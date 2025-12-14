@@ -77,7 +77,7 @@ Hoặc tải trực tiếp từ GitHub:
 **Tải từ website**: [phamhungtien.com](https://phamhungtien.com/)
 
 1. Vào [phamhungtien.com](https://phamhungtien.com/) hoặc [Releases](../../releases)
-2. Download file `PHTV_1.0.0.dmg`
+2. Download file `PHTV_x.y.z.dmg`
 3. Double-click để mở DMG
 4. Drag `PHTV.app` vào folder `Applications`
 5. Bật PHTV từ Launchpad hoặc Spotlight (Cmd + Space)
