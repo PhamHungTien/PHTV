@@ -236,8 +236,7 @@ Xem [FAQ.md](FAQ.md) để có câu trả lời chi tiết hơn.
 ## 📞 Liên hệ & Hỗ trợ
 
 - **Issues**: [GitHub Issues](../../issues) - Báo cáo lỗi
-- **Discussions**: [GitHub Discussions](../../discussions) - Thảo luận & đề xuất
-- **Email**: [Sẽ cập nhật sau]
+- **Email**: phamhungtien@maclife.io
 
 ---
 
