@@ -49,7 +49,23 @@
 
 ## 📦 Cài đặt
 
-### Phương pháp 1: Build từ source code
+> 📖 **Hướng dẫn chi tiết**: Xem [INSTALL.md](INSTALL.md)
+
+### Phương pháp 1: Download bản release (Khuyến khích)
+
+1. Vào [Releases](../../releases)
+2. Download file `PHTV_1.0.0.dmg`
+3. Double-click để mở DMG
+4. Drag `PHTV.app` vào folder `Applications`
+5. Bật PHTV từ Launchpad hoặc Spotlight (Cmd + Space)
+
+### Phương pháp 2: Homebrew (Sắp tới)
+
+```bash
+brew install --cask phtv
+```
+
+### Phương pháp 3: Build từ source code
 
 1. Clone repository:
 
@@ -73,10 +89,6 @@ open PHTV.xcodeproj
    - Khi ứng dụng khởi động lần đầu, nó sẽ yêu cầu quyền Accessibility
    - Mở **System Settings > Privacy & Security > Accessibility**
    - Thêm PHTV vào danh sách ứng dụng được phép
-
-### Phương pháp 2: Cài đặt từ bản release (nếu có)
-
-[Thêm hướng dẫn khi có bản release]
 
 ## 🚀 Sử dụng
 
@@ -146,7 +158,7 @@ Chúng tôi rất mong nhận được đóng góp từ cộng đồng! Xem [CON
 Các cách bạn có thể giúp đỡ:
 
 - 🐛 Báo cáo lỗi (GitHub Issues)
-- 💡 Đề xuất tính năng mới
+- 💡 Đề xuất tính năng mới (GitHub Discussions)
 - 🔧 Gửi Pull Request với cải thiện
 - 📝 Cải thiện tài liệu
 - 🌍 Hỗ trợ dịch (i18n)
@@ -162,11 +174,25 @@ Dự án này kế thừa và mở rộng engine từ **[OpenKey](https://github
 Nếu bạn phát hiện lỗi, vui lòng:
 
 1. Kiểm tra [GitHub Issues](../../issues) xem lỗi đã được báo cáo chưa
-2. Nếu chưa, tạo issue mới với:
+2. Xem [FAQ.md](FAQ.md) để tìm giải pháp cho các vấn đề phổ biến
+3. Nếu chưa, tạo issue mới với:
    - Mô tả chi tiết lỗi
    - Cách tái hiện lỗi
    - Thông tin hệ thống (macOS version, Xcode version)
    - Log (nếu có)
+
+## ❓ FAQ
+
+> 📋 **Câu hỏi thường gặp**: Xem [FAQ.md](FAQ.md) để biết thêm chi tiết
+
+**Câu hỏi phổ biến:**
+
+- **PHTV tiêu thụ bao nhiêu tài nguyên?** - Rất nhẹ! ~30-50 MB bộ nhớ
+- **Có thể tùy chỉnh phím tắt được không?** - Có! Settings → Keyboard Shortcuts
+- **PHTV có gửi dữ liệu gì lên internet không?** - Không! Hoàn toàn offline
+- **Phương pháp gõ nào phù hợp nhất?** - Telex phổ biến nhất, nhưng thử từng cái để tìm phù hợp
+
+Xem [FAQ.md](FAQ.md) để có câu trả lời chi tiết hơn.
 
 ## 🚀 Tính năng sắp tới
 
@@ -175,3 +201,17 @@ Nếu bạn phát hiện lỗi, vui lòng:
 - [ ] Theme tùy chỉnh
 - [ ] Tiếng Việt Hán Nôm
 - [ ] Giao diện đa ngôn ngữ (English, 中文, etc.)
+
+## 📚 Tài liệu thêm
+
+- [**INSTALL.md**](INSTALL.md) - Hướng dẫn cài đặt chi tiết & troubleshooting
+- [**FAQ.md**](FAQ.md) - Câu hỏi thường gặp
+- [**CHANGELOG.md**](CHANGELOG.md) - Lịch sử phiên bản
+- [**CONTRIBUTING.md**](CONTRIBUTING.md) - Hướng dẫn đóng góp
+- [**CODE_OF_CONDUCT.md**](CODE_OF_CONDUCT.md) - Quy tắc ứng xử
+
+## 📞 Liên hệ & Hỗ trợ
+
+- **Issues**: [GitHub Issues](../../issues) - Báo cáo lỗi
+- **Discussions**: [GitHub Discussions](../../discussions) - Thảo luận & đề xuất
+- **Email**: [Sẽ cập nhật sau]
