@@ -3,10 +3,10 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![macOS 14+](https://img.shields.io/badge/macOS-14+-blue.svg)](https://www.apple.com/macos/)
 [![Swift 5.9+](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
-[![OpenKey Engine](https://img.shields.io/badge/Engine-OpenKey-blueviolet.svg)](https://github.com/vietnamesetext/openkey)
+[![OpenKey](https://img.shields.io/badge/Engine-OpenKey-blueviolet.svg)](https://github.com/tuyenvm/OpenKey)
 [![Website](https://img.shields.io/badge/Website-phamhungtien.com-green.svg)](https://phamhungtien.com/)
 
-**PHTV** là bộ gõ tiếng Việt hoàn toàn offline cho macOS, được phát triển bởi **Phạm Hùng Tiến**. Dự án này sử dụng và mở rộng **[OpenKey Engine](https://github.com/vietnamesetext/openkey)** - engine nhập liệu tiếng Việt mạnh mẽ, với tích hợp hiện đại cho macOS và giao diện SwiftUI.
+**PHTV** là bộ gõ tiếng Việt hoàn toàn offline cho macOS, được phát triển bởi **Phạm Hùng Tiến**. Dự án này sử dụng và mở rộng **[OpenKey](https://github.com/tuyenvm/OpenKey)** - công cụ nhập liệu tiếng Việt mạnh mẽ, với tích hợp hiện đại cho macOS và giao diện SwiftUI.
 
 ---
 
@@ -243,6 +243,6 @@ Xem [FAQ.md](FAQ.md) để có câu trả lời chi tiết hơn.
 
 ## 🙏 Ghi nhận
 
-**PHTV** được phát triển dựa trên **[OpenKey Engine](https://github.com/vietnamesetext/openkey)** - một công cụ nhập liệu tiếng Việt mạnh mẽ và linh hoạt. Cảm ơn cộng đồng OpenKey đã tạo ra nền tảng tuyệt vời này.
+**PHTV** được phát triển dựa trên **[OpenKey](https://github.com/tuyenvm/OpenKey)** - một công cụ nhập liệu tiếng Việt mạnh mẽ và linh hoạt. Cảm ơn tác giả OpenKey đã tạo ra nền tảng tuyệt vời này.
 
-**OpenKey** là một dự án open-source cộng đồng nhằm cung cấp các công cụ xử lý tiếng Việt chất lượng cao. PHTV mở rộng engine này với tích hợp native cho macOS, giao diện SwiftUI hiện đại, và các tính năng bổ sung như Smart Switch Key, Macros, và Excluded Apps.
+**OpenKey** là một dự án open-source cung cấp công cụ xử lý tiếng Việt chất lượng cao. PHTV mở rộng OpenKey với tích hợp native cho macOS, giao diện SwiftUI hiện đại, và các tính năng bổ sung như Smart Switch Key, Macros, và Excluded Apps.
