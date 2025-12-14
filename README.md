@@ -49,11 +49,13 @@
 
 ## 📦 Cài đặt
 
-> 📖 **Hướng dẫn chi tiết**: Xem [INSTALL.md](INSTALL.md)
+> 📖 **Hướng dẫn chi tiết**: Xem [INSTALL.md](INSTALL.md) hoặc tại [phamhungtien.com](https://phamhungtien.com/)
 
 ### Phương pháp 1: Download bản release (Khuyến khích)
 
-1. Vào [Releases](../../releases)
+**Tải từ website**: [phamhungtien.com](https://phamhungtien.com/)
+
+1. Vào [phamhungtien.com](https://phamhungtien.com/) hoặc [Releases](../../releases)
 2. Download file `PHTV_1.0.0.dmg`
 3. Double-click để mở DMG
 4. Drag `PHTV.app` vào folder `Applications`

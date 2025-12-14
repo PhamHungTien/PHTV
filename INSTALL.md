@@ -1,10 +1,12 @@
 # PHTV Installation Guide
 
+> 🌐 **Hướng dẫn đầy đủ với hình ảnh**: Xem tại [phamhungtien.com](https://phamhungtien.com/)
+
 ## 🚀 Cách cài đặt PHTV
 
 ### Option 1: Download DMG trực tiếp (Khuyến khích)
 
-1. Vào [GitHub Releases](https://github.com/PhamHungTien/PHTV/releases)
+1. Vào [phamhungtien.com](https://phamhungtien.com/) hoặc [GitHub Releases](https://github.com/PhamHungTien/PHTV/releases)
 2. Download file `PHTV_1.0.0.dmg`
 3. Double-click để mở DMG
 4. Drag `PHTV.app` vào folder `Applications`
@@ -69,6 +71,14 @@ xcodebuild -scheme PHTV -configuration Release -arch arm64 -arch x86_64
 
 1. Settings → Excluded Apps
 2. Nhấn "+" và chọn ứng dụng muốn tắt tiếng Việt
+
+---
+
+## 📚 Tài nguyên hỗ trợ
+
+- **Website**: [phamhungtien.com](https://phamhungtien.com/) - Hướng dẫn chi tiết với hình ảnh, video, và các tính năng
+- **GitHub**: [github.com/PhamHungTien/PHTV](https://github.com/PhamHungTien/PHTV)
+- **Liên hệ**: [hungtien10a7@gmail.com](mailto:hungtien10a7@gmail.com)
 
 ---
 
