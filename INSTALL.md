@@ -1,12 +1,30 @@
 # PHTV Installation Guide
 
-> 🌐 **Hướng dẫn đầy đủ với hình ảnh**: Xem tại [phamhungtien.com](https://phamhungtien.com/)
+---
+
+## 🌟 Tải xuống nhanh
+
+<div align="center">
+
+### 👉 **[Tải PHTV từ phamhungtien.com](https://phamhungtien.com/)**
+
+**Hướng dẫn chi tiết, hình ảnh từng bước, và video hướng dẫn**
+
+[Website](https://phamhungtien.com/) | [Hướng dẫn chi tiết](https://phamhungtien.com/#setup) | [GitHub](https://github.com/PhamHungTien/PHTV)
+
+</div>
+
+---
 
 ## 🚀 Cách cài đặt PHTV
 
-### Option 1: Download DMG trực tiếp (Khuyến khích)
+### ⭐ Option 1: Download từ Website (Khuyến khích)
 
-1. Vào [phamhungtien.com](https://phamhungtien.com/) hoặc [GitHub Releases](https://github.com/PhamHungTien/PHTV/releases)
+**[👉 Tải trực tiếp tại phamhungtien.com](https://phamhungtien.com/)**
+
+Hoặc từ GitHub Releases:
+
+1. Vào [GitHub Releases](https://github.com/PhamHungTien/PHTV/releases)
 2. Download file `PHTV_1.0.0.dmg`
 3. Double-click để mở DMG
 4. Drag `PHTV.app` vào folder `Applications`
