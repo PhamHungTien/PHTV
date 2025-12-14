@@ -12,11 +12,15 @@
 #include <iostream>
 #include <memory.h>
 #include <fstream>
+#include <mutex>
 
 using namespace std;
 
 //main data
 map<vector<Uint32>, MacroData> macroMap;
+
+// Thread safety: protect macroMap access between main thread (AppDelegate) and event tap thread
+static std::mutex macroMapMutex;
 
 extern volatile int vCodeTable;
 //local variable
@@ -79,6 +83,7 @@ static void convert(const string& str, vector<Uint32>& outData) {
  */
 extern "C" {
 void initMacroMap(const Byte* pData, const int& size) {
+    std::lock_guard<std::mutex> lock(macroMapMutex);
     macroMap.clear();
     
     // Handle empty or null data
@@ -117,6 +122,7 @@ void initMacroMap(const Byte* pData, const int& size) {
 }
 
 void getMacroSaveData(vector<Byte>& outData) {
+    std::lock_guard<std::mutex> lock(macroMapMutex);
     Uint16 totalMacro = (Uint16)macroMap.size();
     outData.push_back((Byte)totalMacro);
     outData.push_back((Byte)(totalMacro>>8));
@@ -160,6 +166,8 @@ static bool modifyCaseUnicode(Uint32& code, const bool& isUpperCase=true) {
 }
 
 bool findMacro(vector<Uint32>& key, vector<Uint32>& macroContentCode) {
+    std::lock_guard<std::mutex> lock(macroMapMutex);
+    
     // Normalize character codes once
     for (c = 0; c < key.size(); c++) {
         key[c] = getCharacterCode(key[c]);
@@ -218,12 +226,14 @@ bool findMacro(vector<Uint32>& key, vector<Uint32>& macroContentCode) {
 }
 
 bool hasMacro(const string& macroName) {
+    std::lock_guard<std::mutex> lock(macroMapMutex);
     vector<Uint32> key;
     convert(macroName, key);
     return (macroMap.find(key) != macroMap.end());
 }
 
 void getAllMacro(vector<vector<Uint32>>& keys, vector<string>& macroTexts, vector<string>& macroContents) {
+    std::lock_guard<std::mutex> lock(macroMapMutex);
     keys.clear();
     macroTexts.clear();
     macroContents.clear();
@@ -235,6 +245,7 @@ void getAllMacro(vector<vector<Uint32>>& keys, vector<string>& macroTexts, vecto
 }
 
 bool addMacro(const string& macroText, const string& macroContent) {
+    std::lock_guard<std::mutex> lock(macroMapMutex);
     vector<Uint32> key;
     convert(macroText, key);
     if (macroMap.find(key) == macroMap.end()) { //add new macro
@@ -251,6 +262,7 @@ bool addMacro(const string& macroText, const string& macroContent) {
 }
 
 bool deleteMacro(const string& macroText) {
+    std::lock_guard<std::mutex> lock(macroMapMutex);
     vector<Uint32> key;
     convert(macroText, key);
     if (macroMap.find(key) != macroMap.end()) {

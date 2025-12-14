@@ -13,6 +13,9 @@ struct MacroSettingsView: View {
     @State private var macros: [MacroItem] = []
     @State private var selectedMacro: UUID?
     @State private var showingAddMacro = false
+    @State private var showingEditMacro = false
+    @State private var editingMacro: MacroItem? = nil
+    @State private var refreshTrigger = UUID()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -101,6 +104,12 @@ struct MacroSettingsView: View {
 
                 Spacer()
 
+                Button(action: { restartApp() }) {
+                    Image(systemName: "arrow.clockwise")
+                    Text("Lưu & Khởi động")
+                }
+                .buttonStyle(.borderedProminent)
+
                 Text("\(macros.count) gõ tắt")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -124,12 +133,21 @@ struct MacroSettingsView: View {
         .sheet(isPresented: $showingAddMacro) {
             MacroEditorView(isPresented: $showingAddMacro)
                 .environmentObject(appState)
-                .onDisappear {
-                    loadMacros()
-                }
+        }
+        .sheet(isPresented: $showingEditMacro) {
+            MacroEditorView(isPresented: $showingEditMacro, editingMacro: editingMacro)
+                .environmentObject(appState)
         }
         .onAppear {
             loadMacros()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("MacrosUpdated")))
+        { _ in
+            DispatchQueue.main.async {
+                print("[MacroSettings] Received MacrosUpdated notification, reloading...")
+                loadMacros()
+                refreshTrigger = UUID()
+            }
         }
     }
 
@@ -139,8 +157,12 @@ struct MacroSettingsView: View {
             let loadedMacros = try? JSONDecoder().decode([MacroItem].self, from: data)
         {
             macros = loadedMacros
+            print(
+                "[MacroSettings] Loaded \(loadedMacros.count) macros: \(loadedMacros.map { $0.shortcut }.joined(separator: ", "))"
+            )
         } else {
             macros = []
+            print("[MacroSettings] No macros found in UserDefaults")
         }
     }
 
@@ -151,23 +173,72 @@ struct MacroSettingsView: View {
             return
         }
 
+        let deletedMacro = macros[index]
         macros.remove(at: index)
         selectedMacro = nil
+        print(
+            "[MacroSettings] Deleted macro: \(deletedMacro.shortcut) -> \(deletedMacro.expansion)")
         saveMacros()
     }
 
     private func editMacro() {
-        // Edit functionality: delete old and add new
-        deleteMacro()
+        guard let selectedId = selectedMacro,
+            let macro = macros.first(where: { $0.id == selectedId })
+        else {
+            return
+        }
+        editingMacro = macro
+        showingEditMacro = true
+    }
+
+    private func restartApp() {
+        // Restart application
+        print("[MacroSettings] Restarting application...")
+
+        let bundleURL = Bundle.main.bundleURL
+
+        // Prepare an open configuration
+        let config = NSWorkspace.OpenConfiguration()
+        config.activates = true
+
+        // Try to relaunch first, then terminate after the request is issued
+        NSWorkspace.shared.openApplication(at: bundleURL, configuration: config) { app, error in
+            if let error = error {
+                print("[MacroSettings] openApplication failed: \(error). Falling back to /usr/bin/open")
+                // Fallback: use /usr/bin/open to launch the bundle. This process will outlive our app termination.
+                let process = Process()
+                process.launchPath = "/usr/bin/open"
+                process.arguments = ["-n", bundleURL.path]
+                do {
+                    try process.run()
+                } catch {
+                    print("[MacroSettings] Fallback open failed: \(error)")
+                }
+            }
+
+            // Terminate after a short delay to allow the relaunch request to be enqueued
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                NSApplication.shared.terminate(nil)
+            }
+        }
     }
 
     private func saveMacros() {
         let defaults = UserDefaults.standard
         if let encoded = try? JSONEncoder().encode(macros) {
             defaults.set(encoded, forKey: "macroList")
-            // Removed synchronize() - let UserDefaults auto-save periodically for better performance
-            // Notify backend to reload macro data
-            NotificationCenter.default.post(name: NSNotification.Name("MacrosUpdated"), object: nil)
+            defaults.synchronize()
+            print("[MacroSettings] Saved \(macros.count) macros to UserDefaults")
+            print("[MacroSettings] macroList data size: \(encoded.count) bytes")
+            // Important: Wait to ensure synchronize completes before notification
+            print("[MacroSettings] Posting MacrosUpdated notification after 50ms delay")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("MacrosUpdated"), object: nil)
+                print("[MacroSettings] Notification posted")
+            }
+        } else {
+            print("[MacroSettings] ERROR: Failed to encode macros")
         }
     }
 }
@@ -301,3 +372,4 @@ struct MacroRowView: View {
         .environmentObject(AppState.shared)
         .frame(width: 500, height: 600)
 }
+
