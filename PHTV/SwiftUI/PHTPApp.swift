@@ -132,7 +132,68 @@ final class AppState: ObservableObject {
         isLoadingSettings = false
         setupObservers()
         setupNotificationObservers()
+        setupExternalSettingsObserver()
         checkAccessibilityPermission()
+    }
+
+    /// Monitor external UserDefaults changes and reload settings in real-time
+    private func setupExternalSettingsObserver() {
+        SettingsObserver.shared.$settingsDidChange
+            .debounce(for: 0.1, scheduler: DispatchQueue.main)
+            .sink { [weak self] (_: Date?) in
+                guard let self = self else { return }
+                self.reloadSettingsFromDefaults()
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Reload only settings that may have changed externally
+    private func reloadSettingsFromDefaults() {
+        let defaults = UserDefaults.standard
+
+        isLoadingSettings = true
+        defer { isLoadingSettings = false }
+
+        // Only reload settings that may change from external sources
+        let inputMethod_saved = defaults.integer(forKey: "InputMethod")
+        let newIsEnabled = (inputMethod_saved == 1)
+
+        let inputTypeIndex = defaults.integer(forKey: "InputType")
+        let newInputMethod = InputMethod.from(index: inputTypeIndex)
+
+        let codeTableIndex = defaults.integer(forKey: "CodeTable")
+        let newCodeTable = CodeTable.from(index: codeTableIndex)
+
+        let switchKeyStatus = defaults.integer(forKey: "SwitchKeyStatus")
+
+        // Update only if values changed to avoid unnecessary refreshes
+        if newIsEnabled != isEnabled {
+            isEnabled = newIsEnabled
+        }
+
+        if newInputMethod != inputMethod {
+            inputMethod = newInputMethod
+        }
+
+        if newCodeTable != codeTable {
+            codeTable = newCodeTable
+        }
+
+        if switchKeyStatus != 0 {
+            let oldStatus = encodeSwitchKeyStatus()
+            if switchKeyStatus != oldStatus {
+                decodeSwitchKeyStatus(switchKeyStatus)
+            }
+        }
+
+        // Reload excluded apps if changed
+        if let data = defaults.data(forKey: "ExcludedApps"),
+            let newApps = try? JSONDecoder().decode([ExcludedApp].self, from: data)
+        {
+            if newApps != excludedApps {
+                excludedApps = newApps
+            }
+        }
     }
 
     private func setupNotificationObservers() {
@@ -347,7 +408,12 @@ final class AppState: ObservableObject {
         if let data = try? JSONEncoder().encode(excludedApps) {
             UserDefaults.standard.set(data, forKey: "ExcludedApps")
             UserDefaults.standard.synchronize()
-            // Notify backend
+
+            // Notify backend with hot reload
+            NotificationCenter.default.post(
+                name: NSNotification.Name("ExcludedAppsChanged"), object: excludedApps)
+
+            // Also post legacy notification for backward compatibility
             NotificationCenter.default.post(
                 name: NSNotification.Name("ExcludedAppsChanged"), object: nil)
         }
@@ -464,6 +530,54 @@ final class AppState: ObservableObject {
                 name: NSNotification.Name("HotkeyChanged"), object: NSNumber(value: switchKeyStatus)
             )
         }.store(in: &cancellables)
+    }
+
+    // MARK: - Reset to Defaults
+
+    func resetToDefaults() {
+        isLoadingSettings = true
+        defer { isLoadingSettings = false }
+
+        // Reset all settings to defaults
+        inputMethod = .telex
+        codeTable = .unicode
+
+        isEnabled = true
+        checkSpelling = true
+        useModernOrthography = true
+        quickTelex = false
+        useMacro = true
+        useMacroInEnglishMode = false
+        autoCapsMacro = false
+        useSmartSwitchKey = true
+        upperCaseFirstChar = false
+        allowConsonantZFWJ = false
+        quickStartConsonant = false
+        quickEndConsonant = false
+        rememberCode = true
+
+        runOnStartup = false
+        fixChromiumBrowser = false
+        performLayoutCompat = false
+        showIconOnDock = false
+
+        switchKeyCommand = false
+        switchKeyOption = false
+        switchKeyControl = true
+        switchKeyShift = true
+        switchKeyCode = 0xFE
+        switchKeyName = "Không"
+
+        excludedApps = []
+
+        // Save to defaults
+        saveSettings()
+
+        // Notify backend about reset
+        NotificationCenter.default.post(
+            name: NSNotification.Name("SettingsResetToDefaults"),
+            object: nil
+        )
     }
 }
 

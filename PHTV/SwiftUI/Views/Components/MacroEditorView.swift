@@ -16,10 +16,14 @@ struct MacroEditorView: View {
     @State private var errorMessage = ""
     @State private var showError = false
 
+    // Edit mode support
+    var editingMacro: MacroItem? = nil
+    var isEditMode: Bool { editingMacro != nil }
+
     var body: some View {
         VStack(spacing: 16) {
             HStack {
-                Text("Thêm gõ tắt mới")
+                Text(isEditMode ? "Chỉnh sửa gõ tắt" : "Thêm gõ tắt mới")
                     .font(.headline)
                 Spacer()
                 Button("Đóng") {
@@ -59,6 +63,13 @@ struct MacroEditorView: View {
         } message: {
             Text(errorMessage)
         }
+        .onAppear {
+            // Initialize fields if editing
+            if let macro = editingMacro {
+                macroName = macro.shortcut
+                macroCode = macro.expansion
+            }
+        }
     }
 
     private func saveMacro() {
@@ -78,32 +89,63 @@ struct MacroEditorView: View {
         // Load existing macros
         let defaults = UserDefaults.standard
         var macros = loadMacros()
+        let trimmedName = macroName.trimmingCharacters(in: .whitespaces)
+        let trimmedCode = macroCode.trimmingCharacters(in: .whitespaces)
 
-        // Check if macro already exists
-        if macros.contains(where: { $0.shortcut.lowercased() == macroName.lowercased() }) {
-            errorMessage = "Gõ tắt '\(macroName)' đã tồn tại"
-            showError = true
-            return
+        if isEditMode {
+            // EDIT MODE: Find and update existing macro
+            if let index = macros.firstIndex(where: {
+                $0.shortcut.lowercased() == editingMacro!.shortcut.lowercased()
+            }) {
+                print("[MacroEditor] Editing macro: \(editingMacro!.shortcut)")
+                macros[index].expansion = trimmedCode
+                // Don't change shortcut in edit mode
+                print("[MacroEditor] Updated expansion to: \(trimmedCode)")
+            } else {
+                errorMessage = "Không tìm thấy gõ tắt để chỉnh sửa"
+                showError = true
+                return
+            }
+        } else {
+            // ADD MODE: Check if macro already exists
+            if macros.contains(where: { $0.shortcut.lowercased() == trimmedName.lowercased() }) {
+                errorMessage = "Gõ tắt '\(trimmedName)' đã tồn tại"
+                showError = true
+                return
+            }
+
+            // Add new macro
+            let newMacro = MacroItem(
+                shortcut: trimmedName,
+                expansion: trimmedCode)
+            macros.append(newMacro)
+            print("[MacroEditor] Added new macro: \(newMacro.shortcut) -> \(newMacro.expansion)")
         }
-
-        // Add new macro
-        let newMacro = MacroItem(
-            shortcut: macroName.trimmingCharacters(in: .whitespaces),
-            expansion: macroCode.trimmingCharacters(in: .whitespaces))
-        macros.append(newMacro)
 
         // Save to UserDefaults
         if let encoded = try? JSONEncoder().encode(macros) {
             defaults.set(encoded, forKey: "macroList")
-            // Removed synchronize() - let UserDefaults auto-save periodically for better performance
+            defaults.synchronize()
+            print("[MacroEditor] Saved \(macros.count) macros to UserDefaults")
+            print("[MacroEditor] macroList data size: \(encoded.count) bytes")
 
-            // Update macro data for backend
-            updateMacroDataForBackend(macros)
-
-            isPresented = false
+            // Important: Wait a tiny bit to ensure synchronize completes
+            // Then post notification so AppDelegate reads fresh data
+            print("[MacroEditor] Posting MacrosUpdated notification after 50ms delay")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("MacrosUpdated"), object: nil)
+                print("[MacroEditor] Notification posted")
+                // Close the editor after a short delay; no restart here
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    isPresented = true // ensure still presented until saved
+                    isPresented = false // then close
+                }
+            }
         } else {
             errorMessage = "Không thể lưu gõ tắt"
             showError = true
+            print("[MacroEditor] ERROR: Failed to encode macros")
         }
     }
 
@@ -116,14 +158,10 @@ struct MacroEditorView: View {
         }
         return []
     }
-
-    private func updateMacroDataForBackend(_ macros: [MacroItem]) {
-        // Notify backend to reload macro data
-        NotificationCenter.default.post(name: NSNotification.Name("MacrosUpdated"), object: nil)
-    }
 }
 
 #Preview {
     @Previewable @State var isPresented = true
     return MacroEditorView(isPresented: $isPresented)
 }
+

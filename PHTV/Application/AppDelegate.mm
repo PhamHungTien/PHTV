@@ -328,6 +328,9 @@ extern bool convertToolDontAlertWhenCompleted;
     // Initialize SwiftUI integration
     [self setupSwiftUIBridge];
     
+    // Load existing macros from UserDefaults to binary format (macroData)
+    [self loadExistingMacros];
+    
     // Observe Dark Mode changes
     [self observeAppearanceChanges];
     
@@ -431,6 +434,16 @@ extern bool convertToolDontAlertWhenCompleted;
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(handleMacrosUpdated:)
                                                  name:@"MacrosUpdated"
+                                               object:nil];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleCheckForUpdates:)
+                                                 name:@"CheckForUpdates"
+                                               object:nil];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleSettingsReset:)
+                                                 name:@"SettingsReset"
                                                object:nil];
 }
 
@@ -644,10 +657,20 @@ extern bool convertToolDontAlertWhenCompleted;
 
 - (void)handleMacrosUpdated:(NSNotification *)notification {
     // Reload macros from UserDefaults and rebuild macro map
+    NSLog(@"========================================");
+    NSLog(@"[AppDelegate] handleMacrosUpdated CALLED!");
+    NSLog(@"========================================");
+    
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     NSData *macroListData = [defaults dataForKey:@"macroList"];
     
+    NSLog(@"[AppDelegate] Reading from UserDefaults...");
+    NSLog(@"[AppDelegate] macroList exists: %@", macroListData ? @"YES" : @"NO");
     if (macroListData) {
+        NSLog(@"[AppDelegate] macroList size: %ld bytes", (long)[macroListData length]);
+    }
+    
+    if (macroListData && macroListData.length > 0) {
         // Parse JSON and convert to binary format for C++ engine
         NSError *error = nil;
         NSMutableArray *macros = [NSJSONSerialization JSONObjectWithData:macroListData 
@@ -655,9 +678,100 @@ extern bool convertToolDontAlertWhenCompleted;
                                                                      error:&error];
         
         if (error || !macros) {
-            NSLog(@"[ERROR] Failed to parse macro list: %@", error);
+            NSLog(@"[AppDelegate] ERROR: Failed to parse macro list: %@", error);
             return;
         }
+        
+        NSLog(@"[AppDelegate] Converting %lu macros to binary format", (unsigned long)[macros count]);
+        
+        // Convert JSON macros to binary format and save
+        NSMutableData *binaryData = [NSMutableData data];
+        uint16_t macroCount = (uint16_t)[macros count];
+        [binaryData appendBytes:&macroCount length:2];
+        
+        NSLog(@"[AppDelegate] Binary header: count=%u (2 bytes)", macroCount);
+        
+        for (NSDictionary *macro in macros) {
+            NSString *shortcut = macro[@"shortcut"] ?: @"";
+            NSString *expansion = macro[@"expansion"] ?: @"";
+            
+            NSLog(@"  - Adding macro: '%@' -> '%@'", shortcut, expansion);
+            
+            uint8_t shortcutLen = (uint8_t)[shortcut lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
+            [binaryData appendBytes:&shortcutLen length:1];
+            [binaryData appendData:[shortcut dataUsingEncoding:NSUTF8StringEncoding]];
+            
+            uint16_t expansionLen = (uint16_t)[expansion lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
+            [binaryData appendBytes:&expansionLen length:2];
+            [binaryData appendData:[expansion dataUsingEncoding:NSUTF8StringEncoding]];
+            
+            NSLog(@"    Encoded: shortcut_len=%u, expansion_len=%u", shortcutLen, expansionLen);
+        }
+        
+        // Save to "macroData" for C++ engine to load
+        [defaults setObject:binaryData forKey:@"macroData"];
+        [defaults synchronize];
+        
+        NSLog(@"[AppDelegate] Saved binary data: %ld bytes to UserDefaults", (long)[binaryData length]);
+        
+        // Reload macro map in C++ engine
+        NSLog(@"[AppDelegate] Calling initMacroMap(%ld bytes)...", (long)[binaryData length]);
+        initMacroMap((const unsigned char*)[binaryData bytes], (int)[binaryData length]);
+        NSLog(@"[AppDelegate] initMacroMap call completed");
+        
+        NSLog(@"[AppDelegate] Macros reloaded in C++ engine: %lu macros", (unsigned long)[macros count]);
+    } else {
+        // macroList is empty or missing - clear all macros
+        NSLog(@"[AppDelegate] macroList is empty - clearing all macros");
+        
+        // Remove macroData to keep in sync with empty macroList
+        [defaults removeObjectForKey:@"macroData"];
+        [defaults synchronize];
+        
+        // Clear macros from C++ engine
+        NSMutableData *emptyData = [NSMutableData data];
+        uint16_t macroCount = 0;
+        [emptyData appendBytes:&macroCount length:2];
+        NSLog(@"[AppDelegate] Calling initMacroMap with empty data (0 bytes)...");
+        initMacroMap((const unsigned char*)[emptyData bytes], (int)[emptyData length]);
+        NSLog(@"[AppDelegate] initMacroMap call completed");
+        
+        NSLog(@"[AppDelegate] Cleared all macros from C++ engine");
+    }
+}
+
+- (void)loadExistingMacros {
+    // On app startup, load macros from macroList (the source of truth)
+    // Always convert macroList to binary macroData to ensure they stay in sync
+    NSLog(@"========================================");
+    NSLog(@"[AppDelegate.loadExistingMacros] STARTUP MACRO LOADING");
+    NSLog(@"========================================");
+    
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    NSData *macroListData = [defaults dataForKey:@"macroList"];
+    
+    NSLog(@"[AppDelegate.loadExistingMacros] Startup check: macroList=%@", 
+          macroListData ? @"exists" : @"missing");
+    if (macroListData) {
+        NSLog(@"[AppDelegate.loadExistingMacros] macroList size: %ld bytes", (long)[macroListData length]);
+    }
+    
+    // Always process macroList if it exists
+    if (macroListData) {
+        NSLog(@"[AppDelegate.loadExistingMacros] Converting macroList (%ld bytes) to macroData...", (long)[macroListData length]);
+        
+        // Parse JSON directly and convert to binary format
+        NSError *error = nil;
+        NSMutableArray *macros = [NSJSONSerialization JSONObjectWithData:macroListData 
+                                                                   options:NSJSONReadingMutableContainers 
+                                                                     error:&error];
+        
+        if (error || !macros) {
+            NSLog(@"[AppDelegate.loadExistingMacros] ERROR: Failed to parse macro list on startup: %@", error);
+            return;
+        }
+        
+        NSLog(@"[AppDelegate.loadExistingMacros] Found %lu macros in macroList", (unsigned long)[macros count]);
         
         // Convert JSON macros to binary format and save
         NSMutableData *binaryData = [NSMutableData data];
@@ -667,6 +781,8 @@ extern bool convertToolDontAlertWhenCompleted;
         for (NSDictionary *macro in macros) {
             NSString *shortcut = macro[@"shortcut"] ?: @"";
             NSString *expansion = macro[@"expansion"] ?: @"";
+            
+            NSLog(@"  - Converting: %@ -> %@", shortcut, expansion);
             
             uint8_t shortcutLen = (uint8_t)[shortcut lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
             [binaryData appendBytes:&shortcutLen length:1];
@@ -681,13 +797,201 @@ extern bool convertToolDontAlertWhenCompleted;
         [defaults setObject:binaryData forKey:@"macroData"];
         [defaults synchronize];
         
+        NSLog(@"[AppDelegate.loadExistingMacros] Saved binary data: %ld bytes", (long)[binaryData length]);
+        
         // Reload macro map in C++ engine
         initMacroMap((const unsigned char*)[binaryData bytes], (int)[binaryData length]);
         
-        #ifdef DEBUG
-        NSLog(@"[SwiftUI] Macros reloaded: %lu macros", (unsigned long)[macros count]);
-        #endif
+        NSLog(@"[AppDelegate.loadExistingMacros] Macros converted and loaded: %lu macros", (unsigned long)[macros count]);
+    } else {
+        // No macroList exists - clear all macros in C++ engine
+        NSLog(@"[AppDelegate.loadExistingMacros] No macroList found - clearing all macros");
+        
+        // Create empty binary data (just the count = 0)
+        NSMutableData *emptyData = [NSMutableData data];
+        uint16_t macroCount = 0;
+        [emptyData appendBytes:&macroCount length:2];
+        
+        // Clear macroData from UserDefaults to keep them in sync
+        [defaults removeObjectForKey:@"macroData"];
+        [defaults synchronize];
+        
+        // Clear macros from C++ engine
+        initMacroMap((const unsigned char*)[emptyData bytes], (int)[emptyData length]);
+        
+        NSLog(@"[AppDelegate.loadExistingMacros] Cleared all macros from C++ engine");
     }
+}
+
+- (void)handleCheckForUpdates:(NSNotification *)notification {
+    // Check for updates from GitHub API
+    NSString *currentVersion = [[NSBundle mainBundle] infoDictionary][@"CFBundleShortVersionString"];
+    
+    NSLog(@"[Update Check] ========================================");
+    NSLog(@"[Update Check] Starting update check...");
+    NSLog(@"[Update Check] Current version: %@", currentVersion);
+    
+    // Fetch latest release from GitHub API
+    NSURL *url = [NSURL URLWithString:@"https://api.github.com/repos/PhamHungTien/PHTV/releases/latest"];
+    NSLog(@"[Update Check] Fetching from URL: %@", url);
+    
+    NSURLRequest *request = [NSURLRequest requestWithURL:url 
+                                              cachePolicy:NSURLRequestReloadIgnoringLocalCacheData 
+                                          timeoutInterval:15.0];
+    
+    // Create configuration to allow HTTP/HTTPS and ensure proper timeout
+    NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
+    config.timeoutIntervalForRequest = 15.0;
+    config.timeoutIntervalForResource = 30.0;
+    config.waitsForConnectivity = YES;
+    
+    NSURLSession *session = [NSURLSession sessionWithConfiguration:config];
+    
+    NSLog(@"[Update Check] Starting network request...");
+    
+    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        NSLog(@"[Update Check] Network request completed");
+        
+        dispatch_async(dispatch_get_main_queue(), ^{
+            NSDictionary *responseDict = nil;
+            
+            // Check HTTP response status
+            if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
+                NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
+                NSLog(@"[Update Check] HTTP Status Code: %ld", (long)httpResponse.statusCode);
+                
+                if (httpResponse.statusCode != 200) {
+                    NSLog(@"[Update Check] ERROR: HTTP Status %ld", (long)httpResponse.statusCode);
+                    responseDict = @{
+                        @"message": [NSString stringWithFormat:@"Lỗi GitHub API (Status %ld)", (long)httpResponse.statusCode],
+                        @"isError": @YES,
+                        @"updateAvailable": @NO
+                    };
+                }
+            }
+            
+            if (error) {
+                NSLog(@"[Update Check] ERROR: Network request failed");
+                NSLog(@"[Update Check] Error Code: %ld", (long)error.code);
+                NSLog(@"[Update Check] Error Domain: %@", error.domain);
+                NSLog(@"[Update Check] Error Description: %@", error.localizedDescription);
+                NSLog(@"[Update Check] Error Details: %@", error.userInfo);
+                
+                // Distinguish between different error types
+                NSString *errorMsg = @"Không thể kết nối để kiểm tra cập nhật";
+                
+                if (error.code == NSURLErrorTimedOut || error.code == NSURLErrorNetworkConnectionLost) {
+                    errorMsg = @"Kết nối bị timeout. Vui lòng kiểm tra internet.";
+                } else if (error.code == NSURLErrorNotConnectedToInternet) {
+                    errorMsg = @"Không có kết nối internet";
+                } else if (error.code == NSURLErrorDNSLookupFailed) {
+                    errorMsg = @"Không thể kết nối DNS. Vui lòng kiểm tra internet.";
+                }
+                
+                responseDict = @{
+                    @"message": errorMsg,
+                    @"isError": @YES,
+                    @"updateAvailable": @NO
+                };
+            } else if (!data) {
+                NSLog(@"[Update Check] ERROR: No data received from GitHub API");
+                responseDict = @{
+                    @"message": @"Lỗi: Không nhận được dữ liệu từ GitHub",
+                    @"isError": @YES,
+                    @"updateAvailable": @NO
+                };
+            } else if (!responseDict) {  // Only parse if no error encountered
+                NSLog(@"[Update Check] Parsing JSON response (%lu bytes)...", (unsigned long)data.length);
+                
+                // Parse JSON response
+                NSError *parseError = nil;
+                NSDictionary *jsonResponse = [NSJSONSerialization JSONObjectWithData:data options:0 error:&parseError];
+                
+                if (parseError) {
+                    NSLog(@"[Update Check] ERROR: Failed to parse GitHub response: %@", parseError);
+                    responseDict = @{
+                        @"message": @"Lỗi: Không thể phân tích phản hồi từ GitHub",
+                        @"isError": @YES,
+                        @"updateAvailable": @NO
+                    };
+                } else if (!jsonResponse || ![jsonResponse isKindOfClass:[NSDictionary class]]) {
+                    NSLog(@"[Update Check] ERROR: Invalid GitHub response format");
+                    NSLog(@"[Update Check] Response type: %@", NSStringFromClass([jsonResponse class]));
+                    responseDict = @{
+                        @"message": @"Lỗi: Phản hồi từ GitHub không hợp lệ",
+                        @"isError": @YES,
+                        @"updateAvailable": @NO
+                    };
+                } else if (jsonResponse[@"message"] && [jsonResponse[@"message"] isKindOfClass:[NSString class]]) {
+                    // GitHub API error (e.g., rate limit)
+                    NSLog(@"[Update Check] GitHub API Error: %@", jsonResponse[@"message"]);
+                    responseDict = @{
+                        @"message": [NSString stringWithFormat:@"Lỗi GitHub API: %@", jsonResponse[@"message"]],
+                        @"isError": @YES,
+                        @"updateAvailable": @NO
+                    };
+                } else {
+                    // Extract version from tag_name (e.g., "v1.0.0" -> "1.0.0")
+                    NSString *tagName = jsonResponse[@"tag_name"];
+                    NSString *latestVersion = tagName;
+                    
+                    NSLog(@"[Update Check] Tag name from GitHub: %@", tagName);
+                    
+                    // Remove 'v' prefix if present
+                    if ([latestVersion hasPrefix:@"v"]) {
+                        latestVersion = [latestVersion substringFromIndex:1];
+                    }
+                    
+                    NSLog(@"[Update Check] Latest version: %@", latestVersion);
+                    
+                    // Compare versions
+                    NSComparisonResult comparison = [currentVersion compare:latestVersion options:NSNumericSearch];
+                    NSLog(@"[Update Check] Version comparison result: %ld", (long)comparison);
+                    
+                    if (comparison == NSOrderedAscending) {
+                        // Current version is older than latest
+                        NSString *releaseNotes = jsonResponse[@"name"] ?: @"";
+                        responseDict = @{
+                            @"message": [NSString stringWithFormat:@"Phiên bản mới %@ có sẵn.\n\n%@", latestVersion, releaseNotes],
+                            @"isError": @NO,
+                            @"updateAvailable": @YES,
+                            @"latestVersion": latestVersion,
+                            @"downloadUrl": @"https://github.com/PhamHungTien/PHTV/releases/latest"
+                        };
+                        NSLog(@"[Update Check] Update available: %@", latestVersion);
+                    } else {
+                        // Current version is up to date
+                        responseDict = @{
+                            @"message": [NSString stringWithFormat:@"Phiên bản hiện tại (%@) là mới nhất", currentVersion],
+                            @"isError": @NO,
+                            @"updateAvailable": @NO
+                        };
+                        NSLog(@"[Update Check] App is up to date");
+                    }
+                }
+            }
+            
+            NSLog(@"[Update Check] Posting response: %@", responseDict[@"message"]);
+            NSLog(@"[Update Check] ========================================");
+            
+            // Post response notification
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"CheckForUpdatesResponse"
+                                                                object:responseDict];
+        });
+    }];
+    
+    [dataTask resume];
+}
+
+- (void)handleSettingsReset:(NSNotification *)notification {
+    // Settings have been reset, post confirmation to UI
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"SettingsResetComplete" object:nil];
+        
+        #ifdef DEBUG
+        NSLog(@"[Settings Reset] Reset complete, UI will refresh");
+        #endif
+    });
 }
 
 - (void)onShowSettings:(NSNotification *)notification {
