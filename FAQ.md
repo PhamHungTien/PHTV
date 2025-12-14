@@ -4,11 +4,11 @@
 
 ### Q1: PHTV có tương thích với phiên bản macOS nào?
 
-**A:** PHTV hỗ trợ macOS 12.0+ (Monterey trở lên). Hoạt động tốt trên Apple Silicon (M1/M2/M3) và Intel Macs.
+**A:** PHTV hỗ trợ macOS 14.0+ (Sonoma trở lên). Hoạt động tốt trên Apple Silicon (M1/M2/M3) và Intel Macs.
 
 ### Q2: Làm sao để chuyển đổi giữa tiếng Anh và tiếng Việt?
 
-**A:** Nhấn phím tắt được cấu hình (mặc định `Cmd + Space` hoặc `Cmd + Option + Space`). Hoặc click vào Status Bar icon để chọn ngôn ngữ.
+**A:** Nhấn phím tắt được cấu hình (mặc định `Ctrl + Shift`. Hoặc click vào Status Bar icon để chọn ngôn ngữ.
 
 ### Q3: Phương pháp gõ nào phù hợp nhất?
 
