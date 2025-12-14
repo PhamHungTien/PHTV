@@ -1,0 +1,104 @@
+# Xcode build products
+build/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xcworkspace/xcuserdata/
+xcuserdata/
+*.xccheckout
+*.moved-aside
+DerivedData/
+*.hmap
+*.ipa
+*.xcarchive
+*.xcodeproj/xcuserdata
+*.app
+
+# Swift Package Manager
+.build/
+.swiftpm/
+*.resolved
+Package.resolved
+
+# CocoaPods
+Pods/
+Podfile.lock
+*.xcworkspace/
+
+# Carthage
+Carthage/
+Checkouts/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Accio dependency management
+Dependencies/
+.accio/
+
+# Code coverage
+*.coverage
+*.profraw
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+.classpath
+
+# Build artifacts
+*.o
+*.out
+*.a
+*.dylib
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.egg-info/
+*.egg
+
+# Runtime
+*.so
+*.dll
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Temporary files
+*~
+*.bak
+*.tmp
+*.swp
+.DS_Store
+
+# Misc
+.claude/
+.git/
+.gitkeep

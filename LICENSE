@@ -1,0 +1,173 @@
+GNU GENERAL PUBLIC LICENSE
+Version 3, 29 June 2007
+
+Copyright (C) 2019-2025 Phạm Hùng Tiến
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+================================================================================
+
+PREAMBLE
+
+This license applies to any program in the PHTV distribution that contains
+a notice placed by the copyright holder saying it may be distributed under
+the terms of this General Public License.
+
+PHTV - Vietnamese Input Method for macOS
+Project repository: https://github.com/PhamHungTien/PHTV
+OpenKey repository: https://github.com/tuyenvm/OpenKey
+
+================================================================================
+
+This program is based on the original OpenKey engine for Vietnamese text input.
+The engine components (Vietnamese.cpp, Engine.cpp, etc.) provide the core
+functionality for handling Vietnamese typing with various input methods
+(Telex, VNI, Simple Telex) and character encodings (Unicode, TCVN3, VNI).
+
+================================================================================
+
+TERMS AND CONDITIONS
+
+0. Definitions.
+
+"This License" refers to version 3 of the GNU General Public License.
+
+"Copyright" also means copyright-like laws that apply to other kinds of works,
+such as semiconductor masks.
+
+"The Program" refers to any copyrightable work licensed under this License.
+Each licensee is addressed as "you".
+
+"Licensees" and "recipients" may be individuals or organizations.
+
+"To modify" a work means to copy from or adapt all or part of the work
+in a fashion requiring copyright permission, other than the making of an
+exact copy. The resulting work is called a "modified version" of the earlier
+work or a work "based on" the earlier work.
+
+"A covered work" means either the unmodified Program or a derivative work
+under copyright law.
+
+1. Source Code.
+
+The "source code" for a work means the preferred form of the work for making
+modifications to it.
+
+2. Basic Permissions.
+
+All rights granted under this License are granted for the term of copyright
+on the Program, and are irrevocable provided the stated conditions are met.
+You are granted the rights as follows:
+
+a) You may run the unmodified Program. You are free to run the Program
+for any purpose.
+
+b) You may make and run privately modified versions of the Program.
+
+c) You may distribute copies of the Program as received, in source or binary
+form, under the terms of Section 4, provided you also meet all of these
+conditions:
+
+i) The work must carry prominent notices stating that you modified it.
+
+ii) The work must carry a notice of the GPL v3 license and this notice.
+
+iii) You must license the entire work under this License.
+
+iv) If the Program normally reads commands interactively, you must make
+sure that when it starts in a normal mode of operation, it prints a notice
+including an appropriate copyright notice and a notice that there is no
+warranty.
+
+d) You may distribute the Program (including any work based on the Program)
+under the terms of Section 4.
+
+3. Copyleft.
+
+Each time you distribute the Program (or any work based on the Program),
+the recipient automatically receives a license from the original licensor
+to run, modify and distribute the Program subject to these terms and conditions.
+
+4. Distribution.
+
+You may distribute copies of source code of the Program you receive or
+modified versions of the Program under the terms of Sections 3 and 4,
+provided that you also meet all of these conditions:
+
+a) The work must carry prominent notices stating that you modified it, and
+giving a relevant date.
+
+b) The work must carry prominent notices stating it is released under this
+License and any conditions added under section 7. This requirement modifies
+the requirement in section 4 to "keep intact all notices".
+
+c) You must license the entire work, as a whole, under this License to anyone
+who comes into possession of a copy. This License will therefore apply, along
+with any applicable section 7 additional terms, to the whole of the work,
+and all its parts, regardless of how they are packaged.
+
+d) Notwithstanding any other provision of this License, you have permission
+to link or combine any covered work with a work licensed under version 3
+or later of the GNU Affero General Public License into a single combined work,
+and to convey the resulting work.
+
+e) If you distribute executable or object code versions of the Program
+(or works based on them), you must offer to distribute the source code
+of the Program.
+
+5. Non-Source Distribution.
+
+You may distribute a non-source version of a work based on the Program
+under Sections 4 and 5, provided that you also do one of the following:
+
+a) Accompany it with the complete corresponding machine-readable source code
+under Sections 4 and 5.
+
+b) Accompany it with a written offer, which is valid for at least three years
+and valid for as long as you offer spare parts or customer support for that
+model, to give anyone who possesses the object code either (1) a copy of the
+corresponding source code for all the software in the object code covered by
+this License, for a price no more than your reasonable cost of physically
+performing this source distribution, or (2) access to copy the corresponding
+source code from a network server at no charge.
+
+6. Patent Grant.
+
+Each contributor grants you a non-exclusive, worldwide, royalty-free patent
+license under the contributor's patent claims, to make, have made, use, offer
+to sell, sell, import, and otherwise transfer the contribution.
+
+7. No Warranty.
+
+THE PROGRAM IS PROVIDED WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR
+A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+
+8. Limitation of Liability.
+
+IN NO EVENT SHALL ANY COPYRIGHT HOLDER OR OTHER PARTY PROVIDE MODIFICATIONS
+TO THE PROGRAM BE LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL,
+INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO
+USE THE PROGRAM.
+
+================================================================================
+
+This project uses and adapts code and concepts from the OpenKey Vietnamese
+input method engine developed by Tuyến Võ Minh. PHTV (Phạm Hùng Tiến Vietnamese)
+extends this engine with modern macOS integration, SwiftUI interface, and additional
+features while maintaining GPL-3.0 compliance.
+
+OpenKey: https://github.com/tuyenvm/OpenKey
+
+For more information about GPL-3.0, visit: https://www.gnu.org/licenses/gpl-3.0.html

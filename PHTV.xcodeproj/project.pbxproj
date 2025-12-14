@@ -1,0 +1,660 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 54;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		232EDA5921F1B33E0085D362 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 232EDA5821F1B33E0085D362 /* AppDelegate.mm */; };
+		232EDA5E21F1B33F0085D362 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 232EDA5D21F1B33F0085D362 /* Assets.xcassets */; };
+		233C4A6E231F923D00DD7052 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 233C4A6D231F923D00DD7052 /* AppKit.framework */; };
+		233C4A70231F937900DD7052 /* ConvertTool.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 233C4A6F231F937900DD7052 /* ConvertTool.cpp */; };
+		2371AAEF22FA85B200CA1B57 /* PHTV.mm in Sources */ = {isa = PBXBuildFile; fileRef = 2371AAEE22FA85B200CA1B57 /* PHTV.mm */; };
+		238519F821F1BF3C00E79A41 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 238519F221F1B8E200E79A41 /* Foundation.framework */; };
+		238519FF21F1BF8A00E79A41 /* EventKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 238519FD21F1BF5100E79A41 /* EventKit.framework */; };
+		23851A0021F1BFA300E79A41 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 238519FB21F1BF4900E79A41 /* Cocoa.framework */; };
+		23851A0121F1C1A400E79A41 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 238519F921F1BF4400E79A41 /* CoreGraphics.framework */; };
+		2389467D21FDDB920030A13B /* PHTVManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 2389467C21FDDB920030A13B /* PHTVManager.m */; };
+		23963B5022040C720097189E /* ServiceManagement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23963B4F22040C720097189E /* ServiceManagement.framework */; };
+		23CA6D1722F0439100804D6E /* MyTextField.m in Sources */ = {isa = PBXBuildFile; fileRef = 23CA6D1622F0439100804D6E /* MyTextField.m */; };
+		23E2E49D2314FD3A006CCC3E /* Macro.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23E2E4952314FD3A006CCC3E /* Macro.cpp */; };
+		23E2E49E2314FD3A006CCC3E /* SmartSwitchKey.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23E2E4982314FD3A006CCC3E /* SmartSwitchKey.cpp */; };
+		23E2E49F2314FD3A006CCC3E /* Engine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23E2E49A2314FD3A006CCC3E /* Engine.cpp */; };
+		23E2E4A02314FD3A006CCC3E /* Vietnamese.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23E2E49B2314FD3A006CCC3E /* Vietnamese.cpp */; };
+		23F512852336386200397988 /* MJAccessibilityUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 23F512832336386200397988 /* MJAccessibilityUtils.m */; };
+		46EF4FFA2EEDBFD400DF8DD1 /* PHTV.icon in Resources */ = {isa = PBXBuildFile; fileRef = 46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */; };
+		A534F32629D8B78100296F25 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23874B0F220160A500000BC8 /* Carbon.framework */; };
+		A534F32629D8B78100296F26 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23874B10220160A500000BC9 /* QuartzCore.framework */; };
+		E1A1A1A42025120200000002 /* UsageStats.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A32025120200000004 /* UsageStats.m */; };
+		E1A1A1A52025120200000005 /* PHTVConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A72025120200000007 /* PHTVConfig.m */; };
+		E1A1A1A62025120200000006 /* PHTVUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A92025120200000009 /* PHTVUtilities.m */; };
+		F1A1A1B12025130000000001 /* PHTPApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B22025130000000002 /* PHTPApp.swift */; };
+		F1A1A1B32025130000000003 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B42025130000000004 /* SettingsView.swift */; };
+		F1A1A1B52025130000000005 /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B62025130000000006 /* StatusBarController.swift */; };
+		F1A1A1B72025130000000007 /* WindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B82025130000000008 /* WindowController.swift */; };
+		F1A1A1B92025130000000009 /* AppDelegate+SwiftUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1BA2025130000000010 /* AppDelegate+SwiftUI.swift */; };
+		F1A1A1BB2025130000000011 /* ViewModifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1BC2025130000000012 /* ViewModifiers.swift */; };
+		F1A1A1BD2025130000000013 /* PreviewHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1BE2025130000000014 /* PreviewHelpers.swift */; };
+		F1A1A1C12025130000000017 /* StatusBarMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1C22025130000000018 /* StatusBarMenuView.swift */; };
+		F1A1A1D12025130100000019 /* TypingSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D22025130100000020 /* TypingSettingsView.swift */; };
+		F1A1A1D32025130100000021 /* SystemSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D42025130100000022 /* SystemSettingsView.swift */; };
+		F1A1A1D52025130100000023 /* MacroSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D62025130100000024 /* MacroSettingsView.swift */; };
+		F1A1A1D72025130100000025 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D82025130100000026 /* AboutView.swift */; };
+		F1A1A1D92025130100000027 /* HotkeyConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1DA2025130100000028 /* HotkeyConfigView.swift */; };
+		F1A1A1DB2025130100000029 /* MacroEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1DC2025130100000030 /* MacroEditorView.swift */; };
+		F1A1A1DD2025130100000031 /* PermissionWarningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1DE2025130100000032 /* PermissionWarningView.swift */; };
+		F1A1A1DF2025130100000033 /* ExcludedAppsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1E02025130100000034 /* ExcludedAppsView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		237559C4220417DD00FB8CB9 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Library/LoginItems;
+			dstSubfolderSpec = 1;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		232EDA5721F1B33E0085D362 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		232EDA5821F1B33E0085D362 /* AppDelegate.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AppDelegate.mm; sourceTree = "<group>"; };
+		232EDA5D21F1B33F0085D362 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		232EDA6221F1B33F0085D362 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		232EDA6321F1B33F0085D362 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		233C4A6D231F923D00DD7052 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
+		233C4A6F231F937900DD7052 /* ConvertTool.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ConvertTool.cpp; sourceTree = "<group>"; };
+		233C4A71231F938800DD7052 /* ConvertTool.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ConvertTool.h; sourceTree = "<group>"; };
+		2371AAEE22FA85B200CA1B57 /* PHTV.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = PHTV.mm; sourceTree = "<group>"; };
+		237724A3232BA3B800E92BDF /* linux.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = linux.h; sourceTree = "<group>"; };
+		237724A4232BA3B800E92BDF /* win32.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = win32.h; sourceTree = "<group>"; };
+		237724A5232BA3B800E92BDF /* mac.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mac.h; sourceTree = "<group>"; };
+		238519F221F1B8E200E79A41 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		238519F921F1BF4400E79A41 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
+		238519FB21F1BF4900E79A41 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
+		238519FD21F1BF5100E79A41 /* EventKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = EventKit.framework; path = System/Library/Frameworks/EventKit.framework; sourceTree = SDKROOT; };
+		23874B0F220160A500000BC8 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
+		23874B10220160A500000BC9 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		2389467C21FDDB920030A13B /* PHTVManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PHTVManager.m; sourceTree = "<group>"; };
+		2389467E21FDDC3F0030A13B /* PHTVManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PHTVManager.h; sourceTree = "<group>"; };
+		23963B4F22040C720097189E /* ServiceManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ServiceManagement.framework; path = System/Library/Frameworks/ServiceManagement.framework; sourceTree = SDKROOT; };
+		23A984BE220ED07E000914A2 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
+		23CA6D1522F0439100804D6E /* MyTextField.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MyTextField.h; sourceTree = "<group>"; };
+		23CA6D1622F0439100804D6E /* MyTextField.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MyTextField.m; sourceTree = "<group>"; };
+		23E2E4942314FD3A006CCC3E /* Engine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Engine.h; sourceTree = "<group>"; };
+		23E2E4952314FD3A006CCC3E /* Macro.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Macro.cpp; sourceTree = "<group>"; };
+		23E2E4962314FD3A006CCC3E /* DataType.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DataType.h; sourceTree = "<group>"; };
+		23E2E4972314FD3A006CCC3E /* Macro.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Macro.h; sourceTree = "<group>"; };
+		23E2E4982314FD3A006CCC3E /* SmartSwitchKey.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SmartSwitchKey.cpp; sourceTree = "<group>"; };
+		23E2E4992314FD3A006CCC3E /* Vietnamese.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Vietnamese.h; sourceTree = "<group>"; };
+		23E2E49A2314FD3A006CCC3E /* Engine.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Engine.cpp; sourceTree = "<group>"; };
+		23E2E49B2314FD3A006CCC3E /* Vietnamese.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Vietnamese.cpp; sourceTree = "<group>"; };
+		23E2E49C2314FD3A006CCC3E /* SmartSwitchKey.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SmartSwitchKey.h; sourceTree = "<group>"; };
+		23F512832336386200397988 /* MJAccessibilityUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MJAccessibilityUtils.m; sourceTree = "<group>"; };
+		23F512842336386200397988 /* MJAccessibilityUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MJAccessibilityUtils.h; sourceTree = "<group>"; };
+		46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = PHTV.icon; sourceTree = "<group>"; };
+		46EF4FFB2EEDC0A200DF8DD1 /* PHTV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PHTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E1A1A1A22025120100000003 /* UsageStats.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UsageStats.h; sourceTree = "<group>"; };
+		E1A1A1A32025120200000004 /* UsageStats.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = UsageStats.m; sourceTree = "<group>"; };
+		E1A1A1A72025120200000007 /* PHTVConfig.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PHTVConfig.m; sourceTree = "<group>"; };
+		E1A1A1A82025120200000008 /* PHTVConfig.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PHTVConfig.h; sourceTree = "<group>"; };
+		E1A1A1A92025120200000009 /* PHTVUtilities.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PHTVUtilities.m; sourceTree = "<group>"; };
+		E1A1A1AA2025120200000010 /* PHTVUtilities.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PHTVUtilities.h; sourceTree = "<group>"; };
+		E1A1A1AB2025120200000011 /* PHTVConstants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PHTVConstants.h; sourceTree = "<group>"; };
+		F1A1A1B22025130000000002 /* PHTPApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PHTPApp.swift; sourceTree = "<group>"; };
+		F1A1A1B42025130000000004 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		F1A1A1B62025130000000006 /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
+		F1A1A1B82025130000000008 /* WindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowController.swift; sourceTree = "<group>"; };
+		F1A1A1BA2025130000000010 /* AppDelegate+SwiftUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppDelegate+SwiftUI.swift"; sourceTree = "<group>"; };
+		F1A1A1BC2025130000000012 /* ViewModifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModifiers.swift; sourceTree = "<group>"; };
+		F1A1A1BE2025130000000014 /* PreviewHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewHelpers.swift; sourceTree = "<group>"; };
+		F1A1A1BF2025130000000015 /* PHTV-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "PHTV-Bridging-Header.h"; sourceTree = "<group>"; };
+		F1A1A1C22025130000000018 /* StatusBarMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarMenuView.swift; sourceTree = "<group>"; };
+		F1A1A1D22025130100000020 /* TypingSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypingSettingsView.swift; sourceTree = "<group>"; };
+		F1A1A1D42025130100000022 /* SystemSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSettingsView.swift; sourceTree = "<group>"; };
+		F1A1A1D62025130100000024 /* MacroSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroSettingsView.swift; sourceTree = "<group>"; };
+		F1A1A1D82025130100000026 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
+		F1A1A1DA2025130100000028 /* HotkeyConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyConfigView.swift; sourceTree = "<group>"; };
+		F1A1A1DC2025130100000030 /* MacroEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroEditorView.swift; sourceTree = "<group>"; };
+		F1A1A1DE2025130100000032 /* PermissionWarningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionWarningView.swift; sourceTree = "<group>"; };
+		F1A1A1E02025130100000034 /* ExcludedAppsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcludedAppsView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		232EDA5121F1B33E0085D362 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A534F32629D8B78100296F25 /* Carbon.framework in Frameworks */,
+				A534F32629D8B78100296F26 /* QuartzCore.framework in Frameworks */,
+				233C4A6E231F923D00DD7052 /* AppKit.framework in Frameworks */,
+				23963B5022040C720097189E /* ServiceManagement.framework in Frameworks */,
+				23851A0121F1C1A400E79A41 /* CoreGraphics.framework in Frameworks */,
+				23851A0021F1BFA300E79A41 /* Cocoa.framework in Frameworks */,
+				238519FF21F1BF8A00E79A41 /* EventKit.framework in Frameworks */,
+				238519F821F1BF3C00E79A41 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		232EDA4B21F1B33E0085D362 = {
+			isa = PBXGroup;
+			children = (
+				46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */,
+				232EDA5621F1B33E0085D362 /* PHTV */,
+				238519F121F1B8E200E79A41 /* Frameworks */,
+				46EF4FFB2EEDC0A200DF8DD1 /* PHTV.app */,
+			);
+			sourceTree = "<group>";
+		};
+		232EDA5621F1B33E0085D362 /* PHTV */ = {
+			isa = PBXGroup;
+			children = (
+				E1A1A2A12025120000000011 /* Application */,
+				E1A1A2A22025120000000012 /* Core */,
+				E1A1A2A32025120000000013 /* Managers */,
+				E1A1A2A52025120000000015 /* Views */,
+				E1A1A2A62025120000000016 /* Utils */,
+				F1A1A2A72025130000000017 /* SwiftUI */,
+				232EDA5D21F1B33F0085D362 /* Assets.xcassets */,
+				232EDA6221F1B33F0085D362 /* Info.plist */,
+				F1A1A1BF2025130000000015 /* PHTV-Bridging-Header.h */,
+			);
+			path = PHTV;
+			sourceTree = "<group>";
+		};
+		238519F121F1B8E200E79A41 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				233C4A6D231F923D00DD7052 /* AppKit.framework */,
+				23A984BE220ED07E000914A2 /* IOKit.framework */,
+				23963B4F22040C720097189E /* ServiceManagement.framework */,
+				23874B0F220160A500000BC8 /* Carbon.framework */,
+				23874B10220160A500000BC9 /* QuartzCore.framework */,
+				238519FD21F1BF5100E79A41 /* EventKit.framework */,
+				238519FB21F1BF4900E79A41 /* Cocoa.framework */,
+				238519F921F1BF4400E79A41 /* CoreGraphics.framework */,
+				238519F221F1B8E200E79A41 /* Foundation.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		23E2E4932314FD3A006CCC3E /* Engine */ = {
+			isa = PBXGroup;
+			children = (
+				23E2E4962314FD3A006CCC3E /* DataType.h */,
+				23E2E4942314FD3A006CCC3E /* Engine.h */,
+				23E2E49A2314FD3A006CCC3E /* Engine.cpp */,
+				23E2E4972314FD3A006CCC3E /* Macro.h */,
+				23E2E4952314FD3A006CCC3E /* Macro.cpp */,
+				23E2E49C2314FD3A006CCC3E /* SmartSwitchKey.h */,
+				23E2E4982314FD3A006CCC3E /* SmartSwitchKey.cpp */,
+				23E2E4992314FD3A006CCC3E /* Vietnamese.h */,
+				23E2E49B2314FD3A006CCC3E /* Vietnamese.cpp */,
+				233C4A71231F938800DD7052 /* ConvertTool.h */,
+				233C4A6F231F937900DD7052 /* ConvertTool.cpp */,
+			);
+			path = Engine;
+			sourceTree = "<group>";
+		};
+		E1A1A2A12025120000000011 /* Application */ = {
+			isa = PBXGroup;
+			children = (
+				232EDA5721F1B33E0085D362 /* AppDelegate.h */,
+				232EDA5821F1B33E0085D362 /* AppDelegate.mm */,
+				232EDA6321F1B33F0085D362 /* main.m */,
+			);
+			path = Application;
+			sourceTree = "<group>";
+		};
+		E1A1A2A22025120000000012 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				23E2E4932314FD3A006CCC3E /* Engine */,
+				E1A1A2A72025120000000017 /* Platforms */,
+				E1A1A1A82025120200000008 /* PHTVConfig.h */,
+				E1A1A1A72025120200000007 /* PHTVConfig.m */,
+				E1A1A1AB2025120200000011 /* PHTVConstants.h */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		E1A1A2A32025120000000013 /* Managers */ = {
+			isa = PBXGroup;
+			children = (
+				2371AAEE22FA85B200CA1B57 /* PHTV.mm */,
+				2389467E21FDDC3F0030A13B /* PHTVManager.h */,
+				2389467C21FDDB920030A13B /* PHTVManager.m */,
+			);
+			path = Managers;
+			sourceTree = "<group>";
+		};
+		E1A1A2A52025120000000015 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				23CA6D1522F0439100804D6E /* MyTextField.h */,
+				23CA6D1622F0439100804D6E /* MyTextField.m */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		E1A1A2A62025120000000016 /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				23F512842336386200397988 /* MJAccessibilityUtils.h */,
+				23F512832336386200397988 /* MJAccessibilityUtils.m */,
+				E1A1A1AA2025120200000010 /* PHTVUtilities.h */,
+				E1A1A1A92025120200000009 /* PHTVUtilities.m */,
+				E1A1A1A22025120100000003 /* UsageStats.h */,
+				E1A1A1A32025120200000004 /* UsageStats.m */,
+			);
+			path = Utils;
+			sourceTree = "<group>";
+		};
+		E1A1A2A72025120000000017 /* Platforms */ = {
+			isa = PBXGroup;
+			children = (
+				237724A5232BA3B800E92BDF /* mac.h */,
+				237724A3232BA3B800E92BDF /* linux.h */,
+				237724A4232BA3B800E92BDF /* win32.h */,
+			);
+			path = Platforms;
+			sourceTree = "<group>";
+		};
+		F1A1A2A72025130000000017 /* SwiftUI */ = {
+			isa = PBXGroup;
+			children = (
+				F1A1A1B22025130000000002 /* PHTPApp.swift */,
+				F1A1A2A82025130000000018 /* Views */,
+				F1A1A2A92025130000000019 /* Controllers */,
+				F1A1A2AA2025130000000020 /* Bridge */,
+				F1A1A2AB2025130000000021 /* Utilities */,
+			);
+			path = SwiftUI;
+			sourceTree = "<group>";
+		};
+		F1A1A2A82025130000000018 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				F1A1A1B42025130000000004 /* SettingsView.swift */,
+				F1A1A1C22025130000000018 /* StatusBarMenuView.swift */,
+				F1A1A2AC2025130100000035 /* Settings */,
+				F1A1A2AD2025130100000036 /* Components */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		F1A1A2A92025130000000019 /* Controllers */ = {
+			isa = PBXGroup;
+			children = (
+				F1A1A1B62025130000000006 /* StatusBarController.swift */,
+				F1A1A1B82025130000000008 /* WindowController.swift */,
+			);
+			path = Controllers;
+			sourceTree = "<group>";
+		};
+		F1A1A2AA2025130000000020 /* Bridge */ = {
+			isa = PBXGroup;
+			children = (
+				F1A1A1BA2025130000000010 /* AppDelegate+SwiftUI.swift */,
+			);
+			path = Bridge;
+			sourceTree = "<group>";
+		};
+		F1A1A2AB2025130000000021 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				F1A1A1BC2025130000000012 /* ViewModifiers.swift */,
+				F1A1A1BE2025130000000014 /* PreviewHelpers.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		F1A1A2AC2025130100000035 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				F1A1A1D22025130100000020 /* TypingSettingsView.swift */,
+				F1A1A1D42025130100000022 /* SystemSettingsView.swift */,
+				F1A1A1D62025130100000024 /* MacroSettingsView.swift */,
+				F1A1A1D82025130100000026 /* AboutView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		F1A1A2AD2025130100000036 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				F1A1A1DA2025130100000028 /* HotkeyConfigView.swift */,
+				F1A1A1DC2025130100000030 /* MacroEditorView.swift */,
+				F1A1A1DE2025130100000032 /* PermissionWarningView.swift */,
+				F1A1A1E02025130100000034 /* ExcludedAppsView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		232EDA5321F1B33E0085D362 /* PHTV */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 232EDA6821F1B33F0085D362 /* Build configuration list for PBXNativeTarget "PHTV" */;
+			buildPhases = (
+				232EDA5021F1B33E0085D362 /* Sources */,
+				232EDA5121F1B33E0085D362 /* Frameworks */,
+				232EDA5221F1B33E0085D362 /* Resources */,
+				237559C4220417DD00FB8CB9 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PHTV;
+			productName = ModernKey;
+			productReference = 46EF4FFB2EEDC0A200DF8DD1 /* PHTV.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		232EDA4C21F1B33E0085D362 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 2620;
+				ORGANIZATIONNAME = "Phạm Hùng Tiến";
+				TargetAttributes = {
+					232EDA5321F1B33E0085D362 = {
+						CreatedOnToolsVersion = 10.1;
+						SystemCapabilities = {
+							com.apple.Sandbox = {
+								enabled = 0;
+							};
+						};
+					};
+				};
+			};
+			buildConfigurationList = 232EDA4F21F1B33E0085D362 /* Build configuration list for PBXProject "PHTV" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 232EDA4B21F1B33E0085D362;
+			productRefGroup = 232EDA4B21F1B33E0085D362;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				232EDA5321F1B33E0085D362 /* PHTV */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		232EDA5221F1B33E0085D362 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				46EF4FFA2EEDBFD400DF8DD1 /* PHTV.icon in Resources */,
+				232EDA5E21F1B33F0085D362 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		232EDA5021F1B33E0085D362 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				23E2E49F2314FD3A006CCC3E /* Engine.cpp in Sources */,
+				23E2E49E2314FD3A006CCC3E /* SmartSwitchKey.cpp in Sources */,
+				23F512852336386200397988 /* MJAccessibilityUtils.m in Sources */,
+				2389467D21FDDB920030A13B /* PHTVManager.m in Sources */,
+				23E2E4A02314FD3A006CCC3E /* Vietnamese.cpp in Sources */,
+				23CA6D1722F0439100804D6E /* MyTextField.m in Sources */,
+				2371AAEF22FA85B200CA1B57 /* PHTV.mm in Sources */,
+				23E2E49D2314FD3A006CCC3E /* Macro.cpp in Sources */,
+				233C4A70231F937900DD7052 /* ConvertTool.cpp in Sources */,
+				232EDA5921F1B33E0085D362 /* AppDelegate.mm in Sources */,
+				E1A1A1A42025120200000002 /* UsageStats.m in Sources */,
+				E1A1A1A52025120200000005 /* PHTVConfig.m in Sources */,
+				E1A1A1A62025120200000006 /* PHTVUtilities.m in Sources */,
+				F1A1A1B12025130000000001 /* PHTPApp.swift in Sources */,
+				F1A1A1B32025130000000003 /* SettingsView.swift in Sources */,
+				F1A1A1B52025130000000005 /* StatusBarController.swift in Sources */,
+				F1A1A1B72025130000000007 /* WindowController.swift in Sources */,
+				F1A1A1B92025130000000009 /* AppDelegate+SwiftUI.swift in Sources */,
+				F1A1A1BB2025130000000011 /* ViewModifiers.swift in Sources */,
+				F1A1A1BD2025130000000013 /* PreviewHelpers.swift in Sources */,
+				F1A1A1C12025130000000017 /* StatusBarMenuView.swift in Sources */,
+				F1A1A1D12025130100000019 /* TypingSettingsView.swift in Sources */,
+				F1A1A1D32025130100000021 /* SystemSettingsView.swift in Sources */,
+				F1A1A1D52025130100000023 /* MacroSettingsView.swift in Sources */,
+				F1A1A1D72025130100000025 /* AboutView.swift in Sources */,
+				F1A1A1D92025130100000027 /* HotkeyConfigView.swift in Sources */,
+				F1A1A1DB2025130100000029 /* MacroEditorView.swift in Sources */,
+				F1A1A1DD2025130100000031 /* PermissionWarningView.swift in Sources */,
+				F1A1A1DF2025130100000033 /* ExcludedAppsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		232EDA6621F1B33F0085D362 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		232EDA6721F1B33F0085D362 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		232EDA6921F1B33F0085D362 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = PHTV;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CLANG_ENABLE_MODULES = NO;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = NO;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/PHTV/Core/Engine";
+				INFOPLIST_FILE = PHTV/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.phamhungtien.phtv;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "PHTV/PHTV-Bridging-Header.h";
+			};
+			name = Debug;
+		};
+		232EDA6A21F1B33F0085D362 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = PHTV;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CLANG_ENABLE_MODULES = NO;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = NO;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/PHTV/Core/Engine";
+				INFOPLIST_FILE = PHTV/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.phamhungtien.phtv;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "PHTV/PHTV-Bridging-Header.h";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		232EDA4F21F1B33E0085D362 /* Build configuration list for PBXProject "PHTV" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				232EDA6621F1B33F0085D362 /* Debug */,
+				232EDA6721F1B33F0085D362 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		232EDA6821F1B33F0085D362 /* Build configuration list for PBXNativeTarget "PHTV" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				232EDA6921F1B33F0085D362 /* Debug */,
+				232EDA6A21F1B33F0085D362 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 232EDA4C21F1B33E0085D362 /* Project object */;
+}
