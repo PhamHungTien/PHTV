@@ -6,10 +6,6 @@
 
 **PHTV** là bộ gõ tiếng Việt hoàn toàn offline cho macOS, được phát triển bởi **Phạm Hùng Tiến**. Nó kế thừa và mở rộng engine nhập liệu từ OpenKey, với tích hợp hiện đại cho macOS và giao diện SwiftUI.
 
-## 📸 Ảnh chụp màn hình
-
-[Thêm ảnh chụp màn hình nếu có]
-
 ## ✨ Đặc điểm nổi bật
 
 - ✅ **Hoạt động hoàn toàn offline** - Không cần kết nối Internet
