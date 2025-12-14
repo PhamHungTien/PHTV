@@ -18,6 +18,7 @@ brew install --cask phtv
 ```
 
 Hoặc khi được thêm vào chính thức Homebrew Casks:
+
 ```bash
 brew install --cask phtv
 ```
@@ -48,20 +49,24 @@ xcodebuild -scheme PHTV -configuration Release -arch arm64 -arch x86_64
 ## 🔧 Cách sử dụng
 
 ### Bật/Tắt tiếng Việt
+
 - Nhấn phím tắt mặc định: `Cmd + Space` (hoặc tùy chỉnh)
 - Hoặc click vào Status Bar icon → chọn ngôn ngữ
 
 ### Thay đổi phương pháp gõ
+
 1. Click Status Bar icon → Settings
 2. Chọn Input Method: Telex, VNI, Simple Telex 1/2
 3. Chọn Character Set: Unicode, TCVN3, VNI Windows, v.v.
 
 ### Quản lý Macros (Gõ tắt)
+
 1. Mở Settings → Macros
 2. Nhấn "+" để thêm macro mới
 3. Nhập từ viết tắt và nội dung
 
 ### Loại trừ ứng dụng
+
 1. Settings → Excluded Apps
 2. Nhấn "+" và chọn ứng dụng muốn tắt tiếng Việt
 
@@ -72,11 +77,13 @@ xcodebuild -scheme PHTV -configuration Release -arch arm64 -arch x86_64
 ### PHTV không hoạt động
 
 **Kiểm tra**:
+
 1. Đảm bảo đã bật PHTV trong Language Settings
 2. Restart app gặp vấn đề
 3. Kiểm tra System Preferences → Security & Privacy → Accessibility
 
 **Bật quyền truy cập**:
+
 ```bash
 # Yêu cầu password admin
 sudo defaults write com.apple.universalaccess enabled -bool true
@@ -85,6 +92,7 @@ sudo defaults write com.apple.universalaccess enabled -bool true
 ### Ứng dụng không mở
 
 Nếu macOS cảnh báo app chưa được xác thực:
+
 1. Mở Finder → Applications
 2. Right-click PHTV.app → Open
 3. Nhấn "Open" khi được hỏi
@@ -100,4 +108,3 @@ GNU General Public License v3.0 - xem [LICENSE](../LICENSE)
 - GitHub: https://github.com/PhamHungTien/PHTV
 - Issues: https://github.com/PhamHungTien/PHTV/issues
 - Discussions: https://github.com/PhamHungTien/PHTV/discussions
-
