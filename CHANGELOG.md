@@ -31,28 +31,43 @@ và dự án tuân theo [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [1.0.0] - 2025-12-15
 
-### Added
+PHTV v1.0.0 là phiên bản đầu tiên - một bộ gõ tiếng Việt hiện đại cho macOS, được xây dựng trên nền tảng SwiftUI với giao diện Liquid Glass.
 
-- Phiên bản đầu tiên của PHTV
-- Hỗ trợ 4 phương pháp gõ:
-  - Telex
-  - VNI
-  - Simple Telex 1
-  - Simple Telex 2
-- Hỗ trợ 5 bảng mã:
-  - Unicode (mặc định)
-  - TCVN3 (ABC)
-  - VNI Windows
-  - Unicode Composite
-  - Vietnamese Locale (CP1258)
-- Giao diện Menu Bar với nhanh các tùy chọn chính
-- Kiểm tra chính tả (spell checking)
-- Quản lý macro (gõ tắt)
+### ✨ Tính năng chính
+
+**📝 Phương pháp gõ (4 loại)**
+
+- Telex
+- VNI
+- Simple Telex 1
+- Simple Telex 2
+
+**🔤 Bảng mã ký tự (5 loại)**
+
+- Unicode (mặc định)
+- TCVN3 (ABC)
+- VNI Windows
+- Unicode Composite
+- Vietnamese Locale (CP1258)
+
+**⚙️ Chức năng nâng cao**
+
+- Giao diện Menu Bar với truy cập nhanh đến tùy chọn chính
+- Kiểm tra chính tả (spell checking) với từ điển tiếng Việt
+- Quản lý macro (gõ tắt) - tạo các từ viết tắt tùy chỉnh
 - Excluded apps - tự động tắt tiếng Việt cho ứng dụng chỉ định
+- Tùy chỉnh phím tắt chuyển đổi ngôn ngữ
 - Hỗ trợ Dark Mode
-- Tùy chỉnh phím tắt chuyển ngôn ngữ
 - Thống kê sử dụng
 - Khởi động cùng hệ thống (auto-launch)
+- Smart Switch Key - tự động chuyển đổi theo ứng dụng
+
+### 🎨 Giao diện
+
+- Xây dựng hoàn toàn bằng SwiftUI với Liquid Glass design
+- Hỗ trợ macOS 12.0+
+- Status bar controller cho quick access
+- Settings panel mới tổ chức tốt hơn
 
 ---
 
