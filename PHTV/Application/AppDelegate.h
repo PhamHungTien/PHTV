@@ -39,6 +39,9 @@
 - (void)checkAccessibilityStatus;
 - (void)handleAccessibilityRevoked;
 - (void)setupSwiftUIBridge;
+- (void)loadExistingMacros;
+- (void)handleCheckForUpdates:(NSNotification *)notification;
+- (void)handleSettingsReset:(NSNotification *)notification;
 
 @end
 
