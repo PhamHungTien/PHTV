@@ -3,8 +3,25 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![macOS 14+](https://img.shields.io/badge/macOS-14+-blue.svg)](https://www.apple.com/macos/)
 [![Swift 5.9+](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
+[![Website](https://img.shields.io/badge/Website-phamhungtien.com-green.svg)](https://phamhungtien.com/)
 
 **PHTV** là bộ gõ tiếng Việt hoàn toàn offline cho macOS, được phát triển bởi **Phạm Hùng Tiến**. Nó kế thừa và mở rộng engine nhập liệu từ OpenKey, với tích hợp hiện đại cho macOS và giao diện SwiftUI.
+
+---
+
+## 🌐 Tải xuống & Hướng dẫn
+
+> ### 👉 **[Tải PHTV từ phamhungtien.com](https://phamhungtien.com/)** - Hướng dẫn chi tiết, hình ảnh, và video
+
+<div align="center">
+
+**Tải ngay** | **Hướng dẫn cài đặt** | **Tính năng** | **Liên hệ**
+--- | --- | --- | ---
+[🔗 phamhungtien.com](https://phamhungtien.com/) | [📖 Chi tiết](https://phamhungtien.com/#setup) | [✨ Xem thêm](https://phamhungtien.com/#features) | [📧 Góp ý](https://phamhungtien.com/#feedback)
+
+</div>
+
+---
 
 ## ✨ Đặc điểm nổi bật
 
@@ -32,13 +49,15 @@
 
 ### ⚡ Tính năng nâng cao
 
-- 📝 **Kiểm tra chính tả thông minh** - Tự động phát hiện lỗi chính tả tiếng Việt
-- ⚡ **Quick Telex** - Gõ nhanh với các phím tắt thông minh (cc→ch, gg→gi, kk→kh, nn→ng, qq→qu, pp→ph, tt→th, uu→ương)
-- 🔤 **Macro (Gõ tắt)** - Tạo từ viết tắt tùy chỉnh để gõ nhanh hơn
-- 🔄 **Chuyển mã nhanh** - Chuyển đổi giữa các bảng mã một cách nhanh chóng
-- 🎯 **Smart Switch Key** - Tự động nhận diện và chuyển chế độ theo ứng dụng
-- 🚫 **Excluded Apps** - Tự động chuyển sang tiếng Anh khi dùng các ứng dụng chỉ định
-- ⌨️ **Phím tắt tùy chỉnh** - Tùy biến phím tắt chuyển ngôn ngữ hoàn toàn
+- ⭐ **Khuyến khích**: Tải từ **[phamhungtien.com](https://phamhungtien.com/)** để có hướng dẫn đầy đủ với hình ảnh và video
+
+### Phương pháp 1: Download từ Website (Khuyến khích) ⭐
+
+**[👉 Tải PHTV tại phamhungtien.com](https://phamhungtien.com/)**
+
+Hoặc tải trực tiếp từ GitHub:
+
+1. Vàoôn ngữ hoàn toàn
 - 📊 **Thống kê sử dụng** - Theo dõi thống kê gõ của bạn
 
 ## ⚙️ Yêu cầu hệ thống
