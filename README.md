@@ -2,7 +2,7 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![macOS 14+](https://img.shields.io/badge/macOS-14+-blue.svg)](https://www.apple.com/macos/)
-[![Swift 5.9+](https://img.shields.io/badge/Swift-5.9+-orange.svg)](https://swift.org)
+[![Swift 6.0+](https://img.shields.io/badge/Swift-6.0+-orange.svg)](https://swift.org)
 [![OpenKey](https://img.shields.io/badge/Engine-OpenKey-blueviolet.svg)](https://github.com/tuyenvm/OpenKey)
 [![Website](https://img.shields.io/badge/Website-phamhungtien.com-green.svg)](https://phamhungtien.com/)
 
@@ -56,31 +56,27 @@
 
 **[👉 Tải PHTV tại phamhungtien.com](https://phamhungtien.com/)**
 
-Hoặc tải trực tiếp từ GitHub:
-
-1. Vàoôn ngữ hoàn toàn
-
 - 📊 **Thống kê sử dụng** - Theo dõi thống kê gõ của bạn
 
 ## ⚙️ Yêu cầu hệ thống
 
 - **macOS 14.0 trở lên** (Sonoma và các phiên bản mới hơn)
 - **Quyền Accessibility** (sẽ được yêu cầu khi khởi động lần đầu)
-- **Xcode 15.0+** (nếu build từ source)
+- **Xcode 16.0+** (nếu build từ source)
 
 ## 📦 Cài đặt
 
 > 📖 **Hướng dẫn chi tiết**: Xem [INSTALL.md](INSTALL.md) hoặc tại [phamhungtien.com](https://phamhungtien.com/)
 
-### Phương pháp 1: Download bản release (Khuyến khích)
+### Phương pháp 1: Tải bản phát hành (Khuyến khích)
 
 **Tải từ website**: [phamhungtien.com](https://phamhungtien.com/)
 
-1. Vào [phamhungtien.com](https://phamhungtien.com/) hoặc [Releases](../../releases)
-2. Download file `PHTV_x.y.z.dmg`
-3. Double-click để mở DMG
-4. Drag `PHTV.app` vào folder `Applications`
-5. Bật PHTV từ Launchpad hoặc Spotlight (Cmd + Space)
+1. Vào [phamhungtien.com](https://phamhungtien.com/) hoặc [GitHub Releases](../../releases/latest)
+2. Tải về `PHTV.dmg` hoặc `PHTV.zip`
+3. Nếu là DMG: double-click để mở, kéo `PHTV.app` vào `Applications`
+4. Nếu là ZIP: giải nén rồi kéo `PHTV.app` vào `Applications`
+5. Mở PHTV từ Launchpad hoặc Spotlight (Cmd + Space)
 
 ### Phương pháp 2: Homebrew (Sắp tới)
 
@@ -167,7 +163,7 @@ PHTV/
 
 ## 🛠️ Công nghệ
 
-- **Swift 5.9+** - Ngôn ngữ chính cho giao diện
+- **Swift 6.0+** - Ngôn ngữ chính cho giao diện
 - **SwiftUI** - Giao diện người dùng hiện đại với Liquid Glass design
 - **Objective-C/C++** - Engine xử lý input method (kế thừa từ OpenKey)
 - **Core Graphics (CGEvent API)** - Event tap để xử lý bàn phím
@@ -229,7 +225,7 @@ Xem [FAQ.md](FAQ.md) để có câu trả lời chi tiết hơn.
 
 - [**INSTALL.md**](INSTALL.md) - Hướng dẫn cài đặt chi tiết & troubleshooting
 - [**FAQ.md**](FAQ.md) - Câu hỏi thường gặp
-- [**CHANGELOG.md**](CHANGELOG.md) - Lịch sử phiên bản
+- [**Releases**](../../releases) - Lịch sử phiên bản và tải xuống
 - [**CONTRIBUTING.md**](CONTRIBUTING.md) - Hướng dẫn đóng góp
 - [**CODE_OF_CONDUCT.md**](CODE_OF_CONDUCT.md) - Quy tắc ứng xử
 
