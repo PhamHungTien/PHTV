@@ -78,6 +78,9 @@ extern bool convertToolDontAlertWhenCompleted;
 // Accessibility monitoring
 @property (nonatomic, strong) NSTimer *accessibilityMonitor;
 @property (nonatomic, assign) BOOL wasAccessibilityEnabled;
+
+// Health watchdog
+@property (nonatomic, strong) NSTimer *healthCheckTimer;
 @end
 
 
@@ -126,6 +129,7 @@ extern bool convertToolDontAlertWhenCompleted;
     }
     
     [self stopAccessibilityMonitoring];
+    [self stopHealthCheckMonitoring];
 }
 
 -(void)askPermission {
@@ -175,6 +179,31 @@ extern bool convertToolDontAlertWhenCompleted;
     }
 }
 
+- (void)startHealthCheckMonitoring {
+    [self stopHealthCheckMonitoring];
+        // Run more frequently to catch tap drops sooner, still low overhead
+        self.healthCheckTimer = [NSTimer scheduledTimerWithTimeInterval:30.0
+                                                              target:self
+                                                            selector:@selector(runHealthCheck)
+                                                            userInfo:nil
+                                                             repeats:YES];
+}
+
+- (void)stopHealthCheckMonitoring {
+    if (self.healthCheckTimer) {
+        [self.healthCheckTimer invalidate];
+        self.healthCheckTimer = nil;
+    }
+}
+
+- (void)runHealthCheck {
+    // Skip checks if accessibility permission is missing; restart flow will handle it
+    if (!MJAccessibilityIsEnabled()) {
+        return;
+    }
+    [PHTVManager ensureEventTapAlive];
+}
+
 - (void)checkAccessibilityStatus {
     BOOL isEnabled = MJAccessibilityIsEnabled();
     
@@ -213,6 +242,7 @@ extern bool convertToolDontAlertWhenCompleted;
             
             // Start monitoring for permission revocation
             [self startAccessibilityMonitoring];
+            [self startHealthCheckMonitoring];
             
             // Update menu bar to normal state
             [self fillDataWithAnimation:YES];
@@ -334,6 +364,7 @@ extern bool convertToolDontAlertWhenCompleted;
     if (!MJAccessibilityIsEnabled()) {
         [self askPermission];
         [self startAccessibilityMonitoring];
+        [self stopHealthCheckMonitoring];
         return;
     }
     
@@ -348,6 +379,7 @@ extern bool convertToolDontAlertWhenCompleted;
             // Start continuous monitoring for accessibility permission changes
             // This detects if permission is revoked while app is running
             [self startAccessibilityMonitoring];
+            [self startHealthCheckMonitoring];
             
             NSInteger showui = [[NSUserDefaults standardUserDefaults] integerForKey:@"ShowUIOnStartup"];
             if (showui == 1) {
