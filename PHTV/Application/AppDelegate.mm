@@ -78,6 +78,7 @@ extern bool convertToolDontAlertWhenCompleted;
 // Accessibility monitoring
 @property (nonatomic, strong) NSTimer *accessibilityMonitor;
 @property (nonatomic, assign) BOOL wasAccessibilityEnabled;
+@property (nonatomic, assign) NSUInteger accessibilityStableCount;
 
 // Health watchdog
 @property (nonatomic, strong) NSTimer *healthCheckTimer;
@@ -153,8 +154,8 @@ extern bool convertToolDontAlertWhenCompleted;
 }
 
 - (void)startAccessibilityMonitoring {
-    // Monitor accessibility status less frequently (every 3 seconds instead of 2)
-    // This reduces CPU usage while still detecting permission changes
+    // Monitor accessibility status with smart interval
+    // Start at 3s, increase to 10s once stable
     self.accessibilityMonitor = [NSTimer scheduledTimerWithTimeInterval:3.0
                                                                   target:self
                                                                 selector:@selector(checkAccessibilityStatus)
@@ -181,8 +182,8 @@ extern bool convertToolDontAlertWhenCompleted;
 
 - (void)startHealthCheckMonitoring {
     [self stopHealthCheckMonitoring];
-        // Run more frequently to catch tap drops sooner, still low overhead
-        self.healthCheckTimer = [NSTimer scheduledTimerWithTimeInterval:30.0
+        // Aggressive monitoring (10s) to eliminate any delay
+        self.healthCheckTimer = [NSTimer scheduledTimerWithTimeInterval:10.0
                                                               target:self
                                                             selector:@selector(runHealthCheck)
                                                             userInfo:nil
@@ -214,12 +215,29 @@ extern bool convertToolDontAlertWhenCompleted;
     // Permission was just granted (transition from disabled to enabled)
     if (!self.wasAccessibilityEnabled && isEnabled) {
         NSLog(@"[Accessibility] Permission GRANTED - Restarting app...");
+        self.accessibilityStableCount = 0;
         [self performAccessibilityGrantedRestart];
     }
     // Permission was revoked while app is running (transition from enabled to disabled)
     else if (self.wasAccessibilityEnabled && !isEnabled) {
         NSLog(@"[Accessibility] CRITICAL - Permission REVOKED while running!");
+        self.accessibilityStableCount = 0;
         [self handleAccessibilityRevoked];
+    }
+    else if (isEnabled) {
+        // Stable state - after 10 stable checks, slow down monitoring
+        self.accessibilityStableCount++;
+        if (self.accessibilityStableCount == 10) {
+            [self.accessibilityMonitor invalidate];
+            self.accessibilityMonitor = [NSTimer scheduledTimerWithTimeInterval:10.0
+                                                                          target:self
+                                                                        selector:@selector(checkAccessibilityStatus)
+                                                                        userInfo:nil
+                                                                         repeats:YES];
+            #ifdef DEBUG
+            NSLog(@"[Accessibility] Stable - reducing check frequency to 10s");
+            #endif
+        }
     }
     
     // Update state

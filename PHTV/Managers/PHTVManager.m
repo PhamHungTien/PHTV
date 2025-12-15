@@ -161,7 +161,10 @@ static NSUInteger         _tapRecreateCount = 0;
         return;
     }
 
-    if (!CGEventTapIsEnabled(eventTap)) {
+    // Check if tap is disabled OR not receiving events properly
+    BOOL isEnabled = CGEventTapIsEnabled(eventTap);
+    
+    if (!isEnabled) {
         _tapReenableCount++;
         NSLog(@"[EventTap] Health check: tap disabled — re-enabling (count=%lu)", (unsigned long)_tapReenableCount);
         CGEventTapEnable(eventTap, true);
@@ -175,6 +178,10 @@ static NSUInteger         _tapRecreateCount = 0;
                 [self initEventTap];
             });
         }
+    } else {
+        // Proactive: even if enabled, give it a quick re-enable nudge to keep it alive
+        // This prevents macOS from silently disabling it
+        CGEventTapEnable(eventTap, true);
     }
 }
 
