@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import AudioToolbox
 
 struct TypingSettingsView: View {
     @EnvironmentObject var appState: AppState
@@ -66,25 +67,7 @@ struct TypingSettingsView: View {
                             isOn: $appState.checkSpelling
                         )
 
-                        SettingsDivider()
-
-                        SettingsToggleRow(
-                            icon: "book.closed.fill",
-                            iconColor: .purple,
-                            title: "Chính tả hiện đại",
-                            subtitle: "Áp dụng quy tắc chính tả mới",
-                            isOn: $appState.useModernOrthography
-                        )
-
-                        SettingsDivider()
-
-                        SettingsToggleRow(
-                            icon: "bolt.fill",
-                            iconColor: .yellow,
-                            title: "Quick Telex",
-                            subtitle: "Gõ nhanh với phím tắt",
-                            isOn: $appState.quickTelex
-                        )
+                        // Removed font size slider and preview
                     }
                 }
 
@@ -153,6 +136,8 @@ struct TypingSettingsView: View {
                         )
                     }
                 }
+
+                // (Âm thanh & Giao diện) section removed per latest direction
 
                 // Hotkey Configuration
                 SettingsCard(title: "Phím tắt chuyển chế độ", icon: "command.circle.fill") {
@@ -359,8 +344,78 @@ struct SettingsDivider: View {
     }
 }
 
+struct SettingsSliderRow: View {
+    let icon: String
+    let iconColor: Color
+    let title: String
+    let subtitle: String
+    let minValue: Double
+    let maxValue: Double
+    let step: Double
+    @Binding var value: Double
+    var valueFormatter: (Double) -> String = { String(format: "%.0f", $0) }
+    var onEditingChanged: ((Bool) -> Void)? = nil
+    var onValueChanged: ((Double) -> Void)? = nil
+
+    var body: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 14) {
+                ZStack {
+                    if #available(macOS 26.0, *) {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(iconColor.opacity(0.12))
+                            .frame(width: 36, height: 36)
+                            .glassEffect(in: .rect(cornerRadius: 8))
+                    } else {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(iconColor.opacity(0.12))
+                            .frame(width: 36, height: 36)
+                    }
+
+                    Image(systemName: icon)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(iconColor)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.body)
+                        .foregroundStyle(.primary)
+
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Text(valueFormatter(value))
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.blue)
+                    .frame(minWidth: 40, alignment: .trailing)
+            }
+
+            Slider(
+                value: $value,
+                in: minValue...maxValue,
+                step: step,
+                onEditingChanged: { editing in
+                    onEditingChanged?(editing)
+                }
+            )
+            .tint(.blue)
+            .onChange(of: value) { _, newVal in
+                onValueChanged?(newVal)
+            }
+        }
+        .padding(.vertical, 6)
+    }
+}
+
 #Preview {
     TypingSettingsView()
         .environmentObject(AppState.shared)
         .frame(width: 500, height: 800)
 }
+

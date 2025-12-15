@@ -15,9 +15,11 @@ class StatusBarController: ObservableObject {
     @Published var currentInputMethod: String = "VN"
     @Published var currentCodeTable: String = "Unicode"
     @Published var isEnabled: Bool = true
+    private var menuBarIconSize: Double = 18.0
     
     init() {
         setupStatusItem()
+        setupNotificationObservers()
     }
     
     private func setupStatusItem() {
@@ -173,30 +175,55 @@ class StatusBarController: ObservableObject {
     
     func updateStatusButton() {
         guard let button = statusItem?.button else { return }
-        
-        // Create attributed string with icon and text
-        let attachment = NSTextAttachment()
-        
-        // Use SF Symbol for status
-        let symbolConfig = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
-        let symbolName = isEnabled ? "globe" : "globe.badge.chevron.backward"
-        
-        if let symbolImage = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil) {
-            let image = symbolImage.withSymbolConfiguration(symbolConfig)
-            attachment.image = image
+
+        let size = CGFloat(menuBarIconSize)
+        if let image = makeMenuBarIcon(size: size, slashed: !isEnabled) {
+            image.isTemplate = true
+            image.size = NSSize(width: size, height: size)
+            button.image = image
+            button.title = ""
+            button.imagePosition = .imageOnly
         }
-        
-        let attachmentString = NSAttributedString(attachment: attachment)
-        let text = NSAttributedString(string: " \(isEnabled ? "VN" : "EN")")
-        
-        let combined = NSMutableAttributedString()
-        combined.append(attachmentString)
-        combined.append(text)
-        
-        button.attributedTitle = combined
-        
+
         // Update tooltip
         button.toolTip = "PHTV - \(currentInputMethod) (\(currentCodeTable))\n\(isEnabled ? "Đang bật" : "Đang tắt")"
+    }
+
+    private func makeMenuBarIcon(size: CGFloat, slashed: Bool) -> NSImage? {
+        let baseIcon: NSImage? = {
+            if let img = NSImage(named: "menubar_icon") {
+                return img
+            }
+            return NSApplication.shared.applicationIconImage
+        }()
+        guard let baseIcon else { return nil }
+        let targetSize = NSSize(width: size, height: size)
+        let img = NSImage(size: targetSize)
+        img.lockFocus()
+        defer { img.unlockFocus() }
+
+        // Draw app icon scaled to fit
+        let rect = NSRect(origin: .zero, size: targetSize)
+        let fraction: CGFloat = slashed ? 0.35 : 1.0
+        baseIcon.draw(in: rect, from: .zero, operation: .sourceOver, fraction: fraction, respectFlipped: true, hints: [.interpolation: NSImageInterpolation.high])
+
+        return img
+    }
+    
+    private func setupNotificationObservers() {
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("MenuBarIconSizeChanged"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self = self else { return }
+            if let size = notification.object as? NSNumber {
+                Task { @MainActor in
+                    self.menuBarIconSize = size.doubleValue
+                    self.updateStatusButton()
+                }
+            }
+        }
     }
     
     private func getHotkeyString() -> String {

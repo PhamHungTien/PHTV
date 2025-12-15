@@ -318,12 +318,8 @@ extern bool convertToolDontAlertWhenCompleted;
     BOOL showDockIcon = [[NSUserDefaults standardUserDefaults] boolForKey:@"vShowIconOnDock"];
     [NSApp setActivationPolicy: showDockIcon ? NSApplicationActivationPolicyRegular : NSApplicationActivationPolicyAccessory];
     
-    if (vSwitchKeyStatus & 0x8000) {
-        // Delay beep to ensure it's played after app initialization
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            NSBeep();
-        });
-    }
+    // Beep on startup is now handled by SwiftUI if enabled
+    // (removed NSBeep() to avoid duplicate sounds)
 
     // Initialize SwiftUI integration
     [self setupSwiftUIBridge];

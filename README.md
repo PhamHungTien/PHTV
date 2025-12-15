@@ -23,9 +23,9 @@
 
 ## ⚡ Bắt đầu nhanh (3 bước)
 
-1) Tải `PHTV.dmg` hoặc `PHTV.zip` từ [phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/) hoặc [Releases](../../releases/latest)
-2) Kéo `PHTV.app` vào `Applications`
-3) Mở app và cấp **Accessibility** khi được nhắc
+1. Tải `PHTV.dmg` hoặc `PHTV.zip` từ [phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/) hoặc [Releases](../../releases/latest)
+2. Kéo `PHTV.app` vào `Applications`
+3. Mở app và cấp **Accessibility** khi được nhắc
 
 ---
 
@@ -88,11 +88,11 @@
 
 ### Ma trận hỗ trợ
 
-| Kiến trúc | Trạng thái | Ghi chú |
-| --- | --- | --- |
-| Apple Silicon (arm64) | ✅ Hỗ trợ | Build universal mặc định |
-| Intel (x86_64) | ✅ Hỗ trợ | Build universal mặc định |
-| macOS < 14 | ⚠️ Không bảo đảm | Yêu cầu LSMinimumSystemVersion = 14 |
+| Kiến trúc             | Trạng thái       | Ghi chú                             |
+| --------------------- | ---------------- | ----------------------------------- |
+| Apple Silicon (arm64) | ✅ Hỗ trợ        | Build universal mặc định            |
+| Intel (x86_64)        | ✅ Hỗ trợ        | Build universal mặc định            |
+| macOS < 14            | ⚠️ Không bảo đảm | Yêu cầu LSMinimumSystemVersion = 14 |
 
 ## 📦 Cài đặt
 

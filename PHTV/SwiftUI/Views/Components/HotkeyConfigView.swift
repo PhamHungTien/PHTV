@@ -8,6 +8,8 @@
 
 import SwiftUI
 import Carbon
+import AudioToolbox
+import AppKit
 
 struct HotkeyConfigView: View {
     @EnvironmentObject var appState: AppState
@@ -172,6 +174,35 @@ struct HotkeyConfigView: View {
                 }
                 .padding(.vertical, 6)
                 .padding(.top, 8)
+
+                // Beep volume slider (under the toggle)
+                VStack(spacing: 8) {
+                    HStack {
+                        Image(systemName: "speaker.wave.2")
+                            .foregroundStyle(.secondary)
+                        Text("Âm lượng beep")
+                        Spacer()
+                        Text(String(format: "%.0f%%", appState.beepVolume * 100))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .font(.body)
+
+                    Slider(
+                        value: $appState.beepVolume,
+                        in: 0.0...1.0,
+                        step: 0.01,
+                        onEditingChanged: { editing in
+                            // Play pop sound on slider release
+                            if !editing && appState.beepVolume > 0 {
+                                BeepManager.shared.play(volume: appState.beepVolume)
+                            }
+                        }
+                    )
+                    .tint(.blue)
+                    // The slider should still adjust volume even if the mode beep is disabled
+                }
+                .padding(.leading, 50)
             }
         }
     }
