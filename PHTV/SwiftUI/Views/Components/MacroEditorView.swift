@@ -34,12 +34,15 @@ struct MacroEditorView: View {
             Form {
                 Section("Tên gõ tắt") {
                     TextField("Ví dụ: tvn (Việt Nam)", text: $macroName)
+                        .settingsTextField()
+                        .textFieldStyle(.roundedBorder)
                 }
 
                 Section("Nội dung") {
                     TextEditor(text: $macroCode)
                         .frame(minHeight: 100)
                         .font(.system(.body, design: .monospaced))
+                        .roundedTextArea()
                 }
             }
 

@@ -104,12 +104,6 @@ struct MacroSettingsView: View {
 
                 Spacer()
 
-                Button(action: { restartApp() }) {
-                    Image(systemName: "arrow.clockwise")
-                    Text("Lưu & Khởi động")
-                }
-                .buttonStyle(.borderedProminent)
-
                 Text("\(macros.count) gõ tắt")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -189,38 +183,6 @@ struct MacroSettingsView: View {
         }
         editingMacro = macro
         showingEditMacro = true
-    }
-
-    private func restartApp() {
-        // Restart application
-        print("[MacroSettings] Restarting application...")
-
-        let bundleURL = Bundle.main.bundleURL
-
-        // Prepare an open configuration
-        let config = NSWorkspace.OpenConfiguration()
-        config.activates = true
-
-        // Try to relaunch first, then terminate after the request is issued
-        NSWorkspace.shared.openApplication(at: bundleURL, configuration: config) { app, error in
-            if let error = error {
-                print("[MacroSettings] openApplication failed: \(error). Falling back to /usr/bin/open")
-                // Fallback: use /usr/bin/open to launch the bundle. This process will outlive our app termination.
-                let process = Process()
-                process.launchPath = "/usr/bin/open"
-                process.arguments = ["-n", bundleURL.path]
-                do {
-                    try process.run()
-                } catch {
-                    print("[MacroSettings] Fallback open failed: \(error)")
-                }
-            }
-
-            // Terminate after a short delay to allow the relaunch request to be enqueued
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                NSApplication.shared.terminate(nil)
-            }
-        }
     }
 
     private func saveMacros() {

@@ -13,6 +13,8 @@ struct SettingsView: View {
     @EnvironmentObject var appState: AppState
     @State private var selectedTab: SettingsTab = .typing
     @State private var searchText: String = ""
+    @State private var hasUnsavedChanges: Bool = false
+    @State private var initialSettingsHash: Int = 0
 
     private var filteredSettings: [SettingsItem] {
         if searchText.isEmpty {
@@ -22,6 +24,15 @@ struct SettingsView: View {
             item.title.localizedCaseInsensitiveContains(searchText)
                 || item.keywords.contains { $0.localizedCaseInsensitiveContains(searchText) }
         }
+    }
+    
+    private var searchSuggestions: [SettingsItem] {
+        if searchText.isEmpty {
+            // Show popular/recent searches when search is active but empty
+            return Array(SettingsItem.allItems.prefix(5))
+        }
+        // Show top 5 matches as suggestions
+        return Array(filteredSettings.prefix(5))
     }
 
     var body: some View {
@@ -57,11 +68,66 @@ struct SettingsView: View {
                 }
             }
             .listStyle(.sidebar)
-            .searchable(text: $searchText, placement: .sidebar, prompt: "Tìm kiếm cài đặt")
+            .searchable(
+                text: $searchText,
+                placement: .toolbar,
+                prompt: "Tìm kiếm cài đặt..."
+            )
+            .searchSuggestions {
+                if !searchText.isEmpty {
+                    ForEach(searchSuggestions) { item in
+                        Button {
+                            selectedTab = item.tab
+                            searchText = ""
+                        } label: {
+                            HStack {
+                                Image(systemName: item.iconName)
+                                    .foregroundStyle(.blue)
+                                    .frame(width: 20)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(item.title)
+                                        .font(.body)
+                                    Text(item.tab.title)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
         } detail: {
             detailView
                 .environmentObject(appState)
                 .frame(minWidth: 500)
+                .toolbar {
+                    // Flexible spacer to push items to trailing edge (macOS 26.0+)
+                    if #available(macOS 26.0, *) {
+                        ToolbarSpacer(.flexible)
+                    } else {
+                        ToolbarItem(placement: .automatic) {
+                            Spacer()
+                        }
+                    }
+                    
+                    // Action items group
+                    ToolbarItemGroup(placement: .automatic) {
+                        if hasUnsavedChanges {
+                            Button {
+                                restartApp()
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "arrow.clockwise")
+                                    Text("Lưu & Khởi động lại")
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.blue)
+                            .help("Lưu thay đổi và khởi động lại ứng dụng")
+                        }
+                    }
+                }
         }
         .navigationSplitViewStyle(.automatic)
         .onAppear {
@@ -73,6 +139,9 @@ struct SettingsView: View {
             if appState.showIconOnDock {
                 appDelegate?.showIcon(onDock: true)
             }
+            // Capture initial settings state
+            initialSettingsHash = calculateSettingsHash()
+            hasUnsavedChanges = false
         }
         .onDisappear {
             // When settings window closes, always hide dock icon
@@ -87,6 +156,112 @@ struct SettingsView: View {
                 "[SettingsView] onChange - showIconOnDock changed from %@ to %@",
                 oldValue ? "true" : "false", newValue ? "true" : "false")
             appDelegate?.showIcon(onDock: newValue)
+        }
+        .onChange(of: calculateSettingsHash()) { oldValue, newValue in
+            // Track any settings changes
+            hasUnsavedChanges = (newValue != initialSettingsHash)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("MacrosUpdated"))) { _ in
+            // Recalculate hash when macros change
+            let newHash = calculateSettingsHash()
+            hasUnsavedChanges = (newHash != initialSettingsHash)
+        }
+    }
+    
+    private func calculateSettingsHash() -> Int {
+        var hasher = Hasher()
+        // Input settings
+        hasher.combine(appState.inputMethod)
+        hasher.combine(appState.codeTable)
+        hasher.combine(appState.checkSpelling)
+        hasher.combine(appState.useModernOrthography)
+        hasher.combine(appState.quickTelex)
+        
+        // Macro settings
+        hasher.combine(appState.useMacro)
+        hasher.combine(appState.useMacroInEnglishMode)
+        hasher.combine(appState.autoCapsMacro)
+        
+        // Typing enhancement settings
+        hasher.combine(appState.useSmartSwitchKey)
+        hasher.combine(appState.upperCaseFirstChar)
+        hasher.combine(appState.allowConsonantZFWJ)
+        hasher.combine(appState.quickStartConsonant)
+        hasher.combine(appState.quickEndConsonant)
+        hasher.combine(appState.rememberCode)
+        
+        // System settings
+        hasher.combine(appState.runOnStartup)
+        hasher.combine(appState.showIconOnDock)
+        hasher.combine(appState.fixChromiumBrowser)
+        hasher.combine(appState.performLayoutCompat)
+        
+        // Hotkey settings
+        hasher.combine(appState.switchKeyCode)
+        hasher.combine(appState.switchKeyControl)
+        hasher.combine(appState.switchKeyOption)
+        hasher.combine(appState.switchKeyCommand)
+        hasher.combine(appState.switchKeyShift)
+        hasher.combine(appState.beepOnModeSwitch)
+        
+        // Excluded apps
+        hasher.combine(appState.excludedApps.map { $0.bundleIdentifier })
+        
+        // Macros list from UserDefaults
+        if let data = UserDefaults.standard.data(forKey: "macroList"),
+           let macros = try? JSONDecoder().decode([MacroItem].self, from: data) {
+            for macro in macros {
+                hasher.combine(macro.shortcut)
+                hasher.combine(macro.expansion)
+            }
+        }
+        
+        return hasher.finalize()
+    }
+    
+    private func restartApp() {
+        // Save all settings first
+        appState.saveSettings()
+        
+        // Get app bundle path
+        guard let bundlePath = Bundle.main.bundlePath as String? else {
+            NSLog("[Restart] Failed to get bundle path")
+            return
+        }
+        
+        // Create a shell script to wait and relaunch
+        let script = """
+        #!/bin/bash
+        sleep 0.5
+        open "\(bundlePath)"
+        """
+        
+        // Write script to temporary file
+        let tempDir = NSTemporaryDirectory()
+        let scriptPath = tempDir + "restart_phtv.sh"
+        
+        do {
+            try script.write(toFile: scriptPath, atomically: true, encoding: .utf8)
+            
+            // Make script executable
+            let process1 = Process()
+            process1.launchPath = "/bin/chmod"
+            process1.arguments = ["+x", scriptPath]
+            process1.launch()
+            process1.waitUntilExit()
+            
+            // Launch script in background
+            let process2 = Process()
+            process2.launchPath = "/bin/bash"
+            process2.arguments = [scriptPath]
+            process2.launch()
+            
+            // Terminate current instance
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                NSApp.terminate(nil)
+            }
+        } catch {
+            NSLog("[Restart] Failed to create restart script: \(error)")
         }
     }
 
