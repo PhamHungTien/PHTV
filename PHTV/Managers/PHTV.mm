@@ -10,15 +10,31 @@
 #import <Foundation/Foundation.h>
 #import <libproc.h>
 #import <ApplicationServices/ApplicationServices.h>
+#import <os/lock.h>
+#import <os/log.h>
+#import <mach/mach_time.h>
 #import "Engine.h"
 #import "../Application/AppDelegate.h"
 #import "PHTVManager.h"
 
 #define FRONT_APP [[NSWorkspace sharedWorkspace] frontmostApplication].bundleIdentifier
 
-// Cache for PID to bundle ID mapping
+// Modern logging subsystem
+static os_log_t phtv_log;
+static dispatch_once_t log_init_token;
+
+// High-resolution timing
+static mach_timebase_info_data_t timebase_info;
+static dispatch_once_t timebase_init_token;
+
+static inline uint64_t mach_time_to_ms(uint64_t mach_time) {
+    return (mach_time * timebase_info.numer) / (timebase_info.denom * 1000000);
+}
+
+// Cache for PID to bundle ID mapping with modern lock
 static NSMutableDictionary<NSNumber*, NSString*> *_pidBundleCache = nil;
-static NSDate *_lastCacheClean = nil;
+static uint64_t _lastCacheCleanTime = 0;
+static os_unfair_lock _pidCacheLock = OS_UNFAIR_LOCK_INIT;
 
 // Check if Spotlight or similar overlay is currently active using Accessibility API
 BOOL isSpotlightActive(void) {
@@ -67,24 +83,40 @@ BOOL isSpotlightActive(void) {
 
 // Get bundle ID from process ID
 NSString* getBundleIdFromPID(pid_t pid) {
-    if (pid <= 0) return nil;
+    if (__builtin_expect(pid <= 0, 0)) return nil;
     
-    // Initialize cache if needed
-    if (_pidBundleCache == nil) {
-        _pidBundleCache = [NSMutableDictionary new];
-        _lastCacheClean = [NSDate date];
-    }
+    // Initialize infrastructure once
+    dispatch_once(&log_init_token, ^{
+        phtv_log = os_log_create("com.phamhungtien.phtv", "Engine");
+    });
+    dispatch_once(&timebase_init_token, ^{
+        mach_timebase_info(&timebase_info);
+    });
     
-    // Clean cache every 60 seconds (increased from 30s for better performance)
-    // Active apps are likely to remain active, so longer cache retention reduces lookups
-    if ([[NSDate date] timeIntervalSinceDate:_lastCacheClean] > 60) {
-        [_pidBundleCache removeAllObjects];
-        _lastCacheClean = [NSDate date];
-    }
-    
-    // Check cache first
+    // Fast path: check cache with modern lock
     NSNumber *pidKey = @(pid);
+    os_unfair_lock_lock(&_pidCacheLock);
+    
+    // Initialize cache on first use
+    if (__builtin_expect(_pidBundleCache == nil, 0)) {
+        _pidBundleCache = [NSMutableDictionary dictionaryWithCapacity:64];
+        _lastCacheCleanTime = mach_absolute_time();
+    }
+    
     NSString *cached = _pidBundleCache[pidKey];
+    
+    // Smart cache cleanup with zero-allocation timing
+    uint64_t now = mach_absolute_time();
+    uint64_t elapsed_ms = mach_time_to_ms(now - _lastCacheCleanTime);
+    if (__builtin_expect(elapsed_ms > 120000, 0)) { // 2 minutes
+        if (_pidBundleCache.count > 50) {
+            [_pidBundleCache removeAllObjects];
+        }
+        _lastCacheCleanTime = now;
+    }
+    
+    os_unfair_lock_unlock(&_pidCacheLock);
+    
     if (cached) {
         return [cached isEqualToString:@""] ? nil : cached;
     }
@@ -94,7 +126,9 @@ NSString* getBundleIdFromPID(pid_t pid) {
     for (NSRunningApplication *app in runningApps) {
         if (app.processIdentifier == pid) {
             NSString *bundleId = app.bundleIdentifier ?: @"";
+            os_unfair_lock_lock(&_pidCacheLock);
             _pidBundleCache[pidKey] = bundleId;
+            os_unfair_lock_unlock(&_pidCacheLock);
             return bundleId.length > 0 ? bundleId : nil;
         }
     }
@@ -109,21 +143,29 @@ NSString* getBundleIdFromPID(pid_t pid) {
         #endif
         // Check for known system processes
         if ([path containsString:@"Spotlight"]) {
+            os_unfair_lock_lock(&_pidCacheLock);
             _pidBundleCache[pidKey] = @"com.apple.Spotlight";
+            os_unfair_lock_unlock(&_pidCacheLock);
             return @"com.apple.Spotlight";
         }
         if ([path containsString:@"SystemUIServer"]) {
+            os_unfair_lock_lock(&_pidCacheLock);
             _pidBundleCache[pidKey] = @"com.apple.systemuiserver";
+            os_unfair_lock_unlock(&_pidCacheLock);
             return @"com.apple.systemuiserver";
         }
         if ([path containsString:@"Launchpad"]) {
+            os_unfair_lock_lock(&_pidCacheLock);
             _pidBundleCache[pidKey] = @"com.apple.launchpad.launcher";
+            os_unfair_lock_unlock(&_pidCacheLock);
             return @"com.apple.launchpad.launcher";
         }
     }
     
     // Cache negative result
+    os_unfair_lock_lock(&_pidCacheLock);
     _pidBundleCache[pidKey] = @"";
+    os_unfair_lock_unlock(&_pidCacheLock);
     return nil;
 }
 #define OTHER_CONTROL_KEY (_flag & kCGEventFlagMaskCommand) || (_flag & kCGEventFlagMaskControl) || \
@@ -213,14 +255,16 @@ extern "C" {
     // PERFORMANCE: inline for hot path (called on every keystroke)
     __attribute__((always_inline)) static inline BOOL shouldDisableVietnameseForEvent(CGEventRef event) {
         static pid_t lastPid = -1;
-        static CFAbsoluteTime lastCheck = 0;
+        static uint64_t lastCheckTime = 0;
         static BOOL lastResult = NO;
 
-        CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
+        uint64_t now = mach_absolute_time();
         pid_t targetPID = (pid_t)CGEventGetIntegerValueField(event, kCGEventTargetUnixProcessID);
 
-        // Fast path: reuse last decision if same PID and checked recently (~300ms)
-        if (targetPID > 0 && targetPID == lastPid && (now - lastCheck) < 0.3) {
+        // Fast path: reuse last decision if same PID and checked recently (~100ms)
+        // Very short cache for immediate app-switch response
+        uint64_t elapsed_ms = mach_time_to_ms(now - lastCheckTime);
+        if (__builtin_expect(targetPID > 0 && targetPID == lastPid && elapsed_ms < 100, 1)) {
             return lastResult;
         }
 
@@ -259,7 +303,7 @@ extern "C" {
 
         // Update cache only when we have a valid PID, to avoid cross-app leakage
         lastResult = shouldDisable;
-        lastCheck = now;
+        lastCheckTime = now;
         lastPid = (cachePid > 0) ? cachePid : -1;
 
         return shouldDisable;
@@ -367,14 +411,17 @@ extern "C" {
     }
     
     void RequestNewSession() {
-        // CRITICAL FIX for CPU cache coherency:
-        // Even with volatile, event tap thread on different CPU core might not see
-        // updated vInputType/vCodeTable due to L1/L2 cache delays.
-        // Memory barrier ensures ALL threads see the new values immediately!
-        __sync_synchronize();  // Full memory barrier - forces cache flush
+        // Acquire barrier: ensure we see latest config changes before processing
+        __atomic_thread_fence(__ATOMIC_ACQUIRE);
 
+        #ifdef DEBUG
+        // Use atomic loads for thread-safe debug logging
+        int dbg_inputType = __atomic_load_n(&vInputType, __ATOMIC_RELAXED);
+        int dbg_codeTable = __atomic_load_n(&vCodeTable, __ATOMIC_RELAXED);
+        int dbg_language = __atomic_load_n(&vLanguage, __ATOMIC_RELAXED);
         NSLog(@"[RequestNewSession] vInputType=%d, vCodeTable=%d, vLanguage=%d",
-              vInputType, vCodeTable, vLanguage);
+              dbg_inputType, dbg_codeTable, dbg_language);
+        #endif
 
         // Must use vKeyHandleEvent with Mouse event, NOT startNewSession directly!
         // The Mouse event triggers proper word-break handling which clears:
@@ -385,7 +432,8 @@ extern "C" {
         vKeyHandleEvent(vKeyEvent::Mouse, vKeyEventState::MouseDown, 0);
 
         // Clear VNI/Unicode Compound sync tracking
-        if (IS_DOUBLE_CODE(vCodeTable)) {
+        int currentCodeTable = __atomic_load_n(&vCodeTable, __ATOMIC_RELAXED);
+        if (IS_DOUBLE_CODE(currentCodeTable)) {
             _syncKey.clear();
         }
 
@@ -395,10 +443,12 @@ extern "C" {
         _willSendControlKey = false;
         _hasJustUsedHotKey = false;
 
-        // Another memory barrier to ensure engine sees reset state
-        __sync_synchronize();
+        // Release barrier: ensure state reset is visible to all threads
+        __atomic_thread_fence(__ATOMIC_RELEASE);
 
+        #ifdef DEBUG
         NSLog(@"[RequestNewSession] Session reset complete");
+        #endif
     }
     
     void queryFrontMostApp() {
@@ -845,10 +895,33 @@ extern "C" {
      * MAIN Callback.
      */
     CGEventRef PHTVCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event, void *refcon) {
+        @autoreleasepool {
         // Auto-recover when macOS temporarily disables the event tap
-        if (type == kCGEventTapDisabledByTimeout || type == kCGEventTapDisabledByUserInput) {
+        if (__builtin_expect(type == kCGEventTapDisabledByTimeout || type == kCGEventTapDisabledByUserInput, 0)) {
             [PHTVManager handleEventTapDisabled:type];
             return event;
+        }
+
+        // Aggressive inline health check every 25 events for near-instant recovery
+        // Smart skip: after 1000 healthy checks, reduce frequency to save CPU
+        static NSUInteger eventCounter = 0;
+        static NSUInteger recoveryCounter = 0;
+        static NSUInteger healthyCounter = 0;
+        
+        NSUInteger checkInterval = (healthyCounter > 1000) ? 100 : 25;
+        
+        if (__builtin_expect(++eventCounter % checkInterval == 0, 0)) {
+            if (__builtin_expect(![PHTVManager isEventTapEnabled], 0)) {
+                healthyCounter = 0; // Reset healthy counter on failure
+                // Throttle log: only log every 10th recovery to reduce overhead
+                if (++recoveryCounter % 10 == 1) {
+                    os_log_error(phtv_log, "[EventTap] Detected disabled tap — recovering (occurrence #%lu)", (unsigned long)recoveryCounter);
+                }
+                [PHTVManager ensureEventTapAlive];
+            } else {
+                // Tap is healthy, increment counter
+                if (__builtin_expect(healthyCounter < 2000, 1)) healthyCounter++;
+            }
         }
 
         //dont handle my event
@@ -927,7 +1000,9 @@ extern "C" {
         }
         
         //If is in english mode
-        if (vLanguage == 0) {
+        // Use atomic read to ensure thread-safe access from event tap thread
+        int currentLanguage = __atomic_load_n(&vLanguage, __ATOMIC_RELAXED);
+        if (currentLanguage == 0) {
             if (vUseMacro && vUseMacroInEnglishMode && type == kCGEventKeyDown) {
                 vEnglishMode((type == kCGEventKeyDown ? vKeyEventState::KeyDown : vKeyEventState::MouseDown),
                              _keycode,
@@ -952,11 +1027,13 @@ extern "C" {
         // PERFORMANCE: Cache language check to avoid expensive TIS calls on every keystroke
         if(vOtherLanguage){
             static NSString *cachedLanguage = nil;
-            static NSDate *lastLanguageCheck = nil;
+            static uint64_t lastLanguageCheckTime = 0;
             NSString *currentLanguage = nil;
 
-            // Check language at most once per second (keyboard layout doesn't change that often)
-            if (lastLanguageCheck == nil || [[NSDate date] timeIntervalSinceDate:lastLanguageCheck] > 1.0) {
+            // Check language at most once every 2 seconds (keyboard layout doesn't change that often)
+            uint64_t now = mach_absolute_time();
+            uint64_t elapsed_ms = mach_time_to_ms(now - lastLanguageCheckTime);
+            if (__builtin_expect(lastLanguageCheckTime == 0 || elapsed_ms > 2000, 0)) {
                 TISInputSourceRef isource = TISCopyCurrentKeyboardInputSource();
                 if (isource != NULL) {
                     CFArrayRef languages = (CFArrayRef) TISGetInputSourceProperty(isource, kTISPropertyInputSourceLanguages);
@@ -967,7 +1044,7 @@ extern "C" {
                         cachedLanguage = [(__bridge NSString *)langRef copy];  // Copy to retain
                     }
                     CFRelease(isource);  // Only release isource (we copied it)
-                    lastLanguageCheck = [NSDate date];
+                    lastLanguageCheckTime = now;
                 }
             }
 
@@ -986,7 +1063,9 @@ extern "C" {
                             _flag & kCGEventFlagMaskShift ? 1 : (_flag & kCGEventFlagMaskAlphaShift ? 2 : 0),
                             OTHER_CONTROL_KEY);
             if (pData->code == vDoNothing) { //do nothing
-                if (IS_DOUBLE_CODE(vCodeTable)) { //VNI
+                // Use atomic read for thread safety
+                int currentCodeTable = __atomic_load_n(&vCodeTable, __ATOMIC_RELAXED);
+                if (IS_DOUBLE_CODE(currentCodeTable)) { //VNI
                     if (pData->extCode == 1) { //break key
                         _syncKey.clear();
                     } else if (pData->extCode == 2) { //delete key
@@ -1053,5 +1132,6 @@ extern "C" {
         }
         
         return event;
+        } // @autoreleasepool
     }
 }
