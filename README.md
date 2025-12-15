@@ -10,6 +10,17 @@
 
 ---
 
+## 🧭 Mục lục nhanh
+
+- [Tải xuống](#-tải-xuống--hướng-dẫn)
+- [Tính năng](#-tính-năng-chính)
+- [Yêu cầu & Cài đặt](#-yêu-cầu-hệ-thống)
+- [Sử dụng](#-sử-dụng)
+- [Cấu trúc dự án](#-cấu-trúc-dự-án)
+- [Đóng góp & Hỗ trợ](#-đóng-góp)
+
+---
+
 ## 🌐 Tải xuống & Hướng dẫn
 
 > ### 👉 **[Tải PHTV từ phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/)** - Hướng dẫn chi tiết, hình ảnh, và video
@@ -50,13 +61,15 @@
 
 ### ⚡ Tính năng nâng cao
 
-- ⭐ **Khuyến khích**: Tải từ **[phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/)** để có hướng dẫn đầy đủ với hình ảnh và video
+- Smart Switch Key, Excluded Apps, Macro/gõ tắt
+- Thống kê sử dụng, nhiều kiểu gõ và bảng mã
+- Chạy hoàn toàn offline, không gửi dữ liệu ra ngoài
 
-### Phương pháp 1: Download từ Website (Khuyến khích) ⭐
+### ✅ Sau khi cài đặt nên kiểm tra
 
-**[👉 Tải PHTV tại phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/)**
-
-- 📊 **Thống kê sử dụng** - Theo dõi thống kê gõ của bạn
+- Bật quyền **Accessibility** cho PHTV
+- Thử chuyển nhanh Telex/VNI, macro, Excluded Apps
+- Mở Settings để bật khởi động cùng macOS nếu cần
 
 ## ⚙️ Yêu cầu hệ thống
 
@@ -70,13 +83,11 @@
 
 ### Phương pháp 1: Tải bản phát hành (Khuyến khích)
 
-**Tải từ website**: [phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/)
-
-1. Vào [phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/) hoặc [GitHub Releases](../../releases/latest)
-2. Tải về `PHTV.dmg` hoặc `PHTV.zip`
-3. Nếu là DMG: double-click để mở, kéo `PHTV.app` vào `Applications`
-4. Nếu là ZIP: giải nén rồi kéo `PHTV.app` vào `Applications`
-5. Mở PHTV từ Launchpad hoặc Spotlight (Cmd + Space)
+- Truy cập [phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/) hoặc [GitHub Releases](../../releases/latest)
+- Tải `PHTV.dmg` (khuyên dùng) hoặc `PHTV.zip`
+- DMG: mở, kéo `PHTV.app` vào `Applications`
+- ZIP: giải nén, kéo `PHTV.app` vào `Applications`
+- Mở PHTV từ Launchpad/Spotlight
 
 ### Phương pháp 2: Homebrew (Sắp tới)
 
@@ -101,8 +112,12 @@ open PHTV.xcodeproj
 
 3. Build và chạy:
 
-   - Sử dụng Xcode: Nhấn **Cmd+R** hoặc chọn **Product > Run**
-   - Hoặc dùng lệnh: `xcodebuild -project PHTV.xcodeproj -scheme PHTV`
+   - Dùng Xcode: **Cmd+R** hoặc **Product > Run**
+   - Dòng lệnh (universal):
+
+```bash
+xcodebuild -project PHTV.xcodeproj -scheme PHTV -configuration Release -arch arm64 -arch x86_64
+```
 
 4. Cấp quyền Accessibility:
    - Khi ứng dụng khởi động lần đầu, nó sẽ yêu cầu quyền Accessibility
@@ -231,8 +246,9 @@ Xem [FAQ.md](FAQ.md) để có câu trả lời chi tiết hơn.
 
 ## 📞 Liên hệ & Hỗ trợ
 
-- **Issues**: [GitHub Issues](../../issues) - Báo cáo lỗi
+- **Issues**: [GitHub Issues](../../issues) - Báo cáo lỗi, yêu cầu tính năng
 - **Email**: phamhungtien@maclife.io
+- **Website**: [phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/)
 
 ---
 
