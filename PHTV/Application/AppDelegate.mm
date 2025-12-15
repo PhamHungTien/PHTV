@@ -583,7 +583,8 @@ extern bool convertToolDontAlertWhenCompleted;
         [self fillData];
         
         #ifdef DEBUG
-        NSLog(@"[SwiftUI] Hotkey changed to: 0x%X", vSwitchKeyStatus);
+        BOOL hasBeep = PHTV_HAS_BEEP(vSwitchKeyStatus);
+        NSLog(@"[SwiftUI] Hotkey changed to: 0x%X (beep=%@)", vSwitchKeyStatus, hasBeep ? @"YES" : @"NO");
         #endif
     }
 }
@@ -608,8 +609,13 @@ extern bool convertToolDontAlertWhenCompleted;
     vPerformLayoutCompat = (int)[defaults integerForKey:@"vPerformLayoutCompat"];
     vShowIconOnDock = (int)[defaults integerForKey:@"vShowIconOnDock"];
     
+    // Memory barrier to ensure event tap thread sees new values immediately
+    __sync_synchronize();
+    
     #ifdef DEBUG
     NSLog(@"[SwiftUI] Settings reloaded from UserDefaults");
+    NSLog(@"  - useMacro=%d, autoCapsMacro=%d, useMacroInEnglishMode=%d", vUseMacro, vAutoCapsMacro, vUseMacroInEnglishMode);
+    NSLog(@"  - fixChromiumBrowser=%d, performLayoutCompat=%d", vFixChromiumBrowser, vPerformLayoutCompat);
     #endif
     
     // Apply dock icon visibility immediately with async dispatch

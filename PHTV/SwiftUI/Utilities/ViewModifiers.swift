@@ -43,6 +43,42 @@ extension View {
     func sectionHeader() -> some View {
         modifier(SectionHeaderStyle())
     }
+
+    // Apply consistent defaults for TextField across the app
+    @ViewBuilder
+    func settingsTextField() -> some View {
+        #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS) || targetEnvironment(macCatalyst)
+        if #available(iOS 15.0, tvOS 15.0, watchOS 8.0, visionOS 1.0, *) {
+            self
+                .disableAutocorrection(true)
+                .textInputAutocapitalization(.never)
+        } else {
+            self
+                .disableAutocorrection(true)
+        }
+        #elseif os(macOS)
+        if #available(macOS 12.0, *) {
+            self
+                .disableAutocorrection(true)
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
+    }
+
+    // Rounded text area style for TextEditor and similar inputs
+    func roundedTextArea() -> some View {
+        self
+            .padding(6)
+            .background(Color(NSColor.controlBackgroundColor))
+            .cornerRadius(8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+            )
+    }
 }
 
 // MARK: - Custom Button Styles

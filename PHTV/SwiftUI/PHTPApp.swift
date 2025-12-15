@@ -116,6 +116,7 @@ final class AppState: ObservableObject {
     @Published var switchKeyShift: Bool = true
     @Published var switchKeyCode: UInt16 = 0xFE  // 0xFE = modifier only mode
     @Published var switchKeyName: String = "Không"  // Display name for the key
+    @Published var beepOnModeSwitch: Bool = false  // Play beep sound when switching mode
 
     // Excluded apps - auto switch to English when these apps are active
     @Published var excludedApps: [ExcludedApp] = []
@@ -272,6 +273,7 @@ final class AppState: ObservableObject {
             switchKeyShift = true
             switchKeyName = "Không"
         }
+        beepOnModeSwitch = defaults.bool(forKey: "vBeepOnModeSwitch")
 
         // Load input settings
         checkSpelling = defaults.bool(forKey: "Spelling")
@@ -298,13 +300,14 @@ final class AppState: ObservableObject {
     // MARK: - Hotkey Encoding/Decoding
 
     /// Decode vSwitchKeyStatus from backend format
-    /// Format: first 8 bits = keycode, bit 8 = Control, bit 9 = Option, bit 10 = Command
+    /// Format: first 8 bits = keycode, bit 8 = Control, bit 9 = Option, bit 10 = Command, bit 11 = Shift, bit 15 = Beep
     private func decodeSwitchKeyStatus(_ status: Int) {
         switchKeyCode = UInt16(status & 0xFF)
         switchKeyControl = (status & 0x100) != 0
         switchKeyOption = (status & 0x200) != 0
         switchKeyCommand = (status & 0x400) != 0
         switchKeyShift = (status & 0x800) != 0
+        beepOnModeSwitch = (status & 0x8000) != 0
         switchKeyName = keyCodeToName(switchKeyCode)
     }
 
@@ -315,6 +318,7 @@ final class AppState: ObservableObject {
         if switchKeyOption { status |= 0x200 }
         if switchKeyCommand { status |= 0x400 }
         if switchKeyShift { status |= 0x800 }
+        if beepOnModeSwitch { status |= 0x8000 }
         return status
     }
 
@@ -359,6 +363,7 @@ final class AppState: ObservableObject {
         // Save hotkey in backend format (SwitchKeyStatus)
         let switchKeyStatus = encodeSwitchKeyStatus()
         defaults.set(switchKeyStatus, forKey: "SwitchKeyStatus")
+        defaults.set(beepOnModeSwitch, forKey: "vBeepOnModeSwitch")
 
         // Save input settings
         defaults.set(checkSpelling, forKey: "Spelling")
@@ -466,7 +471,7 @@ final class AppState: ObservableObject {
                 object: NSNumber(value: newTable.toIndex()))
         }.store(in: &cancellables)
 
-        // Observer for other settings that need to save
+        // Observer for other settings that need to save and notify backend
         // Combine all settings into single publisher for efficient batching
         Publishers.Merge8(
             $checkSpelling,
@@ -491,6 +496,9 @@ final class AppState: ObservableObject {
         .sink { [weak self] _ in
             guard let self = self, !self.isLoadingSettings else { return }
             self.saveSettings()
+            // Notify backend that settings have changed
+            NotificationCenter.default.post(
+                name: NSNotification.Name("PHTVSettingsChanged"), object: nil)
         }.store(in: &cancellables)
 
         // Observer for showIconOnDock - save to defaults only
@@ -510,21 +518,27 @@ final class AppState: ObservableObject {
         .sink { [weak self] _ in
             guard let self = self, !self.isLoadingSettings else { return }
             self.saveSettings()
+            // Notify backend about compatibility settings change
+            NotificationCenter.default.post(
+                name: NSNotification.Name("PHTVSettingsChanged"), object: nil)
         }.store(in: &cancellables)
 
         // Observer for hotkey settings - notify backend efficiently
-        Publishers.Merge5(
+        Publishers.Merge6(
             $switchKeyCode.map { _ in () }.eraseToAnyPublisher(),
             $switchKeyCommand.map { _ in () }.eraseToAnyPublisher(),
             $switchKeyOption.map { _ in () }.eraseToAnyPublisher(),
             $switchKeyControl.map { _ in () }.eraseToAnyPublisher(),
-            $switchKeyShift.map { _ in () }.eraseToAnyPublisher()
+            $switchKeyShift.map { _ in () }.eraseToAnyPublisher(),
+            $beepOnModeSwitch.map { _ in () }.eraseToAnyPublisher()
         )
         .debounce(for: .milliseconds(50), scheduler: RunLoop.main)
         .sink { [weak self] _ in
             guard let self = self, !self.isLoadingSettings else { return }
             let switchKeyStatus = self.encodeSwitchKeyStatus()
             UserDefaults.standard.set(switchKeyStatus, forKey: "SwitchKeyStatus")
+            UserDefaults.standard.set(self.beepOnModeSwitch, forKey: "vBeepOnModeSwitch")
+            UserDefaults.standard.synchronize()
             // Notify backend about hotkey change
             NotificationCenter.default.post(
                 name: NSNotification.Name("HotkeyChanged"), object: NSNumber(value: switchKeyStatus)
