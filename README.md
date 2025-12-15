@@ -4,7 +4,7 @@
 [![macOS 14+](https://img.shields.io/badge/macOS-14+-blue.svg)](https://www.apple.com/macos/)
 [![Swift 6.0+](https://img.shields.io/badge/Swift-6.0+-orange.svg)](https://swift.org)
 [![OpenKey](https://img.shields.io/badge/Engine-OpenKey-blueviolet.svg)](https://github.com/tuyenvm/OpenKey)
-[![Website](https://img.shields.io/badge/Website-phamhungtien.com-green.svg)](https://phamhungtien.com/)
+[![Website](https://img.shields.io/badge/Website-phamhungtien.com/PHTV-green.svg)](https://phamhungtien.com/PHTV/)
 
 **PHTV** là bộ gõ tiếng Việt hoàn toàn offline cho macOS, được phát triển bởi **Phạm Hùng Tiến**. Dự án này sử dụng và mở rộng **[OpenKey](https://github.com/tuyenvm/OpenKey)** - công cụ nhập liệu tiếng Việt mạnh mẽ, với tích hợp hiện đại cho macOS và giao diện SwiftUI.
 
@@ -12,13 +12,13 @@
 
 ## 🌐 Tải xuống & Hướng dẫn
 
-> ### 👉 **[Tải PHTV từ phamhungtien.com](https://phamhungtien.com/)** - Hướng dẫn chi tiết, hình ảnh, và video
+> ### 👉 **[Tải PHTV từ phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/)** - Hướng dẫn chi tiết, hình ảnh, và video
 
 <div align="center">
 
 | **Tải ngay**                                     | **Hướng dẫn cài đặt**                          | **Tính năng**                                     | **Liên hệ**                                    |
 | ------------------------------------------------ | ---------------------------------------------- | ------------------------------------------------- | ---------------------------------------------- |
-| [🔗 phamhungtien.com](https://phamhungtien.com/) | [📖 Chi tiết](https://phamhungtien.com/#setup) | [✨ Xem thêm](https://phamhungtien.com/#features) | [📧 Góp ý](https://phamhungtien.com/#feedback) |
+| [🔗 phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/) | [📖 Chi tiết](https://phamhungtien.com/PHTV/#setup) | [✨ Xem thêm](https://phamhungtien.com/PHTV/#features) | [📧 Góp ý](https://phamhungtien.com/PHTV/#feedback) |
 
 </div>
 
@@ -50,11 +50,11 @@
 
 ### ⚡ Tính năng nâng cao
 
-- ⭐ **Khuyến khích**: Tải từ **[phamhungtien.com](https://phamhungtien.com/)** để có hướng dẫn đầy đủ với hình ảnh và video
+- ⭐ **Khuyến khích**: Tải từ **[phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/)** để có hướng dẫn đầy đủ với hình ảnh và video
 
 ### Phương pháp 1: Download từ Website (Khuyến khích) ⭐
 
-**[👉 Tải PHTV tại phamhungtien.com](https://phamhungtien.com/)**
+**[👉 Tải PHTV tại phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/)**
 
 - 📊 **Thống kê sử dụng** - Theo dõi thống kê gõ của bạn
 
@@ -66,13 +66,13 @@
 
 ## 📦 Cài đặt
 
-> 📖 **Hướng dẫn chi tiết**: Xem [INSTALL.md](INSTALL.md) hoặc tại [phamhungtien.com](https://phamhungtien.com/)
+> 📖 **Hướng dẫn chi tiết**: Xem [INSTALL.md](INSTALL.md) hoặc tại [phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/)
 
 ### Phương pháp 1: Tải bản phát hành (Khuyến khích)
 
-**Tải từ website**: [phamhungtien.com](https://phamhungtien.com/)
+**Tải từ website**: [phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/)
 
-1. Vào [phamhungtien.com](https://phamhungtien.com/) hoặc [GitHub Releases](../../releases/latest)
+1. Vào [phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/) hoặc [GitHub Releases](../../releases/latest)
 2. Tải về `PHTV.dmg` hoặc `PHTV.zip`
 3. Nếu là DMG: double-click để mở, kéo `PHTV.app` vào `Applications`
 4. Nếu là ZIP: giải nén rồi kéo `PHTV.app` vào `Applications`
