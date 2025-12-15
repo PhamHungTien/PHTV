@@ -21,6 +21,14 @@
 
 ---
 
+## ⚡ Bắt đầu nhanh (3 bước)
+
+1) Tải `PHTV.dmg` hoặc `PHTV.zip` từ [phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/) hoặc [Releases](../../releases/latest)
+2) Kéo `PHTV.app` vào `Applications`
+3) Mở app và cấp **Accessibility** khi được nhắc
+
+---
+
 ## 🌐 Tải xuống & Hướng dẫn
 
 > ### 👉 **[Tải PHTV từ phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/)** - Hướng dẫn chi tiết, hình ảnh, và video
@@ -42,6 +50,7 @@
 - 🎨 **Giao diện Liquid Glass** - Tương thích với macOS 14+ với thiết kế đẹp mắt
 - 🌙 **Dark Mode** - Tự động thích ứng với chế độ giao diện hệ thống
 - 🔧 **Hoàn toàn có thể tùy chỉnh** - Linh hoạt với nhiều tùy chọn cấu hình
+- 🔒 **Quyền riêng tư** - Không thu thập hay gửi dữ liệu gõ ra ngoài
 
 ## 🌟 Tính năng chính
 
@@ -76,6 +85,14 @@
 - **macOS 14.0 trở lên** (Sonoma và các phiên bản mới hơn)
 - **Quyền Accessibility** (sẽ được yêu cầu khi khởi động lần đầu)
 - **Xcode 16.0+** (nếu build từ source)
+
+### Ma trận hỗ trợ
+
+| Kiến trúc | Trạng thái | Ghi chú |
+| --- | --- | --- |
+| Apple Silicon (arm64) | ✅ Hỗ trợ | Build universal mặc định |
+| Intel (x86_64) | ✅ Hỗ trợ | Build universal mặc định |
+| macOS < 14 | ⚠️ Không bảo đảm | Yêu cầu LSMinimumSystemVersion = 14 |
 
 ## 📦 Cài đặt
 
