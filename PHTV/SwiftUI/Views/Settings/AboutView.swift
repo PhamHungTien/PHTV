@@ -64,7 +64,7 @@ struct AboutView: View {
                             .foregroundStyle(.secondary)
 
                         Text(
-                            "v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.2")"
+                            "v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.3")"
                         )
                         .font(.system(.caption, design: .monospaced))
                         .fontWeight(.semibold)
