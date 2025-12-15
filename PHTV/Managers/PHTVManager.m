@@ -30,6 +30,8 @@ static BOOL _isInited = NO;
 static CFMachPortRef      eventTap;
 static CGEventMask        eventMask;
 static CFRunLoopSourceRef runLoopSource;
+static NSUInteger         _tapReenableCount = 0;
+static NSUInteger         _tapRecreateCount = 0;
 
 #pragma mark - Core Functionality
 
@@ -111,6 +113,69 @@ static CFRunLoopSourceRef runLoopSource;
         NSLog(@"[EventTap] Stopped successfully");
     }
     return YES;
+}
+
+// Recover when the event tap is disabled by the system (timeout/user input)
++(void)handleEventTapDisabled:(CGEventType)type {
+    if (!_isInited) return;
+
+    const char *reason = (type == kCGEventTapDisabledByTimeout) ? "timeout" : "user input";
+    NSLog(@"[EventTap] Disabled by %s — attempting to re-enable", reason);
+
+    _tapReenableCount++;
+    CGEventTapEnable(eventTap, true);
+
+    // If re-enable failed (tap still disabled), recreate it on the main queue to avoid deadlocks
+    if (!CGEventTapIsEnabled(eventTap)) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (!_isInited) return;
+            NSLog(@"[EventTap] Re-enabling failed, recreating event tap");
+            _tapRecreateCount++;
+            [self stopEventTap];
+            [self initEventTap];
+        });
+    }
+}
+
+// Query current state of the tap
++(BOOL)isEventTapEnabled {
+    if (!_isInited || eventTap == nil) return NO;
+    return CGEventTapIsEnabled(eventTap);
+}
+
+// Ensure the tap stays alive for long-running sessions
++(void)ensureEventTapAlive {
+    if (!_isInited) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (!_isInited) {
+                [self initEventTap];
+            }
+        });
+        return;
+    }
+
+    if (eventTap == nil) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self initEventTap];
+        });
+        return;
+    }
+
+    if (!CGEventTapIsEnabled(eventTap)) {
+        _tapReenableCount++;
+        NSLog(@"[EventTap] Health check: tap disabled — re-enabling (count=%lu)", (unsigned long)_tapReenableCount);
+        CGEventTapEnable(eventTap, true);
+
+        if (!CGEventTapIsEnabled(eventTap)) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if (!_isInited) return;
+                _tapRecreateCount++;
+                NSLog(@"[EventTap] Health check: re-enable failed — recreating tap (count=%lu)", (unsigned long)_tapRecreateCount);
+                [self stopEventTap];
+                [self initEventTap];
+            });
+        }
+    }
 }
 
 #pragma mark - Table Codes

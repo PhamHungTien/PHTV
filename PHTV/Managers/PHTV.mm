@@ -12,6 +12,7 @@
 #import <ApplicationServices/ApplicationServices.h>
 #import "Engine.h"
 #import "../Application/AppDelegate.h"
+#import "PHTVManager.h"
 
 #define FRONT_APP [[NSWorkspace sharedWorkspace] frontmostApplication].bundleIdentifier
 
@@ -211,37 +212,56 @@ extern "C" {
     // Check if Vietnamese input should be disabled for current app (using PID)
     // PERFORMANCE: inline for hot path (called on every keystroke)
     __attribute__((always_inline)) static inline BOOL shouldDisableVietnameseForEvent(CGEventRef event) {
+        static pid_t lastPid = -1;
+        static CFAbsoluteTime lastCheck = 0;
+        static BOOL lastResult = NO;
+
+        CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
+        pid_t targetPID = (pid_t)CGEventGetIntegerValueField(event, kCGEventTargetUnixProcessID);
+
+        // Fast path: reuse last decision if same PID and checked recently (~300ms)
+        if (targetPID > 0 && targetPID == lastPid && (now - lastCheck) < 0.3) {
+            return lastResult;
+        }
+
         // First, check using Accessibility API to get the actual focused window's app
         AXUIElementRef systemWide = AXUIElementCreateSystemWide();
         AXUIElementRef focusedElement = NULL;
         AXError error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement);
         CFRelease(systemWide);
-        
+
         NSString *bundleId = nil;
-        
+        pid_t cachePid = targetPID; // cache key we will use for next lookup
+
         if (error == kAXErrorSuccess && focusedElement != NULL) {
             pid_t focusedPID = 0;
             error = AXUIElementGetPid(focusedElement, &focusedPID);
             CFRelease(focusedElement);
-            
+
             if (error == kAXErrorSuccess && focusedPID != 0) {
                 bundleId = getBundleIdFromPID(focusedPID);
+                cachePid = focusedPID;
             }
         }
-        
+
         // Fallback to target PID from event if accessibility fails
-        if (bundleId == nil) {
-            pid_t targetPID = (pid_t)CGEventGetIntegerValueField(event, kCGEventTargetUnixProcessID);
+        if (bundleId == nil && targetPID > 0) {
             bundleId = getBundleIdFromPID(targetPID);
         }
-        
-        // Last fallback to frontmost app
+
+        // Last fallback to frontmost app (do not cache frontmost fallback to avoid stale state)
         if (bundleId == nil) {
             bundleId = FRONT_APP;
+            cachePid = -1;
         }
 
         BOOL shouldDisable = bundleIdMatchesAppSet(bundleId, _disableVietnameseAppSet);
-        
+
+        // Update cache only when we have a valid PID, to avoid cross-app leakage
+        lastResult = shouldDisable;
+        lastCheck = now;
+        lastPid = (cachePid > 0) ? cachePid : -1;
+
         return shouldDisable;
     }
 
@@ -825,6 +845,12 @@ extern "C" {
      * MAIN Callback.
      */
     CGEventRef PHTVCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event, void *refcon) {
+        // Auto-recover when macOS temporarily disables the event tap
+        if (type == kCGEventTapDisabledByTimeout || type == kCGEventTapDisabledByUserInput) {
+            [PHTVManager handleEventTapDisabled:type];
+            return event;
+        }
+
         //dont handle my event
         if (CGEventGetIntegerValueField(event, kCGEventSourceStateID) == CGEventSourceGetSourceStateID(myEventSource)) {
             return event;

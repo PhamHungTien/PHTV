@@ -10,6 +10,7 @@
 #define PHTVManager_h
 
 #import <Cocoa/Cocoa.h>
+#import <ApplicationServices/ApplicationServices.h>
 
 @interface PHTVManager : NSObject
 
@@ -17,6 +18,9 @@
 +(BOOL)isInited;
 +(BOOL)initEventTap;
 +(BOOL)stopEventTap;
++(void)handleEventTapDisabled:(CGEventType)type;
++(BOOL)isEventTapEnabled;
++(void)ensureEventTapAlive;
 
 // Table codes
 +(NSArray*)getTableCodes;
