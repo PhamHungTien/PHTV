@@ -755,9 +755,16 @@ extern "C" {
     }
     
     void switchLanguage() {
-        // Beep before switching if enabled
-        if (HAS_BEEP(vSwitchKeyStatus))
+        // Memory barrier to ensure we read the latest vSwitchKeyStatus value
+        __sync_synchronize();
+        
+        // Beep before switching if enabled (bit 0x8000)
+        if (HAS_BEEP(vSwitchKeyStatus)) {
+            #ifdef DEBUG
+            NSLog(@"[PHTV] Playing beep sound (vSwitchKeyStatus=0x%X)", vSwitchKeyStatus);
+            #endif
             NSBeep();
+        }
 
         // onImputMethodChanged handles: toggle, save, RequestNewSession, fillData, notify
         // No need to modify vLanguage here or call startNewSession separately

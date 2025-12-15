@@ -232,6 +232,7 @@ struct RunningAppsPickerView: View {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
                 TextField("Tìm kiếm...", text: $searchText)
+                    .settingsTextField()
                     .textFieldStyle(.plain)
             }
             .padding(8)

@@ -133,6 +133,45 @@ struct HotkeyConfigView: View {
                         .foregroundStyle(.orange)
                         .padding(.top, 4)
                 }
+                
+                // Beep on mode switch toggle
+                HStack(spacing: 14) {
+                    ZStack {
+                        if #available(macOS 26.0, *) {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.green.opacity(0.12))
+                                .frame(width: 36, height: 36)
+                                .glassEffect(in: .rect(cornerRadius: 8))
+                        } else {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.green.opacity(0.12))
+                                .frame(width: 36, height: 36)
+                        }
+
+                        Image(systemName: "speaker.wave.2.fill")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(.green)
+                    }
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Phát âm thanh khi chuyển chế độ")
+                            .font(.body)
+                            .foregroundStyle(.primary)
+
+                        Text("Phát beep khi bấm phím tắt")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    Toggle("", isOn: $appState.beepOnModeSwitch)
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                        .tint(.blue)
+                }
+                .padding(.vertical, 6)
+                .padding(.top, 8)
             }
         }
     }
