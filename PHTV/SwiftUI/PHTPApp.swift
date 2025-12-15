@@ -8,6 +8,7 @@
 
 import AppKit
 import ApplicationServices
+import AudioToolbox
 import Combine
 import ServiceManagement
 import SwiftUI
@@ -24,9 +25,10 @@ struct PHTVApp: App {
             StatusBarMenuView()
                 .environmentObject(appState)
         } label: {
-            // Use text label that changes based on language mode
-            Text(appState.isEnabled ? "Vi" : "En")
-                .fontWeight(.medium)
+            // Use app icon (template); add slash when in English mode
+            let size = CGFloat(appState.menuBarIconSize)
+            Image(nsImage: makeMenuBarIconImage(size: size, slashed: !appState.isEnabled))
+                .renderingMode(.template)
         }
         .menuBarExtraStyle(.menu)
         .onChange(of: appState.isEnabled) { _, _ in
@@ -40,6 +42,64 @@ struct PHTVApp: App {
         }
         .windowStyle(.hiddenTitleBar)
     }
+}
+
+// MARK: - Beep Manager (inline for target visibility)
+@MainActor
+final class BeepManager {
+    static let shared = BeepManager()
+
+    private let popSound: NSSound?
+
+    private init() {
+        self.popSound = NSSound(named: NSSound.Name("Pop"))
+        self.popSound?.loops = false
+    }
+
+    func play(volume: Double) {
+        let v = max(0.0, min(1.0, volume))
+        guard v > 0.0 else { return }
+        if let sound = self.popSound {
+            sound.stop()
+            sound.volume = Float(v)
+            sound.play()
+            return
+        }
+        NSSound.beep()
+    }
+}
+
+// MARK: - Menu Bar Icon Drawing
+@MainActor
+private func makeMenuBarIconImage(size: CGFloat, slashed: Bool) -> NSImage {
+    let targetSize = NSSize(width: size, height: size)
+    let img = NSImage(size: targetSize)
+    img.lockFocus()
+    defer { img.unlockFocus() }
+
+    let rect = NSRect(origin: .zero, size: targetSize)
+    let baseIcon: NSImage? = {
+        if let img = NSImage(named: "menubar_icon") {
+            return img
+        }
+        return NSApplication.shared.applicationIconImage
+    }()
+
+    if let baseIcon {
+        let fraction: CGFloat = slashed ? 0.35 : 1.0
+        baseIcon.draw(
+            in: rect,
+            from: .zero,
+            operation: .sourceOver,
+            fraction: fraction,
+            respectFlipped: true,
+            hints: [.interpolation: NSImageInterpolation.high]
+        )
+    }
+
+    img.isTemplate = true
+    img.size = targetSize
+    return img
 }
 
 @MainActor
@@ -118,6 +178,11 @@ final class AppState: ObservableObject {
     @Published var switchKeyName: String = "Không"  // Display name for the key
     @Published var beepOnModeSwitch: Bool = false  // Play beep sound when switching mode
 
+    // Audio and Display settings
+    @Published var beepVolume: Double = 0.5  // Range: 0.0 to 1.0
+    // Removed fontSize setting
+    @Published var menuBarIconSize: Double = 18.0  // Increased default
+
     // Excluded apps - auto switch to English when these apps are active
     @Published var excludedApps: [ExcludedApp] = []
 
@@ -131,6 +196,7 @@ final class AppState: ObservableObject {
         isLoadingSettings = true
         loadSettings()
         isLoadingSettings = false
+        print("[AppState] Init complete, beepVolume=\(beepVolume), menuBarIconSize=\(menuBarIconSize)")
         setupObservers()
         setupNotificationObservers()
         setupExternalSettingsObserver()
@@ -223,6 +289,11 @@ final class AppState: ObservableObject {
                     self.isLoadingSettings = true
                     self.isEnabled = language.intValue == 1
                     self.isLoadingSettings = false
+                    
+                    // Play beep when hotkey changes mode (if enabled)
+                    if self.beepOnModeSwitch && self.beepVolume > 0.0 {
+                        BeepManager.shared.play(volume: self.beepVolume)
+                    }
                 }
             }
         }
@@ -288,6 +359,17 @@ final class AppState: ObservableObject {
         quickStartConsonant = defaults.bool(forKey: "vQuickStartConsonant")
         quickEndConsonant = defaults.bool(forKey: "vQuickEndConsonant")
         rememberCode = defaults.bool(forKey: "vRememberCode")
+
+        // Load audio and display settings
+        beepVolume = defaults.double(forKey: "vBeepVolume")
+        if beepVolume == 0 { beepVolume = 0.5 } // Default if not set
+        print("[Settings] Loaded beepVolume: \(beepVolume)")
+        
+        // fontSize removed
+        
+        menuBarIconSize = defaults.double(forKey: "vMenuBarIconSize")
+        if menuBarIconSize == 0 { menuBarIconSize = 18.0 } // Increased default if not set
+        print("[Settings] Loaded menuBarIconSize: \(menuBarIconSize)")
 
         // Load excluded apps
         if let data = defaults.data(forKey: "ExcludedApps"),
@@ -379,6 +461,11 @@ final class AppState: ObservableObject {
         defaults.set(quickEndConsonant, forKey: "vQuickEndConsonant")
         defaults.set(rememberCode, forKey: "vRememberCode")
 
+        // Save audio and display settings
+        defaults.set(beepVolume, forKey: "vBeepVolume")
+        // fontSize removed
+        defaults.set(menuBarIconSize, forKey: "vMenuBarIconSize")
+
         // Save excluded apps
         if let data = try? JSONEncoder().encode(excludedApps) {
             defaults.set(data, forKey: "ExcludedApps")
@@ -432,6 +519,12 @@ final class AppState: ObservableObject {
             let language = value ? 1 : 0
             defaults.set(language, forKey: "InputMethod")
             defaults.synchronize()
+            
+            // Play beep if enabled (volume adjusted)
+            if self.beepOnModeSwitch && self.beepVolume > 0.0 {
+                BeepManager.shared.play(volume: self.beepVolume)
+            }
+            
             // Notify backend about language change from SwiftUI
             NotificationCenter.default.post(
                 name: NSNotification.Name("LanguageChangedFromSwiftUI"),
@@ -544,6 +637,39 @@ final class AppState: ObservableObject {
                 name: NSNotification.Name("HotkeyChanged"), object: NSNumber(value: switchKeyStatus)
             )
         }.store(in: &cancellables)
+
+        // Observer for audio and display settings - immediate UI + debounced persistence
+        // Immediate UI update for menu bar icon size
+        $menuBarIconSize
+            .sink { [weak self] value in
+                guard let self = self, !self.isLoadingSettings else { return }
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("MenuBarIconSizeChanged"),
+                    object: NSNumber(value: value)
+                )
+            }.store(in: &cancellables)
+
+        // Debounced persistence for these sliders
+        $beepVolume
+            .debounce(for: .milliseconds(250), scheduler: RunLoop.main)
+            .sink { [weak self] value in
+                guard let self = self, !self.isLoadingSettings else { return }
+                let defaults = UserDefaults.standard
+                defaults.set(value, forKey: "vBeepVolume")
+                // Avoid synchronous disk flush for smoother slider interaction
+            }.store(in: &cancellables)
+
+        // fontSize observer removed
+
+        $menuBarIconSize
+            .debounce(for: .milliseconds(100), scheduler: RunLoop.main)
+            .sink { [weak self] value in
+                guard let self = self, !self.isLoadingSettings else { return }
+                let defaults = UserDefaults.standard
+                defaults.set(value, forKey: "vMenuBarIconSize")
+                defaults.synchronize()
+                print("[Settings] Saved menuBarIconSize: \(value)")
+            }.store(in: &cancellables)
     }
 
     // MARK: - Reset to Defaults
@@ -581,6 +707,9 @@ final class AppState: ObservableObject {
         switchKeyShift = true
         switchKeyCode = 0xFE
         switchKeyName = "Không"
+
+        beepVolume = 0.5
+        menuBarIconSize = 18.0
 
         excludedApps = []
 
@@ -684,3 +813,4 @@ struct ExcludedApp: Codable, Identifiable, Hashable {
         self.path = url.path
     }
 }
+
