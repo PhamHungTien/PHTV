@@ -13,11 +13,25 @@
 #import <os/lock.h>
 #import <os/log.h>
 #import <mach/mach_time.h>
+#import <unistd.h>
+#import <stdlib.h>
+#import <string.h>
 #import "Engine.h"
 #import "../Application/AppDelegate.h"
 #import "PHTVManager.h"
 
 #define FRONT_APP [[NSWorkspace sharedWorkspace] frontmostApplication].bundleIdentifier
+
+// AXValueType constant name differs across SDK versions.
+#if defined(kAXValueTypeCFRange)
+    #define PHTV_AXVALUE_CFRANGE_TYPE kAXValueTypeCFRange
+#elif defined(kAXValueCFRangeType)
+    #define PHTV_AXVALUE_CFRANGE_TYPE kAXValueCFRangeType
+#else
+    // Fallback for older SDKs where the CFRange constant isn't exposed.
+    // AXValueType values are stable across macOS; CFRange is typically 4.
+    #define PHTV_AXVALUE_CFRANGE_TYPE ((AXValueType)4)
+#endif
 
 // Modern logging subsystem
 static os_log_t phtv_log;
@@ -30,6 +44,35 @@ static dispatch_once_t timebase_init_token;
 static inline uint64_t mach_time_to_ms(uint64_t mach_time) {
     return (mach_time * timebase_info.numer) / (timebase_info.denom * 1000000);
 }
+
+#ifdef DEBUG
+static inline BOOL PHTVSpotlightDebugEnabled(void) {
+    // Opt-in logging to avoid noisy Console output.
+    // Enable by launching with env var: PHTV_SPOTLIGHT_DEBUG=1
+    static int enabled = -1;
+    if (enabled < 0) {
+        const char *env = getenv("PHTV_SPOTLIGHT_DEBUG");
+        enabled = (env != NULL && env[0] != '\0' && strcmp(env, "0") != 0) ? 1 : 0;
+    }
+    return enabled == 1;
+}
+
+static inline void PHTVSpotlightDebugLog(NSString *message) {
+    if (!PHTVSpotlightDebugEnabled()) {
+        return;
+    }
+    dispatch_once(&timebase_init_token, ^{
+        mach_timebase_info(&timebase_info);
+    });
+    static uint64_t lastLogTime = 0;
+    uint64_t now = mach_absolute_time();
+    if (lastLogTime != 0 && mach_time_to_ms(now - lastLogTime) < 500) {
+        return;
+    }
+    lastLogTime = now;
+    NSLog(@"[PHTV Spotlight] %@", message);
+}
+#endif
 
 // Cache for PID to bundle ID mapping with modern lock
 static NSMutableDictionary<NSNumber*, NSString*> *_pidBundleCache = nil;
@@ -215,9 +258,15 @@ extern "C" {
                                                            @"com.microsoft.Edge.Dev",
                                                            @"com.microsoft.Edge"]];
 
+    // Apps that need to FORCE Unicode precomposed (not compound) - Using NSSet for O(1) lookup performance
+    // These apps don't handle Unicode combining characters properly
+    NSSet* _forcePrecomposedAppSet = [NSSet setWithArray:@[@"com.apple.Spotlight",
+                                                            @"com.apple.systemuiserver"]];  // Spotlight runs under SystemUIServer
+
     //app which needs step by step key sending (timing sensitive apps) - Using NSSet for O(1) lookup performance
-    NSSet* _stepByStepAppSet = [NSSet setWithArray:@[@"com.apple.Spotlight",
-                                                      @"com.apple.systemuiserver",  // Spotlight runs under SystemUIServer
+    NSSet* _stepByStepAppSet = [NSSet setWithArray:@[// Commented out for testing Vietnamese input:
+                                                      // @"com.apple.Spotlight",
+                                                      // @"com.apple.systemuiserver",  // Spotlight runs under SystemUIServer
                                                       @"com.apple.loginwindow",     // Login window
                                                       @"com.apple.SecurityAgent",   // Security dialogs
                                                       @"com.raycast.macos",
@@ -228,8 +277,7 @@ extern "C" {
     NSSet* _disableVietnameseAppSet = [NSSet setWithArray:@[
         @"com.apple.apps.launcher",       // Apps.app (Applications)
         @"com.apple.ScreenContinuity",    // iPhone Mirroring
-        @"com.apple.Spotlight",           // Spotlight
-        @"com.apple.systemuiserver"       // SystemUIServer (Spotlight may run here)
+        // Spotlight is handled separately (force precomposed Unicode instead of disabling)
     ]];
     
     // Optimized helper to check if bundleId matches any app in the set (exact match or prefix)
@@ -249,6 +297,144 @@ extern "C" {
             }
         }
         return NO;
+    }
+
+    __attribute__((always_inline)) static inline BOOL isSpotlightLikeApp(NSString* bundleId) {
+        return bundleIdMatchesAppSet(bundleId, _forcePrecomposedAppSet);
+    }
+
+    // Cache the effective target bundle id for the current event tap callback.
+    // This avoids re-querying AX focus inside hot-path send routines.
+    static NSString* _phtvEffectiveTargetBundleId = nil;
+    static BOOL _phtvPostToHIDTap = NO;
+    static int64_t _phtvKeyboardType = 0;
+    static int _phtvPendingBackspaceCount = 0;
+
+    __attribute__((always_inline)) static inline void SpotlightTinyDelay(void) {
+        // Spotlight/SystemUIServer input fields are timing-sensitive.
+        // A tiny delay helps ensure backspace + replacement is applied in order.
+        usleep(8000); // 8ms (empirically needed for Spotlight)
+    }
+
+    static BOOL ReplaceFocusedTextViaAX(NSInteger backspaceCount, NSString* insertText) {
+        if (backspaceCount < 0) backspaceCount = 0;
+        if (insertText == nil) insertText = @"";
+
+        AXUIElementRef systemWide = AXUIElementCreateSystemWide();
+        AXUIElementRef focusedElement = NULL;
+        AXError error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement);
+        CFRelease(systemWide);
+        if (error != kAXErrorSuccess || focusedElement == NULL) {
+#ifdef DEBUG
+            PHTVSpotlightDebugLog([NSString stringWithFormat:@"AX focus failed err=%d", (int)error]);
+#endif
+            return NO;
+        }
+
+        CFTypeRef valueRef = NULL;
+        error = AXUIElementCopyAttributeValue(focusedElement, kAXValueAttribute, &valueRef);
+        if (error != kAXErrorSuccess) {
+#ifdef DEBUG
+            PHTVSpotlightDebugLog([NSString stringWithFormat:@"AX value read failed err=%d", (int)error]);
+#endif
+            CFRelease(focusedElement);
+            return NO;
+        }
+
+        NSString *valueStr = nil;
+        if (valueRef != NULL && CFGetTypeID(valueRef) == CFStringGetTypeID()) {
+            valueStr = (__bridge NSString *)valueRef;
+        } else {
+            valueStr = @"";
+        }
+
+        CFTypeRef rangeRef = NULL;
+        error = AXUIElementCopyAttributeValue(focusedElement, kAXSelectedTextRangeAttribute, &rangeRef);
+        if (error != kAXErrorSuccess || rangeRef == NULL || CFGetTypeID(rangeRef) != AXValueGetTypeID()) {
+#ifdef DEBUG
+            PHTVSpotlightDebugLog([NSString stringWithFormat:@"AX selectedRange read failed err=%d typeOk=%d", (int)error, (rangeRef != NULL && CFGetTypeID(rangeRef) == AXValueGetTypeID())]);
+#endif
+            if (valueRef) CFRelease(valueRef);
+            CFRelease(focusedElement);
+            if (rangeRef) CFRelease(rangeRef);
+            return NO;
+        }
+
+        CFRange selection = CFRangeMake(0, 0);
+        if (!AXValueGetValue((AXValueRef)rangeRef, PHTV_AXVALUE_CFRANGE_TYPE, &selection)) {
+#ifdef DEBUG
+            PHTVSpotlightDebugLog(@"AX range decode failed");
+#endif
+            if (valueRef) CFRelease(valueRef);
+            CFRelease(rangeRef);
+            CFRelease(focusedElement);
+            return NO;
+        }
+
+        NSInteger caretLocation = (NSInteger)selection.location;
+        if (caretLocation < 0) caretLocation = 0;
+        if (caretLocation > (NSInteger)valueStr.length) caretLocation = (NSInteger)valueStr.length;
+
+        NSInteger start = caretLocation - backspaceCount;
+        if (start < 0) start = 0;
+        NSInteger len = caretLocation - start;
+        if (len < 0) len = 0;
+        if (start + len > (NSInteger)valueStr.length) {
+            len = (NSInteger)valueStr.length - start;
+            if (len < 0) len = 0;
+        }
+
+        NSString *newValue = [valueStr stringByReplacingCharactersInRange:NSMakeRange((NSUInteger)start, (NSUInteger)len)
+                                                              withString:insertText];
+
+        AXError setValueErr = AXUIElementSetAttributeValue(focusedElement, kAXValueAttribute, (__bridge CFTypeRef)newValue);
+        if (setValueErr != kAXErrorSuccess) {
+#ifdef DEBUG
+            PHTVSpotlightDebugLog([NSString stringWithFormat:@"AX value write failed err=%d", (int)setValueErr]);
+#endif
+            if (valueRef) CFRelease(valueRef);
+            CFRelease(rangeRef);
+            CFRelease(focusedElement);
+            return NO;
+        }
+
+        CFRange newSel = CFRangeMake(start + (NSInteger)insertText.length, 0);
+        AXValueRef newRange = AXValueCreate(PHTV_AXVALUE_CFRANGE_TYPE, &newSel);
+        if (newRange != NULL) {
+            AXUIElementSetAttributeValue(focusedElement, kAXSelectedTextRangeAttribute, newRange);
+            CFRelease(newRange);
+        }
+
+        if (valueRef) CFRelease(valueRef);
+        CFRelease(rangeRef);
+        CFRelease(focusedElement);
+
+    #ifdef DEBUG
+        PHTVSpotlightDebugLog([NSString stringWithFormat:@"AX replace ok del=%ld ins=%ld", (long)backspaceCount, (long)insertText.length]);
+    #endif
+        return YES;
+    }
+
+    __attribute__((always_inline)) static inline void PostSyntheticEvent(CGEventTapProxy proxy, CGEventRef e) {
+        if (_phtvPostToHIDTap) {
+            CGEventPost(kCGHIDEventTap, e);
+        } else {
+            CGEventTapPostEvent(proxy, e);
+        }
+    }
+
+    __attribute__((always_inline)) static inline void ApplyKeyboardTypeAndFlags(CGEventRef down, CGEventRef up) {
+        if (_phtvKeyboardType != 0) {
+            CGEventSetIntegerValueField(down, kCGKeyboardEventKeyboardType, _phtvKeyboardType);
+            CGEventSetIntegerValueField(up, kCGKeyboardEventKeyboardType, _phtvKeyboardType);
+        }
+        if (_phtvPostToHIDTap) {
+            // Spotlight/SystemUIServer is sensitive to coalescing.
+            CGEventFlags flags = CGEventGetFlags(down);
+            flags |= kCGEventFlagMaskNonCoalesced;
+            CGEventSetFlags(down, flags);
+            CGEventSetFlags(up, flags);
+        }
     }
 
     // Check if Vietnamese input should be disabled for current app (using PID)
@@ -464,9 +650,37 @@ extern "C" {
         return [NSString stringWithUTF8String:convertUtil([str UTF8String]).c_str()];
     }
     
+    // Get bundle ID of the actually focused app (not just frontmost)
+    // This is important for overlay windows like Spotlight, which aren't the frontmost app
+    NSString* getFocusedAppBundleId() {
+        AXUIElementRef systemWide = AXUIElementCreateSystemWide();
+        AXUIElementRef focusedElement = NULL;
+        AXError error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement);
+        CFRelease(systemWide);
+        
+        if (error != kAXErrorSuccess || focusedElement == NULL) {
+            return FRONT_APP;  // Fallback to frontmost app
+        }
+        
+        pid_t focusedPID = 0;
+        error = AXUIElementGetPid(focusedElement, &focusedPID);
+        CFRelease(focusedElement);
+        
+        if (error != kAXErrorSuccess || focusedPID == 0) {
+            return FRONT_APP;
+        }
+        
+        NSString *bundleId = getBundleIdFromPID(focusedPID);
+        return (bundleId != nil) ? bundleId : FRONT_APP;
+    }
+    
     BOOL containUnicodeCompoundApp(NSString* topApp) {
         // Optimized to use NSSet for O(1) lookup instead of O(n) array iteration
         return bundleIdMatchesAppSet(topApp, _unicodeCompoundAppSet);
+    }
+    
+    BOOL needsForcePrecomposed(NSString* bundleId) {
+        return bundleIdMatchesAppSet(bundleId, _forcePrecomposedAppSet);
     }
     
     void saveSmartSwitchKeyData() {
@@ -547,10 +761,12 @@ extern "C" {
     void SendPureCharacter(const Uint16& ch) {
         _newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
         _newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
+        ApplyKeyboardTypeAndFlags(_newEventDown, _newEventUp);
         CGEventKeyboardSetUnicodeString(_newEventDown, 1, &ch);
         CGEventKeyboardSetUnicodeString(_newEventUp, 1, &ch);
-        CGEventTapPostEvent(_proxy, _newEventDown);
-        CGEventTapPostEvent(_proxy, _newEventUp);
+        PostSyntheticEvent(_proxy, _newEventDown);
+        PostSyntheticEvent(_proxy, _newEventUp);
+        if (_phtvPostToHIDTap) SpotlightTinyDelay();
         CFRelease(_newEventDown);
         CFRelease(_newEventUp);
         if (IS_DOUBLE_CODE(vCodeTable)) {
@@ -577,26 +793,32 @@ extern "C" {
             
             CGEventSetFlags(_newEventDown, _privateFlag);
             CGEventSetFlags(_newEventUp, _privateFlag);
-            CGEventTapPostEvent(_proxy, _newEventDown);
-            CGEventTapPostEvent(_proxy, _newEventUp);
+            ApplyKeyboardTypeAndFlags(_newEventDown, _newEventUp);
+            PostSyntheticEvent(_proxy, _newEventDown);
+            PostSyntheticEvent(_proxy, _newEventUp);
+            if (_phtvPostToHIDTap) SpotlightTinyDelay();
         } else {
             if (vCodeTable == 0) { //unicode 2 bytes code
                 _newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
                 _newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
+                ApplyKeyboardTypeAndFlags(_newEventDown, _newEventUp);
                 CGEventKeyboardSetUnicodeString(_newEventDown, 1, &_newChar);
                 CGEventKeyboardSetUnicodeString(_newEventUp, 1, &_newChar);
-                CGEventTapPostEvent(_proxy, _newEventDown);
-                CGEventTapPostEvent(_proxy, _newEventUp);
+                PostSyntheticEvent(_proxy, _newEventDown);
+                PostSyntheticEvent(_proxy, _newEventUp);
+                if (_phtvPostToHIDTap) SpotlightTinyDelay();
             } else if (vCodeTable == 1 || vCodeTable == 2 || vCodeTable == 4) { //others such as VNI Windows, TCVN3: 1 byte code
                 _newCharHi = HIBYTE(_newChar);
                 _newChar = LOBYTE(_newChar);
                 
                 _newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
                 _newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
+                ApplyKeyboardTypeAndFlags(_newEventDown, _newEventUp);
                 CGEventKeyboardSetUnicodeString(_newEventDown, 1, &_newChar);
                 CGEventKeyboardSetUnicodeString(_newEventUp, 1, &_newChar);
-                CGEventTapPostEvent(_proxy, _newEventDown);
-                CGEventTapPostEvent(_proxy, _newEventUp);
+                PostSyntheticEvent(_proxy, _newEventDown);
+                PostSyntheticEvent(_proxy, _newEventUp);
+                if (_phtvPostToHIDTap) SpotlightTinyDelay();
                 if (_newCharHi > 32) {
                     if (vCodeTable == 2) //VNI
                         InsertKeyLength(2);
@@ -604,10 +826,12 @@ extern "C" {
                     CFRelease(_newEventUp);
                     _newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
                     _newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
+                    ApplyKeyboardTypeAndFlags(_newEventDown, _newEventUp);
                     CGEventKeyboardSetUnicodeString(_newEventDown, 1, &_newCharHi);
                     CGEventKeyboardSetUnicodeString(_newEventUp, 1, &_newCharHi);
-                    CGEventTapPostEvent(_proxy, _newEventDown);
-                    CGEventTapPostEvent(_proxy, _newEventUp);
+                    PostSyntheticEvent(_proxy, _newEventDown);
+                    PostSyntheticEvent(_proxy, _newEventUp);
+                    if (_phtvPostToHIDTap) SpotlightTinyDelay();
                 } else {
                     if (vCodeTable == 2) //VNI
                         InsertKeyLength(1);
@@ -620,10 +844,12 @@ extern "C" {
                 InsertKeyLength(_newCharHi > 0 ? 2 : 1);
                 _newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
                 _newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
+                ApplyKeyboardTypeAndFlags(_newEventDown, _newEventUp);
                 CGEventKeyboardSetUnicodeString(_newEventDown, (_newCharHi > 0 ? 2 : 1), _uniChar);
                 CGEventKeyboardSetUnicodeString(_newEventUp, (_newCharHi > 0 ? 2 : 1), _uniChar);
-                CGEventTapPostEvent(_proxy, _newEventDown);
-                CGEventTapPostEvent(_proxy, _newEventUp);
+                PostSyntheticEvent(_proxy, _newEventDown);
+                PostSyntheticEvent(_proxy, _newEventUp);
+                if (_phtvPostToHIDTap) SpotlightTinyDelay();
             }
         }
         CFRelease(_newEventDown);
@@ -641,10 +867,12 @@ extern "C" {
         
         _newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
         _newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
+        ApplyKeyboardTypeAndFlags(_newEventDown, _newEventUp);
         CGEventKeyboardSetUnicodeString(_newEventDown, 1, &_newChar);
         CGEventKeyboardSetUnicodeString(_newEventUp, 1, &_newChar);
-        CGEventTapPostEvent(_proxy, _newEventDown);
-        CGEventTapPostEvent(_proxy, _newEventUp);
+        PostSyntheticEvent(_proxy, _newEventDown);
+        PostSyntheticEvent(_proxy, _newEventUp);
+        if (_phtvPostToHIDTap) SpotlightTinyDelay();
         CFRelease(_newEventDown);
         CFRelease(_newEventUp);
     }
@@ -661,14 +889,53 @@ extern "C" {
     }
 
     void SendBackspace() {
-        CGEventTapPostEvent(_proxy, eventBackSpaceDown);
-        CGEventTapPostEvent(_proxy, eventBackSpaceUp);
+        if (_phtvPostToHIDTap) {
+            // Spotlight/SystemUIServer can ignore cached backspace events.
+            // Create fresh events and include keyboard type to match real device.
+            CGEventRef bsDown = CGEventCreateKeyboardEvent(myEventSource, 51, true);
+            CGEventRef bsUp = CGEventCreateKeyboardEvent(myEventSource, 51, false);
+            if (_phtvKeyboardType != 0) {
+                CGEventSetIntegerValueField(bsDown, kCGKeyboardEventKeyboardType, _phtvKeyboardType);
+                CGEventSetIntegerValueField(bsUp, kCGKeyboardEventKeyboardType, _phtvKeyboardType);
+            }
+            CGEventFlags bsFlags = CGEventGetFlags(bsDown);
+            bsFlags |= kCGEventFlagMaskNonCoalesced;
+            CGEventSetFlags(bsDown, bsFlags);
+            CGEventSetFlags(bsUp, bsFlags);
+            PostSyntheticEvent(_proxy, bsDown);
+            PostSyntheticEvent(_proxy, bsUp);
+            SpotlightTinyDelay();
+            CFRelease(bsDown);
+            CFRelease(bsUp);
+        } else {
+            CGEventTapPostEvent(_proxy, eventBackSpaceDown);
+            CGEventTapPostEvent(_proxy, eventBackSpaceUp);
+        }
         
         if (IS_DOUBLE_CODE(vCodeTable)) { //VNI or Unicode Compound
             if (_syncKey.back() > 1) {
-                if (!(vCodeTable == 3 && containUnicodeCompoundApp(FRONT_APP))) {
-                    CGEventTapPostEvent(_proxy, eventBackSpaceDown);
-                    CGEventTapPostEvent(_proxy, eventBackSpaceUp);
+                NSString *effectiveTarget = _phtvEffectiveTargetBundleId ?: getFocusedAppBundleId();
+                if (!(vCodeTable == 3 && containUnicodeCompoundApp(effectiveTarget))) {
+                    if (_phtvPostToHIDTap) {
+                        CGEventRef bsDown2 = CGEventCreateKeyboardEvent(myEventSource, 51, true);
+                        CGEventRef bsUp2 = CGEventCreateKeyboardEvent(myEventSource, 51, false);
+                        if (_phtvKeyboardType != 0) {
+                            CGEventSetIntegerValueField(bsDown2, kCGKeyboardEventKeyboardType, _phtvKeyboardType);
+                            CGEventSetIntegerValueField(bsUp2, kCGKeyboardEventKeyboardType, _phtvKeyboardType);
+                        }
+                        CGEventFlags bsFlags2 = CGEventGetFlags(bsDown2);
+                        bsFlags2 |= kCGEventFlagMaskNonCoalesced;
+                        CGEventSetFlags(bsDown2, bsFlags2);
+                        CGEventSetFlags(bsUp2, bsFlags2);
+                        PostSyntheticEvent(_proxy, bsDown2);
+                        PostSyntheticEvent(_proxy, bsUp2);
+                        SpotlightTinyDelay();
+                        CFRelease(bsDown2);
+                        CFRelease(bsUp2);
+                    } else {
+                        CGEventTapPostEvent(_proxy, eventBackSpaceDown);
+                        CGEventTapPostEvent(_proxy, eventBackSpaceUp);
+                    }
                 }
             }
             _syncKey.pop_back();
@@ -688,7 +955,7 @@ extern "C" {
         
         if (IS_DOUBLE_CODE(vCodeTable)) { //VNI or Unicode Compound
             if (_syncKey.back() > 1) {
-                if (!(vCodeTable == 3 && containUnicodeCompoundApp(FRONT_APP))) {
+                if (!(vCodeTable == 3 && containUnicodeCompoundApp(getFocusedAppBundleId()))) {
                     CGEventTapPostEvent(_proxy, eventVkeyDown);
                     CGEventTapPostEvent(_proxy, eventVkeyUp);
                 }
@@ -719,6 +986,14 @@ extern "C" {
         _newCharSize = dataFromMacro ? pData->macroData.size() : pData->newCharCount;
         _willContinuteSending = false;
         _willSendControlKey = false;
+        
+        // Prefer the effective target bundle id cached by the callback.
+        // Fallback to focused app only if cache isn't available.
+        NSString *effectiveTarget = _phtvEffectiveTargetBundleId ?: getFocusedAppBundleId();
+        // Treat as Spotlight target if the callback decided to use HID/Spotlight-safe path.
+        // This covers cases where Spotlight is active but bundle-id matching is imperfect.
+        BOOL isSpotlightTarget = _phtvPostToHIDTap || isSpotlightLikeApp(effectiveTarget);
+        BOOL forcePrecomposed = (vCodeTable == 3) && isSpotlightTarget;
         
         if (_newCharSize > 0) {
             for (_k = dataFromMacro ? offset : pData->newCharCount - 1 - offset;
@@ -763,6 +1038,7 @@ extern "C" {
                         _newCharHi = (_newChar >> 13);
                         _newChar &= 0x1FFF;
                         
+                        // Always build compound form first (will be converted to precomposed later if needed)
                         InsertKeyLength(_newCharHi > 0 ? 2 : 1);
                         _newCharString[_j++] = _newChar;
                         if (_newCharHi > 0) {
@@ -787,14 +1063,81 @@ extern "C" {
             startNewSession();
         }
         
-        _newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
-        _newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
-        CGEventKeyboardSetUnicodeString(_newEventDown, _willContinuteSending ? 16 : _newCharSize - offset, _newCharString);
-        CGEventKeyboardSetUnicodeString(_newEventUp, _willContinuteSending ? 16 : _newCharSize - offset, _newCharString);
-        CGEventTapPostEvent(_proxy, _newEventDown);
-        CGEventTapPostEvent(_proxy, _newEventUp);
-        CFRelease(_newEventDown);
-        CFRelease(_newEventUp);
+        // If we need to force precomposed Unicode (for apps like Spotlight), 
+        // convert the entire string from compound to precomposed form
+        Uint16 _finalCharString[MAX_UNICODE_STRING];
+        int _finalCharSize = _willContinuteSending ? 16 : _newCharSize - offset;
+        
+        if (forcePrecomposed && _finalCharSize > 0) {
+            // Create NSString from Unicode characters and get precomposed version
+            NSString *tempStr = [NSString stringWithCharacters:(const unichar *)_newCharString length:_finalCharSize];
+            NSString *precomposed = [tempStr precomposedStringWithCanonicalMapping];
+            _finalCharSize = (int)[precomposed length];
+            [precomposed getCharacters:(unichar *)_finalCharString range:NSMakeRange(0, _finalCharSize)];
+        } else {
+            // Use original string
+            memcpy(_finalCharString, _newCharString, _finalCharSize * sizeof(Uint16));
+        }
+
+        if (isSpotlightTarget) {
+            // Prefer AX value replacement for Spotlight/SystemUIServer.
+            // This avoids the search field mis-handling synthetic backspace + unicode replacement.
+            NSString *insertStr = [NSString stringWithCharacters:(const unichar *)_finalCharString length:_finalCharSize];
+            int backspaceCount = _phtvPendingBackspaceCount;
+            _phtvPendingBackspaceCount = 0;
+            if (ReplaceFocusedTextViaAX(backspaceCount, insertStr)) {
+                return;
+            }
+            // If AX fails, fall back to synthetic events below.
+            // IMPORTANT: we deferred deletion in the callback; perform it here now.
+            if (backspaceCount > 0) {
+                int maxDeletes = backspaceCount;
+                for (int del = 0; del < maxDeletes; del++) {
+                    if (IS_DOUBLE_CODE(vCodeTable) && _syncKey.size() == 0) {
+                        break;
+                    }
+                    SendBackspace();
+                }
+            }
+        }
+        
+        if (isSpotlightTarget) {
+            // Spotlight's search field is sensitive to batched Unicode replacement.
+            // Send as per-character Unicode events to avoid mark reordering/duplication.
+            for (int idx = 0; idx < _finalCharSize; idx++) {
+                UniChar oneChar = (UniChar)_finalCharString[idx];
+                _newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
+                _newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
+                if (_phtvKeyboardType != 0) {
+                    CGEventSetIntegerValueField(_newEventDown, kCGKeyboardEventKeyboardType, _phtvKeyboardType);
+                    CGEventSetIntegerValueField(_newEventUp, kCGKeyboardEventKeyboardType, _phtvKeyboardType);
+                }
+                CGEventFlags uFlags = CGEventGetFlags(_newEventDown);
+                uFlags |= kCGEventFlagMaskNonCoalesced;
+                CGEventSetFlags(_newEventDown, uFlags);
+                CGEventSetFlags(_newEventUp, uFlags);
+                CGEventKeyboardSetUnicodeString(_newEventDown, 1, &oneChar);
+                CGEventKeyboardSetUnicodeString(_newEventUp, 1, &oneChar);
+                PostSyntheticEvent(_proxy, _newEventDown);
+                PostSyntheticEvent(_proxy, _newEventUp);
+                SpotlightTinyDelay();
+                CFRelease(_newEventDown);
+                CFRelease(_newEventUp);
+            }
+        } else {
+            _newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
+            _newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
+            if (_phtvKeyboardType != 0) {
+                CGEventSetIntegerValueField(_newEventDown, kCGKeyboardEventKeyboardType, _phtvKeyboardType);
+                CGEventSetIntegerValueField(_newEventUp, kCGKeyboardEventKeyboardType, _phtvKeyboardType);
+            }
+            CGEventKeyboardSetUnicodeString(_newEventDown, _finalCharSize, _finalCharString);
+            CGEventKeyboardSetUnicodeString(_newEventUp, _finalCharSize, _finalCharString);
+            PostSyntheticEvent(_proxy, _newEventDown);
+            PostSyntheticEvent(_proxy, _newEventUp);
+            CFRelease(_newEventDown);
+            CFRelease(_newEventUp);
+        }
 
         if (_willContinuteSending) {
             SendNewCharString(dataFromMacro, dataFromMacro ? _k : 16);
@@ -850,7 +1193,7 @@ extern "C" {
             }
         }
         //send real data - use step by step for timing sensitive apps like Spotlight
-        BOOL useStepByStep = vSendKeyStepByStep || needsStepByStep(FRONT_APP);
+        BOOL useStepByStep = vSendKeyStepByStep || needsStepByStep(getFocusedAppBundleId());
         if (!useStepByStep) {
             SendNewCharString(true);
         } else {
@@ -1056,6 +1399,55 @@ extern "C" {
         
         //handle keyboard
         if (type == kCGEventKeyDown) {
+            // Determine the effective target app.
+            // NOTE: In some cases (observed while Spotlight is focused), kCGEventTargetUnixProcessID may
+            // resolve to an unrelated foreground app (e.g. Console). When Spotlight is AX-focused, prefer
+            // the AX-focused owner.
+            pid_t eventTargetPID = (pid_t)CGEventGetIntegerValueField(event, kCGEventTargetUnixProcessID);
+            NSString *eventTargetBundleId = (eventTargetPID > 0) ? getBundleIdFromPID(eventTargetPID) : nil;
+            NSString *focusedBundleId = getFocusedAppBundleId();
+            BOOL spotlightActive = isSpotlightActive();
+            NSString *effectiveBundleId = (spotlightActive && focusedBundleId != nil) ? focusedBundleId : (eventTargetBundleId ?: focusedBundleId);
+
+            // Cache for send routines called later in this callback.
+            _phtvEffectiveTargetBundleId = effectiveBundleId;
+            _phtvPostToHIDTap = spotlightActive || isSpotlightLikeApp(effectiveBundleId);
+            _phtvKeyboardType = CGEventGetIntegerValueField(event, kCGKeyboardEventKeyboardType);
+            _phtvPendingBackspaceCount = 0;
+
+#ifdef DEBUG
+            // Diagnostic logs: either we believe the target is Spotlight-like, or AX says Spotlight is active.
+            // This helps detect bundle-id mismatches (e.g. Spotlight field hosted by another process).
+            if (_phtvPostToHIDTap || spotlightActive) {
+                int currentCodeTable = __atomic_load_n(&vCodeTable, __ATOMIC_RELAXED);
+                PHTVSpotlightDebugLog([NSString stringWithFormat:@"spotlightActive=%d targetPID=%d eventTarget=%@ focused=%@ effective=%@ codeTable=%d keycode=%d",
+                                      (int)spotlightActive,
+                                      (int)eventTargetPID,
+                                      eventTargetBundleId,
+                                      focusedBundleId,
+                                      effectiveBundleId,
+                                      currentCodeTable,
+                                      (int)_keycode]);
+            }
+#endif
+
+            struct CodeTableOverrideGuard {
+                bool active = false;
+                int saved = 0;
+                ~CodeTableOverrideGuard() {
+                    if (active) {
+                        __atomic_store_n(&vCodeTable, saved, __ATOMIC_RELAXED);
+                    }
+                }
+            } codeTableGuard;
+
+            int currentCodeTable = __atomic_load_n(&vCodeTable, __ATOMIC_RELAXED);
+            if (currentCodeTable == 3 && (spotlightActive || isSpotlightLikeApp(effectiveBundleId))) {
+                codeTableGuard.active = true;
+                codeTableGuard.saved = currentCodeTable;
+                __atomic_store_n(&vCodeTable, 0, __ATOMIC_RELAXED);
+            }
+
             //send event signal to Engine
             vKeyHandleEvent(vKeyEvent::Keyboard,
                             vKeyEventState::KeyDown,
@@ -1070,7 +1462,7 @@ extern "C" {
                         _syncKey.clear();
                     } else if (pData->extCode == 2) { //delete key
                         if (_syncKey.size() > 0) {
-                            if (_syncKey.back() > 1 && (vCodeTable == 2 || !containUnicodeCompoundApp(FRONT_APP))) {
+                            if (_syncKey.back() > 1 && (vCodeTable == 2 || !containUnicodeCompoundApp(effectiveBundleId))) {
                                 //send one more backspace
                                 CGEventTapPostEvent(_proxy, eventBackSpaceDown);
                                 CGEventTapPostEvent(_proxy, eventBackSpaceUp);
@@ -1086,8 +1478,8 @@ extern "C" {
             } else if (pData->code == vWillProcess || pData->code == vRestore || pData->code == vRestoreAndStartNewSession) { //handle result signal
                 
                 //fix autocomplete
-                if (vFixRecommendBrowser && pData->extCode != 4) {
-                    if (vFixChromiumBrowser && [_unicodeCompoundAppSet containsObject:FRONT_APP]) {
+                if (vFixRecommendBrowser && pData->extCode != 4 && !isSpotlightLikeApp(effectiveBundleId)) {
+                    if (vFixChromiumBrowser && [_unicodeCompoundAppSet containsObject:effectiveBundleId]) {
                         if (pData->backspaceCount > 0) {
                             SendShiftAndLeftArrow();
                             if (pData->backspaceCount == 1)
@@ -1102,13 +1494,30 @@ extern "C" {
                 
                 //send backspace
                 if (pData->backspaceCount > 0 && pData->backspaceCount < MAX_BUFF) {
-                    for (_i = 0; _i < pData->backspaceCount; _i++) {
-                        SendBackspace();
+                    if (isSpotlightLikeApp(effectiveBundleId)) {
+                        // Defer deletion to AX replacement inside SendNewCharString().
+                        _phtvPendingBackspaceCount = (int)pData->backspaceCount;
+#ifdef DEBUG
+                        PHTVSpotlightDebugLog([NSString stringWithFormat:@"deferBackspace=%d newCharCount=%d", (int)pData->backspaceCount, (int)pData->newCharCount]);
+#endif
+                    } else {
+                        for (_i = 0; _i < pData->backspaceCount; _i++) {
+                            SendBackspace();
+                        }
                     }
                 }
                 
                 //send new character - use step by step for timing sensitive apps like Spotlight
-                BOOL useStepByStep = vSendKeyStepByStep || needsStepByStep(FRONT_APP);
+                // IMPORTANT: For Spotlight-like targets we rely on SendNewCharString(), which can
+                // perform deterministic replacement (AX) and/or per-character Unicode posting.
+                // Forcing step-by-step here would skip deferred deletions and cause duplicated letters.
+                BOOL isSpotlightTarget = spotlightActive || isSpotlightLikeApp(effectiveBundleId);
+                BOOL useStepByStep = (!isSpotlightTarget) && (vSendKeyStepByStep || needsStepByStep(effectiveBundleId));
+#ifdef DEBUG
+                if (isSpotlightTarget) {
+                    PHTVSpotlightDebugLog([NSString stringWithFormat:@"willSend stepByStep=%d backspaceCount=%d newCharCount=%d", (int)useStepByStep, (int)pData->backspaceCount, (int)pData->newCharCount]);
+                }
+#endif
                 if (!useStepByStep) {
                     SendNewCharString();
                 } else {
