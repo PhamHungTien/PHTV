@@ -35,16 +35,39 @@ PHTV là bộ gõ tiếng Việt **offline, nhanh, và riêng tư** cho macOS 14
 
 <div align="center">
 
-### Menu Bar
+### 🎨 Menu Bar
 
-<img src="PHTV/Resources/UI/menu-vietnamese.png" alt="Menu Bar - Tiếng Việt" width="45%">
-<img src="PHTV/Resources/UI/menu-english.png" alt="Menu Bar - English" width="45%">
+<table>
+<tr>
+<td width="50%">
+<img src="PHTV/Resources/UI/menu-vietnamese.png" alt="Menu Bar - Tiếng Việt" style="border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" width="100%">
+<p align="center"><em>Menu Bar - Tiếng Việt</em></p>
+</td>
+<td width="50%">
+<img src="PHTV/Resources/UI/menu-english.png" alt="Menu Bar - English" style="border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" width="100%">
+<p align="center"><em>Menu Bar - English</em></p>
+</td>
+</tr>
+</table>
 
-### Settings
+### ⚙️ Settings
 
-<img src="PHTV/Resources/UI/settings-typing.png" alt="Settings - Typing" width="30%">
-<img src="PHTV/Resources/UI/settings-macros.png" alt="Settings - Macros" width="30%">
-<img src="PHTV/Resources/UI/settings-system.png" alt="Settings - System" width="30%">
+<table>
+<tr>
+<td width="33%">
+<img src="PHTV/Resources/UI/settings-typing.png" alt="Settings - Typing" style="border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" width="100%">
+<p align="center"><em>Typing Settings</em></p>
+</td>
+<td width="33%">
+<img src="PHTV/Resources/UI/settings-macros.png" alt="Settings - Macros" style="border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" width="100%">
+<p align="center"><em>Macros Settings</em></p>
+</td>
+<td width="33%">
+<img src="PHTV/Resources/UI/settings-system.png" alt="Settings - System" style="border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" width="100%">
+<p align="center"><em>System Settings</em></p>
+</td>
+</tr>
+</table>
 
 </div>
 
