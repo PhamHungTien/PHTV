@@ -29,6 +29,21 @@ PHTV là bộ gõ tiếng Việt **offline, nhanh, và riêng tư** cho macOS 14
 - 📝 **Macro** - Gõ tắt thông minh, import từ file
 - 🎛️ **Hot Reload** - Thay đổi cài đặt không cần khởi động lại
 
+## 📸 Screenshots
+
+<div align="center">
+
+### Menu Bar
+<img src="PHTV/Resources/UI/menutab1.png" alt="Menu Bar - Tiếng Việt" width="45%">
+<img src="PHTV/Resources/UI/menutab2.png" alt="Menu Bar - English" width="45%">
+
+### Settings
+<img src="PHTV/Resources/UI/setingtab1.png" alt="Settings - Typing" width="30%">
+<img src="PHTV/Resources/UI/Settingtab2.png" alt="Settings - Macros" width="30%">
+<img src="PHTV/Resources/UI/Settingtab3.png" alt="Settings - System" width="30%">
+
+</div>
+
 ## ⚡ Cài đặt nhanh
 
 **Phương pháp 1: Tải trực tiếp** (khuyên dùng)
