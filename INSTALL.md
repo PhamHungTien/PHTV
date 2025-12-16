@@ -81,7 +81,7 @@ xcodebuild -scheme PHTV -configuration Release -arch arm64 -arch x86_64
 ## 📖 Tài liệu thêm
 
 - 📚 [Hướng dẫn chi tiết](https://phamhungtien.com/PHTV/#setup) - Video & Screenshots
-- ⚡ [Các tính năng](README.md#-tính-năng-nổi-bật) 
+- ⚡ [Các tính năng](README.md#-tính-năng-nổi-bật)
 - 💬 [FAQ](FAQ.md) - Câu hỏi thường gặp
 - 🤝 [Đóng góp](CONTRIBUTING.md)
 

@@ -167,6 +167,8 @@ final class AppState: ObservableObject {
     @Published var checkSpelling: Bool = true
     @Published var useModernOrthography: Bool = true
     @Published var quickTelex: Bool = false
+    @Published var restoreOnInvalidWord: Bool = false
+    @Published var sendKeyStepByStep: Bool = false
     @Published var useMacro: Bool = true
     @Published var useMacroInEnglishMode: Bool = false
     @Published var autoCapsMacro: Bool = false
@@ -204,6 +206,11 @@ final class AppState: ObservableObject {
 
     // Accessibility
     @Published var hasAccessibilityPermission: Bool = false
+
+    // Update notification - shown when new version is available on startup
+    @Published var updateAvailableMessage: String = ""
+    @Published var showUpdateBanner: Bool = false
+    @Published var latestVersion: String = ""
 
     private var cancellables = Set<AnyCancellable>()
     private var isLoadingSettings = false
@@ -313,6 +320,30 @@ final class AppState: ObservableObject {
                 }
             }
         }
+
+        // Listen for update check responses from backend
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("CheckForUpdatesResponse"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self = self else { return }
+            if let response = notification.object as? [String: Any] {
+                // Extract values outside of MainActor to avoid data races
+                let updateAvailable = (response["updateAvailable"] as? Bool) ?? false
+                let message = response["message"] as? String ?? ""
+                let latestVersion = response["latestVersion"] as? String ?? ""
+                
+                if updateAvailable && !message.isEmpty && !latestVersion.isEmpty {
+                    Task { @MainActor in
+                        // Show update banner on startup
+                        self.updateAvailableMessage = message
+                        self.latestVersion = latestVersion
+                        self.showUpdateBanner = true
+                    }
+                }
+            }
+        }
     }
 
     func checkAccessibilityPermission() {
@@ -366,6 +397,8 @@ final class AppState: ObservableObject {
         checkSpelling = defaults.bool(forKey: "Spelling")
         useModernOrthography = defaults.bool(forKey: "ModernOrthography")
         quickTelex = defaults.bool(forKey: "QuickTelex")
+        restoreOnInvalidWord = defaults.bool(forKey: "RestoreIfInvalidWord")
+        sendKeyStepByStep = defaults.bool(forKey: "SendKeyStepByStep")
         useMacro = defaults.bool(forKey: "UseMacro")
         useMacroInEnglishMode = defaults.bool(forKey: "UseMacroInEnglishMode")
         autoCapsMacro = defaults.bool(forKey: "vAutoCapsMacro")
@@ -469,6 +502,8 @@ final class AppState: ObservableObject {
         defaults.set(checkSpelling, forKey: "Spelling")
         defaults.set(useModernOrthography, forKey: "ModernOrthography")
         defaults.set(quickTelex, forKey: "QuickTelex")
+        defaults.set(restoreOnInvalidWord, forKey: "RestoreIfInvalidWord")
+        defaults.set(sendKeyStepByStep, forKey: "SendKeyStepByStep")
         defaults.set(useMacro, forKey: "UseMacro")
         defaults.set(useMacroInEnglishMode, forKey: "UseMacroInEnglishMode")
         defaults.set(autoCapsMacro, forKey: "vAutoCapsMacro")
@@ -613,11 +648,13 @@ final class AppState: ObservableObject {
         )
         .merge(
             with:
-                Publishers.Merge4(
+                Publishers.Merge6(
                     $allowConsonantZFWJ,
                     $quickStartConsonant,
                     $quickEndConsonant,
-                    $rememberCode
+                    $rememberCode,
+                    $restoreOnInvalidWord,
+                    $sendKeyStepByStep
                 )
         )
         .debounce(for: .milliseconds(100), scheduler: RunLoop.main)
@@ -721,6 +758,8 @@ final class AppState: ObservableObject {
         checkSpelling = true
         useModernOrthography = true
         quickTelex = false
+        restoreOnInvalidWord = false
+        sendKeyStepByStep = false
         useMacro = true
         useMacroInEnglishMode = false
         autoCapsMacro = false

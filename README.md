@@ -101,7 +101,7 @@ open PHTV.xcodeproj
 | Phím tắt            | Chức năng                        |
 | ------------------- | -------------------------------- |
 | **Control + Shift** | Chuyển Việt/Anh (tùy chỉnh được) |
-| **Fn + Modifier**   | Phím tắt nâng cao (v1.1.1+)      |
+| **Fn + Modifier**   | Phím tắt nâng cao (v1.1.2+)      |
 
 ### Menu Bar
 
@@ -137,7 +137,14 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 
 ## 📋 Changelog
 
-### v1.1.1 (2025-12-17)
+### v1.1.2 (2025-12-17)
+
+- ⚙️ Thêm tính năng **Kiểm tra cập nhật** tự động lúc khởi động
+- 🛠️ Khôi phục phím nếu từ sai (Restore if invalid word)
+- ⌨️ Chế độ "Gửi từng phím" (Send key step by step)
+- 🎯 Cải thiện tính ổn định
+
+### v1.1.1 (2025-12-16)
 
 - ⌨️ Hỗ trợ phím **Fn** trong hotkey
 - 🔄 **Hot reload** - Không cần restart khi đổi chế độ

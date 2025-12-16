@@ -506,6 +506,12 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
             }
         }
         [self setQuickConvertString];
+        
+        // Check for updates on startup with a delay to not impact app startup performance
+        // Default: check on every startup unless last check was today
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [self checkForUpdatesOnStartup];
+        });
     });
     
     //load default config if is first launch
@@ -786,6 +792,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     int oldCheckSpelling = vCheckSpelling;
     int oldModernOrthography = vUseModernOrthography;
     int oldQuickTelex = vQuickTelex;
+    int oldRestoreIfWrongSpelling = vRestoreIfWrongSpelling;
 
     // Capture previous values for other groups (macros/typing/system) for live apply.
     int oldUseMacro = vUseMacro;
@@ -804,6 +811,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     vCheckSpelling = PHTVReadIntWithFallback(defaults, @"Spelling", vCheckSpelling);
     vUseModernOrthography = PHTVReadIntWithFallback(defaults, @"ModernOrthography", vUseModernOrthography);
     vQuickTelex = PHTVReadIntWithFallback(defaults, @"QuickTelex", vQuickTelex);
+    vRestoreIfWrongSpelling = PHTVReadIntWithFallback(defaults, @"RestoreIfInvalidWord", vRestoreIfWrongSpelling);
     vUseMacro = PHTVReadIntWithFallback(defaults, @"UseMacro", vUseMacro);
     vUseMacroInEnglishMode = PHTVReadIntWithFallback(defaults, @"UseMacroInEnglishMode", vUseMacroInEnglishMode);
     vAutoCapsMacro = PHTVReadIntWithFallback(defaults, @"vAutoCapsMacro", vAutoCapsMacro);
@@ -828,7 +836,8 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     if (PHTVLiveDebugEnabled()) {
         BOOL changed1 = (oldCheckSpelling != vCheckSpelling ||
                          oldModernOrthography != vUseModernOrthography ||
-                         oldQuickTelex != vQuickTelex);
+                         oldQuickTelex != vQuickTelex ||
+                         oldRestoreIfWrongSpelling != vRestoreIfWrongSpelling);
         BOOL changed2 = (oldUseMacro != vUseMacro ||
                          oldUseMacroInEnglishMode != vUseMacroInEnglishMode ||
                          oldAutoCapsMacro != vAutoCapsMacro ||
@@ -1120,6 +1129,37 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     }];
     
     [dataTask resume];
+}
+
+- (void)checkForUpdatesOnStartup {
+    // Check for updates on app startup, but only once per day to avoid excessive network calls
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    NSDate *lastUpdateCheck = [defaults objectForKey:@"LastUpdateCheckDate"];
+    NSDate *today = [NSDate date];
+    
+    // Check if we should skip the update check (already checked today)
+    if (lastUpdateCheck) {
+        NSCalendar *calendar = [NSCalendar currentCalendar];
+        NSDateComponents *components = [calendar components:NSCalendarUnitDay 
+                                                   fromDate:lastUpdateCheck 
+                                                     toDate:today 
+                                                    options:0];
+        
+        if (components.day < 1) {
+            // Already checked today, skip
+            NSLog(@"[Update Check Startup] Skipped - already checked today");
+            return;
+        }
+    }
+    
+    // Record this check
+    [defaults setObject:today forKey:@"LastUpdateCheckDate"];
+    [defaults synchronize];
+    
+    NSLog(@"[Update Check Startup] Running automatic update check...");
+    
+    // Perform the actual update check
+    [self handleCheckForUpdates:nil];
 }
 
 - (void)handleSettingsReset:(NSNotification *)notification {

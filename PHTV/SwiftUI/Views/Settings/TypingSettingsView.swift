@@ -67,6 +67,16 @@ struct TypingSettingsView: View {
                             isOn: $appState.checkSpelling
                         )
 
+                        SettingsDivider()
+
+                        SettingsToggleRow(
+                            icon: "arrow.uturn.left.circle.fill",
+                            iconColor: .red,
+                            title: "Khôi phục phím nếu từ sai",
+                            subtitle: "Khôi phục ký tự khi từ không hợp lệ",
+                            isOn: $appState.restoreOnInvalidWord
+                        )
+
                         // Removed font size slider and preview
                     }
                 }
@@ -90,6 +100,16 @@ struct TypingSettingsView: View {
                             title: "Phím chuyển thông minh",
                             subtitle: "Tự động chuyển ngữ thông minh",
                             isOn: $appState.useSmartSwitchKey
+                        )
+
+                        SettingsDivider()
+
+                        SettingsToggleRow(
+                            icon: "a.circle.fill",
+                            iconColor: .purple,
+                            title: "Đặt dấu oà, uý",
+                            subtitle: "Dấu trên chữ (oà, uý) thay vì dưới (òa, úy)",
+                            isOn: $appState.useModernOrthography
                         )
                     }
                 }
@@ -133,6 +153,16 @@ struct TypingSettingsView: View {
                             title: "Nhớ bảng mã",
                             subtitle: "Lưu bảng mã khi đóng ứng dụng",
                             isOn: $appState.rememberCode
+                        )
+
+                        SettingsDivider()
+
+                        SettingsToggleRow(
+                            icon: "keyboard.badge.ellipsis",
+                            iconColor: .gray,
+                            title: "Gửi từng phím",
+                            subtitle: "Gửi từng ký tự một (chậm nhưng ổn định)",
+                            isOn: $appState.sendKeyStepByStep
                         )
                     }
                 }
