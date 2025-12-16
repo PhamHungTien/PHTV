@@ -194,6 +194,12 @@ Xem [FAQ.md](FAQ.md) để có câu trả lời chi tiết hơn.
 
 ## 🗓️ Lịch sử cập nhật gần đây
 
+### v1.1.1 (2025-12-17)
+
+- ⌨️ **Hỗ trợ phím Fn**: Thêm phím Fn vào các phím tắt chuyển chế độ gõ
+- 🔄 **Hot reload chế độ**: Không cần khởi động lại khi điều chỉnh các chế độ gõ
+- 📥 **Import gõ tắt**: Có thể import macro từ file để nhanh chóng cộng thêm từ viết tắt
+
 ### v1.1.0 (2025-12-16)
 
 - ✅ **Khắc phục Spotlight**: Gõ tiếng Việt trong Spotlight Search giờ hoạt động bình thường
