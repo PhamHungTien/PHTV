@@ -153,61 +153,111 @@ struct SettingsItem: Identifiable {
     let keywords: [String]
 
     static let allItems: [SettingsItem] = [
-        // Typing settings
+        // Typing settings - Input Configuration
         SettingsItem(
             title: "Phương pháp gõ", iconName: "keyboard", tab: .typing,
-            keywords: ["telex", "vni", "simple telex", "kiểu gõ", "input method"]),
+            keywords: ["telex", "vni", "simple telex", "kiểu gõ", "input method", "cấu hình gõ"]),
         SettingsItem(
             title: "Bảng mã", iconName: "textformat", tab: .typing,
-            keywords: ["unicode", "tcvn3", "vni windows", "code table"]),
+            keywords: ["unicode", "tcvn3", "vni windows", "code table", "codepoint"]),
+
+        // Typing settings - Basic Features
         SettingsItem(
             title: "Kiểm tra chính tả", iconName: "text.badge.checkmark", tab: .typing,
-            keywords: ["spell check", "spelling", "lỗi chính tả"]),
+            keywords: ["spell check", "spelling", "lỗi chính tả", "tính năng cơ bản"]),
         SettingsItem(
-            title: "Chính tả hiện đại", iconName: "book.closed.fill", tab: .typing,
-            keywords: ["modern", "orthography", "quy tắc"]),
-        SettingsItem(
-            title: "Quick Telex", iconName: "bolt.fill", tab: .typing,
-            keywords: ["quick", "nhanh", "tắt"]),
+            title: "Khôi phục phím nếu từ sai", iconName: "arrow.uturn.left.circle.fill", tab: .typing,
+            keywords: ["restore", "khôi phục", "ký tự", "từ sai", "invalid word"]),
+
+        // Typing settings - Enhancement Features
         SettingsItem(
             title: "Viết hoa ký tự đầu", iconName: "textformat.abc", tab: .typing,
-            keywords: ["capitalize", "uppercase", "hoa"]),
+            keywords: ["capitalize", "uppercase", "hoa", "tự động", "cải thiện gõ"]),
         SettingsItem(
             title: "Phím chuyển thông minh", iconName: "arrow.left.arrow.right", tab: .typing,
-            keywords: ["smart switch", "auto switch", "tự động"]),
+            keywords: ["smart switch", "auto switch", "tự động chuyển", "ngữ thông minh"]),
+        SettingsItem(
+            title: "Đặt dấu oà, uý", iconName: "a.circle.fill", tab: .typing,
+            keywords: ["modern orthography", "chính tả hiện đại", "dấu oà", "dấu uý", "quy tắc"]),
+
+        // Typing settings - Advanced Options
+        SettingsItem(
+            title: "Phụ âm Z, F, W, J", iconName: "character", tab: .typing,
+            keywords: ["consonant", "phụ âm", "ngoại lai", "z f w j", "tùy chọn nâng cao"]),
+        SettingsItem(
+            title: "Phụ âm đầu nhanh", iconName: "arrow.right.circle.fill", tab: .typing,
+            keywords: ["quick start consonant", "phụ âm đầu", "nhanh", "gõ tắt"]),
+        SettingsItem(
+            title: "Phụ âm cuối nhanh", iconName: "arrow.left.circle.fill", tab: .typing,
+            keywords: ["quick end consonant", "phụ âm cuối", "nhanh", "gõ tắt"]),
+        SettingsItem(
+            title: "Nhớ bảng mã", iconName: "memorychip.fill", tab: .typing,
+            keywords: ["remember code", "bảng mã", "lưu", "nhớ", "khôi phục"]),
+        SettingsItem(
+            title: "Gửi từng phím", iconName: "keyboard.badge.ellipsis", tab: .typing,
+            keywords: ["send key step by step", "từng ký tự", "ổn định", "chậm"]),
+
+        // Typing settings - Hotkey
         SettingsItem(
             title: "Phím tắt chuyển chế độ", iconName: "command.circle.fill", tab: .typing,
-            keywords: ["hotkey", "shortcut", "ctrl", "shift", "option", "command"]),
+            keywords: ["hotkey", "shortcut", "ctrl", "shift", "option", "command", "chuyển chế độ"]),
 
         // Macro settings
         SettingsItem(
             title: "Gõ tắt", iconName: "text.badge.plus", tab: .macro,
-            keywords: ["macro", "shortcut", "expansion", "viết tắt"]),
+            keywords: ["macro", "shortcut", "expansion", "viết tắt", "tắc gõ", "enable"]),
         SettingsItem(
-            title: "Danh sách gõ tắt", iconName: "list.bullet", tab: .macro,
-            keywords: ["macro list", "danh sách"]),
+            title: "Bật trong chế độ tiếng Anh", iconName: "globe", tab: .macro,
+            keywords: ["macro english", "tiếng anh", "gõ tắt", "mode"]),
+        SettingsItem(
+            title: "Tự động viết hoa ký tự đầu macro", iconName: "textformat.abc", tab: .macro,
+            keywords: ["auto caps macro", "viết hoa", "gõ tắt", "ký tự đầu"]),
+        SettingsItem(
+            title: "Thêm gõ tắt", iconName: "plus.circle.fill", tab: .macro,
+            keywords: ["add macro", "thêm", "mới", "tạo"]),
+        SettingsItem(
+            title: "Xóa gõ tắt", iconName: "minus.circle.fill", tab: .macro,
+            keywords: ["delete macro", "xóa", "danh sách"]),
+        SettingsItem(
+            title: "Chỉnh sửa gõ tắt", iconName: "pencil.circle.fill", tab: .macro,
+            keywords: ["edit macro", "chỉnh sửa", "sửa"]),
+        SettingsItem(
+            title: "Import gõ tắt", iconName: "square.and.arrow.down", tab: .macro,
+            keywords: ["import macro", "import", "nhập", "tệp"]),
 
-        // System settings
+        // System settings - Startup
         SettingsItem(
             title: "Khởi động cùng hệ thống", iconName: "play.fill", tab: .system,
-            keywords: ["startup", "login", "boot", "tự động mở"]),
+            keywords: ["startup", "login", "boot", "tự động mở", "khởi động"]),
+        SettingsItem(
+            title: "Hiển thị icon trên Dock", iconName: "app.fill", tab: .system,
+            keywords: ["show icon dock", "icon", "dock", "hiển thị"]),
+
+        // System settings - Excluded Apps
         SettingsItem(
             title: "Loại trừ ứng dụng", iconName: "app.badge.fill", tab: .system,
-            keywords: ["exclude", "blacklist", "app", "ứng dụng"]),
+            keywords: ["exclude", "blacklist", "app", "ứng dụng", "loại trừ"]),
+
+        // System settings - Compatibility
         SettingsItem(
             title: "Sửa lỗi Chromium", iconName: "globe", tab: .system,
-            keywords: ["chrome", "edge", "brave", "browser", "trình duyệt"]),
+            keywords: ["chrome", "edge", "brave", "browser", "trình duyệt", "chromium"]),
         SettingsItem(
             title: "Tương thích bố cục bàn phím", iconName: "keyboard.fill", tab: .system,
-            keywords: ["layout", "compatibility", "dvorak", "colemak"]),
+            keywords: ["layout", "compatibility", "dvorak", "colemak", "bố cục"]),
+
+        // System settings - Data Management
+        SettingsItem(
+            title: "Đặt lại cài đặt", iconName: "arrow.counterclockwise.circle.fill", tab: .system,
+            keywords: ["reset", "đặt lại", "khôi phục", "mặc định", "quản lý dữ liệu"]),
 
         // About
         SettingsItem(
             title: "Thông tin ứng dụng", iconName: "info.circle", tab: .about,
-            keywords: ["about", "version", "phiên bản", "info"]),
+            keywords: ["about", "version", "phiên bản", "info", "thông tin"]),
         SettingsItem(
             title: "Kiểm tra cập nhật", iconName: "arrow.clockwise", tab: .about,
-            keywords: ["update", "cập nhật", "new version"]),
+            keywords: ["update", "cập nhật", "new version", "phiên bản mới", "kiểm tra"]),
     ]
 }
 
