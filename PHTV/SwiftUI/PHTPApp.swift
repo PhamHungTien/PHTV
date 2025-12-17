@@ -25,10 +25,10 @@ struct PHTVApp: App {
             StatusBarMenuView()
                 .environmentObject(appState)
         } label: {
-            // Use app icon (template); add slash when in English mode
+            // Show "Vi" when Vietnamese typing is enabled, "En" when English typing is enabled
             let size = CGFloat(appState.menuBarIconSize)
-            Image(nsImage: makeMenuBarIconImage(size: size, slashed: !appState.isEnabled))
-                .renderingMode(.template)
+            Image(nsImage: makeMenuBarIconImage(size: size, isVietnamese: appState.isEnabled))
+                .renderingMode(.original)
         }
         .menuBarExtraStyle(.menu)
         .onChange(of: appState.isEnabled) { _, _ in
@@ -71,33 +71,52 @@ final class BeepManager {
 
 // MARK: - Menu Bar Icon Drawing
 @MainActor
-private func makeMenuBarIconImage(size: CGFloat, slashed: Bool) -> NSImage {
+private func makeMenuBarIconImage(size: CGFloat, isVietnamese: Bool) -> NSImage {
     let targetSize = NSSize(width: size, height: size)
     let img = NSImage(size: targetSize)
     img.lockFocus()
     defer { img.unlockFocus() }
 
-    let rect = NSRect(origin: .zero, size: targetSize)
-    let baseIcon: NSImage? = {
-        if let img = NSImage(named: "menubar_icon") {
-            return img
-        }
-        return NSApplication.shared.applicationIconImage
-    }()
-
-    if let baseIcon {
-        let fraction: CGFloat = slashed ? 0.35 : 1.0
-        baseIcon.draw(
-            in: rect,
-            from: .zero,
-            operation: .sourceOver,
-            fraction: fraction,
-            respectFlipped: true,
-            hints: [.interpolation: NSImageInterpolation.high]
-        )
-    }
-
-    img.isTemplate = true
+    // Determine text based on language mode
+    let text = isVietnamese ? "Vi" : "En"
+    
+    // Set up font - use appropriate size for menu bar (slightly smaller for two-character text)
+    let fontSize = size * 0.8
+    let font = NSFont.systemFont(ofSize: fontSize, weight: .semibold)
+    
+    // Use white color for icon text
+    let textColor = NSColor.white
+    
+    // Create attributed string
+    let paragraphStyle = NSMutableParagraphStyle()
+    paragraphStyle.alignment = .center
+    
+    let attributes: [NSAttributedString.Key: Any] = [
+        .font: font,
+        .foregroundColor: textColor,
+        .paragraphStyle: paragraphStyle
+    ]
+    
+    let attributedString = NSAttributedString(string: text, attributes: attributes)
+    
+    // Calculate accurate text bounding rect
+    let boundingRect = attributedString.boundingRect(
+        with: NSSize(width: size, height: size),
+        options: [.usesLineFragmentOrigin, .usesFontLeading]
+    )
+    
+    // Center the text both horizontally and vertically
+    let textRect = NSRect(
+        x: (size - boundingRect.width) / 2,
+        y: (size - boundingRect.height) / 2 - boundingRect.origin.y,
+        width: boundingRect.width,
+        height: boundingRect.height
+    )
+    
+    // Draw text centered
+    attributedString.draw(in: textRect)
+    
+    img.isTemplate = false  // Don't use template mode for text icons
     img.size = targetSize
     return img
 }

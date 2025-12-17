@@ -15,17 +15,27 @@ class StatusBarController: ObservableObject {
     @Published var currentInputMethod: String = "VN"
     @Published var currentCodeTable: String = "Unicode"
     @Published var isEnabled: Bool = true
+    @Published var isVietnameseMode: Bool = true  // Track Vietnamese/English state
     private var menuBarIconSize: Double = 18.0
     
     init() {
+        // Load initial language state from UserDefaults
+        let inputMethod = UserDefaults.standard.integer(forKey: "InputMethod")
+        isVietnameseMode = (inputMethod == 1)
+        
         setupStatusItem()
         setupNotificationObservers()
     }
     
     private func setupStatusItem() {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        // Use square length for icon-based status items (like system icons)
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         
         if let button = statusItem?.button {
+            // Configure button for icon display
+            button.imagePosition = .imageOnly
+            button.appearsDisabled = false
+            
             updateStatusButton()
             button.action = #selector(statusBarButtonClicked)
             button.target = self
@@ -177,37 +187,125 @@ class StatusBarController: ObservableObject {
         guard let button = statusItem?.button else { return }
 
         let size = CGFloat(menuBarIconSize)
-        if let image = makeMenuBarIcon(size: size, slashed: !isEnabled) {
-            image.isTemplate = true
+        
+        // Create icon image based on language state
+        if let image = createMenuBarIcon(size: size, isVietnamese: isVietnameseMode, isEnabled: isEnabled) {
+            // Configure for menu bar display
+            image.isTemplate = false  // Don't use template mode for text icons
             image.size = NSSize(width: size, height: size)
+            
             button.image = image
-            button.title = ""
+            button.title = ""  // Clear title when using image
             button.imagePosition = .imageOnly
+            
+            // Configure button appearance for macOS 15
+            if #available(macOS 11.0, *) {
+                button.bezelStyle = .texturedRounded
+            }
         }
 
         // Update tooltip
-        button.toolTip = "PHTV - \(currentInputMethod) (\(currentCodeTable))\n\(isEnabled ? "Đang bật" : "Đang tắt")"
+        let languageStatus = isVietnameseMode ? "Tiếng Việt" : "Tiếng Anh"
+        button.toolTip = "PHTV - \(currentInputMethod) (\(currentCodeTable))\n\(languageStatus) - \(isEnabled ? "Đang bật" : "Đang tắt")"
     }
-
-    private func makeMenuBarIcon(size: CGFloat, slashed: Bool) -> NSImage? {
-        let baseIcon: NSImage? = {
-            if let img = NSImage(named: "menubar_icon") {
-                return img
-            }
-            return NSApplication.shared.applicationIconImage
-        }()
-        guard let baseIcon else { return nil }
-        let targetSize = NSSize(width: size, height: size)
-        let img = NSImage(size: targetSize)
-        img.lockFocus()
-        defer { img.unlockFocus() }
-
-        // Draw app icon scaled to fit
-        let rect = NSRect(origin: .zero, size: targetSize)
-        let fraction: CGFloat = slashed ? 0.35 : 1.0
-        baseIcon.draw(in: rect, from: .zero, operation: .sourceOver, fraction: fraction, respectFlipped: true, hints: [.interpolation: NSImageInterpolation.high])
-
-        return img
+    
+    private func createMenuBarIcon(size: CGFloat, isVietnamese: Bool, isEnabled: Bool) -> NSImage? {
+        // Determine text based on language mode
+        let text = isVietnamese ? "Vi" : "En"
+        
+        // Use modern NSImage rendering for macOS 15 compatibility
+        if #available(macOS 10.15, *) {
+            return createIconWithRenderer(size: size, text: text, isEnabled: isEnabled)
+        } else {
+            return createIconWithLockFocus(size: size, text: text, isEnabled: isEnabled)
+        }
+    }
+    
+    @available(macOS 10.15, *)
+    private func createIconWithRenderer(size: CGFloat, text: String, isEnabled: Bool) -> NSImage {
+        let image = NSImage(size: NSSize(width: size, height: size))
+        
+        image.lockFocus()
+        defer { image.unlockFocus() }
+        
+        // Set up font
+        let fontSize = size * 0.65  // Slightly smaller for "Vi"/"En"
+        let font = NSFont.systemFont(ofSize: fontSize, weight: .semibold)
+        
+        // Use appropriate color that works in menu bar
+        let textColor: NSColor
+        if isEnabled {
+            // Use a color that adapts to light/dark mode
+            textColor = NSColor.labelColor
+        } else {
+            textColor = NSColor.secondaryLabelColor
+        }
+        
+        // Create attributed string
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+        
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: textColor,
+            .paragraphStyle: paragraphStyle
+        ]
+        
+        let attributedString = NSAttributedString(string: text, attributes: attributes)
+        
+        // Calculate text size and position to center it
+        let textSize = attributedString.size()
+        let textRect = NSRect(
+            x: (size - textSize.width) / 2,
+            y: (size - textSize.height) / 2 - fontSize * 0.15,  // Slight vertical adjustment
+            width: textSize.width,
+            height: textSize.height
+        )
+        
+        // Draw text
+        attributedString.draw(in: textRect)
+        
+        return image
+    }
+    
+    private func createIconWithLockFocus(size: CGFloat, text: String, isEnabled: Bool) -> NSImage {
+        let image = NSImage(size: NSSize(width: size, height: size))
+        
+        image.lockFocus()
+        defer { image.unlockFocus() }
+        
+        // Set up font
+        let fontSize = size * 0.65
+        let font = NSFont.systemFont(ofSize: fontSize, weight: .semibold)
+        
+        // Use appropriate color
+        let textColor: NSColor = isEnabled ? NSColor.black : NSColor.gray
+        
+        // Create attributed string
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+        
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: textColor,
+            .paragraphStyle: paragraphStyle
+        ]
+        
+        let attributedString = NSAttributedString(string: text, attributes: attributes)
+        
+        // Calculate text size and position to center it
+        let textSize = attributedString.size()
+        let textRect = NSRect(
+            x: (size - textSize.width) / 2,
+            y: (size - textSize.height) / 2 - fontSize * 0.15,
+            width: textSize.width,
+            height: textSize.height
+        )
+        
+        // Draw text
+        attributedString.draw(in: textRect)
+        
+        return image
     }
     
     private func setupNotificationObservers() {
@@ -220,6 +318,22 @@ class StatusBarController: ObservableObject {
             if let size = notification.object as? NSNumber {
                 Task { @MainActor in
                     self.menuBarIconSize = size.doubleValue
+                    self.updateStatusButton()
+                }
+            }
+        }
+        
+        // Listen for language changes from backend
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("LanguageChangedFromBackend"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self = self else { return }
+            if let language = notification.object as? NSNumber {
+                Task { @MainActor in
+                    // vLanguage: 0 = English, 1 = Vietnamese
+                    self.isVietnameseMode = (language.intValue == 1)
                     self.updateStatusButton()
                 }
             }
