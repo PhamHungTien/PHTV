@@ -12,30 +12,34 @@ struct StatusBarMenuView: View {
     @EnvironmentObject var appState: AppState
     @Environment(\.openWindow) private var openWindow
     
+    // Computed property to ensure view updates when isEnabled changes
+    private var isVietnameseEnabled: Bool {
+        appState.isEnabled
+    }
+    
     var body: some View {
-        // Language toggle
+        // Language toggle - Vietnamese
         Button {
             appState.isEnabled = true
         } label: {
             HStack {
-                Image(systemName: "v.circle.fill")
-                Text("Tiếng Việt")
-                if appState.isEnabled {
-                    Spacer()
+                Label("Tiếng Việt", systemImage: "v.circle.fill")
+                Spacer()
+                if isVietnameseEnabled {
                     Image(systemName: "checkmark")
                 }
             }
         }
         .keyboardShortcut("v", modifiers: [.control, .shift])
         
+        // Language toggle - English
         Button {
             appState.isEnabled = false
         } label: {
             HStack {
-                Image(systemName: "e.circle.fill")
-                Text("Tiếng Anh")
-                if !appState.isEnabled {
-                    Spacer()
+                Label("Tiếng Anh", systemImage: "e.circle.fill")
+                Spacer()
+                if !isVietnameseEnabled {
                     Image(systemName: "checkmark")
                 }
             }
