@@ -131,25 +131,3 @@ xcodebuild -scheme PHTV -configuration Release -arch arm64 -arch x86_64
 [🏠 Về trang chủ](README.md) • [📧 Email](mailto:hungtien10a7@gmail.com) • [💬 Discussions](../../discussions)
 
 </div>
-sudo defaults write com.apple.universalaccess enabled -bool true
-```
-
-### Ứng dụng không mở
-
-Nếu macOS cảnh báo app chưa được xác thực:
-
-1. Mở Finder → Applications
-2. Right-click PHTV.app → Open
-3. Nhấn "Open" khi được hỏi
-
----
-
-## 📝 License
-
-GNU General Public License v3.0 - xem [LICENSE](../LICENSE)
-
-## 🔗 Liên kết
-
-- GitHub: https://github.com/PhamHungTien/PHTV
-- Issues: https://github.com/PhamHungTien/PHTV/issues
-- Discussions: https://github.com/PhamHungTien/PHTV/discussions
