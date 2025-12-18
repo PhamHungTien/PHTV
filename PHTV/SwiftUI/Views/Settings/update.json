@@ -1,5 +1,6 @@
 {
-  "latestVersion": "1.1.0",
+  "_comment": "Chỉ cập nhật latestVersion khi có phiên bản mới thực sự được release trên GitHub. File này là fallback cho update check.",
+  "latestVersion": "1.1.4",
   "downloadURL": "https://github.com/PhamHungTien/PHTV/releases/latest",
-  "message": "Bản 1.1.0 có sẵn. Bạn muốn tải xuống?"
+  "message": "Có phiên bản mới. Bạn muốn tải xuống?"
 }

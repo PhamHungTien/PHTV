@@ -11,6 +11,7 @@ import SwiftUI
 // MARK: - Main Settings View
 struct SettingsView: View {
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var themeManager: ThemeManager
     @State private var selectedTab: SettingsTab = .typing
     @State private var searchText: String = ""
 
@@ -39,9 +40,27 @@ struct SettingsView: View {
                 if searchText.isEmpty {
                     // Normal tab list
                     ForEach(SettingsTab.allCases) { tab in
-                        NavigationLink(value: tab) {
-                            Label(tab.title, systemImage: tab.iconName)
+                        HStack {
+                            Image(systemName: tab.iconName)
+                                .foregroundStyle(selectedTab == tab ? .white : themeManager.themeColor)
+                            Text(tab.title)
+                                .foregroundStyle(selectedTab == tab ? .white : .primary)
+                            Spacer()
                         }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 6)
+                        .background {
+                            if selectedTab == tab {
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(themeManager.themeColor.gradient)
+                            }
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            selectedTab = tab
+                        }
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                     }
                 } else {
                     // Search results
@@ -66,6 +85,7 @@ struct SettingsView: View {
                 }
             }
             .listStyle(.sidebar)
+            .tint(themeManager.themeColor)
             .searchable(
                 text: $searchText,
                 placement: .sidebar,
@@ -80,7 +100,7 @@ struct SettingsView: View {
                         } label: {
                             HStack {
                                 Image(systemName: item.iconName)
-                                    .foregroundStyle(.blue)
+                                    .foregroundStyle(.tint)
                                     .frame(width: 20)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(item.title)
@@ -98,11 +118,14 @@ struct SettingsView: View {
         } detail: {
             detailView
                 .environmentObject(appState)
+                .environmentObject(themeManager)
                 .frame(minWidth: 500)
                 .toolbar {
                 }
         }
         .navigationSplitViewStyle(.automatic)
+        .tint(themeManager.themeColor)
+        .accentColor(themeManager.themeColor)
         .onAppear {
             // When settings window opens, show dock icon only if setting is enabled
             let appDelegate = NSApp.delegate as? AppDelegate
@@ -134,8 +157,14 @@ struct SettingsView: View {
         switch selectedTab {
         case .typing:
             TypingSettingsView()
+        case .advanced:
+            AdvancedSettingsView()
         case .macro:
             MacroSettingsView()
+        case .hotkeys:
+            HotkeySettingsView()
+        case .theme:
+            ThemeSettingsView()
         case .system:
             SystemSettingsView()
         case .about:
@@ -180,27 +209,35 @@ struct SettingsItem: Identifiable {
             title: "Đặt dấu oà, uý", iconName: "a.circle.fill", tab: .typing,
             keywords: ["modern orthography", "chính tả hiện đại", "dấu oà", "dấu uý", "quy tắc"]),
 
-        // Typing settings - Advanced Options
+        // Advanced settings - Advanced Options
         SettingsItem(
-            title: "Phụ âm Z, F, W, J", iconName: "character", tab: .typing,
+            title: "Phụ âm Z, F, W, J", iconName: "character", tab: .advanced,
             keywords: ["consonant", "phụ âm", "ngoại lai", "z f w j", "tùy chọn nâng cao"]),
         SettingsItem(
-            title: "Phụ âm đầu nhanh", iconName: "arrow.right.circle.fill", tab: .typing,
+            title: "Phụ âm đầu nhanh", iconName: "arrow.right.circle.fill", tab: .advanced,
             keywords: ["quick start consonant", "phụ âm đầu", "nhanh", "gõ tắt"]),
         SettingsItem(
-            title: "Phụ âm cuối nhanh", iconName: "arrow.left.circle.fill", tab: .typing,
+            title: "Phụ âm cuối nhanh", iconName: "arrow.left.circle.fill", tab: .advanced,
             keywords: ["quick end consonant", "phụ âm cuối", "nhanh", "gõ tắt"]),
         SettingsItem(
-            title: "Nhớ bảng mã", iconName: "memorychip.fill", tab: .typing,
+            title: "Nhớ bảng mã", iconName: "memorychip.fill", tab: .advanced,
             keywords: ["remember code", "bảng mã", "lưu", "nhớ", "khôi phục"]),
         SettingsItem(
-            title: "Gửi từng phím", iconName: "keyboard.badge.ellipsis", tab: .typing,
+            title: "Gửi từng phím", iconName: "keyboard.badge.ellipsis", tab: .advanced,
             keywords: ["send key step by step", "từng ký tự", "ổn định", "chậm"]),
-
-        // Typing settings - Hotkey
         SettingsItem(
-            title: "Phím tắt chuyển chế độ", iconName: "command.circle.fill", tab: .typing,
+            title: "Ứng dụng gửi từng phím", iconName: "app.badge.fill", tab: .advanced,
+            keywords: ["send key apps", "ứng dụng", "từng phím", "app list"]),
+
+        // Hotkey settings
+        SettingsItem(
+            title: "Phím tắt chuyển chế độ", iconName: "command.circle.fill", tab: .hotkeys,
             keywords: ["hotkey", "shortcut", "ctrl", "shift", "option", "command", "chuyển chế độ"]),
+
+        // Theme settings
+        SettingsItem(
+            title: "Màu chủ đạo", iconName: "paintpalette.fill", tab: .theme,
+            keywords: ["theme", "color", "màu sắc", "giao diện", "theme color", "accent", "xanh", "đỏ", "vàng", "tím", "cam", "hồng"]),
 
         // Macro settings
         SettingsItem(
@@ -264,7 +301,10 @@ struct SettingsItem: Identifiable {
 // MARK: - Settings Tabs
 enum SettingsTab: String, CaseIterable, Identifiable {
     case typing = "Bộ gõ"
+    case advanced = "Nâng cao"
     case macro = "Gõ tắt"
+    case hotkeys = "Phím tắt"
+    case theme = "Giao diện"
     case system = "Hệ thống"
     case about = "Thông tin"
 
@@ -274,7 +314,10 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     nonisolated var iconName: String {
         switch self {
         case .typing: return "keyboard"
+        case .advanced: return "gearshape.2"
         case .macro: return "text.badge.checkmark"
+        case .hotkeys: return "command"
+        case .theme: return "paintpalette.fill"
         case .system: return "gear"
         case .about: return "info.circle"
         }

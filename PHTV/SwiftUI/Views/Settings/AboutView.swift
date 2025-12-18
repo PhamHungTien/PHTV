@@ -9,6 +9,8 @@
 import SwiftUI
 
 struct AboutView: View {
+    @EnvironmentObject var themeManager: ThemeManager
+
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
@@ -71,7 +73,7 @@ struct AboutView: View {
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .background(Capsule().fill(Color.blue.opacity(0.15)))
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.tint)
                     }
                 }
                 .padding(.top, 20)
@@ -83,21 +85,21 @@ struct AboutView: View {
                 VStack(spacing: 16) {
                     AboutInfoCard(
                         icon: "person.circle.fill",
-                        iconColor: .blue,
+                        iconColor: themeManager.themeColor,
                         title: "Phát triển bởi",
                         value: "Phạm Hùng Tiến"
                     )
 
                     AboutInfoCard(
                         icon: "calendar.circle.fill",
-                        iconColor: .orange,
+                        iconColor: themeManager.themeColor,
                         title: "Phát hành",
                         value: "2026"
                     )
 
                     AboutInfoCard(
                         icon: "swift",
-                        iconColor: .orange,
+                        iconColor: themeManager.themeColor,
                         title: "Công nghệ",
                         value: "Swift & SwiftUI"
                     )
@@ -235,7 +237,7 @@ private struct AppIconView: View {
             // Fallback
             Image(systemName: "square.fill")
                 .font(.system(size: 50))
-                .foregroundStyle(.blue)
+                .foregroundStyle(.tint)
         }
     }
 }

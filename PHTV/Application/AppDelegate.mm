@@ -127,6 +127,10 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     NSString* _previousBundleIdentifier;       // Track the previous app's bundle ID
     BOOL _isInExcludedApp;                     // Flag to track if currently in an excluded app
 
+    // Send key step by step app state management
+    BOOL _savedSendKeyStepByStepBeforeApp;     // Saved sendKeyStepByStep state before entering app
+    BOOL _isInSendKeyStepByStepApp;            // Flag to track if currently in a send key step by step app
+
     // Re-entry guards to prevent notification ping-pong (performance optimization)
     BOOL _isUpdatingLanguage;
     BOOL _isUpdatingInputType;
@@ -173,8 +177,20 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
 -(void)askPermission {
     NSAlert *alert = [[NSAlert alloc] init];
-    [alert setMessageText: [NSString stringWithFormat:@"PHTV cần bạn cấp quyền để có thể hoạt động!"]];
-    [alert setInformativeText:@"Ứng dụng sẽ tự động khởi động lại sau khi bạn cấp quyền."];
+
+    // Check if this is after an app update
+    NSString *currentVersion = [[NSBundle mainBundle] infoDictionary][@"CFBundleShortVersionString"];
+    NSString *lastVersion = [[NSUserDefaults standardUserDefaults] stringForKey:@"LastRunVersion"];
+
+    if (lastVersion && ![lastVersion isEqualToString:currentVersion]) {
+        // App was updated
+        [alert setMessageText:@"PHTV đã được cập nhật!"];
+        [alert setInformativeText:[NSString stringWithFormat:@"Do macOS yêu cầu bảo mật, bạn cần cấp lại quyền trợ năng sau khi cập nhật ứng dụng lên phiên bản %@.\n\nỨng dụng sẽ tự động khởi động lại sau khi bạn cấp quyền.", currentVersion]];
+    } else {
+        // First run or no permission yet
+        [alert setMessageText:@"PHTV cần bạn cấp quyền để có thể hoạt động!"];
+        [alert setInformativeText:@"Ứng dụng sẽ tự động khởi động lại sau khi bạn cấp quyền."];
+    }
 
     [alert addButtonWithTitle:@"Không"];
     [alert addButtonWithTitle:@"Cấp quyền"];
@@ -186,6 +202,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
     if (res == 1001) {
         MJAccessibilityOpenPanel();
+        // Save current version after user agrees to grant permission
+        [[NSUserDefaults standardUserDefaults] setObject:currentVersion forKey:@"LastRunVersion"];
+        [[NSUserDefaults standardUserDefaults] synchronize];
     } else {
         [NSApp terminate:0];
     }
@@ -284,10 +303,15 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
 - (void)performAccessibilityGrantedRestart {
     NSLog(@"[Accessibility] Permission granted - Initializing event tap...");
-    
+
+    // Save current version to track successful permission grant
+    NSString *currentVersion = [[NSBundle mainBundle] infoDictionary][@"CFBundleShortVersionString"];
+    [[NSUserDefaults standardUserDefaults] setObject:currentVersion forKey:@"LastRunVersion"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+
     // Stop monitoring (permission granted, no need to monitor for grant anymore)
     [self stopAccessibilityMonitoring];
-    
+
     // Initialize event tap immediately - NO RESTART NEEDED!
     dispatch_async(dispatch_get_main_queue(), ^{
         if (![PHTVManager initEventTap]) {
@@ -416,6 +440,10 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     _savedLanguageBeforeExclusion = 0;  // Default to English
     _previousBundleIdentifier = nil;
     _isInExcludedApp = NO;
+
+    // Initialize send key step by step app state tracking
+    _savedSendKeyStepByStepBeforeApp = NO;  // Default to disabled
+    _isInSendKeyStepByStepApp = NO;
 
     // Initialize re-entry guards
     _isUpdatingLanguage = NO;
@@ -605,6 +633,12 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                                                  name:@"ExcludedAppsChanged"
                                                object:nil];
 
+    // Send key step by step apps changes: apply immediately
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleSendKeyStepByStepAppsChanged:)
+                                                 name:@"SendKeyStepByStepAppsChanged"
+                                               object:nil];
+
     // Menu bar font size changes
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(handleMenuBarIconSizeChanged:)
@@ -617,6 +651,14 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     NSRunningApplication *frontmost = [[NSWorkspace sharedWorkspace] frontmostApplication];
     if (frontmost.bundleIdentifier.length > 0) {
         [self checkExcludedApp:frontmost.bundleIdentifier];
+    }
+}
+
+- (void)handleSendKeyStepByStepAppsChanged:(NSNotification *)notification {
+    // Re-evaluate current app against the updated send key step by step list.
+    NSRunningApplication *frontmost = [[NSWorkspace sharedWorkspace] frontmostApplication];
+    if (frontmost.bundleIdentifier.length > 0) {
+        [self checkSendKeyStepByStepApp:frontmost.bundleIdentifier];
     }
 }
 
@@ -2002,11 +2044,12 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     if (vUseSmartSwitchKey && [PHTVManager isInited]) {
         OnActiveAppChanged();
     }
-    
+
     // Check if the newly active app is in the excluded list
     NSRunningApplication *activeApp = [[note userInfo] objectForKey:NSWorkspaceApplicationKey];
     if (activeApp && activeApp.bundleIdentifier) {
         [self checkExcludedApp:activeApp.bundleIdentifier];
+        [self checkSendKeyStepByStepApp:activeApp.bundleIdentifier];
     }
 }
 
@@ -2053,8 +2096,8 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
             NSLog(@"[ExcludedApp] Entered excluded app '%@' - switched to English (saved state: Vietnamese)", bundleIdentifier);
 
-            // Notify SwiftUI
-            [[NSNotificationCenter defaultCenter] postNotificationName:@"LanguageChangedFromBackend" object:@(vLanguage)];
+            // Notify SwiftUI (use special notification to avoid beep sound)
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"LanguageChangedFromExcludedApp" object:@(vLanguage)];
         } else {
             NSLog(@"[ExcludedApp] Entered excluded app '%@' - already in English (saved state: English)", bundleIdentifier);
         }
@@ -2072,8 +2115,8 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
             NSLog(@"[ExcludedApp] Left excluded app, switched to '%@' - restored Vietnamese mode", bundleIdentifier);
 
-            // Notify SwiftUI
-            [[NSNotificationCenter defaultCenter] postNotificationName:@"LanguageChangedFromBackend" object:@(vLanguage)];
+            // Notify SwiftUI (use special notification to avoid beep sound)
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"LanguageChangedFromExcludedApp" object:@(vLanguage)];
         } else {
             NSLog(@"[ExcludedApp] Left excluded app, switched to '%@' - staying in English", bundleIdentifier);
         }
@@ -2086,6 +2129,73 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
     // Update previous bundle identifier
     _previousBundleIdentifier = bundleIdentifier;
+}
+
+-(void)checkSendKeyStepByStepApp:(NSString *)bundleIdentifier {
+    // Skip if bundle ID is nil
+    if (!bundleIdentifier) {
+        return;
+    }
+
+    // Load send key step by step apps from UserDefaults
+    NSData *data = [[NSUserDefaults standardUserDefaults] dataForKey:@"SendKeyStepByStepApps"];
+    NSArray *sendKeyStepByStepApps = nil;
+    if (data) {
+        NSError *error;
+        sendKeyStepByStepApps = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
+        if (error) {
+            sendKeyStepByStepApps = nil;
+        }
+    }
+
+    // Check if current app is in the list
+    BOOL isInList = NO;
+    if (sendKeyStepByStepApps) {
+        for (NSDictionary *app in sendKeyStepByStepApps) {
+            NSString *appBundleId = app[@"bundleIdentifier"];
+            if ([bundleIdentifier isEqualToString:appBundleId]) {
+                isInList = YES;
+                break;
+            }
+        }
+    }
+
+    // Handle state transition
+    if (isInList && !_isInSendKeyStepByStepApp) {
+        // Entering a send key step by step app - save current state and enable
+        _savedSendKeyStepByStepBeforeApp = vSendKeyStepByStep;
+        _isInSendKeyStepByStepApp = YES;
+
+        if (!vSendKeyStepByStep) {  // Currently disabled
+            vSendKeyStepByStep = YES;  // Enable
+            [[NSUserDefaults standardUserDefaults] setBool:vSendKeyStepByStep forKey:@"SendKeyStepByStep"];
+            [[NSUserDefaults standardUserDefaults] synchronize];
+
+            NSLog(@"[SendKeyStepByStepApp] Entered app '%@' - enabled send key step by step", bundleIdentifier);
+        } else {
+            NSLog(@"[SendKeyStepByStepApp] Entered app '%@' - already enabled", bundleIdentifier);
+        }
+    }
+    else if (!isInList && _isInSendKeyStepByStepApp) {
+        // Leaving a send key step by step app - restore previous state
+        _isInSendKeyStepByStepApp = NO;
+
+        if (!_savedSendKeyStepByStepBeforeApp && vSendKeyStepByStep) {
+            // Restore disabled state
+            vSendKeyStepByStep = NO;
+            [[NSUserDefaults standardUserDefaults] setBool:vSendKeyStepByStep forKey:@"SendKeyStepByStep"];
+            [[NSUserDefaults standardUserDefaults] synchronize];
+
+            NSLog(@"[SendKeyStepByStepApp] Left app '%@' - disabled send key step by step", bundleIdentifier);
+        } else {
+            NSLog(@"[SendKeyStepByStepApp] Left app '%@' - keeping send key step by step state", bundleIdentifier);
+        }
+    }
+    else if (isInList && _isInSendKeyStepByStepApp) {
+        // Moving between apps in the list - stay enabled
+        NSLog(@"[SendKeyStepByStepApp] Moved to another app in list '%@' - keeping enabled", bundleIdentifier);
+    }
+    // else: moving between apps not in the list, no action needed
 }
 
 #pragma mark - SwiftUI Notification Handlers

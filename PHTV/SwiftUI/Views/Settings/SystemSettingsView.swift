@@ -10,6 +10,7 @@ import SwiftUI
 
 struct SystemSettingsView: View {
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var themeManager: ThemeManager
     @State private var showingResetAlert = false
     @State private var showingUpdateCheckStatus = false
     @State private var updateCheckMessage = ""
@@ -24,7 +25,7 @@ struct SystemSettingsView: View {
                     VStack(spacing: 0) {
                         SettingsToggleRow(
                             icon: "play.fill",
-                            iconColor: .green,
+                            iconColor: themeManager.themeColor,
                             title: "Khởi động cùng hệ thống",
                             subtitle: "Tự động mở PHTV khi đăng nhập macOS",
                             isOn: $appState.runOnStartup
@@ -34,10 +35,23 @@ struct SystemSettingsView: View {
 
                         SettingsToggleRow(
                             icon: "app.fill",
-                            iconColor: .blue,
+                            iconColor: themeManager.themeColor,
                             title: "Hiển thị icon trên Dock",
                             subtitle: "Hiện icon PHTV khi mở menu bảng điều khiển",
                             isOn: $appState.showIconOnDock
+                        )
+                    }
+                }
+
+                // Appearance Settings
+                SettingsCard(title: "Giao diện", icon: "paintbrush.fill") {
+                    VStack(spacing: 0) {
+                        SettingsToggleRow(
+                            icon: "flag.fill",
+                            iconColor: themeManager.themeColor,
+                            title: "Hiển thị icon tiếng Việt trên thanh menu",
+                            subtitle: "Dùng icon chữ Việt khi đang ở chế độ tiếng Việt",
+                            isOn: $appState.useVietnameseMenubarIcon
                         )
                     }
                 }
@@ -52,7 +66,7 @@ struct SystemSettingsView: View {
                     VStack(spacing: 0) {
                         SettingsToggleRow(
                             icon: "globe",
-                            iconColor: .blue,
+                            iconColor: themeManager.themeColor,
                             title: "Sửa lỗi Chromium",
                             subtitle: "Tương thích Chrome, Edge, Brave...",
                             isOn: $appState.fixChromiumBrowser
@@ -62,7 +76,7 @@ struct SystemSettingsView: View {
 
                         SettingsToggleRow(
                             icon: "keyboard.fill",
-                            iconColor: .purple,
+                            iconColor: themeManager.themeColor,
                             title: "Tương thích bố cục bàn phím",
                             subtitle: "Hỗ trợ các bố cục đặc biệt",
                             isOn: $appState.performLayoutCompat
@@ -75,7 +89,7 @@ struct SystemSettingsView: View {
                     VStack(spacing: 0) {
                         SettingsInfoRow(
                             icon: "number.circle.fill",
-                            iconColor: .blue,
+                            iconColor: themeManager.themeColor,
                             title: "Phiên bản",
                             value: Bundle.main.infoDictionary?["CFBundleShortVersionString"]
                                 as? String ?? "1.0"
@@ -85,7 +99,7 @@ struct SystemSettingsView: View {
 
                         SettingsInfoRow(
                             icon: "hammer.fill",
-                            iconColor: .orange,
+                            iconColor: themeManager.themeColor,
                             title: "Build",
                             value: Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
                         )
@@ -95,7 +109,7 @@ struct SystemSettingsView: View {
                         SettingsButtonRow(
                             icon: isCheckingForUpdates
                                 ? "hourglass.circle.fill" : "arrow.clockwise.circle.fill",
-                            iconColor: .green,
+                            iconColor: themeManager.themeColor,
                             title: isCheckingForUpdates ? "Đang kiểm tra..." : "Kiểm tra cập nhật",
                             subtitle: "Tìm phiên bản mới",
                             isLoading: isCheckingForUpdates,
@@ -193,18 +207,20 @@ struct SystemSettingsView: View {
                     let info = try JSONDecoder().decode(UpdateInfo.self, from: data)
                     let current = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
 
-                    if current.compare(info.latestVersion, options: .numeric) == .orderedAscending {
-                        // Có bản mới
-                        if let msg = info.message, !msg.isEmpty {
-                            return (msg, false)
-                        } else {
-                            return ("Bản \(info.latestVersion) có sẵn. Bạn muốn tải xuống?", false)
-                        }
+                    let comparisonResult = current.compare(info.latestVersion, options: .numeric)
+
+                    if comparisonResult == .orderedAscending {
+                        // Có bản mới hơn
+                        return ("Có phiên bản \(info.latestVersion) mới hơn phiên bản hiện tại (\(current)). Bạn muốn tải xuống?", false)
+                    } else if comparisonResult == .orderedSame {
+                        // Đang dùng phiên bản mới nhất
+                        return ("Bạn đang sử dụng phiên bản mới nhất (\(current))", false)
                     } else {
-                        return ("Phiên bản hiện tại là mới nhất", false)
+                        // Version hiện tại cao hơn (development build)
+                        return ("Phiên bản hiện tại (\(current)) mới hơn bản release (\(info.latestVersion))", false)
                     }
                 } catch {
-                    return ("Không thể đọc thông tin cập nhật.", true)
+                    return ("Không thể đọc thông tin cập nhật: \(error.localizedDescription)", true)
                 }
             }()
 
