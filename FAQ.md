@@ -18,7 +18,7 @@
 
 ### Q2: Làm sao để chuyển đổi giữa tiếng Anh và tiếng Việt?
 
-**A:** Nhấn phím tắt được cấu hình (mặc định `Ctrl + Shift`. Hoặc click vào Status Bar icon để chọn ngôn ngữ.
+**A:** Nhấn phím tắt được cấu hình (mặc định `Ctrl + Shift`). Hoặc click vào Status Bar icon để chọn ngôn ngữ.
 
 ### Q3: Phương pháp gõ nào phù hợp nhất?
 

@@ -45,6 +45,10 @@ Bao gồm:
 | 1.x       | ✅ Đầy đủ         |
 | 0.x       | ⚠️ Quan trọng chỉ |
 
+## Mức độ nghiêm trọng
+
+### Lỗ hổng nghiêm trọng
+
 - Remote code execution
 - Tấn công elevation of privilege
 

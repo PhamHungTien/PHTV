@@ -83,8 +83,6 @@ Format: `<type>: <mô tả>`
 - `test:` - Thêm test
 - `chore:` - Công việc khác
 
-```
-
 ## 🔨 Hướng dẫn phát triển
 
 ### Cấu trúc dự án

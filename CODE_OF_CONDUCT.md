@@ -61,7 +61,7 @@ Quy tắc ứng xử này được thích nghi từ [Contributor Covenant][homep
 
 ✅ **Làm:**
 
-- Tôn trọ những người khác
+- Tôn trọng những người khác
 - Sử dụng ngôn ngữ lịch sự
 - Chấp nhận phê bình xây dựng
 - Tập trung vào vấn đề, không phải cá nhân
