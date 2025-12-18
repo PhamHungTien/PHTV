@@ -15,10 +15,24 @@ struct HotkeyConfigView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var themeManager: ThemeManager
     @State private var isRecording = false
-    
+
     // 0xFE = modifier only mode (no key needed, just press and release modifiers)
     private let modifierOnlyKeyCode: UInt16 = 0xFE
-    
+
+    // Check if hotkey conflicts with restore key
+    private var hasRestoreHotkeyConflict: Bool {
+        guard appState.restoreOnEscape else { return false }
+
+        switch appState.restoreKey {
+        case .esc:
+            return false // ESC never conflicts
+        case .option:
+            return appState.switchKeyOption
+        case .control:
+            return appState.switchKeyControl
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             // Modifier Keys Section
@@ -39,8 +53,33 @@ struct HotkeyConfigView: View {
                 Text("Mặc định: Ctrl + Shift (bấm rồi thả)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+
+                // Conflict warning
+                if hasRestoreHotkeyConflict {
+                    HStack(spacing: 10) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                            .font(.system(size: 14))
+
+                        Text("Phím bổ trợ trùng với phím khôi phục")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+
+                        Spacer()
+                    }
+                    .padding(10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.orange.opacity(0.1))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+                            )
+                    )
+                    .transition(.scale.combined(with: .opacity))
+                }
             }
-            
+
             Divider()
             
             // Key Selection Section

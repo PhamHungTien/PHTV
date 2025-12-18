@@ -36,6 +36,12 @@ struct PHTVApp: App {
         .onChange(of: appState.isEnabled) { _, _ in
             // Force menu bar refresh when language changes
         }
+        .onChange(of: appState.menuBarIconSize) { _, _ in
+            // Force menu bar refresh when icon size changes
+        }
+        .onChange(of: appState.useVietnameseMenubarIcon) { _, _ in
+            // Force menu bar refresh when Vietnamese icon setting changes
+        }
 
         // Settings window with hidden title bar
         Window("Cài đặt", id: "settings") {
@@ -196,6 +202,10 @@ final class AppState: ObservableObject {
     @Published var quickStartConsonant: Bool = false
     @Published var quickEndConsonant: Bool = false
     @Published var rememberCode: Bool = true
+
+    // Restore to raw keys (customizable key)
+    @Published var restoreOnEscape: Bool = true
+    @Published var restoreKey: RestoreKey = .esc
 
     // System settings
     @Published var runOnStartup: Bool = false
@@ -474,6 +484,11 @@ final class AppState: ObservableObject {
         quickEndConsonant = defaults.bool(forKey: "vQuickEndConsonant")
         rememberCode = defaults.bool(forKey: "vRememberCode")
 
+        // Restore to raw keys (customizable key)
+        restoreOnEscape = defaults.object(forKey: "vRestoreOnEscape") as? Bool ?? true
+        let restoreKeyCode = defaults.integer(forKey: "vCustomEscapeKey")
+        restoreKey = RestoreKey.from(keyCode: restoreKeyCode == 0 ? 53 : restoreKeyCode)
+
         // Load audio and display settings
         beepVolume = defaults.double(forKey: "vBeepVolume")
         if beepVolume == 0 { beepVolume = 0.5 } // Default if not set
@@ -587,6 +602,10 @@ final class AppState: ObservableObject {
         defaults.set(quickStartConsonant, forKey: "vQuickStartConsonant")
         defaults.set(quickEndConsonant, forKey: "vQuickEndConsonant")
         defaults.set(rememberCode, forKey: "vRememberCode")
+
+        // Restore to raw keys (customizable key)
+        defaults.set(restoreOnEscape, forKey: "vRestoreOnEscape")
+        defaults.set(restoreKey.rawValue, forKey: "vCustomEscapeKey")
 
         // Save audio and display settings
         defaults.set(beepVolume, forKey: "vBeepVolume")
@@ -767,8 +786,11 @@ final class AppState: ObservableObject {
                     $sendKeyStepByStep
                 )
         )
+        .map { _ in () }
+        .merge(with: $restoreOnEscape.map { _ in () })
+        .merge(with: $restoreKey.map { _ in () })
         .debounce(for: .milliseconds(100), scheduler: RunLoop.main)
-        .sink { [weak self] _ in
+        .sink { [weak self] in
             guard let self = self, !self.isLoadingSettings else { return }
             self.saveSettings()
         }.store(in: &cancellables)
@@ -858,9 +880,11 @@ final class AppState: ObservableObject {
             .sink { [weak self] value in
                 guard let self = self, !self.isLoadingSettings else { return }
                 let defaults = UserDefaults.standard
-                defaults.set(value, forKey: "vMenuBarIconSize")
+                // Round to nearest integer for cleaner storage
+                let roundedValue = round(value)
+                defaults.set(roundedValue, forKey: "vMenuBarIconSize")
                 defaults.synchronize()
-                print("[Settings] Saved menuBarIconSize: \(value)")
+                print("[Settings] Saved menuBarIconSize: \(roundedValue)")
             }.store(in: &cancellables)
 
         $useVietnameseMenubarIcon
@@ -991,6 +1015,50 @@ enum CodeTable: String, CaseIterable, Identifiable, Sendable {
         case 3: return .unicodeComposite
         case 4: return .cp1258
         default: return .unicode
+        }
+    }
+}
+
+// MARK: - Restore Key
+enum RestoreKey: Int, CaseIterable, Identifiable, Sendable {
+    case esc = 53
+    case option = 58         // Left Option (represents both L/R)
+    case control = 59        // Left Control (represents both L/R)
+
+    nonisolated var id: Int { rawValue }
+
+    nonisolated var displayName: String {
+        switch self {
+        case .esc: return "ESC"
+        case .option: return "Option"
+        case .control: return "Control"
+        }
+    }
+
+    nonisolated var symbol: String {
+        switch self {
+        case .esc: return "esc"
+        case .option: return "⌥"
+        case .control: return "⌃"
+        }
+    }
+
+    // Get all possible key codes for this restore key (for modifiers, includes both left and right)
+    nonisolated var keyCodes: [Int] {
+        switch self {
+        case .esc: return [53]
+        case .option: return [58, 61]       // Left and Right Option
+        case .control: return [59, 62]      // Left and Right Control
+        }
+    }
+
+    static func from(keyCode: Int) -> RestoreKey {
+        // Map both left and right modifier keys to the same enum case
+        switch keyCode {
+        case 53: return .esc
+        case 58, 61: return .option      // Left or Right Option
+        case 59, 62: return .control     // Left or Right Control
+        default: return .esc
         }
     }
 }

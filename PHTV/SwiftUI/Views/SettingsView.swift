@@ -125,6 +125,7 @@ struct SettingsView: View {
                 }
         }
         .navigationSplitViewStyle(.automatic)
+        .navigationSplitViewColumnWidth(ideal: 220)
         .tint(themeManager.themeColor)
         .accentColor(themeManager.themeColor)
         .onAppear {

@@ -30,6 +30,8 @@ PHTV là bộ gõ tiếng Việt **offline, nhanh, và riêng tư** cho macOS 14
 - 🔍 **Spotlight Fix** - Gõ tiếng Việt trong Spotlight không bị lỗi
 - 📝 **Macro** - Gõ tắt thông minh, import từ file
 - 🎛️ **Hot Reload** - Thay đổi cài đặt không cần khởi động lại
+- ⚡ **Phím khôi phục** - Tùy chỉnh phím khôi phục về ASCII (ESC/Option/Control)
+- ⚠️ **Cảnh báo xung đột** - Tự động phát hiện xung đột giữa phím khôi phục và phím tắt
 
 ## 📸 Screenshots
 
@@ -114,10 +116,11 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 
 ### Settings
 
-- **Typing**: Phương pháp gõ, bảng mã, chính tả hiện đại
+- **Typing**: Phương pháp gõ, bảng mã, chính tả hiện đại, phím khôi phục tùy chỉnh
 - **Macros**: Quản lý gõ tắt, import/export từ file
+- **Hotkey**: Phím tắt chuyển chế độ, cảnh báo xung đột tự động
 - **Excluded Apps**: Danh sách app tự động chuyển sang Anh
-- **System**: Khởi động cùng macOS, hotkey tùy chỉnh
+- **System**: Khởi động cùng macOS, kích cỡ icon thanh menu, giao diện
 
 ## 🔧 Yêu cầu hệ thống
 

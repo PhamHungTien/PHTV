@@ -58,13 +58,15 @@ struct SettingsSliderRow: View {
                     .frame(minWidth: 40, alignment: .trailing)
             }
 
+            // Continuous slider without tick marks
             Slider(
                 value: $value,
                 in: minValue...maxValue
             )
             .tint(iconColor)
+            .controlSize(.regular)
         }
-        .padding(.vertical, 6)
+        .padding(.top, 6)
     }
 }
 

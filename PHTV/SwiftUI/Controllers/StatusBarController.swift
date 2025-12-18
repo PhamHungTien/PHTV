@@ -198,9 +198,8 @@ class StatusBarController: ObservableObject {
                     return englishIcon
                 }
             }
-            // Vietnamese mode - use menubar_vietnamese.png or menubar_icon.png based on preference
-            let useVietnameseIcon = AppState.shared.useVietnameseMenubarIcon
-            if useVietnameseIcon, let vietnameseIcon = NSImage(named: "menubar_vietnamese") {
+            // Vietnamese mode - use menubar_vietnamese.png (already has 'V' character)
+            if let vietnameseIcon = NSImage(named: "menubar_vietnamese") {
                 return vietnameseIcon
             }
             if let img = NSImage(named: "menubar_icon") {

@@ -195,6 +195,20 @@ extern volatile int vOtherLanguage;
 extern volatile int vTempOffPHTV;
 
 /**
+ * 0: No; 1: Yes
+ * Restore to original keys when pressing a customizable key
+ * (user → úẻ → restore key → user)
+ */
+extern volatile int vRestoreOnEscape;
+
+/**
+ * Custom key code for restore function (default: KEY_ESC = 53)
+ * Can be any key: ESC, Option, Control
+ * Set to 0 to use default ESC key
+ */
+extern volatile int vCustomEscapeKey;
+
+/**
  * Call this function first to receive data pointer
  */
 void* vKeyInit();
@@ -242,6 +256,12 @@ void vSetCheckSpelling();
  * temporarily turn off PHTV engine
  */
 void vTempOffEngine(const bool& off=true);
+
+/**
+ * Manually trigger restore to raw keys
+ * Returns true if restore was successful
+ */
+bool vRestoreToRawKeys();
 
 /**
  * some utils function

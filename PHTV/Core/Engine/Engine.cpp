@@ -1201,11 +1201,49 @@ void handleQuickTelex(const Uint16& data, const bool& isCaps) {
     insertKey(_quickTelex[data][1], isCaps, false);
 }
 
+/**
+ * Restore buffer to raw ASCII keys (undo all Vietnamese transforms)
+ * Called when the restore key is pressed (customizable: ESC, Option, Control)
+ * Example: "úẻ" (from typing "user" in Telex) → "user"
+ */
+bool restoreToRawKeys() {
+    if (_stateIndex == 0 || _index == 0) {
+        return false;
+    }
+
+    // Check if any transforms were applied
+    bool hasTransforms = false;
+    for (ii = 0; ii < _index; ii++) {
+        if ((TypingWord[ii] & MARK_MASK) || (TypingWord[ii] & TONE_MASK) ||
+            (TypingWord[ii] & TONEW_MASK) || (TypingWord[ii] & STANDALONE_MASK)) {
+            hasTransforms = true;
+            break;
+        }
+    }
+
+    if (!hasTransforms) {
+        return false;
+    }
+
+    // Restore to original key states
+    hCode = vRestore;
+    hBPC = _index;
+    hNCC = _stateIndex;
+
+    for (i = 0; i < _stateIndex; i++) {
+        TypingWord[i] = KeyStates[i];
+        hData[_stateIndex - 1 - i] = KeyStates[i];
+    }
+    _index = _stateIndex;
+
+    return true;
+}
+
 bool checkRestoreIfWrongSpelling(const int& handleCode) {
     for (ii = 0; ii < _index; ii++) {
         if (!IS_CONSONANT(CHR(ii)) &&
             (TypingWord[ii] & MARK_MASK || TypingWord[ii] & TONE_MASK || TypingWord[ii] & TONEW_MASK)) {
-            
+
             hCode = handleCode;
             hBPC = _index;
             hNCC = _stateIndex;
@@ -1232,6 +1270,10 @@ void vSetCheckSpelling() {
 
 void vTempOffEngine(const bool& off) {
     _willTempOffEngine = off;
+}
+
+bool vRestoreToRawKeys() {
+    return restoreToRawKeys();
 }
 
 bool checkQuickConsonant() {
@@ -1326,6 +1368,23 @@ void vKeyHandleEvent(const vKeyEvent& event,
     }
     #endif
 
+    // NEW FEATURE: Restore key - restore to original typed keys
+    // Customizable key: ESC (default), Option, Control
+    // Note: Modifier keys (Option, Control) are handled in PHTV.mm via kCGEventFlagsChanged
+    if (vRestoreOnEscape && _index > 0) {
+        Uint16 restoreKey = (vCustomEscapeKey > 0) ? vCustomEscapeKey : KEY_ESC;
+
+        // Check if current key matches the restore key
+        if (data == restoreKey) {
+            if (restoreToRawKeys()) {
+                // Successfully restored - let the engine handle vRestore code
+                // Don't call startNewSession() here as it will clear hCode
+                // The vRestore code will be processed and session will be cleared later
+                return;
+            }
+        }
+    }
+
     _isCaps = (capsStatus == 1 || //shift
                capsStatus == 2); //caps lock
     if ((IS_NUMBER_KEY(data) && capsStatus == 1)
@@ -1402,7 +1461,8 @@ void vKeyHandleEvent(const vKeyEvent& event,
             _hasHandledMacro = true;
         } else if ((vQuickStartConsonant || vQuickEndConsonant) && !tempDisableKey && checkQuickConsonant()) {
             _spaceCount++;
-        } else if (vRestoreIfWrongSpelling && tempDisableKey && !_hasHandledMacro) { //restore key if wrong spelling
+        } else if (vRestoreIfWrongSpelling && tempDisableKey && !_hasHandledMacro) {
+            // Original logic: restore key if wrong spelling
             if (!checkRestoreIfWrongSpelling(vRestore)) {
                 hCode = vDoNothing;
             }

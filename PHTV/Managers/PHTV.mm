@@ -74,6 +74,18 @@ static inline void PHTVSpotlightDebugLog(NSString *message) {
 }
 #endif
 
+// MARK: - Replacement Method Detection (Fix for IDE/Browser apps)
+
+/**
+ * Replacement method to use when replacing text
+ * Different apps require different approaches to avoid autocomplete issues
+ */
+typedef NS_ENUM(NSInteger, ReplacementMethod) {
+    ReplacementMethodBackspace = 0,  // Default: Backspace + type (fast, no flicker)
+    ReplacementMethodSelection = 1,  // Browser/IDE: Shift+Left select + type (fixes autocomplete)
+    ReplacementMethodAX = 2          // Spotlight: Accessibility API (deterministic)
+};
+
 // Cache for PID to bundle ID mapping with modern lock
 static NSMutableDictionary<NSNumber*, NSString*> *_pidBundleCache = nil;
 static uint64_t _lastCacheCleanTime = 0;
@@ -521,11 +533,15 @@ extern "C" {
     bool _willSendControlKey = false;
     
     vector<Uint16> _syncKey;
-    
+
     Uint16 _uniChar[2];
     int _i, _j, _k;
     Uint32 _tempChar;
     bool _hasJustUsedHotKey = false;
+
+    // For restore key detection with modifier keys
+    bool _restoreModifierPressed = false;
+    bool _keyPressedWithRestoreModifier = false;
 
     int _languageTemp = 0; //use for smart switch key
     vector<Byte> savedSmartSwitchKeyData; ////use for smart switch key
@@ -628,6 +644,8 @@ extern "C" {
         _willContinuteSending = false;
         _willSendControlKey = false;
         _hasJustUsedHotKey = false;
+        _restoreModifierPressed = false;
+        _keyPressedWithRestoreModifier = false;
 
         // Release barrier: ensure state reset is visible to all threads
         __atomic_thread_fence(__ATOMIC_RELEASE);
@@ -973,14 +991,212 @@ extern "C" {
         _privateFlag |= NX_COMMANDMASK;
         CGEventSetFlags(eventVkeyDown, _privateFlag);
         CGEventSetFlags(eventVkeyUp, _privateFlag);
-        
+
         CGEventTapPostEvent(_proxy, eventVkeyDown);
         CGEventTapPostEvent(_proxy, eventVkeyUp);
-        
+
         CFRelease(eventVkeyDown);
         CFRelease(eventVkeyUp);
     }
-    
+
+    /**
+     * Check if app is a terminal/IDE that needs special handling
+     * These apps are extremely timing-sensitive and need higher delays
+     * Uses backspace method with step-by-step character sending
+     */
+    BOOL isTerminalApp(NSString *bundleId) {
+        if (!bundleId) return NO;
+
+        // JetBrains IDEs (IntelliJ, PyCharm, WebStorm, GoLand, CLion, Fleet, etc.)
+        if ([bundleId hasPrefix:@"com.jetbrains"]) {
+            return YES;
+        }
+
+        static NSSet<NSString*> *terminalApps = nil;
+        static dispatch_once_t onceToken;
+        dispatch_once(&onceToken, ^{
+            terminalApps = [NSSet setWithArray:@[
+                // Terminals
+                @"com.apple.Terminal",              // macOS Terminal (used by Claude Code)
+                @"com.googlecode.iterm2",           // iTerm2
+                @"io.alacritty",                    // Alacritty
+                @"com.github.wez.wezterm",          // WezTerm
+                @"com.mitchellh.ghostty",           // Ghostty
+                @"dev.warp.Warp-Stable",            // Warp
+                @"net.kovidgoyal.kitty",            // Kitty
+                @"co.zeit.hyper",                   // Hyper
+                @"org.tabby",                       // Tabby
+                @"com.raphaelamorim.rio",           // Rio
+                @"com.termius-dmg.mac",             // Termius
+                // IDEs/Editors
+                @"com.microsoft.VSCode",            // VS Code
+                @"com.microsoft.VSCodeInsiders",    // VS Code Insiders
+                @"com.google.antigravity",          // Android Studio
+                @"dev.zed.Zed",                     // Zed
+                @"com.sublimetext.4",               // Sublime Text 4
+                @"com.sublimetext.3",               // Sublime Text 3
+                @"com.panic.Nova"                   // Nova
+            ]];
+        });
+        return [terminalApps containsObject:bundleId];
+    }
+
+    /**
+     * Check if app is an Electron app that needs special handling
+     * NOTE: Claude Code terminal uses com.apple.Terminal bundle ID, not its own
+     * These apps require higher delays to avoid missing characters
+     */
+    BOOL isElectronApp(NSString *bundleId) {
+        static NSSet<NSString*> *electronApps = nil;
+        static dispatch_once_t onceToken;
+        dispatch_once(&onceToken, ^{
+            electronApps = [NSSet setWithArray:@[
+                @"notion.id",                       // Notion
+                @"com.tinyspeck.slackmacgap",      // Slack
+                @"com.hnc.Discord",                // Discord
+                @"com.github.GitHubClient",        // GitHub Desktop
+                @"com.postmanlabs.mac"             // Postman
+            ]];
+        });
+        return [electronApps containsObject:bundleId];
+    }
+
+    /**
+     * Detect which replacement method to use based on app and focused element
+     * Fix for IDE/Browser autocomplete issues (JetBrains, VSCode, Chrome, etc.)
+     */
+    ReplacementMethod detectReplacementMethod(NSString *bundleId) {
+        if (!bundleId || bundleId.length == 0) {
+            return ReplacementMethodBackspace;  // Default
+        }
+
+        // Spotlight/SystemUIServer - use AX API for deterministic replacement
+        if (isSpotlightLikeApp(bundleId)) {
+            return ReplacementMethodAX;
+        }
+
+        // Electron apps (Claude Code, Notion, etc.) - use selection with higher delays
+        if (isElectronApp(bundleId)) {
+            return ReplacementMethodSelection;
+        }
+
+        // Get focused element's role via Accessibility API
+        AXUIElementRef systemWide = AXUIElementCreateSystemWide();
+        AXUIElementRef focused = NULL;
+        NSString *role = nil;
+
+        if (AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef*)&focused) == kAXErrorSuccess && focused) {
+            CFTypeRef roleValue = NULL;
+            if (AXUIElementCopyAttributeValue(focused, kAXRoleAttribute, &roleValue) == kAXErrorSuccess && roleValue) {
+                role = (__bridge_transfer NSString*)roleValue;
+            }
+            CFRelease(focused);
+        }
+
+        // Browser address bars (AXComboBox) - use selection to avoid autocomplete issues
+        // Examples: Chrome, Safari, Firefox, Arc, Brave, Edge address bars
+        if ([role isEqualToString:@"AXComboBox"]) {
+            return ReplacementMethodSelection;
+        }
+
+        // Search fields with autocomplete (AXSearchField subtype)
+        if ([role isEqualToString:@"AXTextField"]) {
+            // Check if it's a search field by looking at subrole
+            AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef*)&focused);
+            if (focused) {
+                CFTypeRef subroleValue = NULL;
+                if (AXUIElementCopyAttributeValue(focused, kAXSubroleAttribute, &subroleValue) == kAXErrorSuccess && subroleValue) {
+                    NSString *subrole = (__bridge_transfer NSString*)subroleValue;
+                    if ([subrole isEqualToString:@"AXSearchField"]) {
+                        CFRelease(focused);
+                        return ReplacementMethodSelection;
+                    }
+                }
+                CFRelease(focused);
+            }
+
+            // JetBrains IDEs (IntelliJ, PyCharm, WebStorm, GoLand, CLion, etc.) with AXTextField
+            // Use selection method to fix autocomplete popup issues
+            if ([bundleId hasPrefix:@"com.jetbrains"]) {
+                return ReplacementMethodSelection;
+            }
+        }
+
+        // Browser apps - use selection for address bar compatibility
+        static NSSet<NSString*> *browserApps = nil;
+        static dispatch_once_t onceToken;
+        dispatch_once(&onceToken, ^{
+            browserApps = [NSSet setWithArray:@[
+                // Chromium-based
+                @"com.google.Chrome", @"com.google.Chrome.canary", @"com.google.Chrome.beta",
+                @"org.chromium.Chromium", @"com.brave.Browser", @"com.brave.Browser.beta",
+                @"com.brave.Browser.nightly", @"com.microsoft.edgemac", @"com.microsoft.edgemac.Beta",
+                @"com.microsoft.edgemac.Dev", @"com.microsoft.edgemac.Canary",
+                @"com.vivaldi.Vivaldi", @"com.vivaldi.Vivaldi.snapshot",
+                // Opera
+                @"com.opera.Opera", @"com.operasoftware.Opera", @"com.operasoftware.OperaGX",
+                // Firefox-based
+                @"org.mozilla.firefox", @"org.mozilla.firefoxdeveloperedition", @"org.mozilla.nightly",
+                // Safari
+                @"com.apple.Safari", @"com.apple.SafariTechnologyPreview",
+                // Arc & Others
+                @"company.thebrowser.Browser", @"company.thebrowser.Arc",
+                @"app.zen-browser.zen", @"com.duckduckgo.macos.browser"
+            ]];
+        });
+
+        if ([role isEqualToString:@"AXTextField"] && [browserApps containsObject:bundleId]) {
+            return ReplacementMethodSelection;
+        }
+
+        // Default: backspace method (fast, works for 90% of apps)
+        return ReplacementMethodBackspace;
+    }
+
+    /**
+     * Send replacement using Selection method (Shift+Left Arrow + type)
+     * Used for IDE/Browser apps to avoid autocomplete conflicts
+     * Electron apps need higher delays to avoid missing characters
+     */
+    void SendSelectionReplacement(NSInteger backspaceCount, const bool& dataFromMacro=false, NSString *bundleId=nil) {
+        if (backspaceCount <= 0) return;
+
+        // Electron apps (Claude Code, Notion, etc.) need higher delays
+        BOOL isElectron = bundleId && isElectronApp(bundleId);
+        uint32_t selectionDelay = isElectron ? 8000 : 1000;   // 8ms vs 1ms
+        uint32_t settleDelay = isElectron ? 15000 : 3000;     // 15ms vs 3ms
+        uint32_t charDelay = isElectron ? 8000 : 2000;        // 8ms vs 2ms
+
+        // Step 1: Select text using Shift+Left Arrow
+        for (NSInteger i = 0; i < backspaceCount; i++) {
+            SendShiftAndLeftArrow();
+            usleep(selectionDelay);
+        }
+
+        // Step 2: Small delay to ensure selection is registered
+        usleep(settleDelay);
+
+        // Step 3: Type replacement text (selected text will be automatically replaced)
+        // Use step-by-step sending for reliability with IDE autocomplete
+        if (dataFromMacro) {
+            for (int i = 0; i < pData->macroData.size(); i++) {
+                if (pData->macroData[i] & PURE_CHARACTER_MASK) {
+                    SendPureCharacter(pData->macroData[i]);
+                } else {
+                    SendKeyCode(pData->macroData[i]);
+                }
+                usleep(charDelay);
+            }
+        } else {
+            if (pData->newCharCount > 0 && pData->newCharCount <= MAX_BUFF) {
+                for (int i = pData->newCharCount - 1; i >= 0; i--) {
+                    SendKeyCode(pData->charData[i]);
+                    usleep(charDelay);
+                }
+            }
+        }
+    }
+
     void SendNewCharString(const bool& dataFromMacro=false, const Uint16& offset=0) {
         _j = 0;
         _newCharSize = dataFromMacro ? pData->macroData.size() : pData->newCharCount;
@@ -1179,31 +1395,59 @@ extern "C" {
     }
     
     void handleMacro() {
-        //fix autocomplete
-        if (vFixRecommendBrowser) {
+        NSString *bundleId = _phtvEffectiveTargetBundleId ?: getFocusedAppBundleId();
+        ReplacementMethod method = detectReplacementMethod(bundleId);
+
+        //fix autocomplete for browser address bars
+        if (vFixRecommendBrowser && method != ReplacementMethodSelection) {
             SendEmptyCharacter();
             pData->backspaceCount++;
         }
-        
-        //send backspace
-        if (pData->backspaceCount > 0) {
-            for (int i = 0; i < pData->backspaceCount; i++) {
-                SendBackspace();
-            }
-        }
-        //send real data - use step by step for timing sensitive apps like Spotlight
-        BOOL useStepByStep = vSendKeyStepByStep || needsStepByStep(getFocusedAppBundleId());
-        if (!useStepByStep) {
-            SendNewCharString(true);
+
+        // Choose replacement method based on app type
+        if (method == ReplacementMethodSelection && pData->backspaceCount > 0) {
+            // IDE/Browser/Electron: Use selection method (Shift+Left + type)
+            SendSelectionReplacement(pData->backspaceCount, true, bundleId);
         } else {
-            for (int i = 0; i < pData->macroData.size(); i++) {
-                if (pData->macroData[i] & PURE_CHARACTER_MASK) {
-                    SendPureCharacter(pData->macroData[i]);
-                } else {
-                    SendKeyCode(pData->macroData[i]);
+            // Default/Spotlight: Use backspace method
+            BOOL isTerminal = isTerminalApp(bundleId);
+            if (pData->backspaceCount > 0) {
+                for (int i = 0; i < pData->backspaceCount; i++) {
+                    SendBackspace();
+                    if (isTerminal) {
+                        usleep(3000);  // 3ms delay for terminals
+                    }
+                }
+                // Extra settle time for terminals after all backspaces
+                if (isTerminal) {
+                    usleep(8000);  // 8ms settle time
                 }
             }
+
+            //send real data - use step by step for timing sensitive apps like Spotlight
+            BOOL useStepByStep = vSendKeyStepByStep || needsStepByStep(bundleId) || isTerminal;
+            if (!useStepByStep) {
+                SendNewCharString(true);
+            } else {
+                for (int i = 0; i < pData->macroData.size(); i++) {
+                    if (pData->macroData[i] & PURE_CHARACTER_MASK) {
+                        SendPureCharacter(pData->macroData[i]);
+                    } else {
+                        SendKeyCode(pData->macroData[i]);
+                    }
+                    if (isTerminal) {
+                        usleep(3000);  // 3ms delay between chars for terminals
+                    }
+                }
+            }
+
+            // Final settle time for terminals (20ms) after all text is sent
+            // This is critical for terminal apps to process all events correctly
+            if (isTerminal) {
+                usleep(20000);  // 20ms final settle time for terminals
+            }
         }
+
         SendKeyCode(_keycode | (_flag & kCGEventFlagMaskShift ? CAPS_MASK : 0));
     }
 
@@ -1295,13 +1539,80 @@ extern "C" {
                 _hasJustUsedHotKey = true;
                 return NULL;
             }
-            // Only mark as used hotkey if we had modifiers pressed
-            _hasJustUsedHotKey = _lastFlag != 0;
+            // Track if any key is pressed while restore modifier is held
+            if (_restoreModifierPressed) {
+                _keyPressedWithRestoreModifier = true;
+            }
         } else if (type == kCGEventFlagsChanged) {
             if (_lastFlag == 0 || _lastFlag < _flag) {
+                // Pressing more modifiers
                 _lastFlag = _flag;
+
+                // Check if restore modifier key is being pressed
+                if (vRestoreOnEscape && vCustomEscapeKey > 0) {
+                    bool isOptionKey = (vCustomEscapeKey == KEY_LEFT_OPTION || vCustomEscapeKey == KEY_RIGHT_OPTION);
+                    bool isControlKey = (vCustomEscapeKey == KEY_LEFT_CONTROL || vCustomEscapeKey == KEY_RIGHT_CONTROL);
+
+                    if ((isOptionKey && (_flag & kCGEventFlagMaskAlternate)) ||
+                        (isControlKey && (_flag & kCGEventFlagMaskControl))) {
+                        _restoreModifierPressed = true;
+                        _keyPressedWithRestoreModifier = false;
+                    }
+                }
             } else if (_lastFlag > _flag)  {
-                //check switch
+                // Releasing modifiers - check for restore modifier key first
+                if (vRestoreOnEscape && _restoreModifierPressed && !_keyPressedWithRestoreModifier) {
+                    bool isOptionKey = (vCustomEscapeKey == KEY_LEFT_OPTION || vCustomEscapeKey == KEY_RIGHT_OPTION);
+                    bool isControlKey = (vCustomEscapeKey == KEY_LEFT_CONTROL || vCustomEscapeKey == KEY_RIGHT_CONTROL);
+
+                    bool optionReleased = isOptionKey && (_lastFlag & kCGEventFlagMaskAlternate) && !(_flag & kCGEventFlagMaskAlternate);
+                    bool controlReleased = isControlKey && (_lastFlag & kCGEventFlagMaskControl) && !(_flag & kCGEventFlagMaskControl);
+
+                    if (optionReleased || controlReleased) {
+                        // Restore modifier released without any other key press - trigger restore
+                        if (vRestoreToRawKeys()) {
+                            // Successfully restored - pData now contains restore info
+                            NSString *effectiveBundleId = _phtvEffectiveTargetBundleId ?: getFocusedAppBundleId();
+                            BOOL isTerminal = isTerminalApp(effectiveBundleId);
+
+                            // Send backspaces to delete Vietnamese characters
+                            if (pData->backspaceCount > 0 && pData->backspaceCount < MAX_BUFF) {
+                                for (int i = 0; i < pData->backspaceCount; i++) {
+                                    SendBackspace();
+                                    if (isTerminal) {
+                                        usleep(3000);  // 3ms delay for terminals
+                                    }
+                                }
+                                // Extra settle time for terminals after all backspaces
+                                if (isTerminal) {
+                                    usleep(8000);  // 8ms settle time
+                                }
+                            }
+
+                            // Send the raw ASCII characters
+                            SendNewCharString();
+
+                            // Final settle time for terminals (20ms) after all text is sent
+                            if (isTerminal) {
+                                usleep(20000);  // 20ms final settle time for terminals
+                            }
+
+                            _restoreModifierPressed = false;
+                            _keyPressedWithRestoreModifier = false;
+                            _lastFlag = 0;
+                            return NULL; // Swallow the event since we handled the restore
+                        }
+                        _restoreModifierPressed = false;
+                        _keyPressedWithRestoreModifier = false;
+                        _lastFlag = 0;
+                        return event; // Let the modifier key release through
+                    }
+                }
+
+                _restoreModifierPressed = false;
+                _keyPressedWithRestoreModifier = false;
+
+                // Check for hotkey
                 if (checkHotKey(vSwitchKeyStatus, GET_SWITCH_KEY(vSwitchKeyStatus) != 0xFE)) {
                     _lastFlag = 0;
                     switchLanguage();
@@ -1323,6 +1634,13 @@ extern "C" {
                 }
                 _lastFlag = 0;
                 _hasJustUsedHotKey = false;
+            }
+            // Always sync _lastFlag with current state to prevent stuck flags
+            if (_flag == 0) {
+                _lastFlag = 0;
+                _hasJustUsedHotKey = false;
+                _restoreModifierPressed = false;
+                _keyPressedWithRestoreModifier = false;
             }
         }
 
@@ -1474,9 +1792,12 @@ extern "C" {
                 }
                 return event;
             } else if (pData->code == vWillProcess || pData->code == vRestore || pData->code == vRestoreAndStartNewSession) { //handle result signal
-                
-                //fix autocomplete
-                if (vFixRecommendBrowser && pData->extCode != 4 && !isSpotlightLikeApp(effectiveBundleId)) {
+
+                // Detect which replacement method to use
+                ReplacementMethod method = detectReplacementMethod(effectiveBundleId);
+
+                // Fix autocomplete for browser address bars (not needed for selection method)
+                if (vFixRecommendBrowser && pData->extCode != 4 && method != ReplacementMethodSelection && !isSpotlightLikeApp(effectiveBundleId)) {
                     if (vFixChromiumBrowser && [_unicodeCompoundAppSet containsObject:effectiveBundleId]) {
                         if (pData->backspaceCount > 0) {
                             SendShiftAndLeftArrow();
@@ -1486,49 +1807,81 @@ extern "C" {
                     } else {
                         SendEmptyCharacter();
                         pData->backspaceCount++;
-                    
                     }
                 }
-                
-                //send backspace
-                if (pData->backspaceCount > 0 && pData->backspaceCount < MAX_BUFF) {
-                    if (isSpotlightLikeApp(effectiveBundleId)) {
-                        // Defer deletion to AX replacement inside SendNewCharString().
-                        _phtvPendingBackspaceCount = (int)pData->backspaceCount;
-#ifdef DEBUG
-                        PHTVSpotlightDebugLog([NSString stringWithFormat:@"deferBackspace=%d newCharCount=%d", (int)pData->backspaceCount, (int)pData->newCharCount]);
-#endif
-                    } else {
-                        for (_i = 0; _i < pData->backspaceCount; _i++) {
-                            SendBackspace();
-                        }
-                    }
-                }
-                
-                //send new character - use step by step for timing sensitive apps like Spotlight
-                // IMPORTANT: For Spotlight-like targets we rely on SendNewCharString(), which can
-                // perform deterministic replacement (AX) and/or per-character Unicode posting.
-                // Forcing step-by-step here would skip deferred deletions and cause duplicated letters.
-                BOOL isSpotlightTarget = spotlightActive || isSpotlightLikeApp(effectiveBundleId);
-                BOOL useStepByStep = (!isSpotlightTarget) && (vSendKeyStepByStep || needsStepByStep(effectiveBundleId));
-#ifdef DEBUG
-                if (isSpotlightTarget) {
-                    PHTVSpotlightDebugLog([NSString stringWithFormat:@"willSend stepByStep=%d backspaceCount=%d newCharCount=%d", (int)useStepByStep, (int)pData->backspaceCount, (int)pData->newCharCount]);
-                }
-#endif
-                if (!useStepByStep) {
-                    SendNewCharString();
-                } else {
-                    if (pData->newCharCount > 0 && pData->newCharCount <= MAX_BUFF) {
-                        for (int i = pData->newCharCount - 1; i >= 0; i--) {
-                            SendKeyCode(pData->charData[i]);
-                        }
-                    }
+
+                // Choose replacement strategy based on detected method
+                if (method == ReplacementMethodSelection && pData->backspaceCount > 0) {
+                    // IDE/Browser/Electron: Use selection method (Shift+Left + type) to avoid autocomplete issues
+                    SendSelectionReplacement(pData->backspaceCount, false, effectiveBundleId);
+
+                    // Send the original key if restore operation
                     if (pData->code == vRestore || pData->code == vRestoreAndStartNewSession) {
                         SendKeyCode(_keycode | ((_flag & kCGEventFlagMaskAlphaShift) || (_flag & kCGEventFlagMaskShift) ? CAPS_MASK : 0));
                     }
                     if (pData->code == vRestoreAndStartNewSession) {
                         startNewSession();
+                    }
+                } else {
+                    // Default/Spotlight: Use backspace method
+                    if (pData->backspaceCount > 0 && pData->backspaceCount < MAX_BUFF) {
+                        if (isSpotlightLikeApp(effectiveBundleId)) {
+                            // Defer deletion to AX replacement inside SendNewCharString().
+                            _phtvPendingBackspaceCount = (int)pData->backspaceCount;
+#ifdef DEBUG
+                            PHTVSpotlightDebugLog([NSString stringWithFormat:@"deferBackspace=%d newCharCount=%d", (int)pData->backspaceCount, (int)pData->newCharCount]);
+#endif
+                        } else {
+                            // Terminals need delays between backspaces for reliability
+                            BOOL isTerminal = isTerminalApp(effectiveBundleId);
+                            for (_i = 0; _i < pData->backspaceCount; _i++) {
+                                SendBackspace();
+                                if (isTerminal) {
+                                    usleep(3000);  // 3ms delay for terminals
+                                }
+                            }
+                            // Extra settle time for terminals after all backspaces
+                            if (isTerminal && pData->backspaceCount > 0) {
+                                usleep(8000);  // 8ms settle time
+                            }
+                        }
+                    }
+
+                    //send new character - use step by step for timing sensitive apps like Spotlight
+                    // IMPORTANT: For Spotlight-like targets we rely on SendNewCharString(), which can
+                    // perform deterministic replacement (AX) and/or per-character Unicode posting.
+                    // Forcing step-by-step here would skip deferred deletions and cause duplicated letters.
+                    BOOL isSpotlightTarget = spotlightActive || isSpotlightLikeApp(effectiveBundleId);
+                    BOOL isTerminal = isTerminalApp(effectiveBundleId);
+                    BOOL useStepByStep = (!isSpotlightTarget) && (vSendKeyStepByStep || needsStepByStep(effectiveBundleId) || isTerminal);
+#ifdef DEBUG
+                    if (isSpotlightTarget) {
+                        PHTVSpotlightDebugLog([NSString stringWithFormat:@"willSend stepByStep=%d backspaceCount=%d newCharCount=%d", (int)useStepByStep, (int)pData->backspaceCount, (int)pData->newCharCount]);
+                    }
+#endif
+                    if (!useStepByStep) {
+                        SendNewCharString();
+                    } else {
+                        if (pData->newCharCount > 0 && pData->newCharCount <= MAX_BUFF) {
+                            for (int i = pData->newCharCount - 1; i >= 0; i--) {
+                                SendKeyCode(pData->charData[i]);
+                                if (isTerminal) {
+                                    usleep(3000);  // 3ms delay between chars for terminals
+                                }
+                            }
+                        }
+                        if (pData->code == vRestore || pData->code == vRestoreAndStartNewSession) {
+                            SendKeyCode(_keycode | ((_flag & kCGEventFlagMaskAlphaShift) || (_flag & kCGEventFlagMaskShift) ? CAPS_MASK : 0));
+                        }
+                        if (pData->code == vRestoreAndStartNewSession) {
+                            startNewSession();
+                        }
+                    }
+
+                    // Final settle time for terminals (20ms) after all text is sent
+                    // This is critical for terminal apps to process all events correctly
+                    if (isTerminal) {
+                        usleep(20000);  // 20ms final settle time for terminals
                     }
                 }
             } else if (pData->code == vReplaceMaro) { //MACRO
