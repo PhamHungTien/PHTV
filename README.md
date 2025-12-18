@@ -40,12 +40,12 @@ PHTV là bộ gõ tiếng Việt **offline, nhanh, và riêng tư** cho macOS 14
 <table>
 <tr>
 <td width="50%">
-<img src="PHTV/Resources/UI/menu-vietnamese.png" alt="Menu Bar - Tiếng Việt" style="border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" width="100%">
-<p align="center"><em>Menu Bar - Tiếng Việt</em></p>
+<img src="PHTV/Resources/UI/menu-input-methods.png" alt="Các kiểu gõ trên menu bar" style="border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" width="100%">
+<p align="center"><em>Các kiểu gõ trên menu bar</em></p>
 </td>
 <td width="50%">
-<img src="PHTV/Resources/UI/menu-english.png" alt="Menu Bar - English" style="border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" width="100%">
-<p align="center"><em>Menu Bar - English</em></p>
+<img src="PHTV/Resources/UI/menu-charset.png" alt="Các bảng mã trên menu bar" style="border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" width="100%">
+<p align="center"><em>Các bảng mã trên menu bar</em></p>
 </td>
 </tr>
 </table>

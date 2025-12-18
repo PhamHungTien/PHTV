@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		EF5EC6D461F146F7BB7B771B /* ColorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */; };
+		969E53BC2BBB4C93AC790BF7 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99A1FB75E4F047E2882D19DC /* ThemeManager.swift */; };
+		5832154BF8BC438D804CD999 /* ThemeSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF311551B144E45B07D9CCD /* ThemeSettingsView.swift */; };
 		232EDA5921F1B33E0085D362 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 232EDA5821F1B33E0085D362 /* AppDelegate.mm */; };
 		232EDA5E21F1B33F0085D362 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 232EDA5D21F1B33F0085D362 /* Assets.xcassets */; };
 		233C4A6E231F923D00DD7052 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 233C4A6D231F923D00DD7052 /* AppKit.framework */; };
@@ -24,6 +27,7 @@
 		23E2E49F2314FD3A006CCC3E /* Engine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23E2E49A2314FD3A006CCC3E /* Engine.cpp */; };
 		23E2E4A02314FD3A006CCC3E /* Vietnamese.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23E2E49B2314FD3A006CCC3E /* Vietnamese.cpp */; };
 		23F512852336386200397988 /* MJAccessibilityUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 23F512832336386200397988 /* MJAccessibilityUtils.m */; };
+		461048622EF2DF22005AF5FC /* SendKeyStepByStepAppsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 461048612EF2DF22005AF5FC /* SendKeyStepByStepAppsView.swift */; };
 		46413AEE2EEF7EB300278BFB /* update.json in Resources */ = {isa = PBXBuildFile; fileRef = 46413AED2EEF7EB300278BFB /* update.json */; };
 		46EF4FFA2EEDBFD400DF8DD1 /* PHTV.icon in Resources */ = {isa = PBXBuildFile; fileRef = 46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */; };
 		A534F32629D8B78100296F25 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23874B0F220160A500000BC8 /* Carbon.framework */; };
@@ -40,6 +44,8 @@
 		F1A1A1BD2025130000000013 /* PreviewHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1BE2025130000000014 /* PreviewHelpers.swift */; };
 		F1A1A1C12025130000000017 /* StatusBarMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1C22025130000000018 /* StatusBarMenuView.swift */; };
 		F1A1A1D12025130100000019 /* TypingSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D22025130100000020 /* TypingSettingsView.swift */; };
+		DB799B68D74F4B3AA863B03A /* AdvancedSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5079BAE20074F51ADAB4E65 /* AdvancedSettingsView.swift */; };
+		015CCFFEF0134F81976FCAB6 /* HotkeySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3CCE6686B954309A3B65AAD /* HotkeySettingsView.swift */; };
 		F1A1A1D32025130100000021 /* SystemSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D42025130100000022 /* SystemSettingsView.swift */; };
 		F1A1A1D52025130100000023 /* MacroSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D62025130100000024 /* MacroSettingsView.swift */; };
 		F1A1A1D72025130100000025 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D82025130100000026 /* AboutView.swift */; };
@@ -99,6 +105,7 @@
 		23E2E49C2314FD3A006CCC3E /* SmartSwitchKey.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SmartSwitchKey.h; sourceTree = "<group>"; };
 		23F512832336386200397988 /* MJAccessibilityUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MJAccessibilityUtils.m; sourceTree = "<group>"; };
 		23F512842336386200397988 /* MJAccessibilityUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MJAccessibilityUtils.h; sourceTree = "<group>"; };
+		461048612EF2DF22005AF5FC /* SendKeyStepByStepAppsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendKeyStepByStepAppsView.swift; sourceTree = "<group>"; };
 		46413AED2EEF7EB300278BFB /* update.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = update.json; sourceTree = "<group>"; };
 		46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = PHTV.icon; sourceTree = "<group>"; };
 		46EF4FFB2EEDC0A200DF8DD1 /* PHTV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PHTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -119,6 +126,11 @@
 		F1A1A1BF2025130000000015 /* PHTV-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "PHTV-Bridging-Header.h"; sourceTree = "<group>"; };
 		F1A1A1C22025130000000018 /* StatusBarMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarMenuView.swift; sourceTree = "<group>"; };
 		F1A1A1D22025130100000020 /* TypingSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypingSettingsView.swift; sourceTree = "<group>"; };
+		8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities/ColorExtension.swift; sourceTree = "<group>"; };
+		99A1FB75E4F047E2882D19DC /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities/ThemeManager.swift; sourceTree = "<group>"; };
+		0FF311551B144E45B07D9CCD /* ThemeSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeSettingsView.swift; sourceTree = "<group>"; };
+		D5079BAE20074F51ADAB4E65 /* AdvancedSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedSettingsView.swift; sourceTree = "<group>"; };
+		D3CCE6686B954309A3B65AAD /* HotkeySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeySettingsView.swift; sourceTree = "<group>"; };
 		F1A1A1D42025130100000022 /* SystemSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSettingsView.swift; sourceTree = "<group>"; };
 		F1A1A1D62025130100000024 /* MacroSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroSettingsView.swift; sourceTree = "<group>"; };
 		F1A1A1D82025130100000026 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
@@ -281,7 +293,9 @@
 				F1A1A2A92025130000000019 /* Controllers */,
 				F1A1A2AA2025130000000020 /* Bridge */,
 				F1A1A2AB2025130000000021 /* Utilities */,
-			);
+			
+				8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */,
+				99A1FB75E4F047E2882D19DC /* ThemeManager.swift */,);
 			path = SwiftUI;
 			sourceTree = "<group>";
 		};
@@ -327,6 +341,9 @@
 		F1A1A2AC2025130100000035 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				D5079BAE20074F51ADAB4E65 /* AdvancedSettingsView.swift */,
+				D3CCE6686B954309A3B65AAD /* HotkeySettingsView.swift */,
+								0FF311551B144E45B07D9CCD /* ThemeSettingsView.swift */,
 				F1A1A1D22025130100000020 /* TypingSettingsView.swift */,
 				F1A1A1D42025130100000022 /* SystemSettingsView.swift */,
 				F1A1A1D62025130100000024 /* MacroSettingsView.swift */,
@@ -339,6 +356,7 @@
 		F1A1A2AD2025130100000036 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				461048612EF2DF22005AF5FC /* SendKeyStepByStepAppsView.swift */,
 				F1A1A1DA2025130100000028 /* HotkeyConfigView.swift */,
 				F1A1A1DC2025130100000030 /* MacroEditorView.swift */,
 				F1A1A1DE2025130100000032 /* PermissionWarningView.swift */,
@@ -424,12 +442,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EF5EC6D461F146F7BB7B771B /* ColorExtension.swift in Sources */,
+				969E53BC2BBB4C93AC790BF7 /* ThemeManager.swift in Sources */,
+				5832154BF8BC438D804CD999 /* ThemeSettingsView.swift in Sources */,
 				23E2E49F2314FD3A006CCC3E /* Engine.cpp in Sources */,
 				23E2E49E2314FD3A006CCC3E /* SmartSwitchKey.cpp in Sources */,
 				23F512852336386200397988 /* MJAccessibilityUtils.m in Sources */,
 				2389467D21FDDB920030A13B /* PHTVManager.m in Sources */,
 				23E2E4A02314FD3A006CCC3E /* Vietnamese.cpp in Sources */,
 				23CA6D1722F0439100804D6E /* MyTextField.m in Sources */,
+				461048622EF2DF22005AF5FC /* SendKeyStepByStepAppsView.swift in Sources */,
 				2371AAEF22FA85B200CA1B57 /* PHTV.mm in Sources */,
 				23E2E49D2314FD3A006CCC3E /* Macro.cpp in Sources */,
 				233C4A70231F937900DD7052 /* ConvertTool.cpp in Sources */,
@@ -455,7 +477,9 @@
 				F1A1A1DF2025130100000033 /* ExcludedAppsView.swift in Sources */,
 				F1A1A1E12025130100000035 /* SettingsObserver.swift in Sources */,
 				F1A1A1E32025130100000037 /* ReloadHelpers.swift in Sources */,
-			);
+							DB799B68D74F4B3AA863B03A /* AdvancedSettingsView.swift in Sources */,
+				015CCFFEF0134F81976FCAB6 /* HotkeySettingsView.swift in Sources */,
+				);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
@@ -596,7 +620,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.1.2;
+				CURRENT_PROJECT_VERSION = 1.1.4;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = NO;
@@ -608,7 +632,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.1.2;
+				MARKETING_VERSION = 1.1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.phamhungtien.phtv;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -625,7 +649,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.1.2;
+				CURRENT_PROJECT_VERSION = 1.1.4;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = NO;
@@ -637,7 +661,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.1.2;
+				MARKETING_VERSION = 1.1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.phamhungtien.phtv;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

@@ -190,7 +190,19 @@ class StatusBarController: ObservableObject {
     }
 
     private func makeMenuBarIcon(size: CGFloat, slashed: Bool) -> NSImage? {
+        // Use different icons based on language mode
         let baseIcon: NSImage? = {
+            if slashed {
+                // English mode - use menubar_english.png
+                if let englishIcon = NSImage(named: "menubar_english") {
+                    return englishIcon
+                }
+            }
+            // Vietnamese mode - use menubar_vietnamese.png or menubar_icon.png based on preference
+            let useVietnameseIcon = AppState.shared.useVietnameseMenubarIcon
+            if useVietnameseIcon, let vietnameseIcon = NSImage(named: "menubar_vietnamese") {
+                return vietnameseIcon
+            }
             if let img = NSImage(named: "menubar_icon") {
                 return img
             }
@@ -202,10 +214,9 @@ class StatusBarController: ObservableObject {
         img.lockFocus()
         defer { img.unlockFocus() }
 
-        // Draw app icon scaled to fit
+        // Draw app icon scaled to fit (no blurring)
         let rect = NSRect(origin: .zero, size: targetSize)
-        let fraction: CGFloat = slashed ? 0.35 : 1.0
-        baseIcon.draw(in: rect, from: .zero, operation: .sourceOver, fraction: fraction, respectFlipped: true, hints: [.interpolation: NSImageInterpolation.high])
+        baseIcon.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1.0, respectFlipped: true, hints: [.interpolation: NSImageInterpolation.high])
 
         return img
     }
@@ -222,6 +233,17 @@ class StatusBarController: ObservableObject {
                     self.menuBarIconSize = size.doubleValue
                     self.updateStatusButton()
                 }
+            }
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("MenuBarIconPreferenceChanged"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self = self else { return }
+            Task { @MainActor in
+                self.updateStatusButton()
             }
         }
     }

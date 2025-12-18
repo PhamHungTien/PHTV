@@ -13,6 +13,7 @@ import AppKit
 
 struct HotkeyConfigView: View {
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var themeManager: ThemeManager
     @State private var isRecording = false
     
     // 0xFE = modifier only mode (no key needed, just press and release modifiers)
@@ -65,11 +66,11 @@ struct HotkeyConfigView: View {
                         HStack(spacing: 10) {
                             Image(systemName: isRecording ? "keyboard.badge.ellipsis" : "keyboard")
                                 .font(.system(size: 16, weight: .medium))
-                                .foregroundStyle(isRecording ? .blue : .secondary)
+                                .foregroundStyle(isRecording ? themeManager.themeColor : .secondary)
 
                             Text(keyDisplayText)
                                 .font(.body)
-                                .foregroundStyle(isRecording ? .blue : .primary)
+                                .foregroundStyle(isRecording ? themeManager.themeColor : .primary)
                                 .animation(.easeInOut(duration: 0.2), value: keyDisplayText)
 
                             Spacer()
@@ -95,10 +96,10 @@ struct HotkeyConfigView: View {
                         .frame(minWidth: 180)
                         .background(
                             RoundedRectangle(cornerRadius: 10)
-                                .fill(isRecording ? Color.blue.opacity(0.1) : Color(NSColor.controlBackgroundColor))
+                                .fill(isRecording ? themeManager.themeColor.opacity(0.1) : Color(NSColor.controlBackgroundColor))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 10)
-                                        .stroke(isRecording ? Color.blue : Color.gray.opacity(0.3), lineWidth: 1)
+                                        .stroke(isRecording ? themeManager.themeColor : Color.gray.opacity(0.3), lineWidth: 1)
                                 )
                         )
                     }
@@ -116,14 +117,14 @@ struct HotkeyConfigView: View {
                             Text(currentHotkeyDisplay)
                                 .font(.system(.body, design: .rounded))
                                 .fontWeight(.semibold)
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(.tint)
                                 .animation(.easeInOut(duration: 0.2), value: currentHotkeyDisplay)
                         }
                         .padding(.horizontal, 14)
                         .padding(.vertical, 8)
                         .background(
                             RoundedRectangle(cornerRadius: 10)
-                                .fill(Color.blue.opacity(0.08))
+                                .fill(themeManager.themeColor.opacity(0.08))
                         )
                         .transition(.scale.combined(with: .opacity))
                     }
@@ -142,18 +143,18 @@ struct HotkeyConfigView: View {
                     ZStack {
                         if #available(macOS 26.0, *) {
                             RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.green.opacity(0.12))
+                                .fill(themeManager.themeColor.opacity(0.12))
                                 .frame(width: 36, height: 36)
                                 .glassEffect(in: .rect(cornerRadius: 8))
                         } else {
                             RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.green.opacity(0.12))
+                                .fill(themeManager.themeColor.opacity(0.12))
                                 .frame(width: 36, height: 36)
                         }
 
                         Image(systemName: "speaker.wave.2.fill")
                             .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(.green)
+                            .foregroundStyle(themeManager.themeColor)
                     }
 
                     VStack(alignment: .leading, spacing: 2) {
@@ -171,7 +172,7 @@ struct HotkeyConfigView: View {
                     Toggle("", isOn: $appState.beepOnModeSwitch)
                         .labelsHidden()
                         .toggleStyle(.switch)
-                        .tint(.blue)
+                        .tint(themeManager.themeColor)
                 }
                 .padding(.vertical, 6)
                 .padding(.top, 8)
@@ -200,7 +201,7 @@ struct HotkeyConfigView: View {
                             }
                         }
                     )
-                    .tint(.blue)
+                    .tint(themeManager.themeColor)
                     // The slider should still adjust volume even if the mode beep is disabled
                 }
                 .padding(.leading, 50)
@@ -242,6 +243,7 @@ struct HotkeyConfigView: View {
 }
 
 struct ModifierKeyButton: View {
+    @EnvironmentObject var themeManager: ThemeManager
     let symbol: String
     let name: String
     @Binding var isOn: Bool
@@ -264,8 +266,8 @@ struct ModifierKeyButton: View {
             .frame(width: 70, height: 56)
             .background(
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(isOn ? Color.blue : Color(NSColor.controlBackgroundColor))
-                    .shadow(color: isOn ? Color.blue.opacity(0.3) : Color.clear, radius: 4, x: 0, y: 2)
+                    .fill(isOn ? themeManager.themeColor : Color(NSColor.controlBackgroundColor))
+                    .shadow(color: isOn ? themeManager.themeColor.opacity(0.3) : Color.clear, radius: 4, x: 0, y: 2)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 10)

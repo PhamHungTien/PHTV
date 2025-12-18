@@ -17,6 +17,7 @@ import SwiftUI
 struct PHTVApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var appState = AppState.shared
+    @StateObject private var themeManager = ThemeManager.shared
     @Environment(\.openWindow) private var openWindow
 
     var body: some Scene {
@@ -24,6 +25,7 @@ struct PHTVApp: App {
         MenuBarExtra {
             StatusBarMenuView()
                 .environmentObject(appState)
+                .tint(themeManager.themeColor)
         } label: {
             // Use app icon (template); add slash when in English mode
             let size = CGFloat(appState.menuBarIconSize)
@@ -39,8 +41,12 @@ struct PHTVApp: App {
         Window("Cài đặt", id: "settings") {
             SettingsView()
                 .environmentObject(appState)
+                .environmentObject(themeManager)
+                .tint(themeManager.themeColor)
         }
         .windowStyle(.hiddenTitleBar)
+        .defaultSize(width: 900, height: 650)
+        .windowResizability(.contentSize)
     }
 }
 
@@ -78,7 +84,20 @@ private func makeMenuBarIconImage(size: CGFloat, slashed: Bool) -> NSImage {
     defer { img.unlockFocus() }
 
     let rect = NSRect(origin: .zero, size: targetSize)
+
+    // Use different icons based on language mode
     let baseIcon: NSImage? = {
+        if slashed {
+            // English mode - use menubar_english.png
+            if let englishIcon = NSImage(named: "menubar_english") {
+                return englishIcon
+            }
+        }
+        // Vietnamese mode - use menubar_vietnamese.png or menubar_icon.png based on preference
+        let useVietnameseIcon = AppState.shared.useVietnameseMenubarIcon
+        if useVietnameseIcon, let vietnameseIcon = NSImage(named: "menubar_vietnamese") {
+            return vietnameseIcon
+        }
         if let img = NSImage(named: "menubar_icon") {
             return img
         }
@@ -86,12 +105,11 @@ private func makeMenuBarIconImage(size: CGFloat, slashed: Bool) -> NSImage {
     }()
 
     if let baseIcon {
-        let fraction: CGFloat = slashed ? 0.35 : 1.0
         baseIcon.draw(
             in: rect,
             from: .zero,
             operation: .sourceOver,
-            fraction: fraction,
+            fraction: 1.0,
             respectFlipped: true,
             hints: [.interpolation: NSImageInterpolation.high]
         )
@@ -200,9 +218,13 @@ final class AppState: ObservableObject {
     @Published var beepVolume: Double = 0.5  // Range: 0.0 to 1.0
     // Removed fontSize setting
     @Published var menuBarIconSize: Double = 18.0  // Increased default
+    @Published var useVietnameseMenubarIcon: Bool = false  // Use Vietnamese menubar icon in Vietnamese mode
 
     // Excluded apps - auto switch to English when these apps are active
     @Published var excludedApps: [ExcludedApp] = []
+
+    // Send key step by step apps - auto enable send key step by step when these apps are active
+    @Published var sendKeyStepByStepApps: [SendKeyStepByStepApp] = []
 
     // Accessibility
     @Published var hasAccessibilityPermission: Bool = false
@@ -284,6 +306,15 @@ final class AppState: ObservableObject {
                 excludedApps = newApps
             }
         }
+
+        // Reload send key step by step apps if changed
+        if let data = defaults.data(forKey: "SendKeyStepByStepApps"),
+            let newApps = try? JSONDecoder().decode([SendKeyStepByStepApp].self, from: data)
+        {
+            if newApps != sendKeyStepByStepApps {
+                sendKeyStepByStepApps = newApps
+            }
+        }
     }
 
     private func setupNotificationObservers() {
@@ -300,7 +331,7 @@ final class AppState: ObservableObject {
             }
         }
 
-        // Listen for language changes from backend (e.g., excluded apps)
+        // Listen for language changes from backend (e.g., hotkey)
         NotificationCenter.default.addObserver(
             forName: NSNotification.Name("LanguageChangedFromBackend"),
             object: nil,
@@ -312,11 +343,28 @@ final class AppState: ObservableObject {
                     self.isLoadingSettings = true
                     self.isEnabled = language.intValue == 1
                     self.isLoadingSettings = false
-                    
+
                     // Play beep when hotkey changes mode (if enabled)
                     if self.beepOnModeSwitch && self.beepVolume > 0.0 {
                         BeepManager.shared.play(volume: self.beepVolume)
                     }
+                }
+            }
+        }
+
+        // Listen for language changes from excluded apps (no beep sound)
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("LanguageChangedFromExcludedApp"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self = self else { return }
+            if let language = notification.object as? NSNumber {
+                Task { @MainActor in
+                    self.isLoadingSettings = true
+                    self.isEnabled = language.intValue == 1
+                    self.isLoadingSettings = false
+                    // No beep sound for excluded app auto-switch
                 }
             }
         }
@@ -413,18 +461,27 @@ final class AppState: ObservableObject {
         beepVolume = defaults.double(forKey: "vBeepVolume")
         if beepVolume == 0 { beepVolume = 0.5 } // Default if not set
         print("[Settings] Loaded beepVolume: \(beepVolume)")
-        
+
         // fontSize removed
-        
+
         menuBarIconSize = defaults.double(forKey: "vMenuBarIconSize")
         if menuBarIconSize == 0 { menuBarIconSize = 18.0 } // Increased default if not set
         print("[Settings] Loaded menuBarIconSize: \(menuBarIconSize)")
+
+        useVietnameseMenubarIcon = defaults.bool(forKey: "vUseVietnameseMenubarIcon")
 
         // Load excluded apps
         if let data = defaults.data(forKey: "ExcludedApps"),
             let apps = try? JSONDecoder().decode([ExcludedApp].self, from: data)
         {
             excludedApps = apps
+        }
+
+        // Load send key step by step apps
+        if let data = defaults.data(forKey: "SendKeyStepByStepApps"),
+            let apps = try? JSONDecoder().decode([SendKeyStepByStepApp].self, from: data)
+        {
+            sendKeyStepByStepApps = apps
         }
     }
 
@@ -518,10 +575,16 @@ final class AppState: ObservableObject {
         defaults.set(beepVolume, forKey: "vBeepVolume")
         // fontSize removed
         defaults.set(menuBarIconSize, forKey: "vMenuBarIconSize")
+        defaults.set(useVietnameseMenubarIcon, forKey: "vUseVietnameseMenubarIcon")
 
         // Save excluded apps
         if let data = try? JSONEncoder().encode(excludedApps) {
             defaults.set(data, forKey: "ExcludedApps")
+        }
+
+        // Save send key step by step apps
+        if let data = try? JSONEncoder().encode(sendKeyStepByStepApps) {
+            defaults.set(data, forKey: "SendKeyStepByStepApps")
         }
 
         defaults.synchronize()
@@ -564,6 +627,36 @@ final class AppState: ObservableObject {
             liveLog("posting ExcludedAppsChanged (legacy)")
             NotificationCenter.default.post(
                 name: NSNotification.Name("ExcludedAppsChanged"), object: nil)
+        }
+    }
+
+    // MARK: - Send Key Step By Step Apps Management
+
+    func addSendKeyStepByStepApp(_ app: SendKeyStepByStepApp) {
+        if !sendKeyStepByStepApps.contains(where: { $0.bundleIdentifier == app.bundleIdentifier }) {
+            sendKeyStepByStepApps.append(app)
+            saveSendKeyStepByStepApps()
+        }
+    }
+
+    func removeSendKeyStepByStepApp(_ app: SendKeyStepByStepApp) {
+        sendKeyStepByStepApps.removeAll { $0.bundleIdentifier == app.bundleIdentifier }
+        saveSendKeyStepByStepApps()
+    }
+
+    func isAppInSendKeyStepByStepList(bundleIdentifier: String) -> Bool {
+        return sendKeyStepByStepApps.contains { $0.bundleIdentifier == bundleIdentifier }
+    }
+
+    private func saveSendKeyStepByStepApps() {
+        if let data = try? JSONEncoder().encode(sendKeyStepByStepApps) {
+            UserDefaults.standard.set(data, forKey: "SendKeyStepByStepApps")
+            UserDefaults.standard.synchronize()
+
+            // Notify backend with hot reload
+            liveLog("posting SendKeyStepByStepAppsChanged")
+            NotificationCenter.default.post(
+                name: NSNotification.Name("SendKeyStepByStepAppsChanged"), object: sendKeyStepByStepApps)
         }
     }
 
@@ -721,6 +814,16 @@ final class AppState: ObservableObject {
                 )
             }.store(in: &cancellables)
 
+        // Immediate UI update for Vietnamese menubar icon preference
+        $useVietnameseMenubarIcon
+            .sink { [weak self] _ in
+                guard let self = self, !self.isLoadingSettings else { return }
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("MenuBarIconPreferenceChanged"),
+                    object: nil
+                )
+            }.store(in: &cancellables)
+
         // Debounced persistence for these sliders
         $beepVolume
             .debounce(for: .milliseconds(250), scheduler: RunLoop.main)
@@ -741,6 +844,16 @@ final class AppState: ObservableObject {
                 defaults.set(value, forKey: "vMenuBarIconSize")
                 defaults.synchronize()
                 print("[Settings] Saved menuBarIconSize: \(value)")
+            }.store(in: &cancellables)
+
+        $useVietnameseMenubarIcon
+            .debounce(for: .milliseconds(100), scheduler: RunLoop.main)
+            .sink { [weak self] value in
+                guard let self = self, !self.isLoadingSettings else { return }
+                let defaults = UserDefaults.standard
+                defaults.set(value, forKey: "vUseVietnameseMenubarIcon")
+                defaults.synchronize()
+                print("[Settings] Saved useVietnameseMenubarIcon: \(value)")
             }.store(in: &cancellables)
     }
 
@@ -785,8 +898,10 @@ final class AppState: ObservableObject {
 
         beepVolume = 0.5
         menuBarIconSize = 18.0
+        useVietnameseMenubarIcon = false
 
         excludedApps = []
+        sendKeyStepByStepApps = []
 
         // Save to defaults
         saveSettings()
@@ -865,6 +980,32 @@ enum CodeTable: String, CaseIterable, Identifiable, Sendable {
 
 // MARK: - Excluded App Model
 struct ExcludedApp: Codable, Identifiable, Hashable {
+    var id: String { bundleIdentifier }
+    let bundleIdentifier: String
+    let name: String
+    let path: String
+
+    init(bundleIdentifier: String, name: String, path: String) {
+        self.bundleIdentifier = bundleIdentifier
+        self.name = name
+        self.path = path
+    }
+
+    init?(from url: URL) {
+        guard let bundle = Bundle(url: url),
+            let bundleId = bundle.bundleIdentifier,
+            let name = bundle.infoDictionary?["CFBundleName"] as? String ?? bundle.infoDictionary?[
+                "CFBundleDisplayName"] as? String
+        else { return nil }
+
+        self.bundleIdentifier = bundleId
+        self.name = name
+        self.path = url.path
+    }
+}
+
+// MARK: - Send Key Step By Step App Model
+struct SendKeyStepByStepApp: Codable, Identifiable, Hashable {
     var id: String { bundleIdentifier }
     let bundleIdentifier: String
     let name: String

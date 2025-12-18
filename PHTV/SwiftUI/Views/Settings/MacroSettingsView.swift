@@ -11,6 +11,7 @@ import UniformTypeIdentifiers
 
 struct MacroSettingsView: View {
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var themeManager: ThemeManager
     @State private var macros: [MacroItem] = []
     @State private var selectedMacro: UUID?
     @State private var showingAddMacro = false
@@ -19,119 +20,110 @@ struct MacroSettingsView: View {
     @State private var refreshTrigger = UUID()
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Configuration Header
-            VStack(spacing: 16) {
-                // Main Toggle
-                HStack(spacing: 16) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(
-                                appState.useMacro
-                                    ? Color.blue.opacity(0.12) : Color.gray.opacity(0.12)
-                            )
-                            .frame(width: 48, height: 48)
+        ScrollView {
+            VStack(spacing: 20) {
+                // Macro Configuration
+                SettingsCard(title: "Cấu hình gõ tắt", icon: "text.badge.plus") {
+                    VStack(spacing: 0) {
+                        SettingsToggleRow(
+                            icon: "text.badge.plus",
+                            iconColor: themeManager.themeColor,
+                            title: "Bật gõ tắt",
+                            subtitle: appState.useMacro ? "Đang hoạt động" : "Đang tắt",
+                            isOn: $appState.useMacro
+                        )
 
-                        Image(systemName: "text.badge.plus")
-                            .font(.system(size: 22, weight: .medium))
-                            .foregroundStyle(appState.useMacro ? .blue : .secondary)
+                        SettingsDivider()
+
+                        SettingsToggleRow(
+                            icon: "globe",
+                            iconColor: themeManager.themeColor,
+                            title: "Bật trong chế độ tiếng Anh",
+                            subtitle: "Cho phép gõ tắt khi đang ở chế độ tiếng Anh",
+                            isOn: $appState.useMacroInEnglishMode
+                        )
+                        .disabled(!appState.useMacro)
+                        .opacity(appState.useMacro ? 1 : 0.5)
+
+                        SettingsDivider()
+
+                        SettingsToggleRow(
+                            icon: "textformat.abc",
+                            iconColor: themeManager.themeColor,
+                            title: "Tự động viết hoa ký tự đầu",
+                            subtitle: "Viết hoa ký tự đầu tiên của từ mở rộng",
+                            isOn: $appState.autoCapsMacro
+                        )
+                        .disabled(!appState.useMacro)
+                        .opacity(appState.useMacro ? 1 : 0.5)
                     }
+                }
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Gõ tắt")
-                            .font(.headline)
-                            .foregroundStyle(.primary)
+                // Macro List
+                SettingsCard(title: "Danh sách gõ tắt", icon: "list.bullet.rectangle") {
+                    VStack(spacing: 0) {
+                        // Toolbar
+                        HStack(spacing: 12) {
+                            Button(action: { showingAddMacro = true }) {
+                                Label("Thêm", systemImage: "plus.circle.fill")
+                                    .font(.subheadline)
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(!appState.useMacro)
 
-                        Text(appState.useMacro ? "Đang bật" : "Đang tắt")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            Button(action: { editMacro() }) {
+                                Label("Sửa", systemImage: "pencil.circle.fill")
+                                    .font(.subheadline)
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(selectedMacro == nil || !appState.useMacro)
+
+                            Button(action: { deleteMacro() }) {
+                                Label("Xóa", systemImage: "minus.circle.fill")
+                                    .font(.subheadline)
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(selectedMacro == nil || !appState.useMacro)
+
+                            Spacer()
+
+                            Button(action: { importMacros() }) {
+                                Label("Import", systemImage: "square.and.arrow.down")
+                                    .font(.subheadline)
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(!appState.useMacro)
+
+                            Text("\(macros.count)")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .background(Capsule().fill(themeManager.themeColor))
+                        }
+                        .padding(.bottom, 12)
+
+                        Divider()
+                            .padding(.bottom, 8)
+
+                        // Content
+                        if macros.isEmpty {
+                            EmptyMacroView(useMacro: appState.useMacro, onAdd: {
+                                showingAddMacro = true
+                            })
+                        } else {
+                            MacroListView(macros: macros, selectedMacro: $selectedMacro)
+                                .frame(height: 300)
+                        }
                     }
-
-                    Spacer()
-
-                    Toggle("", isOn: $appState.useMacro)
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                        .tint(.blue)
                 }
-                .padding(16)
-                .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
-                .cornerRadius(10)
 
-                // Options
-                VStack(spacing: 12) {
-                    MacroOptionButton(
-                        icon: "globe",
-                        title: "Bật trong chế độ tiếng Anh",
-                        isOn: $appState.useMacroInEnglishMode,
-                        disabled: !appState.useMacro
-                    )
-
-                    MacroOptionButton(
-                        icon: "textformat.abc",
-                        title: "Tự động viết hoa ký tự đầu",
-                        isOn: $appState.autoCapsMacro,
-                        disabled: !appState.useMacro
-                    )
-                }
+                Spacer(minLength: 20)
             }
             .padding(20)
-            .background(Color(NSColor.windowBackgroundColor))
-
-            Divider()
-
-            // Toolbar
-            HStack(spacing: 12) {
-                Button(action: { showingAddMacro = true }) {
-                    Image(systemName: "plus.circle.fill")
-                    Text("Thêm")
-                }
-                .buttonStyle(.bordered)
-                .disabled(!appState.useMacro)
-
-                Button(action: { deleteMacro() }) {
-                    Image(systemName: "minus.circle.fill")
-                    Text("Xóa")
-                }
-                .buttonStyle(.bordered)
-                .disabled(selectedMacro == nil || !appState.useMacro)
-
-                Button(action: { editMacro() }) {
-                    Image(systemName: "pencil.circle.fill")
-                    Text("Chỉnh sửa")
-                }
-                .buttonStyle(.bordered)
-                .disabled(selectedMacro == nil || !appState.useMacro)
-
-                Button(action: { importMacros() }) {
-                    Image(systemName: "square.and.arrow.down")
-                    Text("Import")
-                }
-                .buttonStyle(.bordered)
-                .disabled(!appState.useMacro)
-
-                Spacer()
-
-                Text("\(macros.count) gõ tắt")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(Capsule().fill(Color.gray.opacity(0.15)))
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
-            .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
-
-            Divider()
-
-            // Content
-            if macros.isEmpty {
-                EmptyMacroView(useMacro: appState.useMacro, onAdd: { showingAddMacro = true })
-            } else {
-                MacroListView(macros: macros, selectedMacro: $selectedMacro)
-            }
         }
+        .background(Color(NSColor.windowBackgroundColor))
         .sheet(isPresented: $showingAddMacro) {
             MacroEditorView(isPresented: $showingAddMacro)
                 .environmentObject(appState)
@@ -273,68 +265,25 @@ struct MacroSettingsView: View {
 
 // MARK: - Subviews
 
-struct MacroOptionButton: View {
-    let icon: String
-    let title: String
-    @Binding var isOn: Bool
-    let disabled: Bool
-
-    var body: some View {
-        Button(action: { isOn.toggle() }) {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: 14, weight: .medium))
-
-                Text(title)
-                    .font(.subheadline)
-
-                Image(systemName: isOn ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 14))
-                    .foregroundStyle(isOn ? .green : .secondary)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .frame(maxWidth: .infinity)
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(isOn ? Color.blue.opacity(0.1) : Color(NSColor.controlBackgroundColor))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(
-                                isOn ? Color.blue.opacity(0.3) : Color.gray.opacity(0.2),
-                                lineWidth: 1)
-                    )
-            )
-            .foregroundStyle(disabled ? .secondary : .primary)
-        }
-        .buttonStyle(.plain)
-        .disabled(disabled)
-        .opacity(disabled ? 0.5 : 1)
-    }
-}
-
 struct EmptyMacroView: View {
     let useMacro: Bool
     let onAdd: () -> Void
 
     var body: some View {
-        VStack(spacing: 20) {
-            Spacer()
-
+        VStack(spacing: 16) {
             ZStack {
                 Circle()
                     .fill(Color.blue.opacity(0.1))
-                    .frame(width: 80, height: 80)
+                    .frame(width: 64, height: 64)
 
                 Image(systemName: "text.badge.plus")
-                    .font(.system(size: 36))
-                    .foregroundStyle(.blue)
+                    .font(.system(size: 28))
+                    .foregroundStyle(.tint)
             }
 
-            VStack(spacing: 8) {
+            VStack(spacing: 6) {
                 Text("Chưa có gõ tắt")
-                    .font(.title3)
-                    .fontWeight(.semibold)
+                    .font(.headline)
                     .foregroundStyle(.primary)
 
                 Text("Tạo gõ tắt để nhập văn bản nhanh hơn")
@@ -347,13 +296,11 @@ struct EmptyMacroView: View {
                 Label("Tạo gõ tắt đầu tiên", systemImage: "plus.circle.fill")
             }
             .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .controlSize(.regular)
             .disabled(!useMacro)
-
-            Spacer()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(NSColor.windowBackgroundColor))
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 40)
     }
 }
 
@@ -374,13 +321,20 @@ struct MacroRowView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: "text.badge.plus")
-                .foregroundStyle(.blue)
-                .frame(width: 24)
+            ZStack {
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color.blue.opacity(0.12))
+                    .frame(width: 32, height: 32)
 
-            VStack(alignment: .leading, spacing: 2) {
+                Image(systemName: "text.badge.plus")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.tint)
+            }
+
+            VStack(alignment: .leading, spacing: 3) {
                 Text(macro.shortcut)
                     .font(.body)
+                    .fontWeight(.medium)
                     .foregroundStyle(.primary)
 
                 Text(macro.expansion)
@@ -400,4 +354,3 @@ struct MacroRowView: View {
         .environmentObject(AppState.shared)
         .frame(width: 500, height: 600)
 }
-

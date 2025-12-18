@@ -54,7 +54,7 @@ struct SettingsSliderRow: View {
                 Text(valueFormatter(value))
                     .font(.subheadline)
                     .fontWeight(.semibold)
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.tint)
                     .frame(minWidth: 40, alignment: .trailing)
             }
 
@@ -62,7 +62,7 @@ struct SettingsSliderRow: View {
                 value: $value,
                 in: minValue...maxValue
             )
-            .tint(.blue)
+            .tint(iconColor)
         }
         .padding(.vertical, 6)
     }
@@ -72,7 +72,7 @@ struct SettingsSliderRow: View {
     VStack(spacing: 16) {
         SettingsSliderRow(
             icon: "speaker.wave.2.fill",
-            iconColor: .orange,
+            iconColor: .blue,
             title: "Âm lượng beep",
             subtitle: "Điều chỉnh mức âm lượng tiếng beep",
             minValue: 0.0,
@@ -87,7 +87,7 @@ struct SettingsSliderRow: View {
 
         SettingsSliderRow(
             icon: "textformat.size",
-            iconColor: .purple,
+            iconColor: .blue,
             title: "Kích cỡ font",
             subtitle: "Điều chỉnh kích cỡ chữ hiển thị",
             minValue: 8.0,
