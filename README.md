@@ -135,39 +135,6 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 - **CGEvent API** - Event interception và xử lý bàn phím
 - **NSUserDefaults** - Lưu trữ cấu hình local
 
-## 📋 Changelog
-
-### v1.1.2 (2025-12-17)
-
-- ⚙️ Thêm tính năng **Kiểm tra cập nhật** tự động lúc khởi động
-- 🛠️ Khôi phục phím nếu từ sai (Restore if invalid word)
-- ⌨️ Chế độ "Gửi từng phím" (Send key step by step)
-- 🎯 Cải thiện tính ổn định
-
-### v1.1.1 (2025-12-16)
-
-- ⌨️ Hỗ trợ phím **Fn** trong hotkey
-- 🔄 **Hot reload** - Không cần restart khi đổi chế độ
-- 📥 **Import macro** từ file
-
-### v1.1.0 (2025-12-16)
-
-- ✅ Khắc phục lỗi gõ trong **Spotlight Search**
-- 🔤 Sửa lỗi garbling text
-- 🎯 Tích hợp Accessibility API
-
-### v1.0.3
-
-- Cấu hình cơ bản, Macro, Excluded Apps
-- Smart Switch Key, macOS integration
-
-<details>
-<summary>📅 Xem lịch sử đầy đủ</summary>
-
-Truy cập [GitHub Releases](../../releases) để xem chi tiết tất cả các phiên bản.
-
-</details>
-
 ## 🤝 Đóng góp
 
 Mọi đóng góp đều được chào đón! Xem [CONTRIBUTING.md](CONTRIBUTING.md) để biết cách thức.
