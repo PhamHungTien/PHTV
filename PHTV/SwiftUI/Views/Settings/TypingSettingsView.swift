@@ -13,6 +13,20 @@ struct TypingSettingsView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var themeManager: ThemeManager
 
+    // Check if restore key conflicts with hotkey
+    private var hasRestoreHotkeyConflict: Bool {
+        guard appState.restoreOnEscape else { return false }
+
+        switch appState.restoreKey {
+        case .esc:
+            return false // ESC never conflicts
+        case .option:
+            return appState.switchKeyOption
+        case .control:
+            return appState.switchKeyControl
+        }
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
@@ -77,6 +91,74 @@ struct TypingSettingsView: View {
                             subtitle: "Khôi phục ký tự khi từ không hợp lệ",
                             isOn: $appState.restoreOnInvalidWord
                         )
+                    }
+                }
+
+                // Restore to Raw Keys Feature
+                SettingsCard(title: "Phím khôi phục", icon: "arrow.uturn.backward.circle.fill") {
+                    VStack(spacing: 16) {
+                        SettingsToggleRow(
+                            icon: "arrow.uturn.backward.circle.fill",
+                            iconColor: themeManager.themeColor,
+                            title: "Khôi phục về ký tự gốc",
+                            subtitle: "Khôi phục về ký tự đã gõ trước khi biến đổi (VD: user → úẻ → phím khôi phục → user)",
+                            isOn: $appState.restoreOnEscape
+                        )
+
+                        if appState.restoreOnEscape {
+                            Divider()
+
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Chọn phím khôi phục")
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.primary)
+
+                                // Grid of restore keys (3 columns, 3 keys total)
+                                LazyVGrid(columns: [
+                                    GridItem(.flexible(), spacing: 10),
+                                    GridItem(.flexible(), spacing: 10),
+                                    GridItem(.flexible(), spacing: 10)
+                                ], spacing: 10) {
+                                    ForEach(RestoreKey.allCases) { key in
+                                        RestoreKeyButton(
+                                            key: key,
+                                            isSelected: appState.restoreKey == key,
+                                            themeColor: themeManager.themeColor
+                                        ) {
+                                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                                appState.restoreKey = key
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Conflict warning
+                                if hasRestoreHotkeyConflict {
+                                    HStack(spacing: 10) {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .foregroundStyle(.orange)
+                                            .font(.system(size: 14))
+
+                                        Text("Phím khôi phục trùng với phím bổ trợ trong phím tắt chuyển chế độ")
+                                            .font(.caption)
+                                            .foregroundStyle(.orange)
+
+                                        Spacer()
+                                    }
+                                    .padding(10)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(Color.orange.opacity(0.1))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+                                            )
+                                    )
+                                    .transition(.scale.combined(with: .opacity))
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -365,6 +447,54 @@ struct SettingsSliderRow: View {
             }
         }
         .padding(.vertical, 6)
+    }
+}
+
+// MARK: - Restore Key Button Component
+struct RestoreKeyButton: View {
+    let key: RestoreKey
+    let isSelected: Bool
+    let themeColor: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                Text(key.symbol)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(isSelected ? .white : .primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+
+                Text(shortDisplayName)
+                    .font(.caption2)
+                    .foregroundStyle(isSelected ? .white.opacity(0.9) : .secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(isSelected ? themeColor : Color(NSColor.controlBackgroundColor))
+                    .shadow(color: isSelected ? themeColor.opacity(0.3) : Color.clear, radius: 4, x: 0, y: 2)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(isSelected ? Color.clear : Color.gray.opacity(0.25), lineWidth: 1)
+            )
+            .scaleEffect(isSelected ? 1.0 : 0.98)
+        }
+        .buttonStyle(.plain)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
+    }
+
+    private var shortDisplayName: String {
+        switch key {
+        case .esc: return "ESC"
+        case .option: return "Option"
+        case .control: return "Control"
+        }
     }
 }
 

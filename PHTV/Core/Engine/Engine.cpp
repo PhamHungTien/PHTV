@@ -2,7 +2,7 @@
 //  Engine.cpp
 //  PHTV
 //
-//  Created by Phạm Hùng Tiến on 1/18/19.
+//  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 #include <iostream>
@@ -1201,6 +1201,44 @@ void handleQuickTelex(const Uint16& data, const bool& isCaps) {
     insertKey(_quickTelex[data][1], isCaps, false);
 }
 
+/**
+ * Restore to raw keys - restore typed Vietnamese text to original ASCII keys
+ * Called when the restore key is pressed (customizable: ESC, Option, Control)
+ * Example: "úẻ" (from typing "user" in Telex) → "user"
+ */
+bool restoreToRawKeys() {
+    if (_stateIndex == 0 || _index == 0) {
+        return false;
+    }
+
+    // Check if any transforms were applied
+    bool hasTransforms = false;
+    for (ii = 0; ii < _index; ii++) {
+        if ((TypingWord[ii] & MARK_MASK) || (TypingWord[ii] & TONE_MASK) ||
+            (TypingWord[ii] & TONEW_MASK) || (TypingWord[ii] & STANDALONE_MASK)) {
+            hasTransforms = true;
+            break;
+        }
+    }
+
+    if (!hasTransforms) {
+        return false;
+    }
+
+    // Restore to original key states
+    hCode = vRestore;
+    hBPC = _index;
+    hNCC = _stateIndex;
+
+    for (i = 0; i < _stateIndex; i++) {
+        TypingWord[i] = KeyStates[i];
+        hData[_stateIndex - 1 - i] = KeyStates[i];
+    }
+    _index = _stateIndex;
+
+    return true;
+}
+
 bool checkRestoreIfWrongSpelling(const int& handleCode) {
     for (ii = 0; ii < _index; ii++) {
         if (!IS_CONSONANT(CHR(ii)) &&
@@ -1232,6 +1270,10 @@ void vSetCheckSpelling() {
 
 void vTempOffEngine(const bool& off) {
     _willTempOffEngine = off;
+}
+
+bool vRestoreToRawKeys() {
+    return restoreToRawKeys();
 }
 
 bool checkQuickConsonant() {
@@ -1325,6 +1367,18 @@ void vKeyHandleEvent(const vKeyEvent& event,
         lastInputType = vInputType;
     }
     #endif
+
+    // NEW FEATURE: Restore key - ESC only
+    // Note: Modifier keys (Option, Control) are handled in PHTV.mm via kCGEventFlagsChanged
+    // We ONLY handle ESC key here to avoid conflicts with typing (e.g. VNI number keys)
+    if (vRestoreOnEscape && _index > 0 && data == KEY_ESC) {
+        if (restoreToRawKeys()) {
+            // Successfully restored - let the engine handle vRestore code
+            // Don't call startNewSession() here as it will clear hCode
+            // The vRestore code will be processed and session will be cleared later
+            return;
+        }
+    }
 
     _isCaps = (capsStatus == 1 || //shift
                capsStatus == 2); //caps lock

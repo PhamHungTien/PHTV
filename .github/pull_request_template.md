@@ -24,13 +24,13 @@ Closes #[issue number]
 - [ ] 🎨 Style update - thay đổi format/style
 - [ ] ♻️ Refactoring - tái cấu trúc code
 
-## 🧪 Test (Testing)
+## 🧪 Testing
 
 <!-- Bạn đã test gì? -->
 
 - [ ] Tested locally
 - [ ] Tested on macOS 14.x
-- [ ] Tested on macOS 13.x
+- [ ] Tested on macOS 15.x
 - [ ] Tested in dark mode
 - [ ] Tested with excluded apps
 - [ ] Tested with multiple input methods

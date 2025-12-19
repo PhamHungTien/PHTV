@@ -1,7 +1,9 @@
 //
-// mac.h
-// Created by Phạm Hùng Tiến on 8/21/19.
-// Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
+//  mac.h
+//  PHTV
+//
+//  Created by Phạm Hùng Tiến on 2026.
+//  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
 
@@ -74,5 +76,14 @@
 #define KEY_QUOTE                               39
 #define KEY_COMMA                               43
 #define KEY_SLASH                               44
+
+// Modifier keys (for restore key feature)
+#define KEY_LEFT_COMMAND                        55
+#define KEY_RIGHT_COMMAND                       54
+#define KEY_LEFT_CONTROL                        59
+#define KEY_RIGHT_CONTROL                       62
+#define KEY_LEFT_OPTION                         58
+#define KEY_RIGHT_OPTION                        61
+#define KEY_FUNCTION                            63
 
 #endif //PHTV_MAC_H

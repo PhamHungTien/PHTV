@@ -30,7 +30,7 @@ struct ThemeSettingsView: View {
                                     isSelected: isSameColor(themeColor.color, themeManager.themeColor)
                                 ) {
                                     withAnimation(.easeInOut(duration: 0.2)) {
-                                        themeManager.updateThemeColor(themeColor.color)
+                                        themeManager.themeColor = themeColor.color
                                     }
                                 }
                             }

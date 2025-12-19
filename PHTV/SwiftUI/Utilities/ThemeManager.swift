@@ -12,24 +12,18 @@ import SwiftUI
 class ThemeManager: ObservableObject {
     static let shared = ThemeManager()
 
-    @AppStorage("themeColor") private var storedColor: AppStorageColor = AppStorageColor(color: .blue) {
-        willSet {
-            objectWillChange.send()
-        }
-    }
+    @AppStorage("themeColor") private var storedColor = AppStorageColor(color: .blue)
 
     var themeColor: Color {
         get { storedColor.color }
-        set { storedColor = AppStorageColor(color: newValue) }
+        set {
+            objectWillChange.send()
+            storedColor = AppStorageColor(color: newValue)
+        }
     }
 
     private init() {}
 
     // Predefined theme colors
     let predefinedColors: [ThemeColor] = Color.themeColors
-
-    // Update theme color
-    func updateThemeColor(_ color: Color) {
-        themeColor = color
-    }
 }

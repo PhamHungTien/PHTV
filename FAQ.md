@@ -24,7 +24,7 @@
 
 **A:**
 
-- **Telex**: Phổ biến, dễ học (ơ=o, ư=u, ư=uw, v.v.)
+- **Telex**: Phổ biến, dễ học (ơ=ow, ư=uw, â=aa, v.v.)
 - **VNI**: Gõ bằng số (1-9 cho các dấu)
 - **Simple Telex 1/2**: Biến thể đơn giản của Telex
 
@@ -40,7 +40,7 @@ Hãy thử từng cái để tìm phù hợp nhất!
 
 ---
 
-## Sử dụng
+## 🎯 Sử dụng
 
 ### Q5: Làm sao để tắt PHTV cho một ứng dụng cụ thể?
 
@@ -124,7 +124,7 @@ Hoặc trong Settings → Reset All (nếu có button này).
 
 **A:** Để giám sát phím gõ, chuyển ngôn ngữ, hoạt động trên mọi ứng dụng. Yêu cầu chuẩn của macOS.
 
-## Khắc phục sự cố
+## 🛠️ Khắc phục sự cố
 
 ### Q16: PHTV không hoạt động?
 
@@ -147,7 +147,7 @@ Hoặc trong Settings → Reset All (nếu có button này).
 
 **A:** Kiểm tra Input Method (Telex/VNI) và Character Set (Unicode/TCVN3).
 
-## Phát triển
+## 🚀 Phát triển
 
 ### Q19: Làm sao để đóng góp?
 

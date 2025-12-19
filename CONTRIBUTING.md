@@ -88,27 +88,25 @@ Format: `<type>: <mô tả>`
 ### Cấu trúc dự án
 
 ```
-
 PHTV/
 ├── PHTV/
-│ ├── Application/ # AppDelegate, main entry point
-│ ├── Core/
-│ │ ├── Engine/ # Core input method engine (C++)
-│ │ │ ├── Engine.cpp/.h # Logic chính
-│ │ │ ├── Vietnamese.cpp/.h # Bảng mã tiếng Việt
-│ │ │ ├── Macro.cpp/.h # Quản lý macro
-│ │ │ └── ...
-│ │ └── Platforms/ # macOS-specific integration
-│ ├── Managers/ # Business logic
-│ ├── SwiftUI/ # Giao diện người dùng
-│ │ ├── Views/ # SwiftUI views
-│ │ ├── Controllers/ # Window/Status bar controllers
-│ │ └── Utilities/ # Helper functions
-│ └── Utils/ # Utility functions
-├── PHTV.xcodeproj/ # Xcode project
+│   ├── Application/        # AppDelegate, main entry point
+│   ├── Core/
+│   │   ├── Engine/         # Core input method engine (C++)
+│   │   │   ├── Engine.cpp/.h         # Logic chính
+│   │   │   ├── Vietnamese.cpp/.h     # Bảng mã tiếng Việt
+│   │   │   ├── Macro.cpp/.h          # Quản lý macro
+│   │   │   └── ...
+│   │   └── Platforms/      # macOS-specific integration
+│   ├── Managers/           # Business logic
+│   ├── SwiftUI/            # Giao diện người dùng
+│   │   ├── Views/          # SwiftUI views
+│   │   ├── Controllers/    # Window/Status bar controllers
+│   │   └── Utilities/      # Helper functions
+│   └── Utils/              # Utility functions
+├── PHTV.xcodeproj/         # Xcode project
 └── README.md
-
-````
+```
 
 ### Build và Test
 
@@ -121,7 +119,7 @@ xcodebuild -project PHTV.xcodeproj -scheme PHTV test
 
 # Clean build
 xcodebuild -project PHTV.xcodeproj clean
-````
+```
 
 ### Debugging
 

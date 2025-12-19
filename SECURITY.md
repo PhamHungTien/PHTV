@@ -25,7 +25,7 @@ Bao gồm:
 - Tác động tiềm ẩn
 - PHTV & macOS version
 
-### Timeline
+### ⏱️ Timeline
 
 - **Ngay khi nhận:** Xác nhận báo cáo
 - **Trong 48 giờ:** Đánh giá mức độ nghiêm trọng
@@ -33,53 +33,53 @@ Bao gồm:
 - **Trước release vá:** Liên hệ với bạn
 - **Sau release:** Công bố lỗ hổng và bản vá
 
-### Tiết lộ có trách nhiệm
+### 🤝 Tiết lộ có trách nhiệm
 
 - **Cho bạn:** Vui lòng cho chúng tôi thời gian bản vá trước khi công bố
 - **Cho chúng tôi:** Chúng tôi sẽ bản vá và thông báo người dùng nhanh chóng
 
-## Hỗ trợ phiên bản
+## 📌 Hỗ trợ phiên bản
 
 | Phiên bản | Hỗ trợ            |
 | --------- | ----------------- |
 | 1.x       | ✅ Đầy đủ         |
 | 0.x       | ⚠️ Quan trọng chỉ |
 
-## Mức độ nghiêm trọng
+## 📊 Mức độ nghiêm trọng
 
-### Lỗ hổng nghiêm trọng
+### 🔴 Lỗ hổng nghiêm trọng
 
 - Remote code execution
 - Tấn công elevation of privilege
 
 **Ví dụ:** Một cách để đọc các tệp người dùng khác trên macOS
 
-### Lỗ hổng cao
+### 🟠 Lỗ hổng cao
 
 - Hành vi không mong muốn có thể ảnh hưởng đến bảo mật
 - Tính năng bảo mật yếu
 
 **Ví dụ:** Macro không được xác thực một cách đúng đắn
 
-### Lỗ hổng trung bình
+### 🟡 Lỗ hổng trung bình
 
 - Tính năng không hoạt động như mong đợi
 - Tiềm năng bị lạm dụng
 
-### Lỗ hổng thấp
+### 🟢 Lỗ hổng thấp
 
 - Các vấn đề nhỏ không có tác động bảo mật rõ ràng
 
-## Các thực hành bảo mật tốt
+## ✅ Các thực hành bảo mật tốt
 
-### Để người dùng
+### 👤 Để người dùng
 
 - **Cập nhật thường xuyên:** Cài đặt các bản cập nhật của PHTV ngay khi có sẵn
 - **Cấp quyền cẩn thận:** Chỉ cấp quyền Accessibility cho PHTV (đó là cách nó hoạt động)
 - **Exclude sensitive apps:** Thêm các ứng dụng nhạy cảm vào danh sách Excluded Apps
 - **Theo dõi macro:** Kiểm tra macro được thêm nếu bạn có nghi ngờ
 
-### Để nhà phát triển
+### 👨‍💻 Để nhà phát triển
 
 - Chúng tôi tuân theo các thực hành bảo mật tốt:
   - Code review trước merge
@@ -87,7 +87,7 @@ Bao gồm:
   - Tránh đọc/ghi file không cần thiết
   - Sử dụng HTTPS cho tất cả các yêu cầu mạng (nếu có)
 
-## Công khai lỗ hổng
+## 📢 Công khai lỗ hổng
 
 Khi chúng tôi công bố lỗ hổng bảo mật, chúng tôi sẽ:
 
@@ -126,5 +126,3 @@ Chúng tôi cam kết bảo vệ người dùng và xử lý mọi báo cáo b�
 [🏠 Trang chủ](README.md) • [📧 Email bảo mật](mailto:hungtien10a7@gmail.com)
 
 </div>
-
-**Cảm ơn đã giúp giữ PHTV an toàn!** 🔒

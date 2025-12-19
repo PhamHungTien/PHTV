@@ -2,7 +2,7 @@
 //  PHTVConfig.h
 //  PHTV - Vietnamese Input Method
 //
-//  Created by Phạm Hùng Tiến on 2026
+//  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 //  Runtime Configuration Manager - Singleton Pattern

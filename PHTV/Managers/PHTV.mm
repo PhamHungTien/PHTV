@@ -527,6 +527,10 @@ extern "C" {
     Uint32 _tempChar;
     bool _hasJustUsedHotKey = false;
 
+    // For restore key detection with modifier keys
+    bool _restoreModifierPressed = false;
+    bool _keyPressedWithRestoreModifier = false;
+
     int _languageTemp = 0; //use for smart switch key
     vector<Byte> savedSmartSwitchKeyData; ////use for smart switch key
     
@@ -965,7 +969,49 @@ extern "C" {
         CFRelease(eventVkeyDown);
         CFRelease(eventVkeyUp);
     }
-    
+
+    /**
+     * Check if app is a terminal/IDE that needs special handling
+     * These apps are extremely timing-sensitive and need higher delays
+     * Uses backspace method with step-by-step character sending
+     */
+    BOOL isTerminalApp(NSString *bundleId) {
+        if (!bundleId) return NO;
+
+        // JetBrains IDEs (IntelliJ, PyCharm, WebStorm, GoLand, CLion, Fleet, etc.)
+        if ([bundleId hasPrefix:@"com.jetbrains"]) {
+            return YES;
+        }
+
+        static NSSet<NSString*> *terminalApps = nil;
+        static dispatch_once_t onceToken;
+        dispatch_once(&onceToken, ^{
+            terminalApps = [NSSet setWithArray:@[
+                // Terminals
+                @"com.apple.Terminal",              // macOS Terminal (used by Claude Code)
+                @"com.googlecode.iterm2",           // iTerm2
+                @"io.alacritty",                    // Alacritty
+                @"com.github.wez.wezterm",          // WezTerm
+                @"com.mitchellh.ghostty",           // Ghostty
+                @"dev.warp.Warp-Stable",            // Warp
+                @"net.kovidgoyal.kitty",            // Kitty
+                @"co.zeit.hyper",                   // Hyper
+                @"org.tabby",                       // Tabby
+                @"com.raphaelamorim.rio",           // Rio
+                @"com.termius-dmg.mac",             // Termius
+                // IDEs/Editors
+                @"com.microsoft.VSCode",            // VS Code
+                @"com.microsoft.VSCodeInsiders",    // VS Code Insiders
+                @"com.google.antigravity",          // Android Studio
+                @"dev.zed.Zed",                     // Zed
+                @"com.sublimetext.4",               // Sublime Text 4
+                @"com.sublimetext.3",               // Sublime Text 3
+                @"com.panic.Nova"                   // Nova
+            ]];
+        });
+        return [terminalApps containsObject:bundleId];
+    }
+
     void SendCutKey() {
         CGEventRef eventVkeyDown = CGEventCreateKeyboardEvent (myEventSource, KEY_X, true);
         CGEventRef eventVkeyUp = CGEventCreateKeyboardEvent (myEventSource, KEY_X, false);
@@ -1297,10 +1343,89 @@ extern "C" {
             }
             // Only mark as used hotkey if we had modifiers pressed
             _hasJustUsedHotKey = _lastFlag != 0;
+            // Track if any key is pressed while restore modifier is held
+            // Only track if custom restore key is actually set (Option or Control)
+            if (vRestoreOnEscape && vCustomEscapeKey > 0 && _restoreModifierPressed) {
+                _keyPressedWithRestoreModifier = true;
+            }
         } else if (type == kCGEventFlagsChanged) {
             if (_lastFlag == 0 || _lastFlag < _flag) {
+                // Pressing more modifiers
                 _lastFlag = _flag;
+
+                // Check if restore modifier key is being pressed
+                if (vRestoreOnEscape && vCustomEscapeKey > 0) {
+                    bool isOptionKey = (vCustomEscapeKey == KEY_LEFT_OPTION || vCustomEscapeKey == KEY_RIGHT_OPTION);
+                    bool isControlKey = (vCustomEscapeKey == KEY_LEFT_CONTROL || vCustomEscapeKey == KEY_RIGHT_CONTROL);
+
+                    if ((isOptionKey && (_flag & kCGEventFlagMaskAlternate)) ||
+                        (isControlKey && (_flag & kCGEventFlagMaskControl))) {
+                        _restoreModifierPressed = true;
+                        _keyPressedWithRestoreModifier = false;
+                    }
+                }
             } else if (_lastFlag > _flag)  {
+                // Releasing modifiers - check for restore modifier key first
+                if (vRestoreOnEscape && _restoreModifierPressed && !_keyPressedWithRestoreModifier) {
+                    bool isOptionKey = (vCustomEscapeKey == KEY_LEFT_OPTION || vCustomEscapeKey == KEY_RIGHT_OPTION);
+                    bool isControlKey = (vCustomEscapeKey == KEY_LEFT_CONTROL || vCustomEscapeKey == KEY_RIGHT_CONTROL);
+
+                    bool optionReleased = isOptionKey && (_lastFlag & kCGEventFlagMaskAlternate) && !(_flag & kCGEventFlagMaskAlternate);
+                    bool controlReleased = isControlKey && (_lastFlag & kCGEventFlagMaskControl) && !(_flag & kCGEventFlagMaskControl);
+
+                    if (optionReleased || controlReleased) {
+                        // Restore modifier released without any other key press - trigger restore
+                        if (vRestoreToRawKeys()) {
+                            // Successfully restored - pData now contains restore info
+                            NSString *effectiveBundleId = _phtvEffectiveTargetBundleId ?: getFocusedAppBundleId();
+                            BOOL isTerminal = isTerminalApp(effectiveBundleId);
+
+                            // Send backspaces to delete Vietnamese characters
+                            if (pData->backspaceCount > 0 && pData->backspaceCount < MAX_BUFF) {
+                                for (int i = 0; i < pData->backspaceCount; i++) {
+                                    SendBackspace();
+                                    if (isTerminal) {
+                                        usleep(3000);  // 3ms delay for terminals
+                                    }
+                                }
+                                // Extra settle time for terminals after all backspaces
+                                if (isTerminal) {
+                                    usleep(8000);  // 8ms settle time
+                                }
+                            }
+
+                            // Send the raw ASCII characters
+                            SendNewCharString();
+
+                            // Final settle time for terminals (20ms) after all text is sent
+                            if (isTerminal) {
+                                usleep(20000);  // 20ms final settle time for terminals
+                            }
+
+                            _lastFlag = 0;
+                            _restoreModifierPressed = false;
+                            _keyPressedWithRestoreModifier = false;
+                            return NULL;
+                        }
+                        _restoreModifierPressed = false;
+                        _keyPressedWithRestoreModifier = false;
+                    }
+                }
+
+                // Reset restore modifier state when releasing any modifier
+                if (_restoreModifierPressed) {
+                    bool isOptionKey = (vCustomEscapeKey == KEY_LEFT_OPTION || vCustomEscapeKey == KEY_RIGHT_OPTION);
+                    bool isControlKey = (vCustomEscapeKey == KEY_LEFT_CONTROL || vCustomEscapeKey == KEY_RIGHT_CONTROL);
+
+                    bool optionReleased = isOptionKey && (_lastFlag & kCGEventFlagMaskAlternate) && !(_flag & kCGEventFlagMaskAlternate);
+                    bool controlReleased = isControlKey && (_lastFlag & kCGEventFlagMaskControl) && !(_flag & kCGEventFlagMaskControl);
+
+                    if (optionReleased || controlReleased) {
+                        _restoreModifierPressed = false;
+                        _keyPressedWithRestoreModifier = false;
+                    }
+                }
+
                 //check switch
                 if (checkHotKey(vSwitchKeyStatus, GET_SWITCH_KEY(vSwitchKeyStatus) != 0xFE)) {
                     _lastFlag = 0;

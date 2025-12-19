@@ -49,10 +49,59 @@ struct SystemSettingsView: View {
                         SettingsToggleRow(
                             icon: "flag.fill",
                             iconColor: themeManager.themeColor,
-                            title: "Hiển thị icon tiếng Việt trên thanh menu",
-                            subtitle: "Dùng icon chữ Việt khi đang ở chế độ tiếng Việt",
+                            title: "Hiển thị icon chữ V trên thanh menu",
+                            subtitle: "Dùng icon chữ V khi đang ở chế độ tiếng Việt",
                             isOn: $appState.useVietnameseMenubarIcon
                         )
+
+                        SettingsDivider()
+
+                        VStack(spacing: 8) {
+                            HStack(spacing: 14) {
+                                ZStack {
+                                    if #available(macOS 26.0, *) {
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(themeManager.themeColor.opacity(0.12))
+                                            .frame(width: 36, height: 36)
+                                            .glassEffect(in: .rect(cornerRadius: 8))
+                                    } else {
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(themeManager.themeColor.opacity(0.12))
+                                            .frame(width: 36, height: 36)
+                                    }
+
+                                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundStyle(themeManager.themeColor)
+                                }
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Kích cỡ icon thanh menu")
+                                        .font(.body)
+                                        .foregroundStyle(.primary)
+
+                                    Text("Điều chỉnh kích thước icon trên thanh menu")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+
+                                Spacer()
+
+                                Text(String(format: "%.0f px", appState.menuBarIconSize))
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.tint)
+                                    .frame(minWidth: 40, alignment: .trailing)
+                            }
+
+                            CustomSlider(
+                                value: $appState.menuBarIconSize,
+                                range: 12.0...20.0,
+                                step: 0.01,
+                                tintColor: themeManager.themeColor
+                            )
+                        }
+                        .padding(.vertical, 6)
                     }
                 }
 

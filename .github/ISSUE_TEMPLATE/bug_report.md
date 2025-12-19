@@ -48,8 +48,8 @@ Thank you for reporting a bug! Please fill in this form to help us understand yo
 
 **macOS Version:**
 
+- [ ] macOS 15.x (Sequoia)
 - [ ] macOS 14.x (Sonoma)
-- [ ] macOS 13.x (Ventura)
 - [ ] Other: **\_\_\_**
 
 **PHTV Version:**

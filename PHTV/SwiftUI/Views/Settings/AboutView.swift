@@ -22,7 +22,8 @@ struct AboutView: View {
                                 .fill(
                                     LinearGradient(
                                         colors: [
-                                            Color.blue.opacity(0.12), Color.purple.opacity(0.12),
+                                            themeManager.themeColor.opacity(0.12),
+                                            themeManager.themeColor.opacity(0.08),
                                         ],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
@@ -35,7 +36,8 @@ struct AboutView: View {
                                 .fill(
                                     LinearGradient(
                                         colors: [
-                                            Color.blue.opacity(0.2), Color.purple.opacity(0.2),
+                                            themeManager.themeColor.opacity(0.2),
+                                            themeManager.themeColor.opacity(0.15),
                                         ],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
@@ -72,8 +74,8 @@ struct AboutView: View {
                         .fontWeight(.semibold)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(Capsule().fill(Color.blue.opacity(0.15)))
-                        .foregroundStyle(.tint)
+                        .background(Capsule().fill(themeManager.themeColor.opacity(0.15)))
+                        .foregroundStyle(themeManager.themeColor)
                     }
                 }
                 .padding(.top, 20)
@@ -244,5 +246,6 @@ private struct AppIconView: View {
 
 #Preview {
     AboutView()
+        .environmentObject(ThemeManager.shared)
         .frame(width: 500, height: 700)
 }

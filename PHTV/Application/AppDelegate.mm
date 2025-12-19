@@ -64,6 +64,10 @@ volatile int vRememberCode = 1; //new on version 2.0
 volatile int vOtherLanguage = 1; //new on version 2.0
 volatile int vTempOffPHTV = 0; //new on version 2.0
 
+// Restore to raw keys (customizable key)
+volatile int vRestoreOnEscape = 1; //enable restore to raw keys feature (default: ON)
+volatile int vCustomEscapeKey = 0; //custom restore key code (0 = default ESC = 53)
+
 int vShowIconOnDock = 0; //new on version 2.0
 
 volatile int vPerformLayoutCompat = 0;
@@ -870,7 +874,11 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     vFixChromiumBrowser = PHTVReadIntWithFallback(defaults, @"vFixChromiumBrowser", vFixChromiumBrowser);
     vPerformLayoutCompat = PHTVReadIntWithFallback(defaults, @"vPerformLayoutCompat", vPerformLayoutCompat);
     vShowIconOnDock = PHTVReadIntWithFallback(defaults, @"vShowIconOnDock", vShowIconOnDock);
-    
+
+    // Restore to raw keys (customizable key)
+    vRestoreOnEscape = PHTVReadIntWithFallback(defaults, @"vRestoreOnEscape", vRestoreOnEscape);
+    vCustomEscapeKey = PHTVReadIntWithFallback(defaults, @"vCustomEscapeKey", vCustomEscapeKey);
+
     // Memory barrier to ensure event tap thread sees new values immediately
     __sync_synchronize();
 
@@ -1507,6 +1515,11 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     vRememberCode = 1; [defaults setInteger:vRememberCode forKey:@"vRememberCode"];
     vOtherLanguage = 1; [defaults setInteger:vOtherLanguage forKey:@"vOtherLanguage"];
     vTempOffPHTV = 0; [defaults setInteger:vTempOffPHTV forKey:@"vTempOffPHTV"];
+
+    // Restore to raw keys (customizable key) - default: ON with ESC key
+    vRestoreOnEscape = 1; [defaults setInteger:vRestoreOnEscape forKey:@"vRestoreOnEscape"];
+    vCustomEscapeKey = 0; [defaults setInteger:vCustomEscapeKey forKey:@"vCustomEscapeKey"];
+
     vShowIconOnDock = 0; [defaults setInteger:vShowIconOnDock forKey:@"vShowIconOnDock"];
     vFixChromiumBrowser = 0; [defaults setInteger:vFixChromiumBrowser forKey:@"vFixChromiumBrowser"];
     vPerformLayoutCompat = 0; [defaults setInteger:vPerformLayoutCompat forKey:@"vPerformLayoutCompat"];

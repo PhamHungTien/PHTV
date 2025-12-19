@@ -40,11 +40,11 @@ PHTV là bộ gõ tiếng Việt **offline, nhanh, và riêng tư** cho macOS 14
 <table>
 <tr>
 <td width="50%">
-<img src="PHTV/Resources/UI/menu-input-methods.png" alt="Các kiểu gõ trên menu bar" style="border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" width="100%">
+<img src="PHTV/Resources/UI/menu-input-methods.png" alt="Các kiểu gõ trên menu bar" width="100%">
 <p align="center"><em>Các kiểu gõ trên menu bar</em></p>
 </td>
 <td width="50%">
-<img src="PHTV/Resources/UI/menu-charset.png" alt="Các bảng mã trên menu bar" style="border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" width="100%">
+<img src="PHTV/Resources/UI/menu-charset.png" alt="Các bảng mã trên menu bar" width="100%">
 <p align="center"><em>Các bảng mã trên menu bar</em></p>
 </td>
 </tr>
@@ -55,15 +55,15 @@ PHTV là bộ gõ tiếng Việt **offline, nhanh, và riêng tư** cho macOS 14
 <table>
 <tr>
 <td width="33%">
-<img src="PHTV/Resources/UI/settings-typing.png" alt="Settings - Typing" style="border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" width="100%">
+<img src="PHTV/Resources/UI/settings-typing.png" alt="Settings - Typing" width="100%">
 <p align="center"><em>Typing Settings</em></p>
 </td>
 <td width="33%">
-<img src="PHTV/Resources/UI/settings-macros.png" alt="Settings - Macros" style="border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" width="100%">
+<img src="PHTV/Resources/UI/settings-macros.png" alt="Settings - Macros" width="100%">
 <p align="center"><em>Macros Settings</em></p>
 </td>
 <td width="33%">
-<img src="PHTV/Resources/UI/settings-system.png" alt="Settings - System" style="border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" width="100%">
+<img src="PHTV/Resources/UI/settings-system.png" alt="Settings - System" width="100%">
 <p align="center"><em>System Settings</em></p>
 </td>
 </tr>
@@ -125,7 +125,7 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 | ------------- | ----------------------------------------- |
 | **macOS**     | 14.0+ (Sonoma trở lên)                    |
 | **Kiến trúc** | Apple Silicon (arm64) hoặc Intel (x86_64) |
-| **Xcode**     | 26.0+ (nếu build từ source)               |
+| **Xcode**     | 16.0+ (nếu build từ source)               |
 | **Quyền**     | Accessibility                             |
 
 ## 🛠️ Công nghệ

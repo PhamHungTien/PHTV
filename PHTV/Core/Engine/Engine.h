@@ -2,7 +2,7 @@
 //  Engine.h
 //  PHTV
 //
-//  Created by Phạm Hùng Tiến on 1/18/19.
+//  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
@@ -195,6 +195,20 @@ extern volatile int vOtherLanguage;
 extern volatile int vTempOffPHTV;
 
 /**
+ * Restore to raw keys feature (default: ON)
+ * When enabled, pressing ESC (or custom key) will restore typed text to raw keys
+ * (user → úẻ → restore key → user)
+ */
+extern volatile int vRestoreOnEscape;
+
+/**
+ * Custom key code for restore function (default: KEY_ESC = 53)
+ * Can be any key: ESC, Option, Control
+ * Set to 0 to use default ESC key
+ */
+extern volatile int vCustomEscapeKey;
+
+/**
  * Call this function first to receive data pointer
  */
 void* vKeyInit();
@@ -242,6 +256,12 @@ void vSetCheckSpelling();
  * temporarily turn off PHTV engine
  */
 void vTempOffEngine(const bool& off=true);
+
+/**
+ * Manually trigger restore to raw keys
+ * Returns true if restore was successful
+ */
+bool vRestoreToRawKeys();
 
 /**
  * some utils function
