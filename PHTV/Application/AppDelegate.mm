@@ -219,10 +219,11 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 }
 
 - (void)startAccessibilityMonitoring {
-    // Monitor accessibility status with VERY fast interval (0.1s) to detect revocation INSTANTLY
+    // Monitor accessibility status with 1s interval
     // CRITICAL: Uses test event tap creation - ONLY reliable method (Apple recommended)
     // MJAccessibilityIsEnabled() returns TRUE even when permission is revoked!
-    self.accessibilityMonitor = [NSTimer scheduledTimerWithTimeInterval:0.1
+    // 1s interval is optimal - faster causes conflicts with main event tap
+    self.accessibilityMonitor = [NSTimer scheduledTimerWithTimeInterval:1.0
                                                                   target:self
                                                                 selector:@selector(checkAccessibilityStatus)
                                                                 userInfo:nil
@@ -232,7 +233,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     self.wasAccessibilityEnabled = [PHTVManager canCreateEventTap];
 
     #ifdef DEBUG
-    NSLog(@"[Accessibility] Started monitoring via test event tap (interval: 0.1s)");
+    NSLog(@"[Accessibility] Started monitoring via test event tap (interval: 1s, cached)");
     #endif
 }
 

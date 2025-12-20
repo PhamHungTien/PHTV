@@ -34,6 +34,10 @@ static CFRunLoopSourceRef runLoopSource;
 static NSUInteger         _tapReenableCount = 0;
 static NSUInteger         _tapRecreateCount = 0;
 
+// Cache for canCreateEventTap to avoid creating test taps too frequently
+static BOOL _lastPermissionCheckResult = NO;
+static NSTimeInterval _lastPermissionCheckTime = 0;
+
 #pragma mark - Core Functionality
 
 +(BOOL)hasPermissionLost {
@@ -55,7 +59,16 @@ static NSUInteger         _tapRecreateCount = 0;
 // SAFE permission check via test event tap (Apple recommended)
 // This is the ONLY reliable way to check accessibility permission
 // Returns YES if we can create event tap (permission granted), NO otherwise
+// Cached to avoid creating test taps too frequently (max once per second)
 +(BOOL)canCreateEventTap {
+    NSTimeInterval now = [[NSDate date] timeIntervalSince1970];
+
+    // If checked within last 1 second, return cached result
+    // This prevents creating test taps too frequently which could interfere with main tap
+    if (now - _lastPermissionCheckTime < 1.0) {
+        return _lastPermissionCheckResult;
+    }
+
     // Try creating a test event tap
     CFMachPortRef testTap = CGEventTapCreate(
         kCGSessionEventTap,
@@ -74,6 +87,10 @@ static NSUInteger         _tapRecreateCount = 0;
         CFRelease(testTap);
     }
 
+    // Update cache
+    _lastPermissionCheckResult = hasPermission;
+    _lastPermissionCheckTime = now;
+
     return hasPermission;
 }
 
@@ -87,6 +104,10 @@ static NSUInteger         _tapRecreateCount = 0;
 
     // Reset permission lost flag (fresh start)
     _permissionLost = NO;
+
+    // Invalidate permission check cache on init
+    _lastPermissionCheckTime = 0;
+    _lastPermissionCheckResult = NO;
 
     // Initialize PHTV engine
     PHTVInit();
