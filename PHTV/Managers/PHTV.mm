@@ -257,13 +257,13 @@ extern "C" {
                                                            @"com.microsoft.edgemac.Dev",
                                                            @"com.microsoft.edgemac.Beta",
                                                            @"com.microsoft.Edge.Dev",
-                                                           @"com.microsoft.Edge",
-                                                           @"net.whatsapp.WhatsApp"]];  // WhatsApp Desktop (Electron/Chromium-based)
+                                                           @"com.microsoft.Edge"]];
 
     // Apps that need to FORCE Unicode precomposed (not compound) - Using NSSet for O(1) lookup performance
     // These apps don't handle Unicode combining characters properly
     NSSet* _forcePrecomposedAppSet = [NSSet setWithArray:@[@"com.apple.Spotlight",
-                                                            @"com.apple.systemuiserver"]];  // Spotlight runs under SystemUIServer
+                                                            @"com.apple.systemuiserver",  // Spotlight runs under SystemUIServer
+                                                            @"net.whatsapp.WhatsApp"]];    // WhatsApp needs precomposed Unicode
 
     //app which needs step by step key sending (timing sensitive apps) - Using NSSet for O(1) lookup performance
     NSSet* _stepByStepAppSet = [NSSet setWithArray:@[// Commented out for testing Vietnamese input:
@@ -273,14 +273,14 @@ extern "C" {
                                                       @"com.apple.SecurityAgent",   // Security dialogs
                                                       @"com.raycast.macos",
                                                       @"com.alfredapp.Alfred",
-                                                      @"com.apple.launchpad",       // Launchpad/Ứng dụng
-                                                      @"net.whatsapp.WhatsApp"]];   // WhatsApp Desktop (caption field needs step-by-step)
+                                                      @"com.apple.launchpad"]];     // Launchpad/Ứng dụng
+                                                      // Removed WhatsApp - step-by-step causes more issues
 
     // Apps where Vietnamese input should be disabled (search/launcher apps) - Using NSSet for O(1) lookup performance
     NSSet* _disableVietnameseAppSet = [NSSet setWithArray:@[
         @"com.apple.apps.launcher",       // Apps.app (Applications)
         @"com.apple.ScreenContinuity",    // iPhone Mirroring
-        // Spotlight is handled separately (force precomposed Unicode instead of disabling)
+        // WhatsApp is handled separately (force precomposed Unicode like Spotlight)
     ]];
     
     // Optimized helper to check if bundleId matches any app in the set (exact match or prefix)
@@ -1711,7 +1711,7 @@ extern "C" {
                     } else {
                         SendEmptyCharacter();
                         pData->backspaceCount++;
-                    
+
                     }
                 }
                 

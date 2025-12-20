@@ -8,6 +8,8 @@
 
 #import <Cocoa/Cocoa.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 #define PHTV_BUNDLE @"com.phamhungtien.phtv"
 
 @interface AppDelegate : NSObject <NSApplicationDelegate, NSMenuDelegate>
@@ -40,10 +42,12 @@
 - (void)handleAccessibilityRevoked;
 - (void)setupSwiftUIBridge;
 - (void)loadExistingMacros;
-- (void)handleCheckForUpdates:(NSNotification *)notification;
-- (void)handleSettingsReset:(NSNotification *)notification;
+- (void)handleCheckForUpdates:(NSNotification * _Nullable)notification;
+- (void)handleSettingsReset:(NSNotification * _Nullable)notification;
 
 @end
+
+NS_ASSUME_NONNULL_END
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,4 +59,5 @@ AppDelegate* _Nullable GetAppDelegateInstance(void);
 #ifdef __cplusplus
 }
 #endif
+
 

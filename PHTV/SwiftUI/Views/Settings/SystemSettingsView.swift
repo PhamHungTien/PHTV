@@ -268,8 +268,10 @@ struct SystemSettingsView: View {
         // Get AppDelegate using global function
         if let appDelegate = GetAppDelegateInstance() {
             // Call on main thread to ensure it runs
+            // Note: handleCheck expects NSNotification but we can pass a dummy one
+            let dummyNotification = Notification(name: NSNotification.Name("CheckForUpdates"))
             DispatchQueue.main.async {
-                appDelegate.handleCheck(forUpdates: nil)
+                appDelegate.handleCheck(forUpdates: dummyNotification)
             }
         } else {
             // Show immediate error to user
