@@ -378,12 +378,12 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
             #pragma clang diagnostic push
             #pragma clang diagnostic ignored "-Wdeprecated-declarations"
             NSError *error = nil;
-            BOOL launched = [[NSWorkspace sharedWorkspace] launchApplicationAtURL:bundleURL
+            NSRunningApplication *app = [[NSWorkspace sharedWorkspace] launchApplicationAtURL:bundleURL
                                                                           options:NSWorkspaceLaunchDefault
                                                                     configuration:@{}
                                                                             error:&error];
             #pragma clang diagnostic pop
-            if (!launched) {
+            if (!app) {
                 NSLog(@"[Accessibility] Relaunch failed: %@", error.localizedDescription ?: @"unknown error");
                 return;
             }

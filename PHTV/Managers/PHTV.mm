@@ -1337,7 +1337,27 @@ extern "C" {
         
         _flag = CGEventGetFlags(event);
         _keycode = (CGKeyCode)CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
-        
+
+        // If pause key is being held, strip pause modifier from events to prevent special characters
+        if (_pauseKeyPressed && (type == kCGEventKeyDown || type == kCGEventKeyUp)) {
+            CGEventFlags newFlags = _flag;
+
+            // Remove pause modifier flag based on configured pause key
+            if (vPauseKey == KEY_LEFT_OPTION || vPauseKey == KEY_RIGHT_OPTION) {
+                newFlags &= ~kCGEventFlagMaskAlternate;
+            } else if (vPauseKey == KEY_LEFT_CONTROL || vPauseKey == KEY_RIGHT_CONTROL) {
+                newFlags &= ~kCGEventFlagMaskControl;
+            } else if (vPauseKey == KEY_LEFT_COMMAND || vPauseKey == KEY_RIGHT_COMMAND) {
+                newFlags &= ~kCGEventFlagMaskCommand;
+            } else if (vPauseKey == 63) {  // Fn key
+                newFlags &= ~kCGEventFlagMaskSecondaryFn;
+            }
+
+            // Apply modified flags to event
+            CGEventSetFlags(event, newFlags);
+            _flag = newFlags;  // Update local flag as well
+        }
+
         if (type == kCGEventKeyDown && vPerformLayoutCompat) {
             // If conversion fail, use current keycode
            _keycode = ConvertEventToKeyboadLayoutCompatKeyCode(event, _keycode);
