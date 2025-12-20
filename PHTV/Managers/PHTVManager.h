@@ -28,6 +28,7 @@
 
 // SAFE permission check via test event tap (Apple recommended approach)
 +(BOOL)canCreateEventTap;
++(void)invalidatePermissionCache;  // Force fresh check on next call
 
 // Table codes
 +(NSArray*)getTableCodes;

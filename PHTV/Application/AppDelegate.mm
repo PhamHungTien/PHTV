@@ -210,6 +210,13 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
     if (res == 1001) {
         MJAccessibilityOpenPanel();
+
+        // CRITICAL: Invalidate permission cache immediately
+        // User is going to System Settings to grant permission
+        // Next timer check MUST do fresh permission test
+        [PHTVManager invalidatePermissionCache];
+        NSLog(@"[Accessibility] User opening System Settings - cache invalidated for fresh check");
+
         // Save current version after user agrees to grant permission
         [[NSUserDefaults standardUserDefaults] setObject:currentVersion forKey:@"LastRunVersion"];
         [[NSUserDefaults standardUserDefaults] synchronize];
@@ -278,13 +285,17 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     // MJAccessibilityIsEnabled() returns TRUE even after user removes app from list
     BOOL isEnabled = [PHTVManager canCreateEventTap];
 
+    NSLog(@"[Accessibility] Check: was=%@, now=%@",
+          self.wasAccessibilityEnabled ? @"YES" : @"NO",
+          isEnabled ? @"YES" : @"NO");
+
     // Always notify SwiftUI about current status
     [[NSNotificationCenter defaultCenter] postNotificationName:@"AccessibilityStatusChanged"
                                                         object:@(isEnabled)];
 
     // Permission was just granted (transition from disabled to enabled)
     if (!self.wasAccessibilityEnabled && isEnabled) {
-        NSLog(@"[Accessibility] Permission GRANTED (via test tap) - Restarting app...");
+        NSLog(@"[Accessibility] ✅ Permission GRANTED (via test tap) - Initializing...");
         self.accessibilityStableCount = 0;
         [self performAccessibilityGrantedRestart];
     }
@@ -407,6 +418,11 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         NSModalResponse response = [alert runModal];
         if (response == NSAlertFirstButtonReturn) {
             MJAccessibilityOpenPanel();
+
+            // CRITICAL: Invalidate permission cache
+            // User is going to System Settings to re-grant permission
+            [PHTVManager invalidatePermissionCache];
+            NSLog(@"[Accessibility] User opening System Settings to re-grant - cache invalidated");
         }
         
         // Update menu bar to show disabled state

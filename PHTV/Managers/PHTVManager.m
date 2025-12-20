@@ -17,6 +17,12 @@ extern CGEventRef PHTVCallback(CGEventTapProxy proxy,
 
 extern NSString* ConvertUtil(NSString* str);
 
+// No-op callback used only for permission test tap to satisfy nonnull parameter requirements
+static CGEventRef PHTVTestTapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event, void *refcon) {
+    // Simply pass events through unchanged
+    return event;
+}
+
 @interface PHTVManager ()
 
 @end
@@ -56,6 +62,12 @@ static NSTimeInterval _lastPermissionCheckTime = 0;
     }
 }
 
+// Invalidate permission check cache - forces fresh check on next call
++(void)invalidatePermissionCache {
+    _lastPermissionCheckTime = 0;
+    NSLog(@"[Permission] Cache invalidated - next check will be fresh");
+}
+
 // SAFE permission check via test event tap (Apple recommended)
 // This is the ONLY reliable way to check accessibility permission
 // Returns YES if we can create event tap (permission granted), NO otherwise
@@ -66,20 +78,23 @@ static NSTimeInterval _lastPermissionCheckTime = 0;
     // If checked within last 1 second, return cached result
     // This prevents creating test taps too frequently which could interfere with main tap
     if (now - _lastPermissionCheckTime < 1.0) {
+        NSLog(@"[Permission] Returning CACHED result: %@", _lastPermissionCheckResult ? @"HAS" : @"NO");
         return _lastPermissionCheckResult;
     }
 
     // Try creating a test event tap
+    NSLog(@"[Permission] Creating test event tap to check permission...");
     CFMachPortRef testTap = CGEventTapCreate(
         kCGSessionEventTap,
         kCGTailAppendEventTap,
         kCGEventTapOptionDefault,
         CGEventMaskBit(kCGEventKeyDown),
-        NULL,  // No callback needed for test
+        PHTVTestTapCallback,
         NULL
     );
 
     BOOL hasPermission = (testTap != NULL);
+    NSLog(@"[Permission] Test tap result: %@", hasPermission ? @"SUCCESS (has permission)" : @"FAILED (no permission)");
 
     // Clean up test tap if created successfully
     if (testTap != NULL) {
@@ -328,3 +343,4 @@ static NSTimeInterval _lastPermissionCheckTime = 0;
 }
 
 @end
+
