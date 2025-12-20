@@ -22,6 +22,10 @@
 +(BOOL)isEventTapEnabled;
 +(void)ensureEventTapAlive;
 
+// CRITICAL: Permission loss protection
++(BOOL)hasPermissionLost;
++(void)markPermissionLost;
+
 // Table codes
 +(NSArray*)getTableCodes;
 

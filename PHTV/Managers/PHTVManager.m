@@ -26,6 +26,7 @@ extern NSString* ConvertUtil(NSString* str);
 }
 
 static BOOL _isInited = NO;
+static BOOL _permissionLost = NO;  // CRITICAL: Flag to prevent event processing when permission is revoked
 
 static CFMachPortRef      eventTap;
 static CGEventMask        eventMask;
@@ -35,6 +36,20 @@ static NSUInteger         _tapRecreateCount = 0;
 
 #pragma mark - Core Functionality
 
++(BOOL)hasPermissionLost {
+    return _permissionLost;
+}
+
++(void)markPermissionLost {
+    _permissionLost = YES;
+
+    // CRITICAL: Disable event tap IMMEDIATELY to prevent kernel deadlock
+    if (eventTap != nil) {
+        CGEventTapEnable(eventTap, false);
+        NSLog(@"🛑 EMERGENCY: Event tap disabled due to permission loss!");
+    }
+}
+
 +(BOOL)isInited {
     return _isInited;
 }
@@ -42,10 +57,13 @@ static NSUInteger         _tapRecreateCount = 0;
 +(BOOL)initEventTap {
     if (_isInited)
         return true;
-    
+
+    // Reset permission lost flag (fresh start)
+    _permissionLost = NO;
+
     // Initialize PHTV engine
     PHTVInit();
-    
+
     // Create an event tap. We are interested in key presses.
     eventMask = ((1 << kCGEventKeyDown) |
                  (1 << kCGEventKeyUp) |
@@ -54,19 +72,19 @@ static NSUInteger         _tapRecreateCount = 0;
                  (1 << kCGEventRightMouseDown) |
                  (1 << kCGEventLeftMouseDragged) |
                  (1 << kCGEventRightMouseDragged));
-    
+
     eventTap = CGEventTapCreate(kCGSessionEventTap,
                                 kCGHeadInsertEventTap,
                                 0,
                                 eventMask,
                                 PHTVCallback,
                                 NULL);
-    
+
     if (!eventTap) {
         fprintf(stderr, "Failed to create event tap\n");
         return NO;
     }
-    
+
     _isInited = YES;
     
     // Create a run loop source.

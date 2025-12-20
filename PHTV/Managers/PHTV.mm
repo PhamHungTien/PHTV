@@ -1303,6 +1303,12 @@ extern "C" {
      */
     CGEventRef PHTVCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event, void *refcon) {
         @autoreleasepool {
+        // CRITICAL: If permission was lost, reject ALL events immediately
+        // This prevents ANY processing after permission revocation
+        if (__builtin_expect([PHTVManager hasPermissionLost], 0)) {
+            return event;  // Pass through without processing
+        }
+
         // Auto-recover when macOS temporarily disables the event tap
         if (__builtin_expect(type == kCGEventTapDisabledByTimeout || type == kCGEventTapDisabledByUserInput, 0)) {
             [PHTVManager handleEventTapDisabled:type];
@@ -1314,11 +1320,17 @@ extern "C" {
         static NSUInteger permissionCheckCounter = 0;
         if (__builtin_expect(++permissionCheckCounter % 100 == 0, 0)) {
             if (__builtin_expect(!MJAccessibilityIsEnabled(), 0)) {
-                os_log_error(phtv_log, "🛑 CRITICAL: Accessibility permission lost during event tap!");
-                // Post notification to trigger immediate shutdown on main thread
+                os_log_error(phtv_log, "🛑🛑🛑 EMERGENCY: Accessibility permission lost during event tap!");
+
+                // CRITICAL: Mark permission lost and disable event tap IMMEDIATELY
+                // This MUST happen synchronously (not dispatch_async) to prevent ANY gap
+                [PHTVManager markPermissionLost];
+
+                // Schedule cleanup on main thread (after event tap is already disabled)
                 dispatch_async(dispatch_get_main_queue(), ^{
                     [[NSNotificationCenter defaultCenter] postNotificationName:@"AccessibilityPermissionLost" object:nil];
                 });
+
                 return event; // Return immediately, don't process this event
             }
         }
