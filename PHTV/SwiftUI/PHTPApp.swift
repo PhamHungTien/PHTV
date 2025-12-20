@@ -201,6 +201,11 @@ final class AppState: ObservableObject {
     @Published var restoreOnEscape: Bool = true
     @Published var restoreKey: RestoreKey = .esc
 
+    // Pause Vietnamese input when holding a key
+    @Published var pauseKeyEnabled: Bool = false
+    @Published var pauseKey: UInt16 = 58  // Default: Left Option (same as RestoreKey.option)
+    @Published var pauseKeyName: String = "Option"
+
     // System settings
     @Published var runOnStartup: Bool = false
     @Published var fixChromiumBrowser: Bool = false
@@ -483,6 +488,14 @@ final class AppState: ObservableObject {
         let restoreKeyCode = defaults.integer(forKey: "vCustomEscapeKey")
         restoreKey = RestoreKey.from(keyCode: restoreKeyCode == 0 ? 53 : restoreKeyCode)
 
+        // Pause Vietnamese input when holding a key
+        pauseKeyEnabled = defaults.object(forKey: "vPauseKeyEnabled") as? Bool ?? false
+        pauseKey = UInt16(defaults.integer(forKey: "vPauseKey"))
+        if pauseKey == 0 {
+            pauseKey = 58  // Default: Left Option
+        }
+        pauseKeyName = defaults.string(forKey: "vPauseKeyName") ?? "Option"
+
         // Load audio and display settings
         beepVolume = defaults.double(forKey: "vBeepVolume")
         if beepVolume == 0 { beepVolume = 0.5 } // Default if not set
@@ -600,6 +613,11 @@ final class AppState: ObservableObject {
         // Restore to raw keys (customizable key)
         defaults.set(restoreOnEscape, forKey: "vRestoreOnEscape")
         defaults.set(restoreKey.rawValue, forKey: "vCustomEscapeKey")
+
+        // Pause Vietnamese input when holding a key
+        defaults.set(pauseKeyEnabled, forKey: "vPauseKeyEnabled")
+        defaults.set(Int(pauseKey), forKey: "vPauseKey")
+        defaults.set(pauseKeyName, forKey: "vPauseKeyName")
 
         // Save audio and display settings
         defaults.set(beepVolume, forKey: "vBeepVolume")
@@ -783,6 +801,9 @@ final class AppState: ObservableObject {
         .map { _ in () }
         .merge(with: $restoreOnEscape.map { _ in () })
         .merge(with: $restoreKey.map { _ in () })
+        .merge(with: $pauseKeyEnabled.map { _ in () })
+        .merge(with: $pauseKey.map { _ in () })
+        .merge(with: $pauseKeyName.map { _ in () })
         .debounce(for: .milliseconds(100), scheduler: RunLoop.main)
         .sink { [weak self] in
             guard let self = self, !self.isLoadingSettings else { return }

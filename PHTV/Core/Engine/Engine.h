@@ -209,6 +209,18 @@ extern volatile int vRestoreOnEscape;
 extern volatile int vCustomEscapeKey;
 
 /**
+ * Enable pause Vietnamese input when holding a key
+ * When enabled, holding the pause key temporarily switches to English mode
+ */
+extern volatile int vPauseKeyEnabled;
+
+/**
+ * Custom key code for pause function (default: KEY_LEFT_OPTION = 58)
+ * Can be any key: Option, Control, Shift, Command, Fn, or any other key
+ */
+extern volatile int vPauseKey;
+
+/**
  * Call this function first to receive data pointer
  */
 void* vKeyInit();

@@ -534,6 +534,10 @@ extern "C" {
     bool _restoreModifierPressed = false;
     bool _keyPressedWithRestoreModifier = false;
 
+    // For pause key detection - temporarily disable Vietnamese when holding key
+    bool _pauseKeyPressed = false;
+    int _savedLanguageBeforePause = 1; // Save language state before pause (1 = Vietnamese, 0 = English)
+
     int _languageTemp = 0; //use for smart switch key
     vector<Byte> savedSmartSwitchKeyData; ////use for smart switch key
     
@@ -1378,6 +1382,34 @@ extern "C" {
                         _keyPressedWithRestoreModifier = false;
                     }
                 }
+
+                // Check if pause key is being pressed - temporarily disable Vietnamese
+                if (vPauseKeyEnabled && vPauseKey > 0 && !_pauseKeyPressed) {
+                    bool pauseKeyPressed = false;
+
+                    // Check common modifier keys
+                    if (vPauseKey == KEY_LEFT_OPTION || vPauseKey == KEY_RIGHT_OPTION) {
+                        pauseKeyPressed = (_flag & kCGEventFlagMaskAlternate);
+                    } else if (vPauseKey == KEY_LEFT_CONTROL || vPauseKey == KEY_RIGHT_CONTROL) {
+                        pauseKeyPressed = (_flag & kCGEventFlagMaskControl);
+                    } else if (vPauseKey == KEY_LEFT_SHIFT || vPauseKey == KEY_RIGHT_SHIFT) {
+                        pauseKeyPressed = (_flag & kCGEventFlagMaskShift);
+                    } else if (vPauseKey == KEY_LEFT_COMMAND || vPauseKey == KEY_RIGHT_COMMAND) {
+                        pauseKeyPressed = (_flag & kCGEventFlagMaskCommand);
+                    } else if (vPauseKey == 63) {  // Fn key
+                        pauseKeyPressed = (_flag & kCGEventFlagMaskSecondaryFn);
+                    }
+
+                    if (pauseKeyPressed) {
+                        // Save current language state and temporarily switch to English
+                        _savedLanguageBeforePause = vLanguage;
+                        if (vLanguage == 1) {
+                            // Only switch if currently in Vietnamese mode
+                            vLanguage = 0;  // Switch to English
+                        }
+                        _pauseKeyPressed = true;
+                    }
+                }
             } else if (_lastFlag > _flag)  {
                 // Releasing modifiers - check for restore modifier key first
                 if (vRestoreOnEscape && _restoreModifierPressed && !_keyPressedWithRestoreModifier) {
@@ -1437,6 +1469,30 @@ extern "C" {
                     if (optionReleased || controlReleased) {
                         _restoreModifierPressed = false;
                         _keyPressedWithRestoreModifier = false;
+                    }
+                }
+
+                // Check if pause key is being released - restore Vietnamese mode
+                if (_pauseKeyPressed) {
+                    bool pauseKeyReleased = false;
+
+                    // Check which key was released
+                    if (vPauseKey == KEY_LEFT_OPTION || vPauseKey == KEY_RIGHT_OPTION) {
+                        pauseKeyReleased = (_lastFlag & kCGEventFlagMaskAlternate) && !(_flag & kCGEventFlagMaskAlternate);
+                    } else if (vPauseKey == KEY_LEFT_CONTROL || vPauseKey == KEY_RIGHT_CONTROL) {
+                        pauseKeyReleased = (_lastFlag & kCGEventFlagMaskControl) && !(_flag & kCGEventFlagMaskControl);
+                    } else if (vPauseKey == KEY_LEFT_SHIFT || vPauseKey == KEY_RIGHT_SHIFT) {
+                        pauseKeyReleased = (_lastFlag & kCGEventFlagMaskShift) && !(_flag & kCGEventFlagMaskShift);
+                    } else if (vPauseKey == KEY_LEFT_COMMAND || vPauseKey == KEY_RIGHT_COMMAND) {
+                        pauseKeyReleased = (_lastFlag & kCGEventFlagMaskCommand) && !(_flag & kCGEventFlagMaskCommand);
+                    } else if (vPauseKey == 63) {  // Fn key
+                        pauseKeyReleased = (_lastFlag & kCGEventFlagMaskSecondaryFn) && !(_flag & kCGEventFlagMaskSecondaryFn);
+                    }
+
+                    if (pauseKeyReleased) {
+                        // Restore previous language state
+                        vLanguage = _savedLanguageBeforePause;
+                        _pauseKeyPressed = false;
                     }
                 }
 

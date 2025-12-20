@@ -541,6 +541,331 @@ fileprivate func convertToNSColor(_ color: Color) -> NSColor? {
     return NSColor(cgColor: cgColor)
 }
 
+// MARK: - Pause Key Configuration View
+struct PauseKeyConfigView: View {
+    @EnvironmentObject var appState: AppState
+    @EnvironmentObject var themeManager: ThemeManager
+    @State private var isRecording = false
+
+    // Check if pause key conflicts with restore key
+    private var hasPauseRestoreConflict: Bool {
+        guard appState.pauseKeyEnabled && appState.restoreOnEscape else { return false }
+
+        // Compare keyCode directly
+        return appState.pauseKey == appState.restoreKey.rawValue
+    }
+
+    // Check if pause key conflicts with switch key
+    private var hasPauseSwitchConflict: Bool {
+        guard appState.pauseKeyEnabled else { return false }
+
+        // Check if pause key matches switch key code (if set)
+        if appState.switchKeyCode != 0xFE && appState.pauseKey == appState.switchKeyCode {
+            return true
+        }
+
+        // Check if pause key matches any switch modifier
+        if appState.pauseKey == 58 && appState.switchKeyOption { return true }  // Option
+        if appState.pauseKey == 59 && appState.switchKeyControl { return true } // Control
+
+        return false
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Enable toggle
+            HStack(spacing: 14) {
+                ZStack {
+                    if #available(macOS 26.0, *) {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(themeManager.themeColor.opacity(0.12))
+                            .frame(width: 36, height: 36)
+                            .glassEffect(in: .rect(cornerRadius: 8))
+                    } else {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(themeManager.themeColor.opacity(0.12))
+                            .frame(width: 36, height: 36)
+                    }
+
+                    Image(systemName: "pause.fill")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(themeManager.themeColor)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Bật tính năng tạm dừng")
+                        .font(.body)
+                        .foregroundStyle(.primary)
+
+                    Text("Nhấn giữ phím để tạm thời chuyển sang tiếng Anh")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Toggle("", isOn: $appState.pauseKeyEnabled)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .tint(themeManager.themeColor)
+            }
+
+            if appState.pauseKeyEnabled {
+                Divider()
+
+                // Key Selection Section
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Phím tạm dừng")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.primary)
+
+                    HStack(spacing: 16) {
+                        // Key selector button
+                        Button(action: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                isRecording = true
+                            }
+                        }) {
+                            HStack(spacing: 10) {
+                                Image(systemName: isRecording ? "keyboard.badge.ellipsis" : "keyboard")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundStyle(isRecording ? themeManager.themeColor : .secondary)
+
+                                Text(isRecording ? "Nhấn phím..." : appState.pauseKeyName)
+                                    .font(.body)
+                                    .foregroundStyle(isRecording ? themeManager.themeColor : .primary)
+                                    .animation(.easeInOut(duration: 0.2), value: appState.pauseKeyName)
+
+                                Spacer()
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                            .frame(minWidth: 180)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(isRecording ? themeManager.themeColor.opacity(0.1) : Color(NSColor.controlBackgroundColor))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(isRecording ? themeManager.themeColor : Color.gray.opacity(0.3), lineWidth: 1)
+                                    )
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .animation(.easeInOut(duration: 0.2), value: isRecording)
+                        .background(PauseKeyEventHandler(isRecording: $isRecording, appState: appState))
+
+                        // Current key display
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Phím hiện tại")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+
+                            Text(appState.pauseKeyName)
+                                .font(.system(.body, design: .rounded))
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.tint)
+                                .animation(.easeInOut(duration: 0.2), value: appState.pauseKeyName)
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(themeManager.themeColor.opacity(0.08))
+                        )
+                    }
+
+                    Text("Mặc định: Option (⌥)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                // Conflict warnings
+                if hasPauseRestoreConflict {
+                    HStack(spacing: 10) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                            .font(.system(size: 14))
+
+                        Text("Phím tạm dừng trùng với phím khôi phục")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+
+                        Spacer()
+                    }
+                    .padding(10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.orange.opacity(0.1))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+                            )
+                    )
+                    .transition(.scale.combined(with: .opacity))
+                }
+
+                if hasPauseSwitchConflict {
+                    HStack(spacing: 10) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                            .font(.system(size: 14))
+
+                        Text("Phím tạm dừng trùng với phím chuyển đổi ngôn ngữ")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+
+                        Spacer()
+                    }
+                    .padding(10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.orange.opacity(0.1))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+                            )
+                    )
+                    .transition(.scale.combined(with: .opacity))
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Pause Key Event Handler
+struct PauseKeyEventHandler: NSViewRepresentable {
+    @Binding var isRecording: Bool
+    var appState: AppState
+
+    func makeNSView(context: Context) -> NSView {
+        let view = PauseKeyCaptureView()
+        view.onKeyPress = { keyCode, keyName in
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                appState.pauseKey = keyCode
+                appState.pauseKeyName = keyName
+                isRecording = false
+            }
+        }
+        DispatchQueue.main.async {
+            context.coordinator.view = view
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        if let keyView = nsView as? PauseKeyCaptureView {
+            keyView.isRecording = isRecording
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    class Coordinator {
+        var view: PauseKeyCaptureView?
+    }
+}
+
+class PauseKeyCaptureView: NSView {
+    var onKeyPress: ((UInt16, String) -> Void)?
+    var isRecording = false {
+        didSet {
+            if isRecording {
+                window?.makeFirstResponder(self)
+            }
+        }
+    }
+
+    override var acceptsFirstResponder: Bool { true }
+
+    override func keyDown(with event: NSEvent) {
+        guard isRecording else {
+            super.keyDown(with: event)
+            return
+        }
+
+        let keyCode = UInt16(event.keyCode)
+        let keyName = getKeyName(for: keyCode)
+
+        // Call with animation on main thread
+        DispatchQueue.main.async { [weak self] in
+            self?.onKeyPress?(keyCode, keyName)
+        }
+    }
+
+    private func getKeyName(for keyCode: UInt16) -> String {
+        // Map common keycodes to readable names
+        switch Int(keyCode) {
+        case kVK_ANSI_A: return "A"
+        case kVK_ANSI_B: return "B"
+        case kVK_ANSI_C: return "C"
+        case kVK_ANSI_D: return "D"
+        case kVK_ANSI_E: return "E"
+        case kVK_ANSI_F: return "F"
+        case kVK_ANSI_G: return "G"
+        case kVK_ANSI_H: return "H"
+        case kVK_ANSI_I: return "I"
+        case kVK_ANSI_J: return "J"
+        case kVK_ANSI_K: return "K"
+        case kVK_ANSI_L: return "L"
+        case kVK_ANSI_M: return "M"
+        case kVK_ANSI_N: return "N"
+        case kVK_ANSI_O: return "O"
+        case kVK_ANSI_P: return "P"
+        case kVK_ANSI_Q: return "Q"
+        case kVK_ANSI_R: return "R"
+        case kVK_ANSI_S: return "S"
+        case kVK_ANSI_T: return "T"
+        case kVK_ANSI_U: return "U"
+        case kVK_ANSI_V: return "V"
+        case kVK_ANSI_W: return "W"
+        case kVK_ANSI_X: return "X"
+        case kVK_ANSI_Y: return "Y"
+        case kVK_ANSI_Z: return "Z"
+        case kVK_ANSI_0: return "0"
+        case kVK_ANSI_1: return "1"
+        case kVK_ANSI_2: return "2"
+        case kVK_ANSI_3: return "3"
+        case kVK_ANSI_4: return "4"
+        case kVK_ANSI_5: return "5"
+        case kVK_ANSI_6: return "6"
+        case kVK_ANSI_7: return "7"
+        case kVK_ANSI_8: return "8"
+        case kVK_ANSI_9: return "9"
+        case kVK_Space: return "Space"
+        case kVK_Return: return "Return"
+        case kVK_Tab: return "Tab"
+        case kVK_Delete: return "Delete"
+        case kVK_Escape: return "Esc"
+        case 58: return "Option"      // Left Option
+        case 61: return "Option"      // Right Option
+        case 59: return "Control"     // Left Control
+        case 62: return "Control"     // Right Control
+        case 56: return "Shift"       // Left Shift
+        case 60: return "Shift"       // Right Shift
+        case 55: return "Command"     // Left Command
+        case 54: return "Command"     // Right Command
+        case 63: return "Fn"          // Function key
+        case kVK_F1: return "F1"
+        case kVK_F2: return "F2"
+        case kVK_F3: return "F3"
+        case kVK_F4: return "F4"
+        case kVK_F5: return "F5"
+        case kVK_F6: return "F6"
+        case kVK_F7: return "F7"
+        case kVK_F8: return "F8"
+        case kVK_F9: return "F9"
+        case kVK_F10: return "F10"
+        case kVK_F11: return "F11"
+        case kVK_F12: return "F12"
+        case kVK_CapsLock: return "Caps Lock"
+        default: return "Key \(keyCode)"
+        }
+    }
+}
+
 #Preview {
     HotkeyConfigView()
         .environmentObject(AppState.shared)

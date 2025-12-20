@@ -68,6 +68,10 @@ volatile int vTempOffPHTV = 0; //new on version 2.0
 volatile int vRestoreOnEscape = 1; //enable restore to raw keys feature (default: ON)
 volatile int vCustomEscapeKey = 0; //custom restore key code (0 = default ESC = 53)
 
+// Pause Vietnamese input when holding a key
+volatile int vPauseKeyEnabled = 0; //enable pause key feature (default: OFF)
+volatile int vPauseKey = 58; //pause key code (default: Left Option = 58)
+
 int vShowIconOnDock = 0; //new on version 2.0
 
 volatile int vPerformLayoutCompat = 0;
@@ -878,6 +882,10 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     // Restore to raw keys (customizable key)
     vRestoreOnEscape = PHTVReadIntWithFallback(defaults, @"vRestoreOnEscape", vRestoreOnEscape);
     vCustomEscapeKey = PHTVReadIntWithFallback(defaults, @"vCustomEscapeKey", vCustomEscapeKey);
+
+    // Pause Vietnamese input when holding a key
+    vPauseKeyEnabled = PHTVReadIntWithFallback(defaults, @"vPauseKeyEnabled", vPauseKeyEnabled);
+    vPauseKey = PHTVReadIntWithFallback(defaults, @"vPauseKey", vPauseKey);
 
     // Memory barrier to ensure event tap thread sees new values immediately
     __sync_synchronize();

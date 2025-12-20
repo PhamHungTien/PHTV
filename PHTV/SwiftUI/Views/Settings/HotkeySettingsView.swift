@@ -20,6 +20,11 @@ struct HotkeySettingsView: View {
                     HotkeyConfigView()
                 }
 
+                // Pause Key Configuration
+                SettingsCard(title: "Tạm dừng gõ tiếng Việt", icon: "pause.circle.fill") {
+                    PauseKeyConfigView()
+                }
+
                 Spacer(minLength: 20)
             }
             .padding(20)
