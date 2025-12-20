@@ -634,13 +634,6 @@ struct PauseKeyConfigView: View {
                             selectedKeyCode: $appState.pauseKey,
                             selectedKeyName: $appState.pauseKeyName
                         )
-                        PauseKeyButton(
-                            symbol: "fn",
-                            name: "Fn",
-                            keyCode: 63,
-                            selectedKeyCode: $appState.pauseKey,
-                            selectedKeyName: $appState.pauseKeyName
-                        )
                     }
 
                     Text("Mặc định: Option (⌥)")
