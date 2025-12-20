@@ -1315,26 +1315,8 @@ extern "C" {
             return event;
         }
 
-        // CRITICAL: Check accessibility permission on EVERY event for keyboard/mouse events
-        // This ensures INSTANT detection when permission is revoked (no delay whatsoever)
-        // Only check for actual input events to minimize performance impact
-        if (__builtin_expect(type == kCGEventKeyDown || type == kCGEventKeyUp ||
-                             type == kCGEventLeftMouseDown || type == kCGEventRightMouseDown, 1)) {
-            if (__builtin_expect(!MJAccessibilityIsEnabled(), 0)) {
-                os_log_error(phtv_log, "🛑🛑🛑 EMERGENCY: Accessibility permission REVOKED!");
-
-                // CRITICAL: Invalidate event tap IMMEDIATELY in callback thread
-                // This stops all event processing at kernel level
-                [PHTVManager markPermissionLost];
-
-                // Schedule cleanup on main thread (event tap already invalidated, safe to cleanup)
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    [[NSNotificationCenter defaultCenter] postNotificationName:@"AccessibilityPermissionLost" object:nil];
-                });
-
-                return event; // Pass through, no processing
-            }
-        }
+        // REMOVED: Permission checking in callback - causes kernel deadlock
+        // Permission is now checked ONLY via test event tap creation in timer (safe approach)
 
         // Aggressive inline health check every 25 events for near-instant recovery
         // Smart skip: after 1000 healthy checks, reduce frequency to save CPU

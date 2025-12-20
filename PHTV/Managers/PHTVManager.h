@@ -26,6 +26,9 @@
 +(BOOL)hasPermissionLost;
 +(void)markPermissionLost;
 
+// SAFE permission check via test event tap (Apple recommended approach)
++(BOOL)canCreateEventTap;
+
 // Table codes
 +(NSArray*)getTableCodes;
 

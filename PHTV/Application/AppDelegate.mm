@@ -220,19 +220,19 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
 - (void)startAccessibilityMonitoring {
     // Monitor accessibility status with VERY fast interval (0.1s) to detect revocation INSTANTLY
-    // CRITICAL: Ultra-fast monitoring catches permission loss even when user is idle (no events)
-    // This complements per-event checking in callback for complete coverage
+    // CRITICAL: Uses test event tap creation - ONLY reliable method (Apple recommended)
+    // MJAccessibilityIsEnabled() returns TRUE even when permission is revoked!
     self.accessibilityMonitor = [NSTimer scheduledTimerWithTimeInterval:0.1
                                                                   target:self
                                                                 selector:@selector(checkAccessibilityStatus)
                                                                 userInfo:nil
                                                                  repeats:YES];
 
-    // Set initial state
-    self.wasAccessibilityEnabled = MJAccessibilityIsEnabled();
+    // Set initial state using test tap (reliable)
+    self.wasAccessibilityEnabled = [PHTVManager canCreateEventTap];
 
     #ifdef DEBUG
-    NSLog(@"[Accessibility] Started ultra-fast monitoring (interval: 0.1s for instant detection)");
+    NSLog(@"[Accessibility] Started monitoring via test event tap (interval: 0.1s)");
     #endif
 }
 
@@ -265,37 +265,39 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
 - (void)runHealthCheck {
     // Skip checks if accessibility permission is missing; restart flow will handle it
-    if (!MJAccessibilityIsEnabled()) {
+    // Use test tap - reliable check (MJAccessibilityIsEnabled is unreliable)
+    if (![PHTVManager canCreateEventTap]) {
         return;
     }
     [PHTVManager ensureEventTapAlive];
 }
 
 - (void)checkAccessibilityStatus {
-    BOOL isEnabled = MJAccessibilityIsEnabled();
-    
+    // CRITICAL: Use test event tap creation - ONLY reliable way to check permission
+    // MJAccessibilityIsEnabled() returns TRUE even after user removes app from list
+    BOOL isEnabled = [PHTVManager canCreateEventTap];
+
     // Always notify SwiftUI about current status
     [[NSNotificationCenter defaultCenter] postNotificationName:@"AccessibilityStatusChanged"
                                                         object:@(isEnabled)];
-    
+
     // Permission was just granted (transition from disabled to enabled)
     if (!self.wasAccessibilityEnabled && isEnabled) {
-        NSLog(@"[Accessibility] Permission GRANTED - Restarting app...");
+        NSLog(@"[Accessibility] Permission GRANTED (via test tap) - Restarting app...");
         self.accessibilityStableCount = 0;
         [self performAccessibilityGrantedRestart];
     }
     // Permission was revoked while app is running (transition from enabled to disabled)
     else if (self.wasAccessibilityEnabled && !isEnabled) {
-        NSLog(@"[Accessibility] CRITICAL - Permission REVOKED while running!");
+        NSLog(@"[Accessibility] 🛑 CRITICAL - Permission REVOKED (test tap failed)!");
         self.accessibilityStableCount = 0;
         [self handleAccessibilityRevoked];
     }
     else if (isEnabled) {
-        // Keep checking at 1s interval to detect permission revocation quickly
-        // Do NOT slow down - fast monitoring is critical to prevent macOS freeze
+        // Keep checking - fast monitoring is critical
         self.accessibilityStableCount++;
     }
-    
+
     // Update state
     self.wasAccessibilityEnabled = isEnabled;
 }
@@ -422,7 +424,8 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 - (void)checkAccessibilityAndRestart {
     // Legacy method - kept for compatibility
     // Now handled by checkAccessibilityStatus
-    if (MJAccessibilityIsEnabled()) {
+    // Use test tap - reliable check (MJAccessibilityIsEnabled is unreliable)
+    if ([PHTVManager canCreateEventTap]) {
         [self performAccessibilityGrantedRestart];
     }
 }
@@ -449,7 +452,8 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     _isUpdatingCodeTable = NO;
 
     BOOL isFirstLaunch = ([[NSUserDefaults standardUserDefaults] boolForKey:@"NonFirstTime"] == 0);
-    _needsRelaunchAfterPermission = (isFirstLaunch && !MJAccessibilityIsEnabled());
+    // Use test tap - reliable check (MJAccessibilityIsEnabled is unreliable)
+    _needsRelaunchAfterPermission = (isFirstLaunch && ![PHTVManager canCreateEventTap]);
 
     appDelegate = self;
     
@@ -505,7 +509,8 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     [self observeAppearanceChanges];
     
     // check if user granted Accessabilty permission
-    if (!MJAccessibilityIsEnabled()) {
+    // Use test tap - ONLY reliable way to check (MJAccessibilityIsEnabled is unreliable)
+    if (![PHTVManager canCreateEventTap]) {
         [self askPermission];
         [self startAccessibilityMonitoring];
         [self stopHealthCheckMonitoring];

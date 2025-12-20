@@ -52,6 +52,31 @@ static NSUInteger         _tapRecreateCount = 0;
     }
 }
 
+// SAFE permission check via test event tap (Apple recommended)
+// This is the ONLY reliable way to check accessibility permission
+// Returns YES if we can create event tap (permission granted), NO otherwise
++(BOOL)canCreateEventTap {
+    // Try creating a test event tap
+    CFMachPortRef testTap = CGEventTapCreate(
+        kCGSessionEventTap,
+        kCGTailAppendEventTap,
+        kCGEventTapOptionDefault,
+        CGEventMaskBit(kCGEventKeyDown),
+        NULL,  // No callback needed for test
+        NULL
+    );
+
+    BOOL hasPermission = (testTap != NULL);
+
+    // Clean up test tap if created successfully
+    if (testTap != NULL) {
+        CFMachPortInvalidate(testTap);
+        CFRelease(testTap);
+    }
+
+    return hasPermission;
+}
+
 +(BOOL)isInited {
     return _isInited;
 }
