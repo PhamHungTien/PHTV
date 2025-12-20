@@ -219,9 +219,10 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 }
 
 - (void)startAccessibilityMonitoring {
-    // Monitor accessibility status with fast interval (1s) to detect revocation quickly
-    // CRITICAL: Fast monitoring prevents macOS freeze when permission is revoked
-    self.accessibilityMonitor = [NSTimer scheduledTimerWithTimeInterval:1.0
+    // Monitor accessibility status with VERY fast interval (0.1s) to detect revocation INSTANTLY
+    // CRITICAL: Ultra-fast monitoring catches permission loss even when user is idle (no events)
+    // This complements per-event checking in callback for complete coverage
+    self.accessibilityMonitor = [NSTimer scheduledTimerWithTimeInterval:0.1
                                                                   target:self
                                                                 selector:@selector(checkAccessibilityStatus)
                                                                 userInfo:nil
@@ -231,7 +232,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     self.wasAccessibilityEnabled = MJAccessibilityIsEnabled();
 
     #ifdef DEBUG
-    NSLog(@"[Accessibility] Started monitoring (interval: 1s for fast revocation detection)");
+    NSLog(@"[Accessibility] Started ultra-fast monitoring (interval: 0.1s for instant detection)");
     #endif
 }
 

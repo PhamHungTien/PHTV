@@ -43,10 +43,12 @@ static NSUInteger         _tapRecreateCount = 0;
 +(void)markPermissionLost {
     _permissionLost = YES;
 
-    // CRITICAL: Disable event tap IMMEDIATELY to prevent kernel deadlock
+    // CRITICAL: INVALIDATE event tap IMMEDIATELY (not just disable)
+    // This must happen synchronously in callback thread to prevent kernel deadlock
     if (eventTap != nil) {
         CGEventTapEnable(eventTap, false);
-        NSLog(@"🛑 EMERGENCY: Event tap disabled due to permission loss!");
+        CFMachPortInvalidate(eventTap);  // Invalidate to stop receiving events completely
+        NSLog(@"🛑🛑🛑 EMERGENCY: Event tap INVALIDATED due to permission loss!");
     }
 }
 
@@ -125,14 +127,18 @@ static NSUInteger         _tapRecreateCount = 0;
             runLoopSource = nil;
         }
 
-        // Invalidate and release the event tap
+        // Invalidate and release the event tap (safe even if already invalidated)
         if (eventTap != nil) {
-            CFMachPortInvalidate(eventTap);
+            // Check if port is still valid before invalidating
+            if (CFMachPortIsValid(eventTap)) {
+                CFMachPortInvalidate(eventTap);
+            }
             CFRelease(eventTap);
             eventTap = nil;
         }
 
         _isInited = false;
+        _permissionLost = NO;  // Reset flag when fully stopped
 
         NSLog(@"[EventTap] Stopped successfully");
     }
