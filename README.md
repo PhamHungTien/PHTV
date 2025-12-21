@@ -12,30 +12,61 @@
 [![GitHub release](https://img.shields.io/github/v/release/PhamHungTien/PHTV)](../../releases/latest)
 [![GitHub stars](https://img.shields.io/github/stars/PhamHungTien/PHTV)](../../stargazers)
 
-[**📥 Tải về**](https://phamhungtien.com/PHTV/) • [**📖 Tài liệu**](INSTALL.md) • [**🐛 Báo lỗi**](../../issues) • [**❓ FAQ**](FAQ.md)
+[**Tải về**](https://phamhungtien.com/PHTV/) | [**Tài liệu**](INSTALL.md) | [**Báo lỗi**](../../issues) | [**FAQ**](FAQ.md)
 
 </div>
 
 ---
 
-## 🎯 Giới thiệu
+## Giới thiệu
 
 PHTV là bộ gõ tiếng Việt **offline, nhanh, và riêng tư** cho macOS 14+. Được phát triển bằng Swift/SwiftUI với engine C++ từ OpenKey, mang đến trải nghiệm gõ tiếng Việt mượt mà và tích hợp sâu vào hệ thống.
 
-### ✨ Tính năng nổi bật
+## Tính năng
 
-- 🚀 **Hoàn toàn offline** - Không cần Internet, bảo mật tuyệt đối
-- ⌨️ **Telex & VNI** - Đầy đủ các phương pháp gõ phổ biến
-- 🎨 **Native macOS** - Giao diện SwiftUI, hỗ trợ Dark Mode
-- 🔍 **Spotlight Fix** - Gõ tiếng Việt trong Spotlight không bị lỗi
-- 📝 **Macro** - Gõ tắt thông minh, import từ file
-- 🎛️ **Hot Reload** - Thay đổi cài đặt không cần khởi động lại
+### Cốt lõi
+- **Hoàn toàn offline** - Không cần Internet, bảo mật tuyệt đối
+- **Telex, VNI, Simple Telex** - Đầy đủ các phương pháp gõ phổ biến
+- **Nhiều bảng mã** - Unicode, TCVN3 (ABC), VNI Windows, Unicode Compound
+- **Native macOS** - Giao diện SwiftUI hiện đại, hỗ trợ Dark Mode
 
-## 📸 Screenshots
+### Gõ thông minh
+- **Kiểm tra chính tả** - Tự động phát hiện từ sai chính tả
+- **Chính tả hiện đại** - Hỗ trợ quy tắc "oà, uý" thay vì "òa, úy"
+- **Gõ tắt nhanh (Quick Telex)** - cc→ch, gg→gi, kk→kh, nn→ng, qq→qu, pp→ph, tt→th
+- **Phụ âm đầu/cuối nhanh** - f→ph, j→gi, w→qu (đầu) và g→ng, h→nh, k→ch (cuối)
+- **Tự động viết hoa** - Viết hoa chữ cái đầu câu sau dấu chấm
+
+### Macro (Gõ tắt)
+- **Gõ tắt thông minh** - Định nghĩa từ viết tắt tùy ý (VD: "btw" → "by the way")
+- **Tự động viết hoa macro** - "Btw" → "By the way", "BTW" → "BY THE WAY"
+- **Hoạt động ở cả 2 chế độ** - Macro hoạt động cả khi gõ tiếng Việt và tiếng Anh
+- **Import/Export** - Nhập xuất danh sách macro từ file
+
+### Tương thích ứng dụng
+- **Spotlight Fix** - Gõ tiếng Việt trong Spotlight không bị lỗi
+- **WhatsApp Fix** - Hỗ trợ gõ tiếng Việt mượt mà trong WhatsApp
+- **Chromium Fix** - Tối ưu cho Chrome, Edge, Brave và các trình duyệt Chromium
+- **Excluded Apps** - Danh sách ứng dụng tự động chuyển sang tiếng Anh
+- **Nhớ bảng mã theo ứng dụng** - Tự động chuyển bảng mã phù hợp cho từng app
+
+### Phím tắt & Điều khiển
+- **Phím chuyển ngôn ngữ tùy chỉnh** - Control, Option, Command, Shift hoặc tổ hợp
+- **Tạm tắt tiếng Việt** - Giữ phím để tạm thời gõ tiếng Anh
+- **Khôi phục ký tự gốc** - Nhấn ESC để hoàn tác dấu (VD: "việt" → "viet")
+- **Smart Switch** - Tự động nhớ ngôn ngữ cho từng ứng dụng
+
+### Hệ thống
+- **Khởi động cùng macOS** - Tùy chọn chạy khi đăng nhập
+- **Hot Reload** - Thay đổi cài đặt không cần khởi động lại
+- **Tự động cập nhật** - Kiểm tra phiên bản mới từ GitHub
+- **Menu bar icon** - Hiển thị trạng thái Vi/En trên thanh menu
+
+## Screenshots
 
 <div align="center">
 
-### 🎨 Menu Bar
+### Menu Bar
 
 <table>
 <tr>
@@ -50,7 +81,7 @@ PHTV là bộ gõ tiếng Việt **offline, nhanh, và riêng tư** cho macOS 14
 </tr>
 </table>
 
-### ⚙️ Settings
+### Settings
 
 <table>
 <tr>
@@ -71,7 +102,7 @@ PHTV là bộ gõ tiếng Việt **offline, nhanh, và riêng tư** cho macOS 14
 
 </div>
 
-## ⚡ Cài đặt nhanh
+## Cài đặt
 
 **Phương pháp 1: Tải trực tiếp** (khuyên dùng)
 
@@ -92,69 +123,74 @@ open PHTV.xcodeproj
 # Build với Cmd+B, chạy với Cmd+R
 ```
 
-> ⚠️ **Lưu ý**: Ứng dụng cần quyền **Accessibility** để hoạt động. Vào **System Settings > Privacy & Security > Accessibility** và thêm PHTV.
+> **Lưu ý**: Ứng dụng cần quyền **Accessibility** để hoạt động. Vào **System Settings > Privacy & Security > Accessibility** và thêm PHTV.
 
-## 📚 Sử dụng
+## Sử dụng
 
-### Phím tắt
+### Phím tắt mặc định
 
-| Phím tắt            | Chức năng                        |
-| ------------------- | -------------------------------- |
+| Phím tắt | Chức năng |
+| --- | --- |
 | **Control + Shift** | Chuyển Việt/Anh (tùy chỉnh được) |
-| **Fn + Modifier**   | Phím tắt nâng cao (v1.1.2+)      |
+| **ESC** | Khôi phục ký tự gốc (hoàn tác dấu) |
+| **Giữ Option** | Tạm tắt tiếng Việt (tùy chỉnh được) |
 
 ### Menu Bar
 
 Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 
 - Chuyển đổi phương pháp gõ (Telex/VNI/Simple Telex)
-- Thay đổi bảng mã (Unicode/TCVN3/VNI Windows)
+- Thay đổi bảng mã (Unicode/TCVN3/VNI Windows/Unicode Compound)
 - Bật/tắt kiểm tra chính tả, gõ tắt
 - Mở Settings để cấu hình chi tiết
 
-### Settings
+### Cài đặt chi tiết
 
-- **Typing**: Phương pháp gõ, bảng mã, chính tả hiện đại
-- **Macros**: Quản lý gõ tắt, import/export từ file
-- **Excluded Apps**: Danh sách app tự động chuyển sang Anh
-- **System**: Khởi động cùng macOS, hotkey tùy chỉnh
+| Tab | Nội dung |
+| --- | --- |
+| **Typing** | Phương pháp gõ, bảng mã, chính tả, Quick Telex, phụ âm nhanh |
+| **Macros** | Quản lý gõ tắt, import/export, tự động viết hoa |
+| **Excluded Apps** | Danh sách app tự động chuyển sang tiếng Anh |
+| **System** | Khởi động cùng macOS, hotkey, Smart Switch, cập nhật |
+| **About** | Thông tin phiên bản, ủng hộ phát triển |
 
-## 🔧 Yêu cầu hệ thống
+## Yêu cầu hệ thống
 
-| Thành phần    | Yêu cầu                                   |
-| ------------- | ----------------------------------------- |
-| **macOS**     | 14.0+ (Sonoma trở lên)                    |
+| Thành phần | Yêu cầu |
+| --- | --- |
+| **macOS** | 14.0+ (Sonoma trở lên) |
 | **Kiến trúc** | Apple Silicon (arm64) hoặc Intel (x86_64) |
-| **Xcode**     | 16.0+ (nếu build từ source)               |
-| **Quyền**     | Accessibility                             |
+| **Xcode** | 16.0+ (nếu build từ source) |
+| **Quyền** | Accessibility |
 
-## 🛠️ Công nghệ
+## Công nghệ
 
 - **Swift 6.0** + **SwiftUI** - Giao diện native hiện đại
 - **C++** - Engine xử lý input (từ OpenKey)
 - **CGEvent API** - Event interception và xử lý bàn phím
+- **Accessibility API** - Hỗ trợ Spotlight và các app đặc biệt
 - **NSUserDefaults** - Lưu trữ cấu hình local
 
-## 🤝 Đóng góp
+## Đóng góp
 
 Mọi đóng góp đều được chào đón! Xem [CONTRIBUTING.md](CONTRIBUTING.md) để biết cách thức.
 
 **Các cách đóng góp:**
 
-- 🐛 [Báo lỗi](../../issues/new?template=bug_report.md)
-- 💡 [Đề xuất tính năng](../../issues/new?template=feature_request.md)
-- 🔧 Gửi Pull Request
-- 📝 Cải thiện tài liệu
+- [Báo lỗi](../../issues/new?template=bug_report.md)
+- [Đề xuất tính năng](../../issues/new?template=feature_request.md)
+- Gửi Pull Request
+- Cải thiện tài liệu
 
-## 📞 Hỗ trợ & Liên hệ
+## Hỗ trợ & Liên hệ
 
-- 📧 Email: hungtien10a7@gmail.com
-- 🐙 GitHub: [Issues](../../issues) • [Discussions](../../discussions)
-- 🌐 Website: [phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/)
-- 👤 Facebook: [phamhungtien1404](https://www.facebook.com/phamhungtien1404)
-- 💼 LinkedIn: [Phạm Hùng Tiến](https://www.linkedin.com/in/ph%E1%BA%A1m-h%C3%B9ng-ti%E1%BA%BFn-a1b405327/)
+- Email: hungtien10a7@gmail.com
+- GitHub: [Issues](../../issues) | [Discussions](../../discussions)
+- Website: [phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/)
+- Facebook: [phamhungtien1404](https://www.facebook.com/phamhungtien1404)
+- LinkedIn: [Phạm Hùng Tiến](https://www.linkedin.com/in/ph%E1%BA%A1m-h%C3%B9ng-ti%E1%BA%BFn-a1b405327/)
 
-## 📄 License & Credits
+## License & Credits
 
 PHTV được phát hành dưới giấy phép **[GPL v3.0](LICENSE)**.
 
@@ -164,11 +200,11 @@ Dự án kế thừa và mở rộng engine từ **[OpenKey](https://github.com/
 
 <div align="center">
 
-### ⭐ Nếu PHTV hữu ích, hãy cho dự án một star!
+### Nếu PHTV hữu ích, hãy cho dự án một star!
 
 [![GitHub stars](https://img.shields.io/github/stars/PhamHungTien/PHTV?style=social)](../../stargazers)
 
-**[⬆️ Về đầu trang](#phtv)**
+**[Về đầu trang](#phtv)**
 
 Made with ❤️ for Vietnamese macOS users
 

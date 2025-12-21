@@ -1327,6 +1327,7 @@ void vEnglishMode(const vKeyEventState& state, const Uint16& data, const bool& i
     hCode = vDoNothing;
     if (state == vKeyEventState::MouseDown || (otherControlKey && !isCaps)) {
         hMacroKey.clear();
+        _hasHandledMacro = false;  // Reset when starting new word
         _willTempOffEngine = false;
     } else if (data == KEY_SPACE || isMacroBreakCode(data)) {
         // Check macro for SPACE and other macro break codes (Enter, comma, dot, etc.)
@@ -1335,6 +1336,7 @@ void vEnglishMode(const vKeyEventState& state, const Uint16& data, const bool& i
             hBPC = (Byte)hMacroKey.size();
         }
         hMacroKey.clear();
+        _hasHandledMacro = false;  // Reset when starting new word
         _willTempOffEngine = false;
     } else if (data == KEY_DELETE) {
         if (hMacroKey.size() > 0) {
@@ -1346,6 +1348,7 @@ void vEnglishMode(const vKeyEventState& state, const Uint16& data, const bool& i
         if (isWordBreak(vKeyEvent::Keyboard, state, data) &&
             std::find(_charKeyCode.begin(), _charKeyCode.end(), data) == _charKeyCode.end()) {
             hMacroKey.clear();
+            _hasHandledMacro = false;  // Reset when starting new word
             _willTempOffEngine = false;
         } else {
             if (!_willTempOffEngine)
@@ -1427,6 +1430,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             _willTempOffEngine = false;
         } else if (hCode == vReplaceMaro || _hasHandleQuickConsonant) {
             _index = 0;
+            _hasHandledMacro = false;  // Reset for next macro
         }
         
         //insert key for macro function
@@ -1435,6 +1439,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
                 hMacroKey.push_back(data | (_isCaps ? CAPS_MASK : 0));
             } else {
                 hMacroKey.clear();
+                _hasHandledMacro = false;  // Reset when starting new word
             }
         }
         
@@ -1454,7 +1459,6 @@ void vKeyHandleEvent(const vKeyEvent& event,
             hCode = vReplaceMaro;
             hBPC = (Byte)hMacroKey.size();
             _spaceCount++;
-            _hasHandledMacro = true;
         } else if ((vQuickStartConsonant || vQuickEndConsonant) && !tempDisableKey && checkQuickConsonant()) {
             _spaceCount++;
         } else if (vRestoreIfWrongSpelling && tempDisableKey && !_hasHandledMacro) { //restore key if wrong spelling
@@ -1468,6 +1472,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
         }
         if (vUseMacro) {
             hMacroKey.clear();
+            _hasHandledMacro = false;  // Reset when starting new word
         }
         if (vUpperCaseFirstChar && _upperCaseStatus == 1) {
             _upperCaseStatus = 2;
