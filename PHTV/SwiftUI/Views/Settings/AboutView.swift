@@ -52,13 +52,18 @@ struct AboutView: View {
                             .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
                     }
 
-                    VStack(spacing: 8) {
+                    VStack(spacing: 6) {
                         Text("PHTV")
                             .font(.system(size: 32, weight: .bold, design: .rounded))
 
-                        Text("Bộ gõ tiếng Việt cho macOS")
-                            .font(.title3)
+                        Text("Precision Hybrid Typing Vietnamese")
+                            .font(.system(size: 13, weight: .medium, design: .default))
                             .foregroundStyle(.secondary)
+                            .italic()
+
+                        Text("Bộ gõ tiếng Việt cho macOS")
+                            .font(.subheadline)
+                            .foregroundStyle(.tertiary)
                     }
 
                     // Version Badge

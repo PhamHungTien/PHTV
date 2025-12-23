@@ -186,7 +186,7 @@ class StatusBarController: ObservableObject {
         }
 
         // Update tooltip
-        button.toolTip = "PHTV - \(currentInputMethod) (\(currentCodeTable))\n\(isEnabled ? "Đang bật" : "Đang tắt")"
+        button.toolTip = "PHTV - Precision Hybrid Typing Vietnamese\n\(currentInputMethod) (\(currentCodeTable)) - \(isEnabled ? "Đang bật" : "Đang tắt")"
     }
 
     private func makeMenuBarIcon(size: CGFloat, slashed: Bool) -> NSImage? {
