@@ -14,7 +14,7 @@
 
 ### Q1: PHTV có tương thích với phiên bản macOS nào?
 
-**A:** PHTV hỗ trợ macOS 14.0+ (Sonoma trở lên). Hoạt động tốt trên Apple Silicon (M1/M2/M3) và Intel Macs.
+**A:** PHTV hỗ trợ macOS 14.0+ (Sonoma trở lên). Chỉ hoạt động trên Apple Silicon (M1, M2, M3, M4 và các thế hệ sau). Không hỗ trợ Intel Macs.
 
 ### Q2: Làm sao để chuyển đổi giữa tiếng Anh và tiếng Việt?
 

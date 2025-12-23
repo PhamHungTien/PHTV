@@ -8,6 +8,7 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![macOS 14+](https://img.shields.io/badge/macOS-14+-blue.svg)](https://www.apple.com/macos/)
+[![Apple Silicon](https://img.shields.io/badge/Apple%20Silicon-arm64-red.svg)](https://support.apple.com/en-us/HT211814)
 [![Swift 6.0+](https://img.shields.io/badge/Swift-6.0+-orange.svg)](https://swift.org)
 [![GitHub release](https://img.shields.io/github/v/release/PhamHungTien/PHTV)](../../releases/latest)
 [![GitHub stars](https://img.shields.io/github/stars/PhamHungTien/PHTV)](../../stargazers)
@@ -159,9 +160,11 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 | Thành phần | Yêu cầu |
 | --- | --- |
 | **macOS** | 14.0+ (Sonoma trở lên) |
-| **Kiến trúc** | Apple Silicon (arm64) hoặc Intel (x86_64) |
-| **Xcode** | 16.0+ (nếu build từ source) |
+| **Kiến trúc** | Apple Silicon (arm64) |
+| **Xcode** | 26.0+ (nếu build từ source) |
 | **Quyền** | Accessibility |
+
+> **Lưu ý**: PHTV chỉ hỗ trợ Apple Silicon (M1, M2, M3, M4 và các thế hệ sau). Không hỗ trợ Intel Macs.
 
 ## Công nghệ
 

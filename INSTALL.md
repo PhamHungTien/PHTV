@@ -59,8 +59,8 @@
 git clone https://github.com/PhamHungTien/PHTV.git
 cd PHTV
 
-# Build với Xcode
-xcodebuild -scheme PHTV -configuration Release -arch arm64 -arch x86_64
+# Build với Xcode (yêu cầu Xcode 26.0+)
+xcodebuild -scheme PHTV -configuration Release -arch arm64
 
 # App sẽ được build tại: build/Release/PHTV.app
 ```
@@ -68,8 +68,11 @@ xcodebuild -scheme PHTV -configuration Release -arch arm64 -arch x86_64
 ## ⚙️ Yêu cầu hệ thống
 
 - **macOS**: 14.0 hoặc cao hơn (Sonoma+)
-- **Bộ xử lý**: Apple Silicon (M1/M2/M3) hoặc Intel
+- **Bộ xử lý**: Apple Silicon (M1, M2, M3, M4 và các thế hệ sau)
+- **Xcode**: 26.0+ (nếu build từ source)
 - **Dung lượng**: ~50 MB
+
+> **Lưu ý**: PHTV chỉ hỗ trợ Apple Silicon. Không hỗ trợ Intel Macs.
 
 ## 🔧 Các bước sau khi cài
 

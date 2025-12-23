@@ -110,9 +110,11 @@ PHTV/
 
 ### Build và Test
 
+> **Yêu cầu**: macOS 14.0+ (Sonoma) trên Apple Silicon và Xcode 26.0+
+
 ```bash
-# Build project
-xcodebuild -project PHTV.xcodeproj -scheme PHTV
+# Build project (chỉ arm64)
+xcodebuild -project PHTV.xcodeproj -scheme PHTV -arch arm64
 
 # Run tests (nếu có)
 xcodebuild -project PHTV.xcodeproj -scheme PHTV test
