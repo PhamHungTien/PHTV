@@ -55,6 +55,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL performLayoutCompatEnabled;
 @property (nonatomic, assign) BOOL tempDisablePHTVEnabled;
 @property (nonatomic, assign) BOOL otherLanguageDetectionEnabled;
+@property (nonatomic, assign) BOOL autoRestoreEnglishWordEnabled;
 
 #pragma mark - UI Settings
 @property (nonatomic, assign) BOOL grayIconEnabled;

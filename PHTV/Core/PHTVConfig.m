@@ -21,6 +21,7 @@ static NSString * const kPHTVSwitchKeyKey = @"PHTV_SwitchKey";
 static NSString * const kPHTVGrayIconKey = @"PHTV_GrayIcon";
 static NSString * const kPHTVShowDockKey = @"PHTV_ShowDock";
 static NSString * const kPHTVRunOnStartupKey = @"PHTV_RunOnStartup";
+static NSString * const kPHTVAutoRestoreEnglishWordKey = @"vAutoRestoreEnglishWord";
 
 @implementation PHTVConfig
 
@@ -64,7 +65,10 @@ static NSString * const kPHTVRunOnStartupKey = @"PHTV_RunOnStartup";
     self.grayIconEnabled = [defaults boolForKey:kPHTVGrayIconKey];
     self.showIconOnDockEnabled = [defaults boolForKey:kPHTVShowDockKey];
     self.runOnStartupEnabled = [defaults boolForKey:kPHTVRunOnStartupKey];
-    
+
+    // Auto restore English word
+    self.autoRestoreEnglishWordEnabled = [defaults boolForKey:kPHTVAutoRestoreEnglishWordKey];
+
     // Advanced
     self.switchKeyStatus = (int)[defaults integerForKey:kPHTVSwitchKeyKey];
     if (self.switchKeyStatus == 0) {
@@ -86,8 +90,9 @@ static NSString * const kPHTVRunOnStartupKey = @"PHTV_RunOnStartup";
     [defaults setBool:self.grayIconEnabled forKey:kPHTVGrayIconKey];
     [defaults setBool:self.showIconOnDockEnabled forKey:kPHTVShowDockKey];
     [defaults setBool:self.runOnStartupEnabled forKey:kPHTVRunOnStartupKey];
+    [defaults setBool:self.autoRestoreEnglishWordEnabled forKey:kPHTVAutoRestoreEnglishWordKey];
     [defaults setInteger:self.switchKeyStatus forKey:kPHTVSwitchKeyKey];
-    
+
     [defaults synchronize];
 }
 

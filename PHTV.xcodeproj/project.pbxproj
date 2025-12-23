@@ -7,9 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		EF5EC6D461F146F7BB7B771B /* ColorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */; };
-		969E53BC2BBB4C93AC790BF7 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99A1FB75E4F047E2882D19DC /* ThemeManager.swift */; };
-		5832154BF8BC438D804CD999 /* ThemeSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF311551B144E45B07D9CCD /* ThemeSettingsView.swift */; };
+		015CCFFEF0134F81976FCAB6 /* HotkeySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3CCE6686B954309A3B65AAD /* HotkeySettingsView.swift */; };
 		232EDA5921F1B33E0085D362 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 232EDA5821F1B33E0085D362 /* AppDelegate.mm */; };
 		232EDA5E21F1B33F0085D362 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 232EDA5D21F1B33F0085D362 /* Assets.xcassets */; };
 		233C4A6E231F923D00DD7052 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 233C4A6D231F923D00DD7052 /* AppKit.framework */; };
@@ -28,13 +26,35 @@
 		23E2E4A02314FD3A006CCC3E /* Vietnamese.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23E2E49B2314FD3A006CCC3E /* Vietnamese.cpp */; };
 		23F512852336386200397988 /* MJAccessibilityUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 23F512832336386200397988 /* MJAccessibilityUtils.m */; };
 		461048622EF2DF22005AF5FC /* SendKeyStepByStepAppsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 461048612EF2DF22005AF5FC /* SendKeyStepByStepAppsView.swift */; };
+		46394F5A2EFA5D56009D5194 /* EnglishWordDetector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46394F592EFA5D56009D5194 /* EnglishWordDetector.cpp */; };
+		46394F6E2EFA5E8F009D5194 /* settings-system.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F642EFA5E8F009D5194 /* settings-system.png */; };
+		46394F6F2EFA5E8F009D5194 /* step4-grant-access.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F5E2EFA5E8F009D5194 /* step4-grant-access.png */; };
+		46394F702EFA5E8F009D5194 /* menubar_icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F6B2EFA5E8F009D5194 /* menubar_icon.png */; };
+		46394F712EFA5E8F009D5194 /* icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F692EFA5E8F009D5194 /* icon.png */; };
+		46394F722EFA5E8F009D5194 /* step1-download.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F5B2EFA5E8F009D5194 /* step1-download.png */; };
+		46394F732EFA5E8F009D5194 /* settings-macros.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F632EFA5E8F009D5194 /* settings-macros.png */; };
+		46394F742EFA5E8F009D5194 /* step5-complete.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F5F2EFA5E8F009D5194 /* step5-complete.png */; };
+		46394F752EFA5E8F009D5194 /* settings-typing.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F652EFA5E8F009D5194 /* settings-typing.png */; };
+		46394F772EFA5E8F009D5194 /* menu-charset.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F612EFA5E8F009D5194 /* menu-charset.png */; };
+		46394F782EFA5E8F009D5194 /* step3-permissions.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F5D2EFA5E8F009D5194 /* step3-permissions.png */; };
+		46394F792EFA5E8F009D5194 /* menu-input-methods.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F622EFA5E8F009D5194 /* menu-input-methods.png */; };
+		46394F7A2EFA5E8F009D5194 /* step2-open.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F5C2EFA5E8F009D5194 /* step2-open.png */; };
+		46394F7B2EFA5E8F009D5194 /* menubar_vietnamese.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F6C2EFA5E8F009D5194 /* menubar_vietnamese.png */; };
+		46394F7C2EFA5E8F009D5194 /* donate.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F672EFA5E8F009D5194 /* donate.png */; };
+		46394F7D2EFA5E8F009D5194 /* menubar_english.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F6A2EFA5E8F009D5194 /* menubar_english.png */; };
+		46394F822EFAC18E009D5194 /* vi_dict.bin in Resources */ = {isa = PBXBuildFile; fileRef = 46394F812EFAC18E009D5194 /* vi_dict.bin */; };
+		46394F832EFAC18E009D5194 /* en_dict.bin in Resources */ = {isa = PBXBuildFile; fileRef = 46394F802EFAC18E009D5194 /* en_dict.bin */; };
 		46413AEE2EEF7EB300278BFB /* update.json in Resources */ = {isa = PBXBuildFile; fileRef = 46413AED2EEF7EB300278BFB /* update.json */; };
 		46EF4FFA2EEDBFD400DF8DD1 /* PHTV.icon in Resources */ = {isa = PBXBuildFile; fileRef = 46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */; };
+		5832154BF8BC438D804CD999 /* ThemeSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF311551B144E45B07D9CCD /* ThemeSettingsView.swift */; };
+		969E53BC2BBB4C93AC790BF7 /* Utilities/ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99A1FB75E4F047E2882D19DC /* Utilities/ThemeManager.swift */; };
 		A534F32629D8B78100296F25 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23874B0F220160A500000BC8 /* Carbon.framework */; };
 		A534F32629D8B78100296F26 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23874B10220160A500000BC9 /* QuartzCore.framework */; };
+		DB799B68D74F4B3AA863B03A /* AdvancedSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5079BAE20074F51ADAB4E65 /* AdvancedSettingsView.swift */; };
 		E1A1A1A42025120200000002 /* UsageStats.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A32025120200000004 /* UsageStats.m */; };
 		E1A1A1A52025120200000005 /* PHTVConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A72025120200000007 /* PHTVConfig.m */; };
 		E1A1A1A62025120200000006 /* PHTVUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A92025120200000009 /* PHTVUtilities.m */; };
+		EF5EC6D461F146F7BB7B771B /* Utilities/ColorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E55895C7C4348BCA1ABE9E7 /* Utilities/ColorExtension.swift */; };
 		F1A1A1B12025130000000001 /* PHTPApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B22025130000000002 /* PHTPApp.swift */; };
 		F1A1A1B32025130000000003 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B42025130000000004 /* SettingsView.swift */; };
 		F1A1A1B52025130000000005 /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B62025130000000006 /* StatusBarController.swift */; };
@@ -44,8 +64,6 @@
 		F1A1A1BD2025130000000013 /* PreviewHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1BE2025130000000014 /* PreviewHelpers.swift */; };
 		F1A1A1C12025130000000017 /* StatusBarMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1C22025130000000018 /* StatusBarMenuView.swift */; };
 		F1A1A1D12025130100000019 /* TypingSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D22025130100000020 /* TypingSettingsView.swift */; };
-		DB799B68D74F4B3AA863B03A /* AdvancedSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5079BAE20074F51ADAB4E65 /* AdvancedSettingsView.swift */; };
-		015CCFFEF0134F81976FCAB6 /* HotkeySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3CCE6686B954309A3B65AAD /* HotkeySettingsView.swift */; };
 		F1A1A1D32025130100000021 /* SystemSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D42025130100000022 /* SystemSettingsView.swift */; };
 		F1A1A1D52025130100000023 /* MacroSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D62025130100000024 /* MacroSettingsView.swift */; };
 		F1A1A1D72025130100000025 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D82025130100000026 /* AboutView.swift */; };
@@ -70,6 +88,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0FF311551B144E45B07D9CCD /* ThemeSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeSettingsView.swift; sourceTree = "<group>"; };
 		232EDA5721F1B33E0085D362 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		232EDA5821F1B33E0085D362 /* AppDelegate.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AppDelegate.mm; sourceTree = "<group>"; };
 		232EDA5D21F1B33F0085D362 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -79,8 +98,6 @@
 		233C4A6F231F937900DD7052 /* ConvertTool.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ConvertTool.cpp; sourceTree = "<group>"; };
 		233C4A71231F938800DD7052 /* ConvertTool.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ConvertTool.h; sourceTree = "<group>"; };
 		2371AAEE22FA85B200CA1B57 /* PHTV.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = PHTV.mm; sourceTree = "<group>"; };
-		237724A3232BA3B800E92BDF /* linux.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = linux.h; sourceTree = "<group>"; };
-		237724A4232BA3B800E92BDF /* win32.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = win32.h; sourceTree = "<group>"; };
 		237724A5232BA3B800E92BDF /* mac.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mac.h; sourceTree = "<group>"; };
 		238519F221F1B8E200E79A41 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		238519F921F1BF4400E79A41 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -106,9 +123,31 @@
 		23F512832336386200397988 /* MJAccessibilityUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MJAccessibilityUtils.m; sourceTree = "<group>"; };
 		23F512842336386200397988 /* MJAccessibilityUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MJAccessibilityUtils.h; sourceTree = "<group>"; };
 		461048612EF2DF22005AF5FC /* SendKeyStepByStepAppsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendKeyStepByStepAppsView.swift; sourceTree = "<group>"; };
+		46394F592EFA5D56009D5194 /* EnglishWordDetector.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = EnglishWordDetector.cpp; sourceTree = "<group>"; };
+		46394F5B2EFA5E8F009D5194 /* step1-download.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "step1-download.png"; sourceTree = "<group>"; };
+		46394F5C2EFA5E8F009D5194 /* step2-open.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "step2-open.png"; sourceTree = "<group>"; };
+		46394F5D2EFA5E8F009D5194 /* step3-permissions.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "step3-permissions.png"; sourceTree = "<group>"; };
+		46394F5E2EFA5E8F009D5194 /* step4-grant-access.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "step4-grant-access.png"; sourceTree = "<group>"; };
+		46394F5F2EFA5E8F009D5194 /* step5-complete.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "step5-complete.png"; sourceTree = "<group>"; };
+		46394F612EFA5E8F009D5194 /* menu-charset.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "menu-charset.png"; sourceTree = "<group>"; };
+		46394F622EFA5E8F009D5194 /* menu-input-methods.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "menu-input-methods.png"; sourceTree = "<group>"; };
+		46394F632EFA5E8F009D5194 /* settings-macros.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "settings-macros.png"; sourceTree = "<group>"; };
+		46394F642EFA5E8F009D5194 /* settings-system.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "settings-system.png"; sourceTree = "<group>"; };
+		46394F652EFA5E8F009D5194 /* settings-typing.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "settings-typing.png"; sourceTree = "<group>"; };
+		46394F672EFA5E8F009D5194 /* donate.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = donate.png; sourceTree = "<group>"; };
+		46394F692EFA5E8F009D5194 /* icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon.png; sourceTree = "<group>"; };
+		46394F6A2EFA5E8F009D5194 /* menubar_english.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = menubar_english.png; sourceTree = "<group>"; };
+		46394F6B2EFA5E8F009D5194 /* menubar_icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = menubar_icon.png; sourceTree = "<group>"; };
+		46394F6C2EFA5E8F009D5194 /* menubar_vietnamese.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = menubar_vietnamese.png; sourceTree = "<group>"; };
+		46394F802EFAC18E009D5194 /* en_dict.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = en_dict.bin; sourceTree = "<group>"; };
+		46394F812EFAC18E009D5194 /* vi_dict.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = vi_dict.bin; sourceTree = "<group>"; };
 		46413AED2EEF7EB300278BFB /* update.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = update.json; sourceTree = "<group>"; };
 		46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = PHTV.icon; sourceTree = "<group>"; };
 		46EF4FFB2EEDC0A200DF8DD1 /* PHTV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PHTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8E55895C7C4348BCA1ABE9E7 /* Utilities/ColorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities/ColorExtension.swift; sourceTree = "<group>"; };
+		99A1FB75E4F047E2882D19DC /* Utilities/ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities/ThemeManager.swift; sourceTree = "<group>"; };
+		D3CCE6686B954309A3B65AAD /* HotkeySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeySettingsView.swift; sourceTree = "<group>"; };
+		D5079BAE20074F51ADAB4E65 /* AdvancedSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedSettingsView.swift; sourceTree = "<group>"; };
 		E1A1A1A22025120100000003 /* UsageStats.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UsageStats.h; sourceTree = "<group>"; };
 		E1A1A1A32025120200000004 /* UsageStats.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = UsageStats.m; sourceTree = "<group>"; };
 		E1A1A1A72025120200000007 /* PHTVConfig.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PHTVConfig.m; sourceTree = "<group>"; };
@@ -126,11 +165,6 @@
 		F1A1A1BF2025130000000015 /* PHTV-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "PHTV-Bridging-Header.h"; sourceTree = "<group>"; };
 		F1A1A1C22025130000000018 /* StatusBarMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarMenuView.swift; sourceTree = "<group>"; };
 		F1A1A1D22025130100000020 /* TypingSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypingSettingsView.swift; sourceTree = "<group>"; };
-		8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities/ColorExtension.swift; sourceTree = "<group>"; };
-		99A1FB75E4F047E2882D19DC /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities/ThemeManager.swift; sourceTree = "<group>"; };
-		0FF311551B144E45B07D9CCD /* ThemeSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeSettingsView.swift; sourceTree = "<group>"; };
-		D5079BAE20074F51ADAB4E65 /* AdvancedSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedSettingsView.swift; sourceTree = "<group>"; };
-		D3CCE6686B954309A3B65AAD /* HotkeySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeySettingsView.swift; sourceTree = "<group>"; };
 		F1A1A1D42025130100000022 /* SystemSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSettingsView.swift; sourceTree = "<group>"; };
 		F1A1A1D62025130100000024 /* MacroSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroSettingsView.swift; sourceTree = "<group>"; };
 		F1A1A1D82025130100000026 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
@@ -174,6 +208,7 @@
 		232EDA5621F1B33E0085D362 /* PHTV */ = {
 			isa = PBXGroup;
 			children = (
+				46394F6D2EFA5E8F009D5194 /* Resources */,
 				E1A1A2A12025120000000011 /* Application */,
 				E1A1A2A22025120000000012 /* Core */,
 				E1A1A2A32025120000000013 /* Managers */,
@@ -206,6 +241,7 @@
 		23E2E4932314FD3A006CCC3E /* Engine */ = {
 			isa = PBXGroup;
 			children = (
+				46394F592EFA5D56009D5194 /* EnglishWordDetector.cpp */,
 				23E2E4962314FD3A006CCC3E /* DataType.h */,
 				23E2E4942314FD3A006CCC3E /* Engine.h */,
 				23E2E49A2314FD3A006CCC3E /* Engine.cpp */,
@@ -219,6 +255,46 @@
 				233C4A6F231F937900DD7052 /* ConvertTool.cpp */,
 			);
 			path = Engine;
+			sourceTree = "<group>";
+		};
+		46394F602EFA5E8F009D5194 /* Setup */ = {
+			isa = PBXGroup;
+			children = (
+				46394F5B2EFA5E8F009D5194 /* step1-download.png */,
+				46394F5C2EFA5E8F009D5194 /* step2-open.png */,
+				46394F5D2EFA5E8F009D5194 /* step3-permissions.png */,
+				46394F5E2EFA5E8F009D5194 /* step4-grant-access.png */,
+				46394F5F2EFA5E8F009D5194 /* step5-complete.png */,
+			);
+			path = Setup;
+			sourceTree = "<group>";
+		};
+		46394F662EFA5E8F009D5194 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				46394F612EFA5E8F009D5194 /* menu-charset.png */,
+				46394F622EFA5E8F009D5194 /* menu-input-methods.png */,
+				46394F632EFA5E8F009D5194 /* settings-macros.png */,
+				46394F642EFA5E8F009D5194 /* settings-system.png */,
+				46394F652EFA5E8F009D5194 /* settings-typing.png */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		46394F6D2EFA5E8F009D5194 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				46394F602EFA5E8F009D5194 /* Setup */,
+				46394F662EFA5E8F009D5194 /* UI */,
+				46394F672EFA5E8F009D5194 /* donate.png */,
+				46394F692EFA5E8F009D5194 /* icon.png */,
+				46394F6A2EFA5E8F009D5194 /* menubar_english.png */,
+				46394F6B2EFA5E8F009D5194 /* menubar_icon.png */,
+				46394F6C2EFA5E8F009D5194 /* menubar_vietnamese.png */,
+				46394F802EFAC18E009D5194 /* en_dict.bin */,
+				46394F812EFAC18E009D5194 /* vi_dict.bin */,
+			);
+			path = Resources;
 			sourceTree = "<group>";
 		};
 		E1A1A2A12025120000000011 /* Application */ = {
@@ -279,8 +355,6 @@
 			isa = PBXGroup;
 			children = (
 				237724A5232BA3B800E92BDF /* mac.h */,
-				237724A3232BA3B800E92BDF /* linux.h */,
-				237724A4232BA3B800E92BDF /* win32.h */,
 			);
 			path = Platforms;
 			sourceTree = "<group>";
@@ -293,9 +367,9 @@
 				F1A1A2A92025130000000019 /* Controllers */,
 				F1A1A2AA2025130000000020 /* Bridge */,
 				F1A1A2AB2025130000000021 /* Utilities */,
-			
-				8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */,
-				99A1FB75E4F047E2882D19DC /* ThemeManager.swift */,);
+				8E55895C7C4348BCA1ABE9E7 /* Utilities/ColorExtension.swift */,
+				99A1FB75E4F047E2882D19DC /* Utilities/ThemeManager.swift */,
+			);
 			path = SwiftUI;
 			sourceTree = "<group>";
 		};
@@ -343,7 +417,7 @@
 			children = (
 				D5079BAE20074F51ADAB4E65 /* AdvancedSettingsView.swift */,
 				D3CCE6686B954309A3B65AAD /* HotkeySettingsView.swift */,
-								0FF311551B144E45B07D9CCD /* ThemeSettingsView.swift */,
+				0FF311551B144E45B07D9CCD /* ThemeSettingsView.swift */,
 				F1A1A1D22025130100000020 /* TypingSettingsView.swift */,
 				F1A1A1D42025130100000022 /* SystemSettingsView.swift */,
 				F1A1A1D62025130100000024 /* MacroSettingsView.swift */,
@@ -431,6 +505,23 @@
 			files = (
 				46EF4FFA2EEDBFD400DF8DD1 /* PHTV.icon in Resources */,
 				232EDA5E21F1B33F0085D362 /* Assets.xcassets in Resources */,
+				46394F6E2EFA5E8F009D5194 /* settings-system.png in Resources */,
+				46394F822EFAC18E009D5194 /* vi_dict.bin in Resources */,
+				46394F832EFAC18E009D5194 /* en_dict.bin in Resources */,
+				46394F6F2EFA5E8F009D5194 /* step4-grant-access.png in Resources */,
+				46394F702EFA5E8F009D5194 /* menubar_icon.png in Resources */,
+				46394F712EFA5E8F009D5194 /* icon.png in Resources */,
+				46394F722EFA5E8F009D5194 /* step1-download.png in Resources */,
+				46394F732EFA5E8F009D5194 /* settings-macros.png in Resources */,
+				46394F742EFA5E8F009D5194 /* step5-complete.png in Resources */,
+				46394F752EFA5E8F009D5194 /* settings-typing.png in Resources */,
+				46394F772EFA5E8F009D5194 /* menu-charset.png in Resources */,
+				46394F782EFA5E8F009D5194 /* step3-permissions.png in Resources */,
+				46394F792EFA5E8F009D5194 /* menu-input-methods.png in Resources */,
+				46394F7A2EFA5E8F009D5194 /* step2-open.png in Resources */,
+				46394F7B2EFA5E8F009D5194 /* menubar_vietnamese.png in Resources */,
+				46394F7C2EFA5E8F009D5194 /* donate.png in Resources */,
+				46394F7D2EFA5E8F009D5194 /* menubar_english.png in Resources */,
 				46413AEE2EEF7EB300278BFB /* update.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -442,8 +533,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EF5EC6D461F146F7BB7B771B /* ColorExtension.swift in Sources */,
-				969E53BC2BBB4C93AC790BF7 /* ThemeManager.swift in Sources */,
+				EF5EC6D461F146F7BB7B771B /* Utilities/ColorExtension.swift in Sources */,
+				969E53BC2BBB4C93AC790BF7 /* Utilities/ThemeManager.swift in Sources */,
 				5832154BF8BC438D804CD999 /* ThemeSettingsView.swift in Sources */,
 				23E2E49F2314FD3A006CCC3E /* Engine.cpp in Sources */,
 				23E2E49E2314FD3A006CCC3E /* SmartSwitchKey.cpp in Sources */,
@@ -464,6 +555,7 @@
 				F1A1A1B52025130000000005 /* StatusBarController.swift in Sources */,
 				F1A1A1B72025130000000007 /* WindowController.swift in Sources */,
 				F1A1A1B92025130000000009 /* AppDelegate+SwiftUI.swift in Sources */,
+				46394F5A2EFA5D56009D5194 /* EnglishWordDetector.cpp in Sources */,
 				F1A1A1BB2025130000000011 /* ViewModifiers.swift in Sources */,
 				F1A1A1BD2025130000000013 /* PreviewHelpers.swift in Sources */,
 				F1A1A1C12025130000000017 /* StatusBarMenuView.swift in Sources */,
@@ -477,9 +569,9 @@
 				F1A1A1DF2025130100000033 /* ExcludedAppsView.swift in Sources */,
 				F1A1A1E12025130100000035 /* SettingsObserver.swift in Sources */,
 				F1A1A1E32025130100000037 /* ReloadHelpers.swift in Sources */,
-							DB799B68D74F4B3AA863B03A /* AdvancedSettingsView.swift in Sources */,
+				DB799B68D74F4B3AA863B03A /* AdvancedSettingsView.swift in Sources */,
 				015CCFFEF0134F81976FCAB6 /* HotkeySettingsView.swift in Sources */,
-				);
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
@@ -620,7 +712,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.1.9;
+				CURRENT_PROJECT_VERSION = 1.2.0;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = NO;
@@ -632,7 +724,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.1.9;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.phamhungtien.phtv;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -649,7 +741,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.1.9;
+				CURRENT_PROJECT_VERSION = 1.2.0;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = NO;
@@ -661,7 +753,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.1.9;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.phamhungtien.phtv;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

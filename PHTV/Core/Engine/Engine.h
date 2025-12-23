@@ -17,6 +17,7 @@
 #include "Macro.h"
 #include "SmartSwitchKey.h"
 #include "ConvertTool.h"
+#include "EnglishWordDetector.h"
 
 #define IS_DEBUG 1
 
@@ -219,6 +220,15 @@ extern volatile int vPauseKeyEnabled;
  * Can be any key: Option, Control, Shift, Command, Fn, or any other key
  */
 extern volatile int vPauseKey;
+
+/**
+ * Auto restore English word feature
+ * When enabled, automatically restores English words when typed in Vietnamese mode
+ * Example: typing "tẻminal" → restores to "terminal"
+ * 0: Disabled
+ * 1: Enabled
+ */
+extern volatile int vAutoRestoreEnglishWord;
 
 /**
  * Call this function first to receive data pointer

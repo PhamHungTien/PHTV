@@ -91,6 +91,16 @@ struct TypingSettingsView: View {
                             subtitle: "Khôi phục ký tự khi từ không hợp lệ",
                             isOn: $appState.restoreOnInvalidWord
                         )
+
+                        SettingsDivider()
+
+                        SettingsToggleRow(
+                            icon: "textformat.abc.dottedunderline",
+                            iconColor: themeManager.themeColor,
+                            title: "Tự động nhận diện từ tiếng Anh",
+                            subtitle: "Khôi phục từ tiếng Anh khi gõ ở chế độ Việt (VD: tẻminal → terminal)",
+                            isOn: $appState.autoRestoreEnglishWord
+                        )
                     }
                 }
 

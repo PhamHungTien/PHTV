@@ -17,6 +17,7 @@
 #import "../Utils/MJAccessibilityUtils.h"
 #import "../Utils/UsageStats.h"
 #import "PHTV-Swift.h"
+#include "../Core/Engine/Engine.h"
 
 static inline int PHTVReadIntWithFallback(NSUserDefaults *defaults, NSString *key, int fallbackValue) {
     if ([defaults objectForKey:key] == nil) {
@@ -77,6 +78,9 @@ volatile int vCustomEscapeKey = 0; //custom restore key code (0 = default ESC = 
 // Pause Vietnamese input when holding a key
 volatile int vPauseKeyEnabled = 0; //enable pause key feature (default: OFF)
 volatile int vPauseKey = 58; //pause key code (default: Left Option = 58)
+
+// Auto restore English word feature
+volatile int vAutoRestoreEnglishWord = 0; //auto restore English words (default: OFF)
 
 int vShowIconOnDock = 0; //new on version 2.0
 
@@ -516,7 +520,10 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     
     // Load existing macros from UserDefaults to binary format (macroData)
     [self loadExistingMacros];
-    
+
+    // Initialize English word dictionary for auto-restore feature
+    [self initEnglishWordDictionary];
+
     // Load hotkey settings from UserDefaults BEFORE initializing event tap
     NSInteger savedHotkey = [[NSUserDefaults standardUserDefaults] integerForKey:@"SwitchKeyStatus"];
     if (savedHotkey != 0) {
@@ -911,6 +918,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     vPauseKeyEnabled = PHTVReadIntWithFallback(defaults, @"vPauseKeyEnabled", vPauseKeyEnabled);
     vPauseKey = PHTVReadIntWithFallback(defaults, @"vPauseKey", vPauseKey);
 
+    // Auto restore English word feature
+    vAutoRestoreEnglishWord = PHTVReadIntWithFallback(defaults, @"vAutoRestoreEnglishWord", vAutoRestoreEnglishWord);
+
     // Memory barrier to ensure event tap thread sees new values immediately
     __sync_synchronize();
 
@@ -1054,6 +1064,34 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 - (void)loadExistingMacros {
     // On app startup, sync macroData from macroList (source of truth).
     [self syncMacrosFromUserDefaultsResetSession:NO];
+}
+
+- (void)initEnglishWordDictionary {
+    // Load English dictionary (binary only - PHT3 format)
+    NSString *enBundlePath = [[NSBundle mainBundle] pathForResource:@"en_dict" ofType:@"bin"];
+    if (enBundlePath) {
+        std::string path = [enBundlePath UTF8String];
+        if (initEnglishDictionary(path)) {
+            NSLog(@"[EnglishWordDetector] English dictionary loaded: %zu words", getEnglishDictionarySize());
+        } else {
+            NSLog(@"[EnglishWordDetector] Failed to load English dictionary");
+        }
+    } else {
+        NSLog(@"[EnglishWordDetector] en_dict.bin not found in bundle");
+    }
+
+    // Load Vietnamese dictionary (binary only - PHT3 format)
+    NSString *viBundlePath = [[NSBundle mainBundle] pathForResource:@"vi_dict" ofType:@"bin"];
+    if (viBundlePath) {
+        std::string path = [viBundlePath UTF8String];
+        if (initVietnameseDictionary(path)) {
+            NSLog(@"[EnglishWordDetector] Vietnamese dictionary loaded: %zu words", getVietnameseDictionarySize());
+        } else {
+            NSLog(@"[EnglishWordDetector] Failed to load Vietnamese dictionary");
+        }
+    } else {
+        NSLog(@"[EnglishWordDetector] vi_dict.bin not found in bundle");
+    }
 }
 
 - (void)handleCheckForUpdates:(NSNotification *)notification {

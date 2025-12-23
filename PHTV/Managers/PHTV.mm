@@ -80,48 +80,75 @@ static NSMutableDictionary<NSNumber*, NSString*> *_pidBundleCache = nil;
 static uint64_t _lastCacheCleanTime = 0;
 static os_unfair_lock _pidCacheLock = OS_UNFAIR_LOCK_INIT;
 
+// Spotlight detection cache (refreshes every 50ms for responsiveness)
+static BOOL _cachedSpotlightActive = NO;
+static uint64_t _lastSpotlightCheckTime = 0;
+static pid_t _cachedFocusedPID = 0;
+
 // Check if Spotlight or similar overlay is currently active using Accessibility API
+// OPTIMIZED: Results cached for 50ms to avoid repeated AX API calls
 BOOL isSpotlightActive(void) {
+    uint64_t now = mach_absolute_time();
+    uint64_t elapsed_ms = mach_time_to_ms(now - _lastSpotlightCheckTime);
+
+    // Return cached result if recent enough (50ms cache)
+    if (elapsed_ms < 50 && _lastSpotlightCheckTime > 0) {
+        return _cachedSpotlightActive;
+    }
+
+    _lastSpotlightCheckTime = now;
+
     // Get the system-wide focused element
     AXUIElementRef systemWide = AXUIElementCreateSystemWide();
     AXUIElementRef focusedElement = NULL;
     AXError error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement);
     CFRelease(systemWide);
-    
+
     if (error != kAXErrorSuccess || focusedElement == NULL) {
+        _cachedSpotlightActive = NO;
         return NO;
     }
-    
+
     // Get the PID of the app that owns the focused element
     pid_t focusedPID = 0;
     error = AXUIElementGetPid(focusedElement, &focusedPID);
     CFRelease(focusedElement);
-    
+
     if (error != kAXErrorSuccess || focusedPID == 0) {
+        _cachedSpotlightActive = NO;
         return NO;
     }
-    
-    // Get the bundle ID from the PID
+
+    // Quick path: if PID unchanged and we already checked, return cached
+    if (focusedPID == _cachedFocusedPID && _cachedFocusedPID > 0) {
+        return _cachedSpotlightActive;
+    }
+    _cachedFocusedPID = focusedPID;
+
+    // Get the bundle ID from the PID (uses internal cache)
     NSRunningApplication *app = [NSRunningApplication runningApplicationWithProcessIdentifier:focusedPID];
     NSString *bundleId = app.bundleIdentifier;
-    
+
     // Check if it's Spotlight or similar
     if ([bundleId isEqualToString:@"com.apple.Spotlight"] ||
         [bundleId hasPrefix:@"com.apple.Spotlight"]) {
+        _cachedSpotlightActive = YES;
         return YES;
     }
-    
+
     // Also check by process path for system processes without bundle ID
     if (bundleId == nil) {
         char pathBuffer[PROC_PIDPATHINFO_MAXSIZE];
         if (proc_pidpath(focusedPID, pathBuffer, sizeof(pathBuffer)) > 0) {
             NSString *path = [NSString stringWithUTF8String:pathBuffer];
             if ([path containsString:@"Spotlight"]) {
+                _cachedSpotlightActive = YES;
                 return YES;
             }
         }
     }
-    
+
+    _cachedSpotlightActive = NO;
     return NO;
 }
 
@@ -322,11 +349,18 @@ extern "C" {
     static int64_t _phtvKeyboardType = 0;
     static int _phtvPendingBackspaceCount = 0;
 
+    // Track expected text length after AX replacement to detect stale reads
+    static NSInteger _phtvExpectedTextLength = -1;
+    static uint64_t _phtvLastAXReplaceTime = 0;
+
     __attribute__((always_inline)) static inline void SpotlightTinyDelay(void) {
         // Spotlight/SystemUIServer input fields are timing-sensitive.
-        // A tiny delay helps ensure backspace + replacement is applied in order.
-        // This is only used when AX API fallback to synthetic events (rare)
-        usleep(10000); // 10ms (fallback path - AX API is preferred)
+        // Reduced from 10ms to 3ms for faster response
+        usleep(3000); // 3ms (fallback path - AX API is preferred)
+    }
+
+    __attribute__((always_inline)) static inline uint64_t GetCurrentTimeUs(void) {
+        return clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW) / 1000; // microseconds
     }
 
     static BOOL ReplaceFocusedTextViaAX(NSInteger backspaceCount, NSString* insertText) {
@@ -342,6 +376,31 @@ extern "C" {
             PHTVSpotlightDebugLog([NSString stringWithFormat:@"AX focus failed err=%d", (int)error]);
 #endif
             return NO;
+        }
+
+        // Wait for Spotlight to sync if we recently made a replacement
+        // This prevents reading stale text when typing fast
+        // OPTIMIZED: Use microsecond timing and shorter polls
+        uint64_t nowUs = GetCurrentTimeUs();
+        uint64_t timeSinceLastReplaceUs = nowUs - _phtvLastAXReplaceTime;
+        if (_phtvExpectedTextLength >= 0 && timeSinceLastReplaceUs < 30000) { // 30ms window
+            // Fast polling: max 4 attempts, 2ms each = 8ms max
+            for (int pollAttempt = 0; pollAttempt < 4; pollAttempt++) {
+                CFTypeRef checkValueRef = NULL;
+                AXError checkErr = AXUIElementCopyAttributeValue(focusedElement, kAXValueAttribute, &checkValueRef);
+                if (checkErr == kAXErrorSuccess && checkValueRef != NULL) {
+                    NSInteger currentLen = 0;
+                    if (CFGetTypeID(checkValueRef) == CFStringGetTypeID()) {
+                        currentLen = (NSInteger)CFStringGetLength((CFStringRef)checkValueRef);
+                    }
+                    CFRelease(checkValueRef);
+
+                    if (currentLen == _phtvExpectedTextLength) {
+                        break; // Spotlight has synced
+                    }
+                }
+                usleep(2000); // 2ms between polls (reduced from 5ms)
+            }
         }
 
         CFTypeRef valueRef = NULL;
@@ -418,12 +477,16 @@ extern "C" {
             CFRelease(newRange);
         }
 
+        // Track expected text length for next call (microseconds for precision)
+        _phtvExpectedTextLength = (NSInteger)newValue.length;
+        _phtvLastAXReplaceTime = GetCurrentTimeUs();
+
         if (valueRef) CFRelease(valueRef);
         CFRelease(rangeRef);
         CFRelease(focusedElement);
 
     #ifdef DEBUG
-        PHTVSpotlightDebugLog([NSString stringWithFormat:@"AX replace ok del=%ld ins=%ld", (long)backspaceCount, (long)insertText.length]);
+        PHTVSpotlightDebugLog([NSString stringWithFormat:@"AX replace ok del=%ld ins=%ld newLen=%ld", (long)backspaceCount, (long)insertText.length, (long)newValue.length]);
     #endif
         return YES;
     }
@@ -649,6 +712,9 @@ extern "C" {
         _willContinuteSending = false;
         _willSendControlKey = false;
         _hasJustUsedHotKey = false;
+
+        // Reset Spotlight AX sync tracking
+        _phtvExpectedTextLength = -1;
 
         // Release barrier: ensure state reset is visible to all threads
         __atomic_thread_fence(__ATOMIC_RELEASE);
@@ -1153,15 +1219,9 @@ extern "C" {
             int backspaceCount = _phtvPendingBackspaceCount;
             _phtvPendingBackspaceCount = 0;
 
-            // Retry AX replacement up to 3 times when typing very fast
-            // Spotlight can be busy (searching) causing AX API to fail temporarily
-            BOOL axSucceeded = NO;
-            for (int retry = 0; retry < 3 && !axSucceeded; retry++) {
-                if (retry > 0) {
-                    usleep(5000); // 5ms delay before retry (Spotlight might be busy)
-                }
-                axSucceeded = ReplaceFocusedTextViaAX(backspaceCount, insertStr);
-            }
+            // Try AX replacement once - no retries to maximize speed
+            // The sync polling in ReplaceFocusedTextViaAX handles timing issues
+            BOOL axSucceeded = ReplaceFocusedTextViaAX(backspaceCount, insertStr);
 
             if (axSucceeded) {
                 return;  // AX replacement succeeded - no need for synthetic events

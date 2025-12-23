@@ -197,6 +197,9 @@ final class AppState: ObservableObject {
     @Published var quickEndConsonant: Bool = false
     @Published var rememberCode: Bool = true
 
+    // Auto restore English words
+    @Published var autoRestoreEnglishWord: Bool = false
+
     // Restore to raw keys (customizable key)
     @Published var restoreOnEscape: Bool = true
     @Published var restoreKey: RestoreKey = .esc
@@ -483,6 +486,9 @@ final class AppState: ObservableObject {
         quickEndConsonant = defaults.bool(forKey: "vQuickEndConsonant")
         rememberCode = defaults.bool(forKey: "vRememberCode")
 
+        // Auto restore English words
+        autoRestoreEnglishWord = defaults.bool(forKey: "vAutoRestoreEnglishWord")
+
         // Restore to raw keys (customizable key)
         restoreOnEscape = defaults.object(forKey: "vRestoreOnEscape") as? Bool ?? true
         let restoreKeyCode = defaults.integer(forKey: "vCustomEscapeKey")
@@ -609,6 +615,9 @@ final class AppState: ObservableObject {
         defaults.set(quickStartConsonant, forKey: "vQuickStartConsonant")
         defaults.set(quickEndConsonant, forKey: "vQuickEndConsonant")
         defaults.set(rememberCode, forKey: "vRememberCode")
+
+        // Auto restore English words
+        defaults.set(autoRestoreEnglishWord, forKey: "vAutoRestoreEnglishWord")
 
         // Restore to raw keys (customizable key)
         defaults.set(restoreOnEscape, forKey: "vRestoreOnEscape")
@@ -799,6 +808,7 @@ final class AppState: ObservableObject {
                 )
         )
         .map { _ in () }
+        .merge(with: $autoRestoreEnglishWord.map { _ in () })
         .merge(with: $restoreOnEscape.map { _ in () })
         .merge(with: $restoreKey.map { _ in () })
         .merge(with: $pauseKeyEnabled.map { _ in () })
@@ -936,6 +946,7 @@ final class AppState: ObservableObject {
         quickStartConsonant = false
         quickEndConsonant = false
         rememberCode = true
+        autoRestoreEnglishWord = false
 
         runOnStartup = false
         fixChromiumBrowser = false

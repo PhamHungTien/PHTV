@@ -1400,6 +1400,19 @@ void vKeyHandleEvent(const vKeyEvent& event,
             _hasHandledMacro = true;
         } else if ((vQuickStartConsonant || vQuickEndConsonant) && !tempDisableKey && isMacroBreakCode(data)) {
             checkQuickConsonant();
+        } else if (vAutoRestoreEnglishWord && isWordBreak(event, state, data) && _stateIndex > 1 && _index > 0 && checkIfEnglishWord(KeyStates, _stateIndex)) {
+            // Auto restore English word feature
+            // checkIfEnglishWord returns true only if:
+            // - Word exists in English dictionary AND
+            // - Word does NOT exist in Vietnamese dictionary
+            hCode = vRestoreAndStartNewSession;
+            hBPC = _index;
+            hNCC = _stateIndex;
+            for (i = 0; i < _stateIndex; i++) {
+                TypingWord[i] = KeyStates[i];
+                hData[_stateIndex - 1 - i] = KeyStates[i];
+            }
+            _index = _stateIndex;
         } else if (vRestoreIfWrongSpelling && isWordBreak(event, state, data)) { //restore key if wrong spelling with break-key
             if (!tempDisableKey && vCheckSpelling) {
                 checkSpelling(true); //force check spelling
@@ -1460,6 +1473,18 @@ void vKeyHandleEvent(const vKeyEvent& event,
             hBPC = (Byte)hMacroKey.size();
             _spaceCount++;
         } else if ((vQuickStartConsonant || vQuickEndConsonant) && !tempDisableKey && checkQuickConsonant()) {
+            _spaceCount++;
+        } else if (vAutoRestoreEnglishWord && _stateIndex > 1 && _index > 0 && checkIfEnglishWord(KeyStates, _stateIndex)) {
+            // Auto restore English word on SPACE
+            // checkIfEnglishWord returns true only if word is English AND NOT Vietnamese
+            hCode = vRestore;
+            hBPC = _index;
+            hNCC = _stateIndex;
+            for (i = 0; i < _stateIndex; i++) {
+                TypingWord[i] = KeyStates[i];
+                hData[_stateIndex - 1 - i] = KeyStates[i];
+            }
+            _index = _stateIndex;
             _spaceCount++;
         } else if (vRestoreIfWrongSpelling && tempDisableKey && !_hasHandledMacro) { //restore key if wrong spelling
             if (!checkRestoreIfWrongSpelling(vRestore)) {
