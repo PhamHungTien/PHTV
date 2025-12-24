@@ -250,20 +250,114 @@ NSString* getBundleIdFromPID(pid_t pid) {
 
 // Ignore code for Modifier keys and numpad
 // Reference: https://eastmanreference.com/complete-list-of-applescript-key-codes
+// Maps characters to their QWERTY keycode equivalents for layout compatibility
+// This comprehensive map supports multiple international keyboard layouts
 NSDictionary *keyStringToKeyCodeMap = @{
-    // Characters from number row
+    // ===== STANDARD QWERTY CHARACTERS =====
+    // Number row
     @"`": @50, @"~": @50, @"1": @18, @"!": @18, @"2": @19, @"@": @19, @"3": @20, @"#": @20, @"4": @21, @"$": @21,
     @"5": @23, @"%": @23, @"6": @22, @"^": @22, @"7": @26, @"&": @26, @"8": @28, @"*": @28, @"9": @25, @"(": @25,
     @"0": @29, @")": @29, @"-": @27, @"_": @27, @"=": @24, @"+": @24,
-    // Characters from first keyboard row
+    // First row (QWERTY)
     @"q": @12, @"w": @13, @"e": @14, @"r": @15, @"t": @17, @"y": @16, @"u": @32, @"i": @34, @"o": @31, @"p": @35,
     @"[": @33, @"{": @33, @"]": @30, @"}": @30, @"\\": @42, @"|": @42,
-    // Characters from second keyboard row
+    // Second row (home row)
     @"a": @0, @"s": @1, @"d": @2, @"f": @3, @"g": @5, @"h": @4, @"j": @38, @"k": @40, @"l": @37,
     @";": @41, @":": @41, @"'": @39, @"\"": @39,
-    // Characters from second third row
+    // Third row
     @"z": @6, @"x": @7, @"c": @8, @"v": @9, @"b": @11, @"n": @45, @"m": @46,
-    @",": @43, @"<": @43, @".": @47, @">": @47, @"/": @44, @"?": @44
+    @",": @43, @"<": @43, @".": @47, @">": @47, @"/": @44, @"?": @44,
+
+    // ===== INTERNATIONAL KEYBOARD LAYOUT CHARACTERS =====
+    // Maps special characters from various keyboard layouts to their physical key positions
+    // Note: When a character appears on multiple layouts at different positions,
+    // we use the most common position. The layout compatibility feature will
+    // find the correct mapping at runtime.
+
+    // German QWERTZ specific
+    @"ß": @27,  // ß at - position
+
+    // Umlauts (German, Nordic, Turkish, Hungarian)
+    @"ü": @33,  // ü at [ position (German/Nordic)
+    @"ö": @41,  // ö at ; position (German/Nordic)
+    @"ä": @39,  // ä at ' position (German/Nordic)
+
+    // French AZERTY specific
+    @"é": @19,  // é at 2 position
+    @"è": @26,  // è at 7 position
+    @"ù": @39,  // ù at ' position
+    @"²": @50,  // ² at ` position
+    @"«": @30,  // « guillemet
+    @"»": @42,  // » guillemet
+    @"µ": @42,  // µ (micro)
+
+    // Spanish
+    @"ñ": @41,  // ñ at ; position
+    @"¡": @24,  // ¡ at = position
+    @"¿": @27,  // ¿ at - position
+    @"¬": @50,  // ¬ at ` position
+
+    // Italian
+    @"ò": @41,  // ò at ; position
+    @"ì": @24,  // ì at = position
+
+    // Portuguese
+    @"ç": @41,  // ç at ; position (most common)
+    @"º": @50,  // º at ` position
+    @"ª": @50,  // ª at ` position
+
+    // Nordic (Swedish, Norwegian, Danish, Finnish)
+    @"å": @33,  // å at [ position
+    @"æ": @39,  // æ at ' position
+    @"ø": @41,  // ø at ; position
+    @"§": @50,  // § at ` position
+    @"½": @50,  // ½ at ` position
+    @"¤": @21,  // ¤ currency at 4 position
+
+    // Polish
+    @"ą": @0, @"ć": @8, @"ę": @14, @"ł": @37, @"ń": @45,
+    @"ó": @31, @"ś": @1, @"ź": @7, @"ż": @6,
+
+    // Czech/Slovak
+    @"ě": @19, @"š": @20, @"č": @21, @"ř": @23, @"ž": @22,
+    @"ý": @26, @"á": @28, @"í": @25, @"ú": @41, @"ů": @33,
+    @"ď": @30, @"ť": @39, @"ň": @42,
+
+    // Hungarian
+    @"ő": @27, @"ű": @42,
+
+    // Turkish
+    @"ğ": @33, @"ş": @41, @"ı": @34,
+
+    // Dead keys and accents
+    @"´": @24,  // acute accent
+    @"¨": @33,  // diaeresis
+    @"^": @33,  // circumflex
+    @"à": @29,  // à at 0 position (AZERTY)
+
+    // Currency and special symbols
+    @"€": @14,  // € Euro
+    @"£": @20,  // £ Pound
+    @"¥": @16,  // ¥ Yen
+    @"¢": @8,   // ¢ Cent
+    @"©": @8,   // © Copyright
+    @"®": @15,  // ® Registered
+    @"™": @17,  // ™ Trademark
+    @"°": @28,  // ° Degree
+    @"±": @24,  // ± Plus-minus
+    @"×": @7,   // × Multiplication
+    @"÷": @44,  // ÷ Division
+    @"≠": @24,  // ≠ Not equal
+    @"≤": @43,  // ≤ Less/equal
+    @"≥": @47,  // ≥ Greater/equal
+    @"∞": @23,  // ∞ Infinity
+    @"…": @41,  // … Ellipsis
+    @"–": @27,  // – En dash
+    @"—": @27,  // — Em dash
+    @"\u2018": @39,  // ' Left single quote
+    @"\u2019": @39,  // ' Right single quote
+    @"\u201C": @39,  // " Left double quote
+    @"\u201D": @39   // " Right double quote
 };
 
 extern AppDelegate* appDelegate;
@@ -575,6 +669,32 @@ extern "C" {
         LOAD_DATA(vFixChromiumBrowser, vFixChromiumBrowser);
 
         LOAD_DATA(vPerformLayoutCompat, vPerformLayoutCompat);
+
+        // Auto-enable layout compatibility for non-US keyboard layouts
+        // Check if user has never set this preference (key doesn't exist)
+        NSUserDefaults *layoutDefaults = [NSUserDefaults standardUserDefaults];
+        if ([layoutDefaults objectForKey:@"vPerformLayoutCompat"] == nil) {
+            // First run - auto-detect keyboard layout
+            TISInputSourceRef currentKeyboard = TISCopyCurrentKeyboardInputSource();
+            if (currentKeyboard != NULL) {
+                CFStringRef sourceID = (CFStringRef)TISGetInputSourceProperty(currentKeyboard, kTISPropertyInputSourceID);
+                if (sourceID != NULL) {
+                    NSString *keyboardID = (__bridge NSString *)sourceID;
+                    // Check if NOT a standard US keyboard layout
+                    // US layouts typically contain "US" or "ABC" in their ID
+                    BOOL isUSLayout = [keyboardID containsString:@".US"] ||
+                                      [keyboardID containsString:@".ABC"] ||
+                                      [keyboardID isEqualToString:@"com.apple.keylayout.US"];
+                    if (!isUSLayout) {
+                        // Auto-enable layout compatibility for non-US keyboards (QWERTZ, AZERTY, etc.)
+                        vPerformLayoutCompat = 1;
+                        [layoutDefaults setInteger:vPerformLayoutCompat forKey:@"vPerformLayoutCompat"];
+                        os_log_info(phtv_log, "[PHTV] Auto-enabled layout compatibility for non-US keyboard: %{public}@", keyboardID);
+                    }
+                }
+                CFRelease(currentKeyboard);
+            }
+        }
 
         myEventSource = CGEventSourceCreate(kCGEventSourceStatePrivate);
         pData = (vKeyHookState*)vKeyInit();
@@ -1254,29 +1374,88 @@ extern "C" {
         SendKeyCode(_keycode | (_flag & kCGEventFlagMaskShift ? CAPS_MASK : 0));
     }
 
-    // TODO: Research API to convert character into CGKeyCode more elegantly!
+    // Convert character string to QWERTY keycode
+    // This function maps a character to its equivalent QWERTY keycode for layout compatibility
     int ConvertKeyStringToKeyCode(NSString *keyString, CGKeyCode fallback) {
-        // Infomation about capitalization (shift/caps) is already included
-        // in the original CGEvent, only find out which position on keyboard a key is pressed
-        NSString *lowercasedKeyString = [keyString lowercaseString];
-        if (!lowercasedKeyString) {
+        if (!keyString || keyString.length == 0) {
             return fallback;
         }
-        
-        NSNumber *keycode = [keyStringToKeyCodeMap objectForKey:lowercasedKeyString];
 
+        // First try exact match (for special characters like ß, ü, etc.)
+        NSNumber *keycode = [keyStringToKeyCodeMap objectForKey:keyString];
         if (keycode) {
             return [keycode intValue];
         }
+
+        // Then try lowercase version for letters
+        NSString *lowercasedKeyString = [keyString lowercaseString];
+        if (lowercasedKeyString && ![lowercasedKeyString isEqualToString:keyString]) {
+            keycode = [keyStringToKeyCodeMap objectForKey:lowercasedKeyString];
+            if (keycode) {
+                return [keycode intValue];
+            }
+        }
+
         return fallback;
     }
 
-    // If conversion fails, return fallbackKeyCode
+    // Convert keyboard event to QWERTY-equivalent keycode for layout compatibility
+    // This function handles international keyboard layouts by mapping characters to QWERTY keycodes
     CGKeyCode ConvertEventToKeyboadLayoutCompatKeyCode(CGEventRef keyEvent, CGKeyCode fallbackKeyCode) {
         NSEvent *kbLayoutCompatEvent = [NSEvent eventWithCGEvent:keyEvent];
+        if (!kbLayoutCompatEvent) {
+            return fallbackKeyCode;
+        }
+
+        // Strategy 1: Try charactersIgnoringModifiers first (best for most layouts)
+        // This gives us the base character without Shift/Option modifications
         NSString *kbLayoutCompatKeyString = kbLayoutCompatEvent.charactersIgnoringModifiers;
-        return ConvertKeyStringToKeyCode(kbLayoutCompatKeyString,
-                                         fallbackKeyCode);
+        CGKeyCode result = ConvertKeyStringToKeyCode(kbLayoutCompatKeyString, 0xFFFF);
+        if (result != 0xFFFF) {
+            return result;
+        }
+
+        // Strategy 2: If that fails, try the actual characters property
+        // This is useful for layouts like AZERTY where Shift+key produces a different character
+        // that might be in our mapping (e.g., Shift+& = 1 on AZERTY)
+        NSString *actualCharacters = kbLayoutCompatEvent.characters;
+        if (actualCharacters && ![actualCharacters isEqualToString:kbLayoutCompatKeyString]) {
+            result = ConvertKeyStringToKeyCode(actualCharacters, 0xFFFF);
+            if (result != 0xFFFF) {
+                return result;
+            }
+        }
+
+        // Strategy 3: For AZERTY number row handling
+        // On AZERTY, the number row produces special characters by default
+        // and numbers with Shift. We need to handle the Shift+character -> number case
+        static NSDictionary *azertyShiftedToNumber = nil;
+        static dispatch_once_t onceToken;
+        dispatch_once(&onceToken, ^{
+            azertyShiftedToNumber = @{
+                @"&": @18,  // & (Shift=1) -> KEY_1
+                @"é": @19,  // é (Shift=2) -> KEY_2 (note: on some AZERTY, 2 is direct)
+                @"\"": @20, // " (Shift=3) -> KEY_3
+                @"'": @21,  // ' (Shift=4) -> KEY_4
+                @"(": @23,  // ( (Shift=5) -> KEY_5
+                @"-": @22,  // - (but this is complex, may not be 6)
+                @"è": @26,  // è (Shift=7) -> KEY_7
+                @"_": @28,  // _ (Shift=8) -> KEY_8
+                @"ç": @25,  // ç (Shift=9) -> KEY_9
+                @"à": @29,  // à (Shift=0) -> KEY_0
+            };
+        });
+
+        // Check if the base character is an AZERTY special char that maps to number row
+        if (kbLayoutCompatKeyString.length == 1) {
+            NSNumber *azertyKeycode = [azertyShiftedToNumber objectForKey:kbLayoutCompatKeyString];
+            if (azertyKeycode) {
+                return [azertyKeycode intValue];
+            }
+        }
+
+        // Fallback to original keycode
+        return fallbackKeyCode;
     }
 
     /**
@@ -1597,7 +1776,42 @@ extern "C" {
             }
 
             currentLanguage = cachedLanguage;
-            if (currentLanguage && ![currentLanguage isLike:@"en"]) {
+            // Allow Latin-based keyboard layouts that can type Vietnamese
+            // This includes: en (English), de (German), fr (French), es (Spanish),
+            // it (Italian), pt (Portuguese), nl (Dutch), da (Danish), sv (Swedish),
+            // Only block non-Latin keyboards like Chinese, Japanese, Korean, Arabic, Hebrew, etc.
+            // All Latin-script based keyboards are allowed for Vietnamese input
+            static NSSet *latinLanguages = nil;
+            static dispatch_once_t onceToken;
+            dispatch_once(&onceToken, ^{
+                latinLanguages = [[NSSet alloc] initWithArray:@[
+                    // Western European
+                    @"en", @"de", @"fr", @"es", @"it", @"pt", @"nl", @"ca",  // English, German, French, Spanish, Italian, Portuguese, Dutch, Catalan
+                    // Nordic
+                    @"da", @"sv", @"no", @"nb", @"nn", @"fi", @"is", @"fo",  // Danish, Swedish, Norwegian, Finnish, Icelandic, Faroese
+                    // Eastern European (Latin script)
+                    @"pl", @"cs", @"sk", @"hu", @"ro", @"hr", @"sl", @"sr-Latn",  // Polish, Czech, Slovak, Hungarian, Romanian, Croatian, Slovenian, Serbian Latin
+                    // Baltic
+                    @"et", @"lv", @"lt",  // Estonian, Latvian, Lithuanian
+                    // Other European
+                    @"sq", @"bs", @"mt",  // Albanian, Bosnian, Maltese
+                    // Turkish & Turkic (Latin script)
+                    @"tr", @"az", @"uz", @"tk",  // Turkish, Azerbaijani, Uzbek, Turkmen
+                    // Southeast Asian (Latin script)
+                    @"id", @"ms", @"vi", @"tl", @"jv", @"su",  // Indonesian, Malay, Vietnamese, Tagalog, Javanese, Sundanese
+                    // African (Latin script)
+                    @"sw", @"ha", @"yo", @"ig", @"zu", @"xh", @"af",  // Swahili, Hausa, Yoruba, Igbo, Zulu, Xhosa, Afrikaans
+                    // Pacific
+                    @"mi", @"sm", @"to", @"haw",  // Maori, Samoan, Tongan, Hawaiian
+                    // Celtic
+                    @"ga", @"gd", @"cy", @"br",  // Irish, Scottish Gaelic, Welsh, Breton
+                    // Other
+                    @"eo", @"la",  // Esperanto, Latin
+                    // Romanizations (Pinyin, Romaji often report base language but use Latin)
+                    @"mul"  // Multiple languages (generic Latin)
+                ]];
+            });
+            if (currentLanguage && ![latinLanguages containsObject:currentLanguage]) {
                 return event;
             }
         }
