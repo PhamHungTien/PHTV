@@ -63,6 +63,7 @@
 - **Hot Reload** - Thay đổi cài đặt không cần khởi động lại
 - **Tự động cập nhật** - Kiểm tra phiên bản mới từ GitHub
 - **Menu bar icon** - Hiển thị trạng thái Vi/En trên thanh menu
+- **Báo lỗi thông minh** - Tự động thu thập log debug, thống kê lỗi, gửi qua GitHub/Email
 
 ## Screenshots
 

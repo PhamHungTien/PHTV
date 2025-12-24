@@ -168,6 +168,8 @@ struct SettingsView: View {
             ThemeSettingsView()
         case .system:
             SystemSettingsView()
+        case .bugReport:
+            BugReportView()
         case .about:
             AboutView()
         }
@@ -289,6 +291,17 @@ struct SettingsItem: Identifiable {
             title: "Đặt lại cài đặt", iconName: "arrow.counterclockwise.circle.fill", tab: .system,
             keywords: ["reset", "đặt lại", "khôi phục", "mặc định", "quản lý dữ liệu"]),
 
+        // Bug Report
+        SettingsItem(
+            title: "Báo lỗi", iconName: "ladybug.fill", tab: .bugReport,
+            keywords: ["bug", "report", "lỗi", "báo cáo", "feedback", "phản hồi"]),
+        SettingsItem(
+            title: "Debug logs", iconName: "doc.text.fill", tab: .bugReport,
+            keywords: ["log", "debug", "nhật ký", "gỡ lỗi", "thông tin hệ thống"]),
+        SettingsItem(
+            title: "Gửi báo lỗi", iconName: "paperplane.fill", tab: .bugReport,
+            keywords: ["send", "gửi", "email", "github", "issue"]),
+
         // About
         SettingsItem(
             title: "Thông tin ứng dụng", iconName: "info.circle", tab: .about,
@@ -307,6 +320,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     case hotkeys = "Phím tắt"
     case theme = "Giao diện"
     case system = "Hệ thống"
+    case bugReport = "Báo lỗi"
     case about = "Thông tin"
 
     nonisolated var id: String { rawValue }
@@ -320,6 +334,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .hotkeys: return "command"
         case .theme: return "paintpalette.fill"
         case .system: return "gear"
+        case .bugReport: return "ladybug.fill"
         case .about: return "info.circle"
         }
     }

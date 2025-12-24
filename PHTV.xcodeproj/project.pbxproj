@@ -44,6 +44,7 @@
 		46394F7D2EFA5E8F009D5194 /* menubar_english.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F6A2EFA5E8F009D5194 /* menubar_english.png */; };
 		46394F822EFAC18E009D5194 /* vi_dict.bin in Resources */ = {isa = PBXBuildFile; fileRef = 46394F812EFAC18E009D5194 /* vi_dict.bin */; };
 		46394F832EFAC18E009D5194 /* en_dict.bin in Resources */ = {isa = PBXBuildFile; fileRef = 46394F802EFAC18E009D5194 /* en_dict.bin */; };
+		46394F852EFC8C7B009D5194 /* PHTVLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46394F842EFC8C7B009D5194 /* PHTVLogger.swift */; };
 		46413AEE2EEF7EB300278BFB /* update.json in Resources */ = {isa = PBXBuildFile; fileRef = 46413AED2EEF7EB300278BFB /* update.json */; };
 		46EF4FFA2EEDBFD400DF8DD1 /* PHTV.icon in Resources */ = {isa = PBXBuildFile; fileRef = 46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */; };
 		5832154BF8BC438D804CD999 /* ThemeSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF311551B144E45B07D9CCD /* ThemeSettingsView.swift */; };
@@ -73,6 +74,7 @@
 		F1A1A1DF2025130100000033 /* ExcludedAppsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1E02025130100000034 /* ExcludedAppsView.swift */; };
 		F1A1A1E12025130100000035 /* SettingsObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1E22025130100000036 /* SettingsObserver.swift */; };
 		F1A1A1E32025130100000037 /* ReloadHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1E42025130100000038 /* ReloadHelpers.swift */; };
+		F1A1A1E52025130100000039 /* BugReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1E62025130100000040 /* BugReportView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -141,6 +143,7 @@
 		46394F6C2EFA5E8F009D5194 /* menubar_vietnamese.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = menubar_vietnamese.png; sourceTree = "<group>"; };
 		46394F802EFAC18E009D5194 /* en_dict.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = en_dict.bin; sourceTree = "<group>"; };
 		46394F812EFAC18E009D5194 /* vi_dict.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = vi_dict.bin; sourceTree = "<group>"; };
+		46394F842EFC8C7B009D5194 /* PHTVLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PHTVLogger.swift; sourceTree = "<group>"; };
 		46413AED2EEF7EB300278BFB /* update.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = update.json; sourceTree = "<group>"; };
 		46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = PHTV.icon; sourceTree = "<group>"; };
 		46EF4FFB2EEDC0A200DF8DD1 /* PHTV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PHTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -174,6 +177,7 @@
 		F1A1A1E02025130100000034 /* ExcludedAppsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcludedAppsView.swift; sourceTree = "<group>"; };
 		F1A1A1E22025130100000036 /* SettingsObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsObserver.swift; sourceTree = "<group>"; };
 		F1A1A1E42025130100000038 /* ReloadHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReloadHelpers.swift; sourceTree = "<group>"; };
+		F1A1A1E62025130100000040 /* BugReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BugReportView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -404,6 +408,7 @@
 		F1A1A2AB2025130000000021 /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
+				46394F842EFC8C7B009D5194 /* PHTVLogger.swift */,
 				F1A1A1BC2025130000000012 /* ViewModifiers.swift */,
 				F1A1A1BE2025130000000014 /* PreviewHelpers.swift */,
 				F1A1A1E22025130100000036 /* SettingsObserver.swift */,
@@ -421,6 +426,7 @@
 				F1A1A1D22025130100000020 /* TypingSettingsView.swift */,
 				F1A1A1D42025130100000022 /* SystemSettingsView.swift */,
 				F1A1A1D62025130100000024 /* MacroSettingsView.swift */,
+				F1A1A1E62025130100000040 /* BugReportView.swift */,
 				F1A1A1D82025130100000026 /* AboutView.swift */,
 				46413AED2EEF7EB300278BFB /* update.json */,
 			);
@@ -554,6 +560,7 @@
 				F1A1A1B32025130000000003 /* SettingsView.swift in Sources */,
 				F1A1A1B52025130000000005 /* StatusBarController.swift in Sources */,
 				F1A1A1B72025130000000007 /* WindowController.swift in Sources */,
+				46394F852EFC8C7B009D5194 /* PHTVLogger.swift in Sources */,
 				F1A1A1B92025130000000009 /* AppDelegate+SwiftUI.swift in Sources */,
 				46394F5A2EFA5D56009D5194 /* EnglishWordDetector.cpp in Sources */,
 				F1A1A1BB2025130000000011 /* ViewModifiers.swift in Sources */,
@@ -563,6 +570,7 @@
 				F1A1A1D32025130100000021 /* SystemSettingsView.swift in Sources */,
 				F1A1A1D52025130100000023 /* MacroSettingsView.swift in Sources */,
 				F1A1A1D72025130100000025 /* AboutView.swift in Sources */,
+				F1A1A1E52025130100000039 /* BugReportView.swift in Sources */,
 				F1A1A1D92025130100000027 /* HotkeyConfigView.swift in Sources */,
 				F1A1A1DB2025130100000029 /* MacroEditorView.swift in Sources */,
 				F1A1A1DD2025130100000031 /* PermissionWarningView.swift in Sources */,

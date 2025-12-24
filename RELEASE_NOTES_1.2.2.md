@@ -1,10 +1,19 @@
 # PHTV v1.2.2 Release Notes
 
-## Hỗ trợ đầy đủ bàn phím quốc tế (International Keyboard Support)
+## Hỗ trợ bàn phím quốc tế & Báo lỗi thông minh
 
-Phiên bản này tập trung vào việc hỗ trợ hoàn toàn các bàn phím quốc tế, đặc biệt là các layout không phải US QWERTY.
+Phiên bản này tập trung vào việc hỗ trợ hoàn toàn các bàn phím quốc tế và cải tiến hệ thống báo lỗi để giúp debug dễ dàng hơn.
 
 ### Các tính năng mới
+
+#### 🐛 Hệ thống báo lỗi thông minh (Bug Report)
+- **Tự động thu thập nhật ký debug** - Sử dụng OSLogStore API để lấy log của ứng dụng
+- **Thống kê tổng quan** - Hiển thị số lượng log, lỗi, cảnh báo với biểu đồ trực quan
+- **Phân loại thông minh** - Tự động phân loại log theo chức năng (Input, Sync, UI, Macro, Permission...)
+- **Highlight lỗi** - Ưu tiên hiển thị các lỗi quan trọng với emoji màu sắc
+- **Lọc thông minh** - Chỉ hiển thị log liên quan đến PHTV, lọc bỏ log hệ thống
+- **Tự động làm mới** - Lấy log mới nhất khi gửi báo lỗi qua GitHub/Email
+- **Tự dọn dẹp** - Log tự động xóa khi >2MB hoặc >24 giờ (với PHTVLogger)
 
 #### 🌍 Hỗ trợ bàn phím quốc tế
 - **QWERTZ (German, Swiss, Austrian)**: Gõ tiếng Việt hoạt động bình thường với các phím đặc biệt như ß, ü, ö, ä
