@@ -329,10 +329,9 @@ NSDictionary *keyStringToKeyCodeMap = @{
     // Turkish
     @"ğ": @33, @"ş": @41, @"ı": @34,
 
-    // Dead keys and accents
+    // Dead keys and accents (excluding ^ which is already defined in QWERTY section)
     @"´": @24,  // acute accent
     @"¨": @33,  // diaeresis
-    @"^": @33,  // circumflex
     @"à": @29,  // à at 0 position (AZERTY)
 
     // Currency and special symbols
