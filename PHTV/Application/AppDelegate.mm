@@ -237,11 +237,11 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 }
 
 - (void)startAccessibilityMonitoring {
-    // Monitor accessibility status with 1s interval
+    // Monitor accessibility status with 5s interval (optimized from 1s to reduce CPU usage)
     // CRITICAL: Uses test event tap creation - ONLY reliable method (Apple recommended)
     // MJAccessibilityIsEnabled() returns TRUE even when permission is revoked!
-    // 1s interval is optimal - faster causes conflicts with main event tap
-    self.accessibilityMonitor = [NSTimer scheduledTimerWithTimeInterval:1.0
+    // 5s is sufficient - permission changes are rare during normal operation
+    self.accessibilityMonitor = [NSTimer scheduledTimerWithTimeInterval:5.0
                                                                   target:self
                                                                 selector:@selector(checkAccessibilityStatus)
                                                                 userInfo:nil
@@ -251,7 +251,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     self.wasAccessibilityEnabled = [PHTVManager canCreateEventTap];
 
     #ifdef DEBUG
-    NSLog(@"[Accessibility] Started monitoring via test event tap (interval: 1s, cached)");
+    NSLog(@"[Accessibility] Started monitoring via test event tap (interval: 5s)");
     #endif
 }
 
@@ -296,13 +296,18 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     // MJAccessibilityIsEnabled() returns TRUE even after user removes app from list
     BOOL isEnabled = [PHTVManager canCreateEventTap];
 
-    NSLog(@"[Accessibility] Check: was=%@, now=%@",
-          self.wasAccessibilityEnabled ? @"YES" : @"NO",
-          isEnabled ? @"YES" : @"NO");
+    // Only log and notify when status CHANGES (reduce console spam and CPU)
+    BOOL statusChanged = (self.wasAccessibilityEnabled != isEnabled);
 
-    // Always notify SwiftUI about current status
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"AccessibilityStatusChanged"
-                                                        object:@(isEnabled)];
+    if (statusChanged) {
+        NSLog(@"[Accessibility] Status CHANGED: was=%@, now=%@",
+              self.wasAccessibilityEnabled ? @"YES" : @"NO",
+              isEnabled ? @"YES" : @"NO");
+
+        // Notify SwiftUI only on change
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"AccessibilityStatusChanged"
+                                                            object:@(isEnabled)];
+    }
 
     // Permission was just granted (transition from disabled to enabled)
     if (!self.wasAccessibilityEnabled && isEnabled) {
@@ -317,7 +322,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         [self handleAccessibilityRevoked];
     }
     else if (isEnabled) {
-        // Keep checking - fast monitoring is critical
+        // Permission stable - increment counter
         self.accessibilityStableCount++;
     }
 
@@ -569,8 +574,12 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         }
         [self setQuickConvertString];
 
-        // Initialize Sparkle auto-updater
-        [[SparkleManager shared] checkForUpdates];
+        // Initialize Sparkle auto-updater with delay to ensure network is ready
+        // Wait 10 seconds after launch to avoid network errors on system startup
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(10.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            NSLog(@"[Sparkle] Checking for updates (delayed start)...");
+            [[SparkleManager shared] checkForUpdates];
+        });
     });
     
     //load default config if is first launch
@@ -1111,17 +1120,19 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     });
 }
 
-- (void)handleSparkleNoUpdate:(NSNotification *)notification {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        NSString *currentVersion = [[NSBundle mainBundle] infoDictionary][@"CFBundleShortVersionString"];
-        [[NSNotificationCenter defaultCenter] postNotificationName:@"CheckForUpdatesResponse"
-                                                            object:@{
-            @"message": [NSString stringWithFormat:@"Phiên bản hiện tại (%@) là mới nhất", currentVersion],
-            @"isError": @NO,
-            @"updateAvailable": @NO
-        }];
-    });
-}
+// Disabled: No longer show "up to date" message to avoid annoying users
+// Only notify when there IS an update available
+//- (void)handleSparkleNoUpdate:(NSNotification *)notification {
+//    dispatch_async(dispatch_get_main_queue(), ^{
+//        NSString *currentVersion = [[NSBundle mainBundle] infoDictionary][@"CFBundleShortVersionString"];
+//        [[NSNotificationCenter defaultCenter] postNotificationName:@"CheckForUpdatesResponse"
+//                                                            object:@{
+//            @"message": [NSString stringWithFormat:@"Phiên bản hiện tại (%@) là mới nhất", currentVersion],
+//            @"isError": @NO,
+//            @"updateAvailable": @NO
+//        }];
+//    });
+//}
 
 - (void)handleUpdateFrequencyChanged:(NSNotification *)notification {
     if (NSNumber *interval = notification.object) {
@@ -2239,10 +2250,11 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                                                  name:@"SparkleUpdateFound"
                                                object:NULL];
 
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(handleSparkleNoUpdate:)
-                                                 name:@"SparkleNoUpdateFound"
-                                               object:NULL];
+    // Disabled: No longer show "up to date" message
+    // [[NSNotificationCenter defaultCenter] addObserver:self
+    //                                          selector:@selector(handleSparkleNoUpdate:)
+    //                                              name:@"SparkleNoUpdateFound"
+    //                                            object:NULL];
 
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(handleUpdateFrequencyChanged:)

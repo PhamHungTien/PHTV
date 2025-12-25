@@ -71,19 +71,25 @@ static NSTimeInterval _lastPermissionCheckTime = 0;
 // SAFE permission check via test event tap (Apple recommended)
 // This is the ONLY reliable way to check accessibility permission
 // Returns YES if we can create event tap (permission granted), NO otherwise
-// Cached to avoid creating test taps too frequently (max once per second)
+// Cached to avoid creating test taps too frequently (max once per 10 seconds)
 +(BOOL)canCreateEventTap {
     NSTimeInterval now = [[NSDate date] timeIntervalSince1970];
 
-    // If checked within last 1 second, return cached result
+    // If checked within last 10 seconds, return cached result
+    // Permission rarely changes during normal operation, so 10s cache is safe
     // This prevents creating test taps too frequently which could interfere with main tap
-    if (now - _lastPermissionCheckTime < 1.0) {
+    if (now - _lastPermissionCheckTime < 10.0) {
+        #ifdef DEBUG
         NSLog(@"[Permission] Returning CACHED result: %@", _lastPermissionCheckResult ? @"HAS" : @"NO");
+        #endif
         return _lastPermissionCheckResult;
     }
 
-    // Try creating a test event tap
+    // Try creating a test event tap (happens every 10s when monitoring is active)
+    #ifdef DEBUG
     NSLog(@"[Permission] Creating test event tap to check permission...");
+    #endif
+
     CFMachPortRef testTap = CGEventTapCreate(
         kCGSessionEventTap,
         kCGTailAppendEventTap,
@@ -94,7 +100,10 @@ static NSTimeInterval _lastPermissionCheckTime = 0;
     );
 
     BOOL hasPermission = (testTap != NULL);
+
+    #ifdef DEBUG
     NSLog(@"[Permission] Test tap result: %@", hasPermission ? @"SUCCESS (has permission)" : @"FAILED (no permission)");
+    #endif
 
     // Clean up test tap if created successfully
     if (testTap != NULL) {

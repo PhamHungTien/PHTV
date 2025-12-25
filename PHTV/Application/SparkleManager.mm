@@ -11,6 +11,7 @@
 @interface SparkleManager ()
 @property (nonatomic, strong) SPUStandardUpdaterController *updaterController;
 @property (nonatomic, assign) BOOL betaChannelEnabled;
+@property (nonatomic, assign) BOOL isManualCheck;  // Track if this is a user-initiated check
 @end
 
 @implementation SparkleManager
@@ -43,13 +44,15 @@
 
 - (void)checkForUpdatesWithFeedback {
     NSLog(@"[Sparkle] User-initiated update check (with feedback)");
-    // Pass self as sender so Sparkle knows this is user-initiated
-    // This will show "You're up to date!" dialog when no update found
-    [self.updaterController checkForUpdates:self];
+    self.isManualCheck = YES;
+    // Don't pass sender to prevent Sparkle from showing default "up to date" alert
+    // We handle all feedback through our custom notifications
+    [self.updaterController checkForUpdates:nil];
 }
 
 - (void)checkForUpdates {
     NSLog(@"[Sparkle] Background update check (silent)");
+    self.isManualCheck = NO;
     [self.updaterController checkForUpdates:nil];
 }
 
@@ -80,7 +83,7 @@
 - (void)updater:(SPUUpdater *)updater didFindValidUpdate:(SUAppcastItem *)item {
     NSLog(@"[Sparkle] Update found: %@ (%@)", item.displayVersionString, item.versionString);
 
-    // Notify SwiftUI
+    // Notify SwiftUI - always notify when update is found
     NSDictionary *info = @{
         @"version": item.displayVersionString ?: @"",
         @"releaseNotes": item.itemDescription ?: @"",
@@ -88,11 +91,20 @@
     };
 
     [[NSNotificationCenter defaultCenter] postNotificationName:@"SparkleUpdateFound" object:info];
+
+    // Reset flag after check
+    self.isManualCheck = NO;
 }
 
 - (void)updaterDidNotFindUpdate:(SPUUpdater *)updater {
-    NSLog(@"[Sparkle] No updates available");
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"SparkleNoUpdateFound" object:nil];
+    NSLog(@"[Sparkle] No updates available (manual check: %@)", self.isManualCheck ? @"YES" : @"NO");
+
+    // Silent for both manual and background checks when no update is found
+    // Only notify when there IS an update available
+    // This prevents annoying "You're up to date" messages
+
+    // Reset flag after check
+    self.isManualCheck = NO;
 }
 
 - (void)updater:(SPUUpdater *)updater didFinishLoadingAppcast:(SUAppcast *)appcast {
@@ -100,15 +112,21 @@
 }
 
 - (void)updater:(SPUUpdater *)updater failedToDownloadUpdate:(SUAppcastItem *)item error:(NSError *)error {
-    NSLog(@"[Sparkle] Failed to download update: %@", error.localizedDescription);
+    NSLog(@"[Sparkle] Failed to download update: %@ (manual check: %@)", error.localizedDescription, self.isManualCheck ? @"YES" : @"NO");
 
-    NSDictionary *info = @{
-        @"message": [NSString stringWithFormat:@"Lỗi tải bản cập nhật: %@", error.localizedDescription],
-        @"isError": @YES,
-        @"updateAvailable": @NO
-    };
+    // Only show error to user if this was a manual check
+    if (self.isManualCheck) {
+        NSDictionary *info = @{
+            @"message": [NSString stringWithFormat:@"Lỗi tải bản cập nhật: %@", error.localizedDescription],
+            @"isError": @YES,
+            @"updateAvailable": @NO
+        };
 
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"CheckForUpdatesResponse" object:info];
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"CheckForUpdatesResponse" object:info];
+    }
+
+    // Reset flag after check
+    self.isManualCheck = NO;
 }
 
 - (void)updater:(SPUUpdater *)updater willInstallUpdate:(SUAppcastItem *)item {
@@ -130,6 +148,9 @@
     };
 
     [[NSNotificationCenter defaultCenter] postNotificationName:@"SparkleShowUpdateBanner" object:info];
+
+    // Reset flag after showing update
+    self.isManualCheck = NO;
 }
 
 - (void)standardUserDriverDidReceiveUserAttention:(SPUStandardUserDriver *)userDriver {
