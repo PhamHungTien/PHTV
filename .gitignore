@@ -67,6 +67,9 @@ Dependencies/
 *.out
 *.a
 *.dylib
+*.dmg
+*.zip
+*.pkg
 
 # Python
 __pycache__/
