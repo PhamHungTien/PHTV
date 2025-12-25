@@ -1,0 +1,33 @@
+//
+//  SwiftUIConfig.xcconfig
+//  PHTV
+//
+//  Build configuration for SwiftUI support
+//
+
+// Swift Language Version
+SWIFT_VERSION = 5.0
+
+// Bridging Header
+SWIFT_OBJC_BRIDGING_HEADER = $(SRCROOT)/PHTV/PHTV-Bridging-Header.h
+
+// Embed Swift Standard Libraries
+ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES
+
+// Swift Optimization
+SWIFT_OPTIMIZATION_LEVEL = -O
+
+// Swift Compilation Mode
+SWIFT_COMPILATION_MODE = wholemodule
+
+// Enable Swift in Objective-C
+CLANG_ENABLE_MODULES = YES
+
+// Module Name
+PRODUCT_MODULE_NAME = PHTV
+
+// Swift Include Paths
+SWIFT_INCLUDE_PATHS = $(inherited) $(SRCROOT)/PHTV
+
+// Deployment Target (SwiftUI requires 10.15+)
+MACOSX_DEPLOYMENT_TARGET = 14.0
