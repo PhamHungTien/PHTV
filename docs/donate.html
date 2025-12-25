@@ -129,6 +129,64 @@
             margin: 0;
         }
 
+        .paypal-section {
+            padding: 2rem;
+            text-align: center;
+            background: linear-gradient(180deg, #0d0d0d 0%, #111 100%);
+        }
+
+        .payment-label {
+            font-size: 0.875rem;
+            color: #666;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .paypal-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #0070ba, #1546a0);
+            border-radius: 12px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 112, 186, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .paypal-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .paypal-btn:hover::before {
+            left: 100%;
+        }
+
+        .paypal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 112, 186, 0.4);
+        }
+
+        .paypal-btn:active {
+            transform: translateY(0);
+        }
+
+        .paypal-btn svg {
+            flex-shrink: 0;
+        }
+
         .info-section {
             padding: 2rem;
         }
@@ -216,6 +274,15 @@
                 height: 200px;
             }
 
+            .paypal-section {
+                padding: 1.5rem;
+            }
+
+            .paypal-btn {
+                padding: 0.875rem 1.5rem;
+                font-size: 0.9375rem;
+            }
+
             .info-section {
                 padding: 1.5rem;
             }
@@ -235,7 +302,19 @@
                 <div class="qr-wrapper">
                     <img src="Resources/donate.png" alt="QR Code donate" loading="lazy">
                 </div>
-                <p class="qr-hint">Quét mã để ủng hộ</p>
+                <p class="qr-hint">Quét mã QR để ủng hộ qua MoMo/Banking</p>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="paypal-section">
+                <p class="payment-label">Hoặc ủng hộ qua PayPal</p>
+                <a href="https://www.paypal.com/paypalme/phamhungtien1404" target="_blank" rel="noopener noreferrer" class="paypal-btn">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                        <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.77.77 0 0 1 .76-.653h8.78c2.866 0 4.817 1.116 5.665 3.239.407 1.02.463 2.156.166 3.377-.011.046-.024.093-.037.14a6.567 6.567 0 0 1-.568 1.613c-1.037 1.932-2.889 2.913-5.505 2.913h-1.39a.77.77 0 0 0-.76.653l-.045.214-.673 4.268-.031.157a.402.402 0 0 1-.396.34zm4.84-11.802a.77.77 0 0 0 .76-.653l.045-.214.673-4.268.031-.157a.402.402 0 0 1 .396-.34h4.607c2.866 0 4.817 1.116 5.665 3.239.407 1.02.463 2.156.166 3.377-.011.046-.024.093-.037.14a6.567 6.567 0 0 1-.568 1.613c-1.037 1.932-2.889 2.913-5.505 2.913h-1.39a.77.77 0 0 0-.76.653l-.045.214-.673 4.268-.031.157a.402.402 0 0 1-.396.34H9.247a.641.641 0 0 1-.633-.74l1.302-8.24a.77.77 0 0 1 .76-.653z"/>
+                    </svg>
+                    <span>Donate via PayPal</span>
+                </a>
             </div>
 
             <div class="divider"></div>
