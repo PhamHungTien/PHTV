@@ -1,5 +1,5 @@
- # GitHub Sponsors configuration
-  # https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository
+# GitHub Sponsors configuration
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository
 
-  # Custom sponsor link
-  custom: ['https://phamhungtien.github.io/PHTV/donate.html']
+# Custom sponsor links
+custom: ['https://phamhungtien.github.io/PHTV/donate.html', 'https://www.paypal.com/paypalme/phamhungtien1404']
