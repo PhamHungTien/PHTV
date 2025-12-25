@@ -11,6 +11,7 @@ import Foundation
 /// Installation type of Claude Code
 enum ClaudeInstallationType {
     case notInstalled
+    case nativeBinary  // Binary from native install (curl script) - cannot be patched
     case homebrew      // Binary from Homebrew - cannot be patched
     case npm           // JavaScript from npm - can be patched
 }
@@ -163,7 +164,12 @@ return;
                 return .homebrew
             }
 
-            // Check if it's a binary
+            // Check if it's native binary install (.claude directory)
+            if resolvedPath.contains(".claude") {
+                return .nativeBinary
+            }
+
+            // Check if it's a binary (could be native or homebrew)
             let fileProcess = Process()
             fileProcess.executableURL = URL(fileURLWithPath: "/usr/bin/file")
             fileProcess.arguments = [resolvedPath]
@@ -178,7 +184,8 @@ return;
             let fileData = filePipe.fileHandleForReading.readDataToEndOfFile()
             if let fileOutput = String(data: fileData, encoding: .utf8) {
                 if fileOutput.contains("Mach-O") || fileOutput.contains("executable") {
-                    return .homebrew
+                    // It's a binary, but not in homebrew or .claude - assume native install
+                    return .nativeBinary
                 }
             }
 
@@ -377,13 +384,48 @@ return;
         return nil
     }
 
-    /// Reinstall Claude Code from npm (uninstall Homebrew version first)
+    /// Reinstall Claude Code from npm (uninstall binary version first)
     /// Returns progress updates via callback
     func reinstallFromNpm(progress: @escaping (String) -> Void, completion: @escaping (Result<String, PatchError>) -> Void) {
         DispatchQueue.global(qos: .userInitiated).async {
-            // Step 1: Check if Homebrew version exists
+            // Step 1: Check installation type and uninstall if needed
             let installType = self.getInstallationType()
 
+            // Handle native binary install
+            if installType == .nativeBinary {
+                progress("Đang gỡ Claude Code native binary...")
+
+                // Try to remove native binary installation
+                let homeDir = NSHomeDirectory()
+                let possiblePaths = [
+                    homeDir + "/.claude",
+                    "/usr/local/bin/claude",
+                    "/opt/homebrew/bin/claude"
+                ]
+
+                for path in possiblePaths {
+                    if FileManager.default.fileExists(atPath: path) {
+                        // Check if this is native install (not homebrew)
+                        var shouldRemove = false
+                        if path.contains(".claude") {
+                            shouldRemove = true
+                        } else if let resolved = try? FileManager.default.destinationOfSymbolicLink(atPath: path),
+                                  !resolved.contains("homebrew") && !resolved.contains("Caskroom") {
+                            shouldRemove = true
+                        }
+
+                        if shouldRemove {
+                            try? FileManager.default.removeItem(atPath: path)
+                        }
+                    }
+                }
+
+                // Continue to npm install
+                self.installViaAndPatch(progress: progress, completion: completion)
+                return
+            }
+
+            // Handle Homebrew install
             if installType == .homebrew {
                 progress("Đang gỡ Claude Code Homebrew...")
 

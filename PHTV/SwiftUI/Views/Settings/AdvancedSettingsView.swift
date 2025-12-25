@@ -18,11 +18,12 @@ struct AdvancedSettingsView: View {
     @State private var isConverting = false
     @State private var convertProgress = ""
     @State private var canOpenTerminal = false
-    @State private var wasHomebrewInstall = false
+    @State private var wasBinaryInstall = false
 
     enum ClaudeCodeStatus {
         case checking
         case notInstalled     // Claude Code chưa cài
+        case nativeBinaryInstall  // Cài qua Native Install (binary) - cần chuyển sang npm
         case homebrewInstall  // Cài qua Homebrew - cần chuyển sang npm
         case canPatch         // Cài qua npm (JavaScript) - có thể patch
     }
@@ -109,7 +110,7 @@ struct AdvancedSettingsView: View {
         .alert(alertTitle, isPresented: $showingAlert) {
             if canOpenTerminal {
                 Button("Mở Terminal") {
-                    ClaudeCodePatcher.shared.openTerminalWithInstallCommand(isHomebrew: wasHomebrewInstall)
+                    ClaudeCodePatcher.shared.openTerminalWithInstallCommand(isHomebrew: wasBinaryInstall)
                 }
                 Button("Đóng", role: .cancel) {}
             } else {
@@ -130,8 +131,10 @@ struct AdvancedSettingsView: View {
                 return "Đang kiểm tra..."
             case .notInstalled:
                 return "Claude Code chưa được cài đặt"
+            case .nativeBinaryInstall:
+                return isConverting ? convertProgress : "Bật để chuyển sang phiên bản npm (hỗ trợ tiếng Việt)"
             case .homebrewInstall:
-                return isConverting ? convertProgress : "Bật để chuyển sang phiên bản hỗ trợ"
+                return isConverting ? convertProgress : "Bật để chuyển sang phiên bản npm (hỗ trợ tiếng Việt)"
             case .canPatch:
                 return appState.claudeCodePatchEnabled ? "Đã bật ✓" : "Sửa lỗi không nhận dấu tiếng Việt"
             }
@@ -143,7 +146,7 @@ struct AdvancedSettingsView: View {
                 return themeManager.themeColor
             case .notInstalled:
                 return .secondary
-            case .homebrewInstall:
+            case .nativeBinaryInstall, .homebrewInstall:
                 return isConverting ? themeManager.themeColor : .orange
             }
         }()
@@ -162,7 +165,7 @@ struct AdvancedSettingsView: View {
                     claudeCodeStatus == .canPatch ? appState.claudeCodePatchEnabled : false
                 },
                 set: { newValue in
-                    if claudeCodeStatus == .homebrewInstall && newValue && !isConverting {
+                    if (claudeCodeStatus == .nativeBinaryInstall || claudeCodeStatus == .homebrewInstall) && newValue && !isConverting {
                         convertToNpm()
                     } else if claudeCodeStatus == .canPatch {
                         if newValue {
@@ -187,6 +190,8 @@ struct AdvancedSettingsView: View {
             switch installationType {
             case .notInstalled:
                 status = .notInstalled
+            case .nativeBinary:
+                status = .nativeBinaryInstall
             case .homebrew:
                 status = .homebrewInstall
             case .npm:
@@ -242,7 +247,7 @@ struct AdvancedSettingsView: View {
     private func convertToNpm() {
         isConverting = true
         convertProgress = "Đang bắt đầu..."
-        wasHomebrewInstall = (claudeCodeStatus == .homebrewInstall)
+        wasBinaryInstall = (claudeCodeStatus == .nativeBinaryInstall || claudeCodeStatus == .homebrewInstall)
 
         ClaudeCodePatcher.shared.reinstallFromNpm(
             progress: { message in
