@@ -1,0 +1,21 @@
+{
+    "stars": 53,
+    "forks": 8,
+    "watchers": 53,
+    "open_issues": 3,
+    "version": "v1.2.5",
+    "description": "PHTV - Precision Hybrid Typing Vietnamese | Bộ gõ Tiếng Việt Đa năng & Chuẩn xác",
+    "homepage": "https:\/\/phamhungtien.github.io\/PHTV\/",
+    "language": "Swift",
+    "updated_at": "2025-12-25T14:19:00Z",
+    "created_at": "2025-12-14T19:26:44Z",
+    "cached_at": "2025-12-25T14:19:00+00:00",
+    "downloads": 3,
+    "latest_release": {
+        "version": "v1.2.5",
+        "name": "PHTV v1.2.5",
+        "published_at": "2025-12-25T13:50:15Z",
+        "download_url": "https:\/\/github.com\/PhamHungTien\/PHTV\/releases\/tag\/v1.2.5",
+        "downloads": 0
+    }
+}

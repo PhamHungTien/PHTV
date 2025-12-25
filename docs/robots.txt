@@ -1,47 +1,12 @@
-# ============================================
-# robots.txt for phamhungtien.com
-# PHTV - Vietnamese Input Method Download Page
-# ============================================
+# robots.txt for PHTV - Vietnamese Input Method for macOS
+# https://phamhungtien.com/PHTV/
 
-# Allow all search engines to crawl the site
 User-agent: *
 Allow: /
-Allow: /PHTV/
-Allow: /favicon.ico
-Allow: /PHTV/favicon.ico
-Allow: /PHTV/Resources/icon.png
-Allow: /PHTV/Resources/icons/
 
-# Disallow sensitive backend files
-Disallow: /PHTV/feedback_protected.php
+# Block sensitive files
+Disallow: /feedback_protected.php
 Disallow: /*.json$
-Disallow: /PHTV/*.json$
-Disallow: /PHTV/browserconfig.xml
 
-# Sitemap location
+# Sitemap
 Sitemap: https://phamhungtien.com/PHTV/sitemap.xml
-
-# Host preference (canonical domain)
-Host: https://phamhungtien.com
-
-# ============================================
-# Specific search engine directives
-# ============================================
-
-# Google
-User-agent: Googlebot
-Allow: /
-Allow: /PHTV/
-Disallow: /PHTV/feedback_protected.php
-
-# Bing
-User-agent: Bingbot
-Allow: /
-Allow: /PHTV/
-Disallow: /PHTV/feedback_protected.php
-
-# Yandex
-User-agent: Yandex
-Allow: /
-Allow: /PHTV/
-Disallow: /PHTV/feedback_protected.php
