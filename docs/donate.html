@@ -14,19 +14,42 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #0a0a0a;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 2rem;
-            color: white;
+            padding: 2rem 1rem;
+            color: #ffffff;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(255, 65, 108, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(88, 86, 214, 0.06) 0%, transparent 50%);
+            animation: rotate 30s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .container {
-            max-width: 500px;
-            text-align: center;
-            animation: fadeIn 0.5s ease-in;
+            max-width: 480px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+            animation: fadeIn 0.6s ease-out;
         }
 
         @keyframes fadeIn {
@@ -34,105 +57,229 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .card {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(20px);
-            border-radius: 24px;
-            padding: 3rem 2rem;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .brand {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 1rem;
         }
 
         h1 {
-            font-size: 2rem;
+            font-size: 2.5rem;
             font-weight: 700;
-            margin-bottom: 1rem;
-            letter-spacing: -0.02em;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.03em;
+            line-height: 1.2;
         }
 
         .subtitle {
-            font-size: 1.1rem;
-            opacity: 0.9;
-            margin-bottom: 2rem;
+            font-size: 1rem;
+            color: #888;
+            font-weight: 400;
             line-height: 1.6;
         }
 
-        .qr-container {
-            background: white;
+        .card {
+            background: #111;
+            border: 1px solid #1a1a1a;
             border-radius: 16px;
-            padding: 1.5rem;
-            margin: 2rem 0;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            padding: 0;
+            overflow: hidden;
         }
 
-        .qr-container img {
-            width: 100%;
-            max-width: 300px;
-            height: auto;
-            display: block;
-            margin: 0 auto;
-            border-radius: 8px;
+        .qr-section {
+            padding: 3rem 2rem 2rem;
+            background: linear-gradient(180deg, #111 0%, #0d0d0d 100%);
+            text-align: center;
         }
 
-        .message {
-            font-size: 0.95rem;
-            opacity: 0.85;
-            margin-top: 2rem;
-            padding: 1.5rem;
-            background: rgba(255, 255, 255, 0.1);
+        .qr-wrapper {
+            background: #fff;
             border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 1.5rem;
+            display: inline-block;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
         }
 
-        .back-link {
-            display: inline-block;
-            margin-top: 2rem;
-            padding: 0.75rem 1.5rem;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            text-decoration: none;
+        .qr-wrapper img {
+            display: block;
+            width: 240px;
+            height: 240px;
             border-radius: 8px;
-            transition: all 0.3s ease;
+        }
+
+        .qr-hint {
+            font-size: 0.875rem;
+            color: #666;
             font-weight: 500;
         }
 
-        .back-link:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #1a1a1a, transparent);
+            margin: 0;
         }
 
-        .heart {
-            display: inline-block;
-            animation: heartbeat 1.5s ease-in-out infinite;
-            color: #ff6b6b;
-            font-size: 1.5rem;
+        .info-section {
+            padding: 2rem;
         }
 
-        @keyframes heartbeat {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+        .info-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem 0;
+        }
+
+        .info-item:not(:last-child) {
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .info-icon {
+            width: 40px;
+            height: 40px;
+            background: #1a1a1a;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.25rem;
+        }
+
+        .info-content h3 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: #fff;
+        }
+
+        .info-content p {
+            font-size: 0.8125rem;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .footer {
+            margin-top: 2rem;
+            text-align: center;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.875rem 1.5rem;
+            background: #1a1a1a;
+            border: 1px solid #252525;
+            border-radius: 10px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            background: #252525;
+            border-color: #333;
+            transform: translateY(-1px);
+        }
+
+        .accent {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        @media (max-width: 640px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .qr-section {
+                padding: 2rem 1.5rem 1.5rem;
+            }
+
+            .qr-wrapper img {
+                width: 200px;
+                height: 200px;
+            }
+
+            .info-section {
+                padding: 1.5rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="header">
+            <div class="brand">PHTV Project</div>
+            <h1>Ủng hộ <span class="accent">PHTV</span></h1>
+            <p class="subtitle">Giúp duy trì và phát triển bộ gõ tiếng Việt mã nguồn mở cho macOS</p>
+        </div>
+
         <div class="card">
-            <h1>Cảm ơn bạn! <span class="heart">♥</span></h1>
-            <p class="subtitle">
-                Sự đóng góp của bạn giúp duy trì và phát triển PHTV - bộ gõ tiếng Việt mã nguồn mở cho macOS.
-            </p>
-
-            <div class="qr-container">
-                <img src="Resources/donate.png" alt="QR Code donate" loading="lazy">
+            <div class="qr-section">
+                <div class="qr-wrapper">
+                    <img src="Resources/donate.png" alt="QR Code donate" loading="lazy">
+                </div>
+                <p class="qr-hint">Quét mã để ủng hộ</p>
             </div>
 
-            <div class="message">
-                <strong>Mọi đóng góp đều có ý nghĩa!</strong><br>
-                Quét mã QR bên trên để ủng hộ dự án.<br>
-                Cảm ơn bạn đã tin tưởng và sử dụng PHTV.
-            </div>
+            <div class="divider"></div>
 
-            <a href="./" class="back-link">← Quay lại trang chủ</a>
+            <div class="info-section">
+                <div class="info-item">
+                    <div class="info-icon">💎</div>
+                    <div class="info-content">
+                        <h3>100% Mã nguồn mở</h3>
+                        <p>Minh bạch, có thể kiểm chứng và đóng góp</p>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-icon">🎯</div>
+                    <div class="info-content">
+                        <h3>100% Miễn phí</h3>
+                        <p>Không quảng cáo, không thu phí, mãi mãi</p>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-icon">🔒</div>
+                    <div class="info-content">
+                        <h3>100% Offline & Bảo mật</h3>
+                        <p>Không thu thập dữ liệu, bảo vệ quyền riêng tư</p>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-icon">❤️</div>
+                    <div class="info-content">
+                        <h3>Sự đóng góp của bạn</h3>
+                        <p>Giúp duy trì server, phát triển tính năng mới và hỗ trợ cộng đồng</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <a href="./" class="back-btn">
+                <span>←</span>
+                <span>Quay lại trang chủ</span>
+            </a>
         </div>
     </div>
 </body>
