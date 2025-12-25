@@ -8,6 +8,64 @@
 
         <!-- Most recent version first -->
         <item>
+            <title>PHTV 1.2.6</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.2.6</link>
+            <sparkle:version>1.2.6</sparkle:version>
+            <sparkle:shortVersionString>1.2.6</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h2>PHTV 1.2.6 - Performance & UX Optimization</h2>
+
+                <h3>Cải tiến hiệu năng</h3>
+                <h4>Tối ưu kiểm tra quyền truy cập</h4>
+                <ul>
+                    <li><strong>Giảm tần suất kiểm tra</strong>: Từ mỗi giây xuống còn mỗi 5 giây (tiết kiệm 80% CPU)</li>
+                    <li><strong>Cache thông minh</strong>: Tăng cache duration từ 1 giây lên 10 giây</li>
+                    <li><strong>Giảm console spam</strong>: Chỉ log khi trạng thái thay đổi</li>
+                    <li><strong>Debug logs</strong>: Các log chi tiết chỉ xuất hiện trong debug build</li>
+                    <li><strong>Kết quả</strong>: Giảm 83% số lần tạo test event tap (từ 40 xuống 6 lần/phút)</li>
+                </ul>
+
+                <h4>Tối ưu kiểm tra cập nhật</h4>
+                <ul>
+                    <li><strong>Delay khởi động</strong>: Đợi 10 giây sau khi app khởi động mới check update</li>
+                    <li><strong>Im lặng khi không có update</strong>: Loại bỏ dialog "PHTV is currently the newest version available"</li>
+                    <li><strong>Background check</strong>: Hoàn toàn im lặng, không làm phiền người dùng</li>
+                </ul>
+
+                <h3>Cải tiến chức năng</h3>
+                <h4>Nâng cấp hệ thống báo lỗi</h4>
+                <ul>
+                    <li><strong>Runtime state tracking</strong>: Accessibility permission, Event tap status, Front app info</li>
+                    <li><strong>Performance metrics</strong>: Memory usage, System uptime</li>
+                    <li><strong>Crash logs tự động</strong>: Tự động tìm và đọc crash logs trong 7 ngày gần đây</li>
+                    <li><strong>File logs</strong>: Thu thập logs từ PHTVLogger</li>
+                    <li><strong>Smart reporting</strong>: Tự động highlight unusual settings</li>
+                </ul>
+
+                <h3>So sánh với v1.2.5</h3>
+                <ul>
+                    <li>Permission checks: 60/minute → 12/minute (-80%)</li>
+                    <li>Console logs: ~120 lines/minute → 0 lines (chỉ khi có event)</li>
+                    <li>"Up to date" dialogs: Hiện mỗi khi check → Không hiện</li>
+                    <li>Boot time update check: Ngay lập tức (lỗi) → Delay 10s (ổn định)</li>
+                    <li>Test event taps: ~40/minute → ~6/minute (-85%)</li>
+                </ul>
+
+                <p><em>Phiên bản này tập trung vào tối ưu hiệu năng và trải nghiệm người dùng, giảm thiểu resource usage và loại bỏ các thông báo không cần thiết.</em></p>
+            ]]></description>
+            <pubDate>Thu, 26 Dec 2025 05:45:00 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.2.6/PHTV-1.2.6.dmg"
+                sparkle:version="1.2.6"
+                sparkle:shortVersionString="1.2.6"
+                sparkle:edSignature="LdBjKEn+zv5ygiHSQpFzQP6TTOeL3+VfWtT0tMW1uwybC232FKG33TpSj+YF985sEPoIp2bgoQaHfqHEvKvFAw=="
+                length="12331966"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <!-- Previous versions -->
+        <item>
             <title>PHTV 1.2.5</title>
             <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.2.5</link>
             <sparkle:version>1.2.5</sparkle:version>
