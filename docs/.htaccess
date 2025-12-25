@@ -1,0 +1,298 @@
+# .htaccess for PHTV Website
+# Apache configuration for better performance and security
+# Version: 2.0.0 - Advanced SEO & Performance Optimization
+# Last Updated: 2025-12-25
+
+# Enable Rewrite Engine
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Force HTTPS (uncomment when you have SSL certificate)
+    # RewriteCond %{HTTPS} off
+    # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Remove www prefix (or add www, choose one)
+    # RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
+    # RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
+
+    # Block access to cache directory
+    RewriteRule ^PHTV/cache/ - [F,L]
+
+    # Remove trailing slashes (for consistency & SEO)
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [R=301,L]
+
+    # Add trailing slash to directories
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteCond %{REQUEST_URI} !(.+)/$
+    RewriteRule ^(.+)$ $1/ [R=301,L]
+</IfModule>
+
+# ============================================
+# COMPRESSION - Brotli (modern) + Gzip (fallback)
+# ============================================
+
+# Brotli Compression (if available - better than gzip)
+<IfModule mod_brotli.c>
+    AddOutputFilterByType BROTLI_COMPRESS text/html text/plain text/xml text/css text/javascript
+    AddOutputFilterByType BROTLI_COMPRESS application/javascript application/json application/xml
+    AddOutputFilterByType BROTLI_COMPRESS application/x-javascript application/xhtml+xml
+    AddOutputFilterByType BROTLI_COMPRESS application/rss+xml application/atom+xml
+    AddOutputFilterByType BROTLI_COMPRESS image/svg+xml image/x-icon
+    AddOutputFilterByType BROTLI_COMPRESS font/truetype font/opentype font/woff font/woff2
+</IfModule>
+
+# Gzip Compression (fallback)
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript
+    AddOutputFilterByType DEFLATE application/javascript application/json application/xml
+    AddOutputFilterByType DEFLATE application/x-javascript application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/rss+xml application/atom+xml
+    AddOutputFilterByType DEFLATE image/svg+xml image/x-icon
+    AddOutputFilterByType DEFLATE font/truetype font/opentype font/woff font/woff2
+
+    # Don't compress images (already compressed)
+    SetEnvIfNoCase Request_URI \.(?:gif|jpe?g|png|webp|avif)$ no-gzip dont-vary
+
+    # Compress all output labeled with these MIME-types
+    <IfModule mod_filter.c>
+        AddOutputFilterByType DEFLATE application/atom+xml \
+                                      application/javascript \
+                                      application/json \
+                                      application/ld+json \
+                                      application/manifest+json \
+                                      application/rss+xml \
+                                      application/vnd.geo+json \
+                                      application/vnd.ms-fontobject \
+                                      application/x-font-ttf \
+                                      application/x-web-app-manifest+json \
+                                      application/xhtml+xml \
+                                      application/xml \
+                                      font/opentype \
+                                      image/svg+xml \
+                                      image/x-icon \
+                                      text/cache-manifest \
+                                      text/css \
+                                      text/plain \
+                                      text/vcard \
+                                      text/vnd.rim.location.xloc \
+                                      text/vtt \
+                                      text/x-component \
+                                      text/x-cross-domain-policy
+    </IfModule>
+</IfModule>
+
+# ============================================
+# SMART BROWSER CACHING (với Cache Busting ?v=)
+# ============================================
+<IfModule mod_expires.c>
+    ExpiresActive On
+
+    # HTML/PHP - Luôn kiểm tra mới (no cache)
+    ExpiresByType text/html "access plus 0 seconds"
+    ExpiresByType application/x-httpd-php "access plus 0 seconds"
+
+    # CSS/JS - Cache 1 năm (dùng ?v= để busting)
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType text/javascript "access plus 1 year"
+
+    # Images - Cache 1 tháng (cân bằng giữa performance và freshness)
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
+    ExpiresByType image/webp "access plus 1 month"
+    ExpiresByType image/x-icon "access plus 1 year"
+
+    # Fonts - Cache 1 năm
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType font/woff "access plus 1 year"
+    ExpiresByType font/ttf "access plus 1 year"
+    ExpiresByType application/font-woff "access plus 1 year"
+    ExpiresByType application/font-woff2 "access plus 1 year"
+
+    # JSON API - Cache ngắn
+    ExpiresByType application/json "access plus 5 minutes"
+
+    # Manifests - Không cache
+    ExpiresByType application/manifest+json "access plus 0 seconds"
+    ExpiresByType text/cache-manifest "access plus 0 seconds"
+
+    # Default
+    ExpiresDefault "access plus 1 week"
+</IfModule>
+
+# ============================================
+# CACHE CONTROL HEADERS (Order matters - specific before general!)
+# ============================================
+<IfModule mod_headers.c>
+    # Remove server info first
+    Header unset X-Powered-By
+    Header unset Server
+
+    # Service Worker - MUST BE FIRST (most specific)
+    <FilesMatch "sw\.js$">
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </FilesMatch>
+
+    # Manifest - No cache (specific file)
+    <FilesMatch "manifest\.json$">
+        Header set Cache-Control "no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+    </FilesMatch>
+
+    # HTML/PHP - Always fresh
+    <FilesMatch "\.(html|php)$">
+        Header set Cache-Control "no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+    </FilesMatch>
+
+    # CSS/JS - Long cache with immutable (AFTER sw.js rule!)
+    <FilesMatch "\.(css|js)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+        Header append Vary "Accept-Encoding"
+    </FilesMatch>
+
+    # Images - Cache 1 tháng
+    <FilesMatch "\.(jpg|jpeg|png|gif|svg|webp)$">
+        Header set Cache-Control "public, max-age=2592000"
+    </FilesMatch>
+
+    # Favicon - Cache 1 năm
+    <FilesMatch "\.(ico)$">
+        Header set Cache-Control "public, max-age=31536000"
+    </FilesMatch>
+
+    # Fonts - Cache 1 năm
+    <FilesMatch "\.(woff|woff2|ttf|otf|eot)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+        Header append Vary "Accept-Encoding"
+    </FilesMatch>
+
+    # JSON API responses - Cache ngắn
+    <FilesMatch "get_stats\.php$">
+        Header set Cache-Control "public, max-age=300, must-revalidate"
+    </FilesMatch>
+
+    # ============================================
+    # SECURITY HEADERS (All in one place - no duplicates!)
+    # ============================================
+
+    # Prevent clickjacking
+    Header always set X-Frame-Options "SAMEORIGIN"
+
+    # XSS Protection
+    Header always set X-XSS-Protection "1; mode=block"
+
+    # Prevent MIME type sniffing
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Referrer Policy
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Permissions Policy
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+
+    # Strict-Transport-Security (HSTS) - Uncomment when SSL is active
+    # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+    # ============================================
+    # ETAG CONFIGURATION
+    # ============================================
+    # Use ETag with MTime+Size for better cache validation
+    FileETag MTime Size
+</IfModule>
+
+# ============================================
+# PERFORMANCE OPTIMIZATION
+# ============================================
+
+# Add Vary: Accept-Encoding header
+<IfModule mod_headers.c>
+    <FilesMatch "\.(js|css|xml|gz|html|woff|woff2)$">
+        Header append Vary Accept-Encoding
+    </FilesMatch>
+</IfModule>
+
+# Disable Directory Browsing
+Options -Indexes
+
+# Custom Error Pages
+ErrorDocument 404 /404.html
+ErrorDocument 500 /404.html
+
+# ============================================
+# MODERN IMAGE OPTIMIZATION
+# ============================================
+
+# WebP image rewrite (serve .webp if available)
+<IfModule mod_rewrite.c>
+    RewriteCond %{HTTP_ACCEPT} image/webp
+    RewriteCond %{REQUEST_FILENAME} (.*)\.(jpe?g|png)$
+    RewriteCond %1.webp -f
+    RewriteRule (.+)\.(jpe?g|png)$ $1.webp [T=image/webp,E=accept:1,L]
+</IfModule>
+
+<IfModule mod_headers.c>
+    <FilesMatch "\.(jpe?g|png)$">
+        Header append Vary Accept
+    </FilesMatch>
+</IfModule>
+
+# ============================================
+# HTTP/2 SERVER PUSH (if supported)
+# ============================================
+<IfModule mod_headers.c>
+    # Preload critical assets
+    <FilesMatch "index\.php$">
+        Header add Link "<https://fonts.googleapis.com>; rel=preconnect; crossorigin"
+        Header add Link "<https://fonts.gstatic.com>; rel=preconnect; crossorigin"
+        Header add Link "<https://api.github.com>; rel=preconnect"
+    </FilesMatch>
+</IfModule>
+
+# ============================================
+# SECURITY ENHANCEMENTS
+# ============================================
+
+# Block access to hidden files
+<IfModule mod_rewrite.c>
+    RewriteCond %{REQUEST_URI} "!(^|/)\.well-known/([^./]+./?)+$" [NC]
+    RewriteCond %{SCRIPT_FILENAME} -d [OR]
+    RewriteCond %{SCRIPT_FILENAME} -f
+    RewriteRule "(^|/)\." - [F]
+</IfModule>
+
+# Block access to backup and source files
+<FilesMatch "(^#.*#|\.(bak|conf|dist|fla|in[ci]|log|orig|psd|sh|sql|sw[op])|~)$">
+    # Apache < 2.3
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+        Satisfy All
+    </IfModule>
+
+    # Apache ≥ 2.3
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</FilesMatch>
+
+# ============================================
+# CHARSET & LANGUAGE
+# ============================================
+AddDefaultCharset UTF-8
+<IfModule mod_mime.c>
+    AddCharset UTF-8 .html .css .js .xml .json .rss .atom
+</IfModule>
+
+# ============================================
+# OPTIMAL REWRITE BASE
+# ============================================
+<IfModule mod_rewrite.c>
+    # RewriteBase /
+</IfModule>

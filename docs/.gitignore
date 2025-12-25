@@ -1,0 +1,47 @@
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+*.swp
+*.swo
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Environment & credentials
+.env
+.env.local
+purge-cache.sh
+*.key
+*.pem
+
+# Node (if used later)
+node_modules/
+package-lock.json
+npm-debug.log
+
+# Build & logs
+*.log
+dist/
+build/
+
+# Cache & temporary files
+PHTV/cache/*.cache
+PHTV/cache/debug.log
+PHTV/cache/github_stats.json
+PHTV/feedback_protected.php
+*-test.php
+*-test.html
+*-backup*.php
+*-old.php
+*.tmp
+*.temp
+
+# API files (not used)
+*api-*.php
+
+# Static HTML (using PHP version)
+# PHTV/index.html - Commented out for GitHub Pages deployment
