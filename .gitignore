@@ -102,3 +102,10 @@ yarn-error.log*
 .claude/
 .git/
 .gitkeep
+
+# Sparkle Auto-Update - Security (NEVER commit these!)
+*.p12
+*-private.key
+PHTV-CodeSign.p12
+*.cer
+*.certSigningRequest

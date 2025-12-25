@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <channel>
+        <title>PHTV Beta Updates</title>
+        <link>https://github.com/PhamHungTien/PHTV</link>
+        <description>PHTV Beta Channel - Bộ gõ tiếng Việt cho macOS (phiên bản thử nghiệm)</description>
+        <language>vi</language>
+
+        <!-- Beta releases go here -->
+        <!-- Example beta release format:
+        <item>
+            <title>PHTV 1.3.0 Beta 1</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.0-beta.1</link>
+            <sparkle:version>1.3.0</sparkle:version>
+            <sparkle:shortVersionString>1.3.0-beta.1</sparkle:shortVersionString>
+            <sparkle:channel>beta</sparkle:channel>
+            <description><![CDATA[
+                <h3>Tính năng mới (Beta)</h3>
+                <ul>
+                    <li>Tính năng A đang thử nghiệm</li>
+                    <li>Tính năng B đang thử nghiệm</li>
+                </ul>
+                <p><strong>Lưu ý:</strong> Đây là phiên bản beta, có thể chưa ổn định.</p>
+            ]]></description>
+            <pubDate>Wed, 01 Jan 2025 10:00:00 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.3.0-beta.1/PHTV-1.3.0-beta.1.dmg"
+                sparkle:version="1.3.0"
+                sparkle:shortVersionString="1.3.0-beta.1"
+                sparkle:edSignature="SIGNATURE_HERE"
+                length="10485760"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+        </item>
+        -->
+
+        <!-- Also include stable releases for fallback -->
+        <item>
+            <title>PHTV 1.2.4</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.2.4</link>
+            <sparkle:version>1.2.4</sparkle:version>
+            <sparkle:shortVersionString>1.2.4</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h3>Cải tiến Claude Code Patcher</h3>
+                <p>Phiên bản này cải tiến đáng kể tính năng <strong>Claude Code Patcher</strong> - giúp việc chuyển đổi từ Homebrew sang npm và vá lỗi gõ tiếng Việt ổn định hơn.</p>
+                <h4>Tính năng mới</h4>
+                <ul>
+                    <li>Cải thiện phát hiện Homebrew đa nền tảng</li>
+                    <li>Hỗ trợ fnm (Fast Node Manager)</li>
+                    <li>Cài đặt thủ công qua Terminal</li>
+                </ul>
+            ]]></description>
+            <pubDate>Wed, 25 Dec 2024 14:48:00 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.2.4/PHTV-1.2.4.dmg"
+                sparkle:version="1.2.4"
+                sparkle:shortVersionString="1.2.4"
+                sparkle:edSignature="SIGNATURE_WILL_BE_GENERATED_BY_SIGN_SCRIPT"
+                length="10485760"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+        </item>
+
+    </channel>
+</rss>

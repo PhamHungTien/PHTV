@@ -421,7 +421,7 @@ return;
 
     /// Reinstall Claude Code from npm (uninstall binary version first)
     /// Returns progress updates via callback
-    func reinstallFromNpm(progress: @escaping (String) -> Void, completion: @escaping (Result<String, PatchError>) -> Void) {
+    func reinstallFromNpm(progress: @escaping @Sendable (String) -> Void, completion: @escaping @Sendable (Result<String, PatchError>) -> Void) {
         DispatchQueue.global(qos: .userInitiated).async {
             // Step 1: Check installation type and uninstall if needed
             let installType = self.getInstallationType()
@@ -528,7 +528,7 @@ return;
     }
 
     /// Install Claude Code via npm and apply patch
-    private func installViaAndPatch(progress: @escaping (String) -> Void, completion: @escaping (Result<String, PatchError>) -> Void) {
+    private func installViaAndPatch(progress: @escaping @Sendable (String) -> Void, completion: @escaping @Sendable (Result<String, PatchError>) -> Void) {
         progress("Đang cài đặt Claude Code qua npm...")
 
         // Find npm path (including nvm)

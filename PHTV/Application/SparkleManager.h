@@ -1,0 +1,31 @@
+//
+//  SparkleManager.h
+//  PHTV
+//
+//  Created by Phạm Hùng Tiến on 2026.
+//  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+#import <Sparkle/Sparkle.h>
+
+NS_ASSUME_NONNULL_BEGIN
+
+@interface SparkleManager : NSObject <SPUUpdaterDelegate, SPUStandardUserDriverDelegate>
+
+@property (nonatomic, strong, readonly) SPUStandardUpdaterController *updaterController;
+
++ (instancetype)shared;
+
+/// Manually trigger update check
+- (void)checkForUpdates;
+
+/// Configure update check interval in seconds
+- (void)setUpdateCheckInterval:(NSTimeInterval)interval;
+
+/// Enable or disable beta channel
+- (void)setBetaChannelEnabled:(BOOL)enabled;
+
+@end
+
+NS_ASSUME_NONNULL_END

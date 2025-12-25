@@ -34,5 +34,17 @@
 	<string>Copyright © 2026 Phạm Hùng Tiến. All rights reserved.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>SUFeedURL</key>
+	<string>https://phamhungtien.github.io/PHTV/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>F+3YESLwzN0aoT6o6uiQWempYxL4W5czJxsN+dcUZa8=</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUAutomaticallyUpdate</key>
+	<false/>
+	<key>SUAllowsAutomaticUpdates</key>
+	<true/>
+	<key>SUScheduledCheckInterval</key>
+	<integer>86400</integer>
 </dict>
 </plist>
