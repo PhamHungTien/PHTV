@@ -9,6 +9,7 @@
 import SwiftUI
 import OSLog
 import Carbon
+import Darwin.Mach
 
 // MARK: - Logger for PHTV
 private let phtvLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.phamhungtien.phtv", category: "general")
@@ -255,6 +256,175 @@ struct BugReportView: View {
             return "Unknown"
         }
         return Unmanaged<CFString>.fromOpaque(localizedName).takeUnretainedValue() as String
+    }
+
+    // MARK: - Runtime Info Helpers
+
+    private func checkEventTapStatus() -> String {
+        // Check if event tap is running
+        let isRunning = AXIsProcessTrusted()
+        return isRunning ? "✅ Running" : "❌ Not running"
+    }
+
+    private func getFrontAppInfo() -> String {
+        guard let frontApp = NSWorkspace.shared.frontmostApplication else {
+            return "Unknown"
+        }
+
+        let appName = frontApp.localizedName ?? "Unknown"
+        let bundleId = frontApp.bundleIdentifier ?? "Unknown"
+
+        // Check if it's an excluded app
+        let isExcluded = appState.excludedApps.contains { $0.bundleIdentifier == bundleId }
+        let excludedMark = isExcluded ? " 🚫" : ""
+
+        return "\(appName) (\(bundleId))\(excludedMark)"
+    }
+
+    private func getExcludedAppsDetails() -> String {
+        guard !appState.excludedApps.isEmpty else {
+            return ""
+        }
+
+        var details = "\n  **Danh sách:**\n"
+        for app in appState.excludedApps.prefix(10) {
+            details += "  - \(app.name) (\(app.bundleIdentifier))\n"
+        }
+
+        if appState.excludedApps.count > 10 {
+            details += "  - ... và \(appState.excludedApps.count - 10) app khác\n"
+        }
+
+        return details
+    }
+
+    private func getPerformanceInfo() -> String {
+        let processInfo = ProcessInfo.processInfo
+        let physicalMemory = processInfo.physicalMemory
+
+        // Get process memory usage
+        var info = mach_task_basic_info()
+        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size)/4
+
+        let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
+                task_info(mach_task_self_,
+                         task_flavor_t(MACH_TASK_BASIC_INFO),
+                         $0,
+                         &count)
+            }
+        }
+
+        let usedMemoryMB: Double
+        if kerr == KERN_SUCCESS {
+            usedMemoryMB = Double(info.resident_size) / 1024.0 / 1024.0
+        } else {
+            usedMemoryMB = 0
+        }
+
+        let totalMemoryGB = Double(physicalMemory) / 1024.0 / 1024.0 / 1024.0
+
+        var output = ""
+        output += "- **Memory Usage:** \(String(format: "%.1f MB", usedMemoryMB))\n"
+        output += "- **Total RAM:** \(String(format: "%.1f GB", totalMemoryGB))\n"
+        output += "- **Uptime:** \(formatUptime(processInfo.systemUptime))"
+
+        return output
+    }
+
+    private func formatUptime(_ seconds: TimeInterval) -> String {
+        let hours = Int(seconds) / 3600
+        let minutes = (Int(seconds) % 3600) / 60
+        if hours > 0 {
+            return "\(hours)h \(minutes)m"
+        } else {
+            return "\(minutes)m"
+        }
+    }
+
+    private func getRecentCrashLogs() -> String {
+        let crashLogsPath = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Logs/DiagnosticReports")
+
+        guard let files = try? FileManager.default.contentsOfDirectory(
+            at: crashLogsPath,
+            includingPropertiesForKeys: [.creationDateKey],
+            options: .skipsHiddenFiles
+        ) else {
+            return ""
+        }
+
+        // Filter PHTV crash logs from last 7 days
+        let sevenDaysAgo = Date().addingTimeInterval(-7 * 24 * 60 * 60)
+        let phtvCrashes = files.filter { file in
+            guard file.lastPathComponent.contains("PHTV") || file.lastPathComponent.contains("phtv") else {
+                return false
+            }
+
+            if let creationDate = try? file.resourceValues(forKeys: [.creationDateKey]).creationDate {
+                return creationDate > sevenDaysAgo
+            }
+            return false
+        }.sorted { file1, file2 in
+            let date1 = (try? file1.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? Date.distantPast
+            let date2 = (try? file2.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? Date.distantPast
+            return date1 > date2
+        }
+
+        guard !phtvCrashes.isEmpty else {
+            return ""
+        }
+
+        var crashReport = "📍 Tìm thấy \(phtvCrashes.count) crash log(s) gần đây:\n\n"
+
+        // Get first crash log content
+        if let firstCrash = phtvCrashes.first,
+           let content = try? String(contentsOf: firstCrash, encoding: .utf8) {
+            crashReport += "**File:** \(firstCrash.lastPathComponent)\n\n"
+
+            // Extract important parts
+            let lines = content.components(separatedBy: .newlines)
+
+            // Get crash reason
+            if let crashReasonLine = lines.first(where: { $0.contains("Exception Type:") || $0.contains("Termination Reason:") }) {
+                crashReport += "\(crashReasonLine)\n"
+            }
+
+            // Get thread that crashed
+            var inCrashedThread = false
+            var threadLines: [String] = []
+            for line in lines {
+                if line.contains("Thread") && line.contains("Crashed") {
+                    inCrashedThread = true
+                    threadLines.append(line)
+                    continue
+                }
+
+                if inCrashedThread {
+                    if line.starts(with: "Thread ") || line.isEmpty {
+                        break
+                    }
+                    threadLines.append(line)
+                    if threadLines.count > 15 { break }  // Limit to 15 lines
+                }
+            }
+
+            if !threadLines.isEmpty {
+                crashReport += "\n```\n"
+                crashReport += threadLines.joined(separator: "\n")
+                crashReport += "\n```\n"
+            }
+        }
+
+        // List other crash files
+        if phtvCrashes.count > 1 {
+            crashReport += "\n**Các crash khác:**\n"
+            for crash in phtvCrashes.dropFirst().prefix(3) {
+                crashReport += "- \(crash.lastPathComponent)\n"
+            }
+        }
+
+        return crashReport
     }
 
     private func loadDebugLogs() {
@@ -580,35 +750,91 @@ struct BugReportView: View {
         var report = """
         # Báo lỗi PHTV
 
-        ## Tiêu đề
+        ## 📋 Tiêu đề
         \(bugTitle.isEmpty ? "(Chưa nhập)" : bugTitle)
 
-        ## Mô tả chi tiết
+        ## 📝 Mô tả chi tiết
         \(bugDescription.isEmpty ? "(Chưa nhập)" : bugDescription)
 
         """
 
         if includeSystemInfo {
+            let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "N/A"
+            let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "N/A"
+            let macOS = ProcessInfo.processInfo.operatingSystemVersionString
+
             report += """
-            ## Thông tin hệ thống
-            - Phiên bản PHTV: \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "N/A")
-            - Build: \(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "N/A")
-            - macOS: \(ProcessInfo.processInfo.operatingSystemVersionString)
-            - Chip: \(getChipInfo())
-            - Bàn phím: \(getCurrentKeyboardLayout())
-            - Kiểu gõ: \(appState.inputMethod.rawValue)
-            - Bảng mã: \(appState.codeTable.rawValue)
+            ## 💻 Thông tin hệ thống
+            - **Phiên bản PHTV:** \(version) (build \(build))
+            - **macOS:** \(macOS)
+            - **Chip:** \(getChipInfo())
+            - **Bàn phím:** \(getCurrentKeyboardLayout())
+
+            ## ⚙️ Cài đặt hiện tại
+            - **Chế độ:** \(appState.isEnabled ? "🇻🇳 Tiếng Việt" : "🇬🇧 English")
+            - **Kiểu gõ:** \(appState.inputMethod.rawValue)
+            - **Bảng mã:** \(appState.codeTable.rawValue)
+            - **Kiểm tra chính tả:** \(appState.checkSpelling ? "✅" : "❌")
+            - **Gõ tắt (Macro):** \(appState.useMacro ? "✅" : "❌")
+            - **Smart switch:** \(appState.useSmartSwitchKey ? "✅" : "❌")
+            - **Modern orthography:** \(appState.useModernOrthography ? "✅" : "❌")
+            - **Quick Telex:** \(appState.quickTelex ? "✅" : "❌")
+            - **Beep on mode switch:** \(appState.beepOnModeSwitch ? "✅" : "❌")
+
+            ## 🔐 Quyền & Trạng thái
+            - **Accessibility Permission:** \(appState.hasAccessibilityPermission ? "✅ Granted" : "❌ Denied")
+            - **Event Tap:** \(checkEventTapStatus())
+            - **Front App:** \(getFrontAppInfo())
+            - **Excluded Apps:** \(appState.excludedApps.isEmpty ? "Không có" : "\(appState.excludedApps.count) app(s)")
+            \(getExcludedAppsDetails())
+
+            ## 🔧 Advanced Settings
+            - **Fix Chromium Browser:** \(appState.fixChromiumBrowser ? "✅" : "❌")
+            - **Layout Compat:** \(appState.performLayoutCompat ? "✅" : "❌")
+            - **Send key step by step:** \(appState.sendKeyStepByStep ? "✅" : "❌")
+            - **Restore on invalid word:** \(appState.restoreOnInvalidWord ? "✅" : "❌")
+            - **Auto restore English word:** \(appState.autoRestoreEnglishWord ? "✅" : "❌")
+
+            ## 📊 Hiệu năng
+            \(getPerformanceInfo())
 
             """
+
+            // Thêm crash logs nếu có
+            let crashLogs = getRecentCrashLogs()
+            if !crashLogs.isEmpty {
+                report += """
+                ## 💥 Crash Logs gần đây
+                ```
+                \(crashLogs)
+                ```
+
+                """
+            }
         }
 
-        if includeLogs && !logs.isEmpty {
-            report += """
-            ## Nhật ký Debug
-            ```
-            \(logs)
-            ```
-            """
+        if includeLogs {
+            // File logs từ PHTVLogger
+            let fileLogs = PHTVLogger.shared.getFileLogs()
+            if !fileLogs.isEmpty {
+                report += """
+                ## 📄 File Logs (PHTVLogger)
+                ```
+                \(String(fileLogs.suffix(2000)))
+                ```
+
+                """
+            }
+
+            // OSLog
+            if !logs.isEmpty {
+                report += """
+                ## 📊 System Logs (OSLog)
+                ```
+                \(logs)
+                ```
+                """
+            }
         }
 
         return report
@@ -705,25 +931,54 @@ struct BugReportView: View {
 
         // Mô tả
         if !bugDescription.isEmpty {
-            report += "## Mô tả\n\(bugDescription)\n\n"
+            report += "## 📝 Mô tả\n\(bugDescription)\n\n"
         }
 
-        // Thông tin hệ thống (rút gọn)
+        // Thông tin hệ thống (rút gọn nhưng đầy đủ)
         if includeSystemInfo {
             let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
             let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
             let macOS = ProcessInfo.processInfo.operatingSystemVersionString
+            let chip = getChipInfo()
 
-            report += "## Hệ thống\n"
-            report += "- PHTV: \(version) (\(build))\n"
-            report += "- macOS: \(macOS)\n"
-            report += "- Kiểu gõ: \(appState.inputMethod.rawValue)\n"
-            report += "- Bảng mã: \(appState.codeTable.rawValue)\n\n"
+            report += "## 💻 Hệ thống\n"
+            report += "- **PHTV:** \(version) (\(build))\n"
+            report += "- **macOS:** \(macOS)\n"
+            report += "- **Chip:** \(chip)\n"
+            report += "- **Chế độ:** \(appState.isEnabled ? "🇻🇳 Tiếng Việt" : "🇬🇧 English")\n"
+            report += "- **Kiểu gõ:** \(appState.inputMethod.rawValue)\n"
+            report += "- **Bảng mã:** \(appState.codeTable.rawValue)\n"
+
+            // Thêm thông tin permission nếu không có quyền (quan trọng để debug)
+            if !appState.hasAccessibilityPermission {
+                report += "- ⚠️ **Accessibility:** ❌ Denied\n"
+            }
+
+            report += "\n"
+
+            // Thêm các settings bất thường (khác default)
+            var unusualSettings: [String] = []
+            if !appState.checkSpelling { unusualSettings.append("No spell check") }
+            if !appState.useModernOrthography { unusualSettings.append("Old orthography") }
+            if appState.quickTelex { unusualSettings.append("Quick Telex") }
+            if appState.fixChromiumBrowser { unusualSettings.append("Chromium fix") }
+            if appState.sendKeyStepByStep { unusualSettings.append("Send key step-by-step") }
+            if !appState.excludedApps.isEmpty { unusualSettings.append("\(appState.excludedApps.count) excluded apps") }
+
+            if !unusualSettings.isEmpty {
+                report += "**⚙️ Settings:** " + unusualSettings.joined(separator: ", ") + "\n\n"
+            }
         }
 
         // Log lỗi quan trọng
         if includeLogs && !logs.isEmpty {
-            report += "## Lỗi gần đây\n```\n\(logs)\n```"
+            report += "## 🔴 Lỗi gần đây\n```\n\(logs)\n```\n\n"
+        }
+
+        // Thêm crash logs nếu có (rất quan trọng)
+        let crashLogs = getRecentCrashLogs()
+        if !crashLogs.isEmpty {
+            report += "## 💥 Crash Logs\n\(crashLogs)\n"
         }
 
         return report
