@@ -39,20 +39,32 @@
 
 ---
 
-### Option 1: Từ Website (Khuyến khích)
+### Option 1: Homebrew (Khuyến khích - Dễ nhất)
+
+```bash
+brew install --cask phamhungtien/phtv/phtv
+```
+
+**Ưu điểm:**
+- Cài đặt tự động, chỉ cần 1 lệnh
+- Dễ dàng cập nhật: `brew upgrade --cask phtv`
+- Gỡ cài đặt sạch sẽ: `brew uninstall --cask phtv`
+
+### Option 2: Từ Website
 
 1. Tải từ [phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/)
-2. Drag `PHTV.app` vào `Applications`
-3. Khởi động từ Launchpad hoặc Spotlight
+2. Mở file `.dmg`
+3. Drag `PHTV.app` vào `Applications`
+4. Khởi động từ Launchpad hoặc Spotlight
 
-### Option 2: Từ GitHub Releases
+### Option 3: Từ GitHub Releases
 
 1. Vào [GitHub Releases](https://github.com/PhamHungTien/PHTV/releases)
-2. Download `PHTV.dmg`
+2. Download `PHTV-1.2.6.dmg`
 3. Double-click để mở DMG
 4. Drag `PHTV.app` vào `Applications`
 
-### Option 3: Từ Source Code
+### Option 4: Từ Source Code
 
 ```bash
 # Clone repository

@@ -16,11 +16,26 @@
 
 **A:** PHTV hỗ trợ macOS 14.0+ (Sonoma trở lên). Universal Binary - hoạt động trên cả Intel và Apple Silicon (M1/M2/M3/M4). Tương thích với mọi Mac chạy macOS 14.0+.
 
-### Q2: Làm sao để chuyển đổi giữa tiếng Anh và tiếng Việt?
+### Q2: Cách nào dễ nhất để cài đặt PHTV?
+
+**A:** Dùng Homebrew (khuyến khích):
+
+```bash
+brew install --cask phamhungtien/phtv/phtv
+```
+
+**Ưu điểm:**
+- Cài đặt tự động chỉ với 1 lệnh
+- Cập nhật dễ dàng: `brew upgrade --cask phtv`
+- Gỡ cài đặt sạch sẽ: `brew uninstall --cask phtv`
+
+Hoặc tải trực tiếp từ [phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/) hoặc [GitHub Releases](https://github.com/PhamHungTien/PHTV/releases).
+
+### Q3: Làm sao để chuyển đổi giữa tiếng Anh và tiếng Việt?
 
 **A:** Nhấn phím tắt được cấu hình (mặc định `Ctrl + Shift`). Hoặc click vào Status Bar icon để chọn ngôn ngữ.
 
-### Q3: Phương pháp gõ nào phù hợp nhất?
+### Q4: Phương pháp gõ nào phù hợp nhất?
 
 **A:**
 
@@ -30,7 +45,7 @@
 
 Hãy thử từng cái để tìm phù hợp nhất!
 
-### Q4: Sử dụng font nào để xem tiếng Việt đúng nhất?
+### Q5: Sử dụng font nào để xem tiếng Việt đúng nhất?
 
 **A:** PHTV hỗ trợ mọi font tiêu chuẩn:
 
@@ -42,7 +57,7 @@ Hãy thử từng cái để tìm phù hợp nhất!
 
 ## Sử dụng
 
-### Q5: Làm sao để tắt PHTV cho một ứng dụng cụ thể?
+### Q6: Làm sao để tắt PHTV cho một ứng dụng cụ thể?
 
 **A:**
 
@@ -50,7 +65,7 @@ Hãy thử từng cái để tìm phù hợp nhất!
 2. Nhấn "+" và chọn ứng dụng
 3. Khi sử dụng app đó, PHTV sẽ tự động tắt
 
-### Q6: Macro (gõ tắt) hoạt động như thế nào?
+### Q7: Macro (gõ tắt) hoạt động như thế nào?
 
 **A:**
 
@@ -58,13 +73,13 @@ Hãy thử từng cái để tìm phù hợp nhất!
 2. Nhập từ viết tắt (VD: "tks") và nội dung (VD: "cảm ơn")
 3. Khi gõ "tks" + Space, tự động thay thế bằng "cảm ơn"
 
-### Q7: Có thể bỏ dấu khi gõ không?
+### Q8: Có thể bỏ dấu khi gõ không?
 
 **A:** Có! Gõ bình thường mà không cần phím dấu. Ví dụ:
 
 - `ao` → `ào`, `áo`, `ảo`, v.v. (gõ thêm phím để thêm dấu)
 
-### Q8: Làm sao để reset cài đặt về mặc định?
+### Q9: Làm sao để reset cài đặt về mặc định?
 
 **A:**
 
@@ -78,7 +93,7 @@ Hoặc trong Settings → Reset All (nếu có button này).
 
 ## Tính năng & Hiệu năng
 
-### Q9: PHTV tiêu thụ bao nhiêu tài nguyên?
+### Q10: PHTV tiêu thụ bao nhiêu tài nguyên?
 
 **A:** Rất nhẹ!
 
@@ -86,18 +101,18 @@ Hoặc trong Settings → Reset All (nếu có button này).
 - **Memory**: ~30-50 MB
 - **Disk**: ~50 MB
 
-### Q10: Có thể tùy chỉnh phím tắt được không?
+### Q11: Có thể tùy chỉnh phím tắt được không?
 
 **A:** Có! Settings → Keyboard Shortcuts
 
 - Thay đổi phím chuyển ngôn ngữ
 - Thay đổi phím gõ dấu (nếu cần)
 
-### Q11: Ngoài tiếng Việt, có hỗ trợ ngôn ngữ khác không?
+### Q12: Ngoài tiếng Việt, có hỗ trợ ngôn ngữ khác không?
 
 **A:** Hiện tại chỉ hỗ trợ tiếng Việt. Tiếng Anh là ngôn ngữ mặc định của hệ thống.
 
-### Q12: Spell checking hoạt động như thế nào?
+### Q13: Spell checking hoạt động như thế nào?
 
 **A:** PHTV có từ điển tiếng Việt tích hợp:
 
@@ -109,24 +124,24 @@ Hoặc trong Settings → Reset All (nếu có button này).
 
 ## Bảo mật & Quyền riêng tư
 
-### Q13: PHTV có gửi dữ liệu lên Internet không?
+### Q14: PHTV có gửi dữ liệu lên Internet không?
 
 **A:** Không! Hoàn toàn offline, không kết nối mạng, không thu thập dữ liệu.
 
-### Q14: Dữ liệu được lưu ở đâu?
+### Q15: Dữ liệu được lưu ở đâu?
 
 **A:** Chỉ nằm trên máy của bạn:
 
 - Settings: `~/Library/Preferences/com.phtv.app.plist`
 - Macros: `~/Library/Application Support/PHTV/`
 
-### Q15: Tại sao PHTV cần quyền Accessibility?
+### Q16: Tại sao PHTV cần quyền Accessibility?
 
 **A:** Để giám sát phím gõ, chuyển ngôn ngữ, hoạt động trên mọi ứng dụng. Yêu cầu chuẩn của macOS.
 
 ## Khắc phục sự cố
 
-### Q16: PHTV không hoạt động?
+### Q17: PHTV không hoạt động?
 
 **A:**
 
@@ -135,7 +150,7 @@ Hoặc trong Settings → Reset All (nếu có button này).
 3. Restart ứng dụng gặp lỗi
 4. Tạo issue trên GitHub
 
-### Q17: Phím tắt không hoạt động?
+### Q18: Phím tắt không hoạt động?
 
 **A:**
 
@@ -143,17 +158,17 @@ Hoặc trong Settings → Reset All (nếu có button này).
 2. Kiểm tra System Preferences → Keyboard → Shortcuts
 3. Tìm xung đột với ứng dụng khác
 
-### Q18: Tiếng Việt gõ ra sai?
+### Q19: Tiếng Việt gõ ra sai?
 
 **A:** Kiểm tra Input Method (Telex/VNI) và Character Set (Unicode/TCVN3).
 
 ## Phát triển
 
-### Q19: Làm sao để đóng góp?
+### Q20: Làm sao để đóng góp?
 
 **A:** Xem [CONTRIBUTING.md](CONTRIBUTING.md) - Fork, tạo branch, commit, PR.
 
-### Q20: Engine gõ là gì?
+### Q21: Engine gõ là gì?
 
 **A:** Dựa trên [OpenKey](https://github.com/tuyenvm/OpenKey) - dự án mã nguồn mở tiếng Việt.
 
