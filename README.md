@@ -114,6 +114,20 @@
 brew install --cask phamhungtien/tap/phtv
 ```
 
+**Cập nhật phiên bản mới:**
+```bash
+brew upgrade --cask phtv
+```
+
+**Gỡ cài đặt:**
+```bash
+# Gỡ ứng dụng
+brew uninstall --cask phtv
+
+# Gỡ sạch (bao gồm cả settings)
+brew uninstall --zap --cask phtv
+```
+
 ### Tải trực tiếp
 
 ```bash
