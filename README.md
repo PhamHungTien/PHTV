@@ -212,6 +212,6 @@ Dự án kế thừa và mở rộng engine từ **[OpenKey](https://github.com/
 
 **[Về đầu trang](#phtv)**
 
-Made with ❤️ for Vietnamese macOS users
+Made with love for Vietnamese macOS users
 
 </div>

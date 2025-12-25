@@ -1,22 +1,22 @@
 <div align="center">
 
-# 📦 Hướng dẫn cài đặt PHTV
+# Hướng dẫn cài đặt PHTV
 
 **PHTV — Precision Hybrid Typing Vietnamese | Cài đặt bộ gõ tiếng Việt cho macOS trong 3 phút**
 
-[🏠 Trang chủ](README.md) • [💬 FAQ](FAQ.md) • [🐛 Báo lỗi](../../issues)
+[Trang chủ](README.md) • [FAQ](FAQ.md) • [Báo lỗi](../../issues)
 
 </div>
 
 ---
 
-## 🚀 Tải xuống
+## Tải xuống
 
-**[👉 Tải PHTV từ phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/)**
+**[Tải PHTV từ phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/)**
 
-## 📥 Cách cài đặt
+## Cách cài đặt
 
-### 🖼️ Hướng dẫn có ảnh
+### Hướng dẫn có ảnh
 
 <div align="center">
 
@@ -39,20 +39,20 @@
 
 ---
 
-### 🌐 Option 1: Từ Website (Khuyến khích)
+### Option 1: Từ Website (Khuyến khích)
 
 1. Tải từ [phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/)
 2. Drag `PHTV.app` vào `Applications`
 3. Khởi động từ Launchpad hoặc Spotlight
 
-### 🐙 Option 2: Từ GitHub Releases
+### Option 2: Từ GitHub Releases
 
 1. Vào [GitHub Releases](https://github.com/PhamHungTien/PHTV/releases)
 2. Download `PHTV.dmg`
 3. Double-click để mở DMG
 4. Drag `PHTV.app` vào `Applications`
 
-### 💻 Option 3: Từ Source Code
+### Option 3: Từ Source Code
 
 ```bash
 # Clone repository
@@ -65,7 +65,7 @@ xcodebuild -scheme PHTV -configuration Release -arch arm64
 # App sẽ được build tại: build/Release/PHTV.app
 ```
 
-## ⚙️ Yêu cầu hệ thống
+## Yêu cầu hệ thống
 
 - **macOS**: 14.0 hoặc cao hơn (Sonoma+)
 - **Bộ xử lý**: Apple Silicon (M1, M2, M3, M4 và các thế hệ sau)
@@ -74,23 +74,23 @@ xcodebuild -scheme PHTV -configuration Release -arch arm64
 
 > **Lưu ý**: PHTV chỉ hỗ trợ Apple Silicon. Không hỗ trợ Intel Macs.
 
-## 🔧 Các bước sau khi cài
+## Các bước sau khi cài
 
 1. **Cấp quyền Accessibility** - App sẽ yêu cầu lần đầu
 2. **Chọn phương pháp gõ** - Settings → Telex hoặc VNI
 3. **Tùy chỉnh phím chuyển** - Settings → Keyboard Shortcuts (optional)
 4. **Thêm Macros** - Settings → Macros (optional)
 
-## 📖 Tài liệu thêm
+## Tài liệu thêm
 
-- 📚 [Hướng dẫn chi tiết](https://phamhungtien.com/PHTV/#setup) - Video & Screenshots
-- ⚡ [Các tính năng](README.md#-tính-năng-nổi-bật)
-- 💬 [FAQ](FAQ.md) - Câu hỏi thường gặp
-- 🤝 [Đóng góp](CONTRIBUTING.md)
+- [Hướng dẫn chi tiết](https://phamhungtien.com/PHTV/#setup) - Video & Screenshots
+- [Các tính năng](README.md#tính-năng)
+- [FAQ](FAQ.md) - Câu hỏi thường gặp
+- [Đóng góp](CONTRIBUTING.md)
 
 ---
 
-## 🆘 Xử lý sự cố
+## Xử lý sự cố
 
 <details>
 <summary><b>PHTV không hoạt động</b></summary>
@@ -131,6 +131,6 @@ xcodebuild -scheme PHTV -configuration Release -arch arm64
 
 **Vẫn gặp vấn đề?** [Tạo issue trên GitHub](../../issues/new) hoặc [Liên hệ qua email](mailto:hungtien10a7@gmail.com)
 
-[🏠 Về trang chủ](README.md) • [📧 Email](mailto:hungtien10a7@gmail.com) • [💬 Discussions](../../discussions)
+[Về trang chủ](README.md) • [Email](mailto:hungtien10a7@gmail.com) • [Discussions](../../discussions)
 
 </div>
