@@ -1,16 +1,16 @@
 <div align="center">
 
-# ❓ FAQ - Câu hỏi thường gặp
+# FAQ - Câu hỏi thường gặp
 
 **Giải đáp thắc mắc về PHTV — Precision Hybrid Typing Vietnamese**
 
-[🏠 Trang chủ](README.md) • [📦 Cài đặt](INSTALL.md) • [🤝 Đóng góp](CONTRIBUTING.md)
+[Trang chủ](README.md) • [Cài đặt](INSTALL.md) • [Đóng góp](CONTRIBUTING.md)
 
 </div>
 
 ---
 
-## 📥 Cài đặt & Cấu hình
+## Cài đặt & Cấu hình
 
 ### Q1: PHTV có tương thích với phiên bản macOS nào?
 
@@ -40,7 +40,7 @@ Hãy thử từng cái để tìm phù hợp nhất!
 
 ---
 
-## 🎯 Sử dụng
+## Sử dụng
 
 ### Q5: Làm sao để tắt PHTV cho một ứng dụng cụ thể?
 
@@ -124,7 +124,7 @@ Hoặc trong Settings → Reset All (nếu có button này).
 
 **A:** Để giám sát phím gõ, chuyển ngôn ngữ, hoạt động trên mọi ứng dụng. Yêu cầu chuẩn của macOS.
 
-## 🛠️ Khắc phục sự cố
+## Khắc phục sự cố
 
 ### Q16: PHTV không hoạt động?
 
@@ -147,7 +147,7 @@ Hoặc trong Settings → Reset All (nếu có button này).
 
 **A:** Kiểm tra Input Method (Telex/VNI) và Character Set (Unicode/TCVN3).
 
-## 🚀 Phát triển
+## Phát triển
 
 ### Q19: Làm sao để đóng góp?
 
@@ -161,11 +161,11 @@ Hoặc trong Settings → Reset All (nếu có button này).
 
 <div align="center">
 
-## 💬 Vẫn có câu hỏi?
+## Vẫn có câu hỏi?
 
 [![GitHub Discussions](https://img.shields.io/badge/GitHub-Discussions-green?logo=github)](../../discussions)
 [![Email](https://img.shields.io/badge/Email-hungtien10a7@gmail.com-blue?logo=gmail)](mailto:hungtien10a7@gmail.com)
 
-[🏠 Trang chủ](README.md) • [📦 Cài đặt](INSTALL.md) • [🐛 Báo lỗi](../../issues)
+[Trang chủ](README.md) • [Cài đặt](INSTALL.md) • [Báo lỗi](../../issues)
 
 </div>
