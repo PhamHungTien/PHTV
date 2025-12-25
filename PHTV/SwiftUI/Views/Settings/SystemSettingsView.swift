@@ -135,42 +135,6 @@ struct SystemSettingsView: View {
                     }
                 }
 
-                // App Information
-                SettingsCard(title: "Thông tin ứng dụng", icon: "info.circle.fill") {
-                    VStack(spacing: 0) {
-                        SettingsInfoRow(
-                            icon: "number.circle.fill",
-                            iconColor: themeManager.themeColor,
-                            title: "Phiên bản",
-                            value: Bundle.main.infoDictionary?["CFBundleShortVersionString"]
-                                as? String ?? "1.0"
-                        )
-
-                        SettingsDivider()
-
-                        SettingsInfoRow(
-                            icon: "hammer.fill",
-                            iconColor: themeManager.themeColor,
-                            title: "Build",
-                            value: Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
-                        )
-
-                        SettingsDivider()
-
-                        SettingsButtonRow(
-                            icon: isCheckingForUpdates
-                                ? "hourglass.circle.fill" : "arrow.clockwise.circle.fill",
-                            iconColor: themeManager.themeColor,
-                            title: isCheckingForUpdates ? "Đang kiểm tra..." : "Kiểm tra cập nhật",
-                            subtitle: "Tìm phiên bản mới",
-                            isLoading: isCheckingForUpdates,
-                            action: {
-                                checkForUpdates()
-                            }
-                        )
-                    }
-                }
-
                 // Update Settings
                 SettingsCard(title: "Cập nhật", icon: "arrow.down.circle.fill") {
                     VStack(spacing: 0) {
