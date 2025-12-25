@@ -108,7 +108,13 @@
 
 ## Cài đặt
 
-**Phương pháp 1: Tải trực tiếp** (khuyên dùng)
+### Homebrew (khuyên dùng)
+
+```bash
+brew install --cask phamhungtien/phtv/phtv
+```
+
+### Tải trực tiếp
 
 ```bash
 # Tải từ website
@@ -118,7 +124,7 @@ open https://phamhungtien.com/PHTV/
 open https://github.com/PhamHungTien/PHTV/releases/latest
 ```
 
-**Phương pháp 2: Build từ source**
+### Build từ source
 
 ```bash
 git clone https://github.com/PhamHungTien/PHTV.git
