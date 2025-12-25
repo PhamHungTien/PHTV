@@ -21,7 +21,7 @@
 **A:** Dùng Homebrew (khuyến khích):
 
 ```bash
-brew install --cask phamhungtien/phtv/phtv
+brew install --cask phamhungtien/tap/phtv
 ```
 
 **Ưu điểm:**

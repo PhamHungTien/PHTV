@@ -111,7 +111,7 @@
 ### Homebrew (khuyên dùng)
 
 ```bash
-brew install --cask phamhungtien/phtv/phtv
+brew install --cask phamhungtien/tap/phtv
 ```
 
 ### Tải trực tiếp

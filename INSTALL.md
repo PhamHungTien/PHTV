@@ -42,7 +42,7 @@
 ### Option 1: Homebrew (Khuyến khích - Dễ nhất)
 
 ```bash
-brew install --cask phamhungtien/phtv/phtv
+brew install --cask phamhungtien/tap/phtv
 ```
 
 **Ưu điểm:**

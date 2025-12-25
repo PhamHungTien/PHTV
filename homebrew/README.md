@@ -6,7 +6,7 @@ Official Homebrew tap for [PHTV](https://github.com/PhamHungTien/PHTV) - Modern 
 
 ```bash
 # Add this tap
-brew tap phamhungtien/phtv
+brew tap phamhungtien/tap
 
 # Install PHTV
 brew install --cask phtv
@@ -15,7 +15,7 @@ brew install --cask phtv
 ## One-liner Installation
 
 ```bash
-brew install --cask phamhungtien/phtv/phtv
+brew install --cask phamhungtien/tap/phtv
 ```
 
 ## Update

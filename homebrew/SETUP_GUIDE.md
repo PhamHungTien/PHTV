@@ -1,5 +1,9 @@
 # Hướng dẫn thiết lập Homebrew Tap cho PHTV
 
+**Lưu ý**: Repository đã đổi tên từ `homebrew-phtv` → `homebrew-tap` để lệnh cài đặt ngắn gọn hơn:
+- Old: `brew install --cask phamhungtien/phtv/phtv` (lặp "phtv")
+- New: `brew install --cask phamhungtien/tap/phtv` (ngắn gọn hơn)
+
 ## Bước 1: Tạo GitHub Release với PHTV-1.2.6.dmg
 
 Trước tiên, bạn cần tạo một GitHub Release và upload file `PHTV-1.2.6.dmg`:
@@ -11,12 +15,12 @@ Trước tiên, bạn cần tạo một GitHub Release và upload file `PHTV-1.2
 5. Upload file: `PHTV-1.2.6.dmg` (đã có sẵn)
 6. Click **Publish release**
 
-## Bước 2: Tạo repository homebrew-phtv
+## Bước 2: Tạo repository homebrew-tap
 
 ### Trên GitHub:
 
 1. Đi đến: https://github.com/new
-2. Repository name: `homebrew-phtv`
+2. Repository name: `homebrew-tap`
 3. Description: `🍺 Homebrew tap for PHTV - Modern Vietnamese input method for macOS`
 4. Public repository
 5. **KHÔNG** tick "Add a README file" (chúng ta đã có sẵn)
@@ -27,8 +31,8 @@ Trước tiên, bạn cần tạo một GitHub Release và upload file `PHTV-1.2
 ```bash
 # Tạo thư mục mới cho homebrew tap
 cd ~/Documents
-mkdir homebrew-phtv
-cd homebrew-phtv
+mkdir homebrew-tap
+cd homebrew-tap
 
 # Init git repo
 git init
@@ -49,16 +53,16 @@ git add .
 git commit -m "Initial commit: Add PHTV cask"
 
 # Add remote và push
-git remote add origin https://github.com/PhamHungTien/homebrew-phtv.git
+git remote add origin https://github.com/PhamHungTien/homebrew-tap.git
 git push -u origin main
 ```
 
-## Bước 3: Cấu trúc thư mục homebrew-phtv
+## Bước 3: Cấu trúc thư mục homebrew-tap
 
 Repo nên có cấu trúc như sau:
 
 ```
-homebrew-phtv/
+homebrew-tap/
 ├── Casks/
 │   └── phtv.rb          # Homebrew Cask formula
 ├── README.md            # Hướng dẫn cài đặt
@@ -69,7 +73,7 @@ homebrew-phtv/
 
 ```bash
 # Add tap từ local (để test)
-brew tap phamhungtien/phtv
+brew tap phamhungtien/tap
 
 # Kiểm tra tap đã được thêm
 brew tap
@@ -91,7 +95,7 @@ Thêm phần Homebrew installation vào `README.md` của PHTV:
 ### Homebrew (Khuyến nghị)
 
 ```bash
-brew install --cask phamhungtien/phtv/phtv
+brew install --cask phamhungtien/tap/phtv
 ```
 
 ### Tải thủ công
@@ -140,11 +144,12 @@ brew install --cask phtv --verbose
 
 ## Lưu ý
 
-- Tên repo PHẢI là `homebrew-*` (ví dụ: `homebrew-phtv`)
+- Tên repo PHẢI là `homebrew-*` (ví dụ: `homebrew-tap`)
 - Cask files phải nằm trong thư mục `Casks/`
 - File name phải match với cask name (ví dụ: `phtv.rb` cho cask "phtv")
 - SHA256 checksum phải khớp với file dmg trên GitHub Release
 - URL phải trỏ đến file dmg trên GitHub Releases (không phải source code)
+- Tên tap ngắn gọn (như `tap`) tốt hơn tên dài (như `phtv`) để tránh lặp trong lệnh cài đặt
 
 ## Troubleshooting
 
