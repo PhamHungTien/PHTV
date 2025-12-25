@@ -78,6 +78,8 @@
 		F1A1A1E12025130100000035 /* SettingsObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1E22025130100000036 /* SettingsObserver.swift */; };
 		F1A1A1E32025130100000037 /* ReloadHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1E42025130100000038 /* ReloadHelpers.swift */; };
 		F1A1A1E52025130100000039 /* BugReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1E62025130100000040 /* BugReportView.swift */; };
+		F1A1A1E72025130100000041 /* UpdateBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1E82025130100000042 /* UpdateBannerView.swift */; };
+		F1A1A1E92025130100000043 /* ReleaseNotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1EA2025130100000044 /* ReleaseNotesView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -184,6 +186,8 @@
 		F1A1A1E22025130100000036 /* SettingsObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsObserver.swift; sourceTree = "<group>"; };
 		F1A1A1E42025130100000038 /* ReloadHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReloadHelpers.swift; sourceTree = "<group>"; };
 		F1A1A1E62025130100000040 /* BugReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BugReportView.swift; sourceTree = "<group>"; };
+		F1A1A1E82025130100000042 /* UpdateBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateBannerView.swift; sourceTree = "<group>"; };
+		F1A1A1EA2025130100000044 /* ReleaseNotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -451,6 +455,8 @@
 				F1A1A1DC2025130100000030 /* MacroEditorView.swift */,
 				F1A1A1DE2025130100000032 /* PermissionWarningView.swift */,
 				F1A1A1E02025130100000034 /* ExcludedAppsView.swift */,
+				F1A1A1E82025130100000042 /* UpdateBannerView.swift */,
+				F1A1A1EA2025130100000044 /* ReleaseNotesView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -589,6 +595,8 @@
 				F1A1A1DB2025130100000029 /* MacroEditorView.swift in Sources */,
 				F1A1A1DD2025130100000031 /* PermissionWarningView.swift in Sources */,
 				F1A1A1DF2025130100000033 /* ExcludedAppsView.swift in Sources */,
+				F1A1A1E72025130100000041 /* UpdateBannerView.swift in Sources */,
+				F1A1A1E92025130100000043 /* ReleaseNotesView.swift in Sources */,
 				F1A1A1E12025130100000035 /* SettingsObserver.swift in Sources */,
 				F1A1A1E32025130100000037 /* ReloadHelpers.swift in Sources */,
 				DB799B68D74F4B3AA863B03A /* AdvancedSettingsView.swift in Sources */,
