@@ -85,8 +85,43 @@ return;
     /// Detect how Claude Code was installed
     func getInstallationType() -> ClaudeInstallationType {
         let fileManager = FileManager.default
+        let homeDir = NSHomeDirectory()
 
-        // Method 1: Check common Homebrew paths first (most reliable in sandbox)
+        // Method 1: Check native binary install path first (~/.local/bin/claude)
+        let nativePaths = [
+            homeDir + "/.local/bin/claude",
+            homeDir + "/.claude/bin/claude"
+        ]
+
+        for path in nativePaths {
+            if fileManager.fileExists(atPath: path) {
+                // Check if it's a binary file
+                let fileProcess = Process()
+                fileProcess.executableURL = URL(fileURLWithPath: "/usr/bin/file")
+                fileProcess.arguments = [path]
+
+                let filePipe = Pipe()
+                fileProcess.standardOutput = filePipe
+                fileProcess.standardError = FileHandle.nullDevice
+
+                do {
+                    try fileProcess.run()
+                    fileProcess.waitUntilExit()
+
+                    let fileData = filePipe.fileHandleForReading.readDataToEndOfFile()
+                    if let fileOutput = String(data: fileData, encoding: .utf8) {
+                        if fileOutput.contains("Mach-O") || fileOutput.contains("executable") {
+                            return .nativeBinary
+                        }
+                    }
+                } catch {
+                    // If we can't check file type but it exists in .local/bin, assume native
+                    return .nativeBinary
+                }
+            }
+        }
+
+        // Method 2: Check common Homebrew paths (most reliable in sandbox)
         let homebrewPaths = [
             "/opt/homebrew/bin/claude",
             "/usr/local/bin/claude",
@@ -398,7 +433,8 @@ return;
                 // Try to remove native binary installation
                 let homeDir = NSHomeDirectory()
                 let possiblePaths = [
-                    homeDir + "/.claude",
+                    homeDir + "/.local/bin/claude",  // Primary native install location
+                    homeDir + "/.claude",            // Alternative native install location
                     "/usr/local/bin/claude",
                     "/opt/homebrew/bin/claude"
                 ]
@@ -407,7 +443,7 @@ return;
                     if FileManager.default.fileExists(atPath: path) {
                         // Check if this is native install (not homebrew)
                         var shouldRemove = false
-                        if path.contains(".claude") {
+                        if path.contains(".local/bin") || path.contains(".claude") {
                             shouldRemove = true
                         } else if let resolved = try? FileManager.default.destinationOfSymbolicLink(atPath: path),
                                   !resolved.contains("homebrew") && !resolved.contains("Caskroom") {
