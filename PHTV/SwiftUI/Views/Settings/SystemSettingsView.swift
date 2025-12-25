@@ -238,12 +238,16 @@ struct SystemSettingsView: View {
     }
 
     private func checkForUpdates() {
+        print("[SystemSettings] User clicked 'Kiểm tra cập nhật' button")
+
         // Trigger Sparkle update check
         // Sparkle will handle the UI via UpdateBannerView or notification when no update
         NotificationCenter.default.post(
             name: NSNotification.Name("SparkleManualCheck"),
             object: nil
         )
+
+        print("[SystemSettings] Posted SparkleManualCheck notification")
     }
 }
 

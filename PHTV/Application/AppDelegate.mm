@@ -2231,8 +2231,8 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     // Sparkle update notifications
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(handleSparkleManualCheck:)
-                                                 name:@"CheckForUpdates"
-                                               object:NULL];
+                                                 name:@"SparkleManualCheck"
+                                               object:nil];
 
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(handleSparkleUpdateFound:)
