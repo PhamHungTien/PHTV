@@ -484,9 +484,42 @@ extern "C" {
         if (caretLocation < 0) caretLocation = 0;
         if (caretLocation > (NSInteger)valueStr.length) caretLocation = (NSInteger)valueStr.length;
 
-        // Calculate replacement
+        // Calculate replacement - handle Unicode composed/decomposed length mismatch
+        // The backspaceCount from engine counts logical characters, but Spotlight may have
+        // different Unicode representation (composed vs decomposed)
         NSInteger start = caretLocation - backspaceCount;
         if (start < 0) start = 0;
+
+        // If we're replacing text, verify the length matches what we expect
+        // Vietnamese text may have combining characters that increase length
+        if (backspaceCount > 0 && start < caretLocation) {
+            NSString *textToDelete = [valueStr substringWithRange:NSMakeRange(start, caretLocation - start)];
+            // Get composed form length - this is what engine expects
+            NSString *composedText = [textToDelete precomposedStringWithCanonicalMapping];
+            NSInteger composedLen = (NSInteger)composedText.length;
+
+            // If composed length differs from backspaceCount, the text in Spotlight
+            // may be in decomposed form - recalculate start position
+            if (composedLen != backspaceCount && composedLen > 0) {
+                // Try to find correct start by counting composed characters backwards
+                NSInteger actualStart = caretLocation;
+                NSInteger composedCount = 0;
+                while (actualStart > 0 && composedCount < backspaceCount) {
+                    actualStart--;
+                    // Check if this is a base character (not combining mark)
+                    unichar c = [valueStr characterAtIndex:actualStart];
+                    // Skip combining marks (0x0300-0x036F, 0x1DC0-0x1DFF, etc.)
+                    if (!(c >= 0x0300 && c <= 0x036F) &&
+                        !(c >= 0x1DC0 && c <= 0x1DFF) &&
+                        !(c >= 0x20D0 && c <= 0x20FF) &&
+                        !(c >= 0xFE20 && c <= 0xFE2F)) {
+                        composedCount++;
+                    }
+                }
+                start = actualStart;
+            }
+        }
+
         NSInteger len = caretLocation - start;
         if (start + len > (NSInteger)valueStr.length) len = (NSInteger)valueStr.length - start;
         if (len < 0) len = 0;
@@ -1266,6 +1299,9 @@ extern "C" {
 
             BOOL axSucceeded = ReplaceFocusedTextViaAX(backspaceCount, insertStr);
             if (axSucceeded) {
+                // Small delay after AX replacement to let Spotlight update its internal state
+                // This prevents race conditions when typing quickly
+                usleep(5000); // 5ms
                 return;
             }
 

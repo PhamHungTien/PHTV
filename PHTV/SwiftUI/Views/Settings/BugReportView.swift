@@ -19,35 +19,35 @@ struct BugReportView: View {
 
     @State private var bugTitle: String = ""
     @State private var bugDescription: String = ""
-    @State private var stepsToReproduce: String = ""
-    @State private var expectedBehavior: String = ""
-    @State private var actualBehavior: String = ""
     @State private var debugLogs: String = ""
     @State private var isLoadingLogs: Bool = false
     @State private var showCopiedAlert: Bool = false
     @State private var includeSystemInfo: Bool = true
     @State private var includeLogs: Bool = true
+    @State private var cachedLogs: String = ""
+    @State private var isSending: Bool = false
 
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // Header
-                headerSection
-
                 // Bug Information Form
                 bugInfoSection
 
-                // Debug Logs Section
-                debugLogsSection
+                // Debug Options & Info
+                debugOptionsSection
 
                 // Actions
                 actionsSection
+
+                Spacer(minLength: 20)
             }
-            .padding(24)
+            .padding(20)
         }
         .background(Color(NSColor.windowBackgroundColor))
-        .onAppear {
-            loadDebugLogs()
+        .task {
+            if cachedLogs.isEmpty {
+                await loadDebugLogsAsync()
+            }
         }
         .alert("Đã sao chép!", isPresented: $showCopiedAlert) {
             Button("OK", role: .cancel) {}
@@ -56,249 +56,158 @@ struct BugReportView: View {
         }
     }
 
-    // MARK: - Header Section
-    private var headerSection: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "ladybug.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(themeManager.themeColor)
-
-            Text("Báo lỗi")
-                .font(.title.bold())
-
-            Text("Giúp chúng tôi cải thiện PHTV bằng cách báo cáo lỗi bạn gặp phải")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .padding(.bottom, 10)
-    }
-
     // MARK: - Bug Info Section
     private var bugInfoSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Title
-            SettingsCard(title: "Thông tin lỗi", icon: "exclamationmark.triangle.fill") {
-                VStack(alignment: .leading, spacing: 16) {
-                    // Bug Title
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Tiêu đề lỗi")
-                            .font(.headline)
-                        TextField("Ví dụ: Không gõ được tiếng Việt trong Safari", text: $bugTitle)
-                            .textFieldStyle(.roundedBorder)
-                    }
+        SettingsCard(title: "Báo lỗi", icon: "ladybug.fill") {
+            VStack(alignment: .leading, spacing: 12) {
+                // Bug Title
+                TextField("Tiêu đề lỗi (VD: Không gõ được tiếng Việt trong Safari)", text: $bugTitle)
+                    .textFieldStyle(.roundedBorder)
 
-                    Divider()
-
-                    // Description
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Mô tả chi tiết")
-                            .font(.headline)
-                        TextEditor(text: $bugDescription)
-                            .frame(minHeight: 80)
-                            .font(.body)
-                            .padding(8)
-                            .background(Color(NSColor.textBackgroundColor))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                            )
-                    }
-
-                    Divider()
-
-                    // Steps to Reproduce
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Các bước để tái tạo lỗi")
-                            .font(.headline)
-                        TextEditor(text: $stepsToReproduce)
-                            .frame(minHeight: 60)
-                            .font(.body)
-                            .padding(8)
-                            .background(Color(NSColor.textBackgroundColor))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                            )
-                        Text("Ví dụ:\n1. Mở Safari\n2. Truy cập google.com\n3. Gõ tiếng Việt...")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Divider()
-
-                    // Expected vs Actual
-                    HStack(alignment: .top, spacing: 16) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Kết quả mong đợi")
-                                .font(.headline)
-                            TextEditor(text: $expectedBehavior)
-                                .frame(minHeight: 50)
-                                .font(.body)
-                                .padding(8)
-                                .background(Color(NSColor.textBackgroundColor))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                                )
-                        }
-
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Kết quả thực tế")
-                                .font(.headline)
-                            TextEditor(text: $actualBehavior)
-                                .frame(minHeight: 50)
-                                .font(.body)
-                                .padding(8)
-                                .background(Color(NSColor.textBackgroundColor))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                                )
+                // Description
+                TextEditor(text: $bugDescription)
+                    .frame(minHeight: 100)
+                    .font(.body)
+                    .padding(8)
+                    .background(Color(NSColor.textBackgroundColor))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                    )
+                    .overlay(alignment: .topLeading) {
+                        if bugDescription.isEmpty {
+                            Text("Mô tả chi tiết lỗi và các bước để tái tạo...")
+                                .foregroundStyle(.tertiary)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 16)
+                                .allowsHitTesting(false)
                         }
                     }
-                }
-                .padding(4)
             }
         }
     }
 
-    // MARK: - Debug Logs Section
-    private var debugLogsSection: some View {
+    // MARK: - Debug Options Section
+    private var debugOptionsSection: some View {
         SettingsCard(title: "Thông tin gỡ lỗi", icon: "doc.text.fill") {
-            VStack(alignment: .leading, spacing: 12) {
-                // Options
-                Toggle("Bao gồm thông tin hệ thống", isOn: $includeSystemInfo)
-                    .toggleStyle(.checkbox)
+            VStack(spacing: 0) {
+                SettingsToggleRow(
+                    icon: "cpu.fill",
+                    iconColor: themeManager.themeColor,
+                    title: "Thông tin hệ thống",
+                    subtitle: "Phiên bản PHTV, macOS, chip, bàn phím",
+                    isOn: $includeSystemInfo
+                )
 
-                Toggle("Bao gồm nhật ký debug", isOn: $includeLogs)
-                    .toggleStyle(.checkbox)
+                SettingsDivider()
 
-                Divider()
+                SettingsToggleRow(
+                    icon: "doc.text.fill",
+                    iconColor: themeManager.themeColor,
+                    title: "Nhật ký debug",
+                    subtitle: "Log hoạt động gần đây của ứng dụng",
+                    isOn: $includeLogs
+                )
 
-                // System Info
-                if includeSystemInfo {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Thông tin hệ thống")
-                            .font(.headline)
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            systemInfoRow("Phiên bản PHTV", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "N/A")
-                            systemInfoRow("Build", value: Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "N/A")
-                            systemInfoRow("macOS", value: ProcessInfo.processInfo.operatingSystemVersionString)
-                            systemInfoRow("Chip", value: getChipInfo())
-                            systemInfoRow("Bàn phím", value: getCurrentKeyboardLayout())
-                            systemInfoRow("Kiểu gõ", value: appState.inputMethod.rawValue)
-                            systemInfoRow("Bảng mã", value: appState.codeTable.rawValue)
-                        }
-                        .padding(12)
-                        .background(Color(NSColor.controlBackgroundColor))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                    }
-
-                    Divider()
-                }
-
-                // Debug Logs
+                // Hiển thị preview log nếu bật
                 if includeLogs {
+                    SettingsDivider()
+
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Text("Nhật ký debug")
-                                .font(.headline)
+                            Text("Xem trước")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
 
                             Spacer()
 
                             Button {
                                 loadDebugLogs()
                             } label: {
-                                Label("Làm mới", systemImage: "arrow.clockwise")
-                                    .font(.caption)
+                                if isLoadingLogs {
+                                    ProgressView()
+                                        .scaleEffect(0.6)
+                                } else {
+                                    Image(systemName: "arrow.clockwise")
+                                }
                             }
                             .buttonStyle(.borderless)
                             .disabled(isLoadingLogs)
                         }
 
-                        if isLoadingLogs {
-                            HStack {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                                Text("Đang tải nhật ký...")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: 180)
-                            .background(Color(NSColor.textBackgroundColor))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                        } else {
-                            ScrollView {
-                                Text(debugLogs.isEmpty ? "Không có nhật ký" : debugLogs)
-                                    .font(.system(.caption, design: .monospaced))
-                                    .textSelection(.enabled)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            .frame(height: 180)
-                            .padding(8)
-                            .background(Color(NSColor.textBackgroundColor))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                            )
+                        ScrollView {
+                            Text(debugLogs.isEmpty ? "Không có nhật ký" : debugLogs)
+                                .font(.system(.caption2, design: .monospaced))
+                                .textSelection(.enabled)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
+                        .frame(height: 120)
+                        .padding(8)
+                        .background(Color(NSColor.textBackgroundColor))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
                     }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
                 }
             }
-            .padding(4)
         }
     }
 
     // MARK: - Actions Section
     private var actionsSection: some View {
         SettingsCard(title: "Gửi báo lỗi", icon: "paperplane.fill") {
-            VStack(spacing: 16) {
-                Text("Chọn cách gửi báo lỗi phù hợp với bạn:")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                HStack(spacing: 12) {
-                    // Copy to Clipboard
-                    Button {
-                        copyBugReportToClipboard()
-                    } label: {
-                        Label("Sao chép nội dung", systemImage: "doc.on.doc")
+            HStack(spacing: 10) {
+                // Copy to Clipboard
+                Button {
+                    Task { await copyBugReportToClipboardAsync() }
+                } label: {
+                    if isSending {
+                        ProgressView()
+                            .scaleEffect(0.6)
+                            .frame(maxWidth: .infinity, minHeight: 32)
+                    } else {
+                        Label("Sao chép", systemImage: "doc.on.doc")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
-
-                    // Open GitHub Issue
-                    Button {
-                        openGitHubIssue()
-                    } label: {
-                        Label("Tạo Issue GitHub", systemImage: "link")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(themeManager.themeColor)
-                    .controlSize(.large)
-
-                    // Send Email
-                    Button {
-                        sendEmailReport()
-                    } label: {
-                        Label("Gửi Email", systemImage: "envelope")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
                 }
+                .buttonStyle(.bordered)
+                .disabled(isSending)
+
+                // Open GitHub Issue
+                Button {
+                    Task { await openGitHubIssueAsync() }
+                } label: {
+                    if isSending {
+                        ProgressView()
+                            .scaleEffect(0.6)
+                            .frame(maxWidth: .infinity, minHeight: 32)
+                    } else {
+                        Label("GitHub Issue", systemImage: "link")
+                            .frame(maxWidth: .infinity)
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(themeManager.themeColor)
+                .disabled(isSending)
+
+                // Send Email
+                Button {
+                    Task { await sendEmailReportAsync() }
+                } label: {
+                    if isSending {
+                        ProgressView()
+                            .scaleEffect(0.6)
+                            .frame(maxWidth: .infinity, minHeight: 32)
+                    } else {
+                        Label("Email", systemImage: "envelope")
+                            .frame(maxWidth: .infinity)
+                    }
+                }
+                .buttonStyle(.bordered)
+                .disabled(isSending)
             }
-            .padding(4)
+            .padding(.vertical, 4)
         }
     }
 
@@ -349,16 +258,30 @@ struct BugReportView: View {
     }
 
     private func loadDebugLogs() {
+        guard !isLoadingLogs else { return }
         isLoadingLogs = true
-        debugLogs = ""
 
-        DispatchQueue.global(qos: .userInitiated).async {
-            let logs = Self.fetchLogsSync()
-            DispatchQueue.main.async {
+        Task.detached(priority: .userInitiated) {
+            let logs = Self.fetchLogsSync(maxEntries: 50) // Giới hạn số log
+            await MainActor.run {
                 self.debugLogs = logs
+                self.cachedLogs = logs
                 self.isLoadingLogs = false
             }
         }
+    }
+
+    private func loadDebugLogsAsync() async {
+        guard !isLoadingLogs else { return }
+        isLoadingLogs = true
+
+        let logs = await Task.detached(priority: .userInitiated) {
+            Self.fetchLogsSync(maxEntries: 50) // Giới hạn số log
+        }.value
+
+        debugLogs = logs
+        cachedLogs = logs
+        isLoadingLogs = false
     }
 
     // MARK: - Log Entry Model
@@ -420,7 +343,7 @@ struct BugReportView: View {
         }
     }
 
-    nonisolated private static func fetchLogsSync() -> String {
+    nonisolated private static func fetchLogsSync(maxEntries: Int = 50) -> String {
         var allLogEntries: [LogEntry] = []
         var stats = LogStats()
 
@@ -428,10 +351,15 @@ struct BugReportView: View {
         if #available(macOS 12.0, *) {
             do {
                 let store = try OSLogStore(scope: .currentProcessIdentifier)
-                let position = store.position(date: Date().addingTimeInterval(-30 * 60))
+                // Giảm thời gian từ 30 phút xuống 10 phút để giảm số log cần xử lý
+                let position = store.position(date: Date().addingTimeInterval(-10 * 60))
                 let entries = try store.getEntries(at: position)
 
+                var count = 0
                 for entry in entries {
+                    // Dừng sớm nếu đã đủ số log cần thiết (nhưng vẫn giữ lỗi)
+                    if count >= maxEntries * 3 { break }
+
                     if let logEntry = entry as? OSLogEntryLog {
                         let message = logEntry.composedMessage
                         guard !message.isEmpty else { continue }
@@ -449,6 +377,7 @@ struct BugReportView: View {
                             message: message
                         )
                         allLogEntries.append(entry)
+                        count += 1
                     }
                 }
             } catch {
@@ -492,7 +421,7 @@ struct BugReportView: View {
             return buildNoLogsMessage()
         }
 
-        return buildFormattedOutput(entries: allLogEntries, stats: stats)
+        return buildFormattedOutput(entries: allLogEntries, stats: stats, maxEntries: maxEntries)
     }
 
     /// Lọc bỏ các log hệ thống không liên quan đến PHTV
@@ -558,91 +487,62 @@ struct BugReportView: View {
         return "General"
     }
 
-    nonisolated private static func buildFormattedOutput(entries: [LogEntry], stats: LogStats) -> String {
-        var output = ""
+    nonisolated private static func buildFormattedOutput(entries: [LogEntry], stats: LogStats, maxEntries: Int = 50) -> String {
+        // Sử dụng mảng thay vì string concatenation để tăng hiệu năng
+        var lines: [String] = []
+        lines.reserveCapacity(maxEntries + 30)
+
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "HH:mm:ss.SSS"
 
         let fullDateFormatter = DateFormatter()
         fullDateFormatter.dateFormat = "dd/MM HH:mm:ss"
 
-        // === THỐNG KÊ TỔNG QUAN ===
-        output += "📊 THỐNG KÊ TỔNG QUAN\n"
-        output += "═══════════════════════════════════════\n"
-        output += "📈 Tổng số log: \(stats.totalCount)\n"
-        output += "⏱️ Thời gian: \(stats.duration)\n"
+        // === THỐNG KÊ TỔNG QUAN (rút gọn) ===
+        lines.append("📊 THỐNG KÊ: \(stats.totalCount) log | \(stats.duration)")
 
-        if let first = stats.firstLogTime, let last = stats.lastLogTime {
-            output += "📅 Từ \(fullDateFormatter.string(from: first)) đến \(fullDateFormatter.string(from: last))\n"
-        }
-
-        output += "\n"
         if stats.errorCount > 0 {
-            output += "🔴 Lỗi: \(stats.errorCount)\n"
-        }
-        if stats.warningCount > 0 {
-            output += "🟡 Cảnh báo: \(stats.warningCount)\n"
-        }
-        output += "🔵 Thông tin: \(stats.infoCount)\n"
-        if stats.debugCount > 0 {
-            output += "⚪ Debug: \(stats.debugCount)\n"
-        }
-
-        // Phân loại theo category
-        if !stats.categoryCounts.isEmpty {
-            output += "\n📁 PHÂN LOẠI THEO CHỨC NĂNG:\n"
-            for (category, count) in stats.categoryCounts.sorted(by: { $0.value > $1.value }) {
-                let icon = categoryIcon(category)
-                let bar = String(repeating: "█", count: min(count, 20))
-                output += "  \(icon) \(category.padding(toLength: 12, withPad: " ", startingAt: 0)) \(bar) (\(count))\n"
-            }
+            lines.append("🔴 Lỗi: \(stats.errorCount) | 🟡 Cảnh báo: \(stats.warningCount)")
         }
 
         // Lỗi gần nhất - QUAN TRỌNG
         if let lastError = stats.lastError, let errorTime = stats.lastErrorTime {
-            output += "\n"
-            output += "⚠️ ═══ LỖI GẦN NHẤT ═══\n"
-            output += "🕐 Thời gian: \(fullDateFormatter.string(from: errorTime))\n"
-            output += "📝 Nội dung:\n"
-            // Wrap long error message
+            lines.append("")
+            lines.append("⚠️ LỖI GẦN NHẤT [\(fullDateFormatter.string(from: errorTime))]:")
+            // Chỉ lấy 2 dòng đầu của lỗi
             let errorLines = lastError.components(separatedBy: .newlines)
-            for line in errorLines.prefix(5) {
-                output += "   \(line)\n"
+            for line in errorLines.prefix(2) {
+                lines.append("  \(line)")
             }
         }
 
-        output += "\n"
-        output += "═══════════════════════════════════════\n"
-        output += "📜 CHI TIẾT NHẬT KÝ\n"
-        output += "═══════════════════════════════════════\n\n"
+        lines.append("")
+        lines.append("───────────────────────────────────────")
 
-        // === LỖI VÀ CẢNH BÁO TRƯỚC - HIỂN THỊ TẤT CẢ ===
+        // === LỖI TRƯỚC (giới hạn 10) ===
         let importantEntries = entries.filter { $0.isImportant }
         if !importantEntries.isEmpty {
-            output += "🚨 TẤT CẢ LỖI (\(importantEntries.count)):\n"
-            output += "───────────────────────────────────────\n"
-            for entry in importantEntries {
+            lines.append("🚨 LỖI (\(min(importantEntries.count, 10))/\(importantEntries.count)):")
+            for entry in importantEntries.suffix(10) {
                 let time = dateFormatter.string(from: entry.date)
-                output += "\(entry.levelEmoji) [\(time)] \(entry.message)\n"
+                // Giới hạn độ dài message
+                let msg = entry.message.count > 100 ? String(entry.message.prefix(100)) + "..." : entry.message
+                lines.append("\(entry.levelEmoji) [\(time)] \(msg)")
             }
-            output += "\n"
+            lines.append("")
         }
 
-        // === LOG GẦN NHẤT - HIỂN THỊ NHIỀU HƠN ===
-        let recentCount = min(entries.count, 100)
-        output += "📋 LOG GẦN NHẤT (\(recentCount) dòng cuối):\n"
-        output += "───────────────────────────────────────\n"
+        // === LOG GẦN NHẤT (giới hạn theo maxEntries) ===
+        let recentCount = min(entries.count, maxEntries)
+        lines.append("📋 LOG GẦN NHẤT (\(recentCount) dòng):")
         for entry in entries.suffix(recentCount) {
             let time = dateFormatter.string(from: entry.date)
-            let categoryPadded = "[\(entry.category)]".padding(toLength: 14, withPad: " ", startingAt: 0)
-            output += "\(entry.levelEmoji) [\(time)] \(categoryPadded) \(entry.message)\n"
+            // Giới hạn độ dài message để giảm kích thước
+            let msg = entry.message.count > 80 ? String(entry.message.prefix(80)) + "..." : entry.message
+            lines.append("\(entry.levelEmoji) [\(time)] \(msg)")
         }
 
-        // Footer với thông tin cleanup
-        output += "\n───────────────────────────────────────\n"
-        output += "💾 Log tự động dọn dẹp: >2MB hoặc >24 giờ\n"
-
-        return output
+        return lines.joined(separator: "\n")
     }
 
     nonisolated private static func categoryIcon(_ category: String) -> String {
@@ -675,30 +575,21 @@ struct BugReportView: View {
         """
     }
 
-    private func generateBugReport() -> String {
+    /// Tạo báo lỗi với logs đã được fetch sẵn (không block main thread)
+    private func generateBugReportWithLogs(_ logs: String) -> String {
         var report = """
         # Báo lỗi PHTV
 
         ## Tiêu đề
         \(bugTitle.isEmpty ? "(Chưa nhập)" : bugTitle)
 
-        ## Mô tả
+        ## Mô tả chi tiết
         \(bugDescription.isEmpty ? "(Chưa nhập)" : bugDescription)
-
-        ## Các bước tái tạo
-        \(stepsToReproduce.isEmpty ? "(Chưa nhập)" : stepsToReproduce)
-
-        ## Kết quả mong đợi
-        \(expectedBehavior.isEmpty ? "(Chưa nhập)" : expectedBehavior)
-
-        ## Kết quả thực tế
-        \(actualBehavior.isEmpty ? "(Chưa nhập)" : actualBehavior)
 
         """
 
         if includeSystemInfo {
             report += """
-
             ## Thông tin hệ thống
             - Phiên bản PHTV: \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "N/A")
             - Build: \(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "N/A")
@@ -711,73 +602,152 @@ struct BugReportView: View {
             """
         }
 
-        if includeLogs {
-            // Luôn lấy log mới nhất khi gửi báo lỗi
-            let freshLogs = Self.fetchLogsSync()
-            if !freshLogs.isEmpty {
-                report += """
-
+        if includeLogs && !logs.isEmpty {
+            report += """
             ## Nhật ký Debug
             ```
-            \(freshLogs)
+            \(logs)
             ```
             """
-            }
         }
 
         return report
     }
 
-    private func copyBugReportToClipboard() {
-        // Cập nhật log mới nhất trước khi sao chép
-        debugLogs = Self.fetchLogsSync()
+    private func copyBugReportToClipboardAsync() async {
+        guard !isSending else { return }
+        isSending = true
 
-        let report = generateBugReport()
+        // Lấy log trên background thread
+        let logs = await Task.detached(priority: .utility) {
+            Self.fetchLogsSync(maxEntries: 50)
+        }.value
+
+        debugLogs = logs
+        cachedLogs = logs
+
+        let report = generateBugReportWithLogs(logs)
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(report, forType: .string)
+
+        isSending = false
         showCopiedAlert = true
     }
 
-    private func openGitHubIssue() {
-        // Cập nhật log mới nhất
-        debugLogs = Self.fetchLogsSync()
+    private func openGitHubIssueAsync() async {
+        guard !isSending else { return }
+        isSending = true
 
+        // Lấy log quan trọng (chỉ errors) trên background
+        let importantLogs = await Task.detached(priority: .utility) {
+            Self.fetchImportantLogsOnly()
+        }.value
+
+        // Tạo body ngắn gọn cho GitHub
+        let body = generateCompactReport(withLogs: importantLogs)
+
+        // Encode URL
         let title = bugTitle.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let body = generateBugReport().addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let encodedBody = body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
 
-        // GitHub has URL length limits, so we might need to truncate
-        var urlString = "https://github.com/phamhungtien/PHTV/issues/new?title=\(title)&body="
-
-        // Check URL length and truncate if needed
-        let maxBodyLength = 8000 - urlString.count
-        var truncatedBody = body
-        if body.count > maxBodyLength {
-            truncatedBody = String(body.prefix(maxBodyLength))
-            truncatedBody += "...(nội dung bị cắt, vui lòng dán từ clipboard)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        }
-
-        urlString += truncatedBody
+        let urlString = "https://github.com/phamhungtien/PHTV/issues/new?title=\(title)&body=\(encodedBody)"
 
         if let url = URL(string: urlString) {
             NSWorkspace.shared.open(url)
         }
 
-        // Also copy to clipboard in case URL is truncated
-        let report = generateBugReport()
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(report, forType: .string)
+        isSending = false
     }
 
-    private func sendEmailReport() {
-        // Cập nhật log mới nhất
-        debugLogs = Self.fetchLogsSync()
+    /// Lấy chỉ các log quan trọng (errors, faults) - rất nhanh
+    nonisolated private static func fetchImportantLogsOnly() -> String {
+        var errorMessages: [String] = []
+
+        if #available(macOS 12.0, *) {
+            do {
+                let store = try OSLogStore(scope: .currentProcessIdentifier)
+                let position = store.position(date: Date().addingTimeInterval(-5 * 60)) // 5 phút gần nhất
+                let entries = try store.getEntries(at: position)
+
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "HH:mm:ss"
+
+                for entry in entries {
+                    if errorMessages.count >= 5 { break } // Tối đa 5 lỗi
+
+                    if let logEntry = entry as? OSLogEntryLog {
+                        // Chỉ lấy ERROR và FAULT
+                        guard logEntry.level == .error || logEntry.level == .fault else { continue }
+
+                        let message = logEntry.composedMessage
+                        guard !message.isEmpty else { continue }
+
+                        // Bỏ qua system errors không liên quan
+                        let skipPatterns = ["HALC_Proxy", "IOWorkLoop", "AddInstanceForFactory", "Reporter disconnected"]
+                        if skipPatterns.contains(where: { message.contains($0) }) { continue }
+
+                        let time = dateFormatter.string(from: logEntry.date)
+                        let shortMsg = message.count > 60 ? String(message.prefix(60)) + "..." : message
+                        errorMessages.append("[\(time)] \(shortMsg)")
+                    }
+                }
+            } catch {
+                // Ignore
+            }
+        }
+
+        return errorMessages.isEmpty ? "" : errorMessages.joined(separator: "\n")
+    }
+
+    /// Tạo báo lỗi ngắn gọn để gửi trực tiếp qua URL (không cần paste)
+    private func generateCompactReport(withLogs logs: String = "") -> String {
+        var report = ""
+
+        // Mô tả
+        if !bugDescription.isEmpty {
+            report += "## Mô tả\n\(bugDescription)\n\n"
+        }
+
+        // Thông tin hệ thống (rút gọn)
+        if includeSystemInfo {
+            let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+            let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+            let macOS = ProcessInfo.processInfo.operatingSystemVersionString
+
+            report += "## Hệ thống\n"
+            report += "- PHTV: \(version) (\(build))\n"
+            report += "- macOS: \(macOS)\n"
+            report += "- Kiểu gõ: \(appState.inputMethod.rawValue)\n"
+            report += "- Bảng mã: \(appState.codeTable.rawValue)\n\n"
+        }
+
+        // Log lỗi quan trọng
+        if includeLogs && !logs.isEmpty {
+            report += "## Lỗi gần đây\n```\n\(logs)\n```"
+        }
+
+        return report
+    }
+
+    private func sendEmailReportAsync() async {
+        guard !isSending else { return }
+        isSending = true
+
+        // Lấy log quan trọng
+        let importantLogs = await Task.detached(priority: .utility) {
+            Self.fetchImportantLogsOnly()
+        }.value
+
+        let body = generateCompactReport(withLogs: importantLogs)
 
         let subject = "Báo lỗi PHTV: \(bugTitle)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let body = generateBugReport().addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let encodedBody = body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
 
-        if let url = URL(string: "mailto:hungtien10a7@gmail.com?subject=\(subject)&body=\(body)") {
+        if let url = URL(string: "mailto:hungtien10a7@gmail.com?subject=\(subject)&body=\(encodedBody)") {
             NSWorkspace.shared.open(url)
         }
+
+        isSending = false
     }
 }
 
