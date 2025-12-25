@@ -2,10 +2,11 @@ cask "phtv" do
   version "1.2.6"
   sha256 "b8d97f0c34eda19d3e081b26641b81ff4e0cae693c849baf597c3bfd947e2b8b"
 
-  url "https://github.com/PhamHungTien/PHTV/releases/download/v#{version}/PHTV-#{version}.dmg"
+  url "https://github.com/PhamHungTien/PHTV/releases/download/v#{version}/PHTV-#{version}.dmg",
+      verified: "github.com/PhamHungTien/"
   name "PHTV"
   name "Precision Hybrid Typing Vietnamese"
-  desc "Modern Vietnamese input method for macOS"
+  desc "Modern Vietnamese input method"
   homepage "https://phamhungtien.com/PHTV/"
 
   # Universal Binary - supports both Intel and Apple Silicon
@@ -27,9 +28,9 @@ cask "phtv" do
 
   zap trash: [
     "~/Library/Application Support/PHTV",
-    "~/Library/Preferences/com.phamhungtien.phtv.plist",
     "~/Library/Caches/com.phamhungtien.phtv",
     "~/Library/Logs/PHTV",
+    "~/Library/Preferences/com.phamhungtien.phtv.plist",
   ]
 
   caveats <<~EOS
