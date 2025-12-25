@@ -8,6 +8,63 @@
 
         <!-- Most recent version first -->
         <item>
+            <title>PHTV 1.2.5</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.2.5</link>
+            <sparkle:version>1.2.5</sparkle:version>
+            <sparkle:shortVersionString>1.2.5</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h2>PHTV 1.2.5 - Auto-Update Framework</h2>
+
+                <h3>Tính năng mới</h3>
+                <h4>Hệ thống cập nhật tự động</h4>
+                <ul>
+                    <li><strong>Sparkle Framework</strong>: Tích hợp Sparkle 2.8.1 - framework cập nhật chuyên nghiệp cho macOS</li>
+                    <li><strong>Kiểm tra tự động</strong>: Tự động kiểm tra phiên bản mới theo lịch (hàng ngày/hàng tuần/hàng tháng)</li>
+                    <li><strong>Kênh Beta</strong>: Hỗ trợ opt-in vào kênh beta để nhận phiên bản thử nghiệm</li>
+                    <li><strong>UI hiện đại</strong>: Banner thông báo cập nhật với glassmorphism effect</li>
+                    <li><strong>Release notes viewer</strong>: Xem chi tiết changelog trước khi cập nhật</li>
+                    <li><strong>EdDSA signing</strong>: Bảo mật cao với chữ ký EdDSA cho mọi bản cập nhật</li>
+                </ul>
+
+                <h3>Cải tiến</h3>
+                <h4>Giao diện cài đặt</h4>
+                <ul>
+                    <li><strong>Đơn giản hóa</strong>: Loại bỏ phần "Thông tin ứng dụng" trùng lặp trong cài đặt hệ thống</li>
+                    <li><strong>Tối ưu UI</strong>: Chỉ giữ lại một nút "Kiểm tra cập nhật" trong card "Cập nhật"</li>
+                    <li><strong>Settings card mới</strong>: Card "Cập nhật" với đầy đủ tùy chọn (tần suất kiểm tra, kênh beta, kiểm tra thủ công)</li>
+                </ul>
+
+                <h4>Backend</h4>
+                <ul>
+                    <li><strong>Loại bỏ code cũ</strong>: Xóa hoàn toàn logic kiểm tra cập nhật qua GitHub API thủ công</li>
+                    <li><strong>Notification flow</strong>: Cải thiện luồng thông báo giữa SwiftUI và Objective-C</li>
+                    <li><strong>Sparkle delegates</strong>: Sử dụng SPUUpdaterDelegate và SPUStandardUserDriverDelegate</li>
+                </ul>
+
+                <h3>Sửa lỗi</h3>
+                <ul>
+                    <li><strong>Timeout error</strong>: Sửa lỗi timeout 30 giây khi kiểm tra cập nhật</li>
+                    <li><strong>Stuck alert</strong>: Sửa lỗi alert "Đang kiểm tra cập nhật..." không biến mất</li>
+                    <li><strong>No response</strong>: Sửa lỗi nhấn nút "Kiểm tra cập nhật" không có phản hồi</li>
+                    <li><strong>Notification mismatch</strong>: Sửa lỗi tên notification không khớp</li>
+                    <li><strong>Missing feedback</strong>: Sửa lỗi Sparkle check im lặng khi người dùng click thủ công</li>
+                </ul>
+
+                <p><em>Phiên bản này là bước quan trọng giúp PHTV có hệ thống cập nhật chuyên nghiệp, tự động và an toàn như các ứng dụng macOS khác.</em></p>
+            ]]></description>
+            <pubDate>Thu, 25 Dec 2025 20:50:15 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.2.5/PHTV-1.2.5.dmg"
+                sparkle:version="1.2.5"
+                sparkle:shortVersionString="1.2.5"
+                sparkle:edSignature="aHXAGW2sNGEN1kfXBXzig2mQD6LMAhEU5/4ULv2l1cLWpeSqGO7gB9VugzbBDxqSKb6ZmDUOLRa18gYxkzrjDA=="
+                length="12257516"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <!-- Previous versions -->
+        <item>
             <title>PHTV 1.2.4</title>
             <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.2.4</link>
             <sparkle:version>1.2.4</sparkle:version>
