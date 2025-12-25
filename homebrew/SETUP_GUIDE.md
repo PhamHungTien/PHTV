@@ -1,14 +1,14 @@
 # Hướng dẫn thiết lập Homebrew Tap cho PHTV
 
-## Bước 1: Tạo GitHub Release với PHTV-1.2.6.zip
+## Bước 1: Tạo GitHub Release với PHTV-1.2.6.dmg
 
-Trước tiên, bạn cần tạo một GitHub Release và upload file `PHTV-1.2.6.zip`:
+Trước tiên, bạn cần tạo một GitHub Release và upload file `PHTV-1.2.6.dmg`:
 
 1. Đi đến: https://github.com/PhamHungTien/PHTV/releases/new
 2. Tag version: `v1.2.6`
 3. Release title: `PHTV v1.2.6 - Performance & UX Optimization`
 4. Description: Copy nội dung từ `RELEASE_NOTES_1.2.6.md`
-5. Upload file: `PHTV-1.2.6.zip` (đã có sẵn)
+5. Upload file: `PHTV-1.2.6.dmg` (đã có sẵn)
 6. Click **Publish release**
 
 ## Bước 2: Tạo repository homebrew-phtv
@@ -96,17 +96,17 @@ brew install --cask phamhungtien/phtv/phtv
 
 ### Tải thủ công
 
-Tải file `.zip` từ [GitHub Releases](https://github.com/PhamHungTien/PHTV/releases/latest)
+Tải file `.dmg` từ [GitHub Releases](https://github.com/PhamHungTien/PHTV/releases/latest)
 ```
 
 ## Bước 6: Cập nhật Cask cho phiên bản mới (tương lai)
 
 Khi release version mới (ví dụ 1.2.7):
 
-1. Upload file `PHTV-1.2.7.zip` lên GitHub Release
+1. Upload file `PHTV-1.2.7.dmg` lên GitHub Release
 2. Tính SHA256:
    ```bash
-   shasum -a 256 PHTV-1.2.7.zip
+   shasum -a 256 PHTV-1.2.7.dmg
    ```
 3. Cập nhật `Casks/phtv.rb`:
    ```ruby
@@ -143,8 +143,8 @@ brew install --cask phtv --verbose
 - Tên repo PHẢI là `homebrew-*` (ví dụ: `homebrew-phtv`)
 - Cask files phải nằm trong thư mục `Casks/`
 - File name phải match với cask name (ví dụ: `phtv.rb` cho cask "phtv")
-- SHA256 checksum phải khớp với file zip trên GitHub Release
-- URL phải trỏ đến file zip trên GitHub Releases (không phải source code)
+- SHA256 checksum phải khớp với file dmg trên GitHub Release
+- URL phải trỏ đến file dmg trên GitHub Releases (không phải source code)
 
 ## Troubleshooting
 
@@ -157,8 +157,8 @@ brew install --cask phtv --verbose
 
 ### Lỗi: "URL not found"
 - Kiểm tra đã tạo GitHub Release chưa
-- Kiểm tra file PHTV-1.2.6.zip đã upload lên Release chưa
-- URL phải đúng format: `https://github.com/PhamHungTien/PHTV/releases/download/v1.2.6/PHTV-1.2.6.zip`
+- Kiểm tra file PHTV-1.2.6.dmg đã upload lên Release chưa
+- URL phải đúng format: `https://github.com/PhamHungTien/PHTV/releases/download/v1.2.6/PHTV-1.2.6.dmg`
 
 ## Resources
 

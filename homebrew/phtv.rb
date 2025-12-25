@@ -1,8 +1,8 @@
 cask "phtv" do
   version "1.2.6"
-  sha256 "4241ef3043689e6b81f1b29e1fdbbcd5a105c61ffb44f8753386ebe38d97df74"
+  sha256 "5f65b9b5d8084f802a40ba508b719c5de9dc974c4ac476a34b4c0779f027fe23"
 
-  url "https://github.com/PhamHungTien/PHTV/releases/download/v#{version}/PHTV-#{version}.zip"
+  url "https://github.com/PhamHungTien/PHTV/releases/download/v#{version}/PHTV-#{version}.dmg"
   name "PHTV"
   name "Precision Hybrid Typing Vietnamese"
   desc "Modern Vietnamese input method for macOS"
