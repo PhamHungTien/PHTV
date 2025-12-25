@@ -49,6 +49,7 @@
 - **Spotlight Fix** - Gõ tiếng Việt trong Spotlight không bị lỗi
 - **WhatsApp Fix** - Hỗ trợ gõ tiếng Việt mượt mà trong WhatsApp
 - **Chromium Fix** - Tối ưu cho Chrome, Edge, Brave và các trình duyệt Chromium
+- **Claude Code Fix** - Sửa lỗi gõ tiếng Việt trong Claude Code CLI (Terminal)
 - **Excluded Apps** - Danh sách ứng dụng tự động chuyển sang tiếng Anh
 - **Nhớ bảng mã theo ứng dụng** - Tự động chuyển bảng mã phù hợp cho từng app
 
