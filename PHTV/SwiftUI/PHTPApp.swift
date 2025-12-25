@@ -39,10 +39,18 @@ struct PHTVApp: App {
 
         // Settings window with hidden title bar
         Window("Cài đặt", id: "settings") {
-            SettingsView()
-                .environmentObject(appState)
-                .environmentObject(themeManager)
-                .tint(themeManager.themeColor)
+            ZStack(alignment: .top) {
+                SettingsView()
+                    .environmentObject(appState)
+                    .environmentObject(themeManager)
+                    .tint(themeManager.themeColor)
+
+                // Update banner overlay
+                UpdateBannerView()
+                    .environmentObject(appState)
+                    .environmentObject(themeManager)
+                    .zIndex(1000)
+            }
         }
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 900, height: 650)
@@ -249,6 +257,12 @@ final class AppState: ObservableObject {
     @Published var showUpdateBanner: Bool = false
     @Published var latestVersion: String = ""
 
+    // Sparkle update configuration
+    @Published var updateCheckFrequency: UpdateCheckFrequency = .daily
+    @Published var betaChannelEnabled: Bool = false
+    @Published var showCustomUpdateBanner: Bool = false
+    @Published var customUpdateBannerInfo: UpdateBannerInfo? = nil
+
     private var cancellables = Set<AnyCancellable>()
     private var isLoadingSettings = false
 
@@ -424,6 +438,25 @@ final class AppState: ObservableObject {
                 }
             }
         }
+
+        // Sparkle custom update banner
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("SparkleShowUpdateBanner"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self = self else { return }
+            if let info = notification.object as? [String: String] {
+                Task { @MainActor in
+                    self.customUpdateBannerInfo = UpdateBannerInfo(
+                        version: info["version"] ?? "",
+                        releaseNotes: info["releaseNotes"] ?? "",
+                        downloadURL: info["downloadURL"] ?? ""
+                    )
+                    self.showCustomUpdateBanner = true
+                }
+            }
+        }
     }
 
     func checkAccessibilityPermission() {
@@ -534,6 +567,11 @@ final class AppState: ObservableObject {
         {
             sendKeyStepByStepApps = apps
         }
+
+        // Load Sparkle settings
+        let updateInterval = defaults.integer(forKey: "SUScheduledCheckInterval")
+        updateCheckFrequency = UpdateCheckFrequency.from(interval: updateInterval == 0 ? 86400 : updateInterval)
+        betaChannelEnabled = defaults.bool(forKey: "SUEnableBetaChannel")
     }
 
     // MARK: - Hotkey Encoding/Decoding
@@ -649,6 +687,10 @@ final class AppState: ObservableObject {
         if let data = try? JSONEncoder().encode(sendKeyStepByStepApps) {
             defaults.set(data, forKey: "SendKeyStepByStepApps")
         }
+
+        // Save Sparkle settings
+        defaults.set(updateCheckFrequency.rawValue, forKey: "SUScheduledCheckInterval")
+        defaults.set(betaChannelEnabled, forKey: "SUEnableBetaChannel")
 
         defaults.synchronize()
 
@@ -942,6 +984,32 @@ final class AppState: ObservableObject {
                 defaults.synchronize()
                 print("[Settings] Saved useVietnameseMenubarIcon: \(value)")
             }.store(in: &cancellables)
+
+        // Update frequency observer
+        $updateCheckFrequency.sink { [weak self] frequency in
+            guard let self = self, !self.isLoadingSettings else { return }
+            let defaults = UserDefaults.standard
+            defaults.set(frequency.rawValue, forKey: "SUScheduledCheckInterval")
+            defaults.synchronize()
+
+            NotificationCenter.default.post(
+                name: NSNotification.Name("UpdateCheckFrequencyChanged"),
+                object: NSNumber(value: frequency.rawValue)
+            )
+        }.store(in: &cancellables)
+
+        // Beta channel observer
+        $betaChannelEnabled.sink { [weak self] enabled in
+            guard let self = self, !self.isLoadingSettings else { return }
+            let defaults = UserDefaults.standard
+            defaults.set(enabled, forKey: "SUEnableBetaChannel")
+            defaults.synchronize()
+
+            NotificationCenter.default.post(
+                name: NSNotification.Name("BetaChannelChanged"),
+                object: NSNumber(value: enabled)
+            )
+        }.store(in: &cancellables)
     }
 
     // MARK: - Reset to Defaults
@@ -1112,6 +1180,42 @@ enum RestoreKey: Int, CaseIterable, Identifiable, Sendable {
             return .esc
         }
     }
+}
+
+// MARK: - Update Check Frequency
+enum UpdateCheckFrequency: Int, CaseIterable, Identifiable, Sendable {
+    case never = 0
+    case daily = 86400        // 24 hours
+    case weekly = 604800      // 7 days
+    case monthly = 2592000    // 30 days
+
+    nonisolated var id: Int { rawValue }
+
+    nonisolated var displayName: String {
+        switch self {
+        case .never: return "Không bao giờ"
+        case .daily: return "Hàng ngày"
+        case .weekly: return "Hàng tuần"
+        case .monthly: return "Hàng tháng"
+        }
+    }
+
+    static func from(interval: Int) -> UpdateCheckFrequency {
+        switch interval {
+        case 0: return .never
+        case 86400: return .daily
+        case 604800: return .weekly
+        case 2592000: return .monthly
+        default: return .daily
+        }
+    }
+}
+
+// MARK: - Update Banner Info
+struct UpdateBannerInfo: Equatable {
+    let version: String
+    let releaseNotes: String
+    let downloadURL: String
 }
 
 // MARK: - Excluded App Model

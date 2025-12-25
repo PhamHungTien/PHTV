@@ -171,6 +171,69 @@ struct SystemSettingsView: View {
                     }
                 }
 
+                // Update Settings
+                SettingsCard(title: "Cập nhật", icon: "arrow.down.circle.fill") {
+                    VStack(spacing: 0) {
+                        // Frequency picker
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(spacing: 14) {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(themeManager.themeColor.opacity(0.12))
+                                        .frame(width: 36, height: 36)
+
+                                    Image(systemName: "clock.fill")
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundStyle(themeManager.themeColor)
+                                }
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Tần suất kiểm tra")
+                                        .font(.body)
+
+                                    Text("Tự động kiểm tra bản cập nhật mới")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+
+                                Spacer()
+
+                                Picker("", selection: $appState.updateCheckFrequency) {
+                                    ForEach(UpdateCheckFrequency.allCases) { freq in
+                                        Text(freq.displayName).tag(freq)
+                                    }
+                                }
+                                .labelsHidden()
+                                .frame(width: 140)
+                            }
+                            .padding(.vertical, 6)
+                        }
+
+                        SettingsDivider()
+
+                        // Beta toggle
+                        SettingsToggleRow(
+                            icon: "testtube.2",
+                            iconColor: .orange,
+                            title: "Kênh Beta",
+                            subtitle: "Nhận bản cập nhật beta (không ổn định)",
+                            isOn: $appState.betaChannelEnabled
+                        )
+
+                        SettingsDivider()
+
+                        // Manual check
+                        SettingsButtonRow(
+                            icon: isCheckingForUpdates ? "hourglass.circle.fill" : "arrow.clockwise.circle.fill",
+                            iconColor: themeManager.themeColor,
+                            title: isCheckingForUpdates ? "Đang kiểm tra..." : "Kiểm tra cập nhật",
+                            subtitle: "Tìm phiên bản mới ngay bây giờ",
+                            isLoading: isCheckingForUpdates,
+                            action: checkForUpdates
+                        )
+                    }
+                }
+
                 // Data Management
                 SettingsCard(title: "Quản lý dữ liệu", icon: "externaldrive.fill") {
                     VStack(spacing: 0) {

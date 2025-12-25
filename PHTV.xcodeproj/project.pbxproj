@@ -47,6 +47,8 @@
 		46394F852EFC8C7B009D5194 /* PHTVLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46394F842EFC8C7B009D5194 /* PHTVLogger.swift */; };
 		46394F862EFC8C7B009D5195 /* ClaudeCodePatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46394F872EFC8C7B009D5195 /* ClaudeCodePatcher.swift */; };
 		46413AEE2EEF7EB300278BFB /* update.json in Resources */ = {isa = PBXBuildFile; fileRef = 46413AED2EEF7EB300278BFB /* update.json */; };
+		46ABBBAA2EFD67680003CBB5 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 46ABBBA92EFD67680003CBB5 /* Sparkle */; };
+		46ABBBB02EFD67B00003CBB5 /* SparkleManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = 46ABBBAF2EFD67B00003CBB5 /* SparkleManager.mm */; };
 		46EF4FFA2EEDBFD400DF8DD1 /* PHTV.icon in Resources */ = {isa = PBXBuildFile; fileRef = 46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */; };
 		5832154BF8BC438D804CD999 /* ThemeSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF311551B144E45B07D9CCD /* ThemeSettingsView.swift */; };
 		969E53BC2BBB4C93AC790BF7 /* Utilities/ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99A1FB75E4F047E2882D19DC /* Utilities/ThemeManager.swift */; };
@@ -147,6 +149,8 @@
 		46394F842EFC8C7B009D5194 /* PHTVLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PHTVLogger.swift; sourceTree = "<group>"; };
 		46394F872EFC8C7B009D5195 /* ClaudeCodePatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeCodePatcher.swift; sourceTree = "<group>"; };
 		46413AED2EEF7EB300278BFB /* update.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = update.json; sourceTree = "<group>"; };
+		46ABBBAE2EFD67B00003CBB5 /* SparkleManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SparkleManager.h; sourceTree = "<group>"; };
+		46ABBBAF2EFD67B00003CBB5 /* SparkleManager.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = SparkleManager.mm; sourceTree = "<group>"; };
 		46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = PHTV.icon; sourceTree = "<group>"; };
 		46EF4FFB2EEDC0A200DF8DD1 /* PHTV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PHTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8E55895C7C4348BCA1ABE9E7 /* Utilities/ColorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities/ColorExtension.swift; sourceTree = "<group>"; };
@@ -187,6 +191,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				46ABBBAA2EFD67680003CBB5 /* Sparkle in Frameworks */,
 				A534F32629D8B78100296F25 /* Carbon.framework in Frameworks */,
 				A534F32629D8B78100296F26 /* QuartzCore.framework in Frameworks */,
 				233C4A6E231F923D00DD7052 /* AppKit.framework in Frameworks */,
@@ -306,6 +311,8 @@
 		E1A1A2A12025120000000011 /* Application */ = {
 			isa = PBXGroup;
 			children = (
+				46ABBBAE2EFD67B00003CBB5 /* SparkleManager.h */,
+				46ABBBAF2EFD67B00003CBB5 /* SparkleManager.mm */,
 				232EDA5721F1B33E0085D362 /* AppDelegate.h */,
 				232EDA5821F1B33E0085D362 /* AppDelegate.mm */,
 				232EDA6321F1B33F0085D362 /* main.m */,
@@ -498,6 +505,9 @@
 				Base,
 			);
 			mainGroup = 232EDA4B21F1B33E0085D362;
+			packageReferences = (
+				46ABBBA82EFD67680003CBB5 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			productRefGroup = 232EDA4B21F1B33E0085D362;
 			projectDirPath = "";
 			projectRoot = "";
@@ -582,6 +592,7 @@
 				F1A1A1E12025130100000035 /* SettingsObserver.swift in Sources */,
 				F1A1A1E32025130100000037 /* ReloadHelpers.swift in Sources */,
 				DB799B68D74F4B3AA863B03A /* AdvancedSettingsView.swift in Sources */,
+				46ABBBB02EFD67B00003CBB5 /* SparkleManager.mm in Sources */,
 				015CCFFEF0134F81976FCAB6 /* HotkeySettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -648,7 +659,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				ONLY_ACTIVE_ARCH = YES;
+				ONLY_ACTIVE_ARCH = NO;
 				SDKROOT = macosx;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_VERSION = 6.0;
@@ -708,6 +719,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = NO;
 				SDKROOT = macosx;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -720,14 +732,22 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = PHTV;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				AUTOMATION_APPLE_EVENTS = NO;
 				CLANG_ENABLE_MODULES = NO;
 				CODE_SIGN_IDENTITY = "-";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1.2.4;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = "";
-				ENABLE_HARDENED_RUNTIME = NO;
+				DEVELOPMENT_TEAM = F9XPW22T8M;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/PHTV/Core/Engine";
 				INFOPLIST_FILE = PHTV/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
@@ -740,6 +760,12 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.phamhungtien.phtv;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
+				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
+				RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY = NO;
+				RUNTIME_EXCEPTION_DEBUGGING_TOOL = NO;
+				RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION = NO;
+				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "PHTV/PHTV-Bridging-Header.h";
 			};
 			name = Debug;
@@ -749,14 +775,22 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = PHTV;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				AUTOMATION_APPLE_EVENTS = NO;
 				CLANG_ENABLE_MODULES = NO;
 				CODE_SIGN_IDENTITY = "-";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1.2.4;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = "";
-				ENABLE_HARDENED_RUNTIME = NO;
+				DEVELOPMENT_TEAM = F9XPW22T8M;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/PHTV/Core/Engine";
 				INFOPLIST_FILE = PHTV/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
@@ -769,6 +803,12 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.phamhungtien.phtv;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
+				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
+				RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY = NO;
+				RUNTIME_EXCEPTION_DEBUGGING_TOOL = NO;
+				RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION = NO;
+				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
 				SWIFT_OBJC_BRIDGING_HEADER = "PHTV/PHTV-Bridging-Header.h";
 			};
 			name = Release;
@@ -795,6 +835,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		46ABBBA82EFD67680003CBB5 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.8.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		46ABBBA92EFD67680003CBB5 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 46ABBBA82EFD67680003CBB5 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 232EDA4C21F1B33E0085D362 /* Project object */;
 }

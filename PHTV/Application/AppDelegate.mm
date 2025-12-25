@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #import "AppDelegate.h"
+#import "SparkleManager.h"
 #import "../Managers/PHTVManager.h"
 #import "../Utils/MJAccessibilityUtils.h"
 #import "../Utils/UsageStats.h"
@@ -567,12 +568,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
             }
         }
         [self setQuickConvertString];
-        
-        // Check for updates on startup with a delay to not impact app startup performance
-        // Default: check on every startup unless last check was today
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            [self checkForUpdatesOnStartup];
-        });
+
+        // Initialize Sparkle auto-updater
+        [[SparkleManager shared] checkForUpdates];
     });
     
     //load default config if is first launch
@@ -1094,195 +1092,54 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     }
 }
 
-- (void)handleCheckForUpdates:(NSNotification *)notification {
-    // Check for updates from GitHub API
-    NSString *currentVersion = [[NSBundle mainBundle] infoDictionary][@"CFBundleShortVersionString"];
-    
-    NSLog(@"[Update Check] ========================================");
-    NSLog(@"[Update Check] Starting update check...");
-    NSLog(@"[Update Check] Current version: %@", currentVersion);
-    
-    // Fetch latest release from GitHub API
-    NSURL *url = [NSURL URLWithString:@"https://api.github.com/repos/PhamHungTien/PHTV/releases/latest"];
-    NSLog(@"[Update Check] Fetching from URL: %@", url);
-    
-    NSURLRequest *request = [NSURLRequest requestWithURL:url 
-                                              cachePolicy:NSURLRequestReloadIgnoringLocalCacheData 
-                                          timeoutInterval:15.0];
-    
-    // Create configuration to allow HTTP/HTTPS and ensure proper timeout
-    NSURLSessionConfiguration *config = [NSURLSessionConfiguration defaultSessionConfiguration];
-    config.timeoutIntervalForRequest = 15.0;
-    config.timeoutIntervalForResource = 30.0;
-    config.waitsForConnectivity = YES;
-    
-    NSURLSession *session = [NSURLSession sessionWithConfiguration:config];
-    
-    NSLog(@"[Update Check] Starting network request...");
-    
-    NSURLSessionDataTask *dataTask = [session dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        NSLog(@"[Update Check] Network request completed");
-        
-        dispatch_async(dispatch_get_main_queue(), ^{
-            NSDictionary *responseDict = nil;
-            
-            // Check HTTP response status
-            if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
-                NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
-                NSLog(@"[Update Check] HTTP Status Code: %ld", (long)httpResponse.statusCode);
-                
-                if (httpResponse.statusCode != 200) {
-                    NSLog(@"[Update Check] ERROR: HTTP Status %ld", (long)httpResponse.statusCode);
-                    responseDict = @{
-                        @"message": [NSString stringWithFormat:@"Lỗi GitHub API (Status %ld)", (long)httpResponse.statusCode],
-                        @"isError": @YES,
-                        @"updateAvailable": @NO
-                    };
-                }
-            }
-            
-            if (error) {
-                NSLog(@"[Update Check] ERROR: Network request failed");
-                NSLog(@"[Update Check] Error Code: %ld", (long)error.code);
-                NSLog(@"[Update Check] Error Domain: %@", error.domain);
-                NSLog(@"[Update Check] Error Description: %@", error.localizedDescription);
-                NSLog(@"[Update Check] Error Details: %@", error.userInfo);
-                
-                // Distinguish between different error types
-                NSString *errorMsg = @"Không thể kết nối để kiểm tra cập nhật";
-                
-                if (error.code == NSURLErrorTimedOut || error.code == NSURLErrorNetworkConnectionLost) {
-                    errorMsg = @"Kết nối bị timeout. Vui lòng kiểm tra internet.";
-                } else if (error.code == NSURLErrorNotConnectedToInternet) {
-                    errorMsg = @"Không có kết nối internet";
-                } else if (error.code == NSURLErrorDNSLookupFailed) {
-                    errorMsg = @"Không thể kết nối DNS. Vui lòng kiểm tra internet.";
-                }
-                
-                responseDict = @{
-                    @"message": errorMsg,
-                    @"isError": @YES,
-                    @"updateAvailable": @NO
-                };
-            } else if (!data) {
-                NSLog(@"[Update Check] ERROR: No data received from GitHub API");
-                responseDict = @{
-                    @"message": @"Lỗi: Không nhận được dữ liệu từ GitHub",
-                    @"isError": @YES,
-                    @"updateAvailable": @NO
-                };
-            } else if (!responseDict) {  // Only parse if no error encountered
-                NSLog(@"[Update Check] Parsing JSON response (%lu bytes)...", (unsigned long)data.length);
-                
-                // Parse JSON response
-                NSError *parseError = nil;
-                NSDictionary *jsonResponse = [NSJSONSerialization JSONObjectWithData:data options:0 error:&parseError];
-                
-                if (parseError) {
-                    NSLog(@"[Update Check] ERROR: Failed to parse GitHub response: %@", parseError);
-                    responseDict = @{
-                        @"message": @"Lỗi: Không thể phân tích phản hồi từ GitHub",
-                        @"isError": @YES,
-                        @"updateAvailable": @NO
-                    };
-                } else if (!jsonResponse || ![jsonResponse isKindOfClass:[NSDictionary class]]) {
-                    NSLog(@"[Update Check] ERROR: Invalid GitHub response format");
-                    NSLog(@"[Update Check] Response type: %@", NSStringFromClass([jsonResponse class]));
-                    responseDict = @{
-                        @"message": @"Lỗi: Phản hồi từ GitHub không hợp lệ",
-                        @"isError": @YES,
-                        @"updateAvailable": @NO
-                    };
-                } else if (jsonResponse[@"message"] && [jsonResponse[@"message"] isKindOfClass:[NSString class]]) {
-                    // GitHub API error (e.g., rate limit)
-                    NSLog(@"[Update Check] GitHub API Error: %@", jsonResponse[@"message"]);
-                    responseDict = @{
-                        @"message": [NSString stringWithFormat:@"Lỗi GitHub API: %@", jsonResponse[@"message"]],
-                        @"isError": @YES,
-                        @"updateAvailable": @NO
-                    };
-                } else {
-                    // Extract version from tag_name (e.g., "v1.0.0" -> "1.0.0")
-                    NSString *tagName = jsonResponse[@"tag_name"];
-                    NSString *latestVersion = tagName;
-                    
-                    NSLog(@"[Update Check] Tag name from GitHub: %@", tagName);
-                    
-                    // Remove 'v' prefix if present
-                    if ([latestVersion hasPrefix:@"v"]) {
-                        latestVersion = [latestVersion substringFromIndex:1];
-                    }
-                    
-                    NSLog(@"[Update Check] Latest version: %@", latestVersion);
-                    
-                    // Compare versions
-                    NSComparisonResult comparison = [currentVersion compare:latestVersion options:NSNumericSearch];
-                    NSLog(@"[Update Check] Version comparison result: %ld", (long)comparison);
-                    
-                    if (comparison == NSOrderedAscending) {
-                        // Current version is older than latest
-                        NSString *releaseNotes = jsonResponse[@"name"] ?: @"";
-                        responseDict = @{
-                            @"message": [NSString stringWithFormat:@"Phiên bản mới %@ có sẵn.\n\n%@", latestVersion, releaseNotes],
-                            @"isError": @NO,
-                            @"updateAvailable": @YES,
-                            @"latestVersion": latestVersion,
-                            @"downloadUrl": @"https://github.com/PhamHungTien/PHTV/releases/latest"
-                        };
-                        NSLog(@"[Update Check] Update available: %@", latestVersion);
-                    } else {
-                        // Current version is up to date
-                        responseDict = @{
-                            @"message": [NSString stringWithFormat:@"Phiên bản hiện tại (%@) là mới nhất", currentVersion],
-                            @"isError": @NO,
-                            @"updateAvailable": @NO
-                        };
-                        NSLog(@"[Update Check] App is up to date");
-                    }
-                }
-            }
-            
-            NSLog(@"[Update Check] Posting response: %@", responseDict[@"message"]);
-            NSLog(@"[Update Check] ========================================");
-            
-            // Post response notification
-            [[NSNotificationCenter defaultCenter] postNotificationName:@"CheckForUpdatesResponse"
-                                                                object:responseDict];
-        });
-    }];
-    
-    [dataTask resume];
+#pragma mark - Sparkle Update Handlers
+
+- (void)handleSparkleManualCheck:(NSNotification *)notification {
+    NSLog(@"[Sparkle] Manual check requested from UI");
+    [[SparkleManager shared] checkForUpdates];
 }
 
-- (void)checkForUpdatesOnStartup {
-    // Check for updates on app startup, but only once per day to avoid excessive network calls
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    NSDate *lastUpdateCheck = [defaults objectForKey:@"LastUpdateCheckDate"];
-    NSDate *today = [NSDate date];
-    
-    // Check if we should skip the update check (already checked today)
-    if (lastUpdateCheck) {
-        NSCalendar *calendar = [NSCalendar currentCalendar];
-        NSDateComponents *components = [calendar components:NSCalendarUnitDay 
-                                                   fromDate:lastUpdateCheck 
-                                                     toDate:today 
-                                                    options:0];
-        
-        if (components.day < 1) {
-            // Already checked today, skip
-            NSLog(@"[Update Check Startup] Skipped - already checked today");
-            return;
-        }
+- (void)handleSparkleUpdateFound:(NSNotification *)notification {
+    NSDictionary *updateInfo = notification.object;
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        // Forward to SwiftUI in legacy format for compatibility
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"CheckForUpdatesResponse"
+                                                            object:@{
+            @"message": [NSString stringWithFormat:@"Phiên bản mới %@ có sẵn", updateInfo[@"version"]],
+            @"isError": @NO,
+            @"updateAvailable": @YES,
+            @"latestVersion": updateInfo[@"version"],
+            @"downloadUrl": updateInfo[@"downloadURL"],
+            @"releaseNotes": updateInfo[@"releaseNotes"]
+        }];
+    });
+}
+
+- (void)handleSparkleNoUpdate:(NSNotification *)notification {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSString *currentVersion = [[NSBundle mainBundle] infoDictionary][@"CFBundleShortVersionString"];
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"CheckForUpdatesResponse"
+                                                            object:@{
+            @"message": [NSString stringWithFormat:@"Phiên bản hiện tại (%@) là mới nhất", currentVersion],
+            @"isError": @NO,
+            @"updateAvailable": @NO
+        }];
+    });
+}
+
+- (void)handleUpdateFrequencyChanged:(NSNotification *)notification {
+    if (NSNumber *interval = notification.object) {
+        NSLog(@"[Sparkle] Update frequency changed to: %.0f seconds", [interval doubleValue]);
+        [[SparkleManager shared] setUpdateCheckInterval:[interval doubleValue]];
     }
-    
-    // Record this check
-    [defaults setObject:today forKey:@"LastUpdateCheckDate"];
-    [defaults synchronize];
-    
-    NSLog(@"[Update Check Startup] Running automatic update check...");
-    
-    // Perform the actual update check
-    [self handleCheckForUpdates:nil];
+}
+
+- (void)handleBetaChannelChanged:(NSNotification *)notification {
+    if (NSNumber *enabled = notification.object) {
+        NSLog(@"[Sparkle] Beta channel changed to: %@", [enabled boolValue] ? @"ENABLED" : @"DISABLED");
+        [[SparkleManager shared] setBetaChannelEnabled:[enabled boolValue]];
+    }
 }
 
 - (void)handleSettingsReset:(NSNotification *)notification {
@@ -2375,5 +2232,31 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                                                                                          selector:@selector(handleUserDefaultsDidChange:)
                                                                                                  name:NSUserDefaultsDidChangeNotification
                                                                                              object:NULL];
+
+    // Sparkle update notifications
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleSparkleManualCheck:)
+                                                 name:@"CheckForUpdates"
+                                               object:NULL];
+
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleSparkleUpdateFound:)
+                                                 name:@"SparkleUpdateFound"
+                                               object:NULL];
+
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleSparkleNoUpdate:)
+                                                 name:@"SparkleNoUpdateFound"
+                                               object:NULL];
+
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleUpdateFrequencyChanged:)
+                                                 name:@"UpdateCheckFrequencyChanged"
+                                               object:NULL];
+
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleBetaChannelChanged:)
+                                                 name:@"BetaChannelChanged"
+                                               object:NULL];
 }
 @end

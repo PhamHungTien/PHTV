@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <channel>
+        <title>PHTV Updates</title>
+        <link>https://github.com/PhamHungTien/PHTV</link>
+        <description>PHTV - Bộ gõ tiếng Việt cho macOS</description>
+        <language>vi</language>
+
+        <!-- Most recent version first -->
+        <item>
+            <title>PHTV 1.2.4</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.2.4</link>
+            <sparkle:version>1.2.4</sparkle:version>
+            <sparkle:shortVersionString>1.2.4</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h3>Cải tiến Claude Code Patcher</h3>
+                <p>Phiên bản này cải tiến đáng kể tính năng <strong>Claude Code Patcher</strong> - giúp việc chuyển đổi từ Homebrew sang npm và vá lỗi gõ tiếng Việt ổn định hơn.</p>
+
+                <h4>Tính năng mới</h4>
+
+                <p><strong>🔧 Cải thiện phát hiện Homebrew</strong></p>
+                <ul>
+                    <li>Tìm brew đa nền tảng: Tự động tìm brew tại /opt/homebrew/bin (Apple Silicon), /usr/local/bin (Intel), và Linux</li>
+                    <li>Fallback với which brew: Nếu không tìm thấy brew ở các đường dẫn thông thường</li>
+                    <li>Nhiều lệnh uninstall: Thử nhiều cách gỡ Homebrew (với/không --cask, với/không --force)</li>
+                    <li>Xóa symlink thừa: Tự động xóa symlink còn sót lại sau khi gỡ Homebrew</li>
+                </ul>
+
+                <p><strong>📦 Hỗ trợ Node.js managers</strong></p>
+                <ul>
+                    <li>Hỗ trợ fnm: Ngoài nvm, giờ còn hỗ trợ Fast Node Manager (fnm)</li>
+                    <li>PATH đầy đủ: Build đường dẫn PATH đầy đủ khi chạy npm để tránh lỗi</li>
+                    <li>npm prefix cho nvm: Tự động cấu hình npm_config_prefix đúng cho nvm</li>
+                </ul>
+
+                <p><strong>🛠️ Cài đặt thủ công qua Terminal</strong></p>
+                <ul>
+                    <li>Nút "Mở Terminal": Khi cài đặt tự động thất bại, hiển thị nút mở Terminal với lệnh sẵn</li>
+                    <li>Chi tiết lỗi npm: Hiển thị lỗi npm đầy đủ để debug dễ hơn</li>
+                    <li>Hướng dẫn cài thủ công: Hiển thị lệnh cài đặt thủ công nếu tự động không thành công</li>
+                </ul>
+
+                <h4>Sửa lỗi</h4>
+                <ul>
+                    <li>Sửa lỗi không tìm thấy brew: Trước đây hardcode /opt/homebrew/bin/brew, giờ tìm động</li>
+                    <li>Sửa lỗi npm không chạy được: Cải thiện environment variables khi gọi npm</li>
+                    <li>Sửa lỗi gỡ Homebrew không sạch: Xử lý các trường hợp symlink còn tồn tại</li>
+                </ul>
+            ]]></description>
+            <pubDate>Wed, 25 Dec 2024 14:48:00 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.2.4/PHTV-1.2.4.dmg"
+                sparkle:version="1.2.4"
+                sparkle:shortVersionString="1.2.4"
+                sparkle:edSignature="SIGNATURE_WILL_BE_GENERATED_BY_SIGN_SCRIPT"
+                length="10485760"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <!-- Add previous versions below as you release new versions -->
+
+    </channel>
+</rss>
