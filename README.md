@@ -12,8 +12,9 @@
 [![Swift 6.0+](https://img.shields.io/badge/Swift-6.0+-orange.svg)](https://swift.org)
 [![GitHub release](https://img.shields.io/github/v/release/PhamHungTien/PHTV)](../../releases/latest)
 [![GitHub stars](https://img.shields.io/github/stars/PhamHungTien/PHTV)](../../stargazers)
+[![Sponsor](https://img.shields.io/badge/❤️_Sponsor-PHTV-ea4aaa?style=flat&logo=github-sponsors)](https://phamhungtien.github.io/PHTV/donate.html)
 
-[**Tải về**](https://phamhungtien.com/PHTV/) | [**Tài liệu**](INSTALL.md) | [**Báo lỗi**](../../issues) | [**FAQ**](FAQ.md)
+[**Tải về**](https://phamhungtien.com/PHTV/) | [**Tài liệu**](INSTALL.md) | [**Báo lỗi**](../../issues) | [**FAQ**](FAQ.md) | [**☕ Ủng hộ**](https://phamhungtien.github.io/PHTV/donate.html)
 
 </div>
 

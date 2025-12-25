@@ -1,0 +1,65 @@
+# Git attributes for PHTV project
+# https://git-scm.com/docs/gitattributes
+
+# Auto detect text files and normalize line endings to LF
+* text=auto eol=lf
+
+# Source code
+*.swift text diff=swift
+*.h text
+*.m text
+*.mm text
+*.c text
+*.cpp text
+*.hpp text
+
+# Documentation
+*.md text diff=markdown
+*.markdown text diff=markdown
+*.txt text
+
+# Configuration files
+*.json text
+*.xml text
+*.plist text
+*.xcconfig text
+*.yml text
+*.yaml text
+.gitignore text
+.gitattributes text
+
+# Shell scripts
+*.sh text eol=lf
+*.bash text eol=lf
+*.zsh text eol=lf
+
+# Web files
+*.html text diff=html
+*.css text
+*.js text
+*.ts text
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.icns binary
+*.pdf binary
+*.dmg binary
+*.zip binary
+*.pkg binary
+*.app binary
+
+# Xcode
+*.pbxproj merge=union
+*.xcworkspace binary
+*.xcuserstate binary
+*.xcscheme text
+
+# Fonts
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
