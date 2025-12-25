@@ -1096,7 +1096,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
 - (void)handleSparkleManualCheck:(NSNotification *)notification {
     NSLog(@"[Sparkle] Manual check requested from UI");
-    [[SparkleManager shared] checkForUpdates];
+    [[SparkleManager shared] checkForUpdatesWithFeedback];
 }
 
 - (void)handleSparkleUpdateFound:(NSNotification *)notification {

@@ -17,7 +17,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (instancetype)shared;
 
-/// Manually trigger update check
+/// Manually trigger update check (user-initiated, shows feedback)
+- (void)checkForUpdatesWithFeedback;
+
+/// Background update check (silent)
 - (void)checkForUpdates;
 
 /// Configure update check interval in seconds

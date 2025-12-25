@@ -41,8 +41,15 @@
     return self;
 }
 
+- (void)checkForUpdatesWithFeedback {
+    NSLog(@"[Sparkle] User-initiated update check (with feedback)");
+    // Pass self as sender so Sparkle knows this is user-initiated
+    // This will show "You're up to date!" dialog when no update found
+    [self.updaterController checkForUpdates:self];
+}
+
 - (void)checkForUpdates {
-    NSLog(@"[Sparkle] Manual update check triggered");
+    NSLog(@"[Sparkle] Background update check (silent)");
     [self.updaterController checkForUpdates:nil];
 }
 

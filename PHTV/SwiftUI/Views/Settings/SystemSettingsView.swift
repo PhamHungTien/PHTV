@@ -12,8 +12,6 @@ struct SystemSettingsView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var themeManager: ThemeManager
     @State private var showingResetAlert = false
-    @State private var showingUpdateStatus = false
-    @State private var updateStatusMessage = ""
 
     var body: some View {
         ScrollView {
@@ -222,15 +220,6 @@ struct SystemSettingsView: View {
         } message: {
             Text("Tất cả cài đặt sẽ được khôi phục về mặc định. Hành động này không thể hoàn tác.")
         }
-        .alert("Kiểm tra cập nhật", isPresented: $showingUpdateStatus) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(updateStatusMessage)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SparkleNoUpdateFound"))) { _ in
-            updateStatusMessage = "Phiên bản hiện tại (\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")) đã là mới nhất"
-            showingUpdateStatus = true
-        }
     }
 
     private func resetToDefaults() {
@@ -249,18 +238,12 @@ struct SystemSettingsView: View {
     }
 
     private func checkForUpdates() {
-        // Show immediate feedback
-        updateStatusMessage = "Đang kiểm tra cập nhật..."
-        showingUpdateStatus = true
-
         // Trigger Sparkle update check
-        // Sparkle will handle the UI via UpdateBannerView or show alert when no update
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            NotificationCenter.default.post(
-                name: NSNotification.Name("SparkleManualCheck"),
-                object: nil
-            )
-        }
+        // Sparkle will handle the UI via UpdateBannerView or notification when no update
+        NotificationCenter.default.post(
+            name: NSNotification.Name("SparkleManualCheck"),
+            object: nil
+        )
     }
 }
 
