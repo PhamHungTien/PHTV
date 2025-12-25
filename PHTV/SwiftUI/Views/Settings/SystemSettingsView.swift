@@ -12,12 +12,6 @@ struct SystemSettingsView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var themeManager: ThemeManager
     @State private var showingResetAlert = false
-    @State private var showingUpdateCheckStatus = false
-    @State private var updateCheckMessage = ""
-    @State private var updateCheckIsError = false
-    @State private var isCheckingForUpdates = false
-    @State private var updateDownloadUrl: String?
-    @State private var updateCheckTimeoutTask: Task<Void, Never>?
 
     var body: some View {
         ScrollView {
@@ -188,11 +182,10 @@ struct SystemSettingsView: View {
 
                         // Manual check
                         SettingsButtonRow(
-                            icon: isCheckingForUpdates ? "hourglass.circle.fill" : "arrow.clockwise.circle.fill",
+                            icon: "arrow.clockwise.circle.fill",
                             iconColor: themeManager.themeColor,
-                            title: isCheckingForUpdates ? "Đang kiểm tra..." : "Kiểm tra cập nhật",
+                            title: "Kiểm tra cập nhật",
                             subtitle: "Tìm phiên bản mới ngay bây giờ",
-                            isLoading: isCheckingForUpdates,
                             action: checkForUpdates
                         )
                     }
@@ -227,28 +220,6 @@ struct SystemSettingsView: View {
         } message: {
             Text("Tất cả cài đặt sẽ được khôi phục về mặc định. Hành động này không thể hoàn tác.")
         }
-        .alert("Kiểm tra cập nhật", isPresented: $showingUpdateCheckStatus) {
-            if !updateCheckIsError && updateCheckMessage.contains("có sẵn") {
-                Button("Hủy", role: .cancel) {}
-                Button("Tải xuống") {
-                    // Use dynamic download URL from backend response
-                    let urlString = updateDownloadUrl ?? "https://github.com/PhamHungTien/PHTV/releases/latest"
-                    if let url = URL(string: urlString) {
-                        NSWorkspace.shared.open(url)
-                    }
-                }
-            } else {
-                Button("OK") {}
-            }
-        } message: {
-            Text(updateCheckMessage)
-        }
-        .onReceive(
-            NotificationCenter.default.publisher(
-                for: NSNotification.Name("CheckForUpdatesResponse"))
-        ) { notification in
-            handleUpdateCheckResponse(notification)
-        }
     }
 
     private func resetToDefaults() {
@@ -267,59 +238,12 @@ struct SystemSettingsView: View {
     }
 
     private func checkForUpdates() {
-        // Cancel any existing timeout task
-        updateCheckTimeoutTask?.cancel()
-
-        isCheckingForUpdates = true
-        updateCheckMessage = ""
-        updateCheckIsError = false
-        updateDownloadUrl = nil
-
-        // Set up timeout handler (30 seconds)
-        updateCheckTimeoutTask = Task {
-            try? await Task.sleep(nanoseconds: 30_000_000_000) // 30 seconds
-
-            guard !Task.isCancelled else { return }
-
-            await MainActor.run {
-                if isCheckingForUpdates {
-                    isCheckingForUpdates = false
-                    updateCheckMessage = "Timeout: Không nhận được phản hồi từ server sau 30 giây"
-                    updateCheckIsError = true
-                    showingUpdateCheckStatus = true
-                }
-            }
-        }
-
         // Trigger Sparkle update check
+        // Sparkle will handle the UI via UpdateBannerView or show native dialog
         NotificationCenter.default.post(
             name: NSNotification.Name("SparkleManualCheck"),
             object: nil
         )
-    }
-
-    private func handleUpdateCheckResponse(_ notification: Notification) {
-        // Cancel timeout task since we received a response
-        updateCheckTimeoutTask?.cancel()
-        updateCheckTimeoutTask = nil
-
-        isCheckingForUpdates = false
-
-        if let response = notification.object as? [String: Any] {
-            if let message = response["message"] as? String {
-                updateCheckMessage = message
-            }
-            if let isError = response["isError"] as? Bool {
-                updateCheckIsError = isError
-            }
-            if let downloadUrl = response["downloadUrl"] as? String {
-                updateDownloadUrl = downloadUrl
-            }
-        } else {
-            updateCheckMessage = "Phiên bản hiện tại là mới nhất"
-        }
-
-        showingUpdateCheckStatus = true
     }
 }
 
