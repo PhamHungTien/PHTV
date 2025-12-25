@@ -327,23 +327,11 @@ struct SystemSettingsView: View {
             }
         }
 
-        // Trigger backend to check for updates via GitHub API
-        // Get AppDelegate using global function
-        if let appDelegate = GetAppDelegateInstance() {
-            // Call on main thread to ensure it runs
-            // Note: handleCheck expects NSNotification but we can pass a dummy one
-            let dummyNotification = Notification(name: NSNotification.Name("CheckForUpdates"))
-            DispatchQueue.main.async {
-                appDelegate.handleCheck(forUpdates: dummyNotification)
-            }
-        } else {
-            // Show immediate error to user
-            updateCheckTimeoutTask?.cancel()
-            isCheckingForUpdates = false
-            updateCheckMessage = "Lỗi: Không thể lấy AppDelegate instance (app chưa khởi tạo xong)"
-            updateCheckIsError = true
-            showingUpdateCheckStatus = true
-        }
+        // Trigger Sparkle update check
+        NotificationCenter.default.post(
+            name: NSNotification.Name("SparkleManualCheck"),
+            object: nil
+        )
     }
 
     private func handleUpdateCheckResponse(_ notification: Notification) {

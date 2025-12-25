@@ -42,7 +42,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)handleAccessibilityRevoked;
 - (void)setupSwiftUIBridge;
 - (void)loadExistingMacros;
-- (void)handleCheckForUpdates:(NSNotification * _Nullable)notification;
 - (void)handleSettingsReset:(NSNotification * _Nullable)notification;
 
 @end
