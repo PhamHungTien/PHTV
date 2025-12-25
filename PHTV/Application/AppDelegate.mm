@@ -650,12 +650,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                                              selector:@selector(handleMacrosUpdated:)
                                                  name:@"MacrosUpdated"
                                                object:nil];
-    
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(handleCheckForUpdates:)
-                                                 name:@"CheckForUpdates"
-                                               object:nil];
-    
+
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(handleSettingsReset:)
                                                  name:@"SettingsReset"
