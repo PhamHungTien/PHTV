@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="PHTV/Resources/icon.png" alt="PHTV Icon" width="128" height="128">
+<img src="Resources/icon.png" alt="PHTV Icon" width="128" height="128">
 
 # PHTV — Precision Hybrid Typing Vietnamese
 
@@ -77,11 +77,11 @@
 <table>
 <tr>
 <td width="50%">
-<img src="PHTV/Resources/UI/menu-input-methods.png" alt="Các kiểu gõ trên menu bar" width="100%">
+<img src="Resources/UI/menu-input-methods.png" alt="Các kiểu gõ trên menu bar" width="100%">
 <p align="center"><em>Các kiểu gõ trên menu bar</em></p>
 </td>
 <td width="50%">
-<img src="PHTV/Resources/UI/menu-charset.png" alt="Các bảng mã trên menu bar" width="100%">
+<img src="Resources/UI/menu-charset.png" alt="Các bảng mã trên menu bar" width="100%">
 <p align="center"><em>Các bảng mã trên menu bar</em></p>
 </td>
 </tr>
@@ -92,15 +92,15 @@
 <table>
 <tr>
 <td width="33%">
-<img src="PHTV/Resources/UI/settings-typing.png" alt="Settings - Typing" width="100%">
+<img src="Resources/UI/settings-typing.png" alt="Settings - Typing" width="100%">
 <p align="center"><em>Typing Settings</em></p>
 </td>
 <td width="33%">
-<img src="PHTV/Resources/UI/settings-macros.png" alt="Settings - Macros" width="100%">
+<img src="Resources/UI/settings-macros.png" alt="Settings - Macros" width="100%">
 <p align="center"><em>Macros Settings</em></p>
 </td>
 <td width="33%">
-<img src="PHTV/Resources/UI/settings-system.png" alt="Settings - System" width="100%">
+<img src="Resources/UI/settings-system.png" alt="Settings - System" width="100%">
 <p align="center"><em>System Settings</em></p>
 </td>
 </tr>

@@ -21,19 +21,19 @@
 <div align="center">
 
 **Bước 1: Tải về**
-<img src="PHTV/Resources/Setup/step1-download.png" alt="Tải PHTV" width="70%">
+<img src="Resources/Setup/step1-download.png" alt="Tải PHTV" width="70%">
 
 **Bước 2: Mở ứng dụng**
-<img src="PHTV/Resources/Setup/step2-open.png" alt="Mở PHTV" width="70%">
+<img src="Resources/Setup/step2-open.png" alt="Mở PHTV" width="70%">
 
 **Bước 3: Yêu cầu quyền**
-<img src="PHTV/Resources/Setup/step3-permissions.png" alt="Yêu cầu Accessibility" width="70%">
+<img src="Resources/Setup/step3-permissions.png" alt="Yêu cầu Accessibility" width="70%">
 
 **Bước 4: Cấp quyền Accessibility**
-<img src="PHTV/Resources/Setup/step4-grant-access.png" alt="Cấp quyền" width="70%">
+<img src="Resources/Setup/step4-grant-access.png" alt="Cấp quyền" width="70%">
 
 **Bước 5: Hoàn tất**
-<img src="PHTV/Resources/Setup/step5-complete.png" alt="Hoàn tất cài đặt" width="70%">
+<img src="Resources/Setup/step5-complete.png" alt="Hoàn tất cài đặt" width="70%">
 
 </div>
 
