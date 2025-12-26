@@ -105,29 +105,70 @@ Tải file `.dmg` từ [GitHub Releases](https://github.com/PhamHungTien/PHTV/re
 
 ## Bước 6: Cập nhật Cask cho phiên bản mới (tương lai)
 
+### Phương pháp 1: Tự động (Khuyến nghị)
+
+Sử dụng script tự động `scripts/update_homebrew.sh`:
+
+```bash
+# Sau khi build và release version mới
+./scripts/update_homebrew.sh
+```
+
+Script sẽ:
+- Đọc version từ `Info.plist`
+- Tìm file DMG tương ứng trong `Releases/VERSION/`
+- Tính SHA256 checksum
+- Cập nhật `homebrew/phtv.rb` tự động
+- Chạy style check và syntax validation
+
+Sau đó commit và push:
+```bash
+git add homebrew/phtv.rb
+git commit -m "chore: update homebrew formula to v1.2.7"
+git push
+```
+
+### Phương pháp 2: Thủ công
+
 Khi release version mới (ví dụ 1.2.7):
 
 1. Upload file `PHTV-1.2.7.dmg` lên GitHub Release
 2. Tính SHA256:
    ```bash
-   shasum -a 256 PHTV-1.2.7.dmg
+   shasum -a 256 Releases/1.2.7/PHTV-1.2.7.dmg
    ```
-3. Cập nhật `Casks/phtv.rb`:
+3. Cập nhật `homebrew/phtv.rb`:
    ```ruby
    version "1.2.7"
    sha256 "new_sha256_here"
    ```
 4. Commit và push:
    ```bash
-   git add Casks/phtv.rb
-   git commit -m "Update PHTV to v1.2.7"
+   git add homebrew/phtv.rb
+   git commit -m "chore: update homebrew formula to v1.2.7"
    git push
    ```
-5. Người dùng sẽ update bằng:
-   ```bash
-   brew update
-   brew upgrade --cask phtv
-   ```
+
+### Sync với tap repository
+
+Sau khi cập nhật formula trong repo chính, sync với tap repo:
+
+```bash
+# Copy formula mới sang tap repo
+cp homebrew/phtv.rb ~/Documents/homebrew-tap/Casks/phtv.rb
+
+# Commit và push trong tap repo
+cd ~/Documents/homebrew-tap
+git add Casks/phtv.rb
+git commit -m "chore: update PHTV to v1.2.7"
+git push
+```
+
+Người dùng sẽ update bằng:
+```bash
+brew update
+brew upgrade --cask phtv
+```
 
 ## Kiểm tra Cask syntax
 
