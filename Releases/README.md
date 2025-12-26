@@ -21,4 +21,4 @@ Mỗi phiên bản có một file `RELEASE_NOTES_X.Y.Z.md` riêng với:
 ## Xem thêm
 
 - [GitHub Releases](https://github.com/PhamHungTien/PHTV/releases)
-- [Appcast Feed](https://phamhungtien.github.io/PHTV/appcast.xml)
+- [Appcast Feed](https://phamhungtien.com/PHTV/appcast.xml)

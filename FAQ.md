@@ -29,7 +29,7 @@ brew install --cask phamhungtien/tap/phtv
 - Cập nhật dễ dàng: `brew upgrade --cask phtv`
 - Gỡ cài đặt sạch sẽ: `brew uninstall --cask phtv`
 
-Hoặc tải trực tiếp từ [phamhungtien.com/PHTV](https://phamhungtien.github.io/PHTV/) hoặc [GitHub Releases](https://github.com/PhamHungTien/PHTV/releases).
+Hoặc tải trực tiếp từ [phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/) hoặc [GitHub Releases](https://github.com/PhamHungTien/PHTV/releases).
 
 ### Q3: Làm sao để chuyển đổi giữa tiếng Anh và tiếng Việt?
 
