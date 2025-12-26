@@ -199,6 +199,20 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 - **Accessibility API** - Hỗ trợ Spotlight và các app đặc biệt
 - **NSUserDefaults** - Lưu trữ cấu hình local
 
+## Tài liệu
+
+### Người dùng
+- **[Cài đặt](INSTALL.md)** - Hướng dẫn cài đặt chi tiết
+- **[FAQ](FAQ.md)** - Các câu hỏi thường gặp
+- **[Homebrew](docs/homebrew/)** - Cài đặt qua Homebrew
+
+### Nhà phát triển
+- **[Documentation](docs/)** - Tài liệu đầy đủ
+- **[Automation](docs/automation/)** - Hệ thống automation Homebrew
+- **[Scripts](scripts/)** - Scripts tự động hóa
+- **[Contributing](CONTRIBUTING.md)** - Hướng dẫn đóng góp
+- **[Security](SECURITY.md)** - Chính sách bảo mật
+
 ## Đóng góp
 
 Mọi đóng góp đều được chào đón! Xem [CONTRIBUTING.md](CONTRIBUTING.md) để biết cách thức.
