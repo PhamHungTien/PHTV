@@ -12,7 +12,7 @@
 
 ## Tải xuống
 
-**[Tải PHTV từ phamhungtien.github.io/PHTV](https://phamhungtien.github.io/PHTV/)**
+**[Tải PHTV từ phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/)**
 
 ## Cách cài đặt
 
@@ -52,7 +52,7 @@ brew install --cask phamhungtien/tap/phtv
 
 ### Option 2: Từ Website
 
-1. Tải từ [phamhungtien.github.io/PHTV](https://phamhungtien.github.io/PHTV/)
+1. Tải từ [phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/)
 2. Mở file `.dmg`
 3. Drag `PHTV.app` vào `Applications`
 4. Khởi động từ Launchpad hoặc Spotlight
@@ -96,7 +96,7 @@ xcodebuild -scheme PHTV -configuration Release
 
 ## Tài liệu thêm
 
-- [Hướng dẫn chi tiết](https://phamhungtien.github.io/PHTV/#setup) - Video & Screenshots
+- [Hướng dẫn chi tiết](https://phamhungtien.com/PHTV/#setup) - Video & Screenshots
 - [Các tính năng](README.md#tính-năng)
 - [FAQ](FAQ.md) - Câu hỏi thường gặp
 - [Đóng góp](CONTRIBUTING.md)
