@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		015CCFFEF0134F81976FCAB6 /* HotkeySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3CCE6686B954309A3B65AAD /* HotkeySettingsView.swift */; };
+		16B982F63741372BF590C264 /* PHSilentUserDriver.m in Sources */ = {isa = PBXBuildFile; fileRef = 1366D9FE4F6A7BBD6B32B8BE /* PHSilentUserDriver.m */; };
 		232EDA5921F1B33E0085D362 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 232EDA5821F1B33E0085D362 /* AppDelegate.mm */; };
 		232EDA5E21F1B33F0085D362 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 232EDA5D21F1B33F0085D362 /* Assets.xcassets */; };
 		233C4A6E231F923D00DD7052 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 233C4A6D231F923D00DD7052 /* AppKit.framework */; };
@@ -51,14 +52,14 @@
 		46ABBBB02EFD67B00003CBB5 /* SparkleManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = 46ABBBAF2EFD67B00003CBB5 /* SparkleManager.mm */; };
 		46EF4FFA2EEDBFD400DF8DD1 /* PHTV.icon in Resources */ = {isa = PBXBuildFile; fileRef = 46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */; };
 		5832154BF8BC438D804CD999 /* ThemeSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF311551B144E45B07D9CCD /* ThemeSettingsView.swift */; };
-		969E53BC2BBB4C93AC790BF7 /* Utilities/ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99A1FB75E4F047E2882D19DC /* Utilities/ThemeManager.swift */; };
+		969E53BC2BBB4C93AC790BF7 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99A1FB75E4F047E2882D19DC /* ThemeManager.swift */; };
 		A534F32629D8B78100296F25 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23874B0F220160A500000BC8 /* Carbon.framework */; };
 		A534F32629D8B78100296F26 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23874B10220160A500000BC9 /* QuartzCore.framework */; };
 		DB799B68D74F4B3AA863B03A /* AdvancedSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5079BAE20074F51ADAB4E65 /* AdvancedSettingsView.swift */; };
 		E1A1A1A42025120200000002 /* UsageStats.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A32025120200000004 /* UsageStats.m */; };
 		E1A1A1A52025120200000005 /* PHTVConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A72025120200000007 /* PHTVConfig.m */; };
 		E1A1A1A62025120200000006 /* PHTVUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A92025120200000009 /* PHTVUtilities.m */; };
-		EF5EC6D461F146F7BB7B771B /* Utilities/ColorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E55895C7C4348BCA1ABE9E7 /* Utilities/ColorExtension.swift */; };
+		EF5EC6D461F146F7BB7B771B /* ColorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */; };
 		F1A1A1B12025130000000001 /* PHTPApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B22025130000000002 /* PHTPApp.swift */; };
 		F1A1A1B32025130000000003 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B42025130000000004 /* SettingsView.swift */; };
 		F1A1A1B52025130000000005 /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B62025130000000006 /* StatusBarController.swift */; };
@@ -96,6 +97,7 @@
 
 /* Begin PBXFileReference section */
 		0FF311551B144E45B07D9CCD /* ThemeSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeSettingsView.swift; sourceTree = "<group>"; };
+		1366D9FE4F6A7BBD6B32B8BE /* PHSilentUserDriver.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = PHSilentUserDriver.m; sourceTree = "<group>"; };
 		232EDA5721F1B33E0085D362 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		232EDA5821F1B33E0085D362 /* AppDelegate.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AppDelegate.mm; sourceTree = "<group>"; };
 		232EDA5D21F1B33F0085D362 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -129,6 +131,7 @@
 		23E2E49C2314FD3A006CCC3E /* SmartSwitchKey.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SmartSwitchKey.h; sourceTree = "<group>"; };
 		23F512832336386200397988 /* MJAccessibilityUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MJAccessibilityUtils.m; sourceTree = "<group>"; };
 		23F512842336386200397988 /* MJAccessibilityUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MJAccessibilityUtils.h; sourceTree = "<group>"; };
+		3B27EBB488B64D6C48DE34C7 /* PHSilentUserDriver.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = PHSilentUserDriver.h; sourceTree = "<group>"; };
 		461048612EF2DF22005AF5FC /* SendKeyStepByStepAppsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendKeyStepByStepAppsView.swift; sourceTree = "<group>"; };
 		46394F592EFA5D56009D5194 /* EnglishWordDetector.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = EnglishWordDetector.cpp; sourceTree = "<group>"; };
 		46394F5B2EFA5E8F009D5194 /* step1-download.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "step1-download.png"; sourceTree = "<group>"; };
@@ -155,8 +158,8 @@
 		46ABBBAF2EFD67B00003CBB5 /* SparkleManager.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = SparkleManager.mm; sourceTree = "<group>"; };
 		46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = PHTV.icon; sourceTree = "<group>"; };
 		46EF4FFB2EEDC0A200DF8DD1 /* PHTV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PHTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		8E55895C7C4348BCA1ABE9E7 /* Utilities/ColorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities/ColorExtension.swift; sourceTree = "<group>"; };
-		99A1FB75E4F047E2882D19DC /* Utilities/ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities/ThemeManager.swift; sourceTree = "<group>"; };
+		8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities/ColorExtension.swift; sourceTree = "<group>"; };
+		99A1FB75E4F047E2882D19DC /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities/ThemeManager.swift; sourceTree = "<group>"; };
 		D3CCE6686B954309A3B65AAD /* HotkeySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeySettingsView.swift; sourceTree = "<group>"; };
 		D5079BAE20074F51ADAB4E65 /* AdvancedSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedSettingsView.swift; sourceTree = "<group>"; };
 		E1A1A1A22025120100000003 /* UsageStats.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UsageStats.h; sourceTree = "<group>"; };
@@ -320,6 +323,8 @@
 				232EDA5721F1B33E0085D362 /* AppDelegate.h */,
 				232EDA5821F1B33E0085D362 /* AppDelegate.mm */,
 				232EDA6321F1B33F0085D362 /* main.m */,
+				3B27EBB488B64D6C48DE34C7 /* PHSilentUserDriver.h */,
+				1366D9FE4F6A7BBD6B32B8BE /* PHSilentUserDriver.m */,
 			);
 			path = Application;
 			sourceTree = "<group>";
@@ -384,8 +389,8 @@
 				F1A1A2A92025130000000019 /* Controllers */,
 				F1A1A2AA2025130000000020 /* Bridge */,
 				F1A1A2AB2025130000000021 /* Utilities */,
-				8E55895C7C4348BCA1ABE9E7 /* Utilities/ColorExtension.swift */,
-				99A1FB75E4F047E2882D19DC /* Utilities/ThemeManager.swift */,
+				8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */,
+				99A1FB75E4F047E2882D19DC /* ThemeManager.swift */,
 			);
 			path = SwiftUI;
 			sourceTree = "<group>";
@@ -558,8 +563,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EF5EC6D461F146F7BB7B771B /* Utilities/ColorExtension.swift in Sources */,
-				969E53BC2BBB4C93AC790BF7 /* Utilities/ThemeManager.swift in Sources */,
+				EF5EC6D461F146F7BB7B771B /* ColorExtension.swift in Sources */,
+				969E53BC2BBB4C93AC790BF7 /* ThemeManager.swift in Sources */,
 				5832154BF8BC438D804CD999 /* ThemeSettingsView.swift in Sources */,
 				23E2E49F2314FD3A006CCC3E /* Engine.cpp in Sources */,
 				23E2E49E2314FD3A006CCC3E /* SmartSwitchKey.cpp in Sources */,
@@ -602,6 +607,7 @@
 				DB799B68D74F4B3AA863B03A /* AdvancedSettingsView.swift in Sources */,
 				46ABBBB02EFD67B00003CBB5 /* SparkleManager.mm in Sources */,
 				015CCFFEF0134F81976FCAB6 /* HotkeySettingsView.swift in Sources */,
+				16B982F63741372BF590C264 /* PHSilentUserDriver.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -746,7 +752,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.2.6;
+				CURRENT_PROJECT_VERSION = 2;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = F9XPW22T8M;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -789,7 +795,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.2.6;
+				CURRENT_PROJECT_VERSION = 2;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = F9XPW22T8M;
 				ENABLE_HARDENED_RUNTIME = YES;

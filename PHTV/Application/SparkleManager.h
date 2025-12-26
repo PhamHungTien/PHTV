@@ -13,7 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface SparkleManager : NSObject <SPUUpdaterDelegate, SPUStandardUserDriverDelegate>
 
-@property (nonatomic, strong, readonly) SPUStandardUpdaterController *updaterController;
+@property (nonatomic, strong, readonly) SPUUpdater *updater;
 
 + (instancetype)shared;
 
