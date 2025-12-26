@@ -530,3 +530,93 @@ window.addEventListener('appinstalled', () => {
   console.log('[App] PWA installed successfully');
   deferredPrompt = null;
 });
+
+// ============================================
+// GitHub API Integration
+// ============================================
+
+// Fetch GitHub repository data
+async function fetchGitHubData() {
+  const owner = 'PhamHungTien';
+  const repo = 'PHTV';
+  
+  try {
+    // Fetch repository info (stars)
+    const repoResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}`);
+    const repoData = await repoResponse.json();
+    
+    // Fetch latest release
+    const releaseResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/releases/latest`);
+    const releaseData = await releaseResponse.json();
+    
+    // Update UI with data
+    updateGitHubUI(repoData, releaseData);
+  } catch (error) {
+    console.error('[GitHub API] Error fetching data:', error);
+  }
+}
+
+// Update UI with GitHub data
+function updateGitHubUI(repoData, releaseData) {
+  // Update stars count
+  const starsCount = repoData.stargazers_count;
+  
+  // Update version
+  const latestVersion = releaseData.tag_name || releaseData.name;
+  
+  // Calculate total downloads
+  let totalDownloads = 0;
+  if (releaseData.assets) {
+    releaseData.assets.forEach(asset => {
+      totalDownloads += asset.download_count;
+    });
+  }
+  
+  // Update download URL
+  const downloadUrl = releaseData.html_url || `https://github.com/${owner}/${repo}/releases/latest`;
+  
+  // Update download buttons
+  const downloadButtons = document.querySelectorAll('#downloadBtn, #downloadHeroBtn');
+  downloadButtons.forEach(btn => {
+    if (btn) {
+      btn.href = downloadUrl;
+      // Update button text with version if needed
+      const btnText = btn.querySelector('span:last-child');
+      if (btnText && latestVersion) {
+        // Keep original text but could add version
+        console.log(`[GitHub API] Latest version: ${latestVersion}`);
+      }
+    }
+  });
+  
+  // Log data for debugging
+  console.log('[GitHub API] Data updated:', {
+    stars: starsCount,
+    version: latestVersion,
+    downloads: totalDownloads,
+    downloadUrl: downloadUrl
+  });
+  
+  // Dispatch custom event for other scripts to use
+  window.dispatchEvent(new CustomEvent('githubDataLoaded', {
+    detail: {
+      stars: starsCount,
+      version: latestVersion,
+      downloads: totalDownloads,
+      releaseUrl: downloadUrl
+    }
+  }));
+}
+
+// Fetch data on page load
+document.addEventListener('DOMContentLoaded', () => {
+  // Fetch GitHub data
+  fetchGitHubData();
+  
+  // Refresh every 5 minutes
+  setInterval(fetchGitHubData, 5 * 60 * 1000);
+});
+
+// Export for external use
+window.PHTV = window.PHTV || {};
+window.PHTV.fetchGitHubData = fetchGitHubData;
