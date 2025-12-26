@@ -3,7 +3,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://phamhungtien.github.io/PHTV/sitemap.xml
+Sitemap: https://phamhungtien.com/sitemap.xml
 
 # Disallow crawling of assets
 Disallow: /Resources/

@@ -45,7 +45,7 @@ After installation, PHTV requires Accessibility permission:
 
 ## Links
 
-- [PHTV Homepage](https://phamhungtien.github.io/PHTV/)
+- [PHTV Homepage](https://phamhungtien.com/)
 - [GitHub Repository](https://github.com/PhamHungTien/PHTV)
 - [Report Issues](https://github.com/PhamHungTien/PHTV/issues)
 - [Documentation](https://github.com/PhamHungTien/PHTV/blob/main/README.md)

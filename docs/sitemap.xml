@@ -3,19 +3,19 @@
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <!-- Homepage -->
   <url>
-    <loc>https://phamhungtien.github.io/PHTV/</loc>
+    <loc>https://phamhungtien.com/</loc>
     <lastmod>2025-12-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <image:image>
-      <image:loc>https://phamhungtien.github.io/PHTV/Resources/Social_preview.png</image:loc>
+      <image:loc>https://phamhungtien.com/Resources/Social_preview.png</image:loc>
       <image:title>PHTV - Vietnamese Input Method for macOS</image:title>
     </image:image>
   </url>
 
   <!-- Privacy Policy -->
   <url>
-    <loc>https://phamhungtien.github.io/PHTV/privacy.html</loc>
+    <loc>https://phamhungtien.com/privacy.html</loc>
     <lastmod>2025-12-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
@@ -23,7 +23,7 @@
 
   <!-- Donate Page -->
   <url>
-    <loc>https://phamhungtien.github.io/PHTV/donate.html</loc>
+    <loc>https://phamhungtien.com/donate.html</loc>
     <lastmod>2025-12-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
