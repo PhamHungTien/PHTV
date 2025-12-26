@@ -23,12 +23,6 @@ cask "phtv" do
 
   app "PHTV.app"
 
-  # Accessibility permission required
-  postflight do
-    system_command "/bin/launchctl",
-                   args: ["load", "-w", "#{appdir}/PHTV.app/Contents/Library/LoginItems/PHTV.app"]
-  end
-
   zap trash: [
     "~/Library/Application Support/PHTV",
     "~/Library/Caches/com.phamhungtien.phtv",
