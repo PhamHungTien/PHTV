@@ -87,14 +87,14 @@
             "url": "https://phamhungtien.com"
         },
         "downloadUrl": "https://github.com/PhamHungTien/PHTV/releases/latest",
-        "softwareVersion": "1.0",
+        "softwareVersion": "1.2.7",
         "aggregateRating": {
             "@type": "AggregateRating",
             "ratingValue": "5",
             "ratingCount": "100"
         },
         "screenshot": "https://phamhungtien.github.io/PHTV/Resources/UI/setting_bogo.png",
-        "featureList": "Telex, VNI, Simple Telex, Quick Telex shortcuts (cc→ch, gg→gi), Spell-checking, Macros, ESC Recovery, App-specific memory, Dark Mode, Swift 6.0, C++ Engine, Apple Silicon Native"
+        "featureList": "Telex, VNI, Simple Telex, Quick Telex shortcuts (cc→ch, gg→gi, kk→kh, nn→ng, qq→qu, pp→ph, tt→th), Fast consonants (f→ph, j→gi, w→qu, g→ng, h→nh, k→ch), Spell-checking, Modern spelling (oà, uý), Auto-capitalize, Macros with auto-capitalization, Auto English word recovery, ESC Recovery, Smart Switch (app-specific language memory), App charset memory, Excluded Apps, Spotlight Fix, WhatsApp Fix, Chromium Fix, Claude Code Fix, Menu bar icon, Hot Reload, Auto-update, Smart error reporting, Dark Mode, Universal Binary (Intel + Apple Silicon), Swift 6.0, C++ Engine, Offline, Open Source"
     }
     </script>
 
@@ -124,7 +124,7 @@
                 "name": "Yêu cầu hệ thống của PHTV?",
                 "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "macOS 14.0 (Sonoma) trở lên. Yêu cầu chip Apple Silicon (M1/M2/M3/M4) - không hỗ trợ Intel Mac."
+                    "text": "macOS 14.0 (Sonoma) trở lên. PHTV là Universal Binary, hỗ trợ cả Intel và Apple Silicon (M1/M2/M3/M4)."
                 }
             },
             {
@@ -149,6 +149,30 @@
                 "acceptedAnswer": {
                     "@type": "Answer",
                     "text": "PHTV hoạt động với mọi ứng dụng macOS và được tối ưu đặc biệt cho Spotlight, WhatsApp, Chrome, Edge, Claude Code CLI. Hỗ trợ nhớ bảng mã riêng cho từng ứng dụng."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "PHTV có hoạt động trong Claude Code CLI không?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Có! PHTV có tính năng Claude Code Fix được tích hợp sẵn để hỗ trợ gõ tiếng Việt mượt mà trong Claude Code CLI (Terminal)."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Smart Switch là gì?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Smart Switch tự động nhớ ngôn ngữ (Việt/Anh) cho từng ứng dụng. Ví dụ: bạn dùng tiếng Việt trong Chrome và tiếng Anh trong Terminal, PHTV sẽ tự động chuyển đổi khi bạn chuyển giữa các app."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Hot Reload là gì?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Hot Reload cho phép bạn thay đổi cài đặt (phím tắt, macro, bảng mã, v.v.) mà không cần khởi động lại ứng dụng. Mọi thay đổi có hiệu lực ngay lập tức."
                 }
             }
         ]
@@ -335,14 +359,14 @@
                     <div class="bento-icon"><span class="material-icons-round">tune</span></div>
                     <div class="bento-content">
                         <h3 data-i18n="feat4.title">Gõ Tắt Thông Minh</h3>
-                        <p data-i18n="feat4.desc">Hỗ trợ đầy đủ Telex, VNI, Simple Telex. Quick Telex shortcuts (cc→ch, gg→gi, kk→kh), phím tắt đầu/cuối từ, và macro với tự động viết hoa. Nhấn ESC để khôi phục ký tự gốc.</p>
+                        <p data-i18n="feat4.desc">Hỗ trợ đầy đủ Telex, VNI, Simple Telex. Quick Telex shortcuts (cc→ch, gg→gi, kk→kh, nn→ng, qq→qu, pp→ph, tt→th). Phím tắt đầu/cuối từ (f→ph, j→gi, w→qu, g→ng, h→nh, k→ch). Macro với tự động viết hoa. Tự động viết hoa chữ cái đầu câu. Chính tả hiện đại (oà, uý). Tự động khôi phục từ tiếng Anh khi gõ nhầm. Nhấn ESC để khôi phục ký tự gốc.</p>
                     </div>
                 </div>
                 <div class="bento-card span-3 reveal">
                     <div class="bento-icon"><span class="material-icons-round">verified_user</span></div>
                     <div class="bento-content">
                         <h3 data-i18n="feat5.title">Tương Thích Tuyệt Đối</h3>
-                        <p data-i18n="feat5.desc">Tối ưu đặc biệt cho Spotlight, WhatsApp, Chrome/Edge, Claude Code CLI. Nhớ bảng mã riêng cho từng ứng dụng, tự động chuyển tiếng Anh cho ứng dụng loại trừ, khôi phục từ tiếng Anh khi gõ nhầm.</p>
+                        <p data-i18n="feat5.desc">Tối ưu đặc biệt cho Spotlight, WhatsApp, Chrome/Edge/Brave (Chromium Fix), Claude Code CLI. Nhớ bảng mã riêng cho từng ứng dụng (Smart Switch), tự động chuyển tiếng Anh cho ứng dụng loại trừ (Excluded Apps). Menu bar icon hiển thị trạng thái Vi/En. Hot Reload - thay đổi cài đặt không cần khởi động lại. Báo lỗi thông minh với auto log debug.</p>
                     </div>
                 </div>
             </div>
@@ -540,7 +564,7 @@
                 </details>
                 <details class="faq-item">
                     <summary class="faq-summary" data-i18n="q2">Yêu cầu hệ thống?</summary>
-                    <div class="faq-content" data-i18n="a2">macOS 14.0 (Sonoma) trở lên. Yêu cầu chip Apple Silicon (M1/M2/M3/M4) - không hỗ trợ Intel Mac.</div>
+                    <div class="faq-content" data-i18n="a2">macOS 14.0 (Sonoma) trở lên. PHTV là Universal Binary, hỗ trợ cả Intel và Apple Silicon (M1/M2/M3/M4).</div>
                 </details>
                 <details class="faq-item">
                     <summary class="faq-summary" data-i18n="q3">PHTV có thu thập dữ liệu không?</summary>
@@ -556,7 +580,19 @@
                 </details>
                 <details class="faq-item">
                     <summary class="faq-summary" data-i18n="q6">Làm sao để khôi phục ký tự gốc khi gõ nhầm?</summary>
-                    <div class="faq-content" data-i18n="a6">Nhấn phím ESC để khôi phục ký tự gốc trước khi bị chuyển đổi. PHTV cũng tự động phát hiện và khôi phục từ tiếng Anh khi bạn gõ nhầm.</div>
+                    <div class="faq-content" data-i18n="a6">Nhấn phím ESC để khôi phục ký tự gốc trước khi bị chuyển đổi. PHTV cũng tự động phát hiện và khôi phục từ tiếng Anh khi bạn gõ nhầm (ví dụ: "tẻminal" → "terminal").</div>
+                </details>
+                <details class="faq-item">
+                    <summary class="faq-summary">PHTV có hoạt động trong Claude Code CLI không?</summary>
+                    <div class="faq-content">Có! PHTV có tính năng "Claude Code Fix" được tích hợp sẵn để hỗ trợ gõ tiếng Việt mượt mà trong Claude Code CLI (Terminal).</div>
+                </details>
+                <details class="faq-item">
+                    <summary class="faq-summary">Smart Switch là gì?</summary>
+                    <div class="faq-content">Smart Switch tự động nhớ ngôn ngữ (Việt/Anh) cho từng ứng dụng. Ví dụ: bạn dùng tiếng Việt trong Chrome và tiếng Anh trong Terminal, PHTV sẽ tự động chuyển đổi khi bạn chuyển giữa các app.</div>
+                </details>
+                <details class="faq-item">
+                    <summary class="faq-summary">Hot Reload là gì?</summary>
+                    <div class="faq-content">Hot Reload cho phép bạn thay đổi cài đặt (phím tắt, macro, bảng mã, v.v.) mà không cần khởi động lại ứng dụng. Mọi thay đổi có hiệu lực ngay lập tức.</div>
                 </details>
             </div>
         </section>
