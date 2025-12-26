@@ -10,8 +10,13 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-/// Custom user driver that suppresses the "no update found" alert
-/// while keeping all other Sparkle UI behaviors intact
+/// Custom user driver that suppresses annoying update-related alerts:
+/// - "No update found" alerts when already up-to-date
+/// - Appcast load errors (network errors, 404, timeout, etc)
+/// - Default Sparkle UI dialogs
+///
+/// This provides a silent, non-intrusive update checking experience
+/// while still notifying users when actual updates are available.
 @interface PHSilentUserDriver : SPUStandardUserDriver
 
 @end
