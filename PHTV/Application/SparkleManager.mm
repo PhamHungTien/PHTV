@@ -7,9 +7,11 @@
 //
 
 #import "SparkleManager.h"
+#import "PHSilentUserDriver.h"
 
 @interface SparkleManager ()
-@property (nonatomic, strong) SPUStandardUpdaterController *updaterController;
+@property (nonatomic, strong) SPUUpdater *updater;
+@property (nonatomic, strong) PHSilentUserDriver *customUserDriver;
 @property (nonatomic, assign) BOOL betaChannelEnabled;
 @property (nonatomic, assign) BOOL isManualCheck;  // Track if this is a user-initiated check
 @end
@@ -28,16 +30,27 @@
 - (instancetype)init {
     self = [super init];
     if (self) {
-        // Initialize Sparkle with delegate
-        _updaterController = [[SPUStandardUpdaterController alloc]
-            initWithStartingUpdater:YES
-            updaterDelegate:self
-            userDriverDelegate:self];
+        // Create custom user driver that suppresses "no update found" alert
+        _customUserDriver = [[PHSilentUserDriver alloc] initWithHostBundle:[NSBundle mainBundle]
+                                                                  delegate:self];
+
+        // Initialize SPUUpdater directly with custom user driver
+        // This allows us to suppress the "no update found" alert
+        _updater = [[SPUUpdater alloc] initWithHostBundle:[NSBundle mainBundle]
+                                        applicationBundle:[NSBundle mainBundle]
+                                               userDriver:_customUserDriver
+                                                 delegate:self];
+
+        // Start the updater
+        NSError *error = nil;
+        if (![_updater startUpdater:&error]) {
+            NSLog(@"[Sparkle] Failed to start updater: %@", error);
+        }
 
         // Load preferences
         _betaChannelEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"SUEnableBetaChannel"];
 
-        NSLog(@"[Sparkle] Initialized - Beta channel: %@", _betaChannelEnabled ? @"ON" : @"OFF");
+        NSLog(@"[Sparkle] Initialized with PHSilentUserDriver - Beta channel: %@", _betaChannelEnabled ? @"ON" : @"OFF");
     }
     return self;
 }
@@ -45,15 +58,14 @@
 - (void)checkForUpdatesWithFeedback {
     NSLog(@"[Sparkle] User-initiated update check (with feedback)");
     self.isManualCheck = YES;
-    // Don't pass sender to prevent Sparkle from showing default "up to date" alert
-    // We handle all feedback through our custom notifications
-    [self.updaterController checkForUpdates:nil];
+    // Custom user driver will suppress "no update found" alert
+    [self.updater checkForUpdates];
 }
 
 - (void)checkForUpdates {
     NSLog(@"[Sparkle] Background update check (silent)");
     self.isManualCheck = NO;
-    [self.updaterController checkForUpdates:nil];
+    [self.updater checkForUpdatesInBackground];
 }
 
 - (void)setUpdateCheckInterval:(NSTimeInterval)interval {

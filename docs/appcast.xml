@@ -8,6 +8,68 @@
 
         <!-- Most recent version first -->
         <item>
+            <title>PHTV 1.2.7</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.2.7</link>
+            <sparkle:version>2</sparkle:version>
+            <sparkle:shortVersionString>1.2.7</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h2>PHTV 1.2.7 - Update Check UX Fix</h2>
+
+                <h3>Cải tiến chính</h3>
+                <h4>🔕 Loại bỏ thông báo "no update" gây phiền</h4>
+                <ul>
+                    <li><strong>KHÔNG còn</strong> popup "You're up to date" khi click kiểm tra cập nhật</li>
+                    <li><strong>KHÔNG còn</strong> thông báo khi đã là phiên bản mới nhất</li>
+                    <li><strong>CHỈ thông báo</strong> khi thực sự có bản cập nhật mới</li>
+                    <li><strong>Trải nghiệm mượt mà</strong>, không gián đoạn</li>
+                </ul>
+
+                <h4>🏗️ Kiến trúc mới</h4>
+                <ul>
+                    <li>Triển khai <strong>PHSilentUserDriver</strong> - custom user driver cho Sparkle</li>
+                    <li>Override method showUpdateNotFoundWithError để chặn alert</li>
+                    <li>Chuyển từ SPUStandardUpdaterController sang SPUUpdater trực tiếp</li>
+                    <li>Kiểm soát hoàn toàn luồng thông báo update</li>
+                </ul>
+
+                <h3>So sánh với v1.2.6</h3>
+                <table>
+                    <tr>
+                        <td><strong>Tính năng</strong></td>
+                        <td><strong>v1.2.6</strong></td>
+                        <td><strong>v1.2.7</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Thông báo "up to date"</td>
+                        <td>❌ Hiện popup</td>
+                        <td>✅ Không hiện</td>
+                    </tr>
+                    <tr>
+                        <td>Thông báo có update mới</td>
+                        <td>✅ Hiện banner</td>
+                        <td>✅ Hiện banner</td>
+                    </tr>
+                    <tr>
+                        <td>Manual check</td>
+                        <td>❌ Popup phiền</td>
+                        <td>✅ Silent</td>
+                    </tr>
+                </table>
+
+                <p><em>Bản cập nhật này loại bỏ hoàn toàn thông báo gây phiền khi kiểm tra cập nhật và đã là phiên bản mới nhất.</em></p>
+            ]]></description>
+            <pubDate>Thu, 26 Dec 2025 07:40:11 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.2.7/PHTV-1.2.7.dmg"
+                sparkle:version="2"
+                sparkle:shortVersionString="1.2.7"
+                sparkle:edSignature="FHJ8kULtyoUm++UmIM/jSpqY2XFMCCYc14DVFLF+9rF7zqdwUnbBwan42N5gf33qEC4bI5XrKtmVI17jVteaDA=="
+                length="12325544"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <item>
             <title>PHTV 1.2.6</title>
             <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.2.6</link>
             <sparkle:version>1.2.6</sparkle:version>
