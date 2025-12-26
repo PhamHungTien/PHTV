@@ -18,7 +18,7 @@ Homebrew Cask installation and maintenance:
 
 ### [Website](website/)
 Project website source files (HTML/CSS/JS):
-- Hosted at: https://phamhungtien.github.io/PHTV/
+- Hosted at: https://phamhungtien.com/
 - User documentation, downloads, and guides
 
 ## 🔗 Quick Links
