@@ -15,7 +15,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/PhamHungTien/PHTV)](../../stargazers)
 [![Sponsor](https://img.shields.io/badge/❤️_Sponsor-PHTV-ea4aaa?style=flat&logo=github-sponsors)](https://phamhungtien.github.io/PHTV/donate.html)
 
-[**Tải về**](https://phamhungtien.com/PHTV/) | [**Tài liệu**](INSTALL.md) | [**Báo lỗi**](../../issues) | [**FAQ**](FAQ.md) | [**☕ Ủng hộ**](https://phamhungtien.github.io/PHTV/donate.html)
+[**Tải về**](https://phamhungtien.github.io/PHTV/) | [**Tài liệu**](INSTALL.md) | [**Báo lỗi**](../../issues) | [**FAQ**](FAQ.md) | [**☕ Ủng hộ**](https://phamhungtien.github.io/PHTV/donate.html)
 
 </div>
 
@@ -134,7 +134,7 @@ brew uninstall --zap --cask phtv
 
 ```bash
 # Tải từ website
-open https://phamhungtien.com/PHTV/
+open https://phamhungtien.github.io/PHTV/
 
 # Hoặc từ GitHub Releases
 open https://github.com/PhamHungTien/PHTV/releases/latest
@@ -228,7 +228,7 @@ Mọi đóng góp đều được chào đón! Xem [CONTRIBUTING.md](CONTRIBUTIN
 
 - Email: hungtien10a7@gmail.com
 - GitHub: [Issues](../../issues) | [Discussions](../../discussions)
-- Website: [phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/)
+- Website: [phamhungtien.github.io/PHTV](https://phamhungtien.github.io/PHTV/)
 - Facebook: [phamhungtien1404](https://www.facebook.com/phamhungtien1404)
 - LinkedIn: [Phạm Hùng Tiến](https://www.linkedin.com/in/ph%E1%BA%A1m-h%C3%B9ng-ti%E1%BA%BFn-a1b405327/)
 

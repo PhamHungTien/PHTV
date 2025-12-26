@@ -10,7 +10,7 @@ cask "phtv" do
   name "PHTV"
   name "Precision Hybrid Typing Vietnamese"
   desc "Modern Vietnamese input method"
-  homepage "https://phamhungtien.com/PHTV/"
+  homepage "https://phamhungtien.github.io/PHTV/"
 
   # Universal Binary - supports both Intel and Apple Silicon
   livecheck do
@@ -44,6 +44,6 @@ cask "phtv" do
     2. Go to Privacy & Security > Accessibility
     3. Enable PHTV
 
-    For more information, visit: https://phamhungtien.com/PHTV/
+    For more information, visit: https://phamhungtien.github.io/PHTV/
   EOS
 end
