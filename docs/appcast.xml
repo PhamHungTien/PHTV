@@ -28,8 +28,8 @@
                 url="https://github.com/PhamHungTien/PHTV/releases/download/v1.2.8/PHTV-1.2.8.dmg"
                 sparkle:version="2"
                 sparkle:shortVersionString="1.2.8"
-                sparkle:edSignature="CSAr+x/0H/6xAiE+2JPoeiTEU0Nw3qDxU5aePkohnFAy8Qg4Us5/jfKwPtPOC5zFPnmJ/RWPaNnYuUWKDmuODg=="
-                length="12161860"
+                sparkle:edSignature="HWslolCEqc04nnhv+K/isd0wMQTPBkSt+9h4mdk35iafmwyUHuvsf/akAlNERF+dz+mcDTR+ZLnNNZ4zbctwAg=="
+                length="12153180"
                 type="application/octet-stream"/>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
         </item>
