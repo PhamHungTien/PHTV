@@ -10,26 +10,34 @@
         <item>
             <title>PHTV 1.2.8</title>
             <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.2.8</link>
-            <sparkle:version>2</sparkle:version>
+            <sparkle:version>3</sparkle:version>
             <sparkle:shortVersionString>1.2.8</sparkle:shortVersionString>
             <description><![CDATA[
-                <h2>PHTV 1.2.8 - Bug Fixes & Stability</h2>
+                <h2>PHTV 1.2.8 - Spotlight Detection & Stability</h2>
 
-                <h3>Cải tiến chính</h3>
+                <h3>🔍 Cải tiến phát hiện Spotlight</h3>
                 <ul>
-                    <li><strong>Sửa lỗi</strong>: Khắc phục các lỗi nhỏ và cải thiện độ ổn định</li>
-                    <li><strong>Tối ưu</strong>: Cải thiện hiệu năng tổng thể</li>
+                    <li><strong>Phát hiện nhanh gấp 3 lần</strong>: Cmd+Space được phát hiện ngay lập tức</li>
+                    <li><strong>Element heuristic check</strong>: Phân tích role/subrole của UI element</li>
+                    <li><strong>Retry mechanism</strong>: Thử lại 3 lần khi AX API fails</li>
+                    <li><strong>Giảm latency</strong>: Cache time từ 50ms → 15ms</li>
                 </ul>
 
-                <p><em>Bản cập nhật này tập trung vào sửa lỗi và cải thiện độ ổn định của ứng dụng.</em></p>
+                <h3>🐛 Sửa lỗi</h3>
+                <ul>
+                    <li><strong>Fix Sparkle update detection</strong>: Tăng build number để nhận diện bản mới</li>
+                    <li><strong>Cải thiện độ ổn định</strong>: Fix memory leak trong AX operations</li>
+                </ul>
+
+                <p><em>Bản cập nhật này tập trung vào cải thiện Spotlight detection và sửa lỗi auto-update.</em></p>
             ]]></description>
-            <pubDate>Sat, 27 Dec 2025 18:30:21 +0700</pubDate>
+            <pubDate>Sat, 27 Dec 2025 18:55:17 +0700</pubDate>
             <enclosure
                 url="https://github.com/PhamHungTien/PHTV/releases/download/v1.2.8/PHTV-1.2.8.dmg"
-                sparkle:version="2"
+                sparkle:version="3"
                 sparkle:shortVersionString="1.2.8"
-                sparkle:edSignature="KDMqYcXkrtlxzip/4WTPte9MEnjCVN9QAeVWmh42P01kwqvXTAVJzV4LhKTfOOgYvwu78u30zgKu0T2NRsw7Cw=="
-                length="11512568"
+                sparkle:edSignature="KdCSnSljVTXaWXhR5SxvXfr8y+EpRKwV+Rs0RPq89wR/IkSQ2Sl6kPUBzomHwi/o7kUm426acQ7ZVlkSp7R4Cg=="
+                length="12152741"
                 type="application/octet-stream"/>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
         </item>
