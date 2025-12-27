@@ -84,30 +84,93 @@ static os_unfair_lock _pidCacheLock = OS_UNFAIR_LOCK_INIT;
 static BOOL _cachedSpotlightActive = NO;
 static uint64_t _lastSpotlightCheckTime = 0;
 static pid_t _cachedFocusedPID = 0;
+static CGEventFlags _lastEventFlags = 0;
+
+// Force invalidate Spotlight detection cache
+// Call this when Cmd+Space is detected or when modifier keys change
+static inline void InvalidateSpotlightCache(void) {
+    _lastSpotlightCheckTime = 0;
+    _cachedFocusedPID = 0;
+}
+
+// Check if element is Spotlight by examining its role and subrole
+static inline BOOL IsElementSpotlight(AXUIElementRef element) {
+    if (element == NULL) return NO;
+
+    CFTypeRef role = NULL;
+    CFTypeRef subrole = NULL;
+    BOOL isSpotlight = NO;
+
+    // Check role
+    if (AXUIElementCopyAttributeValue(element, kAXRoleAttribute, &role) == kAXErrorSuccess) {
+        if (role != NULL) {
+            // Spotlight search field has specific roles
+            if (CFGetTypeID(role) == CFStringGetTypeID()) {
+                NSString *roleStr = (__bridge NSString *)role;
+                if ([roleStr isEqualToString:@"AXTextField"] ||
+                    [roleStr isEqualToString:@"AXSearchField"]) {
+
+                    // Check subrole for confirmation
+                    if (AXUIElementCopyAttributeValue(element, kAXSubroleAttribute, &subrole) == kAXErrorSuccess) {
+                        if (subrole != NULL && CFGetTypeID(subrole) == CFStringGetTypeID()) {
+                            NSString *subroleStr = (__bridge NSString *)subrole;
+                            if ([subroleStr containsString:@"Search"]) {
+                                isSpotlight = YES;
+                            }
+                        }
+                    }
+                }
+            }
+            CFRelease(role);
+        }
+    }
+
+    if (subrole != NULL) CFRelease(subrole);
+    return isSpotlight;
+}
 
 // Check if Spotlight or similar overlay is currently active using Accessibility API
-// OPTIMIZED: Results cached for 50ms to avoid repeated AX API calls
+// OPTIMIZED: Results cached for 15ms to avoid repeated AX API calls while remaining responsive
 BOOL isSpotlightActive(void) {
     uint64_t now = mach_absolute_time();
     uint64_t elapsed_ms = mach_time_to_ms(now - _lastSpotlightCheckTime);
 
-    // Return cached result if recent enough (50ms cache)
-    if (elapsed_ms < 50 && _lastSpotlightCheckTime > 0) {
+    // Return cached result if recent enough (15ms cache - reduced for better Spotlight detection)
+    if (elapsed_ms < 15 && _lastSpotlightCheckTime > 0) {
         return _cachedSpotlightActive;
     }
 
     _lastSpotlightCheckTime = now;
 
-    // Get the system-wide focused element
-    AXUIElementRef systemWide = AXUIElementCreateSystemWide();
+    // Get the system-wide focused element with multiple retries
+    AXUIElementRef systemWide = NULL;
     AXUIElementRef focusedElement = NULL;
-    AXError error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement);
-    CFRelease(systemWide);
+    AXError error = kAXErrorFailure;
+
+    // Retry up to 3 times with progressive delays (0ms, 3ms, 8ms)
+    const int retryDelays[] = {0, 3000, 8000};  // microseconds
+    for (int attempt = 0; attempt < 3; attempt++) {
+        if (attempt > 0) {
+            usleep(retryDelays[attempt]);
+        }
+
+        systemWide = AXUIElementCreateSystemWide();
+        error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement);
+        CFRelease(systemWide);
+
+        if (error == kAXErrorSuccess && focusedElement != NULL) {
+            break;  // Success
+        }
+    }
 
     if (error != kAXErrorSuccess || focusedElement == NULL) {
         _cachedSpotlightActive = NO;
         return NO;
     }
+
+    // HEURISTIC CHECK: First try to detect Spotlight by element role/subrole
+    // This is more reliable than PID/bundle ID which can be ambiguous
+    BOOL elementLooksLikeSpotlight = IsElementSpotlight(focusedElement);
 
     // Get the PID of the app that owns the focused element
     pid_t focusedPID = 0;
@@ -115,6 +178,11 @@ BOOL isSpotlightActive(void) {
     CFRelease(focusedElement);
 
     if (error != kAXErrorSuccess || focusedPID == 0) {
+        // If we couldn't get PID but element looks like Spotlight, trust the heuristic
+        if (elementLooksLikeSpotlight) {
+            _cachedSpotlightActive = YES;
+            return YES;
+        }
         _cachedSpotlightActive = NO;
         return NO;
     }
@@ -146,6 +214,12 @@ BOOL isSpotlightActive(void) {
                 return YES;
             }
         }
+    }
+
+    // Final fallback: trust the element heuristic if bundle ID check failed
+    if (elementLooksLikeSpotlight) {
+        _cachedSpotlightActive = YES;
+        return YES;
     }
 
     _cachedSpotlightActive = NO;
@@ -1543,6 +1617,21 @@ extern "C" {
         
         _flag = CGEventGetFlags(event);
         _keycode = (CGKeyCode)CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
+
+        // SPOTLIGHT OPTIMIZATION: Detect Cmd+Space hotkey and invalidate cache immediately
+        // This ensures PHTV detects Spotlight opening as fast as possible
+        if (type == kCGEventKeyDown && _keycode == 49 && (_flag & kCGEventFlagMaskCommand)) {
+            // Cmd+Space detected - invalidate Spotlight cache to force fresh detection
+            InvalidateSpotlightCache();
+        }
+
+        // AGGRESSIVE CACHE INVALIDATION: When modifier flags change significantly, invalidate cache
+        // This catches cases where Spotlight opens/closes with different hotkeys or window switches
+        CGEventFlags flagChangeMask = kCGEventFlagMaskCommand | kCGEventFlagMaskAlternate | kCGEventFlagMaskControl;
+        if ((type == kCGEventFlagsChanged) && ((_flag ^ _lastEventFlags) & flagChangeMask)) {
+            InvalidateSpotlightCache();
+        }
+        _lastEventFlags = _flag;
 
         // If pause key is being held, strip pause modifier from events to prevent special characters
         if (_pauseKeyPressed && (type == kCGEventKeyDown || type == kCGEventKeyUp)) {
