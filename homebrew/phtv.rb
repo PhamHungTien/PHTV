@@ -3,7 +3,7 @@
 
 cask "phtv" do
   version "1.2.8"
-  sha256 "9b6e6cd452917c269d738ec71ba830d8234bb221acb77a5d78e98403262c4620"
+  sha256 "bf0c5ce39a74241595c06e071644af71d055d42ace465b731cb0b83a2f3012de"
 
   url "https://github.com/PhamHungTien/PHTV/releases/download/v#{version}/PHTV-#{version}.dmg",
       verified: "github.com/PhamHungTien/"
