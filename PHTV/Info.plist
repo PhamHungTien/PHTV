@@ -6,6 +6,8 @@
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>PHTV</string>
+	<key>CFBundleSpokenName</key>
+	<string>PHTV Vietnamese Input</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIconFile</key>
@@ -19,7 +21,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.2.7</string>
+	<string>1.2.8</string>
 	<key>CFBundleVersion</key>
 	<string>2</string>
 	<key>LSApplicationCategoryType</key>
@@ -32,6 +34,10 @@
 	<string>Used for keyboard</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2026 Phạm Hùng Tiến. All rights reserved.</string>
+	<key>NSHumanReadableDescription</key>
+	<string>Vietnamese input method with Telex, VNI support for macOS</string>
+	<key>CFBundleGetInfoString</key>
+	<string>PHTV - Precision Hybrid Typing Vietnamese. Vietnamese input method for macOS.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>SUFeedURL</key>

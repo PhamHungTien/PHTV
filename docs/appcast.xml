@@ -8,6 +8,33 @@
 
         <!-- Most recent version first -->
         <item>
+            <title>PHTV 1.2.8</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.2.8</link>
+            <sparkle:version>2</sparkle:version>
+            <sparkle:shortVersionString>1.2.8</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h2>PHTV 1.2.8 - Bug Fixes & Stability</h2>
+
+                <h3>Cải tiến chính</h3>
+                <ul>
+                    <li><strong>Sửa lỗi</strong>: Khắc phục các lỗi nhỏ và cải thiện độ ổn định</li>
+                    <li><strong>Tối ưu</strong>: Cải thiện hiệu năng tổng thể</li>
+                </ul>
+
+                <p><em>Bản cập nhật này tập trung vào sửa lỗi và cải thiện độ ổn định của ứng dụng.</em></p>
+            ]]></description>
+            <pubDate>Sat, 27 Dec 2025 18:30:21 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.2.8/PHTV-1.2.8.dmg"
+                sparkle:version="2"
+                sparkle:shortVersionString="1.2.8"
+                sparkle:edSignature="CSAr+x/0H/6xAiE+2JPoeiTEU0Nw3qDxU5aePkohnFAy8Qg4Us5/jfKwPtPOC5zFPnmJ/RWPaNnYuUWKDmuODg=="
+                length="12161860"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <item>
             <title>PHTV 1.2.7</title>
             <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.2.7</link>
             <sparkle:version>2</sparkle:version>
