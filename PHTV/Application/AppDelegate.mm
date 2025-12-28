@@ -1146,6 +1146,12 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     }
 }
 
+- (void)handleSparkleInstallUpdate:(NSNotification *)notification {
+    NSLog(@"[Sparkle] Install update requested from custom banner");
+    // Trigger Sparkle's native update UI which will handle download and installation
+    [[SparkleManager shared] checkForUpdatesWithFeedback];
+}
+
 - (void)handleSettingsReset:(NSNotification *)notification {
     // Settings have been reset, post confirmation to UI
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -2262,5 +2268,10 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                                              selector:@selector(handleBetaChannelChanged:)
                                                  name:@"BetaChannelChanged"
                                                object:NULL];
+
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleSparkleInstallUpdate:)
+                                                 name:@"SparkleInstallUpdate"
+                                               object:nil];
 }
 @end

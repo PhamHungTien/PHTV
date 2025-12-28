@@ -469,7 +469,8 @@ extern "C" {
     // These apps don't handle Unicode combining characters properly
     // Note: WhatsApp removed - it needs precomposed but NOT Spotlight-style AX/per-char handling
     NSSet* _forcePrecomposedAppSet = [NSSet setWithArray:@[@"com.apple.Spotlight",
-                                                            @"com.apple.systemuiserver"]];  // Spotlight runs under SystemUIServer
+                                                            @"com.apple.systemuiserver",  // Spotlight runs under SystemUIServer
+                                                            PHTV_BUNDLE]];  // PHTV itself - SwiftUI TextField needs HID tap posting
 
     // Apps that need precomposed Unicode but should use normal batched sending (not AX API)
     // These are Electron/web apps that don't support AX text replacement
@@ -1691,7 +1692,7 @@ extern "C" {
         if (CGEventGetIntegerValueField(event, kCGEventSourceStateID) == CGEventSourceGetSourceStateID(myEventSource)) {
             return event;
         }
-        
+
         _flag = CGEventGetFlags(event);
         _keycode = (CGKeyCode)CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
 

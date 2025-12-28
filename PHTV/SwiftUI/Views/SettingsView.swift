@@ -24,7 +24,7 @@ struct SettingsView: View {
                 || item.keywords.contains { $0.localizedCaseInsensitiveContains(searchText) }
         }
     }
-    
+
     private var searchSuggestions: [SettingsItem] {
         if searchText.isEmpty {
             // Show popular/recent searches when search is active but empty
@@ -138,6 +138,16 @@ struct SettingsView: View {
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowMacroTab"))) { _ in
             selectedTab = .macro
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowConvertToolSheet"))) { _ in
+            // Switch to System tab first, then SystemSettingsView will show the sheet
+            if selectedTab != .system {
+                selectedTab = .system
+                // Post notification for SystemSettingsView after it's mounted
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                    NotificationCenter.default.post(name: NSNotification.Name("OpenConvertToolSheet"), object: nil)
+                }
+            }
+        }
     }
 
     @ViewBuilder
@@ -151,8 +161,12 @@ struct SettingsView: View {
             MacroSettingsView()
         case .hotkeys:
             HotkeySettingsView()
-        case .theme:
-            ThemeSettingsView()
+        case .apps:
+            AppsSettingsView()
+        case .appearance:
+            AppearanceSettingsView()
+        case .compatibility:
+            CompatibilitySettingsView()
         case .system:
             SystemSettingsView()
         case .bugReport:
@@ -172,77 +186,61 @@ struct SettingsItem: Identifiable {
     let keywords: [String]
 
     static let allItems: [SettingsItem] = [
-        // Typing settings - Input Configuration
+        // ═══════════════════════════════════════════
+        // MARK: - Bộ gõ (Typing)
+        // ═══════════════════════════════════════════
         SettingsItem(
             title: "Phương pháp gõ", iconName: "keyboard", tab: .typing,
             keywords: ["telex", "vni", "simple telex", "kiểu gõ", "input method", "cấu hình gõ"]),
         SettingsItem(
             title: "Bảng mã", iconName: "textformat", tab: .typing,
             keywords: ["unicode", "tcvn3", "vni windows", "code table", "codepoint"]),
-
-        // Typing settings - Basic Features
         SettingsItem(
             title: "Kiểm tra chính tả", iconName: "text.badge.checkmark", tab: .typing,
             keywords: ["spell check", "spelling", "lỗi chính tả", "tính năng cơ bản"]),
         SettingsItem(
             title: "Khôi phục phím nếu từ sai", iconName: "arrow.uturn.left.circle.fill", tab: .typing,
             keywords: ["restore", "khôi phục", "ký tự", "từ sai", "invalid word"]),
-
-        // Typing settings - Enhancement Features
+        SettingsItem(
+            title: "Tự động nhận diện từ tiếng Anh", iconName: "textformat.abc.dottedunderline", tab: .typing,
+            keywords: ["auto restore english", "tiếng anh", "english word", "terminal", "tẻminal"]),
+        SettingsItem(
+            title: "Phím khôi phục ký tự gốc", iconName: "arrow.uturn.backward.circle.fill", tab: .typing,
+            keywords: ["restore key", "esc", "escape", "option", "control", "khôi phục", "ký tự gốc"]),
         SettingsItem(
             title: "Viết hoa ký tự đầu", iconName: "textformat.abc", tab: .typing,
             keywords: ["capitalize", "uppercase", "hoa", "tự động", "cải thiện gõ"]),
         SettingsItem(
-            title: "Phím chuyển thông minh", iconName: "arrow.left.arrow.right", tab: .typing,
-            keywords: ["smart switch", "auto switch", "tự động chuyển", "ngữ thông minh"]),
-        SettingsItem(
             title: "Đặt dấu oà, uý", iconName: "a.circle.fill", tab: .typing,
             keywords: ["modern orthography", "chính tả hiện đại", "dấu oà", "dấu uý", "quy tắc"]),
+        SettingsItem(
+            title: "Gõ nhanh (Quick Telex)", iconName: "hare.fill", tab: .typing,
+            keywords: ["quick telex", "gõ nhanh", "cc", "gg", "kk", "nn", "qq", "pp", "tt"]),
 
-        // Advanced settings - Advanced Options
+        // ═══════════════════════════════════════════
+        // MARK: - Nâng cao (Advanced)
+        // ═══════════════════════════════════════════
         SettingsItem(
             title: "Phụ âm Z, F, W, J", iconName: "character", tab: .advanced,
-            keywords: ["consonant", "phụ âm", "ngoại lai", "z f w j", "tùy chọn nâng cao"]),
+            keywords: ["consonant", "phụ âm", "ngoại lai", "z f w j", "phụ âm nâng cao"]),
         SettingsItem(
             title: "Phụ âm đầu nhanh", iconName: "arrow.right.circle.fill", tab: .advanced,
-            keywords: ["quick start consonant", "phụ âm đầu", "nhanh", "gõ tắt"]),
+            keywords: ["quick start consonant", "phụ âm đầu", "nhanh", "f", "j", "w", "ph", "gi", "qu"]),
         SettingsItem(
             title: "Phụ âm cuối nhanh", iconName: "arrow.left.circle.fill", tab: .advanced,
-            keywords: ["quick end consonant", "phụ âm cuối", "nhanh", "gõ tắt"]),
-        SettingsItem(
-            title: "Nhớ bảng mã", iconName: "memorychip.fill", tab: .advanced,
-            keywords: ["remember code", "bảng mã", "lưu", "nhớ", "khôi phục"]),
-        SettingsItem(
-            title: "Gửi từng phím", iconName: "keyboard.badge.ellipsis", tab: .advanced,
-            keywords: ["send key step by step", "từng ký tự", "ổn định", "chậm"]),
-        SettingsItem(
-            title: "Ứng dụng gửi từng phím", iconName: "app.badge.fill", tab: .advanced,
-            keywords: ["send key apps", "ứng dụng", "từng phím", "app list"]),
+            keywords: ["quick end consonant", "phụ âm cuối", "nhanh", "g", "h", "k", "ng", "nh", "ch"]),
 
-        // Advanced settings - Claude Code Fix
+        // ═══════════════════════════════════════════
+        // MARK: - Gõ tắt (Macro)
+        // ═══════════════════════════════════════════
         SettingsItem(
-            title: "Hỗ trợ gõ tiếng Việt trong Claude Code", iconName: "terminal.fill", tab: .advanced,
-            keywords: ["claude", "claude code", "terminal", "cli", "anthropic", "ai", "tiếng việt", "patch", "sửa lỗi", "fix"]),
-
-        // Hotkey settings
+            title: "Bật gõ tắt", iconName: "text.badge.plus", tab: .macro,
+            keywords: ["macro", "shortcut", "expansion", "viết tắt", "gõ tắt", "enable", "bật"]),
         SettingsItem(
-            title: "Phím tắt chuyển chế độ", iconName: "command.circle.fill", tab: .hotkeys,
-            keywords: ["hotkey", "shortcut", "ctrl", "shift", "option", "command", "chuyển chế độ"]),
-
-        // Theme settings
+            title: "Gõ tắt trong chế độ tiếng Anh", iconName: "globe", tab: .macro,
+            keywords: ["macro english", "tiếng anh", "gõ tắt", "mode", "chế độ"]),
         SettingsItem(
-            title: "Màu chủ đạo", iconName: "paintpalette.fill", tab: .theme,
-            keywords: ["theme", "color", "màu sắc", "giao diện", "theme color", "accent", "xanh", "đỏ", "vàng", "tím", "cam", "hồng"]),
-
-        // Macro settings
-        SettingsItem(
-            title: "Gõ tắt", iconName: "text.badge.plus", tab: .macro,
-            keywords: ["macro", "shortcut", "expansion", "viết tắt", "tắc gõ", "enable"]),
-        SettingsItem(
-            title: "Bật trong chế độ tiếng Anh", iconName: "globe", tab: .macro,
-            keywords: ["macro english", "tiếng anh", "gõ tắt", "mode"]),
-        SettingsItem(
-            title: "Tự động viết hoa ký tự đầu macro", iconName: "textformat.abc", tab: .macro,
+            title: "Tự động viết hoa macro", iconName: "textformat.abc", tab: .macro,
             keywords: ["auto caps macro", "viết hoa", "gõ tắt", "ký tự đầu"]),
         SettingsItem(
             title: "Thêm gõ tắt", iconName: "plus.circle.fill", tab: .macro,
@@ -254,36 +252,95 @@ struct SettingsItem: Identifiable {
             title: "Chỉnh sửa gõ tắt", iconName: "pencil.circle.fill", tab: .macro,
             keywords: ["edit macro", "chỉnh sửa", "sửa"]),
         SettingsItem(
-            title: "Import gõ tắt", iconName: "square.and.arrow.down", tab: .macro,
-            keywords: ["import macro", "import", "nhập", "tệp"]),
+            title: "Import/Export gõ tắt", iconName: "square.and.arrow.down", tab: .macro,
+            keywords: ["import macro", "export", "import", "nhập", "xuất", "tệp", "file"]),
 
-        // System settings - Startup
+        // ═══════════════════════════════════════════
+        // MARK: - Phím tắt (Hotkeys)
+        // ═══════════════════════════════════════════
+        SettingsItem(
+            title: "Phím tắt chuyển chế độ", iconName: "command.circle.fill", tab: .hotkeys,
+            keywords: ["hotkey", "shortcut", "ctrl", "shift", "option", "command", "chuyển chế độ", "tiếng việt", "tiếng anh"]),
+        SettingsItem(
+            title: "Phím tạm dừng", iconName: "pause.circle.fill", tab: .hotkeys,
+            keywords: ["pause", "tạm dừng", "giữ phím", "option", "control"]),
+
+        // ═══════════════════════════════════════════
+        // MARK: - Ứng dụng (Apps)
+        // ═══════════════════════════════════════════
+        SettingsItem(
+            title: "Phím chuyển thông minh", iconName: "arrow.left.arrow.right", tab: .apps,
+            keywords: ["smart switch", "auto switch", "tự động chuyển", "ngữ thông minh"]),
+        SettingsItem(
+            title: "Nhớ bảng mã theo ứng dụng", iconName: "memorychip.fill", tab: .apps,
+            keywords: ["remember code", "bảng mã", "lưu", "nhớ", "ứng dụng"]),
+        SettingsItem(
+            title: "Loại trừ ứng dụng", iconName: "app.badge.fill", tab: .apps,
+            keywords: ["exclude", "blacklist", "app", "ứng dụng", "loại trừ", "không gõ"]),
+        SettingsItem(
+            title: "Gửi từng phím", iconName: "keyboard.badge.ellipsis", tab: .apps,
+            keywords: ["send key step by step", "từng ký tự", "ổn định", "chậm"]),
+        SettingsItem(
+            title: "Ứng dụng gửi từng phím", iconName: "app.badge.fill", tab: .apps,
+            keywords: ["send key apps", "ứng dụng", "từng phím", "app list"]),
+
+        // ═══════════════════════════════════════════
+        // MARK: - Giao diện (Appearance)
+        // ═══════════════════════════════════════════
+        SettingsItem(
+            title: "Màu chủ đạo", iconName: "paintpalette.fill", tab: .appearance,
+            keywords: ["theme", "color", "màu sắc", "giao diện", "theme color", "accent", "xanh", "đỏ", "vàng", "tím", "cam", "hồng"]),
+        SettingsItem(
+            title: "Icon chữ V trên thanh menu", iconName: "flag.fill", tab: .appearance,
+            keywords: ["menu bar", "icon", "chữ v", "vietnamese", "thanh menu"]),
+        SettingsItem(
+            title: "Kích cỡ icon thanh menu", iconName: "arrow.up.left.and.arrow.down.right", tab: .appearance,
+            keywords: ["menu bar size", "kích cỡ", "icon", "thanh menu", "pixel"]),
+        SettingsItem(
+            title: "Hiển thị icon trên Dock", iconName: "app.fill", tab: .appearance,
+            keywords: ["show icon dock", "icon", "dock", "hiển thị"]),
+
+        // ═══════════════════════════════════════════
+        // MARK: - Tương thích (Compatibility)
+        // ═══════════════════════════════════════════
+        SettingsItem(
+            title: "Sửa lỗi Chromium", iconName: "globe", tab: .compatibility,
+            keywords: ["chrome", "edge", "brave", "arc", "browser", "trình duyệt", "chromium"]),
+        SettingsItem(
+            title: "Tương thích bố cục bàn phím", iconName: "keyboard.fill", tab: .compatibility,
+            keywords: ["layout", "compatibility", "dvorak", "colemak", "bố cục", "đặc biệt"]),
+        SettingsItem(
+            title: "Hỗ trợ gõ tiếng Việt trong Claude Code", iconName: "terminal.fill", tab: .compatibility,
+            keywords: ["claude", "claude code", "terminal", "cli", "anthropic", "ai", "tiếng việt", "patch", "sửa lỗi", "fix", "npm"]),
+        SettingsItem(
+            title: "Chế độ an toàn (Safe Mode)", iconName: "shield.fill", tab: .compatibility,
+            keywords: ["safe mode", "an toàn", "oclp", "opencore", "legacy", "mac cũ", "accessibility", "crash", "khôi phục"]),
+
+        // ═══════════════════════════════════════════
+        // MARK: - Hệ thống (System)
+        // ═══════════════════════════════════════════
         SettingsItem(
             title: "Khởi động cùng hệ thống", iconName: "play.fill", tab: .system,
             keywords: ["startup", "login", "boot", "tự động mở", "khởi động"]),
         SettingsItem(
-            title: "Hiển thị icon trên Dock", iconName: "app.fill", tab: .system,
-            keywords: ["show icon dock", "icon", "dock", "hiển thị"]),
-
-        // System settings - Excluded Apps
+            title: "Tần suất kiểm tra cập nhật", iconName: "clock.fill", tab: .system,
+            keywords: ["update frequency", "cập nhật", "tự động", "kiểm tra", "tần suất"]),
         SettingsItem(
-            title: "Loại trừ ứng dụng", iconName: "app.badge.fill", tab: .system,
-            keywords: ["exclude", "blacklist", "app", "ứng dụng", "loại trừ"]),
-
-        // System settings - Compatibility
+            title: "Kênh Beta", iconName: "testtube.2", tab: .system,
+            keywords: ["beta", "beta channel", "thử nghiệm", "không ổn định"]),
         SettingsItem(
-            title: "Sửa lỗi Chromium", iconName: "globe", tab: .system,
-            keywords: ["chrome", "edge", "brave", "browser", "trình duyệt", "chromium"]),
+            title: "Kiểm tra cập nhật", iconName: "arrow.clockwise.circle.fill", tab: .system,
+            keywords: ["update", "cập nhật", "new version", "phiên bản mới", "kiểm tra"]),
         SettingsItem(
-            title: "Tương thích bố cục bàn phím", iconName: "keyboard.fill", tab: .system,
-            keywords: ["layout", "compatibility", "dvorak", "colemak", "bố cục"]),
-
-        // System settings - Data Management
+            title: "Chuyển đổi bảng mã", iconName: "doc.on.clipboard.fill", tab: .system,
+            keywords: ["convert", "chuyển đổi", "bảng mã", "unicode", "tcvn3", "vni", "clipboard"]),
         SettingsItem(
             title: "Đặt lại cài đặt", iconName: "arrow.counterclockwise.circle.fill", tab: .system,
             keywords: ["reset", "đặt lại", "khôi phục", "mặc định", "quản lý dữ liệu"]),
 
-        // Bug Report
+        // ═══════════════════════════════════════════
+        // MARK: - Báo lỗi (Bug Report)
+        // ═══════════════════════════════════════════
         SettingsItem(
             title: "Báo lỗi", iconName: "ladybug.fill", tab: .bugReport,
             keywords: ["bug", "report", "lỗi", "báo cáo", "feedback", "phản hồi"]),
@@ -293,14 +350,19 @@ struct SettingsItem: Identifiable {
         SettingsItem(
             title: "Gửi báo lỗi", iconName: "paperplane.fill", tab: .bugReport,
             keywords: ["send", "gửi", "email", "github", "issue"]),
+        SettingsItem(
+            title: "Quyền Accessibility", iconName: "checkmark.shield", tab: .bugReport,
+            keywords: ["accessibility", "permission", "quyền", "trợ năng", "cấp quyền"]),
 
-        // About
+        // ═══════════════════════════════════════════
+        // MARK: - Thông tin (About)
+        // ═══════════════════════════════════════════
         SettingsItem(
             title: "Thông tin ứng dụng", iconName: "info.circle", tab: .about,
-            keywords: ["about", "version", "phiên bản", "info", "thông tin"]),
+            keywords: ["about", "version", "phiên bản", "info", "thông tin", "phtv"]),
         SettingsItem(
-            title: "Kiểm tra cập nhật", iconName: "arrow.clockwise", tab: .about,
-            keywords: ["update", "cập nhật", "new version", "phiên bản mới", "kiểm tra"]),
+            title: "Ủng hộ phát triển", iconName: "heart.fill", tab: .about,
+            keywords: ["donate", "ủng hộ", "support", "qr", "mã", "phát triển"]),
     ]
 }
 
@@ -310,7 +372,9 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     case advanced = "Nâng cao"
     case macro = "Gõ tắt"
     case hotkeys = "Phím tắt"
-    case theme = "Giao diện"
+    case apps = "Ứng dụng"
+    case appearance = "Giao diện"
+    case compatibility = "Tương thích"
     case system = "Hệ thống"
     case bugReport = "Báo lỗi"
     case about = "Thông tin"
@@ -324,7 +388,9 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .advanced: return "gearshape.2"
         case .macro: return "text.badge.checkmark"
         case .hotkeys: return "command"
-        case .theme: return "paintpalette.fill"
+        case .apps: return "square.stack.3d.up"
+        case .appearance: return "paintpalette.fill"
+        case .compatibility: return "puzzlepiece.extension.fill"
         case .system: return "gear"
         case .bugReport: return "ladybug.fill"
         case .about: return "info.circle"
@@ -333,15 +399,59 @@ enum SettingsTab: String, CaseIterable, Identifiable {
 }
 
 // MARK: - Data Models
+
+/// Danh mục gõ tắt
+struct MacroCategory: Identifiable, Hashable, Codable {
+    let id: UUID
+    var name: String
+    var icon: String  // SF Symbol name
+    var color: String // Hex color
+
+    init(id: UUID = UUID(), name: String, icon: String = "folder.fill", color: String = "#007AFF") {
+        self.id = id
+        self.name = name
+        self.icon = icon
+        self.color = color
+    }
+
+    /// Danh mục mặc định "Chung"
+    static let defaultCategory = MacroCategory(
+        id: UUID(uuidString: "00000000-0000-0000-0000-000000000000")!,
+        name: "Chung",
+        icon: "folder.fill",
+        color: "#007AFF"
+    )
+
+    /// Chuyển hex string sang Color
+    var swiftUIColor: Color {
+        Color(hex: color) ?? .blue
+    }
+}
+
 struct MacroItem: Identifiable, Hashable, Codable {
     let id: UUID
     var shortcut: String
     var expansion: String
+    var categoryId: UUID?  // nil = default category
 
-    init(shortcut: String, expansion: String) {
+    init(shortcut: String, expansion: String, categoryId: UUID? = nil) {
         self.id = UUID()
         self.shortcut = shortcut
         self.expansion = expansion
+        self.categoryId = categoryId
+    }
+
+    // Backward compatible decoder
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        shortcut = try container.decode(String.self, forKey: .shortcut)
+        expansion = try container.decode(String.self, forKey: .expansion)
+        categoryId = try container.decodeIfPresent(UUID.self, forKey: .categoryId)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, shortcut, expansion, categoryId
     }
 }
 

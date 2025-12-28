@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		015CCFFEF0134F81976FCAB6 /* HotkeySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3CCE6686B954309A3B65AAD /* HotkeySettingsView.swift */; };
+		0D5084B3411F5119D468D80E /* CompatibilitySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72B4F8A52F8DD55EF170821A /* CompatibilitySettingsView.swift */; };
 		16B982F63741372BF590C264 /* PHSilentUserDriver.m in Sources */ = {isa = PBXBuildFile; fileRef = 1366D9FE4F6A7BBD6B32B8BE /* PHSilentUserDriver.m */; };
 		232EDA5921F1B33E0085D362 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 232EDA5821F1B33E0085D362 /* AppDelegate.mm */; };
 		232EDA5E21F1B33F0085D362 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 232EDA5D21F1B33F0085D362 /* Assets.xcassets */; };
@@ -51,10 +52,12 @@
 		46ABBBAA2EFD67680003CBB5 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 46ABBBA92EFD67680003CBB5 /* Sparkle */; };
 		46ABBBB02EFD67B00003CBB5 /* SparkleManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = 46ABBBAF2EFD67B00003CBB5 /* SparkleManager.mm */; };
 		46EF4FFA2EEDBFD400DF8DD1 /* PHTV.icon in Resources */ = {isa = PBXBuildFile; fileRef = 46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */; };
+		49AFB5E4F7509F2710D83AF1 /* AppearanceSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7517950331D18D85BC42BE65 /* AppearanceSettingsView.swift */; };
 		5832154BF8BC438D804CD999 /* ThemeSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF311551B144E45B07D9CCD /* ThemeSettingsView.swift */; };
 		969E53BC2BBB4C93AC790BF7 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99A1FB75E4F047E2882D19DC /* ThemeManager.swift */; };
 		A534F32629D8B78100296F25 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23874B0F220160A500000BC8 /* Carbon.framework */; };
 		A534F32629D8B78100296F26 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23874B10220160A500000BC9 /* QuartzCore.framework */; };
+		B130517648548D01FFC0F52C /* AppsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2DA720371C3BD130F878C29 /* AppsSettingsView.swift */; };
 		DB799B68D74F4B3AA863B03A /* AdvancedSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5079BAE20074F51ADAB4E65 /* AdvancedSettingsView.swift */; };
 		E1A1A1A42025120200000002 /* UsageStats.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A32025120200000004 /* UsageStats.m */; };
 		E1A1A1A52025120200000005 /* PHTVConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A72025120200000007 /* PHTVConfig.m */; };
@@ -74,6 +77,7 @@
 		F1A1A1D72025130100000025 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D82025130100000026 /* AboutView.swift */; };
 		F1A1A1D92025130100000027 /* HotkeyConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1DA2025130100000028 /* HotkeyConfigView.swift */; };
 		F1A1A1DB2025130100000029 /* MacroEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1DC2025130100000030 /* MacroEditorView.swift */; };
+		F1A1A1ED2025130100000047 /* MacroCategoryEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1EE2025130100000048 /* MacroCategoryEditorView.swift */; };
 		F1A1A1DD2025130100000031 /* PermissionWarningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1DE2025130100000032 /* PermissionWarningView.swift */; };
 		F1A1A1DF2025130100000033 /* ExcludedAppsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1E02025130100000034 /* ExcludedAppsView.swift */; };
 		F1A1A1E12025130100000035 /* SettingsObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1E22025130100000036 /* SettingsObserver.swift */; };
@@ -159,8 +163,11 @@
 		46ABBBAF2EFD67B00003CBB5 /* SparkleManager.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = SparkleManager.mm; sourceTree = "<group>"; };
 		46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = PHTV.icon; sourceTree = "<group>"; };
 		46EF4FFB2EEDC0A200DF8DD1 /* PHTV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PHTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		72B4F8A52F8DD55EF170821A /* CompatibilitySettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CompatibilitySettingsView.swift; sourceTree = "<group>"; };
+		7517950331D18D85BC42BE65 /* AppearanceSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppearanceSettingsView.swift; sourceTree = "<group>"; };
 		8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities/ColorExtension.swift; sourceTree = "<group>"; };
 		99A1FB75E4F047E2882D19DC /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities/ThemeManager.swift; sourceTree = "<group>"; };
+		C2DA720371C3BD130F878C29 /* AppsSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppsSettingsView.swift; sourceTree = "<group>"; };
 		D3CCE6686B954309A3B65AAD /* HotkeySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeySettingsView.swift; sourceTree = "<group>"; };
 		D5079BAE20074F51ADAB4E65 /* AdvancedSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedSettingsView.swift; sourceTree = "<group>"; };
 		E1A1A1A22025120100000003 /* UsageStats.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UsageStats.h; sourceTree = "<group>"; };
@@ -185,6 +192,7 @@
 		F1A1A1D82025130100000026 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
 		F1A1A1DA2025130100000028 /* HotkeyConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyConfigView.swift; sourceTree = "<group>"; };
 		F1A1A1DC2025130100000030 /* MacroEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroEditorView.swift; sourceTree = "<group>"; };
+		F1A1A1EE2025130100000048 /* MacroCategoryEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroCategoryEditorView.swift; sourceTree = "<group>"; };
 		F1A1A1DE2025130100000032 /* PermissionWarningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionWarningView.swift; sourceTree = "<group>"; };
 		F1A1A1E02025130100000034 /* ExcludedAppsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcludedAppsView.swift; sourceTree = "<group>"; };
 		F1A1A1E22025130100000036 /* SettingsObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsObserver.swift; sourceTree = "<group>"; };
@@ -450,6 +458,9 @@
 				F1A1A1E62025130100000040 /* BugReportView.swift */,
 				F1A1A1D82025130100000026 /* AboutView.swift */,
 				46413AED2EEF7EB300278BFB /* update.json */,
+				C2DA720371C3BD130F878C29 /* AppsSettingsView.swift */,
+				7517950331D18D85BC42BE65 /* AppearanceSettingsView.swift */,
+				72B4F8A52F8DD55EF170821A /* CompatibilitySettingsView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -460,6 +471,7 @@
 				461048612EF2DF22005AF5FC /* SendKeyStepByStepAppsView.swift */,
 				F1A1A1DA2025130100000028 /* HotkeyConfigView.swift */,
 				F1A1A1DC2025130100000030 /* MacroEditorView.swift */,
+				F1A1A1EE2025130100000048 /* MacroCategoryEditorView.swift */,
 				F1A1A1DE2025130100000032 /* PermissionWarningView.swift */,
 				F1A1A1E02025130100000034 /* ExcludedAppsView.swift */,
 				F1A1A1E82025130100000042 /* UpdateBannerView.swift */,
@@ -601,6 +613,7 @@
 				F1A1A1E52025130100000039 /* BugReportView.swift in Sources */,
 				F1A1A1D92025130100000027 /* HotkeyConfigView.swift in Sources */,
 				F1A1A1DB2025130100000029 /* MacroEditorView.swift in Sources */,
+				F1A1A1ED2025130100000047 /* MacroCategoryEditorView.swift in Sources */,
 				F1A1A1DD2025130100000031 /* PermissionWarningView.swift in Sources */,
 				F1A1A1DF2025130100000033 /* ExcludedAppsView.swift in Sources */,
 				F1A1A1E72025130100000041 /* UpdateBannerView.swift in Sources */,
@@ -612,6 +625,9 @@
 				46ABBBB02EFD67B00003CBB5 /* SparkleManager.mm in Sources */,
 				015CCFFEF0134F81976FCAB6 /* HotkeySettingsView.swift in Sources */,
 				16B982F63741372BF590C264 /* PHSilentUserDriver.m in Sources */,
+				B130517648548D01FFC0F52C /* AppsSettingsView.swift in Sources */,
+				49AFB5E4F7509F2710D83AF1 /* AppearanceSettingsView.swift in Sources */,
+				0D5084B3411F5119D468D80E /* CompatibilitySettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

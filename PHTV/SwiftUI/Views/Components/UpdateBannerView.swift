@@ -50,11 +50,13 @@ struct UpdateBannerView: View {
 
                     // Actions
                     HStack(spacing: 12) {
-                        Button("Chi tiết") {
+                        Button {
                             showReleaseNotes = true
+                        } label: {
+                            Text("Chi tiết")
+                                .foregroundStyle(themeManager.themeColor)
                         }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(themeManager.themeColor)
+                        .buttonStyle(.borderless)
 
                         Button {
                             installUpdate()
@@ -67,7 +69,7 @@ struct UpdateBannerView: View {
                                 .foregroundStyle(.white)
                                 .clipShape(Capsule())
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.borderless)
 
                         Button {
                             dismissBanner()
@@ -77,7 +79,7 @@ struct UpdateBannerView: View {
                                 .foregroundStyle(.secondary)
                                 .frame(width: 24, height: 24)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.borderless)
                     }
                 }
                 .padding(16)
@@ -104,8 +106,12 @@ struct UpdateBannerView: View {
     }
 
     private func installUpdate() {
-        // Sparkle handles installation automatically
-        // Just dismiss banner - user will be prompted by Sparkle
+        // Notify Sparkle to proceed with update installation
+        NotificationCenter.default.post(
+            name: NSNotification.Name("SparkleInstallUpdate"),
+            object: nil
+        )
+        // Dismiss banner - Sparkle will show its own UI
         dismissBanner()
     }
 

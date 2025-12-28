@@ -14,6 +14,13 @@ struct ReleaseNotesView: View {
     @Environment(\.dismiss) private var dismiss
     let info: UpdateBannerInfo
 
+    init(info: UpdateBannerInfo) {
+        self.info = info
+        print("[ReleaseNotesView] Init with version: \(info.version)")
+        print("[ReleaseNotesView] releaseNotes length: \(info.releaseNotes.count)")
+        print("[ReleaseNotesView] releaseNotes preview: \(String(info.releaseNotes.prefix(200)))")
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -43,10 +50,22 @@ struct ReleaseNotesView: View {
             Divider()
 
             // Content
-            ScrollView {
+            if info.releaseNotes.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "doc.text")
+                        .font(.system(size: 40))
+                        .foregroundStyle(.secondary)
+                    Text("Không có ghi chú phát hành")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                    Text("Xem chi tiết tại trang phát hành trên GitHub")
+                        .font(.subheadline)
+                        .foregroundStyle(.tertiary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
                 ReleaseNotesHTML(html: info.releaseNotes)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
 
             Divider()
@@ -80,30 +99,53 @@ struct ReleaseNotesHTML: NSViewRepresentable {
     let html: String
 
     func makeNSView(context: Context) -> WKWebView {
-        let webView = WKWebView()
+        let config = WKWebViewConfiguration()
+        config.suppressesIncrementalRendering = false
+
+        let webView = WKWebView(frame: .zero, configuration: config)
         webView.setValue(false, forKey: "drawsBackground")
+
+        // Load content immediately
+        loadContent(webView)
+
         return webView
     }
 
     func updateNSView(_ webView: WKWebView, context: Context) {
+        // Only reload if content changed
+        loadContent(webView)
+    }
+
+    private func loadContent(_ webView: WKWebView) {
         let template = """
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
             <style>
+                * {
+                    box-sizing: border-box;
+                }
                 body {
                     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
                     font-size: 14px;
                     line-height: 1.6;
                     color: #333;
-                    padding: 0;
+                    padding: 16px;
                     margin: 0;
+                    background: transparent;
+                }
+                h2 {
+                    font-size: 1.4em;
+                    font-weight: 700;
+                    margin: 0 0 1em;
+                    color: #1d1d1f;
                 }
                 h3 {
                     font-size: 1.2em;
                     font-weight: 600;
-                    margin: 1em 0 0.5em;
+                    margin: 1.2em 0 0.5em;
                     color: #1d1d1f;
                 }
                 h4 {
@@ -120,18 +162,24 @@ struct ReleaseNotesHTML: NSViewRepresentable {
                     margin: 0.5em 0;
                 }
                 li {
-                    margin: 0.3em 0;
+                    margin: 0.4em 0;
                 }
                 strong {
                     font-weight: 600;
                     color: #1d1d1f;
                 }
+                em {
+                    color: #666;
+                }
                 @media (prefers-color-scheme: dark) {
                     body {
                         color: #e0e0e0;
                     }
-                    h3, h4, strong {
+                    h2, h3, h4, strong {
                         color: #f5f5f7;
+                    }
+                    em {
+                        color: #999;
                     }
                 }
             </style>
@@ -145,7 +193,7 @@ struct ReleaseNotesHTML: NSViewRepresentable {
 
 #Preview {
     ReleaseNotesView(info: UpdateBannerInfo(
-        version: "1.3.0",
+        version: "1.3.1",
         releaseNotes: "<h3>Tính năng mới</h3><ul><li>Tính năng A</li><li>Tính năng B</li></ul>",
         downloadURL: "https://github.com/PhamHungTien/PHTV/releases/latest"
     ))

@@ -186,21 +186,21 @@ struct TypingSettingsView: View {
                         SettingsDivider()
 
                         SettingsToggleRow(
-                            icon: "arrow.left.arrow.right",
-                            iconColor: themeManager.themeColor,
-                            title: "Phím chuyển thông minh",
-                            subtitle: "Tự động chuyển ngữ thông minh",
-                            isOn: $appState.useSmartSwitchKey
-                        )
-
-                        SettingsDivider()
-
-                        SettingsToggleRow(
                             icon: "a.circle.fill",
                             iconColor: themeManager.themeColor,
                             title: "Đặt dấu oà, uý",
                             subtitle: "Dấu trên chữ (oà, uý) thay vì dưới (òa, úy)",
                             isOn: $appState.useModernOrthography
+                        )
+
+                        SettingsDivider()
+
+                        SettingsToggleRow(
+                            icon: "hare.fill",
+                            iconColor: themeManager.themeColor,
+                            title: "Gõ nhanh (Quick Telex)",
+                            subtitle: "Gõ cc → ch, gg → gi, kk → kh, nn → ng...",
+                            isOn: $appState.quickTelex
                         )
                     }
                 }
