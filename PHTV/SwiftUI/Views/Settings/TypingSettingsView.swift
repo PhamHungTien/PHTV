@@ -441,7 +441,7 @@ struct SettingsSliderRow: View {
                 }
             )
             .tint(iconColor)
-            .onChange(of: value) { _, newVal in
+            .onChange(of: value) { newVal in
                 onValueChanged?(newVal)
             }
         }

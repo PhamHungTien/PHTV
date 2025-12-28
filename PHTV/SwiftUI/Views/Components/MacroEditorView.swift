@@ -182,8 +182,9 @@ struct MacroEditorView: View {
     }
 }
 
-#Preview {
-    @Previewable @State var isPresented = true
-    return MacroEditorView(isPresented: $isPresented)
+struct MacroEditorView_Previews: PreviewProvider {
+    static var previews: some View {
+        MacroEditorView(isPresented: .constant(true))
+    }
 }
 

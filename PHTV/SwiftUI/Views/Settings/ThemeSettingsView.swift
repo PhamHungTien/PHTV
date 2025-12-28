@@ -89,9 +89,8 @@ struct ThemeColorButton: View {
                 }
 
                 Text(themeColor.name)
-                    .font(.caption)
+                    .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
                     .foregroundStyle(isSelected ? .primary : .secondary)
-                    .fontWeight(isSelected ? .semibold : .regular)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)

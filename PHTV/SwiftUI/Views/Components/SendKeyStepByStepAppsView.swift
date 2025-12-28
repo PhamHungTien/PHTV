@@ -101,9 +101,12 @@ private struct EmptySendKeyStepByStepAppsView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
         .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Color(NSColor.controlBackgroundColor))
-                .strokeBorder(Color.gray.opacity(0.2), lineWidth: 1, antialiased: true)
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(NSColor.controlBackgroundColor))
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+            }
         )
     }
 }

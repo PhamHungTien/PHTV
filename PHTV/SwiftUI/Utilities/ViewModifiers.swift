@@ -208,4 +208,48 @@ extension View {
     func settingsBackground() -> some View {
         modifier(SettingsViewBackground())
     }
+
+    /// Conditionally applies searchable modifier (macOS 12+)
+    /// On macOS 11, search is not available - the view is returned unchanged
+    @ViewBuilder
+    func conditionalSearchable(text: Binding<String>, prompt: String) -> some View {
+        if #available(macOS 12.0, *) {
+            self.searchable(text: text, placement: .sidebar, prompt: prompt)
+        } else {
+            self
+        }
+    }
+
+    /// Compatible foregroundStyle - uses foregroundColor on macOS 11
+    @ViewBuilder
+    func compatForegroundStyle<S: ShapeStyle>(_ style: S) -> some View {
+        if #available(macOS 12.0, *) {
+            self.foregroundStyle(style)
+        } else {
+            if let color = style as? Color {
+                self.foregroundColor(color)
+            } else {
+                self
+            }
+        }
+    }
+
+    /// Compatible foregroundStyle for HierarchicalShapeStyle
+    @ViewBuilder
+    func compatForegroundPrimary() -> some View {
+        if #available(macOS 12.0, *) {
+            self.foregroundStyle(.primary)
+        } else {
+            self.foregroundColor(.primary)
+        }
+    }
+
+    @ViewBuilder
+    func compatForegroundSecondary() -> some View {
+        if #available(macOS 12.0, *) {
+            self.foregroundStyle(.secondary)
+        } else {
+            self.foregroundColor(.secondary)
+        }
+    }
 }

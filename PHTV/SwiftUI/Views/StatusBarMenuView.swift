@@ -10,7 +10,12 @@ import SwiftUI
 
 struct StatusBarMenuView: View {
     @EnvironmentObject var appState: AppState
-    @Environment(\.openWindow) private var openWindow
+
+    // Helper to open settings window (compatible with macOS 12+)
+    private func openSettingsWindow() {
+        NotificationCenter.default.post(name: NSNotification.Name("ShowSettings"), object: nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
 
     // Get current hotkey string
     private var hotkeyString: String {
@@ -315,8 +320,7 @@ struct StatusBarMenuView: View {
         }
 
         Button {
-            openWindow(id: "settings")
-            NSApp.activate(ignoringOtherApps: true)
+            openSettingsWindow()
         } label: {
             Label("Mở Cài đặt đầy đủ...", systemImage: "slider.horizontal.3")
         }
@@ -328,8 +332,7 @@ struct StatusBarMenuView: View {
         // MARK: - Thông tin & Thoát
         // ═══════════════════════════════════════════
         Button {
-            openWindow(id: "settings")
-            NSApp.activate(ignoringOtherApps: true)
+            openSettingsWindow()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 NotificationCenter.default.post(name: NSNotification.Name("ShowAboutTab"), object: nil)
             }

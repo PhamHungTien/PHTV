@@ -18,7 +18,6 @@ struct PHTVApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var appState = AppState.shared
     @StateObject private var themeManager = ThemeManager.shared
-    @Environment(\.openWindow) private var openWindow
 
     var body: some Scene {
         // Menu bar extra - using native menu style
@@ -33,7 +32,7 @@ struct PHTVApp: App {
                 .renderingMode(.template)
         }
         .menuBarExtraStyle(.menu)
-        .onChange(of: appState.isEnabled) { _, _ in
+        .onChange(of: appState.isEnabled) { _ in
             // Force menu bar refresh when language changes
         }
 

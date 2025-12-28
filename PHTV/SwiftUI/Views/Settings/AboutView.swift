@@ -57,9 +57,8 @@ struct AboutView: View {
                             .font(.system(size: 32, weight: .bold, design: .rounded))
 
                         Text("Precision Hybrid Typing Vietnamese")
-                            .font(.system(size: 13, weight: .medium, design: .default))
+                            .font(.system(size: 13, weight: .medium).italic())
                             .foregroundStyle(.secondary)
-                            .italic()
 
                         Text("Bộ gõ tiếng Việt cho macOS")
                             .font(.subheadline)
