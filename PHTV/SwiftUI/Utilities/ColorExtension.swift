@@ -8,6 +8,49 @@
 
 import SwiftUI
 
+// MARK: - Color from Hex String
+
+extension Color {
+    /// Create Color from hex string (e.g., "#FF5733" or "FF5733")
+    init?(hex: String) {
+        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
+
+        var rgb: UInt64 = 0
+        guard Scanner(string: hexSanitized).scanHexInt64(&rgb) else {
+            return nil
+        }
+
+        let length = hexSanitized.count
+        let r, g, b, a: Double
+
+        if length == 6 {
+            r = Double((rgb & 0xFF0000) >> 16) / 255.0
+            g = Double((rgb & 0x00FF00) >> 8) / 255.0
+            b = Double(rgb & 0x0000FF) / 255.0
+            a = 1.0
+        } else if length == 8 {
+            r = Double((rgb & 0xFF000000) >> 24) / 255.0
+            g = Double((rgb & 0x00FF0000) >> 16) / 255.0
+            b = Double((rgb & 0x0000FF00) >> 8) / 255.0
+            a = Double(rgb & 0x000000FF) / 255.0
+        } else {
+            return nil
+        }
+
+        self.init(red: r, green: g, blue: b, opacity: a)
+    }
+
+    /// Convert Color to hex string
+    var hexString: String {
+        let nsColor = NSColor(self).usingColorSpace(.sRGB) ?? NSColor(self)
+        let r = Int(nsColor.redComponent * 255)
+        let g = Int(nsColor.greenComponent * 255)
+        let b = Int(nsColor.blueComponent * 255)
+        return String(format: "#%02X%02X%02X", r, g, b)
+    }
+}
+
 // MARK: - Color Compatibility for macOS 11+
 
 extension Color {
@@ -105,22 +148,22 @@ struct AppStorageColor: RawRepresentable {
     }
 }
 
-// MARK: - Predefined Theme Colors
+// MARK: - Predefined Theme Colors (darker for white text contrast)
 
 extension Color {
     static let themeColors: [ThemeColor] = [
-        ThemeColor(id: "blue", name: "Xanh dương", color: .blue),
-        ThemeColor(id: "purple", name: "Tím", color: .purple),
-        ThemeColor(id: "pink", name: "Hồng", color: .pink),
-        ThemeColor(id: "red", name: "Đỏ", color: .red),
-        ThemeColor(id: "orange", name: "Cam", color: .orange),
-        ThemeColor(id: "yellow", name: "Vàng", color: .yellow),
-        ThemeColor(id: "green", name: "Xanh lá", color: .green),
-        ThemeColor(id: "teal", name: "Xanh ngọc", color: .compatTeal),
-        ThemeColor(id: "indigo", name: "Chàm", color: .compatIndigo),
-        ThemeColor(id: "mint", name: "Bạc hà", color: .compatMint),
-        ThemeColor(id: "cyan", name: "Lục lam", color: .compatCyan),
-        ThemeColor(id: "brown", name: "Nâu", color: .compatBrown),
+        ThemeColor(id: "blue", name: "Xanh dương", color: Color(hex: "#0066CC") ?? .blue),
+        ThemeColor(id: "purple", name: "Tím", color: Color(hex: "#7B3FA0") ?? .purple),
+        ThemeColor(id: "pink", name: "Hồng", color: Color(hex: "#D63384") ?? .pink),
+        ThemeColor(id: "red", name: "Đỏ", color: Color(hex: "#CC3333") ?? .red),
+        ThemeColor(id: "orange", name: "Cam", color: Color(hex: "#E65C00") ?? .orange),
+        ThemeColor(id: "yellow", name: "Vàng", color: Color(hex: "#B8860B") ?? .yellow),  // DarkGoldenrod
+        ThemeColor(id: "green", name: "Xanh lá", color: Color(hex: "#2E8B57") ?? .green),  // SeaGreen
+        ThemeColor(id: "teal", name: "Xanh ngọc", color: Color(hex: "#008080") ?? .compatTeal),
+        ThemeColor(id: "indigo", name: "Chàm", color: Color(hex: "#4B0082") ?? .compatIndigo),
+        ThemeColor(id: "mint", name: "Bạc hà", color: Color(hex: "#00A86B") ?? .compatMint),  // Jade
+        ThemeColor(id: "cyan", name: "Lục lam", color: Color(hex: "#0097A7") ?? .compatCyan),  // Dark Cyan
+        ThemeColor(id: "brown", name: "Nâu", color: Color(hex: "#8B4513") ?? .compatBrown),  // SaddleBrown
     ]
 }
 

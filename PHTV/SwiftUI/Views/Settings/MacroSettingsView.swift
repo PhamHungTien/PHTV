@@ -15,9 +15,26 @@ struct MacroSettingsView: View {
     @State private var macros: [MacroItem] = []
     @State private var selectedMacro: UUID?
     @State private var showingAddMacro = false
-    @State private var showingEditMacro = false
-    @State private var editingMacro: MacroItem? = nil
+    @State private var editingMacro: MacroItem? = nil  // nil = not editing, set to show edit sheet
     @State private var refreshTrigger = UUID()
+
+    // Category states
+    @State private var selectedCategoryId: UUID? = nil  // nil = show all
+    @State private var showingAddCategory = false
+    @State private var editingCategory: MacroCategory? = nil  // nil = not editing, set to show edit sheet
+
+    /// Filtered macros based on selected category
+    private var filteredMacros: [MacroItem] {
+        guard let categoryId = selectedCategoryId else {
+            return macros  // Show all when "Tất cả" is selected
+        }
+        return macros.filter { $0.categoryId == categoryId }
+    }
+
+    /// Count macros for a category
+    private func macroCount(for categoryId: UUID) -> Int {
+        return macros.filter { $0.categoryId == categoryId }.count
+    }
 
     var body: some View {
         ScrollView {
@@ -58,6 +75,80 @@ struct MacroSettingsView: View {
                         .opacity(appState.useMacro ? 1 : 0.5)
                     }
                 }
+
+                // Categories
+                SettingsCard(title: "Danh mục", icon: "folder.fill") {
+                    VStack(spacing: 0) {
+                        // Category toolbar
+                        HStack(spacing: 12) {
+                            Button(action: { showingAddCategory = true }) {
+                                Label("Thêm", systemImage: "plus.circle.fill")
+                                    .font(.subheadline)
+                            }
+                            .adaptiveBorderedButtonStyle()
+
+                            Button(action: { editCategory() }) {
+                                Label("Sửa", systemImage: "pencil.circle.fill")
+                                    .font(.subheadline)
+                            }
+                            .adaptiveBorderedButtonStyle()
+                            .disabled(selectedCategoryId == nil || selectedCategoryId == MacroCategory.defaultCategory.id)
+
+                            Button(action: { deleteCategory() }) {
+                                Label("Xóa", systemImage: "minus.circle.fill")
+                                    .font(.subheadline)
+                            }
+                            .adaptiveBorderedButtonStyle()
+                            .disabled(selectedCategoryId == nil || selectedCategoryId == MacroCategory.defaultCategory.id)
+
+                            Spacer()
+                        }
+                        .padding(.bottom, 12)
+
+                        Divider()
+                            .padding(.bottom, 8)
+
+                        // Category list
+                        VStack(spacing: 4) {
+                            // "All" option - shows all macros
+                            CategoryRowView(
+                                name: "Tất cả",
+                                icon: "tray.2.fill",
+                                color: themeManager.themeColor,
+                                count: macros.count,
+                                isSelected: selectedCategoryId == nil,
+                                isEditable: false
+                            )
+                            .onTapGesture {
+                                withAnimation(.easeInOut(duration: 0.15)) {
+                                    selectedCategoryId = nil
+                                }
+                            }
+
+                            // User categories
+                            ForEach(appState.macroCategories) { category in
+                                CategoryRowView(
+                                    name: category.name,
+                                    icon: category.icon,
+                                    color: category.swiftUIColor,
+                                    count: macroCount(for: category.id),
+                                    isSelected: selectedCategoryId == category.id,
+                                    isEditable: true,
+                                    onEdit: {
+                                        editingCategory = category  // Setting this opens the sheet
+                                    }
+                                )
+                                .onTapGesture {
+                                    withAnimation(.easeInOut(duration: 0.15)) {
+                                        selectedCategoryId = category.id
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                .disabled(!appState.useMacro)
+                .opacity(appState.useMacro ? 1 : 0.5)
 
                 // Macro List
                 SettingsCard(title: "Danh sách gõ tắt", icon: "list.bullet.rectangle") {
@@ -101,7 +192,7 @@ struct MacroSettingsView: View {
                             .adaptiveBorderedButtonStyle()
                             .disabled(!appState.useMacro)
 
-                            Text("\(macros.count)")
+                            Text("\(filteredMacros.count)")
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
                                 .foregroundStyle(.white)
@@ -115,13 +206,22 @@ struct MacroSettingsView: View {
                             .padding(.bottom, 8)
 
                         // Content
-                        if macros.isEmpty {
-                            EmptyMacroView(useMacro: appState.useMacro, onAdd: {
-                                showingAddMacro = true
-                            })
+                        if filteredMacros.isEmpty {
+                            EmptyMacroView(
+                                useMacro: appState.useMacro,
+                                isFiltered: selectedCategoryId != nil,
+                                onAdd: { showingAddMacro = true }
+                            )
                         } else {
-                            MacroListView(macros: macros, selectedMacro: $selectedMacro)
-                                .frame(height: 300)
+                            MacroListView(
+                                macros: filteredMacros,
+                                categories: allCategories,
+                                selectedMacro: $selectedMacro,
+                                onEdit: { macro in
+                                    editingMacro = macro  // Setting this opens the sheet
+                                }
+                            )
+                            .frame(height: 300)
                         }
                     }
                 }
@@ -132,12 +232,50 @@ struct MacroSettingsView: View {
         }
         .settingsBackground()
         .sheet(isPresented: $showingAddMacro) {
-            MacroEditorView(isPresented: $showingAddMacro)
-                .environmentObject(appState)
+            MacroEditorView(
+                isPresented: $showingAddMacro,
+                categories: appState.macroCategories,
+                defaultCategoryId: selectedCategoryId
+            )
+            .environmentObject(appState)
+            .environmentObject(themeManager)
         }
-        .sheet(isPresented: $showingEditMacro) {
-            MacroEditorView(isPresented: $showingEditMacro, editingMacro: editingMacro)
-                .environmentObject(appState)
+        .sheet(item: $editingMacro) { macro in
+            MacroEditorView(
+                isPresented: Binding(
+                    get: { editingMacro != nil },
+                    set: { if !$0 { editingMacro = nil } }
+                ),
+                editingMacro: macro,
+                categories: appState.macroCategories
+            )
+            .environmentObject(appState)
+            .environmentObject(themeManager)
+        }
+        .sheet(isPresented: $showingAddCategory) {
+            MacroCategoryEditorView(
+                editingCategory: nil,
+                existingCategories: appState.macroCategories,
+                onSave: { category in
+                    appState.macroCategories.append(category)
+                    appState.saveSettings()
+                }
+            )
+            .environmentObject(themeManager)
+        }
+        .sheet(item: $editingCategory) { category in
+            MacroCategoryEditorView(
+                editingCategory: category,
+                existingCategories: appState.macroCategories,
+                onSave: { updatedCategory in
+                    if let index = appState.macroCategories.firstIndex(where: { $0.id == updatedCategory.id }) {
+                        appState.macroCategories[index] = updatedCategory
+                        appState.saveSettings()
+                    }
+                    editingCategory = nil  // Close sheet
+                }
+            )
+            .environmentObject(themeManager)
         }
         .onAppear {
             loadMacros()
@@ -150,6 +288,11 @@ struct MacroSettingsView: View {
                 refreshTrigger = UUID()
             }
         }
+    }
+
+    /// All user-created categories
+    private var allCategories: [MacroCategory] {
+        appState.macroCategories
     }
 
     private func loadMacros() {
@@ -188,14 +331,43 @@ struct MacroSettingsView: View {
         else {
             return
         }
-        editingMacro = macro
-        showingEditMacro = true
+        editingMacro = macro  // Setting this opens the sheet
+    }
+
+    private func editCategory() {
+        guard let categoryId = selectedCategoryId,
+              let category = appState.macroCategories.first(where: { $0.id == categoryId })
+        else {
+            return
+        }
+        editingCategory = category  // Setting this opens the sheet
+    }
+
+    private func deleteCategory() {
+        guard let categoryId = selectedCategoryId,
+              let index = appState.macroCategories.firstIndex(where: { $0.id == categoryId })
+        else {
+            return
+        }
+
+        // Move all macros in this category to uncategorized (nil)
+        for i in macros.indices {
+            if macros[i].categoryId == categoryId {
+                macros[i].categoryId = nil
+            }
+        }
+        saveMacros()
+
+        // Remove category
+        appState.macroCategories.remove(at: index)
+        appState.saveSettings()
+
+        selectedCategoryId = nil
     }
 
     private func exportMacros() {
         guard !macros.isEmpty else { return }
 
-        // macOS file save dialog
         let panel = NSSavePanel()
         panel.allowedContentTypes = [UTType.json]
         panel.canCreateDirectories = true
@@ -205,13 +377,29 @@ struct MacroSettingsView: View {
 
         if panel.runModal() == .OK, let url = panel.url {
             do {
-                // Create array of simple dictionaries for export
                 struct ExportMacro: Encodable {
                     let shortcut: String
                     let expansion: String
+                    let categoryId: String?
                 }
 
-                let exportData = macros.map { ExportMacro(shortcut: $0.shortcut, expansion: $0.expansion) }
+                struct ExportData: Encodable {
+                    let categories: [MacroCategory]
+                    let macros: [ExportMacro]
+                }
+
+                let exportMacros = macros.map {
+                    ExportMacro(
+                        shortcut: $0.shortcut,
+                        expansion: $0.expansion,
+                        categoryId: $0.categoryId?.uuidString
+                    )
+                }
+
+                let exportData = ExportData(
+                    categories: appState.macroCategories,
+                    macros: exportMacros
+                )
 
                 let encoder = JSONEncoder()
                 encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -226,7 +414,6 @@ struct MacroSettingsView: View {
     }
 
     private func importMacros() {
-        // macOS file picker
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [UTType.json, UTType.commaSeparatedText, UTType.plainText]
         panel.allowsMultipleSelection = false
@@ -237,14 +424,40 @@ struct MacroSettingsView: View {
             do {
                 let data = try Data(contentsOf: url)
                 var imported: [MacroItem] = []
+                var importedCategories: [MacroCategory] = []
 
                 if url.pathExtension.lowercased() == "json" {
-                    // Expect array of {"shortcut": "...", "expansion": "..."}
-                    struct RawMacro: Decodable { let shortcut: String; let expansion: String }
-                    let raw = try JSONDecoder().decode([RawMacro].self, from: data)
-                    imported = raw.map { MacroItem(shortcut: normalize($0.shortcut), expansion: normalize($0.expansion)) }
+                    // Try new format first
+                    struct ImportData: Decodable {
+                        let categories: [MacroCategory]?
+                        let macros: [ImportMacro]?
+
+                        struct ImportMacro: Decodable {
+                            let shortcut: String
+                            let expansion: String
+                            let categoryId: String?
+                        }
+                    }
+
+                    if let importData = try? JSONDecoder().decode(ImportData.self, from: data),
+                       let macroList = importData.macros {
+                        // New format with categories
+                        importedCategories = importData.categories ?? []
+                        imported = macroList.map {
+                            MacroItem(
+                                shortcut: normalize($0.shortcut),
+                                expansion: normalize($0.expansion),
+                                categoryId: $0.categoryId.flatMap { UUID(uuidString: $0) }
+                            )
+                        }
+                    } else {
+                        // Old format: array of {shortcut, expansion}
+                        struct RawMacro: Decodable { let shortcut: String; let expansion: String }
+                        let raw = try JSONDecoder().decode([RawMacro].self, from: data)
+                        imported = raw.map { MacroItem(shortcut: normalize($0.shortcut), expansion: normalize($0.expansion)) }
+                    }
                 } else {
-                    // CSV/TXT: lines "shortcut,expansion"; ignore empty and comments (#)
+                    // CSV/TXT: lines "shortcut,expansion"
                     if let text = String(data: data, encoding: .utf8) {
                         imported = text
                             .split(whereSeparator: { $0.isNewline })
@@ -261,9 +474,16 @@ struct MacroSettingsView: View {
                     }
                 }
 
-                // Merge: dedupe by shortcut (case-insensitive), prefer imported entries
+                // Merge categories
+                for cat in importedCategories {
+                    if !appState.macroCategories.contains(where: { $0.id == cat.id }) {
+                        appState.macroCategories.append(cat)
+                    }
+                }
+                appState.saveSettings()
+
+                // Merge macros
                 var map: [String: MacroItem] = [:]
-                // Use normalized key for compare but keep original MacroItem to preserve id
                 for m in macros {
                     let key = normalize(m.shortcut).lowercased()
                     map[key] = m
@@ -293,12 +513,73 @@ struct MacroSettingsView: View {
             defaults.set(encoded, forKey: "macroList")
             defaults.synchronize()
             print("[MacroSettings] Saved \(macros.count) macros to UserDefaults")
-            print("[MacroSettings] macroList data size: \(encoded.count) bytes")
-            // Notify immediately; backend rebuilds macroData synchronously
             NotificationCenter.default.post(name: NSNotification.Name("MacrosUpdated"), object: nil)
-            print("[MacroSettings] Notification posted")
         } else {
             print("[MacroSettings] ERROR: Failed to encode macros")
+        }
+    }
+}
+
+// MARK: - Category Row View
+
+struct CategoryRowView: View {
+    let name: String
+    let icon: String
+    let color: Color
+    let count: Int
+    let isSelected: Bool
+    var isEditable: Bool = false
+    var onEdit: (() -> Void)? = nil
+
+    @State private var isHovering = false
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 14))
+                .foregroundStyle(color)
+                .frame(width: 24, height: 24)
+                .background(
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(color.opacity(0.15))
+                )
+
+            Text(name)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+
+            Spacer()
+
+            // Edit button - always present for editable categories
+            if isEditable {
+                Button {
+                    onEdit?()
+                } label: {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 11))
+                        .foregroundStyle(isHovering ? Color.secondary : Color.clear)
+                }
+                .buttonStyle(.borderless)
+                .help("Sửa danh mục")
+            }
+
+            Text("(\(count))")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(isSelected ? color.opacity(0.12) : Color.clear)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(isSelected ? color.opacity(0.3) : Color.clear, lineWidth: 1)
+        )
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            isHovering = hovering
         }
     }
 }
@@ -307,6 +588,7 @@ struct MacroSettingsView: View {
 
 struct EmptyMacroView: View {
     let useMacro: Bool
+    var isFiltered: Bool = false
     let onAdd: () -> Void
 
     var body: some View {
@@ -316,24 +598,24 @@ struct EmptyMacroView: View {
                     .fill(Color.blue.opacity(0.1))
                     .frame(width: 64, height: 64)
 
-                Image(systemName: "text.badge.plus")
+                Image(systemName: isFiltered ? "folder" : "text.badge.plus")
                     .font(.system(size: 28))
                     .foregroundStyle(.tint)
             }
 
             VStack(spacing: 6) {
-                Text("Chưa có gõ tắt")
+                Text(isFiltered ? "Danh mục trống" : "Chưa có gõ tắt")
                     .font(.headline)
                     .foregroundStyle(.primary)
 
-                Text("Tạo gõ tắt để nhập văn bản nhanh hơn")
+                Text(isFiltered ? "Thêm gõ tắt vào danh mục này" : "Tạo gõ tắt để nhập văn bản nhanh hơn")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
 
             Button(action: onAdd) {
-                Label("Tạo gõ tắt đầu tiên", systemImage: "plus.circle.fill")
+                Label(isFiltered ? "Thêm gõ tắt" : "Tạo gõ tắt đầu tiên", systemImage: "plus.circle.fill")
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.regular)
@@ -345,29 +627,46 @@ struct EmptyMacroView: View {
 
 struct MacroListView: View {
     let macros: [MacroItem]
+    let categories: [MacroCategory]
     @Binding var selectedMacro: UUID?
+    var onEdit: ((MacroItem) -> Void)? = nil
 
     var body: some View {
         List(macros, selection: $selectedMacro) { macro in
-            MacroRowView(macro: macro)
+            MacroRowView(
+                macro: macro,
+                category: categoryFor(macro),
+                isSelected: selectedMacro == macro.id,
+                onEdit: { onEdit?(macro) }
+            )
         }
         .listStyle(.inset(alternatesRowBackgrounds: true))
+    }
+
+    private func categoryFor(_ macro: MacroItem) -> MacroCategory? {
+        guard let categoryId = macro.categoryId else { return nil }
+        return categories.first { $0.id == categoryId }
     }
 }
 
 struct MacroRowView: View {
     let macro: MacroItem
+    var category: MacroCategory? = nil
+    var isSelected: Bool = false
+    var onEdit: (() -> Void)? = nil
+
+    @State private var isHovering = false
 
     var body: some View {
         HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 6)
-                    .fill(Color.blue.opacity(0.12))
+                    .fill((category?.swiftUIColor ?? .blue).opacity(0.12))
                     .frame(width: 32, height: 32)
 
-                Image(systemName: "text.badge.plus")
+                Image(systemName: category?.icon ?? "text.badge.plus")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.tint)
+                    .foregroundStyle(category?.swiftUIColor ?? .blue)
             }
 
             VStack(alignment: .leading, spacing: 3) {
@@ -383,13 +682,40 @@ struct MacroRowView: View {
             }
 
             Spacer()
+
+            // Edit button - always visible but with different opacity
+            Button {
+                onEdit?()
+            } label: {
+                Image(systemName: "pencil.circle.fill")
+                    .font(.system(size: 18))
+                    .foregroundStyle(isHovering || isSelected ? Color.secondary : Color.clear)
+            }
+            .buttonStyle(.borderless)
+            .help("Sửa gõ tắt")
+
+            if let cat = category {
+                Text(cat.name)
+                    .font(.caption2)
+                    .foregroundStyle(cat.swiftUIColor)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(
+                        Capsule().fill(cat.swiftUIColor.opacity(0.12))
+                    )
+            }
         }
         .padding(.vertical, 4)
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            isHovering = hovering
+        }
     }
 }
 
 #Preview {
     MacroSettingsView()
         .environmentObject(AppState.shared)
-        .frame(width: 500, height: 600)
+        .environmentObject(ThemeManager.shared)
+        .frame(width: 500, height: 800)
 }

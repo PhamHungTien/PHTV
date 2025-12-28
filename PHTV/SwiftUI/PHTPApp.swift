@@ -278,6 +278,7 @@ final class AppState: ObservableObject {
     @Published var useMacro: Bool = true
     @Published var useMacroInEnglishMode: Bool = false
     @Published var autoCapsMacro: Bool = false
+    @Published var macroCategories: [MacroCategory] = []
     @Published var useSmartSwitchKey: Bool = true
     @Published var upperCaseFirstChar: Bool = false
     @Published var allowConsonantZFWJ: Bool = false
@@ -600,6 +601,11 @@ final class AppState: ObservableObject {
         useMacro = defaults.bool(forKey: "UseMacro")
         useMacroInEnglishMode = defaults.bool(forKey: "UseMacroInEnglishMode")
         autoCapsMacro = defaults.bool(forKey: "vAutoCapsMacro")
+        // Load macro categories (filter out default category if present)
+        if let categoriesData = defaults.data(forKey: "macroCategories"),
+           let categories = try? JSONDecoder().decode([MacroCategory].self, from: categoriesData) {
+            macroCategories = categories.filter { $0.id != MacroCategory.defaultCategory.id }
+        }
         useSmartSwitchKey = defaults.bool(forKey: "UseSmartSwitchKey")
         upperCaseFirstChar = defaults.bool(forKey: "UpperCaseFirstChar")
         allowConsonantZFWJ = defaults.bool(forKey: "vAllowConsonantZFWJ")
@@ -739,6 +745,11 @@ final class AppState: ObservableObject {
         defaults.set(useMacro, forKey: "UseMacro")
         defaults.set(useMacroInEnglishMode, forKey: "UseMacroInEnglishMode")
         defaults.set(autoCapsMacro, forKey: "vAutoCapsMacro")
+        // Save macro categories (exclude default category)
+        let categoriesToSave = macroCategories.filter { $0.id != MacroCategory.defaultCategory.id }
+        if let categoriesData = try? JSONEncoder().encode(categoriesToSave) {
+            defaults.set(categoriesData, forKey: "macroCategories")
+        }
         defaults.set(useSmartSwitchKey, forKey: "UseSmartSwitchKey")
         defaults.set(upperCaseFirstChar, forKey: "UpperCaseFirstChar")
         defaults.set(allowConsonantZFWJ, forKey: "vAllowConsonantZFWJ")

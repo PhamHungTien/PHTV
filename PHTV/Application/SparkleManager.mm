@@ -94,6 +94,7 @@
 
 - (void)updater:(SPUUpdater *)updater didFindValidUpdate:(SUAppcastItem *)item {
     NSLog(@"[Sparkle] Update found: %@ (%@)", item.displayVersionString, item.versionString);
+    NSLog(@"[Sparkle] didFindValidUpdate - itemDescription length: %lu", (unsigned long)[item.itemDescription length]);
 
     // Notify SwiftUI - always notify when update is found
     NSDictionary *info = @{
@@ -152,6 +153,13 @@
                                             state:(SPUUserUpdateState *)state {
     // Intercept to show custom update banner
     NSLog(@"[Sparkle] Showing custom update UI for: %@", update.displayVersionString);
+    NSString *releaseNotes = update.itemDescription ?: @"";
+    NSLog(@"[Sparkle] Release notes length: %lu", (unsigned long)[releaseNotes length]);
+    if (releaseNotes.length > 0) {
+        NSLog(@"[Sparkle] Release notes preview: %@", [releaseNotes substringToIndex:MIN(200, releaseNotes.length)]);
+    } else {
+        NSLog(@"[Sparkle] Release notes: EMPTY");
+    }
 
     NSDictionary *info = @{
         @"version": update.displayVersionString ?: @"",

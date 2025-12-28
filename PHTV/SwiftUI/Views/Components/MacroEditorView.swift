@@ -11,14 +11,37 @@ import SwiftUI
 struct MacroEditorView: View {
     @Binding var isPresented: Bool
     @EnvironmentObject var appState: AppState
-    @State private var macroName = ""
-    @State private var macroCode = ""
+    @EnvironmentObject var themeManager: ThemeManager
+    @State private var macroName: String
+    @State private var macroCode: String
     @State private var errorMessage = ""
     @State private var showError = false
+    @State private var selectedCategoryId: UUID?
 
     // Edit mode support
-    var editingMacro: MacroItem? = nil
+    let editingMacro: MacroItem?
     var isEditMode: Bool { editingMacro != nil }
+
+    // Category support - user categories only
+    let categories: [MacroCategory]
+    let defaultCategoryId: UUID?
+
+    init(
+        isPresented: Binding<Bool>,
+        editingMacro: MacroItem? = nil,
+        categories: [MacroCategory] = [],
+        defaultCategoryId: UUID? = nil
+    ) {
+        self._isPresented = isPresented
+        self.editingMacro = editingMacro
+        self.categories = categories
+        self.defaultCategoryId = defaultCategoryId
+
+        // Initialize state with editing macro values or empty
+        _macroName = State(initialValue: editingMacro?.shortcut ?? "")
+        _macroCode = State(initialValue: editingMacro?.expansion ?? "")
+        _selectedCategoryId = State(initialValue: editingMacro?.categoryId ?? defaultCategoryId)
+    }
 
     var body: some View {
         VStack(spacing: 16) {
@@ -44,6 +67,62 @@ struct MacroEditorView: View {
                         .font(.system(.body, design: .monospaced))
                         .roundedTextArea()
                 }
+
+                // Category picker - only show if there are custom categories
+                if !categories.isEmpty {
+                    Section("Danh mục") {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                // "None" option - uncategorized
+                                Button {
+                                    withAnimation(.easeInOut(duration: 0.15)) {
+                                        selectedCategoryId = nil
+                                    }
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "tag.slash")
+                                            .font(.system(size: 12))
+                                        Text("Không có")
+                                            .font(.subheadline)
+                                    }
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(selectedCategoryId == nil ? Color.gray : Color(NSColor.controlBackgroundColor))
+                                    )
+                                    .foregroundStyle(selectedCategoryId == nil ? .white : .primary)
+                                }
+                                .buttonStyle(.plain)
+
+                                // User categories
+                                ForEach(categories) { category in
+                                    Button {
+                                        withAnimation(.easeInOut(duration: 0.15)) {
+                                            selectedCategoryId = category.id
+                                        }
+                                    } label: {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: category.icon)
+                                                .font(.system(size: 12))
+                                            Text(category.name)
+                                                .font(.subheadline)
+                                        }
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 8)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .fill(selectedCategoryId == category.id ? category.swiftUIColor : Color(NSColor.controlBackgroundColor))
+                                        )
+                                        .foregroundStyle(selectedCategoryId == category.id ? .white : .primary)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.vertical, 4)
+                        }
+                    }
+                }
             }
 
             HStack {
@@ -55,23 +134,17 @@ struct MacroEditorView: View {
                     saveMacro()
                 }
                 .buttonStyle(.borderedProminent)
+                .tint(themeManager.themeColor)
                 .disabled(macroName.isEmpty || macroCode.isEmpty)
             }
             .padding()
         }
         .padding()
-        .frame(minWidth: 400, minHeight: 300)
+        .frame(minWidth: 400, minHeight: categories.isEmpty ? 300 : 360)
         .alert("Lỗi", isPresented: $showError) {
             Button("OK") {}
         } message: {
             Text(errorMessage)
-        }
-        .onAppear {
-            // Initialize fields if editing
-            if let macro = editingMacro {
-                macroName = macro.shortcut
-                macroCode = macro.expansion
-            }
         }
     }
 
@@ -131,7 +204,8 @@ struct MacroEditorView: View {
             print("[MacroEditor] Editing macro: \(editingMacro.shortcut)")
             macros[index].shortcut = trimmedName
             macros[index].expansion = trimmedCode
-            print("[MacroEditor] Updated to: \(trimmedName) -> \(trimmedCode)")
+            macros[index].categoryId = selectedCategoryId
+            print("[MacroEditor] Updated to: \(trimmedName) -> \(trimmedCode), category: \(selectedCategoryId?.uuidString ?? "nil")")
         } else {
             // ADD MODE: Check if macro already exists
             if macros.contains(where: { $0.shortcut.lowercased() == trimmedName.lowercased() }) {
@@ -143,9 +217,10 @@ struct MacroEditorView: View {
             // Add new macro
             let newMacro = MacroItem(
                 shortcut: trimmedName,
-                expansion: trimmedCode)
+                expansion: trimmedCode,
+                categoryId: selectedCategoryId)
             macros.append(newMacro)
-            print("[MacroEditor] Added new macro: \(newMacro.shortcut) -> \(newMacro.expansion)")
+            print("[MacroEditor] Added new macro: \(newMacro.shortcut) -> \(newMacro.expansion), category: \(selectedCategoryId?.uuidString ?? "nil")")
 
             // Auto-enable macro feature when creating first macro
             if !appState.useMacro {
@@ -190,7 +265,15 @@ struct MacroEditorView: View {
 
 struct MacroEditorView_Previews: PreviewProvider {
     static var previews: some View {
-        MacroEditorView(isPresented: .constant(true))
+        MacroEditorView(
+            isPresented: .constant(true),
+            categories: [
+                MacroCategory(name: "Công việc", icon: "briefcase.fill", color: "#FF9500"),
+                MacroCategory(name: "Email", icon: "envelope.fill", color: "#5856D6")
+            ]
+        )
+        .environmentObject(AppState.shared)
+        .environmentObject(ThemeManager.shared)
     }
 }
 

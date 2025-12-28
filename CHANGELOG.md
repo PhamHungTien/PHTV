@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.1] - 2024-12-28
+
+### Changed
+- **Settings Reorganization**: Tổ chức lại cài đặt thành 9 tab hợp lý hơn
+  - **Ứng dụng**: Phím chuyển thông minh, Nhớ bảng mã, Loại trừ ứng dụng, Gửi từng phím
+  - **Giao diện**: Màu chủ đạo, Icon menu bar, Hiển thị Dock
+  - **Tương thích**: Chromium fix, Bàn phím, Claude Code, Safe Mode
+  - **Hỗ trợ**: Kết hợp Thông tin + Báo lỗi với tab con
+- **Advanced Settings**: Đơn giản hóa chỉ còn cài đặt phụ âm nâng cao
+- **Search**: Cập nhật danh sách tìm kiếm theo cấu trúc tab mới
+
 ## [1.3.0] - 2024-12-28
 
 ### Added
@@ -181,7 +192,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Macro (gõ tắt)
 - Hoàn toàn offline
 
-[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/PhamHungTien/PHTV/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/PhamHungTien/PHTV/compare/v1.2.6...v1.3.0
 [1.2.6]: https://github.com/PhamHungTien/PHTV/compare/v1.2.5...v1.2.6
 [1.2.5]: https://github.com/PhamHungTien/PHTV/compare/v1.1.4...v1.2.5

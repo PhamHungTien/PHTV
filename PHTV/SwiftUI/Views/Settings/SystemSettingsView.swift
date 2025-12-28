@@ -27,110 +27,6 @@ struct SystemSettingsView: View {
                             subtitle: "Tự động mở PHTV khi đăng nhập macOS",
                             isOn: $appState.runOnStartup
                         )
-
-                        SettingsDivider()
-
-                        SettingsToggleRow(
-                            icon: "app.fill",
-                            iconColor: themeManager.themeColor,
-                            title: "Hiển thị icon trên Dock",
-                            subtitle: "Hiện icon PHTV khi mở menu bảng điều khiển",
-                            isOn: $appState.showIconOnDock
-                        )
-                    }
-                }
-
-                // Appearance Settings
-                SettingsCard(title: "Giao diện", icon: "paintbrush.fill") {
-                    VStack(spacing: 0) {
-                        SettingsToggleRow(
-                            icon: "flag.fill",
-                            iconColor: themeManager.themeColor,
-                            title: "Hiển thị icon chữ V trên thanh menu",
-                            subtitle: "Dùng icon chữ V khi đang ở chế độ tiếng Việt",
-                            isOn: $appState.useVietnameseMenubarIcon
-                        )
-
-                        SettingsDivider()
-
-                        VStack(spacing: 8) {
-                            HStack(spacing: 14) {
-                                // Icon background - no glass effect to avoid glass-on-glass
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(themeManager.themeColor.opacity(0.12))
-                                        .frame(width: 36, height: 36)
-
-                                    Image(systemName: "arrow.up.left.and.arrow.down.right")
-                                        .font(.system(size: 16, weight: .medium))
-                                        .foregroundStyle(themeManager.themeColor)
-                                }
-
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Kích cỡ icon thanh menu")
-                                        .font(.body)
-                                        .foregroundStyle(.primary)
-
-                                    Text("Điều chỉnh kích thước icon trên thanh menu")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-
-                                Spacer()
-
-                                Text(String(format: "%.0f px", appState.menuBarIconSize))
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.tint)
-                                    .frame(minWidth: 40, alignment: .trailing)
-                            }
-
-                            CustomSlider(
-                                value: $appState.menuBarIconSize,
-                                range: 12.0...20.0,
-                                step: 0.01,
-                                tintColor: themeManager.themeColor
-                            )
-                        }
-                        .padding(.vertical, 6)
-                    }
-                }
-
-                // Excluded Apps
-                SettingsCard(title: "Loại trừ ứng dụng", icon: "app.badge.fill") {
-                    ExcludedAppsView()
-                }
-
-                // Compatibility Settings
-                SettingsCard(title: "Tương thích", icon: "puzzlepiece.extension.fill") {
-                    VStack(spacing: 0) {
-                        SettingsToggleRow(
-                            icon: "globe",
-                            iconColor: themeManager.themeColor,
-                            title: "Sửa lỗi Chromium",
-                            subtitle: "Tương thích Chrome, Edge, Brave...",
-                            isOn: $appState.fixChromiumBrowser
-                        )
-
-                        SettingsDivider()
-
-                        SettingsToggleRow(
-                            icon: "keyboard.fill",
-                            iconColor: themeManager.themeColor,
-                            title: "Tương thích bố cục bàn phím",
-                            subtitle: "Hỗ trợ các bố cục đặc biệt",
-                            isOn: $appState.performLayoutCompat
-                        )
-
-                        SettingsDivider()
-
-                        SettingsToggleRow(
-                            icon: "shield.fill",
-                            iconColor: .orange,
-                            title: "Chế độ an toàn (Safe Mode)",
-                            subtitle: "Dành cho Mac không được hỗ trợ chính thức (OCLP)",
-                            isOn: $appState.safeMode
-                        )
                     }
                 }
 
@@ -140,7 +36,6 @@ struct SystemSettingsView: View {
                         // Frequency picker
                         VStack(alignment: .leading, spacing: 8) {
                             HStack(spacing: 14) {
-                                // Icon background - no glass effect to avoid glass-on-glass
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 8)
                                         .fill(themeManager.themeColor.opacity(0.12))
@@ -240,6 +135,9 @@ struct SystemSettingsView: View {
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowConvertToolSheet"))) { _ in
             showingConvertTool = true
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenConvertToolSheet"))) { _ in
+            showingConvertTool = true
+        }
         .alert("Đặt lại cài đặt?", isPresented: $showingResetAlert) {
             Button("Hủy", role: .cancel) {}
             Button("Đặt lại", role: .destructive) {
@@ -289,7 +187,6 @@ struct SettingsInfoRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            // Icon background - no glass effect to avoid glass-on-glass
             ZStack {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(iconColor.opacity(0.12))
@@ -326,7 +223,6 @@ struct SettingsButtonRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 14) {
-                // Icon background - no glass effect to avoid glass-on-glass
                 ZStack {
                     RoundedRectangle(cornerRadius: 8)
                         .fill(iconColor.opacity(0.12))
@@ -371,5 +267,6 @@ struct SettingsButtonRow: View {
 #Preview {
     SystemSettingsView()
         .environmentObject(AppState.shared)
+        .environmentObject(ThemeManager.shared)
         .frame(width: 500, height: 600)
 }
