@@ -145,7 +145,7 @@ struct ReleaseNotesHTML: NSViewRepresentable {
 
 #Preview {
     ReleaseNotesView(info: UpdateBannerInfo(
-        version: "1.2.9",
+        version: "1.3.0",
         releaseNotes: "<h3>Tính năng mới</h3><ul><li>Tính năng A</li><li>Tính năng B</li></ul>",
         downloadURL: "https://github.com/PhamHungTien/PHTV/releases/latest"
     ))
