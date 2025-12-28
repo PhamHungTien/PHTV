@@ -130,8 +130,6 @@ gh release create v1.2.8 \
   Releases/1.2.8/PHTV-1.2.8.dmg
 ```
 
-See [../docs/automation/](../docs/automation/) for complete documentation.
-
 ---
 
 ## 📝 Script Requirements
@@ -148,7 +146,11 @@ For GitHub Actions:
 
 ## 🐛 Troubleshooting
 
-See [../docs/automation/README.md](../docs/automation/README.md#troubleshooting)
+Common issues:
+- **DMG not found**: Check `Releases/VERSION/PHTV-VERSION.dmg` exists
+- **Permission denied**: Run `gh auth login` to re-authenticate
+- **Formula syntax error**: Run `brew style --fix homebrew/phtv.rb`
+- **Tap not syncing**: Check `~/Documents/homebrew-tap` exists
 
 ---
 
