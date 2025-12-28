@@ -10,7 +10,7 @@
         <item>
             <title>PHTV 1.2.9</title>
             <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.2.9</link>
-            <sparkle:version>1</sparkle:version>
+            <sparkle:version>4</sparkle:version>
             <sparkle:shortVersionString>1.2.9</sparkle:shortVersionString>
             <description><![CDATA[
                 <h2>PHTV 1.2.9 - Code Table Converter & Menu Bar Improvements</h2>
@@ -42,10 +42,10 @@
             <pubDate>Sun, 28 Dec 2025 15:34:12 +0700</pubDate>
             <enclosure
                 url="https://github.com/PhamHungTien/PHTV/releases/download/v1.2.9/PHTV-1.2.9.dmg"
-                sparkle:version="1"
+                sparkle:version="4"
                 sparkle:shortVersionString="1.2.9"
-                sparkle:edSignature="sn8iPsRh914IRnEYVkkDBReWqEBujwcinI1l9/mec9m17QyBynSKgDqo9nsHymO880u9uhH/sTcqU5RJmqhJAA=="
-                length="12407996"
+                sparkle:edSignature="sH0MAVhw0D1B3N5n8qDB3EBrM7UrqA/xauZUPDW9wK+U/hMcKX800ipp6ECP6n5KNVaj9aY3aqzgGEzOpJJpDA=="
+                length="12407908"
                 type="application/octet-stream"/>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
         </item>
