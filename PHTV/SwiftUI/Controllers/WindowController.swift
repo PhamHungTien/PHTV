@@ -73,11 +73,13 @@ extension SwiftUIWindowController {
         let controller = SwiftUIWindowController(
             rootView: SettingsView()
                 .environmentObject(AppState.shared)
-                .frame(minWidth: 700, minHeight: 500),
+                .frame(minWidth: 720, minHeight: 500),
             title: "Cài đặt PHTV",
-            size: NSSize(width: 800, height: 600),
+            size: NSSize(width: 820, height: 600),
             unifiedTitlebar: true
         )
+        // Set minimum window size to prevent sidebar from being too narrow
+        controller.window?.minSize = NSSize(width: 720, height: 500)
         return controller
     }
     

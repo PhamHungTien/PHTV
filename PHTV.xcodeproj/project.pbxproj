@@ -81,6 +81,7 @@
 		F1A1A1E52025130100000039 /* BugReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1E62025130100000040 /* BugReportView.swift */; };
 		F1A1A1E72025130100000041 /* UpdateBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1E82025130100000042 /* UpdateBannerView.swift */; };
 		F1A1A1E92025130100000043 /* ReleaseNotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1EA2025130100000044 /* ReleaseNotesView.swift */; };
+		F1A1A1EB2025130100000045 /* ConvertToolView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1EC2025130100000046 /* ConvertToolView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -191,6 +192,7 @@
 		F1A1A1E62025130100000040 /* BugReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BugReportView.swift; sourceTree = "<group>"; };
 		F1A1A1E82025130100000042 /* UpdateBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateBannerView.swift; sourceTree = "<group>"; };
 		F1A1A1EA2025130100000044 /* ReleaseNotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesView.swift; sourceTree = "<group>"; };
+		F1A1A1EC2025130100000046 /* ConvertToolView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvertToolView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -462,6 +464,7 @@
 				F1A1A1E02025130100000034 /* ExcludedAppsView.swift */,
 				F1A1A1E82025130100000042 /* UpdateBannerView.swift */,
 				F1A1A1EA2025130100000044 /* ReleaseNotesView.swift */,
+				F1A1A1EC2025130100000046 /* ConvertToolView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -602,6 +605,7 @@
 				F1A1A1DF2025130100000033 /* ExcludedAppsView.swift in Sources */,
 				F1A1A1E72025130100000041 /* UpdateBannerView.swift in Sources */,
 				F1A1A1E92025130100000043 /* ReleaseNotesView.swift in Sources */,
+				F1A1A1EB2025130100000045 /* ConvertToolView.swift in Sources */,
 				F1A1A1E12025130100000035 /* SettingsObserver.swift in Sources */,
 				F1A1A1E32025130100000037 /* ReloadHelpers.swift in Sources */,
 				DB799B68D74F4B3AA863B03A /* AdvancedSettingsView.swift in Sources */,
@@ -770,7 +774,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.2.6;
+				MARKETING_VERSION = 1.2.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.phamhungtien.phtv;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -813,7 +817,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.2.6;
+				MARKETING_VERSION = 1.2.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.phamhungtien.phtv;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

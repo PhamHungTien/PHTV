@@ -68,21 +68,21 @@ struct MacroSettingsView: View {
                                 Label("Thêm", systemImage: "plus.circle.fill")
                                     .font(.subheadline)
                             }
-                            .buttonStyle(.bordered)
+                            .adaptiveBorderedButtonStyle()
                             .disabled(!appState.useMacro)
 
                             Button(action: { editMacro() }) {
                                 Label("Sửa", systemImage: "pencil.circle.fill")
                                     .font(.subheadline)
                             }
-                            .buttonStyle(.bordered)
+                            .adaptiveBorderedButtonStyle()
                             .disabled(selectedMacro == nil || !appState.useMacro)
 
                             Button(action: { deleteMacro() }) {
                                 Label("Xóa", systemImage: "minus.circle.fill")
                                     .font(.subheadline)
                             }
-                            .buttonStyle(.bordered)
+                            .adaptiveBorderedButtonStyle()
                             .disabled(selectedMacro == nil || !appState.useMacro)
 
                             Spacer()
@@ -91,14 +91,14 @@ struct MacroSettingsView: View {
                                 Label("Export", systemImage: "square.and.arrow.up")
                                     .font(.subheadline)
                             }
-                            .buttonStyle(.bordered)
+                            .adaptiveBorderedButtonStyle()
                             .disabled(macros.isEmpty || !appState.useMacro)
 
                             Button(action: { importMacros() }) {
                                 Label("Import", systemImage: "square.and.arrow.down")
                                     .font(.subheadline)
                             }
-                            .buttonStyle(.bordered)
+                            .adaptiveBorderedButtonStyle()
                             .disabled(!appState.useMacro)
 
                             Text("\(macros.count)")
@@ -130,7 +130,7 @@ struct MacroSettingsView: View {
             }
             .padding(20)
         }
-        .background(Color(NSColor.windowBackgroundColor))
+        .settingsBackground()
         .sheet(isPresented: $showingAddMacro) {
             MacroEditorView(isPresented: $showingAddMacro)
                 .environmentObject(appState)

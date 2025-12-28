@@ -12,6 +12,7 @@ struct SystemSettingsView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var themeManager: ThemeManager
     @State private var showingResetAlert = false
+    @State private var showingConvertTool = false
 
     var body: some View {
         ScrollView {
@@ -54,17 +55,11 @@ struct SystemSettingsView: View {
 
                         VStack(spacing: 8) {
                             HStack(spacing: 14) {
+                                // Icon background - no glass effect to avoid glass-on-glass
                                 ZStack {
-                                    if #available(macOS 26.0, *) {
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .fill(themeManager.themeColor.opacity(0.12))
-                                            .frame(width: 36, height: 36)
-                                            .glassEffect(in: .rect(cornerRadius: 8))
-                                    } else {
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .fill(themeManager.themeColor.opacity(0.12))
-                                            .frame(width: 36, height: 36)
-                                    }
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(themeManager.themeColor.opacity(0.12))
+                                        .frame(width: 36, height: 36)
 
                                     Image(systemName: "arrow.up.left.and.arrow.down.right")
                                         .font(.system(size: 16, weight: .medium))
@@ -135,6 +130,7 @@ struct SystemSettingsView: View {
                         // Frequency picker
                         VStack(alignment: .leading, spacing: 8) {
                             HStack(spacing: 14) {
+                                // Icon background - no glass effect to avoid glass-on-glass
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 8)
                                         .fill(themeManager.themeColor.opacity(0.12))
@@ -172,7 +168,7 @@ struct SystemSettingsView: View {
                         // Beta toggle
                         SettingsToggleRow(
                             icon: "testtube.2",
-                            iconColor: .orange,
+                            iconColor: themeManager.themeColor,
                             title: "Kênh Beta",
                             subtitle: "Nhận bản cập nhật beta (không ổn định)",
                             isOn: $appState.betaChannelEnabled
@@ -187,6 +183,21 @@ struct SystemSettingsView: View {
                             title: "Kiểm tra cập nhật",
                             subtitle: "Tìm phiên bản mới ngay bây giờ",
                             action: checkForUpdates
+                        )
+                    }
+                }
+
+                // Tools
+                SettingsCard(title: "Công cụ", icon: "wrench.and.screwdriver.fill") {
+                    VStack(spacing: 0) {
+                        SettingsButtonRow(
+                            icon: "doc.on.clipboard.fill",
+                            iconColor: themeManager.themeColor,
+                            title: "Chuyển đổi bảng mã",
+                            subtitle: "Chuyển văn bản giữa Unicode, TCVN3, VNI...",
+                            action: {
+                                showingConvertTool = true
+                            }
                         )
                     }
                 }
@@ -211,7 +222,14 @@ struct SystemSettingsView: View {
             }
             .padding(20)
         }
-        .background(Color(NSColor.windowBackgroundColor))
+        .settingsBackground()
+        .sheet(isPresented: $showingConvertTool) {
+            ConvertToolView()
+                .environmentObject(themeManager)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowConvertToolSheet"))) { _ in
+            showingConvertTool = true
+        }
         .alert("Đặt lại cài đặt?", isPresented: $showingResetAlert) {
             Button("Hủy", role: .cancel) {}
             Button("Đặt lại", role: .destructive) {
@@ -261,6 +279,7 @@ struct SettingsInfoRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
+            // Icon background - no glass effect to avoid glass-on-glass
             ZStack {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(iconColor.opacity(0.12))
@@ -297,6 +316,7 @@ struct SettingsButtonRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 14) {
+                // Icon background - no glass effect to avoid glass-on-glass
                 ZStack {
                     RoundedRectangle(cornerRadius: 8)
                         .fill(iconColor.opacity(0.12))

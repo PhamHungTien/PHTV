@@ -81,6 +81,26 @@ extension View {
     }
 }
 
+// MARK: - Background Extension for Liquid Glass
+
+/// Applies backgroundExtensionEffect on macOS 26+ to allow content to extend under the sidebar
+struct BackgroundExtensionModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(macOS 26.0, *) {
+            content
+                .backgroundExtensionEffect()
+        } else {
+            content
+        }
+    }
+}
+
+extension View {
+    func liquidGlassBackground() -> some View {
+        modifier(BackgroundExtensionModifier())
+    }
+}
+
 // MARK: - Custom Button Styles
 
 struct PrimaryButtonStyle: ButtonStyle {
@@ -139,4 +159,53 @@ extension Color {
     static let phtvSecondary = Color(NSColor.secondaryLabelColor)
     static let phtvBackground = Color(NSColor.windowBackgroundColor)
     static let phtvSurface = Color(NSColor.controlBackgroundColor)
+}
+
+// MARK: - Adaptive Button Styles for Liquid Glass
+
+extension View {
+    /// Applies glassProminent on macOS 26+, borderedProminent on older versions
+    @ViewBuilder
+    func adaptiveProminentButtonStyle() -> some View {
+        if #available(macOS 26.0, *) {
+            self.buttonStyle(.glassProminent)
+        } else {
+            self.buttonStyle(.borderedProminent)
+        }
+    }
+
+    /// Applies glass on macOS 26+, bordered on older versions
+    @ViewBuilder
+    func adaptiveBorderedButtonStyle() -> some View {
+        if #available(macOS 26.0, *) {
+            self.buttonStyle(.glass)
+        } else {
+            self.buttonStyle(.bordered)
+        }
+    }
+}
+
+// MARK: - Settings View Background
+
+/// Applies appropriate background for settings views
+/// On macOS 26+: Uses clear background to allow Liquid Glass effects
+/// On older versions: Uses standard window background color
+struct SettingsViewBackground: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(macOS 26.0, *) {
+            content
+                .scrollContentBackground(.hidden)
+                .background(.clear)
+        } else {
+            content
+                .background(Color(NSColor.windowBackgroundColor))
+        }
+    }
+}
+
+extension View {
+    /// Applies appropriate background for settings detail views
+    func settingsBackground() -> some View {
+        modifier(SettingsViewBackground())
+    }
 }

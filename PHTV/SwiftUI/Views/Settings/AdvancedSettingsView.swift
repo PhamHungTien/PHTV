@@ -103,7 +103,7 @@ struct AdvancedSettingsView: View {
             }
             .padding(20)
         }
-        .background(Color(NSColor.windowBackgroundColor))
+        .settingsBackground()
         .onAppear {
             checkClaudeCodeStatus()
         }
@@ -291,17 +291,11 @@ private struct ClaudeCodeToggleRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
+            // Icon background - no glass effect to avoid glass-on-glass
             ZStack {
-                if #available(macOS 26.0, *) {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(iconColor.opacity(0.12))
-                        .frame(width: 36, height: 36)
-                        .glassEffect(in: .rect(cornerRadius: 8))
-                } else {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(iconColor.opacity(0.12))
-                        .frame(width: 36, height: 36)
-                }
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(iconColor.opacity(0.12))
+                    .frame(width: 36, height: 36)
 
                 if showProgress {
                     ProgressView()

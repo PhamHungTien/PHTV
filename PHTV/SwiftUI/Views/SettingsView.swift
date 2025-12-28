@@ -116,15 +116,15 @@ struct SettingsView: View {
                     }
                 }
             }
+            .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 250)
         } detail: {
             detailView
                 .environmentObject(appState)
                 .environmentObject(themeManager)
                 .frame(minWidth: 500)
-                .toolbar {
-                }
+                .modifier(BackgroundExtensionModifier())
         }
-        .navigationSplitViewStyle(.automatic)
+        .navigationSplitViewStyle(.balanced)
         .tint(themeManager.themeColor)
         .accentColor(themeManager.themeColor)
         .onAppear {

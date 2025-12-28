@@ -44,7 +44,7 @@ struct BugReportView: View {
             }
             .padding(20)
         }
-        .background(Color(NSColor.windowBackgroundColor))
+        .settingsBackground()
         .task {
             if cachedLogs.isEmpty {
                 await loadDebugLogsAsync()
@@ -172,7 +172,7 @@ struct BugReportView: View {
                             .frame(maxWidth: .infinity)
                     }
                 }
-                .buttonStyle(.bordered)
+                .adaptiveBorderedButtonStyle()
                 .disabled(isSending)
 
                 // Open GitHub Issue
@@ -188,7 +188,7 @@ struct BugReportView: View {
                             .frame(maxWidth: .infinity)
                     }
                 }
-                .buttonStyle(.borderedProminent)
+                .adaptiveProminentButtonStyle()
                 .tint(themeManager.themeColor)
                 .disabled(isSending)
 
@@ -205,7 +205,7 @@ struct BugReportView: View {
                             .frame(maxWidth: .infinity)
                     }
                 }
-                .buttonStyle(.bordered)
+                .adaptiveBorderedButtonStyle()
                 .disabled(isSending)
             }
             .padding(.vertical, 4)

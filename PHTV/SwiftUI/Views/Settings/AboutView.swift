@@ -167,7 +167,7 @@ struct AboutView: View {
                 .padding(.bottom, 20)
             }
         }
-        .background(Color(NSColor.windowBackgroundColor))
+        .settingsBackground()
     }
 }
 
@@ -179,17 +179,12 @@ struct AboutInfoCard: View {
 
     var body: some View {
         HStack(spacing: 14) {
+            // Icon background - no glass effect to avoid glass-on-glass
+            // (parent row already has glass background)
             ZStack {
-                if #available(macOS 26.0, *) {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(iconColor.opacity(0.08))
-                        .frame(width: 42, height: 42)
-                        .glassEffect(in: .rect(cornerRadius: 10))
-                } else {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(iconColor.opacity(0.12))
-                        .frame(width: 42, height: 42)
-                }
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(iconColor.opacity(0.12))
+                    .frame(width: 42, height: 42)
 
                 Image(systemName: icon)
                     .font(.system(size: 18, weight: .medium))

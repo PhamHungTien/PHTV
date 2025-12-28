@@ -17,15 +17,22 @@ struct UpdateBannerView: View {
         if let info = appState.customUpdateBannerInfo, appState.showCustomUpdateBanner {
             VStack(spacing: 0) {
                 HStack(spacing: 16) {
-                    // Icon
+                    // Icon with bounce effect on macOS 15+
                     ZStack {
                         RoundedRectangle(cornerRadius: 12)
                             .fill(themeManager.themeColor.opacity(0.15))
                             .frame(width: 48, height: 48)
 
-                        Image(systemName: "arrow.down.circle.fill")
-                            .font(.system(size: 24))
-                            .foregroundStyle(themeManager.themeColor)
+                        if #available(macOS 15.0, *) {
+                            Image(systemName: "arrow.down.circle.fill")
+                                .font(.system(size: 24))
+                                .foregroundStyle(themeManager.themeColor)
+                                .symbolEffect(.bounce, options: .repeat(2))
+                        } else {
+                            Image(systemName: "arrow.down.circle.fill")
+                                .font(.system(size: 24))
+                                .foregroundStyle(themeManager.themeColor)
+                        }
                     }
 
                     // Text

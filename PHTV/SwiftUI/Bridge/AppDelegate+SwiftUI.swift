@@ -41,7 +41,14 @@ extension AppDelegate {
             name: NSNotification.Name("ShowConvertTool"),
             object: nil
         )
-        
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleOpenConvertTool),
+            name: NSNotification.Name("OpenConvertTool"),
+            object: nil
+        )
+
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleShowAbout),
@@ -70,10 +77,34 @@ extension AppDelegate {
     }
     
     @objc private func handleShowConvertTool() {
-        // Show convert tool window
-        // Call existing method to show convert tool
+        // Call quickConvert to convert clipboard content
+        let converted = PHTVManager.quickConvert()
+
+        // Show notification to user
+        if converted {
+            // Play sound to indicate success
+            NSSound.beep()
+        }
     }
-    
+
+    @objc private func handleOpenConvertTool() {
+        DispatchQueue.main.async {
+            // Open settings window and navigate to System tab, then show convert tool
+            if let openWindow = NSApp.windows.first(where: { $0.identifier?.rawValue == "settings" }) {
+                openWindow.makeKeyAndOrderFront(nil)
+            } else {
+                // Post notification to open settings first
+                NotificationCenter.default.post(name: NSNotification.Name("OpenSettings"), object: nil)
+            }
+            NSApp.activate(ignoringOtherApps: true)
+
+            // Post notification to show convert tool sheet
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                NotificationCenter.default.post(name: NSNotification.Name("ShowConvertToolSheet"), object: nil)
+            }
+        }
+    }
+
     @objc private func handleShowAbout() {
         // Show about window
         // Call existing method to show about

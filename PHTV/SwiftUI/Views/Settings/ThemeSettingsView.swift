@@ -42,7 +42,7 @@ struct ThemeSettingsView: View {
             }
             .padding(20)
         }
-        .background(Color(NSColor.windowBackgroundColor))
+        .settingsBackground()
     }
 
     // Helper function to compare colors
