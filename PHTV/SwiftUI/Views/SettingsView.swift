@@ -151,6 +151,12 @@ struct SettingsView: View {
                 oldValue ? "true" : "false", newValue ? "true" : "false")
             appDelegate?.showIcon(onDock: newValue)
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowAboutTab"))) { _ in
+            selectedTab = .about
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowMacroTab"))) { _ in
+            selectedTab = .macro
+        }
     }
 
     @ViewBuilder
