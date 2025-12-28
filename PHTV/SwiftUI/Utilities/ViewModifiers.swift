@@ -187,9 +187,28 @@ extension View {
 
 // MARK: - Settings View Background
 
+/// Visual Effect background for blur effect
+struct VisualEffectBackground: NSViewRepresentable {
+    var material: NSVisualEffectView.Material
+    var blendingMode: NSVisualEffectView.BlendingMode
+
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = material
+        view.blendingMode = blendingMode
+        view.state = .active
+        return view
+    }
+
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
+        nsView.material = material
+        nsView.blendingMode = blendingMode
+    }
+}
+
 /// Applies appropriate background for settings views
-/// On macOS 26+: Uses clear background to allow Liquid Glass effects
-/// On older versions: Uses standard window background color
+/// On macOS 26+: Uses Liquid Glass effects
+/// On older versions: Uses blurred window background
 struct SettingsViewBackground: ViewModifier {
     func body(content: Content) -> some View {
         if #available(macOS 26.0, *) {
@@ -198,7 +217,13 @@ struct SettingsViewBackground: ViewModifier {
                 .background(.clear)
         } else {
             content
-                .background(Color(NSColor.windowBackgroundColor))
+                .scrollContentBackground(.hidden)
+                .background(
+                    VisualEffectBackground(
+                        material: .sidebar,
+                        blendingMode: .behindWindow
+                    )
+                )
         }
     }
 }

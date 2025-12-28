@@ -99,12 +99,12 @@ struct SettingsView: View {
             .listStyle(.sidebar)
             .tint(themeManager.themeColor)
             .conditionalSearchable(text: $searchText, prompt: "Tìm kiếm cài đặt...")
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 250)
+            .navigationSplitViewColumnWidth(min: 160, ideal: 200, max: 240)
         } detail: {
             detailView
                 .environmentObject(appState)
                 .environmentObject(themeManager)
-                .frame(minWidth: 500)
+                .frame(minWidth: 400, minHeight: 400)
                 .modifier(BackgroundExtensionModifier())
         }
         .navigationSplitViewStyle(.balanced)

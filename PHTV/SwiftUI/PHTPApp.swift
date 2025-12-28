@@ -19,6 +19,11 @@ struct PHTVApp: App {
     @StateObject private var appState = AppState.shared
     @StateObject private var themeManager = ThemeManager.shared
 
+    init() {
+        // Initialize SettingsNotificationObserver to listen for notifications
+        _ = SettingsNotificationObserver.shared
+    }
+
     var body: some Scene {
         // Menu bar extra - using native menu style
         MenuBarExtra {
@@ -36,8 +41,9 @@ struct PHTVApp: App {
             // Force menu bar refresh when language changes
         }
 
-        // Settings window with hidden title bar
-        Window("Cài đặt", id: "settings") {
+        // Settings window - uses SettingsWindowHelper for manual creation
+        // This Window scene is kept for compatibility but primary opening is via notification
+        Window("", id: "settings") {
             ZStack(alignment: .top) {
                 SettingsView()
                     .environmentObject(appState)
@@ -52,8 +58,8 @@ struct PHTVApp: App {
             }
         }
         .windowStyle(.hiddenTitleBar)
-        .defaultSize(width: 900, height: 650)
-        .windowResizability(.contentSize)
+        .defaultSize(width: 950, height: 680)
+        .windowResizability(.contentMinSize)
     }
 }
 
@@ -127,40 +133,124 @@ private func makeMenuBarIconImage(size: CGFloat, slashed: Bool) -> NSImage {
     return img
 }
 
+/// Helper class to manage the settings window with proper Swift 6 concurrency
 @MainActor
-func openSettingsWindow(with appState: AppState) {
-    // Check if settings window already exists
-    for window in NSApp.windows {
-        if window.identifier?.rawValue == "settings" || window.title == "Cài đặt" {
-            window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
-            return
-        }
-    }
+enum SettingsWindowHelper {
+    private static var settingsWindow: NSWindow?
 
-    // Open using SwiftUI Window Scene
-    if let url = URL(string: "phtv://settings") {
-        NSWorkspace.shared.open(url)
-    } else {
-        // Fallback: Create window manually with hidden title bar
-        let settingsView = SettingsView().environmentObject(appState)
+    static func openSettingsWindow() {
+        NSLog("[SettingsWindowHelper] openSettingsWindow called")
+
+        // Check if settings window already exists
+        for window in NSApp.windows {
+            let identifier = window.identifier?.rawValue ?? ""
+            if identifier == "settings" {
+                NSLog("[SettingsWindowHelper] Found existing window, bringing to front")
+                window.makeKeyAndOrderFront(nil)
+                NSApp.activate(ignoringOtherApps: true)
+                return
+            }
+        }
+
+        NSLog("[SettingsWindowHelper] Creating new settings window")
+
+        // Create window manually with hidden title bar
+        let appState = AppState.shared
+        let themeManager = ThemeManager.shared
+
+        let settingsView = ZStack(alignment: .top) {
+            SettingsView()
+                .environmentObject(appState)
+                .environmentObject(themeManager)
+                .tint(themeManager.themeColor)
+
+            UpdateBannerView()
+                .environmentObject(appState)
+                .environmentObject(themeManager)
+                .zIndex(1000)
+        }
+
         let hostingController = NSHostingController(rootView: settingsView)
 
-        let settingsWindow = NSWindow(contentViewController: hostingController)
-        settingsWindow.identifier = NSUserInterfaceItemIdentifier("settings")
-        settingsWindow.styleMask = [
-            .titled, .closable, .miniaturizable, .resizable, .fullSizeContentView,
-        ]
-        settingsWindow.titlebarAppearsTransparent = true
-        settingsWindow.titleVisibility = .hidden
-        settingsWindow.isMovableByWindowBackground = true
-        settingsWindow.title = "Cài đặt"
-        settingsWindow.setContentSize(NSSize(width: 850, height: 600))
-        settingsWindow.minSize = NSSize(width: 700, height: 500)
-        settingsWindow.center()
-        settingsWindow.makeKeyAndOrderFront(nil)
+        // Fixed optimal window size
+        let windowWidth: CGFloat = 950
+        let windowHeight: CGFloat = 680
+
+        // Create window with hiddenTitleBar-like style
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: windowWidth, height: windowHeight),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        window.identifier = NSUserInterfaceItemIdentifier("settings")
+        window.contentViewController = hostingController
+
+        // Hidden title bar style - matches SwiftUI .windowStyle(.hiddenTitleBar)
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.isMovableByWindowBackground = true
+
+        // No toolbar needed - let NavigationSplitView handle sidebar naturally
+        window.titlebarSeparatorStyle = .automatic
+
+        // Window sizing constraints - matches SettingsView constraints
+        // Sidebar min: 160 + Detail min: 400 = 560, plus some padding
+        window.minSize = NSSize(width: 600, height: 450)
+
+        // Force set the frame size explicitly
+        window.setContentSize(NSSize(width: windowWidth, height: windowHeight))
+        window.center()
+        window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+
+        settingsWindow = window
+        NSLog("[SettingsWindowHelper] Settings window created and shown")
     }
+}
+
+/// Class to setup notification observers for settings window
+final class SettingsNotificationObserver: @unchecked Sendable {
+    static let shared = SettingsNotificationObserver()
+    private var observers: [Any] = []
+
+    private init() {
+        setupObservers()
+        NSLog("[SettingsNotificationObserver] Initialized")
+    }
+
+    private func setupObservers() {
+        // Listen for ShowSettings notification
+        let showSettingsObserver = NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("ShowSettings"),
+            object: nil,
+            queue: .main
+        ) { _ in
+            NSLog("[SettingsNotificationObserver] Received ShowSettings notification")
+            Task { @MainActor in
+                SettingsWindowHelper.openSettingsWindow()
+            }
+        }
+        observers.append(showSettingsObserver)
+
+        // Listen for CreateSettingsWindow notification
+        let createWindowObserver = NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("CreateSettingsWindow"),
+            object: nil,
+            queue: .main
+        ) { _ in
+            NSLog("[SettingsNotificationObserver] Received CreateSettingsWindow notification")
+            Task { @MainActor in
+                SettingsWindowHelper.openSettingsWindow()
+            }
+        }
+        observers.append(createWindowObserver)
+    }
+}
+
+@MainActor
+func openSettingsWindow(with appState: AppState) {
+    SettingsWindowHelper.openSettingsWindow()
 }
 
 // MARK: - App State Management

@@ -615,16 +615,13 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     // [self syncStateToSwiftUI];  // Removed to prevent race conditions
 
     // Setup notification observers for SwiftUI integration
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(onShowSettings:)
-                                                 name:@"ShowSettings"
-                                               object:nil];
-    
+    // Note: ShowSettings is now handled by SettingsWindowManager in Swift
+    // We only need to handle ShowMacroTab and ShowAboutTab here
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(onShowMacroTab:)
                                                  name:@"ShowMacroTab"
                                                object:nil];
-    
+
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(onShowAboutTab:)
                                                  name:@"ShowAboutTab"
@@ -1160,16 +1157,14 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     });
 }
 
-- (void)onShowSettings:(NSNotification *)notification {
-    [self onControlPanelSelected];
-}
-
 - (void)onShowMacroTab:(NSNotification *)notification {
+    // First open settings window, then switch to macro tab
     [self onControlPanelSelected];
 }
 
 - (void)onShowAboutTab:(NSNotification *)notification {
-    [self onAboutSelected];
+    // First open settings window
+    [self onControlPanelSelected];
 }
 
 #pragma mark - Menu Creation Helpers
@@ -1873,7 +1868,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 -(void) onControlPanelSelected {
     // Show dock icon when opening settings
     [self showIconOnDock:YES];
-    
+
     // Mark that user has opened settings, so defaults won't overwrite their changes
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     if ([defaults integerForKey:@"NonFirstTime"] == 0) {
@@ -1881,8 +1876,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         [defaults synchronize];
         NSLog(@"Marking NonFirstTime after user opened settings");
     }
-    
-    // Show SwiftUI Settings window via notification
+
+    // Post notification - SettingsWindowManager in Swift will handle it
+    NSLog(@"[AppDelegate] Posting ShowSettings notification");
     [[NSNotificationCenter defaultCenter] postNotificationName:@"ShowSettings" object:nil];
 }
 
