@@ -19,7 +19,7 @@ cask "phtv" do
   end
 
   # System requirements
-  depends_on macos: ">= :sonoma"
+  depends_on macos: ">= :ventura"
 
   app "PHTV.app"
 

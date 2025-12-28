@@ -152,7 +152,7 @@ struct ConvertToolView: View {
             }
         }
         .pickerStyle(.segmented)
-        .onChange(of: inputMode) { _, newValue in
+        .onChange(of: inputMode) { newValue in
             showResult = false
             if newValue == .clipboard {
                 loadClipboardContent()

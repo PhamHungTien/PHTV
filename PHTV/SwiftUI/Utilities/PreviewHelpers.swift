@@ -131,8 +131,3 @@ struct HotkeyConfigView_Previews: PreviewProvider {
     }
 }
 
-struct MacroEditorView_Previews: PreviewProvider {
-    static var previews: some View {
-        MacroEditorView(isPresented: .constant(true))
-    }
-}

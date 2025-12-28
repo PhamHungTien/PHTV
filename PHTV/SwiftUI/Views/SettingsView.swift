@@ -66,7 +66,18 @@ struct SettingsView: View {
                 } else {
                     // Search results
                     if filteredSettings.isEmpty {
-                        ContentUnavailableView.search(text: searchText)
+                        VStack(spacing: 8) {
+                            Image(systemName: "magnifyingglass")
+                                .font(.largeTitle)
+                                .foregroundStyle(.secondary)
+                            Text("Không tìm thấy '\(searchText)'")
+                                .font(.headline)
+                            Text("Thử tìm kiếm với từ khóa khác")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding()
                     } else {
                         ForEach(filteredSettings) { item in
                             Button {
@@ -87,35 +98,7 @@ struct SettingsView: View {
             }
             .listStyle(.sidebar)
             .tint(themeManager.themeColor)
-            .searchable(
-                text: $searchText,
-                placement: .sidebar,
-                prompt: "Tìm kiếm cài đặt..."
-            )
-            .searchSuggestions {
-                if !searchText.isEmpty {
-                    ForEach(searchSuggestions) { item in
-                        Button {
-                            selectedTab = item.tab
-                            searchText = ""
-                        } label: {
-                            HStack {
-                                Image(systemName: item.iconName)
-                                    .foregroundStyle(.tint)
-                                    .frame(width: 20)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(item.title)
-                                        .font(.body)
-                                    Text(item.tab.title)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
+            .conditionalSearchable(text: $searchText, prompt: "Tìm kiếm cài đặt...")
             .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 250)
         } detail: {
             detailView
@@ -143,12 +126,10 @@ struct SettingsView: View {
             NSLog("[SettingsView] onDisappear - hiding dock icon")
             appDelegate?.showIcon(onDock: false)
         }
-        .onChange(of: appState.showIconOnDock) { oldValue, newValue in
+        .onChange(of: appState.showIconOnDock) { newValue in
             // When dock icon toggle is changed, update immediately
             let appDelegate = NSApp.delegate as? AppDelegate
-            NSLog(
-                "[SettingsView] onChange - showIconOnDock changed from %@ to %@",
-                oldValue ? "true" : "false", newValue ? "true" : "false")
+            NSLog("[SettingsView] onChange - showIconOnDock changed to %@", newValue ? "true" : "false")
             appDelegate?.showIcon(onDock: newValue)
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowAboutTab"))) { _ in

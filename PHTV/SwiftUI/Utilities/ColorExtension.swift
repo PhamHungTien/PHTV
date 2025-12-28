@@ -8,6 +8,67 @@
 
 import SwiftUI
 
+// MARK: - Color Compatibility for macOS 11+
+
+extension Color {
+    /// Create Color from NSColor (compatible with macOS 11+)
+    static func fromNSColor(_ nsColor: NSColor) -> Color {
+        if #available(macOS 12.0, *) {
+            return Color(nsColor: nsColor)
+        } else {
+            // Fallback for macOS 11: convert via RGB
+            let rgbColor = nsColor.usingColorSpace(.sRGB) ?? nsColor
+            return Color(
+                red: Double(rgbColor.redComponent),
+                green: Double(rgbColor.greenComponent),
+                blue: Double(rgbColor.blueComponent),
+                opacity: Double(rgbColor.alphaComponent)
+            )
+        }
+    }
+
+    // Colors only available in macOS 12+ - define fallbacks
+    static var compatTeal: Color {
+        if #available(macOS 12.0, *) {
+            return .teal
+        } else {
+            return Color(red: 0.35, green: 0.68, blue: 0.68)
+        }
+    }
+
+    static var compatIndigo: Color {
+        if #available(macOS 12.0, *) {
+            return .indigo
+        } else {
+            return Color(red: 0.29, green: 0.0, blue: 0.51)
+        }
+    }
+
+    static var compatMint: Color {
+        if #available(macOS 12.0, *) {
+            return .mint
+        } else {
+            return Color(red: 0.0, green: 0.78, blue: 0.75)
+        }
+    }
+
+    static var compatCyan: Color {
+        if #available(macOS 12.0, *) {
+            return .cyan
+        } else {
+            return Color(red: 0.0, green: 0.75, blue: 0.85)
+        }
+    }
+
+    static var compatBrown: Color {
+        if #available(macOS 12.0, *) {
+            return .brown
+        } else {
+            return Color(red: 0.6, green: 0.4, blue: 0.2)
+        }
+    }
+}
+
 // MARK: - AppStorageColor Wrapper
 
 struct AppStorageColor: RawRepresentable {
@@ -27,7 +88,7 @@ struct AppStorageColor: RawRepresentable {
             guard let color = nsColor else {
                 return nil
             }
-            self.color = Color(nsColor: color)
+            self.color = Color.fromNSColor(color)
         } catch {
             return nil
         }
@@ -55,11 +116,11 @@ extension Color {
         ThemeColor(id: "orange", name: "Cam", color: .orange),
         ThemeColor(id: "yellow", name: "Vàng", color: .yellow),
         ThemeColor(id: "green", name: "Xanh lá", color: .green),
-        ThemeColor(id: "teal", name: "Xanh ngọc", color: .teal),
-        ThemeColor(id: "indigo", name: "Chàm", color: .indigo),
-        ThemeColor(id: "mint", name: "Bạc hà", color: .mint),
-        ThemeColor(id: "cyan", name: "Lục lam", color: .cyan),
-        ThemeColor(id: "brown", name: "Nâu", color: .brown),
+        ThemeColor(id: "teal", name: "Xanh ngọc", color: .compatTeal),
+        ThemeColor(id: "indigo", name: "Chàm", color: .compatIndigo),
+        ThemeColor(id: "mint", name: "Bạc hà", color: .compatMint),
+        ThemeColor(id: "cyan", name: "Lục lam", color: .compatCyan),
+        ThemeColor(id: "brown", name: "Nâu", color: .compatBrown),
     ]
 }
 
