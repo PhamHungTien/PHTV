@@ -8,6 +8,49 @@
 
         <!-- Most recent version first -->
         <item>
+            <title>PHTV 1.2.9</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.2.9</link>
+            <sparkle:version>1</sparkle:version>
+            <sparkle:shortVersionString>1.2.9</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h2>PHTV 1.2.9 - Code Table Converter & Menu Bar Improvements</h2>
+
+                <h3>🔄 Công cụ chuyển đổi bảng mã</h3>
+                <ul>
+                    <li><strong>Chuyển đổi đầy đủ</strong>: Hỗ trợ Unicode, TCVN3, VNI, Unicode tổ hợp, CP1258</li>
+                    <li><strong>Hai chế độ nhập</strong>: Clipboard hoặc nhập văn bản trực tiếp</li>
+                    <li><strong>Preset nhanh</strong>: TCVN3→Unicode, VNI→Unicode với một click</li>
+                    <li><strong>Nút hoán đổi</strong>: Dễ dàng đảo ngược nguồn/đích</li>
+                </ul>
+
+                <h3>📋 Menu bar thông minh hơn</h3>
+                <ul>
+                    <li><strong>Menu chuyển đổi bảng mã</strong>: Chuyển nhanh ngay từ menu bar</li>
+                    <li><strong>Submenus tổ chức tốt hơn</strong>: Bộ gõ, Tính năng, Nâng cao, Hệ thống</li>
+                    <li><strong>Nhiều tùy chọn hơn</strong>: Điều chỉnh cài đặt nhanh không cần mở Settings</li>
+                </ul>
+
+                <h3>🎨 Cải tiến giao diện</h3>
+                <ul>
+                    <li><strong>Liquid Glass</strong>: Hỗ trợ thiết kế mới của macOS 26</li>
+                    <li><strong>Đồng bộ màu theme</strong>: Tất cả các view đều sử dụng màu chủ đạo</li>
+                    <li><strong>Sidebar ổn định</strong>: Không còn bị thu hẹp khi mới cài đặt</li>
+                </ul>
+
+                <p><em>Bản cập nhật này mang đến công cụ chuyển đổi bảng mã mạnh mẽ và menu bar được cải tiến.</em></p>
+            ]]></description>
+            <pubDate>Sun, 28 Dec 2025 15:34:12 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.2.9/PHTV-1.2.9.dmg"
+                sparkle:version="1"
+                sparkle:shortVersionString="1.2.9"
+                sparkle:edSignature="sn8iPsRh914IRnEYVkkDBReWqEBujwcinI1l9/mec9m17QyBynSKgDqo9nsHymO880u9uhH/sTcqU5RJmqhJAA=="
+                length="12407996"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <item>
             <title>PHTV 1.2.8</title>
             <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.2.8</link>
             <sparkle:version>3</sparkle:version>
