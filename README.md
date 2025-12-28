@@ -204,12 +204,9 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 ### Người dùng
 - **[Cài đặt](INSTALL.md)** - Hướng dẫn cài đặt chi tiết
 - **[FAQ](FAQ.md)** - Các câu hỏi thường gặp
-- **[Homebrew](docs/homebrew/)** - Cài đặt qua Homebrew
 
 ### Nhà phát triển
-- **[Documentation](docs/)** - Tài liệu đầy đủ
-- **[Automation](docs/automation/)** - Hệ thống automation Homebrew
-- **[Scripts](scripts/)** - Scripts tự động hóa
+- **[Scripts](scripts/)** - Scripts tự động hóa (Homebrew, Sparkle)
 - **[Contributing](CONTRIBUTING.md)** - Hướng dẫn đóng góp
 - **[Security](SECURITY.md)** - Chính sách bảo mật
 
