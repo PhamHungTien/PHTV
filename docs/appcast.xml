@@ -8,6 +8,48 @@
 
         <!-- Most recent version first -->
         <item>
+            <title>PHTV 1.3.0</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.0</link>
+            <sparkle:version>5</sparkle:version>
+            <sparkle:shortVersionString>1.3.0</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h2>PHTV 1.3.0 - Safe Mode & macOS Ventura Support</h2>
+
+                <h3>🛡️ Safe Mode cho Accessibility API</h3>
+                <ul>
+                    <li><strong>Tự động phát hiện crash</strong>: Phát hiện khi Accessibility API gặp vấn đề</li>
+                    <li><strong>Chế độ an toàn</strong>: Tự động chuyển sang chế độ ổn định hơn nếu cần</li>
+                    <li><strong>Hỗ trợ OCLP Macs</strong>: Tương thích tốt hơn với máy Mac chạy OpenCore Legacy Patcher</li>
+                </ul>
+
+                <h3>🍎 Hỗ trợ macOS Ventura (13.0)</h3>
+                <ul>
+                    <li><strong>Mở rộng phạm vi hỗ trợ</strong>: Hạ yêu cầu từ macOS 14.0 xuống 13.0</li>
+                    <li><strong>Nhiều máy Mac hơn</strong>: Hỗ trợ các máy Mac cũ hơn chạy Ventura</li>
+                </ul>
+
+                <h3>🖼️ Cải tiến cửa sổ Settings</h3>
+                <ul>
+                    <li><strong>Sửa lỗi mở settings</strong>: Fix vòng lặp vô hạn khi mở settings từ menu bar</li>
+                    <li><strong>Kích thước hợp lý</strong>: Kích thước mặc định 950x680, tối thiểu 600x450</li>
+                    <li><strong>Blur background</strong>: Nền sidebar mờ đẹp mắt đồng bộ với theme</li>
+                    <li><strong>Liquid Glass</strong>: Hỗ trợ thiết kế Liquid Glass trên macOS 26</li>
+                </ul>
+
+                <p><em>Bản cập nhật này mang đến độ ổn định cao hơn và hỗ trợ nhiều máy Mac hơn.</em></p>
+            ]]></description>
+            <pubDate>Sun, 28 Dec 2025 19:25:07 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.3.0/PHTV-1.3.0.dmg"
+                sparkle:version="5"
+                sparkle:shortVersionString="1.3.0"
+                sparkle:edSignature="mYO5jX4rWVBzmYOSe0kgCNigiehbRIh88EvBfd/joZYATvErsiYwuViPO+YWBIYSEWCAvQfS9B120c4LyecuDQ=="
+                length="12453089"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <item>
             <title>PHTV 1.2.9</title>
             <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.2.9</link>
             <sparkle:version>4</sparkle:version>
