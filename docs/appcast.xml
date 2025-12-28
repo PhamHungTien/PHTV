@@ -43,8 +43,8 @@
                 url="https://github.com/PhamHungTien/PHTV/releases/download/v1.3.0/PHTV-1.3.0.dmg"
                 sparkle:version="5"
                 sparkle:shortVersionString="1.3.0"
-                sparkle:edSignature="mYO5jX4rWVBzmYOSe0kgCNigiehbRIh88EvBfd/joZYATvErsiYwuViPO+YWBIYSEWCAvQfS9B120c4LyecuDQ=="
-                length="12453089"
+                sparkle:edSignature="nneNuX7UHil6trGqB0hM7v7h4RFfbwg3iPEkvlFY1MbN8lfwx59myr9JxVERItwyzKCFRfB6eCAXNp6oKhrnBg=="
+                length="12452606"
                 type="application/octet-stream"/>
             <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
         </item>
