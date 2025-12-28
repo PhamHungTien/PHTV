@@ -3,7 +3,7 @@
 
 cask "phtv" do
   version "1.2.9"
-  sha256 :no_check # TODO: Update SHA256 after release
+  sha256 "4aaa6e6fa5d81ef7cfb98f0179d504a7537a53a2b5c767c6b6be673bd2ea8a76"
 
   url "https://github.com/PhamHungTien/PHTV/releases/download/v#{version}/PHTV-#{version}.dmg",
       verified: "github.com/PhamHungTien/"
