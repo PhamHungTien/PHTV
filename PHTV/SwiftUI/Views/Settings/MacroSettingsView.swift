@@ -337,7 +337,6 @@ struct EmptyMacroView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.regular)
-            .disabled(!useMacro)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)

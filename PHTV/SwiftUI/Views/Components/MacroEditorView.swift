@@ -146,6 +146,12 @@ struct MacroEditorView: View {
                 expansion: trimmedCode)
             macros.append(newMacro)
             print("[MacroEditor] Added new macro: \(newMacro.shortcut) -> \(newMacro.expansion)")
+
+            // Auto-enable macro feature when creating first macro
+            if !appState.useMacro {
+                appState.useMacro = true
+                print("[MacroEditor] Auto-enabled macro feature")
+            }
         }
 
         // Sort macros by shortcut for stable order
