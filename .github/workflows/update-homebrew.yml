@@ -19,6 +19,7 @@ jobs:
       - name: Checkout PHTV repository
         uses: actions/checkout@v4
         with:
+          ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get version
