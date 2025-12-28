@@ -10,7 +10,7 @@
         <item>
             <title>PHTV 1.3.0</title>
             <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.0</link>
-            <sparkle:version>5</sparkle:version>
+            <sparkle:version>6</sparkle:version>
             <sparkle:shortVersionString>1.3.0</sparkle:shortVersionString>
             <description><![CDATA[
                 <h2>PHTV 1.3.0 - Safe Mode & macOS Ventura Support</h2>
@@ -41,10 +41,10 @@
             <pubDate>Sun, 28 Dec 2025 19:25:07 +0700</pubDate>
             <enclosure
                 url="https://github.com/PhamHungTien/PHTV/releases/download/v1.3.0/PHTV-1.3.0.dmg"
-                sparkle:version="5"
+                sparkle:version="6"
                 sparkle:shortVersionString="1.3.0"
-                sparkle:edSignature="nneNuX7UHil6trGqB0hM7v7h4RFfbwg3iPEkvlFY1MbN8lfwx59myr9JxVERItwyzKCFRfB6eCAXNp6oKhrnBg=="
-                length="12452606"
+                sparkle:edSignature="RxW062/X1q2e1Iqm+KrDQXzXt1Hi4Ii3jhKen8Dh5loSFfSdGeNeTFYWGPfQzCrm+OT+koPV60B1NTe3FSRhDw=="
+                length="12456246"
                 type="application/octet-stream"/>
             <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
         </item>

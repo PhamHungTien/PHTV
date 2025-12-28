@@ -136,18 +136,30 @@ private func makeMenuBarIconImage(size: CGFloat, slashed: Bool) -> NSImage {
 /// Helper class to manage the settings window with proper Swift 6 concurrency
 @MainActor
 enum SettingsWindowHelper {
+    // IMPORTANT: Must retain both window AND hosting controller to prevent crash
+    // If hostingController is deallocated while window is using it, app will crash
     private static var settingsWindow: NSWindow?
+    private static var hostingController: NSHostingController<AnyView>?
 
     static func openSettingsWindow() {
         NSLog("[SettingsWindowHelper] openSettingsWindow called")
 
-        // Check if settings window already exists
+        // Check if settings window already exists and is visible
+        if let existingWindow = settingsWindow, existingWindow.isVisible {
+            NSLog("[SettingsWindowHelper] Found existing window, bringing to front")
+            existingWindow.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        // Also check by identifier in case our reference was lost
         for window in NSApp.windows {
             let identifier = window.identifier?.rawValue ?? ""
             if identifier == "settings" {
-                NSLog("[SettingsWindowHelper] Found existing window, bringing to front")
+                NSLog("[SettingsWindowHelper] Found existing window by identifier, bringing to front")
                 window.makeKeyAndOrderFront(nil)
                 NSApp.activate(ignoringOtherApps: true)
+                settingsWindow = window
                 return
             }
         }
@@ -170,7 +182,9 @@ enum SettingsWindowHelper {
                 .zIndex(1000)
         }
 
-        let hostingController = NSHostingController(rootView: settingsView)
+        // Create and RETAIN the hosting controller to prevent crash
+        let controller = NSHostingController(rootView: AnyView(settingsView))
+        hostingController = controller
 
         // Fixed optimal window size
         let windowWidth: CGFloat = 950
@@ -184,7 +198,7 @@ enum SettingsWindowHelper {
             defer: false
         )
         window.identifier = NSUserInterfaceItemIdentifier("settings")
-        window.contentViewController = hostingController
+        window.contentViewController = controller
 
         // Hidden title bar style - matches SwiftUI .windowStyle(.hiddenTitleBar)
         window.titlebarAppearsTransparent = true
@@ -204,8 +218,32 @@ enum SettingsWindowHelper {
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
 
+        // Set delegate to handle window close
+        window.delegate = SettingsWindowDelegate.shared
+
+        // Retain the window reference
         settingsWindow = window
         NSLog("[SettingsWindowHelper] Settings window created and shown")
+    }
+
+    /// Clean up when window is closed
+    static func windowClosed() {
+        NSLog("[SettingsWindowHelper] Window closed, cleaning up")
+        settingsWindow = nil
+        hostingController = nil
+    }
+}
+
+/// Window delegate to handle window close events
+@MainActor
+final class SettingsWindowDelegate: NSObject, NSWindowDelegate, @unchecked Sendable {
+    static let shared = SettingsWindowDelegate()
+
+    nonisolated func windowWillClose(_ notification: Notification) {
+        NSLog("[SettingsWindowDelegate] Window will close")
+        Task { @MainActor in
+            SettingsWindowHelper.windowClosed()
+        }
     }
 }
 
