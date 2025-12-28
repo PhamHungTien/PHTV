@@ -8,6 +8,45 @@
 
         <!-- Most recent version first -->
         <item>
+            <title>PHTV 1.3.1</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.1</link>
+            <sparkle:version>8</sparkle:version>
+            <sparkle:shortVersionString>1.3.1</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h2>PHTV 1.3.1 - Cải tiến Settings & Sửa lỗi</h2>
+
+                <h3>🔧 Cải tiến giao diện Settings</h3>
+                <ul>
+                    <li><strong>Tách tab Hỗ trợ</strong>: Tab "Hỗ trợ" được tách thành "Báo lỗi" và "Thông tin" riêng biệt</li>
+                    <li><strong>Giao diện rõ ràng hơn</strong>: Dễ dàng tìm thông tin ứng dụng và báo lỗi</li>
+                </ul>
+
+                <h3>🇻🇳 Sửa lỗi gõ tiếng Việt</h3>
+                <ul>
+                    <li><strong>Gõ được trong PHTV</strong>: Sửa lỗi không thể gõ tiếng Việt trong thanh tìm kiếm của chính PHTV</li>
+                    <li><strong>Phím tắt hoạt động</strong>: Phím tắt chuyển đổi ngôn ngữ hoạt động trong PHTV</li>
+                </ul>
+
+                <h3>📝 Cải tiến hiển thị cập nhật</h3>
+                <ul>
+                    <li><strong>Ghi chú phát hành</strong>: Cải thiện hiển thị release notes trong banner cập nhật</li>
+                    <li><strong>Fallback UI</strong>: Hiển thị thông báo phù hợp khi không có ghi chú</li>
+                </ul>
+
+                <p><em>Bản cập nhật này cải thiện trải nghiệm người dùng và sửa các lỗi nhỏ.</em></p>
+            ]]></description>
+            <pubDate>Sun, 29 Dec 2025 00:15:00 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.3.1/PHTV-1.3.1.dmg"
+                sparkle:version="8"
+                sparkle:shortVersionString="1.3.1"
+                sparkle:edSignature="g7GWMhhXe0B/N30cW2R3SiaGD4V1Pp53TdFg6g1OLeMIeHxMQJnDFuLw2qYtnKvXfR6v5o/04EeVwHBhZjTSAQ=="
+                length="12769534"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <item>
             <title>PHTV 1.3.0</title>
             <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.0</link>
             <sparkle:version>7</sparkle:version>
