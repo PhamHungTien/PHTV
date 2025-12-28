@@ -10,10 +10,11 @@ import SwiftUI
 
 struct StatusBarMenuView: View {
     @EnvironmentObject var appState: AppState
+    @Environment(\.openWindow) private var openWindow
 
-    // Helper to open settings window (compatible with macOS 12+)
+    // Helper to open settings window using SwiftUI's Window scene
     private func openSettingsWindow() {
-        NotificationCenter.default.post(name: NSNotification.Name("ShowSettings"), object: nil)
+        openWindow(id: "settings")
         NSApp.activate(ignoringOtherApps: true)
     }
 

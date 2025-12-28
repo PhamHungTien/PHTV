@@ -18,6 +18,7 @@ struct PHTVApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var appState = AppState.shared
     @StateObject private var themeManager = ThemeManager.shared
+    @StateObject private var windowOpener = SettingsWindowOpener.shared
 
     init() {
         // Initialize SettingsNotificationObserver to listen for notifications
@@ -41,25 +42,33 @@ struct PHTVApp: App {
             // Force menu bar refresh when language changes
         }
 
-        // Settings window - uses SettingsWindowHelper for manual creation
-        // This Window scene is kept for compatibility but primary opening is via notification
+        // Settings window - managed by SwiftUI to avoid crashes
         Window("", id: "settings") {
-            ZStack(alignment: .top) {
-                SettingsView()
-                    .environmentObject(appState)
-                    .environmentObject(themeManager)
-                    .tint(themeManager.themeColor)
-
-                // Update banner overlay
-                UpdateBannerView()
-                    .environmentObject(appState)
-                    .environmentObject(themeManager)
-                    .zIndex(1000)
-            }
+            SettingsWindowContent()
+                .environmentObject(appState)
+                .environmentObject(themeManager)
         }
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 950, height: 680)
         .windowResizability(.contentMinSize)
+    }
+}
+
+/// Wrapper view for settings window content
+/// This helps with proper lifecycle management
+struct SettingsWindowContent: View {
+    @EnvironmentObject var appState: AppState
+    @EnvironmentObject var themeManager: ThemeManager
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            SettingsView()
+                .tint(themeManager.themeColor)
+
+            // Update banner overlay
+            UpdateBannerView()
+                .zIndex(1000)
+        }
     }
 }
 
@@ -133,116 +142,60 @@ private func makeMenuBarIconImage(size: CGFloat, slashed: Bool) -> NSImage {
     return img
 }
 
-/// Helper class to manage the settings window with proper Swift 6 concurrency
+/// Helper to open the settings window using SwiftUI's Window scene
+/// This avoids manual NSHostingController management which causes crashes
 @MainActor
 enum SettingsWindowHelper {
-    // IMPORTANT: Must retain both window AND hosting controller to prevent crash
-    // If hostingController is deallocated while window is using it, app will crash
-    private static var settingsWindow: NSWindow?
-    private static var hostingController: NSHostingController<AnyView>?
-
     static func openSettingsWindow() {
         NSLog("[SettingsWindowHelper] openSettingsWindow called")
 
-        // Check if settings window already exists and is visible
-        if let existingWindow = settingsWindow, existingWindow.isVisible {
-            NSLog("[SettingsWindowHelper] Found existing window, bringing to front")
-            existingWindow.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
-            return
-        }
-
-        // Also check by identifier in case our reference was lost
+        // First, try to find and show existing settings window
         for window in NSApp.windows {
             let identifier = window.identifier?.rawValue ?? ""
-            if identifier == "settings" {
-                NSLog("[SettingsWindowHelper] Found existing window by identifier, bringing to front")
+            // SwiftUI Window scenes have identifiers like "settings-AppWindow-1"
+            if identifier.hasPrefix("settings") {
+                NSLog("[SettingsWindowHelper] Found existing settings window: %@", identifier)
                 window.makeKeyAndOrderFront(nil)
                 NSApp.activate(ignoringOtherApps: true)
-                settingsWindow = window
                 return
             }
         }
 
-        NSLog("[SettingsWindowHelper] Creating new settings window")
+        NSLog("[SettingsWindowHelper] No existing window found, triggering openWindow")
 
-        // Create window manually with hidden title bar
-        let appState = AppState.shared
-        let themeManager = ThemeManager.shared
-
-        let settingsView = ZStack(alignment: .top) {
-            SettingsView()
-                .environmentObject(appState)
-                .environmentObject(themeManager)
-                .tint(themeManager.themeColor)
-
-            UpdateBannerView()
-                .environmentObject(appState)
-                .environmentObject(themeManager)
-                .zIndex(1000)
-        }
-
-        // Create and RETAIN the hosting controller to prevent crash
-        let controller = NSHostingController(rootView: AnyView(settingsView))
-        hostingController = controller
-
-        // Fixed optimal window size
-        let windowWidth: CGFloat = 950
-        let windowHeight: CGFloat = 680
-
-        // Create window with hiddenTitleBar-like style
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: windowWidth, height: windowHeight),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
-            backing: .buffered,
-            defer: false
-        )
-        window.identifier = NSUserInterfaceItemIdentifier("settings")
-        window.contentViewController = controller
-
-        // Hidden title bar style - matches SwiftUI .windowStyle(.hiddenTitleBar)
-        window.titlebarAppearsTransparent = true
-        window.titleVisibility = .hidden
-        window.isMovableByWindowBackground = true
-
-        // No toolbar needed - let NavigationSplitView handle sidebar naturally
-        window.titlebarSeparatorStyle = .automatic
-
-        // Window sizing constraints - matches SettingsView constraints
-        // Sidebar min: 160 + Detail min: 400 = 560, plus some padding
-        window.minSize = NSSize(width: 600, height: 450)
-
-        // Force set the frame size explicitly
-        window.setContentSize(NSSize(width: windowWidth, height: windowHeight))
-        window.center()
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-
-        // Set delegate to handle window close
-        window.delegate = SettingsWindowDelegate.shared
-
-        // Retain the window reference
-        settingsWindow = window
-        NSLog("[SettingsWindowHelper] Settings window created and shown")
-    }
-
-    /// Clean up when window is closed
-    static func windowClosed() {
-        NSLog("[SettingsWindowHelper] Window closed, cleaning up")
-        settingsWindow = nil
-        hostingController = nil
+        // Trigger the window opening via notification that SettingsWindowOpener listens to
+        SettingsWindowOpener.shared.requestOpenWindow()
     }
 }
 
-/// Window delegate to handle window close events
+/// Observable object to trigger window opening from SwiftUI context
+/// Uses Environment openWindow action which is the proper way to open SwiftUI windows
 @MainActor
-final class SettingsWindowDelegate: NSObject, NSWindowDelegate, @unchecked Sendable {
-    static let shared = SettingsWindowDelegate()
+final class SettingsWindowOpener: ObservableObject {
+    static let shared = SettingsWindowOpener()
+    @Published var shouldOpenWindow = false
 
-    nonisolated func windowWillClose(_ notification: Notification) {
-        NSLog("[SettingsWindowDelegate] Window will close")
-        Task { @MainActor in
-            SettingsWindowHelper.windowClosed()
+    func requestOpenWindow() {
+        // Set flag that will be observed by SwiftUI
+        shouldOpenWindow = true
+
+        // Also try to open window directly using NSApp
+        // This works because SwiftUI Window scene registers with NSApp
+        DispatchQueue.main.async {
+            // Find the window by checking all windows
+            for window in NSApp.windows {
+                let identifier = window.identifier?.rawValue ?? ""
+                if identifier.hasPrefix("settings") {
+                    window.makeKeyAndOrderFront(nil)
+                    NSApp.activate(ignoringOtherApps: true)
+                    self.shouldOpenWindow = false
+                    return
+                }
+            }
+
+            // If no window found, the SwiftUI scene might create one
+            // We need to activate the app to trigger scene creation
+            NSApp.activate(ignoringOtherApps: true)
         }
     }
 }

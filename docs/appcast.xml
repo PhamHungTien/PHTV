@@ -10,7 +10,7 @@
         <item>
             <title>PHTV 1.3.0</title>
             <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.0</link>
-            <sparkle:version>6</sparkle:version>
+            <sparkle:version>7</sparkle:version>
             <sparkle:shortVersionString>1.3.0</sparkle:shortVersionString>
             <description><![CDATA[
                 <h2>PHTV 1.3.0 - Safe Mode & macOS Ventura Support</h2>
@@ -30,7 +30,8 @@
 
                 <h3>🖼️ Cải tiến cửa sổ Settings</h3>
                 <ul>
-                    <li><strong>Sửa lỗi mở settings</strong>: Fix vòng lặp vô hạn khi mở settings từ menu bar</li>
+                    <li><strong>Sửa lỗi mở settings</strong>: Dùng SwiftUI Window scene và openWindow API chuẩn của Apple</li>
+                    <li><strong>Sửa lỗi crash</strong>: Loại bỏ NSHostingController thủ công gây crash khi animation</li>
                     <li><strong>Kích thước hợp lý</strong>: Kích thước mặc định 950x680, tối thiểu 600x450</li>
                     <li><strong>Blur background</strong>: Nền sidebar mờ đẹp mắt đồng bộ với theme</li>
                     <li><strong>Liquid Glass</strong>: Hỗ trợ thiết kế Liquid Glass trên macOS 26</li>
@@ -38,13 +39,13 @@
 
                 <p><em>Bản cập nhật này mang đến độ ổn định cao hơn và hỗ trợ nhiều máy Mac hơn.</em></p>
             ]]></description>
-            <pubDate>Sun, 28 Dec 2025 19:25:07 +0700</pubDate>
+            <pubDate>Sun, 28 Dec 2025 19:57:45 +0700</pubDate>
             <enclosure
                 url="https://github.com/PhamHungTien/PHTV/releases/download/v1.3.0/PHTV-1.3.0.dmg"
-                sparkle:version="6"
+                sparkle:version="7"
                 sparkle:shortVersionString="1.3.0"
-                sparkle:edSignature="RxW062/X1q2e1Iqm+KrDQXzXt1Hi4Ii3jhKen8Dh5loSFfSdGeNeTFYWGPfQzCrm+OT+koPV60B1NTe3FSRhDw=="
-                length="12456246"
+                sparkle:edSignature="h45ys6/TjMXRmfyDUq9kQ2MrFxvLCk+bZAABaxabbwoPXMR+xLAElesqypuzp6lKJyzSxgQuXC9Llkp6tai/Cg=="
+                length="12457625"
                 type="application/octet-stream"/>
             <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
         </item>

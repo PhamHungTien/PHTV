@@ -6,10 +6,10 @@
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>PHTV</string>
-	<key>CFBundleSpokenName</key>
-	<string>PHTV Vietnamese Input</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleGetInfoString</key>
+	<string>PHTV - Precision Hybrid Typing Vietnamese. Vietnamese input method for macOS.</string>
 	<key>CFBundleIconFile</key>
 	<string>PHTV</string>
 	<key>CFBundleIdentifier</key>
@@ -22,8 +22,10 @@
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>1.3.0</string>
+	<key>CFBundleSpokenName</key>
+	<string>PHTV Vietnamese Input</string>
 	<key>CFBundleVersion</key>
-	<string>6</string>
+	<string>7</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.utilities</string>
 	<key>LSMinimumSystemVersion</key>
@@ -36,23 +38,21 @@
 	<string>Copyright © 2026 Phạm Hùng Tiến. All rights reserved.</string>
 	<key>NSHumanReadableDescription</key>
 	<string>Vietnamese input method with Telex, VNI support for macOS</string>
-	<key>CFBundleGetInfoString</key>
-	<string>PHTV - Precision Hybrid Typing Vietnamese. Vietnamese input method for macOS.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>SUAllowsAutomaticUpdates</key>
+	<true/>
+	<key>SUAutomaticallyUpdate</key>
+	<false/>
+	<key>SUEnableAutomaticChecks</key>
+	<false/>
+	<key>SUEnableSystemProfiling</key>
+	<false/>
 	<key>SUFeedURL</key>
 	<string>https://phamhungtien.github.io/PHTV/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>F+3YESLwzN0aoT6o6uiQWempYxL4W5czJxsN+dcUZa8=</string>
-	<key>SUEnableAutomaticChecks</key>
-	<false/>
-	<key>SUAutomaticallyUpdate</key>
-	<false/>
-	<key>SUAllowsAutomaticUpdates</key>
-	<true/>
 	<key>SUScheduledCheckInterval</key>
 	<integer>86400</integer>
-	<key>SUEnableSystemProfiling</key>
-	<false/>
 </dict>
 </plist>
