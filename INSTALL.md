@@ -60,7 +60,7 @@ brew install --cask phamhungtien/tap/phtv
 ### Option 3: Từ GitHub Releases
 
 1. Vào [GitHub Releases](https://github.com/PhamHungTien/PHTV/releases)
-2. Download `PHTV-1.2.6.dmg`
+2. Download `PHTV-1.3.0.dmg`
 3. Double-click để mở DMG
 4. Drag `PHTV.app` vào `Applications`
 
@@ -71,7 +71,7 @@ brew install --cask phamhungtien/tap/phtv
 git clone https://github.com/PhamHungTien/PHTV.git
 cd PHTV
 
-# Build với Xcode (yêu cầu Xcode 26.0+)
+# Build với Xcode (yêu cầu Xcode 16.0+)
 # Universal Binary - hỗ trợ cả Intel và Apple Silicon
 xcodebuild -scheme PHTV -configuration Release
 
@@ -80,12 +80,12 @@ xcodebuild -scheme PHTV -configuration Release
 
 ## Yêu cầu hệ thống
 
-- **macOS**: 14.0 hoặc cao hơn (Sonoma+)
+- **macOS**: 13.0 hoặc cao hơn (Ventura+)
 - **Bộ xử lý**: Universal Binary - Intel và Apple Silicon (M1/M2/M3/M4)
-- **Xcode**: 26.0+ (nếu build từ source)
+- **Xcode**: 16.0+ (nếu build từ source)
 - **Dung lượng**: ~50 MB
 
-> **Lưu ý**: PHTV là Universal Binary, hỗ trợ cả Intel và Apple Silicon. Hoạt động tốt trên mọi Mac chạy macOS 14.0+.
+> **Lưu ý**: PHTV là Universal Binary, hỗ trợ cả Intel và Apple Silicon. Hoạt động tốt trên mọi Mac chạy macOS 13.0+.
 
 ## Các bước sau khi cài
 

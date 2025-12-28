@@ -29,13 +29,15 @@
 ## Sửa lỗi
 
 - 🐛 Fix vòng lặp vô hạn khi mở cài đặt từ menu bar
+- 🐛 Fix nút "Tạo gõ tắt đầu tiên" không hoạt động khi tính năng gõ tắt chưa bật
+- 🐛 Tự động bật tính năng gõ tắt khi tạo gõ tắt đầu tiên
 - 🐛 Fix background trong suốt không đẹp mắt
 - 🐛 Fix kích thước cửa sổ quá nhỏ khi mở lần đầu
 - 🐛 Fix Swift 6 concurrency warnings trong SettingsWindowHelper
 
 ## Thông tin kỹ thuật
 
-- **Phiên bản**: 1.3.0 (Build 5)
+- **Phiên bản**: 1.3.0 (Build 6)
 - **Yêu cầu tối thiểu**: macOS 13.0 (Ventura)
 - **Kiến trúc**: Universal Binary (Intel x86_64 + Apple Silicon arm64)
 - **Kích thước DMG**: ~12 MB
