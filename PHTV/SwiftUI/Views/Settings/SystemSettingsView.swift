@@ -121,6 +121,16 @@ struct SystemSettingsView: View {
                             subtitle: "Hỗ trợ các bố cục đặc biệt",
                             isOn: $appState.performLayoutCompat
                         )
+
+                        SettingsDivider()
+
+                        SettingsToggleRow(
+                            icon: "shield.fill",
+                            iconColor: .orange,
+                            title: "Chế độ an toàn (Safe Mode)",
+                            subtitle: "Dành cho Mac không được hỗ trợ chính thức (OCLP)",
+                            isOn: $appState.safeMode
+                        )
                     }
                 }
 

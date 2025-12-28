@@ -43,6 +43,11 @@
 // Application Support
 +(NSString*)getApplicationSupportFolder;
 
+// Safe Mode - Disables Accessibility API calls for unsupported hardware
++(BOOL)isSafeModeEnabled;
++(void)setSafeModeEnabled:(BOOL)enabled;
++(void)clearAXTestFlag;  // Call on normal app termination
+
 @end
 
 #endif /* PHTVManager_h */

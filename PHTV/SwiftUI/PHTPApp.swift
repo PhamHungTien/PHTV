@@ -222,6 +222,7 @@ final class AppState: ObservableObject {
     @Published var fixChromiumBrowser: Bool = false
     @Published var performLayoutCompat: Bool = false
     @Published var showIconOnDock: Bool = false
+    @Published var safeMode: Bool = false  // Safe mode disables Accessibility API for OCLP Macs
 
     // Claude Code patch setting
     @Published var claudeCodePatchEnabled: Bool = false
@@ -490,6 +491,7 @@ final class AppState: ObservableObject {
         fixChromiumBrowser = defaults.bool(forKey: "vFixChromiumBrowser")
         performLayoutCompat = defaults.bool(forKey: "vPerformLayoutCompat")
         showIconOnDock = defaults.bool(forKey: "vShowIconOnDock")
+        safeMode = defaults.bool(forKey: "SafeMode")
 
         // Load Claude Code patch setting - check actual patch status
         claudeCodePatchEnabled = ClaudeCodePatcher.shared.isPatched()
@@ -638,6 +640,10 @@ final class AppState: ObservableObject {
         defaults.set(fixChromiumBrowser, forKey: "vFixChromiumBrowser")
         defaults.set(performLayoutCompat, forKey: "vPerformLayoutCompat")
         defaults.set(showIconOnDock, forKey: "vShowIconOnDock")
+
+        // Save safe mode and sync with backend
+        defaults.set(safeMode, forKey: "SafeMode")
+        PHTVManager.setSafeModeEnabled(safeMode)
 
         // Save hotkey in backend format (SwitchKeyStatus)
         let switchKeyStatus = encodeSwitchKeyStatus()
@@ -896,10 +902,11 @@ final class AppState: ObservableObject {
             }
         }.store(in: &cancellables)
 
-        Publishers.Merge(
-            $fixChromiumBrowser,
-            $performLayoutCompat
-        )
+        Publishers.MergeMany([
+            $fixChromiumBrowser.map { _ in () }.eraseToAnyPublisher(),
+            $performLayoutCompat.map { _ in () }.eraseToAnyPublisher(),
+            $safeMode.map { _ in () }.eraseToAnyPublisher()
+        ])
         .debounce(for: .milliseconds(100), scheduler: RunLoop.main)
         .sink { [weak self] _ in
             guard let self = self, !self.isLoadingSettings else { return }
@@ -1043,6 +1050,7 @@ final class AppState: ObservableObject {
         fixChromiumBrowser = false
         performLayoutCompat = false
         showIconOnDock = false
+        safeMode = false
 
         switchKeyCommand = false
         switchKeyOption = false

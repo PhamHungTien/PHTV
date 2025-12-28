@@ -86,6 +86,12 @@ static uint64_t _lastSpotlightCheckTime = 0;
 static pid_t _cachedFocusedPID = 0;
 static CGEventFlags _lastEventFlags = 0;
 
+// Safe Mode: Disable all Accessibility API calls for unsupported hardware
+// When enabled, the app will use fallback methods that don't rely on AX APIs
+// which may crash on Macs running macOS via OpenCore Legacy Patcher (OCLP)
+// Note: Not static - exported for PHTVManager access
+BOOL vSafeMode = NO;
+
 // Force invalidate Spotlight detection cache
 // Call this when Cmd+Space is detected or when modifier keys change
 static inline void InvalidateSpotlightCache(void) {
@@ -132,6 +138,12 @@ static inline BOOL IsElementSpotlight(AXUIElementRef element) {
 // Check if Spotlight or similar overlay is currently active using Accessibility API
 // OPTIMIZED: Results cached for 15ms to avoid repeated AX API calls while remaining responsive
 BOOL isSpotlightActive(void) {
+    // Safe Mode: Skip AX API calls entirely - assume not in Spotlight
+    // This prevents crashes on unsupported hardware (OCLP Macs)
+    if (vSafeMode) {
+        return NO;
+    }
+
     uint64_t now = mach_absolute_time();
     uint64_t elapsed_ms = mach_time_to_ms(now - _lastSpotlightCheckTime);
 
@@ -522,6 +534,12 @@ extern "C" {
 
     // Simple and reliable: always read fresh from AX, no tracking
     static BOOL ReplaceFocusedTextViaAX(NSInteger backspaceCount, NSString* insertText) {
+        // Safe Mode: Skip AX API calls entirely
+        // This prevents crashes on unsupported hardware (OCLP Macs)
+        if (vSafeMode) {
+            return NO;
+        }
+
         if (backspaceCount < 0) backspaceCount = 0;
         if (insertText == nil) insertText = @"";
 
@@ -660,27 +678,31 @@ extern "C" {
             return lastResult;
         }
 
-        // First, check using Accessibility API to get the actual focused window's app
-        AXUIElementRef systemWide = AXUIElementCreateSystemWide();
-        AXUIElementRef focusedElement = NULL;
-        AXError error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement);
-        CFRelease(systemWide);
-
         NSString *bundleId = nil;
         pid_t cachePid = targetPID; // cache key we will use for next lookup
 
-        if (error == kAXErrorSuccess && focusedElement != NULL) {
-            pid_t focusedPID = 0;
-            error = AXUIElementGetPid(focusedElement, &focusedPID);
-            CFRelease(focusedElement);
+        // Safe Mode: Skip AX API calls entirely, use targetPID from event directly
+        // This prevents crashes on unsupported hardware (OCLP Macs)
+        if (!vSafeMode) {
+            // First, check using Accessibility API to get the actual focused window's app
+            AXUIElementRef systemWide = AXUIElementCreateSystemWide();
+            AXUIElementRef focusedElement = NULL;
+            AXError error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement);
+            CFRelease(systemWide);
 
-            if (error == kAXErrorSuccess && focusedPID != 0) {
-                bundleId = getBundleIdFromPID(focusedPID);
-                cachePid = focusedPID;
+            if (error == kAXErrorSuccess && focusedElement != NULL) {
+                pid_t focusedPID = 0;
+                error = AXUIElementGetPid(focusedElement, &focusedPID);
+                CFRelease(focusedElement);
+
+                if (error == kAXErrorSuccess && focusedPID != 0) {
+                    bundleId = getBundleIdFromPID(focusedPID);
+                    cachePid = focusedPID;
+                }
             }
         }
 
-        // Fallback to target PID from event if accessibility fails
+        // Fallback to target PID from event if accessibility fails or safe mode
         if (bundleId == nil && targetPID > 0) {
             bundleId = getBundleIdFromPID(targetPID);
         }
@@ -747,6 +769,14 @@ extern "C" {
     NSString* _frontMostApp = @"UnknownApp";
     
     void PHTVInit() {
+        // Initialize logging infrastructure first
+        dispatch_once(&log_init_token, ^{
+            phtv_log = os_log_create("com.phamhungtien.phtv", "Engine");
+        });
+        dispatch_once(&timebase_init_token, ^{
+            mach_timebase_info(&timebase_info);
+        });
+
         //load saved data
         LOAD_DATA(vLanguage, InputMethod); if (vLanguage < 0) vLanguage = 1;
         LOAD_DATA(vInputType, InputType); if (vInputType < 0) vInputType = 0;
@@ -775,6 +805,47 @@ extern "C" {
         LOAD_DATA(vFixChromiumBrowser, vFixChromiumBrowser);
 
         LOAD_DATA(vPerformLayoutCompat, vPerformLayoutCompat);
+        LOAD_DATA(vSafeMode, SafeMode);
+
+        // Auto-detect AX crash: Check if previous AX test caused crash
+        // If AXTestInProgress flag is still set, previous launch crashed during AX test
+        NSUserDefaults *axDefaults = [NSUserDefaults standardUserDefaults];
+        if ([axDefaults boolForKey:@"AXTestInProgress"]) {
+            // Previous launch crashed during AX API call - auto-enable safe mode
+            vSafeMode = YES;
+            [axDefaults setBool:YES forKey:@"SafeMode"];
+            [axDefaults setBool:NO forKey:@"AXTestInProgress"];
+            [axDefaults synchronize];
+            os_log_error(phtv_log, "[PHTV] ⚠️ Auto-enabled Safe Mode: Previous AX API call crashed");
+            NSLog(@"[PHTV] ⚠️ Auto-enabled Safe Mode due to previous AX crash");
+        }
+
+        // Test AX API if not in safe mode
+        if (!vSafeMode) {
+            // Set flag before attempting AX call
+            [axDefaults setBool:YES forKey:@"AXTestInProgress"];
+            [axDefaults synchronize];
+
+            // Attempt a simple AX API call
+            @try {
+                AXUIElementRef testSystemWide = AXUIElementCreateSystemWide();
+                if (testSystemWide != NULL) {
+                    CFRelease(testSystemWide);
+                }
+                // AX test passed - clear the flag
+                [axDefaults setBool:NO forKey:@"AXTestInProgress"];
+                [axDefaults synchronize];
+                os_log_info(phtv_log, "[PHTV] AX API test passed");
+            }
+            @catch (NSException *exception) {
+                // AX test threw exception - enable safe mode
+                vSafeMode = YES;
+                [axDefaults setBool:YES forKey:@"SafeMode"];
+                [axDefaults setBool:NO forKey:@"AXTestInProgress"];
+                [axDefaults synchronize];
+                os_log_error(phtv_log, "[PHTV] ⚠️ AX API test failed with exception, enabling Safe Mode");
+            }
+        }
 
         // Auto-enable layout compatibility for non-US keyboard layouts
         // Check if user has never set this preference (key doesn't exist)
@@ -893,23 +964,29 @@ extern "C" {
     // Get bundle ID of the actually focused app (not just frontmost)
     // This is important for overlay windows like Spotlight, which aren't the frontmost app
     NSString* getFocusedAppBundleId() {
+        // Safe Mode: Skip AX API calls entirely, use frontmost app
+        // This prevents crashes on unsupported hardware (OCLP Macs)
+        if (vSafeMode) {
+            return FRONT_APP;
+        }
+
         AXUIElementRef systemWide = AXUIElementCreateSystemWide();
         AXUIElementRef focusedElement = NULL;
         AXError error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement);
         CFRelease(systemWide);
-        
+
         if (error != kAXErrorSuccess || focusedElement == NULL) {
             return FRONT_APP;  // Fallback to frontmost app
         }
-        
+
         pid_t focusedPID = 0;
         error = AXUIElementGetPid(focusedElement, &focusedPID);
         CFRelease(focusedElement);
-        
+
         if (error != kAXErrorSuccess || focusedPID == 0) {
             return FRONT_APP;
         }
-        
+
         NSString *bundleId = getBundleIdFromPID(focusedPID);
         return (bundleId != nil) ? bundleId : FRONT_APP;
     }

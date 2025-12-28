@@ -791,6 +791,7 @@ struct BugReportView: View {
             ## 🔧 Advanced Settings
             - **Fix Chromium Browser:** \(appState.fixChromiumBrowser ? "✅" : "❌")
             - **Layout Compat:** \(appState.performLayoutCompat ? "✅" : "❌")
+            - **Safe Mode:** \(appState.safeMode ? "✅" : "❌")
             - **Send key step by step:** \(appState.sendKeyStepByStep ? "✅" : "❌")
             - **Restore on invalid word:** \(appState.restoreOnInvalidWord ? "✅" : "❌")
             - **Auto restore English word:** \(appState.autoRestoreEnglishWord ? "✅" : "❌")

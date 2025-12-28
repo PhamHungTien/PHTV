@@ -602,7 +602,8 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 }
 
 - (void)applicationWillTerminate:(NSNotification *)aNotification {
-    // Insert code here to tear down your application
+    // Clear AX test flag on normal termination to prevent false safe mode activation
+    [PHTVManager clearAXTestFlag];
 }
 
 #pragma mark - SwiftUI Bridge
