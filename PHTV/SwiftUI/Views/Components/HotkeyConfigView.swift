@@ -179,17 +179,11 @@ struct HotkeyConfigView: View {
                 
                 // Beep on mode switch toggle
                 HStack(spacing: 14) {
+                    // Icon background - no glass effect to avoid glass-on-glass
                     ZStack {
-                        if #available(macOS 26.0, *) {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(themeManager.themeColor.opacity(0.12))
-                                .frame(width: 36, height: 36)
-                                .glassEffect(in: .rect(cornerRadius: 8))
-                        } else {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(themeManager.themeColor.opacity(0.12))
-                                .frame(width: 36, height: 36)
-                        }
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(themeManager.themeColor.opacity(0.12))
+                            .frame(width: 36, height: 36)
 
                         Image(systemName: "speaker.wave.2.fill")
                             .font(.system(size: 16, weight: .medium))
@@ -601,17 +595,11 @@ struct PauseKeyConfigView: View {
         VStack(alignment: .leading, spacing: 16) {
             // Enable toggle
             HStack(spacing: 14) {
+                // Icon background - no glass effect to avoid glass-on-glass
                 ZStack {
-                    if #available(macOS 26.0, *) {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(themeManager.themeColor.opacity(0.12))
-                            .frame(width: 36, height: 36)
-                            .glassEffect(in: .rect(cornerRadius: 8))
-                    } else {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(themeManager.themeColor.opacity(0.12))
-                            .frame(width: 36, height: 36)
-                    }
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(themeManager.themeColor.opacity(0.12))
+                        .frame(width: 36, height: 36)
 
                     Image(systemName: "pause.fill")
                         .font(.system(size: 16, weight: .medium))
