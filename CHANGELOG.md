@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2024-12-28
+
+### Added
+- **Safe Mode**: Tự động phát hiện và khôi phục khi Accessibility API gặp lỗi
+- **macOS Ventura**: Hạ yêu cầu từ macOS 14.0 (Sonoma) xuống 13.0 (Ventura)
+- **macOS 26 Liquid Glass**: Hỗ trợ hiệu ứng Liquid Glass trên macOS 26
+- **OCLP Support**: Tương thích tốt hơn với máy Mac chạy OpenCore Legacy Patcher
+
+### Changed
+- **Settings Window**: Thiết kế lại với kích thước tối ưu 950x680, blur background
+- **Thread Safety**: Xử lý window management an toàn với Swift 6 concurrency
+
+### Fixed
+- Sửa vòng lặp vô hạn khi mở settings từ menu bar
+- Sửa lỗi nút "Tạo gõ tắt đầu tiên" không hoạt động khi tính năng gõ tắt chưa bật
+- Tự động bật tính năng gõ tắt khi tạo gõ tắt đầu tiên
+- Sửa background trong suốt không đẹp mắt
+- Sửa kích thước cửa sổ quá nhỏ khi mở lần đầu
+- Sửa Swift 6 concurrency warnings trong SettingsWindowHelper
+
 ## [1.2.6] - 2024-12-26
 
 ### Changed
@@ -161,7 +181,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Macro (gõ tắt)
 - Hoàn toàn offline
 
-[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v1.2.5...HEAD
+[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/PhamHungTien/PHTV/compare/v1.2.6...v1.3.0
 [1.2.6]: https://github.com/PhamHungTien/PHTV/compare/v1.2.5...v1.2.6
 [1.2.5]: https://github.com/PhamHungTien/PHTV/compare/v1.1.4...v1.2.5
 [1.2.4]: https://github.com/PhamHungTien/PHTV/releases/tag/v1.2.4
