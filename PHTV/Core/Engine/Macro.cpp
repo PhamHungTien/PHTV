@@ -46,7 +46,6 @@ static string formatDateTime(const string& format, bool includeTime) {
     tm* ltm = localtime(&now);
 
     ostringstream oss;
-    bool inEscape = false;
     char lastChar = 0;
     int repeatCount = 0;
 

@@ -95,9 +95,6 @@ static BOOL _externalDeleteDetected = NO;
 static uint64_t _lastExternalDeleteTime = 0;
 static int _externalDeleteCount = 0;
 
-// Track character count to detect sudden jumps from text replacement
-static int _inputCharCount = 0;  // Characters user actually typed
-
 // Check if text replacement fix is enabled via settings (default: enabled)
 static inline BOOL IsTextReplacementFixEnabled(void) {
     return [[NSUserDefaults standardUserDefaults] boolForKey:@"vEnableTextReplacementFix"];
@@ -1752,12 +1749,12 @@ extern "C" {
 
         // Also track space after deletes to detect text replacement pattern (only if fix enabled)
         if (IsTextReplacementFixEnabled() && type == kCGEventKeyDown && _keycode == KEY_SPACE) {
+#ifdef DEBUG
             dispatch_once(&timebase_init_token, ^{
                 mach_timebase_info(&timebase_info);
             });
             uint64_t now = mach_absolute_time();
             uint64_t elapsed_ms = (_lastExternalDeleteTime != 0) ? mach_time_to_ms(now - _lastExternalDeleteTime) : 0;
-#ifdef DEBUG
             NSLog(@"[TextReplacement] SPACE key pressed: deleteCount=%d, elapsedMs=%llu, sourceID=%lld",
                   _externalDeleteCount, elapsed_ms,
                   CGEventGetIntegerValueField(event, kCGEventSourceStateID));
@@ -2262,10 +2259,14 @@ extern "C" {
 
                     // Method 2: Mouse click detection (FALLBACK)
                     // When user clicks with mouse, macOS does NOT send DELETE events via CGEventTap
-                    // Pattern: code=3 (vRestore) + short backspaceCount + NO external DELETE
-                    // This is a heuristic that may have false positives for very short English words
-                    else if (pData->code == vRestore || pData->code == vRestoreAndStartNewSession) {
-                        // Likely mouse click text replacement
+                    // Pattern: code=3 (vRestore) + newChar > backspace*2 + NO external DELETE
+                    // Key difference from Auto English restore:
+                    // - Text Replacement "ko"→"không": newChar=5 > backspace*2=4 → SKIP
+                    // - Auto English "hi": newChar=2 ≤ backspace*2=4 → KHÔNG skip
+                    // - Auto English "user": newChar=4 ≤ backspace*2=4 → KHÔNG skip
+                    else if ((pData->code == vRestore || pData->code == vRestoreAndStartNewSession) &&
+                             (pData->newCharCount > pData->backspaceCount * 2)) {
+                        // Text replacement detected (significant character count jump)
                         skipProcessing = YES;
 #ifdef DEBUG
                         NSLog(@"[TextReplacement] Mouse click text replacement detected - passing through event (code=%d, backspace=%d, newChar=%d)",
