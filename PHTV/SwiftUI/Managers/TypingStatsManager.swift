@@ -53,22 +53,84 @@ final class TypingStatsManager: ObservableObject {
     private let defaults = UserDefaults.standard
     private let statsKey = "typingStats"
     private var saveTimer: Timer?
+    private var observers: [Any] = []
+
+    /// Check if typing stats are enabled
+    private var isEnabled: Bool {
+        defaults.bool(forKey: "vTypingStatsEnabled")
+    }
 
     private init() {
         loadStats()
-        startNewSession()
         setupAutoSave()
+        setupNotificationObservers()
+    }
+
+    // MARK: - Notification Observers
+
+    private func setupNotificationObservers() {
+        // Listen for character typed
+        let charObserver = NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("TypingStatsCharacter"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.recordCharacter()
+            }
+        }
+        observers.append(charObserver)
+
+        // Listen for word completed
+        let wordObserver = NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("TypingStatsWord"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            // Extract value before Task to avoid data race
+            let isVietnamese = (notification.object as? NSNumber)?.boolValue ?? true
+            Task { @MainActor in
+                self?.recordWord(isVietnamese: isVietnamese)
+            }
+        }
+        observers.append(wordObserver)
+
+        // Listen for session start
+        let sessionStartObserver = NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("TypingStatsSessionStart"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.startNewSession()
+            }
+        }
+        observers.append(sessionStartObserver)
+
+        // Listen for session end
+        let sessionEndObserver = NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("TypingStatsSessionEnd"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.endSession()
+            }
+        }
+        observers.append(sessionEndObserver)
     }
 
     // MARK: - Session Management
 
     func startNewSession() {
+        guard isEnabled else { return }
         currentSessionStart = Date()
         stats.sessionsCount += 1
         saveStats()
     }
 
     func endSession() {
+        guard isEnabled else { return }
         if let start = currentSessionStart {
             let duration = Date().timeIntervalSince(start)
             stats.totalTypingTime += duration
@@ -86,6 +148,7 @@ final class TypingStatsManager: ObservableObject {
     // MARK: - Recording Stats
 
     func recordCharacter() {
+        guard isEnabled else { return }
         stats.totalCharacters += 1
 
         let today = todayKey()
@@ -96,6 +159,7 @@ final class TypingStatsManager: ObservableObject {
     }
 
     func recordWord(isVietnamese: Bool) {
+        guard isEnabled else { return }
         stats.totalWords += 1
 
         if isVietnamese {
