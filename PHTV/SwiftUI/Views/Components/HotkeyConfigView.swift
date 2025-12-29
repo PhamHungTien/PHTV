@@ -280,6 +280,7 @@ struct ModifierKeyButton: View {
     let symbol: String
     let name: String
     @Binding var isOn: Bool
+    @State private var isHovered = false
 
     var body: some View {
         Button(action: {
@@ -287,28 +288,35 @@ struct ModifierKeyButton: View {
                 isOn.toggle()
             }
         }) {
-            VStack(spacing: 6) {
+            VStack(spacing: 8) {
                 Text(symbol)
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
                     .foregroundStyle(isOn ? .white : .primary)
 
                 Text(name)
-                    .font(.caption2)
+                    .font(.caption)
+                    .fontWeight(.medium)
                     .foregroundStyle(isOn ? .white.opacity(0.9) : .secondary)
             }
-            .frame(width: 70, height: 56)
+            .frame(maxWidth: .infinity)
+            .frame(height: 64)
             .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(isOn ? themeManager.themeColor : Color(NSColor.controlBackgroundColor))
-                    .shadow(color: isOn ? themeManager.themeColor.opacity(0.3) : Color.clear, radius: 4, x: 0, y: 2)
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isOn ? themeManager.themeColor.gradient : Color(NSColor.controlBackgroundColor).gradient)
+                    .shadow(color: isOn ? themeManager.themeColor.opacity(0.4) : Color.clear, radius: 6, x: 0, y: 3)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(isOn ? Color.clear : Color.gray.opacity(0.25), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isOn ? Color.clear : (isHovered ? themeManager.themeColor.opacity(0.5) : Color.gray.opacity(0.2)), lineWidth: 1.5)
             )
-            .scaleEffect(isOn ? 1.0 : 0.98)
+            .scaleEffect(isHovered && !isOn ? 1.02 : 1.0)
         }
         .buttonStyle(.plain)
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHovered = hovering
+            }
+        }
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isOn)
     }
 }
@@ -717,6 +725,7 @@ struct PauseKeyButton: View {
     let keyCode: UInt16
     @Binding var selectedKeyCode: UInt16
     @Binding var selectedKeyName: String
+    @State private var isHovered = false
 
     private var isSelected: Bool {
         selectedKeyCode == keyCode
@@ -729,28 +738,51 @@ struct PauseKeyButton: View {
                 selectedKeyName = name
             }
         }) {
-            VStack(spacing: 6) {
-                Text(symbol)
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(isSelected ? .white : .primary)
+            HStack(spacing: 12) {
+                // Radio indicator
+                ZStack {
+                    Circle()
+                        .stroke(isSelected ? themeManager.themeColor : Color.gray.opacity(0.3), lineWidth: 2)
+                        .frame(width: 20, height: 20)
 
-                Text(name)
-                    .font(.caption2)
-                    .foregroundStyle(isSelected ? .white.opacity(0.9) : .secondary)
+                    if isSelected {
+                        Circle()
+                            .fill(themeManager.themeColor)
+                            .frame(width: 12, height: 12)
+                    }
+                }
+
+                // Key symbol and name
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(symbol)
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .foregroundStyle(isSelected ? themeManager.themeColor : .primary)
+
+                    Text(name)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
             }
-            .frame(width: 70, height: 56)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity)
             .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(isSelected ? themeManager.themeColor : Color(NSColor.controlBackgroundColor))
-                    .shadow(color: isSelected ? themeManager.themeColor.opacity(0.3) : Color.clear, radius: 4, x: 0, y: 2)
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isSelected ? themeManager.themeColor.opacity(0.1) : Color(NSColor.controlBackgroundColor))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(isSelected ? Color.clear : Color.gray.opacity(0.25), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isSelected ? themeManager.themeColor : (isHovered ? themeManager.themeColor.opacity(0.3) : Color.gray.opacity(0.2)), lineWidth: isSelected ? 2 : 1)
             )
-            .scaleEffect(isSelected ? 1.0 : 0.98)
         }
         .buttonStyle(.plain)
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHovered = hovering
+            }
+        }
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
     }
 }
