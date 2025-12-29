@@ -253,6 +253,12 @@ struct SettingsItem: Identifiable {
         SettingsItem(
             title: "Import/Export gõ tắt", iconName: "square.and.arrow.down", tab: .macro,
             keywords: ["import macro", "export", "import", "nhập", "xuất", "tệp", "file"]),
+        SettingsItem(
+            title: "Danh mục gõ tắt", iconName: "folder.fill", tab: .macro,
+            keywords: ["category", "danh mục", "nhóm", "phân loại", "folder"]),
+        SettingsItem(
+            title: "Text Snippets (Đoạn văn động)", iconName: "doc.text.fill", tab: .macro,
+            keywords: ["snippet", "date", "time", "clipboard", "ngày", "giờ", "động", "tự động", "counter", "random"]),
 
         // ═══════════════════════════════════════════
         // MARK: - Từ điển (Dictionary)
@@ -274,6 +280,9 @@ struct SettingsItem: Identifiable {
         // MARK: - Thống kê (Stats)
         // ═══════════════════════════════════════════
         SettingsItem(
+            title: "Bật thống kê gõ phím", iconName: "chart.bar.fill", tab: .stats,
+            keywords: ["enable", "bật", "tắt", "statistics", "thống kê", "gõ phím", "typing", "stats"]),
+        SettingsItem(
             title: "Thống kê gõ phím", iconName: "chart.bar.fill", tab: .stats,
             keywords: ["statistics", "thống kê", "gõ phím", "typing", "stats", "biểu đồ"]),
         SettingsItem(
@@ -285,6 +294,12 @@ struct SettingsItem: Identifiable {
         SettingsItem(
             title: "Biểu đồ hoạt động", iconName: "chart.line.uptrend.xyaxis", tab: .stats,
             keywords: ["chart", "biểu đồ", "graph", "activity", "hoạt động"]),
+        SettingsItem(
+            title: "Phân bố ngôn ngữ", iconName: "globe", tab: .stats,
+            keywords: ["language", "ngôn ngữ", "tiếng việt", "tiếng anh", "phân bố", "tỷ lệ"]),
+        SettingsItem(
+            title: "Xóa thống kê", iconName: "trash.fill", tab: .stats,
+            keywords: ["reset", "xóa", "làm mới", "delete", "clear"]),
 
         // ═══════════════════════════════════════════
         // MARK: - Phím tắt (Hotkeys)
@@ -365,6 +380,12 @@ struct SettingsItem: Identifiable {
         SettingsItem(
             title: "Chuyển đổi bảng mã", iconName: "doc.on.clipboard.fill", tab: .system,
             keywords: ["convert", "chuyển đổi", "bảng mã", "unicode", "tcvn3", "vni", "clipboard"]),
+        SettingsItem(
+            title: "Xuất cài đặt", iconName: "square.and.arrow.up.fill", tab: .system,
+            keywords: ["export", "xuất", "backup", "sao lưu", "settings", "cài đặt", "file"]),
+        SettingsItem(
+            title: "Nhập cài đặt", iconName: "square.and.arrow.down.fill", tab: .system,
+            keywords: ["import", "nhập", "restore", "khôi phục", "settings", "cài đặt", "file"]),
         SettingsItem(
             title: "Đặt lại cài đặt", iconName: "arrow.counterclockwise.circle.fill", tab: .system,
             keywords: ["reset", "đặt lại", "khôi phục", "mặc định", "quản lý dữ liệu"]),
