@@ -58,7 +58,6 @@
 		A534F32629D8B78100296F25 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23874B0F220160A500000BC8 /* Carbon.framework */; };
 		A534F32629D8B78100296F26 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23874B10220160A500000BC9 /* QuartzCore.framework */; };
 		B130517648548D01FFC0F52C /* AppsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2DA720371C3BD130F878C29 /* AppsSettingsView.swift */; };
-		DB799B68D74F4B3AA863B03A /* AdvancedSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5079BAE20074F51ADAB4E65 /* AdvancedSettingsView.swift */; };
 		E1A1A1A42025120200000002 /* UsageStats.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A32025120200000004 /* UsageStats.m */; };
 		E1A1A1A52025120200000005 /* PHTVConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A72025120200000007 /* PHTVConfig.m */; };
 		E1A1A1A62025120200000006 /* PHTVUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A92025120200000009 /* PHTVUtilities.m */; };
@@ -172,7 +171,6 @@
 		99A1FB75E4F047E2882D19DC /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities/ThemeManager.swift; sourceTree = "<group>"; };
 		C2DA720371C3BD130F878C29 /* AppsSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppsSettingsView.swift; sourceTree = "<group>"; };
 		D3CCE6686B954309A3B65AAD /* HotkeySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeySettingsView.swift; sourceTree = "<group>"; };
-		D5079BAE20074F51ADAB4E65 /* AdvancedSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedSettingsView.swift; sourceTree = "<group>"; };
 		E1A1A1A22025120100000003 /* UsageStats.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UsageStats.h; sourceTree = "<group>"; };
 		E1A1A1A32025120200000004 /* UsageStats.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = UsageStats.m; sourceTree = "<group>"; };
 		E1A1A1A72025120200000007 /* PHTVConfig.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PHTVConfig.m; sourceTree = "<group>"; };
@@ -464,7 +462,6 @@
 		F1A1A2AC2025130100000035 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
-				D5079BAE20074F51ADAB4E65 /* AdvancedSettingsView.swift */,
 				D3CCE6686B954309A3B65AAD /* HotkeySettingsView.swift */,
 				0FF311551B144E45B07D9CCD /* ThemeSettingsView.swift */,
 				F1A1A1D22025130100000020 /* TypingSettingsView.swift */,
@@ -641,7 +638,6 @@
 				F1A1A1EB2025130100000045 /* ConvertToolView.swift in Sources */,
 				F1A1A1E12025130100000035 /* SettingsObserver.swift in Sources */,
 				F1A1A1E32025130100000037 /* ReloadHelpers.swift in Sources */,
-				DB799B68D74F4B3AA863B03A /* AdvancedSettingsView.swift in Sources */,
 				46ABBBB02EFD67B00003CBB5 /* SparkleManager.mm in Sources */,
 				015CCFFEF0134F81976FCAB6 /* HotkeySettingsView.swift in Sources */,
 				16B982F63741372BF590C264 /* PHSilentUserDriver.m in Sources */,
