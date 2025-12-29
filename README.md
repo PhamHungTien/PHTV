@@ -41,11 +41,18 @@
 - **Tự động viết hoa** - Viết hoa chữ cái đầu câu sau dấu chấm
 - **Tự động khôi phục từ tiếng Anh** - Nhận diện và khôi phục từ tiếng Anh khi gõ nhầm (VD: "tẻminal" → "terminal")
 
-### Macro (Gõ tắt)
+### Macro & Text Snippets
 - **Gõ tắt thông minh** - Định nghĩa từ viết tắt tùy ý (VD: "btw" → "by the way")
+- **Text Snippets** - Gõ tắt động với ngày, giờ, clipboard, random, counter
 - **Tự động viết hoa macro** - "Btw" → "By the way", "BTW" → "BY THE WAY"
 - **Hoạt động ở cả 2 chế độ** - Macro hoạt động cả khi gõ tiếng Việt và tiếng Anh
 - **Import/Export** - Nhập xuất danh sách macro từ file
+- **Danh mục** - Tổ chức macro theo nhóm với icon và màu sắc
+
+### Từ điển tùy chỉnh
+- **Thêm từ tiếng Anh** - Cải thiện nhận diện từ tiếng Anh
+- **Thêm từ tiếng Việt** - Thêm từ chuyên ngành, tên riêng
+- **Import/Export** - Nhập xuất từ điển từ file
 
 ### Tương thích ứng dụng
 - **Spotlight Fix** - Gõ tiếng Việt trong Spotlight không bị lỗi
@@ -61,10 +68,17 @@
 - **Khôi phục ký tự gốc** - Nhấn ESC để hoàn tác dấu (VD: "việt" → "viet")
 - **Smart Switch** - Tự động nhớ ngôn ngữ cho từng ứng dụng
 
+### Thống kê gõ phím
+- **Đếm từ và ký tự** - Theo dõi số lượng đã gõ
+- **Thời gian gõ** - Tích lũy thời gian typing
+- **Biểu đồ 7 ngày** - Xem xu hướng hoạt động
+- **Phân bố ngôn ngữ** - Tỷ lệ Việt/Anh
+
 ### Hệ thống
 - **Khởi động cùng macOS** - Tùy chọn chạy khi đăng nhập
 - **Hot Reload** - Thay đổi cài đặt không cần khởi động lại
 - **Tự động cập nhật** - Kiểm tra phiên bản mới từ GitHub
+- **Import/Export cài đặt** - Sao lưu và khôi phục toàn bộ settings
 - **Menu bar icon** - Hiển thị trạng thái Vi/En trên thanh menu
 - **Báo lỗi thông minh** - Tự động thu thập log debug, thống kê lỗi, gửi qua GitHub/Email
 

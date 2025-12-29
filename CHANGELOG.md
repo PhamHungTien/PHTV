@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.2] - 2024-12-29
+
+### Added
+- **Text Snippets**: Gõ tắt động với nội dung thay đổi theo ngữ cảnh
+  - Ngày hiện tại (format tùy chỉnh)
+  - Giờ hiện tại
+  - Ngày và giờ
+  - Nội dung clipboard
+  - Random từ danh sách
+  - Counter tự động tăng
+- **Từ điển tùy chỉnh**: Thêm từ tiếng Anh/Việt để nhận diện chính xác hơn
+- **Import/Export cài đặt**: Sao lưu và khôi phục toàn bộ cài đặt ra file .phtv-backup
+- **Thống kê gõ phím**: Theo dõi số từ, ký tự, thời gian gõ với biểu đồ 7 ngày
+
+### Changed
+- **Settings Reorganization**: Tổ chức lại từ 12 tabs xuống 11 tabs
+  - Gộp "Nâng cao" vào "Bộ gõ" thành section "Phụ âm nâng cao"
+  - Sắp xếp theo mức độ sử dụng: Bộ gõ → Phím tắt → Gõ tắt → ...
+- **Hotkey UI**: Thiết kế mới với gradient, hover effects, và radio buttons
+- **Search**: Mở rộng từ 40 lên 61 mục tìm kiếm cho tất cả chức năng
+- **English Dictionary**: Bổ sung thuật ngữ công nghệ và thương hiệu phổ biến
+
+### Fixed
+- Sửa lỗi phím Backspace không reset trạng thái khi gõ tiếng Việt
+- Sửa lỗi Sendable conformance trong SettingsBackup types
+
 ## [1.3.1] - 2024-12-28
 
 ### Changed
