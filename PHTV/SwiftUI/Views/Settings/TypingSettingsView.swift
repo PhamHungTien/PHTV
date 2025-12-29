@@ -205,6 +205,39 @@ struct TypingSettingsView: View {
                     }
                 }
 
+                // Advanced Consonants
+                SettingsCard(title: "Phụ âm nâng cao", icon: "character.textbox") {
+                    VStack(spacing: 0) {
+                        SettingsToggleRow(
+                            icon: "character",
+                            iconColor: themeManager.themeColor,
+                            title: "Phụ âm Z, F, W, J",
+                            subtitle: "Cho phép nhập các phụ âm ngoại lai",
+                            isOn: $appState.allowConsonantZFWJ
+                        )
+
+                        SettingsDivider()
+
+                        SettingsToggleRow(
+                            icon: "arrow.right.circle.fill",
+                            iconColor: themeManager.themeColor,
+                            title: "Phụ âm đầu nhanh",
+                            subtitle: "Gõ f → ph, j → gi, w → qu...",
+                            isOn: $appState.quickStartConsonant
+                        )
+
+                        SettingsDivider()
+
+                        SettingsToggleRow(
+                            icon: "arrow.left.circle.fill",
+                            iconColor: themeManager.themeColor,
+                            title: "Phụ âm cuối nhanh",
+                            subtitle: "Gõ g → ng, h → nh, k → ch...",
+                            isOn: $appState.quickEndConsonant
+                        )
+                    }
+                }
+
                 Spacer(minLength: 20)
             }
             .padding(20)

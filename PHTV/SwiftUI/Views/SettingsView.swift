@@ -155,24 +155,22 @@ struct SettingsView: View {
         switch selectedTab {
         case .typing:
             TypingSettingsView()
-        case .advanced:
-            AdvancedSettingsView()
+        case .hotkeys:
+            HotkeySettingsView()
         case .macro:
             MacroSettingsView()
         case .dictionary:
             CustomDictionaryView()
-        case .stats:
-            TypingStatsView()
-        case .hotkeys:
-            HotkeySettingsView()
         case .apps:
             AppsSettingsView()
-        case .appearance:
-            AppearanceSettingsView()
         case .compatibility:
             CompatibilitySettingsView()
+        case .appearance:
+            AppearanceSettingsView()
         case .system:
             SystemSettingsView()
+        case .stats:
+            TypingStatsView()
         case .bugReport:
             BugReportView()
         case .about:
@@ -221,17 +219,14 @@ struct SettingsItem: Identifiable {
             title: "Gõ nhanh (Quick Telex)", iconName: "hare.fill", tab: .typing,
             keywords: ["quick telex", "gõ nhanh", "cc", "gg", "kk", "nn", "qq", "pp", "tt"]),
 
-        // ═══════════════════════════════════════════
-        // MARK: - Nâng cao (Advanced)
-        // ═══════════════════════════════════════════
         SettingsItem(
-            title: "Phụ âm Z, F, W, J", iconName: "character", tab: .advanced,
+            title: "Phụ âm Z, F, W, J", iconName: "character", tab: .typing,
             keywords: ["consonant", "phụ âm", "ngoại lai", "z f w j", "phụ âm nâng cao"]),
         SettingsItem(
-            title: "Phụ âm đầu nhanh", iconName: "arrow.right.circle.fill", tab: .advanced,
+            title: "Phụ âm đầu nhanh", iconName: "arrow.right.circle.fill", tab: .typing,
             keywords: ["quick start consonant", "phụ âm đầu", "nhanh", "f", "j", "w", "ph", "gi", "qu"]),
         SettingsItem(
-            title: "Phụ âm cuối nhanh", iconName: "arrow.left.circle.fill", tab: .advanced,
+            title: "Phụ âm cuối nhanh", iconName: "arrow.left.circle.fill", tab: .typing,
             keywords: ["quick end consonant", "phụ âm cuối", "nhanh", "g", "h", "k", "ng", "nh", "ch"]),
 
         // ═══════════════════════════════════════════
@@ -405,15 +400,14 @@ struct SettingsItem: Identifiable {
 // MARK: - Settings Tabs
 enum SettingsTab: String, CaseIterable, Identifiable {
     case typing = "Bộ gõ"
-    case advanced = "Nâng cao"
+    case hotkeys = "Phím tắt"
     case macro = "Gõ tắt"
     case dictionary = "Từ điển"
-    case stats = "Thống kê"
-    case hotkeys = "Phím tắt"
     case apps = "Ứng dụng"
-    case appearance = "Giao diện"
     case compatibility = "Tương thích"
+    case appearance = "Giao diện"
     case system = "Hệ thống"
+    case stats = "Thống kê"
     case bugReport = "Báo lỗi"
     case about = "Thông tin"
 
@@ -423,15 +417,14 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     nonisolated var iconName: String {
         switch self {
         case .typing: return "keyboard"
-        case .advanced: return "gearshape.2"
+        case .hotkeys: return "command"
         case .macro: return "text.badge.checkmark"
         case .dictionary: return "character.book.closed"
-        case .stats: return "chart.bar.fill"
-        case .hotkeys: return "command"
         case .apps: return "square.stack.3d.up"
-        case .appearance: return "paintpalette.fill"
         case .compatibility: return "puzzlepiece.extension.fill"
+        case .appearance: return "paintpalette.fill"
         case .system: return "gear"
+        case .stats: return "chart.bar.fill"
         case .bugReport: return "ladybug.fill"
         case .about: return "info.circle"
         }
