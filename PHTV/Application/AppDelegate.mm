@@ -659,6 +659,11 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                                                object:nil];
 
     [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleCustomDictionaryUpdated:)
+                                                 name:@"CustomDictionaryUpdated"
+                                               object:nil];
+
+    [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(handleSettingsReset:)
                                                  name:@"SettingsReset"
                                                object:nil];
@@ -1019,12 +1024,24 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         uint16_t macroCount = (uint16_t)[macros count];
         [binaryData appendBytes:&macroCount length:2];
 
+        // Snippet type mapping from Swift enum to C++ enum
+        NSDictionary *snippetTypeMap = @{
+            @"static": @0,
+            @"date": @1,
+            @"time": @2,
+            @"datetime": @3,
+            @"clipboard": @4,
+            @"random": @5,
+            @"counter": @6
+        };
+
         for (NSDictionary *macro in macros) {
             if (![macro isKindOfClass:[NSDictionary class]]) {
                 continue;
             }
             NSString *shortcut = macro[@"shortcut"] ?: @"";
             NSString *expansion = macro[@"expansion"] ?: @"";
+            NSString *snippetTypeStr = macro[@"snippetType"] ?: @"static";
 
             uint8_t shortcutLen = (uint8_t)[shortcut lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
             [binaryData appendBytes:&shortcutLen length:1];
@@ -1033,6 +1050,10 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
             uint16_t expansionLen = (uint16_t)[expansion lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
             [binaryData appendBytes:&expansionLen length:2];
             [binaryData appendData:[expansion dataUsingEncoding:NSUTF8StringEncoding]];
+
+            // Append snippet type (1 byte)
+            uint8_t snippetType = [snippetTypeMap[snippetTypeStr] unsignedCharValue];
+            [binaryData appendBytes:&snippetType length:1];
         }
 
         [defaults setObject:binaryData forKey:@"macroData"];
@@ -1092,6 +1113,41 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     } else {
         NSLog(@"[EnglishWordDetector] vi_dict.bin not found in bundle");
     }
+
+    // Load custom dictionary from UserDefaults
+    [self syncCustomDictionaryFromUserDefaults];
+}
+
+- (void)syncCustomDictionaryFromUserDefaults {
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    NSData *customDictData = [defaults dataForKey:@"customDictionary"];
+
+    if (customDictData && customDictData.length > 0) {
+        NSError *error = nil;
+        NSArray *words = [NSJSONSerialization JSONObjectWithData:customDictData options:0 error:&error];
+
+        if (error || !words) {
+            NSLog(@"[CustomDictionary] Failed to parse JSON: %@", error.localizedDescription);
+            return;
+        }
+
+        // Re-serialize to JSON string for C++ parser
+        NSData *jsonData = [NSJSONSerialization dataWithJSONObject:words options:0 error:&error];
+        if (jsonData) {
+            initCustomDictionary((const char*)jsonData.bytes, (int)jsonData.length);
+            NSLog(@"[CustomDictionary] Loaded %zu English, %zu Vietnamese custom words",
+                  getCustomEnglishWordCount(), getCustomVietnameseWordCount());
+        }
+    } else {
+        // Clear custom dictionary if no data
+        clearCustomDictionary();
+        NSLog(@"[CustomDictionary] No custom words found");
+    }
+}
+
+- (void)handleCustomDictionaryUpdated:(NSNotification *)notification {
+    PHTV_LIVE_LOG(@"received CustomDictionaryUpdated");
+    [self syncCustomDictionaryFromUserDefaults];
 }
 
 #pragma mark - Sparkle Update Handlers

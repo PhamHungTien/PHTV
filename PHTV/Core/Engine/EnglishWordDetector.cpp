@@ -15,6 +15,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <unordered_set>
 
 #ifdef __APPLE__
 #include "../Platforms/mac.h"
@@ -59,6 +60,10 @@ static size_t vieMmapSize = 0;
 // Pre-computed lookup table: keycode -> letter index (0-25), 255 = invalid
 alignas(64) static uint8_t kcToIdx[64];
 static bool kcInit = false;
+
+// Custom dictionary: user-added words for better accuracy
+static std::unordered_set<std::string> customEnglishWords;
+static std::unordered_set<std::string> customVietnameseWords;
 
 static void initKcLookup() {
     if (kcInit) return;
@@ -246,25 +251,40 @@ string keyStatesToString(const Uint32* keyCodes, int count) {
 // ULTRA-FAST: Check if should restore to English
 // Zero allocation, direct memory access
 // Logic: Vietnamese-first - only restore if NOT Vietnamese AND IS English
+// Priority: Custom Vietnamese > Custom English > Built-in Vietnamese > Built-in English
 // ============================================================================
 bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
     // Quick validation
     if (!engInit | (stateIndex < 2) | (stateIndex > 30)) return false;
 
-    // Convert keycodes to indices
+    // Convert keycodes to indices and build word string
     uint8_t idx[32];
+    char wordBuf[32];
     for (int i = 0; i < stateIndex; i++) {
         uint8_t id = kcToIdx[keyStates[i] & 0x3F];
         if (id >= 26) return false;
         idx[i] = id;
+        wordBuf[i] = 'a' + id;
+    }
+    wordBuf[stateIndex] = '\0';
+    std::string word(wordBuf);
+
+    // PRIORITY 1: Check custom Vietnamese - if user marked as Vietnamese, never restore
+    if (!customVietnameseWords.empty() && customVietnameseWords.count(word)) {
+        return false; // User explicitly marked as Vietnamese - do NOT restore
     }
 
-    // PRIORITY: Check Vietnamese FIRST - if it's Vietnamese, never restore
+    // PRIORITY 2: Check custom English - if user marked as English, always restore
+    if (!customEnglishWords.empty() && customEnglishWords.count(word)) {
+        return true; // User explicitly marked as English - restore
+    }
+
+    // PRIORITY 3: Check built-in Vietnamese dictionary
     if (vieInit && vieNodes && searchBinaryTrie(vieNodes, idx, stateIndex)) {
         return false; // It's a Vietnamese word - do NOT restore
     }
 
-    // Only check English if NOT Vietnamese
+    // PRIORITY 4: Check built-in English dictionary
     return searchBinaryTrie(engNodes, idx, stateIndex);
 }
 
@@ -282,4 +302,80 @@ void clearEnglishDictionary() {
     engInit = vieInit = false;
     engWordCount = vieWordCount = 0;
     engNodeCount = vieNodeCount = 0;
+}
+
+// ============================================================================
+// Custom Dictionary: User-added words
+// ============================================================================
+
+void clearCustomDictionary() {
+    customEnglishWords.clear();
+    customVietnameseWords.clear();
+}
+
+size_t getCustomEnglishWordCount() {
+    return customEnglishWords.size();
+}
+
+size_t getCustomVietnameseWordCount() {
+    return customVietnameseWords.size();
+}
+
+// Simple JSON parser for custom dictionary
+// Expected format: [{"word":"abc","type":"en"},...]
+void initCustomDictionary(const char* jsonData, int length) {
+    clearCustomDictionary();
+
+    if (!jsonData || length < 2) return;
+
+    std::string json(jsonData, length);
+    size_t pos = 0;
+
+    while (pos < json.length()) {
+        // Find "word":"
+        size_t wordKeyPos = json.find("\"word\":", pos);
+        if (wordKeyPos == std::string::npos) break;
+
+        // Find the word value
+        size_t wordStart = json.find("\"", wordKeyPos + 7);
+        if (wordStart == std::string::npos) break;
+        wordStart++; // Skip opening quote
+
+        size_t wordEnd = json.find("\"", wordStart);
+        if (wordEnd == std::string::npos) break;
+
+        std::string word = json.substr(wordStart, wordEnd - wordStart);
+
+        // Find "type":"
+        size_t typeKeyPos = json.find("\"type\":", wordEnd);
+        if (typeKeyPos == std::string::npos) {
+            pos = wordEnd + 1;
+            continue;
+        }
+
+        size_t typeStart = json.find("\"", typeKeyPos + 7);
+        if (typeStart == std::string::npos) break;
+        typeStart++; // Skip opening quote
+
+        size_t typeEnd = json.find("\"", typeStart);
+        if (typeEnd == std::string::npos) break;
+
+        std::string type = json.substr(typeStart, typeEnd - typeStart);
+
+        // Convert word to lowercase
+        for (size_t i = 0; i < word.length(); i++) {
+            if (word[i] >= 'A' && word[i] <= 'Z') {
+                word[i] = word[i] - 'A' + 'a';
+            }
+        }
+
+        // Add to appropriate set
+        if (type == "en" || type == "english") {
+            customEnglishWords.insert(word);
+        } else if (type == "vi" || type == "vietnamese") {
+            customVietnameseWords.insert(word);
+        }
+
+        pos = typeEnd + 1;
+    }
 }

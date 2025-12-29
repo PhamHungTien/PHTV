@@ -74,6 +74,9 @@
 		F1A1A1D12025130100000019 /* TypingSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D22025130100000020 /* TypingSettingsView.swift */; };
 		F1A1A1D32025130100000021 /* SystemSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D42025130100000022 /* SystemSettingsView.swift */; };
 		F1A1A1D52025130100000023 /* MacroSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D62025130100000024 /* MacroSettingsView.swift */; };
+		F1A1A1EF2025130100000049 /* CustomDictionaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1F02025130100000050 /* CustomDictionaryView.swift */; };
+		F1A1A1F12025130100000051 /* TypingStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1F22025130100000052 /* TypingStatsView.swift */; };
+		F1A1A1F32025130100000053 /* TypingStatsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1F42025130100000054 /* TypingStatsManager.swift */; };
 		F1A1A1D72025130100000025 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D82025130100000026 /* AboutView.swift */; };
 		F1A1A1D92025130100000027 /* HotkeyConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1DA2025130100000028 /* HotkeyConfigView.swift */; };
 		F1A1A1DB2025130100000029 /* MacroEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1DC2025130100000030 /* MacroEditorView.swift */; };
@@ -189,6 +192,9 @@
 		F1A1A1D22025130100000020 /* TypingSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypingSettingsView.swift; sourceTree = "<group>"; };
 		F1A1A1D42025130100000022 /* SystemSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSettingsView.swift; sourceTree = "<group>"; };
 		F1A1A1D62025130100000024 /* MacroSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroSettingsView.swift; sourceTree = "<group>"; };
+		F1A1A1F02025130100000050 /* CustomDictionaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomDictionaryView.swift; sourceTree = "<group>"; };
+		F1A1A1F22025130100000052 /* TypingStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypingStatsView.swift; sourceTree = "<group>"; };
+		F1A1A1F42025130100000054 /* TypingStatsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypingStatsManager.swift; sourceTree = "<group>"; };
 		F1A1A1D82025130100000026 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
 		F1A1A1DA2025130100000028 /* HotkeyConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyConfigView.swift; sourceTree = "<group>"; };
 		F1A1A1DC2025130100000030 /* MacroEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroEditorView.swift; sourceTree = "<group>"; };
@@ -399,10 +405,19 @@
 				F1A1A2A92025130000000019 /* Controllers */,
 				F1A1A2AA2025130000000020 /* Bridge */,
 				F1A1A2AB2025130000000021 /* Utilities */,
+				F1A1A2AF2025130100000055 /* Managers */,
 				8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */,
 				99A1FB75E4F047E2882D19DC /* ThemeManager.swift */,
 			);
 			path = SwiftUI;
+			sourceTree = "<group>";
+		};
+		F1A1A2AF2025130100000055 /* Managers */ = {
+			isa = PBXGroup;
+			children = (
+				F1A1A1F42025130100000054 /* TypingStatsManager.swift */,
+			);
+			path = Managers;
 			sourceTree = "<group>";
 		};
 		F1A1A2A82025130000000018 /* Views */ = {
@@ -455,6 +470,8 @@
 				F1A1A1D22025130100000020 /* TypingSettingsView.swift */,
 				F1A1A1D42025130100000022 /* SystemSettingsView.swift */,
 				F1A1A1D62025130100000024 /* MacroSettingsView.swift */,
+				F1A1A1F02025130100000050 /* CustomDictionaryView.swift */,
+				F1A1A1F22025130100000052 /* TypingStatsView.swift */,
 				F1A1A1E62025130100000040 /* BugReportView.swift */,
 				F1A1A1D82025130100000026 /* AboutView.swift */,
 				46413AED2EEF7EB300278BFB /* update.json */,
@@ -609,6 +626,9 @@
 				F1A1A1D12025130100000019 /* TypingSettingsView.swift in Sources */,
 				F1A1A1D32025130100000021 /* SystemSettingsView.swift in Sources */,
 				F1A1A1D52025130100000023 /* MacroSettingsView.swift in Sources */,
+				F1A1A1EF2025130100000049 /* CustomDictionaryView.swift in Sources */,
+				F1A1A1F12025130100000051 /* TypingStatsView.swift in Sources */,
+				F1A1A1F32025130100000053 /* TypingStatsManager.swift in Sources */,
 				F1A1A1D72025130100000025 /* AboutView.swift in Sources */,
 				F1A1A1E52025130100000039 /* BugReportView.swift in Sources */,
 				F1A1A1D92025130100000027 /* HotkeyConfigView.swift in Sources */,

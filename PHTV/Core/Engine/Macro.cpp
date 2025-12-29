@@ -13,6 +13,15 @@
 #include <memory.h>
 #include <fstream>
 #include <mutex>
+#include <ctime>
+#include <sstream>
+#include <iomanip>
+#include <random>
+
+#ifdef __APPLE__
+#include <CoreFoundation/CoreFoundation.h>
+#include <ApplicationServices/ApplicationServices.h>
+#endif
 
 using namespace std;
 
@@ -21,6 +30,169 @@ map<vector<Uint32>, MacroData> macroMap;
 
 // Thread safety: protect macroMap access between main thread (AppDelegate) and event tap thread
 static std::mutex macroMapMutex;
+
+// Counter storage for SNIPPET_COUNTER type
+static std::map<std::string, int> counterValues;
+static std::mutex counterMutex;
+
+// ============================================================================
+// Snippet Helper Functions
+// ============================================================================
+
+// Format date/time using custom format string
+// d=day, M=month, y=year, H=hour, m=minute, s=second
+static string formatDateTime(const string& format, bool includeTime) {
+    time_t now = time(nullptr);
+    tm* ltm = localtime(&now);
+
+    ostringstream oss;
+    bool inEscape = false;
+    char lastChar = 0;
+    int repeatCount = 0;
+
+    auto flushRepeat = [&]() {
+        if (repeatCount == 0) return;
+        switch (lastChar) {
+            case 'd':
+                if (repeatCount >= 2)
+                    oss << setfill('0') << setw(2) << ltm->tm_mday;
+                else
+                    oss << ltm->tm_mday;
+                break;
+            case 'M':
+                if (repeatCount >= 2)
+                    oss << setfill('0') << setw(2) << (ltm->tm_mon + 1);
+                else
+                    oss << (ltm->tm_mon + 1);
+                break;
+            case 'y':
+                if (repeatCount >= 4)
+                    oss << (ltm->tm_year + 1900);
+                else
+                    oss << setfill('0') << setw(2) << ((ltm->tm_year + 1900) % 100);
+                break;
+            case 'H':
+                if (repeatCount >= 2)
+                    oss << setfill('0') << setw(2) << ltm->tm_hour;
+                else
+                    oss << ltm->tm_hour;
+                break;
+            case 'm':
+                if (repeatCount >= 2)
+                    oss << setfill('0') << setw(2) << ltm->tm_min;
+                else
+                    oss << ltm->tm_min;
+                break;
+            case 's':
+                if (repeatCount >= 2)
+                    oss << setfill('0') << setw(2) << ltm->tm_sec;
+                else
+                    oss << ltm->tm_sec;
+                break;
+            default:
+                for (int i = 0; i < repeatCount; i++) oss << lastChar;
+                break;
+        }
+        repeatCount = 0;
+    };
+
+    for (char c : format) {
+        if (c == lastChar && (c == 'd' || c == 'M' || c == 'y' || c == 'H' || c == 'm' || c == 's')) {
+            repeatCount++;
+        } else {
+            flushRepeat();
+            lastChar = c;
+            repeatCount = 1;
+        }
+    }
+    flushRepeat();
+
+    return oss.str();
+}
+
+static string getCurrentDate(const string& format) {
+    if (format.empty()) {
+        return formatDateTime("dd/MM/yyyy", false);
+    }
+    return formatDateTime(format, false);
+}
+
+static string getCurrentTime(const string& format) {
+    if (format.empty()) {
+        return formatDateTime("HH:mm:ss", true);
+    }
+    return formatDateTime(format, true);
+}
+
+static string getCurrentDateTime(const string& format) {
+    if (format.empty()) {
+        return formatDateTime("dd/MM/yyyy HH:mm", true);
+    }
+    return formatDateTime(format, true);
+}
+
+static string getRandomFromList(const string& listStr) {
+    if (listStr.empty()) return "";
+
+    vector<string> items;
+    stringstream ss(listStr);
+    string item;
+    while (getline(ss, item, ',')) {
+        // Trim whitespace
+        size_t start = item.find_first_not_of(" \t");
+        size_t end = item.find_last_not_of(" \t");
+        if (start != string::npos && end != string::npos) {
+            items.push_back(item.substr(start, end - start + 1));
+        }
+    }
+
+    if (items.empty()) return listStr;
+
+    // Random selection
+    static random_device rd;
+    static mt19937 gen(rd());
+    uniform_int_distribution<> dis(0, (int)items.size() - 1);
+    return items[dis(gen)];
+}
+
+static string getAndIncrementCounter(const string& prefix) {
+    std::lock_guard<std::mutex> lock(counterMutex);
+    int value = ++counterValues[prefix];
+    return prefix + to_string(value);
+}
+
+// Reset counter for a specific prefix or all counters
+extern "C" {
+void resetSnippetCounter(const char* prefix) {
+    std::lock_guard<std::mutex> lock(counterMutex);
+    if (prefix && strlen(prefix) > 0) {
+        counterValues.erase(prefix);
+    } else {
+        counterValues.clear();
+    }
+}
+}
+
+// Compute dynamic snippet content based on type
+static string computeSnippet(int snippetType, const string& format) {
+    switch (snippetType) {
+        case SNIPPET_DATE:
+            return getCurrentDate(format);
+        case SNIPPET_TIME:
+            return getCurrentTime(format);
+        case SNIPPET_DATETIME:
+            return getCurrentDateTime(format);
+        case SNIPPET_CLIPBOARD:
+            // Clipboard will be handled by Objective-C bridge
+            return ""; // Placeholder, actual content set by AppDelegate
+        case SNIPPET_RANDOM:
+            return getRandomFromList(format);
+        case SNIPPET_COUNTER:
+            return getAndIncrementCounter(format);
+        default:
+            return format;
+    }
+}
 
 extern volatile int vCodeTable;
 //local variable
@@ -78,6 +250,8 @@ static void convert(const string& str, vector<Uint32>& outData) {
  * byte m, m+1: macroContentSize
  * byte m+1 + macroContentSize: macroContent data
  *
+ * byte p: snippetType (0=static, 1=date, 2=time, etc.)
+ *
  * ...
  * next macro
  */
@@ -85,37 +259,50 @@ extern "C" {
 void initMacroMap(const Byte* pData, const int& size) {
     std::lock_guard<std::mutex> lock(macroMapMutex);
     macroMap.clear();
-    
+
     // Handle empty or null data
     if (!pData || size < 2) {
         return;
     }
-    
+
     Uint16 macroCount = 0;
     Uint32 cursor = 0;
     memcpy(&macroCount, pData + cursor, 2);
     cursor+=2;
-    
+
     Uint8 macroTextSize;
     Uint16 macroContentSize;
+    Uint8 snippetType;
     for (int i = 0; i < macroCount; i++) {
         macroTextSize = pData[cursor++];
         string macroText((char*)pData + cursor, macroTextSize);
         cursor += macroTextSize;
-        
+
         memcpy(&macroContentSize, pData + cursor, 2);
         cursor+=2;
         string macroContent((char*)pData + cursor, macroContentSize);
         cursor += macroContentSize;
-        
+
+        // Read snippetType (1 byte) - defaults to 0 if not present (backward compat)
+        snippetType = 0;
+        if (cursor < size) {
+            snippetType = pData[cursor++];
+        }
+
         MacroData data;
         data.macroText = macroText;
         data.macroContent = macroContent;
-        
+        data.snippetType = snippetType;
+
         vector<Uint32> key;
         convert(macroText, key);
-        convert(macroContent, data.macroContentCode);
-        
+
+        // For static snippets, pre-convert content
+        // For dynamic snippets, content will be computed at runtime
+        if (snippetType == SNIPPET_STATIC) {
+            convert(macroContent, data.macroContentCode);
+        }
+
         macroMap[key] = data;
     }
 }
@@ -165,33 +352,63 @@ static bool modifyCaseUnicode(Uint32& code, const bool& isUpperCase=true) {
     return false;
 }
 
+// Helper to get content code for a macro (handles dynamic snippets)
+static void getMacroContentCode(const MacroData& data, vector<Uint32>& outCode, bool applyAutoCaps = false, bool allCaps = false) {
+    outCode.clear();
+
+    if (data.snippetType == SNIPPET_STATIC) {
+        // Static content - use pre-converted code
+        outCode = data.macroContentCode;
+    } else if (data.snippetType == SNIPPET_CLIPBOARD) {
+        // Clipboard - content will be empty, handled by AppDelegate
+        // Just return empty, the Objective-C layer will handle it
+        return;
+    } else {
+        // Dynamic snippet - compute content now
+        string dynamicContent = computeSnippet(data.snippetType, data.macroContent);
+        convert(dynamicContent, outCode);
+    }
+
+    // Apply auto-caps if needed
+    if (applyAutoCaps && !outCode.empty()) {
+        for (c = 0; c < outCode.size(); c++) {
+            if (c == 0 || allCaps) {
+                _kChar = keyCodeToCharacter(outCode[c]);
+                if (_kChar != 0) {
+                    _kChar = toupper(_kChar);
+                    outCode[c] = _characterMap[_kChar];
+                } else if (outCode[c] & CHAR_CODE_MASK) {
+                    modifyCaseUnicode(outCode[c]);
+                }
+            }
+        }
+    }
+}
+
 bool findMacro(vector<Uint32>& key, vector<Uint32>& macroContentCode) {
     std::lock_guard<std::mutex> lock(macroMapMutex);
-    
+
     // Normalize character codes once
     for (c = 0; c < key.size(); c++) {
         key[c] = getCharacterCode(key[c]);
     }
-    
+
     // First attempt: direct match
     auto it = macroMap.find(key);
     if (it != macroMap.end()) {
-        macroContentCode = it->second.macroContentCode;
+        getMacroContentCode(it->second, macroContentCode);
         return true;
     }
-    
+
     // Second attempt: auto-caps matching (only if enabled)
     if (!vAutoCapsMacro || key.empty()) {
         return false;
     }
-    
+
     _macroFlag = false;
-    bool modified = false;
-    
+
     // Try lowercase first character (for auto-caps first letter)
     if (key.size() > 0 && modifyCaseUnicode(key[0], false)) {
-        modified = true;
-        
         // Also try lowercase remaining characters
         if (key.size() > 1 && modifyCaseUnicode(key[1], false)) {
             _macroFlag = true;
@@ -199,29 +416,15 @@ bool findMacro(vector<Uint32>& key, vector<Uint32>& macroContentCode) {
                 modifyCaseUnicode(key[c], false);
             }
         }
-        
+
         // Check again with lowercase
         it = macroMap.find(key);
         if (it != macroMap.end()) {
-            macroContentCode.clear();
-            macroContentCode = it->second.macroContentCode;
-            
-            // Apply uppercase to first character(s) of expansion
-            for (c = 0; c < macroContentCode.size(); c++) {
-                if (c == 0 || _macroFlag) {
-                    _kChar = keyCodeToCharacter(macroContentCode[c]);
-                    if (_kChar != 0) {
-                        _kChar = toupper(_kChar);
-                        macroContentCode[c] = _characterMap[_kChar];
-                    } else if (macroContentCode[c] & CHAR_CODE_MASK) {
-                        modifyCaseUnicode(macroContentCode[c]);
-                    }
-                }
-            }
+            getMacroContentCode(it->second, macroContentCode, true, _macroFlag);
             return true;
         }
     }
-    
+
     return false;
 }
 

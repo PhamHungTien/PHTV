@@ -17,6 +17,7 @@ struct MacroEditorView: View {
     @State private var errorMessage = ""
     @State private var showError = false
     @State private var selectedCategoryId: UUID?
+    @State private var snippetType: SnippetType
 
     // Edit mode support
     let editingMacro: MacroItem?
@@ -41,6 +42,7 @@ struct MacroEditorView: View {
         _macroName = State(initialValue: editingMacro?.shortcut ?? "")
         _macroCode = State(initialValue: editingMacro?.expansion ?? "")
         _selectedCategoryId = State(initialValue: editingMacro?.categoryId ?? defaultCategoryId)
+        _snippetType = State(initialValue: editingMacro?.snippetType ?? .static)
     }
 
     var body: some View {
@@ -61,11 +63,38 @@ struct MacroEditorView: View {
                         .textFieldStyle(.roundedBorder)
                 }
 
-                Section("Nội dung") {
-                    TextEditor(text: $macroCode)
-                        .frame(minHeight: 100)
-                        .font(.system(.body, design: .monospaced))
-                        .roundedTextArea()
+                Section("Loại nội dung") {
+                    Picker("Loại", selection: $snippetType) {
+                        ForEach(SnippetType.allCases, id: \.self) { type in
+                            Text(type.displayName).tag(type)
+                        }
+                    }
+                    .pickerStyle(.menu)
+
+                    Text(snippetType.helpText)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Section(snippetType == .static ? "Nội dung" : (snippetType == .clipboard ? "Ghi chú" : "Định dạng")) {
+                    if snippetType == .clipboard {
+                        Text("Nội dung từ clipboard sẽ được dán tự động")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, 8)
+                    } else {
+                        TextEditor(text: $macroCode)
+                            .frame(minHeight: snippetType == .static ? 100 : 60)
+                            .font(.system(.body, design: .monospaced))
+                            .roundedTextArea()
+
+                        if snippetType != .static {
+                            Text("Gợi ý: \(snippetType.placeholder)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
 
                 // Category picker - only show if there are custom categories
@@ -135,7 +164,7 @@ struct MacroEditorView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(themeManager.themeColor)
-                .disabled(macroName.isEmpty || macroCode.isEmpty)
+                .disabled(macroName.isEmpty || (snippetType != .clipboard && macroCode.isEmpty))
             }
             .padding()
         }
@@ -156,10 +185,13 @@ struct MacroEditorView: View {
             return
         }
 
-        guard !macroCode.trimmingCharacters(in: .whitespaces).isEmpty else {
-            errorMessage = "Vui lòng nhập nội dung"
-            showError = true
-            return
+        // For clipboard type, content is not required
+        if snippetType != .clipboard {
+            guard !macroCode.trimmingCharacters(in: .whitespaces).isEmpty else {
+                errorMessage = "Vui lòng nhập nội dung"
+                showError = true
+                return
+            }
         }
 
         // Load existing macros
@@ -205,7 +237,8 @@ struct MacroEditorView: View {
             macros[index].shortcut = trimmedName
             macros[index].expansion = trimmedCode
             macros[index].categoryId = selectedCategoryId
-            print("[MacroEditor] Updated to: \(trimmedName) -> \(trimmedCode), category: \(selectedCategoryId?.uuidString ?? "nil")")
+            macros[index].snippetType = snippetType
+            print("[MacroEditor] Updated to: \(trimmedName) -> \(trimmedCode), category: \(selectedCategoryId?.uuidString ?? "nil"), type: \(snippetType.rawValue)")
         } else {
             // ADD MODE: Check if macro already exists
             if macros.contains(where: { $0.shortcut.lowercased() == trimmedName.lowercased() }) {
@@ -218,9 +251,10 @@ struct MacroEditorView: View {
             let newMacro = MacroItem(
                 shortcut: trimmedName,
                 expansion: trimmedCode,
-                categoryId: selectedCategoryId)
+                categoryId: selectedCategoryId,
+                snippetType: snippetType)
             macros.append(newMacro)
-            print("[MacroEditor] Added new macro: \(newMacro.shortcut) -> \(newMacro.expansion), category: \(selectedCategoryId?.uuidString ?? "nil")")
+            print("[MacroEditor] Added new macro: \(newMacro.shortcut) -> \(newMacro.expansion), category: \(selectedCategoryId?.uuidString ?? "nil"), type: \(snippetType.rawValue)")
 
             // Auto-enable macro feature when creating first macro
             if !appState.useMacro {

@@ -159,6 +159,10 @@ struct SettingsView: View {
             AdvancedSettingsView()
         case .macro:
             MacroSettingsView()
+        case .dictionary:
+            CustomDictionaryView()
+        case .stats:
+            TypingStatsView()
         case .hotkeys:
             HotkeySettingsView()
         case .apps:
@@ -254,6 +258,38 @@ struct SettingsItem: Identifiable {
         SettingsItem(
             title: "Import/Export gõ tắt", iconName: "square.and.arrow.down", tab: .macro,
             keywords: ["import macro", "export", "import", "nhập", "xuất", "tệp", "file"]),
+
+        // ═══════════════════════════════════════════
+        // MARK: - Từ điển (Dictionary)
+        // ═══════════════════════════════════════════
+        SettingsItem(
+            title: "Từ điển tùy chỉnh", iconName: "character.book.closed", tab: .dictionary,
+            keywords: ["dictionary", "custom", "từ điển", "tùy chỉnh", "tiếng anh", "tiếng việt"]),
+        SettingsItem(
+            title: "Thêm từ tiếng Anh", iconName: "textformat.abc", tab: .dictionary,
+            keywords: ["english", "tiếng anh", "thêm", "add", "từ", "word"]),
+        SettingsItem(
+            title: "Thêm từ tiếng Việt", iconName: "character.textbox", tab: .dictionary,
+            keywords: ["vietnamese", "tiếng việt", "thêm", "add", "từ", "word"]),
+        SettingsItem(
+            title: "Import/Export từ điển", iconName: "square.and.arrow.down", tab: .dictionary,
+            keywords: ["import", "export", "nhập", "xuất", "từ điển", "dictionary", "file"]),
+
+        // ═══════════════════════════════════════════
+        // MARK: - Thống kê (Stats)
+        // ═══════════════════════════════════════════
+        SettingsItem(
+            title: "Thống kê gõ phím", iconName: "chart.bar.fill", tab: .stats,
+            keywords: ["statistics", "thống kê", "gõ phím", "typing", "stats", "biểu đồ"]),
+        SettingsItem(
+            title: "Số từ đã gõ", iconName: "text.word.spacing", tab: .stats,
+            keywords: ["words", "từ", "đếm", "count", "tổng"]),
+        SettingsItem(
+            title: "Thời gian gõ", iconName: "clock.fill", tab: .stats,
+            keywords: ["time", "thời gian", "duration", "phút", "giờ"]),
+        SettingsItem(
+            title: "Biểu đồ hoạt động", iconName: "chart.line.uptrend.xyaxis", tab: .stats,
+            keywords: ["chart", "biểu đồ", "graph", "activity", "hoạt động"]),
 
         // ═══════════════════════════════════════════
         // MARK: - Phím tắt (Hotkeys)
@@ -371,6 +407,8 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     case typing = "Bộ gõ"
     case advanced = "Nâng cao"
     case macro = "Gõ tắt"
+    case dictionary = "Từ điển"
+    case stats = "Thống kê"
     case hotkeys = "Phím tắt"
     case apps = "Ứng dụng"
     case appearance = "Giao diện"
@@ -387,6 +425,8 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .typing: return "keyboard"
         case .advanced: return "gearshape.2"
         case .macro: return "text.badge.checkmark"
+        case .dictionary: return "character.book.closed"
+        case .stats: return "chart.bar.fill"
         case .hotkeys: return "command"
         case .apps: return "square.stack.3d.up"
         case .appearance: return "paintpalette.fill"
@@ -428,17 +468,65 @@ struct MacroCategory: Identifiable, Hashable, Codable {
     }
 }
 
+enum SnippetType: String, Codable, CaseIterable {
+    case `static` = "static"      // Fixed text (default)
+    case date = "date"            // Current date
+    case time = "time"            // Current time
+    case datetime = "datetime"    // Date and time
+    case clipboard = "clipboard"  // Clipboard content
+    case random = "random"        // Random from list
+    case counter = "counter"      // Auto-increment number
+
+    var displayName: String {
+        switch self {
+        case .static: return "Văn bản tĩnh"
+        case .date: return "Ngày hiện tại"
+        case .time: return "Giờ hiện tại"
+        case .datetime: return "Ngày và giờ"
+        case .clipboard: return "Clipboard"
+        case .random: return "Ngẫu nhiên"
+        case .counter: return "Bộ đếm"
+        }
+    }
+
+    var placeholder: String {
+        switch self {
+        case .static: return "Nội dung mở rộng..."
+        case .date: return "dd/MM/yyyy"
+        case .time: return "HH:mm:ss"
+        case .datetime: return "dd/MM/yyyy HH:mm"
+        case .clipboard: return "(Sẽ dán nội dung từ clipboard)"
+        case .random: return "giá trị 1, giá trị 2, giá trị 3"
+        case .counter: return "prefix"
+        }
+    }
+
+    var helpText: String {
+        switch self {
+        case .static: return "Văn bản cố định sẽ được thay thế"
+        case .date: return "Định dạng: d=ngày, M=tháng, y=năm. VD: dd/MM/yyyy"
+        case .time: return "Định dạng: H=giờ, m=phút, s=giây. VD: HH:mm:ss"
+        case .datetime: return "Kết hợp ngày và giờ. VD: dd/MM/yyyy HH:mm"
+        case .clipboard: return "Dán nội dung hiện tại từ clipboard"
+        case .random: return "Chọn ngẫu nhiên từ danh sách, phân cách bằng dấu phẩy"
+        case .counter: return "Số tự động tăng. VD: prefix → prefix1, prefix2..."
+        }
+    }
+}
+
 struct MacroItem: Identifiable, Hashable, Codable {
     let id: UUID
     var shortcut: String
     var expansion: String
     var categoryId: UUID?  // nil = default category
+    var snippetType: SnippetType = .static  // NEW: snippet type
 
-    init(shortcut: String, expansion: String, categoryId: UUID? = nil) {
+    init(shortcut: String, expansion: String, categoryId: UUID? = nil, snippetType: SnippetType = .static) {
         self.id = UUID()
         self.shortcut = shortcut
         self.expansion = expansion
         self.categoryId = categoryId
+        self.snippetType = snippetType
     }
 
     // Backward compatible decoder
@@ -448,10 +536,11 @@ struct MacroItem: Identifiable, Hashable, Codable {
         shortcut = try container.decode(String.self, forKey: .shortcut)
         expansion = try container.decode(String.self, forKey: .expansion)
         categoryId = try container.decodeIfPresent(UUID.self, forKey: .categoryId)
+        snippetType = try container.decodeIfPresent(SnippetType.self, forKey: .snippetType) ?? .static
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, shortcut, expansion, categoryId
+        case id, shortcut, expansion, categoryId, snippetType
     }
 }
 

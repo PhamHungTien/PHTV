@@ -84,4 +84,23 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex);
  */
 void clearEnglishDictionary();
 
+/**
+ * Initialize custom dictionary from JSON data
+ * JSON format: [{"word": "vinfast", "type": "en"}, {"word": "xin", "type": "vi"}]
+ * @param jsonData JSON string containing custom words
+ * @param length Length of JSON string
+ */
+void initCustomDictionary(const char* jsonData, int length);
+
+/**
+ * Clear custom dictionary
+ */
+void clearCustomDictionary();
+
+/**
+ * Get custom dictionary word count
+ */
+size_t getCustomEnglishWordCount();
+size_t getCustomVietnameseWordCount();
+
 #endif /* EnglishWordDetector_h */

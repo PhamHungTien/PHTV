@@ -16,10 +16,22 @@
 
 using namespace std;
 
+// Snippet types for dynamic content
+enum SnippetTypeEnum {
+    SNIPPET_STATIC = 0,     // Fixed text (default)
+    SNIPPET_DATE = 1,       // Current date
+    SNIPPET_TIME = 2,       // Current time
+    SNIPPET_DATETIME = 3,   // Date and time
+    SNIPPET_CLIPBOARD = 4,  // Clipboard content
+    SNIPPET_RANDOM = 5,     // Random from list
+    SNIPPET_COUNTER = 6     // Auto-increment number
+};
+
 struct MacroData {
     string macroText; //ex: "ms"
-    string macroContent; //ex: "millisecond"
+    string macroContent; //ex: "millisecond" or format string for snippets
     vector<Uint32> macroContentCode; //converted of macroContent
+    int snippetType; //0=static, 1=date, 2=time, etc.
 };
 
 /**
