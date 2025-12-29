@@ -307,6 +307,7 @@ final class AppState: ObservableObject {
     @Published var performLayoutCompat: Bool = false
     @Published var showIconOnDock: Bool = false
     @Published var safeMode: Bool = false  // Safe mode disables Accessibility API for OCLP Macs
+    @Published var enableTextReplacementFix: Bool = true  // Enable text replacement detection fix (default: enabled)
 
     // Claude Code patch setting
     @Published var claudeCodePatchEnabled: Bool = false
@@ -576,6 +577,8 @@ final class AppState: ObservableObject {
         performLayoutCompat = defaults.bool(forKey: "vPerformLayoutCompat")
         showIconOnDock = defaults.bool(forKey: "vShowIconOnDock")
         safeMode = defaults.bool(forKey: "SafeMode")
+        // Default: enabled (true) if key doesn't exist
+        enableTextReplacementFix = defaults.object(forKey: "vEnableTextReplacementFix") as? Bool ?? true
 
         // Load Claude Code patch setting - check actual patch status
         claudeCodePatchEnabled = ClaudeCodePatcher.shared.isPatched()
@@ -736,6 +739,9 @@ final class AppState: ObservableObject {
         // Save safe mode and sync with backend
         defaults.set(safeMode, forKey: "SafeMode")
         PHTVManager.setSafeModeEnabled(safeMode)
+
+        // Save enable text replacement fix
+        defaults.set(enableTextReplacementFix, forKey: "vEnableTextReplacementFix")
 
         // Save hotkey in backend format (SwitchKeyStatus)
         let switchKeyStatus = encodeSwitchKeyStatus()

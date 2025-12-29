@@ -86,6 +86,23 @@ static uint64_t _lastSpotlightCheckTime = 0;
 static pid_t _cachedFocusedPID = 0;
 static CGEventFlags _lastEventFlags = 0;
 
+// Text Replacement detection (for macOS native text replacement)
+// macOS Text Replacement does NOT send delete events via CGEventTap when using mouse!
+// We use multiple detection methods:
+// 1. External DELETE events (works for arrow key selection)
+// 2. Unexpected character count jump (works for mouse click selection)
+static BOOL _externalDeleteDetected = NO;
+static uint64_t _lastExternalDeleteTime = 0;
+static int _externalDeleteCount = 0;
+
+// Track character count to detect sudden jumps from text replacement
+static int _inputCharCount = 0;  // Characters user actually typed
+
+// Check if text replacement fix is enabled via settings (default: enabled)
+static inline BOOL IsTextReplacementFixEnabled(void) {
+    return [[NSUserDefaults standardUserDefaults] boolForKey:@"vEnableTextReplacementFix"];
+}
+
 // Safe Mode: Disable all Accessibility API calls for unsupported hardware
 // When enabled, the app will use fallback methods that don't rely on AX APIs
 // which may crash on Macs running macOS via OpenCore Legacy Patcher (OCLP)
@@ -97,6 +114,29 @@ BOOL vSafeMode = NO;
 static inline void InvalidateSpotlightCache(void) {
     _lastSpotlightCheckTime = 0;
     _cachedFocusedPID = 0;
+}
+
+// Track external delete events (not from PHTV) which may indicate text replacement
+static inline void TrackExternalDelete(void) {
+    dispatch_once(&timebase_init_token, ^{
+        mach_timebase_info(&timebase_info);
+    });
+
+    uint64_t now = mach_absolute_time();
+
+    // Reset count if too much time passed (>30000ms = 30 seconds)
+    // Allow up to 30 seconds for user to select suggestion using mouse or keyboard
+    // IMPORTANT: Only check timeout if we have a previous timestamp (not first delete)
+    if (_lastExternalDeleteTime != 0) {
+        uint64_t elapsed_ms = mach_time_to_ms(now - _lastExternalDeleteTime);
+        if (elapsed_ms > 30000) {
+            _externalDeleteCount = 0;
+        }
+    }
+
+    _externalDeleteCount++;
+    _lastExternalDeleteTime = now;
+    _externalDeleteDetected = YES;
 }
 
 // Check if element is Spotlight by examining its role and subrole
@@ -1698,6 +1738,32 @@ extern "C" {
         _flag = CGEventGetFlags(event);
         _keycode = (CGKeyCode)CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
 
+        // TEXT REPLACEMENT DETECTION: Track external delete events (only if fix enabled)
+        // When macOS Text Replacement is triggered (e.g., "ko" -> "không"),
+        // macOS sends synthetic delete events that we didn't generate
+        // We track these to avoid duplicate characters when SendEmptyCharacter() is called
+        if (IsTextReplacementFixEnabled() && type == kCGEventKeyDown && _keycode == KEY_DELETE) {
+            // This is an external delete event (not from PHTV since we already filtered myEventSource)
+            TrackExternalDelete();
+#ifdef DEBUG
+            NSLog(@"[TextReplacement] External DELETE detected");
+#endif
+        }
+
+        // Also track space after deletes to detect text replacement pattern (only if fix enabled)
+        if (IsTextReplacementFixEnabled() && type == kCGEventKeyDown && _keycode == KEY_SPACE) {
+            dispatch_once(&timebase_init_token, ^{
+                mach_timebase_info(&timebase_info);
+            });
+            uint64_t now = mach_absolute_time();
+            uint64_t elapsed_ms = (_lastExternalDeleteTime != 0) ? mach_time_to_ms(now - _lastExternalDeleteTime) : 0;
+#ifdef DEBUG
+            NSLog(@"[TextReplacement] SPACE key pressed: deleteCount=%d, elapsedMs=%llu, sourceID=%lld",
+                  _externalDeleteCount, elapsed_ms,
+                  CGEventGetIntegerValueField(event, kCGEventSourceStateID));
+#endif
+        }
+
         // SPOTLIGHT OPTIMIZATION: Detect Cmd+Space hotkey and invalidate cache immediately
         // This ensures PHTV detects Spotlight opening as fast as possible
         if (type == kCGEventKeyDown && _keycode == 49 && (_flag & kCGEventFlagMaskCommand)) {
@@ -2078,6 +2144,14 @@ extern "C" {
                             _flag & kCGEventFlagMaskShift ? 1 : (_flag & kCGEventFlagMaskAlphaShift ? 2 : 0),
                             OTHER_CONTROL_KEY);
 
+#ifdef DEBUG
+            // Log engine result for space key
+            if (_keycode == KEY_SPACE) {
+                NSLog(@"[TextReplacement] Engine result for SPACE: code=%d, extCode=%d, backspace=%d, newChar=%d",
+                      pData->code, pData->extCode, pData->backspaceCount, pData->newCharCount);
+            }
+#endif
+
             // Post typing stats notification for character (only for printable characters)
             if (!OTHER_CONTROL_KEY && keyCodeToCharacter(_keycode) != 0) {
                 [[NSNotificationCenter defaultCenter] postNotificationName:@"TypingStatsCharacter" object:nil];
@@ -2110,7 +2184,10 @@ extern "C" {
                 BOOL isSpecialApp = isSpotlightLikeApp(effectiveBundleId) || needsPrecomposedBatched(effectiveBundleId);
 
                 //fix autocomplete
-                if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp) {
+                // CRITICAL FIX: NEVER send empty character for SPACE key!
+                // This conflicts with macOS Text Replacement feature
+                // SendEmptyCharacter is only needed for Vietnamese character keys, NOT for break keys
+                if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE) {
                     if (vFixChromiumBrowser && [_unicodeCompoundAppSet containsObject:effectiveBundleId]) {
                         if (pData->backspaceCount > 0) {
                             SendShiftAndLeftArrow();
@@ -2120,12 +2197,87 @@ extern "C" {
                     } else {
                         SendEmptyCharacter();
                         pData->backspaceCount++;
+                    }
+                }
+#ifdef DEBUG
+                if (_keycode == KEY_SPACE && vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp) {
+                    NSLog(@"[TextReplacement] SKIPPED SendEmptyCharacter for SPACE to avoid Text Replacement conflict");
+                }
+#endif
 
+                // TEXT REPLACEMENT FIX: Skip backspace/newChar if this is SPACE after text replacement
+                // Detection methods:
+                // 1. External DELETE detected (arrow key selection) - HIGH CONFIDENCE
+                // 2. Short backspace + code=3 without DELETE (mouse click selection) - FALLBACK
+                // Can be enabled via Settings > Compatibility > "Sửa lỗi Text Replacement"
+                BOOL skipProcessing = NO;
+
+#ifdef DEBUG
+                // Debug log for mouse click case (no DELETE detected)
+                if (IsTextReplacementFixEnabled() && _keycode == KEY_SPACE &&
+                    (pData->backspaceCount > 0 || pData->newCharCount > 0) &&
+                    (pData->backspaceCount <= 3) && _externalDeleteCount == 0) {
+                    NSLog(@"[TextReplacement] SPACE without DELETE: code=%d, backspace=%d, newChar=%d - Possible mouse click?",
+                          pData->code, (int)pData->backspaceCount, (int)pData->newCharCount);
+                }
+#endif
+
+                if (IsTextReplacementFixEnabled() &&
+                    _keycode == KEY_SPACE &&
+                    (pData->backspaceCount > 0 || pData->newCharCount > 0) &&
+                    (pData->backspaceCount <= 3)) {  // Only check short replacements
+
+                    // Method 1: External DELETE detected (arrow key selection)
+                    if (_externalDeleteCount > 0 && _lastExternalDeleteTime != 0) {
+
+                    // Check how long ago the delete happened
+                    dispatch_once(&timebase_init_token, ^{
+                        mach_timebase_info(&timebase_info);
+                    });
+                    uint64_t now = mach_absolute_time();
+                    uint64_t elapsed_since_delete = mach_time_to_ms(now - _lastExternalDeleteTime);
+
+                    // Text replacement pattern: delete + space within 30 seconds (allow slow menu selection)
+                    if (elapsed_since_delete < 30000) {
+                        // This is macOS Text Replacement, skip processing
+                        skipProcessing = YES;
+#ifdef DEBUG
+                        NSLog(@"[TextReplacement] Text replacement detected - passing through event (code=%d, backspace=%d, newChar=%d, deleteCount=%d, elapsedMs=%llu)",
+                              pData->code, (int)pData->backspaceCount, (int)pData->newCharCount, _externalDeleteCount, elapsed_since_delete);
+#endif
+                        // Reset detection for next time
+                        _externalDeleteCount = 0;
+                        _externalDeleteDetected = NO;
+                        _lastExternalDeleteTime = 0;
+
+                        // CRITICAL: Return event to let macOS insert Space
+                        return event;
+                    } else {
+                        // Too old, reset the counter
+                        _externalDeleteCount = 0;
+                        _externalDeleteDetected = NO;
+                        _lastExternalDeleteTime = 0;
+                    }
+                    }
+
+                    // Method 2: Mouse click detection (FALLBACK)
+                    // When user clicks with mouse, macOS does NOT send DELETE events via CGEventTap
+                    // Pattern: code=3 (vRestore) + short backspaceCount + NO external DELETE
+                    // This is a heuristic that may have false positives for very short English words
+                    else if (pData->code == vRestore || pData->code == vRestoreAndStartNewSession) {
+                        // Likely mouse click text replacement
+                        skipProcessing = YES;
+#ifdef DEBUG
+                        NSLog(@"[TextReplacement] Mouse click text replacement detected - passing through event (code=%d, backspace=%d, newChar=%d)",
+                              pData->code, (int)pData->backspaceCount, (int)pData->newCharCount);
+#endif
+                        // CRITICAL: Return event to let macOS insert Space
+                        return event;
                     }
                 }
 
                 //send backspace
-                if (pData->backspaceCount > 0 && pData->backspaceCount < MAX_BUFF) {
+                if (!skipProcessing && pData->backspaceCount > 0 && pData->backspaceCount < MAX_BUFF) {
                     if (isSpotlightLikeApp(effectiveBundleId)) {
                         // Defer deletion to AX replacement inside SendNewCharString().
                         _phtvPendingBackspaceCount = (int)pData->backspaceCount;
@@ -2143,34 +2295,37 @@ extern "C" {
                 // IMPORTANT: For Spotlight-like targets we rely on SendNewCharString(), which can
                 // perform deterministic replacement (AX) and/or per-character Unicode posting.
                 // Forcing step-by-step here would skip deferred deletions and cause duplicated letters.
-                BOOL isSpotlightTarget = spotlightActive || isSpotlightLikeApp(effectiveBundleId);
-                BOOL useStepByStep = (!isSpotlightTarget) && (vSendKeyStepByStep || needsStepByStep(effectiveBundleId));
+                // TEXT REPLACEMENT FIX: Skip if already determined we should skip processing
+                if (!skipProcessing) {
+                    BOOL isSpotlightTarget = spotlightActive || isSpotlightLikeApp(effectiveBundleId);
+                    BOOL useStepByStep = (!isSpotlightTarget) && (vSendKeyStepByStep || needsStepByStep(effectiveBundleId));
 #ifdef DEBUG
-                if (isSpotlightTarget) {
-                    PHTVSpotlightDebugLog([NSString stringWithFormat:@"willSend stepByStep=%d backspaceCount=%d newCharCount=%d", (int)useStepByStep, (int)pData->backspaceCount, (int)pData->newCharCount]);
-                }
+                    if (isSpotlightTarget) {
+                        PHTVSpotlightDebugLog([NSString stringWithFormat:@"willSend stepByStep=%d backspaceCount=%d newCharCount=%d", (int)useStepByStep, (int)pData->backspaceCount, (int)pData->newCharCount]);
+                    }
 #endif
-                if (!useStepByStep) {
-                    SendNewCharString();
-                } else {
-                    if (pData->newCharCount > 0 && pData->newCharCount <= MAX_BUFF) {
-                        for (int i = pData->newCharCount - 1; i >= 0; i--) {
-                            SendKeyCode(pData->charData[i]);
+                    if (!useStepByStep) {
+                        SendNewCharString();
+                    } else {
+                        if (pData->newCharCount > 0 && pData->newCharCount <= MAX_BUFF) {
+                            for (int i = pData->newCharCount - 1; i >= 0; i--) {
+                                SendKeyCode(pData->charData[i]);
+                            }
                         }
-                    }
-                    if (pData->code == vRestore || pData->code == vRestoreAndStartNewSession) {
-                        SendKeyCode(_keycode | ((_flag & kCGEventFlagMaskAlphaShift) || (_flag & kCGEventFlagMaskShift) ? CAPS_MASK : 0));
-                    }
-                    if (pData->code == vRestoreAndStartNewSession) {
-                        startNewSession();
-                        // Post typing stats notification for word completion
-                        [[NSNotificationCenter defaultCenter] postNotificationName:@"TypingStatsWord" object:@YES];
+                        if (pData->code == vRestore || pData->code == vRestoreAndStartNewSession) {
+                            SendKeyCode(_keycode | ((_flag & kCGEventFlagMaskAlphaShift) || (_flag & kCGEventFlagMaskShift) ? CAPS_MASK : 0));
+                        }
+                        if (pData->code == vRestoreAndStartNewSession) {
+                            startNewSession();
+                            // Post typing stats notification for word completion
+                            [[NSNotificationCenter defaultCenter] postNotificationName:@"TypingStatsWord" object:@YES];
+                        }
                     }
                 }
             } else if (pData->code == vReplaceMaro) { //MACRO
                 handleMacro();
             }
-            
+
             return NULL;
         }
         

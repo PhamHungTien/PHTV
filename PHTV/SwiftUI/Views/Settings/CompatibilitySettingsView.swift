@@ -44,6 +44,19 @@ struct CompatibilitySettingsView: View {
                     }
                 }
 
+                // Text Replacement Compatibility
+                SettingsCard(title: "Thay thế văn bản", icon: "textformat.abc") {
+                    VStack(spacing: 0) {
+                        SettingsToggleRow(
+                            icon: "textformat.abc",
+                            iconColor: themeManager.themeColor,
+                            title: "Sửa lỗi Text Replacement",
+                            subtitle: "Tự động phát hiện và sửa lỗi Text Replacement của macOS (TẮT nếu gặp vấn đề khi gõ)",
+                            isOn: $appState.enableTextReplacementFix
+                        )
+                    }
+                }
+
                 // Keyboard Layout Compatibility
                 SettingsCard(title: "Bàn phím", icon: "keyboard.fill") {
                     VStack(spacing: 0) {
