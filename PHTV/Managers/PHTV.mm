@@ -1425,6 +1425,8 @@ extern "C" {
         }
         if (!_willContinuteSending && pData->code == vRestoreAndStartNewSession) {
             startNewSession();
+            // Post typing stats notification for word completion
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"TypingStatsWord" object:@YES];
         }
         
         // If we need to force precomposed Unicode (for apps like Spotlight), 
@@ -2075,6 +2077,12 @@ extern "C" {
                             _keycode,
                             _flag & kCGEventFlagMaskShift ? 1 : (_flag & kCGEventFlagMaskAlphaShift ? 2 : 0),
                             OTHER_CONTROL_KEY);
+
+            // Post typing stats notification for character (only for printable characters)
+            if (!OTHER_CONTROL_KEY && keyCodeToCharacter(_keycode) != 0) {
+                [[NSNotificationCenter defaultCenter] postNotificationName:@"TypingStatsCharacter" object:nil];
+            }
+
             if (pData->code == vDoNothing) { //do nothing
                 // Use atomic read for thread safety
                 int currentCodeTable = __atomic_load_n(&vCodeTable, __ATOMIC_RELAXED);
@@ -2155,6 +2163,8 @@ extern "C" {
                     }
                     if (pData->code == vRestoreAndStartNewSession) {
                         startNewSession();
+                        // Post typing stats notification for word completion
+                        [[NSNotificationCenter defaultCenter] postNotificationName:@"TypingStatsWord" object:@YES];
                     }
                 }
             } else if (pData->code == vReplaceMaro) { //MACRO

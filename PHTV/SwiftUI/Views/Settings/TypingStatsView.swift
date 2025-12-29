@@ -10,6 +10,7 @@ import SwiftUI
 import Charts
 
 struct TypingStatsView: View {
+    @EnvironmentObject var appState: AppState
     @EnvironmentObject var themeManager: ThemeManager
     @StateObject private var statsManager = TypingStatsManager.shared
     @State private var showResetConfirm = false
@@ -17,20 +18,27 @@ struct TypingStatsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // Header
+                // Header with toggle
                 headerSection
 
-                // Summary Cards
-                summarySection
+                // Enable toggle card
+                enableToggleCard
 
-                // Daily Chart
-                chartSection
+                if appState.typingStatsEnabled {
+                    // Summary Cards
+                    summarySection
 
-                // Language Distribution
-                languageSection
+                    // Daily Chart
+                    chartSection
 
-                // Recent Activity
-                recentActivitySection
+                    // Language Distribution
+                    languageSection
+
+                    // Recent Activity
+                    recentActivitySection
+                } else {
+                    disabledStateView
+                }
 
                 Spacer(minLength: 20)
             }
@@ -63,15 +71,80 @@ struct TypingStatsView: View {
 
             Spacer()
 
-            Button {
-                showResetConfirm = true
-            } label: {
-                Label("Xóa", systemImage: "trash")
-                    .font(.subheadline)
+            if appState.typingStatsEnabled {
+                Button {
+                    showResetConfirm = true
+                } label: {
+                    Label("Xóa", systemImage: "trash")
+                        .font(.subheadline)
+                }
+                .buttonStyle(.bordered)
+                .tint(.red)
             }
-            .buttonStyle(.bordered)
-            .tint(.red)
         }
+    }
+
+    // MARK: - Enable Toggle Card
+
+    private var enableToggleCard: some View {
+        HStack(spacing: 14) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(themeManager.themeColor.opacity(0.12))
+                    .frame(width: 36, height: 36)
+
+                Image(systemName: "chart.bar.fill")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(themeManager.themeColor)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Bật thống kê gõ phím")
+                    .font(.body)
+
+                Text("Theo dõi số từ, ký tự và thời gian gõ")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Toggle("", isOn: $appState.typingStatsEnabled)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .tint(themeManager.themeColor)
+        }
+        .padding()
+        .background(Color(NSColor.controlBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    // MARK: - Disabled State View
+
+    private var disabledStateView: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "chart.bar.xaxis")
+                .font(.system(size: 50))
+                .foregroundStyle(.secondary)
+
+            Text("Thống kê đang tắt")
+                .font(.headline)
+
+            Text("Bật thống kê để theo dõi hoạt động gõ phím của bạn.\nDữ liệu được lưu cục bộ trên máy.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            Button {
+                appState.typingStatsEnabled = true
+            } label: {
+                Label("Bật thống kê", systemImage: "chart.bar.fill")
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(themeManager.themeColor)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 60)
     }
 
     // MARK: - Summary Section

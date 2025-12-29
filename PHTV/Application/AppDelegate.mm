@@ -560,11 +560,14 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
             [[NSNotificationCenter defaultCenter] postNotificationName:@"ShowSettings" object:nil];
         } else {
             NSLog(@"[EventTap] Initialized successfully");
-            
+
             // Start continuous monitoring for accessibility permission changes
             // This detects if permission is revoked while app is running
             [self startAccessibilityMonitoring];
             [self startHealthCheckMonitoring];
+
+            // Start typing stats session
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"TypingStatsSessionStart" object:nil];
             
             NSInteger showui = [[NSUserDefaults standardUserDefaults] integerForKey:@"ShowUIOnStartup"];
             if (showui == 1) {
@@ -604,6 +607,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 - (void)applicationWillTerminate:(NSNotification *)aNotification {
     // Clear AX test flag on normal termination to prevent false safe mode activation
     [PHTVManager clearAXTestFlag];
+
+    // End typing stats session
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"TypingStatsSessionEnd" object:nil];
 }
 
 #pragma mark - SwiftUI Bridge
