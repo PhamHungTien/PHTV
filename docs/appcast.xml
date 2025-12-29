@@ -8,6 +8,53 @@
 
         <!-- Most recent version first -->
         <item>
+            <title>PHTV 1.3.2</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.2</link>
+            <sparkle:version>9</sparkle:version>
+            <sparkle:shortVersionString>1.3.2</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h2>PHTV 1.3.2 - Tính năng mới & Cải tiến giao diện</h2>
+
+                <h3>✨ Tính năng mới</h3>
+                <ul>
+                    <li><strong>Text Snippets</strong>: Gõ tắt động với ngày, giờ, clipboard, random, counter</li>
+                    <li><strong>Từ điển tùy chỉnh</strong>: Thêm từ tiếng Anh/Việt cho nhận diện chính xác hơn</li>
+                    <li><strong>Import/Export cài đặt</strong>: Sao lưu và khôi phục toàn bộ cài đặt</li>
+                    <li><strong>Thống kê gõ phím</strong>: Theo dõi số từ, ký tự, thời gian gõ</li>
+                </ul>
+
+                <h3>🎨 Cải tiến giao diện</h3>
+                <ul>
+                    <li><strong>Tổ chức Settings mới</strong>: Gộp tab Nâng cao vào Bộ gõ, sắp xếp hợp lý hơn</li>
+                    <li><strong>Giao diện Phím tắt</strong>: Thiết kế mới với hiệu ứng hover và gradient</li>
+                    <li><strong>Tìm kiếm đầy đủ</strong>: 61 mục tìm kiếm cho tất cả chức năng</li>
+                </ul>
+
+                <h3>📚 Cải tiến từ điển</h3>
+                <ul>
+                    <li><strong>Từ điển tiếng Anh</strong>: Thêm nhiều thuật ngữ công nghệ và thương hiệu</li>
+                </ul>
+
+                <h3>🔧 Sửa lỗi</h3>
+                <ul>
+                    <li>Sửa lỗi phím Backspace khi gõ tiếng Việt</li>
+                    <li>Sửa lỗi Sendable conformance trong Swift</li>
+                </ul>
+
+                <p><em>Bản cập nhật lớn với nhiều tính năng mới giúp gõ tiếng Việt hiệu quả hơn.</em></p>
+            ]]></description>
+            <pubDate>Sun, 29 Dec 2025 10:40:00 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.3.2/PHTV-1.3.2.dmg"
+                sparkle:version="9"
+                sparkle:shortVersionString="1.3.2"
+                sparkle:edSignature="8038j0F2Dpu4wpWNzK4mtVrkLY/oAvqGYn4C4taeQ4llUNG+V5FaRHLO0M61prmr7vOY25FJ4akWj2UbPoUBCg=="
+                length="13293139"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <item>
             <title>PHTV 1.3.1</title>
             <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.1</link>
             <sparkle:version>8</sparkle:version>
