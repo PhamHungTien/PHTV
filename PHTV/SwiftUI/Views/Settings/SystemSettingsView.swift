@@ -488,7 +488,7 @@ struct SettingsButtonRow: View {
 
 // MARK: - Settings Backup Models
 
-struct SettingsBackup: Codable {
+struct SettingsBackup: Codable, Sendable {
     let version: String
     let exportDate: String
     var settings: [String: AnyCodableValue]?
@@ -498,7 +498,7 @@ struct SettingsBackup: Codable {
     var excludedApps: [String]?
 }
 
-struct AnyCodableValue: Codable {
+struct AnyCodableValue: Codable, @unchecked Sendable {
     let value: Any
 
     init(_ value: Any) {
