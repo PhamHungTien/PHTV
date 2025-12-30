@@ -1452,9 +1452,18 @@ void vKeyHandleEvent(const vKeyEvent& event,
                 }
                 _shouldUpperCaseEnglishRestore = false;
                 _index = _stateIndex;
+                #ifdef DEBUG
+                fprintf(stderr, "[AutoEnglish] ✓ WORD BREAK RESTORE: _stateIndex=%d, _index=%d\n", _stateIndex, _index);
+                fflush(stderr);
+                #endif
             #ifdef DEBUG
-            } else if (_stateIndex <= 1) {
-                fprintf(stderr, "[AutoEnglish] SKIPPED: _stateIndex=%d (need >1), _index=%d\n", _stateIndex, _index);
+            } else if (_stateIndex > 0) {
+                std::string word = keyStatesToString(KeyStates, _stateIndex);
+                fprintf(stderr, "[AutoEnglish] ✗ WORD BREAK NO RESTORE: word='%s', _index=%d, _stateIndex=%d, conditions: ",
+                       word.c_str(), _index, _stateIndex);
+                if (_stateIndex <= 1) fprintf(stderr, "_stateIndex<=1 ");
+                if (!checkIfEnglishWord(KeyStates, _stateIndex)) fprintf(stderr, "notEnglish ");
+                fprintf(stderr, "\n");
                 fflush(stderr);
             #endif
             }
@@ -1518,12 +1527,18 @@ void vKeyHandleEvent(const vKeyEvent& event,
             hBPC = (Byte)hMacroKey.size();
             _spaceCount++;
         } else if ((vQuickStartConsonant || vQuickEndConsonant) && !tempDisableKey && checkQuickConsonant()) {
+            #ifdef DEBUG
+            if (vAutoRestoreEnglishWord && _stateIndex > 1) {
+                fprintf(stderr, "[AutoEnglish] ✗ SPACE SKIPPED: Quick Consonant matched first\n");
+                fflush(stderr);
+            }
+            #endif
             _spaceCount++;
         } else if (vAutoRestoreEnglishWord && _index > 0 && _stateIndex > 1 && checkIfEnglishWord(KeyStates, _stateIndex)) {
             // Auto restore English word on SPACE
             // checkIfEnglishWord returns true only if word is English AND NOT Vietnamese
             #ifdef DEBUG
-            fprintf(stderr, "[AutoEnglish] SPACE detected: _stateIndex=%d, _index=%d\n", _stateIndex, _index);
+            fprintf(stderr, "[AutoEnglish] ✓ SPACE RESTORE: _stateIndex=%d, _index=%d\n", _stateIndex, _index);
             fflush(stderr);
             #endif
             hCode = vRestore;
@@ -1554,6 +1569,19 @@ void vKeyHandleEvent(const vKeyEvent& event,
             }
             _spaceCount++;
         } else { //do nothing with SPACE KEY
+            #ifdef DEBUG
+            // Log why Auto English didn't trigger (for debugging random failures)
+            if (vAutoRestoreEnglishWord && _stateIndex > 0) {
+                std::string word = keyStatesToString(KeyStates, _stateIndex);
+                fprintf(stderr, "[AutoEnglish] ✗ SPACE NO RESTORE: word='%s', _index=%d, _stateIndex=%d, conditions: ",
+                       word.c_str(), _index, _stateIndex);
+                if (_index == 0) fprintf(stderr, "_index=0 ");
+                if (_stateIndex <= 1) fprintf(stderr, "_stateIndex<=1 ");
+                if (!checkIfEnglishWord(KeyStates, _stateIndex)) fprintf(stderr, "notEnglish ");
+                fprintf(stderr, "\n");
+                fflush(stderr);
+            }
+            #endif
             hCode = vDoNothing;
             _spaceCount++;
         }
