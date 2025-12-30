@@ -175,14 +175,22 @@ bool _spellingVowelOK = false;
 Byte _spellingEndIndex = 0;
 
 void checkSpelling(const bool& forceCheckVowel=false) {
+    // Early exit: empty buffer is always valid
+    if (_index == 0) {
+        _spellingOK = true;
+        _spellingVowelOK = true;
+        tempDisableKey = false;
+        return;
+    }
+
     _spellingOK = false;
     _spellingVowelOK = true;
     _spellingEndIndex = _index;
-    
+
     if (_index > 0 && CHR(_index-1) == KEY_RIGHT_BRACKET) {
         _spellingEndIndex = _index-1;
     }
-    
+
     if (_spellingEndIndex > 0) {
         j = 0;
         //Check first consonant
@@ -464,6 +472,7 @@ void startNewSession() {
     _hasHandledMacro = false;
     _hasHandleQuickConsonant = false;
     _shouldUpperCaseEnglishRestore = false;
+    _spaceCount = 0;
     _longWordHelper.clear();
 }
 
@@ -754,14 +763,14 @@ void handleOldMark() {
 
 void insertMark(const Uint32& markMask, const bool& canModifyFlag) {
     vowelCount = 0;
-    
+
     if (canModifyFlag)
         hCode = vWillProcess;
     hBPC = hNCC = 0;
-    
+
     findAndCalculateVowel();
     VWSM = 0;
-    
+
     //detect mark position
     if (vowelCount == 1) {
         VWSM = VEI;
@@ -774,12 +783,12 @@ void insertMark(const Uint32& markMask, const bool& canModifyFlag) {
         if (TypingWord[VEI] & TONE_MASK || TypingWord[VEI] & TONEW_MASK)
             vowelWillSetMark = VEI;
     }
-    
+
     //send data
     kk = _index - 1 - VSI;
     //if duplicate same mark -> restore
     if (TypingWord[VWSM] & markMask) {
-        
+
         TypingWord[VWSM] &= ~MARK_MASK;
         if (canModifyFlag)
             hCode = vRestore;
@@ -792,7 +801,7 @@ void insertMark(const Uint32& markMask, const bool& canModifyFlag) {
     } else {
         //remove other mark
         TypingWord[VWSM] &= ~MARK_MASK;
-        
+
         //add mark
         TypingWord[VWSM] |= markMask;
         for (ii = VSI; ii < _index; ii++) {
@@ -801,7 +810,7 @@ void insertMark(const Uint32& markMask, const bool& canModifyFlag) {
             }
             hData[kk--] = GET(TypingWord[ii]);
         }
-        
+
         hBPC = _index - VSI;
     }
     hNCC = hBPC;
@@ -1063,17 +1072,17 @@ void handleMainKey(const Uint16& data, const bool& isCaps) {
         }
         return;
     }
-    
+
     if (data == KEY_LEFT_BRACKET) { //standalone key [
         checkForStandaloneChar(data, isCaps, KEY_O);
         return;
     }
-    
+
     if (data == KEY_RIGHT_BRACKET) { //standalone key }
         checkForStandaloneChar(data, isCaps, KEY_U);
         return;
     }
-    
+
     //if is D key
     if (IS_KEY_D(data)) {
         isCorect = false;
@@ -1084,7 +1093,7 @@ void handleMainKey(const Uint16& data, const bool& isCaps) {
                 continue;
             isCorect = true;
             checkCorrectVowel(_consonantD, i, k, data);
-            
+
             //allow d after consonant
             if (!isCorect && _index - 2 >= 0 && CHR(_index-1) == KEY_D && IS_CONSONANT(CHR(_index-2))) {
                 isCorect = true;
@@ -1095,13 +1104,13 @@ void handleMainKey(const Uint16& data, const bool& isCaps) {
                 break;
             }
         }
-    
+
         if (!isChanged) {
             insertKey(data, isCaps);
         }
         return;
     }
-    
+
     //if is mark key
     if (IS_MARK_KEY(data)) {
         for (i = 0; i < _vowelForMark.size(); i++) {
@@ -1114,7 +1123,7 @@ void handleMainKey(const Uint16& data, const bool& isCaps) {
                     continue;
                 isCorect = true;
                 checkCorrectVowel(charset, l, k, data);
-                
+
                 if (isCorect) {
                     isChanged = true;
                     if (IS_KEY_S(data))
@@ -1135,14 +1144,14 @@ void handleMainKey(const Uint16& data, const bool& isCaps) {
                 break;
             }
         }
-        
+
         if (!isChanged) {
             insertKey(data, isCaps);
         }
-        
+
         return;
     }
-    
+
     //check Vowel
     if (vInputType == vVNI) {
         for (i = _index-1; i >= 0; i--) {
@@ -1152,7 +1161,7 @@ void handleMainKey(const Uint16& data, const bool& isCaps) {
             }
         }
     }
-    
+
     keyForAEO = ((vInputType != vVNI) ? data : ((data == KEY_7 || data == KEY_8 ? KEY_W : (data == KEY_6 ? TypingWord[VEI] : data))));
     vector<vector<Uint16>>& charset = _vowel[keyForAEO];
     isCorect = false;
@@ -1163,7 +1172,7 @@ void handleMainKey(const Uint16& data, const bool& isCaps) {
             continue;
         isCorect = true;
         checkCorrectVowel(charset, i, k, data);
-        
+
         if (isCorect) {
             isChanged = true;
             if (IS_KEY_DOUBLE(data)) {
@@ -1184,7 +1193,7 @@ void handleMainKey(const Uint16& data, const bool& isCaps) {
             break;
         }
     }
-    
+
     if (!isChanged) {
         if (data == KEY_W && vInputType != vSimpleTelex1) {
             checkForStandaloneChar(data, isCaps, KEY_U);
@@ -1570,6 +1579,11 @@ void vKeyHandleEvent(const vKeyEvent& event,
             hNCC = 0;
             hExt = 2; //delete key
             if (_index == 0) {
+                FILE* flog = fopen("/tmp/phtv_debug.txt", "a");
+                if (flog) {
+                    fprintf(flog, "[vKeyHandleEvent] About to call startNewSession() - delete with _index==0 (line 1631)\n");
+                    fclose(flog);
+                }
                 startNewSession();
                 _specialChar.clear();
                 restoreLastTypingState();
@@ -1587,6 +1601,11 @@ void vKeyHandleEvent(const vKeyEvent& event,
             hBPC = 0;
             hNCC = 0;
             hExt = 0;
+            FILE* flog = fopen("/tmp/phtv_debug.txt", "a");
+            if (flog) {
+                fprintf(flog, "[vKeyHandleEvent] About to call startNewSession() - space count > 0 (line 1648)\n");
+                fclose(flog);
+            }
             startNewSession();
             //continute save space
             saveWord(KEY_SPACE, _spaceCount);
