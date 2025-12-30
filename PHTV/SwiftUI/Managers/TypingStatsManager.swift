@@ -66,6 +66,9 @@ final class TypingStatsManager: ObservableObject {
         setupNotificationObservers()
     }
 
+    // Note: deinit not needed - TypingStatsManager is a singleton that lives for the app lifetime
+    // Timer and observers are automatically cleaned up when app terminates
+
     // MARK: - Notification Observers
 
     private func setupNotificationObservers() {

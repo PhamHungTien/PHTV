@@ -80,7 +80,7 @@ static NSMutableDictionary<NSNumber*, NSString*> *_pidBundleCache = nil;
 static uint64_t _lastCacheCleanTime = 0;
 static os_unfair_lock _pidCacheLock = OS_UNFAIR_LOCK_INIT;
 
-// Spotlight detection cache (refreshes every 50ms for responsiveness)
+// Spotlight detection cache (refreshes every 50ms for optimal balance of performance and responsiveness)
 static BOOL _cachedSpotlightActive = NO;
 static uint64_t _lastSpotlightCheckTime = 0;
 static pid_t _cachedFocusedPID = 0;
@@ -95,9 +95,10 @@ static BOOL _externalDeleteDetected = NO;
 static uint64_t _lastExternalDeleteTime = 0;
 static int _externalDeleteCount = 0;
 
-// Check if text replacement fix is enabled via settings (default: enabled)
+// Check if text replacement fix is enabled via settings (always enabled)
+// Note: This feature is always enabled to fix macOS native text replacement conflicts
 static inline BOOL IsTextReplacementFixEnabled(void) {
-    return [[NSUserDefaults standardUserDefaults] boolForKey:@"vEnableTextReplacementFix"];
+    return YES;  // Always enabled - matches PHTPApp.swift computed property
 }
 
 // Safe Mode: Disable all Accessibility API calls for unsupported hardware
@@ -173,7 +174,7 @@ static inline BOOL IsElementSpotlight(AXUIElementRef element) {
 }
 
 // Check if Spotlight or similar overlay is currently active using Accessibility API
-// OPTIMIZED: Results cached for 15ms to avoid repeated AX API calls while remaining responsive
+// OPTIMIZED: Results cached for 50ms to avoid repeated AX API calls while remaining responsive
 BOOL isSpotlightActive(void) {
     // Safe Mode: Skip AX API calls entirely - assume not in Spotlight
     // This prevents crashes on unsupported hardware (OCLP Macs)
@@ -184,8 +185,8 @@ BOOL isSpotlightActive(void) {
     uint64_t now = mach_absolute_time();
     uint64_t elapsed_ms = mach_time_to_ms(now - _lastSpotlightCheckTime);
 
-    // Return cached result if recent enough (15ms cache - reduced for better Spotlight detection)
-    if (elapsed_ms < 15 && _lastSpotlightCheckTime > 0) {
+    // Return cached result if recent enough (50ms cache - balanced for performance and responsiveness)
+    if (elapsed_ms < 50 && _lastSpotlightCheckTime > 0) {
         return _cachedSpotlightActive;
     }
 
@@ -293,18 +294,25 @@ NSString* getBundleIdFromPID(pid_t pid) {
     
     // Initialize cache on first use
     if (__builtin_expect(_pidBundleCache == nil, 0)) {
-        _pidBundleCache = [NSMutableDictionary dictionaryWithCapacity:64];
+        _pidBundleCache = [NSMutableDictionary dictionaryWithCapacity:128];
         _lastCacheCleanTime = mach_absolute_time();
     }
-    
+
     NSString *cached = _pidBundleCache[pidKey];
-    
-    // Smart cache cleanup with zero-allocation timing
+
+    // Smart cache cleanup: Limit growth but keep hot entries
+    // Check every 5 minutes and only clean if cache grows too large
     uint64_t now = mach_absolute_time();
     uint64_t elapsed_ms = mach_time_to_ms(now - _lastCacheCleanTime);
-    if (__builtin_expect(elapsed_ms > 120000, 0)) { // 2 minutes
-        if (_pidBundleCache.count > 50) {
-            [_pidBundleCache removeAllObjects];
+    if (__builtin_expect(elapsed_ms > 300000, 0)) { // 5 minutes
+        // Only remove half the entries if cache exceeds 100 items
+        // This preserves hot entries better than removeAllObjects
+        if (_pidBundleCache.count > 100) {
+            // Remove approximately half by removing every other entry
+            NSArray *keys = [_pidBundleCache allKeys];
+            for (NSUInteger i = 0; i < keys.count; i += 2) {
+                [_pidBundleCache removeObjectForKey:keys[i]];
+            }
         }
         _lastCacheCleanTime = now;
     }
@@ -2209,20 +2217,16 @@ extern "C" {
                 // Can be enabled via Settings > Compatibility > "Sửa lỗi Text Replacement"
                 BOOL skipProcessing = NO;
 
-#ifdef DEBUG
-                // Debug log for mouse click case (no DELETE detected)
+                // ALWAYS LOG for debugging text replacement issues
                 if (IsTextReplacementFixEnabled() && _keycode == KEY_SPACE &&
-                    (pData->backspaceCount > 0 || pData->newCharCount > 0) &&
-                    (pData->backspaceCount <= 3) && _externalDeleteCount == 0) {
-                    NSLog(@"[TextReplacement] SPACE without DELETE: code=%d, backspace=%d, newChar=%d - Possible mouse click?",
-                          pData->code, (int)pData->backspaceCount, (int)pData->newCharCount);
+                    (pData->backspaceCount > 0 || pData->newCharCount > 0)) {
+                    NSLog(@"[PHTV TextReplacement] SPACE key: code=%d, backspace=%d, newChar=%d, deleteCount=%d",
+                          pData->code, (int)pData->backspaceCount, (int)pData->newCharCount, _externalDeleteCount);
                 }
-#endif
 
                 if (IsTextReplacementFixEnabled() &&
                     _keycode == KEY_SPACE &&
-                    (pData->backspaceCount > 0 || pData->newCharCount > 0) &&
-                    (pData->backspaceCount <= 3)) {  // Only check short replacements
+                    (pData->backspaceCount > 0 || pData->newCharCount > 0)) {
 
                     // Method 1: External DELETE detected (arrow key selection)
                     if (_externalDeleteCount > 0 && _lastExternalDeleteTime != 0) {
@@ -2259,21 +2263,27 @@ extern "C" {
 
                     // Method 2: Mouse click detection (FALLBACK)
                     // When user clicks with mouse, macOS does NOT send DELETE events via CGEventTap
-                    // Pattern: code=3 (vRestore) + newChar > backspace*2 + NO external DELETE
-                    // Key difference from Auto English restore:
-                    // - Text Replacement "ko"→"không": newChar=5 > backspace*2=4 → SKIP
-                    // - Auto English "hi": newChar=2 ≤ backspace*2=4 → KHÔNG skip
-                    // - Auto English "user": newChar=4 ≤ backspace*2=4 → KHÔNG skip
-                    else if ((pData->code == vRestore || pData->code == vRestoreAndStartNewSession) &&
-                             (pData->newCharCount > pData->backspaceCount * 2)) {
-                        // Text replacement detected (significant character count jump)
+                    // TWO detection patterns:
+                    // 2a. Significant char jump: newChar > backspace*2 (e.g., "ko"→"không": 5>4)
+                    // 2b. Suspicious restore: (code=vWillProcess OR vRestore) + backspace==newChar + short length
+                    //     (macOS already replaced text, engine doesn't know, thinks needs restore)
+                    //     Example: "ko"→"không" (macOS), engine sees "ko" buffer, Auto English restore triggers vRestore
+                    else if (_externalDeleteCount == 0 &&
+                             (pData->newCharCount > pData->backspaceCount * 2 ||
+                              ((pData->code == vWillProcess || pData->code == vRestore) &&
+                               pData->backspaceCount > 0 &&
+                               pData->backspaceCount == pData->newCharCount &&
+                               pData->backspaceCount <= 4))) {
+                        // Text replacement detected
                         skipProcessing = YES;
-#ifdef DEBUG
-                        NSLog(@"[TextReplacement] Mouse click text replacement detected - passing through event (code=%d, backspace=%d, newChar=%d)",
+                        NSLog(@"[PHTV TextReplacement] ✅ DETECTED - Skipping processing (code=%d, backspace=%d, newChar=%d)",
                               pData->code, (int)pData->backspaceCount, (int)pData->newCharCount);
-#endif
                         // CRITICAL: Return event to let macOS insert Space
                         return event;
+                    } else {
+                        // Detection FAILED - will process normally (potential bug!)
+                        NSLog(@"[PHTV TextReplacement] ❌ NOT DETECTED - Will process normally (code=%d, backspace=%d, newChar=%d) - MAY CAUSE DUPLICATE!",
+                              pData->code, (int)pData->backspaceCount, (int)pData->newCharCount);
                     }
                 }
 

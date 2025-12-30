@@ -282,11 +282,10 @@ struct MacroSettingsView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("MacrosUpdated")))
         { _ in
-            DispatchQueue.main.async {
-                print("[MacroSettings] Received MacrosUpdated notification, reloading...")
-                loadMacros()
-                refreshTrigger = UUID()
-            }
+            // Note: .onReceive already runs on main thread in SwiftUI
+            print("[MacroSettings] Received MacrosUpdated notification, reloading...")
+            loadMacros()
+            refreshTrigger = UUID()
         }
     }
 
