@@ -2404,11 +2404,11 @@ extern "C" {
                 // Can be enabled via Settings > Compatibility > "Sửa lỗi Text Replacement"
                 BOOL skipProcessing = NO;
 
-                // ALWAYS LOG for debugging text replacement issues
-                if (IsTextReplacementFixEnabled() && _keycode == KEY_SPACE &&
+                // ALWAYS LOG for debugging text replacement issues - ALL keys with backspace/newChar
+                if (IsTextReplacementFixEnabled() &&
                     (pData->backspaceCount > 0 || pData->newCharCount > 0)) {
-                    NSLog(@"[PHTV TextReplacement] SPACE key: code=%d, backspace=%d, newChar=%d, deleteCount=%d",
-                          pData->code, (int)pData->backspaceCount, (int)pData->newCharCount, _externalDeleteCount);
+                    NSLog(@"[PHTV TextReplacement] Key=%d: code=%d, extCode=%d, backspace=%d, newChar=%d, deleteCount=%d",
+                          _keycode, pData->code, pData->extCode, (int)pData->backspaceCount, (int)pData->newCharCount, _externalDeleteCount);
                 }
 
                 if (IsTextReplacementFixEnabled() &&
