@@ -1521,15 +1521,10 @@ void vKeyHandleEvent(const vKeyEvent& event,
             hCode = vReplaceMaro;
             hBPC = (Byte)hMacroKey.size();
             _spaceCount++;
-        } else if ((vQuickStartConsonant || vQuickEndConsonant) && !tempDisableKey && checkQuickConsonant()) {
-            #ifdef DEBUG
-            if (vAutoRestoreEnglishWord && _stateIndex > 1) {
-                fprintf(stderr, "[AutoEnglish] ✗ SPACE SKIPPED: Quick Consonant matched first\n");
-                fflush(stderr);
-            }
-            #endif
-            _spaceCount++;
         } else if (vAutoRestoreEnglishWord && _stateIndex > 1 && checkIfEnglishWord(KeyStates, _stateIndex)) {
+            // PRIORITY FIX: Check Auto English BEFORE Quick Consonant
+            // Auto English should have higher priority to prevent conflicts
+            // (e.g., "search" ending in "ch" shouldn't trigger Quick Consonant)
             // Auto restore English word on SPACE
             // checkIfEnglishWord returns true only if word is English AND NOT Vietnamese
             #ifdef DEBUG
@@ -1559,6 +1554,10 @@ void vKeyHandleEvent(const vKeyEvent& event,
             // This is different from vRestoreAndStartNewSession which also sends the break key
             _index = 0;
             _stateIndex = 0;
+        } else if ((vQuickStartConsonant || vQuickEndConsonant) && !tempDisableKey && checkQuickConsonant()) {
+            // Quick Consonant for Vietnamese typing shortcuts
+            // Now checked AFTER Auto English to avoid conflicts
+            _spaceCount++;
         } else if (vRestoreIfWrongSpelling && tempDisableKey && !_hasHandledMacro) { //restore key if wrong spelling
             if (!checkRestoreIfWrongSpelling(vRestore)) {
                 hCode = vDoNothing;
