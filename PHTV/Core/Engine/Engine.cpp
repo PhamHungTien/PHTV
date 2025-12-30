@@ -11,6 +11,7 @@
 #include <string.h>
 #include <list>
 #include "Macro.h"
+#include <cstdio>
 
 static vector<Uint8> _charKeyCode = {
     KEY_BACKQUOTE, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0, KEY_MINUS, KEY_EQUALS,
@@ -1409,8 +1410,14 @@ void vKeyHandleEvent(const vKeyEvent& event,
             hCode = vReplaceMaro;
             hBPC = (Byte)hMacroKey.size();
             _hasHandledMacro = true;
+            #ifdef DEBUG
+            fprintf(stderr, "[AutoEnglish] CONFLICT: Macro matched, auto English skipped\n"); fflush(stderr);
+            #endif
         } else if ((vQuickStartConsonant || vQuickEndConsonant) && !tempDisableKey && isMacroBreakCode(data)) {
             checkQuickConsonant();
+            #ifdef DEBUG
+            fprintf(stderr, "[AutoEnglish] CONFLICT: Quick consonant checked, auto English skipped\n"); fflush(stderr);
+            #endif
         } else if (vAutoRestoreEnglishWord && isWordBreak(event, state, data) && _stateIndex > 1 && _index > 0 && checkIfEnglishWord(KeyStates, _stateIndex)) {
             // Auto restore English word feature
             // checkIfEnglishWord returns true only if:

@@ -16,6 +16,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <unordered_set>
+#include <cstdio>
 
 #ifdef __APPLE__
 #include "../Platforms/mac.h"
@@ -255,37 +256,75 @@ string keyStatesToString(const Uint32* keyCodes, int count) {
 // ============================================================================
 bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
     // Quick validation
-    if (!engInit | (stateIndex < 2) | (stateIndex > 30)) return false;
+    if (!engInit) {
+        #ifdef DEBUG
+        fprintf(stderr, "[AutoEnglish] FAILED: Dictionary not initialized\n"); fflush(stderr);
+        #endif
+        return false;
+    }
+    if (stateIndex < 2) {
+        #ifdef DEBUG
+        fprintf(stderr, "[AutoEnglish] FAILED: Word too short (length=%d)\n", stateIndex); fflush(stderr);
+        #endif
+        return false;
+    }
+    if (stateIndex > 30) return false;
 
     // Convert keycodes to indices and build word string
     uint8_t idx[32];
     char wordBuf[32];
     for (int i = 0; i < stateIndex; i++) {
         uint8_t id = kcToIdx[keyStates[i] & 0x3F];
-        if (id >= 26) return false;
+        if (id >= 26) {
+            #ifdef DEBUG
+            fprintf(stderr, "[AutoEnglish] FAILED: Contains non-letter character at position %d\n", i); fflush(stderr);
+            #endif
+            return false;
+        }
         idx[i] = id;
         wordBuf[i] = 'a' + id;
     }
     wordBuf[stateIndex] = '\0';
     std::string word(wordBuf);
 
+    #ifdef DEBUG
+    fprintf(stderr, "[AutoEnglish] Checking word: '%s'\n", word.c_str()); fflush(stderr);
+    #endif
+
     // PRIORITY 1: Check custom Vietnamese - if user marked as Vietnamese, never restore
     if (!customVietnameseWords.empty() && customVietnameseWords.count(word)) {
+        #ifdef DEBUG
+        fprintf(stderr, "[AutoEnglish] SKIP: '%s' is in custom Vietnamese dictionary\n", word.c_str()); fflush(stderr);
+        #endif
         return false; // User explicitly marked as Vietnamese - do NOT restore
     }
 
     // PRIORITY 2: Check custom English - if user marked as English, always restore
     if (!customEnglishWords.empty() && customEnglishWords.count(word)) {
+        #ifdef DEBUG
+        fprintf(stderr, "[AutoEnglish] RESTORE: '%s' is in custom English dictionary\n", word.c_str()); fflush(stderr);
+        #endif
         return true; // User explicitly marked as English - restore
     }
 
     // PRIORITY 3: Check built-in Vietnamese dictionary
     if (vieInit && vieNodes && searchBinaryTrie(vieNodes, idx, stateIndex)) {
+        #ifdef DEBUG
+        fprintf(stderr, "[AutoEnglish] SKIP: '%s' found in Vietnamese dictionary\n", word.c_str()); fflush(stderr);
+        #endif
         return false; // It's a Vietnamese word - do NOT restore
     }
 
     // PRIORITY 4: Check built-in English dictionary
-    return searchBinaryTrie(engNodes, idx, stateIndex);
+    bool isEnglish = searchBinaryTrie(engNodes, idx, stateIndex);
+    #ifdef DEBUG
+    if (isEnglish) {
+        fprintf(stderr, "[AutoEnglish] RESTORE: '%s' found in English dictionary\n", word.c_str()); fflush(stderr);
+    } else {
+        fprintf(stderr, "[AutoEnglish] SKIP: '%s' not found in English dictionary\n", word.c_str()); fflush(stderr);
+    }
+    #endif
+    return isEnglish;
 }
 
 void clearEnglishDictionary() {
