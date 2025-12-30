@@ -1424,13 +1424,20 @@ void vKeyHandleEvent(const vKeyEvent& event,
             fflush(stderr);
             #endif
             // IMPORTANT: Check _stateIndex > 1 (at least 2 chars) to avoid false positives with single chars
-            // But DO NOT check _index > 0 because _index might be 0 after session reset while _stateIndex still has data
             if (_stateIndex > 1 && checkIfEnglishWord(KeyStates, _stateIndex)) {
                 // Auto restore English word feature
                 // checkIfEnglishWord returns true only if:
                 // - Word exists in English dictionary AND
                 // - Word does NOT exist in Vietnamese dictionary
+                #ifdef DEBUG
+                if (_index == 0) {
+                    fprintf(stderr, "[AutoEnglish] WARNING: _index=0 but _stateIndex=%d - possible tracking bug!\n", _stateIndex);
+                    fflush(stderr);
+                }
+                #endif
                 hCode = vRestoreAndStartNewSession;
+                // CORRECT LOGIC: Backspace count = actual chars on screen (_index)
+                //                New char count = English word length (_stateIndex)
                 hBPC = _index;
                 hNCC = _stateIndex;
                 for (i = 0; i < _stateIndex; i++) {
@@ -1511,7 +1518,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             _spaceCount++;
         } else if ((vQuickStartConsonant || vQuickEndConsonant) && !tempDisableKey && checkQuickConsonant()) {
             _spaceCount++;
-        } else if (vAutoRestoreEnglishWord && _stateIndex > 1 && checkIfEnglishWord(KeyStates, _stateIndex)) {
+        } else if (vAutoRestoreEnglishWord && _index > 0 && _stateIndex > 1 && checkIfEnglishWord(KeyStates, _stateIndex)) {
             // Auto restore English word on SPACE
             // checkIfEnglishWord returns true only if word is English AND NOT Vietnamese
             #ifdef DEBUG
@@ -1519,9 +1526,9 @@ void vKeyHandleEvent(const vKeyEvent& event,
             fflush(stderr);
             #endif
             hCode = vRestore;
-            // Use _stateIndex instead of _index for backspace count
-            // _index might be 0 after session reset, but _stateIndex always has the correct count
-            hBPC = _stateIndex;
+            // CORRECT LOGIC: Backspace count = actual chars on screen (_index)
+            //                New char count = English word length (_stateIndex)
+            hBPC = _index;
             hNCC = _stateIndex;
             for (i = 0; i < _stateIndex; i++) {
                 TypingWord[i] = KeyStates[i];
