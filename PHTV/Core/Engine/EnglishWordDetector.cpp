@@ -310,8 +310,8 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
 
     // PRIORITY 3: Common English words that are loanwords in Vietnamese
     // These should ALWAYS be treated as English to avoid conflicts
-    // Based on analysis: words like "ok", "test", "cos" exist in Vietnamese as loanwords
-    // but are much more commonly used as English in typing context
+    // NOTE: Math functions (cos, sin, tan, log) REMOVED - they conflict with Telex Vietnamese
+    //       e.g., "cos" is Telex input for "có" (very common Vietnamese word)
     static const std::unordered_set<std::string> englishPriorityWords = {
         // Very common English words that are also loanwords
         "ok", "test", "file", "video", "audio", "email", "internet", "web",
@@ -322,7 +322,7 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
         "print", "scan", "search", "filter", "sort", "view", "show", "hide",
         "start", "stop", "play", "pause", "next", "back", "home", "help",
         "info", "about", "contact", "support", "faq", "news", "event", "photo",
-        "cos", "sin", "tan", "log", "max", "min", "sum", "avg",  // Math/programming
+        "max", "min", "sum", "avg",  // Common programming keywords (not math functions)
     };
 
     if (englishPriorityWords.count(word)) {

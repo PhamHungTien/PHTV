@@ -594,17 +594,12 @@ extern "C" {
     // Note: WhatsApp removed - it needs precomposed but NOT Spotlight-style AX/per-char handling
     NSSet* _forcePrecomposedAppSet = [NSSet setWithArray:@[@"com.apple.Spotlight",
                                                             @"com.apple.systemuiserver",  // Spotlight runs under SystemUIServer
-                                                            @"com.microsoft.Word",        // Word template search needs precomposed
-                                                            @"com.microsoft.Excel",       // Excel template search needs precomposed
-                                                            @"com.microsoft.Powerpoint",  // PowerPoint template search needs precomposed
-                                                            @"com.microsoft.PowerPoint",  // PowerPoint (alternate bundle ID)
-                                                            @"com.microsoft.Outlook",     // Outlook template search needs precomposed
                                                             PHTV_BUNDLE]];  // PHTV itself - SwiftUI TextField needs HID tap posting
 
     // Apps that need precomposed Unicode but should use normal batched sending (not AX API)
     // These are Electron/web apps that don't support AX text replacement
-    // NOTE: Microsoft Office apps MOVED to _forcePrecomposedAppSet
-    // Template search boxes need precomposed Unicode with Spotlight-like handling (AX API)
+    // NOTE: Microsoft Office apps support Vietnamese compound Unicode properly in documents
+    // Template search may have minor issues but prioritizing document editing experience
     NSSet* _precomposedBatchedAppSet = [NSSet setWithArray:@[@"net.whatsapp.WhatsApp"]];
 
     //app which needs step by step key sending (timing sensitive apps) - Using NSSet for O(1) lookup performance
