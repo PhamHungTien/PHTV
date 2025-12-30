@@ -2450,28 +2450,37 @@ extern "C" {
 
                     // Method 2: Mouse click detection (FALLBACK)
                     // When user clicks with mouse, macOS does NOT send DELETE events via CGEventTap
-                    // TWO detection patterns:
-                    // 2a. Significant char jump: newChar > backspace*2 (e.g., "ko"→"không": 5>4)
-                    // 2b. Suspicious WillProcess: code=vWillProcess + backspace==newChar + short length
-                    //     (macOS already replaced text, engine doesn't know, thinks needs process)
-                    //     Example: "ko"→"không" (macOS), engine sees "ko" buffer, generates vWillProcess
-                    //     NOTE: Do NOT include vRestore here - that's intentional Auto English restore!
+                    // Detection patterns (with Auto English exclusions):
+                    // 2a. Significant char jump: newChar > backspace*2 (e.g., "dc"→"được": 4>2*2)
+                    //     This pattern works for all keys including SPACE
+                    // 2b. Equal counts pattern: backspace==newChar + short length
+                    //     BUT: Exclude SPACE key (could be Auto English) and vRestoreAndStartNewSession
+                    //     Example: Mouse click + "dc" → engine sees "dc", generates vRestore (2==2)
                     else if (_externalDeleteCount == 0 &&
-                             (pData->newCharCount > pData->backspaceCount * 2 ||
-                              (pData->code == vWillProcess &&  // ONLY vWillProcess - vRestore is Auto English!
-                               pData->backspaceCount > 0 &&
-                               pData->backspaceCount == pData->newCharCount &&
-                               pData->backspaceCount <= 10))) {  // Expanded from 4 to 10 to cover longer replacements
+                             pData->code != vRestoreAndStartNewSession) {  // Exclude Auto English word break (code 5)
+                        BOOL pattern2a = (pData->newCharCount > pData->backspaceCount * 2);
+                        BOOL pattern2b = (_keycode != KEY_SPACE &&  // Exclude SPACE - could be Auto English
+                                         (pData->code == vWillProcess || pData->code == vRestore) &&
+                                         pData->backspaceCount > 0 &&
+                                         pData->backspaceCount == pData->newCharCount &&
+                                         pData->backspaceCount <= 10);
+                        if (pattern2a || pattern2b) {
+                        #ifdef DEBUG
+                        NSLog(@"[PHTV TextReplacement] Pattern %@ matched: code=%d, backspace=%d, newChar=%d, keycode=%d",
+                              pattern2a ? @"2a" : @"2b",
+                              pData->code, (int)pData->backspaceCount, (int)pData->newCharCount, _keycode);
+                        #endif
                         // Text replacement detected
                         skipProcessing = YES;
                         NSLog(@"[PHTV TextReplacement] ✅ DETECTED - Skipping processing (code=%d, backspace=%d, newChar=%d)",
                               pData->code, (int)pData->backspaceCount, (int)pData->newCharCount);
                         // CRITICAL: Return event to let macOS insert Space
                         return event;
-                    } else {
-                        // Detection FAILED - will process normally (potential bug!)
-                        NSLog(@"[PHTV TextReplacement] ❌ NOT DETECTED - Will process normally (code=%d, backspace=%d, newChar=%d) - MAY CAUSE DUPLICATE!",
-                              pData->code, (int)pData->backspaceCount, (int)pData->newCharCount);
+                        } else {
+                            // Detection FAILED - will process normally (potential bug!)
+                            NSLog(@"[PHTV TextReplacement] ❌ NOT DETECTED - Will process normally (code=%d, backspace=%d, newChar=%d) - MAY CAUSE DUPLICATE!",
+                                  pData->code, (int)pData->backspaceCount, (int)pData->newCharCount);
+                        }
                     }
                 }
 
