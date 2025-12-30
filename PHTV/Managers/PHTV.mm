@@ -1318,7 +1318,9 @@ extern "C" {
         
         if (IS_DOUBLE_CODE(vCodeTable)) { //VNI or Unicode Compound
             if (_syncKey.back() > 1) {
-                if (!(vCodeTable == 3 && containUnicodeCompoundApp(getFocusedAppBundleId()))) {
+                // PERFORMANCE: Use cached bundle ID instead of querying AX API on every backspace
+                NSString *effectiveTarget = _phtvEffectiveTargetBundleId ?: getFocusedAppBundleId();
+                if (!(vCodeTable == 3 && containUnicodeCompoundApp(effectiveTarget))) {
                     CGEventTapPostEvent(_proxy, eventVkeyDown);
                     CGEventTapPostEvent(_proxy, eventVkeyUp);
                 }
@@ -1593,7 +1595,9 @@ extern "C" {
             }
         }
         //send real data - use step by step for timing sensitive apps like Spotlight
-        BOOL useStepByStep = vSendKeyStepByStep || needsStepByStep(getFocusedAppBundleId());
+        // PERFORMANCE: Use cached bundle ID instead of querying AX API
+        NSString *effectiveTarget = _phtvEffectiveTargetBundleId ?: getFocusedAppBundleId();
+        BOOL useStepByStep = vSendKeyStepByStep || needsStepByStep(effectiveTarget);
         if (!useStepByStep) {
             SendNewCharString(true);
         } else {
