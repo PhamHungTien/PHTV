@@ -1413,28 +1413,30 @@ void vKeyHandleEvent(const vKeyEvent& event,
             #ifdef DEBUG
             fprintf(stderr, "[AutoEnglish] CONFLICT: Macro matched, auto English skipped\n"); fflush(stderr);
             #endif
-        } else if ((vQuickStartConsonant || vQuickEndConsonant) && !tempDisableKey && isMacroBreakCode(data)) {
-            checkQuickConsonant();
-            #ifdef DEBUG
-            fprintf(stderr, "[AutoEnglish] CONFLICT: Quick consonant checked, auto English skipped\n"); fflush(stderr);
-            #endif
         } else if (vAutoRestoreEnglishWord && isWordBreak(event, state, data)) {
+            // PRIORITY FIX: Check Auto English BEFORE Quick Consonant
+            // Auto English should have higher priority to prevent conflicts
+            // (e.g., "search." ending in "ch" shouldn't trigger Quick Consonant)
             #ifdef DEBUG
-            fprintf(stderr, "[AutoEnglish] WORD BREAK detected: _stateIndex=%d, _index=%d, data=0x%X\n", _stateIndex, _index, data);
+            const char* eventType = (event == vKeyEvent::Mouse) ? "Mouse" : "Keyboard";
+            const char* stateType = (state == KeyDown) ? "KeyDown" : (state == KeyUp) ? "KeyUp" : (state == MouseDown) ? "MouseDown" : "MouseUp";
+            fprintf(stderr, "[AutoEnglish] WORD BREAK detected: event=%s, state=%s, _stateIndex=%d, _index=%d, data=0x%X\n",
+                   eventType, stateType, _stateIndex, _index, data);
             fflush(stderr);
             #endif
-            // IMPORTANT: Check _stateIndex > 1 (at least 2 chars) to avoid false positives with single chars
-            if (_stateIndex > 1 && checkIfEnglishWord(KeyStates, _stateIndex)) {
+            // IMPORTANT: Check _index > 0 (must have display chars) and _stateIndex > 1 (at least 2 keys pressed)
+            if (_index > 0 && _stateIndex > 1 && checkIfEnglishWord(KeyStates, _stateIndex)) {
                 // Auto restore English word feature
                 // checkIfEnglishWord returns true only if:
                 // - Word exists in English dictionary AND
                 // - Word does NOT exist in Vietnamese dictionary
                 hCode = vRestoreAndStartNewSession;
-                // RELIABILITY FIX: Use _stateIndex for backspace count
-                // English words don't have Vietnamese combining, so keystate count = character count
-                // Using _index is unreliable because Vietnamese processing may desync it
-                hBPC = _stateIndex;
-                hNCC = _stateIndex;
+                // SPACE FIX (WORD BREAK path): Use _index for backspace count
+                // When Vietnamese processing combines chars (e.g., "search" → "sẻach"),
+                // _stateIndex=6 but _index=5, so we must delete based on display count
+                // to avoid deleting characters before the word
+                hBPC = _index;  // Backspace count = display character count
+                hNCC = _stateIndex;  // Insert count = original keystroke count (English word)
                 hExt = 5;  // Signal: This is Auto English restore (not Text Replacement)
                 for (i = 0; i < _stateIndex; i++) {
                     TypingWord[i] = KeyStates[i];
@@ -1447,21 +1449,32 @@ void vKeyHandleEvent(const vKeyEvent& event,
                 }
                 _shouldUpperCaseEnglishRestore = false;
                 _index = _stateIndex;
+                // CRITICAL FIX: Reset session immediately to prevent state pollution
+                // Without this, when typing fast or multiple words, _index/_stateIndex retain old values
+                // causing intermittent failures ("sometimes works, sometimes doesn't")
+                // This matches SPACE handler behavior (line 1573-1574)
+                _index = 0;
+                _stateIndex = 0;
                 #ifdef DEBUG
-                fprintf(stderr, "[AutoEnglish] ✓ WORD BREAK RESTORE: _stateIndex=%d, _index=%d\n", _stateIndex, _index);
+                fprintf(stderr, "[AutoEnglish] ✓ WORD BREAK RESTORE: reset to _index=0, _stateIndex=0\n");
                 fflush(stderr);
                 #endif
             #ifdef DEBUG
             } else if (_stateIndex > 0) {
                 std::string word = keyStatesToString(KeyStates, _stateIndex);
-                fprintf(stderr, "[AutoEnglish] ✗ WORD BREAK NO RESTORE: word='%s', _index=%d, _stateIndex=%d, conditions: ",
+                fprintf(stderr, "[AutoEnglish] ✗ WORD BREAK NO RESTORE: word='%s', _index=%d, _stateIndex=%d, blocked by: ",
                        word.c_str(), _index, _stateIndex);
+                if (_index <= 0) fprintf(stderr, "_index<=0 ");
                 if (_stateIndex <= 1) fprintf(stderr, "_stateIndex<=1 ");
                 if (!checkIfEnglishWord(KeyStates, _stateIndex)) fprintf(stderr, "notEnglish ");
                 fprintf(stderr, "\n");
                 fflush(stderr);
             #endif
             }
+        } else if ((vQuickStartConsonant || vQuickEndConsonant) && !tempDisableKey && isMacroBreakCode(data)) {
+            // Quick Consonant for Vietnamese typing shortcuts
+            // Now checked AFTER Auto English to avoid conflicts
+            checkQuickConsonant();
         } else if (vRestoreIfWrongSpelling && isWordBreak(event, state, data)) { //restore key if wrong spelling with break-key
             if (!tempDisableKey && vCheckSpelling) {
                 checkSpelling(true); //force check spelling
@@ -1514,6 +1527,11 @@ void vKeyHandleEvent(const vKeyEvent& event,
                 _upperCaseStatus = 0;
         }
     } else if (data == KEY_SPACE) {
+        #ifdef DEBUG
+        fprintf(stderr, "[AutoEnglish] SPACE pressed: _stateIndex=%d, _index=%d, tempDisableKey=%d\n",
+               _stateIndex, _index, tempDisableKey);
+        fflush(stderr);
+        #endif
         if (!tempDisableKey && vCheckSpelling) {
             checkSpelling(true); //force check spelling
         }
@@ -1521,22 +1539,28 @@ void vKeyHandleEvent(const vKeyEvent& event,
             hCode = vReplaceMaro;
             hBPC = (Byte)hMacroKey.size();
             _spaceCount++;
-        } else if (vAutoRestoreEnglishWord && _stateIndex > 1 && checkIfEnglishWord(KeyStates, _stateIndex)) {
+            #ifdef DEBUG
+            fprintf(stderr, "[AutoEnglish] Macro matched, Auto English skipped\n");
+            fflush(stderr);
+            #endif
+        } else if (vAutoRestoreEnglishWord && _index > 0 && _stateIndex > 1 && checkIfEnglishWord(KeyStates, _stateIndex)) {
             // PRIORITY FIX: Check Auto English BEFORE Quick Consonant
             // Auto English should have higher priority to prevent conflicts
             // (e.g., "search" ending in "ch" shouldn't trigger Quick Consonant)
             // Auto restore English word on SPACE
             // checkIfEnglishWord returns true only if word is English AND NOT Vietnamese
+            // SAFETY: _index > 0 ensures we have characters to delete (prevents deleting nothing)
             #ifdef DEBUG
             fprintf(stderr, "[AutoEnglish] ✓ SPACE RESTORE: _stateIndex=%d, _index=%d\n", _stateIndex, _index);
             fflush(stderr);
             #endif
             hCode = vRestore;
-            // RELIABILITY FIX: Use _stateIndex for backspace count
-            // English words don't have Vietnamese combining, so keystate count = character count
-            // Using _index is unreliable because Vietnamese processing may desync it
-            hBPC = _stateIndex;
-            hNCC = _stateIndex;
+            // SPACE FIX: Use _index for backspace (delete only what's on screen)
+            // When Vietnamese processing combines chars (e.g., "search" → "sẻach"),
+            // _stateIndex=6 but _index=5, so we must delete based on display count
+            // to avoid deleting the space before the word
+            hBPC = _index;  // Backspace count = display character count
+            hNCC = _stateIndex;  // Insert count = original keystroke count (English word)
             hExt = 5;  // Signal: This is Auto English restore (not Text Replacement)
             for (i = 0; i < _stateIndex; i++) {
                 TypingWord[i] = KeyStates[i];
@@ -1568,10 +1592,11 @@ void vKeyHandleEvent(const vKeyEvent& event,
             // Log why Auto English didn't trigger (for debugging random failures)
             if (vAutoRestoreEnglishWord && _stateIndex > 0) {
                 std::string word = keyStatesToString(KeyStates, _stateIndex);
-                fprintf(stderr, "[AutoEnglish] ✗ SPACE NO RESTORE: word='%s', _stateIndex=%d, conditions: ",
-                       word.c_str(), _stateIndex);
-                if (_stateIndex <= 1) fprintf(stderr, "tooShort ");
-                if (!checkIfEnglishWord(KeyStates, _stateIndex)) fprintf(stderr, "notEnglish ");
+                fprintf(stderr, "[AutoEnglish] ✗ SPACE NO RESTORE: word='%s', _stateIndex=%d, _index=%d, blocked by: ",
+                       word.c_str(), _stateIndex, _index);
+                if (_index <= 0) fprintf(stderr, "_index<=0 ");
+                if (_stateIndex <= 1) fprintf(stderr, "_stateIndex<=1 ");
+                if (!checkIfEnglishWord(KeyStates, _stateIndex)) fprintf(stderr, "notEnglishWord ");
                 fprintf(stderr, "\n");
                 fflush(stderr);
             }
