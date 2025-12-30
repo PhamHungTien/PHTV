@@ -1532,8 +1532,11 @@ void vKeyHandleEvent(const vKeyEvent& event,
                _stateIndex, _index, tempDisableKey);
         fflush(stderr);
         #endif
-        if (!tempDisableKey && vCheckSpelling) {
-            checkSpelling(true); //force check spelling
+        // CRITICAL FIX: Always run checkSpelling() for Auto English
+        // Even when tempDisableKey=true, we need accurate _index for Auto English check
+        // This ensures _index is up-to-date before checking English words
+        if (vCheckSpelling) {
+            checkSpelling(true); //force check spelling (ignore tempDisableKey for Auto English)
         }
         if (vUseMacro && !_hasHandledMacro && findMacro(hMacroKey, hMacroData)) { //macro
             hCode = vReplaceMaro;
