@@ -597,8 +597,13 @@ extern "C" {
                                                             PHTV_BUNDLE]];  // PHTV itself - SwiftUI TextField needs HID tap posting
 
     // Apps that need precomposed Unicode but should use normal batched sending (not AX API)
-    // These are Electron/web apps that don't support AX text replacement
-    NSSet* _precomposedBatchedAppSet = [NSSet setWithArray:@[@"net.whatsapp.WhatsApp"]];
+    // These are Electron/web apps or apps with search boxes that don't support AX text replacement
+    NSSet* _precomposedBatchedAppSet = [NSSet setWithArray:@[@"net.whatsapp.WhatsApp",
+                                                              // Microsoft Office apps - search boxes need precomposed Unicode
+                                                              @"com.microsoft.Word",
+                                                              @"com.microsoft.Excel",
+                                                              @"com.microsoft.Powerpoint",
+                                                              @"com.microsoft.Outlook"]];
 
     //app which needs step by step key sending (timing sensitive apps) - Using NSSet for O(1) lookup performance
     NSSet* _stepByStepAppSet = [NSSet setWithArray:@[// Commented out for testing Vietnamese input:
@@ -2359,6 +2364,13 @@ extern "C" {
                 }
                 return event;
             } else if (pData->code == vWillProcess || pData->code == vRestore || pData->code == vRestoreAndStartNewSession) { //handle result signal
+                #ifdef DEBUG
+                if (pData->code == vRestoreAndStartNewSession) {
+                    fprintf(stderr, "[AutoEnglish] vRestoreAndStartNewSession START: backspace=%d, newChar=%d, keycode=%d\n",
+                           (int)pData->backspaceCount, (int)pData->newCharCount, _keycode);
+                    fflush(stderr);
+                }
+                #endif
 
                 // Check if this is a special app (Spotlight-like or WhatsApp-like)
                 BOOL isSpecialApp = appChars.isSpotlightLike || appChars.needsPrecomposedBatched;
@@ -2497,6 +2509,13 @@ extern "C" {
                             }
                         }
                         if (pData->code == vRestore || pData->code == vRestoreAndStartNewSession) {
+                            #ifdef DEBUG
+                            if (pData->code == vRestoreAndStartNewSession) {
+                                fprintf(stderr, "[AutoEnglish] PROCESSING RESTORE: backspace=%d, newChar=%d, skipProcessing=%d\n",
+                                       (int)pData->backspaceCount, (int)pData->newCharCount, skipProcessing);
+                                fflush(stderr);
+                            }
+                            #endif
                             SendKeyCode(_keycode | ((_flag & kCGEventFlagMaskAlphaShift) || (_flag & kCGEventFlagMaskShift) ? CAPS_MASK : 0));
                         }
                         if (pData->code == vRestoreAndStartNewSession) {

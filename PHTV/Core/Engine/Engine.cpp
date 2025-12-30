@@ -1418,25 +1418,36 @@ void vKeyHandleEvent(const vKeyEvent& event,
             #ifdef DEBUG
             fprintf(stderr, "[AutoEnglish] CONFLICT: Quick consonant checked, auto English skipped\n"); fflush(stderr);
             #endif
-        } else if (vAutoRestoreEnglishWord && isWordBreak(event, state, data) && _stateIndex > 1 && _index > 0 && checkIfEnglishWord(KeyStates, _stateIndex)) {
-            // Auto restore English word feature
-            // checkIfEnglishWord returns true only if:
-            // - Word exists in English dictionary AND
-            // - Word does NOT exist in Vietnamese dictionary
-            hCode = vRestoreAndStartNewSession;
-            hBPC = _index;
-            hNCC = _stateIndex;
-            for (i = 0; i < _stateIndex; i++) {
-                TypingWord[i] = KeyStates[i];
-                hData[_stateIndex - 1 - i] = KeyStates[i];
+        } else if (vAutoRestoreEnglishWord && isWordBreak(event, state, data)) {
+            #ifdef DEBUG
+            fprintf(stderr, "[AutoEnglish] Word break detected: _stateIndex=%d, _index=%d\n", _stateIndex, _index);
+            fflush(stderr);
+            #endif
+            if (_stateIndex > 1 && _index > 0 && checkIfEnglishWord(KeyStates, _stateIndex)) {
+                // Auto restore English word feature
+                // checkIfEnglishWord returns true only if:
+                // - Word exists in English dictionary AND
+                // - Word does NOT exist in Vietnamese dictionary
+                hCode = vRestoreAndStartNewSession;
+                hBPC = _index;
+                hNCC = _stateIndex;
+                for (i = 0; i < _stateIndex; i++) {
+                    TypingWord[i] = KeyStates[i];
+                    hData[_stateIndex - 1 - i] = KeyStates[i];
+                }
+                // Apply uppercase first character if enabled
+                // Use _shouldUpperCaseEnglishRestore which was set when first char was typed
+                if (vUpperCaseFirstChar && _shouldUpperCaseEnglishRestore && _stateIndex > 0) {
+                    hData[_stateIndex - 1] |= CAPS_MASK;
+                }
+                _shouldUpperCaseEnglishRestore = false;
+                _index = _stateIndex;
+            #ifdef DEBUG
+            } else {
+                fprintf(stderr, "[AutoEnglish] SKIPPED: _stateIndex=%d (need >1), _index=%d (need >0)\n", _stateIndex, _index);
+                fflush(stderr);
+            #endif
             }
-            // Apply uppercase first character if enabled
-            // Use _shouldUpperCaseEnglishRestore which was set when first char was typed
-            if (vUpperCaseFirstChar && _shouldUpperCaseEnglishRestore && _stateIndex > 0) {
-                hData[_stateIndex - 1] |= CAPS_MASK;
-            }
-            _shouldUpperCaseEnglishRestore = false;
-            _index = _stateIndex;
         } else if (vRestoreIfWrongSpelling && isWordBreak(event, state, data)) { //restore key if wrong spelling with break-key
             if (!tempDisableKey && vCheckSpelling) {
                 checkSpelling(true); //force check spelling
