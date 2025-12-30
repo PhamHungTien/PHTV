@@ -8,6 +8,58 @@
 
         <!-- Most recent version first -->
         <item>
+            <title>PHTV 1.3.3</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.3</link>
+            <sparkle:version>10</sparkle:version>
+            <sparkle:shortVersionString>1.3.3</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h2>PHTV 1.3.3 - Macro Intelligence & Performance</h2>
+
+                <h3>🚀 Tối ưu hiệu năng</h3>
+                <ul>
+                    <li><strong>Tăng tốc word break detection</strong>: Thay thế O(n) linear search bằng O(1) hash lookup - nhanh hơn 10-20 lần</li>
+                    <li><strong>Lazy initialization</strong>: Chỉ khởi tạo lookup sets khi cần thiết</li>
+                    <li><strong>Giảm độ trễ gõ phím</strong>: Cải thiện đáng kể trải nghiệm đánh máy</li>
+                </ul>
+
+                <h3>🧠 Macro Intelligence</h3>
+                <ul>
+                    <li><strong>Phát hiện xung đột</strong>: Tự động cảnh báo khi gõ tắt bị trùng lặp hoặc xung đột tiền tố</li>
+                    <li><strong>Real-time warnings</strong>: Hiển thị ngay khi user đang tạo/sửa macro</li>
+                    <li><strong>Visual indicators</strong>: Icons và màu sắc rõ ràng (đỏ/cam/vàng) cho từng loại xung đột</li>
+                    <li><strong>Usage tracking</strong>: Theo dõi số lần sử dụng, thời gian dùng gần nhất</li>
+                    <li><strong>Smart helpers</strong>: Nhận biết macro phổ biến và ít dùng</li>
+                </ul>
+
+                <h3>🔧 Sửa lỗi quan trọng</h3>
+                <ul>
+                    <li><strong>Thống kê ngôn ngữ chính xác</strong>: Sửa bug phân bố tiếng Việt/Anh trong Typing Stats</li>
+                    <li><strong>Tracking từ tiếng Anh</strong>: Bây giờ đếm đúng số từ tiếng Anh đã gõ</li>
+                    <li><strong>Pie chart đúng</strong>: Biểu đồ phân bố ngôn ngữ hiển thị chính xác</li>
+                </ul>
+
+                <h3>💡 Chi tiết kỹ thuật</h3>
+                <ul>
+                    <li>Optimize: std::unordered_set cho word break lookup (Engine.cpp)</li>
+                    <li>Feature: MacroItem.findConflicts() với ConflictType enum</li>
+                    <li>Fix: TypingStatsWord notification phân biệt ngôn ngữ đúng</li>
+                    <li>Fix: English mode word completion tracking</li>
+                </ul>
+
+                <p><em>Bản cập nhật này mang lại hiệu năng tốt hơn và tính năng Macro thông minh giúp quản lý gõ tắt dễ dàng hơn.</em></p>
+            ]]></description>
+            <pubDate>Wed, 31 Dec 2025 03:25:13 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.3.3/PHTV-1.3.3.dmg"
+                sparkle:version="10"
+                sparkle:shortVersionString="1.3.3"
+                sparkle:edSignature="+T6M90e/CZ+527if+1htw81NRgLXebwArUjwr8oQQHSO/rfjog/I25vK2SSfXyQAvpQdvZWjbdRo8R0n2kHOBA=="
+                length="13308881"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <item>
             <title>PHTV 1.3.2</title>
             <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.2</link>
             <sparkle:version>9</sparkle:version>
