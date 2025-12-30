@@ -23,6 +23,17 @@
 
 #define FRONT_APP [[NSWorkspace sharedWorkspace] frontmostApplication].bundleIdentifier
 
+// Performance & Cache Configuration
+static const uint64_t SPOTLIGHT_CACHE_DURATION_MS = 50;      // Spotlight detection cache timeout
+static const uint64_t PID_CACHE_CLEAN_INTERVAL_MS = 300000;  // 5 minutes - PID cache cleanup
+static const NSUInteger MAX_PID_CACHE_SIZE = 100;            // Maximum PID cache entries
+static const NSUInteger PID_CACHE_INITIAL_CAPACITY = 128;    // Initial PID cache capacity
+static const uint64_t TEXT_REPLACEMENT_TIMEOUT_MS = 30000;   // 30 seconds - text replacement detection window
+static const NSUInteger MAX_TEXT_REPLACEMENT_LENGTH = 4;     // Maximum characters for text replacement detection
+static const uint64_t DEBUG_LOG_THROTTLE_MS = 500;           // Debug log throttling interval
+static const uint64_t APP_SWITCH_CACHE_DURATION_MS = 100;    // App switch detection cache timeout
+static const NSUInteger SYNC_KEY_RESERVE_SIZE = 256;         // Pre-allocated buffer size for typing sync
+
 // AXValueType constant name differs across SDK versions.
 #if defined(kAXValueTypeCFRange)
     #define PHTV_AXVALUE_CFRANGE_TYPE kAXValueTypeCFRange
@@ -67,7 +78,7 @@ static inline void PHTVSpotlightDebugLog(NSString *message) {
     });
     static uint64_t lastLogTime = 0;
     uint64_t now = mach_absolute_time();
-    if (lastLogTime != 0 && mach_time_to_ms(now - lastLogTime) < 500) {
+    if (lastLogTime != 0 && mach_time_to_ms(now - lastLogTime) < DEBUG_LOG_THROTTLE_MS) {
         return;
     }
     lastLogTime = now;
@@ -81,10 +92,11 @@ static uint64_t _lastCacheCleanTime = 0;
 static os_unfair_lock _pidCacheLock = OS_UNFAIR_LOCK_INIT;
 
 // Spotlight detection cache (refreshes every 50ms for optimal balance of performance and responsiveness)
+// Thread-safe access required since event tap callback may run on different threads
 static BOOL _cachedSpotlightActive = NO;
 static uint64_t _lastSpotlightCheckTime = 0;
 static pid_t _cachedFocusedPID = 0;
-static CGEventFlags _lastEventFlags = 0;
+static os_unfair_lock _spotlightCacheLock = OS_UNFAIR_LOCK_INIT;
 
 // Text Replacement detection (for macOS native text replacement)
 // macOS Text Replacement does NOT send delete events via CGEventTap when using mouse!
@@ -110,8 +122,21 @@ BOOL vSafeMode = NO;
 // Force invalidate Spotlight detection cache
 // Call this when Cmd+Space is detected or when modifier keys change
 static inline void InvalidateSpotlightCache(void) {
+    os_unfair_lock_lock(&_spotlightCacheLock);
     _lastSpotlightCheckTime = 0;
     _cachedFocusedPID = 0;
+    os_unfair_lock_unlock(&_spotlightCacheLock);
+}
+
+// Thread-safe helper to update Spotlight cache
+static inline void UpdateSpotlightCache(BOOL isActive, pid_t pid) {
+    os_unfair_lock_lock(&_spotlightCacheLock);
+    _cachedSpotlightActive = isActive;
+    _lastSpotlightCheckTime = mach_absolute_time();
+    if (pid > 0) {
+        _cachedFocusedPID = pid;
+    }
+    os_unfair_lock_unlock(&_spotlightCacheLock);
 }
 
 // Track external delete events (not from PHTV) which may indicate text replacement
@@ -173,6 +198,35 @@ static inline BOOL IsElementSpotlight(AXUIElementRef element) {
     return isSpotlight;
 }
 
+// Log AX API errors for debugging purposes
+// Only logs in debug builds to avoid overhead in production
+static inline void LogAXError(AXError error, const char *operation) {
+#ifdef DEBUG
+    if (error != kAXErrorSuccess) {
+        const char *errorStr = "Unknown";
+        switch (error) {
+            case kAXErrorFailure: errorStr = "Failure"; break;
+            case kAXErrorIllegalArgument: errorStr = "IllegalArgument"; break;
+            case kAXErrorInvalidUIElement: errorStr = "InvalidUIElement"; break;
+            case kAXErrorInvalidUIElementObserver: errorStr = "InvalidUIElementObserver"; break;
+            case kAXErrorCannotComplete: errorStr = "CannotComplete"; break;
+            case kAXErrorAttributeUnsupported: errorStr = "AttributeUnsupported"; break;
+            case kAXErrorActionUnsupported: errorStr = "ActionUnsupported"; break;
+            case kAXErrorNotificationUnsupported: errorStr = "NotificationUnsupported"; break;
+            case kAXErrorNotImplemented: errorStr = "NotImplemented"; break;
+            case kAXErrorNotificationAlreadyRegistered: errorStr = "NotificationAlreadyRegistered"; break;
+            case kAXErrorNotificationNotRegistered: errorStr = "NotificationNotRegistered"; break;
+            case kAXErrorAPIDisabled: errorStr = "APIDisabled"; break;
+            case kAXErrorNoValue: errorStr = "NoValue"; break;
+            case kAXErrorParameterizedAttributeUnsupported: errorStr = "ParameterizedAttributeUnsupported"; break;
+            case kAXErrorNotEnoughPrecision: errorStr = "NotEnoughPrecision"; break;
+            default: break;
+        }
+        os_log_debug(phtv_log, "[AX] %s failed: %s (code %d)", operation, errorStr, (int)error);
+    }
+#endif
+}
+
 // Check if Spotlight or similar overlay is currently active using Accessibility API
 // OPTIMIZED: Results cached for 50ms to avoid repeated AX API calls while remaining responsive
 BOOL isSpotlightActive(void) {
@@ -183,17 +237,24 @@ BOOL isSpotlightActive(void) {
     }
 
     uint64_t now = mach_absolute_time();
-    uint64_t elapsed_ms = mach_time_to_ms(now - _lastSpotlightCheckTime);
 
-    // Return cached result if recent enough (50ms cache - balanced for performance and responsiveness)
-    if (elapsed_ms < 50 && _lastSpotlightCheckTime > 0) {
-        return _cachedSpotlightActive;
+    // Thread-safe cache check
+    os_unfair_lock_lock(&_spotlightCacheLock);
+    uint64_t lastCheck = _lastSpotlightCheckTime;
+    BOOL cachedResult = _cachedSpotlightActive;
+    pid_t cachedPID = _cachedFocusedPID;
+    os_unfair_lock_unlock(&_spotlightCacheLock);
+
+    uint64_t elapsed_ms = mach_time_to_ms(now - lastCheck);
+
+    // Return cached result if recent enough
+    if (elapsed_ms < SPOTLIGHT_CACHE_DURATION_MS && lastCheck > 0) {
+        return cachedResult;
     }
 
-    _lastSpotlightCheckTime = now;
-
     // Get the system-wide focused element with multiple retries
-    AXUIElementRef systemWide = NULL;
+    // Create systemWide once to avoid unnecessary create/release overhead in retry loop
+    AXUIElementRef systemWide = AXUIElementCreateSystemWide();
     AXUIElementRef focusedElement = NULL;
     AXError error = kAXErrorFailure;
 
@@ -204,17 +265,19 @@ BOOL isSpotlightActive(void) {
             usleep(retryDelays[attempt]);
         }
 
-        systemWide = AXUIElementCreateSystemWide();
         error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement);
-        CFRelease(systemWide);
 
         if (error == kAXErrorSuccess && focusedElement != NULL) {
             break;  // Success
         }
     }
 
+    // Release systemWide after all retry attempts
+    CFRelease(systemWide);
+
     if (error != kAXErrorSuccess || focusedElement == NULL) {
-        _cachedSpotlightActive = NO;
+        LogAXError(error, "AXUIElementCopyAttributeValue(kAXFocusedUIElementAttribute)");
+        UpdateSpotlightCache(NO, 0);
         return NO;
     }
 
@@ -228,20 +291,20 @@ BOOL isSpotlightActive(void) {
     CFRelease(focusedElement);
 
     if (error != kAXErrorSuccess || focusedPID == 0) {
+        LogAXError(error, "AXUIElementGetPid");
         // If we couldn't get PID but element looks like Spotlight, trust the heuristic
         if (elementLooksLikeSpotlight) {
-            _cachedSpotlightActive = YES;
+            UpdateSpotlightCache(YES, 0);
             return YES;
         }
-        _cachedSpotlightActive = NO;
+        UpdateSpotlightCache(NO, 0);
         return NO;
     }
 
     // Quick path: if PID unchanged and we already checked, return cached
-    if (focusedPID == _cachedFocusedPID && _cachedFocusedPID > 0) {
-        return _cachedSpotlightActive;
+    if (focusedPID == cachedPID && cachedPID > 0) {
+        return cachedResult;
     }
-    _cachedFocusedPID = focusedPID;
 
     // Get the bundle ID from the PID (uses internal cache)
     NSRunningApplication *app = [NSRunningApplication runningApplicationWithProcessIdentifier:focusedPID];
@@ -250,7 +313,7 @@ BOOL isSpotlightActive(void) {
     // Check if it's Spotlight or similar
     if ([bundleId isEqualToString:@"com.apple.Spotlight"] ||
         [bundleId hasPrefix:@"com.apple.Spotlight"]) {
-        _cachedSpotlightActive = YES;
+        UpdateSpotlightCache(YES, focusedPID);
         return YES;
     }
 
@@ -260,7 +323,7 @@ BOOL isSpotlightActive(void) {
         if (proc_pidpath(focusedPID, pathBuffer, sizeof(pathBuffer)) > 0) {
             NSString *path = [NSString stringWithUTF8String:pathBuffer];
             if ([path containsString:@"Spotlight"]) {
-                _cachedSpotlightActive = YES;
+                UpdateSpotlightCache(YES, focusedPID);
                 return YES;
             }
         }
@@ -268,11 +331,11 @@ BOOL isSpotlightActive(void) {
 
     // Final fallback: trust the element heuristic if bundle ID check failed
     if (elementLooksLikeSpotlight) {
-        _cachedSpotlightActive = YES;
+        UpdateSpotlightCache(YES, focusedPID);
         return YES;
     }
 
-    _cachedSpotlightActive = NO;
+    UpdateSpotlightCache(NO, focusedPID);
     return NO;
 }
 
@@ -294,7 +357,7 @@ NSString* getBundleIdFromPID(pid_t pid) {
     
     // Initialize cache on first use
     if (__builtin_expect(_pidBundleCache == nil, 0)) {
-        _pidBundleCache = [NSMutableDictionary dictionaryWithCapacity:128];
+        _pidBundleCache = [NSMutableDictionary dictionaryWithCapacity:PID_CACHE_INITIAL_CAPACITY];
         _lastCacheCleanTime = mach_absolute_time();
     }
 
@@ -304,10 +367,10 @@ NSString* getBundleIdFromPID(pid_t pid) {
     // Check every 5 minutes and only clean if cache grows too large
     uint64_t now = mach_absolute_time();
     uint64_t elapsed_ms = mach_time_to_ms(now - _lastCacheCleanTime);
-    if (__builtin_expect(elapsed_ms > 300000, 0)) { // 5 minutes
-        // Only remove half the entries if cache exceeds 100 items
+    if (__builtin_expect(elapsed_ms > PID_CACHE_CLEAN_INTERVAL_MS, 0)) {
+        // Only remove half the entries if cache exceeds maximum size
         // This preserves hot entries better than removeAllObjects
-        if (_pidBundleCache.count > 100) {
+        if (_pidBundleCache.count > MAX_PID_CACHE_SIZE) {
             // Remove approximately half by removing every other entry
             NSArray *keys = [_pidBundleCache allKeys];
             for (NSUInteger i = 0; i < keys.count; i += 2) {
@@ -323,16 +386,14 @@ NSString* getBundleIdFromPID(pid_t pid) {
         return [cached isEqualToString:@""] ? nil : cached;
     }
     
-    // Try to get bundle ID from running applications
-    NSArray *runningApps = [[NSWorkspace sharedWorkspace] runningApplications];
-    for (NSRunningApplication *app in runningApps) {
-        if (app.processIdentifier == pid) {
-            NSString *bundleId = app.bundleIdentifier ?: @"";
-            os_unfair_lock_lock(&_pidCacheLock);
-            _pidBundleCache[pidKey] = bundleId;
-            os_unfair_lock_unlock(&_pidCacheLock);
-            return bundleId.length > 0 ? bundleId : nil;
-        }
+    // Try to get bundle ID from running application - O(1) lookup instead of O(n) iteration
+    NSRunningApplication *app = [NSRunningApplication runningApplicationWithProcessIdentifier:pid];
+    if (app) {
+        NSString *bundleId = app.bundleIdentifier ?: @"";
+        os_unfair_lock_lock(&_pidCacheLock);
+        _pidBundleCache[pidKey] = bundleId;
+        os_unfair_lock_unlock(&_pidCacheLock);
+        return bundleId.length > 0 ? bundleId : nil;
     }
     
     // Fallback: get process path and try to find bundle
@@ -665,7 +726,9 @@ extern "C" {
         NSString *newValue = [valueStr stringByReplacingCharactersInRange:NSMakeRange(start, len) withString:insertText];
 
         // Write new value
-        if (AXUIElementSetAttributeValue(focusedElement, kAXValueAttribute, (__bridge CFTypeRef)newValue) != kAXErrorSuccess) {
+        AXError writeError = AXUIElementSetAttributeValue(focusedElement, kAXValueAttribute, (__bridge CFTypeRef)newValue);
+        if (writeError != kAXErrorSuccess) {
+            LogAXError(writeError, "AXUIElementSetAttributeValue(kAXValueAttribute)");
             if (valueRef) CFRelease(valueRef);
             CFRelease(focusedElement);
             return NO;
@@ -717,10 +780,10 @@ extern "C" {
         uint64_t now = mach_absolute_time();
         pid_t targetPID = (pid_t)CGEventGetIntegerValueField(event, kCGEventTargetUnixProcessID);
 
-        // Fast path: reuse last decision if same PID and checked recently (~100ms)
+        // Fast path: reuse last decision if same PID and checked recently
         // Very short cache for immediate app-switch response
         uint64_t elapsed_ms = mach_time_to_ms(now - lastCheckTime);
-        if (__builtin_expect(targetPID > 0 && targetPID == lastPid && elapsed_ms < 100, 1)) {
+        if (__builtin_expect(targetPID > 0 && targetPID == lastPid && elapsed_ms < APP_SWITCH_CACHE_DURATION_MS, 1)) {
             return lastResult;
         }
 
@@ -923,8 +986,8 @@ extern "C" {
         pData = (vKeyHookState*)vKeyInit();
 
         // Performance optimization: Pre-allocate _syncKey vector to avoid reallocations
-        // Typical typing buffer is ~50 chars, reserve 256 for safety margin
-        _syncKey.reserve(256);
+        // Typical typing buffer is ~50 chars, reserve for safety margin
+        _syncKey.reserve(SYNC_KEY_RESERVE_SIZE);
 
         eventBackSpaceDown = CGEventCreateKeyboardEvent (myEventSource, 51, true);
         eventBackSpaceUp = CGEventCreateKeyboardEvent (myEventSource, 51, false);
@@ -1274,7 +1337,7 @@ extern "C" {
             CGEventTapPostEvent(_proxy, eventBackSpaceDown);
             CGEventTapPostEvent(_proxy, eventBackSpaceUp);
         }
-        
+
         if (IS_DOUBLE_CODE(vCodeTable)) { //VNI or Unicode Compound
             if (_syncKey.back() > 1) {
                 NSString *effectiveTarget = _phtvEffectiveTargetBundleId ?: getFocusedAppBundleId();
@@ -1304,7 +1367,25 @@ extern "C" {
             _syncKey.pop_back();
         }
     }
-    
+
+    // Consolidated helper function to send multiple backspaces with optional terminal delays
+    // This reduces code duplication across the codebase
+    void SendBackspaceSequence(int count, BOOL isTerminalApp) {
+        if (count <= 0) return;
+
+        for (int i = 0; i < count; i++) {
+            SendBackspace();
+            if (isTerminalApp) {
+                usleep(3000);  // 3ms delay for terminals to process each keystroke
+            }
+        }
+
+        // Extra settle time for terminals after all backspaces
+        if (isTerminalApp) {
+            usleep(8000);  // 8ms settle time
+        }
+    }
+
     void SendShiftAndLeftArrow() {
         CGEventRef eventVkeyDown = CGEventCreateKeyboardEvent (myEventSource, KEY_LEFT, true);
         CGEventRef eventVkeyUp = CGEventCreateKeyboardEvent (myEventSource, KEY_LEFT, false);
@@ -1507,9 +1588,7 @@ extern "C" {
             }
 
             // AX failed - fallback to synthetic events
-            for (int del = 0; del < backspaceCount; del++) {
-                SendBackspace();
-            }
+            SendBackspaceSequence(backspaceCount, NO);
 
             _newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
             _newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
@@ -1590,9 +1669,7 @@ extern "C" {
         
         //send backspace
         if (pData->backspaceCount > 0) {
-            for (int i = 0; i < pData->backspaceCount; i++) {
-                SendBackspace();
-            }
+            SendBackspaceSequence(pData->backspaceCount, NO);
         }
         //send real data - use step by step for timing sensitive apps like Spotlight
         // PERFORMANCE: Use cached bundle ID instead of querying AX API
@@ -1696,6 +1773,139 @@ extern "C" {
         return fallbackKeyCode;
     }
 
+    // Handle hotkey press (switch language or convert tool)
+    // Returns NULL if hotkey was triggered (consuming the event), otherwise returns the original event
+    static inline CGEventRef HandleHotkeyPress(CGEventType type, CGKeyCode keycode) {
+        if (type != kCGEventKeyDown) return NULL;
+
+        // Check switch language hotkey
+        if (GET_SWITCH_KEY(vSwitchKeyStatus) == keycode &&
+            checkHotKey(vSwitchKeyStatus, GET_SWITCH_KEY(vSwitchKeyStatus) != 0xFE)) {
+            switchLanguage();
+            _lastFlag = 0;
+            _hasJustUsedHotKey = true;
+            return (CGEventRef)-1;  // Special marker to indicate "consume event"
+        }
+
+        // Check convert tool hotkey
+        if (GET_SWITCH_KEY(convertToolHotKey) == keycode &&
+            checkHotKey(convertToolHotKey, GET_SWITCH_KEY(convertToolHotKey) != 0xFE)) {
+            [appDelegate onQuickConvert];
+            _lastFlag = 0;
+            _hasJustUsedHotKey = true;
+            return (CGEventRef)-1;  // Special marker to indicate "consume event"
+        }
+
+        // Only mark as used hotkey if we had modifiers pressed
+        _hasJustUsedHotKey = _lastFlag != 0;
+        return NULL;
+    }
+
+    // Check if a given key matches the pause key configuration
+    static inline BOOL IsPauseKeyPressed(CGEventFlags flags) {
+        if (!vPauseKeyEnabled || vPauseKey <= 0) return NO;
+
+        if (vPauseKey == KEY_LEFT_OPTION || vPauseKey == KEY_RIGHT_OPTION) {
+            return (flags & kCGEventFlagMaskAlternate) != 0;
+        } else if (vPauseKey == KEY_LEFT_CONTROL || vPauseKey == KEY_RIGHT_CONTROL) {
+            return (flags & kCGEventFlagMaskControl) != 0;
+        } else if (vPauseKey == KEY_LEFT_SHIFT || vPauseKey == KEY_RIGHT_SHIFT) {
+            return (flags & kCGEventFlagMaskShift) != 0;
+        } else if (vPauseKey == KEY_LEFT_COMMAND || vPauseKey == KEY_RIGHT_COMMAND) {
+            return (flags & kCGEventFlagMaskCommand) != 0;
+        } else if (vPauseKey == 63) {  // Fn key
+            return (flags & kCGEventFlagMaskSecondaryFn) != 0;
+        }
+        return NO;
+    }
+
+    // Strip pause modifier from event flags to prevent special characters
+    static inline CGEventFlags StripPauseModifier(CGEventFlags flags) {
+        if (vPauseKey == KEY_LEFT_OPTION || vPauseKey == KEY_RIGHT_OPTION) {
+            return flags & ~kCGEventFlagMaskAlternate;
+        } else if (vPauseKey == KEY_LEFT_CONTROL || vPauseKey == KEY_RIGHT_CONTROL) {
+            return flags & ~kCGEventFlagMaskControl;
+        } else if (vPauseKey == KEY_LEFT_COMMAND || vPauseKey == KEY_RIGHT_COMMAND) {
+            return flags & ~kCGEventFlagMaskCommand;
+        } else if (vPauseKey == 63) {  // Fn key
+            return flags & ~kCGEventFlagMaskSecondaryFn;
+        }
+        return flags;
+    }
+
+    // Handle pause key press - temporarily disable Vietnamese input
+    static inline void HandlePauseKeyPress(CGEventFlags flags) {
+        if (_pauseKeyPressed) return;  // Already pressed
+
+        if (IsPauseKeyPressed(flags)) {
+            // Save current language state and temporarily switch to English
+            _savedLanguageBeforePause = vLanguage;
+            if (vLanguage == 1) {
+                // Only switch if currently in Vietnamese mode
+                vLanguage = 0;  // Switch to English
+            }
+            _pauseKeyPressed = true;
+        }
+    }
+
+    // Handle pause key release - restore Vietnamese input
+    static inline void HandlePauseKeyRelease(CGEventFlags oldFlags, CGEventFlags newFlags) {
+        if (!_pauseKeyPressed) return;  // Not pressed
+
+        // Check if pause key was released
+        if (!IsPauseKeyPressed(newFlags) && IsPauseKeyPressed(oldFlags)) {
+            // Restore saved language state
+            vLanguage = _savedLanguageBeforePause;
+            _pauseKeyPressed = false;
+        }
+    }
+
+    // Handle Spotlight cache invalidation on Cmd+Space and modifier changes
+    // This ensures fast Spotlight detection
+    static inline void HandleSpotlightCacheInvalidation(CGEventType type, CGKeyCode keycode, CGEventFlags flag) {
+        // Detect Cmd+Space hotkey and invalidate cache immediately
+        if (type == kCGEventKeyDown && keycode == 49 && (flag & kCGEventFlagMaskCommand)) {
+            InvalidateSpotlightCache();
+            return;
+        }
+
+        // Track modifier flag changes to invalidate cache on significant changes
+        static CGEventFlags _lastEventFlags = 0;
+        CGEventFlags flagChangeMask = kCGEventFlagMaskCommand | kCGEventFlagMaskAlternate | kCGEventFlagMaskControl;
+        if ((type == kCGEventFlagsChanged) && ((flag ^ _lastEventFlags) & flagChangeMask)) {
+            InvalidateSpotlightCache();
+        }
+        _lastEventFlags = flag;
+    }
+
+    // Event tap health monitoring - checks tap status and recovers if needed
+    // Returns YES if tap is healthy, NO if recovery was attempted
+    static inline BOOL CheckAndRecoverEventTap(void) {
+        // Aggressive inline health check every 25 events for near-instant recovery
+        // Smart skip: after 1000 healthy checks, reduce frequency to save CPU
+        static NSUInteger eventCounter = 0;
+        static NSUInteger recoveryCounter = 0;
+        static NSUInteger healthyCounter = 0;
+
+        NSUInteger checkInterval = (healthyCounter > 1000) ? 100 : 25;
+
+        if (__builtin_expect(++eventCounter % checkInterval == 0, 0)) {
+            if (__builtin_expect(![PHTVManager isEventTapEnabled], 0)) {
+                healthyCounter = 0; // Reset healthy counter on failure
+                // Throttle log: only log every 10th recovery to reduce overhead
+                if (++recoveryCounter % 10 == 1) {
+                    os_log_error(phtv_log, "[EventTap] Detected disabled tap — recovering (occurrence #%lu)", (unsigned long)recoveryCounter);
+                }
+                [PHTVManager ensureEventTapAlive];
+                return NO;
+            } else {
+                // Tap is healthy, increment counter
+                if (__builtin_expect(healthyCounter < 2000, 1)) healthyCounter++;
+            }
+        }
+        return YES;
+    }
+
     /**
      * MAIN HOOK entry, very important function.
      * MAIN Callback.
@@ -1717,27 +1927,8 @@ extern "C" {
         // REMOVED: Permission checking in callback - causes kernel deadlock
         // Permission is now checked ONLY via test event tap creation in timer (safe approach)
 
-        // Aggressive inline health check every 25 events for near-instant recovery
-        // Smart skip: after 1000 healthy checks, reduce frequency to save CPU
-        static NSUInteger eventCounter = 0;
-        static NSUInteger recoveryCounter = 0;
-        static NSUInteger healthyCounter = 0;
-
-        NSUInteger checkInterval = (healthyCounter > 1000) ? 100 : 25;
-
-        if (__builtin_expect(++eventCounter % checkInterval == 0, 0)) {
-            if (__builtin_expect(![PHTVManager isEventTapEnabled], 0)) {
-                healthyCounter = 0; // Reset healthy counter on failure
-                // Throttle log: only log every 10th recovery to reduce overhead
-                if (++recoveryCounter % 10 == 1) {
-                    os_log_error(phtv_log, "[EventTap] Detected disabled tap — recovering (occurrence #%lu)", (unsigned long)recoveryCounter);
-                }
-                [PHTVManager ensureEventTapAlive];
-            } else {
-                // Tap is healthy, increment counter
-                if (__builtin_expect(healthyCounter < 2000, 1)) healthyCounter++;
-            }
-        }
+        // Perform periodic health check and recovery
+        CheckAndRecoverEventTap();
 
         //dont handle my event
         if (CGEventGetIntegerValueField(event, kCGEventSourceStateID) == CGEventSourceGetSourceStateID(myEventSource)) {
@@ -1773,37 +1964,12 @@ extern "C" {
 #endif
         }
 
-        // SPOTLIGHT OPTIMIZATION: Detect Cmd+Space hotkey and invalidate cache immediately
-        // This ensures PHTV detects Spotlight opening as fast as possible
-        if (type == kCGEventKeyDown && _keycode == 49 && (_flag & kCGEventFlagMaskCommand)) {
-            // Cmd+Space detected - invalidate Spotlight cache to force fresh detection
-            InvalidateSpotlightCache();
-        }
-
-        // AGGRESSIVE CACHE INVALIDATION: When modifier flags change significantly, invalidate cache
-        // This catches cases where Spotlight opens/closes with different hotkeys or window switches
-        CGEventFlags flagChangeMask = kCGEventFlagMaskCommand | kCGEventFlagMaskAlternate | kCGEventFlagMaskControl;
-        if ((type == kCGEventFlagsChanged) && ((_flag ^ _lastEventFlags) & flagChangeMask)) {
-            InvalidateSpotlightCache();
-        }
-        _lastEventFlags = _flag;
+        // Handle Spotlight detection optimization
+        HandleSpotlightCacheInvalidation(type, _keycode, _flag);
 
         // If pause key is being held, strip pause modifier from events to prevent special characters
         if (_pauseKeyPressed && (type == kCGEventKeyDown || type == kCGEventKeyUp)) {
-            CGEventFlags newFlags = _flag;
-
-            // Remove pause modifier flag based on configured pause key
-            if (vPauseKey == KEY_LEFT_OPTION || vPauseKey == KEY_RIGHT_OPTION) {
-                newFlags &= ~kCGEventFlagMaskAlternate;
-            } else if (vPauseKey == KEY_LEFT_CONTROL || vPauseKey == KEY_RIGHT_CONTROL) {
-                newFlags &= ~kCGEventFlagMaskControl;
-            } else if (vPauseKey == KEY_LEFT_COMMAND || vPauseKey == KEY_RIGHT_COMMAND) {
-                newFlags &= ~kCGEventFlagMaskCommand;
-            } else if (vPauseKey == 63) {  // Fn key
-                newFlags &= ~kCGEventFlagMaskSecondaryFn;
-            }
-
-            // Apply modified flags to event
+            CGEventFlags newFlags = StripPauseModifier(_flag);
             CGEventSetFlags(event, newFlags);
             _flag = newFlags;  // Update local flag as well
         }
@@ -1814,23 +1980,12 @@ extern "C" {
         }
         
         //switch language shortcut; convert hotkey
+        CGEventRef hotkeyResult = HandleHotkeyPress(type, _keycode);
+        if (hotkeyResult == (CGEventRef)-1) {
+            return NULL;  // Hotkey was triggered, consume event
+        }
+
         if (type == kCGEventKeyDown) {
-            // Check hotkey match immediately - don't reset _lastFlag for non-hotkey presses
-            // This keeps modifier state and makes hotkey more responsive
-            if (GET_SWITCH_KEY(vSwitchKeyStatus) == _keycode && checkHotKey(vSwitchKeyStatus, GET_SWITCH_KEY(vSwitchKeyStatus) != 0xFE)){
-                switchLanguage();
-                _lastFlag = 0;
-                _hasJustUsedHotKey = true;
-                return NULL;
-            }
-            if (GET_SWITCH_KEY(convertToolHotKey) == _keycode && checkHotKey(convertToolHotKey, GET_SWITCH_KEY(convertToolHotKey) != 0xFE)){
-                [appDelegate onQuickConvert];
-                _lastFlag = 0;
-                _hasJustUsedHotKey = true;
-                return NULL;
-            }
-            // Only mark as used hotkey if we had modifiers pressed
-            _hasJustUsedHotKey = _lastFlag != 0;
             // Track if any key is pressed while restore modifier is held
             // Only track if custom restore key is actually set (Option or Control)
             if (vRestoreOnEscape && vCustomEscapeKey > 0 && _restoreModifierPressed) {
@@ -1854,32 +2009,7 @@ extern "C" {
                 }
 
                 // Check if pause key is being pressed - temporarily disable Vietnamese
-                if (vPauseKeyEnabled && vPauseKey > 0 && !_pauseKeyPressed) {
-                    bool pauseKeyPressed = false;
-
-                    // Check common modifier keys
-                    if (vPauseKey == KEY_LEFT_OPTION || vPauseKey == KEY_RIGHT_OPTION) {
-                        pauseKeyPressed = (_flag & kCGEventFlagMaskAlternate);
-                    } else if (vPauseKey == KEY_LEFT_CONTROL || vPauseKey == KEY_RIGHT_CONTROL) {
-                        pauseKeyPressed = (_flag & kCGEventFlagMaskControl);
-                    } else if (vPauseKey == KEY_LEFT_SHIFT || vPauseKey == KEY_RIGHT_SHIFT) {
-                        pauseKeyPressed = (_flag & kCGEventFlagMaskShift);
-                    } else if (vPauseKey == KEY_LEFT_COMMAND || vPauseKey == KEY_RIGHT_COMMAND) {
-                        pauseKeyPressed = (_flag & kCGEventFlagMaskCommand);
-                    } else if (vPauseKey == 63) {  // Fn key
-                        pauseKeyPressed = (_flag & kCGEventFlagMaskSecondaryFn);
-                    }
-
-                    if (pauseKeyPressed) {
-                        // Save current language state and temporarily switch to English
-                        _savedLanguageBeforePause = vLanguage;
-                        if (vLanguage == 1) {
-                            // Only switch if currently in Vietnamese mode
-                            vLanguage = 0;  // Switch to English
-                        }
-                        _pauseKeyPressed = true;
-                    }
-                }
+                HandlePauseKeyPress(_flag);
             } else if (_lastFlag > _flag)  {
                 // Releasing modifiers - check for restore modifier key first
                 if (vRestoreOnEscape && _restoreModifierPressed && !_keyPressedWithRestoreModifier) {
@@ -1898,16 +2028,7 @@ extern "C" {
 
                             // Send backspaces to delete Vietnamese characters
                             if (pData->backspaceCount > 0 && pData->backspaceCount < MAX_BUFF) {
-                                for (int i = 0; i < pData->backspaceCount; i++) {
-                                    SendBackspace();
-                                    if (isTerminal) {
-                                        usleep(3000);  // 3ms delay for terminals
-                                    }
-                                }
-                                // Extra settle time for terminals after all backspaces
-                                if (isTerminal) {
-                                    usleep(8000);  // 8ms settle time
-                                }
+                                SendBackspaceSequence(pData->backspaceCount, isTerminal);
                             }
 
                             // Send the raw ASCII characters
@@ -1943,28 +2064,7 @@ extern "C" {
                 }
 
                 // Check if pause key is being released - restore Vietnamese mode
-                if (_pauseKeyPressed) {
-                    bool pauseKeyReleased = false;
-
-                    // Check which key was released
-                    if (vPauseKey == KEY_LEFT_OPTION || vPauseKey == KEY_RIGHT_OPTION) {
-                        pauseKeyReleased = (_lastFlag & kCGEventFlagMaskAlternate) && !(_flag & kCGEventFlagMaskAlternate);
-                    } else if (vPauseKey == KEY_LEFT_CONTROL || vPauseKey == KEY_RIGHT_CONTROL) {
-                        pauseKeyReleased = (_lastFlag & kCGEventFlagMaskControl) && !(_flag & kCGEventFlagMaskControl);
-                    } else if (vPauseKey == KEY_LEFT_SHIFT || vPauseKey == KEY_RIGHT_SHIFT) {
-                        pauseKeyReleased = (_lastFlag & kCGEventFlagMaskShift) && !(_flag & kCGEventFlagMaskShift);
-                    } else if (vPauseKey == KEY_LEFT_COMMAND || vPauseKey == KEY_RIGHT_COMMAND) {
-                        pauseKeyReleased = (_lastFlag & kCGEventFlagMaskCommand) && !(_flag & kCGEventFlagMaskCommand);
-                    } else if (vPauseKey == 63) {  // Fn key
-                        pauseKeyReleased = (_lastFlag & kCGEventFlagMaskSecondaryFn) && !(_flag & kCGEventFlagMaskSecondaryFn);
-                    }
-
-                    if (pauseKeyReleased) {
-                        // Restore previous language state
-                        vLanguage = _savedLanguageBeforePause;
-                        _pauseKeyPressed = false;
-                    }
-                }
+                HandlePauseKeyRelease(_lastFlag, _flag);
 
                 //check switch
                 if (checkHotKey(vSwitchKeyStatus, GET_SWITCH_KEY(vSwitchKeyStatus) != 0xFE)) {
@@ -2047,7 +2147,11 @@ extern "C" {
                     if (languages != NULL && CFArrayGetCount(languages) > 0) {
                         // MEMORY BUG FIX: CFArrayGetValueAtIndex returns borrowed reference - do NOT CFRelease
                         CFStringRef langRef = (CFStringRef)CFArrayGetValueAtIndex(languages, 0);
-                        cachedLanguage = [(__bridge NSString *)langRef copy];  // Copy to retain
+                        NSString *newLanguage = [(__bridge NSString *)langRef copy];
+                        // Explicitly nil out old value first (ARC will release it), then assign new value
+                        // This ensures proper cleanup of static variable across multiple updates
+                        cachedLanguage = nil;
+                        cachedLanguage = newLanguage;
                     }
                     CFRelease(isource);  // Only release isource (we copied it)
                     lastLanguageCheckTime = now;
@@ -2300,9 +2404,7 @@ extern "C" {
                         PHTVSpotlightDebugLog([NSString stringWithFormat:@"deferBackspace=%d newCharCount=%d", (int)pData->backspaceCount, (int)pData->newCharCount]);
 #endif
                     } else {
-                        for (_i = 0; _i < pData->backspaceCount; _i++) {
-                            SendBackspace();
-                        }
+                        SendBackspaceSequence(pData->backspaceCount, NO);
                     }
                 }
                 
