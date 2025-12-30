@@ -1729,19 +1729,93 @@ extern "C" {
     }
     
     void handleMacro() {
+        // PERFORMANCE: Use cached bundle ID instead of querying AX API
+        NSString *effectiveTarget = _phtvEffectiveTargetBundleId ?: getFocusedAppBundleId();
+        BOOL isSpotlightLike = [effectiveTarget hasPrefix:@"com.apple.Spotlight"] ||
+                               [effectiveTarget isEqualToString:@"com.apple.systemuiserver"];
+
+        #ifdef DEBUG
+        NSLog(@"[Macro] handleMacro: target='%@', isSpotlight=%d, backspaceCount=%d, macroSize=%zu",
+              effectiveTarget, isSpotlightLike, (int)pData->backspaceCount, pData->macroData.size());
+        #endif
+
+        // CRITICAL FIX: Spotlight requires AX API for macro replacement
+        // Synthetic backspace events don't work reliably in Spotlight
+        if (isSpotlightLike) {
+            // Convert macro data to NSString
+            // Macro data can contain: PURE_CHARACTER_MASK, CHAR_CODE_MASK (Vietnamese), or normal keycodes
+            NSMutableString *macroString = [NSMutableString string];
+            for (int i = 0; i < pData->macroData.size(); i++) {
+                Uint32 data = pData->macroData[i];
+                Uint16 ch;
+
+                if (data & PURE_CHARACTER_MASK) {
+                    // Pure Unicode character (special chars) - use directly, remove CAPS_MASK
+                    ch = data & ~CAPS_MASK;
+                    #ifdef DEBUG
+                    NSLog(@"[Macro] [%d] PURE_CHAR: 0x%X → '%C'", i, data, (unichar)ch);
+                    #endif
+                } else if (!(data & CHAR_CODE_MASK)) {
+                    // Normal keycode (a-z, 0-9, etc.) - convert using keyCodeToCharacter()
+                    ch = keyCodeToCharacter(data);
+                    if (ch == 0) {
+                        // Keycode cannot be converted (e.g., function keys)
+                        #ifdef DEBUG
+                        NSLog(@"[Macro] [%d] KEYCODE: 0x%X → SKIP (no conversion)", i, data);
+                        #endif
+                        continue; // Skip this keycode
+                    }
+                    #ifdef DEBUG
+                    NSLog(@"[Macro] [%d] KEYCODE: 0x%X → '%C'", i, data, (unichar)ch);
+                    #endif
+                } else {
+                    // CHAR_CODE_MASK (Vietnamese diacritics)
+                    if (vCodeTable == 0) {
+                        // Unicode mode - use directly (ạ, ù, ế, etc.)
+                        ch = data & 0xFFFF;
+                        #ifdef DEBUG
+                        NSLog(@"[Macro] [%d] CHAR_CODE (Unicode): 0x%X → '%C'", i, data, (unichar)ch);
+                        #endif
+                    } else {
+                        // VNI/TCVN mode - extract low byte
+                        ch = LOBYTE(data);
+                        #ifdef DEBUG
+                        NSLog(@"[Macro] [%d] CHAR_CODE (VNI/TCVN): 0x%X → '%C'", i, data, (unichar)ch);
+                        #endif
+                        // High byte handling would go here for VNI if needed
+                    }
+                }
+                [macroString appendFormat:@"%C", (unichar)ch];
+            }
+
+            // Try AX API first - atomic and most reliable for Spotlight
+            BOOL axSucceeded = ReplaceFocusedTextViaAX(pData->backspaceCount, macroString);
+            if (axSucceeded) {
+                #ifdef DEBUG
+                NSLog(@"[Macro] Spotlight: AX API succeeded, macro='%@'", macroString);
+                #endif
+                usleep(5000); // 5ms delay for Spotlight
+                return;
+            }
+
+            #ifdef DEBUG
+            NSLog(@"[Macro] Spotlight: AX API failed, falling back to synthetic events");
+            #endif
+            // AX failed - fallback to synthetic events below
+        }
+
         //fix autocomplete
         if (vFixRecommendBrowser) {
             SendEmptyCharacter();
             pData->backspaceCount++;
         }
-        
+
         //send backspace
         if (pData->backspaceCount > 0) {
             SendBackspaceSequence(pData->backspaceCount, NO);
         }
+
         //send real data - use step by step for timing sensitive apps like Spotlight
-        // PERFORMANCE: Use cached bundle ID instead of querying AX API
-        NSString *effectiveTarget = _phtvEffectiveTargetBundleId ?: getFocusedAppBundleId();
         BOOL useStepByStep = vSendKeyStepByStep || needsStepByStep(effectiveTarget);
         if (!useStepByStep) {
             SendNewCharString(true);
@@ -1754,7 +1828,11 @@ extern "C" {
                 }
             }
         }
-        SendKeyCode(_keycode | (_flag & kCGEventFlagMaskShift ? CAPS_MASK : 0));
+
+        // Send trigger key for non-Spotlight apps
+        if (!isSpotlightLike) {
+            SendKeyCode(_keycode | (_flag & kCGEventFlagMaskShift ? CAPS_MASK : 0));
+        }
     }
 
     // Convert character string to QWERTY keycode
@@ -2334,6 +2412,22 @@ extern "C" {
             if (_keycode == KEY_SPACE) {
                 NSLog(@"[TextReplacement] Engine result for SPACE: code=%d, extCode=%d, backspace=%d, newChar=%d",
                       pData->code, pData->extCode, pData->backspaceCount, pData->newCharCount);
+            }
+
+            // AUTO ENGLISH DEBUG LOGGING
+            // Log when Auto English should trigger (extCode=5)
+            if (pData->extCode == 5) {
+                if (pData->code == vRestore || pData->code == vRestoreAndStartNewSession) {
+                    NSLog(@"[AutoEnglish] ✓ RESTORE TRIGGERED: code=%d, backspace=%d, newChar=%d, keycode=%d (0x%X)",
+                          pData->code, (int)pData->backspaceCount, (int)pData->newCharCount, _keycode, _keycode);
+                } else {
+                    NSLog(@"[AutoEnglish] ⚠️ WARNING: extCode=5 but code=%d (not restore!)", pData->code);
+                }
+            }
+            // Log when Auto English might have failed (SPACE key with no restore)
+            else if (_keycode == KEY_SPACE && pData->code == vDoNothing) {
+                NSLog(@"[AutoEnglish] ✗ NO RESTORE on SPACE: code=%d, extCode=%d",
+                      pData->code, pData->extCode);
             }
 #endif
 
