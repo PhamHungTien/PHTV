@@ -597,13 +597,11 @@ extern "C" {
                                                             PHTV_BUNDLE]];  // PHTV itself - SwiftUI TextField needs HID tap posting
 
     // Apps that need precomposed Unicode but should use normal batched sending (not AX API)
-    // These are Electron/web apps or apps with search boxes that don't support AX text replacement
-    NSSet* _precomposedBatchedAppSet = [NSSet setWithArray:@[@"net.whatsapp.WhatsApp",
-                                                              // Microsoft Office apps - search boxes need precomposed Unicode
-                                                              @"com.microsoft.Word",
-                                                              @"com.microsoft.Excel",
-                                                              @"com.microsoft.Powerpoint",
-                                                              @"com.microsoft.Outlook"]];
+    // These are Electron/web apps that don't support AX text replacement
+    // NOTE: Microsoft Office apps REMOVED - they support Vietnamese compound Unicode properly
+    // The search boxes work fine with normal Vietnamese typing (tested with Word/Excel/PowerPoint/Outlook)
+    // Forcing precomposed Unicode was preventing Vietnamese input in search boxes
+    NSSet* _precomposedBatchedAppSet = [NSSet setWithArray:@[@"net.whatsapp.WhatsApp"]];
 
     //app which needs step by step key sending (timing sensitive apps) - Using NSSet for O(1) lookup performance
     NSSet* _stepByStepAppSet = [NSSet setWithArray:@[// Commented out for testing Vietnamese input:
