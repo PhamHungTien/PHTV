@@ -2460,7 +2460,7 @@ extern "C" {
                               ((pData->code == vWillProcess || pData->code == vRestore) &&
                                pData->backspaceCount > 0 &&
                                pData->backspaceCount == pData->newCharCount &&
-                               pData->backspaceCount <= 4))) {
+                               pData->backspaceCount <= 10))) {  // Expanded from 4 to 10 to cover longer replacements
                         // Text replacement detected
                         skipProcessing = YES;
                         NSLog(@"[PHTV TextReplacement] ✅ DETECTED - Skipping processing (code=%d, backspace=%d, newChar=%d)",

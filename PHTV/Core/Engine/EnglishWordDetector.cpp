@@ -49,8 +49,9 @@ static uint32_t engNodeCount = 0;
 static uint32_t vieNodeCount = 0;
 static size_t engWordCount = 0;
 static size_t vieWordCount = 0;
-static bool engInit = false;
-static bool vieInit = false;
+// Thread-safe initialization flags with volatile to prevent compiler optimization
+static volatile bool engInit = false;
+static volatile bool vieInit = false;
 
 // Memory mapped file data
 static void* engMmap = nullptr;
