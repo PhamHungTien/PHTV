@@ -18,6 +18,7 @@ struct MacroEditorView: View {
     @State private var showError = false
     @State private var selectedCategoryId: UUID?
     @State private var snippetType: SnippetType
+    @State private var conflicts: [(MacroItem, ConflictType)] = []  // MACRO INTELLIGENCE
 
     // Edit mode support
     let editingMacro: MacroItem?
@@ -61,6 +62,44 @@ struct MacroEditorView: View {
                     TextField("Ví dụ: tvn (Việt Nam)", text: $macroName)
                         .settingsTextField()
                         .textFieldStyle(.roundedBorder)
+                        .onChange(of: macroName) { _ in
+                            updateConflicts()
+                        }
+                }
+
+                // MACRO INTELLIGENCE: Conflict warnings
+                if !conflicts.isEmpty {
+                    Section {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ForEach(conflicts, id: \.0.id) { conflict in
+                                HStack(spacing: 8) {
+                                    Image(systemName: conflict.1.icon)
+                                        .foregroundStyle(conflictColor(conflict.1))
+                                        .font(.system(size: 14))
+
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(conflictMessage(conflict))
+                                            .font(.caption)
+                                            .foregroundStyle(.primary)
+
+                                        Text("'\(conflict.0.shortcut)' → '\(conflict.0.expansion)'")
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(1)
+                                    }
+                                }
+                                .padding(.vertical, 4)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    } header: {
+                        HStack {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.orange)
+                            Text("Cảnh báo xung đột")
+                        }
+                        .font(.caption)
+                    }
                 }
 
                 Section("Loại nội dung") {
@@ -174,6 +213,10 @@ struct MacroEditorView: View {
             Button("OK") {}
         } message: {
             Text(errorMessage)
+        }
+        .onAppear {
+            // MACRO INTELLIGENCE: Check conflicts when opening editor
+            updateConflicts()
         }
     }
 
@@ -294,6 +337,55 @@ struct MacroEditorView: View {
             return macros
         }
         return []
+    }
+
+    // MARK: - MACRO INTELLIGENCE: Conflict Detection
+
+    private func updateConflicts() {
+        guard !macroName.trimmingCharacters(in: .whitespaces).isEmpty else {
+            conflicts = []
+            return
+        }
+
+        let trimmedName = macroName.trimmingCharacters(in: .whitespaces)
+        let allMacros = loadMacros()
+
+        // Create a temporary macro to check conflicts
+        let tempMacro = MacroItem(
+            shortcut: trimmedName,
+            expansion: macroCode,
+            categoryId: selectedCategoryId,
+            snippetType: snippetType
+        )
+
+        // Find conflicts, excluding the macro being edited
+        conflicts = tempMacro.findConflicts(in: allMacros)
+            .filter { conflict in
+                // Exclude self when editing
+                if let editingMacro = editingMacro {
+                    return conflict.0.id != editingMacro.id
+                }
+                return true
+            }
+    }
+
+    private func conflictColor(_ type: ConflictType) -> Color {
+        switch type {
+        case .exactDuplicate: return .red
+        case .thisIsPrefix: return .orange
+        case .otherIsPrefix: return .yellow
+        }
+    }
+
+    private func conflictMessage(_ conflict: (MacroItem, ConflictType)) -> String {
+        switch conflict.1 {
+        case .exactDuplicate:
+            return "Trùng lặp hoàn toàn"
+        case .thisIsPrefix:
+            return "Gõ tắt này là tiền tố của '\(conflict.0.shortcut)'"
+        case .otherIsPrefix:
+            return "'\(conflict.0.shortcut)' là tiền tố của gõ tắt này"
+        }
     }
 }
 
