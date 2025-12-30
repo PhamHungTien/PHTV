@@ -308,34 +308,9 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
         return true; // User explicitly marked as English - restore
     }
 
-    // PRIORITY 3: Common English words that are loanwords in Vietnamese
-    // These should ALWAYS be treated as English to avoid conflicts
-    // NOTE: Math functions (cos, sin, tan, log) REMOVED - they conflict with Telex Vietnamese
-    //       e.g., "cos" is Telex input for "có" (very common Vietnamese word)
-    static const std::unordered_set<std::string> englishPriorityWords = {
-        // Very common English words that are also loanwords
-        "ok", "test", "file", "video", "audio", "email", "internet", "web",
-        "app", "mobile", "online", "code", "data", "software", "hardware",
-        "server", "client", "admin", "user", "login", "logout", "password",
-        "chat", "message", "post", "blog", "site", "link", "click", "download",
-        "upload", "update", "delete", "save", "edit", "copy", "paste", "cut",
-        "print", "scan", "search", "filter", "sort", "view", "show", "hide",
-        "start", "stop", "play", "pause", "next", "back", "home", "help",
-        "info", "about", "contact", "support", "faq", "news", "event", "photo",
-        "max", "min", "sum", "avg",  // Common programming keywords (not math functions)
-    };
-
-    if (englishPriorityWords.count(word)) {
-        #ifdef DEBUG
-        fprintf(stderr, "[AutoEnglish] RESTORE: '%s' is high-priority English word (overrides Vietnamese)\n", word.c_str()); fflush(stderr);
-        #endif
-        // Double-check it's actually in English dictionary before restoring
-        if (searchBinaryTrie(engNodes, idx, stateIndex)) {
-            return true;
-        }
-    }
-
-    // PRIORITY 4: Check built-in Vietnamese dictionary
+    // PRIORITY 3: Check built-in Vietnamese dictionary FIRST
+    // This prevents Telex patterns from being incorrectly restored as English
+    // Examples: "cos" → "có", "max" → "mã", etc.
     if (vieInit && vieNodes && searchBinaryTrie(vieNodes, idx, stateIndex)) {
         #ifdef DEBUG
         fprintf(stderr, "[AutoEnglish] SKIP: '%s' found in Vietnamese dictionary\n", word.c_str()); fflush(stderr);
@@ -343,7 +318,7 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
         return false; // It's a Vietnamese word - do NOT restore
     }
 
-    // PRIORITY 5: Check built-in English dictionary
+    // PRIORITY 4: Check built-in English dictionary (only if NOT in Vietnamese)
     bool isEnglish = searchBinaryTrie(engNodes, idx, stateIndex);
     #ifdef DEBUG
     if (isEnglish) {
