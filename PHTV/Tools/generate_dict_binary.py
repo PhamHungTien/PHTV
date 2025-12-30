@@ -197,6 +197,21 @@ def build_english_dictionary(resources_dir):
 
     words = set()
 
+    # Blacklist: Vietnamese abbreviations that should NOT be in English dictionary
+    # These are common Vietnamese texting shortcuts that conflict with Text Replacement
+    blacklist = {
+        'dc',    # được (Vietnamese)
+        'ko',    # không (Vietnamese)
+        'k',     # không (Vietnamese)
+        'dc',    # được (Vietnamese - texting)
+        'dk',    # được không (Vietnamese - texting)
+        'cx',    # cũng (Vietnamese - texting)
+        'nx',    # nữa (Vietnamese - texting)
+        'vs',    # với (Vietnamese - texting)
+        'ms',    # mới (Vietnamese - texting)
+        'cs',    # chỉ (Vietnamese - texting)
+    }
+
     for url, limit in urls_priority:
         if download_file(url, temp_file):
             count = 0
@@ -204,7 +219,7 @@ def build_english_dictionary(resources_dir):
                 for line in f:
                     word = line.strip().lower()
                     if word and 2 <= len(word) <= 20:  # Limit word length
-                        if all(c.isalpha() and c.isascii() for c in word):
+                        if word not in blacklist and all(c.isalpha() and c.isascii() for c in word):
                             words.add(word)
                             count += 1
                             if count >= limit:
@@ -218,7 +233,7 @@ def build_english_dictionary(resources_dir):
             for line in f:
                 word = line.strip().lower()
                 if word and 2 <= len(word) <= 20:
-                    if all(c.isalpha() and c.isascii() for c in word):
+                    if word not in blacklist and all(c.isalpha() and c.isascii() for c in word):
                         words.add(word)
         print(f"  Added local words, total: {len(words):,}")
 
