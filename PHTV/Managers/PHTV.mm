@@ -2514,6 +2514,11 @@ extern "C" {
                     // Method 1: External DELETE detected (arrow key selection)
                     if (_externalDeleteCount > 0 && _lastExternalDeleteTime != 0) {
 
+                    // CRITICAL FIX: Exclude Auto English from Text Replacement detection
+                    // Auto English uses extCode=5 and vRestoreAndStartNewSession
+                    // Without this exclusion, Auto English restore gets skipped!
+                    if (pData->extCode != 5 && pData->code != vRestoreAndStartNewSession) {
+
                     // Check how long ago the delete happened
                     dispatch_once(&timebase_init_token, ^{
                         mach_timebase_info(&timebase_info);
@@ -2542,7 +2547,8 @@ extern "C" {
                         _externalDeleteDetected = NO;
                         _lastExternalDeleteTime = 0;
                     }
-                    }
+                    }  // End of Auto English exclusion check
+                    }  // End of _externalDeleteCount check
 
                     // Method 2: Mouse click detection (FALLBACK)
                     // When user clicks with mouse, macOS does NOT send DELETE events via CGEventTap
