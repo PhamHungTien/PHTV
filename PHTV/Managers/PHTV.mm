@@ -2452,12 +2452,13 @@ extern "C" {
                     // When user clicks with mouse, macOS does NOT send DELETE events via CGEventTap
                     // TWO detection patterns:
                     // 2a. Significant char jump: newChar > backspace*2 (e.g., "ko"→"không": 5>4)
-                    // 2b. Suspicious restore: (code=vWillProcess OR vRestore) + backspace==newChar + short length
-                    //     (macOS already replaced text, engine doesn't know, thinks needs restore)
-                    //     Example: "ko"→"không" (macOS), engine sees "ko" buffer, Auto English restore triggers vRestore
+                    // 2b. Suspicious WillProcess: code=vWillProcess + backspace==newChar + short length
+                    //     (macOS already replaced text, engine doesn't know, thinks needs process)
+                    //     Example: "ko"→"không" (macOS), engine sees "ko" buffer, generates vWillProcess
+                    //     NOTE: Do NOT include vRestore here - that's intentional Auto English restore!
                     else if (_externalDeleteCount == 0 &&
                              (pData->newCharCount > pData->backspaceCount * 2 ||
-                              ((pData->code == vWillProcess || pData->code == vRestore) &&
+                              (pData->code == vWillProcess &&  // ONLY vWillProcess - vRestore is Auto English!
                                pData->backspaceCount > 0 &&
                                pData->backspaceCount == pData->newCharCount &&
                                pData->backspaceCount <= 10))) {  // Expanded from 4 to 10 to cover longer replacements
