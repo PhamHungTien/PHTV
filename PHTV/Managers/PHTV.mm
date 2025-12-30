@@ -335,18 +335,6 @@ BOOL isSpotlightActive(void) {
         return YES;
     }
 
-    // CRITICAL FIX: Microsoft Office template search boxes need Spotlight-like handling
-    // Check if element is a search field (AXSearchField/AXTextField with Search subrole)
-    // This covers template gallery search boxes in Word/Excel/PowerPoint/Outlook
-    if (elementLooksLikeSpotlight &&
-        ([bundleId isEqualToString:@"com.microsoft.Word"] ||
-         [bundleId isEqualToString:@"com.microsoft.Excel"] ||
-         [bundleId isEqualToString:@"com.microsoft.Powerpoint"] ||
-         [bundleId isEqualToString:@"com.microsoft.Outlook"])) {
-        UpdateSpotlightCache(YES, focusedPID);
-        return YES;
-    }
-
     // Also check by process path for system processes without bundle ID
     if (bundleId == nil) {
         char pathBuffer[PROC_PIDPATHINFO_MAXSIZE];
@@ -606,13 +594,17 @@ extern "C" {
     // Note: WhatsApp removed - it needs precomposed but NOT Spotlight-style AX/per-char handling
     NSSet* _forcePrecomposedAppSet = [NSSet setWithArray:@[@"com.apple.Spotlight",
                                                             @"com.apple.systemuiserver",  // Spotlight runs under SystemUIServer
+                                                            @"com.microsoft.Word",        // Word template search needs precomposed
+                                                            @"com.microsoft.Excel",       // Excel template search needs precomposed
+                                                            @"com.microsoft.Powerpoint",  // PowerPoint template search needs precomposed
+                                                            @"com.microsoft.PowerPoint",  // PowerPoint (alternate bundle ID)
+                                                            @"com.microsoft.Outlook",     // Outlook template search needs precomposed
                                                             PHTV_BUNDLE]];  // PHTV itself - SwiftUI TextField needs HID tap posting
 
     // Apps that need precomposed Unicode but should use normal batched sending (not AX API)
     // These are Electron/web apps that don't support AX text replacement
-    // NOTE: Microsoft Office apps REMOVED - they support Vietnamese compound Unicode properly
-    // The search boxes work fine with normal Vietnamese typing (tested with Word/Excel/PowerPoint/Outlook)
-    // Forcing precomposed Unicode was preventing Vietnamese input in search boxes
+    // NOTE: Microsoft Office apps MOVED to _forcePrecomposedAppSet
+    // Template search boxes need precomposed Unicode with Spotlight-like handling (AX API)
     NSSet* _precomposedBatchedAppSet = [NSSet setWithArray:@[@"net.whatsapp.WhatsApp"]];
 
     //app which needs step by step key sending (timing sensitive apps) - Using NSSet for O(1) lookup performance
