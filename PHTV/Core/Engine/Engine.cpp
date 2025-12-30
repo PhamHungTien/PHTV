@@ -1440,6 +1440,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
                 //                New char count = English word length (_stateIndex)
                 hBPC = _index;
                 hNCC = _stateIndex;
+                hExt = 5;  // Signal: This is Auto English restore (not Text Replacement)
                 for (i = 0; i < _stateIndex; i++) {
                     TypingWord[i] = KeyStates[i];
                     hData[_stateIndex - 1 - i] = KeyStates[i];
@@ -1530,6 +1531,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             //                New char count = English word length (_stateIndex)
             hBPC = _index;
             hNCC = _stateIndex;
+            hExt = 5;  // Signal: This is Auto English restore (not Text Replacement)
             for (i = 0; i < _stateIndex; i++) {
                 TypingWord[i] = KeyStates[i];
                 hData[_stateIndex - 1 - i] = KeyStates[i];

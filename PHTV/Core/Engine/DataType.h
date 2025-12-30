@@ -71,6 +71,7 @@ struct vKeyHookState {
      * 2: Delete key
      * 3: Normal key
      * 4: Should not send empty character
+     * 5: Auto English restore (to distinguish from Text Replacement)
      */
     Byte extCode;
     
