@@ -1420,10 +1420,12 @@ void vKeyHandleEvent(const vKeyEvent& event,
             #endif
         } else if (vAutoRestoreEnglishWord && isWordBreak(event, state, data)) {
             #ifdef DEBUG
-            fprintf(stderr, "[AutoEnglish] Word break detected: _stateIndex=%d, _index=%d\n", _stateIndex, _index);
+            fprintf(stderr, "[AutoEnglish] WORD BREAK detected: _stateIndex=%d, _index=%d, data=0x%X\n", _stateIndex, _index, data);
             fflush(stderr);
             #endif
-            if (_stateIndex > 1 && _index > 0 && checkIfEnglishWord(KeyStates, _stateIndex)) {
+            // IMPORTANT: Check _stateIndex > 1 (at least 2 chars) to avoid false positives with single chars
+            // But DO NOT check _index > 0 because _index might be 0 after session reset while _stateIndex still has data
+            if (_stateIndex > 1 && checkIfEnglishWord(KeyStates, _stateIndex)) {
                 // Auto restore English word feature
                 // checkIfEnglishWord returns true only if:
                 // - Word exists in English dictionary AND
@@ -1443,8 +1445,8 @@ void vKeyHandleEvent(const vKeyEvent& event,
                 _shouldUpperCaseEnglishRestore = false;
                 _index = _stateIndex;
             #ifdef DEBUG
-            } else {
-                fprintf(stderr, "[AutoEnglish] SKIPPED: _stateIndex=%d (need >1), _index=%d (need >0)\n", _stateIndex, _index);
+            } else if (_stateIndex <= 1) {
+                fprintf(stderr, "[AutoEnglish] SKIPPED: _stateIndex=%d (need >1), _index=%d\n", _stateIndex, _index);
                 fflush(stderr);
             #endif
             }
@@ -1509,11 +1511,17 @@ void vKeyHandleEvent(const vKeyEvent& event,
             _spaceCount++;
         } else if ((vQuickStartConsonant || vQuickEndConsonant) && !tempDisableKey && checkQuickConsonant()) {
             _spaceCount++;
-        } else if (vAutoRestoreEnglishWord && _stateIndex > 1 && _index > 0 && checkIfEnglishWord(KeyStates, _stateIndex)) {
+        } else if (vAutoRestoreEnglishWord && _stateIndex > 1 && checkIfEnglishWord(KeyStates, _stateIndex)) {
             // Auto restore English word on SPACE
             // checkIfEnglishWord returns true only if word is English AND NOT Vietnamese
+            #ifdef DEBUG
+            fprintf(stderr, "[AutoEnglish] SPACE detected: _stateIndex=%d, _index=%d\n", _stateIndex, _index);
+            fflush(stderr);
+            #endif
             hCode = vRestore;
-            hBPC = _index;
+            // Use _stateIndex instead of _index for backspace count
+            // _index might be 0 after session reset, but _stateIndex always has the correct count
+            hBPC = _stateIndex;
             hNCC = _stateIndex;
             for (i = 0; i < _stateIndex; i++) {
                 TypingWord[i] = KeyStates[i];
