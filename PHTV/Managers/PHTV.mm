@@ -335,6 +335,18 @@ BOOL isSpotlightActive(void) {
         return YES;
     }
 
+    // CRITICAL FIX: Microsoft Office template search boxes need Spotlight-like handling
+    // Check if element is a search field (AXSearchField/AXTextField with Search subrole)
+    // This covers template gallery search boxes in Word/Excel/PowerPoint/Outlook
+    if (elementLooksLikeSpotlight &&
+        ([bundleId isEqualToString:@"com.microsoft.Word"] ||
+         [bundleId isEqualToString:@"com.microsoft.Excel"] ||
+         [bundleId isEqualToString:@"com.microsoft.Powerpoint"] ||
+         [bundleId isEqualToString:@"com.microsoft.Outlook"])) {
+        UpdateSpotlightCache(YES, focusedPID);
+        return YES;
+    }
+
     // Also check by process path for system processes without bundle ID
     if (bundleId == nil) {
         char pathBuffer[PROC_PIDPATHINFO_MAXSIZE];
