@@ -1429,16 +1429,11 @@ void vKeyHandleEvent(const vKeyEvent& event,
                 // checkIfEnglishWord returns true only if:
                 // - Word exists in English dictionary AND
                 // - Word does NOT exist in Vietnamese dictionary
-                #ifdef DEBUG
-                if (_index == 0) {
-                    fprintf(stderr, "[AutoEnglish] WARNING: _index=0 but _stateIndex=%d - possible tracking bug!\n", _stateIndex);
-                    fflush(stderr);
-                }
-                #endif
                 hCode = vRestoreAndStartNewSession;
-                // CORRECT LOGIC: Backspace count = actual chars on screen (_index)
-                //                New char count = English word length (_stateIndex)
-                hBPC = _index;
+                // RELIABILITY FIX: Use _stateIndex for backspace count
+                // English words don't have Vietnamese combining, so keystate count = character count
+                // Using _index is unreliable because Vietnamese processing may desync it
+                hBPC = _stateIndex;
                 hNCC = _stateIndex;
                 hExt = 5;  // Signal: This is Auto English restore (not Text Replacement)
                 for (i = 0; i < _stateIndex; i++) {
@@ -1534,7 +1529,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             }
             #endif
             _spaceCount++;
-        } else if (vAutoRestoreEnglishWord && _index > 0 && _stateIndex > 1 && checkIfEnglishWord(KeyStates, _stateIndex)) {
+        } else if (vAutoRestoreEnglishWord && _stateIndex > 1 && checkIfEnglishWord(KeyStates, _stateIndex)) {
             // Auto restore English word on SPACE
             // checkIfEnglishWord returns true only if word is English AND NOT Vietnamese
             #ifdef DEBUG
@@ -1542,9 +1537,10 @@ void vKeyHandleEvent(const vKeyEvent& event,
             fflush(stderr);
             #endif
             hCode = vRestore;
-            // CORRECT LOGIC: Backspace count = actual chars on screen (_index)
-            //                New char count = English word length (_stateIndex)
-            hBPC = _index;
+            // RELIABILITY FIX: Use _stateIndex for backspace count
+            // English words don't have Vietnamese combining, so keystate count = character count
+            // Using _index is unreliable because Vietnamese processing may desync it
+            hBPC = _stateIndex;
             hNCC = _stateIndex;
             hExt = 5;  // Signal: This is Auto English restore (not Text Replacement)
             for (i = 0; i < _stateIndex; i++) {
@@ -1573,10 +1569,9 @@ void vKeyHandleEvent(const vKeyEvent& event,
             // Log why Auto English didn't trigger (for debugging random failures)
             if (vAutoRestoreEnglishWord && _stateIndex > 0) {
                 std::string word = keyStatesToString(KeyStates, _stateIndex);
-                fprintf(stderr, "[AutoEnglish] ✗ SPACE NO RESTORE: word='%s', _index=%d, _stateIndex=%d, conditions: ",
-                       word.c_str(), _index, _stateIndex);
-                if (_index == 0) fprintf(stderr, "_index=0 ");
-                if (_stateIndex <= 1) fprintf(stderr, "_stateIndex<=1 ");
+                fprintf(stderr, "[AutoEnglish] ✗ SPACE NO RESTORE: word='%s', _stateIndex=%d, conditions: ",
+                       word.c_str(), _stateIndex);
+                if (_stateIndex <= 1) fprintf(stderr, "tooShort ");
                 if (!checkIfEnglishWord(KeyStates, _stateIndex)) fprintf(stderr, "notEnglish ");
                 fprintf(stderr, "\n");
                 fflush(stderr);
