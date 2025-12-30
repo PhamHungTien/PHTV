@@ -2451,19 +2451,25 @@ extern "C" {
                     // Method 2: Mouse click detection (FALLBACK)
                     // When user clicks with mouse, macOS does NOT send DELETE events via CGEventTap
                     // Detection patterns (with Auto English exclusions):
-                    // 2a. Significant char jump: newChar > backspace*2 (e.g., "dc"→"được": 4>2*2)
-                    //     This pattern works for all keys including SPACE
-                    // 2b. Equal counts pattern: backspace==newChar + short length
-                    //     BUT: Exclude SPACE key (could be Auto English) and vRestoreAndStartNewSession
-                    //     Example: Mouse click + "dc" → engine sees "dc", generates vRestore (2==2)
+                    // 2a. Significant char jump: newChar >= backspace*2 (e.g., "dc"→"được": 4>=2*2, "ko"→"không": 5>=2*2)
+                    // 2b. Equal counts pattern: backspace==newChar + short length (e.g., some Text Replacements don't expand)
+                    // EXCLUSIONS: Auto English has extCode=5, vRestoreAndStartNewSession - skip these
                     else if (_externalDeleteCount == 0 &&
-                             pData->code != vRestoreAndStartNewSession) {  // Exclude Auto English word break (code 5)
-                        BOOL pattern2a = (pData->newCharCount > pData->backspaceCount * 2);
-                        BOOL pattern2b = (_keycode != KEY_SPACE &&  // Exclude SPACE - could be Auto English
-                                         (pData->code == vWillProcess || pData->code == vRestore) &&
+                             pData->extCode != 5 &&  // EXCLUDE: Auto English restore (extCode=5)
+                             pData->code != vRestoreAndStartNewSession) {  // EXCLUDE: Auto English word break
+                        BOOL pattern2a = (pData->newCharCount >= pData->backspaceCount * 2);  // Text expanded 2x or more
+                        BOOL pattern2b = ((pData->code == vWillProcess || pData->code == vRestore) &&
                                          pData->backspaceCount > 0 &&
                                          pData->backspaceCount == pData->newCharCount &&
-                                         pData->backspaceCount <= 10);
+                                         pData->backspaceCount <= 10);  // Equal counts, short word
+
+                        // ALWAYS log pattern check for debugging
+                        NSLog(@"[PHTV TextReplacement] Pattern check: 2a=%d (%d>=%d*2?), 2b=%d (code=%d, %d==%d?), extCode=%d, externalDel=%d",
+                              pattern2a, (int)pData->newCharCount, (int)pData->backspaceCount,
+                              pattern2b, pData->code,
+                              (int)pData->backspaceCount, (int)pData->newCharCount,
+                              pData->extCode, _externalDeleteCount);
+
                         if (pattern2a || pattern2b) {
                         #ifdef DEBUG
                         NSLog(@"[PHTV TextReplacement] Pattern %@ matched: code=%d, backspace=%d, newChar=%d, keycode=%d",
