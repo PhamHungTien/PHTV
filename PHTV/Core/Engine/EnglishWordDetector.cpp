@@ -319,6 +319,14 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
     }
 
     // PRIORITY 4: Check built-in English dictionary (only if NOT in Vietnamese)
+    // SAFETY: Check engNodes is not null before dereferencing (prevents race condition crash)
+    if (!engNodes) {
+        #ifdef DEBUG
+        fprintf(stderr, "[AutoEnglish] SKIP: '%s' - English dictionary not loaded\n", word.c_str()); fflush(stderr);
+        #endif
+        return false;
+    }
+
     bool isEnglish = searchBinaryTrie(engNodes, idx, stateIndex);
     #ifdef DEBUG
     if (isEnglish) {

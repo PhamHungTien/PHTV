@@ -359,11 +359,13 @@ void checkGrammar(const int& deltaBackSpace) {
 void insertKey(const Uint16& keyCode, const bool& isCaps, const bool& isCheckSpelling=true) {
     if (_index >= MAX_BUFF) {
         _longWordHelper.push_back(TypingWord[0]); //save long word
-        //left shift
+        //left shift - buffer is full, shift all elements left
         for (iii = 0; iii < MAX_BUFF - 1; iii++) {
             TypingWord[iii] = TypingWord[iii + 1];
         }
-        setKeyData(_index-1, keyCode, isCaps);
+        // SAFETY FIX: Always write to last position when buffer is full
+        // Using _index-1 could cause out-of-bounds if _index > MAX_BUFF
+        setKeyData(MAX_BUFF - 1, keyCode, isCaps);
     } else {
         setKeyData(_index++, keyCode, isCaps);
     }
@@ -378,11 +380,13 @@ void insertKey(const Uint16& keyCode, const bool& isCaps, const bool& isCheckSpe
 
 void insertState(const Uint16& keyCode, const bool& isCaps) {
     if (_stateIndex >= MAX_BUFF) {
-        //left shift
+        //left shift - buffer is full, shift all elements left
         for (iii = 0; iii < MAX_BUFF - 1; iii++) {
             KeyStates[iii] = KeyStates[iii + 1];
         }
-        KeyStates[_stateIndex-1] = keyCode | (isCaps ? CAPS_MASK : 0);
+        // SAFETY FIX: Always write to last position when buffer is full
+        // Using _stateIndex-1 could cause out-of-bounds if _stateIndex > MAX_BUFF
+        KeyStates[MAX_BUFF - 1] = keyCode | (isCaps ? CAPS_MASK : 0);
     } else {
         KeyStates[_stateIndex++] = keyCode | (isCaps ? CAPS_MASK : 0);
     }
@@ -1664,11 +1668,8 @@ void vKeyHandleEvent(const vKeyEvent& event,
             hNCC = 0;
             hExt = 2; //delete key
             if (_index == 0) {
-                FILE* flog = fopen("/tmp/phtv_debug.txt", "a");
-                if (flog) {
-                    fprintf(flog, "[vKeyHandleEvent] About to call startNewSession() - delete with _index==0 (line 1631)\n");
-                    fclose(flog);
-                }
+                // PERFORMANCE FIX: Removed file I/O from keystroke handler
+                // Debug logging moved to stderr (use PHTV_DEBUG=1 environment variable)
                 startNewSession();
                 _specialChar.clear();
                 restoreLastTypingState();
@@ -1686,11 +1687,8 @@ void vKeyHandleEvent(const vKeyEvent& event,
             hBPC = 0;
             hNCC = 0;
             hExt = 0;
-            FILE* flog = fopen("/tmp/phtv_debug.txt", "a");
-            if (flog) {
-                fprintf(flog, "[vKeyHandleEvent] About to call startNewSession() - space count > 0 (line 1648)\n");
-                fclose(flog);
-            }
+            // PERFORMANCE FIX: Removed file I/O from keystroke handler
+            // Debug logging moved to stderr (use PHTV_DEBUG=1 environment variable)
             startNewSession();
             //continute save space
             saveWord(KEY_SPACE, _spaceCount);
