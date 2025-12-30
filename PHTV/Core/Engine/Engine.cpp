@@ -7,6 +7,7 @@
 //
 #include <iostream>
 #include <algorithm>
+#include <unordered_set>
 #include "Engine.h"
 #include <string.h>
 #include <list>
@@ -31,6 +32,12 @@ static vector<Uint8> _breakCode = {
 static vector<Uint8> _macroBreakCode = {
     KEY_RETURN, KEY_COMMA, KEY_DOT, KEY_SLASH, KEY_SEMICOLON, KEY_QUOTE, KEY_BACK_SLASH, KEY_MINUS, KEY_EQUALS
 };
+
+// PERFORMANCE OPTIMIZATION: O(1) lookup sets built from vectors above
+// Initialized lazily on first use to avoid static initialization order issues
+static std::unordered_set<Uint8> _breakCodeSet;
+static std::unordered_set<Uint8> _macroBreakCodeSet;
+static bool _lookupSetsInitialized = false;
 
 static Uint16 ProcessingChar[][11] = {
     {KEY_S, KEY_F, KEY_R, KEY_X, KEY_J, KEY_A, KEY_O, KEY_E, KEY_W, KEY_D, KEY_Z}, //Telex
@@ -147,21 +154,26 @@ void* vKeyInit() {
 bool isWordBreak(const vKeyEvent& event, const vKeyEventState& state, const Uint16& data) {
     if (event == vKeyEvent::Mouse)
         return true;
-    for (i = 0; i < _breakCode.size(); i++) {
-        if (_breakCode[i] == data) {
-            return true;
-        }
+
+    // PERFORMANCE OPTIMIZATION: Lazy init lookup set for O(1) instead of O(n)
+    if (!_lookupSetsInitialized) {
+        _breakCodeSet.insert(_breakCode.begin(), _breakCode.end());
+        _macroBreakCodeSet.insert(_macroBreakCode.begin(), _macroBreakCode.end());
+        _lookupSetsInitialized = true;
     }
-    return false;
+
+    return _breakCodeSet.count(data) > 0;
 }
 
 bool isMacroBreakCode(const int& data) {
-    for (i = 0; i < _macroBreakCode.size(); i++) {
-        if (_macroBreakCode[i] == data) {
-            return true;
-        }
+    // PERFORMANCE OPTIMIZATION: Use O(1) set lookup instead of O(n) vector scan
+    if (!_lookupSetsInitialized) {
+        _breakCodeSet.insert(_breakCode.begin(), _breakCode.end());
+        _macroBreakCodeSet.insert(_macroBreakCode.begin(), _macroBreakCode.end());
+        _lookupSetsInitialized = true;
     }
-    return false;
+
+    return _macroBreakCodeSet.count(data) > 0;
 }
 
 void setKeyData(const Byte& index, const Uint16& keyCode, const bool& isCaps) {

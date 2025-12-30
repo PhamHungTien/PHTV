@@ -535,12 +535,20 @@ struct MacroItem: Identifiable, Hashable, Codable {
     var categoryId: UUID?  // nil = default category
     var snippetType: SnippetType = .static  // NEW: snippet type
 
+    // MACRO INTELLIGENCE: Usage tracking for smart features
+    var usageCount: Int = 0  // Number of times this macro was triggered
+    var lastUsed: Date? = nil  // Last time this macro was used
+    var createdDate: Date = Date()  // When this macro was created
+
     init(shortcut: String, expansion: String, categoryId: UUID? = nil, snippetType: SnippetType = .static) {
         self.id = UUID()
         self.shortcut = shortcut
         self.expansion = expansion
         self.categoryId = categoryId
         self.snippetType = snippetType
+        self.usageCount = 0
+        self.lastUsed = nil
+        self.createdDate = Date()
     }
 
     // Backward compatible decoder
@@ -551,10 +559,85 @@ struct MacroItem: Identifiable, Hashable, Codable {
         expansion = try container.decode(String.self, forKey: .expansion)
         categoryId = try container.decodeIfPresent(UUID.self, forKey: .categoryId)
         snippetType = try container.decodeIfPresent(SnippetType.self, forKey: .snippetType) ?? .static
+
+        // MACRO INTELLIGENCE: Backward compatible - default to 0/nil/now for old macros
+        usageCount = try container.decodeIfPresent(Int.self, forKey: .usageCount) ?? 0
+        lastUsed = try container.decodeIfPresent(Date.self, forKey: .lastUsed)
+        createdDate = try container.decodeIfPresent(Date.self, forKey: .createdDate) ?? Date()
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, shortcut, expansion, categoryId, snippetType
+        case usageCount, lastUsed, createdDate  // MACRO INTELLIGENCE fields
+    }
+}
+
+// MARK: - Macro Intelligence Extension
+
+extension MacroItem {
+    /// MACRO INTELLIGENCE: Find conflicts with other macros
+    /// Returns array of conflicting macro IDs and conflict type
+    func findConflicts(in macros: [MacroItem]) -> [(MacroItem, ConflictType)] {
+        var conflicts: [(MacroItem, ConflictType)] = []
+
+        for macro in macros {
+            // Skip self
+            if macro.id == self.id { continue }
+
+            let thisShortcut = self.shortcut.lowercased()
+            let otherShortcut = macro.shortcut.lowercased()
+
+            // Exact duplicate
+            if thisShortcut == otherShortcut {
+                conflicts.append((macro, .exactDuplicate))
+            }
+            // This is prefix of other (e.g., "btw" is prefix of "btwn")
+            else if otherShortcut.hasPrefix(thisShortcut) {
+                conflicts.append((macro, .thisIsPrefix))
+            }
+            // Other is prefix of this (e.g., "btw" when checking "btwn")
+            else if thisShortcut.hasPrefix(otherShortcut) {
+                conflicts.append((macro, .otherIsPrefix))
+            }
+        }
+
+        return conflicts
+    }
+
+    /// Check if this macro is rarely used (not used in last 30 days)
+    var isRarelyUsed: Bool {
+        guard let lastUsed = lastUsed else {
+            // Never used - check if created more than 30 days ago
+            return createdDate.timeIntervalSinceNow < -30 * 24 * 3600
+        }
+        return lastUsed.timeIntervalSinceNow < -30 * 24 * 3600
+    }
+
+    /// Check if this is a popular macro (used 10+ times)
+    var isPopular: Bool {
+        return usageCount >= 10
+    }
+}
+
+enum ConflictType: String {
+    case exactDuplicate = "Exact duplicate"
+    case thisIsPrefix = "This shortcut is prefix of another"
+    case otherIsPrefix = "Another shortcut is prefix of this"
+
+    var icon: String {
+        switch self {
+        case .exactDuplicate: return "exclamationmark.triangle.fill"
+        case .thisIsPrefix: return "exclamationmark.circle.fill"
+        case .otherIsPrefix: return "info.circle.fill"
+        }
+    }
+
+    var color: String {
+        switch self {
+        case .exactDuplicate: return "red"
+        case .thisIsPrefix: return "orange"
+        case .otherIsPrefix: return "yellow"
+        }
     }
 }
 
