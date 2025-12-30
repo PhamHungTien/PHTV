@@ -125,10 +125,15 @@ static BOOL _externalDeleteDetected = NO;
 static uint64_t _lastExternalDeleteTime = 0;
 static int _externalDeleteCount = 0;
 
-// Check if text replacement fix is enabled via settings (always enabled)
-// Note: This feature is always enabled to fix macOS native text replacement conflicts
+// Check if text replacement fix is enabled via settings
+// Note: This feature can be disabled for users who don't use macOS text replacement
 static inline BOOL IsTextReplacementFixEnabled(void) {
-    return YES;  // Always enabled - matches PHTPApp.swift computed property
+    // Check UserDefaults for setting (default: YES/enabled)
+    NSNumber *value = [[NSUserDefaults standardUserDefaults] objectForKey:@"vEnableTextReplacementFix"];
+    if (value == nil) {
+        return YES;  // Default to enabled if not set
+    }
+    return [value boolValue];
 }
 
 // Safe Mode: Disable all Accessibility API calls for unsupported hardware

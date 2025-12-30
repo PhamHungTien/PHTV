@@ -306,8 +306,9 @@ final class AppState: ObservableObject {
     @Published var performLayoutCompat: Bool = false
     @Published var showIconOnDock: Bool = false
     @Published var safeMode: Bool = false  // Safe mode disables Accessibility API for OCLP Macs
-    // Text Replacement Fix is always enabled (no user setting)
-    var enableTextReplacementFix: Bool { return true }
+
+    // Text Replacement Fix - can be disabled for users who don't use macOS text replacement
+    @Published var enableTextReplacementFix: Bool = true
 
     // Claude Code patch setting
     @Published var claudeCodePatchEnabled: Bool = false
@@ -577,7 +578,9 @@ final class AppState: ObservableObject {
         performLayoutCompat = defaults.bool(forKey: "vPerformLayoutCompat")
         showIconOnDock = defaults.bool(forKey: "vShowIconOnDock")
         safeMode = defaults.bool(forKey: "SafeMode")
-        // Text Replacement Fix is always enabled - no need to load from defaults
+
+        // Text Replacement Fix - load from defaults, default to true
+        enableTextReplacementFix = defaults.object(forKey: "vEnableTextReplacementFix") as? Bool ?? true
 
         // Load Claude Code patch setting - check actual patch status
         claudeCodePatchEnabled = ClaudeCodePatcher.shared.isPatched()
@@ -739,7 +742,8 @@ final class AppState: ObservableObject {
         defaults.set(safeMode, forKey: "SafeMode")
         PHTVManager.setSafeModeEnabled(safeMode)
 
-        // Text Replacement Fix is always enabled - no need to save
+        // Text Replacement Fix - save setting
+        defaults.set(enableTextReplacementFix, forKey: "vEnableTextReplacementFix")
 
         // Save hotkey in backend format (SwitchKeyStatus)
         let switchKeyStatus = encodeSwitchKeyStatus()
@@ -1010,7 +1014,8 @@ final class AppState: ObservableObject {
         Publishers.MergeMany([
             $fixChromiumBrowser.map { _ in () }.eraseToAnyPublisher(),
             $performLayoutCompat.map { _ in () }.eraseToAnyPublisher(),
-            $safeMode.map { _ in () }.eraseToAnyPublisher()
+            $safeMode.map { _ in () }.eraseToAnyPublisher(),
+            $enableTextReplacementFix.map { _ in () }.eraseToAnyPublisher()
         ])
         .debounce(for: .milliseconds(100), scheduler: RunLoop.main)
         .sink { [weak self] _ in

@@ -106,6 +106,48 @@ struct CompatibilitySettingsView: View {
                     }
                 }
 
+                // Text Replacement Fix
+                SettingsCard(title: "Text Replacement", icon: "textformat.alt") {
+                    VStack(spacing: 0) {
+                        SettingsToggleRow(
+                            icon: "textformat.alt",
+                            iconColor: themeManager.themeColor,
+                            title: "Sửa lỗi Text Replacement",
+                            subtitle: "Tắt nếu bạn không dùng tính năng Text Replacement của macOS",
+                            isOn: $appState.enableTextReplacementFix
+                        )
+
+                        if appState.enableTextReplacementFix {
+                            SettingsDivider()
+
+                            HStack(spacing: 14) {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(themeManager.themeColor.opacity(0.12))
+                                        .frame(width: 36, height: 36)
+
+                                    Image(systemName: "info.circle.fill")
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundStyle(themeManager.themeColor)
+                                }
+
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Khuyến nghị bật")
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                        .foregroundStyle(.primary)
+
+                                    Text("Tính năng này giúp PHTV hoạt động tốt hơn với Text Replacement của macOS. Chỉ tắt nếu bạn không sử dụng Text Replacement và gặp vấn đề.")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                            .padding(.vertical, 6)
+                        }
+                    }
+                }
+
                 Spacer(minLength: 20)
             }
             .padding(20)
