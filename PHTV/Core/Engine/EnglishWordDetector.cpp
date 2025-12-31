@@ -318,6 +318,34 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
         return false; // It's a Vietnamese word - do NOT restore
     }
 
+    // CRITICAL FIX: Check Vietnamese dictionary WITHOUT the last key if it's a Telex tone mark
+    // Problem: When typing "d > i > d" (to make "đi"), KeyStates = ['d','i','d'] (3 keys)
+    //          but Vietnamese dictionary only has "di" (2 letters), not "did" (3 letters)
+    // Solution: If last key is a tone mark (d,s,f,r,x,j,w,a,o,e,[,]), also check without it
+    // Examples: "did" → check "di" (đi), "dod" → check "do" (đo), "dad" → check "da" (đa)
+    if (vieInit && vieNodes && stateIndex >= 2) {
+        uint8_t lastKey = keyStates[stateIndex - 1] & 0x3F;
+        // Telex tone marks: d(đ), s(sắc), f(huyền), r(hỏi), x(ngã), j(nặng), w(horn), a/o/e(^), [](ơ/ư)
+        bool isToneMark = (lastKey == KEY_D || lastKey == KEY_S || lastKey == KEY_F ||
+                          lastKey == KEY_R || lastKey == KEY_X || lastKey == KEY_J ||
+                          lastKey == KEY_W || lastKey == KEY_A || lastKey == KEY_O ||
+                          lastKey == KEY_E || lastKey == KEY_LEFT_BRACKET || lastKey == KEY_RIGHT_BRACKET);
+
+        if (isToneMark && searchBinaryTrie(vieNodes, idx, stateIndex - 1)) {
+            #ifdef DEBUG
+            // Build word without tone mark for debug message
+            char wordWithoutTone[32];
+            for (int i = 0; i < stateIndex - 1; i++) {
+                wordWithoutTone[i] = 'a' + idx[i];
+            }
+            wordWithoutTone[stateIndex - 1] = '\0';
+            fprintf(stderr, "[AutoEnglish] SKIP: '%s' (without tone '%c') found in Vietnamese dictionary\n",
+                   wordWithoutTone, 'a' + idx[stateIndex - 1]); fflush(stderr);
+            #endif
+            return false; // It's a Vietnamese word with tone mark - do NOT restore
+        }
+    }
+
     // PRIORITY 4: Check built-in English dictionary (only if NOT in Vietnamese)
     // SAFETY: Check engNodes is not null before dereferencing (prevents race condition crash)
     if (!engNodes) {
