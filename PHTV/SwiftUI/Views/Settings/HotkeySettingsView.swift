@@ -28,6 +28,11 @@ struct HotkeySettingsView: View {
                     PauseKeyConfigView()
                 }
 
+                // Emoji Picker Hotkey
+                SettingsCard(title: "Emoji Picker", icon: "smiley.fill") {
+                    EmojiHotkeyConfigView()
+                }
+
                 Spacer(minLength: 20)
             }
             .padding(20)

@@ -712,6 +712,305 @@ struct PauseKeyButton: View {
     }
 }
 
+// MARK: - Emoji Hotkey Configuration View
+struct EmojiHotkeyConfigView: View {
+    @EnvironmentObject var appState: AppState
+    @EnvironmentObject var themeManager: ThemeManager
+    @State private var isRecording = false
+
+    // Computed properties for modifier bindings
+    private var emojiHotkeyControl: Binding<Bool> {
+        Binding(
+            get: { appState.emojiHotkeyModifiers.contains(.control) },
+            set: { newValue in
+                var modifiers = appState.emojiHotkeyModifiers
+                if newValue {
+                    modifiers.insert(.control)
+                } else {
+                    modifiers.remove(.control)
+                }
+                appState.emojiHotkeyModifiers = modifiers
+            }
+        )
+    }
+
+    private var emojiHotkeyShift: Binding<Bool> {
+        Binding(
+            get: { appState.emojiHotkeyModifiers.contains(.shift) },
+            set: { newValue in
+                var modifiers = appState.emojiHotkeyModifiers
+                if newValue {
+                    modifiers.insert(.shift)
+                } else {
+                    modifiers.remove(.shift)
+                }
+                appState.emojiHotkeyModifiers = modifiers
+            }
+        )
+    }
+
+    private var emojiHotkeyCommand: Binding<Bool> {
+        Binding(
+            get: { appState.emojiHotkeyModifiers.contains(.command) },
+            set: { newValue in
+                var modifiers = appState.emojiHotkeyModifiers
+                if newValue {
+                    modifiers.insert(.command)
+                } else {
+                    modifiers.remove(.command)
+                }
+                appState.emojiHotkeyModifiers = modifiers
+            }
+        )
+    }
+
+    private var emojiHotkeyOption: Binding<Bool> {
+        Binding(
+            get: { appState.emojiHotkeyModifiers.contains(.option) },
+            set: { newValue in
+                var modifiers = appState.emojiHotkeyModifiers
+                if newValue {
+                    modifiers.insert(.option)
+                } else {
+                    modifiers.remove(.option)
+                }
+                appState.emojiHotkeyModifiers = modifiers
+            }
+        )
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Enable toggle
+            SettingsToggleRow(
+                icon: "smiley.fill",
+                iconColor: themeManager.themeColor,
+                title: "Bật phím tắt Emoji Picker",
+                subtitle: "Mở bảng chọn emoji của hệ thống",
+                isOn: $appState.enableEmojiHotkey
+            )
+
+            if appState.enableEmojiHotkey {
+                Divider()
+
+                // Modifier Keys Section
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Phím bổ trợ")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.primary)
+
+                    HStack(spacing: 12) {
+                        ModifierKeyButton(symbol: "⌃", name: "Control", isOn: emojiHotkeyControl)
+                        ModifierKeyButton(symbol: "⇧", name: "Shift", isOn: emojiHotkeyShift)
+                        ModifierKeyButton(symbol: "⌘", name: "Command", isOn: emojiHotkeyCommand)
+                        ModifierKeyButton(symbol: "⌥", name: "Option", isOn: emojiHotkeyOption)
+                    }
+
+                    Text("Mặc định: Command (⌘)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Divider()
+
+                // Key Selection Section
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Phím chính")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.primary)
+
+                    HStack(spacing: 16) {
+                        // Key selector button
+                        Button(action: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                isRecording = true
+                            }
+                        }) {
+                            HStack(spacing: 10) {
+                                Image(systemName: isRecording ? "keyboard.badge.ellipsis" : "keyboard")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundStyle(isRecording ? themeManager.themeColor : .secondary)
+
+                                Text(keyDisplayText)
+                                    .font(.body)
+                                    .foregroundStyle(isRecording ? themeManager.themeColor : .primary)
+                                    .animation(.easeInOut(duration: 0.2), value: keyDisplayText)
+
+                                Spacer()
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                            .frame(minWidth: 180)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(isRecording ? themeManager.themeColor.opacity(0.1) : Color(NSColor.controlBackgroundColor))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(isRecording ? themeManager.themeColor : Color.gray.opacity(0.3), lineWidth: 1)
+                                    )
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .animation(.easeInOut(duration: 0.2), value: isRecording)
+                        .background(EmojiKeyEventHandler(isRecording: $isRecording, appState: appState))
+
+                        // Current Hotkey Display
+                        if hasValidHotkey {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Tổ hợp hiện tại")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+
+                                Text(currentHotkeyDisplay)
+                                    .font(.system(.body, design: .rounded))
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.tint)
+                                    .animation(.easeInOut(duration: 0.2), value: currentHotkeyDisplay)
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(themeManager.themeColor.opacity(0.08))
+                            )
+                            .transition(.scale.combined(with: .opacity))
+                        }
+                    }
+
+                    Text("💡 Mẹo: Dùng tổ hợp phím như ⌘; hoặc ⌃⇧E để mở emoji nhanh")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 4)
+                }
+            }
+        }
+    }
+
+    private var keyDisplayText: String {
+        if isRecording {
+            return "Nhấn phím..."
+        }
+        return emojiKeyName
+    }
+
+    private var emojiKeyName: String {
+        let keyCode = appState.emojiHotkeyKeyCode
+        // Common key codes for emoji hotkeys
+        switch keyCode {
+        case 41: return ";"
+        case 14: return "E"
+        case 49: return "Space"
+        case 44: return "/"
+        case 39: return "'"
+        case 43: return ","
+        case 47: return "."
+        default:
+            // Try to get character from key code
+            if let char = keyCodeToCharacter(keyCode) {
+                return String(char).uppercased()
+            }
+            return "Key\(keyCode)"
+        }
+    }
+
+    private var hasValidHotkey: Bool {
+        // Valid if at least one modifier is selected
+        return !appState.emojiHotkeyModifiers.isEmpty
+    }
+
+    private var currentHotkeyDisplay: String {
+        var parts: [String] = []
+        let modifiers = appState.emojiHotkeyModifiers
+
+        if modifiers.contains(.control) { parts.append("⌃") }
+        if modifiers.contains(.shift) { parts.append("⇧") }
+        if modifiers.contains(.command) { parts.append("⌘") }
+        if modifiers.contains(.option) { parts.append("⌥") }
+
+        parts.append(emojiKeyName)
+
+        return parts.isEmpty ? "Chưa đặt" : parts.joined(separator: " + ")
+    }
+
+    private func keyCodeToCharacter(_ keyCode: UInt16) -> Character? {
+        let event = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: true)
+        var length = 0
+        event?.keyboardGetUnicodeString(maxStringLength: 4, actualStringLength: &length, unicodeString: nil)
+
+        if length > 0 {
+            var chars: [UniChar] = Array(repeating: 0, count: length)
+            event?.keyboardGetUnicodeString(maxStringLength: 4, actualStringLength: &length, unicodeString: &chars)
+            if let scalar = UnicodeScalar(chars[0]) {
+                return Character(scalar)
+            }
+        }
+        return nil
+    }
+}
+
+// MARK: - Emoji Key Event Handler
+struct EmojiKeyEventHandler: NSViewRepresentable {
+    @Binding var isRecording: Bool
+    var appState: AppState
+
+    func makeNSView(context: Context) -> NSView {
+        let view = EmojiKeyCaptureView()
+        view.onKeyPress = { keyCode in
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                appState.emojiHotkeyKeyCode = keyCode
+                isRecording = false
+            }
+        }
+        DispatchQueue.main.async {
+            context.coordinator.view = view
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        if let keyView = nsView as? EmojiKeyCaptureView {
+            keyView.isRecording = isRecording
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    class Coordinator {
+        var view: EmojiKeyCaptureView?
+    }
+}
+
+class EmojiKeyCaptureView: NSView {
+    var onKeyPress: ((UInt16) -> Void)?
+    var isRecording = false {
+        didSet {
+            if isRecording {
+                window?.makeFirstResponder(self)
+            }
+        }
+    }
+
+    override var acceptsFirstResponder: Bool { true }
+
+    override func keyDown(with event: NSEvent) {
+        guard isRecording else {
+            super.keyDown(with: event)
+            return
+        }
+
+        let keyCode = UInt16(event.keyCode)
+
+        // Call with animation on main thread
+        DispatchQueue.main.async { [weak self] in
+            self?.onKeyPress?(keyCode)
+        }
+    }
+}
+
 #Preview {
     HotkeyConfigView()
         .environmentObject(AppState.shared)

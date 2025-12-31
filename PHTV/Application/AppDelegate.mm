@@ -464,6 +464,8 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
+    NSLog(@"🔴🔴🔴 [AppDelegate] applicationDidFinishLaunching STARTED 🔴🔴🔴");
+
     // Initialize performance optimization
     self.updateQueue = dispatch_queue_create("com.phtv.updateQueue", DISPATCH_QUEUE_SERIAL);
     self.lastInputMethod = -1;
@@ -529,6 +531,16 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
     // Initialize English word dictionary for auto-restore feature
     [self initEnglishWordDictionary];
+    NSLog(@"DEBUG-POINT-A");
+
+    // Initialize EmojiHotkeyManager via Swift bridge
+    NSLog(@"DEBUG-POINT-B");
+    @try {
+        [EmojiHotkeyBridge initializeEmojiHotkeyManager];
+        NSLog(@"DEBUG-POINT-C");
+    } @catch (NSException *exception) {
+        NSLog(@"DEBUG-POINT-ERROR: %@", exception);
+    }
 
     // Load hotkey settings from UserDefaults BEFORE initializing event tap
     NSInteger savedHotkey = [[NSUserDefaults standardUserDefaults] integerForKey:@"SwitchKeyStatus"];

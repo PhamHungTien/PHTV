@@ -9,6 +9,7 @@
 import AppKit
 import ApplicationServices
 import AudioToolbox
+import Carbon
 import Combine
 import ServiceManagement
 import SwiftUI
@@ -21,8 +22,15 @@ struct PHTVApp: App {
     @StateObject private var windowOpener = SettingsWindowOpener.shared
 
     init() {
+        NSLog("PHTV-APP-INIT-START")
+
         // Initialize SettingsNotificationObserver to listen for notifications
         _ = SettingsNotificationObserver.shared
+
+        // Initialize EmojiHotkeyManager directly in SwiftUI init
+        NSLog("PHTV-APP-INIT-EMOJI")
+        _ = EmojiHotkeyManager.shared
+        NSLog("PHTV-APP-INIT-END")
     }
 
     var body: some Scene {
@@ -299,6 +307,23 @@ final class AppState: ObservableObject {
     @Published var pauseKeyEnabled: Bool = false
     @Published var pauseKey: UInt16 = 58  // Default: Left Option (same as RestoreKey.option)
     @Published var pauseKeyName: String = "Option"
+
+    // Emoji Hotkey Settings
+    @Published var enableEmojiHotkey: Bool = false
+    @Published var emojiHotkeyModifiersRaw: Int = Int(NSEvent.ModifierFlags.command.rawValue)
+    @Published var emojiHotkeyKeyCode: UInt16 = 41  // ; key (semicolon) default
+
+    /// Computed property for emoji hotkey modifiers
+    var emojiHotkeyModifiers: NSEvent.ModifierFlags {
+        get {
+            NSEvent.ModifierFlags(rawValue: UInt(emojiHotkeyModifiersRaw))
+        }
+        set {
+            emojiHotkeyModifiersRaw = Int(newValue.rawValue)
+            // Trigger sync when modifiers change
+            NotificationCenter.default.post(name: NSNotification.Name("EmojiHotkeySettingsChanged"), object: nil)
+        }
+    }
 
     // System settings
     @Published var runOnStartup: Bool = false
@@ -637,6 +662,15 @@ final class AppState: ObservableObject {
         }
         pauseKeyName = defaults.string(forKey: "vPauseKeyName") ?? "Option"
 
+        // Load emoji hotkey settings
+        enableEmojiHotkey = defaults.bool(forKey: "vEnableEmojiHotkey")
+        emojiHotkeyModifiersRaw = defaults.integer(forKey: "vEmojiHotkeyModifiers")
+        if emojiHotkeyModifiersRaw == 0 {
+            emojiHotkeyModifiersRaw = Int(NSEvent.ModifierFlags.command.rawValue)  // Default: Command
+        }
+        let savedKeyCode = defaults.integer(forKey: "vEmojiHotkeyKeyCode")
+        emojiHotkeyKeyCode = savedKeyCode > 0 ? UInt16(savedKeyCode) : 41  // Default: semicolon
+
         // Load audio and display settings
         beepVolume = defaults.double(forKey: "vBeepVolume")
         if beepVolume == 0 { beepVolume = 0.5 } // Default if not set
@@ -668,6 +702,9 @@ final class AppState: ObservableObject {
         let updateInterval = defaults.integer(forKey: "SUScheduledCheckInterval")
         updateCheckFrequency = UpdateCheckFrequency.from(interval: updateInterval == 0 ? 86400 : updateInterval)
         betaChannelEnabled = defaults.bool(forKey: "SUEnableBetaChannel")
+
+        // Note: EmojiHotkeyManager is initialized in AppDelegate.applicationDidFinishLaunching
+        // via EmojiHotkeyBridge.initializeEmojiHotkeyManager()
     }
 
     // MARK: - Hotkey Encoding/Decoding
@@ -782,6 +819,11 @@ final class AppState: ObservableObject {
         defaults.set(Int(pauseKey), forKey: "vPauseKey")
         defaults.set(pauseKeyName, forKey: "vPauseKeyName")
 
+        // Save emoji hotkey settings
+        defaults.set(enableEmojiHotkey, forKey: "vEnableEmojiHotkey")
+        defaults.set(emojiHotkeyModifiersRaw, forKey: "vEmojiHotkeyModifiers")
+        defaults.set(Int(emojiHotkeyKeyCode), forKey: "vEmojiHotkeyKeyCode")
+
         // Save audio and display settings
         defaults.set(beepVolume, forKey: "vBeepVolume")
         // fontSize removed
@@ -876,6 +918,8 @@ final class AppState: ObservableObject {
     }
 
     private func setupObservers() {
+        // Note: EmojiHotkeyManager is initialized in AppDelegate via EmojiHotkeyBridge
+
         // Observer for isEnabled (language toggle)
         $isEnabled.sink { [weak self] value in
             guard let self = self, !self.isLoadingSettings else { return }
@@ -988,6 +1032,23 @@ final class AppState: ObservableObject {
             // Notify backend so vShowIconOnDock stays in sync without restart
             NotificationCenter.default.post(
                 name: NSNotification.Name("PHTVSettingsChanged"), object: nil)
+        }.store(in: &cancellables)
+
+        // Observer for emoji hotkey settings - post notification for EmojiHotkeyManager
+        // Note: EmojiHotkeyManager observes "EmojiHotkeySettingsChanged" and syncs automatically
+        Publishers.Merge3(
+            $enableEmojiHotkey.map { _ in () },
+            $emojiHotkeyModifiersRaw.map { _ in () },
+            $emojiHotkeyKeyCode.map { _ in () }
+        )
+        .debounce(for: .milliseconds(100), scheduler: RunLoop.main)
+        .sink { [weak self] in
+            guard let self = self, !self.isLoadingSettings else { return }
+            // Post notification to trigger sync in EmojiHotkeyManager
+            #if DEBUG
+            print("[AppState] Posting EmojiHotkeySettingsChanged notification")
+            #endif
+            NotificationCenter.default.post(name: NSNotification.Name("EmojiHotkeySettingsChanged"), object: nil)
         }.store(in: &cancellables)
 
         // Observer for Claude Code patch - apply/remove patch when toggled
@@ -1384,3 +1445,777 @@ struct SendKeyStepByStepApp: Codable, Identifiable, Hashable {
     }
 }
 
+
+// MARK: - Emoji Hotkey Manager
+
+/// Singleton manager for emoji picker hotkey
+/// Monitors global keyboard events and triggers Character Palette when hotkey is pressed
+final class EmojiHotkeyManager: ObservableObject, @unchecked Sendable {
+
+    static let shared = EmojiHotkeyManager()
+
+    private var globalMonitor: Any?
+    private var localMonitor: Any?
+    private var isEnabled: Bool = false
+    private var modifiers: NSEvent.ModifierFlags = .command
+    private var keyCode: UInt16 = 41  // ; key (semicolon) default
+
+    private init() {
+        NSLog("[EmojiHotkey] EmojiHotkeyManager initialized")
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleSettingsChanged),
+            name: NSNotification.Name("EmojiHotkeySettingsChanged"),
+            object: nil
+        )
+
+        // CRITICAL: Delay sync to avoid circular dependency during AppState.shared initialization
+        // Use asyncAfter with minimal delay to break the dispatch_once recursion
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self = self else { return }
+            Task { @MainActor in
+                self.syncFromAppState(AppState.shared)
+            }
+        }
+    }
+
+    @objc private func handleSettingsChanged() {
+        NSLog("[EmojiHotkey] Settings changed notification received")
+        Task { @MainActor in
+            syncFromAppState(AppState.shared)
+        }
+    }
+    
+    @MainActor
+    func syncFromAppState(_ appState: AppState) {
+        NSLog("SYNC-START: enabled=%d, modifiers=%lu, keyCode=%d", appState.enableEmojiHotkey ? 1 : 0, UInt(appState.emojiHotkeyModifiers.rawValue), appState.emojiHotkeyKeyCode)
+
+        let wasEnabled = isEnabled
+        let oldModifiers = modifiers
+        let oldKeyCode = keyCode
+
+        isEnabled = appState.enableEmojiHotkey
+        modifiers = appState.emojiHotkeyModifiers
+        keyCode = appState.emojiHotkeyKeyCode
+
+        NSLog("SYNC-CHANGE-CHECK: wasEnabled=%d, isEnabled=%d", wasEnabled ? 1 : 0, isEnabled ? 1 : 0)
+
+        if wasEnabled != isEnabled || oldModifiers != modifiers || oldKeyCode != keyCode {
+            NSLog("SYNC-WILL-UPDATE")
+            // CRITICAL: Save desired state BEFORE unregisterHotkey() modifies isEnabled
+            let shouldEnable = isEnabled
+            unregisterHotkey()
+
+            if shouldEnable {
+                NSLog("SYNC-WILL-REGISTER")
+                registerHotkey(modifiers: modifiers, keyCode: keyCode)
+            }
+
+            if shouldEnable {
+                NSLog("[EmojiHotkey] Registered: %@%@", modifierSymbols(modifiers), keyCodeSymbol(keyCode))
+            } else {
+                NSLog("[EmojiHotkey] Disabled")
+            }
+        } else {
+            NSLog("SYNC-NO-CHANGE")
+        }
+    }
+    
+    func registerHotkey(modifiers: NSEvent.ModifierFlags, keyCode: UInt16) {
+        NSLog("REGISTER-START: modifiers=%lu, keyCode=%d", UInt(modifiers.rawValue), keyCode)
+        unregisterHotkey()
+
+        self.modifiers = modifiers
+        self.keyCode = keyCode
+        self.isEnabled = true
+
+        NSLog("REGISTER-ADDING-MONITORS")
+        globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            NSLog("GLOBAL-MONITOR-FIRED")
+            self?.handleKeyEvent(event)
+        }
+
+        localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            NSLog("LOCAL-MONITOR-FIRED")
+            if let consumed = self?.handleKeyEvent(event), consumed {
+                return nil
+            }
+            return event
+        }
+
+        NSLog("REGISTER-COMPLETE: globalMonitor=%@, localMonitor=%@", globalMonitor != nil ? "YES" : "NO", localMonitor != nil ? "YES" : "NO")
+        NSLog("[EmojiHotkey] Hotkey registered: %@%@", modifierSymbols(modifiers), keyCodeSymbol(keyCode))
+    }
+    
+    func unregisterHotkey() {
+        if let monitor = globalMonitor {
+            NSEvent.removeMonitor(monitor)
+            globalMonitor = nil
+        }
+        
+        if let monitor = localMonitor {
+            NSEvent.removeMonitor(monitor)
+            localMonitor = nil
+        }
+        
+        isEnabled = false
+
+        NSLog("[EmojiHotkey] Hotkey unregistered")
+    }
+    
+    @discardableResult
+    private func handleKeyEvent(_ event: NSEvent) -> Bool {
+        NSLog("HANDLE-KEY: keyCode=%d (expecting %d)", event.keyCode, keyCode)
+
+        guard event.keyCode == keyCode else {
+            return false
+        }
+
+        let relevantModifiers: NSEvent.ModifierFlags = [.command, .option, .control, .shift]
+        let eventModifiers = event.modifierFlags.intersection(relevantModifiers)
+
+        NSLog("HANDLE-KEY-MODIFIERS: event=%lu, expected=%lu", UInt(eventModifiers.rawValue), UInt(modifiers.rawValue))
+
+        guard eventModifiers == modifiers else {
+            return false
+        }
+
+        NSLog("HANDLE-KEY-MATCH! Opening emoji picker")
+        openEmojiPicker()
+        return true
+    }
+    
+    private func openEmojiPicker() {
+        NSLog("[EmojiHotkey] Opening custom emoji picker...")
+
+        DispatchQueue.main.async {
+            EmojiPickerManager.shared.show()
+        }
+    }
+    
+    private func modifierSymbols(_ modifiers: NSEvent.ModifierFlags) -> String {
+        var symbols = ""
+        if modifiers.contains(.control) { symbols += "⌃" }
+        if modifiers.contains(.option) { symbols += "⌥" }
+        if modifiers.contains(.shift) { symbols += "⇧" }
+        if modifiers.contains(.command) { symbols += "⌘" }
+        return symbols
+    }
+    
+    private func keyCodeSymbol(_ keyCode: UInt16) -> String {
+        switch keyCode {
+        case 41: return ";"
+        case 14: return "E"
+        case 49: return "Space"
+        case 44: return "/"
+        case 39: return "'"
+        case 43: return ","
+        case 47: return "."
+        default:
+            if let char = keyCodeToCharacter(keyCode) {
+                return String(char)
+            }
+            return "Key\(keyCode)"
+        }
+    }
+    
+    private func keyCodeToCharacter(_ keyCode: UInt16) -> Character? {
+        let event = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: true)
+        var length = 0
+        event?.keyboardGetUnicodeString(maxStringLength: 4, actualStringLength: &length, unicodeString: nil)
+        
+        if length > 0 {
+            var chars: [UniChar] = Array(repeating: 0, count: length)
+            event?.keyboardGetUnicodeString(maxStringLength: 4, actualStringLength: &length, unicodeString: &chars)
+            if let scalar = UnicodeScalar(chars[0]) {
+                return Character(scalar)
+            }
+        }
+        
+        return nil
+    }
+}
+
+// MARK: - Emoji Hotkey Bridge for Objective-C
+
+/// Bridge to initialize EmojiHotkeyManager from Objective-C AppDelegate
+@objc class EmojiHotkeyBridge: NSObject {
+    @objc static func initializeEmojiHotkeyManager() {
+        NSLog("BRIDGE-START")
+        print("BRIDGE-START-PRINT")
+
+        // Force initialization - this will trigger the singleton's init()
+        let manager = EmojiHotkeyManager.shared
+
+        NSLog("BRIDGE-AFTER-SHARED")
+        print("BRIDGE-AFTER-SHARED-PRINT")
+
+        NSLog("[EmojiHotkeyBridge] Manager object: %@", String(describing: manager))
+    }
+}
+
+
+// MARK: - Custom Emoji Picker
+
+// MARK: - Emoji Database
+
+/// Represents an emoji with metadata for search
+struct EmojiItem: Identifiable, Codable, Equatable {
+    let id = UUID()
+    let emoji: String
+    let name: String // English name
+    let keywords: [String] // English + Vietnamese keywords
+    let category: String
+
+    enum CodingKeys: String, CodingKey {
+        case emoji, name, keywords, category
+    }
+}
+
+/// Comprehensive emoji database with search support
+class EmojiDatabase {
+    static let shared = EmojiDatabase()
+
+    let categories: [(name: String, icon: String, emojis: [EmojiItem])]
+
+    private init() {
+        // Smileys & People
+        let smileys: [EmojiItem] = [
+            EmojiItem(emoji: "😀", name: "Grinning Face", keywords: ["grinning", "smile", "happy", "cười", "vui"], category: "Smileys"),
+            EmojiItem(emoji: "😃", name: "Grinning Face with Big Eyes", keywords: ["grinning", "smile", "happy", "cười", "vui", "mắt to"], category: "Smileys"),
+            EmojiItem(emoji: "😄", name: "Grinning Face with Smiling Eyes", keywords: ["smile", "happy", "joy", "cười", "vui vẻ"], category: "Smileys"),
+            EmojiItem(emoji: "😁", name: "Beaming Face with Smiling Eyes", keywords: ["smile", "happy", "cười toe toét"], category: "Smileys"),
+            EmojiItem(emoji: "😆", name: "Grinning Squinting Face", keywords: ["laugh", "happy", "cười", "vui"], category: "Smileys"),
+            EmojiItem(emoji: "😅", name: "Grinning Face with Sweat", keywords: ["smile", "sweat", "cười", "mồ hôi"], category: "Smileys"),
+            EmojiItem(emoji: "🤣", name: "Rolling on the Floor Laughing", keywords: ["laugh", "lol", "rofl", "cười lăn"], category: "Smileys"),
+            EmojiItem(emoji: "😂", name: "Face with Tears of Joy", keywords: ["laugh", "cry", "tears", "cười", "nước mắt"], category: "Smileys"),
+            EmojiItem(emoji: "🙂", name: "Slightly Smiling Face", keywords: ["smile", "cười nhẹ"], category: "Smileys"),
+            EmojiItem(emoji: "🙃", name: "Upside-Down Face", keywords: ["upside down", "sarcasm", "ngược"], category: "Smileys"),
+            EmojiItem(emoji: "😉", name: "Winking Face", keywords: ["wink", "flirt", "nháy mắt"], category: "Smileys"),
+            EmojiItem(emoji: "😊", name: "Smiling Face with Smiling Eyes", keywords: ["smile", "blush", "cười", "hạnh phúc"], category: "Smileys"),
+            EmojiItem(emoji: "😇", name: "Smiling Face with Halo", keywords: ["angel", "halo", "thiên thần"], category: "Smileys"),
+            EmojiItem(emoji: "🥰", name: "Smiling Face with Hearts", keywords: ["love", "hearts", "yêu", "tim"], category: "Smileys"),
+            EmojiItem(emoji: "😍", name: "Smiling Face with Heart-Eyes", keywords: ["love", "hearts", "yêu", "mắt tim"], category: "Smileys"),
+            EmojiItem(emoji: "🤩", name: "Star-Struck", keywords: ["star", "eyes", "wow", "ngôi sao"], category: "Smileys"),
+            EmojiItem(emoji: "😘", name: "Face Blowing a Kiss", keywords: ["kiss", "love", "hôn"], category: "Smileys"),
+            EmojiItem(emoji: "😗", name: "Kissing Face", keywords: ["kiss", "hôn"], category: "Smileys"),
+            EmojiItem(emoji: "😚", name: "Kissing Face with Closed Eyes", keywords: ["kiss", "hôn"], category: "Smileys"),
+            EmojiItem(emoji: "😙", name: "Kissing Face with Smiling Eyes", keywords: ["kiss", "smile", "hôn"], category: "Smileys"),
+            EmojiItem(emoji: "🥲", name: "Smiling Face with Tear", keywords: ["smile", "tear", "cười", "nước mắt"], category: "Smileys"),
+            EmojiItem(emoji: "😋", name: "Face Savoring Food", keywords: ["yum", "delicious", "ngon"], category: "Smileys"),
+            EmojiItem(emoji: "😛", name: "Face with Tongue", keywords: ["tongue", "lưỡi"], category: "Smileys"),
+            EmojiItem(emoji: "😜", name: "Winking Face with Tongue", keywords: ["wink", "tongue", "nháy mắt"], category: "Smileys"),
+            EmojiItem(emoji: "🤪", name: "Zany Face", keywords: ["crazy", "wild", "điên"], category: "Smileys"),
+            EmojiItem(emoji: "😝", name: "Squinting Face with Tongue", keywords: ["tongue", "lưỡi"], category: "Smileys"),
+            EmojiItem(emoji: "🤑", name: "Money-Mouth Face", keywords: ["money", "rich", "tiền"], category: "Smileys"),
+            EmojiItem(emoji: "🤗", name: "Hugging Face", keywords: ["hug", "ôm"], category: "Smileys"),
+            EmojiItem(emoji: "🤭", name: "Face with Hand Over Mouth", keywords: ["oops", "surprise", "che miệng"], category: "Smileys"),
+            EmojiItem(emoji: "🤫", name: "Shushing Face", keywords: ["shh", "quiet", "im lặng"], category: "Smileys"),
+            EmojiItem(emoji: "🤔", name: "Thinking Face", keywords: ["think", "hmm", "suy nghĩ"], category: "Smileys"),
+            EmojiItem(emoji: "🤐", name: "Zipper-Mouth Face", keywords: ["silence", "secret", "im lặng"], category: "Smileys"),
+            EmojiItem(emoji: "🤨", name: "Face with Raised Eyebrow", keywords: ["skeptical", "suspicious", "nghi ngờ"], category: "Smileys"),
+            EmojiItem(emoji: "😐", name: "Neutral Face", keywords: ["neutral", "trung lập"], category: "Smileys"),
+            EmojiItem(emoji: "😑", name: "Expressionless Face", keywords: ["blank", "vô cảm"], category: "Smileys"),
+            EmojiItem(emoji: "😶", name: "Face Without Mouth", keywords: ["silence", "im lặng"], category: "Smileys"),
+            EmojiItem(emoji: "😏", name: "Smirking Face", keywords: ["smirk", "cười khẩy"], category: "Smileys"),
+            EmojiItem(emoji: "😒", name: "Unamused Face", keywords: ["unimpressed", "không vui"], category: "Smileys"),
+            EmojiItem(emoji: "🙄", name: "Face with Rolling Eyes", keywords: ["eyeroll", "lăn mắt"], category: "Smileys"),
+            EmojiItem(emoji: "😬", name: "Grimacing Face", keywords: ["grimace", "nhăn mặt"], category: "Smileys"),
+            EmojiItem(emoji: "🤥", name: "Lying Face", keywords: ["lie", "pinocchio", "nói dối"], category: "Smileys"),
+            EmojiItem(emoji: "😌", name: "Relieved Face", keywords: ["relieved", "calm", "nhẹ nhõm"], category: "Smileys"),
+            EmojiItem(emoji: "😔", name: "Pensive Face", keywords: ["sad", "pensive", "buồn"], category: "Smileys"),
+            EmojiItem(emoji: "😪", name: "Sleepy Face", keywords: ["tired", "sleepy", "buồn ngủ"], category: "Smileys"),
+            EmojiItem(emoji: "🤤", name: "Drooling Face", keywords: ["drool", "chảy nước miếng"], category: "Smileys"),
+            EmojiItem(emoji: "😴", name: "Sleeping Face", keywords: ["sleep", "ngủ"], category: "Smileys"),
+            EmojiItem(emoji: "😷", name: "Face with Medical Mask", keywords: ["mask", "sick", "khẩu trang"], category: "Smileys"),
+            EmojiItem(emoji: "🤒", name: "Face with Thermometer", keywords: ["sick", "fever", "ốm"], category: "Smileys"),
+            EmojiItem(emoji: "🤕", name: "Face with Head-Bandage", keywords: ["hurt", "injured", "bị thương"], category: "Smileys"),
+            EmojiItem(emoji: "🤢", name: "Nauseated Face", keywords: ["sick", "nausea", "buồn nôn"], category: "Smileys"),
+            EmojiItem(emoji: "🤮", name: "Face Vomiting", keywords: ["vomit", "sick", "nôn"], category: "Smileys"),
+            EmojiItem(emoji: "🤧", name: "Sneezing Face", keywords: ["sneeze", "sick", "hắt hơi"], category: "Smileys"),
+            EmojiItem(emoji: "🥵", name: "Hot Face", keywords: ["hot", "heat", "nóng"], category: "Smileys"),
+            EmojiItem(emoji: "🥶", name: "Cold Face", keywords: ["cold", "freeze", "lạnh"], category: "Smileys"),
+            EmojiItem(emoji: "😵", name: "Dizzy Face", keywords: ["dizzy", "confused", "chóng mặt"], category: "Smileys"),
+            EmojiItem(emoji: "🤯", name: "Exploding Head", keywords: ["mind blown", "shocked", "sốc"], category: "Smileys"),
+            EmojiItem(emoji: "🥳", name: "Partying Face", keywords: ["party", "celebrate", "tiệc tung"], category: "Smileys"),
+            EmojiItem(emoji: "😎", name: "Smiling Face with Sunglasses", keywords: ["cool", "sunglasses", "ngầu"], category: "Smileys"),
+            EmojiItem(emoji: "🤓", name: "Nerd Face", keywords: ["nerd", "geek", "mọt sách"], category: "Smileys"),
+            EmojiItem(emoji: "🧐", name: "Face with Monocle", keywords: ["monocle", "fancy", "lịch lãm"], category: "Smileys"),
+            EmojiItem(emoji: "😕", name: "Confused Face", keywords: ["confused", "bối rối"], category: "Smileys"),
+            EmojiItem(emoji: "😟", name: "Worried Face", keywords: ["worried", "lo lắng"], category: "Smileys"),
+            EmojiItem(emoji: "🙁", name: "Slightly Frowning Face", keywords: ["sad", "buồn"], category: "Smileys"),
+            EmojiItem(emoji: "☹️", name: "Frowning Face", keywords: ["sad", "unhappy", "buồn"], category: "Smileys"),
+            EmojiItem(emoji: "😮", name: "Face with Open Mouth", keywords: ["surprise", "wow", "ngạc nhiên"], category: "Smileys"),
+            EmojiItem(emoji: "😯", name: "Hushed Face", keywords: ["quiet", "surprise", "im lặng"], category: "Smileys"),
+            EmojiItem(emoji: "😲", name: "Astonished Face", keywords: ["shocked", "surprise", "sốc"], category: "Smileys"),
+            EmojiItem(emoji: "😳", name: "Flushed Face", keywords: ["blush", "embarrassed", "xấu hổ"], category: "Smileys"),
+            EmojiItem(emoji: "🥺", name: "Pleading Face", keywords: ["puppy eyes", "please", "cầu xin"], category: "Smileys"),
+            EmojiItem(emoji: "😦", name: "Frowning Face with Open Mouth", keywords: ["sad", "frown", "buồn"], category: "Smileys"),
+            EmojiItem(emoji: "😧", name: "Anguished Face", keywords: ["anguish", "worry", "đau khổ"], category: "Smileys"),
+            EmojiItem(emoji: "😨", name: "Fearful Face", keywords: ["fear", "scared", "sợ hãi"], category: "Smileys"),
+            EmojiItem(emoji: "😰", name: "Anxious Face with Sweat", keywords: ["anxious", "nervous", "lo lắng"], category: "Smileys"),
+            EmojiItem(emoji: "😥", name: "Sad but Relieved Face", keywords: ["sad", "relieved", "buồn"], category: "Smileys"),
+            EmojiItem(emoji: "😢", name: "Crying Face", keywords: ["cry", "sad", "tears", "khóc"], category: "Smileys"),
+            EmojiItem(emoji: "😭", name: "Loudly Crying Face", keywords: ["cry", "sob", "tears", "khóc"], category: "Smileys"),
+            EmojiItem(emoji: "😱", name: "Face Screaming in Fear", keywords: ["scream", "fear", "hét"], category: "Smileys"),
+            EmojiItem(emoji: "😖", name: "Confounded Face", keywords: ["confused", "frustrated", "bối rối"], category: "Smileys"),
+            EmojiItem(emoji: "😣", name: "Persevering Face", keywords: ["struggle", "persevere", "kiên trì"], category: "Smileys"),
+            EmojiItem(emoji: "😞", name: "Disappointed Face", keywords: ["disappointed", "sad", "thất vọng"], category: "Smileys"),
+            EmojiItem(emoji: "😓", name: "Downcast Face with Sweat", keywords: ["sad", "sweat", "buồn"], category: "Smileys"),
+            EmojiItem(emoji: "😩", name: "Weary Face", keywords: ["tired", "weary", "mệt mỏi"], category: "Smileys"),
+            EmojiItem(emoji: "😫", name: "Tired Face", keywords: ["tired", "exhausted", "kiệt sức"], category: "Smileys"),
+            EmojiItem(emoji: "🥱", name: "Yawning Face", keywords: ["yawn", "tired", "ngáp"], category: "Smileys"),
+            EmojiItem(emoji: "😤", name: "Face with Steam From Nose", keywords: ["angry", "triumph", "tức giận"], category: "Smileys"),
+            EmojiItem(emoji: "😡", name: "Pouting Face", keywords: ["angry", "mad", "tức"], category: "Smileys"),
+            EmojiItem(emoji: "😠", name: "Angry Face", keywords: ["angry", "mad", "giận"], category: "Smileys"),
+            EmojiItem(emoji: "🤬", name: "Face with Symbols on Mouth", keywords: ["swearing", "cursing", "chửi"], category: "Smileys"),
+            EmojiItem(emoji: "😈", name: "Smiling Face with Horns", keywords: ["devil", "evil", "ma quỷ"], category: "Smileys"),
+            EmojiItem(emoji: "👿", name: "Angry Face with Horns", keywords: ["devil", "angry", "quỷ"], category: "Smileys"),
+            EmojiItem(emoji: "💀", name: "Skull", keywords: ["skull", "death", "dead", "đầu lâu"], category: "Smileys"),
+            EmojiItem(emoji: "☠️", name: "Skull and Crossbones", keywords: ["skull", "danger", "nguy hiểm"], category: "Smileys"),
+        ]
+
+        // Hands & Body
+        let hands: [EmojiItem] = [
+            EmojiItem(emoji: "👋", name: "Waving Hand", keywords: ["wave", "hello", "vẫy tay", "chào"], category: "Hands"),
+            EmojiItem(emoji: "🤚", name: "Raised Back of Hand", keywords: ["hand", "raised", "tay"], category: "Hands"),
+            EmojiItem(emoji: "🖐", name: "Hand with Fingers Splayed", keywords: ["hand", "five", "tay"], category: "Hands"),
+            EmojiItem(emoji: "✋", name: "Raised Hand", keywords: ["hand", "stop", "tay", "dừng"], category: "Hands"),
+            EmojiItem(emoji: "🖖", name: "Vulcan Salute", keywords: ["spock", "star trek", "tay"], category: "Hands"),
+            EmojiItem(emoji: "👌", name: "OK Hand", keywords: ["ok", "okay", "good", "được"], category: "Hands"),
+            EmojiItem(emoji: "🤏", name: "Pinching Hand", keywords: ["small", "tiny", "nhỏ"], category: "Hands"),
+            EmojiItem(emoji: "✌️", name: "Victory Hand", keywords: ["peace", "victory", "chiến thắng"], category: "Hands"),
+            EmojiItem(emoji: "🤞", name: "Crossed Fingers", keywords: ["fingers crossed", "luck", "may mắn"], category: "Hands"),
+            EmojiItem(emoji: "🤟", name: "Love-You Gesture", keywords: ["love", "yêu"], category: "Hands"),
+            EmojiItem(emoji: "🤘", name: "Sign of the Horns", keywords: ["rock", "metal", "nhạc rock"], category: "Hands"),
+            EmojiItem(emoji: "🤙", name: "Call Me Hand", keywords: ["phone", "call", "gọi điện"], category: "Hands"),
+            EmojiItem(emoji: "👈", name: "Backhand Index Pointing Left", keywords: ["point", "left", "trái"], category: "Hands"),
+            EmojiItem(emoji: "👉", name: "Backhand Index Pointing Right", keywords: ["point", "right", "phải"], category: "Hands"),
+            EmojiItem(emoji: "👆", name: "Backhand Index Pointing Up", keywords: ["point", "up", "lên"], category: "Hands"),
+            EmojiItem(emoji: "👇", name: "Backhand Index Pointing Down", keywords: ["point", "down", "xuống"], category: "Hands"),
+            EmojiItem(emoji: "☝️", name: "Index Pointing Up", keywords: ["point", "up", "lên", "một"], category: "Hands"),
+            EmojiItem(emoji: "👍", name: "Thumbs Up", keywords: ["like", "good", "yes", "thích", "tốt"], category: "Hands"),
+            EmojiItem(emoji: "👎", name: "Thumbs Down", keywords: ["dislike", "bad", "no", "không thích"], category: "Hands"),
+            EmojiItem(emoji: "✊", name: "Raised Fist", keywords: ["fist", "punch", "đấm"], category: "Hands"),
+            EmojiItem(emoji: "👊", name: "Oncoming Fist", keywords: ["punch", "đấm"], category: "Hands"),
+            EmojiItem(emoji: "🤛", name: "Left-Facing Fist", keywords: ["fist", "đấm"], category: "Hands"),
+            EmojiItem(emoji: "🤜", name: "Right-Facing Fist", keywords: ["fist", "đấm"], category: "Hands"),
+            EmojiItem(emoji: "👏", name: "Clapping Hands", keywords: ["clap", "applause", "vỗ tay"], category: "Hands"),
+            EmojiItem(emoji: "🙌", name: "Raising Hands", keywords: ["hands", "celebrate", "ăn mừng"], category: "Hands"),
+            EmojiItem(emoji: "👐", name: "Open Hands", keywords: ["hands", "open", "mở"], category: "Hands"),
+            EmojiItem(emoji: "🤲", name: "Palms Up Together", keywords: ["pray", "hands", "cầu nguyện"], category: "Hands"),
+            EmojiItem(emoji: "🤝", name: "Handshake", keywords: ["shake", "deal", "bắt tay"], category: "Hands"),
+            EmojiItem(emoji: "🙏", name: "Folded Hands", keywords: ["pray", "thanks", "cầu nguyện", "cảm ơn"], category: "Hands"),
+        ]
+
+        // Hearts
+        let hearts: [EmojiItem] = [
+            EmojiItem(emoji: "❤️", name: "Red Heart", keywords: ["love", "heart", "yêu", "tim"], category: "Hearts"),
+            EmojiItem(emoji: "🧡", name: "Orange Heart", keywords: ["love", "heart", "yêu", "tim"], category: "Hearts"),
+            EmojiItem(emoji: "💛", name: "Yellow Heart", keywords: ["love", "heart", "yêu", "tim"], category: "Hearts"),
+            EmojiItem(emoji: "💚", name: "Green Heart", keywords: ["love", "heart", "yêu", "tim"], category: "Hearts"),
+            EmojiItem(emoji: "💙", name: "Blue Heart", keywords: ["love", "heart", "yêu", "tim"], category: "Hearts"),
+            EmojiItem(emoji: "💜", name: "Purple Heart", keywords: ["love", "heart", "yêu", "tim"], category: "Hearts"),
+            EmojiItem(emoji: "🖤", name: "Black Heart", keywords: ["love", "heart", "yêu", "tim"], category: "Hearts"),
+            EmojiItem(emoji: "🤍", name: "White Heart", keywords: ["love", "heart", "yêu", "tim"], category: "Hearts"),
+            EmojiItem(emoji: "🤎", name: "Brown Heart", keywords: ["love", "heart", "yêu", "tim"], category: "Hearts"),
+            EmojiItem(emoji: "💔", name: "Broken Heart", keywords: ["broken", "heart", "heartbreak", "tan vỡ"], category: "Hearts"),
+            EmojiItem(emoji: "❤️‍🔥", name: "Heart on Fire", keywords: ["love", "fire", "yêu", "lửa"], category: "Hearts"),
+            EmojiItem(emoji: "❤️‍🩹", name: "Mending Heart", keywords: ["healing", "heart", "lành"], category: "Hearts"),
+            EmojiItem(emoji: "💕", name: "Two Hearts", keywords: ["love", "hearts", "yêu"], category: "Hearts"),
+            EmojiItem(emoji: "💞", name: "Revolving Hearts", keywords: ["love", "hearts", "yêu"], category: "Hearts"),
+            EmojiItem(emoji: "💓", name: "Beating Heart", keywords: ["love", "heartbeat", "yêu", "đập"], category: "Hearts"),
+            EmojiItem(emoji: "💗", name: "Growing Heart", keywords: ["love", "growing", "yêu"], category: "Hearts"),
+            EmojiItem(emoji: "💖", name: "Sparkling Heart", keywords: ["love", "sparkle", "yêu", "lấp lánh"], category: "Hearts"),
+            EmojiItem(emoji: "💘", name: "Heart with Arrow", keywords: ["love", "cupid", "yêu"], category: "Hearts"),
+            EmojiItem(emoji: "💝", name: "Heart with Ribbon", keywords: ["love", "gift", "yêu", "quà"], category: "Hearts"),
+            EmojiItem(emoji: "💟", name: "Heart Decoration", keywords: ["love", "heart", "yêu"], category: "Hearts"),
+        ]
+
+        // Animals
+        let animals: [EmojiItem] = [
+            EmojiItem(emoji: "🐶", name: "Dog Face", keywords: ["dog", "puppy", "chó"], category: "Animals"),
+            EmojiItem(emoji: "🐱", name: "Cat Face", keywords: ["cat", "kitten", "mèo"], category: "Animals"),
+            EmojiItem(emoji: "🐭", name: "Mouse Face", keywords: ["mouse", "chuột"], category: "Animals"),
+            EmojiItem(emoji: "🐹", name: "Hamster", keywords: ["hamster", "chuột"], category: "Animals"),
+            EmojiItem(emoji: "🐰", name: "Rabbit Face", keywords: ["rabbit", "bunny", "thỏ"], category: "Animals"),
+            EmojiItem(emoji: "🦊", name: "Fox", keywords: ["fox", "cáo"], category: "Animals"),
+            EmojiItem(emoji: "🐻", name: "Bear", keywords: ["bear", "gấu"], category: "Animals"),
+            EmojiItem(emoji: "🐼", name: "Panda", keywords: ["panda", "bear", "gấu trúc"], category: "Animals"),
+            EmojiItem(emoji: "🐨", name: "Koala", keywords: ["koala", "gấu túi"], category: "Animals"),
+            EmojiItem(emoji: "🐯", name: "Tiger Face", keywords: ["tiger", "hổ"], category: "Animals"),
+            EmojiItem(emoji: "🦁", name: "Lion", keywords: ["lion", "sư tử"], category: "Animals"),
+            EmojiItem(emoji: "🐮", name: "Cow Face", keywords: ["cow", "bò"], category: "Animals"),
+            EmojiItem(emoji: "🐷", name: "Pig Face", keywords: ["pig", "lợn"], category: "Animals"),
+            EmojiItem(emoji: "🐸", name: "Frog", keywords: ["frog", "ếch"], category: "Animals"),
+            EmojiItem(emoji: "🐵", name: "Monkey Face", keywords: ["monkey", "khỉ"], category: "Animals"),
+            EmojiItem(emoji: "🐔", name: "Chicken", keywords: ["chicken", "gà"], category: "Animals"),
+            EmojiItem(emoji: "🐧", name: "Penguin", keywords: ["penguin", "chim cánh cụt"], category: "Animals"),
+            EmojiItem(emoji: "🐦", name: "Bird", keywords: ["bird", "chim"], category: "Animals"),
+            EmojiItem(emoji: "🐤", name: "Baby Chick", keywords: ["chick", "baby", "gà con"], category: "Animals"),
+            EmojiItem(emoji: "🦆", name: "Duck", keywords: ["duck", "vịt"], category: "Animals"),
+        ]
+
+        // Food
+        let food: [EmojiItem] = [
+            EmojiItem(emoji: "🍎", name: "Red Apple", keywords: ["apple", "fruit", "táo"], category: "Food"),
+            EmojiItem(emoji: "🍐", name: "Pear", keywords: ["pear", "fruit", "lê"], category: "Food"),
+            EmojiItem(emoji: "🍊", name: "Tangerine", keywords: ["orange", "fruit", "cam"], category: "Food"),
+            EmojiItem(emoji: "🍋", name: "Lemon", keywords: ["lemon", "fruit", "chanh"], category: "Food"),
+            EmojiItem(emoji: "🍌", name: "Banana", keywords: ["banana", "fruit", "chuối"], category: "Food"),
+            EmojiItem(emoji: "🍉", name: "Watermelon", keywords: ["watermelon", "fruit", "dưa hấu"], category: "Food"),
+            EmojiItem(emoji: "🍇", name: "Grapes", keywords: ["grapes", "fruit", "nho"], category: "Food"),
+            EmojiItem(emoji: "🍓", name: "Strawberry", keywords: ["strawberry", "fruit", "dâu"], category: "Food"),
+            EmojiItem(emoji: "🫐", name: "Blueberries", keywords: ["blueberry", "fruit", "việt quất"], category: "Food"),
+            EmojiItem(emoji: "🍒", name: "Cherries", keywords: ["cherry", "fruit", "anh đào"], category: "Food"),
+            EmojiItem(emoji: "🍑", name: "Peach", keywords: ["peach", "fruit", "đào"], category: "Food"),
+            EmojiItem(emoji: "🥭", name: "Mango", keywords: ["mango", "fruit", "xoài"], category: "Food"),
+            EmojiItem(emoji: "🍍", name: "Pineapple", keywords: ["pineapple", "fruit", "dứa"], category: "Food"),
+            EmojiItem(emoji: "🥥", name: "Coconut", keywords: ["coconut", "fruit", "dừa"], category: "Food"),
+            EmojiItem(emoji: "🥝", name: "Kiwi Fruit", keywords: ["kiwi", "fruit", "kiwi"], category: "Food"),
+            EmojiItem(emoji: "🍅", name: "Tomato", keywords: ["tomato", "vegetable", "cà chua"], category: "Food"),
+            EmojiItem(emoji: "🥑", name: "Avocado", keywords: ["avocado", "fruit", "bơ"], category: "Food"),
+            EmojiItem(emoji: "🍔", name: "Hamburger", keywords: ["burger", "hamburger", "fast food", "bánh hamburger"], category: "Food"),
+            EmojiItem(emoji: "🍕", name: "Pizza", keywords: ["pizza", "italian", "bánh pizza"], category: "Food"),
+            EmojiItem(emoji: "🍝", name: "Spaghetti", keywords: ["pasta", "spaghetti", "italian", "mì ý"], category: "Food"),
+        ]
+
+        self.categories = [
+            ("Smileys", "😀", smileys),
+            ("Hands", "👋", hands),
+            ("Hearts", "❤️", hearts),
+            ("Animals", "🐶", animals),
+            ("Food", "🍎", food),
+        ]
+    }
+
+    /// Search emojis by keyword
+    func search(_ query: String) -> [EmojiItem] {
+        guard !query.isEmpty else { return [] }
+
+        let lowercaseQuery = query.lowercased()
+        var results: [EmojiItem] = []
+
+        for (_, _, emojis) in categories {
+            for emoji in emojis {
+                // Search in name
+                if emoji.name.lowercased().contains(lowercaseQuery) {
+                    results.append(emoji)
+                    continue
+                }
+
+                // Search in keywords
+                for keyword in emoji.keywords {
+                    if keyword.lowercased().contains(lowercaseQuery) {
+                        results.append(emoji)
+                        break
+                    }
+                }
+            }
+        }
+
+        return results
+    }
+}
+
+/// Floating panel that stays on top of other windows
+class FloatingPanel<Content: View>: NSPanel, NSWindowDelegate {
+
+    init(view: Content, contentRect: NSRect) {
+        super.init(
+            contentRect: contentRect,
+            styleMask: [.nonactivatingPanel, .titled, .closable, .utilityWindow],
+            backing: .buffered,
+            defer: false
+        )
+
+        // Panel behavior
+        self.isFloatingPanel = true
+        self.level = .floating
+        self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+
+        // Visual styling
+        self.titleVisibility = .hidden
+        self.titlebarAppearsTransparent = true
+        self.isMovableByWindowBackground = true
+        self.backgroundColor = .clear
+
+        // Performance
+        self.isOpaque = false
+        self.hasShadow = true
+
+        // Set content view
+        self.contentView = NSHostingView(rootView: view)
+
+        // Set delegate to handle close button
+        self.delegate = self
+
+        // Center on screen
+        self.center()
+    }
+
+    // Handle close button click
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        NSLog("[FloatingPanel] windowShouldClose called")
+        return true
+    }
+
+    // Override performClose to handle close button for nonactivating panels
+    override func performClose(_ sender: Any?) {
+        NSLog("[FloatingPanel] performClose called - closing panel")
+        self.close()
+    }
+
+    /// Shows the panel at current mouse position
+    func showAtMousePosition() {
+        let mouseLocation = NSEvent.mouseLocation
+        let screenFrame = NSScreen.main?.frame ?? .zero
+
+        // Position panel near mouse, but ensure it stays on screen
+        var origin = mouseLocation
+        origin.x = min(max(origin.x, screenFrame.minX), screenFrame.maxX - self.frame.width)
+        origin.y = min(max(origin.y - self.frame.height, screenFrame.minY), screenFrame.maxY - self.frame.height)
+
+        self.setFrameOrigin(origin)
+        self.orderFrontRegardless()
+    }
+
+    /// Key event handling - close on Escape
+    override func keyDown(with event: NSEvent) {
+        switch event.keyCode {
+        case 53: // Escape key
+            close()
+        default:
+            super.keyDown(with: event)
+        }
+    }
+
+    // Override canBecomeKey to allow keyboard input
+    override var canBecomeKey: Bool {
+        return true
+    }
+}
+
+
+/// Emoji picker view with grid layout
+struct EmojiPickerView: View {
+    var onEmojiSelected: (String) -> Void
+    var onClose: (() -> Void)?
+
+    // Emoji categories
+    private let emojiCategories: [(String, [String])] = [
+        ("😀", ["😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂", "🙂", "🙃", "😉", "😊", "😇", "🥰", "😍", "🤩", "😘", "😗", "😚", "😙", "🥲"]),
+        ("👋", ["👋", "🤚", "🖐", "✋", "🖖", "👌", "🤌", "🤏", "✌️", "🤞", "🤟", "🤘", "🤙", "👈", "👉", "👆", "🖕", "👇", "☝️", "👍", "👎"]),
+        ("❤️", ["❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔", "❤️‍🔥", "❤️‍🩹", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "💟"]),
+        ("🐶", ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🐦", "🐤", "🦆"]),
+        ("🍎", ["🍎", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🫐", "🍈", "🍒", "🍑", "🥭", "🍍", "🥥", "🥝", "🍅", "🥑", "🥦", "🥬"]),
+        ("⚽", ["⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🪃", "🥅", "⛳"]),
+        ("🎵", ["🎵", "🎶", "🎤", "🎧", "🎼", "🎹", "🥁", "🪘", "🎷", "🎺", "🪗", "🎸", "🪕", "🎻", "🎲", "♟️", "🎯", "🎰", "🎳", "🎮"]),
+        ("✈️", ["✈️", "🚗", "🚕", "🚙", "🚌", "🚎", "🏎️", "🚓", "🚑", "🚒", "🚐", "🛻", "🚚", "🚛", "🚜", "🦯", "🦽", "🦼", "🛴", "🚲"])
+    ]
+
+    @State private var selectedCategory = 0
+    @State private var searchText = ""
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header with close button
+            HStack {
+                Text("Emoji Picker")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                Spacer()
+                Button(action: {
+                    onClose?()
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Đóng (ESC)")
+            }
+            .padding(.horizontal, 12)
+            .padding(.top, 10)
+            .padding(.bottom, 8)
+
+            // Search bar
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(.secondary)
+                TextField("Tìm emoji...", text: $searchText)
+                    .textFieldStyle(.plain)
+                if !searchText.isEmpty {
+                    Button(action: { searchText = "" }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(8)
+            .background(Color(NSColor.controlBackgroundColor))
+            .cornerRadius(6)
+            .padding(.horizontal, 12)
+            .padding(.bottom, 8)
+
+            // Category tabs
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 4) {
+                    ForEach(0..<emojiCategories.count, id: \.self) { index in
+                        Button(action: { selectedCategory = index }) {
+                            Text(emojiCategories[index].0)
+                                .font(.system(size: 20))
+                                .frame(width: 32, height: 32)
+                                .background(selectedCategory == index ? Color.accentColor.opacity(0.2) : Color.clear)
+                                .cornerRadius(6)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 12)
+            }
+            .padding(.bottom, 8)
+
+            Divider()
+
+            // Emoji grid
+            ScrollView {
+                let emojis = filteredEmojis
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 8), spacing: 4) {
+                    ForEach(emojis, id: \.self) { emoji in
+                        Button(action: {
+                            onEmojiSelected(emoji)
+                        }) {
+                            Text(emoji)
+                                .font(.system(size: 24))
+                                .frame(width: 36, height: 36)
+                                .background(Color(NSColor.controlBackgroundColor))
+                                .cornerRadius(4)
+                        }
+                        .buttonStyle(.plain)
+                        .help(emoji)
+                    }
+                }
+                .padding(12)
+            }
+            .frame(height: 280)
+        }
+        .frame(width: 320)
+        .background(Color(NSColor.windowBackgroundColor))
+        .cornerRadius(12)
+    }
+
+    private var filteredEmojis: [String] {
+        if searchText.isEmpty {
+            return emojiCategories[selectedCategory].1
+        } else {
+            // Simple search - return all emojis containing search text
+            return emojiCategories.flatMap { $0.1 }
+        }
+    }
+}
+
+
+/// Manager for emoji picker floating panel
+@MainActor
+class EmojiPickerManager {
+    static let shared = EmojiPickerManager()
+
+    private var panel: FloatingPanel<EmojiPickerView>?
+
+    private init() {}
+
+    /// Shows the emoji picker at current mouse position
+    func show() {
+        NSLog("[EmojiPicker] Showing emoji picker at mouse position")
+
+        // Close existing panel if any
+        panel?.close()
+
+        // Create new panel with emoji picker view
+        let emojiPickerView = EmojiPickerView(
+            onEmojiSelected: { [weak self] emoji in
+                self?.handleEmojiSelected(emoji)
+            },
+            onClose: { [weak self] in
+                self?.hide()
+            }
+        )
+
+        let contentRect = NSRect(x: 0, y: 0, width: 320, height: 420)
+        panel = FloatingPanel(view: emojiPickerView, contentRect: contentRect)
+
+        // Hide system close button since we have our own
+        panel?.standardWindowButton(.closeButton)?.isHidden = true
+        panel?.standardWindowButton(.miniaturizeButton)?.isHidden = true
+        panel?.standardWindowButton(.zoomButton)?.isHidden = true
+
+        // Show at mouse position
+        panel?.showAtMousePosition()
+
+        // Make panel key to receive keyboard input
+        panel?.makeKey()
+
+        NSLog("[EmojiPicker] Panel shown")
+    }
+
+    /// Hides the emoji picker
+    func hide() {
+        NSLog("[EmojiPicker] Hiding emoji picker")
+        panel?.close()
+        panel = nil
+    }
+
+    /// Handles emoji selection - pastes emoji to frontmost app
+    private func handleEmojiSelected(_ emoji: String) {
+        NSLog("[EmojiPicker] Emoji selected: %@", emoji)
+
+        // Close panel
+        hide()
+
+        // Small delay to allow panel to close and frontmost app to regain focus
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.pasteEmoji(emoji)
+        }
+    }
+
+    /// Pastes emoji using CGEvent to simulate typing
+    private func pasteEmoji(_ emoji: String) {
+        NSLog("[EmojiPicker] Pasting emoji: %@", emoji)
+
+        // Method 1: Use pasteboard (most reliable)
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(emoji, forType: .string)
+
+        // Simulate Command+V to paste
+        let source = CGEventSource(stateID: .hidSystemState)
+
+        // Press Command
+        if let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: true) {
+            cmdDown.flags = .maskCommand
+            cmdDown.post(tap: .cghidEventTap)
+        }
+
+        // Press V
+        if let vDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_ANSI_V), keyDown: true) {
+            vDown.flags = .maskCommand
+            vDown.post(tap: .cghidEventTap)
+        }
+
+        // Release V
+        if let vUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_ANSI_V), keyDown: false) {
+            vUp.flags = .maskCommand
+            vUp.post(tap: .cghidEventTap)
+        }
+
+        // Release Command
+        if let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: false) {
+            cmdUp.post(tap: .cghidEventTap)
+        }
+
+        NSLog("[EmojiPicker] Paste command sent")
+    }
+}
