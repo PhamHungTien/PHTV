@@ -1674,7 +1674,7 @@ struct EmojiItem: Identifiable, Codable, Equatable {
 }
 
 /// Comprehensive emoji database with search support
-class EmojiDatabase {
+final class EmojiDatabase: @unchecked Sendable {
     static let shared = EmojiDatabase()
 
     let categories: [(name: String, icon: String, emojis: [EmojiItem])]
@@ -1917,6 +1917,62 @@ class EmojiDatabase {
 
         return results
     }
+
+    // MARK: - Recent & Frequently Used Tracking
+
+    private let recentEmojisKey = "com.phtv.recentEmojis"
+    private let emojiFrequencyKey = "com.phtv.emojiFrequency"
+    private let maxRecentEmojis = 20
+
+    /// Record emoji usage (adds to recent and increments frequency)
+    func recordUsage(_ emoji: String) {
+        // Update recent emojis
+        var recent = getRecentEmojis()
+        // Remove if already exists to avoid duplicates
+        recent.removeAll { $0 == emoji }
+        // Add to front
+        recent.insert(emoji, at: 0)
+        // Limit to maxRecentEmojis
+        if recent.count > maxRecentEmojis {
+            recent = Array(recent.prefix(maxRecentEmojis))
+        }
+        UserDefaults.standard.set(recent, forKey: recentEmojisKey)
+
+        // Update frequency
+        var frequency = getEmojiFrequency()
+        frequency[emoji, default: 0] += 1
+        UserDefaults.standard.set(frequency, forKey: emojiFrequencyKey)
+
+        NSLog("[EmojiDatabase] Recorded usage: \(emoji), frequency: \(frequency[emoji] ?? 0)")
+    }
+
+    /// Get recent emojis (most recent first)
+    func getRecentEmojis() -> [String] {
+        return UserDefaults.standard.stringArray(forKey: recentEmojisKey) ?? []
+    }
+
+    /// Get emoji frequency map
+    func getEmojiFrequency() -> [String: Int] {
+        return UserDefaults.standard.dictionary(forKey: emojiFrequencyKey) as? [String: Int] ?? [:]
+    }
+
+    /// Get frequently used emojis (sorted by count)
+    func getFrequentlyUsedEmojis(limit: Int = 20) -> [String] {
+        let frequency = getEmojiFrequency()
+        return frequency.sorted { $0.value > $1.value }
+            .prefix(limit)
+            .map { $0.key }
+    }
+
+    /// Get EmojiItem for a given emoji string
+    func getEmojiItem(for emoji: String) -> EmojiItem? {
+        for (_, _, emojis) in categories {
+            if let found = emojis.first(where: { $0.emoji == emoji }) {
+                return found
+            }
+        }
+        return nil
+    }
 }
 
 /// Floating panel that stays on top of other windows
@@ -2003,20 +2059,11 @@ struct EmojiPickerView: View {
     var onEmojiSelected: (String) -> Void
     var onClose: (() -> Void)?
 
-    // Emoji categories
-    private let emojiCategories: [(String, [String])] = [
-        ("😀", ["😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂", "🙂", "🙃", "😉", "😊", "😇", "🥰", "😍", "🤩", "😘", "😗", "😚", "😙", "🥲"]),
-        ("👋", ["👋", "🤚", "🖐", "✋", "🖖", "👌", "🤌", "🤏", "✌️", "🤞", "🤟", "🤘", "🤙", "👈", "👉", "👆", "🖕", "👇", "☝️", "👍", "👎"]),
-        ("❤️", ["❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔", "❤️‍🔥", "❤️‍🩹", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "💟"]),
-        ("🐶", ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🐦", "🐤", "🦆"]),
-        ("🍎", ["🍎", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🫐", "🍈", "🍒", "🍑", "🥭", "🍍", "🥥", "🥝", "🍅", "🥑", "🥦", "🥬"]),
-        ("⚽", ["⚽", "🏀", "🏈", "⚾", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🪀", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "🪃", "🥅", "⛳"]),
-        ("🎵", ["🎵", "🎶", "🎤", "🎧", "🎼", "🎹", "🥁", "🪘", "🎷", "🎺", "🪗", "🎸", "🪕", "🎻", "🎲", "♟️", "🎯", "🎰", "🎳", "🎮"]),
-        ("✈️", ["✈️", "🚗", "🚕", "🚙", "🚌", "🚎", "🏎️", "🚓", "🚑", "🚒", "🚐", "🛻", "🚚", "🚛", "🚜", "🦯", "🦽", "🦼", "🛴", "🚲"])
-    ]
-
-    @State private var selectedCategory = 0
+    @State private var selectedCategory = -1 // -1 = Recent, 0-4 = categories
     @State private var searchText = ""
+
+    // Access emoji database
+    private let database = EmojiDatabase.shared
 
     var body: some View {
         VStack(spacing: 0) {
@@ -2063,15 +2110,36 @@ struct EmojiPickerView: View {
             // Category tabs
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 4) {
-                    ForEach(0..<emojiCategories.count, id: \.self) { index in
+                    // Recent tab
+                    Button(action: { selectedCategory = -1 }) {
+                        VStack(spacing: 2) {
+                            Image(systemName: "clock")
+                                .font(.system(size: 16))
+                            Text("Gần đây")
+                                .font(.system(size: 8))
+                        }
+                        .frame(width: 52, height: 32)
+                        .background(selectedCategory == -1 ? Color.accentColor.opacity(0.2) : Color.clear)
+                        .cornerRadius(6)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Emoji gần đây")
+
+                    Divider()
+                        .frame(height: 24)
+                        .padding(.horizontal, 4)
+
+                    // Category tabs
+                    ForEach(0..<database.categories.count, id: \.self) { index in
                         Button(action: { selectedCategory = index }) {
-                            Text(emojiCategories[index].0)
+                            Text(database.categories[index].icon)
                                 .font(.system(size: 20))
                                 .frame(width: 32, height: 32)
                                 .background(selectedCategory == index ? Color.accentColor.opacity(0.2) : Color.clear)
                                 .cornerRadius(6)
                         }
                         .buttonStyle(.plain)
+                        .help(database.categories[index].name)
                     }
                 }
                 .padding(.horizontal, 12)
@@ -2084,18 +2152,18 @@ struct EmojiPickerView: View {
             ScrollView {
                 let emojis = filteredEmojis
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 8), spacing: 4) {
-                    ForEach(emojis, id: \.self) { emoji in
+                    ForEach(emojis) { emojiItem in
                         Button(action: {
-                            onEmojiSelected(emoji)
+                            onEmojiSelected(emojiItem.emoji)
                         }) {
-                            Text(emoji)
+                            Text(emojiItem.emoji)
                                 .font(.system(size: 24))
                                 .frame(width: 36, height: 36)
                                 .background(Color(NSColor.controlBackgroundColor))
                                 .cornerRadius(4)
                         }
                         .buttonStyle(.plain)
-                        .help(emoji)
+                        .help(emojiItem.name)
                     }
                 }
                 .padding(12)
@@ -2107,12 +2175,17 @@ struct EmojiPickerView: View {
         .cornerRadius(12)
     }
 
-    private var filteredEmojis: [String] {
-        if searchText.isEmpty {
-            return emojiCategories[selectedCategory].1
+    private var filteredEmojis: [EmojiItem] {
+        if !searchText.isEmpty {
+            // Search with keywords
+            return database.search(searchText)
+        } else if selectedCategory == -1 {
+            // Recent tab - show recently used emojis
+            let recentEmojis = database.getRecentEmojis()
+            return recentEmojis.compactMap { database.getEmojiItem(for: $0) }
         } else {
-            // Simple search - return all emojis containing search text
-            return emojiCategories.flatMap { $0.1 }
+            // Show current category
+            return database.categories[selectedCategory].emojis
         }
     }
 }
@@ -2171,6 +2244,9 @@ class EmojiPickerManager {
     /// Handles emoji selection - pastes emoji to frontmost app
     private func handleEmojiSelected(_ emoji: String) {
         NSLog("[EmojiPicker] Emoji selected: %@", emoji)
+
+        // Record emoji usage for recent & frequency tracking
+        EmojiDatabase.shared.recordUsage(emoji)
 
         // Close panel
         hide()
