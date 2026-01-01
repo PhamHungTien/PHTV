@@ -1926,33 +1926,45 @@ final class EmojiDatabase: @unchecked Sendable {
 
     /// Record emoji usage (adds to recent and increments frequency)
     func recordUsage(_ emoji: String) {
-        // Update recent emojis
-        var recent = getRecentEmojis()
-        // Remove if already exists to avoid duplicates
-        recent.removeAll { $0 == emoji }
-        // Add to front
-        recent.insert(emoji, at: 0)
-        // Limit to maxRecentEmojis
-        if recent.count > maxRecentEmojis {
-            recent = Array(recent.prefix(maxRecentEmojis))
+        DispatchQueue.main.async {
+            // Update recent emojis
+            var recent = self.getRecentEmojis()
+            // Remove if already exists to avoid duplicates
+            recent.removeAll { $0 == emoji }
+            // Add to front
+            recent.insert(emoji, at: 0)
+            // Limit to maxRecentEmojis
+            if recent.count > self.maxRecentEmojis {
+                recent = Array(recent.prefix(self.maxRecentEmojis))
+            }
+            UserDefaults.standard.set(recent, forKey: self.recentEmojisKey)
+
+            // Update frequency
+            var frequency = self.getEmojiFrequency()
+            frequency[emoji, default: 0] += 1
+            UserDefaults.standard.set(frequency, forKey: self.emojiFrequencyKey)
+
+            NSLog("[EmojiDatabase] Recorded usage: \(emoji), frequency: \(frequency[emoji] ?? 0)")
         }
-        UserDefaults.standard.set(recent, forKey: recentEmojisKey)
-
-        // Update frequency
-        var frequency = getEmojiFrequency()
-        frequency[emoji, default: 0] += 1
-        UserDefaults.standard.set(frequency, forKey: emojiFrequencyKey)
-
-        NSLog("[EmojiDatabase] Recorded usage: \(emoji), frequency: \(frequency[emoji] ?? 0)")
     }
 
-    /// Get recent emojis (most recent first)
+    /// Get recent emojis (most recent first) - must be called from main thread
     func getRecentEmojis() -> [String] {
+        guard Thread.isMainThread else {
+            return DispatchQueue.main.sync {
+                return UserDefaults.standard.stringArray(forKey: recentEmojisKey) ?? []
+            }
+        }
         return UserDefaults.standard.stringArray(forKey: recentEmojisKey) ?? []
     }
 
-    /// Get emoji frequency map
+    /// Get emoji frequency map - must be called from main thread
     func getEmojiFrequency() -> [String: Int] {
+        guard Thread.isMainThread else {
+            return DispatchQueue.main.sync {
+                return UserDefaults.standard.dictionary(forKey: emojiFrequencyKey) as? [String: Int] ?? [:]
+            }
+        }
         return UserDefaults.standard.dictionary(forKey: emojiFrequencyKey) as? [String: Int] ?? [:]
     }
 
