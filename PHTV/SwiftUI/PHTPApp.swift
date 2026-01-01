@@ -2239,7 +2239,7 @@ class FloatingPanel<Content: View>: NSPanel, NSWindowDelegate {
         // Visual styling
         self.titleVisibility = .hidden
         self.titlebarAppearsTransparent = true
-        self.isMovableByWindowBackground = true
+        self.isMovableByWindowBackground = false  // Disable to allow scroll gestures
         self.backgroundColor = .clear
 
         // Performance
@@ -2320,12 +2320,22 @@ struct EmojiPickerView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header with close button
-            HStack {
+            // Header with close button and drag handle
+            HStack(spacing: 8) {
+                // Drag handle icon (left side)
+                Image(systemName: "line.3.horizontal")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary.opacity(0.5))
+                    .frame(width: 20)
+                    .background(WindowDragHandle())
+                    .help("Kéo để di chuyển")
+
                 Text("Emoji Picker")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.primary)
+
                 Spacer()
+
                 Button(action: {
                     onClose?()
                 }) {
@@ -2743,6 +2753,34 @@ struct VisualEffectBlur: NSViewRepresentable {
     func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
         nsView.material = material
         nsView.blendingMode = blendingMode
+    }
+}
+
+// MARK: - Window Drag Handle
+
+struct WindowDragHandle: NSViewRepresentable {
+    func makeNSView(context: Context) -> DragHandleView {
+        return DragHandleView()
+    }
+
+    func updateNSView(_ nsView: DragHandleView, context: Context) {}
+}
+
+class DragHandleView: NSView {
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override var mouseDownCanMoveWindow: Bool {
+        return true
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .openHand)
     }
 }
 
