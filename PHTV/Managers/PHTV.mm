@@ -108,6 +108,8 @@ typedef struct {
 
 static NSMutableDictionary<NSString*, NSValue*> *_appCharacteristicsCache = nil;
 static os_unfair_lock _appCharCacheLock = OS_UNFAIR_LOCK_INIT;
+static NSString* _lastCachedBundleId = nil;  // Track last app to detect switches
+static uint64_t _lastCacheInvalidationTime = 0;  // Periodic cache invalidation
 
 // Spotlight detection cache (refreshes every 50ms for optimal balance of performance and responsiveness)
 // Thread-safe access required since event tap callback may run on different threads
@@ -662,6 +664,39 @@ extern "C" {
         // Initialize cache on first use
         if (__builtin_expect(_appCharacteristicsCache == nil, 0)) {
             _appCharacteristicsCache = [NSMutableDictionary dictionaryWithCapacity:32];
+        }
+
+        // CRITICAL FIX: Invalidate cache on app switch or periodically (every 30s)
+        // This fixes WhatsApp and other apps that sometimes stop working
+        uint64_t now = mach_absolute_time();
+        static mach_timebase_info_data_t timebase;
+        if (timebase.denom == 0) {
+            mach_timebase_info(&timebase);
+        }
+        uint64_t nowMs = (now * timebase.numer) / (timebase.denom * 1000000);
+
+        BOOL shouldInvalidate = NO;
+
+        // Invalidate on app switch (different bundle ID)
+        if (_lastCachedBundleId != nil && ![_lastCachedBundleId isEqualToString:bundleId]) {
+            shouldInvalidate = YES;
+            #ifdef DEBUG
+            NSLog(@"[Cache] App switched: %@ -> %@, invalidating cache", _lastCachedBundleId, bundleId);
+            #endif
+        }
+
+        // Invalidate every 30 seconds as safety net
+        if (nowMs - _lastCacheInvalidationTime > 30000) {
+            shouldInvalidate = YES;
+            _lastCacheInvalidationTime = nowMs;
+            #ifdef DEBUG
+            NSLog(@"[Cache] 30s elapsed, invalidating cache");
+            #endif
+        }
+
+        if (shouldInvalidate) {
+            [_appCharacteristicsCache removeAllObjects];
+            _lastCachedBundleId = bundleId;
         }
 
         NSValue *cached = _appCharacteristicsCache[bundleId];
