@@ -51,7 +51,7 @@
 	<key>SUFeedURL</key>
 	<string>https://phamhungtien.github.io/PHTV/appcast.xml</string>
 	<key>SUPublicEDKey</key>
-	<string>F+3YESLwzN0aoT6o6uiQWempYxL4W5czJxsN+dcUZa8=</string>
+	<string>rwQcGVAOp0UQ/YiifLx9g1KYtZQaI5z3Q3j1VMnw8pQ=</string>
 	<key>SUScheduledCheckInterval</key>
 	<integer>86400</integer>
 </dict>

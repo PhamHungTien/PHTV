@@ -8,6 +8,41 @@
 
         <!-- Most recent version first -->
         <item>
+            <title>PHTV 1.3.4</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.4</link>
+            <sparkle:version>11</sparkle:version>
+            <sparkle:shortVersionString>1.3.4</sparkle:shortVersionString>
+            <description><![CDATA[
+                <p>🎉 <strong>Chúc mừng năm mới 2026! Chúc các bạn một năm mới tràn đầy sức khỏe, hạnh phúc và thành công!</strong> 🎊</p>
+
+                <h3>✨ Tính năng mới</h3>
+                <ul>
+                    <li><strong>Emoji Picker hiện đại</strong>: Giao diện chọn emoji hoàn toàn mới với phân loại và tìm kiếm</li>
+                    <li><strong>230+ emoji mới</strong>: Thêm emoji cho tất cả danh mục (mặt cười, cử chỉ, động vật, đồ ăn, du lịch, hoạt động, đồ vật, ký hiệu)</li>
+                    <li><strong>80 từ tiếng Anh phổ biến</strong>: Bổ sung từ điển để tự động khôi phục từ tiếng Anh chính xác hơn</li>
+                </ul>
+
+                <h3>🔧 Cải tiến</h3>
+                <ul>
+                    <li><strong>Hệ thống tự phục hồi Event Tap</strong>: Tự động khôi phục khi gặp lỗi, ổn định hơn</li>
+                    <li><strong>Sửa lỗi WhatsApp</strong>: Cải thiện xóa cache để gõ ổn định trên WhatsApp</li>
+                    <li><strong>DMG với Applications symlink</strong>: Cài đặt dễ dàng hơn với shortcut Applications</li>
+                </ul>
+
+                <p><em>Bản cập nhật đầu năm mới này mang đến giao diện emoji hiện đại và cải thiện độ ổn định tổng thể.</em></p>
+            ]]></description>
+            <pubDate>Thu, 01 Jan 2026 20:36:53 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.3.4/PHTV-1.3.4.dmg"
+                sparkle:version="11"
+                sparkle:shortVersionString="1.3.4"
+                sparkle:edSignature="9n+aYOolVxXGzow98m693on+y5mNyx2ArOS42XlHHmsRyq+3a9ukRc66nfgCfgMIOBwLKg3kyWqZWiLt596gAQ=="
+                length="13491238"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <item>
             <title>PHTV 1.3.3</title>
             <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.3</link>
             <sparkle:version>10</sparkle:version>
