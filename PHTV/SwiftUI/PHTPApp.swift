@@ -2299,162 +2299,450 @@ class FloatingPanel<Content: View>: NSPanel, NSWindowDelegate {
 }
 
 
-/// Emoji picker view with grid layout
+/// Modern emoji picker view with enhanced UX
 struct EmojiPickerView: View {
     var onEmojiSelected: (String) -> Void
     var onClose: (() -> Void)?
 
-    @State private var selectedCategory = 0 // Start with first category (Smileys) instead of Recent
+    @State private var selectedCategory = 0
     @State private var searchText = ""
+    @State private var hoveredEmoji: String? = nil
+    @State private var selectedEmojiIndex: Int? = nil
+    @FocusState private var isSearchFocused: Bool
+    @Namespace private var categoryNamespace
 
     // Access emoji database
     private let database = EmojiDatabase.shared
+
+    // Grid configuration
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 8)
+    private let emojiSize: CGFloat = 40
 
     var body: some View {
         VStack(spacing: 0) {
             // Header with close button
             HStack {
                 Text("Emoji Picker")
-                    .font(.headline)
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.primary)
                 Spacer()
                 Button(action: {
                     onClose?()
                 }) {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 16))
+                        .font(.system(size: 18))
                         .foregroundColor(.secondary)
+                        .opacity(0.7)
                 }
                 .buttonStyle(.plain)
                 .help("Đóng (ESC)")
+                .onHover { hovering in
+                    NSCursor.pointingHand.set()
+                }
             }
-            .padding(.horizontal, 12)
-            .padding(.top, 10)
-            .padding(.bottom, 8)
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 10)
 
-            // Search bar
-            HStack {
+            // Search bar with modern design
+            HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
-                    .foregroundColor(.secondary)
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary.opacity(0.7))
                 TextField("Tìm emoji...", text: $searchText)
                     .textFieldStyle(.plain)
+                    .font(.system(size: 13))
+                    .focused($isSearchFocused)
                 if !searchText.isEmpty {
-                    Button(action: { searchText = "" }) {
+                    Button(action: {
+                        searchText = ""
+                        isSearchFocused = true
+                    }) {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.secondary)
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary.opacity(0.7))
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(8)
-            .background(Color(NSColor.controlBackgroundColor))
-            .cornerRadius(6)
             .padding(.horizontal, 12)
-            .padding(.bottom, 8)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color(NSColor.controlBackgroundColor).opacity(0.5))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .strokeBorder(Color.accentColor.opacity(isSearchFocused ? 0.3 : 0), lineWidth: 1.5)
+                    )
+            )
+            .padding(.horizontal, 16)
+            .padding(.bottom, 12)
+            .animation(.easeInOut(duration: 0.2), value: isSearchFocused)
 
-            // Category tabs
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 4) {
-                    // Recent tab
-                    Button(action: { selectedCategory = -1 }) {
-                        VStack(spacing: 2) {
-                            Image(systemName: "clock")
-                                .font(.system(size: 16))
-                            Text("Gần đây")
-                                .font(.system(size: 8))
+            // Category tabs with indicator
+            ScrollViewReader { scrollProxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        // Recent tab
+                        CategoryTab(
+                            isSelected: selectedCategory == -1,
+                            icon: "clock",
+                            label: "Gần đây",
+                            namespace: categoryNamespace
+                        ) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                selectedCategory = -1
+                            }
                         }
-                        .frame(width: 52, height: 32)
-                        .background(selectedCategory == -1 ? Color.accentColor.opacity(0.2) : Color.clear)
-                        .cornerRadius(6)
-                    }
-                    .buttonStyle(.plain)
-                    .help("Emoji gần đây")
+                        .id(-1)
 
-                    Divider()
-                        .frame(height: 24)
-                        .padding(.horizontal, 4)
-
-                    // Category tabs
-                    ForEach(0..<database.categories.count, id: \.self) { index in
-                        Button(action: { selectedCategory = index }) {
-                            Text(database.categories[index].icon)
-                                .font(.system(size: 20))
-                                .frame(width: 32, height: 32)
-                                .background(selectedCategory == index ? Color.accentColor.opacity(0.2) : Color.clear)
-                                .cornerRadius(6)
+                        // Frequently Used tab
+                        CategoryTab(
+                            isSelected: selectedCategory == -2,
+                            icon: "flame.fill",
+                            label: "Thường dùng",
+                            namespace: categoryNamespace
+                        ) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                selectedCategory = -2
+                            }
                         }
-                        .buttonStyle(.plain)
-                        .help(database.categories[index].name)
+                        .id(-2)
+
+                        Rectangle()
+                            .fill(Color.secondary.opacity(0.2))
+                            .frame(width: 1, height: 24)
+                            .padding(.horizontal, 4)
+
+                        // Category tabs
+                        ForEach(0..<database.categories.count, id: \.self) { index in
+                            CategoryIconTab(
+                                isSelected: selectedCategory == index,
+                                icon: database.categories[index].icon,
+                                name: database.categories[index].name,
+                                namespace: categoryNamespace
+                            ) {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    selectedCategory = index
+                                }
+                            }
+                            .id(index)
+                        }
                     }
+                    .padding(.horizontal, 16)
                 }
-                .padding(.horizontal, 12)
+                .padding(.bottom, 10)
             }
-            .padding(.bottom, 8)
 
             Divider()
+                .opacity(0.5)
 
-            // Emoji grid
-            ScrollView {
-                let emojis = filteredEmojis
-                if emojis.isEmpty {
-                    // Empty state
-                    VStack(spacing: 12) {
-                        Image(systemName: selectedCategory == -1 ? "clock" : "magnifyingglass")
-                            .font(.system(size: 48))
-                            .foregroundColor(.secondary)
-                        Text(selectedCategory == -1 ? "Chưa có emoji gần đây" : "Không tìm thấy")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
-                        if selectedCategory == -1 {
-                            Text("Emoji bạn sử dụng sẽ hiển thị ở đây")
-                                .font(.caption)
+            // Emoji grid with ScrollViewReader for smooth navigation
+            ScrollViewReader { scrollProxy in
+                ScrollView {
+                    let emojis = filteredEmojis
+                    if emojis.isEmpty {
+                        // Enhanced empty state
+                        VStack(spacing: 16) {
+                            Image(systemName: getEmptyStateIcon())
+                                .font(.system(size: 56))
+                                .foregroundColor(.secondary.opacity(0.5))
+                            Text(getEmptyStateTitle())
+                                .font(.system(size: 15, weight: .medium))
                                 .foregroundColor(.secondary)
+                            Text(getEmptyStateMessage())
+                                .font(.system(size: 12))
+                                .foregroundColor(.secondary.opacity(0.7))
+                                .multilineTextAlignment(.center)
                         }
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(24)
-                } else {
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 8), spacing: 4) {
-                        ForEach(emojis) { emojiItem in
-                            Button(action: {
-                                onEmojiSelected(emojiItem.emoji)
-                            }) {
-                                Text(emojiItem.emoji)
-                                    .font(.system(size: 24))
-                                    .frame(width: 36, height: 36)
-                                    .background(Color(NSColor.controlBackgroundColor))
-                                    .cornerRadius(4)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(32)
+                    } else if !searchText.isEmpty {
+                        // Grouped search results by category
+                        SearchResultsView(
+                            searchResults: emojis,
+                            database: database,
+                            hoveredEmoji: $hoveredEmoji,
+                            onEmojiSelected: onEmojiSelected
+                        )
+                    } else {
+                        // Regular category view
+                        LazyVGrid(columns: columns, spacing: 8) {
+                            ForEach(Array(emojis.enumerated()), id: \.element.id) { index, emojiItem in
+                                EmojiButton(
+                                    emoji: emojiItem,
+                                    size: emojiSize,
+                                    isHovered: hoveredEmoji == emojiItem.emoji,
+                                    frequencyCount: getFrequencyCount(for: emojiItem.emoji)
+                                ) {
+                                    onEmojiSelected(emojiItem.emoji)
+                                }
+                                .onHover { hovering in
+                                    hoveredEmoji = hovering ? emojiItem.emoji : nil
+                                }
                             }
-                            .buttonStyle(.plain)
-                            .help(emojiItem.name)
                         }
+                        .padding(16)
                     }
-                    .padding(12)
                 }
+                .frame(height: 320)
             }
-            .frame(height: 280)
         }
-        .frame(width: 320)
-        .background(Color(NSColor.windowBackgroundColor))
-        .cornerRadius(12)
+        .frame(width: 380)
+        .background(
+            // Glassmorphism background
+            ZStack {
+                Color(NSColor.windowBackgroundColor)
+                VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
+            }
+        )
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.2), radius: 20, x: 0, y: 10)
+        .onAppear {
+            isSearchFocused = true
+        }
+    }
+
+    // MARK: - Helper Functions
+
+    private func getFrequencyCount(for emoji: String) -> Int? {
+        let frequency = database.getEmojiFrequency()
+        return frequency[emoji]
+    }
+
+    private func getEmptyStateIcon() -> String {
+        if selectedCategory == -1 {
+            return "clock"
+        } else if selectedCategory == -2 {
+            return "flame"
+        } else {
+            return "magnifyingglass"
+        }
+    }
+
+    private func getEmptyStateTitle() -> String {
+        if selectedCategory == -1 {
+            return "Chưa có emoji gần đây"
+        } else if selectedCategory == -2 {
+            return "Chưa có emoji thường dùng"
+        } else {
+            return "Không tìm thấy"
+        }
+    }
+
+    private func getEmptyStateMessage() -> String {
+        if selectedCategory == -1 {
+            return "Emoji bạn sử dụng gần đây\nsẽ hiển thị ở đây"
+        } else if selectedCategory == -2 {
+            return "Emoji bạn dùng nhiều nhất\nsẽ hiển thị ở đây"
+        } else {
+            return "Thử tìm kiếm với từ khóa khác"
+        }
     }
 
     private var filteredEmojis: [EmojiItem] {
         if !searchText.isEmpty {
-            // Search with keywords
             return database.search(searchText)
         } else if selectedCategory == -1 {
-            // Recent tab - show recently used emojis
+            // Recent tab
             let recentEmojis = database.getRecentEmojis()
             return recentEmojis.compactMap { database.getEmojiItem(for: $0) }
+        } else if selectedCategory == -2 {
+            // Frequently Used tab
+            let frequentEmojis = database.getFrequentlyUsedEmojis(limit: 50)
+            return frequentEmojis.compactMap { database.getEmojiItem(for: $0) }
         } else if selectedCategory >= 0 && selectedCategory < database.categories.count {
-            // Show current category (with bounds check)
             return database.categories[selectedCategory].emojis
         } else {
-            // Invalid category - return empty (shouldn't happen)
-            NSLog("[EmojiPicker] WARNING: Invalid selectedCategory: \(selectedCategory)")
             return []
         }
+    }
+}
+
+// MARK: - Category Tab Components
+
+struct CategoryTab: View {
+    let isSelected: Bool
+    let icon: String
+    let label: String
+    let namespace: Namespace.ID
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 3) {
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: isSelected ? .semibold : .regular))
+                Text(label)
+                    .font(.system(size: 9, weight: isSelected ? .semibold : .regular))
+            }
+            .foregroundColor(isSelected ? .accentColor : .secondary)
+            .frame(width: 60, height: 40)
+            .background(
+                Group {
+                    if isSelected {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.accentColor.opacity(0.15))
+                            .matchedGeometryEffect(id: "categoryBackground", in: namespace)
+                    }
+                }
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+struct CategoryIconTab: View {
+    let isSelected: Bool
+    let icon: String
+    let name: String
+    let namespace: Namespace.ID
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(icon)
+                .font(.system(size: 22))
+                .frame(width: 40, height: 40)
+                .background(
+                    Group {
+                        if isSelected {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.accentColor.opacity(0.15))
+                                .matchedGeometryEffect(id: "categoryBackground", in: namespace)
+                        }
+                    }
+                )
+        }
+        .buttonStyle(.plain)
+        .help(name)
+    }
+}
+
+// MARK: - Emoji Button Component
+
+struct EmojiButton: View {
+    let emoji: EmojiItem
+    let size: CGFloat
+    let isHovered: Bool
+    let frequencyCount: Int?
+    let action: () -> Void
+
+    @State private var isPressed = false
+
+    var body: some View {
+        Button(action: {
+            isPressed = true
+            action()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                isPressed = false
+            }
+        }) {
+            ZStack(alignment: .topTrailing) {
+                Text(emoji.emoji)
+                    .font(.system(size: size * 0.65))
+                    .frame(width: size, height: size)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(isHovered ? Color.accentColor.opacity(0.12) : Color(NSColor.controlBackgroundColor).opacity(0.3))
+                    )
+                    .scaleEffect(isHovered ? 1.15 : (isPressed ? 0.95 : 1.0))
+                    .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isHovered)
+                    .animation(.spring(response: 0.2, dampingFraction: 0.5), value: isPressed)
+
+                // Frequency badge
+                if let count = frequencyCount, count > 3 {
+                    Text("\(count)")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 2)
+                        .background(
+                            Capsule()
+                                .fill(Color.accentColor)
+                        )
+                        .offset(x: 4, y: -4)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .help(emoji.name)
+    }
+}
+
+// MARK: - Search Results View
+
+struct SearchResultsView: View {
+    let searchResults: [EmojiItem]
+    let database: EmojiDatabase
+    @Binding var hoveredEmoji: String?
+    let onEmojiSelected: (String) -> Void
+
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 8)
+
+    var body: some View {
+        LazyVStack(alignment: .leading, spacing: 16) {
+            // Group results by category
+            ForEach(groupedResults, id: \.category) { group in
+                VStack(alignment: .leading, spacing: 8) {
+                    // Category header
+                    HStack {
+                        Text(group.category)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(.secondary)
+                        Text("(\(group.emojis.count))")
+                            .font(.system(size: 10, weight: .regular))
+                            .foregroundColor(.secondary.opacity(0.7))
+                    }
+                    .padding(.horizontal, 16)
+
+                    // Emoji grid for this category
+                    LazyVGrid(columns: columns, spacing: 8) {
+                        ForEach(group.emojis) { emojiItem in
+                            EmojiButton(
+                                emoji: emojiItem,
+                                size: 40,
+                                isHovered: hoveredEmoji == emojiItem.emoji,
+                                frequencyCount: nil
+                            ) {
+                                onEmojiSelected(emojiItem.emoji)
+                            }
+                            .onHover { hovering in
+                                hoveredEmoji = hovering ? emojiItem.emoji : nil
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                }
+            }
+        }
+        .padding(.vertical, 16)
+    }
+
+    private var groupedResults: [(category: String, emojis: [EmojiItem])] {
+        let grouped = Dictionary(grouping: searchResults) { $0.category }
+        return grouped.map { (category: $0.key, emojis: $0.value) }
+            .sorted { $0.category < $1.category }
+    }
+}
+
+// MARK: - Visual Effect Blur
+
+struct VisualEffectBlur: NSViewRepresentable {
+    let material: NSVisualEffectView.Material
+    let blendingMode: NSVisualEffectView.BlendingMode
+
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = material
+        view.blendingMode = blendingMode
+        view.state = .active
+        return view
+    }
+
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
+        nsView.material = material
+        nsView.blendingMode = blendingMode
     }
 }
 
@@ -2485,7 +2773,7 @@ class EmojiPickerManager {
             }
         )
 
-        let contentRect = NSRect(x: 0, y: 0, width: 320, height: 420)
+        let contentRect = NSRect(x: 0, y: 0, width: 380, height: 480)
         panel = FloatingPanel(view: emojiPickerView, contentRect: contentRect)
 
         // Hide system close button since we have our own
