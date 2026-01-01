@@ -2163,22 +2163,41 @@ struct EmojiPickerView: View {
             // Emoji grid
             ScrollView {
                 let emojis = filteredEmojis
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 8), spacing: 4) {
-                    ForEach(emojis) { emojiItem in
-                        Button(action: {
-                            onEmojiSelected(emojiItem.emoji)
-                        }) {
-                            Text(emojiItem.emoji)
-                                .font(.system(size: 24))
-                                .frame(width: 36, height: 36)
-                                .background(Color(NSColor.controlBackgroundColor))
-                                .cornerRadius(4)
+                if emojis.isEmpty {
+                    // Empty state
+                    VStack(spacing: 12) {
+                        Image(systemName: selectedCategory == -1 ? "clock" : "magnifyingglass")
+                            .font(.system(size: 48))
+                            .foregroundColor(.secondary)
+                        Text(selectedCategory == -1 ? "Chưa có emoji gần đây" : "Không tìm thấy")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                        if selectedCategory == -1 {
+                            Text("Emoji bạn sử dụng sẽ hiển thị ở đây")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
                         }
-                        .buttonStyle(.plain)
-                        .help(emojiItem.name)
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(24)
+                } else {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 8), spacing: 4) {
+                        ForEach(emojis) { emojiItem in
+                            Button(action: {
+                                onEmojiSelected(emojiItem.emoji)
+                            }) {
+                                Text(emojiItem.emoji)
+                                    .font(.system(size: 24))
+                                    .frame(width: 36, height: 36)
+                                    .background(Color(NSColor.controlBackgroundColor))
+                                    .cornerRadius(4)
+                            }
+                            .buttonStyle(.plain)
+                            .help(emojiItem.name)
+                        }
+                    }
+                    .padding(12)
                 }
-                .padding(12)
             }
             .frame(height: 280)
         }
@@ -2195,9 +2214,13 @@ struct EmojiPickerView: View {
             // Recent tab - show recently used emojis
             let recentEmojis = database.getRecentEmojis()
             return recentEmojis.compactMap { database.getEmojiItem(for: $0) }
-        } else {
-            // Show current category
+        } else if selectedCategory >= 0 && selectedCategory < database.categories.count {
+            // Show current category (with bounds check)
             return database.categories[selectedCategory].emojis
+        } else {
+            // Invalid category - return empty (shouldn't happen)
+            NSLog("[EmojiPicker] WARNING: Invalid selectedCategory: \(selectedCategory)")
+            return []
         }
     }
 }
