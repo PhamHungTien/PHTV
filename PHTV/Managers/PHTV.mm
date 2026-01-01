@@ -2036,7 +2036,10 @@ extern "C" {
         static NSUInteger recoveryCounter = 0;
         static NSUInteger healthyCounter = 0;
 
-        NSUInteger checkInterval = (healthyCounter > 1000) ? 100 : 25;
+        // IMPROVED: More aggressive checking to catch tap disable faster
+        // Max 50 events when healthy (was 100), 15 when recovering (was 25)
+        // This reduces detection latency from 100 keystrokes to 50
+        NSUInteger checkInterval = (healthyCounter > 1000) ? 50 : 15;
 
         if (__builtin_expect(++eventCounter % checkInterval == 0, 0)) {
             if (__builtin_expect(![PHTVManager isEventTapEnabled], 0)) {

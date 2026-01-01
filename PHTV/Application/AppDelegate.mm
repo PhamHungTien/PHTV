@@ -267,8 +267,10 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
 - (void)startHealthCheckMonitoring {
     [self stopHealthCheckMonitoring];
-        // Aggressive monitoring (10s) to eliminate any delay
-        self.healthCheckTimer = [NSTimer scheduledTimerWithTimeInterval:10.0
+        // IMPROVED: Very aggressive monitoring (2s) to catch tap disable quickly
+        // This complements event-based checking (every 50 events)
+        // With 2s timer, max delay is 2 seconds regardless of typing speed
+        self.healthCheckTimer = [NSTimer scheduledTimerWithTimeInterval:2.0
                                                               target:self
                                                             selector:@selector(runHealthCheck)
                                                             userInfo:nil
