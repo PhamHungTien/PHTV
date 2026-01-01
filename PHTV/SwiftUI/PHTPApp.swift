@@ -42,7 +42,7 @@ struct PHTVApp: App {
         } label: {
             // Use app icon (template); add slash when in English mode
             let size = CGFloat(appState.menuBarIconSize)
-            Image(nsImage: makeMenuBarIconImage(size: size, slashed: !appState.isEnabled))
+            Image(nsImage: makeMenuBarIconImage(size: size, slashed: !appState.isEnabled, useVietnameseIcon: appState.useVietnameseMenubarIcon))
                 .renderingMode(.template)
         }
         .menuBarExtraStyle(.menu)
@@ -106,7 +106,7 @@ final class BeepManager {
 
 // MARK: - Menu Bar Icon Drawing
 @MainActor
-private func makeMenuBarIconImage(size: CGFloat, slashed: Bool) -> NSImage {
+private func makeMenuBarIconImage(size: CGFloat, slashed: Bool, useVietnameseIcon: Bool) -> NSImage {
     let targetSize = NSSize(width: size, height: size)
     let img = NSImage(size: targetSize)
     img.lockFocus()
@@ -123,7 +123,6 @@ private func makeMenuBarIconImage(size: CGFloat, slashed: Bool) -> NSImage {
             }
         }
         // Vietnamese mode - use menubar_vietnamese.png or menubar_icon.png based on preference
-        let useVietnameseIcon = AppState.shared.useVietnameseMenubarIcon
         if useVietnameseIcon, let vietnameseIcon = NSImage(named: "menubar_vietnamese") {
             return vietnameseIcon
         }
