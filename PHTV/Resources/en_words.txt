@@ -282,6 +282,7 @@ remix
 astro
 solid
 qwik
+fresh
 preact
 alpine
 htmx
@@ -291,6 +292,10 @@ bulma
 chakra
 material
 antd
+shadcn
+radix
+headless
+daisyui
 flutter
 reactnative
 ionic
@@ -305,6 +310,7 @@ nestjs
 koa
 fastify
 hono
+elysia
 spring
 springboot
 laravel
@@ -315,6 +321,16 @@ phoenix
 aspnet
 dotnet
 blazor
+zig
+nim
+crystal
+gleam
+roc
+odin
+v
+vlang
+carbon
+mojo
 
 # macOS & iOS Apps
 finder
@@ -468,6 +484,9 @@ turbopack
 snowpack
 rome
 biome
+oxc
+rspack
+farm
 eslint
 prettier
 stylelint
@@ -487,6 +506,57 @@ ktlint
 swiftlint
 swiftformat
 
+# Code Editors & IDEs
+vscode
+cursor
+windsurf
+zed
+sublime
+atom
+notepad
+vim
+neovim
+emacs
+nano
+jetbrains
+intellij
+pycharm
+webstorm
+phpstorm
+goland
+rider
+clion
+rubymine
+datagrip
+appcode
+fleet
+nova
+coderunner
+textmate
+bbedit
+coteditor
+macdown
+typora
+obsidian
+
+# Online Code Platforms
+replit
+codepen
+codesandbox
+stackblitz
+glitch
+jsfiddle
+playcode
+runkit
+ideone
+pastebin
+gist
+jsbin
+plunker
+liveweave
+cssdeck
+dabblet
+
 # Cloud & DevOps
 aws
 azure
@@ -496,6 +566,9 @@ firebase
 supabase
 planetscale
 neon
+turso
+xata
+convex
 cockroachdb
 fauna
 dynamodb
@@ -528,15 +601,44 @@ puppet
 saltstack
 packer
 vagrant
+railway
+render
+fly
+flyio
+cyclic
+deno
+deploy
+cloudflare
+workers
+pages
+r2
+kv
+d1
+vectorize
+ai
+hyperdrive
+queues
+pub
+sub
 
 # AI & ML
 openai
 chatgpt
+gpt3
+gpt4
 claude
 anthropic
 gemini
 bard
 copilot
+llama
+llama2
+llama3
+mistral
+mixtral
+phi
+qwen
+deepseek
 midjourney
 dalle
 stablediffusion
@@ -567,6 +669,11 @@ weaviate
 qdrant
 chroma
 milvus
+ollama
+lmstudio
+jan
+gpt4all
+localai
 
 # Gaming
 steam
@@ -941,6 +1048,42 @@ marktext
 obsidian
 notion
 coda
+
+# Developer Communities & Platforms
+stackoverflow
+stackexchange
+devto
+hashnode
+medium
+substack
+hackernews
+producthunt
+indiehackers
+dev
+daily
+dev
+slashdot
+lobsters
+hacker
+noon
+freecodecamp
+geeksforgeeks
+tutorialspoint
+w3schools
+mdn
+mozilla
+caniuse
+hackerearth
+topcoder
+codechef
+spoj
+oj
+uva
+poj
+timus
+icpc
+ioi
+usaco
 
 # Media & Entertainment
 hulu
