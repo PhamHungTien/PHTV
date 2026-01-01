@@ -2071,7 +2071,7 @@ struct EmojiPickerView: View {
     var onEmojiSelected: (String) -> Void
     var onClose: (() -> Void)?
 
-    @State private var selectedCategory = -1 // -1 = Recent, 0-4 = categories
+    @State private var selectedCategory = 0 // Start with first category (Smileys) instead of Recent
     @State private var searchText = ""
 
     // Access emoji database
