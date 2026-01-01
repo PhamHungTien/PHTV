@@ -584,10 +584,15 @@ extern "C" {
     NSSet* _unicodeCompoundAppSet = [NSSet setWithArray:@[@"com.apple.",
                                                            @"com.google.Chrome",
                                                            @"com.brave.Browser",
+                                                           @"com.microsoft.edgemac",  // Edge Stable
                                                            @"com.microsoft.edgemac.Dev",
                                                            @"com.microsoft.edgemac.Beta",
+                                                           @"com.microsoft.Edge",  // Edge Stable (alternate)
                                                            @"com.microsoft.Edge.Dev",
-                                                           @"com.microsoft.Edge"]];
+                                                           @"com.thebrowser.Browser",  // Arc Browser
+                                                           @"org.chromium.Chromium",  // Chromium
+                                                           @"com.vivaldi.Vivaldi",  // Vivaldi
+                                                           @"com.operasoftware.Opera"]];  // Opera
 
     // Apps that need to FORCE Unicode precomposed (not compound) - Using NSSet for O(1) lookup performance
     // These apps don't handle Unicode combining characters properly
@@ -2481,13 +2486,36 @@ extern "C" {
                 // This conflicts with macOS Text Replacement feature
                 // SendEmptyCharacter is only needed for Vietnamese character keys, NOT for break keys
                 if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE) {
-                    if (vFixChromiumBrowser && [_unicodeCompoundAppSet containsObject:effectiveBundleId]) {
-                        if (pData->backspaceCount > 0) {
-                            SendShiftAndLeftArrow();
-                            if (pData->backspaceCount == 1)
-                                pData->backspaceCount--;
+                    BOOL isChromiumBrowser = vFixChromiumBrowser && [_unicodeCompoundAppSet containsObject:effectiveBundleId];
+
+                    if (isChromiumBrowser && pData->backspaceCount > 0) {
+                        // CHROMIUM ADDRESS BAR FIX:
+                        // Chrome address bar has autocomplete that interferes with backspace
+                        // Solution: Use Shift+Left to SELECT the text we want to replace,
+                        // then typing new characters will overwrite the selection
+
+                        // Select characters by sending Shift+Left multiple times
+                        for (int i = 0; i < pData->backspaceCount; i++) {
+                            CGEventRef shiftLeftDown = CGEventCreateKeyboardEvent(myEventSource, KEY_LEFT, true);
+                            CGEventRef shiftLeftUp = CGEventCreateKeyboardEvent(myEventSource, KEY_LEFT, false);
+
+                            CGEventFlags flags = CGEventGetFlags(shiftLeftDown);
+                            flags |= kCGEventFlagMaskShift;
+                            CGEventSetFlags(shiftLeftDown, flags);
+                            CGEventSetFlags(shiftLeftUp, flags);
+
+                            CGEventTapPostEvent(_proxy, shiftLeftDown);
+                            CGEventTapPostEvent(_proxy, shiftLeftUp);
+
+                            CFRelease(shiftLeftDown);
+                            CFRelease(shiftLeftUp);
                         }
+
+                        // Mark backspaceCount as 0 since we've selected the text
+                        // New characters will overwrite the selection
+                        pData->backspaceCount = 0;
                     } else {
+                        // For non-Chromium browsers, use the standard empty character approach
                         SendEmptyCharacter();
                         pData->backspaceCount++;
                     }
