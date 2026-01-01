@@ -1481,8 +1481,12 @@ final class EmojiHotkeyManager: ObservableObject, @unchecked Sendable {
 
     @objc private func handleSettingsChanged() {
         NSLog("[EmojiHotkey] Settings changed notification received")
-        Task { @MainActor in
-            syncFromAppState(AppState.shared)
+        // Delay to avoid circular dependency if called during AppState.shared initialization
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+            guard let self = self else { return }
+            Task { @MainActor in
+                self.syncFromAppState(AppState.shared)
+            }
         }
     }
     
