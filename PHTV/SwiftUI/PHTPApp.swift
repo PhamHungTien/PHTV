@@ -2391,89 +2391,57 @@ struct EmojiPickerView: View {
 
             // Category tabs with scroll indicators
             ScrollViewReader { scrollProxy in
-                ZStack(alignment: .leading) {
-                    // Fade gradient on left edge (hint for scrollable content)
-                    LinearGradient(
-                        colors: [
-                            Color(NSColor.windowBackgroundColor),
-                            Color(NSColor.windowBackgroundColor).opacity(0)
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                    .frame(width: 20)
-                    .allowsHitTesting(false)
-                    .zIndex(1)
-
-                    // Fade gradient on right edge
-                    HStack {
-                        Spacer()
-                        LinearGradient(
-                            colors: [
-                                Color(NSColor.windowBackgroundColor).opacity(0),
-                                Color(NSColor.windowBackgroundColor)
-                            ],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                        .frame(width: 20)
-                        .allowsHitTesting(false)
-                    }
-                    .zIndex(1)
-
-                    // ScrollView with visible indicators
-                    ScrollView(.horizontal, showsIndicators: true) {
-                        HStack(spacing: 8) {
-                            // Recent tab
-                            CategoryTab(
-                                isSelected: selectedCategory == -1,
-                                icon: "clock",
-                                label: "Gần đây",
-                                namespace: categoryNamespace
-                            ) {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                    selectedCategory = -1
-                                }
-                            }
-                            .id(-1)
-
-                            // Frequently Used tab
-                            CategoryTab(
-                                isSelected: selectedCategory == -2,
-                                icon: "flame.fill",
-                                label: "Thường dùng",
-                                namespace: categoryNamespace
-                            ) {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                    selectedCategory = -2
-                                }
-                            }
-                            .id(-2)
-
-                            Rectangle()
-                                .fill(Color.secondary.opacity(0.2))
-                                .frame(width: 1, height: 24)
-                                .padding(.horizontal, 4)
-
-                            // Category tabs
-                            ForEach(0..<database.categories.count, id: \.self) { index in
-                                CategoryIconTab(
-                                    isSelected: selectedCategory == index,
-                                    icon: database.categories[index].icon,
-                                    name: database.categories[index].name,
-                                    namespace: categoryNamespace
-                                ) {
-                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                        selectedCategory = index
-                                        // Auto scroll to selected category
-                                        scrollProxy.scrollTo(index, anchor: .center)
-                                    }
-                                }
-                                .id(index)
+                ScrollView(.horizontal, showsIndicators: true) {
+                    HStack(spacing: 8) {
+                        // Recent tab
+                        CategoryTab(
+                            isSelected: selectedCategory == -1,
+                            icon: "clock",
+                            label: "Gần đây",
+                            namespace: categoryNamespace
+                        ) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                selectedCategory = -1
                             }
                         }
-                        .padding(.horizontal, 16)
+                        .id(-1)
+
+                        // Frequently Used tab
+                        CategoryTab(
+                            isSelected: selectedCategory == -2,
+                            icon: "flame.fill",
+                            label: "Thường dùng",
+                            namespace: categoryNamespace
+                        ) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                selectedCategory = -2
+                            }
+                        }
+                        .id(-2)
+
+                        Rectangle()
+                            .fill(Color.secondary.opacity(0.2))
+                            .frame(width: 1, height: 24)
+                            .padding(.horizontal, 4)
+
+                        // Category tabs
+                        ForEach(0..<database.categories.count, id: \.self) { index in
+                            CategoryIconTab(
+                                isSelected: selectedCategory == index,
+                                icon: database.categories[index].icon,
+                                name: database.categories[index].name,
+                                namespace: categoryNamespace
+                            ) {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    selectedCategory = index
+                                    // Auto scroll to selected category
+                                    scrollProxy.scrollTo(index, anchor: .center)
+                                }
+                            }
+                            .id(index)
+                        }
                     }
+                    .padding(.horizontal, 16)
                 }
                 .padding(.bottom, 10)
             }
