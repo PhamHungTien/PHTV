@@ -8,6 +8,32 @@
 
         <!-- Most recent version first -->
         <item>
+            <title>PHTV 1.3.5</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.5</link>
+            <sparkle:version>12</sparkle:version>
+            <sparkle:shortVersionString>1.3.5</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h3>🔧 Sửa lỗi</h3>
+                <ul>
+                    <li><strong>Settings window z-order</strong>: Sửa lỗi cửa sổ Settings bị ẩn sau các app khác (Issue #60)</li>
+                    <li><strong>GIF click tracking</strong>: Sửa lỗi click GIF không chính xác so với vị trí chuột</li>
+                    <li><strong>Duplicate GIF paste</strong>: Sửa lỗi paste 2 GIF khi chỉ click 1 lần</li>
+                </ul>
+
+                <p><em>Bản sửa lỗi tập trung vào cải thiện trải nghiệm GIF picker.</em></p>
+            ]]></description>
+            <pubDate>Thu, 02 Jan 2026 15:00:00 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.3.5/PHTV-1.3.5.dmg"
+                sparkle:version="12"
+                sparkle:shortVersionString="1.3.5"
+                sparkle:edSignature="SIGNATURE_WILL_BE_GENERATED"
+                length="13491238"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <item>
             <title>PHTV 1.3.4</title>
             <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.4</link>
             <sparkle:version>11</sparkle:version>
