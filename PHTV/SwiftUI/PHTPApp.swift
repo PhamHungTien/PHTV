@@ -1449,8 +1449,8 @@ struct SendKeyStepByStepApp: Codable, Identifiable, Hashable {
 
 // MARK: - Emoji Hotkey Manager
 
-/// Singleton manager for emoji picker hotkey
-/// Monitors global keyboard events and triggers Character Palette when hotkey is pressed
+/// Singleton manager for PHTV Picker hotkey
+/// Monitors global keyboard events and triggers PHTV Picker when hotkey is pressed
 final class EmojiHotkeyManager: ObservableObject, @unchecked Sendable {
 
     static let shared = EmojiHotkeyManager()
@@ -1604,14 +1604,14 @@ final class EmojiHotkeyManager: ObservableObject, @unchecked Sendable {
             return false
         }
 
-        NSLog("HANDLE-KEY-MATCH! Opening emoji picker")
+        NSLog("HANDLE-KEY-MATCH! Opening PHTV Picker")
 
         openEmojiPicker()
         return true
     }
     
     private func openEmojiPicker() {
-        NSLog("[EmojiHotkey] Opening custom emoji picker...")
+        NSLog("[EmojiHotkey] Opening PHTV Picker...")
 
         DispatchQueue.main.async {
             EmojiPickerManager.shared.show()
@@ -1680,7 +1680,7 @@ final class EmojiHotkeyManager: ObservableObject, @unchecked Sendable {
 }
 
 
-// MARK: - Custom Emoji Picker
+// MARK: - PHTV Picker
 
 // MARK: - Emoji Database
 
@@ -2772,7 +2772,7 @@ class FloatingPanel<Content: View>: NSPanel, NSWindowDelegate {
 }
 
 
-/// Modern emoji picker view with enhanced UX
+/// PHTV Picker view with enhanced UX
 struct EmojiPickerView: View {
     var onEmojiSelected: (String) -> Void
     var onClose: (() -> Void)?
@@ -2803,7 +2803,7 @@ struct EmojiPickerView: View {
                     .background(WindowDragHandle())
                     .help("Kéo để di chuyển")
 
-                Text("Emoji Picker")
+                Text("PHTV Picker")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.primary)
 
@@ -3248,7 +3248,7 @@ class DragHandleView: NSView {
 }
 
 
-/// Manager for emoji picker floating panel
+/// Manager for PHTV Picker floating panel
 @MainActor
 class EmojiPickerManager {
     static let shared = EmojiPickerManager()
@@ -3257,14 +3257,14 @@ class EmojiPickerManager {
 
     private init() {}
 
-    /// Shows the emoji picker at current mouse position
+    /// Shows the PHTV Picker at current mouse position
     func show() {
-        NSLog("[EmojiPicker] Showing emoji picker at mouse position")
+        NSLog("[PHTPPicker] Showing PHTV Picker at mouse position")
 
         // Close existing panel if any
         panel?.close()
 
-        // Create new panel with emoji picker view
+        // Create new panel with PHTV Picker view
         let emojiPickerView = EmojiPickerView(
             onEmojiSelected: { [weak self] emoji in
                 self?.handleEmojiSelected(emoji)
@@ -3291,9 +3291,9 @@ class EmojiPickerManager {
         NSLog("[EmojiPicker] Panel shown")
     }
 
-    /// Hides the emoji picker
+    /// Hides the PHTV Picker
     func hide() {
-        NSLog("[EmojiPicker] Hiding emoji picker")
+        NSLog("[PHTPPicker] Hiding PHTV Picker")
         panel?.close()
         panel = nil
     }
