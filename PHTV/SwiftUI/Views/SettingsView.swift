@@ -239,7 +239,7 @@ struct SettingsItem: Identifiable {
             title: "Phím tạm dừng", iconName: "pause.circle.fill", tab: .hotkeys,
             keywords: ["pause", "tạm dừng", "giữ phím", "option", "control"]),
         SettingsItem(
-            title: "Emoji Picker", iconName: "smiley.fill", tab: .hotkeys,
+            title: "PHTV Picker", iconName: "smiley.fill", tab: .hotkeys,
             keywords: ["emoji", "mặt cười", "biểu tượng cảm xúc", "phím tắt", "hotkey", "character viewer", "palette", "😀", "😊", "🎉"]),
 
         // ═══════════════════════════════════════════

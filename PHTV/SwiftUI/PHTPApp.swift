@@ -4194,6 +4194,10 @@ class FloatingPanel<Content: View>: NSPanel, NSWindowDelegate {
         self.isOpaque = false
         self.hasShadow = true
 
+        // Disable resizing completely
+        self.minSize = contentRect.size
+        self.maxSize = contentRect.size
+
         // Set content view
         self.contentView = NSHostingView(rootView: view)
 
