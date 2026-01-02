@@ -1682,6 +1682,314 @@ final class EmojiHotkeyManager: ObservableObject, @unchecked Sendable {
 
 // MARK: - PHTV Picker
 
+// MARK: - Tenor GIF API
+
+/// Tenor API client for fetching GIFs
+@MainActor
+class TenorAPIClient: ObservableObject {
+    static let shared = TenorAPIClient()
+
+    // Tenor API v2 - Free tier
+    private let apiKey = "AIzaSyAKJie7dveL8kiGRzPA_h_ipPXJhSE3Fhc" // Demo key
+    private let baseURL = "https://tenor.googleapis.com/v2"
+
+    @Published var trendingGIFs: [TenorGIF] = []
+    @Published var searchResults: [TenorGIF] = []
+    @Published var isLoading = false
+
+    private init() {}
+
+    /// Fetch trending GIFs
+    func fetchTrending(limit: Int = 20) {
+        isLoading = true
+
+        let urlString = "\(baseURL)/featured?key=\(apiKey)&limit=\(limit)&media_filter=mp4,tinygif"
+        guard let url = URL(string: urlString) else { return }
+
+        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+            guard let data = data, error == nil else {
+                print("[TenorAPI] Error fetching trending: \(error?.localizedDescription ?? "unknown")")
+                DispatchQueue.main.async {
+                    self?.isLoading = false
+                }
+                return
+            }
+
+            do {
+                let result = try JSONDecoder().decode(TenorResponse.self, from: data)
+                DispatchQueue.main.async {
+                    self?.trendingGIFs = result.results
+                    self?.isLoading = false
+                }
+            } catch {
+                print("[TenorAPI] Decode error: \(error)")
+                DispatchQueue.main.async {
+                    self?.isLoading = false
+                }
+            }
+        }.resume()
+    }
+
+    /// Search GIFs
+    func search(query: String, limit: Int = 20) {
+        guard !query.isEmpty else {
+            searchResults = []
+            return
+        }
+
+        isLoading = true
+
+        let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
+        let urlString = "\(baseURL)/search?key=\(apiKey)&q=\(encodedQuery)&limit=\(limit)&media_filter=mp4,tinygif"
+        guard let url = URL(string: urlString) else { return }
+
+        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+            guard let data = data, error == nil else {
+                print("[TenorAPI] Error searching: \(error?.localizedDescription ?? "unknown")")
+                DispatchQueue.main.async {
+                    self?.isLoading = false
+                }
+                return
+            }
+
+            do {
+                let result = try JSONDecoder().decode(TenorResponse.self, from: data)
+                DispatchQueue.main.async {
+                    self?.searchResults = result.results
+                    self?.isLoading = false
+                }
+            } catch {
+                print("[TenorAPI] Decode error: \(error)")
+                DispatchQueue.main.async {
+                    self?.isLoading = false
+                }
+            }
+        }.resume()
+    }
+}
+
+// MARK: - Tenor Models
+
+struct TenorResponse: Codable {
+    let results: [TenorGIF]
+}
+
+struct TenorGIF: Codable, Identifiable {
+    let id: String
+    let title: String?
+    let media_formats: MediaFormats
+    let url: String
+
+    var previewURL: String {
+        media_formats.tinygif?.url ?? media_formats.gif?.url ?? ""
+    }
+
+    var fullURL: String {
+        media_formats.mp4?.url ?? media_formats.gif?.url ?? ""
+    }
+}
+
+struct MediaFormats: Codable {
+    let gif: MediaFormat?
+    let tinygif: MediaFormat?
+    let mp4: MediaFormat?
+}
+
+struct MediaFormat: Codable {
+    let url: String
+    let dims: [Int]?
+}
+
+// MARK: - GIF Tab View
+
+struct GIFTabView: View {
+    @StateObject private var tenorClient = TenorAPIClient.shared
+    @State private var searchText = ""
+    @State private var copiedGIF: String?
+
+    private let columns = [
+        GridItem(.adaptive(minimum: 100, maximum: 150), spacing: 8)
+    ]
+
+    var displayedGIFs: [TenorGIF] {
+        searchText.isEmpty ? tenorClient.trendingGIFs : tenorClient.searchResults
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Search bar
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(.secondary)
+
+                TextField("Tìm GIF...", text: $searchText)
+                    .textFieldStyle(.plain)
+                    .onChange(of: searchText) { newValue in
+                        if newValue.isEmpty {
+                            tenorClient.searchResults = []
+                        } else {
+                            // Debounce search
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                if searchText == newValue {
+                                    tenorClient.search(query: newValue)
+                                }
+                            }
+                        }
+                    }
+
+                if !searchText.isEmpty {
+                    Button(action: { searchText = "" }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(12)
+            .background(Color.secondary.opacity(0.1))
+            .cornerRadius(8)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+
+            Divider()
+
+            // GIF Grid
+            ScrollView {
+                if tenorClient.isLoading {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(40)
+                } else if displayedGIFs.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: searchText.isEmpty ? "photo.on.rectangle.angled" : "magnifyingglass")
+                            .font(.system(size: 48))
+                            .foregroundColor(.secondary.opacity(0.5))
+
+                        Text(searchText.isEmpty ? "Đang tải GIF trending..." : "Không tìm thấy GIF")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+
+                        if !searchText.isEmpty {
+                            Text("Thử tìm kiếm với từ khóa khác")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(40)
+                } else {
+                    LazyVGrid(columns: columns, spacing: 8) {
+                        ForEach(displayedGIFs) { gif in
+                            GIFThumbnailView(gif: gif) {
+                                copyGIFURL(gif)
+                            }
+                        }
+                    }
+                    .padding(16)
+                }
+            }
+
+            // Powered by Tenor attribution
+            HStack {
+                Spacer()
+                Text("Powered by Tenor")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                Spacer()
+            }
+            .padding(.vertical, 8)
+            .background(Color.secondary.opacity(0.05))
+        }
+        .onAppear {
+            if tenorClient.trendingGIFs.isEmpty {
+                tenorClient.fetchTrending()
+            }
+        }
+        .overlay(
+            Group {
+                if copiedGIF != nil {
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                            Text("Đã copy URL!")
+                                .font(.caption)
+                        }
+                        .padding(8)
+                        .background(Color.primary.colorInvert().opacity(0.9))
+                        .cornerRadius(8)
+                        .shadow(radius: 4)
+                        .padding(.bottom, 50)
+                    }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+        )
+    }
+
+    private func copyGIFURL(_ gif: TenorGIF) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(gif.fullURL, forType: .string)
+
+        // Show copied feedback
+        withAnimation {
+            copiedGIF = gif.id
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            withAnimation {
+                copiedGIF = nil
+            }
+        }
+    }
+}
+
+struct GIFThumbnailView: View {
+    let gif: TenorGIF
+    let onTap: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: onTap) {
+            AsyncImage(url: URL(string: gif.previewURL)) { phase in
+                switch phase {
+                case .empty:
+                    ProgressView()
+                        .frame(height: 100)
+                case .success(let image):
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(height: 100)
+                        .clipped()
+                        .cornerRadius(8)
+                case .failure:
+                    Image(systemName: "photo.fill")
+                        .font(.largeTitle)
+                        .foregroundColor(.secondary)
+                        .frame(height: 100)
+                @unknown default:
+                    EmptyView()
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(isHovered ? Color.accentColor : Color.clear, lineWidth: 2)
+        )
+        .scaleEffect(isHovered ? 1.05 : 1.0)
+        .animation(.easeInOut(duration: 0.15), value: isHovered)
+        .onHover { hovering in
+            isHovered = hovering
+        }
+        .help("Click để copy URL")
+    }
+}
+
 // MARK: - Emoji Database
 
 /// Represents an emoji with metadata for search
@@ -2827,40 +3135,42 @@ struct EmojiPickerView: View {
             .padding(.top, 12)
             .padding(.bottom, 10)
 
-            // Search bar with modern design
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 13))
-                    .foregroundColor(.secondary.opacity(0.7))
-                TextField("Tìm emoji...", text: $searchText)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 13))
-                    .focused($isSearchFocused)
-                if !searchText.isEmpty {
-                    Button(action: {
-                        searchText = ""
-                        isSearchFocused = true
-                    }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 13))
-                            .foregroundColor(.secondary.opacity(0.7))
+            // Search bar with modern design (hidden for GIF tab)
+            if selectedCategory != -3 {
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary.opacity(0.7))
+                    TextField("Tìm emoji...", text: $searchText)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 13))
+                        .focused($isSearchFocused)
+                    if !searchText.isEmpty {
+                        Button(action: {
+                            searchText = ""
+                            isSearchFocused = true
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 13))
+                                .foregroundColor(.secondary.opacity(0.7))
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(NSColor.controlBackgroundColor).opacity(0.5))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .strokeBorder(Color.accentColor.opacity(isSearchFocused ? 0.3 : 0), lineWidth: 1.5)
+                        )
+                )
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
+                .animation(.easeInOut(duration: 0.2), value: isSearchFocused)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(NSColor.controlBackgroundColor).opacity(0.5))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .strokeBorder(Color.accentColor.opacity(isSearchFocused ? 0.3 : 0), lineWidth: 1.5)
-                    )
-            )
-            .padding(.horizontal, 16)
-            .padding(.bottom, 12)
-            .animation(.easeInOut(duration: 0.2), value: isSearchFocused)
 
             // Category tabs with scroll indicators
             ScrollViewReader { scrollProxy in
@@ -2886,6 +3196,19 @@ struct EmojiPickerView: View {
                                 }
                             }
                         }
+
+                        // GIF tab
+                        CategoryTab(
+                            isSelected: selectedCategory == -3,
+                            icon: "photo.on.rectangle.angled",
+                            label: "GIF",
+                            namespace: categoryNamespace
+                        ) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                selectedCategory = -3
+                            }
+                        }
+                        .id(-3)
 
                         Rectangle()
                             .fill(Color.secondary.opacity(0.2))
@@ -2917,55 +3240,62 @@ struct EmojiPickerView: View {
             Divider()
                 .opacity(0.5)
 
-            // Emoji grid with ScrollViewReader for smooth navigation
-            ScrollViewReader { scrollProxy in
-                ScrollView {
-                    let emojis = filteredEmojis
-                    if emojis.isEmpty {
-                        // Enhanced empty state
-                        VStack(spacing: 16) {
-                            Image(systemName: getEmptyStateIcon())
-                                .font(.system(size: 56))
-                                .foregroundColor(.secondary.opacity(0.5))
-                            Text(getEmptyStateTitle())
-                                .font(.system(size: 15, weight: .medium))
-                                .foregroundColor(.secondary)
-                            Text(getEmptyStateMessage())
-                                .font(.system(size: 12))
-                                .foregroundColor(.secondary.opacity(0.7))
-                                .multilineTextAlignment(.center)
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .padding(32)
-                    } else if !searchText.isEmpty {
-                        // Grouped search results by category
-                        SearchResultsView(
-                            searchResults: emojis,
-                            database: database,
-                            hoveredEmoji: $hoveredEmoji,
-                            onEmojiSelected: onEmojiSelected
-                        )
-                    } else {
-                        // Regular category view
-                        LazyVGrid(columns: columns, spacing: 8) {
-                            ForEach(Array(emojis.enumerated()), id: \.element.id) { index, emojiItem in
-                                EmojiButton(
-                                    emoji: emojiItem,
-                                    size: emojiSize,
-                                    isHovered: hoveredEmoji == emojiItem.emoji,
-                                    frequencyCount: getFrequencyCount(for: emojiItem.emoji)
-                                ) {
-                                    onEmojiSelected(emojiItem.emoji)
-                                }
-                                .onHover { hovering in
-                                    hoveredEmoji = hovering ? emojiItem.emoji : nil
+            // Content area - show GIF tab or emoji grid
+            if selectedCategory == -3 {
+                // GIF tab
+                GIFTabView()
+                    .frame(height: 320)
+            } else {
+                // Emoji grid with ScrollViewReader for smooth navigation
+                ScrollViewReader { scrollProxy in
+                    ScrollView {
+                        let emojis = filteredEmojis
+                        if emojis.isEmpty {
+                            // Enhanced empty state
+                            VStack(spacing: 16) {
+                                Image(systemName: getEmptyStateIcon())
+                                    .font(.system(size: 56))
+                                    .foregroundColor(.secondary.opacity(0.5))
+                                Text(getEmptyStateTitle())
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundColor(.secondary)
+                                Text(getEmptyStateMessage())
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.secondary.opacity(0.7))
+                                    .multilineTextAlignment(.center)
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .padding(32)
+                        } else if !searchText.isEmpty {
+                            // Grouped search results by category
+                            SearchResultsView(
+                                searchResults: emojis,
+                                database: database,
+                                hoveredEmoji: $hoveredEmoji,
+                                onEmojiSelected: onEmojiSelected
+                            )
+                        } else {
+                            // Regular category view
+                            LazyVGrid(columns: columns, spacing: 8) {
+                                ForEach(Array(emojis.enumerated()), id: \.element.id) { index, emojiItem in
+                                    EmojiButton(
+                                        emoji: emojiItem,
+                                        size: emojiSize,
+                                        isHovered: hoveredEmoji == emojiItem.emoji,
+                                        frequencyCount: getFrequencyCount(for: emojiItem.emoji)
+                                    ) {
+                                        onEmojiSelected(emojiItem.emoji)
+                                    }
+                                    .onHover { hovering in
+                                        hoveredEmoji = hovering ? emojiItem.emoji : nil
+                                    }
                                 }
                             }
+                            .padding(16)
                         }
-                        .padding(16)
                     }
+                    .frame(height: 320)
                 }
-                .frame(height: 320)
             }
         }
         .frame(width: 380)
