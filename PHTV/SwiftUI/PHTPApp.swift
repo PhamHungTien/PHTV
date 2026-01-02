@@ -1587,6 +1587,7 @@ final class EmojiHotkeyManager: ObservableObject, @unchecked Sendable {
         }
 
         NSLog("HANDLE-KEY-MATCH! Opening emoji picker")
+
         openEmojiPicker()
         return true
     }
@@ -1796,9 +1797,30 @@ final class EmojiDatabase: @unchecked Sendable {
             EmojiItem(emoji: "🙀", name: "Weary Cat", keywords: ["cat", "scared", "mèo"], category: "Smileys"),
             EmojiItem(emoji: "😿", name: "Crying Cat", keywords: ["cat", "cry", "mèo"], category: "Smileys"),
             EmojiItem(emoji: "😾", name: "Pouting Cat", keywords: ["cat", "angry", "mèo"], category: "Smileys"),
+            // Hearts & Emotion
+            EmojiItem(emoji: "❤️", name: "Red Heart", keywords: ["love", "heart", "yêu", "tim"], category: "Smileys"),
+            EmojiItem(emoji: "🧡", name: "Orange Heart", keywords: ["love", "heart", "yêu", "tim"], category: "Smileys"),
+            EmojiItem(emoji: "💛", name: "Yellow Heart", keywords: ["love", "heart", "yêu", "tim"], category: "Smileys"),
+            EmojiItem(emoji: "💚", name: "Green Heart", keywords: ["love", "heart", "yêu", "tim"], category: "Smileys"),
+            EmojiItem(emoji: "💙", name: "Blue Heart", keywords: ["love", "heart", "yêu", "tim"], category: "Smileys"),
+            EmojiItem(emoji: "💜", name: "Purple Heart", keywords: ["love", "heart", "yêu", "tim"], category: "Smileys"),
+            EmojiItem(emoji: "🖤", name: "Black Heart", keywords: ["love", "heart", "yêu", "tim"], category: "Smileys"),
+            EmojiItem(emoji: "🤍", name: "White Heart", keywords: ["love", "heart", "yêu", "tim"], category: "Smileys"),
+            EmojiItem(emoji: "🤎", name: "Brown Heart", keywords: ["love", "heart", "yêu", "tim"], category: "Smileys"),
+            EmojiItem(emoji: "💔", name: "Broken Heart", keywords: ["broken", "heart", "heartbreak", "tan vỡ"], category: "Smileys"),
+            EmojiItem(emoji: "❤️‍🔥", name: "Heart on Fire", keywords: ["love", "fire", "yêu", "lửa"], category: "Smileys"),
+            EmojiItem(emoji: "❤️‍🩹", name: "Mending Heart", keywords: ["healing", "heart", "lành"], category: "Smileys"),
+            EmojiItem(emoji: "💕", name: "Two Hearts", keywords: ["love", "hearts", "yêu"], category: "Smileys"),
+            EmojiItem(emoji: "💞", name: "Revolving Hearts", keywords: ["love", "hearts", "yêu"], category: "Smileys"),
+            EmojiItem(emoji: "💓", name: "Beating Heart", keywords: ["love", "heartbeat", "yêu", "đập"], category: "Smileys"),
+            EmojiItem(emoji: "💗", name: "Growing Heart", keywords: ["love", "growing", "yêu"], category: "Smileys"),
+            EmojiItem(emoji: "💖", name: "Sparkling Heart", keywords: ["love", "sparkle", "yêu", "lấp lánh"], category: "Smileys"),
+            EmojiItem(emoji: "💘", name: "Heart with Arrow", keywords: ["love", "cupid", "yêu"], category: "Smileys"),
+            EmojiItem(emoji: "💝", name: "Heart with Ribbon", keywords: ["love", "gift", "yêu", "quà"], category: "Smileys"),
+            EmojiItem(emoji: "💟", name: "Heart Decoration", keywords: ["love", "heart", "yêu"], category: "Smileys"),
         ]
 
-        // Hands & Body
+        // People & Body
         let hands: [EmojiItem] = [
             EmojiItem(emoji: "👋", name: "Waving Hand", keywords: ["wave", "hello", "vẫy tay", "chào"], category: "Hands"),
             EmojiItem(emoji: "🤚", name: "Raised Back of Hand", keywords: ["hand", "raised", "tay"], category: "Hands"),
