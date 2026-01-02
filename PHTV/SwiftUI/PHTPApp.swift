@@ -69,14 +69,8 @@ struct SettingsWindowContent: View {
     @EnvironmentObject var appState: AppState
 
     var body: some View {
-        ZStack(alignment: .top) {
-            SettingsView()
-
-            // Update banner overlay
-            UpdateBannerView()
-                .zIndex(1000)
-        }
-        .background {
+        ZStack {
+            // Full-window background layer
             if #available(macOS 26.0, *) {
                 // Liquid Glass for macOS 26+
                 Color.clear
@@ -87,7 +81,21 @@ struct SettingsWindowContent: View {
                 VisualEffectBlur(material: .underWindowBackground, blendingMode: .behindWindow)
                     .ignoresSafeArea()
             }
+
+            // Content layer
+            VStack(spacing: 0) {
+                SettingsView()
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            // Update banner overlay
+            VStack {
+                UpdateBannerView()
+                Spacer()
+            }
+            .zIndex(1000)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
             // Update window level and transparency based on user preference
             updateSettingsWindowAppearance()
