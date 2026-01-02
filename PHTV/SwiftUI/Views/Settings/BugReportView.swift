@@ -16,7 +16,6 @@ private let phtvLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.
 
 struct BugReportView: View {
     @EnvironmentObject var appState: AppState
-    @EnvironmentObject var themeManager: ThemeManager
 
     @State private var bugTitle: String = ""
     @State private var bugDescription: String = ""
@@ -95,7 +94,7 @@ struct BugReportView: View {
             VStack(spacing: 0) {
                 SettingsToggleRow(
                     icon: "cpu.fill",
-                    iconColor: themeManager.themeColor,
+                    iconColor: .accentColor,
                     title: "Thông tin hệ thống",
                     subtitle: "Phiên bản PHTV, macOS, chip, bàn phím",
                     isOn: $includeSystemInfo
@@ -105,52 +104,11 @@ struct BugReportView: View {
 
                 SettingsToggleRow(
                     icon: "doc.text.fill",
-                    iconColor: themeManager.themeColor,
+                    iconColor: .accentColor,
                     title: "Nhật ký debug",
                     subtitle: "Log hoạt động gần đây của ứng dụng",
                     isOn: $includeLogs
                 )
-
-                // Hiển thị preview log nếu bật
-                if includeLogs {
-                    SettingsDivider()
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("Xem trước")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-
-                            Spacer()
-
-                            Button {
-                                loadDebugLogs()
-                            } label: {
-                                if isLoadingLogs {
-                                    ProgressView()
-                                        .scaleEffect(0.6)
-                                } else {
-                                    Image(systemName: "arrow.clockwise")
-                                }
-                            }
-                            .buttonStyle(.borderless)
-                            .disabled(isLoadingLogs)
-                        }
-
-                        ScrollView {
-                            Text(debugLogs.isEmpty ? "Không có nhật ký" : debugLogs)
-                                .font(.system(.caption2, design: .monospaced))
-                                .textSelection(.enabled)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .frame(height: 120)
-                        .padding(8)
-                        .background(Color(NSColor.textBackgroundColor))
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                }
             }
         }
     }
@@ -189,7 +147,7 @@ struct BugReportView: View {
                     }
                 }
                 .adaptiveProminentButtonStyle()
-                .tint(themeManager.themeColor)
+                .tint(.accentColor)
                 .disabled(isSending)
 
                 // Send Email
@@ -1010,6 +968,5 @@ struct BugReportView: View {
 #Preview {
     BugReportView()
         .environmentObject(AppState.shared)
-        .environmentObject(ThemeManager.shared)
         .frame(width: 600, height: 800)
 }

@@ -18,7 +18,6 @@ import SwiftUI
 struct PHTVApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var appState = AppState.shared
-    @StateObject private var themeManager = ThemeManager.shared
     @StateObject private var windowOpener = SettingsWindowOpener.shared
 
     init() {
@@ -43,7 +42,6 @@ struct PHTVApp: App {
         MenuBarExtra {
             StatusBarMenuView()
                 .environmentObject(appState)
-                .tint(themeManager.themeColor)
         } label: {
             // Use app icon (template); add slash when in English mode
             let size = CGFloat(appState.menuBarIconSize)
@@ -58,7 +56,6 @@ struct PHTVApp: App {
         Window("", id: "settings") {
             SettingsWindowContent()
                 .environmentObject(appState)
-                .environmentObject(themeManager)
         }
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 950, height: 680)
@@ -70,12 +67,10 @@ struct PHTVApp: App {
 /// This helps with proper lifecycle management
 struct SettingsWindowContent: View {
     @EnvironmentObject var appState: AppState
-    @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
         ZStack(alignment: .top) {
             SettingsView()
-                .tint(themeManager.themeColor)
 
             // Update banner overlay
             UpdateBannerView()

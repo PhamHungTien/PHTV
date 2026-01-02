@@ -13,7 +13,6 @@ import AppKit
 
 struct HotkeyConfigView: View {
     @EnvironmentObject var appState: AppState
-    @EnvironmentObject var themeManager: ThemeManager
     @State private var isRecording = false
     
     // 0xFE = modifier only mode (no key needed, just press and release modifiers)
@@ -105,11 +104,11 @@ struct HotkeyConfigView: View {
                         HStack(spacing: 10) {
                             Image(systemName: isRecording ? "keyboard.badge.ellipsis" : "keyboard")
                                 .font(.system(size: 16, weight: .medium))
-                                .foregroundStyle(isRecording ? themeManager.themeColor : .secondary)
+                                .foregroundStyle(isRecording ? Color.accentColor : .secondary)
 
                             Text(keyDisplayText)
                                 .font(.body)
-                                .foregroundStyle(isRecording ? themeManager.themeColor : .primary)
+                                .foregroundStyle(isRecording ? Color.accentColor : .primary)
                                 .animation(.easeInOut(duration: 0.2), value: keyDisplayText)
 
                             Spacer()
@@ -135,10 +134,10 @@ struct HotkeyConfigView: View {
                         .frame(minWidth: 180)
                         .background(
                             RoundedRectangle(cornerRadius: 10)
-                                .fill(isRecording ? themeManager.themeColor.opacity(0.1) : Color(NSColor.controlBackgroundColor))
+                                .fill(isRecording ? .accentColor.opacity(0.1) : Color(NSColor.controlBackgroundColor))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 10)
-                                        .stroke(isRecording ? themeManager.themeColor : Color.gray.opacity(0.3), lineWidth: 1)
+                                        .stroke(isRecording ? .accentColor : Color.gray.opacity(0.3), lineWidth: 1)
                                 )
                         )
                     }
@@ -163,7 +162,7 @@ struct HotkeyConfigView: View {
                         .padding(.vertical, 8)
                         .background(
                             RoundedRectangle(cornerRadius: 10)
-                                .fill(themeManager.themeColor.opacity(0.08))
+                                .fill(Color.accentColor.opacity(0.08))
                         )
                         .transition(.scale.combined(with: .opacity))
                     }
@@ -180,7 +179,7 @@ struct HotkeyConfigView: View {
                 // Beep on mode switch toggle
                 SettingsToggleRow(
                     icon: "speaker.wave.2.fill",
-                    iconColor: themeManager.themeColor,
+                    iconColor: .accentColor,
                     title: "Phát âm thanh khi chuyển chế độ",
                     subtitle: "Phát beep khi bấm phím tắt",
                     isOn: $appState.beepOnModeSwitch
@@ -204,7 +203,7 @@ struct HotkeyConfigView: View {
                         value: $appState.beepVolume,
                         range: 0.0...1.0,
                         step: 0.01,
-                        tintColor: themeManager.themeColor,
+                        tintColor: .accentColor,
                         onEditingChanged: { editing in
                             // Play pop sound on slider release
                             if !editing && appState.beepVolume > 0 {
@@ -253,7 +252,6 @@ struct HotkeyConfigView: View {
 }
 
 struct ModifierKeyButton: View {
-    @EnvironmentObject var themeManager: ThemeManager
     let symbol: String
     let name: String
     @Binding var isOn: Bool
@@ -277,8 +275,8 @@ struct ModifierKeyButton: View {
             .frame(height: 56)
             .background(
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(isOn ? themeManager.themeColor : Color(NSColor.controlBackgroundColor))
-                    .shadow(color: isOn ? themeManager.themeColor.opacity(0.3) : Color.clear, radius: 4, x: 0, y: 2)
+                    .fill(isOn ? .accentColor : Color(NSColor.controlBackgroundColor))
+                    .shadow(color: isOn ? .accentColor.opacity(0.3) : Color.clear, radius: 4, x: 0, y: 2)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
@@ -543,7 +541,6 @@ fileprivate func convertToNSColor(_ color: Color) -> NSColor? {
 // MARK: - Pause Key Configuration View
 struct PauseKeyConfigView: View {
     @EnvironmentObject var appState: AppState
-    @EnvironmentObject var themeManager: ThemeManager
 
     // Check if pause key conflicts with restore key
     private var hasPauseRestoreConflict: Bool {
@@ -574,7 +571,7 @@ struct PauseKeyConfigView: View {
             // Enable toggle
             SettingsToggleRow(
                 icon: "pause.fill",
-                iconColor: themeManager.themeColor,
+                iconColor: .accentColor,
                 title: "Bật tính năng tạm dừng",
                 subtitle: "Nhấn giữ phím để tạm thời chuyển sang tiếng Anh",
                 isOn: $appState.pauseKeyEnabled
@@ -667,7 +664,6 @@ struct PauseKeyConfigView: View {
 
 // MARK: - Pause Key Button (Radio button style)
 struct PauseKeyButton: View {
-    @EnvironmentObject var themeManager: ThemeManager
     let symbol: String
     let name: String
     let keyCode: UInt16
@@ -698,8 +694,8 @@ struct PauseKeyButton: View {
             .frame(height: 56)
             .background(
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(isSelected ? themeManager.themeColor : Color(NSColor.controlBackgroundColor))
-                    .shadow(color: isSelected ? themeManager.themeColor.opacity(0.3) : Color.clear, radius: 4, x: 0, y: 2)
+                    .fill(isSelected ? .accentColor : Color(NSColor.controlBackgroundColor))
+                    .shadow(color: isSelected ? .accentColor.opacity(0.3) : Color.clear, radius: 4, x: 0, y: 2)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
@@ -715,7 +711,6 @@ struct PauseKeyButton: View {
 // MARK: - Emoji Hotkey Configuration View
 struct EmojiHotkeyConfigView: View {
     @EnvironmentObject var appState: AppState
-    @EnvironmentObject var themeManager: ThemeManager
     @State private var isRecording = false
 
     // Computed properties for modifier bindings
@@ -784,9 +779,9 @@ struct EmojiHotkeyConfigView: View {
             // Enable toggle
             SettingsToggleRow(
                 icon: "smiley.fill",
-                iconColor: themeManager.themeColor,
+                iconColor: .accentColor,
                 title: "Bật phím tắt Emoji Picker",
-                subtitle: "Mở bảng tùy chọn Emoji, GIF của PHTV",
+                subtitle: "Mở bảng tùy chọn Emoji, GIF, Sticker của PHTV",
                 isOn: $appState.enableEmojiHotkey
             )
 
@@ -831,11 +826,11 @@ struct EmojiHotkeyConfigView: View {
                             HStack(spacing: 10) {
                                 Image(systemName: isRecording ? "keyboard.badge.ellipsis" : "keyboard")
                                     .font(.system(size: 16, weight: .medium))
-                                    .foregroundStyle(isRecording ? themeManager.themeColor : .secondary)
+                                    .foregroundStyle(isRecording ? Color.accentColor : .secondary)
 
                                 Text(keyDisplayText)
                                     .font(.body)
-                                    .foregroundStyle(isRecording ? themeManager.themeColor : .primary)
+                                    .foregroundStyle(isRecording ? Color.accentColor : .primary)
                                     .animation(.easeInOut(duration: 0.2), value: keyDisplayText)
 
                                 Spacer()
@@ -845,10 +840,10 @@ struct EmojiHotkeyConfigView: View {
                             .frame(minWidth: 180)
                             .background(
                                 RoundedRectangle(cornerRadius: 10)
-                                    .fill(isRecording ? themeManager.themeColor.opacity(0.1) : Color(NSColor.controlBackgroundColor))
+                                    .fill(isRecording ? .accentColor.opacity(0.1) : Color(NSColor.controlBackgroundColor))
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 10)
-                                            .stroke(isRecording ? themeManager.themeColor : Color.gray.opacity(0.3), lineWidth: 1)
+                                            .stroke(isRecording ? .accentColor : Color.gray.opacity(0.3), lineWidth: 1)
                                     )
                             )
                         }
@@ -873,7 +868,7 @@ struct EmojiHotkeyConfigView: View {
                             .padding(.vertical, 8)
                             .background(
                                 RoundedRectangle(cornerRadius: 10)
-                                    .fill(themeManager.themeColor.opacity(0.08))
+                                    .fill(Color.accentColor.opacity(0.08))
                             )
                             .transition(.scale.combined(with: .opacity))
                         }

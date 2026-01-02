@@ -11,7 +11,6 @@ import AudioToolbox
 
 struct TypingSettingsView: View {
     @EnvironmentObject var appState: AppState
-    @EnvironmentObject var themeManager: ThemeManager
 
     // Check if restore key conflicts with hotkey
     private var hasRestoreHotkeyConflict: Bool {
@@ -76,7 +75,7 @@ struct TypingSettingsView: View {
                     VStack(spacing: 0) {
                         SettingsToggleRow(
                             icon: "text.badge.checkmark",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Kiểm tra chính tả",
                             subtitle: "Tự động phát hiện lỗi chính tả",
                             isOn: $appState.checkSpelling
@@ -86,7 +85,7 @@ struct TypingSettingsView: View {
 
                         SettingsToggleRow(
                             icon: "arrow.uturn.left.circle.fill",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Khôi phục phím nếu từ sai",
                             subtitle: "Khôi phục ký tự khi từ không hợp lệ",
                             isOn: $appState.restoreOnInvalidWord
@@ -96,7 +95,7 @@ struct TypingSettingsView: View {
 
                         SettingsToggleRow(
                             icon: "textformat.abc.dottedunderline",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Tự động nhận diện từ tiếng Anh",
                             subtitle: "Khôi phục từ tiếng Anh khi gõ ở chế độ Việt (VD: tẻminal → terminal)",
                             isOn: $appState.autoRestoreEnglishWord
@@ -109,7 +108,7 @@ struct TypingSettingsView: View {
                     VStack(spacing: 16) {
                         SettingsToggleRow(
                             icon: "arrow.uturn.backward.circle.fill",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Khôi phục về ký tự gốc",
                             subtitle: "Khôi phục về ký tự đã gõ trước khi biến đổi (VD: user → úẻ → phím khôi phục → user)",
                             isOn: $appState.restoreOnEscape
@@ -134,7 +133,7 @@ struct TypingSettingsView: View {
                                         RestoreKeyButton(
                                             key: key,
                                             isSelected: appState.restoreKey == key,
-                                            themeColor: themeManager.themeColor
+                                            themeColor: .accentColor
                                         ) {
                                             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                                 appState.restoreKey = key
@@ -177,7 +176,7 @@ struct TypingSettingsView: View {
                     VStack(spacing: 0) {
                         SettingsToggleRow(
                             icon: "textformat.abc",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Viết hoa ký tự đầu",
                             subtitle: "Tự động viết hoa sau dấu chấm",
                             isOn: $appState.upperCaseFirstChar
@@ -187,7 +186,7 @@ struct TypingSettingsView: View {
 
                         SettingsToggleRow(
                             icon: "a.circle.fill",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Đặt dấu oà, uý",
                             subtitle: "Dấu trên chữ (oà, uý) thay vì dưới (òa, úy)",
                             isOn: $appState.useModernOrthography
@@ -197,7 +196,7 @@ struct TypingSettingsView: View {
 
                         SettingsToggleRow(
                             icon: "hare.fill",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Gõ nhanh (Quick Telex)",
                             subtitle: "Gõ cc → ch, gg → gi, kk → kh, nn → ng...",
                             isOn: $appState.quickTelex
@@ -210,7 +209,7 @@ struct TypingSettingsView: View {
                     VStack(spacing: 0) {
                         SettingsToggleRow(
                             icon: "character",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Phụ âm Z, F, W, J",
                             subtitle: "Cho phép nhập các phụ âm ngoại lai",
                             isOn: $appState.allowConsonantZFWJ
@@ -220,7 +219,7 @@ struct TypingSettingsView: View {
 
                         SettingsToggleRow(
                             icon: "arrow.right.circle.fill",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Phụ âm đầu nhanh",
                             subtitle: "Gõ f → ph, j → gi, w → qu...",
                             isOn: $appState.quickStartConsonant
@@ -230,7 +229,7 @@ struct TypingSettingsView: View {
 
                         SettingsToggleRow(
                             icon: "arrow.left.circle.fill",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Phụ âm cuối nhanh",
                             subtitle: "Gõ g → ng, h → nh, k → ch...",
                             isOn: $appState.quickEndConsonant
@@ -249,7 +248,6 @@ struct TypingSettingsView: View {
 // MARK: - Reusable Components
 
 struct StatusCard: View {
-    @EnvironmentObject var themeManager: ThemeManager
     let hasPermission: Bool
 
     var body: some View {
@@ -259,7 +257,7 @@ struct StatusCard: View {
                     ? "checkmark.shield.fill" : "exclamationmark.triangle.fill"
             )
             .font(.system(size: 32))
-            .foregroundStyle(hasPermission ? themeManager.themeColor : .orange)
+            .foregroundStyle(hasPermission ? Color.accentColor : .orange)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(hasPermission ? "Sẵn sàng hoạt động" : "Cần cấp quyền")
@@ -288,7 +286,7 @@ struct StatusCard: View {
                     }
                     .buttonStyle(.glassProminent)
                     .controlSize(.small)
-                    .tint(hasPermission ? themeManager.themeColor : .orange)
+                    .tint(hasPermission ? .accentColor : .orange)
                 } else {
                     Button("Cấp quyền") {
                         if let url = URL(
@@ -307,16 +305,16 @@ struct StatusCard: View {
         .background {
             if #available(macOS 26.0, *) {
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(hasPermission ? themeManager.themeColor.opacity(0.08) : Color.orange.opacity(0.08))
+                    .fill(hasPermission ? .accentColor.opacity(0.08) : Color.orange.opacity(0.08))
                     .glassEffect(in: .rect(cornerRadius: 12))
             } else {
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(hasPermission ? themeManager.themeColor.opacity(0.08) : Color.orange.opacity(0.08))
+                    .fill(hasPermission ? .accentColor.opacity(0.08) : Color.orange.opacity(0.08))
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(
                                 hasPermission
-                                    ? themeManager.themeColor.opacity(0.2) : Color.orange.opacity(0.2),
+                                    ? .accentColor.opacity(0.2) : Color.orange.opacity(0.2),
                                 lineWidth: 1)
                     )
             }

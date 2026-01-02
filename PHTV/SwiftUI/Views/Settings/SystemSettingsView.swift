@@ -11,7 +11,6 @@ import UniformTypeIdentifiers
 
 struct SystemSettingsView: View {
     @EnvironmentObject var appState: AppState
-    @EnvironmentObject var themeManager: ThemeManager
     @State private var showingResetAlert = false
     @State private var showingConvertTool = false
     @State private var showingExportSheet = false
@@ -31,7 +30,7 @@ struct SystemSettingsView: View {
                     VStack(spacing: 0) {
                         SettingsToggleRow(
                             icon: "play.fill",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Khởi động cùng hệ thống",
                             subtitle: "Tự động mở PHTV khi đăng nhập macOS",
                             isOn: $appState.runOnStartup
@@ -47,12 +46,12 @@ struct SystemSettingsView: View {
                             HStack(spacing: 14) {
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 8)
-                                        .fill(themeManager.themeColor.opacity(0.12))
+                                        .fill(Color.accentColor.opacity(0.12))
                                         .frame(width: 36, height: 36)
 
                                     Image(systemName: "clock.fill")
                                         .font(.system(size: 16, weight: .medium))
-                                        .foregroundStyle(themeManager.themeColor)
+                                        .foregroundStyle(Color.accentColor)
                                 }
 
                                 VStack(alignment: .leading, spacing: 2) {
@@ -82,7 +81,7 @@ struct SystemSettingsView: View {
                         // Beta toggle
                         SettingsToggleRow(
                             icon: "testtube.2",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Kênh Beta",
                             subtitle: "Nhận bản cập nhật beta (không ổn định)",
                             isOn: $appState.betaChannelEnabled
@@ -93,7 +92,7 @@ struct SystemSettingsView: View {
                         // Manual check
                         SettingsButtonRow(
                             icon: "arrow.clockwise.circle.fill",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Kiểm tra cập nhật",
                             subtitle: "Tìm phiên bản mới ngay bây giờ",
                             action: checkForUpdates
@@ -106,7 +105,7 @@ struct SystemSettingsView: View {
                     VStack(spacing: 0) {
                         SettingsButtonRow(
                             icon: "doc.on.clipboard.fill",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Chuyển đổi bảng mã",
                             subtitle: "Chuyển văn bản giữa Unicode, TCVN3, VNI...",
                             action: {
@@ -121,7 +120,7 @@ struct SystemSettingsView: View {
                     VStack(spacing: 0) {
                         SettingsButtonRow(
                             icon: "square.and.arrow.up.fill",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Xuất cài đặt",
                             subtitle: "Sao lưu toàn bộ cài đặt ra file",
                             action: {
@@ -133,7 +132,7 @@ struct SystemSettingsView: View {
 
                         SettingsButtonRow(
                             icon: "square.and.arrow.down.fill",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Nhập cài đặt",
                             subtitle: "Khôi phục cài đặt từ file sao lưu",
                             action: {
@@ -163,7 +162,6 @@ struct SystemSettingsView: View {
         .settingsBackground()
         .sheet(isPresented: $showingConvertTool) {
             ConvertToolView()
-                .environmentObject(themeManager)
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowConvertToolSheet"))) { _ in
             showingConvertTool = true
@@ -211,7 +209,7 @@ struct SystemSettingsView: View {
             }
         } message: {
             if let backup = importData {
-                Text("Bản sao lưu từ \(backup.exportDate)\n• \(backup.macros?.count ?? 0) gõ tắt\n• \(backup.customDictionary?.count ?? 0) từ tùy chỉnh\n\nCài đặt hiện tại sẽ được thay thế.")
+                Text("Bản sao lưu từ \(backup.exportDate)\n• \(backup.macros?.count ?? 0) gõ tắt\n\nCài đặt hiện tại sẽ được thay thế.")
             }
         }
         .alert("Lỗi", isPresented: $showError) {
@@ -266,13 +264,6 @@ struct SystemSettingsView: View {
             categories = items
         }
 
-        // Load custom dictionary
-        var customDict: [CustomWord]?
-        if let data = defaults.data(forKey: "customDictionary"),
-           let items = try? JSONDecoder().decode([CustomWord].self, from: data) {
-            customDict = items
-        }
-
         // Load excluded apps
         var excludedApps: [String]?
         if let apps = defaults.stringArray(forKey: "excludedApps") {
@@ -285,7 +276,6 @@ struct SystemSettingsView: View {
             settings: settings,
             macros: macros,
             macroCategories: categories,
-            customDictionary: customDict,
             excludedApps: excludedApps
         )
     }
@@ -339,13 +329,6 @@ struct SystemSettingsView: View {
         if let categories = backup.macroCategories {
             if let encoded = try? JSONEncoder().encode(categories) {
                 defaults.set(encoded, forKey: "macroCategories")
-            }
-        }
-
-        // Apply custom dictionary
-        if let customDict = backup.customDictionary {
-            if let encoded = try? JSONEncoder().encode(customDict) {
-                defaults.set(encoded, forKey: "customDictionary")
             }
         }
 
@@ -494,7 +477,6 @@ struct SettingsBackup: Codable, Sendable {
     var settings: [String: AnyCodableValue]?
     var macros: [MacroItem]?
     var macroCategories: [MacroCategory]?
-    var customDictionary: [CustomWord]?
     var excludedApps: [String]?
 }
 
@@ -562,6 +544,5 @@ struct SettingsBackupDocument: FileDocument {
 #Preview {
     SystemSettingsView()
         .environmentObject(AppState.shared)
-        .environmentObject(ThemeManager.shared)
         .frame(width: 500, height: 600)
 }

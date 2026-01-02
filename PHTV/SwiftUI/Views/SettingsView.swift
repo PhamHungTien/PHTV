@@ -11,7 +11,6 @@ import SwiftUI
 // MARK: - Main Settings View
 struct SettingsView: View {
     @EnvironmentObject var appState: AppState
-    @EnvironmentObject var themeManager: ThemeManager
     @State private var selectedTab: SettingsTab = .typing
     @State private var searchText: String = ""
 
@@ -40,28 +39,8 @@ struct SettingsView: View {
                 if searchText.isEmpty {
                     // Normal tab list
                     ForEach(SettingsTab.allCases) { tab in
-                        HStack(spacing: 12) {
-                            Image(systemName: tab.iconName)
-                                .foregroundStyle(selectedTab == tab ? .white : themeManager.themeColor)
-                                .frame(width: 20, alignment: .center)
-                            Text(tab.title)
-                                .foregroundStyle(selectedTab == tab ? .white : .primary)
-                            Spacer()
-                        }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 6)
-                        .background {
-                            if selectedTab == tab {
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(themeManager.themeColor.gradient)
-                            }
-                        }
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            selectedTab = tab
-                        }
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
+                        Label(tab.title, systemImage: tab.iconName)
+                            .tag(tab)
                     }
                 } else {
                     // Search results
@@ -97,19 +76,15 @@ struct SettingsView: View {
                 }
             }
             .listStyle(.sidebar)
-            .tint(themeManager.themeColor)
             .conditionalSearchable(text: $searchText, prompt: "Tìm kiếm cài đặt...")
             .navigationSplitViewColumnWidth(min: 160, ideal: 200, max: 240)
         } detail: {
             detailView
                 .environmentObject(appState)
-                .environmentObject(themeManager)
                 .frame(minWidth: 400, minHeight: 400)
                 .modifier(BackgroundExtensionModifier())
         }
         .navigationSplitViewStyle(.balanced)
-        .tint(themeManager.themeColor)
-        .accentColor(themeManager.themeColor)
         .onAppear {
             // When settings window opens, show dock icon only if setting is enabled
             let appDelegate = NSApp.delegate as? AppDelegate
@@ -159,18 +134,12 @@ struct SettingsView: View {
             HotkeySettingsView()
         case .macro:
             MacroSettingsView()
-        case .dictionary:
-            CustomDictionaryView()
         case .apps:
             AppsSettingsView()
         case .compatibility:
             CompatibilitySettingsView()
-        case .appearance:
-            AppearanceSettingsView()
         case .system:
             SystemSettingsView()
-        case .stats:
-            TypingStatsView()
         case .bugReport:
             BugReportView()
         case .about:
@@ -261,47 +230,6 @@ struct SettingsItem: Identifiable {
             keywords: ["snippet", "date", "time", "clipboard", "ngày", "giờ", "động", "tự động", "counter", "random"]),
 
         // ═══════════════════════════════════════════
-        // MARK: - Từ điển (Dictionary)
-        // ═══════════════════════════════════════════
-        SettingsItem(
-            title: "Từ điển tùy chỉnh", iconName: "character.book.closed", tab: .dictionary,
-            keywords: ["dictionary", "custom", "từ điển", "tùy chỉnh", "tiếng anh", "tiếng việt"]),
-        SettingsItem(
-            title: "Thêm từ tiếng Anh", iconName: "textformat.abc", tab: .dictionary,
-            keywords: ["english", "tiếng anh", "thêm", "add", "từ", "word"]),
-        SettingsItem(
-            title: "Thêm từ tiếng Việt", iconName: "character.textbox", tab: .dictionary,
-            keywords: ["vietnamese", "tiếng việt", "thêm", "add", "từ", "word"]),
-        SettingsItem(
-            title: "Import/Export từ điển", iconName: "square.and.arrow.down", tab: .dictionary,
-            keywords: ["import", "export", "nhập", "xuất", "từ điển", "dictionary", "file"]),
-
-        // ═══════════════════════════════════════════
-        // MARK: - Thống kê (Stats)
-        // ═══════════════════════════════════════════
-        SettingsItem(
-            title: "Bật thống kê gõ phím", iconName: "chart.bar.fill", tab: .stats,
-            keywords: ["enable", "bật", "tắt", "statistics", "thống kê", "gõ phím", "typing", "stats"]),
-        SettingsItem(
-            title: "Thống kê gõ phím", iconName: "chart.bar.fill", tab: .stats,
-            keywords: ["statistics", "thống kê", "gõ phím", "typing", "stats", "biểu đồ"]),
-        SettingsItem(
-            title: "Số từ đã gõ", iconName: "text.word.spacing", tab: .stats,
-            keywords: ["words", "từ", "đếm", "count", "tổng"]),
-        SettingsItem(
-            title: "Thời gian gõ", iconName: "clock.fill", tab: .stats,
-            keywords: ["time", "thời gian", "duration", "phút", "giờ"]),
-        SettingsItem(
-            title: "Biểu đồ hoạt động", iconName: "chart.line.uptrend.xyaxis", tab: .stats,
-            keywords: ["chart", "biểu đồ", "graph", "activity", "hoạt động"]),
-        SettingsItem(
-            title: "Phân bố ngôn ngữ", iconName: "globe", tab: .stats,
-            keywords: ["language", "ngôn ngữ", "tiếng việt", "tiếng anh", "phân bố", "tỷ lệ"]),
-        SettingsItem(
-            title: "Xóa thống kê", iconName: "trash.fill", tab: .stats,
-            keywords: ["reset", "xóa", "làm mới", "delete", "clear"]),
-
-        // ═══════════════════════════════════════════
         // MARK: - Phím tắt (Hotkeys)
         // ═══════════════════════════════════════════
         SettingsItem(
@@ -332,22 +260,6 @@ struct SettingsItem: Identifiable {
         SettingsItem(
             title: "Ứng dụng gửi từng phím", iconName: "app.badge.fill", tab: .apps,
             keywords: ["send key apps", "ứng dụng", "từng phím", "app list"]),
-
-        // ═══════════════════════════════════════════
-        // MARK: - Giao diện (Appearance)
-        // ═══════════════════════════════════════════
-        SettingsItem(
-            title: "Màu chủ đạo", iconName: "paintpalette.fill", tab: .appearance,
-            keywords: ["theme", "color", "màu sắc", "giao diện", "theme color", "accent", "xanh", "đỏ", "vàng", "tím", "cam", "hồng"]),
-        SettingsItem(
-            title: "Icon chữ V trên thanh menu", iconName: "flag.fill", tab: .appearance,
-            keywords: ["menu bar", "icon", "chữ v", "vietnamese", "thanh menu"]),
-        SettingsItem(
-            title: "Kích cỡ icon thanh menu", iconName: "arrow.up.left.and.arrow.down.right", tab: .appearance,
-            keywords: ["menu bar size", "kích cỡ", "icon", "thanh menu", "pixel"]),
-        SettingsItem(
-            title: "Hiển thị icon trên Dock", iconName: "app.fill", tab: .appearance,
-            keywords: ["show icon dock", "icon", "dock", "hiển thị"]),
 
         // ═══════════════════════════════════════════
         // MARK: - Tương thích (Compatibility)
@@ -426,12 +338,9 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     case typing = "Bộ gõ"
     case hotkeys = "Phím tắt"
     case macro = "Gõ tắt"
-    case dictionary = "Từ điển"
     case apps = "Ứng dụng"
     case compatibility = "Tương thích"
-    case appearance = "Giao diện"
     case system = "Hệ thống"
-    case stats = "Thống kê"
     case bugReport = "Báo lỗi"
     case about = "Thông tin"
 
@@ -443,12 +352,9 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .typing: return "keyboard"
         case .hotkeys: return "command"
         case .macro: return "text.badge.checkmark"
-        case .dictionary: return "character.book.closed"
         case .apps: return "square.stack.3d.up"
         case .compatibility: return "puzzlepiece.extension.fill"
-        case .appearance: return "paintpalette.fill"
         case .system: return "gear"
-        case .stats: return "chart.bar.fill"
         case .bugReport: return "ladybug.fill"
         case .about: return "info.circle"
         }

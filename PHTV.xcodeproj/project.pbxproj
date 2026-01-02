@@ -52,9 +52,6 @@
 		46ABBBAA2EFD67680003CBB5 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 46ABBBA92EFD67680003CBB5 /* Sparkle */; };
 		46ABBBB02EFD67B00003CBB5 /* SparkleManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = 46ABBBAF2EFD67B00003CBB5 /* SparkleManager.mm */; };
 		46EF4FFA2EEDBFD400DF8DD1 /* PHTV.icon in Resources */ = {isa = PBXBuildFile; fileRef = 46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */; };
-		49AFB5E4F7509F2710D83AF1 /* AppearanceSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7517950331D18D85BC42BE65 /* AppearanceSettingsView.swift */; };
-		5832154BF8BC438D804CD999 /* ThemeSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF311551B144E45B07D9CCD /* ThemeSettingsView.swift */; };
-		969E53BC2BBB4C93AC790BF7 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99A1FB75E4F047E2882D19DC /* ThemeManager.swift */; };
 		A534F32629D8B78100296F25 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23874B0F220160A500000BC8 /* Carbon.framework */; };
 		A534F32629D8B78100296F26 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23874B10220160A500000BC9 /* QuartzCore.framework */; };
 		B130517648548D01FFC0F52C /* AppsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2DA720371C3BD130F878C29 /* AppsSettingsView.swift */; };
@@ -73,8 +70,6 @@
 		F1A1A1D12025130100000019 /* TypingSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D22025130100000020 /* TypingSettingsView.swift */; };
 		F1A1A1D32025130100000021 /* SystemSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D42025130100000022 /* SystemSettingsView.swift */; };
 		F1A1A1D52025130100000023 /* MacroSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D62025130100000024 /* MacroSettingsView.swift */; };
-		F1A1A1EF2025130100000049 /* CustomDictionaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1F02025130100000050 /* CustomDictionaryView.swift */; };
-		F1A1A1F12025130100000051 /* TypingStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1F22025130100000052 /* TypingStatsView.swift */; };
 		F1A1A1F32025130100000053 /* TypingStatsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1F42025130100000054 /* TypingStatsManager.swift */; };
 		F1A1A1D72025130100000025 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D82025130100000026 /* AboutView.swift */; };
 		F1A1A1D92025130100000027 /* HotkeyConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1DA2025130100000028 /* HotkeyConfigView.swift */; };
@@ -103,7 +98,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		0FF311551B144E45B07D9CCD /* ThemeSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeSettingsView.swift; sourceTree = "<group>"; };
 		1366D9FE4F6A7BBD6B32B8BE /* PHSilentUserDriver.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = PHSilentUserDriver.m; sourceTree = "<group>"; };
 		232EDA5721F1B33E0085D362 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		232EDA5821F1B33E0085D362 /* AppDelegate.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AppDelegate.mm; sourceTree = "<group>"; };
@@ -166,9 +160,7 @@
 		46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = PHTV.icon; sourceTree = "<group>"; };
 		46EF4FFB2EEDC0A200DF8DD1 /* PHTV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PHTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		72B4F8A52F8DD55EF170821A /* CompatibilitySettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CompatibilitySettingsView.swift; sourceTree = "<group>"; };
-		7517950331D18D85BC42BE65 /* AppearanceSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppearanceSettingsView.swift; sourceTree = "<group>"; };
 		8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities/ColorExtension.swift; sourceTree = "<group>"; };
-		99A1FB75E4F047E2882D19DC /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities/ThemeManager.swift; sourceTree = "<group>"; };
 		C2DA720371C3BD130F878C29 /* AppsSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppsSettingsView.swift; sourceTree = "<group>"; };
 		D3CCE6686B954309A3B65AAD /* HotkeySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeySettingsView.swift; sourceTree = "<group>"; };
 		E1A1A1A22025120100000003 /* UsageStats.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UsageStats.h; sourceTree = "<group>"; };
@@ -190,8 +182,6 @@
 		F1A1A1D22025130100000020 /* TypingSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypingSettingsView.swift; sourceTree = "<group>"; };
 		F1A1A1D42025130100000022 /* SystemSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSettingsView.swift; sourceTree = "<group>"; };
 		F1A1A1D62025130100000024 /* MacroSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroSettingsView.swift; sourceTree = "<group>"; };
-		F1A1A1F02025130100000050 /* CustomDictionaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomDictionaryView.swift; sourceTree = "<group>"; };
-		F1A1A1F22025130100000052 /* TypingStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypingStatsView.swift; sourceTree = "<group>"; };
 		F1A1A1F42025130100000054 /* TypingStatsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypingStatsManager.swift; sourceTree = "<group>"; };
 		F1A1A1D82025130100000026 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
 		F1A1A1DA2025130100000028 /* HotkeyConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyConfigView.swift; sourceTree = "<group>"; };
@@ -405,7 +395,6 @@
 				F1A1A2AB2025130000000021 /* Utilities */,
 				F1A1A2AF2025130100000055 /* Managers */,
 				8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */,
-				99A1FB75E4F047E2882D19DC /* ThemeManager.swift */,
 			);
 			path = SwiftUI;
 			sourceTree = "<group>";
@@ -463,17 +452,13 @@
 			isa = PBXGroup;
 			children = (
 				D3CCE6686B954309A3B65AAD /* HotkeySettingsView.swift */,
-				0FF311551B144E45B07D9CCD /* ThemeSettingsView.swift */,
 				F1A1A1D22025130100000020 /* TypingSettingsView.swift */,
 				F1A1A1D42025130100000022 /* SystemSettingsView.swift */,
 				F1A1A1D62025130100000024 /* MacroSettingsView.swift */,
-				F1A1A1F02025130100000050 /* CustomDictionaryView.swift */,
-				F1A1A1F22025130100000052 /* TypingStatsView.swift */,
 				F1A1A1E62025130100000040 /* BugReportView.swift */,
 				F1A1A1D82025130100000026 /* AboutView.swift */,
 				46413AED2EEF7EB300278BFB /* update.json */,
 				C2DA720371C3BD130F878C29 /* AppsSettingsView.swift */,
-				7517950331D18D85BC42BE65 /* AppearanceSettingsView.swift */,
 				72B4F8A52F8DD55EF170821A /* CompatibilitySettingsView.swift */,
 			);
 			path = Settings;
@@ -593,8 +578,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				EF5EC6D461F146F7BB7B771B /* ColorExtension.swift in Sources */,
-				969E53BC2BBB4C93AC790BF7 /* ThemeManager.swift in Sources */,
-				5832154BF8BC438D804CD999 /* ThemeSettingsView.swift in Sources */,
 				23E2E49F2314FD3A006CCC3E /* Engine.cpp in Sources */,
 				23E2E49E2314FD3A006CCC3E /* SmartSwitchKey.cpp in Sources */,
 				23F512852336386200397988 /* MJAccessibilityUtils.m in Sources */,
@@ -623,8 +606,6 @@
 				F1A1A1D12025130100000019 /* TypingSettingsView.swift in Sources */,
 				F1A1A1D32025130100000021 /* SystemSettingsView.swift in Sources */,
 				F1A1A1D52025130100000023 /* MacroSettingsView.swift in Sources */,
-				F1A1A1EF2025130100000049 /* CustomDictionaryView.swift in Sources */,
-				F1A1A1F12025130100000051 /* TypingStatsView.swift in Sources */,
 				F1A1A1F32025130100000053 /* TypingStatsManager.swift in Sources */,
 				F1A1A1D72025130100000025 /* AboutView.swift in Sources */,
 				F1A1A1E52025130100000039 /* BugReportView.swift in Sources */,
@@ -642,7 +623,6 @@
 				015CCFFEF0134F81976FCAB6 /* HotkeySettingsView.swift in Sources */,
 				16B982F63741372BF590C264 /* PHSilentUserDriver.m in Sources */,
 				B130517648548D01FFC0F52C /* AppsSettingsView.swift in Sources */,
-				49AFB5E4F7509F2710D83AF1 /* AppearanceSettingsView.swift in Sources */,
 				0D5084B3411F5119D468D80E /* CompatibilitySettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

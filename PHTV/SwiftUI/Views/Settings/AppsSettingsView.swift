@@ -10,7 +10,6 @@ import SwiftUI
 
 struct AppsSettingsView: View {
     @EnvironmentObject var appState: AppState
-    @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
         ScrollView {
@@ -20,7 +19,7 @@ struct AppsSettingsView: View {
                     VStack(spacing: 0) {
                         SettingsToggleRow(
                             icon: "arrow.left.arrow.right",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Chuyển thông minh theo ứng dụng",
                             subtitle: "Tự động chuyển Việt/Anh theo từng ứng dụng",
                             isOn: $appState.useSmartSwitchKey
@@ -30,7 +29,7 @@ struct AppsSettingsView: View {
 
                         SettingsToggleRow(
                             icon: "memorychip.fill",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Nhớ bảng mã theo ứng dụng",
                             subtitle: "Lưu bảng mã riêng cho từng ứng dụng",
                             isOn: $appState.rememberCode
@@ -48,7 +47,7 @@ struct AppsSettingsView: View {
                     VStack(spacing: 0) {
                         SettingsToggleRow(
                             icon: "keyboard.badge.ellipsis",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Bật gửi từng phím",
                             subtitle: "Gửi từng ký tự một (chậm nhưng ổn định hơn)",
                             isOn: $appState.sendKeyStepByStep
@@ -72,6 +71,5 @@ struct AppsSettingsView: View {
 #Preview {
     AppsSettingsView()
         .environmentObject(AppState.shared)
-        .environmentObject(ThemeManager.shared)
         .frame(width: 500, height: 600)
 }

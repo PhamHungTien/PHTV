@@ -10,7 +10,6 @@ import SwiftUI
 
 struct UpdateBannerView: View {
     @EnvironmentObject var appState: AppState
-    @EnvironmentObject var themeManager: ThemeManager
     @State private var showReleaseNotes = false
 
     var body: some View {
@@ -20,18 +19,18 @@ struct UpdateBannerView: View {
                     // Icon with bounce effect on macOS 15+
                     ZStack {
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(themeManager.themeColor.opacity(0.15))
+                            .fill(Color.accentColor.opacity(0.15))
                             .frame(width: 48, height: 48)
 
                         if #available(macOS 15.0, *) {
                             Image(systemName: "arrow.down.circle.fill")
                                 .font(.system(size: 24))
-                                .foregroundStyle(themeManager.themeColor)
+                                .foregroundStyle(Color.accentColor)
                                 .symbolEffect(.bounce, options: .repeat(2))
                         } else {
                             Image(systemName: "arrow.down.circle.fill")
                                 .font(.system(size: 24))
-                                .foregroundStyle(themeManager.themeColor)
+                                .foregroundStyle(Color.accentColor)
                         }
                     }
 
@@ -54,7 +53,7 @@ struct UpdateBannerView: View {
                             showReleaseNotes = true
                         } label: {
                             Text("Chi tiết")
-                                .foregroundStyle(themeManager.themeColor)
+                                .foregroundStyle(Color.accentColor)
                         }
                         .buttonStyle(.borderless)
 
@@ -65,7 +64,7 @@ struct UpdateBannerView: View {
                                 .font(.subheadline.weight(.semibold))
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 8)
-                                .background(themeManager.themeColor)
+                                .background(Color.accentColor)
                                 .foregroundStyle(.white)
                                 .clipShape(Capsule())
                         }
@@ -100,7 +99,6 @@ struct UpdateBannerView: View {
             .animation(.spring(response: 0.4, dampingFraction: 0.8), value: appState.showCustomUpdateBanner)
             .sheet(isPresented: $showReleaseNotes) {
                 ReleaseNotesView(info: info)
-                    .environmentObject(themeManager)
             }
         }
     }
@@ -125,5 +123,4 @@ struct UpdateBannerView: View {
 #Preview {
     UpdateBannerView()
         .environmentObject(AppState.shared)
-        .environmentObject(ThemeManager.shared)
 }

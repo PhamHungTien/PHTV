@@ -57,7 +57,6 @@ enum ConvertInputMode: String, CaseIterable {
 
 struct ConvertToolView: View {
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject var themeManager: ThemeManager
 
     @State private var inputMode: ConvertInputMode = .clipboard
     @State private var inputText: String = ""
@@ -118,7 +117,7 @@ struct ConvertToolView: View {
         HStack {
             Image(systemName: "arrow.triangle.2.circlepath")
                 .font(.title2)
-                .foregroundStyle(themeManager.themeColor)
+                .foregroundStyle(Color.accentColor)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Chuyển đổi bảng mã")
@@ -181,7 +180,7 @@ struct ConvertToolView: View {
                             .font(.caption)
                     }
                     .buttonStyle(.plain)
-                    .foregroundStyle(themeManager.themeColor)
+                    .foregroundStyle(Color.accentColor)
                 } else {
                     Button {
                         inputText = ""
@@ -290,7 +289,7 @@ struct ConvertToolView: View {
                 } label: {
                     Image(systemName: "arrow.left.arrow.right")
                         .font(.title3)
-                        .foregroundStyle(themeManager.themeColor)
+                        .foregroundStyle(Color.accentColor)
                 }
                 .buttonStyle(.plain)
                 .help("Hoán đổi bảng mã")
@@ -342,8 +341,8 @@ struct ConvertToolView: View {
         .font(.caption)
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
-        .background(Capsule().fill(isSelected ? themeManager.themeColor : themeManager.themeColor.opacity(0.15)))
-        .foregroundStyle(isSelected ? .white : themeManager.themeColor)
+        .background(Capsule().fill(isSelected ? Color.accentColor : Color.accentColor.opacity(0.15)))
+        .foregroundStyle(isSelected ? .white : Color.accentColor)
     }
 
     // MARK: - Result Preview Card
@@ -365,7 +364,7 @@ struct ConvertToolView: View {
                             .font(.caption)
                     }
                     .buttonStyle(.plain)
-                    .foregroundStyle(themeManager.themeColor)
+                    .foregroundStyle(Color.accentColor)
                 }
             }
 
@@ -517,5 +516,4 @@ struct ConvertToolView: View {
 
 #Preview {
     ConvertToolView()
-        .environmentObject(ThemeManager.shared)
 }

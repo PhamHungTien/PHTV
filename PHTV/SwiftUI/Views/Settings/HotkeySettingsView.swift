@@ -10,7 +10,6 @@ import SwiftUI
 
 struct HotkeySettingsView: View {
     @EnvironmentObject var appState: AppState
-    @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
         ScrollView {
@@ -28,8 +27,8 @@ struct HotkeySettingsView: View {
                     PauseKeyConfigView()
                 }
 
-                // Emoji Picker Hotkey
-                SettingsCard(title: "Emoji Picker", icon: "smiley.fill") {
+                // PHTV Picker Hotkey
+                SettingsCard(title: "PHTV Picker", icon: "smiley.fill") {
                     EmojiHotkeyConfigView()
                 }
 
@@ -47,12 +46,12 @@ struct HotkeySettingsView: View {
             // Icon
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(themeManager.themeColor.opacity(0.12))
+                    .fill(Color.accentColor.opacity(0.12))
                     .frame(width: 48, height: 48)
 
                 Image(systemName: "keyboard.fill")
                     .font(.system(size: 22, weight: .medium))
-                    .foregroundStyle(themeManager.themeColor)
+                    .foregroundStyle(Color.accentColor)
             }
 
             // Info
@@ -73,7 +72,7 @@ struct HotkeySettingsView: View {
             VStack(spacing: 4) {
                 HStack(spacing: 8) {
                     Circle()
-                        .fill(themeManager.themeColor)
+                        .fill(Color.accentColor)
                         .frame(width: 8, height: 8)
                     Text("VI")
                         .font(.caption)
@@ -124,6 +123,5 @@ struct HotkeySettingsView: View {
 #Preview {
     HotkeySettingsView()
         .environmentObject(AppState.shared)
-        .environmentObject(ThemeManager.shared)
         .frame(width: 500, height: 700)
 }

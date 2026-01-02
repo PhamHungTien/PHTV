@@ -10,7 +10,6 @@ import SwiftUI
 
 struct CompatibilitySettingsView: View {
     @EnvironmentObject var appState: AppState
-    @EnvironmentObject var themeManager: ThemeManager
     @State private var claudeCodeStatus: ClaudeCodeStatus = .checking
     @State private var showingAlert = false
     @State private var alertMessage = ""
@@ -36,7 +35,7 @@ struct CompatibilitySettingsView: View {
                     VStack(spacing: 0) {
                         SettingsToggleRow(
                             icon: "globe",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Sửa lỗi Chromium",
                             subtitle: "Tương thích Chrome, Edge, Brave, Arc...",
                             isOn: $appState.fixChromiumBrowser
@@ -49,7 +48,7 @@ struct CompatibilitySettingsView: View {
                     VStack(spacing: 0) {
                         SettingsToggleRow(
                             icon: "keyboard.fill",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Tương thích bố cục bàn phím",
                             subtitle: "Hỗ trợ Dvorak, Colemak và các bố cục đặc biệt",
                             isOn: $appState.performLayoutCompat
@@ -69,7 +68,7 @@ struct CompatibilitySettingsView: View {
                     VStack(spacing: 0) {
                         SettingsToggleRow(
                             icon: "shield.fill",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Bật chế độ an toàn",
                             subtitle: "Tự động khôi phục khi Accessibility API gặp lỗi",
                             isOn: $appState.safeMode
@@ -81,12 +80,12 @@ struct CompatibilitySettingsView: View {
                             HStack(spacing: 14) {
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 8)
-                                        .fill(themeManager.themeColor.opacity(0.12))
+                                        .fill(Color.accentColor.opacity(0.12))
                                         .frame(width: 36, height: 36)
 
                                     Image(systemName: "info.circle.fill")
                                         .font(.system(size: 16, weight: .medium))
-                                        .foregroundStyle(themeManager.themeColor)
+                                        .foregroundStyle(Color.accentColor)
                                 }
 
                                 VStack(alignment: .leading, spacing: 4) {
@@ -150,11 +149,11 @@ struct CompatibilitySettingsView: View {
         let iconColor: Color = {
             switch claudeCodeStatus {
             case .checking, .canPatch:
-                return themeManager.themeColor
+                return .accentColor
             case .notInstalled:
                 return .secondary
             case .nativeBinaryInstall, .homebrewInstall:
-                return isConverting ? themeManager.themeColor : .orange
+                return isConverting ? .accentColor : .orange
             }
         }()
 
@@ -336,6 +335,5 @@ private struct ClaudeCodeToggleRow: View {
 #Preview {
     CompatibilitySettingsView()
         .environmentObject(AppState.shared)
-        .environmentObject(ThemeManager.shared)
         .frame(width: 500, height: 600)
 }

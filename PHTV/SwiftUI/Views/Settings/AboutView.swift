@@ -9,7 +9,6 @@
 import SwiftUI
 
 struct AboutView: View {
-    @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
         ScrollView {
@@ -22,8 +21,8 @@ struct AboutView: View {
                                 .fill(
                                     LinearGradient(
                                         colors: [
-                                            themeManager.themeColor.opacity(0.12),
-                                            themeManager.themeColor.opacity(0.08),
+                                            .accentColor.opacity(0.12),
+                                            .accentColor.opacity(0.08),
                                         ],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
@@ -36,8 +35,8 @@ struct AboutView: View {
                                 .fill(
                                     LinearGradient(
                                         colors: [
-                                            themeManager.themeColor.opacity(0.2),
-                                            themeManager.themeColor.opacity(0.15),
+                                            .accentColor.opacity(0.2),
+                                            .accentColor.opacity(0.15),
                                         ],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
@@ -78,8 +77,8 @@ struct AboutView: View {
                         .fontWeight(.semibold)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(Capsule().fill(themeManager.themeColor.opacity(0.15)))
-                        .foregroundStyle(themeManager.themeColor)
+                        .background(Capsule().fill(Color.accentColor.opacity(0.15)))
+                        .foregroundStyle(Color.accentColor)
                     }
                 }
                 .padding(.top, 20)
@@ -91,21 +90,21 @@ struct AboutView: View {
                 VStack(spacing: 16) {
                     AboutInfoCard(
                         icon: "person.circle.fill",
-                        iconColor: themeManager.themeColor,
+                        iconColor: .accentColor,
                         title: "Phát triển bởi",
                         value: "Phạm Hùng Tiến"
                     )
 
                     AboutInfoCard(
                         icon: "calendar.circle.fill",
-                        iconColor: themeManager.themeColor,
+                        iconColor: .accentColor,
                         title: "Phát hành",
                         value: "2026"
                     )
 
                     AboutInfoCard(
                         icon: "swift",
-                        iconColor: themeManager.themeColor,
+                        iconColor: .accentColor,
                         title: "Công nghệ",
                         value: "Swift & SwiftUI"
                     )
@@ -245,6 +244,5 @@ private struct AppIconView: View {
 
 #Preview {
     AboutView()
-        .environmentObject(ThemeManager.shared)
         .frame(width: 500, height: 700)
 }

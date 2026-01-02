@@ -11,7 +11,6 @@ import UniformTypeIdentifiers
 
 struct SendKeyStepByStepAppsView: View {
     @EnvironmentObject var appState: AppState
-    @EnvironmentObject var themeManager: ThemeManager
     @State private var showingFilePicker = false
     @State private var showingRunningApps = false
 
@@ -316,7 +315,6 @@ struct SendKeyStepByStepRunningAppsPickerView: View {
 
 // MARK: - Running App Row
 private struct SendKeyStepByStepRunningAppRow: View {
-    @EnvironmentObject var themeManager: ThemeManager
     let app: SendKeyStepByStepApp
     let isSelected: Bool
     let onToggle: () -> Void
@@ -327,7 +325,7 @@ private struct SendKeyStepByStepRunningAppRow: View {
             HStack(spacing: 12) {
                 // Checkbox
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? themeManager.themeColor : .secondary)
+                    .foregroundStyle(isSelected ? Color.accentColor : .secondary)
                     .imageScale(.large)
 
                 // App Icon

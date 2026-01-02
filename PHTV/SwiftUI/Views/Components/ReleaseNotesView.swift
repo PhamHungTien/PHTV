@@ -10,7 +10,6 @@ import SwiftUI
 import WebKit
 
 struct ReleaseNotesView: View {
-    @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.dismiss) private var dismiss
     let info: UpdateBannerInfo
 
@@ -87,7 +86,7 @@ struct ReleaseNotesView: View {
                     Label("Tải xuống", systemImage: "arrow.down.circle.fill")
                 }
                 .keyboardShortcut(.defaultAction)
-                .tint(themeManager.themeColor)
+                .tint(.accentColor)
             }
             .padding()
         }
@@ -197,5 +196,4 @@ struct ReleaseNotesHTML: NSViewRepresentable {
         releaseNotes: "<h3>Tính năng mới</h3><ul><li>Tính năng A</li><li>Tính năng B</li></ul>",
         downloadURL: "https://github.com/PhamHungTien/PHTV/releases/latest"
     ))
-    .environmentObject(ThemeManager.shared)
 }

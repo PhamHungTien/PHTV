@@ -11,7 +11,6 @@ import UniformTypeIdentifiers
 
 struct MacroSettingsView: View {
     @EnvironmentObject var appState: AppState
-    @EnvironmentObject var themeManager: ThemeManager
     @State private var macros: [MacroItem] = []
     @State private var selectedMacro: UUID?
     @State private var showingAddMacro = false
@@ -44,7 +43,7 @@ struct MacroSettingsView: View {
                     VStack(spacing: 0) {
                         SettingsToggleRow(
                             icon: "text.badge.plus",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Bật gõ tắt",
                             subtitle: appState.useMacro ? "Đang hoạt động" : "Đang tắt",
                             isOn: $appState.useMacro
@@ -54,7 +53,7 @@ struct MacroSettingsView: View {
 
                         SettingsToggleRow(
                             icon: "globe",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Bật trong chế độ tiếng Anh",
                             subtitle: "Cho phép gõ tắt khi đang ở chế độ tiếng Anh",
                             isOn: $appState.useMacroInEnglishMode
@@ -66,7 +65,7 @@ struct MacroSettingsView: View {
 
                         SettingsToggleRow(
                             icon: "textformat.abc",
-                            iconColor: themeManager.themeColor,
+                            iconColor: .accentColor,
                             title: "Tự động viết hoa ký tự đầu",
                             subtitle: "Viết hoa ký tự đầu tiên của từ mở rộng",
                             isOn: $appState.autoCapsMacro
@@ -114,7 +113,7 @@ struct MacroSettingsView: View {
                             CategoryRowView(
                                 name: "Tất cả",
                                 icon: "tray.2.fill",
-                                color: themeManager.themeColor,
+                                color: .accentColor,
                                 count: macros.count,
                                 isSelected: selectedCategoryId == nil,
                                 isEditable: false
@@ -198,7 +197,7 @@ struct MacroSettingsView: View {
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 4)
-                                .background(Capsule().fill(themeManager.themeColor))
+                                .background(Capsule().fill(Color.accentColor))
                         }
                         .padding(.bottom, 12)
 
@@ -238,7 +237,6 @@ struct MacroSettingsView: View {
                 defaultCategoryId: selectedCategoryId
             )
             .environmentObject(appState)
-            .environmentObject(themeManager)
         }
         .sheet(item: $editingMacro) { macro in
             MacroEditorView(
@@ -250,7 +248,6 @@ struct MacroSettingsView: View {
                 categories: appState.macroCategories
             )
             .environmentObject(appState)
-            .environmentObject(themeManager)
         }
         .sheet(isPresented: $showingAddCategory) {
             MacroCategoryEditorView(
@@ -261,7 +258,6 @@ struct MacroSettingsView: View {
                     appState.saveSettings()
                 }
             )
-            .environmentObject(themeManager)
         }
         .sheet(item: $editingCategory) { category in
             MacroCategoryEditorView(
@@ -275,7 +271,6 @@ struct MacroSettingsView: View {
                     editingCategory = nil  // Close sheet
                 }
             )
-            .environmentObject(themeManager)
         }
         .onAppear {
             loadMacros()
@@ -715,6 +710,5 @@ struct MacroRowView: View {
 #Preview {
     MacroSettingsView()
         .environmentObject(AppState.shared)
-        .environmentObject(ThemeManager.shared)
         .frame(width: 500, height: 800)
 }

@@ -11,7 +11,6 @@ import SwiftUI
 struct MacroEditorView: View {
     @Binding var isPresented: Bool
     @EnvironmentObject var appState: AppState
-    @EnvironmentObject var themeManager: ThemeManager
     @State private var macroName: String
     @State private var macroCode: String
     @State private var errorMessage = ""
@@ -202,7 +201,7 @@ struct MacroEditorView: View {
                     saveMacro()
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(themeManager.themeColor)
+                .tint(.accentColor)
                 .disabled(macroName.isEmpty || (snippetType != .clipboard && macroCode.isEmpty))
             }
             .padding()
@@ -399,7 +398,6 @@ struct MacroEditorView_Previews: PreviewProvider {
             ]
         )
         .environmentObject(AppState.shared)
-        .environmentObject(ThemeManager.shared)
     }
 }
 

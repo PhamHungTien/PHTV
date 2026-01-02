@@ -10,7 +10,6 @@ import SwiftUI
 
 struct MacroCategoryEditorView: View {
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject var themeManager: ThemeManager
 
     let editingCategory: MacroCategory?
     let existingCategories: [MacroCategory]
@@ -211,7 +210,7 @@ struct MacroCategoryEditorView: View {
                     saveCategory()
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(themeManager.themeColor)
+                .tint(.accentColor)
                 .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
             .padding()
@@ -269,5 +268,4 @@ struct MacroCategoryEditorView: View {
         existingCategories: [],
         onSave: { _ in }
     )
-    .environmentObject(ThemeManager.shared)
 }

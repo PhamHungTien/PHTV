@@ -11,7 +11,6 @@ import UniformTypeIdentifiers
 
 struct ExcludedAppsView: View {
     @EnvironmentObject var appState: AppState
-    @EnvironmentObject var themeManager: ThemeManager
     @State private var showingFilePicker = false
     @State private var showingRunningApps = false
     
@@ -316,7 +315,6 @@ struct RunningAppsPickerView: View {
 
 // MARK: - Running App Row
 private struct RunningAppRow: View {
-    @EnvironmentObject var themeManager: ThemeManager
     let app: ExcludedApp
     let isSelected: Bool
     let onToggle: () -> Void
@@ -327,7 +325,7 @@ private struct RunningAppRow: View {
             HStack(spacing: 12) {
                 // Checkbox
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? themeManager.themeColor : .secondary)
+                    .foregroundStyle(isSelected ? Color.accentColor : .secondary)
                     .imageScale(.large)
                 
                 // App Icon
