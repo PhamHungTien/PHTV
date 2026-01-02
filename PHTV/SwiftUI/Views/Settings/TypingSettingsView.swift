@@ -342,9 +342,10 @@ struct SettingsCard<Content: View>: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+            .background(Color(NSColor.controlBackgroundColor).opacity(0.15))
 
             Divider()
+                .opacity(0.5)
 
             // Content
             content
@@ -353,7 +354,7 @@ struct SettingsCard<Content: View>: View {
         .background {
             if #available(macOS 26.0, *) {
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(NSColor.controlBackgroundColor))
+                    .fill(Color(NSColor.controlBackgroundColor).opacity(0.8))
                     .glassEffect(in: .rect(cornerRadius: 12))
             } else {
                 RoundedRectangle(cornerRadius: 12)
