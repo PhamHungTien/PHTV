@@ -203,6 +203,7 @@ struct AboutInfoCard: View {
             Spacer()
         }
         .padding(14)
+        .frame(maxWidth: 700)
         .background {
             if #available(macOS 26.0, *) {
                 RoundedRectangle(cornerRadius: 12)
