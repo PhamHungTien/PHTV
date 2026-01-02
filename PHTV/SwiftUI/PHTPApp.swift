@@ -56,10 +56,11 @@ struct PHTVApp: App {
         Window("", id: "settings") {
             SettingsWindowContent()
                 .environmentObject(appState)
+                .frame(minWidth: 800, maxWidth: 1000, minHeight: 600, maxHeight: 900)
         }
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 950, height: 680)
-        .windowResizability(.contentMinSize)
+        .windowResizability(.contentSize)
     }
 }
 
@@ -93,10 +94,6 @@ struct SettingsWindowContent: View {
                 if identifier.hasPrefix("settings") {
                     // Set window level based on user preference
                     window.level = appState.settingsWindowAlwaysOnTop ? .floating : .normal
-
-                    // Set max size to fit card maxWidth (700) + sidebar (240) + padding (40) + scrollbar (20) = 1000
-                    window.maxSize = NSSize(width: 1000, height: 900)
-                    window.minSize = NSSize(width: 800, height: 600)
 
                     NSLog("[SettingsWindowContent] Set window.level = %@ for window: %@",
                           appState.settingsWindowAlwaysOnTop ? ".floating" : ".normal", identifier)
