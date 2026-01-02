@@ -2283,59 +2283,125 @@ struct EmojiCategoriesView: View {
 
     private let database = EmojiDatabase.shared
     @State private var selectedSubCategory = 0
+    @State private var searchText = ""
+    @FocusState private var isSearchFocused: Bool
     @Namespace private var subCategoryNamespace
 
     private let iconColumns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 7)
 
+    // Filter emojis based on search text
+    private var filteredEmojis: [EmojiItem] {
+        if searchText.isEmpty {
+            return database.categories[selectedSubCategory].emojis
+        }
+
+        // Search across all categories
+        return database.categories.flatMap { $0.emojis }
+            .filter { emoji in
+                emoji.name.localizedCaseInsensitiveContains(searchText) ||
+                emoji.keywords.contains { $0.localizedCaseInsensitiveContains(searchText) }
+            }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            // Sub-category tabs
-            ScrollView(.horizontal, showsIndicators: true) {
-                HStack(spacing: 8) {
-                    ForEach(0..<database.categories.count, id: \.self) { index in
-                        Button(action: {
-                            withAnimation {
-                                selectedSubCategory = index
-                            }
-                        }) {
-                            HStack(spacing: 6) {
-                                Text(database.categories[index].icon)
-                                    .font(.system(size: 16))
-                                Text(database.categories[index].name)
-                                    .font(.system(size: 11, weight: selectedSubCategory == index ? .semibold : .regular))
-                            }
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                            .background(
-                                selectedSubCategory == index ?
-                                    Color.accentColor.opacity(0.15) : Color.clear
-                            )
-                            .cornerRadius(6)
-                        }
-                        .buttonStyle(.plain)
+            // Search bar
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary.opacity(0.7))
+                TextField("Tìm emoji...", text: $searchText)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 13))
+                    .focused($isSearchFocused)
+                if !searchText.isEmpty {
+                    Button(action: {
+                        searchText = ""
+                        isSearchFocused = true
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary.opacity(0.7))
                     }
+                    .buttonStyle(.plain)
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color(NSColor.controlBackgroundColor).opacity(0.5))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .strokeBorder(Color.accentColor.opacity(isSearchFocused ? 0.3 : 0), lineWidth: 1.5)
+                    )
+            )
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+
+            // Sub-category tabs (hidden when searching)
+            if searchText.isEmpty {
+                ScrollView(.horizontal, showsIndicators: true) {
+                    HStack(spacing: 8) {
+                        ForEach(0..<database.categories.count, id: \.self) { index in
+                            Button(action: {
+                                withAnimation {
+                                    selectedSubCategory = index
+                                }
+                            }) {
+                                HStack(spacing: 6) {
+                                    Text(database.categories[index].icon)
+                                        .font(.system(size: 16))
+                                    Text(database.categories[index].name)
+                                        .font(.system(size: 11, weight: selectedSubCategory == index ? .semibold : .regular))
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(
+                                    selectedSubCategory == index ?
+                                        Color.accentColor.opacity(0.15) : Color.clear
+                                )
+                                .cornerRadius(6)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                }
             }
 
             Divider()
 
-            // Emoji grid for selected category
+            // Emoji grid for selected category or search results
             ScrollView {
-                LazyVGrid(columns: iconColumns, spacing: 12) {
-                    ForEach(database.categories[selectedSubCategory].emojis, id: \.id) { emojiItem in
-                        Button(action: {
-                            onEmojiSelected(emojiItem.emoji)
-                        }) {
-                            Text(emojiItem.emoji)
-                                .font(.system(size: 30))
-                        }
-                        .buttonStyle(.plain)
-                        .frame(height: 40)
+                if filteredEmojis.isEmpty {
+                    VStack(spacing: 8) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 32))
+                            .foregroundColor(.secondary.opacity(0.5))
+                        Text("Không tìm thấy emoji")
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary)
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(40)
+                } else {
+                    LazyVGrid(columns: iconColumns, spacing: 12) {
+                        ForEach(filteredEmojis, id: \.id) { emojiItem in
+                            Button(action: {
+                                onEmojiSelected(emojiItem.emoji)
+                            }) {
+                                Text(emojiItem.emoji)
+                                    .font(.system(size: 30))
+                            }
+                            .buttonStyle(.plain)
+                            .frame(height: 40)
+                        }
+                    }
+                    .padding(16)
                 }
-                .padding(16)
             }
         }
     }
@@ -4192,7 +4258,7 @@ class FloatingPanel<Content: View>: NSPanel, NSWindowDelegate {
 
         // Performance
         self.isOpaque = false
-        self.hasShadow = true
+        self.hasShadow = false  // Shadow handled by SwiftUI layer
 
         // Disable resizing completely
         self.minSize = contentRect.size
@@ -4280,10 +4346,14 @@ struct EmojiPickerView: View {
                 Button(action: {
                     onClose?()
                 }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 18))
-                        .foregroundColor(.secondary)
-                        .opacity(0.7)
+                    ZStack {
+                        Circle()
+                            .fill(Color.red.opacity(0.15))
+                            .frame(width: 28, height: 28)
+                        Image(systemName: "xmark")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.red)
+                    }
                 }
                 .buttonStyle(.plain)
                 .help("Đóng (ESC)")
