@@ -1815,6 +1815,7 @@ final class EmojiDatabase: @unchecked Sendable {
             EmojiItem(emoji: "👆", name: "Backhand Index Pointing Up", keywords: ["point", "up", "lên"], category: "Hands"),
             EmojiItem(emoji: "👇", name: "Backhand Index Pointing Down", keywords: ["point", "down", "xuống"], category: "Hands"),
             EmojiItem(emoji: "☝️", name: "Index Pointing Up", keywords: ["point", "up", "lên", "một"], category: "Hands"),
+            EmojiItem(emoji: "🖕", name: "Middle Finger", keywords: ["middle finger", "rude", "ngón giữa"], category: "Hands"),
             EmojiItem(emoji: "👍", name: "Thumbs Up", keywords: ["like", "good", "yes", "thích", "tốt"], category: "Hands"),
             EmojiItem(emoji: "👎", name: "Thumbs Down", keywords: ["dislike", "bad", "no", "không thích"], category: "Hands"),
             EmojiItem(emoji: "✊", name: "Raised Fist", keywords: ["fist", "punch", "đấm"], category: "Hands"),
