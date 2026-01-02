@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.6] - 2026-01-02
+
+### Added
+- **Liquid Glass design**: Áp dụng thiết kế Liquid Glass hiện đại từ Apple cho PHTV Picker trên macOS 26+
+- **Window resizability**: Sử dụng SwiftUI .windowResizability(.contentSize) chuẩn từ Apple (WWDC 2024)
+- **Always on Top setting**: Cài đặt giữ cửa sổ Settings luôn ở trên các app khác
+- **Run on Startup improvement**: Áp dụng ngay lập tức khi bật/tắt (không cần restart)
+
+### Changed
+- **PHTV Picker branding**: Đổi tên "Emoji Picker" thành "PHTV Picker" cho nhất quán
+- **Settings card alignment**: Căn chỉnh SettingsCard đồng nhất trên tất cả các tab
+- **Picker visibility**: Giảm độ trong suốt để dễ nhìn hơn (Glass.clear → Glass.regular)
+- **Settings UI sync**: Tất cả tab cài đặt có thiết kế nhất quán với Liquid Glass principles
+
+### Fixed
+- **Selected text replacement**: Xử lý đúng việc thay thế văn bản đã được highlight/select
+- **Auto-focus search**: Con trỏ tự động vào ô tìm kiếm trong tab Emoji (đồng bộ với GIF/Sticker)
+- **Window size constraints**: Cố định kích thước cửa sổ Settings (800-1000x600-900)
+
+### Removed
+- **Redundant hotkey card**: Loại bỏ card "Phím tắt hiện tại" không cần thiết trong tab Phím tắt
+
 ## [1.3.5] - 2026-01-02
 
 ### Fixed

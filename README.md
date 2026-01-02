@@ -55,10 +55,12 @@
 - **Thêm từ tiếng Việt** - Thêm từ chuyên ngành, tên riêng
 - **Import/Export** - Nhập xuất từ điển từ file
 
-### GIF & Emoji Picker
-- **Emoji Picker hiện đại** - Chọn emoji nhanh với đầy đủ categories
-- **GIF Picker không giới hạn** - Tích hợp Klipy API với hàng ngàn GIF miễn phí
-- **Tìm kiếm thông minh** - Tìm GIF theo từ khóa tiếng Việt và tiếng Anh
+### PHTV Picker (GIF, Emoji & Sticker)
+- **Giao diện Liquid Glass** - Thiết kế hiện đại theo chuẩn Apple macOS 26+
+- **Emoji Picker** - Chọn emoji nhanh với đầy đủ categories và tìm kiếm
+- **GIF không giới hạn** - Tích hợp Klipy API với hàng ngàn GIF miễn phí
+- **Sticker Picker** - Bộ sưu tập sticker đa dạng
+- **Tìm kiếm thông minh** - Tìm GIF/Sticker theo từ khóa tiếng Việt và tiếng Anh
 - **Auto-paste** - Click là gửi ngay, không cần Cmd+V
 - **Multi-format support** - Hoạt động với iMessage, Zalo, Messenger Web và các app khác
 - **Ad-supported** - Miễn phí hoàn toàn nhờ quảng cáo từ Klipy
