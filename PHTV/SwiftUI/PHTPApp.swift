@@ -1682,49 +1682,81 @@ final class EmojiHotkeyManager: ObservableObject, @unchecked Sendable {
 
 // MARK: - PHTV Picker
 
-// MARK: - Tenor GIF API
+// MARK: - Giphy GIF API
 
-/// Tenor API client for fetching GIFs
+/// Giphy API client for fetching GIFs
 @MainActor
-class TenorAPIClient: ObservableObject {
-    static let shared = TenorAPIClient()
+class GiphyAPIClient: ObservableObject {
+    static let shared = GiphyAPIClient()
 
-    // Tenor API v2 - Free tier
-    private let apiKey = "AIzaSyAKJie7dveL8kiGRzPA_h_ipPXJhSE3Fhc" // Demo key
-    private let baseURL = "https://tenor.googleapis.com/v2"
+    // GIPHY API - Free tier (100 calls/hour)
+    // Lấy API key miễn phí tại: https://developers.giphy.com/
+    // 1. Tạo account (1 phút)
+    // 2. Create App -> chọn "SDK" -> nhập tên app "PHTV"
+    // 3. Copy API key và paste vào đây
+    private let apiKey = "YOUR_GIPHY_API_KEY_HERE" // <-- Paste API key của bạn vào đây
+    private let baseURL = "https://api.giphy.com/v1/gifs"
 
-    @Published var trendingGIFs: [TenorGIF] = []
-    @Published var searchResults: [TenorGIF] = []
+    @Published var trendingGIFs: [GiphyGIF] = []
+    @Published var searchResults: [GiphyGIF] = []
     @Published var isLoading = false
+    @Published var needsAPIKey: Bool = false
 
-    private init() {}
+    private init() {
+        needsAPIKey = apiKey == "YOUR_GIPHY_API_KEY_HERE"
+    }
+
+    func saveAPIKey(_ key: String) {
+        // This is just for the setup UI - user should hardcode the key above
+        print("[Giphy] Please hardcode your API key in PHTPApp.swift")
+    }
 
     /// Fetch trending GIFs
     func fetchTrending(limit: Int = 20) {
+        guard apiKey != "YOUR_GIPHY_API_KEY_HERE" else {
+            print("[Giphy] Please set your API key")
+            needsAPIKey = true
+            return
+        }
+
         isLoading = true
 
-        let urlString = "\(baseURL)/featured?key=\(apiKey)&limit=\(limit)&media_filter=mp4,tinygif"
-        guard let url = URL(string: urlString) else { return }
+        let urlString = "\(baseURL)/trending?api_key=\(apiKey)&limit=\(limit)&rating=g"
+        print("[Giphy] Fetching trending from: \(urlString)")
+        guard let url = URL(string: urlString) else {
+            print("[Giphy] Invalid URL")
+            DispatchQueue.main.async {
+                self.isLoading = false
+            }
+            return
+        }
 
         URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+            guard let self = self else { return }
+
+            if let httpResponse = response as? HTTPURLResponse {
+                print("[Giphy] Response status: \(httpResponse.statusCode)")
+            }
+
             guard let data = data, error == nil else {
-                print("[TenorAPI] Error fetching trending: \(error?.localizedDescription ?? "unknown")")
+                print("[Giphy] Error fetching trending: \(error?.localizedDescription ?? "unknown")")
                 DispatchQueue.main.async {
-                    self?.isLoading = false
+                    self.isLoading = false
                 }
                 return
             }
 
             do {
-                let result = try JSONDecoder().decode(TenorResponse.self, from: data)
+                let result = try JSONDecoder().decode(GiphyResponse.self, from: data)
+                print("[Giphy] Successfully decoded \(result.data.count) GIFs")
                 DispatchQueue.main.async {
-                    self?.trendingGIFs = result.results
-                    self?.isLoading = false
+                    self.trendingGIFs = result.data
+                    self.isLoading = false
                 }
             } catch {
-                print("[TenorAPI] Decode error: \(error)")
+                print("[Giphy] Decode error: \(error)")
                 DispatchQueue.main.async {
-                    self?.isLoading = false
+                    self.isLoading = false
                 }
             }
         }.resume()
@@ -1737,73 +1769,88 @@ class TenorAPIClient: ObservableObject {
             return
         }
 
+        guard apiKey != "YOUR_GIPHY_API_KEY_HERE" else {
+            print("[Giphy] Please set your API key for search")
+            needsAPIKey = true
+            return
+        }
+
         isLoading = true
 
         let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
-        let urlString = "\(baseURL)/search?key=\(apiKey)&q=\(encodedQuery)&limit=\(limit)&media_filter=mp4,tinygif"
-        guard let url = URL(string: urlString) else { return }
+        let urlString = "\(baseURL)/search?api_key=\(apiKey)&q=\(encodedQuery)&limit=\(limit)&rating=g"
+        print("[Giphy] Searching for: \(query)")
+        guard let url = URL(string: urlString) else {
+            print("[Giphy] Invalid search URL")
+            DispatchQueue.main.async {
+                self.isLoading = false
+            }
+            return
+        }
 
         URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+            guard let self = self else { return }
+
             guard let data = data, error == nil else {
-                print("[TenorAPI] Error searching: \(error?.localizedDescription ?? "unknown")")
+                print("[Giphy] Error searching: \(error?.localizedDescription ?? "unknown")")
                 DispatchQueue.main.async {
-                    self?.isLoading = false
+                    self.isLoading = false
                 }
                 return
             }
 
             do {
-                let result = try JSONDecoder().decode(TenorResponse.self, from: data)
+                let result = try JSONDecoder().decode(GiphyResponse.self, from: data)
+                print("[Giphy] Search found \(result.data.count) GIFs")
                 DispatchQueue.main.async {
-                    self?.searchResults = result.results
-                    self?.isLoading = false
+                    self.searchResults = result.data
+                    self.isLoading = false
                 }
             } catch {
-                print("[TenorAPI] Decode error: \(error)")
+                print("[Giphy] Decode error: \(error)")
                 DispatchQueue.main.async {
-                    self?.isLoading = false
+                    self.isLoading = false
                 }
             }
         }.resume()
     }
 }
 
-// MARK: - Tenor Models
+// MARK: - Giphy Models
 
-struct TenorResponse: Codable {
-    let results: [TenorGIF]
+struct GiphyResponse: Codable {
+    let data: [GiphyGIF]
 }
 
-struct TenorGIF: Codable, Identifiable {
+struct GiphyGIF: Codable, Identifiable {
     let id: String
-    let title: String?
-    let media_formats: MediaFormats
-    let url: String
+    let title: String
+    let images: GiphyImages
 
     var previewURL: String {
-        media_formats.tinygif?.url ?? media_formats.gif?.url ?? ""
+        images.fixed_width_small.url
     }
 
     var fullURL: String {
-        media_formats.mp4?.url ?? media_formats.gif?.url ?? ""
+        images.original.url
     }
 }
 
-struct MediaFormats: Codable {
-    let gif: MediaFormat?
-    let tinygif: MediaFormat?
-    let mp4: MediaFormat?
+struct GiphyImages: Codable {
+    let original: GiphyImage
+    let fixed_width_small: GiphyImage
 }
 
-struct MediaFormat: Codable {
+struct GiphyImage: Codable {
     let url: String
-    let dims: [Int]?
+    let width: String?
+    let height: String?
 }
 
 // MARK: - GIF Tab View
 
 struct GIFTabView: View {
-    @StateObject private var tenorClient = TenorAPIClient.shared
+    @StateObject private var giphyClient = GiphyAPIClient.shared
     @State private var searchText = ""
     @State private var copiedGIF: String?
 
@@ -1811,8 +1858,8 @@ struct GIFTabView: View {
         GridItem(.adaptive(minimum: 100, maximum: 150), spacing: 8)
     ]
 
-    var displayedGIFs: [TenorGIF] {
-        searchText.isEmpty ? tenorClient.trendingGIFs : tenorClient.searchResults
+    var displayedGIFs: [GiphyGIF] {
+        searchText.isEmpty ? giphyClient.trendingGIFs : giphyClient.searchResults
     }
 
     var body: some View {
@@ -1822,16 +1869,16 @@ struct GIFTabView: View {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(.secondary)
 
-                TextField("Tìm GIF...", text: $searchText)
+                TextField("Search Giphy", text: $searchText)
                     .textFieldStyle(.plain)
                     .onChange(of: searchText) { newValue in
                         if newValue.isEmpty {
-                            tenorClient.searchResults = []
+                            giphyClient.searchResults = []
                         } else {
                             // Debounce search
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                                 if searchText == newValue {
-                                    tenorClient.search(query: newValue)
+                                    giphyClient.search(query: newValue)
                                 }
                             }
                         }
@@ -1853,9 +1900,13 @@ struct GIFTabView: View {
 
             Divider()
 
-            // GIF Grid
+            // GIF Grid or API Key Setup
             ScrollView {
-                if tenorClient.isLoading {
+                if giphyClient.needsAPIKey {
+                    // API Key setup view
+                    APIKeySetupView(giphyClient: giphyClient)
+                        .padding(16)
+                } else if giphyClient.isLoading {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .padding(40)
@@ -1889,10 +1940,10 @@ struct GIFTabView: View {
                 }
             }
 
-            // Powered by Tenor attribution
+            // Powered by Giphy attribution
             HStack {
                 Spacer()
-                Text("Powered by Tenor")
+                Text("Powered by GIPHY")
                     .font(.caption2)
                     .foregroundColor(.secondary)
                 Spacer()
@@ -1901,8 +1952,8 @@ struct GIFTabView: View {
             .background(Color.secondary.opacity(0.05))
         }
         .onAppear {
-            if tenorClient.trendingGIFs.isEmpty {
-                tenorClient.fetchTrending()
+            if giphyClient.trendingGIFs.isEmpty {
+                giphyClient.fetchTrending()
             }
         }
         .overlay(
@@ -1913,7 +1964,7 @@ struct GIFTabView: View {
                         HStack {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundColor(.green)
-                            Text("Đã copy URL!")
+                            Text("Đã copy GIF!")
                                 .font(.caption)
                         }
                         .padding(8)
@@ -1928,53 +1979,56 @@ struct GIFTabView: View {
         )
     }
 
-    private func copyGIFURL(_ gif: TenorGIF) {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(gif.fullURL, forType: .string)
+    private func copyGIFURL(_ gif: GiphyGIF) {
+        // Download and copy GIF data to clipboard
+        guard let url = URL(string: gif.fullURL) else { return }
 
-        // Show copied feedback
+        // Show loading feedback
         withAnimation {
             copiedGIF = gif.id
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            withAnimation {
-                copiedGIF = nil
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            DispatchQueue.main.async {
+                if let data = data, let image = NSImage(data: data) {
+                    // Copy GIF to clipboard as image data
+                    let pasteboard = NSPasteboard.general
+                    pasteboard.clearContents()
+
+                    // Add both TIFF and GIF data for compatibility
+                    if let tiffData = image.tiffRepresentation {
+                        pasteboard.setData(tiffData, forType: .tiff)
+                    }
+                    pasteboard.setData(data, forType: NSPasteboard.PasteboardType("com.compuserve.gif"))
+
+                    print("[GIF] Đã copy GIF: \(gif.title)")
+                } else {
+                    print("[GIF] Lỗi download: \(error?.localizedDescription ?? "unknown")")
+                }
+
+                // Hide feedback after 1.5s
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    withAnimation {
+                        copiedGIF = nil
+                    }
+                }
             }
-        }
+        }.resume()
     }
 }
 
 struct GIFThumbnailView: View {
-    let gif: TenorGIF
+    let gif: GiphyGIF
     let onTap: () -> Void
 
     @State private var isHovered = false
 
     var body: some View {
         Button(action: onTap) {
-            AsyncImage(url: URL(string: gif.previewURL)) { phase in
-                switch phase {
-                case .empty:
-                    ProgressView()
-                        .frame(height: 100)
-                case .success(let image):
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(height: 100)
-                        .clipped()
-                        .cornerRadius(8)
-                case .failure:
-                    Image(systemName: "photo.fill")
-                        .font(.largeTitle)
-                        .foregroundColor(.secondary)
-                        .frame(height: 100)
-                @unknown default:
-                    EmptyView()
-                }
-            }
+            AnimatedGIFView(url: URL(string: gif.previewURL))
+                .frame(height: 100)
+                .clipped()
+                .cornerRadius(8)
         }
         .buttonStyle(.plain)
         .overlay(
@@ -1986,7 +2040,95 @@ struct GIFThumbnailView: View {
         .onHover { hovering in
             isHovered = hovering
         }
-        .help("Click để copy URL")
+        .help("Click để tải và paste GIF")
+    }
+}
+
+// MARK: - API Key Setup View
+
+struct APIKeySetupView: View {
+    @ObservedObject var giphyClient: GiphyAPIClient
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "key.fill")
+                .font(.system(size: 48))
+                .foregroundColor(.accentColor)
+
+            Text("Cần Giphy API Key")
+                .font(.headline)
+
+            Text("Để sử dụng tính năng GIF, bạn cần lấy API key miễn phí từ Giphy.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+
+            Divider()
+                .padding(.vertical, 8)
+
+            // Instructions
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Cách lấy API key miễn phí (< 60 giây):")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("1. Mở Giphy Developers")
+                        .font(.caption2)
+                    Text("2. Đăng nhập hoặc tạo account")
+                        .font(.caption2)
+                    Text("3. Create App -> chọn SDK")
+                        .font(.caption2)
+                    Text("4. Nhập tên app: PHTV")
+                        .font(.caption2)
+                    Text("5. Copy API key và paste vào PHTPApp.swift (dòng 1697)")
+                        .font(.caption2)
+                }
+                .foregroundColor(.secondary)
+
+                Button("Mở Giphy Developers") {
+                    if let url = URL(string: "https://developers.giphy.com/") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+                .buttonStyle(.link)
+                .font(.caption)
+
+                Text("Sau khi có API key, mở file PHTPApp.swift và thay 'YOUR_GIPHY_API_KEY_HERE' bằng key của bạn.")
+                    .font(.caption2)
+                    .foregroundColor(.orange)
+                    .padding(.top, 8)
+            }
+            .padding(.horizontal, 8)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity)
+    }
+}
+
+// MARK: - Animated GIF View
+
+/// SwiftUI wrapper for NSImageView to display animated GIFs
+struct AnimatedGIFView: NSViewRepresentable {
+    let url: URL?
+
+    func makeNSView(context: Context) -> NSImageView {
+        let imageView = NSImageView()
+        imageView.imageScaling = .scaleProportionallyUpOrDown
+        imageView.animates = true // Enable GIF animation
+        return imageView
+    }
+
+    func updateNSView(_ nsView: NSImageView, context: Context) {
+        guard let url = url else { return }
+
+        // Load GIF data asynchronously
+        URLSession.shared.dataTask(with: url) { data, _, _ in
+            guard let data = data, let image = NSImage(data: data) else { return }
+            DispatchQueue.main.async {
+                nsView.image = image
+            }
+        }.resume()
     }
 }
 
