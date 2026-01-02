@@ -76,7 +76,6 @@ struct SettingsView: View {
                 }
             }
             .listStyle(.sidebar)
-            .scrollContentBackground(.hidden)
             .conditionalSearchable(text: $searchText, prompt: "Tìm kiếm cài đặt...")
             .navigationSplitViewColumnWidth(min: 160, ideal: 200, max: 240)
         } detail: {
@@ -86,7 +85,6 @@ struct SettingsView: View {
                 .modifier(BackgroundExtensionModifier())
         }
         .navigationSplitViewStyle(.balanced)
-        .scrollContentBackground(.hidden)
         .onAppear {
             // When settings window opens, show dock icon only if setting is enabled
             let appDelegate = NSApp.delegate as? AppDelegate
