@@ -8,6 +8,53 @@
 
         <!-- Most recent version first -->
         <item>
+            <title>PHTV 1.3.6</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.6</link>
+            <sparkle:version>13</sparkle:version>
+            <sparkle:shortVersionString>1.3.6</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h3>✨ Cải tiến giao diện</h3>
+                <ul>
+                    <li><strong>PHTV Picker với Liquid Glass</strong>: Áp dụng thiết kế Liquid Glass hiện đại từ Apple cho PHTV Picker trên macOS 26+</li>
+                    <li><strong>Giao diện Settings đồng bộ</strong>: Tất cả tab cài đặt có thiết kế nhất quán với Liquid Glass principles</li>
+                    <li><strong>Cố định kích thước cửa sổ</strong>: Sử dụng SwiftUI .windowResizability(.contentSize) chuẩn từ Apple (WWDC 2024)</li>
+                    <li><strong>Tối ưu card alignment</strong>: Căn chỉnh SettingsCard đồng nhất trên tất cả các tab</li>
+                    <li><strong>Xóa card trùng lặp</strong>: Loại bỏ card "Phím tắt hiện tại" không cần thiết trong tab Phím tắt</li>
+                </ul>
+
+                <h3>🔧 Sửa lỗi quan trọng</h3>
+                <ul>
+                    <li><strong>Sửa lỗi replace text</strong>: Xử lý đúng việc thay thế văn bản đã được highlight/select</li>
+                    <li><strong>Auto-focus tìm kiếm</strong>: Con trỏ tự động vào ô tìm kiếm trong tab Emoji (đồng bộ với GIF/Sticker)</li>
+                    <li><strong>PHTV Picker visibility</strong>: Giảm độ trong suốt để dễ nhìn hơn (Glass.clear → Glass.regular)</li>
+                </ul>
+
+                <h3>⚙️ Cài đặt nâng cao</h3>
+                <ul>
+                    <li><strong>Cửa sổ Always on Top</strong>: Cài đặt giữ cửa sổ Settings luôn ở trên các app khác</li>
+                    <li><strong>Run on Startup cải tiến</strong>: Áp dụng ngay lập tức khi bật/tắt (không cần restart)</li>
+                </ul>
+
+                <h3>🎨 Branding</h3>
+                <ul>
+                    <li><strong>Đổi tên Emoji Picker</strong>: Thống nhất thành "PHTV Picker" cho nhất quán branding</li>
+                    <li><strong>Tích hợp search</strong>: PHTV Picker xuất hiện trong kết quả tìm kiếm Settings</li>
+                </ul>
+
+                <p><em>Bản cập nhật này mang đến giao diện hiện đại hơn với Liquid Glass design và sửa nhiều lỗi quan trọng về trải nghiệm người dùng.</em></p>
+            ]]></description>
+            <pubDate>Thu, 02 Jan 2026 20:30:00 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.3.6/PHTV-1.3.6.dmg"
+                sparkle:version="13"
+                sparkle:shortVersionString="1.3.6"
+                sparkle:edSignature="8ao3uhPcPPdeabIAEmJFpyMz8yTezvMHtgtqTKGusumwh+ym35lexQaJMqFOFQGehhvnBwj+/V8G0mNpvGFFAA=="
+                length="13537965"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <item>
             <title>PHTV 1.3.5</title>
             <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.5</link>
             <sparkle:version>12</sparkle:version>
