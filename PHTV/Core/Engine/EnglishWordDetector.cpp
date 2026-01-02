@@ -323,6 +323,13 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
     //          but Vietnamese dictionary only has "di" (2 letters), not "did" (3 letters)
     // Solution: If last key is a tone mark (d,s,f,r,x,j,w,a,o,e,[,]), also check without it
     // Examples: "did" → check "di" (đi), "dod" → check "do" (đo), "dad" → check "da" (đa)
+    //
+    // IMPROVED LOGIC (Fix for Issue #57 vs "fix" conflict):
+    // Only apply tone mark check if word WITHOUT tone mark starts with Vietnamese consonant
+    // Vietnamese consonants: b,c,ch,d,đ,g,gh,gi,h,k,kh,l,m,n,ng,ngh,nh,p,ph,qu,r,s,t,th,tr,v,x
+    // Examples:
+    //   "did" (d+i+d) → "di" starts with 'd' (Vietnamese) → check tone mark → block "did"
+    //   "fix" (f+i+x) → "fi" starts with 'f' (NOT Vietnamese) → skip tone mark → allow "fix"
     if (vieInit && vieNodes && stateIndex >= 2) {
         uint8_t lastKey = keyStates[stateIndex - 1] & 0x3F;
         // Telex tone marks: d(đ), s(sắc), f(huyền), r(hỏi), x(ngã), j(nặng), w(horn), a/o/e(^), [](ơ/ư)
@@ -331,18 +338,54 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
                           lastKey == KEY_W || lastKey == KEY_A || lastKey == KEY_O ||
                           lastKey == KEY_E || lastKey == KEY_LEFT_BRACKET || lastKey == KEY_RIGHT_BRACKET);
 
-        if (isToneMark && searchBinaryTrie(vieNodes, idx, stateIndex - 1)) {
-            #ifdef DEBUG
-            // Build word without tone mark for debug message
-            char wordWithoutTone[32];
-            for (int i = 0; i < stateIndex - 1; i++) {
-                wordWithoutTone[i] = 'a' + idx[i];
+        if (isToneMark) {
+            // Check if word without tone mark starts with Vietnamese consonant
+            uint8_t firstKey = keyStates[0] & 0x3F;
+            uint8_t secondKey = (stateIndex >= 3) ? (keyStates[1] & 0x3F) : 0xFF;
+
+            // Vietnamese consonants (single): b,c,d,g,h,k,l,m,n,p,r,s,t,v,x
+            // Vietnamese consonants (double): ch,gh,gi,kh,ng,nh,ph,qu,th,tr,ngh
+            bool isVietnameseConsonant = false;
+
+            // Check single consonants (not 'f', 'j', 'w', 'z', 'q' alone)
+            if (firstKey == KEY_B || firstKey == KEY_C || firstKey == KEY_D ||
+                firstKey == KEY_G || firstKey == KEY_H || firstKey == KEY_K ||
+                firstKey == KEY_L || firstKey == KEY_M || firstKey == KEY_N ||
+                firstKey == KEY_P || firstKey == KEY_R || firstKey == KEY_S ||
+                firstKey == KEY_T || firstKey == KEY_V || firstKey == KEY_X) {
+                isVietnameseConsonant = true;
             }
-            wordWithoutTone[stateIndex - 1] = '\0';
-            fprintf(stderr, "[AutoEnglish] SKIP: '%s' (without tone '%c') found in Vietnamese dictionary\n",
-                   wordWithoutTone, 'a' + idx[stateIndex - 1]); fflush(stderr);
-            #endif
-            return false; // It's a Vietnamese word with tone mark - do NOT restore
+
+            // Check double consonants
+            if (stateIndex >= 3) {
+                if ((firstKey == KEY_C && secondKey == KEY_H) ||  // ch
+                    (firstKey == KEY_G && secondKey == KEY_H) ||  // gh
+                    (firstKey == KEY_G && secondKey == KEY_I) ||  // gi
+                    (firstKey == KEY_K && secondKey == KEY_H) ||  // kh
+                    (firstKey == KEY_N && secondKey == KEY_G) ||  // ng
+                    (firstKey == KEY_N && secondKey == KEY_H) ||  // nh
+                    (firstKey == KEY_P && secondKey == KEY_H) ||  // ph
+                    (firstKey == KEY_Q && secondKey == KEY_U) ||  // qu
+                    (firstKey == KEY_T && secondKey == KEY_H) ||  // th
+                    (firstKey == KEY_T && secondKey == KEY_R)) {  // tr
+                    isVietnameseConsonant = true;
+                }
+            }
+
+            // Only check Vietnamese dictionary without tone mark if starts with Vietnamese consonant
+            if (isVietnameseConsonant && searchBinaryTrie(vieNodes, idx, stateIndex - 1)) {
+                #ifdef DEBUG
+                // Build word without tone mark for debug message
+                char wordWithoutTone[32];
+                for (int i = 0; i < stateIndex - 1; i++) {
+                    wordWithoutTone[i] = 'a' + idx[i];
+                }
+                wordWithoutTone[stateIndex - 1] = '\0';
+                fprintf(stderr, "[AutoEnglish] SKIP: '%s' (without tone '%c') found in Vietnamese dictionary and starts with Vietnamese consonant\n",
+                       wordWithoutTone, 'a' + idx[stateIndex - 1]); fflush(stderr);
+                #endif
+                return false; // It's a Vietnamese word with tone mark - do NOT restore
+            }
         }
     }
 
