@@ -2239,7 +2239,7 @@ class FloatingPanel<Content: View>: NSPanel, NSWindowDelegate {
         // Visual styling
         self.titleVisibility = .hidden
         self.titlebarAppearsTransparent = true
-        self.isMovableByWindowBackground = false  // Disable to allow scroll gestures
+        self.isMovableByWindowBackground = true  // Enable window dragging
         self.backgroundColor = .clear
 
         // Performance
@@ -2304,7 +2304,7 @@ struct EmojiPickerView: View {
     var onEmojiSelected: (String) -> Void
     var onClose: (() -> Void)?
 
-    @State private var selectedCategory = 0
+    @State private var selectedCategory = -2  // Default to "Frequently Used" tab
     @State private var searchText = ""
     @State private var hoveredEmoji: String? = nil
     @State private var selectedEmojiIndex: Int? = nil
@@ -2393,19 +2393,6 @@ struct EmojiPickerView: View {
             ScrollViewReader { scrollProxy in
                 ScrollView(.horizontal, showsIndicators: true) {
                     HStack(spacing: 8) {
-                        // Recent tab
-                        CategoryTab(
-                            isSelected: selectedCategory == -1,
-                            icon: "clock",
-                            label: "Gần đây",
-                            namespace: categoryNamespace
-                        ) {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                selectedCategory = -1
-                            }
-                        }
-                        .id(-1)
-
                         // Frequently Used tab
                         CategoryTab(
                             isSelected: selectedCategory == -2,
@@ -2523,9 +2510,7 @@ struct EmojiPickerView: View {
     }
 
     private func getEmptyStateIcon() -> String {
-        if selectedCategory == -1 {
-            return "clock"
-        } else if selectedCategory == -2 {
+        if selectedCategory == -2 {
             return "flame"
         } else {
             return "magnifyingglass"
@@ -2533,9 +2518,7 @@ struct EmojiPickerView: View {
     }
 
     private func getEmptyStateTitle() -> String {
-        if selectedCategory == -1 {
-            return "Chưa có emoji gần đây"
-        } else if selectedCategory == -2 {
+        if selectedCategory == -2 {
             return "Chưa có emoji thường dùng"
         } else {
             return "Không tìm thấy"
@@ -2543,9 +2526,7 @@ struct EmojiPickerView: View {
     }
 
     private func getEmptyStateMessage() -> String {
-        if selectedCategory == -1 {
-            return "Emoji bạn sử dụng gần đây\nsẽ hiển thị ở đây"
-        } else if selectedCategory == -2 {
+        if selectedCategory == -2 {
             return "Emoji bạn dùng nhiều nhất\nsẽ hiển thị ở đây"
         } else {
             return "Thử tìm kiếm với từ khóa khác"
@@ -2555,10 +2536,6 @@ struct EmojiPickerView: View {
     private var filteredEmojis: [EmojiItem] {
         if !searchText.isEmpty {
             return database.search(searchText)
-        } else if selectedCategory == -1 {
-            // Recent tab
-            let recentEmojis = database.getRecentEmojis()
-            return recentEmojis.compactMap { database.getEmojiItem(for: $0) }
         } else if selectedCategory == -2 {
             // Frequently Used tab
             let frequentEmojis = database.getFrequentlyUsedEmojis(limit: 50)
