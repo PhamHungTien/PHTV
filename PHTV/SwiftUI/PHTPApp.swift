@@ -2961,9 +2961,11 @@ struct CategoryTab: View {
                     .font(.system(size: 16, weight: isSelected ? .semibold : .regular))
                 Text(label)
                     .font(.system(size: 9, weight: isSelected ? .semibold : .regular))
+                    .lineLimit(1)
             }
             .foregroundColor(isSelected ? .accentColor : .secondary)
-            .frame(width: 60, height: 40)
+            .padding(.horizontal, 8)
+            .frame(minWidth: 60, height: 40)
             .background(
                 Group {
                     if isSelected {
