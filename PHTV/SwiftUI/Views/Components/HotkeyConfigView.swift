@@ -807,7 +807,7 @@ struct EmojiHotkeyConfigView: View {
                         ModifierKeyButton(symbol: "⌥", name: "Option", isOn: emojiHotkeyOption)
                     }
 
-                    Text("Mặc định: Command (⌘)")
+                    Text("Mặc định: ⌘E")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -879,7 +879,7 @@ struct EmojiHotkeyConfigView: View {
                         }
                     }
 
-                    Text("💡 Mẹo: Dùng tổ hợp phím như ⌘; hoặc ⌃⇧E để mở emoji nhanh")
+                    Text("💡 Mẹo: Dùng tổ hợp phím như ⌘E hoặc ⌃⇧E để mở emoji nhanh")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .padding(.top, 4)

@@ -310,7 +310,7 @@ final class AppState: ObservableObject {
     // Emoji Hotkey Settings
     @Published var enableEmojiHotkey: Bool = false
     @Published var emojiHotkeyModifiersRaw: Int = Int(NSEvent.ModifierFlags.command.rawValue)
-    @Published var emojiHotkeyKeyCode: UInt16 = 41  // ; key (semicolon) default
+    @Published var emojiHotkeyKeyCode: UInt16 = 14  // E key default
 
     /// Computed property for emoji hotkey modifiers
     var emojiHotkeyModifiers: NSEvent.ModifierFlags {
@@ -668,7 +668,7 @@ final class AppState: ObservableObject {
             emojiHotkeyModifiersRaw = Int(NSEvent.ModifierFlags.command.rawValue)  // Default: Command
         }
         let savedKeyCode = defaults.integer(forKey: "vEmojiHotkeyKeyCode")
-        emojiHotkeyKeyCode = savedKeyCode > 0 ? UInt16(savedKeyCode) : 41  // Default: semicolon
+        emojiHotkeyKeyCode = savedKeyCode > 0 ? UInt16(savedKeyCode) : 14  // Default: E key
 
         // Load audio and display settings
         beepVolume = defaults.double(forKey: "vBeepVolume")
