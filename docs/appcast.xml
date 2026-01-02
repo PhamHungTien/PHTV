@@ -8,6 +8,32 @@
 
         <!-- Most recent version first -->
         <item>
+            <title>PHTV 1.3.7</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.7</link>
+            <sparkle:version>14</sparkle:version>
+            <sparkle:shortVersionString>1.3.7</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h3>🔧 Sửa lỗi</h3>
+                <ul>
+                    <li><strong>Khôi phục cài đặt thanh menu</strong>: Tùy chọn hiển thị icon chữ V khi đang ở chế độ tiếng Việt</li>
+                    <li><strong>Khôi phục điều chỉnh kích cỡ icon</strong>: Tùy chỉnh kích thước icon trên thanh menu (12-20px)</li>
+                    <li><strong>Khôi phục cài đặt Dock</strong>: Tùy chọn hiển thị icon PHTV trên Dock khi mở cài đặt</li>
+                </ul>
+
+                <p><em>Bản sửa lỗi nhỏ khôi phục các tùy chọn tùy chỉnh giao diện đã bị xóa nhầm trong v1.3.6 khi loại bỏ tính năng màu chủ đề. Tất cả các cài đặt này giờ có trong tab Hệ thống.</em></p>
+            ]]></description>
+            <pubDate>Thu, 02 Jan 2026 21:00:00 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.3.7/PHTV-1.3.7.dmg"
+                sparkle:version="14"
+                sparkle:shortVersionString="1.3.7"
+                sparkle:edSignature="b+UAUrGP/CDBMSN4aa+f5MM7bo8sc4xVQN7rf/8qzF1xo7/w8YNGxduxCkDNL18nq1c3AbiQM+/mcaoRyNeUAA=="
+                length="13540250"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <item>
             <title>PHTV 1.3.6</title>
             <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.6</link>
             <sparkle:version>13</sparkle:version>
