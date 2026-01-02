@@ -4389,10 +4389,18 @@ struct EmojiPickerView: View {
         }
         .frame(width: 380)
         .background(
-            // Glassmorphism background
-            ZStack {
-                Color(NSColor.windowBackgroundColor)
-                VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
+            Group {
+                if #available(macOS 26.0, *) {
+                    // Liquid Glass design for macOS 26+
+                    Color(NSColor.windowBackgroundColor)
+                        .glassEffect(in: .rect(cornerRadius: 16))
+                } else {
+                    // Fallback glassmorphism for older macOS
+                    ZStack {
+                        Color(NSColor.windowBackgroundColor)
+                        VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
+                    }
+                }
             }
         )
         .clipShape(RoundedRectangle(cornerRadius: 16))
