@@ -1709,6 +1709,9 @@ class KlipyAPIClient: ObservableObject {
     @Published var isLoading = false
     @Published var needsAPIKey: Bool = false
 
+    // Callback to close picker window
+    var onCloseCallback: (() -> Void)?
+
     private init() {
         needsAPIKey = appKey == "YOUR_KLIPY_APP_KEY_HERE"
     }
@@ -1879,6 +1882,8 @@ struct KlipyMedia: Codable {
 // MARK: - GIF Tab View
 
 struct GIFTabView: View {
+    var onClose: (() -> Void)?
+
     @StateObject private var klipyClient = KlipyAPIClient.shared
     @State private var searchText = ""
     @State private var copiedGIF: String?
@@ -1968,19 +1973,12 @@ struct GIFTabView: View {
                     .padding(16)
                 }
             }
-
-            // Powered by Klipy attribution
-            HStack {
-                Spacer()
-                Text("Powered by Klipy")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-                Spacer()
-            }
-            .padding(.vertical, 8)
-            .background(Color.secondary.opacity(0.05))
         }
         .onAppear {
+            // Set close callback
+            klipyClient.onCloseCallback = onClose
+
+            // Fetch trending GIFs if empty
             if klipyClient.trendingGIFs.isEmpty {
                 klipyClient.fetchTrending()
             }
@@ -2031,6 +2029,19 @@ struct GIFTabView: View {
                     pasteboard.setData(data, forType: NSPasteboard.PasteboardType("com.compuserve.gif"))
 
                     print("[Klipy] Đã copy GIF: \(gif.title)")
+
+                    // Auto-paste: Close picker and simulate Cmd+V
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        // Close the picker window first
+                        if let onClose = self.klipyClient.onCloseCallback {
+                            onClose()
+                        }
+
+                        // Simulate Cmd+V to paste
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            self.simulatePaste()
+                        }
+                    }
                 } else {
                     print("[Klipy] Lỗi download: \(error?.localizedDescription ?? "unknown")")
                 }
@@ -2044,6 +2055,25 @@ struct GIFTabView: View {
             }
         }.resume()
     }
+
+    private func simulatePaste() {
+        // Create Cmd+V key event
+        let source = CGEventSource(stateID: .hidSystemState)
+
+        // Key down for 'V' with Command modifier
+        let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true)
+        keyDown?.flags = .maskCommand
+
+        // Key up for 'V'
+        let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false)
+        keyUp?.flags = .maskCommand
+
+        // Post events
+        keyDown?.post(tap: .cghidEventTap)
+        keyUp?.post(tap: .cghidEventTap)
+
+        print("[Klipy] Auto-pasted GIF with Cmd+V")
+    }
 }
 
 struct GIFThumbnailView: View {
@@ -2055,7 +2085,9 @@ struct GIFThumbnailView: View {
     var body: some View {
         Button(action: onTap) {
             AnimatedGIFView(url: URL(string: gif.previewURL))
-                .frame(height: 100)
+                .aspectRatio(contentMode: .fill)
+                .frame(minWidth: 100, minHeight: 100)
+                .frame(maxHeight: 150)
                 .clipped()
                 .cornerRadius(8)
         }
@@ -2069,7 +2101,7 @@ struct GIFThumbnailView: View {
         .onHover { hovering in
             isHovered = hovering
         }
-        .help("Click để tải và paste GIF")
+        .help("Click để tải và gửi GIF")
     }
 }
 
@@ -3414,7 +3446,7 @@ struct EmojiPickerView: View {
             // Content area - show GIF tab or emoji grid
             if selectedCategory == -3 {
                 // GIF tab
-                GIFTabView()
+                GIFTabView(onClose: onClose)
                     .frame(height: 320)
             } else {
                 // Emoji grid with ScrollViewReader for smooth navigation
