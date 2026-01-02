@@ -414,6 +414,7 @@ final class AppState: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
     private var isLoadingSettings = false
+    private var isUpdatingRunOnStartup = false
 
     private init() {
         isLoadingSettings = true
@@ -638,7 +639,11 @@ final class AppState: ObservableObject {
         // Load system settings - check actual SMAppService status for runOnStartup
         if #available(macOS 13.0, *) {
             let appService = SMAppService.mainApp
-            runOnStartup = (appService.status == .enabled)
+            let status = (appService.status == .enabled)
+            NSLog("[Settings] Loading runOnStartup from SMAppService: %@", status ? "enabled" : "disabled")
+            isUpdatingRunOnStartup = true
+            runOnStartup = status
+            isUpdatingRunOnStartup = false
         } else {
             runOnStartup = defaults.bool(forKey: "PHTV_RunOnStartup")
         }
@@ -985,19 +990,46 @@ final class AppState: ObservableObject {
                 object: NSNumber(value: language))
         }.store(in: &cancellables)
 
-        // Observer for runOnStartup - update immediately
+        // Observer for runOnStartup - update immediately and verify status
         $runOnStartup.sink { [weak self] value in
-            guard let self = self, !self.isLoadingSettings else { return }
+            guard let self = self, !self.isLoadingSettings, !self.isUpdatingRunOnStartup else { return }
+
             // Safe unwrap AppDelegate
             guard let appDelegate = NSApp.delegate as? AppDelegate else {
                 print("[AppState] AppDelegate not available yet, skipping runOnStartup update")
                 return
             }
+
+            NSLog("[AppState] Setting runOnStartup to: %@", value ? "true" : "false")
+
             // Update immediately without debounce
             appDelegate.setRunOnStartup(value)
+
+            // Save to UserDefaults
             let defaults = UserDefaults.standard
             defaults.set(value, forKey: "PHTV_RunOnStartup")
             defaults.synchronize()
+
+            // Verify actual status after a short delay (SMAppService needs time to update)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                guard let self = self else { return }
+
+                if #available(macOS 13.0, *) {
+                    let appService = SMAppService.mainApp
+                    let actualStatus = (appService.status == .enabled)
+
+                    NSLog("[AppState] Verified runOnStartup status: expected=%@, actual=%@",
+                          value ? "true" : "false", actualStatus ? "true" : "false")
+
+                    // If status doesn't match, update UI to reflect actual status
+                    if actualStatus != value {
+                        NSLog("[AppState] Status mismatch! Updating UI to reflect actual status: %@", actualStatus ? "true" : "false")
+                        self.isUpdatingRunOnStartup = true
+                        self.runOnStartup = actualStatus
+                        self.isUpdatingRunOnStartup = false
+                    }
+                }
+            }
         }.store(in: &cancellables)
 
         // Observer for input method
