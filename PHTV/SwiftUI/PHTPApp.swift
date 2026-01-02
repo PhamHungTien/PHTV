@@ -166,8 +166,22 @@ enum SettingsWindowHelper {
             // SwiftUI Window scenes have identifiers like "settings-AppWindow-1"
             if identifier.hasPrefix("settings") {
                 NSLog("[SettingsWindowHelper] Found existing settings window: %@", identifier)
+
+                // FIX: Set window level to ensure it appears above other apps
+                window.level = .floating
+
+                // FIX: Use orderFrontRegardless to force window to front
+                window.orderFrontRegardless()
                 window.makeKeyAndOrderFront(nil)
+
+                // Ensure window is not minimized
+                if window.isMiniaturized {
+                    window.deminiaturize(nil)
+                }
+
+                // Activate app
                 NSApp.activate(ignoringOtherApps: true)
+
                 return
             }
         }
@@ -2110,21 +2124,29 @@ struct GIFTabView: View {
         URLSession.shared.dataTask(with: url) { data, response, error in
             DispatchQueue.main.async {
                 if let data = data {
-                    // Copy GIF data directly to clipboard (không convert qua NSImage để giữ animation)
+                    // Save to temp file first (required for web apps)
+                    guard let tempURL = self.saveTempGIF(data: data, filename: gif.slug) else {
+                        print("[Klipy] Failed to save temp GIF")
+                        return
+                    }
+
+                    // Copy GIF to clipboard with multiple formats for maximum compatibility
                     let pasteboard = NSPasteboard.general
                     pasteboard.clearContents()
 
-                    // Set GIF data với nhiều UTI types để tương thích tốt hơn
-                    // Chỉ set GIF data thôi, KHÔNG set TIFF vì sẽ mất animation
+                    // STRATEGY: Use file URL + raw GIF data for compatibility
+                    // - Native apps (iMessage): use raw GIF data
+                    // - Web apps (Zalo, Messenger): use file URL
+                    // - Desktop apps: use file URL
+
+                    // 1. File URL (primary method for web apps and desktop apps)
+                    pasteboard.writeObjects([tempURL as NSURL])
+
+                    // 2. Raw GIF data (for native apps like iMessage)
                     pasteboard.setData(data, forType: NSPasteboard.PasteboardType("com.compuserve.gif"))
-                    pasteboard.setData(data, forType: NSPasteboard.PasteboardType("public.gif"))
 
-                    // Thêm file URL type để một số app nhận tốt hơn
-                    if let tempURL = self.saveTempGIF(data: data, filename: gif.slug) {
-                        pasteboard.setString(tempURL.path, forType: .fileURL)
-                    }
-
-                    print("[Klipy] Đã copy GIF: \(gif.title) (\(data.count) bytes)")
+                    print("[Klipy] Đã copy GIF với nhiều formats: \(gif.title) (\(data.count) bytes)")
+                    print("[Klipy] Temp file: \(tempURL.path)")
 
                     // Auto-paste: Close picker and simulate Cmd+V
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -2193,46 +2215,46 @@ struct GIFThumbnailView: View {
     @State private var hasTrackedImpression = false
 
     var body: some View {
-        Button(action: onTap) {
-            ZStack {
-                // Background
-                Color.black.opacity(0.05)
+        ZStack {
+            // Background
+            Color.black.opacity(0.05)
 
-                // GIF content
-                AnimatedGIFView(url: URL(string: gif.previewURL))
-                    .frame(width: 120, height: 120)
-                    .clipped()
+            // GIF content
+            AnimatedGIFView(url: URL(string: gif.previewURL))
+                .frame(width: 120, height: 120)
+                .clipped()
 
-                // Ad badge (nếu là ad)
-                if gif.isAd {
-                    VStack {
-                        HStack {
-                            Spacer()
-                            Text("Ad")
-                                .font(.system(size: 10, weight: .semibold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 7)
-                                .padding(.vertical, 4)
-                                .background(Color.blue.opacity(0.8))
-                                .cornerRadius(4)
-                        }
+            // Ad badge (nếu là ad)
+            if gif.isAd {
+                VStack {
+                    HStack {
                         Spacer()
+                        Text("Ad")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 4)
+                            .background(Color.blue.opacity(0.8))
+                            .cornerRadius(4)
                     }
-                    .padding(8)
+                    Spacer()
                 }
+                .padding(8)
+                .allowsHitTesting(false)
             }
-            .frame(width: 120, height: 120)
-            .cornerRadius(8)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(isHovered ? Color.accentColor : Color.clear, lineWidth: 2)
-            )
         }
-        .buttonStyle(.plain)
         .frame(width: 120, height: 120)
-        .animation(.easeInOut(duration: 0.15), value: isHovered)
+        .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .strokeBorder(isHovered ? Color.accentColor : Color.clear, lineWidth: 2)
+        )
+        .contentShape(Rectangle())
         .onHover { hovering in
             isHovered = hovering
+        }
+        .onTapGesture {
+            onTap()
         }
         .help(gif.isAd ? "Quảng cáo - Click để xem" : "Click để tải và gửi GIF")
         .onAppear {
