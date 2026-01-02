@@ -1459,7 +1459,7 @@ final class EmojiHotkeyManager: ObservableObject, @unchecked Sendable {
     private var localMonitor: Any?
     private var isEnabled: Bool = false
     private var modifiers: NSEvent.ModifierFlags = .command
-    private var keyCode: UInt16 = 41  // ; key (semicolon) default
+    private var keyCode: UInt16 = 14  // E key default
 
     private init() {
         NSLog("[EmojiHotkey] EmojiHotkeyManager initialized")
@@ -1542,11 +1542,29 @@ final class EmojiHotkeyManager: ObservableObject, @unchecked Sendable {
         }
 
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            NSLog("LOCAL-MONITOR-FIRED")
-            if let consumed = self?.handleKeyEvent(event), consumed {
-                return nil
+            guard let self = self else { return event }
+
+            // Quick check to consume event IMMEDIATELY if it matches hotkey
+            // This prevents system beep sound
+            guard event.keyCode == self.keyCode else {
+                return event
             }
-            return event
+
+            let relevantModifiers: NSEvent.ModifierFlags = [.command, .option, .control, .shift]
+            let eventModifiers = event.modifierFlags.intersection(relevantModifiers)
+
+            guard eventModifiers == self.modifiers else {
+                return event
+            }
+
+            // Match! Consume event immediately to prevent beep
+            NSLog("[EmojiHotkey] Hotkey matched, opening picker")
+            DispatchQueue.main.async {
+                self.openEmojiPicker()
+            }
+
+            // Return nil to consume the event and prevent system beep
+            return nil
         }
 
         NSLog("REGISTER-COMPLETE: globalMonitor=%@, localMonitor=%@", globalMonitor != nil ? "YES" : "NO", localMonitor != nil ? "YES" : "NO")
