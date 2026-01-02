@@ -284,6 +284,9 @@ struct SettingsItem: Identifiable {
             title: "Khởi động cùng hệ thống", iconName: "play.fill", tab: .system,
             keywords: ["startup", "login", "boot", "tự động mở", "khởi động"]),
         SettingsItem(
+            title: "Cửa sổ Cài đặt luôn ở trên", iconName: "pin.fill", tab: .system,
+            keywords: ["always on top", "settings window", "cửa sổ", "luôn ở trên", "floating", "pin", "giao diện", "z-order", "mission control"]),
+        SettingsItem(
             title: "Tần suất kiểm tra cập nhật", iconName: "clock.fill", tab: .system,
             keywords: ["update frequency", "cập nhật", "tự động", "kiểm tra", "tần suất"]),
         SettingsItem(
