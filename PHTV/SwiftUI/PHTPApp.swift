@@ -1827,6 +1827,28 @@ final class EmojiDatabase: @unchecked Sendable {
             EmojiItem(emoji: "🤲", name: "Palms Up Together", keywords: ["pray", "hands", "cầu nguyện"], category: "Hands"),
             EmojiItem(emoji: "🤝", name: "Handshake", keywords: ["shake", "deal", "bắt tay"], category: "Hands"),
             EmojiItem(emoji: "🙏", name: "Folded Hands", keywords: ["pray", "thanks", "cầu nguyện", "cảm ơn"], category: "Hands"),
+            EmojiItem(emoji: "✍️", name: "Writing Hand", keywords: ["write", "pen", "viết"], category: "Hands"),
+            EmojiItem(emoji: "💅", name: "Nail Polish", keywords: ["nail", "polish", "manicure", "sơn móng"], category: "Hands"),
+            EmojiItem(emoji: "🤳", name: "Selfie", keywords: ["selfie", "camera", "phone", "chụp ảnh"], category: "Hands"),
+            EmojiItem(emoji: "💪", name: "Flexed Biceps", keywords: ["muscle", "strong", "cơ bắp", "mạnh"], category: "Hands"),
+            EmojiItem(emoji: "🦵", name: "Leg", keywords: ["leg", "kick", "chân"], category: "Hands"),
+            EmojiItem(emoji: "🦶", name: "Foot", keywords: ["foot", "kick", "bàn chân"], category: "Hands"),
+            EmojiItem(emoji: "👂", name: "Ear", keywords: ["ear", "hear", "tai"], category: "Hands"),
+            EmojiItem(emoji: "🦻", name: "Ear with Hearing Aid", keywords: ["ear", "hearing aid", "tai nghe"], category: "Hands"),
+            EmojiItem(emoji: "👃", name: "Nose", keywords: ["nose", "smell", "mũi"], category: "Hands"),
+            EmojiItem(emoji: "🧠", name: "Brain", keywords: ["brain", "smart", "não"], category: "Hands"),
+            EmojiItem(emoji: "🫀", name: "Anatomical Heart", keywords: ["heart", "organ", "tim"], category: "Hands"),
+            EmojiItem(emoji: "🫁", name: "Lungs", keywords: ["lungs", "breath", "phổi"], category: "Hands"),
+            EmojiItem(emoji: "🦷", name: "Tooth", keywords: ["tooth", "dental", "răng"], category: "Hands"),
+            EmojiItem(emoji: "🦴", name: "Bone", keywords: ["bone", "skeleton", "xương"], category: "Hands"),
+            EmojiItem(emoji: "👀", name: "Eyes", keywords: ["eyes", "look", "watch", "mắt"], category: "Hands"),
+            EmojiItem(emoji: "👁️", name: "Eye", keywords: ["eye", "look", "mắt"], category: "Hands"),
+            EmojiItem(emoji: "👅", name: "Tongue", keywords: ["tongue", "lick", "lưỡi"], category: "Hands"),
+            EmojiItem(emoji: "👄", name: "Mouth", keywords: ["mouth", "lips", "miệng", "môi"], category: "Hands"),
+            EmojiItem(emoji: "🫦", name: "Biting Lip", keywords: ["lip", "bite", "cắn môi"], category: "Hands"),
+            EmojiItem(emoji: "💋", name: "Kiss Mark", keywords: ["kiss", "lipstick", "hôn"], category: "Hands"),
+            EmojiItem(emoji: "🦾", name: "Mechanical Arm", keywords: ["robot", "arm", "cánh tay robot"], category: "Hands"),
+            EmojiItem(emoji: "🦿", name: "Mechanical Leg", keywords: ["robot", "leg", "chân robot"], category: "Hands"),
         ]
 
         // Hearts
@@ -2772,6 +2794,14 @@ struct EmojiPickerView: View {
                             }
                         }
                         .id(-2)
+                        .onAppear {
+                            // Scroll to selected category when view appears
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                if selectedCategory == -2 {
+                                    scrollProxy.scrollTo(-2, anchor: .leading)
+                                }
+                            }
+                        }
 
                         Rectangle()
                             .fill(Color.secondary.opacity(0.2))
