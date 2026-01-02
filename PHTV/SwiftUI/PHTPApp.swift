@@ -4388,23 +4388,24 @@ struct EmojiPickerView: View {
             }
         }
         .frame(width: 380)
-        .background(
-            Group {
-                if #available(macOS 26.0, *) {
-                    // Liquid Glass design for macOS 26+
-                    Color(NSColor.windowBackgroundColor)
-                        .glassEffect(in: .rect(cornerRadius: 16))
-                } else {
-                    // Fallback glassmorphism for older macOS
-                    ZStack {
-                        Color(NSColor.windowBackgroundColor)
-                        VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
-                    }
+        .background {
+            if #available(macOS 26.0, *) {
+                // Liquid Glass design for macOS 26+
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.clear)
+                    .glassEffect(.clear.interactive(), in: .rect(cornerRadius: 16))
+                    .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 4)
+            } else {
+                // Fallback glassmorphism for older macOS
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color(NSColor.windowBackgroundColor))
+                    VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
                 }
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .shadow(color: Color.black.opacity(0.15), radius: 12, x: 0, y: 4)
             }
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: Color.black.opacity(0.15), radius: 12, x: 0, y: 4)
+        }
     }
 }
 
