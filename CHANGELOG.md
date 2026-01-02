@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.7] - 2026-01-02
+
+### Fixed
+- **Menu bar and dock settings**: Khôi phục cài đặt thanh menu và dock đã bị xóa nhầm khi xóa theme color
+
 ## [1.3.6] - 2026-01-02
 
 ### Added
