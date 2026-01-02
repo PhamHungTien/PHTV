@@ -239,6 +239,7 @@ struct TypingSettingsView: View {
 
                 Spacer(minLength: 20)
             }
+            .frame(maxWidth: .infinity)
             .padding(20)
         }
         .settingsBackground()
