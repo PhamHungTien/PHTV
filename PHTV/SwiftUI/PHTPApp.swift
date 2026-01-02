@@ -81,9 +81,11 @@ struct SettingsWindowContent: View {
                 // Liquid Glass for macOS 26+
                 Color.clear
                     .glassEffect(.clear)
+                    .ignoresSafeArea()
             } else {
                 // Translucent blur for older macOS
                 VisualEffectBlur(material: .underWindowBackground, blendingMode: .behindWindow)
+                    .ignoresSafeArea()
             }
         }
         .onAppear {
