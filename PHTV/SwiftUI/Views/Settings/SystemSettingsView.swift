@@ -51,6 +51,74 @@ struct SystemSettingsView: View {
                     }
                 }
 
+                // Menu Bar Settings
+                SettingsCard(title: "Thanh menu", icon: "menubar.rectangle") {
+                    VStack(spacing: 0) {
+                        SettingsToggleRow(
+                            icon: "flag.fill",
+                            iconColor: .accentColor,
+                            title: "Hiển thị icon chữ V",
+                            subtitle: "Dùng icon chữ V khi đang ở chế độ tiếng Việt",
+                            isOn: $appState.useVietnameseMenubarIcon
+                        )
+
+                        SettingsDivider()
+
+                        VStack(spacing: 8) {
+                            HStack(spacing: 14) {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color.accentColor.opacity(0.12))
+                                        .frame(width: 36, height: 36)
+
+                                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundStyle(Color.accentColor)
+                                }
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Kích cỡ icon")
+                                        .font(.body)
+                                        .foregroundStyle(.primary)
+
+                                    Text("Điều chỉnh kích thước icon trên thanh menu")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+
+                                Spacer()
+
+                                Text(String(format: "%.0f px", appState.menuBarIconSize))
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.tint)
+                                    .frame(minWidth: 40, alignment: .trailing)
+                            }
+
+                            CustomSlider(
+                                value: $appState.menuBarIconSize,
+                                range: 12.0...20.0,
+                                step: 0.01,
+                                tintColor: .accentColor
+                            )
+                        }
+                        .padding(.vertical, 6)
+                    }
+                }
+
+                // Dock Settings
+                SettingsCard(title: "Dock", icon: "dock.rectangle") {
+                    VStack(spacing: 0) {
+                        SettingsToggleRow(
+                            icon: "app.fill",
+                            iconColor: .accentColor,
+                            title: "Hiển thị icon trên Dock",
+                            subtitle: "Hiện icon PHTV khi mở cài đặt",
+                            isOn: $appState.showIconOnDock
+                        )
+                    }
+                }
+
                 // Update Settings
                 SettingsCard(title: "Cập nhật", icon: "arrow.down.circle.fill") {
                     VStack(spacing: 0) {
