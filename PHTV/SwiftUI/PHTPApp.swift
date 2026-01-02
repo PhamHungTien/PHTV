@@ -1682,46 +1682,56 @@ final class EmojiHotkeyManager: ObservableObject, @unchecked Sendable {
 
 // MARK: - PHTV Picker
 
-// MARK: - Giphy GIF API
+// MARK: - Klipy GIF API
 
-/// Giphy API client for fetching GIFs
+/// Klipy API client for fetching GIFs - Free unlimited API
 @MainActor
-class GiphyAPIClient: ObservableObject {
-    static let shared = GiphyAPIClient()
+class KlipyAPIClient: ObservableObject {
+    static let shared = KlipyAPIClient()
 
-    // GIPHY API - Free tier (100 calls/hour)
-    // API key cho PHTV app từ https://developers.giphy.com/
-    private let apiKey = "N61oi40rWdnDwlA7HyEEIOBc0hqXcsRR"
-    private let baseURL = "https://api.giphy.com/v1/gifs"
+    // KLIPY API - Free unlimited (không giới hạn như Giphy)
+    // Lấy API key miễn phí tại: https://partner.klipy.com/api-keys
+    private let appKey = "YOUR_KLIPY_APP_KEY_HERE" // <-- Paste Klipy app key vào đây
+    private let baseURL = "https://api.klipy.com/api/v1"
 
-    @Published var trendingGIFs: [GiphyGIF] = []
-    @Published var searchResults: [GiphyGIF] = []
+    // Customer ID - unique user identifier (có thể dùng UUID)
+    private let customerId: String = {
+        if let saved = UserDefaults.standard.string(forKey: "KlipyCustomerID") {
+            return saved
+        }
+        let newId = UUID().uuidString
+        UserDefaults.standard.set(newId, forKey: "KlipyCustomerID")
+        return newId
+    }()
+
+    @Published var trendingGIFs: [KlipyGIF] = []
+    @Published var searchResults: [KlipyGIF] = []
     @Published var isLoading = false
     @Published var needsAPIKey: Bool = false
 
     private init() {
-        needsAPIKey = apiKey == "YOUR_GIPHY_API_KEY_HERE"
+        needsAPIKey = appKey == "YOUR_KLIPY_APP_KEY_HERE"
     }
 
     func saveAPIKey(_ key: String) {
-        // This is just for the setup UI - user should hardcode the key above
-        print("[Giphy] Please hardcode your API key in PHTPApp.swift")
+        print("[Klipy] Please hardcode your app key in PHTPApp.swift")
     }
 
     /// Fetch trending GIFs
-    func fetchTrending(limit: Int = 20) {
-        guard apiKey != "YOUR_GIPHY_API_KEY_HERE" else {
-            print("[Giphy] Please set your API key")
+    func fetchTrending(limit: Int = 24) {
+        guard appKey != "YOUR_KLIPY_APP_KEY_HERE" else {
+            print("[Klipy] Please set your app key")
             needsAPIKey = true
             return
         }
 
         isLoading = true
 
-        let urlString = "\(baseURL)/trending?api_key=\(apiKey)&limit=\(limit)&rating=g"
-        print("[Giphy] Fetching trending from: \(urlString)")
+        // Klipy API: GET /api/v1/{app_key}/gifs/trending
+        let urlString = "\(baseURL)/\(appKey)/gifs/trending?customer_id=\(customerId)&per_page=\(limit)"
+        print("[Klipy] Fetching trending from: \(urlString)")
         guard let url = URL(string: urlString) else {
-            print("[Giphy] Invalid URL")
+            print("[Klipy] Invalid URL")
             DispatchQueue.main.async {
                 self.isLoading = false
             }
@@ -1732,11 +1742,11 @@ class GiphyAPIClient: ObservableObject {
             guard let self = self else { return }
 
             if let httpResponse = response as? HTTPURLResponse {
-                print("[Giphy] Response status: \(httpResponse.statusCode)")
+                print("[Klipy] Response status: \(httpResponse.statusCode)")
             }
 
             guard let data = data, error == nil else {
-                print("[Giphy] Error fetching trending: \(error?.localizedDescription ?? "unknown")")
+                print("[Klipy] Error fetching trending: \(error?.localizedDescription ?? "unknown")")
                 DispatchQueue.main.async {
                     self.isLoading = false
                 }
@@ -1744,14 +1754,14 @@ class GiphyAPIClient: ObservableObject {
             }
 
             do {
-                let result = try JSONDecoder().decode(GiphyResponse.self, from: data)
-                print("[Giphy] Successfully decoded \(result.data.count) GIFs")
+                let result = try JSONDecoder().decode(KlipyResponse.self, from: data)
+                print("[Klipy] Successfully decoded \(result.data.data.count) GIFs")
                 DispatchQueue.main.async {
-                    self.trendingGIFs = result.data
+                    self.trendingGIFs = result.data.data
                     self.isLoading = false
                 }
             } catch {
-                print("[Giphy] Decode error: \(error)")
+                print("[Klipy] Decode error: \(error)")
                 DispatchQueue.main.async {
                     self.isLoading = false
                 }
@@ -1760,14 +1770,14 @@ class GiphyAPIClient: ObservableObject {
     }
 
     /// Search GIFs
-    func search(query: String, limit: Int = 20) {
+    func search(query: String, limit: Int = 24) {
         guard !query.isEmpty else {
             searchResults = []
             return
         }
 
-        guard apiKey != "YOUR_GIPHY_API_KEY_HERE" else {
-            print("[Giphy] Please set your API key for search")
+        guard appKey != "YOUR_KLIPY_APP_KEY_HERE" else {
+            print("[Klipy] Please set your app key for search")
             needsAPIKey = true
             return
         }
@@ -1775,10 +1785,11 @@ class GiphyAPIClient: ObservableObject {
         isLoading = true
 
         let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
-        let urlString = "\(baseURL)/search?api_key=\(apiKey)&q=\(encodedQuery)&limit=\(limit)&rating=g"
-        print("[Giphy] Searching for: \(query)")
+        // Klipy API: GET /api/v1/{app_key}/gifs/search
+        let urlString = "\(baseURL)/\(appKey)/gifs/search?q=\(encodedQuery)&customer_id=\(customerId)&per_page=\(limit)"
+        print("[Klipy] Searching for: \(query)")
         guard let url = URL(string: urlString) else {
-            print("[Giphy] Invalid search URL")
+            print("[Klipy] Invalid search URL")
             DispatchQueue.main.async {
                 self.isLoading = false
             }
@@ -1789,7 +1800,7 @@ class GiphyAPIClient: ObservableObject {
             guard let self = self else { return }
 
             guard let data = data, error == nil else {
-                print("[Giphy] Error searching: \(error?.localizedDescription ?? "unknown")")
+                print("[Klipy] Error searching: \(error?.localizedDescription ?? "unknown")")
                 DispatchQueue.main.async {
                     self.isLoading = false
                 }
@@ -1797,14 +1808,14 @@ class GiphyAPIClient: ObservableObject {
             }
 
             do {
-                let result = try JSONDecoder().decode(GiphyResponse.self, from: data)
-                print("[Giphy] Search found \(result.data.count) GIFs")
+                let result = try JSONDecoder().decode(KlipyResponse.self, from: data)
+                print("[Klipy] Search found \(result.data.data.count) GIFs")
                 DispatchQueue.main.async {
-                    self.searchResults = result.data
+                    self.searchResults = result.data.data
                     self.isLoading = false
                 }
             } catch {
-                print("[Giphy] Decode error: \(error)")
+                print("[Klipy] Decode error: \(error)")
                 DispatchQueue.main.async {
                     self.isLoading = false
                 }
@@ -1813,41 +1824,62 @@ class GiphyAPIClient: ObservableObject {
     }
 }
 
-// MARK: - Giphy Models
+// MARK: - Klipy Models
 
-struct GiphyResponse: Codable {
-    let data: [GiphyGIF]
+struct KlipyResponse: Codable {
+    let result: Bool
+    let data: KlipyData
 }
 
-struct GiphyGIF: Codable, Identifiable {
-    let id: String
+struct KlipyData: Codable {
+    let data: [KlipyGIF]
+    let current_page: Int
+    let per_page: Int
+    let has_next: Bool
+}
+
+struct KlipyGIF: Codable, Identifiable {
+    let id: Int64
+    let slug: String
     let title: String
-    let images: GiphyImages
+    let file: KlipyFile
+    let tags: [String]
+    let type: String
 
     var previewURL: String {
-        images.fixed_width_small.url
+        // Use small size for preview
+        file.sm?.gif?.url ?? file.xs?.gif?.url ?? file.hd.gif?.url ?? ""
     }
 
     var fullURL: String {
-        images.original.url
+        // Use HD GIF for full quality
+        file.hd.gif?.url ?? file.sm?.gif?.url ?? ""
     }
 }
 
-struct GiphyImages: Codable {
-    let original: GiphyImage
-    let fixed_width_small: GiphyImage
+struct KlipyFile: Codable {
+    let hd: KlipyFileSize
+    let sm: KlipyFileSize?
+    let xs: KlipyFileSize?
 }
 
-struct GiphyImage: Codable {
+struct KlipyFileSize: Codable {
+    let gif: KlipyMedia?
+    let webp: KlipyMedia?
+    let mp4: KlipyMedia?
+}
+
+struct KlipyMedia: Codable {
     let url: String
-    let width: String?
-    let height: String?
+    let width: Int?
+    let height: Int?
+    let size: Int?
 }
 
 // MARK: - GIF Tab View
 
 struct GIFTabView: View {
-    @StateObject private var giphyClient = GiphyAPIClient.shared
+    @StateObject private var klipyClient = KlipyAPIClient.shared
     @State private var searchText = ""
     @State private var copiedGIF: String?
 
@@ -1855,8 +1887,8 @@ struct GIFTabView: View {
         GridItem(.adaptive(minimum: 100, maximum: 150), spacing: 8)
     ]
 
-    var displayedGIFs: [GiphyGIF] {
-        searchText.isEmpty ? giphyClient.trendingGIFs : giphyClient.searchResults
+    var displayedGIFs: [KlipyGIF] {
+        searchText.isEmpty ? klipyClient.trendingGIFs : klipyClient.searchResults
     }
 
     var body: some View {
@@ -1866,16 +1898,16 @@ struct GIFTabView: View {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(.secondary)
 
-                TextField("Search Giphy", text: $searchText)
+                TextField("Search Klipy", text: $searchText)
                     .textFieldStyle(.plain)
                     .onChange(of: searchText) { newValue in
                         if newValue.isEmpty {
-                            giphyClient.searchResults = []
+                            klipyClient.searchResults = []
                         } else {
                             // Debounce search
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                                 if searchText == newValue {
-                                    giphyClient.search(query: newValue)
+                                    klipyClient.search(query: newValue)
                                 }
                             }
                         }
@@ -1899,11 +1931,11 @@ struct GIFTabView: View {
 
             // GIF Grid or API Key Setup
             ScrollView {
-                if giphyClient.needsAPIKey {
+                if klipyClient.needsAPIKey {
                     // API Key setup view
-                    APIKeySetupView(giphyClient: giphyClient)
+                    APIKeySetupView(klipyClient: klipyClient)
                         .padding(16)
-                } else if giphyClient.isLoading {
+                } else if klipyClient.isLoading {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .padding(40)
@@ -1937,10 +1969,10 @@ struct GIFTabView: View {
                 }
             }
 
-            // Powered by Giphy attribution
+            // Powered by Klipy attribution
             HStack {
                 Spacer()
-                Text("Powered by GIPHY")
+                Text("Powered by Klipy")
                     .font(.caption2)
                     .foregroundColor(.secondary)
                 Spacer()
@@ -1949,8 +1981,8 @@ struct GIFTabView: View {
             .background(Color.secondary.opacity(0.05))
         }
         .onAppear {
-            if giphyClient.trendingGIFs.isEmpty {
-                giphyClient.fetchTrending()
+            if klipyClient.trendingGIFs.isEmpty {
+                klipyClient.fetchTrending()
             }
         }
         .overlay(
@@ -1976,13 +2008,13 @@ struct GIFTabView: View {
         )
     }
 
-    private func copyGIFURL(_ gif: GiphyGIF) {
+    private func copyGIFURL(_ gif: KlipyGIF) {
         // Download and copy GIF data to clipboard
         guard let url = URL(string: gif.fullURL) else { return }
 
         // Show loading feedback
         withAnimation {
-            copiedGIF = gif.id
+            copiedGIF = String(gif.id)
         }
 
         URLSession.shared.dataTask(with: url) { data, response, error in
@@ -1998,9 +2030,9 @@ struct GIFTabView: View {
                     }
                     pasteboard.setData(data, forType: NSPasteboard.PasteboardType("com.compuserve.gif"))
 
-                    print("[GIF] Đã copy GIF: \(gif.title)")
+                    print("[Klipy] Đã copy GIF: \(gif.title)")
                 } else {
-                    print("[GIF] Lỗi download: \(error?.localizedDescription ?? "unknown")")
+                    print("[Klipy] Lỗi download: \(error?.localizedDescription ?? "unknown")")
                 }
 
                 // Hide feedback after 1.5s
@@ -2015,7 +2047,7 @@ struct GIFTabView: View {
 }
 
 struct GIFThumbnailView: View {
-    let gif: GiphyGIF
+    let gif: KlipyGIF
     let onTap: () -> Void
 
     @State private var isHovered = false
@@ -2044,7 +2076,7 @@ struct GIFThumbnailView: View {
 // MARK: - API Key Setup View
 
 struct APIKeySetupView: View {
-    @ObservedObject var giphyClient: GiphyAPIClient
+    @ObservedObject var klipyClient: KlipyAPIClient
 
     var body: some View {
         VStack(spacing: 16) {
@@ -2052,10 +2084,10 @@ struct APIKeySetupView: View {
                 .font(.system(size: 48))
                 .foregroundColor(.accentColor)
 
-            Text("Cần Giphy API Key")
+            Text("Cần Klipy App Key")
                 .font(.headline)
 
-            Text("Để sử dụng tính năng GIF, bạn cần lấy API key miễn phí từ Giphy.")
+            Text("Để sử dụng tính năng GIF, bạn cần lấy app key miễn phí từ Klipy (không giới hạn request).")
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -2065,33 +2097,33 @@ struct APIKeySetupView: View {
 
             // Instructions
             VStack(alignment: .leading, spacing: 8) {
-                Text("Cách lấy API key miễn phí (< 60 giây):")
+                Text("Cách lấy app key miễn phí (< 60 giây):")
                     .font(.caption)
                     .fontWeight(.semibold)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("1. Mở Giphy Developers")
+                    Text("1. Mở Klipy Partner Portal")
                         .font(.caption2)
                     Text("2. Đăng nhập hoặc tạo account")
                         .font(.caption2)
-                    Text("3. Create App -> chọn SDK")
+                    Text("3. Vào API Keys section")
                         .font(.caption2)
-                    Text("4. Nhập tên app: PHTV")
+                    Text("4. Copy app key")
                         .font(.caption2)
-                    Text("5. Copy API key và paste vào PHTPApp.swift (dòng 1697)")
+                    Text("5. Paste vào PHTPApp.swift (dòng 1694)")
                         .font(.caption2)
                 }
                 .foregroundColor(.secondary)
 
-                Button("Mở Giphy Developers") {
-                    if let url = URL(string: "https://developers.giphy.com/") {
+                Button("Mở Klipy Partner Portal") {
+                    if let url = URL(string: "https://partner.klipy.com/api-keys") {
                         NSWorkspace.shared.open(url)
                     }
                 }
                 .buttonStyle(.link)
                 .font(.caption)
 
-                Text("Sau khi có API key, mở file PHTPApp.swift và thay 'YOUR_GIPHY_API_KEY_HERE' bằng key của bạn.")
+                Text("Sau khi có app key, mở file PHTPApp.swift và thay 'YOUR_KLIPY_APP_KEY_HERE' bằng key của bạn.")
                     .font(.caption2)
                     .foregroundColor(.orange)
                     .padding(.top, 8)
