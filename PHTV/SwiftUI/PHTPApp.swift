@@ -73,20 +73,25 @@ struct SettingsWindowContent: View {
             // Full-window background layer
             if #available(macOS 26.0, *) {
                 // Liquid Glass for macOS 26+
-                Color.clear
+                Rectangle()
+                    .fill(Color.clear)
                     .glassEffect(.clear)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .ignoresSafeArea()
             } else {
                 // Translucent blur for older macOS
-                VisualEffectBlur(material: .underWindowBackground, blendingMode: .behindWindow)
+                Rectangle()
+                    .fill(Color.clear)
+                    .background(
+                        VisualEffectBlur(material: .underWindowBackground, blendingMode: .behindWindow)
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .ignoresSafeArea()
             }
 
             // Content layer
-            VStack(spacing: 0) {
-                SettingsView()
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            SettingsView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             // Update banner overlay
             VStack {
