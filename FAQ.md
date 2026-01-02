@@ -122,26 +122,50 @@ Hoặc trong Settings → Reset All (nếu có button này).
 
 ---
 
+## GIF & Emoji Picker
+
+### Q22: Làm sao để mở GIF/Emoji picker?
+
+**A:** Nhấn phím tắt `Cmd+E` (mặc định) hoặc click vào menu bar icon → "Emoji & GIF Picker".
+
+### Q23: GIF picker có miễn phí không?
+
+**A:** Có! Hoàn toàn miễn phí nhờ quảng cáo từ Klipy. Không giới hạn số lượng GIF.
+
+### Q24: Tại sao GIF không paste được vào Zalo/Messenger?
+
+**A:** PHTV v1.3.5+ đã hỗ trợ multi-format clipboard. Đảm bảo bạn đang dùng phiên bản mới nhất.
+
+### Q25: Emoji picker có hỗ trợ tìm kiếm không?
+
+**A:** Có! Gõ tên emoji bằng tiếng Anh hoặc tiếng Việt để tìm kiếm nhanh.
+
+### Q26: GIF có hoạt động offline không?
+
+**A:** Không. GIF picker cần Internet để tải GIF từ Klipy API. Emoji picker hoạt động offline.
+
+---
+
 ## Bảo mật & Quyền riêng tư
 
-### Q14: PHTV có gửi dữ liệu lên Internet không?
+### Q27: PHTV có gửi dữ liệu lên Internet không?
 
-**A:** Không! Hoàn toàn offline, không kết nối mạng, không thu thập dữ liệu.
+**A:** PHTV hoàn toàn offline và không thu thập dữ liệu cá nhân. GIF picker cần Internet để tải GIF từ Klipy API.
 
-### Q15: Dữ liệu được lưu ở đâu?
+### Q28: Dữ liệu được lưu ở đâu?
 
 **A:** Chỉ nằm trên máy của bạn:
 
 - Settings: `~/Library/Preferences/com.phtv.app.plist`
 - Macros: `~/Library/Application Support/PHTV/`
 
-### Q16: Tại sao PHTV cần quyền Accessibility?
+### Q29: Tại sao PHTV cần quyền Accessibility?
 
 **A:** Để giám sát phím gõ, chuyển ngôn ngữ, hoạt động trên mọi ứng dụng. Yêu cầu chuẩn của macOS.
 
 ## Khắc phục sự cố
 
-### Q17: PHTV không hoạt động?
+### Q30: PHTV không hoạt động?
 
 **A:**
 
@@ -150,7 +174,7 @@ Hoặc trong Settings → Reset All (nếu có button này).
 3. Restart ứng dụng gặp lỗi
 4. Tạo issue trên GitHub
 
-### Q18: Phím tắt không hoạt động?
+### Q31: Phím tắt không hoạt động?
 
 **A:**
 
@@ -158,17 +182,17 @@ Hoặc trong Settings → Reset All (nếu có button này).
 2. Kiểm tra System Preferences → Keyboard → Shortcuts
 3. Tìm xung đột với ứng dụng khác
 
-### Q19: Tiếng Việt gõ ra sai?
+### Q32: Tiếng Việt gõ ra sai?
 
 **A:** Kiểm tra Input Method (Telex/VNI) và Character Set (Unicode/TCVN3).
 
 ## Phát triển
 
-### Q20: Làm sao để đóng góp?
+### Q33: Làm sao để đóng góp?
 
 **A:** Xem [CONTRIBUTING.md](CONTRIBUTING.md) - Fork, tạo branch, commit, PR.
 
-### Q21: Engine gõ là gì?
+### Q34: Engine gõ là gì?
 
 **A:** Dựa trên [OpenKey](https://github.com/tuyenvm/OpenKey) - dự án mã nguồn mở tiếng Việt.
 

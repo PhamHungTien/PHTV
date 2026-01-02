@@ -40,6 +40,7 @@
 - **Phụ âm đầu/cuối nhanh** - f→ph, j→gi, w→qu (đầu) và g→ng, h→nh, k→ch (cuối)
 - **Tự động viết hoa** - Viết hoa chữ cái đầu câu sau dấu chấm
 - **Tự động khôi phục từ tiếng Anh** - Nhận diện và khôi phục từ tiếng Anh khi gõ nhầm (VD: "tẻminal" → "terminal")
+- **Vietnamese consonant detection** - Logic thông minh phân biệt từ tiếng Việt có dấu và từ tiếng Anh (VD: "đi" vs "did", "fix" vs "fi")
 
 ### Macro & Text Snippets
 - **Gõ tắt thông minh** - Định nghĩa từ viết tắt tùy ý (VD: "btw" → "by the way")
@@ -53,6 +54,15 @@
 - **Thêm từ tiếng Anh** - Cải thiện nhận diện từ tiếng Anh
 - **Thêm từ tiếng Việt** - Thêm từ chuyên ngành, tên riêng
 - **Import/Export** - Nhập xuất từ điển từ file
+
+### GIF & Emoji Picker
+- **Emoji Picker hiện đại** - Chọn emoji nhanh với đầy đủ categories
+- **GIF Picker không giới hạn** - Tích hợp Klipy API với hàng ngàn GIF miễn phí
+- **Tìm kiếm thông minh** - Tìm GIF theo từ khóa tiếng Việt và tiếng Anh
+- **Auto-paste** - Click là gửi ngay, không cần Cmd+V
+- **Multi-format support** - Hoạt động với iMessage, Zalo, Messenger Web và các app khác
+- **Ad-supported** - Miễn phí hoàn toàn nhờ quảng cáo từ Klipy
+- **Hotkey tiện lợi** - Cmd+E (tùy chỉnh được) để mở nhanh
 
 ### Tương thích ứng dụng
 - **Spotlight Fix** - Gõ tiếng Việt trong Spotlight không bị lỗi

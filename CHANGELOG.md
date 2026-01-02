@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.5] - 2026-01-02
+
+### Fixed
+- **Settings window z-order**: Sửa lỗi cửa sổ Settings bị ẩn sau các app khác (Issue #60)
+- **GIF click tracking**: Sửa lỗi click GIF không chính xác so với vị trí chuột
+- **Duplicate GIF paste**: Sửa lỗi paste 2 GIF khi chỉ click 1 lần
+- **Auto English detection**: Sửa lỗi từ tiếng Anh như "fix", "mix", "box" không được restore khi bật auto English
+- **Vietnamese tone mark detection**: Cải thiện logic phát hiện từ tiếng Việt có dấu ("đi", "đo", "đa") để không bị nhầm với tiếng Anh
+
+### Improved
+- **GIF grid layout**: Cải thiện từ 4 cột xuống 3 cột (120px mỗi thumbnail) cho tracking chính xác hơn
+- **Multi-format clipboard**: Hỗ trợ paste GIF vào nhiều app hơn (iMessage, Zalo, Messenger Web)
+
+## [1.3.4] - 2026-01-01
+
+### Added
+- **Modern Emoji Picker**: Emoji picker hiện đại với đầy đủ categories
+- **GIF Picker**: Tích hợp Klipy API - GIF picker miễn phí không giới hạn
+- **Auto-paste GIF**: Click là gửi ngay, không cần Cmd+V
+- **GIF search**: Tìm kiếm GIF theo từ khóa tiếng Việt và tiếng Anh
+- **Klipy monetization**: Tích hợp quảng cáo Klipy để duy trì miễn phí
+
+### Changed
+- **Hotkey**: Thêm Cmd+E để mở Emoji/GIF picker nhanh
+- **Website**: Thêm GitHub Pages tại phamhungtien.github.io/PHTV
+
+### Fixed
+- **EdDSA signing**: Cập nhật EdDSA signing key cho Sparkle updates
+
+## [1.3.3] - 2025-12-30
+
+### Added
+- **GIF API**: Chuyển từ Giphy sang Klipy API cho unlimited free GIF
+- **App-ads.txt**: Thêm app-ads.txt cho ad network verification
+
+### Changed
+- **Performance**: Tối ưu hiệu suất GIF loading
+- **UI**: Cải thiện giao diện GIF picker
+
 ## [1.3.2] - 2024-12-29
 
 ### Added
@@ -218,7 +257,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Macro (gõ tắt)
 - Hoàn toàn offline
 
-[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v1.3.1...HEAD
+[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v1.3.5...HEAD
+[1.3.5]: https://github.com/PhamHungTien/PHTV/compare/v1.3.4...v1.3.5
+[1.3.4]: https://github.com/PhamHungTien/PHTV/compare/v1.3.3...v1.3.4
+[1.3.3]: https://github.com/PhamHungTien/PHTV/compare/v1.3.2...v1.3.3
+[1.3.2]: https://github.com/PhamHungTien/PHTV/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/PhamHungTien/PHTV/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/PhamHungTien/PHTV/compare/v1.2.6...v1.3.0
 [1.2.6]: https://github.com/PhamHungTien/PHTV/compare/v1.2.5...v1.2.6
