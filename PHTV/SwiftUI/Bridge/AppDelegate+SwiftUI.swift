@@ -91,10 +91,13 @@ extension AppDelegate {
         DispatchQueue.main.async {
             // Open settings window and navigate to System tab, then show convert tool
             if let openWindow = NSApp.windows.first(where: { $0.identifier?.rawValue == "settings" }) {
+                // Set window level based on user preference
+                let alwaysOnTop = UserDefaults.standard.bool(forKey: "vSettingsWindowAlwaysOnTop")
+                openWindow.level = alwaysOnTop ? .floating : .normal
                 openWindow.makeKeyAndOrderFront(nil)
             } else {
-                // Post notification to open settings first
-                NotificationCenter.default.post(name: NSNotification.Name("OpenSettings"), object: nil)
+                // Post notification to open settings first (will be handled by SettingsNotificationObserver)
+                NotificationCenter.default.post(name: NSNotification.Name("ShowSettings"), object: nil)
             }
             NSApp.activate(ignoringOtherApps: true)
 

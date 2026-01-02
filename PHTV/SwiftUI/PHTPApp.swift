@@ -76,6 +76,29 @@ struct SettingsWindowContent: View {
             UpdateBannerView()
                 .zIndex(1000)
         }
+        .onAppear {
+            // Update window level based on user preference
+            updateSettingsWindowLevel()
+        }
+        .onChange(of: appState.settingsWindowAlwaysOnTop) { _ in
+            // Update window level when user toggles the setting
+            updateSettingsWindowLevel()
+        }
+    }
+
+    private func updateSettingsWindowLevel() {
+        DispatchQueue.main.async {
+            for window in NSApp.windows {
+                let identifier = window.identifier?.rawValue ?? ""
+                if identifier.hasPrefix("settings") {
+                    // Set window level based on user preference
+                    window.level = appState.settingsWindowAlwaysOnTop ? .floating : .normal
+                    NSLog("[SettingsWindowContent] Set window.level = %@ for window: %@",
+                          appState.settingsWindowAlwaysOnTop ? ".floating" : ".normal", identifier)
+                    break
+                }
+            }
+        }
     }
 }
 
@@ -162,11 +185,12 @@ enum SettingsWindowHelper {
             if identifier.hasPrefix("settings") {
                 NSLog("[SettingsWindowHelper] Found existing settings window: %@", identifier)
 
-                // FIX: Set window level to ensure it appears above other apps
-                window.level = .floating
+                // Set window level based on user preference
+                let alwaysOnTop = UserDefaults.standard.bool(forKey: "vSettingsWindowAlwaysOnTop")
+                window.level = alwaysOnTop ? .floating : .normal
+                NSLog("[SettingsWindowHelper] Set window.level = %@", alwaysOnTop ? ".floating" : ".normal")
 
-                // FIX: Use orderFrontRegardless to force window to front
-                window.orderFrontRegardless()
+                // Bring window to front
                 window.makeKeyAndOrderFront(nil)
 
                 // Ensure window is not minimized
@@ -343,6 +367,7 @@ final class AppState: ObservableObject {
     @Published var fixChromiumBrowser: Bool = false
     @Published var performLayoutCompat: Bool = false
     @Published var showIconOnDock: Bool = false
+    @Published var settingsWindowAlwaysOnTop: Bool = false  // Settings window always appears above other apps
     @Published var safeMode: Bool = false  // Safe mode disables Accessibility API for OCLP Macs
     // Text Replacement Fix is always enabled (no user setting)
     var enableTextReplacementFix: Bool { return true }
@@ -620,6 +645,7 @@ final class AppState: ObservableObject {
         fixChromiumBrowser = defaults.bool(forKey: "vFixChromiumBrowser")
         performLayoutCompat = defaults.bool(forKey: "vPerformLayoutCompat")
         showIconOnDock = defaults.bool(forKey: "vShowIconOnDock")
+        settingsWindowAlwaysOnTop = defaults.bool(forKey: "vSettingsWindowAlwaysOnTop")
         safeMode = defaults.bool(forKey: "SafeMode")
         // Text Replacement Fix is always enabled - no need to load from defaults
 
@@ -790,6 +816,7 @@ final class AppState: ObservableObject {
         defaults.set(fixChromiumBrowser, forKey: "vFixChromiumBrowser")
         defaults.set(performLayoutCompat, forKey: "vPerformLayoutCompat")
         defaults.set(showIconOnDock, forKey: "vShowIconOnDock")
+        defaults.set(settingsWindowAlwaysOnTop, forKey: "vSettingsWindowAlwaysOnTop")
 
         // Save safe mode and sync with backend
         defaults.set(safeMode, forKey: "SafeMode")

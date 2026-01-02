@@ -38,6 +38,19 @@ struct SystemSettingsView: View {
                     }
                 }
 
+                // Interface Settings
+                SettingsCard(title: "Giao diện", icon: "rectangle.on.rectangle") {
+                    VStack(spacing: 0) {
+                        SettingsToggleRow(
+                            icon: "pin.fill",
+                            iconColor: .accentColor,
+                            title: "Cửa sổ Cài đặt luôn ở trên",
+                            subtitle: "Giữ cửa sổ Cài đặt hiển thị phía trên các ứng dụng khác",
+                            isOn: $appState.settingsWindowAlwaysOnTop
+                        )
+                    }
+                }
+
                 // Update Settings
                 SettingsCard(title: "Cập nhật", icon: "arrow.down.circle.fill") {
                     VStack(spacing: 0) {
