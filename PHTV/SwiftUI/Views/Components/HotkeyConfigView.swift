@@ -786,7 +786,7 @@ struct EmojiHotkeyConfigView: View {
                 icon: "smiley.fill",
                 iconColor: themeManager.themeColor,
                 title: "Bật phím tắt Emoji Picker",
-                subtitle: "Mở bảng chọn emoji của hệ thống",
+                subtitle: "Mở bảng tùy chọn Emoji, GIF của PHTV",
                 isOn: $appState.enableEmojiHotkey
             )
 

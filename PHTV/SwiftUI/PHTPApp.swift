@@ -1738,14 +1738,24 @@ class KlipyAPIClient: ObservableObject {
 
     @Published var trendingGIFs: [KlipyGIF] = []
     @Published var searchResults: [KlipyGIF] = []
+    @Published var trendingStickers: [KlipyGIF] = []
+    @Published var stickerSearchResults: [KlipyGIF] = []
     @Published var isLoading = false
     @Published var needsAPIKey: Bool = false
+
+    // Recent items tracking
+    private let maxRecentItems = 20
+    private let recentGIFsKey = "RecentGIFs"
+    private let recentStickersKey = "RecentStickers"
 
     // Callback to close picker window
     var onCloseCallback: (() -> Void)?
 
     private init() {
         needsAPIKey = appKey == "YOUR_KLIPY_APP_KEY_HERE"
+
+        // Clean old cache on init
+        cleanOldCache()
     }
 
     func saveAPIKey(_ key: String) {
@@ -1856,6 +1866,244 @@ class KlipyAPIClient: ObservableObject {
                 }
             }
         }.resume()
+    }
+
+    // MARK: - Stickers API
+
+    /// Fetch trending Stickers
+    func fetchTrendingStickers(limit: Int = 24) {
+        guard appKey != "YOUR_KLIPY_APP_KEY_HERE" else {
+            print("[Klipy] Please set your app key")
+            needsAPIKey = true
+            return
+        }
+
+        isLoading = true
+
+        // Klipy API: GET /api/v1/{app_key}/stickers/trending
+        let urlString = "\(baseURL)/\(appKey)/stickers/trending?customer_id=\(customerId)&per_page=\(limit)&domain=\(domain)"
+        print("[Klipy Stickers] Fetching trending from: \(urlString)")
+        guard let url = URL(string: urlString) else {
+            print("[Klipy Stickers] Invalid URL")
+            DispatchQueue.main.async {
+                self.isLoading = false
+            }
+            return
+        }
+
+        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+            guard let self = self else { return }
+
+            if let httpResponse = response as? HTTPURLResponse {
+                print("[Klipy Stickers] Response status: \(httpResponse.statusCode)")
+            }
+
+            guard let data = data, error == nil else {
+                print("[Klipy Stickers] Error fetching trending: \(error?.localizedDescription ?? "unknown")")
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                }
+                return
+            }
+
+            do {
+                let result = try JSONDecoder().decode(KlipyResponse.self, from: data)
+                print("[Klipy Stickers] Successfully decoded \(result.data.data.count) Stickers")
+                DispatchQueue.main.async {
+                    self.trendingStickers = result.data.data
+                    self.isLoading = false
+                }
+            } catch {
+                print("[Klipy Stickers] Decode error: \(error)")
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                }
+            }
+        }.resume()
+    }
+
+    /// Search Stickers
+    func searchStickers(query: String, limit: Int = 24) {
+        guard !query.isEmpty else {
+            stickerSearchResults = []
+            return
+        }
+
+        guard appKey != "YOUR_KLIPY_APP_KEY_HERE" else {
+            print("[Klipy Stickers] Please set your app key for search")
+            needsAPIKey = true
+            return
+        }
+
+        isLoading = true
+
+        let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
+        // Klipy API: GET /api/v1/{app_key}/stickers/search
+        let urlString = "\(baseURL)/\(appKey)/stickers/search?q=\(encodedQuery)&customer_id=\(customerId)&per_page=\(limit)&domain=\(domain)"
+        print("[Klipy Stickers] Searching for: \(query)")
+        guard let url = URL(string: urlString) else {
+            print("[Klipy Stickers] Invalid search URL")
+            DispatchQueue.main.async {
+                self.isLoading = false
+            }
+            return
+        }
+
+        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+            guard let self = self else { return }
+
+            guard let data = data, error == nil else {
+                print("[Klipy Stickers] Error searching: \(error?.localizedDescription ?? "unknown")")
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                }
+                return
+            }
+
+            do {
+                let result = try JSONDecoder().decode(KlipyResponse.self, from: data)
+                print("[Klipy Stickers] Search found \(result.data.data.count) Stickers")
+                DispatchQueue.main.async {
+                    self.stickerSearchResults = result.data.data
+                    self.isLoading = false
+                }
+            } catch {
+                print("[Klipy Stickers] Decode error: \(error)")
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                }
+            }
+        }.resume()
+    }
+
+    // MARK: - Recent Items Tracking
+
+    /// Record GIF usage
+    func recordGIFUsage(_ gif: KlipyGIF) {
+        var recent = getRecentGIFIDs()
+        recent.removeAll { $0 == gif.id }
+        recent.insert(gif.id, at: 0)
+        if recent.count > maxRecentItems {
+            recent = Array(recent.prefix(maxRecentItems))
+        }
+        UserDefaults.standard.set(Array(recent), forKey: recentGIFsKey)
+    }
+
+    /// Record Sticker usage
+    func recordStickerUsage(_ sticker: KlipyGIF) {
+        var recent = getRecentStickerIDs()
+        recent.removeAll { $0 == sticker.id }
+        recent.insert(sticker.id, at: 0)
+        if recent.count > maxRecentItems {
+            recent = Array(recent.prefix(maxRecentItems))
+        }
+        UserDefaults.standard.set(Array(recent), forKey: recentStickersKey)
+    }
+
+    /// Get recent GIF IDs
+    func getRecentGIFIDs() -> [Int64] {
+        return (UserDefaults.standard.array(forKey: recentGIFsKey) as? [Int64]) ?? []
+    }
+
+    /// Get recent Sticker IDs
+    func getRecentStickerIDs() -> [Int64] {
+        return (UserDefaults.standard.array(forKey: recentStickersKey) as? [Int64]) ?? []
+    }
+
+    /// Get recent GIFs (from all sources)
+    func getRecentGIFs() -> [KlipyGIF] {
+        let ids = getRecentGIFIDs()
+        let allGIFs = trendingGIFs + searchResults
+        return ids.compactMap { id in allGIFs.first { $0.id == id } }
+    }
+
+    /// Get recent Stickers (from all sources)
+    func getRecentStickers() -> [KlipyGIF] {
+        let ids = getRecentStickerIDs()
+        let allStickers = trendingStickers + stickerSearchResults
+        return ids.compactMap { id in allStickers.first { $0.id == id } }
+    }
+
+    // MARK: - Cache Management
+
+    /// Clean old cached GIFs/Stickers (older than 7 days or if cache exceeds 100MB)
+    func cleanOldCache() {
+        DispatchQueue.global(qos: .background).async {
+            let fileManager = FileManager.default
+            let tempDir = fileManager.temporaryDirectory
+            let sevenDaysAgo = Date().addingTimeInterval(-7 * 24 * 60 * 60)
+
+            guard let files = try? fileManager.contentsOfDirectory(
+                at: tempDir,
+                includingPropertiesForKeys: [.creationDateKey, .fileSizeKey],
+                options: .skipsHiddenFiles
+            ) else {
+                return
+            }
+
+            var totalSize: Int64 = 0
+            var oldFiles: [URL] = []
+
+            // Collect old files and calculate total size
+            for fileURL in files {
+                // Only process GIF and PNG files (our cached media)
+                let ext = fileURL.pathExtension.lowercased()
+                guard ext == "gif" || ext == "png" else { continue }
+
+                if let attributes = try? fileManager.attributesOfItem(atPath: fileURL.path),
+                   let creationDate = attributes[.creationDate] as? Date,
+                   let fileSize = attributes[.size] as? Int64 {
+
+                    totalSize += fileSize
+
+                    // Mark files older than 7 days for deletion
+                    if creationDate < sevenDaysAgo {
+                        oldFiles.append(fileURL)
+                    }
+                }
+            }
+
+            // Delete old files
+            for fileURL in oldFiles {
+                try? fileManager.removeItem(at: fileURL)
+            }
+
+            // If total cache size > 100MB, delete oldest files until under 50MB
+            let maxCacheSize: Int64 = 100 * 1024 * 1024 // 100MB
+            let targetCacheSize: Int64 = 50 * 1024 * 1024 // 50MB
+
+            if totalSize > maxCacheSize {
+                // Sort files by creation date (oldest first)
+                let sortedFiles = files
+                    .filter { url in
+                        let ext = url.pathExtension.lowercased()
+                        return ext == "gif" || ext == "png"
+                    }
+                    .compactMap { url -> (URL, Date)? in
+                        guard let attributes = try? fileManager.attributesOfItem(atPath: url.path),
+                              let creationDate = attributes[.creationDate] as? Date else {
+                            return nil
+                        }
+                        return (url, creationDate)
+                    }
+                    .sorted { $0.1 < $1.1 }
+
+                var currentSize = totalSize
+                for (fileURL, _) in sortedFiles {
+                    if currentSize <= targetCacheSize {
+                        break
+                    }
+
+                    if let attributes = try? fileManager.attributesOfItem(atPath: fileURL.path),
+                       let fileSize = attributes[.size] as? Int64 {
+                        try? fileManager.removeItem(at: fileURL)
+                        currentSize -= fileSize
+                    }
+                }
+
+                print("[Klipy Cache] Cleaned cache from \(totalSize / 1024 / 1024)MB to \(currentSize / 1024 / 1024)MB")
+            }
+        }
     }
 
     // MARK: - Ad Tracking
@@ -1974,25 +2222,89 @@ struct KlipyMedia: Codable {
     let size: Int?
 }
 
-// MARK: - GIF Tab View
+// MARK: - Emoji Categories View
 
-struct GIFTabView: View {
+struct EmojiCategoriesView: View {
+    var onEmojiSelected: (String) -> Void
+
+    private let database = EmojiDatabase.shared
+    @State private var selectedSubCategory = 0
+    @Namespace private var subCategoryNamespace
+
+    private let iconColumns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 7)
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Sub-category tabs
+            ScrollView(.horizontal, showsIndicators: true) {
+                HStack(spacing: 8) {
+                    ForEach(0..<database.categories.count, id: \.self) { index in
+                        Button(action: {
+                            withAnimation {
+                                selectedSubCategory = index
+                            }
+                        }) {
+                            HStack(spacing: 6) {
+                                Text(database.categories[index].icon)
+                                    .font(.system(size: 16))
+                                Text(database.categories[index].name)
+                                    .font(.system(size: 11, weight: selectedSubCategory == index ? .semibold : .regular))
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(
+                                selectedSubCategory == index ?
+                                    Color.accentColor.opacity(0.15) : Color.clear
+                            )
+                            .cornerRadius(6)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+            }
+
+            Divider()
+
+            // Emoji grid for selected category
+            ScrollView {
+                LazyVGrid(columns: iconColumns, spacing: 12) {
+                    ForEach(database.categories[selectedSubCategory].emojis, id: \.id) { emojiItem in
+                        Button(action: {
+                            onEmojiSelected(emojiItem.emoji)
+                        }) {
+                            Text(emojiItem.emoji)
+                                .font(.system(size: 30))
+                        }
+                        .buttonStyle(.plain)
+                        .frame(height: 40)
+                    }
+                }
+                .padding(16)
+            }
+        }
+    }
+}
+
+// MARK: - GIF Only View
+
+struct GIFOnlyView: View {
     var onClose: (() -> Void)?
 
     @StateObject private var klipyClient = KlipyAPIClient.shared
     @State private var searchText = ""
-    @State private var copiedGIF: String?
+    @FocusState private var isSearchFocused: Bool
 
     private let columns = [
-        GridItem(.fixed(120), spacing: 16),
-        GridItem(.fixed(120), spacing: 16),
-        GridItem(.fixed(120), spacing: 16)
+        GridItem(.fixed(80), spacing: 12),
+        GridItem(.fixed(80), spacing: 12),
+        GridItem(.fixed(80), spacing: 12),
+        GridItem(.fixed(80), spacing: 12)
     ]
 
     var displayedGIFs: [KlipyGIF] {
-        let gifs = searchText.isEmpty ? klipyClient.trendingGIFs : klipyClient.searchResults
-        // Filter out GIFs without valid URLs to prevent crashes
-        return gifs.filter { $0.hasValidURL }
+        searchText.isEmpty ? klipyClient.trendingGIFs : klipyClient.searchResults
     }
 
     var body: some View {
@@ -2000,15 +2312,16 @@ struct GIFTabView: View {
             // Search bar
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
-                    .foregroundColor(.secondary)
-
-                TextField("Search Klipy", text: $searchText)
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary.opacity(0.7))
+                TextField("Tìm GIFs...", text: $searchText)
                     .textFieldStyle(.plain)
+                    .font(.system(size: 13))
+                    .focused($isSearchFocused)
                     .onChange(of: searchText) { newValue in
                         if newValue.isEmpty {
                             klipyClient.searchResults = []
                         } else {
-                            // Debounce search
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                                 if searchText == newValue {
                                     klipyClient.search(query: newValue)
@@ -2016,30 +2329,37 @@ struct GIFTabView: View {
                             }
                         }
                     }
-
                 if !searchText.isEmpty {
-                    Button(action: { searchText = "" }) {
+                    Button(action: {
+                        searchText = ""
+                        isSearchFocused = true
+                    }) {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.secondary)
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary.opacity(0.7))
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(12)
-            .background(Color.secondary.opacity(0.1))
-            .cornerRadius(8)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color(NSColor.controlBackgroundColor).opacity(0.5))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .strokeBorder(Color.accentColor.opacity(isSearchFocused ? 0.3 : 0), lineWidth: 1.5)
+                    )
+            )
             .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
 
             Divider()
 
-            // GIF Grid or API Key Setup
+            // GIF Grid
             ScrollView {
-                if klipyClient.needsAPIKey {
-                    // API Key setup view
-                    APIKeySetupView(klipyClient: klipyClient)
-                        .padding(16)
-                } else if klipyClient.isLoading {
+                if klipyClient.isLoading {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .padding(40)
@@ -2048,127 +2368,557 @@ struct GIFTabView: View {
                         Image(systemName: searchText.isEmpty ? "photo.on.rectangle.angled" : "magnifyingglass")
                             .font(.system(size: 48))
                             .foregroundColor(.secondary.opacity(0.5))
-
-                        Text(searchText.isEmpty ? "Đang tải GIF trending..." : "Không tìm thấy GIF")
+                        Text(searchText.isEmpty ? "Đang tải GIFs..." : "Không tìm thấy GIF")
                             .font(.headline)
                             .foregroundColor(.secondary)
-
-                        if !searchText.isEmpty {
-                            Text("Thử tìm kiếm với từ khóa khác")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
                     }
                     .frame(maxWidth: .infinity)
                     .padding(40)
                 } else {
-                    LazyVGrid(columns: columns, spacing: 16) {
+                    LazyVGrid(columns: columns, spacing: 12) {
                         ForEach(displayedGIFs) { gif in
                             GIFThumbnailView(gif: gif) {
-                                copyGIFURL(gif)
+                                copyGIF(gif)
                             }
+                            .frame(width: 80, height: 80)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
                     }
-                    .padding(20)
+                    .padding(16)
                 }
             }
         }
         .onAppear {
-            // Set close callback
-            klipyClient.onCloseCallback = onClose
-
-            // Fetch trending GIFs if empty
+            isSearchFocused = true
             if klipyClient.trendingGIFs.isEmpty {
                 klipyClient.fetchTrending()
             }
         }
-        .overlay(
-            Group {
-                if copiedGIF != nil {
-                    VStack {
-                        Spacer()
-                        HStack {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundColor(.green)
-                            Text("Đã copy GIF!")
-                                .font(.caption)
-                        }
-                        .padding(8)
-                        .background(Color.primary.colorInvert().opacity(0.9))
-                        .cornerRadius(8)
-                        .shadow(radius: 4)
-                        .padding(.bottom, 50)
-                    }
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-            }
-        )
     }
 
-    private func copyGIFURL(_ gif: KlipyGIF) {
-        // Handle ads differently - track click and open target URL
-        if gif.isAd {
-            klipyClient.trackClick(for: gif)
-            klipyClient.openAdTarget(for: gif)
-            return
-        }
-
-        // Download and copy GIF data to clipboard
+    private func copyGIF(_ gif: KlipyGIF) {
+        klipyClient.recordGIFUsage(gif)
         guard let url = URL(string: gif.fullURL) else { return }
 
-        // Show loading feedback
-        withAnimation {
-            copiedGIF = String(gif.id)
-        }
-
-        URLSession.shared.dataTask(with: url) { data, response, error in
+        URLSession.shared.dataTask(with: url) { data, _, _ in
             DispatchQueue.main.async {
                 if let data = data {
-                    // Save to temp file first (required for web apps)
-                    guard let tempURL = self.saveTempGIF(data: data, filename: gif.slug) else {
-                        print("[Klipy] Failed to save temp GIF")
-                        return
-                    }
+                    let tempDir = FileManager.default.temporaryDirectory
+                    let gifURL = tempDir.appendingPathComponent("\(gif.slug).gif")
+                    try? data.write(to: gifURL)
 
-                    // Copy GIF to clipboard with multiple formats for maximum compatibility
                     let pasteboard = NSPasteboard.general
                     pasteboard.clearContents()
+                    pasteboard.writeObjects([gifURL as NSPasteboardWriting])
+                    _ = pasteboard.setData(data, forType: .fileURL)
+                    onClose?()
 
-                    // STRATEGY: Use file URL + raw GIF data for compatibility
-                    // - Native apps (iMessage): use raw GIF data
-                    // - Web apps (Zalo, Messenger): use file URL
-                    // - Desktop apps: use file URL
+                    let source = CGEventSource(stateID: .hidSystemState)
+                    let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true)
+                    keyDown?.flags = .maskCommand
+                    let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false)
+                    keyUp?.flags = .maskCommand
+                    keyDown?.post(tap: .cghidEventTap)
+                    keyUp?.post(tap: .cghidEventTap)
+                }
+            }
+        }.resume()
+    }
+}
 
-                    // 1. File URL (primary method for web apps and desktop apps)
-                    pasteboard.writeObjects([tempURL as NSURL])
+// MARK: - Sticker Only View
 
-                    // 2. Raw GIF data (for native apps like iMessage)
-                    pasteboard.setData(data, forType: NSPasteboard.PasteboardType("com.compuserve.gif"))
+struct StickerOnlyView: View {
+    var onClose: (() -> Void)?
 
-                    print("[Klipy] Đã copy GIF với nhiều formats: \(gif.title) (\(data.count) bytes)")
-                    print("[Klipy] Temp file: \(tempURL.path)")
+    @StateObject private var klipyClient = KlipyAPIClient.shared
+    @State private var searchText = ""
+    @FocusState private var isSearchFocused: Bool
 
-                    // Auto-paste: Close picker and simulate Cmd+V
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        // Close the picker window first
-                        if let onClose = self.klipyClient.onCloseCallback {
-                            onClose()
-                        }
+    private let columns = [
+        GridItem(.fixed(80), spacing: 12),
+        GridItem(.fixed(80), spacing: 12),
+        GridItem(.fixed(80), spacing: 12),
+        GridItem(.fixed(80), spacing: 12)
+    ]
 
-                        // Simulate Cmd+V to paste
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                            self.simulatePaste()
+    var displayedStickers: [KlipyGIF] {
+        searchText.isEmpty ? klipyClient.trendingStickers : klipyClient.stickerSearchResults
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Search bar
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary.opacity(0.7))
+                TextField("Tìm Stickers...", text: $searchText)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 13))
+                    .focused($isSearchFocused)
+                    .onChange(of: searchText) { newValue in
+                        if newValue.isEmpty {
+                            klipyClient.stickerSearchResults = []
+                        } else {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                if searchText == newValue {
+                                    klipyClient.searchStickers(query: newValue)
+                                }
+                            }
                         }
                     }
+                if !searchText.isEmpty {
+                    Button(action: {
+                        searchText = ""
+                        isSearchFocused = true
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary.opacity(0.7))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color(NSColor.controlBackgroundColor).opacity(0.5))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .strokeBorder(Color.accentColor.opacity(isSearchFocused ? 0.3 : 0), lineWidth: 1.5)
+                    )
+            )
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+
+            Divider()
+
+            // Sticker Grid
+            ScrollView {
+                if klipyClient.isLoading {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(40)
+                } else if displayedStickers.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: searchText.isEmpty ? "sparkle" : "magnifyingglass")
+                            .font(.system(size: 48))
+                            .foregroundColor(.secondary.opacity(0.5))
+                        Text(searchText.isEmpty ? "Đang tải Stickers..." : "Không tìm thấy Sticker")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(40)
                 } else {
-                    print("[Klipy] Lỗi download: \(error?.localizedDescription ?? "unknown")")
+                    LazyVGrid(columns: columns, spacing: 12) {
+                        ForEach(displayedStickers) { sticker in
+                            GIFThumbnailView(gif: sticker, onTap: {
+                                copySticker(sticker)
+                            }, contentType: "Sticker")
+                            .frame(width: 80, height: 80)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                    }
+                    .padding(16)
+                }
+            }
+        }
+        .onAppear {
+            isSearchFocused = true
+            if klipyClient.trendingStickers.isEmpty {
+                klipyClient.fetchTrendingStickers()
+            }
+        }
+    }
+
+    private func copySticker(_ sticker: KlipyGIF) {
+        klipyClient.recordStickerUsage(sticker)
+        guard let url = URL(string: sticker.fullURL) else { return }
+
+        URLSession.shared.dataTask(with: url) { data, _, _ in
+            DispatchQueue.main.async {
+                if let data = data {
+                    let tempDir = FileManager.default.temporaryDirectory
+                    let stickerURL = tempDir.appendingPathComponent("\(sticker.slug).png")
+                    try? data.write(to: stickerURL)
+
+                    let pasteboard = NSPasteboard.general
+                    pasteboard.clearContents()
+                    pasteboard.writeObjects([stickerURL as NSPasteboardWriting])
+                    onClose?()
+
+                    let source = CGEventSource(stateID: .hidSystemState)
+                    let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true)
+                    keyDown?.flags = .maskCommand
+                    let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false)
+                    keyUp?.flags = .maskCommand
+                    keyDown?.post(tap: .cghidEventTap)
+                    keyUp?.post(tap: .cghidEventTap)
+                }
+            }
+        }.resume()
+    }
+}
+
+// MARK: - Unified Content View
+
+struct UnifiedContentView: View {
+    var onEmojiSelected: (String) -> Void
+    var onClose: (() -> Void)?
+
+    @StateObject private var klipyClient = KlipyAPIClient.shared
+    private let database = EmojiDatabase.shared
+
+    @State private var searchText = ""
+    @FocusState private var isSearchFocused: Bool
+
+    private let iconColumns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 7)
+    private let mediaColumns = [
+        GridItem(.fixed(70), spacing: 12),
+        GridItem(.fixed(70), spacing: 12),
+        GridItem(.fixed(70), spacing: 12),
+        GridItem(.fixed(70), spacing: 12)
+    ]
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Search bar
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary.opacity(0.7))
+                TextField("Tìm icons, GIFs, stickers...", text: $searchText)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 13))
+                    .focused($isSearchFocused)
+                    .onChange(of: searchText) { newValue in
+                        if !newValue.isEmpty {
+                            // Debounce search
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                if searchText == newValue {
+                                    performSearch(query: newValue)
+                                }
+                            }
+                        }
+                    }
+                if !searchText.isEmpty {
+                    Button(action: {
+                        searchText = ""
+                        isSearchFocused = true
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 13))
+                            .foregroundColor(.secondary.opacity(0.7))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color(NSColor.controlBackgroundColor).opacity(0.5))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .strokeBorder(Color.accentColor.opacity(isSearchFocused ? 0.3 : 0), lineWidth: 1.5)
+                    )
+            )
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+            .animation(.easeInOut(duration: 0.2), value: isSearchFocused)
+
+            Divider()
+
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                // Emojis Section
+                if !searchText.isEmpty {
+                    // Search results for emojis
+                    let emojiResults = database.search(searchText)
+                    if !emojiResults.isEmpty {
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                Image(systemName: "face.smiling")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.secondary)
+                                Text("Emojis")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(.secondary)
+                                    .textCase(.uppercase)
+                            }
+                            .padding(.horizontal, 4)
+
+                            LazyVGrid(columns: iconColumns, spacing: 12) {
+                                ForEach(emojiResults.prefix(14), id: \.id) { emojiItem in
+                                    Button(action: {
+                                        onEmojiSelected(emojiItem.emoji)
+                                    }) {
+                                        Text(emojiItem.emoji)
+                                            .font(.system(size: 30))
+                                    }
+                                    .buttonStyle(.plain)
+                                    .frame(height: 40)
+                                }
+                            }
+                        }
+                        .padding(12)
+                        .background(Color(NSColor.controlBackgroundColor).opacity(0.3))
+                        .cornerRadius(10)
+                    }
+                } else if !database.getFrequentlyUsedEmojis(limit: 14).isEmpty {
+                    // Recent emojis
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Image(systemName: "face.smiling")
+                                .font(.system(size: 12))
+                                .foregroundColor(.secondary)
+                            Text("Emojis")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(.secondary)
+                                .textCase(.uppercase)
+                        }
+                        .padding(.horizontal, 4)
+
+                        LazyVGrid(columns: iconColumns, spacing: 12) {
+                            ForEach(database.getFrequentlyUsedEmojis(limit: 14), id: \.self) { emoji in
+                                if let emojiItem = database.getEmojiItem(for: emoji) {
+                                    Button(action: {
+                                        onEmojiSelected(emojiItem.emoji)
+                                    }) {
+                                        Text(emojiItem.emoji)
+                                            .font(.system(size: 30))
+                                    }
+                                    .buttonStyle(.plain)
+                                    .frame(height: 40)
+                                }
+                            }
+                        }
+                    }
+                    .padding(12)
+                    .background(Color(NSColor.controlBackgroundColor).opacity(0.3))
+                    .cornerRadius(10)
                 }
 
-                // Hide feedback after 1.5s
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                    withAnimation {
-                        copiedGIF = nil
+                // GIFs Section
+                if !searchText.isEmpty {
+                    // Search results for GIFs
+                    if !klipyClient.searchResults.isEmpty {
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                Image(systemName: "photo.on.rectangle.angled")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.secondary)
+                                Text("GIFs")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(.secondary)
+                                    .textCase(.uppercase)
+                            }
+                            .padding(.horizontal, 4)
+
+                            LazyVGrid(columns: mediaColumns, spacing: 12) {
+                                ForEach(klipyClient.searchResults.prefix(8), id: \.id) { gif in
+                                    GIFThumbnailView(gif: gif) {
+                                        copyGIFURL(gif)
+                                    }
+                                    .frame(width: 70, height: 70)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                }
+                            }
+                        }
+                        .padding(12)
+                        .background(Color(NSColor.controlBackgroundColor).opacity(0.3))
+                        .cornerRadius(10)
                     }
+                } else if !klipyClient.getRecentGIFIDs().isEmpty {
+                    // Recent GIFs
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Image(systemName: "photo.on.rectangle.angled")
+                                .font(.system(size: 12))
+                                .foregroundColor(.secondary)
+                            Text("GIFs")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(.secondary)
+                                .textCase(.uppercase)
+                        }
+                        .padding(.horizontal, 4)
+
+                        LazyVGrid(columns: mediaColumns, spacing: 12) {
+                            ForEach(klipyClient.getRecentGIFs().prefix(8), id: \.id) { gif in
+                                GIFThumbnailView(gif: gif) {
+                                    copyGIFURL(gif)
+                                }
+                                .frame(width: 70, height: 70)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                            }
+                        }
+                    }
+                    .padding(12)
+                    .background(Color(NSColor.controlBackgroundColor).opacity(0.3))
+                    .cornerRadius(10)
+                }
+
+                // Stickers Section
+                if !searchText.isEmpty {
+                    // Search results for Stickers
+                    if !klipyClient.stickerSearchResults.isEmpty {
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                Image(systemName: "sparkle")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.secondary)
+                                Text("Stickers")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(.secondary)
+                                    .textCase(.uppercase)
+                            }
+                            .padding(.horizontal, 4)
+
+                            LazyVGrid(columns: mediaColumns, spacing: 12) {
+                                ForEach(klipyClient.stickerSearchResults.prefix(8), id: \.id) { sticker in
+                                    GIFThumbnailView(gif: sticker, onTap: {
+                                        copyStickerURL(sticker)
+                                    }, contentType: "Sticker")
+                                    .frame(width: 70, height: 70)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                }
+                            }
+                        }
+                        .padding(12)
+                        .background(Color(NSColor.controlBackgroundColor).opacity(0.3))
+                        .cornerRadius(10)
+                    }
+                } else if !klipyClient.getRecentStickerIDs().isEmpty {
+                    // Recent Stickers
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Image(systemName: "sparkle")
+                                .font(.system(size: 12))
+                                .foregroundColor(.secondary)
+                            Text("Stickers")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(.secondary)
+                                .textCase(.uppercase)
+                        }
+                        .padding(.horizontal, 4)
+
+                        LazyVGrid(columns: mediaColumns, spacing: 12) {
+                            ForEach(klipyClient.getRecentStickers().prefix(8), id: \.id) { sticker in
+                                GIFThumbnailView(gif: sticker, onTap: {
+                                    copyStickerURL(sticker)
+                                }, contentType: "Sticker")
+                                .frame(width: 70, height: 70)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                            }
+                        }
+                    }
+                    .padding(12)
+                    .background(Color(NSColor.controlBackgroundColor).opacity(0.3))
+                    .cornerRadius(10)
+                }
+
+                // Empty state
+                if !searchText.isEmpty {
+                    // Search empty state
+                    let hasAnyResults = !database.search(searchText).isEmpty ||
+                                       !klipyClient.searchResults.isEmpty ||
+                                       !klipyClient.stickerSearchResults.isEmpty
+                    if !hasAnyResults {
+                        VStack(spacing: 12) {
+                            Image(systemName: "magnifyingglass")
+                                .font(.system(size: 56))
+                                .foregroundColor(.secondary.opacity(0.5))
+                            Text("Không tìm thấy kết quả")
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundColor(.secondary)
+                            Text("Thử tìm kiếm với từ khóa khác")
+                                .font(.system(size: 12))
+                                .foregroundColor(.secondary.opacity(0.7))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 60)
+                    }
+                } else if database.getFrequentlyUsedEmojis(limit: 1).isEmpty &&
+                   klipyClient.getRecentGIFIDs().isEmpty &&
+                   klipyClient.getRecentStickerIDs().isEmpty {
+                    // Recent items empty state
+                    VStack(spacing: 12) {
+                        Image(systemName: "flame")
+                            .font(.system(size: 56))
+                            .foregroundColor(.secondary.opacity(0.5))
+                        Text("Chưa có nội dung thường dùng")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(.secondary)
+                        Text("Emojis, GIFs và Stickers\nbạn dùng nhiều nhất sẽ hiển thị ở đây")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary.opacity(0.7))
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 60)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+        }
+        }
+        .onAppear {
+            isSearchFocused = true
+            // Fetch content if empty
+            if klipyClient.trendingGIFs.isEmpty {
+                klipyClient.fetchTrending()
+            }
+            if klipyClient.trendingStickers.isEmpty {
+                klipyClient.fetchTrendingStickers()
+            }
+        }
+    }
+
+    // Perform search across all content types
+    private func performSearch(query: String) {
+        // Search GIFs
+        klipyClient.search(query: query)
+        // Search Stickers
+        klipyClient.searchStickers(query: query)
+        // Emoji search is done via database.search() in the view
+    }
+
+    // Helper functions to copy media
+    private func copyGIFURL(_ gif: KlipyGIF) {
+        klipyClient.recordGIFUsage(gif)
+        guard let url = URL(string: gif.fullURL) else { return }
+
+        URLSession.shared.dataTask(with: url) { data, _, _ in
+            DispatchQueue.main.async {
+                if let data = data, let tempURL = saveTempGIF(data: data, filename: gif.slug) {
+                    let pasteboard = NSPasteboard.general
+                    pasteboard.clearContents()
+                    pasteboard.writeObjects([tempURL as NSPasteboardWriting])
+                    _ = pasteboard.setData(data, forType: .fileURL)
+                    onClose?()
+                    simulatePaste()
+                }
+            }
+        }.resume()
+    }
+
+    private func copyStickerURL(_ sticker: KlipyGIF) {
+        klipyClient.recordStickerUsage(sticker)
+        guard let url = URL(string: sticker.fullURL) else { return }
+
+        URLSession.shared.dataTask(with: url) { data, _, _ in
+            DispatchQueue.main.async {
+                if let data = data, let tempURL = saveTempSticker(data: data, filename: sticker.slug) {
+                    let pasteboard = NSPasteboard.general
+                    pasteboard.clearContents()
+                    pasteboard.writeObjects([tempURL as NSPasteboardWriting])
+                    onClose?()
+                    simulatePaste()
                 }
             }
         }.resume()
@@ -2177,39 +2927,40 @@ struct GIFTabView: View {
     private func saveTempGIF(data: Data, filename: String) -> URL? {
         let tempDir = FileManager.default.temporaryDirectory
         let gifURL = tempDir.appendingPathComponent("\(filename).gif")
-
         do {
             try data.write(to: gifURL)
             return gifURL
         } catch {
-            print("[Klipy] Failed to save temp GIF: \(error)")
+            return nil
+        }
+    }
+
+    private func saveTempSticker(data: Data, filename: String) -> URL? {
+        let tempDir = FileManager.default.temporaryDirectory
+        let stickerURL = tempDir.appendingPathComponent("\(filename).png")
+        do {
+            try data.write(to: stickerURL)
+            return stickerURL
+        } catch {
             return nil
         }
     }
 
     private func simulatePaste() {
-        // Create Cmd+V key event
         let source = CGEventSource(stateID: .hidSystemState)
-
-        // Key down for 'V' with Command modifier
         let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true)
         keyDown?.flags = .maskCommand
-
-        // Key up for 'V'
         let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false)
         keyUp?.flags = .maskCommand
-
-        // Post events
         keyDown?.post(tap: .cghidEventTap)
         keyUp?.post(tap: .cghidEventTap)
-
-        print("[Klipy] Auto-pasted GIF with Cmd+V")
     }
 }
 
 struct GIFThumbnailView: View {
     let gif: KlipyGIF
     let onTap: () -> Void
+    var contentType: String = "GIF"  // "GIF" or "Sticker"
 
     @State private var isHovered = false
     @State private var hasTrackedImpression = false
@@ -2256,7 +3007,7 @@ struct GIFThumbnailView: View {
         .onTapGesture {
             onTap()
         }
-        .help(gif.isAd ? "Quảng cáo - Click để xem" : "Click để tải và gửi GIF")
+        .help(gif.isAd ? "Quảng cáo - Click để xem" : "Click để tải và gửi \(contentType)")
         .onAppear {
             if gif.isAd && !hasTrackedImpression {
                 KlipyAPIClient.shared.trackImpression(for: gif)
@@ -3371,7 +4122,7 @@ class FloatingPanel<Content: View>: NSPanel, NSWindowDelegate {
     init(view: Content, contentRect: NSRect) {
         super.init(
             contentRect: contentRect,
-            styleMask: [.nonactivatingPanel, .titled, .closable, .utilityWindow],
+            styleMask: [.nonactivatingPanel, .closable, .borderless],
             backing: .buffered,
             defer: false
         )
@@ -3382,8 +4133,6 @@ class FloatingPanel<Content: View>: NSPanel, NSWindowDelegate {
         self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
 
         // Visual styling
-        self.titleVisibility = .hidden
-        self.titlebarAppearsTransparent = true
         self.isMovableByWindowBackground = true  // Enable window dragging
         self.backgroundColor = .clear
 
@@ -3449,19 +4198,8 @@ struct EmojiPickerView: View {
     var onEmojiSelected: (String) -> Void
     var onClose: (() -> Void)?
 
-    @State private var selectedCategory = -2  // Default to "Frequently Used" tab
-    @State private var searchText = ""
-    @State private var hoveredEmoji: String? = nil
-    @State private var selectedEmojiIndex: Int? = nil
-    @FocusState private var isSearchFocused: Bool
+    @State private var selectedCategory = -2  // Default to "All" tab
     @Namespace private var categoryNamespace
-
-    // Access emoji database
-    private let database = EmojiDatabase.shared
-
-    // Grid configuration
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 8)
-    private let emojiSize: CGFloat = 40
 
     var body: some View {
         VStack(spacing: 0) {
@@ -3499,52 +4237,16 @@ struct EmojiPickerView: View {
             .padding(.top, 12)
             .padding(.bottom, 10)
 
-            // Search bar with modern design (hidden for GIF tab)
-            if selectedCategory != -3 {
-                HStack(spacing: 8) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 13))
-                        .foregroundColor(.secondary.opacity(0.7))
-                    TextField("Tìm emoji...", text: $searchText)
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 13))
-                        .focused($isSearchFocused)
-                    if !searchText.isEmpty {
-                        Button(action: {
-                            searchText = ""
-                            isSearchFocused = true
-                        }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 13))
-                                .foregroundColor(.secondary.opacity(0.7))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(NSColor.controlBackgroundColor).opacity(0.5))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .strokeBorder(Color.accentColor.opacity(isSearchFocused ? 0.3 : 0), lineWidth: 1.5)
-                        )
-                )
-                .padding(.horizontal, 16)
-                .padding(.bottom, 12)
-                .animation(.easeInOut(duration: 0.2), value: isSearchFocused)
-            }
 
-            // Category tabs with scroll indicators
+            // Category tabs
             ScrollViewReader { scrollProxy in
-                ScrollView(.horizontal, showsIndicators: true) {
+                ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        // Frequently Used tab
+                        // All Content tab
                         CategoryTab(
                             isSelected: selectedCategory == -2,
-                            icon: "flame.fill",
-                            label: "Thường dùng",
+                            icon: "sparkles",
+                            label: "Tất cả",
                             namespace: categoryNamespace
                         ) {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
@@ -3561,11 +4263,11 @@ struct EmojiPickerView: View {
                             }
                         }
 
-                        // GIF tab
+                        // Emoji tab
                         CategoryTab(
                             isSelected: selectedCategory == -3,
-                            icon: "photo.on.rectangle.angled",
-                            label: "GIF",
+                            icon: "face.smiling.fill",
+                            label: "Emoji",
                             namespace: categoryNamespace
                         ) {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
@@ -3574,27 +4276,31 @@ struct EmojiPickerView: View {
                         }
                         .id(-3)
 
-                        Rectangle()
-                            .fill(Color.secondary.opacity(0.2))
-                            .frame(width: 1, height: 24)
-                            .padding(.horizontal, 4)
-
-                        // Category tabs
-                        ForEach(0..<database.categories.count, id: \.self) { index in
-                            CategoryIconTab(
-                                isSelected: selectedCategory == index,
-                                icon: database.categories[index].icon,
-                                name: database.categories[index].name,
-                                namespace: categoryNamespace
-                            ) {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                    selectedCategory = index
-                                    // Auto scroll to selected category
-                                    scrollProxy.scrollTo(index, anchor: .center)
-                                }
+                        // GIF tab
+                        CategoryTab(
+                            isSelected: selectedCategory == -4,
+                            icon: "photo.on.rectangle.angled",
+                            label: "GIF",
+                            namespace: categoryNamespace
+                        ) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                selectedCategory = -4
                             }
-                            .id(index)
                         }
+                        .id(-4)
+
+                        // Sticker tab
+                        CategoryTab(
+                            isSelected: selectedCategory == -5,
+                            icon: "sparkle",
+                            label: "Sticker",
+                            namespace: categoryNamespace
+                        ) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                selectedCategory = -5
+                            }
+                        }
+                        .id(-5)
                     }
                     .padding(.horizontal, 16)
                 }
@@ -3604,62 +4310,23 @@ struct EmojiPickerView: View {
             Divider()
                 .opacity(0.5)
 
-            // Content area - show GIF tab or emoji grid
-            if selectedCategory == -3 {
+            // Content area - show different tabs based on selectedCategory
+            if selectedCategory == -2 {
+                // All Content tab with search (Emojis, GIFs, Stickers)
+                UnifiedContentView(onEmojiSelected: onEmojiSelected, onClose: onClose)
+                    .frame(height: 320)
+            } else if selectedCategory == -3 {
+                // Emoji tab - show all emoji categories
+                EmojiCategoriesView(onEmojiSelected: onEmojiSelected)
+                    .frame(height: 320)
+            } else if selectedCategory == -4 {
                 // GIF tab
-                GIFTabView(onClose: onClose)
+                GIFOnlyView(onClose: onClose)
                     .frame(height: 320)
-            } else {
-                // Emoji grid with ScrollViewReader for smooth navigation
-                ScrollViewReader { scrollProxy in
-                    ScrollView {
-                        let emojis = filteredEmojis
-                        if emojis.isEmpty {
-                            // Enhanced empty state
-                            VStack(spacing: 16) {
-                                Image(systemName: getEmptyStateIcon())
-                                    .font(.system(size: 56))
-                                    .foregroundColor(.secondary.opacity(0.5))
-                                Text(getEmptyStateTitle())
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundColor(.secondary)
-                                Text(getEmptyStateMessage())
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.secondary.opacity(0.7))
-                                    .multilineTextAlignment(.center)
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .padding(32)
-                        } else if !searchText.isEmpty {
-                            // Grouped search results by category
-                            SearchResultsView(
-                                searchResults: emojis,
-                                database: database,
-                                hoveredEmoji: $hoveredEmoji,
-                                onEmojiSelected: onEmojiSelected
-                            )
-                        } else {
-                            // Regular category view
-                            LazyVGrid(columns: columns, spacing: 8) {
-                                ForEach(Array(emojis.enumerated()), id: \.element.id) { index, emojiItem in
-                                    EmojiButton(
-                                        emoji: emojiItem,
-                                        size: emojiSize,
-                                        isHovered: hoveredEmoji == emojiItem.emoji,
-                                        frequencyCount: getFrequencyCount(for: emojiItem.emoji)
-                                    ) {
-                                        onEmojiSelected(emojiItem.emoji)
-                                    }
-                                    .onHover { hovering in
-                                        hoveredEmoji = hovering ? emojiItem.emoji : nil
-                                    }
-                                }
-                            }
-                            .padding(16)
-                        }
-                    }
+            } else if selectedCategory == -5 {
+                // Sticker tab
+                StickerOnlyView(onClose: onClose)
                     .frame(height: 320)
-                }
             }
         }
         .frame(width: 380)
@@ -3672,54 +4339,6 @@ struct EmojiPickerView: View {
         )
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.2), radius: 20, x: 0, y: 10)
-        .onAppear {
-            isSearchFocused = true
-        }
-    }
-
-    // MARK: - Helper Functions
-
-    private func getFrequencyCount(for emoji: String) -> Int? {
-        let frequency = database.getEmojiFrequency()
-        return frequency[emoji]
-    }
-
-    private func getEmptyStateIcon() -> String {
-        if selectedCategory == -2 {
-            return "flame"
-        } else {
-            return "magnifyingglass"
-        }
-    }
-
-    private func getEmptyStateTitle() -> String {
-        if selectedCategory == -2 {
-            return "Chưa có emoji thường dùng"
-        } else {
-            return "Không tìm thấy"
-        }
-    }
-
-    private func getEmptyStateMessage() -> String {
-        if selectedCategory == -2 {
-            return "Emoji bạn dùng nhiều nhất\nsẽ hiển thị ở đây"
-        } else {
-            return "Thử tìm kiếm với từ khóa khác"
-        }
-    }
-
-    private var filteredEmojis: [EmojiItem] {
-        if !searchText.isEmpty {
-            return database.search(searchText)
-        } else if selectedCategory == -2 {
-            // Frequently Used tab
-            let frequentEmojis = database.getFrequentlyUsedEmojis(limit: 50)
-            return frequentEmojis.compactMap { database.getEmojiItem(for: $0) }
-        } else if selectedCategory >= 0 && selectedCategory < database.categories.count {
-            return database.categories[selectedCategory].emojis
-        } else {
-            return []
-        }
     }
 }
 
@@ -3756,33 +4375,6 @@ struct CategoryTab: View {
             )
         }
         .buttonStyle(.plain)
-    }
-}
-
-struct CategoryIconTab: View {
-    let isSelected: Bool
-    let icon: String
-    let name: String
-    let namespace: Namespace.ID
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(icon)
-                .font(.system(size: 22))
-                .frame(width: 40, height: 40)
-                .background(
-                    Group {
-                        if isSelected {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.accentColor.opacity(0.15))
-                                .matchedGeometryEffect(id: "categoryBackground", in: namespace)
-                        }
-                    }
-                )
-        }
-        .buttonStyle(.plain)
-        .help(name)
     }
 }
 
@@ -3834,62 +4426,6 @@ struct EmojiButton: View {
         }
         .buttonStyle(.plain)
         .help(emoji.name)
-    }
-}
-
-// MARK: - Search Results View
-
-struct SearchResultsView: View {
-    let searchResults: [EmojiItem]
-    let database: EmojiDatabase
-    @Binding var hoveredEmoji: String?
-    let onEmojiSelected: (String) -> Void
-
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 8)
-
-    var body: some View {
-        LazyVStack(alignment: .leading, spacing: 16) {
-            // Group results by category
-            ForEach(groupedResults, id: \.category) { group in
-                VStack(alignment: .leading, spacing: 8) {
-                    // Category header
-                    HStack {
-                        Text(group.category)
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(.secondary)
-                        Text("(\(group.emojis.count))")
-                            .font(.system(size: 10, weight: .regular))
-                            .foregroundColor(.secondary.opacity(0.7))
-                    }
-                    .padding(.horizontal, 16)
-
-                    // Emoji grid for this category
-                    LazyVGrid(columns: columns, spacing: 8) {
-                        ForEach(group.emojis) { emojiItem in
-                            EmojiButton(
-                                emoji: emojiItem,
-                                size: 40,
-                                isHovered: hoveredEmoji == emojiItem.emoji,
-                                frequencyCount: nil
-                            ) {
-                                onEmojiSelected(emojiItem.emoji)
-                            }
-                            .onHover { hovering in
-                                hoveredEmoji = hovering ? emojiItem.emoji : nil
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                }
-            }
-        }
-        .padding(.vertical, 16)
-    }
-
-    private var groupedResults: [(category: String, emojis: [EmojiItem])] {
-        let grouped = Dictionary(grouping: searchResults) { $0.category }
-        return grouped.map { (category: $0.key, emojis: $0.value) }
-            .sorted { $0.category < $1.category }
     }
 }
 
