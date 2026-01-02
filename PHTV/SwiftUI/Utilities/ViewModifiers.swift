@@ -207,13 +207,24 @@ struct VisualEffectBackground: NSViewRepresentable {
 }
 
 /// Applies appropriate background for settings views
-/// Transparent background for settings detail views
-/// Window-level blur is applied by SettingsWindowContent
+/// On macOS 26+: Uses Liquid Glass effects
+/// On older versions: Uses blurred window background
 struct SettingsViewBackground: ViewModifier {
     func body(content: Content) -> some View {
-        content
-            .scrollContentBackground(.hidden)
-            .background(.clear)
+        if #available(macOS 26.0, *) {
+            content
+                .scrollContentBackground(.hidden)
+                .background(.clear)
+        } else {
+            content
+                .scrollContentBackground(.hidden)
+                .background(
+                    VisualEffectBackground(
+                        material: .sidebar,
+                        blendingMode: .behindWindow
+                    )
+                )
+        }
     }
 }
 
