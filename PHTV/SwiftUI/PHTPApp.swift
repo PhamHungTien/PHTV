@@ -1689,9 +1689,9 @@ final class EmojiHotkeyManager: ObservableObject, @unchecked Sendable {
 class KlipyAPIClient: ObservableObject {
     static let shared = KlipyAPIClient()
 
-    // KLIPY API - Free unlimited (không giới hạn như Giphy)
-    // Lấy API key miễn phí tại: https://partner.klipy.com/api-keys
-    private let appKey = "YOUR_KLIPY_APP_KEY_HERE" // <-- Paste Klipy app key vào đây
+    // KLIPY API - Free unlimited (không giới hạn request)
+    // App key cho PHTV từ https://partner.klipy.com/api-keys
+    private let appKey = "OvUIlmqoLrdwmY1YvnF9gVp7ScFDgx30TMGgDWDHqIdPb8CHyQWgYmr3byyhBFPZ"
     private let baseURL = "https://api.klipy.com/api/v1"
 
     // Customer ID - unique user identifier (có thể dùng UUID)
