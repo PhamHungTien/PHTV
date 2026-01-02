@@ -76,23 +76,38 @@ struct SettingsWindowContent: View {
             UpdateBannerView()
                 .zIndex(1000)
         }
+        .background {
+            if #available(macOS 26.0, *) {
+                // Liquid Glass for macOS 26+
+                Color.clear
+                    .glassEffect(.clear)
+            } else {
+                // Translucent blur for older macOS
+                VisualEffectBlur(material: .underWindowBackground, blendingMode: .behindWindow)
+            }
+        }
         .onAppear {
-            // Update window level based on user preference
-            updateSettingsWindowLevel()
+            // Update window level and transparency based on user preference
+            updateSettingsWindowAppearance()
         }
         .onChange(of: appState.settingsWindowAlwaysOnTop) { _ in
             // Update window level when user toggles the setting
-            updateSettingsWindowLevel()
+            updateSettingsWindowAppearance()
         }
     }
 
-    private func updateSettingsWindowLevel() {
+    private func updateSettingsWindowAppearance() {
         DispatchQueue.main.async {
             for window in NSApp.windows {
                 let identifier = window.identifier?.rawValue ?? ""
                 if identifier.hasPrefix("settings") {
                     // Set window level based on user preference
                     window.level = appState.settingsWindowAlwaysOnTop ? .floating : .normal
+
+                    // Enable transparency
+                    window.isOpaque = false
+                    window.backgroundColor = .clear
+
                     NSLog("[SettingsWindowContent] Set window.level = %@ for window: %@",
                           appState.settingsWindowAlwaysOnTop ? ".floating" : ".normal", identifier)
                     break
