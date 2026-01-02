@@ -322,8 +322,9 @@ struct SystemSettingsView: View {
             "quickTelex", "modernOrthography", "autoCapsMacro", "quickEndConsonant",
             "quickStartConsonant", "zAsConsonant", "freeMark", "fixChromiumBrowser",
             "sendKeyStepByStep", "autoRestoreEnglish", "useMacro", "macroInEnglish",
-            "SwitchKeyStatus", "runOnStartup", "showIconOnDock", "themeColorHex",
-            "updateCheckFrequency", "betaChannelEnabled"
+            "SwitchKeyStatus", "runOnStartup", "vShowIconOnDock", "themeColorHex",
+            "updateCheckFrequency", "betaChannelEnabled", "vMenuBarIconSize",
+            "vUseVietnameseMenubarIcon", "vSettingsWindowAlwaysOnTop"
         ]
 
         for key in settingsKeys {
