@@ -24,6 +24,11 @@ struct PHTVApp: App {
     init() {
         NSLog("PHTV-APP-INIT-START")
 
+        // CRITICAL: Initialize AppState FIRST to avoid recursive dispatch_once lock
+        // EmojiHotkeyManager.handleSettingsChanged() calls AppState.shared
+        // If AppState is initializing when the notification fires, we get recursive lock
+        _ = AppState.shared
+
         // Initialize SettingsNotificationObserver to listen for notifications
         _ = SettingsNotificationObserver.shared
 
@@ -381,10 +386,16 @@ final class AppState: ObservableObject {
         loadSettings()
         isLoadingSettings = false
         print("[AppState] Init complete, beepVolume=\(beepVolume), menuBarIconSize=\(menuBarIconSize)")
-        setupObservers()
-        setupNotificationObservers()
-        setupExternalSettingsObserver()
-        checkAccessibilityPermission()
+
+        // Delay observer setup to avoid crashes during initialization
+        // This ensures AppState is fully initialized before observers start firing
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.setupObservers()
+            self.setupNotificationObservers()
+            self.setupExternalSettingsObserver()
+            self.checkAccessibilityPermission()
+        }
     }
 
     /// Monitor external UserDefaults changes and reload settings in real-time
@@ -941,9 +952,13 @@ final class AppState: ObservableObject {
         // Observer for runOnStartup - update immediately
         $runOnStartup.sink { [weak self] value in
             guard let self = self, !self.isLoadingSettings else { return }
-            let appDelegate = NSApp.delegate as? AppDelegate
+            // Safe unwrap AppDelegate
+            guard let appDelegate = NSApp.delegate as? AppDelegate else {
+                print("[AppState] AppDelegate not available yet, skipping runOnStartup update")
+                return
+            }
             // Update immediately without debounce
-            appDelegate?.setRunOnStartup(value)
+            appDelegate.setRunOnStartup(value)
             let defaults = UserDefaults.standard
             defaults.set(value, forKey: "PHTV_RunOnStartup")
             defaults.synchronize()
@@ -1694,6 +1709,9 @@ class KlipyAPIClient: ObservableObject {
     private let appKey = "OvUIlmqoLrdwmY1YvnF9gVp7ScFDgx30TMGgDWDHqIdPb8CHyQWgYmr3byyhBFPZ"
     private let baseURL = "https://api.klipy.com/api/v1"
 
+    // Domain where app-ads.txt is hosted (required for monetization)
+    private let domain = "phamhungtien.github.io"
+
     // Customer ID - unique user identifier (có thể dùng UUID)
     private let customerId: String = {
         if let saved = UserDefaults.standard.string(forKey: "KlipyCustomerID") {
@@ -1731,7 +1749,7 @@ class KlipyAPIClient: ObservableObject {
         isLoading = true
 
         // Klipy API: GET /api/v1/{app_key}/gifs/trending
-        let urlString = "\(baseURL)/\(appKey)/gifs/trending?customer_id=\(customerId)&per_page=\(limit)"
+        let urlString = "\(baseURL)/\(appKey)/gifs/trending?customer_id=\(customerId)&per_page=\(limit)&domain=\(domain)"
         print("[Klipy] Fetching trending from: \(urlString)")
         guard let url = URL(string: urlString) else {
             print("[Klipy] Invalid URL")
@@ -1789,7 +1807,7 @@ class KlipyAPIClient: ObservableObject {
 
         let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
         // Klipy API: GET /api/v1/{app_key}/gifs/search
-        let urlString = "\(baseURL)/\(appKey)/gifs/search?q=\(encodedQuery)&customer_id=\(customerId)&per_page=\(limit)"
+        let urlString = "\(baseURL)/\(appKey)/gifs/search?q=\(encodedQuery)&customer_id=\(customerId)&per_page=\(limit)&domain=\(domain)"
         print("[Klipy] Searching for: \(query)")
         guard let url = URL(string: urlString) else {
             print("[Klipy] Invalid search URL")
@@ -1825,6 +1843,54 @@ class KlipyAPIClient: ObservableObject {
             }
         }.resume()
     }
+
+    // MARK: - Ad Tracking
+
+    /// Track ad impression (when ad is displayed)
+    func trackImpression(for gif: KlipyGIF) {
+        guard gif.isAd, let impressionURL = gif.impression_url, let url = URL(string: impressionURL) else {
+            return
+        }
+
+        print("[Klipy Ads] Tracking impression for ad: \(gif.id)")
+
+        // Fire impression tracking pixel
+        URLSession.shared.dataTask(with: url) { _, _, error in
+            if let error = error {
+                print("[Klipy Ads] Impression tracking error: \(error.localizedDescription)")
+            } else {
+                print("[Klipy Ads] Impression tracked successfully")
+            }
+        }.resume()
+    }
+
+    /// Track ad click (when ad is clicked)
+    func trackClick(for gif: KlipyGIF) {
+        guard gif.isAd, let clickURL = gif.click_url, let url = URL(string: clickURL) else {
+            return
+        }
+
+        print("[Klipy Ads] Tracking click for ad: \(gif.id)")
+
+        // Fire click tracking pixel
+        URLSession.shared.dataTask(with: url) { _, _, error in
+            if let error = error {
+                print("[Klipy Ads] Click tracking error: \(error.localizedDescription)")
+            } else {
+                print("[Klipy Ads] Click tracked successfully")
+            }
+        }.resume()
+    }
+
+    /// Open ad target URL in browser (optional, if user clicks ad)
+    func openAdTarget(for gif: KlipyGIF) {
+        guard gif.isAd, let targetURL = gif.target_url, let url = URL(string: targetURL) else {
+            return
+        }
+
+        print("[Klipy Ads] Opening ad target: \(targetURL)")
+        NSWorkspace.shared.open(url)
+    }
 }
 
 // MARK: - Klipy Models
@@ -1846,22 +1912,37 @@ struct KlipyGIF: Codable, Identifiable {
     let slug: String
     let title: String
     let file: KlipyFile
-    let tags: [String]
+    let tags: [String]?  // Optional - API có thể trả về null
     let type: String
 
+    // Ad-specific fields (optional, only present when type == "ad")
+    let impression_url: String?
+    let click_url: String?
+    let target_url: String?
+    let advertiser: String?
+
+    var isAd: Bool {
+        type == "ad"
+    }
+
     var previewURL: String {
-        // Use small size for preview
-        file.sm?.gif?.url ?? file.xs?.gif?.url ?? file.hd.gif?.url ?? ""
+        // Use small size for preview, fallback to any available size
+        file.sm?.gif?.url ?? file.xs?.gif?.url ?? file.hd?.gif?.url ?? ""
     }
 
     var fullURL: String {
-        // Use HD GIF for full quality
-        file.hd.gif?.url ?? file.sm?.gif?.url ?? ""
+        // Use HD GIF for full quality, fallback to smaller sizes
+        file.hd?.gif?.url ?? file.sm?.gif?.url ?? file.xs?.gif?.url ?? ""
+    }
+
+    // Safe check for empty URLs
+    var hasValidURL: Bool {
+        !previewURL.isEmpty && !fullURL.isEmpty
     }
 }
 
 struct KlipyFile: Codable {
-    let hd: KlipyFileSize
+    let hd: KlipyFileSize?  // Optional - API có thể không trả về hd
     let sm: KlipyFileSize?
     let xs: KlipyFileSize?
 }
@@ -1889,11 +1970,15 @@ struct GIFTabView: View {
     @State private var copiedGIF: String?
 
     private let columns = [
-        GridItem(.adaptive(minimum: 100, maximum: 150), spacing: 8)
+        GridItem(.fixed(120), spacing: 16),
+        GridItem(.fixed(120), spacing: 16),
+        GridItem(.fixed(120), spacing: 16)
     ]
 
     var displayedGIFs: [KlipyGIF] {
-        searchText.isEmpty ? klipyClient.trendingGIFs : klipyClient.searchResults
+        let gifs = searchText.isEmpty ? klipyClient.trendingGIFs : klipyClient.searchResults
+        // Filter out GIFs without valid URLs to prevent crashes
+        return gifs.filter { $0.hasValidURL }
     }
 
     var body: some View {
@@ -1963,14 +2048,14 @@ struct GIFTabView: View {
                     .frame(maxWidth: .infinity)
                     .padding(40)
                 } else {
-                    LazyVGrid(columns: columns, spacing: 8) {
+                    LazyVGrid(columns: columns, spacing: 16) {
                         ForEach(displayedGIFs) { gif in
                             GIFThumbnailView(gif: gif) {
                                 copyGIFURL(gif)
                             }
                         }
                     }
-                    .padding(16)
+                    .padding(20)
                 }
             }
         }
@@ -2007,6 +2092,13 @@ struct GIFTabView: View {
     }
 
     private func copyGIFURL(_ gif: KlipyGIF) {
+        // Handle ads differently - track click and open target URL
+        if gif.isAd {
+            klipyClient.trackClick(for: gif)
+            klipyClient.openAdTarget(for: gif)
+            return
+        }
+
         // Download and copy GIF data to clipboard
         guard let url = URL(string: gif.fullURL) else { return }
 
@@ -2017,18 +2109,22 @@ struct GIFTabView: View {
 
         URLSession.shared.dataTask(with: url) { data, response, error in
             DispatchQueue.main.async {
-                if let data = data, let image = NSImage(data: data) {
-                    // Copy GIF to clipboard as image data
+                if let data = data {
+                    // Copy GIF data directly to clipboard (không convert qua NSImage để giữ animation)
                     let pasteboard = NSPasteboard.general
                     pasteboard.clearContents()
 
-                    // Add both TIFF and GIF data for compatibility
-                    if let tiffData = image.tiffRepresentation {
-                        pasteboard.setData(tiffData, forType: .tiff)
-                    }
+                    // Set GIF data với nhiều UTI types để tương thích tốt hơn
+                    // Chỉ set GIF data thôi, KHÔNG set TIFF vì sẽ mất animation
                     pasteboard.setData(data, forType: NSPasteboard.PasteboardType("com.compuserve.gif"))
+                    pasteboard.setData(data, forType: NSPasteboard.PasteboardType("public.gif"))
 
-                    print("[Klipy] Đã copy GIF: \(gif.title)")
+                    // Thêm file URL type để một số app nhận tốt hơn
+                    if let tempURL = self.saveTempGIF(data: data, filename: gif.slug) {
+                        pasteboard.setString(tempURL.path, forType: .fileURL)
+                    }
+
+                    print("[Klipy] Đã copy GIF: \(gif.title) (\(data.count) bytes)")
 
                     // Auto-paste: Close picker and simulate Cmd+V
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -2056,6 +2152,19 @@ struct GIFTabView: View {
         }.resume()
     }
 
+    private func saveTempGIF(data: Data, filename: String) -> URL? {
+        let tempDir = FileManager.default.temporaryDirectory
+        let gifURL = tempDir.appendingPathComponent("\(filename).gif")
+
+        do {
+            try data.write(to: gifURL)
+            return gifURL
+        } catch {
+            print("[Klipy] Failed to save temp GIF: \(error)")
+            return nil
+        }
+    }
+
     private func simulatePaste() {
         // Create Cmd+V key event
         let source = CGEventSource(stateID: .hidSystemState)
@@ -2081,27 +2190,57 @@ struct GIFThumbnailView: View {
     let onTap: () -> Void
 
     @State private var isHovered = false
+    @State private var hasTrackedImpression = false
 
     var body: some View {
         Button(action: onTap) {
-            AnimatedGIFView(url: URL(string: gif.previewURL))
-                .aspectRatio(contentMode: .fill)
-                .frame(minWidth: 100, minHeight: 100)
-                .frame(maxHeight: 150)
-                .clipped()
-                .cornerRadius(8)
+            ZStack {
+                // Background
+                Color.black.opacity(0.05)
+
+                // GIF content
+                AnimatedGIFView(url: URL(string: gif.previewURL))
+                    .frame(width: 120, height: 120)
+                    .clipped()
+
+                // Ad badge (nếu là ad)
+                if gif.isAd {
+                    VStack {
+                        HStack {
+                            Spacer()
+                            Text("Ad")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 4)
+                                .background(Color.blue.opacity(0.8))
+                                .cornerRadius(4)
+                        }
+                        Spacer()
+                    }
+                    .padding(8)
+                }
+            }
+            .frame(width: 120, height: 120)
+            .cornerRadius(8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .strokeBorder(isHovered ? Color.accentColor : Color.clear, lineWidth: 2)
+            )
         }
         .buttonStyle(.plain)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(isHovered ? Color.accentColor : Color.clear, lineWidth: 2)
-        )
-        .scaleEffect(isHovered ? 1.05 : 1.0)
+        .frame(width: 120, height: 120)
         .animation(.easeInOut(duration: 0.15), value: isHovered)
         .onHover { hovering in
             isHovered = hovering
         }
-        .help("Click để tải và gửi GIF")
+        .help(gif.isAd ? "Quảng cáo - Click để xem" : "Click để tải và gửi GIF")
+        .onAppear {
+            if gif.isAd && !hasTrackedImpression {
+                KlipyAPIClient.shared.trackImpression(for: gif)
+                hasTrackedImpression = true
+            }
+        }
     }
 }
 
