@@ -1043,6 +1043,8 @@ final class AppState: ObservableObject {
         .debounce(for: .milliseconds(100), scheduler: RunLoop.main)
         .sink { [weak self] in
             guard let self = self, !self.isLoadingSettings else { return }
+            // Save settings when emoji hotkey changes
+            self.saveSettings()
             // Post notification to trigger sync in EmojiHotkeyManager
             #if DEBUG
             print("[AppState] Posting EmojiHotkeySettingsChanged notification")
