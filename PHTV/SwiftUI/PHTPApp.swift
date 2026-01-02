@@ -2404,6 +2404,9 @@ struct EmojiCategoriesView: View {
                 }
             }
         }
+        .onAppear {
+            isSearchFocused = true
+        }
     }
 }
 
