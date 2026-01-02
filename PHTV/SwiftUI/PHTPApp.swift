@@ -1690,11 +1690,8 @@ class GiphyAPIClient: ObservableObject {
     static let shared = GiphyAPIClient()
 
     // GIPHY API - Free tier (100 calls/hour)
-    // Lấy API key miễn phí tại: https://developers.giphy.com/
-    // 1. Tạo account (1 phút)
-    // 2. Create App -> chọn "SDK" -> nhập tên app "PHTV"
-    // 3. Copy API key và paste vào đây
-    private let apiKey = "YOUR_GIPHY_API_KEY_HERE" // <-- Paste API key của bạn vào đây
+    // API key cho PHTV app từ https://developers.giphy.com/
+    private let apiKey = "N61oi40rWdnDwlA7HyEEIOBc0hqXcsRR"
     private let baseURL = "https://api.giphy.com/v1/gifs"
 
     @Published var trendingGIFs: [GiphyGIF] = []
