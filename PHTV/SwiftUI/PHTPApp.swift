@@ -2966,7 +2966,8 @@ struct CategoryTab: View {
             }
             .foregroundColor(isSelected ? .accentColor : .secondary)
             .padding(.horizontal, 8)
-            .frame(minWidth: 60, height: 40)
+            .frame(minWidth: 60)
+            .frame(height: 40)
             .background(
                 Group {
                     if isSelected {
