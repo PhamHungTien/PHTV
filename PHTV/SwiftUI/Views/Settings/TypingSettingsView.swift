@@ -302,6 +302,7 @@ struct StatusCard: View {
             }
         }
         .padding(16)
+        .frame(maxWidth: 700)
         .background {
             if #available(macOS 26.0, *) {
                 RoundedRectangle(cornerRadius: 12)
@@ -351,6 +352,7 @@ struct SettingsCard<Content: View>: View {
             content
                 .padding(16)
         }
+        .frame(maxWidth: 700)
         .background {
             if #available(macOS 26.0, *) {
                 RoundedRectangle(cornerRadius: 12)
