@@ -4460,16 +4460,16 @@ struct EmojiPickerView: View {
         .frame(width: 380)
         .background {
             if #available(macOS 26.0, *) {
-                // Liquid Glass design for macOS 26+
+                // Liquid Glass design for macOS 26+ (regular for better visibility)
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.clear)
-                    .glassEffect(.clear.interactive(), in: .rect(cornerRadius: 16))
+                    .fill(Color(NSColor.windowBackgroundColor).opacity(0.3))
+                    .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 16))
                     .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 4)
             } else {
                 // Fallback glassmorphism for older macOS
                 ZStack {
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(Color(NSColor.windowBackgroundColor))
+                        .fill(Color(NSColor.windowBackgroundColor).opacity(0.85))
                     VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 16))
