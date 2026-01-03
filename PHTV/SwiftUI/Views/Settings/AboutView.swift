@@ -142,10 +142,16 @@ struct AboutView: View {
                                 .foregroundStyle(.secondary)
                         }
                         .padding(16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(Color(NSColor.controlBackgroundColor))
-                        )
+                        .background {
+                            if #available(macOS 26.0, *) {
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(.ultraThinMaterial)
+                                    .glassEffect(in: .rect(cornerRadius: 16))
+                            } else {
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(Color(NSColor.controlBackgroundColor))
+                            }
+                        }
                     }
                 }
                 .padding(.horizontal, 20)
@@ -207,7 +213,7 @@ struct AboutInfoCard: View {
         .background {
             if #available(macOS 26.0, *) {
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(.white.opacity(0.08))
+                    .fill(.ultraThinMaterial)
                     .glassEffect(in: .rect(cornerRadius: 12))
             } else {
                 RoundedRectangle(cornerRadius: 12)

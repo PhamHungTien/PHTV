@@ -15,7 +15,11 @@ struct CardStyle: ViewModifier {
         if #available(macOS 26.0, *) {
             content
                 .padding()
-                .glassEffect(in: .rect(cornerRadius: 12))
+                .background {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(.ultraThinMaterial)
+                        .glassEffect(in: .rect(cornerRadius: 12))
+                }
         } else {
             content
                 .padding()
@@ -72,12 +76,20 @@ extension View {
     func roundedTextArea() -> some View {
         self
             .padding(6)
-            .background(Color(NSColor.controlBackgroundColor))
-            .cornerRadius(8)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-            )
+            .background {
+                if #available(macOS 26.0, *) {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.ultraThinMaterial)
+                        .glassEffect(in: .rect(cornerRadius: 8))
+                } else {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(NSColor.controlBackgroundColor))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                        )
+                }
+            }
     }
 }
 
