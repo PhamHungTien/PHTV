@@ -71,7 +71,7 @@ brew install --cask phamhungtien/tap/phtv
 git clone https://github.com/PhamHungTien/PHTV.git
 cd PHTV
 
-# Build với Xcode (yêu cầu Xcode 16.0+)
+# Build với Xcode
 # Universal Binary - hỗ trợ cả Intel và Apple Silicon
 xcodebuild -scheme PHTV -configuration Release
 
@@ -82,7 +82,7 @@ xcodebuild -scheme PHTV -configuration Release
 
 - **macOS**: 13.0 hoặc cao hơn (Ventura+)
 - **Bộ xử lý**: Universal Binary - Intel và Apple Silicon (M1/M2/M3/M4)
-- **Xcode**: 16.0+ (nếu build từ source)
+- **Xcode**: Phiên bản mới nhất (nếu build từ source)
 - **Dung lượng**: ~50 MB
 
 > **Lưu ý**: PHTV là Universal Binary, hỗ trợ cả Intel và Apple Silicon. Hoạt động tốt trên mọi Mac chạy macOS 13.0+.

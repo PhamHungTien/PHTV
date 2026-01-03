@@ -215,7 +215,7 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 | --- | --- |
 | **macOS** | 13.0+ (Ventura trở lên) |
 | **Kiến trúc** | Universal Binary (Intel + Apple Silicon) |
-| **Xcode** | 16.0+ (nếu build từ source) |
+| **Xcode** | Phiên bản mới nhất (nếu build từ source) |
 | **Quyền** | Accessibility |
 
 > **Lưu ý**: PHTV hỗ trợ cả Intel và Apple Silicon (M1/M2/M3/M4). Universal Binary cho mọi Mac chạy macOS 13.0+.

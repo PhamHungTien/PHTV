@@ -110,7 +110,7 @@ PHTV/
 
 ### Build và Test
 
-> **Yêu cầu**: macOS 14.0+ (Sonoma) và Xcode 26.0+ (hỗ trợ cả Intel và Apple Silicon)
+> **Yêu cầu**: macOS 13.0+ (Ventura) và Xcode phiên bản mới nhất (hỗ trợ cả Intel và Apple Silicon)
 
 ```bash
 # Build project (Universal Binary - Intel + Apple Silicon)
