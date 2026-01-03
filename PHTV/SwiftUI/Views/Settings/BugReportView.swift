@@ -88,6 +88,7 @@ struct BugReportView: View {
                 TextEditor(text: $bugDescription)
                     .frame(minHeight: 100)
                     .font(.body)
+                    .scrollContentBackground(.hidden)
                     .padding(8)
                     .background {
                         if #available(macOS 26.0, *) {
