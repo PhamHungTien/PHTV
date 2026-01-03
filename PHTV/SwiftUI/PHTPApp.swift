@@ -2083,14 +2083,23 @@ class KlipyAPIClient: ObservableObject {
     // MARK: - Cache Management
 
     /// Clean old cached GIFs/Stickers (older than 7 days or if cache exceeds 100MB)
+    /// Only cleans files in the PHTPMedia directory to avoid affecting other apps
     func cleanOldCache() {
         DispatchQueue.global(qos: .background).async {
             let fileManager = FileManager.default
             let tempDir = fileManager.temporaryDirectory
+            let phtpDir = tempDir.appendingPathComponent("PHTPMedia", isDirectory: true)
+
+            // Create directory if it doesn't exist
+            if !fileManager.fileExists(atPath: phtpDir.path) {
+                try? fileManager.createDirectory(at: phtpDir, withIntermediateDirectories: true)
+                return // Nothing to clean yet
+            }
+
             let sevenDaysAgo = Date().addingTimeInterval(-7 * 24 * 60 * 60)
 
             guard let files = try? fileManager.contentsOfDirectory(
-                at: tempDir,
+                at: phtpDir,
                 includingPropertiesForKeys: [.creationDateKey, .fileSizeKey],
                 options: .skipsHiddenFiles
             ) else {
@@ -2412,6 +2421,29 @@ struct EmojiCategoriesView: View {
     }
 }
 
+// MARK: - Helper Functions for Media Storage
+
+/// Get or create the PHTV media directory for temporary GIF/Sticker storage
+private func getPHTPMediaDirectory() -> URL {
+    let tempDir = FileManager.default.temporaryDirectory
+    let phtpDir = tempDir.appendingPathComponent("PHTPMedia", isDirectory: true)
+
+    // Create directory if it doesn't exist
+    if !FileManager.default.fileExists(atPath: phtpDir.path) {
+        try? FileManager.default.createDirectory(at: phtpDir, withIntermediateDirectories: true)
+    }
+
+    return phtpDir
+}
+
+/// Delete a file after a delay to ensure paste is complete
+private func deleteFileAfterDelay(_ fileURL: URL, delay: TimeInterval = 5.0) {
+    DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+        try? FileManager.default.removeItem(at: fileURL)
+        NSLog("[PHTPPicker] Cleaned up file: %@", fileURL.lastPathComponent)
+    }
+}
+
 // MARK: - GIF Only View
 
 struct GIFOnlyView: View {
@@ -2528,23 +2560,54 @@ struct GIFOnlyView: View {
         URLSession.shared.dataTask(with: url) { data, _, _ in
             DispatchQueue.main.async {
                 if let data = data {
-                    let tempDir = FileManager.default.temporaryDirectory
-                    let gifURL = tempDir.appendingPathComponent("\(gif.slug).gif")
+                    NSLog("[PHTPPicker] GIF downloaded: %@", gif.slug)
+
+                    let phtpDir = getPHTPMediaDirectory()
+                    let gifURL = phtpDir.appendingPathComponent("\(gif.slug).gif")
                     try? data.write(to: gifURL)
 
                     let pasteboard = NSPasteboard.general
                     pasteboard.clearContents()
                     pasteboard.writeObjects([gifURL as NSPasteboardWriting])
                     _ = pasteboard.setData(data, forType: .fileURL)
+
+                    // Close panel first
                     onClose?()
 
-                    let source = CGEventSource(stateID: .hidSystemState)
-                    let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true)
-                    keyDown?.flags = .maskCommand
-                    let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false)
-                    keyUp?.flags = .maskCommand
-                    keyDown?.post(tap: .cghidEventTap)
-                    keyUp?.post(tap: .cghidEventTap)
+                    // Small delay to allow panel to close and frontmost app to regain focus
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        NSLog("[PHTPPicker] Pasting GIF...")
+
+                        let source = CGEventSource(stateID: .hidSystemState)
+
+                        // Press Command
+                        if let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: true) {
+                            cmdDown.flags = .maskCommand
+                            cmdDown.post(tap: .cghidEventTap)
+                        }
+
+                        // Press V
+                        if let vDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true) {
+                            vDown.flags = .maskCommand
+                            vDown.post(tap: .cghidEventTap)
+                        }
+
+                        // Release V
+                        if let vUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false) {
+                            vUp.flags = .maskCommand
+                            vUp.post(tap: .cghidEventTap)
+                        }
+
+                        // Release Command
+                        if let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: false) {
+                            cmdUp.post(tap: .cghidEventTap)
+                        }
+
+                        NSLog("[PHTPPicker] Paste command sent")
+
+                        // Clean up file after paste
+                        deleteFileAfterDelay(gifURL)
+                    }
                 }
             }
         }.resume()
@@ -2667,22 +2730,53 @@ struct StickerOnlyView: View {
         URLSession.shared.dataTask(with: url) { data, _, _ in
             DispatchQueue.main.async {
                 if let data = data {
-                    let tempDir = FileManager.default.temporaryDirectory
-                    let stickerURL = tempDir.appendingPathComponent("\(sticker.slug).png")
+                    NSLog("[PHTPPicker] Sticker downloaded: %@", sticker.slug)
+
+                    let phtpDir = getPHTPMediaDirectory()
+                    let stickerURL = phtpDir.appendingPathComponent("\(sticker.slug).png")
                     try? data.write(to: stickerURL)
 
                     let pasteboard = NSPasteboard.general
                     pasteboard.clearContents()
                     pasteboard.writeObjects([stickerURL as NSPasteboardWriting])
+
+                    // Close panel first
                     onClose?()
 
-                    let source = CGEventSource(stateID: .hidSystemState)
-                    let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true)
-                    keyDown?.flags = .maskCommand
-                    let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false)
-                    keyUp?.flags = .maskCommand
-                    keyDown?.post(tap: .cghidEventTap)
-                    keyUp?.post(tap: .cghidEventTap)
+                    // Small delay to allow panel to close and frontmost app to regain focus
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        NSLog("[PHTPPicker] Pasting Sticker...")
+
+                        let source = CGEventSource(stateID: .hidSystemState)
+
+                        // Press Command
+                        if let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: true) {
+                            cmdDown.flags = .maskCommand
+                            cmdDown.post(tap: .cghidEventTap)
+                        }
+
+                        // Press V
+                        if let vDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true) {
+                            vDown.flags = .maskCommand
+                            vDown.post(tap: .cghidEventTap)
+                        }
+
+                        // Release V
+                        if let vUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false) {
+                            vUp.flags = .maskCommand
+                            vUp.post(tap: .cghidEventTap)
+                        }
+
+                        // Release Command
+                        if let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: false) {
+                            cmdUp.post(tap: .cghidEventTap)
+                        }
+
+                        NSLog("[PHTPPicker] Paste command sent")
+
+                        // Clean up file after paste
+                        deleteFileAfterDelay(stickerURL)
+                    }
                 }
             }
         }.resume()
@@ -3021,12 +3115,24 @@ struct UnifiedContentView: View {
         URLSession.shared.dataTask(with: url) { data, _, _ in
             DispatchQueue.main.async {
                 if let data = data, let tempURL = saveTempGIF(data: data, filename: gif.slug) {
+                    NSLog("[PHTPPicker] GIF downloaded: %@", gif.slug)
+
                     let pasteboard = NSPasteboard.general
                     pasteboard.clearContents()
                     pasteboard.writeObjects([tempURL as NSPasteboardWriting])
                     _ = pasteboard.setData(data, forType: .fileURL)
+
+                    // Close panel first
                     onClose?()
-                    simulatePaste()
+
+                    // Small delay to allow panel to close and frontmost app to regain focus
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        NSLog("[PHTPPicker] Pasting GIF...")
+                        simulatePaste()
+
+                        // Clean up file after paste
+                        deleteFileAfterDelay(tempURL)
+                    }
                 }
             }
         }.resume()
@@ -3039,46 +3145,99 @@ struct UnifiedContentView: View {
         URLSession.shared.dataTask(with: url) { data, _, _ in
             DispatchQueue.main.async {
                 if let data = data, let tempURL = saveTempSticker(data: data, filename: sticker.slug) {
+                    NSLog("[PHTPPicker] Sticker downloaded: %@", sticker.slug)
+
                     let pasteboard = NSPasteboard.general
                     pasteboard.clearContents()
                     pasteboard.writeObjects([tempURL as NSPasteboardWriting])
+
+                    // Close panel first
                     onClose?()
-                    simulatePaste()
+
+                    // Small delay to allow panel to close and frontmost app to regain focus
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        NSLog("[PHTPPicker] Pasting Sticker...")
+                        simulatePaste()
+
+                        // Clean up file after paste
+                        deleteFileAfterDelay(tempURL)
+                    }
                 }
             }
         }.resume()
     }
 
-    private func saveTempGIF(data: Data, filename: String) -> URL? {
+    private func getPHTPMediaDirectory() -> URL {
         let tempDir = FileManager.default.temporaryDirectory
-        let gifURL = tempDir.appendingPathComponent("\(filename).gif")
+        let phtpDir = tempDir.appendingPathComponent("PHTPMedia", isDirectory: true)
+
+        // Create directory if it doesn't exist
+        if !FileManager.default.fileExists(atPath: phtpDir.path) {
+            try? FileManager.default.createDirectory(at: phtpDir, withIntermediateDirectories: true)
+        }
+
+        return phtpDir
+    }
+
+    private func saveTempGIF(data: Data, filename: String) -> URL? {
+        let phtpDir = getPHTPMediaDirectory()
+        let gifURL = phtpDir.appendingPathComponent("\(filename).gif")
         do {
             try data.write(to: gifURL)
             return gifURL
         } catch {
+            NSLog("[PHTPPicker] Error saving GIF: %@", error.localizedDescription)
             return nil
         }
     }
 
     private func saveTempSticker(data: Data, filename: String) -> URL? {
-        let tempDir = FileManager.default.temporaryDirectory
-        let stickerURL = tempDir.appendingPathComponent("\(filename).png")
+        let phtpDir = getPHTPMediaDirectory()
+        let stickerURL = phtpDir.appendingPathComponent("\(filename).png")
         do {
             try data.write(to: stickerURL)
             return stickerURL
         } catch {
+            NSLog("[PHTPPicker] Error saving Sticker: %@", error.localizedDescription)
             return nil
+        }
+    }
+
+    private func deleteFileAfterDelay(_ fileURL: URL, delay: TimeInterval = 5.0) {
+        // Delete file after a delay to ensure paste is complete
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            try? FileManager.default.removeItem(at: fileURL)
+            NSLog("[PHTPPicker] Cleaned up file: %@", fileURL.lastPathComponent)
         }
     }
 
     private func simulatePaste() {
         let source = CGEventSource(stateID: .hidSystemState)
-        let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true)
-        keyDown?.flags = .maskCommand
-        let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false)
-        keyUp?.flags = .maskCommand
-        keyDown?.post(tap: .cghidEventTap)
-        keyUp?.post(tap: .cghidEventTap)
+
+        // Press Command
+        if let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: true) {
+            cmdDown.flags = .maskCommand
+            cmdDown.post(tap: .cghidEventTap)
+        }
+
+        // Press V (0x09 = kVK_ANSI_V)
+        if let vDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true) {
+            vDown.flags = .maskCommand
+            vDown.post(tap: .cghidEventTap)
+        }
+
+        // Release V
+        if let vUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false) {
+            vUp.flags = .maskCommand
+            vUp.post(tap: .cghidEventTap)
+        }
+
+        // Release Command
+        if let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: false) {
+            cmdUp.post(tap: .cghidEventTap)
+        }
+
+        NSLog("[PHTPPicker] Paste command sent")
     }
 }
 
@@ -4626,12 +4785,19 @@ class EmojiPickerManager {
     static let shared = EmojiPickerManager()
 
     private var panel: FloatingPanel<EmojiPickerView>?
+    private var previousApp: NSRunningApplication?
 
     private init() {}
 
     /// Shows the PHTV Picker at current mouse position
     func show() {
         NSLog("[PHTPPicker] Showing PHTV Picker at mouse position")
+
+        // Save the currently active app so we can restore focus later
+        previousApp = NSWorkspace.shared.frontmostApplication
+        if let appName = previousApp?.localizedName {
+            NSLog("[PHTPPicker] Saved previous app: %@", appName)
+        }
 
         // Close existing panel if any
         panel?.close()
@@ -4663,11 +4829,20 @@ class EmojiPickerManager {
         NSLog("[EmojiPicker] Panel shown")
     }
 
-    /// Hides the PHTV Picker
+    /// Hides the PHTV Picker and restores focus to previous app
     func hide() {
         NSLog("[PHTPPicker] Hiding PHTV Picker")
         panel?.close()
         panel = nil
+
+        // Restore focus to the previous app with a small delay
+        // to ensure panel is fully closed first
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+            if let app = self?.previousApp {
+                NSLog("[PHTPPicker] Restoring focus to: %@", app.localizedName ?? "Unknown")
+                app.activate(options: [.activateIgnoringOtherApps])
+            }
+        }
     }
 
     /// Handles emoji selection - pastes emoji to frontmost app
