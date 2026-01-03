@@ -156,14 +156,28 @@ struct TypingSettingsView: View {
                                         Spacer()
                                     }
                                     .padding(10)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .fill(Color.orange.opacity(0.1))
+                                    .background {
+                                        if #available(macOS 26.0, *) {
+                                            ZStack {
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(.ultraThinMaterial)
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(Color.orange.opacity(0.1))
+                                            }
+                                            .glassEffect(in: .rect(cornerRadius: 8))
                                             .overlay(
                                                 RoundedRectangle(cornerRadius: 8)
                                                     .stroke(Color.orange.opacity(0.3), lineWidth: 1)
                                             )
-                                    )
+                                        } else {
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .fill(Color.orange.opacity(0.1))
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 8)
+                                                        .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+                                                )
+                                        }
+                                    }
                                     .transition(.scale.combined(with: .opacity))
                                 }
                             }
@@ -512,15 +526,27 @@ struct RestoreKeyButton: View {
             }
             .frame(maxWidth: .infinity)
             .frame(height: 56)
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(isSelected ? themeColor : Color(NSColor.controlBackgroundColor))
-                    .shadow(color: isSelected ? themeColor.opacity(0.3) : Color.clear, radius: 4, x: 0, y: 2)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(isSelected ? Color.clear : Color.gray.opacity(0.25), lineWidth: 1)
-            )
+            .background {
+                if #available(macOS 26.0, *) {
+                    if isSelected {
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(themeColor)
+                            .shadow(color: themeColor.opacity(0.3), radius: 4, x: 0, y: 2)
+                    } else {
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(.ultraThinMaterial)
+                            .glassEffect(in: .rect(cornerRadius: 10))
+                    }
+                } else {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(isSelected ? themeColor : Color(NSColor.controlBackgroundColor))
+                        .shadow(color: isSelected ? themeColor.opacity(0.3) : Color.clear, radius: 4, x: 0, y: 2)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(isSelected ? Color.clear : Color.gray.opacity(0.25), lineWidth: 1)
+                        )
+                }
+            }
             .scaleEffect(isSelected ? 1.0 : 0.98)
         }
         .buttonStyle(.plain)
