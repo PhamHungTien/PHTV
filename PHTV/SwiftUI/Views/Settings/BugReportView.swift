@@ -63,14 +63,42 @@ struct BugReportView: View {
             VStack(alignment: .leading, spacing: 12) {
                 // Bug Title
                 TextField("Tiêu đề lỗi (VD: Không gõ được tiếng Việt trong Safari)", text: $bugTitle)
-                    .textFieldStyle(.roundedBorder)
+                    .textFieldStyle(.plain)
+                    .padding(8)
+                    .background {
+                        if #available(macOS 26.0, *) {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(.ultraThinMaterial)
+                                .glassEffect(in: .rect(cornerRadius: 8))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                )
+                        } else {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(NSColor.textBackgroundColor))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                )
+                        }
+                    }
 
                 // Description
                 TextEditor(text: $bugDescription)
                     .frame(minHeight: 100)
                     .font(.body)
                     .padding(8)
-                    .background(Color(NSColor.textBackgroundColor))
+                    .background {
+                        if #available(macOS 26.0, *) {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(.ultraThinMaterial)
+                                .glassEffect(in: .rect(cornerRadius: 8))
+                        } else {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(NSColor.textBackgroundColor))
+                        }
+                    }
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
