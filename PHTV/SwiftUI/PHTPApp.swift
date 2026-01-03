@@ -95,6 +95,11 @@ struct SettingsWindowContent: View {
                     // Set window level based on user preference
                     window.level = appState.settingsWindowAlwaysOnTop ? .floating : .normal
 
+                    // Set window transparency (95% opaque = 5% transparent)
+                    window.alphaValue = 0.95
+                    window.isOpaque = false
+                    window.backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(0.95)
+
                     NSLog("[SettingsWindowContent] Set window.level = %@ for window: %@",
                           appState.settingsWindowAlwaysOnTop ? ".floating" : ".normal", identifier)
                     break
