@@ -320,22 +320,16 @@ struct StatusCard: View {
         .frame(maxWidth: 700)
         .background {
             if #available(macOS 26.0, *) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(.ultraThinMaterial)
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(hasPermission ? .accentColor.opacity(0.08) : Color.orange.opacity(0.08))
-                }
-                .glassEffect(in: .rect(cornerRadius: 12))
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(.ultraThinMaterial)
+                    .glassEffect(in: .rect(cornerRadius: 12))
             } else {
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(hasPermission ? .accentColor.opacity(0.08) : Color.orange.opacity(0.08))
+                    .fill(Color(NSColor.controlBackgroundColor))
+                    .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 2)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
-                            .stroke(
-                                hasPermission
-                                    ? .accentColor.opacity(0.2) : Color.orange.opacity(0.2),
-                                lineWidth: 1)
+                            .stroke(Color.gray.opacity(0.15), lineWidth: 1)
                     )
             }
         }
