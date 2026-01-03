@@ -15,41 +15,10 @@ struct AboutView: View {
             VStack(spacing: 24) {
                 // App Icon and Name
                 VStack(spacing: 16) {
-                    ZStack {
-                        if #available(macOS 26.0, *) {
-                            RoundedRectangle(cornerRadius: 28)
-                                .fill(
-                                    LinearGradient(
-                                        colors: [
-                                            .accentColor.opacity(0.12),
-                                            .accentColor.opacity(0.08),
-                                        ],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .frame(width: 120, height: 120)
-                                .glassEffect(in: .rect(cornerRadius: 28))
-                        } else {
-                            RoundedRectangle(cornerRadius: 28)
-                                .fill(
-                                    LinearGradient(
-                                        colors: [
-                                            .accentColor.opacity(0.2),
-                                            .accentColor.opacity(0.15),
-                                        ],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .frame(width: 120, height: 120)
-                        }
-
-                        AppIconView()
-                            .frame(width: 100, height: 100)
-                            .clipShape(RoundedRectangle(cornerRadius: 22))
-                            .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
-                    }
+                    AppIconView()
+                        .frame(width: 100, height: 100)
+                        .clipShape(RoundedRectangle(cornerRadius: 22))
+                        .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
 
                     VStack(spacing: 6) {
                         Text("PHTV")
