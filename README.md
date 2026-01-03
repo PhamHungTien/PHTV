@@ -23,7 +23,7 @@
 
 ## Giới thiệu
 
-**PHTV (Precision Hybrid Typing Vietnamese)** là bộ gõ tiếng Việt **offline, nhanh, và riêng tư** cho macOS 14+. Được phát triển bằng Swift/SwiftUI với engine C++ từ OpenKey, mang đến trải nghiệm gõ tiếng Việt mượt mà và tích hợp sâu vào hệ thống.
+**PHTV (Precision Hybrid Typing Vietnamese)** là bộ gõ tiếng Việt **offline, nhanh, và riêng tư** cho macOS 13+. Được phát triển bằng Swift/SwiftUI với engine C++ từ OpenKey, mang đến trải nghiệm gõ tiếng Việt mượt mà và tích hợp sâu vào hệ thống.
 
 ## Tính năng
 
@@ -55,23 +55,24 @@
 - **Thêm từ tiếng Việt** - Thêm từ chuyên ngành, tên riêng
 - **Import/Export** - Nhập xuất từ điển từ file
 
-### PHTV Picker (GIF, Emoji & Sticker)
-- **Giao diện Liquid Glass** - Thiết kế hiện đại theo chuẩn Apple macOS 26+
-- **Emoji Picker** - Chọn emoji nhanh với đầy đủ categories và tìm kiếm
+### PHTV Picker (Emoji & GIF)
+- **Giao diện Liquid Glass** - Thiết kế hiện đại theo chuẩn Apple với hiệu ứng glass morphism
+- **1,463 Emoji từ Unicode v17.0** - Đầy đủ emoji mới nhất với categories và tìm kiếm
 - **GIF không giới hạn** - Tích hợp Klipy API với hàng ngàn GIF miễn phí
-- **Sticker Picker** - Bộ sưu tập sticker đa dạng
-- **Tìm kiếm thông minh** - Tìm GIF/Sticker theo từ khóa tiếng Việt và tiếng Anh
+- **Tìm kiếm thông minh** - Tìm Emoji/GIF theo từ khóa tiếng Việt và tiếng Anh
 - **Auto-paste** - Click là gửi ngay, không cần Cmd+V
 - **Multi-format support** - Hoạt động với iMessage, Zalo, Messenger Web và các app khác
+- **Auto cleanup** - Tự động xóa file GIF đã tải sau 5 giây
 - **Ad-supported** - Miễn phí hoàn toàn nhờ quảng cáo từ Klipy
 - **Hotkey tiện lợi** - Cmd+E (tùy chỉnh được) để mở nhanh
 
 ### Tương thích ứng dụng
-- **Spotlight Fix** - Gõ tiếng Việt trong Spotlight không bị lỗi
-- **WhatsApp Fix** - Hỗ trợ gõ tiếng Việt mượt mà trong WhatsApp
 - **Chromium Fix** - Tối ưu cho Chrome, Edge, Brave và các trình duyệt Chromium
+- **Keyboard Layout Compatibility** - Hỗ trợ Dvorak, Colemak và các bố cục bàn phím đặc biệt
 - **Claude Code Fix** - Sửa lỗi gõ tiếng Việt trong Claude Code CLI (Terminal)
+- **Safe Mode** - Tự động khôi phục khi Accessibility API gặp lỗi
 - **Excluded Apps** - Danh sách ứng dụng tự động chuyển sang tiếng Anh
+- **Send Key Step-by-Step** - Gửi từng phím riêng lẻ cho ứng dụng tương thích kém
 - **Nhớ bảng mã theo ứng dụng** - Tự động chuyển bảng mã phù hợp cho từng app
 
 ### Phím tắt & Điều khiển
@@ -200,11 +201,13 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 
 | Tab | Nội dung |
 | --- | --- |
-| **Typing** | Phương pháp gõ, bảng mã, chính tả, Quick Telex, phụ âm nhanh |
-| **Macros** | Quản lý gõ tắt, import/export, tự động viết hoa |
-| **Excluded Apps** | Danh sách app tự động chuyển sang tiếng Anh |
-| **System** | Khởi động cùng macOS, hotkey, Smart Switch, cập nhật |
-| **About** | Thông tin phiên bản, ủng hộ phát triển |
+| **Bộ gõ** | Phương pháp gõ, bảng mã, chính tả, Quick Telex, phụ âm nhanh, từ điển tùy chỉnh |
+| **Phím tắt** | Phím chuyển ngôn ngữ, tạm tắt tiếng Việt, PHTV Picker hotkey |
+| **Gõ tắt** | Quản lý macro, text snippets, import/export, tự động viết hoa |
+| **Ứng dụng** | Excluded Apps, Send Key Step-by-Step, Chromium Fix, Keyboard Layout, Claude Code Fix, Safe Mode |
+| **Hệ thống** | Khởi động cùng macOS, Smart Switch, cập nhật, menu bar, thống kê gõ phím |
+| **Báo lỗi** | Gửi báo cáo lỗi qua GitHub hoặc Email với crash logs và debug info |
+| **Thông tin** | Phiên bản, giấy phép, ủng hộ phát triển |
 
 ## Yêu cầu hệ thống
 

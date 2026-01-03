@@ -61,7 +61,7 @@ Hãy thử từng cái để tìm phù hợp nhất!
 
 **A:**
 
-1. Mở Settings → Excluded Apps
+1. Mở Settings → Ứng dụng → Excluded Apps
 2. Nhấn "+" và chọn ứng dụng
 3. Khi sử dụng app đó, PHTV sẽ tự động tắt
 
@@ -69,9 +69,16 @@ Hãy thử từng cái để tìm phù hợp nhất!
 
 **A:**
 
-1. Settings → Macros → "+"
+1. Settings → Gõ tắt → "+"
 2. Nhập từ viết tắt (VD: "tks") và nội dung (VD: "cảm ơn")
 3. Khi gõ "tks" + Space, tự động thay thế bằng "cảm ơn"
+
+**Text Snippets** hỗ trợ nội dung động:
+- `{date}` - Ngày hiện tại
+- `{time}` - Giờ hiện tại
+- `{clipboard}` - Nội dung clipboard
+- `{random:A,B,C}` - Random từ danh sách
+- `{counter}` - Số tự động tăng
 
 ### Q8: Có thể bỏ dấu khi gõ không?
 
@@ -103,10 +110,11 @@ Hoặc trong Settings → Reset All (nếu có button này).
 
 ### Q11: Có thể tùy chỉnh phím tắt được không?
 
-**A:** Có! Settings → Keyboard Shortcuts
+**A:** Có! Settings → Phím tắt
 
-- Thay đổi phím chuyển ngôn ngữ
-- Thay đổi phím gõ dấu (nếu cần)
+- Thay đổi phím chuyển ngôn ngữ (Ctrl, Option, Cmd, Shift)
+- Tạm tắt tiếng Việt (giữ phím)
+- PHTV Picker hotkey (mặc định Cmd+E)
 
 ### Q12: Ngoài tiếng Việt, có hỗ trợ ngôn ngữ khác không?
 
@@ -134,11 +142,11 @@ Hoặc trong Settings → Reset All (nếu có button này).
 
 ### Q24: Tại sao GIF không paste được vào Zalo/Messenger?
 
-**A:** PHTV v1.3.5+ đã hỗ trợ multi-format clipboard. Đảm bảo bạn đang dùng phiên bản mới nhất.
+**A:** PHTV v1.3.5+ đã hỗ trợ multi-format clipboard. Đảm bảo bạn đang dùng phiên bản mới nhất. Nếu vẫn gặp lỗi, đợi 0.2 giây sau khi click GIF để PHTV có thời gian copy vào clipboard.
 
 ### Q25: Emoji picker có hỗ trợ tìm kiếm không?
 
-**A:** Có! Gõ tên emoji bằng tiếng Anh hoặc tiếng Việt để tìm kiếm nhanh.
+**A:** Có! PHTV Picker có 1,463 emoji từ Unicode v17.0 (2024). Gõ tên emoji bằng tiếng Anh hoặc tiếng Việt để tìm kiếm nhanh. Con trỏ tự động focus vào ô tìm kiếm khi mở.
 
 ### Q26: GIF có hoạt động offline không?
 

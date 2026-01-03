@@ -59,10 +59,10 @@ brew install --cask phamhungtien/tap/phtv
 
 ### Option 3: Từ GitHub Releases
 
-1. Vào [GitHub Releases](https://github.com/PhamHungTien/PHTV/releases)
-2. Download `PHTV-1.3.1.dmg`
+1. Vào [GitHub Releases](https://github.com/PhamHungTien/PHTV/releases/latest)
+2. Download file DMG mới nhất (VD: `PHTV-1.3.8.dmg`)
 3. Double-click để mở DMG
-4. Drag `PHTV.app` vào `Applications`
+4. Drag `PHTV.app` vào thư mục `Applications`
 
 ### Option 4: Từ Source Code
 
@@ -90,9 +90,10 @@ xcodebuild -scheme PHTV -configuration Release
 ## Các bước sau khi cài
 
 1. **Cấp quyền Accessibility** - App sẽ yêu cầu lần đầu
-2. **Chọn phương pháp gõ** - Settings → Telex hoặc VNI
-3. **Tùy chỉnh phím chuyển** - Settings → Keyboard Shortcuts (optional)
-4. **Thêm Macros** - Settings → Macros (optional)
+2. **Chọn phương pháp gõ** - Settings → Bộ gõ → Telex hoặc VNI
+3. **Tùy chỉnh phím chuyển** - Settings → Phím tắt (optional)
+4. **Thêm Macros** - Settings → Gõ tắt (optional)
+5. **Thử PHTV Picker** - Nhấn Cmd+E để mở emoji/GIF picker
 
 ## Tài liệu thêm
 
@@ -132,9 +133,9 @@ xcodebuild -scheme PHTV -configuration Release
 
 **Kiểm tra:**
 
-1. Settings → System → Hotkey Configuration
+1. Settings → Phím tắt
 2. Đảm bảo không trùng với phím tắt khác trong macOS
-3. Thử đổi sang tổ hợp phím khác
+3. Thử đổi sang tổ hợp phím khác (Ctrl, Option, Cmd, Shift)
 
 </details>
 

@@ -11,16 +11,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Emoji expansion**: Thêm 622 emoji mới từ Unicode v17.0, tăng tổng số lượng từ 841 lên 1,463 emoji
-- **Liquid Glass cards**: Áp dụng hiệu ứng Liquid Glass cho tất cả Settings cards với .ultraThinMaterial và .glassEffect()
-- **Auto cleanup**: Tự động xóa file GIF/Sticker đã tải về sau 5 giây để tránh rác ứng dụng
+- **Liquid Glass comprehensive**: Áp dụng hiệu ứng Liquid Glass toàn diện cho tất cả Settings components
+- **Auto cleanup**: Tự động xóa file GIF đã tải về sau 5 giây để tránh rác ứng dụng
+- **Backup improvements**: Bao gồm cả cài đặt menu bar và dock trong backup/export
 
 ### Changed
-- **Settings transparency**: Cải thiện độ trong suốt của cửa sổ Settings với native materials, không dùng titlebar glass effect
+- **Settings merge**: Gộp tab Compatibility vào tab Ứng dụng để giao diện gọn gàng hơn (từ 8 tabs xuống 7 tabs)
+- **Settings transparency**: Cải thiện độ trong suốt của cửa sổ Settings với native materials
+- **UI unification**: Thống nhất thiết kế StatusCard và SettingsCard trên toàn bộ app
+- **About tab redesign**: Loại bỏ gradient background sau icon app để giao diện sạch hơn
 
 ### Fixed
-- **PHTV Picker reliability**: Sửa lỗi paste emoji/gif/sticker đôi khi không hoạt động (system beep) bằng cách thêm delay 0.15s trước khi paste
-- **App focus restoration**: Khôi phục focus về chat app sau khi đóng PHTV Picker (menu bar không còn hiển thị PHTV nữa)
-- **Transparency artifacts**: Loại bỏ hiệu ứng glass/blur ở titlebar Settings window, giữ titlebar chuẩn macOS
+- **PHTV Picker reliability**: Sửa lỗi paste emoji/gif đôi khi không hoạt động (system beep) bằng cách thêm delay 0.15s trước khi paste
+- **App focus restoration**: Khôi phục focus về chat app sau khi đóng PHTV Picker
+- **Card heights consistency**: Ngăn subtitle text wrap để đảm bảo card heights đồng đều
+- **Glass effect display**: Ẩn background mặc định của TextEditor để hiệu ứng glass hiển thị đúng
 
 ## [1.3.7] - 2026-01-02
 
@@ -299,7 +304,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Macro (gõ tắt)
 - Hoàn toàn offline
 
-[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v1.3.5...HEAD
+[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v1.3.8...HEAD
+[1.3.8]: https://github.com/PhamHungTien/PHTV/compare/v1.3.7...v1.3.8
+[1.3.7]: https://github.com/PhamHungTien/PHTV/compare/v1.3.6...v1.3.7
+[1.3.6]: https://github.com/PhamHungTien/PHTV/compare/v1.3.5...v1.3.6
 [1.3.5]: https://github.com/PhamHungTien/PHTV/compare/v1.3.4...v1.3.5
 [1.3.4]: https://github.com/PhamHungTien/PHTV/compare/v1.3.3...v1.3.4
 [1.3.3]: https://github.com/PhamHungTien/PHTV/compare/v1.3.2...v1.3.3
