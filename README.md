@@ -50,11 +50,6 @@
 - **Import/Export** - Nhập xuất danh sách macro từ file
 - **Danh mục** - Tổ chức macro theo nhóm với icon và màu sắc
 
-### Từ điển tùy chỉnh
-- **Thêm từ tiếng Anh** - Cải thiện nhận diện từ tiếng Anh
-- **Thêm từ tiếng Việt** - Thêm từ chuyên ngành, tên riêng
-- **Import/Export** - Nhập xuất từ điển từ file
-
 ### PHTV Picker (Emoji & GIF)
 - **Giao diện Liquid Glass** - Thiết kế hiện đại theo chuẩn Apple với hiệu ứng glass morphism
 - **1,463 Emoji từ Unicode v17.0** - Đầy đủ emoji mới nhất với categories và tìm kiếm
@@ -201,7 +196,7 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 
 | Tab | Nội dung |
 | --- | --- |
-| **Bộ gõ** | Phương pháp gõ, bảng mã, chính tả, Quick Telex, phụ âm nhanh, từ điển tùy chỉnh |
+| **Bộ gõ** | Phương pháp gõ, bảng mã, chính tả, Quick Telex, phụ âm nhanh |
 | **Phím tắt** | Phím chuyển ngôn ngữ, tạm tắt tiếng Việt, PHTV Picker hotkey |
 | **Gõ tắt** | Quản lý macro, text snippets, import/export, tự động viết hoa |
 | **Ứng dụng** | Excluded Apps, Send Key Step-by-Step, Chromium Fix, Keyboard Layout, Claude Code Fix, Safe Mode |
