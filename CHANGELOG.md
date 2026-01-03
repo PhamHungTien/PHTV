@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.8] - 2026-01-03
+
+### Added
+- **Emoji expansion**: Thêm 622 emoji mới từ Unicode v17.0, tăng tổng số lượng từ 841 lên 1,463 emoji
+- **Liquid Glass cards**: Áp dụng hiệu ứng Liquid Glass cho tất cả Settings cards với .ultraThinMaterial và .glassEffect()
+- **Auto cleanup**: Tự động xóa file GIF/Sticker đã tải về sau 5 giây để tránh rác ứng dụng
+
+### Changed
+- **Settings transparency**: Cải thiện độ trong suốt của cửa sổ Settings với native materials, không dùng titlebar glass effect
+
+### Fixed
+- **PHTV Picker reliability**: Sửa lỗi paste emoji/gif/sticker đôi khi không hoạt động (system beep) bằng cách thêm delay 0.15s trước khi paste
+- **App focus restoration**: Khôi phục focus về chat app sau khi đóng PHTV Picker (menu bar không còn hiển thị PHTV nữa)
+- **Transparency artifacts**: Loại bỏ hiệu ứng glass/blur ở titlebar Settings window, giữ titlebar chuẩn macOS
+
 ## [1.3.7] - 2026-01-02
 
 ### Fixed
