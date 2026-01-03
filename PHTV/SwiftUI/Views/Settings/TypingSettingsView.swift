@@ -306,9 +306,13 @@ struct StatusCard: View {
         .frame(maxWidth: 700)
         .background {
             if #available(macOS 26.0, *) {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(hasPermission ? .accentColor.opacity(0.08) : Color.orange.opacity(0.08))
-                    .glassEffect(in: .rect(cornerRadius: 12))
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(.ultraThinMaterial)
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(hasPermission ? .accentColor.opacity(0.08) : Color.orange.opacity(0.08))
+                }
+                .glassEffect(in: .rect(cornerRadius: 12))
             } else {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(hasPermission ? .accentColor.opacity(0.08) : Color.orange.opacity(0.08))
@@ -357,7 +361,7 @@ struct SettingsCard<Content: View>: View {
         .background {
             if #available(macOS 26.0, *) {
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(NSColor.controlBackgroundColor).opacity(0.8))
+                    .fill(.ultraThinMaterial)
                     .glassEffect(in: .rect(cornerRadius: 12))
             } else {
                 RoundedRectangle(cornerRadius: 12)
