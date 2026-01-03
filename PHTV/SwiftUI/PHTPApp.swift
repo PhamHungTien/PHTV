@@ -95,12 +95,9 @@ struct SettingsWindowContent: View {
                     // Set window level based on user preference
                     window.level = appState.settingsWindowAlwaysOnTop ? .floating : .normal
 
-                    // Use native translucency with NSVisualEffectView material
-                    // This avoids black background issue in light mode
-                    window.isOpaque = false
-
-                    // Set background to clear so SwiftUI materials can show through
-                    window.backgroundColor = .clear
+                    // Use default window background
+                    window.isOpaque = true
+                    window.backgroundColor = .windowBackgroundColor
 
                     NSLog("[SettingsWindowContent] Set window.level = %@ for window: %@",
                           appState.settingsWindowAlwaysOnTop ? ".floating" : ".normal", identifier)
