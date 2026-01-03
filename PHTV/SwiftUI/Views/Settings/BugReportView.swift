@@ -146,21 +146,22 @@ struct BugReportView: View {
     // MARK: - Actions Section
     private var actionsSection: some View {
         SettingsCard(title: "Gửi báo lỗi", icon: "paperplane.fill") {
-            HStack(spacing: 10) {
+            HStack(spacing: 12) {
                 // Copy to Clipboard
                 Button {
                     Task { await copyBugReportToClipboardAsync() }
                 } label: {
                     if isSending {
                         ProgressView()
-                            .scaleEffect(0.6)
-                            .frame(maxWidth: .infinity, minHeight: 32)
+                            .scaleEffect(0.7)
+                            .frame(maxWidth: .infinity, minHeight: 36)
                     } else {
                         Label("Sao chép", systemImage: "doc.on.doc")
                             .frame(maxWidth: .infinity)
                     }
                 }
                 .adaptiveBorderedButtonStyle()
+                .controlSize(.large)
                 .disabled(isSending)
 
                 // Open GitHub Issue
@@ -169,14 +170,15 @@ struct BugReportView: View {
                 } label: {
                     if isSending {
                         ProgressView()
-                            .scaleEffect(0.6)
-                            .frame(maxWidth: .infinity, minHeight: 32)
+                            .scaleEffect(0.7)
+                            .frame(maxWidth: .infinity, minHeight: 36)
                     } else {
                         Label("GitHub Issue", systemImage: "link")
                             .frame(maxWidth: .infinity)
                     }
                 }
                 .adaptiveProminentButtonStyle()
+                .controlSize(.large)
                 .tint(.accentColor)
                 .disabled(isSending)
 
@@ -186,17 +188,18 @@ struct BugReportView: View {
                 } label: {
                     if isSending {
                         ProgressView()
-                            .scaleEffect(0.6)
-                            .frame(maxWidth: .infinity, minHeight: 32)
+                            .scaleEffect(0.7)
+                            .frame(maxWidth: .infinity, minHeight: 36)
                     } else {
                         Label("Email", systemImage: "envelope")
                             .frame(maxWidth: .infinity)
                     }
                 }
                 .adaptiveBorderedButtonStyle()
+                .controlSize(.large)
                 .disabled(isSending)
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, 8)
         }
     }
 
