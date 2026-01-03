@@ -78,7 +78,7 @@
 ### Phím tắt & Điều khiển
 - **Phím chuyển ngôn ngữ tùy chỉnh** - Control, Option, Command, Shift hoặc tổ hợp
 - **Tạm tắt tiếng Việt** - Giữ phím để tạm thời gõ tiếng Anh
-- **Khôi phục ký tự gốc** - Nhấn ESC để hoàn tác dấu (VD: "việt" → "viet")
+- **Khôi phục ký tự gốc** - Nhấn ESC để hoàn tác dấu (VD: "việt" → "viejet")
 - **Smart Switch** - Tự động nhớ ngôn ngữ cho từng ứng dụng
 
 ### Thống kê gõ phím
