@@ -81,7 +81,7 @@ xcodebuild -scheme PHTV -configuration Release
 ## Yêu cầu hệ thống
 
 - **macOS**: 13.0 hoặc cao hơn (Ventura+)
-- **Bộ xử lý**: Universal Binary - Intel và Apple Silicon (M1/M2/M3/M4)
+- **Bộ xử lý**: Universal Binary - Intel và Apple Silicon (M1/M2/M3/M4/...)
 - **Xcode**: Phiên bản mới nhất (nếu build từ source)
 - **Dung lượng**: ~50 MB
 

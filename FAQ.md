@@ -14,7 +14,7 @@
 
 ### Q1: PHTV có tương thích với phiên bản macOS nào?
 
-**A:** PHTV hỗ trợ macOS 13.0+ (Ventura trở lên). Universal Binary - hoạt động trên cả Intel và Apple Silicon (M1/M2/M3/M4). Tương thích với mọi Mac chạy macOS 13.0+.
+**A:** PHTV hỗ trợ macOS 13.0+ (Ventura trở lên). Universal Binary - hoạt động trên cả Intel và Apple Silicon (M1/M2/M3/M4/...). Tương thích với mọi Mac chạy macOS 13.0+.
 
 ### Q2: Cách nào dễ nhất để cài đặt PHTV?
 
