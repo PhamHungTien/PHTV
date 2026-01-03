@@ -95,9 +95,10 @@ struct SettingsWindowContent: View {
                     // Set window level based on user preference
                     window.level = appState.settingsWindowAlwaysOnTop ? .floating : .normal
 
-                    // Use default window background
-                    window.isOpaque = true
-                    window.backgroundColor = .windowBackgroundColor
+                    // Keep content transparent but titlebar opaque (no glass effect on titlebar)
+                    // DO NOT set titlebarAppearsTransparent - that creates unwanted glass titlebar
+                    window.isOpaque = false
+                    window.backgroundColor = .clear
 
                     NSLog("[SettingsWindowContent] Set window.level = %@ for window: %@",
                           appState.settingsWindowAlwaysOnTop ? ".floating" : ".normal", identifier)
