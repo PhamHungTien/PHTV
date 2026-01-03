@@ -8,6 +8,48 @@
 
         <!-- Most recent version first -->
         <item>
+            <title>PHTV 1.3.8</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.8</link>
+            <sparkle:version>15</sparkle:version>
+            <sparkle:shortVersionString>1.3.8</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h3>✨ Tính năng mới</h3>
+                <ul>
+                    <li><strong>622 emoji mới</strong>: Cập nhật đầy đủ emoji từ Unicode v17.0 (2024)</li>
+                    <li><strong>Gộp tab Compatibility</strong>: Tích hợp tab Tương thích vào tab Ứng dụng để giao diện gọn gàng hơn</li>
+                </ul>
+
+                <h3>🎨 Cải tiến giao diện</h3>
+                <ul>
+                    <li><strong>Liquid Glass toàn diện</strong>: Áp dụng hiệu ứng Liquid Glass cho tất cả Settings components</li>
+                    <li><strong>UI đồng nhất</strong>: Thống nhất thiết kế StatusCard và SettingsCard trên toàn bộ app</li>
+                    <li><strong>About tab mới</strong>: Loại bỏ gradient background sau icon app để giao diện sạch hơn</li>
+                    <li><strong>Settings window trong suốt</strong>: Cải tiến hiệu ứng trong suốt với native materials</li>
+                </ul>
+
+                <h3>🔧 Sửa lỗi và cải tiến</h3>
+                <ul>
+                    <li><strong>Card heights nhất quán</strong>: Ngăn subtitle text wrap để đảm bảo card heights đồng đều</li>
+                    <li><strong>PHTV Picker ổn định hơn</strong>: Cải thiện độ tin cậy và thêm tính năng tự động dọn dẹp</li>
+                    <li><strong>Backup/Export đầy đủ</strong>: Bao gồm cả cài đặt menu bar và dock trong backup</li>
+                    <li><strong>Glass effect hoàn hảo</strong>: Ẩn background mặc định để hiệu ứng glass hiển thị đúng</li>
+                    <li><strong>Hotkey UI cải tiến</strong>: Áp dụng Liquid Glass cho tất cả hotkey components</li>
+                </ul>
+
+                <p><em>Bản cập nhật này mang đến giao diện hiện đại hơn với Liquid Glass design toàn diện, bổ sung 622 emoji mới và cải thiện trải nghiệm người dùng.</em></p>
+            ]]></description>
+            <pubDate>Fri, 03 Jan 2026 14:00:00 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.3.8/PHTV-1.3.8.dmg"
+                sparkle:version="15"
+                sparkle:shortVersionString="1.3.8"
+                sparkle:edSignature="bFUrGbLY9YMtIUyF26YYkXgTAvec7n1dpOGCtH0WWgfVPHzCvMAMz/Ti/Us1TLcoo240xldjAFswWZ4gBzm6Dg=="
+                length="13599095"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <item>
             <title>PHTV 1.3.7</title>
             <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.7</link>
             <sparkle:version>14</sparkle:version>
