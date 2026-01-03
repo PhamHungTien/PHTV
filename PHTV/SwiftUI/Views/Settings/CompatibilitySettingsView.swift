@@ -32,29 +32,35 @@ struct CompatibilitySettingsView: View {
             VStack(spacing: 20) {
                 // Browser Compatibility
                 SettingsCard(title: "Trình duyệt", icon: "globe") {
-                    SettingsToggleRow(
-                        icon: "globe",
-                        iconColor: .accentColor,
-                        title: "Sửa lỗi Chromium",
-                        subtitle: "Tương thích Chrome, Edge, Brave, Arc...",
-                        isOn: $appState.fixChromiumBrowser
-                    )
+                    VStack(spacing: 0) {
+                        SettingsToggleRow(
+                            icon: "globe",
+                            iconColor: .accentColor,
+                            title: "Sửa lỗi Chromium",
+                            subtitle: "Tương thích Chrome, Edge, Brave, Arc...",
+                            isOn: $appState.fixChromiumBrowser
+                        )
+                    }
                 }
 
                 // Keyboard Layout Compatibility
                 SettingsCard(title: "Bàn phím", icon: "keyboard.fill") {
-                    SettingsToggleRow(
-                        icon: "keyboard.fill",
-                        iconColor: .accentColor,
-                        title: "Tương thích bố cục bàn phím",
-                        subtitle: "Hỗ trợ Dvorak, Colemak và các bố cục đặc biệt",
-                        isOn: $appState.performLayoutCompat
-                    )
+                    VStack(spacing: 0) {
+                        SettingsToggleRow(
+                            icon: "keyboard.fill",
+                            iconColor: .accentColor,
+                            title: "Tương thích bố cục bàn phím",
+                            subtitle: "Hỗ trợ Dvorak, Colemak và các bố cục đặc biệt",
+                            isOn: $appState.performLayoutCompat
+                        )
+                    }
                 }
 
                 // Claude Code Fix
                 SettingsCard(title: "Claude Code", icon: "terminal.fill") {
-                    claudeCodeToggleRow
+                    VStack(spacing: 0) {
+                        claudeCodeToggleRow
+                    }
                 }
 
                 // Safe Mode
@@ -313,6 +319,7 @@ private struct ClaudeCodeToggleRow: View {
                 Text(subtitle)
                     .font(.caption)
                     .foregroundStyle(iconColor == .orange ? iconColor : .secondary)
+                    .lineLimit(1)
             }
 
             Spacer()
