@@ -97,7 +97,6 @@ struct SettingsWindowContent: View {
 
                     // Use native translucency with NSVisualEffectView material
                     // This avoids black background issue in light mode
-                    window.titlebarAppearsTransparent = true
                     window.isOpaque = false
 
                     // Set background to clear so SwiftUI materials can show through
