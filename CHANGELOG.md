@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.2] - 2026-01-04
+
+### Added
+- **Automated CI/CD**: Thêm GitHub Actions workflow tự động build và release
+- **Code Signing**: Tự động sign app với Apple Development certificate trong CI
+- **Sparkle Auto-Update**: Tự động cập nhật appcast.xml và Homebrew formula khi release
+
+### Changed
+- **Build Infrastructure**: Chuyển sang macOS 26 runner để hỗ trợ đầy đủ Liquid Glass APIs
+- **Release Process**: Tự động hóa hoàn toàn quy trình release (build → sign → DMG → appcast → Homebrew)
+
+### Fixed
+- **Auto-Update**: Sửa lỗi Sparkle không thể cài đặt bản cập nhật do app chưa được code sign
+
 ## [1.3.8] - 2026-01-03
 
 ### Added
