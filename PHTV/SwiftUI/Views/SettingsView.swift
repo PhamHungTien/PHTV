@@ -82,7 +82,6 @@ struct SettingsView: View {
             detailView
                 .environmentObject(appState)
                 .frame(minWidth: 400, minHeight: 400)
-                .background(.ultraThinMaterial)
         }
         .navigationSplitViewStyle(.balanced)
         .onAppear {

@@ -11,7 +11,9 @@ import AppKit
 
 /// Window controller for hosting SwiftUI views in NSWindow
 class SwiftUIWindowController: NSWindowController, NSWindowDelegate {
-    
+
+    private var titlebarEffectView: NSVisualEffectView?
+
     convenience init<Content: View>(rootView: Content, title: String, size: NSSize = NSSize(width: 800, height: 600), unifiedTitlebar: Bool = false) {
         var styleMask: NSWindow.StyleMask = [.titled, .closable, .miniaturizable, .resizable]
         
@@ -35,19 +37,24 @@ class SwiftUIWindowController: NSWindowController, NSWindowDelegate {
             // Completely hide titlebar, content extends to top
             window.titlebarAppearsTransparent = true
             window.titleVisibility = .hidden
-            
+
             // Remove the toolbar completely
             window.toolbar = nil
-            
+
             // Make window movable by dragging background
             window.isMovableByWindowBackground = true
-            
+
             // Hide title bar but keep traffic lights
             window.standardWindowButton(.closeButton)?.superview?.superview?.isHidden = false
         }
-        
+
         self.init(window: window)
         window.delegate = self
+
+        // Setup titlebar background if unified titlebar is enabled
+        if unifiedTitlebar {
+            setupTitlebarBackground()
+        }
     }
     
     func show() {
@@ -55,8 +62,56 @@ class SwiftUIWindowController: NSWindowController, NSWindowDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
     
+    // Setup titlebar background with visual effect view
+    private func setupTitlebarBackground() {
+        guard let window = window,
+              let titlebarContainer = window.standardWindowButton(.closeButton)?.superview?.superview else {
+            return
+        }
+
+        // Create visual effect view for titlebar
+        let effectView = NSVisualEffectView(frame: titlebarContainer.bounds)
+        effectView.material = .titlebar
+        effectView.blendingMode = .behindWindow
+        effectView.state = .active
+        effectView.autoresizingMask = [.width, .height]
+
+        // Insert at the back so traffic lights remain visible
+        titlebarContainer.addSubview(effectView, positioned: .below, relativeTo: nil)
+        titlebarEffectView = effectView
+
+        // Apply initial opacity from settings
+        updateTitlebarOpacity()
+
+        // Observe opacity changes
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleOpacityChanged),
+            name: NSNotification.Name("PHTVSettingsChanged"),
+            object: nil
+        )
+    }
+
+    @objc private func handleOpacityChanged() {
+        updateTitlebarOpacity()
+    }
+
+    private func updateTitlebarOpacity() {
+        let enabled = UserDefaults.standard.object(forKey: "vEnableLiquidGlassBackground") as? Bool ?? true
+        let opacity = UserDefaults.standard.object(forKey: "vSettingsBackgroundOpacity") as? Double ?? 0.95
+
+        if enabled {
+            titlebarEffectView?.alphaValue = CGFloat(opacity)
+        } else {
+            titlebarEffectView?.alphaValue = 1.0
+        }
+    }
+
     // Handle window close to release reference
     func windowWillClose(_ notification: Notification) {
+        // Remove observer
+        NotificationCenter.default.removeObserver(self)
+
         // Restore dock icon state to user preference when closing settings
         if window?.title == "Cài đặt PHTV" || window?.title == "Cài đặt" {
             let appDelegate = NSApplication.shared.delegate as? AppDelegate

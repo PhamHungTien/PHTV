@@ -245,6 +245,9 @@ struct MacroEditorView: View {
         trimmedName = (trimmedName as NSString).precomposedStringWithCanonicalMapping
         trimmedCode = (trimmedCode as NSString).precomposedStringWithCanonicalMapping
 
+        var savedMacroId: UUID?
+        var action: String = ""
+
         if isEditMode {
             guard let editingMacro else {
                 errorMessage = "Không tìm thấy gõ tắt để chỉnh sửa"
@@ -280,6 +283,8 @@ struct MacroEditorView: View {
             macros[index].expansion = trimmedCode
             macros[index].categoryId = selectedCategoryId
             macros[index].snippetType = snippetType
+            savedMacroId = editingMacro.id
+            action = "edited"
             print("[MacroEditor] Updated to: \(trimmedName) -> \(trimmedCode), category: \(selectedCategoryId?.uuidString ?? "nil"), type: \(snippetType.rawValue)")
         } else {
             // ADD MODE: Check if macro already exists
@@ -296,6 +301,8 @@ struct MacroEditorView: View {
                 categoryId: selectedCategoryId,
                 snippetType: snippetType)
             macros.append(newMacro)
+            savedMacroId = newMacro.id
+            action = "added"
             print("[MacroEditor] Added new macro: \(newMacro.shortcut) -> \(newMacro.expansion), category: \(selectedCategoryId?.uuidString ?? "nil"), type: \(snippetType.rawValue)")
 
             // Auto-enable macro feature when creating first macro
@@ -315,9 +322,18 @@ struct MacroEditorView: View {
             print("[MacroEditor] Saved \(macros.count) macros to UserDefaults")
             print("[MacroEditor] macroList data size: \(encoded.count) bytes")
 
-            // Post notification immediately; AppDelegate will rebuild macroData synchronously
-            NotificationCenter.default.post(name: NSNotification.Name("MacrosUpdated"), object: nil)
-            print("[MacroEditor] Notification posted")
+            // Post notification with macro ID and action for animation
+            if let macroId = savedMacroId {
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("MacrosUpdated"),
+                    object: nil,
+                    userInfo: ["macroId": macroId, "action": action]
+                )
+                print("[MacroEditor] Notification posted with action: \(action), macroId: \(macroId)")
+            } else {
+                NotificationCenter.default.post(name: NSNotification.Name("MacrosUpdated"), object: nil)
+                print("[MacroEditor] Notification posted")
+            }
 
             // Close the editor promptly
             isPresented = false

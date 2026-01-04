@@ -376,6 +376,8 @@ final class AppState: ObservableObject {
     @Published var showIconOnDock: Bool = false
     @Published var settingsWindowAlwaysOnTop: Bool = false  // Settings window always appears above other apps
     @Published var safeMode: Bool = false  // Safe mode disables Accessibility API for OCLP Macs
+    @Published var enableLiquidGlassBackground: Bool = true  // Enable liquid glass background for settings window
+    @Published var settingsBackgroundOpacity: Double = 0.95  // Background opacity for settings window (0.0-1.0)
     // Text Replacement Fix is always enabled (no user setting)
     var enableTextReplacementFix: Bool { return true }
 
@@ -659,6 +661,8 @@ final class AppState: ObservableObject {
         showIconOnDock = defaults.bool(forKey: "vShowIconOnDock")
         settingsWindowAlwaysOnTop = defaults.bool(forKey: "vSettingsWindowAlwaysOnTop")
         safeMode = defaults.bool(forKey: "SafeMode")
+        enableLiquidGlassBackground = defaults.object(forKey: "vEnableLiquidGlassBackground") as? Bool ?? true
+        settingsBackgroundOpacity = defaults.object(forKey: "vSettingsBackgroundOpacity") as? Double ?? 0.95
         // Text Replacement Fix is always enabled - no need to load from defaults
 
         // Load Claude Code patch setting - check actual patch status
@@ -829,6 +833,8 @@ final class AppState: ObservableObject {
         defaults.set(performLayoutCompat, forKey: "vPerformLayoutCompat")
         defaults.set(showIconOnDock, forKey: "vShowIconOnDock")
         defaults.set(settingsWindowAlwaysOnTop, forKey: "vSettingsWindowAlwaysOnTop")
+        defaults.set(enableLiquidGlassBackground, forKey: "vEnableLiquidGlassBackground")
+        defaults.set(settingsBackgroundOpacity, forKey: "vSettingsBackgroundOpacity")
 
         // Save safe mode and sync with backend
         defaults.set(safeMode, forKey: "SafeMode")

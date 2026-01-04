@@ -48,7 +48,63 @@ struct SystemSettingsView: View {
                             subtitle: "Giữ cửa sổ Cài đặt hiển thị phía trên các ứng dụng khác",
                             isOn: $appState.settingsWindowAlwaysOnTop
                         )
+
+                        SettingsDivider()
+
+                        SettingsToggleRow(
+                            icon: "sparkles.rectangle.stack.fill",
+                            iconColor: .accentColor,
+                            title: "Giao diện Liquid Glass",
+                            subtitle: "Hiệu ứng nền kính mờ đẹp mắt cho cửa sổ cài đặt",
+                            isOn: $appState.enableLiquidGlassBackground
+                        )
+
+                        if appState.enableLiquidGlassBackground {
+                            SettingsDivider()
+
+                            VStack(spacing: 8) {
+                                HStack(spacing: 14) {
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(Color.accentColor.opacity(0.12))
+                                            .frame(width: 36, height: 36)
+
+                                        Image(systemName: "circle.lefthalf.filled")
+                                            .font(.system(size: 16, weight: .medium))
+                                            .foregroundStyle(Color.accentColor)
+                                    }
+
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("Độ mờ nền cửa sổ")
+                                            .font(.body)
+                                            .foregroundStyle(.primary)
+
+                                        Text("Điều chỉnh độ trong suốt của nền cài đặt")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+
+                                    Spacer()
+
+                                    Text(String(format: "%.0f%%", appState.settingsBackgroundOpacity * 100))
+                                        .font(.subheadline)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(.tint)
+                                        .frame(minWidth: 40, alignment: .trailing)
+                                }
+
+                                CustomSlider(
+                                    value: $appState.settingsBackgroundOpacity,
+                                    range: 0.5...1.0,
+                                    step: 0.05,
+                                    tintColor: .accentColor
+                                )
+                            }
+                            .padding(.vertical, 6)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
                     }
+                    .animation(.easeInOut(duration: 0.3), value: appState.enableLiquidGlassBackground)
                 }
 
                 // Menu Bar Settings

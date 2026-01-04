@@ -17,6 +17,11 @@ struct MacroSettingsView: View {
     @State private var editingMacro: MacroItem? = nil  // nil = not editing, set to show edit sheet
     @State private var refreshTrigger = UUID()
 
+    // Animation and highlight states
+    @State private var recentlyAddedId: UUID? = nil
+    @State private var recentlyEditedId: UUID? = nil
+    @Namespace private var animation
+
     // Category states
     @State private var selectedCategoryId: UUID? = nil  // nil = show all
     @State private var showingAddCategory = false
@@ -197,7 +202,13 @@ struct MacroSettingsView: View {
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 4)
-                                .background(Capsule().fill(Color.accentColor))
+                                .background(
+                                    Capsule()
+                                        .fill(Color.accentColor)
+                                        .shadow(color: .accentColor.opacity(0.3), radius: 4, x: 0, y: 2)
+                                )
+                                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: filteredMacros.count)
+                                .transition(.scale.combined(with: .opacity))
                         }
                         .padding(.bottom, 12)
 
@@ -216,6 +227,8 @@ struct MacroSettingsView: View {
                                 macros: filteredMacros,
                                 categories: allCategories,
                                 selectedMacro: $selectedMacro,
+                                recentlyAddedId: recentlyAddedId,
+                                recentlyEditedId: recentlyEditedId,
                                 onEdit: { macro in
                                     editingMacro = macro  // Setting this opens the sheet
                                 }
@@ -277,10 +290,43 @@ struct MacroSettingsView: View {
             loadMacros()
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("MacrosUpdated")))
-        { _ in
+        { notification in
             // Note: .onReceive already runs on main thread in SwiftUI
             print("[MacroSettings] Received MacrosUpdated notification, reloading...")
-            loadMacros()
+
+            // Check if notification contains info about added/edited macro
+            if let userInfo = notification.userInfo,
+               let macroId = userInfo["macroId"] as? UUID,
+               let action = userInfo["action"] as? String {
+
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+                    loadMacros()
+
+                    if action == "added" {
+                        recentlyAddedId = macroId
+                    } else if action == "edited" {
+                        recentlyEditedId = macroId
+                    }
+                }
+
+                // Clear highlight after delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    withAnimation {
+                        if recentlyAddedId == macroId {
+                            recentlyAddedId = nil
+                        }
+                        if recentlyEditedId == macroId {
+                            recentlyEditedId = nil
+                        }
+                    }
+                }
+            } else {
+                // Default animation for other updates
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    loadMacros()
+                }
+            }
+
             refreshTrigger = UUID()
         }
     }
@@ -313,8 +359,12 @@ struct MacroSettingsView: View {
         }
 
         let deletedMacro = macros[index]
-        macros.remove(at: index)
-        selectedMacro = nil
+
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+            macros.remove(at: index)
+            selectedMacro = nil
+        }
+
         print(
             "[MacroSettings] Deleted macro: \(deletedMacro.shortcut) -> \(deletedMacro.expansion)")
         saveMacros()
@@ -550,9 +600,9 @@ struct CategoryRowView: View {
                 Button {
                     onEdit?()
                 } label: {
-                    Image(systemName: "pencil")
-                        .font(.system(size: 11))
-                        .foregroundStyle(isHovering ? Color.secondary : Color.clear)
+                    Image(systemName: "pencil.circle.fill")
+                        .font(.system(size: 18))
+                        .foregroundStyle(isHovering || isSelected ? Color.secondary : Color.clear)
                 }
                 .buttonStyle(.borderless)
                 .help("Sửa danh mục")
@@ -561,6 +611,7 @@ struct CategoryRowView: View {
             Text("(\(count))")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: count)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
@@ -574,7 +625,9 @@ struct CategoryRowView: View {
         )
         .contentShape(Rectangle())
         .onHover { hovering in
-            isHovering = hovering
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isHovering = hovering
+            }
         }
     }
 }
@@ -624,6 +677,8 @@ struct MacroListView: View {
     let macros: [MacroItem]
     let categories: [MacroCategory]
     @Binding var selectedMacro: UUID?
+    var recentlyAddedId: UUID? = nil
+    var recentlyEditedId: UUID? = nil
     var onEdit: ((MacroItem) -> Void)? = nil
 
     var body: some View {
@@ -632,10 +687,17 @@ struct MacroListView: View {
                 macro: macro,
                 category: categoryFor(macro),
                 isSelected: selectedMacro == macro.id,
+                isRecentlyAdded: macro.id == recentlyAddedId,
+                isRecentlyEdited: macro.id == recentlyEditedId,
                 onEdit: { onEdit?(macro) }
             )
+            .transition(.asymmetric(
+                insertion: .scale(scale: 0.8).combined(with: .opacity),
+                removal: .scale(scale: 0.8).combined(with: .opacity)
+            ))
         }
         .listStyle(.inset(alternatesRowBackgrounds: true))
+        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: macros.map { $0.id })
     }
 
     private func categoryFor(_ macro: MacroItem) -> MacroCategory? {
@@ -648,6 +710,8 @@ struct MacroRowView: View {
     let macro: MacroItem
     var category: MacroCategory? = nil
     var isSelected: Bool = false
+    var isRecentlyAdded: Bool = false
+    var isRecentlyEdited: Bool = false
     var onEdit: (() -> Void)? = nil
 
     @State private var isHovering = false
@@ -663,6 +727,8 @@ struct MacroRowView: View {
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(category?.swiftUIColor ?? .blue)
             }
+            .scaleEffect(isRecentlyAdded ? 1.1 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isRecentlyAdded)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(macro.shortcut)
@@ -701,9 +767,113 @@ struct MacroRowView: View {
             }
         }
         .padding(.vertical, 4)
+        .padding(.horizontal, 8)
+        .background(
+            Group {
+                if isRecentlyAdded {
+                    // Liquid glass effect for newly added items
+                    if #available(macOS 26.0, *) {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.green.opacity(0.08))
+                            .glassEffect(in: .rect(cornerRadius: 8))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .strokeBorder(
+                                        LinearGradient(
+                                            colors: [
+                                                .green.opacity(0.6),
+                                                .green.opacity(0.3)
+                                            ],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1.5
+                                    )
+                            )
+                            .shadow(color: .green.opacity(0.3), radius: 8, x: 0, y: 2)
+                    } else {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(.green.opacity(0.08))
+                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+
+                            RoundedRectangle(cornerRadius: 8)
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [
+                                            .green.opacity(0.6),
+                                            .green.opacity(0.3)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1.5
+                                )
+                                .shadow(color: .green.opacity(0.3), radius: 8, x: 0, y: 2)
+                        }
+                    }
+                } else if isRecentlyEdited {
+                    // Liquid glass effect for edited items
+                    if #available(macOS 26.0, *) {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.blue.opacity(0.08))
+                            .glassEffect(in: .rect(cornerRadius: 8))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .strokeBorder(
+                                        LinearGradient(
+                                            colors: [
+                                                .blue.opacity(0.6),
+                                                .blue.opacity(0.3)
+                                            ],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1.5
+                                    )
+                            )
+                            .shadow(color: .blue.opacity(0.3), radius: 8, x: 0, y: 2)
+                    } else {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(.blue.opacity(0.08))
+                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+
+                            RoundedRectangle(cornerRadius: 8)
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [
+                                            .blue.opacity(0.6),
+                                            .blue.opacity(0.3)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1.5
+                                )
+                                .shadow(color: .blue.opacity(0.3), radius: 8, x: 0, y: 2)
+                        }
+                    }
+                } else if isHovering {
+                    // Subtle glass effect on hover
+                    if #available(macOS 26.0, *) {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.primary.opacity(0.03))
+                            .glassEffect(in: .rect(cornerRadius: 8))
+                    } else {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.primary.opacity(0.03))
+                            .background(.ultraThinMaterial.opacity(0.5), in: RoundedRectangle(cornerRadius: 8))
+                    }
+                }
+            }
+            .animation(.easeInOut(duration: 0.2), value: isHovering)
+        )
         .contentShape(Rectangle())
         .onHover { hovering in
-            isHovering = hovering
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isHovering = hovering
+            }
         }
     }
 }
