@@ -1,20 +1,3 @@
-<item>
-    <title>Version 1.3.9</title>
-    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.9</link>
-    <sparkle:version>1.3.9</sparkle:version>
-    <sparkle:shortVersionString>1.3.9</sparkle:shortVersionString>
-    <description><![CDATA[
-        <h2>PHTV 1.3.9</h2>
-        <p>See release notes at: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.9">GitHub Release</a></p>
-    ]]></description>
-    <pubDate>Sun, 04 Jan 2026 07:22:59 +0000</pubDate>
-    <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v1.3.9/PHTV-1.3.9.dmg"
-               sparkle:version="1.3.9"
-               sparkle:shortVersionString="1.3.9"
-               length="8368523"
-               type="application/octet-stream"
-           />
-      </item>
 <?xml version="1.0" encoding="utf-8"?>
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <channel>
