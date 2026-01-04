@@ -66,7 +66,7 @@ jobs:
           echo "  CFBundleShortVersionString: $VERSION"
           echo "  CFBundleVersion: $NEW_BUILD (was $CURRENT_BUILD)"
 
-      - name: Build PHTV
+      - name: Build PHTV (full log)
         run: |
           set -eo pipefail
           VERSION="${{ steps.version.outputs.version }}"
@@ -79,7 +79,10 @@ jobs:
             -destination 'platform=macOS' \
             -derivedDataPath ./build \
             clean build \
-            | xcpretty
+            | tee /tmp/xcodebuild.log
+
+          # Upload log on success too (helps debugging post-run)
+          cp /tmp/xcodebuild.log ./xcodebuild.log
           
           if [ ! -d "./build/Build/Products/Release/PHTV.app" ]; then
             echo "❌ Build failed - PHTV.app not found"
@@ -252,6 +255,13 @@ jobs:
 
       - name: Commit and push appcast
         if: ${{ success() }}
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log
+          path: xcodebuild.log
         run: |
           cd repo-main
           git config user.name "github-actions[bot]"
