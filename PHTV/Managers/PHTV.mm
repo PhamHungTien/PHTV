@@ -592,6 +592,7 @@ extern "C" {
                                                            @"com.microsoft.Edge",  // Edge Stable (alternate)
                                                            @"com.microsoft.Edge.Dev",
                                                            @"com.thebrowser.Browser",  // Arc Browser
+                                                           @"company.thebrowser.dia",  // Dia Browser
                                                            @"org.chromium.Chromium",  // Chromium
                                                            @"com.vivaldi.Vivaldi",  // Vivaldi
                                                            @"com.operasoftware.Opera"]];  // Opera
