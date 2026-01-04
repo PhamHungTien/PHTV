@@ -144,13 +144,15 @@ jobs:
 
       - name: Sign update with Sparkle
         id: sign_update
-        if: ${{ secrets.SPARKLE_PRIVATE_KEY != '' }}
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        if: ${{ env.SPARKLE_PRIVATE_KEY != '' }}
         run: |
           DMG_PATH="${{ steps.create_dmg.outputs.dmg_path }}"
           SPARKLE_BIN="${{ steps.sparkle.outputs.sparkle_bin }}"
           
           # Create temp key file
-          echo "${{ secrets.SPARKLE_PRIVATE_KEY }}" > /tmp/sparkle_key
+          echo "$SPARKLE_PRIVATE_KEY" > /tmp/sparkle_key
           
           # Sign the update
           SIGNATURE=$("$SPARKLE_BIN/sign_update" "$DMG_PATH" -f /tmp/sparkle_key | grep 'sparkle:edSignature=' | cut -d'"' -f2)
