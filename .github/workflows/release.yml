@@ -68,7 +68,7 @@ jobs:
 
       - name: Disable code signing in project (CI patch)
         run: |
-          echo "Patching project.pbxproj to disable code signing for CI..."
+          echo "Patching project.pbxproj for CI build..."
           
           # Backup original
           cp PHTV.xcodeproj/project.pbxproj PHTV.xcodeproj/project.pbxproj.bak
@@ -85,6 +85,13 @@ jobs:
           
           # Disable hardened runtime (causes signing issues)
           sed -i '' 's/ENABLE_HARDENED_RUNTIME = YES;/ENABLE_HARDENED_RUNTIME = NO;/g' PHTV.xcodeproj/project.pbxproj
+          
+          # Fix asset catalog issues - disable INCLUDE_ALL_APPICON_ASSETS
+          sed -i '' 's/ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;/ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;/g' PHTV.xcodeproj/project.pbxproj
+          
+          # Remove PHTV.icon from build (Icon Composer format not supported on all CI)
+          # Find the line with PHTV.icon in Resources and comment-style remove it
+          sed -i '' '/46EF4FFA2EEDBFD400DF8DD1.*PHTV.icon in Resources/d' PHTV.xcodeproj/project.pbxproj
           
           echo "✓ Project patched for CI build"
           
@@ -113,6 +120,8 @@ jobs:
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
+            ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS=NO \
+            ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOLS=NO \
             clean build \
             2>&1 | tee /tmp/xcodebuild.log
 
