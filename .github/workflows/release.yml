@@ -220,61 +220,22 @@ jobs:
       - name: Merge appcast entry into feed
         if: always()
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
           FEED_PATH="repo-main/docs/appcast.xml"
           ENTRY_PATH="/tmp/appcast_entry.xml"
+          TEMP_FEED="/tmp/appcast_merged.xml"
           
           if [ ! -f "$FEED_PATH" ]; then
             echo "Error: appcast.xml not found"
             exit 1
           fi
           
-          # Use Python script to merge appcast
-          cat > /tmp/merge_appcast.py << 'EOF'
-import xml.etree.ElementTree as ET
-from pathlib import Path
-
-feed_path = Path("repo-main/docs/appcast.xml")
-entry_path = Path("/tmp/appcast_entry.xml")
-
-# Register namespaces
-NS = {
-    'sparkle': 'http://www.andymatuschak.org/xml-namespaces/sparkle',
-    'dc': 'http://purl.org/dc/elements/1.1/'
-}
-for prefix, uri in NS.items():
-    ET.register_namespace(prefix, uri)
-
-# Parse feed
-tree = ET.parse(feed_path)
-root = tree.getroot()
-channel = root.find('channel')
-
-# Parse new entry
-entry_tree = ET.parse(entry_path)
-new_item = entry_tree.getroot()
-
-# Get version to de-duplicate
-def get_version(item):
-    v = item.find(f"{{{NS['sparkle']}}}shortVersionString")
-    return v.text if v is not None else None
-
-new_version = get_version(new_item)
-
-# Remove any existing items with same version
-for item in list(channel.findall('item')):
-    if get_version(item) == new_version:
-        channel.remove(item)
-
-# Insert at start (newest first)
-channel.insert(0, new_item)
-
-# Write back
-tree.write(feed_path, encoding='utf-8', xml_declaration=True)
-print("✓ Updated appcast.xml")
-EOF
+          # Simple XML merge: extract channel, insert entry at position 8 (after <description>)
+          # Insert new item after the opening <channel> tag
+          sed -e '/<channel>/a\' "$ENTRY_PATH" "$FEED_PATH" > "$TEMP_FEED"
           
-          python3 /tmp/merge_appcast.py
+          # Replace original
+          mv "$TEMP_FEED" "$FEED_PATH"
+          echo "✓ Appcast merged"
 
       - name: Commit and push appcast
         if: always()
