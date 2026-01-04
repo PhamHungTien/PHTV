@@ -37,7 +37,7 @@ jobs:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: latest-stable
+          xcode-version: "16.2"
 
       - name: Determine version
         id: version
@@ -48,7 +48,6 @@ jobs:
             VERSION="${GITHUB_REF_NAME#v}"
           fi
           
-          # Get current build number and increment
           CURRENT_BUILD=$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" PHTV/Info.plist)
           BUILD_NUMBER=$((CURRENT_BUILD + 1))
           
@@ -68,13 +67,11 @@ jobs:
 
       - name: Patch project for CI
         run: |
-          # Disable code signing for CI build
           sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' PHTV.xcodeproj/project.pbxproj
           sed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=macosx\*\]" = "Apple Development";/"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";/g' PHTV.xcodeproj/project.pbxproj
           sed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=macosx\*\]" = "Mac Development";/"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";/g' PHTV.xcodeproj/project.pbxproj
           sed -i '' 's/DEVELOPMENT_TEAM = F9XPW22T8M;/DEVELOPMENT_TEAM = "";/g' PHTV.xcodeproj/project.pbxproj
           sed -i '' 's/ENABLE_HARDENED_RUNTIME = YES;/ENABLE_HARDENED_RUNTIME = NO;/g' PHTV.xcodeproj/project.pbxproj
-          
           echo "✅ Project patched for CI"
 
       - name: Build
@@ -89,7 +86,6 @@ jobs:
             echo "❌ Build failed"
             exit 1
           fi
-          
           echo "✅ Build succeeded"
 
       - name: Create DMG
@@ -99,12 +95,10 @@ jobs:
           APP_PATH="./build/Build/Products/Release/PHTV.app"
           DMG_NAME="PHTV-$VERSION.dmg"
           
-          # Create temp folder with app and Applications symlink
           TEMP_DIR=$(mktemp -d)
           cp -R "$APP_PATH" "$TEMP_DIR/"
           ln -s /Applications "$TEMP_DIR/Applications"
           
-          # Create DMG
           hdiutil create -volname "PHTV" \
             -srcfolder "$TEMP_DIR" \
             -ov -format UDZO \
@@ -122,7 +116,7 @@ jobs:
         run: |
           curl -sL "https://github.com/sparkle-project/Sparkle/releases/download/${{ env.SPARKLE_VERSION }}/Sparkle-for-Swift-Package-Manager.zip" -o sparkle.zip
           unzip -q sparkle.zip -d /tmp/Sparkle
-          echo "✅ Sparkle ${{ env.SPARKLE_VERSION }} downloaded"
+          echo "✅ Sparkle downloaded"
 
       - name: Sign update
         id: sign
@@ -132,16 +126,14 @@ jobs:
           DMG_NAME="${{ steps.dmg.outputs.name }}"
           
           if [ -z "$SPARKLE_PRIVATE_KEY" ]; then
-            echo "⚠️ No SPARKLE_PRIVATE_KEY, skipping signing"
+            echo "⚠️ No SPARKLE_PRIVATE_KEY"
             echo "signature=" >> $GITHUB_OUTPUT
             exit 0
           fi
           
           echo "$SPARKLE_PRIVATE_KEY" > /tmp/sparkle.key
-          
           RESULT=$(/tmp/Sparkle/bin/sign_update "$DMG_NAME" -f /tmp/sparkle.key)
           SIGNATURE=$(echo "$RESULT" | grep -o 'sparkle:edSignature="[^"]*"' | cut -d'"' -f2)
-          
           rm /tmp/sparkle.key
           
           if [ -z "$SIGNATURE" ]; then
@@ -150,7 +142,7 @@ jobs:
           fi
           
           echo "signature=$SIGNATURE" >> $GITHUB_OUTPUT
-          echo "✅ Signed: ${SIGNATURE:0:20}..."
+          echo "✅ Signed"
 
       - name: Upload DMG artifact
         uses: actions/upload-artifact@v4
@@ -208,65 +200,63 @@ jobs:
           DMG_NAME: ${{ needs.build.outputs.dmg_name }}
           REPO: ${{ github.repository }}
         run: |
-          DATE=$(date -R)
-          DOWNLOAD_URL="https://github.com/$REPO/releases/download/v$VERSION/$DMG_NAME"
-          RELEASE_URL="https://github.com/$REPO/releases/tag/v$VERSION"
+          python3 - << 'EOF'
+          import os
+          import sys
+          from datetime import datetime
           
-          # Create new item entry
-          cat > /tmp/new_item.xml << ITEMEOF
-        <item>
-            <title>PHTV $VERSION</title>
-            <link>$RELEASE_URL</link>
-            <sparkle:version>$BUILD</sparkle:version>
-            <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
-            <description><![CDATA[
-                <h2>PHTV $VERSION</h2>
-                <p>See release notes: <a href="$RELEASE_URL">GitHub Release</a></p>
-            ]]></description>
-            <pubDate>$DATE</pubDate>
-            <enclosure
-                url="$DOWNLOAD_URL"
-                sparkle:version="$BUILD"
-                sparkle:shortVersionString="$VERSION"
-                sparkle:edSignature="$SIGNATURE"
-                length="$SIZE"
-                type="application/octet-stream"/>
-            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
-        </item>
-
-ITEMEOF
+          version = os.environ['VERSION']
+          build = os.environ['BUILD']
+          size = os.environ['SIZE']
+          signature = os.environ['SIGNATURE']
+          dmg_name = os.environ['DMG_NAME']
+          repo = os.environ['REPO']
           
-          # Insert after marker comment using Python
-          python3 << 'PYEOF'
-import os
-import sys
-
-marker = '<!-- Most recent version first -->'
-version = os.environ['VERSION']
-
-with open('docs/appcast.xml', 'r') as f:
-    content = f.read()
-
-with open('/tmp/new_item.xml', 'r') as f:
-    new_item = f.read()
-
-if marker not in content:
-    print("❌ Marker not found in appcast.xml")
-    sys.exit(1)
-
-# Check if this version already exists
-if f'<sparkle:shortVersionString>{version}</sparkle:shortVersionString>' in content:
-    print(f"⚠️ Version {version} already in appcast, skipping")
-    sys.exit(0)
-
-# Insert new item after marker
-new_content = content.replace(marker, marker + '\n' + new_item)
-
-with open('docs/appcast.xml', 'w') as f:
-    f.write(new_content)
-
-print("✅ Appcast updated")
-PYEOF
+          download_url = f"https://github.com/{repo}/releases/download/v{version}/{dmg_name}"
+          release_url = f"https://github.com/{repo}/releases/tag/v{version}"
+          date = datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S +0000")
+          
+          new_item = f'''        <item>
+              <title>PHTV {version}</title>
+              <link>{release_url}</link>
+              <sparkle:version>{build}</sparkle:version>
+              <sparkle:shortVersionString>{version}</sparkle:shortVersionString>
+              <description><![CDATA[
+                  <h2>PHTV {version}</h2>
+                  <p>See release notes: <a href="{release_url}">GitHub Release</a></p>
+              ]]></description>
+              <pubDate>{date}</pubDate>
+              <enclosure
+                  url="{download_url}"
+                  sparkle:version="{build}"
+                  sparkle:shortVersionString="{version}"
+                  sparkle:edSignature="{signature}"
+                  length="{size}"
+                  type="application/octet-stream"/>
+              <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+          </item>
+          '''
+          
+          marker = '<!-- Most recent version first -->'
+          
+          with open('docs/appcast.xml', 'r') as f:
+              content = f.read()
+          
+          if marker not in content:
+              print("❌ Marker not found")
+              sys.exit(1)
+          
+          if f'<sparkle:shortVersionString>{version}</sparkle:shortVersionString>' in content:
+              print(f"⚠️ Version {version} already exists")
+              sys.exit(0)
+          
+          new_content = content.replace(marker, marker + '\n' + new_item)
+          
+          with open('docs/appcast.xml', 'w') as f:
+              f.write(new_content)
+          
+          print("✅ Appcast updated")
+          EOF
 
       - name: Commit and push
         run: |
@@ -293,7 +283,7 @@ PYEOF
         with:
           ref: main
 
-      - name: Download DMG and calculate SHA256
+      - name: Download DMG and update formula
         env:
           VERSION: ${{ needs.build.outputs.version }}
           DMG_NAME: ${{ needs.build.outputs.dmg_name }}
@@ -302,17 +292,10 @@ PYEOF
           curl -sL "https://github.com/$REPO/releases/download/v$VERSION/$DMG_NAME" -o "$DMG_NAME"
           SHA256=$(sha256sum "$DMG_NAME" | cut -d' ' -f1)
           
-          echo "SHA256=$SHA256" >> $GITHUB_ENV
-          echo "✅ SHA256: $SHA256"
-
-      - name: Update formula
-        env:
-          VERSION: ${{ needs.build.outputs.version }}
-        run: |
           sed -i "s/version \".*\"/version \"$VERSION\"/" homebrew/phtv.rb
           sed -i "s/sha256 \".*\"/sha256 \"$SHA256\"/" homebrew/phtv.rb
           
-          echo "✅ Updated homebrew/phtv.rb"
+          echo "✅ Updated formula with SHA256: $SHA256"
 
       - name: Commit and push
         run: |
