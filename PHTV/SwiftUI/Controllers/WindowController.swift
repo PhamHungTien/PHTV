@@ -98,7 +98,7 @@ class SwiftUIWindowController: NSWindowController, NSWindowDelegate {
 
     private func updateTitlebarOpacity() {
         let enabled = UserDefaults.standard.object(forKey: "vEnableLiquidGlassBackground") as? Bool ?? true
-        let opacity = UserDefaults.standard.object(forKey: "vSettingsBackgroundOpacity") as? Double ?? 0.95
+        let opacity = UserDefaults.standard.object(forKey: "vSettingsBackgroundOpacity") as? Double ?? 1.0
 
         if enabled {
             titlebarEffectView?.alphaValue = CGFloat(opacity)
