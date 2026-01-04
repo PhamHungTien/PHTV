@@ -68,14 +68,18 @@ jobs:
 
       - name: Build PHTV
         run: |
+          set -eo pipefail
           VERSION="${{ steps.version.outputs.version }}"
           echo "Building PHTV version $VERSION..."
           
-          xcodebuild -scheme PHTV \
+          xcodebuild \
+            -project PHTV/PHTV.xcodeproj \
+            -scheme PHTV \
             -configuration Release \
+            -destination 'platform=macOS' \
             -derivedDataPath ./build \
             clean build \
-            | xcpretty || true
+            | xcpretty
           
           if [ ! -d "./build/Build/Products/Release/PHTV.app" ]; then
             echo "❌ Build failed - PHTV.app not found"
