@@ -371,6 +371,11 @@ struct SystemSettingsView: View {
         } message: {
             Text(successMessage)
         }
+        .alert("Đã cập nhật", isPresented: $appState.showNoUpdateAlert) {
+            Button("OK") {}
+        } message: {
+            Text("Bạn đang sử dụng phiên bản mới nhất của PHTV.")
+        }
     }
 
     private func formatDate(_ date: Date) -> String {

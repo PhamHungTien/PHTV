@@ -449,6 +449,7 @@ final class AppState: ObservableObject {
     @Published var autoInstallUpdates: Bool = true  // Tự động cài đặt cập nhật
     @Published var showCustomUpdateBanner: Bool = false
     @Published var customUpdateBannerInfo: UpdateBannerInfo? = nil
+    @Published var showNoUpdateAlert: Bool = false  // Hiển thị thông báo "đã là phiên bản mới nhất"
 
     private var cancellables = Set<AnyCancellable>()
     private var notificationObservers: [NSObjectProtocol] = []
@@ -671,6 +672,19 @@ final class AppState: ObservableObject {
             }
         }
         notificationObservers.append(observer6)
+
+        // Sparkle no update found (manual check only)
+        let observer7 = NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("SparkleNoUpdateFound"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self = self else { return }
+            Task { @MainActor in
+                self.showNoUpdateAlert = true
+            }
+        }
+        notificationObservers.append(observer7)
 
         // Listen for app termination
         let terminateObserver = NotificationCenter.default.addObserver(

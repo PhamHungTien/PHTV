@@ -112,9 +112,11 @@
 - (void)updaterDidNotFindUpdate:(SPUUpdater *)updater {
     NSLog(@"[Sparkle] No updates available (manual check: %@)", self.isManualCheck ? @"YES" : @"NO");
 
-    // Silent for both manual and background checks when no update is found
-    // Only notify when there IS an update available
-    // This prevents annoying "You're up to date" messages
+    // Only show "up to date" message for manual checks
+    if (self.isManualCheck) {
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"SparkleNoUpdateFound" object:nil];
+    }
+    // Silent for background checks - no notification
 
     // Reset flag after check
     self.isManualCheck = NO;
