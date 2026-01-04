@@ -614,6 +614,7 @@ extern "C" {
                                                             @"com.apple.weather",  // Weather
                                                             @"com.apple.podcasts",  // Podcasts
                                                             @"com.apple.Passwords",  // Passwords
+                                                            @"com.apple.iBooksX",  // Books
                                                             PHTV_BUNDLE]];  // PHTV itself - SwiftUI TextField needs HID tap posting
 
     // Apps that need precomposed Unicode but should use normal batched sending (not AX API)
