@@ -229,7 +229,8 @@ jobs:
             exit 1
           fi
           
-          python3 - <<'PYTHON'
+          # Use Python script to merge appcast
+          cat > /tmp/merge_appcast.py << 'EOF'
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -271,7 +272,9 @@ channel.insert(0, new_item)
 # Write back
 tree.write(feed_path, encoding='utf-8', xml_declaration=True)
 print("✓ Updated appcast.xml")
-PYTHON
+EOF
+          
+          python3 /tmp/merge_appcast.py
 
       - name: Commit and push appcast
         if: always()
