@@ -126,20 +126,21 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var detailView: some View {
-        switch selectedTab {
-        case .typing:
+        // Lazy loading: Only create the view for selected tab
+        // This significantly reduces memory usage by not instantiating all 7 tabs at once
+        if selectedTab == .typing {
             TypingSettingsView()
-        case .hotkeys:
+        } else if selectedTab == .hotkeys {
             HotkeySettingsView()
-        case .macro:
+        } else if selectedTab == .macro {
             MacroSettingsView()
-        case .apps:
+        } else if selectedTab == .apps {
             AppsSettingsView()
-        case .system:
+        } else if selectedTab == .system {
             SystemSettingsView()
-        case .bugReport:
+        } else if selectedTab == .bugReport {
             BugReportView()
-        case .about:
+        } else if selectedTab == .about {
             AboutView()
         }
     }
