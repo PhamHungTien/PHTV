@@ -372,3 +372,29 @@ jobs:
             git push
             echo "✅ Pushed"
           fi
+
+      - name: Sync to homebrew-tap
+        env:
+          TAP_REPO_TOKEN: ${{ secrets.TAP_REPO_TOKEN }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          if [ -z "$TAP_REPO_TOKEN" ]; then
+            echo "⚠️ TAP_REPO_TOKEN not set, skipping tap sync"
+            exit 0
+          fi
+          
+          git clone "https://x-access-token:${TAP_REPO_TOKEN}@github.com/PhamHungTien/homebrew-tap.git" /tmp/homebrew-tap
+          cp homebrew/phtv.rb /tmp/homebrew-tap/Casks/phtv.rb
+          
+          cd /tmp/homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/phtv.rb
+          
+          if git diff --staged --quiet; then
+            echo "No changes to tap"
+          else
+            git commit -m "chore: update PHTV to v$VERSION"
+            git push
+            echo "✅ Tap synced"
+          fi
