@@ -629,6 +629,18 @@ final class AppState: ObservableObject {
             }
         }
         notificationObservers.append(observer6)
+
+        // Listen for app termination
+        let terminateObserver = NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("ApplicationWillTerminate"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.cleanupObservers()
+            }
+        }
+        notificationObservers.append(terminateObserver)
     }
 
     /// Cleanup notification observers (call on app termination if needed)

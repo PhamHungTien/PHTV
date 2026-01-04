@@ -625,8 +625,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     // End typing stats session
     [[NSNotificationCenter defaultCenter] postNotificationName:@"TypingStatsSessionEnd" object:nil];
 
-    // Cleanup AppState notification observers to prevent leaks
-    [AppState.shared cleanupObservers];
+    // Post notification for SwiftUI cleanup instead of direct call
+    // AppState is @MainActor and cannot be called directly from Objective-C
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"ApplicationWillTerminate" object:nil];
 }
 
 #pragma mark - SwiftUI Bridge
