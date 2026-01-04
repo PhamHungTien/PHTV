@@ -285,52 +285,52 @@ jobs:
           cp appcast_entry.xml "$ENTRY_PATH"
 
           python - <<'PY'
-from pathlib import Path
-import xml.etree.ElementTree as ET
+            from pathlib import Path
+            import xml.etree.ElementTree as ET
 
-feed_path = Path("repo-main/docs/appcast.xml")
-entry_path = Path("repo-main/appcast_entry.xml")
+            feed_path = Path("repo-main/docs/appcast.xml")
+            entry_path = Path("repo-main/appcast_entry.xml")
 
-if not feed_path.exists():
-    raise SystemExit(f"Feed not found: {feed_path}")
-if not entry_path.exists():
-    raise SystemExit(f"Appcast entry not found: {entry_path}")
+            if not feed_path.exists():
+              raise SystemExit(f"Feed not found: {feed_path}")
+            if not entry_path.exists():
+              raise SystemExit(f"Appcast entry not found: {entry_path}")
 
-NS = {
-    'sparkle': 'http://www.andymatuschak.org/xml-namespaces/sparkle',
-    'dc': 'http://purl.org/dc/elements/1.1/'
-}
-for prefix, uri in NS.items():
-    ET.register_namespace(prefix, uri)
+            NS = {
+              'sparkle': 'http://www.andymatuschak.org/xml-namespaces/sparkle',
+              'dc': 'http://purl.org/dc/elements/1.1/'
+            }
+            for prefix, uri in NS.items():
+              ET.register_namespace(prefix, uri)
 
-# Parse main feed
-tree = ET.parse(feed_path)
-root = tree.getroot()
-channel = root.find('channel')
-if channel is None:
-    raise SystemExit('Invalid appcast: missing channel element')
+            # Parse main feed
+            tree = ET.parse(feed_path)
+            root = tree.getroot()
+            channel = root.find('channel')
+            if channel is None:
+              raise SystemExit('Invalid appcast: missing channel element')
 
-# Parse new entry
-entry_tree = ET.parse(entry_path)
-new_item = entry_tree.getroot()
+            # Parse new entry
+            entry_tree = ET.parse(entry_path)
+            new_item = entry_tree.getroot()
 
-# Extract version to de-duplicate
-def get_short_version(item: ET.Element) -> str | None:
-    sv = item.find(f"{{{NS['sparkle']}}}shortVersionString")
-    return sv.text if sv is not None else None
+            # Extract version to de-duplicate
+            def get_short_version(item: ET.Element) -> str | None:
+              sv = item.find(f"{{{NS['sparkle']}}}shortVersionString")
+              return sv.text if sv is not None else None
 
-new_version = get_short_version(new_item)
+            new_version = get_short_version(new_item)
 
-# Remove any existing items with same shortVersionString
-for item in list(channel.findall('item')):
-    if get_short_version(item) == new_version:
-        channel.remove(item)
+            # Remove any existing items with same shortVersionString
+            for item in list(channel.findall('item')):
+              if get_short_version(item) == new_version:
+                channel.remove(item)
 
-# Insert newest first
-channel.insert(0, new_item)
+            # Insert newest first
+            channel.insert(0, new_item)
 
-# Write back
-tree.write(feed_path, encoding='utf-8', xml_declaration=True)
+            # Write back
+            tree.write(feed_path, encoding='utf-8', xml_declaration=True)
 PY
 
           echo "Updated appcast feed: $FEED_PATH"
