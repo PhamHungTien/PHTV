@@ -7,10 +7,12 @@
 ### Bộ gõ tiếng Việt hiện đại cho macOS
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/PhamHungTien/PHTV/release.yml?branch=main&label=Build)](../../actions/workflows/release.yml)
 [![macOS 13+](https://img.shields.io/badge/macOS-13+-blue.svg)](https://www.apple.com/macos/)
 [![Universal Binary](https://img.shields.io/badge/Universal-Intel%20%2B%20Apple%20Silicon-red.svg)](https://support.apple.com/en-us/HT211814)
 [![Swift 6.0+](https://img.shields.io/badge/Swift-6.0+-orange.svg)](https://swift.org)
 [![GitHub release](https://img.shields.io/github/v/release/PhamHungTien/PHTV)](../../releases/latest)
+[![Auto-update](https://img.shields.io/badge/Auto--update-Sparkle-green.svg)](https://sparkle-project.org/)
 [![GitHub downloads](https://img.shields.io/github/downloads/PhamHungTien/PHTV/total?label=Downloads)](../../releases)
 [![GitHub stars](https://img.shields.io/github/stars/PhamHungTien/PHTV)](../../stargazers)
 [![Sponsor](https://img.shields.io/badge/❤️_Sponsor-PHTV-ea4aaa?style=flat&logo=github-sponsors)](https://phamhungtien.com/PHTV/donate.html)
@@ -24,6 +26,24 @@
 ## Giới thiệu
 
 **PHTV (Precision Hybrid Typing Vietnamese)** là bộ gõ tiếng Việt **offline, nhanh, và riêng tư** cho macOS 13+. Được phát triển bằng Swift/SwiftUI với engine C++ từ OpenKey, mang đến trải nghiệm gõ tiếng Việt mượt mà và tích hợp sâu vào hệ thống.
+
+✨ **Tự động cập nhật** - Nhận phiên bản mới ngay khi ra mắt với Sparkle framework. Không cần tải lại thủ công!
+
+## 🚀 Quick Start
+
+```bash
+# Cài đặt bằng Homebrew
+brew install --cask phamhungtien/tap/phtv
+
+# Mở ứng dụng
+open /Applications/PHTV.app
+```
+
+**Sau khi cài:**
+1. Cho phép quyền **Accessibility** trong System Settings
+2. Click icon **En** trên menu bar → chọn **Vi** để bật tiếng Việt
+3. Nhấn **Control + Shift** để chuyển đổi Việt/Anh (tùy chỉnh trong Settings)
+4. Bắt đầu gõ! 🎉
 
 ## Tính năng
 
@@ -85,7 +105,7 @@
 ### Hệ thống
 - **Khởi động cùng macOS** - Tùy chọn chạy khi đăng nhập
 - **Hot Reload** - Thay đổi cài đặt không cần khởi động lại
-- **Tự động cập nhật** - Kiểm tra phiên bản mới từ GitHub
+- **Tự động cập nhật (Sparkle)** - Kiểm tra và cập nhật phiên bản mới tự động từ GitHub với EdDSA signing bảo mật
 - **Import/Export cài đặt** - Sao lưu và khôi phục toàn bộ settings
 - **Menu bar icon** - Hiển thị trạng thái Vi/En trên thanh menu
 - **Báo lỗi thông minh** - Tự động thu thập log debug, thống kê lỗi, gửi qua GitHub/Email
@@ -138,7 +158,9 @@
 brew install --cask phamhungtien/tap/phtv
 ```
 
-**Cập nhật phiên bản mới:**
+> 💡 **Tự động cập nhật**: Sau khi cài, PHTV sẽ tự động kiểm tra và thông báo khi có phiên bản mới. Không cần `brew upgrade` thủ công!
+
+**Cập nhật thủ công qua Homebrew (nếu muốn):**
 ```bash
 brew upgrade --cask phtv
 ```
@@ -172,6 +194,18 @@ open PHTV.xcodeproj
 ```
 
 > **Lưu ý**: Ứng dụng cần quyền **Accessibility** để hoạt động. Vào **System Settings > Privacy & Security > Accessibility** và thêm PHTV.
+
+### 🤖 CI/CD & Release Automation
+
+PHTV sử dụng GitHub Actions để tự động build, sign, và release:
+- ✅ **Tự động build** trên macOS 26 với Xcode
+- ✅ **Code signing** với Apple Development certificate
+- ✅ **Tạo DMG** với Applications shortcut
+- ✅ **Sparkle signing** cho auto-update bảo mật
+- ✅ **Auto-update Homebrew** formula và appcast.xml
+- ✅ **Auto-increment build number** cho mỗi release
+
+Xem chi tiết tại [.github/workflows/README.md](.github/workflows/README.md)
 
 ## Sử dụng
 
@@ -217,11 +251,18 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 
 ## Công nghệ
 
+### Core
 - **Swift 6.0** + **SwiftUI** - Giao diện native hiện đại
 - **C++** - Engine xử lý input (từ OpenKey)
 - **CGEvent API** - Event interception và xử lý bàn phím
 - **Accessibility API** - Hỗ trợ Spotlight và các app đặc biệt
 - **NSUserDefaults** - Lưu trữ cấu hình local
+
+### Distribution & Updates
+- **Sparkle 2.8.1** - Framework auto-update với EdDSA signing
+- **GitHub Actions** - CI/CD tự động build và release
+- **Homebrew Cask** - Package manager cho macOS
+- **DMG** - Universal disk image với Applications symlink
 
 ## Tài liệu
 
@@ -230,7 +271,8 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 - **[FAQ](FAQ.md)** - Các câu hỏi thường gặp
 
 ### Nhà phát triển
-- **[Scripts](scripts/)** - Scripts tự động hóa (Homebrew, Sparkle)
+- **[GitHub Actions Workflows](.github/workflows/README.md)** - CI/CD, auto-update, và release automation
+- **[Scripts](scripts/)** - Scripts tự động hóa (Homebrew, Sparkle, DMG creation)
 - **[Contributing](CONTRIBUTING.md)** - Hướng dẫn đóng góp
 - **[Security](SECURITY.md)** - Chính sách bảo mật
 
