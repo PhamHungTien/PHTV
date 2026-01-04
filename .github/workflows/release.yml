@@ -66,7 +66,40 @@ jobs:
           echo "  CFBundleShortVersionString: $VERSION"
           echo "  CFBundleVersion: $NEW_BUILD (was $CURRENT_BUILD)"
 
-      - name: Build PHTV (full log)
+      - name: Disable code signing in project (CI patch)
+        run: |
+          echo "Patching project.pbxproj to disable code signing for CI..."
+          
+          # Backup original
+          cp PHTV.xcodeproj/project.pbxproj PHTV.xcodeproj/project.pbxproj.bak
+          
+          # Replace Automatic with Manual signing
+          sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' PHTV.xcodeproj/project.pbxproj
+          
+          # Replace Apple Development with ad-hoc signing (-)
+          sed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=macosx\*\]" = "Apple Development";/"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";/g' PHTV.xcodeproj/project.pbxproj
+          sed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=macosx\*\]" = "Mac Development";/"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";/g' PHTV.xcodeproj/project.pbxproj
+          
+          # Clear DEVELOPMENT_TEAM
+          sed -i '' 's/DEVELOPMENT_TEAM = F9XPW22T8M;/DEVELOPMENT_TEAM = "";/g' PHTV.xcodeproj/project.pbxproj
+          
+          # Disable hardened runtime (causes signing issues)
+          sed -i '' 's/ENABLE_HARDENED_RUNTIME = YES;/ENABLE_HARDENED_RUNTIME = NO;/g' PHTV.xcodeproj/project.pbxproj
+          
+          echo "✓ Project patched for CI build"
+          
+          # Show diff
+          diff PHTV.xcodeproj/project.pbxproj.bak PHTV.xcodeproj/project.pbxproj || true
+
+      - name: Resolve Swift Package Manager dependencies
+        run: |
+          echo "Resolving SPM dependencies..."
+          xcodebuild -resolvePackageDependencies \
+            -project PHTV.xcodeproj \
+            -scheme PHTV
+          echo "✓ SPM dependencies resolved"
+
+      - name: Build PHTV
         run: |
           set -eo pipefail
           VERSION="${{ steps.version.outputs.version }}"
@@ -76,16 +109,12 @@ jobs:
             -project PHTV.xcodeproj \
             -scheme PHTV \
             -configuration Release \
-            -destination 'platform=macOS,arch=arm64' \
             -derivedDataPath ./build \
-            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGN_ENTITLEMENTS="" \
-            DEVELOPMENT_TEAM="" \
-            PROVISIONING_PROFILE_SPECIFIER="" \
             clean build \
-            | tee /tmp/xcodebuild.log
+            2>&1 | tee /tmp/xcodebuild.log
 
           # Upload log on success too (helps debugging post-run)
           cp /tmp/xcodebuild.log ./xcodebuild.log
