@@ -21,11 +21,13 @@ struct CardStyle: ViewModifier {
                         .glassEffect(in: .rect(cornerRadius: 12))
                 }
         } else {
+            // Use drawingGroup() to flatten the view hierarchy and reduce compositing
             content
                 .padding()
                 .background(Color(NSColor.controlBackgroundColor))
                 .cornerRadius(8)
                 .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
+                .drawingGroup(opaque: false)
         }
     }
 }
@@ -200,7 +202,8 @@ extension View {
 // MARK: - Settings View Background
 
 /// Visual Effect background for blur effect
-struct VisualEffectBackground: NSViewRepresentable {
+/// Optimized: Uses Equatable to prevent unnecessary CALayer updates
+struct VisualEffectBackground: NSViewRepresentable, Equatable {
     var material: NSVisualEffectView.Material
     var blendingMode: NSVisualEffectView.BlendingMode
 
@@ -209,22 +212,38 @@ struct VisualEffectBackground: NSViewRepresentable {
         view.material = material
         view.blendingMode = blendingMode
         view.state = .active
+        // Performance: Disable implicit animations for property changes
+        view.wantsLayer = true
+        view.layer?.actions = ["contents": NSNull(), "bounds": NSNull()]
         return view
     }
 
     func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
-        nsView.material = material
-        nsView.blendingMode = blendingMode
+        // Only update if values changed to reduce CALayer updates
+        if nsView.material != material {
+            nsView.material = material
+        }
+        if nsView.blendingMode != blendingMode {
+            nsView.blendingMode = blendingMode
+        }
+    }
+
+    nonisolated static func == (lhs: VisualEffectBackground, rhs: VisualEffectBackground) -> Bool {
+        lhs.material == rhs.material && lhs.blendingMode == rhs.blendingMode
     }
 }
 
 /// Applies appropriate background for settings views
 /// Uses sidebar material for beautiful liquid glass effect when enabled
+/// Optimized: Reads directly from UserDefaults to avoid unnecessary redraws from AppState changes
 struct SettingsViewBackground: ViewModifier {
-    @EnvironmentObject var appState: AppState
+    // Read directly from UserDefaults to avoid subscribing to all AppState changes
+    // Keys must match AppState: "vEnableLiquidGlassBackground" and "vSettingsBackgroundOpacity"
+    @AppStorage("vEnableLiquidGlassBackground") private var enableLiquidGlass = true
+    @AppStorage("vSettingsBackgroundOpacity") private var backgroundOpacity = 1.0
 
     func body(content: Content) -> some View {
-        if appState.enableLiquidGlassBackground {
+        if enableLiquidGlass {
             content
                 .scrollContentBackground(.hidden)
                 .background(
@@ -232,7 +251,7 @@ struct SettingsViewBackground: ViewModifier {
                         material: .sidebar,
                         blendingMode: .behindWindow
                     )
-                    .opacity(appState.settingsBackgroundOpacity)
+                    .opacity(backgroundOpacity)
                     .ignoresSafeArea()
                 )
         } else {

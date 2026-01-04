@@ -13,6 +13,7 @@ import AppKit
 class SwiftUIWindowController: NSWindowController, NSWindowDelegate {
 
     private var titlebarEffectView: NSVisualEffectView?
+    private var opacityObserver: Any?
 
     convenience init<Content: View>(rootView: Content, title: String, size: NSSize = NSSize(width: 800, height: 600), unifiedTitlebar: Bool = false) {
         var styleMask: NSWindow.StyleMask = [.titled, .closable, .miniaturizable, .resizable]
@@ -83,17 +84,14 @@ class SwiftUIWindowController: NSWindowController, NSWindowDelegate {
         // Apply initial opacity from settings
         updateTitlebarOpacity()
 
-        // Observe opacity changes
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleOpacityChanged),
-            name: NSNotification.Name("PHTVSettingsChanged"),
-            object: nil
-        )
-    }
-
-    @objc private func handleOpacityChanged() {
-        updateTitlebarOpacity()
+        // Observe opacity changes using block-based observer (safer memory management)
+        opacityObserver = NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("PHTVSettingsChanged"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.updateTitlebarOpacity()
+        }
     }
 
     private func updateTitlebarOpacity() {
@@ -109,8 +107,11 @@ class SwiftUIWindowController: NSWindowController, NSWindowDelegate {
 
     // Handle window close to release reference
     func windowWillClose(_ notification: Notification) {
-        // Remove observer
-        NotificationCenter.default.removeObserver(self)
+        // Remove block-based observer properly
+        if let observer = opacityObserver {
+            NotificationCenter.default.removeObserver(observer)
+            opacityObserver = nil
+        }
 
         // Restore dock icon state to user preference when closing settings
         if window?.title == "Cài đặt PHTV" || window?.title == "Cài đặt" {
@@ -119,6 +120,7 @@ class SwiftUIWindowController: NSWindowController, NSWindowDelegate {
             appDelegate?.showIcon(showDock)
         }
     }
+
 }
 
 // MARK: - Convenience Factory Methods

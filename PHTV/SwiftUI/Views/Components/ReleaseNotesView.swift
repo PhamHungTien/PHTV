@@ -97,6 +97,10 @@ struct ReleaseNotesView: View {
 struct ReleaseNotesHTML: NSViewRepresentable {
     let html: String
 
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
     func makeNSView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
         config.suppressesIncrementalRendering = false
@@ -104,15 +108,29 @@ struct ReleaseNotesHTML: NSViewRepresentable {
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.setValue(false, forKey: "drawsBackground")
 
+        // Store reference for cleanup
+        context.coordinator.webView = webView
+
         // Load content immediately
         loadContent(webView)
+        context.coordinator.loadedHTML = html
 
         return webView
     }
 
     func updateNSView(_ webView: WKWebView, context: Context) {
-        // Only reload if content changed
+        // Only reload if content actually changed
+        guard context.coordinator.loadedHTML != html else { return }
         loadContent(webView)
+        context.coordinator.loadedHTML = html
+    }
+
+    /// Cleanup WKWebView when view is removed to prevent memory leaks
+    static func dismantleNSView(_ webView: WKWebView, coordinator: Coordinator) {
+        webView.stopLoading()
+        webView.loadHTMLString("", baseURL: nil)
+        webView.configuration.userContentController.removeAllScriptMessageHandlers()
+        coordinator.webView = nil
     }
 
     private func loadContent(_ webView: WKWebView) {
@@ -187,6 +205,11 @@ struct ReleaseNotesHTML: NSViewRepresentable {
         </html>
         """
         webView.loadHTMLString(template, baseURL: nil)
+    }
+
+    class Coordinator {
+        var loadedHTML: String = ""
+        weak var webView: WKWebView?
     }
 }
 

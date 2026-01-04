@@ -16,6 +16,12 @@ class StatusBarController: ObservableObject {
     @Published var currentCodeTable: String = "Unicode"
     @Published var isEnabled: Bool = true
     private var menuBarIconSize: Double = 18.0
+
+    // MARK: - Icon Caching
+    private var iconCache: [String: NSImage] = [:]
+    private var lastIconCacheKey: String = ""
+    private var iconSizeObserver: Any?
+    private var iconPreferenceObserver: Any?
     
     init() {
         setupStatusItem()
@@ -198,6 +204,15 @@ class StatusBarController: ObservableObject {
     }
 
     private func makeMenuBarIcon(size: CGFloat, slashed: Bool) -> NSImage? {
+        // Generate cache key based on current state
+        let useVietnameseIcon = AppState.shared.useVietnameseMenubarIcon
+        let cacheKey = "\(size)-\(slashed)-\(useVietnameseIcon)"
+
+        // Return cached icon if available
+        if let cachedIcon = iconCache[cacheKey] {
+            return cachedIcon
+        }
+
         // Use different icons based on language mode
         let baseIcon: NSImage? = {
             if slashed {
@@ -207,7 +222,6 @@ class StatusBarController: ObservableObject {
                 }
             }
             // Vietnamese mode - use menubar_vietnamese.png or menubar_icon.png based on preference
-            let useVietnameseIcon = AppState.shared.useVietnameseMenubarIcon
             if useVietnameseIcon, let vietnameseIcon = NSImage(named: "menubar_vietnamese") {
                 return vietnameseIcon
             }
@@ -226,11 +240,19 @@ class StatusBarController: ObservableObject {
         let rect = NSRect(origin: .zero, size: targetSize)
         baseIcon.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1.0, respectFlipped: true, hints: [.interpolation: NSImageInterpolation.high])
 
+        // Cache the generated icon
+        iconCache[cacheKey] = img
+
         return img
+    }
+
+    /// Clear icon cache when settings change
+    private func invalidateIconCache() {
+        iconCache.removeAll()
     }
     
     private func setupNotificationObservers() {
-        NotificationCenter.default.addObserver(
+        iconSizeObserver = NotificationCenter.default.addObserver(
             forName: NSNotification.Name("MenuBarIconSizeChanged"),
             object: nil,
             queue: .main
@@ -239,22 +261,25 @@ class StatusBarController: ObservableObject {
             if let size = notification.object as? NSNumber {
                 Task { @MainActor in
                     self.menuBarIconSize = size.doubleValue
+                    self.invalidateIconCache()  // Clear cache when size changes
                     self.updateStatusButton()
                 }
             }
         }
 
-        NotificationCenter.default.addObserver(
+        iconPreferenceObserver = NotificationCenter.default.addObserver(
             forName: NSNotification.Name("MenuBarIconPreferenceChanged"),
             object: nil,
             queue: .main
         ) { [weak self] _ in
             guard let self = self else { return }
             Task { @MainActor in
+                self.invalidateIconCache()  // Clear cache when preference changes
                 self.updateStatusButton()
             }
         }
     }
+
     
     private func getHotkeyString() -> String {
         // Get hotkey from AppState

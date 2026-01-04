@@ -135,8 +135,25 @@ final class BeepManager {
 }
 
 // MARK: - Menu Bar Icon Drawing
+
+/// Cache for menu bar icons to avoid repeated image generation
+@MainActor
+private var menuBarIconCache: [String: NSImage] = [:]
+
+/// Invalidate menu bar icon cache (call when icon settings change)
+@MainActor
+func invalidateMenuBarIconCache() {
+    menuBarIconCache.removeAll()
+}
+
 @MainActor
 private func makeMenuBarIconImage(size: CGFloat, slashed: Bool, useVietnameseIcon: Bool) -> NSImage {
+    // Check cache first
+    let cacheKey = "\(size)-\(slashed)-\(useVietnameseIcon)"
+    if let cached = menuBarIconCache[cacheKey] {
+        return cached
+    }
+
     let targetSize = NSSize(width: size, height: size)
     let img = NSImage(size: targetSize)
     img.lockFocus()
@@ -175,6 +192,9 @@ private func makeMenuBarIconImage(size: CGFloat, slashed: Bool, useVietnameseIco
 
     img.isTemplate = true
     img.size = targetSize
+
+    // Cache the result
+    menuBarIconCache[cacheKey] = img
     return img
 }
 
@@ -376,8 +396,16 @@ final class AppState: ObservableObject {
     @Published var showIconOnDock: Bool = false
     @Published var settingsWindowAlwaysOnTop: Bool = false  // Settings window always appears above other apps
     @Published var safeMode: Bool = false  // Safe mode disables Accessibility API for OCLP Macs
-    @Published var enableLiquidGlassBackground: Bool = true  // Enable liquid glass background for settings window
-    @Published var settingsBackgroundOpacity: Double = 1.0  // Background opacity for settings window (0.0-1.0)
+    @Published var enableLiquidGlassBackground: Bool = true {  // Enable liquid glass background for settings window
+        didSet {
+            UserDefaults.standard.set(enableLiquidGlassBackground, forKey: "vEnableLiquidGlassBackground")
+        }
+    }
+    @Published var settingsBackgroundOpacity: Double = 1.0 {  // Background opacity for settings window (0.0-1.0)
+        didSet {
+            UserDefaults.standard.set(settingsBackgroundOpacity, forKey: "vSettingsBackgroundOpacity")
+        }
+    }
     // Text Replacement Fix is always enabled (no user setting)
     var enableTextReplacementFix: Bool { return true }
 

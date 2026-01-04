@@ -423,7 +423,7 @@ struct BugReportView: View {
         isLoadingLogs = true
 
         Task.detached(priority: .userInitiated) {
-            let logs = Self.fetchLogsSync(maxEntries: 50) // Giới hạn số log
+            let logs = Self.fetchLogsSync(maxEntries: 100) // Giới hạn số log
             await MainActor.run {
                 self.debugLogs = logs
                 self.cachedLogs = logs
@@ -437,7 +437,7 @@ struct BugReportView: View {
         isLoadingLogs = true
 
         let logs = await Task.detached(priority: .userInitiated) {
-            Self.fetchLogsSync(maxEntries: 50) // Giới hạn số log
+            Self.fetchLogsSync(maxEntries: 100) // Giới hạn số log
         }.value
 
         debugLogs = logs
@@ -474,7 +474,7 @@ struct BugReportView: View {
         }
 
         var isImportant: Bool {
-            level == .error || level == .fault
+            level == .error || level == .fault || level == .notice
         }
     }
 
@@ -504,7 +504,7 @@ struct BugReportView: View {
         }
     }
 
-    nonisolated private static func fetchLogsSync(maxEntries: Int = 50) -> String {
+    nonisolated private static func fetchLogsSync(maxEntries: Int = 100) -> String {
         var allLogEntries: [LogEntry] = []
         var stats = LogStats()
 
@@ -512,33 +512,42 @@ struct BugReportView: View {
         if #available(macOS 12.0, *) {
             do {
                 let store = try OSLogStore(scope: .currentProcessIdentifier)
-                // Giảm thời gian từ 30 phút xuống 10 phút để giảm số log cần xử lý
-                let position = store.position(date: Date().addingTimeInterval(-10 * 60))
+                // Lấy log trong 60 phút gần đây để không sót lỗi
+                let position = store.position(date: Date().addingTimeInterval(-60 * 60))
                 let entries = try store.getEntries(at: position)
 
-                var count = 0
-                for entry in entries {
-                    // Dừng sớm nếu đã đủ số log cần thiết (nhưng vẫn giữ lỗi)
-                    if count >= maxEntries * 3 { break }
+                var regularLogCount = 0
+                let maxRegularLogs = maxEntries * 3
 
+                for entry in entries {
                     if let logEntry = entry as? OSLogEntryLog {
                         let message = logEntry.composedMessage
                         guard !message.isEmpty else { continue }
+
+                        let isErrorOrWarning = logEntry.level == .error || logEntry.level == .fault || logEntry.level == .notice
 
                         // Lọc bỏ log hệ thống không liên quan
                         if shouldFilterOut(message: message, subsystem: logEntry.subsystem, level: logEntry.level) {
                             continue
                         }
 
+                        // LUÔN giữ lại tất cả errors và warnings - không bao giờ bỏ sót
+                        // Chỉ giới hạn số lượng log thường
+                        if !isErrorOrWarning {
+                            if regularLogCount >= maxRegularLogs {
+                                continue // Bỏ qua log thường nếu đã đủ, nhưng vẫn tiếp tục tìm errors/warnings
+                            }
+                            regularLogCount += 1
+                        }
+
                         let category = detectCategory(from: message)
-                        let entry = LogEntry(
+                        let logEntryItem = LogEntry(
                             date: logEntry.date,
                             level: logEntry.level,
                             category: category,
                             message: message
                         )
-                        allLogEntries.append(entry)
-                        count += 1
+                        allLogEntries.append(logEntryItem)
                     }
                 }
             } catch {
@@ -648,7 +657,7 @@ struct BugReportView: View {
         return "General"
     }
 
-    nonisolated private static func buildFormattedOutput(entries: [LogEntry], stats: LogStats, maxEntries: Int = 50) -> String {
+    nonisolated private static func buildFormattedOutput(entries: [LogEntry], stats: LogStats, maxEntries: Int = 100) -> String {
         // Sử dụng mảng thay vì string concatenation để tăng hiệu năng
         var lines: [String] = []
         lines.reserveCapacity(maxEntries + 30)
@@ -670,25 +679,42 @@ struct BugReportView: View {
         if let lastError = stats.lastError, let errorTime = stats.lastErrorTime {
             lines.append("")
             lines.append("⚠️ LỖI GẦN NHẤT [\(fullDateFormatter.string(from: errorTime))]:")
-            // Chỉ lấy 2 dòng đầu của lỗi
+            // Hiển thị đầy đủ lỗi (tối đa 10 dòng)
             let errorLines = lastError.components(separatedBy: .newlines)
-            for line in errorLines.prefix(2) {
+            for line in errorLines.prefix(10) {
                 lines.append("  \(line)")
+            }
+            if errorLines.count > 10 {
+                lines.append("  ... (\(errorLines.count - 10) dòng nữa)")
             }
         }
 
         lines.append("")
         lines.append("───────────────────────────────────────")
 
-        // === LỖI TRƯỚC (giới hạn 10) ===
-        let importantEntries = entries.filter { $0.isImportant }
-        if !importantEntries.isEmpty {
-            lines.append("🚨 LỖI (\(min(importantEntries.count, 10))/\(importantEntries.count)):")
-            for entry in importantEntries.suffix(10) {
-                let time = dateFormatter.string(from: entry.date)
-                // Giới hạn độ dài message
-                let msg = entry.message.count > 100 ? String(entry.message.prefix(100)) + "..." : entry.message
-                lines.append("\(entry.levelEmoji) [\(time)] \(msg)")
+        // === LỖI VÀ CẢNH BÁO (ưu tiên lỗi) ===
+        let errorEntries = entries.filter { $0.level == .error || $0.level == .fault }
+        let warningEntries = entries.filter { $0.level == .notice }
+
+        if !errorEntries.isEmpty || !warningEntries.isEmpty {
+            lines.append("🚨 LỖI VÀ CẢNH BÁO:")
+
+            // Hiển thị tất cả lỗi (tối đa 20)
+            if !errorEntries.isEmpty {
+                lines.append("  📛 Lỗi (\(errorEntries.count)):")
+                for entry in errorEntries.suffix(20) {
+                    let time = dateFormatter.string(from: entry.date)
+                    lines.append("  🔴 [\(time)] \(entry.message)")
+                }
+            }
+
+            // Hiển thị cảnh báo (tối đa 10)
+            if !warningEntries.isEmpty {
+                lines.append("  ⚠️ Cảnh báo (\(warningEntries.count)):")
+                for entry in warningEntries.suffix(10) {
+                    let time = dateFormatter.string(from: entry.date)
+                    lines.append("  🟡 [\(time)] \(entry.message)")
+                }
             }
             lines.append("")
         }
@@ -698,8 +724,15 @@ struct BugReportView: View {
         lines.append("📋 LOG GẦN NHẤT (\(recentCount) dòng):")
         for entry in entries.suffix(recentCount) {
             let time = dateFormatter.string(from: entry.date)
-            // Giới hạn độ dài message để giảm kích thước
-            let msg = entry.message.count > 80 ? String(entry.message.prefix(80)) + "..." : entry.message
+            // Giới hạn độ dài message cho log thường (không phải error)
+            let msg: String
+            if entry.isImportant {
+                // Error/Fault: hiển thị đầy đủ
+                msg = entry.message
+            } else {
+                // Log thường: giới hạn 200 ký tự
+                msg = entry.message.count > 200 ? String(entry.message.prefix(200)) + "..." : entry.message
+            }
             lines.append("\(entry.levelEmoji) [\(time)] \(msg)")
         }
 
@@ -838,7 +871,7 @@ struct BugReportView: View {
 
         // Lấy log trên background thread
         let logs = await Task.detached(priority: .utility) {
-            Self.fetchLogsSync(maxEntries: 50)
+            Self.fetchLogsSync(maxEntries: 100)
         }.value
 
         debugLogs = logs
@@ -856,12 +889,12 @@ struct BugReportView: View {
         guard !isSending else { return }
         isSending = true
 
-        // Lấy log quan trọng (chỉ errors) trên background
+        // Lấy log quan trọng
         let importantLogs = await Task.detached(priority: .utility) {
             Self.fetchImportantLogsOnly()
         }.value
 
-        // Tạo body ngắn gọn cho GitHub
+        // Tạo body cho GitHub URL
         let body = generateCompactReport(withLogs: importantLogs)
 
         // Encode URL
@@ -877,44 +910,60 @@ struct BugReportView: View {
         isSending = false
     }
 
-    /// Lấy chỉ các log quan trọng (errors, faults) - rất nhanh
+    /// Lấy log quan trọng - ƯU TIÊN LỖI trước, sau đó mới đến cảnh báo
     nonisolated private static func fetchImportantLogsOnly() -> String {
-        var errorMessages: [String] = []
+        var errors: [(time: String, message: String)] = []
+        var warnings: [(time: String, message: String)] = []
 
         if #available(macOS 12.0, *) {
             do {
                 let store = try OSLogStore(scope: .currentProcessIdentifier)
-                let position = store.position(date: Date().addingTimeInterval(-5 * 60)) // 5 phút gần nhất
+                let position = store.position(date: Date().addingTimeInterval(-30 * 60))
                 let entries = try store.getEntries(at: position)
 
                 let dateFormatter = DateFormatter()
                 dateFormatter.dateFormat = "HH:mm:ss"
 
+                let skipPatterns = ["HALC_Proxy", "IOWorkLoop", "AddInstanceForFactory", "Reporter disconnected"]
+
                 for entry in entries {
-                    if errorMessages.count >= 5 { break } // Tối đa 5 lỗi
-
                     if let logEntry = entry as? OSLogEntryLog {
-                        // Chỉ lấy ERROR và FAULT
-                        guard logEntry.level == .error || logEntry.level == .fault else { continue }
-
                         let message = logEntry.composedMessage
                         guard !message.isEmpty else { continue }
-
-                        // Bỏ qua system errors không liên quan
-                        let skipPatterns = ["HALC_Proxy", "IOWorkLoop", "AddInstanceForFactory", "Reporter disconnected"]
                         if skipPatterns.contains(where: { message.contains($0) }) { continue }
 
                         let time = dateFormatter.string(from: logEntry.date)
-                        let shortMsg = message.count > 60 ? String(message.prefix(60)) + "..." : message
-                        errorMessages.append("[\(time)] \(shortMsg)")
+                        // Giới hạn 120 ký tự cho URL
+                        let truncatedMsg = message.count > 120 ? String(message.prefix(120)) + "..." : message
+
+                        if logEntry.level == .error || logEntry.level == .fault {
+                            errors.append((time, truncatedMsg))
+                        } else if logEntry.level == .notice {
+                            warnings.append((time, truncatedMsg))
+                        }
                     }
                 }
-            } catch {
-                // Ignore
+            } catch {}
+        }
+
+        // Tổng tối đa 20 chỗ, ưu tiên lỗi trước
+        let maxTotal = 20
+        var result: [String] = []
+
+        // Lấy tất cả lỗi (tối đa 20)
+        for (time, msg) in errors.suffix(maxTotal) {
+            result.append("🔴 [\(time)] \(msg)")
+        }
+
+        // Thêm cảnh báo nếu còn chỗ
+        let remainingSlots = maxTotal - result.count
+        if remainingSlots > 0 {
+            for (time, msg) in warnings.suffix(remainingSlots) {
+                result.append("🟡 [\(time)] \(msg)")
             }
         }
 
-        return errorMessages.isEmpty ? "" : errorMessages.joined(separator: "\n")
+        return result.joined(separator: "\n")
     }
 
     /// Tạo báo lỗi ngắn gọn để gửi trực tiếp qua URL (không cần paste)
@@ -962,15 +1011,17 @@ struct BugReportView: View {
             }
         }
 
-        // Log lỗi quan trọng
+        // Log lỗi và cảnh báo quan trọng (rút gọn cho URL)
         if includeLogs && !logs.isEmpty {
-            report += "## 🔴 Lỗi gần đây\n```\n\(logs)\n```\n\n"
+            report += "## ⚠️ Lỗi và cảnh báo gần đây\n```\n\(logs)\n```\n\n"
         }
 
-        // Thêm crash logs nếu có (rất quan trọng)
+        // Thêm crash logs nếu có (rút gọn cho URL)
         let crashLogs = getRecentCrashLogs()
         if !crashLogs.isEmpty {
-            report += "## 💥 Crash Logs\n\(crashLogs)\n"
+            // Chỉ lấy phần đầu crash log cho URL
+            let shortCrashLogs = String(crashLogs.prefix(500))
+            report += "## 💥 Crash Logs\n\(shortCrashLogs)\n"
         }
 
         return report
@@ -985,6 +1036,7 @@ struct BugReportView: View {
             Self.fetchImportantLogsOnly()
         }.value
 
+        // Tạo body cho Email URL
         let body = generateCompactReport(withLogs: importantLogs)
 
         let subject = "Báo lỗi PHTV: \(bugTitle)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
