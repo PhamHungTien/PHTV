@@ -149,7 +149,7 @@ jobs:
           echo "sparkle_bin=$SPARKLE_DIR/bin" >> $GITHUB_OUTPUT
 
       - name: Sign update with Sparkle
-        if: ${{ success() && secrets.SPARKLE_PRIVATE_KEY != '' }}
+        if: ${{ success() && env.SPARKLE_PRIVATE_KEY != '' }}
         id: sign_update
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
