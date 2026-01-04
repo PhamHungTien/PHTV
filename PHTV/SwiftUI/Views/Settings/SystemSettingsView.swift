@@ -217,8 +217,8 @@ struct SystemSettingsView: View {
 
                         // Auto install toggle
                         SettingsToggleRow(
-                            icon: "arrow.down.circle.fill",
-                            iconColor: .green,
+                            icon: "square.and.arrow.down.fill",
+                            iconColor: .accentColor,
                             title: "Tự động cài đặt",
                             subtitle: "Tự động cập nhật khi có phiên bản mới",
                             isOn: $appState.autoInstallUpdates
