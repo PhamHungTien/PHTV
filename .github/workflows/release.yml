@@ -65,22 +65,62 @@ jobs:
           
           echo "✅ Updated Info.plist: $VERSION ($BUILD)"
 
-      - name: Patch project for CI
+      - name: Import Code Signing Certificate
+        env:
+          CERTIFICATES_P12: ${{ secrets.CERTIFICATES_P12 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
         run: |
-          sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' PHTV.xcodeproj/project.pbxproj
-          sed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=macosx\*\]" = "Apple Development";/"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";/g' PHTV.xcodeproj/project.pbxproj
-          sed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=macosx\*\]" = "Mac Development";/"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";/g' PHTV.xcodeproj/project.pbxproj
-          sed -i '' 's/DEVELOPMENT_TEAM = F9XPW22T8M;/DEVELOPMENT_TEAM = "";/g' PHTV.xcodeproj/project.pbxproj
-          sed -i '' 's/ENABLE_HARDENED_RUNTIME = YES;/ENABLE_HARDENED_RUNTIME = NO;/g' PHTV.xcodeproj/project.pbxproj
-          echo "✅ Project patched for CI"
+          if [ -z "$CERTIFICATES_P12" ]; then
+            echo "⚠️ No certificate, will build without signing"
+            exit 0
+          fi
+          
+          # Create temporary keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/signing.keychain-db
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
+          
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          
+          # Import certificate
+          echo "$CERTIFICATES_P12" | base64 --decode > $RUNNER_TEMP/certificate.p12
+          security import $RUNNER_TEMP/certificate.p12 \
+            -k "$KEYCHAIN_PATH" \
+            -P "$CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security
+          
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          
+          rm $RUNNER_TEMP/certificate.p12
+          echo "✅ Certificate imported"
 
       - name: Build
+        env:
+          CERTIFICATES_P12: ${{ secrets.CERTIFICATES_P12 }}
         run: |
-          xcodebuild -scheme PHTV \
-            -configuration Release \
-            -derivedDataPath ./build \
-            clean build \
-            2>&1 | tee build.log
+          if [ -n "$CERTIFICATES_P12" ]; then
+            # Build with signing
+            xcodebuild -scheme PHTV \
+              -configuration Release \
+              -derivedDataPath ./build \
+              clean build \
+              2>&1 | tee build.log
+          else
+            # Build without signing (patch project first)
+            sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' PHTV.xcodeproj/project.pbxproj
+            sed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=macosx\*\]" = "Apple Development";/"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";/g' PHTV.xcodeproj/project.pbxproj
+            sed -i '' 's/DEVELOPMENT_TEAM = F9XPW22T8M;/DEVELOPMENT_TEAM = "";/g' PHTV.xcodeproj/project.pbxproj
+            sed -i '' 's/ENABLE_HARDENED_RUNTIME = YES;/ENABLE_HARDENED_RUNTIME = NO;/g' PHTV.xcodeproj/project.pbxproj
+            
+            xcodebuild -scheme PHTV \
+              -configuration Release \
+              -derivedDataPath ./build \
+              clean build \
+              2>&1 | tee build.log
+          fi
           
           if [ ! -d "./build/Build/Products/Release/PHTV.app" ]; then
             echo "❌ Build failed"
