@@ -617,6 +617,7 @@ extern "C" {
                                                             @"com.apple.iBooksX",  // Books
                                                             @"com.apple.reminders",  // Reminders
                                                             @"com.apple.journal",  // Journal
+                                                            @"com.apple.games",  // Game Center
                                                             PHTV_BUNDLE]];  // PHTV itself - SwiftUI TextField needs HID tap posting
 
     // Apps that need precomposed Unicode but should use normal batched sending (not AX API)
