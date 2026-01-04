@@ -6,44 +6,69 @@ File `release.yml` tự động build, sign và tạo release cho PHTV.
 
 ### Tính năng
 
-- ✅ Build tự động với Xcode
-- ✅ Code signing (nếu có certificate)
+- ✅ Build tự động với Xcode trên macOS 26
+- ✅ Code signing với Apple Development certificate
 - ✅ Tạo DMG với Applications symlink
-- ✅ Sign update với Sparkle
+- ✅ Sign update với Sparkle EdDSA
 - ✅ Tạo GitHub Release với artifacts
-- ✅ Generate appcast entry
+- ✅ Tự động cập nhật appcast.xml
+- ✅ Tự động cập nhật Homebrew formula
+- ✅ Sync với homebrew-tap repository
+- ✅ Tự động tăng build number và commit Info.plist
+
+### Các Jobs trong Workflow
+
+| Job | Runner | Mô tả |
+|-----|--------|-------|
+| `build` | macos-26 | Build app, tạo DMG, sign với Sparkle |
+| `release` | ubuntu-latest | Upload DMG lên GitHub Releases |
+| `update-appcast` | ubuntu-latest | Thêm entry mới vào appcast.xml |
+| `update-homebrew` | ubuntu-latest | Cập nhật Homebrew formula và sync tap |
 
 ### Cách sử dụng
 
 #### 1. Trigger tự động khi push tag
 
 ```bash
-git tag v1.3.9
-git push origin v1.3.9
+git tag v1.4.5
+git push origin v1.4.5
 ```
 
-#### 2. Chạy thủ công
+#### 2. Chạy thủ công (Manual Dispatch)
 
-1. Vào tab "Actions" trên GitHub
-2. Chọn "Build and Release"
-3. Click "Run workflow"
-4. Nhập version (ví dụ: 1.3.9)
-5. Click "Run workflow"
+1. Vào tab **Actions** trên GitHub
+2. Chọn **Build and Release**
+3. Click **Run workflow**
+4. Nhập version (ví dụ: `1.4.5`)
+5. Click **Run workflow**
 
 ### Setup GitHub Secrets
 
 Để workflow hoạt động đầy đủ, cần setup các secrets sau:
 
-#### Bắt buộc cho Sparkle Auto-Update
+#### Bắt buộc
 
-**`SPARKLE_PRIVATE_KEY`** - Private key để sign update
+| Secret | Mô tả |
+|--------|-------|
+| `SPARKLE_PRIVATE_KEY` | EdDSA private key để sign Sparkle updates |
+| `CERTIFICATES_P12` | Apple Development certificate (base64) |
+| `CERTIFICATE_PASSWORD` | Password của file .p12 |
+
+#### Optional (để sync Homebrew tap)
+
+| Secret | Mô tả |
+|--------|-------|
+| `TAP_REPO_TOKEN` | Personal Access Token để push sang homebrew-tap repo |
+
+---
+
+### Hướng dẫn tạo Secrets
+
+#### SPARKLE_PRIVATE_KEY
 
 ##### Nếu đã có private key trong Keychain:
 
 ```bash
-# Tìm tên của key trong Keychain
-security find-generic-password -l "Sparkle"
-
 # Export private key từ Keychain
 security find-generic-password -l "Sparkle EdDSA Private Key" -w | pbcopy
 ```
@@ -64,8 +89,6 @@ unzip Sparkle-for-Swift-Package-Manager.zip
 
 Kết quả:
 ```
-A key has been generated and saved in your keychain under "Sparkle ..." name.
-
 Public key (add to Info.plist):
 SUPublicEDKey = "ABC123..."
 
@@ -73,41 +96,33 @@ Private key (keep secret, add to GitHub Secrets):
 [private key content]
 ```
 
-##### Thêm vào GitHub Secrets:
-
-1. Copy **private key** (toàn bộ nội dung hoặc từ clipboard)
-2. Vào GitHub repo → Settings → Secrets and variables → Actions
-3. Tạo secret mới: `SPARKLE_PRIVATE_KEY`
-4. Paste private key vào
-
 **Lưu ý**: Public key đã được thêm vào `PHTV/Info.plist` key `SUPublicEDKey`
 
-#### Optional: Code Signing (để app được Apple verify)
-
-**`CERTIFICATES_P12`** - Certificate ở format base64
+#### CERTIFICATES_P12
 
 ```bash
-# Export certificate từ Keychain
+# Export certificate từ Keychain Access:
 # 1. Mở Keychain Access
-# 2. Chọn certificate "Developer ID Application: ..."
+# 2. Chọn certificate "Apple Development: ..." hoặc "Developer ID Application: ..."
 # 3. Export as .p12 file với password
 
 # Convert to base64
 base64 -i certificate.p12 | pbcopy
 ```
 
-**`CERTIFICATE_PASSWORD`** - Password của file .p12
+Paste kết quả vào secret `CERTIFICATES_P12`.
 
-**`CODE_SIGN_IDENTITY`** - Identity để sign (ví dụ: "Developer ID Application: Your Name (TEAMID)")
+#### CERTIFICATE_PASSWORD
 
-```bash
-# Xem danh sách identities
-security find-identity -v -p codesigning
-```
+Password bạn đã dùng khi export file .p12.
 
-**`DEVELOPMENT_TEAM`** - Team ID (10 ký tự)
+#### TAP_REPO_TOKEN
 
-Tìm trong Apple Developer Portal hoặc từ identity name.
+1. Vào https://github.com/settings/tokens
+2. **Generate new token (classic)** với scope `repo`
+3. Copy token và thêm vào secret `TAP_REPO_TOKEN`
+
+---
 
 ### Không có Code Signing Certificate?
 
@@ -116,44 +131,40 @@ Workflow vẫn hoạt động! App sẽ:
 - ✅ Tạo DMG với Applications symlink
 - ✅ Tạo release trên GitHub
 - ✅ Auto-update vẫn hoạt động (nếu có SPARKLE_PRIVATE_KEY)
-- ⚠️  macOS sẽ hiện cảnh báo "unidentified developer" khi mở lần đầu
+- ⚠️ macOS sẽ hiện cảnh báo "unidentified developer" khi mở lần đầu
 
 Users có thể bypass bằng cách:
 1. Click chuột phải vào app
 2. Chọn "Open"
 3. Click "Open" trong dialog
 
-## Update Homebrew Workflow
+---
 
-File `update-homebrew.yml` tự động cập nhật Homebrew formula sau khi release.
+### Build Number Tự động
 
-### Hoạt động
+Workflow tự động:
+1. Đọc `CFBundleVersion` từ Info.plist
+2. Tăng lên 1 cho mỗi release
+3. Sau khi release thành công, commit lại Info.plist với build number mới
 
-- Trigger tự động khi có GitHub Release mới
-- Download DMG từ release
-- Tính SHA256
-- Cập nhật `homebrew/phtv.rb`
-- Commit và push
+Ví dụ:
+- Release 1.4.4 → build 18
+- Release 1.4.5 → build 19
+- Release 1.4.6 → build 20
 
-## Workflow Khác
-
-Có thể thêm workflows khác như:
-- CI testing
-- Linting
-- Security scanning
-- Beta releases
+---
 
 ## Troubleshooting
 
-### Build failed: "xcodebuild: command not found"
+### Build failed: Xcode version không đúng
 
-Runner đang sử dụng Xcode version cũ. Update `setup-xcode` step trong workflow.
+Workflow sử dụng `macos-26` runner. Nếu GitHub chưa có runner này, sẽ cần thay đổi.
 
 ### Code signing failed
 
-1. Kiểm tra secrets đã được tạo đúng
-2. Verify certificate còn valid
-3. Check Team ID và Bundle ID match
+1. Kiểm tra `CERTIFICATES_P12` đã encode base64 đúng
+2. Kiểm tra `CERTIFICATE_PASSWORD` đúng
+3. Certificate còn valid và chưa hết hạn
 
 ### DMG không có Applications symlink
 
@@ -161,13 +172,20 @@ Kiểm tra step "Create DMG" - step này tạo symlink trước khi build DMG.
 
 ### Auto-update không hoạt động
 
-1. Verify SPARKLE_PRIVATE_KEY đã được add vào secrets
-2. Check public key trong Info.plist match với private key
-3. Xem appcast entry trong release artifacts
+1. Verify `SPARKLE_PRIVATE_KEY` đã được add vào secrets
+2. Check public key trong `Info.plist` (`SUPublicEDKey`) match với private key
+3. Kiểm tra appcast.xml đã được cập nhật trên GitHub Pages
+4. Đảm bảo build number mới **cao hơn** build hiện tại
 
-## Testing
+### Homebrew không cập nhật
 
-Để test workflow locally:
+1. Kiểm tra `TAP_REPO_TOKEN` đã được set
+2. Verify token có quyền `repo`
+3. Check job "Update Homebrew" trong workflow logs
+
+---
+
+## Testing Locally
 
 ```bash
 # Test build
@@ -177,8 +195,59 @@ xcodebuild -scheme PHTV -configuration Release clean build
 ./scripts/create_dmg.sh
 
 # Test Sparkle signing
-./scripts/sign_update.sh ~/Desktop/PHTV-1.3.9.dmg
+./scripts/sign_update.sh ~/Desktop/PHTV-1.4.5.dmg
 ```
+
+---
+
+## Flow Hoàn Chỉnh
+
+```
+Push tag v1.4.5
+    │
+    ▼
+┌─────────────────────────────────────────────────────────────┐
+│  BUILD (macos-26)                                           │
+│  • Checkout code                                            │
+│  • Import certificate                                       │
+│  • Increment build number (17 → 18)                         │
+│  • Build with Xcode                                         │
+│  • Create signed DMG                                        │
+│  • Sign with Sparkle EdDSA                                  │
+└─────────────────────────────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────────────────────────────┐
+│  RELEASE (ubuntu-latest)                                    │
+│  • Create GitHub Release                                    │
+│  • Upload DMG as asset                                      │
+└─────────────────────────────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────────────────────────────┐
+│  UPDATE-APPCAST (ubuntu-latest)                             │
+│  • Add new entry to appcast.xml                             │
+│  • Commit and push to main                                  │
+│  • GitHub Pages auto-deploy                                 │
+└─────────────────────────────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────────────────────────────┐
+│  UPDATE-HOMEBREW (ubuntu-latest)                            │
+│  • Update homebrew/phtv.rb with new SHA256                  │
+│  • Commit to PHTV repo                                      │
+│  • Sync to homebrew-tap repo                                │
+│  • Update Info.plist with new build number                  │
+│  • Commit to main                                           │
+└─────────────────────────────────────────────────────────────┘
+    │
+    ▼
+🎉 Release Complete!
+   • Users thấy update trong Sparkle
+   • brew upgrade --cask phtv hoạt động
+```
+
+---
 
 ## Support
 
