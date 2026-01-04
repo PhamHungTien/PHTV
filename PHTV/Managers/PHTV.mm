@@ -611,6 +611,7 @@ extern "C" {
                                                             @"com.apple.configurator.ui",  // Apple Configurator
                                                             @"com.apple.mail",  // Mail
                                                             @"com.apple.Music",  // Music
+                                                            @"com.apple.weather",  // Weather
                                                             PHTV_BUNDLE]];  // PHTV itself - SwiftUI TextField needs HID tap posting
 
     // Apps that need precomposed Unicode but should use normal batched sending (not AX API)
