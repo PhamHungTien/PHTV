@@ -697,7 +697,8 @@ struct MacroListView: View {
             ))
         }
         .listStyle(.inset(alternatesRowBackgrounds: true))
-        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: macros.map { $0.id })
+        // Use count instead of map to avoid O(n) operation on every render
+        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: macros.count)
     }
 
     private func categoryFor(_ macro: MacroItem) -> MacroCategory? {
