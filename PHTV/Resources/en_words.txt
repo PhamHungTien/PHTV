@@ -843,4 +843,3 @@ display
 render
 warn
 error
-telex
