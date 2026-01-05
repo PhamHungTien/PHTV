@@ -15,6 +15,7 @@ import struct
 import os
 import urllib.request
 import sys
+import re
 
 # Vietnamese character to Telex base mapping
 # Maps each Vietnamese character to its Telex raw key sequence
@@ -176,6 +177,23 @@ def download_file(url, dest):
         print(f"  ✗ Download failed: {e}")
         return False
 
+def has_telex_conflict(word):
+    """Check if word contains Telex patterns that could create Vietnamese."""
+    word_lower = word.lower()
+    # Double vowels: aa -> â, ee -> ê, oo -> ô
+    if 'aa' in word_lower or 'ee' in word_lower or 'oo' in word_lower:
+        return True
+    # Horn marks: aw -> ă, ow -> ơ, uw -> ư
+    if 'aw' in word_lower or 'ow' in word_lower or 'uw' in word_lower:
+        return True
+    # dd -> đ
+    if 'dd' in word_lower:
+        return True
+    # Vowel + tone mark: s(sắc), f(huyền), r(hỏi), x(ngã), j(nặng)
+    if re.search(r'[aeiou][sfrxj]', word_lower):
+        return True
+    return False
+
 def build_english_dictionary(resources_dir):
     """Build English dictionary binary with common words only."""
     print("\n" + "="*60)
@@ -239,12 +257,16 @@ def build_english_dictionary(resources_dir):
 
     if not words:
         print("  ✗ No English words found!")
-        return False
+        return False, set()
+
+    # Filter: only keep words with Telex conflict
+    filtered_words = {w for w in words if has_telex_conflict(w)}
+    print(f"  Filtered to {len(filtered_words):,} words with Telex conflict")
 
     # Build trie
-    print(f"  Building trie with {len(words):,} unique words...")
+    print(f"  Building trie with {len(filtered_words):,} unique words...")
     trie = Trie()
-    for word in sorted(words):
+    for word in sorted(filtered_words):
         trie.insert(word)
 
     write_binary_trie(trie, output_path)
@@ -253,9 +275,9 @@ def build_english_dictionary(resources_dir):
     if os.path.exists(temp_file):
         os.remove(temp_file)
 
-    return True
+    return True, filtered_words
 
-def build_vietnamese_dictionary(resources_dir):
+def build_vietnamese_dictionary(resources_dir, english_words=None):
     """Build Vietnamese dictionary binary with complete word list."""
     print("\n" + "="*60)
     print("BUILDING VIETNAMESE DICTIONARY")
@@ -359,15 +381,22 @@ def build_vietnamese_dictionary(resources_dir):
     trie = Trie()
     telex_words = set()
 
+    excluded_count = 0
     for word in vietnamese_words:
         # Get ALL variants (inline tone, end tone, base)
         variants = vietnamese_to_telex_variants(word)
         for telex in variants:
             if telex and 2 <= len(telex) <= 30:
                 if all(c.isalpha() and c.isascii() for c in telex):
+                    # Exclude patterns that match English words
+                    if english_words and telex in english_words:
+                        excluded_count += 1
+                        continue
                     telex_words.add(telex)
 
     print(f"  Generated {len(telex_words):,} unique Telex patterns (with variants)")
+    if excluded_count > 0:
+        print(f"  Excluded {excluded_count} patterns matching English words")
 
     for word in sorted(telex_words):
         trie.insert(word)
@@ -412,8 +441,12 @@ def main():
     print(f"Resources directory: {resources_dir}")
 
     # Build dictionaries
-    en_ok = build_english_dictionary(resources_dir)
-    vi_ok = build_vietnamese_dictionary(resources_dir)
+    en_result = build_english_dictionary(resources_dir)
+    if isinstance(en_result, tuple):
+        en_ok, english_words = en_result
+    else:
+        en_ok, english_words = en_result, set()
+    vi_ok = build_vietnamese_dictionary(resources_dir, english_words)
 
     if en_ok and vi_ok:
         # Ask before cleanup
