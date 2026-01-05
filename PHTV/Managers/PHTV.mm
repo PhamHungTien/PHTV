@@ -301,22 +301,23 @@ BOOL isSpotlightActive(void) {
         return NO;
     }
 
-    // HEURISTIC CHECK: First try to detect Spotlight by element role/subrole
-    // This is more reliable than PID/bundle ID which can be ambiguous
-    BOOL elementLooksLikeSpotlight = IsElementSpotlight(focusedElement);
+    // PRIMARY CHECK: Detect search field by AXRole/AXSubrole
+    // This applies to ALL apps with search fields, not just Spotlight
+    BOOL elementLooksLikeSearchField = IsElementSpotlight(focusedElement);
 
     // Get the PID of the app that owns the focused element
     pid_t focusedPID = 0;
     error = AXUIElementGetPid(focusedElement, &focusedPID);
     CFRelease(focusedElement);
 
+    // If focused element is a search field, return YES immediately (for any app)
+    if (elementLooksLikeSearchField) {
+        UpdateSpotlightCache(YES, focusedPID > 0 ? focusedPID : 0);
+        return YES;
+    }
+
     if (error != kAXErrorSuccess || focusedPID == 0) {
         LogAXError(error, "AXUIElementGetPid");
-        // If we couldn't get PID but element looks like Spotlight, trust the heuristic
-        if (elementLooksLikeSpotlight) {
-            UpdateSpotlightCache(YES, 0);
-            return YES;
-        }
         UpdateSpotlightCache(NO, 0);
         return NO;
     }
@@ -347,12 +348,6 @@ BOOL isSpotlightActive(void) {
                 return YES;
             }
         }
-    }
-
-    // Final fallback: trust the element heuristic if bundle ID check failed
-    if (elementLooksLikeSpotlight) {
-        UpdateSpotlightCache(YES, focusedPID);
-        return YES;
     }
 
     UpdateSpotlightCache(NO, focusedPID);
