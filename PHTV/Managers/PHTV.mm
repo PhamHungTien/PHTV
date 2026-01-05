@@ -182,30 +182,30 @@ static inline void TrackExternalDelete(void) {
     _externalDeleteDetected = YES;
 }
 
-// Check if element is Spotlight by examining its role and subrole
+// Check if element is a search field by examining its role and subrole
 static inline BOOL IsElementSpotlight(AXUIElementRef element) {
     if (element == NULL) return NO;
 
     CFTypeRef role = NULL;
     CFTypeRef subrole = NULL;
-    BOOL isSpotlight = NO;
+    BOOL isSearchField = NO;
 
     // Check role
     if (AXUIElementCopyAttributeValue(element, kAXRoleAttribute, &role) == kAXErrorSuccess) {
-        if (role != NULL) {
-            // Spotlight search field has specific roles
-            if (CFGetTypeID(role) == CFStringGetTypeID()) {
-                NSString *roleStr = (__bridge NSString *)role;
-                if ([roleStr isEqualToString:@"AXTextField"] ||
-                    [roleStr isEqualToString:@"AXSearchField"]) {
+        if (role != NULL && CFGetTypeID(role) == CFStringGetTypeID()) {
+            NSString *roleStr = (__bridge NSString *)role;
 
-                    // Check subrole for confirmation
-                    if (AXUIElementCopyAttributeValue(element, kAXSubroleAttribute, &subrole) == kAXErrorSuccess) {
-                        if (subrole != NULL && CFGetTypeID(subrole) == CFStringGetTypeID()) {
-                            NSString *subroleStr = (__bridge NSString *)subrole;
-                            if ([subroleStr containsString:@"Search"]) {
-                                isSpotlight = YES;
-                            }
+            // AXSearchField → always return YES (standard search field)
+            if ([roleStr isEqualToString:@"AXSearchField"]) {
+                isSearchField = YES;
+            }
+            // AXTextField → check subrole for "Search" (some apps use TextField with Search subrole)
+            else if ([roleStr isEqualToString:@"AXTextField"]) {
+                if (AXUIElementCopyAttributeValue(element, kAXSubroleAttribute, &subrole) == kAXErrorSuccess) {
+                    if (subrole != NULL && CFGetTypeID(subrole) == CFStringGetTypeID()) {
+                        NSString *subroleStr = (__bridge NSString *)subrole;
+                        if ([subroleStr containsString:@"Search"]) {
+                            isSearchField = YES;
                         }
                     }
                 }
@@ -215,7 +215,7 @@ static inline BOOL IsElementSpotlight(AXUIElementRef element) {
     }
 
     if (subrole != NULL) CFRelease(subrole);
-    return isSpotlight;
+    return isSearchField;
 }
 
 // Log AX API errors for debugging purposes
