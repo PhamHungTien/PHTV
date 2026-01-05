@@ -88,12 +88,28 @@ struct SettingsWindowContent: View {
                 NSLog("[SettingsWindowContent] Setting activation policy to .regular")
                 NSApp.setActivationPolicy(.regular)
                 
-                // Force dock to refresh by calling activate multiple times
+                // Force dock to refresh by calling activate
                 NSApp.activate(ignoringOtherApps: true)
+                
+                // Bring settings window to front
+                for window in NSApp.windows {
+                    if window.identifier?.rawValue.hasPrefix("settings") == true {
+                        window.makeKeyAndOrderFront(nil)
+                        NSLog("[SettingsWindowContent] Brought settings window to front")
+                        break
+                    }
+                }
                 
                 // Sometimes first activate doesn't work, try again after a tiny delay
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                     NSApp.activate(ignoringOtherApps: true)
+                    // Bring window to front again
+                    for window in NSApp.windows {
+                        if window.identifier?.rawValue.hasPrefix("settings") == true {
+                            window.makeKeyAndOrderFront(nil)
+                            break
+                        }
+                    }
                     NSLog("[SettingsWindowContent] Dock icon activation complete")
                 }
             }
