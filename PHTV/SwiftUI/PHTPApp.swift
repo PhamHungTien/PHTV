@@ -82,13 +82,24 @@ struct SettingsWindowContent: View {
             // This prevents the window from being hidden when app loses focus
             NSLog("[SettingsWindowContent] onAppear - showing dock icon")
             
-            // Set activation policy directly (works immediately)
-            NSApp.setActivationPolicy(.regular)
-            NSApp.activate(ignoringOtherApps: true)
+            // Use DispatchQueue.main.async to ensure run loop is ready
+            // This is crucial on first launch when app just started
+            DispatchQueue.main.async {
+                NSLog("[SettingsWindowContent] Setting activation policy to .regular")
+                NSApp.setActivationPolicy(.regular)
+                
+                // Force dock to refresh by calling activate multiple times
+                NSApp.activate(ignoringOtherApps: true)
+                
+                // Sometimes first activate doesn't work, try again after a tiny delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    NSApp.activate(ignoringOtherApps: true)
+                    NSLog("[SettingsWindowContent] Dock icon activation complete")
+                }
+            }
             
             // Also post notification for AppDelegate to track state
-            // Use slight delay to ensure AppDelegate has registered observers
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 NotificationCenter.default.post(name: NSNotification.Name("PHTVShowDockIcon"), object: nil, userInfo: ["visible": true])
             }
             
@@ -103,9 +114,11 @@ struct SettingsWindowContent: View {
             // Post notification for AppDelegate to restore state
             NotificationCenter.default.post(name: NSNotification.Name("PHTVShowDockIcon"), object: nil, userInfo: ["visible": userPrefersDock])
             
-            // Also set activation policy directly as backup
-            let policy: NSApplication.ActivationPolicy = userPrefersDock ? .regular : .accessory
-            NSApp.setActivationPolicy(policy)
+            // Also set activation policy directly
+            DispatchQueue.main.async {
+                let policy: NSApplication.ActivationPolicy = userPrefersDock ? .regular : .accessory
+                NSApp.setActivationPolicy(policy)
+            }
         }
         .onChange(of: appState.settingsWindowAlwaysOnTop) { _ in
             // Update window level when user toggles the setting
