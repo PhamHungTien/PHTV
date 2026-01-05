@@ -615,6 +615,24 @@ final class AppState: ObservableObject {
         }
         notificationObservers.append(observer4)
 
+        // Listen for language changes from input source switch (Japanese/Chinese keyboard, no beep sound)
+        let observerInputSource = NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("LanguageChangedFromObjC"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self = self else { return }
+            if let language = notification.object as? NSNumber {
+                Task { @MainActor in
+                    self.isLoadingSettings = true
+                    self.isEnabled = language.intValue == 1
+                    self.isLoadingSettings = false
+                    // No beep sound for input source auto-switch
+                }
+            }
+        }
+        notificationObservers.append(observerInputSource)
+
         // Listen for update check responses from backend
         let observer5 = NotificationCenter.default.addObserver(
             forName: NSNotification.Name("CheckForUpdatesResponse"),

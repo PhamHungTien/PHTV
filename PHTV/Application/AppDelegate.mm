@@ -174,6 +174,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     NSMenuItem* mnuQuickConvert;
     
     id _appearanceObserver;
+    id _inputSourceObserver;
+    NSInteger _savedLanguageBeforeNonLatin;  // Saved language state before switching to non-Latin input source
+    BOOL _isInNonLatinInputSource;           // Flag to track if currently using non-Latin input source
 }
 
 - (void)observeAppearanceChanges {
@@ -185,9 +188,126 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     }];
 }
 
+// Check if input source is Latin-based (can type Vietnamese)
+- (BOOL)isLatinInputSource:(TISInputSourceRef)inputSource {
+    if (inputSource == NULL) return YES;  // Assume Latin if we can't determine
+    
+    CFArrayRef languages = (CFArrayRef)TISGetInputSourceProperty(inputSource, kTISPropertyInputSourceLanguages);
+    if (languages == NULL || CFArrayGetCount(languages) == 0) return YES;
+    
+    CFStringRef langRef = (CFStringRef)CFArrayGetValueAtIndex(languages, 0);
+    if (langRef == NULL) return YES;
+    
+    NSString *language = (__bridge NSString *)langRef;
+    
+    // Latin-based languages that can type Vietnamese
+    static NSSet *latinLanguages = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        latinLanguages = [[NSSet alloc] initWithArray:@[
+            // Western European
+            @"en", @"de", @"fr", @"es", @"it", @"pt", @"nl", @"ca",
+            // Nordic
+            @"da", @"sv", @"no", @"nb", @"nn", @"fi", @"is", @"fo",
+            // Eastern European (Latin script)
+            @"pl", @"cs", @"sk", @"hu", @"ro", @"hr", @"sl", @"sr-Latn",
+            // Baltic
+            @"et", @"lv", @"lt",
+            // Other European
+            @"sq", @"bs", @"mt",
+            // Turkish & Turkic (Latin script)
+            @"tr", @"az", @"uz", @"tk",
+            // Southeast Asian (Latin script)
+            @"id", @"ms", @"vi", @"tl", @"jv", @"su",
+            // African (Latin script)
+            @"sw", @"ha", @"yo", @"ig", @"zu", @"xh", @"af",
+            // Pacific
+            @"mi", @"sm", @"to", @"haw",
+            // Celtic
+            @"ga", @"gd", @"cy", @"br",
+            // Other
+            @"eo", @"la", @"mul"
+        ]];
+    });
+    
+    return [latinLanguages containsObject:language];
+}
+
+// Handle input source change notification
+- (void)handleInputSourceChanged:(NSNotification *)notification {
+    // Only process if vOtherLanguage is enabled (user wants auto-switching)
+    if (!vOtherLanguage) return;
+    
+    TISInputSourceRef currentInputSource = TISCopyCurrentKeyboardInputSource();
+    if (currentInputSource == NULL) return;
+    
+    BOOL isLatin = [self isLatinInputSource:currentInputSource];
+    CFStringRef sourceID = (CFStringRef)TISGetInputSourceProperty(currentInputSource, kTISPropertyInputSourceID);
+    NSString *inputSourceName = sourceID ? (__bridge NSString *)sourceID : @"Unknown";
+    
+    CFRelease(currentInputSource);
+    
+    if (!isLatin && !_isInNonLatinInputSource) {
+        // Switching TO non-Latin input source → save state and switch to English
+        _savedLanguageBeforeNonLatin = vLanguage;
+        _isInNonLatinInputSource = YES;
+        
+        if (vLanguage != 0) {
+            NSLog(@"[InputSource] Switched to non-Latin keyboard (%@), auto-switching PHTV to English", inputSourceName);
+            
+            vLanguage = 0;  // Switch to English
+            __sync_synchronize();
+            [[NSUserDefaults standardUserDefaults] setInteger:vLanguage forKey:@"InputMethod"];
+            RequestNewSession();
+            [self fillData];
+            
+            // Notify SwiftUI
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"LanguageChangedFromObjC" 
+                                                                object:@(vLanguage)];
+        }
+    } else if (isLatin && _isInNonLatinInputSource) {
+        // Switching back TO Latin input source → restore previous state
+        _isInNonLatinInputSource = NO;
+        
+        if (_savedLanguageBeforeNonLatin != 0 && vLanguage == 0) {
+            NSLog(@"[InputSource] Switched back to Latin keyboard (%@), restoring PHTV to Vietnamese", inputSourceName);
+            
+            vLanguage = (int)_savedLanguageBeforeNonLatin;
+            __sync_synchronize();
+            [[NSUserDefaults standardUserDefaults] setInteger:vLanguage forKey:@"InputMethod"];
+            RequestNewSession();
+            [self fillData];
+            
+            // Notify SwiftUI
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"LanguageChangedFromObjC" 
+                                                                object:@(vLanguage)];
+        }
+    }
+}
+
+// Start observing input source changes
+- (void)startInputSourceMonitoring {
+    _isInNonLatinInputSource = NO;
+    _savedLanguageBeforeNonLatin = 0;
+    
+    // Listen for keyboard input source changes
+    _inputSourceObserver = [[NSDistributedNotificationCenter defaultCenter] 
+        addObserverForName:(NSString *)kTISNotifySelectedKeyboardInputSourceChanged
+                    object:nil
+                     queue:[NSOperationQueue mainQueue]
+                usingBlock:^(NSNotification *note) {
+        [self handleInputSourceChanged:note];
+    }];
+    
+    NSLog(@"[InputSource] Started monitoring input source changes");
+}
+
 - (void)dealloc {
     if (_appearanceObserver) {
         [[NSDistributedNotificationCenter defaultCenter] removeObserver:_appearanceObserver];
+    }
+    if (_inputSourceObserver) {
+        [[NSDistributedNotificationCenter defaultCenter] removeObserver:_inputSourceObserver];
     }
     
     [self stopAccessibilityMonitoring];
@@ -579,6 +699,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
             // This detects if permission is revoked while app is running
             [self startAccessibilityMonitoring];
             [self startHealthCheckMonitoring];
+            
+            // Start monitoring input source changes (for auto-switching when using Japanese/Chinese/etc. keyboards)
+            [self startInputSourceMonitoring];
 
             // Start typing stats session
             [[NSNotificationCenter defaultCenter] postNotificationName:@"TypingStatsSessionStart" object:nil];
