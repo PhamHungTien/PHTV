@@ -1106,6 +1106,18 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         if (visible) {
             [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
             [NSApp activateIgnoringOtherApps:YES];
+            
+            // Bring settings window to front
+            for (NSWindow *window in [NSApp windows]) {
+                NSString *identifier = window.identifier.rawValue;
+                if (identifier && [identifier hasPrefix:@"settings"]) {
+                    [window makeKeyAndOrderFront:nil];
+                    [window orderFrontRegardless];
+                    NSLog(@"[AppDelegate] Brought settings window to front: %@", identifier);
+                    break;
+                }
+            }
+            
             NSLog(@"[AppDelegate] Dock icon shown (settings window open)");
         } else {
             // Restore to user preference
