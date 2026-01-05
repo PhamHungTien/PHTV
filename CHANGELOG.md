@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-01-05
+
 ### Added
 - **Enhanced Non-Latin Keyboard Detection**: Tự động chuyển về English khi dùng bàn phím non-Latin
   - Hỗ trợ: Japanese, Chinese, Korean, Arabic, Hebrew, Thai, Hindi, Greek, Cyrillic, Georgian, Armenian, v.v.
@@ -16,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - **Chromium Fix**: Xóa tính năng sửa lỗi Chromium (gây nhiều lỗi hơn là giải quyết)
 - **Typing Stats**: Xóa tính năng thống kê gõ phím
+
+### Changed
+- **English Dictionary**: Xóa từ "fpt" khỏi từ điển
 
 ## [1.4.6] - 2026-01-04
 
