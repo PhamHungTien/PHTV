@@ -84,6 +84,7 @@ volatile int vPauseKey = 58; //pause key code (default: Left Option = 58)
 volatile int vAutoRestoreEnglishWord = 0; //auto restore English words (default: OFF)
 
 int vShowIconOnDock = 0; //new on version 2.0
+static BOOL settingsWindowOpen = NO; // Track if settings window is open (to keep dock icon visible)
 
 volatile int vPerformLayoutCompat = 0;
 
@@ -1176,7 +1177,13 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     #endif
     
     // Apply dock icon visibility immediately with async dispatch
+    // BUT only if settings window is not currently open (it needs dock icon visible)
     dispatch_async(dispatch_get_main_queue(), ^{
+        if (settingsWindowOpen) {
+            // Settings window is open - keep dock icon visible regardless of preference
+            NSLog(@"[AppDelegate] Settings window open, keeping dock icon visible");
+            return;
+        }
         NSApplicationActivationPolicy policy = vShowIconOnDock ? NSApplicationActivationPolicyRegular : NSApplicationActivationPolicyAccessory;
         [NSApp setActivationPolicy:policy];
         if (vShowIconOnDock) {
@@ -1798,8 +1805,10 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 }
 
 -(void)setDockIconVisible:(BOOL)visible {
-    NSLog(@"[AppDelegate] setDockIconVisible called with: %d", visible);
-    vShowIconOnDock = visible ? 1 : 0;
+    NSLog(@\"[AppDelegate] setDockIconVisible called with: %d\", visible);
+    
+    // Track whether settings window is open (don't modify vShowIconOnDock - that's user preference)
+    settingsWindowOpen = visible;
     
     dispatch_async(dispatch_get_main_queue(), ^{
         // Only change dock visibility, don't affect menu bar
@@ -1811,8 +1820,10 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
             // Activate app and bring windows to front
             [NSApp activateIgnoringOtherApps:YES];
         } else {
-            // Hide from dock (accessory app - stay in menu bar only)
-            [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
+            // Settings closed - restore to user preference
+            BOOL userPrefersDock = [[NSUserDefaults standardUserDefaults] boolForKey:@"vShowIconOnDock"];
+            NSApplicationActivationPolicy policy = userPrefersDock ? NSApplicationActivationPolicyRegular : NSApplicationActivationPolicyAccessory;
+            [NSApp setActivationPolicy:policy];
         }
     });
 }
