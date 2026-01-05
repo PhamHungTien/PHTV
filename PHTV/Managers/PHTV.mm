@@ -2580,16 +2580,17 @@ extern "C" {
                 }
                 #endif
 
-                // CHROMIUM SEARCH FIELD FIX: Chromium apps don't support AX API properly
-                // When spotlightActive=true on Chromium, we must NOT use Spotlight-style handling
+                // CHROMIUM FIX: Chromium apps don't support AX API properly
+                // When vFixChromiumBrowser is enabled for Chromium apps, we must NOT use Spotlight-style handling
                 // (deferred backspace, AX API replacement) because it causes duplicate/corrupted characters
+                // This applies to ALL typing, not just search fields, because AX API is unreliable on Chromium
                 BOOL isChromiumApp = [_unicodeCompoundAppSet containsObject:effectiveBundleId];
-                BOOL isChromiumSearchField = isChromiumApp && spotlightActive;
+                BOOL isChromiumWithFix = vFixChromiumBrowser && isChromiumApp;
                 BOOL savedPostToHIDTap = _phtvPostToHIDTap;
-                if (isChromiumSearchField) {
+                if (isChromiumWithFix) {
                     _phtvPostToHIDTap = NO;  // Force CGEventTapPostEvent instead of kCGHIDEventTap
 #ifdef DEBUG
-                    NSLog(@"[PHTV] Chromium search field detected, disabling Spotlight-style handling");
+                    NSLog(@"[PHTV] Chromium app with fix enabled, disabling Spotlight-style handling");
 #endif
                 }
 
@@ -2746,8 +2747,8 @@ extern "C" {
                 //send backspace
                 if (!skipProcessing && pData->backspaceCount > 0 && pData->backspaceCount < MAX_BUFF) {
                     // Use Spotlight-style deferred backspace when in search field (spotlightActive) or Spotlight-like app
-                    // EXCEPT for Chromium apps - they don't support AX API properly, use direct backspace instead
-                    if ((spotlightActive || appChars.isSpotlightLike) && !isChromiumSearchField) {
+                    // EXCEPT for Chromium apps with fix enabled - they don't support AX API properly
+                    if ((spotlightActive || appChars.isSpotlightLike) && !isChromiumWithFix) {
                         // Defer deletion to AX replacement inside SendNewCharString().
                         _phtvPendingBackspaceCount = (int)pData->backspaceCount;
 #ifdef DEBUG
@@ -2766,15 +2767,15 @@ extern "C" {
                 // EXCEPTION: Auto English restore (extCode=5) on Chromium apps should use step-by-step
                 // because Chromium's autocomplete interferes with AX API and Unicode string posting
                 if (!skipProcessing) {
-                    // For Chromium search fields, force step-by-step because AX API doesn't work properly
-                    BOOL isSpotlightTarget = (spotlightActive || appChars.isSpotlightLike) && !isChromiumSearchField;
-                    BOOL useStepByStep = (!isSpotlightTarget) && (vSendKeyStepByStep || appChars.needsStepByStep || isChromiumSearchField);
+                    // For Chromium apps with fix enabled, force step-by-step because AX API doesn't work properly
+                    BOOL isSpotlightTarget = (spotlightActive || appChars.isSpotlightLike) && !isChromiumWithFix;
+                    BOOL useStepByStep = (!isSpotlightTarget) && (vSendKeyStepByStep || appChars.needsStepByStep || isChromiumWithFix);
 #ifdef DEBUG
                     if (isSpotlightTarget) {
                         PHTVSpotlightDebugLog([NSString stringWithFormat:@"willSend stepByStep=%d backspaceCount=%d newCharCount=%d", (int)useStepByStep, (int)pData->backspaceCount, (int)pData->newCharCount]);
                     }
-                    if (isChromiumSearchField) {
-                        NSLog(@"[PHTV] Chromium search field: using step-by-step sending");
+                    if (isChromiumWithFix) {
+                        NSLog(@"[PHTV] Chromium app with fix: using step-by-step sending");
                     }
 #endif
                     if (!useStepByStep) {
@@ -2804,8 +2805,8 @@ extern "C" {
                     }
                 }
 
-                // Restore _phtvPostToHIDTap after processing (for Chromium search field fix)
-                if (isChromiumSearchField) {
+                // Restore _phtvPostToHIDTap after processing (for Chromium fix)
+                if (isChromiumWithFix) {
                     _phtvPostToHIDTap = savedPostToHIDTap;
                 }
             } else if (pData->code == vReplaceMaro) { //MACRO
