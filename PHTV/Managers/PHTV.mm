@@ -2580,14 +2580,16 @@ extern "C" {
                 }
                 #endif
 
-                // CHROMIUM AUTO ENGLISH FIX: Disable HID tap posting for Auto English restore on Chromium
-                // Chromium apps don't work well with kCGHIDEventTap posting, causing duplicate characters
-                BOOL isAutoEnglishRestoreChromium = (pData->extCode == 5) && [_unicodeCompoundAppSet containsObject:effectiveBundleId];
+                // CHROMIUM SEARCH FIELD FIX: Chromium apps don't support AX API properly
+                // When spotlightActive=true on Chromium, we must NOT use Spotlight-style handling
+                // (deferred backspace, AX API replacement) because it causes duplicate/corrupted characters
+                BOOL isChromiumApp = [_unicodeCompoundAppSet containsObject:effectiveBundleId];
+                BOOL isChromiumSearchField = isChromiumApp && spotlightActive;
                 BOOL savedPostToHIDTap = _phtvPostToHIDTap;
-                if (isAutoEnglishRestoreChromium) {
-                    _phtvPostToHIDTap = NO;
+                if (isChromiumSearchField) {
+                    _phtvPostToHIDTap = NO;  // Force CGEventTapPostEvent instead of kCGHIDEventTap
 #ifdef DEBUG
-                    NSLog(@"[AutoEnglish] Chromium detected, disabling HID tap posting for this restore");
+                    NSLog(@"[PHTV] Chromium search field detected, disabling Spotlight-style handling");
 #endif
                 }
 
@@ -2744,12 +2746,8 @@ extern "C" {
                 //send backspace
                 if (!skipProcessing && pData->backspaceCount > 0 && pData->backspaceCount < MAX_BUFF) {
                     // Use Spotlight-style deferred backspace when in search field (spotlightActive) or Spotlight-like app
-                    // EXCEPT for Auto English restore (extCode=5) on Chromium apps - use direct backspace instead
-                    // because Chromium's autocomplete interferes with AX API fallback
-                    BOOL isAutoEnglishRestore = (pData->extCode == 5);
-                    BOOL isChromiumApp = [_unicodeCompoundAppSet containsObject:effectiveBundleId];
-                    
-                    if ((spotlightActive || appChars.isSpotlightLike) && !(isAutoEnglishRestore && isChromiumApp)) {
+                    // EXCEPT for Chromium apps - they don't support AX API properly, use direct backspace instead
+                    if ((spotlightActive || appChars.isSpotlightLike) && !isChromiumSearchField) {
                         // Defer deletion to AX replacement inside SendNewCharString().
                         _phtvPendingBackspaceCount = (int)pData->backspaceCount;
 #ifdef DEBUG
@@ -2768,18 +2766,15 @@ extern "C" {
                 // EXCEPTION: Auto English restore (extCode=5) on Chromium apps should use step-by-step
                 // because Chromium's autocomplete interferes with AX API and Unicode string posting
                 if (!skipProcessing) {
-                    BOOL isAutoEnglishRestore = (pData->extCode == 5);
-                    BOOL isChromiumApp = [_unicodeCompoundAppSet containsObject:effectiveBundleId];
-                    
-                    // For Auto English on Chromium apps, force step-by-step to avoid race conditions
-                    BOOL isSpotlightTarget = (spotlightActive || appChars.isSpotlightLike) && !(isAutoEnglishRestore && isChromiumApp);
-                    BOOL useStepByStep = (!isSpotlightTarget) && (vSendKeyStepByStep || appChars.needsStepByStep || (isAutoEnglishRestore && isChromiumApp));
+                    // For Chromium search fields, force step-by-step because AX API doesn't work properly
+                    BOOL isSpotlightTarget = (spotlightActive || appChars.isSpotlightLike) && !isChromiumSearchField;
+                    BOOL useStepByStep = (!isSpotlightTarget) && (vSendKeyStepByStep || appChars.needsStepByStep || isChromiumSearchField);
 #ifdef DEBUG
                     if (isSpotlightTarget) {
                         PHTVSpotlightDebugLog([NSString stringWithFormat:@"willSend stepByStep=%d backspaceCount=%d newCharCount=%d", (int)useStepByStep, (int)pData->backspaceCount, (int)pData->newCharCount]);
                     }
-                    if (isAutoEnglishRestore && isChromiumApp) {
-                        NSLog(@"[AutoEnglish] Chromium app detected, using step-by-step for restore");
+                    if (isChromiumSearchField) {
+                        NSLog(@"[PHTV] Chromium search field: using step-by-step sending");
                     }
 #endif
                     if (!useStepByStep) {
@@ -2809,8 +2804,8 @@ extern "C" {
                     }
                 }
 
-                // Restore _phtvPostToHIDTap after processing (for Chromium Auto English fix)
-                if (isAutoEnglishRestoreChromium) {
+                // Restore _phtvPostToHIDTap after processing (for Chromium search field fix)
+                if (isChromiumSearchField) {
                     _phtvPostToHIDTap = savedPostToHIDTap;
                 }
             } else if (pData->code == vReplaceMaro) { //MACRO
