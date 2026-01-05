@@ -32,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
 -(void)onQuickConvert;
 -(void)setQuickConvertString;
 
--(void)showIconOnDock:(BOOL)val;
+-(void)setDockIconVisible:(BOOL)visible;
 -(void)showIcon:(BOOL)onDock;
 
 // Accessibility monitoring methods

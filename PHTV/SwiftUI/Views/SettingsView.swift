@@ -91,7 +91,7 @@ struct SettingsView: View {
             // Use showIconOnDock: which doesn't save to UserDefaults
             let appDelegate = NSApp.delegate as? AppDelegate
             NSLog("[SettingsView] onAppear - temporarily showing dock icon to keep window visible")
-            appDelegate?.showIconOnDock(true)
+            appDelegate?.setDockIconVisible(true)
         }
         .onDisappear {
             // When settings window closes, restore dock icon to user preference
@@ -99,7 +99,7 @@ struct SettingsView: View {
             let appDelegate = NSApp.delegate as? AppDelegate
             let userPrefersDock = appState.showIconOnDock
             NSLog("[SettingsView] onDisappear - restoring dock icon to user preference: %@", userPrefersDock ? "true" : "false")
-            appDelegate?.showIconOnDock(userPrefersDock)
+            appDelegate?.setDockIconVisible(userPrefersDock)
         }
         .onChange(of: appState.showIconOnDock) { newValue in
             // When dock icon toggle is changed, update immediately and save

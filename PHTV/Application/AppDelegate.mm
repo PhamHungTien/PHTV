@@ -1797,15 +1797,15 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     [self fillData];
 }
 
--(void)showIconOnDock:(BOOL)val {
-    NSLog(@"[AppDelegate] showIconOnDock called with: %d", val);
-    vShowIconOnDock = val ? 1 : 0;
+-(void)setDockIconVisible:(BOOL)visible {
+    NSLog(@"[AppDelegate] setDockIconVisible called with: %d", visible);
+    vShowIconOnDock = visible ? 1 : 0;
     
     dispatch_async(dispatch_get_main_queue(), ^{
         // Only change dock visibility, don't affect menu bar
         // LSUIElement in Info.plist keeps app hidden from dock by default
         // This toggles visibility temporarily for settings window
-        if (val) {
+        if (visible) {
             // Show icon on dock (regular app)
             [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
             // Activate app and bring windows to front
