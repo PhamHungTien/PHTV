@@ -78,43 +78,28 @@ struct SettingsWindowContent: View {
                 .zIndex(1000)
         }
         .onAppear {
-            // Show dock icon when settings window opens
-            // This prevents the window from being hidden when app loses focus
-            NSLog("[SettingsWindowContent] onAppear - showing dock icon")
+            // Show dock icon and bring window to front when settings opens
+            NSLog("[SettingsWindowContent] onAppear - initializing settings window")
             
-            // Use DispatchQueue.main.async to ensure run loop is ready
-            // This is crucial on first launch when app just started
-            DispatchQueue.main.async {
-                NSLog("[SettingsWindowContent] Setting activation policy to .regular")
-                NSApp.setActivationPolicy(.regular)
-                
-                // Force dock to refresh by calling activate
+            // Step 1: Set activation policy to regular (show dock icon)
+            // This must happen first before any window operations
+            NSApp.setActivationPolicy(.regular)
+            
+            // Step 2: After a short delay, activate app and bring window to front
+            // The delay ensures macOS has processed the activation policy change
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                // Activate the app
                 NSApp.activate(ignoringOtherApps: true)
                 
-                // Bring settings window to front
-                for window in NSApp.windows {
-                    if window.identifier?.rawValue.hasPrefix("settings") == true {
-                        window.makeKeyAndOrderFront(nil)
-                        NSLog("[SettingsWindowContent] Brought settings window to front")
-                        break
-                    }
-                }
-                
-                // Sometimes first activate doesn't work, try again after a tiny delay
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                    NSApp.activate(ignoringOtherApps: true)
-                    // Bring window to front again
-                    for window in NSApp.windows {
-                        if window.identifier?.rawValue.hasPrefix("settings") == true {
-                            window.makeKeyAndOrderFront(nil)
-                            break
-                        }
-                    }
-                    NSLog("[SettingsWindowContent] Dock icon activation complete")
+                // Find and bring settings window to front
+                if let settingsWindow = NSApp.windows.first(where: { $0.identifier?.rawValue.hasPrefix("settings") == true }) {
+                    settingsWindow.makeKeyAndOrderFront(nil)
+                    settingsWindow.orderFrontRegardless()
+                    NSLog("[SettingsWindowContent] Settings window brought to front")
                 }
             }
             
-            // Also post notification for AppDelegate to track state
+            // Step 3: Post notification for AppDelegate to track state
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 NotificationCenter.default.post(name: NSNotification.Name("PHTVShowDockIcon"), object: nil, userInfo: ["visible": true])
             }
@@ -130,11 +115,9 @@ struct SettingsWindowContent: View {
             // Post notification for AppDelegate to restore state
             NotificationCenter.default.post(name: NSNotification.Name("PHTVShowDockIcon"), object: nil, userInfo: ["visible": userPrefersDock])
             
-            // Also set activation policy directly
-            DispatchQueue.main.async {
-                let policy: NSApplication.ActivationPolicy = userPrefersDock ? .regular : .accessory
-                NSApp.setActivationPolicy(policy)
-            }
+            // Set activation policy based on user preference
+            let policy: NSApplication.ActivationPolicy = userPrefersDock ? .regular : .accessory
+            NSApp.setActivationPolicy(policy)
         }
         .onChange(of: appState.settingsWindowAlwaysOnTop) { _ in
             // Update window level when user toggles the setting
