@@ -611,7 +611,6 @@ NSDictionary *keyStringToKeyCodeMap = @{
 
 extern AppDelegate* appDelegate;
 extern volatile int vSendKeyStepByStep;
-extern volatile int vFixChromiumBrowser;
 extern volatile int vPerformLayoutCompat;
 extern volatile int vTempOffPHTV;
 
@@ -1093,8 +1092,6 @@ extern "C" {
         LOAD_DATA(vRememberCode, vRememberCode);
         LOAD_DATA(vOtherLanguage, vOtherLanguage);
         LOAD_DATA(vTempOffPHTV, vTempOffPHTV);
-
-        LOAD_DATA(vFixChromiumBrowser, vFixChromiumBrowser);
 
         LOAD_DATA(vPerformLayoutCompat, vPerformLayoutCompat);
         LOAD_DATA(vSafeMode, SafeMode);
@@ -2614,39 +2611,8 @@ extern "C" {
                 // This conflicts with macOS Text Replacement feature
                 // SendEmptyCharacter is only needed for Vietnamese character keys, NOT for break keys
                 if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE) {
-                    BOOL isChromiumBrowser = vFixChromiumBrowser && [_unicodeCompoundAppSet containsObject:effectiveBundleId];
-
-                    if (isChromiumBrowser && pData->backspaceCount > 0) {
-                        // CHROMIUM ADDRESS BAR FIX:
-                        // Chrome address bar has autocomplete that interferes with backspace
-                        // Solution: Use Shift+Left to SELECT the text we want to replace,
-                        // then typing new characters will overwrite the selection
-
-                        // Select characters by sending Shift+Left multiple times
-                        for (int i = 0; i < pData->backspaceCount; i++) {
-                            CGEventRef shiftLeftDown = CGEventCreateKeyboardEvent(myEventSource, KEY_LEFT, true);
-                            CGEventRef shiftLeftUp = CGEventCreateKeyboardEvent(myEventSource, KEY_LEFT, false);
-
-                            CGEventFlags flags = CGEventGetFlags(shiftLeftDown);
-                            flags |= kCGEventFlagMaskShift;
-                            CGEventSetFlags(shiftLeftDown, flags);
-                            CGEventSetFlags(shiftLeftUp, flags);
-
-                            CGEventTapPostEvent(_proxy, shiftLeftDown);
-                            CGEventTapPostEvent(_proxy, shiftLeftUp);
-
-                            CFRelease(shiftLeftDown);
-                            CFRelease(shiftLeftUp);
-                        }
-
-                        // Mark backspaceCount as 0 since we've selected the text
-                        // New characters will overwrite the selection
-                        pData->backspaceCount = 0;
-                    } else {
-                        // For non-Chromium browsers, use the standard empty character approach
-                        SendEmptyCharacter();
-                        pData->backspaceCount++;
-                    }
+                    SendEmptyCharacter();
+                    pData->backspaceCount++;
                 }
 #ifdef DEBUG
                 if (_keycode == KEY_SPACE && vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp) {

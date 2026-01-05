@@ -214,10 +214,6 @@ struct StatusBarMenuView: View {
                     Label("Gửi phím từng bước", systemImage: "arrow.down.to.line.compact")
                 }
 
-                Toggle(isOn: $appState.fixChromiumBrowser) {
-                    Label("Sửa lỗi Chromium", systemImage: "globe")
-                }
-
                 Toggle(isOn: $appState.performLayoutCompat) {
                     Label("Tương thích layout", systemImage: "keyboard.badge.ellipsis")
                 }

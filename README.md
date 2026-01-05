@@ -82,7 +82,6 @@ open /Applications/PHTV.app
 - **Hotkey tiện lợi** - Cmd+E (tùy chỉnh được) để mở nhanh
 
 ### Tương thích ứng dụng
-- **Chromium Fix** - Tối ưu cho Chrome, Edge, Brave và các trình duyệt Chromium
 - **Keyboard Layout Compatibility** - Hỗ trợ Dvorak, Colemak và các bố cục bàn phím đặc biệt
 - **Claude Code Fix** - Sửa lỗi gõ tiếng Việt trong Claude Code CLI (Terminal)
 - **Safe Mode** - Tự động khôi phục khi Accessibility API gặp lỗi
@@ -239,7 +238,7 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 | **Bộ gõ** | Phương pháp gõ, bảng mã, chính tả, Quick Telex, phụ âm nhanh |
 | **Phím tắt** | Phím chuyển ngôn ngữ, tạm tắt tiếng Việt, PHTV Picker hotkey |
 | **Gõ tắt** | Quản lý macro, text snippets, import/export, tự động viết hoa |
-| **Ứng dụng** | Excluded Apps, Send Key Step-by-Step, Chromium Fix, Keyboard Layout, Claude Code Fix, Safe Mode |
+| **Ứng dụng** | Excluded Apps, Send Key Step-by-Step, Keyboard Layout, Claude Code Fix, Safe Mode |
 | **Hệ thống** | Khởi động cùng macOS, Smart Switch, cập nhật, menu bar, thống kê gõ phím |
 | **Báo lỗi** | Gửi báo cáo lỗi qua GitHub hoặc Email với crash logs và debug info |
 | **Thông tin** | Phiên bản, giấy phép, ủng hộ phát triển |

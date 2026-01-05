@@ -259,9 +259,6 @@ struct SettingsItem: Identifiable {
             title: "Ứng dụng gửi từng phím", iconName: "app.badge.fill", tab: .apps,
             keywords: ["send key apps", "ứng dụng", "từng phím", "app list"]),
         SettingsItem(
-            title: "Sửa lỗi Chromium", iconName: "globe", tab: .apps,
-            keywords: ["chrome", "edge", "brave", "arc", "browser", "trình duyệt", "chromium", "tương thích"]),
-        SettingsItem(
             title: "Tương thích bố cục bàn phím", iconName: "keyboard.fill", tab: .apps,
             keywords: ["layout", "compatibility", "dvorak", "colemak", "bố cục", "đặc biệt", "tương thích"]),
         SettingsItem(

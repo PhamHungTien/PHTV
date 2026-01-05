@@ -30,17 +30,6 @@ struct CompatibilitySettingsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // Browser Compatibility
-                SettingsCard(title: "Trình duyệt", icon: "globe") {
-                    SettingsToggleRow(
-                        icon: "globe",
-                        iconColor: .accentColor,
-                        title: "Sửa lỗi Chromium",
-                        subtitle: "Tương thích Chrome, Edge, Brave, Arc...",
-                        isOn: $appState.fixChromiumBrowser
-                    )
-                }
-
                 // Keyboard Layout Compatibility
                 SettingsCard(title: "Bàn phím", icon: "keyboard.fill") {
                     SettingsToggleRow(

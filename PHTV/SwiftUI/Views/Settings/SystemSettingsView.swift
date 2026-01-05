@@ -389,7 +389,7 @@ struct SystemSettingsView: View {
         let settingsKeys = [
             "inputMethod", "codeTable", "checkSpelling", "restoreIfWrongSpelling",
             "quickTelex", "modernOrthography", "autoCapsMacro", "quickEndConsonant",
-            "quickStartConsonant", "zAsConsonant", "freeMark", "fixChromiumBrowser",
+            "quickStartConsonant", "zAsConsonant", "freeMark",
             "sendKeyStepByStep", "autoRestoreEnglish", "useMacro", "macroInEnglish",
             "SwitchKeyStatus", "runOnStartup", "vShowIconOnDock", "themeColorHex",
             "updateCheckFrequency", "betaChannelEnabled", "vAutoInstallUpdates", "vMenuBarIconSize",

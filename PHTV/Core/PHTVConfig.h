@@ -51,7 +51,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL rememberCodeTableEnabled;
 @property (nonatomic, assign) BOOL autoCapsMacroEnabled;
 @property (nonatomic, assign) BOOL sendKeyStepByStepEnabled;
-@property (nonatomic, assign) BOOL fixChromiumBrowserEnabled;
 @property (nonatomic, assign) BOOL performLayoutCompatEnabled;
 @property (nonatomic, assign) BOOL tempDisablePHTVEnabled;
 @property (nonatomic, assign) BOOL otherLanguageDetectionEnabled;

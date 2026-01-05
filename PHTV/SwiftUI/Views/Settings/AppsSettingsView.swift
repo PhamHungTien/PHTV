@@ -77,17 +77,6 @@ struct AppsSettingsView: View {
                 // Compatibility
                 SettingsCard(title: "Tương thích", icon: "puzzlepiece.extension.fill") {
                     VStack(spacing: 0) {
-                        // Browser Compatibility
-                        SettingsToggleRow(
-                            icon: "globe",
-                            iconColor: .accentColor,
-                            title: "Sửa lỗi Chromium",
-                            subtitle: "Tương thích Chrome, Edge, Brave, Arc...",
-                            isOn: $appState.fixChromiumBrowser
-                        )
-
-                        SettingsDivider()
-
                         // Keyboard Layout Compatibility
                         SettingsToggleRow(
                             icon: "keyboard.fill",

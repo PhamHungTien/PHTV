@@ -87,9 +87,6 @@ int vShowIconOnDock = 0; //new on version 2.0
 
 volatile int vPerformLayoutCompat = 0;
 
-//beta feature
-volatile int vFixChromiumBrowser = 0; //new on version 2.0
-
 extern int convertToolHotKey;
 extern bool convertToolDontAlertWhenCompleted;
 
@@ -1041,7 +1038,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     int oldQuickStartConsonant = vQuickStartConsonant;
     int oldQuickEndConsonant = vQuickEndConsonant;
     int oldRememberCode = vRememberCode;
-    int oldFixChromiumBrowser = vFixChromiumBrowser;
     int oldPerformLayoutCompat = vPerformLayoutCompat;
     
     vCheckSpelling = PHTVReadIntWithFallback(defaults, @"Spelling", vCheckSpelling);
@@ -1058,7 +1054,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     vQuickStartConsonant = PHTVReadIntWithFallback(defaults, @"vQuickStartConsonant", vQuickStartConsonant);
     vQuickEndConsonant = PHTVReadIntWithFallback(defaults, @"vQuickEndConsonant", vQuickEndConsonant);
     vRememberCode = PHTVReadIntWithFallback(defaults, @"vRememberCode", vRememberCode);
-    vFixChromiumBrowser = PHTVReadIntWithFallback(defaults, @"vFixChromiumBrowser", vFixChromiumBrowser);
     vPerformLayoutCompat = PHTVReadIntWithFallback(defaults, @"vPerformLayoutCompat", vPerformLayoutCompat);
     vShowIconOnDock = PHTVReadIntWithFallback(defaults, @"vShowIconOnDock", vShowIconOnDock);
 
@@ -1094,7 +1089,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                          oldQuickStartConsonant != vQuickStartConsonant ||
                          oldQuickEndConsonant != vQuickEndConsonant ||
                          oldRememberCode != vRememberCode ||
-                         oldFixChromiumBrowser != vFixChromiumBrowser ||
                          oldPerformLayoutCompat != vPerformLayoutCompat);
         PHTV_LIVE_LOG(@"settings loaded; changedGroup1=%@ changedGroup2=%@ useMacro=%d upperCaseFirst=%d", changed1 ? @"YES" : @"NO", changed2 ? @"YES" : @"NO", vUseMacro, vUpperCaseFirstChar);
     }
@@ -1107,7 +1101,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     #ifdef DEBUG
     NSLog(@"[SwiftUI] Settings reloaded from UserDefaults");
     NSLog(@"  - useMacro=%d, autoCapsMacro=%d, useMacroInEnglishMode=%d", vUseMacro, vAutoCapsMacro, vUseMacroInEnglishMode);
-    NSLog(@"  - fixChromiumBrowser=%d, performLayoutCompat=%d", vFixChromiumBrowser, vPerformLayoutCompat);
+    NSLog(@"  - performLayoutCompat=%d", vPerformLayoutCompat);
     #endif
     
     // Apply dock icon visibility immediately with async dispatch
@@ -1661,7 +1655,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     vCustomEscapeKey = 0; [defaults setInteger:vCustomEscapeKey forKey:@"vCustomEscapeKey"];
 
     vShowIconOnDock = 0; [defaults setInteger:vShowIconOnDock forKey:@"vShowIconOnDock"];
-    vFixChromiumBrowser = 0; [defaults setInteger:vFixChromiumBrowser forKey:@"vFixChromiumBrowser"];
     vPerformLayoutCompat = 0; [defaults setInteger:vPerformLayoutCompat forKey:@"vPerformLayoutCompat"];
 
     [defaults setInteger:1 forKey:@"GrayIcon"];

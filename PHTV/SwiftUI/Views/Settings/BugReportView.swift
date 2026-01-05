@@ -813,7 +813,6 @@ struct BugReportView: View {
             \(getExcludedAppsDetails())
 
             ## 🔧 Advanced Settings
-            - **Fix Chromium Browser:** \(appState.fixChromiumBrowser ? "✅" : "❌")
             - **Layout Compat:** \(appState.performLayoutCompat ? "✅" : "❌")
             - **Safe Mode:** \(appState.safeMode ? "✅" : "❌")
             - **Send key step by step:** \(appState.sendKeyStepByStep ? "✅" : "❌")
@@ -1002,7 +1001,6 @@ struct BugReportView: View {
             if !appState.checkSpelling { unusualSettings.append("No spell check") }
             if !appState.useModernOrthography { unusualSettings.append("Old orthography") }
             if appState.quickTelex { unusualSettings.append("Quick Telex") }
-            if appState.fixChromiumBrowser { unusualSettings.append("Chromium fix") }
             if appState.sendKeyStepByStep { unusualSettings.append("Send key step-by-step") }
             if !appState.excludedApps.isEmpty { unusualSettings.append("\(appState.excludedApps.count) excluded apps") }
 

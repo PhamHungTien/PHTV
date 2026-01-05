@@ -391,7 +391,6 @@ final class AppState: ObservableObject {
 
     // System settings
     @Published var runOnStartup: Bool = false
-    @Published var fixChromiumBrowser: Bool = false
     @Published var performLayoutCompat: Bool = false
     @Published var showIconOnDock: Bool = false
     @Published var settingsWindowAlwaysOnTop: Bool = false  // Settings window always appears above other apps
@@ -738,7 +737,6 @@ final class AppState: ObservableObject {
         } else {
             runOnStartup = defaults.bool(forKey: "PHTV_RunOnStartup")
         }
-        fixChromiumBrowser = defaults.bool(forKey: "vFixChromiumBrowser")
         performLayoutCompat = defaults.bool(forKey: "vPerformLayoutCompat")
         showIconOnDock = defaults.bool(forKey: "vShowIconOnDock")
         settingsWindowAlwaysOnTop = defaults.bool(forKey: "vSettingsWindowAlwaysOnTop")
@@ -917,7 +915,6 @@ final class AppState: ObservableObject {
 
         // Save system settings
         defaults.set(runOnStartup, forKey: "PHTV_RunOnStartup")
-        defaults.set(fixChromiumBrowser, forKey: "vFixChromiumBrowser")
         defaults.set(performLayoutCompat, forKey: "vPerformLayoutCompat")
         defaults.set(showIconOnDock, forKey: "vShowIconOnDock")
         defaults.set(settingsWindowAlwaysOnTop, forKey: "vSettingsWindowAlwaysOnTop")
