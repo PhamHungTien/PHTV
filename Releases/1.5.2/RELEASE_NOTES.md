@@ -2,16 +2,21 @@
 
 ## 🐛 Sửa lỗi
 
-### Khôi phục pattern tiếng Việt ngắn
-- Sửa lỗi các từ tiếng Việt ngắn (2-3 ký tự) bị nhận diện sai là tiếng Anh
-- **`ơn`** (`own`) giờ được nhận diện đúng là tiếng Việt
-- Chỉ loại bỏ pattern >= 4 ký tự trùng với từ tiếng Anh
-- Các âm tiết đơn như `ơn`, `ăn`, `ân`, `ên`, `ôn` hoạt động chính xác
+### Khôi phục toàn bộ pattern tiếng Việt
+- Sửa lỗi các từ tiếng Việt bị nhận diện sai là tiếng Anh
+- **Giữ nguyên tất cả** pattern tiếng Việt trong từ điển, không loại bỏ bất kỳ pattern nào
+- Logic runtime sẽ ưu tiên tiếng Việt khi gõ
 
-**Ví dụ đã sửa:**
-| Gõ | Trước (1.5.1) | Sau (1.5.2) |
+**Các từ đã sửa:**
+| Gõ Telex | Trước (1.5.1) | Sau (1.5.2) |
 | --- | --- | --- |
-| `o` `w` `n` + space | own ❌ | ơn ✅ |
+| `o` `w` `n` | own ❌ | ơn ✅ |
+| `b` `e` `e` `n` | been ❌ | bên ✅ |
+| `b` `e` `e` `f` | beef ❌ | bề ✅ |
+| `b` `e` `e` `r` | beer ❌ | bể ✅ |
+| `s` `o` `o` `n` | soon ❌ | sôn ✅ |
+| `t` `e` `e` `n` | teen ❌ | tên ✅ |
+| `s` `e` `e` `n` | seen ❌ | sên ✅ |
 
 ---
 
@@ -41,4 +46,4 @@ brew upgrade --cask phtv
 
 ---
 
-> *Phiên bản này sửa lỗi quan trọng về nhận diện từ tiếng Việt ngắn.*
+> *Phiên bản này sửa lỗi quan trọng về nhận diện từ tiếng Việt trong chức năng tự động nhận diện tiếng Anh.*
