@@ -1109,7 +1109,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
             
             // Bring settings window to front
             for (NSWindow *window in [NSApp windows]) {
-                NSString *identifier = window.identifier.rawValue;
+                NSString *identifier = window.identifier;
                 if (identifier && [identifier hasPrefix:@"settings"]) {
                     [window makeKeyAndOrderFront:nil];
                     [window orderFrontRegardless];
