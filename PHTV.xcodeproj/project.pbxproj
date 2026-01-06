@@ -29,17 +29,12 @@
 		23F512852336386200397988 /* MJAccessibilityUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 23F512832336386200397988 /* MJAccessibilityUtils.m */; };
 		461048622EF2DF22005AF5FC /* SendKeyStepByStepAppsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 461048612EF2DF22005AF5FC /* SendKeyStepByStepAppsView.swift */; };
 		46394F5A2EFA5D56009D5194 /* EnglishWordDetector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46394F592EFA5D56009D5194 /* EnglishWordDetector.cpp */; };
-		46394F6E2EFA5E8F009D5194 /* settings-system.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F642EFA5E8F009D5194 /* settings-system.png */; };
 		46394F6F2EFA5E8F009D5194 /* step4-grant-access.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F5E2EFA5E8F009D5194 /* step4-grant-access.png */; };
 		46394F702EFA5E8F009D5194 /* menubar_icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F6B2EFA5E8F009D5194 /* menubar_icon.png */; };
 		46394F712EFA5E8F009D5194 /* icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F692EFA5E8F009D5194 /* icon.png */; };
 		46394F722EFA5E8F009D5194 /* step1-download.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F5B2EFA5E8F009D5194 /* step1-download.png */; };
-		46394F732EFA5E8F009D5194 /* settings-macros.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F632EFA5E8F009D5194 /* settings-macros.png */; };
 		46394F742EFA5E8F009D5194 /* step5-complete.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F5F2EFA5E8F009D5194 /* step5-complete.png */; };
-		46394F752EFA5E8F009D5194 /* settings-typing.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F652EFA5E8F009D5194 /* settings-typing.png */; };
-		46394F772EFA5E8F009D5194 /* menu-charset.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F612EFA5E8F009D5194 /* menu-charset.png */; };
 		46394F782EFA5E8F009D5194 /* step3-permissions.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F5D2EFA5E8F009D5194 /* step3-permissions.png */; };
-		46394F792EFA5E8F009D5194 /* menu-input-methods.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F622EFA5E8F009D5194 /* menu-input-methods.png */; };
 		46394F7A2EFA5E8F009D5194 /* step2-open.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F5C2EFA5E8F009D5194 /* step2-open.png */; };
 		46394F7B2EFA5E8F009D5194 /* menubar_vietnamese.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F6C2EFA5E8F009D5194 /* menubar_vietnamese.png */; };
 		46394F7C2EFA5E8F009D5194 /* donate.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F672EFA5E8F009D5194 /* donate.png */; };
@@ -58,7 +53,7 @@
 		E1A1A1A42025120200000002 /* UsageStats.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A32025120200000004 /* UsageStats.m */; };
 		E1A1A1A52025120200000005 /* PHTVConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A72025120200000007 /* PHTVConfig.m */; };
 		E1A1A1A62025120200000006 /* PHTVUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A92025120200000009 /* PHTVUtilities.m */; };
-		EF5EC6D461F146F7BB7B771B /* ColorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */; };
+		EF5EC6D461F146F7BB7B771B /* Utilities/ColorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E55895C7C4348BCA1ABE9E7 /* Utilities/ColorExtension.swift */; };
 		F1A1A1B12025130000000001 /* PHTPApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B22025130000000002 /* PHTPApp.swift */; };
 		F1A1A1B32025130000000003 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B42025130000000004 /* SettingsView.swift */; };
 		F1A1A1B52025130000000005 /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B62025130000000006 /* StatusBarController.swift */; };
@@ -70,11 +65,9 @@
 		F1A1A1D12025130100000019 /* TypingSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D22025130100000020 /* TypingSettingsView.swift */; };
 		F1A1A1D32025130100000021 /* SystemSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D42025130100000022 /* SystemSettingsView.swift */; };
 		F1A1A1D52025130100000023 /* MacroSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D62025130100000024 /* MacroSettingsView.swift */; };
-		F1A1A1F32025130100000053 /* TypingStatsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1F42025130100000054 /* TypingStatsManager.swift */; };
 		F1A1A1D72025130100000025 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1D82025130100000026 /* AboutView.swift */; };
 		F1A1A1D92025130100000027 /* HotkeyConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1DA2025130100000028 /* HotkeyConfigView.swift */; };
 		F1A1A1DB2025130100000029 /* MacroEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1DC2025130100000030 /* MacroEditorView.swift */; };
-		F1A1A1ED2025130100000047 /* MacroCategoryEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1EE2025130100000048 /* MacroCategoryEditorView.swift */; };
 		F1A1A1DD2025130100000031 /* PermissionWarningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1DE2025130100000032 /* PermissionWarningView.swift */; };
 		F1A1A1DF2025130100000033 /* ExcludedAppsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1E02025130100000034 /* ExcludedAppsView.swift */; };
 		F1A1A1E12025130100000035 /* SettingsObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1E22025130100000036 /* SettingsObserver.swift */; };
@@ -83,6 +76,8 @@
 		F1A1A1E72025130100000041 /* UpdateBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1E82025130100000042 /* UpdateBannerView.swift */; };
 		F1A1A1E92025130100000043 /* ReleaseNotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1EA2025130100000044 /* ReleaseNotesView.swift */; };
 		F1A1A1EB2025130100000045 /* ConvertToolView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1EC2025130100000046 /* ConvertToolView.swift */; };
+		F1A1A1ED2025130100000047 /* MacroCategoryEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1EE2025130100000048 /* MacroCategoryEditorView.swift */; };
+		F1A1A1F32025130100000053 /* TypingStatsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1F42025130100000054 /* TypingStatsManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -140,11 +135,6 @@
 		46394F5D2EFA5E8F009D5194 /* step3-permissions.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "step3-permissions.png"; sourceTree = "<group>"; };
 		46394F5E2EFA5E8F009D5194 /* step4-grant-access.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "step4-grant-access.png"; sourceTree = "<group>"; };
 		46394F5F2EFA5E8F009D5194 /* step5-complete.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "step5-complete.png"; sourceTree = "<group>"; };
-		46394F612EFA5E8F009D5194 /* menu-charset.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "menu-charset.png"; sourceTree = "<group>"; };
-		46394F622EFA5E8F009D5194 /* menu-input-methods.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "menu-input-methods.png"; sourceTree = "<group>"; };
-		46394F632EFA5E8F009D5194 /* settings-macros.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "settings-macros.png"; sourceTree = "<group>"; };
-		46394F642EFA5E8F009D5194 /* settings-system.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "settings-system.png"; sourceTree = "<group>"; };
-		46394F652EFA5E8F009D5194 /* settings-typing.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "settings-typing.png"; sourceTree = "<group>"; };
 		46394F672EFA5E8F009D5194 /* donate.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = donate.png; sourceTree = "<group>"; };
 		46394F692EFA5E8F009D5194 /* icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon.png; sourceTree = "<group>"; };
 		46394F6A2EFA5E8F009D5194 /* menubar_english.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = menubar_english.png; sourceTree = "<group>"; };
@@ -160,7 +150,7 @@
 		46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = PHTV.icon; sourceTree = "<group>"; };
 		46EF4FFB2EEDC0A200DF8DD1 /* PHTV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PHTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		72B4F8A52F8DD55EF170821A /* CompatibilitySettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CompatibilitySettingsView.swift; sourceTree = "<group>"; };
-		8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities/ColorExtension.swift; sourceTree = "<group>"; };
+		8E55895C7C4348BCA1ABE9E7 /* Utilities/ColorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities/ColorExtension.swift; sourceTree = "<group>"; };
 		C2DA720371C3BD130F878C29 /* AppsSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppsSettingsView.swift; sourceTree = "<group>"; };
 		D3CCE6686B954309A3B65AAD /* HotkeySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeySettingsView.swift; sourceTree = "<group>"; };
 		E1A1A1A22025120100000003 /* UsageStats.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UsageStats.h; sourceTree = "<group>"; };
@@ -182,11 +172,9 @@
 		F1A1A1D22025130100000020 /* TypingSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypingSettingsView.swift; sourceTree = "<group>"; };
 		F1A1A1D42025130100000022 /* SystemSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSettingsView.swift; sourceTree = "<group>"; };
 		F1A1A1D62025130100000024 /* MacroSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroSettingsView.swift; sourceTree = "<group>"; };
-		F1A1A1F42025130100000054 /* TypingStatsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypingStatsManager.swift; sourceTree = "<group>"; };
 		F1A1A1D82025130100000026 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
 		F1A1A1DA2025130100000028 /* HotkeyConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyConfigView.swift; sourceTree = "<group>"; };
 		F1A1A1DC2025130100000030 /* MacroEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroEditorView.swift; sourceTree = "<group>"; };
-		F1A1A1EE2025130100000048 /* MacroCategoryEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroCategoryEditorView.swift; sourceTree = "<group>"; };
 		F1A1A1DE2025130100000032 /* PermissionWarningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionWarningView.swift; sourceTree = "<group>"; };
 		F1A1A1E02025130100000034 /* ExcludedAppsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcludedAppsView.swift; sourceTree = "<group>"; };
 		F1A1A1E22025130100000036 /* SettingsObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsObserver.swift; sourceTree = "<group>"; };
@@ -195,6 +183,8 @@
 		F1A1A1E82025130100000042 /* UpdateBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateBannerView.swift; sourceTree = "<group>"; };
 		F1A1A1EA2025130100000044 /* ReleaseNotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesView.swift; sourceTree = "<group>"; };
 		F1A1A1EC2025130100000046 /* ConvertToolView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvertToolView.swift; sourceTree = "<group>"; };
+		F1A1A1EE2025130100000048 /* MacroCategoryEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroCategoryEditorView.swift; sourceTree = "<group>"; };
+		F1A1A1F42025130100000054 /* TypingStatsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypingStatsManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -294,11 +284,6 @@
 		46394F662EFA5E8F009D5194 /* UI */ = {
 			isa = PBXGroup;
 			children = (
-				46394F612EFA5E8F009D5194 /* menu-charset.png */,
-				46394F622EFA5E8F009D5194 /* menu-input-methods.png */,
-				46394F632EFA5E8F009D5194 /* settings-macros.png */,
-				46394F642EFA5E8F009D5194 /* settings-system.png */,
-				46394F652EFA5E8F009D5194 /* settings-typing.png */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -394,17 +379,9 @@
 				F1A1A2AA2025130000000020 /* Bridge */,
 				F1A1A2AB2025130000000021 /* Utilities */,
 				F1A1A2AF2025130100000055 /* Managers */,
-				8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */,
+				8E55895C7C4348BCA1ABE9E7 /* Utilities/ColorExtension.swift */,
 			);
 			path = SwiftUI;
-			sourceTree = "<group>";
-		};
-		F1A1A2AF2025130100000055 /* Managers */ = {
-			isa = PBXGroup;
-			children = (
-				F1A1A1F42025130100000054 /* TypingStatsManager.swift */,
-			);
-			path = Managers;
 			sourceTree = "<group>";
 		};
 		F1A1A2A82025130000000018 /* Views */ = {
@@ -480,6 +457,14 @@
 			path = Components;
 			sourceTree = "<group>";
 		};
+		F1A1A2AF2025130100000055 /* Managers */ = {
+			isa = PBXGroup;
+			children = (
+				F1A1A1F42025130100000054 /* TypingStatsManager.swift */,
+			);
+			path = Managers;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -549,19 +534,14 @@
 			files = (
 				46EF4FFA2EEDBFD400DF8DD1 /* PHTV.icon in Resources */,
 				232EDA5E21F1B33F0085D362 /* Assets.xcassets in Resources */,
-				46394F6E2EFA5E8F009D5194 /* settings-system.png in Resources */,
 				46394F822EFAC18E009D5194 /* vi_dict.bin in Resources */,
 				46394F832EFAC18E009D5194 /* en_dict.bin in Resources */,
 				46394F6F2EFA5E8F009D5194 /* step4-grant-access.png in Resources */,
 				46394F702EFA5E8F009D5194 /* menubar_icon.png in Resources */,
 				46394F712EFA5E8F009D5194 /* icon.png in Resources */,
 				46394F722EFA5E8F009D5194 /* step1-download.png in Resources */,
-				46394F732EFA5E8F009D5194 /* settings-macros.png in Resources */,
 				46394F742EFA5E8F009D5194 /* step5-complete.png in Resources */,
-				46394F752EFA5E8F009D5194 /* settings-typing.png in Resources */,
-				46394F772EFA5E8F009D5194 /* menu-charset.png in Resources */,
 				46394F782EFA5E8F009D5194 /* step3-permissions.png in Resources */,
-				46394F792EFA5E8F009D5194 /* menu-input-methods.png in Resources */,
 				46394F7A2EFA5E8F009D5194 /* step2-open.png in Resources */,
 				46394F7B2EFA5E8F009D5194 /* menubar_vietnamese.png in Resources */,
 				46394F7C2EFA5E8F009D5194 /* donate.png in Resources */,
@@ -577,7 +557,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EF5EC6D461F146F7BB7B771B /* ColorExtension.swift in Sources */,
+				EF5EC6D461F146F7BB7B771B /* Utilities/ColorExtension.swift in Sources */,
 				23E2E49F2314FD3A006CCC3E /* Engine.cpp in Sources */,
 				23E2E49E2314FD3A006CCC3E /* SmartSwitchKey.cpp in Sources */,
 				23F512852336386200397988 /* MJAccessibilityUtils.m in Sources */,
