@@ -26,6 +26,8 @@
 	<string>PHTV Vietnamese Input</string>
 	<key>CFBundleVersion</key>
 	<string>29</string>
+	<key>LSUIElement</key>
+	<true/>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.utilities</string>
 	<key>LSMinimumSystemVersion</key>
