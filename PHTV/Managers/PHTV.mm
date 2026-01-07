@@ -634,20 +634,26 @@ extern "C" {
                                                            @"com.vivaldi.Vivaldi",  // Vivaldi
                                                            @"com.operasoftware.Opera"]];  // Opera
 
-    // Chromium-based browsers only (excludes Apple apps)
-    // These apps don't support AX API for text replacement, so we shouldn't use Spotlight-style handling
-    NSSet* _chromiumBrowserAppSet = [NSSet setWithArray:@[@"com.google.Chrome",
-                                                           @"com.brave.Browser",
-                                                           @"com.microsoft.edgemac",  // Edge Stable
-                                                           @"com.microsoft.edgemac.Dev",
-                                                           @"com.microsoft.edgemac.Beta",
-                                                           @"com.microsoft.Edge",  // Edge Stable (alternate)
-                                                           @"com.microsoft.Edge.Dev",
-                                                           @"com.thebrowser.Browser",  // Arc Browser
-                                                           @"company.thebrowser.dia",  // Dia Browser
-                                                           @"org.chromium.Chromium",  // Chromium
-                                                           @"com.vivaldi.Vivaldi",  // Vivaldi
-                                                           @"com.operasoftware.Opera"]];  // Opera
+    // Browsers (Chromium, Safari, Firefox, etc.)
+    // These apps have their own address bar autocomplete/prediction that conflicts 
+    // with Spotlight-style HID tap posting or AX API replacement.
+    // They should be treated as normal apps (using CGEventTapPostEvent and SendEmptyCharacter).
+    NSSet* _browserAppSet = [NSSet setWithArray:@[@"com.apple.Safari",
+                                                   @"org.mozilla.firefox",
+                                                   @"com.google.Chrome",
+                                                   @"com.brave.Browser",
+                                                   @"com.microsoft.edgemac",  // Edge Stable
+                                                   @"com.microsoft.edgemac.Dev",
+                                                   @"com.microsoft.edgemac.Beta",
+                                                   @"com.microsoft.Edge",  // Edge Stable (alternate)
+                                                   @"com.microsoft.Edge.Dev",
+                                                   @"com.thebrowser.Browser",  // Arc Browser
+                                                   @"company.thebrowser.dia",  // Dia Browser
+                                                   @"org.chromium.Chromium",  // Chromium
+                                                   @"com.vivaldi.Vivaldi",  // Vivaldi
+                                                   @"com.operasoftware.Opera", // Opera
+                                                   @"com.kagi.kagimacOS",     // Orion
+                                                   @"com.duckduckgo.macos.browser"]]; // DuckDuckGo
 
     // Apps that need to FORCE Unicode precomposed (not compound) - Using NSSet for O(1) lookup performance
     // These apps don't handle Unicode combining characters properly
@@ -2586,10 +2592,11 @@ extern "C" {
             // Cache for send routines called later in this callback.
             _phtvEffectiveTargetBundleId = effectiveBundleId;
             
-            // CHROMIUM FIX: Chromium apps don't support HID tap posting or AX API
-            // When spotlightActive=true on Chromium, we should NOT use Spotlight-style handling
-            BOOL isChromiumBrowser = [_chromiumBrowserAppSet containsObject:effectiveBundleId];
-            _phtvPostToHIDTap = (!isChromiumBrowser && spotlightActive) || appChars.isSpotlightLike;
+            // BROWSER FIX: Browsers (Chromium, Safari, Firefox, etc.) don't support 
+            // HID tap posting or AX API for their address bar autocomplete.
+            // When spotlightActive=true on a browser address bar, we should NOT use Spotlight-style handling.
+            BOOL isBrowser = [_browserAppSet containsObject:effectiveBundleId];
+            _phtvPostToHIDTap = (!isBrowser && spotlightActive) || appChars.isSpotlightLike;
             
             _phtvKeyboardType = CGEventGetIntegerValueField(event, kCGKeyboardEventKeyboardType);
             _phtvPendingBackspaceCount = 0;
@@ -2693,15 +2700,15 @@ extern "C" {
                 }
                 #endif
 
-                // CHROMIUM FIX: Chromium apps don't support AX API properly
-                // When spotlightActive=true on Chromium, we should NOT use Spotlight-style handling
-                // Use _chromiumBrowserAppSet which contains only Chromium browsers (not Apple apps)
-                BOOL isChromiumApp = [_chromiumBrowserAppSet containsObject:effectiveBundleId];
+                // BROWSER FIX: Browsers (Chromium, Safari, Firefox, etc.) don't support AX API properly
+                // for their address bar autocomplete. When spotlightActive=true on a browser, 
+                // we should NOT use Spotlight-style handling.
+                BOOL isBrowserApp = [_browserAppSet containsObject:effectiveBundleId];
                 
                 // Check if this is a special app (Spotlight-like or WhatsApp-like)
                 // Also treat as special when spotlightActive (search field detected via AX API)
-                // EXCEPT for Chromium apps - they don't support AX API, so ignore spotlightActive for them
-                BOOL isSpecialApp = (!isChromiumApp && spotlightActive) || appChars.isSpotlightLike || appChars.needsPrecomposedBatched;
+                // EXCEPT for browsers - they don't support AX API for autocomplete, so ignore spotlightActive for them
+                BOOL isSpecialApp = (!isBrowserApp && spotlightActive) || appChars.isSpotlightLike || appChars.needsPrecomposedBatched;
 
                 //fix autocomplete
                 // CRITICAL FIX: NEVER send empty character for SPACE key!
@@ -2815,7 +2822,7 @@ extern "C" {
                 if (!skipProcessing && pData->backspaceCount > 0 && pData->backspaceCount < MAX_BUFF) {
                     // Use Spotlight-style deferred backspace when in search field (spotlightActive) or Spotlight-like app
                     // EXCEPT for Chromium apps - they don't support AX API properly
-                    if ((!isChromiumApp && spotlightActive) || appChars.isSpotlightLike) {
+                    if ((!isBrowserApp && spotlightActive) || appChars.isSpotlightLike) {
                         // Defer deletion to AX replacement inside SendNewCharString().
                         _phtvPendingBackspaceCount = (int)pData->backspaceCount;
 #ifdef DEBUG
@@ -2837,7 +2844,7 @@ extern "C" {
                     // For Spotlight-like targets we rely on SendNewCharString(), which can
                     // perform deterministic replacement (AX) and/or per-character Unicode posting.
                     // EXCEPT for Chromium apps - they don't support AX API properly
-                    BOOL isSpotlightTarget = (!isChromiumApp && spotlightActive) || appChars.isSpotlightLike;
+                    BOOL isSpotlightTarget = (!isBrowserApp && spotlightActive) || appChars.isSpotlightLike;
                     BOOL useStepByStep = (!isSpotlightTarget) && (vSendKeyStepByStep || appChars.needsStepByStep);
 #ifdef DEBUG
                     if (isSpotlightTarget) {
