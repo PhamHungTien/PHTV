@@ -642,6 +642,8 @@ extern "C" {
                                                    @"org.mozilla.firefox",
                                                    @"com.google.Chrome",
                                                    @"com.brave.Browser",
+                                                   @"com.visualkit.browser",  // Cốc Cốc
+                                                   @"com.coccoc.browser",     // Cốc Cốc (new)
                                                    @"com.microsoft.edgemac",  // Edge Stable
                                                    @"com.microsoft.edgemac.Dev",
                                                    @"com.microsoft.edgemac.Beta",
@@ -2710,11 +2712,17 @@ extern "C" {
                 // EXCEPT for browsers - they don't support AX API for autocomplete, so ignore spotlightActive for them
                 BOOL isSpecialApp = (!isBrowserApp && spotlightActive) || appChars.isSpotlightLike || appChars.needsPrecomposedBatched;
 
-                //fix autocomplete
+                // BROWSER SHORTCUT FIX: Avoid sending empty character for common shortcut prefixes (like /)
+                // or when a new session just started without any previous context.
+                // This prevents browsers from deleting the shortcut token (e.g., "/p") 
+                // when PHTV tries to break the autocomplete.
+                BOOL isPotentialShortcut = (_keycode == KEY_SLASH);
+                
+                // fix autocomplete
                 // CRITICAL FIX: NEVER send empty character for SPACE key!
                 // This conflicts with macOS Text Replacement feature
                 // SendEmptyCharacter is only needed for Vietnamese character keys, NOT for break keys
-                if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE) {
+                if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE && !isPotentialShortcut) {
                     SendEmptyCharacter();
                     pData->backspaceCount++;
                 }
