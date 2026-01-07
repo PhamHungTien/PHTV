@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="PHTV/Resources/icon.png" alt="PHTV Icon" width="128" height="128">
+<img src="docs/images/icon.png" alt="PHTV Icon" width="128" height="128">
 
 # PHTV — Precision Hybrid Typing Vietnamese
 
