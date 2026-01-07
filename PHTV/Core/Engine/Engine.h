@@ -286,6 +286,11 @@ void vTempOffEngine(const bool& off=true);
 bool vRestoreToRawKeys();
 
 /**
+ * Restore session with word
+ */
+void vRestoreSessionWithWord(const wstring& word);
+
+/**
  * some utils function
  */
 wstring utf8ToWideString(const string& str);

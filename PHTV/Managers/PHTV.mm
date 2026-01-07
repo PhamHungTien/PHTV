@@ -2220,6 +2220,72 @@ extern "C" {
      * MAIN HOOK entry, very important function.
      * MAIN Callback.
      */
+    void TryToRestoreSessionFromAX() {
+        if (vLanguage != 1) return;
+
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            if (vSafeMode || vLanguage != 1) return;
+            
+            AXUIElementRef systemWide = AXUIElementCreateSystemWide();
+            AXUIElementRef focusedElement = NULL;
+            AXError error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement);
+            CFRelease(systemWide);
+            
+            if (error != kAXErrorSuccess || focusedElement == NULL) return;
+            
+            // Get Value
+            CFTypeRef valueRef = NULL;
+            AXUIElementCopyAttributeValue(focusedElement, kAXValueAttribute, &valueRef);
+            NSString *valueStr = (valueRef && CFGetTypeID(valueRef) == CFStringGetTypeID()) ? [(__bridge NSString *)valueRef copy] : nil;
+            
+            // Get Selection
+            CFTypeRef rangeRef = NULL;
+            AXUIElementCopyAttributeValue(focusedElement, kAXSelectedTextRangeAttribute, &rangeRef);
+            
+            CFRange sel = {0, 0};
+            bool hasSel = false;
+            if (rangeRef && CFGetTypeID(rangeRef) == AXValueGetTypeID()) {
+                 if (AXValueGetValue((AXValueRef)rangeRef, PHTV_AXVALUE_CFRANGE_TYPE, &sel)) {
+                    hasSel = true;
+                }
+            }
+            
+            if (valueRef) CFRelease(valueRef);
+            if (rangeRef) CFRelease(rangeRef);
+            CFRelease(focusedElement);
+            
+            if (!hasSel || !valueStr || valueStr.length == 0) return;
+            if (sel.length > 0) return; // Ignore if selection exists
+            
+            NSInteger caret = sel.location;
+            if (caret <= 0 || caret > valueStr.length) return;
+            
+            // Find word BEFORE caret
+            NSInteger start = caret;
+            while (start > 0) {
+                unichar c = [valueStr characterAtIndex:start - 1];
+                if (![[NSCharacterSet letterCharacterSet] characterIsMember:c] && c != '_') { 
+                    break;
+                }
+                start--;
+            }
+            
+            if (caret <= start) return;
+            
+            NSString *word = [valueStr substringWithRange:NSMakeRange(start, caret - start)];
+            
+            if (word.length > 40) return;
+            
+            // Restore
+            std::wstring wWord = utf8ToWideString([word UTF8String]);
+            vRestoreSessionWithWord(wWord);
+            
+            #ifdef DEBUG
+            NSLog(@"[PHTV] Restored session: %@", word);
+            #endif
+        });
+    }
+
     CGEventRef PHTVCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event, void *refcon) {
         @autoreleasepool {
         // CRITICAL: If permission was lost, reject ALL events immediately
@@ -2497,6 +2563,12 @@ extern "C" {
         //handle mouse - reset session to avoid stale typing state
         if (type == kCGEventLeftMouseDown || type == kCGEventRightMouseDown || type == kCGEventLeftMouseDragged || type == kCGEventRightMouseDragged) {
             RequestNewSession();
+            
+            // Try to restore session if clicked on a word (Left Mouse Down only)
+            if (type == kCGEventLeftMouseDown) {
+                TryToRestoreSessionFromAX();
+            }
+            
             return event;
         }
 
@@ -2668,6 +2740,12 @@ extern "C" {
             }
 
             if (pData->code == vDoNothing) { //do nothing
+                // Navigation keys: trigger session restore to support keyboard-based edit-in-place
+                if (_keycode == KEY_LEFT || _keycode == KEY_RIGHT || _keycode == KEY_UP || _keycode == KEY_DOWN ||
+                    _keycode == 115 || _keycode == 119 || _keycode == 116 || _keycode == 121) { // Home, End, PgUp, PgDown
+                    TryToRestoreSessionFromAX();
+                }
+
                 // Use atomic read for thread safety
                 int currentCodeTable = __atomic_load_n(&vCodeTable, __ATOMIC_RELAXED);
                 if (IS_DOUBLE_CODE(currentCodeTable)) { //VNI
