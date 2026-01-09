@@ -97,8 +97,8 @@ jobs:
           security import $RUNNER_TEMP/DeveloperIDCA.cer -k "$KEYCHAIN_PATH" -T /usr/bin/codesign -T /usr/bin/security
 
           # Import User Certificate (P12)
-          # Use -i to ignore garbage characters (newlines) in base64
-          echo "$CERTIFICATES_P12" | base64 --decode -i > $RUNNER_TEMP/certificate.p12
+          # Fix base64 decode: macOS base64 behaves differently. Use simple --decode.
+          echo "$CERTIFICATES_P12" | base64 --decode > $RUNNER_TEMP/certificate.p12
           
           # Import P12
           # We use /usr/bin/codesign explicitly to allow access
