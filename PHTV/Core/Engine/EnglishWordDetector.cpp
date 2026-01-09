@@ -335,8 +335,9 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
     //   "eee" (e+e+e) → "ee" starts with 'e' (Vietnamese vowel) → check tone mark → block "eee" (ê + e)
     if (vieInit && vieNodes && stateIndex >= 2) {
         uint8_t lastKey = keyStates[stateIndex - 1] & 0x3F;
-        // Telex tone marks: d(đ), s(sắc), f(huyền), r(hỏi), x(ngã), j(nặng), w(horn), a/o/e(^), [](ơ/ư)
-        bool isToneMark = (lastKey == KEY_D || lastKey == KEY_S || lastKey == KEY_F ||
+        // Telex tone marks: s(sắc), f(huyền), r(hỏi), x(ngã), j(nặng), w(horn), a/o/e(^), [](ơ/ư)
+        // Note: KEY_D removed to fix "add" -> "ađ" issue (Issue #57)
+        bool isToneMark = (lastKey == KEY_S || lastKey == KEY_F ||
                           lastKey == KEY_R || lastKey == KEY_X || lastKey == KEY_J ||
                           lastKey == KEY_W || lastKey == KEY_A || lastKey == KEY_O ||
                           lastKey == KEY_E || lastKey == KEY_LEFT_BRACKET || lastKey == KEY_RIGHT_BRACKET);
