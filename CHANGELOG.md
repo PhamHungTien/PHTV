@@ -7,7 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.6.1] - 2026-01-09
+## [1.6.2] - 2026-01-09
+
+### Fixed
+- **Fix triệt để gõ tiếng Việt không hoạt động sau khi cấp quyền**:
+  - **Force Restart khi quay lại từ System Settings**: Tự động restart để áp dụng TCC state
+  - **Event Tap Verification**: Kiểm tra event tap thực sự enabled sau khi init, không chỉ init thành công
+  - **Auto-Recreate Event Tap**: Nếu event tap bị disabled bởi hệ thống, tự động recreate
+  - **Timing Fix**: Thêm delay nhỏ (0.1s) trước khi init event tap để run loop sẵn sàng
+  - **Double-Check Mechanism**: Kiểm tra lại sau 0.2s để catch race conditions
+
+## [1.6.1] - 2026-01-09 (cancelled)
 
 ### Fixed
 - **Fix triệt để cho người dùng mới**: Sửa lỗi người dùng cài đặt lần đầu không nhận quyền trợ năng

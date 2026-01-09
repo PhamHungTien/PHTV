@@ -574,8 +574,8 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     // Reset the AX=YES/Tap=NO counter since we're attempting fresh init
     [PHTVManager resetAxYesTapNoCounter];
 
-    // Initialize event tap immediately
-    dispatch_async(dispatch_get_main_queue(), ^{
+    // Initialize event tap with slight delay to ensure run loop is ready
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         if (![PHTVManager initEventTap]) {
             // Event tap failed to initialize even though permission was granted
             // This is the TCC cache issue - app needs relaunch
@@ -587,6 +587,21 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
             [self relaunchAppAfterPermissionGrant];
         } else {
             NSLog(@"[EventTap] Initialized successfully - App ready!");
+
+            // CRITICAL: Verify event tap is actually enabled and working
+            if (![PHTVManager isEventTapEnabled]) {
+                NSLog(@"[EventTap] ⚠️ Event tap init succeeded but not enabled - forcing enable");
+                [PHTVManager ensureEventTapAlive];
+            }
+
+            // Double-check after a short delay
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                if ([PHTVManager isInited] && ![PHTVManager isEventTapEnabled]) {
+                    NSLog(@"[EventTap] ⚠️ Event tap still not enabled - recreating");
+                    [PHTVManager stopEventTap];
+                    [PHTVManager initEventTap];
+                }
+            });
 
             // Start monitoring for permission revocation
             [self startAccessibilityMonitoring];
@@ -863,19 +878,36 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         return;
     }
     
-    //init
-    dispatch_async(dispatch_get_main_queue(), ^{
+    //init - use slight delay to ensure run loop is fully ready
+    // This fixes issue where event tap is created but doesn't work until Settings window is opened
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         if (![PHTVManager initEventTap]) {
             // Show settings via SwiftUI notification
             [[NSNotificationCenter defaultCenter] postNotificationName:@"ShowSettings" object:nil];
         } else {
             NSLog(@"[EventTap] Initialized successfully");
 
+            // CRITICAL: Verify event tap is actually enabled and working
+            // Sometimes init succeeds but tap is not enabled
+            if (![PHTVManager isEventTapEnabled]) {
+                NSLog(@"[EventTap] ⚠️ Event tap init succeeded but not enabled - forcing enable");
+                [PHTVManager ensureEventTapAlive];
+            }
+
+            // Double-check after a short delay to catch any race conditions
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                if ([PHTVManager isInited] && ![PHTVManager isEventTapEnabled]) {
+                    NSLog(@"[EventTap] ⚠️ Event tap still not enabled - recreating");
+                    [PHTVManager stopEventTap];
+                    [PHTVManager initEventTap];
+                }
+            });
+
             // Start continuous monitoring for accessibility permission changes
             // This detects if permission is revoked while app is running
             [self startAccessibilityMonitoring];
             [self startHealthCheckMonitoring];
-            
+
             // Start monitoring input source changes (for auto-switching when using Japanese/Chinese/etc. keyboards)
             [self startInputSourceMonitoring];
 
@@ -2403,9 +2435,31 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                     if (![PHTVManager isInited]) {
                         if ([PHTVManager initEventTap]) {
                             NSLog(@"[Accessibility] ✅ Event tap initialized successfully!");
+
+                            // CRITICAL: Verify event tap is enabled
+                            if (![PHTVManager isEventTapEnabled]) {
+                                NSLog(@"[Accessibility] ⚠️ Event tap not enabled - forcing enable");
+                                [PHTVManager ensureEventTapAlive];
+                            }
+
                             [self startAccessibilityMonitoring];
                             [self startHealthCheckMonitoring];
                             [self fillDataWithAnimation:YES];
+                            return;
+                        }
+                    } else {
+                        // Event tap already inited, but verify it's enabled
+                        if (![PHTVManager isEventTapEnabled]) {
+                            NSLog(@"[Accessibility] ⚠️ Event tap exists but not enabled - recreating");
+                            [PHTVManager stopEventTap];
+                            if ([PHTVManager initEventTap]) {
+                                [self startAccessibilityMonitoring];
+                                [self startHealthCheckMonitoring];
+                                [self fillDataWithAnimation:YES];
+                                return;
+                            }
+                        } else {
+                            NSLog(@"[Accessibility] ✅ Event tap already working!");
                             return;
                         }
                     }
