@@ -136,6 +136,7 @@ jobs:
             STRIP_SWIFT_SYMBOLS=NO \
             COPY_PHASE_STRIP=NO \
             STRIP_INSTALLED_PRODUCT=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO \
             clean build \
             2>&1 | tee build.log
           
