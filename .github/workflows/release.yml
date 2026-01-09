@@ -67,9 +67,8 @@ jobs:
           CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
         run: |
           if [ -z "$CERTIFICATES_P12" ]; then
-            echo "⚠️ No certificate, will build without signing"
-            echo "has_certificate=false" >> $GITHUB_OUTPUT
-            exit 0
+            echo "❌ Error: CERTIFICATES_P12 secret is missing. Cannot build signed release."
+            exit 1
           fi
           
           # Create temporary keychain
@@ -96,73 +95,52 @@ jobs:
           
           # Find certificate identity
           IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -o '"[^"]*"' | head -1 | tr -d '"')
+          
+          if [ -z "$IDENTITY" ]; then
+            echo "❌ Error: Could not find valid signing identity in imported certificate."
+            exit 1
+          fi
+          
           echo "🔐 Found signing identity: $IDENTITY"
           
           rm $RUNNER_TEMP/certificate.p12
           
-          echo "has_certificate=true" >> $GITHUB_OUTPUT
           echo "identity=$IDENTITY" >> $GITHUB_OUTPUT
           echo "keychain=$KEYCHAIN_PATH" >> $GITHUB_OUTPUT
-          echo "✅ Certificate imported"
+          echo "✅ Certificate imported successfully"
 
       - name: Build
         run: |
-          # Function to build without signing
-          build_unsigned() {
-            echo "⚠️ Building without code signing..."
-            # Build without signing (patch project first)
-            sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' PHTV.xcodeproj/project.pbxproj
-            sed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=macosx\*\]" = "Apple Development";/"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";/g' PHTV.xcodeproj/project.pbxproj
-            sed -i '' 's/DEVELOPMENT_TEAM = F9XPW22T8M;/DEVELOPMENT_TEAM = "";/g' PHTV.xcodeproj/project.pbxproj
-            sed -i '' 's/ENABLE_HARDENED_RUNTIME = YES;/ENABLE_HARDENED_RUNTIME = NO;/g' PHTV.xcodeproj/project.pbxproj
-            
-            xcodebuild -scheme PHTV \
-              -configuration Release \
-              -derivedDataPath ./build \
-              clean build \
-              2>&1 | tee build.log
-          }
-
-          if [ "${{ steps.certificate.outputs.has_certificate }}" = "true" ]; then
-            echo "🔐 Building with code signing..."
-            echo "Identity: ${{ steps.certificate.outputs.identity }}"
-            
-            set +e # Disable exit on error temporarily
-            xcodebuild -scheme PHTV \
-              -configuration Release \
-              -derivedDataPath ./build \
-              CODE_SIGN_STYLE=Manual \
-              CODE_SIGN_IDENTITY="${{ steps.certificate.outputs.identity }}" \
-              OTHER_CODE_SIGN_FLAGS="--keychain ${{ steps.certificate.outputs.keychain }}" \
-              clean build \
-              2>&1 | tee build.log
-            BUILD_RESULT=$?
-            set -e # Re-enable exit on error
-            
-            if [ $BUILD_RESULT -ne 0 ]; then
-                echo "❌ Signed build failed (likely due to certificate issues)."
-                echo "🔄 Falling back to unsigned build..."
-                build_unsigned
-            fi
-          else
-            build_unsigned
-          fi
+          echo "🔐 Building with mandatory code signing..."
+          echo "Identity: ${{ steps.certificate.outputs.identity }}"
+          
+          # Ensure project settings enforce manual signing with our identity
+          # We force development team to empty to avoid automatic management issues,
+          # as we are providing specific identity and keychain manually.
+          
+          xcodebuild -scheme PHTV \
+            -configuration Release \
+            -derivedDataPath ./build \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="${{ steps.certificate.outputs.identity }}" \
+            OTHER_CODE_SIGN_FLAGS="--keychain ${{ steps.certificate.outputs.keychain }}" \
+            DEVELOPMENT_TEAM="" \
+            clean build \
+            2>&1 | tee build.log
           
           if [ ! -d "./build/Build/Products/Release/PHTV.app" ]; then
-            echo "❌ Build failed"
+            echo "❌ Build failed: PHTV.app not found"
             exit 1
           fi
           
-          # Verify signing
-          if [ "${{ steps.certificate.outputs.has_certificate }}" = "true" ] && [ -z "$BUILD_RESULT" ]; then
-            echo "🔍 Verifying code signature..."
-            codesign -dv --verbose=2 "./build/Build/Products/Release/PHTV.app" 2>&1 || echo "⚠️ Signature verification output above"
-          elif [ "${{ steps.certificate.outputs.has_certificate }}" = "true" ] && [ $BUILD_RESULT -eq 0 ]; then
-             echo "🔍 Verifying code signature..."
-             codesign -dv --verbose=2 "./build/Build/Products/Release/PHTV.app" 2>&1 || echo "⚠️ Signature verification output above"
+          # Verify signing strictly
+          echo "🔍 Verifying code signature..."
+          if codesign -dv --verbose=2 "./build/Build/Products/Release/PHTV.app"; then
+             echo "✅ Code signature verified"
+          else
+             echo "❌ Error: App is not properly signed!"
+             exit 1
           fi
-          
-          echo "✅ Build succeeded"
 
       - name: Create DMG
         id: dmg
