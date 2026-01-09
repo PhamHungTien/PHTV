@@ -21,11 +21,11 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.6.5</string>
+	<string>1.6.6</string>
 	<key>CFBundleSpokenName</key>
 	<string>PHTV Vietnamese Input</string>
 	<key>CFBundleVersion</key>
-	<string>44</string>
+	<string>45</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.utilities</string>
 	<key>LSMinimumSystemVersion</key>
@@ -34,6 +34,8 @@
 	<true/>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSAccessibilityUsageDescription</key>
+	<string>PHTV needs Accessibility permissions to intercept keyboard events and provide Vietnamese input.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
@@ -41,14 +43,12 @@
 	</dict>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>Used for keyboard</string>
-	<key>NSAccessibilityUsageDescription</key>
-	<string>PHTV needs Accessibility permissions to intercept keyboard events and provide Vietnamese input.</string>
-	<key>NSInputMonitoringUsageDescription</key>
-	<string>PHTV needs Input Monitoring permissions to detect key presses for Vietnamese input.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2026 Phạm Hùng Tiến. All rights reserved.</string>
 	<key>NSHumanReadableDescription</key>
 	<string>Vietnamese input method with Telex, VNI support for macOS</string>
+	<key>NSInputMonitoringUsageDescription</key>
+	<string>PHTV needs Input Monitoring permissions to detect key presses for Vietnamese input.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>SKAdNetworkItems</key>
