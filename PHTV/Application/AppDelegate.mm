@@ -592,10 +592,10 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                 [self onControlPanelSelected];
             }
 
-            // On very first launch, relaunch once after permission is granted
+            // Clear first-launch relaunch flag - we now initialize immediately without restart
             if (self->_needsRelaunchAfterPermission) {
                 self->_needsRelaunchAfterPermission = NO;
-                [self relaunchAppAfterPermissionGrant];
+                NSLog(@"[Accessibility] Initialized successfully - skipping forced relaunch");
             }
         }
         [self setQuickConvertString];
