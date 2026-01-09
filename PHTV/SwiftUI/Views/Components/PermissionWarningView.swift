@@ -33,7 +33,7 @@ struct PermissionWarningView: View {
             }
             .padding()
             .background {
-                if #available(macOS 15.0, *) {
+                if #available(macOS 26.0, *) {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(Color.green.opacity(0.1))
                         .glassEffect(in: .rect(cornerRadius: 12))
@@ -60,7 +60,7 @@ struct PermissionWarningView: View {
                     }
                 }
 
-                if #available(macOS 15.0, *) {
+                if #available(macOS 26.0, *) {
                     Button("Mở Cài đặt Hệ thống") {
                         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
                             NSWorkspace.shared.open(url)
@@ -79,7 +79,7 @@ struct PermissionWarningView: View {
             }
             .padding()
             .background {
-                if #available(macOS 15.0, *) {
+                if #available(macOS 26.0, *) {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(Color.orange.opacity(0.1))
                         .glassEffect(in: .rect(cornerRadius: 12))

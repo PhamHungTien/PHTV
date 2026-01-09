@@ -157,7 +157,7 @@ struct TypingSettingsView: View {
                                     }
                                     .padding(10)
                                     .background {
-                                        if #available(macOS 15.0, *) {
+                                        if #available(macOS 26.0, *) {
                                             ZStack {
                                                 RoundedRectangle(cornerRadius: 8)
                                                     .fill(.ultraThinMaterial)
@@ -290,7 +290,7 @@ struct StatusCard: View {
             Spacer()
 
             if !hasPermission {
-                if #available(macOS 15.0, *) {
+                if #available(macOS 26.0, *) {
                     Button("Cấp quyền") {
                         if let url = URL(
                             string:
@@ -319,7 +319,7 @@ struct StatusCard: View {
         .padding(16)
         .frame(maxWidth: 700)
         .background {
-            if #available(macOS 15.0, *) {
+            if #available(macOS 26.0, *) {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(.ultraThinMaterial)
                     .glassEffect(in: .rect(cornerRadius: 12))
@@ -367,7 +367,7 @@ struct SettingsCard<Content: View>: View {
         }
         .frame(maxWidth: 700)
         .background {
-            if #available(macOS 15.0, *) {
+            if #available(macOS 26.0, *) {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(.ultraThinMaterial)
                     .glassEffect(in: .rect(cornerRadius: 12))
@@ -522,7 +522,7 @@ struct RestoreKeyButton: View {
             .frame(maxWidth: .infinity)
             .frame(height: 56)
             .background {
-                if #available(macOS 15.0, *) {
+                if #available(macOS 26.0, *) {
                     if isSelected {
                         RoundedRectangle(cornerRadius: 10)
                             .fill(themeColor)

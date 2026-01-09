@@ -773,7 +773,7 @@ struct MacroRowView: View {
             Group {
                 if isRecentlyAdded {
                     // Liquid glass effect for newly added items
-                    if #available(macOS 15.0, *) {
+                    if #available(macOS 26.0, *) {
                         RoundedRectangle(cornerRadius: 8)
                             .fill(.green.opacity(0.08))
                             .glassEffect(in: .rect(cornerRadius: 8))
@@ -815,7 +815,7 @@ struct MacroRowView: View {
                     }
                 } else if isRecentlyEdited {
                     // Liquid glass effect for edited items
-                    if #available(macOS 15.0, *) {
+                    if #available(macOS 26.0, *) {
                         RoundedRectangle(cornerRadius: 8)
                             .fill(.blue.opacity(0.08))
                             .glassEffect(in: .rect(cornerRadius: 8))
@@ -857,7 +857,7 @@ struct MacroRowView: View {
                     }
                 } else if isHovering {
                     // Subtle glass effect on hover
-                    if #available(macOS 15.0, *) {
+                    if #available(macOS 26.0, *) {
                         RoundedRectangle(cornerRadius: 8)
                             .fill(.primary.opacity(0.03))
                             .glassEffect(in: .rect(cornerRadius: 8))

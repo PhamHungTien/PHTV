@@ -100,7 +100,7 @@ private struct EmptySendKeyStepByStepAppsView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
         .background {
-            if #available(macOS 15.0, *) {
+            if #available(macOS 26.0, *) {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(.ultraThinMaterial)
                     .glassEffect(in: .rect(cornerRadius: 10))
@@ -139,7 +139,7 @@ private struct SendKeyStepByStepAppsList: View {
             }
         }
         .background {
-            if #available(macOS 15.0, *) {
+            if #available(macOS 26.0, *) {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(.ultraThinMaterial)
                     .glassEffect(in: .rect(cornerRadius: 10))

@@ -112,7 +112,7 @@ struct AboutView: View {
                         }
                         .padding(16)
                         .background {
-                            if #available(macOS 15.0, *) {
+                            if #available(macOS 26.0, *) {
                                 RoundedRectangle(cornerRadius: 16)
                                     .fill(.ultraThinMaterial)
                                     .glassEffect(in: .rect(cornerRadius: 16))
@@ -180,7 +180,7 @@ struct AboutInfoCard: View {
         .padding(14)
         .frame(maxWidth: 700)
         .background {
-            if #available(macOS 15.0, *) {
+            if #available(macOS 26.0, *) {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(.ultraThinMaterial)
                     .glassEffect(in: .rect(cornerRadius: 12))

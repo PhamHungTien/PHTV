@@ -68,7 +68,7 @@ struct HotkeyConfigView: View {
                     }
                     .padding(10)
                     .background {
-                        if #available(macOS 15.0, *) {
+                        if #available(macOS 26.0, *) {
                             ZStack {
                                 RoundedRectangle(cornerRadius: 8)
                                     .fill(.ultraThinMaterial)
@@ -147,7 +147,7 @@ struct HotkeyConfigView: View {
                         .padding(.vertical, 10)
                         .frame(minWidth: 180)
                         .background {
-                            if #available(macOS 15.0, *) {
+                            if #available(macOS 26.0, *) {
                                 if isRecording {
                                     RoundedRectangle(cornerRadius: 10)
                                         .fill(Color.accentColor.opacity(0.1))
@@ -190,7 +190,7 @@ struct HotkeyConfigView: View {
                         .padding(.horizontal, 14)
                         .padding(.vertical, 8)
                         .background {
-                            if #available(macOS 15.0, *) {
+                            if #available(macOS 26.0, *) {
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 10)
                                         .fill(.ultraThinMaterial)
@@ -313,7 +313,7 @@ struct ModifierKeyButton: View {
             .frame(maxWidth: .infinity)
             .frame(height: 56)
             .background {
-                if #available(macOS 15.0, *) {
+                if #available(macOS 26.0, *) {
                     if isOn {
                         RoundedRectangle(cornerRadius: 10)
                             .fill(Color.accentColor)
@@ -675,7 +675,7 @@ struct PauseKeyConfigView: View {
                     }
                     .padding(10)
                     .background {
-                        if #available(macOS 15.0, *) {
+                        if #available(macOS 26.0, *) {
                             ZStack {
                                 RoundedRectangle(cornerRadius: 8)
                                     .fill(.ultraThinMaterial)
@@ -713,7 +713,7 @@ struct PauseKeyConfigView: View {
                     }
                     .padding(10)
                     .background {
-                        if #available(macOS 15.0, *) {
+                        if #available(macOS 26.0, *) {
                             ZStack {
                                 RoundedRectangle(cornerRadius: 8)
                                     .fill(.ultraThinMaterial)
@@ -772,7 +772,7 @@ struct PauseKeyButton: View {
             .frame(maxWidth: .infinity)
             .frame(height: 56)
             .background {
-                if #available(macOS 15.0, *) {
+                if #available(macOS 26.0, *) {
                     if isSelected {
                         RoundedRectangle(cornerRadius: 10)
                             .fill(Color.accentColor)
@@ -930,7 +930,7 @@ struct EmojiHotkeyConfigView: View {
                             .padding(.vertical, 10)
                             .frame(minWidth: 180)
                             .background {
-                                if #available(macOS 15.0, *) {
+                                if #available(macOS 26.0, *) {
                                     if isRecording {
                                         RoundedRectangle(cornerRadius: 10)
                                             .fill(Color.accentColor.opacity(0.1))
@@ -973,7 +973,7 @@ struct EmojiHotkeyConfigView: View {
                             .padding(.horizontal, 14)
                             .padding(.vertical, 8)
                             .background {
-                                if #available(macOS 15.0, *) {
+                                if #available(macOS 26.0, *) {
                                     ZStack {
                                         RoundedRectangle(cornerRadius: 10)
                                             .fill(.ultraThinMaterial)

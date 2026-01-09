@@ -6073,7 +6073,7 @@ struct EmojiPickerView: View {
             UserDefaults.standard.set(newValue, forKey: EmojiPickerView.lastTabKey)
         }
         .background {
-            if #available(macOS 15.0, *) {
+            if #available(macOS 26.0, *) {
                 // Liquid Glass design for macOS 26+ (regular for better visibility)
                 RoundedRectangle(cornerRadius: 16)
                     .fill(Color(NSColor.windowBackgroundColor).opacity(0.3))

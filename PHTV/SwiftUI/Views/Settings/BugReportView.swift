@@ -66,7 +66,7 @@ struct BugReportView: View {
                     .textFieldStyle(.plain)
                     .padding(8)
                     .background {
-                        if #available(macOS 15.0, *) {
+                        if #available(macOS 26.0, *) {
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(.ultraThinMaterial)
                                 .glassEffect(in: .rect(cornerRadius: 8))
@@ -91,7 +91,7 @@ struct BugReportView: View {
                     .scrollContentBackground(.hidden)
                     .padding(8)
                     .background {
-                        if #available(macOS 15.0, *) {
+                        if #available(macOS 26.0, *) {
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(.ultraThinMaterial)
                                 .glassEffect(in: .rect(cornerRadius: 8))
