@@ -47,6 +47,11 @@ static NSUInteger         _tapRecreateCount = 0;
 static BOOL _lastPermissionCheckResult = NO;
 static NSTimeInterval _lastPermissionCheckTime = 0;
 
+// Dynamic cache TTL: Short when waiting for permission, long when permission granted
+// This ensures fast detection when user grants permission while avoiding excessive test taps when running normally
+static const NSTimeInterval kCacheTTLWaitingForPermission = 0.5;  // 500ms when waiting
+static const NSTimeInterval kCacheTTLPermissionGranted = 10.0;    // 10s when granted
+
 #pragma mark - Core Functionality
 
 +(BOOL)hasPermissionLost {
@@ -74,16 +79,18 @@ static NSTimeInterval _lastPermissionCheckTime = 0;
 // SAFE permission check via test event tap (Apple recommended)
 // This is the ONLY reliable way to check accessibility permission
 // Returns YES if we can create event tap (permission granted), NO otherwise
-// Cached to avoid creating test taps too frequently (max once per 10 seconds)
+// Cached with DYNAMIC TTL: short when waiting for permission, long when granted
 +(BOOL)canCreateEventTap {
     NSTimeInterval now = [[NSDate date] timeIntervalSince1970];
 
-    // If checked within last 10 seconds, return cached result
-    // Permission rarely changes during normal operation, so 10s cache is safe
-    // This prevents creating test taps too frequently which could interfere with main tap
-    if (now - _lastPermissionCheckTime < 10.0) {
+    // Use DYNAMIC cache TTL based on current permission state
+    // When waiting for permission (NO): use short TTL (0.5s) for fast detection
+    // When permission granted (YES): use long TTL (10s) to reduce overhead
+    NSTimeInterval cacheTTL = _lastPermissionCheckResult ? kCacheTTLPermissionGranted : kCacheTTLWaitingForPermission;
+
+    if (now - _lastPermissionCheckTime < cacheTTL) {
         #ifdef DEBUG
-        NSLog(@"[Permission] Returning CACHED result: %@", _lastPermissionCheckResult ? @"HAS" : @"NO");
+        NSLog(@"[Permission] Returning CACHED result: %@ (TTL: %.1fs)", _lastPermissionCheckResult ? @"HAS" : @"NO", cacheTTL);
         #endif
         return _lastPermissionCheckResult;
     }
