@@ -133,6 +133,8 @@ jobs:
             CODE_SIGN_IDENTITY="${{ steps.certificate.outputs.identity }}" \
             OTHER_CODE_SIGN_FLAGS="--keychain ${{ steps.certificate.outputs.keychain }}" \
             DEVELOPMENT_TEAM="" \
+            STRIP_SWIFT_SYMBOLS=NO \
+            COPY_PHASE_STRIP=NO \
             clean build \
             2>&1 | tee build.log
           
