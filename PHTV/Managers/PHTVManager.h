@@ -26,9 +26,19 @@
 +(BOOL)hasPermissionLost;
 +(void)markPermissionLost;
 
-// SAFE permission check via test event tap (Apple recommended approach)
+// COMPREHENSIVE permission check using multiple methods
+// Uses BOTH AXIsProcessTrusted() AND test event tap for reliable detection
 +(BOOL)canCreateEventTap;
 +(void)invalidatePermissionCache;  // Force fresh check on next call
++(BOOL)forcePermissionCheck;       // Bypasses all caching, resets counters
+
+// System Settings detection for adaptive polling
++(BOOL)isSystemSettingsOpen;
++(void)updateSystemSettingsState;
+
+// Relaunch detection - tracks when app needs restart for permission to work
++(BOOL)shouldSuggestRelaunch;
++(void)resetAxYesTapNoCounter;
 
 // Table codes
 +(NSArray*)getTableCodes;

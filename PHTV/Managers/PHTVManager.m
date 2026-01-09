@@ -47,10 +47,21 @@ static NSUInteger         _tapRecreateCount = 0;
 static BOOL _lastPermissionCheckResult = NO;
 static NSTimeInterval _lastPermissionCheckTime = 0;
 
-// Dynamic cache TTL: Short when waiting for permission, long when permission granted
-// This ensures fast detection when user grants permission while avoiding excessive test taps when running normally
-static const NSTimeInterval kCacheTTLWaitingForPermission = 0.5;  // 500ms when waiting
-static const NSTimeInterval kCacheTTLPermissionGranted = 10.0;    // 10s when granted
+// Dynamic cache TTL: NO CACHE when waiting for permission (immediate detection), long when permission granted
+// This ensures instant detection when user grants permission while avoiding excessive test taps when running normally
+static const NSTimeInterval kCacheTTLWaitingForPermission = 0.0;  // NO CACHE when waiting - CRITICAL for fast detection
+static const NSTimeInterval kCacheTTLPermissionGranted = 5.0;     // 5s when granted (reduced from 10s)
+
+// Retry configuration for test tap creation
+static const int kMaxTestTapRetries = 3;           // Number of retry attempts
+static const useconds_t kTestTapRetryDelayUs = 50000;  // 50ms between retries
+
+// Track if System Settings is currently open (for aggressive polling)
+static BOOL _systemSettingsIsOpen = NO;
+
+// Track consecutive AX=YES but Tap=NO states (indicates need for relaunch)
+static int _axYesTapNoCount = 0;
+static const int kMaxAxYesTapNoBeforeRelaunch = 5;  // After 5 consecutive occurrences, suggest relaunch
 
 #pragma mark - Core Functionality
 
@@ -76,49 +87,163 @@ static const NSTimeInterval kCacheTTLPermissionGranted = 10.0;    // 10s when gr
     NSLog(@"[Permission] Cache invalidated - next check will be fresh");
 }
 
-// SAFE permission check via test event tap (Apple recommended)
-// This is the ONLY reliable way to check accessibility permission
-// Returns YES if we can create event tap (permission granted), NO otherwise
-// Cached with DYNAMIC TTL: short when waiting for permission, long when granted
+// Forward declaration for AXIsProcessTrusted
+extern Boolean AXIsProcessTrusted(void) __attribute__((weak_import));
+
+// Helper: Try to create test tap with retries
+// Returns YES if test tap was successfully created (permission granted)
++(BOOL)tryCreateTestTapWithRetries {
+    for (int attempt = 0; attempt < kMaxTestTapRetries; attempt++) {
+        CFMachPortRef testTap = CGEventTapCreate(
+            kCGSessionEventTap,
+            kCGTailAppendEventTap,
+            kCGEventTapOptionDefault,
+            CGEventMaskBit(kCGEventKeyDown),
+            PHTVTestTapCallback,
+            NULL
+        );
+
+        if (testTap != NULL) {
+            // Success - clean up and return
+            CFMachPortInvalidate(testTap);
+            CFRelease(testTap);
+            #ifdef DEBUG
+            NSLog(@"[Permission] Test tap SUCCESS on attempt %d", attempt + 1);
+            #endif
+            return YES;
+        }
+
+        // Failed - wait briefly before retry (except on last attempt)
+        if (attempt < kMaxTestTapRetries - 1) {
+            usleep(kTestTapRetryDelayUs);
+        }
+    }
+
+    #ifdef DEBUG
+    NSLog(@"[Permission] Test tap FAILED after %d attempts", kMaxTestTapRetries);
+    #endif
+    return NO;
+}
+
+// Check if System Settings (Privacy & Security) is currently open
++(BOOL)isSystemSettingsOpen {
+    NSRunningApplication *frontApp = [[NSWorkspace sharedWorkspace] frontmostApplication];
+    if (frontApp) {
+        NSString *bundleId = frontApp.bundleIdentifier;
+        // System Settings on macOS 13+ is "com.apple.systempreferences"
+        // System Preferences on older macOS is also "com.apple.systempreferences"
+        return [bundleId isEqualToString:@"com.apple.systempreferences"] ||
+               [bundleId isEqualToString:@"com.apple.Accessibility-Settings.extension"];
+    }
+    return NO;
+}
+
+// Update System Settings open state
++(void)updateSystemSettingsState {
+    _systemSettingsIsOpen = [self isSystemSettingsOpen];
+}
+
+// Check if we should suggest app relaunch
++(BOOL)shouldSuggestRelaunch {
+    return _axYesTapNoCount >= kMaxAxYesTapNoBeforeRelaunch;
+}
+
+// Reset the AX=YES Tap=NO counter
++(void)resetAxYesTapNoCounter {
+    _axYesTapNoCount = 0;
+}
+
+// COMPREHENSIVE permission check using multiple methods with fallbacks
+// This is designed to work reliably on ALL macOS versions and device configurations:
+// 1. AXIsProcessTrusted() - updates IMMEDIATELY when permission is granted
+// 2. CGEventTapCreate test - RELIABLE for detecting permission revocation
+// 3. Multiple retry attempts - handles transient TCC cache issues
+// 4. Tracks AX=YES but Tap=NO state to detect when relaunch is needed
 +(BOOL)canCreateEventTap {
     NSTimeInterval now = [[NSDate date] timeIntervalSince1970];
 
-    // Use DYNAMIC cache TTL based on current permission state
-    // When waiting for permission (NO): use short TTL (0.5s) for fast detection
-    // When permission granted (YES): use long TTL (10s) to reduce overhead
-    NSTimeInterval cacheTTL = _lastPermissionCheckResult ? kCacheTTLPermissionGranted : kCacheTTLWaitingForPermission;
+    // Update System Settings state for adaptive polling
+    [self updateSystemSettingsState];
 
-    if (now - _lastPermissionCheckTime < cacheTTL) {
+    // Use DYNAMIC cache TTL based on current state
+    // When waiting for permission (NO): NO CACHE - every check is fresh
+    // When System Settings is open: NO CACHE - user might be granting permission right now
+    // When permission granted and System Settings closed: use 5s TTL
+    NSTimeInterval cacheTTL;
+    if (!_lastPermissionCheckResult || _systemSettingsIsOpen) {
+        cacheTTL = 0;  // No cache when waiting or when System Settings is open
+    } else {
+        cacheTTL = kCacheTTLPermissionGranted;
+    }
+
+    if (cacheTTL > 0 && (now - _lastPermissionCheckTime < cacheTTL)) {
         #ifdef DEBUG
         NSLog(@"[Permission] Returning CACHED result: %@ (TTL: %.1fs)", _lastPermissionCheckResult ? @"HAS" : @"NO", cacheTTL);
         #endif
         return _lastPermissionCheckResult;
     }
 
-    // Try creating a test event tap (happens every 10s when monitoring is active)
-    #ifdef DEBUG
-    NSLog(@"[Permission] Creating test event tap to check permission...");
-    #endif
+    // METHOD 1: Check AXIsProcessTrusted() - this updates IMMEDIATELY when permission is granted
+    // It's unreliable for detecting revocation but FAST for detecting grant
+    BOOL axTrusted = NO;
+    if (AXIsProcessTrusted != NULL) {
+        axTrusted = AXIsProcessTrusted();
+    }
 
-    CFMachPortRef testTap = CGEventTapCreate(
-        kCGSessionEventTap,
-        kCGTailAppendEventTap,
-        kCGEventTapOptionDefault,
-        CGEventMaskBit(kCGEventKeyDown),
-        PHTVTestTapCallback,
-        NULL
-    );
+    // METHOD 2: Test event tap creation with RETRIES
+    // This is reliable for detecting revocation but may be slow for grant detection
+    BOOL tapCreated = [self tryCreateTestTapWithRetries];
 
-    BOOL hasPermission = (testTap != NULL);
+    // Log current state
+    NSLog(@"[Permission] Check: AXIsProcessTrusted=%@ TestTap=%@ SystemSettings=%@",
+          axTrusted ? @"YES" : @"NO",
+          tapCreated ? @"YES" : @"NO",
+          _systemSettingsIsOpen ? @"OPEN" : @"closed");
 
-    #ifdef DEBUG
-    NSLog(@"[Permission] Test tap result: %@", hasPermission ? @"SUCCESS (has permission)" : @"FAILED (no permission)");
-    #endif
+    // COMPREHENSIVE LOGIC with edge case handling:
+    BOOL hasPermission;
 
-    // Clean up test tap if created successfully
-    if (testTap != NULL) {
-        CFMachPortInvalidate(testTap);
-        CFRelease(testTap);
+    if (_lastPermissionCheckResult) {
+        // === WAS GRANTED BEFORE ===
+        // For revocation detection, only trust test tap
+        // AXIsProcessTrusted can return YES even after user removes app from list
+        hasPermission = tapCreated;
+
+        if (!hasPermission && axTrusted) {
+            NSLog(@"[Permission] ⚠️ AXIsProcessTrusted=YES but TestTap=NO - permission likely REVOKED");
+            _axYesTapNoCount = 0;  // Reset counter - this is revocation, not TCC cache issue
+        }
+    } else {
+        // === WAS DENIED BEFORE ===
+        // For grant detection, use OR logic: either method succeeding means permission granted
+        // This ensures fast detection regardless of macOS version or TCC cache state
+
+        if (tapCreated) {
+            // Test tap works - definitely have permission
+            hasPermission = YES;
+            _axYesTapNoCount = 0;
+        } else if (axTrusted) {
+            // AXIsProcessTrusted=YES but test tap failed
+            // This is the problematic case - TCC says YES but event tap won't work yet
+            // This usually means app needs to be relaunched for permission to take effect
+            hasPermission = YES;  // Trust AX for grant detection
+            _axYesTapNoCount++;
+
+            NSLog(@"[Permission] ✅ AXIsProcessTrusted=YES (TestTap not working yet) - count=%d", _axYesTapNoCount);
+
+            if (_axYesTapNoCount >= kMaxAxYesTapNoBeforeRelaunch) {
+                NSLog(@"[Permission] 🔄 Detected persistent AX=YES/Tap=NO state - app relaunch recommended");
+                // Post notification for UI to handle relaunch prompt
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [[NSNotificationCenter defaultCenter] postNotificationName:@"AccessibilityNeedsRelaunch"
+                                                                        object:nil];
+                });
+            }
+        } else {
+            // Both methods say NO - definitely no permission
+            hasPermission = NO;
+            _axYesTapNoCount = 0;
+        }
     }
 
     // Update cache
@@ -126,6 +251,13 @@ static const NSTimeInterval kCacheTTLPermissionGranted = 10.0;    // 10s when gr
     _lastPermissionCheckTime = now;
 
     return hasPermission;
+}
+
+// Force permission check (bypasses all caching)
++(BOOL)forcePermissionCheck {
+    [self invalidatePermissionCache];
+    _axYesTapNoCount = 0;
+    return [self canCreateEventTap];
 }
 
 +(BOOL)isInited {

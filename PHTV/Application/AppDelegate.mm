@@ -462,9 +462,10 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
 // Get appropriate monitoring interval based on current permission state
 - (NSTimeInterval)currentMonitoringInterval {
-    // When waiting for permission: check every 1 second for fast response
+    // When waiting for permission: check every 0.3 seconds for INSTANT response
     // When permission granted: check every 5 seconds to reduce overhead
-    return self.wasAccessibilityEnabled ? 5.0 : 1.0;
+    // Reduced from 1.0s to 0.3s for faster permission detection
+    return self.wasAccessibilityEnabled ? 5.0 : 0.3;
 }
 
 - (void)stopAccessibilityMonitoring {
@@ -524,8 +525,8 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
         // IMPORTANT: Restart timer with appropriate interval based on new permission state
         // When permission granted: switch to 5s interval (low overhead)
-        // When permission revoked: switch to 1s interval (fast re-detection)
-        NSTimeInterval newInterval = isEnabled ? 5.0 : 1.0;
+        // When permission revoked: switch to 0.3s interval (instant re-detection)
+        NSTimeInterval newInterval = isEnabled ? 5.0 : 0.3;
         NSLog(@"[Accessibility] Adjusting monitoring interval to %.1fs", newInterval);
         [self startAccessibilityMonitoringWithInterval:newInterval];
     }
@@ -562,21 +563,30 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     // Stop monitoring (permission granted, no need to monitor for grant anymore)
     [self stopAccessibilityMonitoring];
 
-    // Initialize event tap immediately - NO RESTART NEEDED!
+    // Reset the AX=YES/Tap=NO counter since we're attempting fresh init
+    [PHTVManager resetAxYesTapNoCounter];
+
+    // Initialize event tap immediately
     dispatch_async(dispatch_get_main_queue(), ^{
         if (![PHTVManager initEventTap]) {
-            NSLog(@"[EventTap] Failed to initialize");
-            [self onControlPanelSelected];
+            // Event tap failed to initialize even though permission was granted
+            // This is the TCC cache issue - app needs relaunch
+            NSLog(@"[EventTap] Failed to initialize despite permission granted");
+            NSLog(@"[EventTap] 🔄 Auto-relaunching to apply permission...");
+
+            // Auto-relaunch since user has already granted permission
+            // No need to ask - they just granted permission, it should work after relaunch
+            [self relaunchAppAfterPermissionGrant];
         } else {
             NSLog(@"[EventTap] Initialized successfully - App ready!");
-            
+
             // Start monitoring for permission revocation
             [self startAccessibilityMonitoring];
             [self startHealthCheckMonitoring];
-            
+
             // Update menu bar to normal state
             [self fillDataWithAnimation:YES];
-            
+
             // Show UI if requested
             NSInteger showui = [[NSUserDefaults standardUserDefaults] integerForKey:@"ShowUIOnStartup"];
             if (showui == 1) {
@@ -651,7 +661,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         [alert setAlertStyle:NSAlertStyleWarning];
         [alert addButtonWithTitle:@"Mở cài đặt"];
         [alert addButtonWithTitle:@"Đóng"];
-        
+
         NSModalResponse response = [alert runModal];
         if (response == NSAlertFirstButtonReturn) {
             MJAccessibilityOpenPanel();
@@ -661,7 +671,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
             [PHTVManager invalidatePermissionCache];
             NSLog(@"[Accessibility] User opening System Settings to re-grant - cache invalidated");
         }
-        
+
         // Update menu bar to show disabled state
         if (self.statusItem && self.statusItem.button) {
             NSFont *statusFont = [NSFont monospacedSystemFontOfSize:12 weight:NSFontWeightSemibold];
@@ -671,6 +681,61 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
             };
             NSAttributedString *title = [[NSAttributedString alloc] initWithString:@"⚠️" attributes:attributes];
             self.statusItem.button.attributedTitle = title;
+        }
+    });
+}
+
+// Handle when app needs relaunch for permission to take effect
+// This is triggered when AXIsProcessTrusted=YES but CGEventTapCreate fails persistently
+// This happens because macOS TCC cache is not invalidated for the running process
+- (void)handleAccessibilityNeedsRelaunch {
+    static BOOL isShowingRelaunchAlert = NO;
+
+    // Prevent showing multiple alerts
+    if (isShowingRelaunchAlert) {
+        return;
+    }
+
+    isShowingRelaunchAlert = YES;
+    NSLog(@"[Accessibility] 🔄 Handling relaunch request - permission granted but not effective yet");
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        // First, try to initialize event tap one more time
+        // Sometimes it works after a short delay
+        if (![PHTVManager isInited]) {
+            NSLog(@"[Accessibility] Attempting event tap initialization before relaunch prompt...");
+            if ([PHTVManager initEventTap]) {
+                NSLog(@"[Accessibility] ✅ Event tap initialized successfully! No relaunch needed.");
+                [PHTVManager resetAxYesTapNoCounter];
+                isShowingRelaunchAlert = NO;
+
+                // Update UI and start monitoring
+                [self startAccessibilityMonitoring];
+                [self startHealthCheckMonitoring];
+                [self fillDataWithAnimation:YES];
+                return;
+            }
+        }
+
+        // Event tap still won't initialize - show relaunch prompt
+        NSAlert *alert = [[NSAlert alloc] init];
+        [alert setMessageText:@"🔄 Cần khởi động lại ứng dụng"];
+        [alert setInformativeText:@"PHTV đã nhận được quyền trợ năng từ hệ thống, nhưng cần khởi động lại để quyền có hiệu lực.\n\nĐây là yêu cầu bảo mật của macOS. Bạn có muốn khởi động lại ngay không?"];
+        [alert setAlertStyle:NSAlertStyleInformational];
+        [alert addButtonWithTitle:@"Khởi động lại"];
+        [alert addButtonWithTitle:@"Để sau"];
+
+        NSModalResponse response = [alert runModal];
+        isShowingRelaunchAlert = NO;
+
+        if (response == NSAlertFirstButtonReturn) {
+            NSLog(@"[Accessibility] User requested relaunch to apply permission");
+            [PHTVManager resetAxYesTapNoCounter];
+            [self relaunchAppAfterPermissionGrant];
+        } else {
+            NSLog(@"[Accessibility] User deferred relaunch");
+            // Reset counter so we don't spam the user
+            [PHTVManager resetAxYesTapNoCounter];
         }
     });
 }
@@ -918,6 +983,13 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(handleAccessibilityRevoked)
                                                  name:@"AccessibilityPermissionLost"
+                                               object:nil];
+
+    // Handle when app needs relaunch for permission to take effect
+    // This is triggered when AXIsProcessTrusted=YES but test tap fails persistently
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleAccessibilityNeedsRelaunch)
+                                                 name:@"AccessibilityNeedsRelaunch"
                                                object:nil];
 
     // Excluded apps changes: apply immediately (don't wait for app switch)
@@ -2295,6 +2367,20 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     if (activeApp && activeApp.bundleIdentifier) {
         [self checkExcludedApp:activeApp.bundleIdentifier];
         [self checkSendKeyStepByStepApp:activeApp.bundleIdentifier];
+
+        // CRITICAL: When PHTV becomes active (user returning from System Settings),
+        // immediately check permission if we're waiting for it
+        // This enables instant detection when user grants permission and switches back
+        NSString *ourBundleId = [[NSBundle mainBundle] bundleIdentifier];
+        if ([activeApp.bundleIdentifier isEqualToString:ourBundleId] && !self.wasAccessibilityEnabled) {
+            NSLog(@"[Accessibility] 🔄 PHTV became active while waiting for permission - checking immediately");
+            // Invalidate cache and check permission immediately
+            [PHTVManager invalidatePermissionCache];
+            // Trigger immediate check on next run loop iteration
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self checkAccessibilityStatus];
+            });
+        }
     }
 }
 

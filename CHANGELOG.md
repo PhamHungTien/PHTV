@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-01-09
+
+### Fixed
+- **Khắc phục triệt để lỗi quyền trợ năng**: Sửa hoàn toàn lỗi người dùng cấp quyền nhưng ứng dụng không nhận
+  - **Hybrid Permission Check**: Kết hợp `AXIsProcessTrusted()` (phản hồi nhanh) VÀ `CGEventTapCreate` test tap (đáng tin cậy)
+  - **Multiple Retry**: Thử tạo test tap 3 lần với delay 50ms để xử lý transient TCC cache issues
+  - **System Settings Detection**: Detect khi System Settings đang mở để polling aggressive hơn
+  - **Auto-Relaunch**: Tự động restart khi permission granted nhưng event tap không khởi tạo được (TCC cache issue)
+  - **No Cache khi chờ quyền**: Mỗi lần check đều fresh, không dùng cached result
+  - **Faster Polling**: 0.3s thay vì 1s khi chờ quyền
+
+### Improved
+- **Immediate Permission Detection**: Khi user quay lại từ System Settings, check quyền ngay lập tức
+- **Smart Relaunch Prompt**: Hiển thị prompt restart thông minh khi phát hiện TCC cache issue kéo dài
+- **Better Logging**: Log chi tiết trạng thái AXIsProcessTrusted, TestTap, và SystemSettings
+
 ## [1.5.9] - 2026-01-09
 
 ### Fixed
