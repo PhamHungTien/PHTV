@@ -146,10 +146,13 @@ jobs:
             exit 1
           fi
           
-          # Verify signing
-          if [ "${{ steps.certificate.outputs.has_certificate }}" = "true" ]; then
-            echo "🔍 Verifying code signature..."
-            codesign -dv --verbose=2 "./build/Build/Products/Release/PHTV.app" 2>&1 || echo "⚠️ Signature verification output above"
+          # Verify signing strictly
+          echo "🔍 Verifying code signature..."
+          if codesign -dv --verbose=2 "./build/Build/Products/Release/PHTV.app"; then
+             echo "✅ Code signature verified"
+          else
+             echo "❌ Error: App is not properly signed!"
+             exit 1
           fi
           
           echo "✅ Build succeeded"
