@@ -1739,7 +1739,13 @@ void vKeyHandleEvent(const vKeyEvent& event,
         
         if (hCode == vRestore) {
             insertKey(data, _isCaps);
-            _stateIndex--;
+            // FIX: Do NOT decrement _stateIndex here!
+            // When a Telex mark is restored/removed (e.g., pressing 's' twice to toggle sắc),
+            // the key was already added to KeyStates via insertState() at line 1712.
+            // Decrementing _stateIndex causes English word detection to fail because
+            // checkIfEnglishWord() would see "addres" (6 chars) instead of "address" (7 chars).
+            // The key IS being inserted into TypingWord via insertKey() above, so _stateIndex
+            // should remain in sync with the actual number of keys pressed.
         }
         
         //insert or replace key for macro feature
