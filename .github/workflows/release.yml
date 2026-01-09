@@ -90,8 +90,10 @@ jobs:
           curl -sL https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer -o $RUNNER_TEMP/AppleWWDRCAG3.cer
           security import $RUNNER_TEMP/AppleWWDRCAG3.cer -k "$KEYCHAIN_PATH" -T /usr/bin/codesign -T /usr/bin/security
           
-          # Decode P12 file using openssl for cross-platform reliability
-          echo "$CERTIFICATES_P12" | openssl base64 -d -out $RUNNER_TEMP/certificate.p12
+          # Decode P12 file using Python for absolute cross-platform reliability
+          # This handles newlines/whitespace in the secret correctly
+          echo "$CERTIFICATES_P12" > $RUNNER_TEMP/cert_base64.txt
+          python3 -c "import base64; open('$RUNNER_TEMP/certificate.p12', 'wb').write(base64.b64decode(open('$RUNNER_TEMP/cert_base64.txt', 'r').read()))"
           
           # Import P12
           security import $RUNNER_TEMP/certificate.p12 \
