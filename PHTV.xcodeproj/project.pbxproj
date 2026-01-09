@@ -706,6 +706,7 @@
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/PHTV/Core/Engine";
 				INFOPLIST_FILE = PHTV/Info.plist;
+				CODE_SIGN_ENTITLEMENTS = PHTV/PHTV.entitlements;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -749,6 +750,7 @@
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/PHTV/Core/Engine";
 				INFOPLIST_FILE = PHTV/Info.plist;
+				CODE_SIGN_ENTITLEMENTS = PHTV/PHTV.entitlements;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
