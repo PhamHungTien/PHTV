@@ -13,13 +13,20 @@
     <sparkle:version>33</sparkle:version>
     <sparkle:shortVersionString>1.5.7</sparkle:shortVersionString>
     <description><![CDATA[
-        <h2>PHTV 1.5.7</h2>
-        <p>Bản cập nhật quan trọng khắc phục lỗi Malware và cải thiện độ ổn định.</p>
+        <h2>PHTV 1.5.7 - Bảo mật & Ổn định</h2>
+        <p>Phiên bản này tập trung khắc phục các vấn đề nghiêm trọng liên quan đến cảnh báo bảo mật của macOS và cải thiện độ ổn định trên trình duyệt.</p>
+        
+        <h3>⚠️ Quan trọng</h3>
         <ul>
-            <li>Sửa lỗi macOS báo Malware và xóa app (#81)</li>
-            <li>Sửa lỗi nhân đôi ký tự trên Chromium (#79)</li>
-            <li>Sửa lỗi gõ từ kết thúc bằng 'd' như 'add' (#57)</li>
-            <li>Sửa lỗi crash tiến trình hệ thống (#80)</li>
+            <li><strong>Khắc phục lỗi báo nhầm Malware (#81):</strong> Đã xử lý triệt để vấn đề macOS Gatekeeper/XProtect nhận diện nhầm PHTV là phần mềm độc hại.</li>
+            <li><em>Lưu ý:</em> Tính năng "Khôi phục phiên gõ khi click chuột" (Edit-in-place) tạm thời bị vô hiệu hóa để tránh kích hoạt hệ thống phòng thủ của macOS.</li>
+        </ul>
+
+        <h3>🐛 Sửa lỗi</h3>
+        <ul>
+            <li><strong>Lỗi nhân đôi ký tự trên Chromium (#79):</strong> Sửa lỗi nhân đôi ký tự đầu tiên trên thanh địa chỉ Chrome, Edge, Brave...</li>
+            <li><strong>Lỗi gõ tiếng Anh đuôi 'd' (#57):</strong> Cải thiện nhận diện để khôi phục chính xác các từ như 'add', 'did', 'dad'.</li>
+            <li><strong>Sửa lỗi Crash (#80):</strong> Khắc phục lỗi thoát đột ngột trong chế độ Safe Mode.</li>
         </ul>
     ]]></description>
     <pubDate>Fri, 09 Jan 2026 15:30:00 +0000</pubDate>
