@@ -20,7 +20,7 @@ env:
 jobs:
   build:
     name: Build PHTV
-    runs-on: macos-latest
+    runs-on: macos-26
     outputs:
       version: ${{ steps.version.outputs.version }}
       build_number: ${{ steps.version.outputs.build_number }}
