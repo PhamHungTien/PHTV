@@ -149,9 +149,17 @@ jobs:
           # Verify signing
           if [ "${{ steps.certificate.outputs.has_certificate }}" = "true" ]; then
             echo "🔍 Verifying code signature..."
-            codesign -dv --verbose=2 "./build/Build/Products/Release/PHTV.app" 2>&1 || echo "⚠️ Signature verification output above"
+            codesign -dv --verbose=2 "./build/Build/Products/Release/PHTV.app" 2>&1
+
+            echo "🔍 Verifying signature validity..."
+            codesign --verify --deep --strict "./build/Build/Products/Release/PHTV.app" 2>&1
+            if [ $? -ne 0 ]; then
+              echo "❌ Code signature verification failed!"
+              exit 1
+            fi
+            echo "✅ Code signature is valid"
           fi
-          
+
           echo "✅ Build succeeded"
 
       - name: Create DMG
@@ -160,7 +168,11 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           APP_PATH="./build/Build/Products/Release/PHTV.app"
           DMG_NAME="PHTV-$VERSION.dmg"
-          
+
+          # Remove extended attributes (quarantine) to prevent "damaged" error
+          xattr -cr "$APP_PATH"
+          echo "✅ Removed extended attributes from app"
+
           TEMP_DIR=$(mktemp -d)
           cp -R "$APP_PATH" "$TEMP_DIR/"
           ln -s /Applications "$TEMP_DIR/Applications"
