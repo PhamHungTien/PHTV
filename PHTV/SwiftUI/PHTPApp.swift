@@ -779,9 +779,11 @@ final class AppState: ObservableObject {
     }
 
     func checkAccessibilityPermission() {
-        // Check using AXIsProcessTrusted
+        // CRITICAL: Use PHTVManager.canCreateEventTap() - the ONLY reliable method
+        // AXIsProcessTrusted() is UNRELIABLE and can return wrong results!
+        // This method uses test event tap creation (Apple recommended approach)
         Task { @MainActor in
-            self.hasAccessibilityPermission = AXIsProcessTrusted()
+            self.hasAccessibilityPermission = PHTVManager.canCreateEventTap()
         }
     }
 
