@@ -115,6 +115,7 @@ static uint64_t _lastCacheInvalidationTime = 0;  // Periodic cache invalidation
 static BOOL _cachedSpotlightActive = NO;
 static uint64_t _lastSpotlightCheckTime = 0;
 static pid_t _cachedFocusedPID = 0;
+static NSString* _cachedFocusedBundleId = nil;
 static os_unfair_lock _spotlightCacheLock = OS_UNFAIR_LOCK_INIT;
 
 // Text Replacement detection (for macOS native text replacement)
@@ -144,17 +145,17 @@ static inline void InvalidateSpotlightCache(void) {
     os_unfair_lock_lock(&_spotlightCacheLock);
     _lastSpotlightCheckTime = 0;
     _cachedFocusedPID = 0;
+    _cachedFocusedBundleId = nil;
     os_unfair_lock_unlock(&_spotlightCacheLock);
 }
 
 // Thread-safe helper to update Spotlight cache
-static inline void UpdateSpotlightCache(BOOL isActive, pid_t pid) {
+static inline void UpdateSpotlightCache(BOOL isActive, pid_t pid, NSString* bundleId) {
     os_unfair_lock_lock(&_spotlightCacheLock);
     _cachedSpotlightActive = isActive;
     _lastSpotlightCheckTime = mach_absolute_time();
-    if (pid > 0) {
-        _cachedFocusedPID = pid;
-    }
+    _cachedFocusedPID = pid;
+    _cachedFocusedBundleId = bundleId;
     os_unfair_lock_unlock(&_spotlightCacheLock);
 }
 
@@ -308,9 +309,9 @@ BOOL isSpotlightActive(void) {
 
     uint64_t elapsed_ms = mach_time_to_ms(now - lastCheck);
 
-    // Only use cache if result was TRUE (search field/Spotlight detected)
-    // Always re-check when cached result is FALSE to detect when user focuses on search field
-    if (elapsed_ms < SPOTLIGHT_CACHE_DURATION_MS && lastCheck > 0 && cachedResult) {
+    // Use cache if it's within the duration, regardless of whether it was TRUE or FALSE.
+    // 50ms is responsive enough to detect focus changes while saving thousands of AX calls.
+    if (elapsed_ms < SPOTLIGHT_CACHE_DURATION_MS && lastCheck > 0) {
         return cachedResult;
     }
 
@@ -339,7 +340,7 @@ BOOL isSpotlightActive(void) {
 
     if (error != kAXErrorSuccess || focusedElement == NULL) {
         LogAXError(error, "AXUIElementCopyAttributeValue(kAXFocusedUIElementAttribute)");
-        UpdateSpotlightCache(NO, 0);
+        UpdateSpotlightCache(NO, 0, nil);
         return NO;
     }
 
@@ -354,13 +355,14 @@ BOOL isSpotlightActive(void) {
 
     // If focused element is a search field, return YES immediately (for any app)
     if (elementLooksLikeSearchField) {
-        UpdateSpotlightCache(YES, focusedPID > 0 ? focusedPID : 0);
+        NSString *bundleId = (focusedPID > 0) ? getBundleIdFromPID(focusedPID) : nil;
+        UpdateSpotlightCache(YES, focusedPID > 0 ? focusedPID : 0, bundleId);
         return YES;
     }
 
     if (error != kAXErrorSuccess || focusedPID == 0) {
         LogAXError(error, "AXUIElementGetPid");
-        UpdateSpotlightCache(NO, 0);
+        UpdateSpotlightCache(NO, 0, nil);
         return NO;
     }
 
@@ -376,7 +378,7 @@ BOOL isSpotlightActive(void) {
     // Check if it's Spotlight or similar
     if ([bundleId isEqualToString:@"com.apple.Spotlight"] ||
         [bundleId hasPrefix:@"com.apple.Spotlight"]) {
-        UpdateSpotlightCache(YES, focusedPID);
+        UpdateSpotlightCache(YES, focusedPID, bundleId);
         return YES;
     }
 
@@ -386,13 +388,13 @@ BOOL isSpotlightActive(void) {
         if (proc_pidpath(focusedPID, pathBuffer, sizeof(pathBuffer)) > 0) {
             NSString *path = [NSString stringWithUTF8String:pathBuffer];
             if ([path containsString:@"Spotlight"]) {
-                UpdateSpotlightCache(YES, focusedPID);
+                UpdateSpotlightCache(YES, focusedPID, @"com.apple.Spotlight");
                 return YES;
             }
         }
     }
 
-    UpdateSpotlightCache(NO, focusedPID);
+    UpdateSpotlightCache(NO, focusedPID, bundleId);
     return NO;
 }
 
@@ -984,40 +986,9 @@ extern "C" {
             return lastResult;
         }
 
-        NSString *bundleId = nil;
-        pid_t cachePid = targetPID; // cache key we will use for next lookup
-
-        // Safe Mode: Skip AX API calls entirely, use targetPID from event directly
-        // This prevents crashes on unsupported hardware (OCLP Macs)
-        if (!vSafeMode) {
-            // First, check using Accessibility API to get the actual focused window's app
-            AXUIElementRef systemWide = AXUIElementCreateSystemWide();
-            AXUIElementRef focusedElement = NULL;
-            AXError error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement);
-            CFRelease(systemWide);
-
-            if (error == kAXErrorSuccess && focusedElement != NULL) {
-                pid_t focusedPID = 0;
-                error = AXUIElementGetPid(focusedElement, &focusedPID);
-                CFRelease(focusedElement);
-
-                if (error == kAXErrorSuccess && focusedPID != 0) {
-                    bundleId = getBundleIdFromPID(focusedPID);
-                    cachePid = focusedPID;
-                }
-            }
-        }
-
-        // Fallback to target PID from event if accessibility fails or safe mode
-        if (bundleId == nil && targetPID > 0) {
-            bundleId = getBundleIdFromPID(targetPID);
-        }
-
-        // Last fallback to frontmost app (do not cache frontmost fallback to avoid stale state)
-        if (bundleId == nil) {
-            bundleId = FRONT_APP;
-            cachePid = -1;
-        }
+        // Use getFocusedAppBundleId() which is now optimized with focus cache
+        NSString *bundleId = getFocusedAppBundleId();
+        pid_t cachePid = targetPID;
 
         BOOL shouldDisable = bundleIdMatchesAppSet(bundleId, _disableVietnameseAppSet);
 
@@ -1256,49 +1227,43 @@ extern "C" {
         #endif
     }
     
-    void queryFrontMostApp() {
-        if ([[[NSWorkspace sharedWorkspace] frontmostApplication].bundleIdentifier compare:PHTV_BUNDLE] != 0) {
-            _frontMostApp = [[NSWorkspace sharedWorkspace] frontmostApplication].bundleIdentifier;
-            if (_frontMostApp == nil)
-                _frontMostApp = [[NSWorkspace sharedWorkspace] frontmostApplication].localizedName != nil ?
-                [[NSWorkspace sharedWorkspace] frontmostApplication].localizedName : @"UnknownApp";
-        }
-    }
-    
+    void RequestNewSession() {    
     NSString* ConvertUtil(NSString* str) {
         return [NSString stringWithUTF8String:convertUtil([str UTF8String]).c_str()];
     }
     
     // Get bundle ID of the actually focused app (not just frontmost)
     // This is important for overlay windows like Spotlight, which aren't the frontmost app
+    // OPTIMIZED: Uses the cache populated by isSpotlightActive()
     NSString* getFocusedAppBundleId() {
         // Safe Mode: Skip AX API calls entirely, use frontmost app
         // This prevents crashes on unsupported hardware (OCLP Macs)
         if (vSafeMode) {
             return FRONT_APP;
         }
-
-        AXUIElementRef systemWide = AXUIElementCreateSystemWide();
-        AXUIElementRef focusedElement = NULL;
-        AXError error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement);
-        CFRelease(systemWide);
-
-        if (error != kAXErrorSuccess || focusedElement == NULL) {
-            return FRONT_APP;  // Fallback to frontmost app
-        }
-
-        pid_t focusedPID = 0;
-        error = AXUIElementGetPid(focusedElement, &focusedPID);
-        CFRelease(focusedElement);
-
-        if (error != kAXErrorSuccess || focusedPID == 0) {
-            return FRONT_APP;
-        }
-
-        NSString *bundleId = getBundleIdFromPID(focusedPID);
-        return (bundleId != nil) ? bundleId : FRONT_APP;
-    }
     
+        // Ensure cache is reasonably fresh (within 50ms)
+        // isSpotlightActive() is always called before getFocusedAppBundleId() in the hot path
+        uint64_t now = mach_absolute_time();
+        os_unfair_lock_lock(&_spotlightCacheLock);
+        uint64_t lastCheck = _lastSpotlightCheckTime;
+        NSString *cachedBundleId = [_cachedFocusedBundleId copy];
+        os_unfair_lock_unlock(&_spotlightCacheLock);
+    
+        uint64_t elapsed_ms = mach_time_to_ms(now - lastCheck);
+        if (elapsed_ms < SPOTLIGHT_CACHE_DURATION_MS && lastCheck > 0 && cachedBundleId != nil) {
+            return cachedBundleId;
+        }
+    
+        // Cache miss or too old - trigger a fresh check via isSpotlightActive
+        isSpotlightActive();
+    
+        os_unfair_lock_lock(&_spotlightCacheLock);
+        NSString *result = [_cachedFocusedBundleId copy];
+        os_unfair_lock_unlock(&_spotlightCacheLock);
+    
+        return (result != nil) ? result : FRONT_APP;
+    }    
     BOOL containUnicodeCompoundApp(NSString* topApp) {
         // Optimized to use NSSet for O(1) lookup instead of O(n) array iteration
         return bundleIdMatchesAppSet(topApp, _unicodeCompoundAppSet);
@@ -1320,7 +1285,9 @@ extern "C" {
             return;  // Skip if features disabled - performance optimization
         }
 
-        queryFrontMostApp();
+        // Use the optimized focused app bundle ID
+        _frontMostApp = getFocusedAppBundleId();
+        
         _languageTemp = getAppInputMethodStatus(string(_frontMostApp.UTF8String), vLanguage | (vCodeTable << 1));
 
         if ((_languageTemp & 0x01) != vLanguage) { //for input method
@@ -1359,7 +1326,7 @@ extern "C" {
         }
 
         // PERFORMANCE: Just save the mapping, don't trigger more updates
-        queryFrontMostApp();
+        _frontMostApp = getFocusedAppBundleId();
         setAppInputMethodStatus(string(_frontMostApp.UTF8String), vLanguage | (vCodeTable << 1));
         saveSmartSwitchKeyData();
     }
@@ -1370,7 +1337,7 @@ extern "C" {
         }
 
         // PERFORMANCE: Just save the mapping, don't trigger more updates
-        queryFrontMostApp();
+        _frontMostApp = getFocusedAppBundleId();
         setAppInputMethodStatus(string(_frontMostApp.UTF8String), vLanguage | (vCodeTable << 1));
         saveSmartSwitchKeyData();
     }
@@ -2027,63 +1994,92 @@ extern "C" {
         return fallback;
     }
 
+    // Layout compatibility cache to avoid expensive NSEvent creation on every keystroke
+    static CGKeyCode _layoutCache[256];
+    static BOOL _layoutCacheValid = NO;
+
+    // Invalidate layout cache (call when keyboard layout changes)
+    extern "C" void InvalidateLayoutCache() {
+        _layoutCacheValid = NO;
+    }
+
     // Convert keyboard event to QWERTY-equivalent keycode for layout compatibility
     // This function handles international keyboard layouts by mapping characters to QWERTY keycodes
     CGKeyCode ConvertEventToKeyboadLayoutCompatKeyCode(CGEventRef keyEvent, CGKeyCode fallbackKeyCode) {
+        // Fast path: check cache first
+        CGKeyCode rawKeyCode = (CGKeyCode)CGEventGetIntegerValueField(keyEvent, kCGKeyboardEventKeycode);
+        if (_layoutCacheValid && rawKeyCode < 256 && _layoutCache[rawKeyCode] != 0xFFFF) {
+            return _layoutCache[rawKeyCode];
+        }
+
+        // Initialize cache if needed
+        if (!_layoutCacheValid) {
+            for (int i = 0; i < 256; i++) _layoutCache[i] = 0xFFFF;
+            _layoutCacheValid = YES;
+        }
+
         NSEvent *kbLayoutCompatEvent = [NSEvent eventWithCGEvent:keyEvent];
         if (!kbLayoutCompatEvent) {
             return fallbackKeyCode;
         }
 
+        CGKeyCode result = fallbackKeyCode;
+
         // Strategy 1: Try charactersIgnoringModifiers first (best for most layouts)
         // This gives us the base character without Shift/Option modifications
         NSString *kbLayoutCompatKeyString = kbLayoutCompatEvent.charactersIgnoringModifiers;
-        CGKeyCode result = ConvertKeyStringToKeyCode(kbLayoutCompatKeyString, 0xFFFF);
-        if (result != 0xFFFF) {
-            return result;
-        }
-
-        // Strategy 2: If that fails, try the actual characters property
-        // This is useful for layouts like AZERTY where Shift+key produces a different character
-        // that might be in our mapping (e.g., Shift+& = 1 on AZERTY)
-        NSString *actualCharacters = kbLayoutCompatEvent.characters;
-        if (actualCharacters && ![actualCharacters isEqualToString:kbLayoutCompatKeyString]) {
-            result = ConvertKeyStringToKeyCode(actualCharacters, 0xFFFF);
-            if (result != 0xFFFF) {
-                return result;
+        CGKeyCode converted = ConvertKeyStringToKeyCode(kbLayoutCompatKeyString, 0xFFFF);
+        if (converted != 0xFFFF) {
+            result = converted;
+        } else {
+            // Strategy 2: If that fails, try the actual characters property
+            // This is useful for layouts like AZERTY where Shift+key produces a different character
+            // that might be in our mapping (e.g., Shift+& = 1 on AZERTY)
+            NSString *actualCharacters = kbLayoutCompatEvent.characters;
+            if (actualCharacters && ![actualCharacters isEqualToString:kbLayoutCompatKeyString]) {
+                converted = ConvertKeyStringToKeyCode(actualCharacters, 0xFFFF);
+                if (converted != 0xFFFF) {
+                    result = converted;
+                }
             }
         }
 
         // Strategy 3: For AZERTY number row handling
         // On AZERTY, the number row produces special characters by default
         // and numbers with Shift. We need to handle the Shift+character -> number case
-        static NSDictionary *azertyShiftedToNumber = nil;
-        static dispatch_once_t onceToken;
-        dispatch_once(&onceToken, ^{
-            azertyShiftedToNumber = @{
-                @"&": @18,  // & (Shift=1) -> KEY_1
-                @"é": @19,  // é (Shift=2) -> KEY_2 (note: on some AZERTY, 2 is direct)
-                @"\"": @20, // " (Shift=3) -> KEY_3
-                @"'": @21,  // ' (Shift=4) -> KEY_4
-                @"(": @23,  // ( (Shift=5) -> KEY_5
-                @"-": @22,  // - (but this is complex, may not be 6)
-                @"è": @26,  // è (Shift=7) -> KEY_7
-                @"_": @28,  // _ (Shift=8) -> KEY_8
-                @"ç": @25,  // ç (Shift=9) -> KEY_9
-                @"à": @29,  // à (Shift=0) -> KEY_0
-            };
-        });
+        if (result == fallbackKeyCode) {
+            static NSDictionary *azertyShiftedToNumber = nil;
+            static dispatch_once_t onceToken;
+            dispatch_once(&onceToken, ^{
+                azertyShiftedToNumber = @{
+                    @"&": @18,  // & (Shift=1) -> KEY_1
+                    @"é": @19,  // é (Shift=2) -> KEY_2 (note: on some AZERTY, 2 is direct)
+                    @"\"": @20, // " (Shift=3) -> KEY_3
+                    @"'": @21,  // ' (Shift=4) -> KEY_4
+                    @"(": @23,  // ( (Shift=5) -> KEY_5
+                    @"-": @22,  // - (but this is complex, may not be 6)
+                    @"è": @26,  // è (Shift=7) -> KEY_7
+                    @"_": @28,  // _ (Shift=8) -> KEY_8
+                    @"ç": @25,  // ç (Shift=9) -> KEY_9
+                    @"à": @29,  // à (Shift=0) -> KEY_0
+                };
+            });
 
-        // Check if the base character is an AZERTY special char that maps to number row
-        if (kbLayoutCompatKeyString.length == 1) {
-            NSNumber *azertyKeycode = [azertyShiftedToNumber objectForKey:kbLayoutCompatKeyString];
-            if (azertyKeycode) {
-                return [azertyKeycode intValue];
+            // Check if the base character is an AZERTY special char that maps to number row
+            if (kbLayoutCompatKeyString.length == 1) {
+                NSNumber *azertyKeycode = [azertyShiftedToNumber objectForKey:kbLayoutCompatKeyString];
+                if (azertyKeycode) {
+                    result = [azertyKeycode intValue];
+                }
             }
         }
 
-        // Fallback to original keycode
-        return fallbackKeyCode;
+        // Cache result
+        if (rawKeyCode < 256) {
+            _layoutCache[rawKeyCode] = result;
+        }
+
+        return result;
     }
 
     // Handle hotkey press (switch language or convert tool)
@@ -2515,10 +2511,10 @@ extern "C" {
             static uint64_t lastLanguageCheckTime = 0;
             NSString *currentLanguage = nil;
 
-            // Check language at most once every 2 seconds (keyboard layout doesn't change that often)
+            // Check language at most once every 1 second (keyboard layout doesn't change that often)
             uint64_t now = mach_absolute_time();
             uint64_t elapsed_ms = mach_time_to_ms(now - lastLanguageCheckTime);
-            if (__builtin_expect(lastLanguageCheckTime == 0 || elapsed_ms > 2000, 0)) {
+            if (__builtin_expect(lastLanguageCheckTime == 0 || elapsed_ms > 1000, 0)) {
                 TISInputSourceRef isource = TISCopyCurrentKeyboardInputSource();
                 if (isource != NULL) {
                     CFArrayRef languages = (CFArrayRef) TISGetInputSourceProperty(isource, kTISPropertyInputSourceLanguages);
@@ -2526,11 +2522,7 @@ extern "C" {
                     if (languages != NULL && CFArrayGetCount(languages) > 0) {
                         // MEMORY BUG FIX: CFArrayGetValueAtIndex returns borrowed reference - do NOT CFRelease
                         CFStringRef langRef = (CFStringRef)CFArrayGetValueAtIndex(languages, 0);
-                        NSString *newLanguage = [(__bridge NSString *)langRef copy];
-                        // Explicitly nil out old value first (ARC will release it), then assign new value
-                        // This ensures proper cleanup of static variable across multiple updates
-                        cachedLanguage = nil;
-                        cachedLanguage = newLanguage;
+                        cachedLanguage = [(__bridge NSString *)langRef copy];
                     }
                     CFRelease(isource);  // Only release isource (we copied it)
                     lastLanguageCheckTime = now;

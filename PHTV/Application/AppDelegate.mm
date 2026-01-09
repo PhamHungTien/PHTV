@@ -39,6 +39,7 @@ extern "C" {
     void OnInputMethodChanged(void);
     void RequestNewSession(void);
     void OnActiveAppChanged(void);
+    void InvalidateLayoutCache(void);
 }
 
 //see document in Engine.h
@@ -91,17 +92,25 @@ extern int convertToolHotKey;
 extern bool convertToolDontAlertWhenCompleted;
 
 static inline BOOL PHTVLiveDebugEnabled(void) {
+    static int cachedEnabled = -1;
+    if (__builtin_expect(cachedEnabled != -1, 1)) {
+        return cachedEnabled == 1;
+    }
+
     const char *env = getenv("PHTV_LIVE_DEBUG");
     if (env != NULL && env[0] != '\0') {
-        return strcmp(env, "0") != 0;
+        cachedEnabled = (strcmp(env, "0") != 0) ? 1 : 0;
+        return cachedEnabled == 1;
     }
 
     // Fallback: allow enabling via UserDefaults for easier debugging.
-    // Example: defaults write com.phamhungtien.phtv PHTV_LIVE_DEBUG -int 1
     id stored = [[NSUserDefaults standardUserDefaults] objectForKey:@"PHTV_LIVE_DEBUG"];
     if ([stored respondsToSelector:@selector(intValue)]) {
-        return [stored intValue] != 0;
+        cachedEnabled = ([stored intValue] != 0) ? 1 : 0;
+        return cachedEnabled == 1;
     }
+    
+    cachedEnabled = 0;
     return NO;
 }
 
@@ -299,6 +308,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 // Supports auto-switching for ALL non-Latin keyboards:
 // Japanese, Chinese, Korean, Arabic, Hebrew, Thai, Hindi, Greek, Cyrillic, Georgian, Armenian, etc.
 - (void)handleInputSourceChanged:(NSNotification *)notification {
+    // Invalidate layout compatibility cache
+    InvalidateLayoutCache();
+
     // Only process if vOtherLanguage is enabled (user wants auto-switching)
     if (!vOtherLanguage) return;
     
