@@ -7,7 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.6.4] - 2026-01-09
+## [1.6.7] - 2026-01-09
+
+### Fixed
+- **Quyền Accessibility hoạt động ngay lập tức**: Sửa lỗi yêu cầu restart ứng dụng sau khi cấp quyền. Giờ đây PHTV sẽ hoạt động ngay khi bạn gạt công tắc trong Cài đặt Hệ thống.
+- **Cải thiện Code Signing**: Bắt buộc ký số (Mandatory Code Signing) cho mọi bản build, đảm bảo tính toàn vẹn và bảo mật trên macOS mới nhất.
+- **Sửa lỗi quyền Input Monitoring**: Bổ sung `PHTV.entitlements` để cấp đúng quyền giám sát bàn phím trên macOS 14/15.
+- **Đăng ký TCC chuẩn**: Đảm bảo ứng dụng luôn xuất hiện trong danh sách "Privacy & Security" để người dùng dễ dàng cấp quyền.
+
+## [1.6.6] - 2026-01-09
 
 ### Fixed
 - **Sửa lỗi ứng dụng không tự khởi động lại khi cấp quyền**: Fix bug khiến app không tự động hoạt động sau khi user cấp quyền trợ năng
