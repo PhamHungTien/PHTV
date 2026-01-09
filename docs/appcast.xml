@@ -10,17 +10,43 @@
         <item>
     <title>PHTV 1.5.7</title>
     <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.5.7</link>
-    <sparkle:version>31</sparkle:version>
+    <sparkle:version>32</sparkle:version>
     <sparkle:shortVersionString>1.5.7</sparkle:shortVersionString>
     <description><![CDATA[
         <h2>PHTV 1.5.7</h2>
-        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.5.7">GitHub Release</a></p>
+        <p>Bản cập nhật quan trọng khắc phục lỗi Malware và cải thiện độ ổn định.</p>
+        <ul>
+            <li>Sửa lỗi macOS báo Malware và xóa app (#81)</li>
+            <li>Sửa lỗi nhân đôi ký tự trên Chromium (#79)</li>
+            <li>Sửa lỗi gõ từ kết thúc bằng 'd' như 'add' (#57)</li>
+            <li>Sửa lỗi crash tiến trình hệ thống (#80)</li>
+        </ul>
     ]]></description>
-    <pubDate>Fri, 09 Jan 2026 08:30:03 +0000</pubDate>
+    <pubDate>Fri, 09 Jan 2026 15:30:00 +0000</pubDate>
     <enclosure
         url="https://github.com/PhamHungTien/PHTV/releases/download/v1.5.7/PHTV-1.5.7.dmg"
-        sparkle:version="31"
+        sparkle:version="32"
         sparkle:shortVersionString="1.5.7"
+        sparkle:edSignature="slJ5kLJ/9ayXx0+ivfltkD2HTKL8r4B3wSUwnWYYpPJljxsauQRnLDvoxC92ZTXyvKeqW9PlGLXVCBYvp5RiDA=="
+        length="6054421"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+<item>
+    <title>PHTV 1.5.6</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.5.6</link>
+    <sparkle:version>31</sparkle:version>
+    <sparkle:shortVersionString>1.5.6</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.5.6</h2>
+        <p>Cải thiện tính năng Edit-in-place và độ ổn định.</p>
+    ]]></description>
+    <pubDate>Wed, 07 Jan 2026 21:12:42 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.5.6/PHTV-1.5.6.dmg"
+        sparkle:version="31"
+        sparkle:shortVersionString="1.5.6"
         sparkle:edSignature="slJ5kLJ/9ayXx0+ivfltkD2HTKL8r4B3wSUwnWYYpPJljxsauQRnLDvoxC92ZTXyvKeqW9PlGLXVCBYvp5RiDA=="
         length="6054421"
         type="application/octet-stream"/>
