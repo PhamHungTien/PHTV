@@ -141,9 +141,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 @property (nonatomic, assign) BOOL wasAccessibilityEnabled;
 @property (nonatomic, assign) NSUInteger accessibilityStableCount;
 
-// Track when user is granting permission (for force restart on return)
-@property (nonatomic, assign) BOOL waitingForPermissionGrant;
-
 // Health watchdog
 @property (nonatomic, strong) NSTimer *healthCheckTimer;
 @end
@@ -423,20 +420,13 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     NSModalResponse res = [alert runModal];
 
     if (res == 1001) {
-        // CRITICAL: Set flag to indicate user is going to grant permission
-        // When user returns, we will force restart to apply TCC state
-        self.waitingForPermissionGrant = YES;
-        NSLog(@"[Accessibility] 🔑 User going to System Settings to grant permission");
-
         MJAccessibilityOpenPanel();
 
-        // CRITICAL: Invalidate permission cache immediately
-        // User is going to System Settings to grant permission
-        // Next timer check MUST do fresh permission test
+        // Invalidate permission cache for fresh check
         [PHTVManager invalidatePermissionCache];
-        NSLog(@"[Accessibility] User opening System Settings - cache invalidated for fresh check");
+        NSLog(@"[Accessibility] User opening System Settings - cache invalidated");
 
-        // Save current version after user agrees to grant permission
+        // Save current version
         [[NSUserDefaults standardUserDefaults] setObject:currentVersion forKey:@"LastRunVersion"];
         [[NSUserDefaults standardUserDefaults] synchronize];
     } else {
@@ -568,40 +558,16 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     [[NSUserDefaults standardUserDefaults] setObject:currentVersion forKey:@"LastRunVersion"];
     [[NSUserDefaults standardUserDefaults] synchronize];
 
-    // Stop monitoring (permission granted, no need to monitor for grant anymore)
+    // Stop monitoring (permission granted)
     [self stopAccessibilityMonitoring];
 
-    // Reset the AX=YES/Tap=NO counter since we're attempting fresh init
-    [PHTVManager resetAxYesTapNoCounter];
-
-    // Initialize event tap with slight delay to ensure run loop is ready
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+    // Initialize event tap
+    dispatch_async(dispatch_get_main_queue(), ^{
         if (![PHTVManager initEventTap]) {
-            // Event tap failed to initialize even though permission was granted
-            // This is the TCC cache issue - app needs relaunch
-            NSLog(@"[EventTap] Failed to initialize despite permission granted");
-            NSLog(@"[EventTap] 🔄 Auto-relaunching to apply permission...");
-
-            // Auto-relaunch since user has already granted permission
-            // No need to ask - they just granted permission, it should work after relaunch
-            [self relaunchAppAfterPermissionGrant];
+            NSLog(@"[EventTap] Failed to initialize");
+            [self onControlPanelSelected];
         } else {
             NSLog(@"[EventTap] Initialized successfully - App ready!");
-
-            // CRITICAL: Verify event tap is actually enabled and working
-            if (![PHTVManager isEventTapEnabled]) {
-                NSLog(@"[EventTap] ⚠️ Event tap init succeeded but not enabled - forcing enable");
-                [PHTVManager ensureEventTapAlive];
-            }
-
-            // Double-check after a short delay
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                if ([PHTVManager isInited] && ![PHTVManager isEventTapEnabled]) {
-                    NSLog(@"[EventTap] ⚠️ Event tap still not enabled - recreating");
-                    [PHTVManager stopEventTap];
-                    [PHTVManager initEventTap];
-                }
-            });
 
             // Start monitoring for permission revocation
             [self startAccessibilityMonitoring];
@@ -616,8 +582,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                 [self onControlPanelSelected];
             }
 
-            // On very first launch, relaunch once after permission is granted so the
-            // accessibility trust state is fully applied to the process.
+            // On very first launch, relaunch once after permission is granted
             if (self->_needsRelaunchAfterPermission) {
                 self->_needsRelaunchAfterPermission = NO;
                 [self relaunchAppAfterPermissionGrant];
@@ -687,14 +652,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
         NSModalResponse response = [alert runModal];
         if (response == NSAlertFirstButtonReturn) {
-            // Set flag to force restart when user returns
-            self.waitingForPermissionGrant = YES;
-            NSLog(@"[Accessibility] 🔑 User going to System Settings to re-grant permission");
-
             MJAccessibilityOpenPanel();
 
-            // CRITICAL: Invalidate permission cache
-            // User is going to System Settings to re-grant permission
+            // Invalidate permission cache
             [PHTVManager invalidatePermissionCache];
             NSLog(@"[Accessibility] User opening System Settings to re-grant - cache invalidated");
         }
@@ -878,49 +838,29 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         return;
     }
     
-    //init - use slight delay to ensure run loop is fully ready
-    // This fixes issue where event tap is created but doesn't work until Settings window is opened
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+    //init
+    dispatch_async(dispatch_get_main_queue(), ^{
         if (![PHTVManager initEventTap]) {
             // Show settings via SwiftUI notification
             [[NSNotificationCenter defaultCenter] postNotificationName:@"ShowSettings" object:nil];
         } else {
             NSLog(@"[EventTap] Initialized successfully");
 
-            // CRITICAL: Verify event tap is actually enabled and working
-            // Sometimes init succeeds but tap is not enabled
-            if (![PHTVManager isEventTapEnabled]) {
-                NSLog(@"[EventTap] ⚠️ Event tap init succeeded but not enabled - forcing enable");
-                [PHTVManager ensureEventTapAlive];
-            }
-
-            // Double-check after a short delay to catch any race conditions
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                if ([PHTVManager isInited] && ![PHTVManager isEventTapEnabled]) {
-                    NSLog(@"[EventTap] ⚠️ Event tap still not enabled - recreating");
-                    [PHTVManager stopEventTap];
-                    [PHTVManager initEventTap];
-                }
-            });
-
             // Start continuous monitoring for accessibility permission changes
-            // This detects if permission is revoked while app is running
             [self startAccessibilityMonitoring];
             [self startHealthCheckMonitoring];
 
-            // Start monitoring input source changes (for auto-switching when using Japanese/Chinese/etc. keyboards)
+            // Start monitoring input source changes
             [self startInputSourceMonitoring];
 
             NSInteger showui = [[NSUserDefaults standardUserDefaults] integerForKey:@"ShowUIOnStartup"];
             if (showui == 1) {
-                // Show settings via SwiftUI notification
                 [[NSNotificationCenter defaultCenter] postNotificationName:@"ShowSettings" object:nil];
             }
         }
         [self setQuickConvertString];
 
-        // Initialize Sparkle auto-updater with delay to ensure network is ready
-        // Wait 10 seconds after launch to avoid network errors on system startup
+        // Initialize Sparkle auto-updater with delay
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(10.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             NSLog(@"[Sparkle] Checking for updates (delayed start)...");
             [[SparkleManager shared] checkForUpdates];
@@ -2411,80 +2351,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     if (activeApp && activeApp.bundleIdentifier) {
         [self checkExcludedApp:activeApp.bundleIdentifier];
         [self checkSendKeyStepByStepApp:activeApp.bundleIdentifier];
-
-        // CRITICAL: When PHTV becomes active (user returning from System Settings),
-        // check if user was granting permission and force restart to apply TCC state
-        NSString *ourBundleId = [[NSBundle mainBundle] bundleIdentifier];
-        if ([activeApp.bundleIdentifier isEqualToString:ourBundleId]) {
-
-            // CASE 1: User returning after clicking "Cấp quyền" - FORCE RESTART
-            // This is the most reliable way to apply TCC state for NEW users
-            if (self.waitingForPermissionGrant) {
-                NSLog(@"[Accessibility] 🔄 User returned from System Settings after granting permission");
-                self.waitingForPermissionGrant = NO;
-
-                // Invalidate cache and do a fresh check
-                [PHTVManager invalidatePermissionCache];
-
-                // Check if permission was actually granted
-                BOOL hasPermission = [PHTVManager canCreateEventTap];
-                NSLog(@"[Accessibility] Fresh permission check: %@", hasPermission ? @"GRANTED" : @"NOT YET");
-
-                if (hasPermission) {
-                    // Try to initialize event tap
-                    if (![PHTVManager isInited]) {
-                        if ([PHTVManager initEventTap]) {
-                            NSLog(@"[Accessibility] ✅ Event tap initialized successfully!");
-
-                            // CRITICAL: Verify event tap is enabled
-                            if (![PHTVManager isEventTapEnabled]) {
-                                NSLog(@"[Accessibility] ⚠️ Event tap not enabled - forcing enable");
-                                [PHTVManager ensureEventTapAlive];
-                            }
-
-                            [self startAccessibilityMonitoring];
-                            [self startHealthCheckMonitoring];
-                            [self fillDataWithAnimation:YES];
-                            return;
-                        }
-                    } else {
-                        // Event tap already inited, but verify it's enabled
-                        if (![PHTVManager isEventTapEnabled]) {
-                            NSLog(@"[Accessibility] ⚠️ Event tap exists but not enabled - recreating");
-                            [PHTVManager stopEventTap];
-                            if ([PHTVManager initEventTap]) {
-                                [self startAccessibilityMonitoring];
-                                [self startHealthCheckMonitoring];
-                                [self fillDataWithAnimation:YES];
-                                return;
-                            }
-                        } else {
-                            NSLog(@"[Accessibility] ✅ Event tap already working!");
-                            return;
-                        }
-                    }
-                }
-
-                // If we get here, either permission not granted or tap init failed
-                // Force restart to ensure TCC state is fully applied
-                NSLog(@"[Accessibility] 🔄 Force restarting to apply TCC state...");
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                    [self relaunchAppAfterPermissionGrant];
-                });
-                return;
-            }
-
-            // CASE 2: Normal permission check when app becomes active
-            if (!self.wasAccessibilityEnabled) {
-                NSLog(@"[Accessibility] 🔄 PHTV became active while waiting for permission - checking immediately");
-                // Invalidate cache and check permission immediately
-                [PHTVManager invalidatePermissionCache];
-                // Trigger immediate check on next run loop iteration
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    [self checkAccessibilityStatus];
-                });
-            }
-        }
     }
 }
 

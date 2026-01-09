@@ -7,7 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.6.2] - 2026-01-09
+## [1.6.3] - 2026-01-09
+
+### Fixed
+- **Simplify permission detection logic**: Quay lại logic đơn giản như v1.5.4 để đảm bảo ổn định
+  - Bỏ các logic phức tạp gây regression (force restart, event tap verification, timing delays)
+  - Giữ lại hybrid permission check (AXIsProcessTrusted + CGEventTapCreate)
+  - Event tap init đơn giản và đáng tin cậy
+
+## [1.6.2] - 2026-01-09 (cancelled)
 
 ### Fixed
 - **Fix triệt để gõ tiếng Việt không hoạt động sau khi cấp quyền**:
