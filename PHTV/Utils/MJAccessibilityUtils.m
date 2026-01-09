@@ -26,17 +26,22 @@ BOOL MJAccessibilityIsEnabled(void) {
 }
 
 void MJAccessibilityOpenPanel(void) {
-    // Attempt to open System Settings directly to Privacy & Security -> Accessibility
-    // This bypasses AXIsProcessTrusted() which might fail to prompt if it falsely thinks it's trusted
+    // 1. Trigger system prompt to register app in TCC database
+    // This is required so the app appears in the list
+    if (AXIsProcessTrustedWithOptions != NULL) {
+        NSDictionary *options = @{(__bridge id)kAXTrustedCheckOptionPrompt: @YES};
+        AXIsProcessTrustedWithOptions((__bridge CFDictionaryRef)options);
+    }
+
+    // 2. Open System Settings directly to Privacy & Security -> Accessibility
+    // This helps the user find the setting quickly
     NSURL *url = [NSURL URLWithString:@"x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"];
     if ([[NSWorkspace sharedWorkspace] openURL:url]) {
         return;
     }
 
-    if (AXIsProcessTrustedWithOptions != NULL) {
-        AXIsProcessTrustedWithOptions((__bridge CFDictionaryRef)@{(__bridge id)kAXTrustedCheckOptionPrompt: @YES});
-    }
-    else {
+    // Fallback for older macOS (should be covered by openURL, but kept for safety)
+    if (AXIsProcessTrustedWithOptions == NULL) {
         static NSString* script = @"tell application \"System Preferences\"\nactivate\nset current pane to pane \"com.apple.preference.universalaccess\"\nend tell";
         [[[NSAppleScript alloc] initWithSource:script] executeAndReturnError:nil];
     }
