@@ -2221,120 +2221,7 @@ extern "C" {
      * MAIN Callback.
      */
     void TryToRestoreSessionFromAX() {
-        if (vLanguage != 1) return;
-
-        // Use a recursive block for retries (captured in heap)
-        // Main Queue is preferred for AX/UI operations to ensure synchronization with app runloops
-        __block void (^attemptRestore)(int) = nil;
-        
-        #pragma clang diagnostic push
-        #pragma clang diagnostic ignored "-Warc-retain-cycles"
-        attemptRestore = [^(int retries) {
-            // Progressive delay logic: 0.1s, 0.25s, 0.4s, 0.55s
-            double delay = 0.1 + (4 - retries) * 0.15; 
-
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                // Re-check state
-                if (vLanguage != 1 || vSafeMode) {
-                    attemptRestore = nil;
-                    return;
-                }
-                
-                AXUIElementRef systemWide = AXUIElementCreateSystemWide();
-                if (!systemWide) {
-                    if (retries > 0) attemptRestore(retries - 1);
-                    else attemptRestore = nil;
-                    return;
-                }
-
-                AXUIElementRef focusedElement = NULL;
-                AXError error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement);
-                CFRelease(systemWide);
-                
-                if (error != kAXErrorSuccess || focusedElement == NULL) {
-                    if (retries > 0) attemptRestore(retries - 1);
-                    else attemptRestore = nil;
-                    return;
-                }
-                
-                // Get Value
-                CFTypeRef valueRef = NULL;
-                AXUIElementCopyAttributeValue(focusedElement, kAXValueAttribute, &valueRef);
-                NSString *valueStr = (valueRef && CFGetTypeID(valueRef) == CFStringGetTypeID()) ? [(__bridge NSString *)valueRef copy] : nil;
-                if (valueRef) CFRelease(valueRef);
-                
-                // Get Selection
-                CFTypeRef rangeRef = NULL;
-                AXUIElementCopyAttributeValue(focusedElement, kAXSelectedTextRangeAttribute, &rangeRef);
-                
-                CFRange sel = {0, 0};
-                bool hasSel = false;
-                if (rangeRef && CFGetTypeID(rangeRef) == AXValueGetTypeID()) {
-                     if (AXValueGetValue((AXValueRef)rangeRef, PHTV_AXVALUE_CFRANGE_TYPE, &sel)) {
-                        hasSel = true;
-                    }
-                }
-                if (rangeRef) CFRelease(rangeRef);
-                CFRelease(focusedElement);
-                
-                // Retry if missing data
-                if (!hasSel || !valueStr) {
-                    if (retries > 0) attemptRestore(retries - 1);
-                    else attemptRestore = nil;
-                    return;
-                }
-                
-                if (sel.length > 0) {
-                    attemptRestore = nil;
-                    return;
-                }
-                
-                NSInteger caret = sel.location;
-                if (caret <= 0 || caret > valueStr.length) {
-                    attemptRestore = nil;
-                    return;
-                }
-                
-                // 🛠 FIX: Improved Word Start Detection
-                // Previous logic used letterCharacterSet which failed on Vietnamese marks in NFD form.
-                NSMutableCharacterSet *breakSet = [[NSCharacterSet whitespaceAndNewlineCharacterSet] mutableCopy];
-                [breakSet formUnionWithCharacterSet:[NSCharacterSet punctuationCharacterSet]];
-                
-                NSInteger start = caret;
-                while (start > 0) {
-                    unichar c = [valueStr characterAtIndex:start - 1];
-                    if ([breakSet characterIsMember:c] && c != '_') { 
-                        break;
-                    }
-                    start--;
-                }
-                
-                if (caret <= start) {
-                    attemptRestore = nil;
-                    return; 
-                }
-                
-                NSString *word = [valueStr substringWithRange:NSMakeRange(start, caret - start)];
-                
-                if (word.length > 40) {
-                    attemptRestore = nil;
-                    return;
-                }
-                
-                // Restore
-                std::wstring wWord = utf8ToWideString([word UTF8String]);
-                vRestoreSessionWithWord(wWord);
-                
-                #ifdef DEBUG
-                NSLog(@"[PHTV] Restored session: '%@' (retries=%d)", word, 4-retries);
-                #endif
-                
-                attemptRestore = nil; // Success
-            });
-        } copy];
-        #pragma clang diagnostic pop
-        
-        attemptRestore(4); // Start with 4 retries
+        return; // Disabled to prevent malware false positive
     }
 
     CGEventRef PHTVCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event, void *refcon) {
@@ -2617,7 +2504,7 @@ extern "C" {
             
             // Try to restore session if clicked on a word (Left Mouse Down only)
             if (type == kCGEventLeftMouseDown) {
-                TryToRestoreSessionFromAX();
+                // TryToRestoreSessionFromAX();
             }
             
             return event;
@@ -2794,7 +2681,7 @@ extern "C" {
                 // Navigation keys: trigger session restore to support keyboard-based edit-in-place
                 if (_keycode == KEY_LEFT || _keycode == KEY_RIGHT || _keycode == KEY_UP || _keycode == KEY_DOWN ||
                     _keycode == 115 || _keycode == 119 || _keycode == 116 || _keycode == 121) { // Home, End, PgUp, PgDown
-                    TryToRestoreSessionFromAX();
+                    // TryToRestoreSessionFromAX();
                 }
 
                 // Use atomic read for thread safety
