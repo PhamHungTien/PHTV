@@ -20,7 +20,7 @@ env:
 jobs:
   build:
     name: Build PHTV
-    runs-on: macos-26
+    runs-on: macos-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
       build_number: ${{ steps.version.outputs.build_number }}
@@ -79,9 +79,16 @@ jobs:
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          
-          # Import certificate
-          echo "$CERTIFICATES_P12" | base64 --decode > $RUNNER_TEMP/certificate.p12
+
+          # Import Apple WWDR Intermediate Certificate (Required for validation)
+          curl -sL https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer -o $RUNNER_TEMP/AppleWWDRCAG3.cer
+          security import $RUNNER_TEMP/AppleWWDRCAG3.cer -k "$KEYCHAIN_PATH" -T /usr/bin/codesign -T /usr/bin/security
+
+          # Decode P12 file using Python for absolute cross-platform reliability
+          echo "$CERTIFICATES_P12" > $RUNNER_TEMP/cert_base64.txt
+          python3 -c "import base64; open('$RUNNER_TEMP/certificate.p12', 'wb').write(base64.b64decode(open('$RUNNER_TEMP/cert_base64.txt', 'r').read()))"
+
+          # Import P12
           security import $RUNNER_TEMP/certificate.p12 \
             -k "$KEYCHAIN_PATH" \
             -P "$CERTIFICATE_PASSWORD" \
