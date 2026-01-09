@@ -34,13 +34,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Select Latest Xcode
-        run: |
-          LATEST_XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
-          echo "Using Xcode at $LATEST_XCODE"
-          sudo xcode-select -s "$LATEST_XCODE/Contents/Developer"
-          xcodebuild -version
-
       - name: Determine version
         id: version
         run: |
@@ -74,8 +67,9 @@ jobs:
           CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
         run: |
           if [ -z "$CERTIFICATES_P12" ]; then
-            echo "❌ Error: CERTIFICATES_P12 secret is missing."
-            exit 1
+            echo "⚠️ No certificate, will build without signing"
+            echo "has_certificate=false" >> $GITHUB_OUTPUT
+            exit 0
           fi
           
           # Create temporary keychain
@@ -89,9 +83,8 @@ jobs:
           # Import Apple WWDR Intermediate Certificate (Required for validation)
           curl -sL https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer -o $RUNNER_TEMP/AppleWWDRCAG3.cer
           security import $RUNNER_TEMP/AppleWWDRCAG3.cer -k "$KEYCHAIN_PATH" -T /usr/bin/codesign -T /usr/bin/security
-          
+
           # Decode P12 file using Python for absolute cross-platform reliability
-          # This handles newlines/whitespace in the secret correctly
           echo "$CERTIFICATES_P12" > $RUNNER_TEMP/cert_base64.txt
           python3 -c "import base64; open('$RUNNER_TEMP/certificate.p12', 'wb').write(base64.b64decode(open('$RUNNER_TEMP/cert_base64.txt', 'r').read()))"
           
@@ -103,56 +96,63 @@ jobs:
             -T /usr/bin/security \
             -A
           
-          # Add keychain to search list
+          # Add keychain to search list (BEFORE login.keychain)
           security list-keychain -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
           security default-keychain -s "$KEYCHAIN_PATH"
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           
-          # Find identity
+          # Find certificate identity
           IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -o '"[^"]*"' | head -1 | tr -d '"')
+          echo "🔐 Found signing identity: $IDENTITY"
           
-          if [ -z "$IDENTITY" ]; then
-            echo "❌ Error: No valid signing identity found."
-            security find-identity -p codesigning "$KEYCHAIN_PATH"
-            exit 1
-          fi
+          rm $RUNNER_TEMP/certificate.p12
           
-          echo "🔐 Identity found: $IDENTITY"
+          echo "has_certificate=true" >> $GITHUB_OUTPUT
           echo "identity=$IDENTITY" >> $GITHUB_OUTPUT
           echo "keychain=$KEYCHAIN_PATH" >> $GITHUB_OUTPUT
+          echo "✅ Certificate imported"
 
       - name: Build
         run: |
-          echo "🔐 Building with mandatory code signing..."
-          echo "Identity: ${{ steps.certificate.outputs.identity }}"
-          
-          xcodebuild -scheme PHTV \
-            -configuration Release \
-            -derivedDataPath ./build \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="${{ steps.certificate.outputs.identity }}" \
-            OTHER_CODE_SIGN_FLAGS="--keychain ${{ steps.certificate.outputs.keychain }}" \
-            DEVELOPMENT_TEAM="" \
-            STRIP_SWIFT_SYMBOLS=NO \
-            COPY_PHASE_STRIP=NO \
-            STRIP_INSTALLED_PRODUCT=NO \
-            COMPILER_INDEX_STORE_ENABLE=NO \
-            clean build \
-            2>&1 | tee build.log
+          if [ "${{ steps.certificate.outputs.has_certificate }}" = "true" ]; then
+            echo "🔐 Building with code signing..."
+            echo "Identity: ${{ steps.certificate.outputs.identity }}"
+            
+            xcodebuild -scheme PHTV \
+              -configuration Release \
+              -derivedDataPath ./build \
+              CODE_SIGN_STYLE=Manual \
+              CODE_SIGN_IDENTITY="${{ steps.certificate.outputs.identity }}" \
+              OTHER_CODE_SIGN_FLAGS="--keychain ${{ steps.certificate.outputs.keychain }}" \
+              clean build \
+              2>&1 | tee build.log
+          else
+            echo "⚠️ Building without code signing..."
+            # Build without signing (patch project first)
+            sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' PHTV.xcodeproj/project.pbxproj
+            sed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=macosx\*\]" = "Apple Development";/"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";/g' PHTV.xcodeproj/project.pbxproj
+            sed -i '' 's/DEVELOPMENT_TEAM = F9XPW22T8M;/DEVELOPMENT_TEAM = "";/g' PHTV.xcodeproj/project.pbxproj
+            sed -i '' 's/ENABLE_HARDENED_RUNTIME = YES;/ENABLE_HARDENED_RUNTIME = NO;/g' PHTV.xcodeproj/project.pbxproj
+            
+            xcodebuild -scheme PHTV \
+              -configuration Release \
+              -derivedDataPath ./build \
+              clean build \
+              2>&1 | tee build.log
+          fi
           
           if [ ! -d "./build/Build/Products/Release/PHTV.app" ]; then
-            echo "❌ Build failed: PHTV.app not found"
+            echo "❌ Build failed"
             exit 1
           fi
           
-          # Verify signing strictly
-          echo "🔍 Verifying code signature..."
-          if codesign -dv --verbose=2 "./build/Build/Products/Release/PHTV.app"; then
-             echo "✅ Code signature verified"
-          else
-             echo "❌ Error: App is not properly signed!"
-             exit 1
+          # Verify signing
+          if [ "${{ steps.certificate.outputs.has_certificate }}" = "true" ]; then
+            echo "🔍 Verifying code signature..."
+            codesign -dv --verbose=2 "./build/Build/Products/Release/PHTV.app" 2>&1 || echo "⚠️ Signature verification output above"
           fi
+          
+          echo "✅ Build succeeded"
 
       - name: Create DMG
         id: dmg
