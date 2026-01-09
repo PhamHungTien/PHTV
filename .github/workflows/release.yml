@@ -107,19 +107,8 @@ jobs:
 
       - name: Build
         run: |
-          if [ "${{ steps.certificate.outputs.has_certificate }}" = "true" ]; then
-            echo "🔐 Building with code signing..."
-            echo "Identity: ${{ steps.certificate.outputs.identity }}"
-            
-            xcodebuild -scheme PHTV \
-              -configuration Release \
-              -derivedDataPath ./build \
-              CODE_SIGN_STYLE=Manual \
-              CODE_SIGN_IDENTITY="${{ steps.certificate.outputs.identity }}" \
-              OTHER_CODE_SIGN_FLAGS="--keychain ${{ steps.certificate.outputs.keychain }}" \
-              clean build \
-              2>&1 | tee build.log
-          else
+          # Function to build without signing
+          build_unsigned() {
             echo "⚠️ Building without code signing..."
             # Build without signing (patch project first)
             sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' PHTV.xcodeproj/project.pbxproj
@@ -132,6 +121,31 @@ jobs:
               -derivedDataPath ./build \
               clean build \
               2>&1 | tee build.log
+          }
+
+          if [ "${{ steps.certificate.outputs.has_certificate }}" = "true" ]; then
+            echo "🔐 Building with code signing..."
+            echo "Identity: ${{ steps.certificate.outputs.identity }}"
+            
+            set +e # Disable exit on error temporarily
+            xcodebuild -scheme PHTV \
+              -configuration Release \
+              -derivedDataPath ./build \
+              CODE_SIGN_STYLE=Manual \
+              CODE_SIGN_IDENTITY="${{ steps.certificate.outputs.identity }}" \
+              OTHER_CODE_SIGN_FLAGS="--keychain ${{ steps.certificate.outputs.keychain }}" \
+              clean build \
+              2>&1 | tee build.log
+            BUILD_RESULT=$?
+            set -e # Re-enable exit on error
+            
+            if [ $BUILD_RESULT -ne 0 ]; then
+                echo "❌ Signed build failed (likely due to certificate issues)."
+                echo "🔄 Falling back to unsigned build..."
+                build_unsigned
+            fi
+          else
+            build_unsigned
           fi
           
           if [ ! -d "./build/Build/Products/Release/PHTV.app" ]; then
@@ -140,9 +154,12 @@ jobs:
           fi
           
           # Verify signing
-          if [ "${{ steps.certificate.outputs.has_certificate }}" = "true" ]; then
+          if [ "${{ steps.certificate.outputs.has_certificate }}" = "true" ] && [ -z "$BUILD_RESULT" ]; then
             echo "🔍 Verifying code signature..."
             codesign -dv --verbose=2 "./build/Build/Products/Release/PHTV.app" 2>&1 || echo "⚠️ Signature verification output above"
+          elif [ "${{ steps.certificate.outputs.has_certificate }}" = "true" ] && [ $BUILD_RESULT -eq 0 ]; then
+             echo "🔍 Verifying code signature..."
+             codesign -dv --verbose=2 "./build/Build/Products/Release/PHTV.app" 2>&1 || echo "⚠️ Signature verification output above"
           fi
           
           echo "✅ Build succeeded"
