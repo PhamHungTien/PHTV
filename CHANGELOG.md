@@ -7,83 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.6.7] - 2026-01-09
-
-### Fixed
-- **Quyền Accessibility hoạt động ngay lập tức**: Sửa lỗi yêu cầu restart ứng dụng sau khi cấp quyền. Giờ đây PHTV sẽ hoạt động ngay khi bạn gạt công tắc trong Cài đặt Hệ thống.
-- **Cải thiện Code Signing**: Bắt buộc ký số (Mandatory Code Signing) cho mọi bản build, đảm bảo tính toàn vẹn và bảo mật trên macOS mới nhất.
-- **Sửa lỗi quyền Input Monitoring**: Bổ sung `PHTV.entitlements` để cấp đúng quyền giám sát bàn phím trên macOS 14/15.
-- **Đăng ký TCC chuẩn**: Đảm bảo ứng dụng luôn xuất hiện trong danh sách "Privacy & Security" để người dùng dễ dàng cấp quyền.
-
-## [1.6.6] - 2026-01-09
-
-### Fixed
-- **Sửa lỗi ứng dụng không tự khởi động lại khi cấp quyền**: Fix bug khiến app không tự động hoạt động sau khi user cấp quyền trợ năng
-  - **Root cause**: Khi permission status thay đổi, timer restart đặt lại `wasAccessibilityEnabled` TRƯỚC KHI code phát hiện transition chạy
-  - **Fix**: Thêm parameter `resetState:NO` khi restart timer để thay đổi interval, giữ nguyên state cho transition detection
-  - **Đơn giản hóa permission check**: Chỉ sử dụng test event tap (CGEventTapCreate) - phương pháp duy nhất đáng tin cậy theo Apple
-  - **Bỏ AXIsProcessTrusted()**: API này không đáng tin cậy - có thể trả về YES ngay cả khi permission không thực sự hoạt động
-
-## [1.6.3] - 2026-01-09
-
-### Fixed
-- **Simplify permission detection logic**: Quay lại logic đơn giản như v1.5.4 để đảm bảo ổn định
-  - Bỏ các logic phức tạp gây regression (force restart, event tap verification, timing delays)
-  - Giữ lại hybrid permission check (AXIsProcessTrusted + CGEventTapCreate)
-  - Event tap init đơn giản và đáng tin cậy
-
-## [1.6.2] - 2026-01-09 (cancelled)
-
-### Fixed
-- **Fix triệt để gõ tiếng Việt không hoạt động sau khi cấp quyền**:
-  - **Force Restart khi quay lại từ System Settings**: Tự động restart để áp dụng TCC state
-  - **Event Tap Verification**: Kiểm tra event tap thực sự enabled sau khi init, không chỉ init thành công
-  - **Auto-Recreate Event Tap**: Nếu event tap bị disabled bởi hệ thống, tự động recreate
-  - **Timing Fix**: Thêm delay nhỏ (0.1s) trước khi init event tap để run loop sẵn sàng
-  - **Double-Check Mechanism**: Kiểm tra lại sau 0.2s để catch race conditions
-
-## [1.6.1] - 2026-01-09 (cancelled)
-
-### Fixed
-- **Fix triệt để cho người dùng mới**: Sửa lỗi người dùng cài đặt lần đầu không nhận quyền trợ năng
-  - **Force Restart khi quay lại từ System Settings**: Khi user cấp quyền và quay lại app, tự động restart để áp dụng TCC state
-  - **Tracking Permission Grant State**: Theo dõi khi user đang trong quá trình cấp quyền để xử lý đúng
-  - **Đảm bảo TCC state được apply**: macOS yêu cầu restart app sau khi cấp quyền lần đầu, giờ được xử lý tự động
-
-## [1.6.0] - 2026-01-09
-
-### Fixed
-- **Khắc phục triệt để lỗi quyền trợ năng**: Sửa hoàn toàn lỗi người dùng cấp quyền nhưng ứng dụng không nhận
-  - **Hybrid Permission Check**: Kết hợp `AXIsProcessTrusted()` (phản hồi nhanh) VÀ `CGEventTapCreate` test tap (đáng tin cậy)
-  - **Multiple Retry**: Thử tạo test tap 3 lần với delay 50ms để xử lý transient TCC cache issues
-  - **System Settings Detection**: Detect khi System Settings đang mở để polling aggressive hơn
-  - **Auto-Relaunch**: Tự động restart khi permission granted nhưng event tap không khởi tạo được (TCC cache issue)
-  - **No Cache khi chờ quyền**: Mỗi lần check đều fresh, không dùng cached result
-  - **Faster Polling**: 0.3s thay vì 1s khi chờ quyền
-
-### Improved
-- **Immediate Permission Detection**: Khi user quay lại từ System Settings, check quyền ngay lập tức
-- **Smart Relaunch Prompt**: Hiển thị prompt restart thông minh khi phát hiện TCC cache issue kéo dài
-- **Better Logging**: Log chi tiết trạng thái AXIsProcessTrusted, TestTap, và SystemSettings
-
 ## [1.5.9] - 2026-01-09
 
 ### Fixed
-- **Quyền Accessibility không nhận**: Sửa lỗi người dùng cấp quyền trợ năng nhưng ứng dụng không nhận
-  - Áp dụng Dynamic Cache TTL: 0.5s khi chờ cấp quyền, 10s khi đã có quyền
-  - Áp dụng Dynamic Polling: 1s khi chờ, 5s khi đã có quyền
-  - Sử dụng CGEventTapCreate test tap (Apple recommended) thay vì AXIsProcessTrusted unreliable
-- **Tự động khôi phục từ tiếng Anh**: Sửa lỗi không khôi phục được các từ có phụ âm đôi cuối
-  - Sửa lỗi "address" hiển thị "ađres" thay vì khôi phục đúng
-  - Sửa lỗi _stateIndex bị giảm sai khi toggle dấu Telex (ss, ff, rr, xx, jj)
-  - Áp dụng cho tất cả từ có pattern tương tự: address, access, process, success, etc.
-
-### Improved
-- **Từ điển tiếng Anh mở rộng**: Tăng từ 5,493 lên 7,600 từ
-  - Thêm từ có phụ âm đôi (bb, cc, dd, ff, gg, ll, mm, nn, pp, rr, ss, tt, zz)
-  - Thêm từ bắt đầu với cluster không có trong tiếng Việt (bl, br, cl, cr, dr, fl, fr, etc.)
-  - Thêm từ có hậu tố tiếng Anh (-ment, -tion, -sion, -ness, -able, -ible, etc.)
-  - Thêm từ có w, z, j và kết thúc với cluster đặc biệt (ct, ft, ght, ld, nd, nt, etc.)
+- **Khắc phục triệt để lỗi quyền trợ năng (Accessibility)**:
+  - Sửa lỗi ứng dụng không nhận quyền ngay cả khi đã cấp trong System Settings.
+  - Loại bỏ yêu cầu khởi động lại ứng dụng sau khi cấp quyền.
+  - Sử dụng phương pháp kiểm tra quyền tin cậy hơn (CGEventTapCreate).
+- **Cải thiện Code Signing**:
+  - Bắt buộc ký số (Mandatory Code Signing) để đảm bảo bảo mật và tránh lỗi TCC trên macOS mới.
+  - Sửa lỗi workflow build tự động trên GitHub Actions.
+- **Quyền Input Monitoring**:
+  - Bổ sung entitlements cần thiết để hoạt động trơn tru trên macOS 14/15.
+- **Tự động khôi phục từ tiếng Anh**:
+  - Sửa lỗi không khôi phục được các từ có phụ âm đôi cuối (address, access, success...).
+  - Mở rộng từ điển tiếng Anh lên 7,600 từ.
 
 ## [1.5.0] - 2026-01-05
 
