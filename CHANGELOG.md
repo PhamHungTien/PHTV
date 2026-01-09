@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.9] - 2026-01-09
+
+### Fixed
+- **Quyền Accessibility không nhận**: Sửa lỗi người dùng cấp quyền trợ năng nhưng ứng dụng không nhận
+  - Áp dụng Dynamic Cache TTL: 0.5s khi chờ cấp quyền, 10s khi đã có quyền
+  - Áp dụng Dynamic Polling: 1s khi chờ, 5s khi đã có quyền
+  - Sử dụng CGEventTapCreate test tap (Apple recommended) thay vì AXIsProcessTrusted unreliable
+- **Tự động khôi phục từ tiếng Anh**: Sửa lỗi không khôi phục được các từ có phụ âm đôi cuối
+  - Sửa lỗi "address" hiển thị "ađres" thay vì khôi phục đúng
+  - Sửa lỗi _stateIndex bị giảm sai khi toggle dấu Telex (ss, ff, rr, xx, jj)
+  - Áp dụng cho tất cả từ có pattern tương tự: address, access, process, success, etc.
+
+### Improved
+- **Từ điển tiếng Anh mở rộng**: Tăng từ 5,493 lên 7,600 từ
+  - Thêm từ có phụ âm đôi (bb, cc, dd, ff, gg, ll, mm, nn, pp, rr, ss, tt, zz)
+  - Thêm từ bắt đầu với cluster không có trong tiếng Việt (bl, br, cl, cr, dr, fl, fr, etc.)
+  - Thêm từ có hậu tố tiếng Anh (-ment, -tion, -sion, -ness, -able, -ible, etc.)
+  - Thêm từ có w, z, j và kết thúc với cluster đặc biệt (ct, ft, ght, ld, nd, nt, etc.)
+
 ## [1.5.0] - 2026-01-05
 
 ### Added
@@ -369,7 +388,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Macro (gõ tắt)
 - Hoàn toàn offline
 
-[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v1.4.6...HEAD
+[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v1.5.9...HEAD
+[1.5.9]: https://github.com/PhamHungTien/PHTV/compare/v1.5.8...v1.5.9
+[1.5.8]: https://github.com/PhamHungTien/PHTV/compare/v1.5.7...v1.5.8
+[1.5.7]: https://github.com/PhamHungTien/PHTV/compare/v1.5.6...v1.5.7
+[1.5.6]: https://github.com/PhamHungTien/PHTV/compare/v1.5.5...v1.5.6
+[1.5.5]: https://github.com/PhamHungTien/PHTV/compare/v1.5.4...v1.5.5
+[1.5.4]: https://github.com/PhamHungTien/PHTV/compare/v1.5.3...v1.5.4
+[1.5.3]: https://github.com/PhamHungTien/PHTV/compare/v1.5.2...v1.5.3
+[1.5.2]: https://github.com/PhamHungTien/PHTV/compare/v1.5.1...v1.5.2
+[1.5.1]: https://github.com/PhamHungTien/PHTV/compare/v1.5.0...v1.5.1
+[1.5.0]: https://github.com/PhamHungTien/PHTV/compare/v1.4.9...v1.5.0
+[1.4.9]: https://github.com/PhamHungTien/PHTV/compare/v1.4.8...v1.4.9
+[1.4.8]: https://github.com/PhamHungTien/PHTV/compare/v1.4.7...v1.4.8
+[1.4.7]: https://github.com/PhamHungTien/PHTV/compare/v1.4.6...v1.4.7
 [1.4.6]: https://github.com/PhamHungTien/PHTV/compare/v1.4.5...v1.4.6
 [1.4.5]: https://github.com/PhamHungTien/PHTV/compare/v1.4.4...v1.4.5
 [1.4.4]: https://github.com/PhamHungTien/PHTV/compare/v1.4.3...v1.4.4
