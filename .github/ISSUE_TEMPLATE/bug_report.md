@@ -48,21 +48,29 @@ Thank you for reporting a bug! Please fill in this form to help us understand yo
 
 **macOS Version:**
 
+- [ ] macOS 26.x (macOS 15.x Beta/Developer Preview)
 - [ ] macOS 15.x (Sequoia)
 - [ ] macOS 14.x (Sonoma)
+- [ ] macOS 13.x (Ventura)
 - [ ] Other: **\_\_\_**
 
 **PHTV Version:**
 
-<!-- Xem "About PHTV" từ menu bar -->
+<!-- Xem "About PHTV" từ menu bar hoặc kiểm tra trong Settings -->
+
+**Architecture:**
+
+- [ ] Apple Silicon (M1/M2/M3/M4)
+- [ ] Intel
 
 **Xcode Version (nếu build từ source):**
 
-<!-- xcode-select --version -->
+<!-- xcode-select --version hoặc xem trong Xcode → About Xcode -->
 
 **Ứng dụng bị ảnh hưởng:**
 
-<!-- Ví dụ: Google Docs, Microsoft Word, Telegram, v.v. -->
+<!-- Ví dụ: Google Docs, Microsoft Word, Telegram, VS Code, Terminal, v.v. -->
+<!-- Nếu lỗi chỉ xảy ra với ứng dụng cụ thể, hãy ghi rõ tên và version -->
 
 ## 🔧 Điều gì bạn đã cố gắng? (What have you tried?)
 
@@ -70,29 +78,50 @@ Thank you for reporting a bug! Please fill in this form to help us understand yo
 
 - [ ] Khởi động lại PHTV
 - [ ] Khởi động lại macOS
-- [ ] Vô hiệu hóa/Bật lại Accessibility permission
+- [ ] Vô hiệu hóa/Bật lại Accessibility permission trong System Settings
+- [ ] Kiểm tra Console.app để xem logs (tìm "PHTV" hoặc "phtv")
+- [ ] Thử Safe Mode (nếu có liên quan đến hardware compatibility)
 - [ ] Other: **\_\_\_**
 
 ## 📊 Thông tin bổ sung (Additional Context)
 
 <!-- Bất kỳ thông tin khác có thể hữu ích -->
+<!-- Ví dụ: Có sử dụng ứng dụng gõ tiếng Việt khác? Có extension hoặc phần mềm can thiệp vào keyboard? -->
+
+[Thêm thông tin ở đây nếu cần]
+
+## 📋 Console Logs (Optional but highly recommended)
+
+<!-- Nếu có thể, hãy copy logs từ Console.app (filter by "phtv" or "PHTV") -->
+<!-- Logs giúp chúng tôi hiểu vấn đề nhanh hơn rất nhiều -->
+
+<details>
+<summary>Click to expand logs</summary>
+
+```
+[Paste logs here]
+```
+
+</details>
 
 ---
 
 **Mức độ nghiêm trọng (Severity):**
 
-- [ ] 🔴 Lỗi nghiêm trọng (Critical) - Ứng dụng bị crash hoặc không thể sử dụng
-- [ ] 🟠 Lỗi cao (High) - Tính năng chính không hoạt động
-- [ ] 🟡 Lỗi trung bình (Medium) - Tính năng không hoạt động đúng
-- [ ] 🟢 Lỗi thấp (Low) - Vấn đề nhỏ hoặc cosmetic
+- [ ] 🔴 Critical - Ứng dụng crash hoặc không thể sử dụng
+- [ ] 🟠 High - Tính năng chính không hoạt động (không gõ được tiếng Việt)
+- [ ] 🟡 Medium - Tính năng không hoạt động đúng (gõ sai, lỗi chuyển mã)
+- [ ] 🟢 Low - Vấn đề nhỏ, cosmetic, hoặc edge case
 
 **Tần suất (Frequency):**
 
-- [ ] Lúc nào cũng xảy ra (Always)
-- [ ] Thường xuyên (Frequently)
-- [ ] Thỉnh thoảng (Occasionally)
-- [ ] Hiếm khi (Rarely)
+- [ ] Always (100%) - Lúc nào cũng xảy ra
+- [ ] Frequently (>50%) - Thường xuyên
+- [ ] Occasionally (10-50%) - Thỉnh thoảng
+- [ ] Rarely (<10%) - Hiếm khi
 
 ---
 
-**Cảm ơn vì đã giúp chúng tôi!** 🙏
+**Cảm ơn vì đã giúp chúng tôi cải thiện PHTV!** 🙏
+
+<!-- Chúng tôi sẽ phản hồi sớm nhất có thể. Vui lòng kiểm tra email/GitHub notifications -->
