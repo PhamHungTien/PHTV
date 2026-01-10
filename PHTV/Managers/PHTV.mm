@@ -687,7 +687,8 @@ extern "C" {
     // These are Electron/web apps that don't support AX text replacement
     // NOTE: Microsoft Office apps support Vietnamese compound Unicode properly in documents
     // Template search may have minor issues but prioritizing document editing experience
-    NSSet* _precomposedBatchedAppSet = [NSSet setWithArray:@[@"net.whatsapp.WhatsApp"]];
+    NSSet* _precomposedBatchedAppSet = [NSSet setWithArray:@[@"net.whatsapp.WhatsApp",
+                                                              @"notion.id"]];  // Notion - Electron app
 
     //app which needs step by step key sending (timing sensitive apps) - Using NSSet for O(1) lookup performance
     NSSet* _stepByStepAppSet = [NSSet setWithArray:@[// Commented out for testing Vietnamese input:
@@ -697,7 +698,8 @@ extern "C" {
                                                       @"com.apple.SecurityAgent",   // Security dialogs
                                                       @"com.raycast.macos",
                                                       @"com.alfredapp.Alfred",
-                                                      @"com.apple.launchpad"]];     // Launchpad/Ứng dụng
+                                                      @"com.apple.launchpad",       // Launchpad/Ứng dụng
+                                                      @"notion.id"]];               // Notion - needs step-by-step for stability
                                                       // Removed WhatsApp - step-by-step causes more issues
 
     // Apps where Vietnamese input should be disabled (search/launcher apps) - Using NSSet for O(1) lookup performance
