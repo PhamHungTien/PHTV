@@ -156,6 +156,67 @@ jobs:
           fi
           echo "✅ Code signature is valid"
 
+      - name: Notarize app with Apple
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: |
+          APP_PATH="./build/Build/Products/Release/PHTV.app"
+
+          if [ -z "$APPLE_ID" ] || [ -z "$APPLE_TEAM_ID" ] || [ -z "$APPLE_APP_PASSWORD" ]; then
+            echo "⚠️ Notarization credentials not set - skipping notarization"
+            echo "To enable notarization, set these secrets in GitHub:"
+            echo "  - APPLE_ID (your Apple ID email)"
+            echo "  - APPLE_TEAM_ID (your Team ID)"
+            echo "  - APPLE_APP_PASSWORD (app-specific password)"
+            exit 0
+          fi
+
+          echo "🍎 Starting Apple notarization..."
+
+          # Remove quarantine attributes
+          xattr -cr "$APP_PATH"
+
+          # Create ZIP for notarization
+          TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+          ZIP_NAME="PHTV_${TIMESTAMP}.zip"
+          ditto -c -k --keepParent "$APP_PATH" "$ZIP_NAME"
+          echo "✅ Created ZIP: $ZIP_NAME"
+
+          # Submit for notarization
+          echo "📤 Submitting to Apple notarization service..."
+          xcrun notarytool submit "$ZIP_NAME" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --wait \
+            --timeout 30m
+
+          NOTARIZE_STATUS=$?
+
+          if [ $NOTARIZE_STATUS -eq 0 ]; then
+            echo "✅ Notarization successful!"
+
+            # Staple the notarization ticket
+            echo "📎 Stapling notarization ticket..."
+            xcrun stapler staple "$APP_PATH"
+            echo "✅ Ticket stapled"
+
+            # Verify notarization
+            echo "🔍 Verifying notarization..."
+            xcrun stapler validate "$APP_PATH"
+            spctl --assess -vv --type install "$APP_PATH"
+            echo "✅ Notarization verified - app will NOT be flagged as malware!"
+          else
+            echo "❌ Notarization failed"
+            echo "⚠️ App will be signed but not notarized"
+            echo "Users may see Gatekeeper warnings"
+          fi
+
+          # Cleanup
+          rm -f "$ZIP_NAME"
+
       - name: Create DMG
         id: dmg
         run: |
