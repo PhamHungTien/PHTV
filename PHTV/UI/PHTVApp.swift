@@ -172,14 +172,16 @@ struct SettingsWindowContent: View {
         ) { _ in
             // Re-ensure window properties when app loses focus
             // This prevents macOS from hiding the window in accessory mode
-            for window in NSApp.windows {
-                if window.identifier?.rawValue.hasPrefix("settings") == true {
-                    window.hidesOnDeactivate = false
-                    // Keep window visible even when not active
-                    if window.isVisible {
-                        NSLog("[SettingsWindowContent] App deactivated - ensuring settings window stays visible")
+            MainActor.assumeIsolated {
+                for window in NSApp.windows {
+                    if window.identifier?.rawValue.hasPrefix("settings") == true {
+                        window.hidesOnDeactivate = false
+                        // Keep window visible even when not active
+                        if window.isVisible {
+                            NSLog("[SettingsWindowContent] App deactivated - ensuring settings window stays visible")
+                        }
+                        break
                     }
-                    break
                 }
             }
         }
@@ -476,8 +478,8 @@ final class AppState: ObservableObject {
     @Published var quickEndConsonant: Bool = false
     @Published var rememberCode: Bool = true
 
-    // Auto restore English words
-    @Published var autoRestoreEnglishWord: Bool = false
+    // Auto restore English words - default: ON for new users
+    @Published var autoRestoreEnglishWord: Bool = true
 
     // Restore to raw keys (customizable key)
     @Published var restoreOnEscape: Bool = true
@@ -1515,7 +1517,7 @@ final class AppState: ObservableObject {
         quickStartConsonant = false
         quickEndConsonant = false
         rememberCode = true
-        autoRestoreEnglishWord = false
+        autoRestoreEnglishWord = true  // Default: ON for new users
 
         runOnStartup = false
         performLayoutCompat = false

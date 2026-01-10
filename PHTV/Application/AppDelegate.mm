@@ -1864,6 +1864,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     vOtherLanguage = 1; [defaults setInteger:vOtherLanguage forKey:@"vOtherLanguage"];
     vTempOffPHTV = 0; [defaults setInteger:vTempOffPHTV forKey:@"vTempOffPHTV"];
 
+    // Auto restore English words - default: ON for new users
+    vAutoRestoreEnglishWord = 1; [defaults setInteger:vAutoRestoreEnglishWord forKey:@"vAutoRestoreEnglishWord"];
+
     // Restore to raw keys (customizable key) - default: ON with ESC key
     vRestoreOnEscape = 1; [defaults setInteger:vRestoreOnEscape forKey:@"vRestoreOnEscape"];
     vCustomEscapeKey = 0; [defaults setInteger:vCustomEscapeKey forKey:@"vCustomEscapeKey"];

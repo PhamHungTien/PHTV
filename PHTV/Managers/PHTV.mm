@@ -2868,6 +2868,7 @@ extern "C" {
                 // FIX #79: Detect Auto-English restoration on Browsers (Chromium/Safari/Firefox)
                 // Browsers often drop backspace events during rapid restoration or have address bar autocomplete interference
                 // We need to force HID tap posting and use aggressive timing delays
+                // CRITICAL FIX: This is only for Auto English (extCode == 5), normal Vietnamese doesn't need HID tap
                 BOOL isAutoEnglishBrowser = (isBrowserApp && pData->extCode == 5);
                 if (isAutoEnglishBrowser) {
                     _phtvPostToHIDTap = YES; // Force HID tap for robustness
@@ -2885,7 +2886,9 @@ extern "C" {
 #endif
                     } else {
                         // Use browser-specific delays for browser apps, terminal delays for terminals
-                        if (isAutoEnglishBrowser) {
+                        // CRITICAL FIX: ALL browser operations need delays, not just Auto English
+                        // Without delays, browser autocomplete races with backspace events causing duplicates
+                        if (isBrowserApp) {
                             SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeBrowser);
                         } else if (appChars.needsStepByStep) {
                             SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeTerminal);
@@ -2907,8 +2910,10 @@ extern "C" {
                     // perform deterministic replacement (AX) and/or per-character Unicode posting.
                     // EXCEPT for Chromium apps - they don't support AX API properly
                     BOOL isSpotlightTarget = (!isBrowserApp && spotlightActive) || appChars.isSpotlightLike;
-                    // FIX #79: Force step-by-step for Auto-English on Browsers
-                    BOOL useStepByStep = (!isSpotlightTarget) && (vSendKeyStepByStep || appChars.needsStepByStep || isAutoEnglishBrowser);
+                    // CRITICAL FIX: Force step-by-step for ALL browser operations
+                    // Browsers don't support AX API and batch Unicode posting races with autocomplete
+                    // Step-by-step with delays (applied above) ensures stable input
+                    BOOL useStepByStep = (!isSpotlightTarget) && (vSendKeyStepByStep || appChars.needsStepByStep || isBrowserApp);
 #ifdef DEBUG
                     if (isSpotlightTarget) {
                         PHTVSpotlightDebugLog([NSString stringWithFormat:@"willSend stepByStep=%d backspaceCount=%d newCharCount=%d", (int)useStepByStep, (int)pData->backspaceCount, (int)pData->newCharCount]);
@@ -2921,7 +2926,8 @@ extern "C" {
                             for (int i = pData->newCharCount - 1; i >= 0; i--) {
                                 SendKeyCode(pData->charData[i]);
                                 // Add delay between characters for browser apps to ensure stable input
-                                if (isAutoEnglishBrowser && i > 0) {
+                                // CRITICAL FIX: ALL browser operations need delays to prevent autocomplete races
+                                if (isBrowserApp && i > 0) {
                                     usleep(BROWSER_CHAR_DELAY_US);
                                 }
                             }
@@ -2935,7 +2941,8 @@ extern "C" {
                             }
                             #endif
                             // Add delay before final key for browsers
-                            if (isAutoEnglishBrowser) {
+                            // CRITICAL FIX: ALL browser operations need delays to prevent autocomplete races
+                            if (isBrowserApp) {
                                 usleep(BROWSER_CHAR_DELAY_US);
                             }
                             SendKeyCode(_keycode | ((_flag & kCGEventFlagMaskAlphaShift) || (_flag & kCGEventFlagMaskShift) ? CAPS_MASK : 0));
