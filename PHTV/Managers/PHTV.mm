@@ -44,6 +44,12 @@ static const uint64_t TERMINAL_SETTLE_DELAY_US = 4000;       // After all backsp
 static const uint64_t TERMINAL_FINAL_SETTLE_US = 10000;      // Final settle after all text (reduced from 20000us)
 static const uint64_t SPOTLIGHT_TINY_DELAY_US = 2000;        // Spotlight timing delay (reduced from 3000us)
 
+// Browser Delay Configuration - browsers (Chromium, Safari, Firefox) need longer delays
+// These delays ensure stable Vietnamese input in browser address bars and text fields
+static const uint64_t BROWSER_KEYSTROKE_DELAY_US = 2500;     // Per-character delay for browsers
+static const uint64_t BROWSER_SETTLE_DELAY_US = 6000;        // After all backspaces for browsers
+static const uint64_t BROWSER_CHAR_DELAY_US = 2000;          // Delay between characters for browsers
+
 // AXValueType constant name differs across SDK versions.
 #if defined(kAXValueTypeCFRange)
     #define PHTV_AXVALUE_CFRANGE_TYPE kAXValueTypeCFRange
@@ -1548,22 +1554,50 @@ extern "C" {
         }
     }
 
-    // Consolidated helper function to send multiple backspaces with optional terminal delays
+    // Delay type enum for different app categories
+    typedef enum {
+        DelayTypeNone = 0,
+        DelayTypeTerminal = 1,
+        DelayTypeBrowser = 2
+    } DelayType;
+
+    // Consolidated helper function to send multiple backspaces with app-specific delays
     // This reduces code duplication across the codebase
-    void SendBackspaceSequence(int count, BOOL isTerminalApp) {
+    void SendBackspaceSequenceWithDelay(int count, DelayType delayType) {
         if (count <= 0) return;
+
+        uint64_t keystrokeDelay = 0;
+        uint64_t settleDelay = 0;
+
+        switch (delayType) {
+            case DelayTypeTerminal:
+                keystrokeDelay = TERMINAL_KEYSTROKE_DELAY_US;
+                settleDelay = TERMINAL_SETTLE_DELAY_US;
+                break;
+            case DelayTypeBrowser:
+                keystrokeDelay = BROWSER_KEYSTROKE_DELAY_US;
+                settleDelay = BROWSER_SETTLE_DELAY_US;
+                break;
+            default:
+                break;
+        }
 
         for (int i = 0; i < count; i++) {
             SendBackspace();
-            if (isTerminalApp) {
-                usleep(TERMINAL_KEYSTROKE_DELAY_US);
+            if (keystrokeDelay > 0) {
+                usleep((useconds_t)keystrokeDelay);
             }
         }
 
-        // Extra settle time for terminals after all backspaces
-        if (isTerminalApp) {
-            usleep(TERMINAL_SETTLE_DELAY_US);
+        // Extra settle time after all backspaces
+        if (settleDelay > 0) {
+            usleep((useconds_t)settleDelay);
         }
+    }
+
+    // Backwards compatible wrapper
+    void SendBackspaceSequence(int count, BOOL isTerminalApp) {
+        SendBackspaceSequenceWithDelay(count, isTerminalApp ? DelayTypeTerminal : DelayTypeNone);
     }
 
     void SendShiftAndLeftArrow() {
@@ -2846,11 +2880,17 @@ extern "C" {
                         PHTVSpotlightDebugLog([NSString stringWithFormat:@"deferBackspace=%d newCharCount=%d", (int)pData->backspaceCount, (int)pData->newCharCount]);
 #endif
                     } else {
-                        // Pass isAutoEnglishBrowser as isTerminalApp to enable aggressive delays
-                        SendBackspaceSequence(pData->backspaceCount, isAutoEnglishBrowser);
+                        // Use browser-specific delays for browser apps, terminal delays for terminals
+                        if (isAutoEnglishBrowser) {
+                            SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeBrowser);
+                        } else if (appChars.needsStepByStep) {
+                            SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeTerminal);
+                        } else {
+                            SendBackspaceSequence(pData->backspaceCount, NO);
+                        }
                     }
                 }
-                
+
                 //send new character - use step by step for timing sensitive apps like Spotlight
                 // IMPORTANT: For Spotlight-like targets we rely on SendNewCharString(), which can
                 // perform deterministic replacement (AX) and/or per-character Unicode posting.
@@ -2876,6 +2916,10 @@ extern "C" {
                         if (pData->newCharCount > 0 && pData->newCharCount <= MAX_BUFF) {
                             for (int i = pData->newCharCount - 1; i >= 0; i--) {
                                 SendKeyCode(pData->charData[i]);
+                                // Add delay between characters for browser apps to ensure stable input
+                                if (isAutoEnglishBrowser && i > 0) {
+                                    usleep(BROWSER_CHAR_DELAY_US);
+                                }
                             }
                         }
                         if (pData->code == vRestore || pData->code == vRestoreAndStartNewSession) {
@@ -2886,6 +2930,10 @@ extern "C" {
                                 fflush(stderr);
                             }
                             #endif
+                            // Add delay before final key for browsers
+                            if (isAutoEnglishBrowser) {
+                                usleep(BROWSER_CHAR_DELAY_US);
+                            }
                             SendKeyCode(_keycode | ((_flag & kCGEventFlagMaskAlphaShift) || (_flag & kCGEventFlagMaskShift) ? CAPS_MASK : 0));
                         }
                         if (pData->code == vRestoreAndStartNewSession) {
