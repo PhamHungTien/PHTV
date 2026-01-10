@@ -57,6 +57,13 @@ static const uint64_t BROWSER_CHAR_DELAY_MAX_US = 6000;           // Max delay b
 // Safari-specific: Extra delays for Safari address bar (most problematic)
 static const uint64_t SAFARI_ADDRESS_BAR_EXTRA_DELAY_US = 2000;   // Additional delay for Safari address bar
 
+// Auto English Restore: Reduced delays for faster restoration
+// English word restore has less autocomplete conflict than Vietnamese transforms
+// Users expect fast restore when typing English words in Vietnamese mode
+static const uint64_t AUTO_ENGLISH_KEYSTROKE_DELAY_US = 1500;     // Per-backspace delay (reduced from 4000)
+static const uint64_t AUTO_ENGLISH_SETTLE_DELAY_US = 3000;        // Settle delay after backspaces (reduced from 10000)
+static const uint64_t AUTO_ENGLISH_CHAR_DELAY_US = 1000;          // Per-character delay (reduced from 3500)
+
 // Adaptive delay tracking
 static uint64_t _lastKeystrokeTimestamp = 0;
 static uint64_t _averageResponseTimeUs = 0;
@@ -1648,7 +1655,8 @@ extern "C" {
         DelayTypeNone = 0,
         DelayTypeTerminal = 1,
         DelayTypeBrowser = 2,
-        DelayTypeSafariBrowser = 3  // Safari with extra delays
+        DelayTypeSafariBrowser = 3,  // Safari with extra delays
+        DelayTypeAutoEnglish = 4     // Auto English restore with reduced delays
     } DelayType;
 
     // Update response time tracking for adaptive delays
@@ -1739,6 +1747,11 @@ extern "C" {
                 // Safari needs even longer delays due to aggressive autocomplete
                 keystrokeDelay = getAdaptiveDelay(BROWSER_KEYSTROKE_DELAY_BASE_US, BROWSER_KEYSTROKE_DELAY_MAX_US) + SAFARI_ADDRESS_BAR_EXTRA_DELAY_US;
                 settleDelay = getAdaptiveDelay(BROWSER_SETTLE_DELAY_BASE_US, BROWSER_SETTLE_DELAY_MAX_US) + SAFARI_ADDRESS_BAR_EXTRA_DELAY_US;
+                break;
+            case DelayTypeAutoEnglish:
+                // Auto English restore has less autocomplete conflict, use reduced delays
+                keystrokeDelay = AUTO_ENGLISH_KEYSTROKE_DELAY_US;
+                settleDelay = AUTO_ENGLISH_SETTLE_DELAY_US;
                 break;
             default:
                 break;
@@ -3049,9 +3062,16 @@ extern "C" {
                         // CRITICAL FIX: ALL browser operations need delays, not just Auto English
                         // Without delays, browser autocomplete races with backspace events causing duplicates
                         // SAFARI FIX: Safari needs extra delays due to most aggressive autocomplete
+                        // AUTO ENGLISH OPTIMIZATION: Use reduced delays for Auto English restore (extCode=5)
                         if (isBrowserApp) {
-                            BOOL isSafari = [effectiveBundleId isEqualToString:@"com.apple.Safari"];
-                            DelayType browserDelayType = isSafari ? DelayTypeSafariBrowser : DelayTypeBrowser;
+                            DelayType browserDelayType;
+                            if (pData->extCode == 5) {
+                                // Auto English restore - reduced delays for faster restoration
+                                browserDelayType = DelayTypeAutoEnglish;
+                            } else {
+                                BOOL isSafari = [effectiveBundleId isEqualToString:@"com.apple.Safari"];
+                                browserDelayType = isSafari ? DelayTypeSafariBrowser : DelayTypeBrowser;
+                            }
                             SendBackspaceSequenceWithDelay(pData->backspaceCount, browserDelayType);
                         } else if (appChars.needsStepByStep) {
                             SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeTerminal);
@@ -3087,13 +3107,19 @@ extern "C" {
                     } else {
                         if (pData->newCharCount > 0 && pData->newCharCount <= MAX_BUFF) {
                             // SAFARI FIX: Calculate adaptive delays for Safari
-                            BOOL isSafari = [effectiveBundleId isEqualToString:@"com.apple.Safari"];
+                            // AUTO ENGLISH OPTIMIZATION: Use reduced delays for Auto English restore (extCode=5)
                             uint64_t charDelay = 0;
 
                             if (isBrowserApp) {
-                                charDelay = getAdaptiveDelay(BROWSER_CHAR_DELAY_BASE_US, BROWSER_CHAR_DELAY_MAX_US);
-                                if (isSafari) {
-                                    charDelay += SAFARI_ADDRESS_BAR_EXTRA_DELAY_US;
+                                if (pData->extCode == 5) {
+                                    // Auto English restore - reduced delays for faster restoration
+                                    charDelay = AUTO_ENGLISH_CHAR_DELAY_US;
+                                } else {
+                                    BOOL isSafari = [effectiveBundleId isEqualToString:@"com.apple.Safari"];
+                                    charDelay = getAdaptiveDelay(BROWSER_CHAR_DELAY_BASE_US, BROWSER_CHAR_DELAY_MAX_US);
+                                    if (isSafari) {
+                                        charDelay += SAFARI_ADDRESS_BAR_EXTRA_DELAY_US;
+                                    }
                                 }
                             }
 
@@ -3116,11 +3142,18 @@ extern "C" {
                             #endif
                             // Add adaptive delay before final key for browsers
                             // CRITICAL FIX: ALL browser operations need delays to prevent autocomplete races
+                            // AUTO ENGLISH OPTIMIZATION: Use reduced delays for Auto English restore (extCode=5)
                             if (isBrowserApp) {
-                                BOOL isSafari = [effectiveBundleId isEqualToString:@"com.apple.Safari"];
-                                uint64_t finalDelay = getAdaptiveDelay(BROWSER_CHAR_DELAY_BASE_US, BROWSER_CHAR_DELAY_MAX_US);
-                                if (isSafari) {
-                                    finalDelay += SAFARI_ADDRESS_BAR_EXTRA_DELAY_US;
+                                uint64_t finalDelay;
+                                if (pData->extCode == 5) {
+                                    // Auto English restore - reduced delays for faster restoration
+                                    finalDelay = AUTO_ENGLISH_CHAR_DELAY_US;
+                                } else {
+                                    BOOL isSafari = [effectiveBundleId isEqualToString:@"com.apple.Safari"];
+                                    finalDelay = getAdaptiveDelay(BROWSER_CHAR_DELAY_BASE_US, BROWSER_CHAR_DELAY_MAX_US);
+                                    if (isSafari) {
+                                        finalDelay += SAFARI_ADDRESS_BAR_EXTRA_DELAY_US;
+                                    }
                                 }
                                 usleep((useconds_t)finalDelay);
                             }
