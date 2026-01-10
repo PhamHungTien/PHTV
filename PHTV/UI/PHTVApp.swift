@@ -446,7 +446,7 @@ final class AppState: ObservableObject {
     @Published var pauseKeyName: String = "Option"
 
     // Emoji Hotkey Settings
-    @Published var enableEmojiHotkey: Bool = false
+    @Published var enableEmojiHotkey: Bool = true
     @Published var emojiHotkeyModifiersRaw: Int = Int(NSEvent.ModifierFlags.command.rawValue)
     @Published var emojiHotkeyKeyCode: UInt16 = 14  // E key default
 
@@ -875,8 +875,12 @@ final class AppState: ObservableObject {
         }
         pauseKeyName = defaults.string(forKey: "vPauseKeyName") ?? "Option"
 
-        // Load emoji hotkey settings
-        enableEmojiHotkey = defaults.bool(forKey: "vEnableEmojiHotkey")
+        // Load emoji hotkey settings (default true for first-time users)
+        if defaults.object(forKey: "vEnableEmojiHotkey") != nil {
+            enableEmojiHotkey = defaults.bool(forKey: "vEnableEmojiHotkey")
+        } else {
+            enableEmojiHotkey = true  // Default enabled for new users
+        }
         emojiHotkeyModifiersRaw = defaults.integer(forKey: "vEmojiHotkeyModifiers")
         if emojiHotkeyModifiersRaw == 0 {
             emojiHotkeyModifiersRaw = Int(NSEvent.ModifierFlags.command.rawValue)  // Default: Command
