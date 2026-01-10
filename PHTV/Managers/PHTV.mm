@@ -674,7 +674,8 @@ extern "C" {
                                                    @"com.vivaldi.Vivaldi",  // Vivaldi
                                                    @"com.operasoftware.Opera", // Opera
                                                    @"com.kagi.kagimacOS",     // Orion
-                                                   @"com.duckduckgo.macos.browser"]]; // DuckDuckGo
+                                                   @"com.duckduckgo.macos.browser", // DuckDuckGo
+                                                   @"app.zen-browser.zen"]];  // Zen Browser (Firefox-based)
 
     // Apps that need to FORCE Unicode precomposed (not compound) - Using NSSet for O(1) lookup performance
     // These apps don't handle Unicode combining characters properly
