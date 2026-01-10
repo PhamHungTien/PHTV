@@ -46,9 +46,10 @@ static const uint64_t SPOTLIGHT_TINY_DELAY_US = 2000;        // Spotlight timing
 
 // Browser Delay Configuration - browsers (Chromium, Safari, Firefox) need longer delays
 // These delays ensure stable Vietnamese input in browser address bars and text fields
-static const uint64_t BROWSER_KEYSTROKE_DELAY_US = 2500;     // Per-character delay for browsers
-static const uint64_t BROWSER_SETTLE_DELAY_US = 6000;        // After all backspaces for browsers
-static const uint64_t BROWSER_CHAR_DELAY_US = 2000;          // Delay between characters for browsers
+// Values are set conservatively high for 100% reliability across all system loads
+static const uint64_t BROWSER_KEYSTROKE_DELAY_US = 4000;     // Per-backspace delay for browsers
+static const uint64_t BROWSER_SETTLE_DELAY_US = 10000;       // After all backspaces for browsers
+static const uint64_t BROWSER_CHAR_DELAY_US = 3500;          // Delay between characters for browsers
 
 // AXValueType constant name differs across SDK versions.
 #if defined(kAXValueTypeCFRange)
