@@ -1,5 +1,5 @@
 //
-//  PHTPApp.swift
+//  PHTVApp.swift
 //  PHTV
 //
 //  Created by Phạm Hùng Tiến on 2026.
@@ -1993,7 +1993,7 @@ class KlipyAPIClient: ObservableObject {
     }
 
     func saveAPIKey(_ key: String) {
-        print("[Klipy] Please hardcode your app key in PHTPApp.swift")
+        print("[Klipy] Please hardcode your app key in PHTVApp.swift")
     }
 
     /// Fetch trending GIFs
@@ -3569,7 +3569,7 @@ struct APIKeySetupView: View {
                         .font(.caption2)
                     Text("4. Copy app key")
                         .font(.caption2)
-                    Text("5. Paste vào PHTPApp.swift (dòng 1694)")
+                    Text("5. Paste vào PHTVApp.swift (dòng 1694)")
                         .font(.caption2)
                 }
                 .foregroundColor(.secondary)
@@ -3582,7 +3582,7 @@ struct APIKeySetupView: View {
                 .buttonStyle(.link)
                 .font(.caption)
 
-                Text("Sau khi có app key, mở file PHTPApp.swift và thay 'YOUR_KLIPY_APP_KEY_HERE' bằng key của bạn.")
+                Text("Sau khi có app key, mở file PHTVApp.swift và thay 'YOUR_KLIPY_APP_KEY_HERE' bằng key của bạn.")
                     .font(.caption2)
                     .foregroundColor(.orange)
                     .padding(.top, 8)

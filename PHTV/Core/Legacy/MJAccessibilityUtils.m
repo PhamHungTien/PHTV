@@ -10,7 +10,7 @@
 
 
 #import "MJAccessibilityUtils.h"
-#import "../Managers/PHTVManager.h"
+#import "../../Managers/PHTVManager.h"
 #import <AppKit/AppKit.h>
 // #import "HSLogger.h"
 

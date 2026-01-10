@@ -19,7 +19,7 @@
 #import "Engine.h"
 #import "../Application/AppDelegate.h"
 #import "PHTVManager.h"
-#import "../Utils/MJAccessibilityUtils.h"
+#import "../Core/Legacy/MJAccessibilityUtils.h"
 
 // Forward declarations for functions used before definition (inside extern "C" block)
 extern "C" {
@@ -136,7 +136,7 @@ static int _externalDeleteCount = 0;
 // Check if text replacement fix is enabled via settings (always enabled)
 // Note: This feature is always enabled to fix macOS native text replacement conflicts
 static inline BOOL IsTextReplacementFixEnabled(void) {
-    return YES;  // Always enabled - matches PHTPApp.swift computed property
+    return YES;  // Always enabled - matches PHTVApp.swift computed property
 }
 
 // Safe Mode: Disable all Accessibility API calls for unsupported hardware

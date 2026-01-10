@@ -15,7 +15,7 @@
 #import "AppDelegate.h"
 #import "SparkleManager.h"
 #import "../Managers/PHTVManager.h"
-#import "../Utils/MJAccessibilityUtils.h"
+#import "../Core/Legacy/MJAccessibilityUtils.h"
 #import "PHTV-Swift.h"
 #include "../Core/Engine/Engine.h"
 
@@ -1188,7 +1188,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 - (BOOL)isSettingsWindowVisible {
     for (NSWindow *window in [NSApp windows]) {
         NSString *identifier = window.identifier;
-        // SwiftUI windows have identifier starting with "settings" (set in PHTPApp.swift)
+        // SwiftUI windows have identifier starting with "settings" (set in PHTVApp.swift)
         if (identifier && [identifier hasPrefix:@"settings"] && window.isVisible) {
             return YES;
         }

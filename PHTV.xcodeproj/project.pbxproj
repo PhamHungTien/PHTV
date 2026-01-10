@@ -21,7 +21,6 @@
 		23851A0121F1C1A400E79A41 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 238519F921F1BF4400E79A41 /* CoreGraphics.framework */; };
 		2389467D21FDDB920030A13B /* PHTVManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 2389467C21FDDB920030A13B /* PHTVManager.m */; };
 		23963B5022040C720097189E /* ServiceManagement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23963B4F22040C720097189E /* ServiceManagement.framework */; };
-		23CA6D1722F0439100804D6E /* MyTextField.m in Sources */ = {isa = PBXBuildFile; fileRef = 23CA6D1622F0439100804D6E /* MyTextField.m */; };
 		23E2E49D2314FD3A006CCC3E /* Macro.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23E2E4952314FD3A006CCC3E /* Macro.cpp */; };
 		23E2E49E2314FD3A006CCC3E /* SmartSwitchKey.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23E2E4982314FD3A006CCC3E /* SmartSwitchKey.cpp */; };
 		23E2E49F2314FD3A006CCC3E /* Engine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23E2E49A2314FD3A006CCC3E /* Engine.cpp */; };
@@ -44,7 +43,7 @@
 		E1A1A1A52025120200000005 /* PHTVConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A72025120200000007 /* PHTVConfig.m */; };
 		E1A1A1A62025120200000006 /* PHTVUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A92025120200000009 /* PHTVUtilities.m */; };
 		EF5EC6D461F146F7BB7B771B /* Utilities/ColorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E55895C7C4348BCA1ABE9E7 /* Utilities/ColorExtension.swift */; };
-		F1A1A1B12025130000000001 /* PHTPApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B22025130000000002 /* PHTPApp.swift */; };
+		F1A1A1B12025130000000001 /* PHTVApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B22025130000000002 /* PHTVApp.swift */; };
 		F1A1A1B32025130000000003 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B42025130000000004 /* SettingsView.swift */; };
 		F1A1A1B52025130000000005 /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B62025130000000006 /* StatusBarController.swift */; };
 		F1A1A1B72025130000000007 /* WindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B82025130000000008 /* WindowController.swift */; };
@@ -104,8 +103,6 @@
 		2389467E21FDDC3F0030A13B /* PHTVManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PHTVManager.h; sourceTree = "<group>"; };
 		23963B4F22040C720097189E /* ServiceManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ServiceManagement.framework; path = System/Library/Frameworks/ServiceManagement.framework; sourceTree = SDKROOT; };
 		23A984BE220ED07E000914A2 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
-		23CA6D1522F0439100804D6E /* MyTextField.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MyTextField.h; sourceTree = "<group>"; };
-		23CA6D1622F0439100804D6E /* MyTextField.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MyTextField.m; sourceTree = "<group>"; };
 		23E2E4942314FD3A006CCC3E /* Engine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Engine.h; sourceTree = "<group>"; };
 		23E2E4952314FD3A006CCC3E /* Macro.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Macro.cpp; sourceTree = "<group>"; };
 		23E2E4962314FD3A006CCC3E /* DataType.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DataType.h; sourceTree = "<group>"; };
@@ -130,7 +127,11 @@
 		46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = PHTV.icon; sourceTree = "<group>"; };
 		46EF4FFB2EEDC0A200DF8DD1 /* PHTV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PHTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		72B4F8A52F8DD55EF170821A /* CompatibilitySettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CompatibilitySettingsView.swift; sourceTree = "<group>"; };
-		8E55895C7C4348BCA1ABE9E7 /* Utilities/ColorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities/ColorExtension.swift; sourceTree = "<group>"; };
+		8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorExtension.swift; sourceTree = "<group>"; };
+		8E55895D7C4348BCA1ABE9E8 /* BackendSyncOptimizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendSyncOptimizer.swift; sourceTree = "<group>"; };
+		8E55895E7C4348BCA1ABE9E9 /* BeepManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeepManager.swift; sourceTree = "<group>"; };
+		8E55895F7C4348BCA1ABE9EA /* SettingsSliderRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSliderRow.swift; sourceTree = "<group>"; };
+		8E558960C4348BCA1ABE9EB /* HotReloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotReloadManager.swift; sourceTree = "<group>"; };
 		C2DA720371C3BD130F878C29 /* AppsSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppsSettingsView.swift; sourceTree = "<group>"; };
 		D3CCE6686B954309A3B65AAD /* HotkeySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeySettingsView.swift; sourceTree = "<group>"; };
 
@@ -139,7 +140,7 @@
 		E1A1A1A92025120200000009 /* PHTVUtilities.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PHTVUtilities.m; sourceTree = "<group>"; };
 		E1A1A1AA2025120200000010 /* PHTVUtilities.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PHTVUtilities.h; sourceTree = "<group>"; };
 		E1A1A1AB2025120200000011 /* PHTVConstants.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PHTVConstants.h; sourceTree = "<group>"; };
-		F1A1A1B22025130000000002 /* PHTPApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PHTPApp.swift; sourceTree = "<group>"; };
+		F1A1A1B22025130000000002 /* PHTVApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PHTVApp.swift; sourceTree = "<group>"; };
 		F1A1A1B42025130000000004 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		F1A1A1B62025130000000006 /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
 		F1A1A1B82025130000000008 /* WindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowController.swift; sourceTree = "<group>"; };
@@ -199,13 +200,12 @@
 		232EDA5621F1B33E0085D362 /* PHTV */ = {
 			isa = PBXGroup;
 			children = (
-				46394F6D2EFA5E8F009D5194 /* Resources */,
 				E1A1A2A12025120000000011 /* Application */,
 				E1A1A2A22025120000000012 /* Core */,
 				E1A1A2A32025120000000013 /* Managers */,
-				E1A1A2A52025120000000015 /* Views */,
-				E1A1A2A62025120000000016 /* Utils */,
-				F1A1A2A72025130000000017 /* SwiftUI */,
+				F1A1A2A72025130000000017 /* UI */,
+				F1A1A2AA2025130000000020 /* Development */,
+				46394F6D2EFA5E8F009D5194 /* Resources */,
 				232EDA5D21F1B33F0085D362 /* Assets.xcassets */,
 				232EDA6221F1B33F0085D362 /* Info.plist */,
 				F1A1A1BF2025130000000015 /* PHTV-Bridging-Header.h */,
@@ -248,29 +248,29 @@
 			path = Engine;
 			sourceTree = "<group>";
 		};
-		46394F602EFA5E8F009D5194 /* Setup */ = {
+			46394F6D2EFA5E8F009D5194 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				46394F6E2EFA5E8F009D5195 /* Dictionaries */,
+				46394F6F2EFA5E8F009D5196 /* Images */,
 			);
-			path = Setup;
+			path = Resources;
 			sourceTree = "<group>";
 		};
-		46394F662EFA5E8F009D5194 /* UI */ = {
+		46394F6E2EFA5E8F009D5195 /* Dictionaries */ = {
 			isa = PBXGroup;
 			children = (
-			);
-			path = UI;
-			sourceTree = "<group>";
-		};
-		46394F6D2EFA5E8F009D5194 /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				46394F602EFA5E8F009D5194 /* Setup */,
-				46394F662EFA5E8F009D5194 /* UI */,
 				46394F802EFAC18E009D5194 /* en_dict.bin */,
 				46394F812EFAC18E009D5194 /* vi_dict.bin */,
 			);
-			path = Resources;
+			path = Dictionaries;
+			sourceTree = "<group>";
+		};
+		46394F6F2EFA5E8F009D5196 /* Images */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Images;
 			sourceTree = "<group>";
 		};
 		E1A1A2A12025120000000011 /* Application */ = {
@@ -292,11 +292,31 @@
 			children = (
 				23E2E4932314FD3A006CCC3E /* Engine */,
 				E1A1A2A72025120000000017 /* Platforms */,
+				E1A1A2C12025120000000030 /* Config */,
+				E1A1A2C22025120000000031 /* Legacy */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		E1A1A2C12025120000000030 /* Config */ = {
+			isa = PBXGroup;
+			children = (
 				E1A1A1A82025120200000008 /* PHTVConfig.h */,
 				E1A1A1A72025120200000007 /* PHTVConfig.m */,
 				E1A1A1AB2025120200000011 /* PHTVConstants.h */,
 			);
-			path = Core;
+			path = Config;
+			sourceTree = "<group>";
+		};
+		E1A1A2C22025120000000031 /* Legacy */ = {
+			isa = PBXGroup;
+			children = (
+				23F512842336386200397988 /* MJAccessibilityUtils.h */,
+				23F512832336386200397988 /* MJAccessibilityUtils.m */,
+				E1A1A1AA2025120200000010 /* PHTVUtilities.h */,
+				E1A1A1A92025120200000009 /* PHTVUtilities.m */,
+			);
+			path = Legacy;
 			sourceTree = "<group>";
 		};
 		E1A1A2A32025120000000013 /* Managers */ = {
@@ -309,27 +329,7 @@
 			path = Managers;
 			sourceTree = "<group>";
 		};
-		E1A1A2A52025120000000015 /* Views */ = {
-			isa = PBXGroup;
-			children = (
-				23CA6D1522F0439100804D6E /* MyTextField.h */,
-				23CA6D1622F0439100804D6E /* MyTextField.m */,
-			);
-			path = Views;
-			sourceTree = "<group>";
-		};
-		E1A1A2A62025120000000016 /* Utils */ = {
-			isa = PBXGroup;
-			children = (
-				23F512842336386200397988 /* MJAccessibilityUtils.h */,
-				23F512832336386200397988 /* MJAccessibilityUtils.m */,
-				E1A1A1AA2025120200000010 /* PHTVUtilities.h */,
-				E1A1A1A92025120200000009 /* PHTVUtilities.m */,
-			);
-			path = Utils;
-			sourceTree = "<group>";
-		};
-		E1A1A2A72025120000000017 /* Platforms */ = {
+			E1A1A2A72025120000000017 /* Platforms */ = {
 			isa = PBXGroup;
 			children = (
 				237724A5232BA3B800E92BDF /* mac.h */,
@@ -337,17 +337,16 @@
 			path = Platforms;
 			sourceTree = "<group>";
 		};
-		F1A1A2A72025130000000017 /* SwiftUI */ = {
+		F1A1A2A72025130000000017 /* UI */ = {
 			isa = PBXGroup;
 			children = (
-				F1A1A1B22025130000000002 /* PHTPApp.swift */,
+				F1A1A1B22025130000000002 /* PHTVApp.swift */,
+				F1A1A1BA2025130000000010 /* AppDelegate+SwiftUI.swift */,
 				F1A1A2A82025130000000018 /* Views */,
 				F1A1A2A92025130000000019 /* Controllers */,
-				F1A1A2AA2025130000000020 /* Bridge */,
 				F1A1A2AB2025130000000021 /* Utilities */,
-				8E55895C7C4348BCA1ABE9E7 /* Utilities/ColorExtension.swift */,
 			);
-			path = SwiftUI;
+			path = UI;
 			sourceTree = "<group>";
 		};
 		F1A1A2A82025130000000018 /* Views */ = {
@@ -370,23 +369,26 @@
 			path = Controllers;
 			sourceTree = "<group>";
 		};
-		F1A1A2AA2025130000000020 /* Bridge */ = {
+		F1A1A2AA2025130000000020 /* Development */ = {
 			isa = PBXGroup;
 			children = (
-				F1A1A1BA2025130000000010 /* AppDelegate+SwiftUI.swift */,
+				46394F872EFC8C7B009D5195 /* ClaudeCodePatcher.swift */,
+				F1A1A1BE2025130000000014 /* PreviewHelpers.swift */,
+				8E558960C4348BCA1ABE9EB /* HotReloadManager.swift */,
 			);
-			path = Bridge;
+			path = Development;
 			sourceTree = "<group>";
 		};
 		F1A1A2AB2025130000000021 /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
-				46394F872EFC8C7B009D5195 /* ClaudeCodePatcher.swift */,
 				46394F842EFC8C7B009D5194 /* PHTVLogger.swift */,
 				F1A1A1BC2025130000000012 /* ViewModifiers.swift */,
-				F1A1A1BE2025130000000014 /* PreviewHelpers.swift */,
 				F1A1A1E22025130100000036 /* SettingsObserver.swift */,
 				F1A1A1E42025130100000038 /* ReloadHelpers.swift */,
+				8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */,
+				8E55895D7C4348BCA1ABE9E8 /* BackendSyncOptimizer.swift */,
+				8E55895E7C4348BCA1ABE9E9 /* BeepManager.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -419,6 +421,7 @@
 				F1A1A1E82025130100000042 /* UpdateBannerView.swift */,
 				F1A1A1EA2025130100000044 /* ReleaseNotesView.swift */,
 				F1A1A1EC2025130100000046 /* ConvertToolView.swift */,
+				8E55895F7C4348BCA1ABE9EA /* SettingsSliderRow.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -511,7 +514,6 @@
 				23F512852336386200397988 /* MJAccessibilityUtils.m in Sources */,
 				2389467D21FDDB920030A13B /* PHTVManager.m in Sources */,
 				23E2E4A02314FD3A006CCC3E /* Vietnamese.cpp in Sources */,
-				23CA6D1722F0439100804D6E /* MyTextField.m in Sources */,
 				461048622EF2DF22005AF5FC /* SendKeyStepByStepAppsView.swift in Sources */,
 				2371AAEF22FA85B200CA1B57 /* PHTV.mm in Sources */,
 				23E2E49D2314FD3A006CCC3E /* Macro.cpp in Sources */,
@@ -519,7 +521,7 @@
 				232EDA5921F1B33E0085D362 /* AppDelegate.mm in Sources */,
 				E1A1A1A52025120200000005 /* PHTVConfig.m in Sources */,
 				E1A1A1A62025120200000006 /* PHTVUtilities.m in Sources */,
-				F1A1A1B12025130000000001 /* PHTPApp.swift in Sources */,
+				F1A1A1B12025130000000001 /* PHTVApp.swift in Sources */,
 				F1A1A1B32025130000000003 /* SettingsView.swift in Sources */,
 				F1A1A1B52025130000000005 /* StatusBarController.swift in Sources */,
 				F1A1A1B72025130000000007 /* WindowController.swift in Sources */,

@@ -18,12 +18,12 @@
 // Managers
 #import "Managers/PHTVManager.h"
 
-// Utils
-#import "Utils/MJAccessibilityUtils.h"
+// Legacy utilities
+#import "Core/Legacy/MJAccessibilityUtils.h"
 #import "Application/PHSilentUserDriver.h"
 
-// Core
-#import "Core/PHTVConfig.h"
-#import "Core/PHTVConstants.h"
+// Core Config
+#import "Core/Config/PHTVConfig.h"
+#import "Core/Config/PHTVConstants.h"
 
 #endif /* PHTV_Bridging_Header_h */
