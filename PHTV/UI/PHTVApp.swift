@@ -799,6 +799,26 @@ final class AppState: ObservableObject {
         }
         notificationObservers.append(observer6)
 
+        // CRITICAL: Listen for Launch at Login changes from AppDelegate
+        // This ensures UI syncs immediately when SMAppService status changes
+        let observer7 = NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("RunOnStartupChanged"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self = self else { return }
+            if let userInfo = notification.userInfo,
+               let enabled = userInfo["enabled"] as? Bool {
+                Task { @MainActor in
+                    self.isUpdatingRunOnStartup = true
+                    self.runOnStartup = enabled
+                    self.isUpdatingRunOnStartup = false
+                    print("[AppState] ✅ RunOnStartup synced from notification: \(enabled)")
+                }
+            }
+        }
+        notificationObservers.append(observer7)
+
         // SparkleNoUpdateFound is now handled by AppDelegate with NSAlert directly
         // This provides better UX as it doesn't require the settings window to be open
 

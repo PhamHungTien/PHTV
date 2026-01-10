@@ -886,9 +886,45 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         NSLog(@"[AppDelegate] First launch: loaded default config and marked NonFirstTime");
     }
 
-    //correct run on startup
-    NSInteger val = [[NSUserDefaults standardUserDefaults] integerForKey:@"RunOnStartup"];
-    [appDelegate setRunOnStartup:val];
+    // CRITICAL FIX: Sync Launch at Login with actual SMAppService status
+    // This ensures UserDefaults matches reality after app restart
+    if (@available(macOS 13.0, *)) {
+        SMAppService *appService = [SMAppService mainAppService];
+        SMAppServiceStatus actualStatus = appService.status;
+        BOOL actuallyEnabled = (actualStatus == SMAppServiceStatusEnabled);
+
+        NSInteger savedValue = [[NSUserDefaults standardUserDefaults] integerForKey:@"RunOnStartup"];
+        BOOL savedEnabled = (savedValue == 1);
+
+        NSLog(@"[LoginItem] Startup sync - Actual: %d, Saved: %d", actuallyEnabled, savedEnabled);
+
+        // If first launch, enable immediately (default behavior)
+        if (isFirstLaunch) {
+            NSLog(@"[LoginItem] First launch detected - enabling Launch at Login");
+            [self setRunOnStartup:YES];
+        }
+        // If mismatch between actual status and saved preference, sync to actual
+        else if (actuallyEnabled != savedEnabled) {
+            NSLog(@"[LoginItem] ⚠️ Mismatch detected! Syncing UserDefaults to actual SMAppService status");
+            [[NSUserDefaults standardUserDefaults] setInteger:(actuallyEnabled ? 1 : 0) forKey:@"RunOnStartup"];
+            [[NSUserDefaults standardUserDefaults] setBool:actuallyEnabled forKey:@"PHTV_RunOnStartup"];
+            [[NSUserDefaults standardUserDefaults] synchronize];
+
+            // Notify SwiftUI to update toggle
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"RunOnStartupChanged"
+                                                                object:nil
+                                                              userInfo:@{@"enabled": @(actuallyEnabled)}];
+        }
+        // If both agree but user wants it enabled, ensure registration (handle upgrade case)
+        else if (savedEnabled && !actuallyEnabled) {
+            NSLog(@"[LoginItem] User wants Launch at Login but it's disabled - re-registering");
+            [self setRunOnStartup:YES];
+        }
+    } else {
+        // Legacy macOS < 13: just load saved preference
+        NSInteger val = [[NSUserDefaults standardUserDefaults] integerForKey:@"RunOnStartup"];
+        [self setRunOnStartup:val];
+    }
 }
 
 - (BOOL)applicationShouldHandleReopen:(NSApplication *)sender hasVisibleWindows:(BOOL)flag {
@@ -2012,10 +2048,18 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         }
     }
 
-    // Update user defaults
+    // Update user defaults immediately
     [[NSUserDefaults standardUserDefaults] setBool:val forKey:@"PHTV_RunOnStartup"];
     [[NSUserDefaults standardUserDefaults] setInteger:(val ? 1 : 0) forKey:@"RunOnStartup"];
     [[NSUserDefaults standardUserDefaults] synchronize];
+
+    // CRITICAL: Notify SwiftUI to sync UI immediately
+    // This ensures toggle reflects actual state without delay
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"RunOnStartupChanged"
+                                                        object:nil
+                                                      userInfo:@{@"enabled": @(val)}];
+
+    NSLog(@"[LoginItem] ✅ Launch at Login %@ - UserDefaults saved and UI notified", val ? @"ENABLED" : @"DISABLED");
 }
 
 -(void)setGrayIcon:(BOOL)val {
