@@ -845,7 +845,7 @@ struct BugReportView: View {
             - **Quick End Consonant:** \(appState.quickEndConsonant ? "✅" : "❌")
             - **Allow Z/F/W/J:** \(appState.allowConsonantZFWJ ? "✅" : "❌")
             - **Beep on mode switch:** \(appState.beepOnModeSwitch ? "✅" : "❌")
-            - **Gray icon when English:** \(appState.grayIcon ? "✅" : "❌")
+            - **Vietnamese menubar icon:** \(appState.useVietnameseMenubarIcon ? "✅" : "❌")
             - **Show icon on Dock:** \(appState.showIconOnDock ? "✅" : "❌")
 
             ## 🔐 Quyền & Trạng thái
@@ -861,8 +861,6 @@ struct BugReportView: View {
             - **Send key step by step:** \(appState.sendKeyStepByStep ? "✅" : "❌")
             - **Restore on invalid word:** \(appState.restoreOnInvalidWord ? "✅" : "❌")
             - **Auto restore English word:** \(appState.autoRestoreEnglishWord ? "✅" : "❌")
-            - **Fix browser autocomplete:** \(appState.fixBrowserRecommend ? "✅" : "❌")
-            - **Fix Text Replacement:** \(appState.fixTextReplacement ? "✅" : "❌")
             - **Restore on Escape:** \(appState.restoreOnEscape ? "✅" : "❌")
             - **Pause key enabled:** \(appState.pauseKeyEnabled ? "✅" : "❌")
 
