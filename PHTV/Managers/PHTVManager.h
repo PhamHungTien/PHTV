@@ -31,6 +31,11 @@
 +(BOOL)canCreateEventTap;
 +(void)invalidatePermissionCache;  // Force fresh check on next call
 +(BOOL)forcePermissionCheck;       // Bypasses all caching, resets counters
++(void)aggressivePermissionReset;  // Nuclear option: reset TCC cache and retry multiple times
+
+// TCC change notification
++(void)startTCCNotificationListener;  // Start listening for TCC database changes
++(void)stopTCCNotificationListener;   // Stop listening
 
 // System Settings detection for adaptive polling
 +(BOOL)isSystemSettingsOpen;

@@ -571,17 +571,58 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     // Stop monitoring (permission granted)
     [self stopAccessibilityMonitoring];
 
-    // Initialize event tap
+    // CRITICAL: Use aggressive permission reset to ensure TCC cache is fresh
+    [PHTVManager aggressivePermissionReset];
+
+    // Initialize event tap with retry mechanism
     dispatch_async(dispatch_get_main_queue(), ^{
-        if (![PHTVManager initEventTap]) {
-            NSLog(@"[EventTap] Failed to initialize");
-            [self onControlPanelSelected];
+        BOOL initSuccess = NO;
+
+        // Try up to 3 times with delays to handle TCC propagation
+        for (int attempt = 1; attempt <= 3; attempt++) {
+            NSLog(@"[EventTap] Init attempt %d/3", attempt);
+
+            if ([PHTVManager initEventTap]) {
+                NSLog(@"[EventTap] Initialized successfully on attempt %d - App ready!", attempt);
+                initSuccess = YES;
+                break;
+            }
+
+            if (attempt < 3) {
+                // Wait progressively longer between attempts
+                usleep(100000 * attempt);  // 100ms, 200ms
+
+                // Force permission recheck
+                [PHTVManager invalidatePermissionCache];
+            }
+        }
+
+        if (!initSuccess) {
+            NSLog(@"[EventTap] Failed to initialize after 3 attempts");
+
+            // Show alert suggesting relaunch
+            NSAlert *alert = [[NSAlert alloc] init];
+            [alert setMessageText:@"🔄 Cần khởi động lại ứng dụng"];
+            [alert setInformativeText:@"PHTV đã nhận quyền nhưng cần khởi động lại để quyền có hiệu lực.\n\nBạn có muốn khởi động lại ngay không?"];
+            [alert addButtonWithTitle:@"Khởi động lại ngay"];
+            [alert addButtonWithTitle:@"Để sau"];
+            [alert setAlertStyle:NSAlertStyleInformational];
+
+            NSModalResponse response = [alert runModal];
+            if (response == NSAlertFirstButtonReturn) {
+                [self relaunchAppAfterPermissionGrant];
+            } else {
+                [self onControlPanelSelected];
+            }
         } else {
-            NSLog(@"[EventTap] Initialized successfully - App ready!");
+            // Success - start normal operation
 
             // Start monitoring for permission revocation
             [self startAccessibilityMonitoring];
             [self startHealthCheckMonitoring];
+
+            // Start TCC notification listener
+            [PHTVManager startTCCNotificationListener];
 
             // Update menu bar to normal state
             [self fillDataWithAnimation:YES];
@@ -664,9 +705,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         if (response == NSAlertFirstButtonReturn) {
             MJAccessibilityOpenPanel();
 
-            // Invalidate permission cache
-            [PHTVManager invalidatePermissionCache];
-            NSLog(@"[Accessibility] User opening System Settings to re-grant - cache invalidated");
+            // Aggressive cache invalidation and TCC reset
+            [PHTVManager aggressivePermissionReset];
+            NSLog(@"[Accessibility] User opening System Settings to re-grant - aggressive reset performed");
         }
 
         // Update menu bar to show disabled state
@@ -839,6 +880,10 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     // Observe Dark Mode changes
     [self observeAppearanceChanges];
     
+    // Start TCC notification listener immediately (works even without permission)
+    [PHTVManager startTCCNotificationListener];
+    NSLog(@"[TCC] Notification listener started at app launch");
+
     // check if user granted Accessabilty permission
     // Use test tap - ONLY reliable way to check (MJAccessibilityIsEnabled is unreliable)
     if (![PHTVManager canCreateEventTap]) {
@@ -847,7 +892,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         [self stopHealthCheckMonitoring];
         return;
     }
-    
+
     //init
     dispatch_async(dispatch_get_main_queue(), ^{
         if (![PHTVManager initEventTap]) {
@@ -1203,21 +1248,35 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     NSNumber *hotkey = notification.object;
     if (hotkey) {
         vSwitchKeyStatus = hotkey.intValue;
-        
+
         // Memory barrier to ensure event tap thread sees new value immediately
         __sync_synchronize();
-        
+
         [[NSUserDefaults standardUserDefaults] setInteger:vSwitchKeyStatus forKey:@"SwitchKeyStatus"];
         [[NSUserDefaults standardUserDefaults] synchronize];
-        
+
         // Update UI to reflect hotkey change
         [self fillData];
-        
+
         #ifdef DEBUG
         BOOL hasBeep = PHTV_HAS_BEEP(vSwitchKeyStatus);
         NSLog(@"[SwiftUI] Hotkey changed to: 0x%X (beep=%@)", vSwitchKeyStatus, hasBeep ? @"YES" : @"NO");
         #endif
     }
+}
+
+- (void)handleTCCDatabaseChanged:(NSNotification *)notification {
+    NSLog(@"[TCC] TCC database change notification received in AppDelegate");
+    NSLog(@"[TCC] userInfo: %@", notification.userInfo);
+
+    // Aggressive permission reset to handle the change
+    [PHTVManager aggressivePermissionReset];
+
+    // Force check accessibility status immediately
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)),
+                  dispatch_get_main_queue(), ^{
+        [self checkAccessibilityStatus];
+    });
 }
 
 // Helper to robustly check if settings window is visible
@@ -2695,6 +2754,12 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     [[NSNotificationCenter defaultCenter] addObserver: self
                                              selector: @selector(handleHotkeyChanged:)
                                                  name: @"HotkeyChanged"
+                                               object: NULL];
+
+    // Listen for TCC database changes (posted by PHTVManager)
+    [[NSNotificationCenter defaultCenter] addObserver: self
+                                             selector: @selector(handleTCCDatabaseChanged:)
+                                                 name: @"TCCDatabaseChanged"
                                                object: NULL];
 
         // Also observe the full set of SwiftUI-driven live settings.

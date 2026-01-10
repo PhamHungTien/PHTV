@@ -63,6 +63,31 @@ static BOOL _systemSettingsIsOpen = NO;
 static int _axYesTapNoCount = 0;
 static const int kMaxAxYesTapNoBeforeRelaunch = 5;  // After 5 consecutive occurrences, suggest relaunch
 
+// TCC notification observer
+static id _tccNotificationObserver = nil;
+
+// Force reset TCC cache helper
+static void ForceResetTCCCache(void) {
+    NSLog(@"[TCC] Force resetting TCC cache...");
+
+    // Method 1: Kill tccd daemon (system will auto-restart it)
+    // This forces TCC to reload its database
+    system("killall -9 tccd 2>/dev/null");
+
+    // Method 2: Touch TCC database to trigger reload
+    NSString *tccDbPath = [@"~/Library/Application Support/com.apple.TCC/TCC.db" stringByExpandingTildeInPath];
+    if ([[NSFileManager defaultManager] fileExistsAtPath:tccDbPath]) {
+        [[NSFileManager defaultManager] setAttributes:@{NSFileModificationDate: [NSDate date]}
+                                         ofItemAtPath:tccDbPath
+                                                error:nil];
+    }
+
+    // Wait briefly for TCC to restart
+    usleep(100000);  // 100ms
+
+    NSLog(@"[TCC] Cache reset completed");
+}
+
 #pragma mark - Core Functionality
 
 +(BOOL)hasPermissionLost {
@@ -84,11 +109,117 @@ static const int kMaxAxYesTapNoBeforeRelaunch = 5;  // After 5 consecutive occur
 // Invalidate permission check cache - forces fresh check on next call
 +(void)invalidatePermissionCache {
     _lastPermissionCheckTime = 0;
+    _lastPermissionCheckResult = NO;
     NSLog(@"[Permission] Cache invalidated - next check will be fresh");
+}
+
+// Aggressively invalidate permission cache and force TCC reset
++(void)aggressivePermissionReset {
+    NSLog(@"[Permission] AGGRESSIVE RESET initiated");
+
+    // 1. Clear all cached state
+    _lastPermissionCheckTime = 0;
+    _lastPermissionCheckResult = NO;
+    _axYesTapNoCount = 0;
+
+    // 2. Force reset TCC cache
+    ForceResetTCCCache();
+
+    // 3. Multiple attempts to verify permission
+    for (int i = 0; i < 5; i++) {
+        usleep(50000);  // 50ms between attempts
+        BOOL result = [self tryCreateTestTapWithRetries];
+        NSLog(@"[Permission] Aggressive check attempt %d: %@", i + 1, result ? @"SUCCESS" : @"FAILED");
+        if (result) {
+            _lastPermissionCheckResult = YES;
+            _lastPermissionCheckTime = [[NSDate date] timeIntervalSince1970];
+            NSLog(@"[Permission] AGGRESSIVE RESET succeeded on attempt %d", i + 1);
+            return;
+        }
+    }
+
+    NSLog(@"[Permission] AGGRESSIVE RESET completed but permission still not available");
 }
 
 // Forward declaration for AXIsProcessTrusted
 extern Boolean AXIsProcessTrusted(void) __attribute__((weak_import));
+
+#pragma mark - TCC Notification Listener
+
+// Start listening for TCC database changes
++(void)startTCCNotificationListener {
+    if (_tccNotificationObserver != nil) {
+        NSLog(@"[TCC] Notification listener already started");
+        return;
+    }
+
+    NSLog(@"[TCC] Starting notification listener...");
+
+    // Listen to distributed notification for TCC changes
+    // macOS posts this notification when TCC database is modified
+    NSDistributedNotificationCenter *center = [NSDistributedNotificationCenter defaultCenter];
+
+    _tccNotificationObserver = [center addObserverForName:@"com.apple.accessibility.api"
+                                                   object:nil
+                                                    queue:[NSOperationQueue mainQueue]
+                                               usingBlock:^(NSNotification *notification) {
+        NSLog(@"[TCC] 🔔 TCC notification received: %@", notification.name);
+        NSLog(@"[TCC] userInfo: %@", notification.userInfo);
+
+        // Invalidate cache immediately
+        [self invalidatePermissionCache];
+
+        // Post internal notification for app to handle
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"TCCDatabaseChanged"
+                                                            object:nil
+                                                          userInfo:notification.userInfo];
+
+        // Check permission after a brief delay to let TCC settle
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)),
+                      dispatch_get_main_queue(), ^{
+            BOOL hasPermission = [self canCreateEventTap];
+            NSLog(@"[TCC] Post-notification check: %@", hasPermission ? @"GRANTED" : @"DENIED");
+
+            // Notify observers about permission change
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"AccessibilityStatusChanged"
+                                                                object:@(hasPermission)];
+        });
+    }];
+
+    // Also listen for com.apple.TCC.access.changed
+    id observer2 = [center addObserverForName:@"com.apple.TCC.access.changed"
+                                       object:nil
+                                        queue:[NSOperationQueue mainQueue]
+                                   usingBlock:^(NSNotification *notification) {
+        NSLog(@"[TCC] 🔔 TCC access changed notification: %@", notification.userInfo);
+
+        [self invalidatePermissionCache];
+
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)),
+                      dispatch_get_main_queue(), ^{
+            BOOL hasPermission = [self canCreateEventTap];
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"AccessibilityStatusChanged"
+                                                                object:@(hasPermission)];
+        });
+    }];
+
+    // Store both observers (we'll use an array)
+    if (_tccNotificationObserver == nil) {
+        _tccNotificationObserver = observer2;
+    }
+
+    NSLog(@"[TCC] Notification listener started successfully");
+}
+
+// Stop listening for TCC changes
++(void)stopTCCNotificationListener {
+    if (_tccNotificationObserver != nil) {
+        NSLog(@"[TCC] Stopping notification listener...");
+        [[NSDistributedNotificationCenter defaultCenter] removeObserver:_tccNotificationObserver];
+        _tccNotificationObserver = nil;
+        NSLog(@"[TCC] Notification listener stopped");
+    }
+}
 
 // Helper: Try to create test tap with retries
 // Returns YES if test tap was successfully created (permission granted)

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Triệt để vấn đề mất quyền Accessibility không phục hồi được**:
+  - Thêm TCC notification listener - phát hiện thay đổi quyền ngay lập tức từ hệ thống
+  - Implement aggressive permission reset - force reset TCC cache khi cấp lại quyền
+  - Cải thiện khả năng recover với multiple retry attempts và progressive delays
+  - Tự động kill và restart tccd daemon để invalidate TCC cache
+  - Cache invalidation thông minh - clear cả result và timestamp
+  - Xử lý edge case: user toggle quyền nhiều lần liên tiếp
+  - Tự động đề xuất khởi động lại app nếu quyền không nhận sau 3 lần thử
+
 ## [1.5.9] - 2026-01-09
 
 ### Fixed
