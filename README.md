@@ -54,7 +54,6 @@ open /Applications/PHTV.app
 - **Native macOS** - Giao diện SwiftUI hiện đại, hỗ trợ Dark Mode
 
 ### Gõ thông minh
-- **Sửa dấu tại chỗ (Edit-in-place)** - Tự động nhận diện ngữ cảnh khi bạn click chuột hoặc dùng phím mũi tên quay lại từ đã gõ, giúp sửa hoặc thêm dấu trực tiếp mà không cần xóa gõ lại từ đầu.
 - **Kiểm tra chính tả** - Tự động phát hiện từ sai chính tả
 - **Chính tả hiện đại** - Hỗ trợ quy tắc "oà, uý" thay vì "òa, úy"
 - **Gõ tắt nhanh (Quick Telex)** - cc→ch, gg→gi, kk→kh, nn→ng, qq→qu, pp→ph, tt→th
