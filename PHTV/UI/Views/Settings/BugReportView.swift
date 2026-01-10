@@ -341,6 +341,35 @@ struct BugReportView: View {
         }
     }
 
+    private func getBrowserDetectionInfo() -> String {
+        var output = ""
+
+        // Supported browsers
+        let supportedBrowsers = [
+            "Safari", "Chrome", "Firefox", "Edge", "Arc", "Brave",
+            "Vivaldi", "Opera", "Chromium", "Cốc Cốc", "DuckDuckGo",
+            "Orion", "Zen", "Dia"
+        ]
+        output += "- **Supported Browsers:** \(supportedBrowsers.joined(separator: ", "))\n"
+
+        // Browser fix features
+        output += "- **Browser Fixes:**\n"
+        output += "  - Step-by-step sending: ✅ (prevents autocomplete race)\n"
+        output += "  - Backspace delay: ✅ 4ms per keystroke\n"
+        output += "  - Character delay: ✅ 3.5ms between chars\n"
+        output += "  - Settle delay: ✅ 10ms after all backspaces\n"
+        output += "  - Auto English on browser: \(appState.autoRestoreEnglishWord ? "✅ (with HID tap)" : "❌")\n"
+
+        // Current front app
+        output += "- **Current App:** \(getFrontAppInfo())\n"
+
+        // Terminal/IDE detection
+        output += "- **Terminal/IDE Apps:** Auto-detected (iTerm2, Terminal, VS Code, etc.)\n"
+        output += "- **Spotlight-like Apps:** Auto-detected via AX API\n"
+
+        return output
+    }
+
     private func getRecentCrashLogs() -> String {
         let crashLogsPath = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Logs/DiagnosticReports")
@@ -808,10 +837,16 @@ struct BugReportView: View {
             - **Bảng mã:** \(appState.codeTable.rawValue)
             - **Kiểm tra chính tả:** \(appState.checkSpelling ? "✅" : "❌")
             - **Gõ tắt (Macro):** \(appState.useMacro ? "✅" : "❌")
+            - **Macro in English mode:** \(appState.useMacroInEnglishMode ? "✅" : "❌")
             - **Smart switch:** \(appState.useSmartSwitchKey ? "✅" : "❌")
             - **Modern orthography:** \(appState.useModernOrthography ? "✅" : "❌")
             - **Quick Telex:** \(appState.quickTelex ? "✅" : "❌")
+            - **Quick Start Consonant:** \(appState.quickStartConsonant ? "✅" : "❌")
+            - **Quick End Consonant:** \(appState.quickEndConsonant ? "✅" : "❌")
+            - **Allow Z/F/W/J:** \(appState.allowConsonantZFWJ ? "✅" : "❌")
             - **Beep on mode switch:** \(appState.beepOnModeSwitch ? "✅" : "❌")
+            - **Gray icon when English:** \(appState.grayIcon ? "✅" : "❌")
+            - **Show icon on Dock:** \(appState.showIconOnDock ? "✅" : "❌")
 
             ## 🔐 Quyền & Trạng thái
             - **Accessibility Permission:** \(appState.hasAccessibilityPermission ? "✅ Granted" : "❌ Denied")
@@ -826,9 +861,16 @@ struct BugReportView: View {
             - **Send key step by step:** \(appState.sendKeyStepByStep ? "✅" : "❌")
             - **Restore on invalid word:** \(appState.restoreOnInvalidWord ? "✅" : "❌")
             - **Auto restore English word:** \(appState.autoRestoreEnglishWord ? "✅" : "❌")
+            - **Fix browser autocomplete:** \(appState.fixBrowserRecommend ? "✅" : "❌")
+            - **Fix Text Replacement:** \(appState.fixTextReplacement ? "✅" : "❌")
+            - **Restore on Escape:** \(appState.restoreOnEscape ? "✅" : "❌")
+            - **Pause key enabled:** \(appState.pauseKeyEnabled ? "✅" : "❌")
 
             ## 📊 Hiệu năng
             \(getPerformanceInfo())
+
+            ## 🌐 Browser & App Detection
+            \(getBrowserDetectionInfo())
 
             """
 
@@ -876,9 +918,9 @@ struct BugReportView: View {
         guard !isSending else { return }
         isSending = true
 
-        // Lấy log trên background thread
+        // Lấy FULL logs cho clipboard (đầy đủ nhất)
         let logs = await Task.detached(priority: .utility) {
-            Self.fetchLogsSync(maxEntries: 100)
+            Self.fetchLogsSync(maxEntries: 200) // Tăng lên 200 để debug tốt hơn
         }.value
 
         debugLogs = logs
@@ -1037,22 +1079,36 @@ struct BugReportView: View {
         guard !isSending else { return }
         isSending = true
 
-        // Lấy log quan trọng
-        let importantLogs = await Task.detached(priority: .utility) {
-            Self.fetchImportantLogsOnly()
+        // Lấy FULL logs cho email (không giới hạn như GitHub)
+        let fullLogs = await Task.detached(priority: .utility) {
+            Self.fetchLogsSync(maxEntries: 200) // Nhiều hơn để debug tốt hơn
         }.value
 
-        // Tạo body cho Email URL
-        let body = generateCompactReport(withLogs: importantLogs)
+        // Tạo FULL report (đầy đủ nhất)
+        let fullReport = generateBugReportWithLogs(fullLogs)
 
+        // Copy full report vào clipboard
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(fullReport, forType: .string)
+
+        // Tạo email với hướng dẫn paste
         let subject = "Báo lỗi PHTV: \(bugTitle)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let encodedBody = body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let body = """
+        [Báo cáo chi tiết đã được sao chép vào clipboard]
 
-        if let url = URL(string: "mailto:hungtien10a7@gmail.com?subject=\(subject)&body=\(encodedBody)") {
+        Vui lòng dán (Cmd+V) báo cáo đầy đủ vào đây.
+
+        ---
+        Hoặc mô tả ngắn gọn:
+        \(bugDescription.isEmpty ? "(Chưa nhập)" : bugDescription)
+        """.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+
+        if let url = URL(string: "mailto:hungtien10a7@gmail.com?subject=\(subject)&body=\(body)") {
             NSWorkspace.shared.open(url)
         }
 
         isSending = false
+        showCopiedAlert = true // Thông báo đã copy
     }
 }
 
