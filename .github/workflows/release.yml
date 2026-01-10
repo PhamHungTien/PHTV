@@ -157,6 +157,7 @@ jobs:
           echo "✅ Code signature is valid"
 
       - name: Notarize app with Apple
+        continue-on-error: true
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -170,6 +171,7 @@ jobs:
             echo "  - APPLE_ID (your Apple ID email)"
             echo "  - APPLE_TEAM_ID (your Team ID)"
             echo "  - APPLE_APP_PASSWORD (app-specific password)"
+            echo "📦 App is signed but not notarized - users may see Gatekeeper warnings"
             exit 0
           fi
 
@@ -186,6 +188,7 @@ jobs:
 
           # Submit for notarization
           echo "📤 Submitting to Apple notarization service..."
+          set +e  # Don't exit on error
           xcrun notarytool submit "$ZIP_NAME" \
             --apple-id "$APPLE_ID" \
             --team-id "$APPLE_TEAM_ID" \
@@ -194,6 +197,7 @@ jobs:
             --timeout 30m
 
           NOTARIZE_STATUS=$?
+          set -e  # Re-enable exit on error
 
           if [ $NOTARIZE_STATUS -eq 0 ]; then
             echo "✅ Notarization successful!"
@@ -209,13 +213,21 @@ jobs:
             spctl --assess -vv --type install "$APP_PATH"
             echo "✅ Notarization verified - app will NOT be flagged as malware!"
           else
-            echo "❌ Notarization failed"
+            echo "❌ Notarization failed with exit code: $NOTARIZE_STATUS"
             echo "⚠️ App will be signed but not notarized"
-            echo "Users may see Gatekeeper warnings"
+            echo "Users may see Gatekeeper warnings when downloading"
+            echo ""
+            echo "💡 Common causes:"
+            echo "  - Apple ID does not have Apple Developer Program membership (\$99/year)"
+            echo "  - Team ID mismatch or invalid credentials"
+            echo "  - Network timeout or Apple server issues"
           fi
 
           # Cleanup
           rm -f "$ZIP_NAME"
+
+          # Always exit 0 to continue workflow
+          exit 0
 
       - name: Create DMG
         id: dmg
