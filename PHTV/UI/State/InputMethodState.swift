@@ -52,73 +52,73 @@ final class InputMethodState: ObservableObject {
         let defaults = UserDefaults.standard
 
         // Load input method and code table
-        let inputTypeIndex = defaults.integer(forKey: "InputType")
+        let inputTypeIndex = defaults.integer(forKey: UserDefaultsKey.inputType)
         inputMethod = InputMethod.from(index: inputTypeIndex)
 
-        let codeTableIndex = defaults.integer(forKey: "CodeTable")
+        let codeTableIndex = defaults.integer(forKey: UserDefaultsKey.codeTable)
         codeTable = CodeTable.from(index: codeTableIndex)
 
         // Load input settings
-        checkSpelling = defaults.bool(forKey: "Spelling")
-        useModernOrthography = defaults.bool(forKey: "ModernOrthography")
-        quickTelex = defaults.bool(forKey: "QuickTelex")
-        restoreOnInvalidWord = defaults.bool(forKey: "RestoreIfInvalidWord")
-        sendKeyStepByStep = defaults.bool(forKey: "SendKeyStepByStep")
-        useSmartSwitchKey = defaults.bool(forKey: "UseSmartSwitchKey")
-        upperCaseFirstChar = defaults.bool(forKey: "UpperCaseFirstChar")
-        allowConsonantZFWJ = defaults.bool(forKey: "vAllowConsonantZFWJ")
-        quickStartConsonant = defaults.bool(forKey: "vQuickStartConsonant")
-        quickEndConsonant = defaults.bool(forKey: "vQuickEndConsonant")
-        rememberCode = defaults.bool(forKey: "vRememberCode")
+        checkSpelling = defaults.bool(forKey: UserDefaultsKey.spelling)
+        useModernOrthography = defaults.bool(forKey: UserDefaultsKey.modernOrthography)
+        quickTelex = defaults.bool(forKey: UserDefaultsKey.quickTelex)
+        restoreOnInvalidWord = defaults.bool(forKey: UserDefaultsKey.restoreIfInvalidWord)
+        sendKeyStepByStep = defaults.bool(forKey: UserDefaultsKey.sendKeyStepByStep)
+        useSmartSwitchKey = defaults.bool(forKey: UserDefaultsKey.useSmartSwitchKey)
+        upperCaseFirstChar = defaults.bool(forKey: UserDefaultsKey.upperCaseFirstChar)
+        allowConsonantZFWJ = defaults.bool(forKey: UserDefaultsKey.allowConsonantZFWJ)
+        quickStartConsonant = defaults.bool(forKey: UserDefaultsKey.quickStartConsonant)
+        quickEndConsonant = defaults.bool(forKey: UserDefaultsKey.quickEndConsonant)
+        rememberCode = defaults.bool(forKey: UserDefaultsKey.rememberCode)
 
         // Auto restore English words
-        autoRestoreEnglishWord = defaults.bool(forKey: "vAutoRestoreEnglishWord")
+        autoRestoreEnglishWord = defaults.bool(forKey: UserDefaultsKey.autoRestoreEnglishWord)
 
         // Restore to raw keys (customizable key)
-        restoreOnEscape = defaults.object(forKey: "vRestoreOnEscape") as? Bool ?? true
-        let restoreKeyCode = defaults.integer(forKey: "vCustomEscapeKey")
-        restoreKey = RestoreKey.from(keyCode: restoreKeyCode == 0 ? 53 : restoreKeyCode)
+        restoreOnEscape = defaults.object(forKey: UserDefaultsKey.restoreOnEscape) as? Bool ?? Defaults.restoreOnEscape
+        let restoreKeyCode = defaults.integer(forKey: UserDefaultsKey.customEscapeKey)
+        restoreKey = RestoreKey.from(keyCode: restoreKeyCode == 0 ? Int(Defaults.restoreKeyCode) : restoreKeyCode)
 
         // Pause Vietnamese input when holding a key
-        pauseKeyEnabled = defaults.object(forKey: "vPauseKeyEnabled") as? Bool ?? false
-        pauseKey = UInt16(defaults.integer(forKey: "vPauseKey"))
+        pauseKeyEnabled = defaults.object(forKey: UserDefaultsKey.pauseKeyEnabled) as? Bool ?? Defaults.pauseKeyEnabled
+        pauseKey = UInt16(defaults.integer(forKey: UserDefaultsKey.pauseKey))
         if pauseKey == 0 {
-            pauseKey = 58  // Default: Left Option
+            pauseKey = Defaults.pauseKeyCode
         }
-        pauseKeyName = defaults.string(forKey: "vPauseKeyName") ?? "Option"
+        pauseKeyName = defaults.string(forKey: UserDefaultsKey.pauseKeyName) ?? Defaults.pauseKeyName
     }
 
     func saveSettings() {
         let defaults = UserDefaults.standard
 
         // Save input method and code table
-        defaults.set(inputMethod.toIndex(), forKey: "InputType")
-        defaults.set(codeTable.toIndex(), forKey: "CodeTable")
+        defaults.set(inputMethod.toIndex(), forKey: UserDefaultsKey.inputType)
+        defaults.set(codeTable.toIndex(), forKey: UserDefaultsKey.codeTable)
 
         // Save input settings
-        defaults.set(checkSpelling, forKey: "Spelling")
-        defaults.set(useModernOrthography, forKey: "ModernOrthography")
-        defaults.set(quickTelex, forKey: "QuickTelex")
-        defaults.set(restoreOnInvalidWord, forKey: "RestoreIfInvalidWord")
-        defaults.set(sendKeyStepByStep, forKey: "SendKeyStepByStep")
-        defaults.set(useSmartSwitchKey, forKey: "UseSmartSwitchKey")
-        defaults.set(upperCaseFirstChar, forKey: "UpperCaseFirstChar")
-        defaults.set(allowConsonantZFWJ, forKey: "vAllowConsonantZFWJ")
-        defaults.set(quickStartConsonant, forKey: "vQuickStartConsonant")
-        defaults.set(quickEndConsonant, forKey: "vQuickEndConsonant")
-        defaults.set(rememberCode, forKey: "vRememberCode")
+        defaults.set(checkSpelling, forKey: UserDefaultsKey.spelling)
+        defaults.set(useModernOrthography, forKey: UserDefaultsKey.modernOrthography)
+        defaults.set(quickTelex, forKey: UserDefaultsKey.quickTelex)
+        defaults.set(restoreOnInvalidWord, forKey: UserDefaultsKey.restoreIfInvalidWord)
+        defaults.set(sendKeyStepByStep, forKey: UserDefaultsKey.sendKeyStepByStep)
+        defaults.set(useSmartSwitchKey, forKey: UserDefaultsKey.useSmartSwitchKey)
+        defaults.set(upperCaseFirstChar, forKey: UserDefaultsKey.upperCaseFirstChar)
+        defaults.set(allowConsonantZFWJ, forKey: UserDefaultsKey.allowConsonantZFWJ)
+        defaults.set(quickStartConsonant, forKey: UserDefaultsKey.quickStartConsonant)
+        defaults.set(quickEndConsonant, forKey: UserDefaultsKey.quickEndConsonant)
+        defaults.set(rememberCode, forKey: UserDefaultsKey.rememberCode)
 
         // Auto restore English words
-        defaults.set(autoRestoreEnglishWord, forKey: "vAutoRestoreEnglishWord")
+        defaults.set(autoRestoreEnglishWord, forKey: UserDefaultsKey.autoRestoreEnglishWord)
 
         // Restore to raw keys (customizable key)
-        defaults.set(restoreOnEscape, forKey: "vRestoreOnEscape")
-        defaults.set(restoreKey.rawValue, forKey: "vCustomEscapeKey")
+        defaults.set(restoreOnEscape, forKey: UserDefaultsKey.restoreOnEscape)
+        defaults.set(restoreKey.rawValue, forKey: UserDefaultsKey.customEscapeKey)
 
         // Pause Vietnamese input when holding a key
-        defaults.set(pauseKeyEnabled, forKey: "vPauseKeyEnabled")
-        defaults.set(Int(pauseKey), forKey: "vPauseKey")
-        defaults.set(pauseKeyName, forKey: "vPauseKeyName")
+        defaults.set(pauseKeyEnabled, forKey: UserDefaultsKey.pauseKeyEnabled)
+        defaults.set(Int(pauseKey), forKey: UserDefaultsKey.pauseKey)
+        defaults.set(pauseKeyName, forKey: UserDefaultsKey.pauseKeyName)
 
         defaults.synchronize()
     }
@@ -126,10 +126,10 @@ final class InputMethodState: ObservableObject {
     func reloadFromDefaults() {
         let defaults = UserDefaults.standard
 
-        let inputTypeIndex = defaults.integer(forKey: "InputType")
+        let inputTypeIndex = defaults.integer(forKey: UserDefaultsKey.inputType)
         let newInputMethod = InputMethod.from(index: inputTypeIndex)
 
-        let codeTableIndex = defaults.integer(forKey: "CodeTable")
+        let codeTableIndex = defaults.integer(forKey: UserDefaultsKey.codeTable)
         let newCodeTable = CodeTable.from(index: codeTableIndex)
 
         // Update only if values changed to avoid unnecessary refreshes
@@ -149,10 +149,10 @@ final class InputMethodState: ObservableObject {
         $inputMethod.sink { [weak self] newMethod in
             guard let self = self, !self.isLoadingSettings else { return }
             let defaults = UserDefaults.standard
-            defaults.set(newMethod.toIndex(), forKey: "InputType")
+            defaults.set(newMethod.toIndex(), forKey: UserDefaultsKey.inputType)
             defaults.synchronize()
             NotificationCenter.default.post(
-                name: NSNotification.Name("InputMethodChanged"),
+                name: NotificationName.inputMethodChanged,
                 object: NSNumber(value: newMethod.toIndex()))
         }.store(in: &cancellables)
 
@@ -160,10 +160,10 @@ final class InputMethodState: ObservableObject {
         $codeTable.sink { [weak self] newTable in
             guard let self = self, !self.isLoadingSettings else { return }
             let defaults = UserDefaults.standard
-            defaults.set(newTable.toIndex(), forKey: "CodeTable")
+            defaults.set(newTable.toIndex(), forKey: UserDefaultsKey.codeTable)
             defaults.synchronize()
             NotificationCenter.default.post(
-                name: NSNotification.Name("CodeTableChanged"),
+                name: NotificationName.codeTableChanged,
                 object: NSNumber(value: newTable.toIndex()))
         }.store(in: &cancellables)
 
@@ -173,10 +173,10 @@ final class InputMethodState: ObservableObject {
             .sink { [weak self] value in
                 guard let self = self, !self.isLoadingSettings else { return }
                 let defaults = UserDefaults.standard
-                defaults.set(value, forKey: "UpperCaseFirstChar")
+                defaults.set(value, forKey: UserDefaultsKey.upperCaseFirstChar)
                 defaults.synchronize()
                 NotificationCenter.default.post(
-                    name: NSNotification.Name("PHTVSettingsChanged"), object: nil
+                    name: NotificationName.phtvSettingsChanged, object: nil
                 )
             }.store(in: &cancellables)
 
@@ -199,12 +199,12 @@ final class InputMethodState: ObservableObject {
             $pauseKey.map { _ in () }.eraseToAnyPublisher(),
             $pauseKeyName.map { _ in () }.eraseToAnyPublisher()
         ])
-        .debounce(for: .milliseconds(100), scheduler: RunLoop.main)
+        .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
         .sink { [weak self] _ in
             guard let self = self, !self.isLoadingSettings else { return }
             self.saveSettings()
             NotificationCenter.default.post(
-                name: NSNotification.Name("PHTVSettingsChanged"), object: nil
+                name: NotificationName.phtvSettingsChanged, object: nil
             )
         }.store(in: &cancellables)
     }
