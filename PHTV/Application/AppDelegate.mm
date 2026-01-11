@@ -947,29 +947,40 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         NSInteger savedValue = [[NSUserDefaults standardUserDefaults] integerForKey:@"RunOnStartup"];
         BOOL savedEnabled = (savedValue == 1);
 
-        NSLog(@"[LoginItem] Startup sync - Actual: %d, Saved: %d", actuallyEnabled, savedEnabled);
+        NSLog(@"[LoginItem] Startup sync - Actual: %d, Saved: %d, Status: %ld",
+              actuallyEnabled, savedEnabled, (long)actualStatus);
 
         // If first launch, enable immediately (default behavior)
         if (isFirstLaunch) {
             NSLog(@"[LoginItem] First launch detected - enabling Launch at Login");
             [self setRunOnStartup:YES];
         }
-        // If mismatch between actual status and saved preference, sync to actual
+        // If mismatch between actual status and saved preference
         else if (actuallyEnabled != savedEnabled) {
-            NSLog(@"[LoginItem] ⚠️ Mismatch detected! Syncing UserDefaults to actual SMAppService status");
-            [[NSUserDefaults standardUserDefaults] setInteger:(actuallyEnabled ? 1 : 0) forKey:@"RunOnStartup"];
-            [[NSUserDefaults standardUserDefaults] setBool:actuallyEnabled forKey:@"PHTV_RunOnStartup"];
-            [[NSUserDefaults standardUserDefaults] synchronize];
+            // User enabled but macOS disabled it (e.g., after reboot, signature issues)
+            if (savedEnabled && !actuallyEnabled) {
+                NSLog(@"[LoginItem] ⚠️ User enabled but SMAppService is disabled - syncing UI to OFF");
+                NSLog(@"[LoginItem] Possible causes: code signature, system policy, or macOS disabled it");
 
-            // Notify SwiftUI to update toggle
-            [[NSNotificationCenter defaultCenter] postNotificationName:@"RunOnStartupChanged"
-                                                                object:nil
-                                                              userInfo:@{@"enabled": @(actuallyEnabled)}];
+                // Update UserDefaults to match reality
+                [[NSUserDefaults standardUserDefaults] setInteger:0 forKey:@"RunOnStartup"];
+                [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"PHTV_RunOnStartup"];
+                [[NSUserDefaults standardUserDefaults] synchronize];
+
+                // Notify SwiftUI to update toggle to OFF
+                [[NSNotificationCenter defaultCenter] postNotificationName:@"RunOnStartupChanged"
+                                                                    object:nil
+                                                                  userInfo:@{@"enabled": @(NO)}];
+            }
+            // User disabled but macOS still has it enabled (rare case)
+            else if (!savedEnabled && actuallyEnabled) {
+                NSLog(@"[LoginItem] User disabled but SMAppService still enabled - disabling");
+                [self setRunOnStartup:NO];
+            }
         }
-        // If both agree but user wants it enabled, ensure registration (handle upgrade case)
-        else if (savedEnabled && !actuallyEnabled) {
-            NSLog(@"[LoginItem] User wants Launch at Login but it's disabled - re-registering");
-            [self setRunOnStartup:YES];
+        // Both agree - status is consistent
+        else {
+            NSLog(@"[LoginItem] ✅ Status consistent: %@", actuallyEnabled ? @"ENABLED" : @"DISABLED");
         }
     } else {
         // Legacy macOS < 13: just load saved preference
@@ -1991,6 +2002,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     // Use SMAppService for macOS 13+ (application target is macOS 13+)
     SMAppService *appService = [SMAppService mainAppService];
     NSError *error = nil;
+    BOOL actualSuccess = NO;  // Track actual registration result
 
     // Log current status
     NSLog(@"[LoginItem] Current SMAppService status: %ld", (long)appService.status);
@@ -2030,6 +2042,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
             BOOL success = [appService registerAndReturnError:&error];
             if (success) {
                 NSLog(@"✅ [LoginItem] Registered with SMAppService");
+                actualSuccess = YES;
             } else {
                 NSLog(@"❌ [LoginItem] Failed to register with SMAppService");
                 NSLog(@"   Error: %@", error.localizedDescription);
@@ -2051,11 +2064,26 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                                 NSError *retryError = nil;
                                 if ([appService registerAndReturnError:&retryError]) {
                                     NSLog(@"✅ [LoginItem] Registration succeeded on retry");
+
+                                    // Update UserDefaults on success
+                                    [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"PHTV_RunOnStartup"];
+                                    [[NSUserDefaults standardUserDefaults] setInteger:1 forKey:@"RunOnStartup"];
+                                    [[NSUserDefaults standardUserDefaults] synchronize];
+
+                                    // Notify SwiftUI
+                                    [[NSNotificationCenter defaultCenter] postNotificationName:@"RunOnStartupChanged"
+                                                                                        object:nil
+                                                                                      userInfo:@{@"enabled": @(YES)}];
                                 } else {
                                     NSLog(@"❌ [LoginItem] Registration still failed: %@", retryError.localizedDescription);
+
+                                    // Notify SwiftUI to revert toggle
+                                    [[NSNotificationCenter defaultCenter] postNotificationName:@"RunOnStartupChanged"
+                                                                                        object:nil
+                                                                                      userInfo:@{@"enabled": @(NO)}];
                                 }
                             });
-                            break;
+                            return;  // Exit early - retry will handle notification
                         }
                         case 2: { // kSMAppServiceErrorInvalidSignature
                             NSLog(@"   → Invalid code signature. App must be properly signed with Developer ID");
@@ -2073,36 +2101,52 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                         }
                     }
                 }
+
+                // Registration failed - revert toggle to OFF
+                actualSuccess = NO;
             }
         } else {
             NSLog(@"ℹ️ [LoginItem] Already enabled, skipping registration");
+            actualSuccess = YES;  // Already enabled = success
         }
     } else {
         if (appService.status == SMAppServiceStatusEnabled) {
             BOOL success = [appService unregisterAndReturnError:&error];
             if (success) {
                 NSLog(@"✅ [LoginItem] Unregistered from SMAppService");
+                actualSuccess = YES;
             } else {
                 NSLog(@"❌ [LoginItem] Failed to unregister: %@", error.localizedDescription);
                 NSLog(@"   Error Domain: %@, Code: %ld", error.domain, (long)error.code);
+                actualSuccess = NO;
             }
         } else {
             NSLog(@"ℹ️ [LoginItem] Already disabled, skipping unregistration");
+            actualSuccess = YES;  // Already disabled = success
         }
     }
 
-    // Update user defaults immediately
-    [[NSUserDefaults standardUserDefaults] setBool:val forKey:@"PHTV_RunOnStartup"];
-    [[NSUserDefaults standardUserDefaults] setInteger:(val ? 1 : 0) forKey:@"RunOnStartup"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
+    // CRITICAL FIX: Only update UserDefaults if operation succeeded
+    if (actualSuccess) {
+        [[NSUserDefaults standardUserDefaults] setBool:val forKey:@"PHTV_RunOnStartup"];
+        [[NSUserDefaults standardUserDefaults] setInteger:(val ? 1 : 0) forKey:@"RunOnStartup"];
+        [[NSUserDefaults standardUserDefaults] synchronize];
 
-    // CRITICAL: Notify SwiftUI to sync UI immediately
-    // This ensures toggle reflects actual state without delay
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"RunOnStartupChanged"
-                                                        object:nil
-                                                      userInfo:@{@"enabled": @(val)}];
+        // Notify SwiftUI to sync UI
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"RunOnStartupChanged"
+                                                            object:nil
+                                                          userInfo:@{@"enabled": @(val)}];
 
-    NSLog(@"[LoginItem] ✅ Launch at Login %@ - UserDefaults saved and UI notified", val ? @"ENABLED" : @"DISABLED");
+        NSLog(@"[LoginItem] ✅ Launch at Login %@ - UserDefaults saved and UI notified", val ? @"ENABLED" : @"DISABLED");
+    } else {
+        // Registration/unregistration failed - revert toggle to opposite state
+        NSLog(@"[LoginItem] ❌ Operation failed - reverting toggle to %@", val ? @"OFF" : @"ON");
+
+        // Notify SwiftUI to revert toggle
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"RunOnStartupChanged"
+                                                            object:nil
+                                                          userInfo:@{@"enabled": @(!val)}];
+    }
 }
 
 -(void)setGrayIcon:(BOOL)val {

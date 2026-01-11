@@ -572,6 +572,7 @@ final class AppState: ObservableObject {
     private var notificationObservers: [NSObjectProtocol] = []
     private var isLoadingSettings = false
     private var isUpdatingRunOnStartup = false
+    private var loginItemCheckTimer: Timer?
 
     private init() {
         isLoadingSettings = true
@@ -822,6 +823,10 @@ final class AppState: ObservableObject {
         // SparkleNoUpdateFound is now handled by AppDelegate with NSAlert directly
         // This provides better UX as it doesn't require the settings window to be open
 
+        // Start periodic check for login item status (every 5 seconds)
+        // This detects when user disables it from System Settings
+        startLoginItemStatusMonitoring()
+
         // Listen for app termination
         let terminateObserver = NotificationCenter.default.addObserver(
             forName: NSNotification.Name("ApplicationWillTerminate"),
@@ -841,6 +846,59 @@ final class AppState: ObservableObject {
             NotificationCenter.default.removeObserver(observer)
         }
         notificationObservers.removeAll()
+
+        // Stop login item monitoring timer
+        loginItemCheckTimer?.invalidate()
+        loginItemCheckTimer = nil
+    }
+
+    /// Start periodic monitoring of login item status
+    /// This detects when macOS or user disables login item from System Settings
+    private func startLoginItemStatusMonitoring() {
+        guard #available(macOS 13.0, *) else { return }
+
+        // Check every 5 seconds
+        loginItemCheckTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                await self?.checkLoginItemStatus()
+            }
+        }
+
+        // Also check immediately
+        Task { @MainActor in
+            await checkLoginItemStatus()
+        }
+
+        NSLog("[LoginItem] Periodic status monitoring started (interval: 5s)")
+    }
+
+    /// Check if SMAppService status matches our UI state
+    @available(macOS 13.0, *)
+    @MainActor
+    private func checkLoginItemStatus() async {
+        guard !isUpdatingRunOnStartup else { return }
+
+        let appService = SMAppService.mainApp
+        let actualStatus = (appService.status == .enabled)
+
+        // Only log if there's a mismatch
+        if actualStatus != runOnStartup {
+            NSLog("[LoginItem] ⚠️ Status mismatch detected! UI: %@, SMAppService: %@",
+                  runOnStartup ? "ON" : "OFF", actualStatus ? "ON" : "OFF")
+
+            // Update UI to match reality
+            isUpdatingRunOnStartup = true
+            runOnStartup = actualStatus
+            isUpdatingRunOnStartup = false
+
+            // Update UserDefaults too
+            let defaults = UserDefaults.standard
+            defaults.set(actualStatus, forKey: "PHTV_RunOnStartup")
+            defaults.set(actualStatus ? 1 : 0, forKey: "RunOnStartup")
+            defaults.synchronize()
+
+            NSLog("[LoginItem] ✅ UI synced to actual status: %@", actualStatus ? "ON" : "OFF")
+        }
     }
 
     func checkAccessibilityPermission() {
@@ -1229,44 +1287,41 @@ final class AppState: ObservableObject {
 
         // Observer for runOnStartup - update immediately and verify status
         $runOnStartup.sink { [weak self] value in
-            guard let self = self, !self.isLoadingSettings, !self.isUpdatingRunOnStartup else { return }
-
-            // Safe unwrap AppDelegate
-            guard let appDelegate = NSApp.delegate as? AppDelegate else {
-                print("[AppState] AppDelegate not available yet, skipping runOnStartup update")
+            guard let self = self, !self.isLoadingSettings, !self.isUpdatingRunOnStartup else {
+                NSLog("[AppState] runOnStartup observer skipped (isLoading=%@, isUpdating=%@)",
+                      self?.isLoadingSettings == true ? "YES" : "NO",
+                      self?.isUpdatingRunOnStartup == true ? "YES" : "NO")
                 return
             }
 
-            NSLog("[AppState] Setting runOnStartup to: %@", value ? "true" : "false")
+            NSLog("[AppState] 🔄 runOnStartup observer triggered: value=%@", value ? "ON" : "OFF")
 
-            // Update immediately without debounce
+            // CRITICAL: Call setRunOnStartup immediately - it handles UserDefaults internally
+            // Do NOT save to UserDefaults here - setRunOnStartup will do it ONLY on success
+            guard let appDelegate = NSApp.delegate as? AppDelegate else {
+                NSLog("[AppState] ❌ AppDelegate not available yet - retrying in 0.5s")
+
+                // Retry after short delay (app may still be launching)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    guard let appDelegate = NSApp.delegate as? AppDelegate else {
+                        NSLog("[AppState] ❌ AppDelegate still not available - giving up")
+                        return
+                    }
+
+                    NSLog("[AppState] ✅ AppDelegate now available - calling setRunOnStartup")
+                    appDelegate.setRunOnStartup(value)
+                }
+                return
+            }
+
+            NSLog("[AppState] ✅ Calling AppDelegate.setRunOnStartup(%@)", value ? "YES" : "NO")
             appDelegate.setRunOnStartup(value)
 
-            // Save to UserDefaults
-            let defaults = UserDefaults.standard
-            defaults.set(value, forKey: "PHTV_RunOnStartup")
-            defaults.synchronize()
-
-            // Verify actual status after a short delay (SMAppService needs time to update)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-                guard let self = self else { return }
-
-                if #available(macOS 13.0, *) {
-                    let appService = SMAppService.mainApp
-                    let actualStatus = (appService.status == .enabled)
-
-                    NSLog("[AppState] Verified runOnStartup status: expected=%@, actual=%@",
-                          value ? "true" : "false", actualStatus ? "true" : "false")
-
-                    // If status doesn't match, update UI to reflect actual status
-                    if actualStatus != value {
-                        NSLog("[AppState] Status mismatch! Updating UI to reflect actual status: %@", actualStatus ? "true" : "false")
-                        self.isUpdatingRunOnStartup = true
-                        self.runOnStartup = actualStatus
-                        self.isUpdatingRunOnStartup = false
-                    }
-                }
-            }
+            // Note: setRunOnStartup will:
+            // 1. Call SMAppService.register/unregister
+            // 2. Save to UserDefaults ONLY if successful
+            // 3. Send RunOnStartupChanged notification to sync UI
+            // 4. Revert toggle if operation failed
         }.store(in: &cancellables)
 
         // Observer for input method
