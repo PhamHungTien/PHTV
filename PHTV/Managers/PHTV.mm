@@ -44,25 +44,15 @@ static const uint64_t TERMINAL_SETTLE_DELAY_US = 4000;       // After all backsp
 static const uint64_t TERMINAL_FINAL_SETTLE_US = 10000;      // Final settle after all text (reduced from 20000us)
 static const uint64_t SPOTLIGHT_TINY_DELAY_US = 2000;        // Spotlight timing delay (reduced from 3000us)
 
-// Browser Delay Configuration - browsers (Chromium, Safari, Firefox) need longer delays
-// These delays ensure stable Vietnamese input in browser address bars and text fields
-// ADAPTIVE DELAYS: Base values + dynamic adjustment based on system response time
-static const uint64_t BROWSER_KEYSTROKE_DELAY_BASE_US = 4000;     // Base per-backspace delay for browsers
-static const uint64_t BROWSER_KEYSTROKE_DELAY_MAX_US = 8000;      // Max per-backspace delay under high load
-static const uint64_t BROWSER_SETTLE_DELAY_BASE_US = 10000;       // Base settle delay after all backspaces
-static const uint64_t BROWSER_SETTLE_DELAY_MAX_US = 18000;        // Max settle delay under high load
-static const uint64_t BROWSER_CHAR_DELAY_BASE_US = 3500;          // Base delay between characters
-static const uint64_t BROWSER_CHAR_DELAY_MAX_US = 6000;           // Max delay between characters under high load
-
-// Safari-specific: Extra delays for Safari address bar (most problematic)
-static const uint64_t SAFARI_ADDRESS_BAR_EXTRA_DELAY_US = 2000;   // Additional delay for Safari address bar
-
-// Auto English Restore: Reduced delays for faster restoration
-// English word restore has less autocomplete conflict than Vietnamese transforms
-// Users expect fast restore when typing English words in Vietnamese mode
-static const uint64_t AUTO_ENGLISH_KEYSTROKE_DELAY_US = 1500;     // Per-backspace delay (reduced from 4000)
-static const uint64_t AUTO_ENGLISH_SETTLE_DELAY_US = 3000;        // Settle delay after backspaces (reduced from 10000)
-static const uint64_t AUTO_ENGLISH_CHAR_DELAY_US = 1000;          // Per-character delay (reduced from 3500)
+// Browser Delay Configuration - REMOVED
+// Browser delays are no longer needed thanks to Shift+Left strategy (inspired by OpenKey)
+// The "Select then Delete" approach eliminates autocomplete race conditions
+// This works for all browsers: Chromium, WebKit (Safari), Gecko (Firefox)
+// REMOVED: BROWSER_KEYSTROKE_DELAY_BASE_US, BROWSER_KEYSTROKE_DELAY_MAX_US
+// REMOVED: BROWSER_SETTLE_DELAY_BASE_US, BROWSER_SETTLE_DELAY_MAX_US
+// REMOVED: BROWSER_CHAR_DELAY_BASE_US, BROWSER_CHAR_DELAY_MAX_US
+// REMOVED: SAFARI_ADDRESS_BAR_EXTRA_DELAY_US
+// REMOVED: AUTO_ENGLISH_KEYSTROKE_DELAY_US, AUTO_ENGLISH_SETTLE_DELAY_US, AUTO_ENGLISH_CHAR_DELAY_US
 
 // Adaptive delay tracking
 static uint64_t _lastKeystrokeTimestamp = 0;
@@ -1560,24 +1550,8 @@ extern "C" {
         CFRelease(_newEventDown);
         CFRelease(_newEventUp);
 
-        // BROWSER FIX: Add adaptive delay after empty character to ensure it's processed
-        // before backspaces are sent. This prevents race conditions with autocomplete.
-        NSString *effectiveBundleId = FRONT_APP ?: @"";
-        BOOL isBrowserApp = [_browserAppSet containsObject:effectiveBundleId];
-
-        if (isBrowserApp) {
-            BOOL isSafari = [effectiveBundleId isEqualToString:@"com.apple.Safari"];
-            uint64_t emptyCharDelay = getAdaptiveDelay(BROWSER_CHAR_DELAY_BASE_US, BROWSER_CHAR_DELAY_MAX_US);
-
-            // Safari needs extra delay due to most aggressive autocomplete
-            if (isSafari) {
-                emptyCharDelay += SAFARI_ADDRESS_BAR_EXTRA_DELAY_US;
-            }
-
-            if (emptyCharDelay > 0) {
-                usleep((useconds_t)emptyCharDelay);
-            }
-        }
+        // BROWSER FIX REMOVED: Shift+Left strategy eliminates need for delays
+        // No delay needed after empty character - the select-then-delete approach handles it
     }
     
     void SendVirtualKey(const Byte& vKey) {
@@ -1635,9 +1609,10 @@ extern "C" {
     typedef enum {
         DelayTypeNone = 0,
         DelayTypeTerminal = 1,
-        DelayTypeBrowser = 2,
-        DelayTypeSafariBrowser = 3,  // Safari with extra delays
-        DelayTypeAutoEnglish = 4     // Auto English restore with reduced delays
+        // Browser delays removed - Shift+Left strategy eliminates need for delays:
+        // DelayTypeBrowser = 2,          // REMOVED - no longer needed
+        // DelayTypeSafariBrowser = 3,    // REMOVED - no longer needed
+        // DelayTypeAutoEnglish = 4       // REMOVED - no longer needed
     } DelayType;
 
     // Update response time tracking for adaptive delays
@@ -1746,24 +1721,8 @@ extern "C" {
                 keystrokeDelay = TERMINAL_KEYSTROKE_DELAY_US;
                 settleDelay = TERMINAL_SETTLE_DELAY_US;
                 break;
-            case DelayTypeBrowser:
-                // Adaptive delays for browsers
-                keystrokeDelay = getAdaptiveDelay(BROWSER_KEYSTROKE_DELAY_BASE_US, BROWSER_KEYSTROKE_DELAY_MAX_US);
-                settleDelay = getAdaptiveDelay(BROWSER_SETTLE_DELAY_BASE_US, BROWSER_SETTLE_DELAY_MAX_US);
-                useShiftLeftStrategy = YES;
-                break;
-            case DelayTypeSafariBrowser:
-                // Safari needs even longer delays due to aggressive autocomplete
-                keystrokeDelay = getAdaptiveDelay(BROWSER_KEYSTROKE_DELAY_BASE_US, BROWSER_KEYSTROKE_DELAY_MAX_US) + SAFARI_ADDRESS_BAR_EXTRA_DELAY_US;
-                settleDelay = getAdaptiveDelay(BROWSER_SETTLE_DELAY_BASE_US, BROWSER_SETTLE_DELAY_MAX_US) + SAFARI_ADDRESS_BAR_EXTRA_DELAY_US;
-                useShiftLeftStrategy = YES;
-                break;
-            case DelayTypeAutoEnglish:
-                // Auto English restore has less autocomplete conflict, use reduced delays
-                keystrokeDelay = AUTO_ENGLISH_KEYSTROKE_DELAY_US;
-                settleDelay = AUTO_ENGLISH_SETTLE_DELAY_US;
-                useShiftLeftStrategy = YES; // Also use robust strategy for browsers
-                break;
+            // Browser delay cases removed - no longer needed with Shift+Left strategy
+            // DelayTypeBrowser, DelayTypeSafariBrowser, DelayTypeAutoEnglish are now unused
             default:
                 break;
         }
@@ -1799,7 +1758,8 @@ extern "C" {
 
     // Backwards compatible wrapper
     void SendBackspaceSequence(int count, BOOL isTerminalApp) {
-        SendBackspaceSequenceWithDelay(count, isTerminalApp ? DelayTypeTerminal : DelayTypeNone);
+        // Terminal apps no longer need special delay handling
+        SendBackspaceSequenceWithDelay(count, DelayTypeNone);
     }
 
     /**
@@ -3039,14 +2999,8 @@ extern "C" {
                     }
                 }
 
-                // FIX #79: Detect Auto-English restoration on Browsers (Chromium/Safari/Firefox)
-                // Browsers often drop backspace events during rapid restoration or have address bar autocomplete interference
-                // We need to force HID tap posting and use aggressive timing delays
-                // CRITICAL FIX: This is only for Auto English (extCode == 5), normal Vietnamese doesn't need HID tap
-                BOOL isAutoEnglishBrowser = (isBrowserApp && pData->extCode == 5);
-                if (isAutoEnglishBrowser) {
-                    _phtvPostToHIDTap = YES; // Force HID tap for robustness
-                }
+                // Auto-English browser fix removed - Shift+Left strategy handles it
+                // No need for HID tap forcing or aggressive delays anymore
 
                 //send backspace
                 if (!skipProcessing && pData->backspaceCount > 0 && pData->backspaceCount < MAX_BUFF) {
@@ -3059,24 +3013,19 @@ extern "C" {
                         PHTVSpotlightDebugLog([NSString stringWithFormat:@"deferBackspace=%d newCharCount=%d", (int)pData->backspaceCount, (int)pData->newCharCount]);
 #endif
                     } else {
-                        // Use browser-specific delays for browser apps, terminal delays for terminals
-                        // CRITICAL FIX: ALL browser operations need delays, not just Auto English
-                        // Without delays, browser autocomplete races with backspace events causing duplicates
-                        // SAFARI FIX: Safari needs extra delays due to most aggressive autocomplete
-                        // AUTO ENGLISH OPTIMIZATION: Use reduced delays for Auto English restore (extCode=5)
-                        if (isBrowserApp) {
-                            DelayType browserDelayType;
-                            if (pData->extCode == 5) {
-                                // Auto English restore - reduced delays for faster restoration
-                                browserDelayType = DelayTypeAutoEnglish;
-                            } else {
-                                BOOL isSafari = [effectiveBundleId isEqualToString:@"com.apple.Safari"];
-                                browserDelayType = isSafari ? DelayTypeSafariBrowser : DelayTypeBrowser;
-                            }
-                            SendBackspaceSequenceWithDelay(pData->backspaceCount, browserDelayType);
-                        } else if (appChars.needsStepByStep || appChars.isTerminal) {
+                        // NEW STRATEGY: Use "Select then Delete" (Shift + Left Arrow) approach
+                        // This strategy (inspired by OpenKey) works well for all browsers:
+                        // - Chromium-based (Chrome, Edge, Brave, etc.)
+                        // - WebKit (Safari)
+                        // - Gecko (Firefox)
+                        // No more delays needed thanks to this approach
+
+                        if (appChars.needsStepByStep) {
+                            // Only step-by-step apps need special timing
                             SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeTerminal);
                         } else {
+                            // Browsers, terminals, and normal apps all use no delay
+                            // The Shift+Left strategy handles browser autocomplete issues
                             SendBackspaceSequence(pData->backspaceCount, NO);
                         }
                     }
@@ -3092,12 +3041,11 @@ extern "C" {
                 if (!skipProcessing) {
                     // For Spotlight-like targets we rely on SendNewCharString(), which can
                     // perform deterministic replacement (AX) and/or per-character Unicode posting.
-                    // EXCEPT for Chromium apps - they don't support AX API properly
+                    // EXCEPT for browsers - they don't support AX API properly
                     BOOL isSpotlightTarget = (!isBrowserApp && spotlightActive) || appChars.isSpotlightLike;
-                    // CRITICAL FIX: Force step-by-step for ALL browser operations
-                    // Browsers don't support AX API and batch Unicode posting races with autocomplete
-                    // Step-by-step with delays (applied above) ensures stable input
-                    BOOL useStepByStep = (!isSpotlightTarget) && (vSendKeyStepByStep || appChars.needsStepByStep || isBrowserApp);
+                    // Browser step-by-step removed - Shift+Left strategy handles browsers well with batch posting
+                    // Only use step-by-step for explicitly configured apps
+                    BOOL useStepByStep = (!isSpotlightTarget) && (vSendKeyStepByStep || appChars.needsStepByStep);
 #ifdef DEBUG
                     if (isSpotlightTarget) {
                         PHTVSpotlightDebugLog([NSString stringWithFormat:@"willSend stepByStep=%d backspaceCount=%d newCharCount=%d", (int)useStepByStep, (int)pData->backspaceCount, (int)pData->newCharCount]);
@@ -3107,30 +3055,10 @@ extern "C" {
                         SendNewCharString();
                     } else {
                         if (pData->newCharCount > 0 && pData->newCharCount <= MAX_BUFF) {
-                            // SAFARI FIX: Calculate adaptive delays for Safari
-                            // AUTO ENGLISH OPTIMIZATION: Use reduced delays for Auto English restore (extCode=5)
-                            uint64_t charDelay = 0;
-
-                            if (isBrowserApp) {
-                                if (pData->extCode == 5) {
-                                    // Auto English restore - reduced delays for faster restoration
-                                    charDelay = AUTO_ENGLISH_CHAR_DELAY_US;
-                                } else {
-                                    BOOL isSafari = [effectiveBundleId isEqualToString:@"com.apple.Safari"];
-                                    charDelay = getAdaptiveDelay(BROWSER_CHAR_DELAY_BASE_US, BROWSER_CHAR_DELAY_MAX_US);
-                                    if (isSafari) {
-                                        charDelay += SAFARI_ADDRESS_BAR_EXTRA_DELAY_US;
-                                    }
-                                }
-                            }
-
+                            // Browser delays removed - Shift+Left strategy handles autocomplete
                             for (int i = pData->newCharCount - 1; i >= 0; i--) {
                                 SendKeyCode(pData->charData[i]);
-                                // Add adaptive delay between characters for browser apps
-                                // CRITICAL FIX: ALL browser operations need delays to prevent autocomplete races
-                                if (isBrowserApp && i > 0 && charDelay > 0) {
-                                    usleep((useconds_t)charDelay);
-                                }
+                                // No delay needed between characters - Shift+Left handles it
                             }
                         }
                         if (pData->code == vRestore || pData->code == vRestoreAndStartNewSession) {
@@ -3141,23 +3069,8 @@ extern "C" {
                                 fflush(stderr);
                             }
                             #endif
-                            // Add adaptive delay before final key for browsers
-                            // CRITICAL FIX: ALL browser operations need delays to prevent autocomplete races
-                            // AUTO ENGLISH OPTIMIZATION: Use reduced delays for Auto English restore (extCode=5)
-                            if (isBrowserApp) {
-                                uint64_t finalDelay;
-                                if (pData->extCode == 5) {
-                                    // Auto English restore - reduced delays for faster restoration
-                                    finalDelay = AUTO_ENGLISH_CHAR_DELAY_US;
-                                } else {
-                                    BOOL isSafari = [effectiveBundleId isEqualToString:@"com.apple.Safari"];
-                                    finalDelay = getAdaptiveDelay(BROWSER_CHAR_DELAY_BASE_US, BROWSER_CHAR_DELAY_MAX_US);
-                                    if (isSafari) {
-                                        finalDelay += SAFARI_ADDRESS_BAR_EXTRA_DELAY_US;
-                                    }
-                                }
-                                usleep((useconds_t)finalDelay);
-                            }
+                            // Browser delay removed - Shift+Left strategy handles autocomplete
+                            // No delay needed before final key
                             SendKeyCode(_keycode | ((_flag & kCGEventFlagMaskAlphaShift) || (_flag & kCGEventFlagMaskShift) ? CAPS_MASK : 0));
                         }
                         if (pData->code == vRestoreAndStartNewSession) {
