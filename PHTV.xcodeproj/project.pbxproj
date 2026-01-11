@@ -28,28 +28,28 @@
 		23F512852336386200397988 /* MJAccessibilityUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 23F512832336386200397988 /* MJAccessibilityUtils.m */; };
 		461048622EF2DF22005AF5FC /* SendKeyStepByStepAppsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 461048612EF2DF22005AF5FC /* SendKeyStepByStepAppsView.swift */; };
 		46394F5A2EFA5D56009D5194 /* EnglishWordDetector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46394F592EFA5D56009D5194 /* EnglishWordDetector.cpp */; };
+		46394F7E2EFAC18E009D5194 /* en_words.txt in Resources */ = {isa = PBXBuildFile; fileRef = 46394F7F2EFAC18E009D5194 /* en_words.txt */; };
 		46394F822EFAC18E009D5194 /* vi_dict.bin in Resources */ = {isa = PBXBuildFile; fileRef = 46394F812EFAC18E009D5194 /* vi_dict.bin */; };
 		46394F832EFAC18E009D5194 /* en_dict.bin in Resources */ = {isa = PBXBuildFile; fileRef = 46394F802EFAC18E009D5194 /* en_dict.bin */; };
-		46394F7E2EFAC18E009D5194 /* en_words.txt in Resources */ = {isa = PBXBuildFile; fileRef = 46394F7F2EFAC18E009D5194 /* en_words.txt */; };
-		46394FA02EFAC18F009D5194 /* icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F902EFAC18F009D5194 /* icon.png */; };
+		46394F852EFC8C7B009D5194 /* PHTVLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46394F842EFC8C7B009D5194 /* PHTVLogger.swift */; };
+		46394F862EFC8C7B009D5195 /* ClaudeCodePatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46394F872EFC8C7B009D5195 /* ClaudeCodePatcher.swift */; };
 		46394FA12EFAC18F009D5194 /* menubar_ui.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F912EFAC18F009D5194 /* menubar_ui.png */; };
 		46394FA22EFAC18F009D5194 /* PHTV_Picker_1_Emoji.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F922EFAC18F009D5194 /* PHTV_Picker_1_Emoji.png */; };
 		46394FA32EFAC18F009D5194 /* PHTV_Picker_2_GIF.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F932EFAC18F009D5194 /* PHTV_Picker_2_GIF.png */; };
 		46394FA42EFAC18F009D5194 /* PHTV_Picker_3_Sticker.png in Resources */ = {isa = PBXBuildFile; fileRef = 46394F942EFAC18F009D5194 /* PHTV_Picker_3_Sticker.png */; };
 		46394FA52EFAC190009D5194 /* Main.strings in Resources */ = {isa = PBXBuildFile; fileRef = 46394F952EFAC190009D5194 /* Main.strings */; };
-		46394F852EFC8C7B009D5194 /* PHTVLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46394F842EFC8C7B009D5194 /* PHTVLogger.swift */; };
-		46394F862EFC8C7B009D5195 /* ClaudeCodePatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46394F872EFC8C7B009D5195 /* ClaudeCodePatcher.swift */; };
 		46413AEE2EEF7EB300278BFB /* update.json in Resources */ = {isa = PBXBuildFile; fileRef = 46413AED2EEF7EB300278BFB /* update.json */; };
+		46A5B9222F13F0B900F5FE6E /* icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 46A5B9212F13F0B900F5FE6E /* icon.png */; };
 		46ABBBAA2EFD67680003CBB5 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 46ABBBA92EFD67680003CBB5 /* Sparkle */; };
 		46ABBBB02EFD67B00003CBB5 /* SparkleManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = 46ABBBAF2EFD67B00003CBB5 /* SparkleManager.mm */; };
 		46EF4FFA2EEDBFD400DF8DD1 /* PHTV.icon in Resources */ = {isa = PBXBuildFile; fileRef = 46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */; };
+		94655D583046479AA9515786 /* PHTVBinaryIntegrity.m in Sources */ = {isa = PBXBuildFile; fileRef = DC22F23BA9404436B654A651 /* PHTVBinaryIntegrity.m */; };
 		A534F32629D8B78100296F25 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23874B0F220160A500000BC8 /* Carbon.framework */; };
 		A534F32629D8B78100296F26 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23874B10220160A500000BC9 /* QuartzCore.framework */; };
 		B130517648548D01FFC0F52C /* AppsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2DA720371C3BD130F878C29 /* AppsSettingsView.swift */; };
-
 		E1A1A1A52025120200000005 /* PHTVConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A72025120200000007 /* PHTVConfig.m */; };
 		E1A1A1A62025120200000006 /* PHTVUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A92025120200000009 /* PHTVUtilities.m */; };
-		EF5EC6D461F146F7BB7B771B /* Utilities/ColorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E55895C7C4348BCA1ABE9E7 /* Utilities/ColorExtension.swift */; };
+		EF5EC6D461F146F7BB7B771B /* ColorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */; };
 		F1A1A1B12025130000000001 /* PHTVApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B22025130000000002 /* PHTVApp.swift */; };
 		F1A1A1B32025130000000003 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B42025130000000004 /* SettingsView.swift */; };
 		F1A1A1B52025130000000005 /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B62025130000000006 /* StatusBarController.swift */; };
@@ -73,9 +73,6 @@
 		F1A1A1E92025130100000043 /* ReleaseNotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1EA2025130100000044 /* ReleaseNotesView.swift */; };
 		F1A1A1EB2025130100000045 /* ConvertToolView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1EC2025130100000046 /* ConvertToolView.swift */; };
 		F1A1A1ED2025130100000047 /* MacroCategoryEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1EE2025130100000048 /* MacroCategoryEditorView.swift */; };
-
-		53779AF820E046B69FB6BF84 /* PHTVBinaryIntegrity.h in Headers */ = {isa = PBXBuildFile; fileRef = 4EE6F9D6434C477BAC2BDF4E /* PHTVBinaryIntegrity.h */; };
-		94655D583046479AA9515786 /* PHTVBinaryIntegrity.m in Sources */ = {isa = PBXBuildFile; fileRef = DC22F23BA9404436B654A651 /* PHTVBinaryIntegrity.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -130,19 +127,20 @@
 		46394F7F2EFAC18E009D5194 /* en_words.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = en_words.txt; sourceTree = "<group>"; };
 		46394F802EFAC18E009D5194 /* en_dict.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = en_dict.bin; sourceTree = "<group>"; };
 		46394F812EFAC18E009D5194 /* vi_dict.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = vi_dict.bin; sourceTree = "<group>"; };
-		46394F902EFAC18F009D5194 /* icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon.png; sourceTree = "<group>"; };
+		46394F842EFC8C7B009D5194 /* PHTVLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PHTVLogger.swift; sourceTree = "<group>"; };
+		46394F872EFC8C7B009D5195 /* ClaudeCodePatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeCodePatcher.swift; sourceTree = "<group>"; };
 		46394F912EFAC18F009D5194 /* menubar_ui.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = menubar_ui.png; sourceTree = "<group>"; };
 		46394F922EFAC18F009D5194 /* PHTV_Picker_1_Emoji.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = PHTV_Picker_1_Emoji.png; sourceTree = "<group>"; };
 		46394F932EFAC18F009D5194 /* PHTV_Picker_2_GIF.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = PHTV_Picker_2_GIF.png; sourceTree = "<group>"; };
 		46394F942EFAC18F009D5194 /* PHTV_Picker_3_Sticker.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = PHTV_Picker_3_Sticker.png; sourceTree = "<group>"; };
 		46394F952EFAC190009D5194 /* Main.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = Main.strings; sourceTree = "<group>"; };
-		46394F842EFC8C7B009D5194 /* PHTVLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PHTVLogger.swift; sourceTree = "<group>"; };
-		46394F872EFC8C7B009D5195 /* ClaudeCodePatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeCodePatcher.swift; sourceTree = "<group>"; };
 		46413AED2EEF7EB300278BFB /* update.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = update.json; sourceTree = "<group>"; };
+		46A5B9212F13F0B900F5FE6E /* icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon.png; sourceTree = "<group>"; };
 		46ABBBAE2EFD67B00003CBB5 /* SparkleManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SparkleManager.h; sourceTree = "<group>"; };
 		46ABBBAF2EFD67B00003CBB5 /* SparkleManager.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = SparkleManager.mm; sourceTree = "<group>"; };
 		46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = PHTV.icon; sourceTree = "<group>"; };
 		46EF4FFB2EEDC0A200DF8DD1 /* PHTV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PHTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4EE6F9D6434C477BAC2BDF4E /* PHTVBinaryIntegrity.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PHTVBinaryIntegrity.h; sourceTree = "<group>"; };
 		72B4F8A52F8DD55EF170821A /* CompatibilitySettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CompatibilitySettingsView.swift; sourceTree = "<group>"; };
 		8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorExtension.swift; sourceTree = "<group>"; };
 		8E55895D7C4348BCA1ABE9E8 /* BackendSyncOptimizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendSyncOptimizer.swift; sourceTree = "<group>"; };
@@ -151,7 +149,7 @@
 		8E558960C4348BCA1ABE9EB /* HotReloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotReloadManager.swift; sourceTree = "<group>"; };
 		C2DA720371C3BD130F878C29 /* AppsSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppsSettingsView.swift; sourceTree = "<group>"; };
 		D3CCE6686B954309A3B65AAD /* HotkeySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeySettingsView.swift; sourceTree = "<group>"; };
-
+		DC22F23BA9404436B654A651 /* PHTVBinaryIntegrity.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PHTVBinaryIntegrity.m; sourceTree = "<group>"; };
 		E1A1A1A72025120200000007 /* PHTVConfig.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PHTVConfig.m; sourceTree = "<group>"; };
 		E1A1A1A82025120200000008 /* PHTVConfig.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PHTVConfig.h; sourceTree = "<group>"; };
 		E1A1A1A92025120200000009 /* PHTVUtilities.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PHTVUtilities.m; sourceTree = "<group>"; };
@@ -181,9 +179,6 @@
 		F1A1A1EA2025130100000044 /* ReleaseNotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesView.swift; sourceTree = "<group>"; };
 		F1A1A1EC2025130100000046 /* ConvertToolView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvertToolView.swift; sourceTree = "<group>"; };
 		F1A1A1EE2025130100000048 /* MacroCategoryEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroCategoryEditorView.swift; sourceTree = "<group>"; };
-		F1A1A1F42025130100000054 /* TypingStatsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypingStatsManager.swift; sourceTree = "<group>"; };
-		4EE6F9D6434C477BAC2BDF4E /* PHTVBinaryIntegrity.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PHTVBinaryIntegrity.h; sourceTree = "<group>"; };
-		DC22F23BA9404436B654A651 /* PHTVBinaryIntegrity.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PHTVBinaryIntegrity.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -268,7 +263,7 @@
 			path = Engine;
 			sourceTree = "<group>";
 		};
-			46394F6D2EFA5E8F009D5194 /* Resources */ = {
+		46394F6D2EFA5E8F009D5194 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
 				46394F6E2EFA5E8F009D5195 /* Dictionaries */,
@@ -276,6 +271,28 @@
 				46394F962EFAC191009D5194 /* Localization */,
 			);
 			path = Resources;
+			sourceTree = "<group>";
+		};
+		46394F6E2EFA5E8F009D5195 /* Dictionaries */ = {
+			isa = PBXGroup;
+			children = (
+				46394F802EFAC18E009D5194 /* en_dict.bin */,
+				46394F812EFAC18E009D5194 /* vi_dict.bin */,
+				46394F7F2EFAC18E009D5194 /* en_words.txt */,
+			);
+			path = Dictionaries;
+			sourceTree = "<group>";
+		};
+		46394F6F2EFA5E8F009D5196 /* Images */ = {
+			isa = PBXGroup;
+			children = (
+				46A5B9212F13F0B900F5FE6E /* icon.png */,
+				46394F912EFAC18F009D5194 /* menubar_ui.png */,
+				46394F922EFAC18F009D5194 /* PHTV_Picker_1_Emoji.png */,
+				46394F932EFAC18F009D5194 /* PHTV_Picker_2_GIF.png */,
+				46394F942EFAC18F009D5194 /* PHTV_Picker_3_Sticker.png */,
+			);
+			path = Images;
 			sourceTree = "<group>";
 		};
 		46394F962EFAC191009D5194 /* Localization */ = {
@@ -292,28 +309,6 @@
 				46394F952EFAC190009D5194 /* Main.strings */,
 			);
 			path = "vi-VN.lproj";
-			sourceTree = "<group>";
-		};
-		46394F6E2EFA5E8F009D5195 /* Dictionaries */ = {
-			isa = PBXGroup;
-			children = (
-				46394F802EFAC18E009D5194 /* en_dict.bin */,
-				46394F812EFAC18E009D5194 /* vi_dict.bin */,
-				46394F7F2EFAC18E009D5194 /* en_words.txt */,
-			);
-			path = Dictionaries;
-			sourceTree = "<group>";
-		};
-		46394F6F2EFA5E8F009D5196 /* Images */ = {
-			isa = PBXGroup;
-			children = (
-				46394F902EFAC18F009D5194 /* icon.png */,
-				46394F912EFAC18F009D5194 /* menubar_ui.png */,
-				46394F922EFAC18F009D5194 /* PHTV_Picker_1_Emoji.png */,
-				46394F932EFAC18F009D5194 /* PHTV_Picker_2_GIF.png */,
-				46394F942EFAC18F009D5194 /* PHTV_Picker_3_Sticker.png */,
-			);
-			path = Images;
 			sourceTree = "<group>";
 		};
 		E1A1A2A12025120000000011 /* Application */ = {
@@ -341,6 +336,26 @@
 			path = Core;
 			sourceTree = "<group>";
 		};
+		E1A1A2A32025120000000013 /* Managers */ = {
+			isa = PBXGroup;
+			children = (
+				2371AAEE22FA85B200CA1B57 /* PHTV.mm */,
+				2389467E21FDDC3F0030A13B /* PHTVManager.h */,
+				2389467C21FDDB920030A13B /* PHTVManager.m */,
+				4EE6F9D6434C477BAC2BDF4E /* PHTVBinaryIntegrity.h */,
+				DC22F23BA9404436B654A651 /* PHTVBinaryIntegrity.m */,
+			);
+			path = Managers;
+			sourceTree = "<group>";
+		};
+		E1A1A2A72025120000000017 /* Platforms */ = {
+			isa = PBXGroup;
+			children = (
+				237724A5232BA3B800E92BDF /* mac.h */,
+			);
+			path = Platforms;
+			sourceTree = "<group>";
+		};
 		E1A1A2C12025120000000030 /* Config */ = {
 			isa = PBXGroup;
 			children = (
@@ -360,26 +375,6 @@
 				E1A1A1A92025120200000009 /* PHTVUtilities.m */,
 			);
 			path = Legacy;
-			sourceTree = "<group>";
-		};
-		E1A1A2A32025120000000013 /* Managers */ = {
-			isa = PBXGroup;
-			children = (
-				2371AAEE22FA85B200CA1B57 /* PHTV.mm */,
-				2389467E21FDDC3F0030A13B /* PHTVManager.h */,
-				2389467C21FDDB920030A13B /* PHTVManager.m */,
-				4EE6F9D6434C477BAC2BDF4E /* PHTVBinaryIntegrity.h */,
-				DC22F23BA9404436B654A651 /* PHTVBinaryIntegrity.m */,
-			);
-			path = Managers;
-			sourceTree = "<group>";
-		};
-			E1A1A2A72025120000000017 /* Platforms */ = {
-			isa = PBXGroup;
-			children = (
-				237724A5232BA3B800E92BDF /* mac.h */,
-			);
-			path = Platforms;
 			sourceTree = "<group>";
 		};
 		F1A1A2A72025130000000017 /* UI */ = {
@@ -543,10 +538,10 @@
 				46394F822EFAC18E009D5194 /* vi_dict.bin in Resources */,
 				46394F832EFAC18E009D5194 /* en_dict.bin in Resources */,
 				46394F7E2EFAC18E009D5194 /* en_words.txt in Resources */,
-				46394FA02EFAC18F009D5194 /* icon.png in Resources */,
 				46394FA12EFAC18F009D5194 /* menubar_ui.png in Resources */,
 				46394FA22EFAC18F009D5194 /* PHTV_Picker_1_Emoji.png in Resources */,
 				46394FA32EFAC18F009D5194 /* PHTV_Picker_2_GIF.png in Resources */,
+				46A5B9222F13F0B900F5FE6E /* icon.png in Resources */,
 				46394FA42EFAC18F009D5194 /* PHTV_Picker_3_Sticker.png in Resources */,
 				46394FA52EFAC190009D5194 /* Main.strings in Resources */,
 				46413AEE2EEF7EB300278BFB /* update.json in Resources */,
@@ -560,7 +555,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EF5EC6D461F146F7BB7B771B /* Utilities/ColorExtension.swift in Sources */,
+				EF5EC6D461F146F7BB7B771B /* ColorExtension.swift in Sources */,
 				23E2E49F2314FD3A006CCC3E /* Engine.cpp in Sources */,
 				23E2E49E2314FD3A006CCC3E /* SmartSwitchKey.cpp in Sources */,
 				23F512852336386200397988 /* MJAccessibilityUtils.m in Sources */,
@@ -745,6 +740,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				AUTOMATION_APPLE_EVENTS = NO;
 				CLANG_ENABLE_MODULES = NO;
+				CODE_SIGN_ENTITLEMENTS = PHTV/PHTV.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -761,7 +757,6 @@
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/PHTV/Core/Engine";
 				INFOPLIST_FILE = PHTV/Info.plist;
-				CODE_SIGN_ENTITLEMENTS = PHTV/PHTV.entitlements;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -789,6 +784,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				AUTOMATION_APPLE_EVENTS = NO;
 				CLANG_ENABLE_MODULES = NO;
+				CODE_SIGN_ENTITLEMENTS = PHTV/PHTV.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -805,7 +801,6 @@
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/PHTV/Core/Engine";
 				INFOPLIST_FILE = PHTV/Info.plist;
-				CODE_SIGN_ENTITLEMENTS = PHTV/PHTV.entitlements;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

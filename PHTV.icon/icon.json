@@ -1,18 +1,22 @@
 {
   "fill" : {
-    "solid" : "display-p3:0.64482,0.00626,0.00626,1.00000"
+    "solid" : "display-p3:0.29754,0.00576,0.00852,1.00000"
   },
   "groups" : [
     {
       "layers" : [
         {
-          "image-name" : "1289679474.svg",
-          "name" : "1289679474",
+          "blend-mode" : "normal",
+          "fill" : {
+            "solid" : "display-p3:0.96783,0.84574,0.00000,1.00000"
+          },
+          "image-name" : "P.png",
+          "name" : "P",
           "position" : {
-            "scale" : 4,
+            "scale" : 0.63,
             "translation-in-points" : [
-              0,
-              0
+              14.958124999999995,
+              21.875
             ]
           }
         }
