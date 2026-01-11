@@ -9,7 +9,10 @@
 /* Begin PBXBuildFile section */
 		015CCFFEF0134F81976FCAB6 /* HotkeySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3CCE6686B954309A3B65AAD /* HotkeySettingsView.swift */; };
 		0D5084B3411F5119D468D80E /* CompatibilitySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72B4F8A52F8DD55EF170821A /* CompatibilitySettingsView.swift */; };
+		0F415974F6B1D1BF7401695B /* EmojiPickerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D211AB0354C9DBCE44ED2062 /* EmojiPickerManager.swift */; };
+		11F95F0F93E3770C57A5D9C0 /* GIFOnlyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4CEF88A4B3F8A497ADD2444 /* GIFOnlyView.swift */; };
 		16B982F63741372BF590C264 /* PHSilentUserDriver.m in Sources */ = {isa = PBXBuildFile; fileRef = 1366D9FE4F6A7BBD6B32B8BE /* PHSilentUserDriver.m */; };
+		18A38599C93D75F8363E979C /* AnimatedGIFView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91463AD883518504EED880BB /* AnimatedGIFView.swift */; };
 		1A2F2DF299D4FD6F60AAB963 /* KeyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15404E79E3FAB407D4F065D /* KeyModels.swift */; };
 		20A30E70D92BD4559B80436F /* UpdateModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1498B293675600E929EBB555 /* UpdateModels.swift */; };
 		232EDA5921F1B33E0085D362 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 232EDA5821F1B33E0085D362 /* AppDelegate.mm */; };
@@ -49,20 +52,31 @@
 		46EF4FFA2EEDBFD400DF8DD1 /* PHTV.icon in Resources */ = {isa = PBXBuildFile; fileRef = 46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */; };
 		582F22823AB2122EA8CC0172 /* VietnameseSynonyms.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84443821FC9E0F2616F3C783 /* VietnameseSynonyms.swift */; };
 		5EE57A9BB919C44652062797 /* KlipyAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCA3766510F7D84A0AF64E7B /* KlipyAPIClient.swift */; };
+		62C8CE4ED1A5A22915ABA918 /* UnifiedContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63EE9D27E8009304C5EBDC2A /* UnifiedContentView.swift */; };
+		66A3D739021BD8350A76029A /* EmojiButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3ECD12D358B4A226DC87FB3 /* EmojiButton.swift */; };
 		71156465A7A93BA70CE4B34A /* KlipyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F8113D10F75956CFA8F2D7E /* KlipyModels.swift */; };
 		7CD0F7C9799435D2137792A1 /* EmojiHotkeyBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77DE4E5107F853D1232E1CAE /* EmojiHotkeyBridge.swift */; };
 		7E8FC7E86DE2E6DFF24E2FA5 /* EmojiDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3CC100734FFEFB3899169A6 /* EmojiDatabase.swift */; };
 		811E70BC3AACAA2FEEB531B3 /* EmojiHotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D5FAA9501C1BD2A1E0B936E /* EmojiHotkeyManager.swift */; };
+		8493C732A2DC212C03C5F6A4 /* GIFThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ABD4B910A480743E5362BB8 /* GIFThumbnailView.swift */; };
 		94655D583046479AA9515786 /* PHTVBinaryIntegrity.m in Sources */ = {isa = PBXBuildFile; fileRef = DC22F23BA9404436B654A651 /* PHTVBinaryIntegrity.m */; };
 		A534F32629D8B78100296F25 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23874B0F220160A500000BC8 /* Carbon.framework */; };
 		A534F32629D8B78100296F26 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23874B10220160A500000BC9 /* QuartzCore.framework */; };
+		A541BC9447C9FAB86E11112C /* APIKeySetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F82534773F42A3F85B37C435 /* APIKeySetupView.swift */; };
 		B130517648548D01FFC0F52C /* AppsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2DA720371C3BD130F878C29 /* AppsSettingsView.swift */; };
+		B3F6294A1AB68D85BEAD9932 /* CategoryTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65AA6483B2A118EB4B67C1CB /* CategoryTab.swift */; };
+		BA360903220983A511EF90E3 /* WindowDragHandle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74641C96F631E9734052F9C3 /* WindowDragHandle.swift */; };
+		C0CE0F8F502340D96361B721 /* EmojiPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB70E3E828FD5E07F9695FEC /* EmojiPickerView.swift */; };
 		C4961E0947A9379AEC307E96 /* EmojiModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64A3EE8FE1AA073862B82C1A /* EmojiModels.swift */; };
 		C4B0D93C0BD03698D158FAFF /* MenuBarIconManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91BDAE4C737217F8B2934770 /* MenuBarIconManager.swift */; };
+		CCE359D81044723B047F005C /* StickerOnlyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FABD3529F8FFC83F017377CB /* StickerOnlyView.swift */; };
+		D05EB41CB955ED038072EA12 /* VisualEffectBlur.swift in Sources */ = {isa = PBXBuildFile; fileRef = A89EF9EA55C44906E5F4F5EC /* VisualEffectBlur.swift */; };
 		D357A0503308011A99A4C950 /* AppModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE0F76B39F1FB9FB8C382332 /* AppModels.swift */; };
 		D357BD38FFDBA314DC771E23 /* BeepManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF98255BCC66A085A1BB7AF0 /* BeepManager.swift */; };
+		E0128285999F5C12524AB87C /* FloatingPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFFABF16C6BB7046AE02AFAD /* FloatingPanel.swift */; };
 		E1A1A1A52025120200000005 /* PHTVConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A72025120200000007 /* PHTVConfig.m */; };
 		E1A1A1A62025120200000006 /* PHTVUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A92025120200000009 /* PHTVUtilities.m */; };
+		ECFB9B9C23FD05660CDBB24E /* EmojiCategoriesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B68D32C8DF8CC2C3AB495253 /* EmojiCategoriesView.swift */; };
 		EF5EC6D461F146F7BB7B771B /* ColorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */; };
 		F1A1A1B12025130000000001 /* PHTVApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B22025130000000002 /* PHTVApp.swift */; };
 		F1A1A1B32025130000000003 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B42025130000000004 /* SettingsView.swift */; };
@@ -157,9 +171,13 @@
 		46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = PHTV.icon; sourceTree = "<group>"; };
 		46EF4FFB2EEDC0A200DF8DD1 /* PHTV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PHTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4EE6F9D6434C477BAC2BDF4E /* PHTVBinaryIntegrity.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PHTVBinaryIntegrity.h; sourceTree = "<group>"; };
+		5ABD4B910A480743E5362BB8 /* GIFThumbnailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GIFThumbnailView.swift; sourceTree = "<group>"; };
+		63EE9D27E8009304C5EBDC2A /* UnifiedContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UnifiedContentView.swift; sourceTree = "<group>"; };
 		64A3EE8FE1AA073862B82C1A /* EmojiModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EmojiModels.swift; sourceTree = "<group>"; };
+		65AA6483B2A118EB4B67C1CB /* CategoryTab.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CategoryTab.swift; sourceTree = "<group>"; };
 		68D7ABD6D4D0E226B22794A2 /* MediaStorageHelper.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MediaStorageHelper.swift; sourceTree = "<group>"; };
 		72B4F8A52F8DD55EF170821A /* CompatibilitySettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CompatibilitySettingsView.swift; sourceTree = "<group>"; };
+		74641C96F631E9734052F9C3 /* WindowDragHandle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WindowDragHandle.swift; sourceTree = "<group>"; };
 		77DE4E5107F853D1232E1CAE /* EmojiHotkeyBridge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EmojiHotkeyBridge.swift; sourceTree = "<group>"; };
 		7F8113D10F75956CFA8F2D7E /* KlipyModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KlipyModels.swift; sourceTree = "<group>"; };
 		84443821FC9E0F2616F3C783 /* VietnameseSynonyms.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VietnameseSynonyms.swift; sourceTree = "<group>"; };
@@ -169,15 +187,23 @@
 		8E55895E7C4348BCA1ABE9E9 /* BeepManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeepManager.swift; sourceTree = "<group>"; };
 		8E55895F7C4348BCA1ABE9EA /* SettingsSliderRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSliderRow.swift; sourceTree = "<group>"; };
 		8E558960C4348BCA1ABE9EB /* HotReloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotReloadManager.swift; sourceTree = "<group>"; };
+		91463AD883518504EED880BB /* AnimatedGIFView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AnimatedGIFView.swift; sourceTree = "<group>"; };
 		91BDAE4C737217F8B2934770 /* MenuBarIconManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MenuBarIconManager.swift; sourceTree = "<group>"; };
 		990B0144306ECDAF3CBFEA13 /* InputModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InputModels.swift; sourceTree = "<group>"; };
+		A3ECD12D358B4A226DC87FB3 /* EmojiButton.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EmojiButton.swift; sourceTree = "<group>"; };
+		A89EF9EA55C44906E5F4F5EC /* VisualEffectBlur.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VisualEffectBlur.swift; sourceTree = "<group>"; };
 		AF98255BCC66A085A1BB7AF0 /* BeepManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BeepManager.swift; sourceTree = "<group>"; };
+		B68D32C8DF8CC2C3AB495253 /* EmojiCategoriesView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EmojiCategoriesView.swift; sourceTree = "<group>"; };
 		BCA3766510F7D84A0AF64E7B /* KlipyAPIClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KlipyAPIClient.swift; sourceTree = "<group>"; };
 		C2DA720371C3BD130F878C29 /* AppsSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppsSettingsView.swift; sourceTree = "<group>"; };
+		C4CEF88A4B3F8A497ADD2444 /* GIFOnlyView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GIFOnlyView.swift; sourceTree = "<group>"; };
 		D15404E79E3FAB407D4F065D /* KeyModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeyModels.swift; sourceTree = "<group>"; };
+		D211AB0354C9DBCE44ED2062 /* EmojiPickerManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EmojiPickerManager.swift; sourceTree = "<group>"; };
 		D3CC100734FFEFB3899169A6 /* EmojiDatabase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EmojiDatabase.swift; sourceTree = "<group>"; };
 		D3CCE6686B954309A3B65AAD /* HotkeySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeySettingsView.swift; sourceTree = "<group>"; };
+		DB70E3E828FD5E07F9695FEC /* EmojiPickerView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EmojiPickerView.swift; sourceTree = "<group>"; };
 		DC22F23BA9404436B654A651 /* PHTVBinaryIntegrity.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PHTVBinaryIntegrity.m; sourceTree = "<group>"; };
+		DFFABF16C6BB7046AE02AFAD /* FloatingPanel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FloatingPanel.swift; sourceTree = "<group>"; };
 		E1A1A1A72025120200000007 /* PHTVConfig.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PHTVConfig.m; sourceTree = "<group>"; };
 		E1A1A1A82025120200000008 /* PHTVConfig.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PHTVConfig.h; sourceTree = "<group>"; };
 		E1A1A1A92025120200000009 /* PHTVUtilities.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PHTVUtilities.m; sourceTree = "<group>"; };
@@ -207,7 +233,9 @@
 		F1A1A1EA2025130100000044 /* ReleaseNotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesView.swift; sourceTree = "<group>"; };
 		F1A1A1EC2025130100000046 /* ConvertToolView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvertToolView.swift; sourceTree = "<group>"; };
 		F1A1A1EE2025130100000048 /* MacroCategoryEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroCategoryEditorView.swift; sourceTree = "<group>"; };
+		F82534773F42A3F85B37C435 /* APIKeySetupView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = APIKeySetupView.swift; sourceTree = "<group>"; };
 		F9A75B12CBD76A680F99BAC0 /* VietnameseTextUtilities.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VietnameseTextUtilities.swift; sourceTree = "<group>"; };
+		FABD3529F8FFC83F017377CB /* StickerOnlyView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StickerOnlyView.swift; sourceTree = "<group>"; };
 		FE0F76B39F1FB9FB8C382332 /* AppModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppModels.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -231,6 +259,19 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		01B65F2B0AC435804B789415 /* Picker */ = {
+			isa = PBXGroup;
+			children = (
+				572F54A2523BA1A2A21328D9 /* Components */,
+				E22A72C5D5019BF42E0D80C9 /* ContentViews */,
+				DFFABF16C6BB7046AE02AFAD /* FloatingPanel.swift */,
+				DB70E3E828FD5E07F9695FEC /* EmojiPickerView.swift */,
+				D211AB0354C9DBCE44ED2062 /* EmojiPickerManager.swift */,
+			);
+			name = Picker;
+			path = Picker;
+			sourceTree = "<group>";
+		};
 		0241EB3E2A7FF95BA5D86B0F /* Database */ = {
 			isa = PBXGroup;
 			children = (
@@ -388,6 +429,20 @@
 			path = Network;
 			sourceTree = "<group>";
 		};
+		572F54A2523BA1A2A21328D9 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				5ABD4B910A480743E5362BB8 /* GIFThumbnailView.swift */,
+				91463AD883518504EED880BB /* AnimatedGIFView.swift */,
+				65AA6483B2A118EB4B67C1CB /* CategoryTab.swift */,
+				A3ECD12D358B4A226DC87FB3 /* EmojiButton.swift */,
+				A89EF9EA55C44906E5F4F5EC /* VisualEffectBlur.swift */,
+				74641C96F631E9734052F9C3 /* WindowDragHandle.swift */,
+			);
+			name = Components;
+			path = Components;
+			sourceTree = "<group>";
+		};
 		E1A1A2A12025120000000011 /* Application */ = {
 			isa = PBXGroup;
 			children = (
@@ -454,6 +509,19 @@
 			path = Legacy;
 			sourceTree = "<group>";
 		};
+		E22A72C5D5019BF42E0D80C9 /* ContentViews */ = {
+			isa = PBXGroup;
+			children = (
+				B68D32C8DF8CC2C3AB495253 /* EmojiCategoriesView.swift */,
+				C4CEF88A4B3F8A497ADD2444 /* GIFOnlyView.swift */,
+				FABD3529F8FFC83F017377CB /* StickerOnlyView.swift */,
+				63EE9D27E8009304C5EBDC2A /* UnifiedContentView.swift */,
+				F82534773F42A3F85B37C435 /* APIKeySetupView.swift */,
+			);
+			name = ContentViews;
+			path = ContentViews;
+			sourceTree = "<group>";
+		};
 		F1A1A2A72025130000000017 /* UI */ = {
 			isa = PBXGroup;
 			children = (
@@ -466,6 +534,7 @@
 				3DD52C7E92A94D766F188731 /* Services */,
 				4FD0308313995A886D6D78C1 /* Network */,
 				0241EB3E2A7FF95BA5D86B0F /* Database */,
+				01B65F2B0AC435804B789415 /* Picker */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -696,6 +765,20 @@
 				F28A6AB4C40769F607E59F7B /* VietnameseTextUtilities.swift in Sources */,
 				582F22823AB2122EA8CC0172 /* VietnameseSynonyms.swift in Sources */,
 				7E8FC7E86DE2E6DFF24E2FA5 /* EmojiDatabase.swift in Sources */,
+				E0128285999F5C12524AB87C /* FloatingPanel.swift in Sources */,
+				C0CE0F8F502340D96361B721 /* EmojiPickerView.swift in Sources */,
+				0F415974F6B1D1BF7401695B /* EmojiPickerManager.swift in Sources */,
+				8493C732A2DC212C03C5F6A4 /* GIFThumbnailView.swift in Sources */,
+				18A38599C93D75F8363E979C /* AnimatedGIFView.swift in Sources */,
+				B3F6294A1AB68D85BEAD9932 /* CategoryTab.swift in Sources */,
+				66A3D739021BD8350A76029A /* EmojiButton.swift in Sources */,
+				D05EB41CB955ED038072EA12 /* VisualEffectBlur.swift in Sources */,
+				BA360903220983A511EF90E3 /* WindowDragHandle.swift in Sources */,
+				ECFB9B9C23FD05660CDBB24E /* EmojiCategoriesView.swift in Sources */,
+				11F95F0F93E3770C57A5D9C0 /* GIFOnlyView.swift in Sources */,
+				CCE359D81044723B047F005C /* StickerOnlyView.swift in Sources */,
+				62C8CE4ED1A5A22915ABA918 /* UnifiedContentView.swift in Sources */,
+				A541BC9447C9FAB86E11112C /* APIKeySetupView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
