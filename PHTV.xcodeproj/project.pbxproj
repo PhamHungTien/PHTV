@@ -107,6 +107,11 @@
 		F1A1A1EB2025130100000045 /* ConvertToolView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1EC2025130100000046 /* ConvertToolView.swift */; };
 		F1A1A1ED2025130100000047 /* MacroCategoryEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1EE2025130100000048 /* MacroCategoryEditorView.swift */; };
 		F28A6AB4C40769F607E59F7B /* VietnameseTextUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9A75B12CBD76A680F99BAC0 /* VietnameseTextUtilities.swift */; };
+		3FA00BB1220A49AFAB1F902A /* InputMethodState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1273F78C8F894BE4B378851F /* InputMethodState.swift */; };
+		55FC7DCD65CF4B5AB16EB55E /* MacroState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A7F69D746974D44B4B789CF /* MacroState.swift */; };
+		599D4DAFA64E4625A7FC223A /* SystemState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FEA46915A7F40CAB646023A /* SystemState.swift */; };
+		97FEE5D3C0A94531A7BFA0AF /* UIState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4618BC329294FEEB38FCB5A /* UIState.swift */; };
+		AB3EE4AF43F64525BCFCE06A /* AppListsState.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF1BC147D8354623929675A1 /* AppListsState.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -247,6 +252,11 @@
 		F9A75B12CBD76A680F99BAC0 /* VietnameseTextUtilities.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VietnameseTextUtilities.swift; sourceTree = "<group>"; };
 		FABD3529F8FFC83F017377CB /* StickerOnlyView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StickerOnlyView.swift; sourceTree = "<group>"; };
 		FE0F76B39F1FB9FB8C382332 /* AppModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppModels.swift; sourceTree = "<group>"; };
+		1273F78C8F894BE4B378851F /* InputMethodState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMethodState.swift; sourceTree = "<group>"; };
+		0A7F69D746974D44B4B789CF /* MacroState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroState.swift; sourceTree = "<group>"; };
+		3FEA46915A7F40CAB646023A /* SystemState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemState.swift; sourceTree = "<group>"; };
+		F4618BC329294FEEB38FCB5A /* UIState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIState.swift; sourceTree = "<group>"; };
+		FF1BC147D8354623929675A1 /* AppListsState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppListsState.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -548,6 +558,11 @@
 			isa = PBXGroup;
 			children = (
 				F3E15DDA71B387CD0639493F /* AppState.swift */,
+				1273F78C8F894BE4B378851F /* InputMethodState.swift */,
+				0A7F69D746974D44B4B789CF /* MacroState.swift */,
+				3FEA46915A7F40CAB646023A /* SystemState.swift */,
+				F4618BC329294FEEB38FCB5A /* UIState.swift */,
+				FF1BC147D8354623929675A1 /* AppListsState.swift */,
 			);
 			name = State;
 			path = State;
@@ -817,6 +832,11 @@
 				F15A1682052C0E19BCB012E8 /* SettingsWindowOpener.swift in Sources */,
 				82AEA01829CE01145F535AB7 /* SettingsNotificationObserver.swift in Sources */,
 				020D2C9970888E364BF34981 /* AppState.swift in Sources */,
+				3FA00BB1220A49AFAB1F902A /* InputMethodState.swift in Sources */,
+				55FC7DCD65CF4B5AB16EB55E /* MacroState.swift in Sources */,
+				599D4DAFA64E4625A7FC223A /* SystemState.swift in Sources */,
+				97FEE5D3C0A94531A7BFA0AF /* UIState.swift in Sources */,
+				AB3EE4AF43F64525BCFCE06A /* AppListsState.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
