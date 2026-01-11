@@ -734,7 +734,7 @@ extern "C" {
         @"com.tinyspeck.slackmacgap",  // Slack
         @"com.hnc.Discord",            // Discord
         @"com.electron.discord",       // Discord (alternate)
-        @"com.microsoft.VSCode",       // VS Code
+        // NOTE: VSCode removed from this list - terminal needs Layout Compatibility enabled
         @"com.github.GitHubClient",    // GitHub Desktop
         @"com.figma.Desktop",          // Figma
         @"notion.id",                  // Notion
