@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		015CCFFEF0134F81976FCAB6 /* HotkeySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3CCE6686B954309A3B65AAD /* HotkeySettingsView.swift */; };
+		020D2C9970888E364BF34981 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3E15DDA71B387CD0639493F /* AppState.swift */; };
 		0D5084B3411F5119D468D80E /* CompatibilitySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72B4F8A52F8DD55EF170821A /* CompatibilitySettingsView.swift */; };
 		0F415974F6B1D1BF7401695B /* EmojiPickerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D211AB0354C9DBCE44ED2062 /* EmojiPickerManager.swift */; };
 		11F95F0F93E3770C57A5D9C0 /* GIFOnlyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4CEF88A4B3F8A497ADD2444 /* GIFOnlyView.swift */; };
@@ -53,12 +54,15 @@
 		582F22823AB2122EA8CC0172 /* VietnameseSynonyms.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84443821FC9E0F2616F3C783 /* VietnameseSynonyms.swift */; };
 		5EE57A9BB919C44652062797 /* KlipyAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCA3766510F7D84A0AF64E7B /* KlipyAPIClient.swift */; };
 		62C8CE4ED1A5A22915ABA918 /* UnifiedContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63EE9D27E8009304C5EBDC2A /* UnifiedContentView.swift */; };
+		65C45B7195EC9D7105F79A2D /* SettingsWindowHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C87D42C4A844B638E884513 /* SettingsWindowHelper.swift */; };
 		66A3D739021BD8350A76029A /* EmojiButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3ECD12D358B4A226DC87FB3 /* EmojiButton.swift */; };
 		71156465A7A93BA70CE4B34A /* KlipyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F8113D10F75956CFA8F2D7E /* KlipyModels.swift */; };
 		7CD0F7C9799435D2137792A1 /* EmojiHotkeyBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77DE4E5107F853D1232E1CAE /* EmojiHotkeyBridge.swift */; };
 		7E8FC7E86DE2E6DFF24E2FA5 /* EmojiDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3CC100734FFEFB3899169A6 /* EmojiDatabase.swift */; };
 		811E70BC3AACAA2FEEB531B3 /* EmojiHotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D5FAA9501C1BD2A1E0B936E /* EmojiHotkeyManager.swift */; };
+		82AEA01829CE01145F535AB7 /* SettingsNotificationObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = C70807CB6874B42FFE69DCBC /* SettingsNotificationObserver.swift */; };
 		8493C732A2DC212C03C5F6A4 /* GIFThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ABD4B910A480743E5362BB8 /* GIFThumbnailView.swift */; };
+		8FE65B27C458CAB478FFE025 /* SettingsWindowContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3275F9510DD17ABFE9A00A80 /* SettingsWindowContent.swift */; };
 		94655D583046479AA9515786 /* PHTVBinaryIntegrity.m in Sources */ = {isa = PBXBuildFile; fileRef = DC22F23BA9404436B654A651 /* PHTVBinaryIntegrity.m */; };
 		A534F32629D8B78100296F25 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23874B0F220160A500000BC8 /* Carbon.framework */; };
 		A534F32629D8B78100296F26 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23874B10220160A500000BC9 /* QuartzCore.framework */; };
@@ -78,6 +82,7 @@
 		E1A1A1A62025120200000006 /* PHTVUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A92025120200000009 /* PHTVUtilities.m */; };
 		ECFB9B9C23FD05660CDBB24E /* EmojiCategoriesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B68D32C8DF8CC2C3AB495253 /* EmojiCategoriesView.swift */; };
 		EF5EC6D461F146F7BB7B771B /* ColorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */; };
+		F15A1682052C0E19BCB012E8 /* SettingsWindowOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05CD94C7C42C2D520013AB28 /* SettingsWindowOpener.swift */; };
 		F1A1A1B12025130000000001 /* PHTVApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B22025130000000002 /* PHTVApp.swift */; };
 		F1A1A1B32025130000000003 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B42025130000000004 /* SettingsView.swift */; };
 		F1A1A1B52025130000000005 /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1B62025130000000006 /* StatusBarController.swift */; };
@@ -117,6 +122,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		05CD94C7C42C2D520013AB28 /* SettingsWindowOpener.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsWindowOpener.swift; sourceTree = "<group>"; };
 		1366D9FE4F6A7BBD6B32B8BE /* PHSilentUserDriver.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = PHSilentUserDriver.m; sourceTree = "<group>"; };
 		1498B293675600E929EBB555 /* UpdateModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UpdateModels.swift; sourceTree = "<group>"; };
 		232EDA5721F1B33E0085D362 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
@@ -150,6 +156,7 @@
 		23E2E49C2314FD3A006CCC3E /* SmartSwitchKey.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SmartSwitchKey.h; sourceTree = "<group>"; };
 		23F512832336386200397988 /* MJAccessibilityUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MJAccessibilityUtils.m; sourceTree = "<group>"; };
 		23F512842336386200397988 /* MJAccessibilityUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MJAccessibilityUtils.h; sourceTree = "<group>"; };
+		3275F9510DD17ABFE9A00A80 /* SettingsWindowContent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsWindowContent.swift; sourceTree = "<group>"; };
 		3B27EBB488B64D6C48DE34C7 /* PHSilentUserDriver.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = PHSilentUserDriver.h; sourceTree = "<group>"; };
 		461048612EF2DF22005AF5FC /* SendKeyStepByStepAppsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendKeyStepByStepAppsView.swift; sourceTree = "<group>"; };
 		46394F582EFA5D56009D5194 /* EnglishWordDetector.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EnglishWordDetector.h; sourceTree = "<group>"; };
@@ -181,6 +188,7 @@
 		77DE4E5107F853D1232E1CAE /* EmojiHotkeyBridge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EmojiHotkeyBridge.swift; sourceTree = "<group>"; };
 		7F8113D10F75956CFA8F2D7E /* KlipyModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KlipyModels.swift; sourceTree = "<group>"; };
 		84443821FC9E0F2616F3C783 /* VietnameseSynonyms.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VietnameseSynonyms.swift; sourceTree = "<group>"; };
+		8C87D42C4A844B638E884513 /* SettingsWindowHelper.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsWindowHelper.swift; sourceTree = "<group>"; };
 		8D5FAA9501C1BD2A1E0B936E /* EmojiHotkeyManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EmojiHotkeyManager.swift; sourceTree = "<group>"; };
 		8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorExtension.swift; sourceTree = "<group>"; };
 		8E55895D7C4348BCA1ABE9E8 /* BackendSyncOptimizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendSyncOptimizer.swift; sourceTree = "<group>"; };
@@ -197,6 +205,7 @@
 		BCA3766510F7D84A0AF64E7B /* KlipyAPIClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KlipyAPIClient.swift; sourceTree = "<group>"; };
 		C2DA720371C3BD130F878C29 /* AppsSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppsSettingsView.swift; sourceTree = "<group>"; };
 		C4CEF88A4B3F8A497ADD2444 /* GIFOnlyView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GIFOnlyView.swift; sourceTree = "<group>"; };
+		C70807CB6874B42FFE69DCBC /* SettingsNotificationObserver.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsNotificationObserver.swift; sourceTree = "<group>"; };
 		D15404E79E3FAB407D4F065D /* KeyModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeyModels.swift; sourceTree = "<group>"; };
 		D211AB0354C9DBCE44ED2062 /* EmojiPickerManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EmojiPickerManager.swift; sourceTree = "<group>"; };
 		D3CC100734FFEFB3899169A6 /* EmojiDatabase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EmojiDatabase.swift; sourceTree = "<group>"; };
@@ -233,6 +242,7 @@
 		F1A1A1EA2025130100000044 /* ReleaseNotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesView.swift; sourceTree = "<group>"; };
 		F1A1A1EC2025130100000046 /* ConvertToolView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvertToolView.swift; sourceTree = "<group>"; };
 		F1A1A1EE2025130100000048 /* MacroCategoryEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroCategoryEditorView.swift; sourceTree = "<group>"; };
+		F3E15DDA71B387CD0639493F /* AppState.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		F82534773F42A3F85B37C435 /* APIKeySetupView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = APIKeySetupView.swift; sourceTree = "<group>"; };
 		F9A75B12CBD76A680F99BAC0 /* VietnameseTextUtilities.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VietnameseTextUtilities.swift; sourceTree = "<group>"; };
 		FABD3529F8FFC83F017377CB /* StickerOnlyView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StickerOnlyView.swift; sourceTree = "<group>"; };
@@ -357,6 +367,18 @@
 				233C4A6F231F937900DD7052 /* ConvertTool.cpp */,
 			);
 			path = Engine;
+			sourceTree = "<group>";
+		};
+		340F4C55F4C6F0056B02F26F /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				3275F9510DD17ABFE9A00A80 /* SettingsWindowContent.swift */,
+				8C87D42C4A844B638E884513 /* SettingsWindowHelper.swift */,
+				05CD94C7C42C2D520013AB28 /* SettingsWindowOpener.swift */,
+				C70807CB6874B42FFE69DCBC /* SettingsNotificationObserver.swift */,
+			);
+			name = Settings;
+			path = Settings;
 			sourceTree = "<group>";
 		};
 		3DD52C7E92A94D766F188731 /* Services */ = {
@@ -522,6 +544,15 @@
 			path = ContentViews;
 			sourceTree = "<group>";
 		};
+		ED3CB4C0EBC6444BEA98E4FB /* State */ = {
+			isa = PBXGroup;
+			children = (
+				F3E15DDA71B387CD0639493F /* AppState.swift */,
+			);
+			name = State;
+			path = State;
+			sourceTree = "<group>";
+		};
 		F1A1A2A72025130000000017 /* UI */ = {
 			isa = PBXGroup;
 			children = (
@@ -535,6 +566,8 @@
 				4FD0308313995A886D6D78C1 /* Network */,
 				0241EB3E2A7FF95BA5D86B0F /* Database */,
 				01B65F2B0AC435804B789415 /* Picker */,
+				340F4C55F4C6F0056B02F26F /* Settings */,
+				ED3CB4C0EBC6444BEA98E4FB /* State */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -779,6 +812,11 @@
 				CCE359D81044723B047F005C /* StickerOnlyView.swift in Sources */,
 				62C8CE4ED1A5A22915ABA918 /* UnifiedContentView.swift in Sources */,
 				A541BC9447C9FAB86E11112C /* APIKeySetupView.swift in Sources */,
+				8FE65B27C458CAB478FFE025 /* SettingsWindowContent.swift in Sources */,
+				65C45B7195EC9D7105F79A2D /* SettingsWindowHelper.swift in Sources */,
+				F15A1682052C0E19BCB012E8 /* SettingsWindowOpener.swift in Sources */,
+				82AEA01829CE01145F535AB7 /* SettingsNotificationObserver.swift in Sources */,
+				020D2C9970888E364BF34981 /* AppState.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
