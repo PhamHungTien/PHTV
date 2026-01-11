@@ -10,6 +10,8 @@
 		015CCFFEF0134F81976FCAB6 /* HotkeySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3CCE6686B954309A3B65AAD /* HotkeySettingsView.swift */; };
 		0D5084B3411F5119D468D80E /* CompatibilitySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72B4F8A52F8DD55EF170821A /* CompatibilitySettingsView.swift */; };
 		16B982F63741372BF590C264 /* PHSilentUserDriver.m in Sources */ = {isa = PBXBuildFile; fileRef = 1366D9FE4F6A7BBD6B32B8BE /* PHSilentUserDriver.m */; };
+		1A2F2DF299D4FD6F60AAB963 /* KeyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15404E79E3FAB407D4F065D /* KeyModels.swift */; };
+		20A30E70D92BD4559B80436F /* UpdateModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1498B293675600E929EBB555 /* UpdateModels.swift */; };
 		232EDA5921F1B33E0085D362 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 232EDA5821F1B33E0085D362 /* AppDelegate.mm */; };
 		232EDA5E21F1B33F0085D362 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 232EDA5D21F1B33F0085D362 /* Assets.xcassets */; };
 		233C4A6E231F923D00DD7052 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 233C4A6D231F923D00DD7052 /* AppKit.framework */; };
@@ -26,6 +28,8 @@
 		23E2E49F2314FD3A006CCC3E /* Engine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23E2E49A2314FD3A006CCC3E /* Engine.cpp */; };
 		23E2E4A02314FD3A006CCC3E /* Vietnamese.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23E2E49B2314FD3A006CCC3E /* Vietnamese.cpp */; };
 		23F512852336386200397988 /* MJAccessibilityUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 23F512832336386200397988 /* MJAccessibilityUtils.m */; };
+		2CA3F1C734453D6C382C9FD9 /* InputModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 990B0144306ECDAF3CBFEA13 /* InputModels.swift */; };
+		3530750AF0ABC7A8ABF8B48A /* MediaStorageHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D7ABD6D4D0E226B22794A2 /* MediaStorageHelper.swift */; };
 		461048622EF2DF22005AF5FC /* SendKeyStepByStepAppsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 461048612EF2DF22005AF5FC /* SendKeyStepByStepAppsView.swift */; };
 		46394F5A2EFA5D56009D5194 /* EnglishWordDetector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46394F592EFA5D56009D5194 /* EnglishWordDetector.cpp */; };
 		46394F7E2EFAC18E009D5194 /* en_words.txt in Resources */ = {isa = PBXBuildFile; fileRef = 46394F7F2EFAC18E009D5194 /* en_words.txt */; };
@@ -43,10 +47,20 @@
 		46ABBBAA2EFD67680003CBB5 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 46ABBBA92EFD67680003CBB5 /* Sparkle */; };
 		46ABBBB02EFD67B00003CBB5 /* SparkleManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = 46ABBBAF2EFD67B00003CBB5 /* SparkleManager.mm */; };
 		46EF4FFA2EEDBFD400DF8DD1 /* PHTV.icon in Resources */ = {isa = PBXBuildFile; fileRef = 46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */; };
+		582F22823AB2122EA8CC0172 /* VietnameseSynonyms.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84443821FC9E0F2616F3C783 /* VietnameseSynonyms.swift */; };
+		5EE57A9BB919C44652062797 /* KlipyAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCA3766510F7D84A0AF64E7B /* KlipyAPIClient.swift */; };
+		71156465A7A93BA70CE4B34A /* KlipyModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F8113D10F75956CFA8F2D7E /* KlipyModels.swift */; };
+		7CD0F7C9799435D2137792A1 /* EmojiHotkeyBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77DE4E5107F853D1232E1CAE /* EmojiHotkeyBridge.swift */; };
+		7E8FC7E86DE2E6DFF24E2FA5 /* EmojiDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3CC100734FFEFB3899169A6 /* EmojiDatabase.swift */; };
+		811E70BC3AACAA2FEEB531B3 /* EmojiHotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D5FAA9501C1BD2A1E0B936E /* EmojiHotkeyManager.swift */; };
 		94655D583046479AA9515786 /* PHTVBinaryIntegrity.m in Sources */ = {isa = PBXBuildFile; fileRef = DC22F23BA9404436B654A651 /* PHTVBinaryIntegrity.m */; };
 		A534F32629D8B78100296F25 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23874B0F220160A500000BC8 /* Carbon.framework */; };
 		A534F32629D8B78100296F26 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23874B10220160A500000BC9 /* QuartzCore.framework */; };
 		B130517648548D01FFC0F52C /* AppsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2DA720371C3BD130F878C29 /* AppsSettingsView.swift */; };
+		C4961E0947A9379AEC307E96 /* EmojiModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64A3EE8FE1AA073862B82C1A /* EmojiModels.swift */; };
+		C4B0D93C0BD03698D158FAFF /* MenuBarIconManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91BDAE4C737217F8B2934770 /* MenuBarIconManager.swift */; };
+		D357A0503308011A99A4C950 /* AppModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE0F76B39F1FB9FB8C382332 /* AppModels.swift */; };
+		D357BD38FFDBA314DC771E23 /* BeepManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF98255BCC66A085A1BB7AF0 /* BeepManager.swift */; };
 		E1A1A1A52025120200000005 /* PHTVConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A72025120200000007 /* PHTVConfig.m */; };
 		E1A1A1A62025120200000006 /* PHTVUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A92025120200000009 /* PHTVUtilities.m */; };
 		EF5EC6D461F146F7BB7B771B /* ColorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */; };
@@ -73,6 +87,7 @@
 		F1A1A1E92025130100000043 /* ReleaseNotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1EA2025130100000044 /* ReleaseNotesView.swift */; };
 		F1A1A1EB2025130100000045 /* ConvertToolView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1EC2025130100000046 /* ConvertToolView.swift */; };
 		F1A1A1ED2025130100000047 /* MacroCategoryEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1EE2025130100000048 /* MacroCategoryEditorView.swift */; };
+		F28A6AB4C40769F607E59F7B /* VietnameseTextUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9A75B12CBD76A680F99BAC0 /* VietnameseTextUtilities.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -89,6 +104,7 @@
 
 /* Begin PBXFileReference section */
 		1366D9FE4F6A7BBD6B32B8BE /* PHSilentUserDriver.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = PHSilentUserDriver.m; sourceTree = "<group>"; };
+		1498B293675600E929EBB555 /* UpdateModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UpdateModels.swift; sourceTree = "<group>"; };
 		232EDA5721F1B33E0085D362 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		232EDA5821F1B33E0085D362 /* AppDelegate.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AppDelegate.mm; sourceTree = "<group>"; };
 		232EDA5D21F1B33F0085D362 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -141,13 +157,25 @@
 		46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = PHTV.icon; sourceTree = "<group>"; };
 		46EF4FFB2EEDC0A200DF8DD1 /* PHTV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PHTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4EE6F9D6434C477BAC2BDF4E /* PHTVBinaryIntegrity.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PHTVBinaryIntegrity.h; sourceTree = "<group>"; };
+		64A3EE8FE1AA073862B82C1A /* EmojiModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EmojiModels.swift; sourceTree = "<group>"; };
+		68D7ABD6D4D0E226B22794A2 /* MediaStorageHelper.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MediaStorageHelper.swift; sourceTree = "<group>"; };
 		72B4F8A52F8DD55EF170821A /* CompatibilitySettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CompatibilitySettingsView.swift; sourceTree = "<group>"; };
+		77DE4E5107F853D1232E1CAE /* EmojiHotkeyBridge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EmojiHotkeyBridge.swift; sourceTree = "<group>"; };
+		7F8113D10F75956CFA8F2D7E /* KlipyModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KlipyModels.swift; sourceTree = "<group>"; };
+		84443821FC9E0F2616F3C783 /* VietnameseSynonyms.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VietnameseSynonyms.swift; sourceTree = "<group>"; };
+		8D5FAA9501C1BD2A1E0B936E /* EmojiHotkeyManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EmojiHotkeyManager.swift; sourceTree = "<group>"; };
 		8E55895C7C4348BCA1ABE9E7 /* ColorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorExtension.swift; sourceTree = "<group>"; };
 		8E55895D7C4348BCA1ABE9E8 /* BackendSyncOptimizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendSyncOptimizer.swift; sourceTree = "<group>"; };
 		8E55895E7C4348BCA1ABE9E9 /* BeepManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeepManager.swift; sourceTree = "<group>"; };
 		8E55895F7C4348BCA1ABE9EA /* SettingsSliderRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSliderRow.swift; sourceTree = "<group>"; };
 		8E558960C4348BCA1ABE9EB /* HotReloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotReloadManager.swift; sourceTree = "<group>"; };
+		91BDAE4C737217F8B2934770 /* MenuBarIconManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MenuBarIconManager.swift; sourceTree = "<group>"; };
+		990B0144306ECDAF3CBFEA13 /* InputModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InputModels.swift; sourceTree = "<group>"; };
+		AF98255BCC66A085A1BB7AF0 /* BeepManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BeepManager.swift; sourceTree = "<group>"; };
+		BCA3766510F7D84A0AF64E7B /* KlipyAPIClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KlipyAPIClient.swift; sourceTree = "<group>"; };
 		C2DA720371C3BD130F878C29 /* AppsSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppsSettingsView.swift; sourceTree = "<group>"; };
+		D15404E79E3FAB407D4F065D /* KeyModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeyModels.swift; sourceTree = "<group>"; };
+		D3CC100734FFEFB3899169A6 /* EmojiDatabase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EmojiDatabase.swift; sourceTree = "<group>"; };
 		D3CCE6686B954309A3B65AAD /* HotkeySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeySettingsView.swift; sourceTree = "<group>"; };
 		DC22F23BA9404436B654A651 /* PHTVBinaryIntegrity.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PHTVBinaryIntegrity.m; sourceTree = "<group>"; };
 		E1A1A1A72025120200000007 /* PHTVConfig.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PHTVConfig.m; sourceTree = "<group>"; };
@@ -179,6 +207,8 @@
 		F1A1A1EA2025130100000044 /* ReleaseNotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotesView.swift; sourceTree = "<group>"; };
 		F1A1A1EC2025130100000046 /* ConvertToolView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvertToolView.swift; sourceTree = "<group>"; };
 		F1A1A1EE2025130100000048 /* MacroCategoryEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroCategoryEditorView.swift; sourceTree = "<group>"; };
+		F9A75B12CBD76A680F99BAC0 /* VietnameseTextUtilities.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VietnameseTextUtilities.swift; sourceTree = "<group>"; };
+		FE0F76B39F1FB9FB8C382332 /* AppModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppModels.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -201,6 +231,31 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0241EB3E2A7FF95BA5D86B0F /* Database */ = {
+			isa = PBXGroup;
+			children = (
+				F9A75B12CBD76A680F99BAC0 /* VietnameseTextUtilities.swift */,
+				84443821FC9E0F2616F3C783 /* VietnameseSynonyms.swift */,
+				D3CC100734FFEFB3899169A6 /* EmojiDatabase.swift */,
+			);
+			name = Database;
+			path = Database;
+			sourceTree = "<group>";
+		};
+		1FC54811CB424120D0DAB3AA /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				990B0144306ECDAF3CBFEA13 /* InputModels.swift */,
+				D15404E79E3FAB407D4F065D /* KeyModels.swift */,
+				1498B293675600E929EBB555 /* UpdateModels.swift */,
+				FE0F76B39F1FB9FB8C382332 /* AppModels.swift */,
+				7F8113D10F75956CFA8F2D7E /* KlipyModels.swift */,
+				64A3EE8FE1AA073862B82C1A /* EmojiModels.swift */,
+			);
+			name = Models;
+			path = Models;
+			sourceTree = "<group>";
+		};
 		232EDA4B21F1B33E0085D362 = {
 			isa = PBXGroup;
 			children = (
@@ -263,6 +318,19 @@
 			path = Engine;
 			sourceTree = "<group>";
 		};
+		3DD52C7E92A94D766F188731 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				AF98255BCC66A085A1BB7AF0 /* BeepManager.swift */,
+				91BDAE4C737217F8B2934770 /* MenuBarIconManager.swift */,
+				68D7ABD6D4D0E226B22794A2 /* MediaStorageHelper.swift */,
+				8D5FAA9501C1BD2A1E0B936E /* EmojiHotkeyManager.swift */,
+				77DE4E5107F853D1232E1CAE /* EmojiHotkeyBridge.swift */,
+			);
+			name = Services;
+			path = Services;
+			sourceTree = "<group>";
+		};
 		46394F6D2EFA5E8F009D5194 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
@@ -309,6 +377,15 @@
 				46394F952EFAC190009D5194 /* Main.strings */,
 			);
 			path = "vi-VN.lproj";
+			sourceTree = "<group>";
+		};
+		4FD0308313995A886D6D78C1 /* Network */ = {
+			isa = PBXGroup;
+			children = (
+				BCA3766510F7D84A0AF64E7B /* KlipyAPIClient.swift */,
+			);
+			name = Network;
+			path = Network;
 			sourceTree = "<group>";
 		};
 		E1A1A2A12025120000000011 /* Application */ = {
@@ -385,6 +462,10 @@
 				F1A1A2A82025130000000018 /* Views */,
 				F1A1A2A92025130000000019 /* Controllers */,
 				F1A1A2AB2025130000000021 /* Utilities */,
+				1FC54811CB424120D0DAB3AA /* Models */,
+				3DD52C7E92A94D766F188731 /* Services */,
+				4FD0308313995A886D6D78C1 /* Network */,
+				0241EB3E2A7FF95BA5D86B0F /* Database */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -600,6 +681,21 @@
 				16B982F63741372BF590C264 /* PHSilentUserDriver.m in Sources */,
 				B130517648548D01FFC0F52C /* AppsSettingsView.swift in Sources */,
 				0D5084B3411F5119D468D80E /* CompatibilitySettingsView.swift in Sources */,
+				2CA3F1C734453D6C382C9FD9 /* InputModels.swift in Sources */,
+				1A2F2DF299D4FD6F60AAB963 /* KeyModels.swift in Sources */,
+				20A30E70D92BD4559B80436F /* UpdateModels.swift in Sources */,
+				D357A0503308011A99A4C950 /* AppModels.swift in Sources */,
+				71156465A7A93BA70CE4B34A /* KlipyModels.swift in Sources */,
+				C4961E0947A9379AEC307E96 /* EmojiModels.swift in Sources */,
+				D357BD38FFDBA314DC771E23 /* BeepManager.swift in Sources */,
+				C4B0D93C0BD03698D158FAFF /* MenuBarIconManager.swift in Sources */,
+				3530750AF0ABC7A8ABF8B48A /* MediaStorageHelper.swift in Sources */,
+				811E70BC3AACAA2FEEB531B3 /* EmojiHotkeyManager.swift in Sources */,
+				7CD0F7C9799435D2137792A1 /* EmojiHotkeyBridge.swift in Sources */,
+				5EE57A9BB919C44652062797 /* KlipyAPIClient.swift in Sources */,
+				F28A6AB4C40769F607E59F7B /* VietnameseTextUtilities.swift in Sources */,
+				582F22823AB2122EA8CC0172 /* VietnameseSynonyms.swift in Sources */,
+				7E8FC7E86DE2E6DFF24E2FA5 /* EmojiDatabase.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
