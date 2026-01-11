@@ -441,6 +441,19 @@ func openSettingsWindow(with appState: AppState) {
 final class AppState: ObservableObject {
     static let shared = AppState()
 
+    // Helper to access AppDelegate via NSApp (thread-safe)
+    // Note: In SwiftUI with @NSApplicationDelegateAdaptor, use NSApp.delegate
+    @MainActor
+    private func getAppDelegate() -> AppDelegate? {
+        // Use NSApp.delegate instead of global var - this is thread-safe
+        if let delegate = NSApp.delegate as? AppDelegate {
+            return delegate
+        }
+        // Fallback: try Objective-C global var if NSApp.delegate not set yet
+        // This works during app launch before delegate is fully initialized
+        return NSApplication.shared.delegate as? AppDelegate
+    }
+
     private static var liveDebugEnabled: Bool {
         let env = ProcessInfo.processInfo.environment["PHTV_LIVE_DEBUG"]
         if let env, !env.isEmpty {
@@ -1296,21 +1309,11 @@ final class AppState: ObservableObject {
 
             NSLog("[AppState] 🔄 runOnStartup observer triggered: value=%@", value ? "ON" : "OFF")
 
-            // CRITICAL: Call setRunOnStartup immediately - it handles UserDefaults internally
-            // Do NOT save to UserDefaults here - setRunOnStartup will do it ONLY on success
-            guard let appDelegate = NSApp.delegate as? AppDelegate else {
-                NSLog("[AppState] ❌ AppDelegate not available yet - retrying in 0.5s")
-
-                // Retry after short delay (app may still be launching)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    guard let appDelegate = NSApp.delegate as? AppDelegate else {
-                        NSLog("[AppState] ❌ AppDelegate still not available - giving up")
-                        return
-                    }
-
-                    NSLog("[AppState] ✅ AppDelegate now available - calling setRunOnStartup")
-                    appDelegate.setRunOnStartup(value)
-                }
+            // CRITICAL: Use global appDelegate helper
+            // NSApp.delegate returns nil in SwiftUI apps with @NSApplicationDelegateAdaptor
+            guard let appDelegate = self.getAppDelegate() else {
+                NSLog("[AppState] ❌ Global appDelegate is nil - app may still be launching")
+                NSLog("[AppState] ⚠️ This should not happen - appDelegate is set in applicationDidFinishLaunching")
                 return
             }
 

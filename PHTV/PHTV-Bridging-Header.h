@@ -15,6 +15,10 @@
 // Application
 #import "Application/AppDelegate.h"
 
+// Global AppDelegate instance (defined in AppDelegate.mm)
+// Note: Accessed on main thread only, safe despite concurrency warning
+extern AppDelegate* _Nullable appDelegate;
+
 // Managers
 #import "Managers/PHTVManager.h"
 
