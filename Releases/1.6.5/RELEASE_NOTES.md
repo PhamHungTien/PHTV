@@ -190,7 +190,7 @@ xcodebuild -scheme PHTV -configuration Release
 
 - **Issues**: https://github.com/PhamHungTien/PHTV/issues
 - **Discussions**: https://github.com/PhamHungTien/PHTV/discussions
-- **Email**: hungtien10a7@gmail.com
+- **Email**: phamhungtien.contact@gmail.com
 
 Nếu bản update này giải quyết được vấn đề của bạn, hãy để lại ⭐ trên GitHub!
 

@@ -1103,7 +1103,7 @@ struct BugReportView: View {
         \(bugDescription.isEmpty ? "(Chưa nhập)" : bugDescription)
         """.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
 
-        if let url = URL(string: "mailto:hungtien10a7@gmail.com?subject=\(subject)&body=\(body)") {
+        if let url = URL(string: "mailto:phamhungtien.contact@gmail.com?subject=\(subject)&body=\(body)") {
             NSWorkspace.shared.open(url)
         }
 

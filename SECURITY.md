@@ -4,7 +4,7 @@
 
 **PHTV — Precision Hybrid Typing Vietnamese | Security Policy**
 
-[🏠 Trang chủ](README.md) • [📧 Email bảo mật](mailto:hungtien10a7@gmail.com) • [🐛 Issues](https://github.com/PhamHungTien/PHTV/issues)
+[🏠 Trang chủ](README.md) • [📧 Email bảo mật](mailto:phamhungtien.contact@gmail.com) • [🐛 Issues](https://github.com/PhamHungTien/PHTV/issues)
 
 </div>
 
@@ -29,7 +29,7 @@
 
 ### 📧 Cách báo cáo
 
-**Email:** [hungtien10a7@gmail.com](mailto:hungtien10a7@gmail.com)
+**Email:** [phamhungtien.contact@gmail.com](mailto:phamhungtien.contact@gmail.com)
 **Subject:** `[SECURITY] Báo cáo lỗ hổng bảo mật - [Tóm tắt ngắn gọn]`
 
 ### 📝 Thông tin cần cung cấp
@@ -323,7 +323,7 @@ _Chưa có báo cáo nào được ghi nhận trong năm 2025._
 
 ### Cho các câu hỏi bảo mật
 
-- **Email**: [hungtien10a7@gmail.com](mailto:hungtien10a7@gmail.com)
+- **Email**: [phamhungtien.contact@gmail.com](mailto:phamhungtien.contact@gmail.com)
 - **Subject line**: Bắt đầu với `[SECURITY]`
 
 ### Cho các vấn đề khác
@@ -340,7 +340,7 @@ _Chưa có báo cáo nào được ghi nhận trong năm 2025._
 Chúng tôi cam kết bảo vệ người dùng và xử lý mọi báo cáo bảo mật một cách nghiêm túc.
 
 [![Security Policy](https://img.shields.io/badge/Security-Policy-red?logo=security)](SECURITY.md)
-[![Report Vulnerability](https://img.shields.io/badge/Report-Vulnerability-critical)](mailto:hungtien10a7@gmail.com)
+[![Report Vulnerability](https://img.shields.io/badge/Report-Vulnerability-critical)](mailto:phamhungtien.contact@gmail.com)
 [![Responsible Disclosure](https://img.shields.io/badge/Responsible-Disclosure-success)]()
 
 ### 🙏 Cảm ơn đã giúp PHTV an toàn hơn!
@@ -351,7 +351,7 @@ Mọi báo cáo bảo mật đều được đánh giá cao và góp phần làm
 
 **Quick Links**
 
-[🏠 Trang chủ](README.md) • [📧 Email bảo mật](mailto:hungtien10a7@gmail.com) • [🐛 Report Bug](https://github.com/PhamHungTien/PHTV/issues) • [📖 Documentation](README.md)
+[🏠 Trang chủ](README.md) • [📧 Email bảo mật](mailto:phamhungtien.contact@gmail.com) • [🐛 Report Bug](https://github.com/PhamHungTien/PHTV/issues) • [📖 Documentation](README.md)
 
 ---
 

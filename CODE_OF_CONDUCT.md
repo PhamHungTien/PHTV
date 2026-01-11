@@ -81,6 +81,6 @@ Quy tắc ứng xử này được thích nghi từ [Contributor Covenant][homep
 
 **Cảm ơn đã giúp tạo ra một cộng đồng thân thiện và đón tiếp!** ❤️
 
-[🏠 Trang chủ](README.md) • [🤝 Đóng góp](CONTRIBUTING.md) • [📧 Báo cáo vi phạm](mailto:hungtien10a7@gmail.com)
+[🏠 Trang chủ](README.md) • [🤝 Đóng góp](CONTRIBUTING.md) • [📧 Báo cáo vi phạm](mailto:phamhungtien.contact@gmail.com)
 
 </div>

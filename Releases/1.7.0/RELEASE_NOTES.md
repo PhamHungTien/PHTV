@@ -588,7 +588,7 @@ brew upgrade phtv
 
 - **Issues**: [GitHub Issues](https://github.com/PhamHungTien/PHTV/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/PhamHungTien/PHTV/discussions)
-- **Email**: hungtien10a7@gmail.com
+- **Email**: phamhungtien.contact@gmail.com
 
 If this update improves your typing experience, please:
 - ⭐ Star the project on GitHub

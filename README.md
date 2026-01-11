@@ -322,10 +322,10 @@ Mọi đóng góp đều được chào đón! Xem [CONTRIBUTING.md](CONTRIBUTIN
 
 ## Hỗ trợ & Liên hệ
 
-- Email: hungtien10a7@gmail.com
+- Email: phamhungtien.contact@gmail.com
 - GitHub: [Issues](../../issues) | [Discussions](../../discussions)
 - Website: [phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/)
-- Facebook: [phamhungtien1404](https://www.facebook.com/phamhungtien1404)
+- Facebook: [PHTVInput](https://www.facebook.com/PHTVInput)
 - LinkedIn: [Phạm Hùng Tiến](https://www.linkedin.com/in/ph%E1%BA%A1m-h%C3%B9ng-ti%E1%BA%BFn-a1b405327/)
 
 ## License & Credits

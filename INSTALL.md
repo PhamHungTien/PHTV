@@ -372,8 +372,8 @@ brew install --cask phtv
 
 <div align="center">
 
-**Vẫn gặp vấn đề?** [Tạo issue trên GitHub](../../issues/new) hoặc [Liên hệ qua email](mailto:hungtien10a7@gmail.com)
+**Vẫn gặp vấn đề?** [Tạo issue trên GitHub](../../issues/new) hoặc [Liên hệ qua email](mailto:phamhungtien.contact@gmail.com)
 
-[Về trang chủ](README.md) • [Email](mailto:hungtien10a7@gmail.com) • [Discussions](../../discussions)
+[Về trang chủ](README.md) • [Email](mailto:phamhungtien.contact@gmail.com) • [Discussions](../../discussions)
 
 </div>

@@ -10,7 +10,7 @@
 - Cập nhật hình ảnh UI mới cho README.
 
 ## Tác giả
-Phạm Hùng Tiến <hungtien10a7@gmail.com>
+Phạm Hùng Tiến <phamhungtien.contact@gmail.com>
 
 ---
 
@@ -26,4 +26,4 @@ Phạm Hùng Tiến <hungtien10a7@gmail.com>
 - Updated new UI images in README.
 
 ## Author
-Phạm Hùng Tiến <hungtien10a7@gmail.com>
+Phạm Hùng Tiến <phamhungtien.contact@gmail.com>
