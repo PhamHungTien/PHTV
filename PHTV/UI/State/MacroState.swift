@@ -22,7 +22,7 @@ final class MacroState: ObservableObject {
     // Emoji Hotkey Settings
     @Published var enableEmojiHotkey: Bool = true
     @Published var emojiHotkeyModifiersRaw: Int = Int(NSEvent.ModifierFlags.command.rawValue)
-    @Published var emojiHotkeyKeyCode: UInt16 = 14  // E key default
+    @Published var emojiHotkeyKeyCode: UInt16 = KeyCode.eKey  // E key default
 
     /// Computed property for emoji hotkey modifiers
     var emojiHotkeyModifiers: NSEvent.ModifierFlags {
@@ -32,7 +32,7 @@ final class MacroState: ObservableObject {
         set {
             emojiHotkeyModifiersRaw = Int(newValue.rawValue)
             // Trigger sync when modifiers change
-            NotificationCenter.default.post(name: NSNotification.Name("EmojiHotkeySettingsChanged"), object: nil)
+            NotificationCenter.default.post(name: NotificationName.emojiHotkeySettingsChanged, object: nil)
         }
     }
 
@@ -47,48 +47,48 @@ final class MacroState: ObservableObject {
         let defaults = UserDefaults.standard
 
         // Load macro settings
-        useMacro = defaults.bool(forKey: "UseMacro")
-        useMacroInEnglishMode = defaults.bool(forKey: "UseMacroInEnglishMode")
-        autoCapsMacro = defaults.bool(forKey: "vAutoCapsMacro")
+        useMacro = defaults.bool(forKey: UserDefaultsKey.useMacro)
+        useMacroInEnglishMode = defaults.bool(forKey: UserDefaultsKey.useMacroInEnglishMode)
+        autoCapsMacro = defaults.bool(forKey: UserDefaultsKey.autoCapsMacro)
 
         // Load macro categories (filter out default category if present)
-        if let categoriesData = defaults.data(forKey: "macroCategories"),
+        if let categoriesData = defaults.data(forKey: UserDefaultsKey.macroCategories),
            let categories = try? JSONDecoder().decode([MacroCategory].self, from: categoriesData) {
             macroCategories = categories.filter { $0.id != MacroCategory.defaultCategory.id }
         }
 
         // Load emoji hotkey settings (default true for first-time users)
-        if defaults.object(forKey: "vEnableEmojiHotkey") != nil {
-            enableEmojiHotkey = defaults.bool(forKey: "vEnableEmojiHotkey")
+        if defaults.object(forKey: UserDefaultsKey.enableEmojiHotkey) != nil {
+            enableEmojiHotkey = defaults.bool(forKey: UserDefaultsKey.enableEmojiHotkey)
         } else {
             enableEmojiHotkey = true  // Default enabled for new users
         }
-        emojiHotkeyModifiersRaw = defaults.integer(forKey: "vEmojiHotkeyModifiers")
+        emojiHotkeyModifiersRaw = defaults.integer(forKey: UserDefaultsKey.emojiHotkeyModifiers)
         if emojiHotkeyModifiersRaw == 0 {
             emojiHotkeyModifiersRaw = Int(NSEvent.ModifierFlags.command.rawValue)  // Default: Command
         }
-        let savedKeyCode = defaults.integer(forKey: "vEmojiHotkeyKeyCode")
-        emojiHotkeyKeyCode = savedKeyCode > 0 ? UInt16(savedKeyCode) : 14  // Default: E key
+        let savedKeyCode = defaults.integer(forKey: UserDefaultsKey.emojiHotkeyKeyCode)
+        emojiHotkeyKeyCode = savedKeyCode > 0 ? UInt16(savedKeyCode) : KeyCode.eKey  // Default: E key
     }
 
     func saveSettings() {
         let defaults = UserDefaults.standard
 
         // Save macro settings
-        defaults.set(useMacro, forKey: "UseMacro")
-        defaults.set(useMacroInEnglishMode, forKey: "UseMacroInEnglishMode")
-        defaults.set(autoCapsMacro, forKey: "vAutoCapsMacro")
+        defaults.set(useMacro, forKey: UserDefaultsKey.useMacro)
+        defaults.set(useMacroInEnglishMode, forKey: UserDefaultsKey.useMacroInEnglishMode)
+        defaults.set(autoCapsMacro, forKey: UserDefaultsKey.autoCapsMacro)
 
         // Save macro categories (exclude default category)
         let categoriesToSave = macroCategories.filter { $0.id != MacroCategory.defaultCategory.id }
         if let categoriesData = try? JSONEncoder().encode(categoriesToSave) {
-            defaults.set(categoriesData, forKey: "macroCategories")
+            defaults.set(categoriesData, forKey: UserDefaultsKey.macroCategories)
         }
 
         // Save emoji hotkey settings
-        defaults.set(enableEmojiHotkey, forKey: "vEnableEmojiHotkey")
-        defaults.set(emojiHotkeyModifiersRaw, forKey: "vEmojiHotkeyModifiers")
-        defaults.set(Int(emojiHotkeyKeyCode), forKey: "vEmojiHotkeyKeyCode")
+        defaults.set(enableEmojiHotkey, forKey: UserDefaultsKey.enableEmojiHotkey)
+        defaults.set(emojiHotkeyModifiersRaw, forKey: UserDefaultsKey.emojiHotkeyModifiers)
+        defaults.set(Int(emojiHotkeyKeyCode), forKey: UserDefaultsKey.emojiHotkeyKeyCode)
 
         defaults.synchronize()
     }
@@ -102,12 +102,12 @@ final class MacroState: ObservableObject {
             $useMacroInEnglishMode,
             $autoCapsMacro
         )
-        .debounce(for: .milliseconds(100), scheduler: RunLoop.main)
+        .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
         .sink { [weak self] _ in
             guard let self = self, !self.isLoadingSettings else { return }
             self.saveSettings()
             NotificationCenter.default.post(
-                name: NSNotification.Name("PHTVSettingsChanged"), object: nil
+                name: NotificationName.phtvSettingsChanged, object: nil
             )
         }.store(in: &cancellables)
 
@@ -117,7 +117,7 @@ final class MacroState: ObservableObject {
             $emojiHotkeyModifiersRaw.map { _ in () },
             $emojiHotkeyKeyCode.map { _ in () }
         )
-        .debounce(for: .milliseconds(100), scheduler: RunLoop.main)
+        .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
         .sink { [weak self] in
             guard let self = self, !self.isLoadingSettings else { return }
             // Save settings when emoji hotkey changes
@@ -126,7 +126,7 @@ final class MacroState: ObservableObject {
             #if DEBUG
             print("[MacroState] Posting EmojiHotkeySettingsChanged notification")
             #endif
-            NotificationCenter.default.post(name: NSNotification.Name("EmojiHotkeySettingsChanged"), object: nil)
+            NotificationCenter.default.post(name: NotificationName.emojiHotkeySettingsChanged, object: nil)
         }.store(in: &cancellables)
     }
 
@@ -141,7 +141,7 @@ final class MacroState: ObservableObject {
 
         enableEmojiHotkey = true
         emojiHotkeyModifiersRaw = Int(NSEvent.ModifierFlags.command.rawValue)
-        emojiHotkeyKeyCode = 14
+        emojiHotkeyKeyCode = KeyCode.eKey
 
         saveSettings()
     }

@@ -49,7 +49,7 @@ final class AppState: ObservableObject {
         if let env, !env.isEmpty {
             return env != "0"
         }
-        return UserDefaults.standard.integer(forKey: "PHTV_LIVE_DEBUG") != 0
+        return UserDefaults.standard.integer(forKey: UserDefaultsKey.liveDebug) != 0
     }
 
     private func liveLog(_ message: String) {
@@ -82,7 +82,7 @@ final class AppState: ObservableObject {
         let defaults = UserDefaults.standard
 
         // Load global isEnabled state
-        let inputMethod_saved = defaults.integer(forKey: "InputMethod")
+        let inputMethod_saved = defaults.integer(forKey: UserDefaultsKey.inputMethod)
         isEnabled = (inputMethod_saved == 1)
 
         // Load all sub-states
@@ -120,7 +120,7 @@ final class AppState: ObservableObject {
         // Notify Objective-C backend
         liveLog("posting PHTVSettingsChanged")
         NotificationCenter.default.post(
-            name: NSNotification.Name("PHTVSettingsChanged"), object: nil)
+            name: NotificationName.phtvSettingsChanged, object: nil)
     }
 
     // MARK: - External Settings Observer
@@ -128,7 +128,7 @@ final class AppState: ObservableObject {
     /// Monitor external UserDefaults changes and reload settings in real-time
     private func setupExternalSettingsObserver() {
         SettingsObserver.shared.$settingsDidChange
-            .debounce(for: 0.1, scheduler: DispatchQueue.main)
+            .debounce(for: .seconds(Timing.externalSettingsDebounce), scheduler: DispatchQueue.main)
             .sink { [weak self] (_: Date?) in
                 guard let self = self else { return }
                 self.reloadSettingsFromDefaults()
@@ -147,7 +147,7 @@ final class AppState: ObservableObject {
 
         // Reload global isEnabled state
         let defaults = UserDefaults.standard
-        let inputMethod_saved = defaults.integer(forKey: "InputMethod")
+        let inputMethod_saved = defaults.integer(forKey: UserDefaultsKey.inputMethod)
         let newIsEnabled = (inputMethod_saved == 1)
         if newIsEnabled != isEnabled {
             isEnabled = newIsEnabled
@@ -171,7 +171,7 @@ final class AppState: ObservableObject {
 
         // Listen for language changes from manual actions (hotkey, UI, input type change)
         let observer1 = NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("LanguageChangedFromBackend"),
+            forName: NotificationName.languageChangedFromBackend,
             object: nil,
             queue: .main
         ) { [weak self] notification in
@@ -193,7 +193,7 @@ final class AppState: ObservableObject {
 
         // Listen for language changes from excluded apps (no beep sound)
         let observer2 = NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("LanguageChangedFromExcludedApp"),
+            forName: NotificationName.languageChangedFromExcludedApp,
             object: nil,
             queue: .main
         ) { [weak self] notification in
@@ -210,7 +210,7 @@ final class AppState: ObservableObject {
 
         // Listen for language changes from smart switch (no beep sound)
         let observer3 = NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("LanguageChangedFromSmartSwitch"),
+            forName: NotificationName.languageChangedFromSmartSwitch,
             object: nil,
             queue: .main
         ) { [weak self] notification in
@@ -227,7 +227,7 @@ final class AppState: ObservableObject {
 
         // Listen for language changes from input source switch (no beep sound)
         let observer4 = NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("LanguageChangedFromObjC"),
+            forName: NotificationName.languageChangedFromObjC,
             object: nil,
             queue: .main
         ) { [weak self] notification in
@@ -244,7 +244,7 @@ final class AppState: ObservableObject {
 
         // Listen for app termination
         let terminateObserver = NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("ApplicationWillTerminate"),
+            forName: NotificationName.applicationWillTerminate,
             object: nil,
             queue: .main
         ) { [weak self] _ in
@@ -279,7 +279,7 @@ final class AppState: ObservableObject {
             guard let self = self, !self.isLoadingSettings else { return }
             let defaults = UserDefaults.standard
             let language = value ? 1 : 0
-            defaults.set(language, forKey: "InputMethod")
+            defaults.set(language, forKey: UserDefaultsKey.inputMethod)
             defaults.synchronize()
 
             // Play beep if enabled (volume adjusted)
@@ -289,7 +289,7 @@ final class AppState: ObservableObject {
 
             // Notify backend about language change from SwiftUI
             NotificationCenter.default.post(
-                name: NSNotification.Name("LanguageChangedFromSwiftUI"),
+                name: NotificationName.languageChangedFromSwiftUI,
                 object: NSNumber(value: language))
         }.store(in: &cancellables)
     }
@@ -312,7 +312,7 @@ final class AppState: ObservableObject {
 
         // Notify backend about reset
         NotificationCenter.default.post(
-            name: NSNotification.Name("SettingsResetToDefaults"),
+            name: NotificationName.settingsResetToDefaults,
             object: nil
         )
     }

@@ -25,7 +25,7 @@ final class AppListsState: ObservableObject {
         if let env, !env.isEmpty {
             return env != "0"
         }
-        return UserDefaults.standard.integer(forKey: "PHTV_LIVE_DEBUG") != 0
+        return UserDefaults.standard.integer(forKey: UserDefaultsKey.liveDebug) != 0
     }
 
     private func liveLog(_ message: String) {
@@ -41,14 +41,14 @@ final class AppListsState: ObservableObject {
         let defaults = UserDefaults.standard
 
         // Load excluded apps
-        if let data = defaults.data(forKey: "ExcludedApps"),
+        if let data = defaults.data(forKey: UserDefaultsKey.excludedApps),
             let apps = try? JSONDecoder().decode([ExcludedApp].self, from: data)
         {
             excludedApps = apps
         }
 
         // Load send key step by step apps
-        if let data = defaults.data(forKey: "SendKeyStepByStepApps"),
+        if let data = defaults.data(forKey: UserDefaultsKey.sendKeyStepByStepApps),
             let apps = try? JSONDecoder().decode([SendKeyStepByStepApp].self, from: data)
         {
             sendKeyStepByStepApps = apps
@@ -60,12 +60,12 @@ final class AppListsState: ObservableObject {
 
         // Save excluded apps
         if let data = try? JSONEncoder().encode(excludedApps) {
-            defaults.set(data, forKey: "ExcludedApps")
+            defaults.set(data, forKey: UserDefaultsKey.excludedApps)
         }
 
         // Save send key step by step apps
         if let data = try? JSONEncoder().encode(sendKeyStepByStepApps) {
-            defaults.set(data, forKey: "SendKeyStepByStepApps")
+            defaults.set(data, forKey: UserDefaultsKey.sendKeyStepByStepApps)
         }
 
         defaults.synchronize()
@@ -75,7 +75,7 @@ final class AppListsState: ObservableObject {
         let defaults = UserDefaults.standard
 
         // Reload excluded apps if changed
-        if let data = defaults.data(forKey: "ExcludedApps"),
+        if let data = defaults.data(forKey: UserDefaultsKey.excludedApps),
             let newApps = try? JSONDecoder().decode([ExcludedApp].self, from: data)
         {
             if newApps != excludedApps {
@@ -84,7 +84,7 @@ final class AppListsState: ObservableObject {
         }
 
         // Reload send key step by step apps if changed
-        if let data = defaults.data(forKey: "SendKeyStepByStepApps"),
+        if let data = defaults.data(forKey: UserDefaultsKey.sendKeyStepByStepApps),
             let newApps = try? JSONDecoder().decode([SendKeyStepByStepApp].self, from: data)
         {
             if newApps != sendKeyStepByStepApps {
@@ -113,18 +113,18 @@ final class AppListsState: ObservableObject {
 
     private func saveExcludedApps() {
         if let data = try? JSONEncoder().encode(excludedApps) {
-            UserDefaults.standard.set(data, forKey: "ExcludedApps")
+            UserDefaults.standard.set(data, forKey: UserDefaultsKey.excludedApps)
             UserDefaults.standard.synchronize()
 
             // Notify backend with hot reload
             liveLog("posting ExcludedAppsChanged")
             NotificationCenter.default.post(
-                name: NSNotification.Name("ExcludedAppsChanged"), object: excludedApps)
+                name: NotificationName.excludedAppsChanged, object: excludedApps)
 
             // Also post legacy notification for backward compatibility
             liveLog("posting ExcludedAppsChanged (legacy)")
             NotificationCenter.default.post(
-                name: NSNotification.Name("ExcludedAppsChanged"), object: nil)
+                name: NotificationName.excludedAppsChanged, object: nil)
         }
     }
 
@@ -148,13 +148,13 @@ final class AppListsState: ObservableObject {
 
     private func saveSendKeyStepByStepApps() {
         if let data = try? JSONEncoder().encode(sendKeyStepByStepApps) {
-            UserDefaults.standard.set(data, forKey: "SendKeyStepByStepApps")
+            UserDefaults.standard.set(data, forKey: UserDefaultsKey.sendKeyStepByStepApps)
             UserDefaults.standard.synchronize()
 
             // Notify backend with hot reload
             liveLog("posting SendKeyStepByStepAppsChanged")
             NotificationCenter.default.post(
-                name: NSNotification.Name("SendKeyStepByStepAppsChanged"), object: sendKeyStepByStepApps)
+                name: NotificationName.sendKeyStepByStepAppsChanged, object: sendKeyStepByStepApps)
         }
     }
 

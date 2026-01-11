@@ -21,12 +21,12 @@ final class SystemState: ObservableObject {
     @Published var safeMode: Bool = false
     @Published var enableLiquidGlassBackground: Bool = true {
         didSet {
-            UserDefaults.standard.set(enableLiquidGlassBackground, forKey: "vEnableLiquidGlassBackground")
+            UserDefaults.standard.set(enableLiquidGlassBackground, forKey: UserDefaultsKey.enableLiquidGlassBackground)
         }
     }
     @Published var settingsBackgroundOpacity: Double = 1.0 {
         didSet {
-            UserDefaults.standard.set(settingsBackgroundOpacity, forKey: "vSettingsBackgroundOpacity")
+            UserDefaults.standard.set(settingsBackgroundOpacity, forKey: UserDefaultsKey.settingsBackgroundOpacity)
         }
     }
 
@@ -80,29 +80,29 @@ final class SystemState: ObservableObject {
             runOnStartup = status
             isUpdatingRunOnStartup = false
         } else {
-            runOnStartup = defaults.bool(forKey: "PHTV_RunOnStartup")
+            runOnStartup = defaults.bool(forKey: UserDefaultsKey.runOnStartup)
         }
 
-        performLayoutCompat = defaults.bool(forKey: "vPerformLayoutCompat")
-        showIconOnDock = defaults.bool(forKey: "vShowIconOnDock")
-        settingsWindowAlwaysOnTop = defaults.bool(forKey: "vSettingsWindowAlwaysOnTop")
-        safeMode = defaults.bool(forKey: "SafeMode")
-        enableLiquidGlassBackground = defaults.object(forKey: "vEnableLiquidGlassBackground") as? Bool ?? true
-        settingsBackgroundOpacity = defaults.object(forKey: "vSettingsBackgroundOpacity") as? Double ?? 1.0
+        performLayoutCompat = defaults.bool(forKey: UserDefaultsKey.performLayoutCompat)
+        showIconOnDock = defaults.bool(forKey: UserDefaultsKey.showIconOnDock)
+        settingsWindowAlwaysOnTop = defaults.bool(forKey: UserDefaultsKey.settingsWindowAlwaysOnTop)
+        safeMode = defaults.bool(forKey: UserDefaultsKey.safeMode)
+        enableLiquidGlassBackground = defaults.object(forKey: UserDefaultsKey.enableLiquidGlassBackground) as? Bool ?? true
+        settingsBackgroundOpacity = defaults.object(forKey: UserDefaultsKey.settingsBackgroundOpacity) as? Double ?? 1.0
 
         // Load Claude Code patch setting - check actual patch status
         claudeCodePatchEnabled = ClaudeCodePatcher.shared.isPatched()
 
         // Load Sparkle settings
-        let updateInterval = defaults.integer(forKey: "SUScheduledCheckInterval")
+        let updateInterval = defaults.integer(forKey: UserDefaultsKey.updateCheckInterval)
         updateCheckFrequency = UpdateCheckFrequency.from(interval: updateInterval == 0 ? 86400 : updateInterval)
-        betaChannelEnabled = defaults.bool(forKey: "SUEnableBetaChannel")
+        betaChannelEnabled = defaults.bool(forKey: UserDefaultsKey.betaChannelEnabled)
 
         // Auto install updates - default to true if not set
-        if defaults.object(forKey: "vAutoInstallUpdates") == nil {
+        if defaults.object(forKey: UserDefaultsKey.autoInstallUpdates) == nil {
             autoInstallUpdates = true
         } else {
-            autoInstallUpdates = defaults.bool(forKey: "vAutoInstallUpdates")
+            autoInstallUpdates = defaults.bool(forKey: UserDefaultsKey.autoInstallUpdates)
         }
     }
 
@@ -110,21 +110,21 @@ final class SystemState: ObservableObject {
         let defaults = UserDefaults.standard
 
         // Save system settings
-        defaults.set(runOnStartup, forKey: "PHTV_RunOnStartup")
-        defaults.set(performLayoutCompat, forKey: "vPerformLayoutCompat")
-        defaults.set(showIconOnDock, forKey: "vShowIconOnDock")
-        defaults.set(settingsWindowAlwaysOnTop, forKey: "vSettingsWindowAlwaysOnTop")
-        defaults.set(enableLiquidGlassBackground, forKey: "vEnableLiquidGlassBackground")
-        defaults.set(settingsBackgroundOpacity, forKey: "vSettingsBackgroundOpacity")
+        defaults.set(runOnStartup, forKey: UserDefaultsKey.runOnStartup)
+        defaults.set(performLayoutCompat, forKey: UserDefaultsKey.performLayoutCompat)
+        defaults.set(showIconOnDock, forKey: UserDefaultsKey.showIconOnDock)
+        defaults.set(settingsWindowAlwaysOnTop, forKey: UserDefaultsKey.settingsWindowAlwaysOnTop)
+        defaults.set(enableLiquidGlassBackground, forKey: UserDefaultsKey.enableLiquidGlassBackground)
+        defaults.set(settingsBackgroundOpacity, forKey: UserDefaultsKey.settingsBackgroundOpacity)
 
         // Save safe mode and sync with backend
-        defaults.set(safeMode, forKey: "SafeMode")
+        defaults.set(safeMode, forKey: UserDefaultsKey.safeMode)
         PHTVManager.setSafeModeEnabled(safeMode)
 
         // Save Sparkle settings
-        defaults.set(updateCheckFrequency.rawValue, forKey: "SUScheduledCheckInterval")
-        defaults.set(betaChannelEnabled, forKey: "SUEnableBetaChannel")
-        defaults.set(autoInstallUpdates, forKey: "vAutoInstallUpdates")
+        defaults.set(updateCheckFrequency.rawValue, forKey: UserDefaultsKey.updateCheckInterval)
+        defaults.set(betaChannelEnabled, forKey: UserDefaultsKey.betaChannelEnabled)
+        defaults.set(autoInstallUpdates, forKey: UserDefaultsKey.autoInstallUpdates)
 
         defaults.synchronize()
     }
@@ -145,7 +145,7 @@ final class SystemState: ObservableObject {
         guard #available(macOS 13.0, *) else { return }
 
         // Check every 5 seconds
-        loginItemCheckTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+        loginItemCheckTimer = Timer.scheduledTimer(withTimeInterval: Timing.loginItemCheckInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 await self?.checkLoginItemStatus()
             }
@@ -168,7 +168,7 @@ final class SystemState: ObservableObject {
         // Don't override user changes immediately
         if let lastChange = lastRunOnStartupChangeTime {
             let timeSinceChange = Date().timeIntervalSince(lastChange)
-            if timeSinceChange < 10.0 {
+            if timeSinceChange < Timing.loginItemGracePeriod {
                 NSLog("[LoginItem] Skipping check - user changed setting %.1fs ago (< 10s grace period)", timeSinceChange)
                 return
             }
@@ -189,8 +189,8 @@ final class SystemState: ObservableObject {
 
             // Update UserDefaults too
             let defaults = UserDefaults.standard
-            defaults.set(actualStatus, forKey: "PHTV_RunOnStartup")
-            defaults.set(actualStatus ? 1 : 0, forKey: "RunOnStartup")
+            defaults.set(actualStatus, forKey: UserDefaultsKey.runOnStartup)
+            defaults.set(actualStatus ? 1 : 0, forKey: UserDefaultsKey.runOnStartupLegacy)
             defaults.synchronize()
 
             NSLog("[LoginItem] ✅ UI synced to actual status: %@", actualStatus ? "ON" : "OFF")
@@ -225,9 +225,9 @@ final class SystemState: ObservableObject {
         $showIconOnDock.sink { [weak self] value in
             guard let self = self, !self.isLoadingSettings else { return }
             let defaults = UserDefaults.standard
-            defaults.set(value, forKey: "vShowIconOnDock")
+            defaults.set(value, forKey: UserDefaultsKey.showIconOnDock)
             NotificationCenter.default.post(
-                name: NSNotification.Name("PHTVSettingsChanged"), object: nil)
+                name: NotificationName.phtvSettingsChanged, object: nil)
         }.store(in: &cancellables)
 
         // Observer for Claude Code patch
@@ -250,23 +250,23 @@ final class SystemState: ObservableObject {
             $performLayoutCompat.map { _ in () }.eraseToAnyPublisher(),
             $safeMode.map { _ in () }.eraseToAnyPublisher()
         ])
-        .debounce(for: .milliseconds(100), scheduler: RunLoop.main)
+        .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
         .sink { [weak self] _ in
             guard let self = self, !self.isLoadingSettings else { return }
             self.saveSettings()
             NotificationCenter.default.post(
-                name: NSNotification.Name("PHTVSettingsChanged"), object: nil)
+                name: NotificationName.phtvSettingsChanged, object: nil)
         }.store(in: &cancellables)
 
         // Update frequency observer
         $updateCheckFrequency.sink { [weak self] frequency in
             guard let self = self, !self.isLoadingSettings else { return }
             let defaults = UserDefaults.standard
-            defaults.set(frequency.rawValue, forKey: "SUScheduledCheckInterval")
+            defaults.set(frequency.rawValue, forKey: UserDefaultsKey.updateCheckInterval)
             defaults.synchronize()
 
             NotificationCenter.default.post(
-                name: NSNotification.Name("UpdateCheckFrequencyChanged"),
+                name: NotificationName.updateCheckFrequencyChanged,
                 object: NSNumber(value: frequency.rawValue)
             )
         }.store(in: &cancellables)
@@ -275,11 +275,11 @@ final class SystemState: ObservableObject {
         $betaChannelEnabled.sink { [weak self] enabled in
             guard let self = self, !self.isLoadingSettings else { return }
             let defaults = UserDefaults.standard
-            defaults.set(enabled, forKey: "SUEnableBetaChannel")
+            defaults.set(enabled, forKey: UserDefaultsKey.betaChannelEnabled)
             defaults.synchronize()
 
             NotificationCenter.default.post(
-                name: NSNotification.Name("BetaChannelChanged"),
+                name: NotificationName.betaChannelChanged,
                 object: NSNumber(value: enabled)
             )
         }.store(in: &cancellables)
@@ -288,14 +288,14 @@ final class SystemState: ObservableObject {
         $autoInstallUpdates.sink { [weak self] enabled in
             guard let self = self, !self.isLoadingSettings else { return }
             let defaults = UserDefaults.standard
-            defaults.set(enabled, forKey: "vAutoInstallUpdates")
+            defaults.set(enabled, forKey: UserDefaultsKey.autoInstallUpdates)
             defaults.synchronize()
         }.store(in: &cancellables)
     }
 
     func setupNotificationObservers() {
         let observer1 = NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("AccessibilityStatusChanged"),
+            forName: NotificationName.accessibilityStatusChanged,
             object: nil,
             queue: .main
         ) { [weak self] notification in
@@ -310,7 +310,7 @@ final class SystemState: ObservableObject {
 
         // Listen for update check responses from backend
         let observer2 = NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("CheckForUpdatesResponse"),
+            forName: NotificationName.checkForUpdatesResponse,
             object: nil,
             queue: .main
         ) { [weak self] notification in
@@ -333,7 +333,7 @@ final class SystemState: ObservableObject {
 
         // Sparkle custom update banner
         let observer3 = NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("SparkleShowUpdateBanner"),
+            forName: NotificationName.sparkleShowUpdateBanner,
             object: nil,
             queue: .main
         ) { [weak self] notification in
@@ -355,7 +355,7 @@ final class SystemState: ObservableObject {
 
         // Listen for Launch at Login changes from AppDelegate
         let observer4 = NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("RunOnStartupChanged"),
+            forName: NotificationName.runOnStartupChanged,
             object: nil,
             queue: .main
         ) { [weak self] notification in
@@ -374,7 +374,7 @@ final class SystemState: ObservableObject {
 
         // Listen for app termination
         let terminateObserver = NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("ApplicationWillTerminate"),
+            forName: NotificationName.applicationWillTerminate,
             object: nil,
             queue: .main
         ) { [weak self] _ in
