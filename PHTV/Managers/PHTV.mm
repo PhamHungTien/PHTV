@@ -1592,10 +1592,8 @@ extern "C" {
         CFRelease(eventVkeyUp);
     }
 
-    void SendBackspace() {
+    void SendPhysicalBackspace() {
         if (_phtvPostToHIDTap) {
-            // Spotlight/SystemUIServer can ignore cached backspace events.
-            // Create fresh events and include keyboard type to match real device.
             CGEventRef bsDown = CGEventCreateKeyboardEvent(myEventSource, 51, true);
             CGEventRef bsUp = CGEventCreateKeyboardEvent(myEventSource, 51, false);
             if (_phtvKeyboardType != 0) {
@@ -1604,7 +1602,6 @@ extern "C" {
             }
             CGEventFlags bsFlags = CGEventGetFlags(bsDown);
             bsFlags |= kCGEventFlagMaskNonCoalesced;
-            // Clear Fn/Globe flag to prevent triggering system hotkeys
             bsFlags &= ~kCGEventFlagMaskSecondaryFn;
             CGEventSetFlags(bsDown, bsFlags);
             CGEventSetFlags(bsUp, bsFlags);
@@ -1617,36 +1614,21 @@ extern "C" {
             CGEventTapPostEvent(_proxy, eventBackSpaceDown);
             CGEventTapPostEvent(_proxy, eventBackSpaceUp);
         }
+    }
+
+    void SendBackspace() {
+        SendPhysicalBackspace();
 
         if (IS_DOUBLE_CODE(vCodeTable)) { //VNI or Unicode Compound
-            if (_syncKey.back() > 1) {
-                NSString *effectiveTarget = _phtvEffectiveTargetBundleId ?: getFocusedAppBundleId();
-                if (!(vCodeTable == 3 && containUnicodeCompoundApp(effectiveTarget))) {
-                    if (_phtvPostToHIDTap) {
-                        CGEventRef bsDown2 = CGEventCreateKeyboardEvent(myEventSource, 51, true);
-                        CGEventRef bsUp2 = CGEventCreateKeyboardEvent(myEventSource, 51, false);
-                        if (_phtvKeyboardType != 0) {
-                            CGEventSetIntegerValueField(bsDown2, kCGKeyboardEventKeyboardType, _phtvKeyboardType);
-                            CGEventSetIntegerValueField(bsUp2, kCGKeyboardEventKeyboardType, _phtvKeyboardType);
-                        }
-                        CGEventFlags bsFlags2 = CGEventGetFlags(bsDown2);
-                        bsFlags2 |= kCGEventFlagMaskNonCoalesced;
-                        // Clear Fn/Globe flag to prevent triggering system hotkeys
-                        bsFlags2 &= ~kCGEventFlagMaskSecondaryFn;
-                        CGEventSetFlags(bsDown2, bsFlags2);
-                        CGEventSetFlags(bsUp2, bsFlags2);
-                        PostSyntheticEvent(_proxy, bsDown2);
-                        PostSyntheticEvent(_proxy, bsUp2);
-                        SpotlightTinyDelay();
-                        CFRelease(bsDown2);
-                        CFRelease(bsUp2);
-                    } else {
-                        CGEventTapPostEvent(_proxy, eventBackSpaceDown);
-                        CGEventTapPostEvent(_proxy, eventBackSpaceUp);
+            if (!_syncKey.empty()) {
+                if (_syncKey.back() > 1) {
+                    NSString *effectiveTarget = _phtvEffectiveTargetBundleId ?: getFocusedAppBundleId();
+                    if (!(vCodeTable == 3 && containUnicodeCompoundApp(effectiveTarget))) {
+                        SendPhysicalBackspace();
                     }
                 }
+                _syncKey.pop_back();
             }
-            _syncKey.pop_back();
         }
     }
 
@@ -1725,56 +1707,6 @@ extern "C" {
         return adaptiveDelay;
     }
 
-    // Consolidated helper function to send multiple backspaces with app-specific delays
-    // IMPROVED: Now supports adaptive delays and Safari-specific handling
-    void SendBackspaceSequenceWithDelay(int count, DelayType delayType) {
-        if (count <= 0) return;
-
-        uint64_t keystrokeDelay = 0;
-        uint64_t settleDelay = 0;
-
-        switch (delayType) {
-            case DelayTypeTerminal:
-                keystrokeDelay = TERMINAL_KEYSTROKE_DELAY_US;
-                settleDelay = TERMINAL_SETTLE_DELAY_US;
-                break;
-            case DelayTypeBrowser:
-                // Adaptive delays for browsers
-                keystrokeDelay = getAdaptiveDelay(BROWSER_KEYSTROKE_DELAY_BASE_US, BROWSER_KEYSTROKE_DELAY_MAX_US);
-                settleDelay = getAdaptiveDelay(BROWSER_SETTLE_DELAY_BASE_US, BROWSER_SETTLE_DELAY_MAX_US);
-                break;
-            case DelayTypeSafariBrowser:
-                // Safari needs even longer delays due to aggressive autocomplete
-                keystrokeDelay = getAdaptiveDelay(BROWSER_KEYSTROKE_DELAY_BASE_US, BROWSER_KEYSTROKE_DELAY_MAX_US) + SAFARI_ADDRESS_BAR_EXTRA_DELAY_US;
-                settleDelay = getAdaptiveDelay(BROWSER_SETTLE_DELAY_BASE_US, BROWSER_SETTLE_DELAY_MAX_US) + SAFARI_ADDRESS_BAR_EXTRA_DELAY_US;
-                break;
-            case DelayTypeAutoEnglish:
-                // Auto English restore has less autocomplete conflict, use reduced delays
-                keystrokeDelay = AUTO_ENGLISH_KEYSTROKE_DELAY_US;
-                settleDelay = AUTO_ENGLISH_SETTLE_DELAY_US;
-                break;
-            default:
-                break;
-        }
-
-        for (int i = 0; i < count; i++) {
-            SendBackspace();
-            if (keystrokeDelay > 0) {
-                usleep((useconds_t)keystrokeDelay);
-            }
-        }
-
-        // Extra settle time after all backspaces
-        if (settleDelay > 0) {
-            usleep((useconds_t)settleDelay);
-        }
-    }
-
-    // Backwards compatible wrapper
-    void SendBackspaceSequence(int count, BOOL isTerminalApp) {
-        SendBackspaceSequenceWithDelay(count, isTerminalApp ? DelayTypeTerminal : DelayTypeNone);
-    }
-
     void SendShiftAndLeftArrow() {
         CGEventRef eventVkeyDown = CGEventCreateKeyboardEvent (myEventSource, KEY_LEFT, true);
         CGEventRef eventVkeyUp = CGEventCreateKeyboardEvent (myEventSource, KEY_LEFT, false);
@@ -1799,6 +1731,76 @@ extern "C" {
         }
         CFRelease(eventVkeyDown);
         CFRelease(eventVkeyUp);
+    }
+
+    // Consolidated helper function to send multiple backspaces with app-specific delays
+    // IMPROVED: Now supports adaptive delays and Safari-specific handling
+    void SendBackspaceSequenceWithDelay(int count, DelayType delayType) {
+        if (count <= 0) return;
+
+        uint64_t keystrokeDelay = 0;
+        uint64_t settleDelay = 0;
+        BOOL useShiftLeftStrategy = NO;
+
+        switch (delayType) {
+            case DelayTypeTerminal:
+                keystrokeDelay = TERMINAL_KEYSTROKE_DELAY_US;
+                settleDelay = TERMINAL_SETTLE_DELAY_US;
+                break;
+            case DelayTypeBrowser:
+                // Adaptive delays for browsers
+                keystrokeDelay = getAdaptiveDelay(BROWSER_KEYSTROKE_DELAY_BASE_US, BROWSER_KEYSTROKE_DELAY_MAX_US);
+                settleDelay = getAdaptiveDelay(BROWSER_SETTLE_DELAY_BASE_US, BROWSER_SETTLE_DELAY_MAX_US);
+                useShiftLeftStrategy = YES;
+                break;
+            case DelayTypeSafariBrowser:
+                // Safari needs even longer delays due to aggressive autocomplete
+                keystrokeDelay = getAdaptiveDelay(BROWSER_KEYSTROKE_DELAY_BASE_US, BROWSER_KEYSTROKE_DELAY_MAX_US) + SAFARI_ADDRESS_BAR_EXTRA_DELAY_US;
+                settleDelay = getAdaptiveDelay(BROWSER_SETTLE_DELAY_BASE_US, BROWSER_SETTLE_DELAY_MAX_US) + SAFARI_ADDRESS_BAR_EXTRA_DELAY_US;
+                useShiftLeftStrategy = YES;
+                break;
+            case DelayTypeAutoEnglish:
+                // Auto English restore has less autocomplete conflict, use reduced delays
+                keystrokeDelay = AUTO_ENGLISH_KEYSTROKE_DELAY_US;
+                settleDelay = AUTO_ENGLISH_SETTLE_DELAY_US;
+                useShiftLeftStrategy = YES; // Also use robust strategy for browsers
+                break;
+            default:
+                break;
+        }
+
+        if (useShiftLeftStrategy) {
+            // OPENKEY REFERENCED FIX: Use Shift+Left to select text then Delete
+            // This is more robust against browser address bar autocomplete
+            // where a single Backspace might just dismiss the autocomplete suggestion
+            // but fail to delete the actual character.
+            for (int i = 0; i < count; i++) {
+                SendShiftAndLeftArrow(); // Selects char (and handles syncKey)
+                if (keystrokeDelay > 0) {
+                    usleep((useconds_t)keystrokeDelay);
+                }
+            }
+            // Send one physical backspace to delete the selection
+            SendPhysicalBackspace();
+        } else {
+            // Standard backspace method for non-browser apps
+            for (int i = 0; i < count; i++) {
+                SendBackspace();
+                if (keystrokeDelay > 0) {
+                    usleep((useconds_t)keystrokeDelay);
+                }
+            }
+        }
+
+        // Extra settle time after all backspaces
+        if (settleDelay > 0) {
+            usleep((useconds_t)settleDelay);
+        }
+    }
+
+    // Backwards compatible wrapper
+    void SendBackspaceSequence(int count, BOOL isTerminalApp) {
+        SendBackspaceSequenceWithDelay(count, isTerminalApp ? DelayTypeTerminal : DelayTypeNone);
     }
 
     /**
