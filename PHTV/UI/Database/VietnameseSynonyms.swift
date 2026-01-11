@@ -1,0 +1,148 @@
+//
+//  VietnameseSynonyms.swift
+//  PHTV
+//
+//  Created by Phạm Hùng Tiến on 2026.
+//  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
+//
+
+import Foundation
+
+/// Vietnamese synonyms and slang for emoji search
+/// Maps common Vietnamese words/slang to related search terms
+/// Vietnamese synonyms and slang for emoji search
+/// Maps common Vietnamese words/slang to related search terms
+let vietnameseSynonyms: [String: [String]] = [
+    // Cười / Vui
+    "haha": ["cười", "vui", "laugh", "smile"],
+    "hihi": ["cười", "vui", "smile"],
+    "hehe": ["cười", "cười khẩy", "smile"],
+    "lol": ["cười", "laugh", "cười lăn"],
+    "vl": ["cười", "laugh", "shock"],
+    "vcl": ["cười", "shock", "ngạc nhiên"],
+    "=))": ["cười", "laugh"],
+    ":))": ["cười", "laugh"],
+    ":v": ["cười", "troll"],
+    "cute": ["dễ thương", "đáng yêu", "adorable"],
+
+    // Buồn / Khóc
+    "huhu": ["buồn", "khóc", "cry", "sad"],
+    "hic": ["buồn", "khóc", "cry"],
+    "sad": ["buồn", "khóc", "cry"],
+    ":(": ["buồn", "sad"],
+    "T_T": ["khóc", "cry", "buồn"],
+    "TT": ["khóc", "cry", "buồn"],
+
+    // Yêu / Tình cảm
+    "love": ["yêu", "tim", "heart"],
+    "iu": ["yêu", "love", "tim"],
+    "<3": ["yêu", "tim", "heart"],
+    "tym": ["tim", "heart", "yêu"],
+    "crush": ["yêu", "thích", "love"],
+    "thich": ["thích", "like", "yêu"],
+
+    // Giận / Tức
+    "gian": ["giận", "angry", "tức"],
+    "tuc": ["tức", "giận", "angry"],
+    "angry": ["giận", "tức"],
+    "grrr": ["giận", "angry"],
+
+    // Ngạc nhiên / Shock
+    "wow": ["ngạc nhiên", "ngôi sao", "star", "shock"],
+    "omg": ["ngạc nhiên", "shock", "oh"],
+    "wtf": ["ngạc nhiên", "shock"],
+    "oa": ["ngạc nhiên", "wow"],
+    "oaa": ["ngạc nhiên", "wow"],
+
+    // Tay / Cử chỉ
+    "ok": ["đồng ý", "ok", "tốt"],
+    "oke": ["đồng ý", "ok", "tốt"],
+    "okie": ["đồng ý", "ok", "tốt"],
+    "yes": ["đồng ý", "ok", "có"],
+    "no": ["không", "no", "từ chối"],
+    "ko": ["không", "no"],
+    "khong": ["không", "no"],
+    "bye": ["tạm biệt", "goodbye", "vẫy tay"],
+    "hi": ["xin chào", "hello", "vẫy tay"],
+    "hello": ["xin chào", "hello", "vẫy tay"],
+    "chao": ["xin chào", "hello", "vẫy tay"],
+
+    // Thức ăn
+    "an": ["ăn", "eat", "food"],
+    "do an": ["đồ ăn", "food", "eat"],
+    "com": ["cơm", "rice", "food"],
+    "pho": ["phở", "noodle"],
+    "tra": ["trà", "tea"],
+    "cafe": ["cà phê", "coffee"],
+    "caphe": ["cà phê", "coffee"],
+    "bia": ["bia", "beer"],
+    "ruou": ["rượu", "wine"],
+
+    // Động vật
+    "cho": ["chó", "dog"],
+    "meo": ["mèo", "cat"],
+    "ga": ["gà", "chicken"],
+    "ca": ["cá", "fish"],
+    "chim": ["chim", "bird"],
+    "bo": ["bò", "cow"],
+    "lon": ["lợn", "pig"],
+    "cun": ["cún", "chó", "dog"],
+
+    // Thời tiết / Tự nhiên
+    "mua": ["mưa", "rain"],
+    "nang": ["nắng", "sunny", "sun"],
+    "mat troi": ["mặt trời", "sun"],
+    "mat trang": ["mặt trăng", "moon"],
+    "sao": ["ngôi sao", "star"],
+    "hoa": ["hoa", "flower"],
+    "cay": ["cây", "tree"],
+
+    // Hoạt động
+    "ngu": ["ngủ", "sleep"],
+    "di ngu": ["ngủ", "sleep"],
+    "lam viec": ["làm việc", "work"],
+    "hoc": ["học", "study"],
+    "choi": ["chơi", "play"],
+    "doc": ["đọc", "read"],
+    "nghe nhac": ["âm nhạc", "music"],
+    "nhac": ["âm nhạc", "music"],
+
+    // Người / Gia đình
+    "me": ["mẹ", "mother"],
+    "ba": ["bố", "father"],
+    "ong": ["ông", "grandfather"],
+    "ba noi": ["bà nội", "grandmother"],
+    "con": ["con", "child"],
+    "em be": ["em bé", "baby"],
+    "be": ["em bé", "baby"],
+
+    // Công nghệ
+    "dien thoai": ["điện thoại", "phone"],
+    "dt": ["điện thoại", "phone"],
+    "may tinh": ["máy tính", "computer"],
+    "laptop": ["máy tính", "computer", "laptop"],
+    "code": ["lập trình", "developer", "code"],
+    "lap trinh": ["lập trình", "developer", "code"],
+
+    // Tiền / Mua sắm
+    "tien": ["tiền", "money"],
+    "mua sam": ["mua sắm", "shopping"],
+    "qua": ["quà", "gift"],
+
+    // Khác
+    "hot": ["nóng", "fire", "lửa"],
+    "lanh": ["lạnh", "cold"],
+    "dep": ["đẹp", "beautiful"],
+    "xau": ["xấu", "ugly"],
+    "to": ["to", "big"],
+    "nho": ["nhỏ", "small"],
+    "nhanh": ["nhanh", "fast"],
+    "cham": ["chậm", "slow"],
+    "dung": ["đúng", "correct", "tick"],
+    "sai": ["sai", "wrong", "x"],
+    "check": ["đúng", "tick", "kiểm tra"],
+    "cam on": ["cảm ơn", "thank"],
+    "thanks": ["cảm ơn", "thank"],
+    "sorry": ["xin lỗi", "sorry"],
+    "xin loi": ["xin lỗi", "sorry"]
+]
