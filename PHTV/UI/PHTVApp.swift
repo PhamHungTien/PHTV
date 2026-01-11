@@ -441,17 +441,13 @@ func openSettingsWindow(with appState: AppState) {
 final class AppState: ObservableObject {
     static let shared = AppState()
 
-    // Helper to access AppDelegate via NSApp (thread-safe)
-    // Note: In SwiftUI with @NSApplicationDelegateAdaptor, use NSApp.delegate
+    // Helper to access AppDelegate via C function (bypasses Swift concurrency checks)
+    // Note: GetAppDelegateInstance() is a C function that returns the global appDelegate
     @MainActor
     private func getAppDelegate() -> AppDelegate? {
-        // Use NSApp.delegate instead of global var - this is thread-safe
-        if let delegate = NSApp.delegate as? AppDelegate {
-            return delegate
-        }
-        // Fallback: try Objective-C global var if NSApp.delegate not set yet
-        // This works during app launch before delegate is fully initialized
-        return NSApplication.shared.delegate as? AppDelegate
+        // Use the C function to get the global appDelegate instance
+        // This bypasses Swift's concurrency safety checks
+        return GetAppDelegateInstance()
     }
 
     private static var liveDebugEnabled: Bool {
@@ -586,6 +582,7 @@ final class AppState: ObservableObject {
     private var isLoadingSettings = false
     private var isUpdatingRunOnStartup = false
     private var loginItemCheckTimer: Timer?
+    private var lastRunOnStartupChangeTime: Date?  // Track user interactions
 
     private init() {
         isLoadingSettings = true
@@ -890,6 +887,16 @@ final class AppState: ObservableObject {
     @MainActor
     private func checkLoginItemStatus() async {
         guard !isUpdatingRunOnStartup else { return }
+
+        // CRITICAL: Don't override user changes immediately
+        // Give AppDelegate 10 seconds to complete SMAppService operation
+        if let lastChange = lastRunOnStartupChangeTime {
+            let timeSinceChange = Date().timeIntervalSince(lastChange)
+            if timeSinceChange < 10.0 {
+                NSLog("[LoginItem] Skipping check - user changed setting %.1fs ago (< 10s grace period)", timeSinceChange)
+                return
+            }
+        }
 
         let appService = SMAppService.mainApp
         let actualStatus = (appService.status == .enabled)
@@ -1309,11 +1316,14 @@ final class AppState: ObservableObject {
 
             NSLog("[AppState] 🔄 runOnStartup observer triggered: value=%@", value ? "ON" : "OFF")
 
-            // CRITICAL: Use global appDelegate helper
-            // NSApp.delegate returns nil in SwiftUI apps with @NSApplicationDelegateAdaptor
+            // Record timestamp to prevent periodic monitor from immediately overriding
+            self.lastRunOnStartupChangeTime = Date()
+
+            // Use C function GetAppDelegateInstance() to access global appDelegate
+            // This bypasses Swift's concurrency checks and works during app launch
             guard let appDelegate = self.getAppDelegate() else {
-                NSLog("[AppState] ❌ Global appDelegate is nil - app may still be launching")
-                NSLog("[AppState] ⚠️ This should not happen - appDelegate is set in applicationDidFinishLaunching")
+                NSLog("[AppState] ❌ GetAppDelegateInstance() returned nil - app still initializing")
+                NSLog("[AppState] ⚠️ Will retry when AppDelegate is fully initialized")
                 return
             }
 
