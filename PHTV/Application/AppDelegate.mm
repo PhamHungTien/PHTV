@@ -2088,22 +2088,42 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
             }
         }
     } else {
-        // Legacy approach for macOS < 13
-        NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
-        if (!bundleID) {
-            NSLog(@"[LoginItem] Cannot get bundle identifier");
-            return;
-        }
-
-        #pragma clang diagnostic push
-        #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-        Boolean success = SMLoginItemSetEnabled((__bridge CFStringRef)bundleID, val);
-        #pragma clang diagnostic pop
-
-        if (success) {
-            NSLog(@"✅ Login item %@", val ? @"enabled" : @"disabled");
+        // Legacy approach for macOS < 13 using LSSharedFileList
+        // This allows the main app to start itself without a helper app
+        LSSharedFileListRef loginItems = LSSharedFileListCreate(NULL, kLSSharedFileListSessionLoginItems, NULL);
+        if (loginItems) {
+            if (val) {
+                // Enable: Add main bundle to login items
+                NSURL *appURL = [NSURL fileURLWithPath:[[NSBundle mainBundle] bundlePath]];
+                LSSharedFileListItemRef item = LSSharedFileListInsertItemURL(loginItems, kLSSharedFileListItemLast, NULL, NULL, (__bridge CFURLRef)appURL, NULL, NULL);
+                if (item) {
+                    NSLog(@"✅ [LoginItem] Legacy: Added to login items via LSSharedFileList");
+                    CFRelease(item);
+                } else {
+                    NSLog(@"❌ [LoginItem] Legacy: Failed to add to login items");
+                }
+            } else {
+                // Disable: Remove main bundle from login items
+                UInt32 seedValue;
+                CFArrayRef loginItemsArray = LSSharedFileListCopySnapshot(loginItems, &seedValue);
+                if (loginItemsArray) {
+                    NSString *appPath = [[NSBundle mainBundle] bundlePath];
+                    for (id item in (__bridge NSArray *)loginItemsArray) {
+                        LSSharedFileListItemRef itemRef = (__bridge LSSharedFileListItemRef)item;
+                        if (LSSharedFileListItemResolve(itemRef, 0, (CFURLRef *)NULL, NULL) == noErr) {
+                            NSURL *url = (__bridge_transfer NSURL *)LSSharedFileListItemCopyResolvedURL(itemRef, 0, NULL);
+                            if ([url.path isEqualToString:appPath]) {
+                                LSSharedFileListItemRemove(loginItems, itemRef);
+                                NSLog(@"✅ [LoginItem] Legacy: Removed from login items via LSSharedFileList");
+                            }
+                        }
+                    }
+                    CFRelease(loginItemsArray);
+                }
+            }
+            CFRelease(loginItems);
         } else {
-            NSLog(@"❌ Failed to %@ login item", val ? @"enable" : @"disable");
+            NSLog(@"❌ [LoginItem] Legacy: Failed to create LSSharedFileList");
         }
     }
 
