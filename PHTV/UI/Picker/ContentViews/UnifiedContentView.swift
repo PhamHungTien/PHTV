@@ -348,11 +348,34 @@ struct UnifiedContentView: View {
     // Helper functions to copy media
     private func copyGIFURL(_ gif: KlipyGIF) {
         klipyClient.recordGIFUsage(gif)
-        guard let url = URL(string: gif.fullURL) else { return }
+        guard let url = URL(string: gif.fullURL) else {
+            NSLog("[PHTPPicker] Invalid GIF URL: %@", gif.fullURL)
+            return
+        }
 
-        URLSession.shared.dataTask(with: url) { data, _, _ in
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            // Check for network errors
+            if let error = error {
+                NSLog("[PHTPPicker] GIF download error: %@", error.localizedDescription)
+                return
+            }
+
+            // Check HTTP status code
+            if let httpResponse = response as? HTTPURLResponse {
+                guard 200...299 ~= httpResponse.statusCode else {
+                    NSLog("[PHTPPicker] GIF download HTTP error: %d", httpResponse.statusCode)
+                    return
+                }
+            }
+
+            // Ensure we have data
+            guard let data = data else {
+                NSLog("[PHTPPicker] No data received for GIF: %@", gif.slug)
+                return
+            }
+
             DispatchQueue.main.async {
-                if let data = data, let tempURL = saveTempGIF(data: data, filename: gif.slug) {
+                if let tempURL = saveTempGIF(data: data, filename: gif.slug) {
                     NSLog("[PHTPPicker] GIF downloaded: %@", gif.slug)
 
                     let pasteboard = NSPasteboard.general
@@ -371,6 +394,8 @@ struct UnifiedContentView: View {
                         // Clean up file after paste
                         deleteFileAfterDelay(tempURL)
                     }
+                } else {
+                    NSLog("[PHTPPicker] Failed to save GIF to temp location")
                 }
             }
         }.resume()
@@ -378,11 +403,34 @@ struct UnifiedContentView: View {
 
     private func copyStickerURL(_ sticker: KlipyGIF) {
         klipyClient.recordStickerUsage(sticker)
-        guard let url = URL(string: sticker.fullURL) else { return }
+        guard let url = URL(string: sticker.fullURL) else {
+            NSLog("[PHTPPicker] Invalid Sticker URL: %@", sticker.fullURL)
+            return
+        }
 
-        URLSession.shared.dataTask(with: url) { data, _, _ in
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            // Check for network errors
+            if let error = error {
+                NSLog("[PHTPPicker] Sticker download error: %@", error.localizedDescription)
+                return
+            }
+
+            // Check HTTP status code
+            if let httpResponse = response as? HTTPURLResponse {
+                guard 200...299 ~= httpResponse.statusCode else {
+                    NSLog("[PHTPPicker] Sticker download HTTP error: %d", httpResponse.statusCode)
+                    return
+                }
+            }
+
+            // Ensure we have data
+            guard let data = data else {
+                NSLog("[PHTPPicker] No data received for Sticker: %@", sticker.slug)
+                return
+            }
+
             DispatchQueue.main.async {
-                if let data = data, let tempURL = saveTempSticker(data: data, filename: sticker.slug) {
+                if let tempURL = saveTempSticker(data: data, filename: sticker.slug) {
                     NSLog("[PHTPPicker] Sticker downloaded: %@", sticker.slug)
 
                     let pasteboard = NSPasteboard.general
@@ -400,6 +448,8 @@ struct UnifiedContentView: View {
                         // Clean up file after paste
                         deleteFileAfterDelay(tempURL)
                     }
+                } else {
+                    NSLog("[PHTPPicker] Failed to save Sticker to temp location")
                 }
             }
         }.resume()
@@ -411,7 +461,12 @@ struct UnifiedContentView: View {
 
         // Create directory if it doesn't exist
         if !FileManager.default.fileExists(atPath: phtpDir.path) {
-            try? FileManager.default.createDirectory(at: phtpDir, withIntermediateDirectories: true)
+            do {
+                try FileManager.default.createDirectory(at: phtpDir, withIntermediateDirectories: true)
+            } catch {
+                NSLog("[PHTPPicker] Failed to create media directory: %@", error.localizedDescription)
+                // Return the path anyway - subsequent operations will fail if directory creation failed
+            }
         }
 
         return phtpDir

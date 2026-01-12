@@ -120,59 +120,86 @@ struct GIFOnlyView: View {
 
     private func copyGIF(_ gif: KlipyGIF) {
         klipyClient.recordGIFUsage(gif)
-        guard let url = URL(string: gif.fullURL) else { return }
+        guard let url = URL(string: gif.fullURL) else {
+            NSLog("[GIFPicker] Invalid GIF URL: %@", gif.fullURL)
+            return
+        }
 
-        URLSession.shared.dataTask(with: url) { data, _, _ in
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            // Check for network errors
+            if let error = error {
+                NSLog("[GIFPicker] GIF download error: %@", error.localizedDescription)
+                return
+            }
+
+            // Check HTTP status code
+            if let httpResponse = response as? HTTPURLResponse {
+                guard 200...299 ~= httpResponse.statusCode else {
+                    NSLog("[GIFPicker] GIF download HTTP error: %d", httpResponse.statusCode)
+                    return
+                }
+            }
+
+            // Ensure we have data
+            guard let data = data else {
+                NSLog("[GIFPicker] No data received for GIF: %@", gif.slug)
+                return
+            }
+
             DispatchQueue.main.async {
-                if let data = data {
-                    NSLog("[PHTPPicker] GIF downloaded: %@", gif.slug)
+                NSLog("[GIFPicker] GIF downloaded: %@", gif.slug)
 
-                    let phtpDir = getPHTPMediaDirectory()
-                    let gifURL = phtpDir.appendingPathComponent("\(gif.slug).gif")
-                    try? data.write(to: gifURL)
+                let phtpDir = getPHTPMediaDirectory()
+                let gifURL = phtpDir.appendingPathComponent("\(gif.slug).gif")
 
-                    let pasteboard = NSPasteboard.general
-                    pasteboard.clearContents()
-                    pasteboard.writeObjects([gifURL as NSPasteboardWriting])
-                    _ = pasteboard.setData(data, forType: .fileURL)
+                do {
+                    try data.write(to: gifURL)
+                } catch {
+                    NSLog("[GIFPicker] Failed to save GIF: %@", error.localizedDescription)
+                    return
+                }
 
-                    // Close panel first
-                    onClose?()
+                let pasteboard = NSPasteboard.general
+                pasteboard.clearContents()
+                pasteboard.writeObjects([gifURL as NSPasteboardWriting])
+                _ = pasteboard.setData(data, forType: .fileURL)
 
-                    // Small delay to allow panel to close and frontmost app to regain focus
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                        NSLog("[PHTPPicker] Pasting GIF...")
+                // Close panel first
+                onClose?()
 
-                        let source = CGEventSource(stateID: .hidSystemState)
+                // Small delay to allow panel to close and frontmost app to regain focus
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                    NSLog("[GIFPicker] Pasting GIF...")
 
-                        // Press Command
-                        if let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: true) {
-                            cmdDown.flags = .maskCommand
-                            cmdDown.post(tap: .cghidEventTap)
-                        }
+                    let source = CGEventSource(stateID: .hidSystemState)
 
-                        // Press V
-                        if let vDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true) {
-                            vDown.flags = .maskCommand
-                            vDown.post(tap: .cghidEventTap)
-                        }
-
-                        // Release V
-                        if let vUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false) {
-                            vUp.flags = .maskCommand
-                            vUp.post(tap: .cghidEventTap)
-                        }
-
-                        // Release Command
-                        if let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: false) {
-                            cmdUp.post(tap: .cghidEventTap)
-                        }
-
-                        NSLog("[PHTPPicker] Paste command sent")
-
-                        // Clean up file after paste
-                        deleteFileAfterDelay(gifURL)
+                    // Press Command
+                    if let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: true) {
+                        cmdDown.flags = .maskCommand
+                        cmdDown.post(tap: .cghidEventTap)
                     }
+
+                    // Press V
+                    if let vDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true) {
+                        vDown.flags = .maskCommand
+                        vDown.post(tap: .cghidEventTap)
+                    }
+
+                    // Release V
+                    if let vUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false) {
+                        vUp.flags = .maskCommand
+                        vUp.post(tap: .cghidEventTap)
+                    }
+
+                    // Release Command
+                    if let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: false) {
+                        cmdUp.post(tap: .cghidEventTap)
+                    }
+
+                    NSLog("[GIFPicker] Paste command sent")
+
+                    // Clean up file after paste
+                    deleteFileAfterDelay(gifURL)
                 }
             }
         }.resume()
