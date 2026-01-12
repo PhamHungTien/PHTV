@@ -21,23 +21,21 @@
 #import "PHTVManager.h"
 #import "../Core/Legacy/MJAccessibilityUtils.h"
 
-// Refactoring toggles - enable to use new managers
-// Comment out to use old monolithic code
-#define USE_NEW_CACHE 1
-#define USE_NEW_APP_DETECTION 1
-//#define USE_NEW_SPOTLIGHT 1
-//#define USE_NEW_ACCESSIBILITY 1
-//#define USE_NEW_EVENT_SYNTHESIS 1
-//#define USE_NEW_HOTKEY 1
-
-// New manager imports
+// Import new manager classes
 #import "PHTVCacheManager.h"
 #import "PHTVTimingManager.h"
 #import "PHTVAppDetectionManager.h"
 #import "PHTVSpotlightManager.h"
 #import "PHTVAccessibilityManager.h"
-#import "PHTVEventSynthesisManager.h"
-#import "PHTVHotkeyManager.h"
+
+// Refactoring toggles - enable to use new managers
+// Comment out to use old monolithic code
+#define USE_NEW_CACHE 1
+#define USE_NEW_APP_DETECTION 1
+#define USE_NEW_SPOTLIGHT 1
+#define USE_NEW_ACCESSIBILITY 1
+//#define USE_NEW_EVENT_SYNTHESIS 1
+//#define USE_NEW_HOTKEY 1
 
 // Forward declarations for functions used before definition (inside extern "C" block)
 extern "C" {
@@ -335,6 +333,9 @@ static inline void LogAXError(AXError error, const char *operation) {
 // Check if Spotlight or similar overlay is currently active using Accessibility API
 // OPTIMIZED: Results cached for 50ms to avoid repeated AX API calls while remaining responsive
 BOOL isSpotlightActive(void) {
+#ifdef USE_NEW_SPOTLIGHT
+    return [PHTVSpotlightManager isSpotlightActive];
+#else
     // Safe Mode: Skip AX API calls entirely - assume not in Spotlight
     // This prevents crashes on unsupported hardware (OCLP Macs)
     if (vSafeMode) {
@@ -439,6 +440,7 @@ BOOL isSpotlightActive(void) {
 
     UpdateSpotlightCache(NO, focusedPID, bundleId);
     return NO;
+#endif // USE_NEW_SPOTLIGHT
 }
 
 // Get bundle ID from process ID
