@@ -32,9 +32,18 @@
 		23E2E49F2314FD3A006CCC3E /* Engine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23E2E49A2314FD3A006CCC3E /* Engine.cpp */; };
 		23E2E4A02314FD3A006CCC3E /* Vietnamese.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 23E2E49B2314FD3A006CCC3E /* Vietnamese.cpp */; };
 		23F512852336386200397988 /* MJAccessibilityUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 23F512832336386200397988 /* MJAccessibilityUtils.m */; };
+		24999C8F7B5E4738863DF5ED /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8CED3963BA54D7AB9CEFE6E /* Constants.swift */; };
 		2CA3F1C734453D6C382C9FD9 /* InputModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 990B0144306ECDAF3CBFEA13 /* InputModels.swift */; };
 		3530750AF0ABC7A8ABF8B48A /* MediaStorageHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68D7ABD6D4D0E226B22794A2 /* MediaStorageHelper.swift */; };
+		3FA00BB1220A49AFAB1F902A /* InputMethodState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1273F78C8F894BE4B378851F /* InputMethodState.swift */; };
 		461048622EF2DF22005AF5FC /* SendKeyStepByStepAppsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 461048612EF2DF22005AF5FC /* SendKeyStepByStepAppsView.swift */; };
+		461B0D702F151B90005DF210 /* PHTVAccessibilityManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = 461B0D6D2F151B90005DF210 /* PHTVAccessibilityManager.mm */; };
+		461B0D712F151B90005DF210 /* PHTVAppDetectionManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = 461B0D6F2F151B90005DF210 /* PHTVAppDetectionManager.mm */; };
+		461B0D782F151BAD005DF210 /* PHTVCacheManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = 461B0D732F151BAD005DF210 /* PHTVCacheManager.mm */; };
+		461B0D792F151BAD005DF210 /* PHTVEventSynthesisManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = 461B0D752F151BAD005DF210 /* PHTVEventSynthesisManager.mm */; };
+		461B0D7A2F151BAD005DF210 /* PHTVHotkeyManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = 461B0D772F151BAD005DF210 /* PHTVHotkeyManager.mm */; };
+		461B0D7F2F151BB7005DF210 /* PHTVSpotlightManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = 461B0D7C2F151BB7005DF210 /* PHTVSpotlightManager.mm */; };
+		461B0D802F151BB7005DF210 /* PHTVTimingManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = 461B0D7E2F151BB7005DF210 /* PHTVTimingManager.mm */; };
 		46394F5A2EFA5D56009D5194 /* EnglishWordDetector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 46394F592EFA5D56009D5194 /* EnglishWordDetector.cpp */; };
 		46394F7E2EFAC18E009D5194 /* en_words.txt in Resources */ = {isa = PBXBuildFile; fileRef = 46394F7F2EFAC18E009D5194 /* en_words.txt */; };
 		46394F822EFAC18E009D5194 /* vi_dict.bin in Resources */ = {isa = PBXBuildFile; fileRef = 46394F812EFAC18E009D5194 /* vi_dict.bin */; };
@@ -51,7 +60,9 @@
 		46ABBBAA2EFD67680003CBB5 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 46ABBBA92EFD67680003CBB5 /* Sparkle */; };
 		46ABBBB02EFD67B00003CBB5 /* SparkleManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = 46ABBBAF2EFD67B00003CBB5 /* SparkleManager.mm */; };
 		46EF4FFA2EEDBFD400DF8DD1 /* PHTV.icon in Resources */ = {isa = PBXBuildFile; fileRef = 46EF4FF92EEDBFD400DF8DD1 /* PHTV.icon */; };
+		55FC7DCD65CF4B5AB16EB55E /* MacroState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A7F69D746974D44B4B789CF /* MacroState.swift */; };
 		582F22823AB2122EA8CC0172 /* VietnameseSynonyms.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84443821FC9E0F2616F3C783 /* VietnameseSynonyms.swift */; };
+		599D4DAFA64E4625A7FC223A /* SystemState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FEA46915A7F40CAB646023A /* SystemState.swift */; };
 		5EE57A9BB919C44652062797 /* KlipyAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCA3766510F7D84A0AF64E7B /* KlipyAPIClient.swift */; };
 		62C8CE4ED1A5A22915ABA918 /* UnifiedContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63EE9D27E8009304C5EBDC2A /* UnifiedContentView.swift */; };
 		65C45B7195EC9D7105F79A2D /* SettingsWindowHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C87D42C4A844B638E884513 /* SettingsWindowHelper.swift */; };
@@ -64,9 +75,11 @@
 		8493C732A2DC212C03C5F6A4 /* GIFThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ABD4B910A480743E5362BB8 /* GIFThumbnailView.swift */; };
 		8FE65B27C458CAB478FFE025 /* SettingsWindowContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3275F9510DD17ABFE9A00A80 /* SettingsWindowContent.swift */; };
 		94655D583046479AA9515786 /* PHTVBinaryIntegrity.m in Sources */ = {isa = PBXBuildFile; fileRef = DC22F23BA9404436B654A651 /* PHTVBinaryIntegrity.m */; };
+		97FEE5D3C0A94531A7BFA0AF /* UIState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4618BC329294FEEB38FCB5A /* UIState.swift */; };
 		A534F32629D8B78100296F25 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23874B0F220160A500000BC8 /* Carbon.framework */; };
 		A534F32629D8B78100296F26 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23874B10220160A500000BC9 /* QuartzCore.framework */; };
 		A541BC9447C9FAB86E11112C /* APIKeySetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F82534773F42A3F85B37C435 /* APIKeySetupView.swift */; };
+		AB3EE4AF43F64525BCFCE06A /* AppListsState.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF1BC147D8354623929675A1 /* AppListsState.swift */; };
 		B130517648548D01FFC0F52C /* AppsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2DA720371C3BD130F878C29 /* AppsSettingsView.swift */; };
 		B3F6294A1AB68D85BEAD9932 /* CategoryTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65AA6483B2A118EB4B67C1CB /* CategoryTab.swift */; };
 		BA360903220983A511EF90E3 /* WindowDragHandle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74641C96F631E9734052F9C3 /* WindowDragHandle.swift */; };
@@ -107,12 +120,6 @@
 		F1A1A1EB2025130100000045 /* ConvertToolView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1EC2025130100000046 /* ConvertToolView.swift */; };
 		F1A1A1ED2025130100000047 /* MacroCategoryEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1EE2025130100000048 /* MacroCategoryEditorView.swift */; };
 		F28A6AB4C40769F607E59F7B /* VietnameseTextUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9A75B12CBD76A680F99BAC0 /* VietnameseTextUtilities.swift */; };
-		3FA00BB1220A49AFAB1F902A /* InputMethodState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1273F78C8F894BE4B378851F /* InputMethodState.swift */; };
-		55FC7DCD65CF4B5AB16EB55E /* MacroState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A7F69D746974D44B4B789CF /* MacroState.swift */; };
-		599D4DAFA64E4625A7FC223A /* SystemState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FEA46915A7F40CAB646023A /* SystemState.swift */; };
-		97FEE5D3C0A94531A7BFA0AF /* UIState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4618BC329294FEEB38FCB5A /* UIState.swift */; };
-		AB3EE4AF43F64525BCFCE06A /* AppListsState.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF1BC147D8354623929675A1 /* AppListsState.swift */; };
-		24999C8F7B5E4738863DF5ED /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8CED3963BA54D7AB9CEFE6E /* Constants.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -129,6 +136,8 @@
 
 /* Begin PBXFileReference section */
 		05CD94C7C42C2D520013AB28 /* SettingsWindowOpener.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsWindowOpener.swift; sourceTree = "<group>"; };
+		0A7F69D746974D44B4B789CF /* MacroState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroState.swift; sourceTree = "<group>"; };
+		1273F78C8F894BE4B378851F /* InputMethodState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMethodState.swift; sourceTree = "<group>"; };
 		1366D9FE4F6A7BBD6B32B8BE /* PHSilentUserDriver.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = PHSilentUserDriver.m; sourceTree = "<group>"; };
 		1498B293675600E929EBB555 /* UpdateModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UpdateModels.swift; sourceTree = "<group>"; };
 		232EDA5721F1B33E0085D362 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
@@ -164,7 +173,22 @@
 		23F512842336386200397988 /* MJAccessibilityUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MJAccessibilityUtils.h; sourceTree = "<group>"; };
 		3275F9510DD17ABFE9A00A80 /* SettingsWindowContent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsWindowContent.swift; sourceTree = "<group>"; };
 		3B27EBB488B64D6C48DE34C7 /* PHSilentUserDriver.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = PHSilentUserDriver.h; sourceTree = "<group>"; };
+		3FEA46915A7F40CAB646023A /* SystemState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemState.swift; sourceTree = "<group>"; };
 		461048612EF2DF22005AF5FC /* SendKeyStepByStepAppsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendKeyStepByStepAppsView.swift; sourceTree = "<group>"; };
+		461B0D6C2F151B90005DF210 /* PHTVAccessibilityManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PHTVAccessibilityManager.h; sourceTree = "<group>"; };
+		461B0D6D2F151B90005DF210 /* PHTVAccessibilityManager.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PHTVAccessibilityManager.mm; sourceTree = "<group>"; };
+		461B0D6E2F151B90005DF210 /* PHTVAppDetectionManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PHTVAppDetectionManager.h; sourceTree = "<group>"; };
+		461B0D6F2F151B90005DF210 /* PHTVAppDetectionManager.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PHTVAppDetectionManager.mm; sourceTree = "<group>"; };
+		461B0D722F151BAD005DF210 /* PHTVCacheManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PHTVCacheManager.h; sourceTree = "<group>"; };
+		461B0D732F151BAD005DF210 /* PHTVCacheManager.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PHTVCacheManager.mm; sourceTree = "<group>"; };
+		461B0D742F151BAD005DF210 /* PHTVEventSynthesisManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PHTVEventSynthesisManager.h; sourceTree = "<group>"; };
+		461B0D752F151BAD005DF210 /* PHTVEventSynthesisManager.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PHTVEventSynthesisManager.mm; sourceTree = "<group>"; };
+		461B0D762F151BAD005DF210 /* PHTVHotkeyManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PHTVHotkeyManager.h; sourceTree = "<group>"; };
+		461B0D772F151BAD005DF210 /* PHTVHotkeyManager.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PHTVHotkeyManager.mm; sourceTree = "<group>"; };
+		461B0D7B2F151BB7005DF210 /* PHTVSpotlightManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PHTVSpotlightManager.h; sourceTree = "<group>"; };
+		461B0D7C2F151BB7005DF210 /* PHTVSpotlightManager.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PHTVSpotlightManager.mm; sourceTree = "<group>"; };
+		461B0D7D2F151BB7005DF210 /* PHTVTimingManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PHTVTimingManager.h; sourceTree = "<group>"; };
+		461B0D7E2F151BB7005DF210 /* PHTVTimingManager.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PHTVTimingManager.mm; sourceTree = "<group>"; };
 		46394F582EFA5D56009D5194 /* EnglishWordDetector.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EnglishWordDetector.h; sourceTree = "<group>"; };
 		46394F592EFA5D56009D5194 /* EnglishWordDetector.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = EnglishWordDetector.cpp; sourceTree = "<group>"; };
 		46394F7F2EFAC18E009D5194 /* en_words.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = en_words.txt; sourceTree = "<group>"; };
@@ -208,6 +232,7 @@
 		A89EF9EA55C44906E5F4F5EC /* VisualEffectBlur.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VisualEffectBlur.swift; sourceTree = "<group>"; };
 		AF98255BCC66A085A1BB7AF0 /* BeepManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BeepManager.swift; sourceTree = "<group>"; };
 		B68D32C8DF8CC2C3AB495253 /* EmojiCategoriesView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EmojiCategoriesView.swift; sourceTree = "<group>"; };
+		B8CED3963BA54D7AB9CEFE6E /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		BCA3766510F7D84A0AF64E7B /* KlipyAPIClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KlipyAPIClient.swift; sourceTree = "<group>"; };
 		C2DA720371C3BD130F878C29 /* AppsSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppsSettingsView.swift; sourceTree = "<group>"; };
 		C4CEF88A4B3F8A497ADD2444 /* GIFOnlyView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GIFOnlyView.swift; sourceTree = "<group>"; };
@@ -249,16 +274,12 @@
 		F1A1A1EC2025130100000046 /* ConvertToolView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvertToolView.swift; sourceTree = "<group>"; };
 		F1A1A1EE2025130100000048 /* MacroCategoryEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroCategoryEditorView.swift; sourceTree = "<group>"; };
 		F3E15DDA71B387CD0639493F /* AppState.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		F4618BC329294FEEB38FCB5A /* UIState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIState.swift; sourceTree = "<group>"; };
 		F82534773F42A3F85B37C435 /* APIKeySetupView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = APIKeySetupView.swift; sourceTree = "<group>"; };
 		F9A75B12CBD76A680F99BAC0 /* VietnameseTextUtilities.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VietnameseTextUtilities.swift; sourceTree = "<group>"; };
 		FABD3529F8FFC83F017377CB /* StickerOnlyView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StickerOnlyView.swift; sourceTree = "<group>"; };
 		FE0F76B39F1FB9FB8C382332 /* AppModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppModels.swift; sourceTree = "<group>"; };
-		1273F78C8F894BE4B378851F /* InputMethodState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMethodState.swift; sourceTree = "<group>"; };
-		0A7F69D746974D44B4B789CF /* MacroState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroState.swift; sourceTree = "<group>"; };
-		3FEA46915A7F40CAB646023A /* SystemState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemState.swift; sourceTree = "<group>"; };
-		F4618BC329294FEEB38FCB5A /* UIState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIState.swift; sourceTree = "<group>"; };
 		FF1BC147D8354623929675A1 /* AppListsState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppListsState.swift; sourceTree = "<group>"; };
-		B8CED3963BA54D7AB9CEFE6E /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -290,7 +311,6 @@
 				DB70E3E828FD5E07F9695FEC /* EmojiPickerView.swift */,
 				D211AB0354C9DBCE44ED2062 /* EmojiPickerManager.swift */,
 			);
-			name = Picker;
 			path = Picker;
 			sourceTree = "<group>";
 		};
@@ -301,7 +321,6 @@
 				84443821FC9E0F2616F3C783 /* VietnameseSynonyms.swift */,
 				D3CC100734FFEFB3899169A6 /* EmojiDatabase.swift */,
 			);
-			name = Database;
 			path = Database;
 			sourceTree = "<group>";
 		};
@@ -315,7 +334,6 @@
 				7F8113D10F75956CFA8F2D7E /* KlipyModels.swift */,
 				64A3EE8FE1AA073862B82C1A /* EmojiModels.swift */,
 			);
-			name = Models;
 			path = Models;
 			sourceTree = "<group>";
 		};
@@ -389,7 +407,6 @@
 				05CD94C7C42C2D520013AB28 /* SettingsWindowOpener.swift */,
 				C70807CB6874B42FFE69DCBC /* SettingsNotificationObserver.swift */,
 			);
-			name = Settings;
 			path = Settings;
 			sourceTree = "<group>";
 		};
@@ -402,7 +419,6 @@
 				8D5FAA9501C1BD2A1E0B936E /* EmojiHotkeyManager.swift */,
 				77DE4E5107F853D1232E1CAE /* EmojiHotkeyBridge.swift */,
 			);
-			name = Services;
 			path = Services;
 			sourceTree = "<group>";
 		};
@@ -459,7 +475,6 @@
 			children = (
 				BCA3766510F7D84A0AF64E7B /* KlipyAPIClient.swift */,
 			);
-			name = Network;
 			path = Network;
 			sourceTree = "<group>";
 		};
@@ -473,7 +488,6 @@
 				A89EF9EA55C44906E5F4F5EC /* VisualEffectBlur.swift */,
 				74641C96F631E9734052F9C3 /* WindowDragHandle.swift */,
 			);
-			name = Components;
 			path = Components;
 			sourceTree = "<group>";
 		};
@@ -505,6 +519,20 @@
 		E1A1A2A32025120000000013 /* Managers */ = {
 			isa = PBXGroup;
 			children = (
+				461B0D7B2F151BB7005DF210 /* PHTVSpotlightManager.h */,
+				461B0D7C2F151BB7005DF210 /* PHTVSpotlightManager.mm */,
+				461B0D7D2F151BB7005DF210 /* PHTVTimingManager.h */,
+				461B0D7E2F151BB7005DF210 /* PHTVTimingManager.mm */,
+				461B0D722F151BAD005DF210 /* PHTVCacheManager.h */,
+				461B0D732F151BAD005DF210 /* PHTVCacheManager.mm */,
+				461B0D742F151BAD005DF210 /* PHTVEventSynthesisManager.h */,
+				461B0D752F151BAD005DF210 /* PHTVEventSynthesisManager.mm */,
+				461B0D762F151BAD005DF210 /* PHTVHotkeyManager.h */,
+				461B0D772F151BAD005DF210 /* PHTVHotkeyManager.mm */,
+				461B0D6C2F151B90005DF210 /* PHTVAccessibilityManager.h */,
+				461B0D6D2F151B90005DF210 /* PHTVAccessibilityManager.mm */,
+				461B0D6E2F151B90005DF210 /* PHTVAppDetectionManager.h */,
+				461B0D6F2F151B90005DF210 /* PHTVAppDetectionManager.mm */,
 				2371AAEE22FA85B200CA1B57 /* PHTV.mm */,
 				2389467E21FDDC3F0030A13B /* PHTVManager.h */,
 				2389467C21FDDB920030A13B /* PHTVManager.m */,
@@ -552,7 +580,6 @@
 				63EE9D27E8009304C5EBDC2A /* UnifiedContentView.swift */,
 				F82534773F42A3F85B37C435 /* APIKeySetupView.swift */,
 			);
-			name = ContentViews;
 			path = ContentViews;
 			sourceTree = "<group>";
 		};
@@ -566,7 +593,6 @@
 				F4618BC329294FEEB38FCB5A /* UIState.swift */,
 				FF1BC147D8354623929675A1 /* AppListsState.swift */,
 			);
-			name = State;
 			path = State;
 			sourceTree = "<group>";
 		};
@@ -794,6 +820,9 @@
 				F1A1A1E72025130100000041 /* UpdateBannerView.swift in Sources */,
 				F1A1A1E92025130100000043 /* ReleaseNotesView.swift in Sources */,
 				F1A1A1EB2025130100000045 /* ConvertToolView.swift in Sources */,
+				461B0D782F151BAD005DF210 /* PHTVCacheManager.mm in Sources */,
+				461B0D792F151BAD005DF210 /* PHTVEventSynthesisManager.mm in Sources */,
+				461B0D7A2F151BAD005DF210 /* PHTVHotkeyManager.mm in Sources */,
 				F1A1A1E12025130100000035 /* SettingsObserver.swift in Sources */,
 				F1A1A1E32025130100000037 /* ReloadHelpers.swift in Sources */,
 				46ABBBB02EFD67B00003CBB5 /* SparkleManager.mm in Sources */,
@@ -801,6 +830,8 @@
 				16B982F63741372BF590C264 /* PHSilentUserDriver.m in Sources */,
 				B130517648548D01FFC0F52C /* AppsSettingsView.swift in Sources */,
 				0D5084B3411F5119D468D80E /* CompatibilitySettingsView.swift in Sources */,
+				461B0D702F151B90005DF210 /* PHTVAccessibilityManager.mm in Sources */,
+				461B0D712F151B90005DF210 /* PHTVAppDetectionManager.mm in Sources */,
 				2CA3F1C734453D6C382C9FD9 /* InputModels.swift in Sources */,
 				1A2F2DF299D4FD6F60AAB963 /* KeyModels.swift in Sources */,
 				20A30E70D92BD4559B80436F /* UpdateModels.swift in Sources */,
@@ -837,6 +868,8 @@
 				020D2C9970888E364BF34981 /* AppState.swift in Sources */,
 				3FA00BB1220A49AFAB1F902A /* InputMethodState.swift in Sources */,
 				55FC7DCD65CF4B5AB16EB55E /* MacroState.swift in Sources */,
+				461B0D7F2F151BB7005DF210 /* PHTVSpotlightManager.mm in Sources */,
+				461B0D802F151BB7005DF210 /* PHTVTimingManager.mm in Sources */,
 				599D4DAFA64E4625A7FC223A /* SystemState.swift in Sources */,
 				97FEE5D3C0A94531A7BFA0AF /* UIState.swift in Sources */,
 				AB3EE4AF43F64525BCFCE06A /* AppListsState.swift in Sources */,
@@ -981,8 +1014,8 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				AUTOMATION_APPLE_EVENTS = NO;
 				CLANG_ENABLE_MODULES = NO;
-				CODE_SIGN_ENTITLEMENTS = PHTV/PHTV.entitlements;
 				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
+				CODE_SIGN_ENTITLEMENTS = PHTV/PHTV.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -1026,8 +1059,8 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				AUTOMATION_APPLE_EVENTS = NO;
 				CLANG_ENABLE_MODULES = NO;
-				CODE_SIGN_ENTITLEMENTS = PHTV/PHTV.entitlements;
 				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
+				CODE_SIGN_ENTITLEMENTS = PHTV/PHTV.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;

@@ -21,6 +21,24 @@
 #import "PHTVManager.h"
 #import "../Core/Legacy/MJAccessibilityUtils.h"
 
+// Refactoring toggles - enable to use new managers
+// Comment out to use old monolithic code
+#define USE_NEW_CACHE 1
+#define USE_NEW_APP_DETECTION 1
+//#define USE_NEW_SPOTLIGHT 1
+//#define USE_NEW_ACCESSIBILITY 1
+//#define USE_NEW_EVENT_SYNTHESIS 1
+//#define USE_NEW_HOTKEY 1
+
+// New manager imports
+#import "PHTVCacheManager.h"
+#import "PHTVTimingManager.h"
+#import "PHTVAppDetectionManager.h"
+#import "PHTVSpotlightManager.h"
+#import "PHTVAccessibilityManager.h"
+#import "PHTVEventSynthesisManager.h"
+#import "PHTVHotkeyManager.h"
+
 // Forward declarations for functions used before definition (inside extern "C" block)
 extern "C" {
     NSString* getBundleIdFromPID(pid_t pid);
@@ -121,13 +139,14 @@ static os_unfair_lock _pidCacheLock = OS_UNFAIR_LOCK_INIT;
 
 // App characteristics cache - cache all app properties to reduce repeated function calls
 // This eliminates 5-10 function calls per keystroke down to 1 dictionary lookup
-typedef struct {
-    BOOL isSpotlightLike;
-    BOOL needsPrecomposedBatched;
-    BOOL isTerminal;
-    BOOL needsStepByStep;
-    BOOL containsUnicodeCompound;
-} AppCharacteristics;
+// MOVED TO PHTVCacheManager.h
+// typedef struct {
+//     BOOL isSpotlightLike;
+//     BOOL needsPrecomposedBatched;
+//     BOOL isTerminal;
+//     BOOL needsStepByStep;
+//     BOOL containsUnicodeCompound;
+// } AppCharacteristics;
 
 static NSMutableDictionary<NSString*, NSValue*> *_appCharacteristicsCache = nil;
 static os_unfair_lock _appCharCacheLock = OS_UNFAIR_LOCK_INIT;
@@ -424,6 +443,11 @@ BOOL isSpotlightActive(void) {
 
 // Get bundle ID from process ID
 NSString* getBundleIdFromPID(pid_t pid) {
+#ifdef USE_NEW_CACHE
+    // Use new PHTVCacheManager
+    return [PHTVCacheManager getBundleIdFromPID:pid];
+#else
+    // Old implementation
     if (__builtin_expect(pid <= 0, 0)) return nil;
     
     // Initialize infrastructure once
@@ -518,6 +542,7 @@ NSString* getBundleIdFromPID(pid_t pid) {
     _pidBundleCache[pidKey] = @"";
     os_unfair_lock_unlock(&_pidCacheLock);
     return nil;
+#endif
 }
 #define OTHER_CONTROL_KEY (_flag & kCGEventFlagMaskCommand) || (_flag & kCGEventFlagMaskControl) || \
                             (_flag & kCGEventFlagMaskAlternate) || (_flag & kCGEventFlagMaskSecondaryFn) || \
@@ -771,6 +796,11 @@ extern "C" {
     // Optimized helper to check if bundleId matches any app in the set (exact match or prefix)
     // PERFORMANCE: inline + always_inline attribute for hot path optimization
     __attribute__((always_inline)) static inline BOOL bundleIdMatchesAppSet(NSString* bundleId, NSSet* appSet) {
+#ifdef USE_NEW_APP_DETECTION
+        // Use new PHTVAppDetectionManager
+        return [PHTVAppDetectionManager bundleIdMatchesAppSet:bundleId appSet:appSet];
+#else
+        // Old implementation
         if (bundleId == nil) return NO;
 
         // Fast path: exact match using O(1) NSSet lookup
@@ -785,6 +815,7 @@ extern "C" {
             }
         }
         return NO;
+#endif
     }
 
     // Forward declaration
@@ -1625,14 +1656,15 @@ extern "C" {
     }
 
     // Delay type enum for different app categories
-    typedef enum {
-        DelayTypeNone = 0,
-        DelayTypeTerminal = 1,
-        // Browser delays removed - Shift+Left strategy eliminates need for delays:
-        // DelayTypeBrowser = 2,          // REMOVED - no longer needed
-        // DelayTypeSafariBrowser = 3,    // REMOVED - no longer needed
-        // DelayTypeAutoEnglish = 4       // REMOVED - no longer needed
-    } DelayType;
+    // MOVED TO PHTVTimingManager.h
+    // typedef enum {
+    //     DelayTypeNone = 0,
+    //     DelayTypeTerminal = 1,
+    //     // Browser delays removed - Shift+Left strategy eliminates need for delays:
+    //     // DelayTypeBrowser = 2,          // REMOVED - no longer needed
+    //     // DelayTypeSafariBrowser = 3,    // REMOVED - no longer needed
+    //     // DelayTypeAutoEnglish = 4       // REMOVED - no longer needed
+    // } DelayType;
 
     // Update response time tracking for adaptive delays
     // Call this after each keystroke to measure system responsiveness
@@ -1797,6 +1829,11 @@ extern "C" {
      * Uses backspace method with step-by-step character sending
      */
     BOOL isTerminalApp(NSString *bundleId) {
+#ifdef USE_NEW_APP_DETECTION
+        // Use new PHTVAppDetectionManager
+        return [PHTVAppDetectionManager isTerminalApp:bundleId];
+#else
+        // Old implementation
         if (!bundleId) return NO;
 
         // JetBrains IDEs (IntelliJ, PyCharm, WebStorm, GoLand, CLion, Fleet, etc.)
@@ -1831,6 +1868,7 @@ extern "C" {
             ]];
         });
         return [terminalApps containsObject:bundleId];
+#endif
     }
 
     void SendCutKey() {
