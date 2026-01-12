@@ -41,17 +41,25 @@ final class AppListsState: ObservableObject {
         let defaults = UserDefaults.standard
 
         // Load excluded apps
-        if let data = defaults.data(forKey: UserDefaultsKey.excludedApps),
-            let apps = try? JSONDecoder().decode([ExcludedApp].self, from: data)
-        {
-            excludedApps = apps
+        if let data = defaults.data(forKey: UserDefaultsKey.excludedApps) {
+            do {
+                excludedApps = try JSONDecoder().decode([ExcludedApp].self, from: data)
+            } catch {
+                NSLog("[AppListsState] Failed to decode excluded apps: %@", error.localizedDescription)
+                // Keep default empty array
+                excludedApps = []
+            }
         }
 
         // Load send key step by step apps
-        if let data = defaults.data(forKey: UserDefaultsKey.sendKeyStepByStepApps),
-            let apps = try? JSONDecoder().decode([SendKeyStepByStepApp].self, from: data)
-        {
-            sendKeyStepByStepApps = apps
+        if let data = defaults.data(forKey: UserDefaultsKey.sendKeyStepByStepApps) {
+            do {
+                sendKeyStepByStepApps = try JSONDecoder().decode([SendKeyStepByStepApp].self, from: data)
+            } catch {
+                NSLog("[AppListsState] Failed to decode send key step by step apps: %@", error.localizedDescription)
+                // Keep default empty array
+                sendKeyStepByStepApps = []
+            }
         }
     }
 
@@ -59,13 +67,19 @@ final class AppListsState: ObservableObject {
         let defaults = UserDefaults.standard
 
         // Save excluded apps
-        if let data = try? JSONEncoder().encode(excludedApps) {
+        do {
+            let data = try JSONEncoder().encode(excludedApps)
             defaults.set(data, forKey: UserDefaultsKey.excludedApps)
+        } catch {
+            NSLog("[AppListsState] Failed to encode excluded apps: %@", error.localizedDescription)
         }
 
         // Save send key step by step apps
-        if let data = try? JSONEncoder().encode(sendKeyStepByStepApps) {
+        do {
+            let data = try JSONEncoder().encode(sendKeyStepByStepApps)
             defaults.set(data, forKey: UserDefaultsKey.sendKeyStepByStepApps)
+        } catch {
+            NSLog("[AppListsState] Failed to encode send key step by step apps: %@", error.localizedDescription)
         }
 
         defaults.synchronize()
@@ -75,20 +89,26 @@ final class AppListsState: ObservableObject {
         let defaults = UserDefaults.standard
 
         // Reload excluded apps if changed
-        if let data = defaults.data(forKey: UserDefaultsKey.excludedApps),
-            let newApps = try? JSONDecoder().decode([ExcludedApp].self, from: data)
-        {
-            if newApps != excludedApps {
-                excludedApps = newApps
+        if let data = defaults.data(forKey: UserDefaultsKey.excludedApps) {
+            do {
+                let newApps = try JSONDecoder().decode([ExcludedApp].self, from: data)
+                if newApps != excludedApps {
+                    excludedApps = newApps
+                }
+            } catch {
+                NSLog("[AppListsState] Failed to reload excluded apps: %@", error.localizedDescription)
             }
         }
 
         // Reload send key step by step apps if changed
-        if let data = defaults.data(forKey: UserDefaultsKey.sendKeyStepByStepApps),
-            let newApps = try? JSONDecoder().decode([SendKeyStepByStepApp].self, from: data)
-        {
-            if newApps != sendKeyStepByStepApps {
-                sendKeyStepByStepApps = newApps
+        if let data = defaults.data(forKey: UserDefaultsKey.sendKeyStepByStepApps) {
+            do {
+                let newApps = try JSONDecoder().decode([SendKeyStepByStepApp].self, from: data)
+                if newApps != sendKeyStepByStepApps {
+                    sendKeyStepByStepApps = newApps
+                }
+            } catch {
+                NSLog("[AppListsState] Failed to reload send key step by step apps: %@", error.localizedDescription)
             }
         }
     }
@@ -112,7 +132,8 @@ final class AppListsState: ObservableObject {
     }
 
     private func saveExcludedApps() {
-        if let data = try? JSONEncoder().encode(excludedApps) {
+        do {
+            let data = try JSONEncoder().encode(excludedApps)
             UserDefaults.standard.set(data, forKey: UserDefaultsKey.excludedApps)
             UserDefaults.standard.synchronize()
 
@@ -125,6 +146,8 @@ final class AppListsState: ObservableObject {
             liveLog("posting ExcludedAppsChanged (legacy)")
             NotificationCenter.default.post(
                 name: NotificationName.excludedAppsChanged, object: nil)
+        } catch {
+            NSLog("[AppListsState] Failed to save excluded apps: %@", error.localizedDescription)
         }
     }
 
@@ -147,7 +170,8 @@ final class AppListsState: ObservableObject {
     }
 
     private func saveSendKeyStepByStepApps() {
-        if let data = try? JSONEncoder().encode(sendKeyStepByStepApps) {
+        do {
+            let data = try JSONEncoder().encode(sendKeyStepByStepApps)
             UserDefaults.standard.set(data, forKey: UserDefaultsKey.sendKeyStepByStepApps)
             UserDefaults.standard.synchronize()
 
@@ -155,6 +179,8 @@ final class AppListsState: ObservableObject {
             liveLog("posting SendKeyStepByStepAppsChanged")
             NotificationCenter.default.post(
                 name: NotificationName.sendKeyStepByStepAppsChanged, object: sendKeyStepByStepApps)
+        } catch {
+            NSLog("[AppListsState] Failed to save send key step by step apps: %@", error.localizedDescription)
         }
     }
 

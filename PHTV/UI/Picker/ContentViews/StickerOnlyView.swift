@@ -120,58 +120,85 @@ struct StickerOnlyView: View {
 
     private func copySticker(_ sticker: KlipyGIF) {
         klipyClient.recordStickerUsage(sticker)
-        guard let url = URL(string: sticker.fullURL) else { return }
+        guard let url = URL(string: sticker.fullURL) else {
+            NSLog("[StickerPicker] Invalid Sticker URL: %@", sticker.fullURL)
+            return
+        }
 
-        URLSession.shared.dataTask(with: url) { data, _, _ in
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            // Check for network errors
+            if let error = error {
+                NSLog("[StickerPicker] Sticker download error: %@", error.localizedDescription)
+                return
+            }
+
+            // Check HTTP status code
+            if let httpResponse = response as? HTTPURLResponse {
+                guard 200...299 ~= httpResponse.statusCode else {
+                    NSLog("[StickerPicker] Sticker download HTTP error: %d", httpResponse.statusCode)
+                    return
+                }
+            }
+
+            // Ensure we have data
+            guard let data = data else {
+                NSLog("[StickerPicker] No data received for Sticker: %@", sticker.slug)
+                return
+            }
+
             DispatchQueue.main.async {
-                if let data = data {
-                    NSLog("[PHTPPicker] Sticker downloaded: %@", sticker.slug)
+                NSLog("[StickerPicker] Sticker downloaded: %@", sticker.slug)
 
-                    let phtpDir = getPHTPMediaDirectory()
-                    let stickerURL = phtpDir.appendingPathComponent("\(sticker.slug).png")
-                    try? data.write(to: stickerURL)
+                let phtpDir = getPHTPMediaDirectory()
+                let stickerURL = phtpDir.appendingPathComponent("\(sticker.slug).png")
 
-                    let pasteboard = NSPasteboard.general
-                    pasteboard.clearContents()
-                    pasteboard.writeObjects([stickerURL as NSPasteboardWriting])
+                do {
+                    try data.write(to: stickerURL)
+                } catch {
+                    NSLog("[StickerPicker] Failed to save Sticker: %@", error.localizedDescription)
+                    return
+                }
 
-                    // Close panel first
-                    onClose?()
+                let pasteboard = NSPasteboard.general
+                pasteboard.clearContents()
+                pasteboard.writeObjects([stickerURL as NSPasteboardWriting])
 
-                    // Small delay to allow panel to close and frontmost app to regain focus
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                        NSLog("[PHTPPicker] Pasting Sticker...")
+                // Close panel first
+                onClose?()
 
-                        let source = CGEventSource(stateID: .hidSystemState)
+                // Small delay to allow panel to close and frontmost app to regain focus
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                    NSLog("[StickerPicker] Pasting Sticker...")
 
-                        // Press Command
-                        if let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: true) {
-                            cmdDown.flags = .maskCommand
-                            cmdDown.post(tap: .cghidEventTap)
-                        }
+                    let source = CGEventSource(stateID: .hidSystemState)
 
-                        // Press V
-                        if let vDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true) {
-                            vDown.flags = .maskCommand
-                            vDown.post(tap: .cghidEventTap)
-                        }
-
-                        // Release V
-                        if let vUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false) {
-                            vUp.flags = .maskCommand
-                            vUp.post(tap: .cghidEventTap)
-                        }
-
-                        // Release Command
-                        if let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: false) {
-                            cmdUp.post(tap: .cghidEventTap)
-                        }
-
-                        NSLog("[PHTPPicker] Paste command sent")
-
-                        // Clean up file after paste
-                        deleteFileAfterDelay(stickerURL)
+                    // Press Command
+                    if let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: true) {
+                        cmdDown.flags = .maskCommand
+                        cmdDown.post(tap: .cghidEventTap)
                     }
+
+                    // Press V
+                    if let vDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true) {
+                        vDown.flags = .maskCommand
+                        vDown.post(tap: .cghidEventTap)
+                    }
+
+                    // Release V
+                    if let vUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false) {
+                        vUp.flags = .maskCommand
+                        vUp.post(tap: .cghidEventTap)
+                    }
+
+                    // Release Command
+                    if let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: false) {
+                        cmdUp.post(tap: .cghidEventTap)
+                    }
+
+                    NSLog("[StickerPicker] Paste command sent")
+
+                    // Clean up file after paste
+                    deleteFileAfterDelay(stickerURL)
                 }
             }
         }.resume()
