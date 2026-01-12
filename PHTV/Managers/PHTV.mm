@@ -1361,7 +1361,12 @@ extern "C" {
 
         // Use the optimized focused app bundle ID
         _frontMostApp = getFocusedAppBundleId();
-        
+
+        // CRITICAL: Guard against nil bundleIdentifier during app switching transitions
+        if (_frontMostApp == nil) {
+            return;  // Skip if no frontmost app - prevents crash on NULL UTF8String
+        }
+
         _languageTemp = getAppInputMethodStatus(string(_frontMostApp.UTF8String), vLanguage | (vCodeTable << 1));
 
         if ((_languageTemp & 0x01) != vLanguage) { //for input method
@@ -1401,6 +1406,12 @@ extern "C" {
 
         // PERFORMANCE: Just save the mapping, don't trigger more updates
         _frontMostApp = getFocusedAppBundleId();
+
+        // CRITICAL: Guard against nil bundleIdentifier
+        if (_frontMostApp == nil) {
+            return;  // Skip if no frontmost app - prevents crash
+        }
+
         setAppInputMethodStatus(string(_frontMostApp.UTF8String), vLanguage | (vCodeTable << 1));
         saveSmartSwitchKeyData();
     }
@@ -1412,6 +1423,12 @@ extern "C" {
 
         // PERFORMANCE: Just save the mapping, don't trigger more updates
         _frontMostApp = getFocusedAppBundleId();
+
+        // CRITICAL: Guard against nil bundleIdentifier
+        if (_frontMostApp == nil) {
+            return;  // Skip if no frontmost app - prevents crash
+        }
+
         setAppInputMethodStatus(string(_frontMostApp.UTF8String), vLanguage | (vCodeTable << 1));
         saveSmartSwitchKeyData();
     }
