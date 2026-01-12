@@ -353,14 +353,15 @@ struct BugReportView: View {
         output += "- **Supported Browsers:** \(supportedBrowsers.joined(separator: ", "))\n"
 
         // Browser fix features
-        output += "- **Browser Detection:**\n"
-        output += "  - Detection method: ✅ Bundle ID matching (no delays)\n"
-        output += "  - Uses CGEventTapPostEvent: ✅ (standard event posting)\n"
-        output += "  - HID tap for browser: ❌ (browsers don't support AX API for autocomplete)\n"
-        output += "  - Address bar autocomplete: ✅ Handled via bundle-based detection\n"
-        output += "  - Shortcut fix: ✅ Prevents '/' deletion in browser shortcuts\n"
-        output += "  - Step-by-step mode: \(appState.sendKeyStepByStep ? "✅ Enabled" : "❌ Disabled (default)")\n"
-        output += "  - Auto English on browser: \(appState.autoRestoreEnglishWord ? "✅ (with HID tap)" : "❌")\n"
+        output += "- **Browser Detection & Handling:**\n"
+        output += "  - Detection method: ✅ Bundle ID matching (_browserAppSet)\n"
+        output += "  - Event posting: ✅ CGEventTapPostEvent (standard)\n"
+        output += "  - HID tap/AX API: ❌ Disabled for browsers (autocomplete incompatible)\n"
+        output += "  - Backspace method: ✅ Standard SendBackspace() - no delays\n"
+        output += "  - Address bar fix: ✅ Prevents Spotlight-style handling on browser\n"
+        output += "  - Empty char timing: ✅ Smart detection (skips '/' shortcuts)\n"
+        output += "  - Step-by-step mode: \(appState.sendKeyStepByStep ? "✅ Enabled (global)" : "❌ Disabled (default)")\n"
+        output += "  - Auto English restore: \(appState.autoRestoreEnglishWord ? "✅ (HID tap for restoration)" : "❌")\n"
 
         // Current front app
         output += "- **Current App:** \(getFrontAppInfo())\n"
