@@ -24,12 +24,10 @@ struct SettingsWindowContent: View {
         .onAppear {
             // Show dock icon when settings window opens
             // This prevents the window from being hidden when app loses focus
-            NSLog("[SettingsWindowContent] onAppear - showing dock icon")
 
             // Use DispatchQueue.main.async to ensure run loop is ready
             // This is crucial on first launch when app just started
             DispatchQueue.main.async {
-                NSLog("[SettingsWindowContent] Setting activation policy to .regular")
                 NSApp.setActivationPolicy(.regular)
 
                 // Force dock to refresh by calling activate
@@ -42,7 +40,6 @@ struct SettingsWindowContent: View {
                         window.hidesOnDeactivate = false
                         window.collectionBehavior = [.managed, .participatesInCycle, .moveToActiveSpace, .fullScreenAuxiliary]
                         window.makeKeyAndOrderFront(nil)
-                        NSLog("[SettingsWindowContent] Brought settings window to front, hidesOnDeactivate=false")
                         break
                     }
                 }
@@ -58,7 +55,6 @@ struct SettingsWindowContent: View {
                             break
                         }
                     }
-                    NSLog("[SettingsWindowContent] Dock icon activation complete")
                 }
             }
 
@@ -77,7 +73,6 @@ struct SettingsWindowContent: View {
         .onDisappear {
             // Restore dock icon to user preference when settings closes
             let userPrefersDock = appState.showIconOnDock
-            NSLog("[SettingsWindowContent] onDisappear - restoring dock icon, userPrefers: %@", userPrefersDock ? "true" : "false")
 
             // Remove deactivation observer
             if let observer = deactivationObserver {
@@ -119,10 +114,6 @@ struct SettingsWindowContent: View {
                 for window in NSApp.windows {
                     if window.identifier?.rawValue.hasPrefix("settings") == true {
                         window.hidesOnDeactivate = false
-                        // Keep window visible even when not active
-                        if window.isVisible {
-                            NSLog("[SettingsWindowContent] App deactivated - ensuring settings window stays visible")
-                        }
                         break
                     }
                 }
@@ -158,8 +149,6 @@ struct SettingsWindowContent: View {
                          window.orderFront(nil)
                     }
 
-                    NSLog("[SettingsWindowContent] Set window.level = %@ for window: %@",
-                          appState.settingsWindowAlwaysOnTop ? ".floating" : ".normal", identifier)
                     break
                 }
             }

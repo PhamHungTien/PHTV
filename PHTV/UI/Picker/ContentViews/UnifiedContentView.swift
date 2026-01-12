@@ -376,8 +376,6 @@ struct UnifiedContentView: View {
 
             DispatchQueue.main.async {
                 if let tempURL = saveTempGIF(data: data, filename: gif.slug) {
-                    NSLog("[PHTPPicker] GIF downloaded: %@", gif.slug)
-
                     let pasteboard = NSPasteboard.general
                     pasteboard.clearContents()
                     pasteboard.writeObjects([tempURL as NSPasteboardWriting])

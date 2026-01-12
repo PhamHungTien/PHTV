@@ -147,8 +147,6 @@ struct GIFOnlyView: View {
             }
 
             DispatchQueue.main.async {
-                NSLog("[GIFPicker] GIF downloaded: %@", gif.slug)
-
                 let phtpDir = getPHTPMediaDirectory()
                 let gifURL = phtpDir.appendingPathComponent("\(gif.slug).gif")
 
