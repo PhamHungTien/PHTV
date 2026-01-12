@@ -2553,6 +2553,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
 #pragma mark Reset PHTV after mac computer awake
 -(void)receiveWakeNote: (NSNotification*)note {
+    // Force stop/start on wake to ensure fresh connection to Window Server
+    // This fixes issues where event tap dies during sleep or Mach port becomes invalid
+    [PHTVManager stopEventTap];
     [PHTVManager initEventTap];
 }
 
