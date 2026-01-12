@@ -19,7 +19,8 @@ enum ClaudeInstallationType {
 /// Utility class to patch Claude Code CLI for Vietnamese input support
 /// Claude Code has a bug where it processes backspace but doesn't insert replacement text
 /// This patcher fixes that bug by modifying the cli.js file
-final class ClaudeCodePatcher: @unchecked Sendable {
+/// Thread-safe: File operations run on background DispatchQueue
+final class ClaudeCodePatcher: Sendable {
     static let shared = ClaudeCodePatcher()
 
     /// Marker to identify patched files

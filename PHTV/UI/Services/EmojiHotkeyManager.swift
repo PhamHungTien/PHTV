@@ -14,12 +14,14 @@ import Combine
 
 /// Singleton manager for PHTV Picker hotkey
 /// Monitors global keyboard events and triggers PHTV Picker when hotkey is pressed
-final class EmojiHotkeyManager: ObservableObject, @unchecked Sendable {
+@MainActor
+final class EmojiHotkeyManager: ObservableObject {
 
     static let shared = EmojiHotkeyManager()
 
-    private var globalMonitor: Any?
-    private var localMonitor: Any?
+    nonisolated(unsafe) private var globalMonitor: Any?
+    nonisolated(unsafe) private var localMonitor: Any?
+    nonisolated(unsafe) private var settingsObserver: NSObjectProtocol?
     private var isEnabled: Bool = false
     private var modifiers: NSEvent.ModifierFlags = .command
     private var keyCode: UInt16 = 14  // E key default
@@ -27,12 +29,14 @@ final class EmojiHotkeyManager: ObservableObject, @unchecked Sendable {
     private init() {
         NSLog("[EmojiHotkey] EmojiHotkeyManager initialized")
 
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleSettingsChanged),
-            name: NSNotification.Name("EmojiHotkeySettingsChanged"),
-            object: nil
-        )
+        // Use block-based observer with .main queue for thread safety
+        settingsObserver = NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("EmojiHotkeySettingsChanged"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleSettingsChanged()
+        }
 
         // CRITICAL: Delay sync to avoid circular dependency during AppState.shared initialization
         // Use asyncAfter with minimal delay to break the dispatch_once recursion
@@ -44,7 +48,7 @@ final class EmojiHotkeyManager: ObservableObject, @unchecked Sendable {
         }
     }
 
-    @objc private func handleSettingsChanged() {
+    private func handleSettingsChanged() {
         NSLog("[EmojiHotkey] Settings changed notification received")
         // Delay to avoid circular dependency if called during AppState.shared initialization
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
@@ -99,31 +103,37 @@ final class EmojiHotkeyManager: ObservableObject, @unchecked Sendable {
         self.isEnabled = true
 
         NSLog("REGISTER-ADDING-MONITORS")
+        // Capture values to avoid main-actor access from background thread
+        let capturedKeyCode = self.keyCode
+        let capturedModifiers = self.modifiers
+
         globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
             NSLog("GLOBAL-MONITOR-FIRED")
-            self?.handleKeyEvent(event)
+            // Dispatch to main thread to access self properties safely
+            Task { @MainActor [weak self] in
+                self?.handleKeyEvent(event)
+            }
         }
 
-        localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            guard let self = self else { return event }
-
+        localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             // Quick check to consume event IMMEDIATELY if it matches hotkey
             // This prevents system beep sound
-            guard event.keyCode == self.keyCode else {
+            // Use captured values to avoid main-actor isolation issues
+            guard event.keyCode == capturedKeyCode else {
                 return event
             }
 
             let relevantModifiers: NSEvent.ModifierFlags = [.command, .option, .control, .shift]
             let eventModifiers = event.modifierFlags.intersection(relevantModifiers)
 
-            guard eventModifiers == self.modifiers else {
+            guard eventModifiers == capturedModifiers else {
                 return event
             }
 
             // Match! Consume event immediately to prevent beep
             NSLog("[EmojiHotkey] Hotkey matched, opening picker")
-            DispatchQueue.main.async {
-                self.openEmojiPicker()
+            Task { @MainActor in
+                EmojiHotkeyManager.shared.openEmojiPicker()
             }
 
             // Return nil to consume the event and prevent system beep
@@ -211,7 +221,7 @@ final class EmojiHotkeyManager: ObservableObject, @unchecked Sendable {
         let event = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: true)
         var length = 0
         event?.keyboardGetUnicodeString(maxStringLength: 4, actualStringLength: &length, unicodeString: nil)
-        
+
         if length > 0 {
             var chars: [UniChar] = Array(repeating: 0, count: length)
             event?.keyboardGetUnicodeString(maxStringLength: 4, actualStringLength: &length, unicodeString: &chars)
@@ -219,7 +229,20 @@ final class EmojiHotkeyManager: ObservableObject, @unchecked Sendable {
                 return Character(scalar)
             }
         }
-        
+
         return nil
+    }
+
+    deinit {
+        if let observer = settingsObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        // Cleanup monitors manually since we can't call main actor methods in deinit
+        if let monitor = globalMonitor {
+            NSEvent.removeMonitor(monitor)
+        }
+        if let monitor = localMonitor {
+            NSEvent.removeMonitor(monitor)
+        }
     }
 }

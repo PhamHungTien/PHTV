@@ -17,7 +17,6 @@ final class SettingsObserver: NSObject, ObservableObject {
     @Published var settingsDidChange: Date?
 
     nonisolated(unsafe) private var observer: NSObjectProtocol?
-
     private var lastNotificationTime: Date = Date()
 
     private override init() {
@@ -43,9 +42,7 @@ final class SettingsObserver: NSObject, ObservableObject {
         let now = Date()
         if now.timeIntervalSince(lastNotificationTime) > 0.1 {
             lastNotificationTime = now
-            Task { @MainActor in
-                self.settingsDidChange = now
-            }
+            settingsDidChange = now
         }
     }
 

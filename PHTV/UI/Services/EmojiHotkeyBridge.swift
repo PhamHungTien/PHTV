@@ -12,7 +12,7 @@ import Foundation
 
 /// Bridge to initialize EmojiHotkeyManager from Objective-C AppDelegate
 @objc class EmojiHotkeyBridge: NSObject {
-    @objc static func initializeEmojiHotkeyManager() {
+    @MainActor @objc static func initializeEmojiHotkeyManager() {
         NSLog("BRIDGE-START")
         print("BRIDGE-START-PRINT")
 

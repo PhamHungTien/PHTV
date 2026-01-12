@@ -9,7 +9,8 @@
 import Foundation
 import AppKit
 
-final class SettingsNotificationObserver: @unchecked Sendable {
+@MainActor
+final class SettingsNotificationObserver {
     static let shared = SettingsNotificationObserver()
     private var observers: [Any] = []
 

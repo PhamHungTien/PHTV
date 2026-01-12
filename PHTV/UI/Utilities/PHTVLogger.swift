@@ -10,7 +10,8 @@ import Foundation
 import OSLog
 
 /// Logger thông minh cho PHTV với cơ chế tự dọn dẹp
-final class PHTVLogger: @unchecked Sendable {
+/// Thread-safe: Uses serial queue for file operations and NSLock for shared state
+final class PHTVLogger: Sendable {
     static let shared = PHTVLogger()
 
     // MARK: - Properties
@@ -21,7 +22,7 @@ final class PHTVLogger: @unchecked Sendable {
     private let maxLogAge: TimeInterval = 24 * 60 * 60  // 24 giờ
     private let queue = DispatchQueue(label: "com.phamhungtien.phtv.logger", qos: .utility)
 
-    private var _lastCleanupDate: Date?
+    nonisolated(unsafe) private var _lastCleanupDate: Date?
     private let lock = NSLock()
     private let cleanupInterval: TimeInterval = 60 * 60  // Dọn dẹp mỗi 1 giờ
 
