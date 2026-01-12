@@ -209,14 +209,6 @@ open https://phamhungtien.com/PHTV/
 open https://github.com/PhamHungTien/PHTV/releases/latest
 ```
 
-> [!WARNING]
-> **Không mở được ứng dụng?** Nếu macOS báo lỗi "damaged", "can't be opened", hoặc tự động xóa app:
-> - **Tạm thời**: Chạy `./scripts/quick_fix_gatekeeper.sh /Applications/PHTV.app`
-> - **Lâu dài**: Cài qua Homebrew để có app đã signed đúng cách
->
-> **Lỗi nhập liệu trên trình duyệt?** Nếu gõ tiếng Việt bị lỗi "lúc được lúc không" trên Safari/Chrome/Firefox:
-> - **[Khắc phục lỗi Browser Input](docs/BROWSER_INPUT_FIXES.md)** - Giải thích chi tiết các cải tiến adaptive delays
-
 ### Build từ source
 
 ```bash
