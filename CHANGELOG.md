@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Browser Address Bar Duplication**: Fixed an issue where typing Vietnamese in Safari, Chrome, and other browsers' address bars would cause character duplication (e.g., "dđ", "aâ") due to autocomplete conflicts. Re-enabled the "Shift+Left" backspace strategy for browsers.
+
 ## [1.6.8] - 2026-01-11
 
 ### Added

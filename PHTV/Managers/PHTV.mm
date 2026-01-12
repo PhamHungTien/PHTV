@@ -33,7 +33,9 @@ extern "C" {
 static const uint64_t SPOTLIGHT_CACHE_DURATION_MS = 50;      // Spotlight detection cache timeout
 static const uint64_t PID_CACHE_CLEAN_INTERVAL_MS = 60000;   // 60 seconds - PID cache cleanup (Reduced from 5 mins to fix WhatsApp issues)
 static const NSUInteger PID_CACHE_INITIAL_CAPACITY = 128;    // Initial PID cache capacity
+#ifdef DEBUG
 static const uint64_t DEBUG_LOG_THROTTLE_MS = 500;           // Debug log throttling interval
+#endif
 static const uint64_t APP_SWITCH_CACHE_DURATION_MS = 100;    // App switch detection cache timeout
 static const NSUInteger SYNC_KEY_RESERVE_SIZE = 256;         // Pre-allocated buffer size for typing sync
 
@@ -1732,6 +1734,16 @@ extern "C" {
         uint64_t keystrokeDelay = 0;
         uint64_t settleDelay = 0;
         BOOL useShiftLeftStrategy = NO;
+
+        // BROWSER FIX: Use Shift+Left strategy for all browsers
+        // This is critical for Safari/Chrome address bar where Backspace only cancels autocomplete
+        // but fails to delete the character, causing duplication (e.g. "dđ", "aâ")
+        if (delayType != DelayTypeTerminal) {
+            NSString *effectiveTarget = _phtvEffectiveTargetBundleId ?: getFocusedAppBundleId();
+            if (bundleIdMatchesAppSet(effectiveTarget, _browserAppSet)) {
+                useShiftLeftStrategy = YES;
+            }
+        }
 
         switch (delayType) {
             case DelayTypeTerminal:
