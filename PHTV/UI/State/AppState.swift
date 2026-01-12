@@ -274,6 +274,28 @@ final class AppState: ObservableObject {
         systemState.setupObservers()
         uiState.setupObservers()
 
+        // Propagate sub-state changes to AppState
+        // This ensures Views observing AppState are updated when a sub-state changes
+        inputMethodState.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }.store(in: &cancellables)
+
+        macroState.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }.store(in: &cancellables)
+
+        systemState.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }.store(in: &cancellables)
+
+        uiState.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }.store(in: &cancellables)
+
+        appListsState.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }.store(in: &cancellables)
+
         // Observer for global isEnabled (language toggle)
         $isEnabled.sink { [weak self] value in
             guard let self = self, !self.isLoadingSettings else { return }
