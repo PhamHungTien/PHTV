@@ -324,7 +324,7 @@ Mọi đóng góp đều được chào đón! Xem [CONTRIBUTING.md](CONTRIBUTIN
 
 PHTV được phát hành dưới giấy phép **[GPL v3.0](LICENSE)**.
 
-Dự án kế thừa và mở rộng engine từ **[OpenKey](https://github.com/tuyenvm/OpenKey)** của Tuyến Võ Minh. Chân thành cảm ơn cộng đồng OpenKey đã tạo nền tảng tuyệt vời này.
+Dự án kế thừa và mở rộng engine từ **[OpenKey](https://github.com/tuyenvm/OpenKey)** của Mai Vũ Tuyên. Chân thành cảm ơn cộng đồng OpenKey đã tạo nền tảng tuyệt vời này.
 
 ---
 
