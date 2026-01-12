@@ -16,7 +16,6 @@ final class SettingsNotificationObserver {
 
     private init() {
         setupObservers()
-        NSLog("[SettingsNotificationObserver] Initialized")
     }
 
     private func setupObservers() {
@@ -26,7 +25,6 @@ final class SettingsNotificationObserver {
             object: nil,
             queue: .main
         ) { _ in
-            NSLog("[SettingsNotificationObserver] Received ShowSettings notification")
             Task { @MainActor in
                 SettingsWindowHelper.openSettingsWindow()
             }
@@ -39,7 +37,6 @@ final class SettingsNotificationObserver {
             object: nil,
             queue: .main
         ) { _ in
-            NSLog("[SettingsNotificationObserver] Received CreateSettingsWindow notification")
             Task { @MainActor in
                 SettingsWindowHelper.openSettingsWindow()
             }

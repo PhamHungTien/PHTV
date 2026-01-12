@@ -13,15 +13,7 @@ import Foundation
 /// Bridge to initialize EmojiHotkeyManager from Objective-C AppDelegate
 @objc class EmojiHotkeyBridge: NSObject {
     @MainActor @objc static func initializeEmojiHotkeyManager() {
-        NSLog("BRIDGE-START")
-        print("BRIDGE-START-PRINT")
-
         // Force initialization - this will trigger the singleton's init()
-        let manager = EmojiHotkeyManager.shared
-
-        NSLog("BRIDGE-AFTER-SHARED")
-        print("BRIDGE-AFTER-SHARED-PRINT")
-
-        NSLog("[EmojiHotkeyBridge] Manager object: %@", String(describing: manager))
+        _ = EmojiHotkeyManager.shared
     }
 }

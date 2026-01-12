@@ -1975,8 +1975,6 @@ EmojiItem(emoji: "🏧", name: "Atm Sign", keywords: ["atm", "sign"], category: 
         var frequency = self.getEmojiFrequency()
         frequency[emoji, default: 0] += 1
         UserDefaults.standard.set(frequency, forKey: self.emojiFrequencyKey)
-
-        NSLog("[EmojiDatabase] Recorded usage: \(emoji), frequency: \(frequency[emoji] ?? 0)")
     }
 
     /// Get recent emojis (most recent first)

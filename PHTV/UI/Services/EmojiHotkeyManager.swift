@@ -27,8 +27,6 @@ final class EmojiHotkeyManager: ObservableObject {
     private var keyCode: UInt16 = 14  // E key default
 
     private init() {
-        NSLog("[EmojiHotkey] EmojiHotkeyManager initialized")
-
         // Use block-based observer with .main queue for thread safety
         settingsObserver = NotificationCenter.default.addObserver(
             forName: NSNotification.Name("EmojiHotkeySettingsChanged"),
@@ -51,7 +49,6 @@ final class EmojiHotkeyManager: ObservableObject {
     }
 
     private func handleSettingsChanged() {
-        NSLog("[EmojiHotkey] Settings changed notification received")
         // Delay to avoid circular dependency if called during AppState.shared initialization
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
             guard let self = self else { return }
@@ -63,8 +60,6 @@ final class EmojiHotkeyManager: ObservableObject {
     
     @MainActor
     func syncFromAppState(_ appState: AppState) {
-        NSLog("SYNC-START: enabled=%d, modifiers=%lu, keyCode=%d", appState.enableEmojiHotkey ? 1 : 0, UInt(appState.emojiHotkeyModifiers.rawValue), appState.emojiHotkeyKeyCode)
-
         let wasEnabled = isEnabled
         let oldModifiers = modifiers
         let oldKeyCode = keyCode
@@ -73,44 +68,29 @@ final class EmojiHotkeyManager: ObservableObject {
         modifiers = appState.emojiHotkeyModifiers
         keyCode = appState.emojiHotkeyKeyCode
 
-        NSLog("SYNC-CHANGE-CHECK: wasEnabled=%d, isEnabled=%d", wasEnabled ? 1 : 0, isEnabled ? 1 : 0)
-
         if wasEnabled != isEnabled || oldModifiers != modifiers || oldKeyCode != keyCode {
-            NSLog("SYNC-WILL-UPDATE")
             // CRITICAL: Save desired state BEFORE unregisterHotkey() modifies isEnabled
             let shouldEnable = isEnabled
             unregisterHotkey()
 
             if shouldEnable {
-                NSLog("SYNC-WILL-REGISTER")
                 registerHotkey(modifiers: modifiers, keyCode: keyCode)
             }
-
-            if shouldEnable {
-                NSLog("[EmojiHotkey] Registered: %@%@", modifierSymbols(modifiers), keyCodeSymbol(keyCode))
-            } else {
-                NSLog("[EmojiHotkey] Disabled")
-            }
-        } else {
-            NSLog("SYNC-NO-CHANGE")
         }
     }
     
     func registerHotkey(modifiers: NSEvent.ModifierFlags, keyCode: UInt16) {
-        NSLog("REGISTER-START: modifiers=%lu, keyCode=%d", UInt(modifiers.rawValue), keyCode)
         unregisterHotkey()
 
         self.modifiers = modifiers
         self.keyCode = keyCode
         self.isEnabled = true
 
-        NSLog("REGISTER-ADDING-MONITORS")
         // Capture values to avoid main-actor access from background thread
         let capturedKeyCode = self.keyCode
         let capturedModifiers = self.modifiers
 
         globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            NSLog("GLOBAL-MONITOR-FIRED")
             // Dispatch to main thread to access self properties safely
             Task { @MainActor [weak self] in
                 self?.handleKeyEvent(event)
@@ -133,7 +113,6 @@ final class EmojiHotkeyManager: ObservableObject {
             }
 
             // Match! Consume event immediately to prevent beep
-            NSLog("[EmojiHotkey] Hotkey matched, opening picker")
             Task { @MainActor in
                 EmojiHotkeyManager.shared.openEmojiPicker()
             }
@@ -141,9 +120,6 @@ final class EmojiHotkeyManager: ObservableObject {
             // Return nil to consume the event and prevent system beep
             return nil
         }
-
-        NSLog("REGISTER-COMPLETE: globalMonitor=%@, localMonitor=%@", globalMonitor != nil ? "YES" : "NO", localMonitor != nil ? "YES" : "NO")
-        NSLog("[EmojiHotkey] Hotkey registered: %@%@", modifierSymbols(modifiers), keyCodeSymbol(keyCode))
     }
     
     func unregisterHotkey() {
@@ -151,21 +127,17 @@ final class EmojiHotkeyManager: ObservableObject {
             NSEvent.removeMonitor(monitor)
             globalMonitor = nil
         }
-        
+
         if let monitor = localMonitor {
             NSEvent.removeMonitor(monitor)
             localMonitor = nil
         }
-        
-        isEnabled = false
 
-        NSLog("[EmojiHotkey] Hotkey unregistered")
+        isEnabled = false
     }
-    
+
     @discardableResult
     private func handleKeyEvent(_ event: NSEvent) -> Bool {
-        NSLog("HANDLE-KEY: keyCode=%d (expecting %d)", event.keyCode, keyCode)
-
         guard event.keyCode == keyCode else {
             return false
         }
@@ -173,21 +145,15 @@ final class EmojiHotkeyManager: ObservableObject {
         let relevantModifiers: NSEvent.ModifierFlags = [.command, .option, .control, .shift]
         let eventModifiers = event.modifierFlags.intersection(relevantModifiers)
 
-        NSLog("HANDLE-KEY-MODIFIERS: event=%lu, expected=%lu", UInt(eventModifiers.rawValue), UInt(modifiers.rawValue))
-
         guard eventModifiers == modifiers else {
             return false
         }
 
-        NSLog("HANDLE-KEY-MATCH! Opening PHTV Picker")
-
         openEmojiPicker()
         return true
     }
-    
-    private func openEmojiPicker() {
-        NSLog("[EmojiHotkey] Opening PHTV Picker...")
 
+    private func openEmojiPicker() {
         DispatchQueue.main.async {
             EmojiPickerManager.shared.show()
         }
