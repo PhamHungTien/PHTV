@@ -1400,6 +1400,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     // Memory barrier to ensure event tap thread sees new values immediately
     __sync_synchronize();
 
+    // Sync spell checking state specifically (fixes issue where vCheckSpelling is reset to stale _useSpellCheckingBefore)
+    vSetCheckSpelling();
+
     // Always reset the session on any settings change.
     // This matches the "restart app" effect without requiring restart.
     RequestNewSession();
