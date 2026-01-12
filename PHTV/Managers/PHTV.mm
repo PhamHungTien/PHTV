@@ -27,15 +27,7 @@
 #import "PHTVAppDetectionManager.h"
 #import "PHTVSpotlightManager.h"
 #import "PHTVAccessibilityManager.h"
-
-// Refactoring toggles - enable to use new managers
-// Comment out to use old monolithic code
-#define USE_NEW_CACHE 1
-#define USE_NEW_APP_DETECTION 1
-#define USE_NEW_SPOTLIGHT 1
-#define USE_NEW_ACCESSIBILITY 1
-//#define USE_NEW_EVENT_SYNTHESIS 1
-//#define USE_NEW_HOTKEY 1
+#import "PHTVHotkeyManager.h"
 
 // Forward declarations for functions used before definition (inside extern "C" block)
 extern "C" {
@@ -47,8 +39,6 @@ extern "C" {
 
 // Performance & Cache Configuration
 static const uint64_t SPOTLIGHT_CACHE_DURATION_MS = 50;      // Spotlight detection cache timeout
-static const uint64_t PID_CACHE_CLEAN_INTERVAL_MS = 60000;   // 60 seconds - PID cache cleanup (Reduced from 5 mins to fix WhatsApp issues)
-static const NSUInteger PID_CACHE_INITIAL_CAPACITY = 128;    // Initial PID cache capacity
 #ifdef DEBUG
 static const uint64_t DEBUG_LOG_THROTTLE_MS = 500;           // Debug log throttling interval
 #endif
@@ -130,10 +120,10 @@ static inline void PHTVSpotlightDebugLog(NSString *message) {
 }
 #endif
 
-// Cache for PID to bundle ID mapping with modern lock
-static NSMutableDictionary<NSNumber*, NSString*> *_pidBundleCache = nil;
-static uint64_t _lastCacheCleanTime = 0;
-static os_unfair_lock _pidCacheLock = OS_UNFAIR_LOCK_INIT;
+// Cache for PID to bundle ID mapping - MOVED TO PHTVCacheManager
+// static NSMutableDictionary<NSNumber*, NSString*> *_pidBundleCache = nil;
+// static uint64_t _lastCacheCleanTime = 0;
+// static os_unfair_lock _pidCacheLock = OS_UNFAIR_LOCK_INIT;
 
 // App characteristics cache - cache all app properties to reduce repeated function calls
 // This eliminates 5-10 function calls per keystroke down to 1 dictionary lookup
@@ -153,7 +143,7 @@ static uint64_t _lastCacheInvalidationTime = 0;  // Periodic cache invalidation
 
 // Spotlight detection cache (refreshes every 50ms for optimal balance of performance and responsiveness)
 // Thread-safe access required since event tap callback may run on different threads
-static BOOL _cachedSpotlightActive = NO;
+// static BOOL _cachedSpotlightActive = NO;  // MOVED TO PHTVSpotlightManager
 static uint64_t _lastSpotlightCheckTime = 0;
 static pid_t _cachedFocusedPID = 0;
 static NSString* _cachedFocusedBundleId = nil;
@@ -190,15 +180,15 @@ static inline void InvalidateSpotlightCache(void) {
     os_unfair_lock_unlock(&_spotlightCacheLock);
 }
 
-// Thread-safe helper to update Spotlight cache
-static inline void UpdateSpotlightCache(BOOL isActive, pid_t pid, NSString* bundleId) {
-    os_unfair_lock_lock(&_spotlightCacheLock);
-    _cachedSpotlightActive = isActive;
-    _lastSpotlightCheckTime = mach_absolute_time();
-    _cachedFocusedPID = pid;
-    _cachedFocusedBundleId = bundleId;
-    os_unfair_lock_unlock(&_spotlightCacheLock);
-}
+// Thread-safe helper to update Spotlight cache - MOVED TO PHTVSpotlightManager
+// static inline void UpdateSpotlightCache(BOOL isActive, pid_t pid, NSString* bundleId) {
+//     os_unfair_lock_lock(&_spotlightCacheLock);
+//     _cachedSpotlightActive = isActive;
+//     _lastSpotlightCheckTime = mach_absolute_time();
+//     _cachedFocusedPID = pid;
+//     _cachedFocusedBundleId = bundleId;
+//     os_unfair_lock_unlock(&_spotlightCacheLock);
+// }
 
 // Track external delete events (not from PHTV) which may indicate text replacement
 static inline void TrackExternalDelete(void) {
@@ -223,83 +213,9 @@ static inline void TrackExternalDelete(void) {
     _externalDeleteDetected = YES;
 }
 
-// Helper to check if string contains search-related keywords (case insensitive)
-static inline BOOL ContainsSearchKeyword(NSString *str) {
-    if (str == nil) return NO;
-    NSString *lower = [str lowercaseString];
-    return [lower containsString:@"search"] ||
-           [lower containsString:@"tìm kiếm"] ||
-           [lower containsString:@"tìm"] ||
-           [lower containsString:@"filter"] ||
-           [lower containsString:@"lọc"];
-}
-
-// Check if element is a search field by examining its role, subrole, and other attributes
-static inline BOOL IsElementSpotlight(AXUIElementRef element) {
-    if (element == NULL) return NO;
-
-    CFTypeRef role = NULL;
-    BOOL isSearchField = NO;
-
-    // Check role
-    if (AXUIElementCopyAttributeValue(element, kAXRoleAttribute, &role) == kAXErrorSuccess) {
-        if (role != NULL && CFGetTypeID(role) == CFStringGetTypeID()) {
-            NSString *roleStr = (__bridge NSString *)role;
-
-            // AXSearchField → always return YES (standard search field)
-            if ([roleStr isEqualToString:@"AXSearchField"]) {
-                isSearchField = YES;
-            }
-            // AXTextField or AXTextArea → check additional attributes
-            else if ([roleStr isEqualToString:@"AXTextField"] || [roleStr isEqualToString:@"AXTextArea"]) {
-                CFTypeRef attr = NULL;
-
-                // Check subrole
-                if (!isSearchField && AXUIElementCopyAttributeValue(element, kAXSubroleAttribute, &attr) == kAXErrorSuccess) {
-                    if (attr != NULL && CFGetTypeID(attr) == CFStringGetTypeID()) {
-                        if (ContainsSearchKeyword((__bridge NSString *)attr)) {
-                            isSearchField = YES;
-                        }
-                    }
-                    if (attr) { CFRelease(attr); attr = NULL; }
-                }
-
-                // Check AXIdentifier
-                if (!isSearchField && AXUIElementCopyAttributeValue(element, kAXIdentifierAttribute, &attr) == kAXErrorSuccess) {
-                    if (attr != NULL && CFGetTypeID(attr) == CFStringGetTypeID()) {
-                        if (ContainsSearchKeyword((__bridge NSString *)attr)) {
-                            isSearchField = YES;
-                        }
-                    }
-                    if (attr) { CFRelease(attr); attr = NULL; }
-                }
-
-                // Check AXDescription
-                if (!isSearchField && AXUIElementCopyAttributeValue(element, kAXDescriptionAttribute, &attr) == kAXErrorSuccess) {
-                    if (attr != NULL && CFGetTypeID(attr) == CFStringGetTypeID()) {
-                        if (ContainsSearchKeyword((__bridge NSString *)attr)) {
-                            isSearchField = YES;
-                        }
-                    }
-                    if (attr) { CFRelease(attr); attr = NULL; }
-                }
-
-                // Check AXPlaceholderValue (placeholder text like "Search..." or "Tìm kiếm...")
-                if (!isSearchField && AXUIElementCopyAttributeValue(element, kAXPlaceholderValueAttribute, &attr) == kAXErrorSuccess) {
-                    if (attr != NULL && CFGetTypeID(attr) == CFStringGetTypeID()) {
-                        if (ContainsSearchKeyword((__bridge NSString *)attr)) {
-                            isSearchField = YES;
-                        }
-                    }
-                    if (attr) { CFRelease(attr); attr = NULL; }
-                }
-            }
-            CFRelease(role);
-        }
-    }
-
-    return isSearchField;
-}
+// Helper functions MOVED TO PHTVSpotlightManager
+// static inline BOOL ContainsSearchKeyword(NSString *str) { ... }
+// static inline BOOL IsElementSpotlight(AXUIElementRef element) { ... }
 
 // Log AX API errors for debugging purposes
 // Only logs in debug builds to avoid overhead in production
@@ -333,218 +249,12 @@ static inline void LogAXError(AXError error, const char *operation) {
 // Check if Spotlight or similar overlay is currently active using Accessibility API
 // OPTIMIZED: Results cached for 50ms to avoid repeated AX API calls while remaining responsive
 BOOL isSpotlightActive(void) {
-#ifdef USE_NEW_SPOTLIGHT
     return [PHTVSpotlightManager isSpotlightActive];
-#else
-    // Safe Mode: Skip AX API calls entirely - assume not in Spotlight
-    // This prevents crashes on unsupported hardware (OCLP Macs)
-    if (vSafeMode) {
-        return NO;
-    }
-
-    uint64_t now = mach_absolute_time();
-
-    // Thread-safe cache check
-    os_unfair_lock_lock(&_spotlightCacheLock);
-    uint64_t lastCheck = _lastSpotlightCheckTime;
-    BOOL cachedResult = _cachedSpotlightActive;
-    pid_t cachedPID = _cachedFocusedPID;
-    os_unfair_lock_unlock(&_spotlightCacheLock);
-
-    uint64_t elapsed_ms = mach_time_to_ms(now - lastCheck);
-
-    // Use cache if it's within the duration, regardless of whether it was TRUE or FALSE.
-    // 50ms is responsive enough to detect focus changes while saving thousands of AX calls.
-    if (elapsed_ms < SPOTLIGHT_CACHE_DURATION_MS && lastCheck > 0) {
-        return cachedResult;
-    }
-
-    // Get the system-wide focused element with multiple retries
-    // Create systemWide once to avoid unnecessary create/release overhead in retry loop
-    AXUIElementRef systemWide = AXUIElementCreateSystemWide();
-    AXUIElementRef focusedElement = NULL;
-    AXError error = kAXErrorFailure;
-
-    // Retry up to 3 times with progressive delays (0ms, 3ms, 8ms)
-    const int retryDelays[] = {0, 3000, 8000};  // microseconds
-    for (int attempt = 0; attempt < 3; attempt++) {
-        if (attempt > 0) {
-            usleep(retryDelays[attempt]);
-        }
-
-        error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement);
-
-        if (error == kAXErrorSuccess && focusedElement != NULL) {
-            break;  // Success
-        }
-    }
-
-    // Release systemWide after all retry attempts
-    CFRelease(systemWide);
-
-    if (error != kAXErrorSuccess || focusedElement == NULL) {
-        LogAXError(error, "AXUIElementCopyAttributeValue(kAXFocusedUIElementAttribute)");
-        UpdateSpotlightCache(NO, 0, nil);
-        return NO;
-    }
-
-    // PRIMARY CHECK: Detect search field by AXRole/AXSubrole
-    // This applies to ALL apps with search fields, not just Spotlight
-    BOOL elementLooksLikeSearchField = IsElementSpotlight(focusedElement);
-
-    // Get the PID of the app that owns the focused element
-    pid_t focusedPID = 0;
-    error = AXUIElementGetPid(focusedElement, &focusedPID);
-    CFRelease(focusedElement);
-
-    // If focused element is a search field, return YES immediately (for any app)
-    if (elementLooksLikeSearchField) {
-        NSString *bundleId = (focusedPID > 0) ? getBundleIdFromPID(focusedPID) : nil;
-        UpdateSpotlightCache(YES, focusedPID > 0 ? focusedPID : 0, bundleId);
-        return YES;
-    }
-
-    if (error != kAXErrorSuccess || focusedPID == 0) {
-        LogAXError(error, "AXUIElementGetPid");
-        UpdateSpotlightCache(NO, 0, nil);
-        return NO;
-    }
-
-    // Quick path: if PID unchanged and we already checked, return cached
-    if (focusedPID == cachedPID && cachedPID > 0) {
-        return cachedResult;
-    }
-
-    // Get the bundle ID from the PID (uses internal cache)
-    NSRunningApplication *app = [NSRunningApplication runningApplicationWithProcessIdentifier:focusedPID];
-    NSString *bundleId = app.bundleIdentifier;
-
-    // Check if it's Spotlight or similar
-    if ([bundleId isEqualToString:@"com.apple.Spotlight"] ||
-        [bundleId hasPrefix:@"com.apple.Spotlight"]) {
-        UpdateSpotlightCache(YES, focusedPID, bundleId);
-        return YES;
-    }
-
-    // Also check by process path for system processes without bundle ID
-    if (bundleId == nil) {
-        char pathBuffer[PROC_PIDPATHINFO_MAXSIZE];
-        if (proc_pidpath(focusedPID, pathBuffer, sizeof(pathBuffer)) > 0) {
-            NSString *path = [NSString stringWithUTF8String:pathBuffer];
-            if ([path containsString:@"Spotlight"]) {
-                UpdateSpotlightCache(YES, focusedPID, @"com.apple.Spotlight");
-                return YES;
-            }
-        }
-    }
-
-    UpdateSpotlightCache(NO, focusedPID, bundleId);
-    return NO;
-#endif // USE_NEW_SPOTLIGHT
 }
 
 // Get bundle ID from process ID
 NSString* getBundleIdFromPID(pid_t pid) {
-#ifdef USE_NEW_CACHE
-    // Use new PHTVCacheManager
     return [PHTVCacheManager getBundleIdFromPID:pid];
-#else
-    // Old implementation
-    if (__builtin_expect(pid <= 0, 0)) return nil;
-    
-    // Initialize infrastructure once
-    dispatch_once(&log_init_token, ^{
-        phtv_log = os_log_create("com.phamhungtien.phtv", "Engine");
-    });
-    dispatch_once(&timebase_init_token, ^{
-        mach_timebase_info(&timebase_info);
-    });
-    
-    // Fast path: check cache with modern lock
-    NSNumber *pidKey = @(pid);
-    os_unfair_lock_lock(&_pidCacheLock);
-    
-    // Initialize cache on first use
-    if (__builtin_expect(_pidBundleCache == nil, 0)) {
-        _pidBundleCache = [NSMutableDictionary dictionaryWithCapacity:PID_CACHE_INITIAL_CAPACITY];
-        _lastCacheCleanTime = mach_absolute_time();
-    }
-
-    NSString *cached = _pidBundleCache[pidKey];
-
-    // Smart cache cleanup: Check every 60 seconds
-    // Force clean ALL entries to ensure we handle app restarts/updates (like WhatsApp)
-    // Re-populating cache is cheap (NSRunningApplication is fast) vs user facing bugs
-    uint64_t now = mach_absolute_time();
-    uint64_t elapsed_ms = mach_time_to_ms(now - _lastCacheCleanTime);
-    if (__builtin_expect(elapsed_ms > PID_CACHE_CLEAN_INTERVAL_MS, 0)) {
-        [_pidBundleCache removeAllObjects];
-        _lastCacheCleanTime = now;
-        #ifdef DEBUG
-        NSLog(@"[Cache] PID cache cleared (interval expired)");
-        #endif
-    }
-    
-    os_unfair_lock_unlock(&_pidCacheLock);
-    
-    if (cached) {
-        return [cached isEqualToString:@""] ? nil : cached;
-    }
-    
-    // Try to get bundle ID from running application - O(1) lookup instead of O(n) iteration
-    NSRunningApplication *app = [NSRunningApplication runningApplicationWithProcessIdentifier:pid];
-    if (app) {
-        NSString *bundleId = app.bundleIdentifier ?: @"";
-        os_unfair_lock_lock(&_pidCacheLock);
-        _pidBundleCache[pidKey] = bundleId;
-        os_unfair_lock_unlock(&_pidCacheLock);
-        return bundleId.length > 0 ? bundleId : nil;
-    }
-    
-    // Safe Mode: Skip proc_pidpath entirely for system processes to prevent crashes
-    // This fixes "Unable to obtain a task name port right" crash on macOS 15+ (Issue #80)
-    if (vSafeMode) {
-        os_unfair_lock_lock(&_pidCacheLock);
-        _pidBundleCache[pidKey] = @"";
-        os_unfair_lock_unlock(&_pidCacheLock);
-        return nil;
-    }
-    
-    // Fallback: get process path and try to find bundle
-    char pathBuffer[PROC_PIDPATHINFO_MAXSIZE];
-    if (proc_pidpath(pid, pathBuffer, sizeof(pathBuffer)) > 0) {
-        NSString *path = [NSString stringWithUTF8String:pathBuffer];
-        // Debug logging disabled in release builds for performance
-        #ifdef DEBUG
-        NSLog(@"PHTV DEBUG: PID=%d path=%@", pid, path);
-        #endif
-        // Check for known system processes
-        if ([path containsString:@"Spotlight"]) {
-            os_unfair_lock_lock(&_pidCacheLock);
-            _pidBundleCache[pidKey] = @"com.apple.Spotlight";
-            os_unfair_lock_unlock(&_pidCacheLock);
-            return @"com.apple.Spotlight";
-        }
-        if ([path containsString:@"SystemUIServer"]) {
-            os_unfair_lock_lock(&_pidCacheLock);
-            _pidBundleCache[pidKey] = @"com.apple.systemuiserver";
-            os_unfair_lock_unlock(&_pidCacheLock);
-            return @"com.apple.systemuiserver";
-        }
-        if ([path containsString:@"Launchpad"]) {
-            os_unfair_lock_lock(&_pidCacheLock);
-            _pidBundleCache[pidKey] = @"com.apple.launchpad.launcher";
-            os_unfair_lock_unlock(&_pidCacheLock);
-            return @"com.apple.launchpad.launcher";
-        }
-    }
-    
-    // Cache negative result
-    os_unfair_lock_lock(&_pidCacheLock);
-    _pidBundleCache[pidKey] = @"";
-    os_unfair_lock_unlock(&_pidCacheLock);
-    return nil;
-#endif
 }
 #define OTHER_CONTROL_KEY (_flag & kCGEventFlagMaskCommand) || (_flag & kCGEventFlagMaskControl) || \
                             (_flag & kCGEventFlagMaskAlternate) || (_flag & kCGEventFlagMaskSecondaryFn) || \
@@ -798,26 +508,7 @@ extern "C" {
     // Optimized helper to check if bundleId matches any app in the set (exact match or prefix)
     // PERFORMANCE: inline + always_inline attribute for hot path optimization
     __attribute__((always_inline)) static inline BOOL bundleIdMatchesAppSet(NSString* bundleId, NSSet* appSet) {
-#ifdef USE_NEW_APP_DETECTION
-        // Use new PHTVAppDetectionManager
         return [PHTVAppDetectionManager bundleIdMatchesAppSet:bundleId appSet:appSet];
-#else
-        // Old implementation
-        if (bundleId == nil) return NO;
-
-        // Fast path: exact match using O(1) NSSet lookup
-        if ([appSet containsObject:bundleId]) {
-            return YES;
-        }
-
-        // Slower path: check for prefix matches (needed for "com.apple." pattern)
-        for (NSString* app in appSet) {
-            if ([bundleId hasPrefix:app]) {
-                return YES;
-            }
-        }
-        return NO;
-#endif
     }
 
     // Forward declaration
@@ -1831,46 +1522,7 @@ extern "C" {
      * Uses backspace method with step-by-step character sending
      */
     BOOL isTerminalApp(NSString *bundleId) {
-#ifdef USE_NEW_APP_DETECTION
-        // Use new PHTVAppDetectionManager
         return [PHTVAppDetectionManager isTerminalApp:bundleId];
-#else
-        // Old implementation
-        if (!bundleId) return NO;
-
-        // JetBrains IDEs (IntelliJ, PyCharm, WebStorm, GoLand, CLion, Fleet, etc.)
-        if ([bundleId hasPrefix:@"com.jetbrains"]) {
-            return YES;
-        }
-
-        static NSSet<NSString*> *terminalApps = nil;
-        static dispatch_once_t onceToken;
-        dispatch_once(&onceToken, ^{
-            terminalApps = [NSSet setWithArray:@[
-                // Terminals
-                @"com.apple.Terminal",              // macOS Terminal (used by Claude Code)
-                @"com.googlecode.iterm2",           // iTerm2
-                @"io.alacritty",                    // Alacritty
-                @"com.github.wez.wezterm",          // WezTerm
-                @"com.mitchellh.ghostty",           // Ghostty
-                @"dev.warp.Warp-Stable",            // Warp
-                @"net.kovidgoyal.kitty",            // Kitty
-                @"co.zeit.hyper",                   // Hyper
-                @"org.tabby",                       // Tabby
-                @"com.raphaelamorim.rio",           // Rio
-                @"com.termius-dmg.mac",             // Termius
-                // IDEs/Editors
-                @"com.microsoft.VSCode",            // VS Code
-                @"com.microsoft.VSCodeInsiders",    // VS Code Insiders
-                @"com.google.antigravity",          // Android Studio
-                @"dev.zed.Zed",                     // Zed
-                @"com.sublimetext.4",               // Sublime Text 4
-                @"com.sublimetext.3",               // Sublime Text 3
-                @"com.panic.Nova"                   // Nova
-            ]];
-        });
-        return [terminalApps containsObject:bundleId];
-#endif
     }
 
     void SendCutKey() {
