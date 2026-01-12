@@ -286,7 +286,9 @@ private struct ClaudeCodeToggleRow: View {
 
                 if showProgress {
                     ProgressView()
+                        .controlSize(.small)
                         .scaleEffect(0.6)
+                        .frame(width: 16, height: 16)
                 } else {
                     Image(systemName: "terminal.fill")
                         .font(.system(size: 16, weight: .medium))

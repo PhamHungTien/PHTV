@@ -648,6 +648,9 @@ struct SettingsButtonRow: View {
 
                     if isLoading {
                         ProgressView()
+                            .controlSize(.small)
+                            .scaleEffect(0.8)
+                            .frame(width: 16, height: 16)
                             .tint(iconColor)
                     } else {
                         Image(systemName: icon)
