@@ -35,7 +35,9 @@ final class EmojiHotkeyManager: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.handleSettingsChanged()
+            Task { @MainActor in
+                self?.handleSettingsChanged()
+            }
         }
 
         // CRITICAL: Delay sync to avoid circular dependency during AppState.shared initialization
