@@ -353,19 +353,21 @@ struct BugReportView: View {
         output += "- **Supported Browsers:** \(supportedBrowsers.joined(separator: ", "))\n"
 
         // Browser fix features
-        output += "- **Browser Fixes:**\n"
-        output += "  - Step-by-step sending: ✅ (prevents autocomplete race)\n"
-        output += "  - Backspace delay: ✅ 4ms per keystroke\n"
-        output += "  - Character delay: ✅ 3.5ms between chars\n"
-        output += "  - Settle delay: ✅ 10ms after all backspaces\n"
+        output += "- **Browser Detection:**\n"
+        output += "  - Detection method: ✅ Bundle ID matching (no delays)\n"
+        output += "  - Uses CGEventTapPostEvent: ✅ (standard event posting)\n"
+        output += "  - HID tap for browser: ❌ (browsers don't support AX API for autocomplete)\n"
+        output += "  - Address bar autocomplete: ✅ Handled via bundle-based detection\n"
+        output += "  - Shortcut fix: ✅ Prevents '/' deletion in browser shortcuts\n"
+        output += "  - Step-by-step mode: \(appState.sendKeyStepByStep ? "✅ Enabled" : "❌ Disabled (default)")\n"
         output += "  - Auto English on browser: \(appState.autoRestoreEnglishWord ? "✅ (with HID tap)" : "❌")\n"
 
         // Current front app
         output += "- **Current App:** \(getFrontAppInfo())\n"
 
         // Terminal/IDE detection
-        output += "- **Terminal/IDE Apps:** Auto-detected (iTerm2, Terminal, VS Code, etc.)\n"
-        output += "- **Spotlight-like Apps:** Auto-detected via AX API\n"
+        output += "- **Terminal/IDE Apps:** Auto-detected via bundle ID (iTerm2, Terminal, VS Code, etc.)\n"
+        output += "- **Spotlight-like Apps:** Auto-detected via AX API + bundle ID\n"
 
         return output
     }
