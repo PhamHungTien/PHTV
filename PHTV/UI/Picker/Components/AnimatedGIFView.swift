@@ -26,8 +26,32 @@ struct AnimatedGIFView: NSViewRepresentable {
         guard let url = url else { return }
 
         // Load GIF data asynchronously
-        URLSession.shared.dataTask(with: url) { data, _, _ in
-            guard let data = data, let image = NSImage(data: data) else { return }
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            // Check for network errors
+            if let error = error {
+                NSLog("[AnimatedGIF] Failed to load GIF: %@", error.localizedDescription)
+                return
+            }
+
+            // Check HTTP status code
+            if let httpResponse = response as? HTTPURLResponse {
+                guard 200...299 ~= httpResponse.statusCode else {
+                    NSLog("[AnimatedGIF] HTTP error loading GIF: %d", httpResponse.statusCode)
+                    return
+                }
+            }
+
+            // Ensure we have data and can create image
+            guard let data = data else {
+                NSLog("[AnimatedGIF] No data received for GIF")
+                return
+            }
+
+            guard let image = NSImage(data: data) else {
+                NSLog("[AnimatedGIF] Failed to create NSImage from data")
+                return
+            }
+
             DispatchQueue.main.async {
                 nsView.image = image
             }

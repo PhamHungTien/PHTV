@@ -52,9 +52,15 @@ final class MacroState: ObservableObject {
         autoCapsMacro = defaults.bool(forKey: UserDefaultsKey.autoCapsMacro)
 
         // Load macro categories (filter out default category if present)
-        if let categoriesData = defaults.data(forKey: UserDefaultsKey.macroCategories),
-           let categories = try? JSONDecoder().decode([MacroCategory].self, from: categoriesData) {
-            macroCategories = categories.filter { $0.id != MacroCategory.defaultCategory.id }
+        if let categoriesData = defaults.data(forKey: UserDefaultsKey.macroCategories) {
+            do {
+                let categories = try JSONDecoder().decode([MacroCategory].self, from: categoriesData)
+                macroCategories = categories.filter { $0.id != MacroCategory.defaultCategory.id }
+            } catch {
+                NSLog("[MacroState] Failed to decode macro categories: %@", error.localizedDescription)
+                // Keep default empty array
+                macroCategories = []
+            }
         }
 
         // Load emoji hotkey settings (default true for first-time users)
@@ -81,8 +87,11 @@ final class MacroState: ObservableObject {
 
         // Save macro categories (exclude default category)
         let categoriesToSave = macroCategories.filter { $0.id != MacroCategory.defaultCategory.id }
-        if let categoriesData = try? JSONEncoder().encode(categoriesToSave) {
+        do {
+            let categoriesData = try JSONEncoder().encode(categoriesToSave)
             defaults.set(categoriesData, forKey: UserDefaultsKey.macroCategories)
+        } catch {
+            NSLog("[MacroState] Failed to encode macro categories: %@", error.localizedDescription)
         }
 
         // Save emoji hotkey settings
