@@ -31,7 +31,10 @@
 +(BOOL)canCreateEventTap;
 +(void)invalidatePermissionCache;  // Force fresh check on next call
 +(BOOL)forcePermissionCheck;       // Bypasses all caching, resets counters
-+(void)aggressivePermissionReset;  // Nuclear option: reset TCC cache and retry multiple times
+
+// TCC entry corruption detection and auto-fix
++(BOOL)isTCCEntryCorrupt;          // Check if TCC entry is corrupt (app not appearing in System Settings)
++(BOOL)autoFixTCCEntryWithError:(NSError **)error;  // Automatically fix TCC corruption (shows password prompt)
 
 // TCC change notification
 +(void)startTCCNotificationListener;  // Start listening for TCC database changes

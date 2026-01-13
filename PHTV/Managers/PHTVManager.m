@@ -67,26 +67,45 @@ static const int kMaxAxYesTapNoBeforeRelaunch = 5;  // After 5 consecutive occur
 // TCC notification observer
 static id _tccNotificationObserver = nil;
 
-// Force reset TCC cache helper
-static void ForceResetTCCCache(void) {
-    NSLog(@"[TCC] Force resetting TCC cache...");
+// Check if app is registered in TCC database for Accessibility
+// Returns YES if app is present in TCC (regardless of permission state)
+// Returns NO if TCC entry is corrupt/missing (app won't appear in System Settings)
+static BOOL IsAppRegisteredInTCC(void) {
+    // Try to query TCC database using tccutil
+    // This checks if the app has ANY entry in TCC for Accessibility service
+    NSTask *task = [[NSTask alloc] init];
+    NSPipe *pipe = [NSPipe pipe];
 
-    // Method 1: Kill tccd daemon (system will auto-restart it)
-    // This forces TCC to reload its database
-    system("killall -9 tccd 2>/dev/null");
+    [task setLaunchPath:@"/usr/bin/tccutil"];
+    [task setArguments:@[@"query", @"Accessibility"]];
+    [task setStandardOutput:pipe];
+    [task setStandardError:[NSPipe pipe]];
 
-    // Method 2: Touch TCC database to trigger reload
-    NSString *tccDbPath = [@"~/Library/Application Support/com.apple.TCC/TCC.db" stringByExpandingTildeInPath];
-    if ([[NSFileManager defaultManager] fileExistsAtPath:tccDbPath]) {
-        [[NSFileManager defaultManager] setAttributes:@{NSFileModificationDate: [NSDate date]}
-                                         ofItemAtPath:tccDbPath
-                                                error:nil];
+    NSError *error = nil;
+    if (@available(macOS 10.13, *)) {
+        [task launchAndReturnError:&error];
+    } else {
+        [task launch];
     }
 
-    // Wait briefly for TCC to restart
-    usleep(100000);  // 100ms
+    if (error) {
+        NSLog(@"[TCC] Failed to query TCC database: %@", error);
+        return YES;  // Assume registered if we can't check
+    }
 
-    NSLog(@"[TCC] Cache reset completed");
+    [task waitUntilExit];
+
+    NSData *data = [[pipe fileHandleForReading] readDataToEndOfFile];
+    NSString *output = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+
+    // Check if our bundle ID appears in the output
+    NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
+    BOOL isRegistered = [output containsString:bundleID];
+
+    NSLog(@"[TCC] App registration check: %@ (bundleID: %@)",
+          isRegistered ? @"REGISTERED" : @"NOT FOUND", bundleID);
+
+    return isRegistered;
 }
 
 #pragma mark - Core Functionality
@@ -114,32 +133,81 @@ static void ForceResetTCCCache(void) {
     NSLog(@"[Permission] Cache invalidated - next check will be fresh");
 }
 
-// Aggressively invalidate permission cache and force TCC reset
-+(void)aggressivePermissionReset {
-    NSLog(@"[Permission] AGGRESSIVE RESET initiated");
-
-    // 1. Clear all cached state
-    _lastPermissionCheckTime = 0;
-    _lastPermissionCheckResult = NO;
-    _axYesTapNoCount = 0;
-
-    // 2. Force reset TCC cache
-    ForceResetTCCCache();
-
-    // 3. Multiple attempts to verify permission
-    for (int i = 0; i < 5; i++) {
-        usleep(50000);  // 50ms between attempts
-        BOOL result = [self tryCreateTestTapWithRetries];
-        NSLog(@"[Permission] Aggressive check attempt %d: %@", i + 1, result ? @"SUCCESS" : @"FAILED");
-        if (result) {
-            _lastPermissionCheckResult = YES;
-            _lastPermissionCheckTime = [[NSDate date] timeIntervalSince1970];
-            NSLog(@"[Permission] AGGRESSIVE RESET succeeded on attempt %d", i + 1);
-            return;
-        }
+// Check if TCC entry is corrupt (app not appearing in System Settings)
++(BOOL)isTCCEntryCorrupt {
+    // If permission check fails but app is not registered in TCC, entry is corrupt
+    BOOL hasPermission = [self canCreateEventTap];
+    if (hasPermission) {
+        return NO;  // Permission granted - TCC entry is fine
     }
 
-    NSLog(@"[Permission] AGGRESSIVE RESET completed but permission still not available");
+    // Permission denied - check if app is registered in TCC
+    BOOL isRegistered = IsAppRegisteredInTCC();
+    if (!isRegistered) {
+        NSLog(@"[TCC] ⚠️ CORRUPT ENTRY DETECTED - App not found in TCC database!");
+        return YES;
+    }
+
+    return NO;  // App is registered, just waiting for user to grant permission
+}
+
+// Automatically fix TCC entry corruption by running tccutil reset
+// Returns YES if successful, NO if failed or user cancelled
++(BOOL)autoFixTCCEntryWithError:(NSError **)error {
+    NSLog(@"[TCC] Auto-fix initiated...");
+
+    NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
+
+    // Create the shell script that will reset TCC
+    NSString *script = [NSString stringWithFormat:@"#!/bin/sh\ntccutil reset Accessibility %@\nexit 0", bundleID];
+
+    // Write script to temporary file
+    NSString *tempPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"phtv_tcc_reset.sh"];
+    NSError *writeError = nil;
+    [script writeToFile:tempPath atomically:YES encoding:NSUTF8StringEncoding error:&writeError];
+
+    if (writeError) {
+        NSLog(@"[TCC] Failed to create temp script: %@", writeError);
+        if (error) *error = writeError;
+        return NO;
+    }
+
+    // Make script executable
+    [[NSFileManager defaultManager] setAttributes:@{NSFilePosixPermissions: @(0755)}
+                                     ofItemAtPath:tempPath
+                                            error:nil];
+
+    // Use osascript to run with administrator privileges
+    // This will show the native macOS authentication dialog
+    NSString *osascript = [NSString stringWithFormat:
+        @"do shell script \"sh '%@'\" with administrator privileges", tempPath];
+
+    NSAppleScript *appleScript = [[NSAppleScript alloc] initWithSource:osascript];
+    NSDictionary *errorDict = nil;
+    [appleScript executeAndReturnError:&errorDict];
+
+    // Clean up temp file
+    [[NSFileManager defaultManager] removeItemAtPath:tempPath error:nil];
+
+    if (errorDict) {
+        NSLog(@"[TCC] Auto-fix failed or cancelled: %@", errorDict);
+        if (error) {
+            *error = [NSError errorWithDomain:@"com.phamhungtien.phtv.tcc"
+                                         code:-1
+                                     userInfo:errorDict];
+        }
+        return NO;
+    }
+
+    NSLog(@"[TCC] Auto-fix completed successfully");
+
+    // Invalidate cache to trigger fresh check
+    [self invalidatePermissionCache];
+
+    // Wait briefly for TCC to update
+    usleep(200000);  // 200ms
+
+    return YES;
 }
 
 // Forward declaration for AXIsProcessTrusted

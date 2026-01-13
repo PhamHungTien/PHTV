@@ -90,6 +90,7 @@
 		D05EB41CB955ED038072EA12 /* VisualEffectBlur.swift in Sources */ = {isa = PBXBuildFile; fileRef = A89EF9EA55C44906E5F4F5EC /* VisualEffectBlur.swift */; };
 		D357A0503308011A99A4C950 /* AppModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE0F76B39F1FB9FB8C382332 /* AppModels.swift */; };
 		D357BD38FFDBA314DC771E23 /* BeepManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF98255BCC66A085A1BB7AF0 /* BeepManager.swift */; };
+		DECF49E1A8EDA7C0FA6D7030 /* TCCResetInstructionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D31951BBF6C6D13433ADC4 /* TCCResetInstructionsView.swift */; };
 		E0128285999F5C12524AB87C /* FloatingPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFFABF16C6BB7046AE02AFAD /* FloatingPanel.swift */; };
 		E1A1A1A52025120200000005 /* PHTVConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A72025120200000007 /* PHTVConfig.m */; };
 		E1A1A1A62025120200000006 /* PHTVUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = E1A1A1A92025120200000009 /* PHTVUtilities.m */; };
@@ -174,6 +175,7 @@
 		3275F9510DD17ABFE9A00A80 /* SettingsWindowContent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsWindowContent.swift; sourceTree = "<group>"; };
 		3B27EBB488B64D6C48DE34C7 /* PHSilentUserDriver.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = PHSilentUserDriver.h; sourceTree = "<group>"; };
 		3FEA46915A7F40CAB646023A /* SystemState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemState.swift; sourceTree = "<group>"; };
+		41D31951BBF6C6D13433ADC4 /* TCCResetInstructionsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TCCResetInstructionsView.swift; sourceTree = "<group>"; };
 		461048612EF2DF22005AF5FC /* SendKeyStepByStepAppsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendKeyStepByStepAppsView.swift; sourceTree = "<group>"; };
 		461B0D6C2F151B90005DF210 /* PHTVAccessibilityManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PHTVAccessibilityManager.h; sourceTree = "<group>"; };
 		461B0D6D2F151B90005DF210 /* PHTVAccessibilityManager.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = PHTVAccessibilityManager.mm; sourceTree = "<group>"; };
@@ -689,6 +691,7 @@
 				F1A1A1EA2025130100000044 /* ReleaseNotesView.swift */,
 				F1A1A1EC2025130100000046 /* ConvertToolView.swift */,
 				8E55895F7C4348BCA1ABE9EA /* SettingsSliderRow.swift */,
+				41D31951BBF6C6D13433ADC4 /* TCCResetInstructionsView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -874,6 +877,7 @@
 				97FEE5D3C0A94531A7BFA0AF /* UIState.swift in Sources */,
 				AB3EE4AF43F64525BCFCE06A /* AppListsState.swift in Sources */,
 				24999C8F7B5E4738863DF5ED /* Constants.swift in Sources */,
+				DECF49E1A8EDA7C0FA6D7030 /* TCCResetInstructionsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

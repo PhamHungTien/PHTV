@@ -571,8 +571,8 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     // Stop monitoring (permission granted)
     [self stopAccessibilityMonitoring];
 
-    // CRITICAL: Use aggressive permission reset to ensure TCC cache is fresh
-    [PHTVManager aggressivePermissionReset];
+    // Invalidate permission cache to ensure fresh check
+    [PHTVManager invalidatePermissionCache];
 
     // Initialize event tap with retry mechanism
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -705,9 +705,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         if (response == NSAlertFirstButtonReturn) {
             MJAccessibilityOpenPanel();
 
-            // Aggressive cache invalidation and TCC reset
-            [PHTVManager aggressivePermissionReset];
-            NSLog(@"[Accessibility] User opening System Settings to re-grant - aggressive reset performed");
+            // Invalidate cache for fresh permission check
+            [PHTVManager invalidatePermissionCache];
+            NSLog(@"[Accessibility] User opening System Settings to re-grant");
         }
 
         // Update menu bar to show disabled state
@@ -1286,8 +1286,8 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     NSLog(@"[TCC] TCC database change notification received in AppDelegate");
     NSLog(@"[TCC] userInfo: %@", notification.userInfo);
 
-    // Aggressive permission reset to handle the change
-    [PHTVManager aggressivePermissionReset];
+    // Invalidate permission cache to handle the change
+    [PHTVManager invalidatePermissionCache];
 
     // Force check accessibility status immediately
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)),
