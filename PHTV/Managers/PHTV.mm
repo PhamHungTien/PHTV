@@ -2741,13 +2741,24 @@ extern "C" {
                         // - Gecko (Firefox)
                         // No more delays needed thanks to this approach
 
-                        if (appChars.needsStepByStep) {
-                            // Only step-by-step apps need special timing
-                            SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeTerminal);
+                        // BROWSER FIX: "Overwrite" strategy (Select then Type, no Backspace)
+                        // This fixes duplicate characters on Facebook/Chrome (e.g. "dđ", "aâ")
+                        // where Backspace is treated as "cancel autocomplete" instead of "delete".
+                        // OpenKey Reference: Only send Shift+Left to select, then let new char overwrite.
+                        if (isBrowserApp && pData->newCharCount > 0) {
+                            // Select characters to be replaced
+                            for (int i = 0; i < pData->backspaceCount; i++) {
+                                SendShiftAndLeftArrow();
+                            }
+                            // SKIP Backspace! The selection will be overwritten by SendNewCharString()
+                            // This avoids the race condition where Backspace cancels browser autocomplete
                         } else {
-                            // Browsers, terminals, and normal apps all use no delay
-                            // The Shift+Left strategy handles browser autocomplete issues
-                            SendBackspaceSequence(pData->backspaceCount, NO);
+                            if (appChars.needsStepByStep) {
+                                SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeTerminal);
+                            } else {
+                                // Browsers (deleting only), terminals, and normal apps
+                                SendBackspaceSequence(pData->backspaceCount, NO);
+                            }
                         }
                     }
                 }
