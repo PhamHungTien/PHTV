@@ -2612,17 +2612,28 @@ extern "C" {
                 // when PHTV tries to break the autocomplete.
                 BOOL isPotentialShortcut = (_keycode == KEY_SLASH);
                 
-                // fix autocomplete - OpenKey's approach
-                // For Chromium browsers: Use Shift+Left (handled later at line 2749)
-                // For non-Chromium browsers (Safari, Firefox): Use SendEmptyCharacter
+                // fix autocomplete - OpenKey's dual approach
                 // CRITICAL FIX: NEVER send empty character for SPACE key!
                 // This conflicts with macOS Text Replacement feature
                 // SendEmptyCharacter is only needed for Vietnamese character keys, NOT for break keys
                 if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE && !isPotentialShortcut) {
-                    // OpenKey's default approach: SendEmptyCharacter for ALL browsers
-                    // This breaks autocomplete and allows Vietnamese input to work
-                    SendEmptyCharacter();
-                    pData->backspaceCount++;
+                    // OpenKey's strategy (when vFixChromiumBrowser is enabled):
+                    // - Chromium browsers: Use Shift+Left selection (fixes Facebook/Messenger duplicate)
+                    // - Non-Chromium browsers: Use SendEmptyCharacter
+                    if (appChars.containsUnicodeCompound && pData->backspaceCount > 0) {
+                        // Chromium fix: Send Shift+Left to select character
+                        // This prevents duplicate issues on Facebook, Messenger, etc.
+                        SendShiftAndLeftArrow();
+                        if (pData->backspaceCount == 1) {
+                            // Selection will be overwritten by new character, no backspace needed
+                            pData->backspaceCount--;
+                        }
+                        // If backspaceCount > 1, we still need to send backspaces after selection
+                    } else {
+                        // Non-Chromium browsers: Use empty character to break autocomplete
+                        SendEmptyCharacter();
+                        pData->backspaceCount++;
+                    }
                 }
 #ifdef DEBUG
                 if (_keycode == KEY_SPACE && vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp) {
