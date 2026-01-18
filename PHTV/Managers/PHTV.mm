@@ -2621,14 +2621,16 @@ extern "C" {
                     // - Chromium browsers: Use Shift+Left selection (fixes Facebook/Messenger duplicate)
                     // - Non-Chromium browsers: Use SendEmptyCharacter
                     if (appChars.containsUnicodeCompound && pData->backspaceCount > 0) {
-                        // Chromium fix: Send Shift+Left to select character
-                        // This prevents duplicate issues on Facebook, Messenger, etc.
+                        // Chromium hybrid fix: Select + Always Delete
+                        // Send Shift+Left to select first character
+                        // Then ALWAYS send at least 1 backspace to delete selection
+                        // This works for:
+                        // - Facebook/Messenger: Select + backspace prevents duplicate
+                        // - Google Docs/Sheets: Select + backspace ensures proper deletion
                         SendShiftAndLeftArrow();
-                        if (pData->backspaceCount == 1) {
-                            // Selection will be overwritten by new character, no backspace needed
-                            pData->backspaceCount--;
-                        }
-                        // If backspaceCount > 1, we still need to send backspaces after selection
+                        // Do NOT decrement backspaceCount - we need explicit delete after selection
+                        // The first backspace will delete the selection
+                        // Additional backspaces (if any) will delete remaining characters
                     } else {
                         // Non-Chromium browsers: Use empty character to break autocomplete
                         SendEmptyCharacter();
