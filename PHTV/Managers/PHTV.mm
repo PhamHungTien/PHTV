@@ -2624,12 +2624,11 @@ extern "C" {
                     // User can toggle this in Settings > Apps > "Fix Chromium Browser"
                     if (vFixChromiumBrowser && appChars.containsUnicodeCompound && pData->backspaceCount > 0) {
                         // Chromium "Select + Immediate Delete" strategy
-                        // Improvement over OpenKey: Instead of relying on overwrite (unreliable in Google Docs),
-                        // we EXPLICITLY delete the selection right after selecting.
-                        // This works for BOTH Facebook (simple input) AND Google Docs (rich text editor)
-                        SendShiftAndLeftArrow();  // Select the character
-                        SendBackspace();           // IMMEDIATELY delete the selection (don't wait!)
-                        pData->backspaceCount--;   // We already deleted one character
+                        // SendShiftAndLeftArrow already pops _syncKey once
+                        // So we use SendPhysicalBackspace (not SendBackspace) to avoid double-pop
+                        SendShiftAndLeftArrow();      // Select the character (_syncKey.pop_back)
+                        SendPhysicalBackspace();      // Delete selection (no _syncKey modification)
+                        pData->backspaceCount--;      // We already deleted one character
                         // If backspaceCount > 0, additional backspaces will be sent later
                     } else {
                         // Default strategy: SendEmptyCharacter for all browsers
