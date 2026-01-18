@@ -15,6 +15,7 @@
 #import "AppDelegate.h"
 #import "SparkleManager.h"
 #import "../Managers/PHTVManager.h"
+#import "../Managers/PHTVCacheManager.h"
 #import "../Core/Legacy/MJAccessibilityUtils.h"
 #import "PHTV-Swift.h"
 #include "../Core/Engine/Engine.h"
@@ -2576,6 +2577,10 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     if (vUseSmartSwitchKey && [PHTVManager isInited]) {
         OnActiveAppChanged();
     }
+
+    // Invalidate Spotlight cache on app switch to ensure fresh detection
+    // This prevents stale Spotlight detection when switching between apps
+    [PHTVCacheManager invalidateSpotlightCache];
 
     // Check if the newly active app is in the excluded list
     NSRunningApplication *activeApp = [[note userInfo] objectForKey:NSWorkspaceApplicationKey];
