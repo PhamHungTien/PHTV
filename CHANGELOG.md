@@ -7,8 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.7] - 2026-01-18
+
+### 📢 Lời Nhắn Từ Tác Giả
+
+Xin chào các bạn,
+
+Hôm nay tôi rất tiếc phải thông báo rằng gia đình tôi đang trong thời gian tang lễ của ông ngoại. Do đó, việc cập nhật và hỗ trợ ứng dụng có thể bị chậm trễ trong vài ngày tới.
+
+Version 1.7.7 này được phát hành để khắc phục một số lỗi quan trọng ảnh hưởng đến trải nghiệm gõ tiếng Việt trên các trình duyệt web, đặc biệt là Google Docs và Google Sheets. Tôi mong các bạn thông cảm cho sự chậm trễ này và cảm ơn sự ủng hộ của các bạn.
+
+Kính chúc sức khỏe,
+Phạm Hùng Tiến
+
+---
+
 ### Fixed
-- **Browser Address Bar Duplication**: Fixed an issue where typing Vietnamese in Safari, Chrome, and other browsers' address bars would cause character duplication (e.g., "dđ", "aâ") due to autocomplete conflicts. Re-enabled the "Shift+Left" backspace strategy for browsers.
+- **Google Docs/Sheets Input Issues**: Sửa lỗi mất ký tự khi gõ tiếng Việt trên Google Docs, Google Sheets và các rich text editor khác trong trình duyệt
+  - Phát hiện vấn đề: Chiến lược "Shift+Left selection" gây mất ký tự (ví dụ: "đến Việt" → "ếnới iệt")
+  - Áp dụng chiến lược mặc định của OpenKey: SendEmptyCharacter + backspace thông thường
+  - Hoạt động ổn định trên tất cả trình duyệt: Chrome, Safari, Firefox, Edge, Brave...
+  - Đảm bảo tương thích với autocomplete và rich text editing
+- **Browser Input Strategy**: Loại bỏ chiến lược "Shift+Left" không ổn định, quay về phương pháp đã được OpenKey kiểm chứng qua nhiều năm
+
+### Technical Details
+- Nghiên cứu sâu mã nguồn OpenKey để hiểu đúng cơ chế xử lý browser input
+- OpenKey có 2 chế độ: mặc định (SendEmptyCharacter) và tùy chọn (Shift+Left khi user bật setting)
+- PHTV trước đây force enable Shift+Left cho tất cả Chromium browsers → gây lỗi
+- Bây giờ PHTV tuân theo OpenKey's default: đơn giản, ổn định, đã được verify
 
 ## [1.6.8] - 2026-01-11
 
