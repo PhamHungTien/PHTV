@@ -20,7 +20,7 @@
 
 // Spotlight Detection
 + (BOOL)isSpotlightActive;
-+ (BOOL)isElementSpotlight:(AXUIElementRef)element;
++ (BOOL)isElementSpotlight:(AXUIElementRef)element bundleId:(NSString*)bundleId;
 + (BOOL)containsSearchKeyword:(NSString*)str;
 
 // Text Replacement Detection

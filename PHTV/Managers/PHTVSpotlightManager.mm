@@ -44,8 +44,15 @@ static int _externalDeleteCount = 0;
            [lower containsString:@"lọc"];
 }
 
-+ (BOOL)isElementSpotlight:(AXUIElementRef)element {
++ (BOOL)isElementSpotlight:(AXUIElementRef)element bundleId:(NSString*)bundleId {
     if (element == NULL) return NO;
+
+    // CRITICAL FIX: Filter out browser address bars
+    // Browser address bars have AXSearchField role but they are NOT Spotlight
+    // This prevents false positive detection when transitioning between Chromium and Spotlight
+    if (bundleId != nil && [PHTVAppDetectionManager isBrowserApp:bundleId]) {
+        return NO;  // Browser address bar is NOT Spotlight
+    }
 
     CFTypeRef role = NULL;
     BOOL isSearchField = NO;
@@ -55,7 +62,7 @@ static int _externalDeleteCount = 0;
         if (role != NULL && CFGetTypeID(role) == CFStringGetTypeID()) {
             NSString *roleStr = (__bridge NSString *)role;
 
-            // AXSearchField → always return YES (standard search field)
+            // AXSearchField → return YES (standard search field, but already filtered browsers above)
             if ([roleStr isEqualToString:@"AXSearchField"]) {
                 isSearchField = YES;
             }
@@ -169,17 +176,27 @@ static int _externalDeleteCount = 0;
         return NO;
     }
 
-    // PRIMARY CHECK: Detect search field by AXRole/AXSubrole
-    BOOL elementLooksLikeSearchField = [self isElementSpotlight:focusedElement];
-
-    // Get the PID of the app that owns the focused element
+    // Get the PID of the app that owns the focused element FIRST
+    // This is needed to filter out browser address bars before checking AXSearchField
     pid_t focusedPID = 0;
     error = AXUIElementGetPid(focusedElement, &focusedPID);
+
+    if (error != kAXErrorSuccess || focusedPID == 0) {
+        CFRelease(focusedElement);
+        [PHTVCacheManager updateSpotlightCache:NO pid:0 bundleId:nil];
+        return NO;
+    }
+
+    // Get bundle ID to filter browser address bars
+    NSString *bundleId = [PHTVCacheManager getBundleIdFromPID:focusedPID];
+
+    // PRIMARY CHECK: Detect search field by AXRole/AXSubrole
+    // Now with bundle ID filtering to exclude browser address bars
+    BOOL elementLooksLikeSearchField = [self isElementSpotlight:focusedElement bundleId:bundleId];
     CFRelease(focusedElement);
 
-    // If focused element is a search field, return YES immediately (for any app)
+    // If focused element is a search field (and NOT a browser address bar), return YES
     if (elementLooksLikeSearchField) {
-        NSString *bundleId = (focusedPID > 0) ? [PHTVCacheManager getBundleIdFromPID:focusedPID] : nil;
         // Log state change when transitioning TO Spotlight
         if (!cachedResult) {
             NSLog(@"[Spotlight] ✅ DETECTED: bundleId=%@, pid=%d", bundleId ?: @"(nil)", focusedPID);
@@ -188,18 +205,7 @@ static int _externalDeleteCount = 0;
         return YES;
     }
 
-    if (error != kAXErrorSuccess || focusedPID == 0) {
-        [PHTVCacheManager updateSpotlightCache:NO pid:0 bundleId:nil];
-        return NO;
-    }
-
-    // REMOVED quick path: Always check bundle ID even if PID unchanged
-    // This ensures we detect when Spotlight closes and focus moves to another app
-    // even if that app was previously focused (PID matches cached)
-
-    // Get the bundle ID from the PID (uses internal cache)
-    NSRunningApplication *app = [NSRunningApplication runningApplicationWithProcessIdentifier:focusedPID];
-    NSString *bundleId = app.bundleIdentifier;
+    // bundle ID was already retrieved above (line 191) - no need to get it again
 
     // Check if it's Spotlight or similar
     if ([bundleId isEqualToString:@"com.apple.Spotlight"] ||
