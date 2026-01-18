@@ -2626,6 +2626,10 @@ extern "C" {
                         // Chromium "Select + Immediate Delete" strategy
                         // SendShiftAndLeftArrow already pops _syncKey once
                         // So we use SendPhysicalBackspace (not SendBackspace) to avoid double-pop
+#ifdef DEBUG
+                        NSLog(@"[PHTV Chromium] Using Shift+Left strategy: backspaceCount=%d, app=%@",
+                              (int)pData->backspaceCount, getFocusedAppBundleId());
+#endif
                         SendShiftAndLeftArrow();      // Select the character (_syncKey.pop_back)
                         SendPhysicalBackspace();      // Delete selection (no _syncKey modification)
                         pData->backspaceCount--;      // We already deleted one character
@@ -2633,6 +2637,10 @@ extern "C" {
                     } else {
                         // Default strategy: SendEmptyCharacter for all browsers
                         // Works well for Google Docs/Sheets and most apps
+#ifdef DEBUG
+                        NSLog(@"[PHTV Browser] Using SendEmptyCharacter: backspaceCount=%d, vFixChromium=%d, isChromium=%d, app=%@",
+                              (int)pData->backspaceCount, vFixChromiumBrowser, appChars.containsUnicodeCompound, getFocusedAppBundleId());
+#endif
                         SendEmptyCharacter();
                         pData->backspaceCount++;
                     }
