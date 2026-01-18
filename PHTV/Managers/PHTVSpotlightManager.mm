@@ -122,7 +122,6 @@ static int _externalDeleteCount = 0;
     // Thread-safe cache check
     BOOL cachedResult = [PHTVCacheManager getCachedSpotlightActive];
     uint64_t lastCheck = [PHTVCacheManager getLastSpotlightCheckTime];
-    pid_t cachedPID = [PHTVCacheManager getCachedFocusedPID];
 
     uint64_t elapsed_ms = [PHTVTimingManager machTimeToMs:now - lastCheck];
 
