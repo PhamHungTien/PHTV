@@ -2619,14 +2619,10 @@ extern "C" {
                 // This conflicts with macOS Text Replacement feature
                 // SendEmptyCharacter is only needed for Vietnamese character keys, NOT for break keys
                 if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE && !isPotentialShortcut) {
-                    // Only use SendEmptyCharacter for NON-Chromium browsers
-                    // Chromium browsers will use Shift+Left strategy instead
-                    if (!appChars.containsUnicodeCompound) {
-                        SendEmptyCharacter();
-                        pData->backspaceCount++;
-                    }
-                    // For Chromium browsers (Chrome, Edge, Brave, etc.):
-                    // Skip SendEmptyCharacter here, will use SendShiftAndLeftArrow() later at line 2749
+                    // OpenKey's default approach: SendEmptyCharacter for ALL browsers
+                    // This breaks autocomplete and allows Vietnamese input to work
+                    SendEmptyCharacter();
+                    pData->backspaceCount++;
                 }
 #ifdef DEBUG
                 if (_keycode == KEY_SPACE && vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp) {
@@ -2742,23 +2738,11 @@ extern "C" {
                         PHTVSpotlightDebugLog([NSString stringWithFormat:@"deferBackspace=%d newCharCount=%d", (int)pData->backspaceCount, (int)pData->newCharCount]);
 #endif
                     } else {
-                        // BROWSER FIX: OpenKey's "Select + Delete + Type" strategy
-                        // ONLY for Chromium browsers (Chrome, Edge, Brave, Arc, Opera, Vivaldi, etc.):
-                        // Send ONE Shift+Left to select, then still send backspaces to delete the selection.
-                        // This fixes Google Docs/Sheets where simple "select + overwrite" doesn't work
-                        // because rich text editors require explicit delete after selection.
+                        // BROWSER FIX: OpenKey's default strategy
+                        // Use SendEmptyCharacter (line 2624) + regular backspace
+                        // NO Shift+Left selection by default (OpenKey requires vFixChromiumBrowser setting)
                         //
-                        // Non-Chromium browsers (Safari, Firefox) use SendEmptyCharacter instead (see line 2624)
-                        if (isBrowserApp && appChars.containsUnicodeCompound && pData->backspaceCount > 0) {
-                            // Send ONE Shift+Left to select the first character
-                            SendShiftAndLeftArrow();
-                            // Decrement backspace count since we selected one character
-                            if (pData->backspaceCount == 1) {
-                                pData->backspaceCount--;
-                            }
-                        }
-
-                        // Now send backspaces (for both browsers and other apps)
+                        // Send backspaces for all apps
                         if (pData->backspaceCount > 0) {
                             if (appChars.needsStepByStep) {
                                 SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeTerminal);
