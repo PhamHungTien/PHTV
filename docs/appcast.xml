@@ -8,6 +8,26 @@
 
         <!-- Most recent version first -->
         <item>
+    <title>PHTV 1.7.9</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.7.9</link>
+    <sparkle:version>71</sparkle:version>
+    <sparkle:shortVersionString>1.7.9</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.7.9</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.7.9">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sun, 18 Jan 2026 08:02:31 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.7.9/PHTV-1.7.9.dmg"
+        sparkle:version="71"
+        sparkle:shortVersionString="1.7.9"
+        sparkle:edSignature="q8s+Qy00Z6TccJwsRr97Q615Bxg73N1GFBZiFCy1rInAapllFrE4DiFe0ZxMQhf4X7THrEfEM7AF6oFeXTIrCA=="
+        length="9131144"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
     <title>PHTV 1.7.8</title>
     <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.7.8</link>
     <sparkle:version>70</sparkle:version>
