@@ -188,14 +188,8 @@ static int _externalDeleteCount = 0;
     CFRelease(systemWide);
 
     if (error != kAXErrorSuccess || focusedElement == NULL) {
-        // IMPROVED: If AX API completely failed after all retries, return cached result
-        // instead of assuming NO. This prevents false negatives when AX API is temporarily unavailable.
-        // Only cache NO if we had no previous cached result or it was already NO.
-        if (lastCheck > 0 && cachedResult) {
-            // We previously detected Spotlight, and AX API is now failing
-            // Keep the cached result instead of switching to NO
-            return cachedResult;
-        }
+        // If AX API completely failed after all retries, assume NO.
+        // Returning stale YES (sticky cache) causes issues when switching apps or closing Spotlight.
         [PHTVCacheManager updateSpotlightCache:NO pid:0 bundleId:nil];
         return NO;
     }

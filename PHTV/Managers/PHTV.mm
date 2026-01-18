@@ -144,10 +144,10 @@ static uint64_t _lastCacheInvalidationTime = 0;  // Periodic cache invalidation
 // Spotlight detection cache (refreshes every 50ms for optimal balance of performance and responsiveness)
 // Thread-safe access required since event tap callback may run on different threads
 // static BOOL _cachedSpotlightActive = NO;  // MOVED TO PHTVSpotlightManager
-static uint64_t _lastSpotlightCheckTime = 0;
-static pid_t _cachedFocusedPID = 0;
-static NSString* _cachedFocusedBundleId = nil;
-static os_unfair_lock _spotlightCacheLock = OS_UNFAIR_LOCK_INIT;
+// static uint64_t _lastSpotlightCheckTime = 0; // MOVED TO PHTVCacheManager
+// static pid_t _cachedFocusedPID = 0;          // MOVED TO PHTVCacheManager
+// static NSString* _cachedFocusedBundleId = nil; // MOVED TO PHTVCacheManager
+// static os_unfair_lock _spotlightCacheLock = OS_UNFAIR_LOCK_INIT; // MOVED TO PHTVCacheManager
 
 // Text Replacement detection (for macOS native text replacement)
 // macOS Text Replacement does NOT send delete events via CGEventTap when using mouse!
@@ -173,26 +173,13 @@ BOOL vSafeMode = NO;
 // Force invalidate Spotlight detection cache
 // Call this when Cmd+Space is detected or when modifier keys change
 static inline void InvalidateSpotlightCache(void) {
-    os_unfair_lock_lock(&_spotlightCacheLock);
-    _lastSpotlightCheckTime = 0;
-    _cachedFocusedPID = 0;
-    _cachedFocusedBundleId = nil;
-    os_unfair_lock_unlock(&_spotlightCacheLock);
-
-    // CRITICAL FIX: Also invalidate PHTVCacheManager cache to stay in sync
+    // CRITICAL FIX: Always invalidate PHTVCacheManager cache
     // This ensures PHTVSpotlightManager::isSpotlightActive() rechecks immediately
     [PHTVCacheManager invalidateSpotlightCache];
 }
 
 // Thread-safe helper to update Spotlight cache - MOVED TO PHTVSpotlightManager
-// static inline void UpdateSpotlightCache(BOOL isActive, pid_t pid, NSString* bundleId) {
-//     os_unfair_lock_lock(&_spotlightCacheLock);
-//     _cachedSpotlightActive = isActive;
-//     _lastSpotlightCheckTime = mach_absolute_time();
-//     _cachedFocusedPID = pid;
-//     _cachedFocusedBundleId = bundleId;
-//     os_unfair_lock_unlock(&_spotlightCacheLock);
-// }
+// static inline void UpdateSpotlightCache(BOOL isActive, pid_t pid, NSString* bundleId) { ... }
 
 // Track external delete events (not from PHTV) which may indicate text replacement
 static inline void TrackExternalDelete(void) {
@@ -1050,13 +1037,13 @@ extern "C" {
             return FRONT_APP;
         }
     
-        // Ensure cache is reasonably fresh (within 50ms)
+        // Ensure cache is reasonably fresh (within 10ms - matches PHTVSpotlightManager)
         // isSpotlightActive() is always called before getFocusedAppBundleId() in the hot path
         uint64_t now = mach_absolute_time();
-        os_unfair_lock_lock(&_spotlightCacheLock);
-        uint64_t lastCheck = _lastSpotlightCheckTime;
-        NSString *cachedBundleId = [_cachedFocusedBundleId copy];
-        os_unfair_lock_unlock(&_spotlightCacheLock);
+        
+        // Use PHTVCacheManager (thread-safe)
+        uint64_t lastCheck = [PHTVCacheManager getLastSpotlightCheckTime];
+        NSString *cachedBundleId = [PHTVCacheManager getCachedFocusedBundleId];
     
         uint64_t elapsed_ms = mach_time_to_ms(now - lastCheck);
         if (elapsed_ms < SPOTLIGHT_CACHE_DURATION_MS && lastCheck > 0 && cachedBundleId != nil) {
@@ -1064,11 +1051,11 @@ extern "C" {
         }
     
         // Cache miss or too old - trigger a fresh check via isSpotlightActive
+        // This will update PHTVCacheManager
         isSpotlightActive();
     
-        os_unfair_lock_lock(&_spotlightCacheLock);
-        NSString *result = [_cachedFocusedBundleId copy];
-        os_unfair_lock_unlock(&_spotlightCacheLock);
+        // Read fresh result from PHTVCacheManager
+        NSString *result = [PHTVCacheManager getCachedFocusedBundleId];
     
         return (result != nil) ? result : FRONT_APP;
     }    
