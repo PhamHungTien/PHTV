@@ -179,6 +179,10 @@ static int _externalDeleteCount = 0;
     // If focused element is a search field, return YES immediately (for any app)
     if (elementLooksLikeSearchField) {
         NSString *bundleId = (focusedPID > 0) ? [PHTVCacheManager getBundleIdFromPID:focusedPID] : nil;
+        // Log state change when transitioning TO Spotlight
+        if (!cachedResult) {
+            NSLog(@"[Spotlight] ✅ DETECTED: bundleId=%@, pid=%d", bundleId ?: @"(nil)", focusedPID);
+        }
         [PHTVCacheManager updateSpotlightCache:YES pid:focusedPID bundleId:bundleId];
         return YES;
     }
@@ -200,6 +204,10 @@ static int _externalDeleteCount = 0;
     // Check if it's Spotlight or similar
     if ([bundleId isEqualToString:@"com.apple.Spotlight"] ||
         [bundleId hasPrefix:@"com.apple.Spotlight"]) {
+        // Log state change when transitioning TO Spotlight
+        if (!cachedResult) {
+            NSLog(@"[Spotlight] ✅ DETECTED (by bundleId): bundleId=%@, pid=%d", bundleId, focusedPID);
+        }
         [PHTVCacheManager updateSpotlightCache:YES pid:focusedPID bundleId:bundleId];
         return YES;
     }
@@ -210,12 +218,20 @@ static int _externalDeleteCount = 0;
         if (proc_pidpath(focusedPID, pathBuffer, sizeof(pathBuffer)) > 0) {
             NSString *path = [NSString stringWithUTF8String:pathBuffer];
             if ([path containsString:@"Spotlight"]) {
+                // Log state change when transitioning TO Spotlight
+                if (!cachedResult) {
+                    NSLog(@"[Spotlight] ✅ DETECTED (by path): path=%@, pid=%d", path, focusedPID);
+                }
                 [PHTVCacheManager updateSpotlightCache:YES pid:focusedPID bundleId:@"com.apple.Spotlight"];
                 return YES;
             }
         }
     }
 
+    // Log state change when transitioning FROM Spotlight
+    if (cachedResult) {
+        NSLog(@"[Spotlight] ❌ LOST: now focused on bundleId=%@, pid=%d", bundleId ?: @"(nil)", focusedPID);
+    }
     [PHTVCacheManager updateSpotlightCache:NO pid:focusedPID bundleId:bundleId];
     return NO;
 }
