@@ -2620,19 +2620,14 @@ extern "C" {
                     // OpenKey's strategy (when vFixChromiumBrowser is enabled):
                     // - Chromium browsers: Use Shift+Left selection (fixes Facebook/Messenger duplicate)
                     // - Non-Chromium browsers: Use SendEmptyCharacter
-                    if (appChars.containsUnicodeCompound && pData->backspaceCount > 0) {
-                        // Chromium hybrid fix: Select + Always Delete
-                        // Send Shift+Left to select first character
-                        // Then ALWAYS send at least 1 backspace to delete selection
-                        // This works for:
-                        // - Facebook/Messenger: Select + backspace prevents duplicate
-                        // - Google Docs/Sheets: Select + backspace ensures proper deletion
+                    // TEMPORARY: Disable Shift+Left for ALL browsers to test
+                    // OpenKey's vFixChromiumBrowser is OFF by default
+                    // Let's verify if SendEmptyCharacter alone works
+                    if (false && appChars.containsUnicodeCompound && pData->backspaceCount > 0) {
+                        // Chromium Shift+Left strategy (DISABLED for testing)
                         SendShiftAndLeftArrow();
-                        // Do NOT decrement backspaceCount - we need explicit delete after selection
-                        // The first backspace will delete the selection
-                        // Additional backspaces (if any) will delete remaining characters
                     } else {
-                        // Non-Chromium browsers: Use empty character to break autocomplete
+                        // Use SendEmptyCharacter for ALL browsers (OpenKey default)
                         SendEmptyCharacter();
                         pData->backspaceCount++;
                     }
