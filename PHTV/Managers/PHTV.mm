@@ -1459,49 +1459,26 @@ extern "C" {
 
         uint64_t keystrokeDelay = 0;
         uint64_t settleDelay = 0;
-        BOOL useShiftLeftStrategy = NO;
-
-        // BROWSER FIX: Use Shift+Left strategy for all browsers
-        // This is critical for Safari/Chrome address bar where Backspace only cancels autocomplete
-        // but fails to delete the character, causing duplication (e.g. "dđ", "aâ")
-        if (delayType != DelayTypeTerminal) {
-            NSString *effectiveTarget = _phtvEffectiveTargetBundleId ?: getFocusedAppBundleId();
-            if (bundleIdMatchesAppSet(effectiveTarget, _browserAppSet)) {
-                useShiftLeftStrategy = YES;
-            }
-        }
+        // REMOVED: Old useShiftLeftStrategy logic
+        // This was causing conflicts with the new autocomplete fix strategy
+        // Now Shift+Left is ONLY used in the autocomplete fix section (line ~2630)
+        // when vFixChromiumBrowser setting is enabled
 
         switch (delayType) {
             case DelayTypeTerminal:
                 keystrokeDelay = TERMINAL_KEYSTROKE_DELAY_US;
                 settleDelay = TERMINAL_SETTLE_DELAY_US;
                 break;
-            // Browser delay cases removed - no longer needed with Shift+Left strategy
-            // DelayTypeBrowser, DelayTypeSafariBrowser, DelayTypeAutoEnglish are now unused
             default:
                 break;
         }
 
-        if (useShiftLeftStrategy) {
-            // OPENKEY REFERENCED FIX: Use Shift+Left to select text then Delete
-            // This is more robust against browser address bar autocomplete
-            // where a single Backspace might just dismiss the autocomplete suggestion
-            // but fail to delete the actual character.
-            for (int i = 0; i < count; i++) {
-                SendShiftAndLeftArrow(); // Selects char (and handles syncKey)
-                if (keystrokeDelay > 0) {
-                    usleep((useconds_t)keystrokeDelay);
-                }
-            }
-            // Send one physical backspace to delete the selection
-            SendPhysicalBackspace();
-        } else {
-            // Standard backspace method for non-browser apps
-            for (int i = 0; i < count; i++) {
-                SendBackspace();
-                if (keystrokeDelay > 0) {
-                    usleep((useconds_t)keystrokeDelay);
-                }
+        // Always use standard backspace method
+        // Shift+Left selection is handled separately in autocomplete fix
+        for (int i = 0; i < count; i++) {
+            SendBackspace();
+            if (keystrokeDelay > 0) {
+                usleep((useconds_t)keystrokeDelay);
             }
         }
 
