@@ -178,6 +178,10 @@ static inline void InvalidateSpotlightCache(void) {
     _cachedFocusedPID = 0;
     _cachedFocusedBundleId = nil;
     os_unfair_lock_unlock(&_spotlightCacheLock);
+
+    // CRITICAL FIX: Also invalidate PHTVCacheManager cache to stay in sync
+    // This ensures PHTVSpotlightManager::isSpotlightActive() rechecks immediately
+    [PHTVCacheManager invalidateSpotlightCache];
 }
 
 // Thread-safe helper to update Spotlight cache - MOVED TO PHTVSpotlightManager
