@@ -2623,15 +2623,14 @@ extern "C" {
                     // - When disabled (default): All browsers use SendEmptyCharacter only
                     // User can toggle this in Settings > Apps > "Fix Chromium Browser"
                     if (vFixChromiumBrowser && appChars.containsUnicodeCompound && pData->backspaceCount > 0) {
-                        // Chromium Shift+Left strategy (when user enables it)
-                        // This fixes duplicate characters on Facebook, Messenger
-                        // But may cause issues on Google Docs/Sheets
-                        SendShiftAndLeftArrow();
-                        if (pData->backspaceCount == 1) {
-                            // Selection will be overwritten by new character
-                            pData->backspaceCount--;
-                        }
-                        // If backspaceCount > 1, we still send backspaces after selection
+                        // Chromium "Select + Immediate Delete" strategy
+                        // Improvement over OpenKey: Instead of relying on overwrite (unreliable in Google Docs),
+                        // we EXPLICITLY delete the selection right after selecting.
+                        // This works for BOTH Facebook (simple input) AND Google Docs (rich text editor)
+                        SendShiftAndLeftArrow();  // Select the character
+                        SendBackspace();           // IMMEDIATELY delete the selection (don't wait!)
+                        pData->backspaceCount--;   // We already deleted one character
+                        // If backspaceCount > 0, additional backspaces will be sent later
                     } else {
                         // Default strategy: SendEmptyCharacter for all browsers
                         // Works well for Google Docs/Sheets and most apps
