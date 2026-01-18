@@ -2612,13 +2612,21 @@ extern "C" {
                 // when PHTV tries to break the autocomplete.
                 BOOL isPotentialShortcut = (_keycode == KEY_SLASH);
                 
-                // fix autocomplete
+                // fix autocomplete - OpenKey's approach
+                // For Chromium browsers: Use Shift+Left (handled later at line 2749)
+                // For non-Chromium browsers (Safari, Firefox): Use SendEmptyCharacter
                 // CRITICAL FIX: NEVER send empty character for SPACE key!
                 // This conflicts with macOS Text Replacement feature
                 // SendEmptyCharacter is only needed for Vietnamese character keys, NOT for break keys
                 if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE && !isPotentialShortcut) {
-                    SendEmptyCharacter();
-                    pData->backspaceCount++;
+                    // Only use SendEmptyCharacter for NON-Chromium browsers
+                    // Chromium browsers will use Shift+Left strategy instead
+                    if (!appChars.containsUnicodeCompound) {
+                        SendEmptyCharacter();
+                        pData->backspaceCount++;
+                    }
+                    // For Chromium browsers (Chrome, Edge, Brave, etc.):
+                    // Skip SendEmptyCharacter here, will use SendShiftAndLeftArrow() later at line 2749
                 }
 #ifdef DEBUG
                 if (_keycode == KEY_SPACE && vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp) {
@@ -2734,29 +2742,28 @@ extern "C" {
                         PHTVSpotlightDebugLog([NSString stringWithFormat:@"deferBackspace=%d newCharCount=%d", (int)pData->backspaceCount, (int)pData->newCharCount]);
 #endif
                     } else {
-                        // NEW STRATEGY: Use "Select then Delete" (Shift + Left Arrow) approach
-                        // This strategy (inspired by OpenKey) works well for all browsers:
-                        // - Chromium-based (Chrome, Edge, Brave, etc.)
-                        // - WebKit (Safari)
-                        // - Gecko (Firefox)
-                        // No more delays needed thanks to this approach
-
-                        // BROWSER FIX: "Overwrite" strategy (Select then Type, no Backspace)
-                        // This fixes duplicate characters on Facebook/Chrome (e.g. "dđ", "aâ")
-                        // where Backspace is treated as "cancel autocomplete" instead of "delete".
-                        // OpenKey Reference: Only send Shift+Left to select, then let new char overwrite.
-                        if (isBrowserApp && pData->newCharCount > 0) {
-                            // Select characters to be replaced
-                            for (int i = 0; i < pData->backspaceCount; i++) {
-                                SendShiftAndLeftArrow();
+                        // BROWSER FIX: OpenKey's "Select + Delete + Type" strategy
+                        // ONLY for Chromium browsers (Chrome, Edge, Brave, Arc, Opera, Vivaldi, etc.):
+                        // Send ONE Shift+Left to select, then still send backspaces to delete the selection.
+                        // This fixes Google Docs/Sheets where simple "select + overwrite" doesn't work
+                        // because rich text editors require explicit delete after selection.
+                        //
+                        // Non-Chromium browsers (Safari, Firefox) use SendEmptyCharacter instead (see line 2624)
+                        if (isBrowserApp && appChars.containsUnicodeCompound && pData->backspaceCount > 0) {
+                            // Send ONE Shift+Left to select the first character
+                            SendShiftAndLeftArrow();
+                            // Decrement backspace count since we selected one character
+                            if (pData->backspaceCount == 1) {
+                                pData->backspaceCount--;
                             }
-                            // SKIP Backspace! The selection will be overwritten by SendNewCharString()
-                            // This avoids the race condition where Backspace cancels browser autocomplete
-                        } else {
+                        }
+
+                        // Now send backspaces (for both browsers and other apps)
+                        if (pData->backspaceCount > 0) {
                             if (appChars.needsStepByStep) {
                                 SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeTerminal);
                             } else {
-                                // Browsers (deleting only), terminals, and normal apps
+                                // Browsers, terminals, and normal apps
                                 SendBackspaceSequence(pData->backspaceCount, NO);
                             }
                         }
