@@ -35,6 +35,7 @@ static BOOL _cachedSpotlightActive = NO;
 static uint64_t _lastSpotlightCheckTime = 0;
 static pid_t _cachedFocusedPID = 0;
 static NSString* _cachedFocusedBundleId = nil;
+static uint64_t _lastSpotlightInvalidationTime = 0;  // NEW: Track when cache was invalidated
 static os_unfair_lock _spotlightCacheLock = OS_UNFAIR_LOCK_INIT;
 
 // Layout Cache
@@ -249,6 +250,13 @@ static BOOL _layoutCacheValid = NO;
     return time;
 }
 
++ (uint64_t)getLastSpotlightInvalidationTime {
+    os_unfair_lock_lock(&_spotlightCacheLock);
+    uint64_t time = _lastSpotlightInvalidationTime;
+    os_unfair_lock_unlock(&_spotlightCacheLock);
+    return time;
+}
+
 + (void)updateSpotlightCache:(BOOL)isActive pid:(pid_t)pid bundleId:(NSString*)bundleId {
     os_unfair_lock_lock(&_spotlightCacheLock);
     _cachedSpotlightActive = isActive;
@@ -264,6 +272,7 @@ static BOOL _layoutCacheValid = NO;
     _lastSpotlightCheckTime = 0;
     _cachedFocusedPID = 0;
     _cachedFocusedBundleId = nil;
+    _lastSpotlightInvalidationTime = mach_absolute_time();  // Record when invalidated
     os_unfair_lock_unlock(&_spotlightCacheLock);
 
     // Log cache invalidation
