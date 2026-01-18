@@ -38,7 +38,7 @@ extern "C" {
 #define FRONT_APP [[NSWorkspace sharedWorkspace] frontmostApplication].bundleIdentifier
 
 // Performance & Cache Configuration
-static const uint64_t SPOTLIGHT_CACHE_DURATION_MS = 50;      // Spotlight detection cache timeout
+static const uint64_t SPOTLIGHT_CACHE_DURATION_MS = 30;      // Spotlight detection cache timeout (reduced from 50ms)
 #ifdef DEBUG
 static const uint64_t DEBUG_LOG_THROTTLE_MS = 500;           // Debug log throttling interval
 #endif
@@ -2056,10 +2056,23 @@ extern "C" {
         }
 
         // Detect ESC key (keycode 53) to invalidate cache when user closes Spotlight
-        // This fixes the issue where Spotlight detection gets stuck after closing
+        // IMPROVED: Only invalidate if we were recently detecting Spotlight to avoid false invalidations
         if (type == kCGEventKeyDown && keycode == 53) {
-            InvalidateSpotlightCache();
+            // Check if we recently thought Spotlight was active
+            BOOL wasSpotlightActive = [PHTVCacheManager getCachedSpotlightActive];
+            if (wasSpotlightActive) {
+                InvalidateSpotlightCache();
+            }
             return;
+        }
+
+        // Invalidate on mouse clicks to handle user clicking outside Spotlight to close it
+        // This catches the case where user closes Spotlight without ESC or keyboard
+        if (type == kCGEventLeftMouseDown || type == kCGEventRightMouseDown) {
+            BOOL wasSpotlightActive = [PHTVCacheManager getCachedSpotlightActive];
+            if (wasSpotlightActive) {
+                InvalidateSpotlightCache();
+            }
         }
 
         // Track modifier flag changes to invalidate cache on significant changes
