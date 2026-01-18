@@ -129,8 +129,32 @@ static int _externalDeleteCount = 0;
     // Thread-safe cache check
     BOOL cachedResult = [PHTVCacheManager getCachedSpotlightActive];
     uint64_t lastCheck = [PHTVCacheManager getLastSpotlightCheckTime];
+    uint64_t lastInvalidation = [PHTVCacheManager getLastSpotlightInvalidationTime];
 
     uint64_t elapsed_ms = [PHTVTimingManager machTimeToMs:now - lastCheck];
+    uint64_t elapsed_since_invalidation_ms = lastInvalidation > 0 ? [PHTVTimingManager machTimeToMs:now - lastInvalidation] : UINT64_MAX;
+
+    // CRITICAL FIX 1: Skip cache entirely within 100ms after invalidation
+    // This ensures we always recheck immediately after Cmd+Space, ESC, mouse clicks, etc.
+    // Prevents using stale cache during Spotlight open/close transitions
+    static const uint64_t FORCE_RECHECK_AFTER_INVALIDATION_MS = 100;
+    if (elapsed_since_invalidation_ms < FORCE_RECHECK_AFTER_INVALIDATION_MS) {
+        // Force full recheck - don't use cache at all
+        lastCheck = 0;
+        elapsed_ms = UINT64_MAX;
+    }
+
+    // CRITICAL FIX 2: Check if cached bundle ID is a browser BEFORE returning cached result
+    // This prevents returning stale "YES" if we previously detected browser address bar as Spotlight
+    if (lastCheck > 0 && cachedResult) {
+        NSString *cachedBundleId = [PHTVCacheManager getCachedFocusedBundleId];
+        if (cachedBundleId != nil && [PHTVAppDetectionManager isBrowserApp:cachedBundleId]) {
+            // Cached result was for a browser address bar → INVALIDATE and recheck
+            [PHTVCacheManager invalidateSpotlightCache];
+            lastCheck = 0;  // Force recheck below
+            elapsed_ms = UINT64_MAX;
+        }
+    }
 
     // Use cache if it's within 10ms duration (reduced from 30ms for faster Spotlight->App transitions)
     // This ensures when user closes Spotlight and immediately types in another app,
