@@ -2052,6 +2052,13 @@ extern "C" {
             return;
         }
 
+        // Detect ESC key (keycode 53) to invalidate cache when user closes Spotlight
+        // This fixes the issue where Spotlight detection gets stuck after closing
+        if (type == kCGEventKeyDown && keycode == 53) {
+            InvalidateSpotlightCache();
+            return;
+        }
+
         // Track modifier flag changes to invalidate cache on significant changes
         static CGEventFlags _lastEventFlags = 0;
         CGEventFlags flagChangeMask = kCGEventFlagMaskCommand | kCGEventFlagMaskAlternate | kCGEventFlagMaskControl;

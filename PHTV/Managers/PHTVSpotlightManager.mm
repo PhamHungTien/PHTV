@@ -126,8 +126,8 @@ static int _externalDeleteCount = 0;
 
     uint64_t elapsed_ms = [PHTVTimingManager machTimeToMs:now - lastCheck];
 
-    // Use cache if it's within 50ms duration
-    static const uint64_t SPOTLIGHT_CACHE_DURATION_MS = 50;
+    // Use cache if it's within 30ms duration (reduced from 50ms for faster response)
+    static const uint64_t SPOTLIGHT_CACHE_DURATION_MS = 30;
     if (elapsed_ms < SPOTLIGHT_CACHE_DURATION_MS && lastCheck > 0) {
         return cachedResult;
     }
@@ -137,9 +137,10 @@ static int _externalDeleteCount = 0;
     AXUIElementRef focusedElement = NULL;
     AXError error = kAXErrorFailure;
 
-    // Retry up to 3 times with progressive delays (0ms, 3ms, 8ms)
-    const int retryDelays[] = {0, 3000, 8000};  // microseconds
-    for (int attempt = 0; attempt < 3; attempt++) {
+    // Retry up to 5 times with progressive delays (0ms, 2ms, 5ms, 10ms, 15ms)
+    // Increased retries and better delay distribution for more reliable detection
+    const int retryDelays[] = {0, 2000, 5000, 10000, 15000};  // microseconds
+    for (int attempt = 0; attempt < 5; attempt++) {
         if (attempt > 0) {
             usleep(retryDelays[attempt]);
         }
