@@ -72,6 +72,8 @@ static NSSet* _disableVietnameseAppSet = nil;
             @"com.microsoft.Edge.Dev",
             // Arc Browser
             @"com.thebrowser.Browser",
+            // AI-powered browsers
+            @"ai.perplexity.comet",
             // Vietnamese browsers
             @"com.visualkit.browser",
             @"com.coccoc.browser",

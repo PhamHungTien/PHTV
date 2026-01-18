@@ -441,6 +441,9 @@ extern "C" {
         // Arc Browser family
         @"com.thebrowser.Browser",     // Arc Browser
 
+        // AI-powered browsers
+        @"ai.perplexity.comet",        // Comet Browser (Perplexity AI)
+
         // Vietnamese browsers
         @"com.visualkit.browser",      // Cốc Cốc (old)
         @"com.coccoc.browser",         // Cốc Cốc (new)
