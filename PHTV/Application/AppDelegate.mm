@@ -58,6 +58,7 @@ volatile int vQuickTelex = 0;
 volatile int vSwitchKeyStatus = DEFAULT_SWITCH_STATUS;
 volatile int vRestoreIfWrongSpelling = 0;
 volatile int vFixRecommendBrowser = 1;
+volatile int vFixChromiumBrowser = 0; // Default OFF like OpenKey
 volatile int vUseMacro = 1;
 volatile int vUseMacroInEnglishMode = 1;
 volatile int vAutoCapsMacro = 0;
@@ -1966,6 +1967,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     vUseModernOrthography = 0; [defaults setInteger:vUseModernOrthography forKey:@"ModernOrthography"];
     vRestoreIfWrongSpelling = 0; [defaults setInteger:vRestoreIfWrongSpelling forKey:@"RestoreIfInvalidWord"];
     vFixRecommendBrowser = 1; [defaults setInteger:vFixRecommendBrowser forKey:@"FixRecommendBrowser"];
+    vFixChromiumBrowser = 0; [defaults setInteger:vFixChromiumBrowser forKey:@"FixChromiumBrowser"];
     vUseMacro = 1; [defaults setInteger:vUseMacro forKey:@"UseMacro"];
     vUseMacroInEnglishMode = 0; [defaults setInteger:vUseMacroInEnglishMode forKey:@"UseMacroInEnglishMode"];
     vSendKeyStepByStep = 0; [defaults setInteger:vSendKeyStepByStep forKey:@"SendKeyStepByStep"];

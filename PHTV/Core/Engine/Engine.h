@@ -117,6 +117,15 @@ extern volatile int vRestoreIfWrongSpelling;
 extern volatile int vFixRecommendBrowser;
 
 /**
+ * Fix for Chromium browsers (Chrome, Edge, Brave, etc.)
+ * Uses Shift+Left selection strategy to prevent duplicate characters
+ * on Facebook, Messenger, and other Chromium-based web apps.
+ * 0: Off (default) - use SendEmptyCharacter only
+ * 1: On - use Shift+Left selection for Chromium browsers
+ */
+extern volatile int vFixChromiumBrowser;
+
+/**
  * Macro on or off
  */
 extern volatile int vUseMacro;
