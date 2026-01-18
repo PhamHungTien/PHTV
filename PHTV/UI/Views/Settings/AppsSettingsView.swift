@@ -93,6 +93,17 @@ struct AppsSettingsView: View {
 
                         SettingsDivider()
 
+                        // Fix Chromium Browser
+                        SettingsToggleRow(
+                            icon: "network",
+                            iconColor: .accentColor,
+                            title: "Sửa lỗi Chromium Browser",
+                            subtitle: "Khắc phục duplicate trên Facebook/Messenger (có thể gây lỗi Google Docs)",
+                            isOn: $appState.fixChromiumBrowser
+                        )
+
+                        SettingsDivider()
+
                         // Safe Mode
                         SettingsToggleRow(
                             icon: "shield.fill",

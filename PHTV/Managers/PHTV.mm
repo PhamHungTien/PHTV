@@ -869,6 +869,7 @@ extern "C" {
         LOAD_DATA(vUseModernOrthography, ModernOrthography);
         LOAD_DATA(vRestoreIfWrongSpelling, RestoreIfInvalidWord);
         LOAD_DATA(vFixRecommendBrowser, FixRecommendBrowser);
+        LOAD_DATA(vFixChromiumBrowser, FixChromiumBrowser);
         LOAD_DATA(vUseMacro, UseMacro);
         LOAD_DATA(vUseMacroInEnglishMode, UseMacroInEnglishMode);
         LOAD_DATA(vAutoCapsMacro, vAutoCapsMacro);
@@ -2617,17 +2618,23 @@ extern "C" {
                 // This conflicts with macOS Text Replacement feature
                 // SendEmptyCharacter is only needed for Vietnamese character keys, NOT for break keys
                 if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE && !isPotentialShortcut) {
-                    // OpenKey's strategy (when vFixChromiumBrowser is enabled):
-                    // - Chromium browsers: Use Shift+Left selection (fixes Facebook/Messenger duplicate)
-                    // - Non-Chromium browsers: Use SendEmptyCharacter
-                    // TEMPORARY: Disable Shift+Left for ALL browsers to test
-                    // OpenKey's vFixChromiumBrowser is OFF by default
-                    // Let's verify if SendEmptyCharacter alone works
-                    if (false && appChars.containsUnicodeCompound && pData->backspaceCount > 0) {
-                        // Chromium Shift+Left strategy (DISABLED for testing)
+                    // OpenKey's dual strategy based on vFixChromiumBrowser setting:
+                    // - When enabled: Chromium browsers use Shift+Left selection (fixes Facebook/Messenger duplicate)
+                    // - When disabled (default): All browsers use SendEmptyCharacter only
+                    // User can toggle this in Settings > Apps > "Fix Chromium Browser"
+                    if (vFixChromiumBrowser && appChars.containsUnicodeCompound && pData->backspaceCount > 0) {
+                        // Chromium Shift+Left strategy (when user enables it)
+                        // This fixes duplicate characters on Facebook, Messenger
+                        // But may cause issues on Google Docs/Sheets
                         SendShiftAndLeftArrow();
+                        if (pData->backspaceCount == 1) {
+                            // Selection will be overwritten by new character
+                            pData->backspaceCount--;
+                        }
+                        // If backspaceCount > 1, we still send backspaces after selection
                     } else {
-                        // Use SendEmptyCharacter for ALL browsers (OpenKey default)
+                        // Default strategy: SendEmptyCharacter for all browsers
+                        // Works well for Google Docs/Sheets and most apps
                         SendEmptyCharacter();
                         pData->backspaceCount++;
                     }
