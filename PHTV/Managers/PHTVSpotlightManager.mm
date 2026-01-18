@@ -126,8 +126,10 @@ static int _externalDeleteCount = 0;
 
     uint64_t elapsed_ms = [PHTVTimingManager machTimeToMs:now - lastCheck];
 
-    // Use cache if it's within 30ms duration (reduced from 50ms for faster response)
-    static const uint64_t SPOTLIGHT_CACHE_DURATION_MS = 30;
+    // Use cache if it's within 10ms duration (reduced from 30ms for faster Spotlight->App transitions)
+    // This ensures when user closes Spotlight and immediately types in another app,
+    // we recheck quickly instead of using stale cache
+    static const uint64_t SPOTLIGHT_CACHE_DURATION_MS = 10;
     if (elapsed_ms < SPOTLIGHT_CACHE_DURATION_MS && lastCheck > 0) {
         return cachedResult;
     }
@@ -192,10 +194,9 @@ static int _externalDeleteCount = 0;
         return NO;
     }
 
-    // Quick path: if PID unchanged and we already checked, return cached
-    if (focusedPID == cachedPID && cachedPID > 0) {
-        return cachedResult;
-    }
+    // REMOVED quick path: Always check bundle ID even if PID unchanged
+    // This ensures we detect when Spotlight closes and focus moves to another app
+    // even if that app was previously focused (PID matches cached)
 
     // Get the bundle ID from the PID (uses internal cache)
     NSRunningApplication *app = [NSRunningApplication runningApplicationWithProcessIdentifier:focusedPID];

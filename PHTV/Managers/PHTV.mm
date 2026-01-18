@@ -38,7 +38,7 @@ extern "C" {
 #define FRONT_APP [[NSWorkspace sharedWorkspace] frontmostApplication].bundleIdentifier
 
 // Performance & Cache Configuration
-static const uint64_t SPOTLIGHT_CACHE_DURATION_MS = 30;      // Spotlight detection cache timeout (reduced from 50ms)
+static const uint64_t SPOTLIGHT_CACHE_DURATION_MS = 10;      // Spotlight detection cache timeout (reduced for fast transitions)
 #ifdef DEBUG
 static const uint64_t DEBUG_LOG_THROTTLE_MS = 500;           // Debug log throttling interval
 #endif
