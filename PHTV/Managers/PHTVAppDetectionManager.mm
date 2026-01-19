@@ -29,8 +29,9 @@ static NSSet* _disableVietnameseAppSet = nil;
         _niceSpaceAppSet = [NSSet setWithArray:@[@"com.sublimetext.3",
                                                   @"com.sublimetext.2"]];
 
-        // Safari set - currently unused, kept for future reference
-        _safariAppSet = [NSSet setWithArray:@[]];
+        // Safari set - used for specific Safari optimizations (Shift+Left strategy)
+        _safariAppSet = [NSSet setWithArray:@[@"com.apple.Safari",
+                                              @"com.apple.SafariTechnologyPreview"]];
 
         // Apps with unicode compound issues (Safari + Chromium-based browsers)
         _unicodeCompoundAppSet = [NSSet setWithArray:@[

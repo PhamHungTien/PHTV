@@ -2613,12 +2613,11 @@ extern "C" {
                 // This conflicts with macOS Text Replacement feature
                 // SendEmptyCharacter is only needed for Vietnamese character keys, NOT for break keys
                 if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE && !isPotentialShortcut) {
-                    // OpenKey's dual strategy based on vFixChromiumBrowser setting:
-                    // - When enabled: Chromium browsers use Shift+Left selection (fixes Facebook/Messenger duplicate)
-                    // - When disabled (default): All browsers (including Safari) use SendEmptyCharacter only
-                    // User can toggle this in Settings > Apps > "Fix Chromium Browser"
-                    if (vFixChromiumBrowser && (appChars.containsUnicodeCompound || appChars.isSafari) && pData->backspaceCount > 0) {
-                        // Chromium & Safari "Select + Immediate Delete" strategy
+                                            // OpenKey's dual strategy based on vFixChromiumBrowser setting:
+                                            // - When enabled: Chromium browsers use Shift+Left selection (fixes Facebook/Messenger duplicate)
+                                            // - When disabled (default): All browsers use SendEmptyCharacter only
+                                            // SAFARI FIX: Safari ALWAYS uses Shift+Left strategy to prevent address bar duplication
+                                            if ((appChars.isSafari || (vFixChromiumBrowser && appChars.containsUnicodeCompound)) && pData->backspaceCount > 0) {                        // Chromium & Safari "Select + Immediate Delete" strategy
                         // SendShiftAndLeftArrow already pops _syncKey once
                         // So we use SendPhysicalBackspace (not SendBackspace) to avoid double-pop
 #ifdef DEBUG
