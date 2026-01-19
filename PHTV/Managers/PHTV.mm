@@ -867,7 +867,6 @@ extern "C" {
         LOAD_DATA(vUseModernOrthography, ModernOrthography);
         LOAD_DATA(vRestoreIfWrongSpelling, RestoreIfInvalidWord);
         LOAD_DATA(vFixRecommendBrowser, FixRecommendBrowser);
-        LOAD_DATA(vFixChromiumBrowser, FixChromiumBrowser);
         LOAD_DATA(vUseMacro, UseMacro);
         LOAD_DATA(vUseMacroInEnglishMode, UseMacroInEnglishMode);
         LOAD_DATA(vAutoCapsMacro, vAutoCapsMacro);
@@ -1457,10 +1456,7 @@ extern "C" {
 
         uint64_t keystrokeDelay = 0;
         uint64_t settleDelay = 0;
-        // REMOVED: Old useShiftLeftStrategy logic
-        // This was causing conflicts with the new autocomplete fix strategy
-        // Now Shift+Left is ONLY used in the autocomplete fix section (line ~2630)
-        // when vFixChromiumBrowser setting is enabled
+        // Shift+Left is handled in the autocomplete fix section for Safari/Chromium browsers
 
         switch (delayType) {
             case DelayTypeTerminal:
@@ -2608,36 +2604,38 @@ extern "C" {
                 // when PHTV tries to break the autocomplete.
                 BOOL isPotentialShortcut = (_keycode == KEY_SLASH);
                 
-                // fix autocomplete - OpenKey's dual approach
+                // fix autocomplete - Unified browser fix strategy
                 // CRITICAL FIX: NEVER send empty character for SPACE key!
                 // This conflicts with macOS Text Replacement feature
                 // SendEmptyCharacter is only needed for Vietnamese character keys, NOT for break keys
                 if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE && !isPotentialShortcut) {
-                                            // OpenKey's dual strategy based on vFixChromiumBrowser setting:
-                                            // - When enabled: Chromium browsers use Shift+Left selection (fixes Facebook/Messenger duplicate)
-                                            // - When disabled (default): All browsers use SendEmptyCharacter only
-                                            // SAFARI FIX: Safari ALWAYS uses Shift+Left strategy to prevent address bar duplication
-                                            if ((appChars.isSafari || (vFixChromiumBrowser && appChars.containsUnicodeCompound)) && pData->backspaceCount > 0) {                        // Chromium & Safari "Select + Immediate Delete" strategy
+                    // Unified strategy: Safari and Chromium browsers use Shift+Left selection
+                    // This prevents duplicate characters on Facebook, Messenger, Safari address bar, etc.
+                    BOOL useShiftLeft = (appChars.isSafari || appChars.containsUnicodeCompound) && pData->backspaceCount > 0;
+
+                    if (useShiftLeft) {
+                        // Safari & Chromium "Select + Immediate Delete" strategy
                         // SendShiftAndLeftArrow already pops _syncKey once
                         // So we use SendPhysicalBackspace (not SendBackspace) to avoid double-pop
 #ifdef DEBUG
-                        NSLog(@"[PHTV Chromium/Safari] Using Shift+Left strategy: backspaceCount=%d, app=%@",
-                              (int)pData->backspaceCount, getFocusedAppBundleId());
+                        NSLog(@"[PHTV Browser] Using Shift+Left strategy: backspaceCount=%d, isSafari=%d, isChromium=%d, app=%@",
+                              (int)pData->backspaceCount, appChars.isSafari, appChars.containsUnicodeCompound, getFocusedAppBundleId());
 #endif
                         SendShiftAndLeftArrow();      // Select the character (_syncKey.pop_back)
                         SendPhysicalBackspace();      // Delete selection (no _syncKey modification)
                         pData->backspaceCount--;      // We already deleted one character
                         // If backspaceCount > 0, additional backspaces will be sent later
-                    } else {
-                        // Default strategy: SendEmptyCharacter for all browsers
+                    } else if (!appChars.isSafari && !appChars.containsUnicodeCompound) {
+                        // Default strategy: SendEmptyCharacter for other browsers (Firefox, etc.)
                         // Works well for Google Docs/Sheets and most apps
 #ifdef DEBUG
-                        NSLog(@"[PHTV Browser] Using SendEmptyCharacter: backspaceCount=%d, vFixChromium=%d, isChromium=%d, isSafari=%d, app=%@",
-                              (int)pData->backspaceCount, vFixChromiumBrowser, appChars.containsUnicodeCompound, appChars.isSafari, getFocusedAppBundleId());
+                        NSLog(@"[PHTV Browser] Using SendEmptyCharacter: backspaceCount=%d, app=%@",
+                              (int)pData->backspaceCount, getFocusedAppBundleId());
 #endif
                         SendEmptyCharacter();
                         pData->backspaceCount++;
                     }
+                    // Safari/Chromium with backspaceCount=0: Skip both strategies, let normal processing handle it
                 }
 #ifdef DEBUG
                 if (_keycode == KEY_SPACE && vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp) {
@@ -2753,11 +2751,8 @@ extern "C" {
                         PHTVSpotlightDebugLog([NSString stringWithFormat:@"deferBackspace=%d newCharCount=%d", (int)pData->backspaceCount, (int)pData->newCharCount]);
 #endif
                     } else {
-                        // BROWSER FIX: OpenKey's default strategy
-                        // Use SendEmptyCharacter (line 2624) + regular backspace
-                        // NO Shift+Left selection by default (OpenKey requires vFixChromiumBrowser setting)
-                        //
                         // Send backspaces for all apps
+                        // Safari/Chromium browsers use Shift+Left strategy (handled above)
                         if (pData->backspaceCount > 0) {
                             if (appChars.needsStepByStep) {
                                 SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeTerminal);

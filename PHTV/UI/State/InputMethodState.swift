@@ -22,7 +22,6 @@ final class InputMethodState: ObservableObject {
     @Published var quickTelex: Bool = false
     @Published var restoreOnInvalidWord: Bool = false
     @Published var sendKeyStepByStep: Bool = false
-    @Published var fixChromiumBrowser: Bool = false  // Default OFF like OpenKey
     @Published var useSmartSwitchKey: Bool = true
     @Published var upperCaseFirstChar: Bool = false
     @Published var allowConsonantZFWJ: Bool = false
@@ -65,7 +64,6 @@ final class InputMethodState: ObservableObject {
         quickTelex = defaults.bool(forKey: UserDefaultsKey.quickTelex)
         restoreOnInvalidWord = defaults.bool(forKey: UserDefaultsKey.restoreIfInvalidWord)
         sendKeyStepByStep = defaults.bool(forKey: UserDefaultsKey.sendKeyStepByStep)
-        fixChromiumBrowser = defaults.bool(forKey: UserDefaultsKey.fixChromiumBrowser)
         useSmartSwitchKey = defaults.bool(forKey: UserDefaultsKey.useSmartSwitchKey)
         upperCaseFirstChar = defaults.bool(forKey: UserDefaultsKey.upperCaseFirstChar)
         allowConsonantZFWJ = defaults.bool(forKey: UserDefaultsKey.allowConsonantZFWJ)
@@ -103,7 +101,6 @@ final class InputMethodState: ObservableObject {
         defaults.set(quickTelex, forKey: UserDefaultsKey.quickTelex)
         defaults.set(restoreOnInvalidWord, forKey: UserDefaultsKey.restoreIfInvalidWord)
         defaults.set(sendKeyStepByStep, forKey: UserDefaultsKey.sendKeyStepByStep)
-        defaults.set(fixChromiumBrowser, forKey: UserDefaultsKey.fixChromiumBrowser)
         defaults.set(useSmartSwitchKey, forKey: UserDefaultsKey.useSmartSwitchKey)
         defaults.set(upperCaseFirstChar, forKey: UserDefaultsKey.upperCaseFirstChar)
         defaults.set(allowConsonantZFWJ, forKey: UserDefaultsKey.allowConsonantZFWJ)

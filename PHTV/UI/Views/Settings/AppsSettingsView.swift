@@ -93,17 +93,6 @@ struct AppsSettingsView: View {
 
                         SettingsDivider()
 
-                        // Fix Chromium Browser (now includes Safari)
-                        SettingsToggleRow(
-                            icon: "network",
-                            iconColor: .accentColor,
-                            title: "Sửa lỗi Browser",
-                            subtitle: "Khắc phục lỗi gõ trên Safari, Chrome và các trình duyệt Chromium (Google Docs, Sheets, Facebook, Messenger)",
-                            isOn: $appState.fixChromiumBrowser
-                        )
-
-                        SettingsDivider()
-
                         // Safe Mode
                         SettingsToggleRow(
                             icon: "shield.fill",

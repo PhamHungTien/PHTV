@@ -23,7 +23,6 @@ enum UserDefaultsKey {
     static let quickTelex = "QuickTelex"
     static let restoreIfInvalidWord = "RestoreIfInvalidWord"
     static let sendKeyStepByStep = "SendKeyStepByStep"
-    static let fixChromiumBrowser = "FixChromiumBrowser"
     static let useMacro = "UseMacro"
     static let useMacroInEnglishMode = "UseMacroInEnglishMode"
     static let autoCapsMacro = "vAutoCapsMacro"

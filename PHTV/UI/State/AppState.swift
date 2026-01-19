@@ -377,11 +377,6 @@ final class AppState: ObservableObject {
         set { inputMethodState.sendKeyStepByStep = newValue }
     }
 
-    var fixChromiumBrowser: Bool {
-        get { inputMethodState.fixChromiumBrowser }
-        set { inputMethodState.fixChromiumBrowser = newValue }
-    }
-
     var useSmartSwitchKey: Bool {
         get { inputMethodState.useSmartSwitchKey }
         set { inputMethodState.useSmartSwitchKey = newValue }
