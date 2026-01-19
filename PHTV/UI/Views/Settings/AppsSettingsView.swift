@@ -93,12 +93,12 @@ struct AppsSettingsView: View {
 
                         SettingsDivider()
 
-                        // Fix Chromium Browser
+                        // Fix Chromium Browser (now includes Safari)
                         SettingsToggleRow(
                             icon: "network",
                             iconColor: .accentColor,
-                            title: "Sửa lỗi Chromium Browser",
-                            subtitle: "Khắc phục duplicate trên Facebook/Messenger (có thể gây lỗi Google Docs)",
+                            title: "Sửa lỗi Browser",
+                            subtitle: "Khắc phục lỗi gõ trên Safari, Chrome và các trình duyệt Chromium (Google Docs, Sheets, Facebook, Messenger)",
                             isOn: $appState.fixChromiumBrowser
                         )
 

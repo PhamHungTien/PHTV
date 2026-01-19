@@ -19,6 +19,7 @@ typedef struct {
     BOOL isTerminal;
     BOOL needsStepByStep;
     BOOL containsUnicodeCompound;
+    BOOL isSafari;  // Safari always uses Shift+Left strategy
 } AppCharacteristics;
 
 @interface PHTVCacheManager : NSObject

@@ -489,7 +489,10 @@ extern "C" {
                                                       @"com.raycast.macos",
                                                       @"com.alfredapp.Alfred",
                                                       @"com.apple.launchpad",       // Launchpad/Ứng dụng
-                                                      @"notion.id"]];               // Notion - needs step-by-step for stability
+                                                      @"notion.id",                 // Notion - needs step-by-step for stability
+                                                      // Safari - CRITICAL FIX for Google Docs/Sheets character corruption
+                                                      @"com.apple.Safari",
+                                                      @"com.apple.SafariTechnologyPreview"]];
                                                       // Removed WhatsApp - step-by-step causes more issues
 
     // Apps where Vietnamese input should be disabled (search/launcher apps) - Using NSSet for O(1) lookup performance
@@ -513,7 +516,7 @@ extern "C" {
     // PERFORMANCE: Critical hot path optimization - ~15ms savings per keystroke
     static inline AppCharacteristics getAppCharacteristics(NSString* bundleId) {
         if (!bundleId) {
-            AppCharacteristics empty = {NO, NO, NO, NO, NO};
+            AppCharacteristics empty = {NO, NO, NO, NO, NO, NO};
             return empty;
         }
 
@@ -577,6 +580,7 @@ extern "C" {
         chars.isTerminal = isTerminalApp(bundleId);
         chars.needsStepByStep = bundleIdMatchesAppSet(bundleId, _stepByStepAppSet);
         chars.containsUnicodeCompound = [_unicodeCompoundAppSet containsObject:bundleId];
+        chars.isSafari = [PHTVAppDetectionManager isSafariApp:bundleId];
 
         // Cache for future use
         os_unfair_lock_lock(&_appCharCacheLock);
@@ -2611,14 +2615,14 @@ extern "C" {
                 if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE && !isPotentialShortcut) {
                     // OpenKey's dual strategy based on vFixChromiumBrowser setting:
                     // - When enabled: Chromium browsers use Shift+Left selection (fixes Facebook/Messenger duplicate)
-                    // - When disabled (default): All browsers use SendEmptyCharacter only
+                    // - When disabled (default): All browsers (including Safari) use SendEmptyCharacter only
                     // User can toggle this in Settings > Apps > "Fix Chromium Browser"
-                    if (vFixChromiumBrowser && appChars.containsUnicodeCompound && pData->backspaceCount > 0) {
-                        // Chromium "Select + Immediate Delete" strategy
+                    if (vFixChromiumBrowser && (appChars.containsUnicodeCompound || appChars.isSafari) && pData->backspaceCount > 0) {
+                        // Chromium & Safari "Select + Immediate Delete" strategy
                         // SendShiftAndLeftArrow already pops _syncKey once
                         // So we use SendPhysicalBackspace (not SendBackspace) to avoid double-pop
 #ifdef DEBUG
-                        NSLog(@"[PHTV Chromium] Using Shift+Left strategy: backspaceCount=%d, app=%@",
+                        NSLog(@"[PHTV Chromium/Safari] Using Shift+Left strategy: backspaceCount=%d, app=%@",
                               (int)pData->backspaceCount, getFocusedAppBundleId());
 #endif
                         SendShiftAndLeftArrow();      // Select the character (_syncKey.pop_back)
@@ -2629,8 +2633,8 @@ extern "C" {
                         // Default strategy: SendEmptyCharacter for all browsers
                         // Works well for Google Docs/Sheets and most apps
 #ifdef DEBUG
-                        NSLog(@"[PHTV Browser] Using SendEmptyCharacter: backspaceCount=%d, vFixChromium=%d, isChromium=%d, app=%@",
-                              (int)pData->backspaceCount, vFixChromiumBrowser, appChars.containsUnicodeCompound, getFocusedAppBundleId());
+                        NSLog(@"[PHTV Browser] Using SendEmptyCharacter: backspaceCount=%d, vFixChromium=%d, isChromium=%d, isSafari=%d, app=%@",
+                              (int)pData->backspaceCount, vFixChromiumBrowser, appChars.containsUnicodeCompound, appChars.isSafari, getFocusedAppBundleId());
 #endif
                         SendEmptyCharacter();
                         pData->backspaceCount++;

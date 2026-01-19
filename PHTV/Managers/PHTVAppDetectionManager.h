@@ -23,6 +23,7 @@
 + (BOOL)needsPrecomposedBatched:(NSString*)bundleId;
 + (BOOL)needsStepByStep:(NSString*)bundleId;
 + (BOOL)containsUnicodeCompound:(NSString*)bundleId;
++ (BOOL)isSafariApp:(NSString*)bundleId;
 + (BOOL)shouldDisableVietnamese:(NSString*)bundleId;
 + (BOOL)needsNiceSpace:(NSString*)bundleId;
 

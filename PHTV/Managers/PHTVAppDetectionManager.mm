@@ -14,6 +14,7 @@
 // App detection sets
 static NSSet* _niceSpaceAppSet = nil;
 static NSSet* _unicodeCompoundAppSet = nil;
+static NSSet* _safariAppSet = nil;  // Safari always uses Shift+Left strategy
 static NSSet* _browserAppSet = nil;
 static NSSet* _forcePrecomposedAppSet = nil;
 static NSSet* _precomposedBatchedAppSet = nil;
@@ -28,8 +29,15 @@ static NSSet* _disableVietnameseAppSet = nil;
         _niceSpaceAppSet = [NSSet setWithArray:@[@"com.sublimetext.3",
                                                   @"com.sublimetext.2"]];
 
-        // Apps with unicode compound issues
-        _unicodeCompoundAppSet = [NSSet setWithArray:@[@"com.apple.",
+        // Safari set - currently unused, kept for future reference
+        _safariAppSet = [NSSet setWithArray:@[]];
+
+        // Apps with unicode compound issues (Safari + Chromium-based browsers)
+        _unicodeCompoundAppSet = [NSSet setWithArray:@[
+                                                        // Safari (WebKit) - needs same compound handling as Chromium
+                                                        @"com.apple.Safari",
+                                                        @"com.apple.SafariTechnologyPreview",
+                                                        // Chromium-based browsers
                                                         @"com.google.Chrome",
                                                         @"com.brave.Browser",
                                                         @"com.microsoft.edgemac",
@@ -115,7 +123,9 @@ static NSSet* _disableVietnameseAppSet = nil;
                                                    @"com.raycast.macos",
                                                    @"com.alfredapp.Alfred",
                                                    @"com.apple.launchpad",
-                                                   @"notion.id"]];
+                                                   @"notion.id",
+                                                   @"com.apple.Safari",
+                                                   @"com.apple.SafariTechnologyPreview"]];
 
         // Disable Vietnamese input
         _disableVietnameseAppSet = [NSSet setWithArray:@[@"com.apple.apps.launcher",
@@ -178,6 +188,10 @@ static NSSet* _disableVietnameseAppSet = nil;
 
 + (BOOL)containsUnicodeCompound:(NSString*)bundleId {
     return [self bundleIdMatchesAppSet:bundleId appSet:_unicodeCompoundAppSet];
+}
+
++ (BOOL)isSafariApp:(NSString*)bundleId {
+    return [self bundleIdMatchesAppSet:bundleId appSet:_safariAppSet];
 }
 
 + (BOOL)shouldDisableVietnamese:(NSString*)bundleId {
