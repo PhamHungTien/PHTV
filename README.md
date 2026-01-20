@@ -327,7 +327,7 @@ PHTV được phát hành dưới giấy phép **[GPL v3.0](LICENSE)**.
 ### Cảm ơn đặc biệt
 
 - **[OpenKey](https://github.com/tuyenvm/OpenKey)** — Mai Vũ Tuyên — Engine xử lý tiếng Việt
-- **[Claude Code Vietnamese Fix](https://github.com/manhit96/claude-code-vietnamese-fix)** — [Đinh Văn Mạnh](https://www.facebook.com/manhdv.pro) — Phương pháp patch Claude Code CLI
+- **[Claude Code Vietnamese Fix](https://github.com/manhit96/claude-code-vietnamese-fix)** — [Đinh Văn Mạnh](https://www.facebook.com/manhdv.pro) — Cải tiến phương pháp patch Claude Code CLI của PHTV
 
 ---
 
