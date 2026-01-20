@@ -260,6 +260,68 @@ static int _externalDeleteCount = 0;
     return NO;
 }
 
+#pragma mark - Safari Detection
+
++ (BOOL)isSafariAddressBar {
+    // Check if current focused element is Safari's address bar (AXTextField with URL role)
+    AXUIElementRef systemWide = AXUIElementCreateSystemWide();
+    AXUIElementRef focusedElement = NULL;
+    BOOL isAddressBar = NO;
+
+    AXError error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement);
+    CFRelease(systemWide);
+
+    if (error != kAXErrorSuccess || focusedElement == NULL) {
+        return NO;
+    }
+
+    // Check AXRole
+    CFTypeRef role = NULL;
+    if (AXUIElementCopyAttributeValue(focusedElement, kAXRoleAttribute, &role) == kAXErrorSuccess) {
+        if (role != NULL && CFGetTypeID(role) == CFStringGetTypeID()) {
+            NSString *roleStr = (__bridge NSString *)role;
+            // Safari address bar is AXTextField or AXSearchField
+            if ([roleStr isEqualToString:@"AXTextField"] || [roleStr isEqualToString:@"AXSearchField"]) {
+                // Check AXDescription or AXIdentifier for "address" or "URL"
+                CFTypeRef desc = NULL;
+                if (AXUIElementCopyAttributeValue(focusedElement, kAXDescriptionAttribute, &desc) == kAXErrorSuccess) {
+                    if (desc != NULL && CFGetTypeID(desc) == CFStringGetTypeID()) {
+                        NSString *descStr = [(__bridge NSString *)desc lowercaseString];
+                        if ([descStr containsString:@"address"] || [descStr containsString:@"url"] ||
+                            [descStr containsString:@"location"] || [descStr containsString:@"địa chỉ"]) {
+                            isAddressBar = YES;
+                        }
+                    }
+                    if (desc) CFRelease(desc);
+                }
+
+                // Also check AXSubrole
+                if (!isAddressBar) {
+                    CFTypeRef subrole = NULL;
+                    if (AXUIElementCopyAttributeValue(focusedElement, kAXSubroleAttribute, &subrole) == kAXErrorSuccess) {
+                        if (subrole != NULL && CFGetTypeID(subrole) == CFStringGetTypeID()) {
+                            NSString *subroleStr = [(__bridge NSString *)subrole lowercaseString];
+                            if ([subroleStr containsString:@"url"] || [subroleStr containsString:@"address"]) {
+                                isAddressBar = YES;
+                            }
+                        }
+                        if (subrole) CFRelease(subrole);
+                    }
+                }
+
+                // Fallback: If it's AXSearchField in Safari, assume address bar
+                if (!isAddressBar && [roleStr isEqualToString:@"AXSearchField"]) {
+                    isAddressBar = YES;
+                }
+            }
+        }
+        if (role) CFRelease(role);
+    }
+
+    CFRelease(focusedElement);
+    return isAddressBar;
+}
+
 #pragma mark - Text Replacement Detection
 
 + (void)trackExternalDelete {

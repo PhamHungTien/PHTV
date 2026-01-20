@@ -23,6 +23,9 @@
 + (BOOL)isElementSpotlight:(AXUIElementRef)element bundleId:(NSString*)bundleId;
 + (BOOL)containsSearchKeyword:(NSString*)str;
 
+// Safari Detection
++ (BOOL)isSafariAddressBar;
+
 // Text Replacement Detection
 + (void)trackExternalDelete;
 + (BOOL)hasRecentExternalDeletes;
