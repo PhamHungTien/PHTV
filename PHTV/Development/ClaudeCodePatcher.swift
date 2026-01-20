@@ -60,10 +60,17 @@ return;
 
     /// Detect how Claude Code was installed
     func getInstallationType() -> ClaudeInstallationType {
+        // Priority 1: Check if npm cli.js exists (Patchable)
+        // This must be first because npm installs via Homebrew (e.g. /opt/homebrew/bin/claude -> .../cli.js)
+        // are patchable, but might be mistaken for Homebrew Cask binary installs if we check paths first.
+        if getClaudeCliPath() != nil {
+            return .npm
+        }
+
         let fileManager = FileManager.default
         let homeDir = NSHomeDirectory()
 
-        // Method 1: Check native binary install path first (~/.local/bin/claude)
+        // Method 2: Check native binary install path (~/.local/bin/claude)
         let nativePaths = [
             homeDir + "/.local/bin/claude",
             homeDir + "/.claude/bin/claude"
@@ -97,7 +104,7 @@ return;
             }
         }
 
-        // Method 2: Check common Homebrew paths (most reliable in sandbox)
+        // Method 3: Check common Homebrew paths (for Cask/Binary installs)
         let homebrewPaths = [
             "/opt/homebrew/bin/claude",
             "/usr/local/bin/claude",
@@ -126,6 +133,8 @@ return;
                                 ((resolvedPath as NSString).deletingLastPathComponent as NSString).appendingPathComponent(resolved)
                         }
                         if resolvedPath.contains("Caskroom") || resolvedPath.contains("homebrew") {
+                            // If it resolves to homebrew but NOT node_modules, it's likely a binary/Cask
+                            // (We already checked for cli.js at top, so if we are here, it's not a JS file we found)
                             return .homebrew
                         }
                     }
@@ -135,12 +144,7 @@ return;
             }
         }
 
-        // Method 2: Check if npm cli.js exists
-        if getClaudeCliPath() != nil {
-            return .npm
-        }
-
-        // Method 3: Try 'which claude' command as fallback
+        // Method 4: Try 'which claude' command as fallback
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         process.arguments = ["which", "claude"]
