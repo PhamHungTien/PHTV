@@ -13,7 +13,7 @@ Bản cập nhật này sửa lỗi nhân đôi ký tự trên Safari và cải 
 - **Claude Code Patcher**: Cải tiến phương pháp patch Claude Code CLI
   - Sử dụng phương pháp trích xuất biến động từ mã nguồn minified
   - Hoạt động ổn định trên Claude Code 2.1.x và các phiên bản mới hơn
-  - Dựa trên cải tiến của [Đinh Văn Mạnh](https://github.com/manhit96/claude-code-vietnamese-fix)
+  - Dựa trên cải tiến của bạn [Đinh Văn Mạnh](https://github.com/manhit96/claude-code-vietnamese-fix)
 
 ### Chi tiết kỹ thuật
 
