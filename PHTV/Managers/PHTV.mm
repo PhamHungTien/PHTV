@@ -379,6 +379,9 @@ extern "C" {
 
     //app which error with unicode Compound - Using NSSet for O(1) lookup performance
     NSSet* _unicodeCompoundAppSet = [NSSet setWithArray:@[@"com.apple.",
+                                                           // Safari (WebKit)
+                                                           @"com.apple.Safari",
+                                                           @"com.apple.SafariTechnologyPreview",
                                                            @"com.google.Chrome",
                                                            @"com.brave.Browser",
                                                            @"com.microsoft.edgemac",  // Edge Stable
