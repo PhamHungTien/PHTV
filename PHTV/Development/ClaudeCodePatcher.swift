@@ -739,22 +739,40 @@ return;
 
         // Step 4: Extract variable names using regex
         // Pattern: let COUNT=(INPUT.match(/\x7f/g)||[]).length,STATE=CURSTATE;
-        // The pattern uses \\x7f in the regex but the actual content has the DEL character
-        let varsPattern = #"let (\w+)=\(\w+\.match\(/\\x7f/g\)\|\|\[\]\)\.length,(\w+)=(\w+);"#
-        // Also try with actual DEL character
-        let varsPatternAlt = "let (\\w+)=\\(\\w+\\.match\\(/\(delChar)/g\\)\\|\\|\\[\\]\\)\\.length,(\\w+)=(\\w+);"
+        // Claude Code 2.1.12+ uses \\x7f (escaped) in the match regex
+        // Pattern formats:
+        // - (l.match(/\\x7f/g)||[]).length  - escaped hex (file contains literal backslash)
+        // - (l.match(/\x7f/g)||[]).length   - actual DEL char
+        let varsPatterns = [
+            // Pattern with escaped \\x7f (Claude Code 2.1.12+)
+            // In the file, it's literally: (l.match(/\\x7f/g)||[])
+            // So we need to match the literal backslash: \\\\x7f
+            #"let (\S+)=\((\w+)\.match\(/\\x7f/g\)\|\|\[\]\)\.length,(\w+)=(\w+);"#,
+            // Pattern with actual DEL character
+            "let (\\S+)=\\((\\w+)\\.match\\(/\(delChar)/g\\)\\|\\|\\[\\]\\)\\.length,(\\w+)=(\\w+);"
+        ]
 
         var stateVar: String?
         var curStateVar: String?
+        var inputVarFromMatch: String?
 
-        if let regex = try? NSRegularExpression(pattern: varsPattern, options: []),
-           let match = regex.firstMatch(in: fullBlock, options: [], range: NSRange(fullBlock.startIndex..., in: fullBlock)) {
-            stateVar = Range(match.range(at: 2), in: fullBlock).map { String(fullBlock[$0]) }
-            curStateVar = Range(match.range(at: 3), in: fullBlock).map { String(fullBlock[$0]) }
-        } else if let regex = try? NSRegularExpression(pattern: varsPatternAlt, options: []),
-                  let match = regex.firstMatch(in: fullBlock, options: [], range: NSRange(fullBlock.startIndex..., in: fullBlock)) {
-            stateVar = Range(match.range(at: 2), in: fullBlock).map { String(fullBlock[$0]) }
-            curStateVar = Range(match.range(at: 3), in: fullBlock).map { String(fullBlock[$0]) }
+        for varsPattern in varsPatterns {
+            if let regex = try? NSRegularExpression(pattern: varsPattern, options: []),
+               let match = regex.firstMatch(in: fullBlock, options: [], range: NSRange(fullBlock.startIndex..., in: fullBlock)) {
+                // For first pattern (4 groups): group1=count, group2=inputVar, group3=state, group4=curState
+                // For second pattern (3 groups): group1=count, group2=state, group3=curState
+                if match.numberOfRanges == 5 {
+                    // First pattern with inputVar
+                    inputVarFromMatch = Range(match.range(at: 2), in: fullBlock).map { String(fullBlock[$0]) }
+                    stateVar = Range(match.range(at: 3), in: fullBlock).map { String(fullBlock[$0]) }
+                    curStateVar = Range(match.range(at: 4), in: fullBlock).map { String(fullBlock[$0]) }
+                } else {
+                    // Second pattern without inputVar in match
+                    stateVar = Range(match.range(at: 2), in: fullBlock).map { String(fullBlock[$0]) }
+                    curStateVar = Range(match.range(at: 3), in: fullBlock).map { String(fullBlock[$0]) }
+                }
+                break
+            }
         }
 
         guard let stateVar = stateVar, let curStateVar = curStateVar else {
@@ -771,12 +789,18 @@ return;
             return nil
         }
 
-        // Step 6: Extract input variable from includes check
+        // Step 6: Extract input variable from includes check (if not already extracted from match pattern)
         // Pattern: INPUT.includes("
-        let inputPattern = "(\\w+)\\.includes\\(\""
-        guard let inputRegex = try? NSRegularExpression(pattern: inputPattern, options: []),
-              let inputMatch = inputRegex.firstMatch(in: fullBlock, options: [], range: NSRange(fullBlock.startIndex..., in: fullBlock)),
-              let inputVar = Range(inputMatch.range(at: 1), in: fullBlock).map({ String(fullBlock[$0]) }) else {
+        var inputVar = inputVarFromMatch
+        if inputVar == nil {
+            let inputPattern = "(\\w+)\\.includes\\(\""
+            if let inputRegex = try? NSRegularExpression(pattern: inputPattern, options: []),
+               let inputMatch = inputRegex.firstMatch(in: fullBlock, options: [], range: NSRange(fullBlock.startIndex..., in: fullBlock)) {
+                inputVar = Range(inputMatch.range(at: 1), in: fullBlock).map({ String(fullBlock[$0]) })
+            }
+        }
+
+        guard let inputVar = inputVar else {
             return nil
         }
 
