@@ -15,11 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Ngoại trừ Google Docs/Sheets/Slides/Forms (giữ SendEmptyCharacter để tránh mất ký tự)
   - Phát hiện Google Docs qua URL (`docs.google.com`) hoặc tiêu đề cửa sổ
 
-### Improved
-- **Claude Code Patcher**: Cải tiến phương pháp patch Claude Code CLI
-  - Sử dụng phương pháp trích xuất biến động từ mã nguồn minified
-  - Hoạt động ổn định trên Claude Code 2.1.x và các phiên bản mới hơn
-  - Dựa trên công trình của [Đinh Văn Mạnh](https://github.com/manhit96/claude-code-vietnamese-fix)
+### Cải tiến
+- **Claude Code Patcher**: Cải tiến vượt bậc cơ chế vá lỗi gõ tiếng Việt, hỗ trợ Claude Code v2.1.6 đến v2.1.12+.
+- **Tài liệu**: Thêm hướng dẫn chi tiết về cách fix lỗi gõ tiếng Việt trong Claude Code CLI cho cả macOS và Windows.
+- **Tính ổn định**: Tối ưu regex pattern và cơ chế tìm kiếm khối mã lỗi trong Claude Code CLI.
+
+### Sửa lỗi
+- Sửa lỗi không nhận diện được khối mã cần vá trong một số phiên bản Claude Code mới.
 
 ### Technical Details
 - Thêm method `isSafariGoogleDocsOrSheets` để phát hiện Google Docs/Sheets qua Accessibility API

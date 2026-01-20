@@ -698,58 +698,72 @@ return;
         // Pattern: .includes("\x7f") or .includes("") where  is actual DEL char
         let includesPattern = ".includes(\"\(delChar)\")"
         guard let includesRange = content.range(of: includesPattern) else {
+            // Try single quotes fallback
+            let includesPatternSingle = ".includes('\(delChar)')"
+            if let range = content.range(of: includesPatternSingle) {
+                return applyDynamicPatchWithRange(content: content, includesRange: range)
+            }
             return nil
         }
 
+        return applyDynamicPatchWithRange(content: content, includesRange: includesRange)
+    }
+
+    private func applyDynamicPatchWithRange(content: String, includesRange: Range<String.Index>) -> String? {
+        let delChar = "\u{7f}"
         let includesIndex = content.distance(from: content.startIndex, to: includesRange.lowerBound)
 
         // Step 2: Find the start of the if block containing this pattern
-        let searchStart = max(0, includesIndex - 150)
+        let searchStart = max(0, includesIndex - 200)
         let searchRange = content.index(content.startIndex, offsetBy: searchStart)..<includesRange.lowerBound
         let beforeIncludes = String(content[searchRange])
 
-        guard let ifStart = beforeIncludes.range(of: "if(", options: .backwards) else {
-            return nil
+        // Find the last 'if(' or 'if ('
+        var blockStartIndex: Int?
+        if let ifRange = beforeIncludes.range(of: "if(", options: .backwards) {
+            blockStartIndex = searchStart + beforeIncludes.distance(from: beforeIncludes.startIndex, to: ifRange.lowerBound)
+        } else if let ifRange = beforeIncludes.range(of: "if (", options: .backwards) {
+            blockStartIndex = searchStart + beforeIncludes.distance(from: beforeIncludes.startIndex, to: ifRange.lowerBound)
         }
 
-        let blockStartIndex = searchStart + beforeIncludes.distance(from: beforeIncludes.startIndex, to: ifStart.lowerBound)
+        guard let blockStartIdx = blockStartIndex else {
+            return nil
+        }
 
         // Step 3: Find the matching closing brace of the if block
         var depth = 0
         var blockEndIndex = includesIndex
-        let startSearchIndex = content.index(content.startIndex, offsetBy: blockStartIndex)
-        let endSearchIndex = content.index(startSearchIndex, offsetBy: min(800, content.distance(from: startSearchIndex, to: content.endIndex)))
+        let startSearchIndex = content.index(content.startIndex, offsetBy: blockStartIdx)
+        let endSearchIndex = content.index(startSearchIndex, offsetBy: min(1000, content.distance(from: startSearchIndex, to: content.endIndex)))
 
+        var foundStart = false
         for (i, char) in content[startSearchIndex..<endSearchIndex].enumerated() {
             if char == "{" {
                 depth += 1
+                foundStart = true
             } else if char == "}" {
                 depth -= 1
-                if depth == 0 {
-                    blockEndIndex = blockStartIndex + i + 1
+                if foundStart && depth == 0 {
+                    blockEndIndex = blockStartIdx + i + 1
                     break
                 }
             }
         }
 
         // Extract the full block
-        let blockStart = content.index(content.startIndex, offsetBy: blockStartIndex)
+        let blockStart = content.index(content.startIndex, offsetBy: blockStartIdx)
         let blockEnd = content.index(content.startIndex, offsetBy: blockEndIndex)
         let fullBlock = String(content[blockStart..<blockEnd])
 
+        // Normalize block for easier regex matching (handle both literal and escaped DEL)
+        let normalizedBlock = fullBlock.replacingOccurrences(of: delChar, with: "\\x7f")
+
         // Step 4: Extract variable names using regex
         // Pattern: let COUNT=(INPUT.match(/\x7f/g)||[]).length,STATE=CURSTATE;
-        // Claude Code 2.1.12+ uses \\x7f (escaped) in the match regex
-        // Pattern formats:
-        // - (l.match(/\\x7f/g)||[]).length  - escaped hex (file contains literal backslash)
-        // - (l.match(/\x7f/g)||[]).length   - actual DEL char
         let varsPatterns = [
-            // Pattern with escaped \\x7f (Claude Code 2.1.12+)
-            // In the file, it's literally: (l.match(/\\x7f/g)||[])
-            // So we need to match the literal backslash: \\\\x7f
-            #"let (\S+)=\((\w+)\.match\(/\\x7f/g\)\|\|\[\]\)\.length,(\w+)=(\w+);"#,
-            // Pattern with actual DEL character
-            "let (\\S+)=\\((\\w+)\\.match\\(/\(delChar)/g\\)\\|\\|\\[\\]\\)\\.length,(\\w+)=(\\w+);"
+            #"let (\w+)=\((\w+)\.match\(/\\x7f/g\)\|\|\[\]\)\.length,(\w+)=(\w+);"#,
+            #"let (\w+)=\(\w+\.match\(/\\x7f/g\)\|\|\[\]\)\.length,(\w+)=(\w+);"#,
+            #"let (\S+)=\((\w+)\.match\(/\\x7f/g\)\|\|\[\]\)\.length,(\w+)=(\w+);"#
         ]
 
         var stateVar: String?
@@ -758,20 +772,18 @@ return;
 
         for varsPattern in varsPatterns {
             if let regex = try? NSRegularExpression(pattern: varsPattern, options: []),
-               let match = regex.firstMatch(in: fullBlock, options: [], range: NSRange(fullBlock.startIndex..., in: fullBlock)) {
-                // For first pattern (4 groups): group1=count, group2=inputVar, group3=state, group4=curState
-                // For second pattern (3 groups): group1=count, group2=state, group3=curState
+               let match = regex.firstMatch(in: normalizedBlock, options: [], range: NSRange(normalizedBlock.startIndex..., in: normalizedBlock)) {
+                
                 if match.numberOfRanges == 5 {
-                    // First pattern with inputVar
-                    inputVarFromMatch = Range(match.range(at: 2), in: fullBlock).map { String(fullBlock[$0]) }
-                    stateVar = Range(match.range(at: 3), in: fullBlock).map { String(fullBlock[$0]) }
-                    curStateVar = Range(match.range(at: 4), in: fullBlock).map { String(fullBlock[$0]) }
-                } else {
-                    // Second pattern without inputVar in match
-                    stateVar = Range(match.range(at: 2), in: fullBlock).map { String(fullBlock[$0]) }
-                    curStateVar = Range(match.range(at: 3), in: fullBlock).map { String(fullBlock[$0]) }
+                    inputVarFromMatch = Range(match.range(at: 2), in: normalizedBlock).map { String(normalizedBlock[$0]) }
+                    stateVar = Range(match.range(at: 3), in: normalizedBlock).map { String(normalizedBlock[$0]) }
+                    curStateVar = Range(match.range(at: 4), in: normalizedBlock).map { String(normalizedBlock[$0]) }
+                } else if match.numberOfRanges == 4 {
+                    stateVar = Range(match.range(at: 2), in: normalizedBlock).map { String(normalizedBlock[$0]) }
+                    curStateVar = Range(match.range(at: 3), in: normalizedBlock).map { String(normalizedBlock[$0]) }
                 }
-                break
+                
+                if stateVar != nil { break }
             }
         }
 
@@ -781,7 +793,9 @@ return;
 
         // Step 5: Extract update functions
         // Pattern: UPDATETEXT(STATE.text);UPDATEOFFSET(STATE.offset)
-        let updatePattern = "(\\w+)\\(\(stateVar)\\.text\\);(\\w+)\\(\(stateVar)\\.offset\\)"
+        let escapedStateVarForUpdate = NSRegularExpression.escapedPattern(for: stateVar)
+        let updatePattern = #"(\w+)\(\#(escapedStateVarForUpdate)\.text\);(\w+)\(\#(escapedStateVarForUpdate)\.offset\)"#
+        
         guard let updateRegex = try? NSRegularExpression(pattern: updatePattern, options: []),
               let updateMatch = updateRegex.firstMatch(in: fullBlock, options: [], range: NSRange(fullBlock.startIndex..., in: fullBlock)),
               let updateTextFunc = Range(updateMatch.range(at: 1), in: fullBlock).map({ String(fullBlock[$0]) }),
@@ -789,11 +803,10 @@ return;
             return nil
         }
 
-        // Step 6: Extract input variable from includes check (if not already extracted from match pattern)
-        // Pattern: INPUT.includes("
+        // Step 6: Extract input variable from includes check
         var inputVar = inputVarFromMatch
         if inputVar == nil {
-            let inputPattern = "(\\w+)\\.includes\\(\""
+            let inputPattern = #"(\w+)\.includes\(["']"#
             if let inputRegex = try? NSRegularExpression(pattern: inputPattern, options: []),
                let inputMatch = inputRegex.firstMatch(in: fullBlock, options: [], range: NSRange(fullBlock.startIndex..., in: fullBlock)) {
                 inputVar = Range(inputMatch.range(at: 1), in: fullBlock).map({ String(fullBlock[$0]) })
@@ -805,7 +818,10 @@ return;
         }
 
         // Step 7: Find insertion point - right after UPDATEOFFSET(STATE.offset)}
-        let insertPattern = "\(updateOffsetFunc)\\(\(stateVar)\\.offset\\)\\}"
+        let escapedOffsetFunc = NSRegularExpression.escapedPattern(for: updateOffsetFunc)
+        let escapedStateVar = NSRegularExpression.escapedPattern(for: stateVar)
+        let insertPattern = #"\#(escapedOffsetFunc)\(\#(escapedStateVar)\.offset\)\}"#
+            
         guard let insertRegex = try? NSRegularExpression(pattern: insertPattern, options: []),
               let insertMatch = insertRegex.firstMatch(in: fullBlock, options: [], range: NSRange(fullBlock.startIndex..., in: fullBlock)) else {
             return nil
@@ -813,7 +829,7 @@ return;
 
         // Calculate absolute position for insertion
         let relativePos = insertMatch.range.location + insertMatch.range.length
-        let absolutePos = blockStartIndex + relativePos
+        let absolutePos = blockStartIdx + relativePos
 
         // Step 8: Build fix code with extracted variable names
         let fixCode = """
@@ -827,6 +843,7 @@ return;
 
         return modifiedContent
     }
+
 
     /// Get the path to Claude CLI's main JavaScript file
     private func getClaudeCliPath() -> String? {
