@@ -848,6 +848,18 @@ return;
 
     /// Get the path to Claude CLI's main JavaScript file
     private func getClaudeCliPath() -> String? {
+        // Method 0: Check cached path first
+        if let cachedPath = UserDefaults.standard.string(forKey: "ClaudeCliPath"),
+           FileManager.default.fileExists(atPath: cachedPath) {
+            return cachedPath
+        }
+
+        // Helper to cache and return
+        func cacheAndReturn(_ path: String) -> String {
+            UserDefaults.standard.set(path, forKey: "ClaudeCliPath")
+            return path
+        }
+
         // Method 1: Use 'which claude' command
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
@@ -891,13 +903,13 @@ return;
                     let normalizedPath = (path as NSString).standardizingPath
                     if fileManager.fileExists(atPath: normalizedPath),
                        normalizedPath.hasSuffix(".js") {
-                        return normalizedPath
+                        return cacheAndReturn(normalizedPath)
                     }
                 }
 
                 // Search for cli.js in the directory structure
                 if let cliPath = findCliJs(in: (claudePath as NSString).deletingLastPathComponent) {
-                    return cliPath
+                    return cacheAndReturn(cliPath)
                 }
             }
         } catch {
@@ -923,20 +935,29 @@ return;
         let fileManager = FileManager.default
         for path in commonPaths {
             if path.contains("*") {
-                // Handle glob pattern
-                let basePath = (path as NSString).deletingLastPathComponent
-                let pattern = (path as NSString).lastPathComponent
-                if let files = try? fileManager.contentsOfDirectory(atPath: (basePath as NSString).deletingLastPathComponent) {
-                    for file in files {
-                        let fullPath = ((basePath as NSString).deletingLastPathComponent as NSString).appendingPathComponent(file)
-                        let cliPath = (fullPath as NSString).appendingPathComponent(pattern)
-                        if fileManager.fileExists(atPath: cliPath) {
-                            return cliPath
+                // Handle glob pattern properly (e.g. ~/.npm/_npx/*/node_modules/...)
+                let components = path.components(separatedBy: "*")
+                if components.count == 2 {
+                    let prefix = components[0]
+                    let suffix = components[1]
+                    
+                    if let folders = try? fileManager.contentsOfDirectory(atPath: prefix) {
+                        for folder in folders {
+                            // Construct full path: prefix + folder + suffix
+                            let fullPath = prefix + folder + suffix
+                            if fileManager.fileExists(atPath: fullPath) {
+                                return cacheAndReturn(fullPath)
+                            }
                         }
+                    }
+                } else {
+                    // Fallback for complex globs - not supported, try direct check if somehow valid
+                    if fileManager.fileExists(atPath: path) {
+                        return cacheAndReturn(path)
                     }
                 }
             } else if fileManager.fileExists(atPath: path) {
-                return path
+                return cacheAndReturn(path)
             }
         }
 
