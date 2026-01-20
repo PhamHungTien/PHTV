@@ -628,7 +628,8 @@ return;
             return .failure(.noBackupFound)
         }
 
-        let backups = files.filter { $0.contains(".phtv-backup-") }
+        // Support both PHTV backups and script backups
+        let backups = files.filter { $0.contains(".phtv-backup-") || $0.contains(".backup-") }
             .sorted()
             .reversed()
 
