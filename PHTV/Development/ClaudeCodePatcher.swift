@@ -744,18 +744,15 @@ return;
         // Also try with actual DEL character
         let varsPatternAlt = "let (\\w+)=\\(\\w+\\.match\\(/\(delChar)/g\\)\\|\\|\\[\\]\\)\\.length,(\\w+)=(\\w+);"
 
-        var countVar: String?
         var stateVar: String?
         var curStateVar: String?
 
         if let regex = try? NSRegularExpression(pattern: varsPattern, options: []),
            let match = regex.firstMatch(in: fullBlock, options: [], range: NSRange(fullBlock.startIndex..., in: fullBlock)) {
-            countVar = Range(match.range(at: 1), in: fullBlock).map { String(fullBlock[$0]) }
             stateVar = Range(match.range(at: 2), in: fullBlock).map { String(fullBlock[$0]) }
             curStateVar = Range(match.range(at: 3), in: fullBlock).map { String(fullBlock[$0]) }
         } else if let regex = try? NSRegularExpression(pattern: varsPatternAlt, options: []),
                   let match = regex.firstMatch(in: fullBlock, options: [], range: NSRange(fullBlock.startIndex..., in: fullBlock)) {
-            countVar = Range(match.range(at: 1), in: fullBlock).map { String(fullBlock[$0]) }
             stateVar = Range(match.range(at: 2), in: fullBlock).map { String(fullBlock[$0]) }
             curStateVar = Range(match.range(at: 3), in: fullBlock).map { String(fullBlock[$0]) }
         }
