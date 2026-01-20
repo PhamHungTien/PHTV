@@ -263,63 +263,52 @@ static int _externalDeleteCount = 0;
 #pragma mark - Safari Detection
 
 + (BOOL)isSafariAddressBar {
-    // Check if current focused element is Safari's address bar (AXTextField with URL role)
+    // Detect if focused element is Safari address bar (NOT web content)
+    // Strategy: Check if element or its parent is AXWebArea (web content)
+    // If NOT in web content, assume it's address bar or other native UI
     AXUIElementRef systemWide = AXUIElementCreateSystemWide();
     AXUIElementRef focusedElement = NULL;
-    BOOL isAddressBar = NO;
+    BOOL isWebContent = NO;
 
     AXError error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement);
     CFRelease(systemWide);
 
     if (error != kAXErrorSuccess || focusedElement == NULL) {
-        return NO;
+        return YES;  // If can't detect, assume address bar (use Shift+Left)
     }
 
-    // Check AXRole
-    CFTypeRef role = NULL;
-    if (AXUIElementCopyAttributeValue(focusedElement, kAXRoleAttribute, &role) == kAXErrorSuccess) {
-        if (role != NULL && CFGetTypeID(role) == CFStringGetTypeID()) {
-            NSString *roleStr = (__bridge NSString *)role;
-            // Safari address bar is AXTextField or AXSearchField
-            if ([roleStr isEqualToString:@"AXTextField"] || [roleStr isEqualToString:@"AXSearchField"]) {
-                // Check AXDescription or AXIdentifier for "address" or "URL"
-                CFTypeRef desc = NULL;
-                if (AXUIElementCopyAttributeValue(focusedElement, kAXDescriptionAttribute, &desc) == kAXErrorSuccess) {
-                    if (desc != NULL && CFGetTypeID(desc) == CFStringGetTypeID()) {
-                        NSString *descStr = [(__bridge NSString *)desc lowercaseString];
-                        if ([descStr containsString:@"address"] || [descStr containsString:@"url"] ||
-                            [descStr containsString:@"location"] || [descStr containsString:@"địa chỉ"]) {
-                            isAddressBar = YES;
-                        }
-                    }
-                    if (desc) CFRelease(desc);
-                }
+    // Check if current element or any parent is AXWebArea
+    AXUIElementRef currentElement = focusedElement;
+    CFRetain(currentElement);
 
-                // Also check AXSubrole
-                if (!isAddressBar) {
-                    CFTypeRef subrole = NULL;
-                    if (AXUIElementCopyAttributeValue(focusedElement, kAXSubroleAttribute, &subrole) == kAXErrorSuccess) {
-                        if (subrole != NULL && CFGetTypeID(subrole) == CFStringGetTypeID()) {
-                            NSString *subroleStr = [(__bridge NSString *)subrole lowercaseString];
-                            if ([subroleStr containsString:@"url"] || [subroleStr containsString:@"address"]) {
-                                isAddressBar = YES;
-                            }
-                        }
-                        if (subrole) CFRelease(subrole);
-                    }
-                }
-
-                // Fallback: If it's AXSearchField in Safari, assume address bar
-                if (!isAddressBar && [roleStr isEqualToString:@"AXSearchField"]) {
-                    isAddressBar = YES;
+    for (int i = 0; i < 10; i++) {  // Check up to 10 levels of parents
+        CFTypeRef role = NULL;
+        if (AXUIElementCopyAttributeValue(currentElement, kAXRoleAttribute, &role) == kAXErrorSuccess) {
+            if (role != NULL && CFGetTypeID(role) == CFStringGetTypeID()) {
+                NSString *roleStr = (__bridge NSString *)role;
+                if ([roleStr isEqualToString:@"AXWebArea"]) {
+                    isWebContent = YES;
+                    CFRelease(role);
+                    break;
                 }
             }
+            if (role) CFRelease(role);
         }
-        if (role) CFRelease(role);
+
+        // Get parent
+        AXUIElementRef parent = NULL;
+        if (AXUIElementCopyAttributeValue(currentElement, kAXParentAttribute, (CFTypeRef *)&parent) != kAXErrorSuccess || parent == NULL) {
+            break;
+        }
+        CFRelease(currentElement);
+        currentElement = parent;
     }
 
+    CFRelease(currentElement);
     CFRelease(focusedElement);
-    return isAddressBar;
+
+    // Return YES if NOT in web content (address bar, search field, etc.)
+    return !isWebContent;
 }
 
 #pragma mark - Text Replacement Detection
