@@ -1206,22 +1206,69 @@ void handleMainKey(const Uint16& data, const bool& isCaps) {
         if (isCorect) {
             isChanged = true;
             if (IS_KEY_DOUBLE(data)) {
-                // Check for invalid diphthong logic (prevent doubling if creates invalid pair)
+                // 1. Block doubling if ANY char in the vowel cluster has a Tone Mark (sắc, huyền...)
+                // Fixes: "của" + "a" -> "cuẩ", "chào" + "o" -> "chaồ", "dứa" + "a" -> "duấ"
+                bool hasMark = false;
+                for (int m = _index - 1; m >= 0; m--) {
+                    if (IS_CONSONANT(CHR(m))) break; // Stop at consonant
+                    if (TypingWord[m] & MARK_MASK) {
+                        hasMark = true;
+                        break;
+                    }
+                }
+                
+                if (hasMark) {
+                    isChanged = false;
+                    break;
+                }
+
+                // 2. Check for invalid diphthong logic (prevent doubling if creates invalid pair)
+                // First, find the ACTUAL index of the char being doubled (scan back for keyForAEO)
+                int idx = -1;
+                for (int m = _index - 1; m >= 0; m--) {
+                    // Match the character code (ignoring marks)
+                    if (CHR(m) == keyForAEO) {
+                        idx = m;
+                        break;
+                    }
+                    if (IS_CONSONANT(CHR(m))) break; // Don't scan past consonants
+                }
+
                 bool blockDoubling = false;
-                if (_index >= 2 && !IS_CONSONANT(CHR(_index - 2))) {
-                    Uint32 v1 = TypingWord[_index - 2];
+                if (idx > 0 && !IS_CONSONANT(CHR(idx - 1))) {
+                    Uint32 v1 = TypingWord[idx - 1];
                     Uint16 v1Key = v1 & CHAR_MASK;
-                    bool isPureU = (v1Key == KEY_U && !(v1 & TONEW_MASK)); // u (not ư)
+                    
+                    // Check if v1 has TONEW (ư, ơ) or TONE (â, ê, ô)
+                    bool hasTone = (v1 & (TONE_MASK | TONEW_MASK));
+                    
+                    // Detect pure u, i, y (no hook/hat)
+                    bool isPureU = (v1Key == KEY_U && !hasTone);
+                    bool isPureI = (v1Key == KEY_I && !hasTone);
+                    bool isPureY = (v1Key == KEY_Y && !hasTone);
 
                     if (keyForAEO == KEY_A) { // Target â
-                        // Only allow if v1 is pure u (e.g. uân). Block others (ư, o, i...)
-                        if (!isPureU) blockDoubling = true;
+                        if (!isPureU) {
+                            blockDoubling = true; // Block ư+aa (chưaa), o+aa (oaâ? no), etc.
+                        } else if (idx == _index - 1) {
+                            // pure u + a + a (at end) -> Block (cuaa)
+                            // pure u + a + n + a (not at end) -> Allow (tuân) if user types "tuana"?? 
+                            // Actually, if user types "muono", idx is not end.
+                            // If user types "tuaa", idx IS end. Blocked.
+                            // So "tuaa" -> "tuaa". "tuaan" -> "tuaan".
+                            // To type "tuân", user must type "tuan" + "a"? No, that's "tuana".
+                            // Or use 'w' for â. 
+                            // This is the trade-off for "cua" -> "cuaa".
+                            blockDoubling = true;
+                        }
+                        // If idx < _index - 1 (e.g. "tuana"), doubling is allowed if logic permits?
+                        // But wait, doubling "a" in "tuan" (idx 2) changes it to "tuân".
+                        // So "t" "u" "a" "n" "a" -> "tuân" IS supported with this check!
                     } else if (keyForAEO == KEY_O) { // Target ô
-                        // Only allow if v1 is pure u (e.g. muôn). Block others (a, e, ơ...)
-                        if (!isPureU) blockDoubling = true;
+                        if (!isPureU) blockDoubling = true; // Block a+oo, e+oo. Allow u+oo (muôn).
                     } else if (keyForAEO == KEY_E) { // Target ê
                         // Allow i, u, y (iê, uê, yê). Block others.
-                        if (v1Key != KEY_I && v1Key != KEY_Y && !isPureU) blockDoubling = true;
+                        if (!isPureU && !isPureI && !isPureY) blockDoubling = true;
                     }
                 }
                 
