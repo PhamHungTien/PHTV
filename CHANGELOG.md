@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.8] - 2026-01-20
+
+### Fixed
+- **Safari Address Bar Duplicate Character**: Sửa lỗi nhân đôi ký tự đầu tiên khi gõ tiếng Việt trên thanh địa chỉ Safari
+  - Áp dụng chiến lược Shift+Left cho TẤT CẢ trang web trên Safari
+  - Ngoại trừ Google Docs/Sheets/Slides/Forms (giữ SendEmptyCharacter để tránh mất ký tự)
+  - Phát hiện Google Docs qua URL (`docs.google.com`) hoặc tiêu đề cửa sổ
+
+### Improved
+- **Claude Code Patcher**: Cải tiến phương pháp patch Claude Code CLI
+  - Sử dụng phương pháp trích xuất biến động từ mã nguồn minified
+  - Hoạt động ổn định trên Claude Code 2.1.x và các phiên bản mới hơn
+  - Dựa trên công trình của [Đinh Văn Mạnh](https://github.com/manhit96/claude-code-vietnamese-fix)
+
+### Technical Details
+- Thêm method `isSafariGoogleDocsOrSheets` để phát hiện Google Docs/Sheets qua Accessibility API
+- Cải thiện `isSafariAddressBar` với kiểm tra AXTextField/AXComboBox role trước
+- Cập nhật regex pattern cho Claude Code 2.1.12+ với `\S+` thay vì `\w+`
+
 ## [1.7.7] - 2026-01-18
 
 ### 📢 Lời Nhắn Từ Tác Giả
