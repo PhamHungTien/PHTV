@@ -655,26 +655,16 @@ bool canHasEndConsonant() {
 }
 
 void handleModernMark() {
+    // Prolonged vowel adjustment: treat repeated identical vowels at the end as one
+    // for the purpose of mark placement rules.
+    while (VEI > VSI && CHR(VEI) == CHR(VEI - 1)) {
+        VEI--;
+        vowelCount--;
+    }
+
     //default
     VWSM = VEI;
     hBPC = (_index - VEI);
-    
-    //Fix for prolonged vowels (e.g. "nhéee", "áaa")
-    //If all vowels are the same character (except 'o'), keep mark on the first one
-    if (vowelCount >= 2) {
-        bool allSame = true;
-        for (int k = VSI + 1; k <= VEI; k++) {
-            if (CHR(k) != CHR(VSI)) {
-                allSame = false;
-                break;
-            }
-        }
-        if (allSame && CHR(VSI) != KEY_O) {
-            VWSM = VSI;
-            hBPC = (_index - VWSM);
-            return;
-        }
-    }
     
     //rule 2
     if (vowelCount == 3 && ((CHR(VSI) == KEY_O && CHR(VSI+1) == KEY_A && CHR(VSI+2) == KEY_I) ||
@@ -770,29 +760,18 @@ void handleModernMark() {
 }
 
 void handleOldMark() {
+    // Prolonged vowel adjustment
+    while (VEI > VSI && CHR(VEI) == CHR(VEI - 1)) {
+        VEI--;
+        vowelCount--;
+    }
+
     //default
     if (vowelCount == 0 && CHR(VEI) == KEY_I)
         VWSM = VEI;
     else
         VWSM = VSI;
     hBPC = (_index - VWSM);
-    
-    //Fix for prolonged vowels (e.g. "nhéee", "áaa")
-    //If all vowels are the same character (except 'o'), keep mark on the first one
-    if (vowelCount >= 2) {
-        bool allSame = true;
-        for (int k = VSI + 1; k <= VEI; k++) {
-            if (CHR(k) != CHR(VSI)) {
-                allSame = false;
-                break;
-            }
-        }
-        if (allSame && CHR(VSI) != KEY_O) {
-            VWSM = VSI;
-            hBPC = (_index - VWSM);
-            return;
-        }
-    }
     
     //rule 2
     if (vowelCount == 3 || (VEI + 1 < _index && IS_CONSONANT(CHR(VEI + 1)) && canHasEndConsonant())) {
