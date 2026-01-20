@@ -1206,6 +1206,29 @@ void handleMainKey(const Uint16& data, const bool& isCaps) {
         if (isCorect) {
             isChanged = true;
             if (IS_KEY_DOUBLE(data)) {
+                // Check for invalid diphthong logic (prevent doubling if creates invalid pair)
+                bool blockDoubling = false;
+                if (_index >= 2 && !IS_CONSONANT(CHR(_index - 2))) {
+                    Uint32 v1 = TypingWord[_index - 2];
+                    Uint16 v1Key = v1 & CHAR_MASK;
+                    bool isPureU = (v1Key == KEY_U && !(v1 & TONEW_MASK)); // u (not ư)
+
+                    if (keyForAEO == KEY_A) { // Target â
+                        // Only allow if v1 is pure u (e.g. uân). Block others (ư, o, i...)
+                        if (!isPureU) blockDoubling = true;
+                    } else if (keyForAEO == KEY_O) { // Target ô
+                        // Only allow if v1 is pure u (e.g. muôn). Block others (a, e, ơ...)
+                        if (!isPureU) blockDoubling = true;
+                    } else if (keyForAEO == KEY_E) { // Target ê
+                        // Allow i, u, y (iê, uê, yê). Block others.
+                        if (v1Key != KEY_I && v1Key != KEY_Y && !isPureU) blockDoubling = true;
+                    }
+                }
+                
+                if (blockDoubling) {
+                    isChanged = false; // Fallback to normal insert
+                    break;
+                }
                 insertAOE(keyForAEO, isCaps);
             } else if (IS_KEY_W(data)) {
                 if (vInputType == vVNI) {
