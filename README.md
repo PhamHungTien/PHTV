@@ -83,7 +83,7 @@ open /Applications/PHTV.app
 
 ### Tương thích ứng dụng
 - **Keyboard Layout Compatibility** - Hỗ trợ Dvorak, Colemak và các bố cục bàn phím đặc biệt
-- **[Claude Code Vietnamese IME Fix](docs/CLAUDE_CODE_FIX.md)** - Sửa lỗi gõ tiếng Việt trong Claude Code CLI (Terminal)
+- **Claude Code Support** - Sửa lỗi gõ tiếng Việt trong Claude Code CLI (Terminal) thông qua tính năng Patch tích hợp
 - **Safe Mode** - Tự động khôi phục khi Accessibility API gặp lỗi
 - **Excluded Apps** - Danh sách ứng dụng tự động chuyển sang tiếng Anh
 - **Send Key Step-by-Step** - Gửi từng phím riêng lẻ cho ứng dụng tương thích kém
@@ -258,7 +258,7 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 | **Bộ gõ** | Phương pháp gõ, bảng mã, chính tả, Quick Telex, phụ âm nhanh |
 | **Phím tắt** | Phím chuyển ngôn ngữ, tạm tắt tiếng Việt, PHTV Picker hotkey |
 | **Gõ tắt** | Quản lý macro, text snippets, import/export, tự động viết hoa |
-| **Ứng dụng** | Excluded Apps, Send Key Step-by-Step, Keyboard Layout, Claude Code Vietnamese IME Fix, Safe Mode |
+| **Ứng dụng** | Excluded Apps, Send Key Step-by-Step, Keyboard Layout, Claude Code Fix, Safe Mode |
 | **Hệ thống** | Khởi động cùng macOS, Smart Switch, cập nhật, menu bar, phát hiện bàn phím non-Latin |
 | **Báo lỗi** | Gửi báo cáo lỗi qua GitHub hoặc Email với crash logs và debug info |
 | **Thông tin** | Phiên bản, giấy phép, ủng hộ phát triển |
@@ -327,7 +327,7 @@ PHTV được phát hành dưới giấy phép **[GPL v3.0](LICENSE)**.
 ### Cảm ơn đặc biệt
 
 - **[OpenKey](https://github.com/tuyenvm/OpenKey)** — Mai Vũ Tuyên — Engine xử lý tiếng Việt
-- **[Claude Code Vietnamese Fix](https://github.com/manhit96/claude-code-vietnamese-fix)** — [Đinh Văn Mạnh](https://www.facebook.com/manhdv.pro) — Cải tiến phương pháp patch Claude Code CLI của PHTV
+- **[Đinh Văn Mạnh](https://www.facebook.com/manhdv.pro)** — Cải tiến phương pháp patch Claude Code CLI cho PHTV
 
 ---
 
