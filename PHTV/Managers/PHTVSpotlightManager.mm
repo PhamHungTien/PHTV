@@ -264,11 +264,13 @@ static int _externalDeleteCount = 0;
 
 + (BOOL)isSafariAddressBar {
     // Detect if focused element is Safari address bar (NOT web content)
-    // Strategy: Check if element or its parent is AXWebArea (web content)
-    // If NOT in web content, assume it's address bar or other native UI
+    // Strategy 1: Check if focused element is AXTextField/AXComboBox (address bar)
+    // Strategy 2: Check if element or its parent is AXWebArea (web content)
+    // If in AXTextField/AXComboBox OR NOT in web content, it's address bar
     AXUIElementRef systemWide = AXUIElementCreateSystemWide();
     AXUIElementRef focusedElement = NULL;
     BOOL isWebContent = NO;
+    BOOL isAddressBarElement = NO;
 
     AXError error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement);
     CFRelease(systemWide);
@@ -277,7 +279,28 @@ static int _externalDeleteCount = 0;
         return YES;  // If can't detect, assume address bar (use Shift+Left)
     }
 
-    // Check if current element or any parent is AXWebArea
+    // First, check the focused element's role directly
+    CFTypeRef focusedRole = NULL;
+    if (AXUIElementCopyAttributeValue(focusedElement, kAXRoleAttribute, &focusedRole) == kAXErrorSuccess) {
+        if (focusedRole != NULL && CFGetTypeID(focusedRole) == CFStringGetTypeID()) {
+            NSString *roleStr = (__bridge NSString *)focusedRole;
+            // Safari address bar is typically AXTextField or AXComboBox
+            if ([roleStr isEqualToString:@"AXTextField"] ||
+                [roleStr isEqualToString:@"AXComboBox"] ||
+                [roleStr isEqualToString:@"AXSearchField"]) {
+                isAddressBarElement = YES;
+            }
+        }
+        if (focusedRole) CFRelease(focusedRole);
+    }
+
+    // If it's an address bar element, return YES immediately
+    if (isAddressBarElement) {
+        CFRelease(focusedElement);
+        return YES;
+    }
+
+    // Otherwise, check if current element or any parent is AXWebArea
     AXUIElementRef currentElement = focusedElement;
     CFRetain(currentElement);
 
@@ -309,6 +332,92 @@ static int _externalDeleteCount = 0;
 
     // Return YES if NOT in web content (address bar, search field, etc.)
     return !isWebContent;
+}
+
++ (BOOL)isSafariGoogleDocsOrSheets {
+    // Detect if Safari is currently on Google Docs or Google Sheets
+    // by checking the URL via Accessibility API
+    // Google Docs URL patterns:
+    // - docs.google.com/document
+    // - docs.google.com/spreadsheets
+    // - docs.google.com/presentation
+
+    AXUIElementRef systemWide = AXUIElementCreateSystemWide();
+    AXUIElementRef focusedElement = NULL;
+    BOOL isGoogleDocs = NO;
+
+    AXError error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement);
+    CFRelease(systemWide);
+
+    if (error != kAXErrorSuccess || focusedElement == NULL) {
+        return NO;  // If can't detect, assume NOT Google Docs
+    }
+
+    // Get PID and create app element
+    pid_t pid = 0;
+    error = AXUIElementGetPid(focusedElement, &pid);
+    CFRelease(focusedElement);
+
+    if (error != kAXErrorSuccess || pid == 0) {
+        return NO;
+    }
+
+    // Create app element to get window info
+    AXUIElementRef appElement = AXUIElementCreateApplication(pid);
+    if (appElement == NULL) {
+        return NO;
+    }
+
+    // Get focused window
+    AXUIElementRef focusedWindow = NULL;
+    error = AXUIElementCopyAttributeValue(appElement, kAXFocusedWindowAttribute, (CFTypeRef *)&focusedWindow);
+    CFRelease(appElement);
+
+    if (error != kAXErrorSuccess || focusedWindow == NULL) {
+        return NO;
+    }
+
+    // Try to get document URL (Safari exposes this for web pages)
+    CFTypeRef documentURL = NULL;
+    error = AXUIElementCopyAttributeValue(focusedWindow, kAXDocumentAttribute, &documentURL);
+
+    if (error == kAXErrorSuccess && documentURL != NULL) {
+        if (CFGetTypeID(documentURL) == CFStringGetTypeID()) {
+            NSString *urlStr = (__bridge NSString *)documentURL;
+            // Check for Google Docs/Sheets/Slides patterns
+            if ([urlStr containsString:@"docs.google.com/document"] ||
+                [urlStr containsString:@"docs.google.com/spreadsheets"] ||
+                [urlStr containsString:@"docs.google.com/presentation"] ||
+                [urlStr containsString:@"docs.google.com/forms"]) {
+                isGoogleDocs = YES;
+            }
+        }
+        CFRelease(documentURL);
+    }
+
+    // Fallback: Check window title for Google Docs indicators
+    if (!isGoogleDocs) {
+        CFTypeRef title = NULL;
+        error = AXUIElementCopyAttributeValue(focusedWindow, kAXTitleAttribute, &title);
+        if (error == kAXErrorSuccess && title != NULL) {
+            if (CFGetTypeID(title) == CFStringGetTypeID()) {
+                NSString *titleStr = (__bridge NSString *)title;
+                // Google Docs typically has " - Google Docs" or " - Google Sheets" in title
+                if ([titleStr containsString:@" - Google Docs"] ||
+                    [titleStr containsString:@" - Google Sheets"] ||
+                    [titleStr containsString:@" - Google Slides"] ||
+                    [titleStr containsString:@" - Google Tài liệu"] ||
+                    [titleStr containsString:@" - Google Trang tính"] ||
+                    [titleStr containsString:@" - Google Biểu mẫu"]) {
+                    isGoogleDocs = YES;
+                }
+            }
+            CFRelease(title);
+        }
+    }
+
+    CFRelease(focusedWindow);
+    return isGoogleDocs;
 }
 
 #pragma mark - Text Replacement Detection

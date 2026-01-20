@@ -25,6 +25,7 @@
 
 // Safari Detection
 + (BOOL)isSafariAddressBar;
++ (BOOL)isSafariGoogleDocsOrSheets;
 
 // Text Replacement Detection
 + (void)trackExternalDelete;

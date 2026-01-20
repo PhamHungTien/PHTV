@@ -2609,28 +2609,27 @@ extern "C" {
                 // This conflicts with macOS Text Replacement feature
                 // SendEmptyCharacter is only needed for Vietnamese character keys, NOT for break keys
                 if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE && !isPotentialShortcut) {
-                    // Safari address bar: Use Shift+Left strategy (fixes duplicate char issue)
-                    // Safari web content (Google Docs): Use SendEmptyCharacter (Shift+Left causes char loss)
+                    // Safari: Use Shift+Left for ALL pages EXCEPT Google Docs/Sheets (Shift+Left causes char loss there)
                     // Chromium browsers: Use Shift+Left strategy (fixes Facebook, Messenger)
-                    BOOL isSafariAddressBar = appChars.isSafari && [PHTVSpotlightManager isSafariAddressBar];
-                    BOOL useShiftLeft = (isSafariAddressBar || appChars.containsUnicodeCompound) && pData->backspaceCount > 0;
+                    BOOL isSafariExcludingGoogleDocs = appChars.isSafari && ![PHTVSpotlightManager isSafariGoogleDocsOrSheets];
+                    BOOL useShiftLeft = (isSafariExcludingGoogleDocs || appChars.containsUnicodeCompound) && pData->backspaceCount > 0;
 
                     if (useShiftLeft) {
-                        // Safari address bar & Chromium "Select + Immediate Delete" strategy
+                        // Safari (except Google Docs) & Chromium "Select + Immediate Delete" strategy
                         // SendShiftAndLeftArrow already pops _syncKey once
                         // So we use SendPhysicalBackspace (not SendBackspace) to avoid double-pop
 #ifdef DEBUG
-                        NSLog(@"[PHTV Browser] Using Shift+Left strategy: backspaceCount=%d, isSafariAddressBar=%d, isChromium=%d, app=%@",
-                              (int)pData->backspaceCount, isSafariAddressBar, appChars.containsUnicodeCompound, getFocusedAppBundleId());
+                        NSLog(@"[PHTV Browser] Using Shift+Left strategy: backspaceCount=%d, isSafari=%d, isChromium=%d, app=%@",
+                              (int)pData->backspaceCount, appChars.isSafari, appChars.containsUnicodeCompound, getFocusedAppBundleId());
 #endif
                         SendShiftAndLeftArrow();      // Select the character (_syncKey.pop_back)
                         SendPhysicalBackspace();      // Delete selection (no _syncKey modification)
                         pData->backspaceCount--;      // We already deleted one character
                         // If backspaceCount > 0, additional backspaces will be sent later
                     } else if (!appChars.containsUnicodeCompound) {
-                        // Safari web content (Google Docs) and Firefox use SendEmptyCharacter
+                        // Safari Google Docs/Sheets and Firefox use SendEmptyCharacter
 #ifdef DEBUG
-                        NSLog(@"[PHTV Browser] Using SendEmptyCharacter: backspaceCount=%d, isSafari=%d, app=%@",
+                        NSLog(@"[PHTV Browser] Using SendEmptyCharacter (GoogleDocs/Firefox): backspaceCount=%d, isSafari=%d, app=%@",
                               (int)pData->backspaceCount, appChars.isSafari, getFocusedAppBundleId());
 #endif
                         SendEmptyCharacter();
