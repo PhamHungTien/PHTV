@@ -26,26 +26,8 @@ final class ClaudeCodePatcher: Sendable {
     /// Marker to identify patched files
     private let patchMarker = "/* PHTV Vietnamese IME fix */"
 
-    /// The fix code that handles Vietnamese IME input correctly (v2.0.76+)
-    /// The new Claude Code uses minified variable names like $A, M, DA, etc.
-    /// Bug: After processing DEL characters, code returns without inserting remaining text
-    /// Fix: Filter out DEL characters and insert the clean text
-    private let patchCodeV2 = """
-/* PHTV Vietnamese IME fix v2 */
-// After backspacing, insert remaining characters (filter out DEL)
-let cleanText = DA.replace(/\\x7f/g, '');
-if (cleanText.length > 0) {
-    for (const char of cleanText) {
-        $A = $A.insert(char);
-    }
-    if (!M.equals($A)) {
-        if (M.text !== $A.text) Q($A.text);
-        N($A.offset);
-    }
-}
-_eA(), jeA();
-return;
-"""
+    /// Patch marker to identify patched files
+    private let patchMarkerNew = "/* Vietnamese IME fix */"
 
     /// Legacy fix code for older versions (pre-2.0.70)
     private let patchCodeLegacy = """
@@ -62,13 +44,6 @@ for (const char of e2) {
 this.render();
 return;
 """
-
-    // Multiple patterns to find the buggy code block
-    private let searchPatternsV2 = [
-        // Pattern for Claude Code 2.0.76+: buggy block that processes DEL but returns without insert
-        // Match the entire if block that checks for DEL character and returns
-        #"if\s*\(\s*!\s*mA\.backspace\s*&&\s*!\s*mA\.delete\s*&&\s*DA\.includes\s*\([^)]*\)\s*\)\s*\{[^}]*\.match\s*\([^)]*\\x7f[^)]*\)[^}]*backspace[^}]*_eA\s*\(\s*\)\s*,\s*jeA\s*\(\s*\)\s*;\s*return\s*;?\s*\}"#
-    ]
 
     private let searchPatternsLegacy = [
         // Pattern 1: Full block with DEL check (legacy)
@@ -243,8 +218,8 @@ return;
               let content = try? String(contentsOfFile: cliPath, encoding: .utf8) else {
             return false
         }
-        // Check for both legacy and v2 markers
-        return content.contains(patchMarker) || content.contains("PHTV Vietnamese IME fix v2")
+        // Check for both legacy, v2 markers, and new marker
+        return content.contains(patchMarker) || content.contains("PHTV Vietnamese IME fix v2") || content.contains(patchMarkerNew)
     }
 
     /// Get Claude Code version
@@ -298,29 +273,11 @@ return;
         // Try to find and replace the buggy code
         var patchedContent: String?
 
-        // Method 1: Try V2 patterns first (Claude Code 2.0.76+)
-        for pattern in searchPatternsV2 {
-            if let regex = try? NSRegularExpression(pattern: pattern, options: [.dotMatchesLineSeparators]) {
-                let range = NSRange(content.startIndex..., in: content)
-                if let match = regex.firstMatch(in: content, options: [], range: range) {
-                    let matchRange = Range(match.range, in: content)!
-                    patchedContent = content.replacingCharacters(in: matchRange, with: patchCodeV2)
-                    break
-                }
-            }
-        }
+        // Method 1: New dynamic variable extraction method (Claude Code 2.1.x+)
+        // This method extracts actual variable names from minified code
+        patchedContent = applyDynamicPatch(content: content)
 
-        // Method 2: Try V2 direct string matching (simpler but reliable)
-        if patchedContent == nil && content.contains("DA.includes(\"\u{7f}\")") {
-            patchedContent = applyV2Patch(content: content)
-        }
-
-        // Method 3: Alternative V2 pattern - find the return after DEL processing
-        if patchedContent == nil && content.contains(".match(/\\x7f/g)") {
-            patchedContent = applyV2PatchAlternative(content: content)
-        }
-
-        // Method 4: Try legacy patterns (older Claude Code versions)
+        // Method 2: Try legacy patterns (older Claude Code versions)
         if patchedContent == nil {
             for pattern in searchPatternsLegacy {
                 if let regex = try? NSRegularExpression(pattern: pattern, options: [.dotMatchesLineSeparators]) {
@@ -334,7 +291,7 @@ return;
             }
         }
 
-        // Method 5: Fallback - legacy direct string replacement
+        // Method 3: Fallback - legacy direct string replacement
         if patchedContent == nil {
             if content.contains("e2.charCodeAt(0) === 127") || content.contains("e2.charCodeAt(0)===127") {
                 let lines = content.components(separatedBy: "\n")
@@ -731,59 +688,123 @@ return;
 
     // MARK: - Private Methods
 
-    /// Apply V2 patch by finding the buggy block that handles DEL characters
-    /// Claude Code 2.0.76+ uses minified variable names
-    private func applyV2Patch(content: String) -> String? {
-        // The buggy pattern in v2.0.76:
-        // if(!mA.backspace&&!mA.delete&&DA.includes("")){
-        //   let qA=(DA.match(/\x7f/g)||[]).length,$A=M;
-        //   for(let KA=0;KA<qA;KA++)$A=$A.backspace();
-        //   if(!M.equals($A)){if(M.text!==$A.text)Q($A.text);N($A.offset)}
-        //   _eA(),jeA();
-        //   return  <-- BUG: returns without inserting remaining text
-        // }
+    /// Apply dynamic patch by extracting actual variable names from minified code
+    /// This method is more robust and works across different Claude Code versions
+    /// Based on work by Đinh Văn Mạnh: https://github.com/manhit96/claude-code-vietnamese-fix
+    private func applyDynamicPatch(content: String) -> String? {
+        let delChar = "\u{7f}" // DEL character (0x7F)
 
-        // More specific pattern that only matches the DEL handling block
-        // The buggy pattern ends with: N($A.offset)}_eA(),jeA();return
-        let buggyPattern = "N($A.offset)}_eA(),jeA();return"
+        // Step 1: Find the includes check with DEL character
+        // Pattern: .includes("\x7f") or .includes("") where  is actual DEL char
+        let includesPattern = ".includes(\"\(delChar)\")"
+        guard let includesRange = content.range(of: includesPattern) else {
+            return nil
+        }
 
-        // The fix: after backspacing, insert remaining characters
-        // We replace the return with code that inserts clean text first
+        let includesIndex = content.distance(from: content.startIndex, to: includesRange.lowerBound)
+
+        // Step 2: Find the start of the if block containing this pattern
+        let searchStart = max(0, includesIndex - 150)
+        let searchRange = content.index(content.startIndex, offsetBy: searchStart)..<includesRange.lowerBound
+        let beforeIncludes = String(content[searchRange])
+
+        guard let ifStart = beforeIncludes.range(of: "if(", options: .backwards) else {
+            return nil
+        }
+
+        let blockStartIndex = searchStart + beforeIncludes.distance(from: beforeIncludes.startIndex, to: ifStart.lowerBound)
+
+        // Step 3: Find the matching closing brace of the if block
+        var depth = 0
+        var blockEndIndex = includesIndex
+        let startSearchIndex = content.index(content.startIndex, offsetBy: blockStartIndex)
+        let endSearchIndex = content.index(startSearchIndex, offsetBy: min(800, content.distance(from: startSearchIndex, to: content.endIndex)))
+
+        for (i, char) in content[startSearchIndex..<endSearchIndex].enumerated() {
+            if char == "{" {
+                depth += 1
+            } else if char == "}" {
+                depth -= 1
+                if depth == 0 {
+                    blockEndIndex = blockStartIndex + i + 1
+                    break
+                }
+            }
+        }
+
+        // Extract the full block
+        let blockStart = content.index(content.startIndex, offsetBy: blockStartIndex)
+        let blockEnd = content.index(content.startIndex, offsetBy: blockEndIndex)
+        let fullBlock = String(content[blockStart..<blockEnd])
+
+        // Step 4: Extract variable names using regex
+        // Pattern: let COUNT=(INPUT.match(/\x7f/g)||[]).length,STATE=CURSTATE;
+        // The pattern uses \\x7f in the regex but the actual content has the DEL character
+        let varsPattern = #"let (\w+)=\(\w+\.match\(/\\x7f/g\)\|\|\[\]\)\.length,(\w+)=(\w+);"#
+        // Also try with actual DEL character
+        let varsPatternAlt = "let (\\w+)=\\(\\w+\\.match\\(/\(delChar)/g\\)\\|\\|\\[\\]\\)\\.length,(\\w+)=(\\w+);"
+
+        var countVar: String?
+        var stateVar: String?
+        var curStateVar: String?
+
+        if let regex = try? NSRegularExpression(pattern: varsPattern, options: []),
+           let match = regex.firstMatch(in: fullBlock, options: [], range: NSRange(fullBlock.startIndex..., in: fullBlock)) {
+            countVar = Range(match.range(at: 1), in: fullBlock).map { String(fullBlock[$0]) }
+            stateVar = Range(match.range(at: 2), in: fullBlock).map { String(fullBlock[$0]) }
+            curStateVar = Range(match.range(at: 3), in: fullBlock).map { String(fullBlock[$0]) }
+        } else if let regex = try? NSRegularExpression(pattern: varsPatternAlt, options: []),
+                  let match = regex.firstMatch(in: fullBlock, options: [], range: NSRange(fullBlock.startIndex..., in: fullBlock)) {
+            countVar = Range(match.range(at: 1), in: fullBlock).map { String(fullBlock[$0]) }
+            stateVar = Range(match.range(at: 2), in: fullBlock).map { String(fullBlock[$0]) }
+            curStateVar = Range(match.range(at: 3), in: fullBlock).map { String(fullBlock[$0]) }
+        }
+
+        guard let stateVar = stateVar, let curStateVar = curStateVar else {
+            return nil
+        }
+
+        // Step 5: Extract update functions
+        // Pattern: UPDATETEXT(STATE.text);UPDATEOFFSET(STATE.offset)
+        let updatePattern = "(\\w+)\\(\(stateVar)\\.text\\);(\\w+)\\(\(stateVar)\\.offset\\)"
+        guard let updateRegex = try? NSRegularExpression(pattern: updatePattern, options: []),
+              let updateMatch = updateRegex.firstMatch(in: fullBlock, options: [], range: NSRange(fullBlock.startIndex..., in: fullBlock)),
+              let updateTextFunc = Range(updateMatch.range(at: 1), in: fullBlock).map({ String(fullBlock[$0]) }),
+              let updateOffsetFunc = Range(updateMatch.range(at: 2), in: fullBlock).map({ String(fullBlock[$0]) }) else {
+            return nil
+        }
+
+        // Step 6: Extract input variable from includes check
+        // Pattern: INPUT.includes("
+        let inputPattern = "(\\w+)\\.includes\\(\""
+        guard let inputRegex = try? NSRegularExpression(pattern: inputPattern, options: []),
+              let inputMatch = inputRegex.firstMatch(in: fullBlock, options: [], range: NSRange(fullBlock.startIndex..., in: fullBlock)),
+              let inputVar = Range(inputMatch.range(at: 1), in: fullBlock).map({ String(fullBlock[$0]) }) else {
+            return nil
+        }
+
+        // Step 7: Find insertion point - right after UPDATEOFFSET(STATE.offset)}
+        let insertPattern = "\(updateOffsetFunc)\\(\(stateVar)\\.offset\\)\\}"
+        guard let insertRegex = try? NSRegularExpression(pattern: insertPattern, options: []),
+              let insertMatch = insertRegex.firstMatch(in: fullBlock, options: [], range: NSRange(fullBlock.startIndex..., in: fullBlock)) else {
+            return nil
+        }
+
+        // Calculate absolute position for insertion
+        let relativePos = insertMatch.range.location + insertMatch.range.length
+        let absolutePos = blockStartIndex + relativePos
+
+        // Step 8: Build fix code with extracted variable names
         let fixCode = """
-N($A.offset)}/* PHTV Vietnamese IME fix v2 */let _phtv_clean=DA.replace(/\\x7f/g,'');if(_phtv_clean.length>0){for(const _phtv_c of _phtv_clean){$A=$A.insert(_phtv_c)}if(!M.equals($A)){if(M.text!==$A.text)Q($A.text);N($A.offset)}}_eA(),jeA();return
+\(patchMarkerNew)let _vn=\(inputVar).replace(/\\x7f/g,"");if(_vn.length>0){for(const _c of _vn)\(stateVar)=\(stateVar).insert(_c);if(!\(curStateVar).equals(\(stateVar))){if(\(curStateVar).text!==\(stateVar).text)\(updateTextFunc)(\(stateVar).text);\(updateOffsetFunc)(\(stateVar).offset)}}
 """
 
-        if content.contains(buggyPattern) {
-            return content.replacingOccurrences(of: buggyPattern, with: fixCode)
-        }
+        // Step 9: Insert fix code at the calculated position
+        var modifiedContent = content
+        let insertIndex = modifiedContent.index(modifiedContent.startIndex, offsetBy: absolutePos)
+        modifiedContent.insert(contentsOf: fixCode, at: insertIndex)
 
-        return nil
-    }
-
-    /// Alternative V2 patch method - more targeted replacement
-    private func applyV2PatchAlternative(content: String) -> String? {
-        // Look for the pattern where DEL is processed but return happens without insert
-        // Find: .match(/\x7f/g) ... _eA(),jeA();return
-        // The key is to insert remaining text before return
-
-        // Use regex to find the exact block
-        let pattern = #"\$A=\$A\.backspace\(\)\}if\(!M\.equals\(\$A\)\)\{if\(M\.text!==\$A\.text\)Q\(\$A\.text\);N\(\$A\.offset\)\}_eA\(\),jeA\(\);return"#
-
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
-            return nil
-        }
-
-        let range = NSRange(content.startIndex..., in: content)
-        guard regex.firstMatch(in: content, options: [], range: range) != nil else {
-            return nil
-        }
-
-        // Replace with fixed version that inserts clean text
-        let replacement = """
-$A=$A.backspace()}/* PHTV Vietnamese IME fix v2 */let _phtv_clean=DA.replace(/\\x7f/g,'');if(_phtv_clean.length>0){for(const _phtv_c of _phtv_clean){$A=$A.insert(_phtv_c)}}if(!M.equals($A)){if(M.text!==$A.text)Q($A.text);N($A.offset)}_eA(),jeA();return
-"""
-
-        return regex.stringByReplacingMatches(in: content, options: [], range: range, withTemplate: replacement)
+        return modifiedContent
     }
 
     /// Get the path to Claude CLI's main JavaScript file

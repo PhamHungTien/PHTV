@@ -324,7 +324,10 @@ Mọi đóng góp đều được chào đón! Xem [CONTRIBUTING.md](CONTRIBUTIN
 
 PHTV được phát hành dưới giấy phép **[GPL v3.0](LICENSE)**.
 
-Dự án kế thừa và mở rộng engine từ **[OpenKey](https://github.com/tuyenvm/OpenKey)** của Mai Vũ Tuyên. Chân thành cảm ơn cộng đồng OpenKey đã tạo nền tảng tuyệt vời này.
+### Cảm ơn đặc biệt
+
+- **[OpenKey](https://github.com/tuyenvm/OpenKey)** — Mai Vũ Tuyên — Engine xử lý tiếng Việt
+- **[Claude Code Vietnamese Fix](https://github.com/manhit96/claude-code-vietnamese-fix)** — [Đinh Văn Mạnh](https://www.facebook.com/manhdv.pro) — Phương pháp patch Claude Code CLI
 
 ---
 
