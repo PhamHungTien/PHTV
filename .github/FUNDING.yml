@@ -1,10 +1,10 @@
 # GitHub Sponsors configuration
 
-# Link Ko-fi (Chỉ điền username)
+# Tài khoản GitHub chính thức
+github: [phamhungtien]
+
+# Link Ko-fi
 ko_fi: phamhungtien
 
-# Link PayPal (Chỉ điền username)
-paypal: phamhungtien1404
-
-# Link donate trên website cá nhân (Dùng custom)
-custom: ['https://phamhungtien.com/PHTV/#donate']
+# Link PayPal và website được đưa vào mục custom để luôn hiển thị rõ ràng
+custom: ['https://paypal.me/phamhungtien1404', 'https://phamhungtien.com/PHTV/#donate']
