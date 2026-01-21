@@ -862,3 +862,4 @@ show
 display
 warn
 telex
+emulator

@@ -228,7 +228,8 @@ def should_include_english_word(word):
         'ment', 'tion', 'sion', 'ness', 'able', 'ible',
         'ful', 'less', 'ity', 'ive', 'ous', 'ious',
         'ence', 'ance', 'ling', 'ward', 'wise', 'ship',
-        'dom', 'hood', 'ism', 'ist', 'ure', 'ture'
+        'dom', 'hood', 'ism', 'ist', 'ure', 'ture',
+        'ator', 'ing', 'ery', 'ory'
     ]
     for suffix in english_suffixes:
         if word_lower.endswith(suffix) and len(word_lower) > len(suffix) + 2:
