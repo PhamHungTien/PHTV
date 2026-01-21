@@ -342,6 +342,12 @@ void checkGrammar(const int& deltaBackSpace) {
     if (_index >= 2) {
         for (i = l; i <= VEI; i++) {
             if (TypingWord[i] & MARK_MASK) {
+                //check if new vowel is prolonged (same as previous vowel)
+                //e.g., "nữa" + "a" -> keep mark on "ữ", "nhé" + "e" -> keep mark on "é"
+                if (VEI >= 1 && CHR(VEI) == CHR(VEI - 1)) {
+                    //new vowel is same as previous, don't move mark
+                    break;
+                }
                 Uint32 mark = TypingWord[i] & MARK_MASK;
                 TypingWord[i] &= ~MARK_MASK;
                 insertMark(mark, false);
@@ -658,7 +664,23 @@ void handleModernMark() {
     //default
     VWSM = VEI;
     hBPC = (_index - VEI);
-    
+
+    //rule 1: prolonged vowels (e.g., "nhéee", "áaa") - keep mark on first vowel
+    if (vowelCount >= 2) {
+        bool allSame = true;
+        for (int k = VSI + 1; k <= VEI; k++) {
+            if (CHR(k) != CHR(VSI)) {
+                allSame = false;
+                break;
+            }
+        }
+        if (allSame && CHR(VSI) != KEY_O) { // exclude "oo" (thoòng)
+            VWSM = VSI;
+            hBPC = (_index - VWSM);
+            return;
+        }
+    }
+
     //rule 2
     if (vowelCount == 3 && ((CHR(VSI) == KEY_O && CHR(VSI+1) == KEY_A && CHR(VSI+2) == KEY_I) ||
                             (CHR(VSI) == KEY_U && CHR(VSI+1) == KEY_Y && CHR(VSI+2) == KEY_U) ||
@@ -759,13 +781,30 @@ void handleOldMark() {
     else
         VWSM = VSI;
     hBPC = (_index - VWSM);
-    
+
+    //rule 1: prolonged vowels (e.g., "nhéee", "áaa") - keep mark on first vowel
+    if (vowelCount >= 2) {
+        bool allSame = true;
+        for (int k = VSI + 1; k <= VEI; k++) {
+            if (CHR(k) != CHR(VSI)) {
+                allSame = false;
+                break;
+            }
+        }
+        if (allSame && CHR(VSI) != KEY_O) { // exclude "oo" (thoòng)
+            VWSM = VSI;
+            hBPC = (_index - VWSM);
+            hNCC = hBPC;
+            return;
+        }
+    }
+
     //rule 2
     if (vowelCount == 3 || (VEI + 1 < _index && IS_CONSONANT(CHR(VEI + 1)) && canHasEndConsonant())) {
         VWSM = VSI + 1;
         hBPC = _index - VWSM;
     }
-    
+
     //rule 3
     for (ii = VSI; ii <= VEI; ii++) {
         if ((CHR(ii) == KEY_E && TypingWord[ii] & TONE_MASK) || (CHR(ii) == KEY_O && TypingWord[ii] & TONEW_MASK)) {
@@ -774,7 +813,7 @@ void handleOldMark() {
             break;
         }
     }
-    
+
     hNCC = hBPC;
 }
 
@@ -860,10 +899,12 @@ void insertD(const Uint16& data, const bool& isCaps) {
 
 void insertAOE(const Uint16& data, const bool& isCaps) {
     findAndCalculateVowel();
-    
-    //remove W tone
+
+    //remove W tone (but preserve TONEW_MASK if vowel has tone mark - e.g., "nữa" + "a")
     for (ii = VSI; ii <= VEI; ii++) {
-        TypingWord[ii] &= ~TONEW_MASK;
+        if (!(TypingWord[ii] & MARK_MASK)) {
+            TypingWord[ii] &= ~TONEW_MASK;
+        }
     }
     
     hCode = vWillProcess;
@@ -898,12 +939,14 @@ void insertAOE(const Uint16& data, const bool& isCaps) {
 
 void insertW(const Uint16& data, const bool& isCaps) {
     isRestoredW = false;
-    
+
     findAndCalculateVowel();
-    
-    //remove ^ tone
+
+    //remove ^ tone (but preserve TONE_MASK if vowel has tone mark - e.g., "nhấn" + "a")
     for (ii = VSI; ii <= VEI; ii++) {
-        TypingWord[ii] &= ~TONE_MASK;
+        if (!(TypingWord[ii] & MARK_MASK)) {
+            TypingWord[ii] &= ~TONE_MASK;
+        }
     }
     
     if (vowelCount > 1) {
@@ -1191,6 +1234,21 @@ void handleMainKey(const Uint16& data, const bool& isCaps) {
         checkCorrectVowel(charset, i, k, data);
 
         if (isCorect) {
+            //check if any vowel has tone mark - don't convert "aa" to "â" in case like "nữa" + "a"
+            findAndCalculateVowel();
+            bool hasMarkedVowel = false;
+            for (int idx = VSI; idx <= VEI; idx++) {
+                if (TypingWord[idx] & MARK_MASK) {
+                    hasMarkedVowel = true;
+                    break;
+                }
+            }
+            if (hasMarkedVowel && IS_KEY_DOUBLE(data)) {
+                //don't convert, just insert the key
+                insertKey(data, isCaps);
+                break;
+            }
+
             isChanged = true;
             if (IS_KEY_DOUBLE(data)) {
                 insertAOE(keyForAEO, isCaps);
