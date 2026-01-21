@@ -867,15 +867,64 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         NSLog(@"DEBUG-POINT-ERROR: %@", exception);
     }
 
-    // Load hotkey settings from UserDefaults BEFORE initializing event tap
-    NSInteger savedHotkey = [[NSUserDefaults standardUserDefaults] integerForKey:@"SwitchKeyStatus"];
+    // Load ALL settings from UserDefaults BEFORE initializing event tap
+    // This ensures settings persist across restart/wake from sleep
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+
+    // Core input settings - CRITICAL for persistence across restart/wake
+    vLanguage = PHTVReadIntWithFallback(defaults, @"InputMethod", vLanguage);
+    vInputType = PHTVReadIntWithFallback(defaults, @"InputType", vInputType);
+    vCodeTable = PHTVReadIntWithFallback(defaults, @"CodeTable", vCodeTable);
+    NSLog(@"[AppDelegate] Loaded core settings: language=%d, inputType=%d, codeTable=%d", vLanguage, vInputType, vCodeTable);
+
+    // Spelling and orthography settings
+    vCheckSpelling = PHTVReadIntWithFallback(defaults, @"Spelling", vCheckSpelling);
+    vUseModernOrthography = PHTVReadIntWithFallback(defaults, @"ModernOrthography", vUseModernOrthography);
+    vQuickTelex = PHTVReadIntWithFallback(defaults, @"QuickTelex", vQuickTelex);
+    vRestoreIfWrongSpelling = PHTVReadIntWithFallback(defaults, @"RestoreIfInvalidWord", vRestoreIfWrongSpelling);
+    vFreeMark = PHTVReadIntWithFallback(defaults, @"FreeMark", vFreeMark);
+
+    // Macro settings
+    vUseMacro = PHTVReadIntWithFallback(defaults, @"UseMacro", vUseMacro);
+    vUseMacroInEnglishMode = PHTVReadIntWithFallback(defaults, @"UseMacroInEnglishMode", vUseMacroInEnglishMode);
+    vAutoCapsMacro = PHTVReadIntWithFallback(defaults, @"vAutoCapsMacro", vAutoCapsMacro);
+
+    // Typing behavior settings
+    vSendKeyStepByStep = PHTVReadIntWithFallback(defaults, @"SendKeyStepByStep", vSendKeyStepByStep);
+    vUseSmartSwitchKey = PHTVReadIntWithFallback(defaults, @"UseSmartSwitchKey", vUseSmartSwitchKey);
+    vUpperCaseFirstChar = PHTVReadIntWithFallback(defaults, @"UpperCaseFirstChar", vUpperCaseFirstChar);
+    vAllowConsonantZFWJ = PHTVReadIntWithFallback(defaults, @"vAllowConsonantZFWJ", vAllowConsonantZFWJ);
+    vQuickStartConsonant = PHTVReadIntWithFallback(defaults, @"vQuickStartConsonant", vQuickStartConsonant);
+    vQuickEndConsonant = PHTVReadIntWithFallback(defaults, @"vQuickEndConsonant", vQuickEndConsonant);
+    vRememberCode = PHTVReadIntWithFallback(defaults, @"vRememberCode", vRememberCode);
+    vPerformLayoutCompat = PHTVReadIntWithFallback(defaults, @"vPerformLayoutCompat", vPerformLayoutCompat);
+
+    // Restore to raw keys settings
+    vRestoreOnEscape = PHTVReadIntWithFallback(defaults, @"vRestoreOnEscape", vRestoreOnEscape);
+    vCustomEscapeKey = PHTVReadIntWithFallback(defaults, @"vCustomEscapeKey", vCustomEscapeKey);
+
+    // Pause key settings
+    vPauseKeyEnabled = PHTVReadIntWithFallback(defaults, @"vPauseKeyEnabled", vPauseKeyEnabled);
+    vPauseKey = PHTVReadIntWithFallback(defaults, @"vPauseKey", vPauseKey);
+
+    // Auto restore English word
+    vAutoRestoreEnglishWord = PHTVReadIntWithFallback(defaults, @"vAutoRestoreEnglishWord", vAutoRestoreEnglishWord);
+
+    // UI settings
+    vShowIconOnDock = PHTVReadIntWithFallback(defaults, @"vShowIconOnDock", vShowIconOnDock);
+
+    // Hotkey settings
+    NSInteger savedHotkey = [defaults integerForKey:@"SwitchKeyStatus"];
     if (savedHotkey != 0) {
         vSwitchKeyStatus = (int)savedHotkey;
         NSLog(@"[AppDelegate] Loaded hotkey from UserDefaults: 0x%X", vSwitchKeyStatus);
     } else {
         NSLog(@"[AppDelegate] No saved hotkey found, using default: 0x%X", vSwitchKeyStatus);
     }
-    // Memory barrier to ensure event tap thread sees the hotkey value
+
+    NSLog(@"[AppDelegate] All settings loaded from UserDefaults");
+
+    // Memory barrier to ensure event tap thread sees all values
     __sync_synchronize();
     
     // Observe Dark Mode changes
