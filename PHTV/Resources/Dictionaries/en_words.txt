@@ -18,6 +18,52 @@ overlay
 snackbar
 toast
 drawer
+case
+term
+follower
+base
+phase
+server
+user
+border
+this
+that
+with
+from
+into
+onto
+is
+the
+it
+in
+on
+at
+by
+for
+to
+of
+if
+as
+be
+are
+was
+were
+been
+have
+has
+had
+do
+does
+did
+will
+would
+shall
+should
+can
+could
+may
+might
+must
 accordion
 stepper
 progress
@@ -26,7 +72,6 @@ datepicker
 timepicker
 colorpicker
 textarea
-dropdown
 multiselect
 combobox
 listbox
@@ -70,7 +115,6 @@ vmware
 cisco
 visa
 mastercard
-square
 shopify
 spotify
 uber
@@ -165,7 +209,6 @@ mojo
 # macOS & iOS Apps
 finder
 siri
-safari
 messages
 photos
 music
@@ -173,12 +216,10 @@ podcasts
 weather
 notes
 reminders
-calendar
 books
 appstore
 systempreferences
 activitymonitor
-terminal
 automator
 shortcuts
 garageband
@@ -194,7 +235,6 @@ compass
 calculator
 voicememos
 files
-shortcuts
 freeform
 
 # Apple Operating Systems & Devices
@@ -231,7 +271,6 @@ gatekeeper
 codesign
 notarization
 appleseed
-testflight
 
 # Development Tools
 yarn
@@ -297,9 +336,7 @@ terraform
 chef
 packer
 render
-cloudflare
 workers
-pages
 vectorize
 hyperdrive
 queues
@@ -357,8 +394,6 @@ webex
 meet
 clubhouse
 spaces
-twitter
-facebook
 messenger
 
 # Productivity & Office
@@ -522,7 +557,6 @@ craft
 bear
 ulysses
 iawriter
-typora
 marktext
 
 # Developer Communities & Platforms
@@ -535,13 +569,11 @@ slashdot
 lobsters
 hacker
 noon
-freecodecamp
 geeksforgeeks
 tutorialspoint
 w3schools
 caniuse
 hackerearth
-topcoder
 codechef
 spoj
 oj
@@ -579,9 +611,6 @@ fontawesome
 heroicons
 feather
 phosphor
-radix
-headless
-daisyui
 flowbite
 hyper
 nextui
@@ -595,7 +624,6 @@ echarts
 highcharts
 amcharts
 altair
-threejs
 aframe
 playcanvas
 greensock
@@ -611,7 +639,6 @@ afp
 foxnews
 guardian
 times
-mirror
 huffpost
 buzzfeed
 vox
@@ -685,7 +712,6 @@ vauxhall
 ford
 chrysler
 jeep
-tesla
 polestar
 genesis
 geely
@@ -698,7 +724,6 @@ baojun
 usa
 america
 korea
-singapore
 indonesia
 philippines
 australia
@@ -712,7 +737,6 @@ denmark
 russia
 turkey
 israel
-qatar
 argentina
 mexico
 paris
@@ -738,7 +762,6 @@ houston
 boston
 denver
 dallas
-phoenix
 sanfrancisco
 lasvegas
 orlando
@@ -765,12 +788,10 @@ hoffman
 chesky
 murphy
 krieger
-houston
 arash
 ferdowsi
 collison
 moskovitz
-asana
 butterfield
 stewart
 torvalds
@@ -807,7 +828,6 @@ sandbox
 axie
 sorare
 starkware
-base
 blast
 celestia
 berachain
@@ -840,7 +860,5 @@ configure
 disable
 show
 display
-render
 warn
-error
 telex

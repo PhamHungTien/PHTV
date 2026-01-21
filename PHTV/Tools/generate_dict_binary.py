@@ -365,6 +365,11 @@ def build_vietnamese_dictionary(resources_dir, english_words=None):
 
     vietnamese_words = set()
 
+    # Blacklist: Invalid or rare Vietnamese words that conflict with English
+    blacklist_vi = {
+        'tẻm',   # Conflicts with 'term'
+    }
+
     # Add common Vietnamese single-syllable words that might be missing
     common_vi_words = [
         # Common words
@@ -427,7 +432,8 @@ def build_vietnamese_dictionary(resources_dir, english_words=None):
                     for word in parts:
                         word = word.strip()
                         if word and len(word) >= 1:
-                            vietnamese_words.add(word)
+                            if word not in blacklist_vi:
+                                vietnamese_words.add(word)
 
             print(f"  Loaded {len(vietnamese_words):,} Vietnamese words total")
             break  # Use first successful download
@@ -501,7 +507,10 @@ def cleanup_txt_files(resources_dir):
 
 def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    resources_dir = os.path.join(script_dir, '..', 'Resources')
+    resources_dir = os.path.join(script_dir, '..', 'Resources', 'Dictionaries')
+
+    if not os.path.exists(resources_dir):
+        resources_dir = os.path.join(script_dir, '..', 'Resources')
 
     print("="*60)
     print("PHTV Dictionary Generator")

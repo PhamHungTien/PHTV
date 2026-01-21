@@ -385,6 +385,20 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
 
             // Check Vietnamese dictionary without tone mark if starts with Vietnamese consonant OR vowel
             if ((isVietnameseConsonant || isVietnameseVowel) && searchBinaryTrie(vieNodes, idx, stateIndex - 1)) {
+                // EXCEPTION: If the whole word is in the English dictionary and is 4+ chars long,
+                // and the last key is not a pure tone mark (s,f,r,x,j), we allow it.
+                // This fixes conflicts like "case" (cá + e), "code" (có + e), etc.
+                if (stateIndex >= 4 && engNodes && searchBinaryTrie(engNodes, idx, stateIndex)) {
+                    bool isPureTone = (lastKey == KEY_S || lastKey == KEY_F || 
+                                     lastKey == KEY_R || lastKey == KEY_X || lastKey == KEY_J);
+                    if (!isPureTone) {
+                        #ifdef DEBUG
+                        fprintf(stderr, "[AutoEnglish] ALLOW: '%s' is a valid English word and not a pure tone conflict\n", wordBuf); fflush(stderr);
+                        #endif
+                        return true; 
+                    }
+                }
+
                 #ifdef DEBUG
                 // Build word without tone mark for debug message
                 char wordWithoutTone[32];
