@@ -233,7 +233,6 @@ struct MacroSettingsView: View {
                                     editingMacro = macro  // Setting this opens the sheet
                                 }
                             )
-                            .frame(height: 300)
                         }
                     }
                 }
@@ -682,22 +681,27 @@ struct MacroListView: View {
     var onEdit: ((MacroItem) -> Void)? = nil
 
     var body: some View {
-        List(macros, selection: $selectedMacro) { macro in
-            MacroRowView(
-                macro: macro,
-                category: categoryFor(macro),
-                isSelected: selectedMacro == macro.id,
-                isRecentlyAdded: macro.id == recentlyAddedId,
-                isRecentlyEdited: macro.id == recentlyEditedId,
-                onEdit: { onEdit?(macro) }
-            )
-            .transition(.asymmetric(
-                insertion: .scale(scale: 0.8).combined(with: .opacity),
-                removal: .scale(scale: 0.8).combined(with: .opacity)
-            ))
+        VStack(spacing: 4) {
+            ForEach(macros) { macro in
+                MacroRowView(
+                    macro: macro,
+                    category: categoryFor(macro),
+                    isSelected: selectedMacro == macro.id,
+                    isRecentlyAdded: macro.id == recentlyAddedId,
+                    isRecentlyEdited: macro.id == recentlyEditedId,
+                    onEdit: { onEdit?(macro) }
+                )
+                .onTapGesture {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        selectedMacro = macro.id
+                    }
+                }
+                .transition(.asymmetric(
+                    insertion: .scale(scale: 0.8).combined(with: .opacity),
+                    removal: .scale(scale: 0.8).combined(with: .opacity)
+                ))
+            }
         }
-        .listStyle(.inset(alternatesRowBackgrounds: true))
-        // Use count instead of map to avoid O(n) operation on every render
         .animation(.spring(response: 0.4, dampingFraction: 0.75), value: macros.count)
     }
 
@@ -717,45 +721,57 @@ struct MacroRowView: View {
 
     @State private var isHovering = false
 
+    private var rowColor: Color {
+        category?.swiftUIColor ?? .accentColor
+    }
+
     var body: some View {
         HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 6)
-                    .fill((category?.swiftUIColor ?? .blue).opacity(0.12))
-                    .frame(width: 32, height: 32)
+            // Icon with background - matching CategoryRowView style
+            Image(systemName: category?.icon ?? "text.badge.plus")
+                .font(.system(size: 14))
+                .foregroundStyle(rowColor)
+                .frame(width: 24, height: 24)
+                .background(
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(rowColor.opacity(0.15))
+                )
+                .scaleEffect(isRecentlyAdded ? 1.1 : 1.0)
+                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isRecentlyAdded)
 
-                Image(systemName: category?.icon ?? "text.badge.plus")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(category?.swiftUIColor ?? .blue)
-            }
-            .scaleEffect(isRecentlyAdded ? 1.1 : 1.0)
-            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isRecentlyAdded)
+            // Shortcut text
+            Text(macro.shortcut)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundStyle(.primary)
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text(macro.shortcut)
-                    .font(.body)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.primary)
+            // Arrow
+            Image(systemName: "arrow.right")
+                .font(.system(size: 10))
+                .foregroundStyle(.tertiary)
 
-                Text(macro.expansion)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
+            // Expansion text
+            Text(macro.expansion)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
 
             Spacer()
 
-            // Edit button - always visible but with different opacity
-            Button {
-                onEdit?()
-            } label: {
-                Image(systemName: "pencil.circle.fill")
-                    .font(.system(size: 18))
-                    .foregroundStyle(isHovering || isSelected ? Color.secondary : Color.clear)
+            // Edit button
+            if isHovering || isSelected {
+                Button {
+                    onEdit?()
+                } label: {
+                    Image(systemName: "pencil.circle.fill")
+                        .font(.system(size: 18))
+                        .foregroundStyle(Color.secondary)
+                }
+                .buttonStyle(.borderless)
+                .help("Sửa gõ tắt")
             }
-            .buttonStyle(.borderless)
-            .help("Sửa gõ tắt")
 
+            // Category badge
             if let cat = category {
                 Text(cat.name)
                     .font(.caption2)
@@ -767,108 +783,15 @@ struct MacroRowView: View {
                     )
             }
         }
-        .padding(.vertical, 4)
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
         .background(
-            Group {
-                if isRecentlyAdded {
-                    // Liquid glass effect for newly added items
-                    if #available(macOS 26.0, *) {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.green.opacity(0.08))
-                            .glassEffect(in: .rect(cornerRadius: 8))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .strokeBorder(
-                                        LinearGradient(
-                                            colors: [
-                                                .green.opacity(0.6),
-                                                .green.opacity(0.3)
-                                            ],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ),
-                                        lineWidth: 1.5
-                                    )
-                            )
-                            .shadow(color: .green.opacity(0.3), radius: 8, x: 0, y: 2)
-                    } else {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(.green.opacity(0.08))
-                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
-
-                            RoundedRectangle(cornerRadius: 8)
-                                .strokeBorder(
-                                    LinearGradient(
-                                        colors: [
-                                            .green.opacity(0.6),
-                                            .green.opacity(0.3)
-                                        ],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 1.5
-                                )
-                                .shadow(color: .green.opacity(0.3), radius: 8, x: 0, y: 2)
-                        }
-                    }
-                } else if isRecentlyEdited {
-                    // Liquid glass effect for edited items
-                    if #available(macOS 26.0, *) {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.blue.opacity(0.08))
-                            .glassEffect(in: .rect(cornerRadius: 8))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .strokeBorder(
-                                        LinearGradient(
-                                            colors: [
-                                                .blue.opacity(0.6),
-                                                .blue.opacity(0.3)
-                                            ],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ),
-                                        lineWidth: 1.5
-                                    )
-                            )
-                            .shadow(color: .blue.opacity(0.3), radius: 8, x: 0, y: 2)
-                    } else {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(.blue.opacity(0.08))
-                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
-
-                            RoundedRectangle(cornerRadius: 8)
-                                .strokeBorder(
-                                    LinearGradient(
-                                        colors: [
-                                            .blue.opacity(0.6),
-                                            .blue.opacity(0.3)
-                                        ],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 1.5
-                                )
-                                .shadow(color: .blue.opacity(0.3), radius: 8, x: 0, y: 2)
-                        }
-                    }
-                } else if isHovering {
-                    // Subtle glass effect on hover
-                    if #available(macOS 26.0, *) {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.primary.opacity(0.03))
-                            .glassEffect(in: .rect(cornerRadius: 8))
-                    } else {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.primary.opacity(0.03))
-                            .background(.ultraThinMaterial.opacity(0.5), in: RoundedRectangle(cornerRadius: 8))
-                    }
-                }
-            }
-            .animation(.easeInOut(duration: 0.2), value: isHovering)
+            RoundedRectangle(cornerRadius: 8)
+                .fill(backgroundColor)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(borderColor, lineWidth: borderWidth)
         )
         .contentShape(Rectangle())
         .onHover { hovering in
@@ -876,6 +799,34 @@ struct MacroRowView: View {
                 isHovering = hovering
             }
         }
+    }
+
+    private var backgroundColor: Color {
+        if isRecentlyAdded {
+            return .green.opacity(0.12)
+        } else if isRecentlyEdited {
+            return .blue.opacity(0.12)
+        } else if isSelected {
+            return rowColor.opacity(0.12)
+        } else {
+            return .clear
+        }
+    }
+
+    private var borderColor: Color {
+        if isRecentlyAdded {
+            return .green.opacity(0.3)
+        } else if isRecentlyEdited {
+            return .blue.opacity(0.3)
+        } else if isSelected {
+            return rowColor.opacity(0.3)
+        } else {
+            return .clear
+        }
+    }
+
+    private var borderWidth: CGFloat {
+        (isRecentlyAdded || isRecentlyEdited || isSelected) ? 1 : 0
     }
 }
 
