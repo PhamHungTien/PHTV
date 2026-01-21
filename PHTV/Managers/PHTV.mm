@@ -378,10 +378,9 @@ extern "C" {
                                                      @"com.sublimetext.2"]];
 
     //app which error with unicode Compound - Using NSSet for O(1) lookup performance
+    // NOTE: Safari is NOT included here - it works fine with standard SendEmptyCharacter+Backspace
+    // Only Chromium-based browsers need special Unicode Compound handling
     NSSet* _unicodeCompoundAppSet = [NSSet setWithArray:@[@"com.apple.",
-                                                           // Safari (WebKit)
-                                                           @"com.apple.Safari",
-                                                           @"com.apple.SafariTechnologyPreview",
                                                            @"com.google.Chrome",
                                                            @"com.brave.Browser",
                                                            @"com.microsoft.edgemac",  // Edge Stable
@@ -2612,33 +2611,32 @@ extern "C" {
                 // This conflicts with macOS Text Replacement feature
                 // SendEmptyCharacter is only needed for Vietnamese character keys, NOT for break keys
                 if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE && !isPotentialShortcut) {
-                    // Safari: Use Shift+Left for ALL pages EXCEPT Google Docs/Sheets (Shift+Left causes char loss there)
-                    // Chromium browsers: Use Shift+Left strategy (fixes Facebook, Messenger)
-                    BOOL isSafariExcludingGoogleDocs = appChars.isSafari && ![PHTVSpotlightManager isSafariGoogleDocsOrSheets];
-                    BOOL useShiftLeft = (isSafariExcludingGoogleDocs || appChars.containsUnicodeCompound) && pData->backspaceCount > 0;
+                    // Chromium browsers: Use Shift+Left strategy (fixes Facebook, Messenger duplicate chars)
+                    // Safari & Firefox: Use SendEmptyCharacter (standard approach, works well)
+                    BOOL useShiftLeft = appChars.containsUnicodeCompound && pData->backspaceCount > 0;
 
                     if (useShiftLeft) {
-                        // Safari (except Google Docs) & Chromium "Select + Immediate Delete" strategy
+                        // Chromium "Select + Immediate Delete" strategy
                         // SendShiftAndLeftArrow already pops _syncKey once
                         // So we use SendPhysicalBackspace (not SendBackspace) to avoid double-pop
 #ifdef DEBUG
-                        NSLog(@"[PHTV Browser] Using Shift+Left strategy: backspaceCount=%d, isSafari=%d, isChromium=%d, app=%@",
-                              (int)pData->backspaceCount, appChars.isSafari, appChars.containsUnicodeCompound, getFocusedAppBundleId());
+                        NSLog(@"[PHTV Browser] Using Shift+Left strategy: backspaceCount=%d, isChromium=%d, app=%@",
+                              (int)pData->backspaceCount, appChars.containsUnicodeCompound, getFocusedAppBundleId());
 #endif
                         SendShiftAndLeftArrow();      // Select the character (_syncKey.pop_back)
                         SendPhysicalBackspace();      // Delete selection (no _syncKey modification)
                         pData->backspaceCount--;      // We already deleted one character
                         // If backspaceCount > 0, additional backspaces will be sent later
-                    } else if (!appChars.containsUnicodeCompound) {
-                        // Safari Google Docs/Sheets and Firefox use SendEmptyCharacter
+                    } else {
+                        // Safari, Firefox, and other browsers use SendEmptyCharacter
+                        // This is the standard approach that works well for most browsers
 #ifdef DEBUG
-                        NSLog(@"[PHTV Browser] Using SendEmptyCharacter (GoogleDocs/Firefox): backspaceCount=%d, isSafari=%d, app=%@",
-                              (int)pData->backspaceCount, appChars.isSafari, getFocusedAppBundleId());
+                        NSLog(@"[PHTV Browser] Using SendEmptyCharacter: backspaceCount=%d, app=%@",
+                              (int)pData->backspaceCount, getFocusedAppBundleId());
 #endif
                         SendEmptyCharacter();
                         pData->backspaceCount++;
                     }
-                    // Chromium with backspaceCount=0: Skip, let normal processing handle it
                 }
 #ifdef DEBUG
                 if (_keycode == KEY_SPACE && vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp) {
