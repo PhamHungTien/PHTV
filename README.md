@@ -278,7 +278,7 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 
 ### Core
 - **Swift 6.0** + **SwiftUI** - Giao diện native hiện đại
-- **C++** - Engine xử lý input (từ OpenKey)
+- **C/C++** - Engine xử lý input (từ OpenKey)
 - **CGEvent API** - Event interception và xử lý bàn phím
 - **Accessibility API** - Hỗ trợ Spotlight và các app đặc biệt
 - **NSUserDefaults** - Lưu trữ cấu hình local
