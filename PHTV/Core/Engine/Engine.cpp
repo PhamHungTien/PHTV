@@ -318,6 +318,7 @@ void checkGrammar(const int& deltaBackSpace) {
         return;
     
     isCheckedGrammar = false;
+    int localDelta = deltaBackSpace;
     
     l = VSI;
     
@@ -335,6 +336,36 @@ void checkGrammar(const int& deltaBackSpace) {
                     }
                 }
             }
+        }
+    }
+    
+    // Retroactive fix for blocked vowel doubling (prolonged -> diphthong/triphthong)
+    // Fixes: "xuaats" (xuất), "suaast" (suất), "chuaarn" (chuẩn), "trịeet" (triệt)
+    // Converts V V consonant -> V^ consonant (e.g. aa -> â, ee -> ê)
+    if (_index >= 3 && IS_CONSONANT(CHR(_index-1))) {
+        Uint16 v2 = CHR(_index-2);
+        Uint16 v1 = CHR(_index-3);
+        
+        if (v2 == v1 && (v2 == KEY_A || v2 == KEY_E || v2 == KEY_O)) {
+             // Combine marks from both characters (if any)
+             Uint32 mark = (TypingWord[_index-2] & MARK_MASK) | (TypingWord[_index-3] & MARK_MASK);
+             
+             // Apply hat to v1 (convert a->â, e->ê, o->ô)
+             TypingWord[_index-3] |= TONE_MASK;
+             
+             // Apply combined mark to v1
+             TypingWord[_index-3] = (TypingWord[_index-3] & ~MARK_MASK) | mark;
+             
+             // Remove v2
+             for (int k = _index - 2; k < _index - 1; k++) {
+                 TypingWord[k] = TypingWord[k+1];
+             }
+             _index--;
+             localDelta++; // Compensate for length reduction
+             isCheckedGrammar = true;
+             
+             // Update l to ensure we resend the modified vowel
+             if (_index-3 < l) l = _index-3;
         }
     }
     
@@ -363,7 +394,7 @@ void checkGrammar(const int& deltaBackSpace) {
             hData[_index - 1 - i] = GET(TypingWord[i]);
         }
         hNCC = hBPC;
-        hBPC += deltaBackSpace;
+        hBPC += localDelta;
         hExt = 4;
     }
 }
@@ -505,9 +536,26 @@ void checkCorrectVowel(vector<vector<Uint16>>& charset, int& i, int& k, const Ui
             isCorect = false;
             return;
         }
+        
+        // Match found. Smart skip for prolonged vowels.
+        // If the NEXT charset char (j-1) is DIFFERENT from current,
+        // we consume all identical input chars (e.g. uaa -> match a, consume all a's).
+        // If it is SAME (e.g. oo -> match o, next is o), we DO NOT consume,
+        // leaving the previous o for the next step.
+        Uint16 currentMatched = CHR(k);
         k--;
-        if (k < 0)
-            break;
+        
+        bool nextInCharsetIsSame = (j > 0) && (charset[i][j-1] == charset[i][j]);
+        if (!nextInCharsetIsSame) {
+            while (k >= 0 && CHR(k) == currentMatched) {
+                k--;
+            }
+        }
+        
+        if (k < 0 && j > 0) { // Run out of input but charset has more
+             isCorect = false;
+             return;
+        }
     }
     
     //limit mark for end consonant: "C", "T"
@@ -519,11 +567,7 @@ void checkCorrectVowel(vector<vector<Uint16>>& charset, int& i, int& k, const Ui
         }
     }
     
-    if (isCorect && k >= 0) {
-        if (CHR(k) == CHR(k+1)) {
-            isCorect = false;
-        }
-    }
+    // Removed strict prolonged check (CHR(k) == CHR(k+1)) to allow "xuaa" etc.
 }
 
 Uint32 getCharacterCode(const Uint32& data) {
@@ -655,26 +699,16 @@ bool canHasEndConsonant() {
 }
 
 void handleModernMark() {
+    // Prolonged vowel adjustment: treat repeated identical vowels at the end as one
+    // for the purpose of mark placement rules.
+    while (VEI > VSI && CHR(VEI) == CHR(VEI - 1)) {
+        VEI--;
+        vowelCount--;
+    }
+
     //default
     VWSM = VEI;
     hBPC = (_index - VEI);
-    
-    //Fix for prolonged vowels (e.g. "nhéee", "áaa")
-    //If all vowels are the same character (except 'o'), keep mark on the first one
-    if (vowelCount >= 2) {
-        bool allSame = true;
-        for (int k = VSI + 1; k <= VEI; k++) {
-            if (CHR(k) != CHR(VSI)) {
-                allSame = false;
-                break;
-            }
-        }
-        if (allSame && CHR(VSI) != KEY_O) {
-            VWSM = VSI;
-            hBPC = (_index - VWSM);
-            return;
-        }
-    }
     
     //rule 2
     if (vowelCount == 3 && ((CHR(VSI) == KEY_O && CHR(VSI+1) == KEY_A && CHR(VSI+2) == KEY_I) ||
@@ -770,29 +804,18 @@ void handleModernMark() {
 }
 
 void handleOldMark() {
+    // Prolonged vowel adjustment
+    while (VEI > VSI && CHR(VEI) == CHR(VEI - 1)) {
+        VEI--;
+        vowelCount--;
+    }
+
     //default
     if (vowelCount == 0 && CHR(VEI) == KEY_I)
         VWSM = VEI;
     else
         VWSM = VSI;
     hBPC = (_index - VWSM);
-    
-    //Fix for prolonged vowels (e.g. "nhéee", "áaa")
-    //If all vowels are the same character (except 'o'), keep mark on the first one
-    if (vowelCount >= 2) {
-        bool allSame = true;
-        for (int k = VSI + 1; k <= VEI; k++) {
-            if (CHR(k) != CHR(VSI)) {
-                allSame = false;
-                break;
-            }
-        }
-        if (allSame && CHR(VSI) != KEY_O) {
-            VWSM = VSI;
-            hBPC = (_index - VWSM);
-            return;
-        }
-    }
     
     //rule 2
     if (vowelCount == 3 || (VEI + 1 < _index && IS_CONSONANT(CHR(VEI + 1)) && canHasEndConsonant())) {
@@ -1227,6 +1250,65 @@ void handleMainKey(const Uint16& data, const bool& isCaps) {
         if (isCorect) {
             isChanged = true;
             if (IS_KEY_DOUBLE(data)) {
+                // 1. Block doubling if ANY char in the vowel cluster has a Tone Mark (sắc, huyền...)
+                // Fixes: "của" + "a" -> "cuẩ", "chào" + "o" -> "chaồ", "dứa" + "a" -> "duấ"
+                bool hasMark = false;
+                for (int m = _index - 1; m >= 0; m--) {
+                    if (IS_CONSONANT(CHR(m))) break; // Stop at consonant
+                    if (TypingWord[m] & MARK_MASK) {
+                        hasMark = true;
+                        break;
+                    }
+                }
+                
+                if (hasMark) {
+                    isChanged = false;
+                    break;
+                }
+
+                // 2. Check for invalid diphthong logic (prevent doubling if creates invalid pair)
+                // First, find the ACTUAL index of the char being doubled (scan back for keyForAEO)
+                int idx = -1;
+                for (int m = _index - 1; m >= 0; m--) {
+                    // Match the character code (ignoring marks)
+                    if (CHR(m) == keyForAEO) {
+                        idx = m;
+                        break;
+                    }
+                    if (IS_CONSONANT(CHR(m))) break; // Don't scan past consonants
+                }
+
+                bool blockDoubling = false;
+                if (idx > 0 && !IS_CONSONANT(CHR(idx - 1))) {
+                    Uint32 v1 = TypingWord[idx - 1];
+                    Uint16 v1Key = v1 & CHAR_MASK;
+                    
+                    // Check if v1 has TONEW (ư, ơ) or TONE (â, ê, ô)
+                    bool hasTone = (v1 & (TONE_MASK | TONEW_MASK));
+                    
+                    // Detect pure u, i, y (no hook/hat)
+                    bool isPureU = (v1Key == KEY_U && !hasTone);
+                    bool isPureI = (v1Key == KEY_I && !hasTone);
+                    bool isPureY = (v1Key == KEY_Y && !hasTone);
+
+                    if (keyForAEO == KEY_A) { // Target â
+                        if (!isPureU) {
+                            blockDoubling = true; // Block ư+aa (chưaa), o+aa, etc.
+                        } 
+                        // ALLOW pure u + aa -> uâ (e.g. "chua" + "a" -> "chuâ", "tuân").
+                        // User explicitly requested "chuaa" -> "chuâ".
+                    } else if (keyForAEO == KEY_O) { // Target ô
+                        if (!isPureU) blockDoubling = true; // Block a+oo, e+oo. Allow u+oo (muôn).
+                    } else if (keyForAEO == KEY_E) { // Target ê
+                        // Allow i, u, y (iê, uê, yê). Block others.
+                        if (!isPureU && !isPureI && !isPureY) blockDoubling = true;
+                    }
+                }
+                
+                if (blockDoubling) {
+                    isChanged = false; // Fallback to normal insert
+                    break;
+                }
                 insertAOE(keyForAEO, isCaps);
             } else if (IS_KEY_W(data)) {
                 if (vInputType == vVNI) {
