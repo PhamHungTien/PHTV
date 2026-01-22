@@ -2560,7 +2560,13 @@ extern "C" {
             pid_t eventTargetPID = (pid_t)CGEventGetIntegerValueField(event, kCGEventTargetUnixProcessID);
             NSString *eventTargetBundleId = (eventTargetPID > 0) ? getBundleIdFromPID(eventTargetPID) : nil;
             NSString *focusedBundleId = getFocusedAppBundleId();
-            BOOL spotlightActive = isSpotlightActive();
+            
+            // OPTIMIZATION: If the event target is explicitly a browser, skip isSpotlightActive() check.
+            // Browsers (Edge, Chrome) on homepage/search box are heavy web elements, AX calls can lag/timeout.
+            // We assume if you are typing into a browser process, you are NOT in Spotlight overlay.
+            BOOL isTargetBrowser = (eventTargetBundleId != nil && [_browserAppSet containsObject:eventTargetBundleId]);
+            BOOL spotlightActive = !isTargetBrowser && isSpotlightActive();
+            
             NSString *effectiveBundleId = (spotlightActive && focusedBundleId != nil) ? focusedBundleId : (eventTargetBundleId ?: focusedBundleId);
 
             // PERFORMANCE: Cache app characteristics once per callback
@@ -2573,7 +2579,7 @@ extern "C" {
             // BROWSER FIX: Browsers (Chromium, Safari, Firefox, etc.) don't support 
             // HID tap posting or AX API for their address bar autocomplete.
             // When spotlightActive=true on a browser address bar, we should NOT use Spotlight-style handling.
-            BOOL isBrowser = [_browserAppSet containsObject:effectiveBundleId];
+            BOOL isBrowser = isTargetBrowser || [_browserAppSet containsObject:effectiveBundleId];
             _phtvPostToHIDTap = (!isBrowser && spotlightActive) || appChars.isSpotlightLike;
             
             _phtvKeyboardType = CGEventGetIntegerValueField(event, kCGKeyboardEventKeyboardType);
