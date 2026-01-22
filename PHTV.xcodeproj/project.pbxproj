@@ -121,6 +121,7 @@
 		F1A1A1EB2025130100000045 /* ConvertToolView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1EC2025130100000046 /* ConvertToolView.swift */; };
 		F1A1A1ED2025130100000047 /* MacroCategoryEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A1A1EE2025130100000048 /* MacroCategoryEditorView.swift */; };
 		F28A6AB4C40769F607E59F7B /* VietnameseTextUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9A75B12CBD76A680F99BAC0 /* VietnameseTextUtilities.swift */; };
+		ONBOARDING01202513000001 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ONBOARDING01202513000002 /* OnboardingView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -282,6 +283,7 @@
 		FABD3529F8FFC83F017377CB /* StickerOnlyView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StickerOnlyView.swift; sourceTree = "<group>"; };
 		FE0F76B39F1FB9FB8C382332 /* AppModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppModels.swift; sourceTree = "<group>"; };
 		FF1BC147D8354623929675A1 /* AppListsState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppListsState.swift; sourceTree = "<group>"; };
+		ONBOARDING01202513000002 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -624,8 +626,17 @@
 				F1A1A1C22025130000000018 /* StatusBarMenuView.swift */,
 				F1A1A2AC2025130100000035 /* Settings */,
 				F1A1A2AD2025130100000036 /* Components */,
+				ONBOARDING01202513000004 /* Onboarding */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		ONBOARDING01202513000004 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				ONBOARDING01202513000002 /* OnboardingView.swift */,
+			);
+			path = Onboarding;
 			sourceTree = "<group>";
 		};
 		F1A1A2A92025130000000019 /* Controllers */ = {
@@ -878,6 +889,7 @@
 				AB3EE4AF43F64525BCFCE06A /* AppListsState.swift in Sources */,
 				24999C8F7B5E4738863DF5ED /* Constants.swift in Sources */,
 				DECF49E1A8EDA7C0FA6D7030 /* TCCResetInstructionsView.swift in Sources */,
+				ONBOARDING01202513000001 /* OnboardingView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -21,6 +21,7 @@ struct SystemSettingsView: View {
     @State private var showError = false
     @State private var showSuccess = false
     @State private var successMessage = ""
+    @State private var showOnboarding = false
 
     var body: some View {
         ScrollView {
@@ -267,6 +268,18 @@ struct SystemSettingsView: View {
                 SettingsCard(title: "Quản lý dữ liệu", icon: "externaldrive.fill") {
                     VStack(spacing: 0) {
                         SettingsButtonRow(
+                            icon: "book.fill",
+                            iconColor: .accentColor,
+                            title: "Xem hướng dẫn",
+                            subtitle: "Xem lại màn hình giới thiệu PHTV",
+                            action: {
+                                showOnboarding = true
+                            }
+                        )
+
+                        SettingsDivider()
+
+                        SettingsButtonRow(
                             icon: "square.and.arrow.up.fill",
                             iconColor: .accentColor,
                             title: "Xuất cài đặt",
@@ -370,6 +383,10 @@ struct SystemSettingsView: View {
             Button("OK") {}
         } message: {
             Text(successMessage)
+        }
+        .sheet(isPresented: $showOnboarding) {
+            OnboardingView(isPresented: $showOnboarding)
+                .environmentObject(appState)
         }
         // showNoUpdateAlert removed - now handled by AppDelegate with NSAlert directly
         // This allows the alert to show even when settings window is not open

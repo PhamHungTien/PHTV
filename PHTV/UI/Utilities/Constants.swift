@@ -77,6 +77,9 @@ enum UserDefaultsKey {
 
     // MARK: - Debug
     static let liveDebug = "PHTV_LIVE_DEBUG"
+
+    // MARK: - Onboarding
+    static let onboardingCompleted = "PHTV_OnboardingCompleted"
 }
 
 // MARK: - Notification Names

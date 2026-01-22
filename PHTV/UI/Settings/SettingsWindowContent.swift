@@ -12,14 +12,17 @@ import AppKit
 struct SettingsWindowContent: View {
     @EnvironmentObject var appState: AppState
     @State private var deactivationObserver: Any?
+    @State private var showOnboarding: Bool = false
 
     var body: some View {
-        ZStack(alignment: .top) {
-            SettingsView()
+        OnboardingContainer(showOnboarding: $showOnboarding) {
+            ZStack(alignment: .top) {
+                SettingsView()
 
-            // Update banner overlay
-            UpdateBannerView()
-                .zIndex(1000)
+                // Update banner overlay
+                UpdateBannerView()
+                    .zIndex(1000)
+            }
         }
         .onAppear {
             // Show dock icon when settings window opens
@@ -69,6 +72,9 @@ struct SettingsWindowContent: View {
             // FIX: Add observer to keep settings window visible when app loses focus
             // This prevents the window from hiding in accessory mode
             setupDeactivationObserver()
+
+            // Check if onboarding should be shown (first launch)
+            checkAndShowOnboarding()
         }
         .onDisappear {
             // Restore dock icon to user preference when settings closes
@@ -116,6 +122,19 @@ struct SettingsWindowContent: View {
                         window.hidesOnDeactivate = false
                         break
                     }
+                }
+            }
+        }
+    }
+
+    /// Check if onboarding should be shown (first time user)
+    private func checkAndShowOnboarding() {
+        let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: UserDefaultsKey.onboardingCompleted)
+        if !hasCompletedOnboarding {
+            // Small delay to ensure window is fully loaded
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    showOnboarding = true
                 }
             }
         }
