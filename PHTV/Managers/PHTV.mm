@@ -2713,6 +2713,11 @@ extern "C" {
                 
                 BOOL isBrowserFix = vFixRecommendBrowser && isBrowserApp;
                 
+                // Allow Browser Fix for KEY_SPACE if there is backspace count (restoring word)
+                // This fixes "play" -> "pplay" bug where standard backspace fails in address bar on Space key
+                BOOL isSpaceRestore = (_keycode == KEY_SPACE && pData->backspaceCount > 0);
+                BOOL shouldSkipSpace = (_keycode == KEY_SPACE && !isSpaceRestore);
+                
                 if (isBrowserFix && pData->extCode != 4 && !isSpecialApp && !shouldSkipSpace && !isPotentialShortcut) {
                     if (pData->backspaceCount > 0) {
                         // DETECT ADDRESS BAR:
