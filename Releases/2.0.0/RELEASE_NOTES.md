@@ -12,13 +12,14 @@ PHTV 2.0 giới thiệu thuật toán xử lý "Lai" (Hybrid Logic) kết hợp 
 *   **Trong Google Sheets, Docs, Facebook:** Bộ gõ nhận diện chính xác vùng soạn thảo nội dung và chuyển sang chế độ **"An toàn tuyệt đối"**. Cam kết 100% không còn lỗi xóa nhầm văn bản ("iệt Nam") hay lỗi nhảy con trỏ lung tung.
 *   **Đột phá trên Safari:** Xử lý triệt để vấn đề nhận diện sai trong Safari nhờ khả năng phân tích cấu trúc Accessibility sâu, đảm bảo Google Sheets trên Safari mượt mà như ứng dụng Native.
 
-#### 2. Hoàn thiện tính năng "Phụ âm ngoài"
+#### 2. Trải nghiệm người dùng hoàn toàn mới (New Onboarding)
+*   **Giao diện chào mừng hiện đại:** Thiết kế lại toàn bộ quy trình thiết lập ban đầu theo phong cách Wizard từng bước, trực quan và dễ hiểu hơn bao giờ hết.
+*   **Thiết lập nhanh chóng:** Hướng dẫn người dùng chọn kiểu gõ (Telex/VNI), bật các tính năng quan trọng và cấp quyền hệ thống chỉ trong vài cú nhấp chuột.
+*   **Visual ấn tượng:** Sử dụng các thẻ (Cards) lớn, icon minh họa rõ ràng và hiệu ứng chuyển cảnh mượt mà, mang lại cảm giác chuyên nghiệp ngay từ lần đầu mở ứng dụng.
+
+#### 3. Hoàn thiện tính năng "Phụ âm ngoài"
 *   Xử lý dấu thanh điệu chuẩn xác cho các phụ âm vay mượn (Z, F, W, J).
 *   Giờ đây bạn có thể gõ mượt mà: *Zuj → Zụ, Zif → Zì, Zaayj → Zậ* mà không gặp bất kỳ trở ngại nào.
-
-#### 3. Trải nghiệm người dùng mới (New Onboarding)
-*   Giao diện chào mừng và thiết lập ban đầu được thiết kế lại hoàn toàn: Đẹp mắt, trực quan và dễ hiểu.
-*   Hướng dẫn người dùng cấp quyền và tùy chọn kiểu gõ (Telex/VNI) ngay từ lần mở đầu tiên.
 
 ### 🛡 An toàn & Hiệu năng
 *   **Chốt chặn an toàn (Safety Valve):** Hệ thống tự động giới hạn số lượng ký tự xóa tối đa trong một lần xử lý (15 ký tự). Dữ liệu của bạn luôn được bảo vệ an toàn khỏi các lỗi logic tiềm ẩn.
