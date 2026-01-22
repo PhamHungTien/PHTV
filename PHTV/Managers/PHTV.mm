@@ -1823,13 +1823,18 @@ extern "C" {
             pData->backspaceCount++;
         }
 
+        //send real data - use step by step for timing sensitive apps like Spotlight
+        BOOL useStepByStep = vSendKeyStepByStep || needsStepByStep(effectiveTarget);
+
         //send backspace
         if (pData->backspaceCount > 0) {
             SendBackspaceSequence(pData->backspaceCount, NO);
+            // FIX: Add delay after backspace for web apps (Google Sheets) to process DOM updates
+            if (useStepByStep) {
+                usleep(5000); // 5ms delay
+            }
         }
 
-        //send real data - use step by step for timing sensitive apps like Spotlight
-        BOOL useStepByStep = vSendKeyStepByStep || needsStepByStep(effectiveTarget);
         if (!useStepByStep) {
             SendNewCharString(true);
         } else {
@@ -1839,6 +1844,9 @@ extern "C" {
                 } else {
                     SendKeyCode(pData->macroData[i]);
                 }
+                // FIX: Add micro-delay between keys for Google Sheets/Browsers
+                // Prevents character dropping/swapping race conditions
+                usleep(2000); // 2ms delay
             }
         }
 
