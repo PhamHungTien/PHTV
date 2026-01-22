@@ -754,20 +754,27 @@ extern "C" {
         return YES;
     }
 
+    // Address Bar Cache
+    static BOOL _lastAddressBarResult = NO;
+    static uint64_t _lastAddressBarCheckTime = 0;
+
+    static void InvalidateAddressBarCache(void) {
+        _lastAddressBarCheckTime = 0;
+        _lastAddressBarResult = NO;
+    }
+
     // Check if the focused element is likely an address bar (TextField)
     // Cached to avoid excessive AX calls
     static BOOL isFocusedElementAddressBar(void) {
         if (vSafeMode) return NO;
-
-        static BOOL _lastResult = NO;
-        static uint64_t _lastCheckTime = 0;
         
         uint64_t now = mach_absolute_time();
-        uint64_t elapsed_ms = mach_time_to_ms(now - _lastCheckTime);
+        uint64_t elapsed_ms = mach_time_to_ms(now - _lastAddressBarCheckTime);
         
-        // Cache valid for 500ms (enough for a typing burst)
-        if (_lastCheckTime > 0 && elapsed_ms < 500) {
-            return _lastResult;
+        // Cache valid for 3000ms (enough for a typing burst and thinking pauses)
+        // We invalidate this cache on mouse clicks (RequestNewSession), so it's safe to keep longer
+        if (_lastAddressBarCheckTime > 0 && elapsed_ms < 3000) {
+            return _lastAddressBarResult;
         }
 
         BOOL isAddressBar = NO;
@@ -819,8 +826,8 @@ extern "C" {
         }
         CFRelease(systemWide);
         
-        _lastResult = isAddressBar;
-        _lastCheckTime = now;
+        _lastAddressBarResult = isAddressBar;
+        _lastAddressBarCheckTime = now;
         return isAddressBar;
     }
 
@@ -1067,6 +1074,9 @@ extern "C" {
     }
     
     void RequestNewSession() {
+        // Reset Address Bar cache on new session (often triggered by mouse click/focus change)
+        InvalidateAddressBarCache();
+
         // Acquire barrier: ensure we see latest config changes before processing
         __atomic_thread_fence(__ATOMIC_ACQUIRE);
 
