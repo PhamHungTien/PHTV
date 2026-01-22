@@ -2713,7 +2713,7 @@ extern "C" {
                 
                 BOOL isBrowserFix = vFixRecommendBrowser && isBrowserApp;
                 
-                if (isBrowserFix && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE && !isPotentialShortcut) {
+                if (isBrowserFix && pData->extCode != 4 && !isSpecialApp && !shouldSkipSpace && !isPotentialShortcut) {
                     if (pData->backspaceCount > 0) {
                         // DETECT ADDRESS BAR:
                         // Use accurate AX API check (cached) instead of unreliable spotlightActive
@@ -2721,9 +2721,13 @@ extern "C" {
 #ifdef DEBUG
                             NSLog(@"[PHTV Browser] Address Bar Detected (AX) -> Using Shift+Left: backspaceCount=%d", (int)pData->backspaceCount);
 #endif
-                            SendShiftAndLeftArrow();
-                            SendPhysicalBackspace();
-                            pData->backspaceCount--;
+                            // LOOP FIX: Send Shift+Left for ALL characters that need to be deleted
+                            // This ensures the entire word is replaced, fixing "play" -> "pplay"
+                            while (pData->backspaceCount > 0) {
+                                SendShiftAndLeftArrow();
+                                SendPhysicalBackspace();
+                                pData->backspaceCount--;
+                            }
                         } else {
                             // Content Mode (Sheets, Docs, Forms)
                             // Do nothing here, let standard SendBackspaceSequence handle it below.
