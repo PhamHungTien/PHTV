@@ -2617,41 +2617,41 @@ extern "C" {
                 
                 // fix autocomplete - Unified browser fix strategy
                 // CRITICAL FIX: NEVER send empty character for SPACE key!
-                // This conflicts with macOS Text Replacement feature
-                // SendEmptyCharacter is only needed for Vietnamese character keys, NOT for break keys
-                //
-                // HYBRID BROWSER FIX (Address Bar vs Content):
-                // 1. Address Bar (spotlightActive=YES): NEEDS vFixRecommendBrowser to prevent character duplication (aa, dd).
-                // 2. Content/Sheets (spotlightActive=NO): MUST DISABLE vFixRecommendBrowser to prevent "iệt Nam" deletion bug.
-                //
-                // We define "Browser Content" as a Browser App where Spotlight (AXTextField) is NOT active.
-                BOOL isBrowserContent = isBrowserApp && !spotlightActive && !appChars.isSpotlightLike;
-                BOOL shouldSkipFix = isBrowserContent;
-
-                if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE && !isPotentialShortcut && !shouldSkipFix) {
-                    // Chromium browsers: Use Shift+Left strategy (fixes Facebook, Messenger duplicate chars)
-                    // Safari & Firefox: Use SendEmptyCharacter (standard approach, works well)
-                    BOOL useShiftLeft = appChars.containsUnicodeCompound && pData->backspaceCount > 0;
-
-                    if (useShiftLeft) {
-                        // Chromium "Select + Immediate Delete" strategy
-                        // SendShiftAndLeftArrow already pops _syncKey once
-                        // So we use SendPhysicalBackspace (not SendBackspace) to avoid double-pop
+                
+                // FINAL BROWSER FIX (v1.9.9):
+                // 1. Force "Shift+Left + Delete" strategy for ALL browsers (Chrome, Safari, Edge...).
+                //    - Address Bar: Selects the typed char (breaking autocomplete selection) then deletes it. Fixes "dđ", "chaào".
+                //    - Google Sheets: Selects the typed char then deletes it. Safe & clean.
+                // 2. NEVER use SendEmptyCharacter for browsers. That causes the "iệt Nam" bug.
+                // 3. IGNORE spotlightActive checks because they are too slow for the first word.
+                
+                BOOL isBrowserFix = vFixRecommendBrowser && isBrowserApp;
+                
+                if (isBrowserFix && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE && !isPotentialShortcut) {
+                    if (pData->backspaceCount > 0) {
+                        // UNIFIED STRATEGY: Always use Shift+Left for Browsers
+                        // This works for both Address Bar (Autofill) and Content (Sheets)
 #ifdef DEBUG
-                        NSLog(@"[PHTV Browser] Using Shift+Left strategy: backspaceCount=%d, isChromium=%d, app=%@",
-                              (int)pData->backspaceCount, appChars.containsUnicodeCompound, getFocusedAppBundleId());
+                        NSLog(@"[PHTV Browser] Force Shift+Left strategy: backspaceCount=%d, app=%@",
+                              (int)pData->backspaceCount, getFocusedAppBundleId());
 #endif
                         SendShiftAndLeftArrow();      // Select the character (_syncKey.pop_back)
                         SendPhysicalBackspace();      // Delete selection (no _syncKey modification)
                         pData->backspaceCount--;      // We already deleted one character
-                        // If backspaceCount > 0, additional backspaces will be sent later
+                    }
+                    // For browsers, we NEVER send SendEmptyCharacter anymore.
+                    // It's too dangerous for web editors.
+                } 
+                else if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE && !isPotentialShortcut && !isBrowserApp) {
+                    // Legacy logic for non-browser apps (Electron, etc.)
+                    // Keep original behavior: shift-left for Chromium, EmptyChar for others
+                    BOOL useShiftLeft = appChars.containsUnicodeCompound && pData->backspaceCount > 0;
+                    
+                    if (useShiftLeft) {
+                        SendShiftAndLeftArrow();
+                        SendPhysicalBackspace();
+                        pData->backspaceCount--;
                     } else {
-                        // Safari, Firefox, and other browsers use SendEmptyCharacter
-                        // This is the standard approach that works well for most browsers
-#ifdef DEBUG
-                        NSLog(@"[PHTV Browser] Using SendEmptyCharacter: backspaceCount=%d, app=%@",
-                              (int)pData->backspaceCount, getFocusedAppBundleId());
-#endif
                         SendEmptyCharacter();
                         pData->backspaceCount++;
                     }
