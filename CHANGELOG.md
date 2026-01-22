@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.2] - 2026-01-22
+
+### Added
+- **Onboarding System Settings Step**: Thêm bước hướng dẫn cài đặt hệ thống trong quy trình Onboarding
+  - Hướng dẫn trực quan để tắt các tính năng tự động sửa lỗi của macOS
+  - Thêm hình ảnh minh họa cài đặt Input Source trong System Settings
+- **Image Zoom in Onboarding**: Click vào ảnh để xem phóng to với icon kính lúp
+- **Help Button in Settings**: Thêm nút '?' vào thanh công cụ Settings để xem lại Onboarding
+
+### Changed
+- Cập nhật README.md và INSTALL.md với cảnh báo về cài đặt macOS
+
 ## [1.8.8] - 2026-01-20
 
 ### Fixed
