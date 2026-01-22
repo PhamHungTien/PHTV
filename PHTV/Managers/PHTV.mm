@@ -1823,18 +1823,13 @@ extern "C" {
             pData->backspaceCount++;
         }
 
-        //send real data - use step by step for timing sensitive apps like Spotlight
-        BOOL useStepByStep = vSendKeyStepByStep || needsStepByStep(effectiveTarget);
-
         //send backspace
         if (pData->backspaceCount > 0) {
             SendBackspaceSequence(pData->backspaceCount, NO);
-            // FIX: Add delay after backspace for web apps (Google Sheets) to process DOM updates
-            if (useStepByStep) {
-                usleep(5000); // 5ms delay
-            }
         }
 
+        //send real data - use step by step for timing sensitive apps like Spotlight
+        BOOL useStepByStep = vSendKeyStepByStep || needsStepByStep(effectiveTarget);
         if (!useStepByStep) {
             SendNewCharString(true);
         } else {
@@ -1844,9 +1839,6 @@ extern "C" {
                 } else {
                     SendKeyCode(pData->macroData[i]);
                 }
-                // FIX: Add micro-delay between keys for Google Sheets/Browsers
-                // Prevents character dropping/swapping race conditions
-                usleep(2000); // 2ms delay
             }
         }
 
@@ -2627,7 +2619,11 @@ extern "C" {
                 // CRITICAL FIX: NEVER send empty character for SPACE key!
                 // This conflicts with macOS Text Replacement feature
                 // SendEmptyCharacter is only needed for Vietnamese character keys, NOT for break keys
-                if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE && !isPotentialShortcut) {
+                // 
+                // GOOGLE SHEETS FIX: NEVER use vFixRecommendBrowser for apps that need Step-by-Step!
+                // Sending Unicode empty characters (0x202F/0x200C) into Google Sheets/Docs causes
+                // unpredictable cursor behavior and text selection, leading to "iệt Nam" style bugs.
+                if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE && !isPotentialShortcut && !appChars.needsStepByStep) {
                     // Chromium browsers: Use Shift+Left strategy (fixes Facebook, Messenger duplicate chars)
                     // Safari & Firefox: Use SendEmptyCharacter (standard approach, works well)
                     BOOL useShiftLeft = appChars.containsUnicodeCompound && pData->backspaceCount > 0;
@@ -2654,6 +2650,15 @@ extern "C" {
                         SendEmptyCharacter();
                         pData->backspaceCount++;
                     }
+                }
+
+                // SAFETY LIMIT: A single Vietnamese word transformation should never delete more than 15 chars.
+                // This prevents massive text loss ("iệt Nam" bug) if logic fails or race conditions occur.
+                if (pData->backspaceCount > 15) {
+#ifdef DEBUG
+                    NSLog(@"[PHTV Safety] Blocked excessive backspaceCount: %d -> 15 (Key=%d)", (int)pData->backspaceCount, _keycode);
+#endif
+                    pData->backspaceCount = 15;
                 }
 #ifdef DEBUG
                 if (_keycode == KEY_SPACE && vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp) {
