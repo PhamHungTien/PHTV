@@ -199,6 +199,8 @@ struct FeatureToggleRow: View {
 // MARK: - Steps
 
 struct SystemSettingsStepView: View {
+    @State private var showZoom = false
+    
     var body: some View {
         VStack(spacing: 20) {
             VStack(spacing: 8) {
@@ -243,12 +245,47 @@ struct SystemSettingsStepView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     
-                    Image("onboarding_system_settings")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(height: 180)
-                        .cornerRadius(8)
-                        .shadow(radius: 3)
+                    ZStack(alignment: .bottomTrailing) {
+                        Image("onboarding_system_settings")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(height: 180)
+                            .cornerRadius(8)
+                            .shadow(radius: 3)
+                        
+                        Image(systemName: "plus.magnifyingglass")
+                            .font(.system(size: 14, weight: .bold))
+                            .padding(6)
+                            .background(Color.black.opacity(0.6))
+                            .foregroundColor(.white)
+                            .clipShape(Circle())
+                            .padding(6)
+                    }
+                    .onTapGesture {
+                        showZoom = true
+                    }
+                    .sheet(isPresented: $showZoom) {
+                        VStack {
+                            HStack {
+                                Spacer()
+                                Button(action: { showZoom = false }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.title2)
+                                        .foregroundColor(.secondary)
+                                }
+                                .buttonStyle(.plain)
+                                .padding()
+                                .keyboardShortcut(.escape, modifiers: [])
+                            }
+                            
+                            Image("onboarding_system_settings")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .padding(.horizontal)
+                                .padding(.bottom)
+                        }
+                        .frame(minWidth: 800, minHeight: 600)
+                    }
                 }
                 .padding()
                 .background(
