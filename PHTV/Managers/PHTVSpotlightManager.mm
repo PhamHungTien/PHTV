@@ -156,39 +156,25 @@ static int _externalDeleteCount = 0;
         }
     }
 
-    // Use cache if it's within 10ms duration (reduced from 30ms for faster Spotlight->App transitions)
-    // This ensures when user closes Spotlight and immediately types in another app,
-    // we recheck quickly instead of using stale cache
-    static const uint64_t SPOTLIGHT_CACHE_DURATION_MS = 10;
+    // Use cache if it's within 50ms duration (increased from 10ms to prevent event tap timeouts)
+    // This ensures we don't block the event tap with frequent AX calls
+    static const uint64_t SPOTLIGHT_CACHE_DURATION_MS = 50;
     if (elapsed_ms < SPOTLIGHT_CACHE_DURATION_MS && lastCheck > 0) {
         return cachedResult;
     }
 
-    // Get the system-wide focused element with multiple retries
+    // Get the system-wide focused element
+    // REMOVED RETRIES: Event tap callbacks must be fast. Waiting with usleep() causes
+    // the tap to timeout, leading to duplicated characters (original event leaks + synthetic event sent).
     AXUIElementRef systemWide = AXUIElementCreateSystemWide();
     AXUIElementRef focusedElement = NULL;
-    AXError error = kAXErrorFailure;
+    AXError error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement);
 
-    // Retry up to 5 times with progressive delays (0ms, 2ms, 5ms, 10ms, 15ms)
-    // Increased retries and better delay distribution for more reliable detection
-    const int retryDelays[] = {0, 2000, 5000, 10000, 15000};  // microseconds
-    for (int attempt = 0; attempt < 5; attempt++) {
-        if (attempt > 0) {
-            usleep(retryDelays[attempt]);
-        }
-
-        error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement);
-
-        if (error == kAXErrorSuccess && focusedElement != NULL) {
-            break;  // Success
-        }
-    }
-
-    // Release systemWide after all retry attempts
+    // Release systemWide immediately
     CFRelease(systemWide);
 
     if (error != kAXErrorSuccess || focusedElement == NULL) {
-        // If AX API completely failed after all retries, assume NO.
+        // If AX API failed, assume NO.
         // Returning stale YES (sticky cache) causes issues when switching apps or closing Spotlight.
         [PHTVCacheManager updateSpotlightCache:NO pid:0 bundleId:nil];
         return NO;
