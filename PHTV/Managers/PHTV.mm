@@ -754,6 +754,46 @@ extern "C" {
         return YES;
     }
 
+    // Check if the focused element is likely an address bar (TextField)
+    // Cached to avoid excessive AX calls
+    static BOOL isFocusedElementAddressBar(void) {
+        if (vSafeMode) return NO;
+
+        static BOOL _lastResult = NO;
+        static uint64_t _lastCheckTime = 0;
+        
+        uint64_t now = mach_absolute_time();
+        uint64_t elapsed_ms = mach_time_to_ms(now - _lastCheckTime);
+        
+        // Cache valid for 500ms (enough for a typing burst)
+        if (_lastCheckTime > 0 && elapsed_ms < 500) {
+            return _lastResult;
+        }
+
+        BOOL isAddressBar = NO;
+        AXUIElementRef systemWide = AXUIElementCreateSystemWide();
+        AXUIElementRef focusedElement = NULL;
+        
+        if (AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement) == kAXErrorSuccess) {
+            CFStringRef roleRef = NULL;
+            if (AXUIElementCopyAttributeValue(focusedElement, kAXRoleAttribute, (CFTypeRef *)&roleRef) == kAXErrorSuccess) {
+                NSString *role = (__bridge NSString *)roleRef;
+                // Browsers usually use AXTextField for address bars
+                // Web content usually uses AXGroup, AXWebArea, or AXTextArea
+                if ([role isEqualToString:@"AXTextField"] || [role isEqualToString:@"AXComboBox"]) {
+                    isAddressBar = YES;
+                }
+                CFRelease(roleRef);
+            }
+            CFRelease(focusedElement);
+        }
+        CFRelease(systemWide);
+        
+        _lastResult = isAddressBar;
+        _lastCheckTime = now;
+        return isAddressBar;
+    }
+
     __attribute__((always_inline)) static inline void PostSyntheticEvent(CGEventTapProxy proxy, CGEventRef e) {
         if (_phtvPostToHIDTap) {
             CGEventPost(kCGHIDEventTap, e);
@@ -2622,7 +2662,7 @@ extern "C" {
                 // 1. Browsers (Content/Sheets): Default to Simple Backspace.
                 //    - SAFE: No 'Shift+Left' (prevents selection errors in Sheets).
                 //    - SAFE: No 'SendEmptyCharacter' (prevents "iệt Nam" deletion bug).
-                // 2. Browsers (Address Bar): Use 'Shift+Left' ONLY if detected (spotlightActive).
+                // 2. Browsers (Address Bar): Use 'Shift+Left' ONLY if detected (isFocusedElementAddressBar).
                 //    - FIX: Breaks autocomplete suggestions to prevent "dđ", "chaào".
                 
                 BOOL isBrowserFix = vFixRecommendBrowser && isBrowserApp;
@@ -2630,15 +2670,10 @@ extern "C" {
                 if (isBrowserFix && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE && !isPotentialShortcut) {
                     if (pData->backspaceCount > 0) {
                         // DETECT ADDRESS BAR:
-                        // spotlightActive relies on AX API to detect AXTextField role.
-                        // If TRUE: We are likely in Address Bar -> Use Shift+Left to fix duplication.
-                        // If FALSE: We are in Content/Sheets -> Use standard Backspace to be safe.
-                        
-                        // NOTE: If detection lags on first word, user might see "dđ" once.
-                        // This is an acceptable trade-off to ensure Google Sheets never breaks.
-                        if (spotlightActive) {
+                        // Use accurate AX API check (cached) instead of unreliable spotlightActive
+                        if (isFocusedElementAddressBar()) {
 #ifdef DEBUG
-                            NSLog(@"[PHTV Browser] Address Bar Detected -> Using Shift+Left: backspaceCount=%d", (int)pData->backspaceCount);
+                            NSLog(@"[PHTV Browser] Address Bar Detected (AX) -> Using Shift+Left: backspaceCount=%d", (int)pData->backspaceCount);
 #endif
                             SendShiftAndLeftArrow();
                             SendPhysicalBackspace();
