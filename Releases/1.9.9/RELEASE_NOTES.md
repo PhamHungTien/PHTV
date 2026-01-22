@@ -4,14 +4,13 @@ Bản cập nhật này tập trung vào việc khắc phục triệt để lỗ
 
 ### ✨ Tính năng mới & Cải tiến
 *   **Màn hình hướng dẫn (Onboarding):** Thêm giao diện chào mừng và hướng dẫn thiết lập nhanh cho người dùng mới lần đầu sử dụng ứng dụng. Giúp bạn chọn bộ gõ, bật các tính năng cần thiết và cấp quyền Accessibility một cách dễ dàng.
-*   **Hỗ trợ trình duyệt tối ưu:** Mở rộng danh sách hỗ trợ chế độ "Gõ từng ký tự" (Step-by-step) cho hàng loạt trình duyệt phổ biến: **Google Chrome, Microsoft Edge, Firefox, Arc, Brave, Opera và Vivaldi.**
+*   **Hỗ trợ trình duyệt tối ưu:** Mở rộng danh sách hỗ trợ chế độ "Gõ từng ký tự" (Step-by-step) cho hàng loạt trình duyệt phổ biến: **Google Chrome, Microsoft Edge, Firefox, Arc, Brave, Opera, Vivaldi và Safari.**
 
 ### 🐛 Sửa lỗi quan trọng (Bug Fixes)
-*   **Sửa lỗi nhập liệu trên Trình duyệt (Smart Browser Fix):**
-    *   Sử dụng công nghệ nhận diện thông minh (Accessibility API) để phân biệt chính xác vị trí bạn đang gõ phím.
-    *   **Thanh địa chỉ (Address Bar):** Tự động kích hoạt cơ chế chống nhân đôi ký tự ("dđ", "chaào") bằng cách chọn và thay thế ký tự cũ một cách chính xác.
-    *   **Nội dung trang web (Google Sheets, Docs...):** Tự động chuyển sang chế độ an toàn, ngăn chặn tuyệt đối lỗi xóa nhầm văn bản ("iệt Nam") và lỗi chọn vùng không mong muốn.
-    *   *Kết quả:* Giải quyết triệt để xung đột giữa bộ gõ và trình duyệt, mang lại trải nghiệm gõ mượt mà và ổn định nhất từ trước đến nay.
+*   **Sửa lỗi nhập liệu trên Trình duyệt (Deep Browser Fix):**
+    *   **Safari & Google Sheets:** Khắc phục triệt để lỗi nhận diện sai ngữ cảnh trên Safari. Sử dụng thuật toán quét sâu cấu trúc giao diện (Accessibility Hierarchy) để phân biệt chính xác tuyệt đối giữa thanh địa chỉ và ô nhập liệu của Google Sheets.
+    *   **Thanh địa chỉ (Address Bar):** Kích hoạt cơ chế chống nhân đôi ký tự ("dđ", "chaào") chỉ khi chắc chắn bạn đang gõ vào thanh địa chỉ thực sự của trình duyệt.
+    *   **Google Sheets/Docs:** Đảm bảo 100% an toàn dữ liệu, không bao giờ gửi lệnh xóa nhầm hay các ký tự gây lỗi ("iệt Nam").
 *   **Sửa lỗi bỏ dấu với phụ âm ngoài (Z, F, W, J):**
     *   Sửa lỗi Engine chỉ nhận diện bỏ dấu cho nguyên âm 'a' khi gõ phụ âm ngoài. Bây giờ bạn đã có thể gõ mượt mà các từ như: *Zuj -> Zụ, Zif -> Zì, Zaayj -> Zậ...*
     *   Sửa lỗi không thể bỏ dấu lên các nguyên âm đôi (â, ê, ô) khi đứng sau các phụ âm đặc biệt.
