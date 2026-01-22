@@ -779,9 +779,39 @@ extern "C" {
             if (AXUIElementCopyAttributeValue(focusedElement, kAXRoleAttribute, (CFTypeRef *)&roleRef) == kAXErrorSuccess) {
                 NSString *role = (__bridge NSString *)roleRef;
                 // Browsers usually use AXTextField for address bars
-                // Web content usually uses AXGroup, AXWebArea, or AXTextArea
                 if ([role isEqualToString:@"AXTextField"] || [role isEqualToString:@"AXComboBox"]) {
-                    isAddressBar = YES;
+                    // Potential address bar. Now verify it's NOT inside web content.
+                    // Web content elements (like Google Sheets inputs) are descendants of AXWebArea.
+                    // Browser UI (Address Bar) is NOT.
+                    
+                    isAddressBar = YES; // Assume YES initially
+                    
+                    AXUIElementRef currentElement = focusedElement;
+                    CFRetain(currentElement); // Keep +1 for the loop
+                    
+                    // Walk up 3 levels to find AXWebArea
+                    for (int i = 0; i < 3; i++) {
+                        AXUIElementRef parent = NULL;
+                        if (AXUIElementCopyAttributeValue(currentElement, kAXParentAttribute, (CFTypeRef *)&parent) == kAXErrorSuccess) {
+                            CFStringRef parentRoleRef = NULL;
+                            if (AXUIElementCopyAttributeValue(parent, kAXRoleAttribute, (CFTypeRef *)&parentRoleRef) == kAXErrorSuccess) {
+                                NSString *parentRole = (__bridge NSString *)parentRoleRef;
+                                if ([parentRole isEqualToString:@"AXWebArea"]) {
+                                    isAddressBar = NO; // It's inside web content!
+                                    CFRelease(parentRoleRef);
+                                    CFRelease(parent);
+                                    break;
+                                }
+                                CFRelease(parentRoleRef);
+                            }
+                            
+                            CFRelease(currentElement);
+                            currentElement = parent; // Move up
+                        } else {
+                            break; // No parent
+                        }
+                    }
+                    CFRelease(currentElement);
                 }
                 CFRelease(roleRef);
             }
