@@ -7,10 +7,10 @@ Bản cập nhật này tập trung vào việc khắc phục triệt để lỗ
 *   **Hỗ trợ trình duyệt tối ưu:** Mở rộng danh sách hỗ trợ chế độ "Gõ từng ký tự" (Step-by-step) cho hàng loạt trình duyệt phổ biến: **Google Chrome, Microsoft Edge, Firefox, Arc, Brave, Opera và Vivaldi.**
 
 ### 🐛 Sửa lỗi quan trọng (Bug Fixes)
-*   **Sửa lỗi nhập liệu trên Trình duyệt (Browser Fix):** Áp dụng cơ chế xử lý "Lai" (Hybrid Logic) thông minh:
-    *   **Thanh địa chỉ (Address Bar):** Tự động kích hoạt cơ chế chống nhân đôi ký tự (ví dụ: gõ "d" thành "dd").
-    *   **Nội dung trang web (Google Sheets, Docs...):** Tự động tắt các ký tự sửa lỗi gây nhiễu, khắc phục triệt để lỗi gõ câu dài bị xóa ngược (lỗi "iệt Nam").
-    *   *Kết quả:* Bạn có thể gõ mượt mà trên cả thanh địa chỉ lẫn Google Sheets mà không cần chuyển đổi chế độ thủ công.
+*   **Sửa lỗi nhập liệu trên Trình duyệt (Browser Fix):** Áp dụng chiến lược "Shift+Trái + Delete" thống nhất cho tất cả các trình duyệt:
+    *   **Thanh địa chỉ:** Khắc phục triệt để lỗi nhân đôi ký tự đầu tiên (ví dụ: gõ "d" thành "dđ", "chao" thành "chaào") do cơ chế gợi ý URL. Việc bôi đen ký tự trước khi xóa giúp ngắt dòng gợi ý của trình duyệt một cách hiệu quả.
+    *   **Google Sheets/Docs:** Loại bỏ hoàn toàn việc gửi ký tự rỗng (Empty Character), ngăn chặn tuyệt đối lỗi xóa nhầm văn bản ("iệt Nam").
+    *   *Kết quả:* Trải nghiệm gõ ổn định và đồng nhất trên mọi trình duyệt, bất kể bạn đang nhập liệu ở đâu.
 *   **Sửa lỗi bỏ dấu với phụ âm ngoài (Z, F, W, J):**
     *   Sửa lỗi Engine chỉ nhận diện bỏ dấu cho nguyên âm 'a' khi gõ phụ âm ngoài. Bây giờ bạn đã có thể gõ mượt mà các từ như: *Zuj -> Zụ, Zif -> Zì, Zaayj -> Zậ...*
     *   Sửa lỗi không thể bỏ dấu lên các nguyên âm đôi (â, ê, ô) khi đứng sau các phụ âm đặc biệt.
