@@ -60,26 +60,26 @@ struct OnboardingView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             
             // MARK: - Bottom Navigation Bar
-            VStack(spacing: 0) {
-                Divider()
-                HStack {
-                    if currentStep > 0 && currentStep < totalSteps - 1 {
-                        Button("Quay lại") {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                currentStep -= 1
+            if currentStep < totalSteps - 1 {
+                VStack(spacing: 0) {
+                    Divider()
+                    HStack {
+                        if currentStep > 0 {
+                            Button("Quay lại") {
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    currentStep -= 1
+                                }
                             }
+                            .keyboardShortcut(.leftArrow, modifiers: [])
+                            .buttonStyle(PlainButtonStyle())
+                            .foregroundColor(.secondary)
+                            .padding(.leading, 20)
+                        } else {
+                            Spacer().frame(width: 60)
                         }
-                        .keyboardShortcut(.leftArrow, modifiers: [])
-                        .buttonStyle(PlainButtonStyle())
-                        .foregroundColor(.secondary)
-                        .padding(.leading, 20)
-                    } else {
-                        Spacer().frame(width: 60)
-                    }
-                    
-                    Spacer()
-                    
-                    if currentStep < totalSteps - 1 {
+                        
+                        Spacer()
+                        
                         Button(action: {
                             withAnimation(.easeInOut(duration: 0.3)) {
                                 currentStep += 1
@@ -98,12 +98,10 @@ struct OnboardingView: View {
                         .buttonStyle(.plain)
                         .keyboardShortcut(.defaultAction)
                         .padding(.trailing, 20)
-                    } else {
-                        Spacer().frame(width: 100)
                     }
+                    .frame(height: 60)
+                    .background(Color(nsColor: .windowBackgroundColor))
                 }
-                .frame(height: 60)
-                .background(Color(nsColor: .windowBackgroundColor))
             }
         }
         .background(Color(nsColor: .windowBackgroundColor))
