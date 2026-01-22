@@ -1,7 +1,7 @@
 GNU GENERAL PUBLIC LICENSE
 Version 3, 29 June 2007
 
-Copyright (C) 2019-2025 Phạm Hùng Tiến
+Copyright (C) 2019-2026 Phạm Hùng Tiến
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,14 +26,6 @@ the terms of this General Public License.
 
 PHTV - Vietnamese Input Method for macOS
 Project repository: https://github.com/PhamHungTien/PHTV
-OpenKey repository: https://github.com/tuyenvm/OpenKey
-
-================================================================================
-
-This program is based on the original OpenKey engine for Vietnamese text input.
-The engine components (Vietnamese.cpp, Engine.cpp, etc.) provide the core
-functionality for handling Vietnamese typing with various input methods
-(Telex, VNI, Simple Telex) and character encodings (Unicode, TCVN3, VNI).
 
 ================================================================================
 
@@ -123,7 +115,7 @@ or later of the GNU Affero General Public License into a single combined work,
 and to convey the resulting work.
 
 e) If you distribute executable or object code versions of the Program
-(or works based on them), you must offer to distribute the source code
+(or works based them), you must offer to distribute the source code
 of the Program.
 
 5. Non-Source Distribution.
@@ -162,12 +154,5 @@ INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO
 USE THE PROGRAM.
 
 ================================================================================
-
-This project uses and adapts code and concepts from the OpenKey Vietnamese
-input method engine developed by Tuyến Võ Minh. PHTV (Phạm Hùng Tiến Vietnamese)
-extends this engine with modern macOS integration, SwiftUI interface, and additional
-features while maintaining GPL-3.0 compliance.
-
-OpenKey: https://github.com/tuyenvm/OpenKey
 
 For more information about GPL-3.0, visit: https://www.gnu.org/licenses/gpl-3.0.html
