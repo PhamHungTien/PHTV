@@ -7,9 +7,10 @@ Bản cập nhật này tập trung vào việc khắc phục triệt để lỗ
 *   **Hỗ trợ trình duyệt tối ưu:** Mở rộng danh sách hỗ trợ chế độ "Gõ từng ký tự" (Step-by-step) cho hàng loạt trình duyệt phổ biến: **Google Chrome, Microsoft Edge, Firefox, Arc, Brave, Opera và Vivaldi.**
 
 ### 🐛 Sửa lỗi quan trọng (Bug Fixes)
-*   **Sửa lỗi mất văn bản trên Google Sheets/Docs:** Khắc phục triệt để hiện tượng gõ câu dài bị xóa mất đoạn đầu (ví dụ: gõ "Chào mừng..." chỉ còn lại "iệt Nam").
-    *   *Nguyên nhân:* Xung đột giữa tính năng "Sửa lỗi trình duyệt" và cơ chế tự động gợi ý của Google Sheets.
-    *   *Giải pháp:* Tối ưu hóa việc gửi phím và loại bỏ các ký tự điều hướng gây nhiễu cho trình duyệt.
+*   **Sửa lỗi nhập liệu trên Trình duyệt (Browser Fix):** Áp dụng cơ chế xử lý "Lai" (Hybrid Logic) thông minh:
+    *   **Thanh địa chỉ (Address Bar):** Tự động kích hoạt cơ chế chống nhân đôi ký tự (ví dụ: gõ "d" thành "dd").
+    *   **Nội dung trang web (Google Sheets, Docs...):** Tự động tắt các ký tự sửa lỗi gây nhiễu, khắc phục triệt để lỗi gõ câu dài bị xóa ngược (lỗi "iệt Nam").
+    *   *Kết quả:* Bạn có thể gõ mượt mà trên cả thanh địa chỉ lẫn Google Sheets mà không cần chuyển đổi chế độ thủ công.
 *   **Sửa lỗi bỏ dấu với phụ âm ngoài (Z, F, W, J):**
     *   Sửa lỗi Engine chỉ nhận diện bỏ dấu cho nguyên âm 'a' khi gõ phụ âm ngoài. Bây giờ bạn đã có thể gõ mượt mà các từ như: *Zuj -> Zụ, Zif -> Zì, Zaayj -> Zậ...*
     *   Sửa lỗi không thể bỏ dấu lên các nguyên âm đôi (â, ê, ô) khi đứng sau các phụ âm đặc biệt.
