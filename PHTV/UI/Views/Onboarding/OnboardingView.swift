@@ -14,7 +14,7 @@ struct OnboardingView: View {
     @State private var currentStep = 0
     
     // Steps definition
-    private let totalSteps = 5
+    private let totalSteps = 6
     
     var body: some View {
         VStack(spacing: 0) {
@@ -40,15 +40,18 @@ struct OnboardingView: View {
                     WelcomeStepView()
                         .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
                 case 1:
-                    InputMethodStepView()
+                    SystemSettingsStepView()
                         .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
                 case 2:
-                    BasicFeaturesStepView()
+                    InputMethodStepView()
                         .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
                 case 3:
-                    AccessibilityStepView()
+                    BasicFeaturesStepView()
                         .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
                 case 4:
+                    AccessibilityStepView()
+                        .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
+                case 5:
                     CompletionStepView(onFinish: {
                         onDismiss()
                     })
@@ -194,6 +197,79 @@ struct FeatureToggleRow: View {
 }
 
 // MARK: - Steps
+
+struct SystemSettingsStepView: View {
+    var body: some View {
+        VStack(spacing: 20) {
+            VStack(spacing: 8) {
+                Text("Cấu hình Hệ thống")
+                    .font(.title)
+                    .fontWeight(.bold)
+                Text("Tắt các tính năng tự động của macOS để tránh xung đột")
+                    .font(.body)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.top, 20)
+            
+            VStack(spacing: 16) {
+                HStack(alignment: .top, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Vui lòng tắt các mục sau:")
+                            .font(.headline)
+                        
+                        Group {
+                            HStack {
+                                Image(systemName: "xmark.circle.fill").foregroundColor(.red)
+                                Text("Correct spelling automatically")
+                            }
+                            HStack {
+                                Image(systemName: "xmark.circle.fill").foregroundColor(.red)
+                                Text("Capitalize words automatically")
+                            }
+                            HStack {
+                                Image(systemName: "xmark.circle.fill").foregroundColor(.red)
+                                Text("Show inline predictive text")
+                            }
+                            HStack {
+                                Image(systemName: "xmark.circle.fill").foregroundColor(.red)
+                                Text("Add period with double-space")
+                            }
+                            HStack {
+                                Image(systemName: "xmark.circle.fill").foregroundColor(.red)
+                                Text("Use smart quotes and dashes")
+                            }
+                        }
+                        .font(.subheadline)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    Image("onboarding_system_settings")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(height: 180)
+                        .cornerRadius(8)
+                        .shadow(radius: 3)
+                }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(nsColor: .controlBackgroundColor))
+                )
+                
+                Button("Mở Cài đặt Bàn phím") {
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.keyboard") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+            }
+            .padding(.horizontal, 40)
+            
+            Spacer()
+        }
+    }
+}
 
 struct WelcomeStepView: View {
     var body: some View {

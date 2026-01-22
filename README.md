@@ -39,6 +39,8 @@ brew install --cask phamhungtien/tap/phtv
 open /Applications/PHTV.app
 ```
 
+**⚠️ Quan trọng:** Trước khi sử dụng, bạn **phải tắt các tính năng tự động sửa lỗi của macOS** (Correct spelling, Capitalize words,...) trong *System Settings → Keyboard → Edit Input Sources* để tránh xung đột. Xem [hướng dẫn chi tiết tại đây](INSTALL.md#️-chuẩn-bị-trước-khi-cài-đặt).
+
 **Sau khi cài:**
 1. Cho phép quyền **Accessibility** trong System Settings
 2. Click icon **En** trên menu bar → chọn **Vi** để bật tiếng Việt

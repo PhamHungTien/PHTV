@@ -34,6 +34,24 @@
 
 ---
 
+## ⚠️ Chuẩn bị trước khi cài đặt
+
+**Tắt bộ gõ mặc định của macOS để tránh xung đột**
+
+Trước khi cài đặt, hãy vào **System Settings** → **Keyboard** → **Edit Input Sources...** và tắt tất cả các tùy chọn tự động sửa lỗi của macOS để tránh xung đột với PHTV.
+
+1. Tắt **Correct spelling automatically**
+2. Tắt **Capitalize words automatically**
+3. Tắt **Show inline predictive text**
+4. Tắt **Add period with double-space**
+5. Tắt **Use smart quotes and dashes**
+
+<div align="center">
+<img src="docs/images/setup/Input_Source_System_Settings.png" alt="Cài đặt Input Source System Settings" width="70%">
+</div>
+
+---
+
 ## 📥 Tải xuống
 
 **[⬇️ Tải PHTV từ phamhungtien.com/PHTV](https://phamhungtien.com/PHTV/)**

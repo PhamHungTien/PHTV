@@ -76,6 +76,11 @@ struct SettingsWindowContent: View {
             // Check if onboarding should be shown (first launch)
             checkAndShowOnboarding()
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowOnboarding"))) { _ in
+            withAnimation(.easeInOut(duration: 0.3)) {
+                showOnboarding = true
+            }
+        }
         .onDisappear {
             // Restore dock icon to user preference when settings closes
             let userPrefersDock = appState.showIconOnDock

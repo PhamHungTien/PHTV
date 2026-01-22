@@ -33,6 +33,8 @@ struct SettingsView: View {
         return Array(filteredSettings.prefix(5))
     }
 
+    @State private var showHelpMenu = false
+
     var body: some View {
         NavigationSplitView {
             List(selection: $selectedTab) {
@@ -78,6 +80,16 @@ struct SettingsView: View {
             .listStyle(.sidebar)
             .conditionalSearchable(text: $searchText, prompt: "Tìm kiếm cài đặt...")
             .navigationSplitViewColumnWidth(min: 160, ideal: 200, max: 240)
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        NotificationCenter.default.post(name: NSNotification.Name("ShowOnboarding"), object: nil)
+                    } label: {
+                        Image(systemName: "questionmark.circle")
+                    }
+                    .help("Xem lại hướng dẫn & giới thiệu")
+                }
+            }
         } detail: {
             detailView
                 .environmentObject(appState)
