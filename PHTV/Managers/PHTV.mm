@@ -2619,11 +2619,16 @@ extern "C" {
                 // CRITICAL FIX: NEVER send empty character for SPACE key!
                 // This conflicts with macOS Text Replacement feature
                 // SendEmptyCharacter is only needed for Vietnamese character keys, NOT for break keys
-                // 
-                // GOOGLE SHEETS FIX: NEVER use vFixRecommendBrowser for apps that need Step-by-Step!
-                // Sending Unicode empty characters (0x202F/0x200C) into Google Sheets/Docs causes
-                // unpredictable cursor behavior and text selection, leading to "iệt Nam" style bugs.
-                if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE && !isPotentialShortcut && !appChars.needsStepByStep) {
+                //
+                // HYBRID BROWSER FIX (Address Bar vs Content):
+                // 1. Address Bar (spotlightActive=YES): NEEDS vFixRecommendBrowser to prevent character duplication (aa, dd).
+                // 2. Content/Sheets (spotlightActive=NO): MUST DISABLE vFixRecommendBrowser to prevent "iệt Nam" deletion bug.
+                //
+                // We define "Browser Content" as a Browser App where Spotlight (AXTextField) is NOT active.
+                BOOL isBrowserContent = isBrowserApp && !spotlightActive && !appChars.isSpotlightLike;
+                BOOL shouldSkipFix = isBrowserContent;
+
+                if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE && !isPotentialShortcut && !shouldSkipFix) {
                     // Chromium browsers: Use Shift+Left strategy (fixes Facebook, Messenger duplicate chars)
                     // Safari & Firefox: Use SendEmptyCharacter (standard approach, works well)
                     BOOL useShiftLeft = appChars.containsUnicodeCompound && pData->backspaceCount > 0;
