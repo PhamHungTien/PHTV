@@ -26,295 +26,13 @@ struct SystemSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // Startup Settings
-                SettingsCard(title: "Khởi động", icon: "power.circle.fill") {
-                    VStack(spacing: 0) {
-                        SettingsToggleRow(
-                            icon: "play.fill",
-                            iconColor: .accentColor,
-                            title: "Khởi động cùng hệ thống",
-                            subtitle: "Tự động mở PHTV khi đăng nhập macOS",
-                            isOn: $appState.runOnStartup
-                        )
-                    }
-                }
-
-                // Interface Settings
-                SettingsCard(title: "Giao diện", icon: "rectangle.on.rectangle") {
-                    VStack(spacing: 0) {
-                        SettingsToggleRow(
-                            icon: "pin.fill",
-                            iconColor: .accentColor,
-                            title: "Cửa sổ Cài đặt luôn ở trên",
-                            subtitle: "Giữ cửa sổ Cài đặt hiển thị phía trên các ứng dụng khác",
-                            isOn: $appState.settingsWindowAlwaysOnTop
-                        )
-
-                        SettingsDivider()
-
-                        SettingsToggleRow(
-                            icon: "sparkles.rectangle.stack.fill",
-                            iconColor: .accentColor,
-                            title: "Giao diện Liquid Glass",
-                            subtitle: "Hiệu ứng nền kính mờ đẹp mắt cho cửa sổ cài đặt",
-                            isOn: $appState.enableLiquidGlassBackground
-                        )
-
-                        if appState.enableLiquidGlassBackground {
-                            SettingsDivider()
-
-                            VStack(spacing: 8) {
-                                HStack(spacing: 14) {
-                                    ZStack {
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .fill(Color.accentColor.opacity(0.12))
-                                            .frame(width: 36, height: 36)
-
-                                        Image(systemName: "circle.lefthalf.filled")
-                                            .font(.system(size: 16, weight: .medium))
-                                            .foregroundStyle(Color.accentColor)
-                                    }
-
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text("Độ mờ nền cửa sổ")
-                                            .font(.body)
-                                            .foregroundStyle(.primary)
-
-                                        Text("Điều chỉnh độ trong suốt của nền cài đặt")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-
-                                    Spacer()
-
-                                    Text(String(format: "%.0f%%", appState.settingsBackgroundOpacity * 100))
-                                        .font(.subheadline)
-                                        .fontWeight(.semibold)
-                                        .foregroundStyle(.tint)
-                                        .frame(minWidth: 40, alignment: .trailing)
-                                }
-
-                                CustomSlider(
-                                    value: $appState.settingsBackgroundOpacity,
-                                    range: 0.5...1.0,
-                                    step: 0.05,
-                                    tintColor: .accentColor
-                                )
-                            }
-                            .padding(.vertical, 6)
-                            .transition(.opacity.combined(with: .move(edge: .top)))
-                        }
-                    }
-                    .animation(.easeInOut(duration: 0.3), value: appState.enableLiquidGlassBackground)
-                }
-
-                // Menu Bar Settings
-                SettingsCard(title: "Thanh menu", icon: "menubar.rectangle") {
-                    VStack(spacing: 0) {
-                        SettingsToggleRow(
-                            icon: "flag.fill",
-                            iconColor: .accentColor,
-                            title: "Hiển thị icon chữ V",
-                            subtitle: "Dùng icon chữ V khi đang ở chế độ tiếng Việt",
-                            isOn: $appState.useVietnameseMenubarIcon
-                        )
-
-                        SettingsDivider()
-
-                        VStack(spacing: 8) {
-                            HStack(spacing: 14) {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(Color.accentColor.opacity(0.12))
-                                        .frame(width: 36, height: 36)
-
-                                    Image(systemName: "arrow.up.left.and.arrow.down.right")
-                                        .font(.system(size: 16, weight: .medium))
-                                        .foregroundStyle(Color.accentColor)
-                                }
-
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Kích cỡ icon")
-                                        .font(.body)
-                                        .foregroundStyle(.primary)
-
-                                    Text("Điều chỉnh kích thước icon trên thanh menu")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-
-                                Spacer()
-
-                                Text(String(format: "%.0f px", appState.menuBarIconSize))
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.tint)
-                                    .frame(minWidth: 40, alignment: .trailing)
-                            }
-
-                            CustomSlider(
-                                value: $appState.menuBarIconSize,
-                                range: 12.0...20.0,
-                                step: 0.01,
-                                tintColor: .accentColor
-                            )
-                        }
-                        .padding(.vertical, 6)
-                    }
-                }
-
-                // Dock Settings
-                SettingsCard(title: "Dock", icon: "dock.rectangle") {
-                    VStack(spacing: 0) {
-                        SettingsToggleRow(
-                            icon: "app.fill",
-                            iconColor: .accentColor,
-                            title: "Hiển thị icon trên Dock",
-                            subtitle: "Hiện icon PHTV khi mở cài đặt",
-                            isOn: $appState.showIconOnDock
-                        )
-                    }
-                }
-
-                // Update Settings
-                SettingsCard(title: "Cập nhật", icon: "arrow.down.circle.fill") {
-                    VStack(spacing: 0) {
-                        // Frequency picker
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack(spacing: 14) {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(Color.accentColor.opacity(0.12))
-                                        .frame(width: 36, height: 36)
-
-                                    Image(systemName: "clock.fill")
-                                        .font(.system(size: 16, weight: .medium))
-                                        .foregroundStyle(Color.accentColor)
-                                }
-
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Tần suất kiểm tra")
-                                        .font(.body)
-
-                                    Text("Tự động kiểm tra bản cập nhật mới")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-
-                                Spacer()
-
-                                Picker("", selection: $appState.updateCheckFrequency) {
-                                    ForEach(UpdateCheckFrequency.allCases) { freq in
-                                        Text(freq.displayName).tag(freq)
-                                    }
-                                }
-                                .labelsHidden()
-                                .frame(width: 140)
-                            }
-                            .padding(.vertical, 6)
-                        }
-
-                        SettingsDivider()
-
-                        // Auto install toggle
-                        SettingsToggleRow(
-                            icon: "square.and.arrow.down.fill",
-                            iconColor: .accentColor,
-                            title: "Tự động cài đặt",
-                            subtitle: "Tự động cập nhật khi có phiên bản mới",
-                            isOn: $appState.autoInstallUpdates
-                        )
-
-                        SettingsDivider()
-
-                        // Beta toggle
-                        SettingsToggleRow(
-                            icon: "testtube.2",
-                            iconColor: .accentColor,
-                            title: "Kênh Beta",
-                            subtitle: "Nhận bản cập nhật beta (không ổn định)",
-                            isOn: $appState.betaChannelEnabled
-                        )
-
-                        SettingsDivider()
-
-                        // Manual check
-                        SettingsButtonRow(
-                            icon: "arrow.clockwise.circle.fill",
-                            iconColor: .accentColor,
-                            title: "Kiểm tra cập nhật",
-                            subtitle: "Tìm phiên bản mới ngay bây giờ",
-                            action: checkForUpdates
-                        )
-                    }
-                }
-
-                // Tools
-                SettingsCard(title: "Công cụ", icon: "wrench.and.screwdriver.fill") {
-                    VStack(spacing: 0) {
-                        SettingsButtonRow(
-                            icon: "doc.on.clipboard.fill",
-                            iconColor: .accentColor,
-                            title: "Chuyển đổi bảng mã",
-                            subtitle: "Chuyển văn bản giữa Unicode, TCVN3, VNI...",
-                            action: {
-                                showingConvertTool = true
-                            }
-                        )
-                    }
-                }
-
-                // Data Management
-                SettingsCard(title: "Quản lý dữ liệu", icon: "externaldrive.fill") {
-                    VStack(spacing: 0) {
-                        SettingsButtonRow(
-                            icon: "book.fill",
-                            iconColor: .accentColor,
-                            title: "Xem hướng dẫn",
-                            subtitle: "Xem lại màn hình giới thiệu PHTV",
-                            action: {
-                                showOnboarding = true
-                            }
-                        )
-
-                        SettingsDivider()
-
-                        SettingsButtonRow(
-                            icon: "square.and.arrow.up.fill",
-                            iconColor: .accentColor,
-                            title: "Xuất cài đặt",
-                            subtitle: "Sao lưu toàn bộ cài đặt ra file",
-                            action: {
-                                showingExportSheet = true
-                            }
-                        )
-
-                        SettingsDivider()
-
-                        SettingsButtonRow(
-                            icon: "square.and.arrow.down.fill",
-                            iconColor: .accentColor,
-                            title: "Nhập cài đặt",
-                            subtitle: "Khôi phục cài đặt từ file sao lưu",
-                            action: {
-                                showingImportSheet = true
-                            }
-                        )
-
-                        SettingsDivider()
-
-                        SettingsButtonRow(
-                            icon: "arrow.counterclockwise.circle.fill",
-                            iconColor: .red,
-                            title: "Đặt lại cài đặt",
-                            subtitle: "Khôi phục mặc định",
-                            isDestructive: true,
-                            action: {
-                                showingResetAlert = true
-                            }
-                        )
-                    }
-                }
+                startupSection
+                interfaceSection
+                menuBarSection
+                dockSection
+                updateSection
+                toolsSection
+                dataManagementSection
 
                 Spacer(minLength: 20)
             }
@@ -385,11 +103,304 @@ struct SystemSettingsView: View {
             Text(successMessage)
         }
         .sheet(isPresented: $showOnboarding) {
-            OnboardingView(isPresented: $showOnboarding)
-                .environmentObject(appState)
+            OnboardingView(onDismiss: {
+                showOnboarding = false
+            })
+            .environmentObject(appState)
         }
-        // showNoUpdateAlert removed - now handled by AppDelegate with NSAlert directly
-        // This allows the alert to show even when settings window is not open
+    }
+
+    private var startupSection: some View {
+        SettingsCard(title: "Khởi động", icon: "power.circle.fill") {
+            VStack(spacing: 0) {
+                SettingsToggleRow(
+                    icon: "play.fill",
+                    iconColor: .accentColor,
+                    title: "Khởi động cùng hệ thống",
+                    subtitle: "Tự động mở PHTV khi đăng nhập macOS",
+                    isOn: $appState.runOnStartup
+                )
+            }
+        }
+    }
+
+    private var interfaceSection: some View {
+        SettingsCard(title: "Giao diện", icon: "rectangle.on.rectangle") {
+            VStack(spacing: 0) {
+                SettingsToggleRow(
+                    icon: "pin.fill",
+                    iconColor: .accentColor,
+                    title: "Cửa sổ Cài đặt luôn ở trên",
+                    subtitle: "Giữ cửa sổ Cài đặt hiển thị phía trên các ứng dụng khác",
+                    isOn: $appState.settingsWindowAlwaysOnTop
+                )
+
+                SettingsDivider()
+
+                SettingsToggleRow(
+                    icon: "sparkles.rectangle.stack.fill",
+                    iconColor: .accentColor,
+                    title: "Giao diện Liquid Glass",
+                    subtitle: "Hiệu ứng nền kính mờ đẹp mắt cho cửa sổ cài đặt",
+                    isOn: $appState.enableLiquidGlassBackground
+                )
+
+                if appState.enableLiquidGlassBackground {
+                    SettingsDivider()
+
+                    VStack(spacing: 8) {
+                        HStack(spacing: 14) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.accentColor.opacity(0.12))
+                                    .frame(width: 36, height: 36)
+
+                                Image(systemName: "circle.lefthalf.filled")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundStyle(Color.accentColor)
+                            }
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Độ mờ nền cửa sổ")
+                                    .font(.body)
+                                    .foregroundStyle(.primary)
+
+                                Text("Điều chỉnh độ trong suốt của nền cài đặt")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+
+                            Text(String(format: "%.0f%%", appState.settingsBackgroundOpacity * 100))
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.tint)
+                                .frame(minWidth: 40, alignment: .trailing)
+                        }
+
+                        CustomSlider(
+                            value: $appState.settingsBackgroundOpacity,
+                            range: 0.5...1.0,
+                            step: 0.05,
+                            tintColor: .accentColor
+                        )
+                    }
+                    .padding(.vertical, 6)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+            .animation(.easeInOut(duration: 0.3), value: appState.enableLiquidGlassBackground)
+        }
+    }
+
+    private var menuBarSection: some View {
+        SettingsCard(title: "Thanh menu", icon: "menubar.rectangle") {
+            VStack(spacing: 0) {
+                SettingsToggleRow(
+                    icon: "flag.fill",
+                    iconColor: .accentColor,
+                    title: "Hiển thị icon chữ V",
+                    subtitle: "Dùng icon chữ V khi đang ở chế độ tiếng Việt",
+                    isOn: $appState.useVietnameseMenubarIcon
+                )
+
+                SettingsDivider()
+
+                VStack(spacing: 8) {
+                    HStack(spacing: 14) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.accentColor.opacity(0.12))
+                                .frame(width: 36, height: 36)
+
+                            Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundStyle(Color.accentColor)
+                        }
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Kích cỡ icon")
+                                .font(.body)
+                                .foregroundStyle(.primary)
+
+                            Text("Điều chỉnh kích thước icon trên thanh menu")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+
+                        Text(String(format: "%.0f px", appState.menuBarIconSize))
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.tint)
+                            .frame(minWidth: 40, alignment: .trailing)
+                    }
+
+                    CustomSlider(
+                        value: $appState.menuBarIconSize,
+                        range: 12.0...20.0,
+                        step: 0.01,
+                        tintColor: .accentColor
+                    )
+                }
+                .padding(.vertical, 6)
+            }
+        }
+    }
+
+    private var dockSection: some View {
+        SettingsCard(title: "Dock", icon: "dock.rectangle") {
+            VStack(spacing: 0) {
+                SettingsToggleRow(
+                    icon: "app.fill",
+                    iconColor: .accentColor,
+                    title: "Hiển thị icon trên Dock",
+                    subtitle: "Hiện icon PHTV khi mở cài đặt",
+                    isOn: $appState.showIconOnDock
+                )
+            }
+        }
+    }
+
+    private var updateSection: some View {
+        SettingsCard(title: "Cập nhật", icon: "arrow.down.circle.fill") {
+            VStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 14) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.accentColor.opacity(0.12))
+                                .frame(width: 36, height: 36)
+
+                            Image(systemName: "clock.fill")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundStyle(Color.accentColor)
+                        }
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Tần suất kiểm tra")
+                                .font(.body)
+
+                            Text("Tự động kiểm tra bản cập nhật mới")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+
+                        Picker("", selection: $appState.updateCheckFrequency) {
+                            ForEach(UpdateCheckFrequency.allCases) { freq in
+                                Text(freq.displayName).tag(freq)
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(width: 140)
+                    }
+                    .padding(.vertical, 6)
+                }
+
+                SettingsDivider()
+
+                SettingsToggleRow(
+                    icon: "square.and.arrow.down.fill",
+                    iconColor: .accentColor,
+                    title: "Tự động cài đặt",
+                    subtitle: "Tự động cập nhật khi có phiên bản mới",
+                    isOn: $appState.autoInstallUpdates
+                )
+
+                SettingsDivider()
+
+                SettingsToggleRow(
+                    icon: "testtube.2",
+                    iconColor: .accentColor,
+                    title: "Kênh Beta",
+                    subtitle: "Nhận bản cập nhật beta (không ổn định)",
+                    isOn: $appState.betaChannelEnabled
+                )
+
+                SettingsDivider()
+
+                SettingsButtonRow(
+                    icon: "arrow.clockwise.circle.fill",
+                    iconColor: .accentColor,
+                    title: "Kiểm tra cập nhật",
+                    subtitle: "Tìm phiên bản mới ngay bây giờ",
+                    action: checkForUpdates
+                )
+            }
+        }
+    }
+
+    private var toolsSection: some View {
+        SettingsCard(title: "Công cụ", icon: "wrench.and.screwdriver.fill") {
+            VStack(spacing: 0) {
+                SettingsButtonRow(
+                    icon: "doc.on.clipboard.fill",
+                    iconColor: .accentColor,
+                    title: "Chuyển đổi bảng mã",
+                    subtitle: "Chuyển văn bản giữa Unicode, TCVN3, VNI...",
+                    action: {
+                        showingConvertTool = true
+                    }
+                )
+            }
+        }
+    }
+
+    private var dataManagementSection: some View {
+        SettingsCard(title: "Quản lý dữ liệu", icon: "externaldrive.fill") {
+            VStack(spacing: 0) {
+                SettingsButtonRow(
+                    icon: "book.fill",
+                    iconColor: .accentColor,
+                    title: "Xem hướng dẫn",
+                    subtitle: "Xem lại màn hình giới thiệu PHTV",
+                    action: {
+                        showOnboarding = true
+                    }
+                )
+
+                SettingsDivider()
+
+                SettingsButtonRow(
+                    icon: "square.and.arrow.up.fill",
+                    iconColor: .accentColor,
+                    title: "Xuất cài đặt",
+                    subtitle: "Sao lưu toàn bộ cài đặt ra file",
+                    action: {
+                        showingExportSheet = true
+                    }
+                )
+
+                SettingsDivider()
+
+                SettingsButtonRow(
+                    icon: "square.and.arrow.down.fill",
+                    iconColor: .accentColor,
+                    title: "Nhập cài đặt",
+                    subtitle: "Khôi phục cài đặt từ file sao lưu",
+                    action: {
+                        showingImportSheet = true
+                    }
+                )
+
+                SettingsDivider()
+
+                SettingsButtonRow(
+                    icon: "arrow.counterclockwise.circle.fill",
+                    iconColor: .red,
+                    title: "Đặt lại cài đặt",
+                    subtitle: "Khôi phục mặc định",
+                    isDestructive: true,
+                    action: {
+                        showingResetAlert = true
+                    }
+                )
+            }
+        }
     }
 
     private func formatDate(_ date: Date) -> String {
