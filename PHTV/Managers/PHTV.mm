@@ -494,7 +494,16 @@ extern "C" {
                                                       @"notion.id",                 // Notion - needs step-by-step for stability
                                                       // Safari - CRITICAL FIX for Google Docs/Sheets character corruption
                                                       @"com.apple.Safari",
-                                                      @"com.apple.SafariTechnologyPreview"]];
+                                                      @"com.apple.SafariTechnologyPreview",
+                                                      // Popular Browsers - Fix for Google Sheets/Docs
+                                                      @"com.google.Chrome",         // Google Chrome
+                                                      @"com.microsoft.edgemac",     // Microsoft Edge
+                                                      @"org.mozilla.firefox",       // Firefox
+                                                      @"com.brave.Browser",         // Brave Browser
+                                                      @"company.thebrowser.Browser",// Arc Browser
+                                                      @"com.opera.browser",         // Opera
+                                                      @"com.vivaldi.Vivaldi"        // Vivaldi
+                                                      ]];
                                                       // Removed WhatsApp - step-by-step causes more issues
 
     // Apps where Vietnamese input should be disabled (search/launcher apps) - Using NSSet for O(1) lookup performance
