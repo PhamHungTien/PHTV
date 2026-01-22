@@ -2618,32 +2618,42 @@ extern "C" {
                 // fix autocomplete - Unified browser fix strategy
                 // CRITICAL FIX: NEVER send empty character for SPACE key!
                 
-                // FINAL BROWSER FIX (v1.9.9):
-                // 1. Force "Shift+Left + Delete" strategy for ALL browsers (Chrome, Safari, Edge...).
-                //    - Address Bar: Selects the typed char (breaking autocomplete selection) then deletes it. Fixes "dđ", "chaào".
-                //    - Google Sheets: Selects the typed char then deletes it. Safe & clean.
-                // 2. NEVER use SendEmptyCharacter for browsers. That causes the "iệt Nam" bug.
-                // 3. IGNORE spotlightActive checks because they are too slow for the first word.
+                // REFINED HYBRID STRATEGY (Final Safety Fix):
+                // 1. Browsers (Content/Sheets): Default to Simple Backspace.
+                //    - SAFE: No 'Shift+Left' (prevents selection errors in Sheets).
+                //    - SAFE: No 'SendEmptyCharacter' (prevents "iệt Nam" deletion bug).
+                // 2. Browsers (Address Bar): Use 'Shift+Left' ONLY if detected (spotlightActive).
+                //    - FIX: Breaks autocomplete suggestions to prevent "dđ", "chaào".
                 
                 BOOL isBrowserFix = vFixRecommendBrowser && isBrowserApp;
                 
                 if (isBrowserFix && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE && !isPotentialShortcut) {
                     if (pData->backspaceCount > 0) {
-                        // UNIFIED STRATEGY: Always use Shift+Left for Browsers
-                        // This works for both Address Bar (Autofill) and Content (Sheets)
+                        // DETECT ADDRESS BAR:
+                        // spotlightActive relies on AX API to detect AXTextField role.
+                        // If TRUE: We are likely in Address Bar -> Use Shift+Left to fix duplication.
+                        // If FALSE: We are in Content/Sheets -> Use standard Backspace to be safe.
+                        
+                        // NOTE: If detection lags on first word, user might see "dđ" once.
+                        // This is an acceptable trade-off to ensure Google Sheets never breaks.
+                        if (spotlightActive) {
 #ifdef DEBUG
-                        NSLog(@"[PHTV Browser] Force Shift+Left strategy: backspaceCount=%d, app=%@",
-                              (int)pData->backspaceCount, getFocusedAppBundleId());
+                            NSLog(@"[PHTV Browser] Address Bar Detected -> Using Shift+Left: backspaceCount=%d", (int)pData->backspaceCount);
 #endif
-                        SendShiftAndLeftArrow();      // Select the character (_syncKey.pop_back)
-                        SendPhysicalBackspace();      // Delete selection (no _syncKey modification)
-                        pData->backspaceCount--;      // We already deleted one character
+                            SendShiftAndLeftArrow();
+                            SendPhysicalBackspace();
+                            pData->backspaceCount--;
+                        } else {
+                            // Content Mode (Sheets, Docs, Forms)
+                            // Do nothing here, let standard SendBackspaceSequence handle it below.
+                            // Standard Backspace is the safest method for web editors.
+                        }
                     }
-                    // For browsers, we NEVER send SendEmptyCharacter anymore.
-                    // It's too dangerous for web editors.
+                    // CRITICAL: Force fall through to standard backspace if we didn't use Shift+Left
+                    // AND prevent SendEmptyCharacter logic from running below.
                 } 
                 else if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE && !isPotentialShortcut && !isBrowserApp) {
-                    // Legacy logic for non-browser apps (Electron, etc.)
+                    // Legacy logic for non-browser apps (Electron, Slack, etc.)
                     // Keep original behavior: shift-left for Chromium, EmptyChar for others
                     BOOL useShiftLeft = appChars.containsUnicodeCompound && pData->backspaceCount > 0;
                     
