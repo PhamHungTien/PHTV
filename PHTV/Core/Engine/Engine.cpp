@@ -542,7 +542,10 @@ void checkCorrectVowel(vector<vector<Uint16>>& charset, int& i, int& k, const Ui
     }
     
     if (isCorect && k >= 0) {
-        if (CHR(k) == CHR(k+1)) {
+        // ALLOW marks on transformed vowels (â, ê, ô, ă, ư, ơ)
+        // Even if preceded by the same base vowel (e.g., "aa" -> "â", then "â" + "j" -> "ậ")
+        // The original check CHR(k) == CHR(k+1) was too strict and blocked these cases.
+        if (CHR(k) == CHR(k+1) && !(TypingWord[k+1] & (TONE_MASK | TONEW_MASK))) {
             isCorect = false;
         }
     }
@@ -1152,8 +1155,8 @@ void handleMainKey(const Uint16& data, const bool& isCaps) {
 
     //if is mark key
     if (IS_MARK_KEY(data)) {
-        for (i = 0; i < _vowelForMark.size(); i++) {
-            vector<vector<Uint16>>& charset = _vowelForMark[i];
+        for (auto it = _vowelForMark.begin(); it != _vowelForMark.end(); ++it) {
+            vector<vector<Uint16>>& charset = it->second;
             isCorect = false;
             isChanged = false;
             k = _index;
