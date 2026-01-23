@@ -32,6 +32,12 @@ struct BugReportView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
+                SettingsHeaderView(
+                    title: "Báo lỗi & Hỗ trợ",
+                    subtitle: "Gửi thông tin chi tiết để được hỗ trợ nhanh và chính xác hơn.",
+                    icon: "ladybug.fill"
+                )
+
                 // Bug Information Form
                 bugInfoSection
 

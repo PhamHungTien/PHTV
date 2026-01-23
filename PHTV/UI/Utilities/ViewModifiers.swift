@@ -199,6 +199,97 @@ extension View {
     }
 }
 
+// MARK: - Settings Header Components
+
+struct SettingsStatusPill: View {
+    let text: String
+    var color: Color = .accentColor
+
+    var body: some View {
+        Text(text)
+            .font(.caption2)
+            .fontWeight(.semibold)
+            .lineLimit(1)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(
+                Capsule()
+                    .fill(color.opacity(0.15))
+            )
+            .foregroundStyle(color)
+            .accessibilityLabel(Text(text))
+    }
+}
+
+struct SettingsHeaderView<Trailing: View>: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    var accent: Color = .accentColor
+    let trailing: Trailing
+
+    init(
+        title: String,
+        subtitle: String,
+        icon: String,
+        accent: Color = .accentColor,
+        @ViewBuilder trailing: () -> Trailing = { EmptyView() }
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.icon = icon
+        self.accent = accent
+        self.trailing = trailing()
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 16) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(accent.opacity(0.12))
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(accent)
+            }
+            .frame(width: 48, height: 48)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.primary)
+
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 16)
+
+            trailing
+        }
+        .padding(16)
+        .frame(maxWidth: 700)
+        .background {
+            if #available(macOS 26.0, *) {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(.ultraThinMaterial)
+                    .glassEffect(in: .rect(cornerRadius: 14))
+            } else {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color(NSColor.controlBackgroundColor))
+                    .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 2)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(Color.gray.opacity(0.15), lineWidth: 1)
+                    )
+            }
+        }
+    }
+}
+
 // MARK: - Settings View Background
 
 /// Visual Effect background for blur effect

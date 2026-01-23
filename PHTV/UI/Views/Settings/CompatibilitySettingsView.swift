@@ -30,6 +30,12 @@ struct CompatibilitySettingsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
+                SettingsHeaderView(
+                    title: "Tương thích nâng cao",
+                    subtitle: "Tinh chỉnh cho bố cục bàn phím đặc biệt và công cụ bên thứ ba.",
+                    icon: "puzzlepiece.extension.fill"
+                )
+
                 // Keyboard Layout Compatibility
                 SettingsCard(title: "Bàn phím", icon: "keyboard.fill") {
                     SettingsToggleRow(

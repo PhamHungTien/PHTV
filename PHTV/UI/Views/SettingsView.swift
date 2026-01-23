@@ -39,10 +39,15 @@ struct SettingsView: View {
         NavigationSplitView {
             List(selection: $selectedTab) {
                 if searchText.isEmpty {
-                    // Normal tab list
-                    ForEach(SettingsTab.allCases) { tab in
-                        Label(tab.title, systemImage: tab.iconName)
-                            .tag(tab)
+                    // Normal tab list grouped by section
+                    ForEach(SettingsTabSection.allCases) { section in
+                        Section(section.title) {
+                            ForEach(section.tabs) { tab in
+                                SettingsSidebarRow(tab: tab)
+                                    .tag(tab)
+                                    .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
+                            }
+                        }
                     }
                 } else {
                     // Search results
@@ -365,6 +370,52 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .bugReport: return "ladybug.fill"
         case .about: return "info.circle"
         }
+    }
+}
+
+// MARK: - Settings Sidebar Sections
+enum SettingsTabSection: String, CaseIterable, Identifiable {
+    case typing = "Cấu hình gõ"
+    case system = "Hệ thống"
+    case support = "Hỗ trợ"
+
+    nonisolated var id: String { rawValue }
+    nonisolated var title: String { rawValue }
+
+    nonisolated var tabs: [SettingsTab] {
+        switch self {
+        case .typing:
+            return [.typing, .hotkeys, .macro, .apps]
+        case .system:
+            return [.system]
+        case .support:
+            return [.bugReport, .about]
+        }
+    }
+}
+
+// MARK: - Sidebar Row
+struct SettingsSidebarRow: View {
+    let tab: SettingsTab
+
+    var body: some View {
+        HStack(spacing: 10) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color.primary.opacity(0.08))
+                Image(systemName: tab.iconName)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.primary)
+            }
+            .frame(width: 24, height: 24)
+
+            Text(tab.title)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.primary)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 2)
     }
 }
 

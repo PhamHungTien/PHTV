@@ -2293,6 +2293,23 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     
     // Apply activation policy on main thread
     dispatch_async(dispatch_get_main_queue(), ^{
+        // If settings window is open, keep the app in regular mode to prevent sinking
+        if ([self isSettingsWindowVisible] || settingsWindowOpen) {
+            [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+            [NSApp activateIgnoringOtherApps:YES];
+
+            // Bring settings window to front to avoid unintended hiding
+            for (NSWindow *window in [NSApp windows]) {
+                NSString *identifier = window.identifier;
+                if (identifier && [identifier hasPrefix:@"settings"]) {
+                    [window makeKeyAndOrderFront:nil];
+                    [window orderFrontRegardless];
+                    break;
+                }
+            }
+            return;
+        }
+
         NSApplicationActivationPolicy policy = onDock ? NSApplicationActivationPolicyRegular : NSApplicationActivationPolicyAccessory;
         [NSApp setActivationPolicy: policy];
         

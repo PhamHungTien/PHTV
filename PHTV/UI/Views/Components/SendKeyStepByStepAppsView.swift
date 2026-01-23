@@ -11,43 +11,22 @@ import UniformTypeIdentifiers
 
 struct SendKeyStepByStepAppsView: View {
     @EnvironmentObject var appState: AppState
-    @State private var showingFilePicker = false
-    @State private var showingRunningApps = false
+    @Binding var showingFilePicker: Bool
+    @Binding var showingRunningApps: Bool
+    var showHeader: Bool = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Header
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Ứng dụng gửi từng phím")
-                        .font(.headline)
-
-                    Text("Tự động bật chức năng gửi từng phím khi sử dụng các ứng dụng này")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                Menu {
-                    Button(action: { showingRunningApps = true }) {
-                        Label("Chọn từ ứng dụng đang chạy", systemImage: "apps.iphone")
-                    }
-
-                    Button(action: { showingFilePicker = true }) {
-                        Label("Chọn từ thư mục Applications", systemImage: "folder")
-                    }
-                } label: {
-                    Label("Thêm", systemImage: "plus.circle.fill")
-                        .font(.system(size: 13, weight: .medium))
-                }
-                .menuStyle(.borderlessButton)
-                .fixedSize()
+            if showHeader {
+                header
             }
 
             // Apps List
             if appState.sendKeyStepByStepApps.isEmpty {
-                EmptySendKeyStepByStepAppsView()
+                EmptySendKeyStepByStepAppsView(
+                    onPickRunningApps: { showingRunningApps = true },
+                    onPickFromApplications: { showingFilePicker = true }
+                )
             } else {
                 SendKeyStepByStepAppsList(apps: appState.sendKeyStepByStepApps) { app in
                     appState.removeSendKeyStepByStepApp(app)
@@ -79,10 +58,43 @@ struct SendKeyStepByStepAppsView: View {
             }
         }
     }
+
+    private var header: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Ứng dụng gửi từng phím")
+                    .font(.headline)
+
+                Text("Tự động bật chức năng gửi từng phím khi sử dụng các ứng dụng này")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Menu {
+                Button(action: { showingRunningApps = true }) {
+                    Label("Chọn từ ứng dụng đang chạy", systemImage: "apps.iphone")
+                }
+
+                Button(action: { showingFilePicker = true }) {
+                    Label("Chọn từ thư mục Applications", systemImage: "folder")
+                }
+            } label: {
+                Label("Thêm", systemImage: "plus.circle.fill")
+                    .font(.system(size: 13, weight: .medium))
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+        }
+    }
 }
 
 // MARK: - Empty State View
 private struct EmptySendKeyStepByStepAppsView: View {
+    let onPickRunningApps: () -> Void
+    let onPickFromApplications: () -> Void
+
     var body: some View {
         VStack(spacing: 12) {
             Image(systemName: "keyboard.badge.ellipsis")
@@ -96,6 +108,18 @@ private struct EmptySendKeyStepByStepAppsView: View {
             Text("Nhấn \"Thêm\" để chọn ứng dụng")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
+
+            HStack(spacing: 8) {
+                Button("Ứng dụng đang chạy") {
+                    onPickRunningApps()
+                }
+                .adaptiveBorderedButtonStyle()
+
+                Button("Từ Applications") {
+                    onPickFromApplications()
+                }
+                .adaptiveBorderedButtonStyle()
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
@@ -374,7 +398,10 @@ private struct SendKeyStepByStepRunningAppRow: View {
 }
 
 #Preview {
-    SendKeyStepByStepAppsView()
+    SendKeyStepByStepAppsView(
+        showingFilePicker: .constant(false),
+        showingRunningApps: .constant(false)
+    )
         .environmentObject(AppState.shared)
         .frame(width: 400)
         .padding()

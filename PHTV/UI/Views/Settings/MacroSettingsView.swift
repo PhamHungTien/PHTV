@@ -43,6 +43,23 @@ struct MacroSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
+                SettingsHeaderView(
+                    title: "Gõ tắt & Macro",
+                    subtitle: "Tạo từ viết tắt, quản lý danh mục và tăng tốc độ gõ của bạn.",
+                    icon: "text.badge.plus"
+                ) {
+                    VStack(alignment: .trailing, spacing: 6) {
+                        SettingsStatusPill(
+                            text: appState.useMacro ? "Đang bật" : "Đang tắt",
+                            color: appState.useMacro ? .accentColor : .secondary
+                        )
+                        SettingsStatusPill(
+                            text: "Tổng: \(macros.count)",
+                            color: .compatTeal
+                        )
+                    }
+                }
+
                 // Macro Configuration
                 SettingsCard(title: "Cấu hình gõ tắt", icon: "text.badge.plus") {
                     VStack(spacing: 0) {
@@ -81,7 +98,11 @@ struct MacroSettingsView: View {
                 }
 
                 // Categories
-                SettingsCard(title: "Danh mục", icon: "folder.fill") {
+                SettingsCard(
+                    title: "Danh mục",
+                    subtitle: "Nhóm gõ tắt để dễ tìm và quản lý",
+                    icon: "folder.fill"
+                ) {
                     VStack(spacing: 0) {
                         // Category toolbar
                         HStack(spacing: 12) {
@@ -155,7 +176,11 @@ struct MacroSettingsView: View {
                 .opacity(appState.useMacro ? 1 : 0.5)
 
                 // Macro List
-                SettingsCard(title: "Danh sách gõ tắt", icon: "list.bullet.rectangle") {
+                SettingsCard(
+                    title: "Danh sách gõ tắt",
+                    subtitle: "Tạo, chỉnh sửa và lọc theo danh mục",
+                    icon: "list.bullet.rectangle"
+                ) {
                     VStack(spacing: 0) {
                         // Toolbar
                         HStack(spacing: 12) {

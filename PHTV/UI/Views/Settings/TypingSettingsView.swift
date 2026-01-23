@@ -29,6 +29,23 @@ struct TypingSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
+                SettingsHeaderView(
+                    title: "Bộ gõ tiếng Việt",
+                    subtitle: "Chọn phương pháp gõ, chính tả và tốc độ phù hợp với thói quen của bạn.",
+                    icon: "keyboard.fill"
+                ) {
+                    VStack(alignment: .trailing, spacing: 6) {
+                        SettingsStatusPill(
+                            text: appState.isEnabled ? "Chế độ: Tiếng Việt" : "Chế độ: Tiếng Anh",
+                            color: appState.isEnabled ? .accentColor : .secondary
+                        )
+                        SettingsStatusPill(
+                            text: appState.inputMethod.displayName,
+                            color: .compatTeal
+                        )
+                    }
+                }
+
                 // Status Card
                 StatusCard(hasPermission: appState.hasAccessibilityPermission)
 
@@ -336,25 +353,55 @@ struct StatusCard: View {
     }
 }
 
-struct SettingsCard<Content: View>: View {
+struct SettingsCard<Content: View, Trailing: View>: View {
     let title: String
+    let subtitle: String?
     let icon: String
-    @ViewBuilder let content: Content
+    let trailing: Trailing
+    let content: Content
+
+    init(
+        title: String,
+        subtitle: String? = nil,
+        icon: String,
+        @ViewBuilder trailing: () -> Trailing = { EmptyView() },
+        @ViewBuilder content: () -> Content
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.icon = icon
+        self.trailing = trailing()
+        self.content = content()
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header
-            HStack(spacing: 10) {
+            HStack(spacing: 12) {
                 Image(systemName: icon)
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(.tint)
 
-                Text(title)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                Spacer()
+
+                trailing
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.vertical, 12)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color(NSColor.controlBackgroundColor).opacity(0.15))
 
@@ -392,7 +439,7 @@ struct SettingsToggleRow: View {
     @Binding var isOn: Bool
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(alignment: .top, spacing: 14) {
             // Icon background - no glass effect to avoid glass-on-glass
             // (parent SettingsCard already has glass effect)
             ZStack {
@@ -413,7 +460,8 @@ struct SettingsToggleRow: View {
                 Text(subtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             Spacer()
@@ -422,6 +470,9 @@ struct SettingsToggleRow: View {
                 .labelsHidden()
                 .toggleStyle(.switch)
                 .tint(iconColor)
+                .padding(.top, 2)
+                .accessibilityLabel(Text(title))
+                .accessibilityHint(Text(subtitle))
         }
         .padding(.vertical, 6)
     }
@@ -449,7 +500,7 @@ struct SettingsSliderRow: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            HStack(spacing: 14) {
+            HStack(alignment: .top, spacing: 14) {
                 // Icon background - no glass effect to avoid glass-on-glass
                 ZStack {
                     RoundedRectangle(cornerRadius: 8)
@@ -469,6 +520,8 @@ struct SettingsSliderRow: View {
                     Text(subtitle)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Spacer()
@@ -478,6 +531,7 @@ struct SettingsSliderRow: View {
                     .fontWeight(.semibold)
                     .foregroundStyle(.tint)
                     .frame(minWidth: 40, alignment: .trailing)
+                    .padding(.top, 2)
             }
 
             Slider(

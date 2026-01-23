@@ -26,10 +26,27 @@ struct SystemSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                startupSection
+                SettingsHeaderView(
+                    title: "Hệ thống & Cập nhật",
+                    subtitle: "Quản lý khởi động, giao diện, cập nhật và sao lưu dữ liệu.",
+                    icon: "gearshape.fill"
+                ) {
+                    VStack(alignment: .trailing, spacing: 6) {
+                        SettingsStatusPill(
+                            text: appState.runOnStartup ? "Tự khởi động: Bật" : "Tự khởi động: Tắt",
+                            color: appState.runOnStartup ? .accentColor : .secondary
+                        )
+                        SettingsStatusPill(
+                            text: appState.showIconOnDock ? "Dock: Hiện" : "Dock: Ẩn",
+                            color: appState.showIconOnDock ? .compatTeal : .secondary
+                        )
+                    }
+                }
+
                 interfaceSection
                 menuBarSection
                 dockSection
+                startupSection
                 updateSection
                 toolsSection
                 dataManagementSection
@@ -632,7 +649,7 @@ struct SettingsInfoRow: View {
     let value: String
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(alignment: .top, spacing: 14) {
             ZStack {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(iconColor.opacity(0.12))
@@ -652,6 +669,7 @@ struct SettingsInfoRow: View {
             Text(value)
                 .font(.system(.body, design: .monospaced))
                 .foregroundStyle(.secondary)
+                .padding(.top, 2)
         }
         .padding(.vertical, 6)
     }
@@ -668,7 +686,7 @@ struct SettingsButtonRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 14) {
+            HStack(alignment: .top, spacing: 14) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 8)
                         .fill(iconColor.opacity(0.12))
@@ -695,6 +713,8 @@ struct SettingsButtonRow: View {
                     Text(subtitle)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Spacer()
@@ -703,6 +723,7 @@ struct SettingsButtonRow: View {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.tertiary)
+                        .padding(.top, 2)
                 }
             }
             .padding(.vertical, 6)
@@ -710,6 +731,8 @@ struct SettingsButtonRow: View {
         }
         .buttonStyle(.plain)
         .disabled(isLoading)
+        .accessibilityLabel(Text(title))
+        .accessibilityHint(Text(subtitle))
     }
 }
 

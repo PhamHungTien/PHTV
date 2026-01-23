@@ -18,6 +18,10 @@ struct AppsSettingsView: View {
     @State private var convertProgress = ""
     @State private var canOpenTerminal = false
     @State private var wasBinaryInstall = false
+    @State private var showingExcludedFilePicker = false
+    @State private var showingExcludedRunningApps = false
+    @State private var showingStepByStepFilePicker = false
+    @State private var showingStepByStepRunningApps = false
 
     enum ClaudeCodeStatus {
         case checking
@@ -30,6 +34,23 @@ struct AppsSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
+                SettingsHeaderView(
+                    title: "Ứng dụng & Tương thích",
+                    subtitle: "Tùy chỉnh chuyển đổi theo từng ứng dụng và cải thiện khả năng tương thích.",
+                    icon: "square.stack.3d.up.fill"
+                ) {
+                    VStack(alignment: .trailing, spacing: 6) {
+                        SettingsStatusPill(
+                            text: "Loại trừ: \(appState.excludedApps.count)",
+                            color: .compatTeal
+                        )
+                        SettingsStatusPill(
+                            text: appState.sendKeyStepByStep ? "Gửi từng phím: Bật" : "Gửi từng phím: Tắt",
+                            color: appState.sendKeyStepByStep ? .accentColor : .secondary
+                        )
+                    }
+                }
+
                 // Smart Switch
                 SettingsCard(title: "Chuyển đổi thông minh", icon: "brain.fill") {
                     VStack(spacing: 0) {
@@ -54,8 +75,32 @@ struct AppsSettingsView: View {
                 }
 
                 // Excluded Apps
-                SettingsCard(title: "Loại trừ ứng dụng", icon: "app.badge.fill") {
-                    ExcludedAppsView()
+                SettingsCard(
+                    title: "Loại trừ ứng dụng",
+                    subtitle: "Tự động gõ tiếng Anh khi dùng các ứng dụng này",
+                    icon: "app.badge.fill",
+                    trailing: {
+                        Menu {
+                            Button(action: { showingExcludedRunningApps = true }) {
+                                Label("Chọn từ ứng dụng đang chạy", systemImage: "apps.iphone")
+                            }
+
+                            Button(action: { showingExcludedFilePicker = true }) {
+                                Label("Chọn từ thư mục Applications", systemImage: "folder")
+                            }
+                        } label: {
+                            Label("Thêm", systemImage: "plus.circle.fill")
+                                .font(.system(size: 13, weight: .medium))
+                        }
+                        .menuStyle(.borderlessButton)
+                        .fixedSize()
+                    }
+                ) {
+                    ExcludedAppsView(
+                        showingFilePicker: $showingExcludedFilePicker,
+                        showingRunningApps: $showingExcludedRunningApps,
+                        showHeader: false
+                    )
                 }
 
                 // Send Key Step By Step
@@ -70,8 +115,32 @@ struct AppsSettingsView: View {
                 }
 
                 // Send Key Step By Step Apps
-                SettingsCard(title: "Ứng dụng gửi từng phím", icon: "app.badge.fill") {
-                    SendKeyStepByStepAppsView()
+                SettingsCard(
+                    title: "Ứng dụng gửi từng phím",
+                    subtitle: "Tự động bật gửi từng phím trong các ứng dụng này",
+                    icon: "app.badge.fill",
+                    trailing: {
+                        Menu {
+                            Button(action: { showingStepByStepRunningApps = true }) {
+                                Label("Chọn từ ứng dụng đang chạy", systemImage: "apps.iphone")
+                            }
+
+                            Button(action: { showingStepByStepFilePicker = true }) {
+                                Label("Chọn từ thư mục Applications", systemImage: "folder")
+                            }
+                        } label: {
+                            Label("Thêm", systemImage: "plus.circle.fill")
+                                .font(.system(size: 13, weight: .medium))
+                        }
+                        .menuStyle(.borderlessButton)
+                        .fixedSize()
+                    }
+                ) {
+                    SendKeyStepByStepAppsView(
+                        showingFilePicker: $showingStepByStepFilePicker,
+                        showingRunningApps: $showingStepByStepRunningApps,
+                        showHeader: false
+                    )
                 }
 
                 // Compatibility

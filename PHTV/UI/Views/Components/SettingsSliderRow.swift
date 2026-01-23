@@ -21,7 +21,7 @@ struct SettingsSliderRow: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            HStack(spacing: 14) {
+            HStack(alignment: .top, spacing: 14) {
                 // Icon background - no glass effect to avoid glass-on-glass
                 ZStack {
                     RoundedRectangle(cornerRadius: 8)
@@ -41,6 +41,8 @@ struct SettingsSliderRow: View {
                     Text(subtitle)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Spacer()
@@ -50,6 +52,7 @@ struct SettingsSliderRow: View {
                     .fontWeight(.semibold)
                     .foregroundStyle(.tint)
                     .frame(minWidth: 40, alignment: .trailing)
+                    .padding(.top, 2)
             }
 
             Slider(
