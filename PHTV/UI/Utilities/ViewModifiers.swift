@@ -216,6 +216,10 @@ struct SettingsStatusPill: View {
                 Capsule()
                     .fill(color.opacity(0.15))
             )
+            .overlay(
+                Capsule()
+                    .stroke(color.opacity(0.25), lineWidth: 1)
+            )
             .foregroundStyle(color)
             .accessibilityLabel(Text(text))
     }
@@ -255,12 +259,11 @@ struct SettingsHeaderView<Trailing: View>: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.title2)
-                    .fontWeight(.semibold)
+                    .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(.primary)
 
                 Text(subtitle)
-                    .font(.subheadline)
+                    .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)

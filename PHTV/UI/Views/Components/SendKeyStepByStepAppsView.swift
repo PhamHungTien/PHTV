@@ -62,10 +62,10 @@ struct SendKeyStepByStepAppsView: View {
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Ứng dụng gửi từng phím")
+                Text("Ứng dụng gửi theo từng phím")
                     .font(.headline)
 
-                Text("Tự động bật chức năng gửi từng phím khi sử dụng các ứng dụng này")
+                Text("Tự động bật gửi theo từng phím khi dùng các ứng dụng này")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -105,7 +105,7 @@ private struct EmptySendKeyStepByStepAppsView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            Text("Nhấn \"Thêm\" để chọn ứng dụng")
+            Text("Chọn ứng dụng để thêm vào danh sách")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
 

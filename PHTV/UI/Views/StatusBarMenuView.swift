@@ -66,27 +66,31 @@ struct StatusBarMenuView: View {
 
     var body: some View {
         // ═══════════════════════════════════════════
-        // MARK: - Chuyển đổi ngôn ngữ
+        // MARK: - Trạng thái
         // ═══════════════════════════════════════════
-        Picker("", selection: Binding(
-            get: { appState.isEnabled },
-            set: { appState.isEnabled = $0 }
-        )) {
-            Label("Tiếng Việt", systemImage: "v.circle.fill")
-                .tag(true)
-            Label("Tiếng Anh", systemImage: "e.circle.fill")
-                .tag(false)
+        Section("Chế độ gõ") {
+            Picker("", selection: Binding(
+                get: { appState.isEnabled },
+                set: { appState.isEnabled = $0 }
+            )) {
+                Label("Tiếng Việt", systemImage: "v.circle.fill")
+                    .tag(true)
+                Label("Tiếng Anh", systemImage: "e.circle.fill")
+                    .tag(false)
+            }
+            .pickerStyle(.inline)
+            .labelsHidden()
+
+            Label("Phím chuyển: \(hotkeyString)", systemImage: "keyboard")
+                .disabled(true)
         }
-        .pickerStyle(.inline)
-        .labelsHidden()
 
         Divider()
 
         // ═══════════════════════════════════════════
-        // MARK: - Bộ gõ (Input Configuration)
+        // MARK: - Bộ gõ
         // ═══════════════════════════════════════════
         Menu {
-            // Input Method submenu
             Section("Phương pháp gõ") {
                 ForEach(InputMethod.allCases) { method in
                     Button {
@@ -105,7 +109,6 @@ struct StatusBarMenuView: View {
 
             Divider()
 
-            // Code Table submenu
             Section("Bảng mã") {
                 ForEach(CodeTable.allCases) { table in
                     Button {
@@ -124,23 +127,44 @@ struct StatusBarMenuView: View {
 
             Divider()
 
-            // Quick options
-            Toggle(isOn: $appState.quickTelex) {
-                Label("Gõ nhanh (Quick Telex)", systemImage: "hare")
+            Section("Tùy chọn nhập") {
+                Toggle(isOn: $appState.quickTelex) {
+                    Label("Gõ nhanh (Quick Telex)", systemImage: "hare")
+                }
+
+                Toggle(isOn: $appState.upperCaseFirstChar) {
+                    Label("Viết hoa đầu câu", systemImage: "textformat.size.larger")
+                }
+
+                Toggle(isOn: $appState.allowConsonantZFWJ) {
+                    Label("Cho phép ghép phụ âm", systemImage: "character.cursor.ibeam")
+                }
+
+                Toggle(isOn: $appState.quickStartConsonant) {
+                    Label("Phụ âm đầu nhanh", systemImage: "arrow.right.to.line")
+                }
+
+                Toggle(isOn: $appState.quickEndConsonant) {
+                    Label("Phụ âm cuối nhanh", systemImage: "arrow.left.to.line")
+                }
             }
 
-            Toggle(isOn: $appState.useModernOrthography) {
-                Label("Chính tả mới (oà, uý)", systemImage: "textformat.abc")
+            Divider()
+
+            Section("Chính tả") {
+                Toggle(isOn: $appState.useModernOrthography) {
+                    Label("Chính tả mới (oà, uý)", systemImage: "textformat.abc")
+                }
             }
         } label: {
             Label("Bộ gõ", systemImage: "keyboard.fill")
         }
 
         // ═══════════════════════════════════════════
-        // MARK: - Tính năng (Features)
+        // MARK: - Tính năng
         // ═══════════════════════════════════════════
         Menu {
-            Section("Kiểm tra & Sửa lỗi") {
+            Section("Kiểm tra & khôi phục") {
                 Toggle(isOn: $appState.checkSpelling) {
                     Label("Kiểm tra chính tả", systemImage: "text.badge.checkmark")
                 }
@@ -181,47 +205,10 @@ struct StatusBarMenuView: View {
                     Label("Nhớ bảng mã theo ứng dụng", systemImage: "memories")
                 }
             }
-        } label: {
-            Label("Tính năng", systemImage: "star.fill")
-        }
-
-        // ═══════════════════════════════════════════
-        // MARK: - Nâng cao (Advanced)
-        // ═══════════════════════════════════════════
-        Menu {
-            Section("Tùy chọn nhập") {
-                Toggle(isOn: $appState.upperCaseFirstChar) {
-                    Label("Viết hoa đầu câu", systemImage: "textformat.size.larger")
-                }
-
-                Toggle(isOn: $appState.allowConsonantZFWJ) {
-                    Label("Cho phép ghép phụ âm", systemImage: "character.cursor.ibeam")
-                }
-
-                Toggle(isOn: $appState.quickStartConsonant) {
-                    Label("Phụ âm đầu nhanh", systemImage: "arrow.right.to.line")
-                }
-
-                Toggle(isOn: $appState.quickEndConsonant) {
-                    Label("Phụ âm cuối nhanh", systemImage: "arrow.left.to.line")
-                }
-            }
 
             Divider()
 
-            Section("Tương thích") {
-                Toggle(isOn: $appState.sendKeyStepByStep) {
-                    Label("Gửi phím từng bước", systemImage: "arrow.down.to.line.compact")
-                }
-
-                Toggle(isOn: $appState.performLayoutCompat) {
-                    Label("Tương thích layout", systemImage: "keyboard.badge.ellipsis")
-                }
-            }
-
-            Divider()
-
-            Section("Khôi phục") {
+            Section("Tạm dừng & phục hồi") {
                 Toggle(isOn: $appState.restoreOnEscape) {
                     Label("Khôi phục khi nhấn \(appState.restoreKey.symbol)", systemImage: "escape")
                 }
@@ -231,11 +218,26 @@ struct StatusBarMenuView: View {
                 }
             }
         } label: {
-            Label("Nâng cao", systemImage: "gearshape.2.fill")
+            Label("Tính năng", systemImage: "star.fill")
         }
 
         // ═══════════════════════════════════════════
-        // MARK: - Hệ thống (System)
+        // MARK: - Tương thích
+        // ═══════════════════════════════════════════
+        Menu {
+            Toggle(isOn: $appState.sendKeyStepByStep) {
+                Label("Gửi phím từng bước", systemImage: "arrow.down.to.line.compact")
+            }
+
+            Toggle(isOn: $appState.performLayoutCompat) {
+                Label("Tương thích layout", systemImage: "keyboard.badge.ellipsis")
+            }
+        } label: {
+            Label("Tương thích", systemImage: "wrench.and.screwdriver.fill")
+        }
+
+        // ═══════════════════════════════════════════
+        // MARK: - Hệ thống
         // ═══════════════════════════════════════════
         Menu {
             Toggle(isOn: $appState.runOnStartup) {
@@ -252,17 +254,15 @@ struct StatusBarMenuView: View {
 
             Divider()
 
-            // Accessibility status
             if appState.hasAccessibilityPermission {
-                Label("✓ Đã cấp quyền Accessibility", systemImage: "checkmark.shield")
+                Label("Đã cấp quyền Accessibility", systemImage: "checkmark.shield")
             } else {
                 Button {
-                    // Open System Preferences
                     if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
                         NSWorkspace.shared.open(url)
                     }
                 } label: {
-                    Label("⚠ Cần cấp quyền Accessibility", systemImage: "exclamationmark.shield")
+                    Label("Cần cấp quyền Accessibility", systemImage: "exclamationmark.shield")
                 }
             }
         } label: {
@@ -272,7 +272,7 @@ struct StatusBarMenuView: View {
         Divider()
 
         // ═══════════════════════════════════════════
-        // MARK: - Công cụ & Cài đặt
+        // MARK: - Công cụ
         // ═══════════════════════════════════════════
         Menu {
             Section("Chuyển nhanh Clipboard") {
@@ -306,16 +306,21 @@ struct StatusBarMenuView: View {
             Button {
                 NotificationCenter.default.post(name: NSNotification.Name("OpenConvertTool"), object: nil)
             } label: {
-                Label("Mở công cụ đầy đủ...", systemImage: "arrow.triangle.2.circlepath")
+                Label("Mở công cụ chuyển mã...", systemImage: "arrow.triangle.2.circlepath")
             }
         } label: {
-            Label("Chuyển đổi bảng mã", systemImage: "arrow.triangle.2.circlepath")
+            Label("Công cụ", systemImage: "hammer.fill")
         }
 
+        Divider()
+
+        // ═══════════════════════════════════════════
+        // MARK: - Cài đặt
+        // ═══════════════════════════════════════════
         Button {
             openSettingsWindow()
         } label: {
-            Label("Mở Cài đặt đầy đủ...", systemImage: "slider.horizontal.3")
+            Label("Mở Cài đặt...", systemImage: "slider.horizontal.3")
         }
         .keyboardShortcut(",", modifiers: .command)
 

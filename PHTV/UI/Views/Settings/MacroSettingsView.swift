@@ -45,12 +45,12 @@ struct MacroSettingsView: View {
             VStack(spacing: 20) {
                 SettingsHeaderView(
                     title: "Gõ tắt & Macro",
-                    subtitle: "Tạo từ viết tắt, quản lý danh mục và tăng tốc độ gõ của bạn.",
+                    subtitle: "Tạo từ viết tắt, quản lý danh mục và tăng tốc độ nhập liệu.",
                     icon: "text.badge.plus"
                 ) {
                     VStack(alignment: .trailing, spacing: 6) {
                         SettingsStatusPill(
-                            text: appState.useMacro ? "Đang bật" : "Đang tắt",
+                            text: appState.useMacro ? "Đang hoạt động" : "Đang tắt",
                             color: appState.useMacro ? .accentColor : .secondary
                         )
                         SettingsStatusPill(
@@ -61,13 +61,17 @@ struct MacroSettingsView: View {
                 }
 
                 // Macro Configuration
-                SettingsCard(title: "Cấu hình gõ tắt", icon: "text.badge.plus") {
+                SettingsCard(
+                    title: "Thiết lập gõ tắt",
+                    subtitle: "Bật/tắt và cấu hình hành vi mở rộng",
+                    icon: "text.badge.plus"
+                ) {
                     VStack(spacing: 0) {
                         SettingsToggleRow(
                             icon: "text.badge.plus",
                             iconColor: .accentColor,
                             title: "Bật gõ tắt",
-                            subtitle: appState.useMacro ? "Đang hoạt động" : "Đang tắt",
+                            subtitle: appState.useMacro ? "Cho phép mở rộng từ viết tắt" : "Tắt mở rộng từ viết tắt",
                             isOn: $appState.useMacro
                         )
 
@@ -76,8 +80,8 @@ struct MacroSettingsView: View {
                         SettingsToggleRow(
                             icon: "globe",
                             iconColor: .accentColor,
-                            title: "Bật trong chế độ tiếng Anh",
-                            subtitle: "Cho phép gõ tắt khi đang ở chế độ tiếng Anh",
+                            title: "Gõ tắt trong chế độ tiếng Anh",
+                            subtitle: "Cho phép mở rộng ngay cả khi đang ở chế độ Anh",
                             isOn: $appState.useMacroInEnglishMode
                         )
                         .disabled(!appState.useMacro)
@@ -88,8 +92,8 @@ struct MacroSettingsView: View {
                         SettingsToggleRow(
                             icon: "textformat.abc",
                             iconColor: .accentColor,
-                            title: "Tự động viết hoa ký tự đầu",
-                            subtitle: "Viết hoa ký tự đầu tiên của từ mở rộng",
+                            title: "Tự động viết hoa",
+                            subtitle: "Viết hoa ký tự đầu của nội dung mở rộng",
                             isOn: $appState.autoCapsMacro
                         )
                         .disabled(!appState.useMacro)
@@ -100,7 +104,7 @@ struct MacroSettingsView: View {
                 // Categories
                 SettingsCard(
                     title: "Danh mục",
-                    subtitle: "Nhóm gõ tắt để dễ tìm và quản lý",
+                    subtitle: "Nhóm gõ tắt theo chủ đề để dễ quản lý",
                     icon: "folder.fill"
                 ) {
                     VStack(spacing: 0) {
@@ -178,7 +182,7 @@ struct MacroSettingsView: View {
                 // Macro List
                 SettingsCard(
                     title: "Danh sách gõ tắt",
-                    subtitle: "Tạo, chỉnh sửa và lọc theo danh mục",
+                    subtitle: "Quản lý và tìm nhanh theo danh mục",
                     icon: "list.bullet.rectangle"
                 ) {
                     VStack(spacing: 0) {
@@ -208,14 +212,14 @@ struct MacroSettingsView: View {
                             Spacer()
 
                             Button(action: { exportMacros() }) {
-                                Label("Export", systemImage: "square.and.arrow.up")
+                                Label("Xuất", systemImage: "square.and.arrow.up")
                                     .font(.subheadline)
                             }
                             .adaptiveBorderedButtonStyle()
                             .disabled(macros.isEmpty || !appState.useMacro)
 
                             Button(action: { importMacros() }) {
-                                Label("Import", systemImage: "square.and.arrow.down")
+                                Label("Nhập", systemImage: "square.and.arrow.down")
                                     .font(.subheadline)
                             }
                             .adaptiveBorderedButtonStyle()
@@ -680,7 +684,7 @@ struct EmptyMacroView: View {
                     .font(.headline)
                     .foregroundStyle(.primary)
 
-                Text(isFiltered ? "Thêm gõ tắt vào danh mục này" : "Tạo gõ tắt để nhập văn bản nhanh hơn")
+                Text(isFiltered ? "Thêm gõ tắt vào danh mục này" : "Tạo gõ tắt để nhập liệu nhanh hơn")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

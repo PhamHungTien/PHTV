@@ -34,7 +34,7 @@ struct BugReportView: View {
             VStack(spacing: 20) {
                 SettingsHeaderView(
                     title: "Báo lỗi & Hỗ trợ",
-                    subtitle: "Gửi thông tin chi tiết để được hỗ trợ nhanh và chính xác hơn.",
+                    subtitle: "Gửi thông tin chi tiết để hỗ trợ nhanh và chính xác.",
                     icon: "ladybug.fill"
                 )
 
@@ -53,10 +53,10 @@ struct BugReportView: View {
             .padding(20)
         }
         .settingsBackground()
-        .alert("Đã sao chép!", isPresented: $showCopiedAlert) {
+        .alert("Đã sao chép", isPresented: $showCopiedAlert) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Nội dung báo lỗi đã được sao chép vào clipboard.")
+            Text("Nội dung báo lỗi đã được sao chép.")
         }
         .onChange(of: includeLogs) { newValue in
             if newValue {
@@ -77,10 +77,14 @@ struct BugReportView: View {
 
     // MARK: - Bug Info Section
     private var bugInfoSection: some View {
-        SettingsCard(title: "Báo lỗi", icon: "ladybug.fill") {
+        SettingsCard(
+            title: "Thông tin sự cố",
+            subtitle: "Mô tả tình huống và cách tái tạo",
+            icon: "ladybug.fill"
+        ) {
             VStack(alignment: .leading, spacing: 12) {
                 // Bug Title
-                TextField("Tiêu đề lỗi (VD: Không gõ được tiếng Việt trong Safari)", text: $bugTitle)
+                TextField("Tiêu đề vấn đề (vd: Không gõ được tiếng Việt trong Safari)", text: $bugTitle)
                     .textFieldStyle(.plain)
                     .padding(8)
                     .background {
@@ -125,7 +129,7 @@ struct BugReportView: View {
                     )
                     .overlay(alignment: .topLeading) {
                         if bugDescription.isEmpty {
-                            Text("Mô tả chi tiết lỗi và các bước để tái tạo...")
+                            Text("Mô tả vấn đề và các bước để tái tạo…")
                                 .foregroundStyle(.tertiary)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 16)
@@ -138,13 +142,17 @@ struct BugReportView: View {
 
     // MARK: - Debug Options Section
     private var debugOptionsSection: some View {
-        SettingsCard(title: "Thông tin gỡ lỗi", icon: "doc.text.fill") {
+        SettingsCard(
+            title: "Thông tin chẩn đoán",
+            subtitle: "Hệ thống và nhật ký",
+            icon: "doc.text.fill"
+        ) {
             VStack(spacing: 0) {
                 SettingsToggleRow(
                     icon: "cpu.fill",
                     iconColor: .accentColor,
                     title: "Thông tin hệ thống",
-                    subtitle: "Phiên bản PHTV, macOS, chip, bàn phím",
+                    subtitle: "Phiên bản PHTV, macOS, chip và bàn phím",
                     isOn: $includeSystemInfo
                 )
 
@@ -153,7 +161,7 @@ struct BugReportView: View {
                 SettingsToggleRow(
                     icon: "doc.text.fill",
                     iconColor: .accentColor,
-                    title: "Nhật ký debug (tùy chọn)",
+                    title: "Nhật ký (tùy chọn)",
                     subtitle: includeLogs ? "Đang thu thập log 60 phút gần nhất" : "Chỉ tải khi cần để tiết kiệm RAM",
                     isOn: $includeLogs
                 )
@@ -168,7 +176,7 @@ struct BugReportView: View {
                             Image(systemName: hasLoadedLogsOnce ? "checkmark.circle.fill" : "arrow.down.circle.fill")
                                 .foregroundStyle(hasLoadedLogsOnce ? Color.green : Color.accentColor)
                         }
-                        Text(hasLoadedLogsOnce ? "Đã tải log — bật/đặt lại nếu cần làm mới" : "Nhấn bật để tải log (giới hạn 100 mục)")
+                        Text(hasLoadedLogsOnce ? "Đã tải log — tắt/bật để làm mới" : "Bật để tải log (tối đa 100 mục)")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -181,7 +189,11 @@ struct BugReportView: View {
 
     // MARK: - Actions Section
     private var actionsSection: some View {
-        SettingsCard(title: "Gửi báo lỗi", icon: "paperplane.fill") {
+        SettingsCard(
+            title: "Gửi báo lỗi",
+            subtitle: "Chọn kênh gửi phù hợp",
+            icon: "paperplane.fill"
+        ) {
             HStack(spacing: 12) {
                 // Copy to Clipboard
                 Button {
@@ -192,7 +204,7 @@ struct BugReportView: View {
                             .scaleEffect(0.7)
                             .frame(maxWidth: .infinity, minHeight: 36)
                     } else {
-                        Label("Sao chép", systemImage: "doc.on.doc")
+                        Label("Sao chép báo lỗi", systemImage: "doc.on.doc")
                             .frame(maxWidth: .infinity)
                     }
                 }
@@ -209,7 +221,7 @@ struct BugReportView: View {
                             .scaleEffect(0.7)
                             .frame(maxWidth: .infinity, minHeight: 36)
                     } else {
-                        Label("GitHub Issue", systemImage: "link")
+                        Label("GitHub", systemImage: "link")
                             .frame(maxWidth: .infinity)
                     }
                 }
@@ -227,7 +239,7 @@ struct BugReportView: View {
                             .scaleEffect(0.7)
                             .frame(maxWidth: .infinity, minHeight: 36)
                     } else {
-                        Label("Email", systemImage: "envelope")
+                        Label("Gửi email", systemImage: "envelope")
                             .frame(maxWidth: .infinity)
                     }
                 }

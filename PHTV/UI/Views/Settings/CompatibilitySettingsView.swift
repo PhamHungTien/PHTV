@@ -32,12 +32,16 @@ struct CompatibilitySettingsView: View {
             VStack(spacing: 20) {
                 SettingsHeaderView(
                     title: "Tương thích nâng cao",
-                    subtitle: "Tinh chỉnh cho bố cục bàn phím đặc biệt và công cụ bên thứ ba.",
+                    subtitle: "Tinh chỉnh cho bố cục đặc biệt và công cụ bên thứ ba.",
                     icon: "puzzlepiece.extension.fill"
                 )
 
                 // Keyboard Layout Compatibility
-                SettingsCard(title: "Bàn phím", icon: "keyboard.fill") {
+                SettingsCard(
+                    title: "Bàn phím",
+                    subtitle: "Hỗ trợ bố cục đặc biệt",
+                    icon: "keyboard.fill"
+                ) {
                     SettingsToggleRow(
                         icon: "keyboard.fill",
                         iconColor: .accentColor,
@@ -48,18 +52,26 @@ struct CompatibilitySettingsView: View {
                 }
 
                 // Claude Code Fix
-                SettingsCard(title: "Claude Code", icon: "terminal.fill") {
+                SettingsCard(
+                    title: "Claude Code",
+                    subtitle: "Khắc phục lỗi gõ tiếng Việt",
+                    icon: "terminal.fill"
+                ) {
                     claudeCodeToggleRow
                 }
 
                 // Safe Mode
-                SettingsCard(title: "Chế độ an toàn", icon: "shield.lefthalf.filled") {
+                SettingsCard(
+                    title: "Chế độ an toàn",
+                    subtitle: "Tự phục hồi khi API gặp lỗi",
+                    icon: "shield.lefthalf.filled"
+                ) {
                     VStack(spacing: 0) {
                         SettingsToggleRow(
                             icon: "shield.fill",
                             iconColor: .accentColor,
                             title: "Bật chế độ an toàn",
-                            subtitle: "Tự động khôi phục khi Accessibility API gặp lỗi",
+                            subtitle: "Tự phục hồi khi Accessibility API gặp lỗi",
                             isOn: $appState.safeMode
                         )
 
@@ -78,7 +90,7 @@ struct CompatibilitySettingsView: View {
                                 }
 
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("Dành cho máy Mac cũ")
+                                    Text("Gợi ý cho máy Mac cũ")
                                         .font(.caption)
                                         .fontWeight(.medium)
                                         .foregroundStyle(.primary)
@@ -124,15 +136,15 @@ struct CompatibilitySettingsView: View {
         let subtitle: String = {
             switch claudeCodeStatus {
             case .checking:
-                return "Đang kiểm tra..."
+                return "Đang kiểm tra…"
             case .notInstalled:
-                return "Claude Code chưa được cài đặt"
+                return "Chưa phát hiện Claude Code"
             case .nativeBinaryInstall:
-                return isConverting ? convertProgress : "Bật để chuyển sang phiên bản npm (hỗ trợ tiếng Việt)"
+                return isConverting ? convertProgress : "Bật để chuyển sang bản npm (hỗ trợ gõ tiếng Việt)"
             case .homebrewInstall:
-                return isConverting ? convertProgress : "Bật để chuyển sang phiên bản npm (hỗ trợ tiếng Việt)"
+                return isConverting ? convertProgress : "Bật để chuyển sang bản npm (hỗ trợ gõ tiếng Việt)"
             case .canPatch:
-                return appState.claudeCodePatchEnabled ? "Đã bật ✓" : "Sửa lỗi không nhận dấu tiếng Việt"
+                return appState.claudeCodePatchEnabled ? "Đang bật" : "Khắc phục lỗi không nhận dấu tiếng Việt"
             }
         }()
 
@@ -152,7 +164,7 @@ struct CompatibilitySettingsView: View {
 
         ClaudeCodeToggleRow(
             iconColor: iconColor,
-            title: "Hỗ trợ gõ tiếng Việt trong Claude Code",
+            title: "Hỗ trợ gõ tiếng Việt cho Claude Code",
             subtitle: subtitle,
             showProgress: showProgress,
             isDisabled: isDisabled,

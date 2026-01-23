@@ -18,6 +18,7 @@
 		20A30E70D92BD4559B80436F /* UpdateModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1498B293675600E929EBB555 /* UpdateModels.swift */; };
 		232EDA5921F1B33E0085D362 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 232EDA5821F1B33E0085D362 /* AppDelegate.mm */; };
 		232EDA5E21F1B33F0085D362 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 232EDA5D21F1B33F0085D362 /* Assets.xcassets */; };
+		A5C4F2D8E1B34F0192C3D4E5 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A5C4F2D8E1B34F0192C3D4E6 /* AppIntents.framework */; };
 		233C4A6E231F923D00DD7052 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 233C4A6D231F923D00DD7052 /* AppKit.framework */; };
 		233C4A70231F937900DD7052 /* ConvertTool.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 233C4A6F231F937900DD7052 /* ConvertTool.cpp */; };
 		2371AAEF22FA85B200CA1B57 /* PHTV.mm in Sources */ = {isa = PBXBuildFile; fileRef = 2371AAEE22FA85B200CA1B57 /* PHTV.mm */; };
@@ -147,6 +148,7 @@
 		232EDA5D21F1B33F0085D362 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		232EDA6221F1B33F0085D362 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		232EDA6321F1B33F0085D362 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		A5C4F2D8E1B34F0192C3D4E6 /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppIntents.framework; path = System/Library/Frameworks/AppIntents.framework; sourceTree = SDKROOT; };
 		233C4A6D231F923D00DD7052 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		233C4A6F231F937900DD7052 /* ConvertTool.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ConvertTool.cpp; sourceTree = "<group>"; };
 		233C4A71231F938800DD7052 /* ConvertTool.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ConvertTool.h; sourceTree = "<group>"; };
@@ -292,6 +294,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				46ABBBAA2EFD67680003CBB5 /* Sparkle in Frameworks */,
+				A5C4F2D8E1B34F0192C3D4E5 /* AppIntents.framework in Frameworks */,
 				A534F32629D8B78100296F25 /* Carbon.framework in Frameworks */,
 				A534F32629D8B78100296F26 /* QuartzCore.framework in Frameworks */,
 				233C4A6E231F923D00DD7052 /* AppKit.framework in Frameworks */,
@@ -370,6 +373,7 @@
 		238519F121F1B8E200E79A41 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				A5C4F2D8E1B34F0192C3D4E6 /* AppIntents.framework */,
 				233C4A6D231F923D00DD7052 /* AppKit.framework */,
 				23A984BE220ED07E000914A2 /* IOKit.framework */,
 				23963B4F22040C720097189E /* ServiceManagement.framework */,

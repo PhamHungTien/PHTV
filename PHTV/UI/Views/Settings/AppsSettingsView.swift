@@ -36,7 +36,7 @@ struct AppsSettingsView: View {
             VStack(spacing: 20) {
                 SettingsHeaderView(
                     title: "Ứng dụng & Tương thích",
-                    subtitle: "Tùy chỉnh chuyển đổi theo từng ứng dụng và cải thiện khả năng tương thích.",
+                    subtitle: "Quản lý chuyển đổi theo từng ứng dụng và tối ưu khả năng tương thích.",
                     icon: "square.stack.3d.up.fill"
                 ) {
                     VStack(alignment: .trailing, spacing: 6) {
@@ -45,20 +45,24 @@ struct AppsSettingsView: View {
                             color: .compatTeal
                         )
                         SettingsStatusPill(
-                            text: appState.sendKeyStepByStep ? "Gửi từng phím: Bật" : "Gửi từng phím: Tắt",
+                            text: appState.sendKeyStepByStep ? "Gửi theo từng phím: Bật" : "Gửi theo từng phím: Tắt",
                             color: appState.sendKeyStepByStep ? .accentColor : .secondary
                         )
                     }
                 }
 
                 // Smart Switch
-                SettingsCard(title: "Chuyển đổi thông minh", icon: "brain.fill") {
+                SettingsCard(
+                    title: "Chuyển đổi theo ứng dụng",
+                    subtitle: "Tự chuyển Việt/Anh và ghi nhớ bảng mã",
+                    icon: "brain.fill"
+                ) {
                     VStack(spacing: 0) {
                         SettingsToggleRow(
                             icon: "arrow.left.arrow.right",
                             iconColor: .accentColor,
-                            title: "Chuyển thông minh theo ứng dụng",
-                            subtitle: "Tự động chuyển Việt/Anh theo từng ứng dụng",
+                            title: "Tự chuyển theo ứng dụng",
+                            subtitle: "Tự động chuyển Việt/Anh theo ứng dụng đang dùng",
                             isOn: $appState.useSmartSwitchKey
                         )
 
@@ -67,7 +71,7 @@ struct AppsSettingsView: View {
                         SettingsToggleRow(
                             icon: "memorychip.fill",
                             iconColor: .accentColor,
-                            title: "Nhớ bảng mã theo ứng dụng",
+                            title: "Ghi nhớ bảng mã",
                             subtitle: "Lưu bảng mã riêng cho từng ứng dụng",
                             isOn: $appState.rememberCode
                         )
@@ -77,7 +81,7 @@ struct AppsSettingsView: View {
                 // Excluded Apps
                 SettingsCard(
                     title: "Loại trừ ứng dụng",
-                    subtitle: "Tự động gõ tiếng Anh khi dùng các ứng dụng này",
+                    subtitle: "Tự chuyển sang tiếng Anh khi dùng các ứng dụng này",
                     icon: "app.badge.fill",
                     trailing: {
                         Menu {
@@ -104,12 +108,16 @@ struct AppsSettingsView: View {
                 }
 
                 // Send Key Step By Step
-                SettingsCard(title: "Gửi từng phím", icon: "keyboard.badge.ellipsis") {
+                SettingsCard(
+                    title: "Gửi theo từng phím",
+                    subtitle: "Tăng ổn định khi một số ứng dụng không nhận đủ ký tự",
+                    icon: "keyboard.badge.ellipsis"
+                ) {
                     SettingsToggleRow(
                         icon: "keyboard.badge.ellipsis",
                         iconColor: .accentColor,
-                        title: "Bật gửi từng phím",
-                        subtitle: "Gửi từng ký tự một (chậm nhưng ổn định hơn)",
+                        title: "Bật gửi theo từng phím",
+                        subtitle: "Gửi từng ký tự một (chậm nhưng ổn định)",
                         isOn: $appState.sendKeyStepByStep
                     )
                 }
@@ -117,7 +125,7 @@ struct AppsSettingsView: View {
                 // Send Key Step By Step Apps
                 SettingsCard(
                     title: "Ứng dụng gửi từng phím",
-                    subtitle: "Tự động bật gửi từng phím trong các ứng dụng này",
+                    subtitle: "Tự động bật gửi theo từng phím trong các ứng dụng này",
                     icon: "app.badge.fill",
                     trailing: {
                         Menu {
@@ -144,7 +152,11 @@ struct AppsSettingsView: View {
                 }
 
                 // Compatibility
-                SettingsCard(title: "Tương thích", icon: "puzzlepiece.extension.fill") {
+                SettingsCard(
+                    title: "Tương thích nâng cao",
+                    subtitle: "Tùy chọn cho ứng dụng và bố cục đặc biệt",
+                    icon: "puzzlepiece.extension.fill"
+                ) {
                     VStack(spacing: 0) {
                         // Keyboard Layout Compatibility
                         SettingsToggleRow(
@@ -167,7 +179,7 @@ struct AppsSettingsView: View {
                             icon: "shield.fill",
                             iconColor: .accentColor,
                             title: "Bật chế độ an toàn",
-                            subtitle: "Tự động khôi phục khi Accessibility API gặp lỗi",
+                            subtitle: "Tự phục hồi khi Accessibility API gặp lỗi",
                             isOn: $appState.safeMode
                         )
 
@@ -186,7 +198,7 @@ struct AppsSettingsView: View {
                                 }
 
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("Dành cho máy Mac cũ")
+                                    Text("Gợi ý cho máy Mac cũ")
                                         .font(.caption)
                                         .fontWeight(.medium)
                                         .foregroundStyle(.primary)
@@ -232,15 +244,15 @@ struct AppsSettingsView: View {
         let subtitle: String = {
             switch claudeCodeStatus {
             case .checking:
-                return "Đang kiểm tra..."
+                return "Đang kiểm tra…"
             case .notInstalled:
-                return "Claude Code chưa được cài đặt"
+                return "Chưa phát hiện Claude Code"
             case .nativeBinaryInstall:
-                return isConverting ? convertProgress : "Bật để chuyển sang phiên bản npm (hỗ trợ tiếng Việt)"
+                return isConverting ? convertProgress : "Bật để chuyển sang bản npm (hỗ trợ gõ tiếng Việt)"
             case .homebrewInstall:
-                return isConverting ? convertProgress : "Bật để chuyển sang phiên bản npm (hỗ trợ tiếng Việt)"
+                return isConverting ? convertProgress : "Bật để chuyển sang bản npm (hỗ trợ gõ tiếng Việt)"
             case .canPatch:
-                return appState.claudeCodePatchEnabled ? "Đã bật ✓" : "Sửa lỗi không nhận dấu tiếng Việt"
+                return appState.claudeCodePatchEnabled ? "Đang bật" : "Khắc phục lỗi không nhận dấu tiếng Việt"
             }
         }()
 
@@ -260,7 +272,7 @@ struct AppsSettingsView: View {
 
         ClaudeCodeToggleRow(
             iconColor: iconColor,
-            title: "Hỗ trợ gõ tiếng Việt trong Claude Code",
+            title: "Hỗ trợ gõ tiếng Việt cho Claude Code",
             subtitle: subtitle,
             showProgress: showProgress,
             isDisabled: isDisabled,

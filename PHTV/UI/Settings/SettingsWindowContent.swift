@@ -115,7 +115,9 @@ struct SettingsWindowContent: View {
             object: nil,
             queue: .main
         ) { _ in
-            applySettingsWindowBehavior(forceFront: appState.settingsWindowAlwaysOnTop)
+            MainActor.assumeIsolated {
+                applySettingsWindowBehavior(forceFront: appState.settingsWindowAlwaysOnTop)
+            }
         }
 
         let becomeObserver = center.addObserver(
@@ -123,7 +125,9 @@ struct SettingsWindowContent: View {
             object: nil,
             queue: .main
         ) { _ in
-            applySettingsWindowBehavior(forceFront: false)
+            MainActor.assumeIsolated {
+                applySettingsWindowBehavior(forceFront: false)
+            }
         }
 
         // If settings window loses key/main while "always on top" is enabled,
@@ -133,9 +137,14 @@ struct SettingsWindowContent: View {
             object: nil,
             queue: .main
         ) { notification in
-            guard isSettingsWindow(notification.object as? NSWindow) else { return }
-            if appState.settingsWindowAlwaysOnTop {
-                applySettingsWindowBehavior(forceFront: true)
+            let windowID = (notification.object as? NSWindow).map(ObjectIdentifier.init)
+            MainActor.assumeIsolated {
+                guard let windowID,
+                      let window = NSApp.windows.first(where: { ObjectIdentifier($0) == windowID }),
+                      isSettingsWindow(window) else { return }
+                if appState.settingsWindowAlwaysOnTop {
+                    applySettingsWindowBehavior(forceFront: true)
+                }
             }
         }
 
@@ -144,9 +153,14 @@ struct SettingsWindowContent: View {
             object: nil,
             queue: .main
         ) { notification in
-            guard isSettingsWindow(notification.object as? NSWindow) else { return }
-            if appState.settingsWindowAlwaysOnTop {
-                applySettingsWindowBehavior(forceFront: true)
+            let windowID = (notification.object as? NSWindow).map(ObjectIdentifier.init)
+            MainActor.assumeIsolated {
+                guard let windowID,
+                      let window = NSApp.windows.first(where: { ObjectIdentifier($0) == windowID }),
+                      isSettingsWindow(window) else { return }
+                if appState.settingsWindowAlwaysOnTop {
+                    applySettingsWindowBehavior(forceFront: true)
+                }
             }
         }
 
@@ -155,13 +169,17 @@ struct SettingsWindowContent: View {
             object: nil,
             queue: .main
         ) { notification in
-            guard let window = notification.object as? NSWindow,
-                  isSettingsWindow(window),
-                  appState.settingsWindowAlwaysOnTop,
-                  !window.isMiniaturized else { return }
-            // If the window is occluded while always-on-top is enabled, bring it back.
-            window.level = .floating
-            window.orderFrontRegardless()
+            let windowID = (notification.object as? NSWindow).map(ObjectIdentifier.init)
+            MainActor.assumeIsolated {
+                guard let windowID,
+                      let window = NSApp.windows.first(where: { ObjectIdentifier($0) == windowID }),
+                      isSettingsWindow(window),
+                      appState.settingsWindowAlwaysOnTop,
+                      !window.isMiniaturized else { return }
+                // If the window is occluded while always-on-top is enabled, bring it back.
+                window.level = .floating
+                window.orderFrontRegardless()
+            }
         }
 
         windowObservers = [
@@ -194,17 +212,18 @@ struct SettingsWindowContent: View {
         }
     }
 
+    @MainActor
     private func updateSettingsWindowLevel() {
-        DispatchQueue.main.async {
-            applySettingsWindowBehavior(forceFront: appState.settingsWindowAlwaysOnTop)
-        }
+        applySettingsWindowBehavior(forceFront: appState.settingsWindowAlwaysOnTop)
     }
 
+    @MainActor
     private func isSettingsWindow(_ window: NSWindow?) -> Bool {
         guard let identifier = window?.identifier?.rawValue else { return false }
         return identifier.hasPrefix("settings")
     }
 
+    @MainActor
     private func applySettingsWindowBehavior(forceFront: Bool) {
         guard let window = NSApp.windows.first(where: { isSettingsWindow($0) }) else { return }
 

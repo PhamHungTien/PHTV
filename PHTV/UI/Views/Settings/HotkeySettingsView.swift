@@ -28,7 +28,7 @@ struct HotkeySettingsView: View {
             VStack(spacing: 20) {
                 SettingsHeaderView(
                     title: "Phím tắt",
-                    subtitle: "Đặt phím tắt để chuyển chế độ gõ, tạm dừng và mở PHTV Picker nhanh.",
+                    subtitle: "Tùy chỉnh phím tắt để chuyển chế độ gõ và mở PHTV Picker nhanh.",
                     icon: "command.circle.fill"
                 ) {
                     SettingsStatusPill(
@@ -38,17 +38,29 @@ struct HotkeySettingsView: View {
                 }
 
                 // Hotkey Configuration
-                SettingsCard(title: "Phím tắt chuyển chế độ", icon: "command.circle.fill") {
+                SettingsCard(
+                    title: "Chuyển chế độ gõ",
+                    subtitle: "Đổi nhanh giữa Tiếng Việt và Tiếng Anh",
+                    icon: "command.circle.fill"
+                ) {
                     HotkeyConfigView()
                 }
 
                 // Pause Key Configuration
-                SettingsCard(title: "Tạm dừng gõ tiếng Việt", icon: "pause.circle.fill") {
+                SettingsCard(
+                    title: "Tạm dừng gõ tiếng Việt",
+                    subtitle: "Tạm ngưng bộ gõ khi cần nhập liệu đặc biệt",
+                    icon: "pause.circle.fill"
+                ) {
                     PauseKeyConfigView()
                 }
 
                 // PHTV Picker Hotkey
-                SettingsCard(title: "PHTV Picker", icon: "smiley.fill") {
+                SettingsCard(
+                    title: "PHTV Picker",
+                    subtitle: "Mở nhanh bảng emoji/sticker/GIF",
+                    icon: "smiley.fill"
+                ) {
                     EmojiHotkeyConfigView()
                 }
 

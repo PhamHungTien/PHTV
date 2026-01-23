@@ -28,7 +28,7 @@ struct SystemSettingsView: View {
             VStack(spacing: 20) {
                 SettingsHeaderView(
                     title: "Hệ thống & Cập nhật",
-                    subtitle: "Quản lý khởi động, giao diện, cập nhật và sao lưu dữ liệu.",
+                    subtitle: "Quản lý giao diện, khởi động, cập nhật và sao lưu.",
                     icon: "gearshape.fill"
                 ) {
                     VStack(alignment: .trailing, spacing: 6) {
@@ -66,13 +66,13 @@ struct SystemSettingsView: View {
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenConvertToolSheet"))) { _ in
             showingConvertTool = true
         }
-        .alert("Đặt lại cài đặt?", isPresented: $showingResetAlert) {
+        .alert("Khôi phục mặc định?", isPresented: $showingResetAlert) {
             Button("Hủy", role: .cancel) {}
-            Button("Đặt lại", role: .destructive) {
+            Button("Khôi phục", role: .destructive) {
                 resetToDefaults()
             }
         } message: {
-            Text("Tất cả cài đặt sẽ được khôi phục về mặc định. Hành động này không thể hoàn tác.")
+            Text("Tất cả cài đặt sẽ được đưa về mặc định. Hành động này không thể hoàn tác.")
         }
         .fileExporter(
             isPresented: $showingExportSheet,
@@ -128,12 +128,16 @@ struct SystemSettingsView: View {
     }
 
     private var startupSection: some View {
-        SettingsCard(title: "Khởi động", icon: "power.circle.fill") {
+        SettingsCard(
+            title: "Khởi động",
+            subtitle: "Tùy chọn tự mở khi đăng nhập",
+            icon: "power.circle.fill"
+        ) {
             VStack(spacing: 0) {
                 SettingsToggleRow(
                     icon: "play.fill",
                     iconColor: .accentColor,
-                    title: "Khởi động cùng hệ thống",
+                    title: "Mở cùng hệ thống",
                     subtitle: "Tự động mở PHTV khi đăng nhập macOS",
                     isOn: $appState.runOnStartup
                 )
@@ -142,13 +146,17 @@ struct SystemSettingsView: View {
     }
 
     private var interfaceSection: some View {
-        SettingsCard(title: "Giao diện", icon: "rectangle.on.rectangle") {
+        SettingsCard(
+            title: "Giao diện",
+            subtitle: "Tùy chỉnh hiển thị và hiệu ứng",
+            icon: "rectangle.on.rectangle"
+        ) {
             VStack(spacing: 0) {
                 SettingsToggleRow(
                     icon: "pin.fill",
                     iconColor: .accentColor,
-                    title: "Cửa sổ Cài đặt luôn ở trên",
-                    subtitle: "Giữ cửa sổ Cài đặt hiển thị phía trên các ứng dụng khác",
+                    title: "Cài đặt luôn ở trên",
+                    subtitle: "Giữ cửa sổ Cài đặt nằm trên các ứng dụng khác",
                     isOn: $appState.settingsWindowAlwaysOnTop
                 )
 
@@ -157,8 +165,8 @@ struct SystemSettingsView: View {
                 SettingsToggleRow(
                     icon: "sparkles.rectangle.stack.fill",
                     iconColor: .accentColor,
-                    title: "Giao diện Liquid Glass",
-                    subtitle: "Hiệu ứng nền kính mờ đẹp mắt cho cửa sổ cài đặt",
+                    title: "Hiệu ứng Liquid Glass",
+                    subtitle: "Nền kính mờ cho cửa sổ Cài đặt",
                     isOn: $appState.enableLiquidGlassBackground
                 )
 
@@ -178,11 +186,11 @@ struct SystemSettingsView: View {
                             }
 
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Độ mờ nền cửa sổ")
+                                Text("Độ trong nền")
                                     .font(.body)
                                     .foregroundStyle(.primary)
 
-                                Text("Điều chỉnh độ trong suốt của nền cài đặt")
+                                Text("Điều chỉnh độ trong suốt của nền Cài đặt")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -212,13 +220,17 @@ struct SystemSettingsView: View {
     }
 
     private var menuBarSection: some View {
-        SettingsCard(title: "Thanh menu", icon: "menubar.rectangle") {
+        SettingsCard(
+            title: "Thanh menu",
+            subtitle: "Tùy chỉnh biểu tượng trên menu bar",
+            icon: "menubar.rectangle"
+        ) {
             VStack(spacing: 0) {
                 SettingsToggleRow(
                     icon: "flag.fill",
                     iconColor: .accentColor,
-                    title: "Hiển thị icon chữ V",
-                    subtitle: "Dùng icon chữ V khi đang ở chế độ tiếng Việt",
+                    title: "Hiển thị biểu tượng chữ V",
+                    subtitle: "Dùng icon chữ V khi đang ở chế độ Tiếng Việt",
                     isOn: $appState.useVietnameseMenubarIcon
                 )
 
@@ -237,11 +249,11 @@ struct SystemSettingsView: View {
                         }
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Kích cỡ icon")
+                            Text("Kích thước icon")
                                 .font(.body)
                                 .foregroundStyle(.primary)
 
-                            Text("Điều chỉnh kích thước icon trên thanh menu")
+                            Text("Điều chỉnh kích thước icon trên menu bar")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -268,13 +280,17 @@ struct SystemSettingsView: View {
     }
 
     private var dockSection: some View {
-        SettingsCard(title: "Dock", icon: "dock.rectangle") {
+        SettingsCard(
+            title: "Dock",
+            subtitle: "Tùy chọn hiển thị trên Dock",
+            icon: "dock.rectangle"
+        ) {
             VStack(spacing: 0) {
                 SettingsToggleRow(
                     icon: "app.fill",
                     iconColor: .accentColor,
-                    title: "Hiển thị icon trên Dock",
-                    subtitle: "Hiện icon PHTV khi mở cài đặt",
+                    title: "Hiện icon trên Dock",
+                    subtitle: "Hiển thị PHTV trên Dock khi mở Cài đặt",
                     isOn: $appState.showIconOnDock
                 )
             }
@@ -282,7 +298,11 @@ struct SystemSettingsView: View {
     }
 
     private var updateSection: some View {
-        SettingsCard(title: "Cập nhật", icon: "arrow.down.circle.fill") {
+        SettingsCard(
+            title: "Cập nhật",
+            subtitle: "Thiết lập kiểm tra và cài đặt cập nhật",
+            icon: "arrow.down.circle.fill"
+        ) {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 14) {
@@ -297,7 +317,7 @@ struct SystemSettingsView: View {
                         }
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Tần suất kiểm tra")
+                            Text("Tần suất kiểm tra cập nhật")
                                 .font(.body)
 
                             Text("Tự động kiểm tra bản cập nhật mới")
@@ -323,8 +343,8 @@ struct SystemSettingsView: View {
                 SettingsToggleRow(
                     icon: "square.and.arrow.down.fill",
                     iconColor: .accentColor,
-                    title: "Tự động cài đặt",
-                    subtitle: "Tự động cập nhật khi có phiên bản mới",
+                    title: "Tự động cài đặt cập nhật",
+                    subtitle: "Cài đặt khi có phiên bản mới",
                     isOn: $appState.autoInstallUpdates
                 )
 
@@ -333,8 +353,8 @@ struct SystemSettingsView: View {
                 SettingsToggleRow(
                     icon: "testtube.2",
                     iconColor: .accentColor,
-                    title: "Kênh Beta",
-                    subtitle: "Nhận bản cập nhật beta (không ổn định)",
+                    title: "Kênh beta",
+                    subtitle: "Nhận bản cập nhật beta (có thể chưa ổn định)",
                     isOn: $appState.betaChannelEnabled
                 )
 
@@ -343,7 +363,7 @@ struct SystemSettingsView: View {
                 SettingsButtonRow(
                     icon: "arrow.clockwise.circle.fill",
                     iconColor: .accentColor,
-                    title: "Kiểm tra cập nhật",
+                    title: "Kiểm tra ngay",
                     subtitle: "Tìm phiên bản mới ngay bây giờ",
                     action: checkForUpdates
                 )
@@ -352,13 +372,17 @@ struct SystemSettingsView: View {
     }
 
     private var toolsSection: some View {
-        SettingsCard(title: "Công cụ", icon: "wrench.and.screwdriver.fill") {
+        SettingsCard(
+            title: "Tiện ích",
+            subtitle: "Các công cụ đi kèm",
+            icon: "wrench.and.screwdriver.fill"
+        ) {
             VStack(spacing: 0) {
                 SettingsButtonRow(
                     icon: "doc.on.clipboard.fill",
                     iconColor: .accentColor,
                     title: "Chuyển đổi bảng mã",
-                    subtitle: "Chuyển văn bản giữa Unicode, TCVN3, VNI...",
+                    subtitle: "Chuyển văn bản giữa Unicode, TCVN3, VNI…",
                     action: {
                         showingConvertTool = true
                     }
@@ -368,13 +392,17 @@ struct SystemSettingsView: View {
     }
 
     private var dataManagementSection: some View {
-        SettingsCard(title: "Quản lý dữ liệu", icon: "externaldrive.fill") {
+        SettingsCard(
+            title: "Dữ liệu & sao lưu",
+            subtitle: "Sao lưu, khôi phục và đặt lại",
+            icon: "externaldrive.fill"
+        ) {
             VStack(spacing: 0) {
                 SettingsButtonRow(
                     icon: "book.fill",
                     iconColor: .accentColor,
-                    title: "Xem hướng dẫn",
-                    subtitle: "Xem lại màn hình giới thiệu PHTV",
+                    title: "Xem lại hướng dẫn",
+                    subtitle: "Mở lại phần giới thiệu PHTV",
                     action: {
                         showOnboarding = true
                     }
@@ -385,7 +413,7 @@ struct SystemSettingsView: View {
                 SettingsButtonRow(
                     icon: "square.and.arrow.up.fill",
                     iconColor: .accentColor,
-                    title: "Xuất cài đặt",
+                    title: "Xuất cấu hình",
                     subtitle: "Sao lưu toàn bộ cài đặt ra file",
                     action: {
                         showingExportSheet = true
@@ -397,7 +425,7 @@ struct SystemSettingsView: View {
                 SettingsButtonRow(
                     icon: "square.and.arrow.down.fill",
                     iconColor: .accentColor,
-                    title: "Nhập cài đặt",
+                    title: "Nhập cấu hình",
                     subtitle: "Khôi phục cài đặt từ file sao lưu",
                     action: {
                         showingImportSheet = true
@@ -409,8 +437,8 @@ struct SystemSettingsView: View {
                 SettingsButtonRow(
                     icon: "arrow.counterclockwise.circle.fill",
                     iconColor: .red,
-                    title: "Đặt lại cài đặt",
-                    subtitle: "Khôi phục mặc định",
+                    title: "Khôi phục mặc định",
+                    subtitle: "Đưa toàn bộ cài đặt về mặc định",
                     isDestructive: true,
                     action: {
                         showingResetAlert = true

@@ -56,9 +56,9 @@ struct SettingsView: View {
                             Image(systemName: "magnifyingglass")
                                 .font(.largeTitle)
                                 .foregroundStyle(.secondary)
-                            Text("Không tìm thấy '\(searchText)'")
+                            Text("Không có kết quả cho “\(searchText)”")
                                 .font(.headline)
-                            Text("Thử tìm kiếm với từ khóa khác")
+                            Text("Hãy thử từ khóa khác")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
@@ -83,7 +83,7 @@ struct SettingsView: View {
                 }
             }
             .listStyle(.sidebar)
-            .conditionalSearchable(text: $searchText, prompt: "Tìm kiếm cài đặt...")
+            .conditionalSearchable(text: $searchText, prompt: "Tìm nhanh cài đặt…")
             .navigationSplitViewColumnWidth(min: 160, ideal: 200, max: 240)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -375,7 +375,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
 
 // MARK: - Settings Sidebar Sections
 enum SettingsTabSection: String, CaseIterable, Identifiable {
-    case typing = "Cấu hình gõ"
+    case typing = "Nhập liệu"
     case system = "Hệ thống"
     case support = "Hỗ trợ"
 

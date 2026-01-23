@@ -31,7 +31,7 @@ struct TypingSettingsView: View {
             VStack(spacing: 20) {
                 SettingsHeaderView(
                     title: "Bộ gõ tiếng Việt",
-                    subtitle: "Chọn phương pháp gõ, chính tả và tốc độ phù hợp với thói quen của bạn.",
+                    subtitle: "Thiết lập phương pháp gõ, chính tả và các tối ưu để gõ nhanh, đúng.",
                     icon: "keyboard.fill"
                 ) {
                     VStack(alignment: .trailing, spacing: 6) {
@@ -50,7 +50,11 @@ struct TypingSettingsView: View {
                 StatusCard(hasPermission: appState.hasAccessibilityPermission)
 
                 // Input Configuration
-                SettingsCard(title: "Cấu hình gõ", icon: "keyboard.fill") {
+                SettingsCard(
+                    title: "Thiết lập bộ gõ",
+                    subtitle: "Chọn phương pháp gõ và bảng mã phù hợp",
+                    icon: "keyboard.fill"
+                ) {
                     VStack(spacing: 16) {
                         // Input Method Picker
                         VStack(alignment: .leading, spacing: 8) {
@@ -88,13 +92,17 @@ struct TypingSettingsView: View {
                 }
 
                 // Basic Features
-                SettingsCard(title: "Tính năng cơ bản", icon: "checkmark.circle.fill") {
+                SettingsCard(
+                    title: "Cơ bản",
+                    subtitle: "Các tính năng hỗ trợ gõ tiếng Việt",
+                    icon: "checkmark.circle.fill"
+                ) {
                     VStack(spacing: 0) {
                         SettingsToggleRow(
                             icon: "text.badge.checkmark",
                             iconColor: .accentColor,
                             title: "Kiểm tra chính tả",
-                            subtitle: "Tự động phát hiện lỗi chính tả",
+                            subtitle: "Phát hiện lỗi chính tả khi gõ tiếng Việt",
                             isOn: $appState.checkSpelling
                         )
 
@@ -103,8 +111,8 @@ struct TypingSettingsView: View {
                         SettingsToggleRow(
                             icon: "arrow.uturn.left.circle.fill",
                             iconColor: .accentColor,
-                            title: "Khôi phục phím nếu từ sai",
-                            subtitle: "Khôi phục ký tự khi từ không hợp lệ",
+                            title: "Hoàn tác khi từ sai",
+                            subtitle: "Trả lại ký tự gốc khi từ không hợp lệ",
                             isOn: $appState.restoreOnInvalidWord
                         )
 
@@ -113,21 +121,25 @@ struct TypingSettingsView: View {
                         SettingsToggleRow(
                             icon: "textformat.abc.dottedunderline",
                             iconColor: .accentColor,
-                            title: "Tự động nhận diện từ tiếng Anh",
-                            subtitle: "Khôi phục từ tiếng Anh khi gõ ở chế độ Việt (VD: tẻminal → terminal)",
+                            title: "Giữ nguyên từ tiếng Anh",
+                            subtitle: "Không biến đổi từ tiếng Anh khi đang gõ tiếng Việt (vd: tẻminal → terminal)",
                             isOn: $appState.autoRestoreEnglishWord
                         )
                     }
                 }
 
                 // Restore to Raw Keys Feature
-                SettingsCard(title: "Phím khôi phục", icon: "arrow.uturn.backward.circle.fill") {
+                SettingsCard(
+                    title: "Khôi phục ký tự",
+                    subtitle: "Hoàn tác nhanh khi gõ sai",
+                    icon: "arrow.uturn.backward.circle.fill"
+                ) {
                     VStack(spacing: 16) {
                         SettingsToggleRow(
                             icon: "arrow.uturn.backward.circle.fill",
                             iconColor: .accentColor,
-                            title: "Khôi phục về ký tự gốc",
-                            subtitle: "Khôi phục về ký tự đã gõ trước khi biến đổi (VD: user → úẻ → phím khôi phục → user)",
+                            title: "Hoàn tác về ký tự gốc",
+                            subtitle: "Dùng phím hoàn tác để trả về ký tự trước khi biến đổi",
                             isOn: $appState.restoreOnEscape
                         )
 
@@ -135,7 +147,7 @@ struct TypingSettingsView: View {
                             Divider()
 
                             VStack(alignment: .leading, spacing: 12) {
-                                Text("Chọn phím khôi phục")
+                                Text("Chọn phím hoàn tác")
                                     .font(.subheadline)
                                     .fontWeight(.semibold)
                                     .foregroundStyle(.primary)
@@ -166,7 +178,7 @@ struct TypingSettingsView: View {
                                             .foregroundStyle(.orange)
                                             .font(.system(size: 14))
 
-                                        Text("Phím khôi phục trùng với phím bổ trợ trong phím tắt chuyển chế độ")
+                                        Text("Phím hoàn tác trùng với phím bổ trợ của phím tắt chuyển chế độ")
                                             .font(.caption)
                                             .foregroundStyle(.orange)
 
@@ -203,13 +215,17 @@ struct TypingSettingsView: View {
                 }
 
                 // Enhancement Features
-                SettingsCard(title: "Cải thiện gõ", icon: "wand.and.stars") {
+                SettingsCard(
+                    title: "Tối ưu gõ",
+                    subtitle: "Tăng tốc và cải thiện trải nghiệm",
+                    icon: "wand.and.stars"
+                ) {
                     VStack(spacing: 0) {
                         SettingsToggleRow(
                             icon: "textformat.abc",
                             iconColor: .accentColor,
-                            title: "Viết hoa ký tự đầu",
-                            subtitle: "Tự động viết hoa sau dấu chấm",
+                            title: "Viết hoa đầu câu",
+                            subtitle: "Tự động viết hoa sau dấu kết thúc câu",
                             isOn: $appState.upperCaseFirstChar
                         )
 
@@ -218,8 +234,8 @@ struct TypingSettingsView: View {
                         SettingsToggleRow(
                             icon: "a.circle.fill",
                             iconColor: .accentColor,
-                            title: "Đặt dấu oà, uý",
-                            subtitle: "Dấu trên chữ (oà, uý) thay vì dưới (òa, úy)",
+                            title: "Chính tả mới (oà, uý)",
+                            subtitle: "Ưu tiên dấu trên chữ (oà, uý) thay vì òa, úy",
                             isOn: $appState.useModernOrthography
                         )
 
@@ -228,21 +244,25 @@ struct TypingSettingsView: View {
                         SettingsToggleRow(
                             icon: "hare.fill",
                             iconColor: .accentColor,
-                            title: "Gõ nhanh (Quick Telex)",
-                            subtitle: "Gõ cc → ch, gg → gi, kk → kh, nn → ng...",
+                            title: "Gõ nhanh Telex",
+                            subtitle: "Tăng tốc: cc→ch, gg→gi, kk→kh, nn→ng…",
                             isOn: $appState.quickTelex
                         )
                     }
                 }
 
                 // Advanced Consonants
-                SettingsCard(title: "Phụ âm nâng cao", icon: "character.textbox") {
+                SettingsCard(
+                    title: "Phụ âm mở rộng",
+                    subtitle: "Hỗ trợ các tổ hợp nâng cao",
+                    icon: "character.textbox"
+                ) {
                     VStack(spacing: 0) {
                         SettingsToggleRow(
                             icon: "character",
                             iconColor: .accentColor,
-                            title: "Phụ âm Z, F, W, J",
-                            subtitle: "Cho phép nhập các phụ âm ngoại lai",
+                            title: "Cho phép Z/F/W/J",
+                            subtitle: "Hỗ trợ phụ âm ngoại lai khi cần",
                             isOn: $appState.allowConsonantZFWJ
                         )
 
@@ -252,7 +272,7 @@ struct TypingSettingsView: View {
                             icon: "arrow.right.circle.fill",
                             iconColor: .accentColor,
                             title: "Phụ âm đầu nhanh",
-                            subtitle: "Gõ f → ph, j → gi, w → qu...",
+                            subtitle: "Gõ tắt: f→ph, j→gi, w→qu…",
                             isOn: $appState.quickStartConsonant
                         )
 
@@ -262,7 +282,7 @@ struct TypingSettingsView: View {
                             icon: "arrow.left.circle.fill",
                             iconColor: .accentColor,
                             title: "Phụ âm cuối nhanh",
-                            subtitle: "Gõ g → ng, h → nh, k → ch...",
+                            subtitle: "Gõ tắt: g→ng, h→nh, k→ch…",
                             isOn: $appState.quickEndConsonant
                         )
                     }
@@ -292,13 +312,14 @@ struct StatusCard: View {
             .foregroundStyle(hasPermission ? Color.accentColor : .orange)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(hasPermission ? "Sẵn sàng hoạt động" : "Cần cấp quyền")
+                Text(hasPermission ? "Sẵn sàng" : "Thiếu quyền Trợ năng")
                     .font(.headline)
                     .foregroundStyle(.primary)
 
                 Text(
                     hasPermission
-                        ? "Quyền Accessibility đã được cấp" : "Vui lòng cấp quyền để sử dụng"
+                        ? "Quyền Trợ năng đã được cấp"
+                        : "Cần cấp quyền Trợ năng để PHTV hoạt động ổn định"
                 )
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -308,7 +329,7 @@ struct StatusCard: View {
 
             if !hasPermission {
                 if #available(macOS 26.0, *) {
-                    Button("Cấp quyền") {
+                    Button("Mở cài đặt quyền") {
                         if let url = URL(
                             string:
                                 "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
@@ -320,7 +341,7 @@ struct StatusCard: View {
                     .controlSize(.small)
                     .tint(hasPermission ? .accentColor : .orange)
                 } else {
-                    Button("Cấp quyền") {
+                    Button("Mở cài đặt quyền") {
                         if let url = URL(
                             string:
                                 "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
@@ -384,12 +405,12 @@ struct SettingsCard<Content: View, Trailing: View>: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.headline)
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(.primary)
 
                     if let subtitle {
                         Text(subtitle)
-                            .font(.caption)
+                            .font(.system(size: 11))
                             .foregroundStyle(.secondary)
                             .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)

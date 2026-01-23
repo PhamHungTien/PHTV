@@ -28,7 +28,7 @@ struct AboutView: View {
                             .font(.system(size: 13, weight: .medium).italic())
                             .foregroundStyle(.secondary)
 
-                        Text("Bộ gõ tiếng Việt cho macOS")
+                        Text("Bộ gõ tiếng Việt dành cho macOS")
                             .font(.subheadline)
                             .foregroundStyle(.tertiary)
                     }
@@ -67,14 +67,14 @@ struct AboutView: View {
                     AboutInfoCard(
                         icon: "calendar.circle.fill",
                         iconColor: .accentColor,
-                        title: "Phát hành",
+                        title: "Năm phát hành",
                         value: "2026"
                     )
 
                     AboutInfoCard(
                         icon: "swift",
                         iconColor: .accentColor,
-                        title: "Công nghệ",
+                        title: "Công nghệ sử dụng",
                         value: "Swift, SwiftUI & C/C++"
                     )
                 }
@@ -85,12 +85,12 @@ struct AboutView: View {
 
                 // Support Section
                 VStack(spacing: 16) {
-                    Text("Ủng hộ phát triển")
+                    Text("Hỗ trợ phát triển")
                         .font(.headline)
                         .foregroundStyle(.primary)
 
                     Text(
-                        "Nếu bạn thấy PHTV hữu ích, hãy ủng hộ để giúp phát triển thêm các tính năng mới"
+                        "Nếu PHTV hữu ích, bạn có thể ủng hộ để giúp phát triển thêm các tính năng mới"
                     )
                     .font(.subheadline)
                     .foregroundStyle(.secondary)

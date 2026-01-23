@@ -62,10 +62,10 @@ struct ExcludedAppsView: View {
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Ứng dụng loại trừ")
+                Text("Ứng dụng được loại trừ")
                     .font(.headline)
                 
-                Text("Tự động gõ tiếng Anh khi sử dụng các ứng dụng này")
+                Text("Tự chuyển sang tiếng Anh khi dùng các ứng dụng này")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -105,7 +105,7 @@ private struct EmptyExcludedAppsView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             
-            Text("Nhấn \"Thêm\" để chọn ứng dụng")
+            Text("Chọn ứng dụng để thêm vào danh sách")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
 
