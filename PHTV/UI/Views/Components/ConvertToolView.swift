@@ -68,6 +68,7 @@ struct ConvertToolView: View {
     @State private var showResult = false
     @State private var resultMessage = ""
     @State private var isSuccess = false
+    private let presetColumns = [GridItem(.adaptive(minimum: 140), spacing: 8, alignment: .leading)]
 
     // Current text to convert based on mode
     private var currentText: String {
@@ -265,58 +266,50 @@ struct ConvertToolView: View {
             Label("Chọn bảng mã", systemImage: "arrow.left.arrow.right")
                 .font(.subheadline.weight(.semibold))
 
-            HStack(spacing: 16) {
-                // Source
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Từ bảng mã")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+            VStack(spacing: 10) {
+                codeTableRow(
+                    title: "Từ bảng mã",
+                    icon: "tray.and.arrow.down.fill",
+                    selection: $sourceCodeTable
+                )
 
-                    Picker("", selection: $sourceCodeTable) {
-                        ForEach(ConvertCodeTable.allCases) { table in
-                            Text(table.displayName).tag(table)
-                        }
-                    }
-                    .labelsHidden()
-                }
-                .frame(maxWidth: .infinity)
-
-                // Swap button
                 Button {
                     let temp = sourceCodeTable
                     sourceCodeTable = targetCodeTable
                     targetCodeTable = temp
                 } label: {
-                    Image(systemName: "arrow.left.arrow.right")
-                        .font(.title3)
-                        .foregroundStyle(Color.accentColor)
+                    Label("Hoán đổi", systemImage: "arrow.left.arrow.right")
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(
+                            Capsule()
+                                .fill(Color.accentColor.opacity(0.12))
+                        )
+                        .overlay(
+                            Capsule()
+                                .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
+                        )
                 }
                 .buttonStyle(.plain)
+                .foregroundStyle(Color.accentColor)
                 .help("Hoán đổi bảng mã")
-
-                // Target
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Sang bảng mã")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    Picker("", selection: $targetCodeTable) {
-                        ForEach(ConvertCodeTable.allCases) { table in
-                            Text(table.displayName).tag(table)
-                        }
-                    }
-                    .labelsHidden()
-                }
                 .frame(maxWidth: .infinity)
+
+                codeTableRow(
+                    title: "Sang bảng mã",
+                    icon: "tray.and.arrow.up.fill",
+                    selection: $targetCodeTable
+                )
             }
 
             // Quick presets
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    Text("Nhanh:")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Nhanh")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
 
+                LazyVGrid(columns: presetColumns, alignment: .leading, spacing: 8) {
                     presetButton(from: .tcvn3, to: .unicode)
                     presetButton(from: .vniWindows, to: .unicode)
                     presetButton(from: .unicode, to: .tcvn3)
@@ -338,11 +331,55 @@ struct ConvertToolView: View {
             targetCodeTable = target
         }
         .buttonStyle(.plain)
-        .font(.caption)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
+        .font(.caption.weight(.semibold))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
         .background(Capsule().fill(isSelected ? Color.accentColor : Color.accentColor.opacity(0.15)))
         .foregroundStyle(isSelected ? .white : Color.accentColor)
+    }
+
+    private func codeTableRow(
+        title: String,
+        icon: String,
+        selection: Binding<ConvertCodeTable>
+    ) -> some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.accentColor.opacity(0.12))
+                    .frame(width: 30, height: 30)
+
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
+            }
+
+            Text(title)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.primary)
+
+            Spacer(minLength: 12)
+
+            Picker("", selection: selection) {
+                ForEach(ConvertCodeTable.allCases) { table in
+                    Text(table.displayName).tag(table)
+                }
+            }
+            .labelsHidden()
+            .pickerStyle(.menu)
+            .frame(minWidth: 220, maxWidth: .infinity, alignment: .trailing)
+            .layoutPriority(1)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color(NSColor.controlBackgroundColor))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+        )
     }
 
     // MARK: - Result Preview Card

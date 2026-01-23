@@ -19,9 +19,12 @@ final class SystemState: ObservableObject {
     @Published var showIconOnDock: Bool = false
     @Published var settingsWindowAlwaysOnTop: Bool = false
     @Published var safeMode: Bool = false
-    @Published var enableLiquidGlassBackground: Bool = false {
+    @Published var enableLiquidGlassBackground: Bool = true {
         didSet {
             UserDefaults.standard.set(enableLiquidGlassBackground, forKey: UserDefaultsKey.enableLiquidGlassBackground)
+            if enableLiquidGlassBackground && settingsBackgroundOpacity != 1.0 {
+                settingsBackgroundOpacity = 1.0
+            }
         }
     }
     @Published var settingsBackgroundOpacity: Double = 1.0 {
@@ -87,8 +90,8 @@ final class SystemState: ObservableObject {
         showIconOnDock = defaults.bool(forKey: UserDefaultsKey.showIconOnDock)
         settingsWindowAlwaysOnTop = defaults.bool(forKey: UserDefaultsKey.settingsWindowAlwaysOnTop)
         safeMode = defaults.bool(forKey: UserDefaultsKey.safeMode)
-        enableLiquidGlassBackground = defaults.object(forKey: UserDefaultsKey.enableLiquidGlassBackground) as? Bool ?? false
         settingsBackgroundOpacity = defaults.object(forKey: UserDefaultsKey.settingsBackgroundOpacity) as? Double ?? 1.0
+        enableLiquidGlassBackground = defaults.object(forKey: UserDefaultsKey.enableLiquidGlassBackground) as? Bool ?? true
 
         // Load Claude Code patch setting - check actual patch status
         claudeCodePatchEnabled = ClaudeCodePatcher.shared.isPatched()
@@ -403,7 +406,7 @@ final class SystemState: ObservableObject {
         performLayoutCompat = false
         showIconOnDock = false
         safeMode = false
-        enableLiquidGlassBackground = false
+        enableLiquidGlassBackground = true
         settingsBackgroundOpacity = 1.0
         settingsWindowAlwaysOnTop = false
 

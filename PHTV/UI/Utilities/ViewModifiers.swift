@@ -204,24 +204,36 @@ extension View {
 struct SettingsStatusPill: View {
     let text: String
     var color: Color = .accentColor
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         Text(text)
-            .font(.caption2)
+            .font(.caption)
             .fontWeight(.semibold)
             .lineLimit(1)
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
             .background(
                 Capsule()
-                    .fill(color.opacity(0.15))
+                    .fill(pillBaseFill)
+                    .overlay(
+                        Capsule()
+                            .fill(color.opacity(colorScheme == .light ? 0.12 : 0.18))
+                    )
             )
             .overlay(
                 Capsule()
-                    .stroke(color.opacity(0.25), lineWidth: 1)
+                    .stroke(color.opacity(colorScheme == .light ? 0.35 : 0.45), lineWidth: 1)
             )
             .foregroundStyle(color)
             .accessibilityLabel(Text(text))
+    }
+
+    private var pillBaseFill: Color {
+        if colorScheme == .light {
+            return Color(NSColor.windowBackgroundColor).opacity(0.85)
+        }
+        return Color(NSColor.windowBackgroundColor).opacity(0.25)
     }
 }
 

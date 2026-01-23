@@ -169,25 +169,7 @@ struct SystemSettingsView: View {
                     subtitle: "Nền kính mờ cho cửa sổ Cài đặt",
                     isOn: $appState.enableLiquidGlassBackground
                 )
-
-                if appState.enableLiquidGlassBackground {
-                    SettingsDivider()
-
-                    SettingsSliderRow(
-                        icon: "circle.lefthalf.filled",
-                        iconColor: .accentColor,
-                        title: "Độ trong nền",
-                        subtitle: "Điều chỉnh độ trong suốt của nền Cài đặt",
-                        minValue: 0.5,
-                        maxValue: 1.0,
-                        step: 0.05,
-                        value: $appState.settingsBackgroundOpacity,
-                        valueFormatter: { String(format: "%.0f%%", $0 * 100) }
-                    )
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-                }
             }
-            .animation(.easeInOut(duration: 0.3), value: appState.enableLiquidGlassBackground)
         }
     }
 
