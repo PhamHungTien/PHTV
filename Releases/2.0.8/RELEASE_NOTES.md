@@ -13,3 +13,6 @@
 
 ### 🧩 Sửa nhỏ
 - **Slider step chuẩn:** Các thanh trượt settings áp dụng đúng bước nhảy (step) để điều chỉnh chính xác hơn.
+
+### 🇻🇳 Chúc mừng U23 Việt Nam!
+Hòa chung không khí tự hào của cả nước, đội ngũ phát triển PHTV xin gửi lời chúc mừng nồng nhiệt nhất tới Đội tuyển U23 Việt Nam sau chiến thắng nghẹt thở trước U23 Hàn Quốc để giành tấm Huy chương Đồng U23 Châu Á. Một tinh thần quả cảm và nỗ lực tuyệt vời của các chiến binh sao vàng!
