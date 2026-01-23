@@ -9,6 +9,7 @@
 
 ### 🧭 Tinh gọn menu bar
 - **Bỏ nhãn “Chế độ gõ”:** Menu bar gọn hơn nhưng vẫn giữ nguyên lựa chọn Tiếng Việt/Tiếng Anh và phím chuyển.
+- **Ẩn phím chuyển:** Không còn hiển thị phím chuyển trên menu bar để tiết kiệm không gian.
 
 ### 🧩 Sửa nhỏ
 - **Slider step chuẩn:** Các thanh trượt settings áp dụng đúng bước nhảy (step) để điều chỉnh chính xác hơn.
