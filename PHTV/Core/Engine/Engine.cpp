@@ -497,6 +497,12 @@ void restoreLastTypingState() {
                     TypingWord[i] = _typingStatesData[i];
                 }
                 _index = (Byte)_typingStatesData.size();
+                if (vCheckSpelling) {
+                    checkSpelling();
+                } else {
+                    // Ensure tempDisableKey doesn't stay stuck after restore when spell check is off.
+                    tempDisableKey = false;
+                }
             }
         }
     }
