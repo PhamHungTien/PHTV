@@ -46,8 +46,10 @@ struct TypingSettingsView: View {
                     }
                 }
 
-                // Status Card
-                StatusCard(hasPermission: appState.hasAccessibilityPermission)
+                // Status Card (only show when permission is missing)
+                if !appState.hasAccessibilityPermission {
+                    StatusCard(hasPermission: false)
+                }
 
                 // Input Configuration
                 SettingsCard(

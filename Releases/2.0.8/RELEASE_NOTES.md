@@ -3,6 +3,7 @@
 ### ✨ Cải tiến giao diện
 - **Card tiêu đề tab mới:** Tách biệt rõ ràng với SettingsCard bằng nền gradient accent, viền nổi và bóng nhẹ để dễ nhận diện từng tab.
 - **Đồng bộ thanh trượt:** Thanh trượt “Độ trong nền” được thiết kế đồng bộ với thanh trượt “Kích thước icon” (cùng bố cục và phong cách).
+- **Gọn gàng hơn:** Ẩn thẻ trạng thái “Sẵn sàng” khi quyền Trợ năng đã được cấp để tiết kiệm không gian.
 
 ### 🧭 Tinh gọn menu bar
 - **Bỏ nhãn “Chế độ gõ”:** Menu bar gọn hơn nhưng vẫn giữ nguyên lựa chọn Tiếng Việt/Tiếng Anh và phím chuyển.
