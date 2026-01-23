@@ -81,8 +81,6 @@ struct StatusBarMenuView: View {
             .pickerStyle(.inline)
             .labelsHidden()
 
-            Label("Phím chuyển: \(hotkeyString)", systemImage: "keyboard")
-                .disabled(true)
         }
 
         Divider()
