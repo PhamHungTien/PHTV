@@ -141,6 +141,8 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 @property (nonatomic, strong) NSTimer *accessibilityMonitor;
 @property (nonatomic, assign) BOOL wasAccessibilityEnabled;
 @property (nonatomic, assign) NSUInteger accessibilityStableCount;
+@property (nonatomic, assign) BOOL isAttemptingTCCRepair;
+@property (nonatomic, assign) BOOL didAttemptTCCRepairOnce;
 
 // Health watchdog
 @property (nonatomic, strong) NSTimer *healthCheckTimer;
@@ -458,6 +460,10 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                                                                 selector:@selector(checkAccessibilityStatus)
                                                                 userInfo:nil
                                                                  repeats:YES];
+    if (@available(macOS 10.12, *)) {
+        // Small tolerance reduces wakeups while keeping fast detection
+        self.accessibilityMonitor.tolerance = interval * 0.2;
+    }
 
     // ONLY set initial state on first start, NOT when just changing interval
     // This fixes the bug where permission grant detection fails because state is reset mid-check
@@ -496,6 +502,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                                                             selector:@selector(runHealthCheck)
                                                             userInfo:nil
                                                              repeats:YES];
+    if (@available(macOS 10.12, *)) {
+        self.healthCheckTimer.tolerance = 0.2;
+    }
 }
 
 - (void)stopHealthCheckMonitoring {
@@ -722,6 +731,45 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
             self.statusItem.button.attributedTitle = title;
         }
     });
+
+    // Attempt automatic TCC repair if the app vanished from the Accessibility list
+    [self attemptAutomaticTCCRepairIfNeeded];
+}
+
+// Auto-repair flow for corrupted/missing TCC entries (macOS occasionally drops the app from the list)
+- (void)attemptAutomaticTCCRepairIfNeeded {
+    if (self.isAttemptingTCCRepair || self.didAttemptTCCRepairOnce) {
+        return;
+    }
+    self.isAttemptingTCCRepair = YES;
+
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        BOOL isCorrupt = [PHTVManager isTCCEntryCorrupt];
+        if (!isCorrupt) {
+            self.isAttemptingTCCRepair = NO;
+            return;
+        }
+
+        NSLog(@"[Accessibility] ⚠️ TCC entry missing/corrupt - attempting automatic repair");
+
+        NSError *error = nil;
+        BOOL fixed = [PHTVManager autoFixTCCEntryWithError:&error];
+        if (fixed) {
+            NSLog(@"[Accessibility] ✅ TCC auto-repair succeeded, restarting tccd...");
+            [PHTVManager restartTCCDaemon];
+            [PHTVManager invalidatePermissionCache];
+
+            dispatch_async(dispatch_get_main_queue(), ^{
+                // Immediately resume fast monitoring to detect the new permission
+                [self startAccessibilityMonitoringWithInterval:0.3 resetState:YES];
+            });
+        } else {
+            NSLog(@"[Accessibility] ❌ TCC auto-repair failed: %@", error.localizedDescription ?: @"unknown error");
+        }
+
+        self.didAttemptTCCRepairOnce = YES;
+        self.isAttemptingTCCRepair = NO;
+    });
 }
 
 // Handle when app needs relaunch for permission to take effect
@@ -944,6 +992,11 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     // Use test tap - ONLY reliable way to check (MJAccessibilityIsEnabled is unreliable)
     if (![PHTVManager canCreateEventTap]) {
         [self askPermission];
+
+        // In rare cases the app disappears from the Accessibility list (corrupt TCC entry).
+        // Attempt a one-time automatic repair so the user can re-grant permission.
+        [self attemptAutomaticTCCRepairIfNeeded];
+
         [self startAccessibilityMonitoring];
         [self stopHealthCheckMonitoring];
         return;

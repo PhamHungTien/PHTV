@@ -35,6 +35,7 @@
 // TCC entry corruption detection and auto-fix
 +(BOOL)isTCCEntryCorrupt;          // Check if TCC entry is corrupt (app not appearing in System Settings)
 +(BOOL)autoFixTCCEntryWithError:(NSError **)error;  // Automatically fix TCC corruption (shows password prompt)
++(void)restartTCCDaemon;           // Restart per-user tccd to propagate freshly granted permission
 
 // TCC change notification
 +(void)startTCCNotificationListener;  // Start listening for TCC database changes

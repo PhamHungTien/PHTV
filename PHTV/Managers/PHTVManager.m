@@ -8,6 +8,8 @@
 
 #import "PHTVManager.h"
 #import "PHTVBinaryIntegrity.h"
+#import <unistd.h>
+#import <math.h>
 
 extern void PHTVInit(void);
 
@@ -47,6 +49,8 @@ static NSUInteger         _tapRecreateCount = 0;
 // Cache for canCreateEventTap to avoid creating test taps too frequently
 static BOOL _lastPermissionCheckResult = NO;
 static NSTimeInterval _lastPermissionCheckTime = 0;
+static NSInteger _permissionFailureCount = 0;
+static NSTimeInterval _permissionBackoffUntil = 0;
 
 // Dynamic cache TTL: NO CACHE when waiting for permission (immediate detection), long when permission granted
 // This ensures instant detection when user grants permission while avoiding excessive test taps when running normally
@@ -130,6 +134,8 @@ static BOOL IsAppRegisteredInTCC(void) {
 +(void)invalidatePermissionCache {
     _lastPermissionCheckTime = 0;
     _lastPermissionCheckResult = NO;
+    _permissionFailureCount = 0;
+    _permissionBackoffUntil = 0;
     NSLog(@"[Permission] Cache invalidated - next check will be fresh");
 }
 
@@ -208,6 +214,48 @@ static BOOL IsAppRegisteredInTCC(void) {
     usleep(200000);  // 200ms
 
     return YES;
+}
+
+// Restart per-user tccd daemon to force TCC to reload fresh entries
++(void)restartTCCDaemon {
+    NSLog(@"[TCC] Restarting tccd daemon to refresh permissions...");
+
+    NSString *service = [NSString stringWithFormat:@"gui/%d/com.apple.tccd", getuid()];
+
+    NSTask *kickstart = [[NSTask alloc] init];
+    [kickstart setLaunchPath:@"/bin/launchctl"];
+    [kickstart setArguments:@[@"kickstart", @"-k", service]];
+
+    NSPipe *stderrPipe = [NSPipe pipe];
+    [kickstart setStandardError:stderrPipe];
+
+    NSError *error = nil;
+    if (@available(macOS 10.13, *)) {
+        [kickstart launchAndReturnError:&error];
+    } else {
+        [kickstart launch];
+    }
+    [kickstart waitUntilExit];
+
+    int status = [kickstart terminationStatus];
+    if (status != 0 || error) {
+        NSData *errData = [[stderrPipe fileHandleForReading] readDataToEndOfFile];
+        NSString *errOutput = [[NSString alloc] initWithData:errData encoding:NSUTF8StringEncoding];
+        NSLog(@"[TCC] launchctl kickstart failed (status=%d, error=%@, output=%@)", status, error.localizedDescription ?: @"-", errOutput ?: @"-");
+
+        // Fallback: killall tccd (per-user daemon auto-restarts)
+        NSTask *killTask = [[NSTask alloc] init];
+        [killTask setLaunchPath:@"/usr/bin/killall"];
+        [killTask setArguments:@[@"-KILL", @"tccd"]];
+        [killTask launch];
+        [killTask waitUntilExit];
+        NSLog(@"[TCC] killall tccd fallback status=%d", [killTask terminationStatus]);
+    } else {
+        NSLog(@"[TCC] launchctl kickstart succeeded (status=%d)", status);
+    }
+
+    // Allow daemon to restart before next permission check
+    usleep(150000); // 150ms
 }
 
 // Forward declaration for AXIsProcessTrusted
@@ -359,6 +407,15 @@ extern Boolean AXIsProcessTrusted(void) __attribute__((weak_import));
 +(BOOL)canCreateEventTap {
     NSTimeInterval now = [[NSDate date] timeIntervalSince1970];
 
+    // Honor exponential backoff when permission is repeatedly denied.
+    // This prevents CGEventTapCreate hammering the system every 300ms while user hasn't granted permission.
+    if (now < _permissionBackoffUntil) {
+#ifdef DEBUG
+        NSLog(@"[Permission] Backoff active for %.2fs (failures=%ld)", _permissionBackoffUntil - now, (long)_permissionFailureCount);
+#endif
+        return NO;
+    }
+
     // Use DYNAMIC cache TTL based on current state
     // When waiting for permission (NO): NO CACHE - every check is fresh
     // When permission granted: use 5s TTL to reduce overhead
@@ -371,7 +428,17 @@ extern Boolean AXIsProcessTrusted(void) __attribute__((weak_import));
     // ONLY trust test event tap creation - this is the ONLY reliable method
     BOOL hasPermission = [self tryCreateTestTapWithRetries];
 
-    NSLog(@"[Permission] Check: TestTap=%@", hasPermission ? @"SUCCESS" : @"FAILED");
+    if (hasPermission) {
+        _permissionFailureCount = 0;
+        _permissionBackoffUntil = 0;
+        NSLog(@"[Permission] Check: TestTap=SUCCESS");
+    } else {
+        _permissionFailureCount++;
+        // Exponential backoff starting at 0.25s, max 15s
+        NSTimeInterval backoff = MIN(15.0, pow(2.0, MIN(_permissionFailureCount, 6)) * 0.25);
+        _permissionBackoffUntil = now + backoff;
+        NSLog(@"[Permission] Check: TestTap=FAILED (count=%ld) — backing off for %.2fs", (long)_permissionFailureCount, backoff);
+    }
 
     // Update cache
     _lastPermissionCheckResult = hasPermission;
@@ -666,4 +733,3 @@ extern Boolean AXIsProcessTrusted(void) __attribute__((weak_import));
 }
 
 @end
-
