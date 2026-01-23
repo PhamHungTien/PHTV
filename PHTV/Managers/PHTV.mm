@@ -2661,11 +2661,13 @@ extern "C" {
             NSString *eventTargetBundleId = (eventTargetPID > 0) ? getBundleIdFromPID(eventTargetPID) : nil;
             NSString *focusedBundleId = getFocusedAppBundleId();
             
-            // OPTIMIZATION: If the event target is explicitly a browser, skip isSpotlightActive() check.
-            // Browsers (Edge, Chrome) on homepage/search box are heavy web elements, AX calls can lag/timeout.
-            // We assume if you are typing into a browser process, you are NOT in Spotlight overlay.
+            // Determine if target is a browser for later logic
             BOOL isTargetBrowser = (eventTargetBundleId != nil && [_browserAppSet containsObject:eventTargetBundleId]);
-            BOOL spotlightActive = !isTargetBrowser && isSpotlightActive();
+            
+            // Check if Spotlight is active.
+            // Note: We MUST check this even if target is a browser, because Spotlight can be invoked OVER a browser.
+            // PHTVSpotlightManager handles performance/caching to avoid lag.
+            BOOL spotlightActive = isSpotlightActive();
             
             NSString *effectiveBundleId = (spotlightActive && focusedBundleId != nil) ? focusedBundleId : (eventTargetBundleId ?: focusedBundleId);
 
