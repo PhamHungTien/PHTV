@@ -57,7 +57,8 @@ struct SettingsSliderRow: View {
 
             Slider(
                 value: $value,
-                in: minValue...maxValue
+                in: minValue...maxValue,
+                step: step
             )
             .tint(iconColor)
         }

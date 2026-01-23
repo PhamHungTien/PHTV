@@ -68,7 +68,7 @@ struct StatusBarMenuView: View {
         // ═══════════════════════════════════════════
         // MARK: - Trạng thái
         // ═══════════════════════════════════════════
-        Section("Chế độ gõ") {
+        Section {
             Picker("", selection: Binding(
                 get: { appState.isEnabled },
                 set: { appState.isEnabled = $0 }

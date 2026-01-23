@@ -250,7 +250,15 @@ struct SettingsHeaderView<Trailing: View>: View {
         HStack(alignment: .center, spacing: 16) {
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(accent.opacity(0.12))
+                    .fill(
+                        LinearGradient(
+                            colors: [accent.opacity(0.35), accent.opacity(0.15)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(accent.opacity(0.4), lineWidth: 1)
                 Image(systemName: icon)
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(accent)
@@ -273,23 +281,31 @@ struct SettingsHeaderView<Trailing: View>: View {
 
             trailing
         }
-        .padding(16)
+        .padding(18)
         .frame(maxWidth: 700)
-        .background {
-            if #available(macOS 26.0, *) {
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(.ultraThinMaterial)
-                    .glassEffect(in: .rect(cornerRadius: 14))
-            } else {
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(Color(NSColor.controlBackgroundColor))
-                    .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 2)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(Color.gray.opacity(0.15), lineWidth: 1)
-                    )
-            }
-        }
+        .background(headerBackground)
+        .overlay(headerBorder)
+        .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+    }
+
+    private var headerBackground: some View {
+        RoundedRectangle(cornerRadius: 16)
+            .fill(
+                LinearGradient(
+                    colors: [
+                        accent.opacity(0.18),
+                        accent.opacity(0.08),
+                        Color(NSColor.controlBackgroundColor).opacity(0.5)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+    }
+
+    private var headerBorder: some View {
+        RoundedRectangle(cornerRadius: 16)
+            .stroke(accent.opacity(0.35), lineWidth: 1)
     }
 }
 
