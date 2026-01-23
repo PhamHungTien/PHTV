@@ -771,58 +771,150 @@ extern "C" {
         uint64_t now = mach_absolute_time();
         uint64_t elapsed_ms = mach_time_to_ms(now - _lastAddressBarCheckTime);
         
-        // Cache valid for 3000ms (enough for a typing burst and thinking pauses)
-        // We invalidate this cache on mouse clicks (RequestNewSession), so it's safe to keep longer
-        if (_lastAddressBarCheckTime > 0 && elapsed_ms < 3000) {
+        // Cache valid for 500ms
+        if (_lastAddressBarCheckTime > 0 && elapsed_ms < 500) {
             return _lastAddressBarResult;
         }
 
-        BOOL isAddressBar = NO;
+        BOOL isAddressBar = YES; // Default to YES (Address Bar) for safety
         AXUIElementRef systemWide = AXUIElementCreateSystemWide();
         AXUIElementRef focusedElement = NULL;
         
         if (AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement) == kAXErrorSuccess) {
+            // Debug Log: Start inspection
+            #ifdef DEBUG
+            NSLog(@"[AX Debug] Inspecting Focused Element...");
+            #endif
+
+            // STRATEGY 1: Role-based Identification (Fast & Reliable)
             CFStringRef roleRef = NULL;
             if (AXUIElementCopyAttributeValue(focusedElement, kAXRoleAttribute, (CFTypeRef *)&roleRef) == kAXErrorSuccess) {
                 NSString *role = (__bridge NSString *)roleRef;
-                // Browsers usually use AXTextField for address bars
-                if ([role isEqualToString:@"AXTextField"] || [role isEqualToString:@"AXComboBox"]) {
-                    // Potential address bar. Now verify it's NOT inside web content.
-                    // Web content elements (like Google Sheets inputs) are descendants of AXWebArea.
-                    // Browser UI (Address Bar) is NOT.
+                #ifdef DEBUG
+                NSLog(@"[AX Debug] Role: %@", role);
+                #endif
+                
+                if ([role isEqualToString:@"AXTextField"] || 
+                    [role isEqualToString:@"AXSearchField"] || 
+                    [role isEqualToString:@"AXComboBox"]) {
                     
-                    isAddressBar = YES; // Assume YES initially
+                    #ifdef DEBUG
+                    NSLog(@"[AX Debug] -> MATCH: Known Input Role. Returning YES.");
+                    #endif
                     
-                    AXUIElementRef currentElement = focusedElement;
-                    CFRetain(currentElement); // Keep +1 for the loop
+                    isAddressBar = YES;
+                    CFRelease(roleRef);
+                    CFRelease(focusedElement);
+                    CFRelease(systemWide);
                     
-                    // Walk up 3 levels to find AXWebArea
-                    for (int i = 0; i < 3; i++) {
-                        AXUIElementRef parent = NULL;
-                        if (AXUIElementCopyAttributeValue(currentElement, kAXParentAttribute, (CFTypeRef *)&parent) == kAXErrorSuccess) {
-                            CFStringRef parentRoleRef = NULL;
-                            if (AXUIElementCopyAttributeValue(parent, kAXRoleAttribute, (CFTypeRef *)&parentRoleRef) == kAXErrorSuccess) {
-                                NSString *parentRole = (__bridge NSString *)parentRoleRef;
-                                if ([parentRole isEqualToString:@"AXWebArea"]) {
-                                    isAddressBar = NO; // It's inside web content!
-                                    CFRelease(parentRoleRef);
-                                    CFRelease(parent);
-                                    break;
-                                }
-                                CFRelease(parentRoleRef);
-                            }
-                            
-                            CFRelease(currentElement);
-                            currentElement = parent; // Move up
-                        } else {
-                            break; // No parent
-                        }
-                    }
-                    CFRelease(currentElement);
+                    _lastAddressBarResult = isAddressBar;
+                    _lastAddressBarCheckTime = now;
+                    return YES;
                 }
                 CFRelease(roleRef);
             }
+
+            // STRATEGY 2: Positive Identification (Keywords)
+            BOOL positiveMatch = NO;
+            NSArray *attributesToCheck = @[(__bridge NSString *)kAXTitleAttribute, 
+                                           (__bridge NSString *)kAXDescriptionAttribute, 
+                                           (__bridge NSString *)kAXRoleDescriptionAttribute,
+                                           @"AXIdentifier"]; 
+            
+            for (NSString *attr in attributesToCheck) {
+                CFTypeRef valueRef = NULL;
+                if (AXUIElementCopyAttributeValue(focusedElement, (__bridge CFStringRef)attr, &valueRef) == kAXErrorSuccess) {
+                    if (valueRef && CFGetTypeID(valueRef) == CFStringGetTypeID()) {
+                        NSString *value = (__bridge NSString *)valueRef;
+                        #ifdef DEBUG
+                        NSLog(@"[AX Debug] Checking Attribute %@: %@", attr, value);
+                        #endif
+                        
+                        if ([value rangeOfString:@"Address" options:NSCaseInsensitiveSearch].location != NSNotFound ||
+                            [value rangeOfString:@"Omnibox" options:NSCaseInsensitiveSearch].location != NSNotFound ||
+                            [value rangeOfString:@"Location" options:NSCaseInsensitiveSearch].location != NSNotFound ||
+                            [value rangeOfString:@"URL" options:NSCaseInsensitiveSearch].location != NSNotFound ||
+                            [value rangeOfString:@"Search" options:NSCaseInsensitiveSearch].location != NSNotFound || 
+                            [value rangeOfString:@"Địa chỉ" options:NSCaseInsensitiveSearch].location != NSNotFound ||
+                            [value rangeOfString:@"Tìm kiếm" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+                            positiveMatch = YES;
+                        }
+                    }
+                    if (valueRef) CFRelease(valueRef);
+                }
+                if (positiveMatch) break;
+            }
+            
+            if (positiveMatch) {
+                #ifdef DEBUG
+                NSLog(@"[AX Debug] -> MATCH: Positive Keyword found. Returning YES.");
+                #endif
+                isAddressBar = YES;
+            } else {
+                // STRATEGY 3: Negative Identification (Web Area)
+                #ifdef DEBUG
+                NSLog(@"[AX Debug] No positive match. Checking Parent Hierarchy for AXWebArea...");
+                #endif
+                
+                BOOL foundWebArea = NO;
+                AXUIElementRef currentElement = focusedElement;
+                CFRetain(currentElement); // Keep +1 for the loop
+                
+                // Walk up up to 12 levels to find AXWebArea
+                for (int i = 0; i < 12; i++) {
+                    AXUIElementRef parent = NULL;
+                    if (AXUIElementCopyAttributeValue(currentElement, kAXParentAttribute, (CFTypeRef *)&parent) == kAXErrorSuccess) {
+                        CFStringRef parentRoleRef = NULL;
+                        if (AXUIElementCopyAttributeValue(parent, kAXRoleAttribute, (CFTypeRef *)&parentRoleRef) == kAXErrorSuccess) {
+                            NSString *parentRole = (__bridge NSString *)parentRoleRef;
+                            #ifdef DEBUG
+                            NSLog(@"[AX Debug] Parent Level %d Role: %@", i+1, parentRole);
+                            #endif
+                            
+                            if ([parentRole isEqualToString:@"AXWebArea"]) {
+                                foundWebArea = YES;
+                                CFRelease(parentRoleRef);
+                                CFRelease(parent);
+                                break;
+                            }
+                            CFRelease(parentRoleRef);
+                        }
+                        
+                        CFRelease(currentElement);
+                        currentElement = parent; // Move up
+                    } else {
+                        #ifdef DEBUG
+                        NSLog(@"[AX Debug] Parent walk stopped at level %d (No Parent)", i+1);
+                        #endif
+                        break; // No parent
+                    }
+                }
+                CFRelease(currentElement);
+                
+                if (foundWebArea) {
+                    #ifdef DEBUG
+                    NSLog(@"[AX Debug] -> Found AXWebArea. It's Content. Returning NO.");
+                    #endif
+                    isAddressBar = NO;
+                } else {
+                    #ifdef DEBUG
+                    NSLog(@"[AX Debug] -> No AXWebArea found. Assuming Address Bar. Returning YES.");
+                    #endif
+                    isAddressBar = YES;
+                }
+            }
             CFRelease(focusedElement);
+        } else {
+            // AX Failed
+            #ifdef DEBUG
+            NSLog(@"[AX Debug] Failed to get Focused Element. Fallback logic.");
+            #endif
+            
+            if (_lastAddressBarCheckTime > 0 && elapsed_ms < 2000) {
+                 isAddressBar = _lastAddressBarResult;
+            } else {
+                 isAddressBar = YES;
+            }
         }
         CFRelease(systemWide);
         
@@ -954,7 +1046,15 @@ extern "C" {
         LOAD_DATA(vQuickTelex, QuickTelex);
         LOAD_DATA(vUseModernOrthography, ModernOrthography);
         LOAD_DATA(vRestoreIfWrongSpelling, RestoreIfInvalidWord);
-        LOAD_DATA(vFixRecommendBrowser, FixRecommendBrowser);
+        
+        // FixRecommendBrowser default to YES (1) if not set
+        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"FixRecommendBrowser"] == nil) {
+            vFixRecommendBrowser = 1;
+            [[NSUserDefaults standardUserDefaults] setInteger:1 forKey:@"FixRecommendBrowser"];
+        } else {
+            LOAD_DATA(vFixRecommendBrowser, FixRecommendBrowser);
+        }
+        
         LOAD_DATA(vUseMacro, UseMacro);
         LOAD_DATA(vUseMacroInEnglishMode, UseMacroInEnglishMode);
         LOAD_DATA(vAutoCapsMacro, vAutoCapsMacro);
@@ -2718,29 +2818,50 @@ extern "C" {
                 BOOL isSpaceRestore = (_keycode == KEY_SPACE && pData->backspaceCount > 0);
                 BOOL shouldSkipSpace = (_keycode == KEY_SPACE && !isSpaceRestore);
                 
+                #ifdef DEBUG
+                // Always log browser fix status to debug why it might be skipped
+                NSLog(@"[BrowserFix] Status: vFix=%d, app=%@, isBrowser=%d => isFix=%d | bs=%d, ext=%d", 
+                      vFixRecommendBrowser, effectiveBundleId, isBrowserApp, isBrowserFix, 
+                      (int)pData->backspaceCount, pData->extCode);
+                
+                if (isBrowserFix && pData->backspaceCount > 0) {
+                    NSLog(@"[BrowserFix] Checking logic: fix=%d, ext=%d, special=%d, skipSp=%d, shortcut=%d, bs=%d", 
+                          isBrowserFix, pData->extCode, isSpecialApp, shouldSkipSpace, isPotentialShortcut, (int)pData->backspaceCount);
+                }
+                #endif
+
                 if (isBrowserFix && pData->extCode != 4 && !isSpecialApp && !shouldSkipSpace && !isPotentialShortcut) {
                     if (pData->backspaceCount > 0) {
                         // DETECT ADDRESS BAR:
                         // Use accurate AX API check (cached) instead of unreliable spotlightActive
-                        if (isFocusedElementAddressBar()) {
+                        BOOL isAddrBar = isFocusedElementAddressBar();
+                        
+                        #ifdef DEBUG
+                        NSLog(@"[BrowserFix] isFocusedElementAddressBar returned: %d", isAddrBar);
+                        #endif
+
+                        if (isAddrBar) {
 #ifdef DEBUG
-                            NSLog(@"[PHTV Browser] Address Bar Detected (AX) -> Using Shift+Left: backspaceCount=%d", (int)pData->backspaceCount);
+                            NSLog(@"[PHTV Browser] Address Bar Detected (AX) -> Using SendEmptyCharacter (Fix Doubling)");
 #endif
-                            // LOOP FIX: Send Shift+Left for ALL characters that need to be deleted
-                            // This ensures the entire word is replaced, fixing "play" -> "pplay"
-                            while (pData->backspaceCount > 0) {
-                                SendShiftAndLeftArrow();
-                                SendPhysicalBackspace();
-                                pData->backspaceCount--;
-                            }
+                            // Revert to SendEmptyCharacter strategy for Address Bar (like v1.7.6)
+                            // This fixes the "doubling first character" bug where Shift+Left fails
+                            // in some browser profiles/contexts (especially on first char).
+                            // SendEmptyCharacter reliably breaks the autocomplete state.
+                            SendEmptyCharacter();
+                            pData->backspaceCount++;
+                            
+                            // Note: We do NOT consume backspaces here. We let the standard logic below
+                            // handle the actual backspacing. This ensures:
+                            // 1. Empty char is sent.
+                            // 2. Standard backspace sequence runs: deletes Empty char, then deletes original chars.
                         } else {
                             // Content Mode (Sheets, Docs, Forms)
                             // Do nothing here, let standard SendBackspaceSequence handle it below.
                             // Standard Backspace is the safest method for web editors.
                         }
                     }
-                    // CRITICAL: Force fall through to standard backspace if we didn't use Shift+Left
-                    // AND prevent SendEmptyCharacter logic from running below.
+                    // CRITICAL: Force fall through to standard backspace logic below.
                 } 
                 else if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE && !isPotentialShortcut && !isBrowserApp) {
                     // Legacy logic for non-browser apps (Electron, Slack, etc.)
