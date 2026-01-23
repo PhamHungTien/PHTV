@@ -681,7 +681,7 @@ struct MacroListView: View {
     var onEdit: ((MacroItem) -> Void)? = nil
 
     var body: some View {
-        VStack(spacing: 4) {
+        LazyVStack(spacing: 4) {
             ForEach(macros) { macro in
                 MacroRowView(
                     macro: macro,
@@ -696,13 +696,8 @@ struct MacroListView: View {
                         selectedMacro = macro.id
                     }
                 }
-                .transition(.asymmetric(
-                    insertion: .scale(scale: 0.8).combined(with: .opacity),
-                    removal: .scale(scale: 0.8).combined(with: .opacity)
-                ))
             }
         }
-        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: macros.count)
     }
 
     private func categoryFor(_ macro: MacroItem) -> MacroCategory? {

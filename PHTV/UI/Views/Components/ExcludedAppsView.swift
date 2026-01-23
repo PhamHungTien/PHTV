@@ -126,7 +126,7 @@ private struct ExcludedAppsList: View {
     let onRemove: (ExcludedApp) -> Void
     
     var body: some View {
-        VStack(spacing: 0) {
+        LazyVStack(spacing: 0) {
             ForEach(apps) { app in
                 ExcludedAppRow(app: app) {
                     onRemove(app)

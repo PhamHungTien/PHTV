@@ -209,7 +209,7 @@ enum Defaults {
     static let showIconOnDock = false
     static let settingsWindowAlwaysOnTop = false
     static let safeMode = false
-    static let enableLiquidGlassBackground = true
+    static let enableLiquidGlassBackground = false
     static let settingsBackgroundOpacity = 1.0
 
     // MARK: - Hotkey
