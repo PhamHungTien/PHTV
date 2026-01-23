@@ -23,9 +23,11 @@ struct BugReportView: View {
     @State private var isLoadingLogs: Bool = false
     @State private var showCopiedAlert: Bool = false
     @State private var includeSystemInfo: Bool = true
-    @State private var includeLogs: Bool = true
+    // Default: OFF to avoid loading heavy OSLog snapshot when chỉ xem tab
+    @State private var includeLogs: Bool = false
     @State private var cachedLogs: String = ""
     @State private var isSending: Bool = false
+    @State private var hasLoadedLogsOnce: Bool = false
 
     var body: some View {
         ScrollView {
@@ -45,15 +47,25 @@ struct BugReportView: View {
             .padding(20)
         }
         .settingsBackground()
-        .task {
-            if cachedLogs.isEmpty {
-                await loadDebugLogsAsync()
-            }
-        }
         .alert("Đã sao chép!", isPresented: $showCopiedAlert) {
             Button("OK", role: .cancel) {}
         } message: {
             Text("Nội dung báo lỗi đã được sao chép vào clipboard.")
+        }
+        .onChange(of: includeLogs) { newValue in
+            if newValue {
+                // Load log khi người dùng bật, tránh chiếm RAM nếu không cần
+                Task { await loadLogsIfNeeded() }
+            } else {
+                // Giải phóng bộ nhớ log khi tắt
+                debugLogs = ""
+                cachedLogs = ""
+            }
+        }
+        .onDisappear {
+            // Giải phóng log khi rời tab để hạ RAM
+            debugLogs = ""
+            cachedLogs = ""
         }
     }
 
@@ -135,10 +147,28 @@ struct BugReportView: View {
                 SettingsToggleRow(
                     icon: "doc.text.fill",
                     iconColor: .accentColor,
-                    title: "Nhật ký debug",
-                    subtitle: "Log hoạt động gần đây của ứng dụng",
+                    title: "Nhật ký debug (tùy chọn)",
+                    subtitle: includeLogs ? "Đang thu thập log 60 phút gần nhất" : "Chỉ tải khi cần để tiết kiệm RAM",
                     isOn: $includeLogs
                 )
+
+                if includeLogs {
+                    SettingsDivider()
+                    HStack(spacing: 10) {
+                        if isLoadingLogs {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            Image(systemName: hasLoadedLogsOnce ? "checkmark.circle.fill" : "arrow.down.circle.fill")
+                                .foregroundStyle(hasLoadedLogsOnce ? Color.green : Color.accentColor)
+                        }
+                        Text(hasLoadedLogsOnce ? "Đã tải log — bật/đặt lại nếu cần làm mới" : "Nhấn bật để tải log (giới hạn 100 mục)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 6)
+                }
             }
         }
     }
@@ -483,6 +513,15 @@ struct BugReportView: View {
         debugLogs = logs
         cachedLogs = logs
         isLoadingLogs = false
+        hasLoadedLogsOnce = true
+    }
+
+    private func loadLogsIfNeeded() async {
+        if cachedLogs.isEmpty {
+            await loadDebugLogsAsync()
+        } else {
+            debugLogs = cachedLogs
+        }
     }
 
     // MARK: - Log Entry Model

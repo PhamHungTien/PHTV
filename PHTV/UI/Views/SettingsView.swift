@@ -124,21 +124,25 @@ struct SettingsView: View {
     private var detailView: some View {
         // Lazy loading: Only create the view for selected tab
         // This significantly reduces memory usage by not instantiating all 7 tabs at once
-        if selectedTab == .typing {
-            TypingSettingsView()
-        } else if selectedTab == .hotkeys {
-            HotkeySettingsView()
-        } else if selectedTab == .macro {
-            MacroSettingsView()
-        } else if selectedTab == .apps {
-            AppsSettingsView()
-        } else if selectedTab == .system {
-            SystemSettingsView()
-        } else if selectedTab == .bugReport {
-            BugReportView()
-        } else if selectedTab == .about {
-            AboutView()
+        Group {
+            if selectedTab == .typing {
+                TypingSettingsView()
+            } else if selectedTab == .hotkeys {
+                HotkeySettingsView()
+            } else if selectedTab == .macro {
+                MacroSettingsView()
+            } else if selectedTab == .apps {
+                AppsSettingsView()
+            } else if selectedTab == .system {
+                SystemSettingsView()
+            } else if selectedTab == .bugReport {
+                BugReportView()
+            } else if selectedTab == .about {
+                AboutView()
+            }
         }
+        // Force view teardown when đổi tab để giải phóng RAM của các view nặng (log, macro...)
+        .id(selectedTab)
     }
 }
 
