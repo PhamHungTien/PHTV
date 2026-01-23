@@ -518,6 +518,7 @@ struct SettingsSliderRow: View {
     var valueFormatter: (Double) -> String = { String(format: "%.0f", $0) }
     var onEditingChanged: ((Bool) -> Void)? = nil
     var onValueChanged: ((Double) -> Void)? = nil
+    var useLiquidGlassTrack: Bool = true
 
     var body: some View {
         VStack(spacing: 12) {
@@ -555,20 +556,44 @@ struct SettingsSliderRow: View {
                     .padding(.top, 2)
             }
 
-            Slider(
-                value: $value,
-                in: minValue...maxValue,
-                step: step,
-                onEditingChanged: { editing in
-                    onEditingChanged?(editing)
+            ZStack {
+                if useLiquidGlassTrack {
+                    sliderTrackBackground
                 }
-            )
-            .tint(iconColor)
+
+                CustomSlider(
+                    value: $value,
+                    range: minValue...maxValue,
+                    step: step,
+                    tintColor: iconColor,
+                    onEditingChanged: { editing in
+                        onEditingChanged?(editing)
+                    }
+                )
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+            }
             .onChange(of: value) { newVal in
                 onValueChanged?(newVal)
             }
         }
         .padding(.vertical, 6)
+    }
+
+    @ViewBuilder
+    private var sliderTrackBackground: some View {
+        if #available(macOS 26.0, *) {
+            RoundedRectangle(cornerRadius: 10)
+                .fill(.ultraThinMaterial)
+                .glassEffect(in: .rect(cornerRadius: 10))
+        } else {
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color(NSColor.controlBackgroundColor).opacity(0.7))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                )
+        }
     }
 }
 

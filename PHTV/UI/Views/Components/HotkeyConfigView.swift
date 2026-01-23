@@ -225,34 +225,27 @@ struct HotkeyConfigView: View {
                 )
                 .padding(.top, 8)
 
-                // Beep volume slider (under the toggle)
-                VStack(spacing: 8) {
-                    HStack {
-                        Image(systemName: "speaker.wave.2")
-                            .foregroundStyle(.secondary)
-                        Text("Âm lượng beep")
-                        Spacer()
-                        Text(String(format: "%.0f%%", appState.beepVolume * 100))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .font(.body)
+                SettingsDivider()
 
-                    CustomSlider(
-                        value: $appState.beepVolume,
-                        range: 0.0...1.0,
-                        step: 0.01,
-                        tintColor: .accentColor,
-                        onEditingChanged: { editing in
-                            // Play pop sound on slider release
-                            if !editing && appState.beepVolume > 0 {
-                                BeepManager.shared.play(volume: appState.beepVolume)
-                            }
+                // Beep volume slider (under the toggle)
+                SettingsSliderRow(
+                    icon: "speaker.wave.2",
+                    iconColor: .accentColor,
+                    title: "Âm lượng beep",
+                    subtitle: "Điều chỉnh mức âm lượng tiếng beep",
+                    minValue: 0.0,
+                    maxValue: 1.0,
+                    step: 0.01,
+                    value: $appState.beepVolume,
+                    valueFormatter: { String(format: "%.0f%%", $0 * 100) },
+                    onEditingChanged: { editing in
+                        // Play pop sound on slider release
+                        if !editing && appState.beepVolume > 0 {
+                            BeepManager.shared.play(volume: appState.beepVolume)
                         }
-                    )
-                    // The slider should still adjust volume even if the mode beep is disabled
-                }
-                .padding(.leading, 50)
+                    }
+                )
+                // The slider should still adjust volume even if the mode beep is disabled
             }
         }
     }

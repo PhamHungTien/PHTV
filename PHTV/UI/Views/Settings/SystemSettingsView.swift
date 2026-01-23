@@ -236,45 +236,17 @@ struct SystemSettingsView: View {
 
                 SettingsDivider()
 
-                VStack(spacing: 8) {
-                    HStack(spacing: 14) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.accentColor.opacity(0.12))
-                                .frame(width: 36, height: 36)
-
-                            Image(systemName: "arrow.up.left.and.arrow.down.right")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundStyle(Color.accentColor)
-                        }
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Kích thước icon")
-                                .font(.body)
-                                .foregroundStyle(.primary)
-
-                            Text("Điều chỉnh kích thước icon trên menu bar")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Spacer()
-
-                        Text(String(format: "%.0f px", appState.menuBarIconSize))
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.tint)
-                            .frame(minWidth: 40, alignment: .trailing)
-                    }
-
-                    CustomSlider(
-                        value: $appState.menuBarIconSize,
-                        range: 12.0...20.0,
-                        step: 0.01,
-                        tintColor: .accentColor
-                    )
-                }
-                .padding(.vertical, 6)
+                SettingsSliderRow(
+                    icon: "arrow.up.left.and.arrow.down.right",
+                    iconColor: .accentColor,
+                    title: "Kích thước icon",
+                    subtitle: "Điều chỉnh kích thước icon trên menu bar",
+                    minValue: 12.0,
+                    maxValue: 20.0,
+                    step: 0.01,
+                    value: $appState.menuBarIconSize,
+                    valueFormatter: { String(format: "%.0f px", $0) }
+                )
             }
         }
     }
