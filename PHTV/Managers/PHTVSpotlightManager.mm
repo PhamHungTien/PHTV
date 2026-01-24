@@ -442,7 +442,12 @@ static int _externalDeleteCount = 0;
 
 + (void)handleSpotlightCacheInvalidation:(CGEventType)type keycode:(CGKeyCode)keycode flags:(CGEventFlags)flags {
     // Check if Cmd+Space was pressed (Spotlight shortcut)
-    if (type == kCGEventKeyDown && keycode == 49 && (flags & kCGEventFlagMaskCommand)) { // Space = 49
+    // ALSO: Invalidate on ANY Command key press to support Apple Intelligence (Double Cmd) and other overlays
+    // 55 = kVK_Command (Left Command), 54 = kVK_RightCommand (Right Command), 49 = kVK_Space
+    BOOL isCommandKey = (keycode == 55 || keycode == 54);
+    BOOL isCmdSpace = (keycode == 49 && (flags & kCGEventFlagMaskCommand));
+
+    if (type == kCGEventKeyDown && (isCmdSpace || isCommandKey)) {
         [PHTVCacheManager invalidateSpotlightCache];
     }
 }
