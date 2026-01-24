@@ -10,21 +10,85 @@ import SwiftUI
 import OSLog
 import Carbon
 import Darwin.Mach
+import UniformTypeIdentifiers
 
 // MARK: - Logger for PHTV
 private let phtvLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.phamhungtien.phtv", category: "general")
+
+private enum BugSeverity: String, CaseIterable, Identifiable {
+    case low = "low"
+    case normal = "normal"
+    case high = "high"
+    case critical = "critical"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .low: return "Nhẹ"
+        case .normal: return "Bình thường"
+        case .high: return "Nghiêm trọng"
+        case .critical: return "Khẩn cấp"
+        }
+    }
+
+    var badge: String {
+        switch self {
+        case .low: return "🟢"
+        case .normal: return "🟡"
+        case .high: return "🟠"
+        case .critical: return "🔴"
+        }
+    }
+}
+
+private enum BugArea: String, CaseIterable, Identifiable {
+    case typing = "typing"
+    case hotkey = "hotkey"
+    case menuBar = "menubar"
+    case settings = "settings"
+    case picker = "picker"
+    case macro = "macro"
+    case compatibility = "compatibility"
+    case other = "other"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .typing: return "Gõ tiếng Việt"
+        case .hotkey: return "Hotkey"
+        case .menuBar: return "Menu bar"
+        case .settings: return "Cài đặt"
+        case .picker: return "Emoji/Picker"
+        case .macro: return "Macro"
+        case .compatibility: return "Tương thích app"
+        case .other: return "Khác"
+        }
+    }
+}
 
 struct BugReportView: View {
     @EnvironmentObject var appState: AppState
 
     @State private var bugTitle: String = ""
     @State private var bugDescription: String = ""
+    @State private var stepsToReproduce: String = ""
+    @State private var expectedResult: String = ""
+    @State private var actualResult: String = ""
+    @State private var contactEmail: String = ""
+    @State private var bugSeverity: BugSeverity = .normal
+    @State private var bugArea: BugArea = .typing
     @State private var debugLogs: String = ""
     @State private var isLoadingLogs: Bool = false
     @State private var showCopiedAlert: Bool = false
+    @State private var showSavedAlert: Bool = false
+    @State private var savedLocation: String = ""
     @State private var includeSystemInfo: Bool = true
     // Default: OFF to avoid loading heavy OSLog snapshot when chỉ xem tab
     @State private var includeLogs: Bool = false
+    @State private var includeCrashLogs: Bool = true
+    @State private var showLogPreview: Bool = false
     @State private var cachedLogs: String = ""
     @State private var isSending: Bool = false
     @State private var hasLoadedLogsOnce: Bool = false
@@ -58,6 +122,11 @@ struct BugReportView: View {
         } message: {
             Text("Nội dung báo lỗi đã được sao chép.")
         }
+        .alert("Đã lưu báo cáo", isPresented: $showSavedAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(savedLocation.isEmpty ? "Đã lưu báo cáo." : "Đã lưu tại: \(savedLocation)")
+        }
         .onChange(of: includeLogs) { newValue in
             if newValue {
                 // Load log khi người dùng bật, tránh chiếm RAM nếu không cần
@@ -66,6 +135,7 @@ struct BugReportView: View {
                 // Giải phóng bộ nhớ log khi tắt
                 debugLogs = ""
                 cachedLogs = ""
+                showLogPreview = false
             }
         }
         .onDisappear {
@@ -88,23 +158,43 @@ struct BugReportView: View {
                     .textFieldStyle(.plain)
                     .padding(8)
                     .background {
-                        if #available(macOS 26.0, *) {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(.ultraThinMaterial)
-                                .settingsGlassEffect(cornerRadius: 8)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                                )
-                        } else {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color(NSColor.textBackgroundColor))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                                )
-                        }
+                        inputFieldBackground(cornerRadius: 8)
                     }
+
+                // Quick metadata
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Mức độ")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Picker("", selection: $bugSeverity) {
+                            ForEach(BugSeverity.allCases) { severity in
+                                Text("\(severity.badge) \(severity.displayName)").tag(severity)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.menu)
+                        .padding(8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(inputFieldBackground(cornerRadius: 8))
+                    }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Khu vực")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Picker("", selection: $bugArea) {
+                            ForEach(BugArea.allCases) { area in
+                                Text(area.displayName).tag(area)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.menu)
+                        .padding(8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(inputFieldBackground(cornerRadius: 8))
+                    }
+                }
 
                 // Description
                 TextEditor(text: $bugDescription)
@@ -113,20 +203,9 @@ struct BugReportView: View {
                     .scrollContentBackground(.hidden)
                     .padding(8)
                     .background {
-                        if #available(macOS 26.0, *) {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(.ultraThinMaterial)
-                                .settingsGlassEffect(cornerRadius: 8)
-                        } else {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color(NSColor.textBackgroundColor))
-                        }
+                        inputFieldBackground(cornerRadius: 8)
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                    )
                     .overlay(alignment: .topLeading) {
                         if bugDescription.isEmpty {
                             Text("Mô tả vấn đề và các bước để tái tạo…")
@@ -135,6 +214,85 @@ struct BugReportView: View {
                                 .padding(.vertical, 16)
                                 .allowsHitTesting(false)
                         }
+                    }
+
+                Text("Bước tái hiện")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                TextEditor(text: $stepsToReproduce)
+                    .frame(minHeight: 80)
+                    .font(.body)
+                    .scrollContentBackground(.hidden)
+                    .padding(8)
+                    .background {
+                        inputFieldBackground(cornerRadius: 8)
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(alignment: .topLeading) {
+                        if stepsToReproduce.isEmpty {
+                            Text("1. Mở ứng dụng...\n2. Thực hiện...\n3. Lỗi xảy ra...")
+                                .foregroundStyle(.tertiary)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 16)
+                                .allowsHitTesting(false)
+                        }
+                    }
+
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Kết quả mong muốn")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        TextEditor(text: $expectedResult)
+                            .frame(minHeight: 70)
+                            .font(.body)
+                            .scrollContentBackground(.hidden)
+                            .padding(8)
+                            .background {
+                                inputFieldBackground(cornerRadius: 8)
+                            }
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .overlay(alignment: .topLeading) {
+                                if expectedResult.isEmpty {
+                                    Text("Ứng dụng nên…")
+                                        .foregroundStyle(.tertiary)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 16)
+                                        .allowsHitTesting(false)
+                                }
+                            }
+                    }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Kết quả thực tế")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        TextEditor(text: $actualResult)
+                            .frame(minHeight: 70)
+                            .font(.body)
+                            .scrollContentBackground(.hidden)
+                            .padding(8)
+                            .background {
+                                inputFieldBackground(cornerRadius: 8)
+                            }
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .overlay(alignment: .topLeading) {
+                                if actualResult.isEmpty {
+                                    Text("Thực tế đang…")
+                                        .foregroundStyle(.tertiary)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 16)
+                                        .allowsHitTesting(false)
+                                }
+                            }
+                    }
+                }
+
+                TextField("Email liên hệ (tuỳ chọn)", text: $contactEmail)
+                    .textFieldStyle(.plain)
+                    .padding(8)
+                    .background {
+                        inputFieldBackground(cornerRadius: 8)
                     }
             }
         }
@@ -182,7 +340,53 @@ struct BugReportView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.vertical, 6)
+
+                    HStack(spacing: 12) {
+                        Button {
+                            Task { await refreshLogs() }
+                        } label: {
+                            Label("Làm mới log", systemImage: "arrow.clockwise")
+                                .font(.caption.weight(.semibold))
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Color.accentColor)
+                        .disabled(isLoadingLogs)
+
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                showLogPreview.toggle()
+                            }
+                            if showLogPreview {
+                                Task { await loadLogsIfNeeded() }
+                            }
+                        } label: {
+                            Label(showLogPreview ? "Ẩn xem trước" : "Xem trước log", systemImage: showLogPreview ? "chevron.up" : "chevron.down")
+                                .font(.caption.weight(.semibold))
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Color.accentColor)
+
+                        Spacer()
+                    }
+
+                    if showLogPreview {
+                        TextEditor(text: .constant(logPreviewText))
+                            .font(.system(.caption, design: .monospaced))
+                            .frame(minHeight: 140)
+                            .roundedTextArea()
+                            .disabled(true)
+                    }
                 }
+
+                SettingsDivider()
+
+                SettingsToggleRow(
+                    icon: "bolt.fill",
+                    iconColor: .accentColor,
+                    title: "Crash logs gần đây",
+                    subtitle: "Đính kèm các crash log PHTV trong 7 ngày",
+                    isOn: $includeCrashLogs
+                )
             }
         }
     }
@@ -248,6 +452,40 @@ struct BugReportView: View {
                 .disabled(isSending)
             }
             .padding(.vertical, 8)
+
+            HStack(spacing: 10) {
+                Button {
+                    Task { await saveReportToFileAsync() }
+                } label: {
+                    Label("Lưu báo cáo…", systemImage: "square.and.arrow.down")
+                        .font(.caption.weight(.semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.accentColor)
+                .disabled(isSending)
+
+                Button {
+                    applyTemplateIfNeeded()
+                } label: {
+                    Label("Tạo mẫu", systemImage: "wand.and.stars")
+                        .font(.caption.weight(.semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.accentColor)
+                .disabled(isSending)
+
+                Spacer()
+
+                Button(role: .destructive) {
+                    clearForm()
+                } label: {
+                    Label("Xoá nội dung", systemImage: "trash")
+                        .font(.caption.weight(.semibold))
+                }
+                .buttonStyle(.plain)
+                .disabled(isSending)
+            }
+            .padding(.top, 6)
         }
     }
 
@@ -422,6 +660,7 @@ struct BugReportView: View {
     }
 
     private func getRecentCrashLogs() -> String {
+        guard includeCrashLogs else { return "" }
         let crashLogsPath = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Logs/DiagnosticReports")
 
@@ -540,6 +779,11 @@ struct BugReportView: View {
         } else {
             debugLogs = cachedLogs
         }
+    }
+
+    private func refreshLogs() async {
+        cachedLogs = ""
+        await loadDebugLogsAsync()
     }
 
     // MARK: - Log Entry Model
@@ -874,8 +1118,22 @@ struct BugReportView: View {
         ## 📋 Tiêu đề
         \(bugTitle.isEmpty ? "(Chưa nhập)" : bugTitle)
 
+        ## 🧭 Phân loại
+        - **Mức độ:** \(bugSeverity.badge) \(bugSeverity.displayName)
+        - **Khu vực:** \(bugArea.displayName)
+        \(contactEmail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "" : "- **Liên hệ:** \(contactEmail)")
+
         ## 📝 Mô tả chi tiết
         \(bugDescription.isEmpty ? "(Chưa nhập)" : bugDescription)
+
+        ## ✅ Bước tái hiện
+        \(stepsToReproduce.isEmpty ? "(Chưa nhập)" : stepsToReproduce)
+
+        ## 🎯 Kết quả mong muốn
+        \(expectedResult.isEmpty ? "(Chưa nhập)" : expectedResult)
+
+        ## ❗️Kết quả thực tế
+        \(actualResult.isEmpty ? "(Chưa nhập)" : actualResult)
 
         """
 
@@ -934,17 +1192,18 @@ struct BugReportView: View {
 
             """
 
-            // Thêm crash logs nếu có
-            let crashLogs = getRecentCrashLogs()
-            if !crashLogs.isEmpty {
-                report += """
-                ## 💥 Crash Logs gần đây
-                ```
-                \(crashLogs)
-                ```
+        }
 
-                """
-            }
+        // Thêm crash logs nếu có
+        let crashLogs = getRecentCrashLogs()
+        if !crashLogs.isEmpty {
+            report += """
+            ## 💥 Crash Logs gần đây
+            ```
+            \(crashLogs)
+            ```
+
+            """
         }
 
         if includeLogs {
@@ -979,12 +1238,16 @@ struct BugReportView: View {
         isSending = true
 
         // Lấy FULL logs cho clipboard (đầy đủ nhất)
-        let logs = await Task.detached(priority: .utility) {
-            Self.fetchLogsSync(maxEntries: 200) // Tăng lên 200 để debug tốt hơn
-        }.value
-
-        debugLogs = logs
-        cachedLogs = logs
+        let logs: String
+        if includeLogs {
+            logs = await Task.detached(priority: .utility) {
+                Self.fetchLogsSync(maxEntries: 200) // Tăng lên 200 để debug tốt hơn
+            }.value
+            debugLogs = logs
+            cachedLogs = logs
+        } else {
+            logs = ""
+        }
 
         let report = generateBugReportWithLogs(logs)
         NSPasteboard.general.clearContents()
@@ -999,9 +1262,14 @@ struct BugReportView: View {
         isSending = true
 
         // Lấy log quan trọng
-        let importantLogs = await Task.detached(priority: .utility) {
-            Self.fetchImportantLogsOnly()
-        }.value
+        let importantLogs: String
+        if includeLogs {
+            importantLogs = await Task.detached(priority: .utility) {
+                Self.fetchImportantLogsOnly()
+            }.value
+        } else {
+            importantLogs = ""
+        }
 
         // Tạo body cho GitHub URL
         let body = generateCompactReport(withLogs: importantLogs)
@@ -1084,6 +1352,24 @@ struct BugReportView: View {
             report += "## 📝 Mô tả\n\(bugDescription)\n\n"
         }
 
+        report += "## 🧭 Phân loại\n"
+        report += "- **Mức độ:** \(bugSeverity.badge) \(bugSeverity.displayName)\n"
+        report += "- **Khu vực:** \(bugArea.displayName)\n"
+        if !contactEmail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            report += "- **Liên hệ:** \(contactEmail)\n"
+        }
+        report += "\n"
+
+        if !stepsToReproduce.isEmpty {
+            report += "## ✅ Bước tái hiện\n\(stepsToReproduce)\n\n"
+        }
+        if !expectedResult.isEmpty {
+            report += "## 🎯 Kết quả mong muốn\n\(expectedResult)\n\n"
+        }
+        if !actualResult.isEmpty {
+            report += "## ❗️Kết quả thực tế\n\(actualResult)\n\n"
+        }
+
         // Thông tin hệ thống (rút gọn nhưng đầy đủ)
         if includeSystemInfo {
             let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
@@ -1140,9 +1426,14 @@ struct BugReportView: View {
         isSending = true
 
         // Lấy FULL logs cho email (không giới hạn như GitHub)
-        let fullLogs = await Task.detached(priority: .utility) {
-            Self.fetchLogsSync(maxEntries: 200) // Nhiều hơn để debug tốt hơn
-        }.value
+        let fullLogs: String
+        if includeLogs {
+            fullLogs = await Task.detached(priority: .utility) {
+                Self.fetchLogsSync(maxEntries: 200) // Nhiều hơn để debug tốt hơn
+            }.value
+        } else {
+            fullLogs = ""
+        }
 
         // Tạo FULL report (đầy đủ nhất)
         let fullReport = generateBugReportWithLogs(fullLogs)
@@ -1169,6 +1460,96 @@ struct BugReportView: View {
 
         isSending = false
         showCopiedAlert = true // Thông báo đã copy
+    }
+
+    private func saveReportToFileAsync() async {
+        guard !isSending else { return }
+        isSending = true
+
+        let logs: String
+        if includeLogs {
+            logs = await Task.detached(priority: .utility) {
+                Self.fetchLogsSync(maxEntries: 200)
+            }.value
+        } else {
+            logs = ""
+        }
+
+        let report = generateBugReportWithLogs(logs)
+
+        await MainActor.run {
+            let panel = NSSavePanel()
+            panel.allowedContentTypes = [.plainText]
+            panel.nameFieldStringValue = "phtv-bug-report.md"
+            panel.canCreateDirectories = true
+            if panel.runModal() == .OK, let url = panel.url {
+                do {
+                    try report.write(to: url, atomically: true, encoding: .utf8)
+                    savedLocation = url.lastPathComponent
+                    showSavedAlert = true
+                } catch {
+                    savedLocation = ""
+                    showSavedAlert = true
+                }
+            }
+        }
+
+        isSending = false
+    }
+
+    private func applyTemplateIfNeeded() {
+        if bugDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            bugDescription = "Mô tả ngắn gọn vấn đề và bối cảnh xảy ra."
+        }
+        if stepsToReproduce.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            stepsToReproduce = "1. Mở...\n2. Thực hiện...\n3. Lỗi xuất hiện..."
+        }
+        if expectedResult.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            expectedResult = "Kết quả mong muốn là..."
+        }
+        if actualResult.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            actualResult = "Kết quả thực tế đang là..."
+        }
+    }
+
+    private func clearForm() {
+        bugTitle = ""
+        bugDescription = ""
+        stepsToReproduce = ""
+        expectedResult = ""
+        actualResult = ""
+        contactEmail = ""
+        bugSeverity = .normal
+        bugArea = .typing
+    }
+
+    @ViewBuilder
+    private func inputFieldBackground(cornerRadius: CGFloat) -> some View {
+        if #available(macOS 26.0, *) {
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(.ultraThinMaterial)
+                .settingsGlassEffect(cornerRadius: cornerRadius)
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                )
+        } else {
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(Color(NSColor.textBackgroundColor))
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                )
+        }
+    }
+
+    private var logPreviewText: String {
+        if debugLogs.isEmpty {
+            return "Chưa có log để xem trước."
+        }
+        let lines = debugLogs.split(separator: "\n", omittingEmptySubsequences: false)
+        let tail = lines.suffix(80)
+        return tail.joined(separator: "\n")
     }
 }
 
