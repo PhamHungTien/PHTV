@@ -96,39 +96,21 @@ struct StatusBarMenuView: View {
         // MARK: - Bộ gõ
         // ═══════════════════════════════════════════
         Menu {
-            Section("Phương pháp gõ") {
+            Picker("Phương pháp gõ", selection: $appState.inputMethod) {
                 ForEach(InputMethod.allCases) { method in
-                    Button {
-                        appState.inputMethod = method
-                    } label: {
-                        HStack {
-                            Text(method.rawValue)
-                            if appState.inputMethod == method {
-                                Spacer()
-                                Image(systemName: "checkmark")
-                            }
-                        }
-                    }
+                    Text(method.displayName).tag(method)
                 }
             }
+            .pickerStyle(.inline)
 
             Divider()
 
-            Section("Bảng mã") {
+            Picker("Bảng mã", selection: $appState.codeTable) {
                 ForEach(CodeTable.allCases) { table in
-                    Button {
-                        appState.codeTable = table
-                    } label: {
-                        HStack {
-                            Text(table.displayName)
-                            if appState.codeTable == table {
-                                Spacer()
-                                Image(systemName: "checkmark")
-                            }
-                        }
-                    }
+                    Text(table.displayName).tag(table)
                 }
             }
+            .pickerStyle(.inline)
 
             Divider()
 
