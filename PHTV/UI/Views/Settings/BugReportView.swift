@@ -1527,18 +1527,19 @@ struct BugReportView: View {
     private func inputFieldBackground(cornerRadius: CGFloat) -> some View {
         if #available(macOS 26.0, *) {
             RoundedRectangle(cornerRadius: cornerRadius)
-                .fill(.ultraThinMaterial)
-                .settingsGlassEffect(cornerRadius: cornerRadius)
+                .fill(Color(NSColor.textBackgroundColor).opacity(0.6))
+                .background(.regularMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                 .overlay(
                     RoundedRectangle(cornerRadius: cornerRadius)
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                        .stroke(Color.primary.opacity(0.2), lineWidth: 1)
                 )
         } else {
             RoundedRectangle(cornerRadius: cornerRadius)
                 .fill(Color(NSColor.textBackgroundColor))
                 .overlay(
                     RoundedRectangle(cornerRadius: cornerRadius)
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                        .stroke(Color.secondary.opacity(0.4), lineWidth: 1)
                 )
         }
     }

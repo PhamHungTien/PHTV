@@ -366,6 +366,7 @@ struct StatusCard: View {
             } else {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color(NSColor.controlBackgroundColor))
+                    .compositingGroup()
                     .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 2)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
@@ -451,6 +452,7 @@ struct SettingsCard<Content: View, Trailing: View>: View {
             } else {
                 RoundedRectangle(cornerRadius: 14)
                     .fill(cardGradient)
+                    .compositingGroup()
                     .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 2)
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
