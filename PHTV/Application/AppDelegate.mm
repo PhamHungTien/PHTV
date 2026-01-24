@@ -1413,37 +1413,44 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
 // Handle dock icon visibility notification from SwiftUI
 - (void)handleShowDockIconNotification:(NSNotification *)notification {
-    BOOL visible = [[notification.userInfo objectForKey:@"visible"] boolValue];
-    NSLog(@"[AppDelegate] handleShowDockIconNotification: visible=%d", visible);
-    
-    // Update settingsWindowOpen for legacy checks, but rely on isSettingsWindowVisible for logic
-    settingsWindowOpen = visible;
-    
+    BOOL desiredDockVisible = [[notification.userInfo objectForKey:@"visible"] boolValue];
+    NSLog(@"[AppDelegate] handleShowDockIconNotification: visible=%d", desiredDockVisible);
+
+    // Track real settings visibility (notification can also represent user preference)
+    BOOL wasSettingsOpen = settingsWindowOpen;
+    BOOL settingsVisible = [self isSettingsWindowVisible];
+    settingsWindowOpen = settingsVisible;
+
+    BOOL shouldResetSession = wasSettingsOpen && !settingsVisible;
     dispatch_async(dispatch_get_main_queue(), ^{
-        if (visible || [self isSettingsWindowVisible]) {
+        if (settingsVisible) {
             [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
             [NSApp activateIgnoringOtherApps:YES];
-            
+
             // Bring settings window to front
             for (NSWindow *window in [NSApp windows]) {
                 NSString *identifier = window.identifier;
                 if (identifier && [identifier hasPrefix:@"settings"]) {
                     [window makeKeyAndOrderFront:nil];
                     // FORCE window to be main/key to prevent sinking
-                    [window makeKeyWindow]; 
+                    [window makeKeyWindow];
                     [window orderFrontRegardless];
                     NSLog(@"[AppDelegate] Brought settings window to front: %@", identifier);
                     break;
                 }
             }
-            
+
             NSLog(@"[AppDelegate] Dock icon shown (settings window open)");
         } else {
-            // Restore to user preference
-            BOOL userPrefersDock = [[NSUserDefaults standardUserDefaults] boolForKey:@"vShowIconOnDock"];
-            NSApplicationActivationPolicy policy = userPrefersDock ? NSApplicationActivationPolicyRegular : NSApplicationActivationPolicyAccessory;
+            // Restore to desired dock visibility (user preference), but don't steal focus
+            NSApplicationActivationPolicy policy = desiredDockVisible ? NSApplicationActivationPolicyRegular : NSApplicationActivationPolicyAccessory;
             [NSApp setActivationPolicy:policy];
-            NSLog(@"[AppDelegate] Dock icon restored to user preference: %d", userPrefersDock);
+            NSLog(@"[AppDelegate] Dock icon restored to desired visibility: %d", desiredDockVisible);
+        }
+        // If settings just closed, reset session state to avoid stuck input context
+        if (shouldResetSession) {
+            RequestNewSession();
+            [PHTVCacheManager invalidateSpotlightCache];
         }
     });
 }
