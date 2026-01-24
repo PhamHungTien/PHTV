@@ -195,7 +195,7 @@ struct TypingSettingsView: View {
                                                 RoundedRectangle(cornerRadius: 8)
                                                     .fill(Color.orange.opacity(0.1))
                                             }
-                                            .glassEffect(in: .rect(cornerRadius: 8))
+                                            .settingsGlassEffect(cornerRadius: 8)
                                             .overlay(
                                                 RoundedRectangle(cornerRadius: 8)
                                                     .stroke(Color.orange.opacity(0.3), lineWidth: 1)
@@ -339,7 +339,7 @@ struct StatusCard: View {
                             NSWorkspace.shared.open(url)
                         }
                     }
-                    .buttonStyle(.glassProminent)
+                    .adaptiveProminentButtonStyle()
                     .controlSize(.small)
                     .tint(hasPermission ? .accentColor : .orange)
                 } else {
@@ -351,7 +351,7 @@ struct StatusCard: View {
                             NSWorkspace.shared.open(url)
                         }
                     }
-                    .buttonStyle(.borderedProminent)
+                    .adaptiveProminentButtonStyle()
                     .controlSize(.small)
                 }
             }
@@ -362,7 +362,7 @@ struct StatusCard: View {
             if #available(macOS 26.0, *) {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(.ultraThinMaterial)
-                    .glassEffect(in: .rect(cornerRadius: 12))
+                    .settingsGlassEffect(cornerRadius: 12)
             } else {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color(NSColor.controlBackgroundColor))
@@ -382,6 +382,8 @@ struct SettingsCard<Content: View, Trailing: View>: View {
     let icon: String
     let trailing: Trailing
     let content: Content
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     init(
         title: String,
@@ -426,7 +428,7 @@ struct SettingsCard<Content: View, Trailing: View>: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(NSColor.controlBackgroundColor).opacity(0.15))
+            .background(headerRowBackground)
 
             Divider()
                 .opacity(0.5)
@@ -435,22 +437,50 @@ struct SettingsCard<Content: View, Trailing: View>: View {
             content
                 .padding(16)
         }
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .frame(maxWidth: 700)
         .background {
-            if #available(macOS 26.0, *) {
-                RoundedRectangle(cornerRadius: 12)
+            if #available(macOS 26.0, *), !reduceTransparency {
+                RoundedRectangle(cornerRadius: 14)
                     .fill(.ultraThinMaterial)
-                    .glassEffect(in: .rect(cornerRadius: 12))
+                    .settingsGlassEffect(cornerRadius: 14)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.12), lineWidth: 1)
+                    )
             } else {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(NSColor.controlBackgroundColor))
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(cardGradient)
                     .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 2)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.gray.opacity(0.15), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(Color.primary.opacity(colorScheme == .dark ? 0.16 : 0.12), lineWidth: 1)
                     )
             }
         }
+    }
+
+    private var headerRowBackground: some View {
+        LinearGradient(
+            colors: [
+                Color(NSColor.controlBackgroundColor).opacity(colorScheme == .dark ? 0.22 : 0.82),
+                Color(NSColor.windowBackgroundColor).opacity(colorScheme == .dark ? 0.18 : 0.7)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
+
+    private var cardGradient: LinearGradient {
+        LinearGradient(
+            colors: [
+                Color(NSColor.controlBackgroundColor).opacity(colorScheme == .dark ? 0.88 : 0.95),
+                Color(NSColor.windowBackgroundColor).opacity(colorScheme == .dark ? 0.72 : 0.88),
+                Color.accentColor.opacity(colorScheme == .dark ? 0.06 : 0.04)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
     }
 }
 
@@ -587,7 +617,7 @@ struct SettingsSliderRow: View {
         if #available(macOS 26.0, *) {
             RoundedRectangle(cornerRadius: 10)
                 .fill(.ultraThinMaterial)
-                .glassEffect(in: .rect(cornerRadius: 10))
+                .settingsGlassEffect(cornerRadius: 10)
         } else {
             RoundedRectangle(cornerRadius: 10)
                 .fill(Color(NSColor.controlBackgroundColor).opacity(0.7))
@@ -632,7 +662,7 @@ struct RestoreKeyButton: View {
                     } else {
                         RoundedRectangle(cornerRadius: 10)
                             .fill(.ultraThinMaterial)
-                            .glassEffect(in: .rect(cornerRadius: 10))
+                            .settingsGlassEffect(cornerRadius: 10)
                     }
                 } else {
                     RoundedRectangle(cornerRadius: 10)

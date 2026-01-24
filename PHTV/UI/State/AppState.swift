@@ -504,16 +504,6 @@ final class AppState: ObservableObject {
         set { systemState.safeMode = newValue }
     }
 
-    var enableLiquidGlassBackground: Bool {
-        get { systemState.enableLiquidGlassBackground }
-        set { systemState.enableLiquidGlassBackground = newValue }
-    }
-
-    var settingsBackgroundOpacity: Double {
-        get { systemState.settingsBackgroundOpacity }
-        set { systemState.settingsBackgroundOpacity = newValue }
-    }
-
     var enableTextReplacementFix: Bool {
         systemState.enableTextReplacementFix
     }

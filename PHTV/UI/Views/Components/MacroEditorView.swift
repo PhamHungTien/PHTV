@@ -200,7 +200,7 @@ struct MacroEditorView: View {
                 Button("Lưu") {
                     saveMacro()
                 }
-                .buttonStyle(.borderedProminent)
+                .adaptiveProminentButtonStyle()
                 .tint(.accentColor)
                 .disabled(macroName.isEmpty || (snippetType != .clipboard && macroCode.isEmpty))
             }

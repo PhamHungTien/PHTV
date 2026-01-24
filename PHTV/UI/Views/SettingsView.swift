@@ -283,12 +283,6 @@ struct SettingsItem: Identifiable {
             title: "Cửa sổ Cài đặt luôn ở trên", iconName: "pin.fill", tab: .system,
             keywords: ["always on top", "settings window", "cửa sổ", "luôn ở trên", "floating", "pin", "giao diện", "z-order", "mission control"]),
         SettingsItem(
-            title: "Giao diện Liquid Glass", iconName: "sparkles.rectangle.stack.fill", tab: .system,
-            keywords: ["liquid glass", "background", "nền", "kính mờ", "hiệu ứng", "giao diện", "đẹp", "material", "blur", "trong suốt"]),
-        SettingsItem(
-            title: "Độ mờ nền cửa sổ", iconName: "circle.lefthalf.filled", tab: .system,
-            keywords: ["opacity", "transparency", "độ mờ", "trong suốt", "nền", "cửa sổ", "background", "giao diện"]),
-        SettingsItem(
             title: "Hiển thị icon chữ V", iconName: "flag.fill", tab: .system,
             keywords: ["vietnamese icon", "menubar icon", "thanh menu", "icon chữ V", "giao diện", "menu bar", "status bar"]),
         SettingsItem(
@@ -397,12 +391,13 @@ enum SettingsTabSection: String, CaseIterable, Identifiable {
 // MARK: - Sidebar Row
 struct SettingsSidebarRow: View {
     let tab: SettingsTab
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         HStack(spacing: 10) {
             ZStack {
                 RoundedRectangle(cornerRadius: 6)
-                    .fill(Color.primary.opacity(0.08))
+                    .fill(colorScheme == .dark ? Color.primary.opacity(0.18) : Color.accentColor.opacity(0.12))
                 Image(systemName: tab.iconName)
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.primary)

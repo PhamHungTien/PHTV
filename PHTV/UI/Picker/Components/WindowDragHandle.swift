@@ -35,4 +35,10 @@ class DragHandleView: NSView {
     override func resetCursorRects() {
         addCursorRect(bounds, cursor: .openHand)
     }
+
+    override func mouseDown(with event: NSEvent) {
+        NSCursor.closedHand.push()
+        super.mouseDown(with: event)
+        NSCursor.pop()
+    }
 }

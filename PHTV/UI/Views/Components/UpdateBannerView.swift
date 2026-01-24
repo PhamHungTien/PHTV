@@ -86,7 +86,7 @@ struct UpdateBannerView: View {
                     if #available(macOS 26.0, *) {
                         RoundedRectangle(cornerRadius: 16)
                             .fill(Color(NSColor.controlBackgroundColor))
-                            .glassEffect(in: .rect(cornerRadius: 16))
+                            .settingsGlassEffect(cornerRadius: 16)
                     } else {
                         RoundedRectangle(cornerRadius: 16)
                             .fill(Color(NSColor.controlBackgroundColor))

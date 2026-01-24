@@ -54,8 +54,6 @@ enum UserDefaultsKey {
     static let showIconOnDock = "vShowIconOnDock"
     static let settingsWindowAlwaysOnTop = "vSettingsWindowAlwaysOnTop"
     static let safeMode = "SafeMode"
-    static let enableLiquidGlassBackground = "vEnableLiquidGlassBackground"
-    static let settingsBackgroundOpacity = "vSettingsBackgroundOpacity"
 
     // MARK: - Hotkey Settings
     static let switchKeyStatus = "SwitchKeyStatus"
@@ -209,8 +207,6 @@ enum Defaults {
     static let showIconOnDock = false
     static let settingsWindowAlwaysOnTop = false
     static let safeMode = false
-    static let enableLiquidGlassBackground = true
-    static let settingsBackgroundOpacity = 1.0
 
     // MARK: - Hotkey
     static let switchKeyControl = true

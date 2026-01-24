@@ -19,19 +19,6 @@ final class SystemState: ObservableObject {
     @Published var showIconOnDock: Bool = false
     @Published var settingsWindowAlwaysOnTop: Bool = false
     @Published var safeMode: Bool = false
-    @Published var enableLiquidGlassBackground: Bool = true {
-        didSet {
-            UserDefaults.standard.set(enableLiquidGlassBackground, forKey: UserDefaultsKey.enableLiquidGlassBackground)
-            if enableLiquidGlassBackground && settingsBackgroundOpacity != 1.0 {
-                settingsBackgroundOpacity = 1.0
-            }
-        }
-    }
-    @Published var settingsBackgroundOpacity: Double = 1.0 {
-        didSet {
-            UserDefaults.standard.set(settingsBackgroundOpacity, forKey: UserDefaultsKey.settingsBackgroundOpacity)
-        }
-    }
 
     // Text Replacement Fix is always enabled (no user setting)
     var enableTextReplacementFix: Bool { return true }
@@ -90,8 +77,6 @@ final class SystemState: ObservableObject {
         showIconOnDock = defaults.bool(forKey: UserDefaultsKey.showIconOnDock)
         settingsWindowAlwaysOnTop = defaults.bool(forKey: UserDefaultsKey.settingsWindowAlwaysOnTop)
         safeMode = defaults.bool(forKey: UserDefaultsKey.safeMode)
-        settingsBackgroundOpacity = defaults.object(forKey: UserDefaultsKey.settingsBackgroundOpacity) as? Double ?? 1.0
-        enableLiquidGlassBackground = defaults.object(forKey: UserDefaultsKey.enableLiquidGlassBackground) as? Bool ?? true
 
         // Load Claude Code patch setting - check actual patch status
         claudeCodePatchEnabled = ClaudeCodePatcher.shared.isPatched()
@@ -117,8 +102,6 @@ final class SystemState: ObservableObject {
         defaults.set(performLayoutCompat, forKey: UserDefaultsKey.performLayoutCompat)
         defaults.set(showIconOnDock, forKey: UserDefaultsKey.showIconOnDock)
         defaults.set(settingsWindowAlwaysOnTop, forKey: UserDefaultsKey.settingsWindowAlwaysOnTop)
-        defaults.set(enableLiquidGlassBackground, forKey: UserDefaultsKey.enableLiquidGlassBackground)
-        defaults.set(settingsBackgroundOpacity, forKey: UserDefaultsKey.settingsBackgroundOpacity)
 
         // Save safe mode and sync with backend
         defaults.set(safeMode, forKey: UserDefaultsKey.safeMode)
@@ -406,8 +389,6 @@ final class SystemState: ObservableObject {
         performLayoutCompat = false
         showIconOnDock = false
         safeMode = false
-        enableLiquidGlassBackground = true
-        settingsBackgroundOpacity = 1.0
         settingsWindowAlwaysOnTop = false
 
         updateCheckFrequency = .daily

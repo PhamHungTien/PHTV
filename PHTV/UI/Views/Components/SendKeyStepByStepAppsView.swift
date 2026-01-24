@@ -127,7 +127,7 @@ private struct EmptySendKeyStepByStepAppsView: View {
             if #available(macOS 26.0, *) {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(.ultraThinMaterial)
-                    .glassEffect(in: .rect(cornerRadius: 10))
+                    .settingsGlassEffect(cornerRadius: 10)
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
                             .stroke(Color.gray.opacity(0.2), lineWidth: 1)
@@ -166,7 +166,7 @@ private struct SendKeyStepByStepAppsList: View {
             if #available(macOS 26.0, *) {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(.ultraThinMaterial)
-                    .glassEffect(in: .rect(cornerRadius: 10))
+                    .settingsGlassEffect(cornerRadius: 10)
             } else {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(Color(NSColor.controlBackgroundColor))
@@ -323,7 +323,7 @@ struct SendKeyStepByStepRunningAppsPickerView: View {
                     onSelect(appsToAdd)
                     dismiss()
                 }
-                .buttonStyle(.borderedProminent)
+                .adaptiveProminentButtonStyle()
                 .disabled(selectedApps.isEmpty)
             }
             .padding()

@@ -12,9 +12,6 @@ import AppKit
 /// Window controller for hosting SwiftUI views in NSWindow
 class SwiftUIWindowController: NSWindowController, NSWindowDelegate {
 
-    private var titlebarEffectView: NSVisualEffectView?
-    private var opacityObserver: Any?
-
     convenience init<Content: View>(rootView: Content, title: String, size: NSSize = NSSize(width: 800, height: 600), unifiedTitlebar: Bool = false) {
         var styleMask: NSWindow.StyleMask = [.titled, .closable, .miniaturizable, .resizable]
         
@@ -52,10 +49,6 @@ class SwiftUIWindowController: NSWindowController, NSWindowDelegate {
         self.init(window: window)
         window.delegate = self
 
-        // Setup titlebar background if unified titlebar is enabled
-        if unifiedTitlebar {
-            setupTitlebarBackground()
-        }
     }
     
     func show() {
@@ -63,58 +56,8 @@ class SwiftUIWindowController: NSWindowController, NSWindowDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
     
-    // Setup titlebar background with visual effect view
-    private func setupTitlebarBackground() {
-        guard let window = window,
-              let titlebarContainer = window.standardWindowButton(.closeButton)?.superview?.superview else {
-            return
-        }
-
-        // Create visual effect view for titlebar
-        let effectView = NSVisualEffectView(frame: titlebarContainer.bounds)
-        effectView.material = .titlebar
-        effectView.blendingMode = .behindWindow
-        effectView.state = .active
-        effectView.autoresizingMask = [.width, .height]
-
-        // Insert at the back so traffic lights remain visible
-        titlebarContainer.addSubview(effectView, positioned: .below, relativeTo: nil)
-        titlebarEffectView = effectView
-
-        // Apply initial opacity from settings
-        updateTitlebarOpacity()
-
-        // Observe opacity changes using block-based observer (safer memory management)
-        opacityObserver = NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("PHTVSettingsChanged"),
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in
-                self?.updateTitlebarOpacity()
-            }
-        }
-    }
-
-    private func updateTitlebarOpacity() {
-        let enabled = UserDefaults.standard.object(forKey: "vEnableLiquidGlassBackground") as? Bool ?? true
-        let opacity = UserDefaults.standard.object(forKey: "vSettingsBackgroundOpacity") as? Double ?? 1.0
-
-        if enabled {
-            titlebarEffectView?.alphaValue = CGFloat(opacity)
-        } else {
-            titlebarEffectView?.alphaValue = 1.0
-        }
-    }
-
     // Handle window close to release reference
     func windowWillClose(_ notification: Notification) {
-        // Remove block-based observer properly
-        if let observer = opacityObserver {
-            NotificationCenter.default.removeObserver(observer)
-            opacityObserver = nil
-        }
-
         // Restore dock icon state to user preference when closing settings
         if window?.title == "Cài đặt PHTV" || window?.title == "Cài đặt" {
             let appDelegate = NSApplication.shared.delegate as? AppDelegate

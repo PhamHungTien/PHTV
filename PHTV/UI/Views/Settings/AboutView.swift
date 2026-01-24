@@ -115,7 +115,7 @@ struct AboutView: View {
                             if #available(macOS 26.0, *) {
                                 RoundedRectangle(cornerRadius: 16)
                                     .fill(.ultraThinMaterial)
-                                    .glassEffect(in: .rect(cornerRadius: 16))
+                                    .settingsGlassEffect(cornerRadius: 16)
                             } else {
                                 RoundedRectangle(cornerRadius: 16)
                                     .fill(Color(NSColor.controlBackgroundColor))
@@ -183,7 +183,7 @@ struct AboutInfoCard: View {
             if #available(macOS 26.0, *) {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(.ultraThinMaterial)
-                    .glassEffect(in: .rect(cornerRadius: 12))
+                    .settingsGlassEffect(cornerRadius: 12)
             } else {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color(NSColor.controlBackgroundColor))

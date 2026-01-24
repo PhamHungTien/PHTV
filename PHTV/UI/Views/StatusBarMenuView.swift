@@ -18,6 +18,13 @@ struct StatusBarMenuView: View {
         NSApp.activate(ignoringOtherApps: true)
     }
 
+    private func openConvertTool() {
+        openSettingsWindow()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+            NotificationCenter.default.post(name: NSNotification.Name("ShowConvertToolSheet"), object: nil)
+        }
+    }
+
     // Get current hotkey string
     private var hotkeyString: String {
         var parts: [String] = []
@@ -302,7 +309,7 @@ struct StatusBarMenuView: View {
             Divider()
 
             Button {
-                NotificationCenter.default.post(name: NSNotification.Name("OpenConvertTool"), object: nil)
+                openConvertTool()
             } label: {
                 Label("Mở công cụ chuyển mã...", systemImage: "arrow.triangle.2.circlepath")
             }

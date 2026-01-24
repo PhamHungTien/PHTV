@@ -87,10 +87,6 @@ struct OnboardingView: View {
             }
         }
         .background(OnboardingCardBackground())
-        .overlay(
-            RoundedRectangle(cornerRadius: OnboardingStyle.cardCornerRadius, style: .continuous)
-                .stroke(Color.white.opacity(0.6), lineWidth: 1)
-        )
         .shadow(color: Color.black.opacity(0.18), radius: 24, x: 0, y: 14)
         .padding(24)
         .frame(width: OnboardingStyle.cardWidth, height: OnboardingStyle.cardHeight)
@@ -166,25 +162,70 @@ struct OnboardingView: View {
 // MARK: - Visual Styles
 
 struct OnboardingCardBackground: View {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
-        RoundedRectangle(cornerRadius: OnboardingStyle.cardCornerRadius, style: .continuous)
-            .fill(Color(nsColor: .windowBackgroundColor))
-            .overlay(
-                LinearGradient(
-                    colors: [
-                        Color.white.opacity(0.65),
-                        Color.clear
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
+        ZStack {
+            if #available(macOS 26.0, *), !reduceTransparency {
+                RoundedRectangle(cornerRadius: OnboardingStyle.cardCornerRadius, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .settingsGlassEffect(cornerRadius: OnboardingStyle.cardCornerRadius)
+            } else {
+                RoundedRectangle(cornerRadius: OnboardingStyle.cardCornerRadius, style: .continuous)
+                    .fill(Color(nsColor: .windowBackgroundColor))
+            }
+
+            RoundedRectangle(cornerRadius: OnboardingStyle.cardCornerRadius, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(colorScheme == .dark ? 0.08 : 0.28),
+                            Color.clear
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
                 )
-                .opacity(0.35)
-                .clipShape(RoundedRectangle(cornerRadius: OnboardingStyle.cardCornerRadius, style: .continuous))
-            )
+        }
+        .overlay(
+            RoundedRectangle(cornerRadius: OnboardingStyle.cardCornerRadius, style: .continuous)
+                .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.15), lineWidth: 1)
+        )
+    }
+}
+
+struct OnboardingSurface: View {
+    let cornerRadius: CGFloat
+    let fillColor: Color
+    let strokeColor: Color
+    var shadowColor: Color = .clear
+    var shadowRadius: CGFloat = 0
+
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    var body: some View {
+        Group {
+            if #available(macOS 26.0, *), !reduceTransparency {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .settingsGlassEffect(cornerRadius: cornerRadius)
+            } else {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(fillColor)
+            }
+        }
+        .overlay(
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .stroke(strokeColor, lineWidth: 1)
+        )
+        .shadow(color: shadowColor, radius: shadowRadius, x: 0, y: shadowRadius > 0 ? 2 : 0)
     }
 }
 
 struct OnboardingAppBadge: View {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
     var body: some View {
         let image = NSApp.applicationIconImage ?? NSImage()
         Image(nsImage: image)
@@ -192,13 +233,21 @@ struct OnboardingAppBadge: View {
             .aspectRatio(contentMode: .fit)
             .frame(width: 40, height: 40)
             .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.white.opacity(0.8))
+                Group {
+                    if #available(macOS 26.0, *), !reduceTransparency {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(.ultraThinMaterial)
+                            .settingsGlassEffect(cornerRadius: 10)
+                    } else {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color.white.opacity(0.8))
+                    }
+                }
             )
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(Color.white.opacity(0.6), lineWidth: 1)
+                    .stroke(Color.primary.opacity(0.2), lineWidth: 1)
             )
             .shadow(color: Color.black.opacity(0.12), radius: 6, x: 0, y: 4)
     }
@@ -298,7 +347,7 @@ struct OnboardingIconBadge: View {
 
     var body: some View {
         ZStack {
-            Circle()
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [Color.accentColor.opacity(0.2), Color.accentColor.opacity(0.05)],
@@ -307,13 +356,14 @@ struct OnboardingIconBadge: View {
                     )
                 )
                 .frame(width: 48, height: 48)
+                .settingsGlassEffect(cornerRadius: 12)
 
             Image(systemName: symbol)
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(.accentColor)
         }
         .overlay(
-            Circle()
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .stroke(Color.accentColor.opacity(0.25), lineWidth: 1)
         )
     }
@@ -329,9 +379,10 @@ struct OnboardingHighlightCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ZStack {
-                Circle()
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .fill(Color.accentColor.opacity(0.12))
                     .frame(width: 36, height: 36)
+                    .settingsGlassEffect(cornerRadius: 10)
 
                 Image(systemName: icon)
                     .font(.system(size: 16, weight: .semibold))
@@ -349,12 +400,11 @@ struct OnboardingHighlightCard: View {
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+            OnboardingSurface(
+                cornerRadius: 14,
+                fillColor: Color(nsColor: .controlBackgroundColor),
+                strokeColor: Color.black.opacity(0.08)
+            )
         )
     }
 }
@@ -370,9 +420,10 @@ struct OptionCard: View {
         Button(action: action) {
             HStack(alignment: .top, spacing: 16) {
                 ZStack {
-                    Circle()
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .fill(Color.accentColor.opacity(0.12))
                         .frame(width: 36, height: 36)
+                        .settingsGlassEffect(cornerRadius: 10)
 
                     Image(systemName: icon)
                         .font(.system(size: 16, weight: .semibold))
@@ -398,12 +449,11 @@ struct OptionCard: View {
             }
             .padding(16)
             .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color(nsColor: .controlBackgroundColor))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(isSelected ? Color.accentColor.opacity(0.6) : Color.black.opacity(0.08), lineWidth: isSelected ? 2 : 1)
+                OnboardingSurface(
+                    cornerRadius: 14,
+                    fillColor: Color(nsColor: .controlBackgroundColor),
+                    strokeColor: isSelected ? Color.accentColor.opacity(0.6) : Color.black.opacity(0.1)
+                )
             )
             .shadow(color: Color.black.opacity(0.04), radius: 3, x: 0, y: 2)
         }
@@ -423,6 +473,7 @@ struct FeatureToggleRow: View {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .fill(Color.accentColor.opacity(0.12))
                     .frame(width: 36, height: 36)
+                    .settingsGlassEffect(cornerRadius: 10)
 
                 Image(systemName: icon)
                     .font(.system(size: 16, weight: .semibold))
@@ -446,12 +497,11 @@ struct FeatureToggleRow: View {
         }
         .padding(14)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+            OnboardingSurface(
+                cornerRadius: 12,
+                fillColor: Color(nsColor: .controlBackgroundColor),
+                strokeColor: Color.black.opacity(0.08)
+            )
         )
     }
 }
@@ -479,12 +529,11 @@ struct OnboardingChecklistCard: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.black.opacity(0.08), lineWidth: 1)
+            OnboardingSurface(
+                cornerRadius: 14,
+                fillColor: Color(nsColor: .controlBackgroundColor),
+                strokeColor: Color.black.opacity(0.1)
+            )
         )
     }
 }
@@ -532,12 +581,11 @@ struct OnboardingStatusCard: View {
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(tint.opacity(0.08))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(tint.opacity(0.25), lineWidth: 1)
+            OnboardingSurface(
+                cornerRadius: 14,
+                fillColor: tint.opacity(0.08),
+                strokeColor: tint.opacity(0.25)
+            )
         )
     }
 }
@@ -847,12 +895,11 @@ struct AccessibilityStepView: View {
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(Color(nsColor: .controlBackgroundColor))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(Color.black.opacity(0.08), lineWidth: 1)
+                        OnboardingSurface(
+                            cornerRadius: 14,
+                            fillColor: Color(nsColor: .controlBackgroundColor),
+                            strokeColor: Color.black.opacity(0.1)
+                        )
                     )
 
                     Button("Mở Cài đặt Quyền riêng tư") {

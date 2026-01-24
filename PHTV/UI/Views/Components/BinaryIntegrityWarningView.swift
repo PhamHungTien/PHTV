@@ -92,7 +92,7 @@ struct BinaryIntegrityWarningView: View {
                         Text("Mở CleanMyMac")
                     }
                 }
-                .buttonStyle(.bordered)
+                .adaptiveBorderedButtonStyle()
 
                 Spacer()
 
@@ -102,7 +102,7 @@ struct BinaryIntegrityWarningView: View {
                         Text("Tải bản mới")
                     }
                 }
-                .buttonStyle(.borderedProminent)
+                .adaptiveProminentButtonStyle()
                 .tint(.orange)
             }
         }

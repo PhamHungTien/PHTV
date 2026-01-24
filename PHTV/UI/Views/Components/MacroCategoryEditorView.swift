@@ -209,7 +209,7 @@ struct MacroCategoryEditorView: View {
                 Button("Lưu") {
                     saveCategory()
                 }
-                .buttonStyle(.borderedProminent)
+                .adaptiveProminentButtonStyle()
                 .tint(.accentColor)
                 .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }

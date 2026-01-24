@@ -148,7 +148,7 @@ struct SystemSettingsView: View {
     private var interfaceSection: some View {
         SettingsCard(
             title: "Giao diện",
-            subtitle: "Tùy chỉnh hiển thị và hiệu ứng",
+            subtitle: "Tùy chỉnh hiển thị cửa sổ",
             icon: "rectangle.on.rectangle"
         ) {
             VStack(spacing: 0) {
@@ -158,16 +158,6 @@ struct SystemSettingsView: View {
                     title: "Cài đặt luôn ở trên",
                     subtitle: "Giữ cửa sổ Cài đặt nằm trên các ứng dụng khác",
                     isOn: $appState.settingsWindowAlwaysOnTop
-                )
-
-                SettingsDivider()
-
-                SettingsToggleRow(
-                    icon: "sparkles.rectangle.stack.fill",
-                    iconColor: .accentColor,
-                    title: "Hiệu ứng Liquid Glass",
-                    subtitle: "Nền kính mờ cho cửa sổ Cài đặt",
-                    isOn: $appState.enableLiquidGlassBackground
                 )
             }
         }
@@ -392,7 +382,6 @@ struct SystemSettingsView: View {
             // System settings
             "PHTV_RunOnStartup", "vPerformLayoutCompat", "vShowIconOnDock",
             "vSettingsWindowAlwaysOnTop", "SafeMode",
-            "vEnableLiquidGlassBackground", "vSettingsBackgroundOpacity",
 
             // Switch key (hotkey)
             "SwitchKeyStatus",

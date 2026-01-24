@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import AppKit
 
 // MARK: - Category Tab Components
 
@@ -16,6 +17,7 @@ struct CategoryTab: View {
     let label: String
     let namespace: Namespace.ID
     let action: () -> Void
+    @State private var isHovering = false
 
     var body: some View {
         Button(action: action) {
@@ -36,11 +38,29 @@ struct CategoryTab: View {
                         RoundedRectangle(cornerRadius: 8)
                             .fill(Color.accentColor.opacity(0.15))
                             .matchedGeometryEffect(id: "categoryBackground", in: namespace)
+                    } else if isHovering {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.primary.opacity(0.06))
                     }
                 }
             )
         }
         .buttonStyle(.plain)
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            if hovering && !isHovering {
+                NSCursor.pointingHand.push()
+                isHovering = true
+            } else if !hovering && isHovering {
+                NSCursor.pop()
+                isHovering = false
+            }
+        }
+        .onDisappear {
+            if isHovering {
+                NSCursor.pop()
+                isHovering = false
+            }
+        }
     }
 }
-

@@ -91,7 +91,7 @@ struct BugReportView: View {
                         if #available(macOS 26.0, *) {
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(.ultraThinMaterial)
-                                .glassEffect(in: .rect(cornerRadius: 8))
+                                .settingsGlassEffect(cornerRadius: 8)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8)
                                         .stroke(Color.gray.opacity(0.3), lineWidth: 1)
@@ -116,7 +116,7 @@ struct BugReportView: View {
                         if #available(macOS 26.0, *) {
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(.ultraThinMaterial)
-                                .glassEffect(in: .rect(cornerRadius: 8))
+                                .settingsGlassEffect(cornerRadius: 8)
                         } else {
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(Color(NSColor.textBackgroundColor))

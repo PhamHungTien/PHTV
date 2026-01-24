@@ -75,7 +75,7 @@ struct HotkeyConfigView: View {
                                 RoundedRectangle(cornerRadius: 8)
                                     .fill(Color.orange.opacity(0.1))
                             }
-                            .glassEffect(in: .rect(cornerRadius: 8))
+                            .settingsGlassEffect(cornerRadius: 8)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 8)
                                     .stroke(Color.orange.opacity(0.3), lineWidth: 1)
@@ -158,7 +158,7 @@ struct HotkeyConfigView: View {
                                 } else {
                                     RoundedRectangle(cornerRadius: 10)
                                         .fill(.ultraThinMaterial)
-                                        .glassEffect(in: .rect(cornerRadius: 10))
+                                        .settingsGlassEffect(cornerRadius: 10)
                                 }
                             } else {
                                 RoundedRectangle(cornerRadius: 10)
@@ -197,7 +197,7 @@ struct HotkeyConfigView: View {
                                     RoundedRectangle(cornerRadius: 10)
                                         .fill(Color.accentColor.opacity(0.08))
                                 }
-                                .glassEffect(in: .rect(cornerRadius: 10))
+                                .settingsGlassEffect(cornerRadius: 10)
                             } else {
                                 RoundedRectangle(cornerRadius: 10)
                                     .fill(Color.accentColor.opacity(0.08))
@@ -314,7 +314,7 @@ struct ModifierKeyButton: View {
                     } else {
                         RoundedRectangle(cornerRadius: 10)
                             .fill(.ultraThinMaterial)
-                            .glassEffect(in: .rect(cornerRadius: 10))
+                            .settingsGlassEffect(cornerRadius: 10)
                     }
                 } else {
                     RoundedRectangle(cornerRadius: 10)
@@ -675,7 +675,7 @@ struct PauseKeyConfigView: View {
                                 RoundedRectangle(cornerRadius: 8)
                                     .fill(Color.orange.opacity(0.1))
                             }
-                            .glassEffect(in: .rect(cornerRadius: 8))
+                            .settingsGlassEffect(cornerRadius: 8)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 8)
                                     .stroke(Color.orange.opacity(0.3), lineWidth: 1)
@@ -713,7 +713,7 @@ struct PauseKeyConfigView: View {
                                 RoundedRectangle(cornerRadius: 8)
                                     .fill(Color.orange.opacity(0.1))
                             }
-                            .glassEffect(in: .rect(cornerRadius: 8))
+                            .settingsGlassEffect(cornerRadius: 8)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 8)
                                     .stroke(Color.orange.opacity(0.3), lineWidth: 1)
@@ -773,7 +773,7 @@ struct PauseKeyButton: View {
                     } else {
                         RoundedRectangle(cornerRadius: 10)
                             .fill(.ultraThinMaterial)
-                            .glassEffect(in: .rect(cornerRadius: 10))
+                            .settingsGlassEffect(cornerRadius: 10)
                     }
                 } else {
                     RoundedRectangle(cornerRadius: 10)
@@ -934,7 +934,7 @@ struct EmojiHotkeyConfigView: View {
                                     } else {
                                         RoundedRectangle(cornerRadius: 10)
                                             .fill(.ultraThinMaterial)
-                                            .glassEffect(in: .rect(cornerRadius: 10))
+                                            .settingsGlassEffect(cornerRadius: 10)
                                     }
                                 } else {
                                     RoundedRectangle(cornerRadius: 10)
@@ -973,7 +973,7 @@ struct EmojiHotkeyConfigView: View {
                                         RoundedRectangle(cornerRadius: 10)
                                             .fill(Color.accentColor.opacity(0.08))
                                     }
-                                    .glassEffect(in: .rect(cornerRadius: 10))
+                                    .settingsGlassEffect(cornerRadius: 10)
                                 } else {
                                     RoundedRectangle(cornerRadius: 10)
                                         .fill(Color.accentColor.opacity(0.08))

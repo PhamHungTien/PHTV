@@ -38,7 +38,7 @@ struct PermissionWarningView: View {
                 if #available(macOS 26.0, *) {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(Color.green.opacity(0.1))
-                        .glassEffect(in: .rect(cornerRadius: 12))
+                        .settingsGlassEffect(cornerRadius: 12)
                 } else {
                     Color.green.opacity(0.1)
                         .cornerRadius(8)
@@ -73,13 +73,13 @@ struct PermissionWarningView: View {
                                 Button("Mở Cài đặt Hệ thống") {
                                     openSystemSettings()
                                 }
-                                .buttonStyle(.glassProminent)
+                                .adaptiveProminentButtonStyle()
                                 .tint(.orange)
                             } else {
                                 Button("Mở Cài đặt Hệ thống") {
                                     openSystemSettings()
                                 }
-                                .buttonStyle(.borderedProminent)
+                                .adaptiveProminentButtonStyle()
                             }
 
                             // Advanced troubleshooting button
@@ -95,7 +95,7 @@ struct PermissionWarningView: View {
                         if #available(macOS 26.0, *) {
                             RoundedRectangle(cornerRadius: 12)
                                 .fill(Color.orange.opacity(0.1))
-                                .glassEffect(in: .rect(cornerRadius: 12))
+                                .settingsGlassEffect(cornerRadius: 12)
                         } else {
                             Color.orange.opacity(0.1)
                                 .cornerRadius(8)

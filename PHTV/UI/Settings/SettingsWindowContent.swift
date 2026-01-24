@@ -231,10 +231,9 @@ struct SettingsWindowContent: View {
         // Use .floating for always-on-top, .normal for standard
         window.level = appState.settingsWindowAlwaysOnTop ? .floating : .normal
 
-        // Keep content transparent but titlebar opaque (no glass effect on titlebar)
-        // DO NOT set titlebarAppearsTransparent - that creates unwanted glass titlebar
-        window.isOpaque = false
-        window.backgroundColor = .clear
+        // Use opaque window background for Settings
+        window.isOpaque = true
+        window.backgroundColor = NSColor.windowBackgroundColor
 
         // Ensure window doesn't disappear when app loses focus
         window.hidesOnDeactivate = false

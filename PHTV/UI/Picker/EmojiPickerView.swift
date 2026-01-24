@@ -11,6 +11,7 @@ import SwiftUI
 struct EmojiPickerView: View {
     var onEmojiSelected: (String) -> Void
     var onClose: (() -> Void)?
+    @State private var isHoveringClose = false
 
     // Remember last selected tab using UserDefaults
     @State private var selectedCategory: Int
@@ -40,7 +41,6 @@ struct EmojiPickerView: View {
                     .font(.system(size: 12))
                     .foregroundColor(.secondary.opacity(0.5))
                     .frame(width: 20)
-                    .background(WindowDragHandle())
                     .help("Kéo để di chuyển")
 
                 Text("PHTV Picker")
@@ -64,12 +64,20 @@ struct EmojiPickerView: View {
                 .buttonStyle(.plain)
                 .help("Đóng (ESC)")
                 .onHover { hovering in
-                    NSCursor.pointingHand.set()
+                    if hovering && !isHoveringClose {
+                        NSCursor.pointingHand.push()
+                        isHoveringClose = true
+                    } else if !hovering && isHoveringClose {
+                        NSCursor.pop()
+                        isHoveringClose = false
+                    }
                 }
             }
             .padding(.horizontal, 16)
             .padding(.top, 12)
             .padding(.bottom, 10)
+            .contentShape(Rectangle())
+            .background(WindowDragHandle())
 
 
             // Category tabs
@@ -184,6 +192,11 @@ struct EmojiPickerView: View {
                 .shadow(color: Color.black.opacity(0.15), radius: 12, x: 0, y: 4)
             }
         }
+        .onDisappear {
+            if isHoveringClose {
+                NSCursor.pop()
+                isHoveringClose = false
+            }
+        }
     }
 }
-

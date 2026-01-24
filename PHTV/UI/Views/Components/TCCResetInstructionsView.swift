@@ -102,7 +102,7 @@ struct TCCResetInstructionsView: View {
                                 Text(isFixing ? "Đang fix..." : "Tự động khắc phục")
                             }
                         }
-                        .buttonStyle(.glassProminent)
+                        .adaptiveProminentButtonStyle()
                         .tint(.blue)
                         .disabled(isFixing)
                     } else {
@@ -118,7 +118,7 @@ struct TCCResetInstructionsView: View {
                                 Text(isFixing ? "Đang fix..." : "Tự động khắc phục")
                             }
                         }
-                        .buttonStyle(.borderedProminent)
+                        .adaptiveProminentButtonStyle()
                         .disabled(isFixing)
                     }
                 }
@@ -193,7 +193,7 @@ struct TCCResetInstructionsView: View {
             if #available(macOS 26.0, *) {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color.red.opacity(0.1))
-                    .glassEffect(in: .rect(cornerRadius: 12))
+                    .settingsGlassEffect(cornerRadius: 12)
             } else {
                 Color.red.opacity(0.1)
                     .cornerRadius(8)

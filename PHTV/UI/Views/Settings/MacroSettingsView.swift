@@ -317,6 +317,14 @@ struct MacroSettingsView: View {
         .onAppear {
             loadMacros()
         }
+        .onDisappear {
+            macros = []
+            selectedMacro = nil
+            recentlyAddedId = nil
+            recentlyEditedId = nil
+            editingMacro = nil
+            editingCategory = nil
+        }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("MacrosUpdated")))
         { notification in
             // Note: .onReceive already runs on main thread in SwiftUI
@@ -693,7 +701,7 @@ struct EmptyMacroView: View {
             Button(action: onAdd) {
                 Label(isFiltered ? "Thêm gõ tắt" : "Tạo gõ tắt đầu tiên", systemImage: "plus.circle.fill")
             }
-            .buttonStyle(.borderedProminent)
+            .adaptiveProminentButtonStyle()
             .controlSize(.regular)
         }
         .frame(maxWidth: .infinity)

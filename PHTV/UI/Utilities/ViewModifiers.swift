@@ -11,14 +11,16 @@ import SwiftUI
 // MARK: - Custom View Modifiers for consistent styling
 
 struct CardStyle: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
     func body(content: Content) -> some View {
-        if #available(macOS 26.0, *) {
+        if #available(macOS 26.0, *), !reduceTransparency {
             content
                 .padding()
                 .background {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(.ultraThinMaterial)
-                        .glassEffect(in: .rect(cornerRadius: 12))
+                        .settingsGlassEffect(cornerRadius: 12)
                 }
         } else {
             // Use drawingGroup() to flatten the view hierarchy and reduce compositing
@@ -82,7 +84,11 @@ extension View {
                 if #available(macOS 26.0, *) {
                     RoundedRectangle(cornerRadius: 8)
                         .fill(.ultraThinMaterial)
-                        .glassEffect(in: .rect(cornerRadius: 8))
+                        .settingsGlassEffect(cornerRadius: 8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.gray.opacity(0.25), lineWidth: 1)
+                        )
                 } else {
                     RoundedRectangle(cornerRadius: 8)
                         .fill(Color(NSColor.controlBackgroundColor))
@@ -95,23 +101,31 @@ extension View {
     }
 }
 
-// MARK: - Background Extension for Liquid Glass
+// MARK: - Settings Glass Effect
 
-/// Applies backgroundExtensionEffect on macOS 26+ to allow content to extend under the sidebar
-struct BackgroundExtensionModifier: ViewModifier {
+@available(macOS 26.0, *)
+private struct SettingsGlassEffectModifier: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    let cornerRadius: CGFloat
+
     func body(content: Content) -> some View {
-        if #available(macOS 26.0, *) {
+        if reduceTransparency {
             content
-                .backgroundExtensionEffect()
         } else {
-            content
+            content.glassEffect(in: .rect(cornerRadius: cornerRadius))
         }
     }
 }
 
 extension View {
-    func liquidGlassBackground() -> some View {
-        modifier(BackgroundExtensionModifier())
+    /// Applies glassEffect when available and reduce transparency is off
+    @ViewBuilder
+    func settingsGlassEffect(cornerRadius: CGFloat) -> some View {
+        if #available(macOS 26.0, *) {
+            modifier(SettingsGlassEffectModifier(cornerRadius: cornerRadius))
+        } else {
+            self
+        }
     }
 }
 
@@ -124,13 +138,12 @@ struct PrimaryButtonStyle: ButtonStyle {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .buttonStyle(.glassProminent)
+                .opacity(configuration.isPressed ? 0.85 : 1.0)
         } else {
             configuration.label
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(Color.accentColor)
-                .foregroundColor(.white)
-                .cornerRadius(6)
+                .buttonStyle(.borderedProminent)
                 .opacity(configuration.isPressed ? 0.8 : 1.0)
         }
     }
@@ -143,6 +156,7 @@ struct SecondaryButtonStyle: ButtonStyle {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .buttonStyle(.glass)
+                .opacity(configuration.isPressed ? 0.85 : 1.0)
         } else {
             configuration.label
                 .padding(.horizontal, 16)
@@ -175,7 +189,7 @@ extension Color {
     static let phtvSurface = Color(NSColor.controlBackgroundColor)
 }
 
-// MARK: - Adaptive Button Styles for Liquid Glass
+// MARK: - Adaptive Button Styles
 
 extension View {
     /// Applies glassProminent on macOS 26+, borderedProminent on older versions
@@ -231,7 +245,7 @@ struct SettingsStatusPill: View {
 
     private var pillBaseFill: Color {
         if colorScheme == .light {
-            return Color(NSColor.windowBackgroundColor).opacity(0.85)
+            return Color(NSColor.controlBackgroundColor).opacity(0.9)
         }
         return Color(NSColor.windowBackgroundColor).opacity(0.25)
     }
@@ -243,6 +257,7 @@ struct SettingsHeaderView<Trailing: View>: View {
     let icon: String
     var accent: Color = .accentColor
     let trailing: Trailing
+    @Environment(\.colorScheme) private var colorScheme
 
     init(
         title: String,
@@ -260,26 +275,11 @@ struct SettingsHeaderView<Trailing: View>: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 16) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(
-                        LinearGradient(
-                            colors: [accent.opacity(0.35), accent.opacity(0.15)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(accent.opacity(0.4), lineWidth: 1)
-                Image(systemName: icon)
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(accent)
-            }
-            .frame(width: 48, height: 48)
+            iconTile
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(title)
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.system(size: 19, weight: .semibold))
                     .foregroundStyle(.primary)
 
                 Text(subtitle)
@@ -297,90 +297,104 @@ struct SettingsHeaderView<Trailing: View>: View {
         .frame(maxWidth: 700)
         .background(headerBackground)
         .overlay(headerBorder)
-        .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+        .shadow(color: headerShadowColor, radius: 6, x: 0, y: 3)
     }
 
+    private var iconTile: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(iconBackground)
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(iconBorderColor, lineWidth: 1)
+            Image(systemName: icon)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(accent)
+        }
+        .frame(width: 48, height: 48)
+    }
+
+    @ViewBuilder
     private var headerBackground: some View {
-        RoundedRectangle(cornerRadius: 16)
-            .fill(
-                LinearGradient(
-                    colors: [
-                        accent.opacity(0.18),
-                        accent.opacity(0.08),
-                        Color(NSColor.controlBackgroundColor).opacity(0.5)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
+        RoundedRectangle(cornerRadius: 14)
+            .fill(headerGradient)
+            .settingsGlassEffect(cornerRadius: 14)
     }
 
     private var headerBorder: some View {
-        RoundedRectangle(cornerRadius: 16)
-            .stroke(accent.opacity(0.35), lineWidth: 1)
+        RoundedRectangle(cornerRadius: 14)
+            .stroke(borderColor, lineWidth: 1)
     }
+
+    private var headerGradient: LinearGradient {
+        LinearGradient(
+            colors: [
+                Color(NSColor.windowBackgroundColor).opacity(colorScheme == .dark ? 0.35 : 0.92),
+                Color(NSColor.controlBackgroundColor).opacity(colorScheme == .dark ? 0.75 : 0.86),
+                Color.accentColor.opacity(colorScheme == .dark ? 0.1 : 0.05)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    private var borderColor: Color {
+        Color.primary.opacity(colorScheme == .dark ? 0.18 : 0.16)
+    }
+
+    private var iconBackground: LinearGradient {
+        LinearGradient(
+            colors: [
+                accent.opacity(colorScheme == .dark ? 0.28 : 0.2),
+                accent.opacity(colorScheme == .dark ? 0.16 : 0.08)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    private var iconBorderColor: Color {
+        accent.opacity(colorScheme == .dark ? 0.35 : 0.4)
+    }
+
+    private var headerShadowColor: Color {
+        colorScheme == .dark ? .clear : .black.opacity(0.08)
+    }
+
+    
 }
 
 // MARK: - Settings View Background
 
-/// Visual Effect background for blur effect
-/// Optimized: Uses Equatable to prevent unnecessary CALayer updates
-struct VisualEffectBackground: NSViewRepresentable, Equatable {
-    var material: NSVisualEffectView.Material
-    var blendingMode: NSVisualEffectView.BlendingMode
-
-    func makeNSView(context: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.material = material
-        view.blendingMode = blendingMode
-        view.state = .active
-        // Performance: Disable implicit animations for property changes
-        view.wantsLayer = true
-        view.layer?.actions = ["contents": NSNull(), "bounds": NSNull()]
-        return view
-    }
-
-    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
-        // Only update if values changed to reduce CALayer updates
-        if nsView.material != material {
-            nsView.material = material
-        }
-        if nsView.blendingMode != blendingMode {
-            nsView.blendingMode = blendingMode
-        }
-    }
-
-    nonisolated static func == (lhs: VisualEffectBackground, rhs: VisualEffectBackground) -> Bool {
-        lhs.material == rhs.material && lhs.blendingMode == rhs.blendingMode
-    }
-}
-
-/// Applies appropriate background for settings views
-/// Uses sidebar material for beautiful liquid glass effect when enabled
-/// Optimized: Reads directly from UserDefaults to avoid unnecessary redraws from AppState changes
+/// Applies consistent background for settings views
 struct SettingsViewBackground: ViewModifier {
-    // Read directly from UserDefaults to avoid subscribing to all AppState changes
-    // Keys must match AppState: "vEnableLiquidGlassBackground" and "vSettingsBackgroundOpacity"
-    @AppStorage("vEnableLiquidGlassBackground") private var enableLiquidGlass = true
-    @AppStorage("vSettingsBackgroundOpacity") private var backgroundOpacity = 1.0
+    @Environment(\.colorScheme) private var colorScheme
 
     func body(content: Content) -> some View {
-        if enableLiquidGlass {
-            content
-                .scrollContentBackground(.hidden)
-                .background(
-                    VisualEffectBackground(
-                        material: .sidebar,
-                        blendingMode: .behindWindow
+        content
+            .scrollContentBackground(.hidden)
+            .background(
+                ZStack {
+                    LinearGradient(
+                        colors: [
+                            Color(NSColor.windowBackgroundColor).opacity(colorScheme == .light ? 0.98 : 1.0),
+                            Color(NSColor.controlBackgroundColor).opacity(colorScheme == .light ? 0.96 : 1.0)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
                     )
-                    .opacity(backgroundOpacity)
-                    .ignoresSafeArea()
-                )
-        } else {
-            content
-                .scrollContentBackground(.hidden)
-                .background(Color(NSColor.windowBackgroundColor))
-        }
+
+                    RadialGradient(
+                        colors: [
+                            Color.accentColor.opacity(colorScheme == .light ? 0.06 : 0.12),
+                            Color.clear
+                        ],
+                        center: .topLeading,
+                        startRadius: 20,
+                        endRadius: 520
+                    )
+                }
+                .ignoresSafeArea()
+            )
     }
 }
 
