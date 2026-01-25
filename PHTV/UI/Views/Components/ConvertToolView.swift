@@ -50,9 +50,11 @@ enum ConvertCodeTable: Int, CaseIterable, Identifiable {
 }
 
 /// Chế độ nhập liệu
-enum ConvertInputMode: String, CaseIterable {
+enum ConvertInputMode: String, CaseIterable, Identifiable {
     case clipboard = "Clipboard"
     case manual = "Nhập văn bản"
+
+    var id: String { rawValue }
 }
 
 struct ConvertToolView: View {
@@ -168,17 +170,14 @@ struct ConvertToolView: View {
     // MARK: - Input Mode Picker
 
     private var inputModePicker: some View {
-        Picker("", selection: $inputMode) {
-            ForEach(ConvertInputMode.allCases, id: \.self) { mode in
-                switch mode {
-                case .clipboard:
-                    Label("Clipboard", systemImage: "doc.on.clipboard").tag(mode)
-                case .manual:
-                    Label("Nhập tay", systemImage: "keyboard").tag(mode)
-                }
+        GlassSegmentedPicker(selection: $inputMode) { mode in
+            switch mode {
+            case .clipboard:
+                Label("Clipboard", systemImage: "doc.on.clipboard")
+            case .manual:
+                Label("Nhập tay", systemImage: "keyboard")
             }
         }
-        .pickerStyle(.segmented)
         .onChange(of: inputMode) { _ in
             loadClipboardContent()
         }
@@ -419,6 +418,7 @@ struct ConvertToolView: View {
             }
             .labelsHidden()
             .pickerStyle(.menu)
+            .glassMenuPickerStyle()
             .frame(maxWidth: .infinity, alignment: .leading)
 
             Text(selection.wrappedValue.description)

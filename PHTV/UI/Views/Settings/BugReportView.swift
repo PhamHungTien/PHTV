@@ -174,9 +174,8 @@ struct BugReportView: View {
                         }
                         .labelsHidden()
                         .pickerStyle(.menu)
-                        .padding(8)
+                        .glassMenuPickerStyle()
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(inputFieldBackground(cornerRadius: 8))
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
@@ -190,9 +189,8 @@ struct BugReportView: View {
                         }
                         .labelsHidden()
                         .pickerStyle(.menu)
-                        .padding(8)
+                        .glassMenuPickerStyle()
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(inputFieldBackground(cornerRadius: 8))
                     }
                 }
 

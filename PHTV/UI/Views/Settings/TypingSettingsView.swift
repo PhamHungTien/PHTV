@@ -65,13 +65,11 @@ struct TypingSettingsView: View {
                                 .fontWeight(.medium)
                                 .foregroundStyle(.secondary)
 
-                            Picker("", selection: $appState.inputMethod) {
-                                ForEach(InputMethod.allCases) { method in
-                                    Text(method.displayName).tag(method)
-                                }
+                            GlassSegmentedPicker(
+                                selection: $appState.inputMethod
+                            ) { method in
+                                Text(method.displayName)
                             }
-                            .pickerStyle(.segmented)
-                            .labelsHidden()
                         }
 
                         Divider()
@@ -89,6 +87,7 @@ struct TypingSettingsView: View {
                                 }
                             }
                             .labelsHidden()
+                            .glassMenuPickerStyle()
                         }
                     }
                 }

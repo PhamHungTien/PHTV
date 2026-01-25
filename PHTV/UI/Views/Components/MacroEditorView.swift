@@ -108,6 +108,7 @@ struct MacroEditorView: View {
                         }
                     }
                     .pickerStyle(.menu)
+                    .glassMenuPickerStyle()
 
                     Text(snippetType.helpText)
                         .font(.caption)

@@ -919,6 +919,180 @@ struct GlassSegmentedControl<SelectionValue: Hashable, Content: View>: View {
     }
 }
 
+// MARK: - Glass Segmented Picker (macOS 26+)
+
+/// A picker that uses Liquid Glass morphing effect for segment selection
+struct GlassSegmentedPicker<SelectionValue: Hashable & CaseIterable & Identifiable, Label: View>: View
+where SelectionValue.AllCases: RandomAccessCollection {
+    @Binding var selection: SelectionValue
+    let label: (SelectionValue) -> Label
+
+    @Namespace private var pickerNamespace
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var colorScheme
+
+    init(
+        selection: Binding<SelectionValue>,
+        @ViewBuilder label: @escaping (SelectionValue) -> Label
+    ) {
+        self._selection = selection
+        self.label = label
+    }
+
+    var body: some View {
+        if #available(macOS 26.0, *), !reduceTransparency {
+            GlassEffectContainer(spacing: 4) {
+                HStack(spacing: 0) {
+                    ForEach(Array(SelectionValue.allCases)) { item in
+                        segmentButton(for: item)
+                    }
+                }
+                .padding(4)
+                .background {
+                    PHTVRoundedRect(cornerRadius: 10)
+                        .fill(.ultraThinMaterial)
+                        .glassEffect(in: .rect(corners: .fixed(10), isUniform: true))
+                }
+            }
+        } else {
+            // Fallback for older macOS
+            HStack(spacing: 0) {
+                ForEach(Array(SelectionValue.allCases)) { item in
+                    fallbackSegmentButton(for: item)
+                }
+            }
+            .padding(4)
+            .background(Color(NSColor.controlBackgroundColor).opacity(0.6))
+            .cornerRadius(10)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+            )
+        }
+    }
+
+    @available(macOS 26.0, *)
+    @ViewBuilder
+    private func segmentButton(for item: SelectionValue) -> some View {
+        let isSelected = selection == item
+
+        Button {
+            withAnimation(.phtvMorph) {
+                selection = item
+            }
+        } label: {
+            label(item)
+                .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                .foregroundStyle(isSelected ? .primary : .secondary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity)
+                .background {
+                    if isSelected {
+                        PHTVRoundedRect(cornerRadius: 7)
+                            .fill(.ultraThinMaterial)
+                            .glassEffect(
+                                .regular.interactive().tint(.accentColor),
+                                in: .rect(corners: .fixed(7), isUniform: true)
+                            )
+                            .glassEffectID("segmentSelection", in: pickerNamespace)
+                            .overlay(
+                                PHTVRoundedRect(cornerRadius: 7)
+                                    .fill(Color.accentColor.opacity(colorScheme == .dark ? 0.15 : 0.1))
+                            )
+                    }
+                }
+        }
+        .buttonStyle(.plain)
+        .contentShape(Rectangle())
+    }
+
+    @ViewBuilder
+    private func fallbackSegmentButton(for item: SelectionValue) -> some View {
+        let isSelected = selection == item
+
+        Button {
+            withAnimation(.phtvMorph) {
+                selection = item
+            }
+        } label: {
+            label(item)
+                .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                .foregroundStyle(isSelected ? .primary : .secondary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity)
+                .background {
+                    if isSelected {
+                        PHTVRoundedRect(cornerRadius: 7)
+                            .fill(Color.accentColor.opacity(0.15))
+                            .matchedGeometryEffect(id: "segmentSelection", in: pickerNamespace)
+                    }
+                }
+        }
+        .buttonStyle(.plain)
+        .contentShape(Rectangle())
+    }
+}
+
+/// Convenience extension for String-labelled pickers
+extension GlassSegmentedPicker where Label == Text {
+    init<S: StringProtocol>(
+        selection: Binding<SelectionValue>,
+        label: @escaping (SelectionValue) -> S
+    ) {
+        self._selection = selection
+        self.label = { Text(label($0)) }
+    }
+}
+
+// MARK: - Glass Menu Picker Style (macOS 26+)
+
+/// A view modifier that applies Liquid Glass styling to menu pickers
+struct GlassMenuPickerStyle: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var colorScheme
+
+    func body(content: Content) -> some View {
+        if #available(macOS 26.0, *), !reduceTransparency {
+            content
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background {
+                    PHTVRoundedRect(cornerRadius: 8)
+                        .fill(.ultraThinMaterial)
+                        .glassEffect(
+                            .regular.interactive(),
+                            in: .rect(corners: .fixed(8), isUniform: true)
+                        )
+                        .overlay(
+                            PHTVRoundedRect(cornerRadius: 8)
+                                .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
+                        )
+                }
+        } else {
+            content
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background {
+                    PHTVRoundedRect(cornerRadius: 8)
+                        .fill(Color(NSColor.controlBackgroundColor))
+                        .overlay(
+                            PHTVRoundedRect(cornerRadius: 8)
+                                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                        )
+                }
+        }
+    }
+}
+
+extension View {
+    /// Applies Liquid Glass styling to menu pickers
+    func glassMenuPickerStyle() -> some View {
+        modifier(GlassMenuPickerStyle())
+    }
+}
+
 // MARK: - Liquid Glass Search Field Style
 
 struct GlassSearchFieldStyle: ViewModifier {
