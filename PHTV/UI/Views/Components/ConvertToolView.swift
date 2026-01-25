@@ -170,14 +170,18 @@ struct ConvertToolView: View {
     // MARK: - Input Mode Picker
 
     private var inputModePicker: some View {
-        GlassSegmentedPicker(selection: $inputMode) { mode in
-            switch mode {
-            case .clipboard:
-                Label("Clipboard", systemImage: "doc.on.clipboard")
-            case .manual:
-                Label("Nhập tay", systemImage: "keyboard")
+        Picker("", selection: $inputMode) {
+            ForEach(ConvertInputMode.allCases) { mode in
+                switch mode {
+                case .clipboard:
+                    Label("Clipboard", systemImage: "doc.on.clipboard").tag(mode)
+                case .manual:
+                    Label("Nhập tay", systemImage: "keyboard").tag(mode)
+                }
             }
         }
+        .pickerStyle(.segmented)
+        .labelsHidden()
         .onChange(of: inputMode) { _ in
             loadClipboardContent()
         }
