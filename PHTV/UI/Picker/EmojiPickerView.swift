@@ -180,7 +180,6 @@ struct EmojiPickerView: View {
                 RoundedRectangle(cornerRadius: 16)
                     .fill(Color(NSColor.windowBackgroundColor).opacity(0.3))
                     .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 16))
-                    .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 4)
             } else {
                 // Fallback glassmorphism for older macOS
                 ZStack {
@@ -189,7 +188,6 @@ struct EmojiPickerView: View {
                     VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 16))
-                .shadow(color: Color.black.opacity(0.15), radius: 12, x: 0, y: 4)
             }
         }
         .onDisappear {

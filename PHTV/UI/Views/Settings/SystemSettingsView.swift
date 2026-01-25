@@ -222,11 +222,7 @@ struct SystemSettingsView: View {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 14) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.accentColor.opacity(0.12))
-                                .frame(width: 36, height: 36)
-
+                        SettingsIconTile(color: .accentColor) {
                             Image(systemName: "clock.fill")
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundStyle(Color.accentColor)
@@ -590,13 +586,26 @@ struct SettingsInfoRow: View {
     let iconColor: Color
     let title: String
     let value: String
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
             ZStack {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(iconColor.opacity(0.12))
-                    .frame(width: 36, height: 36)
+                if #available(macOS 26.0, *), !reduceTransparency {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.ultraThinMaterial)
+                        .settingsGlassEffect(cornerRadius: 8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.12), lineWidth: 1)
+                        )
+                        .frame(width: 36, height: 36)
+                } else {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(iconColor.opacity(0.12))
+                        .frame(width: 36, height: 36)
+                }
 
                 Image(systemName: icon)
                     .font(.system(size: 16, weight: .medium))
@@ -626,14 +635,28 @@ struct SettingsButtonRow: View {
     var isDestructive: Bool = false
     var isLoading: Bool = false
     let action: () -> Void
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var isHovered = false
 
     var body: some View {
         Button(action: action) {
             HStack(alignment: .top, spacing: 14) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(iconColor.opacity(0.12))
-                        .frame(width: 36, height: 36)
+                    if #available(macOS 26.0, *), !reduceTransparency {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.ultraThinMaterial)
+                            .settingsGlassEffect(cornerRadius: 8)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.12), lineWidth: 1)
+                            )
+                            .frame(width: 36, height: 36)
+                    } else {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(iconColor.opacity(0.12))
+                            .frame(width: 36, height: 36)
+                    }
 
                     if isLoading {
                         ProgressView()
@@ -672,10 +695,30 @@ struct SettingsButtonRow: View {
             .padding(.vertical, 6)
             .contentShape(Rectangle())
         }
+        .background(hoverBackground)
         .buttonStyle(.plain)
         .disabled(isLoading)
         .accessibilityLabel(Text(title))
         .accessibilityHint(Text(subtitle))
+        .onHover { hovering in
+            isHovered = hovering
+        }
+        .transaction { transaction in
+            transaction.animation = nil
+        }
+        .animation(nil, value: isHovered)
+    }
+
+    @ViewBuilder
+    private var hoverBackground: some View {
+        if isHovered {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color.primary.opacity(colorScheme == .dark ? 0.08 : 0.04))
+                .padding(.horizontal, -6)
+                .padding(.vertical, -2)
+        } else {
+            EmptyView()
+        }
     }
 }
 

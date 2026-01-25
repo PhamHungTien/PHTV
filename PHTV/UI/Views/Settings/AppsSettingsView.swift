@@ -183,22 +183,18 @@ struct AppsSettingsView: View {
                             isOn: $appState.safeMode
                         )
 
-                        if appState.safeMode {
-                            SettingsDivider()
+                            if appState.safeMode {
+                                SettingsDivider()
 
-                            HStack(spacing: 14) {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(Color.accentColor.opacity(0.12))
-                                        .frame(width: 36, height: 36)
+                                HStack(spacing: 14) {
+                                    SettingsIconTile(color: .accentColor) {
+                                        Image(systemName: "info.circle.fill")
+                                            .font(.system(size: 16, weight: .medium))
+                                            .foregroundStyle(Color.accentColor)
+                                    }
 
-                                    Image(systemName: "info.circle.fill")
-                                        .font(.system(size: 16, weight: .medium))
-                                        .foregroundStyle(Color.accentColor)
-                                }
-
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Gợi ý cho máy Mac cũ")
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Gợi ý cho máy Mac cũ")
                                         .font(.caption)
                                         .fontWeight(.medium)
                                         .foregroundStyle(.primary)
@@ -405,11 +401,7 @@ private struct ClaudeCodeToggleRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(iconColor.opacity(0.12))
-                    .frame(width: 36, height: 36)
-
+            SettingsIconTile(color: iconColor) {
                 if showProgress {
                     ProgressView()
                         .controlSize(.small)

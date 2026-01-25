@@ -18,7 +18,6 @@ struct AboutView: View {
                     AppIconView()
                         .frame(width: 100, height: 100)
                         .clipShape(RoundedRectangle(cornerRadius: 22))
-                        .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
 
                     VStack(spacing: 6) {
                         Text("PHTV")
@@ -104,7 +103,6 @@ struct AboutView: View {
                                 .scaledToFit()
                                 .frame(maxWidth: 220)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
 
                             Text("Quét mã để ủng hộ")
                                 .font(.caption)
@@ -154,11 +152,7 @@ struct AboutInfoCard: View {
         HStack(spacing: 14) {
             // Icon background - no glass effect to avoid glass-on-glass
             // (parent row already has glass background)
-            ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(iconColor.opacity(0.12))
-                    .frame(width: 42, height: 42)
-
+            SettingsIconTile(color: iconColor, size: 42, cornerRadius: 10) {
                 Image(systemName: icon)
                     .font(.system(size: 18, weight: .medium))
                     .foregroundStyle(iconColor)

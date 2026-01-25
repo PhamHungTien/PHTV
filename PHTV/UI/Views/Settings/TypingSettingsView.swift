@@ -367,7 +367,6 @@ struct StatusCard: View {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color(NSColor.controlBackgroundColor))
                     .compositingGroup()
-                    .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 2)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(Color.gray.opacity(0.15), lineWidth: 1)
@@ -453,7 +452,6 @@ struct SettingsCard<Content: View, Trailing: View>: View {
                 RoundedRectangle(cornerRadius: 14)
                     .fill(cardGradient)
                     .compositingGroup()
-                    .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 2)
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
                             .stroke(Color.primary.opacity(colorScheme == .dark ? 0.16 : 0.12), lineWidth: 1)
@@ -492,15 +490,28 @@ struct SettingsToggleRow: View {
     let title: String
     let subtitle: String
     @Binding var isOn: Bool
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
             // Icon background - no glass effect to avoid glass-on-glass
             // (parent SettingsCard already has glass effect)
             ZStack {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(iconColor.opacity(0.12))
-                    .frame(width: 36, height: 36)
+                if #available(macOS 26.0, *), !reduceTransparency {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.ultraThinMaterial)
+                        .settingsGlassEffect(cornerRadius: 8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.12), lineWidth: 1)
+                        )
+                        .frame(width: 36, height: 36)
+                } else {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(iconColor.opacity(0.12))
+                        .frame(width: 36, height: 36)
+                }
 
                 Image(systemName: icon)
                     .font(.system(size: 16, weight: .medium))
@@ -553,15 +564,28 @@ struct SettingsSliderRow: View {
     var onEditingChanged: ((Bool) -> Void)? = nil
     var onValueChanged: ((Double) -> Void)? = nil
     var useLiquidGlassTrack: Bool = true
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         VStack(spacing: 12) {
             HStack(alignment: .top, spacing: 14) {
                 // Icon background - no glass effect to avoid glass-on-glass
                 ZStack {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(iconColor.opacity(0.12))
-                        .frame(width: 36, height: 36)
+                    if #available(macOS 26.0, *), !reduceTransparency {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(.ultraThinMaterial)
+                            .settingsGlassEffect(cornerRadius: 8)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.12), lineWidth: 1)
+                            )
+                            .frame(width: 36, height: 36)
+                    } else {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(iconColor.opacity(0.12))
+                            .frame(width: 36, height: 36)
+                    }
 
                     Image(systemName: icon)
                         .font(.system(size: 16, weight: .medium))
@@ -660,7 +684,6 @@ struct RestoreKeyButton: View {
                     if isSelected {
                         RoundedRectangle(cornerRadius: 10)
                             .fill(themeColor)
-                            .shadow(color: themeColor.opacity(0.3), radius: 4, x: 0, y: 2)
                     } else {
                         RoundedRectangle(cornerRadius: 10)
                             .fill(.ultraThinMaterial)
@@ -669,7 +692,6 @@ struct RestoreKeyButton: View {
                 } else {
                     RoundedRectangle(cornerRadius: 10)
                         .fill(isSelected ? themeColor : Color(NSColor.controlBackgroundColor))
-                        .shadow(color: isSelected ? themeColor.opacity(0.3) : Color.clear, radius: 4, x: 0, y: 2)
                         .overlay(
                             RoundedRectangle(cornerRadius: 10)
                                 .stroke(isSelected ? Color.clear : Color.gray.opacity(0.25), lineWidth: 1)

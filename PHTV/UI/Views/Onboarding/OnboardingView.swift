@@ -87,7 +87,6 @@ struct OnboardingView: View {
             }
         }
         .background(OnboardingCardBackground())
-        .shadow(color: Color.black.opacity(0.18), radius: 24, x: 0, y: 14)
         .padding(24)
         .frame(width: OnboardingStyle.cardWidth, height: OnboardingStyle.cardHeight)
         .frame(width: OnboardingStyle.containerWidth, height: OnboardingStyle.containerHeight)
@@ -219,7 +218,6 @@ struct OnboardingSurface: View {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .stroke(strokeColor, lineWidth: 1)
         )
-        .shadow(color: shadowColor, radius: shadowRadius, x: 0, y: shadowRadius > 0 ? 2 : 0)
     }
 }
 
@@ -249,7 +247,6 @@ struct OnboardingAppBadge: View {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .stroke(Color.primary.opacity(0.2), lineWidth: 1)
             )
-            .shadow(color: Color.black.opacity(0.12), radius: 6, x: 0, y: 4)
     }
 }
 
@@ -292,7 +289,6 @@ struct OnboardingPrimaryButtonStyle: ButtonStyle {
                 )
             )
             .clipShape(Capsule())
-            .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
             .opacity(configuration.isPressed ? 0.9 : 1.0)
             .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
     }
@@ -455,7 +451,6 @@ struct OptionCard: View {
                     strokeColor: isSelected ? Color.accentColor.opacity(0.6) : Color.black.opacity(0.1)
                 )
             )
-            .shadow(color: Color.black.opacity(0.04), radius: 3, x: 0, y: 2)
         }
         .buttonStyle(.plain)
     }
@@ -625,7 +620,6 @@ struct WelcomeStepView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 96, height: 96)
-                    .shadow(color: Color.black.opacity(0.2), radius: 12, x: 0, y: 6)
 
                 Text("Chào mừng đến với PHTV")
                     .font(.system(size: 30, weight: .bold, design: .rounded))
@@ -698,7 +692,6 @@ struct SystemSettingsStepView: View {
                             .aspectRatio(contentMode: .fit)
                             .frame(height: 180)
                             .cornerRadius(12)
-                            .shadow(radius: 4)
 
                         Image(systemName: "plus.magnifyingglass")
                             .font(.system(size: 14, weight: .bold))

@@ -310,7 +310,6 @@ struct ModifierKeyButton: View {
                     if isOn {
                         RoundedRectangle(cornerRadius: 10)
                             .fill(Color.accentColor)
-                            .shadow(color: Color.accentColor.opacity(0.3), radius: 4, x: 0, y: 2)
                     } else {
                         RoundedRectangle(cornerRadius: 10)
                             .fill(.ultraThinMaterial)
@@ -319,7 +318,6 @@ struct ModifierKeyButton: View {
                 } else {
                     RoundedRectangle(cornerRadius: 10)
                         .fill(isOn ? .accentColor : Color(NSColor.controlBackgroundColor))
-                        .shadow(color: isOn ? .accentColor.opacity(0.3) : Color.clear, radius: 4, x: 0, y: 2)
                         .overlay(
                             RoundedRectangle(cornerRadius: 10)
                                 .stroke(isOn ? Color.clear : Color.gray.opacity(0.25), lineWidth: 1)
@@ -769,7 +767,6 @@ struct PauseKeyButton: View {
                     if isSelected {
                         RoundedRectangle(cornerRadius: 10)
                             .fill(Color.accentColor)
-                            .shadow(color: Color.accentColor.opacity(0.3), radius: 4, x: 0, y: 2)
                     } else {
                         RoundedRectangle(cornerRadius: 10)
                             .fill(.ultraThinMaterial)
@@ -778,7 +775,6 @@ struct PauseKeyButton: View {
                 } else {
                     RoundedRectangle(cornerRadius: 10)
                         .fill(isSelected ? .accentColor : Color(NSColor.controlBackgroundColor))
-                        .shadow(color: isSelected ? .accentColor.opacity(0.3) : Color.clear, radius: 4, x: 0, y: 2)
                         .overlay(
                             RoundedRectangle(cornerRadius: 10)
                                 .stroke(isSelected ? Color.clear : Color.gray.opacity(0.25), lineWidth: 1)

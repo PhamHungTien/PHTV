@@ -79,11 +79,7 @@ struct CompatibilitySettingsView: View {
                             SettingsDivider()
 
                             HStack(spacing: 14) {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(Color.accentColor.opacity(0.12))
-                                        .frame(width: 36, height: 36)
-
+                                SettingsIconTile(color: .accentColor) {
                                     Image(systemName: "info.circle.fill")
                                         .font(.system(size: 16, weight: .medium))
                                         .foregroundStyle(Color.accentColor)
@@ -297,11 +293,7 @@ private struct ClaudeCodeToggleRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(iconColor.opacity(0.12))
-                    .frame(width: 36, height: 36)
-
+            SettingsIconTile(color: iconColor) {
                 if showProgress {
                     ProgressView()
                         .controlSize(.small)

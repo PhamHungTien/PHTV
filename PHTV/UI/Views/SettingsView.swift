@@ -37,64 +37,7 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationSplitView {
-            List(selection: $selectedTab) {
-                if searchText.isEmpty {
-                    // Normal tab list grouped by section
-                    ForEach(SettingsTabSection.allCases) { section in
-                        Section(section.title) {
-                            ForEach(section.tabs) { tab in
-                                SettingsSidebarRow(tab: tab)
-                                    .tag(tab)
-                                    .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
-                            }
-                        }
-                    }
-                } else {
-                    // Search results
-                    if filteredSettings.isEmpty {
-                        VStack(spacing: 8) {
-                            Image(systemName: "magnifyingglass")
-                                .font(.largeTitle)
-                                .foregroundStyle(.secondary)
-                            Text("Không có kết quả cho “\(searchText)”")
-                                .font(.headline)
-                            Text("Hãy thử từ khóa khác")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .padding()
-                    } else {
-                        ForEach(filteredSettings) { item in
-                            Button {
-                                selectedTab = item.tab
-                                searchText = ""
-                            } label: {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Label(item.title, systemImage: item.iconName)
-                                    Text(item.tab.title)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-            }
-            .listStyle(.sidebar)
-            .conditionalSearchable(text: $searchText, prompt: "Tìm nhanh cài đặt…")
-            .navigationSplitViewColumnWidth(min: 160, ideal: 200, max: 240)
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        NotificationCenter.default.post(name: NSNotification.Name("ShowOnboarding"), object: nil)
-                    } label: {
-                        Image(systemName: "questionmark.circle")
-                    }
-                    .help("Xem lại hướng dẫn & giới thiệu")
-                }
-            }
+            sidebarView
         } detail: {
             detailView
                 .environmentObject(appState)
@@ -126,6 +69,76 @@ struct SettingsView: View {
     }
 
     @ViewBuilder
+    private var sidebarView: some View {
+        let list = List(selection: $selectedTab) {
+            if searchText.isEmpty {
+                // Normal tab list grouped by section
+                ForEach(SettingsTabSection.allCases) { section in
+                    Section(section.title) {
+                        ForEach(section.tabs) { tab in
+                            SettingsSidebarRow(tab: tab)
+                                .tag(tab)
+                                .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
+                        }
+                    }
+                }
+            } else {
+                // Search results
+                if filteredSettings.isEmpty {
+                    VStack(spacing: 8) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.largeTitle)
+                            .foregroundStyle(.secondary)
+                        Text("Không có kết quả cho “\(searchText)”")
+                            .font(.headline)
+                        Text("Hãy thử từ khóa khác")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding()
+                } else {
+                    ForEach(filteredSettings) { item in
+                        Button {
+                            selectedTab = item.tab
+                            searchText = ""
+                        } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Label(item.title, systemImage: item.iconName)
+                                Text(item.tab.title)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+        .listStyle(.sidebar)
+        .conditionalSearchable(text: $searchText, prompt: "Tìm nhanh cài đặt…")
+        .navigationSplitViewColumnWidth(min: 160, ideal: 200, max: 240)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    NotificationCenter.default.post(name: NSNotification.Name("ShowOnboarding"), object: nil)
+                } label: {
+                    Image(systemName: "questionmark.circle")
+                }
+                .help("Xem lại hướng dẫn & giới thiệu")
+            }
+        }
+
+        if #available(macOS 26.0, *) {
+            list
+        } else {
+            list
+                .scrollContentBackground(.hidden)
+                .background(sidebarBackground)
+        }
+    }
+
+    @ViewBuilder
     private var detailView: some View {
         // Lazy loading: Only create the view for selected tab
         // This significantly reduces memory usage by not instantiating all 7 tabs at once
@@ -148,6 +161,27 @@ struct SettingsView: View {
         }
         // Force view teardown when đổi tab để giải phóng RAM của các view nặng (log, macro...)
         .id(selectedTab)
+    }
+
+    @ViewBuilder
+    private var sidebarBackground: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    Color(NSColor.windowBackgroundColor).opacity(0.98),
+                    Color(NSColor.controlBackgroundColor).opacity(0.96)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+
+            if #available(macOS 12.0, *) {
+                Rectangle()
+                    .fill(.thinMaterial)
+                    .opacity(0.55)
+            }
+        }
+        .ignoresSafeArea()
     }
 }
 
@@ -396,8 +430,25 @@ struct SettingsSidebarRow: View {
     var body: some View {
         HStack(spacing: 10) {
             ZStack {
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(colorScheme == .dark ? Color.primary.opacity(0.18) : Color.accentColor.opacity(0.12))
+                if #available(macOS 26.0, *) {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(.ultraThinMaterial)
+                        .settingsGlassEffect(cornerRadius: 6)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .strokeBorder(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.1), lineWidth: 1)
+                        )
+                } else if #available(macOS 12.0, *) {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(.thinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .strokeBorder(Color.primary.opacity(colorScheme == .dark ? 0.18 : 0.08), lineWidth: 1)
+                        )
+                } else {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(colorScheme == .dark ? Color.primary.opacity(0.18) : Color.accentColor.opacity(0.12))
+                }
                 Image(systemName: tab.iconName)
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.primary)

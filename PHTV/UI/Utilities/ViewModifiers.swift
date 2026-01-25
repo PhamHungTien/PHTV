@@ -28,7 +28,6 @@ struct CardStyle: ViewModifier {
                 .padding()
                 .background(Color(NSColor.controlBackgroundColor))
                 .cornerRadius(8)
-                .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
                 .drawingGroup(opaque: false)
         }
     }
@@ -117,12 +116,36 @@ private struct SettingsGlassEffectModifier: ViewModifier {
     }
 }
 
+@available(macOS 26.0, *)
+private struct SettingsGlassEffectShapeModifier<S: Shape>: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    let shape: S
+
+    func body(content: Content) -> some View {
+        if reduceTransparency {
+            content
+        } else {
+            content.glassEffect(in: shape)
+        }
+    }
+}
+
 extension View {
     /// Applies glassEffect when available and reduce transparency is off
     @ViewBuilder
     func settingsGlassEffect(cornerRadius: CGFloat) -> some View {
         if #available(macOS 26.0, *) {
             modifier(SettingsGlassEffectModifier(cornerRadius: cornerRadius))
+        } else {
+            self
+        }
+    }
+
+    /// Applies glassEffect with a custom shape when available and reduce transparency is off
+    @ViewBuilder
+    func settingsGlassEffect<S: Shape>(in shape: S) -> some View {
+        if #available(macOS 26.0, *) {
+            modifier(SettingsGlassEffectShapeModifier(shape: shape))
         } else {
             self
         }
@@ -219,6 +242,7 @@ struct SettingsStatusPill: View {
     let text: String
     var color: Color = .accentColor
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
         Text(text)
@@ -227,20 +251,35 @@ struct SettingsStatusPill: View {
             .lineLimit(1)
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
-            .background(
-                Capsule()
-                    .fill(pillBaseFill)
-                    .overlay(
-                        Capsule()
-                            .fill(color.opacity(colorScheme == .light ? 0.12 : 0.18))
-                    )
-            )
-            .overlay(
-                Capsule()
-                    .stroke(color.opacity(colorScheme == .light ? 0.35 : 0.45), lineWidth: 1)
-            )
+            .background(pillBackground)
+            .overlay(pillBorder)
             .foregroundStyle(color)
             .accessibilityLabel(Text(text))
+    }
+
+    @ViewBuilder
+    private var pillBackground: some View {
+        if #available(macOS 26.0, *), !reduceTransparency {
+            Capsule()
+                .fill(.ultraThinMaterial)
+                .settingsGlassEffect(in: Capsule())
+                .overlay(
+                    Capsule()
+                        .fill(color.opacity(colorScheme == .light ? 0.12 : 0.18))
+                )
+        } else {
+            Capsule()
+                .fill(pillBaseFill)
+                .overlay(
+                    Capsule()
+                        .fill(color.opacity(colorScheme == .light ? 0.12 : 0.18))
+                )
+        }
+    }
+
+    private var pillBorder: some View {
+        Capsule()
+            .stroke(color.opacity(colorScheme == .light ? 0.35 : 0.45), lineWidth: 1)
     }
 
     private var pillBaseFill: Color {
@@ -251,6 +290,51 @@ struct SettingsStatusPill: View {
     }
 }
 
+struct SettingsIconTile<Content: View>: View {
+    let color: Color
+    var size: CGFloat = 36
+    var cornerRadius: CGFloat = 8
+    let content: Content
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var colorScheme
+
+    init(
+        color: Color,
+        size: CGFloat = 36,
+        cornerRadius: CGFloat = 8,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.color = color
+        self.size = size
+        self.cornerRadius = cornerRadius
+        self.content = content()
+    }
+
+    var body: some View {
+        ZStack {
+            background
+                .frame(width: size, height: size)
+            content
+        }
+    }
+
+    @ViewBuilder
+    private var background: some View {
+        if #available(macOS 26.0, *), !reduceTransparency {
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(.ultraThinMaterial)
+                .settingsGlassEffect(cornerRadius: cornerRadius)
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.12), lineWidth: 1)
+                )
+        } else {
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(color.opacity(0.12))
+        }
+    }
+}
+
 struct SettingsHeaderView<Trailing: View>: View {
     let title: String
     let subtitle: String
@@ -258,6 +342,7 @@ struct SettingsHeaderView<Trailing: View>: View {
     var accent: Color = .accentColor
     let trailing: Trailing
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     init(
         title: String,
@@ -297,15 +382,24 @@ struct SettingsHeaderView<Trailing: View>: View {
         .frame(maxWidth: 700)
         .background(headerBackground)
         .overlay(headerBorder)
-        .shadow(color: headerShadowColor, radius: 6, x: 0, y: 3)
     }
 
     private var iconTile: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 12)
-                .fill(iconBackground)
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(iconBorderColor, lineWidth: 1)
+            if #available(macOS 26.0, *), !reduceTransparency {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(.ultraThinMaterial)
+                    .settingsGlassEffect(cornerRadius: 12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(iconBorderColor, lineWidth: 1)
+                    )
+            } else {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(iconBackground)
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(iconBorderColor, lineWidth: 1)
+            }
             Image(systemName: icon)
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(accent)
@@ -315,9 +409,14 @@ struct SettingsHeaderView<Trailing: View>: View {
 
     @ViewBuilder
     private var headerBackground: some View {
-        RoundedRectangle(cornerRadius: 14)
-            .fill(headerGradient)
-            .settingsGlassEffect(cornerRadius: 14)
+        if #available(macOS 26.0, *), !reduceTransparency {
+            RoundedRectangle(cornerRadius: 14)
+                .fill(.ultraThinMaterial)
+                .settingsGlassEffect(cornerRadius: 14)
+        } else {
+            RoundedRectangle(cornerRadius: 14)
+                .fill(headerGradient)
+        }
     }
 
     private var headerBorder: some View {
@@ -357,7 +456,7 @@ struct SettingsHeaderView<Trailing: View>: View {
     }
 
     private var headerShadowColor: Color {
-        colorScheme == .dark ? .clear : .black.opacity(0.08)
+        return colorScheme == .dark ? .clear : .black.opacity(0.08)
     }
 
     
@@ -373,28 +472,48 @@ struct SettingsViewBackground: ViewModifier {
         content
             .scrollContentBackground(.hidden)
             .background(
-                ZStack {
-                    LinearGradient(
-                        colors: [
-                            Color(NSColor.windowBackgroundColor).opacity(colorScheme == .light ? 0.98 : 1.0),
-                            Color(NSColor.controlBackgroundColor).opacity(colorScheme == .light ? 0.96 : 1.0)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-
-                    RadialGradient(
-                        colors: [
-                            Color.accentColor.opacity(colorScheme == .light ? 0.06 : 0.12),
-                            Color.clear
-                        ],
-                        center: .topLeading,
-                        startRadius: 20,
-                        endRadius: 520
-                    )
-                }
-                .ignoresSafeArea()
+                backgroundLayer
             )
+    }
+
+    @ViewBuilder
+    private var backgroundLayer: some View {
+        let base = ZStack {
+            LinearGradient(
+                colors: [
+                    Color(NSColor.windowBackgroundColor).opacity(colorScheme == .light ? 0.98 : 1.0),
+                    Color(NSColor.controlBackgroundColor).opacity(colorScheme == .light ? 0.96 : 1.0)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            RadialGradient(
+                colors: [
+                    Color.accentColor.opacity(colorScheme == .light ? 0.06 : 0.12),
+                    Color.clear
+                ],
+                center: .topLeading,
+                startRadius: 20,
+                endRadius: 520
+            )
+
+            if #available(macOS 12.0, *) {
+                Rectangle()
+                    .fill(.ultraThinMaterial)
+                    .opacity(colorScheme == .light ? 0.6 : 0.25)
+            }
+        }
+        .ignoresSafeArea()
+
+        if #available(macOS 26.0, *) {
+            GlassEffectContainer {
+                base
+                    .backgroundExtensionEffect(isEnabled: true)
+            }
+        } else {
+            base
+        }
     }
 }
 
@@ -445,6 +564,18 @@ extension View {
             self.foregroundStyle(.secondary)
         } else {
             self.foregroundColor(.secondary)
+        }
+    }
+
+    /// Groups glass elements to align Liquid Glass rendering when available.
+    @ViewBuilder
+    func settingsGlassContainer() -> some View {
+        if #available(macOS 26.0, *) {
+            GlassEffectContainer {
+                self
+            }
+        } else {
+            self
         }
     }
 }

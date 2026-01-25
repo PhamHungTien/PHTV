@@ -53,22 +53,15 @@ struct UpdateBannerView: View {
                             showReleaseNotes = true
                         } label: {
                             Text("Chi tiết")
-                                .foregroundStyle(Color.accentColor)
                         }
-                        .buttonStyle(.borderless)
+                        .buttonStyle(SecondaryButtonStyle())
 
                         Button {
                             installUpdate()
                         } label: {
                             Text("Cập nhật")
-                                .font(.subheadline.weight(.semibold))
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
-                                .background(Color.accentColor)
-                                .foregroundStyle(.white)
-                                .clipShape(Capsule())
                         }
-                        .buttonStyle(.borderless)
+                        .buttonStyle(PrimaryButtonStyle())
 
                         Button {
                             dismissBanner()
@@ -78,7 +71,7 @@ struct UpdateBannerView: View {
                                 .foregroundStyle(.secondary)
                                 .frame(width: 24, height: 24)
                         }
-                        .buttonStyle(.borderless)
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(16)
@@ -90,7 +83,6 @@ struct UpdateBannerView: View {
                     } else {
                         RoundedRectangle(cornerRadius: 16)
                             .fill(Color(NSColor.controlBackgroundColor))
-                            .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
                     }
                 }
                 .padding()
