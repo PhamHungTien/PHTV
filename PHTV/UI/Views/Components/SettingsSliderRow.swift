@@ -68,59 +68,23 @@ struct SettingsSliderRow: View {
 
     @ViewBuilder
     private var iconBackground: some View {
-        if #available(macOS 26.0, *), !reduceTransparency {
-            // Static glassEffect - use overlay for drag feedback
-            PHTVRoundedRect(cornerRadius: 8)
-                .fill(.ultraThinMaterial)
-                .glassEffect(
-                    .regular.interactive(),
-                    in: .rect(corners: .fixed(8), isUniform: true)
-                )
-                .overlay(
-                    PHTVRoundedRect(cornerRadius: 8)
-                        .fill(iconColor.opacity(isDragging ? 0.2 : 0))
-                )
-                .overlay(
-                    PHTVRoundedRect(cornerRadius: 8)
-                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.12), lineWidth: 1)
-                )
-                .scaleEffect(isDragging ? 1.05 : 1.0)
-                .animation(.easeOut(duration: 0.15), value: isDragging)
-        } else {
-            PHTVRoundedRect(cornerRadius: 8)
-                .fill(iconColor.opacity(0.12))
-        }
+        // Simple icon background - no glass effect inside cards
+        PHTVRoundedRect(cornerRadius: 8)
+            .fill(iconColor.opacity(colorScheme == .dark ? 0.15 : 0.12))
     }
 
     @ViewBuilder
     private var valueDisplay: some View {
-        if #available(macOS 26.0, *), !reduceTransparency {
-            Text(valueFormatter(value))
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundStyle(iconColor)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
-                .background {
-                    // Static glassEffect - use overlay for drag feedback
-                    Capsule()
-                        .fill(.ultraThinMaterial)
-                        .glassEffect(.regular, in: Capsule())
-                        .overlay(
-                            Capsule()
-                                .fill(iconColor.opacity(isDragging ? 0.15 : 0))
-                        )
-                }
-                .scaleEffect(isDragging ? 1.05 : 1.0)
-                .animation(.easeOut(duration: 0.15), value: isDragging)
-        } else {
-            Text(valueFormatter(value))
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundStyle(.tint)
-                .frame(minWidth: 40, alignment: .trailing)
-                .padding(.top, 2)
-        }
+        Text(valueFormatter(value))
+            .font(.subheadline)
+            .fontWeight(.semibold)
+            .foregroundStyle(iconColor)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background {
+                Capsule()
+                    .fill(iconColor.opacity(colorScheme == .dark ? 0.15 : 0.12))
+            }
     }
 }
 
