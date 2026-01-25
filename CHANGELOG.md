@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.0.2] - 2026-01-22
+## [2.1.1] - 2026-01-25
+
+### Changed
+- **Giao diện Glass tinh tế**: Tinh chỉnh hiệu ứng glass và hình nền trong phần Cài đặt.
+- **Tối ưu tương thích**: Loại bỏ xử lý đặc biệt cho Raycast, cải thiện tính ổn định với launcher bên thứ ba.
+
+## [2.1.0] - 2026-01-25
 
 ### Added
 - **Onboarding System Settings Step**: Thêm bước hướng dẫn cài đặt hệ thống trong quy trình Onboarding
