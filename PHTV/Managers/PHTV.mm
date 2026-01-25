@@ -488,7 +488,6 @@ extern "C" {
                                                       // @"com.apple.systemuiserver",  // Spotlight runs under SystemUIServer
                                                       @"com.apple.loginwindow",     // Login window
                                                       @"com.apple.SecurityAgent",   // Security dialogs
-                                                      @"com.raycast.macos",
                                                       @"com.alfredapp.Alfred",
                                                       @"com.apple.launchpad",       // Launchpad/Ứng dụng
                                                       @"notion.id",                 // Notion - needs step-by-step for stability

@@ -121,7 +121,6 @@ static NSSet* _disableVietnameseAppSet = nil;
         // Step-by-step key sending (timing sensitive)
         _stepByStepAppSet = [NSSet setWithArray:@[@"com.apple.loginwindow",
                                                    @"com.apple.SecurityAgent",
-                                                   @"com.raycast.macos",
                                                    @"com.alfredapp.Alfred",
                                                    @"com.apple.launchpad",
                                                    @"notion.id",
