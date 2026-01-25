@@ -39,8 +39,6 @@ struct CategoryTab: View {
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())
-        .scaleEffect(isHovering && !isSelected ? 1.02 : 1.0)
-        .animation(.phtvMorph, value: isHovering)
         .onHover { hovering in
             isHovering = hovering
             if hovering {
@@ -59,14 +57,8 @@ struct CategoryTab: View {
 
     @ViewBuilder
     private var iconView: some View {
-        if #available(macOS 14.0, *) {
-            Image(systemName: icon)
-                .font(.system(size: 16, weight: isSelected ? .semibold : .regular))
-                .symbolEffect(.bounce, value: isSelected)
-        } else {
-            Image(systemName: icon)
-                .font(.system(size: 16, weight: isSelected ? .semibold : .regular))
-        }
+        Image(systemName: icon)
+            .font(.system(size: 16, weight: isSelected ? .semibold : .regular))
     }
 
     @ViewBuilder
