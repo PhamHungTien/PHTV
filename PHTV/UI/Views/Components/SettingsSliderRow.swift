@@ -69,16 +69,23 @@ struct SettingsSliderRow: View {
     @ViewBuilder
     private var iconBackground: some View {
         if #available(macOS 26.0, *), !reduceTransparency {
+            // Static glassEffect - use overlay for drag feedback
             PHTVRoundedRect(cornerRadius: 8)
                 .fill(.ultraThinMaterial)
                 .glassEffect(
-                    isDragging ? .regular.interactive().tint(iconColor) : .regular.interactive(),
+                    .regular.interactive(),
                     in: .rect(corners: .fixed(8), isUniform: true)
+                )
+                .overlay(
+                    PHTVRoundedRect(cornerRadius: 8)
+                        .fill(iconColor.opacity(isDragging ? 0.2 : 0))
                 )
                 .overlay(
                     PHTVRoundedRect(cornerRadius: 8)
                         .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.12), lineWidth: 1)
                 )
+                .scaleEffect(isDragging ? 1.05 : 1.0)
+                .animation(.easeOut(duration: 0.15), value: isDragging)
         } else {
             PHTVRoundedRect(cornerRadius: 8)
                 .fill(iconColor.opacity(0.12))
@@ -95,15 +102,17 @@ struct SettingsSliderRow: View {
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
                 .background {
+                    // Static glassEffect - use overlay for drag feedback
                     Capsule()
                         .fill(.ultraThinMaterial)
-                        .glassEffect(
-                            isDragging ? .regular.tint(iconColor) : .regular,
-                            in: Capsule()
+                        .glassEffect(.regular, in: Capsule())
+                        .overlay(
+                            Capsule()
+                                .fill(iconColor.opacity(isDragging ? 0.15 : 0))
                         )
                 }
                 .scaleEffect(isDragging ? 1.05 : 1.0)
-                .animation(.phtvMorph, value: isDragging)
+                .animation(.easeOut(duration: 0.15), value: isDragging)
         } else {
             Text(valueFormatter(value))
                 .font(.subheadline)

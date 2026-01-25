@@ -11,6 +11,7 @@ import SwiftUI
 struct UpdateBannerView: View {
     @EnvironmentObject var appState: AppState
     @State private var showReleaseNotes = false
+    @State private var animateIcon = false
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorScheme) private var colorScheme
 
@@ -45,6 +46,12 @@ struct UpdateBannerView: View {
             }
             .transition(.move(edge: .top).combined(with: .opacity))
             .animation(.phtvMorph, value: appState.showCustomUpdateBanner)
+            .onAppear {
+                // Trigger bounce animation once on appear
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    animateIcon = true
+                }
+            }
             .sheet(isPresented: $showReleaseNotes) {
                 ReleaseNotesView(info: info)
             }
@@ -70,7 +77,7 @@ struct UpdateBannerView: View {
                 Image(systemName: "arrow.down.circle.fill")
                     .font(.system(size: 24))
                     .foregroundStyle(Color.accentColor)
-                    .symbolEffect(.bounce, options: .repeat(2))
+                    .symbolEffect(.bounce, value: animateIcon)
             } else {
                 PHTVRoundedRect(cornerRadius: 12)
                     .fill(Color.accentColor.opacity(0.15))
@@ -116,15 +123,17 @@ struct UpdateBannerView: View {
                     .regular,
                     in: .rect(corners: .fixed(16), isUniform: true)
                 )
-                .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0.12), radius: 16, y: 6)
                 .overlay(
                     PHTVRoundedRect(cornerRadius: 16)
                         .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
                 )
+                .compositingGroup()
+                .shadow(color: .black.opacity(colorScheme == .dark ? 0.25 : 0.1), radius: 10, y: 4)
         } else {
             PHTVRoundedRect(cornerRadius: 16)
                 .fill(Color(NSColor.controlBackgroundColor))
-                .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+                .compositingGroup()
+                .shadow(color: .black.opacity(0.08), radius: 6, y: 3)
         }
     }
 

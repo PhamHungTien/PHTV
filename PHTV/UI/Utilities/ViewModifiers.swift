@@ -816,7 +816,8 @@ struct FloatingGlassCard<Content: View>: View {
                             .regular,
                             in: .rect(corners: .fixed(cornerRadius), isUniform: true)
                         )
-                        .shadow(color: .black.opacity(colorScheme == .dark ? 0.4 : 0.15), radius: 20, y: 8)
+                        .compositingGroup()
+                        .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0.12), radius: 12, y: 5)
                 } else {
                     ZStack {
                         PHTVRoundedRect(cornerRadius: cornerRadius)
@@ -826,7 +827,8 @@ struct FloatingGlassCard<Content: View>: View {
                                 .fill(.ultraThinMaterial)
                         }
                     }
-                    .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0.1), radius: 16, y: 6)
+                    .compositingGroup()
+                    .shadow(color: .black.opacity(colorScheme == .dark ? 0.25 : 0.08), radius: 10, y: 4)
                 }
             }
             .overlay(
@@ -851,15 +853,13 @@ struct GlassCloseButton: View {
         Button(action: action) {
             ZStack {
                 if #available(macOS 26.0, *), !reduceTransparency {
+                    // Static glassEffect - no state change to prevent re-render
                     Circle()
                         .fill(.ultraThinMaterial)
-                        .glassEffect(
-                            isHovering ? .regular.tint(.red) : .regular,
-                            in: Circle()
-                        )
+                        .glassEffect(.regular, in: Circle())
                         .overlay(
                             Circle()
-                                .fill(Color.red.opacity(isHovering ? 0.25 : 0.12))
+                                .fill(Color.red.opacity(isHovering ? 0.3 : 0.15))
                         )
                 } else {
                     Circle()
@@ -868,14 +868,14 @@ struct GlassCloseButton: View {
                 Image(systemName: "xmark")
                     .font(.system(size: iconSize, weight: .bold))
                     .foregroundColor(.red)
+                    .scaleEffect(isHovering ? 1.1 : 1.0)
             }
             .frame(width: size, height: size)
+            .animation(.easeOut(duration: 0.15), value: isHovering)
         }
         .buttonStyle(.plain)
         .onHover { hovering in
-            withAnimation(.phtvMorph) {
-                isHovering = hovering
-            }
+            isHovering = hovering
             if hovering {
                 NSCursor.pointingHand.push()
             } else {

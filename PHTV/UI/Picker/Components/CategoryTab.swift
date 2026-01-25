@@ -92,19 +92,9 @@ struct CategoryTab: View {
                     .matchedGeometryEffect(id: "categoryBackground", in: namespace)
             }
         } else if isHovering {
-            if #available(macOS 26.0, *), !reduceTransparency {
-                // Subtle glass effect on hover
-                PHTVRoundedRect(cornerRadius: 8)
-                    .fill(.ultraThinMaterial)
-                    .glassEffect(
-                        .regular,
-                        in: .rect(corners: .fixed(8), isUniform: true)
-                    )
-                    .opacity(0.6)
-            } else {
-                PHTVRoundedRect(cornerRadius: 8)
-                    .fill(Color.primary.opacity(0.06))
-            }
+            // Simple fill for hover - no glassEffect to avoid re-creation
+            PHTVRoundedRect(cornerRadius: 8)
+                .fill(Color.primary.opacity(colorScheme == .dark ? 0.08 : 0.05))
         }
     }
 }

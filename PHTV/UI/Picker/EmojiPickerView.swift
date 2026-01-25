@@ -195,11 +195,12 @@ struct EmojiPickerView: View {
                     .regular,
                     in: .rect(corners: .fixed(16), isUniform: true)
                 )
-                .shadow(color: .black.opacity(colorScheme == .dark ? 0.5 : 0.2), radius: 24, y: 10)
                 .overlay(
                     PHTVRoundedRect(cornerRadius: 16)
                         .stroke(Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.06), lineWidth: 1)
                 )
+                .compositingGroup()
+                .shadow(color: .black.opacity(colorScheme == .dark ? 0.35 : 0.15), radius: 14, y: 6)
         } else {
             // Fallback glassmorphism for older macOS
             ZStack {
@@ -208,7 +209,8 @@ struct EmojiPickerView: View {
                 VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
             }
             .clipShape(PHTVRoundedRect(cornerRadius: 16))
-            .shadow(color: .black.opacity(0.15), radius: 16, y: 6)
+            .compositingGroup()
+            .shadow(color: .black.opacity(0.12), radius: 10, y: 4)
         }
     }
 }
