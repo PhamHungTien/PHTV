@@ -90,7 +90,6 @@ struct SettingsView: View {
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 36))
                             .foregroundStyle(.tertiary)
-                            .conditionalPulseEffect()
                         Text("Không có kết quả cho \"\(searchText)\"")
                             .font(.headline)
                             .foregroundStyle(.secondary)
@@ -424,7 +423,6 @@ struct SettingsSidebarRow: View {
     let tab: SettingsTab
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @State private var isHovering = false
 
     var body: some View {
         HStack(spacing: 10) {
@@ -433,7 +431,6 @@ struct SettingsSidebarRow: View {
                 Image(systemName: tab.iconName)
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.primary)
-                    .conditionalPulseEffect(value: isHovering)
             }
             .frame(width: 24, height: 24)
 
@@ -444,18 +441,16 @@ struct SettingsSidebarRow: View {
             Spacer(minLength: 0)
         }
         .padding(.vertical, 2)
-        .onHover { hovering in
-            isHovering = hovering
-        }
     }
 
     @ViewBuilder
     private var iconBackground: some View {
+        // Simplified: no hover state changes to avoid lag
         if #available(macOS 26.0, *), !reduceTransparency {
             PHTVRoundedRect(cornerRadius: 6)
                 .fill(.ultraThinMaterial)
                 .glassEffect(
-                    isHovering ? .regular.interactive() : .regular,
+                    .regular,
                     in: .rect(corners: .fixed(6), isUniform: true)
                 )
                 .overlay(
@@ -671,29 +666,25 @@ struct SearchResultRow: View {
     let item: SettingsItem
     let action: () -> Void
 
-    @State private var isHovering = false
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                // Icon with glass effect
+                // Icon - simplified, no hover state changes
                 ZStack {
                     if #available(macOS 26.0, *), !reduceTransparency {
                         Circle()
                             .fill(.ultraThinMaterial)
-                            .glassEffect(
-                                isHovering ? .regular.tint(.accentColor) : .regular,
-                                in: Circle()
-                            )
+                            .glassEffect(.regular, in: Circle())
                     } else {
                         Circle()
-                            .fill(Color.accentColor.opacity(isHovering ? 0.2 : 0.1))
+                            .fill(Color.accentColor.opacity(0.1))
                     }
                     Image(systemName: item.iconName)
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(isHovering ? .primary : .secondary)
+                        .foregroundStyle(.secondary)
                 }
                 .frame(width: 28, height: 28)
 
@@ -711,30 +702,12 @@ struct SearchResultRow: View {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(.tertiary)
-                    .opacity(isHovering ? 1 : 0.5)
             }
             .padding(.vertical, 6)
             .padding(.horizontal, 8)
-            .background {
-                if isHovering {
-                    if #available(macOS 26.0, *), !reduceTransparency {
-                        PHTVRoundedRect(cornerRadius: 8)
-                            .fill(.ultraThinMaterial)
-                            .glassEffect(.regular, in: .rect(corners: .fixed(8), isUniform: true))
-                            .opacity(0.6)
-                    } else {
-                        PHTVRoundedRect(cornerRadius: 8)
-                            .fill(Color.primary.opacity(0.05))
-                    }
-                }
-            }
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .onHover { hovering in
-            withAnimation(.phtvMorph) {
-                isHovering = hovering
-            }
-        }
     }
 }
 
