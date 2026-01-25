@@ -190,21 +190,21 @@ struct TypingSettingsView: View {
                                     .background {
                                         if #available(macOS 26.0, *) {
                                             ZStack {
-                                                RoundedRectangle(cornerRadius: 8)
+                                                PHTVRoundedRect(cornerRadius: 8)
                                                     .fill(.ultraThinMaterial)
-                                                RoundedRectangle(cornerRadius: 8)
+                                                PHTVRoundedRect(cornerRadius: 8)
                                                     .fill(Color.orange.opacity(0.1))
                                             }
                                             .settingsGlassEffect(cornerRadius: 8)
                                             .overlay(
-                                                RoundedRectangle(cornerRadius: 8)
+                                                PHTVRoundedRect(cornerRadius: 8)
                                                     .stroke(Color.orange.opacity(0.3), lineWidth: 1)
                                             )
                                         } else {
-                                            RoundedRectangle(cornerRadius: 8)
+                                            PHTVRoundedRect(cornerRadius: 8)
                                                 .fill(Color.orange.opacity(0.1))
                                                 .overlay(
-                                                    RoundedRectangle(cornerRadius: 8)
+                                                    PHTVRoundedRect(cornerRadius: 8)
                                                         .stroke(Color.orange.opacity(0.3), lineWidth: 1)
                                                 )
                                         }
@@ -360,15 +360,15 @@ struct StatusCard: View {
         .frame(maxWidth: 700)
         .background {
             if #available(macOS 26.0, *) {
-                RoundedRectangle(cornerRadius: 12)
+                PHTVRoundedRect(cornerRadius: 12)
                     .fill(.ultraThinMaterial)
                     .settingsGlassEffect(cornerRadius: 12)
             } else {
-                RoundedRectangle(cornerRadius: 12)
+                PHTVRoundedRect(cornerRadius: 12)
                     .fill(Color(NSColor.controlBackgroundColor))
                     .compositingGroup()
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12)
+                        PHTVRoundedRect(cornerRadius: 12)
                             .stroke(Color.gray.opacity(0.15), lineWidth: 1)
                     )
             }
@@ -437,23 +437,23 @@ struct SettingsCard<Content: View, Trailing: View>: View {
             content
                 .padding(16)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .clipShape(PHTVRoundedRect(cornerRadius: 14, style: .continuous))
         .frame(maxWidth: 700)
         .background {
             if #available(macOS 26.0, *), !reduceTransparency {
-                RoundedRectangle(cornerRadius: 14)
+                PHTVRoundedRect(cornerRadius: 14)
                     .fill(.ultraThinMaterial)
                     .settingsGlassEffect(cornerRadius: 14)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 14)
+                        PHTVRoundedRect(cornerRadius: 14)
                             .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.12), lineWidth: 1)
                     )
             } else {
-                RoundedRectangle(cornerRadius: 14)
+                PHTVRoundedRect(cornerRadius: 14)
                     .fill(cardGradient)
                     .compositingGroup()
                     .overlay(
-                        RoundedRectangle(cornerRadius: 14)
+                        PHTVRoundedRect(cornerRadius: 14)
                             .stroke(Color.primary.opacity(colorScheme == .dark ? 0.16 : 0.12), lineWidth: 1)
                     )
             }
@@ -499,16 +499,16 @@ struct SettingsToggleRow: View {
             // (parent SettingsCard already has glass effect)
             ZStack {
                 if #available(macOS 26.0, *), !reduceTransparency {
-                    RoundedRectangle(cornerRadius: 8)
+                    PHTVRoundedRect(cornerRadius: 8)
                         .fill(.ultraThinMaterial)
                         .settingsGlassEffect(cornerRadius: 8)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 8)
+                            PHTVRoundedRect(cornerRadius: 8)
                                 .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.12), lineWidth: 1)
                         )
                         .frame(width: 36, height: 36)
                 } else {
-                    RoundedRectangle(cornerRadius: 8)
+                    PHTVRoundedRect(cornerRadius: 8)
                         .fill(iconColor.opacity(0.12))
                         .frame(width: 36, height: 36)
                 }
@@ -573,16 +573,16 @@ struct SettingsSliderRow: View {
                 // Icon background - no glass effect to avoid glass-on-glass
                 ZStack {
                     if #available(macOS 26.0, *), !reduceTransparency {
-                        RoundedRectangle(cornerRadius: 8)
+                        PHTVRoundedRect(cornerRadius: 8)
                             .fill(.ultraThinMaterial)
                             .settingsGlassEffect(cornerRadius: 8)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 8)
+                                PHTVRoundedRect(cornerRadius: 8)
                                     .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.12), lineWidth: 1)
                             )
                             .frame(width: 36, height: 36)
                     } else {
-                        RoundedRectangle(cornerRadius: 8)
+                        PHTVRoundedRect(cornerRadius: 8)
                             .fill(iconColor.opacity(0.12))
                             .frame(width: 36, height: 36)
                     }
@@ -641,14 +641,14 @@ struct SettingsSliderRow: View {
     @ViewBuilder
     private var sliderTrackBackground: some View {
         if #available(macOS 26.0, *) {
-            RoundedRectangle(cornerRadius: 10)
+            PHTVRoundedRect(cornerRadius: 10)
                 .fill(.ultraThinMaterial)
                 .settingsGlassEffect(cornerRadius: 10)
         } else {
-            RoundedRectangle(cornerRadius: 10)
+            PHTVRoundedRect(cornerRadius: 10)
                 .fill(Color(NSColor.controlBackgroundColor).opacity(0.7))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 10)
+                    PHTVRoundedRect(cornerRadius: 10)
                         .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                 )
         }
@@ -682,18 +682,18 @@ struct RestoreKeyButton: View {
             .background {
                 if #available(macOS 26.0, *) {
                     if isSelected {
-                        RoundedRectangle(cornerRadius: 10)
+                        PHTVRoundedRect(cornerRadius: 10)
                             .fill(themeColor)
                     } else {
-                        RoundedRectangle(cornerRadius: 10)
+                        PHTVRoundedRect(cornerRadius: 10)
                             .fill(.ultraThinMaterial)
                             .settingsGlassEffect(cornerRadius: 10)
                     }
                 } else {
-                    RoundedRectangle(cornerRadius: 10)
+                    PHTVRoundedRect(cornerRadius: 10)
                         .fill(isSelected ? themeColor : Color(NSColor.controlBackgroundColor))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 10)
+                            PHTVRoundedRect(cornerRadius: 10)
                                 .stroke(isSelected ? Color.clear : Color.gray.opacity(0.25), lineWidth: 1)
                         )
                 }

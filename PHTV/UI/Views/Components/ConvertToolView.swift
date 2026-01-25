@@ -127,10 +127,10 @@ struct ConvertToolView: View {
     private var headerView: some View {
         HStack(spacing: 14) {
             ZStack {
-                RoundedRectangle(cornerRadius: 12)
+                PHTVRoundedRect(cornerRadius: 12)
                     .fill(Color.accentColor.opacity(0.14))
                     .settingsGlassEffect(cornerRadius: 12)
-                RoundedRectangle(cornerRadius: 12)
+                PHTVRoundedRect(cornerRadius: 12)
                     .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
                 Image(systemName: "arrow.triangle.2.circlepath")
                     .font(.system(size: 18, weight: .semibold))
@@ -429,12 +429,12 @@ struct ConvertToolView: View {
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            PHTVRoundedRect(cornerRadius: 12)
                 .fill(Color(NSColor.controlBackgroundColor))
                 .settingsGlassEffect(cornerRadius: 12)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            PHTVRoundedRect(cornerRadius: 12)
                 .stroke(Color.primary.opacity(0.12), lineWidth: 1)
         )
     }
@@ -467,7 +467,7 @@ struct ConvertToolView: View {
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background {
-                        RoundedRectangle(cornerRadius: 8)
+                        PHTVRoundedRect(cornerRadius: 8)
                             .fill(Color.green.opacity(0.1))
                             .settingsGlassEffect(cornerRadius: 8)
                     }
@@ -478,7 +478,7 @@ struct ConvertToolView: View {
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background {
-                        RoundedRectangle(cornerRadius: 8)
+                        PHTVRoundedRect(cornerRadius: 8)
                             .fill(Color.red.opacity(0.1))
                             .settingsGlassEffect(cornerRadius: 8)
                     }
@@ -530,7 +530,7 @@ struct ConvertToolView: View {
     }
 
     private var inputPanelBackground: some View {
-        RoundedRectangle(cornerRadius: 8)
+        PHTVRoundedRect(cornerRadius: 8)
             .fill(Color(NSColor.controlBackgroundColor))
             .settingsGlassEffect(cornerRadius: 8)
     }

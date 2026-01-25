@@ -593,16 +593,16 @@ struct SettingsInfoRow: View {
         HStack(alignment: .top, spacing: 14) {
             ZStack {
                 if #available(macOS 26.0, *), !reduceTransparency {
-                    RoundedRectangle(cornerRadius: 8)
+                    PHTVRoundedRect(cornerRadius: 8)
                         .fill(.ultraThinMaterial)
                         .settingsGlassEffect(cornerRadius: 8)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 8)
+                            PHTVRoundedRect(cornerRadius: 8)
                                 .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.12), lineWidth: 1)
                         )
                         .frame(width: 36, height: 36)
                 } else {
-                    RoundedRectangle(cornerRadius: 8)
+                    PHTVRoundedRect(cornerRadius: 8)
                         .fill(iconColor.opacity(0.12))
                         .frame(width: 36, height: 36)
                 }
@@ -644,16 +644,16 @@ struct SettingsButtonRow: View {
             HStack(alignment: .top, spacing: 14) {
                 ZStack {
                     if #available(macOS 26.0, *), !reduceTransparency {
-                        RoundedRectangle(cornerRadius: 8)
+                        PHTVRoundedRect(cornerRadius: 8)
                             .fill(.ultraThinMaterial)
                             .settingsGlassEffect(cornerRadius: 8)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 8)
+                                PHTVRoundedRect(cornerRadius: 8)
                                     .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.12), lineWidth: 1)
                             )
                             .frame(width: 36, height: 36)
                     } else {
-                        RoundedRectangle(cornerRadius: 8)
+                        PHTVRoundedRect(cornerRadius: 8)
                             .fill(iconColor.opacity(0.12))
                             .frame(width: 36, height: 36)
                     }
@@ -712,7 +712,7 @@ struct SettingsButtonRow: View {
     @ViewBuilder
     private var hoverBackground: some View {
         if isHovered {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            PHTVRoundedRect(cornerRadius: 10, style: .continuous)
                 .fill(Color.primary.opacity(colorScheme == .dark ? 0.08 : 0.04))
                 .padding(.horizontal, -6)
                 .padding(.vertical, -2)

@@ -32,7 +32,7 @@ struct EmojiButton: View {
                     .font(.system(size: size * 0.65))
                     .frame(width: size, height: size)
                     .background(
-                        RoundedRectangle(cornerRadius: 8)
+                        PHTVRoundedRect(cornerRadius: 8)
                             .fill(isHovered ? Color.accentColor.opacity(0.12) : Color(NSColor.controlBackgroundColor).opacity(0.3))
                     )
                     .scaleEffect(isHovered ? 1.15 : (isPressed ? 0.95 : 1.0))

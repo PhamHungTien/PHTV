@@ -17,7 +17,7 @@ struct AboutView: View {
                 VStack(spacing: 16) {
                     AppIconView()
                         .frame(width: 100, height: 100)
-                        .clipShape(RoundedRectangle(cornerRadius: 22))
+                        .clipShape(PHTVRoundedRect(cornerRadius: 22))
 
                     VStack(spacing: 6) {
                         Text("PHTV")
@@ -102,7 +102,7 @@ struct AboutView: View {
                                 .resizable()
                                 .scaledToFit()
                                 .frame(maxWidth: 220)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .clipShape(PHTVRoundedRect(cornerRadius: 12))
 
                             Text("Quét mã để ủng hộ")
                                 .font(.caption)
@@ -111,11 +111,11 @@ struct AboutView: View {
                         .padding(16)
                         .background {
                             if #available(macOS 26.0, *) {
-                                RoundedRectangle(cornerRadius: 16)
+                                PHTVRoundedRect(cornerRadius: 16)
                                     .fill(.ultraThinMaterial)
                                     .settingsGlassEffect(cornerRadius: 16)
                             } else {
-                                RoundedRectangle(cornerRadius: 16)
+                                PHTVRoundedRect(cornerRadius: 16)
                                     .fill(Color(NSColor.controlBackgroundColor))
                             }
                         }
@@ -175,11 +175,11 @@ struct AboutInfoCard: View {
         .frame(maxWidth: 700)
         .background {
             if #available(macOS 26.0, *) {
-                RoundedRectangle(cornerRadius: 12)
+                PHTVRoundedRect(cornerRadius: 12)
                     .fill(.ultraThinMaterial)
                     .settingsGlassEffect(cornerRadius: 12)
             } else {
-                RoundedRectangle(cornerRadius: 12)
+                PHTVRoundedRect(cornerRadius: 12)
                     .fill(Color(NSColor.controlBackgroundColor))
             }
         }

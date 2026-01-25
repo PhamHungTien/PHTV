@@ -18,7 +18,7 @@ struct CardStyle: ViewModifier {
             content
                 .padding()
                 .background {
-                    RoundedRectangle(cornerRadius: 12)
+                    PHTVRoundedRect(cornerRadius: 12)
                         .fill(.ultraThinMaterial)
                         .settingsGlassEffect(cornerRadius: 12)
                 }
@@ -39,6 +39,34 @@ struct SectionHeaderStyle: ViewModifier {
             .font(.headline)
             .foregroundColor(.primary)
             .padding(.top, 8)
+    }
+}
+
+// MARK: - Shape Utilities
+
+struct PHTVRoundedRect: InsettableShape {
+    var cornerRadius: CGFloat
+    var style: RoundedCornerStyle = .continuous
+    var insetAmount: CGFloat = 0
+
+    func inset(by amount: CGFloat) -> PHTVRoundedRect {
+        var copy = self
+        copy.insetAmount += amount
+        return copy
+    }
+
+    func path(in rect: CGRect) -> Path {
+        let insetRect = rect.insetBy(dx: insetAmount, dy: insetAmount)
+        let effectiveRadius = max(0, cornerRadius - insetAmount)
+
+        if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, visionOS 26.0, *) {
+            return ConcentricRectangle
+                .rect(corners: .fixed(effectiveRadius), isUniform: true)
+                .path(in: insetRect)
+        } else {
+            return RoundedRectangle(cornerRadius: effectiveRadius, style: style)
+                .path(in: insetRect)
+        }
     }
 }
 
@@ -81,18 +109,18 @@ extension View {
             .padding(6)
             .background {
                 if #available(macOS 26.0, *) {
-                    RoundedRectangle(cornerRadius: 8)
+                    PHTVRoundedRect(cornerRadius: 8)
                         .fill(.ultraThinMaterial)
                         .settingsGlassEffect(cornerRadius: 8)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 8)
+                            PHTVRoundedRect(cornerRadius: 8)
                                 .stroke(Color.gray.opacity(0.25), lineWidth: 1)
                         )
                 } else {
-                    RoundedRectangle(cornerRadius: 8)
+                    PHTVRoundedRect(cornerRadius: 8)
                         .fill(Color(NSColor.controlBackgroundColor))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 8)
+                            PHTVRoundedRect(cornerRadius: 8)
                                 .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                         )
                 }
@@ -111,7 +139,7 @@ private struct SettingsGlassEffectModifier: ViewModifier {
         if reduceTransparency {
             content
         } else {
-            content.glassEffect(in: .rect(cornerRadius: cornerRadius))
+            content.glassEffect(in: .rect(corners: .fixed(cornerRadius), isUniform: true))
         }
     }
 }
@@ -150,6 +178,65 @@ extension View {
             self
         }
     }
+
+    /// Applies interactive glassEffect for controls (better touch/click feedback)
+    @ViewBuilder
+    func settingsInteractiveGlassEffect(cornerRadius: CGFloat) -> some View {
+        if #available(macOS 26.0, *) {
+            modifier(SettingsInteractiveGlassModifier(cornerRadius: cornerRadius))
+        } else {
+            self
+        }
+    }
+
+    /// Applies tinted glassEffect for primary actions
+    @ViewBuilder
+    func settingsTintedGlassEffect(cornerRadius: CGFloat, tint: Color) -> some View {
+        if #available(macOS 26.0, *) {
+            modifier(SettingsTintedGlassModifier(cornerRadius: cornerRadius, tint: tint))
+        } else {
+            self
+        }
+    }
+}
+
+// MARK: - Interactive Glass Modifier (macOS 26+)
+
+@available(macOS 26.0, *)
+private struct SettingsInteractiveGlassModifier: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    let cornerRadius: CGFloat
+
+    func body(content: Content) -> some View {
+        if reduceTransparency {
+            content
+        } else {
+            content.glassEffect(
+                .regular.interactive(),
+                in: .rect(corners: .fixed(cornerRadius), isUniform: true)
+            )
+        }
+    }
+}
+
+// MARK: - Tinted Glass Modifier (macOS 26+)
+
+@available(macOS 26.0, *)
+private struct SettingsTintedGlassModifier: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    let cornerRadius: CGFloat
+    let tint: Color
+
+    func body(content: Content) -> some View {
+        if reduceTransparency {
+            content
+        } else {
+            content.glassEffect(
+                .regular.tint(tint),
+                in: .rect(corners: .fixed(cornerRadius), isUniform: true)
+            )
+        }
+    }
 }
 
 // MARK: - Custom Button Styles
@@ -161,7 +248,8 @@ struct PrimaryButtonStyle: ButtonStyle {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .buttonStyle(.glassProminent)
-                .opacity(configuration.isPressed ? 0.85 : 1.0)
+                .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+                .animation(.phtvMorph, value: configuration.isPressed)
         } else {
             configuration.label
                 .padding(.horizontal, 16)
@@ -179,7 +267,8 @@ struct SecondaryButtonStyle: ButtonStyle {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .buttonStyle(.glass)
-                .opacity(configuration.isPressed ? 0.85 : 1.0)
+                .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+                .animation(.phtvMorph, value: configuration.isPressed)
         } else {
             configuration.label
                 .padding(.horizontal, 16)
@@ -188,8 +277,48 @@ struct SecondaryButtonStyle: ButtonStyle {
                 .foregroundColor(.primary)
                 .cornerRadius(6)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 6)
+                    PHTVRoundedRect(cornerRadius: 6)
                         .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                )
+                .opacity(configuration.isPressed ? 0.8 : 1.0)
+        }
+    }
+}
+
+// MARK: - Liquid Glass Pill Button Style (macOS 26+)
+
+struct GlassPillButtonStyle: ButtonStyle {
+    var isSelected: Bool = false
+    var tint: Color = .accentColor
+
+    func makeBody(configuration: Configuration) -> some View {
+        if #available(macOS 26.0, *) {
+            configuration.label
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background {
+                    Capsule()
+                        .fill(isSelected ? tint.opacity(0.2) : .clear)
+                }
+                .foregroundStyle(isSelected ? tint : .secondary)
+                .glassEffect(
+                    isSelected ? .regular.tint(tint) : .regular,
+                    in: Capsule()
+                )
+                .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+                .animation(.phtvMorph, value: configuration.isPressed)
+        } else {
+            configuration.label
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(
+                    Capsule()
+                        .fill(isSelected ? tint.opacity(0.15) : Color(NSColor.controlBackgroundColor))
+                )
+                .foregroundStyle(isSelected ? tint : .secondary)
+                .overlay(
+                    Capsule()
+                        .stroke(isSelected ? tint.opacity(0.3) : Color.gray.opacity(0.2), lineWidth: 1)
                 )
                 .opacity(configuration.isPressed ? 0.8 : 1.0)
         }
@@ -201,6 +330,16 @@ struct SecondaryButtonStyle: ButtonStyle {
 extension Animation {
     static let phtv = Animation.easeInOut(duration: 0.25)
     static let phtvSpring = Animation.spring(response: 0.3, dampingFraction: 0.7)
+
+    // macOS 26+ animations
+    @available(macOS 26.0, *)
+    static let phtvBouncy = Animation.bouncy(duration: 0.4, extraBounce: 0.15)
+
+    @available(macOS 26.0, *)
+    static let phtvSnappy = Animation.snappy(duration: 0.3)
+
+    // Glass morphing animation - smoother transitions
+    static let phtvMorph = Animation.spring(response: 0.35, dampingFraction: 0.85)
 }
 
 // MARK: - Color Extensions
@@ -321,15 +460,15 @@ struct SettingsIconTile<Content: View>: View {
     @ViewBuilder
     private var background: some View {
         if #available(macOS 26.0, *), !reduceTransparency {
-            RoundedRectangle(cornerRadius: cornerRadius)
+            PHTVRoundedRect(cornerRadius: cornerRadius)
                 .fill(.ultraThinMaterial)
                 .settingsGlassEffect(cornerRadius: cornerRadius)
                 .overlay(
-                    RoundedRectangle(cornerRadius: cornerRadius)
+                    PHTVRoundedRect(cornerRadius: cornerRadius)
                         .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.12), lineWidth: 1)
                 )
         } else {
-            RoundedRectangle(cornerRadius: cornerRadius)
+            PHTVRoundedRect(cornerRadius: cornerRadius)
                 .fill(color.opacity(0.12))
         }
     }
@@ -387,17 +526,17 @@ struct SettingsHeaderView<Trailing: View>: View {
     private var iconTile: some View {
         ZStack {
             if #available(macOS 26.0, *), !reduceTransparency {
-                RoundedRectangle(cornerRadius: 12)
+                PHTVRoundedRect(cornerRadius: 12)
                     .fill(.ultraThinMaterial)
                     .settingsGlassEffect(cornerRadius: 12)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12)
+                        PHTVRoundedRect(cornerRadius: 12)
                             .stroke(iconBorderColor, lineWidth: 1)
                     )
             } else {
-                RoundedRectangle(cornerRadius: 12)
+                PHTVRoundedRect(cornerRadius: 12)
                     .fill(iconBackground)
-                RoundedRectangle(cornerRadius: 12)
+                PHTVRoundedRect(cornerRadius: 12)
                     .stroke(iconBorderColor, lineWidth: 1)
             }
             Image(systemName: icon)
@@ -410,17 +549,17 @@ struct SettingsHeaderView<Trailing: View>: View {
     @ViewBuilder
     private var headerBackground: some View {
         if #available(macOS 26.0, *), !reduceTransparency {
-            RoundedRectangle(cornerRadius: 14)
+            PHTVRoundedRect(cornerRadius: 14)
                 .fill(.ultraThinMaterial)
                 .settingsGlassEffect(cornerRadius: 14)
         } else {
-            RoundedRectangle(cornerRadius: 14)
+            PHTVRoundedRect(cornerRadius: 14)
                 .fill(headerGradient)
         }
     }
 
     private var headerBorder: some View {
-        RoundedRectangle(cornerRadius: 14)
+        PHTVRoundedRect(cornerRadius: 14)
             .stroke(borderColor, lineWidth: 1)
     }
 
@@ -509,7 +648,7 @@ struct SettingsViewBackground: ViewModifier {
         if #available(macOS 26.0, *) {
             GlassEffectContainer {
                 base
-                    .backgroundExtensionEffect(isEnabled: true)
+                    .backgroundExtensionEffect()
             }
         } else {
             base
@@ -574,6 +713,283 @@ extension View {
             GlassEffectContainer {
                 self
             }
+        } else {
+            self
+        }
+    }
+
+    /// Groups glass elements with custom spacing for morphing animations.
+    @ViewBuilder
+    func settingsGlassContainer(spacing: CGFloat) -> some View {
+        if #available(macOS 26.0, *) {
+            GlassEffectContainer(spacing: spacing) {
+                self
+            }
+        } else {
+            self
+        }
+    }
+
+    /// Applies glassEffectID for morphing transitions between elements.
+    @ViewBuilder
+    func settingsGlassID<ID: Hashable & Sendable>(_ id: ID, in namespace: Namespace.ID) -> some View {
+        if #available(macOS 26.0, *) {
+            self.glassEffectID(id, in: namespace)
+        } else {
+            self
+        }
+    }
+}
+
+// MARK: - Liquid Glass Tab Indicator (macOS 26+)
+
+/// A morphing tab indicator that uses Liquid Glass on macOS 26+
+struct LiquidGlassTabIndicator: View {
+    let isSelected: Bool
+    let cornerRadius: CGFloat
+    let namespace: Namespace.ID
+    let id: String
+
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var colorScheme
+
+    init(
+        isSelected: Bool,
+        cornerRadius: CGFloat = 8,
+        namespace: Namespace.ID,
+        id: String = "tabIndicator"
+    ) {
+        self.isSelected = isSelected
+        self.cornerRadius = cornerRadius
+        self.namespace = namespace
+        self.id = id
+    }
+
+    var body: some View {
+        if isSelected {
+            if #available(macOS 26.0, *), !reduceTransparency {
+                PHTVRoundedRect(cornerRadius: cornerRadius)
+                    .fill(.ultraThinMaterial)
+                    .glassEffect(
+                        .regular.interactive(),
+                        in: .rect(corners: .fixed(cornerRadius), isUniform: true)
+                    )
+                    .glassEffectID(id, in: namespace)
+                    .overlay(
+                        PHTVRoundedRect(cornerRadius: cornerRadius)
+                            .fill(Color.accentColor.opacity(0.12))
+                    )
+            } else {
+                PHTVRoundedRect(cornerRadius: cornerRadius)
+                    .fill(Color.accentColor.opacity(0.15))
+                    .matchedGeometryEffect(id: id, in: namespace)
+            }
+        }
+    }
+}
+
+// MARK: - Floating Glass Card (macOS 26+)
+
+/// A floating card container with Liquid Glass effect
+struct FloatingGlassCard<Content: View>: View {
+    let cornerRadius: CGFloat
+    let content: Content
+
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var colorScheme
+
+    init(
+        cornerRadius: CGFloat = 16,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.cornerRadius = cornerRadius
+        self.content = content()
+    }
+
+    var body: some View {
+        content
+            .background {
+                if #available(macOS 26.0, *), !reduceTransparency {
+                    PHTVRoundedRect(cornerRadius: cornerRadius)
+                        .fill(Color(NSColor.windowBackgroundColor).opacity(0.25))
+                        .glassEffect(
+                            .regular,
+                            in: .rect(corners: .fixed(cornerRadius), isUniform: true)
+                        )
+                        .shadow(color: .black.opacity(colorScheme == .dark ? 0.4 : 0.15), radius: 20, y: 8)
+                } else {
+                    ZStack {
+                        PHTVRoundedRect(cornerRadius: cornerRadius)
+                            .fill(Color(NSColor.windowBackgroundColor).opacity(0.92))
+                        if #available(macOS 12.0, *) {
+                            PHTVRoundedRect(cornerRadius: cornerRadius)
+                                .fill(.ultraThinMaterial)
+                        }
+                    }
+                    .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0.1), radius: 16, y: 6)
+                }
+            }
+            .overlay(
+                PHTVRoundedRect(cornerRadius: cornerRadius)
+                    .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.08), lineWidth: 1)
+            )
+    }
+}
+
+// MARK: - Glass Close Button (macOS 26+)
+
+/// A circular close button with Liquid Glass effect
+struct GlassCloseButton: View {
+    let action: () -> Void
+    var size: CGFloat = 28
+    var iconSize: CGFloat = 11
+
+    @State private var isHovering = false
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                if #available(macOS 26.0, *), !reduceTransparency {
+                    Circle()
+                        .fill(.ultraThinMaterial)
+                        .glassEffect(
+                            isHovering ? .regular.tint(.red) : .regular,
+                            in: Circle()
+                        )
+                        .overlay(
+                            Circle()
+                                .fill(Color.red.opacity(isHovering ? 0.25 : 0.12))
+                        )
+                } else {
+                    Circle()
+                        .fill(Color.red.opacity(isHovering ? 0.25 : 0.15))
+                }
+                Image(systemName: "xmark")
+                    .font(.system(size: iconSize, weight: .bold))
+                    .foregroundColor(.red)
+            }
+            .frame(width: size, height: size)
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            withAnimation(.phtvMorph) {
+                isHovering = hovering
+            }
+            if hovering {
+                NSCursor.pointingHand.push()
+            } else {
+                NSCursor.pop()
+            }
+        }
+    }
+}
+
+// MARK: - Glass Segmented Control (macOS 26+)
+
+/// A segmented control with Liquid Glass effect and morphing selection
+struct GlassSegmentedControl<SelectionValue: Hashable, Content: View>: View {
+    @Binding var selection: SelectionValue
+    let content: Content
+
+    @Namespace private var glassNamespace
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    init(
+        selection: Binding<SelectionValue>,
+        @ViewBuilder content: () -> Content
+    ) {
+        self._selection = selection
+        self.content = content()
+    }
+
+    var body: some View {
+        if #available(macOS 26.0, *), !reduceTransparency {
+            GlassEffectContainer(spacing: 8) {
+                content
+            }
+        } else {
+            HStack(spacing: 4) {
+                content
+            }
+            .padding(4)
+            .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+            .cornerRadius(10)
+        }
+    }
+}
+
+// MARK: - Liquid Glass Search Field Style
+
+struct GlassSearchFieldStyle: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var colorScheme
+    @FocusState private var isFocused: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .textFieldStyle(.plain)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background {
+                if #available(macOS 26.0, *), !reduceTransparency {
+                    Capsule()
+                        .fill(.ultraThinMaterial)
+                        .glassEffect(
+                            isFocused ? .regular.tint(.accentColor) : .regular,
+                            in: Capsule()
+                        )
+                } else {
+                    Capsule()
+                        .fill(Color(NSColor.controlBackgroundColor))
+                        .overlay(
+                            Capsule()
+                                .stroke(
+                                    isFocused ? Color.accentColor.opacity(0.5) : Color.gray.opacity(0.2),
+                                    lineWidth: 1
+                                )
+                        )
+                }
+            }
+            .focused($isFocused)
+    }
+}
+
+extension View {
+    /// Applies Liquid Glass styling to a search field
+    func glassSearchFieldStyle() -> some View {
+        modifier(GlassSearchFieldStyle())
+    }
+}
+
+// MARK: - Conditional Symbol Effects (macOS 14+)
+
+extension View {
+    /// Applies pulse symbol effect when available (macOS 14+)
+    @ViewBuilder
+    func conditionalPulseEffect() -> some View {
+        if #available(macOS 14.0, *) {
+            self.symbolEffect(.pulse, options: .repeating)
+        } else {
+            self
+        }
+    }
+
+    /// Applies pulse symbol effect with value binding when available (macOS 14+)
+    @ViewBuilder
+    func conditionalPulseEffect<V: Equatable>(value: V) -> some View {
+        if #available(macOS 14.0, *) {
+            self.symbolEffect(.pulse, options: .repeating, value: value)
+        } else {
+            self
+        }
+    }
+
+    /// Applies bounce symbol effect when available (macOS 14+)
+    @ViewBuilder
+    func conditionalBounceEffect<V: Equatable>(value: V) -> some View {
+        if #available(macOS 14.0, *) {
+            self.symbolEffect(.bounce, value: value)
         } else {
             self
         }

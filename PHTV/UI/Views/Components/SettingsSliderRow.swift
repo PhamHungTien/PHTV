@@ -20,30 +20,20 @@ struct SettingsSliderRow: View {
     var valueFormatter: (Double) -> String = { String(format: "%.0f", $0) }
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorScheme) private var colorScheme
+    @State private var isDragging = false
 
     var body: some View {
         VStack(spacing: 12) {
             HStack(alignment: .top, spacing: 14) {
-                // Icon background - no glass effect to avoid glass-on-glass
+                // Icon background with interactive glass effect
                 ZStack {
-                    if #available(macOS 26.0, *), !reduceTransparency {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.ultraThinMaterial)
-                            .settingsGlassEffect(cornerRadius: 8)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.12), lineWidth: 1)
-                            )
-                            .frame(width: 36, height: 36)
-                    } else {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(iconColor.opacity(0.12))
-                            .frame(width: 36, height: 36)
-                    }
+                    iconBackground
+                        .frame(width: 36, height: 36)
 
                     Image(systemName: icon)
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(iconColor)
+                        .symbolEffect(.bounce, value: isDragging)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -60,22 +50,68 @@ struct SettingsSliderRow: View {
 
                 Spacer()
 
-                Text(valueFormatter(value))
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.tint)
-                    .frame(minWidth: 40, alignment: .trailing)
-                    .padding(.top, 2)
+                // Value pill with glass effect
+                valueDisplay
             }
 
             Slider(
                 value: $value,
                 in: minValue...maxValue,
                 step: step
-            )
+            ) { editing in
+                isDragging = editing
+            }
             .tint(iconColor)
         }
         .padding(.vertical, 6)
+    }
+
+    @ViewBuilder
+    private var iconBackground: some View {
+        if #available(macOS 26.0, *), !reduceTransparency {
+            PHTVRoundedRect(cornerRadius: 8)
+                .fill(.ultraThinMaterial)
+                .glassEffect(
+                    isDragging ? .regular.interactive().tint(iconColor) : .regular.interactive(),
+                    in: .rect(corners: .fixed(8), isUniform: true)
+                )
+                .overlay(
+                    PHTVRoundedRect(cornerRadius: 8)
+                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.12), lineWidth: 1)
+                )
+        } else {
+            PHTVRoundedRect(cornerRadius: 8)
+                .fill(iconColor.opacity(0.12))
+        }
+    }
+
+    @ViewBuilder
+    private var valueDisplay: some View {
+        if #available(macOS 26.0, *), !reduceTransparency {
+            Text(valueFormatter(value))
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundStyle(iconColor)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background {
+                    Capsule()
+                        .fill(.ultraThinMaterial)
+                        .glassEffect(
+                            isDragging ? .regular.tint(iconColor) : .regular,
+                            in: Capsule()
+                        )
+                }
+                .scaleEffect(isDragging ? 1.05 : 1.0)
+                .animation(.phtvMorph, value: isDragging)
+        } else {
+            Text(valueFormatter(value))
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundStyle(.tint)
+                .frame(minWidth: 40, alignment: .trailing)
+                .padding(.top, 2)
+        }
     }
 }
 

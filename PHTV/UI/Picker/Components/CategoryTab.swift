@@ -18,12 +18,13 @@ struct CategoryTab: View {
     let namespace: Namespace.ID
     let action: () -> Void
     @State private var isHovering = false
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         Button(action: action) {
             VStack(spacing: 3) {
-                Image(systemName: icon)
-                    .font(.system(size: 16, weight: isSelected ? .semibold : .regular))
+                iconView
                 Text(label)
                     .font(.system(size: 9, weight: isSelected ? .semibold : .regular))
                     .lineLimit(1)
@@ -32,34 +33,77 @@ struct CategoryTab: View {
             .padding(.horizontal, 8)
             .frame(minWidth: 60)
             .frame(height: 40)
-            .background(
-                Group {
-                    if isSelected {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.accentColor.opacity(0.15))
-                            .matchedGeometryEffect(id: "categoryBackground", in: namespace)
-                    } else if isHovering {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.primary.opacity(0.06))
-                    }
-                }
-            )
+            .background {
+                tabBackground
+            }
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())
+        .scaleEffect(isHovering && !isSelected ? 1.02 : 1.0)
+        .animation(.phtvMorph, value: isHovering)
         .onHover { hovering in
-            if hovering && !isHovering {
+            isHovering = hovering
+            if hovering {
                 NSCursor.pointingHand.push()
-                isHovering = true
-            } else if !hovering && isHovering {
+            } else {
                 NSCursor.pop()
-                isHovering = false
             }
         }
         .onDisappear {
             if isHovering {
                 NSCursor.pop()
                 isHovering = false
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var iconView: some View {
+        if #available(macOS 14.0, *) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: isSelected ? .semibold : .regular))
+                .symbolEffect(.bounce, value: isSelected)
+        } else {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: isSelected ? .semibold : .regular))
+        }
+    }
+
+    @ViewBuilder
+    private var tabBackground: some View {
+        if isSelected {
+            if #available(macOS 26.0, *), !reduceTransparency {
+                // Liquid Glass for selected tab with morphing
+                PHTVRoundedRect(cornerRadius: 8)
+                    .fill(.ultraThinMaterial)
+                    .glassEffect(
+                        .regular.interactive().tint(.accentColor),
+                        in: .rect(corners: .fixed(8), isUniform: true)
+                    )
+                    .glassEffectID("categoryTab", in: namespace)
+                    .overlay(
+                        PHTVRoundedRect(cornerRadius: 8)
+                            .fill(Color.accentColor.opacity(colorScheme == .dark ? 0.18 : 0.12))
+                    )
+            } else {
+                // Fallback with matchedGeometryEffect
+                PHTVRoundedRect(cornerRadius: 8)
+                    .fill(Color.accentColor.opacity(0.15))
+                    .matchedGeometryEffect(id: "categoryBackground", in: namespace)
+            }
+        } else if isHovering {
+            if #available(macOS 26.0, *), !reduceTransparency {
+                // Subtle glass effect on hover
+                PHTVRoundedRect(cornerRadius: 8)
+                    .fill(.ultraThinMaterial)
+                    .glassEffect(
+                        .regular,
+                        in: .rect(corners: .fixed(8), isUniform: true)
+                    )
+                    .opacity(0.6)
+            } else {
+                PHTVRoundedRect(cornerRadius: 8)
+                    .fill(Color.primary.opacity(0.06))
             }
         }
     }

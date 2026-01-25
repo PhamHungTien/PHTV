@@ -155,7 +155,7 @@ struct MacroEditorView: View {
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 8)
                                     .background(
-                                        RoundedRectangle(cornerRadius: 8)
+                                        PHTVRoundedRect(cornerRadius: 8)
                                             .fill(selectedCategoryId == nil ? Color.gray : Color(NSColor.controlBackgroundColor))
                                     )
                                     .foregroundStyle(selectedCategoryId == nil ? .white : .primary)
@@ -178,7 +178,7 @@ struct MacroEditorView: View {
                                         .padding(.horizontal, 12)
                                         .padding(.vertical, 8)
                                         .background(
-                                            RoundedRectangle(cornerRadius: 8)
+                                            PHTVRoundedRect(cornerRadius: 8)
                                                 .fill(selectedCategoryId == category.id ? category.swiftUIColor : Color(NSColor.controlBackgroundColor))
                                         )
                                         .foregroundStyle(selectedCategoryId == category.id ? .white : .primary)

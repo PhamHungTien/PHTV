@@ -11,28 +11,15 @@ import SwiftUI
 struct UpdateBannerView: View {
     @EnvironmentObject var appState: AppState
     @State private var showReleaseNotes = false
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         if let info = appState.customUpdateBannerInfo, appState.showCustomUpdateBanner {
             VStack(spacing: 0) {
                 HStack(spacing: 16) {
-                    // Icon with bounce effect on macOS 15+
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.accentColor.opacity(0.15))
-                            .frame(width: 48, height: 48)
-
-                        if #available(macOS 26.0, *) {
-                            Image(systemName: "arrow.down.circle.fill")
-                                .font(.system(size: 24))
-                                .foregroundStyle(Color.accentColor)
-                                .symbolEffect(.bounce, options: .repeat(2))
-                        } else {
-                            Image(systemName: "arrow.down.circle.fill")
-                                .font(.system(size: 24))
-                                .foregroundStyle(Color.accentColor)
-                        }
-                    }
+                    // Icon with Liquid Glass and bounce effect
+                    iconView
 
                     // Text
                     VStack(alignment: .leading, spacing: 4) {
@@ -47,51 +34,97 @@ struct UpdateBannerView: View {
 
                     Spacer()
 
-                    // Actions
-                    HStack(spacing: 12) {
-                        Button {
-                            showReleaseNotes = true
-                        } label: {
-                            Text("Chi tiết")
-                        }
-                        .buttonStyle(SecondaryButtonStyle())
-
-                        Button {
-                            installUpdate()
-                        } label: {
-                            Text("Cập nhật")
-                        }
-                        .buttonStyle(PrimaryButtonStyle())
-
-                        Button {
-                            dismissBanner()
-                        } label: {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(.secondary)
-                                .frame(width: 24, height: 24)
-                        }
-                        .buttonStyle(.plain)
-                    }
+                    // Actions with glass effects
+                    actionsView
                 }
                 .padding(16)
                 .background {
-                    if #available(macOS 26.0, *) {
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(Color(NSColor.controlBackgroundColor))
-                            .settingsGlassEffect(cornerRadius: 16)
-                    } else {
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(Color(NSColor.controlBackgroundColor))
-                    }
+                    bannerBackground
                 }
                 .padding()
             }
             .transition(.move(edge: .top).combined(with: .opacity))
-            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: appState.showCustomUpdateBanner)
+            .animation(.phtvMorph, value: appState.showCustomUpdateBanner)
             .sheet(isPresented: $showReleaseNotes) {
                 ReleaseNotesView(info: info)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var iconView: some View {
+        ZStack {
+            if #available(macOS 26.0, *), !reduceTransparency {
+                PHTVRoundedRect(cornerRadius: 12)
+                    .fill(.ultraThinMaterial)
+                    .glassEffect(
+                        .regular.tint(.accentColor),
+                        in: .rect(corners: .fixed(12), isUniform: true)
+                    )
+                    .frame(width: 48, height: 48)
+                    .overlay(
+                        PHTVRoundedRect(cornerRadius: 12)
+                            .fill(Color.accentColor.opacity(0.12))
+                    )
+
+                Image(systemName: "arrow.down.circle.fill")
+                    .font(.system(size: 24))
+                    .foregroundStyle(Color.accentColor)
+                    .symbolEffect(.bounce, options: .repeat(2))
+            } else {
+                PHTVRoundedRect(cornerRadius: 12)
+                    .fill(Color.accentColor.opacity(0.15))
+                    .frame(width: 48, height: 48)
+
+                Image(systemName: "arrow.down.circle.fill")
+                    .font(.system(size: 24))
+                    .foregroundStyle(Color.accentColor)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var actionsView: some View {
+        HStack(spacing: 12) {
+            Button {
+                showReleaseNotes = true
+            } label: {
+                Text("Chi tiết")
+            }
+            .adaptiveBorderedButtonStyle()
+
+            Button {
+                installUpdate()
+            } label: {
+                Text("Cập nhật")
+            }
+            .adaptiveProminentButtonStyle()
+
+            // Close button with glass effect
+            GlassCloseButton {
+                dismissBanner()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var bannerBackground: some View {
+        if #available(macOS 26.0, *), !reduceTransparency {
+            PHTVRoundedRect(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+                .glassEffect(
+                    .regular,
+                    in: .rect(corners: .fixed(16), isUniform: true)
+                )
+                .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0.12), radius: 16, y: 6)
+                .overlay(
+                    PHTVRoundedRect(cornerRadius: 16)
+                        .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
+                )
+        } else {
+            PHTVRoundedRect(cornerRadius: 16)
+                .fill(Color(NSColor.controlBackgroundColor))
+                .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
         }
     }
 

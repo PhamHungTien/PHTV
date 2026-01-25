@@ -167,15 +167,15 @@ struct OnboardingCardBackground: View {
     var body: some View {
         ZStack {
             if #available(macOS 26.0, *), !reduceTransparency {
-                RoundedRectangle(cornerRadius: OnboardingStyle.cardCornerRadius, style: .continuous)
+                PHTVRoundedRect(cornerRadius: OnboardingStyle.cardCornerRadius, style: .continuous)
                     .fill(.ultraThinMaterial)
                     .settingsGlassEffect(cornerRadius: OnboardingStyle.cardCornerRadius)
             } else {
-                RoundedRectangle(cornerRadius: OnboardingStyle.cardCornerRadius, style: .continuous)
+                PHTVRoundedRect(cornerRadius: OnboardingStyle.cardCornerRadius, style: .continuous)
                     .fill(Color(nsColor: .windowBackgroundColor))
             }
 
-            RoundedRectangle(cornerRadius: OnboardingStyle.cardCornerRadius, style: .continuous)
+            PHTVRoundedRect(cornerRadius: OnboardingStyle.cardCornerRadius, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [
@@ -188,7 +188,7 @@ struct OnboardingCardBackground: View {
                 )
         }
         .overlay(
-            RoundedRectangle(cornerRadius: OnboardingStyle.cardCornerRadius, style: .continuous)
+            PHTVRoundedRect(cornerRadius: OnboardingStyle.cardCornerRadius, style: .continuous)
                 .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.15), lineWidth: 1)
         )
     }
@@ -206,16 +206,16 @@ struct OnboardingSurface: View {
     var body: some View {
         Group {
             if #available(macOS 26.0, *), !reduceTransparency {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                PHTVRoundedRect(cornerRadius: cornerRadius, style: .continuous)
                     .fill(.ultraThinMaterial)
                     .settingsGlassEffect(cornerRadius: cornerRadius)
             } else {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                PHTVRoundedRect(cornerRadius: cornerRadius, style: .continuous)
                     .fill(fillColor)
             }
         }
         .overlay(
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            PHTVRoundedRect(cornerRadius: cornerRadius, style: .continuous)
                 .stroke(strokeColor, lineWidth: 1)
         )
     }
@@ -233,18 +233,18 @@ struct OnboardingAppBadge: View {
             .background(
                 Group {
                     if #available(macOS 26.0, *), !reduceTransparency {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        PHTVRoundedRect(cornerRadius: 10, style: .continuous)
                             .fill(.ultraThinMaterial)
                             .settingsGlassEffect(cornerRadius: 10)
                     } else {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        PHTVRoundedRect(cornerRadius: 10, style: .continuous)
                             .fill(Color.white.opacity(0.8))
                     }
                 }
             )
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .clipShape(PHTVRoundedRect(cornerRadius: 10, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                PHTVRoundedRect(cornerRadius: 10, style: .continuous)
                     .stroke(Color.primary.opacity(0.2), lineWidth: 1)
             )
     }
@@ -254,15 +254,36 @@ struct OnboardingProgressBar: View {
     let currentStep: Int
     let totalSteps: Int
 
+    @Namespace private var progressNamespace
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
     var body: some View {
-        HStack(spacing: 6) {
-            ForEach(0..<totalSteps, id: \.self) { index in
-                Capsule()
-                    .fill(index <= currentStep ? AnyShapeStyle(activeGradient) : AnyShapeStyle(Color.gray.opacity(0.2)))
-                    .frame(width: 22, height: 6)
+        if #available(macOS 26.0, *), !reduceTransparency {
+            GlassEffectContainer(spacing: 6) {
+                HStack(spacing: 6) {
+                    ForEach(0..<totalSteps, id: \.self) { index in
+                        Capsule()
+                            .fill(index <= currentStep ? Color.accentColor : Color.gray.opacity(0.2))
+                            .frame(width: 22, height: 6)
+                            .glassEffect(
+                                index <= currentStep ? .regular.tint(.accentColor) : .regular,
+                                in: Capsule()
+                            )
+                            .glassEffectID("progress-\(index)", in: progressNamespace)
+                    }
+                }
             }
+            .animation(.phtvMorph, value: currentStep)
+        } else {
+            HStack(spacing: 6) {
+                ForEach(0..<totalSteps, id: \.self) { index in
+                    Capsule()
+                        .fill(index <= currentStep ? AnyShapeStyle(activeGradient) : AnyShapeStyle(Color.gray.opacity(0.2)))
+                        .frame(width: 22, height: 6)
+                }
+            }
+            .animation(.spring(response: 0.5, dampingFraction: 0.75), value: currentStep)
         }
-        .animation(.spring(response: 0.5, dampingFraction: 0.75), value: currentStep)
     }
 
     private var activeGradient: LinearGradient {
@@ -275,40 +296,77 @@ struct OnboardingProgressBar: View {
 }
 
 struct OnboardingPrimaryButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 14, weight: .semibold, design: .rounded))
-            .padding(.horizontal, 18)
-            .padding(.vertical, 10)
-            .foregroundColor(.white)
-            .background(
-                LinearGradient(
-                    colors: [Color.accentColor, Color.accentColor.opacity(0.8)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
+        if #available(macOS 26.0, *), !reduceTransparency {
+            configuration.label
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .padding(.horizontal, 18)
+                .padding(.vertical, 10)
+                .foregroundColor(.white)
+                .background {
+                    Capsule()
+                        .fill(Color.accentColor)
+                }
+                .glassEffect(
+                    .regular.tint(.accentColor),
+                    in: Capsule()
                 )
-            )
-            .clipShape(Capsule())
-            .opacity(configuration.isPressed ? 0.9 : 1.0)
-            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+                .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+                .animation(.phtvMorph, value: configuration.isPressed)
+        } else {
+            configuration.label
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .padding(.horizontal, 18)
+                .padding(.vertical, 10)
+                .foregroundColor(.white)
+                .background(
+                    LinearGradient(
+                        colors: [Color.accentColor, Color.accentColor.opacity(0.8)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .clipShape(Capsule())
+                .opacity(configuration.isPressed ? 0.9 : 1.0)
+                .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+        }
     }
 }
 
 struct OnboardingSecondaryButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 13, weight: .semibold, design: .rounded))
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .foregroundColor(.secondary)
-            .background(
-                Capsule()
-                    .fill(Color.gray.opacity(configuration.isPressed ? 0.2 : 0.12))
-            )
-            .overlay(
-                Capsule()
-                    .stroke(Color.gray.opacity(0.25), lineWidth: 1)
-            )
+        if #available(macOS 26.0, *), !reduceTransparency {
+            configuration.label
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .foregroundColor(.secondary)
+                .background {
+                    Capsule()
+                        .fill(.ultraThinMaterial)
+                }
+                .glassEffect(.regular, in: Capsule())
+                .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+                .animation(.phtvMorph, value: configuration.isPressed)
+        } else {
+            configuration.label
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .foregroundColor(.secondary)
+                .background(
+                    Capsule()
+                        .fill(Color.gray.opacity(configuration.isPressed ? 0.2 : 0.12))
+                )
+                .overlay(
+                    Capsule()
+                        .stroke(Color.gray.opacity(0.25), lineWidth: 1)
+                )
+        }
     }
 }
 
@@ -343,7 +401,7 @@ struct OnboardingIconBadge: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            PHTVRoundedRect(cornerRadius: 12, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [Color.accentColor.opacity(0.2), Color.accentColor.opacity(0.05)],
@@ -359,7 +417,7 @@ struct OnboardingIconBadge: View {
                 .foregroundColor(.accentColor)
         }
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            PHTVRoundedRect(cornerRadius: 12, style: .continuous)
                 .stroke(Color.accentColor.opacity(0.25), lineWidth: 1)
         )
     }
@@ -375,7 +433,7 @@ struct OnboardingHighlightCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                PHTVRoundedRect(cornerRadius: 10, style: .continuous)
                     .fill(Color.accentColor.opacity(0.12))
                     .frame(width: 36, height: 36)
                     .settingsGlassEffect(cornerRadius: 10)
@@ -416,7 +474,7 @@ struct OptionCard: View {
         Button(action: action) {
             HStack(alignment: .top, spacing: 16) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    PHTVRoundedRect(cornerRadius: 10, style: .continuous)
                         .fill(Color.accentColor.opacity(0.12))
                         .frame(width: 36, height: 36)
                         .settingsGlassEffect(cornerRadius: 10)
@@ -465,7 +523,7 @@ struct FeatureToggleRow: View {
     var body: some View {
         HStack(spacing: 14) {
             ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                PHTVRoundedRect(cornerRadius: 10, style: .continuous)
                     .fill(Color.accentColor.opacity(0.12))
                     .frame(width: 36, height: 36)
                     .settingsGlassEffect(cornerRadius: 10)

@@ -205,7 +205,7 @@ struct BugReportView: View {
                     .background {
                         inputFieldBackground(cornerRadius: 8)
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .clipShape(PHTVRoundedRect(cornerRadius: 8))
                     .overlay(alignment: .topLeading) {
                         if bugDescription.isEmpty {
                             Text("Mô tả vấn đề và các bước để tái tạo…")
@@ -227,7 +227,7 @@ struct BugReportView: View {
                     .background {
                         inputFieldBackground(cornerRadius: 8)
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .clipShape(PHTVRoundedRect(cornerRadius: 8))
                     .overlay(alignment: .topLeading) {
                         if stepsToReproduce.isEmpty {
                             Text("1. Mở ứng dụng...\n2. Thực hiện...\n3. Lỗi xảy ra...")
@@ -251,7 +251,7 @@ struct BugReportView: View {
                             .background {
                                 inputFieldBackground(cornerRadius: 8)
                             }
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .clipShape(PHTVRoundedRect(cornerRadius: 8))
                             .overlay(alignment: .topLeading) {
                                 if expectedResult.isEmpty {
                                     Text("Ứng dụng nên…")
@@ -275,7 +275,7 @@ struct BugReportView: View {
                             .background {
                                 inputFieldBackground(cornerRadius: 8)
                             }
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .clipShape(PHTVRoundedRect(cornerRadius: 8))
                             .overlay(alignment: .topLeading) {
                                 if actualResult.isEmpty {
                                     Text("Thực tế đang…")
@@ -1526,19 +1526,19 @@ struct BugReportView: View {
     @ViewBuilder
     private func inputFieldBackground(cornerRadius: CGFloat) -> some View {
         if #available(macOS 26.0, *) {
-            RoundedRectangle(cornerRadius: cornerRadius)
+            PHTVRoundedRect(cornerRadius: cornerRadius)
                 .fill(Color(NSColor.textBackgroundColor).opacity(0.6))
                 .background(.regularMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                .clipShape(PHTVRoundedRect(cornerRadius: cornerRadius))
                 .overlay(
-                    RoundedRectangle(cornerRadius: cornerRadius)
+                    PHTVRoundedRect(cornerRadius: cornerRadius)
                         .stroke(Color.primary.opacity(0.2), lineWidth: 1)
                 )
         } else {
-            RoundedRectangle(cornerRadius: cornerRadius)
+            PHTVRoundedRect(cornerRadius: cornerRadius)
                 .fill(Color(NSColor.textBackgroundColor))
                 .overlay(
-                    RoundedRectangle(cornerRadius: cornerRadius)
+                    PHTVRoundedRect(cornerRadius: cornerRadius)
                         .stroke(Color.secondary.opacity(0.4), lineWidth: 1)
                 )
         }

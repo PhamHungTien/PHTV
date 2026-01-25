@@ -42,6 +42,7 @@ struct SettingsView: View {
             detailView
                 .environmentObject(appState)
                 .frame(minWidth: 400, minHeight: 400)
+                .modifier(DetailViewGlassModifier())
         }
         .navigationSplitViewStyle(.balanced)
         .onChange(of: appState.showIconOnDock) { newValue in
@@ -83,34 +84,30 @@ struct SettingsView: View {
                     }
                 }
             } else {
-                // Search results
+                // Search results with improved visual feedback
                 if filteredSettings.isEmpty {
-                    VStack(spacing: 8) {
+                    VStack(spacing: 12) {
                         Image(systemName: "magnifyingglass")
-                            .font(.largeTitle)
-                            .foregroundStyle(.secondary)
-                        Text("Không có kết quả cho “\(searchText)”")
+                            .font(.system(size: 36))
+                            .foregroundStyle(.tertiary)
+                            .conditionalPulseEffect()
+                        Text("Không có kết quả cho \"\(searchText)\"")
                             .font(.headline)
+                            .foregroundStyle(.secondary)
                         Text("Hãy thử từ khóa khác")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.tertiary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding()
                 } else {
                     ForEach(filteredSettings) { item in
-                        Button {
-                            selectedTab = item.tab
-                            searchText = ""
-                        } label: {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Label(item.title, systemImage: item.iconName)
-                                Text(item.tab.title)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                        SearchResultRow(item: item) {
+                            withAnimation(.phtvMorph) {
+                                selectedTab = item.tab
+                                searchText = ""
                             }
                         }
-                        .buttonStyle(.plain)
                     }
                 }
             }
@@ -426,32 +423,17 @@ enum SettingsTabSection: String, CaseIterable, Identifiable {
 struct SettingsSidebarRow: View {
     let tab: SettingsTab
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @State private var isHovering = false
 
     var body: some View {
         HStack(spacing: 10) {
             ZStack {
-                if #available(macOS 26.0, *) {
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(.ultraThinMaterial)
-                        .settingsGlassEffect(cornerRadius: 6)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 6)
-                                .strokeBorder(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.1), lineWidth: 1)
-                        )
-                } else if #available(macOS 12.0, *) {
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(.thinMaterial)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 6)
-                                .strokeBorder(Color.primary.opacity(colorScheme == .dark ? 0.18 : 0.08), lineWidth: 1)
-                        )
-                } else {
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(colorScheme == .dark ? Color.primary.opacity(0.18) : Color.accentColor.opacity(0.12))
-                }
+                iconBackground
                 Image(systemName: tab.iconName)
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.primary)
+                    .conditionalPulseEffect(value: isHovering)
             }
             .frame(width: 24, height: 24)
 
@@ -462,6 +444,35 @@ struct SettingsSidebarRow: View {
             Spacer(minLength: 0)
         }
         .padding(.vertical, 2)
+        .onHover { hovering in
+            isHovering = hovering
+        }
+    }
+
+    @ViewBuilder
+    private var iconBackground: some View {
+        if #available(macOS 26.0, *), !reduceTransparency {
+            PHTVRoundedRect(cornerRadius: 6)
+                .fill(.ultraThinMaterial)
+                .glassEffect(
+                    isHovering ? .regular.interactive() : .regular,
+                    in: .rect(corners: .fixed(6), isUniform: true)
+                )
+                .overlay(
+                    PHTVRoundedRect(cornerRadius: 6)
+                        .strokeBorder(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.1), lineWidth: 1)
+                )
+        } else if #available(macOS 12.0, *) {
+            PHTVRoundedRect(cornerRadius: 6)
+                .fill(.thinMaterial)
+                .overlay(
+                    PHTVRoundedRect(cornerRadius: 6)
+                        .strokeBorder(Color.primary.opacity(colorScheme == .dark ? 0.18 : 0.08), lineWidth: 1)
+                )
+        } else {
+            PHTVRoundedRect(cornerRadius: 6)
+                .fill(colorScheme == .dark ? Color.primary.opacity(0.18) : Color.accentColor.opacity(0.12))
+        }
     }
 }
 
@@ -650,6 +661,97 @@ enum ConflictType: String {
         case .exactDuplicate: return "red"
         case .thisIsPrefix: return "orange"
         case .otherIsPrefix: return "yellow"
+        }
+    }
+}
+
+// MARK: - Search Result Row
+
+struct SearchResultRow: View {
+    let item: SettingsItem
+    let action: () -> Void
+
+    @State private var isHovering = false
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                // Icon with glass effect
+                ZStack {
+                    if #available(macOS 26.0, *), !reduceTransparency {
+                        Circle()
+                            .fill(.ultraThinMaterial)
+                            .glassEffect(
+                                isHovering ? .regular.tint(.accentColor) : .regular,
+                                in: Circle()
+                            )
+                    } else {
+                        Circle()
+                            .fill(Color.accentColor.opacity(isHovering ? 0.2 : 0.1))
+                    }
+                    Image(systemName: item.iconName)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(isHovering ? .primary : .secondary)
+                }
+                .frame(width: 28, height: 28)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.title)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.primary)
+                    Text(item.tab.title)
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.tertiary)
+                    .opacity(isHovering ? 1 : 0.5)
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 8)
+            .background {
+                if isHovering {
+                    if #available(macOS 26.0, *), !reduceTransparency {
+                        PHTVRoundedRect(cornerRadius: 8)
+                            .fill(.ultraThinMaterial)
+                            .glassEffect(.regular, in: .rect(corners: .fixed(8), isUniform: true))
+                            .opacity(0.6)
+                    } else {
+                        PHTVRoundedRect(cornerRadius: 8)
+                            .fill(Color.primary.opacity(0.05))
+                    }
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            withAnimation(.phtvMorph) {
+                isHovering = hovering
+            }
+        }
+    }
+}
+
+// MARK: - Detail View Glass Modifier
+
+/// Applies backgroundExtensionEffect() only to the detail view,
+/// preserving the sidebar's native appearance while extending
+/// glass effect into the toolbar area for the content pane.
+struct DetailViewGlassModifier: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    func body(content: Content) -> some View {
+        if #available(macOS 26.0, *), !reduceTransparency {
+            content
+                .backgroundExtensionEffect()
+        } else {
+            content
         }
     }
 }

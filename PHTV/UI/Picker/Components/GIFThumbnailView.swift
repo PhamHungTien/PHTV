@@ -48,7 +48,7 @@ struct GIFThumbnailView: View {
         .frame(width: 120, height: 120)
         .cornerRadius(8)
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
+            PHTVRoundedRect(cornerRadius: 8)
                 .strokeBorder(isHovered ? Color.accentColor : Color.clear, lineWidth: 2)
         )
         .contentShape(Rectangle())

@@ -125,18 +125,18 @@ private struct EmptyExcludedAppsView: View {
         .padding(.vertical, 24)
         .background {
             if #available(macOS 26.0, *) {
-                RoundedRectangle(cornerRadius: 10)
+                PHTVRoundedRect(cornerRadius: 10)
                     .fill(.ultraThinMaterial)
                     .settingsGlassEffect(cornerRadius: 10)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 10)
+                        PHTVRoundedRect(cornerRadius: 10)
                             .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                     )
             } else {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 10)
+                    PHTVRoundedRect(cornerRadius: 10)
                         .fill(Color(NSColor.controlBackgroundColor))
-                    RoundedRectangle(cornerRadius: 10)
+                    PHTVRoundedRect(cornerRadius: 10)
                         .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                 }
             }
@@ -164,11 +164,11 @@ private struct ExcludedAppsList: View {
         }
         .background {
             if #available(macOS 26.0, *) {
-                RoundedRectangle(cornerRadius: 10)
+                PHTVRoundedRect(cornerRadius: 10)
                     .fill(.ultraThinMaterial)
                     .settingsGlassEffect(cornerRadius: 10)
             } else {
-                RoundedRectangle(cornerRadius: 10)
+                PHTVRoundedRect(cornerRadius: 10)
                     .fill(Color(NSColor.controlBackgroundColor))
             }
         }

@@ -108,11 +108,11 @@ struct BinaryIntegrityWarningView: View {
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            PHTVRoundedRect(cornerRadius: 12)
                 .fill(Color.orange.opacity(0.1))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            PHTVRoundedRect(cornerRadius: 12)
                 .strokeBorder(Color.orange.opacity(0.3), lineWidth: 1)
         )
     }

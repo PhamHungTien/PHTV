@@ -104,7 +104,7 @@ struct MacroCategoryEditorView: View {
                                         .font(.system(size: 16))
                                         .frame(width: 36, height: 36)
                                         .background(
-                                            RoundedRectangle(cornerRadius: 8)
+                                            PHTVRoundedRect(cornerRadius: 8)
                                                 .fill(selectedIcon == icon ? (Color(hex: selectedColor) ?? .blue) : Color(NSColor.controlBackgroundColor))
                                         )
                                         .foregroundStyle(selectedIcon == icon ? .white : .primary)
@@ -160,7 +160,7 @@ struct MacroCategoryEditorView: View {
                                 .foregroundStyle(Color(hex: selectedColor) ?? .blue)
                                 .frame(width: 28, height: 28)
                                 .background(
-                                    RoundedRectangle(cornerRadius: 6)
+                                    PHTVRoundedRect(cornerRadius: 6)
                                         .fill((Color(hex: selectedColor) ?? .blue).opacity(0.15))
                                 )
 
@@ -175,7 +175,7 @@ struct MacroCategoryEditorView: View {
                         }
                         .padding(12)
                         .background(
-                            RoundedRectangle(cornerRadius: 8)
+                            PHTVRoundedRect(cornerRadius: 8)
                                 .fill(Color(NSColor.controlBackgroundColor))
                         )
                     }
@@ -190,7 +190,7 @@ struct MacroCategoryEditorView: View {
                         }
                         .padding(10)
                         .background(
-                            RoundedRectangle(cornerRadius: 8)
+                            PHTVRoundedRect(cornerRadius: 8)
                                 .fill(Color.red.opacity(0.1))
                         )
                     }

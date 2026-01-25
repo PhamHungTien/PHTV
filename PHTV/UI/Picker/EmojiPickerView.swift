@@ -11,14 +11,15 @@ import SwiftUI
 struct EmojiPickerView: View {
     var onEmojiSelected: (String) -> Void
     var onClose: (() -> Void)?
-    @State private var isHoveringClose = false
 
     // Remember last selected tab using UserDefaults
     @State private var selectedCategory: Int
     @Namespace private var categoryNamespace
-    
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var colorScheme
+
     private static let lastTabKey = "PHTVPickerLastTab"
-    
+
     init(onEmojiSelected: @escaping (String) -> Void, onClose: (() -> Void)? = nil) {
         self.onEmojiSelected = onEmojiSelected
         self.onClose = onClose
@@ -35,49 +36,9 @@ struct EmojiPickerView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Header with close button and drag handle
-            HStack(spacing: 8) {
-                // Drag handle icon (left side)
-                Image(systemName: "line.3.horizontal")
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary.opacity(0.5))
-                    .frame(width: 20)
-                    .help("Kéo để di chuyển")
-
-                Text("PHTV Picker")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.primary)
-
-                Spacer()
-
-                Button(action: {
-                    onClose?()
-                }) {
-                    ZStack {
-                        Circle()
-                            .fill(Color.red.opacity(0.15))
-                            .frame(width: 28, height: 28)
-                        Image(systemName: "xmark")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(.red)
-                    }
-                }
-                .buttonStyle(.plain)
-                .help("Đóng (ESC)")
-                .onHover { hovering in
-                    if hovering && !isHoveringClose {
-                        NSCursor.pointingHand.push()
-                        isHoveringClose = true
-                    } else if !hovering && isHoveringClose {
-                        NSCursor.pop()
-                        isHoveringClose = false
-                    }
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 12)
-            .padding(.bottom, 10)
-            .contentShape(Rectangle())
-            .background(WindowDragHandle())
+            headerView
+                .contentShape(Rectangle())
+                .background(WindowDragHandle())
 
 
             // Category tabs
@@ -175,26 +136,79 @@ struct EmojiPickerView: View {
             UserDefaults.standard.set(newValue, forKey: EmojiPickerView.lastTabKey)
         }
         .background {
-            if #available(macOS 26.0, *) {
-                // Liquid Glass design for macOS 26+ (regular for better visibility)
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(NSColor.windowBackgroundColor).opacity(0.3))
-                    .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 16))
-            } else {
-                // Fallback glassmorphism for older macOS
-                ZStack {
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color(NSColor.windowBackgroundColor).opacity(0.85))
-                    VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-            }
+            pickerBackground
         }
-        .onDisappear {
-            if isHoveringClose {
-                NSCursor.pop()
-                isHoveringClose = false
+    }
+
+    // MARK: - Header View
+
+    @ViewBuilder
+    private var headerView: some View {
+        HStack(spacing: 8) {
+            // Drag handle icon (left side) with Liquid Glass
+            if #available(macOS 26.0, *), !reduceTransparency {
+                Image(systemName: "line.3.horizontal")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.secondary.opacity(0.6))
+                    .frame(width: 24, height: 24)
+                    .background {
+                        Circle()
+                            .fill(.ultraThinMaterial)
+                            .glassEffect(.regular, in: Circle())
+                            .opacity(0.5)
+                    }
+                    .help("Kéo để di chuyển")
+            } else {
+                Image(systemName: "line.3.horizontal")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary.opacity(0.5))
+                    .frame(width: 20)
+                    .help("Kéo để di chuyển")
             }
+
+            Text("PHTV Picker")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.primary)
+
+            Spacer()
+
+            // Close button with Liquid Glass
+            GlassCloseButton {
+                onClose?()
+            }
+            .help("Đóng (ESC)")
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 12)
+        .padding(.bottom, 10)
+    }
+
+    // MARK: - Picker Background
+
+    @ViewBuilder
+    private var pickerBackground: some View {
+        if #available(macOS 26.0, *), !reduceTransparency {
+            // Enhanced Liquid Glass design for macOS 26+
+            PHTVRoundedRect(cornerRadius: 16)
+                .fill(Color(NSColor.windowBackgroundColor).opacity(colorScheme == .dark ? 0.2 : 0.25))
+                .glassEffect(
+                    .regular,
+                    in: .rect(corners: .fixed(16), isUniform: true)
+                )
+                .shadow(color: .black.opacity(colorScheme == .dark ? 0.5 : 0.2), radius: 24, y: 10)
+                .overlay(
+                    PHTVRoundedRect(cornerRadius: 16)
+                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.06), lineWidth: 1)
+                )
+        } else {
+            // Fallback glassmorphism for older macOS
+            ZStack {
+                PHTVRoundedRect(cornerRadius: 16)
+                    .fill(Color(NSColor.windowBackgroundColor).opacity(0.85))
+                VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
+            }
+            .clipShape(PHTVRoundedRect(cornerRadius: 16))
+            .shadow(color: .black.opacity(0.15), radius: 16, y: 6)
         }
     }
 }

@@ -77,10 +77,10 @@ struct UnifiedContentView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(
-                RoundedRectangle(cornerRadius: 8)
+                PHTVRoundedRect(cornerRadius: 8)
                     .fill(Color(NSColor.controlBackgroundColor).opacity(0.5))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 8)
+                        PHTVRoundedRect(cornerRadius: 8)
                             .strokeBorder(Color.accentColor.opacity(isSearchFocused ? 0.3 : 0), lineWidth: 1.5)
                     )
             )
@@ -182,7 +182,7 @@ struct UnifiedContentView: View {
                                         copyGIFURL(gif)
                                     }
                                     .frame(width: 70, height: 70)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                    .clipShape(PHTVRoundedRect(cornerRadius: 8))
                                 }
                             }
                         }
@@ -210,7 +210,7 @@ struct UnifiedContentView: View {
                                     copyGIFURL(gif)
                                 }
                                 .frame(width: 70, height: 70)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                .clipShape(PHTVRoundedRect(cornerRadius: 8))
                             }
                         }
                     }
@@ -241,7 +241,7 @@ struct UnifiedContentView: View {
                                         copyStickerURL(sticker)
                                     }, contentType: "Sticker")
                                     .frame(width: 70, height: 70)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                    .clipShape(PHTVRoundedRect(cornerRadius: 8))
                                 }
                             }
                         }
@@ -269,7 +269,7 @@ struct UnifiedContentView: View {
                                     copyStickerURL(sticker)
                                 }, contentType: "Sticker")
                                 .frame(width: 70, height: 70)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                .clipShape(PHTVRoundedRect(cornerRadius: 8))
                             }
                         }
                     }

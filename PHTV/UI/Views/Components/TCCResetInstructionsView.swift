@@ -191,7 +191,7 @@ struct TCCResetInstructionsView: View {
         .padding()
         .background {
             if #available(macOS 26.0, *) {
-                RoundedRectangle(cornerRadius: 12)
+                PHTVRoundedRect(cornerRadius: 12)
                     .fill(Color.red.opacity(0.1))
                     .settingsGlassEffect(cornerRadius: 12)
             } else {

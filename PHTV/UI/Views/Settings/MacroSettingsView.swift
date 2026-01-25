@@ -620,7 +620,7 @@ struct CategoryRowView: View {
                 .foregroundStyle(color)
                 .frame(width: 24, height: 24)
                 .background(
-                    RoundedRectangle(cornerRadius: 5)
+                    PHTVRoundedRect(cornerRadius: 5)
                         .fill(color.opacity(0.15))
                 )
 
@@ -651,11 +651,11 @@ struct CategoryRowView: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .background(
-            RoundedRectangle(cornerRadius: 8)
+            PHTVRoundedRect(cornerRadius: 8)
                 .fill(isSelected ? color.opacity(0.12) : Color.clear)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
+            PHTVRoundedRect(cornerRadius: 8)
                 .stroke(isSelected ? color.opacity(0.3) : Color.clear, lineWidth: 1)
         )
         .contentShape(Rectangle())
@@ -764,7 +764,7 @@ struct MacroRowView: View {
                 .foregroundStyle(rowColor)
                 .frame(width: 24, height: 24)
                 .background(
-                    RoundedRectangle(cornerRadius: 5)
+                    PHTVRoundedRect(cornerRadius: 5)
                         .fill(rowColor.opacity(0.15))
                 )
                 .scaleEffect(isRecentlyAdded ? 1.1 : 1.0)
@@ -817,11 +817,11 @@ struct MacroRowView: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .background(
-            RoundedRectangle(cornerRadius: 8)
+            PHTVRoundedRect(cornerRadius: 8)
                 .fill(backgroundColor)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
+            PHTVRoundedRect(cornerRadius: 8)
                 .stroke(borderColor, lineWidth: borderWidth)
         )
         .contentShape(Rectangle())
