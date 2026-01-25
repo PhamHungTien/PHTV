@@ -112,7 +112,8 @@ static NSSet* _disableVietnameseAppSet = nil;
 
         // Force precomposed Unicode
         _forcePrecomposedAppSet = [NSSet setWithArray:@[@"com.apple.Spotlight",
-                                                         @"com.apple.systemuiserver"]];
+                                                         @"com.apple.systemuiserver",
+                                                         @"com.raycast.*"]];
 
         // Precomposed Unicode with batched sending
         _precomposedBatchedAppSet = [NSSet setWithArray:@[@"net.whatsapp.WhatsApp",

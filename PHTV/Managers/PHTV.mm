@@ -473,7 +473,8 @@ extern "C" {
     // Note: Most apps are now auto-detected via search field detection (IsElementSpotlight)
     // Only apps that ALWAYS need precomposed (not just in search fields) should be listed here
     NSSet* _forcePrecomposedAppSet = [NSSet setWithArray:@[@"com.apple.Spotlight",
-                                                            @"com.apple.systemuiserver"]];  // Spotlight runs under SystemUIServer
+                                                            @"com.apple.systemuiserver",
+                                                            @"com.raycast.*"]];  // Spotlight runs under SystemUIServer
 
     // Apps that need precomposed Unicode but should use normal batched sending (not AX API)
     // These are Electron/web apps that don't support AX text replacement
