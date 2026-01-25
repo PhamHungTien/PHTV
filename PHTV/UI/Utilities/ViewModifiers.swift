@@ -816,8 +816,6 @@ struct FloatingGlassCard<Content: View>: View {
                             .regular,
                             in: .rect(corners: .fixed(cornerRadius), isUniform: true)
                         )
-                        .compositingGroup()
-                        .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0.12), radius: 12, y: 5)
                 } else {
                     ZStack {
                         PHTVRoundedRect(cornerRadius: cornerRadius)
@@ -827,8 +825,6 @@ struct FloatingGlassCard<Content: View>: View {
                                 .fill(.ultraThinMaterial)
                         }
                     }
-                    .compositingGroup()
-                    .shadow(color: .black.opacity(colorScheme == .dark ? 0.25 : 0.08), radius: 10, y: 4)
                 }
             }
             .overlay(

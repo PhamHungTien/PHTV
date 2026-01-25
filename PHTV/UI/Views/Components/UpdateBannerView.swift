@@ -127,13 +127,13 @@ struct UpdateBannerView: View {
                     PHTVRoundedRect(cornerRadius: 16)
                         .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
                 )
-                .compositingGroup()
-                .shadow(color: .black.opacity(colorScheme == .dark ? 0.25 : 0.1), radius: 10, y: 4)
         } else {
             PHTVRoundedRect(cornerRadius: 16)
                 .fill(Color(NSColor.controlBackgroundColor))
-                .compositingGroup()
-                .shadow(color: .black.opacity(0.08), radius: 6, y: 3)
+                .overlay(
+                    PHTVRoundedRect(cornerRadius: 16)
+                        .stroke(Color.primary.opacity(0.1), lineWidth: 1)
+                )
         }
     }
 
