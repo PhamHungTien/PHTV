@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.4] - 2026-01-26
+
+### Fixed
+- **Terminal Commands Not Working (#121)**: Sửa lỗi các lệnh như `clear`, `grep`, `printf` không hoạt động đúng trong Terminal khi bật chế độ tiếng Việt
+  - Thêm logic nhận diện sớm các tổ hợp phụ âm không có trong tiếng Việt (bl, br, cl, cr, dr, fl, fr, gl, gr, pl, pr, sc, sk, sl, sm, sn, sp, st, sw, tw, wr)
+
+### Changed
+- **Onboarding UI**: Thiết kế lại các thẻ công tắc trong bước "Tính năng cơ bản" với chiều cao đồng nhất
+- **Settings Reorganization**: Gộp phần "Cơ bản" vào "Tối ưu gõ" để giao diện gọn gàng hơn
+- **New Onboarding Feature**: Thêm công tắc "Giữ nguyên từ tiếng Anh" vào Onboarding
+
+### Removed
+- **Spell Check UI**: Loại bỏ giao diện (tính năng luôn bật)
+- **Z/F/W/J Consonants UI**: Loại bỏ giao diện (tính năng luôn bật)
+- **Restore on Invalid Word**: Loại bỏ hoàn toàn tính năng này
+- **Search Items**: Cập nhật danh sách tìm kiếm, loại bỏ các mục đã xóa
+- **Bug Report**: Loại bỏ thông tin các tính năng đã xóa khỏi báo cáo debug
+
 ## [2.1.1] - 2026-01-25
 
 ### Changed
