@@ -251,6 +251,32 @@ extension View {
     }
 }
 
+// MARK: - Window Dragging Utilities
+
+/// A view that blocks window dragging
+struct WindowDragBlocker: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        return BlockerView()
+    }
+    
+    func updateNSView(_ nsView: NSView, context: Context) {}
+    
+    private class BlockerView: NSView {
+        override var mouseDownCanMoveWindow: Bool { false }
+        
+        override func mouseDown(with event: NSEvent) {
+            // Consume event to prevent propagation to window background
+            // Do nothing
+        }
+        
+        // Ensure we catch mouse down even if transparency might let it through
+        override func hitTest(_ point: NSPoint) -> NSView? {
+            let view = super.hitTest(point)
+            return view == self ? self : view
+        }
+    }
+}
+
 // MARK: - Settings Header Components
 
 struct SettingsStatusPill: View {
@@ -389,6 +415,8 @@ struct SettingsHeaderView<Trailing: View>: View {
         .frame(maxWidth: 700)
         .background(headerBackground)
         .overlay(headerBorder)
+        // Add explicit drag handle to header
+        .background(WindowDragHandle())
     }
 
     private var iconTile: some View {
@@ -503,6 +531,9 @@ struct SettingsViewBackground: ViewModifier {
                     .fill(.ultraThinMaterial)
                     .opacity(colorScheme == .light ? 0.6 : 0.25)
             }
+            
+            // Block drag on background
+            WindowDragBlocker()
         }
         .ignoresSafeArea()
 

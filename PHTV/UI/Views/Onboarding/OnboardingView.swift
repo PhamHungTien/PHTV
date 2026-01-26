@@ -398,28 +398,22 @@ struct OnboardingStepHeader: View {
 
 struct OnboardingIconBadge: View {
     let symbol: String
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         ZStack {
             PHTVRoundedRect(cornerRadius: 12, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [Color.accentColor.opacity(0.2), Color.accentColor.opacity(0.05)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
+                .fill(Color(NSColor.controlBackgroundColor))
+                .overlay(
+                    PHTVRoundedRect(cornerRadius: 12, style: .continuous)
+                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
                 )
                 .frame(width: 48, height: 48)
-                .settingsGlassEffect(cornerRadius: 12)
 
             Image(systemName: symbol)
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(.accentColor)
         }
-        .overlay(
-            PHTVRoundedRect(cornerRadius: 12, style: .continuous)
-                .stroke(Color.accentColor.opacity(0.25), lineWidth: 1)
-        )
     }
 }
 
@@ -429,14 +423,18 @@ struct OnboardingHighlightCard: View {
     let icon: String
     let title: String
     let subtitle: String
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ZStack {
                 PHTVRoundedRect(cornerRadius: 10, style: .continuous)
-                    .fill(Color.accentColor.opacity(0.12))
+                    .fill(Color(NSColor.controlBackgroundColor))
+                    .overlay(
+                        PHTVRoundedRect(cornerRadius: 10, style: .continuous)
+                            .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
+                    )
                     .frame(width: 36, height: 36)
-                    .settingsGlassEffect(cornerRadius: 10)
 
                 Image(systemName: icon)
                     .font(.system(size: 16, weight: .semibold))
@@ -469,15 +467,19 @@ struct OptionCard: View {
     let icon: String
     let isSelected: Bool
     let action: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         Button(action: action) {
             HStack(alignment: .top, spacing: 16) {
                 ZStack {
                     PHTVRoundedRect(cornerRadius: 10, style: .continuous)
-                        .fill(Color.accentColor.opacity(0.12))
+                        .fill(Color(NSColor.controlBackgroundColor))
+                        .overlay(
+                            PHTVRoundedRect(cornerRadius: 10, style: .continuous)
+                                .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
+                        )
                         .frame(width: 36, height: 36)
-                        .settingsGlassEffect(cornerRadius: 10)
 
                     Image(systemName: icon)
                         .font(.system(size: 16, weight: .semibold))
@@ -519,14 +521,18 @@ struct FeatureToggleRow: View {
     let title: String
     let description: String
     @Binding var isOn: Bool
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         HStack(spacing: 14) {
             ZStack {
                 PHTVRoundedRect(cornerRadius: 10, style: .continuous)
-                    .fill(Color.accentColor.opacity(0.12))
+                    .fill(Color(NSColor.controlBackgroundColor))
+                    .overlay(
+                        PHTVRoundedRect(cornerRadius: 10, style: .continuous)
+                            .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
+                    )
                     .frame(width: 36, height: 36)
-                    .settingsGlassEffect(cornerRadius: 10)
 
                 Image(systemName: icon)
                     .font(.system(size: 16, weight: .semibold))
@@ -609,13 +615,19 @@ struct OnboardingStatusCard: View {
     let title: String
     let description: String
     let tint: Color
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         HStack(spacing: 14) {
             ZStack {
-                Circle()
-                    .fill(tint.opacity(0.15))
+                PHTVRoundedRect(cornerRadius: 10, style: .continuous)
+                    .fill(Color(NSColor.controlBackgroundColor))
+                    .overlay(
+                        PHTVRoundedRect(cornerRadius: 10, style: .continuous)
+                            .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
+                    )
                     .frame(width: 44, height: 44)
+
                 Image(systemName: icon)
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundColor(tint)
