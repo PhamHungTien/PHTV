@@ -1151,7 +1151,6 @@ struct BugReportView: View {
             - **Chế độ:** \(appState.isEnabled ? "🇻🇳 Tiếng Việt" : "🇬🇧 English")
             - **Kiểu gõ:** \(appState.inputMethod.rawValue)
             - **Bảng mã:** \(appState.codeTable.rawValue)
-            - **Kiểm tra chính tả:** \(appState.checkSpelling ? "✅" : "❌")
             - **Gõ tắt (Macro):** \(appState.useMacro ? "✅" : "❌")
             - **Macro in English mode:** \(appState.useMacroInEnglishMode ? "✅" : "❌")
             - **Smart switch:** \(appState.useSmartSwitchKey ? "✅" : "❌")
@@ -1159,7 +1158,6 @@ struct BugReportView: View {
             - **Quick Telex:** \(appState.quickTelex ? "✅" : "❌")
             - **Quick Start Consonant:** \(appState.quickStartConsonant ? "✅" : "❌")
             - **Quick End Consonant:** \(appState.quickEndConsonant ? "✅" : "❌")
-            - **Allow Z/F/W/J:** \(appState.allowConsonantZFWJ ? "✅" : "❌")
             - **Beep on mode switch:** \(appState.beepOnModeSwitch ? "✅" : "❌")
             - **Vietnamese menubar icon:** \(appState.useVietnameseMenubarIcon ? "✅" : "❌")
             - **Show icon on Dock:** \(appState.showIconOnDock ? "✅" : "❌")
@@ -1177,7 +1175,6 @@ struct BugReportView: View {
             - **Layout Compat:** \(appState.performLayoutCompat ? "✅" : "❌")
             - **Safe Mode:** \(appState.safeMode ? "✅" : "❌")
             - **Send key step by step:** \(appState.sendKeyStepByStep ? "✅" : "❌")
-            - **Restore on invalid word:** \(appState.restoreOnInvalidWord ? "✅" : "❌")
             - **Auto restore English word:** \(appState.autoRestoreEnglishWord ? "✅" : "❌")
             - **Restore on Escape:** \(appState.restoreOnEscape ? "✅" : "❌")
             - **Pause key enabled:** \(appState.pauseKeyEnabled ? "✅" : "❌")
@@ -1392,7 +1389,6 @@ struct BugReportView: View {
 
             // Thêm các settings bất thường (khác default)
             var unusualSettings: [String] = []
-            if !appState.checkSpelling { unusualSettings.append("No spell check") }
             if !appState.useModernOrthography { unusualSettings.append("Old orthography") }
             if appState.quickTelex { unusualSettings.append("Quick Telex") }
             if appState.sendKeyStepByStep { unusualSettings.append("Send key step-by-step") }

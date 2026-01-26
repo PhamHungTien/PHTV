@@ -66,7 +66,7 @@ volatile int vSendKeyStepByStep = 0;
 volatile int vUseSmartSwitchKey = 1;
 volatile int vUpperCaseFirstChar = 0;
 volatile int vTempOffSpelling = 0;
-volatile int vAllowConsonantZFWJ = 0;
+volatile int vAllowConsonantZFWJ = 1; // Always enabled (no UI toggle)
 volatile int vQuickStartConsonant = 0;
 volatile int vQuickEndConsonant = 0;
 volatile int vRememberCode = 1; //new on version 2.0
@@ -926,10 +926,11 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     NSLog(@"[AppDelegate] Loaded core settings: language=%d, inputType=%d, codeTable=%d", vLanguage, vInputType, vCodeTable);
 
     // Spelling and orthography settings
-    vCheckSpelling = PHTVReadIntWithFallback(defaults, @"Spelling", vCheckSpelling);
+    // Note: vCheckSpelling and vAllowConsonantZFWJ are always enabled (no UI toggle)
+    vCheckSpelling = 1;
     vUseModernOrthography = PHTVReadIntWithFallback(defaults, @"ModernOrthography", vUseModernOrthography);
     vQuickTelex = PHTVReadIntWithFallback(defaults, @"QuickTelex", vQuickTelex);
-    vRestoreIfWrongSpelling = PHTVReadIntWithFallback(defaults, @"RestoreIfInvalidWord", vRestoreIfWrongSpelling);
+    vRestoreIfWrongSpelling = 0;  // Feature removed
     vFreeMark = PHTVReadIntWithFallback(defaults, @"FreeMark", vFreeMark);
 
     // Macro settings
@@ -941,7 +942,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     vSendKeyStepByStep = PHTVReadIntWithFallback(defaults, @"SendKeyStepByStep", vSendKeyStepByStep);
     vUseSmartSwitchKey = PHTVReadIntWithFallback(defaults, @"UseSmartSwitchKey", vUseSmartSwitchKey);
     vUpperCaseFirstChar = PHTVReadIntWithFallback(defaults, @"UpperCaseFirstChar", vUpperCaseFirstChar);
-    vAllowConsonantZFWJ = PHTVReadIntWithFallback(defaults, @"vAllowConsonantZFWJ", vAllowConsonantZFWJ);
+    vAllowConsonantZFWJ = 1; // Always enabled
     vQuickStartConsonant = PHTVReadIntWithFallback(defaults, @"vQuickStartConsonant", vQuickStartConsonant);
     vQuickEndConsonant = PHTVReadIntWithFallback(defaults, @"vQuickEndConsonant", vQuickEndConsonant);
     vRememberCode = PHTVReadIntWithFallback(defaults, @"vRememberCode", vRememberCode);
@@ -1479,17 +1480,18 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     int oldRememberCode = vRememberCode;
     int oldPerformLayoutCompat = vPerformLayoutCompat;
     
-    vCheckSpelling = PHTVReadIntWithFallback(defaults, @"Spelling", vCheckSpelling);
+    // Note: vCheckSpelling and vAllowConsonantZFWJ are always enabled (no UI toggle)
+    vCheckSpelling = 1;
     vUseModernOrthography = PHTVReadIntWithFallback(defaults, @"ModernOrthography", vUseModernOrthography);
     vQuickTelex = PHTVReadIntWithFallback(defaults, @"QuickTelex", vQuickTelex);
-    vRestoreIfWrongSpelling = PHTVReadIntWithFallback(defaults, @"RestoreIfInvalidWord", vRestoreIfWrongSpelling);
+    vRestoreIfWrongSpelling = 0;  // Feature removed
     vUseMacro = PHTVReadIntWithFallback(defaults, @"UseMacro", vUseMacro);
     vUseMacroInEnglishMode = PHTVReadIntWithFallback(defaults, @"UseMacroInEnglishMode", vUseMacroInEnglishMode);
     vAutoCapsMacro = PHTVReadIntWithFallback(defaults, @"vAutoCapsMacro", vAutoCapsMacro);
     vSendKeyStepByStep = PHTVReadIntWithFallback(defaults, @"SendKeyStepByStep", vSendKeyStepByStep);
     vUseSmartSwitchKey = PHTVReadIntWithFallback(defaults, @"UseSmartSwitchKey", vUseSmartSwitchKey);
     vUpperCaseFirstChar = PHTVReadIntWithFallback(defaults, @"UpperCaseFirstChar", vUpperCaseFirstChar);
-    vAllowConsonantZFWJ = PHTVReadIntWithFallback(defaults, @"vAllowConsonantZFWJ", vAllowConsonantZFWJ);
+    vAllowConsonantZFWJ = 1; // Always enabled
     vQuickStartConsonant = PHTVReadIntWithFallback(defaults, @"vQuickStartConsonant", vQuickStartConsonant);
     vQuickEndConsonant = PHTVReadIntWithFallback(defaults, @"vQuickEndConsonant", vQuickEndConsonant);
     vRememberCode = PHTVReadIntWithFallback(defaults, @"vRememberCode", vRememberCode);
@@ -2082,7 +2084,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     vUseSmartSwitchKey = 1; [defaults setInteger:vUseSmartSwitchKey forKey:@"UseSmartSwitchKey"];
     vUpperCaseFirstChar = 0;[[NSUserDefaults standardUserDefaults] setInteger:vUpperCaseFirstChar forKey:@"UpperCaseFirstChar"];
     vTempOffSpelling = 0; [defaults setInteger:vTempOffSpelling forKey:@"vTempOffSpelling"];
-    vAllowConsonantZFWJ = 0; [defaults setInteger:vAllowConsonantZFWJ forKey:@"vAllowConsonantZFWJ"];
+    vAllowConsonantZFWJ = 1; [defaults setInteger:vAllowConsonantZFWJ forKey:@"vAllowConsonantZFWJ"]; // Always enabled
     vQuickStartConsonant = 0; [defaults setInteger:vQuickStartConsonant forKey:@"vQuickStartConsonant"];
     vQuickEndConsonant = 0; [defaults setInteger:vQuickEndConsonant forKey:@"vQuickEndConsonant"];
     vRememberCode = 1; [defaults setInteger:vRememberCode forKey:@"vRememberCode"];

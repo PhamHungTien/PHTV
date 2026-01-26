@@ -96,43 +96,6 @@ struct TypingSettingsView: View {
                     }
                 }
 
-                // Basic Features
-                SettingsCard(
-                    title: "Cơ bản",
-                    subtitle: "Các tính năng hỗ trợ gõ tiếng Việt",
-                    icon: "checkmark.circle.fill"
-                ) {
-                    VStack(spacing: 0) {
-                        SettingsToggleRow(
-                            icon: "text.badge.checkmark",
-                            iconColor: .accentColor,
-                            title: "Kiểm tra chính tả",
-                            subtitle: "Phát hiện lỗi chính tả khi gõ tiếng Việt",
-                            isOn: $appState.checkSpelling
-                        )
-
-                        SettingsDivider()
-
-                        SettingsToggleRow(
-                            icon: "arrow.uturn.left.circle.fill",
-                            iconColor: .accentColor,
-                            title: "Hoàn tác khi từ sai",
-                            subtitle: "Trả lại ký tự gốc khi từ không hợp lệ",
-                            isOn: $appState.restoreOnInvalidWord
-                        )
-
-                        SettingsDivider()
-
-                        SettingsToggleRow(
-                            icon: "textformat.abc.dottedunderline",
-                            iconColor: .accentColor,
-                            title: "Giữ nguyên từ tiếng Anh",
-                            subtitle: "Không biến đổi từ tiếng Anh khi đang gõ tiếng Việt (vd: tẻminal → terminal)",
-                            isOn: $appState.autoRestoreEnglishWord
-                        )
-                    }
-                }
-
                 // Restore to Raw Keys Feature
                 SettingsCard(
                     title: "Khôi phục ký tự",
@@ -227,6 +190,16 @@ struct TypingSettingsView: View {
                 ) {
                     VStack(spacing: 0) {
                         SettingsToggleRow(
+                            icon: "textformat.abc.dottedunderline",
+                            iconColor: .accentColor,
+                            title: "Giữ nguyên từ tiếng Anh",
+                            subtitle: "Không biến đổi từ tiếng Anh khi đang gõ tiếng Việt",
+                            isOn: $appState.autoRestoreEnglishWord
+                        )
+
+                        SettingsDivider()
+
+                        SettingsToggleRow(
                             icon: "textformat.abc",
                             iconColor: .accentColor,
                             title: "Viết hoa đầu câu",
@@ -258,21 +231,11 @@ struct TypingSettingsView: View {
 
                 // Advanced Consonants
                 SettingsCard(
-                    title: "Phụ âm mở rộng",
-                    subtitle: "Hỗ trợ các tổ hợp nâng cao",
+                    title: "Phụ âm nhanh",
+                    subtitle: "Gõ tắt phụ âm đầu và cuối",
                     icon: "character.textbox"
                 ) {
                     VStack(spacing: 0) {
-                        SettingsToggleRow(
-                            icon: "character",
-                            iconColor: .accentColor,
-                            title: "Cho phép Z/F/W/J",
-                            subtitle: "Hỗ trợ phụ âm ngoại lai khi cần",
-                            isOn: $appState.allowConsonantZFWJ
-                        )
-
-                        SettingsDivider()
-
                         SettingsToggleRow(
                             icon: "arrow.right.circle.fill",
                             iconColor: .accentColor,

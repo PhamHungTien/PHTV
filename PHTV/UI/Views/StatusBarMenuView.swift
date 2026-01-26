@@ -123,10 +123,6 @@ struct StatusBarMenuView: View {
                     Label("Viết hoa đầu câu", systemImage: "textformat.size.larger")
                 }
 
-                Toggle(isOn: $appState.allowConsonantZFWJ) {
-                    Label("Cho phép ghép phụ âm", systemImage: "character.cursor.ibeam")
-                }
-
                 Toggle(isOn: $appState.quickStartConsonant) {
                     Label("Phụ âm đầu nhanh", systemImage: "arrow.right.to.line")
                 }
@@ -151,15 +147,7 @@ struct StatusBarMenuView: View {
         // MARK: - Tính năng
         // ═══════════════════════════════════════════
         Menu {
-            Section("Kiểm tra & khôi phục") {
-                Toggle(isOn: $appState.checkSpelling) {
-                    Label("Kiểm tra chính tả", systemImage: "text.badge.checkmark")
-                }
-
-                Toggle(isOn: $appState.restoreOnInvalidWord) {
-                    Label("Khôi phục từ sai", systemImage: "arrow.uturn.backward")
-                }
-
+            Section("Khôi phục") {
                 Toggle(isOn: $appState.autoRestoreEnglishWord) {
                     Label("Tự động khôi phục từ tiếng Anh", systemImage: "character.bubble")
                 }

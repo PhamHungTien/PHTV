@@ -347,70 +347,111 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
             uint8_t firstKey = keyStates[0] & 0x3F;
             uint8_t secondKey = (stateIndex >= 3) ? (keyStates[1] & 0x3F) : 0xFF;
 
-            // Vietnamese consonants (single): b,c,d,g,h,k,l,m,n,p,r,s,t,v,x
-            // Vietnamese consonants (double): ch,gh,gi,kh,ng,nh,ph,qu,th,tr,ngh
-            bool isVietnameseConsonant = false;
-
-            // Check single consonants (not 'f', 'j', 'w', 'z', 'q' alone)
-            if (firstKey == KEY_B || firstKey == KEY_C || firstKey == KEY_D ||
-                firstKey == KEY_G || firstKey == KEY_H || firstKey == KEY_K ||
-                firstKey == KEY_L || firstKey == KEY_M || firstKey == KEY_N ||
-                firstKey == KEY_P || firstKey == KEY_R || firstKey == KEY_S ||
-                firstKey == KEY_T || firstKey == KEY_V || firstKey == KEY_X) {
-                isVietnameseConsonant = true;
-            }
-
-            // Check double consonants
+            // EARLY EXIT: Check for non-Vietnamese consonant clusters at start
+            // These patterns don't exist in Vietnamese, so skip tone mark logic entirely
+            // Examples: bl, br, cl, cr, dr, fl, fr, gl, gr, pl, pr, sc, sk, sl, sm, sn, sp, st, sw, tw, wr
+            // Fix for Issue #121: "clear" (cl) should be restored in terminal
+            bool isNonVietnameseCluster = false;
             if (stateIndex >= 3) {
-                if ((firstKey == KEY_C && secondKey == KEY_H) ||  // ch
-                    (firstKey == KEY_G && secondKey == KEY_H) ||  // gh
-                    (firstKey == KEY_G && secondKey == KEY_I) ||  // gi
-                    (firstKey == KEY_K && secondKey == KEY_H) ||  // kh
-                    (firstKey == KEY_N && secondKey == KEY_G) ||  // ng
-                    (firstKey == KEY_N && secondKey == KEY_H) ||  // nh
-                    (firstKey == KEY_P && secondKey == KEY_H) ||  // ph
-                    (firstKey == KEY_Q && secondKey == KEY_U) ||  // qu
-                    (firstKey == KEY_T && secondKey == KEY_H) ||  // th
-                    (firstKey == KEY_T && secondKey == KEY_R)) {  // tr
-                    isVietnameseConsonant = true;
+                // Common English clusters that don't exist in Vietnamese
+                if ((firstKey == KEY_B && secondKey == KEY_L) ||  // bl (black, blue, clear)
+                    (firstKey == KEY_B && secondKey == KEY_R) ||  // br (break, brown)
+                    (firstKey == KEY_C && secondKey == KEY_L) ||  // cl (clear, close, class)
+                    (firstKey == KEY_C && secondKey == KEY_R) ||  // cr (create, cross)
+                    (firstKey == KEY_D && secondKey == KEY_R) ||  // dr (drop, drive)
+                    (firstKey == KEY_F && secondKey == KEY_L) ||  // fl (flow, flag)
+                    (firstKey == KEY_F && secondKey == KEY_R) ||  // fr (from, free)
+                    (firstKey == KEY_G && secondKey == KEY_L) ||  // gl (global, glass)
+                    (firstKey == KEY_G && secondKey == KEY_R) ||  // gr (great, green)
+                    (firstKey == KEY_P && secondKey == KEY_L) ||  // pl (play, place)
+                    (firstKey == KEY_P && secondKey == KEY_R) ||  // pr (print, process)
+                    (firstKey == KEY_S && secondKey == KEY_C) ||  // sc (scan, scope)
+                    (firstKey == KEY_S && secondKey == KEY_K) ||  // sk (skip, skill)
+                    (firstKey == KEY_S && secondKey == KEY_L) ||  // sl (slow, sleep)
+                    (firstKey == KEY_S && secondKey == KEY_M) ||  // sm (small, smart)
+                    (firstKey == KEY_S && secondKey == KEY_N) ||  // sn (snap, snow)
+                    (firstKey == KEY_S && secondKey == KEY_P) ||  // sp (space, speed)
+                    (firstKey == KEY_S && secondKey == KEY_T) ||  // st (start, stop)
+                    (firstKey == KEY_S && secondKey == KEY_W) ||  // sw (switch, swap)
+                    (firstKey == KEY_T && secondKey == KEY_W) ||  // tw (two, twist)
+                    (firstKey == KEY_W && secondKey == KEY_R)) {  // wr (write, wrong)
+                    isNonVietnameseCluster = true;
                 }
             }
 
-            // Check Vietnamese vowels: a, e, i, o, u, y
-            // Vowels can also start Vietnamese words and have tone marks applied
-            // Examples: "ắ" (aws), "ê" (ee), "ô" (oo), "ư" (uw), etc.
-            bool isVietnameseVowel = (firstKey == KEY_A || firstKey == KEY_E ||
-                                      firstKey == KEY_I || firstKey == KEY_O ||
-                                      firstKey == KEY_U || firstKey == KEY_Y);
+            // If word starts with non-Vietnamese cluster, skip tone mark logic
+            // and go directly to English dictionary check
+            if (isNonVietnameseCluster) {
+                #ifdef DEBUG
+                fprintf(stderr, "[AutoEnglish] SKIP TONE CHECK: '%s' starts with non-Vietnamese cluster\n", wordBuf); fflush(stderr);
+                #endif
+                // Fall through to English dictionary check at line 418+
+            } else {
+                // Vietnamese consonants (single): b,c,d,g,h,k,l,m,n,p,r,s,t,v,x
+                // Vietnamese consonants (double): ch,gh,gi,kh,ng,nh,ph,qu,th,tr,ngh
+                bool isVietnameseConsonant = false;
 
-            // Check Vietnamese dictionary without tone mark if starts with Vietnamese consonant OR vowel
-            if ((isVietnameseConsonant || isVietnameseVowel) && searchBinaryTrie(vieNodes, idx, stateIndex - 1)) {
-                // EXCEPTION: If the whole word is in the English dictionary and is 4+ chars long,
-                // and the last key is not a pure tone mark (s,f,r,x,j), we allow it.
-                // This fixes conflicts like "case" (cá + e), "code" (có + e), etc.
-                if (stateIndex >= 4 && engNodes && searchBinaryTrie(engNodes, idx, stateIndex)) {
-                    bool isPureTone = (lastKey == KEY_S || lastKey == KEY_F || 
-                                     lastKey == KEY_R || lastKey == KEY_X || lastKey == KEY_J);
-                    if (!isPureTone) {
-                        #ifdef DEBUG
-                        fprintf(stderr, "[AutoEnglish] ALLOW: '%s' is a valid English word and not a pure tone conflict\n", wordBuf); fflush(stderr);
-                        #endif
-                        return true; 
+                // Check single consonants (not 'f', 'j', 'w', 'z', 'q' alone)
+                if (firstKey == KEY_B || firstKey == KEY_C || firstKey == KEY_D ||
+                    firstKey == KEY_G || firstKey == KEY_H || firstKey == KEY_K ||
+                    firstKey == KEY_L || firstKey == KEY_M || firstKey == KEY_N ||
+                    firstKey == KEY_P || firstKey == KEY_R || firstKey == KEY_S ||
+                    firstKey == KEY_T || firstKey == KEY_V || firstKey == KEY_X) {
+                    isVietnameseConsonant = true;
+                }
+
+                // Check double consonants
+                if (stateIndex >= 3) {
+                    if ((firstKey == KEY_C && secondKey == KEY_H) ||  // ch
+                        (firstKey == KEY_G && secondKey == KEY_H) ||  // gh
+                        (firstKey == KEY_G && secondKey == KEY_I) ||  // gi
+                        (firstKey == KEY_K && secondKey == KEY_H) ||  // kh
+                        (firstKey == KEY_N && secondKey == KEY_G) ||  // ng
+                        (firstKey == KEY_N && secondKey == KEY_H) ||  // nh
+                        (firstKey == KEY_P && secondKey == KEY_H) ||  // ph
+                        (firstKey == KEY_Q && secondKey == KEY_U) ||  // qu
+                        (firstKey == KEY_T && secondKey == KEY_H) ||  // th
+                        (firstKey == KEY_T && secondKey == KEY_R)) {  // tr
+                        isVietnameseConsonant = true;
                     }
                 }
 
-                #ifdef DEBUG
-                // Build word without tone mark for debug message
-                char wordWithoutTone[32];
-                for (int i = 0; i < stateIndex - 1; i++) {
-                    wordWithoutTone[i] = 'a' + idx[i];
+                // Check Vietnamese vowels: a, e, i, o, u, y
+                // Vowels can also start Vietnamese words and have tone marks applied
+                // Examples: "ắ" (aws), "ê" (ee), "ô" (oo), "ư" (uw), etc.
+                bool isVietnameseVowel = (firstKey == KEY_A || firstKey == KEY_E ||
+                                          firstKey == KEY_I || firstKey == KEY_O ||
+                                          firstKey == KEY_U || firstKey == KEY_Y);
+
+                // Check Vietnamese dictionary without tone mark if starts with Vietnamese consonant OR vowel
+                if ((isVietnameseConsonant || isVietnameseVowel) && searchBinaryTrie(vieNodes, idx, stateIndex - 1)) {
+                    // EXCEPTION: If the whole word is in the English dictionary and is 4+ chars long,
+                    // and the last key is not a pure tone mark (s,f,r,x,j), we allow it.
+                    // This fixes conflicts like "case" (cá + e), "code" (có + e), etc.
+                    if (stateIndex >= 4 && engNodes && searchBinaryTrie(engNodes, idx, stateIndex)) {
+                        bool isPureTone = (lastKey == KEY_S || lastKey == KEY_F ||
+                                         lastKey == KEY_R || lastKey == KEY_X || lastKey == KEY_J);
+                        if (!isPureTone) {
+                            #ifdef DEBUG
+                            fprintf(stderr, "[AutoEnglish] ALLOW: '%s' is a valid English word and not a pure tone conflict\n", wordBuf); fflush(stderr);
+                            #endif
+                            return true;
+                        }
+                    }
+
+                    #ifdef DEBUG
+                    // Build word without tone mark for debug message
+                    char wordWithoutTone[32];
+                    for (int i = 0; i < stateIndex - 1; i++) {
+                        wordWithoutTone[i] = 'a' + idx[i];
+                    }
+                    wordWithoutTone[stateIndex - 1] = '\0';
+                    fprintf(stderr, "[AutoEnglish] SKIP: '%s' (without tone '%c') found in Vietnamese dictionary and starts with Vietnamese %s\n",
+                           wordWithoutTone, 'a' + idx[stateIndex - 1],
+                           isVietnameseConsonant ? "consonant" : "vowel"); fflush(stderr);
+                    #endif
+                    return false; // It's a Vietnamese word with tone mark - do NOT restore
                 }
-                wordWithoutTone[stateIndex - 1] = '\0';
-                fprintf(stderr, "[AutoEnglish] SKIP: '%s' (without tone '%c') found in Vietnamese dictionary and starts with Vietnamese %s\n",
-                       wordWithoutTone, 'a' + idx[stateIndex - 1],
-                       isVietnameseConsonant ? "consonant" : "vowel"); fflush(stderr);
-                #endif
-                return false; // It's a Vietnamese word with tone mark - do NOT restore
             }
         }
     }

@@ -200,14 +200,8 @@ struct SettingsItem: Identifiable {
             title: "Bảng mã", iconName: "textformat", tab: .typing,
             keywords: ["unicode", "tcvn3", "vni windows", "code table", "codepoint"]),
         SettingsItem(
-            title: "Kiểm tra chính tả", iconName: "text.badge.checkmark", tab: .typing,
-            keywords: ["spell check", "spelling", "lỗi chính tả", "tính năng cơ bản"]),
-        SettingsItem(
-            title: "Khôi phục phím nếu từ sai", iconName: "arrow.uturn.left.circle.fill", tab: .typing,
-            keywords: ["restore", "khôi phục", "ký tự", "từ sai", "invalid word"]),
-        SettingsItem(
-            title: "Tự động nhận diện từ tiếng Anh", iconName: "textformat.abc.dottedunderline", tab: .typing,
-            keywords: ["auto restore english", "tiếng anh", "english word", "terminal", "tẻminal"]),
+            title: "Giữ nguyên từ tiếng Anh", iconName: "textformat.abc.dottedunderline", tab: .typing,
+            keywords: ["auto restore english", "tiếng anh", "english word", "terminal", "tẻminal", "giữ nguyên"]),
         SettingsItem(
             title: "Phím khôi phục ký tự gốc", iconName: "arrow.uturn.backward.circle.fill", tab: .typing,
             keywords: ["restore key", "esc", "escape", "option", "control", "khôi phục", "ký tự gốc"]),
@@ -220,10 +214,6 @@ struct SettingsItem: Identifiable {
         SettingsItem(
             title: "Gõ nhanh (Quick Telex)", iconName: "hare.fill", tab: .typing,
             keywords: ["quick telex", "gõ nhanh", "cc", "gg", "kk", "nn", "qq", "pp", "tt"]),
-
-        SettingsItem(
-            title: "Phụ âm Z, F, W, J", iconName: "character", tab: .typing,
-            keywords: ["consonant", "phụ âm", "ngoại lai", "z f w j", "phụ âm nâng cao"]),
         SettingsItem(
             title: "Phụ âm đầu nhanh", iconName: "arrow.right.circle.fill", tab: .typing,
             keywords: ["quick start consonant", "phụ âm đầu", "nhanh", "f", "j", "w", "ph", "gi", "qu"]),

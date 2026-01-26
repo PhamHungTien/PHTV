@@ -183,7 +183,7 @@ enum Defaults {
     static let autoCapsMacro = false
     static let useSmartSwitchKey = true
     static let upperCaseFirstChar = false
-    static let allowConsonantZFWJ = false
+    static let allowConsonantZFWJ = true  // Always enabled (no UI toggle)
     static let quickStartConsonant = false
     static let quickEndConsonant = false
     static let rememberCode = true

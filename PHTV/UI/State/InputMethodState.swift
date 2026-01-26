@@ -17,6 +17,7 @@ final class InputMethodState: ObservableObject {
     @Published var codeTable: CodeTable = .unicode
 
     // Features
+    // Note: checkSpelling and allowConsonantZFWJ are always enabled (no UI toggle)
     @Published var checkSpelling: Bool = true
     @Published var useModernOrthography: Bool = true
     @Published var quickTelex: Bool = false
@@ -24,7 +25,7 @@ final class InputMethodState: ObservableObject {
     @Published var sendKeyStepByStep: Bool = false
     @Published var useSmartSwitchKey: Bool = true
     @Published var upperCaseFirstChar: Bool = false
-    @Published var allowConsonantZFWJ: Bool = false
+    @Published var allowConsonantZFWJ: Bool = true
     @Published var quickStartConsonant: Bool = false
     @Published var quickEndConsonant: Bool = false
     @Published var rememberCode: Bool = true
@@ -59,14 +60,15 @@ final class InputMethodState: ObservableObject {
         codeTable = CodeTable.from(index: codeTableIndex)
 
         // Load input settings
-        checkSpelling = defaults.bool(forKey: UserDefaultsKey.spelling)
+        // Note: checkSpelling and allowConsonantZFWJ are always true (no user toggle)
+        checkSpelling = true
         useModernOrthography = defaults.bool(forKey: UserDefaultsKey.modernOrthography)
         quickTelex = defaults.bool(forKey: UserDefaultsKey.quickTelex)
-        restoreOnInvalidWord = defaults.bool(forKey: UserDefaultsKey.restoreIfInvalidWord)
+        restoreOnInvalidWord = false  // Feature removed
         sendKeyStepByStep = defaults.bool(forKey: UserDefaultsKey.sendKeyStepByStep)
         useSmartSwitchKey = defaults.bool(forKey: UserDefaultsKey.useSmartSwitchKey)
         upperCaseFirstChar = defaults.bool(forKey: UserDefaultsKey.upperCaseFirstChar)
-        allowConsonantZFWJ = defaults.bool(forKey: UserDefaultsKey.allowConsonantZFWJ)
+        allowConsonantZFWJ = true
         quickStartConsonant = defaults.bool(forKey: UserDefaultsKey.quickStartConsonant)
         quickEndConsonant = defaults.bool(forKey: UserDefaultsKey.quickEndConsonant)
         rememberCode = defaults.bool(forKey: UserDefaultsKey.rememberCode)
@@ -96,14 +98,15 @@ final class InputMethodState: ObservableObject {
         defaults.set(codeTable.toIndex(), forKey: UserDefaultsKey.codeTable)
 
         // Save input settings
-        defaults.set(checkSpelling, forKey: UserDefaultsKey.spelling)
+        // Note: checkSpelling and allowConsonantZFWJ are always true
+        defaults.set(true, forKey: UserDefaultsKey.spelling)
         defaults.set(useModernOrthography, forKey: UserDefaultsKey.modernOrthography)
         defaults.set(quickTelex, forKey: UserDefaultsKey.quickTelex)
-        defaults.set(restoreOnInvalidWord, forKey: UserDefaultsKey.restoreIfInvalidWord)
+        defaults.set(false, forKey: UserDefaultsKey.restoreIfInvalidWord)  // Feature removed
         defaults.set(sendKeyStepByStep, forKey: UserDefaultsKey.sendKeyStepByStep)
         defaults.set(useSmartSwitchKey, forKey: UserDefaultsKey.useSmartSwitchKey)
         defaults.set(upperCaseFirstChar, forKey: UserDefaultsKey.upperCaseFirstChar)
-        defaults.set(allowConsonantZFWJ, forKey: UserDefaultsKey.allowConsonantZFWJ)
+        defaults.set(true, forKey: UserDefaultsKey.allowConsonantZFWJ)
         defaults.set(quickStartConsonant, forKey: UserDefaultsKey.quickStartConsonant)
         defaults.set(quickEndConsonant, forKey: UserDefaultsKey.quickEndConsonant)
         defaults.set(rememberCode, forKey: UserDefaultsKey.rememberCode)
@@ -223,7 +226,7 @@ final class InputMethodState: ObservableObject {
         sendKeyStepByStep = false
         useSmartSwitchKey = true
         upperCaseFirstChar = false
-        allowConsonantZFWJ = false
+        allowConsonantZFWJ = true
         quickStartConsonant = false
         quickEndConsonant = false
         rememberCode = true

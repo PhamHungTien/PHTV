@@ -390,32 +390,37 @@ struct FeatureToggleRow: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .center, spacing: 10) {
+            // Icon - centered vertically
             Image(systemName: icon)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.accentColor)
-                .frame(width: 24, height: 24)
-                .padding(.top, 2)
+                .frame(width: 26, height: 26)
 
+            // Text content - fixed height for consistency
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .lineLimit(1)
 
                 Text(description)
-                    .font(.system(size: 11, design: .rounded))
+                    .font(.system(size: 10, design: .rounded))
                     .foregroundColor(.secondary)
                     .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .frame(height: 36, alignment: .leading)
 
-            Spacer(minLength: 8)
+            Spacer(minLength: 4)
 
+            // Toggle - centered vertically
             Toggle("", isOn: $isOn)
                 .toggleStyle(.switch)
                 .controlSize(.small)
-                .padding(.top, 2)
         }
-        .padding(12)
-        .frame(height: 70)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .frame(height: 58)
         .background(
             OnboardingSurface(
                 cornerRadius: 10,
@@ -739,13 +744,6 @@ struct BasicFeaturesStepView: View {
             ScrollView(.vertical, showsIndicators: false) {
                 LazyVGrid(columns: columns, spacing: 12) {
                     FeatureToggleRow(
-                        icon: "text.magnifyingglass",
-                        title: "Kiểm tra chính tả",
-                        description: "Phát hiện và ngăn gõ sai từ tiếng Việt.",
-                        isOn: $appState.checkSpelling
-                    )
-
-                    FeatureToggleRow(
                         icon: "bolt.fill",
                         title: "Gõ tắt (Macro)",
                         description: "Tăng tốc nhập liệu với bảng gõ tắt.",
@@ -760,24 +758,10 @@ struct BasicFeaturesStepView: View {
                     )
 
                     FeatureToggleRow(
-                        icon: "globe",
-                        title: "Phụ âm ngoài (Z, F, W, J)",
-                        description: "Cho phép gõ các phụ âm mở rộng.",
-                        isOn: $appState.allowConsonantZFWJ
-                    )
-
-                    FeatureToggleRow(
                         icon: "textformat.abc",
                         title: "Chính tả mới",
                         description: "Đặt dấu oà, uý thay vì òa, úy.",
                         isOn: $appState.useModernOrthography
-                    )
-
-                    FeatureToggleRow(
-                        icon: "arrow.uturn.backward",
-                        title: "Khôi phục từ sai",
-                        description: "Khôi phục từ gõ sai thành chữ gốc.",
-                        isOn: $appState.restoreOnInvalidWord
                     )
 
                     FeatureToggleRow(
@@ -792,6 +776,13 @@ struct BasicFeaturesStepView: View {
                         title: "Gõ nhanh (Quick Telex)",
                         description: "Rút gọn tổ hợp phím khi gõ Telex.",
                         isOn: $appState.quickTelex
+                    )
+
+                    FeatureToggleRow(
+                        icon: "character.bubble.fill",
+                        title: "Giữ nguyên từ tiếng Anh",
+                        description: "Không biến đổi từ tiếng Anh khi gõ.",
+                        isOn: $appState.autoRestoreEnglishWord
                     )
                 }
                 .padding(.horizontal, OnboardingStyle.contentHorizontalPadding)
