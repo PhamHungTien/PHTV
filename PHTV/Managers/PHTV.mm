@@ -1861,6 +1861,12 @@ extern "C" {
         
         //the case when hCode is vRestore or vRestoreAndStartNewSession, the word is invalid and last key is control key such as TAB, LEFT ARROW, RIGHT ARROW,...
         if (_willSendControlKey) {
+            // FIX for Issue #121: Add small delay before sending control key (Enter/Tab/etc.) after auto English restore
+            // Terminal and some apps need time to process the Unicode string before receiving the control key
+            // Without this delay, the control key may be processed before the text is inserted
+            if (_newCharSize > 0) {
+                usleep(5000);  // 5ms delay to let Terminal process the Unicode string
+            }
             SendKeyCode(_keycode);
         }
     }
