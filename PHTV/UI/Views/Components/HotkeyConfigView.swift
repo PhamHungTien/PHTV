@@ -245,7 +245,6 @@ struct HotkeyConfigView: View {
                         }
                     }
                 )
-                // The slider should still adjust volume even if the mode beep is disabled
             }
         }
     }

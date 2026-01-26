@@ -442,24 +442,25 @@ struct SettingsCard<Content: View, Trailing: View>: View {
         }
         .clipShape(PHTVRoundedRect(cornerRadius: 14, style: .continuous))
         .frame(maxWidth: 700)
-        .background {
-            // Simple material background - no glass effect
-            if #available(macOS 12.0, *) {
-                PHTVRoundedRect(cornerRadius: 14)
-                    .fill(.regularMaterial)
-                    .overlay(
-                        PHTVRoundedRect(cornerRadius: 14)
-                            .stroke(Color.primary.opacity(colorScheme == .dark ? 0.16 : 0.1), lineWidth: 1)
-                    )
-            } else {
-                PHTVRoundedRect(cornerRadius: 14)
-                    .fill(cardGradient)
-                    .compositingGroup()
-                    .overlay(
-                        PHTVRoundedRect(cornerRadius: 14)
-                            .stroke(Color.primary.opacity(colorScheme == .dark ? 0.16 : 0.12), lineWidth: 1)
-                    )
-            }
+        .background(cardBackground)
+    }
+
+    @ViewBuilder
+    private var cardBackground: some View {
+        if #available(macOS 12.0, *) {
+            PHTVRoundedRect(cornerRadius: 14)
+                .fill(.regularMaterial)
+                .overlay(
+                    PHTVRoundedRect(cornerRadius: 14)
+                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.16 : 0.1), lineWidth: 1)
+                )
+        } else {
+            PHTVRoundedRect(cornerRadius: 14)
+                .fill(Color(NSColor.windowBackgroundColor))
+                .overlay(
+                    PHTVRoundedRect(cornerRadius: 14)
+                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.16 : 0.1), lineWidth: 1)
+                )
         }
     }
 
@@ -471,18 +472,6 @@ struct SettingsCard<Content: View, Trailing: View>: View {
             ],
             startPoint: .top,
             endPoint: .bottom
-        )
-    }
-
-    private var cardGradient: LinearGradient {
-        LinearGradient(
-            colors: [
-                Color(NSColor.controlBackgroundColor).opacity(colorScheme == .dark ? 0.88 : 0.95),
-                Color(NSColor.windowBackgroundColor).opacity(colorScheme == .dark ? 0.72 : 0.88),
-                Color.accentColor.opacity(colorScheme == .dark ? 0.06 : 0.04)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
         )
     }
 }
@@ -498,20 +487,20 @@ struct SettingsToggleRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
-            // Icon background - colored fill to avoid glass-on-glass (Apple guideline)
+            // Icon with white/neutral background
             ZStack {
                 PHTVRoundedRect(cornerRadius: 8)
-                    .fill(iconColor.opacity(colorScheme == .dark ? 0.2 : 0.15))
+                    .fill(Color(NSColor.controlBackgroundColor))
                     .overlay(
                         PHTVRoundedRect(cornerRadius: 8)
-                            .stroke(iconColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
+                            .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
                     )
-                    .frame(width: 36, height: 36)
 
                 Image(systemName: icon)
                     .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(iconColor)
             }
+            .frame(width: 36, height: 36)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -543,103 +532,6 @@ struct SettingsDivider: View {
     var body: some View {
         Divider()
             .padding(.leading, 50)
-    }
-}
-
-struct SettingsSliderRow: View {
-    let icon: String
-    let iconColor: Color
-    let title: String
-    let subtitle: String
-    let minValue: Double
-    let maxValue: Double
-    let step: Double
-    @Binding var value: Double
-    var valueFormatter: (Double) -> String = { String(format: "%.0f", $0) }
-    var onEditingChanged: ((Bool) -> Void)? = nil
-    var onValueChanged: ((Double) -> Void)? = nil
-    var useLiquidGlassTrack: Bool = true
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        VStack(spacing: 12) {
-            HStack(alignment: .top, spacing: 14) {
-                // Icon background - colored fill to avoid glass-on-glass (Apple guideline)
-                ZStack {
-                    PHTVRoundedRect(cornerRadius: 8)
-                        .fill(iconColor.opacity(colorScheme == .dark ? 0.2 : 0.15))
-                        .overlay(
-                            PHTVRoundedRect(cornerRadius: 8)
-                                .stroke(iconColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
-                        )
-                        .frame(width: 36, height: 36)
-
-                    Image(systemName: icon)
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(iconColor)
-                }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.body)
-                        .foregroundStyle(.primary)
-
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer()
-
-                Text(valueFormatter(value))
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.tint)
-                    .frame(minWidth: 40, alignment: .trailing)
-                    .padding(.top, 2)
-            }
-
-            ZStack {
-                if useLiquidGlassTrack {
-                    sliderTrackBackground
-                }
-
-                CustomSlider(
-                    value: $value,
-                    range: minValue...maxValue,
-                    step: step,
-                    tintColor: iconColor,
-                    onEditingChanged: { editing in
-                        onEditingChanged?(editing)
-                    }
-                )
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
-            }
-            .onChange(of: value) { newVal in
-                onValueChanged?(newVal)
-            }
-        }
-        .padding(.vertical, 6)
-    }
-
-    @ViewBuilder
-    private var sliderTrackBackground: some View {
-        if #available(macOS 26.0, *) {
-            PHTVRoundedRect(cornerRadius: 10)
-                .fill(.ultraThinMaterial)
-                .settingsGlassEffect(cornerRadius: 10)
-        } else {
-            PHTVRoundedRect(cornerRadius: 10)
-                .fill(Color(NSColor.controlBackgroundColor).opacity(0.7))
-                .overlay(
-                    PHTVRoundedRect(cornerRadius: 10)
-                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                )
-        }
     }
 }
 

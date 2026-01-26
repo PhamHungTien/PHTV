@@ -326,9 +326,19 @@ struct SettingsIconTile<Content: View>: View {
     }
 
     var body: some View {
-        // Just the content with color - no background
-        content
-            .frame(width: size, height: size)
+        // Icon with white/neutral background
+        ZStack {
+            PHTVRoundedRect(cornerRadius: cornerRadius)
+                .fill(Color(NSColor.controlBackgroundColor))
+                .overlay(
+                    PHTVRoundedRect(cornerRadius: cornerRadius)
+                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
+                )
+
+            content
+                .foregroundStyle(color)
+        }
+        .frame(width: size, height: size)
     }
 }
 
@@ -382,10 +392,19 @@ struct SettingsHeaderView<Trailing: View>: View {
     }
 
     private var iconTile: some View {
-        Image(systemName: icon)
-            .font(.system(size: 28, weight: .semibold))
-            .foregroundStyle(accent)
-            .frame(width: 48, height: 48)
+        ZStack {
+            PHTVRoundedRect(cornerRadius: 12)
+                .fill(Color(NSColor.controlBackgroundColor))
+                .overlay(
+                    PHTVRoundedRect(cornerRadius: 12)
+                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
+                )
+
+            Image(systemName: icon)
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(accent)
+        }
+        .frame(width: 48, height: 48)
     }
 
     @ViewBuilder

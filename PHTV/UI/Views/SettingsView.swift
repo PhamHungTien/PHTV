@@ -426,11 +426,20 @@ struct SettingsSidebarRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            // Icon with color only - no background
-            Image(systemName: tab.iconName)
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 24, height: 24)
+            // Icon with white/neutral background
+            ZStack {
+                PHTVRoundedRect(cornerRadius: 6)
+                    .fill(Color(NSColor.controlBackgroundColor))
+                    .overlay(
+                        PHTVRoundedRect(cornerRadius: 6)
+                            .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
+                    )
+
+                Image(systemName: tab.iconName)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
+            }
+            .frame(width: 24, height: 24)
 
             Text(tab.title)
                 .font(.system(size: 13, weight: .medium))
@@ -643,11 +652,20 @@ struct SearchResultRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                // Icon with color only - no background
-                Image(systemName: item.iconName)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(Color.accentColor)
-                    .frame(width: 28, height: 28)
+                // Icon with white/neutral background
+                ZStack {
+                    PHTVRoundedRect(cornerRadius: 6)
+                        .fill(Color(NSColor.controlBackgroundColor))
+                        .overlay(
+                            PHTVRoundedRect(cornerRadius: 6)
+                                .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
+                        )
+
+                    Image(systemName: item.iconName)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(Color.accentColor)
+                }
+                .frame(width: 28, height: 28)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(item.title)

@@ -60,18 +60,26 @@ struct UpdateBannerView: View {
 
     @ViewBuilder
     private var iconView: some View {
-        // Icon with color only - no background
-        if #available(macOS 14.0, *) {
-            Image(systemName: "arrow.down.circle.fill")
-                .font(.system(size: 32))
-                .foregroundStyle(Color.accentColor)
-                .symbolEffect(.bounce, value: animateIcon)
+        // Icon with white/neutral background
+        ZStack {
+            PHTVRoundedRect(cornerRadius: 12)
+                .fill(Color(NSColor.controlBackgroundColor))
+                .overlay(
+                    PHTVRoundedRect(cornerRadius: 12)
+                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
+                )
                 .frame(width: 48, height: 48)
-        } else {
-            Image(systemName: "arrow.down.circle.fill")
-                .font(.system(size: 32))
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 48, height: 48)
+
+            if #available(macOS 14.0, *) {
+                Image(systemName: "arrow.down.circle.fill")
+                    .font(.system(size: 24))
+                    .foregroundStyle(Color.accentColor)
+                    .symbolEffect(.bounce, value: animateIcon)
+            } else {
+                Image(systemName: "arrow.down.circle.fill")
+                    .font(.system(size: 24))
+                    .foregroundStyle(Color.accentColor)
+            }
         }
     }
 
