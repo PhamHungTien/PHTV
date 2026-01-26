@@ -5,10 +5,8 @@ Phiên bản này tập trung vào sửa lỗi và tối ưu hóa giao diện ng
 ### 🐛 Sửa lỗi
 
 *   **Fix #121 - Lệnh Terminal không hoạt động:** Khắc phục lỗi lệnh `clear`, `grep`, `printf` và các lệnh khác không hoạt động đúng trong Terminal khi bật chế độ tiếng Việt.
-    *   Nguyên nhân 1: Engine nhận nhầm phụ âm cuối của từ tiếng Anh (như `r` trong `clear`) là dấu thanh Telex.
-    *   Giải pháp 1: Thêm logic nhận diện sớm các tổ hợp phụ âm không có trong tiếng Việt (bl, br, cl, cr, dr, fl, fr, gl, gr, pl, pr, sc, sk, sl, sm, sn, sp, st, sw, tw, wr).
-    *   Nguyên nhân 2: Khi "Tự động khôi phục tiếng Anh" bật, Enter được gửi trước khi Terminal kịp nhận text.
-    *   Giải pháp 2: Thêm delay 5ms trước khi gửi control key (Enter/Tab) sau khi khôi phục từ tiếng Anh.
+    *   Nguyên nhân: Engine nhận nhầm phụ âm cuối của từ tiếng Anh (như `r` trong `clear`) là dấu thanh Telex.
+    *   Giải pháp: Thêm logic nhận diện sớm các tổ hợp phụ âm không có trong tiếng Việt (bl, br, cl, cr, dr, fl, fr, gl, gr, pl, pr, sc, sk, sl, sm, sn, sp, st, sw, tw, wr).
 
 ### ✨ Tính năng mới
 
