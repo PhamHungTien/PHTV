@@ -20,6 +20,10 @@ Phiên bản này tập trung vào sửa lỗi và tối ưu hóa giao diện ng
 *   **Empty state gọn hơn:** Thiết kế lại các mục "Chưa có ứng dụng" với layout ngang, tiết kiệm diện tích.
 *   **Âm lượng beep có điều kiện:** Thanh trượt âm lượng chỉ hiển thị khi bật tính năng phát âm thanh.
 
+### 🔧 Cải tiến kỹ thuật
+
+*   **Xuất/nhập cấu hình:** Thêm hỗ trợ xuất/nhập danh sách "Ứng dụng không viết hoa" khi sao lưu/khôi phục cài đặt.
+
 ### 🧹 Đơn giản hóa
 
 *   **Xóa tùy chọn không cần thiết:** Loại bỏ giao diện của các tính năng luôn được bật:

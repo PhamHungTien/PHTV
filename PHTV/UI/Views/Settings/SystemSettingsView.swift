@@ -439,6 +439,13 @@ struct SystemSettingsView: View {
             stepByStepApps = apps
         }
 
+        // Load uppercase excluded apps
+        var upperCaseExcludedApps: [ExcludedApp]?
+        if let data = defaults.data(forKey: "UpperCaseExcludedApps"),
+           let apps = try? JSONDecoder().decode([ExcludedApp].self, from: data) {
+            upperCaseExcludedApps = apps
+        }
+
         return SettingsBackup(
             version: "2.0",
             exportDate: ISO8601DateFormatter().string(from: Date()),
@@ -447,7 +454,8 @@ struct SystemSettingsView: View {
             macroCategories: categories,
             excludedApps: nil,  // Legacy format no longer used
             excludedAppsV2: excludedAppsV2,
-            sendKeyStepByStepApps: stepByStepApps
+            sendKeyStepByStepApps: stepByStepApps,
+            upperCaseExcludedApps: upperCaseExcludedApps
         )
     }
 
@@ -530,6 +538,13 @@ struct SystemSettingsView: View {
             }
         }
 
+        // Apply uppercase excluded apps
+        if let upperCaseExcludedApps = backup.upperCaseExcludedApps {
+            if let encoded = try? JSONEncoder().encode(upperCaseExcludedApps) {
+                defaults.set(encoded, forKey: "UpperCaseExcludedApps")
+            }
+        }
+
         defaults.synchronize()
 
         // Reload all settings
@@ -539,6 +554,7 @@ struct SystemSettingsView: View {
         NotificationCenter.default.post(name: NSNotification.Name("MacrosUpdated"), object: nil)
         NotificationCenter.default.post(name: NSNotification.Name("CustomDictionaryUpdated"), object: nil)
         NotificationCenter.default.post(name: NSNotification.Name("ExcludedAppsChanged"), object: nil)
+        NotificationCenter.default.post(name: NSNotification.Name("UpperCaseExcludedAppsChanged"), object: nil)
         NotificationCenter.default.post(name: NSNotification.Name("PHTVSettingsChanged"), object: nil)
         NotificationCenter.default.post(name: NSNotification.Name("HotkeyChanged"), object: NSNumber(value: defaults.integer(forKey: "SwitchKeyStatus")))
         NotificationCenter.default.post(name: NSNotification.Name("EmojiHotkeySettingsChanged"), object: nil)
@@ -697,6 +713,7 @@ struct SettingsBackup: Codable, Sendable {
     var excludedApps: [String]?  // Legacy format (bundle IDs only)
     var excludedAppsV2: [ExcludedApp]?  // New format with full app info
     var sendKeyStepByStepApps: [ExcludedApp]?  // Apps with step-by-step key sending
+    var upperCaseExcludedApps: [ExcludedApp]?  // Apps excluded from uppercase first char
 }
 
 struct AnyCodableValue: Codable, @unchecked Sendable {
