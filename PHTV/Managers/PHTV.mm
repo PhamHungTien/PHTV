@@ -3029,7 +3029,11 @@ extern "C" {
                     BOOL isSpotlightTarget = (!isBrowserApp && spotlightActive) || appChars.isSpotlightLike;
                     // Browser step-by-step removed - Shift+Left strategy handles browsers well with batch posting
                     // Only use step-by-step for explicitly configured apps
-                    BOOL useStepByStep = (!isSpotlightTarget) && (vSendKeyStepByStep || appChars.needsStepByStep);
+                    // FIX #121: Also use step-by-step for auto English restore + Enter/Return
+                    // This ensures Terminal receives characters before the Enter key
+                    BOOL isAutoEnglishWithEnter = (pData->code == vRestoreAndStartNewSession) &&
+                                                  (_keycode == KEY_ENTER || _keycode == KEY_RETURN);
+                    BOOL useStepByStep = (!isSpotlightTarget) && (vSendKeyStepByStep || appChars.needsStepByStep || isAutoEnglishWithEnter);
 #ifdef DEBUG
                     if (isSpotlightTarget) {
                         PHTVSpotlightDebugLog([NSString stringWithFormat:@"willSend stepByStep=%d backspaceCount=%d newCharCount=%d", (int)useStepByStep, (int)pData->backspaceCount, (int)pData->newCharCount]);
