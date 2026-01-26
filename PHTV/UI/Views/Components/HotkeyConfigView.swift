@@ -287,6 +287,7 @@ struct ModifierKeyButton: View {
     let symbol: String
     let name: String
     @Binding var isOn: Bool
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         Button(action: {
@@ -306,25 +307,20 @@ struct ModifierKeyButton: View {
             .frame(maxWidth: .infinity)
             .frame(height: 56)
             .background {
-                if #available(macOS 26.0, *) {
-                    if isOn {
-                        PHTVRoundedRect(cornerRadius: 10)
-                            .fill(Color.accentColor)
-                    } else {
-                        PHTVRoundedRect(cornerRadius: 10)
-                            .fill(.ultraThinMaterial)
-                            .settingsGlassEffect(cornerRadius: 10)
-                    }
-                } else {
+                if isOn {
                     PHTVRoundedRect(cornerRadius: 10)
-                        .fill(isOn ? .accentColor : Color(NSColor.controlBackgroundColor))
+                        .fill(Color.accentColor)
+                } else {
+                    // Clearer unselected state with subtle fill and visible border
+                    PHTVRoundedRect(cornerRadius: 10)
+                        .fill(Color(NSColor.controlBackgroundColor).opacity(colorScheme == .dark ? 0.5 : 0.8))
                         .overlay(
                             PHTVRoundedRect(cornerRadius: 10)
-                                .stroke(isOn ? Color.clear : Color.gray.opacity(0.25), lineWidth: 1)
+                                .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.15), lineWidth: 1)
                         )
                 }
             }
-            .scaleEffect(isOn ? 1.0 : 0.98)
+            .scaleEffect(isOn ? 1.0 : 1.0)
         }
         .buttonStyle(.plain)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isOn)
@@ -739,6 +735,7 @@ struct PauseKeyButton: View {
     let keyCode: UInt16
     @Binding var selectedKeyCode: UInt16
     @Binding var selectedKeyName: String
+    @Environment(\.colorScheme) private var colorScheme
 
     private var isSelected: Bool {
         selectedKeyCode == keyCode
@@ -763,25 +760,20 @@ struct PauseKeyButton: View {
             .frame(maxWidth: .infinity)
             .frame(height: 56)
             .background {
-                if #available(macOS 26.0, *) {
-                    if isSelected {
-                        PHTVRoundedRect(cornerRadius: 10)
-                            .fill(Color.accentColor)
-                    } else {
-                        PHTVRoundedRect(cornerRadius: 10)
-                            .fill(.ultraThinMaterial)
-                            .settingsGlassEffect(cornerRadius: 10)
-                    }
-                } else {
+                if isSelected {
                     PHTVRoundedRect(cornerRadius: 10)
-                        .fill(isSelected ? .accentColor : Color(NSColor.controlBackgroundColor))
+                        .fill(Color.accentColor)
+                } else {
+                    // Clearer unselected state with subtle fill and visible border
+                    PHTVRoundedRect(cornerRadius: 10)
+                        .fill(Color(NSColor.controlBackgroundColor).opacity(colorScheme == .dark ? 0.5 : 0.8))
                         .overlay(
                             PHTVRoundedRect(cornerRadius: 10)
-                                .stroke(isSelected ? Color.clear : Color.gray.opacity(0.25), lineWidth: 1)
+                                .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.15), lineWidth: 1)
                         )
                 }
             }
-            .scaleEffect(isSelected ? 1.0 : 0.98)
+            .scaleEffect(isSelected ? 1.0 : 1.0)
         }
         .buttonStyle(.plain)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)

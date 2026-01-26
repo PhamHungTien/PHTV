@@ -128,114 +128,27 @@ extension View {
     }
 }
 
-// MARK: - Settings Glass Effect
-
-@available(macOS 26.0, *)
-private struct SettingsGlassEffectModifier: ViewModifier {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    let cornerRadius: CGFloat
-
-    func body(content: Content) -> some View {
-        if reduceTransparency {
-            content
-        } else {
-            content.glassEffect(in: .rect(corners: .fixed(cornerRadius), isUniform: true))
-        }
-    }
-}
-
-@available(macOS 26.0, *)
-private struct SettingsGlassEffectShapeModifier<S: Shape>: ViewModifier {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    let shape: S
-
-    func body(content: Content) -> some View {
-        if reduceTransparency {
-            content
-        } else {
-            content.glassEffect(in: shape)
-        }
-    }
-}
+// MARK: - Settings Glass Effect (disabled - using simple materials instead)
 
 extension View {
-    /// Applies glassEffect when available and reduce transparency is off
-    @ViewBuilder
+    /// Glass effect disabled - returns self unchanged
     func settingsGlassEffect(cornerRadius: CGFloat) -> some View {
-        if #available(macOS 26.0, *) {
-            modifier(SettingsGlassEffectModifier(cornerRadius: cornerRadius))
-        } else {
-            self
-        }
+        self
     }
 
-    /// Applies glassEffect with a custom shape when available and reduce transparency is off
-    @ViewBuilder
+    /// Glass effect disabled - returns self unchanged
     func settingsGlassEffect<S: Shape>(in shape: S) -> some View {
-        if #available(macOS 26.0, *) {
-            modifier(SettingsGlassEffectShapeModifier(shape: shape))
-        } else {
-            self
-        }
+        self
     }
 
-    /// Applies interactive glassEffect for controls (better touch/click feedback)
-    @ViewBuilder
+    /// Interactive glass effect disabled - returns self unchanged
     func settingsInteractiveGlassEffect(cornerRadius: CGFloat) -> some View {
-        if #available(macOS 26.0, *) {
-            modifier(SettingsInteractiveGlassModifier(cornerRadius: cornerRadius))
-        } else {
-            self
-        }
+        self
     }
 
-    /// Applies tinted glassEffect for primary actions
-    @ViewBuilder
+    /// Tinted glass effect disabled - returns self unchanged
     func settingsTintedGlassEffect(cornerRadius: CGFloat, tint: Color) -> some View {
-        if #available(macOS 26.0, *) {
-            modifier(SettingsTintedGlassModifier(cornerRadius: cornerRadius, tint: tint))
-        } else {
-            self
-        }
-    }
-}
-
-// MARK: - Interactive Glass Modifier (macOS 26+)
-
-@available(macOS 26.0, *)
-private struct SettingsInteractiveGlassModifier: ViewModifier {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    let cornerRadius: CGFloat
-
-    func body(content: Content) -> some View {
-        if reduceTransparency {
-            content
-        } else {
-            content.glassEffect(
-                .regular.interactive(),
-                in: .rect(corners: .fixed(cornerRadius), isUniform: true)
-            )
-        }
-    }
-}
-
-// MARK: - Tinted Glass Modifier (macOS 26+)
-
-@available(macOS 26.0, *)
-private struct SettingsTintedGlassModifier: ViewModifier {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    let cornerRadius: CGFloat
-    let tint: Color
-
-    func body(content: Content) -> some View {
-        if reduceTransparency {
-            content
-        } else {
-            content.glassEffect(
-                .regular.tint(tint),
-                in: .rect(corners: .fixed(cornerRadius), isUniform: true)
-            )
-        }
+        self
     }
 }
 
@@ -243,45 +156,32 @@ private struct SettingsTintedGlassModifier: ViewModifier {
 
 struct PrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        if #available(macOS 26.0, *) {
-            configuration.label
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .buttonStyle(.glassProminent)
-                .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
-                .animation(.phtvMorph, value: configuration.isPressed)
-        } else {
-            configuration.label
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .buttonStyle(.borderedProminent)
-                .opacity(configuration.isPressed ? 0.8 : 1.0)
-        }
+        configuration.label
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .opacity(configuration.isPressed ? 0.8 : 1.0)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 
 struct SecondaryButtonStyle: ButtonStyle {
+    @Environment(\.colorScheme) private var colorScheme
+
     func makeBody(configuration: Configuration) -> some View {
-        if #available(macOS 26.0, *) {
-            configuration.label
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .buttonStyle(.glass)
-                .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
-                .animation(.phtvMorph, value: configuration.isPressed)
-        } else {
-            configuration.label
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(Color(NSColor.controlBackgroundColor))
-                .foregroundColor(.primary)
-                .cornerRadius(6)
-                .overlay(
-                    PHTVRoundedRect(cornerRadius: 6)
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                )
-                .opacity(configuration.isPressed ? 0.8 : 1.0)
-        }
+        configuration.label
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(Color(NSColor.controlBackgroundColor).opacity(colorScheme == .dark ? 0.5 : 0.6))
+            .foregroundColor(.primary)
+            .cornerRadius(6)
+            .overlay(
+                PHTVRoundedRect(cornerRadius: 6)
+                    .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
+            )
+            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .opacity(configuration.isPressed ? 0.8 : 1.0)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 
@@ -290,38 +190,24 @@ struct SecondaryButtonStyle: ButtonStyle {
 struct GlassPillButtonStyle: ButtonStyle {
     var isSelected: Bool = false
     var tint: Color = .accentColor
+    @Environment(\.colorScheme) private var colorScheme
 
     func makeBody(configuration: Configuration) -> some View {
-        if #available(macOS 26.0, *) {
-            configuration.label
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background {
-                    Capsule()
-                        .fill(isSelected ? tint.opacity(0.2) : .clear)
-                }
-                .foregroundStyle(isSelected ? tint : .secondary)
-                .glassEffect(
-                    isSelected ? .regular.tint(tint) : .regular,
-                    in: Capsule()
-                )
-                .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
-                .animation(.phtvMorph, value: configuration.isPressed)
-        } else {
-            configuration.label
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background(
-                    Capsule()
-                        .fill(isSelected ? tint.opacity(0.15) : Color(NSColor.controlBackgroundColor))
-                )
-                .foregroundStyle(isSelected ? tint : .secondary)
-                .overlay(
-                    Capsule()
-                        .stroke(isSelected ? tint.opacity(0.3) : Color.gray.opacity(0.2), lineWidth: 1)
-                )
-                .opacity(configuration.isPressed ? 0.8 : 1.0)
-        }
+        configuration.label
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(
+                Capsule()
+                    .fill(isSelected ? tint.opacity(colorScheme == .dark ? 0.2 : 0.15) : Color(NSColor.controlBackgroundColor).opacity(colorScheme == .dark ? 0.5 : 0.6))
+            )
+            .foregroundStyle(isSelected ? tint : .secondary)
+            .overlay(
+                Capsule()
+                    .stroke(isSelected ? tint.opacity(colorScheme == .dark ? 0.3 : 0.25) : Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
+            )
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .opacity(configuration.isPressed ? 0.8 : 1.0)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 
@@ -354,24 +240,14 @@ extension Color {
 // MARK: - Adaptive Button Styles
 
 extension View {
-    /// Applies glassProminent on macOS 26+, borderedProminent on older versions
-    @ViewBuilder
+    /// Uses borderedProminent button style (no glass)
     func adaptiveProminentButtonStyle() -> some View {
-        if #available(macOS 26.0, *) {
-            self.buttonStyle(.glassProminent)
-        } else {
-            self.buttonStyle(.borderedProminent)
-        }
+        self.buttonStyle(.borderedProminent)
     }
 
-    /// Applies glass on macOS 26+, bordered on older versions
-    @ViewBuilder
+    /// Uses bordered button style (no glass)
     func adaptiveBorderedButtonStyle() -> some View {
-        if #available(macOS 26.0, *) {
-            self.buttonStyle(.glass)
-        } else {
-            self.buttonStyle(.bordered)
-        }
+        self.buttonStyle(.bordered)
     }
 }
 
@@ -459,18 +335,13 @@ struct SettingsIconTile<Content: View>: View {
 
     @ViewBuilder
     private var background: some View {
-        if #available(macOS 26.0, *), !reduceTransparency {
-            PHTVRoundedRect(cornerRadius: cornerRadius)
-                .fill(.ultraThinMaterial)
-                .settingsGlassEffect(cornerRadius: cornerRadius)
-                .overlay(
-                    PHTVRoundedRect(cornerRadius: cornerRadius)
-                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.12), lineWidth: 1)
-                )
-        } else {
-            PHTVRoundedRect(cornerRadius: cornerRadius)
-                .fill(color.opacity(0.12))
-        }
+        // Colored fill - no glass to avoid glass-on-glass (Apple guideline)
+        PHTVRoundedRect(cornerRadius: cornerRadius)
+            .fill(color.opacity(colorScheme == .dark ? 0.2 : 0.15))
+            .overlay(
+                PHTVRoundedRect(cornerRadius: cornerRadius)
+                    .stroke(color.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
+            )
     }
 }
 
@@ -525,20 +396,14 @@ struct SettingsHeaderView<Trailing: View>: View {
 
     private var iconTile: some View {
         ZStack {
-            if #available(macOS 26.0, *), !reduceTransparency {
-                PHTVRoundedRect(cornerRadius: 12)
-                    .fill(.ultraThinMaterial)
-                    .settingsGlassEffect(cornerRadius: 12)
-                    .overlay(
-                        PHTVRoundedRect(cornerRadius: 12)
-                            .stroke(iconBorderColor, lineWidth: 1)
-                    )
-            } else {
-                PHTVRoundedRect(cornerRadius: 12)
-                    .fill(iconBackground)
-                PHTVRoundedRect(cornerRadius: 12)
-                    .stroke(iconBorderColor, lineWidth: 1)
-            }
+            // Colored fill - no glass to avoid glass-on-glass (Apple guideline)
+            PHTVRoundedRect(cornerRadius: 12)
+                .fill(accent.opacity(colorScheme == .dark ? 0.2 : 0.15))
+                .overlay(
+                    PHTVRoundedRect(cornerRadius: 12)
+                        .stroke(accent.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
+                )
+
             Image(systemName: icon)
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(accent)
@@ -548,10 +413,10 @@ struct SettingsHeaderView<Trailing: View>: View {
 
     @ViewBuilder
     private var headerBackground: some View {
-        if #available(macOS 26.0, *), !reduceTransparency {
+        // Simple material background - no glass effect
+        if #available(macOS 12.0, *) {
             PHTVRoundedRect(cornerRadius: 14)
-                .fill(.ultraThinMaterial)
-                .settingsGlassEffect(cornerRadius: 14)
+                .fill(.regularMaterial)
         } else {
             PHTVRoundedRect(cornerRadius: 14)
                 .fill(headerGradient)
@@ -741,16 +606,15 @@ extension View {
     }
 }
 
-// MARK: - Liquid Glass Tab Indicator (macOS 26+)
+// MARK: - Tab Indicator
 
-/// A morphing tab indicator that uses Liquid Glass on macOS 26+
+/// A morphing tab indicator with matchedGeometryEffect
 struct LiquidGlassTabIndicator: View {
     let isSelected: Bool
     let cornerRadius: CGFloat
     let namespace: Namespace.ID
     let id: String
 
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorScheme) private var colorScheme
 
     init(
@@ -767,23 +631,13 @@ struct LiquidGlassTabIndicator: View {
 
     var body: some View {
         if isSelected {
-            if #available(macOS 26.0, *), !reduceTransparency {
-                PHTVRoundedRect(cornerRadius: cornerRadius)
-                    .fill(.ultraThinMaterial)
-                    .glassEffect(
-                        .regular.interactive(),
-                        in: .rect(corners: .fixed(cornerRadius), isUniform: true)
-                    )
-                    .glassEffectID(id, in: namespace)
-                    .overlay(
-                        PHTVRoundedRect(cornerRadius: cornerRadius)
-                            .fill(Color.accentColor.opacity(0.12))
-                    )
-            } else {
-                PHTVRoundedRect(cornerRadius: cornerRadius)
-                    .fill(Color.accentColor.opacity(0.15))
-                    .matchedGeometryEffect(id: id, in: namespace)
-            }
+            PHTVRoundedRect(cornerRadius: cornerRadius)
+                .fill(Color.accentColor.opacity(colorScheme == .dark ? 0.2 : 0.15))
+                .overlay(
+                    PHTVRoundedRect(cornerRadius: cornerRadius)
+                        .stroke(Color.accentColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
+                )
+                .matchedGeometryEffect(id: id, in: namespace)
         }
     }
 }
@@ -809,22 +663,13 @@ struct FloatingGlassCard<Content: View>: View {
     var body: some View {
         content
             .background {
-                if #available(macOS 26.0, *), !reduceTransparency {
+                // Simple material background - no glass effect
+                if #available(macOS 12.0, *) {
                     PHTVRoundedRect(cornerRadius: cornerRadius)
-                        .fill(Color(NSColor.windowBackgroundColor).opacity(0.25))
-                        .glassEffect(
-                            .regular,
-                            in: .rect(corners: .fixed(cornerRadius), isUniform: true)
-                        )
+                        .fill(.regularMaterial)
                 } else {
-                    ZStack {
-                        PHTVRoundedRect(cornerRadius: cornerRadius)
-                            .fill(Color(NSColor.windowBackgroundColor).opacity(0.92))
-                        if #available(macOS 12.0, *) {
-                            PHTVRoundedRect(cornerRadius: cornerRadius)
-                                .fill(.ultraThinMaterial)
-                        }
-                    }
+                    PHTVRoundedRect(cornerRadius: cornerRadius)
+                        .fill(Color(NSColor.windowBackgroundColor).opacity(0.92))
                 }
             }
             .overlay(
@@ -848,19 +693,12 @@ struct GlassCloseButton: View {
     var body: some View {
         Button(action: action) {
             ZStack {
-                if #available(macOS 26.0, *), !reduceTransparency {
-                    // Static glassEffect - no state change to prevent re-render
-                    Circle()
-                        .fill(.ultraThinMaterial)
-                        .glassEffect(.regular, in: Circle())
-                        .overlay(
-                            Circle()
-                                .fill(Color.red.opacity(isHovering ? 0.3 : 0.15))
-                        )
-                } else {
-                    Circle()
-                        .fill(Color.red.opacity(isHovering ? 0.25 : 0.15))
-                }
+                Circle()
+                    .fill(Color.red.opacity(isHovering ? 0.25 : 0.15))
+                    .overlay(
+                        Circle()
+                            .stroke(Color.red.opacity(isHovering ? 0.35 : 0.2), lineWidth: 1)
+                    )
                 Image(systemName: "xmark")
                     .font(.system(size: iconSize, weight: .bold))
                     .foregroundColor(.red)
@@ -936,38 +774,20 @@ where SelectionValue.AllCases: RandomAccessCollection {
     }
 
     var body: some View {
-        if #available(macOS 26.0, *), !reduceTransparency {
-            GlassEffectContainer(spacing: 4) {
-                HStack(spacing: 0) {
-                    ForEach(Array(SelectionValue.allCases)) { item in
-                        segmentButton(for: item)
-                    }
-                }
-                .padding(4)
-                .background {
-                    PHTVRoundedRect(cornerRadius: 10)
-                        .fill(.ultraThinMaterial)
-                        .glassEffect(in: .rect(corners: .fixed(10), isUniform: true))
-                }
+        HStack(spacing: 0) {
+            ForEach(Array(SelectionValue.allCases)) { item in
+                segmentButton(for: item)
             }
-        } else {
-            // Fallback for older macOS
-            HStack(spacing: 0) {
-                ForEach(Array(SelectionValue.allCases)) { item in
-                    fallbackSegmentButton(for: item)
-                }
-            }
-            .padding(4)
-            .background(Color(NSColor.controlBackgroundColor).opacity(0.6))
-            .cornerRadius(10)
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-            )
         }
+        .padding(4)
+        .background(Color(NSColor.controlBackgroundColor).opacity(colorScheme == .dark ? 0.5 : 0.6))
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
+        )
     }
 
-    @available(macOS 26.0, *)
     @ViewBuilder
     private func segmentButton(for item: SelectionValue) -> some View {
         let isSelected = selection == item
@@ -986,42 +806,11 @@ where SelectionValue.AllCases: RandomAccessCollection {
                 .background {
                     if isSelected {
                         PHTVRoundedRect(cornerRadius: 7)
-                            .fill(.ultraThinMaterial)
-                            .glassEffect(
-                                .regular.interactive().tint(.accentColor),
-                                in: .rect(corners: .fixed(7), isUniform: true)
-                            )
-                            .glassEffectID("segmentSelection", in: pickerNamespace)
+                            .fill(Color.accentColor.opacity(colorScheme == .dark ? 0.2 : 0.15))
                             .overlay(
                                 PHTVRoundedRect(cornerRadius: 7)
-                                    .fill(Color.accentColor.opacity(colorScheme == .dark ? 0.15 : 0.1))
+                                    .stroke(Color.accentColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
                             )
-                    }
-                }
-        }
-        .buttonStyle(.plain)
-        .contentShape(Rectangle())
-    }
-
-    @ViewBuilder
-    private func fallbackSegmentButton(for item: SelectionValue) -> some View {
-        let isSelected = selection == item
-
-        Button {
-            withAnimation(.phtvMorph) {
-                selection = item
-            }
-        } label: {
-            label(item)
-                .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
-                .foregroundStyle(isSelected ? .primary : .secondary)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .frame(maxWidth: .infinity)
-                .background {
-                    if isSelected {
-                        PHTVRoundedRect(cornerRadius: 7)
-                            .fill(Color.accentColor.opacity(0.15))
                             .matchedGeometryEffect(id: "segmentSelection", in: pickerNamespace)
                     }
                 }
@@ -1042,43 +831,24 @@ extension GlassSegmentedPicker where Label == Text {
     }
 }
 
-// MARK: - Glass Menu Picker Style (macOS 26+)
+// MARK: - Menu Picker Style
 
-/// A view modifier that applies Liquid Glass styling to menu pickers
+/// A view modifier that applies styled background to menu pickers
 struct GlassMenuPickerStyle: ViewModifier {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorScheme) private var colorScheme
 
     func body(content: Content) -> some View {
-        if #available(macOS 26.0, *), !reduceTransparency {
-            content
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background {
-                    PHTVRoundedRect(cornerRadius: 8)
-                        .fill(.ultraThinMaterial)
-                        .glassEffect(
-                            .regular.interactive(),
-                            in: .rect(corners: .fixed(8), isUniform: true)
-                        )
-                        .overlay(
-                            PHTVRoundedRect(cornerRadius: 8)
-                                .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
-                        )
-                }
-        } else {
-            content
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background {
-                    PHTVRoundedRect(cornerRadius: 8)
-                        .fill(Color(NSColor.controlBackgroundColor))
-                        .overlay(
-                            PHTVRoundedRect(cornerRadius: 8)
-                                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                        )
-                }
-        }
+        content
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background {
+                PHTVRoundedRect(cornerRadius: 8)
+                    .fill(Color(NSColor.controlBackgroundColor).opacity(colorScheme == .dark ? 0.5 : 0.6))
+                    .overlay(
+                        PHTVRoundedRect(cornerRadius: 8)
+                            .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
+                    )
+            }
     }
 }
 
@@ -1089,10 +859,9 @@ extension View {
     }
 }
 
-// MARK: - Liquid Glass Search Field Style
+// MARK: - Search Field Style
 
 struct GlassSearchFieldStyle: ViewModifier {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorScheme) private var colorScheme
     @FocusState private var isFocused: Bool
 
@@ -1102,24 +871,15 @@ struct GlassSearchFieldStyle: ViewModifier {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background {
-                if #available(macOS 26.0, *), !reduceTransparency {
-                    Capsule()
-                        .fill(.ultraThinMaterial)
-                        .glassEffect(
-                            isFocused ? .regular.tint(.accentColor) : .regular,
-                            in: Capsule()
-                        )
-                } else {
-                    Capsule()
-                        .fill(Color(NSColor.controlBackgroundColor))
-                        .overlay(
-                            Capsule()
-                                .stroke(
-                                    isFocused ? Color.accentColor.opacity(0.5) : Color.gray.opacity(0.2),
-                                    lineWidth: 1
-                                )
-                        )
-                }
+                Capsule()
+                    .fill(Color(NSColor.controlBackgroundColor).opacity(colorScheme == .dark ? 0.5 : 0.6))
+                    .overlay(
+                        Capsule()
+                            .stroke(
+                                isFocused ? Color.accentColor.opacity(0.5) : Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1),
+                                lineWidth: 1
+                            )
+                    )
             }
             .focused($isFocused)
     }

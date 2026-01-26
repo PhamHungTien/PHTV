@@ -20,20 +20,23 @@ struct SettingsSliderRow: View {
     var valueFormatter: (Double) -> String = { String(format: "%.0f", $0) }
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorScheme) private var colorScheme
-    @State private var isDragging = false
 
     var body: some View {
         VStack(spacing: 12) {
             HStack(alignment: .top, spacing: 14) {
-                // Icon background with interactive glass effect
+                // Icon background - colored fill to avoid glass-on-glass (Apple guideline)
                 ZStack {
-                    iconBackground
+                    PHTVRoundedRect(cornerRadius: 8)
+                        .fill(iconColor.opacity(colorScheme == .dark ? 0.2 : 0.15))
+                        .overlay(
+                            PHTVRoundedRect(cornerRadius: 8)
+                                .stroke(iconColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
+                        )
                         .frame(width: 36, height: 36)
 
                     Image(systemName: icon)
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(iconColor)
-                        .symbolEffect(.bounce, value: isDragging)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -58,19 +61,10 @@ struct SettingsSliderRow: View {
                 value: $value,
                 in: minValue...maxValue,
                 step: step
-            ) { editing in
-                isDragging = editing
-            }
+            )
             .tint(iconColor)
         }
         .padding(.vertical, 6)
-    }
-
-    @ViewBuilder
-    private var iconBackground: some View {
-        // Simple icon background - no glass effect inside cards
-        PHTVRoundedRect(cornerRadius: 8)
-            .fill(iconColor.opacity(colorScheme == .dark ? 0.15 : 0.12))
     }
 
     @ViewBuilder
@@ -83,7 +77,11 @@ struct SettingsSliderRow: View {
             .padding(.vertical, 4)
             .background {
                 Capsule()
-                    .fill(iconColor.opacity(colorScheme == .dark ? 0.15 : 0.12))
+                    .fill(iconColor.opacity(colorScheme == .dark ? 0.2 : 0.15))
+                    .overlay(
+                        Capsule()
+                            .stroke(iconColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
+                    )
             }
     }
 }

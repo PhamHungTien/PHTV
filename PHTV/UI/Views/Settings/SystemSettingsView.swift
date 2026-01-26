@@ -586,26 +586,19 @@ struct SettingsInfoRow: View {
     let iconColor: Color
     let title: String
     let value: String
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
+            // Icon background - colored fill to avoid glass-on-glass (Apple guideline)
             ZStack {
-                if #available(macOS 26.0, *), !reduceTransparency {
-                    PHTVRoundedRect(cornerRadius: 8)
-                        .fill(.ultraThinMaterial)
-                        .settingsGlassEffect(cornerRadius: 8)
-                        .overlay(
-                            PHTVRoundedRect(cornerRadius: 8)
-                                .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.12), lineWidth: 1)
-                        )
-                        .frame(width: 36, height: 36)
-                } else {
-                    PHTVRoundedRect(cornerRadius: 8)
-                        .fill(iconColor.opacity(0.12))
-                        .frame(width: 36, height: 36)
-                }
+                PHTVRoundedRect(cornerRadius: 8)
+                    .fill(iconColor.opacity(colorScheme == .dark ? 0.2 : 0.15))
+                    .overlay(
+                        PHTVRoundedRect(cornerRadius: 8)
+                            .stroke(iconColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
+                    )
+                    .frame(width: 36, height: 36)
 
                 Image(systemName: icon)
                     .font(.system(size: 16, weight: .medium))
@@ -642,21 +635,15 @@ struct SettingsButtonRow: View {
     var body: some View {
         Button(action: action) {
             HStack(alignment: .top, spacing: 14) {
+                // Icon background - colored fill to avoid glass-on-glass (Apple guideline)
                 ZStack {
-                    if #available(macOS 26.0, *), !reduceTransparency {
-                        PHTVRoundedRect(cornerRadius: 8)
-                            .fill(.ultraThinMaterial)
-                            .settingsGlassEffect(cornerRadius: 8)
-                            .overlay(
-                                PHTVRoundedRect(cornerRadius: 8)
-                                    .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.12), lineWidth: 1)
-                            )
-                            .frame(width: 36, height: 36)
-                    } else {
-                        PHTVRoundedRect(cornerRadius: 8)
-                            .fill(iconColor.opacity(0.12))
-                            .frame(width: 36, height: 36)
-                    }
+                    PHTVRoundedRect(cornerRadius: 8)
+                        .fill(iconColor.opacity(colorScheme == .dark ? 0.2 : 0.15))
+                        .overlay(
+                            PHTVRoundedRect(cornerRadius: 8)
+                                .stroke(iconColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
+                        )
+                        .frame(width: 36, height: 36)
 
                     if isLoading {
                         ProgressView()

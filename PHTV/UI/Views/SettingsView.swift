@@ -445,29 +445,13 @@ struct SettingsSidebarRow: View {
 
     @ViewBuilder
     private var iconBackground: some View {
-        // Simplified: no hover state changes to avoid lag
-        if #available(macOS 26.0, *), !reduceTransparency {
-            PHTVRoundedRect(cornerRadius: 6)
-                .fill(.ultraThinMaterial)
-                .glassEffect(
-                    .regular,
-                    in: .rect(corners: .fixed(6), isUniform: true)
-                )
-                .overlay(
-                    PHTVRoundedRect(cornerRadius: 6)
-                        .strokeBorder(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.1), lineWidth: 1)
-                )
-        } else if #available(macOS 12.0, *) {
-            PHTVRoundedRect(cornerRadius: 6)
-                .fill(.thinMaterial)
-                .overlay(
-                    PHTVRoundedRect(cornerRadius: 6)
-                        .strokeBorder(Color.primary.opacity(colorScheme == .dark ? 0.18 : 0.08), lineWidth: 1)
-                )
-        } else {
-            PHTVRoundedRect(cornerRadius: 6)
-                .fill(colorScheme == .dark ? Color.primary.opacity(0.18) : Color.accentColor.opacity(0.12))
-        }
+        // Colored fill - no glass to avoid glass-on-glass (Apple guideline)
+        PHTVRoundedRect(cornerRadius: 6)
+            .fill(Color.accentColor.opacity(colorScheme == .dark ? 0.2 : 0.15))
+            .overlay(
+                PHTVRoundedRect(cornerRadius: 6)
+                    .strokeBorder(Color.accentColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
+            )
     }
 }
 
@@ -672,16 +656,14 @@ struct SearchResultRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                // Icon - simplified, no hover state changes
+                // Icon - colored fill, no glass (Apple guideline: avoid glass-on-glass)
                 ZStack {
-                    if #available(macOS 26.0, *), !reduceTransparency {
-                        Circle()
-                            .fill(.ultraThinMaterial)
-                            .glassEffect(.regular, in: Circle())
-                    } else {
-                        Circle()
-                            .fill(Color.accentColor.opacity(0.1))
-                    }
+                    Circle()
+                        .fill(Color.accentColor.opacity(colorScheme == .dark ? 0.2 : 0.15))
+                        .overlay(
+                            Circle()
+                                .strokeBorder(Color.accentColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
+                        )
                     Image(systemName: item.iconName)
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(.secondary)

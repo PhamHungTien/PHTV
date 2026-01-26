@@ -57,31 +57,33 @@ struct TypingSettingsView: View {
                     subtitle: "Chọn phương pháp gõ và bảng mã phù hợp",
                     icon: "keyboard.fill"
                 ) {
-                    VStack(spacing: 16) {
-                        // Input Method Picker
-                        VStack(alignment: .leading, spacing: 8) {
+                    VStack(spacing: 12) {
+                        // Input Method Picker - inline style
+                        HStack {
                             Text("Phương pháp gõ")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundStyle(.secondary)
+                                .font(.body)
+                                .foregroundStyle(.primary)
+
+                            Spacer()
 
                             Picker("", selection: $appState.inputMethod) {
                                 ForEach(InputMethod.allCases) { method in
                                     Text(method.displayName).tag(method)
                                 }
                             }
-                            .pickerStyle(.segmented)
                             .labelsHidden()
+                            .frame(width: 140)
                         }
 
                         Divider()
 
-                        // Code Table Picker
-                        VStack(alignment: .leading, spacing: 8) {
+                        // Code Table Picker - inline style
+                        HStack {
                             Text("Bảng mã")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundStyle(.secondary)
+                                .font(.body)
+                                .foregroundStyle(.primary)
+
+                            Spacer()
 
                             Picker("", selection: $appState.codeTable) {
                                 ForEach(CodeTable.allCases) { table in
@@ -89,7 +91,7 @@ struct TypingSettingsView: View {
                                 }
                             }
                             .labelsHidden()
-                            .glassMenuPickerStyle()
+                            .frame(width: 140)
                         }
                     }
                 }
@@ -441,13 +443,13 @@ struct SettingsCard<Content: View, Trailing: View>: View {
         .clipShape(PHTVRoundedRect(cornerRadius: 14, style: .continuous))
         .frame(maxWidth: 700)
         .background {
-            if #available(macOS 26.0, *), !reduceTransparency {
+            // Simple material background - no glass effect
+            if #available(macOS 12.0, *) {
                 PHTVRoundedRect(cornerRadius: 14)
-                    .fill(.ultraThinMaterial)
-                    .settingsGlassEffect(cornerRadius: 14)
+                    .fill(.regularMaterial)
                     .overlay(
                         PHTVRoundedRect(cornerRadius: 14)
-                            .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.12), lineWidth: 1)
+                            .stroke(Color.primary.opacity(colorScheme == .dark ? 0.16 : 0.1), lineWidth: 1)
                     )
             } else {
                 PHTVRoundedRect(cornerRadius: 14)
@@ -496,10 +498,14 @@ struct SettingsToggleRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
-            // Simple icon background - no glass effect inside cards
+            // Icon background - colored fill to avoid glass-on-glass (Apple guideline)
             ZStack {
                 PHTVRoundedRect(cornerRadius: 8)
-                    .fill(iconColor.opacity(colorScheme == .dark ? 0.15 : 0.12))
+                    .fill(iconColor.opacity(colorScheme == .dark ? 0.2 : 0.15))
+                    .overlay(
+                        PHTVRoundedRect(cornerRadius: 8)
+                            .stroke(iconColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
+                    )
                     .frame(width: 36, height: 36)
 
                 Image(systemName: icon)
@@ -559,22 +565,15 @@ struct SettingsSliderRow: View {
     var body: some View {
         VStack(spacing: 12) {
             HStack(alignment: .top, spacing: 14) {
-                // Icon background - no glass effect to avoid glass-on-glass
+                // Icon background - colored fill to avoid glass-on-glass (Apple guideline)
                 ZStack {
-                    if #available(macOS 26.0, *), !reduceTransparency {
-                        PHTVRoundedRect(cornerRadius: 8)
-                            .fill(.ultraThinMaterial)
-                            .settingsGlassEffect(cornerRadius: 8)
-                            .overlay(
-                                PHTVRoundedRect(cornerRadius: 8)
-                                    .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.12), lineWidth: 1)
-                            )
-                            .frame(width: 36, height: 36)
-                    } else {
-                        PHTVRoundedRect(cornerRadius: 8)
-                            .fill(iconColor.opacity(0.12))
-                            .frame(width: 36, height: 36)
-                    }
+                    PHTVRoundedRect(cornerRadius: 8)
+                        .fill(iconColor.opacity(colorScheme == .dark ? 0.2 : 0.15))
+                        .overlay(
+                            PHTVRoundedRect(cornerRadius: 8)
+                                .stroke(iconColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
+                        )
+                        .frame(width: 36, height: 36)
 
                     Image(systemName: icon)
                         .font(.system(size: 16, weight: .medium))
@@ -650,6 +649,7 @@ struct RestoreKeyButton: View {
     let isSelected: Bool
     let themeColor: Color
     let action: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         Button(action: action) {
@@ -669,25 +669,20 @@ struct RestoreKeyButton: View {
             .frame(maxWidth: .infinity)
             .frame(height: 56)
             .background {
-                if #available(macOS 26.0, *) {
-                    if isSelected {
-                        PHTVRoundedRect(cornerRadius: 10)
-                            .fill(themeColor)
-                    } else {
-                        PHTVRoundedRect(cornerRadius: 10)
-                            .fill(.ultraThinMaterial)
-                            .settingsGlassEffect(cornerRadius: 10)
-                    }
-                } else {
+                if isSelected {
                     PHTVRoundedRect(cornerRadius: 10)
-                        .fill(isSelected ? themeColor : Color(NSColor.controlBackgroundColor))
+                        .fill(themeColor)
+                } else {
+                    // Clearer unselected state with subtle fill and visible border
+                    PHTVRoundedRect(cornerRadius: 10)
+                        .fill(Color(NSColor.controlBackgroundColor).opacity(colorScheme == .dark ? 0.5 : 0.8))
                         .overlay(
                             PHTVRoundedRect(cornerRadius: 10)
-                                .stroke(isSelected ? Color.clear : Color.gray.opacity(0.25), lineWidth: 1)
+                                .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.15), lineWidth: 1)
                         )
                 }
             }
-            .scaleEffect(isSelected ? 1.0 : 0.98)
+            .scaleEffect(isSelected ? 1.0 : 1.0)
         }
         .buttonStyle(.plain)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)

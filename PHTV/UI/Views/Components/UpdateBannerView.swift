@@ -61,28 +61,21 @@ struct UpdateBannerView: View {
     @ViewBuilder
     private var iconView: some View {
         ZStack {
-            if #available(macOS 26.0, *), !reduceTransparency {
-                PHTVRoundedRect(cornerRadius: 12)
-                    .fill(.ultraThinMaterial)
-                    .glassEffect(
-                        .regular.tint(.accentColor),
-                        in: .rect(corners: .fixed(12), isUniform: true)
-                    )
-                    .frame(width: 48, height: 48)
-                    .overlay(
-                        PHTVRoundedRect(cornerRadius: 12)
-                            .fill(Color.accentColor.opacity(0.12))
-                    )
+            // Colored fill - no glass to avoid glass-on-glass (Apple guideline)
+            PHTVRoundedRect(cornerRadius: 12)
+                .fill(Color.accentColor.opacity(colorScheme == .dark ? 0.2 : 0.15))
+                .frame(width: 48, height: 48)
+                .overlay(
+                    PHTVRoundedRect(cornerRadius: 12)
+                        .stroke(Color.accentColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
+                )
 
+            if #available(macOS 14.0, *) {
                 Image(systemName: "arrow.down.circle.fill")
                     .font(.system(size: 24))
                     .foregroundStyle(Color.accentColor)
                     .symbolEffect(.bounce, value: animateIcon)
             } else {
-                PHTVRoundedRect(cornerRadius: 12)
-                    .fill(Color.accentColor.opacity(0.15))
-                    .frame(width: 48, height: 48)
-
                 Image(systemName: "arrow.down.circle.fill")
                     .font(.system(size: 24))
                     .foregroundStyle(Color.accentColor)
@@ -116,16 +109,13 @@ struct UpdateBannerView: View {
 
     @ViewBuilder
     private var bannerBackground: some View {
-        if #available(macOS 26.0, *), !reduceTransparency {
+        // Simple material background - no glass effect
+        if #available(macOS 12.0, *) {
             PHTVRoundedRect(cornerRadius: 16)
-                .fill(.ultraThinMaterial)
-                .glassEffect(
-                    .regular,
-                    in: .rect(corners: .fixed(16), isUniform: true)
-                )
+                .fill(.regularMaterial)
                 .overlay(
                     PHTVRoundedRect(cornerRadius: 16)
-                        .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
+                        .stroke(Color.accentColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
                 )
         } else {
             PHTVRoundedRect(cornerRadius: 16)

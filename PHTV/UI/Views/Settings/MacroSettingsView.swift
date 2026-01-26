@@ -660,10 +660,9 @@ struct CategoryRowView: View {
         )
         .contentShape(Rectangle())
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isHovering = hovering
-            }
+            isHovering = hovering
         }
+        .animation(nil, value: isHovering)
     }
 }
 
@@ -826,10 +825,9 @@ struct MacroRowView: View {
         )
         .contentShape(Rectangle())
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isHovering = hovering
-            }
+            isHovering = hovering
         }
+        .animation(nil, value: isHovering)
     }
 
     private var backgroundColor: Color {

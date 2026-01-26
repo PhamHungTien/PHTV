@@ -41,71 +41,13 @@ struct EmojiPickerView: View {
                 .background(WindowDragHandle())
 
 
-            // Category tabs
+            // Category tabs with GlassEffectContainer for efficient morphing (Apple guideline)
             ScrollViewReader { scrollProxy in
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        // All Content tab
-                        CategoryTab(
-                            isSelected: selectedCategory == -2,
-                            icon: "sparkles",
-                            label: "Tất cả",
-                            namespace: categoryNamespace
-                        ) {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                selectedCategory = -2
-                            }
-                        }
-                        .id(-2)
-                        .onAppear {
-                            // Scroll to saved/selected category when view appears
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                scrollProxy.scrollTo(selectedCategory, anchor: .center)
-                            }
-                        }
-
-                        // Emoji tab
-                        CategoryTab(
-                            isSelected: selectedCategory == -3,
-                            icon: "face.smiling.fill",
-                            label: "Emoji",
-                            namespace: categoryNamespace
-                        ) {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                selectedCategory = -3
-                            }
-                        }
-                        .id(-3)
-
-                        // GIF tab
-                        CategoryTab(
-                            isSelected: selectedCategory == -4,
-                            icon: "photo.on.rectangle.angled",
-                            label: "GIF",
-                            namespace: categoryNamespace
-                        ) {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                selectedCategory = -4
-                            }
-                        }
-                        .id(-4)
-
-                        // Sticker tab
-                        CategoryTab(
-                            isSelected: selectedCategory == -5,
-                            icon: "sparkle",
-                            label: "Sticker",
-                            namespace: categoryNamespace
-                        ) {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                selectedCategory = -5
-                            }
-                        }
-                        .id(-5)
-                    }
-                    .padding(.horizontal, 16)
+                    categoryTabsContent(scrollProxy: scrollProxy)
+                        .padding(.horizontal, 12)
                 }
-                .padding(.bottom, 10)
+                .padding(.bottom, 8)
             }
 
             Divider()
@@ -145,26 +87,16 @@ struct EmojiPickerView: View {
     @ViewBuilder
     private var headerView: some View {
         HStack(spacing: 8) {
-            // Drag handle icon (left side) with Liquid Glass
-            if #available(macOS 26.0, *), !reduceTransparency {
-                Image(systemName: "line.3.horizontal")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.secondary.opacity(0.6))
-                    .frame(width: 24, height: 24)
-                    .background {
-                        Circle()
-                            .fill(.ultraThinMaterial)
-                            .glassEffect(.regular, in: Circle())
-                            .opacity(0.5)
-                    }
-                    .help("Kéo để di chuyển")
-            } else {
-                Image(systemName: "line.3.horizontal")
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary.opacity(0.5))
-                    .frame(width: 20)
-                    .help("Kéo để di chuyển")
-            }
+            // Drag handle icon (left side)
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.secondary.opacity(0.6))
+                .frame(width: 24, height: 24)
+                .background {
+                    Circle()
+                        .fill(Color.primary.opacity(colorScheme == .dark ? 0.1 : 0.08))
+                }
+                .help("Kéo để di chuyển")
 
             Text("PHTV Picker")
                 .font(.system(size: 14, weight: .semibold))
@@ -172,7 +104,7 @@ struct EmojiPickerView: View {
 
             Spacer()
 
-            // Close button with Liquid Glass
+            // Close button
             GlassCloseButton {
                 onClose?()
             }
@@ -181,6 +113,78 @@ struct EmojiPickerView: View {
         .padding(.horizontal, 16)
         .padding(.top, 12)
         .padding(.bottom, 10)
+    }
+
+    // MARK: - Picker Background
+
+    // MARK: - Category Tabs with GlassEffectContainer
+
+    @ViewBuilder
+    private func categoryTabsContent(scrollProxy: ScrollViewProxy) -> some View {
+        HStack(spacing: 6) {
+            categoryTabItems(scrollProxy: scrollProxy)
+        }
+    }
+
+    @ViewBuilder
+    private func categoryTabItems(scrollProxy: ScrollViewProxy) -> some View {
+        // All Content tab
+        CategoryTab(
+            isSelected: selectedCategory == -2,
+            icon: "sparkles",
+            label: "Tất cả",
+            namespace: categoryNamespace
+        ) {
+            withAnimation(.phtvMorph) {
+                selectedCategory = -2
+            }
+        }
+        .id(-2)
+        .onAppear {
+            // Scroll to saved/selected category when view appears
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                scrollProxy.scrollTo(selectedCategory, anchor: .center)
+            }
+        }
+
+        // Emoji tab
+        CategoryTab(
+            isSelected: selectedCategory == -3,
+            icon: "face.smiling.fill",
+            label: "Emoji",
+            namespace: categoryNamespace
+        ) {
+            withAnimation(.phtvMorph) {
+                selectedCategory = -3
+            }
+        }
+        .id(-3)
+
+        // GIF tab
+        CategoryTab(
+            isSelected: selectedCategory == -4,
+            icon: "photo.on.rectangle.angled",
+            label: "GIF",
+            namespace: categoryNamespace
+        ) {
+            withAnimation(.phtvMorph) {
+                selectedCategory = -4
+            }
+        }
+        .id(-4)
+
+        // Sticker tab
+        CategoryTab(
+            isSelected: selectedCategory == -5,
+            icon: "sparkle",
+            label: "Sticker",
+            namespace: categoryNamespace
+        ) {
+            withAnimation(.phtvMorph) {
+                selectedCategory = -5
+            }
+        }
+        .id(-5)
     }
 
     // MARK: - Picker Background
