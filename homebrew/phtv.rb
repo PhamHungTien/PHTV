@@ -2,8 +2,8 @@
 # frozen_string_literal: true
 
 cask "phtv" do
-  version "2.1.2"
-  sha256 "367a35b288dbcdf65dceb2761e2027787470afa0e08d90ab5ac97bf0ec087c84"
+  version "2.1.3"
+  sha256 "dc59111eedd25dce2673f1ed5a1d48e79729a226fb11262ade63b402e3d56977"
 
   url "https://github.com/PhamHungTien/PHTV/releases/download/v#{version}/PHTV-#{version}.dmg",
       verified: "github.com/PhamHungTien/"
