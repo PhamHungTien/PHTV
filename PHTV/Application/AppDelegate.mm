@@ -65,6 +65,7 @@ volatile int vAutoCapsMacro = 0;
 volatile int vSendKeyStepByStep = 0;
 volatile int vUseSmartSwitchKey = 1;
 volatile int vUpperCaseFirstChar = 0;
+volatile int vUpperCaseExcludedForCurrentApp = 0;  // 1 = current app is in uppercase excluded list
 volatile int vTempOffSpelling = 0;
 volatile int vAllowConsonantZFWJ = 1; // Always enabled (no UI toggle)
 volatile int vQuickStartConsonant = 0;
@@ -1200,6 +1201,12 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                                                  name:@"SendKeyStepByStepAppsChanged"
                                                object:nil];
 
+    // Upper case excluded apps changes: apply immediately
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleUpperCaseExcludedAppsChanged:)
+                                                 name:@"UpperCaseExcludedAppsChanged"
+                                               object:nil];
+
     // Menu bar font size changes
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(handleMenuBarIconSizeChanged:)
@@ -1220,6 +1227,14 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     NSRunningApplication *frontmost = [[NSWorkspace sharedWorkspace] frontmostApplication];
     if (frontmost.bundleIdentifier.length > 0) {
         [self checkSendKeyStepByStepApp:frontmost.bundleIdentifier];
+    }
+}
+
+- (void)handleUpperCaseExcludedAppsChanged:(NSNotification *)notification {
+    // Re-evaluate current app against the updated upper case excluded list.
+    NSRunningApplication *frontmost = [[NSWorkspace sharedWorkspace] frontmostApplication];
+    if (frontmost.bundleIdentifier.length > 0) {
+        [self checkUpperCaseExcludedApp:frontmost.bundleIdentifier];
     }
 }
 
@@ -2713,6 +2728,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     if (activeApp && activeApp.bundleIdentifier) {
         [self checkExcludedApp:activeApp.bundleIdentifier];
         [self checkSendKeyStepByStepApp:activeApp.bundleIdentifier];
+        [self checkUpperCaseExcludedApp:activeApp.bundleIdentifier];
     }
 }
 
@@ -2859,6 +2875,43 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         NSLog(@"[SendKeyStepByStepApp] Moved to another app in list '%@' - keeping enabled", bundleIdentifier);
     }
     // else: moving between apps not in the list, no action needed
+}
+
+-(void)checkUpperCaseExcludedApp:(NSString *)bundleIdentifier {
+    // Skip if bundle ID is nil
+    if (!bundleIdentifier) {
+        return;
+    }
+
+    // Load upper case excluded apps from UserDefaults
+    NSData *data = [[NSUserDefaults standardUserDefaults] dataForKey:@"UpperCaseExcludedApps"];
+    NSArray *upperCaseExcludedApps = nil;
+    if (data) {
+        NSError *error;
+        upperCaseExcludedApps = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
+        if (error) {
+            upperCaseExcludedApps = nil;
+        }
+    }
+
+    // Check if current app is in the list
+    BOOL isExcluded = NO;
+    if (upperCaseExcludedApps) {
+        for (NSDictionary *app in upperCaseExcludedApps) {
+            NSString *appBundleId = app[@"bundleIdentifier"];
+            if ([bundleIdentifier isEqualToString:appBundleId]) {
+                isExcluded = YES;
+                break;
+            }
+        }
+    }
+
+    // Set the global flag
+    vUpperCaseExcludedForCurrentApp = isExcluded ? 1 : 0;
+
+    if (isExcluded) {
+        NSLog(@"[UpperCaseExcludedApp] App '%@' is excluded from uppercase first char", bundleIdentifier);
+    }
 }
 
 #pragma mark - SwiftUI Notification Handlers

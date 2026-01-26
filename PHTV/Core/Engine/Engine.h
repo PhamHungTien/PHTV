@@ -148,6 +148,13 @@ extern volatile int vUseSmartSwitchKey;
 extern volatile int vUpperCaseFirstChar;
 
 /**
+ * Current app is excluded from uppercase first char feature.
+ * 0: No (apply uppercase)
+ * 1: Yes (skip uppercase for this app)
+ */
+extern volatile int vUpperCaseExcludedForCurrentApp;
+
+/**
  * Temporarily turn off spell checking with Ctrl key
  * 0: No
  * 1: Yes

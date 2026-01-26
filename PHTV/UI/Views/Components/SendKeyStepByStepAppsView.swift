@@ -96,48 +96,56 @@ private struct EmptySendKeyStepByStepAppsView: View {
     let onPickFromApplications: () -> Void
 
     var body: some View {
-        VStack(spacing: 12) {
+        HStack(spacing: 12) {
             Image(systemName: "keyboard.badge.ellipsis")
-                .font(.system(size: 32))
+                .font(.system(size: 24))
                 .foregroundStyle(.tertiary)
 
-            Text("Chưa có ứng dụng nào được thêm")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Chưa có ứng dụng nào")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.secondary)
 
-            Text("Chọn ứng dụng để thêm vào danh sách")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+                HStack(spacing: 6) {
+                    Button("Đang chạy") {
+                        onPickRunningApps()
+                    }
+                    .buttonStyle(.plain)
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.accentColor)
 
-            HStack(spacing: 8) {
-                Button("Ứng dụng đang chạy") {
-                    onPickRunningApps()
+                    Text("•")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.tertiary)
+
+                    Button("Applications") {
+                        onPickFromApplications()
+                    }
+                    .buttonStyle(.plain)
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.accentColor)
                 }
-                .adaptiveBorderedButtonStyle()
-
-                Button("Từ Applications") {
-                    onPickFromApplications()
-                }
-                .adaptiveBorderedButtonStyle()
             }
+
+            Spacer()
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 24)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
         .background {
             if #available(macOS 26.0, *) {
-                PHTVRoundedRect(cornerRadius: 10)
+                PHTVRoundedRect(cornerRadius: 8)
                     .fill(.ultraThinMaterial)
-                    .settingsGlassEffect(cornerRadius: 10)
+                    .settingsGlassEffect(cornerRadius: 8)
                     .overlay(
-                        PHTVRoundedRect(cornerRadius: 10)
-                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                        PHTVRoundedRect(cornerRadius: 8)
+                            .stroke(Color.gray.opacity(0.15), lineWidth: 1)
                     )
             } else {
                 ZStack {
-                    PHTVRoundedRect(cornerRadius: 10)
+                    PHTVRoundedRect(cornerRadius: 8)
                         .fill(Color(NSColor.controlBackgroundColor))
-                    PHTVRoundedRect(cornerRadius: 10)
-                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                    PHTVRoundedRect(cornerRadius: 8)
+                        .stroke(Color.gray.opacity(0.15), lineWidth: 1)
                 }
             }
         }

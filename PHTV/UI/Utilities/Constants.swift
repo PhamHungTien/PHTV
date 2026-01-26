@@ -67,6 +67,7 @@ enum UserDefaultsKey {
     // MARK: - App Lists
     static let excludedApps = "ExcludedApps"
     static let sendKeyStepByStepApps = "SendKeyStepByStepApps"
+    static let upperCaseExcludedApps = "UpperCaseExcludedApps"
 
     // MARK: - Sparkle Updates
     static let updateCheckInterval = "SUScheduledCheckInterval"
@@ -100,6 +101,7 @@ enum NotificationName {
     // MARK: - App Lists
     static let excludedAppsChanged = NSNotification.Name("ExcludedAppsChanged")
     static let sendKeyStepByStepAppsChanged = NSNotification.Name("SendKeyStepByStepAppsChanged")
+    static let upperCaseExcludedAppsChanged = NSNotification.Name("UpperCaseExcludedAppsChanged")
 
     // MARK: - Emoji Hotkey
     static let emojiHotkeySettingsChanged = NSNotification.Name("EmojiHotkeySettingsChanged")

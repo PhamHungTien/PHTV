@@ -625,6 +625,11 @@ final class AppState: ObservableObject {
         set { appListsState.sendKeyStepByStepApps = newValue }
     }
 
+    var upperCaseExcludedApps: [ExcludedApp] {
+        get { appListsState.upperCaseExcludedApps }
+        set { appListsState.upperCaseExcludedApps = newValue }
+    }
+
     // Hotkey encoding/decoding methods
     func encodeSwitchKeyStatus() -> Int {
         uiState.encodeSwitchKeyStatus()
@@ -653,6 +658,18 @@ final class AppState: ObservableObject {
 
     func isAppInSendKeyStepByStepList(bundleIdentifier: String) -> Bool {
         appListsState.isAppInSendKeyStepByStepList(bundleIdentifier: bundleIdentifier)
+    }
+
+    func addUpperCaseExcludedApp(_ app: ExcludedApp) {
+        appListsState.addUpperCaseExcludedApp(app)
+    }
+
+    func removeUpperCaseExcludedApp(_ app: ExcludedApp) {
+        appListsState.removeUpperCaseExcludedApp(app)
+    }
+
+    func isAppUpperCaseExcluded(bundleIdentifier: String) -> Bool {
+        appListsState.isAppUpperCaseExcluded(bundleIdentifier: bundleIdentifier)
     }
 
     func checkAccessibilityPermission() {

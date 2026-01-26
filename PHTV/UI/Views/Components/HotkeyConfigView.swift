@@ -225,26 +225,28 @@ struct HotkeyConfigView: View {
                 )
                 .padding(.top, 8)
 
-                SettingsDivider()
+                // Beep volume slider (only show when beep is enabled)
+                if appState.beepOnModeSwitch {
+                    SettingsDivider()
 
-                // Beep volume slider (under the toggle)
-                SettingsSliderRow(
-                    icon: "speaker.wave.2",
-                    iconColor: .accentColor,
-                    title: "Âm lượng beep",
-                    subtitle: "Điều chỉnh mức âm lượng tiếng beep",
-                    minValue: 0.0,
-                    maxValue: 1.0,
-                    step: 0.01,
-                    value: $appState.beepVolume,
-                    valueFormatter: { String(format: "%.0f%%", $0 * 100) },
-                    onEditingChanged: { editing in
-                        // Play pop sound on slider release
-                        if !editing && appState.beepVolume > 0 {
-                            BeepManager.shared.play(volume: appState.beepVolume)
+                    SettingsSliderRow(
+                        icon: "speaker.wave.2",
+                        iconColor: .accentColor,
+                        title: "Âm lượng beep",
+                        subtitle: "Điều chỉnh mức âm lượng tiếng beep",
+                        minValue: 0.0,
+                        maxValue: 1.0,
+                        step: 0.01,
+                        value: $appState.beepVolume,
+                        valueFormatter: { String(format: "%.0f%%", $0 * 100) },
+                        onEditingChanged: { editing in
+                            // Play pop sound on slider release
+                            if !editing && appState.beepVolume > 0 {
+                                BeepManager.shared.play(volume: appState.beepVolume)
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     }

@@ -18,6 +18,9 @@ final class AppListsState: ObservableObject {
     // Send key step by step apps - auto enable send key step by step when these apps are active
     @Published var sendKeyStepByStepApps: [SendKeyStepByStepApp] = []
 
+    // Upper case excluded apps - disable uppercase first char for these apps
+    @Published var upperCaseExcludedApps: [ExcludedApp] = []
+
     var isLoadingSettings = false
 
     private static var liveDebugEnabled: Bool {
@@ -61,6 +64,16 @@ final class AppListsState: ObservableObject {
                 sendKeyStepByStepApps = []
             }
         }
+
+        // Load upper case excluded apps
+        if let data = defaults.data(forKey: UserDefaultsKey.upperCaseExcludedApps) {
+            do {
+                upperCaseExcludedApps = try JSONDecoder().decode([ExcludedApp].self, from: data)
+            } catch {
+                NSLog("[AppListsState] Failed to decode upper case excluded apps: %@", error.localizedDescription)
+                upperCaseExcludedApps = []
+            }
+        }
     }
 
     func saveSettings() {
@@ -80,6 +93,14 @@ final class AppListsState: ObservableObject {
             defaults.set(data, forKey: UserDefaultsKey.sendKeyStepByStepApps)
         } catch {
             NSLog("[AppListsState] Failed to encode send key step by step apps: %@", error.localizedDescription)
+        }
+
+        // Save upper case excluded apps
+        do {
+            let data = try JSONEncoder().encode(upperCaseExcludedApps)
+            defaults.set(data, forKey: UserDefaultsKey.upperCaseExcludedApps)
+        } catch {
+            NSLog("[AppListsState] Failed to encode upper case excluded apps: %@", error.localizedDescription)
         }
 
         defaults.synchronize()
@@ -109,6 +130,18 @@ final class AppListsState: ObservableObject {
                 }
             } catch {
                 NSLog("[AppListsState] Failed to reload send key step by step apps: %@", error.localizedDescription)
+            }
+        }
+
+        // Reload upper case excluded apps if changed
+        if let data = defaults.data(forKey: UserDefaultsKey.upperCaseExcludedApps) {
+            do {
+                let newApps = try JSONDecoder().decode([ExcludedApp].self, from: data)
+                if newApps != upperCaseExcludedApps {
+                    upperCaseExcludedApps = newApps
+                }
+            } catch {
+                NSLog("[AppListsState] Failed to reload upper case excluded apps: %@", error.localizedDescription)
             }
         }
     }
@@ -184,12 +217,46 @@ final class AppListsState: ObservableObject {
         }
     }
 
+    // MARK: - Upper Case Excluded Apps Management
+
+    func addUpperCaseExcludedApp(_ app: ExcludedApp) {
+        if !upperCaseExcludedApps.contains(where: { $0.bundleIdentifier == app.bundleIdentifier }) {
+            upperCaseExcludedApps.append(app)
+            saveUpperCaseExcludedApps()
+        }
+    }
+
+    func removeUpperCaseExcludedApp(_ app: ExcludedApp) {
+        upperCaseExcludedApps.removeAll { $0.bundleIdentifier == app.bundleIdentifier }
+        saveUpperCaseExcludedApps()
+    }
+
+    func isAppUpperCaseExcluded(bundleIdentifier: String) -> Bool {
+        return upperCaseExcludedApps.contains { $0.bundleIdentifier == bundleIdentifier }
+    }
+
+    private func saveUpperCaseExcludedApps() {
+        do {
+            let data = try JSONEncoder().encode(upperCaseExcludedApps)
+            UserDefaults.standard.set(data, forKey: UserDefaultsKey.upperCaseExcludedApps)
+            UserDefaults.standard.synchronize()
+
+            // Notify backend with hot reload
+            liveLog("posting UpperCaseExcludedAppsChanged")
+            NotificationCenter.default.post(
+                name: NotificationName.upperCaseExcludedAppsChanged, object: upperCaseExcludedApps)
+        } catch {
+            NSLog("[AppListsState] Failed to save upper case excluded apps: %@", error.localizedDescription)
+        }
+    }
+
     func resetToDefaults() {
         isLoadingSettings = true
         defer { isLoadingSettings = false }
 
         excludedApps = []
         sendKeyStepByStepApps = []
+        upperCaseExcludedApps = []
 
         saveSettings()
     }

@@ -1491,7 +1491,8 @@ void vKeyHandleEvent(const vKeyEvent& event,
                 }
                 // Apply uppercase first character if enabled
                 // Use _shouldUpperCaseEnglishRestore which was set when first char was typed
-                if (vUpperCaseFirstChar && _shouldUpperCaseEnglishRestore && _stateIndex > 0) {
+                // Also check if current app is NOT excluded from uppercase feature
+                if (vUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _shouldUpperCaseEnglishRestore && _stateIndex > 0) {
                     hData[_stateIndex - 1] |= CAPS_MASK;
                 }
                 _shouldUpperCaseEnglishRestore = false;
@@ -1565,7 +1566,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             }
         }
         
-        if (vUpperCaseFirstChar) {
+        if (vUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp) {
             if (data == KEY_DOT)
                 _upperCaseStatus = 1;
             else if (data == KEY_ENTER || data == KEY_RETURN)
@@ -1618,7 +1619,8 @@ void vKeyHandleEvent(const vKeyEvent& event,
             }
             // Apply uppercase first character if enabled
             // Use _shouldUpperCaseEnglishRestore which was set when first char was typed
-            if (vUpperCaseFirstChar && _shouldUpperCaseEnglishRestore && _stateIndex > 0) {
+            // Also check if current app is NOT excluded from uppercase feature
+            if (vUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _shouldUpperCaseEnglishRestore && _stateIndex > 0) {
                 hData[_stateIndex - 1] |= CAPS_MASK;
             }
             _shouldUpperCaseEnglishRestore = false;
@@ -1658,7 +1660,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             hMacroKey.clear();
             _hasHandledMacro = false;  // Reset when starting new word
         }
-        if (vUpperCaseFirstChar && _upperCaseStatus == 1) {
+        if (vUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _upperCaseStatus == 1) {
             _upperCaseStatus = 2;
         }
         //save word
@@ -1795,7 +1797,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             }
         }
         
-        if (vUpperCaseFirstChar) {
+        if (vUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp) {
             if (_index == 1 && _upperCaseStatus == 2) {
                 upperCaseFirstCharacter();
                 // Track for English restore - in case Vietnamese transform didn't happen
