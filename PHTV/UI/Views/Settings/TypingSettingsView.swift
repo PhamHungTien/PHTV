@@ -224,7 +224,7 @@ struct TypingSettingsView: View {
                         SettingsToggleRow(
                             icon: "textformat.abc.dottedunderline",
                             iconColor: .accentColor,
-                            title: "Giữ nguyên từ tiếng Anh",
+                            title: "Tự động khôi phục tiếng Anh",
                             subtitle: "Không biến đổi từ tiếng Anh khi đang gõ tiếng Việt",
                             isOn: $appState.autoRestoreEnglishWord
                         )

@@ -200,8 +200,8 @@ struct SettingsItem: Identifiable {
             title: "Bảng mã", iconName: "textformat", tab: .typing,
             keywords: ["unicode", "tcvn3", "vni windows", "code table", "codepoint"]),
         SettingsItem(
-            title: "Giữ nguyên từ tiếng Anh", iconName: "textformat.abc.dottedunderline", tab: .typing,
-            keywords: ["auto restore english", "tiếng anh", "english word", "terminal", "tẻminal", "giữ nguyên"]),
+            title: "Tự động khôi phục tiếng Anh", iconName: "textformat.abc.dottedunderline", tab: .typing,
+            keywords: ["auto restore english", "tiếng anh", "english word", "terminal", "tẻminal", "khôi phục"]),
         SettingsItem(
             title: "Phím khôi phục ký tự gốc", iconName: "arrow.uturn.backward.circle.fill", tab: .typing,
             keywords: ["restore key", "esc", "escape", "option", "control", "khôi phục", "ký tự gốc"]),

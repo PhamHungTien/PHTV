@@ -780,7 +780,7 @@ struct BasicFeaturesStepView: View {
 
                     FeatureToggleRow(
                         icon: "character.bubble.fill",
-                        title: "Giữ nguyên từ tiếng Anh",
+                        title: "Tự động khôi phục tiếng Anh",
                         description: "Không biến đổi từ tiếng Anh khi gõ.",
                         isOn: $appState.autoRestoreEnglishWord
                     )

@@ -149,7 +149,7 @@ struct StatusBarMenuView: View {
         Menu {
             Section("Khôi phục") {
                 Toggle(isOn: $appState.autoRestoreEnglishWord) {
-                    Label("Tự động khôi phục từ tiếng Anh", systemImage: "character.bubble")
+                    Label("Tự động khôi phục tiếng Anh", systemImage: "character.bubble")
                 }
             }
 
