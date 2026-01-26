@@ -326,22 +326,9 @@ struct SettingsIconTile<Content: View>: View {
     }
 
     var body: some View {
-        ZStack {
-            background
-                .frame(width: size, height: size)
-            content
-        }
-    }
-
-    @ViewBuilder
-    private var background: some View {
-        // Colored fill - no glass to avoid glass-on-glass (Apple guideline)
-        PHTVRoundedRect(cornerRadius: cornerRadius)
-            .fill(color.opacity(colorScheme == .dark ? 0.2 : 0.15))
-            .overlay(
-                PHTVRoundedRect(cornerRadius: cornerRadius)
-                    .stroke(color.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
-            )
+        // Just the content with color - no background
+        content
+            .frame(width: size, height: size)
     }
 }
 
@@ -395,20 +382,10 @@ struct SettingsHeaderView<Trailing: View>: View {
     }
 
     private var iconTile: some View {
-        ZStack {
-            // Colored fill - no glass to avoid glass-on-glass (Apple guideline)
-            PHTVRoundedRect(cornerRadius: 12)
-                .fill(accent.opacity(colorScheme == .dark ? 0.2 : 0.15))
-                .overlay(
-                    PHTVRoundedRect(cornerRadius: 12)
-                        .stroke(accent.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
-                )
-
-            Image(systemName: icon)
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(accent)
-        }
-        .frame(width: 48, height: 48)
+        Image(systemName: icon)
+            .font(.system(size: 28, weight: .semibold))
+            .foregroundStyle(accent)
+            .frame(width: 48, height: 48)
     }
 
     @ViewBuilder

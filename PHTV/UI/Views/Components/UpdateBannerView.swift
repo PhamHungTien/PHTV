@@ -60,26 +60,18 @@ struct UpdateBannerView: View {
 
     @ViewBuilder
     private var iconView: some View {
-        ZStack {
-            // Colored fill - no glass to avoid glass-on-glass (Apple guideline)
-            PHTVRoundedRect(cornerRadius: 12)
-                .fill(Color.accentColor.opacity(colorScheme == .dark ? 0.2 : 0.15))
+        // Icon with color only - no background
+        if #available(macOS 14.0, *) {
+            Image(systemName: "arrow.down.circle.fill")
+                .font(.system(size: 32))
+                .foregroundStyle(Color.accentColor)
+                .symbolEffect(.bounce, value: animateIcon)
                 .frame(width: 48, height: 48)
-                .overlay(
-                    PHTVRoundedRect(cornerRadius: 12)
-                        .stroke(Color.accentColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
-                )
-
-            if #available(macOS 14.0, *) {
-                Image(systemName: "arrow.down.circle.fill")
-                    .font(.system(size: 24))
-                    .foregroundStyle(Color.accentColor)
-                    .symbolEffect(.bounce, value: animateIcon)
-            } else {
-                Image(systemName: "arrow.down.circle.fill")
-                    .font(.system(size: 24))
-                    .foregroundStyle(Color.accentColor)
-            }
+        } else {
+            Image(systemName: "arrow.down.circle.fill")
+                .font(.system(size: 32))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 48, height: 48)
         }
     }
 

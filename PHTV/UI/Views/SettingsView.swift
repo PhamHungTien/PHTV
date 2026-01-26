@@ -426,13 +426,11 @@ struct SettingsSidebarRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            ZStack {
-                iconBackground
-                Image(systemName: tab.iconName)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.primary)
-            }
-            .frame(width: 24, height: 24)
+            // Icon with color only - no background
+            Image(systemName: tab.iconName)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 24, height: 24)
 
             Text(tab.title)
                 .font(.system(size: 13, weight: .medium))
@@ -441,17 +439,6 @@ struct SettingsSidebarRow: View {
             Spacer(minLength: 0)
         }
         .padding(.vertical, 2)
-    }
-
-    @ViewBuilder
-    private var iconBackground: some View {
-        // Colored fill - no glass to avoid glass-on-glass (Apple guideline)
-        PHTVRoundedRect(cornerRadius: 6)
-            .fill(Color.accentColor.opacity(colorScheme == .dark ? 0.2 : 0.15))
-            .overlay(
-                PHTVRoundedRect(cornerRadius: 6)
-                    .strokeBorder(Color.accentColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
-            )
     }
 }
 
@@ -656,19 +643,11 @@ struct SearchResultRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                // Icon - colored fill, no glass (Apple guideline: avoid glass-on-glass)
-                ZStack {
-                    Circle()
-                        .fill(Color.accentColor.opacity(colorScheme == .dark ? 0.2 : 0.15))
-                        .overlay(
-                            Circle()
-                                .strokeBorder(Color.accentColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
-                        )
-                    Image(systemName: item.iconName)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.secondary)
-                }
-                .frame(width: 28, height: 28)
+                // Icon with color only - no background
+                Image(systemName: item.iconName)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 28, height: 28)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(item.title)

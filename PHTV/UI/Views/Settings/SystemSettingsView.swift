@@ -590,20 +590,11 @@ struct SettingsInfoRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
-            // Icon background - colored fill to avoid glass-on-glass (Apple guideline)
-            ZStack {
-                PHTVRoundedRect(cornerRadius: 8)
-                    .fill(iconColor.opacity(colorScheme == .dark ? 0.2 : 0.15))
-                    .overlay(
-                        PHTVRoundedRect(cornerRadius: 8)
-                            .stroke(iconColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
-                    )
-                    .frame(width: 36, height: 36)
-
-                Image(systemName: icon)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(iconColor)
-            }
+            // Icon with color only - no background
+            Image(systemName: icon)
+                .font(.system(size: 20, weight: .medium))
+                .foregroundStyle(iconColor)
+                .frame(width: 28, height: 28)
 
             Text(title)
                 .font(.body)
