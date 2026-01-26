@@ -20,34 +20,24 @@ struct SettingsSliderRow: View {
     @Binding var value: Double
     var valueFormatter: (Double) -> String = { String(format: "%.0f", $0) }
     var onEditingChanged: ((Bool) -> Void)? = nil
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            // Icon
-            ZStack {
-                PHTVRoundedRect(cornerRadius: 8)
-                    .fill(Color(NSColor.controlBackgroundColor))
-                    .overlay(
-                        PHTVRoundedRect(cornerRadius: 8)
-                            .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
-                    )
-
-                Image(systemName: icon)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(iconColor)
-            }
-            .frame(width: 36, height: 36)
+        HStack(alignment: .center, spacing: 12) {
+            // Compact icon
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(iconColor)
+                .frame(width: 24, height: 24)
 
             // Text
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 1) {
                 Text(title)
-                    .font(.body)
+                    .font(.system(size: 13))
                     .foregroundStyle(.primary)
 
                 Text(subtitle)
-                    .font(.caption)
+                    .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -55,20 +45,7 @@ struct SettingsSliderRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             // Slider & Value (Right aligned)
-            VStack(alignment: .trailing, spacing: 4) {
-                // Value Display
-                Text(valueFormatter(value))
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(iconColor)
-                    .monospacedDigit()
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background {
-                        Capsule()
-                            .fill(iconColor.opacity(colorScheme == .dark ? 0.2 : 0.1))
-                    }
-                
+            HStack(spacing: 8) {
                 // Slider
                 NonDraggableSlider(
                     value: $value,
@@ -77,11 +54,17 @@ struct SettingsSliderRow: View {
                     tint: iconColor,
                     onEditingChanged: onEditingChanged
                 )
-                .frame(width: 130, height: 20)
+                .frame(width: 100, height: 18)
+
+                // Value Display
+                Text(valueFormatter(value))
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(iconColor)
+                    .monospacedDigit()
+                    .frame(minWidth: 40, alignment: .trailing)
             }
-            .padding(.top, -2)
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 5)
     }
 }
 
@@ -187,6 +170,7 @@ struct NonDraggableSlider: NSViewRepresentable {
         Coordinator(self)
     }
 
+    @MainActor
     class Coordinator: NSObject {
         var parent: NonDraggableSlider
         var isEditing = false

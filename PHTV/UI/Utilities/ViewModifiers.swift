@@ -333,16 +333,15 @@ struct SettingsStatusPill: View {
 
 struct SettingsIconTile<Content: View>: View {
     let color: Color
-    var size: CGFloat = 36
-    var cornerRadius: CGFloat = 8
+    var size: CGFloat = 24
+    var cornerRadius: CGFloat = 6
     let content: Content
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorScheme) private var colorScheme
 
     init(
         color: Color,
-        size: CGFloat = 36,
-        cornerRadius: CGFloat = 8,
+        size: CGFloat = 24,
+        cornerRadius: CGFloat = 6,
         @ViewBuilder content: () -> Content
     ) {
         self.color = color
@@ -352,19 +351,9 @@ struct SettingsIconTile<Content: View>: View {
     }
 
     var body: some View {
-        // Icon with white/neutral background
-        ZStack {
-            PHTVRoundedRect(cornerRadius: cornerRadius)
-                .fill(Color(NSColor.controlBackgroundColor))
-                .overlay(
-                    PHTVRoundedRect(cornerRadius: cornerRadius)
-                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
-                )
-
-            content
-                .foregroundStyle(color)
-        }
-        .frame(width: size, height: size)
+        content
+            .foregroundStyle(color)
+            .frame(width: size, height: size)
     }
 }
 
@@ -392,26 +381,26 @@ struct SettingsHeaderView<Trailing: View>: View {
     }
 
     var body: some View {
-        HStack(alignment: .center, spacing: 16) {
+        HStack(alignment: .center, spacing: 14) {
             iconTile
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.system(size: 19, weight: .semibold))
+                    .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(.primary)
 
                 Text(subtitle)
-                    .font(.system(size: 12))
+                    .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            Spacer(minLength: 16)
+            Spacer(minLength: 12)
 
             trailing
         }
-        .padding(18)
+        .padding(16)
         .frame(maxWidth: 700)
         .background(headerBackground)
         .overlay(headerBorder)
@@ -421,73 +410,35 @@ struct SettingsHeaderView<Trailing: View>: View {
 
     private var iconTile: some View {
         ZStack {
-            PHTVRoundedRect(cornerRadius: 12)
+            PHTVRoundedRect(cornerRadius: 10)
                 .fill(Color(NSColor.controlBackgroundColor))
                 .overlay(
-                    PHTVRoundedRect(cornerRadius: 12)
-                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
+                    PHTVRoundedRect(cornerRadius: 10)
+                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.08), lineWidth: 0.5)
                 )
 
             Image(systemName: icon)
-                .font(.system(size: 22, weight: .semibold))
+                .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(accent)
         }
-        .frame(width: 48, height: 48)
+        .frame(width: 42, height: 42)
     }
 
     @ViewBuilder
     private var headerBackground: some View {
         // Simple material background - no glass effect
-        if #available(macOS 12.0, *) {
-            PHTVRoundedRect(cornerRadius: 14)
-                .fill(.regularMaterial)
-        } else {
-            PHTVRoundedRect(cornerRadius: 14)
-                .fill(headerGradient)
-        }
+        PHTVRoundedRect(cornerRadius: 12)
+            .fill(.regularMaterial)
     }
 
     private var headerBorder: some View {
-        PHTVRoundedRect(cornerRadius: 14)
-            .stroke(borderColor, lineWidth: 1)
-    }
-
-    private var headerGradient: LinearGradient {
-        LinearGradient(
-            colors: [
-                Color(NSColor.windowBackgroundColor).opacity(colorScheme == .dark ? 0.35 : 0.92),
-                Color(NSColor.controlBackgroundColor).opacity(colorScheme == .dark ? 0.75 : 0.86),
-                Color.accentColor.opacity(colorScheme == .dark ? 0.1 : 0.05)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
+        PHTVRoundedRect(cornerRadius: 12)
+            .stroke(borderColor, lineWidth: 0.5)
     }
 
     private var borderColor: Color {
-        Color.primary.opacity(colorScheme == .dark ? 0.18 : 0.16)
+        Color.primary.opacity(colorScheme == .dark ? 0.14 : 0.1)
     }
-
-    private var iconBackground: LinearGradient {
-        LinearGradient(
-            colors: [
-                accent.opacity(colorScheme == .dark ? 0.28 : 0.2),
-                accent.opacity(colorScheme == .dark ? 0.16 : 0.08)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
-
-    private var iconBorderColor: Color {
-        accent.opacity(colorScheme == .dark ? 0.35 : 0.4)
-    }
-
-    private var headerShadowColor: Color {
-        return colorScheme == .dark ? .clear : .black.opacity(0.08)
-    }
-
-    
 }
 
 // MARK: - Settings View Background

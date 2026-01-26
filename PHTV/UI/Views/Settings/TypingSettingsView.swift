@@ -404,23 +404,22 @@ struct SettingsCard<Content: View, Trailing: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Header
-            HStack(spacing: 12) {
+            // Header - compact design
+            HStack(spacing: 10) {
                 Image(systemName: icon)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.tint)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 1) {
                     Text(title)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.primary)
 
                     if let subtitle {
                         Text(subtitle)
-                            .font(.system(size: 11))
+                            .font(.system(size: 10))
                             .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .lineLimit(1)
                     }
                 }
 
@@ -428,40 +427,31 @@ struct SettingsCard<Content: View, Trailing: View>: View {
 
                 trailing
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(headerRowBackground)
 
             Divider()
-                .opacity(0.5)
+                .opacity(0.4)
 
             // Content
             content
-                .padding(16)
+                .padding(14)
         }
-        .clipShape(PHTVRoundedRect(cornerRadius: 14, style: .continuous))
+        .clipShape(PHTVRoundedRect(cornerRadius: 12, style: .continuous))
         .frame(maxWidth: 700)
         .background(cardBackground)
     }
 
     @ViewBuilder
     private var cardBackground: some View {
-        if #available(macOS 12.0, *) {
-            PHTVRoundedRect(cornerRadius: 14)
-                .fill(.regularMaterial)
-                .overlay(
-                    PHTVRoundedRect(cornerRadius: 14)
-                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.16 : 0.1), lineWidth: 1)
-                )
-        } else {
-            PHTVRoundedRect(cornerRadius: 14)
-                .fill(Color(NSColor.windowBackgroundColor))
-                .overlay(
-                    PHTVRoundedRect(cornerRadius: 14)
-                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.16 : 0.1), lineWidth: 1)
-                )
-        }
+        PHTVRoundedRect(cornerRadius: 12)
+            .fill(.regularMaterial)
+            .overlay(
+                PHTVRoundedRect(cornerRadius: 12)
+                    .stroke(Color.primary.opacity(colorScheme == .dark ? 0.14 : 0.08), lineWidth: 0.5)
+            )
     }
 
     private var headerRowBackground: some View {
@@ -482,33 +472,23 @@ struct SettingsToggleRow: View {
     let title: String
     let subtitle: String
     @Binding var isOn: Bool
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            // Icon with white/neutral background
-            ZStack {
-                PHTVRoundedRect(cornerRadius: 8)
-                    .fill(Color(NSColor.controlBackgroundColor))
-                    .overlay(
-                        PHTVRoundedRect(cornerRadius: 8)
-                            .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
-                    )
+        HStack(alignment: .center, spacing: 12) {
+            // Compact icon
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(iconColor)
+                .frame(width: 24, height: 24)
 
-                Image(systemName: icon)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(iconColor)
-            }
-            .frame(width: 36, height: 36)
-
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 1) {
                 Text(title)
-                    .font(.body)
+                    .font(.system(size: 13))
                     .foregroundStyle(.primary)
 
                 Text(subtitle)
-                    .font(.caption)
+                    .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -519,19 +499,19 @@ struct SettingsToggleRow: View {
             Toggle("", isOn: $isOn)
                 .labelsHidden()
                 .toggleStyle(.switch)
+                .controlSize(.small)
                 .tint(iconColor)
-                .padding(.top, 2)
                 .accessibilityLabel(Text(title))
                 .accessibilityHint(Text(subtitle))
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 5)
     }
 }
 
 struct SettingsDivider: View {
     var body: some View {
         Divider()
-            .padding(.leading, 50)
+            .padding(.leading, 36)
     }
 }
 

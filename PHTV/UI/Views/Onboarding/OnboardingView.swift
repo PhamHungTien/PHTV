@@ -93,31 +93,31 @@ struct OnboardingView: View {
     }
 
     private var header: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 12) {
             OnboardingAppBadge()
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 1) {
                 Text("PHTV")
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
 
                 Text("Thiết lập nhanh")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
                     .foregroundColor(.secondary)
             }
 
             Spacer()
 
-            VStack(alignment: .trailing, spacing: 6) {
+            VStack(alignment: .trailing, spacing: 5) {
                 Text(stepLabel)
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
                     .foregroundColor(.secondary)
 
                 OnboardingProgressBar(currentStep: currentStep, totalSteps: totalSteps)
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 16)
-        .padding(.bottom, 12)
+        .padding(.horizontal, 18)
+        .padding(.top, 14)
+        .padding(.bottom, 10)
     }
 
     private var footer: some View {
@@ -127,33 +127,34 @@ struct OnboardingView: View {
             HStack {
                 if currentStep > 0 {
                     Button("Quay lại") {
-                        withAnimation(.easeInOut(duration: 0.3)) {
+                        withAnimation(.easeInOut(duration: 0.25)) {
                             currentStep -= 1
                         }
                     }
                     .keyboardShortcut(.leftArrow, modifiers: [])
                     .buttonStyle(OnboardingSecondaryButtonStyle())
                 } else {
-                    Spacer().frame(width: 96)
+                    Spacer().frame(width: 80)
                 }
 
                 Spacer()
 
                 Button(action: {
-                    withAnimation(.easeInOut(duration: 0.3)) {
+                    withAnimation(.easeInOut(duration: 0.25)) {
                         currentStep += 1
                     }
                 }) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 6) {
                         Text(currentStep == 0 ? "Bắt đầu" : "Tiếp tục")
                         Image(systemName: "arrow.right")
+                            .font(.system(size: 12, weight: .semibold))
                     }
                 }
                 .buttonStyle(OnboardingPrimaryButtonStyle())
                 .keyboardShortcut(.defaultAction)
             }
-            .padding(.horizontal, 20)
-            .frame(height: 64)
+            .padding(.horizontal, 18)
+            .frame(height: 56)
         }
     }
 }
@@ -161,36 +162,15 @@ struct OnboardingView: View {
 // MARK: - Visual Styles
 
 struct OnboardingCardBackground: View {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        ZStack {
-            if #available(macOS 26.0, *), !reduceTransparency {
+        PHTVRoundedRect(cornerRadius: OnboardingStyle.cardCornerRadius, style: .continuous)
+            .fill(.regularMaterial)
+            .overlay(
                 PHTVRoundedRect(cornerRadius: OnboardingStyle.cardCornerRadius, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                    .settingsGlassEffect(cornerRadius: OnboardingStyle.cardCornerRadius)
-            } else {
-                PHTVRoundedRect(cornerRadius: OnboardingStyle.cardCornerRadius, style: .continuous)
-                    .fill(Color(nsColor: .windowBackgroundColor))
-            }
-
-            PHTVRoundedRect(cornerRadius: OnboardingStyle.cardCornerRadius, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color.white.opacity(colorScheme == .dark ? 0.08 : 0.28),
-                            Color.clear
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-        }
-        .overlay(
-            PHTVRoundedRect(cornerRadius: OnboardingStyle.cardCornerRadius, style: .continuous)
-                .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.15), lineWidth: 1)
-        )
+                    .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 0.5)
+            )
     }
 }
 
@@ -198,55 +178,27 @@ struct OnboardingSurface: View {
     let cornerRadius: CGFloat
     let fillColor: Color
     let strokeColor: Color
-    var shadowColor: Color = .clear
-    var shadowRadius: CGFloat = 0
-
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
-        Group {
-            if #available(macOS 26.0, *), !reduceTransparency {
+        PHTVRoundedRect(cornerRadius: cornerRadius, style: .continuous)
+            .fill(fillColor)
+            .overlay(
                 PHTVRoundedRect(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                    .settingsGlassEffect(cornerRadius: cornerRadius)
-            } else {
-                PHTVRoundedRect(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(fillColor)
-            }
-        }
-        .overlay(
-            PHTVRoundedRect(cornerRadius: cornerRadius, style: .continuous)
-                .stroke(strokeColor, lineWidth: 1)
-        )
+                    .stroke(strokeColor, lineWidth: 0.5)
+            )
     }
 }
 
 struct OnboardingAppBadge: View {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         let image = NSApp.applicationIconImage ?? NSImage()
         Image(nsImage: image)
             .resizable()
             .aspectRatio(contentMode: .fit)
-            .frame(width: 40, height: 40)
-            .background(
-                Group {
-                    if #available(macOS 26.0, *), !reduceTransparency {
-                        PHTVRoundedRect(cornerRadius: 10, style: .continuous)
-                            .fill(.ultraThinMaterial)
-                            .settingsGlassEffect(cornerRadius: 10)
-                    } else {
-                        PHTVRoundedRect(cornerRadius: 10, style: .continuous)
-                            .fill(Color.white.opacity(0.8))
-                    }
-                }
-            )
-            .clipShape(PHTVRoundedRect(cornerRadius: 10, style: .continuous))
-            .overlay(
-                PHTVRoundedRect(cornerRadius: 10, style: .continuous)
-                    .stroke(Color.primary.opacity(0.2), lineWidth: 1)
-            )
+            .frame(width: 36, height: 36)
+            .clipShape(PHTVRoundedRect(cornerRadius: 8, style: .continuous))
     }
 }
 
@@ -254,119 +206,52 @@ struct OnboardingProgressBar: View {
     let currentStep: Int
     let totalSteps: Int
 
-    @Namespace private var progressNamespace
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-
     var body: some View {
-        if #available(macOS 26.0, *), !reduceTransparency {
-            GlassEffectContainer(spacing: 6) {
-                HStack(spacing: 6) {
-                    ForEach(0..<totalSteps, id: \.self) { index in
-                        Capsule()
-                            .fill(index <= currentStep ? Color.accentColor : Color.gray.opacity(0.2))
-                            .frame(width: 22, height: 6)
-                            .glassEffect(
-                                index <= currentStep ? .regular.tint(.accentColor) : .regular,
-                                in: Capsule()
-                            )
-                            .glassEffectID("progress-\(index)", in: progressNamespace)
-                    }
-                }
+        HStack(spacing: 5) {
+            ForEach(0..<totalSteps, id: \.self) { index in
+                Capsule()
+                    .fill(index <= currentStep ? Color.accentColor : Color.gray.opacity(0.2))
+                    .frame(width: 20, height: 5)
             }
-            .animation(.phtvMorph, value: currentStep)
-        } else {
-            HStack(spacing: 6) {
-                ForEach(0..<totalSteps, id: \.self) { index in
-                    Capsule()
-                        .fill(index <= currentStep ? AnyShapeStyle(activeGradient) : AnyShapeStyle(Color.gray.opacity(0.2)))
-                        .frame(width: 22, height: 6)
-                }
-            }
-            .animation(.spring(response: 0.5, dampingFraction: 0.75), value: currentStep)
         }
-    }
-
-    private var activeGradient: LinearGradient {
-        LinearGradient(
-            colors: [Color.accentColor, Color.accentColor.opacity(0.7)],
-            startPoint: .leading,
-            endPoint: .trailing
-        )
+        .animation(.easeInOut(duration: 0.25), value: currentStep)
     }
 }
 
 struct OnboardingPrimaryButtonStyle: ButtonStyle {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-
     func makeBody(configuration: Configuration) -> some View {
-        if #available(macOS 26.0, *), !reduceTransparency {
-            configuration.label
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                .padding(.horizontal, 18)
-                .padding(.vertical, 10)
-                .foregroundColor(.white)
-                .background {
-                    Capsule()
-                        .fill(Color.accentColor)
-                }
-                .glassEffect(
-                    .regular.tint(.accentColor),
-                    in: Capsule()
-                )
-                .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
-                .animation(.phtvMorph, value: configuration.isPressed)
-        } else {
-            configuration.label
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                .padding(.horizontal, 18)
-                .padding(.vertical, 10)
-                .foregroundColor(.white)
-                .background(
-                    LinearGradient(
-                        colors: [Color.accentColor, Color.accentColor.opacity(0.8)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .clipShape(Capsule())
-                .opacity(configuration.isPressed ? 0.9 : 1.0)
-                .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
-        }
+        configuration.label
+            .font(.system(size: 13, weight: .semibold, design: .rounded))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 9)
+            .foregroundColor(.white)
+            .background(Color.accentColor)
+            .clipShape(Capsule())
+            .opacity(configuration.isPressed ? 0.85 : 1.0)
+            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 
 struct OnboardingSecondaryButtonStyle: ButtonStyle {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var colorScheme
 
     func makeBody(configuration: Configuration) -> some View {
-        if #available(macOS 26.0, *), !reduceTransparency {
-            configuration.label
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .foregroundColor(.secondary)
-                .background {
-                    Capsule()
-                        .fill(.ultraThinMaterial)
-                }
-                .glassEffect(.regular, in: Capsule())
-                .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
-                .animation(.phtvMorph, value: configuration.isPressed)
-        } else {
-            configuration.label
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .foregroundColor(.secondary)
-                .background(
-                    Capsule()
-                        .fill(Color.gray.opacity(configuration.isPressed ? 0.2 : 0.12))
-                )
-                .overlay(
-                    Capsule()
-                        .stroke(Color.gray.opacity(0.25), lineWidth: 1)
-                )
-        }
+        configuration.label
+            .font(.system(size: 13, weight: .medium, design: .rounded))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .foregroundColor(.secondary)
+            .background(
+                Capsule()
+                    .fill(Color(NSColor.controlBackgroundColor).opacity(colorScheme == .dark ? 0.5 : 0.8))
+            )
+            .overlay(
+                Capsule()
+                    .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 0.5)
+            )
+            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 
@@ -376,15 +261,15 @@ struct OnboardingStepHeader: View {
     let icon: String
 
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 14) {
             OnboardingIconBadge(symbol: icon)
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
 
                 Text(subtitle)
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -392,7 +277,7 @@ struct OnboardingStepHeader: View {
             Spacer()
         }
         .padding(.horizontal, OnboardingStyle.contentHorizontalPadding)
-        .padding(.top, 8)
+        .padding(.top, 6)
     }
 }
 
@@ -402,16 +287,16 @@ struct OnboardingIconBadge: View {
 
     var body: some View {
         ZStack {
-            PHTVRoundedRect(cornerRadius: 12, style: .continuous)
+            PHTVRoundedRect(cornerRadius: 10, style: .continuous)
                 .fill(Color(NSColor.controlBackgroundColor))
                 .overlay(
-                    PHTVRoundedRect(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
+                    PHTVRoundedRect(cornerRadius: 10, style: .continuous)
+                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.08), lineWidth: 0.5)
                 )
-                .frame(width: 48, height: 48)
+                .frame(width: 40, height: 40)
 
             Image(systemName: symbol)
-                .font(.system(size: 20, weight: .semibold))
+                .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(.accentColor)
         }
     }
@@ -426,36 +311,27 @@ struct OnboardingHighlightCard: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ZStack {
-                PHTVRoundedRect(cornerRadius: 10, style: .continuous)
-                    .fill(Color(NSColor.controlBackgroundColor))
-                    .overlay(
-                        PHTVRoundedRect(cornerRadius: 10, style: .continuous)
-                            .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
-                    )
-                    .frame(width: 36, height: 36)
-
-                Image(systemName: icon)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.accentColor)
-            }
+        VStack(alignment: .leading, spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.accentColor)
+                .frame(width: 28, height: 28)
 
             Text(title)
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
 
             Text(subtitle)
-                .font(.system(size: 12, weight: .regular, design: .rounded))
+                .font(.system(size: 11, design: .rounded))
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(14)
+        .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             OnboardingSurface(
-                cornerRadius: 14,
+                cornerRadius: 12,
                 fillColor: Color(nsColor: .controlBackgroundColor),
-                strokeColor: Color.black.opacity(0.08)
+                strokeColor: Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.08)
             )
         )
     }
@@ -471,27 +347,18 @@ struct OptionCard: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(alignment: .top, spacing: 16) {
-                ZStack {
-                    PHTVRoundedRect(cornerRadius: 10, style: .continuous)
-                        .fill(Color(NSColor.controlBackgroundColor))
-                        .overlay(
-                            PHTVRoundedRect(cornerRadius: 10, style: .continuous)
-                                .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
-                        )
-                        .frame(width: 36, height: 36)
+            HStack(alignment: .center, spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.accentColor)
+                    .frame(width: 28, height: 28)
 
-                    Image(systemName: icon)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.accentColor)
-                }
-
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
 
                     Text(description)
-                        .font(.system(size: 13, design: .rounded))
+                        .font(.system(size: 12, design: .rounded))
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -499,16 +366,15 @@ struct OptionCard: View {
                 Spacer()
 
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 20))
-                    .foregroundColor(isSelected ? .accentColor : Color.gray.opacity(0.4))
-                    .padding(.top, 2)
+                    .font(.system(size: 18))
+                    .foregroundColor(isSelected ? .accentColor : Color.gray.opacity(0.3))
             }
-            .padding(16)
+            .padding(14)
             .background(
                 OnboardingSurface(
-                    cornerRadius: 14,
+                    cornerRadius: 12,
                     fillColor: Color(nsColor: .controlBackgroundColor),
-                    strokeColor: isSelected ? Color.accentColor.opacity(0.6) : Color.black.opacity(0.1)
+                    strokeColor: isSelected ? Color.accentColor.opacity(0.5) : Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.08)
                 )
             )
         }
@@ -524,42 +390,37 @@ struct FeatureToggleRow: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        HStack(spacing: 14) {
-            ZStack {
-                PHTVRoundedRect(cornerRadius: 10, style: .continuous)
-                    .fill(Color(NSColor.controlBackgroundColor))
-                    .overlay(
-                        PHTVRoundedRect(cornerRadius: 10, style: .continuous)
-                            .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
-                    )
-                    .frame(width: 36, height: 36)
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(.accentColor)
+                .frame(width: 24, height: 24)
+                .padding(.top, 2)
 
-                Image(systemName: icon)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.accentColor)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+
+                Text(description)
+                    .font(.system(size: 11, design: .rounded))
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
             }
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
-
-            Text(description)
-                .font(.system(size: 12, design: .rounded))
-                .foregroundColor(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-
-            Spacer()
+            Spacer(minLength: 8)
 
             Toggle("", isOn: $isOn)
                 .toggleStyle(.switch)
+                .controlSize(.small)
+                .padding(.top, 2)
         }
-        .padding(14)
+        .padding(12)
+        .frame(height: 70)
         .background(
             OnboardingSurface(
-                cornerRadius: 12,
+                cornerRadius: 10,
                 fillColor: Color(nsColor: .controlBackgroundColor),
-                strokeColor: Color.black.opacity(0.08)
+                strokeColor: Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.08)
             )
         )
     }
@@ -569,15 +430,16 @@ struct OnboardingChecklistCard: View {
     let title: String
     let subtitle: String
     let items: [String]
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
 
                 Text(subtitle)
-                    .font(.system(size: 12, design: .rounded))
+                    .font(.system(size: 11, design: .rounded))
                     .foregroundColor(.secondary)
             }
 
@@ -585,13 +447,13 @@ struct OnboardingChecklistCard: View {
                 OnboardingChecklistItem(text: item)
             }
         }
-        .padding(16)
+        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             OnboardingSurface(
-                cornerRadius: 14,
+                cornerRadius: 12,
                 fillColor: Color(nsColor: .controlBackgroundColor),
-                strokeColor: Color.black.opacity(0.1)
+                strokeColor: Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.08)
             )
         )
     }
@@ -601,11 +463,12 @@ struct OnboardingChecklistItem: View {
     let text: String
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 6) {
             Image(systemName: "xmark.circle.fill")
+                .font(.system(size: 12))
                 .foregroundColor(.red)
             Text(text)
-                .font(.system(size: 12, design: .rounded))
+                .font(.system(size: 11, design: .rounded))
         }
     }
 }
@@ -615,41 +478,31 @@ struct OnboardingStatusCard: View {
     let title: String
     let description: String
     let tint: Color
-    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        HStack(spacing: 14) {
-            ZStack {
-                PHTVRoundedRect(cornerRadius: 10, style: .continuous)
-                    .fill(Color(NSColor.controlBackgroundColor))
-                    .overlay(
-                        PHTVRoundedRect(cornerRadius: 10, style: .continuous)
-                            .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
-                    )
-                    .frame(width: 44, height: 44)
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(tint)
+                .frame(width: 32, height: 32)
 
-                Image(systemName: icon)
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(tint)
-            }
-
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
 
                 Text(description)
-                    .font(.system(size: 12, design: .rounded))
+                    .font(.system(size: 11, design: .rounded))
                     .foregroundColor(.secondary)
             }
 
             Spacer()
         }
-        .padding(16)
+        .padding(14)
         .background(
             OnboardingSurface(
-                cornerRadius: 14,
+                cornerRadius: 12,
                 fillColor: tint.opacity(0.08),
-                strokeColor: tint.opacity(0.25)
+                strokeColor: tint.opacity(0.2)
             )
         )
     }
@@ -660,18 +513,18 @@ struct OnboardingNumberedRow: View {
     let text: String
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .top, spacing: 8) {
             Text(number)
-                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .font(.system(size: 11, weight: .bold, design: .rounded))
                 .foregroundColor(.accentColor)
-                .frame(width: 18, height: 18)
+                .frame(width: 16, height: 16)
                 .background(
                     Circle()
-                        .fill(Color.accentColor.opacity(0.15))
+                        .fill(Color.accentColor.opacity(0.12))
                 )
 
             Text(text)
-                .font(.system(size: 12, design: .rounded))
+                .font(.system(size: 11, design: .rounded))
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -682,26 +535,26 @@ struct OnboardingNumberedRow: View {
 
 struct WelcomeStepView: View {
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 20) {
             Spacer(minLength: 4)
 
-            VStack(spacing: 16) {
+            VStack(spacing: 12) {
                 Image(nsImage: NSApp.applicationIconImage ?? NSImage())
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: 96, height: 96)
+                    .frame(width: 80, height: 80)
 
                 Text("Chào mừng đến với PHTV")
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                    .font(.system(size: 26, weight: .bold, design: .rounded))
 
                 Text("Thiết lập nhanh trong chưa đầy 1 phút để tối ưu trải nghiệm gõ tiếng Việt mượt mà và ổn định.")
-                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
                     .multilineTextAlignment(.center)
                     .foregroundColor(.secondary)
-                    .padding(.horizontal, 40)
+                    .padding(.horizontal, 36)
             }
 
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 OnboardingHighlightCard(
                     icon: "bolt.fill",
                     title: "Nhanh & chính xác",
@@ -720,10 +573,10 @@ struct WelcomeStepView: View {
                     subtitle: "Giảm lỗi khi gõ"
                 )
             }
-            .padding(.horizontal, 32)
+            .padding(.horizontal, 28)
 
             Text("Bạn có thể thay đổi mọi thiết lập trong Cài đặt bất cứ lúc nào.")
-                .font(.system(size: 12, design: .rounded))
+                .font(.system(size: 11, design: .rounded))
                 .foregroundColor(.secondary)
 
             Spacer()
@@ -883,12 +736,12 @@ struct BasicFeaturesStepView: View {
                 icon: "sparkles"
             )
 
-            ScrollView {
+            ScrollView(.vertical, showsIndicators: false) {
                 LazyVGrid(columns: columns, spacing: 12) {
                     FeatureToggleRow(
                         icon: "text.magnifyingglass",
                         title: "Kiểm tra chính tả",
-                        description: "Tự động phát hiện và ngăn gõ sai từ tiếng Việt.",
+                        description: "Phát hiện và ngăn gõ sai từ tiếng Việt.",
                         isOn: $appState.checkSpelling
                     )
 
@@ -912,10 +765,42 @@ struct BasicFeaturesStepView: View {
                         description: "Cho phép gõ các phụ âm mở rộng.",
                         isOn: $appState.allowConsonantZFWJ
                     )
+
+                    FeatureToggleRow(
+                        icon: "textformat.abc",
+                        title: "Chính tả mới",
+                        description: "Đặt dấu oà, uý thay vì òa, úy.",
+                        isOn: $appState.useModernOrthography
+                    )
+
+                    FeatureToggleRow(
+                        icon: "arrow.uturn.backward",
+                        title: "Khôi phục từ sai",
+                        description: "Khôi phục từ gõ sai thành chữ gốc.",
+                        isOn: $appState.restoreOnInvalidWord
+                    )
+
+                    FeatureToggleRow(
+                        icon: "textformat.size.larger",
+                        title: "Viết hoa chữ cái đầu",
+                        description: "Tự viết hoa sau dấu chấm câu.",
+                        isOn: $appState.upperCaseFirstChar
+                    )
+
+                    FeatureToggleRow(
+                        icon: "hare.fill",
+                        title: "Gõ nhanh (Quick Telex)",
+                        description: "Rút gọn tổ hợp phím khi gõ Telex.",
+                        isOn: $appState.quickTelex
+                    )
                 }
                 .padding(.horizontal, OnboardingStyle.contentHorizontalPadding)
                 .padding(.bottom, 12)
             }
+
+            Text("Bạn có thể điều chỉnh thêm trong Cài đặt sau.")
+                .font(.system(size: 11, design: .rounded))
+                .foregroundColor(.secondary)
         }
     }
 }
@@ -991,37 +876,37 @@ struct CompletionStepView: View {
     @State private var opacity: Double = 0.0
 
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 20) {
             Spacer(minLength: 8)
 
             ZStack {
                 Circle()
-                    .fill(Color.accentColor.opacity(0.12))
-                    .frame(width: 200, height: 200)
+                    .fill(Color.accentColor.opacity(0.1))
+                    .frame(width: 160, height: 160)
 
                 Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: 90))
+                    .font(.system(size: 72))
                     .foregroundColor(.accentColor)
                     .scaleEffect(scale)
                     .opacity(opacity)
             }
             .onAppear {
-                withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.65)) {
                     scale = 1.0
                     opacity = 1.0
                 }
             }
 
-            VStack(spacing: 12) {
+            VStack(spacing: 8) {
                 Text("Hoàn tất thiết lập")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
 
                 Text("PHTV đã sẵn sàng. Bạn có thể mở Cài đặt để tinh chỉnh thêm bất cứ lúc nào.")
-                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
                     .multilineTextAlignment(.center)
                     .foregroundColor(.secondary)
             }
-            .padding(.horizontal, 40)
+            .padding(.horizontal, 36)
 
             Spacer()
 
@@ -1030,11 +915,11 @@ struct CompletionStepView: View {
                 onFinish()
             }) {
                 Text("Bắt đầu sử dụng")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .frame(width: 200)
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .frame(width: 180)
             }
             .buttonStyle(OnboardingPrimaryButtonStyle())
-            .padding(.bottom, 36)
+            .padding(.bottom, 28)
         }
     }
 }

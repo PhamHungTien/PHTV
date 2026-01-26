@@ -220,35 +220,33 @@ struct SystemSettingsView: View {
             icon: "arrow.down.circle.fill"
         ) {
             VStack(spacing: 0) {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 14) {
-                        SettingsIconTile(color: .accentColor) {
-                            Image(systemName: "clock.fill")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundStyle(Color.accentColor)
-                        }
+                HStack(alignment: .center, spacing: 12) {
+                    Image(systemName: "clock.fill")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 24, height: 24)
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Tần suất kiểm tra cập nhật")
-                                .font(.body)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Tần suất kiểm tra cập nhật")
+                            .font(.system(size: 13))
 
-                            Text("Tự động kiểm tra bản cập nhật mới")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Spacer()
-
-                        Picker("", selection: $appState.updateCheckFrequency) {
-                            ForEach(UpdateCheckFrequency.allCases) { freq in
-                                Text(freq.displayName).tag(freq)
-                            }
-                        }
-                        .labelsHidden()
-                        .frame(width: 140)
+                        Text("Tự động kiểm tra bản cập nhật mới")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
                     }
-                    .padding(.vertical, 6)
+
+                    Spacer()
+
+                    Picker("", selection: $appState.updateCheckFrequency) {
+                        ForEach(UpdateCheckFrequency.allCases) { freq in
+                            Text(freq.displayName).tag(freq)
+                        }
+                    }
+                    .labelsHidden()
+                    .controlSize(.small)
+                    .frame(width: 130)
                 }
+                .padding(.vertical, 5)
 
                 SettingsDivider()
 
@@ -589,34 +587,24 @@ struct SettingsInfoRow: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            // Icon with white/neutral background
-            ZStack {
-                PHTVRoundedRect(cornerRadius: 8)
-                    .fill(Color(NSColor.controlBackgroundColor))
-                    .overlay(
-                        PHTVRoundedRect(cornerRadius: 8)
-                            .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
-                    )
-
-                Image(systemName: icon)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(iconColor)
-            }
-            .frame(width: 36, height: 36)
+        HStack(alignment: .center, spacing: 12) {
+            // Compact icon
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(iconColor)
+                .frame(width: 24, height: 24)
 
             Text(title)
-                .font(.body)
+                .font(.system(size: 13))
                 .foregroundStyle(.primary)
 
             Spacer()
 
             Text(value)
-                .font(.system(.body, design: .monospaced))
+                .font(.system(size: 13, design: .monospaced))
                 .foregroundStyle(.secondary)
-                .padding(.top, 2)
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 5)
     }
 }
 
@@ -628,43 +616,33 @@ struct SettingsButtonRow: View {
     var isDestructive: Bool = false
     var isLoading: Bool = false
     let action: () -> Void
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorScheme) private var colorScheme
     @State private var isHovered = false
 
     var body: some View {
         Button(action: action) {
-            HStack(alignment: .top, spacing: 14) {
-                // Icon with white/neutral background
-                ZStack {
-                    PHTVRoundedRect(cornerRadius: 8)
-                        .fill(Color(NSColor.controlBackgroundColor))
-                        .overlay(
-                            PHTVRoundedRect(cornerRadius: 8)
-                                .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
-                        )
-
-                    if isLoading {
-                        ProgressView()
-                            .controlSize(.small)
-                            .scaleEffect(0.8)
-                            .frame(width: 16, height: 16)
-                            .tint(iconColor)
-                    } else {
-                        Image(systemName: icon)
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(iconColor)
-                    }
+            HStack(alignment: .center, spacing: 12) {
+                // Compact icon
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                        .scaleEffect(0.8)
+                        .frame(width: 24, height: 24)
+                        .tint(iconColor)
+                } else {
+                    Image(systemName: icon)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(iconColor)
+                        .frame(width: 24, height: 24)
                 }
-                .frame(width: 36, height: 36)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 1) {
                     Text(title)
-                        .font(.body)
+                        .font(.system(size: 13))
                         .foregroundStyle(isDestructive ? .red : .primary)
 
                     Text(subtitle)
-                        .font(.caption)
+                        .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
@@ -674,12 +652,11 @@ struct SettingsButtonRow: View {
 
                 if !isLoading {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(.tertiary)
-                        .padding(.top, 2)
                 }
             }
-            .padding(.vertical, 6)
+            .padding(.vertical, 5)
             .contentShape(Rectangle())
         }
         .background(hoverBackground)
@@ -699,9 +676,9 @@ struct SettingsButtonRow: View {
     @ViewBuilder
     private var hoverBackground: some View {
         if isHovered {
-            PHTVRoundedRect(cornerRadius: 10, style: .continuous)
-                .fill(Color.primary.opacity(colorScheme == .dark ? 0.08 : 0.04))
-                .padding(.horizontal, -6)
+            PHTVRoundedRect(cornerRadius: 8, style: .continuous)
+                .fill(Color.primary.opacity(colorScheme == .dark ? 0.06 : 0.03))
+                .padding(.horizontal, -4)
                 .padding(.vertical, -2)
         } else {
             EmptyView()

@@ -110,21 +110,12 @@ struct UpdateBannerView: View {
     @ViewBuilder
     private var bannerBackground: some View {
         // Simple material background - no glass effect
-        if #available(macOS 12.0, *) {
-            PHTVRoundedRect(cornerRadius: 16)
-                .fill(.regularMaterial)
-                .overlay(
-                    PHTVRoundedRect(cornerRadius: 16)
-                        .stroke(Color.accentColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
-                )
-        } else {
-            PHTVRoundedRect(cornerRadius: 16)
-                .fill(Color(NSColor.controlBackgroundColor))
-                .overlay(
-                    PHTVRoundedRect(cornerRadius: 16)
-                        .stroke(Color.primary.opacity(0.1), lineWidth: 1)
-                )
-        }
+        PHTVRoundedRect(cornerRadius: 16)
+            .fill(.regularMaterial)
+            .overlay(
+                PHTVRoundedRect(cornerRadius: 16)
+                    .stroke(Color.accentColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
+            )
     }
 
     private func installUpdate() {
