@@ -115,7 +115,7 @@ class StatusBarController: ObservableObject {
         
         // Quick actions
         menu.addItem(NSMenuItem(title: "Tạm tắt (\(getHotkeyString()))", action: #selector(toggleEnabled), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "Công cụ chuyển mã", action: #selector(showConvertTool), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "Chuyển đổi bảng mã...", action: #selector(showConvertTool), keyEquivalent: ""))
         
         menu.addItem(NSMenuItem.separator())
         

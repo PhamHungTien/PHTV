@@ -281,7 +281,7 @@ struct StatusBarMenuView: View {
             Button {
                 openConvertTool()
             } label: {
-                Label("Mở công cụ chuyển mã...", systemImage: "arrow.triangle.2.circlepath")
+                Label("Chuyển đổi bảng mã...", systemImage: "arrow.triangle.2.circlepath")
             }
         } label: {
             Label("Công cụ", systemImage: "hammer.fill")
