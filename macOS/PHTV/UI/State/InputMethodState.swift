@@ -17,7 +17,6 @@ final class InputMethodState: ObservableObject {
     @Published var codeTable: CodeTable = .unicode
 
     // Features
-    // Note: checkSpelling and allowConsonantZFWJ are always enabled (no UI toggle)
     @Published var checkSpelling: Bool = true
     @Published var useModernOrthography: Bool = true
     @Published var quickTelex: Bool = false
@@ -60,15 +59,14 @@ final class InputMethodState: ObservableObject {
         codeTable = CodeTable.from(index: codeTableIndex)
 
         // Load input settings
-        // Note: checkSpelling and allowConsonantZFWJ are always true (no user toggle)
-        checkSpelling = true
+        checkSpelling = defaults.object(forKey: UserDefaultsKey.spelling) as? Bool ?? Defaults.checkSpelling
         useModernOrthography = defaults.bool(forKey: UserDefaultsKey.modernOrthography)
         quickTelex = defaults.bool(forKey: UserDefaultsKey.quickTelex)
         restoreOnInvalidWord = false  // Feature removed
         sendKeyStepByStep = defaults.bool(forKey: UserDefaultsKey.sendKeyStepByStep)
         useSmartSwitchKey = defaults.bool(forKey: UserDefaultsKey.useSmartSwitchKey)
         upperCaseFirstChar = defaults.bool(forKey: UserDefaultsKey.upperCaseFirstChar)
-        allowConsonantZFWJ = true
+        allowConsonantZFWJ = defaults.object(forKey: UserDefaultsKey.allowConsonantZFWJ) as? Bool ?? Defaults.allowConsonantZFWJ
         quickStartConsonant = defaults.bool(forKey: UserDefaultsKey.quickStartConsonant)
         quickEndConsonant = defaults.bool(forKey: UserDefaultsKey.quickEndConsonant)
         rememberCode = defaults.bool(forKey: UserDefaultsKey.rememberCode)
@@ -98,15 +96,14 @@ final class InputMethodState: ObservableObject {
         defaults.set(codeTable.toIndex(), forKey: UserDefaultsKey.codeTable)
 
         // Save input settings
-        // Note: checkSpelling and allowConsonantZFWJ are always true
-        defaults.set(true, forKey: UserDefaultsKey.spelling)
+        defaults.set(checkSpelling, forKey: UserDefaultsKey.spelling)
         defaults.set(useModernOrthography, forKey: UserDefaultsKey.modernOrthography)
         defaults.set(quickTelex, forKey: UserDefaultsKey.quickTelex)
         defaults.set(false, forKey: UserDefaultsKey.restoreIfInvalidWord)  // Feature removed
         defaults.set(sendKeyStepByStep, forKey: UserDefaultsKey.sendKeyStepByStep)
         defaults.set(useSmartSwitchKey, forKey: UserDefaultsKey.useSmartSwitchKey)
         defaults.set(upperCaseFirstChar, forKey: UserDefaultsKey.upperCaseFirstChar)
-        defaults.set(true, forKey: UserDefaultsKey.allowConsonantZFWJ)
+        defaults.set(allowConsonantZFWJ, forKey: UserDefaultsKey.allowConsonantZFWJ)
         defaults.set(quickStartConsonant, forKey: UserDefaultsKey.quickStartConsonant)
         defaults.set(quickEndConsonant, forKey: UserDefaultsKey.quickEndConsonant)
         defaults.set(rememberCode, forKey: UserDefaultsKey.rememberCode)

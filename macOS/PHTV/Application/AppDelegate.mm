@@ -67,7 +67,7 @@ volatile int vUseSmartSwitchKey = 1;
 volatile int vUpperCaseFirstChar = 0;
 volatile int vUpperCaseExcludedForCurrentApp = 0;  // 1 = current app is in uppercase excluded list
 volatile int vTempOffSpelling = 0;
-volatile int vAllowConsonantZFWJ = 1; // Always enabled (no UI toggle)
+volatile int vAllowConsonantZFWJ = 1;
 volatile int vQuickStartConsonant = 0;
 volatile int vQuickEndConsonant = 0;
 volatile int vRememberCode = 1; //new on version 2.0
@@ -182,6 +182,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     NSMenuItem* mnuVietnameseLocaleCP1258;
     
     NSMenuItem* mnuQuickConvert;
+    
+    NSMenuItem* mnuSpellCheck;
+    NSMenuItem* mnuAllowConsonantZFWJ;
     
     id _appearanceObserver;
     id _inputSourceObserver;
@@ -927,8 +930,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     NSLog(@"[AppDelegate] Loaded core settings: language=%d, inputType=%d, codeTable=%d", vLanguage, vInputType, vCodeTable);
 
     // Spelling and orthography settings
-    // Note: vCheckSpelling and vAllowConsonantZFWJ are always enabled (no UI toggle)
-    vCheckSpelling = 1;
+    vCheckSpelling = PHTVReadIntWithFallback(defaults, @"Spelling", 1);
     vUseModernOrthography = PHTVReadIntWithFallback(defaults, @"ModernOrthography", vUseModernOrthography);
     vQuickTelex = PHTVReadIntWithFallback(defaults, @"QuickTelex", vQuickTelex);
     vRestoreIfWrongSpelling = 0;  // Feature removed
@@ -943,7 +945,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     vSendKeyStepByStep = PHTVReadIntWithFallback(defaults, @"SendKeyStepByStep", vSendKeyStepByStep);
     vUseSmartSwitchKey = PHTVReadIntWithFallback(defaults, @"UseSmartSwitchKey", vUseSmartSwitchKey);
     vUpperCaseFirstChar = PHTVReadIntWithFallback(defaults, @"UpperCaseFirstChar", vUpperCaseFirstChar);
-    vAllowConsonantZFWJ = 1; // Always enabled
+    vAllowConsonantZFWJ = PHTVReadIntWithFallback(defaults, @"vAllowConsonantZFWJ", 1);
     vQuickStartConsonant = PHTVReadIntWithFallback(defaults, @"vQuickStartConsonant", vQuickStartConsonant);
     vQuickEndConsonant = PHTVReadIntWithFallback(defaults, @"vQuickEndConsonant", vQuickEndConsonant);
     vRememberCode = PHTVReadIntWithFallback(defaults, @"vRememberCode", vRememberCode);
@@ -1495,8 +1497,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     int oldRememberCode = vRememberCode;
     int oldPerformLayoutCompat = vPerformLayoutCompat;
     
-    // Note: vCheckSpelling and vAllowConsonantZFWJ are always enabled (no UI toggle)
-    vCheckSpelling = 1;
+    vCheckSpelling = PHTVReadIntWithFallback(defaults, @"Spelling", 1);
     vUseModernOrthography = PHTVReadIntWithFallback(defaults, @"ModernOrthography", vUseModernOrthography);
     vQuickTelex = PHTVReadIntWithFallback(defaults, @"QuickTelex", vQuickTelex);
     vRestoreIfWrongSpelling = 0;  // Feature removed
@@ -1506,7 +1507,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     vSendKeyStepByStep = PHTVReadIntWithFallback(defaults, @"SendKeyStepByStep", vSendKeyStepByStep);
     vUseSmartSwitchKey = PHTVReadIntWithFallback(defaults, @"UseSmartSwitchKey", vUseSmartSwitchKey);
     vUpperCaseFirstChar = PHTVReadIntWithFallback(defaults, @"UpperCaseFirstChar", vUpperCaseFirstChar);
-    vAllowConsonantZFWJ = 1; // Always enabled
+    vAllowConsonantZFWJ = PHTVReadIntWithFallback(defaults, @"vAllowConsonantZFWJ", 1);
     vQuickStartConsonant = PHTVReadIntWithFallback(defaults, @"vQuickStartConsonant", vQuickStartConsonant);
     vQuickEndConsonant = PHTVReadIntWithFallback(defaults, @"vQuickEndConsonant", vQuickEndConsonant);
     vRememberCode = PHTVReadIntWithFallback(defaults, @"vRememberCode", vRememberCode);
@@ -1982,6 +1983,21 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     [self.statusMenu addItem:mnuQuickConvert];
     
     [self.statusMenu addItem:[NSMenuItem separatorItem]];
+
+    // === TYPING FEATURES ===
+    mnuSpellCheck = [[NSMenuItem alloc] initWithTitle:@"Kiểm tra chính tả" 
+                                               action:@selector(toggleSpellCheck:) 
+                                        keyEquivalent:@""];
+    mnuSpellCheck.target = self;
+    [self.statusMenu addItem:mnuSpellCheck];
+
+    mnuAllowConsonantZFWJ = [[NSMenuItem alloc] initWithTitle:@"Phụ âm Z, F, W, J" 
+                                                       action:@selector(toggleAllowConsonantZFWJ:) 
+                                                keyEquivalent:@""];
+    mnuAllowConsonantZFWJ.target = self;
+    [self.statusMenu addItem:mnuAllowConsonantZFWJ];
+
+    [self.statusMenu addItem:[NSMenuItem separatorItem]];
     
     // === SETTINGS ===
     NSMenuItem* startupItem = [[NSMenuItem alloc] initWithTitle:@"Khởi động cùng hệ thống" 
@@ -2454,6 +2470,10 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     [mnuVNIWindows setState:(intCode == 2) ? NSControlStateValueOn : NSControlStateValueOff];
     [mnuUnicodeComposite setState:(intCode == 3) ? NSControlStateValueOn : NSControlStateValueOff];
     [mnuVietnameseLocaleCP1258 setState:(intCode == 4) ? NSControlStateValueOn : NSControlStateValueOff];
+
+    // Update typing features state
+    [mnuSpellCheck setState:vCheckSpelling ? NSControlStateValueOn : NSControlStateValueOff];
+    [mnuAllowConsonantZFWJ setState:vAllowConsonantZFWJ ? NSControlStateValueOn : NSControlStateValueOff];
 }
 
 -(void)onImputMethodChanged:(BOOL)willNotify {
@@ -2642,6 +2662,37 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     } else {
         [PHTVManager showMessage: nil message:@"Không có dữ liệu trong clipboard!" subMsg:@"Hãy sao chép một đoạn text để chuyển đổi!"];
     }
+}
+
+- (void)toggleSpellCheck:(id)sender {
+    vCheckSpelling = !vCheckSpelling;
+    __sync_synchronize();
+    
+    [[NSUserDefaults standardUserDefaults] setInteger:vCheckSpelling forKey:@"Spelling"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+    
+    // Sync engine state
+    vSetCheckSpelling();
+    RequestNewSession();
+    [self fillData];
+    
+    // Notify SwiftUI to update its state
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"PHTVSettingsChanged" object:nil];
+}
+
+- (void)toggleAllowConsonantZFWJ:(id)sender {
+    vAllowConsonantZFWJ = !vAllowConsonantZFWJ;
+    __sync_synchronize();
+    
+    [[NSUserDefaults standardUserDefaults] setInteger:vAllowConsonantZFWJ forKey:@"vAllowConsonantZFWJ"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+    
+    // Sync engine state
+    RequestNewSession();
+    [self fillData];
+    
+    // Notify SwiftUI to update its state
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"PHTVSettingsChanged" object:nil];
 }
 
 // MARK: - UI Actions (SwiftUI Integration)

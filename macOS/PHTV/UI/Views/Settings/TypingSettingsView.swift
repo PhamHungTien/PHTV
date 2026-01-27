@@ -192,6 +192,16 @@ struct TypingSettingsView: View {
                 ) {
                     VStack(spacing: 0) {
                         SettingsToggleRow(
+                            icon: "textformat.abc.dottedunderline",
+                            iconColor: .accentColor,
+                            title: "Kiểm tra chính tả",
+                            subtitle: "Tự động sửa lỗi khi gõ sai cấu trúc tiếng Việt",
+                            isOn: $appState.checkSpelling
+                        )
+
+                        SettingsDivider()
+
+                        SettingsToggleRow(
                             icon: "a.circle.fill",
                             iconColor: .accentColor,
                             title: "Chính tả mới (oà, uý)",
@@ -222,7 +232,7 @@ struct TypingSettingsView: View {
                         SettingsDivider()
 
                         SettingsToggleRow(
-                            icon: "textformat.abc.dottedunderline",
+                            icon: "text.magnifyingglass",
                             iconColor: .accentColor,
                             title: "Tự động khôi phục tiếng Anh",
                             subtitle: "Không biến đổi từ tiếng Anh khi đang gõ tiếng Việt",
@@ -248,6 +258,16 @@ struct TypingSettingsView: View {
                     icon: "character.textbox"
                 ) {
                     VStack(spacing: 0) {
+                        SettingsToggleRow(
+                            icon: "character.cursor.ibeam",
+                            iconColor: .accentColor,
+                            title: "Phụ âm Z, F, W, J",
+                            subtitle: "Cho phép gõ các phụ âm không có trong tiếng Việt",
+                            isOn: $appState.allowConsonantZFWJ
+                        )
+
+                        SettingsDivider()
+
                         SettingsToggleRow(
                             icon: "arrow.right.circle.fill",
                             iconColor: .accentColor,

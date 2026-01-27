@@ -203,6 +203,9 @@ struct SettingsItem: Identifiable {
             title: "Tự động khôi phục tiếng Anh", iconName: "textformat.abc.dottedunderline", tab: .typing,
             keywords: ["auto restore english", "tiếng anh", "english word", "terminal", "tẻminal", "khôi phục"]),
         SettingsItem(
+            title: "Kiểm tra chính tả", iconName: "textformat.abc.dottedunderline", tab: .typing,
+            keywords: ["spell check", "chính tả", "kiểm tra", "đúng", "sai", "correction"]),
+        SettingsItem(
             title: "Phím khôi phục ký tự gốc", iconName: "arrow.uturn.backward.circle.fill", tab: .typing,
             keywords: ["restore key", "esc", "escape", "option", "control", "khôi phục", "ký tự gốc"]),
         SettingsItem(
@@ -214,6 +217,9 @@ struct SettingsItem: Identifiable {
         SettingsItem(
             title: "Gõ nhanh (Quick Telex)", iconName: "hare.fill", tab: .typing,
             keywords: ["quick telex", "gõ nhanh", "cc", "gg", "kk", "nn", "qq", "pp", "tt"]),
+        SettingsItem(
+            title: "Phụ âm Z, F, W, J", iconName: "character.cursor.ibeam", tab: .typing,
+            keywords: ["consonants", "z", "f", "w", "j", "phụ âm", "tiếng anh", "ngoại ngữ"]),
         SettingsItem(
             title: "Phụ âm đầu nhanh", iconName: "arrow.right.circle.fill", tab: .typing,
             keywords: ["quick start consonant", "phụ âm đầu", "nhanh", "f", "j", "w", "ph", "gi", "qu"]),
