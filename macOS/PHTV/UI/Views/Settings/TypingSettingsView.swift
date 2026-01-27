@@ -353,18 +353,18 @@ struct SettingsCard<Content: View, Trailing: View>: View {
         ZStack {
             // Base layer for contrast
             if colorScheme == .dark {
-                Color.black.opacity(0.12)
+                Color.black.opacity(0.25)
             } else {
-                Color.white.opacity(0.4)
+                Color.primary.opacity(0.04)
             }
             
-            // Subtle accent tint to make it feel "alive"
-            Color.accentColor.opacity(colorScheme == .dark ? 0.04 : 0.02)
+            // Pronounced accent tint
+            Color.accentColor.opacity(colorScheme == .dark ? 0.08 : 0.05)
             
             // Modern gradient for depth
             LinearGradient(
                 colors: [
-                    Color.primary.opacity(colorScheme == .dark ? 0.05 : 0.03),
+                    Color.primary.opacity(colorScheme == .dark ? 0.1 : 0.05),
                     Color.primary.opacity(colorScheme == .dark ? 0.02 : 0.01)
                 ],
                 startPoint: .top,
