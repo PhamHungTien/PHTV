@@ -1106,7 +1106,8 @@ void upperCaseFirstCharacter() {
         hNCC = 1;
         TypingWord[0] |= CAPS_MASK;
         hData[0] = GET(TypingWord[0]);
-        _upperCaseStatus = 0;
+        // Don't reset _upperCaseStatus here - let caller handle it
+        // This allows backspace recovery to work properly
         if (vUseMacro)
             hMacroKey[0] |= CAPS_MASK;
     }
