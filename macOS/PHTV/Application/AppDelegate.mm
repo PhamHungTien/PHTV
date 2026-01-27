@@ -2781,6 +2781,12 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     NSRunningApplication *activeApp = [[note userInfo] objectForKey:NSWorkspaceApplicationKey];
     NSString *bundleId = activeApp.bundleIdentifier;
 
+    // CRITICAL: Update focus cache immediately to prevent race conditions in smart switch logic.
+    // This ensures that OnActiveAppChanged and other background tasks see the correct app.
+    if (bundleId) {
+        [PHTVCacheManager setCachedFocusedBundleId:bundleId];
+    }
+
     // CRITICAL FIX: Handle exclusion logic BEFORE smart switch logic.
     // This ensures that if we are leaving an excluded app (which forced English mode),
     // the global vLanguage is restored to its proper value BEFORE smart switch
