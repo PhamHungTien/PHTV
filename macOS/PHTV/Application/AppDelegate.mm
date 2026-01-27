@@ -185,6 +185,10 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     
     NSMenuItem* mnuSpellCheck;
     NSMenuItem* mnuAllowConsonantZFWJ;
+    NSMenuItem* mnuModernOrthography;
+    NSMenuItem* mnuQuickTelex;
+    NSMenuItem* mnuUpperCaseFirstChar;
+    NSMenuItem* mnuAutoRestoreEnglishWord;
     
     id _appearanceObserver;
     id _inputSourceObserver;
@@ -1947,37 +1951,22 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     NSMenuItem* menuInputType = [[NSMenuItem alloc] initWithTitle:@"Kiểu gõ" 
                                                           action:nil 
                                                    keyEquivalent:@""];
-    menuInputType.enabled = YES;  // Must be enabled for submenu to work
+    menuInputType.enabled = YES;
     [self.statusMenu addItem:menuInputType];
     
-    [self.statusMenu addItem:[NSMenuItem separatorItem]];
-    
-    // === CODE TABLE ITEMS ===
-    mnuUnicode = [[NSMenuItem alloc] initWithTitle:@"Unicode dựng sẵn" 
-                                            action:@selector(onCodeSelected:) 
-                                     keyEquivalent:@""];
-    mnuUnicode.target = self;
-    mnuUnicode.tag = 0;
-    [self.statusMenu addItem:mnuUnicode];
-    
-    mnuTCVN = [[NSMenuItem alloc] initWithTitle:@"TCVN3 (ABC)" 
-                                         action:@selector(onCodeSelected:) 
-                                  keyEquivalent:@""];
-    mnuTCVN.target = self;
-    mnuTCVN.tag = 1;
-    [self.statusMenu addItem:mnuTCVN];
-    
-    mnuVNIWindows = [[NSMenuItem alloc] initWithTitle:@"VNI Windows" 
-                                               action:@selector(onCodeSelected:) 
-                                        keyEquivalent:@""];
-    mnuVNIWindows.target = self;
-    mnuVNIWindows.tag = 2;
-    [self.statusMenu addItem:mnuVNIWindows];
-    
-    NSMenuItem* menuCode = [[NSMenuItem alloc] initWithTitle:@"Bảng mã khác..." 
+    // === CODE TABLE HEADER ===
+    NSMenuItem* menuCode = [[NSMenuItem alloc] initWithTitle:@"Bảng mã" 
                                                       action:nil 
                                                keyEquivalent:@""];
+    menuCode.enabled = YES;
     [self.statusMenu addItem:menuCode];
+    
+    // === TYPING OPTIONS HEADER ===
+    NSMenuItem* menuOptions = [[NSMenuItem alloc] initWithTitle:@"Tùy chọn gõ" 
+                                                         action:nil 
+                                                  keyEquivalent:@""];
+    menuOptions.enabled = YES;
+    [self.statusMenu addItem:menuOptions];
     
     [self.statusMenu addItem:[NSMenuItem separatorItem]];
 
@@ -1988,21 +1977,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     mnuQuickConvert.target = self;
     [self.statusMenu addItem:mnuQuickConvert];
     
-    [self.statusMenu addItem:[NSMenuItem separatorItem]];
-
-    // === TYPING FEATURES ===
-    mnuSpellCheck = [[NSMenuItem alloc] initWithTitle:@"Kiểm tra chính tả" 
-                                               action:@selector(toggleSpellCheck:) 
-                                        keyEquivalent:@""];
-    mnuSpellCheck.target = self;
-    [self.statusMenu addItem:mnuSpellCheck];
-
-    mnuAllowConsonantZFWJ = [[NSMenuItem alloc] initWithTitle:@"Phụ âm Z, F, W, J" 
-                                                       action:@selector(toggleAllowConsonantZFWJ:) 
-                                                keyEquivalent:@""];
-    mnuAllowConsonantZFWJ.target = self;
-    [self.statusMenu addItem:mnuAllowConsonantZFWJ];
-
     [self.statusMenu addItem:[NSMenuItem separatorItem]];
     
     // === SETTINGS ===
@@ -2047,6 +2021,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     // Setup submenus
     [self setInputTypeMenu:menuInputType];
     [self setCodeMenu:menuCode];
+    [self setOptionsMenu:menuOptions];
     
     // ================================================
     // CRITICAL: Assign menu to status item
@@ -2411,6 +2386,21 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     NSMenu *sub = parent.submenu;
     [sub removeAllItems]; // Clear old items
     
+    mnuUnicode = [[NSMenuItem alloc] initWithTitle:@"Unicode dựng sẵn" action:@selector(onCodeSelected:) keyEquivalent:@""];
+    mnuUnicode.target = self;
+    mnuUnicode.tag = 0;
+    [sub addItem:mnuUnicode];
+    
+    mnuTCVN = [[NSMenuItem alloc] initWithTitle:@"TCVN3 (ABC)" action:@selector(onCodeSelected:) keyEquivalent:@""];
+    mnuTCVN.target = self;
+    mnuTCVN.tag = 1;
+    [sub addItem:mnuTCVN];
+    
+    mnuVNIWindows = [[NSMenuItem alloc] initWithTitle:@"VNI Windows" action:@selector(onCodeSelected:) keyEquivalent:@""];
+    mnuVNIWindows.target = self;
+    mnuVNIWindows.tag = 2;
+    [sub addItem:mnuVNIWindows];
+    
     mnuUnicodeComposite = [[NSMenuItem alloc] initWithTitle:@"Unicode tổ hợp" action:@selector(onCodeSelected:) keyEquivalent:@""];
     mnuUnicodeComposite.target = self;
     mnuUnicodeComposite.tag = 3;
@@ -2420,6 +2410,45 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     mnuVietnameseLocaleCP1258.target = self;
     mnuVietnameseLocaleCP1258.tag = 4;
     [sub addItem:mnuVietnameseLocaleCP1258];
+}
+
+- (void)setOptionsMenu:(NSMenuItem*) parent {
+    if (!parent.submenu) {
+        NSMenu *sub = [[NSMenu alloc] init];
+        sub.autoenablesItems = NO;
+        parent.submenu = sub;
+    }
+    
+    NSMenu *sub = parent.submenu;
+    [sub removeAllItems];
+    
+    mnuSpellCheck = [[NSMenuItem alloc] initWithTitle:@"Kiểm tra chính tả" action:@selector(toggleSpellCheck:) keyEquivalent:@""];
+    mnuSpellCheck.target = self;
+    [sub addItem:mnuSpellCheck];
+    
+    mnuModernOrthography = [[NSMenuItem alloc] initWithTitle:@"Chính tả mới (oà, uý)" action:@selector(toggleModernOrthography:) keyEquivalent:@""];
+    mnuModernOrthography.target = self;
+    [sub addItem:mnuModernOrthography];
+    
+    [sub addItem:[NSMenuItem separatorItem]];
+    
+    mnuQuickTelex = [[NSMenuItem alloc] initWithTitle:@"Gõ nhanh Telex" action:@selector(toggleQuickTelex:) keyEquivalent:@""];
+    mnuQuickTelex.target = self;
+    [sub addItem:mnuQuickTelex];
+    
+    mnuAllowConsonantZFWJ = [[NSMenuItem alloc] initWithTitle:@"Phụ âm Z, F, W, J" action:@selector(toggleAllowConsonantZFWJ:) keyEquivalent:@""];
+    mnuAllowConsonantZFWJ.target = self;
+    [sub addItem:mnuAllowConsonantZFWJ];
+    
+    [sub addItem:[NSMenuItem separatorItem]];
+    
+    mnuUpperCaseFirstChar = [[NSMenuItem alloc] initWithTitle:@"Viết hoa đầu câu" action:@selector(toggleUpperCaseFirstChar:) keyEquivalent:@""];
+    mnuUpperCaseFirstChar.target = self;
+    [sub addItem:mnuUpperCaseFirstChar];
+    
+    mnuAutoRestoreEnglishWord = [[NSMenuItem alloc] initWithTitle:@"Tự động khôi phục tiếng Anh" action:@selector(toggleAutoRestoreEnglishWord:) keyEquivalent:@""];
+    mnuAutoRestoreEnglishWord.target = self;
+    [sub addItem:mnuAutoRestoreEnglishWord];
 }
 
 - (void) fillData {
@@ -2479,7 +2508,11 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
     // Update typing features state
     [mnuSpellCheck setState:vCheckSpelling ? NSControlStateValueOn : NSControlStateValueOff];
+    [mnuModernOrthography setState:vUseModernOrthography ? NSControlStateValueOn : NSControlStateValueOff];
+    [mnuQuickTelex setState:vQuickTelex ? NSControlStateValueOn : NSControlStateValueOff];
     [mnuAllowConsonantZFWJ setState:vAllowConsonantZFWJ ? NSControlStateValueOn : NSControlStateValueOff];
+    [mnuUpperCaseFirstChar setState:vUpperCaseFirstChar ? NSControlStateValueOn : NSControlStateValueOff];
+    [mnuAutoRestoreEnglishWord setState:vAutoRestoreEnglishWord ? NSControlStateValueOn : NSControlStateValueOff];
 }
 
 -(void)onImputMethodChanged:(BOOL)willNotify {
@@ -2704,6 +2737,54 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     [self fillData];
     
     // Notify SwiftUI to update its state
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"PHTVSettingsChanged" object:nil];
+}
+
+- (void)toggleModernOrthography:(id)sender {
+    vUseModernOrthography = !vUseModernOrthography;
+    __sync_synchronize();
+    
+    [[NSUserDefaults standardUserDefaults] setInteger:vUseModernOrthography forKey:@"ModernOrthography"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+    
+    RequestNewSession();
+    [self fillData];
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"PHTVSettingsChanged" object:nil];
+}
+
+- (void)toggleQuickTelex:(id)sender {
+    vQuickTelex = !vQuickTelex;
+    __sync_synchronize();
+    
+    [[NSUserDefaults standardUserDefaults] setInteger:vQuickTelex forKey:@"QuickTelex"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+    
+    RequestNewSession();
+    [self fillData];
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"PHTVSettingsChanged" object:nil];
+}
+
+- (void)toggleUpperCaseFirstChar:(id)sender {
+    vUpperCaseFirstChar = !vUpperCaseFirstChar;
+    __sync_synchronize();
+    
+    [[NSUserDefaults standardUserDefaults] setInteger:vUpperCaseFirstChar forKey:@"UpperCaseFirstChar"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+    
+    RequestNewSession();
+    [self fillData];
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"PHTVSettingsChanged" object:nil];
+}
+
+- (void)toggleAutoRestoreEnglishWord:(id)sender {
+    vAutoRestoreEnglishWord = !vAutoRestoreEnglishWord;
+    __sync_synchronize();
+    
+    [[NSUserDefaults standardUserDefaults] setInteger:vAutoRestoreEnglishWord forKey:@"vAutoRestoreEnglishWord"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+    
+    RequestNewSession();
+    [self fillData];
     [[NSNotificationCenter defaultCenter] postNotificationName:@"PHTVSettingsChanged" object:nil];
 }
 
