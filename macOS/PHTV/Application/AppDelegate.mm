@@ -2784,7 +2784,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     // CRITICAL: Update focus cache immediately to prevent race conditions in smart switch logic.
     // This ensures that OnActiveAppChanged and other background tasks see the correct app.
     if (bundleId) {
-        [PHTVCacheManager setCachedFocusedBundleId:bundleId];
+        [PHTVCacheManager updateSpotlightCache:NO pid:0 bundleId:bundleId];
     }
 
     // CRITICAL FIX: Handle exclusion logic BEFORE smart switch logic.
