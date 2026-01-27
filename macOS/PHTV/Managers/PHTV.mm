@@ -462,7 +462,6 @@ extern "C" {
         // NOTE: VSCode removed from this list - terminal needs Layout Compatibility enabled
         @"com.github.GitHubClient",    // GitHub Desktop
         @"com.figma.Desktop",          // Figma
-        @"notion.id",                  // Notion
         @"com.linear",                 // Linear
         @"com.logseq.logseq",          // Logseq
         @"md.obsidian",                // Obsidian
