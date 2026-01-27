@@ -42,6 +42,7 @@ typedef struct {
 + (BOOL)getCachedSpotlightActive;
 + (pid_t)getCachedFocusedPID;
 + (NSString*)getCachedFocusedBundleId;
++ (void)setCachedFocusedBundleId:(NSString*)bundleId;
 + (uint64_t)getLastSpotlightCheckTime;
 + (uint64_t)getLastSpotlightInvalidationTime;
 + (void)updateSpotlightCache:(BOOL)isActive pid:(pid_t)pid bundleId:(NSString*)bundleId;

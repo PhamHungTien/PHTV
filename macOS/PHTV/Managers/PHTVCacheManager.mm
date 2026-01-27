@@ -243,6 +243,13 @@ static BOOL _layoutCacheValid = NO;
     return bundleId;
 }
 
++ (void)setCachedFocusedBundleId:(NSString*)bundleId {
+    os_unfair_lock_lock(&_spotlightCacheLock);
+    _cachedFocusedBundleId = bundleId;
+    _lastSpotlightCheckTime = mach_absolute_time();
+    os_unfair_lock_unlock(&_spotlightCacheLock);
+}
+
 + (uint64_t)getLastSpotlightCheckTime {
     os_unfair_lock_lock(&_spotlightCacheLock);
     uint64_t time = _lastSpotlightCheckTime;
