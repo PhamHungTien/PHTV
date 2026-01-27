@@ -350,14 +350,27 @@ struct SettingsCard<Content: View, Trailing: View>: View {
     }
 
     private var headerRowBackground: some View {
-        LinearGradient(
-            colors: [
-                Color(NSColor.controlBackgroundColor).opacity(colorScheme == .dark ? 0.22 : 0.82),
-                Color(NSColor.windowBackgroundColor).opacity(colorScheme == .dark ? 0.18 : 0.7)
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
+        ZStack {
+            // Base layer for contrast
+            if colorScheme == .dark {
+                Color.black.opacity(0.12)
+            } else {
+                Color.white.opacity(0.4)
+            }
+            
+            // Subtle accent tint to make it feel "alive"
+            Color.accentColor.opacity(colorScheme == .dark ? 0.04 : 0.02)
+            
+            // Modern gradient for depth
+            LinearGradient(
+                colors: [
+                    Color.primary.opacity(colorScheme == .dark ? 0.05 : 0.03),
+                    Color.primary.opacity(colorScheme == .dark ? 0.02 : 0.01)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
     }
 }
 
