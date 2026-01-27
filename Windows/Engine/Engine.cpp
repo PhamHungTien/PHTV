@@ -1804,11 +1804,28 @@ void vKeyHandleEvent(const vKeyEvent& event,
         
         if (vUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp) {
             if (_index == 1 && _upperCaseStatus == 2) {
-                upperCaseFirstCharacter();
-                // Track for English restore - in case Vietnamese transform didn't happen
-                _shouldUpperCaseEnglishRestore = true;
+                if (capsStatus == 1) {
+                    // Shift held = user wants to cancel auto-capitalize, force lowercase
+                    if (TypingWord[0] & CAPS_MASK) {
+                        hCode = vWillProcess;
+                        hBPC = 0;
+                        hNCC = 1;
+                        TypingWord[0] &= ~CAPS_MASK;
+                        hData[0] = GET(TypingWord[0]);
+                        if (vUseMacro && hMacroKey.size() > 0) {
+                            hMacroKey[0] &= ~CAPS_MASK;
+                        }
+                    }
+                } else {
+                    // No Shift = auto-capitalize
+                    upperCaseFirstCharacter();
+                    _shouldUpperCaseEnglishRestore = true;
+                }
             }
-            _upperCaseStatus = 0;
+            // Only reset status after second char, so backspace to _index=0 preserves status
+            if (_index > 1) {
+                _upperCaseStatus = 0;
+            }
         }
         
         //case [ ]
