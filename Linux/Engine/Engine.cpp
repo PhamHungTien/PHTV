@@ -956,36 +956,74 @@ void insertW(const Uint16& data, const bool& isCaps) {
             tempDisableKey = true;
         } else {
             hCode = vWillProcess;
-            
+
+            // FIX: Check if vowel already has TONEW_MASK - if so, restore and disable
+            // This handles cases like "thuơ" + "w" -> should restore to "thuo" then add "w" -> "thuow"
+            bool shouldRestore = false;
             if ((CHR(VSI) == KEY_U && CHR(VSI+1) == KEY_O)) {
                 if (VSI - 2 >= 0 && TypingWord[VSI - 2] == KEY_T && TypingWord[VSI - 1] == KEY_H) {
-                    TypingWord[VSI+1] |= TONEW_MASK;
-                    if (VSI + 2 < _index && CHR(VSI+2) == KEY_N) {
-                        TypingWord[VSI] |= TONEW_MASK;
+                    // "thuo" case: only VSI+1 (o) gets TONEW_MASK
+                    if (TypingWord[VSI+1] & TONEW_MASK) {
+                        // Already has TONEW_MASK, restore it
+                        shouldRestore = true;
+                    } else {
+                        TypingWord[VSI+1] |= TONEW_MASK;
+                        if (VSI + 2 < _index && CHR(VSI+2) == KEY_N) {
+                            TypingWord[VSI] |= TONEW_MASK;
+                        }
                     }
                 } else if (VSI - 1 >= 0 && TypingWord[VSI - 1] == KEY_Q) {
-                    TypingWord[VSI+1] |= TONEW_MASK;
+                    // "quo" case
+                    if (TypingWord[VSI+1] & TONEW_MASK) {
+                        shouldRestore = true;
+                    } else {
+                        TypingWord[VSI+1] |= TONEW_MASK;
+                    }
                 } else {
-                    TypingWord[VSI] |= TONEW_MASK;
-                    TypingWord[VSI+1] |= TONEW_MASK;
+                    // Other "uo" cases: both vowels get TONEW_MASK
+                    if ((TypingWord[VSI] & TONEW_MASK) || (TypingWord[VSI+1] & TONEW_MASK)) {
+                        shouldRestore = true;
+                    } else {
+                        TypingWord[VSI] |= TONEW_MASK;
+                        TypingWord[VSI+1] |= TONEW_MASK;
+                    }
                 }
             } else if ((CHR(VSI) == KEY_U && CHR(VSI+1) == KEY_A) ||
                        (CHR(VSI) == KEY_U && CHR(VSI+1) == KEY_I) ||
                        (CHR(VSI) == KEY_U && CHR(VSI+1) == KEY_U) ||
                        (CHR(VSI) == KEY_O && CHR(VSI+1) == KEY_I)) {
-                TypingWord[VSI] |= TONEW_MASK;
+                if (TypingWord[VSI] & TONEW_MASK) {
+                    shouldRestore = true;
+                } else {
+                    TypingWord[VSI] |= TONEW_MASK;
+                }
             } else if ((CHR(VSI) == KEY_I && CHR(VSI+1) == KEY_O) ||
                        (CHR(VSI) == KEY_O && CHR(VSI+1) == KEY_A)) {
-                TypingWord[VSI+1] |= TONEW_MASK;
+                if (TypingWord[VSI+1] & TONEW_MASK) {
+                    shouldRestore = true;
+                } else {
+                    TypingWord[VSI+1] |= TONEW_MASK;
+                }
             } else {
                 //don't do anything
                 tempDisableKey = true;
                 isChanged = false;
                 hCode = vDoNothing;
             }
-            
-            for (ii = VSI; ii < _index; ii++) {
-                hData[_index - 1 - ii] = GET(TypingWord[ii]);
+
+            if (shouldRestore) {
+                // Restore: remove TONEW_MASK from all vowels
+                hCode = vRestore;
+                for (ii = VSI; ii < _index; ii++) {
+                    TypingWord[ii] &= ~TONEW_MASK;
+                    hData[_index - 1 - ii] = GET(TypingWord[ii]) & ~STANDALONE_MASK;
+                }
+                isRestoredW = true;
+                tempDisableKey = true;
+            } else if (hCode == vWillProcess) {
+                for (ii = VSI; ii < _index; ii++) {
+                    hData[_index - 1 - ii] = GET(TypingWord[ii]);
+                }
             }
         }
         
@@ -1106,8 +1144,7 @@ void upperCaseFirstCharacter() {
         hNCC = 1;
         TypingWord[0] |= CAPS_MASK;
         hData[0] = GET(TypingWord[0]);
-        // Don't reset _upperCaseStatus here - let caller handle it
-        // This allows backspace recovery to work properly
+        _upperCaseStatus = 0;
         if (vUseMacro)
             hMacroKey[0] |= CAPS_MASK;
     }
@@ -1557,7 +1594,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             _index = 0;
             _hasHandledMacro = false;  // Reset for next macro
         }
-        
+
         //insert key for macro function
         if (vUseMacro) {
             if (_isCharKeyCode) {
@@ -1567,7 +1604,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
                 _hasHandledMacro = false;  // Reset when starting new word
             }
         }
-        
+
         if (vUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp) {
             if (data == KEY_DOT)
                 _upperCaseStatus = 1;
@@ -1736,14 +1773,14 @@ void vKeyHandleEvent(const vKeyEvent& event,
             hBPC = 0;
             hNCC = 0;
             hExt = 0;
-            // PERFORMANCE FIX: Removed file I/O from keystroke handler
-            // Debug logging moved to stderr (use PHTV_DEBUG=1 environment variable)
+            // FIX: Save space count BEFORE startNewSession() resets it
+            int savedSpaceCount = _spaceCount;
             Byte savedUpperCaseStatus = _upperCaseStatus;
             startNewSession();
             _upperCaseStatus = savedUpperCaseStatus;
-            //continute save space
-            saveWord(KEY_SPACE, _spaceCount);
-            _spaceCount = 0;
+            //continue save space
+            saveWord(KEY_SPACE, savedSpaceCount);
+            // _spaceCount is already 0 from startNewSession()
         } else if (_specialChar.size() > 0) {
             saveSpecialChar();
         }
@@ -1805,28 +1842,11 @@ void vKeyHandleEvent(const vKeyEvent& event,
         
         if (vUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp) {
             if (_index == 1 && _upperCaseStatus == 2) {
-                if (capsStatus == 1) {
-                    // Shift held = user wants to cancel auto-capitalize, force lowercase
-                    if (TypingWord[0] & CAPS_MASK) {
-                        hCode = vWillProcess;
-                        hBPC = 0;
-                        hNCC = 1;
-                        TypingWord[0] &= ~CAPS_MASK;
-                        hData[0] = GET(TypingWord[0]);
-                        if (vUseMacro && hMacroKey.size() > 0) {
-                            hMacroKey[0] &= ~CAPS_MASK;
-                        }
-                    }
-                } else {
-                    // No Shift = auto-capitalize
-                    upperCaseFirstCharacter();
-                    _shouldUpperCaseEnglishRestore = true;
-                }
+                upperCaseFirstCharacter();
+                // Track for English restore - in case Vietnamese transform didn't happen
+                _shouldUpperCaseEnglishRestore = true;
             }
-            // Only reset status after second char, so backspace to _index=0 preserves status
-            if (_index > 1) {
-                _upperCaseStatus = 0;
-            }
+            _upperCaseStatus = 0;
         }
         
         //case [ ]
