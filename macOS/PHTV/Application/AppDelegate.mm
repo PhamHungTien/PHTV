@@ -1289,6 +1289,12 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
             // 1. Update global variable
             vLanguage = newLanguage;
 
+            // If we are currently in an excluded app, update the "saved" language
+            // so that when we switch back to a normal app, it restores the new selection.
+            if (_isInExcludedApp) {
+                _savedLanguageBeforeExclusion = newLanguage;
+            }
+
             // 2. Memory barrier to ensure event tap thread sees new value
             __sync_synchronize();
 
@@ -2511,6 +2517,12 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     // 1. Update global variable
     vLanguage = (int)intInputMethod;
 
+    // If we are currently in an excluded app, update the "saved" language
+    // so that when we switch back to a normal app, it restores the new selection.
+    if (_isInExcludedApp) {
+        _savedLanguageBeforeExclusion = vLanguage;
+    }
+
     // 2. Memory barrier to ensure event tap thread sees new value
     __sync_synchronize();
 
@@ -2766,7 +2778,19 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 }
 
 -(void)activeAppChanged: (NSNotification*)note {
-    if (vUseSmartSwitchKey && [PHTVManager isInited]) {
+    NSRunningApplication *activeApp = [[note userInfo] objectForKey:NSWorkspaceApplicationKey];
+    NSString *bundleId = activeApp.bundleIdentifier;
+
+    // CRITICAL FIX: Handle exclusion logic BEFORE smart switch logic.
+    // This ensures that if we are leaving an excluded app (which forced English mode),
+    // the global vLanguage is restored to its proper value BEFORE smart switch
+    // logic decides what to save or load for the new app.
+    if (bundleId) {
+        [self checkExcludedApp:bundleId];
+    }
+
+    // Handle smart switch logic only for non-excluded apps.
+    if (!_isInExcludedApp && vUseSmartSwitchKey && [PHTVManager isInited]) {
         OnActiveAppChanged();
     }
 
@@ -2774,12 +2798,10 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     // This prevents stale Spotlight detection when switching between apps
     [PHTVCacheManager invalidateSpotlightCache];
 
-    // Check if the newly active app is in the excluded list
-    NSRunningApplication *activeApp = [[note userInfo] objectForKey:NSWorkspaceApplicationKey];
-    if (activeApp && activeApp.bundleIdentifier) {
-        [self checkExcludedApp:activeApp.bundleIdentifier];
-        [self checkSendKeyStepByStepApp:activeApp.bundleIdentifier];
-        [self checkUpperCaseExcludedApp:activeApp.bundleIdentifier];
+    // Check other app-specific behaviors
+    if (bundleId) {
+        [self checkSendKeyStepByStepApp:bundleId];
+        [self checkUpperCaseExcludedApp:bundleId];
     }
 }
 
@@ -2822,6 +2844,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
             vLanguage = 0;  // Switch to English
             [[NSUserDefaults standardUserDefaults] setInteger:vLanguage forKey:@"InputMethod"];
             [[NSUserDefaults standardUserDefaults] synchronize];
+            
+            // CRITICAL: Reset engine session when forcing mode change
+            RequestNewSession();
             [self fillData];
 
             NSLog(@"[ExcludedApp] Entered excluded app '%@' - switched to English (saved state: Vietnamese)", bundleIdentifier);
@@ -2841,6 +2866,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
             vLanguage = 1;
             [[NSUserDefaults standardUserDefaults] setInteger:vLanguage forKey:@"InputMethod"];
             [[NSUserDefaults standardUserDefaults] synchronize];
+            
+            // CRITICAL: Reset engine session when restoring mode
+            RequestNewSession();
             [self fillData];
 
             NSLog(@"[ExcludedApp] Left excluded app, switched to '%@' - restored Vietnamese mode", bundleIdentifier);
