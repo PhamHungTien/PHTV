@@ -1570,8 +1570,8 @@ void vKeyHandleEvent(const vKeyEvent& event,
         if (vUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp) {
             if (data == KEY_DOT)
                 _upperCaseStatus = 1;
-            else if (data == KEY_ENTER || data == KEY_RETURN)
-                _upperCaseStatus = 2;
+            else if (data == KEY_ENTER || data == KEY_RETURN || event == vKeyEvent::Mouse)
+                _upperCaseStatus = 2;  // Mouse click = new context, ready to capitalize
             else
                 _upperCaseStatus = 0;
         }
