@@ -519,6 +519,7 @@ void startNewSession() {
     _shouldUpperCaseEnglishRestore = false;
     _spaceCount = 0;
     _longWordHelper.clear();
+    _upperCaseStatus = 0;
 }
 
 void checkCorrectVowel(vector<vector<Uint16>>& charset, int& i, int& k, const Uint16& markKey) {
@@ -1715,7 +1716,9 @@ void vKeyHandleEvent(const vKeyEvent& event,
             if (_index == 0) {
                 // PERFORMANCE FIX: Removed file I/O from keystroke handler
                 // Debug logging moved to stderr (use PHTV_DEBUG=1 environment variable)
+                Byte savedUpperCaseStatus = _upperCaseStatus;
                 startNewSession();
+                _upperCaseStatus = savedUpperCaseStatus;
                 _specialChar.clear();
                 restoreLastTypingState();
             } else { //August 23rd continue check grammar
@@ -1734,7 +1737,9 @@ void vKeyHandleEvent(const vKeyEvent& event,
             hExt = 0;
             // PERFORMANCE FIX: Removed file I/O from keystroke handler
             // Debug logging moved to stderr (use PHTV_DEBUG=1 environment variable)
+            Byte savedUpperCaseStatus = _upperCaseStatus;
             startNewSession();
+            _upperCaseStatus = savedUpperCaseStatus;
             //continute save space
             saveWord(KEY_SPACE, _spaceCount);
             _spaceCount = 0;
