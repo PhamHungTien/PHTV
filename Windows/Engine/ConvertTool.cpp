@@ -11,6 +11,7 @@
 #include "Engine.h"
 #include <iostream>
 #include <memory.h>
+#include <algorithm> // Fix for std::find
 
 //option
 bool convertToolDontAlertWhenCompleted = false;

@@ -1,79 +1,47 @@
 //
 //  PHTVConfig.h
-//  PHTV - Vietnamese Input Method
+//  PHTV - Windows Configuration Manager
 //
 //  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
-//  Runtime Configuration Manager - Singleton Pattern
-//
 
-#ifndef PHTVConfig_h
-#define PHTVConfig_h
+#ifndef PHTVCONFIG_H
+#define PHTVCONFIG_H
 
-#import <Foundation/Foundation.h>
-#include "PHTVConstants.h"
+#include <string>
 
-NS_ASSUME_NONNULL_BEGIN
+// Global Configuration Variables (matches Engine.h externs)
+// These define the configuration state of the application
 
-/**
- * @brief Centralized configuration manager for PHTV
- * @author Phạm Hùng Tiến
- * 
- * This class manages all runtime configurations and preferences
- * using a singleton pattern for thread-safe access across the application.
- */
-@interface PHTVConfig : NSObject
+// Input Settings
+extern volatile int vInputType;       // 0: Telex, 1: VNI
+extern volatile int vLanguage;        // 0: English, 1: Vietnamese
+extern volatile int vCodeTable;       // 0: Unicode, 1: TCVN3, ...
 
-#pragma mark - Singleton
-+ (instancetype)shared;
+// Feature Flags
+extern int vFreeMark;                 // Free marking allows tone placement anywhere
+extern volatile int vCheckSpelling;   // Enable spell check
+extern volatile int vUseModernOrthography; // Modern tone placement (òa vs oà)
+extern volatile int vQuickTelex;      // Quick typing features (cc=ch, etc)
+extern volatile int vRestoreIfWrongSpelling; // Restore word if spelling is invalid
+extern volatile int vUseMacro;        // Enable macro expansion
 
-#pragma mark - Core Settings
-@property (nonatomic, assign) PHTVInputMethod inputMethod;
-@property (nonatomic, assign) PHTVInputType inputType;
-@property (nonatomic, assign) PHTVCodeTable codeTable;
+// Configuration Manager Class
+class PHTVConfig {
+public:
+    static PHTVConfig& Shared();
 
-#pragma mark - Feature Toggles
-@property (nonatomic, assign) BOOL freeMarkEnabled;
-@property (nonatomic, assign) BOOL modernOrthographyEnabled;
-@property (nonatomic, assign) BOOL spellCheckEnabled;
-@property (nonatomic, assign) BOOL quickTelexEnabled;
-@property (nonatomic, assign) BOOL restoreOnInvalidWordEnabled;
-@property (nonatomic, assign) BOOL fixBrowserRecommendEnabled;
-@property (nonatomic, assign) BOOL macroEnabled;
-@property (nonatomic, assign) BOOL macroInEnglishModeEnabled;
-@property (nonatomic, assign) BOOL smartSwitchKeyEnabled;
-@property (nonatomic, assign) BOOL upperCaseFirstCharEnabled;
-@property (nonatomic, assign) BOOL tempDisableSpellCheckEnabled;
-@property (nonatomic, assign) BOOL allowConsonantZFWJEnabled;
-@property (nonatomic, assign) BOOL quickStartConsonantEnabled;
-@property (nonatomic, assign) BOOL quickEndConsonantEnabled;
-@property (nonatomic, assign) BOOL rememberCodeTableEnabled;
-@property (nonatomic, assign) BOOL autoCapsMacroEnabled;
-@property (nonatomic, assign) BOOL sendKeyStepByStepEnabled;
-@property (nonatomic, assign) BOOL performLayoutCompatEnabled;
-@property (nonatomic, assign) BOOL tempDisablePHTVEnabled;
-@property (nonatomic, assign) BOOL otherLanguageDetectionEnabled;
-@property (nonatomic, assign) BOOL autoRestoreEnglishWordEnabled;
+    void Load();
+    void Save();
+    void ResetDefaults();
 
-#pragma mark - UI Settings
-@property (nonatomic, assign) BOOL grayIconEnabled;
-@property (nonatomic, assign) BOOL showIconOnDockEnabled;
-@property (nonatomic, assign) BOOL showUIOnStartupEnabled;
-@property (nonatomic, assign) BOOL runOnStartupEnabled;
+    // Helper to get executable path
+    std::wstring GetConfigPath();
 
-#pragma mark - Advanced Settings
-@property (nonatomic, assign) int switchKeyStatus;
+private:
+    PHTVConfig();
+    std::wstring configFilePath;
+};
 
-#pragma mark - Methods
-- (void)loadFromUserDefaults;
-- (void)saveToUserDefaults;
-- (void)resetToDefaults;
-- (NSDictionary *)exportSettings;
-- (void)importSettings:(NSDictionary *)settings;
-
-@end
-
-NS_ASSUME_NONNULL_END
-
-#endif /* PHTVConfig_h */
+#endif // PHTVCONFIG_H

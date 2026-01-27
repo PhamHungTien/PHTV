@@ -11,17 +11,23 @@
 
 #include "EnglishWordDetector.h"
 #include <cstring>
+#include <unordered_set>
+#include <cstdio>
+#include <cstdint> // Fix for uint32_t, uint8_t
+
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <unordered_set>
-#include <cstdio>
+#endif
 
 #ifdef __APPLE__
 #include "../Platforms/mac.h"
-#else
-#include "../Platforms/windows.h"
+#elif _WIN32
+#include "../Platforms/win32.h"
 #endif
 
 // ============================================================================
@@ -58,6 +64,12 @@ static void* engMmap = nullptr;
 static void* vieMmap = nullptr;
 static size_t engMmapSize = 0;
 static size_t vieMmapSize = 0;
+#ifdef _WIN32
+static HANDLE hEngFile = INVALID_HANDLE_VALUE;
+static HANDLE hEngMap = NULL;
+static HANDLE hVieFile = INVALID_HANDLE_VALUE;
+static HANDLE hVieMap = NULL;
+#endif
 
 // Pre-computed lookup table: keycode -> letter index (0-25), 255 = invalid
 alignas(64) static uint8_t kcToIdx[64];
@@ -103,7 +115,49 @@ static inline bool searchBinaryTrie(const BinaryTrieNode* __restrict nodes,
 static bool loadBinaryTrie(const char* path,
                            void*& mmapPtr, size_t& mmapSize,
                            const BinaryTrieNode*& nodes,
-                           uint32_t& nodeCount, size_t& wordCount) {
+                           uint32_t& nodeCount, size_t& wordCount,
+                           bool isEng) { // Added isEng to track handles for Windows
+#ifdef _WIN32
+    // Windows Implementation
+    HANDLE hFile = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile == INVALID_HANDLE_VALUE) return false;
+
+    DWORD fileSizeHigh;
+    DWORD fileSizeLow = GetFileSize(hFile, &fileSizeHigh);
+    if (fileSizeLow == INVALID_FILE_SIZE && GetLastError() != NO_ERROR) {
+        CloseHandle(hFile);
+        return false;
+    }
+    size_t fileSize = (size_t)fileSizeLow | ((size_t)fileSizeHigh << 32);
+
+    if (fileSize < 12) {
+        CloseHandle(hFile);
+        return false;
+    }
+
+    HANDLE hMap = CreateFileMappingA(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
+    if (hMap == NULL) {
+        CloseHandle(hFile);
+        return false;
+    }
+
+    void* mapped = MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
+    if (mapped == NULL) {
+        CloseHandle(hMap);
+        CloseHandle(hFile);
+        return false;
+    }
+
+    // Store handles for cleanup
+    if (isEng) {
+        hEngFile = hFile;
+        hEngMap = hMap;
+    } else {
+        hVieFile = hFile;
+        hVieMap = hMap;
+    }
+#else
+    // POSIX Implementation
     int fd = open(path, O_RDONLY);
     if (fd < 0) return false;
 
@@ -124,11 +178,18 @@ static bool loadBinaryTrie(const char* path,
     close(fd);
 
     if (mapped == MAP_FAILED) return false;
+#endif
 
     // Verify header (support both PHT2 and PHT3)
     const uint8_t* data = (const uint8_t*)mapped;
     if (memcmp(data, "PHT3", 4) != 0) {
+#ifdef _WIN32
+        UnmapViewOfFile(mapped);
+        if (isEng) { CloseHandle(hEngMap); CloseHandle(hEngFile); }
+        else { CloseHandle(hVieMap); CloseHandle(hVieFile); }
+#else
         munmap(mapped, fileSize);
+#endif
         return false;
     }
 
@@ -139,7 +200,13 @@ static bool loadBinaryTrie(const char* path,
     // Verify file size
     size_t expectedSize = 12 + (size_t)nCount * sizeof(BinaryTrieNode);
     if (fileSize < expectedSize) {
+#ifdef _WIN32
+        UnmapViewOfFile(mapped);
+        if (isEng) { CloseHandle(hEngMap); CloseHandle(hEngFile); }
+        else { CloseHandle(hVieMap); CloseHandle(hVieFile); }
+#else
         munmap(mapped, fileSize);
+#endif
         return false;
     }
 
@@ -168,7 +235,7 @@ bool initEnglishDictionary(const string& filePath) {
     }
 
     if (loadBinaryTrie(binPath.c_str(), engMmap, engMmapSize,
-                       engNodes, engNodeCount, engWordCount)) {
+                       engNodes, engNodeCount, engWordCount, true)) {
         engInit = true;
         return true;
     }
@@ -179,7 +246,7 @@ bool initEnglishDictionary(const string& filePath) {
         if (baseName.length() >= 6 && baseName.substr(baseName.length() - 6) == "_words") {
             binPath = baseName.substr(0, baseName.length() - 6) + "_dict.bin";
             if (loadBinaryTrie(binPath.c_str(), engMmap, engMmapSize,
-                               engNodes, engNodeCount, engWordCount)) {
+                               engNodes, engNodeCount, engWordCount, true)) {
                 engInit = true;
                 return true;
             }
@@ -200,7 +267,7 @@ bool initVietnameseDictionary(const string& filePath) {
     }
 
     if (loadBinaryTrie(binPath.c_str(), vieMmap, vieMmapSize,
-                       vieNodes, vieNodeCount, vieWordCount)) {
+                       vieNodes, vieNodeCount, vieWordCount, false)) {
         vieInit = true;
         return true;
     }
@@ -210,7 +277,7 @@ bool initVietnameseDictionary(const string& filePath) {
         if (baseName.length() >= 6 && baseName.substr(baseName.length() - 6) == "_words") {
             binPath = baseName.substr(0, baseName.length() - 6) + "_dict.bin";
             if (loadBinaryTrie(binPath.c_str(), vieMmap, vieMmapSize,
-                               vieNodes, vieNodeCount, vieWordCount)) {
+                               vieNodes, vieNodeCount, vieWordCount, false)) {
                 vieInit = true;
                 return true;
             }
@@ -478,12 +545,24 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
 
 void clearEnglishDictionary() {
     if (engMmap) {
+#ifdef _WIN32
+        UnmapViewOfFile(engMmap);
+        if (hEngMap) { CloseHandle(hEngMap); hEngMap = NULL; }
+        if (hEngFile != INVALID_HANDLE_VALUE) { CloseHandle(hEngFile); hEngFile = INVALID_HANDLE_VALUE; }
+#else
         munmap(engMmap, engMmapSize);
+#endif
         engMmap = nullptr;
         engNodes = nullptr;
     }
     if (vieMmap) {
+#ifdef _WIN32
+        UnmapViewOfFile(vieMmap);
+        if (hVieMap) { CloseHandle(hVieMap); hVieMap = NULL; }
+        if (hVieFile != INVALID_HANDLE_VALUE) { CloseHandle(hVieFile); hVieFile = INVALID_HANDLE_VALUE; }
+#else
         munmap(vieMmap, vieMmapSize);
+#endif
         vieMmap = nullptr;
         vieNodes = nullptr;
     }
