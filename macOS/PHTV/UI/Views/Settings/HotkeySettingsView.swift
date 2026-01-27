@@ -11,6 +11,20 @@ import SwiftUI
 struct HotkeySettingsView: View {
     @EnvironmentObject var appState: AppState
 
+    // Check if restore key conflicts with hotkey
+    private var hasRestoreHotkeyConflict: Bool {
+        guard appState.restoreOnEscape else { return false }
+
+        switch appState.restoreKey {
+        case .esc:
+            return false // ESC never conflicts
+        case .option:
+            return appState.switchKeyOption
+        case .control:
+            return appState.switchKeyControl
+        }
+    }
+
     private var hotkeyString: String {
         var parts: [String] = []
         if appState.switchKeyControl { parts.append("⌃") }
@@ -44,6 +58,92 @@ struct HotkeySettingsView: View {
                     icon: "command.circle.fill"
                 ) {
                     HotkeyConfigView()
+                }
+
+                // Restore to Raw Keys Feature
+                SettingsCard(
+                    title: "Khôi phục ký tự",
+                    subtitle: "Hoàn tác nhanh khi gõ sai",
+                    icon: "arrow.uturn.backward.circle.fill"
+                ) {
+                    VStack(spacing: 16) {
+                        SettingsToggleRow(
+                            icon: "arrow.uturn.backward.circle.fill",
+                            iconColor: .accentColor,
+                            title: "Hoàn tác về ký tự gốc",
+                            subtitle: "Dùng phím hoàn tác để trả về ký tự trước khi biến đổi",
+                            isOn: $appState.restoreOnEscape
+                        )
+
+                        if appState.restoreOnEscape {
+                            Divider()
+
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Chọn phím hoàn tác")
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.primary)
+
+                                // Grid of restore keys (3 columns, 3 keys total)
+                                LazyVGrid(columns: [
+                                    GridItem(.flexible(), spacing: 10),
+                                    GridItem(.flexible(), spacing: 10),
+                                    GridItem(.flexible(), spacing: 10)
+                                ], spacing: 10) {
+                                    ForEach(RestoreKey.allCases) { key in
+                                        RestoreKeyButton(
+                                            key: key,
+                                            isSelected: appState.restoreKey == key,
+                                            themeColor: .accentColor
+                                        ) {
+                                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                                appState.restoreKey = key
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Conflict warning
+                                if hasRestoreHotkeyConflict {
+                                    HStack(spacing: 10) {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .foregroundStyle(.orange)
+                                            .font(.system(size: 14))
+
+                                        Text("Phím hoàn tác trùng với phím bổ trợ của phím tắt chuyển chế độ")
+                                            .font(.caption)
+                                            .foregroundStyle(.orange)
+
+                                        Spacer()
+                                    }
+                                    .padding(10)
+                                    .background {
+                                        if #available(macOS 26.0, *) {
+                                            ZStack {
+                                                PHTVRoundedRect(cornerRadius: 8)
+                                                    .fill(.ultraThinMaterial)
+                                                PHTVRoundedRect(cornerRadius: 8)
+                                                    .fill(Color.orange.opacity(0.1))
+                                            }
+                                            .settingsGlassEffect(cornerRadius: 8)
+                                            .overlay(
+                                                PHTVRoundedRect(cornerRadius: 8)
+                                                    .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+                                            )
+                                        } else {
+                                            PHTVRoundedRect(cornerRadius: 8)
+                                                .fill(Color.orange.opacity(0.1))
+                                                .overlay(
+                                                    PHTVRoundedRect(cornerRadius: 8)
+                                                        .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+                                                )
+                                        }
+                                    }
+                                    .transition(.scale.combined(with: .opacity))
+                                }
+                            }
+                        }
+                    }
                 }
 
                 // Pause Key Configuration
