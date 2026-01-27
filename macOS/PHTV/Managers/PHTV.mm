@@ -1285,6 +1285,7 @@ extern "C" {
         // This prevents the settings window (which is often excluded/English) from polluting the global language state
         // or overwriting the saved state of the previous app.
         if ([_frontMostApp isEqualToString:PHTV_BUNDLE]) {
+            _languageTemp = -1; // Reset temp value to avoid using state from previous app switch
             return;
         }
 
@@ -1333,6 +1334,12 @@ extern "C" {
             return;  // Skip if no frontmost app - prevents crash
         }
 
+        // CRITICAL FIX: Ignore PHTV's own settings window.
+        // Changing settings shouldn't save the new language for PHTV itself.
+        if ([_frontMostApp isEqualToString:PHTV_BUNDLE]) {
+            return;
+        }
+
         setAppInputMethodStatus(string(_frontMostApp.UTF8String), vLanguage | (vCodeTable << 1));
         saveSmartSwitchKeyData();
     }
@@ -1348,6 +1355,11 @@ extern "C" {
         // CRITICAL: Guard against nil bundleIdentifier
         if (_frontMostApp == nil) {
             return;  // Skip if no frontmost app - prevents crash
+        }
+
+        // CRITICAL FIX: Ignore PHTV's own settings window.
+        if ([_frontMostApp isEqualToString:PHTV_BUNDLE]) {
+            return;
         }
 
         setAppInputMethodStatus(string(_frontMostApp.UTF8String), vLanguage | (vCodeTable << 1));
