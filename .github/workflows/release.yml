@@ -348,61 +348,36 @@ jobs:
           fi
 
   update-homebrew:
-    name: Update Homebrew
+    name: Update Homebrew Tap
     runs-on: ubuntu-latest
     needs: [build, release, update-appcast]
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: main
-
-      - name: Pull latest changes
-        run: git pull origin main
-
-      - name: Download DMG and update formula
-        env:
-          VERSION: ${{ needs.build.outputs.version }}
-          DMG_NAME: ${{ needs.build.outputs.dmg_name }}
-          REPO: ${{ github.repository }}
-        run: |
-          curl -sL "https://github.com/$REPO/releases/download/v$VERSION/$DMG_NAME" -o "$DMG_NAME"
-          SHA256=$(sha256sum "$DMG_NAME" | cut -d' ' -f1)
-
-          sed -i "s/version \".*\"/version \"$VERSION\"/" homebrew/phtv.rb
-          sed -i "s/sha256 \".*\"/sha256 \"$SHA256\"/" homebrew/phtv.rb
-
-          echo "✅ Updated formula with SHA256: $SHA256"
-
-      - name: Commit and push
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add homebrew/phtv.rb
-
-          if git diff --cached --quiet; then
-            echo "No changes"
-          else
-            git commit -m "chore: bump Homebrew to v${{ needs.build.outputs.version }}"
-            git push
-            echo "✅ Pushed"
-          fi
-
       - name: Sync to homebrew-tap
         env:
           TAP_REPO_TOKEN: ${{ secrets.TAP_REPO_TOKEN }}
           VERSION: ${{ needs.build.outputs.version }}
+          DMG_NAME: ${{ needs.build.outputs.dmg_name }}
+          REPO: ${{ github.repository }}
         run: |
           if [ -z "$TAP_REPO_TOKEN" ]; then
             echo "⚠️ TAP_REPO_TOKEN not set, skipping tap sync"
             exit 0
           fi
 
-          git clone "https://x-access-token:${TAP_REPO_TOKEN}@github.com/PhamHungTien/homebrew-tap.git" /tmp/homebrew-tap
-          cp homebrew/phtv.rb /tmp/homebrew-tap/Casks/phtv.rb
+          # Download DMG and calculate SHA256
+          curl -sL "https://github.com/$REPO/releases/download/v$VERSION/$DMG_NAME" -o "$DMG_NAME"
+          SHA256=$(sha256sum "$DMG_NAME" | cut -d' ' -f1)
+          echo "✅ SHA256: $SHA256"
 
+          # Clone and update homebrew-tap
+          git clone "https://x-access-token:${TAP_REPO_TOKEN}@github.com/PhamHungTien/homebrew-tap.git" /tmp/homebrew-tap
           cd /tmp/homebrew-tap
+
+          # Update version and sha256 in cask
+          sed -i "s/version \".*\"/version \"$VERSION\"/" Casks/phtv.rb
+          sed -i "s/sha256 \".*\"/sha256 \"$SHA256\"/" Casks/phtv.rb
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Casks/phtv.rb
@@ -414,6 +389,20 @@ jobs:
             git push
             echo "✅ Tap synced"
           fi
+
+  update-plist:
+    name: Update Info.plist
+    runs-on: ubuntu-latest
+    needs: [build, release, update-appcast, update-homebrew]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Pull latest changes
+        run: git pull origin main
 
       - name: Update Info.plist for next release
         env:
