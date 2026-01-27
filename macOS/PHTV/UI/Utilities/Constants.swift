@@ -76,6 +76,9 @@ enum UserDefaultsKey {
 
     // MARK: - Debug
     static let liveDebug = "PHTV_LIVE_DEBUG"
+    static let includeSystemInfo = "vIncludeSystemInfo"
+    static let includeLogs = "vIncludeLogs"
+    static let includeCrashLogs = "vIncludeCrashLogs"
 
     // MARK: - Onboarding
     static let onboardingCompleted = "PHTV_OnboardingCompleted"
@@ -229,6 +232,11 @@ enum Defaults {
     static let updateCheckInterval = 86400  // 1 day in seconds
     static let betaChannelEnabled = false
     static let autoInstallUpdates = true
+
+    // MARK: - Bug Report
+    static let includeSystemInfo = true
+    static let includeLogs = false
+    static let includeCrashLogs = true
 }
 
 // MARK: - Timing Constants

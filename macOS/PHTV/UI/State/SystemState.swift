@@ -41,6 +41,11 @@ final class SystemState: ObservableObject {
     @Published var showCustomUpdateBanner: Bool = false
     @Published var customUpdateBannerInfo: UpdateBannerInfo? = nil
 
+    // Bug report settings
+    @Published var includeSystemInfo: Bool = true
+    @Published var includeLogs: Bool = false
+    @Published var includeCrashLogs: Bool = true
+
     private var cancellables = Set<AnyCancellable>()
     private var notificationObservers: [NSObjectProtocol] = []
     var isLoadingSettings = false
@@ -92,6 +97,11 @@ final class SystemState: ObservableObject {
         } else {
             autoInstallUpdates = defaults.bool(forKey: UserDefaultsKey.autoInstallUpdates)
         }
+
+        // Load bug report settings
+        includeSystemInfo = defaults.object(forKey: UserDefaultsKey.includeSystemInfo) as? Bool ?? Defaults.includeSystemInfo
+        includeLogs = defaults.object(forKey: UserDefaultsKey.includeLogs) as? Bool ?? Defaults.includeLogs
+        includeCrashLogs = defaults.object(forKey: UserDefaultsKey.includeCrashLogs) as? Bool ?? Defaults.includeCrashLogs
     }
 
     func saveSettings() {
@@ -111,6 +121,11 @@ final class SystemState: ObservableObject {
         defaults.set(updateCheckFrequency.rawValue, forKey: UserDefaultsKey.updateCheckInterval)
         defaults.set(betaChannelEnabled, forKey: UserDefaultsKey.betaChannelEnabled)
         defaults.set(autoInstallUpdates, forKey: UserDefaultsKey.autoInstallUpdates)
+
+        // Save bug report settings
+        defaults.set(includeSystemInfo, forKey: UserDefaultsKey.includeSystemInfo)
+        defaults.set(includeLogs, forKey: UserDefaultsKey.includeLogs)
+        defaults.set(includeCrashLogs, forKey: UserDefaultsKey.includeCrashLogs)
 
         defaults.synchronize()
     }
@@ -277,6 +292,18 @@ final class SystemState: ObservableObject {
             defaults.set(enabled, forKey: UserDefaultsKey.autoInstallUpdates)
             defaults.synchronize()
         }.store(in: &cancellables)
+
+        // Bug report settings observers
+        Publishers.MergeMany([
+            $includeSystemInfo.map { _ in () }.eraseToAnyPublisher(),
+            $includeLogs.map { _ in () }.eraseToAnyPublisher(),
+            $includeCrashLogs.map { _ in () }.eraseToAnyPublisher()
+        ])
+        .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
+        .sink { [weak self] _ in
+            guard let self = self, !self.isLoadingSettings else { return }
+            self.saveSettings()
+        }.store(in: &cancellables)
     }
 
     func setupNotificationObservers() {
@@ -394,6 +421,10 @@ final class SystemState: ObservableObject {
         updateCheckFrequency = .daily
         betaChannelEnabled = false
         autoInstallUpdates = true
+
+        includeSystemInfo = true
+        includeLogs = false
+        includeCrashLogs = true
 
         saveSettings()
     }

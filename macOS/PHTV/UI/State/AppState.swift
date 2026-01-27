@@ -558,6 +558,22 @@ final class AppState: ObservableObject {
         set { systemState.customUpdateBannerInfo = newValue }
     }
 
+    // Bug report settings
+    var includeSystemInfo: Bool {
+        get { systemState.includeSystemInfo }
+        set { systemState.includeSystemInfo = newValue }
+    }
+
+    var includeLogs: Bool {
+        get { systemState.includeLogs }
+        set { systemState.includeLogs = newValue }
+    }
+
+    var includeCrashLogs: Bool {
+        get { systemState.includeCrashLogs }
+        set { systemState.includeCrashLogs = newValue }
+    }
+
     // UI state properties
     var switchKeyCommand: Bool {
         get { uiState.switchKeyCommand }

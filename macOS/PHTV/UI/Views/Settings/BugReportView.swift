@@ -84,10 +84,7 @@ struct BugReportView: View {
     @State private var showCopiedAlert: Bool = false
     @State private var showSavedAlert: Bool = false
     @State private var savedLocation: String = ""
-    @State private var includeSystemInfo: Bool = true
     // Default: OFF to avoid loading heavy OSLog snapshot when chỉ xem tab
-    @State private var includeLogs: Bool = false
-    @State private var includeCrashLogs: Bool = true
     @State private var showLogPreview: Bool = false
     @State private var cachedLogs: String = ""
     @State private var isSending: Bool = false
@@ -127,7 +124,7 @@ struct BugReportView: View {
         } message: {
             Text(savedLocation.isEmpty ? "Đã lưu báo cáo." : "Đã lưu tại: \(savedLocation)")
         }
-        .onChange(of: includeLogs) { newValue in
+        .onChange(of: appState.includeLogs) { newValue in
             if newValue {
                 // Load log khi người dùng bật, tránh chiếm RAM nếu không cần
                 Task { await loadLogsIfNeeded() }
@@ -309,7 +306,7 @@ struct BugReportView: View {
                     iconColor: .accentColor,
                     title: "Thông tin hệ thống",
                     subtitle: "Phiên bản PHTV, macOS, chip và bàn phím",
-                    isOn: $includeSystemInfo
+                    isOn: $appState.includeSystemInfo
                 )
 
                 SettingsDivider()
@@ -318,11 +315,11 @@ struct BugReportView: View {
                     icon: "doc.text.fill",
                     iconColor: .accentColor,
                     title: "Nhật ký (tùy chọn)",
-                    subtitle: includeLogs ? "Đang thu thập log 60 phút gần nhất" : "Chỉ tải khi cần để tiết kiệm RAM",
-                    isOn: $includeLogs
+                    subtitle: appState.includeLogs ? "Đang thu thập log 60 phút gần nhất" : "Chỉ tải khi cần để tiết kiệm RAM",
+                    isOn: $appState.includeLogs
                 )
 
-                if includeLogs {
+                if appState.includeLogs {
                     SettingsDivider()
                     HStack(spacing: 10) {
                         if isLoadingLogs {
@@ -383,7 +380,7 @@ struct BugReportView: View {
                     iconColor: .accentColor,
                     title: "Crash logs gần đây",
                     subtitle: "Đính kèm các crash log PHTV trong 7 ngày",
-                    isOn: $includeCrashLogs
+                    isOn: $appState.includeCrashLogs
                 )
             }
         }
@@ -658,7 +655,7 @@ struct BugReportView: View {
     }
 
     private func getRecentCrashLogs() -> String {
-        guard includeCrashLogs else { return "" }
+        guard appState.includeCrashLogs else { return "" }
         let crashLogsPath = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Logs/DiagnosticReports")
 
@@ -1135,7 +1132,7 @@ struct BugReportView: View {
 
         """
 
-        if includeSystemInfo {
+        if appState.includeSystemInfo {
             let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "N/A"
             let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "N/A"
             let macOS = ProcessInfo.processInfo.operatingSystemVersionString
@@ -1203,7 +1200,7 @@ struct BugReportView: View {
             """
         }
 
-        if includeLogs {
+        if appState.includeLogs {
             // File logs từ PHTVLogger
             let fileLogs = PHTVLogger.shared.getFileLogs()
             if !fileLogs.isEmpty {
@@ -1236,7 +1233,7 @@ struct BugReportView: View {
 
         // Lấy FULL logs cho clipboard (đầy đủ nhất)
         let logs: String
-        if includeLogs {
+        if appState.includeLogs {
             logs = await Task.detached(priority: .utility) {
                 Self.fetchLogsSync(maxEntries: 200) // Tăng lên 200 để debug tốt hơn
             }.value
@@ -1260,7 +1257,7 @@ struct BugReportView: View {
 
         // Lấy log quan trọng
         let importantLogs: String
-        if includeLogs {
+        if appState.includeLogs {
             importantLogs = await Task.detached(priority: .utility) {
                 Self.fetchImportantLogsOnly()
             }.value
@@ -1368,7 +1365,7 @@ struct BugReportView: View {
         }
 
         // Thông tin hệ thống (rút gọn nhưng đầy đủ)
-        if includeSystemInfo {
+        if appState.includeSystemInfo {
             let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
             let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
             let macOS = ProcessInfo.processInfo.operatingSystemVersionString
@@ -1402,7 +1399,7 @@ struct BugReportView: View {
         }
 
         // Log lỗi và cảnh báo quan trọng (rút gọn cho URL)
-        if includeLogs && !logs.isEmpty {
+        if appState.includeLogs && !logs.isEmpty {
             report += "## ⚠️ Lỗi và cảnh báo gần đây\n```\n\(logs)\n```\n\n"
         }
 
@@ -1423,7 +1420,7 @@ struct BugReportView: View {
 
         // Lấy FULL logs cho email (không giới hạn như GitHub)
         let fullLogs: String
-        if includeLogs {
+        if appState.includeLogs {
             fullLogs = await Task.detached(priority: .utility) {
                 Self.fetchLogsSync(maxEntries: 200) // Nhiều hơn để debug tốt hơn
             }.value
@@ -1463,7 +1460,7 @@ struct BugReportView: View {
         isSending = true
 
         let logs: String
-        if includeLogs {
+        if appState.includeLogs {
             logs = await Task.detached(priority: .utility) {
                 Self.fetchLogsSync(maxEntries: 200)
             }.value
