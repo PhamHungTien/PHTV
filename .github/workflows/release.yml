@@ -129,6 +129,8 @@ jobs:
           xcodebuild -project PHTV.xcodeproj -scheme PHTV \
             -configuration Release \
             -derivedDataPath ./build \
+            -arch arm64 -arch x86_64 \
+            ONLY_ACTIVE_ARCH=NO \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="${{ steps.certificate.outputs.identity }}" \
             OTHER_CODE_SIGN_FLAGS="--keychain ${{ steps.certificate.outputs.keychain }}" \
@@ -144,6 +146,10 @@ jobs:
             echo "❌ Build failed: PHTV.app not found"
             exit 1
           fi
+
+          # Verify universal binary
+          echo "🔍 Verifying binary architectures..."
+          file ./build/Build/Products/Release/PHTV.app/Contents/MacOS/PHTV
 
           # Verify signing strictly
           echo "🔍 Verifying code signature..."
