@@ -123,6 +123,10 @@ struct StatusBarMenuView: View {
                     Label("Viết hoa đầu câu", systemImage: "textformat.size.larger")
                 }
 
+                Toggle(isOn: $appState.allowConsonantZFWJ) {
+                    Label("Phụ âm Z, F, W, J", systemImage: "character.cursor.ibeam")
+                }
+
                 Toggle(isOn: $appState.quickStartConsonant) {
                     Label("Phụ âm đầu nhanh", systemImage: "arrow.right.to.line")
                 }
@@ -135,6 +139,10 @@ struct StatusBarMenuView: View {
             Divider()
 
             Section("Chính tả") {
+                Toggle(isOn: $appState.checkSpelling) {
+                    Label("Kiểm tra chính tả", systemImage: "textformat.abc.dottedunderline")
+                }
+
                 Toggle(isOn: $appState.useModernOrthography) {
                     Label("Chính tả mới (oà, uý)", systemImage: "textformat.abc")
                 }
