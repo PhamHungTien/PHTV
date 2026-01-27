@@ -1,0 +1,31 @@
+<Window x:Class="PHTV.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="PHTV Preferences" Height="450" Width="400"
+        WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
+        Background="#F3F3F3">
+    <Grid Margin="20">
+        <StackPanel>
+            <TextBlock Text="PHTV" FontSize="24" FontWeight="Bold" Margin="0,0,0,20" Foreground="#333"/>
+            
+            <!-- Input Method Group -->
+            <GroupBox Header="Kiểu gõ" Margin="0,0,0,15" Padding="10">
+                <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                    <RadioButton x:Name="RadioTelex" Content="Telex" GroupName="InputMethod" IsChecked="True" Checked="InputMethod_Changed" Margin="0,0,20,0"/>
+                    <RadioButton x:Name="RadioVNI" Content="VNI" GroupName="InputMethod" Checked="InputMethod_Changed"/>
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Features Group -->
+            <GroupBox Header="Tính năng" Padding="10">
+                <StackPanel>
+                    <CheckBox x:Name="ChkSpell" Content="Kiểm tra chính tả" Margin="0,5" Checked="Feature_Changed" Unchecked="Feature_Changed" IsChecked="True"/>
+                    <CheckBox x:Name="ChkModern" Content="Dấu chuẩn (Oà, Uý)" Margin="0,5" Checked="Feature_Changed" Unchecked="Feature_Changed" IsChecked="True"/>
+                    <CheckBox x:Name="ChkMacro" Content="Gõ tắt (Macro)" Margin="0,5" Checked="Feature_Changed" Unchecked="Feature_Changed"/>
+                </StackPanel>
+            </GroupBox>
+
+            <Button Content="Đóng" Width="100" Height="30" Margin="0,20,0,0" HorizontalAlignment="Right" Click="Close_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

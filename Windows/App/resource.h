@@ -1,14 +1,3 @@
-//
-//  resource.h
-//  PHTV
-//
-//  Created by Phạm Hùng Tiến on 2026.
-//  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
-//
-
-#ifndef RESOURCE_H
-#define RESOURCE_H
-
 #define IDI_APP_ICON    101
 #define IDI_ICON_ENG    102
 #define IDI_ICON_VIE    103
@@ -24,17 +13,8 @@
 
 #define WM_TRAYICON     (WM_USER + 1)
 
-// Settings Dialog IDs
-#define IDD_SETTINGS            2000
-#define IDC_GRP_INPUT           2001
-#define IDC_RADIO_TELEX         2002
-#define IDC_RADIO_VNI           2003
-#define IDC_GRP_OPTIONS         2004
-#define IDC_CHECK_SPELLING      2005
-#define IDC_CHECK_MODERN        2006
-#define IDC_CHECK_QUICKTELEX    2007
-#define IDC_CHECK_MACRO         2008
-#define IDC_CHECK_RESTORE_ENG   2009
-#define IDC_BTN_CLOSE           2010
-
-#endif // RESOURCE_H
+// UI Colors
+#define COLOR_BG        0xF2F2F2
+#define COLOR_BTN_BG    0xFFFFFF
+#define COLOR_BTN_TEXT  0x333333
+#define COLOR_ACCENT    0xFF7A00 // Blue-ish like macOS

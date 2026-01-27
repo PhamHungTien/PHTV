@@ -2,18 +2,12 @@
 #include <windows.h>
 #include <shellapi.h>
 #include <shlwapi.h>
-#include <commctrl.h>
 #include <string>
 #include <vector>
 #include <codecvt>
 
 #pragma comment(lib, "shlwapi.lib")
-#pragma comment(lib, "comctl32.lib")
-
-// Enable Visual Styles
-#pragma comment(linker,"\"/manifestdependency:type='win32' \
-name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
-processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#pragma comment(lib, "msimg32.lib") // For GradientFill if needed
 
 #include "resource.h"
 #include "../Platforms/win32.h"
@@ -30,17 +24,23 @@ HINSTANCE hInst;
 HHOOK hKeyboardHook;
 NOTIFYICONDATA nid;
 HWND hHiddenWnd;
+HWND hSettingsWnd = NULL;
 HANDLE hMutex;
+
+// Fonts
+HFONT hFontTitle;
+HFONT hFontNormal;
 
 // Forward Declarations
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK LowLevelKeyboardProc(int, WPARAM, LPARAM);
-INT_PTR CALLBACK SettingsDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK SettingsWndProc(HWND, UINT, WPARAM, LPARAM);
 void InitTrayIcon(HWND hWnd);
 void RemoveTrayIcon();
 void UpdateTrayIcon();
+void ShowSettingsWindow();
 
-// Engine Integration Helpers
+// Engine Integration
 void ProcessEngineOutput();
 void SendUnicodeString(const std::vector<unsigned int>& charCodes);
 void SendBackspace(int count);
@@ -63,61 +63,54 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     hInst = hInstance;
 
-    // 1. Single Instance Check
+    // Single Instance Check
     hMutex = CreateMutexW(NULL, TRUE, PHTV_MUTEX_NAME);
-    if (GetLastError() == ERROR_ALREADY_EXISTS) {
-        // App already running
-        return 0;
-    }
+    if (GetLastError() == ERROR_ALREADY_EXISTS) return 0;
 
-    // 2. Setup Dictionaries
+    // Create Fonts
+    hFontTitle = CreateFontW(24, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
+    hFontNormal = CreateFontW(18, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
+
+    // Setup Engine
     wchar_t exePath[MAX_PATH];
     GetModuleFileNameW(NULL, exePath, MAX_PATH);
     PathRemoveFileSpecW(exePath); 
-
     std::wstring baseDir = exePath;
     std::wstring viDictPath = baseDir + L"\\Resources\\Dictionaries\\vi_dict.bin";
     std::wstring enDictPath = baseDir + L"\\Resources\\Dictionaries\\en_dict.bin";
-
     initVietnameseDictionary(WStringToString(viDictPath));
     initEnglishDictionary(WStringToString(enDictPath));
-
-    // 3. Initialize Engine & Config
     vKeyInit();
     PHTVConfig::Shared().Load();
 
-    // 4. Create Window
+    // Register Classes
     WNDCLASSEXW wcex = {0};
     wcex.cbSize = sizeof(WNDCLASSEX);
-    wcex.style          = CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc    = WndProc;
-    wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_APP_ICON));
-    wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszClassName  = L"PHTVHiddenWindow";
-    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_APP_ICON));
-
+    wcex.lpfnWndProc = WndProc;
+    wcex.hInstance = hInstance;
+    wcex.lpszClassName = L"PHTVHiddenWindow";
     RegisterClassExW(&wcex);
 
-    hHiddenWnd = CreateWindowW(L"PHTVHiddenWindow", L"PHTV", WS_OVERLAPPEDWINDOW,
-                          CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+    WNDCLASSEXW wSettings = {0};
+    wSettings.cbSize = sizeof(WNDCLASSEX);
+    wSettings.style = CS_HREDRAW | CS_VREDRAW;
+    wSettings.lpfnWndProc = SettingsWndProc;
+    wSettings.hInstance = hInstance;
+    wSettings.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    wSettings.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
+    wSettings.lpszClassName = L"PHTVSettingsWindow";
+    wSettings.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_APP_ICON));
+    RegisterClassExW(&wSettings);
 
+    hHiddenWnd = CreateWindowW(L"PHTVHiddenWindow", L"PHTV", 0, 0, 0, 0, 0, nullptr, nullptr, hInstance, nullptr);
     if (!hHiddenWnd) return FALSE;
 
     InitTrayIcon(hHiddenWnd);
 
-    // 5. Install Hook
     hKeyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, LowLevelKeyboardProc, hInstance, 0);
-    if (!hKeyboardHook) {
-        MessageBox(NULL, L"Failed to install keyboard hook!", L"Error", MB_ICONERROR);
-        return 1;
-    }
-
-    // 6. Loop
+    
     MSG msg;
-    while (GetMessage(&msg, nullptr, 0, 0))
-    {
+    while (GetMessage(&msg, nullptr, 0, 0)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
@@ -125,6 +118,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     if (hKeyboardHook) UnhookWindowsHookEx(hKeyboardHook);
     RemoveTrayIcon();
     if (hMutex) ReleaseMutex(hMutex);
+    DeleteObject(hFontTitle);
+    DeleteObject(hFontNormal);
 
     return (int) msg.wParam;
 }
@@ -132,10 +127,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
     if (nCode == HC_ACTION) {
         KBDLLHOOKSTRUCT* pKbd = (KBDLLHOOKSTRUCT*)lParam;
-        
-        if (pKbd->dwExtraInfo == PHTV_INJECTED_SIGNATURE) {
-            return CallNextHookEx(hKeyboardHook, nCode, wParam, lParam);
-        }
+        if (pKbd->dwExtraInfo == PHTV_INJECTED_SIGNATURE) return CallNextHookEx(hKeyboardHook, nCode, wParam, lParam);
 
         if (vLanguage == 1) {
             vKeyEventState state;
@@ -148,17 +140,14 @@ LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
                 bool isCaps = (GetKeyState(VK_CAPITAL) & 0x0001) != 0;
                 bool isCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
                 bool isAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
-
-                Uint8 capsStatus = 0;
-                if (isShift) capsStatus = 1;
-                if (isCaps) capsStatus = 2; 
+                Uint8 capsStatus = (isCaps ? 2 : (isShift ? 1 : 0));
 
                 extern vKeyHookState HookState;
                 vKeyHandleEvent(vKeyEvent::Keyboard, state, (Uint16)pKbd->vkCode, capsStatus, isCtrl || isAlt);
 
                 if (HookState.code != vDoNothing) {
                     ProcessEngineOutput();
-                    return 1; // Block original key
+                    return 1;
                 }
             }
         }
@@ -169,14 +158,9 @@ LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
 void ProcessEngineOutput() {
     extern vKeyHookState HookState;
     if (HookState.backspaceCount > 0) SendBackspace(HookState.backspaceCount);
-    
     if (HookState.newCharCount > 0) {
         std::vector<unsigned int> chars;
-        // FIX 1: Read buffer in REVERSE order (Engine uses LIFO stack logic in hData)
-        // hData[0] is the Last entered char, hData[n-1] is the First.
-        for (int i = HookState.newCharCount - 1; i >= 0; i--) {
-            chars.push_back(HookState.charData[i]);
-        }
+        for (int i = HookState.newCharCount - 1; i >= 0; i--) chars.push_back(HookState.charData[i]);
         SendUnicodeString(chars);
     }
 }
@@ -185,19 +169,13 @@ void SendBackspace(int count) {
     if (count <= 0) return;
     std::vector<INPUT> inputs;
     for (int i = 0; i < count; ++i) {
-        INPUT inputDown = {0};
-        inputDown.type = INPUT_KEYBOARD;
-        inputDown.ki.wVk = VK_BACK;
-        inputDown.ki.dwExtraInfo = PHTV_INJECTED_SIGNATURE;
-        
-        INPUT inputUp = {0};
-        inputUp.type = INPUT_KEYBOARD;
-        inputUp.ki.wVk = VK_BACK;
-        inputUp.ki.dwFlags = KEYEVENTF_KEYUP;
-        inputUp.ki.dwExtraInfo = PHTV_INJECTED_SIGNATURE;
-
-        inputs.push_back(inputDown);
-        inputs.push_back(inputUp);
+        INPUT input = {0};
+        input.type = INPUT_KEYBOARD;
+        input.ki.wVk = VK_BACK;
+        input.ki.dwExtraInfo = PHTV_INJECTED_SIGNATURE;
+        inputs.push_back(input);
+        input.ki.dwFlags = KEYEVENTF_KEYUP;
+        inputs.push_back(input);
     }
     SendInput((UINT)inputs.size(), inputs.data(), sizeof(INPUT));
 }
@@ -214,14 +192,13 @@ void SendUnicodeString(const std::vector<unsigned int>& charCodes) {
         bool isUpperCase = (code & CAPS_MASK_VAL) != 0;
 
         // FIX 2: Handle Capitalization for Raw Keys
-        // If it's an ASCII letter and CAPS_MASK is NOT set, convert to lowercase
-        // (Because Engine stores generic keys like KEY_A as 'A')
         if (finalChar >= 'A' && finalChar <= 'Z') {
             if (!isUpperCase) {
                 finalChar = tolower(finalChar);
             }
         }
         
+        // UNIFIED UNICODE HANDLING (Includes Space 0x0020)
         INPUT inputDown = {0};
         inputDown.type = INPUT_KEYBOARD;
         inputDown.ki.wScan = (WORD)finalChar;
@@ -245,6 +222,8 @@ void InitTrayIcon(HWND hWnd) {
     nid.uID = 1;
     nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     nid.uCallbackMessage = WM_TRAYICON;
+    nid.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_APP_ICON)); 
+    if (!nid.hIcon) nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
     wcscpy_s(nid.szTip, L"PHTV - Bộ gõ Tiếng Việt");
     Shell_NotifyIcon(NIM_ADD, &nid);
     UpdateTrayIcon();
@@ -261,10 +240,112 @@ void RemoveTrayIcon() {
     Shell_NotifyIcon(NIM_DELETE, &nid);
 }
 
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    switch (message)
-    {
+void ShowSettingsWindow() {
+    if (hSettingsWnd) {
+        SetForegroundWindow(hSettingsWnd);
+        return;
+    }
+    int width = 450;
+    int height = 350;
+    int x = (GetSystemMetrics(SM_CXSCREEN) - width) / 2;
+    int y = (GetSystemMetrics(SM_CYSCREEN) - height) / 2;
+    
+    hSettingsWnd = CreateWindowExW(WS_EX_DLGMODALFRAME, L"PHTVSettingsWindow", L"Cài đặt PHTV",
+        WS_VISIBLE | WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX,
+        x, y, width, height, NULL, NULL, hInst, NULL);
+}
+
+// UI Helpers
+void DrawCheckbox(HDC hdc, int x, int y, const wchar_t* text, bool checked, int id) {
+    RECT rc = {x, y, x + 20, y + 20};
+    DrawFrameControl(hdc, &rc, DFC_BUTTON, DFCS_BUTTONCHECK | (checked ? DFCS_CHECKED : 0));
+    
+    SetBkMode(hdc, TRANSPARENT);
+    SelectObject(hdc, hFontNormal);
+    SetTextColor(hdc, RGB(50, 50, 50));
+    TextOutW(hdc, x + 30, y, text, lstrlenW(text));
+}
+
+void DrawRadio(HDC hdc, int x, int y, const wchar_t* text, bool checked, int id) {
+    RECT rc = {x, y, x + 20, y + 20};
+    DrawFrameControl(hdc, &rc, DFC_BUTTON, DFCS_BUTTONRADIO | (checked ? DFCS_CHECKED : 0));
+    
+    SetBkMode(hdc, TRANSPARENT);
+    SelectObject(hdc, hFontNormal);
+    SetTextColor(hdc, RGB(50, 50, 50));
+    TextOutW(hdc, x + 30, y, text, lstrlenW(text));
+}
+
+// Settings Window Procedure
+LRESULT CALLBACK SettingsWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+    switch (message) {
+    case WM_PAINT: {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hWnd, &ps);
+        
+        // Background
+        RECT rcClient;
+        GetClientRect(hWnd, &rcClient);
+        HBRUSH hBrushBg = CreateSolidBrush(RGB(245, 245, 247)); // macOS-like gray
+        FillRect(hdc, &rcClient, hBrushBg);
+        DeleteObject(hBrushBg);
+
+        // Header
+        SetBkMode(hdc, TRANSPARENT);
+        SelectObject(hdc, hFontTitle);
+        SetTextColor(hdc, RGB(0, 0, 0));
+        TextOutW(hdc, 20, 20, L"Kiểu gõ", 7);
+        
+        // Input Method Group
+        DrawRadio(hdc, 30, 60, L"Telex", vInputType == 0, 101);
+        DrawRadio(hdc, 150, 60, L"VNI", vInputType == 1, 102);
+
+        // Features Group
+        SelectObject(hdc, hFontTitle);
+        TextOutW(hdc, 20, 100, L"Tính năng", 9);
+
+        DrawCheckbox(hdc, 30, 140, L"Kiểm tra chính tả", vCheckSpelling, 201);
+        DrawCheckbox(hdc, 30, 170, L"Dấu chuẩn (Oà, Uý)", vUseModernOrthography, 202);
+        DrawCheckbox(hdc, 30, 200, L"Gõ tắt (Macro)", vUseMacro, 203);
+        DrawCheckbox(hdc, 30, 230, L"Khôi phục từ tiếng Anh", vAutoRestoreEnglishWord, 204);
+
+        EndPaint(hWnd, &ps);
+        break;
+    }
+    case WM_LBUTTONUP: {
+        int x = LOWORD(lParam);
+        int y = HIWORD(lParam);
+        
+        // Simple Hit Testing (Hardcoded for demo)
+        bool changed = false;
+        if (y >= 60 && y <= 80) {
+            if (x >= 30 && x <= 100) { vInputType = 0; changed = true; }
+            else if (x >= 150 && x <= 220) { vInputType = 1; changed = true; }
+        }
+        else if (x >= 30 && x <= 300) {
+            if (y >= 140 && y <= 160) { vCheckSpelling = !vCheckSpelling; changed = true; }
+            else if (y >= 170 && y <= 190) { vUseModernOrthography = !vUseModernOrthography; changed = true; }
+            else if (y >= 200 && y <= 220) { vUseMacro = !vUseMacro; changed = true; }
+            else if (y >= 230 && y <= 250) { vAutoRestoreEnglishWord = !vAutoRestoreEnglishWord; changed = true; }
+        }
+
+        if (changed) {
+            PHTVConfig::Shared().Save();
+            InvalidateRect(hWnd, NULL, TRUE); // Redraw
+        }
+        break;
+    }
+    case WM_DESTROY:
+        hSettingsWnd = NULL;
+        break;
+    default:
+        return DefWindowProc(hWnd, message, wParam, lParam);
+    }
+    return 0;
+}
+
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+    switch (message) {
     case WM_TRAYICON:
         if (lParam == WM_RBUTTONUP || lParam == WM_LBUTTONUP) {
             POINT curPoint;
@@ -276,10 +357,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             AppendMenu(hMenu, MF_STRING | (vInputType == 0 ? MF_CHECKED : 0), IDM_TELEX, L"Telex");
             AppendMenu(hMenu, MF_STRING | (vInputType == 1 ? MF_CHECKED : 0), IDM_VNI, L"VNI");
             AppendMenu(hMenu, MF_SEPARATOR, 0, nullptr);
-            AppendMenu(hMenu, MF_STRING | (vUseMacro ? MF_CHECKED : 0), IDM_TOGGLE_MACRO, L"Gõ tắt (Macro)");
-            AppendMenu(hMenu, MF_STRING | (vCheckSpelling ? MF_CHECKED : 0), IDM_TOGGLE_SPELL, L"Kiểm tra chính tả");
-            AppendMenu(hMenu, MF_STRING | (vUseModernOrthography ? MF_CHECKED : 0), IDM_TOGGLE_MODERN, L"Dấu chuẩn (Oà, Uý)");
-            AppendMenu(hMenu, MF_SEPARATOR, 0, nullptr);
             AppendMenu(hMenu, MF_STRING, IDM_SETTINGS, L"Cài đặt...");
             AppendMenu(hMenu, MF_SEPARATOR, 0, nullptr);
             AppendMenu(hMenu, MF_STRING, IDM_EXIT, L"Thoát");
@@ -289,31 +366,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             DestroyMenu(hMenu);
         }
         break;
-
     case WM_COMMAND:
-        switch (LOWORD(wParam))
-        {
+        switch (LOWORD(wParam)) {
         case IDM_EXIT: DestroyWindow(hWnd); break;
         case IDM_TELEX: vInputType = 0; PHTVConfig::Shared().Save(); break;
         case IDM_VNI:   vInputType = 1; PHTVConfig::Shared().Save(); break;
-        
         case IDM_TOGGLE_LANG: 
             vLanguage = !vLanguage; 
             PHTVConfig::Shared().Save(); 
             UpdateTrayIcon(); 
             break;
-
-        case IDM_TOGGLE_MACRO: vUseMacro = !vUseMacro; PHTVConfig::Shared().Save(); break;
-        case IDM_TOGGLE_SPELL: vCheckSpelling = !vCheckSpelling; PHTVConfig::Shared().Save(); break;
-        case IDM_TOGGLE_MODERN: vUseModernOrthography = !vUseModernOrthography; PHTVConfig::Shared().Save(); break;
-
-        case IDM_SETTINGS: 
-            DialogBox(hInst, MAKEINTRESOURCE(IDD_SETTINGS), NULL, SettingsDlgProc); 
-            UpdateTrayIcon();
-            break;
+        case IDM_SETTINGS: ShowSettingsWindow(); break;
         }
         break;
-
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
@@ -321,60 +386,4 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
     return 0;
-}
-
-INT_PTR CALLBACK SettingsDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    UNREFERENCED_PARAMETER(lParam);
-    switch (message)
-    {
-    case WM_INITDIALOG:
-        SetDlgItemTextW(hDlg, IDC_GRP_INPUT, L"Kiểu gõ");
-        SetDlgItemTextW(hDlg, IDC_GRP_OPTIONS, L"Tính năng");
-        SetDlgItemTextW(hDlg, IDC_CHECK_SPELLING, L"Kiểm tra chính tả");
-        SetDlgItemTextW(hDlg, IDC_CHECK_MODERN, L"Dùng quy tắc òa, uý (thay vì oà, úy)");
-        SetDlgItemTextW(hDlg, IDC_CHECK_QUICKTELEX, L"Bật gõ tắt Telex (cc=ch, gg=gi, ...)");
-        SetDlgItemTextW(hDlg, IDC_CHECK_MACRO, L"Cho phép gõ tắt (Macro)");
-        SetDlgItemTextW(hDlg, IDC_CHECK_RESTORE_ENG, L"Tự động khôi phục từ tiếng Anh");
-        SetDlgItemTextW(hDlg, IDC_BTN_CLOSE, L"Đóng");
-        SetWindowTextW(hDlg, L"Cấu hình PHTV");
-
-        if (vInputType == 0) CheckRadioButton(hDlg, IDC_RADIO_TELEX, IDC_RADIO_VNI, IDC_RADIO_TELEX);
-        else CheckRadioButton(hDlg, IDC_RADIO_TELEX, IDC_RADIO_VNI, IDC_RADIO_VNI);
-
-        CheckDlgButton(hDlg, IDC_CHECK_SPELLING, vCheckSpelling ? BST_CHECKED : BST_UNCHECKED);
-        CheckDlgButton(hDlg, IDC_CHECK_MODERN, vUseModernOrthography ? BST_CHECKED : BST_UNCHECKED);
-        CheckDlgButton(hDlg, IDC_CHECK_QUICKTELEX, vQuickTelex ? BST_CHECKED : BST_UNCHECKED);
-        CheckDlgButton(hDlg, IDC_CHECK_MACRO, vUseMacro ? BST_CHECKED : BST_UNCHECKED);
-        CheckDlgButton(hDlg, IDC_CHECK_RESTORE_ENG, vAutoRestoreEnglishWord ? BST_CHECKED : BST_UNCHECKED);
-        
-        {
-            RECT rc, rcDlg, rcOwner;
-            GetWindowRect(hDlg, &rcDlg);
-            GetWindowRect(GetDesktopWindow(), &rcOwner);
-            CopyRect(&rc, &rcOwner);
-            OffsetRect(&rcDlg, -rcDlg.left, -rcDlg.top);
-            OffsetRect(&rc, -rc.left, -rc.top);
-            OffsetRect(&rc, -rcDlg.right, -rcDlg.bottom);
-            SetWindowPos(hDlg, HWND_TOP, rcOwner.left + (rc.right / 2), rcOwner.top + (rc.bottom / 2), 0, 0, SWP_NOSIZE);
-        }
-        return (INT_PTR)TRUE;
-
-    case WM_COMMAND:
-        if (HIWORD(wParam) == BN_CLICKED) {
-            switch (LOWORD(wParam)) {
-                case IDC_RADIO_TELEX: vInputType = 0; PHTVConfig::Shared().Save(); break;
-                case IDC_RADIO_VNI:   vInputType = 1; PHTVConfig::Shared().Save(); break;
-                case IDC_CHECK_SPELLING: vCheckSpelling = IsDlgButtonChecked(hDlg, IDC_CHECK_SPELLING); PHTVConfig::Shared().Save(); break;
-                case IDC_CHECK_MODERN:   vUseModernOrthography = IsDlgButtonChecked(hDlg, IDC_CHECK_MODERN); PHTVConfig::Shared().Save(); break;
-                case IDC_CHECK_QUICKTELEX: vQuickTelex = IsDlgButtonChecked(hDlg, IDC_CHECK_QUICKTELEX); PHTVConfig::Shared().Save(); break;
-                case IDC_CHECK_MACRO:      vUseMacro = IsDlgButtonChecked(hDlg, IDC_CHECK_MACRO); PHTVConfig::Shared().Save(); break;
-                case IDC_CHECK_RESTORE_ENG: vAutoRestoreEnglishWord = IsDlgButtonChecked(hDlg, IDC_CHECK_RESTORE_ENG); PHTVConfig::Shared().Save(); break;
-                case IDC_BTN_CLOSE:
-                case IDCANCEL: EndDialog(hDlg, LOWORD(wParam)); return (INT_PTR)TRUE;
-            }
-        }
-        break;
-    }
-    return (INT_PTR)FALSE;
 }

@@ -1634,39 +1634,34 @@ void vKeyHandleEvent(const vKeyEvent& event,
             fflush(stderr);
             #endif
         } else if (vAutoRestoreEnglishWord && _index > 0 && _stateIndex > 1 && checkIfEnglishWord(KeyStates, _stateIndex)) {
-            // PRIORITY FIX: Check Auto English BEFORE Quick Consonant
-            // Auto English should have higher priority to prevent conflicts
-            // (e.g., "search" ending in "ch" shouldn't trigger Quick Consonant)
-            // Auto restore English word on SPACE
-            // checkIfEnglishWord returns true only if word is English AND NOT Vietnamese
-            // SAFETY: _index > 0 ensures we have characters to delete (prevents deleting nothing)
+            // Priority Fix: Restore English word AND append Space
             #ifdef DEBUG
             fprintf(stderr, "[AutoEnglish] ✓ SPACE RESTORE: _stateIndex=%d, _index=%d\n", _stateIndex, _index);
             fflush(stderr);
             #endif
             hCode = vRestore;
-            // SPACE FIX: Use _index for backspace (delete only what's on screen)
-            // When Vietnamese processing combines chars (e.g., "search" → "sẻach"),
-            // _stateIndex=6 but _index=5, so we must delete based on display count
-            // to avoid deleting the space before the word
-            hBPC = _index;  // Backspace count = display character count
-            hNCC = _stateIndex;  // Insert count = original keystroke count (English word)
-            hExt = 5;  // Signal: This is Auto English restore (not Text Replacement)
+            hBPC = _index;  // Delete current display
+            hNCC = _stateIndex + 1; // Restore original chars + 1 Space
+            hExt = 5;
+            
+            // Set Space as the most recent char (index 0)
+            hData[0] = KEY_SPACE; 
+            
+            // Fill original chars shifted by 1
             for (i = 0; i < _stateIndex; i++) {
                 TypingWord[i] = KeyStates[i];
-                hData[_stateIndex - 1 - i] = KeyStates[i];
+                hData[_stateIndex - i] = KeyStates[i]; 
             }
-            // Apply uppercase first character if enabled
-            // Use _shouldUpperCaseEnglishRestore which was set when first char was typed
-            // Also check if current app is NOT excluded from uppercase feature
+            
             if (vUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _shouldUpperCaseEnglishRestore && _stateIndex > 0) {
-                hData[_stateIndex - 1] |= CAPS_MASK;
+                hData[_stateIndex] |= CAPS_MASK; // Apply caps to first char (which is at index _stateIndex)
             }
+            
             _shouldUpperCaseEnglishRestore = false;
-            _index = _stateIndex;
+            _index = _stateIndex; // Restore internal index
             _spaceCount++;
-            // Reset session after restore to prevent re-triggering on next key (e.g., arrow keys)
-            // This is different from vRestoreAndStartNewSession which also sends the break key
+            
+            // Reset session
             _index = 0;
             _stateIndex = 0;
         } else if ((vQuickStartConsonant || vQuickEndConsonant) && !tempDisableKey && checkQuickConsonant()) {

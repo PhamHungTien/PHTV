@@ -5,16 +5,6 @@ project(PHTV_Win LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Source files from Core Engine
-file(GLOB_RECURSE CORE_SOURCES
-    "Core/Engine/*.cpp"
-    "Core/Config/*.m" # Config uses Objective-C style implementation but on Windows we might need to adapt or exclude if pure C++
-)
-
-# Note: PHTVConfig.m is likely Objective-C and won't compile with MSVC C++.
-# We need to ensure we only include C++ compatible files or provide a Windows implementation (PHTVConfig.cpp).
-# For now, let's include the Engine cpp files which seem to be C++.
-
 set(ENGINE_SOURCES
     "Engine/Engine.cpp"
     "Engine/Vietnamese.cpp"
@@ -25,36 +15,30 @@ set(ENGINE_SOURCES
     "Config/PHTVConfig.cpp"
 )
 
-# App Sources
 set(APP_SOURCES
     "App/main.cpp"
     "App/PHTV.rc"
 )
 
-# Create Windows Executable (GUI application, not Console)
-add_executable(PHTV WIN32
-    ${ENGINE_SOURCES}
-    ${APP_SOURCES}
-)
-
 # Definitions
-target_compile_definitions(PHTV PRIVATE _WIN32 UNICODE _UNICODE)
+add_compile_definitions(_WIN32 UNICODE _UNICODE)
 
 if(MINGW)
-    target_link_options(PHTV PRIVATE 
-        -municode
-        -static
-        -static-libgcc
-        -static-libstdc++
-    )
+    add_link_options(-municode -static -static-libgcc -static-libstdc++)
 endif()
 
 # Include Directories
-target_include_directories(PHTV PRIVATE
+include_directories(
     "Engine"
     "Config"
     "Platforms"
     "App"
+)
+
+# Build EXE
+add_executable(PHTV WIN32
+    ${ENGINE_SOURCES}
+    ${APP_SOURCES}
 )
 
 # Link Libraries
@@ -65,4 +49,5 @@ target_link_libraries(PHTV PRIVATE
     shell32
     shlwapi
     comctl32
+    msimg32
 )
