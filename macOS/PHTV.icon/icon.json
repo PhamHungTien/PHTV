@@ -1,0 +1,40 @@
+{
+  "fill" : {
+    "solid" : "display-p3:0.29754,0.00576,0.00852,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "blend-mode" : "normal",
+          "fill" : {
+            "solid" : "display-p3:0.96783,0.84574,0.00000,1.00000"
+          },
+          "image-name" : "P.png",
+          "name" : "P",
+          "position" : {
+            "scale" : 0.63,
+            "translation-in-points" : [
+              14.958124999999995,
+              21.875
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}

@@ -1,0 +1,455 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.4.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  SPARKLE_VERSION: "2.8.1"
+
+jobs:
+  build:
+    name: Build PHTV
+    runs-on: macos-26
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_number: ${{ steps.version.outputs.build_number }}
+      dmg_name: ${{ steps.dmg.outputs.name }}
+      dmg_size: ${{ steps.dmg.outputs.size }}
+      signature: ${{ steps.sign.outputs.signature }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Select Latest Xcode
+        run: |
+          LATEST_XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          echo "Using Xcode at $LATEST_XCODE"
+          sudo xcode-select -s "$LATEST_XCODE/Contents/Developer"
+          xcodebuild -version
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+
+          CURRENT_BUILD=$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" macOS/PHTV/Info.plist)
+          BUILD_NUMBER=$((CURRENT_BUILD + 1))
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          echo "📦 Version: $VERSION (Build $BUILD_NUMBER)"
+
+      - name: Update Info.plist
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          BUILD="${{ steps.version.outputs.build_number }}"
+
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" macOS/PHTV/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD" macOS/PHTV/Info.plist
+
+          echo "✅ Updated Info.plist: $VERSION ($BUILD)"
+
+      - name: Import Code Signing Certificate
+        id: certificate
+        env:
+          CERTIFICATES_P12: ${{ secrets.CERTIFICATES_P12 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+        run: |
+          if [ -z "$CERTIFICATES_P12" ]; then
+            echo "❌ Error: CERTIFICATES_P12 secret is missing."
+            exit 1
+          fi
+
+          # Create temporary keychain
+          KEYCHAIN_PATH=$RUNNER_TEMP/signing.keychain-db
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Import Apple WWDR Intermediate Certificate (Required for validation)
+          curl -sL https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer -o $RUNNER_TEMP/AppleWWDRCAG3.cer
+          security import $RUNNER_TEMP/AppleWWDRCAG3.cer -k "$KEYCHAIN_PATH" -T /usr/bin/codesign -T /usr/bin/security
+
+          # Decode P12 file using Python for absolute cross-platform reliability
+          echo "$CERTIFICATES_P12" > $RUNNER_TEMP/cert_base64.txt
+          python3 -c "import base64; open('$RUNNER_TEMP/certificate.p12', 'wb').write(base64.b64decode(open('$RUNNER_TEMP/cert_base64.txt', 'r').read()))"
+
+          # Import P12
+          security import $RUNNER_TEMP/certificate.p12 \
+            -k "$KEYCHAIN_PATH" \
+            -P "$CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security \
+            -A
+
+          # Add keychain to search list
+          security list-keychain -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
+          security default-keychain -s "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Find identity
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -o '"[^"]*"' | head -1 | tr -d '"')
+
+          if [ -z "$IDENTITY" ]; then
+            echo "❌ Error: No valid signing identity found."
+            security find-identity -p codesigning "$KEYCHAIN_PATH"
+            exit 1
+          fi
+
+          echo "🔐 Identity found: $IDENTITY"
+          echo "identity=$IDENTITY" >> $GITHUB_OUTPUT
+          echo "keychain=$KEYCHAIN_PATH" >> $GITHUB_OUTPUT
+
+      - name: Build
+        working-directory: macOS
+        run: |
+          echo "🔐 Building with mandatory code signing..."
+          echo "Identity: ${{ steps.certificate.outputs.identity }}"
+
+          xcodebuild -project PHTV.xcodeproj -scheme PHTV \
+            -configuration Release \
+            -derivedDataPath ./build \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="${{ steps.certificate.outputs.identity }}" \
+            OTHER_CODE_SIGN_FLAGS="--keychain ${{ steps.certificate.outputs.keychain }}" \
+            DEVELOPMENT_TEAM="" \
+            STRIP_SWIFT_SYMBOLS=NO \
+            COPY_PHASE_STRIP=NO \
+            STRIP_INSTALLED_PRODUCT=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            clean build \
+            2>&1 | tee build.log
+
+          if [ ! -d "./build/Build/Products/Release/PHTV.app" ]; then
+            echo "❌ Build failed: PHTV.app not found"
+            exit 1
+          fi
+
+          # Verify signing strictly
+          echo "🔍 Verifying code signature..."
+          codesign -dv --verbose=2 "./build/Build/Products/Release/PHTV.app" 2>&1
+
+          echo "🔍 Verifying signature validity..."
+          codesign --verify --deep --strict "./build/Build/Products/Release/PHTV.app" 2>&1
+          if [ $? -ne 0 ]; then
+            echo "❌ Code signature verification failed!"
+            exit 1
+          fi
+          echo "✅ Code signature is valid"
+
+      - name: Create DMG
+        id: dmg
+        working-directory: macOS
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          APP_PATH="./build/Build/Products/Release/PHTV.app"
+          DMG_NAME="PHTV-$VERSION.dmg"
+
+          # Remove extended attributes (quarantine) to prevent "damaged" error
+          xattr -cr "$APP_PATH"
+          echo "✅ Removed extended attributes from app"
+
+          TEMP_DIR=$(mktemp -d)
+          cp -R "$APP_PATH" "$TEMP_DIR/"
+          ln -s /Applications "$TEMP_DIR/Applications"
+
+          hdiutil create -volname "PHTV" \
+            -srcfolder "$TEMP_DIR" \
+            -ov -format UDZO \
+            -imagekey zlib-level=9 \
+            "$DMG_NAME"
+
+          rm -rf "$TEMP_DIR"
+
+          SIZE=$(stat -f%z "$DMG_NAME")
+          echo "name=$DMG_NAME" >> $GITHUB_OUTPUT
+          echo "size=$SIZE" >> $GITHUB_OUTPUT
+          echo "✅ DMG created: $DMG_NAME ($SIZE bytes)"
+
+      - name: Download Sparkle
+        run: |
+          curl -sL "https://github.com/sparkle-project/Sparkle/releases/download/${{ env.SPARKLE_VERSION }}/Sparkle-for-Swift-Package-Manager.zip" -o sparkle.zip
+          unzip -q sparkle.zip -d /tmp/Sparkle
+          echo "✅ Sparkle downloaded"
+
+      - name: Sign update
+        id: sign
+        working-directory: macOS
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          DMG_NAME="${{ steps.dmg.outputs.name }}"
+
+          if [ -z "$SPARKLE_PRIVATE_KEY" ]; then
+            echo "⚠️ No SPARKLE_PRIVATE_KEY"
+            echo "signature=" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "$SPARKLE_PRIVATE_KEY" > /tmp/sparkle.key
+          RESULT=$(/tmp/Sparkle/bin/sign_update "$DMG_NAME" -f /tmp/sparkle.key)
+          SIGNATURE=$(echo "$RESULT" | grep -o 'sparkle:edSignature="[^"]*"' | cut -d'"' -f2)
+          rm /tmp/sparkle.key
+
+          if [ -z "$SIGNATURE" ]; then
+            echo "❌ Failed to sign"
+            exit 1
+          fi
+
+          echo "signature=$SIGNATURE" >> $GITHUB_OUTPUT
+          echo "✅ Signed"
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dmg
+          path: macOS/${{ steps.dmg.outputs.name }}
+          retention-days: 1
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: macOS/build.log
+          retention-days: 7
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Download DMG
+        uses: actions/download-artifact@v4
+        with:
+          name: dmg
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.build.outputs.version }}
+          name: PHTV ${{ needs.build.outputs.version }}
+          files: ${{ needs.build.outputs.dmg_name }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update-appcast:
+    name: Update Appcast
+    runs-on: ubuntu-latest
+    needs: [build, release]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Update appcast.xml
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+          BUILD: ${{ needs.build.outputs.build_number }}
+          SIZE: ${{ needs.build.outputs.dmg_size }}
+          SIGNATURE: ${{ needs.build.outputs.signature }}
+          DMG_NAME: ${{ needs.build.outputs.dmg_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          python3 - << 'EOF'
+          import os
+          import sys
+          from datetime import datetime
+
+          version = os.environ['VERSION']
+          build = os.environ['BUILD']
+          size = os.environ['SIZE']
+          signature = os.environ['SIGNATURE']
+          dmg_name = os.environ['DMG_NAME']
+          repo = os.environ['REPO']
+
+          download_url = f"https://github.com/{repo}/releases/download/v{version}/{dmg_name}"
+          release_url = f"https://github.com/{repo}/releases/tag/v{version}"
+          date = datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S +0000")
+
+          new_item = f'''        <item>
+              <title>PHTV {version}</title>
+              <link>{release_url}</link>
+              <sparkle:version>{build}</sparkle:version>
+              <sparkle:shortVersionString>{version}</sparkle:shortVersionString>
+              <description><![CDATA[
+                  <h2>PHTV {version}</h2>
+                  <p>See release notes: <a href="{release_url}">GitHub Release</a></p>
+              ]]></description>
+              <pubDate>{date}</pubDate>
+              <enclosure
+                  url="{download_url}"
+                  sparkle:version="{build}"
+                  sparkle:shortVersionString="{version}"
+                  sparkle:edSignature="{signature}"
+                  length="{size}"
+                  type="application/octet-stream"/>
+              <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+          </item>
+          '''
+
+          marker = '<!-- Most recent version first -->'
+
+          with open('docs/appcast.xml', 'r') as f:
+              content = f.read()
+
+          if marker not in content:
+              print("❌ Marker not found")
+              sys.exit(1)
+
+          if f'<sparkle:shortVersionString>{version}</sparkle:shortVersionString>' in content:
+              print(f"⚠️ Version {version} already exists")
+              sys.exit(0)
+
+          new_content = content.replace(marker, marker + '\n' + new_item)
+
+          with open('docs/appcast.xml', 'w') as f:
+              f.write(new_content)
+
+          print("✅ Appcast updated")
+          EOF
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/appcast.xml
+
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "chore: update appcast for v${{ needs.build.outputs.version }}"
+            git push
+            echo "✅ Pushed"
+          fi
+
+  update-homebrew:
+    name: Update Homebrew
+    runs-on: ubuntu-latest
+    needs: [build, release, update-appcast]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Pull latest changes
+        run: git pull origin main
+
+      - name: Download DMG and update formula
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+          DMG_NAME: ${{ needs.build.outputs.dmg_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          curl -sL "https://github.com/$REPO/releases/download/v$VERSION/$DMG_NAME" -o "$DMG_NAME"
+          SHA256=$(sha256sum "$DMG_NAME" | cut -d' ' -f1)
+
+          sed -i "s/version \".*\"/version \"$VERSION\"/" homebrew/phtv.rb
+          sed -i "s/sha256 \".*\"/sha256 \"$SHA256\"/" homebrew/phtv.rb
+
+          echo "✅ Updated formula with SHA256: $SHA256"
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add homebrew/phtv.rb
+
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "chore: bump Homebrew to v${{ needs.build.outputs.version }}"
+            git push
+            echo "✅ Pushed"
+          fi
+
+      - name: Sync to homebrew-tap
+        env:
+          TAP_REPO_TOKEN: ${{ secrets.TAP_REPO_TOKEN }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          if [ -z "$TAP_REPO_TOKEN" ]; then
+            echo "⚠️ TAP_REPO_TOKEN not set, skipping tap sync"
+            exit 0
+          fi
+
+          git clone "https://x-access-token:${TAP_REPO_TOKEN}@github.com/PhamHungTien/homebrew-tap.git" /tmp/homebrew-tap
+          cp homebrew/phtv.rb /tmp/homebrew-tap/Casks/phtv.rb
+
+          cd /tmp/homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/phtv.rb
+
+          if git diff --staged --quiet; then
+            echo "No changes to tap"
+          else
+            git commit -m "chore: update PHTV to v$VERSION"
+            git push
+            echo "✅ Tap synced"
+          fi
+
+      - name: Update Info.plist for next release
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+          BUILD_NUMBER: ${{ needs.build.outputs.build_number }}
+        run: |
+          # Pull latest changes first
+          git pull origin main --rebase
+
+          python3 << 'EOF'
+          import plistlib
+          import os
+
+          version = os.environ['VERSION']
+          build = os.environ['BUILD_NUMBER']
+
+          with open('macOS/PHTV/Info.plist', 'rb') as f:
+              plist = plistlib.load(f)
+
+          plist['CFBundleShortVersionString'] = version
+          plist['CFBundleVersion'] = build
+
+          with open('macOS/PHTV/Info.plist', 'wb') as f:
+              plistlib.dump(plist, f)
+
+          print(f"✅ Updated Info.plist to {version} ({build})")
+          EOF
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add macOS/PHTV/Info.plist
+
+          if git diff --cached --quiet; then
+            echo "No changes to Info.plist"
+          else
+            git commit -m "chore: bump version to $VERSION ($BUILD_NUMBER)"
+            git push
+            echo "✅ Info.plist committed"
+          fi

@@ -1,0 +1,2150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <channel>
+        <title>PHTV Updates</title>
+        <link>https://github.com/PhamHungTien/PHTV</link>
+        <description>PHTV - Bộ gõ tiếng Việt cho macOS</description>
+        <language>vi</language>
+
+        <!-- Most recent version first -->
+        <item>
+    <title>PHTV 2.1.4</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v2.1.4</link>
+    <sparkle:version>104</sparkle:version>
+    <sparkle:shortVersionString>2.1.4</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 2.1.4</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v2.1.4">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Mon, 26 Jan 2026 16:30:44 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v2.1.4/PHTV-2.1.4.dmg"
+        sparkle:version="104"
+        sparkle:shortVersionString="2.1.4"
+        sparkle:edSignature="qN8ErvMmzt30UOKfEc6ydM71ijgk69+oKUTHir/ZRL/OOmFHW4vpl82v1rlubl/IjWefcCgR7azMqzerPhoXCQ=="
+        length="10324274"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 2.1.3</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v2.1.3</link>
+    <sparkle:version>103</sparkle:version>
+    <sparkle:shortVersionString>2.1.3</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 2.1.3</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v2.1.3">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Mon, 26 Jan 2026 04:19:30 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v2.1.3/PHTV-2.1.3.dmg"
+        sparkle:version="103"
+        sparkle:shortVersionString="2.1.3"
+        sparkle:edSignature="TnyKKkLMKA0ngq3nXpgtsol6J36T2ixYYaUoRrLeRaifAXPXcavzS1BfN+aFwXrk5sa3O1RSVQWJOpxqKsZqCw=="
+        length="10285511"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 2.1.2</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v2.1.2</link>
+    <sparkle:version>102</sparkle:version>
+    <sparkle:shortVersionString>2.1.2</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 2.1.2</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v2.1.2">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sun, 25 Jan 2026 09:06:11 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v2.1.2/PHTV-2.1.2.dmg"
+        sparkle:version="102"
+        sparkle:shortVersionString="2.1.2"
+        sparkle:edSignature="1qF6BUzfY3/0zdIU3KfdL+6MbsOmM42et1fcljbWAcbGpbGgqcRRkr6PWBSigWaScQxqX6aTQubBSKQ4xHufCA=="
+        length="10258980"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 2.1.1</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v2.1.1</link>
+    <sparkle:version>101</sparkle:version>
+    <sparkle:shortVersionString>2.1.1</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 2.1.1</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v2.1.1">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sun, 25 Jan 2026 08:38:00 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v2.1.1/PHTV-2.1.1.dmg"
+        sparkle:version="101"
+        sparkle:shortVersionString="2.1.1"
+        sparkle:edSignature="Kl7esHIxM3r5VzQWOZhdgeNuABmPxWqR5BMA0pqhsjtku5e8h/IYNZE1MfANDwf8Q5bfl0epsfyWGxO2CNliDw=="
+        length="10246153"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 2.1.0</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v2.1.0</link>
+    <sparkle:version>100</sparkle:version>
+    <sparkle:shortVersionString>2.1.0</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 2.1.0</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v2.1.0">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sun, 25 Jan 2026 01:15:25 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v2.1.0/PHTV-2.1.0.dmg"
+        sparkle:version="100"
+        sparkle:shortVersionString="2.1.0"
+        sparkle:edSignature="CHIU3jxxC19+1yv40Udb0XonxvaC3ZsvMumKNJbMPYE+5bWdkxAzcaT5711BnUqHd7taikeEGg/PuYyioCe2AA=="
+        length="10201518"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 2.0.9</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v2.0.9</link>
+    <sparkle:version>99</sparkle:version>
+    <sparkle:shortVersionString>2.0.9</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 2.0.9</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v2.0.9">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sat, 24 Jan 2026 13:36:51 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v2.0.9/PHTV-2.0.9.dmg"
+        sparkle:version="99"
+        sparkle:shortVersionString="2.0.9"
+        sparkle:edSignature="UJoIrWR1v8ZkWcQvj5sZp7a5Hl2IRAfLUa3IABND+0jNRGb/vBR8/VnxPkObqHKLYn0NFFSg0F03RKOj3xLjCA=="
+        length="10198321"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 2.0.8</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v2.0.8</link>
+    <sparkle:version>98</sparkle:version>
+    <sparkle:shortVersionString>2.0.8</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 2.0.8</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v2.0.8">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sat, 24 Jan 2026 00:05:31 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v2.0.8/PHTV-2.0.8.dmg"
+        sparkle:version="98"
+        sparkle:shortVersionString="2.0.8"
+        sparkle:edSignature="8wdQfOt5H31I/Mi8bFr6Pwk3+de+YS32aZkD2N92AqEomv50ZXoSHr+K3kOehSo02IGNQWqj514Kj74RxEwXAA=="
+        length="10025116"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 2.0.7</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v2.0.7</link>
+    <sparkle:version>97</sparkle:version>
+    <sparkle:shortVersionString>2.0.7</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 2.0.7</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v2.0.7">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Fri, 23 Jan 2026 19:40:18 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v2.0.7/PHTV-2.0.7.dmg"
+        sparkle:version="97"
+        sparkle:shortVersionString="2.0.7"
+        sparkle:edSignature="3iHO7ZVmTtqaw5p5JEw29/6KPSMFefL8t/eJ5sCSd36AQTUR9JW2CcPRzxGyWnbyyasXYP+LZoduelcSVArEBg=="
+        length="10037367"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 2.0.6</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v2.0.6</link>
+    <sparkle:version>96</sparkle:version>
+    <sparkle:shortVersionString>2.0.6</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 2.0.6</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v2.0.6">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Fri, 23 Jan 2026 13:30:42 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v2.0.6/PHTV-2.0.6.dmg"
+        sparkle:version="96"
+        sparkle:shortVersionString="2.0.6"
+        sparkle:edSignature="8BbLy5p87eTmeAbQJnoJCXtwbV5TLTxYb/3yk0wBOKROzQhE9yXTg09dwaW/eM8oxfTrvpIz9x9Mb1vxcIgYBg=="
+        length="9871200"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 2.0.5</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v2.0.5</link>
+    <sparkle:version>95</sparkle:version>
+    <sparkle:shortVersionString>2.0.5</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 2.0.5</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v2.0.5">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Fri, 23 Jan 2026 12:59:31 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v2.0.5/PHTV-2.0.5.dmg"
+        sparkle:version="95"
+        sparkle:shortVersionString="2.0.5"
+        sparkle:edSignature="LJx/ELnrXBHQSfW6Na1VM7aLhBzvEHXMonH+y7aZWpd8DVeJQY7svIv/w2NoXHTwq2ngqGw9SxkCuT4KrxtaBQ=="
+        length="9873417"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 2.0.4</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v2.0.4</link>
+    <sparkle:version>94</sparkle:version>
+    <sparkle:shortVersionString>2.0.4</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 2.0.4</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v2.0.4">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Thu, 22 Jan 2026 18:08:05 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v2.0.4/PHTV-2.0.4.dmg"
+        sparkle:version="94"
+        sparkle:shortVersionString="2.0.4"
+        sparkle:edSignature="Bcgt6zrdMK9VfrcTnr8ADH8+X7RD5IkmYE4DZbqu13Beb/5rCNNZ40TvC+4K+CHb+rTCcqFQIYFMDA4sQTM7Cw=="
+        length="9871515"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 2.0.3</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v2.0.3</link>
+    <sparkle:version>93</sparkle:version>
+    <sparkle:shortVersionString>2.0.3</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 2.0.3</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v2.0.3">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Thu, 22 Jan 2026 13:06:09 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v2.0.3/PHTV-2.0.3.dmg"
+        sparkle:version="93"
+        sparkle:shortVersionString="2.0.3"
+        sparkle:edSignature="Y4eTOT6bxyELdJQItwJ4R3SIj59l3mpMHTo4WYE1rnnqnHNg+hzm5ApFYy7eLSxk5AkNFQGJQSJBkZ3ugAvoCw=="
+        length="9871196"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 2.0.2</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v2.0.2</link>
+    <sparkle:version>92</sparkle:version>
+    <sparkle:shortVersionString>2.0.2</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 2.0.2</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v2.0.2">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Thu, 22 Jan 2026 11:25:01 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v2.0.2/PHTV-2.0.2.dmg"
+        sparkle:version="92"
+        sparkle:shortVersionString="2.0.2"
+        sparkle:edSignature="V46A4qkoZ6mHxGD0WoognhwQ6qzBVN2zc7As2vbBEeBSO/QfqJXLnLqxjZnwbSs6qAzr3j52JKJ7OFC2SvBlCA=="
+        length="9855077"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 2.0.1</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v2.0.1</link>
+    <sparkle:version>91</sparkle:version>
+    <sparkle:shortVersionString>2.0.1</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 2.0.1</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v2.0.1">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Thu, 22 Jan 2026 07:53:39 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v2.0.1/PHTV-2.0.1.dmg"
+        sparkle:version="91"
+        sparkle:shortVersionString="2.0.1"
+        sparkle:edSignature="dkwsjn85kJ51MWxzz5ojbc+Ls7g9R9fAk0UUwvA6aQx6cOkw/I4Epx0zAkPtib/ZdWUIS3CqG+lsK9tQQVd8AQ=="
+        length="9443162"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 2.0.0</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v2.0.0</link>
+    <sparkle:version>90</sparkle:version>
+    <sparkle:shortVersionString>2.0.0</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 2.0.0</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v2.0.0">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Thu, 22 Jan 2026 07:24:41 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v2.0.0/PHTV-2.0.0.dmg"
+        sparkle:version="90"
+        sparkle:shortVersionString="2.0.0"
+        sparkle:edSignature="pRAp4IQtIA+u7Tg2sM34mP9vdzOvfAOjUwpTBTKoocjIIs6G5401+nyp8C//ecG7S6FUUz3ii5DxvwJWfDyVDg=="
+        length="9432508"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.9.9</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.9.9</link>
+    <sparkle:version>89</sparkle:version>
+    <sparkle:shortVersionString>1.9.9</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.9.9</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.9.9">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Thu, 22 Jan 2026 06:19:41 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.9.9/PHTV-1.9.9.dmg"
+        sparkle:version="89"
+        sparkle:shortVersionString="1.9.9"
+        sparkle:edSignature="h4xe3cjaCs/cUgsqZ8EQf0baBFvwRLua4RLCcMIli49DZihU+LL/Y5nxcFOGIhXx7iJ2bmXZOFVaIjzmZ5FdBA=="
+        length="9301298"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.9.8</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.9.8</link>
+    <sparkle:version>88</sparkle:version>
+    <sparkle:shortVersionString>1.9.8</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.9.8</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.9.8">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Wed, 21 Jan 2026 14:30:08 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.9.8/PHTV-1.9.8.dmg"
+        sparkle:version="88"
+        sparkle:shortVersionString="1.9.8"
+        sparkle:edSignature="o7GtWRA5bV6DPAnNhIYllyFWxT5CUYT7j048dldeWI8tTQpqOKejexHxd0h4BSopsMH2ZNsYujfgRmD0WJKCDw=="
+        length="9286035"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.9.7</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.9.7</link>
+    <sparkle:version>87</sparkle:version>
+    <sparkle:shortVersionString>1.9.7</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.9.7</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.9.7">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Wed, 21 Jan 2026 10:29:34 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.9.7/PHTV-1.9.7.dmg"
+        sparkle:version="87"
+        sparkle:shortVersionString="1.9.7"
+        sparkle:edSignature="D0MgZbDZPzROWFb7g/32DQtqxpCrMNH4JmnvwJ97NM1erFk62+EOXTs/evU450yqPriPwnde6W1RkBbV4wWpDw=="
+        length="9279201"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.9.6</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.9.6</link>
+    <sparkle:version>86</sparkle:version>
+    <sparkle:shortVersionString>1.9.6</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.9.6</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.9.6">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Wed, 21 Jan 2026 09:51:40 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.9.6/PHTV-1.9.6.dmg"
+        sparkle:version="86"
+        sparkle:shortVersionString="1.9.6"
+        sparkle:edSignature="afPuzMTMQ/0jB16kpyatGu2BYkA8C3mkrSW8mFF6yN4uVl0B0wLTEkVwcHeFODmPGuKgQEv587+krDFbZDOlAg=="
+        length="9306613"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.9.5</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.9.5</link>
+    <sparkle:version>85</sparkle:version>
+    <sparkle:shortVersionString>1.9.5</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.9.5</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.9.5">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Wed, 21 Jan 2026 08:10:40 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.9.5/PHTV-1.9.5.dmg"
+        sparkle:version="85"
+        sparkle:shortVersionString="1.9.5"
+        sparkle:edSignature="cQrPzf/h/3+0NVQBUbp57k6WHBWL9zunYC68xlHPU+HoBor6awjDMurxbhrny0VUi+6iThDjUfVruAEsFNq9Cg=="
+        length="9301688"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.9.4</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.9.4</link>
+    <sparkle:version>84</sparkle:version>
+    <sparkle:shortVersionString>1.9.4</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.9.4</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.9.4">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Wed, 21 Jan 2026 06:50:42 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.9.4/PHTV-1.9.4.dmg"
+        sparkle:version="84"
+        sparkle:shortVersionString="1.9.4"
+        sparkle:edSignature="rOChGHWZH66eWlyd4RgMNFTewX3AJR9+DlxX5bS+Tc8HPzRJfla8uCEpopny5Jtu/fqOts5iiEuIjUqlpEOUBA=="
+        length="9292711"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.9.1</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.9.1</link>
+    <sparkle:version>83</sparkle:version>
+    <sparkle:shortVersionString>1.9.1</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.9.1</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.9.1">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Tue, 20 Jan 2026 18:47:23 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.9.1/PHTV-1.9.1.dmg"
+        sparkle:version="83"
+        sparkle:shortVersionString="1.9.1"
+        sparkle:edSignature="kcWt2dX/etQ7sy5dod1lyF8haCHbNxhOKYlDGBX7U57C0GTu5moqKj/E+MCqABjLpLJYZMKU7cRCY7gMiwI5Bw=="
+        length="9291625"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.9.0</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.9.0</link>
+    <sparkle:version>82</sparkle:version>
+    <sparkle:shortVersionString>1.9.0</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.9.0</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.9.0">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Tue, 20 Jan 2026 18:11:58 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.9.0/PHTV-1.9.0.dmg"
+        sparkle:version="82"
+        sparkle:shortVersionString="1.9.0"
+        sparkle:edSignature="X/NXC9PK4Llcm1MDA1mv6Tk2SNfPrH/1IZYjlNCzEABGBFigw056T44D/wRxs5FYH50+gXrPuWFoHXZh19RLBA=="
+        length="9299696"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.8.9</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.8.9</link>
+    <sparkle:version>81</sparkle:version>
+    <sparkle:shortVersionString>1.8.9</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.8.9</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.8.9">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Tue, 20 Jan 2026 12:55:11 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.8.9/PHTV-1.8.9.dmg"
+        sparkle:version="81"
+        sparkle:shortVersionString="1.8.9"
+        sparkle:edSignature="v6BUUdWWYFR++ITD44P+YfwRzU18O/qgmf43XZGtILWdlnJrDApYCOOMvhwrxELGf+6v/XUTfxvgVc6vUZreCQ=="
+        length="9291410"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.8.8</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.8.8</link>
+    <sparkle:version>80</sparkle:version>
+    <sparkle:shortVersionString>1.8.8</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.8.8</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.8.8">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Tue, 20 Jan 2026 12:26:34 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.8.8/PHTV-1.8.8.dmg"
+        sparkle:version="80"
+        sparkle:shortVersionString="1.8.8"
+        sparkle:edSignature="CWwVzOApgT3WAGBF8MmrUAzTOmfhBST0H0/IfN9vOnOvuvjVV9VyaVRaCKmVE1hR4DyJrbkHDY1A7TIuFoxTAg=="
+        length="9298738"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.8.7</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.8.7</link>
+    <sparkle:version>79</sparkle:version>
+    <sparkle:shortVersionString>1.8.7</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.8.7</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.8.7">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Tue, 20 Jan 2026 11:13:34 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.8.7/PHTV-1.8.7.dmg"
+        sparkle:version="79"
+        sparkle:shortVersionString="1.8.7"
+        sparkle:edSignature="AGr+d14vrt4ljPnq8YArOHZEctvMJqkRdMZXT2YvqlEb7jv+pVnnMC1SuJ2s9ZUBgcHBYjZagVfOkkU0gWVNAA=="
+        length="9294648"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.8.6</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.8.6</link>
+    <sparkle:version>78</sparkle:version>
+    <sparkle:shortVersionString>1.8.6</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.8.6</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.8.6">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Tue, 20 Jan 2026 05:14:15 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.8.6/PHTV-1.8.6.dmg"
+        sparkle:version="78"
+        sparkle:shortVersionString="1.8.6"
+        sparkle:edSignature="mBXYjCsw4EJuWNYydbehI4kgyml25V9meiilDO8biA1eaoP7qPp3aIaHEFbduYTZw/9bd/+z6pc4Nq97yc6yCQ=="
+        length="10069602"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.8.5</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.8.5</link>
+    <sparkle:version>77</sparkle:version>
+    <sparkle:shortVersionString>1.8.5</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.8.5</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.8.5">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Mon, 19 Jan 2026 16:08:14 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.8.5/PHTV-1.8.5.dmg"
+        sparkle:version="77"
+        sparkle:shortVersionString="1.8.5"
+        sparkle:edSignature="u3ZDSaCQaq+YE0SI+mb5akC8Jn196yhSgA33ThSW6WjBCc2uTLSa/ieg0h0XLJyEQ6e6NJvsTAjSYNnQfOTkAQ=="
+        length="9294068"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.8.4</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.8.4</link>
+    <sparkle:version>76</sparkle:version>
+    <sparkle:shortVersionString>1.8.4</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.8.4</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.8.4">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Mon, 19 Jan 2026 12:54:10 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.8.4/PHTV-1.8.4.dmg"
+        sparkle:version="76"
+        sparkle:shortVersionString="1.8.4"
+        sparkle:edSignature="d2Pe5luhPZEktuagD1Qfj5zsPR8PbTBBtH3JaGHJMOlM3V+hiwRjBaVn0J23viLPRaG4O/RhL7Ii3trq4/NcCQ=="
+        length="9287510"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.8.3</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.8.3</link>
+    <sparkle:version>75</sparkle:version>
+    <sparkle:shortVersionString>1.8.3</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.8.3</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.8.3">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Mon, 19 Jan 2026 09:18:50 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.8.3/PHTV-1.8.3.dmg"
+        sparkle:version="75"
+        sparkle:shortVersionString="1.8.3"
+        sparkle:edSignature="7WoP46xmCSTW/+1u3+ep83Wwnj1NMGT6I52zig29T1IcXusaCOLgT0+nlowTPJpBSBzciArv2Z9sFDdnpZ/6Bw=="
+        length="9295649"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.8.2</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.8.2</link>
+    <sparkle:version>74</sparkle:version>
+    <sparkle:shortVersionString>1.8.2</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.8.2</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.8.2">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Mon, 19 Jan 2026 07:06:00 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.8.2/PHTV-1.8.2.dmg"
+        sparkle:version="74"
+        sparkle:shortVersionString="1.8.2"
+        sparkle:edSignature="3+wxxalPyRTcbBpZI0a7Cxg3fZ+6huJjP0QdRlW1bwkLdW9Dk3YRkge/qTTW36KH9HeGVfzpZC1QSifM7jSNBw=="
+        length="9295578"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.8.1</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.8.1</link>
+    <sparkle:version>73</sparkle:version>
+    <sparkle:shortVersionString>1.8.1</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.8.1</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.8.1">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sun, 18 Jan 2026 14:51:31 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.8.1/PHTV-1.8.1.dmg"
+        sparkle:version="73"
+        sparkle:shortVersionString="1.8.1"
+        sparkle:edSignature="DCPdGI4czSvSBQpuZi0LYctKW+Uol0YRZflq+2+x5P5GTofIpM+RhvwCafH1kCKCbN9D5dZykiecKBoaq2nvCw=="
+        length="9294981"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.8.0</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.8.0</link>
+    <sparkle:version>72</sparkle:version>
+    <sparkle:shortVersionString>1.8.0</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.8.0</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.8.0">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sun, 18 Jan 2026 10:48:20 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.8.0/PHTV-1.8.0.dmg"
+        sparkle:version="72"
+        sparkle:shortVersionString="1.8.0"
+        sparkle:edSignature="ixgDwuHRyUGJGoitDuBKgViPGJW9nvxID76GpQ1uC9flVP3LsSoWTNyCEfv+RbFofzdhbCC+2QmufKRYye9JCA=="
+        length="9287094"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.7.9</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.7.9</link>
+    <sparkle:version>71</sparkle:version>
+    <sparkle:shortVersionString>1.7.9</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.7.9</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.7.9">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sun, 18 Jan 2026 08:02:31 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.7.9/PHTV-1.7.9.dmg"
+        sparkle:version="71"
+        sparkle:shortVersionString="1.7.9"
+        sparkle:edSignature="q8s+Qy00Z6TccJwsRr97Q615Bxg73N1GFBZiFCy1rInAapllFrE4DiFe0ZxMQhf4X7THrEfEM7AF6oFeXTIrCA=="
+        length="9131144"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.7.8</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.7.8</link>
+    <sparkle:version>70</sparkle:version>
+    <sparkle:shortVersionString>1.7.8</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.7.8</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.7.8">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sun, 18 Jan 2026 07:50:53 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.7.8/PHTV-1.7.8.dmg"
+        sparkle:version="70"
+        sparkle:shortVersionString="1.7.8"
+        sparkle:edSignature="0ggi2kK7xhVsxzChhM/VYAq4STGc7Q9cPQOsuhNnKquocgR3QmkvvinvPVtElJSwk+SkzNv5Ie+0A8+DplqVBw=="
+        length="9285619"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.7.6</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.7.6</link>
+    <sparkle:version>69</sparkle:version>
+    <sparkle:shortVersionString>1.7.6</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.7.6</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.7.6">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Tue, 13 Jan 2026 09:46:36 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.7.6/PHTV-1.7.6.dmg"
+        sparkle:version="69"
+        sparkle:shortVersionString="1.7.6"
+        sparkle:edSignature="qUu1PmAGMQ+VGN99nM0Gcp/zkf8zwsqfvbAmgBesKsMmywrjAcvIn9gLbYv1eN9blm/YY50+tM8Z+ubA76bABA=="
+        length="9129769"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.7.5</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.7.5</link>
+    <sparkle:version>68</sparkle:version>
+    <sparkle:shortVersionString>1.7.5</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.7.5</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.7.5">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Mon, 12 Jan 2026 11:29:45 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.7.5/PHTV-1.7.5.dmg"
+        sparkle:version="68"
+        sparkle:shortVersionString="1.7.5"
+        sparkle:edSignature="YTyLolaEDpmLejnz/iS/EDZwlFTa+ogjHl2EV5GBfy+I9fY+BPKeTSoh6JfdTM4ffUbMYVe/puFclLl4wuEZBg=="
+        length="9277464"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.7.4</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.7.4</link>
+    <sparkle:version>67</sparkle:version>
+    <sparkle:shortVersionString>1.7.4</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.7.4</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.7.4">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Mon, 12 Jan 2026 09:10:56 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.7.4/PHTV-1.7.4.dmg"
+        sparkle:version="67"
+        sparkle:shortVersionString="1.7.4"
+        sparkle:edSignature="1uSpKN98pHb7ZwawpzpGC6OhJYOAcdyNajDzZSec2Hgn2uyYdiBkgN1VrFuB5f7js5b30+ruwhboEMZDYbELCA=="
+        length="9269985"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.7.3</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.7.3</link>
+    <sparkle:version>66</sparkle:version>
+    <sparkle:shortVersionString>1.7.3</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.7.3</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.7.3">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Mon, 12 Jan 2026 08:27:33 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.7.3/PHTV-1.7.3.dmg"
+        sparkle:version="66"
+        sparkle:shortVersionString="1.7.3"
+        sparkle:edSignature="BNHk1LmGRIhJoWuPYgbZ2spJiN2YKTsMn/BDq5bPTNjFUmf/ACMOhZu5F+xLLPFZ4pkfdgqrLUe1m5B3O1poAA=="
+        length="9275112"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.7.2</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.7.2</link>
+    <sparkle:version>65</sparkle:version>
+    <sparkle:shortVersionString>1.7.2</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.7.2</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.7.2">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Mon, 12 Jan 2026 07:43:45 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.7.2/PHTV-1.7.2.dmg"
+        sparkle:version="65"
+        sparkle:shortVersionString="1.7.2"
+        sparkle:edSignature="i9vR7v4A/Ypnzpso4+AZXCXyfPjZTYqWAv21OaeDV/mcoIntj8pe0q4AgMto27BoUX7epy11/n/e7wav1+LMAg=="
+        length="9275221"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.7.1</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.7.1</link>
+    <sparkle:version>64</sparkle:version>
+    <sparkle:shortVersionString>1.7.1</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.7.1</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.7.1">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Mon, 12 Jan 2026 06:32:00 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.7.1/PHTV-1.7.1.dmg"
+        sparkle:version="64"
+        sparkle:shortVersionString="1.7.1"
+        sparkle:edSignature="r7mVoAcPFTMcXTux5TFpsqNsug/06yksYeizEjZFmsiVjvYNrVBpT0sPe1QnJY+S57JXBB24TU7FXXuWM4gKCw=="
+        length="9266118"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.7.0</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.7.0</link>
+    <sparkle:version>63</sparkle:version>
+    <sparkle:shortVersionString>1.7.0</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.7.0</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.7.0">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sun, 11 Jan 2026 15:34:10 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.7.0/PHTV-1.7.0.dmg"
+        sparkle:version="63"
+        sparkle:shortVersionString="1.7.0"
+        sparkle:edSignature="HVECyIQ7hTGbMjhaunlYfxfto6zucRP38oLockUiFGa/TtrfKrT8YGdeY07iN4aDB5y0+XiW6LQW7hCsACKbCw=="
+        length="9194515"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.6.9</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.6.9</link>
+    <sparkle:version>62</sparkle:version>
+    <sparkle:shortVersionString>1.6.9</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.6.9</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.6.9">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sun, 11 Jan 2026 11:17:31 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.6.9/PHTV-1.6.9.dmg"
+        sparkle:version="62"
+        sparkle:shortVersionString="1.6.9"
+        sparkle:edSignature="AkPlfihkTYE7S4y9Ug4jiHFr7pxaQ0m7IsCK2348Z8942DQv82fVM9w3nPns455xzPiPw73k1AF5vr5LS6frAg=="
+        length="7899768"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.6.8</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.6.8</link>
+    <sparkle:version>61</sparkle:version>
+    <sparkle:shortVersionString>1.6.8</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.6.8</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.6.8">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sun, 11 Jan 2026 09:22:38 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.6.8/PHTV-1.6.8.dmg"
+        sparkle:version="61"
+        sparkle:shortVersionString="1.6.8"
+        sparkle:edSignature="aM31FB2QAXjkwQPHZzG3qFe4Lfeq3j1L7S3vbk7Vu6AfQ13eVs2Ui3DTEfeD91A2QVxANRuSP/PwSU4OMs+MBw=="
+        length="7897066"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.6.7</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.6.7</link>
+    <sparkle:version>60</sparkle:version>
+    <sparkle:shortVersionString>1.6.7</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.6.7</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.6.7">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sun, 11 Jan 2026 02:36:08 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.6.7/PHTV-1.6.7.dmg"
+        sparkle:version="60"
+        sparkle:shortVersionString="1.6.7"
+        sparkle:edSignature="B9Z+VAIaSV8wE6erOsEGWzODzjmIBbUsVQax5GTj4LoQ2rNWTApsUOIi9k3Aw6kT/rtR3Q83981jFKMI8WcmDA=="
+        length="7891014"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.6.6</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.6.6</link>
+    <sparkle:version>59</sparkle:version>
+    <sparkle:shortVersionString>1.6.6</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.6.6</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.6.6">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sun, 11 Jan 2026 02:06:21 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.6.6/PHTV-1.6.6.dmg"
+        sparkle:version="59"
+        sparkle:shortVersionString="1.6.6"
+        sparkle:edSignature="jnK8NABHQZuTuRi7SyS6ZUob6ooryt16R19JCm2MDT5Heyvyxcbh+h/KOk0bIR1BXSDJxiDktNsq6pAclkLmBw=="
+        length="7890807"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.6.5</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.6.5</link>
+    <sparkle:version>58</sparkle:version>
+    <sparkle:shortVersionString>1.6.5</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.6.5</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.6.5">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sat, 10 Jan 2026 19:44:12 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.6.5/PHTV-1.6.5.dmg"
+        sparkle:version="58"
+        sparkle:shortVersionString="1.6.5"
+        sparkle:edSignature="NE+/ELc+BH2mj5s41RLDbk4dnxdU75NVMlJYfWlDya36NqikpLb/WOAQFoJ/rm8EMC2vwvvWeHETjDruF1UADg=="
+        length="7887202"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.6.4</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.6.4</link>
+    <sparkle:version>57</sparkle:version>
+    <sparkle:shortVersionString>1.6.4</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.6.4</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.6.4">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sat, 10 Jan 2026 18:39:26 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.6.4/PHTV-1.6.4.dmg"
+        sparkle:version="57"
+        sparkle:shortVersionString="1.6.4"
+        sparkle:edSignature="/5A2XWKK7OGTv4TdETj5mpZhmyC2cK93XT2NqJ+fF56tOJ9fDqD6YC8t0rSfpoDfleQushY4nwJKPfG3wauvDw=="
+        length="7880734"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.6.3</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.6.3</link>
+    <sparkle:version>56</sparkle:version>
+    <sparkle:shortVersionString>1.6.3</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.6.3</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.6.3">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sat, 10 Jan 2026 18:05:24 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.6.3/PHTV-1.6.3.dmg"
+        sparkle:version="56"
+        sparkle:shortVersionString="1.6.3"
+        sparkle:edSignature="EDJBhgUspqZ4gnC1K06l3dENzE5YdlY/ZrKEPOsITNTnYVSRuWjQCTowMmeBWuFrzC65glAh+cF6pttvQXIIDQ=="
+        length="7880749"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.6.2</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.6.2</link>
+    <sparkle:version>55</sparkle:version>
+    <sparkle:shortVersionString>1.6.2</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.6.2</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.6.2">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sat, 10 Jan 2026 17:26:25 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.6.2/PHTV-1.6.2.dmg"
+        sparkle:version="55"
+        sparkle:shortVersionString="1.6.2"
+        sparkle:edSignature="fJDXClSbbJ/NwKMEsg7vXr54TqIxt6umVx7inpmicEKbtdt4Mfz4+L2B5YS3EfEz+muNF+o6+xvyG+hFMLyoCw=="
+        length="7883159"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.6.1</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.6.1</link>
+    <sparkle:version>54</sparkle:version>
+    <sparkle:shortVersionString>1.6.1</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.6.1</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.6.1">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sat, 10 Jan 2026 15:39:14 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.6.1/PHTV-1.6.1.dmg"
+        sparkle:version="54"
+        sparkle:shortVersionString="1.6.1"
+        sparkle:edSignature="BMRiqfdRmNaf215D7Oj+uxov+ekeCJ3HfKnmvEji9VvA7SHqGzqZ8H4VC+zvKfVLA7UqeevH6zAtret1mBAHDQ=="
+        length="7875380"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.6.0</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.6.0</link>
+    <sparkle:version>53</sparkle:version>
+    <sparkle:shortVersionString>1.6.0</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.6.0</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.6.0">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sat, 10 Jan 2026 12:03:58 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.6.0/PHTV-1.6.0.dmg"
+        sparkle:version="53"
+        sparkle:shortVersionString="1.6.0"
+        sparkle:edSignature="KvyhR4seSGYvrhDt5tRwIdchrcYy2dtXWtzt6eiK+Q4zXi3f+SO5l8Wgyck/X/tlI2EgXcYGnJWoPexR6b28BA=="
+        length="7865162"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.5.9</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.5.9</link>
+    <sparkle:version>52</sparkle:version>
+    <sparkle:shortVersionString>1.5.9</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.5.9</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.5.9">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Fri, 09 Jan 2026 18:03:12 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.5.9/PHTV-1.5.9.dmg"
+        sparkle:version="52"
+        sparkle:shortVersionString="1.5.9"
+        sparkle:edSignature="O8S6wLZkUSUYvZyJraO8yUPXnpcG/gmxUdmMA2MfSbV6DXMbJaA2SctivCc1WFNGpDhLD4MHIeoR9DfV9x8ZCQ=="
+        length="6046055"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.5.8</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.5.8</link>
+    <sparkle:version>34</sparkle:version>
+    <sparkle:shortVersionString>1.5.8</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.5.8</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.5.8">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Fri, 09 Jan 2026 09:48:36 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.5.8/PHTV-1.5.8.dmg"
+        sparkle:version="34"
+        sparkle:shortVersionString="1.5.8"
+        sparkle:edSignature="svGavnkOIp6zId6bF5Pzc6BxJbpHbZY8kWADtKTPsRrEyD+CPjpLXm/Zr1D7Mki6meAeokVxfYvwKNEi5ZnDDw=="
+        length="6052337"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.5.7</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.5.7</link>
+    <sparkle:version>33</sparkle:version>
+    <sparkle:shortVersionString>1.5.7</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.5.7 - Bảo mật & Ổn định</h2>
+        <p>Phiên bản này tập trung khắc phục các vấn đề nghiêm trọng liên quan đến cảnh báo bảo mật của macOS và cải thiện độ ổn định trên trình duyệt.</p>
+        
+        <h3>⚠️ Quan trọng</h3>
+        <ul>
+            <li><strong>Khắc phục lỗi báo nhầm Malware (#81):</strong> Đã xử lý triệt để vấn đề macOS Gatekeeper/XProtect nhận diện nhầm PHTV là phần mềm độc hại.</li>
+            <li><em>Lưu ý:</em> Tính năng "Khôi phục phiên gõ khi click chuột" (Edit-in-place) tạm thời bị vô hiệu hóa để tránh kích hoạt hệ thống phòng thủ của macOS.</li>
+        </ul>
+
+        <h3>🐛 Sửa lỗi</h3>
+        <ul>
+            <li><strong>Lỗi nhân đôi ký tự trên Chromium (#79):</strong> Sửa lỗi nhân đôi ký tự đầu tiên trên thanh địa chỉ Chrome, Edge, Brave...</li>
+            <li><strong>Lỗi gõ tiếng Anh đuôi 'd' (#57):</strong> Cải thiện nhận diện để khôi phục chính xác các từ như 'add', 'did', 'dad'.</li>
+            <li><strong>Sửa lỗi Crash (#80):</strong> Khắc phục lỗi thoát đột ngột trong chế độ Safe Mode.</li>
+        </ul>
+    ]]></description>
+    <pubDate>Fri, 09 Jan 2026 15:30:00 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.5.7/PHTV-1.5.7.dmg"
+        sparkle:version="33"
+        sparkle:shortVersionString="1.5.7"
+        sparkle:edSignature="slJ5kLJ/9ayXx0+ivfltkD2HTKL8r4B3wSUwnWYYpPJljxsauQRnLDvoxC92ZTXyvKeqW9PlGLXVCBYvp5RiDA=="
+        length="6054465"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+<item>
+    <title>PHTV 1.5.6</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.5.6</link>
+    <sparkle:version>31</sparkle:version>
+    <sparkle:shortVersionString>1.5.6</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.5.6</h2>
+        <p>Cải thiện tính năng Edit-in-place và độ ổn định.</p>
+    ]]></description>
+    <pubDate>Wed, 07 Jan 2026 21:12:42 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.5.6/PHTV-1.5.6.dmg"
+        sparkle:version="31"
+        sparkle:shortVersionString="1.5.6"
+        sparkle:edSignature="slJ5kLJ/9ayXx0+ivfltkD2HTKL8r4B3wSUwnWYYpPJljxsauQRnLDvoxC92ZTXyvKeqW9PlGLXVCBYvp5RiDA=="
+        length="6080820"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.5.5</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.5.5</link>
+    <sparkle:version>30</sparkle:version>
+    <sparkle:shortVersionString>1.5.5</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.5.5</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.5.5">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Wed, 07 Jan 2026 10:27:29 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.5.5/PHTV-1.5.5.dmg"
+        sparkle:version="30"
+        sparkle:shortVersionString="1.5.5"
+        sparkle:edSignature="JEqU+Szs+M+Uhxyv8Ga9snUSQBt7n/+3ytsHtRt1k/tJWK5GjucBgKPOOUGMmLiUv54FECoUC+D+UbNvLaF+Dw=="
+        length="6070690"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.5.4</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.5.4</link>
+    <sparkle:version>29</sparkle:version>
+    <sparkle:shortVersionString>1.5.4</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.5.4</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.5.4">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Tue, 06 Jan 2026 06:46:23 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.5.4/PHTV-1.5.4.dmg"
+        sparkle:version="29"
+        sparkle:shortVersionString="1.5.4"
+        sparkle:edSignature="QP17CkGTchpPHtBXAlEuU8kRi9aYjVzn6mRJXPmH4m/Ri9QbHvBzEwFheApRLtYyryDBfMqceBF1JycHxVmwBA=="
+        length="11184503"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.5.3</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.5.3</link>
+    <sparkle:version>28</sparkle:version>
+    <sparkle:shortVersionString>1.5.3</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.5.3</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.5.3">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Mon, 05 Jan 2026 20:26:38 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.5.3/PHTV-1.5.3.dmg"
+        sparkle:version="28"
+        sparkle:shortVersionString="1.5.3"
+        sparkle:edSignature="COs6akA+dCJskCr+/rvc8i9JFIJPSvu2rTa+IOINBVpAq41UvTZsimyWDPUfmGEH0+5yinvJ0GqOIdxhkl6zDw=="
+        length="13052595"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.5.2</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.5.2</link>
+    <sparkle:version>27</sparkle:version>
+    <sparkle:shortVersionString>1.5.2</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.5.2</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.5.2">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Mon, 05 Jan 2026 15:24:11 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.5.2/PHTV-1.5.2.dmg"
+        sparkle:version="27"
+        sparkle:shortVersionString="1.5.2"
+        sparkle:edSignature="lZSdYuAuU9+Yi1N2YMe8b7We2TdZbEXatlH5LOoQ5NM8kwDwUWigZLvhPEl3SHR+iKxP8uN6KbizIglK5SxzCA=="
+        length="13029133"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.5.1</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.5.1</link>
+    <sparkle:version>26</sparkle:version>
+    <sparkle:shortVersionString>1.5.1</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.5.1</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.5.1">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Mon, 05 Jan 2026 14:51:44 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.5.1/PHTV-1.5.1.dmg"
+        sparkle:version="26"
+        sparkle:shortVersionString="1.5.1"
+        sparkle:edSignature="H0+oWP/Kl3d02/ze3PtrCSttCeDy9eXSOUrFVgjGFqfCKzsmPyfCQGpIDEd0r4o3WnI0V9m81eVhFIZ9t/TcCw=="
+        length="13039558"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.5.0</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.5.0</link>
+    <sparkle:version>25</sparkle:version>
+    <sparkle:shortVersionString>1.5.0</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.5.0</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.5.0">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Mon, 05 Jan 2026 09:47:37 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.5.0/PHTV-1.5.0.dmg"
+        sparkle:version="25"
+        sparkle:shortVersionString="1.5.0"
+        sparkle:edSignature="yEckRtt62uHgxfwK/u1s9vpQih6yCnE7i1iGM+NDUJeY4Kn6+DxgtNLxWFnZoqx/Owuwcq9orPwie8VQCjb7DQ=="
+        length="13089844"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.4.9</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.4.9</link>
+    <sparkle:version>24</sparkle:version>
+    <sparkle:shortVersionString>1.4.9</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.4.9</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.4.9">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Mon, 05 Jan 2026 05:53:47 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.4.9/PHTV-1.4.9.dmg"
+        sparkle:version="24"
+        sparkle:shortVersionString="1.4.9"
+        sparkle:edSignature="Ie8WMEiuFEb/tBh5dUI/7jrC5lsL/Y104jnLVTUoRDXLGHLdhPSjffAI86iKHbSVJ4f10Ro1OsXigtdsHYx1Ag=="
+        length="13075582"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.4.8</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.4.8</link>
+    <sparkle:version>22</sparkle:version>
+    <sparkle:shortVersionString>1.4.8</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.4.8</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.4.8">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Mon, 05 Jan 2026 05:06:22 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.4.8/PHTV-1.4.8.dmg"
+        sparkle:version="22"
+        sparkle:shortVersionString="1.4.8"
+        sparkle:edSignature="Fx0tMEg1YoVoEFK8sCOhNH8U8iqKT1JtmVBvRx0XmSQ3je4niEFQitzrkFmOqt8P5I4TcB04RnTeY1bwiufmAw=="
+        length="13090440"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.4.7</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.4.7</link>
+    <sparkle:version>21</sparkle:version>
+    <sparkle:shortVersionString>1.4.7</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.4.7</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.4.7">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sun, 04 Jan 2026 19:10:18 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.4.7/PHTV-1.4.7.dmg"
+        sparkle:version="21"
+        sparkle:shortVersionString="1.4.7"
+        sparkle:edSignature="u+WvKnAcMv3PuQswJiIDqkRPhs5AlqeF8bZ7KU2c2SsyhEwB3EF2aMnLYXhtmRGn43T8rFHN7k44bfXaFqTIDA=="
+        length="13069714"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.4.6</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.4.6</link>
+    <sparkle:version>20</sparkle:version>
+    <sparkle:shortVersionString>1.4.6</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.4.6</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.4.6">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sun, 04 Jan 2026 16:17:01 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.4.6/PHTV-1.4.6.dmg"
+        sparkle:version="20"
+        sparkle:shortVersionString="1.4.6"
+        sparkle:edSignature="2I6idGzloD5Zl7si1mBFCTFveeJQ2HY+VaxqX6GhDqBFv0kr17TQUHNByrryKxfrSS12l85l81FxIdpTKdFLCQ=="
+        length="13068277"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.4.5</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.4.5</link>
+    <sparkle:version>19</sparkle:version>
+    <sparkle:shortVersionString>1.4.5</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.4.5</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.4.5">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sun, 04 Jan 2026 11:37:10 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.4.5/PHTV-1.4.5.dmg"
+        sparkle:version="19"
+        sparkle:shortVersionString="1.4.5"
+        sparkle:edSignature="SzdTPsda6fEJi1dSWCcWktpmwlXx9XHFVZOpMbNDrhs4r2OPJNE9qpmR5BvOZgDbuN3jcElTIWpzuikYZngYCQ=="
+        length="13043903"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.4.4</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.4.4</link>
+    <sparkle:version>18</sparkle:version>
+    <sparkle:shortVersionString>1.4.4</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.4.4</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.4.4">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sun, 04 Jan 2026 09:31:06 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.4.4/PHTV-1.4.4.dmg"
+        sparkle:version="18"
+        sparkle:shortVersionString="1.4.4"
+        sparkle:edSignature="nb5CHaNbP7S7fheDh9OqvJynJZpoSxhr6cW9FfaI8d3TOFHcn8POVMg2YLeO/qKSkp4/WmKX/gZbyI7VyH91Dg=="
+        length="13043347"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.4.3</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.4.3</link>
+    <sparkle:version>17</sparkle:version>
+    <sparkle:shortVersionString>1.4.3</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.4.3</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.4.3">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sun, 04 Jan 2026 08:54:21 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.4.3/PHTV-1.4.3.dmg"
+        sparkle:version="17"
+        sparkle:shortVersionString="1.4.3"
+        sparkle:edSignature="IT/lXWXE/aRxoYkt70FT+2wm+nPgnxha65UL2AAIyoFw42xxhg2HeNczPIrDOYoUYZhlfirfw30AMn3MADo+AQ=="
+        length="13043418"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.4.2</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.4.2</link>
+    <sparkle:version>16</sparkle:version>
+    <sparkle:shortVersionString>1.4.2</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.4.2</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.4.2">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sun, 04 Jan 2026 08:24:14 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.4.2/PHTV-1.4.2.dmg"
+        sparkle:version="16"
+        sparkle:shortVersionString="1.4.2"
+        sparkle:edSignature="3oFyuODsAzgMhXEm4J2BHWgsNkM0N8El0grI3wkxHPNxDexklCuUZPPL7fVwhrBIOR4hnah3wP6JIUIkvoPIDQ=="
+        length="13043397"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.4.1</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.4.1</link>
+    <sparkle:version>16</sparkle:version>
+    <sparkle:shortVersionString>1.4.1</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.4.1</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.4.1">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sun, 04 Jan 2026 08:10:52 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.4.1/PHTV-1.4.1.dmg"
+        sparkle:version="16"
+        sparkle:shortVersionString="1.4.1"
+        sparkle:edSignature="JPkqAMmmi78LuFGGI6FlqOkYZHq4diTTljl3RuGXMuI4zmF3PqGvDa+8T2lIspCm8APDBq+q0vqOopXEjVR+CQ=="
+        length="8676536"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.4.0</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.4.0</link>
+    <sparkle:version>16</sparkle:version>
+    <sparkle:shortVersionString>1.4.0</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.4.0</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.4.0">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sun, 04 Jan 2026 08:00:22 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.4.0/PHTV-1.4.0.dmg"
+        sparkle:version="16"
+        sparkle:shortVersionString="1.4.0"
+        sparkle:edSignature="11MW9ctxWK4Zed/+srzNTPSU18fdbGOqdWfih0pGDWDoAfCWhfviCGTkdN7YSQv+hUdJAuROV25TTEWAvYD0CA=="
+        length="8676559"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+    <title>PHTV 1.3.9</title>
+    <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.9</link>
+    <sparkle:version>16</sparkle:version>
+    <sparkle:shortVersionString>1.3.9</sparkle:shortVersionString>
+    <description><![CDATA[
+        <h2>PHTV 1.3.9</h2>
+        <p>See release notes: <a href="https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.9">GitHub Release</a></p>
+    ]]></description>
+    <pubDate>Sun, 04 Jan 2026 07:48:06 +0000</pubDate>
+    <enclosure
+        url="https://github.com/PhamHungTien/PHTV/releases/download/v1.3.9/PHTV-1.3.9.dmg"
+        sparkle:version="16"
+        sparkle:shortVersionString="1.3.9"
+        sparkle:edSignature="7yHBeYTa18s+yHUSc5xOwEhvZr1hZBv3BGP5+nAgoPR/owK/VVURJlJVHb5gVsqHXZz6ln3byYdLveR/Gv4gDw=="
+        length="8669983"
+        type="application/octet-stream"/>
+    <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+</item>
+
+        <item>
+            <title>PHTV 1.3.8</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.8</link>
+            <sparkle:version>15</sparkle:version>
+            <sparkle:shortVersionString>1.3.8</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h3>✨ Tính năng mới</h3>
+                <ul>
+                    <li><strong>622 emoji mới</strong>: Cập nhật đầy đủ emoji từ Unicode v17.0 (2024)</li>
+                    <li><strong>Gộp tab Compatibility</strong>: Tích hợp tab Tương thích vào tab Ứng dụng để giao diện gọn gàng hơn</li>
+                </ul>
+
+                <h3>🎨 Cải tiến giao diện</h3>
+                <ul>
+                    <li><strong>Liquid Glass toàn diện</strong>: Áp dụng hiệu ứng Liquid Glass cho tất cả Settings components</li>
+                    <li><strong>UI đồng nhất</strong>: Thống nhất thiết kế StatusCard và SettingsCard trên toàn bộ app</li>
+                    <li><strong>About tab mới</strong>: Loại bỏ gradient background sau icon app để giao diện sạch hơn</li>
+                    <li><strong>Settings window trong suốt</strong>: Cải tiến hiệu ứng trong suốt với native materials</li>
+                </ul>
+
+                <h3>🔧 Sửa lỗi và cải tiến</h3>
+                <ul>
+                    <li><strong>Card heights nhất quán</strong>: Ngăn subtitle text wrap để đảm bảo card heights đồng đều</li>
+                    <li><strong>PHTV Picker ổn định hơn</strong>: Cải thiện độ tin cậy và thêm tính năng tự động dọn dẹp</li>
+                    <li><strong>Backup/Export đầy đủ</strong>: Bao gồm cả cài đặt menu bar và dock trong backup</li>
+                    <li><strong>Glass effect hoàn hảo</strong>: Ẩn background mặc định để hiệu ứng glass hiển thị đúng</li>
+                    <li><strong>Hotkey UI cải tiến</strong>: Áp dụng Liquid Glass cho tất cả hotkey components</li>
+                </ul>
+
+                <p><em>Bản cập nhật này mang đến giao diện hiện đại hơn với Liquid Glass design toàn diện, bổ sung 622 emoji mới và cải thiện trải nghiệm người dùng.</em></p>
+            ]]></description>
+            <pubDate>Fri, 03 Jan 2026 14:00:00 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.3.8/PHTV-1.3.8.dmg"
+                sparkle:version="15"
+                sparkle:shortVersionString="1.3.8"
+                sparkle:edSignature="bFUrGbLY9YMtIUyF26YYkXgTAvec7n1dpOGCtH0WWgfVPHzCvMAMz/Ti/Us1TLcoo240xldjAFswWZ4gBzm6Dg=="
+                length="13599095"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <item>
+            <title>PHTV 1.3.7</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.7</link>
+            <sparkle:version>14</sparkle:version>
+            <sparkle:shortVersionString>1.3.7</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h3>🔧 Sửa lỗi</h3>
+                <ul>
+                    <li><strong>Khôi phục cài đặt thanh menu</strong>: Tùy chọn hiển thị icon chữ V khi đang ở chế độ tiếng Việt</li>
+                    <li><strong>Khôi phục điều chỉnh kích cỡ icon</strong>: Tùy chỉnh kích thước icon trên thanh menu (12-20px)</li>
+                    <li><strong>Khôi phục cài đặt Dock</strong>: Tùy chọn hiển thị icon PHTV trên Dock khi mở cài đặt</li>
+                </ul>
+
+                <p><em>Bản sửa lỗi nhỏ khôi phục các tùy chọn tùy chỉnh giao diện đã bị xóa nhầm trong v1.3.6 khi loại bỏ tính năng màu chủ đề. Tất cả các cài đặt này giờ có trong tab Hệ thống.</em></p>
+            ]]></description>
+            <pubDate>Thu, 02 Jan 2026 21:00:00 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.3.7/PHTV-1.3.7.dmg"
+                sparkle:version="14"
+                sparkle:shortVersionString="1.3.7"
+                sparkle:edSignature="b+UAUrGP/CDBMSN4aa+f5MM7bo8sc4xVQN7rf/8qzF1xo7/w8YNGxduxCkDNL18nq1c3AbiQM+/mcaoRyNeUAA=="
+                length="13540250"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <item>
+            <title>PHTV 1.3.6</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.6</link>
+            <sparkle:version>13</sparkle:version>
+            <sparkle:shortVersionString>1.3.6</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h3>✨ Cải tiến giao diện</h3>
+                <ul>
+                    <li><strong>PHTV Picker với Liquid Glass</strong>: Áp dụng thiết kế Liquid Glass hiện đại từ Apple cho PHTV Picker trên macOS 26+</li>
+                    <li><strong>Giao diện Settings đồng bộ</strong>: Tất cả tab cài đặt có thiết kế nhất quán với Liquid Glass principles</li>
+                    <li><strong>Cố định kích thước cửa sổ</strong>: Sử dụng SwiftUI .windowResizability(.contentSize) chuẩn từ Apple (WWDC 2024)</li>
+                    <li><strong>Tối ưu card alignment</strong>: Căn chỉnh SettingsCard đồng nhất trên tất cả các tab</li>
+                    <li><strong>Xóa card trùng lặp</strong>: Loại bỏ card "Phím tắt hiện tại" không cần thiết trong tab Phím tắt</li>
+                </ul>
+
+                <h3>🔧 Sửa lỗi quan trọng</h3>
+                <ul>
+                    <li><strong>Sửa lỗi replace text</strong>: Xử lý đúng việc thay thế văn bản đã được highlight/select</li>
+                    <li><strong>Auto-focus tìm kiếm</strong>: Con trỏ tự động vào ô tìm kiếm trong tab Emoji (đồng bộ với GIF/Sticker)</li>
+                    <li><strong>PHTV Picker visibility</strong>: Giảm độ trong suốt để dễ nhìn hơn (Glass.clear → Glass.regular)</li>
+                </ul>
+
+                <h3>⚙️ Cài đặt nâng cao</h3>
+                <ul>
+                    <li><strong>Cửa sổ Always on Top</strong>: Cài đặt giữ cửa sổ Settings luôn ở trên các app khác</li>
+                    <li><strong>Run on Startup cải tiến</strong>: Áp dụng ngay lập tức khi bật/tắt (không cần restart)</li>
+                </ul>
+
+                <h3>🎨 Branding</h3>
+                <ul>
+                    <li><strong>Đổi tên Emoji Picker</strong>: Thống nhất thành "PHTV Picker" cho nhất quán branding</li>
+                    <li><strong>Tích hợp search</strong>: PHTV Picker xuất hiện trong kết quả tìm kiếm Settings</li>
+                </ul>
+
+                <p><em>Bản cập nhật này mang đến giao diện hiện đại hơn với Liquid Glass design và sửa nhiều lỗi quan trọng về trải nghiệm người dùng.</em></p>
+            ]]></description>
+            <pubDate>Thu, 02 Jan 2026 20:30:00 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.3.6/PHTV-1.3.6.dmg"
+                sparkle:version="13"
+                sparkle:shortVersionString="1.3.6"
+                sparkle:edSignature="pjztfw3IFi0HhJEJ/ZeUbBTeflyJ3JUGpk/E+3eopo/GwZz+/rXL3Uu0bn6tSCMU9zMBosxyYrE76j+UOj7UCA=="
+                length="13382146"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <item>
+            <title>PHTV 1.3.5</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.5</link>
+            <sparkle:version>12</sparkle:version>
+            <sparkle:shortVersionString>1.3.5</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h3>🔧 Sửa lỗi</h3>
+                <ul>
+                    <li><strong>Settings window z-order</strong>: Sửa lỗi cửa sổ Settings bị ẩn sau các app khác (Issue #60)</li>
+                    <li><strong>GIF click tracking</strong>: Sửa lỗi click GIF không chính xác so với vị trí chuột</li>
+                    <li><strong>Duplicate GIF paste</strong>: Sửa lỗi paste 2 GIF khi chỉ click 1 lần</li>
+                </ul>
+
+                <p><em>Bản sửa lỗi tập trung vào cải thiện trải nghiệm GIF picker.</em></p>
+            ]]></description>
+            <pubDate>Thu, 02 Jan 2026 15:00:00 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.3.5/PHTV-1.3.5.dmg"
+                sparkle:version="12"
+                sparkle:shortVersionString="1.3.5"
+                sparkle:edSignature="Owi9thNmxM/pibrAouyLqgaAYg15quqDSrcU4KLv1WePg60+uxckGfet19fC5LL8OUL6eFn9UFBVSEefhy6+Ag=="
+                length="13937593"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <item>
+            <title>PHTV 1.3.4</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.4</link>
+            <sparkle:version>11</sparkle:version>
+            <sparkle:shortVersionString>1.3.4</sparkle:shortVersionString>
+            <description><![CDATA[
+                <p>🎉 <strong>Chúc mừng năm mới 2026! Chúc các bạn một năm mới tràn đầy sức khỏe, hạnh phúc và thành công!</strong> 🎊</p>
+
+                <h3>✨ Tính năng mới</h3>
+                <ul>
+                    <li><strong>Emoji Picker hiện đại</strong>: Giao diện chọn emoji hoàn toàn mới với phân loại và tìm kiếm</li>
+                    <li><strong>230+ emoji mới</strong>: Thêm emoji cho tất cả danh mục (mặt cười, cử chỉ, động vật, đồ ăn, du lịch, hoạt động, đồ vật, ký hiệu)</li>
+                    <li><strong>80 từ tiếng Anh phổ biến</strong>: Bổ sung từ điển để tự động khôi phục từ tiếng Anh chính xác hơn</li>
+                </ul>
+
+                <h3>🔧 Cải tiến</h3>
+                <ul>
+                    <li><strong>Hệ thống tự phục hồi Event Tap</strong>: Tự động khôi phục khi gặp lỗi, ổn định hơn</li>
+                    <li><strong>Sửa lỗi WhatsApp</strong>: Cải thiện xóa cache để gõ ổn định trên WhatsApp</li>
+                    <li><strong>DMG với Applications symlink</strong>: Cài đặt dễ dàng hơn với shortcut Applications</li>
+                </ul>
+
+                <p><em>Bản cập nhật đầu năm mới này mang đến giao diện emoji hiện đại và cải thiện độ ổn định tổng thể.</em></p>
+            ]]></description>
+            <pubDate>Thu, 01 Jan 2026 20:36:53 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.3.4/PHTV-1.3.4.dmg"
+                sparkle:version="11"
+                sparkle:shortVersionString="1.3.4"
+                sparkle:edSignature="9n+aYOolVxXGzow98m693on+y5mNyx2ArOS42XlHHmsRyq+3a9ukRc66nfgCfgMIOBwLKg3kyWqZWiLt596gAQ=="
+                length="13491238"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <item>
+            <title>PHTV 1.3.3</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.3</link>
+            <sparkle:version>10</sparkle:version>
+            <sparkle:shortVersionString>1.3.3</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h2>PHTV 1.3.3 - Macro Intelligence & Performance</h2>
+
+                <h3>🚀 Tối ưu hiệu năng</h3>
+                <ul>
+                    <li><strong>Tăng tốc word break detection</strong>: Thay thế O(n) linear search bằng O(1) hash lookup - nhanh hơn 10-20 lần</li>
+                    <li><strong>Lazy initialization</strong>: Chỉ khởi tạo lookup sets khi cần thiết</li>
+                    <li><strong>Giảm độ trễ gõ phím</strong>: Cải thiện đáng kể trải nghiệm đánh máy</li>
+                </ul>
+
+                <h3>🧠 Macro Intelligence</h3>
+                <ul>
+                    <li><strong>Phát hiện xung đột</strong>: Tự động cảnh báo khi gõ tắt bị trùng lặp hoặc xung đột tiền tố</li>
+                    <li><strong>Real-time warnings</strong>: Hiển thị ngay khi user đang tạo/sửa macro</li>
+                    <li><strong>Visual indicators</strong>: Icons và màu sắc rõ ràng (đỏ/cam/vàng) cho từng loại xung đột</li>
+                    <li><strong>Usage tracking</strong>: Theo dõi số lần sử dụng, thời gian dùng gần nhất</li>
+                    <li><strong>Smart helpers</strong>: Nhận biết macro phổ biến và ít dùng</li>
+                </ul>
+
+                <h3>🔧 Sửa lỗi quan trọng</h3>
+                <ul>
+                    <li><strong>Thống kê ngôn ngữ chính xác</strong>: Sửa bug phân bố tiếng Việt/Anh trong Typing Stats</li>
+                    <li><strong>Tracking từ tiếng Anh</strong>: Bây giờ đếm đúng số từ tiếng Anh đã gõ</li>
+                    <li><strong>Pie chart đúng</strong>: Biểu đồ phân bố ngôn ngữ hiển thị chính xác</li>
+                </ul>
+
+                <h3>💡 Chi tiết kỹ thuật</h3>
+                <ul>
+                    <li>Optimize: std::unordered_set cho word break lookup (Engine.cpp)</li>
+                    <li>Feature: MacroItem.findConflicts() với ConflictType enum</li>
+                    <li>Fix: TypingStatsWord notification phân biệt ngôn ngữ đúng</li>
+                    <li>Fix: English mode word completion tracking</li>
+                </ul>
+
+                <p><em>Bản cập nhật này mang lại hiệu năng tốt hơn và tính năng Macro thông minh giúp quản lý gõ tắt dễ dàng hơn.</em></p>
+            ]]></description>
+            <pubDate>Wed, 31 Dec 2025 03:25:13 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.3.3/PHTV-1.3.3.dmg"
+                sparkle:version="10"
+                sparkle:shortVersionString="1.3.3"
+                sparkle:edSignature="+T6M90e/CZ+527if+1htw81NRgLXebwArUjwr8oQQHSO/rfjog/I25vK2SSfXyQAvpQdvZWjbdRo8R0n2kHOBA=="
+                length="13308881"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <item>
+            <title>PHTV 1.3.2</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.2</link>
+            <sparkle:version>9</sparkle:version>
+            <sparkle:shortVersionString>1.3.2</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h2>PHTV 1.3.2 - Tính năng mới & Cải tiến giao diện</h2>
+
+                <h3>✨ Tính năng mới</h3>
+                <ul>
+                    <li><strong>Text Snippets</strong>: Gõ tắt động với ngày, giờ, clipboard, random, counter</li>
+                    <li><strong>Từ điển tùy chỉnh</strong>: Thêm từ tiếng Anh/Việt cho nhận diện chính xác hơn</li>
+                    <li><strong>Import/Export cài đặt</strong>: Sao lưu và khôi phục toàn bộ cài đặt</li>
+                    <li><strong>Thống kê gõ phím</strong>: Theo dõi số từ, ký tự, thời gian gõ</li>
+                </ul>
+
+                <h3>🎨 Cải tiến giao diện</h3>
+                <ul>
+                    <li><strong>Tổ chức Settings mới</strong>: Gộp tab Nâng cao vào Bộ gõ, sắp xếp hợp lý hơn</li>
+                    <li><strong>Giao diện Phím tắt</strong>: Thiết kế mới với hiệu ứng hover và gradient</li>
+                    <li><strong>Tìm kiếm đầy đủ</strong>: 61 mục tìm kiếm cho tất cả chức năng</li>
+                </ul>
+
+                <h3>📚 Cải tiến từ điển</h3>
+                <ul>
+                    <li><strong>Từ điển tiếng Anh</strong>: Thêm nhiều thuật ngữ công nghệ và thương hiệu</li>
+                </ul>
+
+                <h3>🔧 Sửa lỗi</h3>
+                <ul>
+                    <li>Sửa lỗi phím Backspace khi gõ tiếng Việt</li>
+                    <li>Sửa lỗi Sendable conformance trong Swift</li>
+                </ul>
+
+                <p><em>Bản cập nhật lớn với nhiều tính năng mới giúp gõ tiếng Việt hiệu quả hơn.</em></p>
+            ]]></description>
+            <pubDate>Sun, 29 Dec 2025 10:40:00 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.3.2/PHTV-1.3.2.dmg"
+                sparkle:version="9"
+                sparkle:shortVersionString="1.3.2"
+                sparkle:edSignature="8038j0F2Dpu4wpWNzK4mtVrkLY/oAvqGYn4C4taeQ4llUNG+V5FaRHLO0M61prmr7vOY25FJ4akWj2UbPoUBCg=="
+                length="13293139"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <item>
+            <title>PHTV 1.3.1</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.1</link>
+            <sparkle:version>8</sparkle:version>
+            <sparkle:shortVersionString>1.3.1</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h2>PHTV 1.3.1 - Cải tiến Settings & Sửa lỗi</h2>
+
+                <h3>🔧 Cải tiến giao diện Settings</h3>
+                <ul>
+                    <li><strong>Tách tab Hỗ trợ</strong>: Tab "Hỗ trợ" được tách thành "Báo lỗi" và "Thông tin" riêng biệt</li>
+                    <li><strong>Giao diện rõ ràng hơn</strong>: Dễ dàng tìm thông tin ứng dụng và báo lỗi</li>
+                </ul>
+
+                <h3>🇻🇳 Sửa lỗi gõ tiếng Việt</h3>
+                <ul>
+                    <li><strong>Gõ được trong PHTV</strong>: Sửa lỗi không thể gõ tiếng Việt trong thanh tìm kiếm của chính PHTV</li>
+                    <li><strong>Phím tắt hoạt động</strong>: Phím tắt chuyển đổi ngôn ngữ hoạt động trong PHTV</li>
+                </ul>
+
+                <h3>📝 Cải tiến hiển thị cập nhật</h3>
+                <ul>
+                    <li><strong>Ghi chú phát hành</strong>: Cải thiện hiển thị release notes trong banner cập nhật</li>
+                    <li><strong>Fallback UI</strong>: Hiển thị thông báo phù hợp khi không có ghi chú</li>
+                </ul>
+
+                <p><em>Bản cập nhật này cải thiện trải nghiệm người dùng và sửa các lỗi nhỏ.</em></p>
+            ]]></description>
+            <pubDate>Sun, 29 Dec 2025 00:15:00 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.3.1/PHTV-1.3.1.dmg"
+                sparkle:version="8"
+                sparkle:shortVersionString="1.3.1"
+                sparkle:edSignature="g7GWMhhXe0B/N30cW2R3SiaGD4V1Pp53TdFg6g1OLeMIeHxMQJnDFuLw2qYtnKvXfR6v5o/04EeVwHBhZjTSAQ=="
+                length="12769534"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <item>
+            <title>PHTV 1.3.0</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.3.0</link>
+            <sparkle:version>7</sparkle:version>
+            <sparkle:shortVersionString>1.3.0</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h2>PHTV 1.3.0 - Safe Mode & macOS Ventura Support</h2>
+
+                <h3>🛡️ Safe Mode cho Accessibility API</h3>
+                <ul>
+                    <li><strong>Tự động phát hiện crash</strong>: Phát hiện khi Accessibility API gặp vấn đề</li>
+                    <li><strong>Chế độ an toàn</strong>: Tự động chuyển sang chế độ ổn định hơn nếu cần</li>
+                    <li><strong>Hỗ trợ OCLP Macs</strong>: Tương thích tốt hơn với máy Mac chạy OpenCore Legacy Patcher</li>
+                </ul>
+
+                <h3>🍎 Hỗ trợ macOS Ventura (13.0)</h3>
+                <ul>
+                    <li><strong>Mở rộng phạm vi hỗ trợ</strong>: Hạ yêu cầu từ macOS 14.0 xuống 13.0</li>
+                    <li><strong>Nhiều máy Mac hơn</strong>: Hỗ trợ các máy Mac cũ hơn chạy Ventura</li>
+                </ul>
+
+                <h3>🖼️ Cải tiến cửa sổ Settings</h3>
+                <ul>
+                    <li><strong>Sửa lỗi mở settings</strong>: Dùng SwiftUI Window scene và openWindow API chuẩn của Apple</li>
+                    <li><strong>Sửa lỗi crash</strong>: Loại bỏ NSHostingController thủ công gây crash khi animation</li>
+                    <li><strong>Kích thước hợp lý</strong>: Kích thước mặc định 950x680, tối thiểu 600x450</li>
+                    <li><strong>Blur background</strong>: Nền sidebar mờ đẹp mắt đồng bộ với theme</li>
+                    <li><strong>Liquid Glass</strong>: Hỗ trợ thiết kế Liquid Glass trên macOS 26</li>
+                </ul>
+
+                <p><em>Bản cập nhật này mang đến độ ổn định cao hơn và hỗ trợ nhiều máy Mac hơn.</em></p>
+            ]]></description>
+            <pubDate>Sun, 28 Dec 2025 19:57:45 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.3.0/PHTV-1.3.0.dmg"
+                sparkle:version="7"
+                sparkle:shortVersionString="1.3.0"
+                sparkle:edSignature="h45ys6/TjMXRmfyDUq9kQ2MrFxvLCk+bZAABaxabbwoPXMR+xLAElesqypuzp6lKJyzSxgQuXC9Llkp6tai/Cg=="
+                length="12462942"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <item>
+            <title>PHTV 1.2.9</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.2.9</link>
+            <sparkle:version>4</sparkle:version>
+            <sparkle:shortVersionString>1.2.9</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h2>PHTV 1.2.9 - Code Table Converter & Menu Bar Improvements</h2>
+
+                <h3>🔄 Công cụ chuyển đổi bảng mã</h3>
+                <ul>
+                    <li><strong>Chuyển đổi đầy đủ</strong>: Hỗ trợ Unicode, TCVN3, VNI, Unicode tổ hợp, CP1258</li>
+                    <li><strong>Hai chế độ nhập</strong>: Clipboard hoặc nhập văn bản trực tiếp</li>
+                    <li><strong>Preset nhanh</strong>: TCVN3→Unicode, VNI→Unicode với một click</li>
+                    <li><strong>Nút hoán đổi</strong>: Dễ dàng đảo ngược nguồn/đích</li>
+                </ul>
+
+                <h3>📋 Menu bar thông minh hơn</h3>
+                <ul>
+                    <li><strong>Menu chuyển đổi bảng mã</strong>: Chuyển nhanh ngay từ menu bar</li>
+                    <li><strong>Submenus tổ chức tốt hơn</strong>: Bộ gõ, Tính năng, Nâng cao, Hệ thống</li>
+                    <li><strong>Nhiều tùy chọn hơn</strong>: Điều chỉnh cài đặt nhanh không cần mở Settings</li>
+                </ul>
+
+                <h3>🎨 Cải tiến giao diện</h3>
+                <ul>
+                    <li><strong>Liquid Glass</strong>: Hỗ trợ thiết kế mới của macOS 26</li>
+                    <li><strong>Đồng bộ màu theme</strong>: Tất cả các view đều sử dụng màu chủ đạo</li>
+                    <li><strong>Sidebar ổn định</strong>: Không còn bị thu hẹp khi mới cài đặt</li>
+                </ul>
+
+                <p><em>Bản cập nhật này mang đến công cụ chuyển đổi bảng mã mạnh mẽ và menu bar được cải tiến.</em></p>
+            ]]></description>
+            <pubDate>Sun, 28 Dec 2025 15:34:12 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.2.9/PHTV-1.2.9.dmg"
+                sparkle:version="4"
+                sparkle:shortVersionString="1.2.9"
+                sparkle:edSignature="sH0MAVhw0D1B3N5n8qDB3EBrM7UrqA/xauZUPDW9wK+U/hMcKX800ipp6ECP6n5KNVaj9aY3aqzgGEzOpJJpDA=="
+                length="12407908"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <item>
+            <title>PHTV 1.2.8</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.2.8</link>
+            <sparkle:version>3</sparkle:version>
+            <sparkle:shortVersionString>1.2.8</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h2>PHTV 1.2.8 - Spotlight Detection & Stability</h2>
+
+                <h3>🔍 Cải tiến phát hiện Spotlight</h3>
+                <ul>
+                    <li><strong>Phát hiện nhanh gấp 3 lần</strong>: Cmd+Space được phát hiện ngay lập tức</li>
+                    <li><strong>Element heuristic check</strong>: Phân tích role/subrole của UI element</li>
+                    <li><strong>Retry mechanism</strong>: Thử lại 3 lần khi AX API fails</li>
+                    <li><strong>Giảm latency</strong>: Cache time từ 50ms → 15ms</li>
+                </ul>
+
+                <h3>🐛 Sửa lỗi</h3>
+                <ul>
+                    <li><strong>Fix Sparkle update detection</strong>: Tăng build number để nhận diện bản mới</li>
+                    <li><strong>Cải thiện độ ổn định</strong>: Fix memory leak trong AX operations</li>
+                </ul>
+
+                <p><em>Bản cập nhật này tập trung vào cải thiện Spotlight detection và sửa lỗi auto-update.</em></p>
+            ]]></description>
+            <pubDate>Sat, 27 Dec 2025 18:55:17 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.2.8/PHTV-1.2.8.dmg"
+                sparkle:version="3"
+                sparkle:shortVersionString="1.2.8"
+                sparkle:edSignature="36MCJTAfnWB8A1ZPkSUsitRnsMPovzTAq7tnQwyKBksHiiQMrlqOjLAfjz9+gmbX++acnMSN7z2SPPUzsjOMDg=="
+                length="12189876"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <item>
+            <title>PHTV 1.2.7</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.2.7</link>
+            <sparkle:version>2</sparkle:version>
+            <sparkle:shortVersionString>1.2.7</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h2>PHTV 1.2.7 - Update Check UX Fix</h2>
+
+                <h3>Cải tiến chính</h3>
+                <h4>🔕 Loại bỏ thông báo "no update" gây phiền</h4>
+                <ul>
+                    <li><strong>KHÔNG còn</strong> popup "You're up to date" khi click kiểm tra cập nhật</li>
+                    <li><strong>KHÔNG còn</strong> thông báo khi đã là phiên bản mới nhất</li>
+                    <li><strong>CHỈ thông báo</strong> khi thực sự có bản cập nhật mới</li>
+                    <li><strong>Trải nghiệm mượt mà</strong>, không gián đoạn</li>
+                </ul>
+
+                <h4>🏗️ Kiến trúc mới</h4>
+                <ul>
+                    <li>Triển khai <strong>PHSilentUserDriver</strong> - custom user driver cho Sparkle</li>
+                    <li>Override method showUpdateNotFoundWithError để chặn alert</li>
+                    <li>Chuyển từ SPUStandardUpdaterController sang SPUUpdater trực tiếp</li>
+                    <li>Kiểm soát hoàn toàn luồng thông báo update</li>
+                </ul>
+
+                <h3>So sánh với v1.2.6</h3>
+                <table>
+                    <tr>
+                        <td><strong>Tính năng</strong></td>
+                        <td><strong>v1.2.6</strong></td>
+                        <td><strong>v1.2.7</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Thông báo "up to date"</td>
+                        <td>❌ Hiện popup</td>
+                        <td>✅ Không hiện</td>
+                    </tr>
+                    <tr>
+                        <td>Thông báo có update mới</td>
+                        <td>✅ Hiện banner</td>
+                        <td>✅ Hiện banner</td>
+                    </tr>
+                    <tr>
+                        <td>Manual check</td>
+                        <td>❌ Popup phiền</td>
+                        <td>✅ Silent</td>
+                    </tr>
+                </table>
+
+                <p><em>Bản cập nhật này loại bỏ hoàn toàn thông báo gây phiền khi kiểm tra cập nhật và đã là phiên bản mới nhất.</em></p>
+            ]]></description>
+            <pubDate>Thu, 26 Dec 2025 07:40:11 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.2.7/PHTV-1.2.7.dmg"
+                sparkle:version="2"
+                sparkle:shortVersionString="1.2.7"
+                sparkle:edSignature="FHJ8kULtyoUm++UmIM/jSpqY2XFMCCYc14DVFLF+9rF7zqdwUnbBwan42N5gf33qEC4bI5XrKtmVI17jVteaDA=="
+                length="12325544"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <item>
+            <title>PHTV 1.2.6</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.2.6</link>
+            <sparkle:version>1.2.6</sparkle:version>
+            <sparkle:shortVersionString>1.2.6</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h2>PHTV 1.2.6 - Performance & UX Optimization</h2>
+
+                <h3>Cải tiến hiệu năng</h3>
+                <h4>Tối ưu kiểm tra quyền truy cập</h4>
+                <ul>
+                    <li><strong>Giảm tần suất kiểm tra</strong>: Từ mỗi giây xuống còn mỗi 5 giây (tiết kiệm 80% CPU)</li>
+                    <li><strong>Cache thông minh</strong>: Tăng cache duration từ 1 giây lên 10 giây</li>
+                    <li><strong>Giảm console spam</strong>: Chỉ log khi trạng thái thay đổi</li>
+                    <li><strong>Debug logs</strong>: Các log chi tiết chỉ xuất hiện trong debug build</li>
+                    <li><strong>Kết quả</strong>: Giảm 83% số lần tạo test event tap (từ 40 xuống 6 lần/phút)</li>
+                </ul>
+
+                <h4>Tối ưu kiểm tra cập nhật</h4>
+                <ul>
+                    <li><strong>Delay khởi động</strong>: Đợi 10 giây sau khi app khởi động mới check update</li>
+                    <li><strong>Im lặng khi không có update</strong>: Loại bỏ dialog "PHTV is currently the newest version available"</li>
+                    <li><strong>Background check</strong>: Hoàn toàn im lặng, không làm phiền người dùng</li>
+                </ul>
+
+                <h3>Cải tiến chức năng</h3>
+                <h4>Nâng cấp hệ thống báo lỗi</h4>
+                <ul>
+                    <li><strong>Runtime state tracking</strong>: Accessibility permission, Event tap status, Front app info</li>
+                    <li><strong>Performance metrics</strong>: Memory usage, System uptime</li>
+                    <li><strong>Crash logs tự động</strong>: Tự động tìm và đọc crash logs trong 7 ngày gần đây</li>
+                    <li><strong>File logs</strong>: Thu thập logs từ PHTVLogger</li>
+                    <li><strong>Smart reporting</strong>: Tự động highlight unusual settings</li>
+                </ul>
+
+                <h3>So sánh với v1.2.5</h3>
+                <ul>
+                    <li>Permission checks: 60/minute → 12/minute (-80%)</li>
+                    <li>Console logs: ~120 lines/minute → 0 lines (chỉ khi có event)</li>
+                    <li>"Up to date" dialogs: Hiện mỗi khi check → Không hiện</li>
+                    <li>Boot time update check: Ngay lập tức (lỗi) → Delay 10s (ổn định)</li>
+                    <li>Test event taps: ~40/minute → ~6/minute (-85%)</li>
+                </ul>
+
+                <p><em>Phiên bản này tập trung vào tối ưu hiệu năng và trải nghiệm người dùng, giảm thiểu resource usage và loại bỏ các thông báo không cần thiết.</em></p>
+            ]]></description>
+            <pubDate>Thu, 26 Dec 2025 05:45:00 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.2.6/PHTV-1.2.6.dmg"
+                sparkle:version="1.2.6"
+                sparkle:shortVersionString="1.2.6"
+                sparkle:edSignature="8AINJISx+poshDseAoQqM1NTv3qiabulYKhwvHr28/DeKX1WxDhEY1E1BvhFZwo3aEzu4YxIOMnvhjvRZfocDA=="
+                length="12331966"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <!-- Previous versions -->
+        <item>
+            <title>PHTV 1.2.5</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.2.5</link>
+            <sparkle:version>1.2.5</sparkle:version>
+            <sparkle:shortVersionString>1.2.5</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h2>PHTV 1.2.5 - Auto-Update Framework</h2>
+
+                <h3>Tính năng mới</h3>
+                <h4>Hệ thống cập nhật tự động</h4>
+                <ul>
+                    <li><strong>Sparkle Framework</strong>: Tích hợp Sparkle 2.8.1 - framework cập nhật chuyên nghiệp cho macOS</li>
+                    <li><strong>Kiểm tra tự động</strong>: Tự động kiểm tra phiên bản mới theo lịch (hàng ngày/hàng tuần/hàng tháng)</li>
+                    <li><strong>Kênh Beta</strong>: Hỗ trợ opt-in vào kênh beta để nhận phiên bản thử nghiệm</li>
+                    <li><strong>UI hiện đại</strong>: Banner thông báo cập nhật với glassmorphism effect</li>
+                    <li><strong>Release notes viewer</strong>: Xem chi tiết changelog trước khi cập nhật</li>
+                    <li><strong>EdDSA signing</strong>: Bảo mật cao với chữ ký EdDSA cho mọi bản cập nhật</li>
+                </ul>
+
+                <h3>Cải tiến</h3>
+                <h4>Giao diện cài đặt</h4>
+                <ul>
+                    <li><strong>Đơn giản hóa</strong>: Loại bỏ phần "Thông tin ứng dụng" trùng lặp trong cài đặt hệ thống</li>
+                    <li><strong>Tối ưu UI</strong>: Chỉ giữ lại một nút "Kiểm tra cập nhật" trong card "Cập nhật"</li>
+                    <li><strong>Settings card mới</strong>: Card "Cập nhật" với đầy đủ tùy chọn (tần suất kiểm tra, kênh beta, kiểm tra thủ công)</li>
+                </ul>
+
+                <h4>Backend</h4>
+                <ul>
+                    <li><strong>Loại bỏ code cũ</strong>: Xóa hoàn toàn logic kiểm tra cập nhật qua GitHub API thủ công</li>
+                    <li><strong>Notification flow</strong>: Cải thiện luồng thông báo giữa SwiftUI và Objective-C</li>
+                    <li><strong>Sparkle delegates</strong>: Sử dụng SPUUpdaterDelegate và SPUStandardUserDriverDelegate</li>
+                </ul>
+
+                <h3>Sửa lỗi</h3>
+                <ul>
+                    <li><strong>Timeout error</strong>: Sửa lỗi timeout 30 giây khi kiểm tra cập nhật</li>
+                    <li><strong>Stuck alert</strong>: Sửa lỗi alert "Đang kiểm tra cập nhật..." không biến mất</li>
+                    <li><strong>No response</strong>: Sửa lỗi nhấn nút "Kiểm tra cập nhật" không có phản hồi</li>
+                    <li><strong>Notification mismatch</strong>: Sửa lỗi tên notification không khớp</li>
+                    <li><strong>Missing feedback</strong>: Sửa lỗi Sparkle check im lặng khi người dùng click thủ công</li>
+                </ul>
+
+                <p><em>Phiên bản này là bước quan trọng giúp PHTV có hệ thống cập nhật chuyên nghiệp, tự động và an toàn như các ứng dụng macOS khác.</em></p>
+            ]]></description>
+            <pubDate>Thu, 25 Dec 2025 20:50:15 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.2.5/PHTV-1.2.5.dmg"
+                sparkle:version="1.2.5"
+                sparkle:shortVersionString="1.2.5"
+                sparkle:edSignature="4P+wKrdJZs035zgb3q+FHUIZ1qULMSbqHtiQ4sd8TqNptuy3p0lFlHFqEd2XaUQrm8ppjm4QbNBHf2u4nNPFCw=="
+                length="12257315"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <!-- Previous versions -->
+        <item>
+            <title>PHTV 1.2.4</title>
+            <link>https://github.com/PhamHungTien/PHTV/releases/tag/v1.2.4</link>
+            <sparkle:version>1.2.4</sparkle:version>
+            <sparkle:shortVersionString>1.2.4</sparkle:shortVersionString>
+            <description><![CDATA[
+                <h3>Cải tiến Claude Code Patcher</h3>
+                <p>Phiên bản này cải tiến đáng kể tính năng <strong>Claude Code Patcher</strong> - giúp việc chuyển đổi từ Homebrew sang npm và vá lỗi gõ tiếng Việt ổn định hơn.</p>
+
+                <h4>Tính năng mới</h4>
+
+                <p><strong>🔧 Cải thiện phát hiện Homebrew</strong></p>
+                <ul>
+                    <li>Tìm brew đa nền tảng: Tự động tìm brew tại /opt/homebrew/bin (Apple Silicon), /usr/local/bin (Intel), và Linux</li>
+                    <li>Fallback với which brew: Nếu không tìm thấy brew ở các đường dẫn thông thường</li>
+                    <li>Nhiều lệnh uninstall: Thử nhiều cách gỡ Homebrew (với/không --cask, với/không --force)</li>
+                    <li>Xóa symlink thừa: Tự động xóa symlink còn sót lại sau khi gỡ Homebrew</li>
+                </ul>
+
+                <p><strong>📦 Hỗ trợ Node.js managers</strong></p>
+                <ul>
+                    <li>Hỗ trợ fnm: Ngoài nvm, giờ còn hỗ trợ Fast Node Manager (fnm)</li>
+                    <li>PATH đầy đủ: Build đường dẫn PATH đầy đủ khi chạy npm để tránh lỗi</li>
+                    <li>npm prefix cho nvm: Tự động cấu hình npm_config_prefix đúng cho nvm</li>
+                </ul>
+
+                <p><strong>🛠️ Cài đặt thủ công qua Terminal</strong></p>
+                <ul>
+                    <li>Nút "Mở Terminal": Khi cài đặt tự động thất bại, hiển thị nút mở Terminal với lệnh sẵn</li>
+                    <li>Chi tiết lỗi npm: Hiển thị lỗi npm đầy đủ để debug dễ hơn</li>
+                    <li>Hướng dẫn cài thủ công: Hiển thị lệnh cài đặt thủ công nếu tự động không thành công</li>
+                </ul>
+
+                <h4>Sửa lỗi</h4>
+                <ul>
+                    <li>Sửa lỗi không tìm thấy brew: Trước đây hardcode /opt/homebrew/bin/brew, giờ tìm động</li>
+                    <li>Sửa lỗi npm không chạy được: Cải thiện environment variables khi gọi npm</li>
+                    <li>Sửa lỗi gỡ Homebrew không sạch: Xử lý các trường hợp symlink còn tồn tại</li>
+                </ul>
+            ]]></description>
+            <pubDate>Wed, 25 Dec 2024 14:48:00 +0700</pubDate>
+            <enclosure
+                url="https://github.com/PhamHungTien/PHTV/releases/download/v1.2.4/PHTV-1.2.4.dmg"
+                sparkle:version="1.2.4"
+                sparkle:shortVersionString="1.2.4"
+                sparkle:edSignature="SIGNATURE_WILL_BE_GENERATED_BY_SIGN_SCRIPT"
+                length="10485760"
+                type="application/octet-stream"/>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+        </item>
+
+        <!-- Add previous versions below as you release new versions -->
+
+    </channel>
+</rss>
+ 

@@ -1,0 +1,218 @@
+//
+//  AboutView.swift
+//  PHTV
+//
+//  Created by Phạm Hùng Tiến on 2026.
+//  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
+//
+
+import SwiftUI
+
+struct AboutView: View {
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                // App Icon and Name
+                VStack(spacing: 16) {
+                    AppIconView()
+                        .frame(width: 100, height: 100)
+                        .clipShape(PHTVRoundedRect(cornerRadius: 22))
+
+                    VStack(spacing: 6) {
+                        Text("PHTV")
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
+
+                        Text("Precision Hybrid Typing Vietnamese")
+                            .font(.system(size: 13, weight: .medium).italic())
+                            .foregroundStyle(.secondary)
+
+                        Text("Bộ gõ tiếng Việt dành cho macOS")
+                            .font(.subheadline)
+                            .foregroundStyle(.tertiary)
+                    }
+
+                    // Version Badge
+                    HStack(spacing: 8) {
+                        Text("Phiên bản")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Text(
+                            "v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1.0")"
+                        )
+                        .font(.system(.caption, design: .monospaced))
+                        .fontWeight(.semibold)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Capsule().fill(Color.accentColor.opacity(0.15)))
+                        .foregroundStyle(Color.accentColor)
+                    }
+                }
+                .padding(.top, 20)
+
+                Divider()
+                    .padding(.horizontal, 40)
+
+                // Developer Info
+                VStack(spacing: 16) {
+                    AboutInfoCard(
+                        icon: "person.circle.fill",
+                        iconColor: .accentColor,
+                        title: "Phát triển bởi",
+                        value: "Phạm Hùng Tiến"
+                    )
+
+                    AboutInfoCard(
+                        icon: "calendar.circle.fill",
+                        iconColor: .accentColor,
+                        title: "Năm phát hành",
+                        value: "2026"
+                    )
+
+                    AboutInfoCard(
+                        icon: "swift",
+                        iconColor: .accentColor,
+                        title: "Công nghệ sử dụng",
+                        value: "Swift, SwiftUI & C/C++"
+                    )
+                }
+                .padding(.horizontal, 20)
+
+                Divider()
+                    .padding(.horizontal, 40)
+
+                // Support Section
+                VStack(spacing: 16) {
+                    Text("Hỗ trợ phát triển")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+
+                    Text(
+                        "Nếu PHTV hữu ích, bạn có thể ủng hộ để giúp phát triển thêm các tính năng mới"
+                    )
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+
+                    if let donateImage = NSImage(named: "donate") {
+                        VStack(spacing: 8) {
+                            Image(nsImage: donateImage)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxWidth: 220)
+                                .clipShape(PHTVRoundedRect(cornerRadius: 12))
+
+                            Text("Quét mã để ủng hộ")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(16)
+                        .background {
+                            if #available(macOS 26.0, *) {
+                                PHTVRoundedRect(cornerRadius: 16)
+                                    .fill(.ultraThinMaterial)
+                                    .settingsGlassEffect(cornerRadius: 16)
+                            } else {
+                                PHTVRoundedRect(cornerRadius: 16)
+                                    .fill(Color(NSColor.controlBackgroundColor))
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+
+                Spacer(minLength: 20)
+
+                // Footer
+                VStack(spacing: 6) {
+                    Text("Copyright © 2026 Phạm Hùng Tiến")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    Text("All rights reserved")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.bottom, 20)
+            }
+        }
+        .settingsBackground()
+    }
+}
+
+struct AboutInfoCard: View {
+    let icon: String
+    let iconColor: Color
+    let title: String
+    let value: String
+
+    var body: some View {
+        HStack(spacing: 14) {
+            // Icon background - no glass effect to avoid glass-on-glass
+            // (parent row already has glass background)
+            SettingsIconTile(color: iconColor, size: 42, cornerRadius: 10) {
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(iconColor)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Text(value)
+                    .font(.body)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.primary)
+            }
+
+            Spacer()
+        }
+        .padding(14)
+        .frame(maxWidth: 700)
+        .background {
+            if #available(macOS 26.0, *) {
+                PHTVRoundedRect(cornerRadius: 12)
+                    .fill(.ultraThinMaterial)
+                    .settingsGlassEffect(cornerRadius: 12)
+            } else {
+                PHTVRoundedRect(cornerRadius: 12)
+                    .fill(Color(NSColor.controlBackgroundColor))
+            }
+        }
+    }
+}
+
+// MARK: - App Icon View
+private struct AppIconView: View {
+    var body: some View {
+        if let iconPath = Bundle.main.path(forResource: "Icon", ofType: "icns"),
+            let icon = NSImage(contentsOfFile: iconPath)
+        {
+            Image(nsImage: icon)
+                .resizable()
+                .scaledToFit()
+        } else if let icon = NSApp.applicationIconImage {
+            Image(nsImage: icon)
+                .resizable()
+                .scaledToFit()
+        } else if let icon = NSImage(named: NSImage.applicationIconName) {
+            Image(nsImage: icon)
+                .resizable()
+                .scaledToFit()
+        } else {
+            // Fallback
+            Image(systemName: "square.fill")
+                .font(.system(size: 50))
+                .foregroundStyle(.tint)
+        }
+    }
+}
+
+#Preview {
+    AboutView()
+        .frame(width: 500, height: 700)
+}

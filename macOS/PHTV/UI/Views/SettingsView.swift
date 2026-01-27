@@ -1,0 +1,704 @@
+//
+//  SettingsView.swift
+//  PHTV
+//
+//  Created by Phạm Hùng Tiến on 2026.
+//  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
+//
+
+import SwiftUI
+
+// MARK: - Main Settings View
+struct SettingsView: View {
+    @EnvironmentObject var appState: AppState
+    @State private var selectedTab: SettingsTab = .typing
+    @State private var searchText: String = ""
+
+    private var filteredSettings: [SettingsItem] {
+        if searchText.isEmpty {
+            return []
+        }
+        return SettingsItem.allItems.filter { item in
+            item.title.localizedCaseInsensitiveContains(searchText)
+                || item.keywords.contains { $0.localizedCaseInsensitiveContains(searchText) }
+        }
+    }
+
+    private var searchSuggestions: [SettingsItem] {
+        if searchText.isEmpty {
+            // Show popular/recent searches when search is active but empty
+            return Array(SettingsItem.allItems.prefix(5))
+        }
+        // Show top 5 matches as suggestions
+        return Array(filteredSettings.prefix(5))
+    }
+
+    @State private var showHelpMenu = false
+
+    var body: some View {
+        NavigationSplitView {
+            sidebarView
+        } detail: {
+            detailView
+                .environmentObject(appState)
+                .frame(minWidth: 400, minHeight: 400)
+                .modifier(DetailViewGlassModifier())
+        }
+        .navigationSplitViewStyle(.balanced)
+        .onChange(of: appState.showIconOnDock) { newValue in
+            // When dock icon toggle is changed, update immediately and save
+            let appDelegate = NSApp.delegate as? AppDelegate
+            NSLog("[SettingsView] onChange - showIconOnDock changed to %@", newValue ? "true" : "false")
+            appDelegate?.showIcon(newValue)  // This one saves to UserDefaults
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowAboutTab"))) { _ in
+            selectedTab = .about
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowMacroTab"))) { _ in
+            selectedTab = .macro
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowConvertToolSheet"))) { _ in
+            // Switch to System tab first, then SystemSettingsView will show the sheet
+            if selectedTab != .system {
+                selectedTab = .system
+                // Post notification for SystemSettingsView after it's mounted
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                    NotificationCenter.default.post(name: NSNotification.Name("OpenConvertToolSheet"), object: nil)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var sidebarView: some View {
+        let list = List(selection: $selectedTab) {
+            if searchText.isEmpty {
+                // Normal tab list grouped by section
+                ForEach(SettingsTabSection.allCases) { section in
+                    Section(section.title) {
+                        ForEach(section.tabs) { tab in
+                            SettingsSidebarRow(tab: tab)
+                                .tag(tab)
+                                .listRowInsets(EdgeInsets(top: 4, leading: 8, bottom: 4, trailing: 8))
+                        }
+                    }
+                }
+            } else {
+                // Search results with improved visual feedback
+                if filteredSettings.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 36))
+                            .foregroundStyle(.tertiary)
+                        Text("Không có kết quả cho \"\(searchText)\"")
+                            .font(.headline)
+                            .foregroundStyle(.secondary)
+                        Text("Hãy thử từ khóa khác")
+                            .font(.subheadline)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding()
+                } else {
+                    ForEach(filteredSettings) { item in
+                        SearchResultRow(item: item) {
+                            withAnimation(.phtvMorph) {
+                                selectedTab = item.tab
+                                searchText = ""
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .listStyle(.sidebar)
+        .conditionalSearchable(text: $searchText, prompt: "Tìm nhanh cài đặt…")
+        .navigationSplitViewColumnWidth(min: 160, ideal: 200, max: 240)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    NotificationCenter.default.post(name: NSNotification.Name("ShowOnboarding"), object: nil)
+                } label: {
+                    Image(systemName: "questionmark.circle")
+                }
+                .help("Xem lại hướng dẫn & giới thiệu")
+            }
+        }
+
+        if #available(macOS 26.0, *) {
+            list
+        } else {
+            list
+                .scrollContentBackground(.hidden)
+                .background(sidebarBackground)
+        }
+    }
+
+    @ViewBuilder
+    private var detailView: some View {
+        // Lazy loading: Only create the view for selected tab
+        // This significantly reduces memory usage by not instantiating all 7 tabs at once
+        Group {
+            if selectedTab == .typing {
+                TypingSettingsView()
+            } else if selectedTab == .hotkeys {
+                HotkeySettingsView()
+            } else if selectedTab == .macro {
+                MacroSettingsView()
+            } else if selectedTab == .apps {
+                AppsSettingsView()
+            } else if selectedTab == .system {
+                SystemSettingsView()
+            } else if selectedTab == .bugReport {
+                BugReportView()
+            } else if selectedTab == .about {
+                AboutView()
+            }
+        }
+        // Force view teardown when đổi tab để giải phóng RAM của các view nặng (log, macro...)
+        .id(selectedTab)
+    }
+
+    @ViewBuilder
+    private var sidebarBackground: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    Color(NSColor.windowBackgroundColor).opacity(0.98),
+                    Color(NSColor.controlBackgroundColor).opacity(0.96)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+
+            if #available(macOS 12.0, *) {
+                Rectangle()
+                    .fill(.thinMaterial)
+                    .opacity(0.55)
+            }
+        }
+        .ignoresSafeArea()
+    }
+}
+
+// MARK: - Settings Search Item
+struct SettingsItem: Identifiable {
+    let id = UUID()
+    let title: String
+    let iconName: String
+    let tab: SettingsTab
+    let keywords: [String]
+
+    static let allItems: [SettingsItem] = [
+        // ═══════════════════════════════════════════
+        // MARK: - Bộ gõ (Typing)
+        // ═══════════════════════════════════════════
+        SettingsItem(
+            title: "Phương pháp gõ", iconName: "keyboard", tab: .typing,
+            keywords: ["telex", "vni", "simple telex", "kiểu gõ", "input method", "cấu hình gõ"]),
+        SettingsItem(
+            title: "Bảng mã", iconName: "textformat", tab: .typing,
+            keywords: ["unicode", "tcvn3", "vni windows", "code table", "codepoint"]),
+        SettingsItem(
+            title: "Tự động khôi phục tiếng Anh", iconName: "textformat.abc.dottedunderline", tab: .typing,
+            keywords: ["auto restore english", "tiếng anh", "english word", "terminal", "tẻminal", "khôi phục"]),
+        SettingsItem(
+            title: "Phím khôi phục ký tự gốc", iconName: "arrow.uturn.backward.circle.fill", tab: .typing,
+            keywords: ["restore key", "esc", "escape", "option", "control", "khôi phục", "ký tự gốc"]),
+        SettingsItem(
+            title: "Viết hoa ký tự đầu", iconName: "textformat.abc", tab: .typing,
+            keywords: ["capitalize", "uppercase", "hoa", "tự động", "cải thiện gõ"]),
+        SettingsItem(
+            title: "Đặt dấu oà, uý", iconName: "a.circle.fill", tab: .typing,
+            keywords: ["modern orthography", "chính tả hiện đại", "dấu oà", "dấu uý", "quy tắc"]),
+        SettingsItem(
+            title: "Gõ nhanh (Quick Telex)", iconName: "hare.fill", tab: .typing,
+            keywords: ["quick telex", "gõ nhanh", "cc", "gg", "kk", "nn", "qq", "pp", "tt"]),
+        SettingsItem(
+            title: "Phụ âm đầu nhanh", iconName: "arrow.right.circle.fill", tab: .typing,
+            keywords: ["quick start consonant", "phụ âm đầu", "nhanh", "f", "j", "w", "ph", "gi", "qu"]),
+        SettingsItem(
+            title: "Phụ âm cuối nhanh", iconName: "arrow.left.circle.fill", tab: .typing,
+            keywords: ["quick end consonant", "phụ âm cuối", "nhanh", "g", "h", "k", "ng", "nh", "ch"]),
+
+        // ═══════════════════════════════════════════
+        // MARK: - Gõ tắt (Macro)
+        // ═══════════════════════════════════════════
+        SettingsItem(
+            title: "Bật gõ tắt", iconName: "text.badge.plus", tab: .macro,
+            keywords: ["macro", "shortcut", "expansion", "viết tắt", "gõ tắt", "enable", "bật"]),
+        SettingsItem(
+            title: "Gõ tắt trong chế độ tiếng Anh", iconName: "globe", tab: .macro,
+            keywords: ["macro english", "tiếng anh", "gõ tắt", "mode", "chế độ"]),
+        SettingsItem(
+            title: "Tự động viết hoa macro", iconName: "textformat.abc", tab: .macro,
+            keywords: ["auto caps macro", "viết hoa", "gõ tắt", "ký tự đầu"]),
+        SettingsItem(
+            title: "Thêm gõ tắt", iconName: "plus.circle.fill", tab: .macro,
+            keywords: ["add macro", "thêm", "mới", "tạo"]),
+        SettingsItem(
+            title: "Xóa gõ tắt", iconName: "minus.circle.fill", tab: .macro,
+            keywords: ["delete macro", "xóa", "danh sách"]),
+        SettingsItem(
+            title: "Chỉnh sửa gõ tắt", iconName: "pencil.circle.fill", tab: .macro,
+            keywords: ["edit macro", "chỉnh sửa", "sửa"]),
+        SettingsItem(
+            title: "Import/Export gõ tắt", iconName: "square.and.arrow.down", tab: .macro,
+            keywords: ["import macro", "export", "import", "nhập", "xuất", "tệp", "file"]),
+        SettingsItem(
+            title: "Danh mục gõ tắt", iconName: "folder.fill", tab: .macro,
+            keywords: ["category", "danh mục", "nhóm", "phân loại", "folder"]),
+        SettingsItem(
+            title: "Text Snippets (Đoạn văn động)", iconName: "doc.text.fill", tab: .macro,
+            keywords: ["snippet", "date", "time", "clipboard", "ngày", "giờ", "động", "tự động", "counter", "random"]),
+
+        // ═══════════════════════════════════════════
+        // MARK: - Phím tắt (Hotkeys)
+        // ═══════════════════════════════════════════
+        SettingsItem(
+            title: "Phím tắt chuyển chế độ", iconName: "command.circle.fill", tab: .hotkeys,
+            keywords: ["hotkey", "shortcut", "ctrl", "shift", "option", "command", "chuyển chế độ", "tiếng việt", "tiếng anh"]),
+        SettingsItem(
+            title: "Phím tạm dừng", iconName: "pause.circle.fill", tab: .hotkeys,
+            keywords: ["pause", "tạm dừng", "giữ phím", "option", "control"]),
+        SettingsItem(
+            title: "PHTV Picker", iconName: "smiley.fill", tab: .hotkeys,
+            keywords: ["emoji", "mặt cười", "biểu tượng cảm xúc", "phím tắt", "hotkey", "character viewer", "palette", "😀", "😊", "🎉"]),
+
+        // ═══════════════════════════════════════════
+        // MARK: - Ứng dụng (Apps)
+        // ═══════════════════════════════════════════
+        SettingsItem(
+            title: "Phím chuyển thông minh", iconName: "arrow.left.arrow.right", tab: .apps,
+            keywords: ["smart switch", "auto switch", "tự động chuyển", "ngữ thông minh"]),
+        SettingsItem(
+            title: "Nhớ bảng mã theo ứng dụng", iconName: "memorychip.fill", tab: .apps,
+            keywords: ["remember code", "bảng mã", "lưu", "nhớ", "ứng dụng"]),
+        SettingsItem(
+            title: "Loại trừ ứng dụng", iconName: "app.badge.fill", tab: .apps,
+            keywords: ["exclude", "blacklist", "app", "ứng dụng", "loại trừ", "không gõ"]),
+        SettingsItem(
+            title: "Gửi từng phím", iconName: "keyboard.badge.ellipsis", tab: .apps,
+            keywords: ["send key step by step", "từng ký tự", "ổn định", "chậm"]),
+        SettingsItem(
+            title: "Ứng dụng gửi từng phím", iconName: "app.badge.fill", tab: .apps,
+            keywords: ["send key apps", "ứng dụng", "từng phím", "app list"]),
+        SettingsItem(
+            title: "Tương thích bố cục bàn phím", iconName: "keyboard.fill", tab: .apps,
+            keywords: ["layout", "compatibility", "dvorak", "colemak", "bố cục", "đặc biệt", "tương thích"]),
+        SettingsItem(
+            title: "Hỗ trợ gõ tiếng Việt trong Claude Code", iconName: "terminal.fill", tab: .apps,
+            keywords: ["claude", "claude code", "terminal", "cli", "anthropic", "ai", "tiếng việt", "patch", "sửa lỗi", "fix", "npm", "tương thích"]),
+        SettingsItem(
+            title: "Chế độ an toàn (Safe Mode)", iconName: "shield.fill", tab: .apps,
+            keywords: ["safe mode", "an toàn", "oclp", "opencore", "legacy", "mac cũ", "accessibility", "crash", "khôi phục", "tương thích"]),
+
+        // ═══════════════════════════════════════════
+        // MARK: - Hệ thống (System)
+        // ═══════════════════════════════════════════
+        SettingsItem(
+            title: "Khởi động cùng hệ thống", iconName: "play.fill", tab: .system,
+            keywords: ["startup", "login", "boot", "tự động mở", "khởi động"]),
+        SettingsItem(
+            title: "Cửa sổ Cài đặt luôn ở trên", iconName: "pin.fill", tab: .system,
+            keywords: ["always on top", "settings window", "cửa sổ", "luôn ở trên", "floating", "pin", "giao diện", "z-order", "mission control"]),
+        SettingsItem(
+            title: "Hiển thị icon chữ V", iconName: "flag.fill", tab: .system,
+            keywords: ["vietnamese icon", "menubar icon", "thanh menu", "icon chữ V", "giao diện", "menu bar", "status bar"]),
+        SettingsItem(
+            title: "Kích cỡ icon thanh menu", iconName: "arrow.up.left.and.arrow.down.right", tab: .system,
+            keywords: ["icon size", "menubar", "thanh menu", "kích thước", "giao diện", "resize", "menu bar"]),
+        SettingsItem(
+            title: "Hiển thị icon trên Dock", iconName: "app.fill", tab: .system,
+            keywords: ["dock icon", "show icon", "hiển thị", "dock", "giao diện", "app icon"]),
+        SettingsItem(
+            title: "Tần suất kiểm tra cập nhật", iconName: "clock.fill", tab: .system,
+            keywords: ["update frequency", "cập nhật", "tự động", "kiểm tra", "tần suất"]),
+        SettingsItem(
+            title: "Kênh Beta", iconName: "testtube.2", tab: .system,
+            keywords: ["beta", "beta channel", "thử nghiệm", "không ổn định"]),
+        SettingsItem(
+            title: "Kiểm tra cập nhật", iconName: "arrow.clockwise.circle.fill", tab: .system,
+            keywords: ["update", "cập nhật", "new version", "phiên bản mới", "kiểm tra"]),
+        SettingsItem(
+            title: "Chuyển đổi bảng mã", iconName: "doc.on.clipboard.fill", tab: .system,
+            keywords: ["convert", "chuyển đổi", "bảng mã", "unicode", "tcvn3", "vni", "clipboard"]),
+        SettingsItem(
+            title: "Xuất cài đặt", iconName: "square.and.arrow.up.fill", tab: .system,
+            keywords: ["export", "xuất", "backup", "sao lưu", "settings", "cài đặt", "file"]),
+        SettingsItem(
+            title: "Nhập cài đặt", iconName: "square.and.arrow.down.fill", tab: .system,
+            keywords: ["import", "nhập", "restore", "khôi phục", "settings", "cài đặt", "file"]),
+        SettingsItem(
+            title: "Đặt lại cài đặt", iconName: "arrow.counterclockwise.circle.fill", tab: .system,
+            keywords: ["reset", "đặt lại", "khôi phục", "mặc định", "quản lý dữ liệu"]),
+
+        // ═══════════════════════════════════════════
+        // MARK: - Báo lỗi (Bug Report)
+        // ═══════════════════════════════════════════
+        SettingsItem(
+            title: "Báo lỗi", iconName: "ladybug.fill", tab: .bugReport,
+            keywords: ["bug", "report", "lỗi", "báo cáo", "feedback", "phản hồi"]),
+        SettingsItem(
+            title: "Debug logs", iconName: "doc.text.fill", tab: .bugReport,
+            keywords: ["log", "debug", "nhật ký", "gỡ lỗi", "thông tin hệ thống"]),
+        SettingsItem(
+            title: "Gửi báo lỗi", iconName: "paperplane.fill", tab: .bugReport,
+            keywords: ["send", "gửi", "email", "github", "issue"]),
+        SettingsItem(
+            title: "Quyền Accessibility", iconName: "checkmark.shield", tab: .bugReport,
+            keywords: ["accessibility", "permission", "quyền", "trợ năng", "cấp quyền"]),
+
+        // ═══════════════════════════════════════════
+        // MARK: - Thông tin (About)
+        // ═══════════════════════════════════════════
+        SettingsItem(
+            title: "Thông tin ứng dụng", iconName: "info.circle", tab: .about,
+            keywords: ["about", "version", "phiên bản", "info", "thông tin", "phtv"]),
+        SettingsItem(
+            title: "Ủng hộ phát triển", iconName: "heart.fill", tab: .about,
+            keywords: ["donate", "ủng hộ", "support", "qr", "mã", "phát triển"]),
+    ]
+}
+
+// MARK: - Settings Tabs
+enum SettingsTab: String, CaseIterable, Identifiable {
+    case typing = "Bộ gõ"
+    case hotkeys = "Phím tắt"
+    case macro = "Gõ tắt"
+    case apps = "Ứng dụng"
+    case system = "Hệ thống"
+    case bugReport = "Báo lỗi"
+    case about = "Thông tin"
+
+    nonisolated var id: String { rawValue }
+    nonisolated var title: String { rawValue }
+
+    nonisolated var iconName: String {
+        switch self {
+        case .typing: return "keyboard"
+        case .hotkeys: return "command"
+        case .macro: return "text.badge.checkmark"
+        case .apps: return "square.stack.3d.up"
+        case .system: return "gear"
+        case .bugReport: return "ladybug.fill"
+        case .about: return "info.circle"
+        }
+    }
+}
+
+// MARK: - Settings Sidebar Sections
+enum SettingsTabSection: String, CaseIterable, Identifiable {
+    case typing = "Nhập liệu"
+    case system = "Hệ thống"
+    case support = "Hỗ trợ"
+
+    nonisolated var id: String { rawValue }
+    nonisolated var title: String { rawValue }
+
+    nonisolated var tabs: [SettingsTab] {
+        switch self {
+        case .typing:
+            return [.typing, .hotkeys, .macro, .apps]
+        case .system:
+            return [.system]
+        case .support:
+            return [.bugReport, .about]
+        }
+    }
+}
+
+// MARK: - Sidebar Row
+struct SettingsSidebarRow: View {
+    let tab: SettingsTab
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    var body: some View {
+        HStack(spacing: 10) {
+            // Icon with white/neutral background
+            ZStack {
+                PHTVRoundedRect(cornerRadius: 6)
+                    .fill(Color(NSColor.controlBackgroundColor))
+                    .overlay(
+                        PHTVRoundedRect(cornerRadius: 6)
+                            .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
+                    )
+
+                Image(systemName: tab.iconName)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
+            }
+            .frame(width: 24, height: 24)
+
+            Text(tab.title)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.primary)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+// MARK: - Data Models
+
+/// Danh mục gõ tắt
+struct MacroCategory: Identifiable, Hashable, Codable {
+    let id: UUID
+    var name: String
+    var icon: String  // SF Symbol name
+    var color: String // Hex color
+
+    init(id: UUID = UUID(), name: String, icon: String = "folder.fill", color: String = "#007AFF") {
+        self.id = id
+        self.name = name
+        self.icon = icon
+        self.color = color
+    }
+
+    /// Danh mục mặc định "Chung"
+    static let defaultCategory = MacroCategory(
+        id: UUID(uuidString: "00000000-0000-0000-0000-000000000000")!,
+        name: "Chung",
+        icon: "folder.fill",
+        color: "#007AFF"
+    )
+
+    /// Chuyển hex string sang Color
+    var swiftUIColor: Color {
+        Color(hex: color) ?? .blue
+    }
+}
+
+enum SnippetType: String, Codable, CaseIterable {
+    case `static` = "static"      // Fixed text (default)
+    case date = "date"            // Current date
+    case time = "time"            // Current time
+    case datetime = "datetime"    // Date and time
+    case clipboard = "clipboard"  // Clipboard content
+    case random = "random"        // Random from list
+    case counter = "counter"      // Auto-increment number
+
+    var displayName: String {
+        switch self {
+        case .static: return "Văn bản tĩnh"
+        case .date: return "Ngày hiện tại"
+        case .time: return "Giờ hiện tại"
+        case .datetime: return "Ngày và giờ"
+        case .clipboard: return "Clipboard"
+        case .random: return "Ngẫu nhiên"
+        case .counter: return "Bộ đếm"
+        }
+    }
+
+    var placeholder: String {
+        switch self {
+        case .static: return "Nội dung mở rộng..."
+        case .date: return "dd/MM/yyyy"
+        case .time: return "HH:mm:ss"
+        case .datetime: return "dd/MM/yyyy HH:mm"
+        case .clipboard: return "(Sẽ dán nội dung từ clipboard)"
+        case .random: return "giá trị 1, giá trị 2, giá trị 3"
+        case .counter: return "prefix"
+        }
+    }
+
+    var helpText: String {
+        switch self {
+        case .static: return "Văn bản cố định sẽ được thay thế"
+        case .date: return "Định dạng: d=ngày, M=tháng, y=năm. VD: dd/MM/yyyy"
+        case .time: return "Định dạng: H=giờ, m=phút, s=giây. VD: HH:mm:ss"
+        case .datetime: return "Kết hợp ngày và giờ. VD: dd/MM/yyyy HH:mm"
+        case .clipboard: return "Dán nội dung hiện tại từ clipboard"
+        case .random: return "Chọn ngẫu nhiên từ danh sách, phân cách bằng dấu phẩy"
+        case .counter: return "Số tự động tăng. VD: prefix → prefix1, prefix2..."
+        }
+    }
+}
+
+struct MacroItem: Identifiable, Hashable, Codable {
+    let id: UUID
+    var shortcut: String
+    var expansion: String
+    var categoryId: UUID?  // nil = default category
+    var snippetType: SnippetType = .static  // NEW: snippet type
+
+    // MACRO INTELLIGENCE: Usage tracking for smart features
+    var usageCount: Int = 0  // Number of times this macro was triggered
+    var lastUsed: Date? = nil  // Last time this macro was used
+    var createdDate: Date = Date()  // When this macro was created
+
+    init(shortcut: String, expansion: String, categoryId: UUID? = nil, snippetType: SnippetType = .static) {
+        self.id = UUID()
+        self.shortcut = shortcut
+        self.expansion = expansion
+        self.categoryId = categoryId
+        self.snippetType = snippetType
+        self.usageCount = 0
+        self.lastUsed = nil
+        self.createdDate = Date()
+    }
+
+    // Backward compatible decoder
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        shortcut = try container.decode(String.self, forKey: .shortcut)
+        expansion = try container.decode(String.self, forKey: .expansion)
+        categoryId = try container.decodeIfPresent(UUID.self, forKey: .categoryId)
+        snippetType = try container.decodeIfPresent(SnippetType.self, forKey: .snippetType) ?? .static
+
+        // MACRO INTELLIGENCE: Backward compatible - default to 0/nil/now for old macros
+        usageCount = try container.decodeIfPresent(Int.self, forKey: .usageCount) ?? 0
+        lastUsed = try container.decodeIfPresent(Date.self, forKey: .lastUsed)
+        createdDate = try container.decodeIfPresent(Date.self, forKey: .createdDate) ?? Date()
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, shortcut, expansion, categoryId, snippetType
+        case usageCount, lastUsed, createdDate  // MACRO INTELLIGENCE fields
+    }
+}
+
+// MARK: - Macro Intelligence Extension
+
+extension MacroItem {
+    /// MACRO INTELLIGENCE: Find conflicts with other macros
+    /// Returns array of conflicting macro IDs and conflict type
+    func findConflicts(in macros: [MacroItem]) -> [(MacroItem, ConflictType)] {
+        var conflicts: [(MacroItem, ConflictType)] = []
+
+        for macro in macros {
+            // Skip self
+            if macro.id == self.id { continue }
+
+            let thisShortcut = self.shortcut.lowercased()
+            let otherShortcut = macro.shortcut.lowercased()
+
+            // Exact duplicate
+            if thisShortcut == otherShortcut {
+                conflicts.append((macro, .exactDuplicate))
+            }
+            // This is prefix of other (e.g., "btw" is prefix of "btwn")
+            else if otherShortcut.hasPrefix(thisShortcut) {
+                conflicts.append((macro, .thisIsPrefix))
+            }
+            // Other is prefix of this (e.g., "btw" when checking "btwn")
+            else if thisShortcut.hasPrefix(otherShortcut) {
+                conflicts.append((macro, .otherIsPrefix))
+            }
+        }
+
+        return conflicts
+    }
+
+    /// Check if this macro is rarely used (not used in last 30 days)
+    var isRarelyUsed: Bool {
+        guard let lastUsed = lastUsed else {
+            // Never used - check if created more than 30 days ago
+            return createdDate.timeIntervalSinceNow < -30 * 24 * 3600
+        }
+        return lastUsed.timeIntervalSinceNow < -30 * 24 * 3600
+    }
+
+    /// Check if this is a popular macro (used 10+ times)
+    var isPopular: Bool {
+        return usageCount >= 10
+    }
+}
+
+enum ConflictType: String {
+    case exactDuplicate = "Exact duplicate"
+    case thisIsPrefix = "This shortcut is prefix of another"
+    case otherIsPrefix = "Another shortcut is prefix of this"
+
+    var icon: String {
+        switch self {
+        case .exactDuplicate: return "exclamationmark.triangle.fill"
+        case .thisIsPrefix: return "exclamationmark.circle.fill"
+        case .otherIsPrefix: return "info.circle.fill"
+        }
+    }
+
+    var color: String {
+        switch self {
+        case .exactDuplicate: return "red"
+        case .thisIsPrefix: return "orange"
+        case .otherIsPrefix: return "yellow"
+        }
+    }
+}
+
+// MARK: - Search Result Row
+
+struct SearchResultRow: View {
+    let item: SettingsItem
+    let action: () -> Void
+
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                // Icon with white/neutral background
+                ZStack {
+                    PHTVRoundedRect(cornerRadius: 6)
+                        .fill(Color(NSColor.controlBackgroundColor))
+                        .overlay(
+                            PHTVRoundedRect(cornerRadius: 6)
+                                .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
+                        )
+
+                    Image(systemName: item.iconName)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(Color.accentColor)
+                }
+                .frame(width: 28, height: 28)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.title)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.primary)
+                    Text(item.tab.title)
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 8)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Detail View Glass Modifier
+
+/// Applies backgroundExtensionEffect() only to the detail view,
+/// preserving the sidebar's native appearance while extending
+/// glass effect into the toolbar area for the content pane.
+struct DetailViewGlassModifier: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    func body(content: Content) -> some View {
+        if #available(macOS 26.0, *), !reduceTransparency {
+            content
+                .backgroundExtensionEffect()
+        } else {
+            content
+        }
+    }
+}
+
+#Preview {
+    SettingsView()
+        .environmentObject(AppState.shared)
+}
