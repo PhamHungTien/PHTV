@@ -1,0 +1,85 @@
+#include "resource.h"
+#include <windows.h>
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_APP_ICON          ICON         "../Resources/Images/icon.ico"
+IDI_ICON_ENG          ICON         "../Resources/Images/eng.ico"
+IDI_ICON_VIE          ICON         "../Resources/Images/vie.ico"
+
+// Menu
+IDR_TRAYMENU MENU
+BEGIN
+    POPUP "TrayMenu"
+    BEGIN
+        MENUITEM "Vietnamese Mode", IDM_TOGGLE_LANG, CHECKED
+        MENUITEM SEPARATOR
+        MENUITEM "Telex", IDM_TELEX, CHECKED
+        MENUITEM "VNI", IDM_VNI
+        MENUITEM SEPARATOR
+        MENUITEM "Macro (Gõ tắt)", IDM_TOGGLE_MACRO
+        MENUITEM "Spell Check (Kiểm tra chính tả)", IDM_TOGGLE_SPELL
+        MENUITEM "Modern Orthography (Dấu chuẩn)", IDM_TOGGLE_MODERN
+        MENUITEM SEPARATOR
+        MENUITEM "Settings...", IDM_SETTINGS
+        MENUITEM SEPARATOR
+        MENUITEM "Exit", IDM_EXIT
+    END
+END
+
+// Settings Dialog
+IDD_SETTINGS DIALOGEX 0, 0, 250, 220
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "PHTV Preferences"
+FONT 9, "Segoe UI", 400, 0, 0x1
+BEGIN
+    // Group: Input Method
+    GROUPBOX        "Input Method",IDC_GRP_INPUT,10,10,230,45
+    CONTROL         "Telex",IDC_RADIO_TELEX,"Button",BS_AUTORADIOBUTTON | WS_GROUP,20,25,60,10
+    CONTROL         "VNI",IDC_RADIO_VNI,"Button",BS_AUTORADIOBUTTON,90,25,60,10
+
+    // Group: Features
+    GROUPBOX        "Features",IDC_GRP_OPTIONS,10,65,230,110
+    CONTROL         "Check Spelling",IDC_CHECK_SPELLING,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,80,200,10
+    CONTROL         "Modern Orthography",IDC_CHECK_MODERN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,95,200,10
+    CONTROL         "Quick Telex",IDC_CHECK_QUICKTELEX,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,110,200,10
+    CONTROL         "Enable Macro",IDC_CHECK_MACRO,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,125,200,10
+    CONTROL         "Auto Restore English",IDC_CHECK_RESTORE_ENG,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,140,200,10
+
+    // Buttons
+    DEFPUSHBUTTON   "Close",IDC_BTN_CLOSE,190,195,50,14
+END
+
+// Version Info
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName", "PHTV Team"
+            VALUE "FileDescription", "PHTV Vietnamese Input Method"
+            VALUE "FileVersion", "1.0.0.1"
+            VALUE "InternalName", "PHTV.exe"
+            VALUE "LegalCopyright", "Copyright (C) 2026"
+            VALUE "OriginalFilename", "PHTV.exe"
+            VALUE "ProductName", "PHTV"
+            VALUE "ProductVersion", "1.0.0.1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

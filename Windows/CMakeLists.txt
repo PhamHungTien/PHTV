@@ -28,6 +28,7 @@ set(ENGINE_SOURCES
 # App Sources
 set(APP_SOURCES
     "App/main.cpp"
+    "App/PHTV.rc"
 )
 
 # Create Windows Executable (GUI application, not Console)
@@ -40,7 +41,12 @@ add_executable(PHTV WIN32
 target_compile_definitions(PHTV PRIVATE _WIN32 UNICODE _UNICODE)
 
 if(MINGW)
-    target_link_options(PHTV PRIVATE -municode)
+    target_link_options(PHTV PRIVATE 
+        -municode
+        -static
+        -static-libgcc
+        -static-libstdc++
+    )
 endif()
 
 # Include Directories
@@ -58,4 +64,5 @@ target_link_libraries(PHTV PRIVATE
     gdi32
     shell32
     shlwapi
+    comctl32
 )
