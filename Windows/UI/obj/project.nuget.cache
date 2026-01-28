@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "keDcaDTSYQ4ofMNXy31kKVEsRx0vKQ3j+mcQwhhqYXRdnhaavsvZfagffmjk3LEi6LJbjIrdP9F6yBHjZXbFsg==",
+  "success": true,
+  "projectFilePath": "C:\\Mac\\Home\\Documents\\PHTV\\Windows\\UI\\PHTV.UI.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\phamhungtien\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\6.0.36\\microsoft.netcore.app.host.win-x64.6.0.36.nupkg.sha512"
+  ],
+  "logs": []
+}

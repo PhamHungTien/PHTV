@@ -281,8 +281,19 @@ static void RemoveTrayIcon() {
 
 static void OpenControlPanel() {
     PHTVConfig::Shared().Save();
-    std::wstring path = PHTVConfig::Shared().GetConfigPath();
-    ShellExecuteW(NULL, L"open", path.c_str(), NULL, NULL, SW_SHOWNORMAL);
+    wchar_t exePath[MAX_PATH];
+    GetModuleFileNameW(NULL, exePath, MAX_PATH);
+    PathRemoveFileSpecW(exePath);
+    std::wstring baseDir = exePath;
+
+    std::wstring uiExe = baseDir + L"\\PHTV.UI.exe";
+    if (GetFileAttributesW(uiExe.c_str()) != INVALID_FILE_ATTRIBUTES) {
+        ShellExecuteW(NULL, L"open", uiExe.c_str(), NULL, baseDir.c_str(), SW_SHOWNORMAL);
+        return;
+    }
+
+    std::wstring iniPath = PHTVConfig::Shared().GetConfigPath();
+    ShellExecuteW(NULL, L"open", iniPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
 }
 
 static void ProcessEngineOutput() {
