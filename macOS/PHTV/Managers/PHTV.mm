@@ -56,10 +56,10 @@ static const uint64_t CLI_SETTLE_DELAY_US = 0;
 static const uint64_t CLI_BACKSPACE_KEY_DELAY_US = 7000;
 static const uint64_t CLI_BACKSPACE_SETTLE_US = 7000;
 static const uint64_t CLI_BACKSPACE_POST_DELAY_US = 5000;
-static const uint64_t CLI_COMPOSE_KEY_DELAY_US = 9000;
-static const uint64_t CLI_FINAL_SETTLE_US = 7000;
+static const uint64_t CLI_COMPOSE_KEY_DELAY_US = 14000;
+static const uint64_t CLI_FINAL_SETTLE_US = 10000;
 static const uint64_t CLI_MIN_INTERVAL_US = 5000;
-static const uint64_t CLI_SPACE_DELAY_US = 5000;
+static const uint64_t CLI_SPACE_DELAY_US = 8000;
 
 // Adaptive delay tracking
 static uint64_t _lastKeystrokeTimestamp = 0;
@@ -588,6 +588,9 @@ static BOOL _phtvPostToHIDTap = NO;
 static BOOL _phtvPostToSessionForCli = NO;
 static BOOL _phtvIsCliTarget = NO;
 static volatile int _phtvCliInjectDepth = 0;
+static uint64_t _phtvCliBusyUntilUs = 0;
+static uint64_t _phtvLastCliKeyDownUs = 0;
+static double _phtvCliSpeedFactor = 1.0;
 static int _phtvCliPendingBackspaceCount = 0;
 static int64_t _phtvKeyboardType = 0;
 static int _phtvPendingBackspaceCount = 0;
@@ -935,12 +938,34 @@ static uint64_t _lastCliInjectTimeUs = 0;
 
         uint64_t now = mach_absolute_time();
         uint64_t nowUs = mach_time_to_us(now);
-        if (_lastCliInjectTimeUs > 0 && nowUs - _lastCliInjectTimeUs < CLI_MIN_INTERVAL_US) {
-            usleep((useconds_t)(CLI_MIN_INTERVAL_US - (nowUs - _lastCliInjectTimeUs)));
+        uint64_t minIntervalUs = CLI_MIN_INTERVAL_US;
+        if (_phtvCliSpeedFactor > 1.0) {
+            minIntervalUs = (uint64_t)(CLI_MIN_INTERVAL_US * _phtvCliSpeedFactor);
+        }
+        if (_lastCliInjectTimeUs > 0 && nowUs - _lastCliInjectTimeUs < minIntervalUs) {
+            usleep((useconds_t)(minIntervalUs - (nowUs - _lastCliInjectTimeUs)));
             now = mach_absolute_time();
             nowUs = mach_time_to_us(now);
         }
         _lastCliInjectTimeUs = nowUs;
+    }
+
+    __attribute__((always_inline)) static inline uint64_t NowUs(void) {
+        dispatch_once(&timebase_init_token, ^{
+            mach_timebase_info(&timebase_info);
+        });
+        return mach_time_to_us(mach_absolute_time());
+    }
+
+    __attribute__((always_inline)) static inline void WaitForCliIdle(void) {
+        if (!_phtvIsCliTarget) {
+            return;
+        }
+        uint64_t nowUs = NowUs();
+        if (_phtvCliBusyUntilUs > nowUs) {
+            uint64_t waitUs = _phtvCliBusyUntilUs - nowUs;
+            usleep((useconds_t)waitUs);
+        }
     }
 
     __attribute__((always_inline)) static inline void ApplyKeyboardTypeAndFlags(CGEventRef down, CGEventRef up) {
@@ -1721,6 +1746,10 @@ static uint64_t _lastCliInjectTimeUs = 0;
             default:
                 break;
         }
+        if (delayType == DelayTypeTerminal && _phtvIsCliTarget && _phtvCliSpeedFactor > 1.0) {
+            keystrokeDelay = (uint64_t)(keystrokeDelay * _phtvCliSpeedFactor);
+            settleDelay = (uint64_t)(settleDelay * _phtvCliSpeedFactor);
+        }
 
         // Always use standard backspace method
         // Shift+Left selection is handled separately in autocomplete fix
@@ -1933,20 +1962,54 @@ static uint64_t _lastCliInjectTimeUs = 0;
             }
 
             BOOL hadCliCompose = (cliInlineBackspaceCount > 0);
+            if (hadCliCompose && _finalCharSize > 0) {
+                uint64_t estimateUs = 0;
+                estimateUs += (uint64_t)cliInlineBackspaceCount * CLI_BACKSPACE_KEY_DELAY_US;
+                estimateUs += CLI_BACKSPACE_POST_DELAY_US;
+                estimateUs += CLI_SETTLE_DELAY_US;
+                estimateUs += (uint64_t)_finalCharSize * CLI_COMPOSE_KEY_DELAY_US;
+                estimateUs += CLI_FINAL_SETTLE_US;
+                if (cliSendSpaceAfter) {
+                    estimateUs += CLI_SPACE_DELAY_US;
+                }
+                estimateUs += 2000; // guard time
+                uint64_t nowUs = NowUs();
+                uint64_t target = nowUs + estimateUs;
+                if (target > _phtvCliBusyUntilUs) {
+                    _phtvCliBusyUntilUs = target;
+                }
+            }
             if (cliInlineBackspaceCount > 0) {
                 SendBackspaceSequenceWithDelay(cliInlineBackspaceCount, DelayTypeTerminal);
-                usleep((useconds_t)CLI_BACKSPACE_POST_DELAY_US);
+                uint64_t postDelayUs = CLI_BACKSPACE_POST_DELAY_US;
+                if (_phtvCliSpeedFactor > 1.0) {
+                    postDelayUs = (uint64_t)(postDelayUs * _phtvCliSpeedFactor);
+                }
+                usleep((useconds_t)postDelayUs);
                 cliInlineBackspaceCount = 0;
             }
             if (_finalCharSize > 0) {
-                usleep((useconds_t)CLI_SETTLE_DELAY_US);
+                uint64_t settleDelayUs = CLI_SETTLE_DELAY_US;
                 uint64_t interDelay = hadCliCompose ? CLI_COMPOSE_KEY_DELAY_US : 0;
+                uint64_t finalDelayUs = CLI_FINAL_SETTLE_US;
+                if (_phtvCliSpeedFactor > 1.0) {
+                    settleDelayUs = (uint64_t)(settleDelayUs * _phtvCliSpeedFactor);
+                    if (interDelay > 0) {
+                        interDelay = (uint64_t)(interDelay * _phtvCliSpeedFactor);
+                    }
+                    finalDelayUs = (uint64_t)(finalDelayUs * _phtvCliSpeedFactor);
+                }
+                usleep((useconds_t)settleDelayUs);
                 int chunkSize = (interDelay > 0) ? 1 : _finalCharSize;
                 SendUnicodeStringChunked(_finalCharString, _finalCharSize, chunkSize, interDelay);
-                usleep((useconds_t)CLI_FINAL_SETTLE_US);
+                usleep((useconds_t)finalDelayUs);
             }
             if (cliSendSpaceAfter) {
-                usleep((useconds_t)CLI_SPACE_DELAY_US);
+                uint64_t spaceDelayUs = CLI_SPACE_DELAY_US;
+                if (_phtvCliSpeedFactor > 1.0) {
+                    spaceDelayUs = (uint64_t)(spaceDelayUs * _phtvCliSpeedFactor);
+                }
+                usleep((useconds_t)spaceDelayUs);
                 SendKeyCode(KEY_SPACE);
             }
             goto FinalizeSend;
@@ -2816,11 +2879,28 @@ static uint64_t _lastCliInjectTimeUs = 0;
             _phtvPostToSessionForCli = _phtvIsCliTarget && !_phtvPostToHIDTap;
 
             if (_phtvIsCliTarget) {
+                if (type == kCGEventKeyDown) {
+                    uint64_t nowUs = NowUs();
+                    uint64_t deltaUs = _phtvLastCliKeyDownUs > 0 ? (nowUs - _phtvLastCliKeyDownUs) : 1000000;
+                    _phtvLastCliKeyDownUs = nowUs;
+                    double factor = 1.0;
+                    if (deltaUs < 120000) {
+                        double t = (double)(120000 - deltaUs) / 120000.0;
+                        factor = 1.0 + t * 1.5;
+                        if (factor > 2.5) {
+                            factor = 2.5;
+                        }
+                    }
+                    _phtvCliSpeedFactor = factor;
+                }
+                WaitForCliIdle();
                 int waitRounds = 0;
                 while (__atomic_load_n(&_phtvCliInjectDepth, __ATOMIC_RELAXED) > 0 && waitRounds < 12) {
                     usleep(1000); // 1ms steps, max ~12ms
                     waitRounds++;
                 }
+            } else {
+                _phtvCliSpeedFactor = 1.0;
             }
 
             _phtvKeyboardType = CGEventGetIntegerValueField(event, kCGKeyboardEventKeyboardType);
