@@ -29,7 +29,7 @@ volatile int vUseMacro = 0;
 volatile int vFixRecommendBrowser = 0;
 volatile int vUseMacroInEnglishMode = 0;
 volatile int vAutoCapsMacro = 0;
-volatile int vUseSmartSwitchKey = 0;
+volatile int vUseSmartSwitchKey = 1;
 volatile int vUpperCaseFirstChar = 0;
 volatile int vUpperCaseExcludedForCurrentApp = 0;
 volatile int vTempOffSpelling = 0;
@@ -37,14 +37,14 @@ volatile int vAllowConsonantZFWJ = 1;
 volatile int vQuickStartConsonant = 0;
 volatile int vQuickEndConsonant = 0;
 volatile int vRememberCode = 0;
-volatile int vOtherLanguage = 0;
+volatile int vOtherLanguage = 1;
 volatile int vTempOffPHTV = 0;
 volatile int vRestoreOnEscape = 1;
 volatile int vCustomEscapeKey = 0; // 0 means default ESC
 volatile int vPauseKeyEnabled = 0;
 volatile int vPauseKey = 0; // Default (e.g., VK_LMENU)
 volatile int vAutoRestoreEnglishWord = 1;
-volatile int vSwitchKeyStatus = 0; // For tracking modifier keys
+volatile int vSwitchKeyStatus = 0x9FE; // Ctrl + Shift (modifier-only)
 
 PHTVConfig::PHTVConfig() {
     // Get path to executable
@@ -132,7 +132,7 @@ void PHTVConfig::ResetDefaults() {
     vAutoCapsMacro = 0;
     vAutoRestoreEnglishWord = 1;
     vFixRecommendBrowser = 0;
-    vUseSmartSwitchKey = 0;
+    vUseSmartSwitchKey = 1;
     vUpperCaseFirstChar = 0;
     vUpperCaseExcludedForCurrentApp = 0;
     vAllowConsonantZFWJ = 1;
@@ -143,8 +143,8 @@ void PHTVConfig::ResetDefaults() {
     vCustomEscapeKey = 0;
     vPauseKeyEnabled = 0;
     vPauseKey = 0;
-    vSwitchKeyStatus = 0;
-    vOtherLanguage = 0;
+    vSwitchKeyStatus = 0x9FE;
+    vOtherLanguage = 1;
     Save();
 }
 

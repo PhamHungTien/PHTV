@@ -87,4 +87,13 @@ extern "C" {
     PHTV_API bool __cdecl PHTV_AppListGetAt(int index, wchar_t* outName, int nameCap, int* outLang);
     PHTV_API void __cdecl PHTV_AppListSet(const wchar_t* name, int lang);
     PHTV_API bool __cdecl PHTV_AppListRemove(const wchar_t* name);
+
+    // Uppercase excluded apps (skip uppercase first char)
+    PHTV_API bool __cdecl PHTV_UpperExcludedLoad(const wchar_t* path);
+    PHTV_API bool __cdecl PHTV_UpperExcludedSave(const wchar_t* path);
+    PHTV_API void __cdecl PHTV_UpperExcludedClear();
+    PHTV_API int __cdecl PHTV_UpperExcludedCount();
+    PHTV_API bool __cdecl PHTV_UpperExcludedGetAt(int index, wchar_t* outName, int nameCap);
+    PHTV_API void __cdecl PHTV_UpperExcludedAdd(const wchar_t* name);
+    PHTV_API bool __cdecl PHTV_UpperExcludedRemove(const wchar_t* name);
 }

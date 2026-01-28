@@ -1,7 +1,9 @@
 #include "Bridge.h"
 #include <windows.h>
 #include <shlwapi.h>
+#include <algorithm>
 #include <string>
+#include <cstring>
 #include <vector>
 #include <fstream>
 #include <cstdio>
@@ -91,6 +93,67 @@ static bool WriteFileBinary(const wchar_t* path, const std::vector<Byte>& data) 
     return true;
 }
 
+static bool GetForegroundExeName(std::string& outExe) {
+    outExe.clear();
+    HWND fg = GetForegroundWindow();
+    if (!fg) return false;
+    DWORD pid = 0;
+    GetWindowThreadProcessId(fg, &pid);
+    if (pid == 0) return false;
+    HANDLE hProc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, pid);
+    if (!hProc) return false;
+    wchar_t path[MAX_PATH];
+    DWORD size = MAX_PATH;
+    bool ok = false;
+    if (QueryFullProcessImageNameW(hProc, 0, path, &size)) {
+        std::wstring wpath(path);
+        size_t pos = wpath.find_last_of(L"\\/");
+        std::wstring exe = (pos == std::wstring::npos) ? wpath : wpath.substr(pos + 1);
+        outExe = WStringToUtf8(exe);
+        ok = !outExe.empty();
+    }
+    CloseHandle(hProc);
+    return ok;
+}
+
+static bool IsModifierKey(DWORD vk) {
+    switch (vk) {
+    case VK_SHIFT:
+    case VK_LSHIFT:
+    case VK_RSHIFT:
+    case VK_CONTROL:
+    case VK_LCONTROL:
+    case VK_RCONTROL:
+    case VK_MENU:
+    case VK_LMENU:
+    case VK_RMENU:
+    case VK_LWIN:
+    case VK_RWIN:
+        return true;
+    default:
+        return false;
+    }
+}
+
+static bool ModifiersMatch(bool reqCtrl, bool reqAlt, bool reqShift, bool reqWin) {
+    bool curCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+    bool curAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
+    bool curShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+    bool curWin = (GetKeyState(VK_LWIN) & 0x8000) != 0 || (GetKeyState(VK_RWIN) & 0x8000) != 0;
+
+    if (reqCtrl && !curCtrl) return false;
+    if (reqAlt && !curAlt) return false;
+    if (reqShift && !curShift) return false;
+    if (reqWin && !curWin) return false;
+
+    if (!reqCtrl && curCtrl) return false;
+    if (!reqAlt && curAlt) return false;
+    if (!reqShift && curShift) return false;
+    if (!reqWin && curWin) return false;
+
+    return true;
+}
+
 // ---------------------------------------------------------
 // INPUT SIMULATION HELPERS
 // ---------------------------------------------------------
@@ -165,48 +228,124 @@ void ProcessEngineOutput() {
 }
 
 // ---------------------------------------------------------
+// UPPERCASE EXCLUDED APPS
+// ---------------------------------------------------------
+static std::vector<std::string> g_upperExcludedApps;
+
+// ---------------------------------------------------------
+// SWITCH KEY HOTKEY
+// ---------------------------------------------------------
+static const int SWITCH_KEY_MASK = 0xFF;
+static const int SWITCH_KEY_NO = 0xFE;
+static const int SWITCH_MASK_CONTROL = 0x100;
+static const int SWITCH_MASK_ALT = 0x200;
+static const int SWITCH_MASK_WIN = 0x400;
+static const int SWITCH_MASK_SHIFT = 0x800;
+static const int SWITCH_MASK_FN = 0x1000;
+static const int SWITCH_MASK_BEEP = 0x8000;
+static bool g_switchHotkeyDown = false;
+
+static bool IsSwitchHotkeyEnabled() {
+    int status = vSwitchKeyStatus;
+    int key = status & SWITCH_KEY_MASK;
+    bool hasModifiers = (status & (SWITCH_MASK_CONTROL | SWITCH_MASK_ALT | SWITCH_MASK_WIN | SWITCH_MASK_SHIFT)) != 0;
+    return key != 0 || hasModifiers;
+}
+
+static bool IsSwitchHotkeyMatch(const KBDLLHOOKSTRUCT* pKbd, bool isKeyDown, bool isKeyUp, bool& shouldConsume) {
+    shouldConsume = false;
+    if (!IsSwitchHotkeyEnabled()) return false;
+    int status = vSwitchKeyStatus;
+    int key = status & SWITCH_KEY_MASK;
+    bool reqCtrl = (status & SWITCH_MASK_CONTROL) != 0;
+    bool reqAlt = (status & SWITCH_MASK_ALT) != 0;
+    bool reqWin = (status & SWITCH_MASK_WIN) != 0;
+    bool reqShift = (status & SWITCH_MASK_SHIFT) != 0;
+
+    if (!ModifiersMatch(reqCtrl, reqAlt, reqShift, reqWin)) {
+        if (isKeyUp) {
+            g_switchHotkeyDown = false;
+        }
+        return false;
+    }
+
+    if (key == 0) return false;
+
+    if (key == SWITCH_KEY_NO) {
+        if (!(reqCtrl || reqAlt || reqShift || reqWin)) return false;
+        if (!IsModifierKey(pKbd->vkCode)) return false;
+        shouldConsume = isKeyDown;
+        return true;
+    }
+
+    if ((int)pKbd->vkCode != key) return false;
+    shouldConsume = isKeyDown;
+    return true;
+}
+
+// ---------------------------------------------------------
 // HOOK PROCEDURE
 // ---------------------------------------------------------
 LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
     if (nCode == HC_ACTION) {
         KBDLLHOOKSTRUCT* pKbd = (KBDLLHOOKSTRUCT*)lParam;
-        
+
         if (pKbd->dwExtraInfo == PHTV_INJECTED_SIGNATURE) {
             return CallNextHookEx(hKeyboardHook, nCode, wParam, lParam);
         }
 
+        bool isKeyDown = (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN);
+        bool isKeyUp = (wParam == WM_KEYUP || wParam == WM_SYSKEYUP);
+
+        bool shouldConsume = false;
+        if (IsSwitchHotkeyMatch(pKbd, isKeyDown, isKeyUp, shouldConsume)) {
+            if (isKeyDown && !g_switchHotkeyDown) {
+                vLanguage = (vLanguage == 1) ? 0 : 1;
+                if ((vSwitchKeyStatus & SWITCH_MASK_BEEP) != 0) {
+                    MessageBeep(MB_OK);
+                }
+                g_switchHotkeyDown = true;
+            }
+            if (isKeyUp) {
+                g_switchHotkeyDown = false;
+            }
+            if (shouldConsume) {
+                return 1;
+            }
+        }
+
         // Smart switch key per app (optional)
-        if (vUseSmartSwitchKey) {
-            HWND fg = GetForegroundWindow();
-            if (fg) {
-                DWORD pid = 0;
-                GetWindowThreadProcessId(fg, &pid);
-                if (pid != 0) {
-                    HANDLE hProc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, FALSE, pid);
-                    if (hProc) {
-                        wchar_t path[MAX_PATH];
-                        DWORD size = MAX_PATH;
-                        if (QueryFullProcessImageNameW(hProc, 0, path, &size)) {
-                            std::wstring wpath(path);
-                            size_t pos = wpath.find_last_of(L\"\\\\/\");
-                            std::wstring exe = (pos == std::wstring::npos) ? wpath : wpath.substr(pos + 1);
-                            std::string exeUtf8 = WStringToUtf8(exe);
-                            int status = getAppInputMethodStatus(exeUtf8, vLanguage);
-                            if (status != -1 && status != vLanguage) {
-                                vLanguage = status;
-                            }
-                        }
-                        CloseHandle(hProc);
-                    }
+        std::string exeUtf8;
+        bool hasExe = false;
+        if (vUseSmartSwitchKey || vUpperCaseExcludedForCurrentApp || !g_upperExcludedApps.empty()) {
+            hasExe = GetForegroundExeName(exeUtf8);
+        }
+
+        if (vUseSmartSwitchKey && hasExe) {
+            int status = getAppInputMethodStatus(exeUtf8, vLanguage);
+            if (status != -1 && status != vLanguage) {
+                vLanguage = status;
+            }
+        }
+
+        if (!g_upperExcludedApps.empty() && hasExe) {
+            bool excluded = false;
+            for (const auto& name : g_upperExcludedApps) {
+                if (_stricmp(name.c_str(), exeUtf8.c_str()) == 0) {
+                    excluded = true;
+                    break;
                 }
             }
+            vUpperCaseExcludedForCurrentApp = excluded ? 1 : 0;
+        } else if (g_upperExcludedApps.empty()) {
+            vUpperCaseExcludedForCurrentApp = 0;
         }
 
         // Access global config directly (vLanguage is extern in Engine)
         if (vLanguage == 1) {
             vKeyEventState state;
-            if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN) state = vKeyEventState::KeyDown;
-            else if (wParam == WM_KEYUP || wParam == WM_SYSKEYUP) state = vKeyEventState::KeyUp;
+            if (isKeyDown) state = vKeyEventState::KeyDown;
+            else if (isKeyUp) state = vKeyEventState::KeyUp;
             else return CallNextHookEx(hKeyboardHook, nCode, wParam, lParam);
 
             if (state == vKeyEventState::KeyDown) {
@@ -481,4 +620,90 @@ bool __cdecl PHTV_AppListRemove(const wchar_t* name) {
     }
     RefreshAppList();
     return true;
+}
+
+// ---------------------------------------------------------
+// UPPERCASE EXCLUDED APPS (LOCAL LIST)
+// ---------------------------------------------------------
+static void EncodeUpperExcludedList(const std::vector<std::string>& items, std::vector<Byte>& outData) {
+    outData.clear();
+    Uint16 count = (Uint16)items.size();
+    outData.push_back((Byte)(count & 0xFF));
+    outData.push_back((Byte)((count >> 8) & 0xFF));
+    for (const auto& nameRaw : items) {
+        std::string name = nameRaw;
+        if (name.size() > 255) name = name.substr(0, 255);
+        outData.push_back((Byte)name.size());
+        outData.insert(outData.end(), name.begin(), name.end());
+    }
+}
+
+static void DecodeUpperExcludedList(const std::vector<Byte>& data, std::vector<std::string>& outItems) {
+    outItems.clear();
+    if (data.size() < 2) return;
+    Uint16 count = (Uint16)(data[0] | (data[1] << 8));
+    size_t cursor = 2;
+    for (Uint16 i = 0; i < count; i++) {
+        if (cursor >= data.size()) break;
+        Uint8 nameLen = data[cursor++];
+        if (cursor + nameLen > data.size()) break;
+        std::string name(reinterpret_cast<const char*>(data.data() + cursor), nameLen);
+        cursor += nameLen;
+        if (!name.empty()) {
+            outItems.push_back(name);
+        }
+    }
+}
+
+bool __cdecl PHTV_UpperExcludedLoad(const wchar_t* path) {
+    std::vector<Byte> data;
+    if (!ReadFileBinary(path, data)) return false;
+    DecodeUpperExcludedList(data, g_upperExcludedApps);
+    return true;
+}
+
+bool __cdecl PHTV_UpperExcludedSave(const wchar_t* path) {
+    std::vector<Byte> data;
+    EncodeUpperExcludedList(g_upperExcludedApps, data);
+    return WriteFileBinary(path, data);
+}
+
+void __cdecl PHTV_UpperExcludedClear() {
+    g_upperExcludedApps.clear();
+    vUpperCaseExcludedForCurrentApp = 0;
+}
+
+int __cdecl PHTV_UpperExcludedCount() {
+    return (int)g_upperExcludedApps.size();
+}
+
+bool __cdecl PHTV_UpperExcludedGetAt(int index, wchar_t* outName, int nameCap) {
+    if (index < 0 || index >= (int)g_upperExcludedApps.size()) return false;
+    CopyWString(Utf8ToWString(g_upperExcludedApps[index]), outName, nameCap);
+    return true;
+}
+
+void __cdecl PHTV_UpperExcludedAdd(const wchar_t* name) {
+    if (!name) return;
+    std::string target = WStringToUtf8(name);
+    if (target.empty()) return;
+    for (const auto& existing : g_upperExcludedApps) {
+        if (_stricmp(existing.c_str(), target.c_str()) == 0) {
+            return;
+        }
+    }
+    g_upperExcludedApps.push_back(target);
+}
+
+bool __cdecl PHTV_UpperExcludedRemove(const wchar_t* name) {
+    if (!name) return false;
+    std::string target = WStringToUtf8(name);
+    auto it = std::remove_if(g_upperExcludedApps.begin(), g_upperExcludedApps.end(), [&](const std::string& item) {
+        return _stricmp(item.c_str(), target.c_str()) == 0;
+    });
+    if (it != g_upperExcludedApps.end()) {
+        g_upperExcludedApps.erase(it, g_upperExcludedApps.end());
+        return true;
+    }
+    return false;
 }

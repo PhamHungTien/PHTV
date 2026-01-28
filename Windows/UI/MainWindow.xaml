@@ -54,6 +54,34 @@
                                 <CheckBox x:Name="ChkFreeMark" Content="Đặt dấu tự do" Margin="0,4" Checked="Feature_Changed" Unchecked="Feature_Changed"/>
                             </StackPanel>
                         </GroupBox>
+
+                        <GroupBox Header="Ứng dụng không viết hoa ký tự đầu" Padding="10" Margin="0,12,0,0">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                    <Button Content="Import" Width="90" Margin="0,0,8,0" Click="UpperExcludedImport_Click"/>
+                                    <Button Content="Export" Width="90" Margin="0,0,8,0" Click="UpperExcludedExport_Click"/>
+                                    <Button Content="Clear" Width="90" Margin="0,0,8,0" Click="UpperExcludedClear_Click"/>
+                                    <Button Content="Detect Running Apps" Width="160" Click="UpperExcludedDetect_Click"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                    <TextBox x:Name="TxtUpperExcludedName" Width="220" Margin="0,0,8,0" />
+                                    <Button Content="Add" Width="80" Click="UpperExcludedAdd_Click"/>
+                                </StackPanel>
+                                <ListBox x:Name="UpperRunningAppList" Height="100" Margin="0,8,0,0" SelectionChanged="UpperRunning_Selected"/>
+                                <DataGrid x:Name="UpperExcludedGrid" AutoGenerateColumns="False" CanUserAddRows="False" Margin="0,8,0,0" Height="200">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="App" Binding="{Binding Name}" Width="*"/>
+                                        <DataGridTemplateColumn Header="" Width="80">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="Remove" Tag="{Binding Name}" Click="UpperExcludedRemove_Click"/>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
+                        </GroupBox>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
@@ -66,7 +94,8 @@
                             <CheckBox x:Name="ChkRestoreOnEscape" Content="Khôi phục bằng phím Escape" Margin="0,4" Checked="Hotkey_Changed" Unchecked="Hotkey_Changed"/>
                             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                                 <TextBlock Text="Custom Escape Key:" Width="160"/>
-                                <TextBox x:Name="TxtCustomEscapeKey" Width="120" TextChanged="Hotkey_TextChanged"/>
+                                <TextBox x:Name="TxtCustomEscapeKey" Width="180" IsReadOnly="True" PreviewKeyDown="Hotkey_CaptureKey"/>
+                                <Button Content="Record" Width="80" Margin="8,0,0,0" Click="Hotkey_RecordEscape_Click"/>
                             </StackPanel>
                         </StackPanel>
                     </GroupBox>
@@ -76,8 +105,27 @@
                             <CheckBox x:Name="ChkPauseKeyEnabled" Content="Bật phím Pause" Margin="0,4" Checked="Hotkey_Changed" Unchecked="Hotkey_Changed"/>
                             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                                 <TextBlock Text="Pause Key (VK):" Width="160"/>
-                                <TextBox x:Name="TxtPauseKey" Width="120" TextChanged="Hotkey_TextChanged"/>
+                                <TextBox x:Name="TxtPauseKey" Width="180" IsReadOnly="True" PreviewKeyDown="Hotkey_CaptureKey"/>
+                                <Button Content="Record" Width="80" Margin="8,0,0,0" Click="Hotkey_RecordPause_Click"/>
                             </StackPanel>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <GroupBox Header="Phím chuyển ngôn ngữ" Padding="10" Margin="0,12,0,0">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,4">
+                                <CheckBox x:Name="ChkSwitchCtrl" Content="Ctrl" Margin="0,0,12,0" Checked="SwitchHotkey_Changed" Unchecked="SwitchHotkey_Changed"/>
+                                <CheckBox x:Name="ChkSwitchAlt" Content="Alt" Margin="0,0,12,0" Checked="SwitchHotkey_Changed" Unchecked="SwitchHotkey_Changed"/>
+                                <CheckBox x:Name="ChkSwitchShift" Content="Shift" Margin="0,0,12,0" Checked="SwitchHotkey_Changed" Unchecked="SwitchHotkey_Changed"/>
+                                <CheckBox x:Name="ChkSwitchWin" Content="Win" Checked="SwitchHotkey_Changed" Unchecked="SwitchHotkey_Changed"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                <TextBlock Text="Switch Key:" Width="160"/>
+                                <TextBox x:Name="TxtSwitchKey" Width="180" IsReadOnly="True" PreviewKeyDown="SwitchKey_CaptureKey"/>
+                                <Button Content="Record" Width="80" Margin="8,0,0,0" Click="SwitchKey_Record_Click"/>
+                                <Button Content="No Key" Width="80" Margin="8,0,0,0" Click="SwitchKey_NoKey_Click"/>
+                            </StackPanel>
+                            <CheckBox x:Name="ChkSwitchBeep" Content="Beep khi đổi chế độ" Margin="0,4" Checked="SwitchHotkey_Changed" Unchecked="SwitchHotkey_Changed"/>
                         </StackPanel>
                     </GroupBox>
                 </StackPanel>
@@ -92,6 +140,11 @@
                             <CheckBox x:Name="ChkMacroInEnglish" Content="Macro trong chế độ English" Margin="0,4" Checked="Feature_Changed" Unchecked="Feature_Changed"/>
                             <CheckBox x:Name="ChkAutoCapsMacro" Content="Tự viết hoa Macro" Margin="0,4" Checked="Feature_Changed" Unchecked="Feature_Changed"/>
                             <Separator Margin="0,8,0,8"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,4">
+                                <Button Content="Import" Width="90" Margin="0,0,8,0" Click="MacroImport_Click"/>
+                                <Button Content="Export" Width="90" Margin="0,0,8,0" Click="MacroExport_Click"/>
+                                <Button Content="Clear" Width="90" Click="MacroClear_Click"/>
+                            </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,4">
                                 <TextBox x:Name="TxtMacroKey" Width="140" Margin="0,0,8,0" />
                                 <TextBox x:Name="TxtMacroValue" Width="360" Margin="0,0,8,0" />
@@ -123,6 +176,11 @@
                             <CheckBox x:Name="ChkSmartSwitchKey" Content="Ghi nhớ kiểu gõ theo ứng dụng" Margin="0,4" Checked="Feature_Changed" Unchecked="Feature_Changed"/>
                             <Separator Margin="0,8,0,8"/>
                             <StackPanel Orientation="Horizontal" Margin="0,4">
+                                <Button Content="Import" Width="90" Margin="0,0,8,0" Click="AppImport_Click"/>
+                                <Button Content="Export" Width="90" Margin="0,0,8,0" Click="AppExport_Click"/>
+                                <Button Content="Detect Running Apps" Width="160" Click="AppDetect_Click"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,4">
                                 <TextBox x:Name="TxtAppName" Width="220" Margin="0,0,8,0" />
                                 <ComboBox x:Name="ComboAppLanguage" Width="160" Margin="0,0,8,0">
                                     <ComboBoxItem Content="Tiếng Việt" Tag="1"/>
@@ -130,6 +188,7 @@
                                 </ComboBox>
                                 <Button Content="Add/Update" Width="100" Click="AppAdd_Click"/>
                             </StackPanel>
+                            <ListBox x:Name="RunningAppList" Height="120" Margin="0,8,0,0" SelectionChanged="AppRunning_Selected"/>
                             <DataGrid x:Name="AppGrid" AutoGenerateColumns="False" CanUserAddRows="False" Margin="0,8,0,0" Height="220">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="App" Binding="{Binding Name}" Width="*"/>
@@ -154,6 +213,7 @@
                     <GroupBox Header="Hệ thống" Padding="10">
                         <StackPanel>
                             <CheckBox x:Name="ChkFixRecommendBrowser" Content="Fix recommend browser/Excel" Margin="0,4" Checked="Feature_Changed" Unchecked="Feature_Changed"/>
+                            <CheckBox x:Name="ChkOtherLanguage" Content="Tắt tiếng Việt khi gõ ngôn ngữ khác" Margin="0,4" Checked="System_Changed" Unchecked="System_Changed"/>
                             <TextBlock Text="Tùy chọn nâng cao khác sẽ được bổ sung sau." Foreground="#666" Margin="0,6,0,0"/>
                         </StackPanel>
                     </GroupBox>
