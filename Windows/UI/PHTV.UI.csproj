@@ -4,13 +4,19 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net6.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
-    <ApplicationIcon>icon.ico</ApplicationIcon>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon>..\\Resources\\Images\\icon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="icon.ico">
+    <Content Include="..\\Resources\\Images\\*.ico">
+      <Link>Resources\\Images\\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </Content>
+    <Content Include="..\\Resources\\Dictionaries\\*.bin">
+      <Link>Resources\\Dictionaries\\%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

@@ -19,6 +19,11 @@ set(ENGINE_SOURCES
     "Config/PHTVConfig.cpp"
 )
 
+set(DLL_SOURCES
+    "Bridge.cpp"
+    ${ENGINE_SOURCES}
+)
+
 set(APP_SOURCES
     "App/main.cpp"
     "App/PHTV.rc"
@@ -54,4 +59,25 @@ target_link_libraries(PHTV PRIVATE
     shlwapi
     comctl32
     msimg32
+)
+
+# Build Core DLL for WPF UI
+add_library(PHTVCore SHARED
+    ${DLL_SOURCES}
+)
+
+target_compile_definitions(PHTVCore PRIVATE PHTV_EXPORTS)
+
+target_include_directories(PHTVCore PRIVATE
+    "${ENGINE_DIR}"
+    "${PLATFORMS_DIR}"
+    "Config"
+)
+
+target_link_libraries(PHTVCore PRIVATE
+    user32
+    kernel32
+    gdi32
+    shell32
+    shlwapi
 )
