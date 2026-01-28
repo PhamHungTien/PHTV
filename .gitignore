@@ -40,6 +40,8 @@ Package.resolved
 *.swp
 *.swo
 *~
+*.vs/
+.vscode/
 
 # Environment
 .env
@@ -52,3 +54,5 @@ Package.resolved
 # Windows build outputs
 Windows/UI/bin/
 Windows/UI/obj/
+Windows/build/
+build_win/

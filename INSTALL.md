@@ -112,9 +112,9 @@ Phiên bản dành cho Windows đang được hoàn thiện. Bạn có thể t�
 2. Clone dự án: `git clone https://github.com/PhamHungTien/PHTV.git`
 3. Chạy lệnh build:
    ```powershell
-   dotnet build Windows/UI/PHTV.UI.csproj -c Release
+   Windows\build.bat
    ```
-4. Chạy file `PHTV.UI.exe` trong thư mục `bin/Release`.
+4. Chạy file `PHTV.exe` trong thư mục `Windows/build/Release`.
 
 > ⚠️ **Lưu ý**: Phiên bản này hiện chỉ mới hoàn thiện giao diện cài đặt, các tính năng gõ đang được tích hợp.
 

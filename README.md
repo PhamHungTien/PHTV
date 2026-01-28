@@ -18,7 +18,7 @@
 **PHTV (Precision Hybrid Typing Vietnamese)** là bộ gõ tiếng Việt **offline, nhanh, và riêng tư**. Được phát triển với mục tiêu mang lại trải nghiệm gõ tiếng Việt tốt nhất trên nhiều hệ điều hành.
 
 - **macOS:** Phiên bản chính thức, đầy đủ tính năng nhất. [Xem chi tiết](#-macos).
-- **Windows:** Đang phát triển (Beta). Đã có giao diện cài đặt hiện đại. [Xem chi tiết](Windows/README.md).
+- **Windows:** Đang phát triển (Beta). Đã có giao diện cài đặt hiện đại. Xem hướng dẫn build tại [Windows/README.md](Windows/README.md).
 - **Linux:** Đang trong giai đoạn thử nghiệm sớm (Alpha). [Xem chi tiết](Linux/README.md).
 
 ✨ **Engine:** Sử dụng engine C++ tối ưu từ dự án OpenKey, đảm bảo tốc độ và độ chính xác cao nhất.

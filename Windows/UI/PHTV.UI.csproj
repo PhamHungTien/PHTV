@@ -27,7 +27,7 @@
       <Link>Resources\Dictionaries\%(Filename)%(Extension)</Link>
     </EmbeddedResource>
     <!-- Include Native Core DLL -->
-    <Content Include="..\..\build_win\Release\PHTVCore.dll">
+    <Content Include="..\build\Release\PHTVCore.dll">
       <Link>PHTVCore.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
