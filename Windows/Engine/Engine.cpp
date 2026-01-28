@@ -698,6 +698,16 @@ void handleModernMark() {
                             (CHR(VSI) == KEY_U && CHR(VSI+1) == KEY_Y && CHR(VSI+2) == KEY_A))) {
         VWSM = VSI + 1;
         hBPC = _index - VWSM;
+    } else if (vowelCount >= 2 && CHR(VEI) == KEY_Y) {
+        // Diphthongs ending with 'y' (ay, ây, uy, oay, ...) should place tone on the last non-'y' vowel
+        int lastNonY = VEI;
+        while (lastNonY >= VSI && CHR(lastNonY) == KEY_Y) {
+            lastNonY--;
+        }
+        if (lastNonY >= VSI) {
+            VWSM = lastNonY;
+            hBPC = _index - VWSM;
+        }
     } else if ((CHR(VSI) == KEY_O && CHR(VSI+1) == KEY_I) ||
                (CHR(VSI) == KEY_A && CHR(VSI+1) == KEY_I) ||
                (CHR(VSI)== KEY_U && CHR(VSI+1) == KEY_I) ) {
