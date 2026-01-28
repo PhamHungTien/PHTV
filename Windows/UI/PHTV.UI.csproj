@@ -7,16 +7,28 @@
     <UseWindowsForms>true</UseWindowsForms>
     <PlatformTarget>x64</PlatformTarget>
     <Prefer32Bit>false</Prefer32Bit>
-    <ApplicationIcon>..\\App\\Resources\\icon.ico</ApplicationIcon>
+    <AssemblyName>PHTV</AssemblyName>
+    <ApplicationIcon>..\App\Resources\icon.ico</ApplicationIcon>
+    
+    <!-- Single File Configuration -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="..\\App\\Resources\\*.ico">
-      <Link>Resources\\Images\\%(Filename)%(Extension)</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\\Resources\\Dictionaries\\*.bin">
-      <Link>Resources\\Dictionaries\\%(Filename)%(Extension)</Link>
+    <EmbeddedResource Include="..\App\Resources\*.ico">
+      <Link>Resources\Images\%(Filename)%(Extension)</Link>
+    </EmbeddedResource>
+    <!-- Embed dictionaries instead of copying -->
+    <EmbeddedResource Include="..\..\macOS\PHTV\Core\Resources\Dictionaries\*.bin">
+      <Link>Resources\Dictionaries\%(Filename)%(Extension)</Link>
+    </EmbeddedResource>
+    <!-- Include Native Core DLL -->
+    <Content Include="..\..\build_win\Release\PHTVCore.dll">
+      <Link>PHTVCore.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

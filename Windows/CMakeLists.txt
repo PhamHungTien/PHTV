@@ -32,6 +32,9 @@ set(APP_SOURCES
 add_compile_definitions(_WIN32 UNICODE _UNICODE)
 
 if(MSVC)
+    # Use static runtime to avoid missing DLL dependencies
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    
     # Avoid std::byte conflict with Windows SDK headers (rpcndr.h/wtypes.h).
     add_compile_definitions(_HAS_STD_BYTE=0)
 endif()
@@ -45,24 +48,6 @@ include_directories(
     "${ENGINE_DIR}"
     "${PLATFORMS_DIR}"
     "Config"
-    "App"
-)
-
-# Build EXE
-add_executable(PHTV WIN32
-    ${ENGINE_SOURCES}
-    ${APP_SOURCES}
-)
-
-# Link Libraries
-target_link_libraries(PHTV PRIVATE
-    user32
-    kernel32
-    gdi32
-    shell32
-    shlwapi
-    comctl32
-    msimg32
 )
 
 # Build Core DLL

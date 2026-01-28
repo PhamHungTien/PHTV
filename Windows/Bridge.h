@@ -8,7 +8,7 @@
 
 extern "C" {
     // Core Control
-    PHTV_API void __cdecl PHTV_Init();
+    PHTV_API void __cdecl PHTV_Init(const wchar_t* resourceDir);
     PHTV_API void __cdecl PHTV_InstallHook();
     PHTV_API void __cdecl PHTV_UninstallHook();
     PHTV_API void __cdecl PHTV_LoadConfig();

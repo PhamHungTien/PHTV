@@ -4,28 +4,29 @@
 
 # PHTV — Precision Hybrid Typing Vietnamese
 
-### Bộ gõ tiếng Việt hiện đại cho macOS
+### Bộ gõ tiếng Việt hiện đại và đa nền tảng
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/PhamHungTien/PHTV/release.yml?branch=main&label=Build)](../../actions/workflows/release.yml)
-[![macOS 13+](https://img.shields.io/badge/macOS-13+-blue.svg)](https://www.apple.com/macos/)
-[![Universal Binary](https://img.shields.io/badge/Universal-Intel%20%2B%20Apple%20Silicon-red.svg)](https://support.apple.com/en-us/HT211814)
-[![Swift 6.0+](https://img.shields.io/badge/Swift-6.0+-orange.svg)](https://swift.org)
-[![GitHub release](https://img.shields.io/github/v/release/PhamHungTien/PHTV)](../../releases/latest)
-[![Auto-update](https://img.shields.io/badge/Auto--update-Sparkle-green.svg)](https://sparkle-project.org/)
-[![GitHub downloads](https://img.shields.io/github/downloads/PhamHungTien/PHTV/total?label=Downloads)](../../releases)
-[![GitHub stars](https://img.shields.io/github/stars/PhamHungTien/PHTV)](../../stargazers)
-[![Sponsor](https://img.shields.io/badge/❤️_Sponsor-PHTV-ea4aaa?style=flat&logo=github-sponsors)](https://phamhungtien.com/PHTV/#donate)
-
-[**Tải về**](https://phamhungtien.com/PHTV/) | [**Tài liệu**](INSTALL.md) | [**Báo lỗi**](../../issues) | [**FAQ**](FAQ.md) | [**☕ Ủng hộ**](https://phamhungtien.com/PHTV/#donate)
-
-</div>
+[![macOS](https://img.shields.io/badge/Platform-macOS-lightgrey.svg)](#)
+[![Windows](https://img.shields.io/badge/Platform-Windows%20(Beta)-orange.svg)](#)
+[![Linux](https://img.shields.io/badge/Platform-Linux%20(Alpha)-red.svg)](#)
 
 ---
 
 ## Giới thiệu
 
-**PHTV (Precision Hybrid Typing Vietnamese)** là bộ gõ tiếng Việt **offline, nhanh, và riêng tư** cho macOS 13+. Được phát triển bằng Swift/SwiftUI với engine C++ từ OpenKey, mang đến trải nghiệm gõ tiếng Việt mượt mà và tích hợp sâu vào hệ thống.
+**PHTV (Precision Hybrid Typing Vietnamese)** là bộ gõ tiếng Việt **offline, nhanh, và riêng tư**. Được phát triển với mục tiêu mang lại trải nghiệm gõ tiếng Việt tốt nhất trên nhiều hệ điều hành.
+
+- **macOS:** Phiên bản chính thức, đầy đủ tính năng nhất. [Xem chi tiết](#-macos).
+- **Windows:** Đang phát triển (Beta). Đã có giao diện cài đặt hiện đại. [Xem chi tiết](Windows/README.md).
+- **Linux:** Đang trong giai đoạn thử nghiệm sớm (Alpha). [Xem chi tiết](Linux/README.md).
+
+✨ **Engine:** Sử dụng engine C++ tối ưu từ dự án OpenKey, đảm bảo tốc độ và độ chính xác cao nhất.
+
+---
+
+## 🍏 macOS
+Phiên bản PHTV cho macOS 13+ được phát triển bằng Swift/SwiftUI, mang đến trải nghiệm tích hợp sâu và mượt mà.
 
 ✨ **Tự động cập nhật** - Nhận phiên bản mới ngay khi ra mắt với Sparkle framework. Không cần tải lại thủ công!
 

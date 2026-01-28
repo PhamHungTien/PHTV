@@ -104,26 +104,25 @@ brew install --cask phamhungtien/tap/phtv
 
 ---
 
-### 🛠️ Option 4: Build từ Source Code
+### 🪟 Option 5: Windows (Beta - Đang phát triển)
 
-**Dành cho developers muốn tự build hoặc đóng góp:**
+Phiên bản dành cho Windows đang được hoàn thiện. Bạn có thể tự build để trải nghiệm giao diện cài đặt mới:
 
-```bash
-# Clone repository
-git clone https://github.com/PhamHungTien/PHTV.git
-cd PHTV
+1. Yêu cầu cài đặt **.NET 6.0 SDK**.
+2. Clone dự án: `git clone https://github.com/PhamHungTien/PHTV.git`
+3. Chạy lệnh build:
+   ```powershell
+   dotnet build Windows/UI/PHTV.UI.csproj -c Release
+   ```
+4. Chạy file `PHTV.UI.exe` trong thư mục `bin/Release`.
 
-# Build với Xcode
-# Universal Binary - hỗ trợ cả Intel và Apple Silicon
-xcodebuild -scheme PHTV -configuration Release
+> ⚠️ **Lưu ý**: Phiên bản này hiện chỉ mới hoàn thiện giao diện cài đặt, các tính năng gõ đang được tích hợp.
 
-# App sẽ được build tại: build/Release/PHTV.app
-```
+---
 
-**Yêu cầu:**
-- Xcode 14.0 trở lên
-- macOS 13.0+ SDK
-- Swift 5.7+
+### 🐧 Option 6: Linux (Alpha - Sắp ra mắt)
+
+Phiên bản Linux đang trong giai đoạn phát triển sơ khai. Vui lòng theo dõi repository để cập nhật thông tin mới nhất.
 
 ---
 

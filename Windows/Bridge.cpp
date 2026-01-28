@@ -374,13 +374,19 @@ LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
 // ---------------------------------------------------------
 // EXPORTED FUNCTIONS
 // ---------------------------------------------------------
-void __cdecl PHTV_Init() {
+void __cdecl PHTV_Init(const wchar_t* resourceDir) {
     vKeyInit();
     PHTVConfig::Shared().Load();
 
-    std::wstring baseDir = GetExeDir();
-    std::wstring viDictPath = baseDir + L"\\Resources\\Dictionaries\\vi_dict.bin";
-    std::wstring enDictPath = baseDir + L"\\Resources\\Dictionaries\\en_dict.bin";
+    std::wstring baseDir = (resourceDir != nullptr) ? std::wstring(resourceDir) : GetExeDir();
+    // Remove trailing slash if present
+    if (!baseDir.empty() && (baseDir.back() == L'\\' || baseDir.back() == L'/')) {
+        baseDir.pop_back();
+    }
+
+    std::wstring viDictPath = baseDir + L"\\Dictionaries\\vi_dict.bin";
+    std::wstring enDictPath = baseDir + L"\\Dictionaries\\en_dict.bin";
+    
     initVietnameseDictionary(WStringToUtf8(viDictPath));
     initEnglishDictionary(WStringToUtf8(enDictPath));
 }
