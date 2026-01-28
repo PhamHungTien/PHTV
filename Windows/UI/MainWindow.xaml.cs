@@ -1002,5 +1002,42 @@ namespace PHTV.UI
             value = 0;
             return false;
         }
+
+        private void NavList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (NavList.SelectedItem is ListBoxItem item && item.Tag is string viewName)
+            {
+                // Hide all views first
+                View_Typing.Visibility = Visibility.Collapsed;
+                View_Hotkeys.Visibility = Visibility.Collapsed;
+                View_Macro.Visibility = Visibility.Collapsed;
+                View_Apps.Visibility = Visibility.Collapsed;
+                View_System.Visibility = Visibility.Collapsed;
+                View_About.Visibility = Visibility.Collapsed;
+
+                // Show selected view
+                switch (viewName)
+                {
+                    case "View_Typing":
+                        View_Typing.Visibility = Visibility.Visible;
+                        break;
+                    case "View_Hotkeys":
+                        View_Hotkeys.Visibility = Visibility.Visible;
+                        break;
+                    case "View_Macro":
+                        View_Macro.Visibility = Visibility.Visible;
+                        break;
+                    case "View_Apps":
+                        View_Apps.Visibility = Visibility.Visible;
+                        break;
+                    case "View_System":
+                        View_System.Visibility = Visibility.Visible;
+                        break;
+                    case "View_About":
+                        View_About.Visibility = Visibility.Visible;
+                        break;
+                }
+            }
+        }
     }
 }
