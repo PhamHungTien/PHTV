@@ -16,7 +16,7 @@ static map<string, Int8> _smartSwitchKeyData;
 static string _cacheKey = ""; //use cache for faster
 static Int8 _cacheData = 0; //use cache for faster
 
-void initSmartSwitchKey(const Byte* pData, const int& size) {
+void initSmartSwitchKey(const Byte* pData, int size) {
     _smartSwitchKeyData.clear();
     if (pData == NULL) return;
     Uint16 count = 0;
@@ -51,7 +51,7 @@ void getSmartSwitchKeySaveData(vector<Byte>& outData) {
     }
 }
 
-int getAppInputMethodStatus(const string& bundleId, const int& currentInputMethod) {
+int getAppInputMethodStatus(const string& bundleId, int currentInputMethod) {
     if (_cacheKey.compare(bundleId) == 0) {
         return _cacheData;
     }
@@ -66,7 +66,7 @@ int getAppInputMethodStatus(const string& bundleId, const int& currentInputMetho
     return -1;
 }
 
-void setAppInputMethodStatus(const string& bundleId, const int& language) {
+void setAppInputMethodStatus(const string& bundleId, int language) {
     _smartSwitchKeyData[bundleId] = language;
     _cacheKey = bundleId;
     _cacheData = language;

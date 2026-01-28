@@ -11,10 +11,14 @@
 
 #include "EnglishWordDetector.h"
 #include <cstring>
+#ifdef _WIN32
+#include <fstream>
+#else
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#endif
 #include <unordered_set>
 #include <cstdio>
 
@@ -60,7 +64,7 @@ static size_t engMmapSize = 0;
 static size_t vieMmapSize = 0;
 
 // Pre-computed lookup table: keycode -> letter index (0-25), 255 = invalid
-alignas(64) static uint8_t kcToIdx[64];
+alignas(64) static uint8_t kcToIdx[256];
 static bool kcInit = false;
 
 // Custom dictionary: user-added words for better accuracy
@@ -104,6 +108,42 @@ static bool loadBinaryTrie(const char* path,
                            void*& mmapPtr, size_t& mmapSize,
                            const BinaryTrieNode*& nodes,
                            uint32_t& nodeCount, size_t& wordCount) {
+#ifdef _WIN32
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    if (!file) return false;
+    std::streamsize fileSize = file.tellg();
+    if (fileSize < 12) return false;
+    file.seekg(0, std::ios::beg);
+
+    uint8_t* buffer = new (std::nothrow) uint8_t[(size_t)fileSize];
+    if (!buffer) return false;
+    if (!file.read(reinterpret_cast<char*>(buffer), fileSize)) {
+        delete[] buffer;
+        return false;
+    }
+
+    const uint8_t* data = buffer;
+    if (memcmp(data, "PHT3", 4) != 0) {
+        delete[] buffer;
+        return false;
+    }
+
+    uint32_t nCount = *(const uint32_t*)(data + 4);
+    uint32_t wCount = *(const uint32_t*)(data + 8);
+
+    size_t expectedSize = 12 + (size_t)nCount * sizeof(BinaryTrieNode);
+    if ((size_t)fileSize < expectedSize) {
+        delete[] buffer;
+        return false;
+    }
+
+    mmapPtr = buffer;
+    mmapSize = (size_t)fileSize;
+    nodes = (const BinaryTrieNode*)(data + 12);
+    nodeCount = nCount;
+    wordCount = wCount;
+    return true;
+#else
     int fd = open(path, O_RDONLY);
     if (fd < 0) return false;
 
@@ -151,6 +191,7 @@ static bool loadBinaryTrie(const char* path,
     wordCount = wCount;
 
     return true;
+#endif
 }
 
 // ============================================================================
@@ -478,12 +519,20 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
 
 void clearEnglishDictionary() {
     if (engMmap) {
+#ifdef _WIN32
+        delete[] reinterpret_cast<uint8_t*>(engMmap);
+#else
         munmap(engMmap, engMmapSize);
+#endif
         engMmap = nullptr;
         engNodes = nullptr;
     }
     if (vieMmap) {
+#ifdef _WIN32
+        delete[] reinterpret_cast<uint8_t*>(vieMmap);
+#else
         munmap(vieMmap, vieMmapSize);
+#endif
         vieMmap = nullptr;
         vieNodes = nullptr;
     }

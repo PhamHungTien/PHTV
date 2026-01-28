@@ -28,9 +28,13 @@ set(APP_SOURCES
     "App/main.cpp"
     "App/PHTV.rc"
 )
-
 # Definitions
 add_compile_definitions(_WIN32 UNICODE _UNICODE)
+
+if(MSVC)
+    # Avoid std::byte conflict with Windows SDK headers (rpcndr.h/wtypes.h).
+    add_compile_definitions(_HAS_STD_BYTE=0)
+endif()
 
 if(MINGW)
     add_link_options(-municode -static -static-libgcc -static-libstdc++)
@@ -61,7 +65,7 @@ target_link_libraries(PHTV PRIVATE
     msimg32
 )
 
-# Build Core DLL for WPF UI
+# Build Core DLL
 add_library(PHTVCore SHARED
     ${DLL_SOURCES}
 )

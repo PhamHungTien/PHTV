@@ -2,145 +2,369 @@
 #include <windows.h>
 #include <shellapi.h>
 #include <shlwapi.h>
+#include <shlobj.h>
 #include <string>
 #include <vector>
-#include <codecvt>
 
 #pragma comment(lib, "shlwapi.lib")
-#pragma comment(lib, "msimg32.lib") // For GradientFill if needed
 
 #include "resource.h"
 #include "win32.h"
 #include "Engine.h"
-#include "../Config/PHTVConfig.h"
 #include "EnglishWordDetector.h"
+#include "../Config/PHTVConfig.h"
 
-// Constants
-#define PHTV_INJECTED_SIGNATURE 0x99887766 
-#define PHTV_MUTEX_NAME L"Local\\PHTV_Instance_Mutex"
+#define PHTV_INJECTED_SIGNATURE 0x99887766
+#define WM_TRAYMESSAGE (WM_USER + 1)
+#define TRAY_ICON_UID 100
+#define TRAY_RETRY_TIMER 1
 
-// Global Variables
-HINSTANCE hInst;
-HHOOK hKeyboardHook;
-NOTIFYICONDATA nid;
-HWND hHiddenWnd;
-HWND hSettingsWnd = NULL;
-HANDLE hMutex;
+static HINSTANCE gInstance = NULL;
+static HWND gTrayWnd = NULL;
+static NOTIFYICONDATA gNid = {0};
+static HMENU gTrayMenu = NULL;
+static HMENU gMenuTyping = NULL;
+static HMENU gMenuInputMethod = NULL;
+static HMENU gMenuCodeTable = NULL;
+static HMENU gMenuFeatures = NULL;
+static UINT gTaskbarCreatedMsg = 0;
+static int gTrayRetryCount = 0;
 
-// Fonts
-HFONT hFontTitle;
-HFONT hFontNormal;
+static HHOOK gKeyboardHook = NULL;
+static HHOOK gMouseHook = NULL;
+static HWINEVENTHOOK gWinEventHook = NULL;
+static DWORD gSelfPid = 0;
 
-// Forward Declarations
-LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-LRESULT CALLBACK LowLevelKeyboardProc(int, WPARAM, LPARAM);
-LRESULT CALLBACK SettingsWndProc(HWND, UINT, WPARAM, LPARAM);
-void InitTrayIcon(HWND hWnd);
-void RemoveTrayIcon();
-void UpdateTrayIcon();
-void ShowSettingsWindow();
+static std::wstring gAppDataDir;
+static std::wstring gSmartSwitchPath;
 
-// Engine Integration
-void ProcessEngineOutput();
-void SendUnicodeString(const std::vector<unsigned int>& charCodes);
-void SendBackspace(int count);
+static void EnsureAppData();
+static void LoadSmartSwitchData();
+static void SaveSmartSwitchData();
+static std::string GetForegroundExeName();
+static void UpdateTrayIcon();
+static void CreateTrayMenu();
+static void UpdateMenuChecks();
+static bool AddTrayIcon();
+static void RemoveTrayIcon();
+static void InitEngine();
+static void OpenControlPanel();
+static void ProcessEngineOutput();
+static void SendBackspace(int count);
+static void SendUnicodeString(const std::vector<unsigned int>& charCodes);
 
-std::string WStringToString(const std::wstring& wstr) {
+LRESULT CALLBACK TrayWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam);
+VOID CALLBACK WinEventProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime);
+
+static void EnsureAppData() {
+    if (!gAppDataDir.empty()) return;
+    wchar_t path[MAX_PATH] = {0};
+    if (SHGetFolderPathW(NULL, CSIDL_APPDATA, NULL, SHGFP_TYPE_CURRENT, path) != S_OK) return;
+    PathAppendW(path, L"PHTV");
+    CreateDirectoryW(path, NULL);
+    gAppDataDir = path;
+    gSmartSwitchPath = gAppDataDir + L"\\apps.dat";
+}
+
+static bool ReadFileBinary(const std::wstring& path, std::vector<Byte>& outData) {
+    outData.clear();
+    HANDLE hFile = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile == INVALID_HANDLE_VALUE) return false;
+    DWORD size = GetFileSize(hFile, NULL);
+    if (size == INVALID_FILE_SIZE || size == 0) {
+        CloseHandle(hFile);
+        return false;
+    }
+    outData.resize(size);
+    DWORD read = 0;
+    BOOL ok = ReadFile(hFile, outData.data(), size, &read, NULL);
+    CloseHandle(hFile);
+    return ok && read == size;
+}
+
+static bool WriteFileBinary(const std::wstring& path, const std::vector<Byte>& data) {
+    HANDLE hFile = CreateFileW(path.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile == INVALID_HANDLE_VALUE) return false;
+    DWORD written = 0;
+    BOOL ok = TRUE;
+    if (!data.empty()) {
+        ok = WriteFile(hFile, data.data(), (DWORD)data.size(), &written, NULL);
+    }
+    CloseHandle(hFile);
+    return ok && written == data.size();
+}
+
+static void LoadSmartSwitchData() {
+    EnsureAppData();
+    std::vector<Byte> data;
+    if (ReadFileBinary(gSmartSwitchPath, data)) {
+        initSmartSwitchKey(data.data(), (int)data.size());
+    }
+}
+
+static void SaveSmartSwitchData() {
+    EnsureAppData();
+    std::vector<Byte> data;
+    getSmartSwitchKeySaveData(data);
+    WriteFileBinary(gSmartSwitchPath, data);
+}
+
+static std::string WStringToUtf8(const std::wstring& wstr) {
     if (wstr.empty()) return std::string();
-    int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
+    int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.size(), NULL, 0, NULL, NULL);
     std::string strTo(size_needed, 0);
-    WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], size_needed, NULL, NULL);
+    WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.size(), &strTo[0], size_needed, NULL, NULL);
     return strTo;
 }
 
-int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
-                     _In_opt_ HINSTANCE hPrevInstance,
-                     _In_ LPWSTR    lpCmdLine,
-                     _In_ int       nCmdShow)
-{
-    UNREFERENCED_PARAMETER(hPrevInstance);
-    UNREFERENCED_PARAMETER(lpCmdLine);
+static std::string GetForegroundExeName() {
+    HWND fg = GetForegroundWindow();
+    if (!fg) return std::string();
+    DWORD pid = 0;
+    GetWindowThreadProcessId(fg, &pid);
+    if (!pid || pid == gSelfPid) return std::string();
+    HANDLE hProc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+    if (!hProc) return std::string();
+    wchar_t path[MAX_PATH];
+    DWORD size = MAX_PATH;
+    std::string exe;
+    if (QueryFullProcessImageNameW(hProc, 0, path, &size)) {
+        std::wstring wpath(path);
+        size_t pos = wpath.find_last_of(L"\\/");
+        std::wstring name = (pos == std::wstring::npos) ? wpath : wpath.substr(pos + 1);
+        exe = WStringToUtf8(name);
+    }
+    CloseHandle(hProc);
+    return exe;
+}
 
-    hInst = hInstance;
-
-    // Single Instance Check
-    hMutex = CreateMutexW(NULL, TRUE, PHTV_MUTEX_NAME);
-    if (GetLastError() == ERROR_ALREADY_EXISTS) return 0;
-
-    // Create Fonts
-    hFontTitle = CreateFontW(24, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
-    hFontNormal = CreateFontW(18, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
-
-    // Setup Engine
+static void InitEngine() {
     wchar_t exePath[MAX_PATH];
     GetModuleFileNameW(NULL, exePath, MAX_PATH);
-    PathRemoveFileSpecW(exePath); 
+    PathRemoveFileSpecW(exePath);
     std::wstring baseDir = exePath;
     std::wstring viDictPath = baseDir + L"\\Resources\\Dictionaries\\vi_dict.bin";
     std::wstring enDictPath = baseDir + L"\\Resources\\Dictionaries\\en_dict.bin";
-    initVietnameseDictionary(WStringToString(viDictPath));
-    initEnglishDictionary(WStringToString(enDictPath));
+
+    initVietnameseDictionary(WStringToUtf8(viDictPath));
+    initEnglishDictionary(WStringToUtf8(enDictPath));
     vKeyInit();
     PHTVConfig::Shared().Load();
-
-    // Register Classes
-    WNDCLASSEXW wcex = {0};
-    wcex.cbSize = sizeof(WNDCLASSEX);
-    wcex.lpfnWndProc = WndProc;
-    wcex.hInstance = hInstance;
-    wcex.lpszClassName = L"PHTVHiddenWindow";
-    RegisterClassExW(&wcex);
-
-    WNDCLASSEXW wSettings = {0};
-    wSettings.cbSize = sizeof(WNDCLASSEX);
-    wSettings.style = CS_HREDRAW | CS_VREDRAW;
-    wSettings.lpfnWndProc = SettingsWndProc;
-    wSettings.hInstance = hInstance;
-    wSettings.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    wSettings.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
-    wSettings.lpszClassName = L"PHTVSettingsWindow";
-    wSettings.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_APP_ICON));
-    RegisterClassExW(&wSettings);
-
-    hHiddenWnd = CreateWindowW(L"PHTVHiddenWindow", L"PHTV", 0, 0, 0, 0, 0, nullptr, nullptr, hInstance, nullptr);
-    if (!hHiddenWnd) return FALSE;
-
-    InitTrayIcon(hHiddenWnd);
-
-    hKeyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, LowLevelKeyboardProc, hInstance, 0);
-    
-    MSG msg;
-    while (GetMessage(&msg, nullptr, 0, 0)) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
-
-    if (hKeyboardHook) UnhookWindowsHookEx(hKeyboardHook);
-    RemoveTrayIcon();
-    if (hMutex) ReleaseMutex(hMutex);
-    DeleteObject(hFontTitle);
-    DeleteObject(hFontNormal);
-
-    return (int) msg.wParam;
+    LoadSmartSwitchData();
 }
 
-LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
+static void UpdateTrayIcon() {
+    int iconId = vLanguage ? IDI_ICON_VIE : IDI_ICON_ENG;
+    int cx = GetSystemMetrics(SM_CXSMICON);
+    int cy = GetSystemMetrics(SM_CYSMICON);
+    gNid.hIcon = (HICON)LoadImageW(gInstance, MAKEINTRESOURCE(iconId), IMAGE_ICON, cx, cy, LR_DEFAULTCOLOR | LR_SHARED);
+    if (!gNid.hIcon) gNid.hIcon = LoadIcon(gInstance, MAKEINTRESOURCE(IDI_APP_ICON));
+    if (!gNid.hIcon) gNid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+    wcscpy_s(gNid.szTip, vLanguage ? L"PHTV - VI" : L"PHTV - EN");
+    Shell_NotifyIcon(NIM_MODIFY, &gNid);
+}
+
+static void CreateTrayMenu() {
+    if (gTrayMenu) return;
+    gTrayMenu = CreatePopupMenu();
+    AppendMenuW(gTrayMenu, MF_STRING, IDM_TOGGLE_LANG, L"B\u1EADt Ti\u1EBFng Vi\u1EC7t");
+    AppendMenuW(gTrayMenu, MF_STRING, IDM_OPEN_CONTROL_PANEL, L"B\u1EA3ng \u0111i\u1EC1u khi\u1EC3n...");
+    AppendMenuW(gTrayMenu, MF_SEPARATOR, 0, NULL);
+
+    gMenuTyping = CreatePopupMenu();
+    gMenuInputMethod = CreatePopupMenu();
+    AppendMenuW(gMenuInputMethod, MF_STRING, IDM_INPUT_TELEX, L"Telex");
+    AppendMenuW(gMenuInputMethod, MF_STRING, IDM_INPUT_VNI, L"VNI");
+    AppendMenuW(gMenuTyping, MF_POPUP, (UINT_PTR)gMenuInputMethod, L"Ph\u01B0\u01A1ng ph\u00E1p g\u00F5");
+
+    gMenuCodeTable = CreatePopupMenu();
+    AppendMenuW(gMenuCodeTable, MF_STRING, IDM_CODE_UNICODE, L"Unicode");
+    AppendMenuW(gMenuCodeTable, MF_STRING, IDM_CODE_TCVN3, L"TCVN3 (ABC)");
+    AppendMenuW(gMenuCodeTable, MF_STRING, IDM_CODE_VNIWIN, L"VNI Windows");
+    AppendMenuW(gMenuTyping, MF_POPUP, (UINT_PTR)gMenuCodeTable, L"B\u1EA3ng m\u00E3");
+
+    AppendMenuW(gMenuTyping, MF_SEPARATOR, 0, NULL);
+    AppendMenuW(gMenuTyping, MF_STRING, IDM_OPT_QUICK_TELEX, L"G\u00F5 nhanh (Quick Telex)");
+    AppendMenuW(gMenuTyping, MF_STRING, IDM_OPT_UPPER_FIRST, L"Vi\u1EBFt hoa \u0111\u1EA7u c\u00E2u");
+    AppendMenuW(gMenuTyping, MF_STRING, IDM_OPT_ALLOW_ZFWJ, L"Ph\u1EE5 \u00E2m Z, F, W, J");
+    AppendMenuW(gMenuTyping, MF_STRING, IDM_OPT_QUICK_START, L"Ph\u1EE5 \u00E2m \u0111\u1EA7u nhanh");
+    AppendMenuW(gMenuTyping, MF_STRING, IDM_OPT_QUICK_END, L"Ph\u1EE5 \u00E2m cu\u1ED1i nhanh");
+    AppendMenuW(gMenuTyping, MF_SEPARATOR, 0, NULL);
+    AppendMenuW(gMenuTyping, MF_STRING, IDM_OPT_CHECK_SPELL, L"Ki\u1EC3m tra ch\u00EDnh t\u1EA3");
+    AppendMenuW(gMenuTyping, MF_STRING, IDM_OPT_MODERN_ORTHO, L"Ch\u00EDnh t\u1EA3 m\u1EDBi (o\u00E0, u\u00FD)");
+
+    AppendMenuW(gTrayMenu, MF_POPUP, (UINT_PTR)gMenuTyping, L"B\u1ED9 g\u00F5");
+
+    gMenuFeatures = CreatePopupMenu();
+    AppendMenuW(gMenuFeatures, MF_STRING, IDM_FEAT_AUTO_RESTORE, L"T\u1EF1 \u0111\u1ED9ng kh\u00F4i ph\u1EE5c ti\u1EBFng Anh");
+    AppendMenuW(gMenuFeatures, MF_SEPARATOR, 0, NULL);
+    AppendMenuW(gMenuFeatures, MF_STRING, IDM_FEAT_USE_MACRO, L"B\u1EADt g\u00F5 t\u1EAFt");
+    AppendMenuW(gMenuFeatures, MF_STRING, IDM_FEAT_MACRO_IN_EN, L"G\u00F5 t\u1EAFt khi \u1EDF ch\u1EBF \u0111\u1ED9 Anh");
+    AppendMenuW(gMenuFeatures, MF_STRING, IDM_FEAT_AUTO_CAPS_MACRO, L"T\u1EF1 \u0111\u1ED9ng vi\u1EBFt hoa macro");
+    AppendMenuW(gMenuFeatures, MF_SEPARATOR, 0, NULL);
+    AppendMenuW(gMenuFeatures, MF_STRING, IDM_FEAT_SMART_SWITCH, L"Chuy\u1EC3n th\u00F4ng minh theo \u1EE9ng d\u1EE5ng");
+    AppendMenuW(gMenuFeatures, MF_STRING, IDM_FEAT_REMEMBER_CODE, L"Nh\u1EDB b\u1EA3ng m\u00E3 theo \u1EE9ng d\u1EE5ng");
+    AppendMenuW(gMenuFeatures, MF_SEPARATOR, 0, NULL);
+    AppendMenuW(gMenuFeatures, MF_STRING, IDM_FEAT_RESTORE_ON_ESC, L"Kh\u00F4i ph\u1EE5c khi nh\u1EA5n Esc");
+    AppendMenuW(gMenuFeatures, MF_STRING, IDM_FEAT_PAUSE_KEY, L"T\u1EA1m d\u1EEBng khi gi\u1EEF ph\u00EDm");
+    AppendMenuW(gTrayMenu, MF_POPUP, (UINT_PTR)gMenuFeatures, L"T\u00EDnh n\u0103ng");
+
+    AppendMenuW(gTrayMenu, MF_SEPARATOR, 0, NULL);
+    AppendMenuW(gTrayMenu, MF_STRING, IDM_EXIT, L"Tho\u00E1t PHTV");
+
+    UpdateMenuChecks();
+}
+
+static void UpdateMenuChecks() {
+    if (!gTrayMenu) return;
+    CheckMenuItem(gTrayMenu, IDM_TOGGLE_LANG, MF_BYCOMMAND | (vLanguage ? MF_CHECKED : MF_UNCHECKED));
+
+    if (gMenuInputMethod) {
+        CheckMenuItem(gMenuInputMethod, IDM_INPUT_TELEX, MF_BYCOMMAND | (vInputType == 0 ? MF_CHECKED : MF_UNCHECKED));
+        CheckMenuItem(gMenuInputMethod, IDM_INPUT_VNI, MF_BYCOMMAND | (vInputType == 1 ? MF_CHECKED : MF_UNCHECKED));
+    }
+    if (gMenuCodeTable) {
+        CheckMenuItem(gMenuCodeTable, IDM_CODE_UNICODE, MF_BYCOMMAND | (vCodeTable == 0 ? MF_CHECKED : MF_UNCHECKED));
+        CheckMenuItem(gMenuCodeTable, IDM_CODE_TCVN3, MF_BYCOMMAND | (vCodeTable == 1 ? MF_CHECKED : MF_UNCHECKED));
+        CheckMenuItem(gMenuCodeTable, IDM_CODE_VNIWIN, MF_BYCOMMAND | (vCodeTable == 2 ? MF_CHECKED : MF_UNCHECKED));
+    }
+
+    if (gMenuTyping) {
+        CheckMenuItem(gMenuTyping, IDM_OPT_QUICK_TELEX, MF_BYCOMMAND | (vQuickTelex ? MF_CHECKED : MF_UNCHECKED));
+        CheckMenuItem(gMenuTyping, IDM_OPT_UPPER_FIRST, MF_BYCOMMAND | (vUpperCaseFirstChar ? MF_CHECKED : MF_UNCHECKED));
+        CheckMenuItem(gMenuTyping, IDM_OPT_ALLOW_ZFWJ, MF_BYCOMMAND | (vAllowConsonantZFWJ ? MF_CHECKED : MF_UNCHECKED));
+        CheckMenuItem(gMenuTyping, IDM_OPT_QUICK_START, MF_BYCOMMAND | (vQuickStartConsonant ? MF_CHECKED : MF_UNCHECKED));
+        CheckMenuItem(gMenuTyping, IDM_OPT_QUICK_END, MF_BYCOMMAND | (vQuickEndConsonant ? MF_CHECKED : MF_UNCHECKED));
+        CheckMenuItem(gMenuTyping, IDM_OPT_CHECK_SPELL, MF_BYCOMMAND | (vCheckSpelling ? MF_CHECKED : MF_UNCHECKED));
+        CheckMenuItem(gMenuTyping, IDM_OPT_MODERN_ORTHO, MF_BYCOMMAND | (vUseModernOrthography ? MF_CHECKED : MF_UNCHECKED));
+    }
+
+    if (gMenuFeatures) {
+        CheckMenuItem(gMenuFeatures, IDM_FEAT_AUTO_RESTORE, MF_BYCOMMAND | (vAutoRestoreEnglishWord ? MF_CHECKED : MF_UNCHECKED));
+        CheckMenuItem(gMenuFeatures, IDM_FEAT_USE_MACRO, MF_BYCOMMAND | (vUseMacro ? MF_CHECKED : MF_UNCHECKED));
+        CheckMenuItem(gMenuFeatures, IDM_FEAT_MACRO_IN_EN, MF_BYCOMMAND | (vUseMacroInEnglishMode ? MF_CHECKED : MF_UNCHECKED));
+        CheckMenuItem(gMenuFeatures, IDM_FEAT_AUTO_CAPS_MACRO, MF_BYCOMMAND | (vAutoCapsMacro ? MF_CHECKED : MF_UNCHECKED));
+        CheckMenuItem(gMenuFeatures, IDM_FEAT_SMART_SWITCH, MF_BYCOMMAND | (vUseSmartSwitchKey ? MF_CHECKED : MF_UNCHECKED));
+        CheckMenuItem(gMenuFeatures, IDM_FEAT_REMEMBER_CODE, MF_BYCOMMAND | (vRememberCode ? MF_CHECKED : MF_UNCHECKED));
+        CheckMenuItem(gMenuFeatures, IDM_FEAT_RESTORE_ON_ESC, MF_BYCOMMAND | (vRestoreOnEscape ? MF_CHECKED : MF_UNCHECKED));
+        CheckMenuItem(gMenuFeatures, IDM_FEAT_PAUSE_KEY, MF_BYCOMMAND | (vPauseKeyEnabled ? MF_CHECKED : MF_UNCHECKED));
+    }
+}
+
+static bool AddTrayIcon() {
+    CreateTrayMenu();
+
+    gNid.cbSize = sizeof(NOTIFYICONDATA);
+    gNid.hWnd = gTrayWnd;
+    gNid.uID = TRAY_ICON_UID;
+    gNid.uCallbackMessage = WM_TRAYMESSAGE;
+    gNid.uVersion = NOTIFYICON_VERSION;
+    gNid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
+    UpdateTrayIcon();
+
+    const int maxRetries = 5;
+    for (int attempt = 0; attempt < maxRetries; ++attempt) {
+        if (Shell_NotifyIcon(NIM_ADD, &gNid)) {
+            Shell_NotifyIcon(NIM_SETVERSION, &gNid);
+            return true;
+        }
+        Sleep(1000);
+    }
+    return false;
+}
+
+static void RemoveTrayIcon() {
+    Shell_NotifyIcon(NIM_DELETE, &gNid);
+}
+
+static void OpenControlPanel() {
+    PHTVConfig::Shared().Save();
+    std::wstring path = PHTVConfig::Shared().GetConfigPath();
+    ShellExecuteW(NULL, L"open", path.c_str(), NULL, NULL, SW_SHOWNORMAL);
+}
+
+static void ProcessEngineOutput() {
+    extern vKeyHookState HookState;
+    if (HookState.backspaceCount > 0) SendBackspace(HookState.backspaceCount);
+    if (HookState.newCharCount > 0) {
+        std::vector<unsigned int> chars;
+        for (int i = HookState.newCharCount - 1; i >= 0; i--) {
+            chars.push_back(HookState.charData[i]);
+        }
+        SendUnicodeString(chars);
+    }
+}
+
+static void SendBackspace(int count) {
+    if (count <= 0) return;
+    std::vector<INPUT> inputs;
+    for (int i = 0; i < count; ++i) {
+        INPUT down = {0};
+        down.type = INPUT_KEYBOARD;
+        down.ki.wVk = VK_BACK;
+        down.ki.dwExtraInfo = PHTV_INJECTED_SIGNATURE;
+
+        INPUT up = down;
+        up.ki.dwFlags = KEYEVENTF_KEYUP;
+
+        inputs.push_back(down);
+        inputs.push_back(up);
+    }
+    SendInput((UINT)inputs.size(), inputs.data(), sizeof(INPUT));
+}
+
+static void SendUnicodeString(const std::vector<unsigned int>& charCodes) {
+    if (charCodes.empty()) return;
+    std::vector<INPUT> inputs;
+    const unsigned int CAPS_MASK_VAL = 0x10000;
+
+    for (unsigned int code : charCodes) {
+        unsigned int finalChar = code & 0xFFFF;
+        bool isUpperCase = (code & CAPS_MASK_VAL) != 0;
+
+        if (finalChar >= 'A' && finalChar <= 'Z') {
+            if (!isUpperCase) finalChar = tolower(finalChar);
+        }
+
+        INPUT down = {0};
+        down.type = INPUT_KEYBOARD;
+        down.ki.wScan = (WORD)finalChar;
+        down.ki.dwFlags = KEYEVENTF_UNICODE;
+        down.ki.dwExtraInfo = PHTV_INJECTED_SIGNATURE;
+
+        INPUT up = down;
+        up.ki.dwFlags = KEYEVENTF_UNICODE | KEYEVENTF_KEYUP;
+
+        inputs.push_back(down);
+        inputs.push_back(up);
+    }
+    SendInput((UINT)inputs.size(), inputs.data(), sizeof(INPUT));
+}
+
+LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
     if (nCode == HC_ACTION) {
         KBDLLHOOKSTRUCT* pKbd = (KBDLLHOOKSTRUCT*)lParam;
-        if (pKbd->dwExtraInfo == PHTV_INJECTED_SIGNATURE) return CallNextHookEx(hKeyboardHook, nCode, wParam, lParam);
+        if (pKbd->dwExtraInfo == PHTV_INJECTED_SIGNATURE) {
+            return CallNextHookEx(gKeyboardHook, nCode, wParam, lParam);
+        }
 
         if (vLanguage == 1) {
             vKeyEventState state;
             if (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN) state = vKeyEventState::KeyDown;
             else if (wParam == WM_KEYUP || wParam == WM_SYSKEYUP) state = vKeyEventState::KeyUp;
-            else return CallNextHookEx(hKeyboardHook, nCode, wParam, lParam);
+            else return CallNextHookEx(gKeyboardHook, nCode, wParam, lParam);
 
             if (state == vKeyEventState::KeyDown) {
                 bool isShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
                 bool isCaps = (GetKeyState(VK_CAPITAL) & 0x0001) != 0;
                 bool isCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
                 bool isAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
-                Uint8 capsStatus = (isCaps ? 2 : (isShift ? 1 : 0));
+
+                Uint8 capsStatus = 0;
+                if (isShift) capsStatus = 1;
+                if (isCaps) capsStatus = 2;
 
                 extern vKeyHookState HookState;
                 vKeyHandleEvent(vKeyEvent::Keyboard, state, (Uint16)pKbd->vkCode, capsStatus, isCtrl || isAlt);
@@ -152,238 +376,263 @@ LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
             }
         }
     }
-    return CallNextHookEx(hKeyboardHook, nCode, wParam, lParam);
+    return CallNextHookEx(gKeyboardHook, nCode, wParam, lParam);
 }
 
-void ProcessEngineOutput() {
-    extern vKeyHookState HookState;
-    if (HookState.backspaceCount > 0) SendBackspace(HookState.backspaceCount);
-    if (HookState.newCharCount > 0) {
-        std::vector<unsigned int> chars;
-        for (int i = HookState.newCharCount - 1; i >= 0; i--) chars.push_back(HookState.charData[i]);
-        SendUnicodeString(chars);
-    }
-}
-
-void SendBackspace(int count) {
-    if (count <= 0) return;
-    std::vector<INPUT> inputs;
-    for (int i = 0; i < count; ++i) {
-        INPUT input = {0};
-        input.type = INPUT_KEYBOARD;
-        input.ki.wVk = VK_BACK;
-        input.ki.dwExtraInfo = PHTV_INJECTED_SIGNATURE;
-        inputs.push_back(input);
-        input.ki.dwFlags = KEYEVENTF_KEYUP;
-        inputs.push_back(input);
-    }
-    SendInput((UINT)inputs.size(), inputs.data(), sizeof(INPUT));
-}
-
-void SendUnicodeString(const std::vector<unsigned int>& charCodes) {
-    if (charCodes.empty()) return;
-    std::vector<INPUT> inputs;
-    
-    // CAPS MASK from Engine (defined in DataType.h)
-    const unsigned int CAPS_MASK_VAL = 0x10000;
-
-    for (unsigned int code : charCodes) {
-        unsigned int finalChar = code & 0xFFFF; // Extract char
-        bool isUpperCase = (code & CAPS_MASK_VAL) != 0;
-
-        // FIX 2: Handle Capitalization for Raw Keys
-        if (finalChar >= 'A' && finalChar <= 'Z') {
-            if (!isUpperCase) {
-                finalChar = tolower(finalChar);
-            }
+LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam) {
+    if (nCode == HC_ACTION) {
+        switch (wParam) {
+        case WM_LBUTTONDOWN:
+        case WM_RBUTTONDOWN:
+        case WM_MBUTTONDOWN:
+        case WM_XBUTTONDOWN:
+        case WM_NCXBUTTONDOWN:
+        case WM_LBUTTONUP:
+        case WM_RBUTTONUP:
+        case WM_MBUTTONUP:
+        case WM_XBUTTONUP:
+        case WM_NCXBUTTONUP:
+            vKeyHandleEvent(vKeyEvent::Mouse, vKeyEventState::MouseDown, 0);
+            break;
         }
-        
-        // UNIFIED UNICODE HANDLING (Includes Space 0x0020)
-        INPUT inputDown = {0};
-        inputDown.type = INPUT_KEYBOARD;
-        inputDown.ki.wScan = (WORD)finalChar;
-        inputDown.ki.dwFlags = KEYEVENTF_UNICODE;
-        inputDown.ki.dwExtraInfo = PHTV_INJECTED_SIGNATURE;
-        inputs.push_back(inputDown);
-
-        INPUT inputUp = {0};
-        inputUp.type = INPUT_KEYBOARD;
-        inputUp.ki.wScan = (WORD)finalChar;
-        inputUp.ki.dwFlags = KEYEVENTF_UNICODE | KEYEVENTF_KEYUP;
-        inputUp.ki.dwExtraInfo = PHTV_INJECTED_SIGNATURE;
-        inputs.push_back(inputUp);
     }
-    SendInput((UINT)inputs.size(), inputs.data(), sizeof(INPUT));
+    return CallNextHookEx(gMouseHook, nCode, wParam, lParam);
 }
 
-void InitTrayIcon(HWND hWnd) {
-    nid.cbSize = sizeof(NOTIFYICONDATA);
-    nid.hWnd = hWnd;
-    nid.uID = 1;
-    nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
-    nid.uCallbackMessage = WM_TRAYICON;
-    nid.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_APP_ICON)); 
-    if (!nid.hIcon) nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-    wcscpy_s(nid.szTip, L"PHTV - Bộ gõ Tiếng Việt");
-    Shell_NotifyIcon(NIM_ADD, &nid);
-    UpdateTrayIcon();
-}
+VOID CALLBACK WinEventProc(HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime) {
+    if (!vUseSmartSwitchKey) return;
+    std::string exe = GetForegroundExeName();
+    if (exe.empty() || _stricmp(exe.c_str(), "explorer.exe") == 0) return;
 
-void UpdateTrayIcon() {
-    int iconId = (vLanguage == 1) ? IDI_ICON_VIE : IDI_ICON_ENG;
-    nid.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(iconId));
-    if (!nid.hIcon) nid.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_APP_ICON));
-    Shell_NotifyIcon(NIM_MODIFY, &nid);
-}
-
-void RemoveTrayIcon() {
-    Shell_NotifyIcon(NIM_DELETE, &nid);
-}
-
-void ShowSettingsWindow() {
-    if (hSettingsWnd) {
-        SetForegroundWindow(hSettingsWnd);
-        return;
+    int status = getAppInputMethodStatus(exe, vLanguage);
+    if (status != -1 && status != vLanguage) {
+        vLanguage = status;
+        UpdateTrayIcon();
+        startNewSession();
+    } else if (status == -1) {
+        SaveSmartSwitchData();
     }
-    int width = 450;
-    int height = 350;
-    int x = (GetSystemMetrics(SM_CXSCREEN) - width) / 2;
-    int y = (GetSystemMetrics(SM_CYSCREEN) - height) / 2;
-    
-    hSettingsWnd = CreateWindowExW(WS_EX_DLGMODALFRAME, L"PHTVSettingsWindow", L"Cài đặt PHTV",
-        WS_VISIBLE | WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX,
-        x, y, width, height, NULL, NULL, hInst, NULL);
 }
 
-// UI Helpers
-void DrawCheckbox(HDC hdc, int x, int y, const wchar_t* text, bool checked, int id) {
-    RECT rc = {x, y, x + 20, y + 20};
-    DrawFrameControl(hdc, &rc, DFC_BUTTON, DFCS_BUTTONCHECK | (checked ? DFCS_CHECKED : 0));
-    
-    SetBkMode(hdc, TRANSPARENT);
-    SelectObject(hdc, hFontNormal);
-    SetTextColor(hdc, RGB(50, 50, 50));
-    TextOutW(hdc, x + 30, y, text, lstrlenW(text));
-}
-
-void DrawRadio(HDC hdc, int x, int y, const wchar_t* text, bool checked, int id) {
-    RECT rc = {x, y, x + 20, y + 20};
-    DrawFrameControl(hdc, &rc, DFC_BUTTON, DFCS_BUTTONRADIO | (checked ? DFCS_CHECKED : 0));
-    
-    SetBkMode(hdc, TRANSPARENT);
-    SelectObject(hdc, hFontNormal);
-    SetTextColor(hdc, RGB(50, 50, 50));
-    TextOutW(hdc, x + 30, y, text, lstrlenW(text));
-}
-
-// Settings Window Procedure
-LRESULT CALLBACK SettingsWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK TrayWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
-    case WM_PAINT: {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hWnd, &ps);
-        
-        // Background
-        RECT rcClient;
-        GetClientRect(hWnd, &rcClient);
-        HBRUSH hBrushBg = CreateSolidBrush(RGB(245, 245, 247)); // macOS-like gray
-        FillRect(hdc, &rcClient, hBrushBg);
-        DeleteObject(hBrushBg);
-
-        // Header
-        SetBkMode(hdc, TRANSPARENT);
-        SelectObject(hdc, hFontTitle);
-        SetTextColor(hdc, RGB(0, 0, 0));
-        TextOutW(hdc, 20, 20, L"Kiểu gõ", 7);
-        
-        // Input Method Group
-        DrawRadio(hdc, 30, 60, L"Telex", vInputType == 0, 101);
-        DrawRadio(hdc, 150, 60, L"VNI", vInputType == 1, 102);
-
-        // Features Group
-        SelectObject(hdc, hFontTitle);
-        TextOutW(hdc, 20, 100, L"Tính năng", 9);
-
-        DrawCheckbox(hdc, 30, 140, L"Kiểm tra chính tả", vCheckSpelling, 201);
-        DrawCheckbox(hdc, 30, 170, L"Dấu chuẩn (Oà, Uý)", vUseModernOrthography, 202);
-        DrawCheckbox(hdc, 30, 200, L"Gõ tắt (Macro)", vUseMacro, 203);
-        DrawCheckbox(hdc, 30, 230, L"Khôi phục từ tiếng Anh", vAutoRestoreEnglishWord, 204);
-
-        EndPaint(hWnd, &ps);
+    case WM_CREATE:
+        gTaskbarCreatedMsg = RegisterWindowMessageW(L"TaskbarCreated");
         break;
-    }
-    case WM_LBUTTONUP: {
-        int x = LOWORD(lParam);
-        int y = HIWORD(lParam);
-        
-        // Simple Hit Testing (Hardcoded for demo)
-        bool changed = false;
-        if (y >= 60 && y <= 80) {
-            if (x >= 30 && x <= 100) { vInputType = 0; changed = true; }
-            else if (x >= 150 && x <= 220) { vInputType = 1; changed = true; }
-        }
-        else if (x >= 30 && x <= 300) {
-            if (y >= 140 && y <= 160) { vCheckSpelling = !vCheckSpelling; changed = true; }
-            else if (y >= 170 && y <= 190) { vUseModernOrthography = !vUseModernOrthography; changed = true; }
-            else if (y >= 200 && y <= 220) { vUseMacro = !vUseMacro; changed = true; }
-            else if (y >= 230 && y <= 250) { vAutoRestoreEnglishWord = !vAutoRestoreEnglishWord; changed = true; }
-        }
-
-        if (changed) {
+    case WM_TRAYMESSAGE:
+        if (lParam == WM_LBUTTONUP) {
+            vLanguage = vLanguage ? 0 : 1;
             PHTVConfig::Shared().Save();
-            InvalidateRect(hWnd, NULL, TRUE); // Redraw
+            UpdateTrayIcon();
+            UpdateMenuChecks();
+            startNewSession();
+        } else if (lParam == WM_RBUTTONUP) {
+            POINT pt;
+            GetCursorPos(&pt);
+            SetForegroundWindow(hWnd);
+
+            UpdateMenuChecks();
+
+            TrackPopupMenu(gTrayMenu, TPM_RIGHTBUTTON | TPM_BOTTOMALIGN, pt.x, pt.y, 0, hWnd, NULL);
+            PostMessage(hWnd, WM_NULL, 0, 0);
         }
-        break;
-    }
-    case WM_DESTROY:
-        hSettingsWnd = NULL;
         break;
     default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
-    }
-    return 0;
-}
-
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-    switch (message) {
-    case WM_TRAYICON:
-        if (lParam == WM_RBUTTONUP || lParam == WM_LBUTTONUP) {
-            POINT curPoint;
-            GetCursorPos(&curPoint);
-            HMENU hMenu = CreatePopupMenu();
-            
-            AppendMenu(hMenu, MF_STRING | (vLanguage == 1 ? MF_CHECKED : 0), IDM_TOGGLE_LANG, L"Chế độ gõ Tiếng Việt");
-            AppendMenu(hMenu, MF_SEPARATOR, 0, nullptr);
-            AppendMenu(hMenu, MF_STRING | (vInputType == 0 ? MF_CHECKED : 0), IDM_TELEX, L"Telex");
-            AppendMenu(hMenu, MF_STRING | (vInputType == 1 ? MF_CHECKED : 0), IDM_VNI, L"VNI");
-            AppendMenu(hMenu, MF_SEPARATOR, 0, nullptr);
-            AppendMenu(hMenu, MF_STRING, IDM_SETTINGS, L"Cài đặt...");
-            AppendMenu(hMenu, MF_SEPARATOR, 0, nullptr);
-            AppendMenu(hMenu, MF_STRING, IDM_EXIT, L"Thoát");
-
-            SetForegroundWindow(hWnd);
-            TrackPopupMenu(hMenu, TPM_BOTTOMALIGN | TPM_LEFTALIGN, curPoint.x, curPoint.y, 0, hWnd, NULL);
-            DestroyMenu(hMenu);
+        if (message == gTaskbarCreatedMsg) {
+            AddTrayIcon();
+            return 0;
         }
         break;
     case WM_COMMAND:
         switch (LOWORD(wParam)) {
-        case IDM_EXIT: DestroyWindow(hWnd); break;
-        case IDM_TELEX: vInputType = 0; PHTVConfig::Shared().Save(); break;
-        case IDM_VNI:   vInputType = 1; PHTVConfig::Shared().Save(); break;
-        case IDM_TOGGLE_LANG: 
-            vLanguage = !vLanguage; 
-            PHTVConfig::Shared().Save(); 
-            UpdateTrayIcon(); 
+        case IDM_TOGGLE_LANG:
+            vLanguage = vLanguage ? 0 : 1;
+            PHTVConfig::Shared().Save();
+            UpdateTrayIcon();
+            UpdateMenuChecks();
+            startNewSession();
             break;
-        case IDM_SETTINGS: ShowSettingsWindow(); break;
+        case IDM_OPEN_CONTROL_PANEL:
+            OpenControlPanel();
+            break;
+        case IDM_INPUT_TELEX:
+            vInputType = 0;
+            PHTVConfig::Shared().Save();
+            UpdateMenuChecks();
+            startNewSession();
+            break;
+        case IDM_INPUT_VNI:
+            vInputType = 1;
+            PHTVConfig::Shared().Save();
+            UpdateMenuChecks();
+            startNewSession();
+            break;
+        case IDM_CODE_UNICODE:
+            vCodeTable = 0;
+            PHTVConfig::Shared().Save();
+            UpdateMenuChecks();
+            startNewSession();
+            break;
+        case IDM_CODE_TCVN3:
+            vCodeTable = 1;
+            PHTVConfig::Shared().Save();
+            UpdateMenuChecks();
+            startNewSession();
+            break;
+        case IDM_CODE_VNIWIN:
+            vCodeTable = 2;
+            PHTVConfig::Shared().Save();
+            UpdateMenuChecks();
+            startNewSession();
+            break;
+        case IDM_OPT_QUICK_TELEX:
+            vQuickTelex = vQuickTelex ? 0 : 1;
+            PHTVConfig::Shared().Save();
+            UpdateMenuChecks();
+            break;
+        case IDM_OPT_UPPER_FIRST:
+            vUpperCaseFirstChar = vUpperCaseFirstChar ? 0 : 1;
+            PHTVConfig::Shared().Save();
+            UpdateMenuChecks();
+            break;
+        case IDM_OPT_ALLOW_ZFWJ:
+            vAllowConsonantZFWJ = vAllowConsonantZFWJ ? 0 : 1;
+            PHTVConfig::Shared().Save();
+            UpdateMenuChecks();
+            break;
+        case IDM_OPT_QUICK_START:
+            vQuickStartConsonant = vQuickStartConsonant ? 0 : 1;
+            PHTVConfig::Shared().Save();
+            UpdateMenuChecks();
+            break;
+        case IDM_OPT_QUICK_END:
+            vQuickEndConsonant = vQuickEndConsonant ? 0 : 1;
+            PHTVConfig::Shared().Save();
+            UpdateMenuChecks();
+            break;
+        case IDM_OPT_CHECK_SPELL:
+            vCheckSpelling = vCheckSpelling ? 0 : 1;
+            PHTVConfig::Shared().Save();
+            UpdateMenuChecks();
+            break;
+        case IDM_OPT_MODERN_ORTHO:
+            vUseModernOrthography = vUseModernOrthography ? 0 : 1;
+            PHTVConfig::Shared().Save();
+            UpdateMenuChecks();
+            startNewSession();
+            break;
+        case IDM_FEAT_AUTO_RESTORE:
+            vAutoRestoreEnglishWord = vAutoRestoreEnglishWord ? 0 : 1;
+            PHTVConfig::Shared().Save();
+            UpdateMenuChecks();
+            break;
+        case IDM_FEAT_USE_MACRO:
+            vUseMacro = vUseMacro ? 0 : 1;
+            PHTVConfig::Shared().Save();
+            UpdateMenuChecks();
+            break;
+        case IDM_FEAT_MACRO_IN_EN:
+            vUseMacroInEnglishMode = vUseMacroInEnglishMode ? 0 : 1;
+            PHTVConfig::Shared().Save();
+            UpdateMenuChecks();
+            break;
+        case IDM_FEAT_AUTO_CAPS_MACRO:
+            vAutoCapsMacro = vAutoCapsMacro ? 0 : 1;
+            PHTVConfig::Shared().Save();
+            UpdateMenuChecks();
+            break;
+        case IDM_FEAT_SMART_SWITCH:
+            vUseSmartSwitchKey = vUseSmartSwitchKey ? 0 : 1;
+            PHTVConfig::Shared().Save();
+            UpdateMenuChecks();
+            break;
+        case IDM_FEAT_REMEMBER_CODE:
+            vRememberCode = vRememberCode ? 0 : 1;
+            PHTVConfig::Shared().Save();
+            UpdateMenuChecks();
+            break;
+        case IDM_FEAT_RESTORE_ON_ESC:
+            vRestoreOnEscape = vRestoreOnEscape ? 0 : 1;
+            PHTVConfig::Shared().Save();
+            UpdateMenuChecks();
+            break;
+        case IDM_FEAT_PAUSE_KEY:
+            vPauseKeyEnabled = vPauseKeyEnabled ? 0 : 1;
+            PHTVConfig::Shared().Save();
+            UpdateMenuChecks();
+            break;
+        case IDM_EXIT:
+            DestroyWindow(hWnd);
+            break;
+        }
+        break;
+    case WM_TIMER:
+        if (wParam == TRAY_RETRY_TIMER) {
+            if (AddTrayIcon() || gTrayRetryCount >= 5) {
+                KillTimer(hWnd, TRAY_RETRY_TIMER);
+            } else {
+                gTrayRetryCount++;
+            }
         }
         break;
     case WM_DESTROY:
+        RemoveTrayIcon();
         PostQuitMessage(0);
         break;
-    default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
     }
-    return 0;
+    return DefWindowProc(hWnd, message, wParam, lParam);
+}
+
+static HWND CreateTrayWindow(const HINSTANCE& hInst) {
+    const wchar_t* className = L"PHTVTrayWindow";
+    WNDCLASSEXW wcex = {0};
+    wcex.cbSize = sizeof(WNDCLASSEX);
+    wcex.lpfnWndProc = TrayWndProc;
+    wcex.hInstance = hInst;
+    wcex.lpszClassName = className;
+    wcex.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_APP_ICON));
+
+    RegisterClassExW(&wcex);
+    HWND hWnd = CreateWindowW(className, L"PHTV", WS_OVERLAPPEDWINDOW,
+        CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInst, NULL);
+    if (!hWnd) return NULL;
+    ShowWindow(hWnd, SW_HIDE);
+    UpdateWindow(hWnd);
+    return hWnd;
+}
+
+int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
+                     _In_opt_ HINSTANCE hPrevInstance,
+                     _In_ LPWSTR    lpCmdLine,
+                     _In_ int       nCmdShow) {
+    UNREFERENCED_PARAMETER(hPrevInstance);
+    UNREFERENCED_PARAMETER(lpCmdLine);
+    UNREFERENCED_PARAMETER(nCmdShow);
+
+    gInstance = hInstance;
+    gSelfPid = GetCurrentProcessId();
+
+    InitEngine();
+
+    gTrayWnd = CreateTrayWindow(hInstance);
+    if (!gTrayWnd) return 1;
+
+    if (!AddTrayIcon()) {
+        SetTimer(gTrayWnd, TRAY_RETRY_TIMER, 3000, NULL);
+    }
+
+    gKeyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardProc, hInstance, 0);
+    gMouseHook = SetWindowsHookEx(WH_MOUSE_LL, MouseProc, hInstance, 0);
+    gWinEventHook = SetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND, NULL, WinEventProc, 0, 0, WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
+
+    MSG msg;
+    while (GetMessage(&msg, NULL, 0, 0)) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+
+    if (gWinEventHook) UnhookWinEvent(gWinEventHook);
+    if (gMouseHook) UnhookWindowsHookEx(gMouseHook);
+    if (gKeyboardHook) UnhookWindowsHookEx(gKeyboardHook);
+    return (int)msg.wParam;
 }
