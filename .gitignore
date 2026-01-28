@@ -48,3 +48,7 @@ Package.resolved
 # Temporary
 *.tmp
 *.temp
+
+# Windows build outputs
+Windows/UI/bin/
+Windows/UI/obj/
