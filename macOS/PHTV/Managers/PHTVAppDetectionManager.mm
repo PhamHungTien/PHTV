@@ -104,7 +104,6 @@ static NSSet* _disableVietnameseAppSet = nil;
             @"com.electron.discord",
             @"com.github.GitHubClient",
             @"com.figma.Desktop",
-            @"notion.id",
             @"com.linear",
             @"com.logseq.logseq",
             @"md.obsidian"

@@ -455,7 +455,7 @@ extern "C" {
         @"ru.yandex.desktop.yandex-browser", // Yandex Browser
 
         // Electron-based apps (Chromium engine)
-        // These apps use Chromium's text input system and need browser fixes
+        // These apps use Chromium's text input system and may need browser fixes
         @"com.tinyspeck.slackmacgap",  // Slack
         @"com.hnc.Discord",            // Discord
         @"com.electron.discord",       // Discord (alternate)
