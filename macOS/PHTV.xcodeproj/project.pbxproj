@@ -18,6 +18,12 @@
 		460202722F2814260040B043 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 460202682F2814260040B043 /* AppIntents.framework */; };
 		460202732F2814260040B043 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 460202742F2814260040B043 /* Sparkle */; };
 		460203682F2816C90040B043 /* PHTV.icon in Resources */ = {isa = PBXBuildFile; fileRef = 460203672F2816C90040B043 /* PHTV.icon */; };
+		F23ACFEA40E1468F97AA77EA /* Engine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7CE9664B430E4EB48CEE2D49 /* Engine.cpp */; };
+		96BF66D4CED14989AE83B0E5 /* Vietnamese.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4473A35DF26644BCBDA07AA0 /* Vietnamese.cpp */; };
+		2FDDAC885FFC42F290E629F3 /* Macro.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B00F2FD1349E4E5CA37AD703 /* Macro.cpp */; };
+		B482EB9F28364F1BA3AB624B /* EnglishWordDetector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9253E41187304C9A9A7D707A /* EnglishWordDetector.cpp */; };
+		FAA98918992942A79BC9B4E0 /* ConvertTool.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B28D64E2699D42FC94CB2B16 /* ConvertTool.cpp */; };
+		3E108E8827154303AD1B75F1 /* SmartSwitchKey.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 643ABA13694145EEB6CD3AAC /* SmartSwitchKey.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +38,12 @@
 		460202672F2814260040B043 /* ServiceManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ServiceManagement.framework; path = System/Library/Frameworks/ServiceManagement.framework; sourceTree = SDKROOT; };
 		460202682F2814260040B043 /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppIntents.framework; path = System/Library/Frameworks/AppIntents.framework; sourceTree = SDKROOT; };
 		460203672F2816C90040B043 /* PHTV.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = PHTV.icon; sourceTree = "<group>"; };
+		7CE9664B430E4EB48CEE2D49 /* Engine.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ../Engine/Engine.cpp; sourceTree = SOURCE_ROOT; };
+		4473A35DF26644BCBDA07AA0 /* Vietnamese.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ../Engine/Vietnamese.cpp; sourceTree = SOURCE_ROOT; };
+		B00F2FD1349E4E5CA37AD703 /* Macro.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ../Engine/Macro.cpp; sourceTree = SOURCE_ROOT; };
+		9253E41187304C9A9A7D707A /* EnglishWordDetector.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ../Engine/EnglishWordDetector.cpp; sourceTree = SOURCE_ROOT; };
+		B28D64E2699D42FC94CB2B16 /* ConvertTool.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ../Engine/ConvertTool.cpp; sourceTree = SOURCE_ROOT; };
+		643ABA13694145EEB6CD3AAC /* SmartSwitchKey.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ../Engine/SmartSwitchKey.cpp; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -39,8 +51,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
-				"PHTV-Bridging-Header.h",
-				PHTV.entitlements,
 			);
 			target = 460202422F2814250040B043 /* PHTV */;
 		};
@@ -82,10 +92,24 @@
 			isa = PBXGroup;
 			children = (
 				460203672F2816C90040B043 /* PHTV.icon */,
+				D0295C47223D485B9A2455B5 /* Engine */,
 				460202452F2814250040B043 /* PHTV */,
 				460202692F2814260040B043 /* Frameworks */,
 				460202442F2814250040B043 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		D0295C47223D485B9A2455B5 /* Engine */ = {
+			isa = PBXGroup;
+			children = (
+				7CE9664B430E4EB48CEE2D49 /* Engine.cpp */,
+				4473A35DF26644BCBDA07AA0 /* Vietnamese.cpp */,
+				B00F2FD1349E4E5CA37AD703 /* Macro.cpp */,
+				9253E41187304C9A9A7D707A /* EnglishWordDetector.cpp */,
+				B28D64E2699D42FC94CB2B16 /* ConvertTool.cpp */,
+				643ABA13694145EEB6CD3AAC /* SmartSwitchKey.cpp */,
+			);
+			name = Engine;
 			sourceTree = "<group>";
 		};
 		460202442F2814250040B043 /* Products */ = {
@@ -192,6 +216,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F23ACFEA40E1468F97AA77EA /* Engine.cpp in Sources */,
+				96BF66D4CED14989AE83B0E5 /* Vietnamese.cpp in Sources */,
+				2FDDAC885FFC42F290E629F3 /* Macro.cpp in Sources */,
+				B482EB9F28364F1BA3AB624B /* EnglishWordDetector.cpp in Sources */,
+				FAA98918992942A79BC9B4E0 /* ConvertTool.cpp in Sources */,
+				3E108E8827154303AD1B75F1 /* SmartSwitchKey.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -267,12 +297,16 @@
 			};
 			name = Debug;
 		};
-		        4602024D2F2814260040B043 /* Release */ = {
-		            isa = XCBuildConfiguration;
-		            buildSettings = {
-		                ALWAYS_SEARCH_USER_PATHS = NO;
-		                ARCHS = "arm64 x86_64";
-		                ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+		4602024D2F2814260040B043 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = (
+					arm64,
+					x86_64,
+				);
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -354,7 +388,7 @@
 				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
 				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
-				HEADER_SEARCH_PATHS = "$(SRCROOT)/PHTV/Core/Engine";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../Engine";
 				INFOPLIST_FILE = PHTV/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -381,7 +415,10 @@
 		460202502F2814260040B043 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "arm64 x86_64";
+				ARCHS = (
+					arm64,
+					x86_64,
+				);
 				ASSETCATALOG_COMPILER_APPICON_NAME = PHTV;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
@@ -404,7 +441,7 @@
 				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
 				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
-				HEADER_SEARCH_PATHS = "$(SRCROOT)/PHTV/Core/Engine";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../Engine";
 				INFOPLIST_FILE = PHTV/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				LD_RUNPATH_SEARCH_PATHS = (

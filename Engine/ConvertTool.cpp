@@ -23,7 +23,7 @@ Uint8 convertToolFromCode = 0;
 Uint8 convertToolToCode = 0;
 int convertToolHotKey = 0;
 
-static vector<Uint8> _breakCode = {'.', '?', '!'};
+static vector<Uint8> _convertToolBreakCode = {'.', '?', '!'};
 
 static bool findKeyCode(const Uint32& charCode, const Uint8& code, int& j, int& k) {
     //find character which has tone/mark
@@ -166,7 +166,7 @@ string convertUtil(const string& sourceString) {
                 shouldUpperCase = true;
         } else if (t == ' ' && convertToolToCapsEachWord) {
             shouldUpperCase = true;
-        } else if (std::find(_breakCode.begin(), _breakCode.end(), t) != _breakCode.end()) {
+        } else if (std::find(_convertToolBreakCode.begin(), _convertToolBreakCode.end(), t) != _convertToolBreakCode.end()) {
             hasBreak = true;
         } else {
             shouldUpperCase = false;
@@ -177,4 +177,3 @@ string convertUtil(const string& sourceString) {
     wstring str(_temp.begin(), _temp.end());
     return wideStringToUtf8(str);
 }
-

@@ -5,13 +5,17 @@ project(PHTV_Win LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Shared engine source (single source of truth)
+set(ENGINE_DIR "${CMAKE_CURRENT_LIST_DIR}/../Engine")
+set(PLATFORMS_DIR "${CMAKE_CURRENT_LIST_DIR}/../Platforms")
+
 set(ENGINE_SOURCES
-    "Engine/Engine.cpp"
-    "Engine/Vietnamese.cpp"
-    "Engine/Macro.cpp"
-    "Engine/EnglishWordDetector.cpp"
-    "Engine/ConvertTool.cpp"
-    "Engine/SmartSwitchKey.cpp"
+    "${ENGINE_DIR}/Engine.cpp"
+    "${ENGINE_DIR}/Vietnamese.cpp"
+    "${ENGINE_DIR}/Macro.cpp"
+    "${ENGINE_DIR}/EnglishWordDetector.cpp"
+    "${ENGINE_DIR}/ConvertTool.cpp"
+    "${ENGINE_DIR}/SmartSwitchKey.cpp"
     "Config/PHTVConfig.cpp"
 )
 
@@ -29,9 +33,9 @@ endif()
 
 # Include Directories
 include_directories(
-    "Engine"
+    "${ENGINE_DIR}"
+    "${PLATFORMS_DIR}"
     "Config"
-    "Platforms"
     "App"
 )
 

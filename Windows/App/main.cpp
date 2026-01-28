@@ -10,10 +10,10 @@
 #pragma comment(lib, "msimg32.lib") // For GradientFill if needed
 
 #include "resource.h"
-#include "../Platforms/win32.h"
-#include "../Engine/Engine.h"
+#include "win32.h"
+#include "Engine.h"
 #include "../Config/PHTVConfig.h"
-#include "../Engine/EnglishWordDetector.h"
+#include "EnglishWordDetector.h"
 
 // Constants
 #define PHTV_INJECTED_SIGNATURE 0x99887766 
