@@ -404,17 +404,3 @@ struct MacroEditorView: View {
         }
     }
 }
-
-struct MacroEditorView_Previews: PreviewProvider {
-    static var previews: some View {
-        MacroEditorView(
-            isPresented: .constant(true),
-            categories: [
-                MacroCategory(name: "Công việc", icon: "briefcase.fill", color: "#FF9500"),
-                MacroCategory(name: "Email", icon: "envelope.fill", color: "#5856D6")
-            ]
-        )
-        .environmentObject(AppState.shared)
-    }
-}
-

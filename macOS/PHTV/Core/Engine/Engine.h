@@ -107,7 +107,6 @@ extern volatile int vQuickTelex;
  * 1: Yes
  *
  */
-extern volatile int vRestoreIfWrongSpelling;
 
 /*
  * Fix recommend browser's address, excel,...

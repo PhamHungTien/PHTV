@@ -20,7 +20,6 @@ final class InputMethodState: ObservableObject {
     @Published var checkSpelling: Bool = true
     @Published var useModernOrthography: Bool = true
     @Published var quickTelex: Bool = false
-    @Published var restoreOnInvalidWord: Bool = false
     @Published var sendKeyStepByStep: Bool = false
     @Published var useSmartSwitchKey: Bool = true
     @Published var upperCaseFirstChar: Bool = false
@@ -62,7 +61,6 @@ final class InputMethodState: ObservableObject {
         checkSpelling = defaults.object(forKey: UserDefaultsKey.spelling) as? Bool ?? Defaults.checkSpelling
         useModernOrthography = defaults.bool(forKey: UserDefaultsKey.modernOrthography)
         quickTelex = defaults.bool(forKey: UserDefaultsKey.quickTelex)
-        restoreOnInvalidWord = false  // Feature removed
         sendKeyStepByStep = defaults.bool(forKey: UserDefaultsKey.sendKeyStepByStep)
         useSmartSwitchKey = defaults.bool(forKey: UserDefaultsKey.useSmartSwitchKey)
         upperCaseFirstChar = defaults.bool(forKey: UserDefaultsKey.upperCaseFirstChar)
@@ -99,7 +97,6 @@ final class InputMethodState: ObservableObject {
         defaults.set(checkSpelling, forKey: UserDefaultsKey.spelling)
         defaults.set(useModernOrthography, forKey: UserDefaultsKey.modernOrthography)
         defaults.set(quickTelex, forKey: UserDefaultsKey.quickTelex)
-        defaults.set(false, forKey: UserDefaultsKey.restoreIfInvalidWord)  // Feature removed
         defaults.set(sendKeyStepByStep, forKey: UserDefaultsKey.sendKeyStepByStep)
         defaults.set(useSmartSwitchKey, forKey: UserDefaultsKey.useSmartSwitchKey)
         defaults.set(upperCaseFirstChar, forKey: UserDefaultsKey.upperCaseFirstChar)
@@ -190,7 +187,6 @@ final class InputMethodState: ObservableObject {
             $quickStartConsonant.map { _ in () }.eraseToAnyPublisher(),
             $quickEndConsonant.map { _ in () }.eraseToAnyPublisher(),
             $rememberCode.map { _ in () }.eraseToAnyPublisher(),
-            $restoreOnInvalidWord.map { _ in () }.eraseToAnyPublisher(),
             $sendKeyStepByStep.map { _ in () }.eraseToAnyPublisher(),
             $autoRestoreEnglishWord.map { _ in () }.eraseToAnyPublisher(),
             $restoreOnEscape.map { _ in () }.eraseToAnyPublisher(),
@@ -219,7 +215,6 @@ final class InputMethodState: ObservableObject {
         checkSpelling = true
         useModernOrthography = true
         quickTelex = false
-        restoreOnInvalidWord = false
         sendKeyStepByStep = false
         useSmartSwitchKey = true
         upperCaseFirstChar = false

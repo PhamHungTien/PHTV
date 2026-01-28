@@ -164,8 +164,6 @@ static int _externalDeleteCount = 0;
     }
 
     // Get the system-wide focused element
-    // REMOVED RETRIES: Event tap callbacks must be fast. Waiting with usleep() causes
-    // the tap to timeout, leading to duplicated characters (original event leaks + synthetic event sent).
     AXUIElementRef systemWide = AXUIElementCreateSystemWide();
     AXUIElementRef focusedElement = NULL;
     AXError error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement);

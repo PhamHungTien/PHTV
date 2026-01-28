@@ -143,7 +143,6 @@ cat << EOF
     <description><![CDATA[
         <h3>Tính năng mới</h3>
         <ul>
-            <li>TODO: Add release notes here</li>
         </ul>
     ]]></description>
     <pubDate>$PUBDATE</pubDate>

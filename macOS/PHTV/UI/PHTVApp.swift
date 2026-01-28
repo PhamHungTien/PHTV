@@ -64,3 +64,53 @@ struct PHTVApp: App {
     }
 }
 
+// MARK: - Menu Bar Icon Helpers
+
+@MainActor
+private var menuBarIconCache: [String: NSImage] = [:]
+
+@MainActor
+private func makeMenuBarIconImage(size: CGFloat, slashed: Bool, useVietnameseIcon: Bool) -> NSImage {
+    let cacheKey = "\(size)-\(slashed)-\(useVietnameseIcon)"
+    if let cached = menuBarIconCache[cacheKey] {
+        return cached
+    }
+
+    let targetSize = NSSize(width: size, height: size)
+    let img = NSImage(size: targetSize)
+    img.lockFocus()
+    defer { img.unlockFocus() }
+
+    let rect = NSRect(origin: .zero, size: targetSize)
+
+    let baseIcon: NSImage? = {
+        if slashed {
+            if let englishIcon = NSImage(named: "menubar_english") {
+                return englishIcon
+            }
+        }
+        if useVietnameseIcon, let vietnameseIcon = NSImage(named: "menubar_vietnamese") {
+            return vietnameseIcon
+        }
+        if let img = NSImage(named: "menubar_icon") {
+            return img
+        }
+        return NSApplication.shared.applicationIconImage
+    }()
+
+    if let baseIcon {
+        baseIcon.draw(
+            in: rect,
+            from: .zero,
+            operation: .sourceOver,
+            fraction: 1.0,
+            respectFlipped: true,
+            hints: [.interpolation: NSImageInterpolation.high]
+        )
+    }
+
+    img.isTemplate = true
+    img.size = targetSize
+    menuBarIconCache[cacheKey] = img
+    return img
+}

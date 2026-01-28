@@ -21,7 +21,6 @@ enum UserDefaultsKey {
     static let spelling = "Spelling"
     static let modernOrthography = "ModernOrthography"
     static let quickTelex = "QuickTelex"
-    static let restoreIfInvalidWord = "RestoreIfInvalidWord"
     static let sendKeyStepByStep = "SendKeyStepByStep"
     static let useMacro = "UseMacro"
     static let useMacroInEnglishMode = "UseMacroInEnglishMode"
@@ -181,7 +180,6 @@ enum Defaults {
     static let checkSpelling = true
     static let useModernOrthography = true
     static let quickTelex = false
-    static let restoreOnInvalidWord = false
     static let sendKeyStepByStep = false
     static let useMacro = true
     static let useMacroInEnglishMode = false

@@ -367,10 +367,6 @@ final class AppState: ObservableObject {
         set { inputMethodState.quickTelex = newValue }
     }
 
-    var restoreOnInvalidWord: Bool {
-        get { inputMethodState.restoreOnInvalidWord }
-        set { inputMethodState.restoreOnInvalidWord = newValue }
-    }
 
     var sendKeyStepByStep: Bool {
         get { inputMethodState.sendKeyStepByStep }

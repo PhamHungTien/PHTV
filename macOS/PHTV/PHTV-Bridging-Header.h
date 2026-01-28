@@ -22,12 +22,4 @@ extern AppDelegate* _Nullable appDelegate;
 // Managers
 #import "Managers/PHTVManager.h"
 
-// Legacy utilities
-#import "Core/Legacy/MJAccessibilityUtils.h"
-#import "Application/PHSilentUserDriver.h"
-
-// Core Config
-#import "Core/Config/PHTVConfig.h"
-#import "Core/Config/PHTVConstants.h"
-
 #endif /* PHTV_Bridging_Header_h */

@@ -52,16 +52,6 @@ static const uint64_t TERMINAL_SETTLE_DELAY_US = 4000;       // After all backsp
 static const uint64_t TERMINAL_FINAL_SETTLE_US = 10000;      // Final settle after all text (reduced from 20000us)
 static const uint64_t SPOTLIGHT_TINY_DELAY_US = 2000;        // Spotlight timing delay (reduced from 3000us)
 
-// Browser Delay Configuration - REMOVED
-// Browser delays are no longer needed thanks to Shift+Left strategy (inspired by OpenKey)
-// The "Select then Delete" approach eliminates autocomplete race conditions
-// This works for all browsers: Chromium, WebKit (Safari), Gecko (Firefox)
-// REMOVED: BROWSER_KEYSTROKE_DELAY_BASE_US, BROWSER_KEYSTROKE_DELAY_MAX_US
-// REMOVED: BROWSER_SETTLE_DELAY_BASE_US, BROWSER_SETTLE_DELAY_MAX_US
-// REMOVED: BROWSER_CHAR_DELAY_BASE_US, BROWSER_CHAR_DELAY_MAX_US
-// REMOVED: SAFARI_ADDRESS_BAR_EXTRA_DELAY_US
-// REMOVED: AUTO_ENGLISH_KEYSTROKE_DELAY_US, AUTO_ENGLISH_SETTLE_DELAY_US, AUTO_ENGLISH_CHAR_DELAY_US
-
 // Adaptive delay tracking
 static uint64_t _lastKeystrokeTimestamp = 0;
 static uint64_t _averageResponseTimeUs = 0;
@@ -120,34 +110,10 @@ static inline void PHTVSpotlightDebugLog(NSString *message) {
 }
 #endif
 
-// Cache for PID to bundle ID mapping - MOVED TO PHTVCacheManager
-// static NSMutableDictionary<NSNumber*, NSString*> *_pidBundleCache = nil;
-// static uint64_t _lastCacheCleanTime = 0;
-// static os_unfair_lock _pidCacheLock = OS_UNFAIR_LOCK_INIT;
-
-// App characteristics cache - cache all app properties to reduce repeated function calls
-// This eliminates 5-10 function calls per keystroke down to 1 dictionary lookup
-// MOVED TO PHTVCacheManager.h
-// typedef struct {
-//     BOOL isSpotlightLike;
-//     BOOL needsPrecomposedBatched;
-//     BOOL isTerminal;
-//     BOOL needsStepByStep;
-//     BOOL containsUnicodeCompound;
-// } AppCharacteristics;
-
 static NSMutableDictionary<NSString*, NSValue*> *_appCharacteristicsCache = nil;
 static os_unfair_lock _appCharCacheLock = OS_UNFAIR_LOCK_INIT;
 static NSString* _lastCachedBundleId = nil;  // Track last app to detect switches
 static uint64_t _lastCacheInvalidationTime = 0;  // Periodic cache invalidation
-
-// Spotlight detection cache (refreshes every 50ms for optimal balance of performance and responsiveness)
-// Thread-safe access required since event tap callback may run on different threads
-// static BOOL _cachedSpotlightActive = NO;  // MOVED TO PHTVSpotlightManager
-// static uint64_t _lastSpotlightCheckTime = 0; // MOVED TO PHTVCacheManager
-// static pid_t _cachedFocusedPID = 0;          // MOVED TO PHTVCacheManager
-// static NSString* _cachedFocusedBundleId = nil; // MOVED TO PHTVCacheManager
-// static os_unfair_lock _spotlightCacheLock = OS_UNFAIR_LOCK_INIT; // MOVED TO PHTVCacheManager
 
 // Text Replacement detection (for macOS native text replacement)
 // macOS Text Replacement does NOT send delete events via CGEventTap when using mouse!
@@ -178,9 +144,6 @@ static inline void InvalidateSpotlightCache(void) {
     [PHTVCacheManager invalidateSpotlightCache];
 }
 
-// Thread-safe helper to update Spotlight cache - MOVED TO PHTVSpotlightManager
-// static inline void UpdateSpotlightCache(BOOL isActive, pid_t pid, NSString* bundleId) { ... }
-
 // Track external delete events (not from PHTV) which may indicate text replacement
 static inline void TrackExternalDelete(void) {
     dispatch_once(&timebase_init_token, ^{
@@ -203,10 +166,6 @@ static inline void TrackExternalDelete(void) {
     _lastExternalDeleteTime = now;
     _externalDeleteDetected = YES;
 }
-
-// Helper functions MOVED TO PHTVSpotlightManager
-// static inline BOOL ContainsSearchKeyword(NSString *str) { ... }
-// static inline BOOL IsElementSpotlight(AXUIElementRef element) { ... }
 
 // Log AX API errors for debugging purposes
 // Only logs in debug builds to avoid overhead in production
@@ -459,7 +418,6 @@ extern "C" {
         @"com.tinyspeck.slackmacgap",  // Slack
         @"com.hnc.Discord",            // Discord
         @"com.electron.discord",       // Discord (alternate)
-        // NOTE: VSCode removed from this list - terminal needs Layout Compatibility enabled
         @"com.github.GitHubClient",    // GitHub Desktop
         @"com.figma.Desktop",          // Figma
         @"com.linear",                 // Linear
@@ -1044,7 +1002,6 @@ extern "C" {
         LOAD_DATA(vCheckSpelling, Spelling);
         LOAD_DATA(vQuickTelex, QuickTelex);
         LOAD_DATA(vUseModernOrthography, ModernOrthography);
-        LOAD_DATA(vRestoreIfWrongSpelling, RestoreIfInvalidWord);
         
         // FixRecommendBrowser default to YES (1) if not set
         if ([[NSUserDefaults standardUserDefaults] objectForKey:@"FixRecommendBrowser"] == nil) {
@@ -1555,17 +1512,6 @@ extern "C" {
         }
     }
 
-    // Delay type enum for different app categories
-    // MOVED TO PHTVTimingManager.h
-    // typedef enum {
-    //     DelayTypeNone = 0,
-    //     DelayTypeTerminal = 1,
-    //     // Browser delays removed - Shift+Left strategy eliminates need for delays:
-    //     // DelayTypeBrowser = 2,          // REMOVED - no longer needed
-    //     // DelayTypeSafariBrowser = 3,    // REMOVED - no longer needed
-    //     // DelayTypeAutoEnglish = 4       // REMOVED - no longer needed
-    // } DelayType;
-
     // Update response time tracking for adaptive delays
     // Call this after each keystroke to measure system responsiveness
     void UpdateResponseTimeTracking() {
@@ -1932,7 +1878,6 @@ extern "C" {
 
     void switchLanguage() {
         // Beep is now handled by SwiftUI when LanguageChangedFromBackend notification is posted
-        // (removed NSBeep() to avoid duplicate sounds)
 
         // onImputMethodChanged handles: toggle, save, RequestNewSession, fillData, notify
         // No need to modify vLanguage here or call startNewSession separately
@@ -3006,7 +2951,6 @@ extern "C" {
                     }
                 }
 
-                // Auto-English browser fix removed - Shift+Left strategy handles it
                 // No need for HID tap forcing or aggressive delays anymore
 
                 //send backspace
@@ -3045,7 +2989,6 @@ extern "C" {
                     // perform deterministic replacement (AX) and/or per-character Unicode posting.
                     // EXCEPT for browsers - they don't support AX API properly
                     BOOL isSpotlightTarget = (!isBrowserApp && spotlightActive) || appChars.isSpotlightLike;
-                    // Browser step-by-step removed - Shift+Left strategy handles browsers well with batch posting
                     // Only use step-by-step for explicitly configured apps
                     // FIX #121: Also use step-by-step for auto English restore + Enter/Return
                     // This ensures Terminal receives characters before the Enter key
@@ -3061,7 +3004,6 @@ extern "C" {
                         SendNewCharString();
                     } else {
                         if (pData->newCharCount > 0 && pData->newCharCount <= MAX_BUFF) {
-                            // Browser delays removed - Shift+Left strategy handles autocomplete
                             for (int i = pData->newCharCount - 1; i >= 0; i--) {
                                 SendKeyCode(pData->charData[i]);
                                 // No delay needed between characters - Shift+Left handles it
@@ -3075,7 +3017,6 @@ extern "C" {
                                 fflush(stderr);
                             }
                             #endif
-                            // Browser delay removed - Shift+Left strategy handles autocomplete
                             // No delay needed before final key
                             SendKeyCode(_keycode | ((_flag & kCGEventFlagMaskAlphaShift) || (_flag & kCGEventFlagMaskShift) ? CAPS_MASK : 0));
                         }

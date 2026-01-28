@@ -81,10 +81,6 @@
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
-// installUpdateSilently removed - auto-install is now handled directly by PHSilentUserDriver
-// When silentAutoInstallEnabled is true, PHSilentUserDriver automatically calls
-// reply(SPUUserUpdateChoiceInstall) in showUpdateFoundWithAppcastItem:
-
 #pragma mark - SPUUpdaterDelegate
 
 - (nullable NSString *)feedURLStringForUpdater:(SPUUpdater *)updater {
@@ -97,8 +93,6 @@
 }
 
 - (void)updater:(SPUUpdater *)updater didFindValidUpdate:(SUAppcastItem *)item {
-    // PHSilentUserDriver now sends SparkleUpdateFound notification in showUpdateFoundWithAppcastItem:
-    // This delegate method is just for logging
     NSLog(@"[Sparkle] didFindValidUpdate: %@ (%@)", item.displayVersionString, item.versionString);
 
     // Don't reset isManualCheck here - let the user driver handle it

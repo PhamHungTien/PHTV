@@ -57,7 +57,6 @@ volatile int vQuickTelex = 0;
 // Format: bits 0-7 = keycode (0xFE = no key), bit 8 = Control, bit 11 = Shift
 #define DEFAULT_SWITCH_STATUS 0x9FE // Ctrl(0x100) + Shift(0x800) + NoKey(0xFE)
 volatile int vSwitchKeyStatus = DEFAULT_SWITCH_STATUS;
-volatile int vRestoreIfWrongSpelling = 0;
 volatile int vFixRecommendBrowser = 1;
 volatile int vUseMacro = 1;
 volatile int vUseMacroInEnglishMode = 1;
@@ -902,7 +901,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     [NSApp setActivationPolicy: showDockIcon ? NSApplicationActivationPolicyRegular : NSApplicationActivationPolicyAccessory];
     
     // Beep on startup is now handled by SwiftUI if enabled
-    // (removed NSBeep() to avoid duplicate sounds)
 
     // Initialize SwiftUI integration
     [self setupSwiftUIBridge];
@@ -912,15 +910,11 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
     // Initialize English word dictionary for auto-restore feature
     [self initEnglishWordDictionary];
-    NSLog(@"DEBUG-POINT-A");
-
     // Initialize EmojiHotkeyManager via Swift bridge
-    NSLog(@"DEBUG-POINT-B");
     @try {
         [EmojiHotkeyBridge initializeEmojiHotkeyManager];
-        NSLog(@"DEBUG-POINT-C");
     } @catch (NSException *exception) {
-        NSLog(@"DEBUG-POINT-ERROR: %@", exception);
+        NSLog(@"[EmojiHotkey] init failed: %@", exception);
     }
 
     // Load ALL settings from UserDefaults BEFORE initializing event tap
@@ -937,7 +931,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     vCheckSpelling = PHTVReadIntWithFallback(defaults, @"Spelling", 1);
     vUseModernOrthography = PHTVReadIntWithFallback(defaults, @"ModernOrthography", vUseModernOrthography);
     vQuickTelex = PHTVReadIntWithFallback(defaults, @"QuickTelex", vQuickTelex);
-    vRestoreIfWrongSpelling = 0;  // Feature removed
     vFreeMark = PHTVReadIntWithFallback(defaults, @"FreeMark", vFreeMark);
 
     // Macro settings
@@ -1407,7 +1400,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         [self fillData];
 
         #ifdef DEBUG
-        BOOL hasBeep = PHTV_HAS_BEEP(vSwitchKeyStatus);
+        BOOL hasBeep = ((vSwitchKeyStatus & 0x8000) != 0);
         NSLog(@"[SwiftUI] Hotkey changed to: 0x%X (beep=%@)", vSwitchKeyStatus, hasBeep ? @"YES" : @"NO");
         #endif
     }
@@ -1492,7 +1485,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     int oldCheckSpelling = vCheckSpelling;
     int oldModernOrthography = vUseModernOrthography;
     int oldQuickTelex = vQuickTelex;
-    int oldRestoreIfWrongSpelling = vRestoreIfWrongSpelling;
 
     // Capture previous values for other groups (macros/typing/system) for live apply.
     int oldUseMacro = vUseMacro;
@@ -1510,7 +1502,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     vCheckSpelling = PHTVReadIntWithFallback(defaults, @"Spelling", 1);
     vUseModernOrthography = PHTVReadIntWithFallback(defaults, @"ModernOrthography", vUseModernOrthography);
     vQuickTelex = PHTVReadIntWithFallback(defaults, @"QuickTelex", vQuickTelex);
-    vRestoreIfWrongSpelling = 0;  // Feature removed
     vUseMacro = PHTVReadIntWithFallback(defaults, @"UseMacro", vUseMacro);
     vUseMacroInEnglishMode = PHTVReadIntWithFallback(defaults, @"UseMacroInEnglishMode", vUseMacroInEnglishMode);
     vAutoCapsMacro = PHTVReadIntWithFallback(defaults, @"vAutoCapsMacro", vAutoCapsMacro);
@@ -1548,8 +1539,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     if (PHTVLiveDebugEnabled()) {
         BOOL changed1 = (oldCheckSpelling != vCheckSpelling ||
                          oldModernOrthography != vUseModernOrthography ||
-                         oldQuickTelex != vQuickTelex ||
-                         oldRestoreIfWrongSpelling != vRestoreIfWrongSpelling);
+                         oldQuickTelex != vQuickTelex);
         BOOL changed2 = (oldUseMacro != vUseMacro ||
                          oldUseMacroInEnglishMode != vUseMacroInEnglishMode ||
                          oldAutoCapsMacro != vAutoCapsMacro ||
@@ -1826,8 +1816,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     [[SparkleManager shared] checkForUpdatesWithFeedback];
 }
 
-// handleSparkleInstallUpdateSilently removed - auto-install is now handled directly by PHSilentUserDriver
-
 - (void)handleSettingsReset:(NSNotification *)notification {
     // Settings have been reset, post confirmation to UI
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -2088,7 +2076,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     vSwitchKeyStatus = DEFAULT_SWITCH_STATUS; [defaults setInteger:vSwitchKeyStatus forKey:@"SwitchKeyStatus"];
     vQuickTelex = 0; [defaults setInteger:vQuickTelex forKey:@"QuickTelex"];
     vUseModernOrthography = 0; [defaults setInteger:vUseModernOrthography forKey:@"ModernOrthography"];
-    vRestoreIfWrongSpelling = 0; [defaults setInteger:vRestoreIfWrongSpelling forKey:@"RestoreIfInvalidWord"];
     vFixRecommendBrowser = 1; [defaults setInteger:vFixRecommendBrowser forKey:@"FixRecommendBrowser"];
     vUseMacro = 1; [defaults setInteger:vUseMacro forKey:@"UseMacro"];
     vUseMacroInEnglishMode = 0; [defaults setInteger:vUseMacroInEnglishMode forKey:@"UseMacroInEnglishMode"];
@@ -2114,7 +2101,21 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     vPerformLayoutCompat = 0; [defaults setInteger:vPerformLayoutCompat forKey:@"vPerformLayoutCompat"];
 
     [defaults setInteger:1 forKey:@"GrayIcon"];
-    [defaults setInteger:1 forKey:@"RunOnStartup"];
+    [defaults setBool:NO forKey:@"PHTV_RunOnStartup"];
+    [defaults setInteger:0 forKey:@"RunOnStartup"];
+    [defaults setInteger:0 forKey:@"vSettingsWindowAlwaysOnTop"];
+    [defaults setInteger:0 forKey:@"vBeepOnModeSwitch"];
+    [defaults setDouble:0.5 forKey:@"vBeepVolume"];
+    [defaults setDouble:18.0 forKey:@"vMenuBarIconSize"];
+    [defaults setInteger:0 forKey:@"vUseVietnameseMenubarIcon"];
+
+    [defaults setInteger:86400 forKey:@"SUScheduledCheckInterval"];
+    [defaults setBool:NO forKey:@"SUEnableBetaChannel"];
+    [defaults setBool:YES forKey:@"vAutoInstallUpdates"];
+
+    [defaults setBool:YES forKey:@"vIncludeSystemInfo"];
+    [defaults setBool:NO forKey:@"vIncludeLogs"];
+    [defaults setBool:YES forKey:@"vIncludeCrashLogs"];
 
     // IMPORTANT: DO NOT reset macroList/macroData here!
     // User's custom abbreviations should be preserved when resetting other settings.
@@ -3213,6 +3214,5 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                                                  name:@"SparkleInstallUpdate"
                                                object:nil];
 
-    // SparkleInstallUpdateSilently observer removed - auto-install is now handled directly by PHSilentUserDriver
 }
 @end

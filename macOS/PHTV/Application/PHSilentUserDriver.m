@@ -129,8 +129,6 @@
     }
 }
 
-// showInstallingUpdate removed - deprecated in Sparkle 2.x
-
 /// Called when update has been installed and app will relaunch
 - (void)showUpdateInstalledAndRelaunched:(BOOL)relaunched acknowledgement:(void (^)(void))acknowledgement {
     NSLog(@"[PHSilentUserDriver] Update installed (relaunched: %@)", relaunched ? @"YES" : @"NO");

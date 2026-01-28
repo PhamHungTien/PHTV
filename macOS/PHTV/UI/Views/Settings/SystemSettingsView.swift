@@ -381,7 +381,7 @@ struct SystemSettingsView: View {
             "SwitchKeyStatus",
 
             // Input behavior
-            "Spelling", "ModernOrthography", "QuickTelex", "RestoreIfInvalidWord",
+            "Spelling", "ModernOrthography", "QuickTelex",
             "SendKeyStepByStep", "UseMacro", "UseMacroInEnglishMode", "vAutoCapsMacro",
             "UseSmartSwitchKey", "UpperCaseFirstChar", "vAllowConsonantZFWJ",
             "vQuickStartConsonant", "vQuickEndConsonant", "vRememberCode",
@@ -566,6 +566,8 @@ struct SystemSettingsView: View {
 
     private func resetToDefaults() {
         if let appDelegate = NSApp.delegate as? AppDelegate {
+            appState.resetToDefaults()
+
             // Reset all settings to defaults in UserDefaults (synchronous)
             // This also updates global variables and calls fillData()
             appDelegate.loadDefaultConfig()
