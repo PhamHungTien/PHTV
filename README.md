@@ -11,6 +11,8 @@
 [![Windows](https://img.shields.io/badge/Platform-Windows%20(Beta)-orange.svg)](#)
 [![Linux](https://img.shields.io/badge/Platform-Linux%20(Alpha)-red.svg)](#)
 
+</div>
+
 ---
 
 ## Giới thiệu
