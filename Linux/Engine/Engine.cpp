@@ -342,6 +342,22 @@ void checkGrammar(const int& deltaBackSpace) {
     if (_index >= 2) {
         for (i = l; i <= VEI; i++) {
             if (TypingWord[i] & MARK_MASK) {
+                // If word ends with a repeated vowel run (e.g., "iuu", "aa"),
+                // keep the mark at its current position (base vowel cluster).
+                int tailStart = VEI;
+                int tailLen = 1;
+                if (VEI > VSI) {
+                    Uint16 tailVowel = CHR(VEI);
+                    while (tailStart > VSI && CHR(tailStart - 1) == tailVowel) {
+                        tailStart--;
+                    }
+                    tailLen = VEI - tailStart + 1;
+                }
+                if (tailLen >= 2 && i <= tailStart) {
+                    isCheckedGrammar = false;
+                    break;
+                }
+
                 // Check for extended vowels (consecutive same vowels like "ee", "aa")
                 // If the marked vowel is followed by the same vowel(s), keep mark at first position
                 // Example: "nhé" + "e" => "nhée" (not "nheé"), "á" + "aa" => "áaa" (not "aáa")
@@ -687,6 +703,28 @@ bool canHasEndConsonant() {
 }
 
 void handleModernMark() {
+    // Normalize trailing repeated vowels (e.g., "iuu", "aa") to place tone on the base vowel cluster
+    Byte originalVEI = VEI;
+    Byte originalVowelCount = vowelCount;
+    bool adjustedTrailing = false;
+    if (vowelCount >= 2) {
+        int tailStart = VEI;
+        Uint16 tailVowel = CHR(VEI);
+        while (tailStart > VSI && CHR(tailStart - 1) == tailVowel) {
+            tailStart--;
+        }
+        if (VEI - tailStart + 1 >= 2) {
+            VEI = (Byte)tailStart;
+            vowelCount = 0;
+            for (int idx = VSI; idx <= VEI; idx++) {
+                if (!IS_CONSONANT(CHR(idx))) {
+                    vowelCount++;
+                }
+            }
+            adjustedTrailing = true;
+        }
+    }
+
     //default
     VWSM = VEI;
     hBPC = (_index - VEI);
@@ -792,9 +830,36 @@ void handleModernMark() {
             hBPC = _index - VWSM;
         }
     }
+
+    if (adjustedTrailing) {
+        VEI = originalVEI;
+        vowelCount = originalVowelCount;
+    }
 }
 
 void handleOldMark() {
+    // Normalize trailing repeated vowels (e.g., "iuu", "aa") to place tone on the base vowel cluster
+    Byte originalVEI = VEI;
+    Byte originalVowelCount = vowelCount;
+    bool adjustedTrailing = false;
+    if (vowelCount >= 2) {
+        int tailStart = VEI;
+        Uint16 tailVowel = CHR(VEI);
+        while (tailStart > VSI && CHR(tailStart - 1) == tailVowel) {
+            tailStart--;
+        }
+        if (VEI - tailStart + 1 >= 2) {
+            VEI = (Byte)tailStart;
+            vowelCount = 0;
+            for (int idx = VSI; idx <= VEI; idx++) {
+                if (!IS_CONSONANT(CHR(idx))) {
+                    vowelCount++;
+                }
+            }
+            adjustedTrailing = true;
+        }
+    }
+
     //default
     if (vowelCount == 0 && CHR(VEI) == KEY_I)
         VWSM = VEI;
@@ -818,6 +883,11 @@ void handleOldMark() {
     }
     
     hNCC = hBPC;
+
+    if (adjustedTrailing) {
+        VEI = originalVEI;
+        vowelCount = originalVowelCount;
+    }
 }
 
 void insertMark(const Uint32& markMask, const bool& canModifyFlag) {
