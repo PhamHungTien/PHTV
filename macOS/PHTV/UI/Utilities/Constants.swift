@@ -53,6 +53,7 @@ enum UserDefaultsKey {
     static let showIconOnDock = "vShowIconOnDock"
     static let settingsWindowAlwaysOnTop = "vSettingsWindowAlwaysOnTop"
     static let safeMode = "SafeMode"
+    static let claudeCodeFixEnabled = "ClaudeCodeFixEnabled"
 
     // MARK: - Hotkey Settings
     static let switchKeyStatus = "SwitchKeyStatus"

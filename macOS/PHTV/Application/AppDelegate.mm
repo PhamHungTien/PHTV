@@ -62,6 +62,7 @@ volatile int vUseMacro = 1;
 volatile int vUseMacroInEnglishMode = 1;
 volatile int vAutoCapsMacro = 0;
 volatile int vSendKeyStepByStep = 0;
+volatile int vClaudeCodeFixEnabled = 0;
 volatile int vUseSmartSwitchKey = 1;
 volatile int vUpperCaseFirstChar = 0;
 volatile int vUpperCaseExcludedForCurrentApp = 0;  // 1 = current app is in uppercase excluded list
@@ -940,6 +941,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
     // Typing behavior settings
     vSendKeyStepByStep = PHTVReadIntWithFallback(defaults, @"SendKeyStepByStep", vSendKeyStepByStep);
+    vClaudeCodeFixEnabled = PHTVReadIntWithFallback(defaults, @"ClaudeCodeFixEnabled", vClaudeCodeFixEnabled);
     vUseSmartSwitchKey = PHTVReadIntWithFallback(defaults, @"UseSmartSwitchKey", vUseSmartSwitchKey);
     vUpperCaseFirstChar = PHTVReadIntWithFallback(defaults, @"UpperCaseFirstChar", vUpperCaseFirstChar);
     vAllowConsonantZFWJ = PHTVReadIntWithFallback(defaults, @"vAllowConsonantZFWJ", 1);
@@ -947,6 +949,8 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     vQuickEndConsonant = PHTVReadIntWithFallback(defaults, @"vQuickEndConsonant", vQuickEndConsonant);
     vRememberCode = PHTVReadIntWithFallback(defaults, @"vRememberCode", vRememberCode);
     vPerformLayoutCompat = PHTVReadIntWithFallback(defaults, @"vPerformLayoutCompat", vPerformLayoutCompat);
+    [defaults setBool:YES forKey:@"ClaudeCodeFixEnabled"];
+    vClaudeCodeFixEnabled = 1;
 
     // Restore to raw keys settings
     vRestoreOnEscape = PHTVReadIntWithFallback(defaults, @"vRestoreOnEscape", vRestoreOnEscape);
@@ -1491,6 +1495,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     int oldUseMacroInEnglishMode = vUseMacroInEnglishMode;
     int oldAutoCapsMacro = vAutoCapsMacro;
     int oldSendKeyStepByStep = vSendKeyStepByStep;
+    int oldClaudeCodeFixEnabled = vClaudeCodeFixEnabled;
     int oldUseSmartSwitchKey = vUseSmartSwitchKey;
     int oldUpperCaseFirstChar = vUpperCaseFirstChar;
     int oldAllowConsonantZFWJ = vAllowConsonantZFWJ;
@@ -1506,6 +1511,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     vUseMacroInEnglishMode = PHTVReadIntWithFallback(defaults, @"UseMacroInEnglishMode", vUseMacroInEnglishMode);
     vAutoCapsMacro = PHTVReadIntWithFallback(defaults, @"vAutoCapsMacro", vAutoCapsMacro);
     vSendKeyStepByStep = PHTVReadIntWithFallback(defaults, @"SendKeyStepByStep", vSendKeyStepByStep);
+    vClaudeCodeFixEnabled = PHTVReadIntWithFallback(defaults, @"ClaudeCodeFixEnabled", vClaudeCodeFixEnabled);
     vUseSmartSwitchKey = PHTVReadIntWithFallback(defaults, @"UseSmartSwitchKey", vUseSmartSwitchKey);
     vUpperCaseFirstChar = PHTVReadIntWithFallback(defaults, @"UpperCaseFirstChar", vUpperCaseFirstChar);
     vAllowConsonantZFWJ = PHTVReadIntWithFallback(defaults, @"vAllowConsonantZFWJ", 1);
@@ -1514,6 +1520,8 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     vRememberCode = PHTVReadIntWithFallback(defaults, @"vRememberCode", vRememberCode);
     vPerformLayoutCompat = PHTVReadIntWithFallback(defaults, @"vPerformLayoutCompat", vPerformLayoutCompat);
     vShowIconOnDock = PHTVReadIntWithFallback(defaults, @"vShowIconOnDock", vShowIconOnDock);
+    [defaults setBool:YES forKey:@"ClaudeCodeFixEnabled"];
+    vClaudeCodeFixEnabled = 1;
 
     // Restore to raw keys (customizable key)
     vRestoreOnEscape = PHTVReadIntWithFallback(defaults, @"vRestoreOnEscape", vRestoreOnEscape);
@@ -1544,6 +1552,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                          oldUseMacroInEnglishMode != vUseMacroInEnglishMode ||
                          oldAutoCapsMacro != vAutoCapsMacro ||
                          oldSendKeyStepByStep != vSendKeyStepByStep ||
+                         oldClaudeCodeFixEnabled != vClaudeCodeFixEnabled ||
                          oldUpperCaseFirstChar != vUpperCaseFirstChar ||
                          oldAllowConsonantZFWJ != vAllowConsonantZFWJ ||
                          oldQuickStartConsonant != vQuickStartConsonant ||

@@ -151,7 +151,18 @@ static NSSet* _disableVietnameseAppSet = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         terminalApps = [NSSet setWithArray:@[
-            // Terminal apps treated as normal apps
+            @"com.apple.Terminal",
+            @"com.googlecode.iterm2",
+            @"dev.warp.Warp",
+            @"dev.warp.Warp-Stable",
+            @"com.github.wez.wezterm",
+            @"io.alacritty",
+            @"net.kovidgoyal.kitty",
+            @"com.mitchellh.ghostty",
+            @"com.raphaelamorim.rio",
+            @"co.zeit.hyper",
+            @"org.tabby",
+            @"com.termius-dmg.mac"
         ]];
     });
     return [terminalApps containsObject:bundleId];

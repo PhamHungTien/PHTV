@@ -11,9 +11,9 @@ import Foundation
 /// Installation type of Claude Code
 enum ClaudeInstallationType {
     case notInstalled
-    case nativeBinary  // Binary from native install (curl script) - cannot be patched
-    case homebrew      // Binary from Homebrew - cannot be patched
-    case npm           // JavaScript from npm - can be patched
+    case nativeBinary  // Native install (claude install) - may be unpatchable if no JS found
+    case homebrew      // Homebrew/cask binary install - may be unpatchable if no JS found
+    case npm           // JavaScript-based install (patchable)
 }
 
 /// Utility class to patch Claude Code CLI for Vietnamese input support
@@ -28,6 +28,8 @@ final class ClaudeCodePatcher: Sendable {
 
     /// Patch marker to identify patched files
     private let patchMarkerNew = "/* Vietnamese IME fix */"
+    /// Limit scanning to avoid loading very large files
+    private let maxCliScanBytes = 6 * 1024 * 1024
 
     /// Legacy fix code for older versions (pre-2.0.70)
     private let patchCodeLegacy = """
@@ -101,6 +103,18 @@ return;
                     // If we can't check file type but it exists in .local/bin, assume native
                     return .nativeBinary
                 }
+            }
+        }
+
+        // Method 2.5: Native install support directory (claude install)
+        let nativeSupportDirs = [
+            homeDir + "/.local/share/claude",
+            homeDir + "/.local/share/claude-code"
+        ]
+
+        for dir in nativeSupportDirs {
+            if fileManager.fileExists(atPath: dir) {
+                return .nativeBinary
             }
         }
 
@@ -891,6 +905,12 @@ return;
                     }
                 }
 
+                // If the resolved path is already a JS file (even without extension), try patching directly
+                if fileManager.fileExists(atPath: claudePath),
+                   isLikelyClaudeCli(path: claudePath) {
+                    return cacheAndReturn(claudePath)
+                }
+
                 // The actual cli.js is usually in the same directory or parent
                 // Common locations:
                 // - /usr/local/lib/node_modules/@anthropic-ai/claude-code/cli.js
@@ -965,6 +985,21 @@ return;
             }
         }
 
+        // Method 3: Native install locations (claude install)
+        let nativeDirs = [
+            homeDir + "/.local/share/claude",
+            homeDir + "/.local/share/claude-code",
+            homeDir + "/.claude",
+            homeDir + "/Library/Application Support/Claude",
+            homeDir + "/Library/Application Support/Claude Code"
+        ]
+
+        for dir in nativeDirs {
+            if let cliPath = findCliJs(in: dir, maxDepth: 6) {
+                return cacheAndReturn(cliPath)
+            }
+        }
+
         return nil
     }
 
@@ -977,15 +1012,16 @@ return;
             return nil
         }
 
+        let candidateNames: Set<String> = ["cli.js", "cli.cjs", "cli.mjs"]
+
         for item in contents {
             let itemPath = (directory as NSString).appendingPathComponent(item)
             var isDirectory: ObjCBool = false
 
             if fileManager.fileExists(atPath: itemPath, isDirectory: &isDirectory) {
-                if item == "cli.js" {
-                    // Verify it's the Claude Code cli.js by checking content
-                    if let content = try? String(contentsOfFile: itemPath, encoding: .utf8),
-                       content.contains("anthropic") || content.contains("claude") {
+                if candidateNames.contains(item) {
+                    // Verify it's the Claude Code CLI file by checking content and signature
+                    if isLikelyClaudeCli(path: itemPath) {
                         return itemPath
                     }
                 } else if isDirectory.boolValue && !item.hasPrefix(".") {
@@ -997,6 +1033,31 @@ return;
         }
 
         return nil
+    }
+
+    private func isLikelyClaudeCli(path: String) -> Bool {
+        let fileManager = FileManager.default
+        if let attrs = try? fileManager.attributesOfItem(atPath: path),
+           let size = attrs[.size] as? NSNumber,
+           size.intValue > maxCliScanBytes {
+            return false
+        }
+
+        guard let content = try? String(contentsOfFile: path, encoding: .utf8) else {
+            return false
+        }
+
+        let hasBranding = content.contains("anthropic") || content.contains("claude")
+        let hasImeSignature = content.contains("\\x7f")
+            || content.contains("\u{7f}")
+            || content.contains("charCodeAt(0) === 127")
+            || content.contains("charCodeAt(0)===127")
+
+        if hasBranding {
+            return true
+        }
+
+        return hasImeSignature
     }
 }
 

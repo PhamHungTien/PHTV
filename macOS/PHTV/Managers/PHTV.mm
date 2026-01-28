@@ -51,6 +51,15 @@ static const uint64_t TERMINAL_KEYSTROKE_DELAY_US = 1500;    // Per-character de
 static const uint64_t TERMINAL_SETTLE_DELAY_US = 4000;       // After all backspaces (reduced from 8000us)
 static const uint64_t TERMINAL_FINAL_SETTLE_US = 10000;      // Final settle after all text (reduced from 20000us)
 static const uint64_t SPOTLIGHT_TINY_DELAY_US = 2000;        // Spotlight timing delay (reduced from 3000us)
+// CLI fix delays (more conservative for raw-mode terminals like Claude Code native)
+static const uint64_t CLI_SETTLE_DELAY_US = 0;
+static const uint64_t CLI_BACKSPACE_KEY_DELAY_US = 7000;
+static const uint64_t CLI_BACKSPACE_SETTLE_US = 7000;
+static const uint64_t CLI_BACKSPACE_POST_DELAY_US = 5000;
+static const uint64_t CLI_COMPOSE_KEY_DELAY_US = 9000;
+static const uint64_t CLI_FINAL_SETTLE_US = 7000;
+static const uint64_t CLI_MIN_INTERVAL_US = 5000;
+static const uint64_t CLI_SPACE_DELAY_US = 5000;
 
 // Adaptive delay tracking
 static uint64_t _lastKeystrokeTimestamp = 0;
@@ -79,6 +88,10 @@ static dispatch_once_t timebase_init_token;
 
 static inline uint64_t mach_time_to_ms(uint64_t mach_time) {
     return (mach_time * timebase_info.numer) / (timebase_info.denom * 1000000);
+}
+
+static inline uint64_t mach_time_to_us(uint64_t mach_time) {
+    return (mach_time * timebase_info.numer) / (timebase_info.denom * 1000);
 }
 
 #ifdef DEBUG
@@ -328,6 +341,7 @@ NSDictionary *keyStringToKeyCodeMap = @{
 
 extern AppDelegate* appDelegate;
 extern volatile int vSendKeyStepByStep;
+extern volatile int vClaudeCodeFixEnabled;
 extern volatile int vPerformLayoutCompat;
 extern volatile int vTempOffPHTV;
 
@@ -569,17 +583,22 @@ extern "C" {
 
     // Cache the effective target bundle id for the current event tap callback.
     // This avoids re-querying AX focus inside hot-path send routines.
-    static NSString* _phtvEffectiveTargetBundleId = nil;
-    static BOOL _phtvPostToHIDTap = NO;
-    static int64_t _phtvKeyboardType = 0;
-    static int _phtvPendingBackspaceCount = 0;
+static NSString* _phtvEffectiveTargetBundleId = nil;
+static BOOL _phtvPostToHIDTap = NO;
+static BOOL _phtvPostToSessionForCli = NO;
+static BOOL _phtvIsCliTarget = NO;
+static volatile int _phtvCliInjectDepth = 0;
+static int _phtvCliPendingBackspaceCount = 0;
+static int64_t _phtvKeyboardType = 0;
+static int _phtvPendingBackspaceCount = 0;
+static uint64_t _lastCliInjectTimeUs = 0;
 
     __attribute__((always_inline)) static inline void SpotlightTinyDelay(void) {
         usleep(SPOTLIGHT_TINY_DELAY_US);
     }
 
     // Simple and reliable: always read fresh from AX, no tracking
-    static BOOL ReplaceFocusedTextViaAX(NSInteger backspaceCount, NSString* insertText) {
+    static BOOL ReplaceFocusedTextViaAX(NSInteger backspaceCount, NSString* insertText, BOOL verify) {
         // Safe Mode: Skip AX API calls entirely
         // This prevents crashes on unsupported hardware (OCLP Macs)
         if (vSafeMode) {
@@ -704,6 +723,21 @@ extern "C" {
         if (newRange) {
             AXUIElementSetAttributeValue(focusedElement, kAXSelectedTextRangeAttribute, newRange);
             CFRelease(newRange);
+        }
+
+        if (verify) {
+            // Verify the value actually changed (Terminal-like apps may ignore sets).
+            CFTypeRef verifyValueRef = NULL;
+            AXError verifyError = AXUIElementCopyAttributeValue(focusedElement, kAXValueAttribute, &verifyValueRef);
+            NSString *verifyStr = (verifyError == kAXErrorSuccess && verifyValueRef &&
+                                   CFGetTypeID(verifyValueRef) == CFStringGetTypeID())
+                ? (__bridge NSString *)verifyValueRef : @"";
+            if (verifyValueRef) CFRelease(verifyValueRef);
+            if (verifyError != kAXErrorSuccess || ![verifyStr isEqualToString:newValue]) {
+                if (valueRef) CFRelease(valueRef);
+                CFRelease(focusedElement);
+                return NO;
+            }
         }
 
         if (valueRef) CFRelease(valueRef);
@@ -883,9 +917,30 @@ extern "C" {
     __attribute__((always_inline)) static inline void PostSyntheticEvent(CGEventTapProxy proxy, CGEventRef e) {
         if (_phtvPostToHIDTap) {
             CGEventPost(kCGHIDEventTap, e);
+        } else if (_phtvPostToSessionForCli) {
+            CGEventPost(kCGSessionEventTap, e);
         } else {
             CGEventTapPostEvent(proxy, e);
         }
+    }
+
+    __attribute__((always_inline)) static inline void ThrottleCliInjection(void) {
+        if (!_phtvIsCliTarget) {
+            return;
+        }
+
+        dispatch_once(&timebase_init_token, ^{
+            mach_timebase_info(&timebase_info);
+        });
+
+        uint64_t now = mach_absolute_time();
+        uint64_t nowUs = mach_time_to_us(now);
+        if (_lastCliInjectTimeUs > 0 && nowUs - _lastCliInjectTimeUs < CLI_MIN_INTERVAL_US) {
+            usleep((useconds_t)(CLI_MIN_INTERVAL_US - (nowUs - _lastCliInjectTimeUs)));
+            now = mach_absolute_time();
+            nowUs = mach_time_to_us(now);
+        }
+        _lastCliInjectTimeUs = nowUs;
     }
 
     __attribute__((always_inline)) static inline void ApplyKeyboardTypeAndFlags(CGEventRef down, CGEventRef up) {
@@ -976,6 +1031,7 @@ extern "C" {
     // (e.g., Cmd+Shift should NOT trigger when user presses Cmd+Shift+S)
     bool _keyPressedWhileSwitchModifiersHeld = false;
 
+
     // For pause key detection - temporarily disable Vietnamese when holding key
     bool _pauseKeyPressed = false;
     int _savedLanguageBeforePause = 1; // Save language state before pause (1 = Vietnamese, 0 = English)
@@ -1015,6 +1071,7 @@ extern "C" {
         LOAD_DATA(vUseMacroInEnglishMode, UseMacroInEnglishMode);
         LOAD_DATA(vAutoCapsMacro, vAutoCapsMacro);
         LOAD_DATA(vSendKeyStepByStep, SendKeyStepByStep);
+        LOAD_DATA(vClaudeCodeFixEnabled, ClaudeCodeFixEnabled);
         LOAD_DATA(vUseSmartSwitchKey, UseSmartSwitchKey);
         LOAD_DATA(vUpperCaseFirstChar, UpperCaseFirstChar);
 
@@ -1604,6 +1661,44 @@ extern "C" {
         CFRelease(eventVkeyUp);
     }
 
+    void SendUnicodeStringChunked(const Uint16* chars, int len, int chunkSize, uint64_t interDelayUs) {
+        if (len <= 0 || chars == nullptr) {
+            return;
+        }
+        if (chunkSize < 1) {
+            chunkSize = 1;
+        }
+
+        for (int i = 0; i < len; i += chunkSize) {
+            int chunkLen = len - i;
+            if (chunkLen > chunkSize) {
+                chunkLen = chunkSize;
+            }
+
+            ThrottleCliInjection();
+            _newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
+            _newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
+            if (_phtvKeyboardType != 0) {
+                CGEventSetIntegerValueField(_newEventDown, kCGKeyboardEventKeyboardType, _phtvKeyboardType);
+                CGEventSetIntegerValueField(_newEventUp, kCGKeyboardEventKeyboardType, _phtvKeyboardType);
+            }
+            CGEventFlags flags = CGEventGetFlags(_newEventDown) | kCGEventFlagMaskNonCoalesced;
+            flags &= ~kCGEventFlagMaskSecondaryFn;
+            CGEventSetFlags(_newEventDown, flags);
+            CGEventSetFlags(_newEventUp, flags);
+            CGEventKeyboardSetUnicodeString(_newEventDown, chunkLen, chars + i);
+            CGEventKeyboardSetUnicodeString(_newEventUp, chunkLen, chars + i);
+            PostSyntheticEvent(_proxy, _newEventDown);
+            PostSyntheticEvent(_proxy, _newEventUp);
+            CFRelease(_newEventDown);
+            CFRelease(_newEventUp);
+
+            if (interDelayUs > 0) {
+                usleep((useconds_t)interDelayUs);
+            }
+        }
+    }
+
     // Consolidated helper function to send multiple backspaces with app-specific delays
     // IMPROVED: Now supports adaptive delays and Safari-specific handling
     void SendBackspaceSequenceWithDelay(int count, DelayType delayType) {
@@ -1615,8 +1710,13 @@ extern "C" {
 
         switch (delayType) {
             case DelayTypeTerminal:
-                keystrokeDelay = TERMINAL_KEYSTROKE_DELAY_US;
-                settleDelay = TERMINAL_SETTLE_DELAY_US;
+                if (_phtvIsCliTarget) {
+                    keystrokeDelay = CLI_BACKSPACE_KEY_DELAY_US;
+                    settleDelay = CLI_BACKSPACE_SETTLE_US;
+                } else {
+                    keystrokeDelay = TERMINAL_KEYSTROKE_DELAY_US;
+                    settleDelay = TERMINAL_SETTLE_DELAY_US;
+                }
                 break;
             default:
                 break;
@@ -1625,6 +1725,7 @@ extern "C" {
         // Always use standard backspace method
         // Shift+Left selection is handled separately in autocomplete fix
         for (int i = 0; i < count; i++) {
+            ThrottleCliInjection();
             SendBackspace();
             if (keystrokeDelay > 0) {
                 usleep((useconds_t)keystrokeDelay);
@@ -1679,11 +1780,17 @@ extern "C" {
         // Treat as Spotlight target if the callback decided to use HID/Spotlight-safe path.
         // This covers cases where Spotlight is active but bundle-id matching is imperfect.
         BOOL isSpotlightTarget = _phtvPostToHIDTap || isSpotlightLikeApp(effectiveTarget);
+        BOOL isTerminalTarget = vClaudeCodeFixEnabled && isTerminalApp(effectiveTarget);
         // WhatsApp and similar apps need precomposed Unicode but with batched sending (not AX API)
         BOOL isPrecomposedBatched = needsPrecomposedBatched(effectiveTarget);
         // Force precomposed for: Unicode Compound (code 3) on Spotlight, OR any Unicode on WhatsApp-like apps
-        BOOL forcePrecomposed = ((vCodeTable == 3) && isSpotlightTarget) ||
+        BOOL forcePrecomposed = ((vCodeTable == 3) && (isSpotlightTarget || isTerminalTarget)) ||
                                  ((vCodeTable == 0 || vCodeTable == 3) && isPrecomposedBatched);
+        int cliDepthAdded = 0;
+        if (isTerminalTarget) {
+            __atomic_add_fetch(&_phtvCliInjectDepth, 1, __ATOMIC_RELAXED);
+            cliDepthAdded = 1;
+        }
         
         if (_newCharSize > 0) {
             for (_k = dataFromMacro ? offset : pData->newCharCount - 1 - offset;
@@ -1757,6 +1864,12 @@ extern "C" {
         // convert the entire string from compound to precomposed form
         Uint16 _finalCharString[MAX_UNICODE_STRING];
         int _finalCharSize = _willContinuteSending ? 16 : _newCharSize - offset;
+        int cliInlineBackspaceCount = 0;
+        BOOL cliSendSpaceAfter = NO;
+        if (isTerminalTarget && _phtvCliPendingBackspaceCount > 0) {
+            cliInlineBackspaceCount = _phtvCliPendingBackspaceCount;
+            _phtvCliPendingBackspaceCount = 0;
+        }
         
         if (forcePrecomposed && _finalCharSize > 0) {
             // Create NSString from Unicode characters and get precomposed version
@@ -1768,6 +1881,13 @@ extern "C" {
             // Use original string
             memcpy(_finalCharString, _newCharString, _finalCharSize * sizeof(Uint16));
         }
+        if (isTerminalTarget &&
+            _keycode == KEY_SPACE &&
+            _finalCharSize > 0 &&
+            _finalCharString[_finalCharSize - 1] == ' ') {
+            cliSendSpaceAfter = YES;
+            _finalCharSize -= 1;
+        }
 
         if (isSpotlightTarget) {
             // Try AX API first - it's atomic and most reliable when it works
@@ -1775,12 +1895,12 @@ extern "C" {
             int backspaceCount = _phtvPendingBackspaceCount;
             _phtvPendingBackspaceCount = 0;
 
-            BOOL axSucceeded = ReplaceFocusedTextViaAX(backspaceCount, insertStr);
+            BOOL axSucceeded = ReplaceFocusedTextViaAX(backspaceCount, insertStr, NO);
             if (axSucceeded) {
                 // Small delay after AX replacement to let Spotlight update its internal state
                 // This prevents race conditions when typing quickly
                 usleep(5000); // 5ms
-                return;
+                goto FinalizeSend;
             }
 
             // AX failed - fallback to synthetic events
@@ -1803,7 +1923,33 @@ extern "C" {
             PostSyntheticEvent(_proxy, _newEventUp);
             CFRelease(_newEventDown);
             CFRelease(_newEventUp);
-            return;
+            goto FinalizeSend;
+        } else if (isTerminalTarget) {
+            if (cliInlineBackspaceCount > 0) {
+                NSString *insertStr = [NSString stringWithCharacters:(const unichar *)_finalCharString length:_finalCharSize];
+                if (ReplaceFocusedTextViaAX(cliInlineBackspaceCount, insertStr, YES)) {
+                    goto FinalizeSend;
+                }
+            }
+
+            BOOL hadCliCompose = (cliInlineBackspaceCount > 0);
+            if (cliInlineBackspaceCount > 0) {
+                SendBackspaceSequenceWithDelay(cliInlineBackspaceCount, DelayTypeTerminal);
+                usleep((useconds_t)CLI_BACKSPACE_POST_DELAY_US);
+                cliInlineBackspaceCount = 0;
+            }
+            if (_finalCharSize > 0) {
+                usleep((useconds_t)CLI_SETTLE_DELAY_US);
+                uint64_t interDelay = hadCliCompose ? CLI_COMPOSE_KEY_DELAY_US : 0;
+                int chunkSize = (interDelay > 0) ? 1 : _finalCharSize;
+                SendUnicodeStringChunked(_finalCharString, _finalCharSize, chunkSize, interDelay);
+                usleep((useconds_t)CLI_FINAL_SETTLE_US);
+            }
+            if (cliSendSpaceAfter) {
+                usleep((useconds_t)CLI_SPACE_DELAY_US);
+                SendKeyCode(KEY_SPACE);
+            }
+            goto FinalizeSend;
         } else {
             _newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
             _newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
@@ -1819,6 +1965,7 @@ extern "C" {
             CFRelease(_newEventUp);
         }
 
+    FinalizeSend:
         if (_willContinuteSending) {
             SendNewCharString(dataFromMacro, dataFromMacro ? _k : 16);
         }
@@ -1826,6 +1973,12 @@ extern "C" {
         //the case when hCode is vRestore or vRestoreAndStartNewSession, the word is invalid and last key is control key such as TAB, LEFT ARROW, RIGHT ARROW,...
         if (_willSendControlKey) {
             SendKeyCode(_keycode);
+        }
+        if (cliDepthAdded) {
+            int newDepth = __atomic_sub_fetch(&_phtvCliInjectDepth, 1, __ATOMIC_RELAXED);
+            if (newDepth < 0) {
+                __atomic_store_n(&_phtvCliInjectDepth, 0, __ATOMIC_RELAXED);
+            }
         }
     }
             
@@ -1945,7 +2098,7 @@ extern "C" {
             }
 
             // Try AX API first - atomic and most reliable for Spotlight
-            BOOL axSucceeded = ReplaceFocusedTextViaAX(pData->backspaceCount, macroString);
+            BOOL axSucceeded = ReplaceFocusedTextViaAX(pData->backspaceCount, macroString, NO);
             if (axSucceeded) {
                 #ifdef DEBUG
                 NSLog(@"[Macro] Spotlight: AX API succeeded, macro='%@'", macroString);
@@ -1961,14 +2114,18 @@ extern "C" {
         }
 
         //fix autocomplete
-        if (vFixRecommendBrowser) {
+        if (vFixRecommendBrowser && !(vClaudeCodeFixEnabled && isTerminalApp(effectiveTarget))) {
             SendEmptyCharacter();
             pData->backspaceCount++;
         }
 
         //send backspace
         if (pData->backspaceCount > 0) {
-            SendBackspaceSequence(pData->backspaceCount, NO);
+            if (vClaudeCodeFixEnabled && isTerminalApp(effectiveTarget)) {
+                SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeTerminal);
+            } else {
+                SendBackspaceSequence(pData->backspaceCount, NO);
+            }
         }
 
         //send real data - use step by step for timing sensitive apps like Spotlight
@@ -1976,12 +2133,19 @@ extern "C" {
         if (!useStepByStep) {
             SendNewCharString(true);
         } else {
+            BOOL useTerminalDelay = vClaudeCodeFixEnabled && isTerminalApp(effectiveTarget);
             for (int i = 0; i < pData->macroData.size(); i++) {
                 if (pData->macroData[i] & PURE_CHARACTER_MASK) {
                     SendPureCharacter(pData->macroData[i]);
                 } else {
                     SendKeyCode(pData->macroData[i]);
                 }
+                if (useTerminalDelay) {
+                    usleep(TERMINAL_KEYSTROKE_DELAY_US);
+                }
+            }
+            if (useTerminalDelay) {
+                usleep(TERMINAL_FINAL_SETTLE_US);
             }
         }
 
@@ -2295,6 +2459,8 @@ extern "C" {
             return event;
         }
 
+        _phtvPostToSessionForCli = NO;
+        _phtvIsCliTarget = NO;
         _flag = CGEventGetFlags(event);
         _keycode = (CGKeyCode)CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
 
@@ -2646,9 +2812,20 @@ extern "C" {
             // When spotlightActive=true on a browser address bar, we should NOT use Spotlight-style handling.
             BOOL isBrowser = isTargetBrowser || [_browserAppSet containsObject:effectiveBundleId];
             _phtvPostToHIDTap = (!isBrowser && spotlightActive) || appChars.isSpotlightLike;
-            
+            _phtvIsCliTarget = vClaudeCodeFixEnabled && appChars.isTerminal;
+            _phtvPostToSessionForCli = _phtvIsCliTarget && !_phtvPostToHIDTap;
+
+            if (_phtvIsCliTarget) {
+                int waitRounds = 0;
+                while (__atomic_load_n(&_phtvCliInjectDepth, __ATOMIC_RELAXED) > 0 && waitRounds < 12) {
+                    usleep(1000); // 1ms steps, max ~12ms
+                    waitRounds++;
+                }
+            }
+
             _phtvKeyboardType = CGEventGetIntegerValueField(event, kCGKeyboardEventKeyboardType);
             _phtvPendingBackspaceCount = 0;
+            _phtvCliPendingBackspaceCount = 0;
 
 #ifdef DEBUG
             // Diagnostic logs: either we believe the target is Spotlight-like, or AX says Spotlight is active.
@@ -2677,7 +2854,9 @@ extern "C" {
             } codeTableGuard;
 
             int currentCodeTable = __atomic_load_n(&vCodeTable, __ATOMIC_RELAXED);
-            if (currentCodeTable == 3 && (spotlightActive || appChars.isSpotlightLike)) {
+            if (currentCodeTable == 3 &&
+                (spotlightActive || appChars.isSpotlightLike ||
+                 (vClaudeCodeFixEnabled && appChars.isTerminal))) {
                 codeTableGuard.active = true;
                 codeTableGuard.saved = currentCodeTable;
                 __atomic_store_n(&vCodeTable, 0, __ATOMIC_RELAXED);
@@ -2828,7 +3007,8 @@ extern "C" {
                     }
                     // CRITICAL: Force fall through to standard backspace logic below.
                 } 
-                else if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE && !isPotentialShortcut && !isBrowserApp) {
+                else if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE &&
+                         !isPotentialShortcut && !isBrowserApp && !(vClaudeCodeFixEnabled && appChars.isTerminal)) {
                     // Legacy logic for non-browser apps (Electron, Slack, etc.)
                     // Keep original behavior: shift-left for Chromium, EmptyChar for others
                     BOOL useShiftLeft = appChars.containsUnicodeCompound && pData->backspaceCount > 0;
@@ -2955,6 +3135,12 @@ extern "C" {
 
                 //send backspace
                 if (!skipProcessing && pData->backspaceCount > 0 && pData->backspaceCount < MAX_BUFF) {
+                    BOOL inlineCliBackspace = vClaudeCodeFixEnabled &&
+                                              appChars.isTerminal &&
+                                              pData->newCharCount > 0;
+                    if (inlineCliBackspace) {
+                        _phtvCliPendingBackspaceCount = (int)pData->backspaceCount;
+                    }
                     // Use Spotlight-style deferred backspace when in search field (spotlightActive) or Spotlight-like app
                     // EXCEPT for Chromium apps - they don't support AX API properly
                     if ((!isBrowserApp && spotlightActive) || appChars.isSpotlightLike) {
@@ -2967,12 +3153,14 @@ extern "C" {
                         // Send backspaces for all apps
                         // Safari/Chromium browsers use Shift+Left strategy (handled above)
                         if (pData->backspaceCount > 0) {
-                            if (appChars.needsStepByStep) {
+                        if (!inlineCliBackspace) {
+                            if (appChars.needsStepByStep || (vClaudeCodeFixEnabled && appChars.isTerminal)) {
                                 SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeTerminal);
                             } else {
                                 // Browsers, terminals, and normal apps
                                 SendBackspaceSequence(pData->backspaceCount, NO);
                             }
+                        }
                         }
                     }
                 }
@@ -2985,6 +3173,12 @@ extern "C" {
                 // EXCEPTION: Auto English restore (extCode=5) on Chromium apps should use step-by-step
                 // because Chromium's autocomplete interferes with AX API and Unicode string posting
                 if (!skipProcessing) {
+                    if (vClaudeCodeFixEnabled &&
+                        appChars.isTerminal &&
+                        pData->backspaceCount > 0 &&
+                        pData->newCharCount > 0) {
+                        usleep((useconds_t)CLI_BACKSPACE_SETTLE_US);
+                    }
                     // For Spotlight-like targets we rely on SendNewCharString(), which can
                     // perform deterministic replacement (AX) and/or per-character Unicode posting.
                     // EXCEPT for browsers - they don't support AX API properly
@@ -2994,7 +3188,14 @@ extern "C" {
                     // This ensures Terminal receives characters before the Enter key
                     BOOL isAutoEnglishWithEnter = (pData->code == vRestoreAndStartNewSession) &&
                                                   (_keycode == KEY_ENTER || _keycode == KEY_RETURN);
-                    BOOL useStepByStep = (!isSpotlightTarget) && (vSendKeyStepByStep || appChars.needsStepByStep || isAutoEnglishWithEnter);
+                    BOOL useStepByStep = (!isSpotlightTarget) &&
+                                         (vSendKeyStepByStep ||
+                                          appChars.needsStepByStep ||
+                                          isAutoEnglishWithEnter);
+                    // Claude CLI fix: prefer Unicode chunk injection over keycode step-by-step
+                    if (vClaudeCodeFixEnabled && appChars.isTerminal) {
+                        useStepByStep = NO;
+                    }
 #ifdef DEBUG
                     if (isSpotlightTarget) {
                         PHTVSpotlightDebugLog([NSString stringWithFormat:@"willSend stepByStep=%d backspaceCount=%d newCharCount=%d", (int)useStepByStep, (int)pData->backspaceCount, (int)pData->newCharCount]);
@@ -3003,11 +3204,17 @@ extern "C" {
                     if (!useStepByStep) {
                         SendNewCharString();
                     } else {
+                        BOOL useTerminalDelay = vClaudeCodeFixEnabled && appChars.isTerminal;
                         if (pData->newCharCount > 0 && pData->newCharCount <= MAX_BUFF) {
                             for (int i = pData->newCharCount - 1; i >= 0; i--) {
                                 SendKeyCode(pData->charData[i]);
-                                // No delay needed between characters - Shift+Left handles it
+                                if (useTerminalDelay) {
+                                    usleep(TERMINAL_KEYSTROKE_DELAY_US);
+                                }
                             }
+                        }
+                        if (useTerminalDelay) {
+                            usleep(TERMINAL_FINAL_SETTLE_US);
                         }
                         if (pData->code == vRestore || pData->code == vRestoreAndStartNewSession) {
                             #ifdef DEBUG

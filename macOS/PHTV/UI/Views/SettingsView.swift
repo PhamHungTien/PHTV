@@ -293,9 +293,6 @@ struct SettingsItem: Identifiable {
             title: "Tương thích bố cục bàn phím", iconName: "keyboard.fill", tab: .apps,
             keywords: ["layout", "compatibility", "dvorak", "colemak", "bố cục", "đặc biệt", "tương thích"]),
         SettingsItem(
-            title: "Hỗ trợ gõ tiếng Việt trong Claude Code", iconName: "terminal.fill", tab: .apps,
-            keywords: ["claude", "claude code", "terminal", "cli", "anthropic", "ai", "tiếng việt", "patch", "sửa lỗi", "fix", "npm", "tương thích"]),
-        SettingsItem(
             title: "Chế độ an toàn (Safe Mode)", iconName: "shield.fill", tab: .apps,
             keywords: ["safe mode", "an toàn", "oclp", "opencore", "legacy", "mac cũ", "accessibility", "crash", "khôi phục", "tương thích"]),
 

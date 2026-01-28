@@ -83,8 +83,9 @@ final class SystemState: ObservableObject {
         settingsWindowAlwaysOnTop = defaults.bool(forKey: UserDefaultsKey.settingsWindowAlwaysOnTop)
         safeMode = defaults.bool(forKey: UserDefaultsKey.safeMode)
 
-        // Load Claude Code patch setting - check actual patch status
-        claudeCodePatchEnabled = ClaudeCodePatcher.shared.isPatched()
+        // Claude Code fix is always enabled
+        defaults.set(true, forKey: UserDefaultsKey.claudeCodeFixEnabled)
+        claudeCodePatchEnabled = true
 
         // Load Sparkle settings
         let updateInterval = defaults.integer(forKey: UserDefaultsKey.updateCheckInterval)
@@ -234,9 +235,29 @@ final class SystemState: ObservableObject {
         // Observer for Claude Code patch
         $claudeCodePatchEnabled.sink { [weak self] value in
             guard let self = self, !self.isLoadingSettings else { return }
+            let defaults = UserDefaults.standard
+            if !value {
+                defaults.set(true, forKey: UserDefaultsKey.claudeCodeFixEnabled)
+                DispatchQueue.main.async {
+                    self.claudeCodePatchEnabled = true
+                }
+                NotificationCenter.default.post(
+                    name: NotificationName.phtvSettingsChanged, object: nil)
+                return
+            }
+
+            defaults.set(true, forKey: UserDefaultsKey.claudeCodeFixEnabled)
+            NotificationCenter.default.post(
+                name: NotificationName.phtvSettingsChanged, object: nil)
+
             DispatchQueue.global(qos: .userInitiated).async {
                 let patcher = ClaudeCodePatcher.shared
+                let installType = patcher.getInstallationType()
                 let currentlyPatched = patcher.isPatched()
+
+                guard installType == .npm else {
+                    return
+                }
 
                 if value && !currentlyPatched {
                     _ = patcher.applyPatch()
