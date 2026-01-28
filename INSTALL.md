@@ -237,9 +237,8 @@ Nhấn `⌘E` (Command + E) bất kỳ đâu để mở:
 
 **Giải pháp nhanh:**
 
+Mở Terminal (⌘+Space → gõ "Terminal"), copy và paste lệnh sau, sau đó nhấn Enter:
 ```bash
-# Mở Terminal (⌘+Space → gõ "Terminal")
-# Copy và paste lệnh sau, sau đó nhấn Enter:
 xattr -cr /Applications/PHTV.app
 ```
 
@@ -316,27 +315,29 @@ System Settings → Privacy & Security → Accessibility → Đảm bảo PHTV �
 <summary><b>Các bước debug</b></summary>
 
 **1. Kiểm tra Console logs:**
-```bash
-# Mở Console.app → tìm "PHTV" để xem error logs
-```
+Mở Console.app → tìm "PHTV" để xem error logs.
 
-**2. Reset settings về mặc định:**
+**2. Reset settings về mặc định (Xóa preferences sẽ reset tất cả settings):**
 ```bash
-# Xóa preferences (sẽ reset tất cả settings)
 rm ~/Library/Preferences/com.phamhungtien.PHTV.plist
 ```
 
 **3. Reinstall clean:**
-```bash
-# Nếu dùng Homebrew:
-brew uninstall --cask phtv
-brew install --cask phtv
 
-# Nếu dùng manual:
-# 1. Xóa /Applications/PHTV.app
-# 2. Xóa ~/Library/Preferences/com.phamhungtien.PHTV.plist
-# 3. Cài lại từ đầu
+Nếu dùng Homebrew:
+```bash
+brew uninstall --cask phtv
 ```
+
+Cài lại:
+```bash
+brew install --cask phtv
+```
+
+Nếu dùng manual:
+1. Xóa `/Applications/PHTV.app`
+2. Xóa `~/Library/Preferences/com.phamhungtien.PHTV.plist`
+3. Cài lại từ đầu
 
 **4. Báo lỗi:**
 - [Tạo issue trên GitHub](../../issues/new) với thông tin:

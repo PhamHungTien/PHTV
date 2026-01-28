@@ -34,11 +34,13 @@ Phiên bản PHTV cho macOS 13+ được phát triển bằng Swift/SwiftUI, man
 
 ## 🚀 Quick Start
 
+Cài đặt bằng Homebrew:
 ```bash
-# Cài đặt bằng Homebrew
 brew install --cask phamhungtien/tap/phtv
+```
 
-# Mở ứng dụng
+Mở ứng dụng:
+```bash
 open /Applications/PHTV.app
 ```
 
@@ -196,34 +198,47 @@ brew upgrade --cask phtv
 ```
 
 **Gỡ cài đặt:**
-```bash
-# Gỡ ứng dụng
-brew uninstall --cask phtv
 
-# Gỡ sạch (bao gồm cả settings)
+Gỡ ứng dụng:
+```bash
+brew uninstall --cask phtv
+```
+
+Gỡ sạch (bao gồm cả settings):
+```bash
 brew uninstall --zap --cask phtv
 ```
 
 ### Tải trực tiếp
 
+Tải từ website:
 ```bash
-# Tải từ website
 open https://phamhungtien.com/PHTV/
+```
 
-# Hoặc từ GitHub Releases
+Hoặc từ GitHub Releases:
+```bash
 open https://github.com/PhamHungTien/PHTV/releases/latest
 ```
 
 ### Build từ source
 
+Clone dự án:
 ```bash
 git clone https://github.com/PhamHungTien/PHTV.git
-cd PHTV
-open PHTV.xcodeproj
-# Build với Cmd+B, chạy với Cmd+R
 ```
 
-> **Lưu ý**: Ứng dụng cần quyền **Accessibility** để hoạt động. Vào **System Settings > Privacy & Security > Accessibility** và thêm PHTV.
+Vào thư mục:
+```bash
+cd PHTV
+```
+
+Mở project:
+```bash
+open PHTV.xcodeproj
+```
+
+> **Lưu ý**: Build với Cmd+B, chạy với Cmd+R. Ứng dụng cần quyền **Accessibility** để hoạt động. Vào **System Settings > Privacy & Security > Accessibility** và thêm PHTV.
 
 ### 🤖 CI/CD & Release Automation
 

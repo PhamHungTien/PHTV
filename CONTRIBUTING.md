@@ -87,24 +87,31 @@ Format: `<type>: <mô tả>`
 
 ### Cấu trúc dự án
 
+Dự án được tổ chức theo kiến trúc đa nền tảng với engine xử lý chung:
+
 ```
 PHTV/
-├── PHTV/
-│   ├── Application/        # AppDelegate, main entry point
-│   ├── Core/
-│   │   ├── Engine/         # Core input method engine (C++)
-│   │   │   ├── Engine.cpp/.h         # Logic chính
-│   │   │   ├── Vietnamese.cpp/.h     # Bảng mã tiếng Việt
-│   │   │   ├── Macro.cpp/.h          # Quản lý macro
-│   │   │   └── ...
-│   │   └── Platforms/      # macOS-specific integration
-│   ├── Managers/           # Business logic
-│   ├── SwiftUI/            # Giao diện người dùng
-│   │   ├── Views/          # SwiftUI views
-│   │   ├── Controllers/    # Window/Status bar controllers
-│   │   └── Utilities/      # Helper functions
-│   └── Utils/              # Utility functions
-├── PHTV.xcodeproj/         # Xcode project
+├── Engine/                 # Core engine xử lý tiếng Việt (C++)
+│   ├── Engine.cpp/.h       # Logic xử lý phím bấm chính
+│   ├── Vietnamese.cpp/.h   # Định nghĩa bảng mã và quy tắc bỏ dấu
+│   ├── Macro.cpp/.h        # Xử lý gõ tắt và snippets
+│   └── ...
+├── Platforms/              # Header files dùng chung cho các nền tảng
+│   ├── mac.h
+│   ├── win32.h
+│   └── linux.h
+├── macOS/                  # Ứng dụng PHTV cho macOS (Swift/SwiftUI)
+│   ├── PHTV.xcodeproj      # Xcode project chính
+│   └── PHTV/
+│       ├── Application/    # AppDelegate và Sparkle manager
+│       ├── Managers/       # Xử lý Event, Hotkey, Accessibility
+│       └── UI/             # Giao diện SwiftUI (Views, State, Models)
+├── Windows/                # Ứng dụng PHTV cho Windows (C# .NET & C++)
+│   ├── App/                # Windows bridge và resources
+│   └── UI/                 # Giao diện WPF (XAML)
+├── Linux/                  # Ứng dụng PHTV cho Linux (đang phát triển)
+├── scripts/                # Các script tự động hóa build, sign và release
+├── docs/                   # Tài liệu và hình ảnh minh họa
 └── README.md
 ```
 
@@ -113,14 +120,20 @@ PHTV/
 > **Yêu cầu**: macOS 13.0+ (Ventura) và Xcode phiên bản mới nhất (hỗ trợ cả Intel và Apple Silicon)
 
 ```bash
-# Build project (Universal Binary - Intel + Apple Silicon)
-xcodebuild -project PHTV.xcodeproj -scheme PHTV
+# Clone dự án
+git clone https://github.com/PhamHungTien/PHTV.git
 
-# Run tests (nếu có)
-xcodebuild -project PHTV.xcodeproj -scheme PHTV test
+# Vào thư mục macOS
+cd PHTV/macOS
 
-# Clean build
-xcodebuild -project PHTV.xcodeproj clean
+# Mở project bằng Xcode
+open PHTV.xcodeproj
+```
+
+Hoặc build qua dòng lệnh:
+```bash
+# Build project (Universal Binary)
+xcodebuild -project macOS/PHTV.xcodeproj -scheme PHTV build
 ```
 
 ### Debugging
