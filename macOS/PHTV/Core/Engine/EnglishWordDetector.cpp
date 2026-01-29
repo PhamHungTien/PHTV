@@ -98,6 +98,84 @@ static inline bool searchBinaryTrie(const BinaryTrieNode* __restrict nodes,
 }
 
 // ============================================================================
+// Telex conflict detection (helps decide when to relax English matching)
+// ============================================================================
+static inline bool hasTelexConflict(const char* word, int len) {
+    if (len < 2) return false;
+    for (int i = 0; i < len - 1; i++) {
+        char c1 = word[i];
+        char c2 = word[i + 1];
+
+        // Double vowels: aa -> â, ee -> ê, oo -> ô
+        if ((c1 == 'a' && c2 == 'a') || (c1 == 'e' && c2 == 'e') || (c1 == 'o' && c2 == 'o')) {
+            return true;
+        }
+        // Horn marks: aw -> ă, ow -> ơ, uw -> ư
+        if ((c1 == 'a' && c2 == 'w') || (c1 == 'o' && c2 == 'w') || (c1 == 'u' && c2 == 'w')) {
+            return true;
+        }
+        // dd -> đ
+        if (c1 == 'd' && c2 == 'd') {
+            return true;
+        }
+        // Vowel + tone mark: s, f, r, x, j
+        if ((c1 == 'a' || c1 == 'e' || c1 == 'i' || c1 == 'o' || c1 == 'u') &&
+            (c2 == 's' || c2 == 'f' || c2 == 'r' || c2 == 'x' || c2 == 'j')) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static inline bool endsWithSuffix(const uint8_t* idx, int len, const char* suffix, int suffixLen) {
+    if (len < suffixLen) return false;
+    int start = len - suffixLen;
+    for (int i = 0; i < suffixLen; i++) {
+        if (idx[start + i] != (uint8_t)(suffix[i] - 'a')) return false;
+    }
+    return true;
+}
+
+static inline bool startsWithNonVietnameseCluster(const uint8_t* idx, int len) {
+    if (len <= 0) return false;
+    char first = (char)('a' + idx[0]);
+    char second = (len > 1) ? (char)('a' + idx[1]) : '\0';
+    char third = (len > 2) ? (char)('a' + idx[2]) : '\0';
+
+    // Letters not used in Vietnamese spelling
+    if (first == 'f' || first == 'j' || first == 'w' || first == 'z') return true;
+
+    // Common English clusters that don't exist in Vietnamese
+    if (second) {
+        if ((first == 'b' && (second == 'l' || second == 'r')) ||
+            (first == 'c' && (second == 'l' || second == 'r')) ||
+            (first == 'd' && second == 'r') ||
+            (first == 'f' && (second == 'l' || second == 'r')) ||
+            (first == 'g' && (second == 'l' || second == 'r')) ||
+            (first == 'p' && (second == 'l' || second == 'r')) ||
+            (first == 's' && (second == 'c' || second == 'k' || second == 'l' || second == 'm' ||
+                              second == 'n' || second == 'p' || second == 't' || second == 'w' ||
+                              second == 'q')) ||
+            (first == 't' && second == 'w') ||
+            (first == 'w' && second == 'r')) {
+            return true;
+        }
+    }
+
+    // 3-letter clusters
+    if (third) {
+        if ((first == 's' && second == 'h' && third == 'r') ||
+            (first == 's' && second == 't' && third == 'r') ||
+            (first == 's' && second == 'p' && third == 'r') ||
+            (first == 's' && second == 'c' && third == 'r')) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// ============================================================================
 // Load binary trie using mmap for instant access
 // ============================================================================
 static bool loadBinaryTrie(const char* path,
@@ -336,11 +414,13 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
     if (vieInit && vieNodes && stateIndex >= 2) {
         uint8_t lastKey = keyStates[stateIndex - 1] & 0x3F;
         // Telex tone marks: s(sắc), f(huyền), r(hỏi), x(ngã), j(nặng), w(horn), a/o/e(^), [](ơ/ư)
-        // Note: KEY_D removed to fix "add" -> "ađ" issue (Issue #57)
+        // Special-case 'd' only when the word starts with 'd' (e.g., "did" -> "đi").
+        // This avoids the "add" -> "ađ" regression while restoring Vietnamese priority for d...d.
         bool isToneMark = (lastKey == KEY_S || lastKey == KEY_F ||
                           lastKey == KEY_R || lastKey == KEY_X || lastKey == KEY_J ||
                           lastKey == KEY_W || lastKey == KEY_A || lastKey == KEY_O ||
-                          lastKey == KEY_E || lastKey == KEY_LEFT_BRACKET || lastKey == KEY_RIGHT_BRACKET);
+                          lastKey == KEY_E || lastKey == KEY_LEFT_BRACKET || lastKey == KEY_RIGHT_BRACKET ||
+                          (lastKey == KEY_D && (keyStates[0] & 0x3F) == KEY_D));
 
         if (isToneMark) {
             // Check if word without tone mark starts with Vietnamese consonant or vowel
@@ -473,6 +553,37 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
         fprintf(stderr, "[AutoEnglish] SKIP: '%s' not found in English dictionary\n", word.c_str()); fflush(stderr);
     }
     #endif
+
+    // Fallback: allow common suffixes if the base word is English
+    // This fixes cases like "footer" (foot + er), "zoomed" (zoom + ed) when
+    // full word is missing in dictionary but still clearly English.
+    if (!isEnglish && hasTelexConflict(wordBuf, stateIndex)) {
+        static const struct { const char* s; int len; } suffixes[] = {
+            {"ing", 3},
+            {"ers", 3},
+            {"er", 2},
+            {"ed", 2},
+            {"es", 2},
+            {"s", 1},
+        };
+
+        for (const auto& suf : suffixes) {
+            if (stateIndex <= suf.len + 2) continue; // base too short
+            if (!endsWithSuffix(idx, stateIndex, suf.s, suf.len)) continue;
+
+            int baseLen = stateIndex - suf.len;
+            if (searchBinaryTrie(engNodes, idx, baseLen)) {
+                bool baseNonVietnameseStart = startsWithNonVietnameseCluster(idx, baseLen);
+                if (baseNonVietnameseStart || !vieNodes || !searchBinaryTrie(vieNodes, idx, baseLen)) {
+                    #ifdef DEBUG
+                    fprintf(stderr, "[AutoEnglish] RESTORE: '%s' via English base + suffix '%s'\n", wordBuf, suf.s); fflush(stderr);
+                    #endif
+                    return true;
+                }
+            }
+        }
+    }
+
     return isEnglish;
 }
 

@@ -196,75 +196,11 @@ def has_telex_conflict(word):
 
 def should_include_english_word(word):
     """
-    Comprehensive check if English word should be included in dictionary.
-    Returns True if word could conflict with Vietnamese Telex typing OR
-    is a common English word that wouldn't naturally occur in Vietnamese.
+    Compatibility shim: keep all English words.
+    We no longer filter; dictionary size is acceptable and avoids missing words
+    like "footer" or "zoomed".
     """
-    word_lower = word.lower()
-
-    # 1. Telex conflict patterns (original logic)
-    if has_telex_conflict(word_lower):
-        return True
-
-    # 2. Double consonants (common in English, rare in Vietnamese)
-    # bb, cc, ff, gg, ll, mm, nn, pp, rr, ss, tt, zz
-    if re.search(r'(bb|cc|ff|gg|ll|mm|nn|pp|rr|ss|tt|zz)', word_lower):
-        return True
-
-    # 3. Consonant clusters at START that don't exist in Vietnamese
-    # Vietnamese only has: ch, gh, gi, kh, ng, nh, ph, qu, th, tr, ngh
-    # English has many more: bl, br, cl, cr, dr, fl, fr, gl, gr, pl, pr, sc, sk, sl, sm, sn, sp, st, sw, tw, wr
-    non_vn_start_clusters = [
-        'bl', 'br', 'cl', 'cr', 'dr', 'fl', 'fr', 'gl', 'gr',
-        'pl', 'pr', 'sc', 'sk', 'sl', 'sm', 'sn', 'sp', 'sq',
-        'st', 'sw', 'tw', 'wr', 'shr', 'str', 'spr', 'scr'
-    ]
-    for cluster in non_vn_start_clusters:
-        if word_lower.startswith(cluster):
-            return True
-
-    # 4. Common English suffixes not natural in Vietnamese
-    english_suffixes = [
-        'ment', 'tion', 'sion', 'ness', 'able', 'ible',
-        'ful', 'less', 'ity', 'ive', 'ous', 'ious',
-        'ence', 'ance', 'ling', 'ward', 'wise', 'ship',
-        'dom', 'hood', 'ism', 'ist', 'ure', 'ture',
-        'ator', 'ing', 'ery', 'ory'
-    ]
-    for suffix in english_suffixes:
-        if word_lower.endswith(suffix) and len(word_lower) > len(suffix) + 2:
-            return True
-
-    # 5. Words containing 'w', 'z', 'j' (not used in Vietnamese)
-    # But exclude Telex patterns: aw, ow, uw (already handled), and j as tone mark
-    if 'w' in word_lower:
-        # Include if 'w' is not part of aw/ow/uw horn mark
-        if not re.search(r'[aou]w', word_lower):
-            return True
-    if 'z' in word_lower:
-        return True
-    if 'j' in word_lower:
-        # Include if 'j' is not after a vowel (tone mark position)
-        if not re.search(r'[aeiou]j', word_lower):
-            return True
-
-    # 6. Consonant clusters at END that don't exist in Vietnamese
-    # Vietnamese endings are limited: c, ch, m, n, ng, nh, p, t
-    non_vn_end_clusters = [
-        'ct', 'ft', 'ght', 'ld', 'lf', 'lk', 'lm', 'lp', 'lt',
-        'mp', 'nce', 'nch', 'nd', 'nge', 'nk', 'nt', 'pt', 'rb',
-        'rce', 'rch', 'rd', 'rf', 'rk', 'rl', 'rm', 'rn', 'rp',
-        'rse', 'rt', 'rth', 'rv', 'sk', 'sp', 'st', 'xt'
-    ]
-    for cluster in non_vn_end_clusters:
-        if word_lower.endswith(cluster):
-            return True
-
-    # 7. Letter 'f' at start (Vietnamese doesn't use 'f', uses 'ph')
-    if word_lower.startswith('f'):
-        return True
-
-    return False
+    return True
 
 def build_english_dictionary(resources_dir):
     """Build English dictionary binary with common words only."""
@@ -331,10 +267,9 @@ def build_english_dictionary(resources_dir):
         print("  ✗ No English words found!")
         return False, set()
 
-    # Filter: keep words that could conflict with Vietnamese or are clearly English
-    # Uses comprehensive filter including Telex conflicts, consonant clusters, suffixes, etc.
-    filtered_words = {w for w in words if should_include_english_word(w)}
-    print(f"  Filtered to {len(filtered_words):,} words (Telex conflicts + English patterns)")
+    # No filtering: keep all words to avoid missing English terms
+    filtered_words = set(words)
+    print(f"  No filtering: {len(filtered_words):,} words")
 
     # Build trie
     print(f"  Building trie with {len(filtered_words):,} unique words...")
