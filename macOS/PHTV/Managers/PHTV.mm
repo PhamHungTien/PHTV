@@ -452,7 +452,8 @@ extern "C" {
     // These are Electron/web apps that don't support AX text replacement
     // NOTE: Microsoft Office apps support Vietnamese compound Unicode properly in documents
     // Template search may have minor issues but prioritizing document editing experience
-    NSSet* _precomposedBatchedAppSet = [NSSet setWithArray:@[@"net.whatsapp.WhatsApp"]];
+    NSSet* _precomposedBatchedAppSet = [NSSet setWithArray:@[@"net.whatsapp.WhatsApp",
+                                                              @"notion.id"]];
 
     //app which needs step by step key sending (timing sensitive apps) - Using NSSet for O(1) lookup performance
     NSSet* _stepByStepAppSet = [NSSet setWithArray:@[// Commented out for testing Vietnamese input:
@@ -755,6 +756,63 @@ static uint64_t _lastCliInjectTimeUs = 0;
     static void InvalidateAddressBarCache(void) {
         _lastAddressBarCheckTime = 0;
         _lastAddressBarResult = NO;
+    }
+
+    // Check if focused element is a Notion Code Block (or similar "code" role)
+    static BOOL isNotionCodeBlock(void) {
+        if (vSafeMode) return NO;
+        
+        AXUIElementRef systemWide = AXUIElementCreateSystemWide();
+        AXUIElementRef focusedElement = NULL;
+        BOOL isCodeBlock = NO;
+        
+        if (AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement) == kAXErrorSuccess) {
+            
+            // Attributes to check for "code" keyword
+            NSArray *attributesToCheck = @[(__bridge NSString *)kAXRoleDescriptionAttribute, 
+                                           (__bridge NSString *)kAXDescriptionAttribute, 
+                                           (__bridge NSString *)kAXHelpAttribute]; 
+            
+            // Check focused element
+            for (NSString *attr in attributesToCheck) {
+                CFTypeRef valueRef = NULL;
+                if (AXUIElementCopyAttributeValue(focusedElement, (__bridge CFStringRef)attr, &valueRef) == kAXErrorSuccess) {
+                    if (valueRef && CFGetTypeID(valueRef) == CFStringGetTypeID()) {
+                        NSString *value = (__bridge NSString *)valueRef;
+                        if ([value rangeOfString:@"code" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+                            isCodeBlock = YES;
+                        }
+                    }
+                    if (valueRef) CFRelease(valueRef);
+                }
+                if (isCodeBlock) break;
+            }
+            
+            // Check Parent (Code Blocks in Notion are often containers)
+            if (!isCodeBlock) {
+                AXUIElementRef parent = NULL;
+                if (AXUIElementCopyAttributeValue(focusedElement, kAXParentAttribute, (CFTypeRef *)&parent) == kAXErrorSuccess) {
+                    for (NSString *attr in attributesToCheck) {
+                        CFTypeRef valueRef = NULL;
+                        if (AXUIElementCopyAttributeValue(parent, (__bridge CFStringRef)attr, &valueRef) == kAXErrorSuccess) {
+                            if (valueRef && CFGetTypeID(valueRef) == CFStringGetTypeID()) {
+                                NSString *value = (__bridge NSString *)valueRef;
+                                if ([value rangeOfString:@"code" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+                                    isCodeBlock = YES;
+                                }
+                            }
+                            if (valueRef) CFRelease(valueRef);
+                        }
+                        if (isCodeBlock) break;
+                    }
+                    CFRelease(parent);
+                }
+            }
+            
+            CFRelease(focusedElement);
+        }
+        CFRelease(systemWide);
+        return isCodeBlock;
     }
 
     // Check if the focused element is likely an address bar (TextField)
@@ -3093,13 +3151,25 @@ static uint64_t _lastCliInjectTimeUs = 0;
                     }
                     // CRITICAL: Force fall through to standard backspace logic below.
                 } 
-                else if (vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp && _keycode != KEY_SPACE &&
+                else if (vFixRecommendBrowser && pData->extCode != 4 && (!isSpecialApp || [effectiveBundleId isEqualToString:@"notion.id"]) && _keycode != KEY_SPACE &&
                          !isPotentialShortcut && !isBrowserApp && !(vClaudeCodeFixEnabled && appChars.isTerminal)) {
                     // Legacy logic for non-browser apps (Electron, Slack, etc.)
                     // Keep original behavior: shift-left for Chromium, EmptyChar for others
                     BOOL useShiftLeft = appChars.containsUnicodeCompound && pData->backspaceCount > 0;
                     
-                    if (useShiftLeft) {
+                    // NOTION CODE BLOCK FIX:
+                    // If Notion Code Block detected, fallback to standard backspace (no Shift+Left, no EmptyChar)
+                    // This fixes duplicates in code blocks where Shift+Left might fail to select or text is raw
+                    BOOL isNotionCodeBlockDetected = [effectiveBundleId isEqualToString:@"notion.id"] && isNotionCodeBlock();
+
+                    if (isNotionCodeBlockDetected) {
+                        // Do nothing here.
+                        // Falls through to SendBackspaceSequence below (Standard Backspace)
+                        #ifdef DEBUG
+                        NSLog(@"[Notion] Code Block detected - using Standard Backspace");
+                        #endif
+                    }
+                    else if (useShiftLeft) {
                         SendShiftAndLeftArrow();
                         SendPhysicalBackspace();
                         pData->backspaceCount--;

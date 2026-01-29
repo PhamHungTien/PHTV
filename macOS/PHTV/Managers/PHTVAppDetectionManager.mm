@@ -116,7 +116,8 @@ static NSSet* _disableVietnameseAppSet = nil;
                                                          @"com.raycast.*"]];
 
         // Precomposed Unicode with batched sending
-        _precomposedBatchedAppSet = [NSSet setWithArray:@[@"net.whatsapp.WhatsApp"]];
+        _precomposedBatchedAppSet = [NSSet setWithArray:@[@"net.whatsapp.WhatsApp",
+                                                           @"notion.id"]];
 
         // Step-by-step key sending (timing sensitive)
         _stepByStepAppSet = [NSSet setWithArray:@[@"com.apple.loginwindow",
