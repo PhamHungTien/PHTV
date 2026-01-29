@@ -50,7 +50,8 @@ static NSSet* _disableVietnameseAppSet = nil;
                                                         @"company.thebrowser.dia",
                                                         @"org.chromium.Chromium",
                                                         @"com.vivaldi.Vivaldi",
-                                                        @"com.operasoftware.Opera"]];
+                                                        @"com.operasoftware.Opera",
+                                                        @"notion.id"]];
 
         // All browsers (36+ entries)
         _browserAppSet = [NSSet setWithArray:@[
@@ -115,8 +116,7 @@ static NSSet* _disableVietnameseAppSet = nil;
                                                          @"com.raycast.*"]];
 
         // Precomposed Unicode with batched sending
-        _precomposedBatchedAppSet = [NSSet setWithArray:@[@"net.whatsapp.WhatsApp",
-                                                           @"notion.id"]];
+        _precomposedBatchedAppSet = [NSSet setWithArray:@[@"net.whatsapp.WhatsApp"]];
 
         // Step-by-step key sending (timing sensitive)
         _stepByStepAppSet = [NSSet setWithArray:@[@"com.apple.loginwindow",

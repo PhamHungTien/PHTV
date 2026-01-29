@@ -365,7 +365,8 @@ extern "C" {
                                                            @"company.thebrowser.dia",  // Dia Browser
                                                            @"org.chromium.Chromium",  // Chromium
                                                            @"com.vivaldi.Vivaldi",  // Vivaldi
-                                                           @"com.operasoftware.Opera"]];  // Opera
+                                                           @"com.operasoftware.Opera", // Opera
+                                                           @"notion.id"]];  // Notion - apply Shift+Left strategy
 
     // Browsers (Chromium, Safari, Firefox, etc.)
     // These apps have their own address bar autocomplete/prediction that conflicts 
@@ -451,8 +452,7 @@ extern "C" {
     // These are Electron/web apps that don't support AX text replacement
     // NOTE: Microsoft Office apps support Vietnamese compound Unicode properly in documents
     // Template search may have minor issues but prioritizing document editing experience
-    NSSet* _precomposedBatchedAppSet = [NSSet setWithArray:@[@"net.whatsapp.WhatsApp",
-                                                              @"notion.id"]];  // Notion - Electron app
+    NSSet* _precomposedBatchedAppSet = [NSSet setWithArray:@[@"net.whatsapp.WhatsApp"]];
 
     //app which needs step by step key sending (timing sensitive apps) - Using NSSet for O(1) lookup performance
     NSSet* _stepByStepAppSet = [NSSet setWithArray:@[// Commented out for testing Vietnamese input:
