@@ -103,24 +103,48 @@ static Byte _stateIndex = 0;
 static bool tempDisableKey = false;
 
 static inline bool isProtectedEnglishWordForSpellcheck(const Uint32* keyStates, int count) {
-    if (count <= 0) return false;
-    auto kc = [&](int idx) -> Uint16 { return (Uint16)(keyStates[idx] & 0x3F); };
-    if (count == 3) { // ear, our
-        if (kc(0) == KEY_E && kc(1) == KEY_A && kc(2) == KEY_R) return true;
-        if (kc(0) == KEY_O && kc(1) == KEY_U && kc(2) == KEY_R) return true;
-        return false;
+    if (count < 2 || count > 12) return false;
+
+    // Common English words that often get tone-marked in Telex when spell check is on.
+    // Keep this list focused on high-frequency words that end with tone keys (r/s/f/...)
+    // or are known problem cases.
+    static const std::unordered_set<std::string> kProtectedWords = {
+        // Problem cases from issue
+        "year", "your", "our", "ear", "early", "their",
+
+        // Pronouns / determiners
+        "her", "hers", "his", "its", "ours", "yours", "theirs",
+
+        // Aux/verbs (ending with tone keys)
+        "are", "were", "is", "as", "was", "has", "does",
+
+        // Prepositions / conjunctions
+        "or", "for", "of", "if",
+
+        // Common adverbs / misc (ending with r/s)
+        "more", "over", "after", "other", "under", "never", "ever",
+        "later", "better", "either", "rather",
+
+        // Short confirmations / misc
+        "yes", "us", "off"
+    };
+
+    std::string word = keyStatesToString(keyStates, count);
+    if ((int)word.size() != count) return false;
+    if (kProtectedWords.count(word) == 0) return false;
+
+    // If this exact key sequence is a Vietnamese word, don't protect it.
+    return !isVietnameseWordFromKeyStates(keyStates, count);
+}
+
+static inline bool isVietnameseWordFromTypingWord(const int length) {
+    if (length <= 0) return false;
+    Uint32 buf[32];
+    int len = length > 30 ? 30 : length;
+    for (int i = 0; i < len; i++) {
+        buf[i] = TypingWord[i] & 0x3F;
     }
-    if (count == 4) { // year, your
-        if (kc(0) == KEY_Y && kc(1) == KEY_E && kc(2) == KEY_A && kc(3) == KEY_R) return true;
-        if (kc(0) == KEY_Y && kc(1) == KEY_O && kc(2) == KEY_U && kc(3) == KEY_R) return true;
-        return false;
-    }
-    if (count == 5) { // early, their
-        if (kc(0) == KEY_E && kc(1) == KEY_A && kc(2) == KEY_R && kc(3) == KEY_L && kc(4) == KEY_Y) return true;
-        if (kc(0) == KEY_T && kc(1) == KEY_H && kc(2) == KEY_E && kc(3) == KEY_I && kc(4) == KEY_R) return true;
-        return false;
-    }
-    return false;
+    return isVietnameseWordFromKeyStates(buf, len);
 }
 static int capsElem;
 static int key;
@@ -1617,8 +1641,20 @@ void vKeyHandleEvent(const vKeyEvent& event,
                    eventType, stateType, _stateIndex, _index, data);
             fflush(stderr);
             #endif
+            if (vCheckSpelling) {
+                checkSpelling(true);
+            }
+            bool shouldRestoreEnglish = false;
+            if (_stateIndex > 1) {
+                shouldRestoreEnglish = checkIfEnglishWord(KeyStates, _stateIndex);
+                if (!shouldRestoreEnglish) {
+                    if (isEnglishWordFromKeyStates(KeyStates, _stateIndex) && !isVietnameseWordFromTypingWord(_index)) {
+                        shouldRestoreEnglish = true;
+                    }
+                }
+            }
             // IMPORTANT: Check _index > 0 (must have display chars) and _stateIndex > 1 (at least 2 keys pressed)
-            if (_index > 0 && _stateIndex > 1 && checkIfEnglishWord(KeyStates, _stateIndex)) {
+            if (_index > 0 && _stateIndex > 1 && shouldRestoreEnglish) {
                 // Auto restore English word feature
                 // checkIfEnglishWord returns true only if:
                 // - Word exists in English dictionary AND
@@ -1725,6 +1761,16 @@ void vKeyHandleEvent(const vKeyEvent& event,
         if (vCheckSpelling) {
             checkSpelling(true); //force check spelling (ignore tempDisableKey for Auto English)
         }
+        bool shouldRestoreEnglish = false;
+        if (vAutoRestoreEnglishWord && _index > 0 && _stateIndex > 1) {
+            shouldRestoreEnglish = checkIfEnglishWord(KeyStates, _stateIndex);
+            if (!shouldRestoreEnglish) {
+                if (isEnglishWordFromKeyStates(KeyStates, _stateIndex) && !isVietnameseWordFromTypingWord(_index)) {
+                    shouldRestoreEnglish = true;
+                }
+            }
+        }
+
         if (vUseMacro && !_hasHandledMacro && findMacro(hMacroKey, hMacroData)) { //macro
             hCode = vReplaceMaro;
             hBPC = (Byte)hMacroKey.size();
@@ -1733,7 +1779,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             fprintf(stderr, "[AutoEnglish] Macro matched, Auto English skipped\n");
             fflush(stderr);
             #endif
-        } else if (vAutoRestoreEnglishWord && _index > 0 && _stateIndex > 1 && checkIfEnglishWord(KeyStates, _stateIndex)) {
+        } else if (vAutoRestoreEnglishWord && _index > 0 && _stateIndex > 1 && shouldRestoreEnglish) {
             // PRIORITY FIX: Check Auto English BEFORE Quick Consonant
             // Auto English should have higher priority to prevent conflicts
             // (e.g., "search" ending in "ch" shouldn't trigger Quick Consonant)

@@ -315,6 +315,54 @@ bool isEnglishWord(const string& word) {
     return searchBinaryTrie(engNodes, idx, len);
 }
 
+bool isEnglishWordFromKeyStates(const Uint32* keyStates, int stateIndex) {
+    if (stateIndex <= 0 || stateIndex > 30) return false;
+    if (!engInit && customEnglishWords.empty()) return false;
+
+    initKcLookup();
+
+    uint8_t idx[32];
+    char wordBuf[32];
+    for (int i = 0; i < stateIndex; i++) {
+        uint8_t id = kcToIdx[keyStates[i] & 0x3F];
+        if (id >= 26) return false;
+        idx[i] = id;
+        wordBuf[i] = 'a' + id;
+    }
+    wordBuf[stateIndex] = '\0';
+
+    if (!customEnglishWords.empty() && customEnglishWords.count(wordBuf)) {
+        return true;
+    }
+
+    if (!engInit || !engNodes) return false;
+    return searchBinaryTrie(engNodes, idx, stateIndex);
+}
+
+bool isVietnameseWordFromKeyStates(const Uint32* keyStates, int stateIndex) {
+    if (stateIndex <= 0 || stateIndex > 30) return false;
+    if (!vieInit && customVietnameseWords.empty()) return false;
+
+    initKcLookup();
+
+    uint8_t idx[32];
+    char wordBuf[32];
+    for (int i = 0; i < stateIndex; i++) {
+        uint8_t id = kcToIdx[keyStates[i] & 0x3F];
+        if (id >= 26) return false;
+        idx[i] = id;
+        wordBuf[i] = 'a' + id;
+    }
+    wordBuf[stateIndex] = '\0';
+
+    if (!customVietnameseWords.empty() && customVietnameseWords.count(wordBuf)) {
+        return true;
+    }
+
+    if (!vieInit || !vieNodes) return false;
+    return searchBinaryTrie(vieNodes, idx, stateIndex);
+}
+
 string keyStatesToString(const Uint32* keyCodes, int count) {
     string result;
     result.reserve(count);

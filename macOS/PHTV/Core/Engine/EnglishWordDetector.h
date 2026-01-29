@@ -61,6 +61,15 @@ size_t getVietnameseDictionarySize();
  * @return true if the word exists
  */
 bool isEnglishWord(const string& word);
+bool isEnglishWordFromKeyStates(const Uint32* keyStates, int stateIndex);
+
+/**
+ * Check if a word exists in the Vietnamese dictionary using raw KeyStates
+ * @param keyStates Array of raw key states
+ * @param stateIndex Number of keys in the array
+ * @return true if the word exists in Vietnamese dictionary (or custom Vietnamese list)
+ */
+bool isVietnameseWordFromKeyStates(const Uint32* keyStates, int stateIndex);
 
 /**
  * Convert key codes (from KeyStates) to ASCII string
