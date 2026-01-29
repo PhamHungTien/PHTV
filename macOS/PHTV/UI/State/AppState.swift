@@ -504,11 +504,6 @@ final class AppState: ObservableObject {
         systemState.enableTextReplacementFix
     }
 
-    var claudeCodePatchEnabled: Bool {
-        get { systemState.claudeCodePatchEnabled }
-        set { systemState.claudeCodePatchEnabled = newValue }
-    }
-
     var hasAccessibilityPermission: Bool {
         get { systemState.hasAccessibilityPermission }
         set { systemState.hasAccessibilityPermission = newValue }

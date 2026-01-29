@@ -23,9 +23,6 @@ final class SystemState: ObservableObject {
     // Text Replacement Fix is always enabled (no user setting)
     var enableTextReplacementFix: Bool { return true }
 
-    // Claude Code patch setting
-    @Published var claudeCodePatchEnabled: Bool = false
-
     // Accessibility
     @Published var hasAccessibilityPermission: Bool = false
 
@@ -82,10 +79,6 @@ final class SystemState: ObservableObject {
         showIconOnDock = defaults.bool(forKey: UserDefaultsKey.showIconOnDock)
         settingsWindowAlwaysOnTop = defaults.bool(forKey: UserDefaultsKey.settingsWindowAlwaysOnTop)
         safeMode = defaults.bool(forKey: UserDefaultsKey.safeMode)
-
-        // Claude Code fix is always enabled
-        defaults.set(true, forKey: UserDefaultsKey.claudeCodeFixEnabled)
-        claudeCodePatchEnabled = true
 
         // Load Sparkle settings
         let updateInterval = defaults.integer(forKey: UserDefaultsKey.updateCheckInterval)
@@ -230,41 +223,6 @@ final class SystemState: ObservableObject {
             defaults.set(value, forKey: UserDefaultsKey.showIconOnDock)
             NotificationCenter.default.post(
                 name: NotificationName.phtvSettingsChanged, object: nil)
-        }.store(in: &cancellables)
-
-        // Observer for Claude Code patch
-        $claudeCodePatchEnabled.sink { [weak self] value in
-            guard let self = self, !self.isLoadingSettings else { return }
-            let defaults = UserDefaults.standard
-            if !value {
-                defaults.set(true, forKey: UserDefaultsKey.claudeCodeFixEnabled)
-                DispatchQueue.main.async {
-                    self.claudeCodePatchEnabled = true
-                }
-                NotificationCenter.default.post(
-                    name: NotificationName.phtvSettingsChanged, object: nil)
-                return
-            }
-
-            defaults.set(true, forKey: UserDefaultsKey.claudeCodeFixEnabled)
-            NotificationCenter.default.post(
-                name: NotificationName.phtvSettingsChanged, object: nil)
-
-            DispatchQueue.global(qos: .userInitiated).async {
-                let patcher = ClaudeCodePatcher.shared
-                let installType = patcher.getInstallationType()
-                let currentlyPatched = patcher.isPatched()
-
-                guard installType == .npm else {
-                    return
-                }
-
-                if value && !currentlyPatched {
-                    _ = patcher.applyPatch()
-                } else if !value && currentlyPatched {
-                    _ = patcher.removePatch()
-                }
-            }
         }.store(in: &cancellables)
 
         // Observer for system settings

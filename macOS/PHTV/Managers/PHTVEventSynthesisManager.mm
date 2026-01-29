@@ -39,6 +39,10 @@ static std::vector<Uint16> _syncKey;
         // Pre-create backspace events for performance
         _eventBackSpaceDown = CGEventCreateKeyboardEvent(_myEventSource, (CGKeyCode)51, true);
         _eventBackSpaceUp = CGEventCreateKeyboardEvent(_myEventSource, (CGKeyCode)51, false);
+        
+        // Apply NonCoalesced flag to global backspace events
+        CGEventSetFlags(_eventBackSpaceDown, CGEventGetFlags(_eventBackSpaceDown) | kCGEventFlagMaskNonCoalesced);
+        CGEventSetFlags(_eventBackSpaceUp, CGEventGetFlags(_eventBackSpaceUp) | kCGEventFlagMaskNonCoalesced);
     }
 }
 

@@ -39,8 +39,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
-				"PHTV-Bridging-Header.h",
-				PHTV.entitlements,
 			);
 			target = 460202422F2814250040B043 /* PHTV */;
 		};
@@ -267,12 +265,16 @@
 			};
 			name = Debug;
 		};
-		        4602024D2F2814260040B043 /* Release */ = {
-		            isa = XCBuildConfiguration;
-		            buildSettings = {
-		                ALWAYS_SEARCH_USER_PATHS = NO;
-		                ARCHS = "arm64 x86_64";
-		                ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
+		4602024D2F2814260040B043 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = (
+					arm64,
+					x86_64,
+				);
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -381,7 +383,10 @@
 		460202502F2814260040B043 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "arm64 x86_64";
+				ARCHS = (
+					arm64,
+					x86_64,
+				);
 				ASSETCATALOG_COMPILER_APPICON_NAME = PHTV;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
