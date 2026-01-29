@@ -598,7 +598,6 @@ static int _phtvPendingBackspaceCount = 0;
 static uint64_t _lastCliInjectTimeUs = 0;
 
     __attribute__((always_inline)) static inline void SpotlightTinyDelay(void) {
-        usleep(SPOTLIGHT_TINY_DELAY_US);
     }
 
     // Simple and reliable: always read fresh from AX, no tracking
@@ -985,27 +984,7 @@ static uint64_t _lastCliInjectTimeUs = 0;
         }
     }
 
-    __attribute__((always_inline)) static inline void ThrottleCliInjection(void) {
-        if (!_phtvIsCliTarget) {
-            return;
-        }
-
-        dispatch_once(&timebase_init_token, ^{
-            mach_timebase_info(&timebase_info);
-        });
-
-        uint64_t now = mach_absolute_time();
-        uint64_t nowUs = mach_time_to_us(now);
-        uint64_t minIntervalUs = CLI_MIN_INTERVAL_US;
-        if (_phtvCliSpeedFactor > 1.0) {
-            minIntervalUs = (uint64_t)(CLI_MIN_INTERVAL_US * _phtvCliSpeedFactor);
-        }
-        if (_lastCliInjectTimeUs > 0 && nowUs - _lastCliInjectTimeUs < minIntervalUs) {
-            usleep((useconds_t)(minIntervalUs - (nowUs - _lastCliInjectTimeUs)));
-            now = mach_absolute_time();
-            nowUs = mach_time_to_us(now);
-        }
-        _lastCliInjectTimeUs = nowUs;
+    void ThrottleCliInjection() {
     }
 
     __attribute__((always_inline)) static inline uint64_t NowUs(void) {
@@ -1016,14 +995,6 @@ static uint64_t _lastCliInjectTimeUs = 0;
     }
 
     __attribute__((always_inline)) static inline void WaitForCliIdle(void) {
-        if (!_phtvIsCliTarget) {
-            return;
-        }
-        uint64_t nowUs = NowUs();
-        if (_phtvCliBusyUntilUs > nowUs) {
-            uint64_t waitUs = _phtvCliBusyUntilUs - nowUs;
-            usleep((useconds_t)waitUs);
-        }
     }
 
     __attribute__((always_inline)) static inline void ApplyKeyboardTypeAndFlags(CGEventRef down, CGEventRef up) {
@@ -1763,7 +1734,6 @@ static uint64_t _lastCliInjectTimeUs = 0;
                 chunkLen = chunkSize;
             }
 
-            ThrottleCliInjection();
             _newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
             _newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
             if (_phtvKeyboardType != 0) {
@@ -1780,53 +1750,17 @@ static uint64_t _lastCliInjectTimeUs = 0;
             PostSyntheticEvent(_proxy, _newEventUp);
             CFRelease(_newEventDown);
             CFRelease(_newEventUp);
-
-            if (interDelayUs > 0) {
-                usleep((useconds_t)interDelayUs);
-            }
         }
     }
 
-    // Consolidated helper function to send multiple backspaces with app-specific delays
-    // IMPROVED: Now supports adaptive delays and Safari-specific handling
+    // Consolidated helper function to send multiple backspaces
+    // Delays and throttling removed for standard application behavior
     void SendBackspaceSequenceWithDelay(int count, DelayType delayType) {
         if (count <= 0) return;
 
-        uint64_t keystrokeDelay = 0;
-        uint64_t settleDelay = 0;
-        // Shift+Left is handled in the autocomplete fix section for Safari/Chromium browsers
-
-        switch (delayType) {
-            case DelayTypeTerminal:
-                if (_phtvIsCliTarget) {
-                    keystrokeDelay = CLI_BACKSPACE_KEY_DELAY_US;
-                    settleDelay = CLI_BACKSPACE_SETTLE_US;
-                } else {
-                    keystrokeDelay = TERMINAL_KEYSTROKE_DELAY_US;
-                    settleDelay = TERMINAL_SETTLE_DELAY_US;
-                }
-                break;
-            default:
-                break;
-        }
-        if (delayType == DelayTypeTerminal && _phtvIsCliTarget && _phtvCliSpeedFactor > 1.0) {
-            keystrokeDelay = (uint64_t)(keystrokeDelay * _phtvCliSpeedFactor);
-            settleDelay = (uint64_t)(settleDelay * _phtvCliSpeedFactor);
-        }
-
         // Always use standard backspace method
-        // Shift+Left selection is handled separately in autocomplete fix
         for (int i = 0; i < count; i++) {
-            ThrottleCliInjection();
             SendBackspace();
-            if (keystrokeDelay > 0) {
-                usleep((useconds_t)keystrokeDelay);
-            }
-        }
-
-        // Extra settle time after all backspaces
-        if (settleDelay > 0) {
-            usleep((useconds_t)settleDelay);
         }
     }
 
@@ -1872,18 +1806,11 @@ static uint64_t _lastCliInjectTimeUs = 0;
         // Treat as Spotlight target if the callback decided to use HID/Spotlight-safe path.
         // This covers cases where Spotlight is active but bundle-id matching is imperfect.
         BOOL isSpotlightTarget = _phtvPostToHIDTap || isSpotlightLikeApp(effectiveTarget);
-        // Generalize terminal handling to all detected terminal apps
-        BOOL isTerminalTarget = isTerminalApp(effectiveTarget);
         // WhatsApp and similar apps need precomposed Unicode but with batched sending (not AX API)
         BOOL isPrecomposedBatched = needsPrecomposedBatched(effectiveTarget);
         // Force precomposed for: Unicode Compound (code 3) on Spotlight, OR any Unicode on WhatsApp-like apps
-        BOOL forcePrecomposed = ((vCodeTable == 3) && (isSpotlightTarget || isTerminalTarget)) ||
+        BOOL forcePrecomposed = ((vCodeTable == 3) && isSpotlightTarget) ||
                                  ((vCodeTable == 0 || vCodeTable == 3) && isPrecomposedBatched);
-        int cliDepthAdded = 0;
-        if (isTerminalTarget) {
-            __atomic_add_fetch(&_phtvCliInjectDepth, 1, __ATOMIC_RELAXED);
-            cliDepthAdded = 1;
-        }
         
         if (_newCharSize > 0) {
             for (_k = dataFromMacro ? offset : pData->newCharCount - 1 - offset;
@@ -1957,12 +1884,6 @@ static uint64_t _lastCliInjectTimeUs = 0;
         // convert the entire string from compound to precomposed form
         Uint16 _finalCharString[MAX_UNICODE_STRING];
         int _finalCharSize = _willContinuteSending ? 16 : _newCharSize - offset;
-        int cliInlineBackspaceCount = 0;
-        BOOL cliSendSpaceAfter = NO;
-        if (isTerminalTarget && _phtvCliPendingBackspaceCount > 0) {
-            cliInlineBackspaceCount = _phtvCliPendingBackspaceCount;
-            _phtvCliPendingBackspaceCount = 0;
-        }
         
         if (forcePrecomposed && _finalCharSize > 0) {
             // Create NSString from Unicode characters and get precomposed version
@@ -1974,13 +1895,6 @@ static uint64_t _lastCliInjectTimeUs = 0;
             // Use original string
             memcpy(_finalCharString, _newCharString, _finalCharSize * sizeof(Uint16));
         }
-        if (isTerminalTarget &&
-            _keycode == KEY_SPACE &&
-            _finalCharSize > 0 &&
-            _finalCharString[_finalCharSize - 1] == ' ') {
-            cliSendSpaceAfter = YES;
-            _finalCharSize -= 1;
-        }
 
         if (isSpotlightTarget) {
             // Try AX API first - it's atomic and most reliable when it works
@@ -1990,9 +1904,6 @@ static uint64_t _lastCliInjectTimeUs = 0;
 
             BOOL axSucceeded = ReplaceFocusedTextViaAX(backspaceCount, insertStr, NO);
             if (axSucceeded) {
-                // Small delay after AX replacement to let Spotlight update its internal state
-                // This prevents race conditions when typing quickly
-                usleep(5000); // 5ms
                 goto FinalizeSend;
             }
 
@@ -2017,66 +1928,6 @@ static uint64_t _lastCliInjectTimeUs = 0;
             CFRelease(_newEventDown);
             CFRelease(_newEventUp);
             goto FinalizeSend;
-        } else if (isTerminalTarget) {
-            if (cliInlineBackspaceCount > 0) {
-                NSString *insertStr = [NSString stringWithCharacters:(const unichar *)_finalCharString length:_finalCharSize];
-                if (ReplaceFocusedTextViaAX(cliInlineBackspaceCount, insertStr, YES)) {
-                    goto FinalizeSend;
-                }
-            }
-
-            BOOL hadCliCompose = (cliInlineBackspaceCount > 0);
-            if (hadCliCompose && _finalCharSize > 0) {
-                uint64_t estimateUs = 0;
-                estimateUs += (uint64_t)cliInlineBackspaceCount * CLI_BACKSPACE_KEY_DELAY_US;
-                estimateUs += CLI_BACKSPACE_POST_DELAY_US;
-                estimateUs += CLI_SETTLE_DELAY_US;
-                estimateUs += (uint64_t)_finalCharSize * CLI_COMPOSE_KEY_DELAY_US;
-                estimateUs += CLI_FINAL_SETTLE_US;
-                if (cliSendSpaceAfter) {
-                    estimateUs += CLI_SPACE_DELAY_US;
-                }
-                estimateUs += 2000; // guard time
-                uint64_t nowUs = NowUs();
-                uint64_t target = nowUs + estimateUs;
-                if (target > _phtvCliBusyUntilUs) {
-                    _phtvCliBusyUntilUs = target;
-                }
-            }
-            if (cliInlineBackspaceCount > 0) {
-                SendBackspaceSequenceWithDelay(cliInlineBackspaceCount, DelayTypeTerminal);
-                uint64_t postDelayUs = CLI_BACKSPACE_POST_DELAY_US;
-                if (_phtvCliSpeedFactor > 1.0) {
-                    postDelayUs = (uint64_t)(postDelayUs * _phtvCliSpeedFactor);
-                }
-                usleep((useconds_t)postDelayUs);
-                cliInlineBackspaceCount = 0;
-            }
-            if (_finalCharSize > 0) {
-                uint64_t settleDelayUs = CLI_SETTLE_DELAY_US;
-                uint64_t interDelay = hadCliCompose ? CLI_COMPOSE_KEY_DELAY_US : 0;
-                uint64_t finalDelayUs = CLI_FINAL_SETTLE_US;
-                if (_phtvCliSpeedFactor > 1.0) {
-                    settleDelayUs = (uint64_t)(settleDelayUs * _phtvCliSpeedFactor);
-                    if (interDelay > 0) {
-                        interDelay = (uint64_t)(interDelay * _phtvCliSpeedFactor);
-                    }
-                    finalDelayUs = (uint64_t)(finalDelayUs * _phtvCliSpeedFactor);
-                }
-                usleep((useconds_t)settleDelayUs);
-                int chunkSize = (interDelay > 0) ? 1 : _finalCharSize;
-                SendUnicodeStringChunked(_finalCharString, _finalCharSize, chunkSize, interDelay);
-                usleep((useconds_t)finalDelayUs);
-            }
-            if (cliSendSpaceAfter) {
-                uint64_t spaceDelayUs = CLI_SPACE_DELAY_US;
-                if (_phtvCliSpeedFactor > 1.0) {
-                    spaceDelayUs = (uint64_t)(spaceDelayUs * _phtvCliSpeedFactor);
-                }
-                usleep((useconds_t)spaceDelayUs);
-                SendKeyCode(KEY_SPACE);
-            }
-            goto FinalizeSend;
         } else {
             _newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
             _newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
@@ -2100,12 +1951,6 @@ static uint64_t _lastCliInjectTimeUs = 0;
         //the case when hCode is vRestore or vRestoreAndStartNewSession, the word is invalid and last key is control key such as TAB, LEFT ARROW, RIGHT ARROW,...
         if (_willSendControlKey) {
             SendKeyCode(_keycode);
-        }
-        if (cliDepthAdded) {
-            int newDepth = __atomic_sub_fetch(&_phtvCliInjectDepth, 1, __ATOMIC_RELAXED);
-            if (newDepth < 0) {
-                __atomic_store_n(&_phtvCliInjectDepth, 0, __ATOMIC_RELAXED);
-            }
         }
     }
             
@@ -2230,7 +2075,6 @@ static uint64_t _lastCliInjectTimeUs = 0;
                 #ifdef DEBUG
                 NSLog(@"[Macro] Spotlight: AX API succeeded, macro='%@'", macroString);
                 #endif
-                usleep(5000); // 5ms delay for Spotlight
                 return;
             }
 
@@ -2241,7 +2085,7 @@ static uint64_t _lastCliInjectTimeUs = 0;
         }
 
         //fix autocomplete
-        if (vFixRecommendBrowser && !isTerminalApp(effectiveTarget)) {
+        if (vFixRecommendBrowser) {
             SendEmptyCharacter();
             pData->backspaceCount++;
         }
@@ -2703,30 +2547,21 @@ static uint64_t _lastCliInjectTimeUs = 0;
 
                     if (optionReleased || controlReleased) {
                         // Restore modifier released without any other key press - trigger restore
-                        if (vRestoreToRawKeys()) {
-                            // Successfully restored - pData now contains restore info
-                            NSString *effectiveBundleId = _phtvEffectiveTargetBundleId ?: getFocusedAppBundleId();
-                            BOOL isTerminal = isTerminalApp(effectiveBundleId);
-
-                            // Send backspaces to delete Vietnamese characters
-                            if (pData->backspaceCount > 0 && pData->backspaceCount < MAX_BUFF) {
-                                SendBackspaceSequence(pData->backspaceCount, isTerminal);
-                            }
-
-                            // Send the raw ASCII characters
-                            SendNewCharString();
-
-                            // Final settle time for terminals after all text is sent
-                            if (isTerminal) {
-                                usleep(TERMINAL_FINAL_SETTLE_US);
-                            }
-
-                            _lastFlag = 0;
-                            _restoreModifierPressed = false;
-                            _keyPressedWithRestoreModifier = false;
-                            return NULL;
-                        }
-                        _restoreModifierPressed = false;
+                                            if (vRestoreToRawKeys()) {
+                                                // Successfully restored - pData now contains restore info
+                                                // Send backspaces to delete Vietnamese characters
+                                                if (pData->backspaceCount > 0 && pData->backspaceCount < MAX_BUFF) {
+                                                    SendBackspaceSequence(pData->backspaceCount, NO);
+                                                }
+                        
+                                                // Send the raw ASCII characters
+                                                SendNewCharString();
+                        
+                                                _lastFlag = 0;
+                                                _restoreModifierPressed = false;
+                                                _keyPressedWithRestoreModifier = false;
+                                                return NULL;
+                                            }                        _restoreModifierPressed = false;
                         _keyPressedWithRestoreModifier = false;
                     }
                 }
@@ -2928,34 +2763,8 @@ static uint64_t _lastCliInjectTimeUs = 0;
             // When spotlightActive=true on a browser address bar, we should NOT use Spotlight-style handling.
             BOOL isBrowser = isTargetBrowser || [_browserAppSet containsObject:effectiveBundleId];
             _phtvPostToHIDTap = (!isBrowser && spotlightActive) || appChars.isSpotlightLike;
-            // Generalize terminal handling to all detected terminal apps
-            _phtvIsCliTarget = appChars.isTerminal;
-            _phtvPostToSessionForCli = _phtvIsCliTarget && !_phtvPostToHIDTap;
-
-            if (_phtvIsCliTarget) {
-                if (type == kCGEventKeyDown) {
-                    uint64_t nowUs = NowUs();
-                    uint64_t deltaUs = _phtvLastCliKeyDownUs > 0 ? (nowUs - _phtvLastCliKeyDownUs) : 1000000;
-                    _phtvLastCliKeyDownUs = nowUs;
-                    double factor = 1.0;
-                    if (deltaUs < 120000) {
-                        double t = (double)(120000 - deltaUs) / 120000.0;
-                        factor = 1.0 + t * 1.5;
-                        if (factor > 2.5) {
-                            factor = 2.5;
-                        }
-                    }
-                    _phtvCliSpeedFactor = factor;
-                }
-                WaitForCliIdle();
-                int waitRounds = 0;
-                while (__atomic_load_n(&_phtvCliInjectDepth, __ATOMIC_RELAXED) > 0 && waitRounds < 12) {
-                    usleep(1000); // 1ms steps, max ~12ms
-                    waitRounds++;
-                }
-            } else {
-                _phtvCliSpeedFactor = 1.0;
-            }
+            _phtvPostToSessionForCli = NO;
+            _phtvCliSpeedFactor = 1.0;
 
             _phtvKeyboardType = CGEventGetIntegerValueField(event, kCGKeyboardEventKeyboardType);
             _phtvPendingBackspaceCount = 0;
@@ -2989,8 +2798,7 @@ static uint64_t _lastCliInjectTimeUs = 0;
 
             int currentCodeTable = __atomic_load_n(&vCodeTable, __ATOMIC_RELAXED);
             if (currentCodeTable == 3 &&
-                (spotlightActive || appChars.isSpotlightLike ||
-                 appChars.isTerminal)) {
+                (spotlightActive || appChars.isSpotlightLike)) {
                 codeTableGuard.active = true;
                 codeTableGuard.saved = currentCodeTable;
                 __atomic_store_n(&vCodeTable, 0, __ATOMIC_RELAXED);
@@ -3148,7 +2956,7 @@ static uint64_t _lastCliInjectTimeUs = 0;
                     // CRITICAL: Force fall through to standard backspace logic below.
                 } 
                 else if (vFixRecommendBrowser && pData->extCode != 4 && (!isSpecialApp || [effectiveBundleId isEqualToString:@"notion.id"]) && _keycode != KEY_SPACE &&
-                         !isPotentialShortcut && !isBrowserApp && !appChars.isTerminal) {
+                         !isPotentialShortcut && !isBrowserApp) {
                     // Legacy logic for non-browser apps (Electron, Slack, etc.)
                     // Keep original behavior: shift-left for Chromium, EmptyChar for others
                     BOOL useShiftLeft = appChars.containsUnicodeCompound && pData->backspaceCount > 0;

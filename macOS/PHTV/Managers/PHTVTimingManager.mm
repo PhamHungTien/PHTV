@@ -140,11 +140,9 @@ static dispatch_once_t _timebase_init_token;
 }
 
 + (void)spotlightTinyDelay {
-    usleep((useconds_t)SPOTLIGHT_TINY_DELAY_US);
 }
 
 + (void)delayMicroseconds:(uint64_t)microseconds {
-    usleep((useconds_t)microseconds);
 }
 
 @end
