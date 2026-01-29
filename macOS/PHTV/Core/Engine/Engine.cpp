@@ -101,6 +101,27 @@ static Uint32 KeyStates[MAX_BUFF];
 static Byte _stateIndex = 0;
 
 static bool tempDisableKey = false;
+
+static inline bool isProtectedEnglishWordForSpellcheck(const Uint32* keyStates, int count) {
+    if (count <= 0) return false;
+    auto kc = [&](int idx) -> Uint16 { return (Uint16)(keyStates[idx] & 0x3F); };
+    if (count == 3) { // ear, our
+        if (kc(0) == KEY_E && kc(1) == KEY_A && kc(2) == KEY_R) return true;
+        if (kc(0) == KEY_O && kc(1) == KEY_U && kc(2) == KEY_R) return true;
+        return false;
+    }
+    if (count == 4) { // year, your
+        if (kc(0) == KEY_Y && kc(1) == KEY_E && kc(2) == KEY_A && kc(3) == KEY_R) return true;
+        if (kc(0) == KEY_Y && kc(1) == KEY_O && kc(2) == KEY_U && kc(3) == KEY_R) return true;
+        return false;
+    }
+    if (count == 5) { // early, their
+        if (kc(0) == KEY_E && kc(1) == KEY_A && kc(2) == KEY_R && kc(3) == KEY_L && kc(4) == KEY_Y) return true;
+        if (kc(0) == KEY_T && kc(1) == KEY_H && kc(2) == KEY_E && kc(3) == KEY_I && kc(4) == KEY_R) return true;
+        return false;
+    }
+    return false;
+}
 static int capsElem;
 static int key;
 static int markElem;
@@ -1860,8 +1881,15 @@ void vKeyHandleEvent(const vKeyEvent& event,
         }
 
         insertState(data, _isCaps); //save state
-        
-        if (!IS_SPECIALKEY(data) || tempDisableKey) { //do nothing
+
+        bool forceRawSpecial = false;
+        if (vCheckSpelling && IS_SPECIALKEY(data)) {
+            if (isProtectedEnglishWordForSpellcheck(KeyStates, _stateIndex)) {
+                forceRawSpecial = true;
+            }
+        }
+
+        if (!IS_SPECIALKEY(data) || tempDisableKey || forceRawSpecial) { //do nothing
             if (vQuickTelex && IS_QUICK_TELEX_KEY(data)) {
                 handleQuickTelex(data, _isCaps);
                 return;
