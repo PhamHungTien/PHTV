@@ -3001,6 +3001,12 @@ static uint64_t _lastCliInjectTimeUs = 0;
                 }
                 return event;
             } else if (pData->code == vWillProcess || pData->code == vRestore || pData->code == vRestoreAndStartNewSession) { //handle result signal
+                // FIGMA FIX: Force pass-through for Space key to support "Hand tool" (Hold Space)
+                // When PHTV consumes Space and sends a synthetic one, it breaks the "hold" state.
+                if (_keycode == KEY_SPACE && pData->backspaceCount == 0 && pData->newCharCount == 1 && [effectiveBundleId isEqualToString:@"com.figma.Desktop"]) {
+                    return event;
+                }
+
                 #ifdef DEBUG
                 if (pData->code == vRestoreAndStartNewSession) {
                     fprintf(stderr, "[AutoEnglish] vRestoreAndStartNewSession START: backspace=%d, newChar=%d, keycode=%d\n",
