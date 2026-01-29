@@ -24,9 +24,22 @@ if not exist "build\Release\PHTVCore.dll" (
     exit /b 1
 )
 
-echo [3/3] Building Single File EXE (PHTV.exe)...
+set MODE=lite
+if /I "%1"=="full" set MODE=full
+
+set PUBLISH_SINGLE_FILE=false
+set SELF_CONTAINED=false
+set INCLUDE_NATIVE=false
+
+if /I "%MODE%"=="full" (
+    set PUBLISH_SINGLE_FILE=true
+    set SELF_CONTAINED=true
+    set INCLUDE_NATIVE=true
+)
+
+echo [3/3] Building %MODE% package (PHTV.exe)...
 :: PHTV.UI.csproj is in UI/
-dotnet publish UI/PHTV.UI.csproj -c Release -r win-x64 /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true --self-contained true -o build/Release
+dotnet publish UI/PHTV.UI.csproj -c Release -r win-x64 /p:PublishSingleFile=%PUBLISH_SINGLE_FILE% /p:IncludeNativeLibrariesForSelfExtract=%INCLUDE_NATIVE% --self-contained %SELF_CONTAINED% -o build/Release
 
 if %errorlevel% neq 0 (
     echo [ERROR] Dotnet publish failed!
@@ -38,5 +51,6 @@ echo ========================================================
 echo   BUILD SUCCESS!
 echo   Output directory: %CD%\build\Release
 echo   Run the app: %CD%\build\Release\PHTV.exe
+echo   Build mode: %MODE%
 echo ========================================================
 pause

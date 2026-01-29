@@ -5,13 +5,13 @@ Bộ gõ PHTV phiên bản dành cho Windows với giao diện hiện đại (WP
 ## Tính năng
 - [x] Giao diện cài đặt hiện đại (Modern WPF UI).
 - [x] Tray Icon với menu ngữ cảnh và chuyển đổi nhanh.
-- [x] Single-File EXE (chạy ngay không cần cài đặt).
+- [x] Có tuỳ chọn đóng gói nhẹ hoặc single-file.
 - [x] Tự động phát hiện và sửa lỗi gõ tiếng Anh (Auto English Restore).
 - [ ] Tự động cập nhật.
 
 ## Yêu cầu hệ thống
 - Windows 10/11 (x64)
-- .NET 6.0 Runtime (đã được nhúng sẵn trong bản EXE nhưng khuyến khích cài đặt nếu muốn nhẹ hơn).
+- .NET 6.0 Runtime (cần khi dùng bản đóng gói nhẹ).
 
 ## Hướng dẫn Build (Dành cho Developer)
 
@@ -25,10 +25,11 @@ Chạy file script `Windows/build.bat`.
 
 ```cmd
 cd Windows
-build.bat
+build.bat            :: build nhẹ (framework-dependent)
+build.bat full       :: build single-file self-contained
 ```
 
 Script sẽ tự động:
 1.  Build core C++ (`PHTVCore.dll`).
 2.  Build giao diện C# (`PHTV.UI.exe`).
-3.  Đóng gói tất cả thành 1 file duy nhất tại `Windows/build/Release/PHTV.exe`.
+3.  Đóng gói ứng dụng tại `Windows/build/Release` (chế độ `full` sẽ là single-file).

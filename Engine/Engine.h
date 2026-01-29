@@ -237,6 +237,20 @@ extern volatile int vPauseKey;
 extern volatile int vAutoRestoreEnglishWord;
 
 /**
+ * Send key step by step (compatibility mode)
+ * 0: No
+ * 1: Yes
+ */
+extern volatile int vSendKeyStepByStep;
+
+/**
+ * Perform keyboard layout compatibility mapping
+ * 0: No
+ * 1: Yes
+ */
+extern volatile int vPerformLayoutCompat;
+
+/**
  * Call this function first to receive data pointer
  */
 void* vKeyInit();

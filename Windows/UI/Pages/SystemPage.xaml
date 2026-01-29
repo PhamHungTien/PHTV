@@ -1,0 +1,41 @@
+<pages:PhtvPageBase x:Class="PHTV.UI.Pages.SystemPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:pages="clr-namespace:PHTV.UI.Pages"
+      Title="Hệ thống">
+    <Border Background="{StaticResource ContentBackgroundBrush}" CornerRadius="8" BorderBrush="{StaticResource ControlBorderBrush}" BorderThickness="1" Margin="16">
+        <ScrollViewer Style="{StaticResource PageScrollViewer}">
+            <StackPanel Style="{StaticResource PageContentPanel}">
+                <TextBlock Text="Hệ thống" Style="{StaticResource HeaderTitle}"/>
+
+                <GroupBox Header="Tùy chọn hệ thống">
+                    <StackPanel>
+                        <CheckBox x:Name="ChkFixRecommendBrowser" Content="Fix lỗi gợi ý trên trình duyệt (Chrome/Edge) và Excel" Checked="SystemFeature_Changed" Unchecked="SystemFeature_Changed"/>
+                        <CheckBox x:Name="ChkOtherLanguage" Content="Tắt tiếng Việt khi chuyển sang ngôn ngữ bàn phím khác" Checked="System_Changed" Unchecked="System_Changed"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="Tương thích">
+                    <StackPanel>
+                        <CheckBox x:Name="ChkSendKeyStepByStep" Content="Gửi phím từng bước (Compatibility)" Checked="Compatibility_Changed" Unchecked="Compatibility_Changed"/>
+                        <CheckBox x:Name="ChkPerformLayoutCompat" Content="Tương thích layout bàn phím" Checked="Compatibility_Changed" Unchecked="Compatibility_Changed"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="Khởi động">
+                    <StackPanel>
+                        <CheckBox x:Name="ChkRunOnStartup" Content="Khởi động cùng Windows" Checked="RunOnStartup_Changed" Unchecked="RunOnStartup_Changed"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="Quản lý dữ liệu">
+                    <StackPanel>
+                        <TextBlock Text="Đặt lại toàn bộ cài đặt về mặc định ban đầu." Margin="0,0,0,8" Foreground="#666"/>
+                        <Button Content="Reset Settings" HorizontalAlignment="Left" Width="140" Click="Reset_Click"/>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+    </Border>
+</pages:PhtvPageBase>

@@ -45,6 +45,8 @@ volatile int vPauseKeyEnabled = 0;
 volatile int vPauseKey = 0; // Default (e.g., VK_LMENU)
 volatile int vAutoRestoreEnglishWord = 1;
 volatile int vSwitchKeyStatus = 0x9FE; // Ctrl + Shift (modifier-only)
+volatile int vSendKeyStepByStep = 0;
+volatile int vPerformLayoutCompat = 0;
 
 PHTVConfig::PHTVConfig() {
     // Get path to executable
@@ -82,12 +84,16 @@ void PHTVConfig::Load() {
     vQuickStartConsonant = GetPrivateProfileIntW(L"Features", L"QuickStartConsonant", 0, configFilePath.c_str());
     vQuickEndConsonant = GetPrivateProfileIntW(L"Features", L"QuickEndConsonant", 0, configFilePath.c_str());
     vFreeMark = GetPrivateProfileIntW(L"Features", L"FreeMark", 1, configFilePath.c_str());
+    vRememberCode = GetPrivateProfileIntW(L"Features", L"RememberCode", 0, configFilePath.c_str());
 
     vRestoreOnEscape = GetPrivateProfileIntW(L"Hotkeys", L"RestoreOnEscape", 1, configFilePath.c_str());
     vCustomEscapeKey = GetPrivateProfileIntW(L"Hotkeys", L"CustomEscapeKey", 0, configFilePath.c_str());
     vPauseKeyEnabled = GetPrivateProfileIntW(L"Hotkeys", L"PauseKeyEnabled", 0, configFilePath.c_str());
     vPauseKey = GetPrivateProfileIntW(L"Hotkeys", L"PauseKey", 0, configFilePath.c_str());
     vSwitchKeyStatus = GetPrivateProfileIntW(L"Hotkeys", L"SwitchKeyStatus", 0, configFilePath.c_str());
+
+    vSendKeyStepByStep = GetPrivateProfileIntW(L"Compatibility", L"SendKeyStepByStep", 0, configFilePath.c_str());
+    vPerformLayoutCompat = GetPrivateProfileIntW(L"Compatibility", L"PerformLayoutCompat", 0, configFilePath.c_str());
 }
 
 void PHTVConfig::Save() {
@@ -112,12 +118,16 @@ void PHTVConfig::Save() {
     WritePrivateProfileStringW(L"Features", L"QuickStartConsonant", std::to_wstring(vQuickStartConsonant).c_str(), configFilePath.c_str());
     WritePrivateProfileStringW(L"Features", L"QuickEndConsonant", std::to_wstring(vQuickEndConsonant).c_str(), configFilePath.c_str());
     WritePrivateProfileStringW(L"Features", L"FreeMark", std::to_wstring(vFreeMark).c_str(), configFilePath.c_str());
+    WritePrivateProfileStringW(L"Features", L"RememberCode", std::to_wstring(vRememberCode).c_str(), configFilePath.c_str());
 
     WritePrivateProfileStringW(L"Hotkeys", L"RestoreOnEscape", std::to_wstring(vRestoreOnEscape).c_str(), configFilePath.c_str());
     WritePrivateProfileStringW(L"Hotkeys", L"CustomEscapeKey", std::to_wstring(vCustomEscapeKey).c_str(), configFilePath.c_str());
     WritePrivateProfileStringW(L"Hotkeys", L"PauseKeyEnabled", std::to_wstring(vPauseKeyEnabled).c_str(), configFilePath.c_str());
     WritePrivateProfileStringW(L"Hotkeys", L"PauseKey", std::to_wstring(vPauseKey).c_str(), configFilePath.c_str());
     WritePrivateProfileStringW(L"Hotkeys", L"SwitchKeyStatus", std::to_wstring(vSwitchKeyStatus).c_str(), configFilePath.c_str());
+
+    WritePrivateProfileStringW(L"Compatibility", L"SendKeyStepByStep", std::to_wstring(vSendKeyStepByStep).c_str(), configFilePath.c_str());
+    WritePrivateProfileStringW(L"Compatibility", L"PerformLayoutCompat", std::to_wstring(vPerformLayoutCompat).c_str(), configFilePath.c_str());
 }
 
 void PHTVConfig::ResetDefaults() {
@@ -139,12 +149,15 @@ void PHTVConfig::ResetDefaults() {
     vQuickStartConsonant = 0;
     vQuickEndConsonant = 0;
     vFreeMark = 1;
+    vRememberCode = 0;
     vRestoreOnEscape = 1;
     vCustomEscapeKey = 0;
     vPauseKeyEnabled = 0;
     vPauseKey = 0;
     vSwitchKeyStatus = 0x9FE;
     vOtherLanguage = 1;
+    vSendKeyStepByStep = 0;
+    vPerformLayoutCompat = 0;
     Save();
 }
 

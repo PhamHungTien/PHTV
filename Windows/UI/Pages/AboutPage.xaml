@@ -1,0 +1,27 @@
+<pages:PhtvPageBase x:Class="PHTV.UI.Pages.AboutPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:pages="clr-namespace:PHTV.UI.Pages"
+      Title="Thông tin">
+    <Border Background="{StaticResource ContentBackgroundBrush}" CornerRadius="8" BorderBrush="{StaticResource ControlBorderBrush}" BorderThickness="1" Margin="16">
+        <ScrollViewer Style="{StaticResource PageScrollViewer}">
+            <StackPanel HorizontalAlignment="Center" Margin="0,40,0,40">
+                <Border Width="80" Height="80" CornerRadius="20" Background="{StaticResource SystemAccentBrush}" Margin="0,0,0,24">
+                    <TextBlock Text="P" FontFamily="Segoe UI" FontSize="48" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+
+                <TextBlock Text="PHTV" FontSize="32" FontWeight="Bold" HorizontalAlignment="Center"/>
+                <TextBlock Text="Bộ gõ tiếng Việt hiện đại" FontSize="16" Foreground="#666" HorizontalAlignment="Center" Margin="0,4,0,32"/>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button Content="Website" Width="100" Margin="0,0,16,0" Click="Website_Click"/>
+                    <Button Content="GitHub" Width="100" Margin="0,0,16,0" Click="GitHub_Click"/>
+                    <Button Content="Donate" Width="100" Style="{StaticResource AccentButton}" Click="Donate_Click"/>
+                </StackPanel>
+
+                <TextBlock Text="© 2026 Pham Hung Tien. All rights reserved." FontSize="12" Foreground="#999" HorizontalAlignment="Center" Margin="0,48,0,0"/>
+            </StackPanel>
+        </ScrollViewer>
+    </Border>
+</pages:PhtvPageBase>

@@ -1,0 +1,70 @@
+<pages:PhtvPageBase x:Class="PHTV.UI.Pages.HotkeysPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:pages="clr-namespace:PHTV.UI.Pages"
+      Title="Phím tắt">
+    <Border Background="{StaticResource ContentBackgroundBrush}" CornerRadius="8" BorderBrush="{StaticResource ControlBorderBrush}" BorderThickness="1" Margin="16">
+        <ScrollViewer Style="{StaticResource PageScrollViewer}">
+            <StackPanel Style="{StaticResource PageContentPanel}">
+                <TextBlock Text="Phím tắt" Style="{StaticResource HeaderTitle}"/>
+
+                <GroupBox Header="Phím chuyển chế độ">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <CheckBox x:Name="ChkSwitchCtrl" Content="Ctrl" Margin="0,0,16,0" Checked="SwitchHotkey_Changed" Unchecked="SwitchHotkey_Changed"/>
+                            <CheckBox x:Name="ChkSwitchAlt" Content="Alt" Margin="0,0,16,0" Checked="SwitchHotkey_Changed" Unchecked="SwitchHotkey_Changed"/>
+                            <CheckBox x:Name="ChkSwitchShift" Content="Shift" Margin="0,0,16,0" Checked="SwitchHotkey_Changed" Unchecked="SwitchHotkey_Changed"/>
+                            <CheckBox x:Name="ChkSwitchWin" Content="Win" Checked="SwitchHotkey_Changed" Unchecked="SwitchHotkey_Changed"/>
+                        </StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Switch Key:" VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1" x:Name="TxtSwitchKey" Width="140" IsReadOnly="True" PreviewKeyDown="SwitchKey_CaptureKey" VerticalAlignment="Center"/>
+                            <Button Grid.Column="2" Content="Record" Margin="8,0,0,0" Click="SwitchKey_Record_Click"/>
+                            <Button Grid.Column="3" Content="Clear" Margin="8,0,0,0" Click="SwitchKey_NoKey_Click"/>
+                        </Grid>
+                        <CheckBox x:Name="ChkSwitchBeep" Content="Phát âm thanh (Beep) khi đổi chế độ" Checked="SwitchHotkey_Changed" Unchecked="SwitchHotkey_Changed"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="Phím khôi phục (Restore)">
+                    <StackPanel>
+                        <CheckBox x:Name="ChkRestoreOnEscape" Content="Khôi phục bằng phím Escape" Checked="Hotkey_Changed" Unchecked="Hotkey_Changed"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Custom Escape Key (VK):" VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1" x:Name="TxtCustomEscapeKey" Width="140" IsReadOnly="True" PreviewKeyDown="Hotkey_CaptureKey" VerticalAlignment="Center"/>
+                            <Button Grid.Column="2" Content="Record" Margin="8,0,0,0" Click="Hotkey_RecordEscape_Click"/>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="Pause Key">
+                    <StackPanel>
+                        <CheckBox x:Name="ChkPauseKeyEnabled" Content="Bật phím Pause (Tạm dừng bộ gõ)" Checked="Hotkey_Changed" Unchecked="Hotkey_Changed"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Pause Key (VK):" VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1" x:Name="TxtPauseKey" Width="140" IsReadOnly="True" PreviewKeyDown="Hotkey_CaptureKey" VerticalAlignment="Center"/>
+                            <Button Grid.Column="2" Content="Record" Margin="8,0,0,0" Click="Hotkey_RecordPause_Click"/>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+    </Border>
+</pages:PhtvPageBase>

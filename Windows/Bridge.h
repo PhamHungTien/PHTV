@@ -40,6 +40,9 @@ extern "C" {
     PHTV_API void __cdecl PHTV_SetPauseKey(int key);
     PHTV_API void __cdecl PHTV_SetSwitchKeyStatus(int status);
     PHTV_API void __cdecl PHTV_SetOtherLanguage(int lang);
+    PHTV_API void __cdecl PHTV_SetRememberCode(bool enable);
+    PHTV_API void __cdecl PHTV_SetSendKeyStepByStep(bool enable);
+    PHTV_API void __cdecl PHTV_SetPerformLayoutCompat(bool enable);
 
     // Configuration Getters
     PHTV_API int __cdecl PHTV_GetInputMethod();
@@ -66,6 +69,12 @@ extern "C" {
     PHTV_API int __cdecl PHTV_GetPauseKey();
     PHTV_API int __cdecl PHTV_GetSwitchKeyStatus();
     PHTV_API int __cdecl PHTV_GetOtherLanguage();
+    PHTV_API bool __cdecl PHTV_GetRememberCode();
+    PHTV_API bool __cdecl PHTV_GetSendKeyStepByStep();
+    PHTV_API bool __cdecl PHTV_GetPerformLayoutCompat();
+
+    // Clipboard conversion
+    PHTV_API bool __cdecl PHTV_QuickConvertClipboard(int fromCode, int toCode);
     
     // Helper
     PHTV_API bool __cdecl PHTV_IsRunning();

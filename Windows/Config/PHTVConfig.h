@@ -26,6 +26,9 @@ extern volatile int vUseModernOrthography; // Modern tone placement (òa vs oà)
 extern volatile int vQuickTelex;      // Quick typing features (cc=ch, etc)
 extern volatile int vRestoreIfWrongSpelling; // Restore word if spelling is invalid
 extern volatile int vUseMacro;        // Enable macro expansion
+extern volatile int vRememberCode;    // Remember code table per app
+extern volatile int vSendKeyStepByStep; // Compatibility: send key step by step
+extern volatile int vPerformLayoutCompat; // Compatibility: layout mapping
 
 // Configuration Manager Class
 class PHTVConfig {

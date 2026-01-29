@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <PlatformTarget>x64</PlatformTarget>
@@ -10,27 +10,40 @@
     <AssemblyName>PHTV</AssemblyName>
     <ApplicationIcon>..\App\Resources\icon.ico</ApplicationIcon>
     
-    <!-- Single File Configuration -->
-    <PublishSingleFile>true</PublishSingleFile>
-    <SelfContained>true</SelfContained>
+    <!-- Packaging Configuration (default: lightweight, framework-dependent) -->
+    <PublishSingleFile>false</PublishSingleFile>
+    <SelfContained>false</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <DebugType>embedded</DebugType>
+    <IncludeNativeLibrariesForSelfExtract>false</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="..\App\Resources\*.ico">
       <Link>Resources\Images\%(Filename)%(Extension)</Link>
     </EmbeddedResource>
-    <!-- Embed dictionaries instead of copying -->
-    <EmbeddedResource Include="..\..\macOS\PHTV\Core\Resources\Dictionaries\*.bin">
+    <!-- Dictionaries are shipped as files to keep EXE small -->
+    <Content Include="..\..\macOS\PHTV\Core\Resources\Dictionaries\*.bin">
       <Link>Resources\Dictionaries\%(Filename)%(Extension)</Link>
-    </EmbeddedResource>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
     <!-- Include Native Core DLL -->
     <Content Include="..\build\Release\PHTVCore.dll">
       <Link>PHTVCore.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WPF-UI" Version="4.2.0" />
   </ItemGroup>
 
 </Project>

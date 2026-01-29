@@ -1,0 +1,57 @@
+<pages:PhtvPageBase x:Class="PHTV.UI.Pages.MacroPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:pages="clr-namespace:PHTV.UI.Pages"
+      Title="Gõ tắt">
+    <Border Background="{StaticResource ContentBackgroundBrush}" CornerRadius="8" BorderBrush="{StaticResource ControlBorderBrush}" BorderThickness="1" Margin="16">
+        <ScrollViewer Style="{StaticResource PageScrollViewer}">
+            <StackPanel Style="{StaticResource PageContentPanel}">
+                <TextBlock Text="Gõ tắt (Macro)" Style="{StaticResource HeaderTitle}"/>
+
+                <GroupBox Header="Cấu hình Macro">
+                    <StackPanel>
+                        <CheckBox x:Name="ChkMacro" Content="Bật tính năng gõ tắt" Checked="MacroFeature_Changed" Unchecked="MacroFeature_Changed"/>
+                        <CheckBox x:Name="ChkMacroInEnglish" Content="Sử dụng Macro trong chế độ tiếng Anh" Checked="MacroFeature_Changed" Unchecked="MacroFeature_Changed"/>
+                        <CheckBox x:Name="ChkAutoCapsMacro" Content="Tự động viết hoa Macro khi cần" Checked="MacroFeature_Changed" Unchecked="MacroFeature_Changed"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="Danh sách Macro">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Button Content="Import" Width="80" Margin="0,0,8,0" Click="MacroImport_Click"/>
+                            <Button Content="Export" Width="80" Margin="0,0,8,0" Click="MacroExport_Click"/>
+                            <Button Content="Clear" Width="80" Margin="0,0,8,0" Click="MacroClear_Click"/>
+                        </StackPanel>
+
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtMacroKey" Margin="0,0,8,0" VerticalAlignment="Center" Tag="Key (vd: vn)"/>
+                            <TextBox x:Name="TxtMacroValue" Grid.Column="1" Margin="0,0,8,0" VerticalAlignment="Center" Tag="Content (vd: Việt Nam)"/>
+                            <Button Grid.Column="2" Content="Add" Width="80" Click="MacroAdd_Click" Style="{StaticResource AccentButton}"/>
+                        </Grid>
+
+                        <DataGrid x:Name="MacroGrid" AutoGenerateColumns="False" CanUserAddRows="False" Height="300" BorderThickness="1" BorderBrush="#E0E0E0" Background="White">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Key" Binding="{Binding Key}" Width="150"/>
+                                <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="*"/>
+                                <DataGridTemplateColumn Header="Action" Width="80">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="Remove" Tag="{Binding Key}" Click="MacroRemove_Click" FontSize="11" Padding="6,2"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+    </Border>
+</pages:PhtvPageBase>

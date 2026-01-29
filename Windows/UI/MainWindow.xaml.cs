@@ -1,288 +1,88 @@
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Drawing; // For Icon
 using System.IO;
-using System.Runtime.InteropServices;
-using System.Text;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 using Microsoft.Win32;
-using System.Drawing; // For Icon
-using System.Windows.Forms; // For NotifyIcon
+using PHTV.UI.Pages;
+using PHTV.UI.Utilities;
+using Wpf.Ui.Controls;
+using static PHTV.UI.Interop.PhtvNative;
+using Forms = System.Windows.Forms;
+using UiMenuItem = Wpf.Ui.Controls.MenuItem;
 
 namespace PHTV.UI
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow : FluentWindow
     {
-        // Import C++ DLL
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern void PHTV_Init(string resourceDir);
+        // Native interop declarations moved to PhtvNative
 
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_InstallHook();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_UninstallHook();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_LoadConfig();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SaveConfig();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_ResetConfig();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SetInputMethod(int type);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SetLanguage(int lang);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SetCodeTable(int table);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SetSpellCheck(bool enable);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SetModernOrthography(bool enable);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SetQuickTelex(bool enable);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SetAutoRestoreEnglishWord(bool enable);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SetMacro(bool enable);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SetMacroInEnglishMode(bool enable);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SetAutoCapsMacro(bool enable);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SetFixRecommendBrowser(bool enable);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SetSmartSwitchKey(bool enable);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SetUpperCaseFirstChar(bool enable);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SetUpperCaseExcludedForCurrentApp(bool enable);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SetAllowConsonantZFWJ(bool enable);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SetQuickStartConsonant(bool enable);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SetQuickEndConsonant(bool enable);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SetFreeMark(bool enable);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SetRestoreOnEscape(bool enable);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SetCustomEscapeKey(int key);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SetPauseKeyEnabled(bool enable);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SetPauseKey(int key);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SetSwitchKeyStatus(int status);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_SetOtherLanguage(int lang);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int PHTV_GetInputMethod();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int PHTV_GetLanguage();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int PHTV_GetCodeTable();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern bool PHTV_GetSpellCheck();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern bool PHTV_GetModernOrthography();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern bool PHTV_GetQuickTelex();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern bool PHTV_GetAutoRestoreEnglishWord();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern bool PHTV_GetMacro();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern bool PHTV_GetMacroInEnglishMode();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern bool PHTV_GetAutoCapsMacro();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern bool PHTV_GetFixRecommendBrowser();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern bool PHTV_GetSmartSwitchKey();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern bool PHTV_GetUpperCaseFirstChar();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern bool PHTV_GetUpperCaseExcludedForCurrentApp();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern bool PHTV_GetAllowConsonantZFWJ();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern bool PHTV_GetQuickStartConsonant();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern bool PHTV_GetQuickEndConsonant();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern bool PHTV_GetFreeMark();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern bool PHTV_GetRestoreOnEscape();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int PHTV_GetCustomEscapeKey();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern bool PHTV_GetPauseKeyEnabled();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int PHTV_GetPauseKey();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int PHTV_GetSwitchKeyStatus();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int PHTV_GetOtherLanguage();
-
-        // Macro API
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern bool PHTV_MacroLoad(string path);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern bool PHTV_MacroSave(string path);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_MacroClear();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int PHTV_MacroCount();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern bool PHTV_MacroGetAt(int index, StringBuilder key, int keyCap, StringBuilder value, int valueCap);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern bool PHTV_MacroAdd(string key, string value);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern bool PHTV_MacroDelete(string key);
-
-        // App list API
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern bool PHTV_AppListLoad(string path);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern bool PHTV_AppListSave(string path);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_AppListClear();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int PHTV_AppListCount();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern bool PHTV_AppListGetAt(int index, StringBuilder name, int nameCap, out int lang);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern void PHTV_AppListSet(string name, int lang);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern bool PHTV_AppListRemove(string name);
-
-        // Uppercase excluded apps API
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern bool PHTV_UpperExcludedLoad(string path);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern bool PHTV_UpperExcludedSave(string path);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void PHTV_UpperExcludedClear();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int PHTV_UpperExcludedCount();
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern bool PHTV_UpperExcludedGetAt(int index, StringBuilder name, int nameCap);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern void PHTV_UpperExcludedAdd(string name);
-
-        [DllImport("PHTVCore.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern bool PHTV_UpperExcludedRemove(string name);
-
-        public class MacroItem
-        {
-            public string Key { get; set; } = string.Empty;
-            public string Value { get; set; } = string.Empty;
-        }
-
-        public class AppItem
-        {
-            public string Name { get; set; } = string.Empty;
-            public int Language { get; set; }
-            public string LanguageName => Language == 1 ? "Tiếng Việt" : "English";
-        }
-
-        public class UpperExcludedItem
-        {
-            public string Name { get; set; } = string.Empty;
-        }
-
-        private bool _suppressEvents = false;
-        private readonly ObservableCollection<MacroItem> _macros = new ObservableCollection<MacroItem>();
-        private readonly ObservableCollection<AppItem> _apps = new ObservableCollection<AppItem>();
-        private readonly ObservableCollection<UpperExcludedItem> _upperExcludedApps = new ObservableCollection<UpperExcludedItem>();
-        private readonly ObservableCollection<string> _runningApps = new ObservableCollection<string>();
-        private string _macroPath = string.Empty;
-        private string _appMapPath = string.Empty;
-        private string _upperExcludedPath = string.Empty;
-        private const int SwitchKeyMask = 0xFF;
-        private const int SwitchKeyNoKey = 0xFE;
-        private const int SwitchMaskControl = 0x100;
-        private const int SwitchMaskAlt = 0x200;
-        private const int SwitchMaskWin = 0x400;
-        private const int SwitchMaskShift = 0x800;
-        private const int SwitchMaskFn = 0x1000;
         private const int SwitchMaskBeep = 0x8000;
+        private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
+        private const string RunValueName = "PHTV";
 
-        private NotifyIcon _notifyIcon;
+        private readonly DispatcherTimer _saveConfigTimer = new DispatcherTimer();
 
+        internal TypingPage TypingPage { get; private set; }
+        internal HotkeysPage HotkeysPage { get; private set; }
+        internal MacroPage MacroPage { get; private set; }
+        internal AppsPage AppsPage { get; private set; }
+        internal SystemPage SystemPage { get; private set; }
+        internal AboutPage AboutPage { get; private set; }
+
+        private Forms.NotifyIcon _notifyIcon;
+        private ContextMenu _trayMenu;
+        private Icon _iconVie;
+        private Icon _iconEng;
+        private Icon _iconApp;
+
+        private UiMenuItem _menuLangVi;
+        private UiMenuItem _menuLangEn;
+        private UiMenuItem _menuInputTelex;
+        private UiMenuItem _menuInputVni;
+        private UiMenuItem _menuInputSimple1;
+        private UiMenuItem _menuInputSimple2;
+        private UiMenuItem _menuCodeUnicode;
+        private UiMenuItem _menuCodeTcvn3;
+        private UiMenuItem _menuCodeVni;
+        private UiMenuItem _menuCodeUnicodeComposite;
+        private UiMenuItem _menuCodeCp1258;
+        private UiMenuItem _menuQuickTelex;
+        private UiMenuItem _menuUpperFirst;
+        private UiMenuItem _menuAllowZfwj;
+        private UiMenuItem _menuQuickStart;
+        private UiMenuItem _menuQuickEnd;
+        private UiMenuItem _menuSpellCheck;
+        private UiMenuItem _menuModernOrtho;
+        private UiMenuItem _menuAutoRestoreEnglish;
+        private UiMenuItem _menuUseMacro;
+        private UiMenuItem _menuMacroInEnglish;
+        private UiMenuItem _menuAutoCapsMacro;
+        private UiMenuItem _menuSmartSwitch;
+        private UiMenuItem _menuRememberCode;
+        private UiMenuItem _menuRestoreOnEscape;
+        private UiMenuItem _menuPauseKey;
+        private UiMenuItem _menuSendKeyStepByStep;
+        private UiMenuItem _menuPerformLayoutCompat;
+        private UiMenuItem _menuRunOnStartup;
+        private UiMenuItem _menuBeepOnSwitch;
+        private UiMenuItem _menuQuickConvertTcvn3ToUnicode;
+        private UiMenuItem _menuQuickConvertVniToUnicode;
+        private UiMenuItem _menuQuickConvertUnicodeToTcvn3;
+        private UiMenuItem _menuQuickConvertCompositeToUnicode;
+        private UiMenuItem _menuOpenConvertTool;
+        private UiMenuItem _menuOpenSettings;
+        private UiMenuItem _menuOpenAbout;
+        private UiMenuItem _menuCheckUpdates;
+        private UiMenuItem _menuExit;
+
+        [Conditional("DEBUG")]
         private void Log(string message)
         {
             try { File.AppendAllText("phtv_debug.txt", DateTime.Now + ": " + message + Environment.NewLine); } catch {}
@@ -299,128 +99,536 @@ namespace PHTV.UI
             InitializeComponent();
             Log("InitializeComponent done");
 
+            PreviewMouseWheel += MainWindow_PreviewMouseWheel;
+
+            InitializeSaveTimer();
             InitializeEngine();
             Log("InitializeEngine done");
-            
-            SetupDataPaths();
-
+            PhtvPaths.Initialize();
             LoadMacroFile();
             LoadAppMapFile();
             LoadUpperExcludedFile();
-            LoadSettingsFromEngine();
-            RefreshMacroList();
-            RefreshAppList();
-            RefreshUpperExcludedList();
-
-            MacroGrid.ItemsSource = _macros;
-            AppGrid.ItemsSource = _apps;
-            RunningAppList.ItemsSource = _runningApps;
-            UpperExcludedGrid.ItemsSource = _upperExcludedApps;
-            UpperRunningAppList.ItemsSource = _runningApps;
-
-            if (ComboAppLanguage.Items.Count > 0)
-            {
-                ComboAppLanguage.SelectedIndex = 0;
-            }
-
             InitializeTrayIcon();
+            Loaded += MainWindow_OnLoaded;
         }
 
-                private void InitializeTrayIcon()
+        private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                NavView.Navigate(typeof(TypingPage));
+            }
+            catch (Exception ex)
+            {
+                Log("Navigate failed: " + ex);
+            }
+        }
+
+        private void MainWindow_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (e.Handled) return;
+
+            var scrollViewer = FindTaggedScrollViewer(e.OriginalSource as DependencyObject);
+            if (scrollViewer == null || scrollViewer.ScrollableHeight <= 0)
+            {
+                return;
+            }
+
+            double lines = SystemParameters.WheelScrollLines;
+            if (lines <= 0) lines = 1;
+            double delta = -e.Delta / Mouse.MouseWheelDeltaForOneLine;
+            double offset = scrollViewer.VerticalOffset + (delta * lines * 16);
+            scrollViewer.ScrollToVerticalOffset(offset);
+            e.Handled = true;
+        }
+
+        private static ScrollViewer FindTaggedScrollViewer(DependencyObject source)
+        {
+            while (source != null)
+            {
+                if (source is ScrollViewer scrollViewer)
                 {
-                    _notifyIcon = new NotifyIcon
-                    {
-                        Text = "PHTV - Bộ gõ tiếng Việt",
-                        Visible = true
-                    };
-        
-                    // Extract all icons
-                    string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                    string imgDir = Path.Combine(appData, "PHTV", "Data", "Images");
-                    Directory.CreateDirectory(imgDir);
-        
-                    string[] icons = { "app.ico", "eng.ico", "vie.ico" };
-                    foreach (var iconName in icons)
-                    {
-                        string iconPath = Path.Combine(imgDir, iconName);
-                        if (!File.Exists(iconPath))
-                        {
-                            ExtractResource("PHTV.UI.Resources.Images." + iconName, iconPath);
-                        }
-                    }
-        
-                    // Set initial icon
-                    UpdateTrayIconState();
-        
-                    // Context Menu
-                    ContextMenuStrip contextMenu = new ContextMenuStrip();
-                    
-                    var showItem = contextMenu.Items.Add("Cài đặt...");
-                    showItem.Click += (s, e) => ShowWindow();
-                    showItem.Font = new Font(showItem.Font, System.Drawing.FontStyle.Bold);
-        
-                    contextMenu.Items.Add(new ToolStripSeparator());
-        
-                    var exitItem = contextMenu.Items.Add("Thoát");
-                    exitItem.Click += (s, e) => {
-                        _notifyIcon.Visible = false;
-                        PHTV_UninstallHook();
-                        System.Windows.Application.Current.Shutdown();
-                    };
-        
-                    _notifyIcon.ContextMenuStrip = contextMenu;
-                    
-                    // Handle Mouse Click
-                    _notifyIcon.MouseClick += (s, e) => {
-                        if (e.Button == MouseButtons.Left)
-                        {
-                            // Toggle Language on Left Click
-                            int currentLang = PHTV_GetLanguage();
-                            int newLang = (currentLang == 1) ? 0 : 1;
-                            PHTV_SetLanguage(newLang);
-                            PHTV_SaveConfig();
-                            
-                            // Update UI if visible
-                            if (this.IsVisible)
-                            {
-                                RadioLangVi.IsChecked = newLang == 1;
-                                RadioLangEn.IsChecked = newLang == 0;
-                            }
-                            
-                            UpdateTrayIconState();
-                        }
-                    };
-                    
-                    _notifyIcon.DoubleClick += (s, e) => ShowWindow();
+                    return Equals(scrollViewer.Tag, "PageScroll") ? scrollViewer : null;
                 }
-        
-                private void UpdateTrayIconState()
+                source = VisualTreeHelper.GetParent(source);
+            }
+            return null;
+        }
+
+        internal void RegisterPage(object page)
+        {
+            switch (page)
+            {
+                case TypingPage typing:
+                    TypingPage = typing;
+                    break;
+                case HotkeysPage hotkeys:
+                    HotkeysPage = hotkeys;
+                    break;
+                case MacroPage macro:
+                    MacroPage = macro;
+                    break;
+                case AppsPage apps:
+                    AppsPage = apps;
+                    break;
+                case SystemPage system:
+                    SystemPage = system;
+                    break;
+                case AboutPage about:
+                    AboutPage = about;
+                    break;
+            }
+        }
+
+        internal void ReloadSettings()
+        {
+            TypingPage?.LoadFromEngine();
+            HotkeysPage?.LoadFromEngine();
+            MacroPage?.LoadFromEngine();
+            AppsPage?.LoadFromEngine();
+            SystemPage?.LoadFromEngine();
+        }
+
+        private void NavigateToTag(string tag)
+        {
+            try
+            {
+                NavView.Navigate(tag);
+            }
+            catch (Exception ex)
+            {
+                Log("Navigate tag failed: " + ex);
+            }
+        }
+
+        private void InitializeSaveTimer()
+        {
+            _saveConfigTimer.Interval = TimeSpan.FromMilliseconds(400);
+            _saveConfigTimer.Tick += (s, e) =>
+            {
+                _saveConfigTimer.Stop();
+                PHTV_SaveConfig();
+            };
+        }
+
+        internal void ScheduleSave()
+        {
+            _saveConfigTimer.Stop();
+            _saveConfigTimer.Start();
+        }
+
+        private void SaveConfigNow()
+        {
+            _saveConfigTimer.Stop();
+            PHTV_SaveConfig();
+        }
+
+        private void InitializeTrayIcon()
+        {
+            _notifyIcon = new Forms.NotifyIcon
+            {
+                Text = "PHTV - Bộ gõ tiếng Việt",
+                Visible = true
+            };
+
+            // Extract all icons
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string imgDir = Path.Combine(appData, "PHTV", "Data", "Images");
+            Directory.CreateDirectory(imgDir);
+
+            string[] icons = { "app.ico", "eng.ico", "vie.ico" };
+            foreach (var iconName in icons)
+            {
+                string iconPath = Path.Combine(imgDir, iconName);
+                if (!File.Exists(iconPath))
                 {
-                    if (_notifyIcon == null) return;
-        
-                    string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                    string imgDir = Path.Combine(appData, "PHTV", "Data", "Images");
-                    
-                    int lang = PHTV_GetLanguage();
-                    string iconName = (lang == 1) ? "vie.ico" : "eng.ico";
-                    string iconPath = Path.Combine(imgDir, iconName);
-        
-                    if (File.Exists(iconPath))
-                    {
-                        _notifyIcon.Icon = new Icon(iconPath);
-                        _notifyIcon.Text = (lang == 1) ? "PHTV - Tiếng Việt" : "PHTV - English";
-                    }
-                    else
-                    {
-                        // Fallback
-                        _notifyIcon.Icon = SystemIcons.Application;
-                    }
+                    ExtractResource("PHTV.UI.Resources.Images." + iconName, iconPath);
                 }
+            }
+
+            _iconApp = File.Exists(Path.Combine(imgDir, "app.ico")) ? new Icon(Path.Combine(imgDir, "app.ico")) : SystemIcons.Application;
+            _iconEng = File.Exists(Path.Combine(imgDir, "eng.ico")) ? new Icon(Path.Combine(imgDir, "eng.ico")) : SystemIcons.Application;
+            _iconVie = File.Exists(Path.Combine(imgDir, "vie.ico")) ? new Icon(Path.Combine(imgDir, "vie.ico")) : SystemIcons.Application;
+
+            BuildTrayMenu();
+            UpdateTrayIconState();
+
+            _notifyIcon.MouseClick += (s, e) =>
+            {
+                if (e.Button == Forms.MouseButtons.Left)
+                {
+                    int currentLang = PHTV_GetLanguage();
+                    int newLang = (currentLang == 1) ? 0 : 1;
+                    SetLanguage(newLang);
+                }
+                else if (e.Button == Forms.MouseButtons.Right)
+                {
+                    ShowTrayMenuAtCursor();
+                }
+            };
+
+            _notifyIcon.DoubleClick += (s, e) => ShowWindow();
+        }
+
+        private void BuildTrayMenu()
+        {
+            _trayMenu = new ContextMenu
+            {
+                StaysOpen = false
+            };
+            _trayMenu.Opened += (s, e) => UpdateTrayMenuState();
+
+            // Language picker
+            var langMenu = new UiMenuItem { Header = "Ngôn ngữ" };
+            _menuLangVi = new UiMenuItem { Header = "Tiếng Việt", IsCheckable = true };
+            _menuLangEn = new UiMenuItem { Header = "Tiếng Anh", IsCheckable = true };
+            _menuLangVi.Click += (s, e) => SetLanguage(1);
+            _menuLangEn.Click += (s, e) => SetLanguage(0);
+            AddItems(langMenu, _menuLangVi, _menuLangEn);
+            AddItems(_trayMenu, langMenu, new Separator());
+
+            // Typing menu
+            var typingMenu = new UiMenuItem { Header = "Bộ gõ" };
+
+            var inputMenu = new UiMenuItem { Header = "Phương pháp gõ" };
+            _menuInputTelex = new UiMenuItem { Header = "Telex", IsCheckable = true };
+            _menuInputVni = new UiMenuItem { Header = "VNI", IsCheckable = true };
+            _menuInputSimple1 = new UiMenuItem { Header = "Simple Telex 1", IsCheckable = true };
+            _menuInputSimple2 = new UiMenuItem { Header = "Simple Telex 2", IsCheckable = true };
+            _menuInputTelex.Click += (s, e) => SetInputMethod(0);
+            _menuInputVni.Click += (s, e) => SetInputMethod(1);
+            _menuInputSimple1.Click += (s, e) => SetInputMethod(2);
+            _menuInputSimple2.Click += (s, e) => SetInputMethod(3);
+            AddItems(inputMenu, _menuInputTelex, _menuInputVni, _menuInputSimple1, _menuInputSimple2);
+
+            var codeMenu = new UiMenuItem { Header = "Bảng mã" };
+            _menuCodeUnicode = new UiMenuItem { Header = "Unicode", IsCheckable = true };
+            _menuCodeTcvn3 = new UiMenuItem { Header = "TCVN3 (ABC)", IsCheckable = true };
+            _menuCodeVni = new UiMenuItem { Header = "VNI Windows", IsCheckable = true };
+            _menuCodeUnicodeComposite = new UiMenuItem { Header = "Unicode tổ hợp", IsCheckable = true };
+            _menuCodeCp1258 = new UiMenuItem { Header = "Vietnamese Locale (CP1258)", IsCheckable = true };
+            _menuCodeUnicode.Click += (s, e) => SetCodeTable(0);
+            _menuCodeTcvn3.Click += (s, e) => SetCodeTable(1);
+            _menuCodeVni.Click += (s, e) => SetCodeTable(2);
+            _menuCodeUnicodeComposite.Click += (s, e) => SetCodeTable(3);
+            _menuCodeCp1258.Click += (s, e) => SetCodeTable(4);
+            AddItems(codeMenu, _menuCodeUnicode, _menuCodeTcvn3, _menuCodeVni, _menuCodeUnicodeComposite, _menuCodeCp1258);
+
+            _menuQuickTelex = new UiMenuItem { Header = "Gõ nhanh (Quick Telex)", IsCheckable = true };
+            _menuUpperFirst = new UiMenuItem { Header = "Viết hoa đầu câu", IsCheckable = true };
+            _menuAllowZfwj = new UiMenuItem { Header = "Phụ âm Z, F, W, J", IsCheckable = true };
+            _menuQuickStart = new UiMenuItem { Header = "Phụ âm đầu nhanh", IsCheckable = true };
+            _menuQuickEnd = new UiMenuItem { Header = "Phụ âm cuối nhanh", IsCheckable = true };
+            _menuSpellCheck = new UiMenuItem { Header = "Kiểm tra chính tả", IsCheckable = true };
+            _menuModernOrtho = new UiMenuItem { Header = "Chính tả mới (oà, uý)", IsCheckable = true };
+
+            _menuQuickTelex.Click += (s, e) => { PHTV_SetQuickTelex(_menuQuickTelex.IsChecked == true); ScheduleSave(); };
+            _menuUpperFirst.Click += (s, e) => { PHTV_SetUpperCaseFirstChar(_menuUpperFirst.IsChecked == true); ScheduleSave(); };
+            _menuAllowZfwj.Click += (s, e) => { PHTV_SetAllowConsonantZFWJ(_menuAllowZfwj.IsChecked == true); ScheduleSave(); };
+            _menuQuickStart.Click += (s, e) => { PHTV_SetQuickStartConsonant(_menuQuickStart.IsChecked == true); ScheduleSave(); };
+            _menuQuickEnd.Click += (s, e) => { PHTV_SetQuickEndConsonant(_menuQuickEnd.IsChecked == true); ScheduleSave(); };
+            _menuSpellCheck.Click += (s, e) => { PHTV_SetSpellCheck(_menuSpellCheck.IsChecked == true); ScheduleSave(); };
+            _menuModernOrtho.Click += (s, e) => { PHTV_SetModernOrthography(_menuModernOrtho.IsChecked == true); ScheduleSave(); };
+
+            AddItems(typingMenu,
+                inputMenu,
+                codeMenu,
+                new Separator(),
+                _menuQuickTelex,
+                _menuUpperFirst,
+                _menuAllowZfwj,
+                _menuQuickStart,
+                _menuQuickEnd,
+                new Separator(),
+                _menuSpellCheck,
+                _menuModernOrtho);
+            _trayMenu.Items.Add(typingMenu);
+
+            // Features menu
+            var featuresMenu = new UiMenuItem { Header = "Tính năng" };
+            _menuAutoRestoreEnglish = new UiMenuItem { Header = "Tự động khôi phục tiếng Anh", IsCheckable = true };
+            _menuUseMacro = new UiMenuItem { Header = "Bật gõ tắt", IsCheckable = true };
+            _menuMacroInEnglish = new UiMenuItem { Header = "Gõ tắt khi ở chế độ Anh", IsCheckable = true };
+            _menuAutoCapsMacro = new UiMenuItem { Header = "Tự động viết hoa macro", IsCheckable = true };
+            _menuSmartSwitch = new UiMenuItem { Header = "Chuyển thông minh theo ứng dụng", IsCheckable = true };
+            _menuRememberCode = new UiMenuItem { Header = "Nhớ bảng mã theo ứng dụng", IsCheckable = true };
+            _menuRestoreOnEscape = new UiMenuItem { Header = "Khôi phục khi nhấn Esc", IsCheckable = true };
+            _menuPauseKey = new UiMenuItem { Header = "Tạm dừng khi giữ phím", IsCheckable = true };
+
+            _menuAutoRestoreEnglish.Click += (s, e) => { PHTV_SetAutoRestoreEnglishWord(_menuAutoRestoreEnglish.IsChecked == true); ScheduleSave(); };
+            _menuUseMacro.Click += (s, e) => { PHTV_SetMacro(_menuUseMacro.IsChecked == true); ScheduleSave(); };
+            _menuMacroInEnglish.Click += (s, e) => { PHTV_SetMacroInEnglishMode(_menuMacroInEnglish.IsChecked == true); ScheduleSave(); };
+            _menuAutoCapsMacro.Click += (s, e) => { PHTV_SetAutoCapsMacro(_menuAutoCapsMacro.IsChecked == true); ScheduleSave(); };
+            _menuSmartSwitch.Click += (s, e) => { PHTV_SetSmartSwitchKey(_menuSmartSwitch.IsChecked == true); ScheduleSave(); };
+            _menuRememberCode.Click += (s, e) => { PHTV_SetRememberCode(_menuRememberCode.IsChecked == true); ScheduleSave(); };
+            _menuRestoreOnEscape.Click += (s, e) => { PHTV_SetRestoreOnEscape(_menuRestoreOnEscape.IsChecked == true); ScheduleSave(); };
+            _menuPauseKey.Click += (s, e) => { PHTV_SetPauseKeyEnabled(_menuPauseKey.IsChecked == true); ScheduleSave(); };
+
+            AddItems(featuresMenu,
+                _menuAutoRestoreEnglish,
+                new Separator(),
+                _menuUseMacro,
+                _menuMacroInEnglish,
+                _menuAutoCapsMacro,
+                new Separator(),
+                _menuSmartSwitch,
+                _menuRememberCode,
+                new Separator(),
+                _menuRestoreOnEscape,
+                _menuPauseKey);
+            _trayMenu.Items.Add(featuresMenu);
+
+            // Compatibility menu
+            var compatMenu = new UiMenuItem { Header = "Tương thích" };
+            _menuSendKeyStepByStep = new UiMenuItem { Header = "Gửi phím từng bước", IsCheckable = true };
+            _menuPerformLayoutCompat = new UiMenuItem { Header = "Tương thích layout bàn phím", IsCheckable = true };
+            _menuSendKeyStepByStep.Click += (s, e) => { PHTV_SetSendKeyStepByStep(_menuSendKeyStepByStep.IsChecked == true); ScheduleSave(); };
+            _menuPerformLayoutCompat.Click += (s, e) => { PHTV_SetPerformLayoutCompat(_menuPerformLayoutCompat.IsChecked == true); ScheduleSave(); };
+            AddItems(compatMenu, _menuSendKeyStepByStep, _menuPerformLayoutCompat);
+            _trayMenu.Items.Add(compatMenu);
+
+            // System menu
+            var systemMenu = new UiMenuItem { Header = "Hệ thống" };
+            _menuRunOnStartup = new UiMenuItem { Header = "Khởi động cùng Windows", IsCheckable = true };
+            _menuBeepOnSwitch = new UiMenuItem { Header = "Âm thanh khi chuyển chế độ", IsCheckable = true };
+            _menuRunOnStartup.Click += (s, e) => SetRunOnStartup(_menuRunOnStartup.IsChecked == true);
+            _menuBeepOnSwitch.Click += (s, e) => SetSwitchBeep(_menuBeepOnSwitch.IsChecked == true);
+            AddItems(systemMenu, _menuRunOnStartup, _menuBeepOnSwitch);
+            _trayMenu.Items.Add(systemMenu);
+
+            _trayMenu.Items.Add(new Separator());
+
+            // Tools menu
+            var toolsMenu = new UiMenuItem { Header = "Công cụ" };
+            _menuQuickConvertTcvn3ToUnicode = new UiMenuItem { Header = "TCVN3 → Unicode" };
+            _menuQuickConvertVniToUnicode = new UiMenuItem { Header = "VNI → Unicode" };
+            _menuQuickConvertUnicodeToTcvn3 = new UiMenuItem { Header = "Unicode → TCVN3" };
+            _menuQuickConvertCompositeToUnicode = new UiMenuItem { Header = "Tổ hợp → Unicode" };
+            _menuOpenConvertTool = new UiMenuItem { Header = "Chuyển đổi bảng mã..." };
+
+            _menuQuickConvertTcvn3ToUnicode.Click += (s, e) => QuickConvertClipboard(1, 0);
+            _menuQuickConvertVniToUnicode.Click += (s, e) => QuickConvertClipboard(2, 0);
+            _menuQuickConvertUnicodeToTcvn3.Click += (s, e) => QuickConvertClipboard(0, 1);
+            _menuQuickConvertCompositeToUnicode.Click += (s, e) => QuickConvertClipboard(3, 0);
+            _menuOpenConvertTool.Click += (s, e) => ShowConvertTool();
+
+            AddItems(toolsMenu,
+                _menuQuickConvertTcvn3ToUnicode,
+                _menuQuickConvertVniToUnicode,
+                _menuQuickConvertUnicodeToTcvn3,
+                _menuQuickConvertCompositeToUnicode,
+                new Separator(),
+                _menuOpenConvertTool);
+            _trayMenu.Items.Add(toolsMenu);
+
+            _trayMenu.Items.Add(new Separator());
+
+            _menuOpenSettings = new UiMenuItem { Header = "Mở Cài đặt..." };
+            _menuOpenSettings.Click += (s, e) => ShowWindow();
+            string version = Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3) ?? "1.0";
+            _menuOpenAbout = new UiMenuItem { Header = $"Về PHTV v{version}" };
+            _menuOpenAbout.Click += (s, e) => ShowAboutView();
+            _menuCheckUpdates = new UiMenuItem { Header = "Kiểm tra cập nhật" };
+            _menuCheckUpdates.Click += (s, e) => OpenUrl("https://github.com/PhamHungTien/PHTV/releases/latest");
+            _menuExit = new UiMenuItem { Header = "Thoát PHTV" };
+            _menuExit.Click += (s, e) =>
+            {
+                SaveConfigNow();
+                _notifyIcon.Visible = false;
+                _notifyIcon.Dispose();
+                _iconApp?.Dispose();
+                _iconEng?.Dispose();
+                _iconVie?.Dispose();
+                PHTV_UninstallHook();
+                System.Windows.Application.Current.Shutdown();
+            };
+
+            AddItems(_trayMenu,
+                _menuOpenSettings,
+                _menuOpenAbout,
+                _menuCheckUpdates,
+                new Separator(),
+                _menuExit);
+        }
+
+        private static void AddItems(ItemsControl parent, params object[] items)
+        {
+            foreach (var item in items)
+            {
+                parent.Items.Add(item);
+            }
+        }
+
+        private void ShowTrayMenuAtCursor()
+        {
+            if (_trayMenu == null) return;
+
+            Dispatcher.Invoke(() =>
+            {
+                UpdateTrayMenuState();
+                var cursor = Forms.Cursor.Position;
+                var dpi = VisualTreeHelper.GetDpi(this);
+                double x = cursor.X / dpi.DpiScaleX;
+                double y = cursor.Y / dpi.DpiScaleY;
+
+                _trayMenu.IsOpen = false;
+                _trayMenu.PlacementTarget = this;
+                _trayMenu.Placement = PlacementMode.AbsolutePoint;
+                _trayMenu.HorizontalOffset = x;
+                _trayMenu.VerticalOffset = y;
+                _trayMenu.IsOpen = true;
+            });
+        }
+
+        internal void UpdateTrayIconState()
+        {
+            if (_notifyIcon == null) return;
+
+            int lang = PHTV_GetLanguage();
+            Icon fallback = _iconApp ?? SystemIcons.Application;
+            _notifyIcon.Icon = (lang == 1) ? (_iconVie ?? fallback) : (_iconEng ?? fallback);
+            _notifyIcon.Text = (lang == 1) ? "PHTV - Tiếng Việt" : "PHTV - English";
+        }
+
+        internal void UpdateTrayMenuState()
+        {
+            _menuLangVi.IsChecked = PHTV_GetLanguage() == 1;
+            _menuLangEn.IsChecked = PHTV_GetLanguage() == 0;
+
+            int inputType = PHTV_GetInputMethod();
+            _menuInputTelex.IsChecked = inputType == 0;
+            _menuInputVni.IsChecked = inputType == 1;
+            _menuInputSimple1.IsChecked = inputType == 2;
+            _menuInputSimple2.IsChecked = inputType == 3;
+
+            int codeTable = PHTV_GetCodeTable();
+            _menuCodeUnicode.IsChecked = codeTable == 0;
+            _menuCodeTcvn3.IsChecked = codeTable == 1;
+            _menuCodeVni.IsChecked = codeTable == 2;
+            _menuCodeUnicodeComposite.IsChecked = codeTable == 3;
+            _menuCodeCp1258.IsChecked = codeTable == 4;
+
+            _menuQuickTelex.IsChecked = PHTV_GetQuickTelex();
+            _menuUpperFirst.IsChecked = PHTV_GetUpperCaseFirstChar();
+            _menuAllowZfwj.IsChecked = PHTV_GetAllowConsonantZFWJ();
+            _menuQuickStart.IsChecked = PHTV_GetQuickStartConsonant();
+            _menuQuickEnd.IsChecked = PHTV_GetQuickEndConsonant();
+            _menuSpellCheck.IsChecked = PHTV_GetSpellCheck();
+            _menuModernOrtho.IsChecked = PHTV_GetModernOrthography();
+
+            _menuAutoRestoreEnglish.IsChecked = PHTV_GetAutoRestoreEnglishWord();
+            _menuUseMacro.IsChecked = PHTV_GetMacro();
+            _menuMacroInEnglish.IsChecked = PHTV_GetMacroInEnglishMode();
+            _menuAutoCapsMacro.IsChecked = PHTV_GetAutoCapsMacro();
+            _menuSmartSwitch.IsChecked = PHTV_GetSmartSwitchKey();
+            _menuRememberCode.IsChecked = PHTV_GetRememberCode();
+            _menuRestoreOnEscape.IsChecked = PHTV_GetRestoreOnEscape();
+            _menuPauseKey.IsChecked = PHTV_GetPauseKeyEnabled();
+
+            _menuSendKeyStepByStep.IsChecked = PHTV_GetSendKeyStepByStep();
+            _menuPerformLayoutCompat.IsChecked = PHTV_GetPerformLayoutCompat();
+
+            _menuRunOnStartup.IsChecked = IsRunOnStartupEnabled();
+            _menuBeepOnSwitch.IsChecked = IsBeepOnModeSwitch();
+
+            if (IsVisible)
+            {
+                ReloadSettings();
+            }
+        }
+
+        private bool IsBeepOnModeSwitch()
+        {
+            return (PHTV_GetSwitchKeyStatus() & SwitchMaskBeep) != 0;
+        }
+
+        private void SetSwitchBeep(bool enable)
+        {
+            int status = PHTV_GetSwitchKeyStatus();
+            if (enable)
+            {
+                status |= SwitchMaskBeep;
+            }
+            else
+            {
+                status &= ~SwitchMaskBeep;
+            }
+            PHTV_SetSwitchKeyStatus(status);
+            ScheduleSave();
+
+            if (IsVisible)
+            {
+                HotkeysPage?.ApplySwitchBeep(enable);
+            }
+        }
+
+        private void SetLanguage(int lang)
+        {
+            PHTV_SetLanguage(lang);
+            ScheduleSave();
+            UpdateTrayIconState();
+            UpdateTrayMenuState();
+
+            if (IsBeepOnModeSwitch())
+            {
+                System.Media.SystemSounds.Beep.Play();
+            }
+
+            if (IsVisible)
+            {
+                ReloadSettings();
+            }
+        }
+
+        private void SetInputMethod(int method)
+        {
+            PHTV_SetInputMethod(method);
+            ScheduleSave();
+            UpdateTrayMenuState();
+            if (IsVisible)
+            {
+                ReloadSettings();
+            }
+        }
+
+        private void SetCodeTable(int table)
+        {
+            PHTV_SetCodeTable(table);
+            ScheduleSave();
+            UpdateTrayMenuState();
+            if (IsVisible)
+            {
+                ReloadSettings();
+            }
+        }
+
+        private void QuickConvertClipboard(int fromCode, int toCode)
+        {
+            bool ok = PHTV_QuickConvertClipboard(fromCode, toCode);
+            if (!ok)
+            {
+                System.Windows.MessageBox.Show("Không thể chuyển đổi clipboard.");
+            }
+        }
+
+        private void ShowConvertTool()
+        {
+            var window = new ConvertWindow();
+            window.Owner = this;
+            window.ShowDialog();
+        }
+
+        private void ShowAboutView()
+        {
+            ShowWindow();
+            NavigateToTag("View_About");
+        }
         private void ShowWindow()
         {
             this.Show();
             this.WindowState = WindowState.Normal;
             this.Activate();
+            ReloadSettings();
         }
 
         protected override void OnStateChanged(EventArgs e)
@@ -447,8 +655,7 @@ namespace PHTV.UI
                 string dictDir = Path.Combine(phtvDataDir, "Dictionaries");
                 Directory.CreateDirectory(dictDir);
 
-                ExtractResource("PHTV.UI.Resources.Dictionaries.vi_dict.bin", Path.Combine(dictDir, "vi_dict.bin"));
-                ExtractResource("PHTV.UI.Resources.Dictionaries.en_dict.bin", Path.Combine(dictDir, "en_dict.bin"));
+                EnsureDictionaryFiles(dictDir);
 
                 PHTV_Init(phtvDataDir);
                 PHTV_InstallHook();
@@ -476,376 +683,66 @@ namespace PHTV.UI
             catch { }
         }
 
-        private void SetupDataPaths()
+        private void EnsureDictionaryFiles(string dictDir)
         {
-            var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            var phtvDir = Path.Combine(appData, "PHTV");
-            Directory.CreateDirectory(phtvDir);
-            _macroPath = Path.Combine(phtvDir, "macros.dat");
-            _appMapPath = Path.Combine(phtvDir, "apps.dat");
-            _upperExcludedPath = Path.Combine(phtvDir, "upper_excluded.dat");
+            string baseDir = AppContext.BaseDirectory;
+            string sourceDir = Path.Combine(baseDir, "Resources", "Dictionaries");
+            EnsureFile(Path.Combine(sourceDir, "vi_dict.bin"),
+                "PHTV.UI.Resources.Dictionaries.vi_dict.bin",
+                Path.Combine(dictDir, "vi_dict.bin"));
+            EnsureFile(Path.Combine(sourceDir, "en_dict.bin"),
+                "PHTV.UI.Resources.Dictionaries.en_dict.bin",
+                Path.Combine(dictDir, "en_dict.bin"));
+        }
+
+        private void EnsureFile(string sourcePath, string resourceName, string destPath)
+        {
+            try
+            {
+                if (File.Exists(sourcePath))
+                {
+                    var srcInfo = new FileInfo(sourcePath);
+                    var dstInfo = new FileInfo(destPath);
+                    if (dstInfo.Exists &&
+                        dstInfo.Length == srcInfo.Length &&
+                        dstInfo.LastWriteTimeUtc >= srcInfo.LastWriteTimeUtc)
+                    {
+                        return;
+                    }
+                    Directory.CreateDirectory(Path.GetDirectoryName(destPath) ?? string.Empty);
+                    File.Copy(sourcePath, destPath, true);
+                    return;
+                }
+
+                if (File.Exists(destPath) && new FileInfo(destPath).Length > 0)
+                {
+                    return;
+                }
+
+                ExtractResource(resourceName, destPath);
+            }
+            catch
+            {
+                // Best-effort; initialization will fail later if dicts are missing.
+            }
         }
 
         private void LoadMacroFile()
         {
-            if (File.Exists(_macroPath)) PHTV_MacroLoad(_macroPath);
+            if (File.Exists(PhtvPaths.MacroPath)) PHTV_MacroLoad(PhtvPaths.MacroPath);
             else PHTV_MacroClear();
         }
 
         private void LoadAppMapFile()
         {
-            if (File.Exists(_appMapPath)) PHTV_AppListLoad(_appMapPath);
+            if (File.Exists(PhtvPaths.AppMapPath)) PHTV_AppListLoad(PhtvPaths.AppMapPath);
             else PHTV_AppListClear();
         }
 
         private void LoadUpperExcludedFile()
         {
-            if (File.Exists(_upperExcludedPath)) PHTV_UpperExcludedLoad(_upperExcludedPath);
+            if (File.Exists(PhtvPaths.UpperExcludedPath)) PHTV_UpperExcludedLoad(PhtvPaths.UpperExcludedPath);
             else PHTV_UpperExcludedClear();
-        }
-
-        private void InputMethod_Changed(object sender, RoutedEventArgs e)
-        {
-            if (_suppressEvents) return;
-            if (RadioTelex.IsChecked == true) PHTV_SetInputMethod(0);
-            else if (RadioVNI.IsChecked == true) PHTV_SetInputMethod(1);
-            PHTV_SaveConfig();
-        }
-
-        private void Language_Changed(object sender, RoutedEventArgs e)
-        {
-            if (_suppressEvents) return;
-            if (RadioLangVi.IsChecked == true) PHTV_SetLanguage(1);
-            else if (RadioLangEn.IsChecked == true) PHTV_SetLanguage(0);
-            PHTV_SaveConfig();
-            UpdateTrayIconState();
-        }
-
-        private void CodeTable_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
-        {
-            if (_suppressEvents) return;
-            if (ComboCodeTable.SelectedItem is System.Windows.Controls.ComboBoxItem item &&
-                int.TryParse(item.Tag?.ToString(), out var table))
-            {
-                PHTV_SetCodeTable(table);
-                PHTV_SaveConfig();
-            }
-        }
-
-        private void Feature_Changed(object sender, RoutedEventArgs e)
-        {
-            if (_suppressEvents) return;
-            PHTV_SetSpellCheck(ChkSpell.IsChecked == true);
-            PHTV_SetModernOrthography(ChkModern.IsChecked == true);
-            PHTV_SetQuickTelex(ChkQuickTelex.IsChecked == true);
-            PHTV_SetAutoRestoreEnglishWord(ChkAutoRestoreEnglish.IsChecked == true);
-            PHTV_SetUpperCaseFirstChar(ChkUppercaseFirstChar.IsChecked == true);
-            PHTV_SetAllowConsonantZFWJ(ChkAllowConsonantZFWJ.IsChecked == true);
-            PHTV_SetQuickStartConsonant(ChkQuickStartConsonant.IsChecked == true);
-            PHTV_SetQuickEndConsonant(ChkQuickEndConsonant.IsChecked == true);
-            PHTV_SetFreeMark(ChkFreeMark.IsChecked == true);
-            PHTV_SetMacro(ChkMacro.IsChecked == true);
-            PHTV_SetMacroInEnglishMode(ChkMacroInEnglish.IsChecked == true);
-            PHTV_SetAutoCapsMacro(ChkAutoCapsMacro.IsChecked == true);
-            PHTV_SetSmartSwitchKey(ChkSmartSwitchKey.IsChecked == true);
-            PHTV_SetFixRecommendBrowser(ChkFixRecommendBrowser.IsChecked == true);
-            PHTV_SaveConfig();
-        }
-
-        private void System_Changed(object sender, RoutedEventArgs e)
-        {
-            if (_suppressEvents) return;
-            PHTV_SetOtherLanguage(ChkOtherLanguage.IsChecked == true ? 1 : 0);
-            PHTV_SaveConfig();
-        }
-
-        private void Hotkey_Changed(object sender, RoutedEventArgs e)
-        {
-            if (_suppressEvents) return;
-            PHTV_SetRestoreOnEscape(ChkRestoreOnEscape.IsChecked == true);
-            PHTV_SetPauseKeyEnabled(ChkPauseKeyEnabled.IsChecked == true);
-            ApplyHotkeyTextFields();
-            PHTV_SaveConfig();
-        }
-
-        private void Hotkey_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
-        {
-            if (_suppressEvents) return;
-            ApplyHotkeyTextFields();
-            PHTV_SaveConfig();
-        }
-
-        private void SwitchHotkey_Changed(object sender, RoutedEventArgs e)
-        {
-            if (_suppressEvents) return;
-            ApplySwitchHotkeyStatus();
-            PHTV_SaveConfig();
-        }
-
-        private void SwitchKey_CaptureKey(object sender, System.Windows.Input.KeyEventArgs e)
-        {
-            if (_suppressEvents) return;
-            if (sender is not System.Windows.Controls.TextBox textBox) return;
-            int vk = GetVirtualKey(e);
-            if (vk <= 0) return;
-            SetSwitchKeyText(textBox, vk);
-            ApplySwitchHotkeyStatus();
-            PHTV_SaveConfig();
-            e.Handled = true;
-        }
-
-        private void SwitchKey_NoKey_Click(object sender, RoutedEventArgs e)
-        {
-            SetSwitchKeyText(TxtSwitchKey, SwitchKeyNoKey);
-            ApplySwitchHotkeyStatus();
-            PHTV_SaveConfig();
-        }
-
-        private void Hotkey_CaptureKey(object sender, System.Windows.Input.KeyEventArgs e)
-        {
-            if (_suppressEvents) return;
-            if (sender is not System.Windows.Controls.TextBox textBox) return;
-
-            int vk = GetVirtualKey(e);
-            if (vk <= 0) return;
-            SetHotkeyText(textBox, vk);
-            ApplyHotkeyTextFields();
-            PHTV_SaveConfig();
-            e.Handled = true;
-        }
-
-        private void Hotkey_RecordEscape_Click(object sender, RoutedEventArgs e)
-        {
-            TxtCustomEscapeKey.Focus();
-            TxtCustomEscapeKey.SelectAll();
-        }
-
-        private void Hotkey_RecordPause_Click(object sender, RoutedEventArgs e)
-        {
-            TxtPauseKey.Focus();
-            TxtPauseKey.SelectAll();
-        }
-
-
-        private void MacroImport_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new Microsoft.Win32.OpenFileDialog
-            {
-                Filter = "PHTV Macro (*.dat)|*.dat|All files|*.*",
-                CheckFileExists = true
-            };
-            if (dialog.ShowDialog() != true) return;
-            if (PHTV_MacroLoad(dialog.FileName))
-            {
-                PHTV_MacroSave(_macroPath);
-                RefreshMacroList();
-            }
-            else
-            {
-                System.Windows.MessageBox.Show("Không thể import macro.");
-            }
-        }
-
-        private void MacroExport_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new Microsoft.Win32.SaveFileDialog
-            {
-                Filter = "PHTV Macro (*.dat)|*.dat|All files|*.*",
-                FileName = "macros.dat"
-            };
-            if (dialog.ShowDialog() != true) return;
-            if (!PHTV_MacroSave(dialog.FileName))
-            {
-                System.Windows.MessageBox.Show("Không thể export macro.");
-            }
-        }
-
-        private void MacroClear_Click(object sender, RoutedEventArgs e)
-        {
-            PHTV_MacroClear();
-            PHTV_MacroSave(_macroPath);
-            RefreshMacroList();
-        }
-
-        private void MacroAdd_Click(object sender, RoutedEventArgs e)
-        {
-            var key = TxtMacroKey.Text.Trim();
-            var value = TxtMacroValue.Text.Trim();
-            if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(value)) return;
-            if (PHTV_MacroAdd(key, value))
-            {
-                PHTV_MacroSave(_macroPath);
-                RefreshMacroList();
-                TxtMacroKey.Text = string.Empty;
-                TxtMacroValue.Text = string.Empty;
-            }
-        }
-
-        private void MacroRemove_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is System.Windows.Controls.Button btn && btn.Tag is string key)
-            {
-                if (PHTV_MacroDelete(key))
-                {
-                    PHTV_MacroSave(_macroPath);
-                    RefreshMacroList();
-                }
-            }
-        }
-
-        private void AppAdd_Click(object sender, RoutedEventArgs e)
-        {
-            var name = TxtAppName.Text.Trim();
-            if (string.IsNullOrEmpty(name)) return;
-            if (ComboAppLanguage.SelectedItem is System.Windows.Controls.ComboBoxItem item &&
-                int.TryParse(item.Tag?.ToString(), out var lang))
-            {
-                PHTV_AppListSet(name, lang);
-                PHTV_AppListSave(_appMapPath);
-                RefreshAppList();
-                TxtAppName.Text = string.Empty;
-            }
-        }
-
-        private void AppRemove_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is System.Windows.Controls.Button btn && btn.Tag is string name)
-            {
-                if (PHTV_AppListRemove(name))
-                {
-                    PHTV_AppListSave(_appMapPath);
-                    RefreshAppList();
-                }
-            }
-        }
-
-        private void UpperExcludedAdd_Click(object sender, RoutedEventArgs e)
-        {
-            var name = TxtUpperExcludedName.Text.Trim();
-            if (string.IsNullOrEmpty(name)) return;
-            PHTV_UpperExcludedAdd(name);
-            PHTV_UpperExcludedSave(_upperExcludedPath);
-            RefreshUpperExcludedList();
-            TxtUpperExcludedName.Text = string.Empty;
-        }
-
-        private void UpperExcludedRemove_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is System.Windows.Controls.Button btn && btn.Tag is string name)
-            {
-                if (PHTV_UpperExcludedRemove(name))
-                {
-                    PHTV_UpperExcludedSave(_upperExcludedPath);
-                    RefreshUpperExcludedList();
-                }
-            }
-        }
-
-        private void UpperExcludedImport_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new Microsoft.Win32.OpenFileDialog
-            {
-                Filter = "PHTV Upper Excluded (*.dat)|*.dat|All files|*.*",
-                CheckFileExists = true
-            };
-            if (dialog.ShowDialog() != true) return;
-            if (PHTV_UpperExcludedLoad(dialog.FileName))
-            {
-                PHTV_UpperExcludedSave(_upperExcludedPath);
-                RefreshUpperExcludedList();
-            }
-            else
-            {
-                System.Windows.MessageBox.Show("Không thể import danh sách.");
-            }
-        }
-
-        private void UpperExcludedExport_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new Microsoft.Win32.SaveFileDialog
-            {
-                Filter = "PHTV Upper Excluded (*.dat)|*.dat|All files|*.*",
-                FileName = "upper_excluded.dat"
-            };
-            if (dialog.ShowDialog() != true) return;
-            if (!PHTV_UpperExcludedSave(dialog.FileName))
-            {
-                System.Windows.MessageBox.Show("Không thể export danh sách.");
-            }
-        }
-
-        private void UpperExcludedClear_Click(object sender, RoutedEventArgs e)
-        {
-            PHTV_UpperExcludedClear();
-            PHTV_UpperExcludedSave(_upperExcludedPath);
-            RefreshUpperExcludedList();
-        }
-
-        private void UpperExcludedDetect_Click(object sender, RoutedEventArgs e)
-        {
-            RefreshRunningApps();
-            if (_runningApps.Count == 0)
-            {
-                System.Windows.MessageBox.Show("Không tìm thấy ứng dụng đang chạy.");
-            }
-        }
-
-        private void UpperRunning_Selected(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
-        {
-            if (UpperRunningAppList.SelectedItem is string name)
-            {
-                TxtUpperExcludedName.Text = name;
-            }
-        }
-
-        private void AppImport_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new Microsoft.Win32.OpenFileDialog
-            {
-                Filter = "PHTV App Map (*.dat)|*.dat|All files|*.*",
-                CheckFileExists = true
-            };
-            if (dialog.ShowDialog() != true) return;
-            if (PHTV_AppListLoad(dialog.FileName))
-            {
-                PHTV_AppListSave(_appMapPath);
-                RefreshAppList();
-            }
-            else
-            {
-                System.Windows.MessageBox.Show("Không thể import app map.");
-            }
-        }
-
-        private void AppExport_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new Microsoft.Win32.SaveFileDialog
-            {
-                Filter = "PHTV App Map (*.dat)|*.dat|All files|*.*",
-                FileName = "apps.dat"
-            };
-            if (dialog.ShowDialog() != true) return;
-            if (!PHTV_AppListSave(dialog.FileName))
-            {
-                System.Windows.MessageBox.Show("Không thể export app map.");
-            }
-        }
-
-        private void AppDetect_Click(object sender, RoutedEventArgs e)
-        {
-            RefreshRunningApps();
-            if (_runningApps.Count == 0)
-            {
-                System.Windows.MessageBox.Show("Không tìm thấy ứng dụng đang chạy.");
-            }
-        }
-
-        private void AppRunning_Selected(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
-        {
-            if (RunningAppList.SelectedItem is string name)
-            {
-                TxtAppName.Text = name;
-            }
         }
 
         private void Close_Click(object sender, RoutedEventArgs e)
@@ -853,338 +750,68 @@ namespace PHTV.UI
             this.Close();
         }
 
-        private void Reset_Click(object sender, RoutedEventArgs e)
+        private static string GetExecutablePath()
         {
-            PHTV_ResetConfig();
-            LoadSettingsFromEngine();
+            string path = Assembly.GetEntryAssembly()?.Location;
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                path = Process.GetCurrentProcess().MainModule?.FileName;
+            }
+            return path ?? string.Empty;
         }
 
-        private void LoadSettingsFromEngine()
+        internal static bool IsRunOnStartupEnabled()
         {
-            _suppressEvents = true;
             try
             {
-                RadioLangVi.IsChecked = PHTV_GetLanguage() == 1;
-                RadioLangEn.IsChecked = PHTV_GetLanguage() == 0;
-                RadioTelex.IsChecked = PHTV_GetInputMethod() == 0;
-                RadioVNI.IsChecked = PHTV_GetInputMethod() == 1;
+                using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath, false);
+                string value = key?.GetValue(RunValueName) as string;
+                if (string.IsNullOrWhiteSpace(value)) return false;
+                string exePath = GetExecutablePath();
+                if (string.IsNullOrWhiteSpace(exePath)) return false;
+                return value.Trim('"').Equals(exePath, StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
-                var codeTable = PHTV_GetCodeTable();
-                foreach (System.Windows.Controls.ComboBoxItem item in ComboCodeTable.Items)
+        internal static void SetRunOnStartup(bool enable)
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath, true) ??
+                                Registry.CurrentUser.CreateSubKey(RunKeyPath);
+                if (key == null) return;
+                if (enable)
                 {
-                    if (int.TryParse(item.Tag?.ToString(), out var tagValue) && tagValue == codeTable)
+                    string exePath = GetExecutablePath();
+                    if (!string.IsNullOrWhiteSpace(exePath))
                     {
-                        ComboCodeTable.SelectedItem = item;
-                        break;
+                        key.SetValue(RunValueName, $"\"{exePath}\"");
                     }
                 }
-
-                ChkSpell.IsChecked = PHTV_GetSpellCheck();
-                ChkModern.IsChecked = PHTV_GetModernOrthography();
-                ChkQuickTelex.IsChecked = PHTV_GetQuickTelex();
-                ChkAutoRestoreEnglish.IsChecked = PHTV_GetAutoRestoreEnglishWord();
-                ChkUppercaseFirstChar.IsChecked = PHTV_GetUpperCaseFirstChar();
-                ChkAllowConsonantZFWJ.IsChecked = PHTV_GetAllowConsonantZFWJ();
-                ChkQuickStartConsonant.IsChecked = PHTV_GetQuickStartConsonant();
-                ChkQuickEndConsonant.IsChecked = PHTV_GetQuickEndConsonant();
-                ChkFreeMark.IsChecked = PHTV_GetFreeMark();
-
-                ChkMacro.IsChecked = PHTV_GetMacro();
-                ChkMacroInEnglish.IsChecked = PHTV_GetMacroInEnglishMode();
-                ChkAutoCapsMacro.IsChecked = PHTV_GetAutoCapsMacro();
-
-                ChkSmartSwitchKey.IsChecked = PHTV_GetSmartSwitchKey();
-                ChkFixRecommendBrowser.IsChecked = PHTV_GetFixRecommendBrowser();
-                ChkOtherLanguage.IsChecked = PHTV_GetOtherLanguage() != 0;
-
-                ChkRestoreOnEscape.IsChecked = PHTV_GetRestoreOnEscape();
-                SetHotkeyText(TxtCustomEscapeKey, PHTV_GetCustomEscapeKey());
-                ChkPauseKeyEnabled.IsChecked = PHTV_GetPauseKeyEnabled();
-                SetHotkeyText(TxtPauseKey, PHTV_GetPauseKey());
-
-                LoadSwitchHotkeyStatus(PHTV_GetSwitchKeyStatus());
-            }
-            finally
-            {
-                _suppressEvents = false;
-            }
-        }
-
-        private void ApplyHotkeyTextFields()
-        {
-            if (TryGetHotkeyValue(TxtCustomEscapeKey, out var escKey))
-            {
-                PHTV_SetCustomEscapeKey(escKey);
-            }
-
-            if (TryGetHotkeyValue(TxtPauseKey, out var pauseKey))
-            {
-                PHTV_SetPauseKey(pauseKey);
-            }
-        }
-
-        private void LoadSwitchHotkeyStatus(int status)
-        {
-            int key = status & SwitchKeyMask;
-            ChkSwitchCtrl.IsChecked = (status & SwitchMaskControl) != 0;
-            ChkSwitchAlt.IsChecked = (status & SwitchMaskAlt) != 0;
-            ChkSwitchWin.IsChecked = (status & SwitchMaskWin) != 0;
-            ChkSwitchShift.IsChecked = (status & SwitchMaskShift) != 0;
-            ChkSwitchBeep.IsChecked = (status & SwitchMaskBeep) != 0;
-
-            if (key == 0)
-            {
-                TxtSwitchKey.Text = string.Empty;
-                TxtSwitchKey.Tag = null;
-            }
-            else
-            {
-                SetSwitchKeyText(TxtSwitchKey, key);
-            }
-        }
-
-        private void ApplySwitchHotkeyStatus()
-        {
-            int key = 0;
-            if (TryGetSwitchKeyValue(TxtSwitchKey, out var value))
-            {
-                key = value;
-            }
-
-            bool ctrl = ChkSwitchCtrl.IsChecked == true;
-            bool alt = ChkSwitchAlt.IsChecked == true;
-            bool shift = ChkSwitchShift.IsChecked == true;
-            bool win = ChkSwitchWin.IsChecked == true;
-            bool beep = ChkSwitchBeep.IsChecked == true;
-
-            if (key == 0 && !(ctrl || alt || shift || win))
-            {
-                PHTV_SetSwitchKeyStatus(0);
-                return;
-            }
-
-            if (key == 0)
-            {
-                key = SwitchKeyNoKey;
-            }
-            else if (key == SwitchKeyNoKey && !(ctrl || alt || shift || win))
-            {
-                PHTV_SetSwitchKeyStatus(0);
-                return;
-            }
-
-            int status = key & SwitchKeyMask;
-            if (ctrl) status |= SwitchMaskControl;
-            if (alt) status |= SwitchMaskAlt;
-            if (win) status |= SwitchMaskWin;
-            if (shift) status |= SwitchMaskShift;
-            if (beep) status |= SwitchMaskBeep;
-            PHTV_SetSwitchKeyStatus(status);
-        }
-
-        private void RefreshMacroList()
-        {
-            _macros.Clear();
-            int count = PHTV_MacroCount();
-            for (int i = 0; i < count; i++)
-            {
-                var keyBuf = new StringBuilder(256);
-                var valBuf = new StringBuilder(1024);
-                if (PHTV_MacroGetAt(i, keyBuf, keyBuf.Capacity, valBuf, valBuf.Capacity))
+                else
                 {
-                    _macros.Add(new MacroItem { Key = keyBuf.ToString(), Value = valBuf.ToString() });
+                    key.DeleteValue(RunValueName, false);
                 }
             }
-        }
-
-        private void RefreshAppList()
-        {
-            _apps.Clear();
-            int count = PHTV_AppListCount();
-            for (int i = 0; i < count; i++)
+            catch
             {
-                var nameBuf = new StringBuilder(260);
-                if (PHTV_AppListGetAt(i, nameBuf, nameBuf.Capacity, out int lang))
-                {
-                    _apps.Add(new AppItem { Name = nameBuf.ToString(), Language = lang });
-                }
+                // Best-effort
             }
         }
 
-        private void RefreshUpperExcludedList()
+        internal static void OpenUrl(string url)
         {
-            _upperExcludedApps.Clear();
-            int count = PHTV_UpperExcludedCount();
-            for (int i = 0; i < count; i++)
+            try
             {
-                var nameBuf = new StringBuilder(260);
-                if (PHTV_UpperExcludedGetAt(i, nameBuf, nameBuf.Capacity))
-                {
-                    _upperExcludedApps.Add(new UpperExcludedItem { Name = nameBuf.ToString() });
-                }
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
             }
-        }
-
-        private void RefreshRunningApps()
-        {
-            var names = new List<string>();
-            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var proc in Process.GetProcesses())
+            catch
             {
-                try
-                {
-                    string name = string.Empty;
-                    try
-                    {
-                        if (proc.MainModule != null && !string.IsNullOrEmpty(proc.MainModule.FileName))
-                        {
-                            name = Path.GetFileName(proc.MainModule.FileName);
-                        }
-                    }
-                    catch
-                    {
-                        // Access denied for some system processes.
-                    }
-
-                    if (string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(proc.ProcessName))
-                    {
-                        name = proc.ProcessName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
-                            ? proc.ProcessName
-                            : proc.ProcessName + ".exe";
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(name) && seen.Add(name))
-                    {
-                        names.Add(name);
-                    }
-                }
-                finally
-                {
-                    proc.Dispose();
-                }
-            }
-
-            names.Sort(StringComparer.OrdinalIgnoreCase);
-            _runningApps.Clear();
-            foreach (var name in names)
-            {
-                _runningApps.Add(name);
-            }
-        }
-
-        private static int GetVirtualKey(System.Windows.Input.KeyEventArgs e)
-        {
-            var key = e.Key == Key.System ? e.SystemKey : e.Key;
-            if (key == Key.ImeProcessed)
-            {
-                key = e.ImeProcessedKey;
-            }
-            return KeyInterop.VirtualKeyFromKey(key);
-        }
-
-        private static void SetHotkeyText(System.Windows.Controls.TextBox textBox, int vk)
-        {
-            textBox.Tag = vk;
-            textBox.Text = FormatHotkeyText(vk);
-        }
-
-        private static string FormatHotkeyText(int vk)
-        {
-            if (vk <= 0) return string.Empty;
-            var key = KeyInterop.KeyFromVirtualKey(vk);
-            if (key == Key.None) return vk.ToString();
-            return $"{key} ({vk})";
-        }
-
-        private static bool TryGetHotkeyValue(System.Windows.Controls.TextBox textBox, out int value)
-        {
-            if (textBox.Tag is int tagValue)
-            {
-                value = tagValue;
-                return true;
-            }
-
-            if (int.TryParse(textBox.Text, out value))
-            {
-                return true;
-            }
-
-            value = 0;
-            return false;
-        }
-
-        private static void SetSwitchKeyText(System.Windows.Controls.TextBox textBox, int vk)
-        {
-            textBox.Tag = vk;
-            textBox.Text = FormatSwitchKeyText(vk);
-        }
-
-        private static string FormatSwitchKeyText(int vk)
-        {
-            if (vk == SwitchKeyNoKey) return "Không (modifier-only)";
-            return FormatHotkeyText(vk);
-        }
-
-        private static bool TryGetSwitchKeyValue(System.Windows.Controls.TextBox textBox, out int value)
-        {
-            if (textBox.Tag is int tagValue)
-            {
-                value = tagValue;
-                return true;
-            }
-
-            if (int.TryParse(textBox.Text, out value))
-            {
-                return true;
-            }
-
-            value = 0;
-            return false;
-        }
-
-        private void SwitchKey_Record_Click(object sender, RoutedEventArgs e)
-        {
-            TxtSwitchKey.Focus();
-            TxtSwitchKey.SelectAll();
-        }
-
-        private void NavList_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (NavList.SelectedItem is ListBoxItem item && item.Tag is string viewName)
-            {
-                // Ensure views are initialized before accessing them
-                if (View_Typing == null) return;
-
-                // Hide all views first
-                View_Typing.Visibility = Visibility.Collapsed;
-                View_Hotkeys.Visibility = Visibility.Collapsed;
-                View_Macro.Visibility = Visibility.Collapsed;
-                View_Apps.Visibility = Visibility.Collapsed;
-                View_System.Visibility = Visibility.Collapsed;
-                View_About.Visibility = Visibility.Collapsed;
-
-                // Show selected view
-                switch (viewName)
-                {
-                    case "View_Typing":
-                        View_Typing.Visibility = Visibility.Visible;
-                        break;
-                    case "View_Hotkeys":
-                        View_Hotkeys.Visibility = Visibility.Visible;
-                        break;
-                    case "View_Macro":
-                        View_Macro.Visibility = Visibility.Visible;
-                        break;
-                    case "View_Apps":
-                        View_Apps.Visibility = Visibility.Visible;
-                        break;
-                    case "View_System":
-                        View_System.Visibility = Visibility.Visible;
-                        break;
-                    case "View_About":
-                        View_About.Visibility = Visibility.Visible;
-                        break;
-                }
+                // ignore
             }
         }
     }

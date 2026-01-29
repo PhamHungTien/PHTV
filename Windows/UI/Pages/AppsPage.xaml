@@ -1,0 +1,61 @@
+<pages:PhtvPageBase x:Class="PHTV.UI.Pages.AppsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:pages="clr-namespace:PHTV.UI.Pages"
+      Title="Ứng dụng">
+    <Border Background="{StaticResource ContentBackgroundBrush}" CornerRadius="8" BorderBrush="{StaticResource ControlBorderBrush}" BorderThickness="1" Margin="16">
+        <ScrollViewer Style="{StaticResource PageScrollViewer}">
+            <StackPanel Style="{StaticResource PageContentPanel}">
+                <TextBlock Text="Ứng dụng" Style="{StaticResource HeaderTitle}"/>
+
+                <GroupBox Header="Cấu hình ứng dụng">
+                    <StackPanel>
+                        <CheckBox x:Name="ChkSmartSwitchKey" Content="Ghi nhớ trạng thái (Việt/Anh) theo từng ứng dụng" Checked="AppsFeature_Changed" Unchecked="AppsFeature_Changed"/>
+                        <CheckBox x:Name="ChkRememberCode" Content="Nhớ bảng mã theo từng ứng dụng" Checked="AppsFeature_Changed" Unchecked="AppsFeature_Changed"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="Danh sách ứng dụng">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Button Content="Import" Width="80" Margin="0,0,8,0" Click="AppImport_Click"/>
+                            <Button Content="Export" Width="80" Margin="0,0,8,0" Click="AppExport_Click"/>
+                            <Button Content="Detect Running" Click="AppDetect_Click"/>
+                        </StackPanel>
+
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="140"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtAppName" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                            <ComboBox x:Name="ComboAppLanguage" Grid.Column="1" Margin="0,0,8,0">
+                                <ComboBoxItem Content="Tiếng Việt" Tag="1"/>
+                                <ComboBoxItem Content="English" Tag="0"/>
+                            </ComboBox>
+                            <Button Grid.Column="2" Content="Add/Update" Width="100" Click="AppAdd_Click" Style="{StaticResource AccentButton}"/>
+                        </Grid>
+
+                        <ListBox x:Name="RunningAppList" Height="100" Margin="0,0,0,12" SelectionChanged="AppRunning_Selected" BorderThickness="1" BorderBrush="#E0E0E0"/>
+
+                        <DataGrid x:Name="AppGrid" AutoGenerateColumns="False" CanUserAddRows="False" Height="250" BorderThickness="1" BorderBrush="#E0E0E0" Background="White">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Application" Binding="{Binding Name}" Width="*"/>
+                                <DataGridTextColumn Header="Default Mode" Binding="{Binding LanguageName}" Width="150"/>
+                                <DataGridTemplateColumn Header="Action" Width="80">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="Remove" Tag="{Binding Name}" Click="AppRemove_Click" FontSize="11" Padding="6,2"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+    </Border>
+</pages:PhtvPageBase>

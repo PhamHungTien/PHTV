@@ -5,6 +5,7 @@
 #include <string>
 #include <cstring>
 #include <vector>
+#include <cctype>
 #include <fstream>
 #include <cstdio>
 #include "Engine.h"
@@ -62,6 +63,47 @@ static std::wstring Utf8ToWString(const std::string& str) {
 static void CopyWString(const std::wstring& src, wchar_t* outBuf, int outCap) {
     if (!outBuf || outCap <= 0) return;
     wcsncpy_s(outBuf, outCap, src.c_str(), _TRUNCATE);
+}
+
+static bool GetClipboardText(std::wstring& outText) {
+    outText.clear();
+    if (!OpenClipboard(NULL)) return false;
+    HANDLE data = GetClipboardData(CF_UNICODETEXT);
+    if (!data) {
+        CloseClipboard();
+        return false;
+    }
+    const wchar_t* text = static_cast<const wchar_t*>(GlobalLock(data));
+    if (!text) {
+        CloseClipboard();
+        return false;
+    }
+    outText.assign(text);
+    GlobalUnlock(data);
+    CloseClipboard();
+    return true;
+}
+
+static bool SetClipboardText(const std::wstring& text) {
+    if (!OpenClipboard(NULL)) return false;
+    EmptyClipboard();
+    size_t bytes = (text.size() + 1) * sizeof(wchar_t);
+    HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, bytes);
+    if (!hMem) {
+        CloseClipboard();
+        return false;
+    }
+    void* ptr = GlobalLock(hMem);
+    if (!ptr) {
+        GlobalFree(hMem);
+        CloseClipboard();
+        return false;
+    }
+    memcpy(ptr, text.c_str(), bytes);
+    GlobalUnlock(hMem);
+    SetClipboardData(CF_UNICODETEXT, hMem);
+    CloseClipboard();
+    return true;
 }
 
 static bool ReadFileBinary(const wchar_t* path, std::vector<Byte>& outData) {
@@ -178,6 +220,55 @@ void SendBackspace(int count) {
     SendInput((UINT)inputs.size(), inputs.data(), sizeof(INPUT));
 }
 
+static void SendUnicodeChar(unsigned int finalChar) {
+    INPUT inputDown = {0};
+    inputDown.type = INPUT_KEYBOARD;
+    inputDown.ki.wScan = (WORD)finalChar;
+    inputDown.ki.dwFlags = KEYEVENTF_UNICODE;
+    inputDown.ki.dwExtraInfo = PHTV_INJECTED_SIGNATURE;
+
+    INPUT inputUp = inputDown;
+    inputUp.ki.dwFlags = KEYEVENTF_UNICODE | KEYEVENTF_KEYUP;
+
+    INPUT inputs[2] = {inputDown, inputUp};
+    SendInput(2, inputs, sizeof(INPUT));
+}
+
+static bool SendCharLayoutCompat(wchar_t ch) {
+    SHORT vk = VkKeyScanW(ch);
+    if (vk == -1) return false;
+
+    BYTE vkCode = LOBYTE(vk);
+    BYTE shiftState = HIBYTE(vk);
+
+    std::vector<INPUT> inputs;
+    auto pushKey = [&](WORD key, bool up) {
+        INPUT input = {0};
+        input.type = INPUT_KEYBOARD;
+        input.ki.wVk = key;
+        input.ki.dwFlags = up ? KEYEVENTF_KEYUP : 0;
+        input.ki.dwExtraInfo = PHTV_INJECTED_SIGNATURE;
+        inputs.push_back(input);
+    };
+
+    if (shiftState & 0x01) pushKey(VK_SHIFT, false);
+    if (shiftState & 0x02) pushKey(VK_CONTROL, false);
+    if (shiftState & 0x04) pushKey(VK_MENU, false);
+
+    pushKey(vkCode, false);
+    pushKey(vkCode, true);
+
+    if (shiftState & 0x04) pushKey(VK_MENU, true);
+    if (shiftState & 0x02) pushKey(VK_CONTROL, true);
+    if (shiftState & 0x01) pushKey(VK_SHIFT, true);
+
+    if (!inputs.empty()) {
+        SendInput((UINT)inputs.size(), inputs.data(), sizeof(INPUT));
+        return true;
+    }
+    return false;
+}
+
 void SendUnicodeString(const std::vector<unsigned int>& charCodes) {
     if (charCodes.empty()) return;
     std::vector<INPUT> inputs;
@@ -223,7 +314,26 @@ void ProcessEngineOutput() {
         for (int i = HookState.newCharCount - 1; i >= 0; i--) {
             chars.push_back(HookState.charData[i]);
         }
-        SendUnicodeString(chars);
+        if (vSendKeyStepByStep || vPerformLayoutCompat) {
+            const unsigned int CAPS_MASK_VAL = 0x10000;
+            for (unsigned int code : chars) {
+                unsigned int finalChar = code & 0xFFFF;
+                bool isUpperCase = (code & CAPS_MASK_VAL) != 0;
+                if (finalChar >= 'A' && finalChar <= 'Z') {
+                    if (!isUpperCase) {
+                        finalChar = tolower(finalChar);
+                    }
+                }
+                if (vPerformLayoutCompat) {
+                    if (SendCharLayoutCompat((wchar_t)finalChar)) {
+                        continue;
+                    }
+                }
+                SendUnicodeChar(finalChar);
+            }
+        } else {
+            SendUnicodeString(chars);
+        }
     }
 }
 
@@ -244,6 +354,7 @@ static const int SWITCH_MASK_SHIFT = 0x800;
 static const int SWITCH_MASK_FN = 0x1000;
 static const int SWITCH_MASK_BEEP = 0x8000;
 static bool g_switchHotkeyDown = false;
+static bool g_pauseKeyDown = false;
 
 static bool IsSwitchHotkeyEnabled() {
     int status = vSwitchKeyStatus;
@@ -296,6 +407,30 @@ LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
 
         bool isKeyDown = (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN);
         bool isKeyUp = (wParam == WM_KEYUP || wParam == WM_SYSKEYUP);
+
+        // Pause key handling: temporarily bypass engine while held
+        if (vPauseKeyEnabled && vPauseKey > 0 && (int)pKbd->vkCode == vPauseKey) {
+            if (isKeyDown) {
+                g_pauseKeyDown = true;
+                vTempOffEngine(true);
+            } else if (isKeyUp) {
+                g_pauseKeyDown = false;
+                vTempOffEngine(false);
+            }
+            return CallNextHookEx(hKeyboardHook, nCode, wParam, lParam);
+        }
+
+        if (vPauseKeyEnabled && g_pauseKeyDown) {
+            return CallNextHookEx(hKeyboardHook, nCode, wParam, lParam);
+        }
+
+        // Custom restore key (non-ESC)
+        if (vRestoreOnEscape && vCustomEscapeKey > 0 && (int)pKbd->vkCode == vCustomEscapeKey && isKeyDown) {
+            if (vRestoreToRawKeys()) {
+                ProcessEngineOutput();
+                return 1;
+            }
+        }
 
         bool shouldConsume = false;
         if (IsSwitchHotkeyMatch(pKbd, isKeyDown, isKeyUp, shouldConsume)) {
@@ -438,6 +573,9 @@ void __cdecl PHTV_SetPauseKeyEnabled(bool enable) { vPauseKeyEnabled = enable ? 
 void __cdecl PHTV_SetPauseKey(int key) { vPauseKey = key; }
 void __cdecl PHTV_SetSwitchKeyStatus(int status) { vSwitchKeyStatus = status; }
 void __cdecl PHTV_SetOtherLanguage(int lang) { vOtherLanguage = lang; }
+void __cdecl PHTV_SetRememberCode(bool enable) { vRememberCode = enable ? 1 : 0; }
+void __cdecl PHTV_SetSendKeyStepByStep(bool enable) { vSendKeyStepByStep = enable ? 1 : 0; }
+void __cdecl PHTV_SetPerformLayoutCompat(bool enable) { vPerformLayoutCompat = enable ? 1 : 0; }
 
 int __cdecl PHTV_GetInputMethod() { return vInputType; }
 int __cdecl PHTV_GetLanguage() { return vLanguage; }
@@ -463,6 +601,9 @@ bool __cdecl PHTV_GetPauseKeyEnabled() { return vPauseKeyEnabled != 0; }
 int __cdecl PHTV_GetPauseKey() { return vPauseKey; }
 int __cdecl PHTV_GetSwitchKeyStatus() { return vSwitchKeyStatus; }
 int __cdecl PHTV_GetOtherLanguage() { return vOtherLanguage; }
+bool __cdecl PHTV_GetRememberCode() { return vRememberCode != 0; }
+bool __cdecl PHTV_GetSendKeyStepByStep() { return vSendKeyStepByStep != 0; }
+bool __cdecl PHTV_GetPerformLayoutCompat() { return vPerformLayoutCompat != 0; }
 
 bool __cdecl PHTV_IsRunning() {
     return (hKeyboardHook != NULL);
@@ -712,4 +853,18 @@ bool __cdecl PHTV_UpperExcludedRemove(const wchar_t* name) {
         return true;
     }
     return false;
+}
+
+bool __cdecl PHTV_QuickConvertClipboard(int fromCode, int toCode) {
+    if (fromCode < 0 || fromCode > 4 || toCode < 0 || toCode > 4) return false;
+    std::wstring text;
+    if (!GetClipboardText(text)) return false;
+    Uint8 oldFrom = convertToolFromCode;
+    Uint8 oldTo = convertToolToCode;
+    convertToolFromCode = (Uint8)fromCode;
+    convertToolToCode = (Uint8)toCode;
+    std::string converted = convertUtil(WStringToUtf8(text));
+    convertToolFromCode = oldFrom;
+    convertToolToCode = oldTo;
+    return SetClipboardText(Utf8ToWString(converted));
 }

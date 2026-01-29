@@ -185,4 +185,18 @@
         <Setter Property="VerticalContentAlignment" Value="Center"/>
     </Style>
 
+    <Style x:Key="PageScrollViewer" TargetType="ScrollViewer">
+        <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+        <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
+        <Setter Property="CanContentScroll" Value="False"/>
+        <Setter Property="PanningMode" Value="VerticalFirst"/>
+        <Setter Property="Tag" Value="PageScroll"/>
+    </Style>
+
+    <Style x:Key="PageContentPanel" TargetType="StackPanel">
+        <Setter Property="Margin" Value="24,16,24,24"/>
+        <Setter Property="MaxWidth" Value="860"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+
 </ResourceDictionary>
