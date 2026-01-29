@@ -610,10 +610,11 @@ void checkCorrectVowel(vector<vector<Uint16>>& charset, int& i, int& k, const Ui
     }
     
     if (isCorect && k >= 0) {
-        // ALLOW marks on transformed vowels (â, ê, ô, ă, ư, ơ)
-        // Even if preceded by the same base vowel (e.g., "aa" -> "â", then "â" + "j" -> "ậ")
-        // The original check CHR(k) == CHR(k+1) was too strict and blocked these cases.
-        if (CHR(k) == CHR(k+1) && !(TypingWord[k+1] & (TONE_MASK | TONEW_MASK))) {
+        // Block duplicate plain vowels, but allow marking when one of them is transformed
+        // (e.g., "ưu" where ư has TONEW_MASK should allow tone marks).
+        if (CHR(k) == CHR(k+1) &&
+            !(TypingWord[k] & (TONE_MASK | TONEW_MASK)) &&
+            !(TypingWord[k+1] & (TONE_MASK | TONEW_MASK))) {
             isCorect = false;
         }
     }
@@ -1112,7 +1113,10 @@ void insertW(const Uint16& data, const bool& isCaps) {
                     }
                 } else {
                     // Other "uo" cases: both vowels get TONEW_MASK
-                    if ((TypingWord[VSI] & TONEW_MASK) || (TypingWord[VSI+1] & TONEW_MASK)) {
+                    if ((TypingWord[VSI] & TONEW_MASK) && !(TypingWord[VSI+1] & TONEW_MASK)) {
+                        // Allow "uow" -> "ươ": add TONEW to 'o' without restoring
+                        TypingWord[VSI+1] |= TONEW_MASK;
+                    } else if ((TypingWord[VSI] & TONEW_MASK) || (TypingWord[VSI+1] & TONEW_MASK)) {
                         shouldRestore = true;
                     } else {
                         TypingWord[VSI] |= TONEW_MASK;
@@ -1286,6 +1290,65 @@ void handleMainKey(const Uint16& data, const bool& isCaps) {
     if (IS_KEY_Z(data)) {
         removeMark();
         if (!isChanged) {
+            // Fallback: allow tone marks on words containing horn vowels (ư/ơ/ă)
+            // even if the exact pattern isn't in _vowelForMark (e.g., "huwux" -> "hữu").
+            bool hasToneW = false;
+            for (ii = 0; ii < _index; ii++) {
+                if (TypingWord[ii] & TONEW_MASK) {
+                    hasToneW = true;
+                    break;
+                }
+            }
+            if (hasToneW) {
+                if (vCheckSpelling) {
+                    checkSpelling(true);
+                }
+                if (_spellingOK && _spellingVowelOK) {
+                    if (IS_KEY_S(data))
+                        insertMark(MARK1_MASK);
+                    else if (IS_KEY_F(data))
+                        insertMark(MARK2_MASK);
+                    else if (IS_KEY_R(data))
+                        insertMark(MARK3_MASK);
+                    else if (IS_KEY_X(data))
+                        insertMark(MARK4_MASK);
+                    else if (IS_KEY_J(data))
+                        insertMark(MARK5_MASK);
+                    return;
+                }
+
+                // Last resort: try marking the last horn vowel (ư/ơ/ă) even if spelling check fails.
+                int markIndex = -1;
+                for (ii = _index - 1; ii >= 0; ii--) {
+                    if ((TypingWord[ii] & TONEW_MASK) != 0) {
+                        markIndex = ii;
+                        break;
+                    }
+                }
+                if (markIndex >= 0) {
+                    TypingWord[markIndex] &= ~MARK_MASK;
+                    if (IS_KEY_S(data))
+                        TypingWord[markIndex] |= MARK1_MASK;
+                    else if (IS_KEY_F(data))
+                        TypingWord[markIndex] |= MARK2_MASK;
+                    else if (IS_KEY_R(data))
+                        TypingWord[markIndex] |= MARK3_MASK;
+                    else if (IS_KEY_X(data))
+                        TypingWord[markIndex] |= MARK4_MASK;
+                    else if (IS_KEY_J(data))
+                        TypingWord[markIndex] |= MARK5_MASK;
+
+                    hCode = vWillProcess;
+                    hBPC = 0;
+                    for (ii = _index - 1; ii >= 0; ii--) {
+                        hBPC++;
+                        hData[_index - 1 - ii] = GET(TypingWord[ii]);
+                    }
+                    hNCC = hBPC;
+                    return;
+                }
+            }
+
             insertKey(data, isCaps);
         }
         return;
@@ -1331,6 +1394,34 @@ void handleMainKey(const Uint16& data, const bool& isCaps) {
 
     //if is mark key
     if (IS_MARK_KEY(data)) {
+        // Special-case: allow tone on "ưu" when typed as "huwu" then mark (huwux -> hữu)
+        if (_index >= 2 &&
+            CHR(_index - 1) == KEY_U &&
+            CHR(_index - 2) == KEY_U &&
+            (TypingWord[_index - 2] & TONEW_MASK) &&
+            !(TypingWord[_index - 1] & TONEW_MASK)) {
+            TypingWord[_index - 2] &= ~MARK_MASK;
+            if (IS_KEY_S(data))
+                TypingWord[_index - 2] |= MARK1_MASK;
+            else if (IS_KEY_F(data))
+                TypingWord[_index - 2] |= MARK2_MASK;
+            else if (IS_KEY_R(data))
+                TypingWord[_index - 2] |= MARK3_MASK;
+            else if (IS_KEY_X(data))
+                TypingWord[_index - 2] |= MARK4_MASK;
+            else if (IS_KEY_J(data))
+                TypingWord[_index - 2] |= MARK5_MASK;
+
+            hCode = vWillProcess;
+            hBPC = 0;
+            for (ii = _index - 1; ii >= 0; ii--) {
+                hBPC++;
+                hData[_index - 1 - ii] = GET(TypingWord[ii]);
+            }
+            hNCC = hBPC;
+            return;
+        }
+
         for (auto it = _vowelForMark.begin(); it != _vowelForMark.end(); ++it) {
             vector<vector<Uint16>>& charset = it->second;
             isCorect = false;
@@ -1648,7 +1739,9 @@ void vKeyHandleEvent(const vKeyEvent& event,
             if (_stateIndex > 1) {
                 shouldRestoreEnglish = checkIfEnglishWord(KeyStates, _stateIndex);
                 if (!shouldRestoreEnglish) {
-                    if (isEnglishWordFromKeyStates(KeyStates, _stateIndex) && !isVietnameseWordFromTypingWord(_index)) {
+                    if (isEnglishWordFromKeyStates(KeyStates, _stateIndex) &&
+                        !isVietnameseWordFromKeyStates(KeyStates, _stateIndex) &&
+                        !isVietnameseWordFromTypingWord(_index)) {
                         shouldRestoreEnglish = true;
                     }
                 }
@@ -1765,7 +1858,9 @@ void vKeyHandleEvent(const vKeyEvent& event,
         if (vAutoRestoreEnglishWord && _index > 0 && _stateIndex > 1) {
             shouldRestoreEnglish = checkIfEnglishWord(KeyStates, _stateIndex);
             if (!shouldRestoreEnglish) {
-                if (isEnglishWordFromKeyStates(KeyStates, _stateIndex) && !isVietnameseWordFromTypingWord(_index)) {
+                if (isEnglishWordFromKeyStates(KeyStates, _stateIndex) &&
+                    !isVietnameseWordFromKeyStates(KeyStates, _stateIndex) &&
+                    !isVietnameseWordFromTypingWord(_index)) {
                     shouldRestoreEnglish = true;
                 }
             }
@@ -1935,7 +2030,14 @@ void vKeyHandleEvent(const vKeyEvent& event,
             }
         }
 
-        if (!IS_SPECIALKEY(data) || tempDisableKey || forceRawSpecial) { //do nothing
+        // If a tone mark is pressed while tempDisableKey is true, re-evaluate spelling.
+        // This allows adding tone after finishing a word like "hưu" -> "hữu".
+        bool allowMarkDespiteTempDisable = IS_MARK_KEY(data);
+        if (vCheckSpelling && allowMarkDespiteTempDisable) {
+            checkSpelling(true);
+        }
+
+        if (!IS_SPECIALKEY(data) || (tempDisableKey && !allowMarkDespiteTempDisable) || forceRawSpecial) { //do nothing
             if (vQuickTelex && IS_QUICK_TELEX_KEY(data)) {
                 handleQuickTelex(data, _isCaps);
                 return;
