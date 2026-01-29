@@ -20,20 +20,6 @@ typedef NS_ENUM(NSInteger, DelayType) {
 
 @interface PHTVTimingManager : NSObject
 
-// Initialization
-+ (void)initialize;
-
-// Delay Constants
-+ (uint64_t)getTerminalKeystrokeDelay;
-+ (uint64_t)getTerminalSettleDelay;
-+ (uint64_t)getTerminalFinalSettle;
-+ (uint64_t)getSpotlightTinyDelay;
-
-// Adaptive Delay Tracking
-+ (void)updateResponseTimeTracking;
-+ (uint64_t)getAdaptiveDelay:(uint64_t)baseDelay maxDelay:(uint64_t)maxDelay;
-+ (uint64_t)getAverageResponseTime;
-
 // Timing Utilities
 + (uint64_t)machTimeToMs:(uint64_t)machTime;
 + (uint64_t)machTimeToUs:(uint64_t)machTime;

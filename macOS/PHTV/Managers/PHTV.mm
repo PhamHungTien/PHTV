@@ -45,27 +45,7 @@ static const uint64_t DEBUG_LOG_THROTTLE_MS = 500;           // Debug log thrott
 static const uint64_t APP_SWITCH_CACHE_DURATION_MS = 100;    // App switch detection cache timeout
 static const NSUInteger SYNC_KEY_RESERVE_SIZE = 256;         // Pre-allocated buffer size for typing sync
 
-// Terminal/IDE Delay Configuration - conservatively reduced for better performance
-// These delays are critical for timing-sensitive apps (terminals, IDEs)
-static const uint64_t TERMINAL_KEYSTROKE_DELAY_US = 1500;    // Per-character delay (reduced from 3000us)
-static const uint64_t TERMINAL_SETTLE_DELAY_US = 4000;       // After all backspaces (reduced from 8000us)
-static const uint64_t TERMINAL_FINAL_SETTLE_US = 10000;      // Final settle after all text (reduced from 20000us)
-static const uint64_t SPOTLIGHT_TINY_DELAY_US = 2000;        // Spotlight timing delay (reduced from 3000us)
-// CLI fix delays (more conservative for raw-mode terminals like Claude Code native)
-static const uint64_t CLI_SETTLE_DELAY_US = 2000;
-static const uint64_t CLI_BACKSPACE_KEY_DELAY_US = 8000;
-static const uint64_t CLI_BACKSPACE_SETTLE_US = 10000;
-static const uint64_t CLI_BACKSPACE_POST_DELAY_US = 10000;
-static const uint64_t CLI_COMPOSE_KEY_DELAY_US = 0;
-static const uint64_t CLI_FINAL_SETTLE_US = 15000;
-static const uint64_t CLI_MIN_INTERVAL_US = 5000;
-static const uint64_t CLI_SPACE_DELAY_US = 8000;
-
-// Adaptive delay tracking
-static uint64_t _lastKeystrokeTimestamp = 0;
-static uint64_t _averageResponseTimeUs = 0;
-static NSUInteger _responseTimeSamples = 0;
-static os_unfair_lock _adaptiveDelayLock = OS_UNFAIR_LOCK_INIT;
+// Timing delay constants (all in microseconds)
 
 // AXValueType constant name differs across SDK versions.
 #if defined(kAXValueTypeCFRange)
@@ -88,10 +68,6 @@ static dispatch_once_t timebase_init_token;
 
 static inline uint64_t mach_time_to_ms(uint64_t mach_time) {
     return (mach_time * timebase_info.numer) / (timebase_info.denom * 1000000);
-}
-
-static inline uint64_t mach_time_to_us(uint64_t mach_time) {
-    return (mach_time * timebase_info.numer) / (timebase_info.denom * 1000);
 }
 
 #ifdef DEBUG
@@ -588,14 +564,10 @@ static NSString* _phtvEffectiveTargetBundleId = nil;
 static BOOL _phtvPostToHIDTap = NO;
 static BOOL _phtvPostToSessionForCli = NO;
 static BOOL _phtvIsCliTarget = NO;
-static volatile int _phtvCliInjectDepth = 0;
-static uint64_t _phtvCliBusyUntilUs = 0;
-static uint64_t _phtvLastCliKeyDownUs = 0;
 static double _phtvCliSpeedFactor = 1.0;
 static int _phtvCliPendingBackspaceCount = 0;
 static int64_t _phtvKeyboardType = 0;
 static int _phtvPendingBackspaceCount = 0;
-static uint64_t _lastCliInjectTimeUs = 0;
 
     __attribute__((always_inline)) static inline void SpotlightTinyDelay(void) {
     }
@@ -985,16 +957,6 @@ static uint64_t _lastCliInjectTimeUs = 0;
     }
 
     void ThrottleCliInjection() {
-    }
-
-    __attribute__((always_inline)) static inline uint64_t NowUs(void) {
-        dispatch_once(&timebase_init_token, ^{
-            mach_timebase_info(&timebase_info);
-        });
-        return mach_time_to_us(mach_absolute_time());
-    }
-
-    __attribute__((always_inline)) static inline void WaitForCliIdle(void) {
     }
 
     __attribute__((always_inline)) static inline void ApplyKeyboardTypeAndFlags(CGEventRef down, CGEventRef up) {
@@ -1628,71 +1590,6 @@ static uint64_t _lastCliInjectTimeUs = 0;
         }
     }
 
-    // Update response time tracking for adaptive delays
-    // Call this after each keystroke to measure system responsiveness
-    void UpdateResponseTimeTracking() {
-        uint64_t now = mach_absolute_time();
-
-        os_unfair_lock_lock(&_adaptiveDelayLock);
-
-        if (_lastKeystrokeTimestamp > 0) {
-            uint64_t responseTime = mach_time_to_ms(now - _lastKeystrokeTimestamp) * 1000; // Convert to microseconds
-
-            // Exponential moving average: 80% old + 20% new
-            if (_responseTimeSamples == 0) {
-                _averageResponseTimeUs = responseTime;
-            } else {
-                _averageResponseTimeUs = (_averageResponseTimeUs * 4 + responseTime) / 5;
-            }
-
-            _responseTimeSamples++;
-
-            // Cap at 100 samples to prevent overflow
-            if (_responseTimeSamples > 100) {
-                _responseTimeSamples = 50; // Reset but keep some history
-            }
-        }
-
-        _lastKeystrokeTimestamp = now;
-
-        os_unfair_lock_unlock(&_adaptiveDelayLock);
-    }
-
-    // Calculate adaptive delay based on system load
-    // Returns value between base and max based on measured response time
-    uint64_t getAdaptiveDelay(uint64_t baseDelay, uint64_t maxDelay) {
-        os_unfair_lock_lock(&_adaptiveDelayLock);
-
-        uint64_t avgResponse = _averageResponseTimeUs;
-        NSUInteger samples = _responseTimeSamples;
-
-        os_unfair_lock_unlock(&_adaptiveDelayLock);
-
-        // Need at least 3 samples for adaptive behavior
-        if (samples < 3) {
-            return baseDelay;
-        }
-
-        // Adaptive scaling: if response time > 2x base delay, scale up
-        // Example: If avgResponse=8ms and base=4ms, scale factor = 2.0
-        double scaleFactor = 1.0;
-        if (avgResponse > baseDelay * 2) {
-            scaleFactor = (double)avgResponse / (double)baseDelay;
-            scaleFactor = fmin(scaleFactor, 2.0); // Cap at 2x
-        }
-
-        uint64_t adaptiveDelay = (uint64_t)(baseDelay * scaleFactor);
-
-        // Clamp between base and max
-        if (adaptiveDelay < baseDelay) {
-            return baseDelay;
-        }
-        if (adaptiveDelay > maxDelay) {
-            return maxDelay;
-        }
-
-        return adaptiveDelay;
-    }
 
     void SendShiftAndLeftArrow() {
         CGEventRef eventVkeyDown = CGEventCreateKeyboardEvent (myEventSource, KEY_LEFT, true);
@@ -3170,10 +3067,6 @@ static uint64_t _lastCliInjectTimeUs = 0;
             } else if (pData->code == vReplaceMaro) { //MACRO
                 handleMacro();
             }
-
-            // Update response time tracking for adaptive delays
-            // Measure how long it takes for system to process keystrokes
-            UpdateResponseTimeTracking();
 
             return NULL;
         }
