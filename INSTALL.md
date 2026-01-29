@@ -111,7 +111,7 @@ brew install --cask phamhungtien/tap/phtv
 ```bash
 # Clone repository
 git clone https://github.com/PhamHungTien/PHTV.git
-cd PHTV
+cd PHTV/macOS
 
 # Build với Xcode
 # Universal Binary - hỗ trợ cả Intel và Apple Silicon

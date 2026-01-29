@@ -33,7 +33,7 @@ Xem [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md). Bằng cách tham gia, bạn đ�
 3. **Build & test:**
 
    ```bash
-   open PHTV.xcodeproj
+   open macOS/PHTV.xcodeproj
    ```
 
 4. **Commit & push:**
@@ -89,22 +89,26 @@ Format: `<type>: <mô tả>`
 
 ```
 PHTV/
-├── PHTV/
-│   ├── Application/        # AppDelegate, main entry point
-│   ├── Core/
-│   │   ├── Engine/         # Core input method engine (C++)
-│   │   │   ├── Engine.cpp/.h         # Logic chính
-│   │   │   ├── Vietnamese.cpp/.h     # Bảng mã tiếng Việt
-│   │   │   ├── Macro.cpp/.h          # Quản lý macro
-│   │   │   └── ...
-│   │   └── Platforms/      # macOS-specific integration
-│   ├── Managers/           # Business logic
-│   ├── SwiftUI/            # Giao diện người dùng
-│   │   ├── Views/          # SwiftUI views
-│   │   ├── Controllers/    # Window/Status bar controllers
-│   │   └── Utilities/      # Helper functions
-│   └── Utils/              # Utility functions
-├── PHTV.xcodeproj/         # Xcode project
+├── docs/                   # Tài liệu và hình ảnh
+├── macOS/                  # Mã nguồn chính cho macOS
+│   ├── PHTV/
+│   │   ├── Application/    # AppDelegate, entry point
+│   │   ├── Core/           # Core engine xử lý
+│   │   │   ├── Engine/     # C++ Engine logic
+│   │   │   ├── Config/     # Cấu hình hằng số
+│   │   │   └── Platforms/  # Mã nguồn đặc thù nền tảng
+│   │   ├── Managers/       # Quản lý logic nghiệp vụ
+│   │   ├── Resources/      # Tài nguyên (ảnh, dữ liệu từ điển)
+│   │   ├── Tools/          # Công cụ hỗ trợ (scripts python, etc.)
+│   │   └── UI/             # Giao diện người dùng (SwiftUI)
+│   │       ├── Controllers/ # Window/Status bar controllers
+│   │       ├── Models/     # Data models
+│   │       ├── Settings/   # Màn hình cài đặt
+│   │       ├── State/      # Quản lý trạng thái ứng dụng
+│   │       ├── Views/      # Các view SwiftUI
+│   │       └── ...
+│   └── PHTV.xcodeproj/     # Xcode project
+├── scripts/                # Scripts tự động hóa (build, release)
 └── README.md
 ```
 
@@ -113,6 +117,10 @@ PHTV/
 > **Yêu cầu**: macOS 13.0+ (Ventura) và Xcode phiên bản mới nhất (hỗ trợ cả Intel và Apple Silicon)
 
 ```bash
+# Clone project
+git clone https://github.com/PhamHungTien/PHTV.git
+cd PHTV/macOS
+
 # Build project (Universal Binary - Intel + Apple Silicon)
 xcodebuild -project PHTV.xcodeproj -scheme PHTV
 

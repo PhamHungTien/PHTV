@@ -215,7 +215,7 @@ open https://github.com/PhamHungTien/PHTV/releases/latest
 
 ```bash
 git clone https://github.com/PhamHungTien/PHTV.git
-cd PHTV
+cd PHTV/macOS
 open PHTV.xcodeproj
 # Build với Cmd+B, chạy với Cmd+R
 ```
