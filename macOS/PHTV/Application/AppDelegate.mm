@@ -16,7 +16,7 @@
 #import "SparkleManager.h"
 #import "../Managers/PHTVManager.h"
 #import "../Managers/PHTVCacheManager.h"
-#import "../Core/Legacy/MJAccessibilityUtils.h"
+#import "../Managers/PHTVAccessibilityManager.h"
 #import "PHTV-Swift.h"
 #include "../Core/Engine/Engine.h"
 
@@ -431,7 +431,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     NSModalResponse res = [alert runModal];
 
     if (res == 1001) {
-        MJAccessibilityOpenPanel();
+        [PHTVAccessibilityManager openAccessibilityPreferences];
 
         // Invalidate permission cache for fresh check
         [PHTVManager invalidatePermissionCache];
@@ -721,7 +721,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
         NSModalResponse response = [alert runModal];
         if (response == NSAlertFirstButtonReturn) {
-            MJAccessibilityOpenPanel();
+            [PHTVAccessibilityManager openAccessibilityPreferences];
 
             // Invalidate cache for fresh permission check
             [PHTVManager invalidatePermissionCache];
@@ -2088,7 +2088,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     vCodeTable = 0; [defaults setInteger:vCodeTable forKey:@"CodeTable"];
     vSwitchKeyStatus = DEFAULT_SWITCH_STATUS; [defaults setInteger:vSwitchKeyStatus forKey:@"SwitchKeyStatus"];
     vQuickTelex = 0; [defaults setInteger:vQuickTelex forKey:@"QuickTelex"];
-    vUseModernOrthography = 0; [defaults setInteger:vUseModernOrthography forKey:@"ModernOrthography"];
+    vUseModernOrthography = 1; [defaults setInteger:vUseModernOrthography forKey:@"ModernOrthography"];
     vFixRecommendBrowser = 1; [defaults setInteger:vFixRecommendBrowser forKey:@"FixRecommendBrowser"];
     vUseMacro = 1; [defaults setInteger:vUseMacro forKey:@"UseMacro"];
     vUseMacroInEnglishMode = 0; [defaults setInteger:vUseMacroInEnglishMode forKey:@"UseMacroInEnglishMode"];

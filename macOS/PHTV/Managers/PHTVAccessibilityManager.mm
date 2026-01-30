@@ -8,7 +8,13 @@
 
 #import "PHTVAccessibilityManager.h"
 #import "PHTVAppDetectionManager.h"
+#import <AppKit/AppKit.h>
+#import "PHTVManager.h"
 #import <os/log.h>
+
+// External declarations for AX
+extern Boolean AXIsProcessTrustedWithOptions(CFDictionaryRef options) __attribute__((weak_import));
+extern CFStringRef kAXTrustedCheckOptionPrompt __attribute__((weak_import));
 
 // AXValueType constant name differs across SDK versions.
 #if defined(kAXValueTypeCFRange)
@@ -213,6 +219,30 @@ static BOOL _vSafeMode = NO;
         NSLog(@"[AX] %s failed: %s (code %d)", operation, errorStr, (int)error);
     }
 #endif
+}
+
+#pragma mark - Permission UI
+
++ (void)openAccessibilityPreferences {
+    // 1. Trigger system prompt to register app in TCC database
+    // This is required so the app appears in the list
+    if (AXIsProcessTrustedWithOptions != NULL) {
+        NSDictionary *options = @{(__bridge id)kAXTrustedCheckOptionPrompt: @YES};
+        AXIsProcessTrustedWithOptions((__bridge CFDictionaryRef)options);
+    }
+
+    // 2. Open System Settings directly to Privacy & Security -> Accessibility
+    // This helps the user find the setting quickly
+    NSURL *url = [NSURL URLWithString:@"x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"];
+    if ([[NSWorkspace sharedWorkspace] openURL:url]) {
+        return;
+    }
+
+    // Fallback for older macOS (should be covered by openURL, but kept for safety)
+    if (AXIsProcessTrustedWithOptions == NULL) {
+        static NSString* script = @"tell application \"System Preferences\"\nactivate\nset current pane to pane \"com.apple.preference.universalaccess\"\nend tell";
+        [[[NSAppleScript alloc] initWithSource:script] executeAndReturnError:nil];
+    }
 }
 
 @end

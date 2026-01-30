@@ -19,7 +19,6 @@
 #import "Engine.h"
 #import "../Application/AppDelegate.h"
 #import "PHTVManager.h"
-#import "../Core/Legacy/MJAccessibilityUtils.h"
 
 // Import new manager classes
 #import "PHTVCacheManager.h"
@@ -321,150 +320,6 @@ extern volatile int vPerformLayoutCompat;
 extern volatile int vTempOffPHTV;
 
 extern "C" {
-    //app which must sent special empty character - Using NSSet for O(1) lookup performance
-    NSSet* _niceSpaceAppSet = [NSSet setWithArray:@[@"com.sublimetext.3",
-                                                     @"com.sublimetext.2"]];
-
-    //app which error with unicode Compound - Using NSSet for O(1) lookup performance
-    // NOTE: Safari is NOT included here - it works fine with standard SendEmptyCharacter+Backspace
-    // Only Chromium-based browsers need special Unicode Compound handling
-    NSSet* _unicodeCompoundAppSet = [NSSet setWithArray:@[@"com.apple.",
-                                                           @"com.google.Chrome",
-                                                           @"com.brave.Browser",
-                                                           @"com.microsoft.edgemac",  // Edge Stable
-                                                           @"com.microsoft.edgemac.Dev",
-                                                           @"com.microsoft.edgemac.Beta",
-                                                           @"com.microsoft.Edge",  // Edge Stable (alternate)
-                                                           @"com.microsoft.Edge.Dev",
-                                                           @"com.thebrowser.Browser",  // Arc Browser
-                                                           @"company.thebrowser.dia",  // Dia Browser
-                                                           @"org.chromium.Chromium",  // Chromium
-                                                           @"com.vivaldi.Vivaldi",  // Vivaldi
-                                                           @"com.operasoftware.Opera", // Opera
-                                                           @"notion.id"]];  // Notion - apply Shift+Left strategy
-
-    // Browsers (Chromium, Safari, Firefox, etc.)
-    // These apps have their own address bar autocomplete/prediction that conflicts 
-    // with Spotlight-style HID tap posting or AX API replacement.
-    // They should be treated as normal apps (using CGEventTapPostEvent and SendEmptyCharacter).
-    // BROWSER SET: All major browsers including Chromium-based variants
-    // This ensures browser input fixes (adaptive delays, empty character timing, etc.) apply universally
-    NSSet* _browserAppSet = [NSSet setWithArray:@[
-        // Safari (WebKit)
-        @"com.apple.Safari",
-        @"com.apple.SafariTechnologyPreview",  // Safari Technology Preview
-
-        // Firefox (Gecko)
-        @"org.mozilla.firefox",
-        @"org.mozilla.firefoxdeveloperedition",  // Firefox Developer Edition
-        @"org.mozilla.nightly",  // Firefox Nightly
-        @"app.zen-browser.zen",  // Zen Browser (Firefox-based)
-
-        // Chrome (all variants)
-        @"com.google.Chrome",
-        @"com.google.Chrome.canary",  // Chrome Canary
-        @"com.google.Chrome.dev",     // Chrome Dev
-        @"com.google.Chrome.beta",    // Chrome Beta
-
-        // Chromium-based browsers
-        @"org.chromium.Chromium",     // Pure Chromium
-        @"com.brave.Browser",         // Brave
-        @"com.brave.Browser.beta",    // Brave Beta
-        @"com.brave.Browser.nightly", // Brave Nightly
-
-        // Microsoft Edge (all variants)
-        @"com.microsoft.edgemac",      // Edge Stable
-        @"com.microsoft.edgemac.Dev",  // Edge Dev
-        @"com.microsoft.edgemac.Beta", // Edge Beta
-        @"com.microsoft.edgemac.Canary", // Edge Canary
-        @"com.microsoft.Edge",         // Edge Stable (alternate ID)
-        @"com.microsoft.Edge.Dev",     // Edge Dev (alternate ID)
-
-        // Arc Browser family
-        @"com.thebrowser.Browser",     // Arc Browser
-
-        // AI-powered browsers
-        @"ai.perplexity.comet",        // Comet Browser (Perplexity AI)
-
-        // Vietnamese browsers
-        @"com.visualkit.browser",      // Cốc Cốc (old)
-        @"com.coccoc.browser",         // Cốc Cốc (new)
-
-        // Other Chromium-based browsers
-        @"com.vivaldi.Vivaldi",        // Vivaldi
-        @"com.operasoftware.Opera",    // Opera
-        @"com.operasoftware.OperaGX",  // Opera GX
-        @"com.kagi.kagimacOS",         // Orion (WebKit + partial Chromium compat)
-        @"com.duckduckgo.macos.browser", // DuckDuckGo
-        @"com.sigmaos.sigmaos.macos",  // SigmaOS
-        @"com.pushplaylabs.sidekick",  // Sidekick Browser
-        @"com.bookry.wavebox",         // Wavebox
-        @"com.mighty.app",             // Mighty Browser
-        @"com.collovos.naver.whale",   // Naver Whale
-        @"ru.yandex.desktop.yandex-browser", // Yandex Browser
-
-        // Electron-based apps (Chromium engine)
-        // These apps use Chromium's text input system and may need browser fixes
-        @"com.tinyspeck.slackmacgap",  // Slack
-        @"com.hnc.Discord",            // Discord
-        @"com.electron.discord",       // Discord (alternate)
-        @"com.github.GitHubClient",    // GitHub Desktop
-        @"com.figma.Desktop",          // Figma
-        @"com.linear",                 // Linear
-        @"com.logseq.logseq",          // Logseq
-        @"md.obsidian",                // Obsidian
-    ]];
-
-    // Apps that need to FORCE Unicode precomposed (not compound) - Using NSSet for O(1) lookup performance
-    // These apps don't handle Unicode combining characters properly
-    // Note: Most apps are now auto-detected via search field detection (IsElementSpotlight)
-    // Only apps that ALWAYS need precomposed (not just in search fields) should be listed here
-    NSSet* _forcePrecomposedAppSet = [NSSet setWithArray:@[@"com.apple.Spotlight",
-                                                            @"com.apple.systemuiserver",
-                                                            @"com.raycast.*"]];  // Spotlight runs under SystemUIServer
-
-    // Apps that need precomposed Unicode but should use normal batched sending (not AX API)
-    // These are Electron/web apps that don't support AX text replacement
-    // NOTE: Microsoft Office apps support Vietnamese compound Unicode properly in documents
-    // Template search may have minor issues but prioritizing document editing experience
-    NSSet* _precomposedBatchedAppSet = [NSSet setWithArray:@[@"net.whatsapp.WhatsApp",
-                                                              @"notion.id"]];
-
-    //app which needs step by step key sending (timing sensitive apps) - Using NSSet for O(1) lookup performance
-    NSSet* _stepByStepAppSet = [NSSet setWithArray:@[// Commented out for testing Vietnamese input:
-                                                      // @"com.apple.Spotlight",
-                                                      // @"com.apple.systemuiserver",  // Spotlight runs under SystemUIServer
-                                                      @"com.apple.loginwindow",     // Login window
-                                                      @"com.apple.SecurityAgent",   // Security dialogs
-                                                      @"com.alfredapp.Alfred",
-                                                      @"com.apple.launchpad",       // Launchpad/Ứng dụng
-                                                      @"notion.id",                 // Notion - needs step-by-step for stability
-                                                      // Safari - CRITICAL FIX for Google Docs/Sheets character corruption
-                                                      @"com.apple.Safari",
-                                                      @"com.apple.SafariTechnologyPreview",
-                                                      // Popular Browsers - Fix for Google Sheets/Docs
-                                                      @"com.google.Chrome",         // Google Chrome
-                                                      @"com.microsoft.edgemac",     // Microsoft Edge
-                                                      @"org.mozilla.firefox",       // Firefox
-                                                      @"com.brave.Browser",         // Brave Browser
-                                                      @"company.thebrowser.Browser",// Arc Browser
-                                                      @"com.opera.browser",         // Opera
-                                                      @"com.vivaldi.Vivaldi"        // Vivaldi
-                                                      ]];
-                                                      // Removed WhatsApp - step-by-step causes more issues
-
-    // Apps where Vietnamese input should be disabled (search/launcher apps) - Using NSSet for O(1) lookup performance
-    NSSet* _disableVietnameseAppSet = [NSSet setWithArray:@[
-        @"com.apple.apps.launcher",       // Apps.app (Applications)
-        @"com.apple.ScreenContinuity",    // iPhone Mirroring
-        // WhatsApp is handled separately (force precomposed Unicode like Spotlight)
-    ]];
-    
-    // Optimized helper to check if bundleId matches any app in the set (exact match or prefix)
-    // PERFORMANCE: inline + always_inline attribute for hot path optimization
-    __attribute__((always_inline)) static inline BOOL bundleIdMatchesAppSet(NSString* bundleId, NSSet* appSet) {
-        return [PHTVAppDetectionManager bundleIdMatchesAppSet:bundleId appSet:appSet];
-    }
 
     // Get cached app characteristics or compute and cache them
     // This reduces 5-10 function calls per keystroke to 1 dictionary lookup
@@ -530,10 +385,10 @@ extern "C" {
 
         // Compute characteristics (slow path - only once per app)
         AppCharacteristics chars;
-        chars.isSpotlightLike = bundleIdMatchesAppSet(bundleId, _forcePrecomposedAppSet);
-        chars.needsPrecomposedBatched = bundleIdMatchesAppSet(bundleId, _precomposedBatchedAppSet);
-        chars.needsStepByStep = bundleIdMatchesAppSet(bundleId, _stepByStepAppSet);
-        chars.containsUnicodeCompound = [_unicodeCompoundAppSet containsObject:bundleId];
+        chars.isSpotlightLike = [PHTVAppDetectionManager isSpotlightLikeApp:bundleId];
+        chars.needsPrecomposedBatched = [PHTVAppDetectionManager needsPrecomposedBatched:bundleId];
+        chars.needsStepByStep = [PHTVAppDetectionManager needsStepByStep:bundleId];
+        chars.containsUnicodeCompound = [PHTVAppDetectionManager containsUnicodeCompound:bundleId];
         chars.isSafari = [PHTVAppDetectionManager isSafariApp:bundleId];
 
         // Cache for future use
@@ -545,12 +400,12 @@ extern "C" {
     }
 
     __attribute__((always_inline)) static inline BOOL isSpotlightLikeApp(NSString* bundleId) {
-        return bundleIdMatchesAppSet(bundleId, _forcePrecomposedAppSet);
+        return [PHTVAppDetectionManager isSpotlightLikeApp:bundleId];
     }
 
     // Check if app needs precomposed Unicode but with batched sending (not AX API)
     __attribute__((always_inline)) static inline BOOL needsPrecomposedBatched(NSString* bundleId) {
-        return bundleIdMatchesAppSet(bundleId, _precomposedBatchedAppSet);
+        return [PHTVAppDetectionManager needsPrecomposedBatched:bundleId];
     }
 
     // Cache the effective target bundle id for the current event tap callback.
@@ -1157,7 +1012,7 @@ static int _phtvPendingBackspaceCount = 0;
         NSString *bundleId = getFocusedAppBundleId();
         pid_t cachePid = targetPID;
 
-        BOOL shouldDisable = bundleIdMatchesAppSet(bundleId, _disableVietnameseAppSet);
+        BOOL shouldDisable = [PHTVAppDetectionManager shouldDisableVietnamese:bundleId];
 
         // Update cache only when we have a valid PID, to avoid cross-app leakage
         lastResult = shouldDisable;
@@ -1169,12 +1024,12 @@ static int _phtvPendingBackspaceCount = 0;
 
     // Legacy check (for backward compatibility)
     BOOL shouldDisableVietnamese(NSString* bundleId) {
-        return bundleIdMatchesAppSet(bundleId, _disableVietnameseAppSet);
+        return [PHTVAppDetectionManager shouldDisableVietnamese:bundleId];
     }
 
     // Legacy check (for backward compatibility)
     BOOL needsStepByStep(NSString* bundleId) {
-        return bundleIdMatchesAppSet(bundleId, _stepByStepAppSet);
+        return [PHTVAppDetectionManager needsStepByStep:bundleId];
     }
     
     CGEventSourceRef myEventSource = NULL;
@@ -1447,11 +1302,11 @@ static int _phtvPendingBackspaceCount = 0;
     }    
     BOOL containUnicodeCompoundApp(NSString* topApp) {
         // Optimized to use NSSet for O(1) lookup instead of O(n) array iteration
-        return bundleIdMatchesAppSet(topApp, _unicodeCompoundAppSet);
+        return [PHTVAppDetectionManager containsUnicodeCompound:topApp];
     }
     
     BOOL needsForcePrecomposed(NSString* bundleId) {
-        return bundleIdMatchesAppSet(bundleId, _forcePrecomposedAppSet);
+        return [PHTVAppDetectionManager isSpotlightLikeApp:bundleId];
     }
     
     void saveSmartSwitchKeyData() {
@@ -1678,7 +1533,7 @@ static int _phtvPendingBackspaceCount = 0;
             InsertKeyLength(1);
 
         _newChar = 0x202F; //empty char
-        if ([_niceSpaceAppSet containsObject:FRONT_APP]) {
+        if ([PHTVAppDetectionManager needsNiceSpace:FRONT_APP]) {
             _newChar = 0x200C; //Unicode character with empty space
         }
 
@@ -2430,10 +2285,6 @@ static int _phtvPendingBackspaceCount = 0;
      * MAIN HOOK entry, very important function.
      * MAIN Callback.
      */
-    void TryToRestoreSessionFromAX() {
-        return; // Disabled to prevent malware false positive
-    }
-
     CGEventRef PHTVCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event, void *refcon) {
         @autoreleasepool {
         // CRITICAL: If permission was lost, reject ALL events immediately
@@ -2788,7 +2639,7 @@ static int _phtvPendingBackspaceCount = 0;
             NSString *focusedBundleId = getFocusedAppBundleId();
             
             // Determine if target is a browser for later logic
-            BOOL isTargetBrowser = (eventTargetBundleId != nil && [_browserAppSet containsObject:eventTargetBundleId]);
+            BOOL isTargetBrowser = (eventTargetBundleId != nil && [PHTVAppDetectionManager isBrowserApp:eventTargetBundleId]);
             
             // Check if Spotlight is active.
             // Note: We MUST check this even if target is a browser, because Spotlight can be invoked OVER a browser.
@@ -2807,7 +2658,7 @@ static int _phtvPendingBackspaceCount = 0;
             // BROWSER FIX: Browsers (Chromium, Safari, Firefox, etc.) don't support 
             // HID tap posting or AX API for their address bar autocomplete.
             // When spotlightActive=true on a browser address bar, we should NOT use Spotlight-style handling.
-            BOOL isBrowser = isTargetBrowser || [_browserAppSet containsObject:effectiveBundleId];
+            BOOL isBrowser = isTargetBrowser || [PHTVAppDetectionManager isBrowserApp:effectiveBundleId];
             _phtvPostToHIDTap = (!isBrowser && spotlightActive) || appChars.isSpotlightLike;
             _phtvPostToSessionForCli = NO;
             _phtvCliSpeedFactor = 1.0;
@@ -2926,7 +2777,7 @@ static int _phtvPendingBackspaceCount = 0;
                 // BROWSER FIX: Browsers (Chromium, Safari, Firefox, etc.) don't support AX API properly
                 // for their address bar autocomplete. When spotlightActive=true on a browser, 
                 // we should NOT use Spotlight-style handling.
-                BOOL isBrowserApp = [_browserAppSet containsObject:effectiveBundleId];
+                BOOL isBrowserApp = [PHTVAppDetectionManager isBrowserApp:effectiveBundleId];
                 
                 // Check if this is a special app (Spotlight-like or WhatsApp-like)
                 // Also treat as special when spotlightActive (search field detected via AX API)
