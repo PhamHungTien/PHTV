@@ -237,6 +237,11 @@ extern volatile int vPauseKey;
 extern volatile int vAutoRestoreEnglishWord;
 
 /**
+ * Prime uppercase for the next character when auto-capitalization is enabled.
+ */
+void vPrimeUpperCaseFirstChar();
+
+/**
  * Call this function first to receive data pointer
  */
 void* vKeyInit();

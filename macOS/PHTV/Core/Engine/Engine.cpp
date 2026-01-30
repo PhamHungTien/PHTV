@@ -186,6 +186,12 @@ string wideStringToUtf8(const wstring& str) {
     return converter.to_bytes(str.c_str());
 }
 
+void vPrimeUpperCaseFirstChar() {
+    if (vUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp) {
+        _upperCaseStatus = 2; // Ready to uppercase the next valid character
+    }
+}
+
 void* vKeyInit() {
     _index = 0;
     _stateIndex = 0;
@@ -193,6 +199,7 @@ void* vKeyInit() {
     _typingStatesData.clear();
     _typingStates.clear();
     _longWordHelper.clear();
+    vPrimeUpperCaseFirstChar();
     return &HookState;
 }
 
@@ -219,6 +226,40 @@ bool isMacroBreakCode(const int& data) {
     }
 
     return _macroBreakCodeSet.count(data) > 0;
+}
+
+static inline bool isSentenceTerminator(const Uint16& data, const Uint8& capsStatus) {
+    if (data == KEY_ENTER || data == KEY_RETURN) {
+        return true;
+    }
+
+    // '.' should not trigger when Shift is held (">")
+    if (data == KEY_DOT && capsStatus != 1) {
+        return true;
+    }
+
+    // Shift + '/' => '?', Shift + '1' => '!'
+    if (capsStatus == 1 && (data == KEY_SLASH || data == KEY_1)) {
+        return true;
+    }
+
+    return false;
+}
+
+static inline bool isUppercaseSkippablePunctuation(const Uint16& data, const Uint8& capsStatus) {
+    if (data == KEY_QUOTE) { // ' or "
+        return true;
+    }
+
+    if (data == KEY_LEFT_BRACKET || data == KEY_RIGHT_BRACKET) { // [ ] or { }
+        return true;
+    }
+
+    if (capsStatus == 1 && (data == KEY_9 || data == KEY_0)) { // ( or )
+        return true;
+    }
+
+    return false;
 }
 
 void setKeyData(const Byte& index, const Uint16& keyCode, const bool& isCaps) {
@@ -1835,12 +1876,13 @@ void vKeyHandleEvent(const vKeyEvent& event,
         }
 
         if (vUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp) {
-            if (data == KEY_DOT)
-                _upperCaseStatus = 1;
-            else if (data == KEY_ENTER || data == KEY_RETURN)
+            if (isSentenceTerminator(data, capsStatus)) {
                 _upperCaseStatus = 2;
-            else
+            } else if (_upperCaseStatus > 0 && isUppercaseSkippablePunctuation(data, capsStatus)) {
+                // Keep pending uppercase across quotes/brackets/parentheses
+            } else {
                 _upperCaseStatus = 0;
+            }
         }
     } else if (data == KEY_SPACE) {
         #ifdef DEBUG

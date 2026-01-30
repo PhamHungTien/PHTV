@@ -28,6 +28,7 @@ static inline int PHTVReadIntWithFallback(NSUserDefaults *defaults, NSString *ke
 }
 
 AppDelegate* appDelegate;
+static int sLastUpperCaseFirstCharSetting = -1;
 
 extern "C" {
     // Global function to get AppDelegate instance
@@ -1534,6 +1535,11 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     // Auto restore English word feature
     vAutoRestoreEnglishWord = PHTVReadIntWithFallback(defaults, @"vAutoRestoreEnglishWord", vAutoRestoreEnglishWord);
 
+    BOOL justEnabledUppercase = NO;
+    if (sLastUpperCaseFirstCharSetting != -1) {
+        justEnabledUppercase = (sLastUpperCaseFirstCharSetting == 0 && vUpperCaseFirstChar != 0);
+    }
+
     // Memory barrier to ensure event tap thread sees new values immediately
     __sync_synchronize();
 
@@ -1543,6 +1549,11 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     // Always reset the session on any settings change.
     // This matches the "restart app" effect without requiring restart.
     RequestNewSession();
+
+    // Prime auto-capitalization when the feature is just enabled
+    if (justEnabledUppercase) {
+        vPrimeUpperCaseFirstChar();
+    }
 
     if (PHTVLiveDebugEnabled()) {
         BOOL changed1 = (oldCheckSpelling != vCheckSpelling ||
@@ -1566,6 +1577,8 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     if (oldUseSmartSwitchKey == 0 && vUseSmartSwitchKey != 0 && [PHTVManager isInited]) {
         OnActiveAppChanged();
     }
+
+    sLastUpperCaseFirstCharSetting = vUpperCaseFirstChar;
     
     #ifdef DEBUG
     NSLog(@"[SwiftUI] Settings reloaded from UserDefaults");
