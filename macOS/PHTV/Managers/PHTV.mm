@@ -16,6 +16,7 @@
 #import <unistd.h>
 #import <stdlib.h>
 #import <string.h>
+#include <limits>
 #import "Engine.h"
 #import "../Application/AppDelegate.h"
 #import "PHTVManager.h"
@@ -649,6 +650,26 @@ static int _phtvPendingBackspaceCount = 0;
         return c == '.' || c == '!' || c == '?';
     }
 
+    static inline BOOL IsUppercasePrimeCandidateKey(CGKeyCode keycode, CGEventFlags flags) {
+        if ((flags & kCGEventFlagMaskCommand) ||
+            (flags & kCGEventFlagMaskControl) ||
+            (flags & kCGEventFlagMaskAlternate) ||
+            (flags & kCGEventFlagMaskSecondaryFn) ||
+            (flags & kCGEventFlagMaskNumericPad) ||
+            (flags & kCGEventFlagMaskHelp)) {
+            return NO;
+        }
+        Uint32 keyWithCaps = keycode | (((flags & kCGEventFlagMaskShift) || (flags & kCGEventFlagMaskAlphaShift)) ? CAPS_MASK : 0);
+        Uint16 ch = keyCodeToCharacter(keyWithCaps);
+        if (ch == 0) {
+            return NO;
+        }
+        if (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r') {
+            return NO;
+        }
+        return YES;
+    }
+
     static NSSet<NSString *> *UppercaseAbbreviationSet(void) {
         static NSSet<NSString *> *set = nil;
         static dispatch_once_t onceToken;
@@ -662,7 +683,10 @@ static int _phtvPendingBackspaceCount = 0;
         return set;
     }
 
-    static BOOL ShouldPrimeUppercaseFromAX(void) {
+    static BOOL ShouldPrimeUppercaseFromAX(BOOL *outReliable) {
+        if (outReliable) {
+            *outReliable = NO;
+        }
         if (!vUpperCaseFirstChar || vUpperCaseExcludedForCurrentApp || vSafeMode) {
             return NO;
         }
@@ -680,6 +704,10 @@ static int _phtvPendingBackspaceCount = 0;
         if (error != kAXErrorSuccess) {
             CFRelease(focusedElement);
             return NO;
+        }
+
+        if (outReliable) {
+            *outReliable = YES;
         }
 
         NSString *valueStr = @"";
@@ -794,8 +822,9 @@ static int _phtvPendingBackspaceCount = 0;
     }
 
     // Address Bar Cache
-    static BOOL _lastAddressBarResult = NO;
-    static uint64_t _lastAddressBarCheckTime = 0;
+static BOOL _lastAddressBarResult = NO;
+static uint64_t _lastAddressBarCheckTime = 0;
+static bool _pendingUppercasePrimeCheck = true;
 
     static void InvalidateAddressBarCache(void) {
         _lastAddressBarCheckTime = 0;
@@ -1352,7 +1381,7 @@ static int _phtvPendingBackspaceCount = 0;
         }
     }
     
-    void RequestNewSession() {
+    static void RequestNewSessionInternal(bool allowUppercasePrime) {
         // Reset Address Bar cache on new session (often triggered by mouse click/focus change)
         InvalidateAddressBarCache();
 
@@ -1382,6 +1411,16 @@ static int _phtvPendingBackspaceCount = 0;
             _syncKey.clear();
         }
 
+        _pendingUppercasePrimeCheck = true;
+        if (allowUppercasePrime) {
+            BOOL axReliable = NO;
+            BOOL shouldPrime = ShouldPrimeUppercaseFromAX(&axReliable);
+            if (shouldPrime) {
+                vPrimeUpperCaseFirstChar();
+                _pendingUppercasePrimeCheck = false;
+            }
+        }
+
         // Reset additional state variables
         _lastFlag = 0;
         _willContinuteSending = false;
@@ -1394,6 +1433,10 @@ static int _phtvPendingBackspaceCount = 0;
         #ifdef DEBUG
         NSLog(@"[RequestNewSession] Session reset complete");
         #endif
+    }
+
+    void RequestNewSession() {
+        RequestNewSessionInternal(true);
     }
 
     NSString* ConvertUtil(NSString* str) {
@@ -1793,7 +1836,10 @@ static int _phtvPendingBackspaceCount = 0;
             CFRelease(_newEventDown);
             CFRelease(_newEventUp);
             if (interDelayUs > 0 && (i + chunkSize) < len) {
-                usleep(interDelayUs);
+                useconds_t sleepUs = (interDelayUs > std::numeric_limits<useconds_t>::max())
+                    ? std::numeric_limits<useconds_t>::max()
+                    : static_cast<useconds_t>(interDelayUs);
+                usleep(sleepUs);
             }
         }
     }
@@ -2547,6 +2593,29 @@ static int _phtvPendingBackspaceCount = 0;
         }
 
         if (type == kCGEventKeyDown) {
+            if (vUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp) {
+                bool hasFocusModifiers = (_flag & (kCGEventFlagMaskCommand |
+                                                   kCGEventFlagMaskControl |
+                                                   kCGEventFlagMaskAlternate |
+                                                   kCGEventFlagMaskSecondaryFn |
+                                                   kCGEventFlagMaskNumericPad |
+                                                   kCGEventFlagMaskHelp)) != 0;
+                if (hasFocusModifiers ||
+                    _keycode == KEY_TAB ||
+                    _keycode == KEY_LEFT || _keycode == KEY_RIGHT || _keycode == KEY_UP || _keycode == KEY_DOWN ||
+                    _keycode == 115 || _keycode == 119 || _keycode == 116 || _keycode == 121) { // Home, End, PgUp, PgDown
+                    _pendingUppercasePrimeCheck = true;
+                }
+                if (_pendingUppercasePrimeCheck && IsUppercasePrimeCandidateKey(_keycode, _flag)) {
+                    BOOL axReliable = NO;
+                    BOOL shouldPrime = ShouldPrimeUppercaseFromAX(&axReliable);
+                    if (shouldPrime) {
+                        vPrimeUpperCaseFirstChar();
+                    }
+                    _pendingUppercasePrimeCheck = false;
+                }
+            }
+
             // Track if any key is pressed while restore modifier is held
             // Only track if custom restore key is actually set (Option or Control)
             if (vRestoreOnEscape && vCustomEscapeKey > 0 && _restoreModifierPressed) {
@@ -2706,13 +2775,8 @@ static int _phtvPendingBackspaceCount = 0;
         
         //handle mouse - reset session to avoid stale typing state
         if (type == kCGEventLeftMouseDown || type == kCGEventRightMouseDown || type == kCGEventLeftMouseDragged || type == kCGEventRightMouseDragged) {
-            RequestNewSession();
-
-            if (type == kCGEventLeftMouseDown || type == kCGEventRightMouseDown) {
-                if (ShouldPrimeUppercaseFromAX()) {
-                    vPrimeUpperCaseFirstChar();
-                }
-            }
+            bool isMouseDown = (type == kCGEventLeftMouseDown || type == kCGEventRightMouseDown);
+            RequestNewSessionInternal(isMouseDown);
             
             // Try to restore session if clicked on a word (Left Mouse Down only)
             if (type == kCGEventLeftMouseDown) {
