@@ -143,14 +143,14 @@ final class MacroState: ObservableObject {
         isLoadingSettings = true
         defer { isLoadingSettings = false }
 
-        useMacro = true
-        useMacroInEnglishMode = false
-        autoCapsMacro = false
+        useMacro = Defaults.useMacro
+        useMacroInEnglishMode = Defaults.useMacroInEnglishMode
+        autoCapsMacro = Defaults.autoCapsMacro
         macroCategories = []
 
-        enableEmojiHotkey = true
-        emojiHotkeyModifiersRaw = Int(NSEvent.ModifierFlags.command.rawValue)
-        emojiHotkeyKeyCode = KeyCode.eKey
+        enableEmojiHotkey = Defaults.enableEmojiHotkey
+        emojiHotkeyModifiersRaw = Int(Defaults.emojiHotkeyModifiers)
+        emojiHotkeyKeyCode = Defaults.emojiHotkeyKeyCode
 
         saveSettings()
     }

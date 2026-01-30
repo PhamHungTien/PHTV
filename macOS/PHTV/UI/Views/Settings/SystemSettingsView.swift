@@ -565,20 +565,8 @@ struct SystemSettingsView: View {
     }
 
     private func resetToDefaults() {
-        if let appDelegate = NSApp.delegate as? AppDelegate {
-            appState.resetToDefaults()
-
-            // Reset all settings to defaults in UserDefaults (synchronous)
-            // This also updates global variables and calls fillData()
-            appDelegate.loadDefaultConfig()
-
-            // Reload AppState properties immediately from UserDefaults
-            // This triggers SwiftUI to update the UI immediately
-            appState.loadSettings()
-
-            // Post notification to trigger UI refresh across the app
-            NotificationCenter.default.post(name: NSNotification.Name("SettingsReset"), object: nil)
-        }
+        // Reset via AppState (single source of truth)
+        appState.resetToDefaults()
     }
 
     private func checkForUpdates() {

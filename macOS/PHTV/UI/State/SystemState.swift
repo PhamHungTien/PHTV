@@ -391,19 +391,20 @@ final class SystemState: ObservableObject {
         isLoadingSettings = true
         defer { isLoadingSettings = false }
 
-        runOnStartup = false
-        performLayoutCompat = false
-        showIconOnDock = false
-        safeMode = false
-        settingsWindowAlwaysOnTop = false
+        runOnStartup = Defaults.runOnStartup
+        performLayoutCompat = Defaults.performLayoutCompat
+        showIconOnDock = Defaults.showIconOnDock
+        safeMode = Defaults.safeMode
+        settingsWindowAlwaysOnTop = Defaults.settingsWindowAlwaysOnTop
 
-        updateCheckFrequency = .daily
-        betaChannelEnabled = false
-        autoInstallUpdates = true
+        let checkInterval = Defaults.updateCheckInterval
+        updateCheckFrequency = UpdateCheckFrequency.from(interval: checkInterval)
+        betaChannelEnabled = Defaults.betaChannelEnabled
+        autoInstallUpdates = Defaults.autoInstallUpdates
 
-        includeSystemInfo = true
-        includeLogs = false
-        includeCrashLogs = true
+        includeSystemInfo = Defaults.includeSystemInfo
+        includeLogs = Defaults.includeLogs
+        includeCrashLogs = Defaults.includeCrashLogs
 
         saveSettings()
     }

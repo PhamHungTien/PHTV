@@ -230,18 +230,18 @@ final class UIState: ObservableObject {
         isLoadingSettings = true
         defer { isLoadingSettings = false }
 
-        switchKeyCommand = false
-        switchKeyOption = false
-        switchKeyControl = true
-        switchKeyShift = true
-        switchKeyFn = false
-        switchKeyCode = KeyCode.noKey
-        switchKeyName = "Không"
-        beepOnModeSwitch = false
+        switchKeyCommand = Defaults.switchKeyCommand
+        switchKeyOption = Defaults.switchKeyOption
+        switchKeyControl = Defaults.switchKeyControl
+        switchKeyShift = Defaults.switchKeyShift
+        switchKeyFn = Defaults.switchKeyFn
+        switchKeyCode = Defaults.switchKeyCode
+        switchKeyName = Defaults.switchKeyName
+        beepOnModeSwitch = Defaults.beepOnModeSwitch
 
-        beepVolume = 0.5
-        menuBarIconSize = 18.0
-        useVietnameseMenubarIcon = false
+        beepVolume = Defaults.beepVolume
+        menuBarIconSize = Defaults.menuBarIconSize
+        useVietnameseMenubarIcon = Defaults.useVietnameseMenubarIcon
 
         saveSettings()
     }

@@ -209,27 +209,27 @@ final class InputMethodState: ObservableObject {
         isLoadingSettings = true
         defer { isLoadingSettings = false }
 
-        inputMethod = .telex
-        codeTable = .unicode
+        inputMethod = Defaults.inputMethod
+        codeTable = Defaults.codeTable
 
-        checkSpelling = true
-        useModernOrthography = true
-        quickTelex = false
-        sendKeyStepByStep = false
-        useSmartSwitchKey = true
-        upperCaseFirstChar = false
-        allowConsonantZFWJ = true
-        quickStartConsonant = false
-        quickEndConsonant = false
-        rememberCode = true
-        autoRestoreEnglishWord = true
+        checkSpelling = Defaults.checkSpelling
+        useModernOrthography = Defaults.useModernOrthography
+        quickTelex = Defaults.quickTelex
+        sendKeyStepByStep = Defaults.sendKeyStepByStep
+        useSmartSwitchKey = Defaults.useSmartSwitchKey
+        upperCaseFirstChar = Defaults.upperCaseFirstChar
+        allowConsonantZFWJ = Defaults.allowConsonantZFWJ
+        quickStartConsonant = Defaults.quickStartConsonant
+        quickEndConsonant = Defaults.quickEndConsonant
+        rememberCode = Defaults.rememberCode
+        autoRestoreEnglishWord = Defaults.autoRestoreEnglishWord
 
-        restoreOnEscape = true
-        restoreKey = .esc
+        restoreOnEscape = Defaults.restoreOnEscape
+        restoreKey = RestoreKey.from(keyCode: Int(Defaults.restoreKeyCode))
 
-        pauseKeyEnabled = false
-        pauseKey = 58
-        pauseKeyName = "Option"
+        pauseKeyEnabled = Defaults.pauseKeyEnabled
+        pauseKey = Defaults.pauseKeyCode
+        pauseKeyName = Defaults.pauseKeyName
 
         saveSettings()
     }
