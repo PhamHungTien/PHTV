@@ -33,9 +33,17 @@ struct OnboardingView: View {
         "Hoàn tất"
     ]
 
+    private var maxStep: Int {
+        totalSteps - 1
+    }
+
+    private var safeStep: Int {
+        min(max(currentStep, 0), maxStep)
+    }
+
     private var stepLabel: String {
-        let index = max(0, min(currentStep, stepTitles.count - 1))
-        return "Bước \(currentStep + 1)/\(totalSteps) · \(stepTitles[index])"
+        let index = min(safeStep, stepTitles.count - 1)
+        return "Bước \(safeStep + 1)/\(totalSteps) · \(stepTitles[index])"
     }
 
     private var stepTransition: AnyTransition {
@@ -52,7 +60,7 @@ struct OnboardingView: View {
             Divider()
 
             ZStack {
-                switch currentStep {
+                switch safeStep {
                 case 0:
                     WelcomeStepView()
                         .transition(stepTransition)
@@ -82,7 +90,7 @@ struct OnboardingView: View {
             .padding(.top, 8)
             .padding(.bottom, 12)
 
-            if currentStep < totalSteps - 1 {
+            if safeStep < maxStep {
                 footer
             }
         }
@@ -112,7 +120,7 @@ struct OnboardingView: View {
                     .font(.system(size: 11, weight: .medium, design: .rounded))
                     .foregroundColor(.secondary)
 
-                OnboardingProgressBar(currentStep: currentStep, totalSteps: totalSteps)
+                OnboardingProgressBar(currentStep: safeStep, totalSteps: totalSteps)
             }
         }
         .padding(.horizontal, 18)
@@ -125,11 +133,9 @@ struct OnboardingView: View {
             Divider()
 
             HStack {
-                if currentStep > 0 {
+                if safeStep > 0 {
                     Button("Quay lại") {
-                        withAnimation(.easeInOut(duration: 0.25)) {
-                            currentStep -= 1
-                        }
+                        goToPreviousStep()
                     }
                     .keyboardShortcut(.leftArrow, modifiers: [])
                     .buttonStyle(OnboardingSecondaryButtonStyle())
@@ -140,12 +146,10 @@ struct OnboardingView: View {
                 Spacer()
 
                 Button(action: {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        currentStep += 1
-                    }
+                    goToNextStep()
                 }) {
                     HStack(spacing: 6) {
-                        Text(currentStep == 0 ? "Bắt đầu" : "Tiếp tục")
+                        Text(safeStep == 0 ? "Bắt đầu" : "Tiếp tục")
                         Image(systemName: "arrow.right")
                             .font(.system(size: 12, weight: .semibold))
                     }
@@ -155,6 +159,22 @@ struct OnboardingView: View {
             }
             .padding(.horizontal, 18)
             .frame(height: 56)
+        }
+    }
+
+    private func goToPreviousStep() {
+        let previousStep = max(currentStep - 1, 0)
+        guard previousStep != currentStep else { return }
+        withAnimation(.easeInOut(duration: 0.25)) {
+            currentStep = previousStep
+        }
+    }
+
+    private func goToNextStep() {
+        let nextStep = min(currentStep + 1, maxStep)
+        guard nextStep != currentStep else { return }
+        withAnimation(.easeInOut(duration: 0.25)) {
+            currentStep = nextStep
         }
     }
 }
