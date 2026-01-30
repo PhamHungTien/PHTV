@@ -43,7 +43,6 @@ typedef uint8_t Byte;
 + (void)sendShiftAndLeftArrow;
 
 // Batch Operations
-+ (void)sendBackspaceSequence:(int)count isTerminalApp:(BOOL)isTerminal;
 + (void)sendBackspaceSequenceWithDelay:(int)count delayType:(DelayType)delayType;
 + (void)sendNewCharString:(BOOL)dataFromMacro offset:(Uint16)offset;
 

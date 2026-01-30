@@ -14,7 +14,6 @@
 // Delay types for app-specific timing
 typedef NS_ENUM(NSInteger, DelayType) {
     DelayTypeNone = 0,
-    DelayTypeTerminal = 1,
     DelayTypeSpotlight = 2
 };
 

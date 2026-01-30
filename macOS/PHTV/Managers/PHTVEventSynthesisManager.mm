@@ -85,10 +85,6 @@ static std::vector<Uint16> _syncKey;
 
 #pragma mark - Batch Operations
 
-+ (void)sendBackspaceSequence:(int)count isTerminalApp:(BOOL)isTerminal {
-    // Placeholder - will be implemented when extracting from PHTV.mm
-}
-
 + (void)sendBackspaceSequenceWithDelay:(int)count delayType:(DelayType)delayType {
     // Placeholder - will be implemented when extracting from PHTV.mm
 }

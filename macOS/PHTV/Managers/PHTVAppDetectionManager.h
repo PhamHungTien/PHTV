@@ -18,7 +18,6 @@
 
 // Bundle ID Matching
 + (BOOL)isBrowserApp:(NSString*)bundleId;
-+ (BOOL)isTerminalApp:(NSString*)bundleId;
 + (BOOL)isSpotlightLikeApp:(NSString*)bundleId;
 + (BOOL)needsPrecomposedBatched:(NSString*)bundleId;
 + (BOOL)needsStepByStep:(NSString*)bundleId;

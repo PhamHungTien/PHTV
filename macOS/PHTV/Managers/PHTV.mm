@@ -467,15 +467,12 @@ extern "C" {
         return [PHTVAppDetectionManager bundleIdMatchesAppSet:bundleId appSet:appSet];
     }
 
-    // Forward declaration
-    BOOL isTerminalApp(NSString *bundleId);
-
     // Get cached app characteristics or compute and cache them
     // This reduces 5-10 function calls per keystroke to 1 dictionary lookup
     // PERFORMANCE: Critical hot path optimization - ~15ms savings per keystroke
     static inline AppCharacteristics getAppCharacteristics(NSString* bundleId) {
         if (!bundleId) {
-            AppCharacteristics empty = {NO, NO, NO, NO, NO, NO};
+            AppCharacteristics empty = {NO, NO, NO, NO, NO};
             return empty;
         }
 
@@ -536,7 +533,6 @@ extern "C" {
         AppCharacteristics chars;
         chars.isSpotlightLike = bundleIdMatchesAppSet(bundleId, _forcePrecomposedAppSet);
         chars.needsPrecomposedBatched = bundleIdMatchesAppSet(bundleId, _precomposedBatchedAppSet);
-        chars.isTerminal = isTerminalApp(bundleId);
         chars.needsStepByStep = bundleIdMatchesAppSet(bundleId, _stepByStepAppSet);
         chars.containsUnicodeCompound = [_unicodeCompoundAppSet containsObject:bundleId];
         chars.isSafari = [PHTVAppDetectionManager isSafariApp:bundleId];
@@ -1825,21 +1821,6 @@ static int _phtvPendingBackspaceCount = 0;
         }
     }
 
-    // Backwards compatible wrapper
-    void SendBackspaceSequence(int count, BOOL isTerminalApp) {
-        // Terminal apps no longer need special delay handling
-        SendBackspaceSequenceWithDelay(count, DelayTypeNone);
-    }
-
-    /**
-     * Check if app is a terminal/IDE that needs special handling
-     * These apps are extremely timing-sensitive and need higher delays
-     * Uses backspace method with step-by-step character sending
-     */
-    BOOL isTerminalApp(NSString *bundleId) {
-        return [PHTVAppDetectionManager isTerminalApp:bundleId];
-    }
-
     void SendCutKey() {
         CGEventRef eventVkeyDown = CGEventCreateKeyboardEvent (myEventSource, KEY_X, true);
         CGEventRef eventVkeyUp = CGEventCreateKeyboardEvent (myEventSource, KEY_X, false);
@@ -1969,7 +1950,7 @@ static int _phtvPendingBackspaceCount = 0;
             }
 
             // AX failed - fallback to synthetic events
-            SendBackspaceSequence(backspaceCount, NO);
+            SendBackspaceSequenceWithDelay(backspaceCount, DelayTypeNone);
 
             _newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
             _newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
@@ -2153,7 +2134,7 @@ static int _phtvPendingBackspaceCount = 0;
 
         // Send backspace if needed
         if (pData->backspaceCount > 0) {
-            SendBackspaceSequence(pData->backspaceCount, NO);
+            SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeNone);
         }
 
         //send real data - use step by step for timing sensitive apps like Spotlight
@@ -2612,7 +2593,7 @@ static int _phtvPendingBackspaceCount = 0;
                                                 // Successfully restored - pData now contains restore info
                                                 // Send backspaces to delete Vietnamese characters
                                                 if (pData->backspaceCount > 0 && pData->backspaceCount < MAX_BUFF) {
-                                                    SendBackspaceSequence(pData->backspaceCount, NO);
+                                                    SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeNone);
                                                 }
                         
                                                 // Send the raw ASCII characters
@@ -3178,7 +3159,7 @@ static int _phtvPendingBackspaceCount = 0;
                                 SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeSpotlight);
                             } else {
                                 // Browsers, terminals, and normal apps
-                                SendBackspaceSequence(pData->backspaceCount, NO);
+                                SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeNone);
                             }
                         }
                     }

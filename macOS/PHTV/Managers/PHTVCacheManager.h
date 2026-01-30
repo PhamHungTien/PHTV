@@ -16,7 +16,6 @@
 typedef struct {
     BOOL isSpotlightLike;
     BOOL needsPrecomposedBatched;
-    BOOL isTerminal;
     BOOL needsStepByStep;
     BOOL containsUnicodeCompound;
     BOOL isSafari;  // Safari always uses Shift+Left strategy
