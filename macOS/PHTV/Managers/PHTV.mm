@@ -720,6 +720,170 @@ static int _phtvPendingBackspaceCount = 0;
         return YES;
     }
 
+    static inline BOOL IsAsciiWhitespace(unichar c) {
+        return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+    }
+
+    static inline BOOL IsAsciiLetter(unichar c) {
+        return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+    }
+
+    static inline BOOL IsAsciiDigit(unichar c) {
+        return (c >= '0' && c <= '9');
+    }
+
+    static inline BOOL IsAsciiClosingPunct(unichar c) {
+        return c == '"' || c == '\'' || c == ')' || c == ']' || c == '}';
+    }
+
+    static inline BOOL IsAsciiSentenceTerminator(unichar c) {
+        return c == '.' || c == '!' || c == '?';
+    }
+
+    static NSSet<NSString *> *UppercaseAbbreviationSet(void) {
+        static NSSet<NSString *> *set = nil;
+        static dispatch_once_t onceToken;
+        dispatch_once(&onceToken, ^{
+            set = [NSSet setWithArray:@[
+                @"mr", @"mrs", @"ms", @"dr", @"prof", @"sr", @"jr", @"st",
+                @"vs", @"etc", @"eg", @"ie",
+                @"tp", @"q", @"p", @"ths", @"ts", @"gs", @"pgs"
+            ]];
+        });
+        return set;
+    }
+
+    static BOOL ShouldPrimeUppercaseFromAX(void) {
+        if (!vUpperCaseFirstChar || vUpperCaseExcludedForCurrentApp || vSafeMode) {
+            return NO;
+        }
+
+        AXUIElementRef systemWide = AXUIElementCreateSystemWide();
+        AXUIElementRef focusedElement = NULL;
+        AXError error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement);
+        CFRelease(systemWide);
+        if (error != kAXErrorSuccess || focusedElement == NULL) {
+            return NO;
+        }
+
+        CFTypeRef valueRef = NULL;
+        error = AXUIElementCopyAttributeValue(focusedElement, kAXValueAttribute, &valueRef);
+        if (error != kAXErrorSuccess) {
+            CFRelease(focusedElement);
+            return NO;
+        }
+
+        NSString *valueStr = @"";
+        if (valueRef && CFGetTypeID(valueRef) == CFStringGetTypeID()) {
+            valueStr = [(__bridge NSString *)valueRef copy];
+        }
+
+        // Read caret position
+        CFTypeRef rangeRef = NULL;
+        NSInteger caretLocation = (NSInteger)valueStr.length;
+        error = AXUIElementCopyAttributeValue(focusedElement, kAXSelectedTextRangeAttribute, &rangeRef);
+        if (error == kAXErrorSuccess && rangeRef && CFGetTypeID(rangeRef) == AXValueGetTypeID()) {
+            CFRange sel;
+            if (AXValueGetValue((AXValueRef)rangeRef, PHTV_AXVALUE_CFRANGE_TYPE, &sel)) {
+                caretLocation = (NSInteger)sel.location;
+            }
+        }
+        if (rangeRef) CFRelease(rangeRef);
+        if (valueRef) CFRelease(valueRef);
+        CFRelease(focusedElement);
+
+        if (caretLocation <= 0) {
+            return YES;
+        }
+        if (caretLocation > (NSInteger)valueStr.length) {
+            caretLocation = (NSInteger)valueStr.length;
+        }
+
+        NSInteger idx = caretLocation - 1;
+
+        // Skip trailing whitespace
+        while (idx >= 0 && IsAsciiWhitespace([valueStr characterAtIndex:idx])) {
+            idx--;
+        }
+        if (idx < 0) {
+            return YES;
+        }
+
+        // Skip closing punctuation and any whitespace before it
+        BOOL progressed = YES;
+        while (progressed) {
+            progressed = NO;
+            while (idx >= 0 && IsAsciiClosingPunct([valueStr characterAtIndex:idx])) {
+                idx--;
+                progressed = YES;
+            }
+            while (idx >= 0 && IsAsciiWhitespace([valueStr characterAtIndex:idx])) {
+                idx--;
+                progressed = YES;
+            }
+        }
+        if (idx < 0) {
+            return YES;
+        }
+
+        unichar lastChar = [valueStr characterAtIndex:idx];
+        if (!IsAsciiSentenceTerminator(lastChar)) {
+            return NO;
+        }
+
+        if (lastChar != '.') {
+            return YES;
+        }
+
+        // Dot: check previous token to avoid abbreviations like "Dr." or "tp."
+        NSInteger end = idx - 1;
+        while (end >= 0 && IsAsciiWhitespace([valueStr characterAtIndex:end])) {
+            end--;
+        }
+        if (end < 0) {
+            return NO;
+        }
+
+        NSInteger start = end;
+        while (start >= 0) {
+            unichar c = [valueStr characterAtIndex:start];
+            if (IsAsciiLetter(c) || IsAsciiDigit(c)) {
+                start--;
+                continue;
+            }
+            break;
+        }
+
+        NSRange tokenRange = NSMakeRange(start + 1, end - start);
+        if (tokenRange.length == 0) {
+            return NO;
+        }
+
+        NSString *token = [[valueStr substringWithRange:tokenRange] lowercaseString];
+
+        // Numeric token like "3."
+        BOOL allDigits = YES;
+        for (NSUInteger i = 0; i < token.length; i++) {
+            if (!IsAsciiDigit([token characterAtIndex:i])) {
+                allDigits = NO;
+                break;
+            }
+        }
+        if (allDigits) {
+            return NO;
+        }
+
+        if (token.length == 1) {
+            return NO;
+        }
+
+        if ([UppercaseAbbreviationSet() containsObject:token]) {
+            return NO;
+        }
+
+        return YES;
+    }
+
     // Address Bar Cache
     static BOOL _lastAddressBarResult = NO;
     static uint64_t _lastAddressBarCheckTime = 0;
@@ -2553,6 +2717,12 @@ static int _phtvPendingBackspaceCount = 0;
         //handle mouse - reset session to avoid stale typing state
         if (type == kCGEventLeftMouseDown || type == kCGEventRightMouseDown || type == kCGEventLeftMouseDragged || type == kCGEventRightMouseDragged) {
             RequestNewSession();
+
+            if (type == kCGEventLeftMouseDown || type == kCGEventRightMouseDown) {
+                if (ShouldPrimeUppercaseFromAX()) {
+                    vPrimeUpperCaseFirstChar();
+                }
+            }
             
             // Try to restore session if clicked on a word (Left Mouse Down only)
             if (type == kCGEventLeftMouseDown) {

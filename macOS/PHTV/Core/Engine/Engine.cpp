@@ -228,6 +228,40 @@ bool isMacroBreakCode(const int& data) {
     return _macroBreakCodeSet.count(data) > 0;
 }
 
+static inline bool isLikelyUppercaseAbbreviation(const Uint32* keyStates, int count) {
+    if (count <= 0) return false;
+    if (count > 12) return false;
+
+    // Numeric token like "3." -> not a sentence break (decimal or list)
+    bool allDigits = true;
+    for (int i = 0; i < count; i++) {
+        Uint16 kc = keyStates[i] & 0x3F;
+        if (!IS_NUMBER_KEY(kc)) {
+            allDigits = false;
+            break;
+        }
+    }
+    if (allDigits) return true;
+
+    // Single-letter initials like "A." or "U."
+    if (count == 1) return true;
+
+    // Small abbreviation list (lowercase)
+    if (count <= 5) {
+        std::string word = keyStatesToString(keyStates, count);
+        if ((int)word.size() == count) {
+            static const std::unordered_set<std::string> kAbbrev = {
+                "mr", "mrs", "ms", "dr", "prof", "sr", "jr", "st",
+                "vs", "etc", "eg", "ie",
+                "tp", "q", "p", "ths", "ts", "gs", "pgs"
+            };
+            if (kAbbrev.count(word)) return true;
+        }
+    }
+
+    return false;
+}
+
 static inline bool isSentenceTerminator(const Uint16& data, const Uint8& capsStatus) {
     if (data == KEY_ENTER || data == KEY_RETURN) {
         return true;
@@ -235,6 +269,9 @@ static inline bool isSentenceTerminator(const Uint16& data, const Uint8& capsSta
 
     // '.' should not trigger when Shift is held (">")
     if (data == KEY_DOT && capsStatus != 1) {
+        if (isLikelyUppercaseAbbreviation(KeyStates, _stateIndex)) {
+            return false;
+        }
         return true;
     }
 
