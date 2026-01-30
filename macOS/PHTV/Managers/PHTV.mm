@@ -84,6 +84,16 @@ static inline uint64_t mach_time_to_ms(uint64_t mach_time) {
     return (mach_time * timebase_info.numer) / (timebase_info.denom * 1000000);
 }
 
+static inline BOOL PHTVStringContainsTerminalKeyword(NSString *value) {
+    if (!value || value.length == 0) {
+        return NO;
+    }
+    NSString *lower = [value lowercaseString];
+    return ([lower containsString:@"terminal"] ||
+            [lower containsString:@"xterm"] ||
+            [lower containsString:@"shell"]);
+}
+
 #ifdef DEBUG
 static inline BOOL PHTVSpotlightDebugEnabled(void) {
     // Opt-in logging to avoid noisy Console output.
@@ -870,21 +880,45 @@ static int _phtvPendingBackspaceCount = 0;
         if (AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement) == kAXErrorSuccess &&
             focusedElement != NULL) {
             NSArray *attributesToCheck = @[(__bridge NSString *)kAXDescriptionAttribute,
-                                           (__bridge NSString *)kAXRoleDescriptionAttribute];
-            for (NSString *attr in attributesToCheck) {
-                CFTypeRef valueRef = NULL;
-                if (AXUIElementCopyAttributeValue(focusedElement, (__bridge CFStringRef)attr, &valueRef) == kAXErrorSuccess) {
-                    if (valueRef && CFGetTypeID(valueRef) == CFStringGetTypeID()) {
-                        NSString *value = [(__bridge NSString *)valueRef lowercaseString];
-                        if ([value hasPrefix:@"terminal"]) {
-                            isTerminalPanel = YES;
+                                           (__bridge NSString *)kAXRoleDescriptionAttribute,
+                                           (__bridge NSString *)kAXHelpAttribute,
+                                           (__bridge NSString *)kAXTitleAttribute,
+                                           @"AXIdentifier"];
+
+            // Check focused element and a few parent levels (VSCode/Cursor terminal often lives in container)
+            AXUIElementRef current = focusedElement;
+            for (int level = 0; level < 3 && current != NULL; level++) {
+                for (NSString *attr in attributesToCheck) {
+                    CFTypeRef valueRef = NULL;
+                    if (AXUIElementCopyAttributeValue(current, (__bridge CFStringRef)attr, &valueRef) == kAXErrorSuccess) {
+                        if (valueRef && CFGetTypeID(valueRef) == CFStringGetTypeID()) {
+                            NSString *value = (__bridge NSString *)valueRef;
+                            if (PHTVStringContainsTerminalKeyword(value)) {
+                                isTerminalPanel = YES;
+                            }
                         }
+                        if (valueRef) CFRelease(valueRef);
                     }
-                    if (valueRef) CFRelease(valueRef);
+                    if (isTerminalPanel) {
+                        break;
+                    }
                 }
                 if (isTerminalPanel) {
                     break;
                 }
+                AXUIElementRef parent = NULL;
+                if (AXUIElementCopyAttributeValue(current, kAXParentAttribute, (CFTypeRef *)&parent) != kAXErrorSuccess ||
+                    parent == NULL) {
+                    break;
+                }
+                if (current != focusedElement) {
+                    CFRelease(current);
+                }
+                current = parent;
+            }
+
+            if (current != NULL && current != focusedElement) {
+                CFRelease(current);
             }
             CFRelease(focusedElement);
         }
