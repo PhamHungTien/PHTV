@@ -317,7 +317,6 @@ NSDictionary *keyStringToKeyCodeMap = @{
 
 extern AppDelegate* appDelegate;
 extern volatile int vSendKeyStepByStep;
-extern volatile int vClaudeCodeFixEnabled;
 extern volatile int vPerformLayoutCompat;
 extern volatile int vTempOffPHTV;
 
@@ -1248,7 +1247,6 @@ static int _phtvPendingBackspaceCount = 0;
         LOAD_DATA(vUseMacroInEnglishMode, UseMacroInEnglishMode);
         LOAD_DATA(vAutoCapsMacro, vAutoCapsMacro);
         LOAD_DATA(vSendKeyStepByStep, SendKeyStepByStep);
-        LOAD_DATA(vClaudeCodeFixEnabled, ClaudeCodeFixEnabled);
         LOAD_DATA(vUseSmartSwitchKey, UseSmartSwitchKey);
         LOAD_DATA(vUpperCaseFirstChar, UpperCaseFirstChar);
 

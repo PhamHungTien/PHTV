@@ -385,7 +385,6 @@ struct SystemSettingsView: View {
             "SendKeyStepByStep", "UseMacro", "UseMacroInEnglishMode", "vAutoCapsMacro",
             "UseSmartSwitchKey", "UpperCaseFirstChar", "vAllowConsonantZFWJ",
             "vQuickStartConsonant", "vQuickEndConsonant", "vRememberCode",
-            "ClaudeCodeFixEnabled",
 
             // Auto restore English
             "vAutoRestoreEnglishWord",
