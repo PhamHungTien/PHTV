@@ -481,12 +481,23 @@ extern Boolean AXIsProcessTrusted(void) __attribute__((weak_import));
                  (1 << kCGEventLeftMouseDragged) |
                  (1 << kCGEventRightMouseDragged));
 
-    eventTap = CGEventTapCreate(kCGSessionEventTap,
+    // Prefer HID-level event tap for better timing (fixes swallowed keystrokes in terminals)
+    eventTap = CGEventTapCreate(kCGHIDEventTap,
                                 kCGHeadInsertEventTap,
                                 0,
                                 eventMask,
                                 PHTVCallback,
                                 NULL);
+
+    if (!eventTap) {
+        NSLog(@"[EventTap] HID tap failed, falling back to session tap");
+        eventTap = CGEventTapCreate(kCGSessionEventTap,
+                                    kCGHeadInsertEventTap,
+                                    0,
+                                    eventMask,
+                                    PHTVCallback,
+                                    NULL);
+    }
 
     if (!eventTap) {
         fprintf(stderr, "Failed to create event tap\n");

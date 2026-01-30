@@ -25,6 +25,10 @@
 + (BOOL)isSafariApp:(NSString*)bundleId;
 + (BOOL)shouldDisableVietnamese:(NSString*)bundleId;
 + (BOOL)needsNiceSpace:(NSString*)bundleId;
++ (BOOL)isTerminalApp:(NSString*)bundleId;
++ (BOOL)isFastTerminalApp:(NSString*)bundleId;
++ (BOOL)isMediumTerminalApp:(NSString*)bundleId;
++ (BOOL)isSlowTerminalApp:(NSString*)bundleId;
 
 // Focused App Detection
 + (NSString*)getFocusedAppBundleId;

@@ -45,6 +45,21 @@ static const uint64_t APP_SWITCH_CACHE_DURATION_MS = 100;    // App switch detec
 static const NSUInteger SYNC_KEY_RESERVE_SIZE = 256;         // Pre-allocated buffer size for typing sync
 
 // Timing delay constants (all in microseconds)
+static const int64_t kPHTVEventMarker = 0x50485456; // "PHTV"
+static const useconds_t CLI_BACKSPACE_DELAY_FAST_US = 2000;
+static const useconds_t CLI_WAIT_AFTER_BACKSPACE_FAST_US = 4000;
+static const useconds_t CLI_TEXT_DELAY_FAST_US = 2000;
+static const useconds_t CLI_BACKSPACE_DELAY_MEDIUM_US = 12000;
+static const useconds_t CLI_WAIT_AFTER_BACKSPACE_MEDIUM_US = 30000;
+static const useconds_t CLI_TEXT_DELAY_MEDIUM_US = 6000;
+static const useconds_t CLI_BACKSPACE_DELAY_SLOW_US = 4000;
+static const useconds_t CLI_WAIT_AFTER_BACKSPACE_SLOW_US = 8000;
+static const useconds_t CLI_TEXT_DELAY_SLOW_US = 4000;
+static const useconds_t CLI_BACKSPACE_DELAY_DEFAULT_US = 3000;
+static const useconds_t CLI_WAIT_AFTER_BACKSPACE_DEFAULT_US = 6000;
+static const useconds_t CLI_TEXT_DELAY_DEFAULT_US = 3000;
+static const int CLI_TEXT_CHUNK_SIZE_DEFAULT = 20;
+static const int CLI_TEXT_CHUNK_SIZE_ONE_BY_ONE = 1;
 
 // AXValueType constant name differs across SDK versions.
 #if defined(kAXValueTypeCFRange)
@@ -416,10 +431,44 @@ static BOOL _phtvPostToSessionForCli = NO;
 static BOOL _phtvIsCliTarget = NO;
 static double _phtvCliSpeedFactor = 1.0;
 static int _phtvCliPendingBackspaceCount = 0;
+static useconds_t _phtvCliBackspaceDelayUs = 0;
+static useconds_t _phtvCliWaitAfterBackspaceUs = 0;
+static useconds_t _phtvCliTextDelayUs = 0;
+static int _phtvCliTextChunkSize = CLI_TEXT_CHUNK_SIZE_DEFAULT;
 static int64_t _phtvKeyboardType = 0;
 static int _phtvPendingBackspaceCount = 0;
 
     __attribute__((always_inline)) static inline void SpotlightTinyDelay(void) {
+    }
+
+    static inline void ConfigureCliProfile(NSString *bundleId) {
+        if ([PHTVAppDetectionManager isFastTerminalApp:bundleId]) {
+            _phtvCliBackspaceDelayUs = CLI_BACKSPACE_DELAY_FAST_US;
+            _phtvCliWaitAfterBackspaceUs = CLI_WAIT_AFTER_BACKSPACE_FAST_US;
+            _phtvCliTextDelayUs = CLI_TEXT_DELAY_FAST_US;
+            _phtvCliTextChunkSize = CLI_TEXT_CHUNK_SIZE_DEFAULT;
+            return;
+        }
+        if ([PHTVAppDetectionManager isMediumTerminalApp:bundleId]) {
+            _phtvCliBackspaceDelayUs = CLI_BACKSPACE_DELAY_MEDIUM_US;
+            _phtvCliWaitAfterBackspaceUs = CLI_WAIT_AFTER_BACKSPACE_MEDIUM_US;
+            _phtvCliTextDelayUs = CLI_TEXT_DELAY_MEDIUM_US;
+            _phtvCliTextChunkSize = CLI_TEXT_CHUNK_SIZE_ONE_BY_ONE;
+            return;
+        }
+        if ([PHTVAppDetectionManager isSlowTerminalApp:bundleId]) {
+            _phtvCliBackspaceDelayUs = CLI_BACKSPACE_DELAY_SLOW_US;
+            _phtvCliWaitAfterBackspaceUs = CLI_WAIT_AFTER_BACKSPACE_SLOW_US;
+            _phtvCliTextDelayUs = CLI_TEXT_DELAY_SLOW_US;
+            _phtvCliTextChunkSize = CLI_TEXT_CHUNK_SIZE_DEFAULT;
+            return;
+        }
+
+        // Default terminal profile
+        _phtvCliBackspaceDelayUs = CLI_BACKSPACE_DELAY_DEFAULT_US;
+        _phtvCliWaitAfterBackspaceUs = CLI_WAIT_AFTER_BACKSPACE_DEFAULT_US;
+        _phtvCliTextDelayUs = CLI_TEXT_DELAY_DEFAULT_US;
+        _phtvCliTextChunkSize = CLI_TEXT_CHUNK_SIZE_DEFAULT;
     }
 
     // Simple and reliable: always read fresh from AX, no tracking
@@ -800,6 +849,52 @@ static int _phtvPendingBackspaceCount = 0;
         return isCodeBlock;
     }
 
+    // Check if focused element is a terminal panel inside IDEs (VSCode/Cursor/etc.)
+    // Cached to avoid excessive AX calls
+    static BOOL isTerminalPanelFocused(void) {
+        if (vSafeMode) return NO;
+
+        static BOOL lastResult = NO;
+        static uint64_t lastCheckTime = 0;
+
+        uint64_t now = mach_absolute_time();
+        uint64_t elapsed_ms = mach_time_to_ms(now - lastCheckTime);
+        if (lastCheckTime != 0 && elapsed_ms < 50) {
+            return lastResult;
+        }
+
+        AXUIElementRef systemWide = AXUIElementCreateSystemWide();
+        AXUIElementRef focusedElement = NULL;
+        BOOL isTerminalPanel = NO;
+
+        if (AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement) == kAXErrorSuccess &&
+            focusedElement != NULL) {
+            NSArray *attributesToCheck = @[(__bridge NSString *)kAXDescriptionAttribute,
+                                           (__bridge NSString *)kAXRoleDescriptionAttribute];
+            for (NSString *attr in attributesToCheck) {
+                CFTypeRef valueRef = NULL;
+                if (AXUIElementCopyAttributeValue(focusedElement, (__bridge CFStringRef)attr, &valueRef) == kAXErrorSuccess) {
+                    if (valueRef && CFGetTypeID(valueRef) == CFStringGetTypeID()) {
+                        NSString *value = [(__bridge NSString *)valueRef lowercaseString];
+                        if ([value hasPrefix:@"terminal"]) {
+                            isTerminalPanel = YES;
+                        }
+                    }
+                    if (valueRef) CFRelease(valueRef);
+                }
+                if (isTerminalPanel) {
+                    break;
+                }
+            }
+            CFRelease(focusedElement);
+        }
+        CFRelease(systemWide);
+
+        lastResult = isTerminalPanel;
+        lastCheckTime = now;
+        return isTerminalPanel;
+    }
+
     // Check if the focused element is likely an address bar (TextField)
     // Cached to avoid excessive AX calls
     static BOOL isFocusedElementAddressBar(void) {
@@ -961,6 +1056,7 @@ static int _phtvPendingBackspaceCount = 0;
     }
 
     __attribute__((always_inline)) static inline void PostSyntheticEvent(CGEventTapProxy proxy, CGEventRef e) {
+        CGEventSetIntegerValueField(e, kCGEventSourceUserData, kPHTVEventMarker);
         if (_phtvPostToHIDTap) {
             CGEventPost(kCGHIDEventTap, e);
         } else if (_phtvPostToSessionForCli) {
@@ -989,6 +1085,8 @@ static int _phtvPendingBackspaceCount = 0;
         
         CGEventSetFlags(down, flags);
         CGEventSetFlags(up, flags);
+        CGEventSetIntegerValueField(down, kCGEventSourceUserData, kPHTVEventMarker);
+        CGEventSetIntegerValueField(up, kCGEventSourceUserData, kPHTVEventMarker);
     }
 
     // Check if Vietnamese input should be disabled for current app (using PID)
@@ -1556,8 +1654,8 @@ static int _phtvPendingBackspaceCount = 0;
         CGEventRef eventVkeyDown = CGEventCreateKeyboardEvent (myEventSource, vKey, true);
         CGEventRef eventVkeyUp = CGEventCreateKeyboardEvent (myEventSource, vKey, false);
         
-        CGEventTapPostEvent(_proxy, eventVkeyDown);
-        CGEventTapPostEvent(_proxy, eventVkeyUp);
+        PostSyntheticEvent(_proxy, eventVkeyDown);
+        PostSyntheticEvent(_proxy, eventVkeyUp);
         
         CFRelease(eventVkeyDown);
         CFRelease(eventVkeyUp);
@@ -1582,8 +1680,8 @@ static int _phtvPendingBackspaceCount = 0;
             CFRelease(bsDown);
             CFRelease(bsUp);
         } else {
-            CGEventTapPostEvent(_proxy, eventBackSpaceDown);
-            CGEventTapPostEvent(_proxy, eventBackSpaceUp);
+            PostSyntheticEvent(_proxy, eventBackSpaceDown);
+            PostSyntheticEvent(_proxy, eventBackSpaceUp);
         }
     }
 
@@ -1612,16 +1710,16 @@ static int _phtvPendingBackspaceCount = 0;
         CGEventSetFlags(eventVkeyDown, _privateFlag);
         CGEventSetFlags(eventVkeyUp, _privateFlag);
         
-        CGEventTapPostEvent(_proxy, eventVkeyDown);
-        CGEventTapPostEvent(_proxy, eventVkeyUp);
+        PostSyntheticEvent(_proxy, eventVkeyDown);
+        PostSyntheticEvent(_proxy, eventVkeyUp);
         
         if (IS_DOUBLE_CODE(vCodeTable)) { //VNI or Unicode Compound
             if (_syncKey.back() > 1) {
                 // PERFORMANCE: Use cached bundle ID instead of querying AX API on every backspace
                 NSString *effectiveTarget = _phtvEffectiveTargetBundleId ?: getFocusedAppBundleId();
                 if (!(vCodeTable == 3 && containUnicodeCompoundApp(effectiveTarget))) {
-                    CGEventTapPostEvent(_proxy, eventVkeyDown);
-                    CGEventTapPostEvent(_proxy, eventVkeyUp);
+                    PostSyntheticEvent(_proxy, eventVkeyDown);
+                    PostSyntheticEvent(_proxy, eventVkeyUp);
                 }
             }
             _syncKey.pop_back();
@@ -1660,6 +1758,9 @@ static int _phtvPendingBackspaceCount = 0;
             PostSyntheticEvent(_proxy, _newEventUp);
             CFRelease(_newEventDown);
             CFRelease(_newEventUp);
+            if (interDelayUs > 0 && (i + chunkSize) < len) {
+                usleep(interDelayUs);
+            }
         }
     }
 
@@ -1667,6 +1768,21 @@ static int _phtvPendingBackspaceCount = 0;
     // Delays and throttling removed for standard application behavior
     void SendBackspaceSequenceWithDelay(int count, DelayType delayType) {
         if (count <= 0) return;
+
+        if (_phtvIsCliTarget) {
+            useconds_t backspaceDelay = _phtvCliBackspaceDelayUs;
+            useconds_t waitDelay = _phtvCliWaitAfterBackspaceUs;
+            for (int i = 0; i < count; i++) {
+                SendBackspace();
+                if (backspaceDelay > 0) {
+                    usleep(backspaceDelay);
+                }
+            }
+            if (waitDelay > 0) {
+                usleep(waitDelay);
+            }
+            return;
+        }
 
         // Always use standard backspace method
         for (int i = 0; i < count; i++) {
@@ -1682,8 +1798,8 @@ static int _phtvPendingBackspaceCount = 0;
         CGEventSetFlags(eventVkeyDown, _privateFlag);
         CGEventSetFlags(eventVkeyUp, _privateFlag);
         
-        CGEventTapPostEvent(_proxy, eventVkeyDown);
-        CGEventTapPostEvent(_proxy, eventVkeyUp);
+        PostSyntheticEvent(_proxy, eventVkeyDown);
+        PostSyntheticEvent(_proxy, eventVkeyUp);
         
         CFRelease(eventVkeyDown);
         CFRelease(eventVkeyUp);
@@ -1824,6 +1940,11 @@ static int _phtvPendingBackspaceCount = 0;
             CFRelease(_newEventUp);
             goto FinalizeSend;
         } else {
+            if (_phtvIsCliTarget) {
+                int chunkSize = (_phtvCliTextChunkSize > 0) ? _phtvCliTextChunkSize : CLI_TEXT_CHUNK_SIZE_ONE_BY_ONE;
+                SendUnicodeStringChunked(_finalCharString, _finalCharSize, chunkSize, _phtvCliTextDelayUs);
+                goto FinalizeSend;
+            }
             _newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
             _newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
             if (_phtvKeyboardType != 0) {
@@ -2305,6 +2426,11 @@ static int _phtvPendingBackspaceCount = 0;
         // Perform periodic health check and recovery
         CheckAndRecoverEventTap();
 
+        // Skip events injected by PHTV itself (marker-based)
+        if (CGEventGetIntegerValueField(event, kCGEventSourceUserData) == kPHTVEventMarker) {
+            return event;
+        }
+
         //dont handle my event
         if (CGEventGetIntegerValueField(event, kCGEventSourceStateID) == CGEventSourceGetSourceStateID(myEventSource)) {
             return event;
@@ -2660,7 +2786,21 @@ static int _phtvPendingBackspaceCount = 0;
             // When spotlightActive=true on a browser address bar, we should NOT use Spotlight-style handling.
             BOOL isBrowser = isTargetBrowser || [PHTVAppDetectionManager isBrowserApp:effectiveBundleId];
             _phtvPostToHIDTap = (!isBrowser && spotlightActive) || appChars.isSpotlightLike;
-            _phtvPostToSessionForCli = NO;
+            BOOL isTerminalApp = [PHTVAppDetectionManager isTerminalApp:effectiveBundleId];
+            BOOL isTerminalPanel = NO;
+            if (!isTerminalApp) {
+                isTerminalPanel = isTerminalPanelFocused();
+            }
+            _phtvIsCliTarget = (isTerminalApp || isTerminalPanel);
+            _phtvPostToSessionForCli = _phtvIsCliTarget;
+            if (_phtvIsCliTarget) {
+                ConfigureCliProfile(effectiveBundleId);
+            } else {
+                _phtvCliBackspaceDelayUs = 0;
+                _phtvCliWaitAfterBackspaceUs = 0;
+                _phtvCliTextDelayUs = 0;
+                _phtvCliTextChunkSize = CLI_TEXT_CHUNK_SIZE_DEFAULT;
+            }
             _phtvCliSpeedFactor = 1.0;
 
             _phtvKeyboardType = CGEventGetIntegerValueField(event, kCGKeyboardEventKeyboardType);
@@ -2748,8 +2888,8 @@ static int _phtvPendingBackspaceCount = 0;
                         if (_syncKey.size() > 0) {
                             if (_syncKey.back() > 1 && (vCodeTable == 2 || !containUnicodeCompoundApp(effectiveBundleId))) {
                                 //send one more backspace
-                                CGEventTapPostEvent(_proxy, eventBackSpaceDown);
-                                CGEventTapPostEvent(_proxy, eventBackSpaceUp);
+                                PostSyntheticEvent(_proxy, eventBackSpaceDown);
+                                PostSyntheticEvent(_proxy, eventBackSpaceUp);
                             }
                             _syncKey.pop_back();
                         }

@@ -16,6 +16,10 @@ static NSSet* _niceSpaceAppSet = nil;
 static NSSet* _unicodeCompoundAppSet = nil;
 static NSSet* _safariAppSet = nil;  // Safari always uses Shift+Left strategy
 static NSSet* _browserAppSet = nil;
+static NSSet* _terminalAppSet = nil;
+static NSSet* _fastTerminalAppSet = nil;
+static NSSet* _mediumTerminalAppSet = nil;
+static NSSet* _slowTerminalAppSet = nil;
 static NSSet* _forcePrecomposedAppSet = nil;
 static NSSet* _precomposedBatchedAppSet = nil;
 static NSSet* _stepByStepAppSet = nil;
@@ -110,6 +114,47 @@ static NSSet* _disableVietnameseAppSet = nil;
             @"md.obsidian"
         ]];
 
+        // Terminal apps (CLI)
+        _terminalAppSet = [NSSet setWithArray:@[
+            // Apple Terminal
+            @"com.apple.Terminal",
+            // Fast terminals (GPU-accelerated)
+            @"io.alacritty",
+            @"com.mitchellh.ghostty",
+            @"net.kovidgoyal.kitty",
+            @"com.github.wez.wezterm",
+            @"com.raphaelamorim.rio",
+            // Medium speed terminals
+            @"com.googlecode.iterm2",
+            @"dev.warp.Warp-Stable",
+            @"co.zeit.hyper",
+            @"org.tabby",
+            @"com.termius-dmg.mac"
+        ]];
+
+        // Fast terminals (lower delay)
+        _fastTerminalAppSet = [NSSet setWithArray:@[
+            @"io.alacritty",
+            @"com.mitchellh.ghostty",
+            @"net.kovidgoyal.kitty",
+            @"com.github.wez.wezterm",
+            @"com.raphaelamorim.rio"
+        ]];
+
+        // Medium terminals (higher delay, one-by-one text)
+        _mediumTerminalAppSet = [NSSet setWithArray:@[
+            @"com.googlecode.iterm2",
+            @"dev.warp.Warp-Stable",
+            @"co.zeit.hyper",
+            @"org.tabby",
+            @"com.termius-dmg.mac"
+        ]];
+
+        // Slow terminals (Apple Terminal)
+        _slowTerminalAppSet = [NSSet setWithArray:@[
+            @"com.apple.Terminal"
+        ]];
+
         // Force precomposed Unicode
         _forcePrecomposedAppSet = [NSSet setWithArray:@[@"com.apple.Spotlight",
                                                          @"com.apple.systemuiserver",
@@ -166,6 +211,22 @@ static NSSet* _disableVietnameseAppSet = nil;
 
 + (BOOL)needsNiceSpace:(NSString*)bundleId {
     return [self bundleIdMatchesAppSet:bundleId appSet:_niceSpaceAppSet];
+}
+
++ (BOOL)isTerminalApp:(NSString*)bundleId {
+    return [self bundleIdMatchesAppSet:bundleId appSet:_terminalAppSet];
+}
+
++ (BOOL)isFastTerminalApp:(NSString*)bundleId {
+    return [self bundleIdMatchesAppSet:bundleId appSet:_fastTerminalAppSet];
+}
+
++ (BOOL)isMediumTerminalApp:(NSString*)bundleId {
+    return [self bundleIdMatchesAppSet:bundleId appSet:_mediumTerminalAppSet];
+}
+
++ (BOOL)isSlowTerminalApp:(NSString*)bundleId {
+    return [self bundleIdMatchesAppSet:bundleId appSet:_slowTerminalAppSet];
 }
 
 #pragma mark - Focused App Detection
