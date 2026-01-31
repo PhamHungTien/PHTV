@@ -88,6 +88,22 @@ static inline uint64_t mach_time_to_ms(uint64_t mach_time) {
     return (mach_time * timebase_info.numer) / (timebase_info.denom * 1000000);
 }
 
+static inline uint64_t mach_time_to_us(uint64_t mach_time) {
+    return (mach_time * timebase_info.numer) / (timebase_info.denom * 1000);
+}
+
+static inline uint64_t us_to_mach_time(uint64_t microseconds) {
+    // Convert microseconds to mach absolute time units
+    return (microseconds * timebase_info.denom * 1000) / timebase_info.numer;
+}
+
+static inline useconds_t PHTVClampUseconds(uint64_t microseconds) {
+    if (microseconds > static_cast<uint64_t>(std::numeric_limits<useconds_t>::max())) {
+        return std::numeric_limits<useconds_t>::max();
+    }
+    return static_cast<useconds_t>(microseconds);
+}
+
 static inline BOOL PHTVStringContainsTerminalKeyword(NSString *value) {
     if (!value || value.length == 0) {
         return NO;
@@ -532,8 +548,22 @@ static useconds_t _phtvCliTextDelayUs = 0;
 static int _phtvCliTextChunkSize = CLI_TEXT_CHUNK_SIZE_DEFAULT;
 static int64_t _phtvKeyboardType = 0;
 static int _phtvPendingBackspaceCount = 0;
+static uint64_t _phtvCliBlockUntil = 0;
+static useconds_t _phtvCliPostSendBlockUs = 20000;
 
     __attribute__((always_inline)) static inline void SpotlightTinyDelay(void) {
+    }
+
+    static inline void SetCliBlockForMicroseconds(uint64_t microseconds) {
+        if (microseconds == 0) return;
+        dispatch_once(&timebase_init_token, ^{
+            mach_timebase_info(&timebase_info);
+        });
+        uint64_t now = mach_absolute_time();
+        uint64_t until = now + us_to_mach_time(microseconds);
+        if (until > _phtvCliBlockUntil) {
+            _phtvCliBlockUntil = until;
+        }
     }
 
     static inline void ConfigureCliProfile(NSString *bundleId) {
@@ -542,13 +572,15 @@ static int _phtvPendingBackspaceCount = 0;
             _phtvCliWaitAfterBackspaceUs = CLI_WAIT_AFTER_BACKSPACE_IDE_US;
             _phtvCliTextDelayUs = CLI_TEXT_DELAY_IDE_US;
             _phtvCliTextChunkSize = CLI_TEXT_CHUNK_SIZE_ONE_BY_ONE;
+            _phtvCliPostSendBlockUs = (useconds_t)MAX((uint64_t)20000, (uint64_t)_phtvCliTextDelayUs * 3);
             return;
         }
         if ([PHTVAppDetectionManager isFastTerminalApp:bundleId]) {
             _phtvCliBackspaceDelayUs = CLI_BACKSPACE_DELAY_FAST_US;
             _phtvCliWaitAfterBackspaceUs = CLI_WAIT_AFTER_BACKSPACE_FAST_US;
             _phtvCliTextDelayUs = CLI_TEXT_DELAY_FAST_US;
-            _phtvCliTextChunkSize = CLI_TEXT_CHUNK_SIZE_DEFAULT;
+            _phtvCliTextChunkSize = CLI_TEXT_CHUNK_SIZE_ONE_BY_ONE;
+            _phtvCliPostSendBlockUs = (useconds_t)MAX((uint64_t)20000, (uint64_t)_phtvCliTextDelayUs * 3);
             return;
         }
         if ([PHTVAppDetectionManager isMediumTerminalApp:bundleId]) {
@@ -556,13 +588,15 @@ static int _phtvPendingBackspaceCount = 0;
             _phtvCliWaitAfterBackspaceUs = CLI_WAIT_AFTER_BACKSPACE_MEDIUM_US;
             _phtvCliTextDelayUs = CLI_TEXT_DELAY_MEDIUM_US;
             _phtvCliTextChunkSize = CLI_TEXT_CHUNK_SIZE_ONE_BY_ONE;
+            _phtvCliPostSendBlockUs = (useconds_t)MAX((uint64_t)20000, (uint64_t)_phtvCliTextDelayUs * 3);
             return;
         }
         if ([PHTVAppDetectionManager isSlowTerminalApp:bundleId]) {
             _phtvCliBackspaceDelayUs = CLI_BACKSPACE_DELAY_SLOW_US;
             _phtvCliWaitAfterBackspaceUs = CLI_WAIT_AFTER_BACKSPACE_SLOW_US;
             _phtvCliTextDelayUs = CLI_TEXT_DELAY_SLOW_US;
-            _phtvCliTextChunkSize = CLI_TEXT_CHUNK_SIZE_DEFAULT;
+            _phtvCliTextChunkSize = CLI_TEXT_CHUNK_SIZE_ONE_BY_ONE;
+            _phtvCliPostSendBlockUs = (useconds_t)MAX((uint64_t)20000, (uint64_t)_phtvCliTextDelayUs * 3);
             return;
         }
 
@@ -570,7 +604,8 @@ static int _phtvPendingBackspaceCount = 0;
         _phtvCliBackspaceDelayUs = CLI_BACKSPACE_DELAY_DEFAULT_US;
         _phtvCliWaitAfterBackspaceUs = CLI_WAIT_AFTER_BACKSPACE_DEFAULT_US;
         _phtvCliTextDelayUs = CLI_TEXT_DELAY_DEFAULT_US;
-        _phtvCliTextChunkSize = CLI_TEXT_CHUNK_SIZE_DEFAULT;
+        _phtvCliTextChunkSize = CLI_TEXT_CHUNK_SIZE_ONE_BY_ONE;
+        _phtvCliPostSendBlockUs = (useconds_t)MAX((uint64_t)20000, (uint64_t)_phtvCliTextDelayUs * 3);
     }
 
     // Simple and reliable: always read fresh from AX, no tracking
@@ -1878,6 +1913,20 @@ static bool _pendingUppercasePrimeCheck = true;
         }
     }
 
+    static inline void ConsumeSyncKeyOnBackspace() {
+        if (!IS_DOUBLE_CODE(vCodeTable)) {
+            return;
+        }
+        if (_syncKey.empty()) {
+            return;
+        }
+        if (_syncKey.back() > 1) {
+            _syncKey.back()--;
+        } else {
+            _syncKey.pop_back();
+        }
+    }
+
     void SendBackspace() {
         SendPhysicalBackspace();
 
@@ -1928,6 +1977,13 @@ static bool _pendingUppercasePrimeCheck = true;
         if (chunkSize < 1) {
             chunkSize = 1;
         }
+        if (_phtvIsCliTarget) {
+            uint64_t totalBlockUs = _phtvCliPostSendBlockUs;
+            if (interDelayUs > 0 && len > 1) {
+                totalBlockUs += interDelayUs * (uint64_t)(len - 1);
+            }
+            SetCliBlockForMicroseconds(totalBlockUs);
+        }
 
         for (int i = 0; i < len; i += chunkSize) {
             int chunkLen = len - i;
@@ -1958,6 +2014,14 @@ static bool _pendingUppercasePrimeCheck = true;
                 usleep(sleepUs);
             }
         }
+
+        if (_phtvIsCliTarget) {
+            uint64_t totalBlockUs = _phtvCliPostSendBlockUs;
+            if (interDelayUs > 0 && len > 1) {
+                totalBlockUs += interDelayUs * (uint64_t)(len - 1);
+            }
+            SetCliBlockForMicroseconds(totalBlockUs);
+        }
     }
 
     // Consolidated helper function to send multiple backspaces
@@ -1968,8 +2032,15 @@ static bool _pendingUppercasePrimeCheck = true;
         if (_phtvIsCliTarget) {
             useconds_t backspaceDelay = _phtvCliBackspaceDelayUs;
             useconds_t waitDelay = _phtvCliWaitAfterBackspaceUs;
+            uint64_t totalBlockUs = _phtvCliPostSendBlockUs;
+            if (backspaceDelay > 0 && count > 0) {
+                totalBlockUs += (uint64_t)backspaceDelay * (uint64_t)count;
+            }
+            totalBlockUs += (uint64_t)waitDelay;
+            SetCliBlockForMicroseconds(totalBlockUs);
             for (int i = 0; i < count; i++) {
-                SendBackspace();
+                SendPhysicalBackspace();
+                ConsumeSyncKeyOnBackspace();
                 if (backspaceDelay > 0) {
                     usleep(backspaceDelay);
                 }
@@ -1977,6 +2048,7 @@ static bool _pendingUppercasePrimeCheck = true;
             if (waitDelay > 0) {
                 usleep(waitDelay);
             }
+            SetCliBlockForMicroseconds(totalBlockUs);
             return;
         }
 
@@ -2608,6 +2680,20 @@ static bool _pendingUppercasePrimeCheck = true;
         // This prevents ANY processing after permission revocation
         if (__builtin_expect([PHTVManager hasPermissionLost], 0)) {
             return event;  // Pass through without processing
+        }
+
+        // CLI stabilization: block briefly after synthetic injection to avoid interleaving
+        if (type == kCGEventKeyDown && _phtvCliBlockUntil != 0) {
+            dispatch_once(&timebase_init_token, ^{
+                mach_timebase_info(&timebase_info);
+            });
+            uint64_t now = mach_absolute_time();
+            if (now < _phtvCliBlockUntil) {
+                uint64_t remainUs = mach_time_to_us(_phtvCliBlockUntil - now);
+                if (remainUs > 0) {
+                    usleep(PHTVClampUseconds(remainUs));
+                }
+            }
         }
 
         // Auto-recover when macOS temporarily disables the event tap
