@@ -61,6 +61,9 @@ static const useconds_t CLI_WAIT_AFTER_BACKSPACE_DEFAULT_US = 6000;
 static const useconds_t CLI_TEXT_DELAY_DEFAULT_US = 3000;
 static const int CLI_TEXT_CHUNK_SIZE_DEFAULT = 20;
 static const int CLI_TEXT_CHUNK_SIZE_ONE_BY_ONE = 1;
+static const useconds_t CLI_BACKSPACE_DELAY_IDE_US = 8000;
+static const useconds_t CLI_WAIT_AFTER_BACKSPACE_IDE_US = 25000;
+static const useconds_t CLI_TEXT_DELAY_IDE_US = 8000;
 
 // AXValueType constant name differs across SDK versions.
 #if defined(kAXValueTypeCFRange)
@@ -92,7 +95,47 @@ static inline BOOL PHTVStringContainsTerminalKeyword(NSString *value) {
     NSString *lower = [value lowercaseString];
     return ([lower containsString:@"terminal"] ||
             [lower containsString:@"xterm"] ||
-            [lower containsString:@"shell"]);
+            [lower containsString:@"shell"] ||
+            [lower containsString:@"console"] ||
+            [lower containsString:@"vscode-terminal"] ||
+            [lower containsString:@"terminal.integrated"] ||
+            [lower containsString:@"xterm.js"] ||
+            [lower containsString:@"terminalview"]);
+}
+
+static BOOL PHTVBundleIdIsIDE(NSString *bundleId) {
+    if (!bundleId) {
+        return NO;
+    }
+    if ([bundleId hasPrefix:@"com.jetbrains."]) {
+        return YES;
+    }
+    return [bundleId isEqualToString:@"com.microsoft.VSCode"] ||
+           [bundleId isEqualToString:@"com.microsoft.VSCodeInsiders"] ||
+           [bundleId isEqualToString:@"com.visualstudio.code.oss"] ||
+           [bundleId isEqualToString:@"com.vscodium"] ||
+           [bundleId isEqualToString:@"com.vscodium.codium"] ||
+           [bundleId isEqualToString:@"com.google.antigravity"] ||
+           [bundleId isEqualToString:@"com.todesktop.cursor"] ||
+           [bundleId isEqualToString:@"com.todesktop.230313mzl4w4u92"];
+}
+
+static BOOL PHTVBundleIdIsVSCodeFamily(NSString *bundleId) {
+    if (!bundleId) {
+        return NO;
+    }
+    return [bundleId isEqualToString:@"com.microsoft.VSCode"] ||
+           [bundleId isEqualToString:@"com.microsoft.VSCodeInsiders"] ||
+           [bundleId isEqualToString:@"com.visualstudio.code.oss"] ||
+           [bundleId isEqualToString:@"com.vscodium"] ||
+           [bundleId isEqualToString:@"com.vscodium.codium"] ||
+           [bundleId isEqualToString:@"com.google.antigravity"] ||
+           [bundleId isEqualToString:@"com.todesktop.cursor"] ||
+           [bundleId isEqualToString:@"com.todesktop.230313mzl4w4u92"];
+}
+
+static BOOL PHTVBundleIdIsJetBrains(NSString *bundleId) {
+    return (bundleId != nil && [bundleId hasPrefix:@"com.jetbrains."]);
 }
 
 #ifdef DEBUG
@@ -453,6 +496,13 @@ static int _phtvPendingBackspaceCount = 0;
     }
 
     static inline void ConfigureCliProfile(NSString *bundleId) {
+        if (PHTVBundleIdIsVSCodeFamily(bundleId) || PHTVBundleIdIsJetBrains(bundleId)) {
+            _phtvCliBackspaceDelayUs = CLI_BACKSPACE_DELAY_IDE_US;
+            _phtvCliWaitAfterBackspaceUs = CLI_WAIT_AFTER_BACKSPACE_IDE_US;
+            _phtvCliTextDelayUs = CLI_TEXT_DELAY_IDE_US;
+            _phtvCliTextChunkSize = CLI_TEXT_CHUNK_SIZE_ONE_BY_ONE;
+            return;
+        }
         if ([PHTVAppDetectionManager isFastTerminalApp:bundleId]) {
             _phtvCliBackspaceDelayUs = CLI_BACKSPACE_DELAY_FAST_US;
             _phtvCliWaitAfterBackspaceUs = CLI_WAIT_AFTER_BACKSPACE_FAST_US;
