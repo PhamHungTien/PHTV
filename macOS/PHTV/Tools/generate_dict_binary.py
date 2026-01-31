@@ -171,7 +171,15 @@ def download_file(url, dest):
     """Download file from URL with progress indicator."""
     print(f"  Downloading from {url}...")
     try:
-        urllib.request.urlretrieve(url, dest)
+        req = urllib.request.Request(
+            url, 
+            data=None, 
+            headers={
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36'
+            }
+        )
+        with urllib.request.urlopen(req) as response, open(dest, 'wb') as out_file:
+            out_file.write(response.read())
         return True
     except Exception as e:
         print(f"  ✗ Download failed: {e}")
@@ -215,8 +223,8 @@ def build_english_dictionary(resources_dir):
 
     # Priority: frequency-based lists (common programming/tech words)
     urls_priority = [
-        # Detailed English word list (370k+ words) - Ensuring completeness
-        ('https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt', 400000),
+        # Detailed English word list (370k+ words) - Limited to 300k to stay under 100MB GitHub limit
+        ('https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt', 300000),
     ]
 
     words = set()
@@ -234,6 +242,26 @@ def build_english_dictionary(resources_dir):
                             if count >= limit:
                                 break
             print(f"  Loaded {len(words):,} words so far")
+
+    # Mandatory words: ensure these tech terms and loan words are ALWAYS present
+    mandatory_words = {
+        'codebase', 'database', 'backend', 'frontend', 'server', 'client',
+        'internet', 'karaoke', 'video', 'camera', 'radio', 'email', 'gmail',
+        'login', 'logout', 'signup', 'signin', 'admin', 'website', 'browser',
+        'format', 'install', 'update', 'download', 'upload',
+        'adobe', 'photoshop', 'office', 'windows', 'macos', 'linux', 'android', 'ios',
+        'facebook', 'youtube', 'google', 'twitter', 'instagram', 'tiktok', 'zalo',
+        'laptop', 'smartphone', 'monitor', 'keyboard', 'mouse',
+        'bluetooth', 'wifi', 'gps', 'usb', 'hdmi',
+        'python', 'java', 'script', 'html', 'css', 'php', 'sql',
+        'docker', 'kubernetes', 'cloud', 'aws', 'azure',
+        'bug', 'fix', 'issue', 'feature', 'commit', 'push', 'pull', 'merge',
+        'branch', 'checkout', 'clone', 'repo', 'repository',
+        'terminal', 'console', 'shell', 'bash', 'zsh', 'command',
+        'english', 'vietnamese', 'japanese', 'chinese', 'french',
+        'important', 'ignorant', 'year', 'your', 'our', 'ear', 'early', 'their'
+    }
+    words.update(mandatory_words)
 
     # Also check local file
     local_en = os.path.join(resources_dir, 'en_words.txt')
@@ -279,7 +307,7 @@ def build_vietnamese_dictionary(resources_dir, english_words=None):
     # Download complete Vietnamese word list (74K+ words)
     temp_file = '/tmp/vi_words_full.txt'
     urls = [
-        'https://vietnamese-wordlist.duyet.net/Viet74K.txt',
+        'https://raw.githubusercontent.com/duyet/vietnamese-wordlist/master/Viet74K.txt',
     ]
 
     vietnamese_words = set()
@@ -349,9 +377,13 @@ def build_vietnamese_dictionary(resources_dir, english_words=None):
                     # Split by space/hyphen to get individual words
                     parts = line.replace('-', ' ').split()
                     for word in parts:
-                        word = word.strip()
+                        word = word.strip().lower()
                         if word and len(word) >= 1:
                             if word not in blacklist_vi:
+                                # FILTER: If word is in English dictionary and long enough, exclude it from Vietnamese
+                                # This ensures loan words like "karaoke", "internet" are treated as English
+                                if english_words and len(word) > 3 and word in english_words:
+                                    continue
                                 vietnamese_words.add(word)
 
             print(f"  Loaded {len(vietnamese_words):,} Vietnamese words total")
