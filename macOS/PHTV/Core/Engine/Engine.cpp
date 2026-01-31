@@ -689,7 +689,13 @@ void checkCorrectVowel(vector<vector<Uint16>>& charset, int& i, int& k, const Ui
         if (CHR(k) == CHR(k+1) &&
             !(TypingWord[k] & (TONE_MASK | TONEW_MASK)) &&
             !(TypingWord[k+1] & (TONE_MASK | TONEW_MASK))) {
-            isCorect = false;
+            // Allow triple (or more) identical vowels when applying a tone mark
+            // so sequences like "ooo" can still receive a tone before end consonants.
+            if (IS_MARK_KEY(markKey) && k + 2 < _index && CHR(k) == CHR(k + 2)) {
+                // keep isCorect = true
+            } else {
+                isCorect = false;
+            }
         }
     }
 }
@@ -827,6 +833,7 @@ void handleModernMark() {
     Byte originalVEI = VEI;
     Byte originalVowelCount = vowelCount;
     bool adjustedTrailing = false;
+    bool preferLastRepeat = false;
     if (vowelCount >= 2) {
         int tailStart = VEI;
         Uint16 tailVowel = CHR(VEI);
@@ -834,14 +841,27 @@ void handleModernMark() {
             tailStart--;
         }
         if (VEI - tailStart + 1 >= 2) {
-            VEI = (Byte)tailStart;
-            vowelCount = 0;
-            for (int idx = VSI; idx <= VEI; idx++) {
-                if (!IS_CONSONANT(CHR(idx))) {
-                    vowelCount++;
+            bool runHasDiacritic = false;
+            for (int idx = tailStart; idx <= VEI; idx++) {
+                if (TypingWord[idx] & (TONE_MASK | TONEW_MASK)) {
+                    runHasDiacritic = true;
+                    break;
                 }
             }
-            adjustedTrailing = true;
+            // Special-case repeated 'o' in modern orthography (loanwords like "boong"):
+            // place the tone on the last 'o' instead of the first.
+            if (!runHasDiacritic && tailVowel == KEY_O && tailStart == VSI) {
+                preferLastRepeat = true;
+            } else {
+                VEI = (Byte)tailStart;
+                vowelCount = 0;
+                for (int idx = VSI; idx <= VEI; idx++) {
+                    if (!IS_CONSONANT(CHR(idx))) {
+                        vowelCount++;
+                    }
+                }
+                adjustedTrailing = true;
+            }
         }
     }
 
@@ -975,6 +995,11 @@ void handleModernMark() {
             VWSM = VEI;
             hBPC = _index - VWSM;
         }
+    }
+
+    if (preferLastRepeat) {
+        VWSM = originalVEI;
+        hBPC = (_index - VWSM);
     }
 
     if (adjustedTrailing) {
