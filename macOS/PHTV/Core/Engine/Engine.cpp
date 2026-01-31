@@ -98,41 +98,6 @@ static Byte _stateIndex = 0;
 
 static bool tempDisableKey = false;
 
-static inline bool isProtectedEnglishWordForSpellcheck(const Uint32* keyStates, int count) {
-    if (count < 2 || count > 12) return false;
-
-    // Common English words that often get tone-marked in Telex when spell check is on.
-    // Keep this list focused on high-frequency words that end with tone keys (r/s/f/...)
-    // or are known problem cases.
-    static const std::unordered_set<std::string> kProtectedWords = {
-        // Problem cases from issue
-        "year", "your", "our", "ear", "early", "their",
-
-        // Pronouns / determiners
-        "her", "hers", "his", "its", "ours", "yours", "theirs",
-
-        // Aux/verbs (ending with tone keys)
-        "are", "were", "is", "as", "was", "has", "does",
-
-        // Prepositions / conjunctions
-        "or", "for", "of", "if",
-
-        // Common adverbs / misc (ending with r/s)
-        "more", "over", "after", "other", "under", "never", "ever",
-        "later", "better", "either", "rather",
-
-        // Short confirmations / misc
-        "yes", "us", "off"
-    };
-
-    std::string word = keyStatesToString(keyStates, count);
-    if ((int)word.size() != count) return false;
-    if (kProtectedWords.count(word) == 0) return false;
-
-    // If this exact key sequence is a Vietnamese word, don't protect it.
-    return !isVietnameseWordFromKeyStates(keyStates, count);
-}
-
 static inline bool isVietnameseWordFromTypingWord(const int length) {
     if (length <= 0) return false;
     Uint32 buf[32];
@@ -2181,13 +2146,6 @@ void vKeyHandleEvent(const vKeyEvent& event,
 
         insertState(data, _isCaps); //save state
 
-        bool forceRawSpecial = false;
-        if (vCheckSpelling && IS_SPECIALKEY(data)) {
-            if (isProtectedEnglishWordForSpellcheck(KeyStates, _stateIndex)) {
-                forceRawSpecial = true;
-            }
-        }
-
         // If a tone mark is pressed while tempDisableKey is true, re-evaluate spelling.
         // This allows adding tone after finishing a word like "hưu" -> "hữu".
         bool allowMarkDespiteTempDisable = IS_MARK_KEY(data);
@@ -2212,9 +2170,17 @@ void vKeyHandleEvent(const vKeyEvent& event,
         bool allowSpecialDespiteTempDisable = allowMarkDespiteTempDisable || allowVowelChangeDespiteTempDisable;
         if (vCheckSpelling && allowSpecialDespiteTempDisable) {
             checkSpelling(true);
+            
+            // Fix for Issue #123: If word is invalid Vietnamese (tempDisableKey=true),
+            // do not allow tone marks (s,f,r,x,j) to force themselves in.
+            // This prevents "year" -> "yẻa", "string" -> "stríng", "global" -> "globá".
+            // We only block MARK keys, allowing vowel corrections (aa, ee, dd) if they were allowed.
+            if (tempDisableKey && allowMarkDespiteTempDisable) {
+                allowSpecialDespiteTempDisable = false;
+            }
         }
 
-        if (!IS_SPECIALKEY(data) || (tempDisableKey && !allowSpecialDespiteTempDisable) || forceRawSpecial) { //do nothing
+        if (!IS_SPECIALKEY(data) || (tempDisableKey && !allowSpecialDespiteTempDisable)) { //do nothing
             if (vQuickTelex && IS_QUICK_TELEX_KEY(data)) {
                 handleQuickTelex(data, _isCaps);
                 return;
