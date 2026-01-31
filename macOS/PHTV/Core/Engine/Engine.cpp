@@ -897,8 +897,28 @@ void handleModernMark() {
         (CHR(VSI) == KEY_Y && (TypingWord[VSI+1] & (KEY_E | TONE_MASK))) ||
         (CHR(VSI) == KEY_U && (TypingWord[VSI+1] == (KEY_O | TONE_MASK))) ||
         ((TypingWord[VSI] == (KEY_U | TONEW_MASK)) && (TypingWord[VSI+1] == (KEY_O | TONEW_MASK)))){
-        
-        if (VSI+2 < _index) {
+
+        // If the second vowel already has a diacritic (iê/yê/uô/ươ), keep tone on it.
+        bool forceSecondVowel = false;
+        if ((CHR(VSI) == KEY_I || CHR(VSI) == KEY_Y) &&
+            CHR(VSI + 1) == KEY_E &&
+            (TypingWord[VSI + 1] & TONE_MASK)) {
+            forceSecondVowel = true;
+        } else if (CHR(VSI) == KEY_U &&
+                   CHR(VSI + 1) == KEY_O &&
+                   (TypingWord[VSI + 1] & TONE_MASK)) {
+            forceSecondVowel = true;
+        } else if ((TypingWord[VSI] & TONEW_MASK) &&
+                   (TypingWord[VSI + 1] & TONEW_MASK) &&
+                   CHR(VSI) == KEY_U &&
+                   CHR(VSI + 1) == KEY_O) {
+            forceSecondVowel = true;
+        }
+
+        if (forceSecondVowel) {
+            VWSM = VSI + 1;
+            hBPC = _index - VWSM;
+        } else if (VSI+2 < _index) {
             if (CHR(VSI+2) == KEY_P || CHR(VSI+2) == KEY_T ||
                 CHR(VSI+2) == KEY_M || CHR(VSI+2) == KEY_N ||
                 CHR(VSI+2) == KEY_O || CHR(VSI+2) == KEY_U ||
@@ -2108,11 +2128,30 @@ void vKeyHandleEvent(const vKeyEvent& event,
         // If a tone mark is pressed while tempDisableKey is true, re-evaluate spelling.
         // This allows adding tone after finishing a word like "hưu" -> "hữu".
         bool allowMarkDespiteTempDisable = IS_MARK_KEY(data);
-        if (vCheckSpelling && allowMarkDespiteTempDisable) {
+
+        // Also allow vowel modifiers to be applied even if tempDisableKey is true,
+        // when the current word already has a tone/diacritic. This fixes cases like
+        // "viejet" -> "việt" where the tone is typed before the vowel modifier.
+        bool allowVowelChangeDespiteTempDisable = false;
+        if (tempDisableKey && IS_SPECIALKEY(data) && !allowMarkDespiteTempDisable) {
+            if (IS_KEY_DOUBLE(data) || IS_KEY_W(data) || IS_BRACKET_KEY(data)) {
+                bool hasToneOrDiacritic = false;
+                for (int scan = 0; scan < _index; scan++) {
+                    if (TypingWord[scan] & (MARK_MASK | TONE_MASK | TONEW_MASK)) {
+                        hasToneOrDiacritic = true;
+                        break;
+                    }
+                }
+                allowVowelChangeDespiteTempDisable = hasToneOrDiacritic;
+            }
+        }
+
+        bool allowSpecialDespiteTempDisable = allowMarkDespiteTempDisable || allowVowelChangeDespiteTempDisable;
+        if (vCheckSpelling && allowSpecialDespiteTempDisable) {
             checkSpelling(true);
         }
 
-        if (!IS_SPECIALKEY(data) || (tempDisableKey && !allowMarkDespiteTempDisable) || forceRawSpecial) { //do nothing
+        if (!IS_SPECIALKEY(data) || (tempDisableKey && !allowSpecialDespiteTempDisable) || forceRawSpecial) { //do nothing
             if (vQuickTelex && IS_QUICK_TELEX_KEY(data)) {
                 handleQuickTelex(data, _isCaps);
                 return;
