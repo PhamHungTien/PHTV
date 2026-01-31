@@ -215,28 +215,11 @@ def build_english_dictionary(resources_dir):
 
     # Priority: frequency-based lists (common programming/tech words)
     urls_priority = [
-        # Google 10K most common (highest priority)
-        ('https://raw.githubusercontent.com/first20hours/google-10000-english/master/google-10000-english.txt', 10000),
-        # MIT word list (common words)
-        ('https://www.mit.edu/~ecprice/wordlist.10000', 10000),
+        # Detailed English word list (370k+ words) - Ensuring completeness
+        ('https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt', 400000),
     ]
 
     words = set()
-
-    # Blacklist: Vietnamese abbreviations that should NOT be in English dictionary
-    # These are common Vietnamese texting shortcuts that conflict with Text Replacement
-    blacklist = {
-        'dc',    # được (Vietnamese)
-        'ko',    # không (Vietnamese)
-        'k',     # không (Vietnamese)
-        'dc',    # được (Vietnamese - texting)
-        'dk',    # được không (Vietnamese - texting)
-        'cx',    # cũng (Vietnamese - texting)
-        'nx',    # nữa (Vietnamese - texting)
-        'vs',    # với (Vietnamese - texting)
-        'ms',    # mới (Vietnamese - texting)
-        'cs',    # chỉ (Vietnamese - texting)
-    }
 
     for url, limit in urls_priority:
         if download_file(url, temp_file):
@@ -244,8 +227,8 @@ def build_english_dictionary(resources_dir):
             with open(temp_file, 'r', encoding='utf-8', errors='ignore') as f:
                 for line in f:
                     word = line.strip().lower()
-                    if word and 2 <= len(word) <= 20:  # Limit word length
-                        if word not in blacklist and all(c.isalpha() and c.isascii() for c in word):
+                    if word and 2 <= len(word) <= 45:  # Expanded length limit
+                        if all(c.isalpha() and c.isascii() for c in word):
                             words.add(word)
                             count += 1
                             if count >= limit:
@@ -258,8 +241,8 @@ def build_english_dictionary(resources_dir):
         with open(local_en, 'r', encoding='utf-8') as f:
             for line in f:
                 word = line.strip().lower()
-                if word and 2 <= len(word) <= 20:
-                    if word not in blacklist and all(c.isalpha() and c.isascii() for c in word):
+                if word and 2 <= len(word) <= 45:
+                    if all(c.isalpha() and c.isascii() for c in word):
                         words.add(word)
         print(f"  Added local words, total: {len(words):,}")
 
