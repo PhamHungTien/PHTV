@@ -100,42 +100,58 @@ static inline BOOL PHTVStringContainsTerminalKeyword(NSString *value) {
             [lower containsString:@"vscode-terminal"] ||
             [lower containsString:@"terminal.integrated"] ||
             [lower containsString:@"xterm.js"] ||
-            [lower containsString:@"terminalview"]);
+            [lower containsString:@"terminalview"] ||
+            [lower containsString:@"terminalpanel"] ||
+            [lower containsString:@"toolwindow terminal"] ||
+            [lower containsString:@"tool window: terminal"] ||
+            [lower containsString:@"terminal tool window"] ||
+            [lower containsString:@"command line"] ||
+            [lower containsString:@"pty"] ||
+            [lower containsString:@"tty"]);
 }
 
 static BOOL PHTVBundleIdIsIDE(NSString *bundleId) {
     if (!bundleId) {
         return NO;
     }
-    if ([bundleId hasPrefix:@"com.jetbrains."]) {
+    NSString *lower = [bundleId lowercaseString];
+    if ([lower hasPrefix:@"com.jetbrains."]) {
         return YES;
     }
-    return [bundleId isEqualToString:@"com.microsoft.VSCode"] ||
-           [bundleId isEqualToString:@"com.microsoft.VSCodeInsiders"] ||
-           [bundleId isEqualToString:@"com.visualstudio.code.oss"] ||
-           [bundleId isEqualToString:@"com.vscodium"] ||
-           [bundleId isEqualToString:@"com.vscodium.codium"] ||
-           [bundleId isEqualToString:@"com.google.antigravity"] ||
-           [bundleId isEqualToString:@"com.todesktop.cursor"] ||
-           [bundleId isEqualToString:@"com.todesktop.230313mzl4w4u92"];
+    if ([lower isEqualToString:@"com.google.android.studio"]) {
+        return YES;
+    }
+    return [lower isEqualToString:@"com.microsoft.vscode"] ||
+           [lower isEqualToString:@"com.microsoft.vscodeinsiders"] ||
+           [lower isEqualToString:@"com.visualstudio.code.oss"] ||
+           [lower isEqualToString:@"com.vscodium"] ||
+           [lower isEqualToString:@"com.vscodium.codium"] ||
+           [lower isEqualToString:@"com.google.antigravity"] ||
+           [lower isEqualToString:@"com.todesktop.cursor"] ||
+           [lower isEqualToString:@"com.todesktop.230313mzl4w4u92"];
 }
 
 static BOOL PHTVBundleIdIsVSCodeFamily(NSString *bundleId) {
     if (!bundleId) {
         return NO;
     }
-    return [bundleId isEqualToString:@"com.microsoft.VSCode"] ||
-           [bundleId isEqualToString:@"com.microsoft.VSCodeInsiders"] ||
-           [bundleId isEqualToString:@"com.visualstudio.code.oss"] ||
-           [bundleId isEqualToString:@"com.vscodium"] ||
-           [bundleId isEqualToString:@"com.vscodium.codium"] ||
-           [bundleId isEqualToString:@"com.google.antigravity"] ||
-           [bundleId isEqualToString:@"com.todesktop.cursor"] ||
-           [bundleId isEqualToString:@"com.todesktop.230313mzl4w4u92"];
+    NSString *lower = [bundleId lowercaseString];
+    return [lower isEqualToString:@"com.microsoft.vscode"] ||
+           [lower isEqualToString:@"com.microsoft.vscodeinsiders"] ||
+           [lower isEqualToString:@"com.visualstudio.code.oss"] ||
+           [lower isEqualToString:@"com.vscodium"] ||
+           [lower isEqualToString:@"com.vscodium.codium"] ||
+           [lower isEqualToString:@"com.google.antigravity"] ||
+           [lower isEqualToString:@"com.todesktop.cursor"] ||
+           [lower isEqualToString:@"com.todesktop.230313mzl4w4u92"];
 }
 
 static BOOL PHTVBundleIdIsJetBrains(NSString *bundleId) {
-    return (bundleId != nil && [bundleId hasPrefix:@"com.jetbrains."]);
+    if (!bundleId) {
+        return NO;
+    }
+    NSString *lower = [bundleId lowercaseString];
+    return [lower hasPrefix:@"com.jetbrains."] || [lower isEqualToString:@"com.google.android.studio"];
 }
 
 #ifdef DEBUG
@@ -192,6 +208,31 @@ static inline BOOL IsTextReplacementFixEnabled(void) {
 // which may crash on Macs running macOS via OpenCore Legacy Patcher (OCLP)
 // Note: Not static - exported for PHTVManager access
 BOOL vSafeMode = NO;
+
+static NSString *PHTVGetFocusedWindowTitleForFrontmostApp(void) {
+    if (__atomic_load_n(&vSafeMode, __ATOMIC_RELAXED)) return nil;
+    NSRunningApplication *frontmost = [[NSWorkspace sharedWorkspace] frontmostApplication];
+    if (!frontmost) return nil;
+
+    AXUIElementRef appEl = AXUIElementCreateApplication(frontmost.processIdentifier);
+    if (!appEl) return nil;
+
+    NSString *title = nil;
+    CFTypeRef focusedWindow = NULL;
+    if (AXUIElementCopyAttributeValue(appEl, kAXFocusedWindowAttribute, &focusedWindow) == kAXErrorSuccess &&
+        focusedWindow != NULL) {
+        CFTypeRef titleRef = NULL;
+        if (AXUIElementCopyAttributeValue((AXUIElementRef)focusedWindow, kAXTitleAttribute, &titleRef) == kAXErrorSuccess) {
+            if (titleRef && CFGetTypeID(titleRef) == CFStringGetTypeID()) {
+                title = [(__bridge NSString *)titleRef copy];
+            }
+            if (titleRef) CFRelease(titleRef);
+        }
+        CFRelease(focusedWindow);
+    }
+    CFRelease(appEl);
+    return title;
+}
 
 // Force invalidate Spotlight detection cache
 // Call this when Cmd+Space is detected or when modifier keys change
@@ -962,11 +1003,20 @@ static bool _pendingUppercasePrimeCheck = true;
                                            (__bridge NSString *)kAXRoleDescriptionAttribute,
                                            (__bridge NSString *)kAXHelpAttribute,
                                            (__bridge NSString *)kAXTitleAttribute,
-                                           @"AXIdentifier"];
+                                           @"AXIdentifier",
+                                           (__bridge NSString *)kAXRoleAttribute,
+                                           (__bridge NSString *)kAXSubroleAttribute];
 
-            // Check focused element and a few parent levels (VSCode/Cursor terminal often lives in container)
+            NSString *bundleId = getFocusedAppBundleId();
+            BOOL isIDE = PHTVBundleIdIsIDE(bundleId);
+            NSString *windowTitle = nil;
+            if (isIDE) {
+                windowTitle = PHTVGetFocusedWindowTitleForFrontmostApp();
+            }
+
+            // Check focused element and parent levels (IDE terminals often live in container)
             AXUIElementRef current = focusedElement;
-            for (int level = 0; level < 3 && current != NULL; level++) {
+            for (int level = 0; level < 8 && current != NULL; level++) {
                 for (NSString *attr in attributesToCheck) {
                     CFTypeRef valueRef = NULL;
                     if (AXUIElementCopyAttributeValue(current, (__bridge CFStringRef)attr, &valueRef) == kAXErrorSuccess) {
@@ -974,6 +1024,12 @@ static bool _pendingUppercasePrimeCheck = true;
                             NSString *value = (__bridge NSString *)valueRef;
                             if (PHTVStringContainsTerminalKeyword(value)) {
                                 isTerminalPanel = YES;
+                            }
+                            if (isIDE && !isTerminalPanel &&
+                                ([value isEqualToString:@"AXTextArea"] || [value isEqualToString:@"AXGroup"] || [value isEqualToString:@"AXScrollArea"])) {
+                                if (PHTVStringContainsTerminalKeyword(windowTitle)) {
+                                    isTerminalPanel = YES;
+                                }
                             }
                         }
                         if (valueRef) CFRelease(valueRef);
@@ -1002,6 +1058,16 @@ static bool _pendingUppercasePrimeCheck = true;
             CFRelease(focusedElement);
         }
         CFRelease(systemWide);
+
+        if (!isTerminalPanel) {
+            NSString *bundleId = getFocusedAppBundleId();
+            if (PHTVBundleIdIsIDE(bundleId)) {
+                NSString *windowTitle = PHTVGetFocusedWindowTitleForFrontmostApp();
+                if (PHTVStringContainsTerminalKeyword(windowTitle)) {
+                    isTerminalPanel = YES;
+                }
+            }
+        }
 
         lastResult = isTerminalPanel;
         lastCheckTime = now;
@@ -2935,11 +3001,13 @@ static bool _pendingUppercasePrimeCheck = true;
             BOOL isBrowser = isTargetBrowser || [PHTVAppDetectionManager isBrowserApp:effectiveBundleId];
             _phtvPostToHIDTap = (!isBrowser && spotlightActive) || appChars.isSpotlightLike;
             BOOL isTerminalApp = [PHTVAppDetectionManager isTerminalApp:effectiveBundleId];
+            BOOL isJetBrainsApp = PHTVBundleIdIsJetBrains(effectiveBundleId);
             BOOL isTerminalPanel = NO;
-            if (!isTerminalApp) {
+            if (!isTerminalApp && !isJetBrainsApp) {
                 isTerminalPanel = isTerminalPanelFocused();
             }
-            _phtvIsCliTarget = (isTerminalApp || isTerminalPanel);
+            // Best-effort: Force CLI mode for all JetBrains apps to avoid terminal swallowing
+            _phtvIsCliTarget = (isTerminalApp || isTerminalPanel || isJetBrainsApp);
             _phtvPostToSessionForCli = _phtvIsCliTarget;
             if (_phtvIsCliTarget) {
                 ConfigureCliProfile(effectiveBundleId);
