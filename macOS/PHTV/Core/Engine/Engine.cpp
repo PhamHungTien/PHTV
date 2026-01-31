@@ -1864,6 +1864,25 @@ void vKeyHandleEvent(const vKeyEvent& event,
                         shouldRestoreEnglish = true;
                     }
                 }
+
+                // Fix for "macoss" -> "macos": If user corrected the word manually (e.g. typing 's' to remove tone),
+                // producing a clean English word in TypingWord, do not restore the raw keys (which might be "macoss").
+                if (shouldRestoreEnglish) {
+                    bool isTypingWordPureEnglish = true;
+                    for (int k = 0; k < _index; k++) {
+                        if (TypingWord[k] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) {
+                            isTypingWordPureEnglish = false;
+                            break;
+                        }
+                    }
+                    if (isTypingWordPureEnglish && isEnglishWordFromKeyStates(TypingWord, _index)) {
+                        shouldRestoreEnglish = false;
+                        #ifdef DEBUG
+                        fprintf(stderr, "[AutoEnglish] SKIP RESTORE: TypingWord is already clean English\n");
+                        fflush(stderr);
+                        #endif
+                    }
+                }
             }
             // IMPORTANT: Check _index > 0 (must have display chars) and _stateIndex > 1 (at least 2 keys pressed)
             if (_index > 0 && _stateIndex > 1 && shouldRestoreEnglish) {
@@ -1982,6 +2001,25 @@ void vKeyHandleEvent(const vKeyEvent& event,
                     !isVietnameseWordFromKeyStates(KeyStates, _stateIndex) &&
                     !isVietnameseWordFromTypingWord(_index)) {
                     shouldRestoreEnglish = true;
+                }
+            }
+            
+            // Fix for "macoss" -> "macos": If user corrected the word manually (e.g. typing 's' to remove tone),
+            // producing a clean English word in TypingWord, do not restore the raw keys (which might be "macoss").
+            if (shouldRestoreEnglish) {
+                bool isTypingWordPureEnglish = true;
+                for (int k = 0; k < _index; k++) {
+                    if (TypingWord[k] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) {
+                        isTypingWordPureEnglish = false;
+                        break;
+                    }
+                }
+                if (isTypingWordPureEnglish && isEnglishWordFromKeyStates(TypingWord, _index)) {
+                    shouldRestoreEnglish = false;
+                    #ifdef DEBUG
+                    fprintf(stderr, "[AutoEnglish] SKIP RESTORE SPACE: TypingWord is already clean English\n");
+                    fflush(stderr);
+                    #endif
                 }
             }
         }
