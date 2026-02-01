@@ -10,6 +10,7 @@
 #import "PHTVCacheManager.h"
 #import "PHTVAppDetectionManager.h"
 #import "PHTVTimingManager.h"
+#import "../Application/AppDelegate.h"
 #import <mach/mach_time.h>
 #import <libproc.h>
 #import <Cocoa/Cocoa.h>
@@ -191,6 +192,12 @@ static int _externalDeleteCount = 0;
 
     // Get bundle ID to filter browser address bars
     NSString *bundleId = [PHTVCacheManager getBundleIdFromPID:focusedPID];
+
+    // Ignore PHTV's own UI - search fields inside the app should not trigger Spotlight behavior.
+    if (bundleId != nil && [bundleId isEqualToString:PHTV_BUNDLE]) {
+        [PHTVCacheManager updateSpotlightCache:NO pid:focusedPID bundleId:bundleId];
+        return NO;
+    }
 
     // PRIMARY CHECK: Detect search field by AXRole/AXSubrole
     // Now with bundle ID filtering to exclude browser address bars
