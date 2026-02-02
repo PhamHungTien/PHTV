@@ -22,6 +22,7 @@ struct PHTVApp: App {
         // EmojiHotkeyManager.handleSettingsChanged() calls AppState.shared
         // If AppState is initializing when the notification fires, we get recursive lock
         _ = AppState.shared
+        MemoryPressureMonitor.shared.start()
 
         // Initialize SettingsNotificationObserver to listen for notifications
         _ = SettingsNotificationObserver.shared

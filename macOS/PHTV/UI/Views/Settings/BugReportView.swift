@@ -79,14 +79,13 @@ struct BugReportView: View {
     @State private var contactEmail: String = ""
     @State private var bugSeverity: BugSeverity = .normal
     @State private var bugArea: BugArea = .typing
-    @State private var debugLogs: String = ""
+    @State private var logBuffer: String = ""
     @State private var isLoadingLogs: Bool = false
     @State private var showCopiedAlert: Bool = false
     @State private var showSavedAlert: Bool = false
     @State private var savedLocation: String = ""
     // Default: OFF to avoid loading heavy OSLog snapshot when chỉ xem tab
     @State private var showLogPreview: Bool = false
-    @State private var cachedLogs: String = ""
     @State private var isSending: Bool = false
     @State private var hasLoadedLogsOnce: Bool = false
 
@@ -130,15 +129,13 @@ struct BugReportView: View {
                 Task { await loadLogsIfNeeded() }
             } else {
                 // Giải phóng bộ nhớ log khi tắt
-                debugLogs = ""
-                cachedLogs = ""
+                logBuffer = ""
                 showLogPreview = false
             }
         }
         .onDisappear {
             // Giải phóng log khi rời tab để hạ RAM
-            debugLogs = ""
-            cachedLogs = ""
+            logBuffer = ""
         }
     }
 
@@ -745,11 +742,13 @@ struct BugReportView: View {
         isLoadingLogs = true
 
         Task.detached(priority: .userInitiated) {
-            let logs = Self.fetchLogsSync(maxEntries: 100) // Giới hạn số log
+            let logs = autoreleasepool {
+                Self.fetchLogsSync(maxEntries: 80) // Giới hạn số log
+            }
             await MainActor.run {
-                self.debugLogs = logs
-                self.cachedLogs = logs
+                self.logBuffer = logs
                 self.isLoadingLogs = false
+                self.hasLoadedLogsOnce = true
             }
         }
     }
@@ -759,25 +758,24 @@ struct BugReportView: View {
         isLoadingLogs = true
 
         let logs = await Task.detached(priority: .userInitiated) {
-            Self.fetchLogsSync(maxEntries: 100) // Giới hạn số log
+            autoreleasepool {
+                Self.fetchLogsSync(maxEntries: 80) // Giới hạn số log
+            }
         }.value
 
-        debugLogs = logs
-        cachedLogs = logs
+        logBuffer = logs
         isLoadingLogs = false
         hasLoadedLogsOnce = true
     }
 
     private func loadLogsIfNeeded() async {
-        if cachedLogs.isEmpty {
+        if logBuffer.isEmpty {
             await loadDebugLogsAsync()
-        } else {
-            debugLogs = cachedLogs
         }
     }
 
     private func refreshLogs() async {
-        cachedLogs = ""
+        logBuffer = ""
         await loadDebugLogsAsync()
     }
 
@@ -848,16 +846,17 @@ struct BugReportView: View {
         if #available(macOS 12.0, *) {
             do {
                 let store = try OSLogStore(scope: .currentProcessIdentifier)
-                // Lấy log trong 60 phút gần đây để không sót lỗi
-                let position = store.position(date: Date().addingTimeInterval(-60 * 60))
+                // Lấy log trong 15 phút gần đây để giảm RAM khi mở tab
+                let position = store.position(date: Date().addingTimeInterval(-15 * 60))
                 let entries = try store.getEntries(at: position)
 
                 var regularLogCount = 0
-                let maxRegularLogs = maxEntries * 3
+                let maxRegularLogs = maxEntries
+                let maxTotalLogs = maxEntries * 2
 
                 for entry in entries {
                     if let logEntry = entry as? OSLogEntryLog {
-                        let message = logEntry.composedMessage
+                        var message = logEntry.composedMessage
                         guard !message.isEmpty else { continue }
 
                         let isErrorOrWarning = logEntry.level == .error || logEntry.level == .fault || logEntry.level == .notice
@@ -876,6 +875,10 @@ struct BugReportView: View {
                             regularLogCount += 1
                         }
 
+                        if message.count > 400 {
+                            message = String(message.prefix(400)) + "..."
+                        }
+
                         let category = detectCategory(from: message)
                         let logEntryItem = LogEntry(
                             date: logEntry.date,
@@ -884,6 +887,10 @@ struct BugReportView: View {
                             message: message
                         )
                         allLogEntries.append(logEntryItem)
+
+                        if allLogEntries.count >= maxTotalLogs {
+                            break
+                        }
                     }
                 }
             } catch {
@@ -1235,10 +1242,11 @@ struct BugReportView: View {
         let logs: String
         if appState.includeLogs {
             logs = await Task.detached(priority: .utility) {
-                Self.fetchLogsSync(maxEntries: 200) // Tăng lên 200 để debug tốt hơn
+                autoreleasepool {
+                    Self.fetchLogsSync(maxEntries: 120)
+                }
             }.value
-            debugLogs = logs
-            cachedLogs = logs
+            logBuffer = logs
         } else {
             logs = ""
         }
@@ -1422,7 +1430,9 @@ struct BugReportView: View {
         let fullLogs: String
         if appState.includeLogs {
             fullLogs = await Task.detached(priority: .utility) {
-                Self.fetchLogsSync(maxEntries: 200) // Nhiều hơn để debug tốt hơn
+                autoreleasepool {
+                    Self.fetchLogsSync(maxEntries: 120)
+                }
             }.value
         } else {
             fullLogs = ""
@@ -1462,7 +1472,9 @@ struct BugReportView: View {
         let logs: String
         if appState.includeLogs {
             logs = await Task.detached(priority: .utility) {
-                Self.fetchLogsSync(maxEntries: 200)
+                autoreleasepool {
+                    Self.fetchLogsSync(maxEntries: 120)
+                }
             }.value
         } else {
             logs = ""
@@ -1538,10 +1550,10 @@ struct BugReportView: View {
     }
 
     private var logPreviewText: String {
-        if debugLogs.isEmpty {
+        if logBuffer.isEmpty {
             return "Chưa có log để xem trước."
         }
-        let lines = debugLogs.split(separator: "\n", omittingEmptySubsequences: false)
+        let lines = logBuffer.split(separator: "\n", omittingEmptySubsequences: false)
         let tail = lines.suffix(80)
         return tail.joined(separator: "\n")
     }
