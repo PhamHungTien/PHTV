@@ -456,10 +456,16 @@ struct SettingsSurfaceBorder: View {
 
     var body: some View {
         // Bevel-style border to keep header/cards visually identical across fills
-        let outer = Color.black.opacity(colorScheme == .dark ? 0.55 : 0.12)
-        let highlight = Color.white.opacity(colorScheme == .dark ? 0.12 : 0.5)
-        let innerGradient = LinearGradient(
+        let outer = SettingsSurfaceColors.outer(colorScheme)
+        let highlight = SettingsSurfaceColors.highlight(colorScheme)
+        let innerShadow = SettingsSurfaceColors.innerShadow(colorScheme)
+        let highlightGradient = LinearGradient(
             colors: [highlight, Color.clear],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        let shadowGradient = LinearGradient(
+            colors: [Color.clear, innerShadow],
             startPoint: .top,
             endPoint: .bottom
         )
@@ -468,8 +474,26 @@ struct SettingsSurfaceBorder: View {
                 .strokeBorder(outer, lineWidth: 1)
             PHTVRoundedRect(cornerRadius: cornerRadius)
                 .inset(by: 0.5)
-                .strokeBorder(innerGradient, lineWidth: 0.5)
+                .strokeBorder(highlightGradient, lineWidth: 0.5)
+            PHTVRoundedRect(cornerRadius: cornerRadius)
+                .inset(by: 1)
+                .strokeBorder(shadowGradient, lineWidth: 0.5)
         }
+    }
+}
+
+/// Centralized colors so borders/dividers remain visually consistent.
+struct SettingsSurfaceColors {
+    static func outer(_ scheme: ColorScheme) -> Color {
+        Color.black.opacity(scheme == .dark ? 0.6 : 0.18)
+    }
+
+    static func highlight(_ scheme: ColorScheme) -> Color {
+        Color.white.opacity(scheme == .dark ? 0.14 : 0.6)
+    }
+
+    static func innerShadow(_ scheme: ColorScheme) -> Color {
+        Color.black.opacity(scheme == .dark ? 0.35 : 0.08)
     }
 }
 

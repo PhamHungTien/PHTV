@@ -432,8 +432,8 @@ struct SettingsDivider: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        let outer = Color.black.opacity(colorScheme == .dark ? 0.55 : 0.12)
-        let highlight = Color.white.opacity(colorScheme == .dark ? 0.12 : 0.5)
+        let outer = SettingsSurfaceColors.outer(colorScheme)
+        let highlight = SettingsSurfaceColors.highlight(colorScheme)
         Rectangle()
             .fill(outer)
             .frame(height: 1)
