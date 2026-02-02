@@ -68,7 +68,7 @@ struct HotkeyConfigView: View {
                     }
                     .padding(10)
                     .background {
-                        if #available(macOS 26.0, *) {
+                        if #available(macOS 26.0, *), SettingsVisualEffects.enableMaterials {
                             ZStack {
                                 PHTVRoundedRect(cornerRadius: 8)
                                     .fill(.ultraThinMaterial)
@@ -147,7 +147,7 @@ struct HotkeyConfigView: View {
                         .padding(.vertical, 10)
                         .frame(minWidth: 180)
                         .background {
-                            if #available(macOS 26.0, *) {
+                            if #available(macOS 26.0, *), SettingsVisualEffects.enableMaterials {
                                 if isRecording {
                                     PHTVRoundedRect(cornerRadius: 10)
                                         .fill(Color.accentColor.opacity(0.1))
@@ -190,7 +190,7 @@ struct HotkeyConfigView: View {
                         .padding(.horizontal, 14)
                         .padding(.vertical, 8)
                         .background {
-                            if #available(macOS 26.0, *) {
+                            if #available(macOS 26.0, *), SettingsVisualEffects.enableMaterials {
                                 ZStack {
                                     PHTVRoundedRect(cornerRadius: 10)
                                         .fill(.ultraThinMaterial)
@@ -663,7 +663,7 @@ struct PauseKeyConfigView: View {
                     }
                     .padding(10)
                     .background {
-                        if #available(macOS 26.0, *) {
+                        if #available(macOS 26.0, *), SettingsVisualEffects.enableMaterials {
                             ZStack {
                                 PHTVRoundedRect(cornerRadius: 8)
                                     .fill(.ultraThinMaterial)
@@ -701,7 +701,7 @@ struct PauseKeyConfigView: View {
                     }
                     .padding(10)
                     .background {
-                        if #available(macOS 26.0, *) {
+                        if #available(macOS 26.0, *), SettingsVisualEffects.enableMaterials {
                             ZStack {
                                 PHTVRoundedRect(cornerRadius: 8)
                                     .fill(.ultraThinMaterial)
@@ -912,7 +912,7 @@ struct EmojiHotkeyConfigView: View {
                             .padding(.vertical, 10)
                             .frame(minWidth: 180)
                             .background {
-                                if #available(macOS 26.0, *) {
+                                if #available(macOS 26.0, *), SettingsVisualEffects.enableMaterials {
                                     if isRecording {
                                         PHTVRoundedRect(cornerRadius: 10)
                                             .fill(Color.accentColor.opacity(0.1))
@@ -955,7 +955,7 @@ struct EmojiHotkeyConfigView: View {
                             .padding(.horizontal, 14)
                             .padding(.vertical, 8)
                             .background {
-                                if #available(macOS 26.0, *) {
+                                if #available(macOS 26.0, *), SettingsVisualEffects.enableMaterials {
                                     ZStack {
                                         PHTVRoundedRect(cornerRadius: 10)
                                             .fill(.ultraThinMaterial)

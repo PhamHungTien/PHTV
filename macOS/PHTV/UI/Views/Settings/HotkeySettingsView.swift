@@ -118,7 +118,7 @@ struct HotkeySettingsView: View {
                                     }
                                     .padding(10)
                                     .background {
-                                        if #available(macOS 26.0, *) {
+                                        if #available(macOS 26.0, *), SettingsVisualEffects.enableMaterials {
                                             ZStack {
                                                 PHTVRoundedRect(cornerRadius: 8)
                                                     .fill(.ultraThinMaterial)

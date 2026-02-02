@@ -110,11 +110,11 @@ struct AboutView: View {
                         }
                         .padding(16)
                         .background {
-                            if #available(macOS 26.0, *) {
-                                PHTVRoundedRect(cornerRadius: 16)
-                                    .fill(.ultraThinMaterial)
-                                    .settingsGlassEffect(cornerRadius: 16)
-                            } else {
+                                if #available(macOS 26.0, *), SettingsVisualEffects.enableMaterials {
+                                    PHTVRoundedRect(cornerRadius: 16)
+                                        .fill(.ultraThinMaterial)
+                                        .settingsGlassEffect(cornerRadius: 16)
+                                } else {
                                 PHTVRoundedRect(cornerRadius: 16)
                                     .fill(Color(NSColor.controlBackgroundColor))
                             }
@@ -174,11 +174,11 @@ struct AboutInfoCard: View {
         .padding(14)
         .frame(maxWidth: 700)
         .background {
-            if #available(macOS 26.0, *) {
-                PHTVRoundedRect(cornerRadius: 12)
-                    .fill(.ultraThinMaterial)
-                    .settingsGlassEffect(cornerRadius: 12)
-            } else {
+                if #available(macOS 26.0, *), SettingsVisualEffects.enableMaterials {
+                    PHTVRoundedRect(cornerRadius: 12)
+                        .fill(.ultraThinMaterial)
+                        .settingsGlassEffect(cornerRadius: 12)
+                } else {
                 PHTVRoundedRect(cornerRadius: 12)
                     .fill(Color(NSColor.controlBackgroundColor))
             }

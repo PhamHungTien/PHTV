@@ -132,7 +132,7 @@ private struct EmptyExcludedAppsView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .background {
-            if #available(macOS 26.0, *) {
+            if #available(macOS 26.0, *), SettingsVisualEffects.enableMaterials {
                 PHTVRoundedRect(cornerRadius: 8)
                     .fill(.ultraThinMaterial)
                     .settingsGlassEffect(cornerRadius: 8)
@@ -171,7 +171,7 @@ private struct ExcludedAppsList: View {
             }
         }
         .background {
-            if #available(macOS 26.0, *) {
+            if #available(macOS 26.0, *), SettingsVisualEffects.enableMaterials {
                 PHTVRoundedRect(cornerRadius: 10)
                     .fill(.ultraThinMaterial)
                     .settingsGlassEffect(cornerRadius: 10)

@@ -14,7 +14,9 @@ struct CardStyle: ViewModifier {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     func body(content: Content) -> some View {
-        if #available(macOS 26.0, *), !reduceTransparency {
+        if #available(macOS 26.0, *),
+           SettingsVisualEffects.enableMaterials,
+           !reduceTransparency {
             content
                 .padding()
                 .background {
@@ -108,7 +110,8 @@ extension View {
         self
             .padding(6)
             .background {
-                if #available(macOS 26.0, *) {
+                if #available(macOS 26.0, *),
+                   SettingsVisualEffects.enableMaterials {
                     PHTVRoundedRect(cornerRadius: 8)
                         .fill(.ultraThinMaterial)
                         .settingsGlassEffect(cornerRadius: 8)
@@ -300,7 +303,9 @@ struct SettingsStatusPill: View {
 
     @ViewBuilder
     private var pillBackground: some View {
-        if #available(macOS 26.0, *), !reduceTransparency {
+        if #available(macOS 26.0, *),
+           SettingsVisualEffects.enableMaterials,
+           !reduceTransparency {
             Capsule()
                 .fill(.ultraThinMaterial)
                 .settingsGlassEffect(in: Capsule())
@@ -661,7 +666,9 @@ struct FloatingGlassCard<Content: View>: View {
         content
             .background {
                 // Simple material background - no glass effect
-                if #available(macOS 12.0, *) {
+                if #available(macOS 12.0, *),
+                   SettingsVisualEffects.enableMaterials,
+                   !reduceTransparency {
                     PHTVRoundedRect(cornerRadius: cornerRadius)
                         .fill(.regularMaterial)
                 } else {

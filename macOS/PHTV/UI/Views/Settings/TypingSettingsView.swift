@@ -257,7 +257,7 @@ struct StatusCard: View {
         .padding(16)
         .frame(maxWidth: 700)
         .background {
-            if #available(macOS 26.0, *) {
+            if #available(macOS 26.0, *), SettingsVisualEffects.enableMaterials {
                 PHTVRoundedRect(cornerRadius: 12)
                     .fill(.ultraThinMaterial)
                     .settingsGlassEffect(cornerRadius: 12)
@@ -359,27 +359,32 @@ struct SettingsCard<Content: View, Trailing: View>: View {
         }
     }
 
+    @ViewBuilder
     private var headerRowBackground: some View {
-        ZStack {
-            // Base layer for contrast
-            if colorScheme == .dark {
-                Color.black.opacity(0.25)
-            } else {
-                Color.primary.opacity(0.04)
+        if SettingsVisualEffects.enableMaterials {
+            ZStack {
+                // Base layer for contrast
+                if colorScheme == .dark {
+                    Color.black.opacity(0.25)
+                } else {
+                    Color.primary.opacity(0.04)
+                }
+
+                // Pronounced accent tint
+                Color.accentColor.opacity(colorScheme == .dark ? 0.08 : 0.05)
+
+                // Modern gradient for depth
+                LinearGradient(
+                    colors: [
+                        Color.primary.opacity(colorScheme == .dark ? 0.1 : 0.05),
+                        Color.primary.opacity(colorScheme == .dark ? 0.02 : 0.01)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
             }
-            
-            // Pronounced accent tint
-            Color.accentColor.opacity(colorScheme == .dark ? 0.08 : 0.05)
-            
-            // Modern gradient for depth
-            LinearGradient(
-                colors: [
-                    Color.primary.opacity(colorScheme == .dark ? 0.1 : 0.05),
-                    Color.primary.opacity(colorScheme == .dark ? 0.02 : 0.01)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+        } else {
+            Color(NSColor.controlBackgroundColor).opacity(colorScheme == .light ? 0.75 : 0.45)
         }
     }
 }
@@ -608,7 +613,7 @@ private struct UpperCaseEmptyAppsView: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .background {
-            if #available(macOS 26.0, *) {
+            if #available(macOS 26.0, *), SettingsVisualEffects.enableMaterials {
                 PHTVRoundedRect(cornerRadius: 8)
                     .fill(.ultraThinMaterial)
                     .settingsGlassEffect(cornerRadius: 8)
@@ -648,7 +653,7 @@ private struct UpperCaseExcludedAppsList: View {
             }
         }
         .background {
-            if #available(macOS 26.0, *) {
+            if #available(macOS 26.0, *), SettingsVisualEffects.enableMaterials {
                 PHTVRoundedRect(cornerRadius: 10)
                     .fill(.ultraThinMaterial)
                     .settingsGlassEffect(cornerRadius: 10)

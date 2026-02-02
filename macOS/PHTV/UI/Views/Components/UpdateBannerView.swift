@@ -109,13 +109,22 @@ struct UpdateBannerView: View {
 
     @ViewBuilder
     private var bannerBackground: some View {
-        // Simple material background - no glass effect
-        PHTVRoundedRect(cornerRadius: 16)
-            .fill(.regularMaterial)
-            .overlay(
-                PHTVRoundedRect(cornerRadius: 16)
-                    .stroke(Color.accentColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
-            )
+        let fallback = Color(NSColor.controlBackgroundColor).opacity(colorScheme == .light ? 0.92 : 0.6)
+        if SettingsVisualEffects.enableMaterials, !reduceTransparency {
+            PHTVRoundedRect(cornerRadius: 16)
+                .fill(.regularMaterial)
+                .overlay(
+                    PHTVRoundedRect(cornerRadius: 16)
+                        .stroke(Color.accentColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
+                )
+        } else {
+            PHTVRoundedRect(cornerRadius: 16)
+                .fill(fallback)
+                .overlay(
+                    PHTVRoundedRect(cornerRadius: 16)
+                        .stroke(Color.accentColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
+                )
+        }
     }
 
     private func installUpdate() {
