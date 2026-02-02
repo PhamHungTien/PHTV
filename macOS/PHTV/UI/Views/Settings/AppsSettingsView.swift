@@ -21,7 +21,8 @@ struct AppsSettingsView: View {
                 SettingsHeaderView(
                     title: "Ứng dụng & Tương thích",
                     subtitle: "Quản lý chuyển đổi theo từng ứng dụng và tối ưu khả năng tương thích.",
-                    icon: "square.stack.3d.up.fill"
+                    icon: "square.stack.3d.up.fill",
+                    accent: .indigo
                 ) {
                     VStack(alignment: .trailing, spacing: 6) {
                         SettingsStatusPill(

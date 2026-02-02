@@ -46,7 +46,8 @@ struct MacroSettingsView: View {
                 SettingsHeaderView(
                     title: "Gõ tắt & Macro",
                     subtitle: "Tạo từ viết tắt, quản lý danh mục và tăng tốc độ nhập liệu.",
-                    icon: "text.badge.plus"
+                    icon: "text.badge.plus",
+                    accent: .green
                 ) {
                     VStack(alignment: .trailing, spacing: 6) {
                         SettingsStatusPill(

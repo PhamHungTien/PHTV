@@ -431,15 +431,26 @@ struct SettingsHeaderView<Trailing: View>: View {
 
     @ViewBuilder
     private var headerBackground: some View {
-        if SettingsVisualEffects.enableMaterials, !reduceTransparency {
+        ZStack {
+            if SettingsVisualEffects.enableMaterials, !reduceTransparency {
+                PHTVRoundedRect(cornerRadius: 12)
+                    .fill(.regularMaterial)
+            } else {
+                PHTVRoundedRect(cornerRadius: 12)
+                    .fill(Color(NSColor.controlBackgroundColor))
+            }
+            
+            // Modern Gradient Overlay
             PHTVRoundedRect(cornerRadius: 12)
-                .fill(.regularMaterial)
-        } else {
-            PHTVRoundedRect(cornerRadius: 12)
-                .fill(Color(NSColor.windowBackgroundColor).opacity(colorScheme == .light ? 0.96 : 0.72))
-                .overlay(
-                    PHTVRoundedRect(cornerRadius: 12)
-                        .fill(Color.accentColor.opacity(colorScheme == .light ? 0.06 : 0.12))
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            accent.opacity(colorScheme == .light ? 0.15 : 0.25),
+                            accent.opacity(colorScheme == .light ? 0.02 : 0.05)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
                 )
         }
     }

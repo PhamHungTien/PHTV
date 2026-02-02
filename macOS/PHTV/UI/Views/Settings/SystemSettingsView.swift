@@ -32,7 +32,8 @@ struct SystemSettingsView: View {
                 SettingsHeaderView(
                     title: "Hệ thống & Cập nhật",
                     subtitle: "Quản lý giao diện, khởi động, cập nhật và sao lưu.",
-                    icon: "gearshape.fill"
+                    icon: "gearshape.fill",
+                    accent: .gray
                 ) {
                     VStack(alignment: .trailing, spacing: 6) {
                         SettingsStatusPill(

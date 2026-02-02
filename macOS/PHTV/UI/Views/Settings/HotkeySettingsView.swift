@@ -43,7 +43,8 @@ struct HotkeySettingsView: View {
                 SettingsHeaderView(
                     title: "Phím tắt",
                     subtitle: "Tùy chỉnh phím tắt để chuyển chế độ gõ và mở PHTV Picker nhanh.",
-                    icon: "command.circle.fill"
+                    icon: "command.circle.fill",
+                    accent: .orange
                 ) {
                     SettingsStatusPill(
                         text: "Chuyển chế độ: \(hotkeyString)",
