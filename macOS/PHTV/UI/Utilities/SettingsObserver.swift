@@ -18,6 +18,7 @@ final class SettingsObserver: NSObject, ObservableObject {
 
     nonisolated(unsafe) private var observer: NSObjectProtocol?
     private var lastNotificationTime: Date = Date()
+    private var suppressUntil: Date?
 
     private override init() {
         super.init()
@@ -38,12 +39,20 @@ final class SettingsObserver: NSObject, ObservableObject {
     }
 
     private func didChangeSettings() {
+        if let suppressUntil, Date() < suppressUntil {
+            return
+        }
         // Debounce notifications to avoid excessive updates
         let now = Date()
         if now.timeIntervalSince(lastNotificationTime) > 0.1 {
             lastNotificationTime = now
             settingsDidChange = now
         }
+    }
+
+    /// Temporarily suppress external settings notifications for local writes.
+    func suspendNotifications(for interval: TimeInterval = 0.4) {
+        suppressUntil = Date().addingTimeInterval(interval)
     }
 
     deinit {

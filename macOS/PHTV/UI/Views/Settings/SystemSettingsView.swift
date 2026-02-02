@@ -496,6 +496,7 @@ struct SystemSettingsView: View {
     }
 
     private func applyBackup(_ backup: SettingsBackup) {
+        SettingsObserver.shared.suspendNotifications(for: 1.0)
         let defaults = UserDefaults.standard
 
         // Apply settings

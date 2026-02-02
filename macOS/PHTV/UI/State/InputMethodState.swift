@@ -87,6 +87,7 @@ final class InputMethodState: ObservableObject {
     }
 
     func saveSettings() {
+        SettingsObserver.shared.suspendNotifications()
         let defaults = UserDefaults.standard
 
         // Save input method and code table
@@ -145,6 +146,7 @@ final class InputMethodState: ObservableObject {
         // Observer for input method
         $inputMethod.sink { [weak self] newMethod in
             guard let self = self, !self.isLoadingSettings else { return }
+            SettingsObserver.shared.suspendNotifications()
             let defaults = UserDefaults.standard
             defaults.set(newMethod.toIndex(), forKey: UserDefaultsKey.inputType)
             defaults.synchronize()
@@ -156,6 +158,7 @@ final class InputMethodState: ObservableObject {
         // Observer for code table
         $codeTable.sink { [weak self] newTable in
             guard let self = self, !self.isLoadingSettings else { return }
+            SettingsObserver.shared.suspendNotifications()
             let defaults = UserDefaults.standard
             defaults.set(newTable.toIndex(), forKey: UserDefaultsKey.codeTable)
             defaults.synchronize()
@@ -169,6 +172,7 @@ final class InputMethodState: ObservableObject {
             .removeDuplicates()
             .sink { [weak self] value in
                 guard let self = self, !self.isLoadingSettings else { return }
+                SettingsObserver.shared.suspendNotifications()
                 let defaults = UserDefaults.standard
                 defaults.set(value, forKey: UserDefaultsKey.upperCaseFirstChar)
                 defaults.synchronize()

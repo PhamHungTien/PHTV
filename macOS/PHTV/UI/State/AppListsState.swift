@@ -77,6 +77,7 @@ final class AppListsState: ObservableObject {
     }
 
     func saveSettings() {
+        SettingsObserver.shared.suspendNotifications()
         let defaults = UserDefaults.standard
 
         // Save excluded apps
@@ -165,6 +166,7 @@ final class AppListsState: ObservableObject {
     }
 
     private func saveExcludedApps() {
+        SettingsObserver.shared.suspendNotifications()
         do {
             let data = try JSONEncoder().encode(excludedApps)
             UserDefaults.standard.set(data, forKey: UserDefaultsKey.excludedApps)
@@ -203,6 +205,7 @@ final class AppListsState: ObservableObject {
     }
 
     private func saveSendKeyStepByStepApps() {
+        SettingsObserver.shared.suspendNotifications()
         do {
             let data = try JSONEncoder().encode(sendKeyStepByStepApps)
             UserDefaults.standard.set(data, forKey: UserDefaultsKey.sendKeyStepByStepApps)

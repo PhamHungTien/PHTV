@@ -23,6 +23,11 @@ struct PHTVApp: App {
         // If AppState is initializing when the notification fires, we get recursive lock
         _ = AppState.shared
         MemoryPressureMonitor.shared.start()
+        URLCache.shared = URLCache(
+            memoryCapacity: 8 * 1024 * 1024,
+            diskCapacity: 50 * 1024 * 1024,
+            diskPath: "PHTVURLCache"
+        )
 
         // Initialize SettingsNotificationObserver to listen for notifications
         _ = SettingsNotificationObserver.shared

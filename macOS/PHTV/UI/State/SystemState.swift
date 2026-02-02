@@ -99,6 +99,7 @@ final class SystemState: ObservableObject {
     }
 
     func saveSettings() {
+        SettingsObserver.shared.suspendNotifications()
         let defaults = UserDefaults.standard
 
         // Save system settings
@@ -190,6 +191,7 @@ final class SystemState: ObservableObject {
             isUpdatingRunOnStartup = false
 
             // Update UserDefaults too
+            SettingsObserver.shared.suspendNotifications()
             let defaults = UserDefaults.standard
             defaults.set(actualStatus, forKey: UserDefaultsKey.runOnStartup)
             defaults.set(actualStatus ? 1 : 0, forKey: UserDefaultsKey.runOnStartupLegacy)
@@ -226,6 +228,7 @@ final class SystemState: ObservableObject {
         // Observer for showIconOnDock
         $showIconOnDock.sink { [weak self] value in
             guard let self = self, !self.isLoadingSettings else { return }
+            SettingsObserver.shared.suspendNotifications()
             let defaults = UserDefaults.standard
             defaults.set(value, forKey: UserDefaultsKey.showIconOnDock)
             NotificationCenter.default.post(
@@ -248,6 +251,7 @@ final class SystemState: ObservableObject {
         // Update frequency observer
         $updateCheckFrequency.sink { [weak self] frequency in
             guard let self = self, !self.isLoadingSettings else { return }
+            SettingsObserver.shared.suspendNotifications()
             let defaults = UserDefaults.standard
             defaults.set(frequency.rawValue, forKey: UserDefaultsKey.updateCheckInterval)
             defaults.synchronize()
@@ -261,6 +265,7 @@ final class SystemState: ObservableObject {
         // Beta channel observer
         $betaChannelEnabled.sink { [weak self] enabled in
             guard let self = self, !self.isLoadingSettings else { return }
+            SettingsObserver.shared.suspendNotifications()
             let defaults = UserDefaults.standard
             defaults.set(enabled, forKey: UserDefaultsKey.betaChannelEnabled)
             defaults.synchronize()
@@ -274,6 +279,7 @@ final class SystemState: ObservableObject {
         // Auto install updates observer
         $autoInstallUpdates.sink { [weak self] enabled in
             guard let self = self, !self.isLoadingSettings else { return }
+            SettingsObserver.shared.suspendNotifications()
             let defaults = UserDefaults.standard
             defaults.set(enabled, forKey: UserDefaultsKey.autoInstallUpdates)
             defaults.synchronize()

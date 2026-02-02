@@ -79,6 +79,7 @@ final class UIState: ObservableObject {
     }
 
     func saveSettings() {
+        SettingsObserver.shared.suspendNotifications()
         let defaults = UserDefaults.standard
 
         // Save hotkey in backend format (SwitchKeyStatus)
@@ -163,6 +164,7 @@ final class UIState: ObservableObject {
             .debounce(for: .milliseconds(Timing.hotkeyDebounce), scheduler: RunLoop.main)
             .sink { [weak self] _ in
                 guard let self = self, !self.isLoadingSettings else { return }
+                SettingsObserver.shared.suspendNotifications()
                 let switchKeyStatus = self.encodeSwitchKeyStatus()
                 UserDefaults.standard.set(switchKeyStatus, forKey: UserDefaultsKey.switchKeyStatus)
                 UserDefaults.standard.set(self.beepOnModeSwitch, forKey: UserDefaultsKey.beepOnModeSwitch)
@@ -199,6 +201,7 @@ final class UIState: ObservableObject {
             .debounce(for: .milliseconds(Timing.audioSliderDebounce), scheduler: RunLoop.main)
             .sink { [weak self] value in
                 guard let self = self, !self.isLoadingSettings else { return }
+                SettingsObserver.shared.suspendNotifications()
                 let defaults = UserDefaults.standard
                 defaults.set(value, forKey: UserDefaultsKey.beepVolume)
             }.store(in: &cancellables)
@@ -208,6 +211,7 @@ final class UIState: ObservableObject {
             .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
             .sink { [weak self] value in
                 guard let self = self, !self.isLoadingSettings else { return }
+                SettingsObserver.shared.suspendNotifications()
                 let defaults = UserDefaults.standard
                 defaults.set(value, forKey: UserDefaultsKey.menuBarIconSize)
                 defaults.synchronize()
@@ -219,6 +223,7 @@ final class UIState: ObservableObject {
             .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
             .sink { [weak self] value in
                 guard let self = self, !self.isLoadingSettings else { return }
+                SettingsObserver.shared.suspendNotifications()
                 let defaults = UserDefaults.standard
                 defaults.set(value, forKey: UserDefaultsKey.useVietnameseMenubarIcon)
                 defaults.synchronize()

@@ -105,6 +105,7 @@ final class AppState: ObservableObject {
     }
 
     func saveSettings() {
+        SettingsObserver.shared.suspendNotifications()
         let defaults = UserDefaults.standard
 
         // Save all sub-states

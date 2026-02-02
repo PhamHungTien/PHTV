@@ -93,6 +93,10 @@ struct SettingsWindowContent: View {
             // Stop login item monitoring when Settings closes
             appState.systemState.stopLoginItemStatusMonitoring()
 
+            // Clear transient caches to release memory
+            AppIconCache.shared.clear()
+            URLCache.shared.removeAllCachedResponses()
+
             // Post notification for AppDelegate to restore state
             NotificationCenter.default.post(name: NSNotification.Name("PHTVShowDockIcon"), object: nil, userInfo: ["visible": userPrefersDock])
 
