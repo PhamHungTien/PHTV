@@ -110,14 +110,7 @@ struct AboutView: View {
                         }
                         .padding(16)
                         .background {
-                                if #available(macOS 26.0, *), SettingsVisualEffects.enableMaterials {
-                                    PHTVRoundedRect(cornerRadius: 16)
-                                        .fill(.ultraThinMaterial)
-                                        .settingsGlassEffect(cornerRadius: 16)
-                                } else {
-                                PHTVRoundedRect(cornerRadius: 16)
-                                    .fill(Color(NSColor.controlBackgroundColor))
-                            }
+                            AboutCardBackground(cornerRadius: 16)
                         }
                     }
                 }
@@ -174,14 +167,43 @@ struct AboutInfoCard: View {
         .padding(14)
         .frame(maxWidth: 700)
         .background {
-                if #available(macOS 26.0, *), SettingsVisualEffects.enableMaterials {
-                    PHTVRoundedRect(cornerRadius: 12)
-                        .fill(.ultraThinMaterial)
-                        .settingsGlassEffect(cornerRadius: 12)
-                } else {
-                PHTVRoundedRect(cornerRadius: 12)
-                    .fill(Color(NSColor.controlBackgroundColor))
-            }
+            AboutCardBackground(cornerRadius: 12)
+        }
+    }
+}
+
+private struct AboutCardBackground: View {
+    let cornerRadius: CGFloat
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    var body: some View {
+        let fillColor = Color(NSColor.controlBackgroundColor).opacity(colorScheme == .light ? 0.95 : 0.62)
+        if SettingsVisualEffects.enableMaterials, !reduceTransparency {
+            PHTVRoundedRect(cornerRadius: cornerRadius)
+                .fill(.regularMaterial)
+                .overlay(AboutCardBorder(cornerRadius: cornerRadius))
+        } else {
+            PHTVRoundedRect(cornerRadius: cornerRadius)
+                .fill(fillColor)
+                .overlay(AboutCardBorder(cornerRadius: cornerRadius))
+        }
+    }
+}
+
+private struct AboutCardBorder: View {
+    let cornerRadius: CGFloat
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        let outer = Color.primary.opacity(colorScheme == .dark ? 0.35 : 0.2)
+        let inner = Color.white.opacity(colorScheme == .dark ? 0.08 : 0.35)
+        return ZStack {
+            PHTVRoundedRect(cornerRadius: cornerRadius)
+                .strokeBorder(outer, lineWidth: 1)
+            PHTVRoundedRect(cornerRadius: cornerRadius)
+                .inset(by: 0.5)
+                .strokeBorder(inner, lineWidth: 0.5)
         }
     }
 }
