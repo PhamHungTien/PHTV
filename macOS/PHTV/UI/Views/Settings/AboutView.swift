@@ -182,28 +182,11 @@ private struct AboutCardBackground: View {
         if SettingsVisualEffects.enableMaterials, !reduceTransparency {
             PHTVRoundedRect(cornerRadius: cornerRadius)
                 .fill(.regularMaterial)
-                .overlay(AboutCardBorder(cornerRadius: cornerRadius))
+                .overlay(SettingsSurfaceBorder(cornerRadius: cornerRadius))
         } else {
             PHTVRoundedRect(cornerRadius: cornerRadius)
                 .fill(fillColor)
-                .overlay(AboutCardBorder(cornerRadius: cornerRadius))
-        }
-    }
-}
-
-private struct AboutCardBorder: View {
-    let cornerRadius: CGFloat
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        let outer = Color.primary.opacity(colorScheme == .dark ? 0.35 : 0.2)
-        let inner = Color.white.opacity(colorScheme == .dark ? 0.08 : 0.35)
-        return ZStack {
-            PHTVRoundedRect(cornerRadius: cornerRadius)
-                .strokeBorder(outer, lineWidth: 1)
-            PHTVRoundedRect(cornerRadius: cornerRadius)
-                .inset(by: 0.5)
-                .strokeBorder(inner, lineWidth: 0.5)
+                .overlay(SettingsSurfaceBorder(cornerRadius: cornerRadius))
         }
     }
 }

@@ -345,23 +345,11 @@ struct SettingsCard<Content: View, Trailing: View>: View {
         if SettingsVisualEffects.enableMaterials, !reduceTransparency {
             PHTVRoundedRect(cornerRadius: 12)
                 .fill(.regularMaterial)
-                .overlay(cardBorder)
+                .overlay(SettingsSurfaceBorder(cornerRadius: 12))
         } else {
             PHTVRoundedRect(cornerRadius: 12)
                 .fill(fillColor)
-                .overlay(cardBorder)
-        }
-    }
-
-    private var cardBorder: some View {
-        let outer = Color.primary.opacity(colorScheme == .dark ? 0.35 : 0.2)
-        let inner = Color.white.opacity(colorScheme == .dark ? 0.08 : 0.35)
-        return ZStack {
-            PHTVRoundedRect(cornerRadius: 12)
-                .strokeBorder(outer, lineWidth: 1)
-            PHTVRoundedRect(cornerRadius: 12)
-                .inset(by: 0.5)
-                .strokeBorder(inner, lineWidth: 0.5)
+                .overlay(SettingsSurfaceBorder(cornerRadius: 12))
         }
     }
 

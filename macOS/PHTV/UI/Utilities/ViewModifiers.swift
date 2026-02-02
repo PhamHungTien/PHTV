@@ -445,14 +445,24 @@ struct SettingsHeaderView<Trailing: View>: View {
     }
 
     private var headerBorder: some View {
-        let outer = Color.primary.opacity(colorScheme == .dark ? 0.3 : 0.2)
+        SettingsSurfaceBorder(cornerRadius: 12)
+    }
+}
+
+/// Shared border style for settings cards/headers to keep thickness consistent.
+struct SettingsSurfaceBorder: View {
+    let cornerRadius: CGFloat
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        let outer = Color.primary.opacity(colorScheme == .dark ? 0.35 : 0.2)
         let inner = Color.white.opacity(colorScheme == .dark ? 0.08 : 0.35)
         return ZStack {
-            PHTVRoundedRect(cornerRadius: 12)
-                .strokeBorder(outer, lineWidth: 1.2)
-            PHTVRoundedRect(cornerRadius: 12)
-                .inset(by: 0.6)
-                .strokeBorder(inner, lineWidth: 0.6)
+            PHTVRoundedRect(cornerRadius: cornerRadius)
+                .strokeBorder(outer, lineWidth: 1)
+            PHTVRoundedRect(cornerRadius: cornerRadius)
+                .inset(by: 0.5)
+                .strokeBorder(inner, lineWidth: 0.5)
         }
     }
 }
