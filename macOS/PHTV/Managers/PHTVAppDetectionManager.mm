@@ -136,13 +136,13 @@ static NSSet* _disableVietnameseAppSet = nil;
         _fastTerminalAppSet = [NSSet setWithArray:@[
             @"io.alacritty",
             @"com.mitchellh.ghostty",
-            @"net.kovidgoyal.kitty",
-            @"com.github.wez.wezterm",
             @"com.raphaelamorim.rio"
         ]];
 
         // Medium terminals (higher delay, one-by-one text)
         _mediumTerminalAppSet = [NSSet setWithArray:@[
+            @"net.kovidgoyal.kitty",
+            @"com.github.wez.wezterm",
             @"com.googlecode.iterm2",
             @"dev.warp.Warp-Stable",
             @"co.zeit.hyper",

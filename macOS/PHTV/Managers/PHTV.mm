@@ -47,18 +47,18 @@ static const NSUInteger SYNC_KEY_RESERVE_SIZE = 256;         // Pre-allocated bu
 
 // Timing delay constants (all in microseconds)
 static const int64_t kPHTVEventMarker = 0x50485456; // "PHTV"
-static const useconds_t CLI_BACKSPACE_DELAY_FAST_US = 2000;
-static const useconds_t CLI_WAIT_AFTER_BACKSPACE_FAST_US = 4000;
-static const useconds_t CLI_TEXT_DELAY_FAST_US = 2000;
-static const useconds_t CLI_BACKSPACE_DELAY_MEDIUM_US = 12000;
-static const useconds_t CLI_WAIT_AFTER_BACKSPACE_MEDIUM_US = 30000;
-static const useconds_t CLI_TEXT_DELAY_MEDIUM_US = 6000;
-static const useconds_t CLI_BACKSPACE_DELAY_SLOW_US = 4000;
-static const useconds_t CLI_WAIT_AFTER_BACKSPACE_SLOW_US = 8000;
-static const useconds_t CLI_TEXT_DELAY_SLOW_US = 4000;
-static const useconds_t CLI_BACKSPACE_DELAY_DEFAULT_US = 3000;
-static const useconds_t CLI_WAIT_AFTER_BACKSPACE_DEFAULT_US = 6000;
-static const useconds_t CLI_TEXT_DELAY_DEFAULT_US = 3000;
+static const useconds_t CLI_BACKSPACE_DELAY_FAST_US = 6000;
+static const useconds_t CLI_WAIT_AFTER_BACKSPACE_FAST_US = 18000;
+static const useconds_t CLI_TEXT_DELAY_FAST_US = 5000;
+static const useconds_t CLI_BACKSPACE_DELAY_MEDIUM_US = 9000;
+static const useconds_t CLI_WAIT_AFTER_BACKSPACE_MEDIUM_US = 27000;
+static const useconds_t CLI_TEXT_DELAY_MEDIUM_US = 7000;
+static const useconds_t CLI_BACKSPACE_DELAY_SLOW_US = 12000;
+static const useconds_t CLI_WAIT_AFTER_BACKSPACE_SLOW_US = 36000;
+static const useconds_t CLI_TEXT_DELAY_SLOW_US = 9000;
+static const useconds_t CLI_BACKSPACE_DELAY_DEFAULT_US = 8000;
+static const useconds_t CLI_WAIT_AFTER_BACKSPACE_DEFAULT_US = 24000;
+static const useconds_t CLI_TEXT_DELAY_DEFAULT_US = 6000;
 static const int CLI_TEXT_CHUNK_SIZE_DEFAULT = 20;
 static const int CLI_TEXT_CHUNK_SIZE_ONE_BY_ONE = 1;
 static const useconds_t CLI_BACKSPACE_DELAY_IDE_US = 8000;
@@ -2380,15 +2380,19 @@ static bool _pendingUppercasePrimeCheck = true;
         }
 
         //send real data - use step by step for timing sensitive apps like Spotlight
-        BOOL useStepByStep = vSendKeyStepByStep || needsStepByStep(effectiveTarget);
+        BOOL useStepByStep = _phtvIsCliTarget || vSendKeyStepByStep || needsStepByStep(effectiveTarget);
         if (!useStepByStep) {
             SendNewCharString(true);
         } else {
+            useconds_t cliTextDelay = _phtvIsCliTarget ? _phtvCliTextDelayUs : 0;
             for (int i = 0; i < pData->macroData.size(); i++) {
                 if (pData->macroData[i] & PURE_CHARACTER_MASK) {
                     SendPureCharacter(pData->macroData[i]);
                 } else {
                     SendKeyCode(pData->macroData[i]);
+                }
+                if (cliTextDelay > 0 && i + 1 < pData->macroData.size()) {
+                    usleep(cliTextDelay);
                 }
             }
         }
@@ -3473,7 +3477,8 @@ static bool _pendingUppercasePrimeCheck = true;
                     BOOL isAutoEnglishWithEnter = (pData->code == vRestoreAndStartNewSession) &&
                                                   (_keycode == KEY_ENTER || _keycode == KEY_RETURN);
                     BOOL useStepByStep = (!isSpotlightTarget) &&
-                                         (vSendKeyStepByStep ||
+                                         (_phtvIsCliTarget ||
+                                          vSendKeyStepByStep ||
                                           appChars.needsStepByStep ||
                                           isAutoEnglishWithEnter);
 #ifdef DEBUG
@@ -3485,8 +3490,12 @@ static bool _pendingUppercasePrimeCheck = true;
                         SendNewCharString();
                     } else {
                         if (pData->newCharCount > 0 && pData->newCharCount <= MAX_BUFF) {
+                            useconds_t cliTextDelay = _phtvIsCliTarget ? _phtvCliTextDelayUs : 0;
                             for (int i = pData->newCharCount - 1; i >= 0; i--) {
                                 SendKeyCode(pData->charData[i]);
+                                if (cliTextDelay > 0 && i > 0) {
+                                    usleep(cliTextDelay);
+                                }
                             }
                         }
                         if (pData->code == vRestore || pData->code == vRestoreAndStartNewSession) {
