@@ -449,10 +449,10 @@ struct SettingsHeaderView<Trailing: View>: View {
         let inner = Color.white.opacity(colorScheme == .dark ? 0.08 : 0.35)
         return ZStack {
             PHTVRoundedRect(cornerRadius: 12)
-                .strokeBorder(outer, lineWidth: 1)
+                .strokeBorder(outer, lineWidth: 1.2)
             PHTVRoundedRect(cornerRadius: 12)
-                .inset(by: 0.5)
-                .strokeBorder(inner, lineWidth: 0.5)
+                .inset(by: 0.6)
+                .strokeBorder(inner, lineWidth: 0.6)
         }
     }
 }
