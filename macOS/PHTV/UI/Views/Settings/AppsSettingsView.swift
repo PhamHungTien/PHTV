@@ -17,7 +17,7 @@ struct AppsSettingsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
+            LazyVStack(spacing: 20) {
                 SettingsHeaderView(
                     title: "Ứng dụng & Tương thích",
                     subtitle: "Quản lý chuyển đổi theo từng ứng dụng và tối ưu khả năng tương thích.",

@@ -12,7 +12,7 @@ struct AboutView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 24) {
+            LazyVStack(spacing: 24) {
                 // App Icon and Name
                 VStack(spacing: 16) {
                     AppIconView()

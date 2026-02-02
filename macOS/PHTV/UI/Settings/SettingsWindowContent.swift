@@ -72,6 +72,9 @@ struct SettingsWindowContent: View {
             // Keep settings window stable and on top when needed
             setupWindowObservers()
 
+            // Start login item monitoring only while Settings is open
+            appState.systemState.startLoginItemStatusMonitoring()
+
             // Check if onboarding should be shown (first launch)
             checkAndShowOnboarding()
         }
@@ -86,6 +89,9 @@ struct SettingsWindowContent: View {
 
             // Remove window observers
             removeWindowObservers()
+
+            // Stop login item monitoring when Settings closes
+            appState.systemState.stopLoginItemStatusMonitoring()
 
             // Post notification for AppDelegate to restore state
             NotificationCenter.default.post(name: NSNotification.Name("PHTVShowDockIcon"), object: nil, userInfo: ["visible": userPrefersDock])

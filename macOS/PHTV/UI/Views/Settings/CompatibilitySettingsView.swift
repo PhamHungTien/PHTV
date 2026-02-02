@@ -13,7 +13,7 @@ struct CompatibilitySettingsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
+            LazyVStack(spacing: 20) {
                 SettingsHeaderView(
                     title: "Tương thích nâng cao",
                     subtitle: "Tinh chỉnh cho bố cục đặc biệt và công cụ bên thứ ba.",

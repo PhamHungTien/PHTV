@@ -39,7 +39,7 @@ struct HotkeySettingsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
+            LazyVStack(spacing: 20) {
                 SettingsHeaderView(
                     title: "Phím tắt",
                     subtitle: "Tùy chỉnh phím tắt để chuyển chế độ gõ và mở PHTV Picker nhanh.",

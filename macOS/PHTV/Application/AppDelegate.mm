@@ -462,7 +462,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
     // CRITICAL: Uses test event tap creation - ONLY reliable method (Apple recommended)
     // MJAccessibilityIsEnabled() returns TRUE even when permission is revoked!
-    // Dynamic interval: 0.3s when waiting for permission (fast detection), 5s when granted (low overhead)
+    // Dynamic interval: 1.0s when waiting for permission, 20s when granted (lower overhead)
     self.accessibilityMonitor = [NSTimer scheduledTimerWithTimeInterval:interval
                                                                   target:self
                                                                 selector:@selector(checkAccessibilityStatus)
@@ -484,10 +484,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
 // Get appropriate monitoring interval based on current permission state
 - (NSTimeInterval)currentMonitoringInterval {
-    // When waiting for permission: check every 0.3 seconds for INSTANT response
-    // When permission granted: check every 5 seconds to reduce overhead
-    // Reduced from 1.0s to 0.3s for faster permission detection
-    return self.wasAccessibilityEnabled ? 5.0 : 0.3;
+    // When waiting for permission: check every 1.0 seconds
+    // When permission granted: check every 20 seconds to reduce overhead
+    return self.wasAccessibilityEnabled ? 20.0 : 1.0;
 }
 
 - (void)stopAccessibilityMonitoring {
@@ -502,16 +501,15 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
 - (void)startHealthCheckMonitoring {
     [self stopHealthCheckMonitoring];
-        // IMPROVED: Very aggressive monitoring (2s) to catch tap disable quickly
-        // This complements event-based checking (every 50 events)
-        // With 2s timer, max delay is 2 seconds regardless of typing speed
-        self.healthCheckTimer = [NSTimer scheduledTimerWithTimeInterval:2.0
+        // Lower frequency monitoring to reduce wakeups while keeping idle recovery
+        // Event-based checks handle active typing; timer covers idle periods
+        self.healthCheckTimer = [NSTimer scheduledTimerWithTimeInterval:10.0
                                                               target:self
                                                             selector:@selector(runHealthCheck)
                                                             userInfo:nil
                                                              repeats:YES];
     if (@available(macOS 10.12, *)) {
-        self.healthCheckTimer.tolerance = 0.2;
+        self.healthCheckTimer.tolerance = 1.0;
     }
 }
 
@@ -549,10 +547,10 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                                                             object:@(isEnabled)];
 
         // IMPORTANT: Restart timer with appropriate interval based on new permission state
-        // When permission granted: switch to 5s interval (low overhead)
-        // When permission revoked: switch to 0.3s interval (instant re-detection)
+        // When permission granted: switch to 20s interval (low overhead)
+        // When permission revoked: switch to 1.0s interval
         // CRITICAL: resetState:NO to preserve wasAccessibilityEnabled for transition detection below
-        NSTimeInterval newInterval = isEnabled ? 5.0 : 0.3;
+        NSTimeInterval newInterval = isEnabled ? 20.0 : 1.0;
         NSLog(@"[Accessibility] Adjusting monitoring interval to %.1fs", newInterval);
         [self startAccessibilityMonitoringWithInterval:newInterval resetState:NO];
     }

@@ -477,9 +477,7 @@ extern Boolean AXIsProcessTrusted(void) __attribute__((weak_import));
                  (1 << kCGEventKeyUp) |
                  (1 << kCGEventFlagsChanged) |
                  (1 << kCGEventLeftMouseDown) |
-                 (1 << kCGEventRightMouseDown) |
-                 (1 << kCGEventLeftMouseDragged) |
-                 (1 << kCGEventRightMouseDragged));
+                 (1 << kCGEventRightMouseDown));
 
     // Prefer HID-level event tap for better timing (fixes swallowed keystrokes in terminals)
     eventTap = CGEventTapCreate(kCGHIDEventTap,
@@ -625,10 +623,6 @@ extern Boolean AXIsProcessTrusted(void) __attribute__((weak_import));
                 [self initEventTap];
             });
         }
-    } else {
-        // Proactive: even if enabled, give it a quick re-enable nudge to keep it alive
-        // This prevents macOS from silently disabling it
-        CGEventTapEnable(eventTap, true);
     }
 }
 

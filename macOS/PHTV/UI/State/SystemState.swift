@@ -138,6 +138,7 @@ final class SystemState: ObservableObject {
     /// Start periodic monitoring of login item status
     func startLoginItemStatusMonitoring() {
         guard #available(macOS 13.0, *) else { return }
+        guard loginItemCheckTimer == nil else { return }
 
         // Check every 5 seconds
         loginItemCheckTimer = Timer.scheduledTimer(withTimeInterval: Timing.loginItemCheckInterval, repeats: true) { [weak self] _ in
@@ -152,6 +153,12 @@ final class SystemState: ObservableObject {
         }
 
         NSLog("[LoginItem] Periodic status monitoring started (interval: 5s)")
+    }
+
+    /// Stop periodic monitoring of login item status
+    func stopLoginItemStatusMonitoring() {
+        loginItemCheckTimer?.invalidate()
+        loginItemCheckTimer = nil
     }
 
     /// Check if SMAppService status matches our UI state

@@ -157,9 +157,9 @@ static int _externalDeleteCount = 0;
         }
     }
 
-    // Use cache if it's within 50ms duration (increased from 10ms to prevent event tap timeouts)
+    // Use cache if it's within 150ms duration (balanced to reduce AX calls)
     // This ensures we don't block the event tap with frequent AX calls
-    static const uint64_t SPOTLIGHT_CACHE_DURATION_MS = 50;
+    static const uint64_t SPOTLIGHT_CACHE_DURATION_MS = 150;
     if (elapsed_ms < SPOTLIGHT_CACHE_DURATION_MS && lastCheck > 0) {
         return cachedResult;
     }

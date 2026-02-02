@@ -230,7 +230,7 @@ private struct AppIconView: View {
     let path: String
     
     var body: some View {
-        if let icon = NSWorkspace.shared.icon(forFile: path) as NSImage? {
+        if let icon = AppIconCache.shared.icon(for: path, size: 32) {
             Image(nsImage: icon)
                 .resizable()
                 .scaledToFit()
@@ -339,6 +339,11 @@ struct RunningAppsPickerView: View {
         .frame(width: 400, height: 500)
         .onAppear {
             loadRunningApps()
+        }
+        .onDisappear {
+            runningApps = []
+            selectedApps = []
+            searchText = ""
         }
     }
     

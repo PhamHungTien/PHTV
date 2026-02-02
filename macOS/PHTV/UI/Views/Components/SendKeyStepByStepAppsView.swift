@@ -158,7 +158,7 @@ private struct SendKeyStepByStepAppsList: View {
     let onRemove: (SendKeyStepByStepApp) -> Void
 
     var body: some View {
-        VStack(spacing: 0) {
+        LazyVStack(spacing: 0) {
             ForEach(apps) { app in
                 SendKeyStepByStepAppRow(app: app) {
                     onRemove(app)
@@ -230,7 +230,7 @@ private struct SendKeyStepByStepAppIconView: View {
     let path: String
 
     var body: some View {
-        if let icon = NSWorkspace.shared.icon(forFile: path) as NSImage? {
+        if let icon = AppIconCache.shared.icon(for: path, size: 32) {
             Image(nsImage: icon)
                 .resizable()
                 .scaledToFit()
@@ -339,6 +339,11 @@ struct SendKeyStepByStepRunningAppsPickerView: View {
         .frame(width: 400, height: 500)
         .onAppear {
             loadRunningApps()
+        }
+        .onDisappear {
+            runningApps = []
+            selectedApps = []
+            searchText = ""
         }
     }
 

@@ -72,7 +72,6 @@ final class AppState: ObservableObject {
             self.setupNotificationObservers()
             self.setupExternalSettingsObserver()
             self.systemState.checkAccessibilityPermission()
-            self.systemState.startLoginItemStatusMonitoring()
         }
     }
 

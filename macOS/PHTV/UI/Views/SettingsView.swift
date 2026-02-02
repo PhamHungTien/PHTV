@@ -12,6 +12,7 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject var appState: AppState
     @State private var selectedTab: SettingsTab = .typing
+    @State private var lastTab: SettingsTab = .typing
     @State private var searchText: String = ""
 
     private var filteredSettings: [SettingsItem] {
@@ -23,17 +24,6 @@ struct SettingsView: View {
                 || item.keywords.contains { $0.localizedCaseInsensitiveContains(searchText) }
         }
     }
-
-    private var searchSuggestions: [SettingsItem] {
-        if searchText.isEmpty {
-            // Show popular/recent searches when search is active but empty
-            return Array(SettingsItem.allItems.prefix(5))
-        }
-        // Show top 5 matches as suggestions
-        return Array(filteredSettings.prefix(5))
-    }
-
-    @State private var showHelpMenu = false
 
     var body: some View {
         NavigationSplitView {
@@ -50,6 +40,13 @@ struct SettingsView: View {
             let appDelegate = NSApp.delegate as? AppDelegate
             NSLog("[SettingsView] onChange - showIconOnDock changed to %@", newValue ? "true" : "false")
             appDelegate?.showIcon(newValue)  // This one saves to UserDefaults
+        }
+        .onChange(of: selectedTab) { newValue in
+            // Release cached app icons when leaving icon-heavy tabs.
+            if lastTab == .apps || lastTab == .typing {
+                AppIconCache.shared.clear()
+            }
+            lastTab = newValue
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowAboutTab"))) { _ in
             selectedTab = .about

@@ -92,7 +92,7 @@ struct BugReportView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
+            LazyVStack(spacing: 20) {
                 SettingsHeaderView(
                     title: "Báo lỗi & Hỗ trợ",
                     subtitle: "Gửi thông tin chi tiết để hỗ trợ nhanh và chính xác.",

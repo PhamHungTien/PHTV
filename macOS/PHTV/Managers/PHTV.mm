@@ -38,7 +38,7 @@ extern "C" {
 #define FRONT_APP [[NSWorkspace sharedWorkspace] frontmostApplication].bundleIdentifier
 
 // Performance & Cache Configuration
-static const uint64_t SPOTLIGHT_CACHE_DURATION_MS = 50;      // Spotlight detection cache timeout (reduced for fast transitions)
+static const uint64_t SPOTLIGHT_CACHE_DURATION_MS = 150;     // Spotlight detection cache timeout (balanced for lower CPU)
 #ifdef DEBUG
 static const uint64_t DEBUG_LOG_THROTTLE_MS = 500;           // Debug log throttling interval
 #endif
@@ -2639,7 +2639,10 @@ static bool _pendingUppercasePrimeCheck = true;
 
     // Event tap health monitoring - checks tap status and recovers if needed
     // Returns YES if tap is healthy, NO if recovery was attempted
-    static inline BOOL CheckAndRecoverEventTap(void) {
+    static inline BOOL CheckAndRecoverEventTap(CGEventType type) {
+        if (__builtin_expect(type != kCGEventKeyDown, 1)) {
+            return YES;
+        }
         // BROWSER FIX: More aggressive health check for faster recovery
         // Reduced intervals to catch tap disable within 5-10 keystrokes instead of 15-50
         // Smart skip: after 1000 healthy checks, reduce frequency to save CPU
@@ -2647,11 +2650,9 @@ static bool _pendingUppercasePrimeCheck = true;
         static NSUInteger recoveryCounter = 0;
         static NSUInteger healthyCounter = 0;
 
-        // IMPROVED: Much more aggressive checking for browser responsiveness
-        // 10 events when healthy and established (was 50)
-        // 5 events when recovering or initial state (was 15)
-        // This reduces detection latency from 50 keystrokes to 5-10
-        NSUInteger checkInterval = (healthyCounter > 1000) ? 10 : 5;
+        // Balanced checking for responsiveness vs CPU usage
+        // 25 events when recovering/initial, 50 when stable
+        NSUInteger checkInterval = (healthyCounter > 2000) ? 50 : 25;
 
         if (__builtin_expect(++eventCounter % checkInterval == 0, 0)) {
             if (__builtin_expect(![PHTVManager isEventTapEnabled], 0)) {
@@ -2706,7 +2707,7 @@ static bool _pendingUppercasePrimeCheck = true;
         // Permission is now checked ONLY via test event tap creation in timer (safe approach)
 
         // Perform periodic health check and recovery
-        CheckAndRecoverEventTap();
+        CheckAndRecoverEventTap(type);
 
         // Skip events injected by PHTV itself (marker-based)
         if (CGEventGetIntegerValueField(event, kCGEventSourceUserData) == kPHTVEventMarker) {
@@ -2944,8 +2945,7 @@ static bool _pendingUppercasePrimeCheck = true;
 
         // Also check correct event hooked
         if ((type != kCGEventKeyDown) && (type != kCGEventKeyUp) &&
-            (type != kCGEventLeftMouseDown) && (type != kCGEventRightMouseDown) &&
-            (type != kCGEventLeftMouseDragged) && (type != kCGEventRightMouseDragged))
+            (type != kCGEventLeftMouseDown) && (type != kCGEventRightMouseDown))
             return event;
         
         _proxy = proxy;
@@ -2976,9 +2976,8 @@ static bool _pendingUppercasePrimeCheck = true;
         }
         
         //handle mouse - reset session to avoid stale typing state
-        if (type == kCGEventLeftMouseDown || type == kCGEventRightMouseDown || type == kCGEventLeftMouseDragged || type == kCGEventRightMouseDragged) {
-            bool isMouseDown = (type == kCGEventLeftMouseDown || type == kCGEventRightMouseDown);
-            RequestNewSessionInternal(isMouseDown);
+        if (type == kCGEventLeftMouseDown || type == kCGEventRightMouseDown) {
+            RequestNewSessionInternal(true);
             
             // Try to restore session if clicked on a word (Left Mouse Down only)
             if (type == kCGEventLeftMouseDown) {

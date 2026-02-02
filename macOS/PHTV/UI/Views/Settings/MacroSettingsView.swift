@@ -15,17 +15,17 @@ struct MacroSettingsView: View {
     @State private var selectedMacro: UUID?
     @State private var showingAddMacro = false
     @State private var editingMacro: MacroItem? = nil  // nil = not editing, set to show edit sheet
-    @State private var refreshTrigger = UUID()
 
     // Animation and highlight states
     @State private var recentlyAddedId: UUID? = nil
     @State private var recentlyEditedId: UUID? = nil
-    @Namespace private var animation
-
     // Category states
     @State private var selectedCategoryId: UUID? = nil  // nil = show all
     @State private var showingAddCategory = false
     @State private var editingCategory: MacroCategory? = nil  // nil = not editing, set to show edit sheet
+
+    private static var cachedMacrosData: Data?
+    private static var cachedMacros: [MacroItem] = []
 
     /// Filtered macros based on selected category
     private var filteredMacros: [MacroItem] {
@@ -42,7 +42,7 @@ struct MacroSettingsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
+            LazyVStack(spacing: 20) {
                 SettingsHeaderView(
                     title: "Gõ tắt & Macro",
                     subtitle: "Tạo từ viết tắt, quản lý danh mục và tăng tốc độ nhập liệu.",
@@ -362,7 +362,6 @@ struct MacroSettingsView: View {
                 }
             }
 
-            refreshTrigger = UUID()
         }
     }
 
@@ -373,16 +372,24 @@ struct MacroSettingsView: View {
 
     private func loadMacros() {
         let defaults = UserDefaults.standard
-        if let data = defaults.data(forKey: "macroList"),
-            let loadedMacros = try? JSONDecoder().decode([MacroItem].self, from: data)
-        {
-            macros = loadedMacros
-            print(
-                "[MacroSettings] Loaded \(loadedMacros.count) macros: \(loadedMacros.map { $0.shortcut }.joined(separator: ", "))"
-            )
+        if let data = defaults.data(forKey: "macroList") {
+            if let cached = Self.cachedMacrosData, cached == data {
+                macros = Self.cachedMacros
+                return
+            }
+            if let loadedMacros = try? JSONDecoder().decode([MacroItem].self, from: data) {
+                macros = loadedMacros
+                Self.cachedMacros = loadedMacros
+                Self.cachedMacrosData = data
+            } else {
+                macros = []
+                Self.cachedMacros = []
+                Self.cachedMacrosData = data
+            }
         } else {
             macros = []
-            print("[MacroSettings] No macros found in UserDefaults")
+            Self.cachedMacros = []
+            Self.cachedMacrosData = nil
         }
     }
 
@@ -592,6 +599,8 @@ struct MacroSettingsView: View {
         if let encoded = try? JSONEncoder().encode(macros) {
             defaults.set(encoded, forKey: "macroList")
             defaults.synchronize()
+            Self.cachedMacros = macros
+            Self.cachedMacrosData = encoded
             print("[MacroSettings] Saved \(macros.count) macros to UserDefaults")
             NotificationCenter.default.post(name: NSNotification.Name("MacrosUpdated"), object: nil)
         } else {

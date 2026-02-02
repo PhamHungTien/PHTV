@@ -22,10 +22,13 @@ struct SystemSettingsView: View {
     @State private var showSuccess = false
     @State private var successMessage = ""
     @State private var showOnboarding = false
+    @State private var exportBackup = SettingsBackup(version: "2.0", exportDate: "")
+
+    private static let isoFormatter = ISO8601DateFormatter()
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
+            LazyVStack(spacing: 20) {
                 SettingsHeaderView(
                     title: "Hệ thống & Cập nhật",
                     subtitle: "Quản lý giao diện, khởi động, cập nhật và sao lưu.",
@@ -76,7 +79,7 @@ struct SystemSettingsView: View {
         }
         .fileExporter(
             isPresented: $showingExportSheet,
-            document: SettingsBackupDocument(backup: createBackup()),
+            document: SettingsBackupDocument(backup: exportBackup),
             contentType: .json,
             defaultFilename: "phtv-backup-\(formatDate(Date())).json"
         ) { result in
@@ -326,6 +329,7 @@ struct SystemSettingsView: View {
                     title: "Xuất cấu hình",
                     subtitle: "Sao lưu toàn bộ cài đặt ra file",
                     action: {
+                        exportBackup = createBackup()
                         showingExportSheet = true
                     }
                 )
@@ -358,10 +362,14 @@ struct SystemSettingsView: View {
         }
     }
 
-    private func formatDate(_ date: Date) -> String {
+    private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: date)
+        return formatter
+    }()
+
+    private func formatDate(_ date: Date) -> String {
+        Self.dateFormatter.string(from: date)
     }
 
     private func createBackup() -> SettingsBackup {
@@ -448,7 +456,7 @@ struct SystemSettingsView: View {
 
         return SettingsBackup(
             version: "2.0",
-            exportDate: ISO8601DateFormatter().string(from: Date()),
+            exportDate: Self.isoFormatter.string(from: Date()),
             settings: settings,
             macros: macros,
             macroCategories: categories,

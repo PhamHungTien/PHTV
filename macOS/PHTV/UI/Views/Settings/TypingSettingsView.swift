@@ -16,7 +16,7 @@ struct TypingSettingsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
+            LazyVStack(spacing: 20) {
                 SettingsHeaderView(
                     title: "Bộ gõ tiếng Việt",
                     subtitle: "Thiết lập phương pháp gõ, chính tả và các tối ưu để gõ nhanh, đúng.",
@@ -660,7 +660,7 @@ private struct UpperCaseExcludedAppRow: View {
     var body: some View {
         HStack(spacing: 12) {
             // App Icon
-            if let icon = NSWorkspace.shared.icon(forFile: app.path) as NSImage? {
+            if let icon = AppIconCache.shared.icon(for: app.path, size: 32) {
                 Image(nsImage: icon)
                     .resizable()
                     .scaledToFit()
@@ -801,6 +801,11 @@ struct UpperCaseRunningAppsPickerView: View {
         .onAppear {
             loadRunningApps()
         }
+        .onDisappear {
+            runningApps = []
+            selectedApps = []
+            searchText = ""
+        }
     }
 
     private func loadRunningApps() {
@@ -839,7 +844,7 @@ private struct UpperCaseRunningAppRow: View {
                     .imageScale(.large)
 
                 // App Icon
-                if let icon = NSWorkspace.shared.icon(forFile: app.path) as NSImage? {
+                if let icon = AppIconCache.shared.icon(for: app.path, size: 28) {
                     Image(nsImage: icon)
                         .resizable()
                         .scaledToFit()
