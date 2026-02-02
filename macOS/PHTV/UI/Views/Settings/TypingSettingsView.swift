@@ -390,7 +390,10 @@ struct SettingsCard<Content: View, Trailing: View>: View {
                 )
             }
         } else {
-            Color(NSColor.controlBackgroundColor).opacity(colorScheme == .light ? 0.75 : 0.45)
+            ZStack {
+                Color(NSColor.controlBackgroundColor).opacity(colorScheme == .light ? 0.78 : 0.5)
+                Color.accentColor.opacity(colorScheme == .light ? 0.04 : 0.08)
+            }
         }
     }
 }

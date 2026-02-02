@@ -436,17 +436,24 @@ struct SettingsHeaderView<Trailing: View>: View {
                 .fill(.regularMaterial)
         } else {
             PHTVRoundedRect(cornerRadius: 12)
-                .fill(Color(NSColor.controlBackgroundColor).opacity(colorScheme == .light ? 0.9 : 0.6))
+                .fill(Color(NSColor.windowBackgroundColor).opacity(colorScheme == .light ? 0.96 : 0.72))
+                .overlay(
+                    PHTVRoundedRect(cornerRadius: 12)
+                        .fill(Color.accentColor.opacity(colorScheme == .light ? 0.06 : 0.12))
+                )
         }
     }
 
     private var headerBorder: some View {
-        PHTVRoundedRect(cornerRadius: 12)
-            .stroke(borderColor, lineWidth: 0.5)
-    }
-
-    private var borderColor: Color {
-        Color.primary.opacity(colorScheme == .dark ? 0.14 : 0.1)
+        let outer = Color.primary.opacity(colorScheme == .dark ? 0.3 : 0.2)
+        let inner = Color.white.opacity(colorScheme == .dark ? 0.08 : 0.35)
+        return ZStack {
+            PHTVRoundedRect(cornerRadius: 12)
+                .strokeBorder(outer, lineWidth: 1)
+            PHTVRoundedRect(cornerRadius: 12)
+                .inset(by: 0.5)
+                .strokeBorder(inner, lineWidth: 0.5)
+        }
     }
 }
 
