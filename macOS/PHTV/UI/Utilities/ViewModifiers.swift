@@ -409,6 +409,7 @@ struct SettingsHeaderView<Trailing: View>: View {
         .frame(maxWidth: 700)
         .background(headerBackground)
         .overlay(headerBorder)
+        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.3 : 0.15), radius: 10, x: 0, y: 5)
         // Add explicit drag handle to header
         .background(WindowDragHandle())
     }
@@ -496,7 +497,7 @@ struct SettingsSurfaceBorder: View {
 /// Centralized colors so borders/dividers remain visually consistent.
 struct SettingsSurfaceColors {
     static func outer(_ scheme: ColorScheme) -> Color {
-        Color.black.opacity(scheme == .dark ? 0.6 : 0.18)
+        Color.black.opacity(scheme == .dark ? 0.75 : 0.25)
     }
 
     static func highlight(_ scheme: ColorScheme) -> Color {

@@ -80,17 +80,17 @@ struct SettingsCard<Content: View, Trailing: View>: View {
         .background(cardBackground)
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(borderCallback, lineWidth: 0.5)
+                .stroke(borderCallback, lineWidth: 1.0)
         )
-        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.1 : 0.05), radius: 4, x: 0, y: 2)
+        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.25 : 0.12), radius: 8, x: 0, y: 4)
         .frame(maxWidth: 700)
     }
 
     private var borderCallback: Color {
         if colorScheme == .dark {
-            return Color.white.opacity(0.1)
+            return Color.white.opacity(0.18)
         } else {
-            return Color.black.opacity(0.08)
+            return Color.black.opacity(0.14)
         }
     }
 
@@ -233,9 +233,9 @@ struct StatusCard: View {
         }
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(hasPermission ? Color.green.opacity(0.3) : Color.orange.opacity(0.3), lineWidth: 1)
+                .stroke(hasPermission ? Color.green.opacity(0.4) : Color.orange.opacity(0.4), lineWidth: 1.5)
         )
-        .shadow(color: (hasPermission ? Color.green : Color.orange).opacity(0.05), radius: 5, x: 0, y: 2)
+        .shadow(color: (hasPermission ? Color.green : Color.orange).opacity(colorScheme == .dark ? 0.15 : 0.08), radius: 10, x: 0, y: 4)
     }
 }
 
