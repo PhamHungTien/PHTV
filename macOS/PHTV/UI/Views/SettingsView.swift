@@ -689,7 +689,9 @@ struct DetailViewGlassModifier: ViewModifier {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     func body(content: Content) -> some View {
-        if #available(macOS 26.0, *), !reduceTransparency {
+        if #available(macOS 26.0, *),
+           SettingsVisualEffects.enableGlassEffects,
+           !reduceTransparency {
             content
                 .backgroundExtensionEffect()
         } else {

@@ -443,9 +443,16 @@ struct SettingsHeaderView<Trailing: View>: View {
 
 // MARK: - Settings View Background
 
+/// Central toggle for heavy visual effects in Settings.
+/// Disabled to prevent large GPU/memory spikes on macOS 26 when switching tabs.
+enum SettingsVisualEffects {
+    static let enableGlassEffects = false
+}
+
 /// Applies consistent background for settings views
 struct SettingsViewBackground: ViewModifier {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     func body(content: Content) -> some View {
         content
@@ -488,7 +495,9 @@ struct SettingsViewBackground: ViewModifier {
         }
         .ignoresSafeArea()
 
-        if #available(macOS 26.0, *) {
+        if #available(macOS 26.0, *),
+           SettingsVisualEffects.enableGlassEffects,
+           !reduceTransparency {
             GlassEffectContainer {
                 base
                     .backgroundExtensionEffect()
