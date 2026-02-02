@@ -341,12 +341,22 @@ struct SettingsCard<Content: View, Trailing: View>: View {
 
     @ViewBuilder
     private var cardBackground: some View {
-        PHTVRoundedRect(cornerRadius: 12)
-            .fill(.regularMaterial)
-            .overlay(
-                PHTVRoundedRect(cornerRadius: 12)
-                    .stroke(Color.primary.opacity(colorScheme == .dark ? 0.14 : 0.08), lineWidth: 0.5)
-            )
+        let fillColor = Color(NSColor.controlBackgroundColor).opacity(colorScheme == .light ? 0.92 : 0.6)
+        if SettingsVisualEffects.enableMaterials, !reduceTransparency {
+            PHTVRoundedRect(cornerRadius: 12)
+                .fill(.regularMaterial)
+                .overlay(
+                    PHTVRoundedRect(cornerRadius: 12)
+                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.14 : 0.08), lineWidth: 0.5)
+                )
+        } else {
+            PHTVRoundedRect(cornerRadius: 12)
+                .fill(fillColor)
+                .overlay(
+                    PHTVRoundedRect(cornerRadius: 12)
+                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.08), lineWidth: 0.5)
+                )
+        }
     }
 
     private var headerRowBackground: some View {

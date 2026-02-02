@@ -426,9 +426,13 @@ struct SettingsHeaderView<Trailing: View>: View {
 
     @ViewBuilder
     private var headerBackground: some View {
-        // Simple material background - no glass effect
-        PHTVRoundedRect(cornerRadius: 12)
-            .fill(.regularMaterial)
+        if SettingsVisualEffects.enableMaterials, !reduceTransparency {
+            PHTVRoundedRect(cornerRadius: 12)
+                .fill(.regularMaterial)
+        } else {
+            PHTVRoundedRect(cornerRadius: 12)
+                .fill(Color(NSColor.controlBackgroundColor).opacity(colorScheme == .light ? 0.9 : 0.6))
+        }
     }
 
     private var headerBorder: some View {
@@ -447,6 +451,7 @@ struct SettingsHeaderView<Trailing: View>: View {
 /// Disabled to prevent large GPU/memory spikes on macOS 26 when switching tabs.
 enum SettingsVisualEffects {
     static let enableGlassEffects = false
+    static let enableMaterials = false
 }
 
 /// Applies consistent background for settings views
@@ -485,9 +490,14 @@ struct SettingsViewBackground: ViewModifier {
             )
 
             if #available(macOS 12.0, *) {
-                Rectangle()
-                    .fill(.ultraThinMaterial)
-                    .opacity(colorScheme == .light ? 0.6 : 0.25)
+                if SettingsVisualEffects.enableMaterials, !reduceTransparency {
+                    Rectangle()
+                        .fill(.ultraThinMaterial)
+                        .opacity(colorScheme == .light ? 0.6 : 0.25)
+                } else {
+                    Rectangle()
+                        .fill(Color(NSColor.controlBackgroundColor).opacity(colorScheme == .light ? 0.45 : 0.2))
+                }
             }
             
             // Block drag on background
