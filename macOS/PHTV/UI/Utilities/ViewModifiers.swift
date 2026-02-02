@@ -455,14 +455,20 @@ struct SettingsSurfaceBorder: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        let outer = Color.primary.opacity(colorScheme == .dark ? 0.35 : 0.2)
-        let inner = Color.white.opacity(colorScheme == .dark ? 0.08 : 0.35)
+        // Bevel-style border to keep header/cards visually identical across fills
+        let outer = Color.black.opacity(colorScheme == .dark ? 0.55 : 0.12)
+        let highlight = Color.white.opacity(colorScheme == .dark ? 0.12 : 0.5)
+        let innerGradient = LinearGradient(
+            colors: [highlight, Color.clear],
+            startPoint: .top,
+            endPoint: .bottom
+        )
         return ZStack {
             PHTVRoundedRect(cornerRadius: cornerRadius)
                 .strokeBorder(outer, lineWidth: 1)
             PHTVRoundedRect(cornerRadius: cornerRadius)
                 .inset(by: 0.5)
-                .strokeBorder(inner, lineWidth: 0.5)
+                .strokeBorder(innerGradient, lineWidth: 0.5)
         }
     }
 }
