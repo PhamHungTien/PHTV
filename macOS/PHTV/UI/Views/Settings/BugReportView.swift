@@ -88,6 +88,7 @@ struct BugReportView: View {
     @State private var showLogPreview: Bool = false
     @State private var isSending: Bool = false
     @State private var hasLoadedLogsOnce: Bool = false
+    @State private var showOptionalDetails: Bool = false
 
     var body: some View {
         ScrollView {
@@ -143,10 +144,14 @@ struct BugReportView: View {
     private var bugInfoSection: some View {
         SettingsCard(
             title: "Thông tin sự cố",
-            subtitle: "Mô tả tình huống và cách tái tạo",
+            subtitle: "Chỉ cần tiêu đề và mô tả",
             icon: "ladybug.fill"
         ) {
             VStack(alignment: .leading, spacing: 12) {
+                Text("Bạn chỉ cần nhập tiêu đề và mô tả. Các mục khác là tuỳ chọn.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
                 // Bug Title
                 TextField("Tiêu đề vấn đề (vd: Không gõ được tiếng Việt trong Safari)", text: $bugTitle)
                     .textFieldStyle(.plain)
@@ -154,39 +159,6 @@ struct BugReportView: View {
                     .background {
                         inputFieldBackground(cornerRadius: 8)
                     }
-
-                // Quick metadata
-                HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Mức độ")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Picker("", selection: $bugSeverity) {
-                            ForEach(BugSeverity.allCases) { severity in
-                                Text("\(severity.badge) \(severity.displayName)").tag(severity)
-                            }
-                        }
-                        .labelsHidden()
-                        .pickerStyle(.menu)
-                        .glassMenuPickerStyle()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Khu vực")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Picker("", selection: $bugArea) {
-                            ForEach(BugArea.allCases) { area in
-                                Text(area.displayName).tag(area)
-                            }
-                        }
-                        .labelsHidden()
-                        .pickerStyle(.menu)
-                        .glassMenuPickerStyle()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }
 
                 // Description
                 TextEditor(text: $bugDescription)
@@ -200,7 +172,7 @@ struct BugReportView: View {
                     .clipShape(PHTVRoundedRect(cornerRadius: 8))
                     .overlay(alignment: .topLeading) {
                         if bugDescription.isEmpty {
-                            Text("Mô tả vấn đề và các bước để tái tạo…")
+                            Text("Mô tả ngắn gọn vấn đề. Có thể kèm bước tái hiện nếu muốn…")
                                 .foregroundStyle(.tertiary)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 16)
@@ -208,35 +180,49 @@ struct BugReportView: View {
                         }
                     }
 
-                Text("Bước tái hiện")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                TextEditor(text: $stepsToReproduce)
-                    .frame(minHeight: 80)
-                    .font(.body)
-                    .scrollContentBackground(.hidden)
-                    .padding(8)
-                    .background {
-                        inputFieldBackground(cornerRadius: 8)
-                    }
-                    .clipShape(PHTVRoundedRect(cornerRadius: 8))
-                    .overlay(alignment: .topLeading) {
-                        if stepsToReproduce.isEmpty {
-                            Text("1. Mở ứng dụng...\n2. Thực hiện...\n3. Lỗi xảy ra...")
-                                .foregroundStyle(.tertiary)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 16)
-                                .allowsHitTesting(false)
-                        }
-                    }
-
-                HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Kết quả mong muốn")
+                DisclosureGroup(isExpanded: $showOptionalDetails) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Các mục dưới đây giúp chẩn đoán nhanh hơn (không bắt buộc).")
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                        TextEditor(text: $expectedResult)
-                            .frame(minHeight: 70)
+
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Mức độ")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Picker("", selection: $bugSeverity) {
+                                    ForEach(BugSeverity.allCases) { severity in
+                                        Text("\(severity.badge) \(severity.displayName)").tag(severity)
+                                    }
+                                }
+                                .labelsHidden()
+                                .pickerStyle(.menu)
+                                .glassMenuPickerStyle()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Khu vực")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Picker("", selection: $bugArea) {
+                                    ForEach(BugArea.allCases) { area in
+                                        Text(area.displayName).tag(area)
+                                    }
+                                }
+                                .labelsHidden()
+                                .pickerStyle(.menu)
+                                .glassMenuPickerStyle()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        }
+
+                        Text("Bước tái hiện")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        TextEditor(text: $stepsToReproduce)
+                            .frame(minHeight: 80)
                             .font(.body)
                             .scrollContentBackground(.hidden)
                             .padding(8)
@@ -245,47 +231,81 @@ struct BugReportView: View {
                             }
                             .clipShape(PHTVRoundedRect(cornerRadius: 8))
                             .overlay(alignment: .topLeading) {
-                                if expectedResult.isEmpty {
-                                    Text("Ứng dụng nên…")
+                                if stepsToReproduce.isEmpty {
+                                    Text("1. Mở ứng dụng...\n2. Thực hiện...\n3. Lỗi xảy ra...")
                                         .foregroundStyle(.tertiary)
                                         .padding(.horizontal, 12)
                                         .padding(.vertical, 16)
                                         .allowsHitTesting(false)
                                 }
                             }
-                    }
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Kết quả thực tế")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        TextEditor(text: $actualResult)
-                            .frame(minHeight: 70)
-                            .font(.body)
-                            .scrollContentBackground(.hidden)
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Kết quả mong muốn")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                TextEditor(text: $expectedResult)
+                                    .frame(minHeight: 70)
+                                    .font(.body)
+                                    .scrollContentBackground(.hidden)
+                                    .padding(8)
+                                    .background {
+                                        inputFieldBackground(cornerRadius: 8)
+                                    }
+                                    .clipShape(PHTVRoundedRect(cornerRadius: 8))
+                                    .overlay(alignment: .topLeading) {
+                                        if expectedResult.isEmpty {
+                                            Text("Ứng dụng nên…")
+                                                .foregroundStyle(.tertiary)
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 16)
+                                                .allowsHitTesting(false)
+                                        }
+                                    }
+                            }
+
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Kết quả thực tế")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                TextEditor(text: $actualResult)
+                                    .frame(minHeight: 70)
+                                    .font(.body)
+                                    .scrollContentBackground(.hidden)
+                                    .padding(8)
+                                    .background {
+                                        inputFieldBackground(cornerRadius: 8)
+                                    }
+                                    .clipShape(PHTVRoundedRect(cornerRadius: 8))
+                                    .overlay(alignment: .topLeading) {
+                                        if actualResult.isEmpty {
+                                            Text("Thực tế đang…")
+                                                .foregroundStyle(.tertiary)
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 16)
+                                                .allowsHitTesting(false)
+                                        }
+                                }
+                            }
+                        }
+                        TextField("Email liên hệ (tuỳ chọn)", text: $contactEmail)
+                            .textFieldStyle(.plain)
                             .padding(8)
                             .background {
                                 inputFieldBackground(cornerRadius: 8)
                             }
-                            .clipShape(PHTVRoundedRect(cornerRadius: 8))
-                            .overlay(alignment: .topLeading) {
-                                if actualResult.isEmpty {
-                                    Text("Thực tế đang…")
-                                        .foregroundStyle(.tertiary)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 16)
-                                        .allowsHitTesting(false)
-                                }
-                            }
+                    }
+                    .padding(.top, 4)
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "slider.horizontal.3")
+                            .font(.system(size: 12, weight: .semibold))
+                        Text("Thêm chi tiết (tuỳ chọn)")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
                     }
                 }
-
-                TextField("Email liên hệ (tuỳ chọn)", text: $contactEmail)
-                    .textFieldStyle(.plain)
-                    .padding(8)
-                    .background {
-                        inputFieldBackground(cornerRadius: 8)
-                    }
             }
         }
     }
