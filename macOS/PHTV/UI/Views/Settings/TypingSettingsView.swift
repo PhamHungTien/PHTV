@@ -341,21 +341,27 @@ struct SettingsCard<Content: View, Trailing: View>: View {
 
     @ViewBuilder
     private var cardBackground: some View {
-        let fillColor = Color(NSColor.controlBackgroundColor).opacity(colorScheme == .light ? 0.92 : 0.6)
+        let fillColor = Color(NSColor.controlBackgroundColor).opacity(colorScheme == .light ? 0.95 : 0.62)
         if SettingsVisualEffects.enableMaterials, !reduceTransparency {
             PHTVRoundedRect(cornerRadius: 12)
                 .fill(.regularMaterial)
-                .overlay(
-                    PHTVRoundedRect(cornerRadius: 12)
-                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.14 : 0.08), lineWidth: 0.5)
-                )
+                .overlay(cardBorder)
         } else {
             PHTVRoundedRect(cornerRadius: 12)
                 .fill(fillColor)
-                .overlay(
-                    PHTVRoundedRect(cornerRadius: 12)
-                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.08), lineWidth: 0.5)
-                )
+                .overlay(cardBorder)
+        }
+    }
+
+    private var cardBorder: some View {
+        let outer = Color.primary.opacity(colorScheme == .dark ? 0.35 : 0.2)
+        let inner = Color.white.opacity(colorScheme == .dark ? 0.08 : 0.35)
+        return ZStack {
+            PHTVRoundedRect(cornerRadius: 12)
+                .strokeBorder(outer, lineWidth: 1)
+            PHTVRoundedRect(cornerRadius: 12)
+                .inset(by: 0.5)
+                .strokeBorder(inner, lineWidth: 0.5)
         }
     }
 
