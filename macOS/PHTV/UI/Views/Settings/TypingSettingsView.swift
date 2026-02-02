@@ -327,8 +327,7 @@ struct SettingsCard<Content: View, Trailing: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(headerRowBackground)
 
-            Divider()
-                .opacity(0.4)
+            SettingsDivider()
 
             // Content
             content
@@ -429,9 +428,21 @@ struct SettingsToggleRow: View {
 }
 
 struct SettingsDivider: View {
+    var leadingInset: CGFloat = 36
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
-        Divider()
-            .padding(.leading, 36)
+        let outer = Color.black.opacity(colorScheme == .dark ? 0.55 : 0.12)
+        let highlight = Color.white.opacity(colorScheme == .dark ? 0.12 : 0.5)
+        Rectangle()
+            .fill(outer)
+            .frame(height: 1)
+            .overlay(alignment: .top) {
+                Rectangle()
+                    .fill(highlight)
+                    .frame(height: 0.5)
+            }
+            .padding(.leading, leadingInset)
     }
 }
 
