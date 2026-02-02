@@ -96,8 +96,7 @@ struct BugReportView: View {
                 SettingsHeaderView(
                     title: "Báo lỗi & Hỗ trợ",
                     subtitle: "Gửi thông tin chi tiết để hỗ trợ nhanh và chính xác.",
-                    icon: "ladybug.fill",
-                    accent: .red
+                    icon: "ladybug.fill"
                 )
 
                 // Bug Information Form
