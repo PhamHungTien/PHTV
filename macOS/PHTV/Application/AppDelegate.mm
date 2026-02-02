@@ -8,7 +8,6 @@
 
 #import <Carbon/Carbon.h>
 #import <Cocoa/Cocoa.h>
-#import <QuartzCore/QuartzCore.h>
 #import <ServiceManagement/ServiceManagement.h>
 #include <stdlib.h>
 #include <string.h>

@@ -11,11 +11,8 @@
 		4602026B2F2814260040B043 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 460202612F2814260040B043 /* Foundation.framework */; };
 		4602026C2F2814260040B043 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 460202622F2814260040B043 /* CoreGraphics.framework */; };
 		4602026D2F2814260040B043 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 460202632F2814260040B043 /* Cocoa.framework */; };
-		4602026E2F2814260040B043 /* EventKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 460202642F2814260040B043 /* EventKit.framework */; };
 		4602026F2F2814260040B043 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 460202652F2814260040B043 /* Carbon.framework */; };
-		460202702F2814260040B043 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 460202662F2814260040B043 /* QuartzCore.framework */; };
 		460202712F2814260040B043 /* ServiceManagement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 460202672F2814260040B043 /* ServiceManagement.framework */; };
-		460202722F2814260040B043 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 460202682F2814260040B043 /* AppIntents.framework */; };
 		460202732F2814260040B043 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 460202742F2814260040B043 /* Sparkle */; };
 		460203682F2816C90040B043 /* PHTV.icon in Resources */ = {isa = PBXBuildFile; fileRef = 460203672F2816C90040B043 /* PHTV.icon */; };
 /* End PBXBuildFile section */
@@ -26,11 +23,8 @@
 		460202612F2814260040B043 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		460202622F2814260040B043 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		460202632F2814260040B043 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
-		460202642F2814260040B043 /* EventKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = EventKit.framework; path = System/Library/Frameworks/EventKit.framework; sourceTree = SDKROOT; };
 		460202652F2814260040B043 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
-		460202662F2814260040B043 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		460202672F2814260040B043 /* ServiceManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ServiceManagement.framework; path = System/Library/Frameworks/ServiceManagement.framework; sourceTree = SDKROOT; };
-		460202682F2814260040B043 /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppIntents.framework; path = System/Library/Frameworks/AppIntents.framework; sourceTree = SDKROOT; };
 		460203672F2816C90040B043 /* PHTV.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = PHTV.icon; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -61,14 +55,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				460202732F2814260040B043 /* Sparkle in Frameworks */,
-				460202722F2814260040B043 /* AppIntents.framework in Frameworks */,
 				4602026F2F2814260040B043 /* Carbon.framework in Frameworks */,
-				460202702F2814260040B043 /* QuartzCore.framework in Frameworks */,
 				4602026A2F2814260040B043 /* AppKit.framework in Frameworks */,
 				460202712F2814260040B043 /* ServiceManagement.framework in Frameworks */,
 				4602026C2F2814260040B043 /* CoreGraphics.framework in Frameworks */,
 				4602026D2F2814260040B043 /* Cocoa.framework in Frameworks */,
-				4602026E2F2814260040B043 /* EventKit.framework in Frameworks */,
 				4602026B2F2814260040B043 /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -97,14 +88,11 @@
 		460202692F2814260040B043 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				460202682F2814260040B043 /* AppIntents.framework */,
 				460202602F2814260040B043 /* AppKit.framework */,
 				460202652F2814260040B043 /* Carbon.framework */,
 				460202632F2814260040B043 /* Cocoa.framework */,
 				460202622F2814260040B043 /* CoreGraphics.framework */,
-				460202642F2814260040B043 /* EventKit.framework */,
 				460202612F2814260040B043 /* Foundation.framework */,
-				460202662F2814260040B043 /* QuartzCore.framework */,
 				460202672F2814260040B043 /* ServiceManagement.framework */,
 			);
 			name = Frameworks;

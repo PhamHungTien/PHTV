@@ -453,23 +453,6 @@ struct UnifiedContentView: View {
         }.resume()
     }
 
-    private func getPHTPMediaDirectory() -> URL {
-        let tempDir = FileManager.default.temporaryDirectory
-        let phtpDir = tempDir.appendingPathComponent("PHTPMedia", isDirectory: true)
-
-        // Create directory if it doesn't exist
-        if !FileManager.default.fileExists(atPath: phtpDir.path) {
-            do {
-                try FileManager.default.createDirectory(at: phtpDir, withIntermediateDirectories: true)
-            } catch {
-                NSLog("[PHTPPicker] Failed to create media directory: %@", error.localizedDescription)
-                // Return the path anyway - subsequent operations will fail if directory creation failed
-            }
-        }
-
-        return phtpDir
-    }
-
     private func saveTempGIF(data: Data, filename: String) -> URL? {
         let phtpDir = getPHTPMediaDirectory()
         let gifURL = phtpDir.appendingPathComponent("\(filename).gif")
@@ -491,14 +474,6 @@ struct UnifiedContentView: View {
         } catch {
             NSLog("[PHTPPicker] Error saving Sticker: %@", error.localizedDescription)
             return nil
-        }
-    }
-
-    private func deleteFileAfterDelay(_ fileURL: URL, delay: TimeInterval = 5.0) {
-        // Delete file after a delay to ensure paste is complete
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-            try? FileManager.default.removeItem(at: fileURL)
-            NSLog("[PHTPPicker] Cleaned up file: %@", fileURL.lastPathComponent)
         }
     }
 
@@ -531,4 +506,3 @@ struct UnifiedContentView: View {
         NSLog("[PHTPPicker] Paste command sent")
     }
 }
-

@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import AppKit
 
 // MARK: - Helper Functions for Media Storage
 

@@ -210,7 +210,7 @@ def should_include_english_word(word):
     """
     return True
 
-def build_english_dictionary(resources_dir):
+def build_english_dictionary(resources_dir, data_dir=None):
     """Build English dictionary binary with common words only."""
     print("\n" + "="*60)
     print("BUILDING ENGLISH DICTIONARY")
@@ -263,16 +263,25 @@ def build_english_dictionary(resources_dir):
     }
     words.update(mandatory_words)
 
-    # Also check local file
-    local_en = os.path.join(resources_dir, 'en_words.txt')
-    if os.path.exists(local_en):
+    # Also check local file (prefer Tools/data if present)
+    local_en = None
+    if data_dir:
+        candidate = os.path.join(data_dir, 'en_words.txt')
+        if os.path.exists(candidate):
+            local_en = candidate
+    if local_en is None:
+        candidate = os.path.join(resources_dir, 'en_words.txt')
+        if os.path.exists(candidate):
+            local_en = candidate
+
+    if local_en:
         with open(local_en, 'r', encoding='utf-8') as f:
             for line in f:
                 word = line.strip().lower()
                 if word and 2 <= len(word) <= 45:
                     if all(c.isalpha() and c.isascii() for c in word):
                         words.add(word)
-        print(f"  Added local words, total: {len(words):,}")
+        print(f"  Added local words from {os.path.basename(local_en)}, total: {len(words):,}")
 
     if not words:
         print("  ✗ No English words found!")
@@ -296,7 +305,7 @@ def build_english_dictionary(resources_dir):
 
     return True, filtered_words
 
-def build_vietnamese_dictionary(resources_dir, english_words=None):
+def build_vietnamese_dictionary(resources_dir, english_words=None, data_dir=None):
     """Build Vietnamese dictionary binary with complete word list."""
     print("\n" + "="*60)
     print("BUILDING VIETNAMESE DICTIONARY")
@@ -389,9 +398,18 @@ def build_vietnamese_dictionary(resources_dir, english_words=None):
             print(f"  Loaded {len(vietnamese_words):,} Vietnamese words total")
             break  # Use first successful download
 
-    # Also check local file
-    local_vi = os.path.join(resources_dir, 'vi_words.txt')
-    if os.path.exists(local_vi):
+    # Also check local file (prefer Tools/data if present)
+    local_vi = None
+    if data_dir:
+        candidate = os.path.join(data_dir, 'vi_words.txt')
+        if os.path.exists(candidate):
+            local_vi = candidate
+    if local_vi is None:
+        candidate = os.path.join(resources_dir, 'vi_words.txt')
+        if os.path.exists(candidate):
+            local_vi = candidate
+
+    if local_vi:
         with open(local_vi, 'r', encoding='utf-8') as f:
             for line in f:
                 word = line.strip()
@@ -441,23 +459,28 @@ def build_vietnamese_dictionary(resources_dir, english_words=None):
 
     return True
 
-def cleanup_txt_files(resources_dir):
+def cleanup_txt_files(resources_dir, data_dir=None):
     """Remove old txt files after successful binary generation."""
     print("\n" + "="*60)
     print("CLEANUP")
     print("="*60)
 
     txt_files = ['en_words.txt', 'vi_words.txt']
+    search_dirs = [data_dir, resources_dir]
     for filename in txt_files:
-        filepath = os.path.join(resources_dir, filename)
-        if os.path.exists(filepath):
-            os.remove(filepath)
-            print(f"  ✓ Removed {filename}")
-        else:
+        removed_any = False
+        for base_dir in filter(None, search_dirs):
+            filepath = os.path.join(base_dir, filename)
+            if os.path.exists(filepath):
+                os.remove(filepath)
+                print(f"  ✓ Removed {filename} from {base_dir}")
+                removed_any = True
+        if not removed_any:
             print(f"  - {filename} not found (already removed)")
 
 def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
+    data_dir = os.path.join(script_dir, 'data')
     resources_dir = os.path.join(script_dir, '..', 'Resources', 'Dictionaries')
 
     if not os.path.exists(resources_dir):
@@ -467,19 +490,20 @@ def main():
     print("PHTV Dictionary Generator")
     print("="*60)
     print(f"Resources directory: {resources_dir}")
+    print(f"Data directory: {data_dir}")
 
     # Build dictionaries
-    en_result = build_english_dictionary(resources_dir)
+    en_result = build_english_dictionary(resources_dir, data_dir=data_dir)
     if isinstance(en_result, tuple):
         en_ok, english_words = en_result
     else:
         en_ok, english_words = en_result, set()
-    vi_ok = build_vietnamese_dictionary(resources_dir, english_words)
+    vi_ok = build_vietnamese_dictionary(resources_dir, english_words, data_dir=data_dir)
 
     if en_ok and vi_ok:
         # Ask before cleanup
         if len(sys.argv) > 1 and sys.argv[1] == '--cleanup':
-            cleanup_txt_files(resources_dir)
+            cleanup_txt_files(resources_dir, data_dir=data_dir)
         else:
             print("\n  Run with --cleanup to remove txt files")
 
