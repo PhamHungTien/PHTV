@@ -111,6 +111,7 @@ struct SettingsView: View {
         .listStyle(.sidebar)
         .conditionalSearchable(text: $searchText, prompt: "Tìm nhanh cài đặt…")
         .navigationSplitViewColumnWidth(min: 160, ideal: 200, max: 240)
+        .animation(nil, value: selectedTab)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -152,8 +153,10 @@ struct SettingsView: View {
                 AboutView()
             }
         }
-        // Force view teardown when đổi tab để giải phóng RAM của các view nặng (log, macro...)
-        .id(selectedTab)
+        // Avoid forced teardown to reduce peak allocations on tab switch.
+        .transaction { transaction in
+            transaction.animation = nil
+        }
     }
 
     @ViewBuilder
