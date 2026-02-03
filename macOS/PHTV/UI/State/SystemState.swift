@@ -81,8 +81,14 @@ final class SystemState: ObservableObject {
         safeMode = defaults.bool(forKey: UserDefaultsKey.safeMode)
 
         // Load Sparkle settings
-        let updateInterval = defaults.integer(forKey: UserDefaultsKey.updateCheckInterval)
-        updateCheckFrequency = UpdateCheckFrequency.from(interval: updateInterval == 0 ? 86400 : updateInterval)
+        let updateIntervalObject = defaults.object(forKey: UserDefaultsKey.updateCheckInterval)
+        let updateInterval: Int
+        if let number = updateIntervalObject as? NSNumber {
+            updateInterval = number.intValue
+        } else {
+            updateInterval = Defaults.updateCheckInterval
+        }
+        updateCheckFrequency = UpdateCheckFrequency.from(interval: updateInterval)
         betaChannelEnabled = defaults.bool(forKey: UserDefaultsKey.betaChannelEnabled)
 
         // Auto install updates - default to true if not set
