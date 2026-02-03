@@ -17,7 +17,6 @@ typedef struct {
     BOOL isSpotlightLike;
     BOOL needsPrecomposedBatched;
     BOOL needsStepByStep;
-    BOOL needsSlowKeyInjection;
     BOOL containsUnicodeCompound;
     BOOL isSafari;  // Safari always uses Shift+Left strategy
 } AppCharacteristics;

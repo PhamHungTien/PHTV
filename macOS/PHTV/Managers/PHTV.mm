@@ -71,7 +71,6 @@ static const uint64_t CLI_SPEED_SLOW_THRESHOLD_US = 48000;
 static const double CLI_SPEED_FACTOR_FAST = 2.1;
 static const double CLI_SPEED_FACTOR_MEDIUM = 1.6;
 static const double CLI_SPEED_FACTOR_SLOW = 1.3;
-static const useconds_t SLOW_KEY_INJECTION_DELAY_US = 5000;
 
 // AXValueType constant name differs across SDK versions.
 #if defined(kAXValueTypeCFRange)
@@ -460,7 +459,7 @@ extern "C" {
     // PERFORMANCE: Critical hot path optimization - ~15ms savings per keystroke
     static inline AppCharacteristics getAppCharacteristics(NSString* bundleId) {
         if (!bundleId) {
-            AppCharacteristics empty = {NO, NO, NO, NO, NO, NO};
+            AppCharacteristics empty = {NO, NO, NO, NO, NO};
             return empty;
         }
 
@@ -522,7 +521,6 @@ extern "C" {
         chars.isSpotlightLike = [PHTVAppDetectionManager isSpotlightLikeApp:bundleId];
         chars.needsPrecomposedBatched = [PHTVAppDetectionManager needsPrecomposedBatched:bundleId];
         chars.needsStepByStep = [PHTVAppDetectionManager needsStepByStep:bundleId];
-        chars.needsSlowKeyInjection = [PHTVAppDetectionManager needsSlowKeyInjection:bundleId];
         chars.containsUnicodeCompound = [PHTVAppDetectionManager containsUnicodeCompound:bundleId];
         chars.isSafari = [PHTVAppDetectionManager isSafariApp:bundleId];
 
@@ -549,7 +547,6 @@ static NSString* _phtvEffectiveTargetBundleId = nil;
 static BOOL _phtvPostToHIDTap = NO;
 static BOOL _phtvPostToSessionForCli = NO;
 static BOOL _phtvIsCliTarget = NO;
-static BOOL _phtvNeedsSlowKeyInjection = NO;
 static double _phtvCliSpeedFactor = 1.0;
 static int _phtvCliPendingBackspaceCount = 0;
 static useconds_t _phtvCliBackspaceDelayUs = 0;
@@ -1460,11 +1457,6 @@ static bool _pendingUppercasePrimeCheck = true;
         return [PHTVAppDetectionManager needsStepByStep:bundleId];
     }
 
-    // Legacy check (for backward compatibility)
-    BOOL needsSlowKeyInjection(NSString* bundleId) {
-        return [PHTVAppDetectionManager needsSlowKeyInjection:bundleId];
-    }
-    
     CGEventSourceRef myEventSource = NULL;
     vKeyHookState* pData;
     CGEventRef eventBackSpaceDown;
@@ -2181,16 +2173,6 @@ static bool _pendingUppercasePrimeCheck = true;
             return;
         }
 
-        if (_phtvNeedsSlowKeyInjection) {
-            for (int i = 0; i < count; i++) {
-                SendBackspace();
-                if (SLOW_KEY_INJECTION_DELAY_US > 0) {
-                    usleep(SLOW_KEY_INJECTION_DELAY_US);
-                }
-            }
-            return;
-        }
-
         // Always use standard backspace method
         for (int i = 0; i < count; i++) {
             SendBackspace();
@@ -2521,16 +2503,13 @@ static bool _pendingUppercasePrimeCheck = true;
         }
 
         //send real data - use step by step for timing sensitive apps like Spotlight
-        BOOL slowInjection = needsSlowKeyInjection(effectiveTarget);
-        BOOL useStepByStep = _phtvIsCliTarget || vSendKeyStepByStep || needsStepByStep(effectiveTarget) || slowInjection;
+        BOOL useStepByStep = _phtvIsCliTarget || vSendKeyStepByStep || needsStepByStep(effectiveTarget);
         if (!useStepByStep) {
             SendNewCharString(true);
         } else {
             useconds_t cliTextDelay = 0;
             if (_phtvIsCliTarget) {
                 cliTextDelay = PHTVScaleCliDelay(_phtvCliTextDelayUs);
-            } else if (slowInjection) {
-                cliTextDelay = SLOW_KEY_INJECTION_DELAY_US;
             }
             for (int i = 0; i < pData->macroData.size(); i++) {
                 if (pData->macroData[i] & PURE_CHARACTER_MASK) {
@@ -2879,7 +2858,6 @@ static bool _pendingUppercasePrimeCheck = true;
 
         _phtvPostToSessionForCli = NO;
         _phtvIsCliTarget = NO;
-        _phtvNeedsSlowKeyInjection = NO;
         _flag = CGEventGetFlags(event);
         _keycode = (CGKeyCode)CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
 
@@ -3238,8 +3216,6 @@ static bool _pendingUppercasePrimeCheck = true;
 
             // Cache for send routines called later in this callback.
             _phtvEffectiveTargetBundleId = effectiveBundleId;
-            _phtvNeedsSlowKeyInjection = appChars.needsSlowKeyInjection;
-            
             // BROWSER FIX: Browsers (Chromium, Safari, Firefox, etc.) don't support 
             // HID tap posting or AX API for their address bar autocomplete.
             // When spotlightActive=true on a browser address bar, we should NOT use Spotlight-style handling.
@@ -3642,7 +3618,6 @@ static bool _pendingUppercasePrimeCheck = true;
                                          (_phtvIsCliTarget ||
                                           vSendKeyStepByStep ||
                                           appChars.needsStepByStep ||
-                                          appChars.needsSlowKeyInjection ||
                                           isAutoEnglishWithEnter);
 #ifdef DEBUG
                     if (isSpotlightTarget) {
@@ -3656,8 +3631,6 @@ static bool _pendingUppercasePrimeCheck = true;
                             useconds_t cliTextDelay = 0;
                             if (_phtvIsCliTarget) {
                                 cliTextDelay = PHTVScaleCliDelay(_phtvCliTextDelayUs);
-                            } else if (appChars.needsSlowKeyInjection) {
-                                cliTextDelay = SLOW_KEY_INJECTION_DELAY_US;
                             }
                             for (int i = pData->newCharCount - 1; i >= 0; i--) {
                                 SendKeyCode(pData->charData[i]);

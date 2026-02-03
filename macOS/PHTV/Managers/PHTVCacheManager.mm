@@ -183,7 +183,7 @@ static BOOL _layoutCacheValid = NO;
 #pragma mark - App Characteristics Cache
 
 + (AppCharacteristics)getAppCharacteristics:(NSString*)bundleId {
-    AppCharacteristics characteristics = {NO, NO, NO, NO, NO, NO};
+    AppCharacteristics characteristics = {NO, NO, NO, NO, NO};
 
     if (!bundleId) {
         return characteristics;
