@@ -139,8 +139,9 @@ static NSSet* _disableVietnameseAppSet = nil;
             @"com.raphaelamorim.rio"
         ]];
 
-        // Medium terminals (higher delay, one-by-one text)
+        // Medium terminals (balanced delay)
         _mediumTerminalAppSet = [NSSet setWithArray:@[
+            @"com.apple.Terminal",
             @"net.kovidgoyal.kitty",
             @"com.github.wez.wezterm",
             @"com.googlecode.iterm2",
@@ -150,10 +151,8 @@ static NSSet* _disableVietnameseAppSet = nil;
             @"com.termius-dmg.mac"
         ]];
 
-        // Slow terminals (Apple Terminal)
-        _slowTerminalAppSet = [NSSet setWithArray:@[
-            @"com.apple.Terminal"
-        ]];
+        // Slow terminals (reserved for apps that still drop chars with medium delays)
+        _slowTerminalAppSet = [NSSet setWithArray:@[]];
 
         // Force precomposed Unicode
         _forcePrecomposedAppSet = [NSSet setWithArray:@[@"com.apple.Spotlight",
