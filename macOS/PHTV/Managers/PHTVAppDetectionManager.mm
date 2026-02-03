@@ -23,6 +23,7 @@ static NSSet* _slowTerminalAppSet = nil;
 static NSSet* _forcePrecomposedAppSet = nil;
 static NSSet* _precomposedBatchedAppSet = nil;
 static NSSet* _stepByStepAppSet = nil;
+static NSSet* _slowKeyInjectionAppSet = nil;
 static NSSet* _disableVietnameseAppSet = nil;
 
 #pragma mark - Initialization
@@ -172,6 +173,11 @@ static NSSet* _disableVietnameseAppSet = nil;
                                                    @"com.apple.Safari",
                                                    @"com.apple.SafariTechnologyPreview"]];
 
+        // Slow key injection to reduce UI lag in heavy editors
+        _slowKeyInjectionAppSet = [NSSet setWithArray:@[
+            @"com.apple.Notes"
+        ]];
+
         // Disable Vietnamese input
         _disableVietnameseAppSet = [NSSet setWithArray:@[@"com.apple.apps.launcher",
                                                           @"com.apple.ScreenContinuity"]];
@@ -194,6 +200,10 @@ static NSSet* _disableVietnameseAppSet = nil;
 
 + (BOOL)needsStepByStep:(NSString*)bundleId {
     return [self bundleIdMatchesAppSet:bundleId appSet:_stepByStepAppSet];
+}
+
++ (BOOL)needsSlowKeyInjection:(NSString*)bundleId {
+    return [self bundleIdMatchesAppSet:bundleId appSet:_slowKeyInjectionAppSet];
 }
 
 + (BOOL)containsUnicodeCompound:(NSString*)bundleId {

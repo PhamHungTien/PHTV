@@ -71,6 +71,7 @@ static const uint64_t CLI_SPEED_SLOW_THRESHOLD_US = 48000;
 static const double CLI_SPEED_FACTOR_FAST = 2.1;
 static const double CLI_SPEED_FACTOR_MEDIUM = 1.6;
 static const double CLI_SPEED_FACTOR_SLOW = 1.3;
+static const useconds_t SLOW_KEY_INJECTION_DELAY_US = 5000;
 
 // AXValueType constant name differs across SDK versions.
 #if defined(kAXValueTypeCFRange)
@@ -459,7 +460,7 @@ extern "C" {
     // PERFORMANCE: Critical hot path optimization - ~15ms savings per keystroke
     static inline AppCharacteristics getAppCharacteristics(NSString* bundleId) {
         if (!bundleId) {
-            AppCharacteristics empty = {NO, NO, NO, NO, NO};
+            AppCharacteristics empty = {NO, NO, NO, NO, NO, NO};
             return empty;
         }
 
@@ -521,6 +522,7 @@ extern "C" {
         chars.isSpotlightLike = [PHTVAppDetectionManager isSpotlightLikeApp:bundleId];
         chars.needsPrecomposedBatched = [PHTVAppDetectionManager needsPrecomposedBatched:bundleId];
         chars.needsStepByStep = [PHTVAppDetectionManager needsStepByStep:bundleId];
+        chars.needsSlowKeyInjection = [PHTVAppDetectionManager needsSlowKeyInjection:bundleId];
         chars.containsUnicodeCompound = [PHTVAppDetectionManager containsUnicodeCompound:bundleId];
         chars.isSafari = [PHTVAppDetectionManager isSafariApp:bundleId];
 
@@ -547,6 +549,7 @@ static NSString* _phtvEffectiveTargetBundleId = nil;
 static BOOL _phtvPostToHIDTap = NO;
 static BOOL _phtvPostToSessionForCli = NO;
 static BOOL _phtvIsCliTarget = NO;
+static BOOL _phtvNeedsSlowKeyInjection = NO;
 static double _phtvCliSpeedFactor = 1.0;
 static int _phtvCliPendingBackspaceCount = 0;
 static useconds_t _phtvCliBackspaceDelayUs = 0;
@@ -675,6 +678,72 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         _phtvCliPostSendBlockUs = (useconds_t)MAX((uint64_t)20000, (uint64_t)_phtvCliTextDelayUs * 3);
     }
 
+    static inline BOOL PHTVStringEqualCanonical(NSString *lhs, NSString *rhs) {
+        if (lhs == rhs) {
+            return YES;
+        }
+        if (!lhs || !rhs) {
+            return NO;
+        }
+        if ([lhs isEqualToString:rhs]) {
+            return YES;
+        }
+        NSString *lhsNorm = [lhs precomposedStringWithCanonicalMapping];
+        NSString *rhsNorm = [rhs precomposedStringWithCanonicalMapping];
+        if ([lhsNorm isEqualToString:rhsNorm]) {
+            return YES;
+        }
+        NSString *lhsDecomp = [lhs decomposedStringWithCanonicalMapping];
+        NSString *rhsDecomp = [rhs decomposedStringWithCanonicalMapping];
+        return [lhsDecomp isEqualToString:rhsDecomp];
+    }
+
+    static inline BOOL PHTVStringHasCanonicalPrefix(NSString *value, NSString *prefix) {
+        if (!value || !prefix) {
+            return NO;
+        }
+        if ([value hasPrefix:prefix]) {
+            return YES;
+        }
+        NSString *valueNorm = [value precomposedStringWithCanonicalMapping];
+        NSString *prefixNorm = [prefix precomposedStringWithCanonicalMapping];
+        if ([valueNorm hasPrefix:prefixNorm]) {
+            return YES;
+        }
+        NSString *valueDecomp = [value decomposedStringWithCanonicalMapping];
+        NSString *prefixDecomp = [prefix decomposedStringWithCanonicalMapping];
+        return [valueDecomp hasPrefix:prefixDecomp];
+    }
+
+    static inline NSInteger PHTVCalculateDeleteStart(NSString *valueStr, NSInteger caretLocation, NSInteger backspaceCount) {
+        if (backspaceCount <= 0) {
+            return caretLocation;
+        }
+        NSInteger start = caretLocation - backspaceCount;
+        if (start < 0) start = 0;
+        if (start < caretLocation && caretLocation <= (NSInteger)valueStr.length) {
+            NSString *textToDelete = [valueStr substringWithRange:NSMakeRange(start, caretLocation - start)];
+            NSString *composedText = [textToDelete precomposedStringWithCanonicalMapping];
+            NSInteger composedLen = (NSInteger)composedText.length;
+            if (composedLen != backspaceCount && composedLen > 0) {
+                NSInteger actualStart = caretLocation;
+                NSInteger composedCount = 0;
+                while (actualStart > 0 && composedCount < backspaceCount) {
+                    actualStart--;
+                    unichar c = [valueStr characterAtIndex:actualStart];
+                    if (!(c >= 0x0300 && c <= 0x036F) &&
+                        !(c >= 0x1DC0 && c <= 0x1DFF) &&
+                        !(c >= 0x20D0 && c <= 0x20FF) &&
+                        !(c >= 0xFE20 && c <= 0xFE2F)) {
+                        composedCount++;
+                    }
+                }
+                start = actualStart;
+            }
+        }
+        return start;
+    }
+
     // Simple and reliable: always read fresh from AX, no tracking
     static BOOL ReplaceFocusedTextViaAX(NSInteger backspaceCount, NSString* insertText, BOOL verify) {
         // Safe Mode: Skip AX API calls entirely
@@ -722,61 +791,25 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         if (caretLocation > (NSInteger)valueStr.length) caretLocation = (NSInteger)valueStr.length;
 
         // Calculate replacement position
-        NSInteger start;
+        NSInteger start = caretLocation;
+        NSInteger len = 0;
+        BOOL selectionAtEnd = (selectedLength > 0 && caretLocation + selectedLength == (NSInteger)valueStr.length);
 
-        // If there's selected text, replace it instead of using backspaceCount
-        if (selectedLength > 0) {
-            // User has highlighted text - replace the selected range
+        if (selectedLength > 0 && !selectionAtEnd) {
+            // User has highlighted text in-place - replace the selected range only
             start = caretLocation;
-        } else {
-            // No selection - use backspaceCount to calculate how much to delete
-            // Handle Unicode composed/decomposed length mismatch
-            // The backspaceCount from engine counts logical characters, but Spotlight may have
-            // different Unicode representation (composed vs decomposed)
-            start = caretLocation - backspaceCount;
-        }
-
-        if (start < 0) start = 0;
-
-        // Calculate replacement length
-        NSInteger len;
-
-        if (selectedLength > 0) {
-            // User has selected text - use the selected length
             len = selectedLength;
         } else {
-            // No selection - use backspaceCount to calculate deletion length
-            // If we're replacing text, verify the length matches what we expect
-            // Vietnamese text may have combining characters that increase length
-            if (backspaceCount > 0 && start < caretLocation) {
-                NSString *textToDelete = [valueStr substringWithRange:NSMakeRange(start, caretLocation - start)];
-                // Get composed form length - this is what engine expects
-                NSString *composedText = [textToDelete precomposedStringWithCanonicalMapping];
-                NSInteger composedLen = (NSInteger)composedText.length;
-
-                // If composed length differs from backspaceCount, the text in Spotlight
-                // may be in decomposed form - recalculate start position
-                if (composedLen != backspaceCount && composedLen > 0) {
-                    // Try to find correct start by counting composed characters backwards
-                    NSInteger actualStart = caretLocation;
-                    NSInteger composedCount = 0;
-                    while (actualStart > 0 && composedCount < backspaceCount) {
-                        actualStart--;
-                        // Check if this is a base character (not combining mark)
-                        unichar c = [valueStr characterAtIndex:actualStart];
-                        // Skip combining marks (0x0300-0x036F, 0x1DC0-0x1DFF, etc.)
-                        if (!(c >= 0x0300 && c <= 0x036F) &&
-                            !(c >= 0x1DC0 && c <= 0x1DFF) &&
-                            !(c >= 0x20D0 && c <= 0x20FF) &&
-                            !(c >= 0xFE20 && c <= 0xFE2F)) {
-                            composedCount++;
-                        }
-                    }
-                    start = actualStart;
-                }
+            // No selection OR Spotlight autocomplete suffix selection.
+            // Always respect backspaceCount to keep IME state consistent.
+            NSInteger deleteStart = PHTVCalculateDeleteStart(valueStr, caretLocation, backspaceCount);
+            if (selectionAtEnd) {
+                start = deleteStart;
+                len = (caretLocation - deleteStart) + selectedLength;
+            } else {
+                start = deleteStart;
+                len = caretLocation - deleteStart;
             }
-
-            len = caretLocation - start;
         }
 
         // Clamp length to valid range
@@ -804,14 +837,30 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         }
 
         if (verify) {
-            // Verify the value actually changed (Terminal-like apps may ignore sets).
-            CFTypeRef verifyValueRef = NULL;
-            AXError verifyError = AXUIElementCopyAttributeValue(focusedElement, kAXValueAttribute, &verifyValueRef);
-            NSString *verifyStr = (verifyError == kAXErrorSuccess && verifyValueRef &&
-                                   CFGetTypeID(verifyValueRef) == CFStringGetTypeID())
-                ? (__bridge NSString *)verifyValueRef : @"";
-            if (verifyValueRef) CFRelease(verifyValueRef);
-            if (verifyError != kAXErrorSuccess || ![verifyStr isEqualToString:newValue]) {
+            // Verify the value actually changed (Spotlight may ignore sets or apply async).
+            BOOL verified = NO;
+            for (int attempt = 0; attempt < 2; attempt++) {
+                CFTypeRef verifyValueRef = NULL;
+                AXError verifyError = AXUIElementCopyAttributeValue(focusedElement, kAXValueAttribute, &verifyValueRef);
+                NSString *verifyStr = (verifyError == kAXErrorSuccess && verifyValueRef &&
+                                       CFGetTypeID(verifyValueRef) == CFStringGetTypeID())
+                    ? (__bridge NSString *)verifyValueRef : @"";
+                if (verifyValueRef) CFRelease(verifyValueRef);
+                if (verifyError == kAXErrorSuccess) {
+                    if (PHTVStringEqualCanonical(verifyStr, newValue)) {
+                        verified = YES;
+                        break;
+                    }
+                    if (selectionAtEnd && PHTVStringHasCanonicalPrefix(verifyStr, newValue)) {
+                        verified = YES;
+                        break;
+                    }
+                }
+                if (attempt == 0) {
+                    usleep(2000);
+                }
+            }
+            if (!verified) {
                 if (valueRef) CFRelease(valueRef);
                 CFRelease(focusedElement);
                 return NO;
@@ -1409,6 +1458,11 @@ static bool _pendingUppercasePrimeCheck = true;
     // Legacy check (for backward compatibility)
     BOOL needsStepByStep(NSString* bundleId) {
         return [PHTVAppDetectionManager needsStepByStep:bundleId];
+    }
+
+    // Legacy check (for backward compatibility)
+    BOOL needsSlowKeyInjection(NSString* bundleId) {
+        return [PHTVAppDetectionManager needsSlowKeyInjection:bundleId];
     }
     
     CGEventSourceRef myEventSource = NULL;
@@ -2127,6 +2181,16 @@ static bool _pendingUppercasePrimeCheck = true;
             return;
         }
 
+        if (_phtvNeedsSlowKeyInjection) {
+            for (int i = 0; i < count; i++) {
+                SendBackspace();
+                if (SLOW_KEY_INJECTION_DELAY_US > 0) {
+                    usleep(SLOW_KEY_INJECTION_DELAY_US);
+                }
+            }
+            return;
+        }
+
         // Always use standard backspace method
         for (int i = 0; i < count; i++) {
             SendBackspace();
@@ -2256,7 +2320,8 @@ static bool _pendingUppercasePrimeCheck = true;
             int backspaceCount = _phtvPendingBackspaceCount;
             _phtvPendingBackspaceCount = 0;
 
-            BOOL axSucceeded = ReplaceFocusedTextViaAX(backspaceCount, insertStr, NO);
+            BOOL shouldVerify = (backspaceCount > 0);
+            BOOL axSucceeded = ReplaceFocusedTextViaAX(backspaceCount, insertStr, shouldVerify);
             if (axSucceeded) {
                 goto FinalizeSend;
             }
@@ -2429,7 +2494,8 @@ static bool _pendingUppercasePrimeCheck = true;
             }
 
             // Try AX API first - atomic and most reliable for Spotlight
-            BOOL axSucceeded = ReplaceFocusedTextViaAX(pData->backspaceCount, macroString, NO);
+            BOOL shouldVerify = (pData->backspaceCount > 0);
+            BOOL axSucceeded = ReplaceFocusedTextViaAX(pData->backspaceCount, macroString, shouldVerify);
             if (axSucceeded) {
                 #ifdef DEBUG
                 NSLog(@"[Macro] Spotlight: AX API succeeded, macro='%@'", macroString);
@@ -2455,11 +2521,17 @@ static bool _pendingUppercasePrimeCheck = true;
         }
 
         //send real data - use step by step for timing sensitive apps like Spotlight
-        BOOL useStepByStep = _phtvIsCliTarget || vSendKeyStepByStep || needsStepByStep(effectiveTarget);
+        BOOL slowInjection = needsSlowKeyInjection(effectiveTarget);
+        BOOL useStepByStep = _phtvIsCliTarget || vSendKeyStepByStep || needsStepByStep(effectiveTarget) || slowInjection;
         if (!useStepByStep) {
             SendNewCharString(true);
         } else {
-            useconds_t cliTextDelay = _phtvIsCliTarget ? PHTVScaleCliDelay(_phtvCliTextDelayUs) : 0;
+            useconds_t cliTextDelay = 0;
+            if (_phtvIsCliTarget) {
+                cliTextDelay = PHTVScaleCliDelay(_phtvCliTextDelayUs);
+            } else if (slowInjection) {
+                cliTextDelay = SLOW_KEY_INJECTION_DELAY_US;
+            }
             for (int i = 0; i < pData->macroData.size(); i++) {
                 if (pData->macroData[i] & PURE_CHARACTER_MASK) {
                     SendPureCharacter(pData->macroData[i]);
@@ -2807,6 +2879,7 @@ static bool _pendingUppercasePrimeCheck = true;
 
         _phtvPostToSessionForCli = NO;
         _phtvIsCliTarget = NO;
+        _phtvNeedsSlowKeyInjection = NO;
         _flag = CGEventGetFlags(event);
         _keycode = (CGKeyCode)CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
 
@@ -3165,6 +3238,7 @@ static bool _pendingUppercasePrimeCheck = true;
 
             // Cache for send routines called later in this callback.
             _phtvEffectiveTargetBundleId = effectiveBundleId;
+            _phtvNeedsSlowKeyInjection = appChars.needsSlowKeyInjection;
             
             // BROWSER FIX: Browsers (Chromium, Safari, Firefox, etc.) don't support 
             // HID tap posting or AX API for their address bar autocomplete.
@@ -3568,6 +3642,7 @@ static bool _pendingUppercasePrimeCheck = true;
                                          (_phtvIsCliTarget ||
                                           vSendKeyStepByStep ||
                                           appChars.needsStepByStep ||
+                                          appChars.needsSlowKeyInjection ||
                                           isAutoEnglishWithEnter);
 #ifdef DEBUG
                     if (isSpotlightTarget) {
@@ -3578,7 +3653,12 @@ static bool _pendingUppercasePrimeCheck = true;
                         SendNewCharString();
                     } else {
                         if (pData->newCharCount > 0 && pData->newCharCount <= MAX_BUFF) {
-                            useconds_t cliTextDelay = _phtvIsCliTarget ? PHTVScaleCliDelay(_phtvCliTextDelayUs) : 0;
+                            useconds_t cliTextDelay = 0;
+                            if (_phtvIsCliTarget) {
+                                cliTextDelay = PHTVScaleCliDelay(_phtvCliTextDelayUs);
+                            } else if (appChars.needsSlowKeyInjection) {
+                                cliTextDelay = SLOW_KEY_INJECTION_DELAY_US;
+                            }
                             for (int i = pData->newCharCount - 1; i >= 0; i--) {
                                 SendKeyCode(pData->charData[i]);
                                 if (cliTextDelay > 0 && i > 0) {

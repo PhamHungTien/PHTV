@@ -21,6 +21,7 @@
 + (BOOL)isSpotlightLikeApp:(NSString*)bundleId;
 + (BOOL)needsPrecomposedBatched:(NSString*)bundleId;
 + (BOOL)needsStepByStep:(NSString*)bundleId;
++ (BOOL)needsSlowKeyInjection:(NSString*)bundleId;
 + (BOOL)containsUnicodeCompound:(NSString*)bundleId;
 + (BOOL)isSafariApp:(NSString*)bundleId;
 + (BOOL)shouldDisableVietnamese:(NSString*)bundleId;
