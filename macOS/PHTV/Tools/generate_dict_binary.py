@@ -223,24 +223,20 @@ def build_english_dictionary(resources_dir, data_dir=None):
 
     # Priority: frequency-based lists (common programming/tech words)
     urls_priority = [
-        # Detailed English word list (370k+ words) - Limited to 300k to stay under 100MB GitHub limit
-        ('https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt', 300000),
+        # Detailed English word list (370k+ words)
+        'https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt',
     ]
 
     words = set()
 
-    for url, limit in urls_priority:
+    for url in urls_priority:
         if download_file(url, temp_file):
-            count = 0
             with open(temp_file, 'r', encoding='utf-8', errors='ignore') as f:
                 for line in f:
                     word = line.strip().lower()
                     if word and 2 <= len(word) <= 45:  # Expanded length limit
                         if all(c.isalpha() and c.isascii() for c in word):
                             words.add(word)
-                            count += 1
-                            if count >= limit:
-                                break
             print(f"  Loaded {len(words):,} words so far")
 
     # Mandatory words: ensure these tech terms and loan words are ALWAYS present
@@ -274,6 +270,7 @@ def build_english_dictionary(resources_dir, data_dir=None):
         if os.path.exists(candidate):
             local_en = candidate
 
+    local_words = set()
     if local_en:
         with open(local_en, 'r', encoding='utf-8') as f:
             for line in f:
@@ -281,15 +278,33 @@ def build_english_dictionary(resources_dir, data_dir=None):
                 if word and 2 <= len(word) <= 45:
                     if all(c.isalpha() and c.isascii() for c in word):
                         words.add(word)
+                        local_words.add(word)
         print(f"  Added local words from {os.path.basename(local_en)}, total: {len(words):,}")
 
     if not words:
         print("  ✗ No English words found!")
         return False, set()
 
-    # No filtering: keep all words to avoid missing English terms
-    filtered_words = set(words)
-    print(f"  No filtering: {len(filtered_words):,} words")
+    # Keep dictionary size under GitHub 100MB limit without biasing alphabetically.
+    # words_alpha.txt is sorted, so taking the first N words drops most T-Z words (e.g., 'what', 'water').
+    # To preserve common English words across the alphabet, prefer shorter words globally.
+    max_words = 300000
+    priority_words = set(mandatory_words)
+    # Ensure locally provided words are always included
+    priority_words.update(local_words)
+
+    if len(words) > max_words:
+        # Always keep mandatory/local words, then fill remaining slots with shortest words
+        remaining = max_words - len(priority_words)
+        if remaining < 0:
+            remaining = 0
+        candidates = sorted((words - priority_words), key=lambda w: (len(w), w))
+        filtered_words = set(priority_words)
+        filtered_words.update(candidates[:remaining])
+        print(f"  Trimmed to {len(filtered_words):,} words (shortest-first) to stay under {max_words:,}")
+    else:
+        filtered_words = set(words)
+        print(f"  No trimming needed: {len(filtered_words):,} words")
 
     # Build trie
     print(f"  Building trie with {len(filtered_words):,} unique words...")
