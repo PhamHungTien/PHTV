@@ -1511,10 +1511,18 @@ static bool _pendingUppercasePrimeCheck = true;
         LOAD_DATA(vInputType, InputType); if (vInputType < 0) vInputType = 0;
         vFreeMark = 0;//(int)[[NSUserDefaults standardUserDefaults] integerForKey:@"FreeMark"];
         LOAD_DATA(vCodeTable, CodeTable); if (vCodeTable < 0) vCodeTable = 0;
-        LOAD_DATA(vCheckSpelling, Spelling);
+
+        // Spell checking default to YES (1) if not set
+        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"Spelling"] == nil) {
+            vCheckSpelling = 1;
+            [[NSUserDefaults standardUserDefaults] setInteger:1 forKey:@"Spelling"];
+        } else {
+            LOAD_DATA(vCheckSpelling, Spelling);
+        }
+
         LOAD_DATA(vQuickTelex, QuickTelex);
         LOAD_DATA(vUseModernOrthography, ModernOrthography);
-        
+
         // FixRecommendBrowser default to YES (1) if not set
         if ([[NSUserDefaults standardUserDefaults] objectForKey:@"FixRecommendBrowser"] == nil) {
             vFixRecommendBrowser = 1;
