@@ -508,6 +508,13 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
                     (firstKey == KEY_W && secondKey == KEY_R)) {  // wr (write, wrong)
                     isNonVietnameseCluster = true;
                 }
+
+                // IMPROVED: Check triple consonant "thr" (three, throw, etc.)
+                // This was missing and is common in English
+                uint8_t thirdKey = (stateIndex >= 4) ? (keyStates[2] & 0x3F) : 0xFF;
+                if (firstKey == KEY_T && secondKey == KEY_H && thirdKey == KEY_R) {  // thr
+                    isNonVietnameseCluster = true;
+                }
             }
 
             // If word starts with non-Vietnamese cluster, skip tone mark logic
@@ -543,6 +550,13 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
                         (firstKey == KEY_Q && secondKey == KEY_U) ||  // qu
                         (firstKey == KEY_T && secondKey == KEY_H) ||  // th
                         (firstKey == KEY_T && secondKey == KEY_R)) {  // tr
+                        isVietnameseConsonant = true;
+                    }
+
+                    // IMPROVED: Check triple consonant "ngh" (nghe, anh, etc.)
+                    // This was missing and caused "ngh*" words to be misidentified
+                    uint8_t thirdKey = (stateIndex >= 4) ? (keyStates[2] & 0x3F) : 0xFF;
+                    if (firstKey == KEY_N && secondKey == KEY_G && thirdKey == KEY_H) {  // ngh
                         isVietnameseConsonant = true;
                     }
                 }
@@ -689,13 +703,56 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
             if (!endsWithSuffix(idx, stateIndex, suf.s, suf.len)) continue;
 
             int baseLen = stateIndex - suf.len;
-            if (searchBinaryTrie(engNodes, idx, baseLen)) {
+
+            // IMPROVED: Try both direct base and toneless base
+            // This handles cases like "footed" with tone mark in "foot"
+            bool baseFoundInEnglish = searchBinaryTrie(engNodes, idx, baseLen);
+
+            if (baseFoundInEnglish) {
                 bool baseNonVietnameseStart = startsWithNonVietnameseCluster(idx, baseLen);
                 if (baseNonVietnameseStart || !vieNodes || !searchBinaryTrie(vieNodes, idx, baseLen)) {
                     #ifdef DEBUG
                     fprintf(stderr, "[AutoEnglish] RESTORE: '%s' via English base + suffix '%s'\n", wordBuf, suf.s); fflush(stderr);
                     #endif
                     return true;
+                }
+            } else if (baseLen >= 2) {
+                // Try removing tone marks from base if direct check fails
+                // This handles: "footed" where "foot" has tone mark in middle
+                uint8_t tonelessBase[32];
+                int tonelessBaseLen = 0;
+
+                for (int i = 0; i < baseLen; i++) {
+                    uint8_t id = idx[i];
+                    uint8_t nextId = (i + 1 < baseLen) ? idx[i + 1] : 0xFF;
+
+                    // Check if next char is a tone mark
+                    bool isNextToneMark = (nextId == kcToIdx[KEY_S] || nextId == kcToIdx[KEY_F] ||
+                                          nextId == kcToIdx[KEY_R] || nextId == kcToIdx[KEY_X] ||
+                                          nextId == kcToIdx[KEY_J] || nextId == kcToIdx[KEY_W]);
+
+                    bool isVowel = (id == kcToIdx[KEY_A] || id == kcToIdx[KEY_E] ||
+                                   id == kcToIdx[KEY_I] || id == kcToIdx[KEY_O] ||
+                                   id == kcToIdx[KEY_U]);
+
+                    tonelessBase[tonelessBaseLen++] = id;
+
+                    if (isVowel && isNextToneMark) {
+                        i++;  // Skip the tone mark
+                    }
+                }
+
+                // Check toneless base version
+                if (tonelessBaseLen >= 2 && tonelessBaseLen < 32) {
+                    if (searchBinaryTrie(engNodes, tonelessBase, tonelessBaseLen)) {
+                        bool baseNonVietnameseStart = startsWithNonVietnameseCluster(tonelessBase, tonelessBaseLen);
+                        if (baseNonVietnameseStart || !vieNodes || !searchBinaryTrie(vieNodes, tonelessBase, tonelessBaseLen)) {
+                            #ifdef DEBUG
+                            fprintf(stderr, "[AutoEnglish] RESTORE: '%s' via English base (tone removed) + suffix '%s'\n", wordBuf, suf.s); fflush(stderr);
+                            #endif
+                            return true;
+                        }
+                    }
                 }
             }
         }
