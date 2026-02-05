@@ -1520,8 +1520,21 @@ static bool _pendingUppercasePrimeCheck = true;
             LOAD_DATA(vCheckSpelling, Spelling);
         }
 
-        LOAD_DATA(vQuickTelex, QuickTelex);
-        LOAD_DATA(vUseModernOrthography, ModernOrthography);
+        // Modern orthography default to YES (1) if not set
+        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"ModernOrthography"] == nil) {
+            vUseModernOrthography = 1;
+            [[NSUserDefaults standardUserDefaults] setInteger:1 forKey:@"ModernOrthography"];
+        } else {
+            LOAD_DATA(vUseModernOrthography, ModernOrthography);
+        }
+
+        // Quick telex default to NO (0) if not set
+        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"QuickTelex"] == nil) {
+            vQuickTelex = 0;
+            [[NSUserDefaults standardUserDefaults] setInteger:0 forKey:@"QuickTelex"];
+        } else {
+            LOAD_DATA(vQuickTelex, QuickTelex);
+        }
 
         // FixRecommendBrowser default to YES (1) if not set
         if ([[NSUserDefaults standardUserDefaults] objectForKey:@"FixRecommendBrowser"] == nil) {
@@ -1530,19 +1543,83 @@ static bool _pendingUppercasePrimeCheck = true;
         } else {
             LOAD_DATA(vFixRecommendBrowser, FixRecommendBrowser);
         }
-        
-        LOAD_DATA(vUseMacro, UseMacro);
-        LOAD_DATA(vUseMacroInEnglishMode, UseMacroInEnglishMode);
+
+        // Macro support default to NO (0) if not set
+        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"UseMacro"] == nil) {
+            vUseMacro = 0;
+            [[NSUserDefaults standardUserDefaults] setInteger:0 forKey:@"UseMacro"];
+        } else {
+            LOAD_DATA(vUseMacro, UseMacro);
+        }
+
+        // Macro in English mode default to NO (0) if not set
+        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"UseMacroInEnglishMode"] == nil) {
+            vUseMacroInEnglishMode = 0;
+            [[NSUserDefaults standardUserDefaults] setInteger:0 forKey:@"UseMacroInEnglishMode"];
+        } else {
+            LOAD_DATA(vUseMacroInEnglishMode, UseMacroInEnglishMode);
+        }
+
         LOAD_DATA(vAutoCapsMacro, vAutoCapsMacro);
-        LOAD_DATA(vSendKeyStepByStep, SendKeyStepByStep);
-        LOAD_DATA(vUseSmartSwitchKey, UseSmartSwitchKey);
-        LOAD_DATA(vUpperCaseFirstChar, UpperCaseFirstChar);
+
+        // Send key step by step default to NO (0) if not set
+        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"SendKeyStepByStep"] == nil) {
+            vSendKeyStepByStep = 0;
+            [[NSUserDefaults standardUserDefaults] setInteger:0 forKey:@"SendKeyStepByStep"];
+        } else {
+            LOAD_DATA(vSendKeyStepByStep, SendKeyStepByStep);
+        }
+
+        // Smart switch key default to YES (1) if not set
+        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"UseSmartSwitchKey"] == nil) {
+            vUseSmartSwitchKey = 1;
+            [[NSUserDefaults standardUserDefaults] setInteger:1 forKey:@"UseSmartSwitchKey"];
+        } else {
+            LOAD_DATA(vUseSmartSwitchKey, UseSmartSwitchKey);
+        }
+
+        // Uppercase first char default to NO (0) if not set
+        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"UpperCaseFirstChar"] == nil) {
+            vUpperCaseFirstChar = 0;
+            [[NSUserDefaults standardUserDefaults] setInteger:0 forKey:@"UpperCaseFirstChar"];
+        } else {
+            LOAD_DATA(vUpperCaseFirstChar, UpperCaseFirstChar);
+        }
 
         LOAD_DATA(vTempOffSpelling, vTempOffSpelling);
-        LOAD_DATA(vAllowConsonantZFWJ, vAllowConsonantZFWJ);
-        LOAD_DATA(vQuickEndConsonant, vQuickEndConsonant);
-        LOAD_DATA(vQuickStartConsonant, vQuickStartConsonant);
-        LOAD_DATA(vRememberCode, vRememberCode);
+
+        // Allow consonant ZFWJ default to YES (1) if not set
+        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"vAllowConsonantZFWJ"] == nil) {
+            vAllowConsonantZFWJ = 1;
+            [[NSUserDefaults standardUserDefaults] setInteger:1 forKey:@"vAllowConsonantZFWJ"];
+        } else {
+            LOAD_DATA(vAllowConsonantZFWJ, vAllowConsonantZFWJ);
+        }
+
+        // Quick end consonant default to NO (0) if not set
+        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"vQuickEndConsonant"] == nil) {
+            vQuickEndConsonant = 0;
+            [[NSUserDefaults standardUserDefaults] setInteger:0 forKey:@"vQuickEndConsonant"];
+        } else {
+            LOAD_DATA(vQuickEndConsonant, vQuickEndConsonant);
+        }
+
+        // Quick start consonant default to NO (0) if not set
+        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"vQuickStartConsonant"] == nil) {
+            vQuickStartConsonant = 0;
+            [[NSUserDefaults standardUserDefaults] setInteger:0 forKey:@"vQuickStartConsonant"];
+        } else {
+            LOAD_DATA(vQuickStartConsonant, vQuickStartConsonant);
+        }
+
+        // Remember code default to YES (1) if not set
+        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"vRememberCode"] == nil) {
+            vRememberCode = 1;
+            [[NSUserDefaults standardUserDefaults] setInteger:1 forKey:@"vRememberCode"];
+        } else {
+            LOAD_DATA(vRememberCode, vRememberCode);
+        }
+
         LOAD_DATA(vOtherLanguage, vOtherLanguage);
         LOAD_DATA(vTempOffPHTV, vTempOffPHTV);
 
