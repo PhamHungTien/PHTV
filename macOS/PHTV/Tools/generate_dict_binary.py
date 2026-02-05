@@ -255,7 +255,15 @@ def build_english_dictionary(resources_dir, data_dir=None):
         'branch', 'checkout', 'clone', 'repo', 'repository',
         'terminal', 'console', 'shell', 'bash', 'zsh', 'command',
         'english', 'vietnamese', 'japanese', 'chinese', 'french',
-        'important', 'ignorant', 'year', 'your', 'our', 'ear', 'early', 'their'
+        'important', 'ignorant', 'year', 'your', 'our', 'ear', 'early', 'their',
+        # Compound words that may fail English restore due to Telex tone mark in middle
+        # Issue #57: "livétream" (livestream with 'e+s' creating 'é') not being restored
+        # These words have letter sequences that trigger Telex patterns (e+s, a+w, e+e, etc.)
+        'livestream', 'screenshot', 'screenshot', 'sometimes', 'somewhere', 'someone',
+        'nonetheless', 'somewhere', 'therefore', 'however',
+        'footer', 'zoomed', 'viewed',
+        # Additional words with tone mark conflicts
+        'meanwhile', 'lifespan', 'riverside', 'riverside', 'waterfall', 'watchers'
     }
     words.update(mandatory_words)
 

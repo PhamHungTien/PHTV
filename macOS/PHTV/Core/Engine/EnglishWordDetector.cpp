@@ -397,6 +397,9 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
     }
     if (stateIndex > 30) return false;
 
+    // Initialize keycode lookup table if not already done
+    initKcLookup();
+
     // Convert keycodes to indices and build word string
     uint8_t idx[32];
     char wordBuf[32];
@@ -591,6 +594,75 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
     }
 
     bool isEnglish = searchBinaryTrie(engNodes, idx, stateIndex);
+
+    // IMPROVED FIX: Check if word has tone mark ở giữa and not in dictionary
+    // Issue #57: "livestream" with 'e+s' creating 'é' was not being restored
+    // Solution: If word is not found but contains tone mark in middle, try removing it
+    if (!isEnglish && stateIndex >= 3) {
+        // Check for tone marks in the middle of the word (not at the end)
+        bool hasToneMarkInMiddle = false;
+        uint8_t tonelessIdx[32];
+        int tonelessLen = 0;
+
+        for (int i = 0; i < stateIndex - 1; i++) {  // Check all except last char
+            uint8_t id = idx[i];
+            uint8_t nextId = idx[i + 1];
+
+            // Check if next char is a tone mark
+            bool isNextToneMark = (nextId == kcToIdx[KEY_S] || nextId == kcToIdx[KEY_F] ||
+                                  nextId == kcToIdx[KEY_R] || nextId == kcToIdx[KEY_X] ||
+                                  nextId == kcToIdx[KEY_J] || nextId == kcToIdx[KEY_W]);
+
+            if (isNextToneMark && (id == kcToIdx[KEY_A] || id == kcToIdx[KEY_E] ||
+                                   id == kcToIdx[KEY_I] || id == kcToIdx[KEY_O] ||
+                                   id == kcToIdx[KEY_U])) {
+                hasToneMarkInMiddle = true;
+                break;
+            }
+        }
+
+        // If tone mark found in middle, try removing it and check again
+        if (hasToneMarkInMiddle) {
+            tonelessLen = 0;
+            for (int i = 0; i < stateIndex; i++) {
+                uint8_t id = idx[i];
+                uint8_t nextId = (i + 1 < stateIndex) ? idx[i + 1] : 0xFF;
+
+                // Skip tone mark if it's after a vowel
+                bool isNextToneMark = (nextId == kcToIdx[KEY_S] || nextId == kcToIdx[KEY_F] ||
+                                      nextId == kcToIdx[KEY_R] || nextId == kcToIdx[KEY_X] ||
+                                      nextId == kcToIdx[KEY_J] || nextId == kcToIdx[KEY_W]);
+
+                bool isVowel = (id == kcToIdx[KEY_A] || id == kcToIdx[KEY_E] ||
+                               id == kcToIdx[KEY_I] || id == kcToIdx[KEY_O] ||
+                               id == kcToIdx[KEY_U]);
+
+                tonelessIdx[tonelessLen++] = id;
+
+                if (isVowel && isNextToneMark) {
+                    i++;  // Skip the tone mark
+                }
+            }
+
+            // Try the toneless version
+            if (tonelessLen >= 2 && tonelessLen < 32) {
+                if (searchBinaryTrie(engNodes, tonelessIdx, tonelessLen)) {
+                    // Check Vietnamese without tone mark too
+                    if (!vieInit || !vieNodes || !searchBinaryTrie(vieNodes, tonelessIdx, tonelessLen)) {
+                        #ifdef DEBUG
+                        char tonelessWord[32];
+                        for (int i = 0; i < tonelessLen; i++) tonelessWord[i] = 'a' + tonelessIdx[i];
+                        tonelessWord[tonelessLen] = '\0';
+                        fprintf(stderr, "[AutoEnglish] RESTORE: '%s' restored as '%s' (tone mark removed)\n",
+                               word.c_str(), tonelessWord); fflush(stderr);
+                        #endif
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
     #ifdef DEBUG
     if (isEnglish) {
         fprintf(stderr, "[AutoEnglish] RESTORE: '%s' found in English dictionary\n", word.c_str()); fflush(stderr);
