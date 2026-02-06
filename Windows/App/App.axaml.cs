@@ -8,6 +8,7 @@ using PHTV.Windows.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 
 namespace PHTV.Windows;
@@ -119,8 +120,12 @@ public sealed partial class App : Application {
         
         var inputMethodSubMenu = new NativeMenu();
         if (_mainWindowViewModel is not null) {
-            foreach (var method in _mainWindowViewModel.State.InputMethodOptions) {
-                var item = new NativeMenuItem(method) { ToggleType = NativeMenuItemToggleType.Radio };
+            var options = _mainWindowViewModel.State.InputMethodOptions;
+            int maxLen = options.Max(o => o.Length);
+            foreach (var method in options) {
+                // Pad with spaces to align checkmarks (rough approximation for native menu)
+                string paddedHeader = method.PadRight(maxLen + 2);
+                var item = new NativeMenuItem(paddedHeader) { ToggleType = NativeMenuItemToggleType.Radio };
                 item.Click += (_, _) => { if (!_isUpdatingTrayMenu) _mainWindowViewModel.SetInputMethodOption(method); };
                 _inputMethodItems[method] = item;
                 inputMethodSubMenu.Add(item);
@@ -130,8 +135,11 @@ public sealed partial class App : Application {
 
         var codeTableSubMenu = new NativeMenu();
         if (_mainWindowViewModel is not null) {
-            foreach (var table in _mainWindowViewModel.State.CodeTableOptions) {
-                var item = new NativeMenuItem(table) { ToggleType = NativeMenuItemToggleType.Radio };
+            var options = _mainWindowViewModel.State.CodeTableOptions;
+            int maxLen = options.Max(o => o.Length);
+            foreach (var table in options) {
+                string paddedHeader = table.PadRight(maxLen + 2);
+                var item = new NativeMenuItem(paddedHeader) { ToggleType = NativeMenuItemToggleType.Radio };
                 item.Click += (_, _) => { if (!_isUpdatingTrayMenu) _mainWindowViewModel.SetCodeTableOption(table); };
                 _codeTableItems[table] = item;
                 codeTableSubMenu.Add(item);
