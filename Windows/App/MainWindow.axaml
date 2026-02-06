@@ -69,7 +69,7 @@
     <Border Grid.Column="1" 
             Classes="detail-panel"
             PointerPressed="OnPointerPressed">
-      <ContentControl Content="{Binding CurrentTab}" Padding="32,54,32,32">
+      <ContentControl Content="{Binding CurrentTab}">
         <ContentControl.DataTemplates>
           <DataTemplate DataType="vm:TypingTabViewModel">
             <tabs:TypingTabView/>

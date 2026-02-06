@@ -322,15 +322,17 @@
 
   <!-- ScrollViewer Styling (Subtle macOS style) -->
   <Style Selector="ScrollBar">
+    <Setter Property="Background" Value="Transparent"/>
   </Style>
 
   <Style Selector="ScrollBar /template/ Thumb">
-    <Setter Property="Background" Value="{DynamicResource PhtvBorderBrush}"/>
+    <Setter Property="Background" Value="{DynamicResource PhtvBorderStrongBrush}"/>
     <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="Opacity" Value="0.5"/>
   </Style>
 
   <Style Selector="ScrollBar:pointerover /template/ Thumb">
-    <Setter Property="Background" Value="{DynamicResource PhtvBorderStrongBrush}"/>
+    <Setter Property="Opacity" Value="0.8"/>
   </Style>
 
   <Style Selector="Button">

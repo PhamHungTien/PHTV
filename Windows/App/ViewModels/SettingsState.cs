@@ -37,7 +37,6 @@ public sealed class SettingsState : ObservableObject {
     private bool _runOnStartup;
     private bool _settingsWindowAlwaysOnTop;
     private bool _useVietnameseMenubarIcon = true;
-    private double _menuBarIconSize = 16;
     private bool _showIconOnDock = true;
     private string _updateCheckFrequency = "Mỗi ngày";
     private bool _autoInstallUpdates;
@@ -113,7 +112,6 @@ public sealed class SettingsState : ObservableObject {
     public bool RunOnStartup { get => _runOnStartup; set => SetProperty(ref _runOnStartup, value); }
     public bool SettingsWindowAlwaysOnTop { get => _settingsWindowAlwaysOnTop; set => SetProperty(ref _settingsWindowAlwaysOnTop, value); }
     public bool UseVietnameseMenubarIcon { get => _useVietnameseMenubarIcon; set => SetProperty(ref _useVietnameseMenubarIcon, value); }
-    public double MenuBarIconSize { get => _menuBarIconSize; set => SetProperty(ref _menuBarIconSize, value); }
     public bool ShowIconOnDock { get => _showIconOnDock; set => SetProperty(ref _showIconOnDock, value); }
     public string UpdateCheckFrequency { get => _updateCheckFrequency; set => SetProperty(ref _updateCheckFrequency, value); }
     public bool AutoInstallUpdates { get => _autoInstallUpdates; set => SetProperty(ref _autoInstallUpdates, value); }

@@ -4,7 +4,7 @@
              xmlns:vm="using:PHTV.Windows.ViewModels"
              x:DataType="vm:AppsTabViewModel">
   <ScrollViewer VerticalScrollBarVisibility="Auto">
-    <StackPanel Margin="20" Spacing="20" MaxWidth="760">
+    <StackPanel Margin="32,54,32,32" Spacing="20" MaxWidth="760">
       <Border Classes="settings-header">
         <Grid ColumnDefinitions="*,Auto">
           <StackPanel Spacing="4">

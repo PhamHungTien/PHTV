@@ -4,7 +4,7 @@
              x:Class="PHTV.Windows.Views.Tabs.AboutTabView"
              x:DataType="vm:AboutTabViewModel">
   <ScrollViewer VerticalScrollBarVisibility="Auto">
-    <StackPanel Margin="20" Spacing="20" MaxWidth="760">
+    <StackPanel Margin="32,54,32,32" Spacing="20" MaxWidth="760">
       <Border Classes="settings-header" Padding="26">
         <StackPanel HorizontalAlignment="Center" Spacing="10">
           <Border Width="96" Height="96" CornerRadius="22" ClipToBounds="True">

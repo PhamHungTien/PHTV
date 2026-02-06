@@ -39,7 +39,6 @@ public sealed class SettingsSnapshot {
     public bool RunOnStartup { get; set; }
     public bool SettingsWindowAlwaysOnTop { get; set; }
     public bool UseVietnameseMenubarIcon { get; set; } = true;
-    public double MenuBarIconSize { get; set; } = 16;
     public bool ShowIconOnDock { get; set; } = true;
     public string UpdateCheckFrequency { get; set; } = "Mỗi ngày";
     public bool AutoInstallUpdates { get; set; }
@@ -97,7 +96,6 @@ public sealed class SettingsSnapshot {
             RunOnStartup = state.RunOnStartup,
             SettingsWindowAlwaysOnTop = state.SettingsWindowAlwaysOnTop,
             UseVietnameseMenubarIcon = state.UseVietnameseMenubarIcon,
-            MenuBarIconSize = state.MenuBarIconSize,
             ShowIconOnDock = state.ShowIconOnDock,
             UpdateCheckFrequency = state.UpdateCheckFrequency,
             AutoInstallUpdates = state.AutoInstallUpdates,
@@ -160,7 +158,6 @@ public sealed class SettingsSnapshot {
         state.RunOnStartup = RunOnStartup;
         state.SettingsWindowAlwaysOnTop = SettingsWindowAlwaysOnTop;
         state.UseVietnameseMenubarIcon = UseVietnameseMenubarIcon;
-        state.MenuBarIconSize = MenuBarIconSize;
         state.ShowIconOnDock = ShowIconOnDock;
         state.UpdateCheckFrequency = UpdateCheckFrequency;
         state.AutoInstallUpdates = AutoInstallUpdates;

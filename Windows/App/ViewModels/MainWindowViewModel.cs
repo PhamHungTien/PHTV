@@ -57,9 +57,6 @@ public sealed class MainWindowViewModel : ObservableObject {
     private readonly AsyncRelayCommand _saveBugReportCommand;
     private readonly RelayCommand _openGithubIssueCommand;
     private readonly RelayCommand _sendEmailCommand;
-    private readonly RelayCommand _startDaemonCommand;
-    private readonly RelayCommand _stopDaemonCommand;
-    private readonly RelayCommand _restartDaemonCommand;
     private readonly RelayCommand _openRuntimeFolderCommand;
 
     private string _searchText = string.Empty;
@@ -71,7 +68,6 @@ public sealed class MainWindowViewModel : ObservableObject {
     private bool _isInputDaemonRunning;
     private string _inputDaemonStatus = "Đang kiểm tra runtime daemon...";
     private bool _initialized;
-    private bool _autoRecoverDaemon = true;
     private DateTime _lastDaemonAutoRecoveryAttemptUtc = DateTime.MinValue;
     private Window? _window;
 
@@ -130,9 +126,6 @@ public sealed class MainWindowViewModel : ObservableObject {
         _saveBugReportCommand = new AsyncRelayCommand(SaveBugReportAsync);
         _openGithubIssueCommand = new RelayCommand(OpenGithubIssue);
         _sendEmailCommand = new RelayCommand(SendEmail);
-        _startDaemonCommand = new RelayCommand(StartInputDaemon, () => !IsInputDaemonRunning && _runtimeBridgeService.IsSupported);
-        _stopDaemonCommand = new RelayCommand(StopInputDaemon, () => IsInputDaemonRunning && _runtimeBridgeService.IsSupported);
-        _restartDaemonCommand = new RelayCommand(RestartInputDaemon, () => _runtimeBridgeService.IsSupported);
         _openRuntimeFolderCommand = new RelayCommand(OpenRuntimeFolder);
 
         OpenWebsiteCommand = new RelayCommand(() => OpenUrl("https://phamhungtien.com/PHTV/"));
@@ -162,10 +155,8 @@ public sealed class MainWindowViewModel : ObservableObject {
         SaveBugReportCommand = _saveBugReportCommand;
         OpenGithubIssueCommand = _openGithubIssueCommand;
         SendEmailCommand = _sendEmailCommand;
-        StartInputDaemonCommand = _startDaemonCommand;
-        StopInputDaemonCommand = _stopDaemonCommand;
-        RestartInputDaemonCommand = _restartDaemonCommand;
         OpenRuntimeFolderCommand = _openRuntimeFolderCommand;
+
 
         _saveDebounceTimer = new DispatcherTimer {
             Interval = TimeSpan.FromMilliseconds(420)
@@ -216,9 +207,6 @@ public sealed class MainWindowViewModel : ObservableObject {
     public ICommand SaveBugReportCommand { get; }
     public ICommand OpenGithubIssueCommand { get; }
     public ICommand SendEmailCommand { get; }
-    public ICommand StartInputDaemonCommand { get; }
-    public ICommand StopInputDaemonCommand { get; }
-    public ICommand RestartInputDaemonCommand { get; }
     public ICommand OpenRuntimeFolderCommand { get; }
 
     public ICommand OpenWebsiteCommand { get; }
@@ -256,11 +244,7 @@ public sealed class MainWindowViewModel : ObservableObject {
 
     public bool IsInputDaemonRunning {
         get => _isInputDaemonRunning;
-        private set {
-            if (SetProperty(ref _isInputDaemonRunning, value)) {
-                RefreshDaemonCommandStates();
-            }
-        }
+        private set => SetProperty(ref _isInputDaemonRunning, value);
     }
 
     public string InputDaemonStatus {
@@ -527,13 +511,6 @@ public sealed class MainWindowViewModel : ObservableObject {
         _exportMacrosCommand.RaiseCanExecuteChanged();
         _removeExcludedAppCommand.RaiseCanExecuteChanged();
         _removeStepByStepAppCommand.RaiseCanExecuteChanged();
-        RefreshDaemonCommandStates();
-    }
-
-    private void RefreshDaemonCommandStates() {
-        _startDaemonCommand.RaiseCanExecuteChanged();
-        _stopDaemonCommand.RaiseCanExecuteChanged();
-        _restartDaemonCommand.RaiseCanExecuteChanged();
     }
 
     private void ScheduleSave() {
@@ -636,26 +613,8 @@ public sealed class MainWindowViewModel : ObservableObject {
             : $"Hook daemon: Chưa chạy (sẵn sàng tại {daemonPath}).";
     }
 
-    private void StartInputDaemon() {
-        try {
-            SyncRuntimeArtifacts();
-        } catch (Exception ex) {
-            StatusMessage = $"Không ghi runtime config: {ex.Message}";
-            return;
-        }
-
-        _autoRecoverDaemon = true;
-
-        if (_runtimeBridgeService.TryStartDaemon(out var message)) {
-            StatusMessage = message;
-        } else {
-            StatusMessage = $"Không khởi chạy daemon: {message}";
-        }
-        RefreshInputDaemonStatus();
-    }
-
     private void AutoRecoverInputDaemon() {
-        if (!_runtimeBridgeService.IsSupported || IsInputDaemonRunning || !_autoRecoverDaemon) {
+        if (!_runtimeBridgeService.IsSupported || IsInputDaemonRunning) {
             return;
         }
 
@@ -669,34 +628,6 @@ public sealed class MainWindowViewModel : ObservableObject {
             RefreshInputDaemonStatus();
             StatusMessage = $"Daemon tự khôi phục: {message}";
         }
-    }
-
-    private void StopInputDaemon() {
-        _autoRecoverDaemon = false;
-        if (_runtimeBridgeService.TryStopDaemon(out var message)) {
-            StatusMessage = message;
-        } else {
-            StatusMessage = $"Không dừng daemon: {message}";
-        }
-        RefreshInputDaemonStatus();
-    }
-
-    private void RestartInputDaemon() {
-        try {
-            SyncRuntimeArtifacts();
-        } catch (Exception ex) {
-            StatusMessage = $"Không ghi runtime config: {ex.Message}";
-            return;
-        }
-
-        _autoRecoverDaemon = true;
-
-        if (_runtimeBridgeService.TryRestartDaemon(out var message)) {
-            StatusMessage = message;
-        } else {
-            StatusMessage = $"Không restart daemon: {message}";
-        }
-        RefreshInputDaemonStatus();
     }
 
     private void OpenRuntimeFolder() {
