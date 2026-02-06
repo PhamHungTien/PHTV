@@ -254,7 +254,8 @@ def build_english_dictionary(resources_dir, data_dir=None):
         'docker', 'kubernetes', 'cloud', 'aws', 'azure', 'heroku',
         'bug', 'fix', 'issue', 'feature', 'commit', 'push', 'pull', 'merge', 'rebase',
         'branch', 'checkout', 'clone', 'repo', 'repository', 'fork', 'gist',
-        'terminal', 'console', 'shell', 'bash', 'zsh', 'command', 'prompt',
+        'workflow', 'pipeline', 'action', 'release', 'deploy', 'deployment', 'staging', 'production',
+        'terminal', 'console', 'shell', 'bash', 'zsh', 'command', 'prompt', 'git',
         'english', 'vietnamese', 'japanese', 'chinese', 'french',
         'important', 'ignorant', 'year', 'your', 'our', 'ear', 'early', 'their',
         # Compound words that may fail English restore due to Telex tone mark in middle
@@ -267,7 +268,29 @@ def build_english_dictionary(resources_dir, data_dir=None):
         'meanwhile', 'lifespan', 'riverside', 'riverside', 'waterfall', 'watchers',
         # Common dev tools and services
         'github', 'gitlab', 'bitbucket', 'jenkins', 'gitlab', 'notion', 'slack',
-        'discord', 'telegram', 'whatsapp', 'zoom', 'meet',
+        'discord', 'telegram', 'whatsapp', 'zoom', 'meet', 'teams',
+        # Additional common developer words
+        'version', 'release', 'stable', 'development', 'staging', 'production',
+        'config', 'configure', 'environment', 'variable', 'package', 'module',
+        'function', 'method', 'class', 'interface', 'abstract', 'implement',
+        'test', 'testing', 'unittest', 'integration', 'automation',
+        'debug', 'debugger', 'breakpoint', 'log', 'logging', 'trace',
+        'error', 'exception', 'throw', 'catch', 'finally', 'finally',
+        'async', 'await', 'promise', 'callback', 'event', 'listener',
+        'middleware', 'decorator', 'plugin', 'extension', 'addon',
+        'api', 'rest', 'graphql', 'websocket', 'socket', 'stream',
+        'cache', 'memory', 'storage', 'database', 'table', 'column',
+        'query', 'request', 'response', 'header', 'body', 'payload',
+        'server', 'client', 'socket', 'port', 'host', 'localhost',
+        'http', 'https', 'ssl', 'certificate', 'token', 'auth',
+        'permission', 'access', 'deny', 'allow', 'grant', 'revoke',
+        'user', 'admin', 'role', 'group', 'profile', 'account',
+        'data', 'file', 'folder', 'directory', 'path', 'filename',
+        'upload', 'download', 'transfer', 'sync', 'backup', 'restore',
+        'build', 'compile', 'assembly', 'link', 'load', 'execute',
+        'process', 'thread', 'concurrent', 'parallel', 'async', 'sync',
+        'performance', 'optimize', 'refactor', 'profiling', 'monitor',
+        'metric', 'benchmark', 'analysis', 'report', 'chart', 'graph',
     }
     words.update(mandatory_words)
 
