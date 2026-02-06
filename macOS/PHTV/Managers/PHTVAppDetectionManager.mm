@@ -35,13 +35,15 @@ static NSSet* _disableVietnameseAppSet = nil;
 
         // Safari set - used for specific Safari optimizations (Shift+Left strategy)
         _safariAppSet = [NSSet setWithArray:@[@"com.apple.Safari",
-                                              @"com.apple.SafariTechnologyPreview"]];
+                                              @"com.apple.SafariTechnologyPreview",
+                                              @"com.apple.Safari.WebApp.*"]];
 
         // Apps with unicode compound issues (Safari + Chromium-based browsers)
         _unicodeCompoundAppSet = [NSSet setWithArray:@[
                                                         // Safari (WebKit) - needs same compound handling as Chromium
                                                         @"com.apple.Safari",
                                                         @"com.apple.SafariTechnologyPreview",
+                                                        @"com.apple.Safari.WebApp.*",
                                                         // Chromium-based browsers
                                                         @"com.google.Chrome",
                                                         @"com.brave.Browser",
@@ -55,13 +57,26 @@ static NSSet* _disableVietnameseAppSet = nil;
                                                         @"org.chromium.Chromium",
                                                         @"com.vivaldi.Vivaldi",
                                                         @"com.operasoftware.Opera",
-                                                        @"notion.id"]];
+                                                        @"notion.id",
+                                                        // Chromium-based PWAs/Web Apps
+                                                        @"com.google.Chrome.app.*",
+                                                        @"com.brave.Browser.app.*",
+                                                        @"com.microsoft.edgemac.app.*",
+                                                        @"com.microsoft.edgemac.Dev.app.*",
+                                                        @"com.microsoft.edgemac.Beta.app.*",
+                                                        @"com.microsoft.Edge.app.*",
+                                                        @"com.microsoft.Edge.Dev.app.*",
+                                                        @"com.thebrowser.Browser.app.*",
+                                                        @"org.chromium.Chromium.app.*",
+                                                        @"com.vivaldi.Vivaldi.app.*",
+                                                        @"com.operasoftware.Opera.app.*"]];
 
         // All browsers (36+ entries)
         _browserAppSet = [NSSet setWithArray:@[
             // Safari (WebKit)
             @"com.apple.Safari",
             @"com.apple.SafariTechnologyPreview",
+            @"com.apple.Safari.WebApp.*",
             // Firefox (Gecko)
             @"org.mozilla.firefox",
             @"org.mozilla.firefoxdeveloperedition",
@@ -103,6 +118,33 @@ static NSSet* _disableVietnameseAppSet = nil;
             @"com.mighty.app",
             @"com.collovos.naver.whale",
             @"ru.yandex.desktop.yandex-browser",
+            // Chromium-based PWAs/Web Apps (installed via "Install as App" / "Add to Dock")
+            // Pattern: {BaseBundleID}.app.{profile}-{app_id}
+            @"com.google.Chrome.app.*",
+            @"com.google.Chrome.canary.app.*",
+            @"com.google.Chrome.dev.app.*",
+            @"com.google.Chrome.beta.app.*",
+            @"org.chromium.Chromium.app.*",
+            @"com.brave.Browser.app.*",
+            @"com.brave.Browser.beta.app.*",
+            @"com.brave.Browser.nightly.app.*",
+            @"com.microsoft.edgemac.app.*",
+            @"com.microsoft.edgemac.Dev.app.*",
+            @"com.microsoft.edgemac.Beta.app.*",
+            @"com.microsoft.edgemac.Canary.app.*",
+            @"com.microsoft.Edge.app.*",
+            @"com.microsoft.Edge.Dev.app.*",
+            @"com.thebrowser.Browser.app.*",
+            @"com.vivaldi.Vivaldi.app.*",
+            @"com.operasoftware.Opera.app.*",
+            @"com.operasoftware.OperaGX.app.*",
+            @"com.coccoc.browser.app.*",
+            @"com.kagi.kagimacOS.app.*",
+            @"com.sigmaos.sigmaos.macos.app.*",
+            @"com.pushplaylabs.sidekick.app.*",
+            @"com.bookry.wavebox.app.*",
+            @"com.collovos.naver.whale.app.*",
+            @"ru.yandex.desktop.yandex-browser.app.*",
             // Electron-based apps
             @"com.tinyspeck.slackmacgap",
             @"com.hnc.Discord",
@@ -170,7 +212,8 @@ static NSSet* _disableVietnameseAppSet = nil;
                                                    @"com.apple.launchpad",
                                                    @"notion.id",
                                                    @"com.apple.Safari",
-                                                   @"com.apple.SafariTechnologyPreview"]];
+                                                   @"com.apple.SafariTechnologyPreview",
+                                                   @"com.apple.Safari.WebApp.*"]];
 
         // Disable Vietnamese input
         _disableVietnameseAppSet = [NSSet setWithArray:@[@"com.apple.apps.launcher",
