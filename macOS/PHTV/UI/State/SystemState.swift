@@ -241,6 +241,15 @@ final class SystemState: ObservableObject {
                 name: NotificationName.phtvSettingsChanged, object: nil)
         }.store(in: &cancellables)
 
+        // Observer for settingsWindowAlwaysOnTop
+        $settingsWindowAlwaysOnTop.sink { [weak self] value in
+            guard let self = self, !self.isLoadingSettings else { return }
+            SettingsObserver.shared.suspendNotifications()
+            let defaults = UserDefaults.standard
+            defaults.set(value, forKey: UserDefaultsKey.settingsWindowAlwaysOnTop)
+            defaults.synchronize()
+        }.store(in: &cancellables)
+
         // Observer for system settings
         Publishers.MergeMany([
             $performLayoutCompat.map { _ in () }.eraseToAnyPublisher(),

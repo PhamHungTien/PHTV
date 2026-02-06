@@ -410,7 +410,10 @@ struct SystemSettingsView: View {
             "vBeepOnModeSwitch", "vBeepVolume", "vMenuBarIconSize", "vUseVietnameseMenubarIcon",
 
             // Update settings
-            "SUScheduledCheckInterval", "SUEnableBetaChannel", "vAutoInstallUpdates"
+            "SUScheduledCheckInterval", "SUEnableBetaChannel", "vAutoInstallUpdates",
+
+            // Bug report settings
+            "vIncludeSystemInfo", "vIncludeLogs", "vIncludeCrashLogs"
         ]
 
         for key in settingsKeys {
