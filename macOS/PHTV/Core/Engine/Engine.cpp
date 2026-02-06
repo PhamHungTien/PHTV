@@ -107,6 +107,66 @@ static inline bool isVietnameseWordFromTypingWord(const int length) {
     }
     return isVietnameseWordFromKeyStates(buf, len);
 }
+
+/**
+ * Convert TypingWord back to canonical Telex keycodes and check Vietnamese dictionary.
+ * This handles ALL alternative Telex typing orders:
+ *   - "dods" (d-o-d-s) → canonical "ddos" (đó) ✓
+ *   - "wf" (standalone W+f) → canonical "uwf" (ừ) ✓
+ *   - Any reordered Telex pattern that the engine processed correctly
+ *
+ * Returns true if the canonical Telex form is a Vietnamese word.
+ */
+static bool isVietnameseFromCanonicalTelex(const int length) {
+    if (length <= 0) return false;
+
+    Uint32 buf[64]; // Canonical Telex can be longer than TypingWord
+    int len = 0;
+    Uint32 toneKey = 0; // Tone mark key to append at end (end-tone variant)
+
+    for (int i = 0; i < length && len < 60; i++) {
+        Uint32 tw = TypingWord[i];
+        Uint32 baseKey = tw & 0x3F;
+
+        // đ: KEY_D with TONE_MASK → "dd"
+        if (baseKey == KEY_D && (tw & TONE_MASK)) {
+            buf[len++] = KEY_D;
+            buf[len++] = KEY_D;
+        }
+        // Vowel with TONE_MASK (â, ê, ô) → double the vowel
+        else if (!(tw & STANDALONE_MASK) && (tw & TONE_MASK) && !IS_CONSONANT(baseKey)) {
+            buf[len++] = baseKey;
+            buf[len++] = baseKey;
+        }
+        // Normal character
+        else {
+            buf[len++] = baseKey;
+        }
+
+        // TONEW_MASK (ă, ơ, ư) → append W
+        if (tw & (TONEW_MASK | STANDALONE_MASK)) {
+            // For standalone ư (KEY_U with STANDALONE), base is already KEY_U
+            // For normal aw/ow/uw, base is the vowel
+            if (len < 62) buf[len++] = KEY_W;
+        }
+
+        // Collect tone mark (only one per word, applied at end)
+        if (tw & MARK1_MASK) toneKey = KEY_S;       // sắc
+        else if (tw & MARK2_MASK) toneKey = KEY_F;   // huyền
+        else if (tw & MARK3_MASK) toneKey = KEY_R;   // hỏi
+        else if (tw & MARK4_MASK) toneKey = KEY_X;   // ngã
+        else if (tw & MARK5_MASK) toneKey = KEY_J;   // nặng
+    }
+
+    // Append tone mark at end (end-tone variant, always in Vietnamese dictionary)
+    if (toneKey && len < 62) {
+        buf[len++] = toneKey;
+    }
+
+    if (len < 2) return false; // Too short for dictionary lookup
+    return isVietnameseWordFromKeyStates(buf, len);
+}
+
 static int capsElem;
 static int key;
 static int markElem;
@@ -1902,6 +1962,37 @@ void vKeyHandleEvent(const vKeyEvent& event,
                     }
                 }
 
+                // PROTECTION: Single-character Vietnamese words should never be restored
+                // (Same protection as SPACE handler - see detailed comment there)
+                if (shouldRestoreEnglish && _index == 1) {
+                    if (TypingWord[0] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) {
+                        shouldRestoreEnglish = false;
+                        #ifdef DEBUG
+                        fprintf(stderr, "[AutoEnglish] SKIP RESTORE WORDBREAK: Single Vietnamese char (has marks)\n");
+                        fflush(stderr);
+                        #endif
+                    }
+                }
+
+                // CANONICAL TELEX CHECK (word break path)
+                // (Same logic as SPACE handler - see detailed comment there)
+                if (shouldRestoreEnglish) {
+                    bool hasVietnameseMarks = false;
+                    for (int k = 0; k < _index; k++) {
+                        if (TypingWord[k] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) {
+                            hasVietnameseMarks = true;
+                            break;
+                        }
+                    }
+                    if (hasVietnameseMarks && isVietnameseFromCanonicalTelex(_index)) {
+                        shouldRestoreEnglish = false;
+                        #ifdef DEBUG
+                        fprintf(stderr, "[AutoEnglish] SKIP RESTORE WORDBREAK: Canonical Telex is Vietnamese\n");
+                        fflush(stderr);
+                        #endif
+                    }
+                }
+
                 // Fix for "macoss" -> "macos": If user corrected the word manually (e.g. typing 's' to remove tone),
                 // producing a clean English word in TypingWord, do not restore the raw keys (which might be "macoss").
                 if (shouldRestoreEnglish) {
@@ -2041,6 +2132,44 @@ void vKeyHandleEvent(const vKeyEvent& event,
                 }
             }
             
+            // PROTECTION: Single-character Vietnamese words should never be restored
+            // When _index==1 and TypingWord has Vietnamese marks, it's a processed Vietnamese character
+            // that has no equivalent English word. Standalone W patterns (e.g., "wf" for "ừ")
+            // are not in any dictionary, so they could slip through both primary and fallback checks.
+            // Examples: ừ (wf), ớ (o[s), ứ (uws), ờ (owf), etc.
+            if (shouldRestoreEnglish && _index == 1) {
+                if (TypingWord[0] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) {
+                    shouldRestoreEnglish = false;
+                    #ifdef DEBUG
+                    fprintf(stderr, "[AutoEnglish] SKIP RESTORE SPACE: Single Vietnamese char (has marks)\n");
+                    fflush(stderr);
+                    #endif
+                }
+            }
+
+            // CANONICAL TELEX CHECK: Convert TypingWord to canonical Telex and verify against
+            // Vietnamese dictionary. This catches ALL alternative Telex typing orders:
+            //   "dods" → canonical "ddos" (đó) → Vietnamese → block restore
+            //   "thoongr" → canonical "thoongr" (thỏng) → Vietnamese → block restore
+            // The check only runs when TypingWord has Vietnamese marks (to avoid overhead
+            // for pure English words like "search" where TypingWord base "seach" ≠ Vietnamese)
+            if (shouldRestoreEnglish) {
+                bool hasVietnameseMarks = false;
+                for (int k = 0; k < _index; k++) {
+                    if (TypingWord[k] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) {
+                        hasVietnameseMarks = true;
+                        break;
+                    }
+                }
+                if (hasVietnameseMarks && isVietnameseFromCanonicalTelex(_index)) {
+                    shouldRestoreEnglish = false;
+                    #ifdef DEBUG
+                    fprintf(stderr, "[AutoEnglish] SKIP RESTORE SPACE: Canonical Telex is Vietnamese\n");
+                    fflush(stderr);
+                    #endif
+                }
+            }
+
             // Fix for "macoss" -> "macos": If user corrected the word manually (e.g. typing 's' to remove tone),
             // producing a clean English word in TypingWord, do not restore the raw keys (which might be "macoss").
             if (shouldRestoreEnglish) {

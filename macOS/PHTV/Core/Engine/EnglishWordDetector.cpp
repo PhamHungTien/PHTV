@@ -561,12 +561,15 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
                     }
                 }
 
-                // Check Vietnamese vowels: a, e, i, o, u, y
+                // Check Vietnamese vowels: a, e, i, o, u, y, w
                 // Vowels can also start Vietnamese words and have tone marks applied
                 // Examples: "ắ" (aws), "ê" (ee), "ô" (oo), "ư" (uw), etc.
+                // KEY_W is included because standalone W produces "ư" (Vietnamese vowel)
+                // Without this, "wf" (standalone W + huyền = "ừ") would not be recognized
                 bool isVietnameseVowel = (firstKey == KEY_A || firstKey == KEY_E ||
                                           firstKey == KEY_I || firstKey == KEY_O ||
-                                          firstKey == KEY_U || firstKey == KEY_Y);
+                                          firstKey == KEY_U || firstKey == KEY_Y ||
+                                          firstKey == KEY_W);
 
                 // Check Vietnamese dictionary without tone mark if starts with Vietnamese consonant OR vowel
                 if ((isVietnameseConsonant || isVietnameseVowel) && searchBinaryTrie(vieNodes, idx, stateIndex - 1)) {

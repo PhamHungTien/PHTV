@@ -385,6 +385,9 @@ def build_vietnamese_dictionary(resources_dir, english_words=None, data_dir=None
         'ra', 'đi', 'làm', 'nên', 'thì', 'mà', 'đó', 'sẽ', 'hơn', 'vào',
         'nếu', 'rất', 'hoặc', 'vì', 'bị', 'lại', 'qua', 'năm', 'nước', 'đây',
         'hết', 'ai', 'gì', 'đâu', 'bao', 'sao', 'nào', 'thế', 'vậy', 'đều',
+        # Vietnamese interjections and single-syllable words (prevent English restore)
+        'ừ', 'ờ', 'ồ', 'ủa', 'ối', 'ái', 'ôi', 'ơi', 'ừm', 'ứ', 'ự',
+        'à', 'ạ', 'á', 'ả', 'ã', 'ư', 'ơ', 'ê', 'ô',
         # Pronouns
         'tôi', 'bạn', 'anh', 'chị', 'em', 'ông', 'bà', 'cô', 'chú', 'bác',
         'họ', 'chúng', 'mình', 'ta', 'nó', 'hắn', 'ấy', 'kia', 'đấy',
@@ -489,7 +492,16 @@ def build_vietnamese_dictionary(resources_dir, english_words=None, data_dir=None
                     # Vietnamese patterns like "been" (bên), "beer" (bể) are valid and common
                     telex_words.add(telex)
 
-    print(f"  Generated {len(telex_words):,} unique Telex patterns (with variants)")
+                    # Generate standalone W variants for patterns starting with "uw" or "ow"
+                    # In Telex, standalone W produces "ư" (from "uw") or "ơ" (from "ow")
+                    # Users can type just "w" instead of "uw"/"ow", creating different KeyStates
+                    # Example: "ừ" = "uwf" → also add "wf" (standalone W + huyền)
+                    if telex.startswith('uw'):
+                        standalone = 'w' + telex[2:]
+                        if standalone and 2 <= len(standalone) <= 30:
+                            telex_words.add(standalone)
+
+    print(f"  Generated {len(telex_words):,} unique Telex patterns (with variants, incl. standalone W)")
 
     for word in sorted(telex_words):
         trie.insert(word)
