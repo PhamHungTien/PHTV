@@ -12,7 +12,9 @@
 
 - `Auto-save` toàn bộ settings vào `%LOCALAPPDATA%/PHTV/settings.json`.
 - `Tray icon` giống menubar flow:
-  - icon đổi theo ngôn ngữ (`Vi`/`En`).
+  - icon đổi theo ngôn ngữ (`Vi`/`menubar`):
+    - bật tiếng Việt: dùng `tray_vi`.
+    - tắt tiếng Việt (English mode): dùng `menubar_icon`.
   - click trái để chuyển Việt/Anh.
   - click phải mở menu nhanh (bộ gõ, bảng mã, gõ tắt, chính tả, cập nhật, mở cài đặt, thoát).
   - đóng cửa sổ sẽ ẩn xuống tray thay vì thoát app.
@@ -61,6 +63,7 @@ Script sẽ tạo:
 - `Windows/App/Assets/PHTV.ico` (icon chính cho `PHTV.exe`)
 - `Windows/App/Assets/tray_vi.ico` (tray icon chế độ tiếng Việt)
 - `Windows/App/Assets/tray_en.ico` (tray icon chế độ tiếng Anh)
+- `Windows/App/Assets/menubar_icon.ico` (tray icon khi tắt tiếng Việt)
 
 ## Run (development)
 

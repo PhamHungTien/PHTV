@@ -110,10 +110,12 @@ def main() -> int:
     app_icon_source = assets_dir / "icon.png"
     tray_vi_source = assets_dir / "tray_vi.png"
     tray_en_source = assets_dir / "tray_en.png"
+    menubar_icon_source = assets_dir / "menubar_icon.png"
 
     app_icon_dest = assets_dir / "PHTV.ico"
     tray_vi_dest = assets_dir / "tray_vi.ico"
     tray_en_dest = assets_dir / "tray_en.ico"
+    menubar_icon_dest = assets_dir / "menubar_icon.ico"
 
     build_icon(app_icon_source, app_icon_dest)
     print(f"Generated: {app_icon_dest}")
@@ -123,6 +125,9 @@ def main() -> int:
 
     build_icon(tray_en_source, tray_en_dest)
     print(f"Generated: {tray_en_dest}")
+
+    build_icon(menubar_icon_source, menubar_icon_dest)
+    print(f"Generated: {menubar_icon_dest}")
     return 0
 
 
