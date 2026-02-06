@@ -86,7 +86,7 @@ struct vKeyHookState {
 #elif _WIN32
 #include "../Platforms/win32.h"
 #else
-#include "../Platforms/mac.h"
+#include "../mac.h"
 #endif
 
 //internal engine data

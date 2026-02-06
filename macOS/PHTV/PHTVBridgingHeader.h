@@ -1,13 +1,13 @@
 //
-//  PHTV-Bridging-Header.h
+//  PHTVBridgingHeader.h
 //  PHTV
 //
 //  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
-#ifndef PHTV_Bridging_Header_h
-#define PHTV_Bridging_Header_h
+#ifndef PHTVBridgingHeader_h
+#define PHTVBridgingHeader_h
 
 #import <Foundation/Foundation.h>
 #import <AppKit/AppKit.h>
@@ -19,7 +19,7 @@
 // Note: Accessed on main thread only, safe despite concurrency warning
 extern AppDelegate* _Nullable appDelegate;
 
-// Managers
-#import "Managers/PHTVManager.h"
+// SystemBridge
+#import "SystemBridge/PHTVManager.h"
 
-#endif /* PHTV_Bridging_Header_h */
+#endif /* PHTVBridgingHeader_h */

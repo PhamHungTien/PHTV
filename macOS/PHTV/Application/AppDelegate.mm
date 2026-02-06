@@ -13,9 +13,9 @@
 #include <string.h>
 #import "AppDelegate.h"
 #import "SparkleManager.h"
-#import "../Managers/PHTVManager.h"
-#import "../Managers/PHTVCacheManager.h"
-#import "../Managers/PHTVAccessibilityManager.h"
+#import "../SystemBridge/PHTVManager.h"
+#import "../SystemBridge/PHTVCacheManager.h"
+#import "../SystemBridge/PHTVAccessibilityManager.h"
 #import "PHTV-Swift.h"
 #include "../Core/Engine/Engine.h"
 

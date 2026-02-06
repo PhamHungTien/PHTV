@@ -19,7 +19,7 @@
 #include <cstdio>
 
 #ifdef __APPLE__
-#include "../Platforms/mac.h"
+#include "../mac.h"
 #else
 #include "../Platforms/windows.h"
 #endif
