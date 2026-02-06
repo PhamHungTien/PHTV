@@ -516,6 +516,7 @@ struct SettingsSurfaceColors {
 enum SettingsVisualEffects {
     static let enableGlassEffects = false
     static let enableMaterials = false
+    static let enableBackgroundExtensionEffect = true
 }
 
 /// Applies consistent background for settings views

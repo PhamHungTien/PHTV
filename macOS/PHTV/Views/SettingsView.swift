@@ -274,7 +274,7 @@ struct DetailViewGlassModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         if #available(macOS 26.0, *),
-           SettingsVisualEffects.enableGlassEffects,
+           SettingsVisualEffects.enableBackgroundExtensionEffect,
            !reduceTransparency {
             content
                 .backgroundExtensionEffect()
