@@ -926,7 +926,8 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     NSLog(@"[AppDelegate] Loaded core settings: language=%d, inputType=%d, codeTable=%d", vLanguage, vInputType, vCodeTable);
 
     // Spelling and orthography settings
-    vCheckSpelling = PHTVReadIntWithFallback(defaults, @"Spelling", 1);
+    // NOTE: vCheckSpelling already loaded in initEnglishWordDictionary() for early initialization
+    // vCheckSpelling = PHTVReadIntWithFallback(defaults, @"Spelling", 1);
     vUseModernOrthography = PHTVReadIntWithFallback(defaults, @"ModernOrthography", vUseModernOrthography);
     vQuickTelex = PHTVReadIntWithFallback(defaults, @"QuickTelex", vQuickTelex);
     vFreeMark = PHTVReadIntWithFallback(defaults, @"FreeMark", vFreeMark);
@@ -1734,6 +1735,14 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
     // Load custom dictionary from UserDefaults
     [self syncCustomDictionaryFromUserDefaults];
+
+    // CRITICAL FIX: Load spell check setting NOW (before event tap starts)
+    // Problem: First keystroke may happen before vCheckSpelling is loaded from UserDefaults
+    // This causes English word detection to skip spell check on first attempt
+    // Solution: Ensure vCheckSpelling is set IMMEDIATELY after dictionary loads
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    vCheckSpelling = PHTVReadIntWithFallback(defaults, @"Spelling", 1);
+    NSLog(@"[EnglishWordDetector] Spell check enabled: %d", vCheckSpelling);
 }
 
 - (void)syncCustomDictionaryFromUserDefaults {
