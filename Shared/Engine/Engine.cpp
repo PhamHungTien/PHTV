@@ -1,0 +1,2564 @@
+//
+//  Engine.cpp
+//  PHTV
+//
+//  Created byPhạm Hùng Tiến on 2026.
+//  Copyright © 2026 phạm Hùng Tiến. All rights reserved.
+//
+#include <iostream>
+#include <algorithm>
+#include <unordered_set>
+#include "Engine.h"
+#include <string.h>
+#include <list>
+#include "Macro.h"
+#include <cstdio>
+
+static vector<Uint8> _charKeyCode = {
+    KEY_BACKQUOTE, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0, KEY_MINUS, KEY_EQUALS,
+    KEY_LEFT_BRACKET, KEY_RIGHT_BRACKET, KEY_BACK_SLASH,
+    KEY_SEMICOLON, KEY_QUOTE, KEY_COMMA, KEY_DOT, KEY_SLASH
+};
+
+static vector<Uint8> _breakCode = {
+    KEY_ESC, KEY_TAB, KEY_ENTER, KEY_RETURN, KEY_LEFT, KEY_RIGHT, KEY_DOWN, KEY_UP, KEY_COMMA, KEY_DOT,
+    KEY_SLASH, KEY_SEMICOLON, KEY_QUOTE, KEY_BACK_SLASH, KEY_MINUS, KEY_EQUALS, KEY_BACKQUOTE, KEY_TAB
+};
+
+static vector<Uint8> _macroBreakCode = {
+    KEY_RETURN, KEY_COMMA, KEY_DOT, KEY_SLASH, KEY_SEMICOLON, KEY_QUOTE, KEY_BACK_SLASH, KEY_MINUS, KEY_EQUALS
+};
+
+// PERFORMANCE OPTIMIZATION: O(1) lookup sets built from vectors above
+// Initialized lazily on first use to avoid static initialization order issues
+static std::unordered_set<Uint8> _breakCodeSet;
+static std::unordered_set<Uint8> _macroBreakCodeSet;
+static bool _lookupSetsInitialized = false;
+
+static Uint16 ProcessingChar[][11] = {
+    {KEY_S, KEY_F, KEY_R, KEY_X, KEY_J, KEY_A, KEY_O, KEY_E, KEY_W, KEY_D, KEY_Z}, //Telex
+    {KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0}, //VNI
+    {KEY_S, KEY_F, KEY_R, KEY_X, KEY_J, KEY_A, KEY_O, KEY_E, KEY_W, KEY_D, KEY_Z}, //Simple Telex 1
+    {KEY_S, KEY_F, KEY_R, KEY_X, KEY_J, KEY_A, KEY_O, KEY_E, KEY_W, KEY_D, KEY_Z} //Simple Telex 2
+};
+
+#define IS_KEY_Z(key) (ProcessingChar[vInputType][10] == key)
+#define IS_KEY_D(key) (ProcessingChar[vInputType][9] == key)
+#define IS_KEY_W(key) ((vInputType != vVNI) ? ProcessingChar[vInputType][8] == key : \
+                                    (vInputType == vVNI ? (ProcessingChar[vInputType][8] == key || ProcessingChar[vInputType][7] == key) : false))
+#define IS_KEY_DOUBLE(key) ((vInputType != vVNI) ? (ProcessingChar[vInputType][5] == key || ProcessingChar[vInputType][6] == key || ProcessingChar[vInputType][7] == key) :\
+                                        (vInputType == vVNI ? ProcessingChar[vInputType][6] == key : false))
+#define IS_KEY_S(key) (ProcessingChar[vInputType][0] == key)
+#define IS_KEY_F(key) (ProcessingChar[vInputType][1] == key)
+#define IS_KEY_R(key) (ProcessingChar[vInputType][2] == key)
+#define IS_KEY_X(key) (ProcessingChar[vInputType][3] == key)
+#define IS_KEY_J(key) (ProcessingChar[vInputType][4] == key)
+
+#define IS_MARK_KEY(keyCode) (((vInputType != vVNI) && (keyCode == KEY_S || keyCode == KEY_F || keyCode == KEY_R || keyCode == KEY_J || keyCode == KEY_X)) || \
+                                        (vInputType == vVNI && (keyCode == KEY_1 || keyCode == KEY_2 || keyCode == KEY_3 || keyCode == KEY_5 || keyCode == KEY_4)))
+#define IS_BRACKET_KEY(key) (key == KEY_LEFT_BRACKET || key == KEY_RIGHT_BRACKET)
+
+#define VSI vowelStartIndex
+#define VEI vowelEndIndex
+#define VWSM vowelWillSetMark
+#define hBPC HookState.backspaceCount
+#define hNCC HookState.newCharCount
+#define hCode HookState.code
+#define hExt HookState.extCode
+#define hData HookState.charData
+#define GET getCharacterCode
+#define hMacroKey HookState.macroKey
+#define hMacroData HookState.macroData
+
+//Data to sendback to main program
+vKeyHookState HookState;
+
+//private data
+/**
+ * data structure of each element in TypingWord (Uint64)
+ * first 2 byte is character code or key code.
+ * bit 16: has caps or not
+ * bit 17: has tone ^ or not
+ * bit 18: has tone w or not
+ * bit 19 - > 23: has mark or not (Sắc, huyền, hỏi, ngã, nặng)
+ * bit 24: is standalone key? (w, [, ])
+ * bit 25: is character code or keyboard code; 1: character code; 0: keycode
+ */
+static Uint32 TypingWord[MAX_BUFF];
+static Byte _index = 0;
+static vector<Uint32> _longWordHelper; //save the word when _index >= MAX_BUFF
+static list<vector<Uint32>> _typingStates; //Aug 28th, 2019: typing helper, save long state of Typing word, can go back and modify the word
+vector<Uint32> _typingStatesData;
+
+/**
+ * Use for restore key if invalid word
+ */
+static Uint32 KeyStates[MAX_BUFF];
+static Byte _stateIndex = 0;
+
+static bool tempDisableKey = false;
+
+static inline bool isVietnameseWordFromTypingWord(const int length) {
+    if (length <= 0) return false;
+    Uint32 buf[32];
+    int len = length > 30 ? 30 : length;
+    for (int i = 0; i < len; i++) {
+        buf[i] = TypingWord[i] & 0x3F;
+    }
+    return isVietnameseWordFromKeyStates(buf, len);
+}
+
+/**
+ * Convert TypingWord back to canonical Telex keycodes and check Vietnamese dictionary.
+ * This handles ALL alternative Telex typing orders:
+ *   - "dods" (d-o-d-s) → canonical "ddos" (đó) ✓
+ *   - "wf" (standalone W+f) → canonical "uwf" (ừ) ✓
+ *   - Any reordered Telex pattern that the engine processed correctly
+ *
+ * Returns true if the canonical Telex form is a Vietnamese word.
+ */
+static bool isVietnameseFromCanonicalTelex(const int length) {
+    if (length <= 0) return false;
+
+    Uint32 buf[64]; // Canonical Telex can be longer than TypingWord
+    int len = 0;
+    Uint32 toneKey = 0; // Tone mark key to append at end (end-tone variant)
+
+    for (int i = 0; i < length && len < 60; i++) {
+        Uint32 tw = TypingWord[i];
+        Uint32 baseKey = tw & 0x3F;
+
+        // đ: KEY_D with TONE_MASK → "dd"
+        if (baseKey == KEY_D && (tw & TONE_MASK)) {
+            buf[len++] = KEY_D;
+            buf[len++] = KEY_D;
+        }
+        // Vowel with TONE_MASK (â, ê, ô) → double the vowel
+        else if (!(tw & STANDALONE_MASK) && (tw & TONE_MASK) && !IS_CONSONANT(baseKey)) {
+            buf[len++] = baseKey;
+            buf[len++] = baseKey;
+        }
+        // Normal character
+        else {
+            buf[len++] = baseKey;
+        }
+
+        // TONEW_MASK (ă, ơ, ư) → append W
+        if (tw & (TONEW_MASK | STANDALONE_MASK)) {
+            // For standalone ư (KEY_U with STANDALONE), base is already KEY_U
+            // For normal aw/ow/uw, base is the vowel
+            if (len < 62) buf[len++] = KEY_W;
+        }
+
+        // Collect tone mark (only one per word, applied at end)
+        if (tw & MARK1_MASK) toneKey = KEY_S;       // sắc
+        else if (tw & MARK2_MASK) toneKey = KEY_F;   // huyền
+        else if (tw & MARK3_MASK) toneKey = KEY_R;   // hỏi
+        else if (tw & MARK4_MASK) toneKey = KEY_X;   // ngã
+        else if (tw & MARK5_MASK) toneKey = KEY_J;   // nặng
+    }
+
+    // Append tone mark at end (end-tone variant, always in Vietnamese dictionary)
+    if (toneKey && len < 62) {
+        buf[len++] = toneKey;
+    }
+
+    if (len < 2) return false; // Too short for dictionary lookup
+    return isVietnameseWordFromKeyStates(buf, len);
+}
+
+static int capsElem;
+static int key;
+static int markElem;
+static bool isCorect = false;
+static bool isChanged = false;
+static Byte vowelCount = 0;
+static Byte vowelStartIndex = 0;
+static Byte vowelEndIndex = 0;
+static Byte vowelWillSetMark = 0;
+static int i, ii, iii;
+static int j;
+static int k, kk;
+static int l;
+static bool isRestoredW;
+static Uint16 keyForAEO;
+static bool isCheckedGrammar;
+static bool _isCaps = false;
+static int _spaceCount = 0; //add: July 30th, 2019
+static bool _hasHandledMacro = false; //for macro flag August 9th, 2019
+static volatile Byte _upperCaseStatus = 0; //for Write upper case for the first letter; 2: will upper case (VOLATILE for thread safety)
+static bool _shouldUpperCaseEnglishRestore = false; //track if English restore should uppercase first char
+static volatile Byte _snapshotUpperCaseFirstChar = 0; //snapshot of vUpperCaseFirstChar at session start (prevents mid-typing setting changes)
+static bool _isCharKeyCode;
+static vector<Uint32> _specialChar;
+static bool _useSpellCheckingBefore;
+static bool _hasHandleQuickConsonant;
+static bool _willTempOffEngine = false;
+
+//function prototype
+void findAndCalculateVowel(const bool& forGrammar=false);
+void insertMark(const Uint32& markMask, const bool& canModifyFlag=true);
+
+static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+wstring utf8ToWideString(const string& str) {
+    return converter.from_bytes(str.c_str());
+}
+
+string wideStringToUtf8(const wstring& str) {
+    return converter.to_bytes(str.c_str());
+}
+
+void vPrimeUpperCaseFirstChar() {
+    if (vUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp) {
+        _upperCaseStatus = 2; // Ready to uppercase the next valid character
+    }
+}
+
+void* vKeyInit() {
+    _index = 0;
+    _stateIndex = 0;
+    _useSpellCheckingBefore = vCheckSpelling;
+    _typingStatesData.clear();
+    _typingStates.clear();
+    _longWordHelper.clear();
+    vPrimeUpperCaseFirstChar();
+    return &HookState;
+}
+
+bool isWordBreak(const vKeyEvent& event, const vKeyEventState& state, const Uint16& data) {
+    if (event == vKeyEvent::Mouse)
+        return true;
+
+    // PERFORMANCE OPTIMIZATION: Lazy init lookup set for O(1) instead of O(n)
+    if (!_lookupSetsInitialized) {
+        _breakCodeSet.insert(_breakCode.begin(), _breakCode.end());
+        _macroBreakCodeSet.insert(_macroBreakCode.begin(), _macroBreakCode.end());
+        _lookupSetsInitialized = true;
+    }
+
+    return _breakCodeSet.count(data) > 0;
+}
+
+bool isMacroBreakCode(const int& data) {
+    // PERFORMANCE OPTIMIZATION: Use O(1) set lookup instead of O(n) vector scan
+    if (!_lookupSetsInitialized) {
+        _breakCodeSet.insert(_breakCode.begin(), _breakCode.end());
+        _macroBreakCodeSet.insert(_macroBreakCode.begin(), _macroBreakCode.end());
+        _lookupSetsInitialized = true;
+    }
+
+    return _macroBreakCodeSet.count(data) > 0;
+}
+
+static inline bool isLikelyUppercaseAbbreviation(const Uint32* keyStates, int count) {
+    if (count <= 0) return false;
+    if (count > 12) return false;
+
+    // Numeric token like "3." -> not a sentence break (decimal or list)
+    bool allDigits = true;
+    for (int i = 0; i < count; i++) {
+        Uint16 kc = keyStates[i] & 0x3F;
+        if (!IS_NUMBER_KEY(kc)) {
+            allDigits = false;
+            break;
+        }
+    }
+    if (allDigits) return true;
+
+    // Single-letter initials like "A." or "U."
+    if (count == 1) return true;
+
+    // Small abbreviation list (lowercase)
+    if (count <= 5) {
+        std::string word = keyStatesToString(keyStates, count);
+        if ((int)word.size() == count) {
+            static const std::unordered_set<std::string> kAbbrev = {
+                "mr", "mrs", "ms", "dr", "prof", "sr", "jr", "st",
+                "vs", "etc", "eg", "ie",
+                "tp", "q", "p", "ths", "ts", "gs", "pgs"
+            };
+            if (kAbbrev.count(word)) return true;
+        }
+    }
+
+    return false;
+}
+
+static inline bool isSentenceTerminator(const Uint16& data, const Uint8& capsStatus) {
+    if (data == KEY_ENTER || data == KEY_RETURN) {
+        return true;
+    }
+
+    // '.' should not trigger when Shift is held (">")
+    if (data == KEY_DOT && capsStatus != 1) {
+        if (isLikelyUppercaseAbbreviation(KeyStates, _stateIndex)) {
+            return false;
+        }
+        return true;
+    }
+
+    // Shift + '/' => '?', Shift + '1' => '!'
+    if (capsStatus == 1 && (data == KEY_SLASH || data == KEY_1)) {
+        return true;
+    }
+
+    return false;
+}
+
+static inline bool isUppercaseSkippablePunctuation(const Uint16& data, const Uint8& capsStatus) {
+    if (data == KEY_QUOTE) { // ' or "
+        return true;
+    }
+
+    if (data == KEY_LEFT_BRACKET || data == KEY_RIGHT_BRACKET) { // [ ] or { }
+        return true;
+    }
+
+    if (capsStatus == 1 && (data == KEY_9 || data == KEY_0)) { // ( or )
+        return true;
+    }
+
+    return false;
+}
+
+void setKeyData(const Byte& index, const Uint16& keyCode, const bool& isCaps) {
+    if (index < 0 || index >= MAX_BUFF)
+        return;
+    TypingWord[index] = keyCode | (isCaps ? CAPS_MASK : 0);
+}
+
+bool _spellingOK = false;
+bool _spellingFlag = false;
+bool _spellingVowelOK = false;
+Byte _spellingEndIndex = 0;
+
+void checkSpelling(const bool& forceCheckVowel=false) {
+    // Early exit: empty buffer is always valid
+    if (_index == 0) {
+        _spellingOK = true;
+        _spellingVowelOK = true;
+        tempDisableKey = false;
+        return;
+    }
+
+    _spellingOK = false;
+    _spellingVowelOK = true;
+    _spellingEndIndex = _index;
+
+    if (_index > 0 && CHR(_index-1) == KEY_RIGHT_BRACKET) {
+        _spellingEndIndex = _index-1;
+    }
+
+    if (_spellingEndIndex > 0) {
+        j = 0;
+        //Check first consonant
+        if (IS_CONSONANT(CHR(0))) {
+            for (i = 0; i < _consonantTable.size(); i++) {
+                _spellingFlag = false;
+                if (_spellingEndIndex < _consonantTable[i].size())
+                    _spellingFlag = true;
+                for (j = 0; j < _consonantTable[i].size(); j++) {
+                    if (_spellingEndIndex > j &&
+                        (_consonantTable[i][j] & ~(vQuickStartConsonant ? END_CONSONANT_MASK : 0)) != CHR(j) &&
+                        (_consonantTable[i][j] & ~(vAllowConsonantZFWJ ? CONSONANT_ALLOW_MASK : 0)) != CHR(j)) {
+                        _spellingFlag = true;
+                        break;
+                    }
+                }
+                if (_spellingFlag)
+                    continue;
+                
+                break;
+            }
+        }
+        
+        if (j == _spellingEndIndex){ //for "d" case
+            _spellingOK = true;
+        }
+        
+        //check next vowel
+        k = j;
+        VSI = k;
+        //August 23rd, 2019: fix case "que't"
+        if (CHR(VSI) == KEY_U && k > 0 && k < _spellingEndIndex-1 && CHR(VSI-1) == KEY_Q) {
+            k = k + 1;
+            j = k;
+            VSI = k;
+        } else if (_index >= 2 && CHR(0) == KEY_G && CHR(1) == KEY_I && IS_CONSONANT(CHR(2))) {
+            VSI = k = j = 1; //Sep 28th: fix gìn
+        }
+        for (l = 0; l < 3; l++) {
+            if (k < _spellingEndIndex && !IS_CONSONANT(CHR(k))) {
+                k++;
+                VEI = k;
+            }
+        }
+        if (k > j) { //has vowel, 
+            _spellingVowelOK = false;
+            //check correct combined vowel
+            if (k - j > 1 && forceCheckVowel) {
+                vector<vector<Uint32>>& vowelSet = _vowelCombine[CHR(j)];
+                for (l = 0; l < vowelSet.size(); l++) {
+                    _spellingFlag = false;
+                    for (ii = 1; ii < vowelSet[l].size(); ii++) {
+                        if (j + ii - 1 < _spellingEndIndex && vowelSet[l][ii] != ((CHR(j + ii - 1) | (TypingWord[j + ii - 1] & TONEW_MASK) | (TypingWord[j + ii - 1] & TONE_MASK)))) {
+                            _spellingFlag = true;
+                            break;
+                        }
+                    }
+                    if (_spellingFlag || (k < _spellingEndIndex && !vowelSet[l][0]) || (j + ii - 1 < _spellingEndIndex && !IS_CONSONANT(CHR(j + ii - 1))))
+                        continue;
+                    
+                    _spellingVowelOK = true;
+                    break;
+                }
+            } else if (!IS_CONSONANT(CHR(j))) {
+                _spellingVowelOK = true;
+            }
+            
+            //continue check last consonant
+            for (ii = 0; ii < _endConsonantTable.size(); ii++) {
+                _spellingFlag = false;
+   
+                for (j = 0; j < _endConsonantTable[ii].size(); j++) {
+                    if (_spellingEndIndex > k+j &&
+                        (_endConsonantTable[ii][j] & ~(vQuickEndConsonant ? END_CONSONANT_MASK : 0)) != CHR(k + j)) {
+                        _spellingFlag = true;
+                        break;
+                    }
+                }
+                if (_spellingFlag)
+                    continue;
+                
+                if (k + j >= _spellingEndIndex) {
+                    _spellingOK = true;
+                    break;
+                }
+            }
+            
+            //limit: end consonant "ch", "t" can not use with "~", "`", "?"
+            if (_spellingOK) {
+                if (_index >= 3 && CHR(_index-1) == KEY_H && CHR(_index-2) == KEY_C && !((TypingWord[_index-3] & MARK1_MASK) || (TypingWord[_index-3] & MARK5_MASK) || !(TypingWord[_index-3] & MARK_MASK))) {
+                    _spellingOK = false;
+                } else if (_index >= 2 && CHR(_index-1) == KEY_T && !((TypingWord[_index-2] & MARK1_MASK) || (TypingWord[_index-2] & MARK5_MASK) || !(TypingWord[_index-2] & MARK_MASK))) {
+                    _spellingOK = false;
+                }
+            }
+        }
+    } else {
+        _spellingOK = true;
+    }
+    tempDisableKey = !(_spellingOK && _spellingVowelOK);
+    
+    //cout<<"spelling vowel: "<<(_spellingVowelOK ? "OK": "Err")<<endl;
+    //cout<<"spelling: "<<(_spellingOK ? "OK": "Err")<<endl<<endl;
+}
+
+void checkGrammar(const int& deltaBackSpace) {
+    if (_index <= 1 || _index >= MAX_BUFF)
+        return;
+
+    findAndCalculateVowel(true);
+    if (vowelCount == 0)
+        return;
+
+    isCheckedGrammar = false;
+
+    l = VSI;
+
+    //if N key for case: "thuơn", "ưoi", "ưom", "ưoc"
+    if (_index >= 3) {
+        for (i = _index-1; i >= 0; i--) {
+            if (CHR(i) == KEY_N || CHR(i) == KEY_C || CHR(i) == KEY_I ||
+                CHR(i) == KEY_M || CHR(i) == KEY_P || CHR(i) == KEY_T) {
+                if (i - 2 >= 0 && CHR(i - 1) == KEY_O && CHR(i - 2) == KEY_U) {
+                    if ((TypingWord[i-1] & TONEW_MASK) ^ (TypingWord[i-2] & TONEW_MASK)) {
+                        TypingWord[i - 2] |= TONEW_MASK;
+                        TypingWord[i - 1] |= TONEW_MASK;
+                        isCheckedGrammar = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    //check mark
+    if (_index >= 2) {
+        for (i = l; i <= VEI; i++) {
+            if (TypingWord[i] & MARK_MASK) {
+                // If word ends with a repeated vowel run (e.g., "iuu", "aa"),
+                // keep the mark at its current position (base vowel cluster).
+                int tailStart = VEI;
+                int tailLen = 1;
+                if (VEI > VSI) {
+                    Uint16 tailVowel = CHR(VEI);
+                    while (tailStart > VSI && CHR(tailStart - 1) == tailVowel) {
+                        tailStart--;
+                    }
+                    tailLen = VEI - tailStart + 1;
+                }
+                if (tailLen >= 2 && i <= tailStart) {
+                    isCheckedGrammar = false;
+                    break;
+                }
+
+                // Check for extended vowels (consecutive same vowels like "ee", "aa")
+                // If the marked vowel is followed by the same vowel(s), keep mark at first position
+                // Example: "nhé" + "e" => "nhée" (not "nheé"), "á" + "aa" => "áaa" (not "aáa")
+                bool isExtendedVowel = false;
+                if (i < VEI && CHR(i) == CHR(i + 1)) {
+                    // Check if all following vowels are the same
+                    isExtendedVowel = true;
+                    for (int checkIdx = i + 1; checkIdx <= VEI; checkIdx++) {
+                        if (CHR(checkIdx) != CHR(i)) {
+                            isExtendedVowel = false;
+                            break;
+                        }
+                    }
+                }
+
+                // If extended vowel, keep mark at current position (first of the sequence)
+                if (isExtendedVowel) {
+                    // Don't move the mark, just update display
+                    isCheckedGrammar = false;
+                    break;
+                }
+
+                Uint32 mark = TypingWord[i] & MARK_MASK;
+                TypingWord[i] &= ~MARK_MASK;
+                insertMark(mark, false);
+                if (i != vowelWillSetMark)
+                    isCheckedGrammar = true;
+                break;
+            }
+        }
+    }
+    
+    //re-arrange data to sendback
+    if (isCheckedGrammar) {
+        if (hCode ==vDoNothing)
+            hCode = vWillProcess;
+        hBPC = 0;
+        
+        for (i = _index - 1; i >= l; i--) {
+            hBPC++;
+            hData[_index - 1 - i] = GET(TypingWord[i]);
+        }
+        hNCC = hBPC;
+        hBPC += deltaBackSpace;
+        hExt = 4;
+    }
+}
+
+void insertKey(const Uint16& keyCode, const bool& isCaps, const bool& isCheckSpelling=true) {
+    if (_index >= MAX_BUFF) {
+        _longWordHelper.push_back(TypingWord[0]); //save long word
+        //left shift - buffer is full, shift all elements left
+        for (iii = 0; iii < MAX_BUFF - 1; iii++) {
+            TypingWord[iii] = TypingWord[iii + 1];
+        }
+        // SAFETY FIX: Always write to last position when buffer is full
+        // Using _index-1 could cause out-of-bounds if _index > MAX_BUFF
+        setKeyData(MAX_BUFF - 1, keyCode, isCaps);
+    } else {
+        setKeyData(_index++, keyCode, isCaps);
+    }
+    
+    if (vCheckSpelling && isCheckSpelling)
+        checkSpelling();
+    
+    //allow d after consonant
+    if (keyCode == KEY_D && _index - 2 >= 0 && IS_CONSONANT(CHR(_index - 2)))
+        tempDisableKey = false;
+}
+
+void insertState(const Uint16& keyCode, const bool& isCaps) {
+    if (_stateIndex >= MAX_BUFF) {
+        //left shift - buffer is full, shift all elements left
+        for (iii = 0; iii < MAX_BUFF - 1; iii++) {
+            KeyStates[iii] = KeyStates[iii + 1];
+        }
+        // SAFETY FIX: Always write to last position when buffer is full
+        // Using _stateIndex-1 could cause out-of-bounds if _stateIndex > MAX_BUFF
+        KeyStates[MAX_BUFF - 1] = keyCode | (isCaps ? CAPS_MASK : 0);
+    } else {
+        KeyStates[_stateIndex++] = keyCode | (isCaps ? CAPS_MASK : 0);
+    }
+}
+
+void saveWord() {
+    //save word history
+    if (hCode != vReplaceMaro) {
+        if (_index > 0) {
+            if (_longWordHelper.size() > 0) { //save long word first
+                _typingStatesData.clear();
+                for (i = 0; i < _longWordHelper.size(); i++) {
+                    if (i != 0 && i % MAX_BUFF == 0) { //save if overflow
+                        _typingStates.push_back(_typingStatesData);
+                        _typingStatesData.clear();
+                    }
+                    _typingStatesData.push_back(_longWordHelper[i]);
+                }
+                _typingStates.push_back(_typingStatesData);
+                _longWordHelper.clear();
+            }
+            
+            //save current word
+            _typingStatesData.clear();
+            for (i = 0; i < _index; i++) {
+                _typingStatesData.push_back(TypingWord[i]);
+            }
+            _typingStates.push_back(_typingStatesData);
+        }
+    } else { //save macro words
+        _typingStatesData.clear();
+        for (i = 0; i < hMacroData.size(); i++) {
+            if (i != 0 && i % MAX_BUFF == 0) { //break if overflow
+                _typingStates.push_back(_typingStatesData);
+                _typingStatesData.clear();
+            }
+            _typingStatesData.push_back(hMacroData[i]);
+        }
+        _typingStates.push_back(_typingStatesData);
+    }
+}
+
+void saveWord(const Uint32& keyCode, const int& count) {
+    _typingStatesData.clear();
+    for (i = 0; i < count; i++) {
+        _typingStatesData.push_back(keyCode);
+    }
+    _typingStates.push_back(_typingStatesData);
+}
+
+void saveSpecialChar() {
+    _typingStatesData.clear();
+    for (i = 0; i < _specialChar.size(); i++) {
+        _typingStatesData.push_back(_specialChar[i]);
+    }
+    _typingStates.push_back(_typingStatesData);
+    _specialChar.clear();
+}
+
+void restoreLastTypingState() {
+    if (_typingStates.size() > 0) {
+        _typingStatesData = _typingStates.back();
+        _typingStates.pop_back();
+        if (_typingStatesData.size() > 0){
+            if (_typingStatesData[0] == KEY_SPACE) {
+                _spaceCount = (int)_typingStatesData.size();
+                _index = 0;
+            } else if (std::find(_charKeyCode.begin(), _charKeyCode.end(), (Uint16)_typingStatesData[0]) != _charKeyCode.end()) {
+                _index = 0;
+                _specialChar = _typingStatesData;
+                checkSpelling();
+            } else {
+                for (i = 0; i < _typingStatesData.size(); i++) {
+                    TypingWord[i] = _typingStatesData[i];
+                }
+                _index = (Byte)_typingStatesData.size();
+                if (vCheckSpelling) {
+                    checkSpelling();
+                } else {
+                    // Ensure tempDisableKey doesn't stay stuck after restore when spell check is off.
+                    tempDisableKey = false;
+                }
+            }
+        }
+    }
+}
+
+void startNewSession() {
+    _index = 0;
+    hBPC = 0;
+    hNCC = 0;
+    tempDisableKey = false;
+    _stateIndex = 0;
+    _hasHandledMacro = false;
+    _hasHandleQuickConsonant = false;
+    _shouldUpperCaseEnglishRestore = false;
+    _spaceCount = 0;
+    _longWordHelper.clear();
+    _upperCaseStatus = 0;
+    // Snapshot settings at session start to prevent mid-typing changes from affecting this word
+    _snapshotUpperCaseFirstChar = vUpperCaseFirstChar;
+}
+
+void checkCorrectVowel(vector<vector<Uint16>>& charset, int& i, int& k, const Uint16& markKey) {
+    //ignore "qu" case
+    if (_index >= 2 && CHR(_index-1) == KEY_U && CHR(_index-2) == KEY_Q) {
+        isCorect = false;
+        return;
+    }
+    k = _index - 1;
+    for (j = (int)charset[i].size() - 1; j >= 0; j--) {
+        if ((charset[i][j] & ~(vQuickEndConsonant ? END_CONSONANT_MASK : 0)) != CHR(k)) {
+            isCorect = false;
+            return;
+        }
+        k--;
+        if (k < 0)
+            break;
+    }
+    
+    //limit mark for end consonant: "C", "T"
+    if (isCorect && charset[i].size() > 1 && (IS_KEY_F(markKey) || IS_KEY_X(markKey) || IS_KEY_R(markKey))) {
+        if (charset[i][1] == KEY_C || charset[i][1] == KEY_T) {
+            isCorect = false;
+        } else if (charset[i].size() > 2 && (charset[i][2] == KEY_T)) {
+            isCorect = false;
+        }
+    }
+    
+    if (isCorect && k >= 0) {
+        // Block duplicate plain vowels, but allow marking when one of them is transformed
+        // (e.g., "ưu" where ư has TONEW_MASK should allow tone marks).
+        if (CHR(k) == CHR(k+1) &&
+            !(TypingWord[k] & (TONE_MASK | TONEW_MASK)) &&
+            !(TypingWord[k+1] & (TONE_MASK | TONEW_MASK))) {
+            // Allow triple (or more) identical vowels when applying a tone mark
+            // so sequences like "ooo" can still receive a tone before end consonants.
+            if (IS_MARK_KEY(markKey) && k + 2 < _index && CHR(k) == CHR(k + 2)) {
+                // keep isCorect = true
+            } else {
+                isCorect = false;
+            }
+        }
+    }
+}
+
+Uint32 getCharacterCode(const Uint32& data) {
+    capsElem = (data & CAPS_MASK) ? 0 : 1;
+    key = data & CHAR_MASK;
+    if (data & MARK_MASK) { //has mark
+        markElem = -2;
+        switch (data & MARK_MASK) {
+            case MARK1_MASK:
+                markElem = 0;
+                break;
+            case MARK2_MASK:
+                markElem = 2;
+                break;
+            case MARK3_MASK:
+                markElem = 4;
+                break;
+            case MARK4_MASK:
+                markElem = 6;
+                break;
+            case MARK5_MASK:
+                markElem = 8;
+                break;
+        }
+        markElem += capsElem;
+        
+        switch (key) {
+            case KEY_A:
+            case KEY_O:
+            case KEY_U:
+            case KEY_E:
+                if ((data & TONE_MASK) == 0 && (data & TONEW_MASK) == 0)
+                    markElem += 4;
+                break;
+        }
+        
+        if (data & TONE_MASK) {
+            key |= TONE_MASK;
+        } else if (data & TONEW_MASK) {
+            key |= TONEW_MASK;
+        }
+        if (_codeTable[vCodeTable].find(key) == _codeTable[vCodeTable].end())
+            return data; //not found
+        
+        return _codeTable[vCodeTable][key][markElem] | CHAR_CODE_MASK;
+    } else { //doesn't has mark
+        if (_codeTable[vCodeTable].find(key) == _codeTable[vCodeTable].end())
+            return data; //not found
+        
+        if (data & TONE_MASK) {
+            return _codeTable[vCodeTable][key][capsElem] | CHAR_CODE_MASK;
+        } else if (data & TONEW_MASK) {
+            return _codeTable[vCodeTable][key][capsElem + 2] | CHAR_CODE_MASK;
+        } else {
+            return data; //not found
+        }
+    }
+    
+    return 0;
+}
+
+void findAndCalculateVowel(const bool& forGrammar) {
+    vowelCount = 0;
+    VSI = VEI = 0;
+    for (iii = _index - 1; iii >= 0; iii--) {
+        if (IS_CONSONANT(CHR(iii))) {
+            if (vowelCount > 0)
+                break;
+        } else {  //is vowel
+            if (vowelCount == 0)
+                VEI = iii;
+            if (!forGrammar) {
+                if ((iii-1 >= 0 && (CHR(iii) == KEY_I && CHR(iii-1) == KEY_G)) ||
+                    (iii-1 >= 0 && (CHR(iii) == KEY_U && CHR(iii-1) == KEY_Q))) {
+                    break;
+                }
+            }
+            VSI = iii;
+            vowelCount++;
+        }
+    }
+    //August 26th, 2019: don't count "u" at "q u" as a vowel
+    if (VSI - 1 >= 0 && CHR(VSI) == KEY_U && CHR(VSI-1) == KEY_Q) {
+        VSI++;
+        vowelCount--;
+    }
+}
+
+void removeMark() {
+    findAndCalculateVowel(true);
+    isChanged = false;
+    if (_index > 0) {
+        for (i = VSI; i <= VEI; i++) {
+            if (TypingWord[i] & MARK_MASK) {
+                TypingWord[i] &= ~MARK_MASK;
+                isChanged = true;
+            }
+        }
+    }
+    if (isChanged) {
+        hCode = vWillProcess;
+        hBPC = 0;
+        
+        for (i = _index - 1; i >= VSI; i--) {
+            hBPC++;
+            hData[_index - 1 - i] = GET(TypingWord[i]);
+        }
+        hNCC = hBPC;
+    } else {
+        hCode = vDoNothing;
+    }
+}
+
+bool canHasEndConsonant() {
+    vector<vector<Uint32>>& vo = _vowelCombine[CHR(VSI)];
+    for (ii = 0; ii < vo.size(); ii++) {
+        kk = VSI;
+        for (iii = 1; iii < vo[ii].size(); iii++) {
+            if (kk > VEI || ((CHR(kk) | (TypingWord[kk] & TONE_MASK) | (TypingWord[kk] & TONEW_MASK)) != vo[ii][iii])) {
+                break;
+            }
+            kk++;
+        }
+        if (iii >= vo[ii].size()) {
+            return vo[ii][0] == 1;
+        }
+    }
+    return false;
+}
+
+static bool canFixVowelWithDiacriticsForMark() {
+    // Preserve current vowel scan state (this is a hot path).
+    Byte savedVowelCount = vowelCount;
+    Byte savedVSI = VSI;
+    Byte savedVEI = VEI;
+
+    findAndCalculateVowel();
+    if (vowelCount == 0) {
+        vowelCount = savedVowelCount;
+        VSI = savedVSI;
+        VEI = savedVEI;
+        return false;
+    }
+
+    auto it = _vowelCombine.find(CHR(VSI));
+    if (it == _vowelCombine.end()) {
+        vowelCount = savedVowelCount;
+        VSI = savedVSI;
+        VEI = savedVEI;
+        return false;
+    }
+
+    const vector<vector<Uint32>>& vo = it->second;
+    bool canFix = false;
+    for (const auto& pattern : vo) {
+        int patternLen = (int)pattern.size() - 1; // exclude flag
+        if (patternLen < vowelCount) {
+            continue;
+        }
+
+        bool match = true;
+        for (int idx = 0; idx < vowelCount; idx++) {
+            Uint32 expected = pattern[idx + 1];
+            Uint16 expectedBase = expected & CHAR_MASK;
+            Uint16 currentBase = CHR(VSI + idx);
+
+            if (currentBase != expectedBase) {
+                match = false;
+                break;
+            }
+
+            Uint32 expectedTone = expected & (TONE_MASK | TONEW_MASK);
+            Uint32 currentTone = TypingWord[VSI + idx] & (TONE_MASK | TONEW_MASK);
+
+            if (expectedTone == 0) {
+                if (currentTone != 0) {
+                    match = false;
+                    break;
+                }
+            } else {
+                if (currentTone != 0 && currentTone != expectedTone) {
+                    match = false;
+                    break;
+                }
+            }
+        }
+
+        if (match) {
+            canFix = true;
+            break;
+        }
+    }
+
+    vowelCount = savedVowelCount;
+    VSI = savedVSI;
+    VEI = savedVEI;
+    return canFix;
+}
+
+void handleModernMark() {
+    // Normalize trailing repeated vowels (e.g., "iuu", "aa") to place tone on the base vowel cluster
+    Byte originalVEI = VEI;
+    Byte originalVowelCount = vowelCount;
+    bool adjustedTrailing = false;
+    bool preferLastRepeat = false;
+    if (vowelCount >= 2) {
+        int tailStart = VEI;
+        Uint16 tailVowel = CHR(VEI);
+        while (tailStart > VSI && CHR(tailStart - 1) == tailVowel) {
+            tailStart--;
+        }
+        if (VEI - tailStart + 1 >= 2) {
+            bool runHasDiacritic = false;
+            for (int idx = tailStart; idx <= VEI; idx++) {
+                if (TypingWord[idx] & (TONE_MASK | TONEW_MASK)) {
+                    runHasDiacritic = true;
+                    break;
+                }
+            }
+            // Special-case repeated 'o' in modern orthography (loanwords like "boong"):
+            // place the tone on the last 'o' instead of the first.
+            if (!runHasDiacritic && tailVowel == KEY_O && tailStart == VSI) {
+                preferLastRepeat = true;
+            } else {
+                VEI = (Byte)tailStart;
+                vowelCount = 0;
+                for (int idx = VSI; idx <= VEI; idx++) {
+                    if (!IS_CONSONANT(CHR(idx))) {
+                        vowelCount++;
+                    }
+                }
+                adjustedTrailing = true;
+            }
+        }
+    }
+
+    //default
+    VWSM = VEI;
+    hBPC = (_index - VEI);
+    
+    //rule 2
+    if (vowelCount == 3 && ((CHR(VSI) == KEY_O && CHR(VSI+1) == KEY_A && CHR(VSI+2) == KEY_I) ||
+                            (CHR(VSI) == KEY_U && CHR(VSI+1) == KEY_Y && CHR(VSI+2) == KEY_U) ||
+                            (CHR(VSI) == KEY_O && CHR(VSI+1) == KEY_E && CHR(VSI+2) == KEY_O) ||
+                            (CHR(VSI) == KEY_U && CHR(VSI+1) == KEY_Y && CHR(VSI+2) == KEY_A))) {
+        VWSM = VSI + 1;
+        hBPC = _index - VWSM;
+    } else if (vowelCount >= 2 && CHR(VEI) == KEY_Y) {
+        // Modern orthography: "uy" places tone on 'y' (u+y) instead of 'u'.
+        if (vowelCount == 2 && CHR(VSI) == KEY_U && CHR(VSI + 1) == KEY_Y) {
+            VWSM = VEI;
+            hBPC = _index - VWSM;
+        } else {
+            // Diphthongs ending with 'y' (ay, oay, ...) place tone on the last non-'y' vowel
+            int lastNonY = VEI;
+            while (lastNonY >= VSI && CHR(lastNonY) == KEY_Y) {
+                lastNonY--;
+            }
+            if (lastNonY >= VSI) {
+                VWSM = lastNonY;
+                hBPC = _index - VWSM;
+            }
+        }
+    } else if ((CHR(VSI) == KEY_O && CHR(VSI+1) == KEY_I) ||
+               (CHR(VSI) == KEY_A && CHR(VSI+1) == KEY_I) ||
+               (CHR(VSI)== KEY_U && CHR(VSI+1) == KEY_I) ) {
+        
+        VWSM = VSI;
+        hBPC = _index - VWSM;
+    } else if (CHR(VEI-1) == KEY_A && CHR(VEI) == KEY_Y) {
+        VWSM = VEI - 1;
+        hBPC = (_index - VEI) + 1;
+    } else if (CHR(VSI) == KEY_U && CHR(VSI+1) == KEY_O) {
+        VWSM = VSI + 1;
+        hBPC = _index - VWSM;
+    } else if (CHR(VSI+1) == KEY_O || CHR(VSI+1) == KEY_U) {
+        VWSM = VEI - 1;
+        hBPC = (_index - VEI) + 1;
+    } else if (CHR(VSI) == KEY_O || CHR(VSI) == KEY_U) {
+        VWSM = VEI;
+        hBPC = (_index - VEI);
+    }
+    
+    //rule 3.1
+    if ((CHR(VSI) == KEY_I && (TypingWord[VSI+1] & (KEY_E | TONE_MASK))) ||
+        (CHR(VSI) == KEY_Y && (TypingWord[VSI+1] & (KEY_E | TONE_MASK))) ||
+        (CHR(VSI) == KEY_U && (TypingWord[VSI+1] == (KEY_O | TONE_MASK))) ||
+        ((TypingWord[VSI] == (KEY_U | TONEW_MASK)) && (TypingWord[VSI+1] == (KEY_O | TONEW_MASK)))){
+
+        // If the second vowel already has a diacritic (iê/yê/uô/ươ), keep tone on it.
+        bool forceSecondVowel = false;
+        if ((CHR(VSI) == KEY_I || CHR(VSI) == KEY_Y) &&
+            CHR(VSI + 1) == KEY_E &&
+            (TypingWord[VSI + 1] & TONE_MASK)) {
+            forceSecondVowel = true;
+        } else if (CHR(VSI) == KEY_U &&
+                   CHR(VSI + 1) == KEY_O &&
+                   (TypingWord[VSI + 1] & TONE_MASK)) {
+            forceSecondVowel = true;
+        } else if ((TypingWord[VSI] & TONEW_MASK) &&
+                   (TypingWord[VSI + 1] & TONEW_MASK) &&
+                   CHR(VSI) == KEY_U &&
+                   CHR(VSI + 1) == KEY_O) {
+            forceSecondVowel = true;
+        }
+
+        if (forceSecondVowel) {
+            VWSM = VSI + 1;
+            hBPC = _index - VWSM;
+        } else if (VSI+2 < _index) {
+            if (CHR(VSI+2) == KEY_P || CHR(VSI+2) == KEY_T ||
+                CHR(VSI+2) == KEY_M || CHR(VSI+2) == KEY_N ||
+                CHR(VSI+2) == KEY_O || CHR(VSI+2) == KEY_U ||
+                CHR(VSI+2) == KEY_I || CHR(VSI+2) == KEY_C ||
+                (VSI+3 < _index && CHR(VSI+2) == KEY_C && CHR(VSI+2) == KEY_H) ||
+                (VSI+3 < _index && CHR(VSI+2) == KEY_N && CHR(VSI+2) == KEY_H) ||
+                (VSI+3 < _index && CHR(VSI+2) == KEY_N && CHR(VSI+2) == KEY_G)) {
+                
+                VWSM = VSI + 1;
+                hBPC = _index - VWSM;
+            } else {
+                VWSM = VSI;
+                hBPC = _index - VWSM;
+            }
+        } else {
+            VWSM = VSI;
+            hBPC = _index - VWSM;
+        }
+    }
+    //rule 3.2
+    else if ((CHR(VSI) == KEY_I && (CHR(VSI) == KEY_A)) ||
+             (CHR(VSI) == KEY_Y && (CHR(VSI) == KEY_A)) ||
+             (CHR(VSI) == KEY_U && (CHR(VSI) == KEY_A)) ||
+             (CHR(VSI) == KEY_U && (TypingWord[VSI+1] == (KEY_U | TONEW_MASK)))){
+        
+        VWSM = VSI;
+        hBPC = _index - VWSM;
+    }
+    
+    //rule 4
+    if (vowelCount == 2) {
+        if (((CHR(VSI) == KEY_I) && (CHR(VSI+1) == KEY_A)) ||
+            ((CHR(VSI) == KEY_I) && (CHR(VSI+1) == KEY_U)) ||
+            ((CHR(VSI) == KEY_I) && (CHR(VSI+1) == KEY_O))) {
+            
+            if (VSI == 0 || (CHR(VSI-1) != KEY_G)) { //dont have G
+                VWSM = VSI;
+                hBPC = _index - VWSM;
+            } else {
+                VWSM = VSI + 1;
+                hBPC = _index - VWSM;
+            }
+        } else if ((CHR(VSI) == KEY_U) && (CHR(VSI+1) == KEY_A)) {
+            if (VSI == 0 || (CHR(VSI-1) != KEY_Q)) { //dont have Q
+                if (VEI + 1 >= _index || !canHasEndConsonant()) {
+                    VWSM = VSI;
+                    hBPC = _index - VWSM;
+                }
+            } else {
+                VWSM = VSI + 1;
+                hBPC = _index - VWSM;
+            }
+        } else if ((CHR(VSI) == KEY_O) && (CHR(VSI+1) == KEY_O)) { //thoong
+            VWSM = VEI;
+            hBPC = _index - VWSM;
+        }
+    }
+
+    if (preferLastRepeat) {
+        VWSM = originalVEI;
+        hBPC = (_index - VWSM);
+    }
+
+    if (adjustedTrailing) {
+        VEI = originalVEI;
+        vowelCount = originalVowelCount;
+    }
+}
+
+void handleOldMark() {
+    // Normalize trailing repeated vowels (e.g., "iuu", "aa") to place tone on the base vowel cluster
+    Byte originalVEI = VEI;
+    Byte originalVowelCount = vowelCount;
+    bool adjustedTrailing = false;
+    if (vowelCount >= 2) {
+        int tailStart = VEI;
+        Uint16 tailVowel = CHR(VEI);
+        while (tailStart > VSI && CHR(tailStart - 1) == tailVowel) {
+            tailStart--;
+        }
+        if (VEI - tailStart + 1 >= 2) {
+            VEI = (Byte)tailStart;
+            vowelCount = 0;
+            for (int idx = VSI; idx <= VEI; idx++) {
+                if (!IS_CONSONANT(CHR(idx))) {
+                    vowelCount++;
+                }
+            }
+            adjustedTrailing = true;
+        }
+    }
+
+    //default
+    if (vowelCount == 0 && CHR(VEI) == KEY_I)
+        VWSM = VEI;
+    else
+        VWSM = VSI;
+    hBPC = (_index - VWSM);
+    
+    //rule 2
+    if (vowelCount == 3 || (VEI + 1 < _index && IS_CONSONANT(CHR(VEI + 1)) && canHasEndConsonant())) {
+        VWSM = VSI + 1;
+        hBPC = _index - VWSM;
+    }
+    
+    //rule 3
+    for (ii = VSI; ii <= VEI; ii++) {
+        if ((CHR(ii) == KEY_E && TypingWord[ii] & TONE_MASK) || (CHR(ii) == KEY_O && TypingWord[ii] & TONEW_MASK)) {
+            VWSM = ii;
+            hBPC = _index - VWSM;
+            break;
+        }
+    }
+    
+    hNCC = hBPC;
+
+    if (adjustedTrailing) {
+        VEI = originalVEI;
+        vowelCount = originalVowelCount;
+    }
+}
+
+void insertMark(const Uint32& markMask, const bool& canModifyFlag) {
+    vowelCount = 0;
+
+    if (canModifyFlag)
+        hCode = vWillProcess;
+    hBPC = hNCC = 0;
+
+    findAndCalculateVowel();
+    VWSM = 0;
+
+    //detect mark position
+    if (vowelCount == 1) {
+        VWSM = VEI;
+        hBPC = (_index - VEI);
+    } else { //vowel = 2 or 3
+        if (vUseModernOrthography == 0)
+            handleOldMark();
+        else
+            handleModernMark();
+        if (TypingWord[VEI] & TONE_MASK || TypingWord[VEI] & TONEW_MASK)
+            vowelWillSetMark = VEI;
+    }
+
+    //send data
+    kk = _index - 1 - VSI;
+    //if duplicate same mark -> restore
+    if (TypingWord[VWSM] & markMask) {
+
+        TypingWord[VWSM] &= ~MARK_MASK;
+        if (canModifyFlag)
+            hCode = vRestore;
+        for (ii = VSI; ii < _index; ii++) {
+            TypingWord[ii] &= ~MARK_MASK;
+            hData[kk--] = GET(TypingWord[ii]);
+        }
+        //_index = 0;
+        tempDisableKey = true;
+    } else {
+        //remove other mark
+        TypingWord[VWSM] &= ~MARK_MASK;
+
+        //add mark
+        TypingWord[VWSM] |= markMask;
+        for (ii = VSI; ii < _index; ii++) {
+            if (ii != VWSM) { //remove mark for other vowel
+                TypingWord[ii] &= ~MARK_MASK;
+            }
+            hData[kk--] = GET(TypingWord[ii]);
+        }
+
+        hBPC = _index - VSI;
+    }
+    hNCC = hBPC;
+}
+
+void insertD(const Uint16& data, const bool& isCaps) {
+    hCode = vWillProcess;
+    hBPC = 0;
+    for (ii = _index - 1; ii >= 0; ii--) {
+        hBPC++;
+        if (CHR(ii) == KEY_D) { //reverse unicode char
+            if (TypingWord[ii] & TONE_MASK) {
+                //restore and disable temporary
+                hCode = vRestore;
+                TypingWord[ii] &= ~TONE_MASK;
+                hData[_index - 1 - ii] = TypingWord[ii];
+                tempDisableKey = true;
+                break;
+            } else {
+                TypingWord[ii] |= TONE_MASK;
+                hData[_index - 1 - ii] = GET(TypingWord[ii]);
+            }
+            break;
+        } else { //preresent old char
+            hData[_index - 1 - ii] = GET(TypingWord[ii]);
+        }
+    }
+    hNCC = hBPC;
+}
+
+void insertAOE(const Uint16& data, const bool& isCaps) {
+    findAndCalculateVowel();
+    
+    //remove W tone
+    for (ii = VSI; ii <= VEI; ii++) {
+        TypingWord[ii] &= ~TONEW_MASK;
+    }
+    
+    hCode = vWillProcess;
+    hBPC = 0;
+    
+    for (ii = _index - 1; ii >= 0; ii--) {
+        hBPC++;
+        if (CHR(ii) == data) { //reverse unicode char
+            if (TypingWord[ii] & TONE_MASK) {
+                //restore and disable temporary
+                hCode = vRestore;
+                TypingWord[ii] &= ~TONE_MASK;
+                hData[_index - 1 - ii] = TypingWord[ii];
+                //_index = 0;
+                if (data != KEY_O) //case thoòng
+                    tempDisableKey = true;
+                break;
+            } else {
+                TypingWord[ii] |= TONE_MASK;
+                if (!IS_KEY_D(data))
+                    TypingWord[ii] &= ~TONEW_MASK;
+                hData[_index - 1 - ii] = GET(TypingWord[ii]);
+                
+            }
+            break;
+        } else { //preresent old char
+            hData[_index - 1 - ii] = GET(TypingWord[ii]);
+        }
+    }
+    hNCC = hBPC;
+}
+
+void insertW(const Uint16& data, const bool& isCaps) {
+    isRestoredW = false;
+    
+    findAndCalculateVowel();
+    
+    //remove ^ tone
+    for (ii = VSI; ii <= VEI; ii++) {
+        TypingWord[ii] &= ~TONE_MASK;
+    }
+    
+    if (vowelCount > 1) {
+        hBPC = _index - VSI;
+        hNCC = hBPC;
+        
+        if (((TypingWord[VSI] & TONEW_MASK) && (TypingWord[VSI+1] & TONEW_MASK)) ||
+            ((TypingWord[VSI] & TONEW_MASK) && CHR(VSI+1) == KEY_I) ||
+            ((TypingWord[VSI] & TONEW_MASK) && CHR(VSI+1) == KEY_A)){
+            //restore and disable temporary
+            hCode = vRestore;
+            
+            for (ii = VSI; ii < _index; ii++) {
+                TypingWord[ii] &= ~TONEW_MASK;
+                hData[_index - 1 - ii] = GET(TypingWord[ii]) & ~STANDALONE_MASK;
+            }
+            isRestoredW = true;
+            tempDisableKey = true;
+        } else {
+            hCode = vWillProcess;
+
+            // FIX: Check if vowel already has TONEW_MASK - if so, restore and disable
+            // This handles cases like "thuơ" + "w" -> should restore to "thuo" then add "w" -> "thuow"
+            bool shouldRestore = false;
+            if ((CHR(VSI) == KEY_U && CHR(VSI+1) == KEY_O)) {
+                if (VSI - 2 >= 0 && TypingWord[VSI - 2] == KEY_T && TypingWord[VSI - 1] == KEY_H) {
+                    // "thuo" case: only VSI+1 (o) gets TONEW_MASK
+                    if (TypingWord[VSI+1] & TONEW_MASK) {
+                        // Already has TONEW_MASK, restore it
+                        shouldRestore = true;
+                    } else {
+                        TypingWord[VSI+1] |= TONEW_MASK;
+                        if (VSI + 2 < _index && CHR(VSI+2) == KEY_N) {
+                            TypingWord[VSI] |= TONEW_MASK;
+                        }
+                    }
+                } else if (VSI - 1 >= 0 && TypingWord[VSI - 1] == KEY_Q) {
+                    // "quo" case
+                    if (TypingWord[VSI+1] & TONEW_MASK) {
+                        shouldRestore = true;
+                    } else {
+                        TypingWord[VSI+1] |= TONEW_MASK;
+                    }
+                } else {
+                    // Other "uo" cases: both vowels get TONEW_MASK
+                    if ((TypingWord[VSI] & TONEW_MASK) && !(TypingWord[VSI+1] & TONEW_MASK)) {
+                        // Allow "uow" -> "ươ": add TONEW to 'o' without restoring
+                        TypingWord[VSI+1] |= TONEW_MASK;
+                    } else if ((TypingWord[VSI] & TONEW_MASK) || (TypingWord[VSI+1] & TONEW_MASK)) {
+                        shouldRestore = true;
+                    } else {
+                        TypingWord[VSI] |= TONEW_MASK;
+                        TypingWord[VSI+1] |= TONEW_MASK;
+                    }
+                }
+            } else if ((CHR(VSI) == KEY_U && CHR(VSI+1) == KEY_A) ||
+                       (CHR(VSI) == KEY_U && CHR(VSI+1) == KEY_I) ||
+                       (CHR(VSI) == KEY_U && CHR(VSI+1) == KEY_U) ||
+                       (CHR(VSI) == KEY_O && CHR(VSI+1) == KEY_I)) {
+                if (TypingWord[VSI] & TONEW_MASK) {
+                    shouldRestore = true;
+                } else {
+                    TypingWord[VSI] |= TONEW_MASK;
+                }
+            } else if ((CHR(VSI) == KEY_I && CHR(VSI+1) == KEY_O) ||
+                       (CHR(VSI) == KEY_O && CHR(VSI+1) == KEY_A)) {
+                if (TypingWord[VSI+1] & TONEW_MASK) {
+                    shouldRestore = true;
+                } else {
+                    TypingWord[VSI+1] |= TONEW_MASK;
+                }
+            } else {
+                //don't do anything
+                tempDisableKey = true;
+                isChanged = false;
+                hCode = vDoNothing;
+            }
+
+            if (shouldRestore) {
+                // Restore: remove TONEW_MASK from all vowels
+                hCode = vRestore;
+                for (ii = VSI; ii < _index; ii++) {
+                    TypingWord[ii] &= ~TONEW_MASK;
+                    hData[_index - 1 - ii] = GET(TypingWord[ii]) & ~STANDALONE_MASK;
+                }
+                isRestoredW = true;
+                tempDisableKey = true;
+            } else if (hCode == vWillProcess) {
+                for (ii = VSI; ii < _index; ii++) {
+                    hData[_index - 1 - ii] = GET(TypingWord[ii]);
+                }
+            }
+        }
+        
+        return;
+    }
+    
+    hCode = vWillProcess;
+    hBPC = 0;
+    
+    for (ii = _index - 1; ii >= 0; ii--) {
+        if (ii < VSI)
+            break;
+        hBPC++;
+        switch (CHR(ii)) {
+            case KEY_A:
+            case KEY_U:
+            case KEY_O:
+                if (TypingWord[ii] & TONEW_MASK) {
+                    //restore and disable temporary
+                    if (TypingWord[ii] & STANDALONE_MASK) {
+                        hCode = vWillProcess;
+                        if (CHR(ii) == KEY_U){
+                            TypingWord[ii] = KEY_W | ((TypingWord[ii] & CAPS_MASK) ? CAPS_MASK : 0);
+                        } else if (CHR(ii) == KEY_O) {
+                            hCode = vRestore;
+                            TypingWord[ii] = KEY_O | ((TypingWord[ii] & CAPS_MASK) ? CAPS_MASK : 0);
+                            isRestoredW = true;
+                        }
+                        hData[_index - 1 - ii] = TypingWord[ii];
+                    } else {
+                        hCode = vRestore;
+                        TypingWord[ii] &= ~TONEW_MASK;
+                        hData[_index - 1 - ii] = TypingWord[ii];
+                        isRestoredW = true;
+                        //_index++;
+                    }
+                    
+                    tempDisableKey = true;
+                } else {
+                    TypingWord[ii] |= TONEW_MASK;
+                    TypingWord[ii] &= ~TONE_MASK;
+                    hData[_index - 1 - ii] = GET(TypingWord[ii]);
+                }
+                break;
+                
+            default:
+                hData[_index - 1 - ii] = GET(TypingWord[ii]);
+                break;
+        }
+    }
+    hNCC = hBPC;
+    
+    if (isRestoredW) {
+        //_index = 0;
+    }
+}
+
+void reverseLastStandaloneChar(const Uint32& keyCode, const bool& isCaps) {
+    hCode = vWillProcess;
+    hBPC = 0;
+    hNCC = 1;
+    hExt = 4;
+    TypingWord[_index - 1] = (keyCode | TONEW_MASK | STANDALONE_MASK | (isCaps ? CAPS_MASK : 0));
+    hData[0] = GET(TypingWord[_index - 1]);
+}
+
+void checkForStandaloneChar(const Uint16& data, const bool& isCaps, const Uint32& keyWillReverse) {
+    if (CHR(_index - 1) == keyWillReverse && TypingWord[_index - 1] & TONEW_MASK) {
+        hCode = vWillProcess;
+        hBPC = 1;
+        hNCC = 1;
+        TypingWord[_index - 1] = data | (isCaps ? CAPS_MASK : 0);
+        hData[0] = GET(TypingWord[_index - 1]);
+        return;
+    }
+    
+    //check standalone w -> ư
+    
+    if (_index > 0 && CHR(_index-1) == KEY_U && keyWillReverse == KEY_O) {
+        insertKey(keyWillReverse, isCaps);
+        reverseLastStandaloneChar(keyWillReverse, isCaps);
+        return;
+    }
+    
+    if (_index == 0) { //zero char
+        insertKey(data, isCaps, false);
+        reverseLastStandaloneChar(keyWillReverse, isCaps);
+        return;
+    } else if (_index == 1) { //1 char
+        for (i = 0; i < _standaloneWbad.size(); i++) {
+            if (CHR(0) == _standaloneWbad[i]) {
+                insertKey(data, isCaps);
+                return;
+            }
+        }
+        insertKey(data, isCaps, false);
+        reverseLastStandaloneChar(keyWillReverse, isCaps);
+        return;
+    } else if (_index == 2) {
+        for (i = 0; i < _doubleWAllowed.size(); i++) {
+            if (CHR(0) == _doubleWAllowed[i][0] && CHR(1) == _doubleWAllowed[i][1]) {
+                insertKey(data, isCaps, false);
+                reverseLastStandaloneChar(keyWillReverse, isCaps);
+                return;
+            }
+        }
+        insertKey(data, isCaps);
+        return;
+    }
+    
+    insertKey(data, isCaps);
+}
+
+void upperCaseFirstCharacter() {
+    if (!(TypingWord[0] & CAPS_MASK)) {
+        hCode = vWillProcess;
+        hBPC = 0;
+        hNCC = 1;
+        TypingWord[0] |= CAPS_MASK;
+        hData[0] = GET(TypingWord[0]);
+        _upperCaseStatus = 0;
+        if (vUseMacro)
+            hMacroKey[0] |= CAPS_MASK;
+    }
+}
+
+void handleMainKey(const Uint16& data, const bool& isCaps) {
+    //if is Z key, remove mark
+    if (IS_KEY_Z(data)) {
+        removeMark();
+        if (!isChanged) {
+            // Fallback: allow tone marks on words containing horn vowels (ư/ơ/ă)
+            // even if the exact pattern isn't in _vowelForMark (e.g., "huwux" -> "hữu").
+            bool hasToneW = false;
+            for (ii = 0; ii < _index; ii++) {
+                if (TypingWord[ii] & TONEW_MASK) {
+                    hasToneW = true;
+                    break;
+                }
+            }
+            if (hasToneW) {
+                if (vCheckSpelling) {
+                    checkSpelling(true);
+                }
+                if (_spellingOK && _spellingVowelOK) {
+                    if (IS_KEY_S(data))
+                        insertMark(MARK1_MASK);
+                    else if (IS_KEY_F(data))
+                        insertMark(MARK2_MASK);
+                    else if (IS_KEY_R(data))
+                        insertMark(MARK3_MASK);
+                    else if (IS_KEY_X(data))
+                        insertMark(MARK4_MASK);
+                    else if (IS_KEY_J(data))
+                        insertMark(MARK5_MASK);
+                    return;
+                }
+
+                // Last resort: try marking the last horn vowel (ư/ơ/ă) even if spelling check fails.
+                int markIndex = -1;
+                for (ii = _index - 1; ii >= 0; ii--) {
+                    if ((TypingWord[ii] & TONEW_MASK) != 0) {
+                        markIndex = ii;
+                        break;
+                    }
+                }
+                if (markIndex >= 0) {
+                    TypingWord[markIndex] &= ~MARK_MASK;
+                    if (IS_KEY_S(data))
+                        TypingWord[markIndex] |= MARK1_MASK;
+                    else if (IS_KEY_F(data))
+                        TypingWord[markIndex] |= MARK2_MASK;
+                    else if (IS_KEY_R(data))
+                        TypingWord[markIndex] |= MARK3_MASK;
+                    else if (IS_KEY_X(data))
+                        TypingWord[markIndex] |= MARK4_MASK;
+                    else if (IS_KEY_J(data))
+                        TypingWord[markIndex] |= MARK5_MASK;
+
+                    hCode = vWillProcess;
+                    hBPC = 0;
+                    for (ii = _index - 1; ii >= 0; ii--) {
+                        hBPC++;
+                        hData[_index - 1 - ii] = GET(TypingWord[ii]);
+                    }
+                    hNCC = hBPC;
+                    return;
+                }
+            }
+
+            insertKey(data, isCaps);
+        }
+        return;
+    }
+
+    if (data == KEY_LEFT_BRACKET) { //standalone key [
+        checkForStandaloneChar(data, isCaps, KEY_O);
+        return;
+    }
+
+    if (data == KEY_RIGHT_BRACKET) { //standalone key }
+        checkForStandaloneChar(data, isCaps, KEY_U);
+        return;
+    }
+
+    //if is D key
+    if (IS_KEY_D(data)) {
+        isCorect = false;
+        isChanged = false;
+        k = _index;
+        for (i = 0; i < _consonantD.size(); i++) {
+            if (_index < _consonantD[i].size())
+                continue;
+            isCorect = true;
+            checkCorrectVowel(_consonantD, i, k, data);
+
+            //allow d after consonant
+            if (!isCorect && _index - 2 >= 0 && CHR(_index-1) == KEY_D && IS_CONSONANT(CHR(_index-2))) {
+                isCorect = true;
+            }
+            if (isCorect) {
+                isChanged = true;
+                insertD(data, isCaps);
+                break;
+            }
+        }
+
+        if (!isChanged) {
+            insertKey(data, isCaps);
+        }
+        return;
+    }
+
+    //if is mark key
+    if (IS_MARK_KEY(data)) {
+        // Special-case: allow tone on "ưu" when typed as "huwu" then mark (huwux -> hữu)
+        if (_index >= 2 &&
+            CHR(_index - 1) == KEY_U &&
+            CHR(_index - 2) == KEY_U &&
+            (TypingWord[_index - 2] & TONEW_MASK) &&
+            !(TypingWord[_index - 1] & TONEW_MASK)) {
+            TypingWord[_index - 2] &= ~MARK_MASK;
+            if (IS_KEY_S(data))
+                TypingWord[_index - 2] |= MARK1_MASK;
+            else if (IS_KEY_F(data))
+                TypingWord[_index - 2] |= MARK2_MASK;
+            else if (IS_KEY_R(data))
+                TypingWord[_index - 2] |= MARK3_MASK;
+            else if (IS_KEY_X(data))
+                TypingWord[_index - 2] |= MARK4_MASK;
+            else if (IS_KEY_J(data))
+                TypingWord[_index - 2] |= MARK5_MASK;
+
+            hCode = vWillProcess;
+            hBPC = 0;
+            for (ii = _index - 1; ii >= 0; ii--) {
+                hBPC++;
+                hData[_index - 1 - ii] = GET(TypingWord[ii]);
+            }
+            hNCC = hBPC;
+            return;
+        }
+
+        for (auto it = _vowelForMark.begin(); it != _vowelForMark.end(); ++it) {
+            vector<vector<Uint16>>& charset = it->second;
+            isCorect = false;
+            isChanged = false;
+            k = _index;
+            for (l = 0; l < charset.size(); l++) {
+                if (_index < charset[l].size())
+                    continue;
+                isCorect = true;
+                checkCorrectVowel(charset, l, k, data);
+
+                if (isCorect) {
+                    isChanged = true;
+                    if (IS_KEY_S(data))
+                        insertMark(MARK1_MASK);
+                    else if (IS_KEY_F(data))
+                        insertMark(MARK2_MASK);
+                    else if (IS_KEY_R(data))
+                        insertMark(MARK3_MASK);
+                    else if (IS_KEY_X(data))
+                        insertMark(MARK4_MASK);
+                    else if (IS_KEY_J(data))
+                        insertMark(MARK5_MASK);
+                    break;
+                }
+            }
+
+            if (isCorect) {
+                break;
+            }
+        }
+
+        if (!isChanged) {
+            insertKey(data, isCaps);
+        }
+
+        return;
+    }
+
+    //check Vowel
+    if (vInputType == vVNI) {
+        for (i = _index-1; i >= 0; i--) {
+            if (CHR(i) == KEY_O || CHR(i) == KEY_A || CHR(i) == KEY_E) {
+                VEI = i;
+                break;
+            }
+        }
+    }
+
+    keyForAEO = ((vInputType != vVNI) ? data : ((data == KEY_7 || data == KEY_8 ? KEY_W : (data == KEY_6 ? TypingWord[VEI] : data))));
+    vector<vector<Uint16>>& charset = _vowel[keyForAEO];
+    isCorect = false;
+    isChanged = false;
+    k = _index;
+    for (i = 0; i < charset.size(); i++) {
+        if (_index < charset[i].size())
+            continue;
+        isCorect = true;
+        checkCorrectVowel(charset, i, k, data);
+
+        if (isCorect) {
+            isChanged = true;
+            if (IS_KEY_DOUBLE(data)) {
+                insertAOE(keyForAEO, isCaps);
+            } else if (IS_KEY_W(data)) {
+                if (vInputType == vVNI) {
+                    for (j = _index-1; j >= 0; j--) {
+                        if (CHR(j) == KEY_O || CHR(j) == KEY_U ||CHR(j) == KEY_A || CHR(j) == KEY_E) {
+                            VEI = j;
+                            break;
+                        }
+                    }
+                    if ((data == KEY_7 && CHR(VEI) == KEY_A && (VEI-1>=0 ? CHR(VEI-1) != KEY_U : true)) || (data == KEY_8 && (CHR(VEI) == KEY_O || CHR(VEI) == KEY_U)))
+                        break;
+                }
+                insertW(keyForAEO, isCaps);
+            }
+            break;
+        }
+    }
+
+    if (!isChanged) {
+        if (data == KEY_W && vInputType != vSimpleTelex1) {
+            checkForStandaloneChar(data, isCaps, KEY_U);
+        } else {
+            insertKey(data, isCaps);
+        }
+    }
+}
+
+void handleQuickTelex(const Uint16& data, const bool& isCaps) {
+    hCode = vWillProcess;
+    hBPC = 1;
+    hNCC = 2;
+    hData[1] = _quickTelex[data][0] | (isCaps ? CAPS_MASK : 0);
+    hData[0] = _quickTelex[data][1] | (isCaps ? CAPS_MASK : 0);
+    insertKey(_quickTelex[data][1], isCaps, false);
+}
+
+/**
+ * Restore to raw keys - restore typed Vietnamese text to original ASCII keys
+ * Called when the restore key is pressed (customizable: ESC, Option, Control)
+ * Example: "úẻ" (from typing "user" in Telex) → "user"
+ */
+bool restoreToRawKeys() {
+    if (_stateIndex == 0 || _index == 0) {
+        return false;
+    }
+
+    // Check if any transforms were applied
+    bool hasTransforms = false;
+    for (ii = 0; ii < _index; ii++) {
+        if ((TypingWord[ii] & MARK_MASK) || (TypingWord[ii] & TONE_MASK) ||
+            (TypingWord[ii] & TONEW_MASK) || (TypingWord[ii] & STANDALONE_MASK)) {
+            hasTransforms = true;
+            break;
+        }
+    }
+
+    if (!hasTransforms) {
+        return false;
+    }
+
+    // Restore to original key states
+    hCode = vRestore;
+    hBPC = _index;
+    hNCC = _stateIndex;
+
+    for (i = 0; i < _stateIndex; i++) {
+        TypingWord[i] = KeyStates[i];
+        hData[_stateIndex - 1 - i] = KeyStates[i];
+    }
+    _index = _stateIndex;
+
+    return true;
+}
+
+bool checkRestoreIfWrongSpelling(const int& handleCode) {
+    for (ii = 0; ii < _index; ii++) {
+        if (!IS_CONSONANT(CHR(ii)) &&
+            (TypingWord[ii] & MARK_MASK || TypingWord[ii] & TONE_MASK || TypingWord[ii] & TONEW_MASK)) {
+            
+            hCode = handleCode;
+            hBPC = _index;
+            hNCC = _stateIndex;
+            for (i = 0; i < _stateIndex; i++) {
+                TypingWord[i] = KeyStates[i];
+                hData[_stateIndex - 1 - i] = TypingWord[i];
+            }
+            _index = _stateIndex;
+            return true;
+        }
+    }
+    return false;
+}
+
+void vTempOffSpellChecking() {
+    if (_useSpellCheckingBefore) {
+        vCheckSpelling = vCheckSpelling ? 0 : 1;
+    }
+}
+
+void vSetCheckSpelling() {
+    _useSpellCheckingBefore = vCheckSpelling;
+}
+
+void vTempOffEngine(const bool& off) {
+    _willTempOffEngine = off;
+}
+
+bool vRestoreToRawKeys() {
+    return restoreToRawKeys();
+}
+
+bool checkQuickConsonant() {
+    if (_index <= 1) return false;
+    l = 0;
+    if (_index > 0) {
+        if (vQuickStartConsonant && _quickStartConsonant.find(CHR(0)) != _quickStartConsonant.end()) {
+            hCode = vRestore;
+            hBPC = _index;
+            hNCC = _index + 1;
+            if (_index < MAX_BUFF-1)
+                _index++;
+            //right shift
+            for (i = _index-1; i >= 2; i--) {
+                TypingWord[i] = TypingWord[i-1];
+            }
+            TypingWord[1] = _quickStartConsonant[CHR(0)][1] | ((TypingWord[0] & CAPS_MASK) && (TypingWord[2] & CAPS_MASK) ? CAPS_MASK : 0);
+            TypingWord[0] = _quickStartConsonant[CHR(0)][0] | (TypingWord[0] & CAPS_MASK ? CAPS_MASK : 0);
+            l = 1;;
+        }
+        if (vQuickEndConsonant &&
+            (_index-2 >= 0 && !IS_CONSONANT(CHR(_index-2))) &&
+            _quickEndConsonant.find(CHR(_index-1)) != _quickEndConsonant.end()) {
+            hCode = vRestore;
+            if (l == 1) {
+                hNCC++;
+            } else {
+                hBPC = 1;
+                hNCC = 2;
+            }
+            if (_index < MAX_BUFF-1)
+                _index++;
+            TypingWord[_index-1] = _quickEndConsonant[CHR(_index-2)][1] | (TypingWord[_index-2] & CAPS_MASK ? CAPS_MASK : 0);
+            TypingWord[_index-2] = _quickEndConsonant[CHR(_index-2)][0] | (TypingWord[_index-2] & CAPS_MASK ? CAPS_MASK : 0);
+            
+            l = 1;
+        }
+        if (l == 1) {
+            _hasHandleQuickConsonant = true;
+            for (i = _index - 1; i >= 0; i--) {
+                hData[_index - 1 - i] = GET(TypingWord[i]);
+            }
+            return true;
+        }
+    }
+    return false;
+}
+/*==========================================================================================================*/
+
+void vEnglishMode(const vKeyEventState& state, const Uint16& data, const bool& isCaps, const bool& otherControlKey) {
+    hCode = vDoNothing;
+    if (state == vKeyEventState::MouseDown || (otherControlKey && !isCaps)) {
+        hMacroKey.clear();
+        _hasHandledMacro = false;  // Reset when starting new word
+        _willTempOffEngine = false;
+    } else if (data == KEY_SPACE || isMacroBreakCode(data)) {
+        // Check macro for SPACE and other macro break codes (Enter, comma, dot, etc.)
+        if (!_hasHandledMacro && findMacro(hMacroKey, hMacroData)) {
+            hCode = vReplaceMaro;
+            hBPC = (Byte)hMacroKey.size();
+        }
+        hMacroKey.clear();
+        _hasHandledMacro = false;  // Reset when starting new word
+        _willTempOffEngine = false;
+    } else if (data == KEY_DELETE) {
+        if (hMacroKey.size() > 0) {
+            hMacroKey.pop_back();
+        } else {
+            _willTempOffEngine = false;
+        }
+    } else {
+        if (isWordBreak(vKeyEvent::Keyboard, state, data) &&
+            std::find(_charKeyCode.begin(), _charKeyCode.end(), data) == _charKeyCode.end()) {
+            hMacroKey.clear();
+            _hasHandledMacro = false;  // Reset when starting new word
+            _willTempOffEngine = false;
+        } else {
+            if (!_willTempOffEngine)
+                hMacroKey.push_back(data | (isCaps ? CAPS_MASK : 0));
+        }
+    }
+}
+
+void vKeyHandleEvent(const vKeyEvent& event,
+                     const vKeyEventState& state,
+                     const Uint16& data,
+                     const Uint8& capsStatus,
+                     const bool& otherControlKey) {
+    // PERFORMANCE: Debug logging only in debug builds (hot path - called on every keystroke)
+    #ifdef DEBUG
+    static int lastInputType = -1;
+    if (vInputType != lastInputType) {
+        printf("[Engine] vInputType CHANGED TO %d (was %d)\n", vInputType, lastInputType);
+        fflush(stdout);
+        lastInputType = vInputType;
+    }
+    #endif
+
+    // NEW FEATURE: Restore key - ESC only
+    // Note: Modifier keys (Option, Control) are handled in PHTV.mm via kCGEventFlagsChanged
+    // We ONLY handle ESC key here to avoid conflicts with typing (e.g. VNI number keys)
+    if (vRestoreOnEscape && _index > 0 && data == KEY_ESC) {
+        if (restoreToRawKeys()) {
+            // Successfully restored - let the engine handle vRestore code
+            // Don't call startNewSession() here as it will clear hCode
+            // The vRestore code will be processed and session will be cleared later
+            return;
+        }
+    }
+
+    _isCaps = (capsStatus == 1 || //shift
+               capsStatus == 2); //caps lock
+    if ((IS_NUMBER_KEY(data) && capsStatus == 1)
+        || otherControlKey || isWordBreak(event, state, data) || (_index == 0 && IS_NUMBER_KEY(data))) {
+        hCode = vDoNothing;
+        hBPC = 0;
+        hNCC = 0;
+        hExt = 1; //word break
+        
+        //check macro feature
+        if (vUseMacro && isMacroBreakCode(data) && !_hasHandledMacro && findMacro(hMacroKey, hMacroData)) {
+            hCode = vReplaceMaro;
+            hBPC = (Byte)hMacroKey.size();
+            _hasHandledMacro = true;
+            #ifdef DEBUG
+            fprintf(stderr, "[AutoEnglish] CONFLICT: Macro matched, auto English skipped\n"); fflush(stderr);
+            #endif
+        } else if (vAutoRestoreEnglishWord && isWordBreak(event, state, data)) {
+            // PRIORITY FIX: Check Auto English BEFORE Quick Consonant
+            // Auto English should have higher priority to prevent conflicts
+            // (e.g., "search." ending in "ch" shouldn't trigger Quick Consonant)
+            #ifdef DEBUG
+            const char* eventType = (event == vKeyEvent::Mouse) ? "Mouse" : "Keyboard";
+            const char* stateType = (state == KeyDown) ? "KeyDown" : (state == KeyUp) ? "KeyUp" : (state == MouseDown) ? "MouseDown" : "MouseUp";
+            fprintf(stderr, "[AutoEnglish] WORD BREAK detected: event=%s, state=%s, _stateIndex=%d, _index=%d, data=0x%X\n",
+                   eventType, stateType, _stateIndex, _index, data);
+            fflush(stderr);
+            #endif
+            if (vCheckSpelling) {
+                checkSpelling(true);
+            }
+            bool shouldRestoreEnglish = false;
+            if (_stateIndex > 1) {
+                shouldRestoreEnglish = checkIfEnglishWord(KeyStates, _stateIndex);
+                if (!shouldRestoreEnglish) {
+                    if (isEnglishWordFromKeyStates(KeyStates, _stateIndex) &&
+                        !isVietnameseWordFromKeyStates(KeyStates, _stateIndex) &&
+                        !isVietnameseWordFromTypingWord(_index)) {
+                        shouldRestoreEnglish = true;
+                    }
+                }
+
+                // PROTECTION: Single-character Vietnamese words should never be restored
+                // (Same protection as SPACE handler - see detailed comment there)
+                if (shouldRestoreEnglish && _index == 1) {
+                    if (TypingWord[0] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) {
+                        shouldRestoreEnglish = false;
+                        #ifdef DEBUG
+                        fprintf(stderr, "[AutoEnglish] SKIP RESTORE WORDBREAK: Single Vietnamese char (has marks)\n");
+                        fflush(stderr);
+                        #endif
+                    }
+                }
+
+                // CANONICAL TELEX CHECK (word break path)
+                // (Same logic as SPACE handler - see detailed comment there)
+                if (shouldRestoreEnglish) {
+                    bool hasVietnameseMarks = false;
+                    for (int k = 0; k < _index; k++) {
+                        if (TypingWord[k] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) {
+                            hasVietnameseMarks = true;
+                            break;
+                        }
+                    }
+                    if (hasVietnameseMarks && isVietnameseFromCanonicalTelex(_index)) {
+                        shouldRestoreEnglish = false;
+                        #ifdef DEBUG
+                        fprintf(stderr, "[AutoEnglish] SKIP RESTORE WORDBREAK: Canonical Telex is Vietnamese\n");
+                        fflush(stderr);
+                        #endif
+                    }
+                }
+
+                // Fix for "macoss" -> "macos": If user corrected the word manually (e.g. typing 's' to remove tone),
+                // producing a clean English word in TypingWord, do not restore the raw keys (which might be "macoss").
+                if (shouldRestoreEnglish) {
+                    bool isTypingWordPureEnglish = true;
+                    for (int k = 0; k < _index; k++) {
+                        if (TypingWord[k] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) {
+                            isTypingWordPureEnglish = false;
+                            break;
+                        }
+                    }
+                    if (isTypingWordPureEnglish && isEnglishWordFromKeyStates(TypingWord, _index)) {
+                        shouldRestoreEnglish = false;
+                        #ifdef DEBUG
+                        fprintf(stderr, "[AutoEnglish] SKIP RESTORE: TypingWord is already clean English\n");
+                        fflush(stderr);
+                        #endif
+                    }
+                }
+            }
+            // IMPORTANT: Check _index > 0 (must have display chars) and _stateIndex > 1 (at least 2 keys pressed)
+            if (_index > 0 && _stateIndex > 1 && shouldRestoreEnglish) {
+                // Auto restore English word feature
+                // checkIfEnglishWord returns true only if:
+                // - Word exists in English dictionary AND
+                // - Word does NOT exist in Vietnamese dictionary
+                hCode = vRestoreAndStartNewSession;
+                // SPACE FIX (WORD BREAK path): Use _index for backspace count
+                // When Vietnamese processing combines chars (e.g., "search" → "sẻach"),
+                // _stateIndex=6 but _index=5, so we must delete based on display count
+                // to avoid deleting characters before the word
+                hBPC = _index;  // Backspace count = display character count
+                hNCC = _stateIndex;  // Insert count = original keystroke count (English word)
+                hExt = 5;  // Signal: This is Auto English restore (not Text Replacement)
+                for (i = 0; i < _stateIndex; i++) {
+                    TypingWord[i] = KeyStates[i];
+                    hData[_stateIndex - 1 - i] = KeyStates[i];
+                }
+                // Apply uppercase first character if enabled
+                // Use _shouldUpperCaseEnglishRestore which was set when first char was typed
+                // Also check if current app is NOT excluded from uppercase feature
+                if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _shouldUpperCaseEnglishRestore && _stateIndex > 0) {
+                    hData[_stateIndex - 1] |= CAPS_MASK;
+                }
+                _shouldUpperCaseEnglishRestore = false;
+                _index = _stateIndex;
+                // CRITICAL FIX: Reset session immediately to prevent state pollution
+                // Without this, when typing fast or multiple words, _index/_stateIndex retain old values
+                // causing intermittent failures ("sometimes works, sometimes doesn't")
+                // This matches SPACE handler behavior (line 1573-1574)
+                _index = 0;
+                _stateIndex = 0;
+                #ifdef DEBUG
+                fprintf(stderr, "[AutoEnglish] ✓ WORD BREAK RESTORE: reset to _index=0, _stateIndex=0\n");
+                fflush(stderr);
+                #endif
+            #ifdef DEBUG
+            } else if (_stateIndex > 0) {
+                std::string word = keyStatesToString(KeyStates, _stateIndex);
+                fprintf(stderr, "[AutoEnglish] ✗ WORD BREAK NO RESTORE: word='%s', _index=%d, _stateIndex=%d, blocked by: ",
+                       word.c_str(), _index, _stateIndex);
+                if (_index <= 0) fprintf(stderr, "_index<=0 ");
+                if (_stateIndex <= 1) fprintf(stderr, "_stateIndex<=1 ");
+                if (!checkIfEnglishWord(KeyStates, _stateIndex)) fprintf(stderr, "notEnglish ");
+                fprintf(stderr, "\n");
+                fflush(stderr);
+            #endif
+            }
+        } else if ((vQuickStartConsonant || vQuickEndConsonant) && !tempDisableKey && isMacroBreakCode(data)) {
+            // Quick Consonant for Vietnamese typing shortcuts
+            // Now checked AFTER Auto English to avoid conflicts
+            checkQuickConsonant();
+        }
+        
+        _isCharKeyCode = state == KeyDown && std::find(_charKeyCode.begin(), _charKeyCode.end(), data) != _charKeyCode.end();
+        if (!_isCharKeyCode) { //clear all line cache
+            _specialChar.clear();
+            _typingStates.clear();
+        } else { //check and save current word
+            if (_spaceCount > 0) {
+                saveWord(KEY_SPACE, _spaceCount);
+                _spaceCount = 0;
+            } else {
+                saveWord();
+            }
+            _specialChar.push_back(data | (_isCaps ? CAPS_MASK : 0));
+            hExt = 3;//normal word
+        }
+        
+        if (hCode == vDoNothing) {
+            startNewSession();
+            vCheckSpelling = _useSpellCheckingBefore;
+            _willTempOffEngine = false;
+        } else if (hCode == vReplaceMaro || _hasHandleQuickConsonant) {
+            _index = 0;
+            _hasHandledMacro = false;  // Reset for next macro
+        }
+
+        //insert key for macro function
+        if (vUseMacro) {
+            if (_isCharKeyCode) {
+                hMacroKey.push_back(data | (_isCaps ? CAPS_MASK : 0));
+            } else {
+                hMacroKey.clear();
+                _hasHandledMacro = false;  // Reset when starting new word
+            }
+        }
+
+        if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp) {
+            if (isSentenceTerminator(data, capsStatus)) {
+                _upperCaseStatus = 2;
+            } else if (_upperCaseStatus > 0 && isUppercaseSkippablePunctuation(data, capsStatus)) {
+                // Keep pending uppercase across quotes/brackets/parentheses
+            } else {
+                _upperCaseStatus = 0;
+            }
+        }
+    } else if (data == KEY_SPACE) {
+        #ifdef DEBUG
+        fprintf(stderr, "[AutoEnglish] SPACE pressed: _stateIndex=%d, _index=%d, tempDisableKey=%d\n",
+               _stateIndex, _index, tempDisableKey);
+        fflush(stderr);
+        #endif
+        // CRITICAL FIX: Always run checkSpelling() for Auto English
+        // Even when tempDisableKey=true, we need accurate _index for Auto English check
+        // This ensures _index is up-to-date before checking English words
+        if (vCheckSpelling) {
+            checkSpelling(true); //force check spelling (ignore tempDisableKey for Auto English)
+        }
+        bool shouldRestoreEnglish = false;
+        if (vAutoRestoreEnglishWord && _index > 0 && _stateIndex > 1) {
+            shouldRestoreEnglish = checkIfEnglishWord(KeyStates, _stateIndex);
+            if (!shouldRestoreEnglish) {
+                if (isEnglishWordFromKeyStates(KeyStates, _stateIndex) &&
+                    !isVietnameseWordFromKeyStates(KeyStates, _stateIndex) &&
+                    !isVietnameseWordFromTypingWord(_index)) {
+                    shouldRestoreEnglish = true;
+                }
+            }
+            
+            // PROTECTION: Single-character Vietnamese words should never be restored
+            // When _index==1 and TypingWord has Vietnamese marks, it's a processed Vietnamese character
+            // that has no equivalent English word. Standalone W patterns (e.g., "wf" for "ừ")
+            // are not in any dictionary, so they could slip through both primary and fallback checks.
+            // Examples: ừ (wf), ớ (o[s), ứ (uws), ờ (owf), etc.
+            if (shouldRestoreEnglish && _index == 1) {
+                if (TypingWord[0] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) {
+                    shouldRestoreEnglish = false;
+                    #ifdef DEBUG
+                    fprintf(stderr, "[AutoEnglish] SKIP RESTORE SPACE: Single Vietnamese char (has marks)\n");
+                    fflush(stderr);
+                    #endif
+                }
+            }
+
+            // CANONICAL TELEX CHECK: Convert TypingWord to canonical Telex and verify against
+            // Vietnamese dictionary. This catches ALL alternative Telex typing orders:
+            //   "dods" → canonical "ddos" (đó) → Vietnamese → block restore
+            //   "thoongr" → canonical "thoongr" (thỏng) → Vietnamese → block restore
+            // The check only runs when TypingWord has Vietnamese marks (to avoid overhead
+            // for pure English words like "search" where TypingWord base "seach" ≠ Vietnamese)
+            if (shouldRestoreEnglish) {
+                bool hasVietnameseMarks = false;
+                for (int k = 0; k < _index; k++) {
+                    if (TypingWord[k] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) {
+                        hasVietnameseMarks = true;
+                        break;
+                    }
+                }
+                if (hasVietnameseMarks && isVietnameseFromCanonicalTelex(_index)) {
+                    shouldRestoreEnglish = false;
+                    #ifdef DEBUG
+                    fprintf(stderr, "[AutoEnglish] SKIP RESTORE SPACE: Canonical Telex is Vietnamese\n");
+                    fflush(stderr);
+                    #endif
+                }
+            }
+
+            // Fix for "macoss" -> "macos": If user corrected the word manually (e.g. typing 's' to remove tone),
+            // producing a clean English word in TypingWord, do not restore the raw keys (which might be "macoss").
+            if (shouldRestoreEnglish) {
+                bool isTypingWordPureEnglish = true;
+                for (int k = 0; k < _index; k++) {
+                    if (TypingWord[k] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) {
+                        isTypingWordPureEnglish = false;
+                        break;
+                    }
+                }
+                if (isTypingWordPureEnglish && isEnglishWordFromKeyStates(TypingWord, _index)) {
+                    shouldRestoreEnglish = false;
+                    #ifdef DEBUG
+                    fprintf(stderr, "[AutoEnglish] SKIP RESTORE SPACE: TypingWord is already clean English\n");
+                    fflush(stderr);
+                    #endif
+                }
+            }
+        }
+
+        if (vUseMacro && !_hasHandledMacro && findMacro(hMacroKey, hMacroData)) { //macro
+            hCode = vReplaceMaro;
+            hBPC = (Byte)hMacroKey.size();
+            _spaceCount++;
+            #ifdef DEBUG
+            fprintf(stderr, "[AutoEnglish] Macro matched, Auto English skipped\n");
+            fflush(stderr);
+            #endif
+        } else if (vAutoRestoreEnglishWord && _index > 0 && _stateIndex > 1 && shouldRestoreEnglish) {
+            // PRIORITY FIX: Check Auto English BEFORE Quick Consonant
+            // Auto English should have higher priority to prevent conflicts
+            // (e.g., "search" ending in "ch" shouldn't trigger Quick Consonant)
+            // Auto restore English word on SPACE
+            // checkIfEnglishWord returns true only if word is English AND NOT Vietnamese
+            // SAFETY: _index > 0 ensures we have characters to delete (prevents deleting nothing)
+            #ifdef DEBUG
+            fprintf(stderr, "[AutoEnglish] ✓ SPACE RESTORE: _stateIndex=%d, _index=%d\n", _stateIndex, _index);
+            fflush(stderr);
+            #endif
+            hCode = vRestore;
+            // SPACE FIX: Use _index for backspace (delete only what's on screen)
+            // When Vietnamese processing combines chars (e.g., "search" → "sẻach"),
+            // _stateIndex=6 but _index=5, so we must delete based on display count
+            // to avoid deleting the space before the word
+            hBPC = _index;  // Backspace count = display character count
+            hNCC = _stateIndex;  // Insert count = original keystroke count (English word)
+            hExt = 5;  // Signal: This is Auto English restore (not Text Replacement)
+            for (i = 0; i < _stateIndex; i++) {
+                TypingWord[i] = KeyStates[i];
+                hData[_stateIndex - 1 - i] = KeyStates[i];
+            }
+            // Apply uppercase first character if enabled
+            // Use _shouldUpperCaseEnglishRestore which was set when first char was typed
+            // Also check if current app is NOT excluded from uppercase feature
+            if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _shouldUpperCaseEnglishRestore && _stateIndex > 0) {
+                hData[_stateIndex - 1] |= CAPS_MASK;
+            }
+            _shouldUpperCaseEnglishRestore = false;
+            _index = _stateIndex;
+            _spaceCount++;
+            // Reset session after restore to prevent re-triggering on next key (e.g., arrow keys)
+            // This is different from vRestoreAndStartNewSession which also sends the break key
+            _index = 0;
+            _stateIndex = 0;
+        } else if ((vQuickStartConsonant || vQuickEndConsonant) && !tempDisableKey && checkQuickConsonant()) {
+            // Quick Consonant for Vietnamese typing shortcuts
+            // Now checked AFTER Auto English to avoid conflicts
+            _spaceCount++;
+        } else { //do nothing with SPACE KEY
+            #ifdef DEBUG
+            // Log why Auto English didn't trigger (for debugging random failures)
+            if (vAutoRestoreEnglishWord && _stateIndex > 0) {
+                std::string word = keyStatesToString(KeyStates, _stateIndex);
+                fprintf(stderr, "[AutoEnglish] ✗ SPACE NO RESTORE: word='%s', _stateIndex=%d, _index=%d, blocked by: ",
+                       word.c_str(), _stateIndex, _index);
+                if (_index <= 0) fprintf(stderr, "_index<=0 ");
+                if (_stateIndex <= 1) fprintf(stderr, "_stateIndex<=1 ");
+                if (!checkIfEnglishWord(KeyStates, _stateIndex)) fprintf(stderr, "notEnglishWord ");
+                fprintf(stderr, "\n");
+                fflush(stderr);
+            }
+            #endif
+            hCode = vDoNothing;
+            _spaceCount++;
+        }
+        if (vUseMacro) {
+            hMacroKey.clear();
+            _hasHandledMacro = false;  // Reset when starting new word
+        }
+        if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _upperCaseStatus == 1) {
+            _upperCaseStatus = 2;
+        }
+        //save word
+        if (_spaceCount == 1) {
+            if (_specialChar.size() > 0) {
+                saveSpecialChar();
+            } else {
+                saveWord();
+            }
+        }
+        vCheckSpelling = _useSpellCheckingBefore;
+        _willTempOffEngine = false;
+    } else if (data == KEY_DELETE) {
+        hCode = vDoNothing;
+        hExt = 2; //delete
+        tempDisableKey = false; // Reset temp disable on backspace
+        if (_specialChar.size() > 0) {
+            _specialChar.pop_back();
+            if (_specialChar.size() == 0) {
+                restoreLastTypingState();
+            }
+        } else if (_spaceCount > 0) { //previous char is space
+            _spaceCount--;
+            if (_spaceCount == 0) { //restore word
+                restoreLastTypingState();
+            }
+        } else {
+            if (_stateIndex > 0) {
+                _stateIndex--;
+            }
+            if (_index > 0){
+                _index--;
+                if (_longWordHelper.size() > 0) {
+                    //right shift
+                    for (i = MAX_BUFF - 1; i > 0; i--) {
+                        TypingWord[i] = TypingWord[i-1];
+                    }
+                    TypingWord[0] = _longWordHelper.back();
+                    _longWordHelper.pop_back();
+                    _index++;
+                }
+                if (vCheckSpelling)
+                    checkSpelling();
+            }
+            if (vUseMacro && hMacroKey.size() > 0) {
+                hMacroKey.pop_back();
+            }
+            
+            hBPC = 0;
+            hNCC = 0;
+            hExt = 2; //delete key
+            if (_index == 0) {
+                // PERFORMANCE FIX: Removed file I/O from keystroke handler
+                // Debug logging moved to stderr (use PHTV_DEBUG=1 environment variable)
+                Byte savedUpperCaseStatus = _upperCaseStatus;
+                startNewSession();
+                _upperCaseStatus = savedUpperCaseStatus;
+                _specialChar.clear();
+                restoreLastTypingState();
+            } else { //August 23rd continue check grammar
+                checkGrammar(1);
+            }
+        }
+    } else { //START AND CHECK KEY
+        if (_willTempOffEngine) {
+            hCode = vDoNothing;
+            hExt = 3;
+            return;
+        }
+        if (_spaceCount > 0) {
+            hBPC = 0;
+            hNCC = 0;
+            hExt = 0;
+            // FIX: Save space count BEFORE startNewSession() resets it
+            int savedSpaceCount = _spaceCount;
+            Byte savedUpperCaseStatus = _upperCaseStatus;
+            startNewSession();
+            _upperCaseStatus = savedUpperCaseStatus;
+            //continue save space
+            saveWord(KEY_SPACE, savedSpaceCount);
+            // _spaceCount is already 0 from startNewSession()
+        } else if (_specialChar.size() > 0) {
+            saveSpecialChar();
+        }
+
+        insertState(data, _isCaps); //save state
+
+        // If a tone mark is pressed while tempDisableKey is true, re-evaluate spelling.
+        // This allows adding tone after finishing a word like "hưu" -> "hữu".
+        bool allowMarkDespiteTempDisable = IS_MARK_KEY(data);
+
+        // Also allow vowel modifiers to be applied even if tempDisableKey is true,
+        // when the current word already has a tone/diacritic. This fixes cases like
+        // "viejet" -> "việt" where the tone is typed before the vowel modifier.
+        bool allowVowelChangeDespiteTempDisable = false;
+        if (tempDisableKey && IS_SPECIALKEY(data) && !allowMarkDespiteTempDisable) {
+            if (IS_KEY_DOUBLE(data) || IS_KEY_W(data) || IS_BRACKET_KEY(data)) {
+                bool hasToneOrDiacritic = false;
+                for (int scan = 0; scan < _index; scan++) {
+                    if (TypingWord[scan] & (MARK_MASK | TONE_MASK | TONEW_MASK)) {
+                        hasToneOrDiacritic = true;
+                        break;
+                    }
+                }
+                allowVowelChangeDespiteTempDisable = hasToneOrDiacritic;
+            }
+        }
+
+        bool allowSpecialDespiteTempDisable = allowMarkDespiteTempDisable || allowVowelChangeDespiteTempDisable;
+        if (vCheckSpelling && allowSpecialDespiteTempDisable) {
+            checkSpelling(true);
+            
+            // Fix for Issue #123: If word is invalid Vietnamese (tempDisableKey=true),
+            // do not allow tone marks (s,f,r,x,j) to force themselves in.
+            // This prevents "year" -> "yẻa", "string" -> "stríng", "global" -> "globá".
+            // We only block MARK keys, allowing vowel corrections (aa, ee, dd) if they were allowed.
+            if (tempDisableKey && allowMarkDespiteTempDisable) {
+                // Allow tone marks when the word is Vietnamese-valid except for missing vowel modifiers
+                // (e.g., "vie" + "j" then "e" -> "việc").
+                bool allowToneOnInvalid = (_spellingOK && !_spellingVowelOK && canFixVowelWithDiacriticsForMark());
+                if (!allowToneOnInvalid) {
+                    allowSpecialDespiteTempDisable = false;
+                }
+            }
+        }
+
+        if (!IS_SPECIALKEY(data) || (tempDisableKey && !allowSpecialDespiteTempDisable)) { //do nothing
+            if (vQuickTelex && IS_QUICK_TELEX_KEY(data)) {
+                handleQuickTelex(data, _isCaps);
+                return;
+            } else {
+                hCode = vDoNothing;
+                hBPC = 0;
+                hNCC = 0;
+                hExt = 3; //normal key
+                insertKey(data, _isCaps);
+            }
+        } else { //check and update key
+            //restore state
+            hCode = vDoNothing;
+            hExt = 3; //normal key
+            handleMainKey(data, _isCaps);
+        }
+
+        if (!vFreeMark && !IS_KEY_D(data)) {
+            if (hCode == vDoNothing) {
+                checkGrammar(-1);
+            } else {
+                checkGrammar(0);
+            }
+        }
+        
+        if (hCode == vRestore) {
+            insertKey(data, _isCaps);
+            // FIX: Do NOT decrement _stateIndex here!
+            // When a Telex mark is restored/removed (e.g., pressing 's' twice to toggle sắc),
+            // the key was already added to KeyStates via insertState() at line 1712.
+            // Decrementing _stateIndex causes English word detection to fail because
+            // checkIfEnglishWord() would see "addres" (6 chars) instead of "address" (7 chars).
+            // The key IS being inserted into TypingWord via insertKey() above, so _stateIndex
+            // should remain in sync with the actual number of keys pressed.
+        }
+        
+        //insert or replace key for macro feature
+        if (vUseMacro) {
+            if (hCode == vDoNothing) {
+                hMacroKey.push_back(data | (_isCaps ? CAPS_MASK : 0));
+            } else if (hCode == vWillProcess || hCode == vRestore) {
+                for (i = 0; i < hBPC; i++) {
+                    if (hMacroKey.size() > 0) {
+                        hMacroKey.pop_back();
+                    }
+                }
+                for (i = _index - hBPC; i < hNCC + (_index - hBPC); i++) {
+                    hMacroKey.push_back(TypingWord[i]);
+                }
+            }
+        }
+        
+        if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp) {
+            if (_index == 1 && _upperCaseStatus == 2) {
+                upperCaseFirstCharacter();
+                // Track for English restore - in case Vietnamese transform didn't happen
+                _shouldUpperCaseEnglishRestore = true;
+            }
+            _upperCaseStatus = 0;
+        }
+        
+        //case [ ]
+        if (IS_BRACKET_KEY(data) && (( IS_BRACKET_KEY((Uint16)hData[0])) || vInputType == vSimpleTelex1 || vInputType == vSimpleTelex2)) {
+            if (_index - (hCode == vWillProcess ? hBPC : 0) > 0) {
+                _index--;
+                saveWord();
+            }
+            _index = 0;
+            tempDisableKey = false;
+            _stateIndex = 0;
+            hExt = 3;
+            _specialChar.push_back(data | (_isCaps ? CAPS_MASK : 0));
+        }
+    }
+    
+    //Debug
+    //cout<<"index "<<(int)_index<< ", stateIndex "<<(int)_stateIndex<<", word "<<_typingStates.size()<<", long word "<<_longWordHelper.size()<< endl;
+    //cout<<"backspace "<<(int)hBPC<<endl;
+    //cout<<"new char "<<(int)hNCC<<endl<<endl;
+}
+
+// Helper to reverse mapping from Unicode char to Engine Key + Flags
+Uint32 getEngineCharFromUnicode(const Uint16& ch) {
+    // Iterate code table
+    for (auto const& item : _codeTable[vCodeTable]) {
+        Uint32 key = item.first;
+        const vector<Uint16>& val = item.second;
+        for (int i = 0; i < val.size(); i++) {
+            if (val[i] == ch) {
+                Uint32 engineChar = key & CHAR_MASK; // Base key
+                
+                // Add Flags based on index i and key flags
+                bool isCaps = (i % 2 == 0);
+                if (isCaps) engineChar |= CAPS_MASK;
+                
+                // If key has TONE_MASK or TONEW_MASK, it's already in key
+                if (key & TONE_MASK) engineChar |= TONE_MASK;
+                if (key & TONEW_MASK) engineChar |= TONEW_MASK;
+                
+                // Determine Mark or extra Tone flags based on index
+                if ((key & (TONE_MASK|TONEW_MASK)) == 0) {
+                    // Clean key (e.g. A, E, O)
+                    if (i >= 0 && i <= 1) engineChar |= TONE_MASK;      // Â
+                    else if (i >= 2 && i <= 3) engineChar |= TONEW_MASK; // Ă
+                    else if (i >= 4 && i <= 5) engineChar |= MARK1_MASK; // Á
+                    else if (i >= 6 && i <= 7) engineChar |= MARK2_MASK; // À
+                    else if (i >= 8 && i <= 9) engineChar |= MARK3_MASK; // Ả
+                    else if (i >= 10 && i <= 11) engineChar |= MARK4_MASK; // Ã
+                    else if (i >= 12 && i <= 13) engineChar |= MARK5_MASK; // Ạ
+                } else {
+                    // Key has TONE (Â) or TONEW (Ă)
+                    // 0,1: MARK1 (Sắc)
+                    // ...
+                    if (i >= 0 && i <= 1) engineChar |= MARK1_MASK;
+                    else if (i >= 2 && i <= 3) engineChar |= MARK2_MASK;
+                    else if (i >= 4 && i <= 5) engineChar |= MARK3_MASK;
+                    else if (i >= 6 && i <= 7) engineChar |= MARK4_MASK;
+                    else if (i >= 8 && i <= 9) engineChar |= MARK5_MASK;
+                }
+                
+                engineChar |= CHAR_CODE_MASK;
+                return engineChar;
+            }
+        }
+    }
+    
+    // If not in code table, check character map (simple chars)
+    if (ch < 128) {
+        if (_characterMap.find(ch) != _characterMap.end()) {
+            return _characterMap[ch];
+        }
+    }
+    
+    // Fallback: Pure Character
+    return ch | PURE_CHARACTER_MASK;
+}
+
+void vRestoreSessionWithWord(const wstring& word) {
+    // 1. Capture current raw keys if any (user typed while we were detecting)
+    vector<Uint32> pendingKeys;
+    for (int i = 0; i < _stateIndex; i++) {
+        pendingKeys.push_back(KeyStates[i]);
+    }
+
+    startNewSession();
+    
+    for (size_t i = 0; i < word.length() && i < MAX_BUFF; i++) {
+        Uint16 ch = (Uint16)word[i];
+        Uint32 engineChar = getEngineCharFromUnicode(ch);
+        
+        TypingWord[_index] = engineChar;
+        KeyStates[_stateIndex] = engineChar; // Best effort
+        
+        _index++;
+        _stateIndex++;
+    }
+    
+    saveWord();
+    
+    // Restore checking state based on validity
+    checkSpelling(); 
+    
+    // 3. Replay pending keys
+    if (!pendingKeys.empty()) {
+        #ifdef DEBUG
+        printf("[PHTV Restore] Replaying %lu pending keys\n", pendingKeys.size());
+        #endif
+        for (Uint32 keyData : pendingKeys) {
+            Uint16 keyCode = keyData & CHAR_MASK;
+            bool isCaps = (keyData & CAPS_MASK) != 0;
+            // Replay as keyboard event
+            vKeyHandleEvent(vKeyEvent::Keyboard, vKeyEventState::KeyDown, keyCode, isCaps ? 1 : 0, false);
+        }
+    }
+}

@@ -1,0 +1,137 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PHTV.Windows.ViewModels"
+             x:Class="PHTV.Windows.Views.Tabs.HotkeysTabView"
+             x:DataType="vm:HotkeysTabViewModel">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="20" Spacing="20" MaxWidth="760">
+      <Border Classes="settings-header">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Spacing="4">
+            <TextBlock Classes="settings-header-title" Text="{Binding Title}"/>
+            <TextBlock Classes="settings-header-subtitle" Text="{Binding Subtitle}" TextWrapping="Wrap"/>
+          </StackPanel>
+          <Border Grid.Column="1" Classes="status-pill">
+            <TextBlock Classes="status-pill-text" Text="{Binding State.SwitchHotkey, StringFormat='Chuyển chế độ: {0}'}"/>
+          </Border>
+        </Grid>
+      </Border>
+
+      <Border Classes="settings-card">
+        <StackPanel>
+          <Border Classes="settings-card-header">
+            <Grid ColumnDefinitions="Auto,*">
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="⌘"/></Border>
+              <StackPanel Spacing="2">
+                <TextBlock Classes="settings-card-title" Text="Chuyển chế độ gõ"/>
+                <TextBlock Classes="settings-card-subtitle" Text="Đổi nhanh giữa Tiếng Việt và Tiếng Anh"/>
+              </StackPanel>
+            </Grid>
+          </Border>
+
+          <Grid Margin="16" ColumnDefinitions="*,220" VerticalAlignment="Center">
+            <StackPanel Spacing="2">
+              <TextBlock Classes="settings-row-title" Text="Phím tắt chuyển chế độ"/>
+              <TextBlock Classes="settings-row-subtitle" Text="Kết hợp modifier + phím chính"/>
+            </StackPanel>
+            <TextBox Grid.Column="1" Text="{Binding State.SwitchHotkey}" Watermark="Ctrl + Shift"/>
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="settings-card">
+        <StackPanel>
+          <Border Classes="settings-card-header">
+            <Grid ColumnDefinitions="Auto,*">
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="↶"/></Border>
+              <StackPanel Spacing="2">
+                <TextBlock Classes="settings-card-title" Text="Khôi phục ký tự"/>
+                <TextBlock Classes="settings-card-subtitle" Text="Hoàn tác nhanh khi gõ sai"/>
+              </StackPanel>
+            </Grid>
+          </Border>
+
+          <StackPanel Margin="16" Spacing="8">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="2">
+                <TextBlock Classes="settings-row-title" Text="Hoàn tác về ký tự gốc"/>
+                <TextBlock Classes="settings-row-subtitle" Text="Dùng phím hoàn tác để trả về ký tự trước khi biến đổi"/>
+              </StackPanel>
+              <ToggleSwitch Grid.Column="1" IsChecked="{Binding State.RestoreOnEscape}"/>
+            </Grid>
+            <Border Classes="settings-divider"/>
+            <Grid ColumnDefinitions="*,220" VerticalAlignment="Center">
+              <StackPanel Spacing="2">
+                <TextBlock Classes="settings-row-title" Text="Chọn phím hoàn tác"/>
+                <TextBlock Classes="settings-row-subtitle" Text="ESC / Option / Control"/>
+              </StackPanel>
+              <ComboBox Grid.Column="1"
+                        ItemsSource="{Binding State.RestoreKeyOptions}"
+                        SelectedItem="{Binding State.RestoreKey}"/>
+            </Grid>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="settings-card">
+        <StackPanel>
+          <Border Classes="settings-card-header">
+            <Grid ColumnDefinitions="Auto,*">
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="⏸"/></Border>
+              <StackPanel Spacing="2">
+                <TextBlock Classes="settings-card-title" Text="Tạm dừng gõ tiếng Việt"/>
+                <TextBlock Classes="settings-card-subtitle" Text="Tạm ngưng bộ gõ khi cần nhập liệu đặc biệt"/>
+              </StackPanel>
+            </Grid>
+          </Border>
+
+          <StackPanel Margin="16" Spacing="8">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="2">
+                <TextBlock Classes="settings-row-title" Text="Bật phím tạm dừng"/>
+                <TextBlock Classes="settings-row-subtitle" Text="Giữ phím để tạm chuyển sang English"/>
+              </StackPanel>
+              <ToggleSwitch Grid.Column="1" IsChecked="{Binding State.PauseKeyEnabled}"/>
+            </Grid>
+            <Border Classes="settings-divider"/>
+            <Grid ColumnDefinitions="*,220">
+              <StackPanel Spacing="2">
+                <TextBlock Classes="settings-row-title" Text="Phím tạm dừng"/>
+                <TextBlock Classes="settings-row-subtitle" Text="Option / Control / Shift"/>
+              </StackPanel>
+              <ComboBox Grid.Column="1"
+                        ItemsSource="{Binding State.PauseKeyOptions}"
+                        SelectedItem="{Binding State.PauseKey}"/>
+            </Grid>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="settings-card">
+        <StackPanel>
+          <Border Classes="settings-card-header">
+            <Grid ColumnDefinitions="Auto,*">
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="☺"/></Border>
+              <StackPanel Spacing="2">
+                <TextBlock Classes="settings-card-title" Text="PHTV Picker"/>
+                <TextBlock Classes="settings-card-subtitle" Text="Mở nhanh bảng emoji/sticker/GIF"/>
+              </StackPanel>
+            </Grid>
+          </Border>
+
+          <StackPanel Margin="16" Spacing="8">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Bật hotkey PHTV Picker"/><TextBlock Classes="settings-row-subtitle" Text="Mở nhanh picker trong mọi ứng dụng"/></StackPanel>
+              <ToggleSwitch Grid.Column="1" IsChecked="{Binding State.EmojiHotkeyEnabled}"/>
+            </Grid>
+            <Border Classes="settings-divider"/>
+            <Grid ColumnDefinitions="*,220">
+              <StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Phím tắt Picker"/><TextBlock Classes="settings-row-subtitle" Text="Ví dụ: Ctrl + E"/></StackPanel>
+              <TextBox Grid.Column="1" Text="{Binding State.EmojiHotkey}"/>
+            </Grid>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

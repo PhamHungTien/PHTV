@@ -1,0 +1,362 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Styles.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <LinearGradientBrush x:Key="PhtvWindowBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#F4F7FC" Offset="0"/>
+            <GradientStop Color="#EDF2F9" Offset="1"/>
+          </LinearGradientBrush>
+          <SolidColorBrush x:Key="PhtvSidebarBrush" Color="#F9FBFF"/>
+          <LinearGradientBrush x:Key="PhtvDetailBrush" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#F4F8FE" Offset="0"/>
+            <GradientStop Color="#EEF3FA" Offset="1"/>
+          </LinearGradientBrush>
+          <SolidColorBrush x:Key="PhtvCardBrush" Color="#FFFFFF"/>
+          <LinearGradientBrush x:Key="PhtvCardHeaderBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#F8FAFF" Offset="0"/>
+            <GradientStop Color="#F2F6FD" Offset="1"/>
+          </LinearGradientBrush>
+          <SolidColorBrush x:Key="PhtvBorderBrush" Color="#D5DEE9"/>
+          <SolidColorBrush x:Key="PhtvBorderStrongBrush" Color="#BECBDA"/>
+          <SolidColorBrush x:Key="PhtvAccentBrush" Color="#0F6FD9"/>
+          <SolidColorBrush x:Key="PhtvAccentSoftBrush" Color="#E8F1FF"/>
+          <SolidColorBrush x:Key="PhtvHoverBrush" Color="#EDF3FF"/>
+          <SolidColorBrush x:Key="PhtvPressedBrush" Color="#DFEAFF"/>
+          <SolidColorBrush x:Key="PhtvTextPrimaryBrush" Color="#0E172A"/>
+          <SolidColorBrush x:Key="PhtvTextSecondaryBrush" Color="#5F6E86"/>
+          <SolidColorBrush x:Key="PhtvTextTertiaryBrush" Color="#8290A7"/>
+          <SolidColorBrush x:Key="PhtvInputBackgroundBrush" Color="#FFFFFF"/>
+          <SolidColorBrush x:Key="PhtvFooterBrush" Color="#EDF3FB"/>
+          <SolidColorBrush x:Key="PhtvSidebarIconBrush" Color="#EAF2FF"/>
+          <SolidColorBrush x:Key="PhtvSidebarIconBorderBrush" Color="#D2E0F6"/>
+          <SolidColorBrush x:Key="PhtvStatusPillBrush" Color="#EAF1FD"/>
+          <SolidColorBrush x:Key="PhtvMacroItemBrush" Color="#F7FAFE"/>
+          <SolidColorBrush x:Key="PhtvMacroItemBorderBrush" Color="#DFE7F2"/>
+        </ResourceDictionary>
+
+        <ResourceDictionary x:Key="Dark">
+          <LinearGradientBrush x:Key="PhtvWindowBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#0E141E" Offset="0"/>
+            <GradientStop Color="#0A111A" Offset="1"/>
+          </LinearGradientBrush>
+          <SolidColorBrush x:Key="PhtvSidebarBrush" Color="#101926"/>
+          <LinearGradientBrush x:Key="PhtvDetailBrush" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#101A28" Offset="0"/>
+            <GradientStop Color="#0E1724" Offset="1"/>
+          </LinearGradientBrush>
+          <SolidColorBrush x:Key="PhtvCardBrush" Color="#141F2E"/>
+          <LinearGradientBrush x:Key="PhtvCardHeaderBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#1A2638" Offset="0"/>
+            <GradientStop Color="#152133" Offset="1"/>
+          </LinearGradientBrush>
+          <SolidColorBrush x:Key="PhtvBorderBrush" Color="#28384D"/>
+          <SolidColorBrush x:Key="PhtvBorderStrongBrush" Color="#3A4F6B"/>
+          <SolidColorBrush x:Key="PhtvAccentBrush" Color="#6AAEFF"/>
+          <SolidColorBrush x:Key="PhtvAccentSoftBrush" Color="#1B2E46"/>
+          <SolidColorBrush x:Key="PhtvHoverBrush" Color="#1F314A"/>
+          <SolidColorBrush x:Key="PhtvPressedBrush" Color="#294163"/>
+          <SolidColorBrush x:Key="PhtvTextPrimaryBrush" Color="#E9F0FB"/>
+          <SolidColorBrush x:Key="PhtvTextSecondaryBrush" Color="#A8B7CC"/>
+          <SolidColorBrush x:Key="PhtvTextTertiaryBrush" Color="#8596AF"/>
+          <SolidColorBrush x:Key="PhtvInputBackgroundBrush" Color="#101C2C"/>
+          <SolidColorBrush x:Key="PhtvFooterBrush" Color="#111D2C"/>
+          <SolidColorBrush x:Key="PhtvSidebarIconBrush" Color="#1A2B42"/>
+          <SolidColorBrush x:Key="PhtvSidebarIconBorderBrush" Color="#2D4463"/>
+          <SolidColorBrush x:Key="PhtvStatusPillBrush" Color="#1C2E46"/>
+          <SolidColorBrush x:Key="PhtvMacroItemBrush" Color="#162335"/>
+          <SolidColorBrush x:Key="PhtvMacroItemBorderBrush" Color="#2B3D56"/>
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Styles.Resources>
+
+  <Style Selector="Window">
+    <Setter Property="Background" Value="{DynamicResource PhtvWindowBackgroundBrush}"/>
+  </Style>
+
+  <Style Selector="Border.sidebar-panel">
+    <Setter Property="Background" Value="{DynamicResource PhtvSidebarBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="0,0,1,0"/>
+    <Setter Property="BoxShadow" Value="2 0 18 0 #140C1528"/>
+  </Style>
+
+  <Style Selector="Border.sidebar-panel:dark">
+    <Setter Property="BoxShadow" Value="2 0 20 0 #5A000000"/>
+  </Style>
+
+  <Style Selector="Border.detail-panel">
+    <Setter Property="Background" Value="{DynamicResource PhtvDetailBrush}"/>
+  </Style>
+
+  <Style Selector="Border.status-footer">
+    <Setter Property="Background" Value="{DynamicResource PhtvFooterBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1,1,0,0"/>
+  </Style>
+
+  <Style Selector="TextBlock.status-footer-text">
+    <Setter Property="Foreground" Value="{DynamicResource PhtvTextSecondaryBrush}"/>
+    <Setter Property="FontSize" Value="11"/>
+  </Style>
+
+  <Style Selector="TextBlock.sidebar-title">
+    <Setter Property="FontSize" Value="20"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvTextPrimaryBrush}"/>
+  </Style>
+
+  <Style Selector="TextBlock.sidebar-subtitle">
+    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvTextSecondaryBrush}"/>
+    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+  </Style>
+
+  <Style Selector="Border.sidebar-brand-icon">
+    <Setter Property="Width" Value="36"/>
+    <Setter Property="Height" Value="36"/>
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="Background" Value="{DynamicResource PhtvSidebarIconBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvSidebarIconBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Padding" Value="5"/>
+  </Style>
+
+  <Style Selector="TextBlock.sidebar-section-title">
+    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvTextSecondaryBrush}"/>
+    <Setter Property="LetterSpacing" Value="0.3"/>
+  </Style>
+
+  <Style Selector="Button.sidebar-tab">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderBrush" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Padding" Value="10,8"/>
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvTextPrimaryBrush}"/>
+  </Style>
+
+  <Style Selector="Button.sidebar-tab:pointerover">
+    <Setter Property="Background" Value="{DynamicResource PhtvHoverBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvBorderBrush}"/>
+  </Style>
+
+  <Style Selector="Button.sidebar-tab.selected">
+    <Setter Property="Background" Value="{DynamicResource PhtvAccentSoftBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvBorderStrongBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+  </Style>
+
+  <Style Selector="Border.sidebar-icon">
+    <Setter Property="Width" Value="26"/>
+    <Setter Property="Height" Value="26"/>
+    <Setter Property="CornerRadius" Value="7"/>
+    <Setter Property="Background" Value="{DynamicResource PhtvSidebarIconBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvSidebarIconBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+  </Style>
+
+  <Style Selector="TextBlock.sidebar-icon-text">
+    <Setter Property="HorizontalAlignment" Value="Center"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+    <Setter Property="FontSize" Value="13"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvAccentBrush}"/>
+  </Style>
+
+  <Style Selector="Border.settings-header">
+    <Setter Property="Background" Value="{DynamicResource PhtvCardBrush}"/>
+    <Setter Property="CornerRadius" Value="14"/>
+    <Setter Property="Padding" Value="20"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="BoxShadow" Value="0 10 26 0 #140B1428"/>
+  </Style>
+
+  <Style Selector="Border.settings-header:dark">
+    <Setter Property="BoxShadow" Value="0 10 30 0 #55000000"/>
+  </Style>
+
+  <Style Selector="TextBlock.settings-header-title">
+    <Setter Property="FontSize" Value="22"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvTextPrimaryBrush}"/>
+  </Style>
+
+  <Style Selector="TextBlock.settings-header-subtitle">
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvTextSecondaryBrush}"/>
+  </Style>
+
+  <Style Selector="Border.status-pill">
+    <Setter Property="CornerRadius" Value="999"/>
+    <Setter Property="Padding" Value="10,4"/>
+    <Setter Property="Background" Value="{DynamicResource PhtvStatusPillBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+  </Style>
+
+  <Style Selector="TextBlock.status-pill-text">
+    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvTextSecondaryBrush}"/>
+  </Style>
+
+  <Style Selector="Border.settings-card">
+    <Setter Property="Background" Value="{DynamicResource PhtvCardBrush}"/>
+    <Setter Property="CornerRadius" Value="14"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Padding" Value="0"/>
+    <Setter Property="BoxShadow" Value="0 10 24 0 #120B1428"/>
+  </Style>
+
+  <Style Selector="Border.settings-card:dark">
+    <Setter Property="BoxShadow" Value="0 10 28 0 #52000000"/>
+  </Style>
+
+  <Style Selector="Border.settings-card-header">
+    <Setter Property="Background" Value="{DynamicResource PhtvCardHeaderBrush}"/>
+    <Setter Property="Padding" Value="18,14"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+  </Style>
+
+  <Style Selector="Border.settings-card-icon">
+    <Setter Property="Width" Value="30"/>
+    <Setter Property="Height" Value="30"/>
+    <Setter Property="CornerRadius" Value="15"/>
+    <Setter Property="Background" Value="{DynamicResource PhtvSidebarIconBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvSidebarIconBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+  </Style>
+
+  <Style Selector="TextBlock.settings-card-icon-text">
+    <Setter Property="HorizontalAlignment" Value="Center"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+    <Setter Property="FontSize" Value="14"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvAccentBrush}"/>
+  </Style>
+
+  <Style Selector="TextBlock.settings-card-title">
+    <Setter Property="FontSize" Value="14"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvTextPrimaryBrush}"/>
+  </Style>
+
+  <Style Selector="TextBlock.settings-card-subtitle">
+    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvTextSecondaryBrush}"/>
+  </Style>
+
+  <Style Selector="Border.settings-row">
+    <Setter Property="Padding" Value="0,6"/>
+  </Style>
+
+  <Style Selector="TextBlock.settings-row-title">
+    <Setter Property="FontSize" Value="13"/>
+    <Setter Property="FontWeight" Value="Medium"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvTextPrimaryBrush}"/>
+    <Setter Property="TextWrapping" Value="Wrap"/>
+  </Style>
+
+  <Style Selector="TextBlock.settings-row-subtitle">
+    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvTextSecondaryBrush}"/>
+    <Setter Property="TextWrapping" Value="Wrap"/>
+  </Style>
+
+  <Style Selector="Border.settings-divider">
+    <Setter Property="Background" Value="{DynamicResource PhtvBorderBrush}"/>
+    <Setter Property="Height" Value="1"/>
+    <Setter Property="Margin" Value="38,4,0,4"/>
+  </Style>
+
+  <Style Selector="TextBox, ComboBox">
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvBorderBrush}"/>
+    <Setter Property="Background" Value="{DynamicResource PhtvInputBackgroundBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvTextPrimaryBrush}"/>
+    <Setter Property="Padding" Value="10,7"/>
+  </Style>
+
+  <Style Selector="TextBox:focus-within, ComboBox:focus-within">
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvAccentBrush}"/>
+  </Style>
+
+  <Style Selector="Button">
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="Background" Value="{DynamicResource PhtvAccentSoftBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvBorderStrongBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Padding" Value="12,7"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvTextPrimaryBrush}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+  </Style>
+
+  <Style Selector="Button:pointerover">
+    <Setter Property="Background" Value="{DynamicResource PhtvHoverBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvAccentBrush}"/>
+  </Style>
+
+  <Style Selector="Button:pressed">
+    <Setter Property="Background" Value="{DynamicResource PhtvPressedBrush}"/>
+  </Style>
+
+  <Style Selector="Button:disabled">
+    <Setter Property="Opacity" Value="0.55"/>
+  </Style>
+
+  <Style Selector="ListBox">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="0"/>
+  </Style>
+
+  <Style Selector="ListBoxItem">
+    <Setter Property="Padding" Value="10,8"/>
+    <Setter Property="Margin" Value="0,0,0,6"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="BorderBrush" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvTextPrimaryBrush}"/>
+  </Style>
+
+  <Style Selector="ListBoxItem:pointerover">
+    <Setter Property="Background" Value="{DynamicResource PhtvHoverBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvBorderBrush}"/>
+  </Style>
+
+  <Style Selector="ListBoxItem:selected">
+    <Setter Property="Background" Value="{DynamicResource PhtvAccentSoftBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvBorderStrongBrush}"/>
+  </Style>
+
+  <Style Selector="WrapPanel.settings-actions Button">
+    <Setter Property="Margin" Value="0,0,6,6"/>
+    <Setter Property="MinWidth" Value="96"/>
+    <Setter Property="Padding" Value="10,6"/>
+  </Style>
+
+  <Style Selector="Border.macro-item-card">
+    <Setter Property="Background" Value="{DynamicResource PhtvMacroItemBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvMacroItemBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+  </Style>
+
+  <Style Selector="TextBlock.macro-item-category">
+    <Setter Property="Foreground" Value="{DynamicResource PhtvTextTertiaryBrush}"/>
+  </Style>
+
+  <Style Selector="TextBlock.about-subtitle">
+    <Setter Property="Foreground" Value="{DynamicResource PhtvTextSecondaryBrush}"/>
+  </Style>
+
+  <Style Selector="TextBlock.about-muted">
+    <Setter Property="Foreground" Value="{DynamicResource PhtvTextTertiaryBrush}"/>
+  </Style>
+</Styles>

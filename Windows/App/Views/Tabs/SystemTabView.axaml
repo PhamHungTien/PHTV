@@ -1,0 +1,130 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="PHTV.Windows.Views.Tabs.SystemTabView"
+             xmlns:vm="using:PHTV.Windows.ViewModels"
+             x:DataType="vm:SystemTabViewModel">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="20" Spacing="20" MaxWidth="760">
+      <Border Classes="settings-header">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Spacing="4">
+            <TextBlock Classes="settings-header-title" Text="{Binding Title}"/>
+            <TextBlock Classes="settings-header-subtitle" Text="{Binding Subtitle}" TextWrapping="Wrap"/>
+          </StackPanel>
+          <StackPanel Grid.Column="1" Spacing="6" HorizontalAlignment="Right">
+            <Border Classes="status-pill"><TextBlock Classes="status-pill-text" Text="{Binding State.RunOnStartup, StringFormat='Tự khởi động: {0}'}"/></Border>
+            <Border Classes="status-pill"><TextBlock Classes="status-pill-text" Text="{Binding State.ShowIconOnDock, StringFormat='Dock: {0}'}"/></Border>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <Border Classes="settings-card">
+        <StackPanel>
+          <Border Classes="settings-card-header"><Grid ColumnDefinitions="Auto,*"><Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="🚀"/></Border><StackPanel Spacing="2"><TextBlock Classes="settings-card-title" Text="Khởi động cùng hệ thống"/><TextBlock Classes="settings-card-subtitle" Text="Tự mở PHTV khi đăng nhập Windows"/></StackPanel></Grid></Border>
+          <StackPanel Margin="16" Spacing="8">
+            <Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Bật khởi động cùng Windows"/><TextBlock Classes="settings-row-subtitle" Text="Đăng ký startup qua user registry (HKCU)"/></StackPanel><ToggleSwitch Grid.Column="1" IsChecked="{Binding State.RunOnStartup}"/></Grid>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="settings-card">
+        <StackPanel>
+          <Border Classes="settings-card-header"><Grid ColumnDefinitions="Auto,*"><Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="⌨"/></Border><StackPanel Spacing="2"><TextBlock Classes="settings-card-title" Text="Runtime Hook Daemon"/><TextBlock Classes="settings-card-subtitle" Text="Đồng bộ engine dùng chung và xử lý gõ toàn hệ thống"/></StackPanel></Grid></Border>
+          <StackPanel Margin="16" Spacing="8">
+            <TextBlock Classes="settings-row-title"
+                       Text="{Binding DataContext.InputDaemonStatus, RelativeSource={RelativeSource AncestorType=Window}}"
+                       TextWrapping="Wrap"/>
+            <WrapPanel Classes="settings-actions">
+              <Button Content="Khởi chạy daemon"
+                      Command="{Binding DataContext.StartInputDaemonCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+              <Button Content="Dừng daemon"
+                      Command="{Binding DataContext.StopInputDaemonCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+              <Button Content="Khởi động lại"
+                      Command="{Binding DataContext.RestartInputDaemonCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+              <Button Content="Mở runtime folder"
+                      Command="{Binding DataContext.OpenRuntimeFolderCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+            </WrapPanel>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="settings-card">
+        <StackPanel>
+          <Border Classes="settings-card-header"><Grid ColumnDefinitions="Auto,*"><Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="🧩"/></Border><StackPanel Spacing="2"><TextBlock Classes="settings-card-title" Text="TSF Input Method (TIP)"/><TextBlock Classes="settings-card-subtitle" Text="Đăng ký bộ gõ system-wide theo chuẩn Windows Text Services Framework"/></StackPanel></Grid></Border>
+          <StackPanel Margin="16" Spacing="8">
+            <TextBlock Classes="settings-row-title"
+                       Text="{Binding DataContext.TsfStatus, RelativeSource={RelativeSource AncestorType=Window}}"
+                       TextWrapping="Wrap"/>
+            <WrapPanel Classes="settings-actions">
+              <Button Content="Đăng ký TSF"
+                      Command="{Binding DataContext.RegisterTsfCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+              <Button Content="Hủy đăng ký TSF"
+                      Command="{Binding DataContext.UnregisterTsfCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+              <Button Content="Mở Language settings"
+                      Command="{Binding DataContext.OpenWindowsLanguageSettingsCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+            </WrapPanel>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="settings-card">
+        <StackPanel>
+          <Border Classes="settings-card-header"><Grid ColumnDefinitions="Auto,*"><Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="🪟"/></Border><StackPanel Spacing="2"><TextBlock Classes="settings-card-title" Text="Giao diện"/><TextBlock Classes="settings-card-subtitle" Text="Tùy chỉnh hiển thị cửa sổ"/></StackPanel></Grid></Border>
+          <StackPanel Margin="16" Spacing="8">
+            <Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Cài đặt luôn ở trên"/><TextBlock Classes="settings-row-subtitle" Text="Giữ cửa sổ Cài đặt nằm trên app khác"/></StackPanel><ToggleSwitch Grid.Column="1" IsChecked="{Binding State.SettingsWindowAlwaysOnTop}"/></Grid>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="settings-card">
+        <StackPanel>
+          <Border Classes="settings-card-header"><Grid ColumnDefinitions="Auto,*"><Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="▭"/></Border><StackPanel Spacing="2"><TextBlock Classes="settings-card-title" Text="Thanh menu"/><TextBlock Classes="settings-card-subtitle" Text="Tùy chỉnh biểu tượng trạng thái"/></StackPanel></Grid></Border>
+          <StackPanel Margin="16" Spacing="8">
+            <Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Hiển thị biểu tượng chữ V"/><TextBlock Classes="settings-row-subtitle" Text="Dùng icon chữ V khi ở chế độ Việt"/></StackPanel><ToggleSwitch Grid.Column="1" IsChecked="{Binding State.UseVietnameseMenubarIcon}"/></Grid>
+            <Border Classes="settings-divider"/>
+            <StackPanel Spacing="4">
+              <TextBlock Classes="settings-row-title" Text="Kích thước icon"/>
+              <TextBlock Classes="settings-row-subtitle" Text="Điều chỉnh kích thước icon trên menu bar"/>
+              <Slider Minimum="12" Maximum="20" Value="{Binding State.MenuBarIconSize}"/>
+            </StackPanel>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="settings-card">
+        <StackPanel>
+          <Border Classes="settings-card-header"><Grid ColumnDefinitions="Auto,*"><Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="⬇"/></Border><StackPanel Spacing="2"><TextBlock Classes="settings-card-title" Text="Cập nhật"/><TextBlock Classes="settings-card-subtitle" Text="Thiết lập kiểm tra và cài đặt cập nhật"/></StackPanel></Grid></Border>
+          <StackPanel Margin="16" Spacing="8">
+            <Grid ColumnDefinitions="*,220"><StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Tần suất kiểm tra cập nhật"/><TextBlock Classes="settings-row-subtitle" Text="Tự động kiểm tra bản mới"/></StackPanel><ComboBox Grid.Column="1" ItemsSource="{Binding State.UpdateCheckFrequencyOptions}" SelectedItem="{Binding State.UpdateCheckFrequency}"/></Grid>
+            <Border Classes="settings-divider"/>
+            <Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Tự động cài đặt cập nhật"/><TextBlock Classes="settings-row-subtitle" Text="Cài đặt khi có phiên bản mới"/></StackPanel><ToggleSwitch Grid.Column="1" IsChecked="{Binding State.AutoInstallUpdates}"/></Grid>
+            <Border Classes="settings-divider"/>
+            <Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Kênh beta"/><TextBlock Classes="settings-row-subtitle" Text="Nhận bản thử nghiệm"/></StackPanel><ToggleSwitch Grid.Column="1" IsChecked="{Binding State.BetaChannelEnabled}"/></Grid>
+            <Border Classes="settings-divider"/>
+            <Button HorizontalAlignment="Left"
+                    Content="Kiểm tra ngay"
+                    Command="{Binding DataContext.CheckForUpdatesCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="settings-card">
+        <StackPanel>
+          <Border Classes="settings-card-header"><Grid ColumnDefinitions="Auto,*"><Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="💾"/></Border><StackPanel Spacing="2"><TextBlock Classes="settings-card-title" Text="Dữ liệu &amp; sao lưu"/><TextBlock Classes="settings-card-subtitle" Text="Sao lưu, khôi phục và đặt lại"/></StackPanel></Grid></Border>
+          <StackPanel Margin="16" Spacing="8">
+            <WrapPanel Classes="settings-actions">
+              <Button Content="Xem hướng dẫn"
+                      Command="{Binding DataContext.OpenGuideCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+              <Button Content="Xuất cấu hình"
+                      Command="{Binding DataContext.ExportSettingsCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+              <Button Content="Nhập cấu hình"
+                      Command="{Binding DataContext.ImportSettingsCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+              <Button Content="Khôi phục mặc định"
+                      Command="{Binding DataContext.ResetSettingsCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+            </WrapPanel>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

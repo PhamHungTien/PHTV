@@ -1,0 +1,94 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PHTV.Windows.ViewModels"
+             x:Class="PHTV.Windows.Views.Tabs.BugReportTabView"
+             x:DataType="vm:BugReportTabViewModel">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="20" Spacing="20" MaxWidth="760">
+      <Border Classes="settings-header">
+        <StackPanel Spacing="4">
+          <TextBlock Classes="settings-header-title" Text="{Binding Title}"/>
+          <TextBlock Classes="settings-header-subtitle" Text="{Binding Subtitle}" TextWrapping="Wrap"/>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="settings-card">
+        <StackPanel>
+          <Border Classes="settings-card-header">
+            <Grid ColumnDefinitions="Auto,*">
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="🐞"/></Border>
+              <StackPanel Spacing="2"><TextBlock Classes="settings-card-title" Text="Thông tin sự cố"/><TextBlock Classes="settings-card-subtitle" Text="Chỉ cần tiêu đề và mô tả"/></StackPanel>
+            </Grid>
+          </Border>
+
+          <StackPanel Margin="16" Spacing="10">
+            <TextBox Watermark="Tiêu đề vấn đề" Text="{Binding State.BugTitle}"/>
+            <TextBox AcceptsReturn="True" Height="120" TextWrapping="Wrap" VerticalContentAlignment="Top" Watermark="Mô tả ngắn gọn vấn đề..." Text="{Binding State.BugDescription}"/>
+
+            <Grid ColumnDefinitions="*,*">
+              <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,6,0">
+                <TextBlock Classes="settings-row-subtitle" Text="Mức độ"/>
+                <ComboBox ItemsSource="{Binding State.BugSeverityOptions}"
+                          SelectedItem="{Binding State.BugSeverity}"/>
+              </StackPanel>
+
+              <StackPanel Grid.Column="1" Spacing="4" Margin="6,0,0,0">
+                <TextBlock Classes="settings-row-subtitle" Text="Khu vực"/>
+                <ComboBox ItemsSource="{Binding State.BugAreaOptions}"
+                          SelectedItem="{Binding State.BugArea}"/>
+              </StackPanel>
+            </Grid>
+
+            <TextBox AcceptsReturn="True" Height="80" TextWrapping="Wrap" VerticalContentAlignment="Top" Watermark="Bước tái hiện..." Text="{Binding State.StepsToReproduce}"/>
+            <Grid ColumnDefinitions="*,*">
+              <TextBox Grid.Column="0" Margin="0,0,6,0" AcceptsReturn="True" Height="72" TextWrapping="Wrap" VerticalContentAlignment="Top" Watermark="Kết quả mong muốn" Text="{Binding State.ExpectedResult}"/>
+              <TextBox Grid.Column="1" Margin="6,0,0,0" AcceptsReturn="True" Height="72" TextWrapping="Wrap" VerticalContentAlignment="Top" Watermark="Kết quả thực tế" Text="{Binding State.ActualResult}"/>
+            </Grid>
+            <TextBox Watermark="Email liên hệ (tuỳ chọn)" Text="{Binding State.ContactEmail}"/>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="settings-card">
+        <StackPanel>
+          <Border Classes="settings-card-header">
+            <Grid ColumnDefinitions="Auto,*">
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="🧾"/></Border>
+              <StackPanel Spacing="2"><TextBlock Classes="settings-card-title" Text="Thông tin chẩn đoán"/><TextBlock Classes="settings-card-subtitle" Text="Hệ thống và nhật ký"/></StackPanel>
+            </Grid>
+          </Border>
+
+          <StackPanel Margin="16" Spacing="8">
+            <Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Thông tin hệ thống"/><TextBlock Classes="settings-row-subtitle" Text="Phiên bản app, OS, phần cứng"/></StackPanel><ToggleSwitch Grid.Column="1" IsChecked="{Binding State.IncludeSystemInfo}"/></Grid>
+            <Border Classes="settings-divider"/>
+            <Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Nhật ký"/><TextBlock Classes="settings-row-subtitle" Text="Thu thập log gần nhất"/></StackPanel><ToggleSwitch Grid.Column="1" IsChecked="{Binding State.IncludeLogs}"/></Grid>
+            <Border Classes="settings-divider"/>
+            <Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Crash logs"/><TextBlock Classes="settings-row-subtitle" Text="Đính kèm thông tin crash (nếu có)"/></StackPanel><ToggleSwitch Grid.Column="1" IsChecked="{Binding State.IncludeCrashLogs}"/></Grid>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="settings-card">
+        <StackPanel>
+          <Border Classes="settings-card-header">
+            <Grid ColumnDefinitions="Auto,*">
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="✉"/></Border>
+              <StackPanel Spacing="2"><TextBlock Classes="settings-card-title" Text="Gửi báo lỗi"/><TextBlock Classes="settings-card-subtitle" Text="Xuất file hoặc gửi lên GitHub/Email"/></StackPanel>
+            </Grid>
+          </Border>
+
+          <WrapPanel Margin="16" Classes="settings-actions">
+            <Button Content="Sao chép nội dung"
+                    Command="{Binding DataContext.CopyBugReportCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+            <Button Content="Lưu file báo cáo"
+                    Command="{Binding DataContext.SaveBugReportCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+            <Button Content="Mở GitHub Issue"
+                    Command="{Binding DataContext.OpenGithubIssueCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+            <Button Content="Gửi Email"
+                    Command="{Binding DataContext.SendEmailCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+          </WrapPanel>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

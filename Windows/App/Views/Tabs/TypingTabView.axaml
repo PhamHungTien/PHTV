@@ -1,0 +1,141 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:PHTV.Windows.ViewModels"
+             x:Class="PHTV.Windows.Views.Tabs.TypingTabView"
+             x:DataType="vm:TypingTabViewModel">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="20" Spacing="20" MaxWidth="760">
+      <Border Classes="settings-header">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Spacing="4">
+            <TextBlock Classes="settings-header-title" Text="{Binding Title}"/>
+            <TextBlock Classes="settings-header-subtitle" Text="{Binding Subtitle}" TextWrapping="Wrap"/>
+          </StackPanel>
+          <StackPanel Grid.Column="1" Spacing="6" HorizontalAlignment="Right">
+            <Border Classes="status-pill">
+              <TextBlock Classes="status-pill-text"
+                         Text="{Binding State.IsVietnameseEnabled, StringFormat='Chế độ: {0}'}"/>
+            </Border>
+            <Border Classes="status-pill">
+              <TextBlock Classes="status-pill-text" Text="{Binding State.InputMethod, StringFormat='Kiểu gõ: {0}'}"/>
+            </Border>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <Border Classes="settings-card">
+        <StackPanel>
+          <Border Classes="settings-card-header">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="⌨"/></Border>
+              <StackPanel Grid.Column="1" Spacing="2">
+                <TextBlock Classes="settings-card-title" Text="Thiết lập bộ gõ"/>
+                <TextBlock Classes="settings-card-subtitle" Text="Chọn phương pháp gõ và bảng mã phù hợp"/>
+              </StackPanel>
+            </Grid>
+          </Border>
+
+          <StackPanel Margin="16" Spacing="8">
+            <Border Classes="settings-row">
+              <Grid ColumnDefinitions="*,180" VerticalAlignment="Center">
+                <StackPanel Spacing="2">
+                  <TextBlock Classes="settings-row-title" Text="Phương pháp gõ"/>
+                  <TextBlock Classes="settings-row-subtitle" Text="Telex, VNI, Simple Telex"/>
+                </StackPanel>
+                <ComboBox Grid.Column="1"
+                          ItemsSource="{Binding State.InputMethodOptions}"
+                          SelectedItem="{Binding State.InputMethod}"/>
+              </Grid>
+            </Border>
+
+            <Border Classes="settings-divider"/>
+
+            <Border Classes="settings-row">
+              <Grid ColumnDefinitions="*,180" VerticalAlignment="Center">
+                <StackPanel Spacing="2">
+                  <TextBlock Classes="settings-row-title" Text="Bảng mã"/>
+                  <TextBlock Classes="settings-row-subtitle" Text="Unicode, TCVN3, VNI Windows"/>
+                </StackPanel>
+                <ComboBox Grid.Column="1"
+                          ItemsSource="{Binding State.CodeTableOptions}"
+                          SelectedItem="{Binding State.CodeTable}"/>
+              </Grid>
+            </Border>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="settings-card">
+        <StackPanel>
+          <Border Classes="settings-card-header">
+            <Grid ColumnDefinitions="Auto,*">
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="✨"/></Border>
+              <StackPanel Spacing="2">
+                <TextBlock Classes="settings-card-title" Text="Tối ưu gõ"/>
+                <TextBlock Classes="settings-card-subtitle" Text="Tăng tốc và cải thiện trải nghiệm"/>
+              </StackPanel>
+            </Grid>
+          </Border>
+
+          <StackPanel Margin="16" Spacing="8">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Kiểm tra chính tả"/><TextBlock Classes="settings-row-subtitle" Text="Tự động sửa lỗi cấu trúc tiếng Việt"/></StackPanel>
+              <ToggleSwitch Grid.Column="1" IsChecked="{Binding State.CheckSpelling}"/>
+            </Grid>
+            <Border Classes="settings-divider"/>
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Chính tả mới (oà, uý)"/><TextBlock Classes="settings-row-subtitle" Text="Ưu tiên quy tắc chính tả hiện đại"/></StackPanel>
+              <ToggleSwitch Grid.Column="1" IsChecked="{Binding State.UseModernOrthography}"/>
+            </Grid>
+            <Border Classes="settings-divider"/>
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Viết hoa đầu câu"/><TextBlock Classes="settings-row-subtitle" Text="Tự động viết hoa sau dấu kết thúc câu"/></StackPanel>
+              <ToggleSwitch Grid.Column="1" IsChecked="{Binding State.UpperCaseFirstChar}"/>
+            </Grid>
+            <Border Classes="settings-divider"/>
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Tự động khôi phục tiếng Anh"/><TextBlock Classes="settings-row-subtitle" Text="Không biến đổi từ tiếng Anh khi gõ"/></StackPanel>
+              <ToggleSwitch Grid.Column="1" IsChecked="{Binding State.AutoRestoreEnglishWord}"/>
+            </Grid>
+            <Border Classes="settings-divider"/>
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Gõ nhanh Telex"/><TextBlock Classes="settings-row-subtitle" Text="cc→ch, gg→gi, kk→kh, nn→ng..."/></StackPanel>
+              <ToggleSwitch Grid.Column="1" IsChecked="{Binding State.QuickTelex}"/>
+            </Grid>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="settings-card">
+        <StackPanel>
+          <Border Classes="settings-card-header">
+            <Grid ColumnDefinitions="Auto,*">
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="𝓐"/></Border>
+              <StackPanel Spacing="2">
+                <TextBlock Classes="settings-card-title" Text="Phụ âm nhanh"/>
+                <TextBlock Classes="settings-card-subtitle" Text="Gõ tắt phụ âm đầu và cuối"/>
+              </StackPanel>
+            </Grid>
+          </Border>
+
+          <StackPanel Margin="16" Spacing="8">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Phụ âm Z, F, W, J"/><TextBlock Classes="settings-row-subtitle" Text="Cho phép phụ âm ngoài chuẩn tiếng Việt"/></StackPanel>
+              <ToggleSwitch Grid.Column="1" IsChecked="{Binding State.AllowConsonantZFWJ}"/>
+            </Grid>
+            <Border Classes="settings-divider"/>
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Phụ âm đầu nhanh"/><TextBlock Classes="settings-row-subtitle" Text="f→ph, j→gi, w→qu"/></StackPanel>
+              <ToggleSwitch Grid.Column="1" IsChecked="{Binding State.QuickStartConsonant}"/>
+            </Grid>
+            <Border Classes="settings-divider"/>
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Phụ âm cuối nhanh"/><TextBlock Classes="settings-row-subtitle" Text="g→ng, h→nh, k→ch"/></StackPanel>
+              <ToggleSwitch Grid.Column="1" IsChecked="{Binding State.QuickEndConsonant}"/>
+            </Grid>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

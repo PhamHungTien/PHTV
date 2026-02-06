@@ -48,3 +48,7 @@ Package.resolved
 # Temporary
 *.tmp
 *.temp
+
+# CMake / Native build outputs
+/build/
+/build-*/

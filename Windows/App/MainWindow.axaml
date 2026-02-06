@@ -1,0 +1,92 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PHTV.Windows.ViewModels"
+        xmlns:tabs="using:PHTV.Windows.Views.Tabs"
+        x:Class="PHTV.Windows.MainWindow"
+        Title="PHTV - Bộ gõ tiếng Việt"
+        Width="1180"
+        Height="760"
+        MinWidth="980"
+        MinHeight="620"
+        Icon="/Assets/PHTV.ico">
+
+  <Grid ColumnDefinitions="280,*">
+    <Border Grid.Column="0" Classes="sidebar-panel">
+      <DockPanel LastChildFill="True">
+        <StackPanel DockPanel.Dock="Top" Margin="16,16,16,12" Spacing="12">
+          <Grid ColumnDefinitions="Auto,*">
+            <Border Classes="sidebar-brand-icon">
+              <Image Source="/Assets/icon.png" Width="24" Height="24" Stretch="Uniform"/>
+            </Border>
+            <StackPanel Grid.Column="1" Margin="10,0,0,0" Spacing="0" VerticalAlignment="Center">
+              <TextBlock Classes="sidebar-title" Text="PHTV"/>
+              <TextBlock Classes="sidebar-subtitle" Text="Precision Hybrid Typing Vietnamese"/>
+            </StackPanel>
+          </Grid>
+          <TextBox Watermark="Tìm nhanh cài đặt..." Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+        </StackPanel>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <ItemsControl ItemsSource="{Binding SidebarEntries}">
+            <ItemsControl.DataTemplates>
+              <DataTemplate DataType="vm:SidebarSectionEntry">
+                <TextBlock Text="{Binding Title}" Classes="sidebar-section-title" Margin="14,14,14,6"/>
+              </DataTemplate>
+
+              <DataTemplate DataType="vm:SidebarTabEntry">
+                <Button Classes="sidebar-tab"
+                        Classes.selected="{Binding IsSelected}"
+                        Command="{Binding DataContext.SelectTabCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                        CommandParameter="{Binding TabId}"
+                        Margin="8,2">
+                  <Grid ColumnDefinitions="30,*" VerticalAlignment="Center">
+                    <Border Classes="sidebar-icon">
+                      <TextBlock Text="{Binding IconGlyph}" Classes="sidebar-icon-text"/>
+                    </Border>
+                    <TextBlock Grid.Column="1" Text="{Binding Title}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                  </Grid>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.DataTemplates>
+          </ItemsControl>
+        </ScrollViewer>
+      </DockPanel>
+    </Border>
+
+    <Border Grid.Column="1" Classes="detail-panel">
+      <DockPanel LastChildFill="True">
+        <Border DockPanel.Dock="Bottom"
+                Classes="status-footer"
+                Padding="10,6">
+          <TextBlock Classes="status-footer-text" Text="{Binding StatusMessage}"/>
+        </Border>
+
+        <ContentControl Content="{Binding CurrentTab}">
+          <ContentControl.DataTemplates>
+            <DataTemplate DataType="vm:TypingTabViewModel">
+              <tabs:TypingTabView/>
+            </DataTemplate>
+            <DataTemplate DataType="vm:HotkeysTabViewModel">
+              <tabs:HotkeysTabView/>
+            </DataTemplate>
+            <DataTemplate DataType="vm:MacroTabViewModel">
+              <tabs:MacroTabView/>
+            </DataTemplate>
+            <DataTemplate DataType="vm:AppsTabViewModel">
+              <tabs:AppsTabView/>
+            </DataTemplate>
+            <DataTemplate DataType="vm:SystemTabViewModel">
+              <tabs:SystemTabView/>
+            </DataTemplate>
+            <DataTemplate DataType="vm:BugReportTabViewModel">
+              <tabs:BugReportTabView/>
+            </DataTemplate>
+            <DataTemplate DataType="vm:AboutTabViewModel">
+              <tabs:AboutTabView/>
+            </DataTemplate>
+          </ContentControl.DataTemplates>
+        </ContentControl>
+      </DockPanel>
+    </Border>
+  </Grid>
+</Window>

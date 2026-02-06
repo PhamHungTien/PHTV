@@ -222,6 +222,23 @@ open PHTV.xcodeproj
 
 > **Lưu ý**: Ứng dụng cần quyền **Accessibility** để hoạt động. Vào **System Settings > Privacy & Security > Accessibility** và thêm PHTV.
 
+Build bản Settings app cho Windows:
+
+```bash
+cd PHTV
+dotnet build Windows/App/PHTV.Windows.csproj
+./Windows/build-all.sh
+# output: Windows/App/publish/win-x64/PHTV.exe
+```
+
+### Kiến trúc đa nền tảng (mới)
+
+- Engine dùng chung đã được chuẩn hóa tại `Shared/Engine`.
+- Nền tảng tích hợp tách riêng tại `Windows/` và `Linux/`.
+- macOS hiện tại giữ tương thích qua wrapper tại `macOS/PHTV/Core/Engine`.
+
+Xem chi tiết: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+
 ### 🤖 CI/CD & Release Automation
 
 PHTV sử dụng GitHub Actions để tự động build, sign, và release:
