@@ -18,6 +18,7 @@ public sealed partial class App : Application {
     private MainWindowViewModel? _mainWindowViewModel;
     private TrayIcon? _trayIcon;
     private WindowIcon? _vietnameseTrayIcon;
+    private WindowIcon? _englishTrayIcon;
     private WindowIcon? _inactiveTrayIcon;
 
     private NativeMenuItem? _languageStatusItem;
@@ -79,18 +80,21 @@ public sealed partial class App : Application {
     private void SetupTrayIcon(IClassicDesktopStyleApplicationLifetime desktop) {
         _vietnameseTrayIcon = TryLoadWindowIcon("avares://PHTV.Windows/Assets/tray_vi.ico")
             ?? TryLoadWindowIcon("avares://PHTV.Windows/Assets/tray_vi.png");
+        _englishTrayIcon = TryLoadWindowIcon("avares://PHTV.Windows/Assets/tray_en.ico")
+            ?? TryLoadWindowIcon("avares://PHTV.Windows/Assets/tray_en.png");
         _inactiveTrayIcon = TryLoadWindowIcon("avares://PHTV.Windows/Assets/menubar_icon.ico")
             ?? TryLoadWindowIcon("avares://PHTV.Windows/Assets/menubar_icon.png")
-            ?? TryLoadWindowIcon("avares://PHTV.Windows/Assets/tray_en.ico")
-            ?? TryLoadWindowIcon("avares://PHTV.Windows/Assets/tray_en.png");
+            ?? _englishTrayIcon;
         var fallbackIcon = TryLoadWindowIcon("avares://PHTV.Windows/Assets/PHTV.ico")
             ?? TryLoadWindowIcon("avares://PHTV.Windows/Assets/icon.png");
         var isVietnamese = _mainWindowViewModel?.State.IsVietnameseEnabled ?? true;
+        var useVietnameseIcon = _mainWindowViewModel?.State.UseVietnameseMenubarIcon ?? true;
+        var vietnameseModeIcon = useVietnameseIcon ? _vietnameseTrayIcon : _inactiveTrayIcon;
 
         _trayIcon = new TrayIcon {
             Icon = isVietnamese
-                ? (_vietnameseTrayIcon ?? _inactiveTrayIcon ?? fallbackIcon)
-                : (_inactiveTrayIcon ?? _vietnameseTrayIcon ?? fallbackIcon),
+                ? (vietnameseModeIcon ?? _vietnameseTrayIcon ?? _inactiveTrayIcon ?? _englishTrayIcon ?? fallbackIcon)
+                : (_englishTrayIcon ?? _inactiveTrayIcon ?? _vietnameseTrayIcon ?? fallbackIcon),
             ToolTipText = "PHTV",
             Menu = BuildTrayMenu(desktop),
             IsVisible = true
@@ -295,8 +299,8 @@ public sealed partial class App : Application {
         var vietnameseModeIcon = useVietnameseIcon ? _vietnameseTrayIcon : _inactiveTrayIcon;
 
         _trayIcon.Icon = isVietnamese
-            ? (vietnameseModeIcon ?? _inactiveTrayIcon ?? _vietnameseTrayIcon ?? _trayIcon.Icon)
-            : (_inactiveTrayIcon ?? vietnameseModeIcon ?? _vietnameseTrayIcon ?? _trayIcon.Icon);
+            ? (vietnameseModeIcon ?? _vietnameseTrayIcon ?? _inactiveTrayIcon ?? _englishTrayIcon ?? _trayIcon.Icon)
+            : (_englishTrayIcon ?? _inactiveTrayIcon ?? _vietnameseTrayIcon ?? _trayIcon.Icon);
         _trayIcon.ToolTipText = isVietnamese ? "PHTV - Tiếng Việt" : "PHTV - Tiếng Anh";
 
         _isUpdatingTrayMenu = true;

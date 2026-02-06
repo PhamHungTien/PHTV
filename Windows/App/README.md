@@ -12,9 +12,9 @@
 
 - `Auto-save` toàn bộ settings vào `%LOCALAPPDATA%/PHTV/settings.json`.
 - `Tray icon` giống menubar flow:
-  - icon đổi theo ngôn ngữ (`Vi`/`menubar`):
-    - bật tiếng Việt: dùng `tray_vi`.
-    - tắt tiếng Việt (English mode): dùng `menubar_icon`.
+  - icon đổi theo ngôn ngữ:
+    - bật tiếng Việt: `tray_vi` (hoặc `menubar_icon` nếu tắt tùy chọn "Hiển thị biểu tượng chữ V").
+    - tắt tiếng Việt (English mode): luôn dùng `tray_en`.
   - click trái để chuyển Việt/Anh.
   - click phải mở menu nhanh (bộ gõ, bảng mã, gõ tắt, chính tả, cập nhật, mở cài đặt, thoát).
   - đóng cửa sổ sẽ ẩn xuống tray thay vì thoát app.
