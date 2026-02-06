@@ -26,7 +26,6 @@
 - Tab `Hệ thống`:
   - Bật/tắt startup cùng Windows (HKCU Run registry).
   - Điều khiển native hook daemon (start/stop/restart, runtime status).
-  - Đăng ký/hủy đăng ký TSF TIP và mở nhanh Windows Language settings.
   - Xuất/nhập cấu hình đầy đủ.
   - Khôi phục mặc định.
   - Mở trang cập nhật và trang hướng dẫn.
@@ -86,7 +85,7 @@ Output sản phẩm: `Windows/App/publish/win-x64/PHTV.exe` (single-file).
 - `Services/SettingsPersistenceService.cs`: đọc/ghi cấu hình.
 - `Services/WindowsStartupService.cs`: startup registry cho Windows.
 - `Services/BugReportService.cs`: tạo report markdown và URL action.
-- `Services/RuntimeBridgeService.cs`: đồng bộ runtime config/macro cho shared engine, quản lý hook daemon và TSF register flow.
+- `Services/RuntimeBridgeService.cs`: đồng bộ runtime config/macro cho shared engine, quản lý hook daemon.
 - `Dialogs/TextPromptWindow.cs`: dialog nhập liệu dùng lại cho CRUD.
 
 ## Phạm vi hiện tại
@@ -95,6 +94,3 @@ Output sản phẩm: `Windows/App/publish/win-x64/PHTV.exe` (single-file).
 - Runtime gõ tiếng Việt theo mô hình OpenKey win32 đã có daemon native tại `Windows/Hook`.
 - App tự ghi runtime files tại `%LOCALAPPDATA%/PHTV/runtime-config.ini` và `%LOCALAPPDATA%/PHTV/runtime-macros.tsv` để daemon hot-reload.
 - Có thể chỉ định đường dẫn daemon thủ công bằng biến môi trường `PHTV_HOOK_DAEMON_PATH`.
-- Có thể chỉ định thủ công TSF artifacts bằng `PHTV_TSF_DLL_PATH` và `PHTV_TSF_REGISTER_TOOL_PATH`.
-- TSF IME system-wide (`Windows/TSF`) đã có COM TIP foundation và register tool; app có thể đăng ký/hủy đăng ký trực tiếp trong tab `Hệ thống`.
-- Sau khi đăng ký TSF, cần bật input source tương ứng trong Windows Language settings để sử dụng như IME hệ thống.

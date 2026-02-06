@@ -22,7 +22,6 @@ PHTV/
 │   ├── Adapter/       # Win32 VK -> engine key-id mapping
 │   ├── Host/          # Engine session facade + smoke host
 │   ├── Hook/          # Low-level hook daemon (OpenKey-style runtime path)
-│   ├── TSF/           # TSF COM TIP bridge + register tool
 │   └── App/           # Windows desktop UI (SwiftUI-structure port)
 └── Linux/
     ├── Runtime/       # Engine globals for Linux process
@@ -75,7 +74,6 @@ dotnet build Windows/App/PHTV.Windows.csproj
 ```
 
 `Windows/App` hiện đã có đầy đủ luồng cấu hình (autosave, import/export, macro/app list management, bug-report workflow, startup integration).
-`Windows/TSF` đã có COM TIP foundation (register/unregister, keystroke sink, edit-session commit). App Windows có thể điều khiển cả hook daemon lẫn TSF registration trong tab `Hệ thống`.
 
 ### Linux foundation target
 

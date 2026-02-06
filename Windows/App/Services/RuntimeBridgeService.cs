@@ -18,10 +18,6 @@ public sealed class RuntimeBridgeService {
     private const string VietnameseDictionaryFileName = "vi_dict.bin";
     private const string DaemonProcessName = "phtv_windows_hook_daemon";
     private const string DaemonExecutableName = "phtv_windows_hook_daemon.exe";
-    private const string TsfDllName = "phtv_windows_tsf.dll";
-    private const string TsfRegisterToolName = "phtv_windows_tsf_register.exe";
-    private const string TsfServiceClsid = "{44F4C999-7F50-4F7E-A69E-7A8DEB035246}";
-    private const int TsfToolTimeoutMs = 15000;
     private const string BundledNativeRootResourceName = "PHTV.Native";
 
     private const int SwitchKeyDefault = 0x9FE; // Ctrl + Shift + no primary key
@@ -98,8 +94,6 @@ public sealed class RuntimeBridgeService {
 
     private static readonly UTF8Encoding Utf8WithoutBom = new(false);
     private string _cachedDaemonPath = string.Empty;
-    private string _cachedTsfDllPath = string.Empty;
-    private string _cachedTsfRegisterToolPath = string.Empty;
 
     private static readonly Dictionary<string, int> PrimaryHotkeyMap = new(StringComparer.OrdinalIgnoreCase) {
         ["a"] = KeyA,
@@ -297,80 +291,6 @@ public sealed class RuntimeBridgeService {
         return true;
     }
 
-    [SupportedOSPlatform("windows")]
-    public bool IsTsfRegistered() {
-        if (!OperatingSystem.IsWindows()) {
-            return false;
-        }
-
-        try {
-            using var key = Registry.CurrentUser.OpenSubKey($@"Software\Classes\CLSID\{TsfServiceClsid}\InprocServer32");
-            if (key is null) {
-                return false;
-            }
-
-            var value = key.GetValue(null) as string;
-            if (string.IsNullOrWhiteSpace(value)) {
-                return false;
-            }
-
-            var normalized = value.Trim();
-            return File.Exists(normalized);
-        } catch {
-            return false;
-        }
-    }
-
-    public bool TryRegisterTsf(out string message) {
-        message = string.Empty;
-
-        if (!OperatingSystem.IsWindows()) {
-            message = "TSF chỉ hỗ trợ trên Windows.";
-            return false;
-        }
-
-        var registerToolPath = ResolveTsfRegisterToolPath();
-        if (string.IsNullOrWhiteSpace(registerToolPath)) {
-            message = "Không tìm thấy phtv_windows_tsf_register.exe.";
-            return false;
-        }
-
-        var dllPath = ResolveTsfDllPath();
-        if (string.IsNullOrWhiteSpace(dllPath)) {
-            message = "Không tìm thấy phtv_windows_tsf.dll.";
-            return false;
-        }
-
-        return TryRunRegisterTool(registerToolPath, $"\"{dllPath}\"", out message);
-    }
-
-    public bool TryUnregisterTsf(out string message) {
-        message = string.Empty;
-
-        if (!OperatingSystem.IsWindows()) {
-            message = "TSF chỉ hỗ trợ trên Windows.";
-            return false;
-        }
-
-        var registerToolPath = ResolveTsfRegisterToolPath();
-        if (string.IsNullOrWhiteSpace(registerToolPath)) {
-            message = "Không tìm thấy phtv_windows_tsf_register.exe.";
-            return false;
-        }
-
-        var dllPath = ResolveTsfDllPath();
-        if (string.IsNullOrWhiteSpace(dllPath)) {
-            dllPath = ResolveRegisteredTsfDllPath();
-        }
-
-        if (string.IsNullOrWhiteSpace(dllPath)) {
-            message = "Không tìm thấy phtv_windows_tsf.dll để thực hiện hủy đăng ký.";
-            return false;
-        }
-
-        return TryRunRegisterTool(registerToolPath, $"/u \"{dllPath}\"", out message);
-    }
-
     public bool TryOpenWindowsLanguageSettings(out string message) {
         message = string.Empty;
 
@@ -394,89 +314,6 @@ public sealed class RuntimeBridgeService {
 
     public string ResolveDaemonPath() {
         return ResolveNativeArtifactPath("PHTV_HOOK_DAEMON_PATH", DaemonExecutableName, ref _cachedDaemonPath);
-    }
-
-    public string ResolveTsfDllPath() {
-        return ResolveNativeArtifactPath("PHTV_TSF_DLL_PATH", TsfDllName, ref _cachedTsfDllPath);
-    }
-
-    public string ResolveTsfRegisterToolPath() {
-        return ResolveNativeArtifactPath("PHTV_TSF_REGISTER_TOOL_PATH",
-                                         TsfRegisterToolName,
-                                         ref _cachedTsfRegisterToolPath);
-    }
-
-    [SupportedOSPlatform("windows")]
-    public string ResolveRegisteredTsfDllPath() {
-        if (!OperatingSystem.IsWindows()) {
-            return string.Empty;
-        }
-
-        try {
-            using var key = Registry.CurrentUser.OpenSubKey($@"Software\Classes\CLSID\{TsfServiceClsid}\InprocServer32");
-            var value = key?.GetValue(null) as string;
-            if (string.IsNullOrWhiteSpace(value)) {
-                return string.Empty;
-            }
-
-            return value.Trim();
-        } catch {
-            return string.Empty;
-        }
-    }
-
-    private bool TryRunRegisterTool(string registerToolPath, string arguments, out string message) {
-        message = string.Empty;
-
-        try {
-            using var process = new Process {
-                StartInfo = new ProcessStartInfo {
-                    FileName = registerToolPath,
-                    Arguments = arguments,
-                    WorkingDirectory = Path.GetDirectoryName(registerToolPath) ?? RuntimeDirectory,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
-                }
-            };
-
-            if (!process.Start()) {
-                message = "Không thể khởi chạy TSF register tool.";
-                return false;
-            }
-
-            if (!process.WaitForExit(TsfToolTimeoutMs)) {
-                try {
-                    process.Kill(true);
-                } catch {
-                    // Ignore kill failures if the process already exits.
-                }
-
-                message = "TSF register tool quá thời gian chờ.";
-                return false;
-            }
-
-            var standardOutput = process.StandardOutput.ReadToEnd().Trim();
-            var standardError = process.StandardError.ReadToEnd().Trim();
-
-            if (process.ExitCode == 0) {
-                message = string.IsNullOrWhiteSpace(standardOutput)
-                    ? "Thao tác TSF hoàn tất."
-                    : standardOutput;
-                return true;
-            }
-
-            message = string.IsNullOrWhiteSpace(standardError)
-                ? (string.IsNullOrWhiteSpace(standardOutput)
-                    ? $"TSF register tool trả về mã lỗi {process.ExitCode}."
-                    : standardOutput)
-                : standardError;
-            return false;
-        } catch (Exception ex) {
-            message = ex.Message;
-            return false;
-        }
     }
 
     private string ResolveNativeArtifactPath(string environmentVariableName,
@@ -590,10 +427,6 @@ public sealed class RuntimeBridgeService {
 
             if (string.Equals(fileName, DaemonExecutableName, StringComparison.OrdinalIgnoreCase)) {
                 _cachedDaemonPath = destinationPath;
-            } else if (string.Equals(fileName, TsfDllName, StringComparison.OrdinalIgnoreCase)) {
-                _cachedTsfDllPath = destinationPath;
-            } else if (string.Equals(fileName, TsfRegisterToolName, StringComparison.OrdinalIgnoreCase)) {
-                _cachedTsfRegisterToolPath = destinationPath;
             }
         }
     }

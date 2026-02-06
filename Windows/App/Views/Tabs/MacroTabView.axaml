@@ -25,9 +25,9 @@
       <Border Classes="settings-card">
         <StackPanel>
           <Border Classes="settings-card-header">
-            <Grid ColumnDefinitions="Auto,*">
+            <Grid ColumnDefinitions="40,*">
               <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="✎"/></Border>
-              <StackPanel Spacing="2">
+              <StackPanel Grid.Column="1" Spacing="2">
                 <TextBlock Classes="settings-card-title" Text="Thiết lập gõ tắt"/>
                 <TextBlock Classes="settings-card-subtitle" Text="Bật/tắt và cấu hình hành vi mở rộng"/>
               </StackPanel>
@@ -48,7 +48,7 @@
         <Border Classes="settings-card" Grid.Column="0" Margin="0,0,8,0">
           <StackPanel>
             <Border Classes="settings-card-header">
-              <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto">
+              <Grid ColumnDefinitions="40,*" RowDefinitions="Auto,Auto">
                 <Border Classes="settings-card-icon">
                   <TextBlock Classes="settings-card-icon-text" Text="📁"/>
                 </Border>
@@ -75,7 +75,7 @@
         <Border Classes="settings-card" Grid.Column="1" Margin="8,0,0,0">
           <StackPanel>
             <Border Classes="settings-card-header">
-              <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto">
+              <Grid ColumnDefinitions="40,*" RowDefinitions="Auto,Auto">
                 <Border Classes="settings-card-icon">
                   <TextBlock Classes="settings-card-icon-text" Text="☰"/>
                 </Border>

@@ -79,48 +79,6 @@ target_link_libraries(phtv_windows_hook
         uuid
 )
 
-add_library(phtv_windows_tsf SHARED
-    TSF/PHTVTextServiceSkeleton.cpp
-)
-
-target_include_directories(phtv_windows_tsf
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/TSF
-        ${CMAKE_CURRENT_SOURCE_DIR}/Host
-        ${CMAKE_CURRENT_SOURCE_DIR}/Runtime
-        ${CMAKE_CURRENT_SOURCE_DIR}/Adapter
-        ${CMAKE_SOURCE_DIR}/Shared/Engine
-)
-
-target_link_libraries(phtv_windows_tsf
-    PUBLIC
-        phtv_windows_host
-        phtv_windows_adapter
-        phtv_windows_runtime
-        ole32
-        advapi32
-        uuid
-)
-
-target_compile_definitions(phtv_windows_tsf
-    PRIVATE
-        UNICODE
-        _UNICODE
-        _WIN32_WINNT=0x0601
-)
-
-set_target_properties(phtv_windows_tsf
-    PROPERTIES
-        PREFIX ""
-        OUTPUT_NAME "phtv_windows_tsf"
-)
-phtv_configure_mingw_runtime(phtv_windows_tsf)
-
-add_executable(phtv_windows_tsf_register
-    TSF/RegisterToolMain.cpp
-)
-phtv_configure_mingw_runtime(phtv_windows_tsf_register)
-
 add_executable(phtv_windows_console
     Host/ConsoleSmokeMain.cpp
 )

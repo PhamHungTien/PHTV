@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 using PHTV.Windows.ViewModels;
 using System.ComponentModel;
@@ -19,6 +20,12 @@ public sealed partial class MainWindow : Window {
         DataContext = viewModel;
         viewModel.InitializeAfterWindowReady();
         Closing += OnClosing;
+    }
+
+    public void OnPointerPressed(object? sender, PointerPressedEventArgs e) {
+        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) {
+            BeginMoveDrag(e);
+        }
     }
 
     public void ShowFromTray() {

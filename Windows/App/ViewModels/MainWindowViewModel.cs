@@ -61,9 +61,6 @@ public sealed class MainWindowViewModel : ObservableObject {
     private readonly RelayCommand _stopDaemonCommand;
     private readonly RelayCommand _restartDaemonCommand;
     private readonly RelayCommand _openRuntimeFolderCommand;
-    private readonly RelayCommand _registerTsfCommand;
-    private readonly RelayCommand _unregisterTsfCommand;
-    private readonly RelayCommand _openWindowsLanguageSettingsCommand;
 
     private string _searchText = string.Empty;
     private SettingsTabId _selectedTabId = SettingsTabId.Typing;
@@ -73,8 +70,6 @@ public sealed class MainWindowViewModel : ObservableObject {
     private bool _isSyncingStartup;
     private bool _isInputDaemonRunning;
     private string _inputDaemonStatus = "Đang kiểm tra runtime daemon...";
-    private bool _isTsfRegistered;
-    private string _tsfStatus = "Đang kiểm tra TSF...";
     private bool _initialized;
     private bool _autoRecoverDaemon = true;
     private DateTime _lastDaemonAutoRecoveryAttemptUtc = DateTime.MinValue;
@@ -139,10 +134,6 @@ public sealed class MainWindowViewModel : ObservableObject {
         _stopDaemonCommand = new RelayCommand(StopInputDaemon, () => IsInputDaemonRunning && _runtimeBridgeService.IsSupported);
         _restartDaemonCommand = new RelayCommand(RestartInputDaemon, () => _runtimeBridgeService.IsSupported);
         _openRuntimeFolderCommand = new RelayCommand(OpenRuntimeFolder);
-        _registerTsfCommand = new RelayCommand(RegisterTsf, () => _runtimeBridgeService.IsSupported && !IsTsfRegistered);
-        _unregisterTsfCommand = new RelayCommand(UnregisterTsf, () => _runtimeBridgeService.IsSupported && IsTsfRegistered);
-        _openWindowsLanguageSettingsCommand = new RelayCommand(OpenWindowsLanguageSettings,
-                                                               () => _runtimeBridgeService.IsSupported);
 
         OpenWebsiteCommand = new RelayCommand(() => OpenUrl("https://phamhungtien.com/PHTV/"));
         OpenGitHubCommand = new RelayCommand(() => OpenUrl("https://github.com/PhamHungTien/PHTV"));
@@ -175,9 +166,6 @@ public sealed class MainWindowViewModel : ObservableObject {
         StopInputDaemonCommand = _stopDaemonCommand;
         RestartInputDaemonCommand = _restartDaemonCommand;
         OpenRuntimeFolderCommand = _openRuntimeFolderCommand;
-        RegisterTsfCommand = _registerTsfCommand;
-        UnregisterTsfCommand = _unregisterTsfCommand;
-        OpenWindowsLanguageSettingsCommand = _openWindowsLanguageSettingsCommand;
 
         _saveDebounceTimer = new DispatcherTimer {
             Interval = TimeSpan.FromMilliseconds(420)
@@ -192,7 +180,6 @@ public sealed class MainWindowViewModel : ObservableObject {
         _daemonStatusTimer.Tick += (_, _) => {
             RefreshInputDaemonStatus();
             AutoRecoverInputDaemon();
-            RefreshTsfStatus();
         };
 
         _currentTab = _tabViewModels[_selectedTabId];
@@ -233,9 +220,6 @@ public sealed class MainWindowViewModel : ObservableObject {
     public ICommand StopInputDaemonCommand { get; }
     public ICommand RestartInputDaemonCommand { get; }
     public ICommand OpenRuntimeFolderCommand { get; }
-    public ICommand RegisterTsfCommand { get; }
-    public ICommand UnregisterTsfCommand { get; }
-    public ICommand OpenWindowsLanguageSettingsCommand { get; }
 
     public ICommand OpenWebsiteCommand { get; }
     public ICommand OpenGitHubCommand { get; }
@@ -282,20 +266,6 @@ public sealed class MainWindowViewModel : ObservableObject {
     public string InputDaemonStatus {
         get => _inputDaemonStatus;
         private set => SetProperty(ref _inputDaemonStatus, value);
-    }
-
-    public bool IsTsfRegistered {
-        get => _isTsfRegistered;
-        private set {
-            if (SetProperty(ref _isTsfRegistered, value)) {
-                RefreshTsfCommandStates();
-            }
-        }
-    }
-
-    public string TsfStatus {
-        get => _tsfStatus;
-        private set => SetProperty(ref _tsfStatus, value);
     }
 
     public void AttachWindow(Window window) {
@@ -558,19 +528,12 @@ public sealed class MainWindowViewModel : ObservableObject {
         _removeExcludedAppCommand.RaiseCanExecuteChanged();
         _removeStepByStepAppCommand.RaiseCanExecuteChanged();
         RefreshDaemonCommandStates();
-        RefreshTsfCommandStates();
     }
 
     private void RefreshDaemonCommandStates() {
         _startDaemonCommand.RaiseCanExecuteChanged();
         _stopDaemonCommand.RaiseCanExecuteChanged();
         _restartDaemonCommand.RaiseCanExecuteChanged();
-    }
-
-    private void RefreshTsfCommandStates() {
-        _registerTsfCommand.RaiseCanExecuteChanged();
-        _unregisterTsfCommand.RaiseCanExecuteChanged();
-        _openWindowsLanguageSettingsCommand.RaiseCanExecuteChanged();
     }
 
     private void ScheduleSave() {
@@ -634,7 +597,6 @@ public sealed class MainWindowViewModel : ObservableObject {
         }
 
         RefreshInputDaemonStatus();
-        RefreshTsfStatus();
 
         if (!_runtimeBridgeService.IsSupported || IsInputDaemonRunning) {
             return;
@@ -672,34 +634,6 @@ public sealed class MainWindowViewModel : ObservableObject {
         InputDaemonStatus = string.IsNullOrWhiteSpace(daemonPath)
             ? "Hook daemon: Chưa chạy (không tìm thấy executable)."
             : $"Hook daemon: Chưa chạy (sẵn sàng tại {daemonPath}).";
-    }
-
-    private void RefreshTsfStatus() {
-        if (!OperatingSystem.IsWindows()) {
-            IsTsfRegistered = false;
-            TsfStatus = "TSF chỉ khả dụng trên Windows.";
-            return;
-        }
-
-        if (_runtimeBridgeService.IsTsfRegistered()) {
-            IsTsfRegistered = true;
-            var registeredDll = _runtimeBridgeService.ResolveRegisteredTsfDllPath();
-            TsfStatus = string.IsNullOrWhiteSpace(registeredDll)
-                ? "TSF TIP: Đã đăng ký."
-                : $"TSF TIP: Đã đăng ký ({registeredDll}).";
-            return;
-        }
-
-        IsTsfRegistered = false;
-        var registerToolPath = _runtimeBridgeService.ResolveTsfRegisterToolPath();
-        var tsfDllPath = _runtimeBridgeService.ResolveTsfDllPath();
-
-        if (string.IsNullOrWhiteSpace(registerToolPath) || string.IsNullOrWhiteSpace(tsfDllPath)) {
-            TsfStatus = "TSF TIP: Chưa sẵn sàng (thiếu DLL hoặc register tool).";
-            return;
-        }
-
-        TsfStatus = "TSF TIP: Chưa đăng ký (sẵn sàng đăng ký).";
     }
 
     private void StartInputDaemon() {
@@ -775,35 +709,6 @@ public sealed class MainWindowViewModel : ObservableObject {
         } catch (Exception ex) {
             StatusMessage = $"Không mở được thư mục runtime: {ex.Message}";
         }
-    }
-
-    private void RegisterTsf() {
-        if (_runtimeBridgeService.TryRegisterTsf(out var message)) {
-            StatusMessage = message;
-        } else {
-            StatusMessage = $"Không đăng ký TSF: {message}";
-        }
-
-        RefreshTsfStatus();
-    }
-
-    private void UnregisterTsf() {
-        if (_runtimeBridgeService.TryUnregisterTsf(out var message)) {
-            StatusMessage = message;
-        } else {
-            StatusMessage = $"Không hủy đăng ký TSF: {message}";
-        }
-
-        RefreshTsfStatus();
-    }
-
-    private void OpenWindowsLanguageSettings() {
-        if (_runtimeBridgeService.TryOpenWindowsLanguageSettings(out var message)) {
-            StatusMessage = message;
-            return;
-        }
-
-        StatusMessage = $"Không mở được Language settings: {message}";
     }
 
     private async Task AddCategoryAsync() {

@@ -34,18 +34,11 @@ cmake -S "$REPO_ROOT" -B "$BUILD_DIR" -G "$GENERATOR" "${CMAKE_ARGS[@]}"
 cmake --build "$BUILD_DIR" --target phtv_engine_shared --config Release
 cmake --build "$BUILD_DIR" --target phtv_windows_console --config Release
 cmake --build "$BUILD_DIR" --target phtv_windows_hook_daemon --config Release
-cmake --build "$BUILD_DIR" --target phtv_windows_tsf --config Release
-cmake --build "$BUILD_DIR" --target phtv_windows_tsf_register --config Release
 
 DAEMON_EXE="$(find "$BUILD_DIR" -type f -name phtv_windows_hook_daemon.exe | head -n 1 || true)"
-TSF_DLL="$(find "$BUILD_DIR" -type f -name 'phtv_windows_tsf.dll' | head -n 1 || true)"
-if [[ -z "$TSF_DLL" ]]; then
-  TSF_DLL="$(find "$BUILD_DIR" -type f -name 'libphtv_windows_tsf.dll' | head -n 1 || true)"
-fi
-TSF_REG_EXE="$(find "$BUILD_DIR" -type f -name phtv_windows_tsf_register.exe | head -n 1 || true)"
 
-if [[ -z "$DAEMON_EXE" || -z "$TSF_DLL" || -z "$TSF_REG_EXE" ]]; then
-  echo "Missing native artifacts. Expected daemon/TSF DLL/TSF register tool." >&2
+if [[ -z "$DAEMON_EXE" ]]; then
+  echo "Missing native artifacts. Expected daemon executable." >&2
   exit 1
 fi
 
@@ -139,22 +132,16 @@ copy_dictionary_bundle() {
 APP_NATIVE_ROOT="$ROOT_DIR/App/Native"
 mkdir -p "$APP_NATIVE_ROOT/win-x64"
 rm -f "$APP_NATIVE_ROOT/win-x64/phtv_windows_hook_daemon.exe" \
-      "$APP_NATIVE_ROOT/win-x64/phtv_windows_tsf.dll" \
-      "$APP_NATIVE_ROOT/win-x64/phtv_windows_tsf_register.exe" \
       "$APP_NATIVE_ROOT/win-x64/en_dict.bin" \
       "$APP_NATIVE_ROOT/win-x64/vi_dict.bin" \
       "$APP_NATIVE_ROOT/win-x64"/lib*.dll
 cp "$DAEMON_EXE" "$APP_NATIVE_ROOT/win-x64/phtv_windows_hook_daemon.exe"
-cp "$TSF_DLL" "$APP_NATIVE_ROOT/win-x64/phtv_windows_tsf.dll"
-cp "$TSF_REG_EXE" "$APP_NATIVE_ROOT/win-x64/phtv_windows_tsf_register.exe"
 copy_dictionary_bundle "$APP_NATIVE_ROOT/win-x64"
 
 if command -v x86_64-w64-mingw32-gcc >/dev/null 2>&1; then
   MINGW_RUNTIME_DLLS="$(
     {
       collect_mingw_runtime_dlls "$DAEMON_EXE"
-      collect_mingw_runtime_dlls "$TSF_DLL"
-      collect_mingw_runtime_dlls "$TSF_REG_EXE"
     } | sort -u
   )"
 
@@ -168,14 +155,10 @@ if command -v x86_64-w64-mingw32-gcc >/dev/null 2>&1; then
 fi
 
 if [[ -n "${PHTV_ARM64_NATIVE_DIR:-}" ]]; then
-  if [[ -f "${PHTV_ARM64_NATIVE_DIR}/phtv_windows_hook_daemon.exe" &&
-        -f "${PHTV_ARM64_NATIVE_DIR}/phtv_windows_tsf.dll" &&
-        -f "${PHTV_ARM64_NATIVE_DIR}/phtv_windows_tsf_register.exe" ]]; then
+  if [[ -f "${PHTV_ARM64_NATIVE_DIR}/phtv_windows_hook_daemon.exe" ]]; then
     mkdir -p "$APP_NATIVE_ROOT/win-arm64"
     rm -f "$APP_NATIVE_ROOT/win-arm64/"*
     cp "${PHTV_ARM64_NATIVE_DIR}/phtv_windows_hook_daemon.exe" "$APP_NATIVE_ROOT/win-arm64/phtv_windows_hook_daemon.exe"
-    cp "${PHTV_ARM64_NATIVE_DIR}/phtv_windows_tsf.dll" "$APP_NATIVE_ROOT/win-arm64/phtv_windows_tsf.dll"
-    cp "${PHTV_ARM64_NATIVE_DIR}/phtv_windows_tsf_register.exe" "$APP_NATIVE_ROOT/win-arm64/phtv_windows_tsf_register.exe"
     copy_dictionary_bundle "$APP_NATIVE_ROOT/win-arm64"
     if compgen -G "${PHTV_ARM64_NATIVE_DIR}/lib*.dll" > /dev/null; then
       cp "${PHTV_ARM64_NATIVE_DIR}"/lib*.dll "$APP_NATIVE_ROOT/win-arm64/"
