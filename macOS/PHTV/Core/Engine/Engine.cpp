@@ -126,8 +126,9 @@ static bool isCheckedGrammar;
 static bool _isCaps = false;
 static int _spaceCount = 0; //add: July 30th, 2019
 static bool _hasHandledMacro = false; //for macro flag August 9th, 2019
-static Byte _upperCaseStatus = 0; //for Write upper case for the first letter; 2: will upper case
+static volatile Byte _upperCaseStatus = 0; //for Write upper case for the first letter; 2: will upper case (VOLATILE for thread safety)
 static bool _shouldUpperCaseEnglishRestore = false; //track if English restore should uppercase first char
+static volatile Byte _snapshotUpperCaseFirstChar = 0; //snapshot of vUpperCaseFirstChar at session start (prevents mid-typing setting changes)
 static bool _isCharKeyCode;
 static vector<Uint32> _specialChar;
 static bool _useSpellCheckingBefore;
@@ -620,6 +621,8 @@ void startNewSession() {
     _spaceCount = 0;
     _longWordHelper.clear();
     _upperCaseStatus = 0;
+    // Snapshot settings at session start to prevent mid-typing changes from affecting this word
+    _snapshotUpperCaseFirstChar = vUpperCaseFirstChar;
 }
 
 void checkCorrectVowel(vector<vector<Uint16>>& charset, int& i, int& k, const Uint16& markKey) {
@@ -1939,7 +1942,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
                 // Apply uppercase first character if enabled
                 // Use _shouldUpperCaseEnglishRestore which was set when first char was typed
                 // Also check if current app is NOT excluded from uppercase feature
-                if (vUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _shouldUpperCaseEnglishRestore && _stateIndex > 0) {
+                if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _shouldUpperCaseEnglishRestore && _stateIndex > 0) {
                     hData[_stateIndex - 1] |= CAPS_MASK;
                 }
                 _shouldUpperCaseEnglishRestore = false;
@@ -2006,7 +2009,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             }
         }
 
-        if (vUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp) {
+        if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp) {
             if (isSentenceTerminator(data, capsStatus)) {
                 _upperCaseStatus = 2;
             } else if (_upperCaseStatus > 0 && isUppercaseSkippablePunctuation(data, capsStatus)) {
@@ -2092,7 +2095,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             // Apply uppercase first character if enabled
             // Use _shouldUpperCaseEnglishRestore which was set when first char was typed
             // Also check if current app is NOT excluded from uppercase feature
-            if (vUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _shouldUpperCaseEnglishRestore && _stateIndex > 0) {
+            if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _shouldUpperCaseEnglishRestore && _stateIndex > 0) {
                 hData[_stateIndex - 1] |= CAPS_MASK;
             }
             _shouldUpperCaseEnglishRestore = false;
@@ -2127,7 +2130,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             hMacroKey.clear();
             _hasHandledMacro = false;  // Reset when starting new word
         }
-        if (vUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _upperCaseStatus == 1) {
+        if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _upperCaseStatus == 1) {
             _upperCaseStatus = 2;
         }
         //save word
@@ -2307,7 +2310,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             }
         }
         
-        if (vUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp) {
+        if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp) {
             if (_index == 1 && _upperCaseStatus == 2) {
                 upperCaseFirstCharacter();
                 // Track for English restore - in case Vietnamese transform didn't happen
