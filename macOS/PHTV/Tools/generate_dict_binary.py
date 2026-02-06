@@ -241,19 +241,20 @@ def build_english_dictionary(resources_dir, data_dir=None):
 
     # Mandatory words: ensure these tech terms and loan words are ALWAYS present
     mandatory_words = {
-        'codebase', 'database', 'backend', 'frontend', 'server', 'client',
+        'codebase', 'codespace', 'database', 'backend', 'frontend', 'server', 'client',
         'internet', 'karaoke', 'video', 'camera', 'radio', 'email', 'gmail',
         'login', 'logout', 'signup', 'signin', 'admin', 'website', 'browser',
         'format', 'install', 'update', 'download', 'upload',
         'adobe', 'photoshop', 'office', 'windows', 'macos', 'linux', 'android', 'ios',
-        'facebook', 'youtube', 'google', 'twitter', 'instagram', 'tiktok', 'zalo',
+        'facebook', 'youtube', 'google', 'twitter', 'instagram', 'tiktok', 'zalo', 'github',
         'laptop', 'smartphone', 'monitor', 'keyboard', 'mouse',
         'bluetooth', 'wifi', 'gps', 'usb', 'hdmi',
-        'python', 'java', 'script', 'html', 'css', 'php', 'sql',
-        'docker', 'kubernetes', 'cloud', 'aws', 'azure',
-        'bug', 'fix', 'issue', 'feature', 'commit', 'push', 'pull', 'merge',
-        'branch', 'checkout', 'clone', 'repo', 'repository',
-        'terminal', 'console', 'shell', 'bash', 'zsh', 'command',
+        'python', 'java', 'javascript', 'typescript', 'swift', 'kotlin', 'golang',
+        'script', 'html', 'css', 'php', 'sql', 'json', 'xml', 'yaml',
+        'docker', 'kubernetes', 'cloud', 'aws', 'azure', 'heroku',
+        'bug', 'fix', 'issue', 'feature', 'commit', 'push', 'pull', 'merge', 'rebase',
+        'branch', 'checkout', 'clone', 'repo', 'repository', 'fork', 'gist',
+        'terminal', 'console', 'shell', 'bash', 'zsh', 'command', 'prompt',
         'english', 'vietnamese', 'japanese', 'chinese', 'french',
         'important', 'ignorant', 'year', 'your', 'our', 'ear', 'early', 'their',
         # Compound words that may fail English restore due to Telex tone mark in middle
@@ -263,7 +264,10 @@ def build_english_dictionary(resources_dir, data_dir=None):
         'nonetheless', 'somewhere', 'therefore', 'however',
         'footer', 'zoomed', 'viewed',
         # Additional words with tone mark conflicts
-        'meanwhile', 'lifespan', 'riverside', 'riverside', 'waterfall', 'watchers'
+        'meanwhile', 'lifespan', 'riverside', 'riverside', 'waterfall', 'watchers',
+        # Common dev tools and services
+        'github', 'gitlab', 'bitbucket', 'jenkins', 'gitlab', 'notion', 'slack',
+        'discord', 'telegram', 'whatsapp', 'zoom', 'meet',
     }
     words.update(mandatory_words)
 
