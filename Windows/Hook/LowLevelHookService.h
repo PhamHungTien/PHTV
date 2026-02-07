@@ -56,7 +56,7 @@ private:
 
     void processEngineOutput(const phtv::windows_host::EngineOutput& output, Uint16 engineKeyCode);
 
-    void sendEngineSequence(const std::vector<Uint32>& sequence, bool reverseOrder, bool useStepByStep);
+    void sendEngineSequence(const std::vector<Uint32>& sequence, bool reverseOrder, bool useStepByStep, int textDelayUs = 0);
     void sendEngineData(Uint32 data);
     void sendRestoreBreakKey(Uint16 engineKeyCode, Uint8 capsStatus);
     void sendEmptyCharacter();
@@ -68,6 +68,12 @@ private:
     void sendBackspace(bool useStepByStep);
     void clearSyncState();
     void pushSyncLength(Uint8 length);
+
+    void updateCliSpeedFactor();
+    int scaleCliDelay(int baseDelayUs) const;
+    void setCliBlockForMicroseconds(int64_t microseconds);
+    bool isCliBlocked() const;
+    bool detectIdeTerminalByUiAutomation() const;
 
     struct ForegroundAppContext {
         DWORD processId = 0;
@@ -115,6 +121,11 @@ private:
     bool cachedIsAddressBar_;
 
     Uint32 modifierMask_;
+
+    std::chrono::steady_clock::time_point lastKeyDownTime_;
+    bool hasLastKeyDownTime_;
+    double cliSpeedFactor_;
+    std::chrono::steady_clock::time_point cliBlockUntil_;
 };
 
 } // namespace phtv::windows_hook

@@ -54,6 +54,20 @@ constexpr int kStepByStepDelayDefaultUs = 3000;
 constexpr int kBrowserBackspaceDelayUs = 0;
 constexpr int kAddressBarDetectRefreshMs = 100;
 
+constexpr int kCliBackspaceDelayIdeUs = 8000;
+constexpr int kCliWaitAfterBackspaceIdeUs = 25000;
+constexpr int kCliTextDelayIdeUs = 8000;
+
+constexpr int kCliPreBackspaceDelayUs = 4000;
+constexpr int kCliPostSendBlockMinUs = 20000;
+
+constexpr int64_t kCliSpeedFastThresholdUs = 20000;
+constexpr int64_t kCliSpeedMediumThresholdUs = 32000;
+constexpr int64_t kCliSpeedSlowThresholdUs = 48000;
+constexpr double kCliSpeedFactorFast = 2.1;
+constexpr double kCliSpeedFactorMedium = 1.6;
+constexpr double kCliSpeedFactorSlow = 1.3;
+
 const std::unordered_set<std::wstring> kBrowserExecutables = {
     L"chrome.exe",
     L"msedge.exe",
@@ -429,7 +443,11 @@ LowLevelHookService::LowLevelHookService()
       nextAddressBarCheckAt_(std::chrono::steady_clock::time_point::min()),
       cachedAddressBarFocusWindow_(nullptr),
       cachedIsAddressBar_(false),
-      modifierMask_(0) {
+      modifierMask_(0),
+      lastKeyDownTime_(),
+      hasLastKeyDownTime_(false),
+      cliSpeedFactor_(1.0),
+      cliBlockUntil_() {
 }
 
 LowLevelHookService::~LowLevelHookService() {
@@ -563,9 +581,20 @@ LRESULT LowLevelHookService::handleKeyboard(WPARAM wParam, LPARAM lParam) {
         return CallNextHookEx(keyboardHook_, HC_ACTION, wParam, lParam);
     }
 
+    if (isCliBlocked()) {
+        return CallNextHookEx(keyboardHook_, HC_ACTION, wParam, lParam);
+    }
+
     refreshRuntimeConfigIfNeeded(false);
     ensureDictionariesLoaded(false);
     refreshForegroundAppContext(false);
+
+    if (appContext_.isTerminal) {
+        updateCliSpeedFactor();
+    } else {
+        cliSpeedFactor_ = 1.0;
+        hasLastKeyDownTime_ = false;
+    }
 
     Uint16 engineKeyCode = 0;
     if (!phtv::windows_adapter::mapVirtualKeyToEngine(vkCode, engineKeyCode)) {
@@ -915,7 +944,7 @@ bool LowLevelHookService::detectAddressBarByUiAutomation(HWND focusedWindow, boo
     if (SUCCEEDED(uiAutomation_->get_ControlViewWalker(&walker)) && walker != nullptr) {
         IUIAutomationElement* current = focusedElement;
         current->AddRef();
-        for (int depth = 0; depth < 8; ++depth) {
+        for (int depth = 0; depth < 12; ++depth) {
             IUIAutomationElement* parent = nullptr;
             HRESULT parentHr = walker->GetParentElement(current, &parent);
             current->Release();
@@ -1059,6 +1088,7 @@ void LowLevelHookService::ensureDictionariesLoaded(bool force) {
               << " (" << status.vietnamesePath.string() << ")"
               << "\n";
     if (isBrowserFixDebugEnabled()) {
+    }
 }
 
 void LowLevelHookService::refreshRuntimeConfigIfNeeded(bool force) {
@@ -1242,6 +1272,11 @@ void LowLevelHookService::refreshForegroundAppContext(bool force) {
     if (newContext.isIde && containsTerminalKeyword(titleLower)) {
         newContext.isTerminal = true;
     }
+    if (newContext.isIde && !newContext.isTerminal) {
+        if (detectIdeTerminalByUiAutomation()) {
+            newContext.isTerminal = true;
+        }
+    }
 
     for (const auto& appRule : runtimeConfig_.excludedApps) {
         if (matchesRuntimeRule(appRule,
@@ -1274,9 +1309,9 @@ void LowLevelHookService::refreshForegroundAppContext(bool force) {
         newContext.textDelayUs = kStepByStepDelayDefaultUs;
 
         if (newContext.isIde && newContext.isTerminal) {
-            newContext.backspaceDelayUs = kCliBackspaceDelayMediumUs;
-            newContext.waitAfterBackspaceUs = kCliWaitAfterBackspaceMediumUs;
-            newContext.textDelayUs = kCliTextDelayMediumUs;
+            newContext.backspaceDelayUs = kCliBackspaceDelayIdeUs;
+            newContext.waitAfterBackspaceUs = kCliWaitAfterBackspaceIdeUs;
+            newContext.textDelayUs = kCliTextDelayIdeUs;
         } else if (newContext.isFastTerminal) {
             newContext.backspaceDelayUs = kCliBackspaceDelayFastUs;
             newContext.waitAfterBackspaceUs = kCliWaitAfterBackspaceFastUs;
@@ -1317,7 +1352,161 @@ void LowLevelHookService::refreshForegroundAppContext(bool force) {
         resetAddressBarCache();
         clearSyncState();
         session_.startSession();
+        cliSpeedFactor_ = 1.0;
+        hasLastKeyDownTime_ = false;
+        cliBlockUntil_ = {};
     }
+}
+
+void LowLevelHookService::updateCliSpeedFactor() {
+    const auto now = std::chrono::steady_clock::now();
+    if (!hasLastKeyDownTime_) {
+        lastKeyDownTime_ = now;
+        hasLastKeyDownTime_ = true;
+        cliSpeedFactor_ = 1.0;
+        return;
+    }
+
+    const int64_t deltaUs = std::chrono::duration_cast<std::chrono::microseconds>(
+        now - lastKeyDownTime_).count();
+    lastKeyDownTime_ = now;
+
+    double target = 1.0;
+    if (deltaUs > 0) {
+        if (deltaUs <= kCliSpeedFastThresholdUs) {
+            target = kCliSpeedFactorFast;
+        } else if (deltaUs <= kCliSpeedMediumThresholdUs) {
+            target = kCliSpeedFactorMedium;
+        } else if (deltaUs <= kCliSpeedSlowThresholdUs) {
+            target = kCliSpeedFactorSlow;
+        }
+    }
+
+    if (target >= cliSpeedFactor_) {
+        cliSpeedFactor_ = target;
+    } else {
+        cliSpeedFactor_ = (cliSpeedFactor_ * 0.7) + (target * 0.3);
+        if (cliSpeedFactor_ < 1.0) {
+            cliSpeedFactor_ = 1.0;
+        }
+    }
+}
+
+int LowLevelHookService::scaleCliDelay(int baseDelayUs) const {
+    if (baseDelayUs <= 0) {
+        return 0;
+    }
+    if (cliSpeedFactor_ <= 1.05) {
+        return baseDelayUs;
+    }
+    const double scaled = static_cast<double>(baseDelayUs) * cliSpeedFactor_;
+    constexpr int kMaxDelayUs = 250000;
+    if (scaled > static_cast<double>(kMaxDelayUs)) {
+        return kMaxDelayUs;
+    }
+    return static_cast<int>(scaled);
+}
+
+void LowLevelHookService::setCliBlockForMicroseconds(int64_t microseconds) {
+    if (microseconds <= 0) {
+        return;
+    }
+    const auto blockUntil = std::chrono::steady_clock::now() +
+        std::chrono::microseconds(microseconds);
+    if (blockUntil > cliBlockUntil_) {
+        cliBlockUntil_ = blockUntil;
+    }
+}
+
+bool LowLevelHookService::isCliBlocked() const {
+    if (!appContext_.isTerminal) {
+        return false;
+    }
+    return std::chrono::steady_clock::now() < cliBlockUntil_;
+}
+
+bool LowLevelHookService::detectIdeTerminalByUiAutomation() const {
+    if (!uiAutomationReady_ || uiAutomation_ == nullptr) {
+        return false;
+    }
+
+    IUIAutomationElement* focusedElement = nullptr;
+    HRESULT hr = uiAutomation_->GetFocusedElement(&focusedElement);
+    if (FAILED(hr) || focusedElement == nullptr) {
+        return false;
+    }
+
+    bool isTerminalPanel = false;
+
+    auto checkElementForTerminal = [](IUIAutomationElement* element) -> bool {
+        if (element == nullptr) {
+            return false;
+        }
+
+        BSTR nameValue = nullptr;
+        BSTR automationIdValue = nullptr;
+        BSTR classValue = nullptr;
+        BSTR localizedTypeValue = nullptr;
+
+        element->get_CurrentName(&nameValue);
+        element->get_CurrentAutomationId(&automationIdValue);
+        element->get_CurrentClassName(&classValue);
+        element->get_CurrentLocalizedControlType(&localizedTypeValue);
+
+        bool found = false;
+        auto checkBstr = [](BSTR value) -> bool {
+            if (value == nullptr) {
+                return false;
+            }
+            const std::wstring lower = bstrToLower(value);
+            return containsTerminalKeyword(lower);
+        };
+
+        found = checkBstr(nameValue) || checkBstr(automationIdValue) ||
+                checkBstr(classValue) || checkBstr(localizedTypeValue);
+
+        if (nameValue != nullptr) SysFreeString(nameValue);
+        if (automationIdValue != nullptr) SysFreeString(automationIdValue);
+        if (classValue != nullptr) SysFreeString(classValue);
+        if (localizedTypeValue != nullptr) SysFreeString(localizedTypeValue);
+
+        return found;
+    };
+
+    if (checkElementForTerminal(focusedElement)) {
+        isTerminalPanel = true;
+    }
+
+    if (!isTerminalPanel) {
+        IUIAutomationTreeWalker* walker = nullptr;
+        if (SUCCEEDED(uiAutomation_->get_ControlViewWalker(&walker)) && walker != nullptr) {
+            IUIAutomationElement* current = focusedElement;
+            current->AddRef();
+            for (int depth = 0; depth < 8 && !isTerminalPanel; ++depth) {
+                IUIAutomationElement* parent = nullptr;
+                HRESULT parentHr = walker->GetParentElement(current, &parent);
+                current->Release();
+                current = nullptr;
+
+                if (FAILED(parentHr) || parent == nullptr) {
+                    break;
+                }
+
+                current = parent;
+                if (checkElementForTerminal(parent)) {
+                    isTerminalPanel = true;
+                }
+            }
+
+            if (current != nullptr) {
+                current->Release();
+            }
+            walker->Release();
+        }
+    }
+
+    focusedElement->Release();
+    return isTerminalPanel;
 }
 
 void LowLevelHookService::processEngineOutput(const phtv::windows_host::EngineOutput& output,
@@ -1351,40 +1540,90 @@ void LowLevelHookService::processEngineOutput(const phtv::windows_host::EngineOu
     // Safety guard against accidental mass deletion caused by stale state/race.
     backspaceCount = std::clamp(backspaceCount, 0, 15);
 
+    const bool isCli = appContext_.isTerminal;
+    const int scaledBackspaceDelay = isCli
+        ? scaleCliDelay(appContext_.backspaceDelayUs)
+        : appContext_.backspaceDelayUs;
+    const int scaledWaitAfterBackspace = isCli
+        ? scaleCliDelay(appContext_.waitAfterBackspaceUs)
+        : appContext_.waitAfterBackspaceUs;
+    const int scaledTextDelay = isCli
+        ? scaleCliDelay(appContext_.textDelayUs)
+        : appContext_.textDelayUs;
+
     if (backspaceCount > 0 && backspaceCount < MAX_BUFF) {
-        for (int i = 0; i < backspaceCount; ++i) {
-            sendBackspace(useStepByStep);
-            if (useStepByStep && appContext_.backspaceDelayUs > 0) {
-                sleepMicroseconds(appContext_.backspaceDelayUs);
+        if (isCli) {
+            int64_t totalBlockUs = static_cast<int64_t>(
+                std::max(kCliPostSendBlockMinUs, scaledTextDelay * 3));
+            if (scaledBackspaceDelay > 0) {
+                totalBlockUs += static_cast<int64_t>(scaledBackspaceDelay) * backspaceCount;
+            }
+            totalBlockUs += static_cast<int64_t>(scaledWaitAfterBackspace);
+            setCliBlockForMicroseconds(totalBlockUs);
+
+            if (cliSpeedFactor_ > 1.05) {
+                const int preDelay = scaleCliDelay(kCliPreBackspaceDelayUs);
+                if (preDelay > 0) {
+                    sleepMicroseconds(preDelay);
+                }
             }
         }
 
-        if (useStepByStep && appContext_.waitAfterBackspaceUs > 0) {
-            sleepMicroseconds(appContext_.waitAfterBackspaceUs);
+        for (int i = 0; i < backspaceCount; ++i) {
+            sendBackspace(useStepByStep);
+            if (useStepByStep && scaledBackspaceDelay > 0) {
+                sleepMicroseconds(scaledBackspaceDelay);
+            }
+        }
+
+        if (useStepByStep && scaledWaitAfterBackspace > 0) {
+            sleepMicroseconds(scaledWaitAfterBackspace);
         }
     }
 
     if (output.code == vReplaceMaro) {
-        sendEngineSequence(output.macroChars, false, useStepByStep);
+        const size_t charCount = output.macroChars.size() + 1;
+        if (isCli && scaledTextDelay > 0) {
+            int64_t totalBlockUs = static_cast<int64_t>(
+                std::max(kCliPostSendBlockMinUs, scaledTextDelay * 3));
+            if (charCount > 1) {
+                totalBlockUs += static_cast<int64_t>(scaledTextDelay) *
+                    static_cast<int64_t>(charCount - 1);
+            }
+            setCliBlockForMicroseconds(totalBlockUs);
+        }
+
+        sendEngineSequence(output.macroChars, false, useStepByStep, scaledTextDelay);
 
         Uint32 rawKey = engineKeyCode;
         if (currentCapsStatus() != 0) {
             rawKey |= CAPS_MASK;
         }
         sendEngineData(rawKey);
-        if (useStepByStep && appContext_.textDelayUs > 0) {
-            sleepMicroseconds(appContext_.textDelayUs);
+        if (useStepByStep && scaledTextDelay > 0) {
+            sleepMicroseconds(scaledTextDelay);
         }
         return;
     }
 
-    sendEngineSequence(output.committedChars, true, useStepByStep);
+    const size_t charCount = output.committedChars.size() +
+        ((output.code == vRestore || output.code == vRestoreAndStartNewSession) ? 1 : 0);
+    if (isCli && scaledTextDelay > 0 && charCount > 0) {
+        int64_t totalBlockUs = static_cast<int64_t>(
+            std::max(kCliPostSendBlockMinUs, scaledTextDelay * 3));
+        if (charCount > 1) {
+            totalBlockUs += static_cast<int64_t>(scaledTextDelay) *
+                static_cast<int64_t>(charCount - 1);
+        }
+        setCliBlockForMicroseconds(totalBlockUs);
+    }
+
+    sendEngineSequence(output.committedChars, true, useStepByStep, scaledTextDelay);
 
     if (output.code == vRestore || output.code == vRestoreAndStartNewSession) {
-        // Keep the original break key (space/comma/enter/...) like macOS path.
         sendRestoreBreakKey(engineKeyCode, capsStatus);
-        if (useStepByStep && appContext_.textDelayUs > 0) {
-            sleepMicroseconds(appContext_.textDelayUs);
+        if (useStepByStep && scaledTextDelay > 0) {
+            sleepMicroseconds(scaledTextDelay);
         }
     }
 
@@ -1395,7 +1634,8 @@ void LowLevelHookService::processEngineOutput(const phtv::windows_host::EngineOu
 
 void LowLevelHookService::sendEngineSequence(const std::vector<Uint32>& sequence,
                                              bool reverseOrder,
-                                             bool useStepByStep) {
+                                             bool useStepByStep,
+                                             int textDelayUs) {
     if (sequence.empty()) {
         return;
     }
@@ -1403,8 +1643,8 @@ void LowLevelHookService::sendEngineSequence(const std::vector<Uint32>& sequence
     if (reverseOrder) {
         for (auto it = sequence.rbegin(); it != sequence.rend(); ++it) {
             sendEngineData(*it);
-            if (useStepByStep && appContext_.textDelayUs > 0) {
-                sleepMicroseconds(appContext_.textDelayUs);
+            if (useStepByStep && textDelayUs > 0) {
+                sleepMicroseconds(textDelayUs);
             }
         }
         return;
@@ -1412,8 +1652,8 @@ void LowLevelHookService::sendEngineSequence(const std::vector<Uint32>& sequence
 
     for (const Uint32 value : sequence) {
         sendEngineData(value);
-        if (useStepByStep && appContext_.textDelayUs > 0) {
-            sleepMicroseconds(appContext_.textDelayUs);
+        if (useStepByStep && textDelayUs > 0) {
+            sleepMicroseconds(textDelayUs);
         }
     }
 }
