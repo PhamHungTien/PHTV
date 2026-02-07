@@ -483,11 +483,36 @@
     <Setter Property="Foreground" Value="White"/>
   </Style>
 
+  <!-- macOS-style List Row -->
+  <Style Selector="Border.list-row">
+    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="Padding" Value="12,8"/>
+    <Setter Property="CornerRadius" Value="8"/>
+  </Style>
+
+  <Style Selector="Border.list-row:pointerover">
+    <Setter Property="Background" Value="{DynamicResource PhtvHoverBrush}"/>
+  </Style>
+
   <Style Selector="Border.macro-item-card">
     <Setter Property="Background" Value="{DynamicResource PhtvMacroItemBrush}"/>
-    <Setter Property="BorderBrush" Value="{DynamicResource PhtvMacroItemBorderBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvBorderBrush}"/>
     <Setter Property="BorderThickness" Value="1"/>
-    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="Margin" Value="0,0,0,8"/>
+    <Setter Property="Padding" Value="12"/>
+  </Style>
+
+  <Style Selector="TextBlock.macro-item-shortcut">
+    <Setter Property="FontFamily" Value="Consolas, Courier New, monospace"/>
+    <Setter Property="FontWeight" Value="Bold"/>
+    <Setter Property="FontSize" Value="13"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvAccentBrush}"/>
+  </Style>
+
+  <Style Selector="TextBlock.macro-item-content">
+    <Setter Property="FontSize" Value="13"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvTextPrimaryBrush}"/>
   </Style>
 
   <Style Selector="TextBlock.macro-item-category">

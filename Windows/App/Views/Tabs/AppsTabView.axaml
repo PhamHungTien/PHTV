@@ -35,55 +35,65 @@
       </Border>
 
       <Grid ColumnDefinitions="*,*">
+        <!-- Excluded Apps -->
         <Border Classes="settings-card" Grid.Column="0" Margin="0,0,8,0">
           <StackPanel>
             <Border Classes="settings-card-header teal">
               <Grid ColumnDefinitions="40,*" RowDefinitions="Auto,Auto">
-                <Border Classes="settings-card-icon">
-                  <TextBlock Classes="settings-card-icon-text" Text="⊘"/>
-                </Border>
+                <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="⊘"/></Border>
                 <StackPanel Grid.Column="1" Spacing="2">
                   <TextBlock Classes="settings-card-title" Text="Loại trừ ứng dụng"/>
-                  <TextBlock Classes="settings-card-subtitle" Text="Tự chuyển sang English trong các app này"/>
+                  <TextBlock Classes="settings-card-subtitle" Text="Tự chuyển sang English"/>
                 </StackPanel>
                 <WrapPanel Grid.Row="1" Grid.ColumnSpan="2" Classes="settings-actions" Margin="0,12,0,0">
-                  <Button Content="Thêm"
-                          Command="{Binding DataContext.AddExcludedAppCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                  <Button Content="Xóa"
-                          Command="{Binding DataContext.RemoveExcludedAppCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                  <Button Content="Thêm" Command="{Binding DataContext.AddExcludedAppCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                  <Button Content="Xóa" Command="{Binding DataContext.RemoveExcludedAppCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                 </WrapPanel>
               </Grid>
             </Border>
-            <ListBox Margin="12"
-                     ItemsSource="{Binding State.ExcludedApps}"
-                     SelectedItem="{Binding State.SelectedExcludedApp}"
-                     MinHeight="170"/>
+            <ListBox Margin="12" ItemsSource="{Binding State.ExcludedApps}" SelectedItem="{Binding State.SelectedExcludedApp}" MinHeight="170">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <Border Classes="list-row">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                      <TextBlock Text="📱" VerticalAlignment="Center" Opacity="0.6"/>
+                      <TextBlock Text="{Binding}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
           </StackPanel>
         </Border>
 
+        <!-- Step by Step Apps -->
         <Border Classes="settings-card" Grid.Column="1" Margin="8,0,0,0">
           <StackPanel>
             <Border Classes="settings-card-header teal">
               <Grid ColumnDefinitions="40,*" RowDefinitions="Auto,Auto">
-                <Border Classes="settings-card-icon">
-                  <TextBlock Classes="settings-card-icon-text" Text="⌁"/>
-                </Border>
+                <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="⌁"/></Border>
                 <StackPanel Grid.Column="1" Spacing="2">
-                  <TextBlock Classes="settings-card-title" Text="Ứng dụng gửi từng phím"/>
-                  <TextBlock Classes="settings-card-subtitle" Text="Auto bật chế độ gửi từng ký tự"/>
+                  <TextBlock Classes="settings-card-title" Text="Gửi từng phím"/>
+                  <TextBlock Classes="settings-card-subtitle" Text="Auto bật chế độ gửi an toàn"/>
                 </StackPanel>
                 <WrapPanel Grid.Row="1" Grid.ColumnSpan="2" Classes="settings-actions" Margin="0,12,0,0">
-                  <Button Content="Thêm"
-                          Command="{Binding DataContext.AddStepByStepAppCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                  <Button Content="Xóa"
-                          Command="{Binding DataContext.RemoveStepByStepAppCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                  <Button Content="Thêm" Command="{Binding DataContext.AddStepByStepAppCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                  <Button Content="Xóa" Command="{Binding DataContext.RemoveStepByStepAppCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                 </WrapPanel>
               </Grid>
             </Border>
-            <ListBox Margin="12"
-                     ItemsSource="{Binding State.StepByStepApps}"
-                     SelectedItem="{Binding State.SelectedStepByStepApp}"
-                     MinHeight="170"/>
+            <ListBox Margin="12" ItemsSource="{Binding State.StepByStepApps}" SelectedItem="{Binding State.SelectedStepByStepApp}" MinHeight="170">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <Border Classes="list-row">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                      <TextBlock Text="⌨" VerticalAlignment="Center" Opacity="0.6"/>
+                      <TextBlock Text="{Binding}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
           </StackPanel>
         </Border>
       </Grid>

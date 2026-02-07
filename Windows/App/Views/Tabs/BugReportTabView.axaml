@@ -12,6 +12,7 @@
         </StackPanel>
       </Border>
 
+      <!-- Issue Details -->
       <Border Classes="settings-card">
         <StackPanel>
           <Border Classes="settings-card-header red">
@@ -21,20 +22,20 @@
             </Grid>
           </Border>
 
-          <StackPanel Margin="16" Spacing="10">
+          <StackPanel Margin="16" Spacing="12">
             <TextBox Watermark="Tiêu đề vấn đề" Text="{Binding State.BugTitle}"/>
             <TextBox AcceptsReturn="True" Height="120" TextWrapping="Wrap" VerticalContentAlignment="Top" Watermark="Mô tả ngắn gọn vấn đề..." Text="{Binding State.BugDescription}"/>
 
             <Grid ColumnDefinitions="*,*">
               <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,6,0">
                 <TextBlock Classes="settings-row-subtitle" Text="Mức độ"/>
-                <ComboBox ItemsSource="{Binding State.BugSeverityOptions}"
+                <ComboBox HorizontalAlignment="Stretch" ItemsSource="{Binding State.BugSeverityOptions}"
                           SelectedItem="{Binding State.BugSeverity}"/>
               </StackPanel>
 
               <StackPanel Grid.Column="1" Spacing="4" Margin="6,0,0,0">
                 <TextBlock Classes="settings-row-subtitle" Text="Khu vực"/>
-                <ComboBox ItemsSource="{Binding State.BugAreaOptions}"
+                <ComboBox HorizontalAlignment="Stretch" ItemsSource="{Binding State.BugAreaOptions}"
                           SelectedItem="{Binding State.BugArea}"/>
               </StackPanel>
             </Grid>
@@ -49,6 +50,7 @@
         </StackPanel>
       </Border>
 
+      <!-- Diagnostic Info -->
       <Border Classes="settings-card">
         <StackPanel>
           <Border Classes="settings-card-header red">
@@ -68,6 +70,7 @@
         </StackPanel>
       </Border>
 
+      <!-- Action Buttons -->
       <Border Classes="settings-card">
         <StackPanel>
           <Border Classes="settings-card-header red">
@@ -77,16 +80,12 @@
             </Grid>
           </Border>
 
-          <WrapPanel Margin="16" Classes="settings-actions">
-            <Button Content="Sao chép nội dung"
-                    Command="{Binding DataContext.CopyBugReportCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-            <Button Content="Lưu file báo cáo"
-                    Command="{Binding DataContext.SaveBugReportCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-            <Button Content="Mở GitHub Issue"
-                    Command="{Binding DataContext.OpenGithubIssueCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-            <Button Content="Gửi Email"
-                    Command="{Binding DataContext.SendEmailCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-          </WrapPanel>
+          <UniformGrid Margin="16" Columns="2" Rows="2">
+            <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,4,4" Content="Sao chép nội dung" Command="{Binding DataContext.CopyBugReportCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+            <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="4,0,0,4" Content="Lưu file báo cáo" Command="{Binding DataContext.SaveBugReportCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+            <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,4,4,0" Content="Mở GitHub Issue" Command="{Binding DataContext.OpenGithubIssueCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+            <Button Classes="primary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="4,4,0,0" Content="Gửi Email" Command="{Binding DataContext.SendEmailCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+          </UniformGrid>
         </StackPanel>
       </Border>
     </StackPanel>

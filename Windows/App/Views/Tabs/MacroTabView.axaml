@@ -45,76 +45,64 @@
       </Border>
 
       <Grid ColumnDefinitions="5*,7*">
+        <!-- Categories -->
         <Border Classes="settings-card" Grid.Column="0" Margin="0,0,8,0">
           <StackPanel>
             <Border Classes="settings-card-header green">
               <Grid ColumnDefinitions="40,*" RowDefinitions="Auto,Auto">
-                <Border Classes="settings-card-icon">
-                  <TextBlock Classes="settings-card-icon-text" Text="▤"/>
-                </Border>
+                <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="▤"/></Border>
                 <StackPanel Grid.Column="1" Spacing="2">
                   <TextBlock Classes="settings-card-title" Text="Danh mục"/>
                   <TextBlock Classes="settings-card-subtitle" Text="Nhóm gõ tắt theo chủ đề"/>
                 </StackPanel>
                 <WrapPanel Grid.Row="1" Grid.ColumnSpan="2" Classes="settings-actions" Margin="0,12,0,0">
-                  <Button Content="Thêm"
-                          Command="{Binding DataContext.AddCategoryCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                  <Button Content="Sửa"
-                          Command="{Binding DataContext.EditCategoryCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                  <Button Content="Thêm" Command="{Binding DataContext.AddCategoryCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                  <Button Content="Sửa" Command="{Binding DataContext.EditCategoryCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                 </WrapPanel>
               </Grid>
             </Border>
 
-            <ListBox Margin="12"
-                     ItemsSource="{Binding State.Categories}"
-                     SelectedItem="{Binding State.SelectedCategory}"
-                     MinHeight="180"/>
+            <ListBox Margin="12" ItemsSource="{Binding State.Categories}" SelectedItem="{Binding State.SelectedCategory}" MinHeight="180">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <Border Classes="list-row"><TextBlock Text="{Binding}" VerticalAlignment="Center"/></Border>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
           </StackPanel>
         </Border>
 
+        <!-- Macros List -->
         <Border Classes="settings-card" Grid.Column="1" Margin="8,0,0,0">
           <StackPanel>
             <Border Classes="settings-card-header green">
               <Grid ColumnDefinitions="40,*" RowDefinitions="Auto,Auto">
-                <Border Classes="settings-card-icon">
-                  <TextBlock Classes="settings-card-icon-text" Text="☰"/>
-                </Border>
+                <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="☰"/></Border>
                 <StackPanel Grid.Column="1" Spacing="2">
                   <TextBlock Classes="settings-card-title" Text="Danh sách gõ tắt"/>
-                  <TextBlock Classes="settings-card-subtitle" Text="Quản lý và tìm nhanh theo danh mục"/>
+                  <TextBlock Classes="settings-card-subtitle" Text="Quản lý và tìm nhanh"/>
                 </StackPanel>
                 <WrapPanel Grid.Row="1" Grid.ColumnSpan="2" Classes="settings-actions" Margin="0,12,0,0">
-                  <Button Content="Thêm"
-                          Command="{Binding DataContext.AddMacroCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                  <Button Content="Sửa"
-                          Command="{Binding DataContext.EditMacroCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                  <Button Content="Xóa"
-                          Command="{Binding DataContext.DeleteMacroCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                  <Button Content="Xuất"
-                          Command="{Binding DataContext.ExportMacrosCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                  <Button Content="Nhập"
-                          Command="{Binding DataContext.ImportMacrosCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                  <Button Content="Thêm" Command="{Binding DataContext.AddMacroCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                  <Button Content="Sửa" Command="{Binding DataContext.EditMacroCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                  <Button Content="Xóa" Command="{Binding DataContext.DeleteMacroCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                  <Button Content="Xuất" Command="{Binding DataContext.ExportMacrosCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                  <Button Content="Nhập" Command="{Binding DataContext.ImportMacrosCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                 </WrapPanel>
               </Grid>
             </Border>
 
-            <ListBox Margin="12"
-                     ItemsSource="{Binding State.Macros}"
-                     SelectedItem="{Binding State.SelectedMacro}"
-                     MinHeight="180">
+            <ListBox Margin="12" ItemsSource="{Binding State.Macros}" SelectedItem="{Binding State.SelectedMacro}" MinHeight="180">
               <ListBox.ItemTemplate>
                 <DataTemplate x:DataType="vm:MacroEntry">
-                  <Border Classes="macro-item-card" Padding="8" CornerRadius="8" Margin="0,0,0,6">
-                    <Grid ColumnDefinitions="Auto,*,Auto">
-                      <TextBlock Text="{Binding Shortcut}" FontFamily="Consolas" FontWeight="SemiBold"/>
-                      <TextBlock Grid.Column="1" Margin="10,0,0,0" Text="{Binding Content}" TextWrapping="Wrap"/>
-                      <TextBlock Grid.Column="2"
-                                 Classes="macro-item-category"
-                                 Margin="10,0,0,0"
-                                 Text="{Binding Category}"
-                                 HorizontalAlignment="Right"
-                                 TextTrimming="CharacterEllipsis"
-                                 MaxWidth="140"/>
+                  <Border Classes="macro-item-card">
+                    <Grid ColumnDefinitions="Auto, *, Auto">
+                      <TextBlock Text="{Binding Shortcut}" Classes="macro-item-shortcut" VerticalAlignment="Center"/>
+                      <TextBlock Grid.Column="1" Text="{Binding Content}" Classes="macro-item-content" 
+                                 Margin="12,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" 
+                                 VerticalAlignment="Center"/>
+                      <TextBlock Grid.Column="2" Text="{Binding Category}" Classes="macro-item-category" 
+                                 VerticalAlignment="Center" Opacity="0.6"/>
                     </Grid>
                   </Border>
                 </DataTemplate>

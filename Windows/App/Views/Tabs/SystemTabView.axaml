@@ -18,6 +18,7 @@
         </Grid>
       </Border>
 
+      <!-- Startup -->
       <Border Classes="settings-card">
         <StackPanel>
           <Border Classes="settings-card-header orange">
@@ -32,6 +33,7 @@
         </StackPanel>
       </Border>
 
+      <!-- Interface -->
       <Border Classes="settings-card">
         <StackPanel>
           <Border Classes="settings-card-header orange">
@@ -46,6 +48,7 @@
         </StackPanel>
       </Border>
 
+      <!-- Menu Bar Icon -->
       <Border Classes="settings-card">
         <StackPanel>
           <Border Classes="settings-card-header orange">
@@ -60,6 +63,7 @@
         </StackPanel>
       </Border>
 
+      <!-- Update -->
       <Border Classes="settings-card">
         <StackPanel>
           <Border Classes="settings-card-header orange">
@@ -68,20 +72,19 @@
               <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Cập nhật"/><TextBlock Classes="settings-card-subtitle" Text="Thiết lập kiểm tra và cài đặt cập nhật"/></StackPanel>
             </Grid>
           </Border>
-          <StackPanel Margin="16" Spacing="8">
-            <Grid ColumnDefinitions="*,220"><StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Tần suất kiểm tra cập nhật"/><TextBlock Classes="settings-row-subtitle" Text="Tự động kiểm tra bản mới"/></StackPanel><ComboBox Grid.Column="1" ItemsSource="{Binding State.UpdateCheckFrequencyOptions}" SelectedItem="{Binding State.UpdateCheckFrequency}"/></Grid>
+          <StackPanel Margin="16" Spacing="12">
+            <Grid ColumnDefinitions="*,220"><StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Tần suất kiểm tra cập nhật"/><TextBlock Classes="settings-row-subtitle" Text="Tự động kiểm tra bản mới"/></StackPanel><ComboBox Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding State.UpdateCheckFrequencyOptions}" SelectedItem="{Binding State.UpdateCheckFrequency}"/></Grid>
             <Border Classes="settings-divider"/>
             <Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Tự động cài đặt cập nhật"/><TextBlock Classes="settings-row-subtitle" Text="Cài đặt khi có phiên bản mới"/></StackPanel><ToggleSwitch Grid.Column="1" IsChecked="{Binding State.AutoInstallUpdates}"/></Grid>
             <Border Classes="settings-divider"/>
             <Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Kênh beta"/><TextBlock Classes="settings-row-subtitle" Text="Nhận bản thử nghiệm"/></StackPanel><ToggleSwitch Grid.Column="1" IsChecked="{Binding State.BetaChannelEnabled}"/></Grid>
             <Border Classes="settings-divider"/>
-            <Button HorizontalAlignment="Left"
-                    Content="Kiểm tra ngay"
-                    Command="{Binding DataContext.CheckForUpdatesCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+            <Button HorizontalAlignment="Left" Content="Kiểm tra cập nhật ngay" Command="{Binding DataContext.CheckForUpdatesCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
           </StackPanel>
         </StackPanel>
       </Border>
 
+      <!-- Data & Backup -->
       <Border Classes="settings-card">
         <StackPanel>
           <Border Classes="settings-card-header orange">
@@ -90,17 +93,14 @@
               <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Dữ liệu &amp; sao lưu"/><TextBlock Classes="settings-card-subtitle" Text="Sao lưu, khôi phục và đặt lại"/></StackPanel>
             </Grid>
           </Border>
-          <StackPanel Margin="16" Spacing="8">
-            <WrapPanel Classes="settings-actions">
-              <Button Content="Xem hướng dẫn"
-                      Command="{Binding DataContext.OpenGuideCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-              <Button Content="Xuất cấu hình"
-                      Command="{Binding DataContext.ExportSettingsCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-              <Button Content="Nhập cấu hình"
-                      Command="{Binding DataContext.ImportSettingsCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-              <Button Content="Khôi phục mặc định"
-                      Command="{Binding DataContext.ResetSettingsCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-            </WrapPanel>
+          <StackPanel Margin="16" Spacing="12">
+            <TextBlock Text="Nếu PHTV hữu ích, bạn có thể xem hướng dẫn hoặc quản lý dữ liệu cài đặt của mình tại đây." FontSize="13" Foreground="{DynamicResource PhtvTextSecondaryBrush}" TextWrapping="Wrap"/>
+            <UniformGrid Columns="2" Rows="2">
+              <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,4,4" Content="Xem hướng dẫn" Command="{Binding DataContext.OpenGuideCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+              <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="4,0,0,4" Content="Xuất cấu hình" Command="{Binding DataContext.ExportSettingsCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+              <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,4,4,0" Content="Nhập cấu hình" Command="{Binding DataContext.ImportSettingsCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+              <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="4,4,0,0" Content="Khôi phục mặc định" Command="{Binding DataContext.ResetSettingsCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+            </UniformGrid>
           </StackPanel>
         </StackPanel>
       </Border>
