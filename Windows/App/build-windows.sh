@@ -33,6 +33,23 @@ if [[ -f "$SOURCE_EXE" ]]; then
   mv -f "$SOURCE_EXE" "$TARGET_EXE"
 fi
 
+# Copy dictionaries to publish directory
+DICT_SRC="$ROOT_DIR/../../macOS/PHTV/Resources/Dictionaries"
+DICT_DEST="$OUT_BASE/$RUNTIME/Dictionaries"
+if [[ -d "$DICT_SRC" ]]; then
+  echo "Copying dictionaries from $DICT_SRC to $DICT_DEST..."
+  mkdir -p "$DICT_DEST"
+  cp -f "$DICT_SRC"/*.bin "$DICT_DEST/"
+else
+  # Fallback to Native directory if macOS folder not found
+  NATIVE_DICT_SRC="$ROOT_DIR/Native/$RUNTIME"
+  if [[ -d "$NATIVE_DICT_SRC" ]]; then
+    echo "Copying dictionaries from $NATIVE_DICT_SRC to $DICT_DEST..."
+    mkdir -p "$DICT_DEST"
+    cp -f "$NATIVE_DICT_SRC"/*.bin "$DICT_DEST/"
+  fi
+fi
+
 if [[ ! -f "$TARGET_EXE" ]]; then
   echo "Publish failed: PHTV.exe not found."
   exit 1

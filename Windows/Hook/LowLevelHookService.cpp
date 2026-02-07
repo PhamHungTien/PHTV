@@ -1045,13 +1045,14 @@ void LowLevelHookService::ensureDictionariesLoaded(bool force) {
     }
 
     const auto status = phtv::windows_runtime::ensureDictionariesLoaded();
+    std::cerr << "[PHTV Dict] Reload attempted. EN="
+              << (status.englishLoaded ? "OK" : "MISSING")
+              << " (" << status.englishPath.string() << ")"
+              << " VI="
+              << (status.vietnameseLoaded ? "OK" : "MISSING")
+              << " (" << status.vietnamesePath.string() << ")"
+              << "\n";
     if (isBrowserFixDebugEnabled()) {
-        std::cerr << "[PHTV Dict] reload attempted: EN="
-                  << (status.englishLoaded ? "ok" : "missing")
-                  << " VI="
-                  << (status.vietnameseLoaded ? "ok" : "missing")
-                  << "\n";
-    }
 }
 
 void LowLevelHookService::refreshRuntimeConfigIfNeeded(bool force) {

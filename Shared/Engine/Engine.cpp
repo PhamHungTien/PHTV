@@ -1952,11 +1952,11 @@ void vKeyHandleEvent(const vKeyEvent& event,
                 checkSpelling(true);
             }
             bool shouldRestoreEnglish = false;
-            if (_stateIndex > 1) {
-                shouldRestoreEnglish = checkIfEnglishWord(KeyStates, _stateIndex);
+            if (_stateIndex > 2) { // must have at least 2 keys + 1 word break
+                shouldRestoreEnglish = checkIfEnglishWord(KeyStates, _stateIndex - 1);
                 if (!shouldRestoreEnglish) {
-                    if (isEnglishWordFromKeyStates(KeyStates, _stateIndex) &&
-                        !isVietnameseWordFromKeyStates(KeyStates, _stateIndex) &&
+                    if (isEnglishWordFromKeyStates(KeyStates, _stateIndex - 1) &&
+                        !isVietnameseWordFromKeyStates(KeyStates, _stateIndex - 1) &&
                         !isVietnameseWordFromTypingWord(_index)) {
                         shouldRestoreEnglish = true;
                     }
@@ -2122,11 +2122,11 @@ void vKeyHandleEvent(const vKeyEvent& event,
             checkSpelling(true); //force check spelling (ignore tempDisableKey for Auto English)
         }
         bool shouldRestoreEnglish = false;
-        if (vAutoRestoreEnglishWord && _index > 0 && _stateIndex > 1) {
-            shouldRestoreEnglish = checkIfEnglishWord(KeyStates, _stateIndex);
+        if (vAutoRestoreEnglishWord && _index > 0 && _stateIndex > 2) { // must have at least 2 keys + 1 space
+            shouldRestoreEnglish = checkIfEnglishWord(KeyStates, _stateIndex - 1);
             if (!shouldRestoreEnglish) {
-                if (isEnglishWordFromKeyStates(KeyStates, _stateIndex) &&
-                    !isVietnameseWordFromKeyStates(KeyStates, _stateIndex) &&
+                if (isEnglishWordFromKeyStates(KeyStates, _stateIndex - 1) &&
+                    !isVietnameseWordFromKeyStates(KeyStates, _stateIndex - 1) &&
                     !isVietnameseWordFromTypingWord(_index)) {
                     shouldRestoreEnglish = true;
                 }
