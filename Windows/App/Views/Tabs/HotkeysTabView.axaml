@@ -102,13 +102,13 @@
               <TextBlock Classes="settings-row-title" Text="Chọn phím hoàn tác"/>
               <UniformGrid Columns="3">
                 <ToggleButton Classes="hotkey-selector-button" Margin="0,0,6,0" IsChecked="{Binding State.RestoreKeyEscSelected}">
-                  <StackPanel><TextBlock Classes="symbol" Text="⎋"/><TextBlock Classes="label" Text="ESC"/></StackPanel>
+                  <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="⎋"/><TextBlock Classes="label" Text="ESC"/></StackPanel>
                 </ToggleButton>
                 <ToggleButton Classes="hotkey-selector-button" Margin="6,0,6,0" IsChecked="{Binding State.RestoreKeyOptionSelected}">
-                  <StackPanel><TextBlock Classes="symbol" Text="⌥"/><TextBlock Classes="label" Text="Option"/></StackPanel>
+                  <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="⌥"/><TextBlock Classes="label" Text="Option"/></StackPanel>
                 </ToggleButton>
                 <ToggleButton Classes="hotkey-selector-button" Margin="6,0,0,0" IsChecked="{Binding State.RestoreKeyControlSelected}">
-                  <StackPanel><TextBlock Classes="symbol" Text="⌃"/><TextBlock Classes="label" Text="Control"/></StackPanel>
+                  <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="⌃"/><TextBlock Classes="label" Text="Control"/></StackPanel>
                 </ToggleButton>
               </UniformGrid>
             </StackPanel>
@@ -142,13 +142,13 @@
               <TextBlock Classes="settings-row-title" Text="Phím tạm dừng"/>
               <UniformGrid Columns="3">
                 <ToggleButton Classes="hotkey-selector-button" Margin="0,0,6,0" IsChecked="{Binding State.PauseKeyAltSelected}">
-                  <StackPanel><TextBlock Classes="symbol" Text="⌥"/><TextBlock Classes="label" Text="Option"/></StackPanel>
+                  <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="⌥"/><TextBlock Classes="label" Text="Option"/></StackPanel>
                 </ToggleButton>
                 <ToggleButton Classes="hotkey-selector-button" Margin="6,0,6,0" IsChecked="{Binding State.PauseKeyControlSelected}">
-                  <StackPanel><TextBlock Classes="symbol" Text="⌃"/><TextBlock Classes="label" Text="Control"/></StackPanel>
+                  <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="⌃"/><TextBlock Classes="label" Text="Control"/></StackPanel>
                 </ToggleButton>
                 <ToggleButton Classes="hotkey-selector-button" Margin="6,0,0,0" IsChecked="{Binding State.PauseKeyShiftSelected}">
-                  <StackPanel><TextBlock Classes="symbol" Text="⇧"/><TextBlock Classes="label" Text="Shift"/></StackPanel>
+                  <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="⇧"/><TextBlock Classes="label" Text="Shift"/></StackPanel>
                 </ToggleButton>
               </UniformGrid>
             </StackPanel>
@@ -185,19 +185,19 @@
                 <TextBlock Classes="settings-row-title" Text="Phím bổ trợ"/>
                 <UniformGrid Columns="5">
                   <ToggleButton Classes="hotkey-selector-button" Margin="0,0,4,0" IsChecked="{Binding State.EmojiHotkeyControl}">
-                    <StackPanel><TextBlock Classes="symbol" Text="⌃"/><TextBlock Classes="label" Text="Control"/></StackPanel>
+                    <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="⌃"/><TextBlock Classes="label" Text="Control"/></StackPanel>
                   </ToggleButton>
                   <ToggleButton Classes="hotkey-selector-button" Margin="4,0,4,0" IsChecked="{Binding State.EmojiHotkeyOption}">
-                    <StackPanel><TextBlock Classes="symbol" Text="⌥"/><TextBlock Classes="label" Text="Option"/></StackPanel>
+                    <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="⌥"/><TextBlock Classes="label" Text="Option"/></StackPanel>
                   </ToggleButton>
                   <ToggleButton Classes="hotkey-selector-button" Margin="4,0,4,0" IsChecked="{Binding State.EmojiHotkeyCommand}">
-                    <StackPanel><TextBlock Classes="symbol" Text="⌘"/><TextBlock Classes="label" Text="Win"/></StackPanel>
+                    <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="⌘"/><TextBlock Classes="label" Text="Win"/></StackPanel>
                   </ToggleButton>
                   <ToggleButton Classes="hotkey-selector-button" Margin="4,0,4,0" IsChecked="{Binding State.EmojiHotkeyShift}">
-                    <StackPanel><TextBlock Classes="symbol" Text="⇧"/><TextBlock Classes="label" Text="Shift"/></StackPanel>
+                    <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="⇧"/><TextBlock Classes="label" Text="Shift"/></StackPanel>
                   </ToggleButton>
                   <ToggleButton Classes="hotkey-selector-button" Margin="4,0,0,0" IsChecked="{Binding State.EmojiHotkeyFn}">
-                    <StackPanel><TextBlock Classes="symbol" Text="fn"/><TextBlock Classes="label" Text="Function"/></StackPanel>
+                    <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="fn"/><TextBlock Classes="label" Text="Function"/></StackPanel>
                   </ToggleButton>
                 </UniformGrid>
               </StackPanel>
