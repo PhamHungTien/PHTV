@@ -9,7 +9,7 @@
 
     <Product Id="*" 
              Name="$(var.ProductName)" 
-             Language="1033" 
+             Language="1066" 
              Codepage="1258"
              Version="$(var.ProductVersion)" 
              Manufacturer="$(var.Manufacturer)" 

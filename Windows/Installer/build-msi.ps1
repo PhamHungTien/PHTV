@@ -86,7 +86,7 @@ $WxsPath = Join-Path $InstallerDir "PHTV.wxs"
 $WixObjPath = Join-Path $InstallerDir "PHTV.wixobj"
 $MsiPath = Join-Path $InstallerDir "PHTV-Setup.msi"
 $LocalizationFiles = @(
-    (Join-Path $InstallerDir "Localization\PHTV.en-US.wxl"),
+    (Join-Path $InstallerDir "Localization\WixUI.vi-VN.wxl"),
     (Join-Path $InstallerDir "Localization\PHTV.vi-VN.wxl")
 )
 
@@ -200,7 +200,7 @@ $lightArguments = @(
 ) + $localizationArguments + @(
     "-ext", "WixUIExtension",
     "-ext", "WixUtilExtension",
-    "-cultures:en-US;vi-VN"
+    "-cultures:vi-VN"
 )
 Invoke-NativeOrThrow -FilePath $lightExe -Arguments $lightArguments
 
