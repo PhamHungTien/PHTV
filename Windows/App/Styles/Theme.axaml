@@ -390,6 +390,47 @@
     <Setter Property="Foreground" Value="White"/>
   </Style>
 
+  <!-- macOS Style Hotkey Selector Button (Large) -->
+  <Style Selector="ToggleButton.hotkey-selector-button">
+    <Setter Property="Padding" Value="0"/>
+    <Setter Property="Height" Value="64"/>
+    <Setter Property="CornerRadius" Value="12"/>
+    <Setter Property="Background" Value="{DynamicResource PhtvCardBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvBorderStrongBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+  </Style>
+
+  <Style Selector="ToggleButton.hotkey-selector-button:pointerover">
+    <Setter Property="Background" Value="{DynamicResource PhtvHoverBrush}"/>
+  </Style>
+
+  <Style Selector="ToggleButton.hotkey-selector-button:checked">
+    <Setter Property="Background" Value="{DynamicResource PhtvAccentBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvAccentBrush}"/>
+  </Style>
+
+  <Style Selector="ToggleButton.hotkey-selector-button:checked TextBlock">
+    <Setter Property="Foreground" Value="White"/>
+  </Style>
+
+  <Style Selector="ToggleButton.hotkey-selector-button TextBlock.symbol">
+    <Setter Property="FontSize" Value="20"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="HorizontalAlignment" Value="Center"/>
+    <Setter Property="TextAlignment" Value="Center"/>
+    <Setter Property="Margin" Value="0,0,0,2"/>
+  </Style>
+
+  <Style Selector="ToggleButton.hotkey-selector-button TextBlock.label">
+    <Setter Property="FontSize" Value="10"/>
+    <Setter Property="HorizontalAlignment" Value="Center"/>
+    <Setter Property="TextAlignment" Value="Center"/>
+    <Setter Property="Opacity" Value="0.8"/>
+  </Style>
+
   <Style Selector="ComboBox.hotkey-primary-selector">
     <Setter Property="MinWidth" Value="220"/>
   </Style>
