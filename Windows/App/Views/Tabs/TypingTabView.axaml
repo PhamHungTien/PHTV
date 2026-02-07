@@ -27,7 +27,7 @@
         <StackPanel>
           <Border Classes="settings-card-header">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="T"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="⌨"/></Border>
               <StackPanel Grid.Column="1" Spacing="2">
                 <TextBlock Classes="settings-card-title" Text="Thiết lập bộ gõ"/>
                 <TextBlock Classes="settings-card-subtitle" Text="Chọn phương pháp gõ và bảng mã phù hợp"/>
@@ -37,12 +37,15 @@
 
           <StackPanel Margin="16" Spacing="8">
             <Border Classes="settings-row">
-              <Grid ColumnDefinitions="*,180" VerticalAlignment="Center">
+              <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
                 <StackPanel Spacing="2">
                   <TextBlock Classes="settings-row-title" Text="Phương pháp gõ"/>
                   <TextBlock Classes="settings-row-subtitle" Text="Telex, VNI, Simple Telex"/>
                 </StackPanel>
                 <ComboBox Grid.Column="1"
+                          Classes="typing-selector-combo"
+                          HorizontalAlignment="Right"
+                          Margin="16,0,0,0"
                           ItemsSource="{Binding State.InputMethodOptions}"
                           SelectedItem="{Binding State.InputMethod}"/>
               </Grid>
@@ -51,12 +54,15 @@
             <Border Classes="settings-divider"/>
 
             <Border Classes="settings-row">
-              <Grid ColumnDefinitions="*,180" VerticalAlignment="Center">
+              <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
                 <StackPanel Spacing="2">
                   <TextBlock Classes="settings-row-title" Text="Bảng mã"/>
                   <TextBlock Classes="settings-row-subtitle" Text="Unicode, TCVN3, VNI Windows"/>
                 </StackPanel>
                 <ComboBox Grid.Column="1"
+                          Classes="typing-selector-combo"
+                          HorizontalAlignment="Right"
+                          Margin="16,0,0,0"
                           ItemsSource="{Binding State.CodeTableOptions}"
                           SelectedItem="{Binding State.CodeTable}"/>
               </Grid>
@@ -69,7 +75,7 @@
         <StackPanel>
           <Border Classes="settings-card-header">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="O"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="✦"/></Border>
               <StackPanel Grid.Column="1" Spacing="2">
                 <TextBlock Classes="settings-card-title" Text="Tối ưu gõ"/>
                 <TextBlock Classes="settings-card-subtitle" Text="Tăng tốc và cải thiện trải nghiệm"/>
@@ -110,7 +116,7 @@
         <StackPanel>
           <Border Classes="settings-card-header">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="C"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="⌁"/></Border>
               <StackPanel Grid.Column="1" Spacing="2">
                 <TextBlock Classes="settings-card-title" Text="Phụ âm nhanh"/>
                 <TextBlock Classes="settings-card-subtitle" Text="Gõ tắt phụ âm đầu và cuối"/>

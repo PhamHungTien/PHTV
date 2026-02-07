@@ -12,7 +12,7 @@
             <TextBlock Classes="settings-header-subtitle" Text="{Binding Subtitle}" TextWrapping="Wrap"/>
           </StackPanel>
           <Border Grid.Column="1" Classes="status-pill">
-            <TextBlock Classes="status-pill-text" Text="{Binding State.SwitchHotkey, StringFormat='Chuyển chế độ: {0}'}"/>
+            <TextBlock Classes="status-pill-text" Text="{Binding State.SwitchHotkeyDisplay, StringFormat='Chuyển chế độ: {0}'}"/>
           </Border>
         </Grid>
       </Border>
@@ -21,21 +21,47 @@
         <StackPanel>
           <Border Classes="settings-card-header">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="H"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="⌘"/></Border>
               <StackPanel Grid.Column="1" Spacing="2">
                 <TextBlock Classes="settings-card-title" Text="Chuyển chế độ gõ"/>
-                <TextBlock Classes="settings-card-subtitle" Text="Đổi nhanh giữa Tiếng Việt và Tiếng Anh"/>
+                <TextBlock Classes="settings-card-subtitle" Text="Thiết lập phím tắt nhanh theo kiểu macOS"/>
               </StackPanel>
             </Grid>
           </Border>
 
-          <Grid Margin="16" ColumnDefinitions="*,220" VerticalAlignment="Center">
-            <StackPanel Spacing="2">
-              <TextBlock Classes="settings-row-title" Text="Phím tắt chuyển chế độ"/>
-              <TextBlock Classes="settings-row-subtitle" Text="Kết hợp modifier + phím chính"/>
+          <StackPanel Margin="16" Spacing="12">
+            <StackPanel Spacing="6">
+              <TextBlock Classes="settings-row-title" Text="Phím bổ trợ"/>
+              <WrapPanel>
+                <ToggleButton Classes="hotkey-chip" Content="Ctrl" Margin="0,0,8,8" IsChecked="{Binding State.SwitchHotkeyControl}"/>
+                <ToggleButton Classes="hotkey-chip" Content="Shift" Margin="0,0,8,8" IsChecked="{Binding State.SwitchHotkeyShift}"/>
+                <ToggleButton Classes="hotkey-chip" Content="Alt" Margin="0,0,8,8" IsChecked="{Binding State.SwitchHotkeyOption}"/>
+                <ToggleButton Classes="hotkey-chip" Content="Win" Margin="0,0,8,8" IsChecked="{Binding State.SwitchHotkeyCommand}"/>
+                <ToggleButton Classes="hotkey-chip" Content="Fn" Margin="0,0,8,8" IsChecked="{Binding State.SwitchHotkeyFn}"/>
+              </WrapPanel>
+              <TextBlock Classes="hotkey-hint" Text="Mặc định: Ctrl + Shift (nhấn rồi thả để chuyển ngôn ngữ)."/>
             </StackPanel>
-            <TextBox Grid.Column="1" Text="{Binding State.SwitchHotkey}" Watermark="Ctrl + Shift"/>
-          </Grid>
+
+            <Border Classes="settings-divider"/>
+
+            <Grid ColumnDefinitions="*,220" VerticalAlignment="Center">
+              <StackPanel Spacing="2">
+                <TextBlock Classes="settings-row-title" Text="Phím chính (tùy chọn)"/>
+                <TextBlock Classes="settings-row-subtitle" Text="Có thể để 'Không' để dùng chế độ chỉ modifier"/>
+              </StackPanel>
+              <ComboBox Grid.Column="1"
+                        Classes="hotkey-primary-selector"
+                        ItemsSource="{Binding State.SwitchHotkeyPrimaryOptions}"
+                        SelectedItem="{Binding State.SwitchHotkeyPrimary}"/>
+            </Grid>
+
+            <Border Classes="hotkey-preview">
+              <StackPanel Spacing="2">
+                <TextBlock Classes="hotkey-preview-label" Text="Tổ hợp hiện tại"/>
+                <TextBlock Classes="hotkey-preview-value" Text="{Binding State.SwitchHotkeyDisplay}"/>
+              </StackPanel>
+            </Border>
+          </StackPanel>
         </StackPanel>
       </Border>
 
@@ -43,7 +69,7 @@
         <StackPanel>
           <Border Classes="settings-card-header">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="R"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="↶"/></Border>
               <StackPanel Grid.Column="1" Spacing="2">
                 <TextBlock Classes="settings-card-title" Text="Khôi phục ký tự"/>
                 <TextBlock Classes="settings-card-subtitle" Text="Hoàn tác nhanh khi gõ sai"/>
@@ -60,15 +86,24 @@
               <ToggleSwitch Grid.Column="1" IsChecked="{Binding State.RestoreOnEscape}"/>
             </Grid>
             <Border Classes="settings-divider"/>
-            <Grid ColumnDefinitions="*,220" VerticalAlignment="Center">
-              <StackPanel Spacing="2">
-                <TextBlock Classes="settings-row-title" Text="Chọn phím hoàn tác"/>
-                <TextBlock Classes="settings-row-subtitle" Text="ESC / Option / Control"/>
-              </StackPanel>
-              <ComboBox Grid.Column="1"
-                        ItemsSource="{Binding State.RestoreKeyOptions}"
-                        SelectedItem="{Binding State.RestoreKey}"/>
-            </Grid>
+            <StackPanel Spacing="6" IsVisible="{Binding State.RestoreOnEscape}">
+              <TextBlock Classes="settings-row-title" Text="Chọn phím hoàn tác"/>
+              <WrapPanel>
+                <ToggleButton Classes="hotkey-chip"
+                              Content="ESC"
+                              Margin="0,0,8,8"
+                              IsChecked="{Binding State.RestoreKeyEscSelected}"/>
+                <ToggleButton Classes="hotkey-chip"
+                              Content="Option"
+                              Margin="0,0,8,8"
+                              IsChecked="{Binding State.RestoreKeyOptionSelected}"/>
+                <ToggleButton Classes="hotkey-chip"
+                              Content="Control"
+                              Margin="0,0,8,8"
+                              IsChecked="{Binding State.RestoreKeyControlSelected}"/>
+              </WrapPanel>
+              <TextBlock Classes="hotkey-hint" Text="Hoạt động như radio: luôn giữ 1 phím hoàn tác được chọn."/>
+            </StackPanel>
           </StackPanel>
         </StackPanel>
       </Border>
@@ -77,7 +112,7 @@
         <StackPanel>
           <Border Classes="settings-card-header">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="P"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="⏸"/></Border>
               <StackPanel Grid.Column="1" Spacing="2">
                 <TextBlock Classes="settings-card-title" Text="Tạm dừng gõ tiếng Việt"/>
                 <TextBlock Classes="settings-card-subtitle" Text="Tạm ngưng bộ gõ khi cần nhập liệu đặc biệt"/>
@@ -94,15 +129,24 @@
               <ToggleSwitch Grid.Column="1" IsChecked="{Binding State.PauseKeyEnabled}"/>
             </Grid>
             <Border Classes="settings-divider"/>
-            <Grid ColumnDefinitions="*,220">
-              <StackPanel Spacing="2">
-                <TextBlock Classes="settings-row-title" Text="Phím tạm dừng"/>
-                <TextBlock Classes="settings-row-subtitle" Text="Option / Control / Shift"/>
-              </StackPanel>
-              <ComboBox Grid.Column="1"
-                        ItemsSource="{Binding State.PauseKeyOptions}"
-                        SelectedItem="{Binding State.PauseKey}"/>
-            </Grid>
+            <StackPanel Spacing="6" IsVisible="{Binding State.PauseKeyEnabled}">
+              <TextBlock Classes="settings-row-title" Text="Phím tạm dừng"/>
+              <WrapPanel>
+                <ToggleButton Classes="hotkey-chip"
+                              Content="Option"
+                              Margin="0,0,8,8"
+                              IsChecked="{Binding State.PauseKeyAltSelected}"/>
+                <ToggleButton Classes="hotkey-chip"
+                              Content="Control"
+                              Margin="0,0,8,8"
+                              IsChecked="{Binding State.PauseKeyControlSelected}"/>
+                <ToggleButton Classes="hotkey-chip"
+                              Content="Shift"
+                              Margin="0,0,8,8"
+                              IsChecked="{Binding State.PauseKeyShiftSelected}"/>
+              </WrapPanel>
+              <TextBlock Classes="hotkey-hint" Text="Giữ một trong các phím trên để tạm thời gõ tiếng Anh."/>
+            </StackPanel>
           </StackPanel>
         </StackPanel>
       </Border>
@@ -111,7 +155,7 @@
         <StackPanel>
           <Border Classes="settings-card-header">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="K"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="☺"/></Border>
               <StackPanel Grid.Column="1" Spacing="2">
                 <TextBlock Classes="settings-card-title" Text="PHTV Picker"/>
                 <TextBlock Classes="settings-card-subtitle" Text="Mở nhanh bảng emoji/sticker/GIF"/>
@@ -121,14 +165,45 @@
 
           <StackPanel Margin="16" Spacing="8">
             <Grid ColumnDefinitions="*,Auto">
-              <StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Bật hotkey PHTV Picker"/><TextBlock Classes="settings-row-subtitle" Text="Mở nhanh picker trong mọi ứng dụng"/></StackPanel>
+              <StackPanel Spacing="2">
+                <TextBlock Classes="settings-row-title" Text="Bật hotkey PHTV Picker"/>
+                <TextBlock Classes="settings-row-subtitle" Text="Mở nhanh picker trong mọi ứng dụng"/>
+              </StackPanel>
               <ToggleSwitch Grid.Column="1" IsChecked="{Binding State.EmojiHotkeyEnabled}"/>
             </Grid>
-            <Border Classes="settings-divider"/>
-            <Grid ColumnDefinitions="*,220">
-              <StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Phím tắt Picker"/><TextBlock Classes="settings-row-subtitle" Text="Ví dụ: Ctrl + E"/></StackPanel>
-              <TextBox Grid.Column="1" Text="{Binding State.EmojiHotkey}"/>
-            </Grid>
+
+            <StackPanel IsVisible="{Binding State.EmojiHotkeyEnabled}" Spacing="12">
+              <Border Classes="settings-divider"/>
+
+              <StackPanel Spacing="6">
+                <TextBlock Classes="settings-row-title" Text="Phím bổ trợ"/>
+                <WrapPanel>
+                  <ToggleButton Classes="hotkey-chip" Content="Ctrl" Margin="0,0,8,8" IsChecked="{Binding State.EmojiHotkeyControl}"/>
+                  <ToggleButton Classes="hotkey-chip" Content="Shift" Margin="0,0,8,8" IsChecked="{Binding State.EmojiHotkeyShift}"/>
+                  <ToggleButton Classes="hotkey-chip" Content="Alt" Margin="0,0,8,8" IsChecked="{Binding State.EmojiHotkeyOption}"/>
+                  <ToggleButton Classes="hotkey-chip" Content="Win" Margin="0,0,8,8" IsChecked="{Binding State.EmojiHotkeyCommand}"/>
+                  <ToggleButton Classes="hotkey-chip" Content="Fn" Margin="0,0,8,8" IsChecked="{Binding State.EmojiHotkeyFn}"/>
+                </WrapPanel>
+              </StackPanel>
+
+              <Grid ColumnDefinitions="*,220" VerticalAlignment="Center">
+                <StackPanel Spacing="2">
+                  <TextBlock Classes="settings-row-title" Text="Phím chính"/>
+                  <TextBlock Classes="settings-row-subtitle" Text="Mặc định: E"/>
+                </StackPanel>
+                <ComboBox Grid.Column="1"
+                          Classes="hotkey-primary-selector"
+                          ItemsSource="{Binding State.EmojiHotkeyPrimaryOptions}"
+                          SelectedItem="{Binding State.EmojiHotkeyPrimary}"/>
+              </Grid>
+
+              <Border Classes="hotkey-preview">
+                <StackPanel Spacing="2">
+                  <TextBlock Classes="hotkey-preview-label" Text="Tổ hợp hiện tại"/>
+                  <TextBlock Classes="hotkey-preview-value" Text="{Binding State.EmojiHotkeyDisplay}"/>
+                </StackPanel>
+              </Border>
+            </StackPanel>
           </StackPanel>
         </StackPanel>
       </Border>

@@ -26,7 +26,7 @@
         <StackPanel>
           <Border Classes="settings-card-header">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="M"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="✎"/></Border>
               <StackPanel Grid.Column="1" Spacing="2">
                 <TextBlock Classes="settings-card-title" Text="Thiết lập gõ tắt"/>
                 <TextBlock Classes="settings-card-subtitle" Text="Bật/tắt và cấu hình hành vi mở rộng"/>
@@ -50,7 +50,7 @@
             <Border Classes="settings-card-header">
               <Grid ColumnDefinitions="40,*" RowDefinitions="Auto,Auto">
                 <Border Classes="settings-card-icon">
-                  <TextBlock Classes="settings-card-icon-text" Text="C"/>
+                  <TextBlock Classes="settings-card-icon-text" Text="▤"/>
                 </Border>
                 <StackPanel Grid.Column="1" Spacing="2">
                   <TextBlock Classes="settings-card-title" Text="Danh mục"/>
@@ -77,7 +77,7 @@
             <Border Classes="settings-card-header">
               <Grid ColumnDefinitions="40,*" RowDefinitions="Auto,Auto">
                 <Border Classes="settings-card-icon">
-                  <TextBlock Classes="settings-card-icon-text" Text="L"/>
+                  <TextBlock Classes="settings-card-icon-text" Text="☰"/>
                 </Border>
                 <StackPanel Grid.Column="1" Spacing="2">
                   <TextBlock Classes="settings-card-title" Text="Danh sách gõ tắt"/>

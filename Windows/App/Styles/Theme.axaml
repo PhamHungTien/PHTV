@@ -171,7 +171,7 @@
     <Setter Property="HorizontalAlignment" Value="Center"/>
     <Setter Property="VerticalAlignment" Value="Center"/>
     <Setter Property="FontSize" Value="12"/>
-    <Setter Property="FontFamily" Value="Segoe UI, Inter, Arial"/>
+    <Setter Property="FontFamily" Value="Segoe UI Symbol, Segoe UI, Inter, Arial"/>
     <Setter Property="FontWeight" Value="SemiBold"/>
     <Setter Property="Foreground" Value="{DynamicResource PhtvAccentBrush}"/>
   </Style>
@@ -243,7 +243,7 @@
     <Setter Property="HorizontalAlignment" Value="Center"/>
     <Setter Property="VerticalAlignment" Value="Center"/>
     <Setter Property="FontSize" Value="13"/>
-    <Setter Property="FontFamily" Value="Segoe UI, Inter, Arial"/>
+    <Setter Property="FontFamily" Value="Segoe UI Symbol, Segoe UI, Inter, Arial"/>
     <Setter Property="FontWeight" Value="SemiBold"/>
     <Setter Property="Foreground" Value="{DynamicResource PhtvAccentBrush}"/>
   </Style>
@@ -366,6 +366,62 @@
 
   <Style Selector="Button.primary:pointerover">
     <Setter Property="Opacity" Value="0.9"/>
+  </Style>
+
+  <Style Selector="ToggleButton.hotkey-chip">
+    <Setter Property="MinWidth" Value="72"/>
+    <Setter Property="Padding" Value="12,8"/>
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="Background" Value="{DynamicResource PhtvCardBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvBorderStrongBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvTextPrimaryBrush}"/>
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+  </Style>
+
+  <Style Selector="ToggleButton.hotkey-chip:pointerover">
+    <Setter Property="Background" Value="{DynamicResource PhtvHoverBrush}"/>
+  </Style>
+
+  <Style Selector="ToggleButton.hotkey-chip:checked">
+    <Setter Property="Background" Value="{DynamicResource PhtvAccentBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvAccentBrush}"/>
+    <Setter Property="Foreground" Value="White"/>
+  </Style>
+
+  <Style Selector="ComboBox.hotkey-primary-selector">
+    <Setter Property="MinWidth" Value="220"/>
+  </Style>
+
+  <Style Selector="ComboBox.typing-selector-combo">
+    <Setter Property="Width" Value="220"/>
+    <Setter Property="MinWidth" Value="220"/>
+    <Setter Property="HorizontalAlignment" Value="Right"/>
+  </Style>
+
+  <Style Selector="TextBlock.hotkey-hint">
+    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvTextSecondaryBrush}"/>
+  </Style>
+
+  <Style Selector="Border.hotkey-preview">
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvAccentSoftBrush}"/>
+    <Setter Property="Background" Value="{DynamicResource PhtvAccentSoftBrush}"/>
+    <Setter Property="Padding" Value="12,10"/>
+  </Style>
+
+  <Style Selector="TextBlock.hotkey-preview-label">
+    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvTextSecondaryBrush}"/>
+  </Style>
+
+  <Style Selector="TextBlock.hotkey-preview-value">
+    <Setter Property="FontSize" Value="13"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvAccentBrush}"/>
   </Style>
 
   <Style Selector="ListBox">

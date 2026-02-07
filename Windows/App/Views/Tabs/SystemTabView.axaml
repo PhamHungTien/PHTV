@@ -26,7 +26,7 @@
 
                   <Grid ColumnDefinitions="40,*">
 
-                    <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="S"/></Border>
+                    <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="⏻"/></Border>
 
                     <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Khởi động cùng hệ thống"/><TextBlock Classes="settings-card-subtitle" Text="Tự mở PHTV khi đăng nhập Windows"/></StackPanel>
 
@@ -54,7 +54,7 @@
 
                   <Grid ColumnDefinitions="40,*">
 
-                    <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="U"/></Border>
+                    <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="◧"/></Border>
 
                     <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Giao diện"/><TextBlock Classes="settings-card-subtitle" Text="Tùy chỉnh hiển thị cửa sổ"/></StackPanel>
 
@@ -71,7 +71,7 @@
         <StackPanel>
           <Border Classes="settings-card-header">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="V"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="▭"/></Border>
               <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Thanh menu"/><TextBlock Classes="settings-card-subtitle" Text="Tùy chỉnh biểu tượng trạng thái"/></StackPanel>
             </Grid>
           </Border>
@@ -85,7 +85,7 @@
         <StackPanel>
           <Border Classes="settings-card-header">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="D"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="⬇"/></Border>
               <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Cập nhật"/><TextBlock Classes="settings-card-subtitle" Text="Thiết lập kiểm tra và cài đặt cập nhật"/></StackPanel>
             </Grid>
           </Border>
@@ -107,7 +107,7 @@
         <StackPanel>
           <Border Classes="settings-card-header">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="B"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="▦"/></Border>
               <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Dữ liệu &amp; sao lưu"/><TextBlock Classes="settings-card-subtitle" Text="Sao lưu, khôi phục và đặt lại"/></StackPanel>
             </Grid>
           </Border>
