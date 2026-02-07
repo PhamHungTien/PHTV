@@ -84,10 +84,10 @@ function Normalize-LocalizationForWindows1258 {
         [Parameter(Mandatory = $true)][string]$OutputPath
     )
 
-    # WiX on Windows can reject some precomposed Vietnamese characters for CP1258.
-    # Normalize to decomposed form to keep Vietnamese diacritics and avoid LGHT0311.
+    # CP1258 does not represent every decomposed combining sequence (e.g. U+031B horn).
+    # Normalize to precomposed NFC to preserve Vietnamese diacritics and avoid LGHT0311.
     $content = Get-Content -Path $InputPath -Raw -Encoding UTF8
-    $normalized = $content.Normalize([Text.NormalizationForm]::FormD)
+    $normalized = $content.Normalize([Text.NormalizationForm]::FormC)
     [IO.File]::WriteAllText($OutputPath, $normalized, [Text.UTF8Encoding]::new($false))
 }
 
