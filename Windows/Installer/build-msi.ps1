@@ -78,6 +78,19 @@ function Assert-ProductVersionIsValid {
     }
 }
 
+function Normalize-LocalizationForWindows1258 {
+    param(
+        [Parameter(Mandatory = $true)][string]$InputPath,
+        [Parameter(Mandatory = $true)][string]$OutputPath
+    )
+
+    # WiX on Windows can reject some precomposed Vietnamese characters for CP1258.
+    # Normalize to decomposed form to keep Vietnamese diacritics and avoid LGHT0311.
+    $content = Get-Content -Path $InputPath -Raw -Encoding UTF8
+    $normalized = $content.Normalize([Text.NormalizationForm]::FormD)
+    [IO.File]::WriteAllText($OutputPath, $normalized, [Text.UTF8Encoding]::new($false))
+}
+
 $InstallerDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ProjectRoot = (Resolve-Path (Join-Path $InstallerDir "..\..")).Path
 $PublishDir = Join-Path $ProjectRoot "Windows\App\publish\$Runtime"
@@ -85,6 +98,7 @@ $SourceDir = Join-Path $InstallerDir "Source"
 $WxsPath = Join-Path $InstallerDir "PHTV.wxs"
 $WixObjPath = Join-Path $InstallerDir "PHTV.wixobj"
 $MsiPath = Join-Path $InstallerDir "PHTV-Setup.msi"
+$LocalizationBuildDir = Join-Path $InstallerDir ".loc-build"
 $LocalizationFiles = @(
     (Join-Path $InstallerDir "Localization\WixUI.vi-VN.wxl"),
     (Join-Path $InstallerDir "Localization\PHTV.vi-VN.wxl")
@@ -171,8 +185,21 @@ Copy-Item -Path $publishDictionaries -Destination $SourceDir -Recurse -Force
 
 $candleExe = Resolve-WixToolPath -ToolName "candle.exe"
 $lightExe = Resolve-WixToolPath -ToolName "light.exe"
-$localizationArguments = @()
+
+if (Test-Path $LocalizationBuildDir) {
+    Remove-Item $LocalizationBuildDir -Recurse -Force
+}
+New-Item -ItemType Directory -Path $LocalizationBuildDir | Out-Null
+
+$normalizedLocalizationFiles = @()
 foreach ($localizationFile in $LocalizationFiles) {
+    $normalizedFile = Join-Path $LocalizationBuildDir ([IO.Path]::GetFileName($localizationFile))
+    Normalize-LocalizationForWindows1258 -InputPath $localizationFile -OutputPath $normalizedFile
+    $normalizedLocalizationFiles += $normalizedFile
+}
+
+$localizationArguments = @()
+foreach ($localizationFile in $normalizedLocalizationFiles) {
     $localizationArguments += @("-loc", $localizationFile)
 }
 

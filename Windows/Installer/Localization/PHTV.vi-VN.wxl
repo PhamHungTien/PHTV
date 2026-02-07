@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <WixLocalization xmlns="http://schemas.microsoft.com/wix/2006/localization"
                  Culture="vi-VN"
-                 Codepage="1252">
-    <String Id="DowngradeErrorMessage">Phien ban moi hon cua [ProductName] da duoc cai dat.</String>
-    <String Id="LaunchApplicationCheckboxText">Mo PHTV sau khi cai dat</String>
+                 Codepage="1258">
+    <String Id="DowngradeErrorMessage">Phiên bản mới hơn của [ProductName] đã được cài đặt.</String>
+    <String Id="LaunchApplicationCheckboxText">Mở PHTV sau khi cài đặt</String>
 </WixLocalization>
