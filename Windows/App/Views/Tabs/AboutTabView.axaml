@@ -33,7 +33,7 @@
         <Border Classes="about-info-card">
           <Grid ColumnDefinitions="Auto, *">
             <Border Classes="about-icon-tile">
-              <TextBlock Classes="about-icon-glyph" Text="👤"/>
+              <TextBlock Classes="about-icon-glyph" Text=""/>
             </Border>
             <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
               <TextBlock Text="Phát triển bởi" FontSize="11" Foreground="{DynamicResource PhtvTextSecondaryBrush}"/>
@@ -45,7 +45,7 @@
         <Border Classes="about-info-card">
           <Grid ColumnDefinitions="Auto, *">
             <Border Classes="about-icon-tile">
-              <TextBlock Classes="about-icon-glyph" Text="📅"/>
+              <TextBlock Classes="about-icon-glyph" Text=""/>
             </Border>
             <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
               <TextBlock Text="Năm phát hành" FontSize="11" Foreground="{DynamicResource PhtvTextSecondaryBrush}"/>
@@ -57,7 +57,7 @@
         <Border Classes="about-info-card">
           <Grid ColumnDefinitions="Auto, *">
             <Border Classes="about-icon-tile">
-              <TextBlock Classes="about-icon-glyph" Text="⚙"/>
+              <TextBlock Classes="about-icon-glyph" Text=""/>
             </Border>
             <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
               <TextBlock Text="Công nghệ sử dụng" FontSize="11" Foreground="{DynamicResource PhtvTextSecondaryBrush}"/>

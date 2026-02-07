@@ -575,7 +575,8 @@
   </Style>
 
   <Style Selector="TextBlock.about-icon-glyph">
-    <Setter Property="FontSize" Value="18"/>
+    <Setter Property="FontSize" Value="20"/>
+    <Setter Property="FontFamily" Value="Segoe UI Symbol, Segoe UI, Inter, Arial"/>
     <Setter Property="HorizontalAlignment" Value="Center"/>
     <Setter Property="VerticalAlignment" Value="Center"/>
     <Setter Property="Foreground" Value="{DynamicResource PhtvAccentBrush}"/>
