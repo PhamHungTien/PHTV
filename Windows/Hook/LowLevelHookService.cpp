@@ -38,21 +38,21 @@ constexpr Uint32 kMaskWin = 0x10;
 
 constexpr int kAppContextRefreshMs = 120;
 
-constexpr int kCliBackspaceDelayFastUs = 6000;
-constexpr int kCliWaitAfterBackspaceFastUs = 18000;
-constexpr int kCliTextDelayFastUs = 5000;
-constexpr int kCliBackspaceDelayMediumUs = 9000;
-constexpr int kCliWaitAfterBackspaceMediumUs = 27000;
-constexpr int kCliTextDelayMediumUs = 7000;
-constexpr int kCliBackspaceDelaySlowUs = 12000;
-constexpr int kCliWaitAfterBackspaceSlowUs = 36000;
-constexpr int kCliTextDelaySlowUs = 9000;
-constexpr int kCliBackspaceDelayDefaultUs = 8000;
-constexpr int kCliWaitAfterBackspaceDefaultUs = 24000;
-constexpr int kCliTextDelayDefaultUs = 6000;
-constexpr int kStepByStepDelayDefaultUs = 2500;
-constexpr int kBrowserBackspaceDelayUs = 1200;
-constexpr int kAddressBarDetectRefreshMs = 180;
+constexpr int kCliBackspaceDelayFastUs = 8000;
+constexpr int kCliWaitAfterBackspaceFastUs = 20000;
+constexpr int kCliTextDelayFastUs = 6000;
+constexpr int kCliBackspaceDelayMediumUs = 12000;
+constexpr int kCliWaitAfterBackspaceMediumUs = 35000;
+constexpr int kCliTextDelayMediumUs = 9000;
+constexpr int kCliBackspaceDelaySlowUs = 18000;
+constexpr int kCliWaitAfterBackspaceSlowUs = 50000;
+constexpr int kCliTextDelaySlowUs = 12000;
+constexpr int kCliBackspaceDelayDefaultUs = 10000;
+constexpr int kCliWaitAfterBackspaceDefaultUs = 30000;
+constexpr int kCliTextDelayDefaultUs = 8000;
+constexpr int kStepByStepDelayDefaultUs = 3000;
+constexpr int kBrowserBackspaceDelayUs = 1500;
+constexpr int kAddressBarDetectRefreshMs = 150;
 
 const std::unordered_set<std::wstring> kBrowserExecutables = {
     L"chrome.exe",
@@ -65,6 +65,8 @@ const std::unordered_set<std::wstring> kBrowserExecutables = {
     L"coccoc.exe",
     L"arc.exe",
     L"zen.exe",
+    L"whale.exe",
+    L"sidekick.exe",
     L"chromium.exe"
 };
 
@@ -80,7 +82,8 @@ const std::unordered_set<std::wstring> kIdeExecutables = {
     L"goland64.exe",
     L"rider64.exe",
     L"studio64.exe",
-    L"devenv.exe"
+    L"devenv.exe",
+    L"sublime_text.exe"
 };
 
 const std::unordered_set<std::wstring> kTerminalExecutables = {
@@ -89,6 +92,7 @@ const std::unordered_set<std::wstring> kTerminalExecutables = {
     L"cmd.exe",
     L"powershell.exe",
     L"pwsh.exe",
+    L"powershell_ise.exe",
     L"conhost.exe",
     L"alacritty.exe",
     L"ghostty.exe",
@@ -98,13 +102,16 @@ const std::unordered_set<std::wstring> kTerminalExecutables = {
     L"mintty.exe",
     L"hyper.exe",
     L"tabby.exe",
-    L"mobaxterm.exe"
+    L"mobaxterm.exe",
+    L"tsh.exe",
+    L"warp.exe"
 };
 
 const std::unordered_set<std::wstring> kFastTerminalExecutables = {
     L"alacritty.exe",
     L"ghostty.exe",
-    L"rio.exe"
+    L"rio.exe",
+    L"warp.exe"
 };
 
 const std::unordered_set<std::wstring> kMediumTerminalExecutables = {
@@ -121,9 +128,12 @@ const std::unordered_set<std::wstring> kMediumTerminalExecutables = {
     L"tabby.exe"
 };
 
-const std::unordered_set<std::wstring> kSlowTerminalExecutables = {};
+const std::unordered_set<std::wstring> kSlowTerminalExecutables = {
+    L"mobaxterm.exe",
+    L"tsh.exe"
+};
 
-const std::array<std::wstring_view, 12> kTerminalTitleKeywords = {
+const std::array<std::wstring_view, 15> kTerminalTitleKeywords = {
     L"terminal",
     L"powershell",
     L"cmd",
@@ -135,10 +145,13 @@ const std::array<std::wstring_view, 12> kTerminalTitleKeywords = {
     L"xterm",
     L"pty",
     L"tty",
+    L"mingu",
+    L"cygwin",
+    L"msys",
     L"tool window: terminal"
 };
 
-const std::array<std::wstring_view, 9> kAddressBarKeywords = {
+const std::array<std::wstring_view, 10> kAddressBarKeywords = {
     L"address",
     L"search",
     L"omnibox",
@@ -147,10 +160,11 @@ const std::array<std::wstring_view, 9> kAddressBarKeywords = {
     L"navigation",
     L"địa chỉ",
     L"tim kiem",
-    L"tìm kiếm"
+    L"tìm kiếm",
+    L"nhập url"
 };
 
-const std::array<std::wstring_view, 8> kAddressBarClassKeywords = {
+const std::array<std::wstring_view, 12> kAddressBarClassKeywords = {
     L"omnibox",
     L"urlbar",
     L"address",
@@ -158,7 +172,11 @@ const std::array<std::wstring_view, 8> kAddressBarClassKeywords = {
     L"searchbox",
     L"search_bar",
     L"location",
-    L"edit"
+    L"edit",
+    L"textbox",
+    L"suggest",
+    L"popup",
+    L"view"
 };
 
 const std::array<std::wstring_view, 14> kWebContentClassKeywords = {
@@ -543,19 +561,31 @@ LRESULT LowLevelHookService::handleKeyboard(WPARAM wParam, LPARAM lParam) {
     ensureDictionariesLoaded(false);
     refreshForegroundAppContext(false);
 
-    if (appContext_.isExcluded) {
-        return CallNextHookEx(keyboardHook_, HC_ACTION, wParam, lParam);
-    }
-
     Uint16 engineKeyCode = 0;
     if (!phtv::windows_adapter::mapVirtualKeyToEngine(vkCode, engineKeyCode)) {
         return CallNextHookEx(keyboardHook_, HC_ACTION, wParam, lParam);
     }
 
-    const auto output = session_.processKeyDown(
-        engineKeyCode,
-        currentCapsStatus(),
-        hasOtherControlKey());
+    // CRITICAL: Immediate pass-through if language is set to English (0)
+    // This ensures that when the user switches to English on tray, 
+    // full Vietnamese processing is bypassed at the hook level.
+    if (vLanguage == 0) {
+        // Still allow macro processing in English mode if enabled
+        if (runtimeConfig_.useMacro != 0 && runtimeConfig_.useMacroInEnglishMode != 0) {
+            const auto output = session_.processKeyDown(engineKeyCode, currentCapsStatus(), hasOtherControlKey());
+            if (output.code == vReplaceMaro) {
+                processEngineOutput(output, engineKeyCode);
+                return 1;
+            }
+        }
+        return CallNextHookEx(keyboardHook_, HC_ACTION, wParam, lParam);
+    }
+
+    if (appContext_.isExcluded) {
+        return CallNextHookEx(keyboardHook_, HC_ACTION, wParam, lParam);
+    }
+
+    const auto output = session_.processKeyDown(engineKeyCode, currentCapsStatus(), hasOtherControlKey());
 
     if (output.code == vDoNothing) {
         if (IS_DOUBLE_CODE(vCodeTable)) {
@@ -1030,7 +1060,7 @@ void LowLevelHookService::refreshRuntimeConfigIfNeeded(bool force) {
         return;
     }
 
-    nextConfigCheckAt_ = now + std::chrono::milliseconds(750);
+    nextConfigCheckAt_ = now + std::chrono::milliseconds(250);
 
     const auto configPath = phtv::windows_runtime::runtimeConfigPath();
     const auto macrosPath = phtv::windows_runtime::runtimeMacrosPath();
@@ -1101,6 +1131,12 @@ void LowLevelHookService::refreshRuntimeConfigIfNeeded(bool force) {
     if (hasMacrosWriteTime_) {
         macrosWriteTime_ = macrosWriteTime;
     }
+
+    // Always ensure global vLanguage is perfectly in sync with config
+    vLanguage = runtimeConfig_.language == 0 ? 0 : 1;
+
+    std::cerr << "[PHTV] Config reloaded. Language: " << (vLanguage == 1 ? "VI" : "EN") 
+              << ", Input: " << runtimeConfig_.inputType << "\n";
 
     nextAppContextCheckAt_ = std::chrono::steady_clock::time_point::min();
     resetAddressBarCache();
@@ -1446,7 +1482,9 @@ void LowLevelHookService::sendEmptyCharacter() {
     if (IS_DOUBLE_CODE(vCodeTable)) {
         pushSyncLength(1);
     }
-    sendUnicode(0x202F);
+    // Use ZERO WIDTH SPACE (0x200B) instead of NARROW NO-BREAK SPACE
+    // as it is less likely to cause visual artifacts in modern address bars.
+    sendUnicode(0x200B);
 }
 
 void LowLevelHookService::sendUnicode(Uint16 unicodeChar) {

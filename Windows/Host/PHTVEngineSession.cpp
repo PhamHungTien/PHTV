@@ -16,11 +16,18 @@ EngineOutput PHTVEngineSession::processKeyDown(Uint16 engineKeyCode,
         startSession();
     }
 
-    vKeyHandleEvent(vKeyEvent::Keyboard,
-                    vKeyEventState::KeyDown,
-                    engineKeyCode,
-                    capsStatus,
-                    hasOtherControlKey);
+    if (vLanguage == 0) { // English mode
+        vEnglishMode(vKeyEventState::KeyDown,
+                     engineKeyCode,
+                     (capsStatus != 0),
+                     hasOtherControlKey);
+    } else { // Vietnamese mode
+        vKeyHandleEvent(vKeyEvent::Keyboard,
+                        vKeyEventState::KeyDown,
+                        engineKeyCode,
+                        capsStatus,
+                        hasOtherControlKey);
+    }
 
     EngineOutput out;
     out.code = state_->code;
@@ -35,11 +42,16 @@ void PHTVEngineSession::notifyMouseDown() {
     if (!state_) {
         startSession();
     }
-    vKeyHandleEvent(vKeyEvent::Mouse,
-                    vKeyEventState::MouseDown,
-                    0,
-                    0,
-                    false);
+    
+    if (vLanguage == 0) { // English mode
+        vEnglishMode(vKeyEventState::MouseDown, 0, false, false);
+    } else { // Vietnamese mode
+        vKeyHandleEvent(vKeyEvent::Mouse,
+                        vKeyEventState::MouseDown,
+                        0,
+                        0,
+                        false);
+    }
 }
 
 } // namespace phtv::windows_host

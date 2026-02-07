@@ -199,10 +199,9 @@ public sealed class RuntimeBridgeService {
             return false;
         }
 
-        if (IsDaemonRunning()) {
-            message = "Hook daemon đã chạy.";
-            return true;
-        }
+        // Force kill any existing daemon instances to ensure we run the latest version
+        TryStopDaemon(out _);
+        EnsureBundledNativeArtifacts();
 
         var daemonPath = ResolveDaemonPath();
         if (string.IsNullOrWhiteSpace(daemonPath)) {
@@ -440,17 +439,68 @@ public sealed class RuntimeBridgeService {
                 return false;
             }
 
-            var destinationInfo = new FileInfo(destinationPath);
-            if (destinationInfo.Exists && stream.CanSeek && destinationInfo.Length == stream.Length) {
+            if (StreamContentMatchesFile(stream, destinationPath)) {
                 return true;
             }
 
+            if (stream.CanSeek) {
+                stream.Position = 0;
+            }
+
+            var destinationInfo = new FileInfo(destinationPath);
             Directory.CreateDirectory(destinationInfo.DirectoryName ?? ".");
             using var output = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None);
             stream.CopyTo(output);
             return true;
         } catch {
             return false;
+        }
+    }
+
+    private static bool StreamContentMatchesFile(Stream sourceStream, string destinationPath) {
+        if (!sourceStream.CanSeek) {
+            return false;
+        }
+
+        FileStream? destinationStream = null;
+        try {
+            var destinationInfo = new FileInfo(destinationPath);
+            if (!destinationInfo.Exists || destinationInfo.Length != sourceStream.Length) {
+                return false;
+            }
+
+            sourceStream.Position = 0;
+            destinationStream = new FileStream(destinationPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+
+            var sourceBuffer = new byte[81920];
+            var destinationBuffer = new byte[81920];
+
+            while (true) {
+                var sourceRead = sourceStream.Read(sourceBuffer, 0, sourceBuffer.Length);
+                var destinationRead = destinationStream.Read(destinationBuffer, 0, destinationBuffer.Length);
+                if (sourceRead != destinationRead) {
+                    return false;
+                }
+
+                if (sourceRead == 0) {
+                    return true;
+                }
+
+                for (var i = 0; i < sourceRead; i++) {
+                    if (sourceBuffer[i] != destinationBuffer[i]) {
+                        return false;
+                    }
+                }
+            }
+        } catch {
+            return false;
+        } finally {
+            destinationStream?.Dispose();
+            try {
+                sourceStream.Position = 0;
+            } catch {
+                // Ignore seek failures for non-seekable streams.
+            }
         }
     }
 

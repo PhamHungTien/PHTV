@@ -280,6 +280,18 @@ public sealed class MainWindowViewModel : ObservableObject {
         }
 
         State.IsVietnameseEnabled = enabled;
+        PersistStateNow();
+
+        if (_runtimeBridgeService.IsSupported) {
+            if (!_runtimeBridgeService.TryRestartDaemon(out var daemonMessage)) {
+                RefreshInputDaemonStatus();
+                StatusMessage = $"Đã chuyển sang {(enabled ? "Tiếng Việt" : "Tiếng Anh")} nhưng không thể áp dụng runtime: {daemonMessage}";
+                return;
+            }
+
+            RefreshInputDaemonStatus();
+        }
+
         StatusMessage = enabled ? "Đã chuyển sang Tiếng Việt." : "Đã chuyển sang Tiếng Anh.";
     }
 
@@ -298,6 +310,7 @@ public sealed class MainWindowViewModel : ObservableObject {
 
         State.InputMethod = inputMethod;
         StatusMessage = $"Đã chuyển phương pháp gõ: {inputMethod}.";
+        PersistStateNow();
     }
 
     public void SetCodeTableOption(string codeTable) {
@@ -315,6 +328,7 @@ public sealed class MainWindowViewModel : ObservableObject {
 
         State.CodeTable = codeTable;
         StatusMessage = $"Đã chuyển bảng mã: {codeTable}.";
+        PersistStateNow();
     }
 
     public void SetCheckSpellingEnabled(bool enabled) {
@@ -573,18 +587,26 @@ public sealed class MainWindowViewModel : ObservableObject {
             return;
         }
 
-        RefreshInputDaemonStatus();
-
-        if (!_runtimeBridgeService.IsSupported || IsInputDaemonRunning) {
+        if (!_runtimeBridgeService.IsSupported) {
+            RefreshInputDaemonStatus();
             return;
         }
 
+        // Always restart once on app startup to avoid stale daemon binaries/process state.
+        if (_runtimeBridgeService.TryRestartDaemon(out var restartMessage)) {
+            RefreshInputDaemonStatus();
+            StatusMessage = restartMessage;
+            return;
+        }
+
+        // Fallback to start-only path when restart cannot recover.
         if (_runtimeBridgeService.TryStartDaemon(out var startMessage)) {
             RefreshInputDaemonStatus();
             StatusMessage = startMessage;
             return;
         }
 
+        RefreshInputDaemonStatus();
         InputDaemonStatus = $"Hook daemon chưa chạy: {startMessage}";
     }
 

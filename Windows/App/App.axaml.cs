@@ -54,6 +54,7 @@ public sealed partial class App : Application {
     private readonly Dictionary<string, NativeMenuItem> _inputMethodItems = new(StringComparer.Ordinal);
     private readonly Dictionary<string, NativeMenuItem> _codeTableItems = new(StringComparer.Ordinal);
     private bool _isUpdatingTrayMenu;
+    private DateTime _ignoreTrayClickUntilUtc = DateTime.MinValue;
     private EventWaitHandle? _activateEvent;
     private RegisteredWaitHandle? _activateEventWaitHandle;
 
@@ -110,11 +111,23 @@ public sealed partial class App : Application {
 
         // 1. Trạng thái (Checkmark style)
         _languageStatusItem = new NativeMenuItem("Tiếng Việt (V)") { ToggleType = NativeMenuItemToggleType.Radio };
-        _languageStatusItem.Click += (_, _) => _mainWindowViewModel?.SetVietnameseEnabled(true);
+        _languageStatusItem.Click += (_, _) => {
+            SuppressTrayClickTemporarily();
+            if (_isUpdatingTrayMenu || _mainWindowViewModel is null) {
+                return;
+            }
+            _mainWindowViewModel.SetVietnameseEnabled(true);
+        };
         menu.Add(_languageStatusItem);
 
         _toggleLanguageItem = new NativeMenuItem("Tiếng Anh (E)") { ToggleType = NativeMenuItemToggleType.Radio };
-        _toggleLanguageItem.Click += (_, _) => _mainWindowViewModel?.SetVietnameseEnabled(false);
+        _toggleLanguageItem.Click += (_, _) => {
+            SuppressTrayClickTemporarily();
+            if (_isUpdatingTrayMenu || _mainWindowViewModel is null) {
+                return;
+            }
+            _mainWindowViewModel.SetVietnameseEnabled(false);
+        };
         menu.Add(_toggleLanguageItem);
 
         menu.Add(new NativeMenuItemSeparator());
@@ -130,7 +143,12 @@ public sealed partial class App : Application {
                 // Pad with spaces to align checkmarks (rough approximation for native menu)
                 string paddedHeader = method.PadRight(maxLen + 2);
                 var item = new NativeMenuItem(paddedHeader) { ToggleType = NativeMenuItemToggleType.Radio };
-                item.Click += (_, _) => { if (!_isUpdatingTrayMenu) _mainWindowViewModel.SetInputMethodOption(method); };
+                item.Click += (_, _) => {
+                    SuppressTrayClickTemporarily();
+                    if (!_isUpdatingTrayMenu) {
+                        _mainWindowViewModel.SetInputMethodOption(method);
+                    }
+                };
                 _inputMethodItems[method] = item;
                 inputMethodSubMenu.Add(item);
             }
@@ -144,7 +162,12 @@ public sealed partial class App : Application {
             foreach (var table in options) {
                 string paddedHeader = table.PadRight(maxLen + 2);
                 var item = new NativeMenuItem(paddedHeader) { ToggleType = NativeMenuItemToggleType.Radio };
-                item.Click += (_, _) => { if (!_isUpdatingTrayMenu) _mainWindowViewModel.SetCodeTableOption(table); };
+                item.Click += (_, _) => {
+                    SuppressTrayClickTemporarily();
+                    if (!_isUpdatingTrayMenu) {
+                        _mainWindowViewModel.SetCodeTableOption(table);
+                    }
+                };
                 _codeTableItems[table] = item;
                 codeTableSubMenu.Add(item);
             }
@@ -246,21 +269,33 @@ public sealed partial class App : Application {
 
         // 7. Cài đặt
         var settingsItem = new NativeMenuItem("⚙  Mở Cài đặt...");
-        settingsItem.Click += (_, _) => ShowSettingsWindow(SettingsTabId.Typing);
+        settingsItem.Click += (_, _) => {
+            SuppressTrayClickTemporarily();
+            ShowSettingsWindow(SettingsTabId.Typing);
+        };
         menu.Add(settingsItem);
 
         menu.Add(new NativeMenuItemSeparator());
 
         var aboutItem = new NativeMenuItem("ⓘ  Về PHTV");
-        aboutItem.Click += (_, _) => ShowSettingsWindow(SettingsTabId.About);
+        aboutItem.Click += (_, _) => {
+            SuppressTrayClickTemporarily();
+            ShowSettingsWindow(SettingsTabId.About);
+        };
         menu.Add(aboutItem);
 
         var updateItem = new NativeMenuItem("↻  Kiểm tra cập nhật");
-        updateItem.Click += (_, _) => _mainWindowViewModel?.OpenLatestReleasePage();
+        updateItem.Click += (_, _) => {
+            SuppressTrayClickTemporarily();
+            _mainWindowViewModel?.OpenLatestReleasePage();
+        };
         menu.Add(updateItem);
 
         var exitItem = new NativeMenuItem("✕  Thoát");
-        exitItem.Click += (_, _) => ExitApplication(desktop);
+        exitItem.Click += (_, _) => {
+            SuppressTrayClickTemporarily();
+            ExitApplication(desktop);
+        };
         menu.Add(exitItem);
 
         return menu;
@@ -271,6 +306,7 @@ public sealed partial class App : Application {
             ToggleType = NativeMenuItemToggleType.CheckBox
         };
         item.Click += (_, _) => {
+            SuppressTrayClickTemporarily();
             if (_isUpdatingTrayMenu || _mainWindowViewModel is null) return;
             setter(!getter());
         };
@@ -279,9 +315,16 @@ public sealed partial class App : Application {
 
     private void OnTrayIconClicked(object? sender, EventArgs e) {
         Dispatcher.UIThread.Post(() => {
+            if (DateTime.UtcNow < _ignoreTrayClickUntilUtc) {
+                return;
+            }
             _mainWindowViewModel?.ToggleVietnameseEnabled();
             UpdateTrayPresentation();
         });
+    }
+
+    private void SuppressTrayClickTemporarily() {
+        _ignoreTrayClickUntilUtc = DateTime.UtcNow.AddMilliseconds(450);
     }
 
     private void OnViewModelStatePropertyChanged(object? sender, PropertyChangedEventArgs e) {
@@ -305,8 +348,12 @@ public sealed partial class App : Application {
 
         _isUpdatingTrayMenu = true;
         try {
-            if (_languageStatusItem is not null) _languageStatusItem.IsChecked = isVietnamese;
-            if (_toggleLanguageItem is not null) _toggleLanguageItem.IsChecked = !isVietnamese;
+            if (_languageStatusItem is not null && _languageStatusItem.IsChecked != isVietnamese) {
+                _languageStatusItem.IsChecked = isVietnamese;
+            }
+            if (_toggleLanguageItem is not null && _toggleLanguageItem.IsChecked != !isVietnamese) {
+                _toggleLanguageItem.IsChecked = !isVietnamese;
+            }
 
             // Typing
             if (_quickTelexItem is not null) _quickTelexItem.IsChecked = state.QuickTelex;
