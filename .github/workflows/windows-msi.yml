@@ -22,7 +22,7 @@ jobs:
     - name: Build Windows App (Self-Contained)
       run: |
         cd Windows/App
-        dotnet publish PHTV.Windows.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish/win-x64
+        dotnet publish PHTV.Windows.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:PublishTrimmed=false -o publish/win-x64
         # Copy dictionaries
         if (!(Test-Path publish/win-x64/Dictionaries)) { New-Item -ItemType Directory -Path publish/win-x64/Dictionaries }
         Copy-Item ../../macOS/PHTV/Resources/Dictionaries/*.bin publish/win-x64/Dictionaries/

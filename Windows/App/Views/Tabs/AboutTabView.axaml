@@ -8,7 +8,7 @@
       <!-- App Icon and Header Section (Centered like macOS) -->
       <StackPanel HorizontalAlignment="Center" Spacing="16" Margin="0,20,0,0">
         <Border Width="100" Height="100" CornerRadius="22" ClipToBounds="True" BoxShadow="0 4 12 0 #20000000">
-          <Image Source="/Assets/icon.png" Stretch="UniformToFill"/>
+          <Image Source="avares://PHTV/Assets/icon.png" Stretch="UniformToFill"/>
         </Border>
         
         <StackPanel Spacing="6" HorizontalAlignment="Center">
@@ -79,7 +79,7 @@
         <Border Classes="about-info-card" HorizontalAlignment="Center" Padding="12" Width="220">
           <StackPanel Spacing="8">
             <Border CornerRadius="8" ClipToBounds="True">
-              <Image Source="/Assets/donate.png" Stretch="Uniform"/>
+              <Image Source="avares://PHTV/Assets/donate.png" Stretch="Uniform"/>
             </Border>
             <TextBlock Text="Quét mã để ủng hộ" FontSize="11" HorizontalAlignment="Center" Foreground="{DynamicResource PhtvTextSecondaryBrush}"/>
           </StackPanel>

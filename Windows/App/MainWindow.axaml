@@ -8,7 +8,7 @@
         Height="760"
         MinWidth="980"
         MinHeight="620"
-        Icon="/Assets/PHTV.ico"
+        Icon="avares://PHTV/Assets/PHTV.ico"
         TransparencyLevelHint="Mica"
         Background="Transparent"
         ExtendClientAreaToDecorationsHint="True">
@@ -22,7 +22,7 @@
         <StackPanel DockPanel.Dock="Top" Margin="16,54,16,16" Spacing="16">
           <Grid ColumnDefinitions="Auto,*">
             <Border Classes="sidebar-brand-icon">
-              <Image Source="/Assets/icon.png" Width="26" Height="26" Stretch="Uniform"/>
+              <Image Source="avares://PHTV/Assets/icon.png" Width="26" Height="26" Stretch="Uniform"/>
             </Border>
             <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="0" VerticalAlignment="Center">
               <TextBlock Classes="sidebar-title" Text="PHTV"/>
