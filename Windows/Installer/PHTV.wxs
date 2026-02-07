@@ -43,19 +43,17 @@
 
         <!-- Thành phần file -->
         <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
-            <Component Id="MainExecutable" Guid="*">
+            <Component Id="MainExecutable" Guid="*" Win64="yes">
                 <File Id="PHTVEXE" Source="Source\PHTV.exe" KeyPath="yes" Checksum="yes">
                     <Shortcut Id="StartMenuShortcut" 
                               Directory="ApplicationProgramsFolder" 
                               Name="$(var.ProductName)" 
                               WorkingDirectory="INSTALLFOLDER" 
-                              Icon="AppIcon" 
                               Advertise="yes" />
                     <Shortcut Id="DesktopShortcut" 
                               Directory="DesktopFolder" 
                               Name="$(var.ProductName)" 
                               WorkingDirectory="INSTALLFOLDER" 
-                              Icon="AppIcon" 
                               Advertise="yes" />
                 </File>
                 <RemoveFolder Id="CleanupShortcut" Directory="ApplicationProgramsFolder" On="uninstall" />
@@ -63,10 +61,10 @@
         </ComponentGroup>
 
         <ComponentGroup Id="DictionaryComponents" Directory="DictionariesFolder">
-            <Component Id="EnDict" Guid="*">
+            <Component Id="EnDict" Guid="*" Win64="yes">
                 <File Id="en_dict.bin" Source="Source\Dictionaries\en_dict.bin" KeyPath="yes" />
             </Component>
-            <Component Id="ViDict" Guid="*">
+            <Component Id="ViDict" Guid="*" Win64="yes">
                 <File Id="vi_dict.bin" Source="Source\Dictionaries\vi_dict.bin" KeyPath="yes" />
             </Component>
         </ComponentGroup>
