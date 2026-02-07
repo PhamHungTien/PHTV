@@ -84,6 +84,21 @@ const std::unordered_set<std::wstring> kBrowserExecutables = {
     L"chromium.exe"
 };
 
+const std::unordered_set<std::wstring> kChromiumExecutables = {
+    L"chrome.exe",
+    L"msedge.exe",
+    L"brave.exe",
+    L"opera.exe",
+    L"launcher.exe", // Opera GX launcher
+    L"vivaldi.exe",
+    L"coccoc.exe",
+    L"arc.exe",
+    L"zen.exe",
+    L"whale.exe",
+    L"sidekick.exe",
+    L"chromium.exe"
+};
+
 const std::unordered_set<std::wstring> kIdeExecutables = {
     L"code.exe",
     L"code-insiders.exe",
@@ -909,27 +924,32 @@ bool LowLevelHookService::detectAddressBarByUiAutomation(HWND focusedWindow, boo
                              containsAnyKeyword(automationIdLower, kWebContentKeywords) ||
                              containsAnyKeyword(classLower, kWebContentClassKeywords) ||
                              containsAnyKeyword(localizedTypeLower, kWebContentKeywords);
+        const bool isEditableControl = controlType == UIA_EditControlTypeId ||
+                                       controlType == UIA_ComboBoxControlTypeId;
 
         if (controlType == UIA_DocumentControlTypeId) {
             hasWebKeyword = true;
-        }
-
-        if (hasWebKeyword) {
-            return -1;
         }
 
         if (hasAddressKeyword) {
             return 1;
         }
 
-        if (controlType == UIA_EditControlTypeId || controlType == UIA_ComboBoxControlTypeId) {
+        // Prefer editable controls over weak web keywords. Chromium UIA trees can
+        // contain document-like ancestors even when focus is in omnibox.
+        if (isEditableControl) {
             return 1;
+        }
+
+        if (hasWebKeyword) {
+            return -1;
         }
 
         return 0;
     };
 
     bool foundAddressCandidate = false;
+    bool foundWebContent = false;
     int classification = classifyElement(focusedElement);
     if (classification < 0) {
         focusedElement->Release();
@@ -957,11 +977,17 @@ bool LowLevelHookService::detectAddressBarByUiAutomation(HWND focusedWindow, boo
             current = parent;
             const int parentClassification = classifyElement(parent);
             if (parentClassification < 0) {
-                current->Release();
-                walker->Release();
-                focusedElement->Release();
-                outDetermined = true;
-                return false;
+                foundWebContent = true;
+                if (!foundAddressCandidate) {
+                    current->Release();
+                    walker->Release();
+                    focusedElement->Release();
+                    outDetermined = true;
+                    return false;
+                }
+                // Once we already have an address candidate, don't let outer
+                // document/web ancestors override it.
+                break;
             }
             if (parentClassification > 0) {
                 foundAddressCandidate = true;
@@ -978,6 +1004,10 @@ bool LowLevelHookService::detectAddressBarByUiAutomation(HWND focusedWindow, boo
     if (foundAddressCandidate) {
         outDetermined = true;
         return true;
+    }
+    if (foundWebContent) {
+        outDetermined = true;
+        return false;
     }
     return false;
 }
@@ -1044,7 +1074,8 @@ bool LowLevelHookService::isFocusedBrowserAddressBar(bool force) {
 bool LowLevelHookService::shouldApplyBrowserAddressBarFix(
     const phtv::windows_host::EngineOutput& output,
     Uint16 engineKeyCode) const {
-    if (runtimeConfig_.fixRecommendBrowser == 0 || !appContext_.isBrowser) {
+    // Match macOS behavior: browser fix is always-on for browser contexts.
+    if (!appContext_.isBrowser) {
         return false;
     }
 
@@ -1260,6 +1291,7 @@ void LowLevelHookService::refreshForegroundAppContext(bool force) {
     }
 
     newContext.isBrowser = kBrowserExecutables.count(processNameLower) > 0;
+    newContext.isChromiumBrowser = kChromiumExecutables.count(processNameLower) > 0;
     newContext.isIde = kIdeExecutables.count(processNameLower) > 0;
     newContext.isFastTerminal = kFastTerminalExecutables.count(processNameLower) > 0;
     newContext.isMediumTerminal = kMediumTerminalExecutables.count(processNameLower) > 0;
@@ -1597,6 +1629,7 @@ void LowLevelHookService::processEngineOutput(const phtv::windows_host::EngineOu
                       << " backspace=" << backspaceCount
                       << " extCode=" << static_cast<int>(output.extCode)
                       << " isAddressBar=" << (isAddressBar ? 1 : 0)
+                      << " isChromium=" << (appContext_.isChromiumBrowser ? 1 : 0)
                       << "\n";
         }
 
@@ -1610,6 +1643,22 @@ void LowLevelHookService::processEngineOutput(const phtv::windows_host::EngineOu
             selectionCount = std::clamp(selectionCount, 0, 15);
             processAddressBarOutput(output, engineKeyCode, selectionCount);
             return;
+        }
+
+        if (appContext_.isChromiumBrowser && backspaceCount > 0) {
+            // Chromium fallback (OpenKey-style): if address-bar detection misses,
+            // pre-select one character then let normal backspace flow continue.
+            sendVirtualKey(VK_LSHIFT, true);
+            sendVirtualKey(VK_LEFT, true, KEYEVENTF_EXTENDEDKEY);
+            sendVirtualKey(VK_LEFT, false, KEYEVENTF_EXTENDEDKEY);
+            sendVirtualKey(VK_LSHIFT, false);
+            if (backspaceCount == 1) {
+                backspaceCount = 0;
+            }
+            if (isBrowserFixDebugEnabled()) {
+                std::cerr << "[PHTV BrowserFix] Chromium fallback selection applied"
+                          << " adjustedBackspace=" << backspaceCount << "\n";
+            }
         }
     }
 

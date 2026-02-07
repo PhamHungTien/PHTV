@@ -86,6 +86,7 @@ private:
         std::wstring processPath;
         std::wstring windowTitle;
         bool isBrowser = false;
+        bool isChromiumBrowser = false;
         bool isTerminal = false;
         bool isIde = false;
         bool isFastTerminal = false;
