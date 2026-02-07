@@ -20,13 +20,13 @@
                  InstallScope="perMachine"
                  SummaryCodepage="1258" />
 
-        <MajorUpgrade DowngradeErrorMessage="Một phiên bản mới hơn của [ProductName] đã được cài đặt." />
+        <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
         <MediaTemplate EmbedCab="yes" />
 
         <!-- Icon cho Add/Remove Programs -->
         <Icon Id="AppIcon" SourceFile="Assets\icon.ico" />
         <Property Id="ARPPRODUCTICON" Value="AppIcon" />
-        <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Khởi chạy PHTV ngay sau khi cài đặt" />
+        <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch PHTV after setup" />
 
         <!-- Cấu trúc thư mục -->
         <Directory Id="TARGETDIR" Name="SourceDir">
