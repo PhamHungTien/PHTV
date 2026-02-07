@@ -96,13 +96,14 @@
               <ListBox.ItemTemplate>
                 <DataTemplate x:DataType="vm:MacroEntry">
                   <Border Classes="macro-item-card">
-                    <Grid ColumnDefinitions="Auto, *, Auto">
+                    <Grid ColumnDefinitions="Auto, *, Auto, Auto">
                       <TextBlock Text="{Binding Shortcut}" Classes="macro-item-shortcut" VerticalAlignment="Center"/>
                       <TextBlock Grid.Column="1" Text="{Binding Content}" Classes="macro-item-content" 
                                  Margin="12,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" 
                                  VerticalAlignment="Center"/>
                       <TextBlock Grid.Column="2" Text="{Binding Category}" Classes="macro-item-category" 
-                                 VerticalAlignment="Center" Opacity="0.6"/>
+                                 VerticalAlignment="Center" Opacity="0.6" Margin="0,0,8,0"/>
+                      <TextBlock Grid.Column="3" Classes="chevron-right" Text=""/>
                     </Grid>
                   </Border>
                 </DataTemplate>

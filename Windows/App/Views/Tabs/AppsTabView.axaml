@@ -18,6 +18,7 @@
         </Grid>
       </Border>
 
+      <!-- Smart Switch -->
       <Border Classes="settings-card">
         <StackPanel>
           <Border Classes="settings-card-header teal">
@@ -55,10 +56,11 @@
               <ListBox.ItemTemplate>
                 <DataTemplate>
                   <Border Classes="list-row">
-                    <StackPanel Orientation="Horizontal" Spacing="10">
-                      <TextBlock Text="📱" VerticalAlignment="Center" Opacity="0.6"/>
-                      <TextBlock Text="{Binding}" VerticalAlignment="Center"/>
-                    </StackPanel>
+                    <Grid ColumnDefinitions="Auto, *, Auto">
+                      <TextBlock Text="📱" VerticalAlignment="Center" Opacity="0.5" FontSize="14"/>
+                      <TextBlock Grid.Column="1" Text="{Binding}" Margin="10,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                      <TextBlock Grid.Column="2" Classes="chevron-right" Text=""/>
+                    </Grid>
                   </Border>
                 </DataTemplate>
               </ListBox.ItemTemplate>
@@ -86,10 +88,11 @@
               <ListBox.ItemTemplate>
                 <DataTemplate>
                   <Border Classes="list-row">
-                    <StackPanel Orientation="Horizontal" Spacing="10">
-                      <TextBlock Text="⌨" VerticalAlignment="Center" Opacity="0.6"/>
-                      <TextBlock Text="{Binding}" VerticalAlignment="Center"/>
-                    </StackPanel>
+                    <Grid ColumnDefinitions="Auto, *, Auto">
+                      <TextBlock Text="⌨" VerticalAlignment="Center" Opacity="0.5" FontSize="14"/>
+                      <TextBlock Grid.Column="1" Text="{Binding}" Margin="10,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                      <TextBlock Grid.Column="2" Classes="chevron-right" Text=""/>
+                    </Grid>
                   </Border>
                 </DataTemplate>
               </ListBox.ItemTemplate>

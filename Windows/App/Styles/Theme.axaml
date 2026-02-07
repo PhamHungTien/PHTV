@@ -520,6 +520,14 @@
     <Setter Property="FontSize" Value="11"/>
   </Style>
 
+  <Style Selector="TextBlock.chevron-right">
+    <Setter Property="FontFamily" Value="Segoe UI Symbol, Segoe UI, Inter, Arial"/>
+    <Setter Property="FontSize" Value="10"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Opacity" Value="0.4"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+  </Style>
+
   <!-- About Tab Styles -->
   <Style Selector="TextBlock.about-subtitle">
     <Setter Property="FontSize" Value="13"/>
