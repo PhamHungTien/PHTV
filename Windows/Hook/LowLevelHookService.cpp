@@ -167,7 +167,7 @@ const std::array<std::wstring_view, 10> kAddressBarKeywords = {
     L"nhập url"
 };
 
-const std::array<std::wstring_view, 12> kAddressBarClassKeywords = {
+const std::array<std::wstring_view, 14> kAddressBarClassKeywords = {
     L"omnibox",
     L"urlbar",
     L"address",
@@ -179,10 +179,12 @@ const std::array<std::wstring_view, 12> kAddressBarClassKeywords = {
     L"textbox",
     L"suggest",
     L"popup",
-    L"view"
+    L"view",
+    L"viewsUI",
+    L"omniboxview"
 };
 
-const std::array<std::wstring_view, 14> kWebContentClassKeywords = {
+const std::array<std::wstring_view, 15> kWebContentClassKeywords = {
     L"renderwidget",
     L"webview",
     L"web area",
@@ -196,7 +198,8 @@ const std::array<std::wstring_view, 14> kWebContentClassKeywords = {
     L"chromium",
     L"edgewebview",
     L"cef",
-    L"content"
+    L"content",
+    L"chrome_renderwidgethosthwnd"
 };
 
 const std::array<std::wstring_view, 10> kWebContentKeywords = {
