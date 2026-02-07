@@ -45,25 +45,35 @@
         <!-- Thành phần file -->
         <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
             <Component Id="MainExecutable" Guid="*" Win64="yes">
-                <File Id="PHTVEXE" Source="Source\PHTV.exe" KeyPath="yes" Checksum="yes">
-                    <Shortcut Id="StartMenuShortcut" 
-                              Directory="ApplicationProgramsFolder" 
-                              Name="$(var.ProductName)" 
-                              Description="PHTV Vietnamese Input Method"
-                              WorkingDirectory="INSTALLFOLDER" 
-                              Icon="AppIcon"
-                              IconIndex="0"
-                              Advertise="no" />
-                    <Shortcut Id="DesktopShortcut" 
-                              Directory="DesktopFolder" 
-                              Name="$(var.ProductName)" 
-                              Description="PHTV Vietnamese Input Method"
-                              WorkingDirectory="INSTALLFOLDER" 
-                              Icon="AppIcon"
-                              IconIndex="0"
-                              Advertise="no" />
-                </File>
+                <File Id="PHTVEXE" Source="Source\PHTV.exe" KeyPath="yes" Checksum="yes" />
+            </Component>
+
+            <Component Id="ApplicationShortcuts" Guid="*">
+                <Shortcut Id="StartMenuShortcut" 
+                          Directory="ApplicationProgramsFolder" 
+                          Name="$(var.ProductName)" 
+                          Description="PHTV Vietnamese Input Method"
+                          Target="[INSTALLFOLDER]PHTV.exe"
+                          WorkingDirectory="INSTALLFOLDER" 
+                          Icon="AppIcon"
+                          IconIndex="0"
+                          Advertise="no" />
+                <Shortcut Id="DesktopShortcut" 
+                          Directory="DesktopFolder" 
+                          Name="$(var.ProductName)" 
+                          Description="PHTV Vietnamese Input Method"
+                          Target="[INSTALLFOLDER]PHTV.exe"
+                          WorkingDirectory="INSTALLFOLDER" 
+                          Icon="AppIcon"
+                          IconIndex="0"
+                          Advertise="no" />
                 <RemoveFolder Id="CleanupShortcut" Directory="ApplicationProgramsFolder" On="uninstall" />
+                <RegistryValue Root="HKCU"
+                               Key="Software\$(var.Manufacturer)\$(var.ProductName)"
+                               Name="ShortcutsInstalled"
+                               Type="integer"
+                               Value="1"
+                               KeyPath="yes" />
             </Component>
         </ComponentGroup>
 
