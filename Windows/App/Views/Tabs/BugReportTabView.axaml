@@ -16,7 +16,7 @@
         <StackPanel>
           <Border Classes="settings-card-header">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="🐞"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="B"/></Border>
               <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Thông tin sự cố"/><TextBlock Classes="settings-card-subtitle" Text="Chỉ cần tiêu đề và mô tả"/></StackPanel>
             </Grid>
           </Border>
@@ -53,7 +53,7 @@
         <StackPanel>
           <Border Classes="settings-card-header">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="🧾"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="D"/></Border>
               <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Thông tin chẩn đoán"/><TextBlock Classes="settings-card-subtitle" Text="Hệ thống và nhật ký"/></StackPanel>
             </Grid>
           </Border>
@@ -72,7 +72,7 @@
         <StackPanel>
           <Border Classes="settings-card-header">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="✉"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="G"/></Border>
               <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Gửi báo lỗi"/><TextBlock Classes="settings-card-subtitle" Text="Xuất file hoặc gửi lên GitHub/Email"/></StackPanel>
             </Grid>
           </Border>

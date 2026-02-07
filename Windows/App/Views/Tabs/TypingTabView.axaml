@@ -27,7 +27,7 @@
         <StackPanel>
           <Border Classes="settings-card-header">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="⌨"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="T"/></Border>
               <StackPanel Grid.Column="1" Spacing="2">
                 <TextBlock Classes="settings-card-title" Text="Thiết lập bộ gõ"/>
                 <TextBlock Classes="settings-card-subtitle" Text="Chọn phương pháp gõ và bảng mã phù hợp"/>
@@ -69,7 +69,7 @@
         <StackPanel>
           <Border Classes="settings-card-header">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="✨"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="O"/></Border>
               <StackPanel Grid.Column="1" Spacing="2">
                 <TextBlock Classes="settings-card-title" Text="Tối ưu gõ"/>
                 <TextBlock Classes="settings-card-subtitle" Text="Tăng tốc và cải thiện trải nghiệm"/>
@@ -110,7 +110,7 @@
         <StackPanel>
           <Border Classes="settings-card-header">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="𝓐"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="C"/></Border>
               <StackPanel Grid.Column="1" Spacing="2">
                 <TextBlock Classes="settings-card-title" Text="Phụ âm nhanh"/>
                 <TextBlock Classes="settings-card-subtitle" Text="Gõ tắt phụ âm đầu và cuối"/>

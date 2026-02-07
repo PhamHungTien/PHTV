@@ -90,13 +90,13 @@ public sealed class MainWindowViewModel : ObservableObject {
         };
 
         _allTabs = new List<SidebarTabEntry> {
-            new(SettingsTabId.Typing, "Bộ gõ", "⌨", "Nhập liệu", "telex", "vni", "typing", "spell", "code table"),
-            new(SettingsTabId.Hotkeys, "Phím tắt", "⌘", "Nhập liệu", "hotkey", "shortcut", "pause", "restore"),
-            new(SettingsTabId.Macro, "Gõ tắt", "✎", "Nhập liệu", "macro", "snippet", "category", "expand"),
-            new(SettingsTabId.Apps, "Ứng dụng", "▦", "Nhập liệu", "apps", "exclude", "compatibility", "layout"),
-            new(SettingsTabId.System, "Hệ thống", "⚙", "Hệ thống", "startup", "update", "backup", "dock", "interface"),
-            new(SettingsTabId.BugReport, "Báo lỗi", "🐞", "Hỗ trợ", "bug", "report", "debug", "logs"),
-            new(SettingsTabId.About, "Thông tin", "ⓘ", "Hỗ trợ", "about", "version", "donate")
+            new(SettingsTabId.Typing, "Bộ gõ", "T", "Nhập liệu", "telex", "vni", "typing", "spell", "code table"),
+            new(SettingsTabId.Hotkeys, "Phím tắt", "H", "Nhập liệu", "hotkey", "shortcut", "pause", "restore"),
+            new(SettingsTabId.Macro, "Gõ tắt", "M", "Nhập liệu", "macro", "snippet", "category", "expand"),
+            new(SettingsTabId.Apps, "Ứng dụng", "A", "Nhập liệu", "apps", "exclude", "compatibility", "layout"),
+            new(SettingsTabId.System, "Hệ thống", "S", "Hệ thống", "startup", "update", "backup", "dock", "interface"),
+            new(SettingsTabId.BugReport, "Báo lỗi", "B", "Hỗ trợ", "bug", "report", "debug", "logs"),
+            new(SettingsTabId.About, "Thông tin", "I", "Hỗ trợ", "about", "version", "donate")
         };
 
         SidebarEntries = new ObservableCollection<SidebarEntry>();

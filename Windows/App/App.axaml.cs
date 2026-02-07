@@ -153,7 +153,7 @@ public sealed partial class App : Application {
                 inputMethodSubMenu.Add(item);
             }
         }
-        typingMenu.Add(new NativeMenuItem("⌨  Phương pháp gõ") { Menu = inputMethodSubMenu });
+        typingMenu.Add(new NativeMenuItem("[T] Phương pháp gõ") { Menu = inputMethodSubMenu });
 
         var codeTableSubMenu = new NativeMenu();
         if (_mainWindowViewModel is not null) {
@@ -172,103 +172,103 @@ public sealed partial class App : Application {
                 codeTableSubMenu.Add(item);
             }
         }
-        typingMenu.Add(new NativeMenuItem("⛭  Bảng mã") { Menu = codeTableSubMenu });
+        typingMenu.Add(new NativeMenuItem("[B] Bảng mã") { Menu = codeTableSubMenu });
 
         typingMenu.Add(new NativeMenuItemSeparator());
 
-        _quickTelexItem = CreateToggleItem("⌨  Gõ nhanh (Quick Telex)", () => _mainWindowViewModel!.State.QuickTelex, v => _mainWindowViewModel!.SetQuickTelexEnabled(v));
+        _quickTelexItem = CreateToggleItem("[T] Gõ nhanh (Quick Telex)", () => _mainWindowViewModel!.State.QuickTelex, v => _mainWindowViewModel!.SetQuickTelexEnabled(v));
         typingMenu.Add(_quickTelexItem);
 
-        _upperCaseFirstCharItem = CreateToggleItem("⇪  Viết hoa đầu câu", () => _mainWindowViewModel!.State.UpperCaseFirstChar, v => _mainWindowViewModel!.State.UpperCaseFirstChar = v);
+        _upperCaseFirstCharItem = CreateToggleItem("[A] Viết hoa đầu câu", () => _mainWindowViewModel!.State.UpperCaseFirstChar, v => _mainWindowViewModel!.State.UpperCaseFirstChar = v);
         typingMenu.Add(_upperCaseFirstCharItem);
 
-        _allowConsonantZFWJItem = CreateToggleItem("Å  Phụ âm Z, F, W, J", () => _mainWindowViewModel!.State.AllowConsonantZFWJ, v => _mainWindowViewModel!.State.AllowConsonantZFWJ = v);
+        _allowConsonantZFWJItem = CreateToggleItem("[C] Phụ âm Z, F, W, J", () => _mainWindowViewModel!.State.AllowConsonantZFWJ, v => _mainWindowViewModel!.State.AllowConsonantZFWJ = v);
         typingMenu.Add(_allowConsonantZFWJItem);
 
-        _quickStartConsonantItem = CreateToggleItem("↦  Phụ âm đầu nhanh", () => _mainWindowViewModel!.State.QuickStartConsonant, v => _mainWindowViewModel!.State.QuickStartConsonant = v);
+        _quickStartConsonantItem = CreateToggleItem("[D] Phụ âm đầu nhanh", () => _mainWindowViewModel!.State.QuickStartConsonant, v => _mainWindowViewModel!.State.QuickStartConsonant = v);
         typingMenu.Add(_quickStartConsonantItem);
 
-        _quickEndConsonantItem = CreateToggleItem("↤  Phụ âm cuối nhanh", () => _mainWindowViewModel!.State.QuickEndConsonant, v => _mainWindowViewModel!.State.QuickEndConsonant = v);
+        _quickEndConsonantItem = CreateToggleItem("[E] Phụ âm cuối nhanh", () => _mainWindowViewModel!.State.QuickEndConsonant, v => _mainWindowViewModel!.State.QuickEndConsonant = v);
         typingMenu.Add(_quickEndConsonantItem);
 
         typingMenu.Add(new NativeMenuItemSeparator());
 
-        _checkSpellingItem = CreateToggleItem("✎  Kiểm tra chính tả", () => _mainWindowViewModel!.State.CheckSpelling, v => _mainWindowViewModel!.SetCheckSpellingEnabled(v));
+        _checkSpellingItem = CreateToggleItem("[K] Kiểm tra chính tả", () => _mainWindowViewModel!.State.CheckSpelling, v => _mainWindowViewModel!.SetCheckSpellingEnabled(v));
         typingMenu.Add(_checkSpellingItem);
 
-        _useModernOrthographyItem = CreateToggleItem("📖  Chính tả mới (oà, uý)", () => _mainWindowViewModel!.State.UseModernOrthography, v => _mainWindowViewModel!.State.UseModernOrthography = v);
+        _useModernOrthographyItem = CreateToggleItem("[M] Chính tả mới (oà, uý)", () => _mainWindowViewModel!.State.UseModernOrthography, v => _mainWindowViewModel!.State.UseModernOrthography = v);
         typingMenu.Add(_useModernOrthographyItem);
 
-        menu.Add(new NativeMenuItem("⌨  Bộ gõ") { Menu = typingMenu });
+        menu.Add(new NativeMenuItem("[T] Bộ gõ") { Menu = typingMenu });
 
         // 3. Tính năng (Submenu)
         var featuresMenu = new NativeMenu();
         
-        _autoRestoreEnglishWordItem = CreateToggleItem("↺  Tự động khôi phục tiếng Anh", () => _mainWindowViewModel!.State.AutoRestoreEnglishWord, v => _mainWindowViewModel!.State.AutoRestoreEnglishWord = v);
+        _autoRestoreEnglishWordItem = CreateToggleItem("[R] Tự động khôi phục tiếng Anh", () => _mainWindowViewModel!.State.AutoRestoreEnglishWord, v => _mainWindowViewModel!.State.AutoRestoreEnglishWord = v);
         featuresMenu.Add(_autoRestoreEnglishWordItem);
 
         featuresMenu.Add(new NativeMenuItemSeparator());
 
-        _useMacroItem = CreateToggleItem("⚑  Bật gõ tắt", () => _mainWindowViewModel!.State.UseMacro, v => _mainWindowViewModel!.SetUseMacroEnabled(v));
+        _useMacroItem = CreateToggleItem("[M] Bật gõ tắt", () => _mainWindowViewModel!.State.UseMacro, v => _mainWindowViewModel!.SetUseMacroEnabled(v));
         featuresMenu.Add(_useMacroItem);
 
-        _useMacroInEnglishModeItem = CreateToggleItem("⚐  Gõ tắt khi ở chế độ Anh", () => _mainWindowViewModel!.State.UseMacroInEnglishMode, v => _mainWindowViewModel!.State.UseMacroInEnglishMode = v);
+        _useMacroInEnglishModeItem = CreateToggleItem("[E] Gõ tắt khi ở chế độ Anh", () => _mainWindowViewModel!.State.UseMacroInEnglishMode, v => _mainWindowViewModel!.State.UseMacroInEnglishMode = v);
         featuresMenu.Add(_useMacroInEnglishModeItem);
 
-        _autoCapsMacroItem = CreateToggleItem("Aa  Tự động viết hoa macro", () => _mainWindowViewModel!.State.AutoCapsMacro, v => _mainWindowViewModel!.State.AutoCapsMacro = v);
+        _autoCapsMacroItem = CreateToggleItem("[A] Tự động viết hoa macro", () => _mainWindowViewModel!.State.AutoCapsMacro, v => _mainWindowViewModel!.State.AutoCapsMacro = v);
         featuresMenu.Add(_autoCapsMacroItem);
 
         featuresMenu.Add(new NativeMenuItemSeparator());
 
-        _useSmartSwitchKeyItem = CreateToggleItem("⚙  Chuyển thông minh theo ứng dụng", () => _mainWindowViewModel!.State.UseSmartSwitchKey, v => _mainWindowViewModel!.State.UseSmartSwitchKey = v);
+        _useSmartSwitchKeyItem = CreateToggleItem("[S] Chuyển thông minh theo ứng dụng", () => _mainWindowViewModel!.State.UseSmartSwitchKey, v => _mainWindowViewModel!.State.UseSmartSwitchKey = v);
         featuresMenu.Add(_useSmartSwitchKeyItem);
 
-        _rememberCodeItem = CreateToggleItem("⛃  Nhớ bảng mã theo ứng dụng", () => _mainWindowViewModel!.State.RememberCode, v => _mainWindowViewModel!.State.RememberCode = v);
+        _rememberCodeItem = CreateToggleItem("[B] Nhớ bảng mã theo ứng dụng", () => _mainWindowViewModel!.State.RememberCode, v => _mainWindowViewModel!.State.RememberCode = v);
         featuresMenu.Add(_rememberCodeItem);
 
         featuresMenu.Add(new NativeMenuItemSeparator());
 
-        _restoreOnEscapeItem = CreateToggleItem("⎋  Khôi phục khi nhấn ESC", () => _mainWindowViewModel!.State.RestoreOnEscape, v => _mainWindowViewModel!.State.RestoreOnEscape = v);
+        _restoreOnEscapeItem = CreateToggleItem("[E] Khôi phục khi nhấn ESC", () => _mainWindowViewModel!.State.RestoreOnEscape, v => _mainWindowViewModel!.State.RestoreOnEscape = v);
         featuresMenu.Add(_restoreOnEscapeItem);
 
-        _pauseKeyEnabledItem = CreateToggleItem("⏸  Tạm dừng khi giữ phím", () => _mainWindowViewModel!.State.PauseKeyEnabled, v => _mainWindowViewModel!.State.PauseKeyEnabled = v);
+        _pauseKeyEnabledItem = CreateToggleItem("[P] Tạm dừng khi giữ phím", () => _mainWindowViewModel!.State.PauseKeyEnabled, v => _mainWindowViewModel!.State.PauseKeyEnabled = v);
         featuresMenu.Add(_pauseKeyEnabledItem);
 
-        menu.Add(new NativeMenuItem("⛭  Tính năng") { Menu = featuresMenu });
+        menu.Add(new NativeMenuItem("[F] Tính năng") { Menu = featuresMenu });
 
         // 4. Tương thích (Submenu)
         var compatibilityMenu = new NativeMenu();
         
-        _sendKeyStepByStepItem = CreateToggleItem("⇶  Gửi phím từng bước", () => _mainWindowViewModel!.State.SendKeyStepByStep, v => _mainWindowViewModel!.State.SendKeyStepByStep = v);
+        _sendKeyStepByStepItem = CreateToggleItem("[K] Gửi phím từng bước", () => _mainWindowViewModel!.State.SendKeyStepByStep, v => _mainWindowViewModel!.State.SendKeyStepByStep = v);
         compatibilityMenu.Add(_sendKeyStepByStepItem);
 
-        _performLayoutCompatItem = CreateToggleItem("⌨  Tương thích layout", () => _mainWindowViewModel!.State.PerformLayoutCompat, v => _mainWindowViewModel!.State.PerformLayoutCompat = v);
+        _performLayoutCompatItem = CreateToggleItem("[L] Tương thích layout", () => _mainWindowViewModel!.State.PerformLayoutCompat, v => _mainWindowViewModel!.State.PerformLayoutCompat = v);
         compatibilityMenu.Add(_performLayoutCompatItem);
 
-        menu.Add(new NativeMenuItem("🛠  Tương thích") { Menu = compatibilityMenu });
+        menu.Add(new NativeMenuItem("[C] Tương thích") { Menu = compatibilityMenu });
 
         // 5. Hệ thống (Submenu)
         var systemMenu = new NativeMenu();
         
-        _runOnStartupItem = CreateToggleItem("⏻  Khởi động cùng máy", () => _mainWindowViewModel!.State.RunOnStartup, v => _mainWindowViewModel!.State.RunOnStartup = v);
+        _runOnStartupItem = CreateToggleItem("[S] Khởi động cùng máy", () => _mainWindowViewModel!.State.RunOnStartup, v => _mainWindowViewModel!.State.RunOnStartup = v);
         systemMenu.Add(_runOnStartupItem);
 
-        _showIconOnDockItem = CreateToggleItem("▭  Hiện icon trên Taskbar", () => _mainWindowViewModel!.State.ShowIconOnDock, v => _mainWindowViewModel!.State.ShowIconOnDock = v);
+        _showIconOnDockItem = CreateToggleItem("[I] Hiện icon trên Taskbar", () => _mainWindowViewModel!.State.ShowIconOnDock, v => _mainWindowViewModel!.State.ShowIconOnDock = v);
         systemMenu.Add(_showIconOnDockItem);
 
-        menu.Add(new NativeMenuItem("💻  Hệ thống") { Menu = systemMenu });
+        menu.Add(new NativeMenuItem("[S] Hệ thống") { Menu = systemMenu });
 
         menu.Add(new NativeMenuItemSeparator());
 
         // 6. Công cụ
         var toolsMenu = new NativeMenu();
-        toolsMenu.Add(new NativeMenuItem("⚒  Chuyển đổi bảng mã...") { IsEnabled = false });
-        menu.Add(new NativeMenuItem("⚒  Công cụ") { Menu = toolsMenu });
+        toolsMenu.Add(new NativeMenuItem("[T] Chuyển đổi bảng mã...") { IsEnabled = false });
+        menu.Add(new NativeMenuItem("[T] Công cụ") { Menu = toolsMenu });
 
         menu.Add(new NativeMenuItemSeparator());
 
         // 7. Cài đặt
-        var settingsItem = new NativeMenuItem("⚙  Mở Cài đặt...");
+        var settingsItem = new NativeMenuItem("[S] Mở Cài đặt...");
         settingsItem.Click += (_, _) => {
             SuppressTrayClickTemporarily();
             ShowSettingsWindow(SettingsTabId.Typing);
@@ -277,21 +277,21 @@ public sealed partial class App : Application {
 
         menu.Add(new NativeMenuItemSeparator());
 
-        var aboutItem = new NativeMenuItem("ⓘ  Về PHTV");
+        var aboutItem = new NativeMenuItem("[I] Về PHTV");
         aboutItem.Click += (_, _) => {
             SuppressTrayClickTemporarily();
             ShowSettingsWindow(SettingsTabId.About);
         };
         menu.Add(aboutItem);
 
-        var updateItem = new NativeMenuItem("↻  Kiểm tra cập nhật");
+        var updateItem = new NativeMenuItem("[U] Kiểm tra cập nhật");
         updateItem.Click += (_, _) => {
             SuppressTrayClickTemporarily();
             _mainWindowViewModel?.OpenLatestReleasePage();
         };
         menu.Add(updateItem);
 
-        var exitItem = new NativeMenuItem("✕  Thoát");
+        var exitItem = new NativeMenuItem("[X] Thoát");
         exitItem.Click += (_, _) => {
             SuppressTrayClickTemporarily();
             ExitApplication(desktop);

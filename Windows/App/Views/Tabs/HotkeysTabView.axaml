@@ -21,7 +21,7 @@
         <StackPanel>
           <Border Classes="settings-card-header">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="⌘"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="H"/></Border>
               <StackPanel Grid.Column="1" Spacing="2">
                 <TextBlock Classes="settings-card-title" Text="Chuyển chế độ gõ"/>
                 <TextBlock Classes="settings-card-subtitle" Text="Đổi nhanh giữa Tiếng Việt và Tiếng Anh"/>
@@ -43,7 +43,7 @@
         <StackPanel>
           <Border Classes="settings-card-header">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="↶"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="R"/></Border>
               <StackPanel Grid.Column="1" Spacing="2">
                 <TextBlock Classes="settings-card-title" Text="Khôi phục ký tự"/>
                 <TextBlock Classes="settings-card-subtitle" Text="Hoàn tác nhanh khi gõ sai"/>
@@ -77,7 +77,7 @@
         <StackPanel>
           <Border Classes="settings-card-header">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="⏸"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="P"/></Border>
               <StackPanel Grid.Column="1" Spacing="2">
                 <TextBlock Classes="settings-card-title" Text="Tạm dừng gõ tiếng Việt"/>
                 <TextBlock Classes="settings-card-subtitle" Text="Tạm ngưng bộ gõ khi cần nhập liệu đặc biệt"/>
@@ -111,7 +111,7 @@
         <StackPanel>
           <Border Classes="settings-card-header">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="☺"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="K"/></Border>
               <StackPanel Grid.Column="1" Spacing="2">
                 <TextBlock Classes="settings-card-title" Text="PHTV Picker"/>
                 <TextBlock Classes="settings-card-subtitle" Text="Mở nhanh bảng emoji/sticker/GIF"/>

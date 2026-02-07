@@ -22,7 +22,7 @@
         <StackPanel>
           <Border Classes="settings-card-header">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="🧠"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="S"/></Border>
               <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Chuyển đổi theo ứng dụng"/><TextBlock Classes="settings-card-subtitle" Text="Tự chuyển Việt/Anh và ghi nhớ bảng mã"/></StackPanel>
             </Grid>
           </Border>
@@ -40,7 +40,7 @@
             <Border Classes="settings-card-header">
               <Grid ColumnDefinitions="40,*" RowDefinitions="Auto,Auto">
                 <Border Classes="settings-card-icon">
-                  <TextBlock Classes="settings-card-icon-text" Text="🚫"/>
+                  <TextBlock Classes="settings-card-icon-text" Text="X"/>
                 </Border>
                 <StackPanel Grid.Column="1" Spacing="2">
                   <TextBlock Classes="settings-card-title" Text="Loại trừ ứng dụng"/>
@@ -66,7 +66,7 @@
             <Border Classes="settings-card-header">
               <Grid ColumnDefinitions="40,*" RowDefinitions="Auto,Auto">
                 <Border Classes="settings-card-icon">
-                  <TextBlock Classes="settings-card-icon-text" Text="⌁"/>
+                  <TextBlock Classes="settings-card-icon-text" Text="K"/>
                 </Border>
                 <StackPanel Grid.Column="1" Spacing="2">
                   <TextBlock Classes="settings-card-title" Text="Ứng dụng gửi từng phím"/>
@@ -92,7 +92,7 @@
         <StackPanel>
           <Border Classes="settings-card-header">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="🧩"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="C"/></Border>
               <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Tương thích nâng cao"/><TextBlock Classes="settings-card-subtitle" Text="Tùy chọn cho app và bố cục đặc biệt"/></StackPanel>
             </Grid>
           </Border>
