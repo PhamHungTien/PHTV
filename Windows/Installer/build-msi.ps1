@@ -44,7 +44,7 @@ function Assert-UpgradeCodeIsValid {
     $content = Get-Content -Path $WxsPath -Raw
     $match = [regex]::Match($content, '<\?define\s+UpgradeCode\s*=\s*"([^"]+)"\s*\?>')
     if (-not $match.Success) {
-        throw "Cannot find '<?define UpgradeCode = \"...\" ?>' in $WxsPath"
+        throw ("Cannot find '<?define UpgradeCode = ""..."" ?>' in {0}" -f $WxsPath)
     }
 
     $upgradeCode = $match.Groups[1].Value
