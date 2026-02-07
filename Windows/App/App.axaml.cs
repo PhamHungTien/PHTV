@@ -16,8 +16,9 @@ namespace PHTV.Windows;
 
 public sealed partial class App : Application {
     private const int TraySettingsBurstClickThreshold = 3;
-    private static readonly TimeSpan TraySettingsBurstWindow = TimeSpan.FromMilliseconds(900);
-    private static readonly TimeSpan TrayToggleDebounce = TimeSpan.FromMilliseconds(240);
+    private static readonly TimeSpan TraySettingsBurstWindow = TimeSpan.FromMilliseconds(850);
+    private static readonly TimeSpan TraySingleClickDebounce = TimeSpan.FromMilliseconds(120);
+    private static readonly TimeSpan TrayMultiClickDebounce = TimeSpan.FromMilliseconds(180);
 
     private MainWindow? _mainWindow;
     private MainWindowViewModel? _mainWindowViewModel;
@@ -497,7 +498,7 @@ public sealed partial class App : Application {
         }
 
         _trayClickDebounceTimer = new DispatcherTimer {
-            Interval = TrayToggleDebounce
+            Interval = TraySingleClickDebounce
         };
         _trayClickDebounceTimer.Tick += OnTrayClickDebounceTimerTick;
     }
@@ -531,6 +532,11 @@ public sealed partial class App : Application {
         }
 
         _trayClickDebounceTimer?.Stop();
+        if (_trayClickDebounceTimer is not null) {
+            _trayClickDebounceTimer.Interval = _trayClickBurstCount <= 1
+                ? TraySingleClickDebounce
+                : TrayMultiClickDebounce;
+        }
         _trayClickDebounceTimer?.Start();
     }
 
