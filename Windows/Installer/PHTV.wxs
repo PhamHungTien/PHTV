@@ -48,7 +48,7 @@
                 <File Id="PHTVEXE" Source="Source\PHTV.exe" KeyPath="yes" Checksum="yes" />
             </Component>
 
-            <Component Id="ApplicationShortcuts" Guid="*">
+            <Component Id="ApplicationShortcuts" Guid="*" Win64="yes">
                 <Shortcut Id="StartMenuShortcut" 
                           Directory="ApplicationProgramsFolder" 
                           Name="$(var.ProductName)" 
