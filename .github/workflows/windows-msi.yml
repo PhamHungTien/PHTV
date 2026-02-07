@@ -28,16 +28,26 @@ jobs:
         Copy-Item ../../macOS/PHTV/Resources/Dictionaries/*.bin publish/win-x64/Dictionaries/
       shell: pwsh
 
-    - name: Create Icon Asset
+    - name: Setup WiX Toolset
       run: |
-        # Use existing icon or placeholder
-        cp docs/images/icon.png Windows/Installer/Assets/icon.ico -ErrorAction SilentlyContinue || echo "No icon found"
+        if (-not (Get-Command candle.exe -ErrorAction SilentlyContinue)) {
+          choco install wixtoolset --version 3.11.2 -y --no-progress
+        }
+        $env:PATH += ";C:\Program Files (x86)\WiX Toolset v3.11\bin"
+        $candle = Get-Command candle.exe -ErrorAction Stop
+        $light = Get-Command light.exe -ErrorAction Stop
+        Write-Host "Using candle.exe at: $($candle.Source)"
+        Write-Host "Using light.exe at:  $($light.Source)"
+      shell: pwsh
 
     - name: Build MSI with WiX
       shell: pwsh
       run: |
-        $env:PATH += ";C:\Program Files (x86)\WiX Toolset v3.11\bin"
-        ./Windows/Installer/build-msi.ps1
+        $runNumber = [int]$env:GITHUB_RUN_NUMBER
+        $patch = ($runNumber % 65534) + 1
+        $productVersion = "1.0.$patch"
+        Write-Host "MSI ProductVersion: $productVersion"
+        ./Windows/Installer/build-msi.ps1 -Runtime win-x64 -ProductVersion $productVersion
 
     - name: Upload MSI Artifact
       uses: actions/upload-artifact@v4

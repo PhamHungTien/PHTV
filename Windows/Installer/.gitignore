@@ -1,0 +1,4 @@
+Source/
+*.wixobj
+*.wixpdb
+*.msi
