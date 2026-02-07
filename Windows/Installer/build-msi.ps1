@@ -95,14 +95,13 @@ function Normalize-LocalizationForWindows1258 {
     # - Precomposed base vowels (ă â ê ô ơ ư)
     # - Combining tone marks (grave/acute/hook/tilde/dot below)
     # Convert arbitrary Unicode Vietnamese to this representable form.
-    $baseCompositionMap = @{
-        "a|$([char]0x0306)" = "ă"; "A|$([char]0x0306)" = "Ă"
-        "a|$([char]0x0302)" = "â"; "A|$([char]0x0302)" = "Â"
-        "e|$([char]0x0302)" = "ê"; "E|$([char]0x0302)" = "Ê"
-        "o|$([char]0x0302)" = "ô"; "O|$([char]0x0302)" = "Ô"
-        "o|$([char]0x031B)" = "ơ"; "O|$([char]0x031B)" = "Ơ"
-        "u|$([char]0x031B)" = "ư"; "U|$([char]0x031B)" = "Ư"
-    }
+    $baseCompositionMap = [Collections.Generic.Dictionary[string, string]]::new([StringComparer]::Ordinal)
+    $baseCompositionMap.Add("a|$([char]0x0306)", "ă"); $baseCompositionMap.Add("A|$([char]0x0306)", "Ă")
+    $baseCompositionMap.Add("a|$([char]0x0302)", "â"); $baseCompositionMap.Add("A|$([char]0x0302)", "Â")
+    $baseCompositionMap.Add("e|$([char]0x0302)", "ê"); $baseCompositionMap.Add("E|$([char]0x0302)", "Ê")
+    $baseCompositionMap.Add("o|$([char]0x0302)", "ô"); $baseCompositionMap.Add("O|$([char]0x0302)", "Ô")
+    $baseCompositionMap.Add("o|$([char]0x031B)", "ơ"); $baseCompositionMap.Add("O|$([char]0x031B)", "Ơ")
+    $baseCompositionMap.Add("u|$([char]0x031B)", "ư"); $baseCompositionMap.Add("U|$([char]0x031B)", "Ư")
 
     $content = Get-Content -Path $InputPath -Raw -Encoding UTF8
     $nfd = $content.Normalize([Text.NormalizationForm]::FormD)
