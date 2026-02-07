@@ -1,0 +1,56 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PHTV.Windows.Dialogs"
+        x:Class="PHTV.Windows.Dialogs.AppPickerWindow"
+        Title="Chọn ứng dụng"
+        Width="420" Height="520"
+        WindowStartupLocation="CenterOwner"
+        TransparencyLevelHint="Mica"
+        Background="Transparent"
+        ExtendClientAreaToDecorationsHint="True">
+
+  <Border Padding="20,40,20,20">
+    <DockPanel LastChildFill="True">
+      <StackPanel DockPanel.Dock="Top" Spacing="12" Margin="0,0,0,16">
+        <TextBlock Text="Chọn ứng dụng" FontSize="20" FontWeight="Bold"/>
+        <TextBox Watermark="Tìm kiếm ứng dụng..." 
+                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                 Classes="sidebar-search"/>
+      </StackPanel>
+
+      <StackPanel DockPanel.Dock="Bottom" Spacing="12" Margin="0,16,0,0">
+        <Border Classes="settings-divider"/>
+        <Grid ColumnDefinitions="*,*">
+          <Button Content="Hủy" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" 
+                  Margin="0,0,6,0" Click="OnCancelClick"/>
+          <Button Grid.Column="1" Classes="primary" Content="Chọn" 
+                  HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" 
+                  Margin="6,0,0,0" Click="OnSelectClick"
+                  IsEnabled="{Binding SelectedApp, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+        </Grid>
+      </StackPanel>
+
+      <ListBox ItemsSource="{Binding FilteredApps}" 
+               SelectedItem="{Binding SelectedApp}"
+               Background="Transparent" BorderThickness="0">
+        <ListBox.ItemTemplate>
+          <DataTemplate>
+            <Border Padding="8,4">
+              <Grid ColumnDefinitions="Auto,*">
+                <Border Width="32" Height="32" CornerRadius="6" Background="{DynamicResource PhtvAccentSoftBrush}">
+                  <TextBlock Text="" VerticalAlignment="Center" HorizontalAlignment="Center" 
+                             Foreground="{DynamicResource PhtvAccentBrush}" FontSize="16"
+                             FontFamily="Segoe UI Symbol"/>
+                </Border>
+                <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding Name}" FontWeight="Medium" FontSize="13"/>
+                  <TextBlock Text="{Binding ExeName}" FontSize="11" Opacity="0.6"/>
+                </StackPanel>
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </DockPanel>
+  </Border>
+</Window>

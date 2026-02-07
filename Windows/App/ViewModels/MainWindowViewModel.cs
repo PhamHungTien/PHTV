@@ -42,9 +42,9 @@ public sealed class MainWindowViewModel : ObservableObject {
     private readonly AsyncRelayCommand _exportMacrosCommand;
     private readonly AsyncRelayCommand _importMacrosCommand;
 
-    private readonly AsyncRelayCommand _addExcludedAppCommand;
+    private readonly RelayCommand<object> _addExcludedAppCommand;
     private readonly RelayCommand _removeExcludedAppCommand;
-    private readonly AsyncRelayCommand _addStepByStepAppCommand;
+    private readonly RelayCommand<object> _addStepByStepAppCommand;
     private readonly RelayCommand _removeStepByStepAppCommand;
 
     private readonly RelayCommand _checkForUpdatesCommand;
@@ -118,9 +118,9 @@ public sealed class MainWindowViewModel : ObservableObject {
         _exportMacrosCommand = new AsyncRelayCommand(ExportMacrosAsync, () => State.Macros.Count > 0);
         _importMacrosCommand = new AsyncRelayCommand(ImportMacrosAsync);
 
-        _addExcludedAppCommand = new AsyncRelayCommand(AddExcludedAppAsync);
+        _addExcludedAppCommand = new RelayCommand<object>(async p => await AddExcludedAppAsync(p));
         _removeExcludedAppCommand = new RelayCommand(RemoveExcludedApp, () => !string.IsNullOrWhiteSpace(State.SelectedExcludedApp));
-        _addStepByStepAppCommand = new AsyncRelayCommand(AddStepByStepAppAsync);
+        _addStepByStepAppCommand = new RelayCommand<object>(async p => await AddStepByStepAppAsync(p));
         _removeStepByStepAppCommand = new RelayCommand(RemoveStepByStepApp, () => !string.IsNullOrWhiteSpace(State.SelectedStepByStepApp));
 
         _checkForUpdatesCommand = new RelayCommand(CheckForUpdates);
@@ -1041,30 +1041,35 @@ public sealed class MainWindowViewModel : ObservableObject {
         return value.ValueKind == JsonValueKind.String ? value.GetString() ?? string.Empty : string.Empty;
     }
 
-    private async Task AddExcludedAppAsync() {
+    private async Task AddExcludedAppAsync(object? parameter) {
         var owner = GetOwnerWindow();
-        if (owner is null) {
-            return;
+        if (owner is null) return;
+
+        string? appToExclude = null;
+        string mode = parameter as string ?? "Running";
+
+        if (mode == "Running") {
+            appToExclude = await AppPickerWindow.ShowAsync(owner);
+        } else if (mode == "File") {
+            var files = await owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions {
+                Title = "Chọn ứng dụng (.exe)",
+                AllowMultiple = false,
+                FileTypeFilter = new List<FilePickerFileType> {
+                    new("Executable") { Patterns = new[] { "*.exe" } }
+                }
+            });
+            appToExclude = Path.GetFileName(files.FirstOrDefault()?.TryGetLocalPath());
+        } else {
+            appToExclude = await TextPromptWindow.ShowAsync(owner, "Thêm thủ công", "Nhập tên tiến trình (ví dụ: notepad.exe)");
         }
 
-        var appName = await TextPromptWindow.ShowAsync(
-            owner,
-            "Thêm ứng dụng loại trừ",
-            "Nhập tên app cần tự chuyển sang English",
-            watermark: "Ví dụ: Adobe Photoshop");
-        if (string.IsNullOrWhiteSpace(appName)) {
-            return;
-        }
+        if (string.IsNullOrWhiteSpace(appToExclude)) return;
 
-        var normalized = appName.Trim();
-        if (State.ExcludedApps.Any(a => string.Equals(a, normalized, StringComparison.OrdinalIgnoreCase))) {
-            StatusMessage = "Ứng dụng đã tồn tại trong danh sách loại trừ.";
-            return;
+        var normalized = appToExclude.Trim();
+        if (!State.ExcludedApps.Contains(normalized, StringComparer.OrdinalIgnoreCase)) {
+            State.ExcludedApps.Add(normalized);
+            StatusMessage = $"Đã thêm '{normalized}' vào danh sách loại trừ.";
         }
-
-        State.ExcludedApps.Add(normalized);
-        State.SelectedExcludedApp = normalized;
-        StatusMessage = $"Đã thêm '{normalized}' vào danh sách loại trừ.";
     }
 
     private void RemoveExcludedApp() {
@@ -1077,30 +1082,35 @@ public sealed class MainWindowViewModel : ObservableObject {
         StatusMessage = $"Đã xóa '{selected}' khỏi danh sách loại trừ.";
     }
 
-    private async Task AddStepByStepAppAsync() {
+    private async Task AddStepByStepAppAsync(object? parameter) {
         var owner = GetOwnerWindow();
-        if (owner is null) {
-            return;
+        if (owner is null) return;
+
+        string? appToAdd = null;
+        string mode = parameter as string ?? "Running";
+
+        if (mode == "Running") {
+            appToAdd = await AppPickerWindow.ShowAsync(owner);
+        } else if (mode == "File") {
+            var files = await owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions {
+                Title = "Chọn ứng dụng (.exe)",
+                AllowMultiple = false,
+                FileTypeFilter = new List<FilePickerFileType> {
+                    new("Executable") { Patterns = new[] { "*.exe" } }
+                }
+            });
+            appToAdd = Path.GetFileName(files.FirstOrDefault()?.TryGetLocalPath());
+        } else {
+            appToAdd = await TextPromptWindow.ShowAsync(owner, "Thêm thủ công", "Nhập tên tiến trình (ví dụ: putty.exe)");
         }
 
-        var appName = await TextPromptWindow.ShowAsync(
-            owner,
-            "Thêm ứng dụng gửi từng phím",
-            "Nhập tên app cần bật Send Key Step-by-Step",
-            watermark: "Ví dụ: Remote Desktop");
-        if (string.IsNullOrWhiteSpace(appName)) {
-            return;
-        }
+        if (string.IsNullOrWhiteSpace(appToAdd)) return;
 
-        var normalized = appName.Trim();
-        if (State.StepByStepApps.Any(a => string.Equals(a, normalized, StringComparison.OrdinalIgnoreCase))) {
-            StatusMessage = "Ứng dụng đã có trong danh sách gửi từng phím.";
-            return;
+        var normalized = appToAdd.Trim();
+        if (!State.StepByStepApps.Contains(normalized, StringComparer.OrdinalIgnoreCase)) {
+            State.StepByStepApps.Add(normalized);
+            StatusMessage = $"Đã thêm '{normalized}' vào danh sách gửi từng phím.";
         }
-
-        State.StepByStepApps.Add(normalized);
-        State.SelectedStepByStepApp = normalized;
-        StatusMessage = $"Đã thêm '{normalized}' vào danh sách gửi từng phím.";
     }
 
     private void RemoveStepByStepApp() {

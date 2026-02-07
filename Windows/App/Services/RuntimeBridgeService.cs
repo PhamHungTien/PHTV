@@ -575,6 +575,8 @@ public sealed class RuntimeBridgeService {
             $"auto_restore_english_word={ToInt(state.AutoRestoreEnglishWord)}",
             $"send_key_step_by_step={ToInt(state.SendKeyStepByStep)}",
             $"perform_layout_compat={ToInt(state.PerformLayoutCompat)}",
+            $"emoji_hotkey_enabled={ToInt(state.EmojiHotkeyEnabled)}",
+            $"emoji_hotkey_status={ParseSwitchKeyStatus(state.EmojiHotkey)}",
             "fix_recommend_browser=1",
             $"excluded_apps={BuildEscapedList(state.ExcludedApps)}",
             $"step_by_step_apps={BuildEscapedList(state.StepByStepApps)}"
