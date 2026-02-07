@@ -92,7 +92,7 @@ public sealed class MainWindowViewModel : ObservableObject {
         _allTabs = new List<SidebarTabEntry> {
             new(SettingsTabId.Typing, "Bộ gõ", "⌨", "Nhập liệu", 
                 "telex", "vni", "simple", "chính tả", "spell", "bảng mã", "unicode", "tcvn3", "vni windows", "hiện đại", "viết hoa", "phụ âm", "zfwj"),
-            new(SettingsTabId.Hotkeys, "Phím tắt", "", "Nhập liệu", 
+            new(SettingsTabId.Hotkeys, "Phím tắt", "", "Nhập liệu", 
                 "hotkey", "shortcut", "tạm dừng", "pause", "khôi phục", "restore", "chuyển chế độ", "esc", "alt", "ctrl", "win", "fn", "picker", "emoji"),
             new(SettingsTabId.Macro, "Gõ tắt", "✎", "Nhập liệu", 
                 "macro", "snippet", "danh mục", "category", "viết hoa macro", "auto caps", "xuất", "nhập", "export", "import"),

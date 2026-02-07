@@ -22,7 +22,7 @@
         <StackPanel>
           <Border Classes="settings-card-header indigo">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text=""/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text=""/></Border>
               <StackPanel Grid.Column="1" Spacing="2">
                 <TextBlock Classes="settings-card-title" Text="Chuyển chế độ gõ"/>
                 <TextBlock Classes="settings-card-subtitle" Text="Thiết lập phím tắt nhanh theo kiểu Windows"/>
@@ -48,7 +48,7 @@
                 </ToggleButton>
                 <ToggleButton Classes="hotkey-selector-button" Margin="4,0,4,0" IsChecked="{Binding State.SwitchHotkeyCommand}">
                   <StackPanel HorizontalAlignment="Center">
-                    <TextBlock Classes="symbol" Text=""/>
+                    <TextBlock Classes="symbol" Text=""/>
                     <TextBlock Classes="label" Text="Win"/>
                   </StackPanel>
                 </ToggleButton>
@@ -206,7 +206,7 @@
                     <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="Alt"/><TextBlock Classes="label" Text="Alt"/></StackPanel>
                   </ToggleButton>
                   <ToggleButton Classes="hotkey-selector-button" Margin="4,0,4,0" IsChecked="{Binding State.EmojiHotkeyCommand}">
-                    <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text=""/><TextBlock Classes="label" Text="Win"/></StackPanel>
+                    <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text=""/><TextBlock Classes="label" Text="Win"/></StackPanel>
                   </ToggleButton>
                   <ToggleButton Classes="hotkey-selector-button" Margin="4,0,4,0" IsChecked="{Binding State.EmojiHotkeyShift}">
                     <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="⇧"/><TextBlock Classes="label" Text="Shift"/></StackPanel>
