@@ -51,8 +51,8 @@ constexpr int kCliBackspaceDelayDefaultUs = 10000;
 constexpr int kCliWaitAfterBackspaceDefaultUs = 30000;
 constexpr int kCliTextDelayDefaultUs = 8000;
 constexpr int kStepByStepDelayDefaultUs = 3000;
-constexpr int kBrowserBackspaceDelayUs = 5000;
-constexpr int kAddressBarDetectRefreshMs = 150;
+constexpr int kBrowserBackspaceDelayUs = 0;
+constexpr int kAddressBarDetectRefreshMs = 100;
 
 const std::unordered_set<std::wstring> kBrowserExecutables = {
     L"chrome.exe",
