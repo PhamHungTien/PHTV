@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WixLocalization xmlns="http://schemas.microsoft.com/wix/2006/localization"
+                 Culture="en-US"
+                 Codepage="1252">
+    <String Id="DowngradeErrorMessage">A newer version of [ProductName] is already installed.</String>
+    <String Id="LaunchApplicationCheckboxText">Launch PHTV after setup</String>
+</WixLocalization>

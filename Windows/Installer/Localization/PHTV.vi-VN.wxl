@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WixLocalization xmlns="http://schemas.microsoft.com/wix/2006/localization"
+                 Culture="vi-VN"
+                 Codepage="1258">
+    <String Id="DowngradeErrorMessage">Phiên bản mới hơn của [ProductName] đã được cài đặt.</String>
+    <String Id="LaunchApplicationCheckboxText">Mở PHTV sau khi cài đặt</String>
+
+    <String Id="WixUIBack">&amp;Quay lại</String>
+    <String Id="WixUINext">&amp;Tiếp</String>
+    <String Id="WixUICancel">Hủy</String>
+    <String Id="WixUIFinish">&amp;Hoàn tất</String>
+
+    <String Id="WelcomeDlgTitle">{\WixUI_Font_Bigger}Chào mừng đến với Trình cài đặt [ProductName]</String>
+    <String Id="WelcomeDlgDescription">Trình cài đặt sẽ cài [ProductName] vào máy tính của bạn. Nhấn Tiếp để tiếp tục hoặc Hủy để thoát.</String>
+
+    <String Id="InstallDirDlgTitle">{\WixUI_Font_Title}Thư mục cài đặt</String>
+    <String Id="InstallDirDlgDescription">Nhấn Tiếp để cài vào thư mục mặc định hoặc chọn Thay đổi để chọn vị trí khác.</String>
+    <String Id="InstallDirDlgFolderLabel">Cài đặt [ProductName] vào:</String>
+    <String Id="InstallDirDlgChange">&amp;Thay đổi...</String>
+
+    <String Id="VerifyReadyDlgInstall">&amp;Cài đặt</String>
+    <String Id="VerifyReadyDlgInstallTitle">{\WixUI_Font_Title}Sẵn sàng cài đặt [ProductName]</String>
+    <String Id="VerifyReadyDlgInstallText">Nhấn Cài đặt để bắt đầu cài đặt. Nhấn Quay lại để xem lại cài đặt hoặc Hủy để thoát.</String>
+
+    <String Id="ProgressDlgTextInstalling">Vui lòng đợi trong khi Trình cài đặt đang cài [ProductName].</String>
+    <String Id="ProgressDlgTitleInstalling">{\WixUI_Font_Title}Đang cài đặt [ProductName]</String>
+    <String Id="ProgressDlgStatusLabel">Trạng thái:</String>
+
+    <String Id="ExitDialogTitle">{\WixUI_Font_Bigger}Đã hoàn tất Trình cài đặt [ProductName]</String>
+    <String Id="ExitDialogDescription">Nhấn Hoàn tất để đóng Trình cài đặt.</String>
+
+    <String Id="CancelDlgText">Bạn có chắc muốn hủy cài đặt [ProductName] không?</String>
+    <String Id="FatalErrorTitle">{\WixUI_Font_Bigger}Trình cài đặt [ProductName] đã kết thúc sớm</String>
+    <String Id="FatalErrorDescription1">Trình cài đặt [ProductName] đã kết thúc do lỗi. Hệ thống của bạn chưa bị thay đổi.</String>
+    <String Id="FatalErrorDescription2">Nhấn Hoàn tất để đóng Trình cài đặt.</String>
+
+    <String Id="UserExitTitle">{\WixUI_Font_Bigger}Quá trình cài đặt [ProductName] đã bị gián đoạn</String>
+    <String Id="UserExitDescription1">Quá trình cài đặt [ProductName] đã bị dừng. Hệ thống của bạn chưa bị thay đổi.</String>
+    <String Id="UserExitDescription2">Nhấn Hoàn tất để đóng Trình cài đặt.</String>
+</WixLocalization>

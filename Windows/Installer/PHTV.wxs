@@ -21,13 +21,13 @@
                  Platform="x64"
                  SummaryCodepage="1258" />
 
-        <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+        <MajorUpgrade DowngradeErrorMessage="!(loc.DowngradeErrorMessage)" />
         <MediaTemplate EmbedCab="yes" />
 
         <!-- Icon cho Add/Remove Programs -->
         <Icon Id="AppIcon" SourceFile="Assets\icon.ico" />
         <Property Id="ARPPRODUCTICON" Value="AppIcon" />
-        <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch PHTV after setup" />
+        <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="!(loc.LaunchApplicationCheckboxText)" />
 
         <!-- Cấu trúc thư mục -->
         <Directory Id="TARGETDIR" Name="SourceDir">
@@ -49,13 +49,19 @@
                     <Shortcut Id="StartMenuShortcut" 
                               Directory="ApplicationProgramsFolder" 
                               Name="$(var.ProductName)" 
+                              Description="PHTV Vietnamese Input Method"
                               WorkingDirectory="INSTALLFOLDER" 
-                              Advertise="yes" />
+                              Icon="AppIcon"
+                              IconIndex="0"
+                              Advertise="no" />
                     <Shortcut Id="DesktopShortcut" 
                               Directory="DesktopFolder" 
                               Name="$(var.ProductName)" 
+                              Description="PHTV Vietnamese Input Method"
                               WorkingDirectory="INSTALLFOLDER" 
-                              Advertise="yes" />
+                              Icon="AppIcon"
+                              IconIndex="0"
+                              Advertise="no" />
                 </File>
                 <RemoveFolder Id="CleanupShortcut" Directory="ApplicationProgramsFolder" On="uninstall" />
             </Component>

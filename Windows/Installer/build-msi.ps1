@@ -85,6 +85,10 @@ $SourceDir = Join-Path $InstallerDir "Source"
 $WxsPath = Join-Path $InstallerDir "PHTV.wxs"
 $WixObjPath = Join-Path $InstallerDir "PHTV.wixobj"
 $MsiPath = Join-Path $InstallerDir "PHTV-Setup.msi"
+$LocalizationFiles = @(
+    (Join-Path $InstallerDir "Localization\PHTV.en-US.wxl"),
+    (Join-Path $InstallerDir "Localization\PHTV.vi-VN.wxl")
+)
 
 Write-Host "--- PHTV MSI BUILDER ---" -ForegroundColor Cyan
 Write-Host "ProjectRoot: $ProjectRoot"
@@ -98,6 +102,12 @@ if (-not (Test-Path $WxsPath)) {
 }
 
 Assert-UpgradeCodeIsValid -WxsPath $WxsPath
+
+foreach ($localizationFile in $LocalizationFiles) {
+    if (-not (Test-Path $localizationFile)) {
+        throw "Missing WiX localization file: $localizationFile"
+    }
+}
 
 if (-not (Test-Path $PublishDir)) {
     throw "Publish directory not found: $PublishDir"
@@ -161,30 +171,38 @@ Copy-Item -Path $publishDictionaries -Destination $SourceDir -Recurse -Force
 
 $candleExe = Resolve-WixToolPath -ToolName "candle.exe"
 $lightExe = Resolve-WixToolPath -ToolName "light.exe"
+$localizationArguments = @()
+foreach ($localizationFile in $LocalizationFiles) {
+    $localizationArguments += @("-loc", $localizationFile)
+}
 
 Write-Host "Compiling WiX source..."
-Invoke-NativeOrThrow -FilePath $candleExe -Arguments @(
+$candleArguments = @(
     "-nologo",
     "-dProductVersion=$ProductVersion",
     "-out", $WixObjPath,
-    $WxsPath,
+    $WxsPath
+) + $localizationArguments + @(
     "-ext", "WixUIExtension",
     "-ext", "WixUtilExtension"
 )
+Invoke-NativeOrThrow -FilePath $candleExe -Arguments $candleArguments
 
 if (-not (Test-Path $WixObjPath)) {
     throw "Expected output not found: $WixObjPath"
 }
 
 Write-Host "Linking MSI package..."
-Invoke-NativeOrThrow -FilePath $lightExe -Arguments @(
+$lightArguments = @(
     "-nologo",
     "-out", $MsiPath,
-    $WixObjPath,
+    $WixObjPath
+) + $localizationArguments + @(
     "-ext", "WixUIExtension",
     "-ext", "WixUtilExtension",
-    "-cultures:vi-VN;en-US"
+    "-cultures:en-US;vi-VN"
 )
+Invoke-NativeOrThrow -FilePath $lightExe -Arguments $lightArguments
 
 if (-not (Test-Path $MsiPath)) {
     throw "MSI build finished but output file was not found: $MsiPath"
