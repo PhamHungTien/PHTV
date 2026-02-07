@@ -3,7 +3,7 @@
     <?define ProductVersion = "1.0.0" ?>
     <?define Manufacturer = "Pham Hung Tien" ?>
     <?define ProductName = "PHTV" ?>
-    <?define UpgradeCode = "a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6" ?>
+    <?define UpgradeCode = "7E3F1B2C-D4A5-4E6F-8A9B-0C1D2E3F4A5B" ?>
 
     <Product Id="*" 
              Name="$(var.ProductName)" 

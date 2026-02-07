@@ -23,7 +23,7 @@ Copy-Item (Join-Path $PublishDir "Dictionaries") $SourceDir -Recurse
 Write-Host "Compiling WiX source..."
 & candle.exe -nologo -out "$InstallerDir\PHTV.wixobj" "$InstallerDir\PHTV.wxs" -ext WixUIExtension -ext WixUtilExtension
 
-Write-Host "Linking MSI package..."
-& light.exe -nologo -out "$InstallerDir\PHTV-Setup.msi" "$InstallerDir\PHTV.wixobj" -ext WixUIExtension -ext WixUtilExtension -cultures:vi-VN;en-US
+WriteHost "Linking MSI package..."
+& light.exe -nologo -out "$InstallerDir\PHTV-Setup.msi" "$InstallerDir\PHTV.wixobj" -ext WixUIExtension -ext WixUtilExtension "-cultures:vi-VN;en-US"
 
 Write-Host "Done! Installer created at: $InstallerDir\PHTV-Setup.msi" -ForegroundColor Green
