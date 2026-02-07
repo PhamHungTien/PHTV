@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-    <?define ProductVersion = "1.0.0" ?>
+    <?ifndef ProductVersion ?>
+        <?define ProductVersion = "1.0.0" ?>
+    <?endif?>
     <?define Manufacturer = "Pham Hung Tien" ?>
     <?define ProductName = "PHTV" ?>
     <?define UpgradeCode = "7E3F1B2C-D4A5-4E6F-8A9B-0C1D2E3F4A5B" ?>
@@ -8,11 +10,15 @@
     <Product Id="*" 
              Name="$(var.ProductName)" 
              Language="1033" 
+             Codepage="1258"
              Version="$(var.ProductVersion)" 
              Manufacturer="$(var.Manufacturer)" 
              UpgradeCode="$(var.UpgradeCode)">
         
-        <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+        <Package InstallerVersion="200"
+                 Compressed="yes"
+                 InstallScope="perMachine"
+                 SummaryCodepage="1258" />
 
         <MajorUpgrade DowngradeErrorMessage="Một phiên bản mới hơn của [ProductName] đã được cài đặt." />
         <MediaTemplate EmbedCab="yes" />
