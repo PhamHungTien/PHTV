@@ -11,7 +11,7 @@
             <TextBlock Classes="settings-header-title" Text="{Binding Title}"/>
             <TextBlock Classes="settings-header-subtitle" Text="{Binding Subtitle}" TextWrapping="Wrap"/>
           </StackPanel>
-          <Border Grid.Column="1" Classes="status-pill">
+          <Border Grid.Column="1" Classes="status-pill" VerticalAlignment="Center" Margin="16,0,0,0">
             <TextBlock Classes="status-pill-text" Text="{Binding State.SwitchHotkeyDisplay, StringFormat='Chuyển chế độ: {0}'}"/>
           </Border>
         </Grid>

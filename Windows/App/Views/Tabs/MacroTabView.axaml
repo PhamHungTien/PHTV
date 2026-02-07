@@ -11,7 +11,7 @@
             <TextBlock Classes="settings-header-title" Text="{Binding Title}"/>
             <TextBlock Classes="settings-header-subtitle" Text="{Binding Subtitle}" TextWrapping="Wrap"/>
           </StackPanel>
-          <StackPanel Grid.Column="1" Spacing="6" HorizontalAlignment="Right">
+          <StackPanel Grid.Column="1" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Center">
             <Border Classes="status-pill">
               <TextBlock Classes="status-pill-text" Text="{Binding State.UseMacro, StringFormat='Trạng thái: {0}'}"/>
             </Border>
