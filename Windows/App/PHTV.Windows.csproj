@@ -4,6 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>PHTV</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets/PHTV.ico</ApplicationIcon>
     <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>

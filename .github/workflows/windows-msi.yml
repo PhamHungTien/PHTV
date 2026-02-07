@@ -24,8 +24,9 @@ jobs:
         cd Windows/App
         dotnet publish PHTV.Windows.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish/win-x64
         # Copy dictionaries
-        mkdir publish/win-x64/Dictionaries
-        cp ../../macOS/PHTV/Resources/Dictionaries/*.bin publish/win-x64/Dictionaries/
+        if (!(Test-Path publish/win-x64/Dictionaries)) { New-Item -ItemType Directory -Path publish/win-x64/Dictionaries }
+        Copy-Item ../../macOS/PHTV/Resources/Dictionaries/*.bin publish/win-x64/Dictionaries/
+      shell: pwsh
 
     - name: Create Icon Asset
       run: |
