@@ -18,6 +18,7 @@
         <Package InstallerVersion="200"
                  Compressed="yes"
                  InstallScope="perMachine"
+                 Platform="x64"
                  SummaryCodepage="1258" />
 
         <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
