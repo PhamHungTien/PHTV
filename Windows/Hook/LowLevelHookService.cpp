@@ -51,7 +51,7 @@ constexpr int kCliBackspaceDelayDefaultUs = 10000;
 constexpr int kCliWaitAfterBackspaceDefaultUs = 30000;
 constexpr int kCliTextDelayDefaultUs = 8000;
 constexpr int kStepByStepDelayDefaultUs = 3000;
-constexpr int kBrowserBackspaceDelayUs = 1500;
+constexpr int kBrowserBackspaceDelayUs = 5000;
 constexpr int kAddressBarDetectRefreshMs = 150;
 
 const std::unordered_set<std::wstring> kBrowserExecutables = {
@@ -1493,9 +1493,9 @@ void LowLevelHookService::sendEmptyCharacter() {
     if (IS_DOUBLE_CODE(vCodeTable)) {
         pushSyncLength(1);
     }
-    // Use ZERO WIDTH SPACE (0x200B) instead of NARROW NO-BREAK SPACE
-    // as it is less likely to cause visual artifacts in modern address bars.
-    sendUnicode(0x200B);
+    // Use NARROW NO-BREAK SPACE (0x202F) like macOS version.
+    // This is more effective at interrupting Chromium's autocomplete engine.
+    sendUnicode(0x202F);
 }
 
 void LowLevelHookService::sendUnicode(Uint16 unicodeChar) {
