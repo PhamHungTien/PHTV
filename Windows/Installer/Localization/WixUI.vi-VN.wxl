@@ -2,14 +2,14 @@
 <!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.TXT file in the project root for full license information. -->
 
 
-<WixLocalization Culture="vi-VN" Codepage="1258" xmlns="http://schemas.microsoft.com/wix/2006/localization">
+<WixLocalization Culture="vi-VN" Codepage="1252" xmlns="http://schemas.microsoft.com/wix/2006/localization">
     <!-- _locID@Culture="vi-VN" _locComment="Vietnamese" -->
-    <!-- _locID@Codepage="1258" _locComment="Windows-1258" -->
+    <!-- _locID@Codepage="1252" _locComment="Windows-1252" -->
 
-    <String Id="WixUIBack" Overridable="yes"><!-- _locID_text="WixUIBack" _locComment="WixUIBack" -->&amp;Quay lại</String>
-    <String Id="WixUINext" Overridable="yes"><!-- _locID_text="WixUINext" _locComment="WixUINext" -->&amp;Tiếp</String>
-    <String Id="WixUICancel" Overridable="yes"><!-- _locID_text="WixUICancel" _locComment="WixUICancel" -->Hủy</String>
-    <String Id="WixUIFinish" Overridable="yes"><!-- _locID_text="WixUIFinish" _locComment="WixUIFinish" -->&amp;Hoàn tất</String>
+    <String Id="WixUIBack" Overridable="yes"><!-- _locID_text="WixUIBack" _locComment="WixUIBack" -->&amp;Quay lai</String>
+    <String Id="WixUINext" Overridable="yes"><!-- _locID_text="WixUINext" _locComment="WixUINext" -->&amp;Tiep</String>
+    <String Id="WixUICancel" Overridable="yes"><!-- _locID_text="WixUICancel" _locComment="WixUICancel" -->Huy</String>
+    <String Id="WixUIFinish" Overridable="yes"><!-- _locID_text="WixUIFinish" _locComment="WixUIFinish" -->&amp;Hoan tat</String>
     <String Id="WixUIRetry" Overridable="yes"><!-- _locID_text="WixUIRetry" _locComment="WixUIRetry" -->&amp;Retry</String>
     <String Id="WixUIIgnore" Overridable="yes"><!-- _locID_text="WixUIIgnore" _locComment="WixUIIgnore" -->&amp;Ignore</String>
     <String Id="WixUIYes" Overridable="yes"><!-- _locID_text="WixUIYes" _locComment="WixUIYes" -->&amp;Yes</String>
@@ -43,7 +43,7 @@
     <String Id="BrowseDlgTitle" Overridable="yes"><!-- _locID_text="BrowseDlgTitle" _locComment="BrowseDlgTitle" -->{\WixUI_Font_Title}Change destination folder</String>
 
     <String Id="CancelDlg_Title" Overridable="yes"><!-- _locID_text="CancelDlg_Title" _locComment="CancelDlg_Title" -->[ProductName] Setup</String>
-    <String Id="CancelDlgText" Overridable="yes"><!-- _locID_text="CancelDlgText" _locComment="CancelDlgText" -->Bạn có chắc muốn hủy cài đặt [ProductName] không?</String>
+    <String Id="CancelDlgText" Overridable="yes"><!-- _locID_text="CancelDlgText" _locComment="CancelDlgText" -->Ban co chac muon huy cai dat [ProductName] khong?</String>
     <String Id="CancelDlgIcon" Overridable="yes"><!-- _locID_text="CancelDlgIcon" _locComment="CancelDlgIcon" -->WixUI_Ico_Info</String>
     <String Id="CancelDlgIconTooltip" Overridable="yes"><!-- _locID_text="CancelDlgIconTooltip" _locComment="CancelDlgIconTooltip" -->Information icon</String>
 
@@ -75,14 +75,14 @@
 
     <String Id="ExitDialog_Title" Overridable="yes"><!-- _locID_text="ExitDialog_Title" _locComment="ExitDialog_Title" -->[ProductName] Setup</String>
     <String Id="ExitDialogBitmap" Overridable="yes"><!-- _locID_text="ExitDialogBitmap" _locComment="ExitDialogBitmap" -->WixUI_Bmp_Dialog</String>
-    <String Id="ExitDialogDescription" Overridable="yes"><!-- _locID_text="ExitDialogDescription" _locComment="ExitDialogDescription" -->Nhấn Hoàn tất để đóng Trình cài đặt.</String>
-    <String Id="ExitDialogTitle" Overridable="yes"><!-- _locID_text="ExitDialogTitle" _locComment="ExitDialogTitle" -->{\WixUI_Font_Bigger}Đã hoàn tất Trình cài đặt [ProductName]</String>
+    <String Id="ExitDialogDescription" Overridable="yes"><!-- _locID_text="ExitDialogDescription" _locComment="ExitDialogDescription" -->Nhan Hoan tat de dong Trinh cai dat.</String>
+    <String Id="ExitDialogTitle" Overridable="yes"><!-- _locID_text="ExitDialogTitle" _locComment="ExitDialogTitle" -->{\WixUI_Font_Bigger}Da hoan tat Trinh cai dat [ProductName]</String>
 
     <String Id="FatalError_Title" Overridable="yes"><!-- _locID_text="FatalError_Title" _locComment="FatalError_Title" -->[ProductName] Setup</String>
     <String Id="FatalErrorBitmap" Overridable="yes"><!-- _locID_text="FatalErrorBitmap" _locComment="FatalErrorBitmap" -->WixUI_Bmp_Dialog</String>
-    <String Id="FatalErrorTitle" Overridable="yes"><!-- _locID_text="FatalErrorTitle" _locComment="FatalErrorTitle" -->{\WixUI_Font_Bigger}Trình cài đặt [ProductName] đã kết thúc sớm</String>
-    <String Id="FatalErrorDescription1" Overridable="yes"><!-- _locID_text="FatalErrorDescription1" _locComment="FatalErrorDescription1" -->Trình cài đặt [ProductName] đã kết thúc do lỗi. Hệ thống của bạn chưa bị thay đổi.</String>
-    <String Id="FatalErrorDescription2" Overridable="yes"><!-- _locID_text="FatalErrorDescription2" _locComment="FatalErrorDescription2" -->Nhấn Hoàn tất để đóng Trình cài đặt.</String>
+    <String Id="FatalErrorTitle" Overridable="yes"><!-- _locID_text="FatalErrorTitle" _locComment="FatalErrorTitle" -->{\WixUI_Font_Bigger}Trinh cai dat [ProductName] da ket thuc som</String>
+    <String Id="FatalErrorDescription1" Overridable="yes"><!-- _locID_text="FatalErrorDescription1" _locComment="FatalErrorDescription1" -->Trinh cai dat [ProductName] da ket thuc do loi. He thong cua ban chua bi thay doi.</String>
+    <String Id="FatalErrorDescription2" Overridable="yes"><!-- _locID_text="FatalErrorDescription2" _locComment="FatalErrorDescription2" -->Nhan Hoan tat de dong Trinh cai dat.</String>
 
     <String Id="FeaturesDlg_Title" Overridable="yes"><!-- _locID_text="FeaturesDlg_Title" _locComment="FeaturesDlg_Title" -->[ProductName] Setup</String>
     <String Id="FeaturesDlgTree" Overridable="yes"><!-- _locID_text="FeaturesDlgTree" _locComment="FeaturesDlgTree" -->Product features</String>
@@ -102,11 +102,11 @@
     <String Id="FilesInUseTitle" Overridable="yes"><!-- _locID_text="FilesInUseTitle" _locComment="FilesInUseTitle" -->{\WixUI_Font_Title}Files in Use</String>
 
     <String Id="InstallDirDlg_Title" Overridable="yes"><!-- _locID_text="InstallDirDlg_Title" _locComment="InstallDirDlg_Title" -->[ProductName] Setup</String>
-    <String Id="InstallDirDlgChange" Overridable="yes"><!-- _locID_text="InstallDirDlgChange" _locComment="InstallDirDlgChange" -->&amp;Thay đổi...</String>
-    <String Id="InstallDirDlgTitle" Overridable="yes"><!-- _locID_text="InstallDirDlgTitle" _locComment="InstallDirDlgTitle" -->{\WixUI_Font_Title}Thư mục cài đặt</String>
-    <String Id="InstallDirDlgDescription" Overridable="yes"><!-- _locID_text="InstallDirDlgDescription" _locComment="InstallDirDlgDescription" -->Nhấn Tiếp để cài vào thư mục mặc định hoặc chọn Thay đổi để chọn vị trí khác.</String>
+    <String Id="InstallDirDlgChange" Overridable="yes"><!-- _locID_text="InstallDirDlgChange" _locComment="InstallDirDlgChange" -->&amp;Thay doi...</String>
+    <String Id="InstallDirDlgTitle" Overridable="yes"><!-- _locID_text="InstallDirDlgTitle" _locComment="InstallDirDlgTitle" -->{\WixUI_Font_Title}Thu muc cai dat</String>
+    <String Id="InstallDirDlgDescription" Overridable="yes"><!-- _locID_text="InstallDirDlgDescription" _locComment="InstallDirDlgDescription" -->Nhan Tiep de cai vao thu muc mac dinh hoac chon Thay doi de chon vi tri khac.</String>
     <String Id="InstallDirDlgBannerBitmap" Overridable="yes"><!-- _locID_text="InstallDirDlgBannerBitmap" _locComment="InstallDirDlgBannerBitmap" -->WixUI_Bmp_Banner</String>
-    <String Id="InstallDirDlgFolderLabel" Overridable="yes"><!-- _locID_text="InstallDirDlgFolderLabel" _locComment="InstallDirDlgFolderLabel" -->Cài đặt [ProductName] vào:</String>
+    <String Id="InstallDirDlgFolderLabel" Overridable="yes"><!-- _locID_text="InstallDirDlgFolderLabel" _locComment="InstallDirDlgFolderLabel" -->Cai dat [ProductName] vao:</String>
 
     <String Id="InstallScopeDlg_Title" Overridable="yes"><!-- _locID_text="InstallScopeDlg_Title" _locComment="InstallScopeDlg_Title" -->[ProductName] Setup</String>
     <String Id="InstallScopeDlgBannerBitmap" Overridable="yes"><!-- _locID_text="InstallScopeDlgBannerBitmap" _locComment="InstallScopeDlgBannerBitmap" -->WixUI_Bmp_Banner</String>
@@ -183,8 +183,8 @@
 
     <String Id="ProgressDlg_Title" Overridable="yes"><!-- _locID_text="ProgressDlg_Title" _locComment="ProgressDlg_Title" -->[ProductName] Setup</String>
     <String Id="ProgressDlgBannerBitmap" Overridable="yes"><!-- _locID_text="ProgressDlgBannerBitmap" _locComment="ProgressDlgBannerBitmap" -->WixUI_Bmp_Banner</String>
-    <String Id="ProgressDlgTextInstalling" Overridable="yes"><!-- _locID_text="ProgressDlgTextInstalling" _locComment="ProgressDlgTextInstalling" -->Vui lòng đợi trong khi Trình cài đặt đang cài [ProductName].</String>
-    <String Id="ProgressDlgTitleInstalling" Overridable="yes"><!-- _locID_text="ProgressDlgTitleInstalling" _locComment="ProgressDlgTitleInstalling" -->{\WixUI_Font_Title}Đang cài đặt [ProductName]</String>
+    <String Id="ProgressDlgTextInstalling" Overridable="yes"><!-- _locID_text="ProgressDlgTextInstalling" _locComment="ProgressDlgTextInstalling" -->Vui long doi trong khi Trinh cai dat dang cai [ProductName].</String>
+    <String Id="ProgressDlgTitleInstalling" Overridable="yes"><!-- _locID_text="ProgressDlgTitleInstalling" _locComment="ProgressDlgTitleInstalling" -->{\WixUI_Font_Title}Dang cai dat [ProductName]</String>
     <String Id="ProgressDlgTextChanging" Overridable="yes"><!-- _locID_text="ProgressDlgTextChanging" _locComment="ProgressDlgTextChanging" -->Please wait while the Setup Wizard changes [ProductName].</String>
     <String Id="ProgressDlgTitleChanging" Overridable="yes"><!-- _locID_text="ProgressDlgTitleChanging" _locComment="ProgressDlgTitleChanging" -->{\WixUI_Font_Title}Changing [ProductName]</String>
     <String Id="ProgressDlgTextRepairing" Overridable="yes"><!-- _locID_text="ProgressDlgTextRepairing" _locComment="ProgressDlgTextRepairing" -->Please wait while the Setup Wizard repairs [ProductName].</String>
@@ -194,7 +194,7 @@
     <String Id="ProgressDlgTextUpdating" Overridable="yes"><!-- _locID_text="ProgressDlgTextUpdating" _locComment="ProgressDlgTextUpdating" -->Please wait while the Setup Wizard updates [ProductName].</String>
     <String Id="ProgressDlgTitleUpdating" Overridable="yes"><!-- _locID_text="ProgressDlgTitleUpdating" _locComment="ProgressDlgTitleUpdating" -->{\WixUI_Font_Title}Updating [ProductName]</String>
     <String Id="ProgressDlgProgressBar" Overridable="yes"><!-- _locID_text="ProgressDlgProgressBar" _locComment="ProgressDlgProgressBar" -->Progress done</String>
-    <String Id="ProgressDlgStatusLabel" Overridable="yes"><!-- _locID_text="ProgressDlgStatusLabel" _locComment="ProgressDlgStatusLabel" -->Trạng thái:</String>
+    <String Id="ProgressDlgStatusLabel" Overridable="yes"><!-- _locID_text="ProgressDlgStatusLabel" _locComment="ProgressDlgStatusLabel" -->Trang thai:</String>
 
     <String Id="ResumeDlg_Title" Overridable="yes"><!-- _locID_text="ResumeDlg_Title" _locComment="ResumeDlg_Title" -->[ProductName] Setup</String>
     <String Id="ResumeDlgInstall" Overridable="yes"><!-- _locID_text="ResumeDlgInstall" _locComment="ResumeDlgInstall" -->&amp;Install</String>
@@ -218,15 +218,15 @@
 
     <String Id="UserExit_Title" Overridable="yes"><!-- _locID_text="UserExit_Title" _locComment="UserExit_Title" -->[ProductName] Setup</String>
     <String Id="UserExitBitmap" Overridable="yes"><!-- _locID_text="UserExitBitmap" _locComment="UserExitBitmap" -->WixUI_Bmp_Dialog</String>
-    <String Id="UserExitTitle" Overridable="yes"><!-- _locID_text="UserExitTitle" _locComment="UserExitTitle" -->{\WixUI_Font_Bigger}Quá trình cài đặt [ProductName] đã bị gián đoạn</String>
-    <String Id="UserExitDescription1" Overridable="yes"><!-- _locID_text="UserExitDescription1" _locComment="UserExitDescription1" -->Quá trình cài đặt [ProductName] đã bị dừng. Hệ thống của bạn chưa bị thay đổi.</String>
-    <String Id="UserExitDescription2" Overridable="yes"><!-- _locID_text="UserExitDescription2" _locComment="UserExitDescription2" -->Nhấn Hoàn tất để đóng Trình cài đặt.</String>
+    <String Id="UserExitTitle" Overridable="yes"><!-- _locID_text="UserExitTitle" _locComment="UserExitTitle" -->{\WixUI_Font_Bigger}Qua trinh cai dat [ProductName] da bi gian doan</String>
+    <String Id="UserExitDescription1" Overridable="yes"><!-- _locID_text="UserExitDescription1" _locComment="UserExitDescription1" -->Qua trinh cai dat [ProductName] da bi dung. He thong cua ban chua bi thay doi.</String>
+    <String Id="UserExitDescription2" Overridable="yes"><!-- _locID_text="UserExitDescription2" _locComment="UserExitDescription2" -->Nhan Hoan tat de dong Trinh cai dat.</String>
 
     <String Id="VerifyReadyDlg_Title" Overridable="yes"><!-- _locID_text="VerifyReadyDlg_Title" _locComment="VerifyReadyDlg_Title" -->[ProductName] Setup</String>
     <String Id="VerifyReadyDlgBannerBitmap" Overridable="yes"><!-- _locID_text="VerifyReadyDlgBannerBitmap" _locComment="VerifyReadyDlgBannerBitmap" -->WixUI_Bmp_Banner</String>
-    <String Id="VerifyReadyDlgInstall" Overridable="yes"><!-- _locID_text="VerifyReadyDlgInstall" _locComment="VerifyReadyDlgInstall" -->&amp;Cài đặt</String>
-    <String Id="VerifyReadyDlgInstallText" Overridable="yes"><!-- _locID_text="VerifyReadyDlgInstallText" _locComment="VerifyReadyDlgInstallText" -->Nhấn Cài đặt để bắt đầu cài đặt. Nhấn Quay lại để xem lại cài đặt hoặc Hủy để thoát.</String>
-    <String Id="VerifyReadyDlgInstallTitle" Overridable="yes"><!-- _locID_text="VerifyReadyDlgInstallTitle" _locComment="VerifyReadyDlgInstallTitle" -->{\WixUI_Font_Title}Sẵn sàng cài đặt [ProductName]</String>
+    <String Id="VerifyReadyDlgInstall" Overridable="yes"><!-- _locID_text="VerifyReadyDlgInstall" _locComment="VerifyReadyDlgInstall" -->&amp;Cai dat</String>
+    <String Id="VerifyReadyDlgInstallText" Overridable="yes"><!-- _locID_text="VerifyReadyDlgInstallText" _locComment="VerifyReadyDlgInstallText" -->Nhan Cai dat de bat dau cai dat. Nhan Quay lai de xem lai cai dat hoac Huy de thoat.</String>
+    <String Id="VerifyReadyDlgInstallTitle" Overridable="yes"><!-- _locID_text="VerifyReadyDlgInstallTitle" _locComment="VerifyReadyDlgInstallTitle" -->{\WixUI_Font_Title}San sang cai dat [ProductName]</String>
     <String Id="VerifyReadyDlgChange" Overridable="yes"><!-- _locID_text="VerifyReadyDlgChange" _locComment="VerifyReadyDlgChange" -->&amp;Change</String>
     <String Id="VerifyReadyDlgChangeText" Overridable="yes"><!-- _locID_text="VerifyReadyDlgChangeText" _locComment="VerifyReadyDlgChangeText" -->Click Change to begin the installation. Click Back to review or change any of your installation settings. Click Cancel to exit the wizard.</String>
     <String Id="VerifyReadyDlgChangeTitle" Overridable="yes"><!-- _locID_text="VerifyReadyDlgChangeTitle" _locComment="VerifyReadyDlgChangeTitle" -->{\WixUI_Font_Title}Ready to change [ProductName]</String>
@@ -248,9 +248,9 @@
 
     <String Id="WelcomeDlg_Title" Overridable="yes"><!-- _locID_text="WelcomeDlg_Title" _locComment="WelcomeDlg_Title" -->[ProductName] Setup</String>
     <String Id="WelcomeDlgBitmap" Overridable="yes"><!-- _locID_text="WelcomeDlgBitmap" _locComment="WelcomeDlgBitmap" -->WixUI_Bmp_Dialog</String>
-    <String Id="WelcomeDlgDescription" Overridable="yes"><!-- _locID_text="WelcomeDlgDescription" _locComment="WelcomeDlgDescription" -->Trình cài đặt sẽ cài [ProductName] vào máy tính của bạn. Nhấn Tiếp để tiếp tục hoặc Hủy để thoát.</String>
+    <String Id="WelcomeDlgDescription" Overridable="yes"><!-- _locID_text="WelcomeDlgDescription" _locComment="WelcomeDlgDescription" -->Trinh cai dat se cai [ProductName] vao may tinh cua ban. Nhan Tiep de tiep tuc hoac Huy de thoat.</String>
     <String Id="WelcomeUpdateDlgDescriptionUpdate" Overridable="yes"><!-- _locID_text="WelcomeUpdateDlgDescriptionUpdate" _locComment="WelcomeUpdateDlgDescriptionUpdate" -->The Setup Wizard will update [ProductName] on your computer. Click Next to continue or Cancel to exit the Setup Wizard.</String>
-    <String Id="WelcomeDlgTitle" Overridable="yes"><!-- _locID_text="WelcomeDlgTitle" _locComment="WelcomeDlgTitle" -->{\WixUI_Font_Bigger}Chào mừng đến với Trình cài đặt [ProductName]</String>
+    <String Id="WelcomeDlgTitle" Overridable="yes"><!-- _locID_text="WelcomeDlgTitle" _locComment="WelcomeDlgTitle" -->{\WixUI_Font_Bigger}Chao mung den voi Trinh cai dat [ProductName]</String>
 
     <String Id="WelcomeEulaDlg_Title" Overridable="yes"><!-- _locID_text="WelcomeEulaDlg_Title" _locComment="WelcomeEulaDlg_Title" -->[ProductName] Setup</String>
     <String Id="WelcomeEulaDlgBitmap" Overridable="yes"><!-- _locID_text="WelcomeEulaDlgBitmap" _locComment="WelcomeEulaDlgBitmap" -->WixUI_Bmp_Dialog</String>

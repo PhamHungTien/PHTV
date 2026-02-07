@@ -10,7 +10,7 @@
     <Product Id="*" 
              Name="$(var.ProductName)" 
              Language="1066" 
-             Codepage="1258"
+             Codepage="1252"
              Version="$(var.ProductVersion)" 
              Manufacturer="$(var.Manufacturer)" 
              UpgradeCode="$(var.UpgradeCode)">
@@ -19,7 +19,7 @@
                  Compressed="yes"
                  InstallScope="perMachine"
                  Platform="x64"
-                 SummaryCodepage="1258" />
+                 SummaryCodepage="1252" />
 
         <MajorUpgrade DowngradeErrorMessage="!(loc.DowngradeErrorMessage)" />
         <MediaTemplate EmbedCab="yes" />
