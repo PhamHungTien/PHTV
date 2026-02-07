@@ -274,6 +274,13 @@ public sealed class MainWindowViewModel : ObservableObject {
         SetVietnameseEnabled(!State.IsVietnameseEnabled);
     }
 
+    public bool TryStopDaemon() {
+        if (!_runtimeBridgeService.IsSupported) return true;
+        var result = _runtimeBridgeService.TryStopDaemon(out _);
+        RefreshInputDaemonStatus();
+        return result;
+    }
+
     public void SetVietnameseEnabled(bool enabled) {
         if (State.IsVietnameseEnabled == enabled) {
             return;

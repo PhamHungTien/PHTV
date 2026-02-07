@@ -409,6 +409,9 @@ public sealed partial class App : Application {
 
         if (_mainWindowViewModel is not null) {
             _mainWindowViewModel.State.PropertyChanged -= OnViewModelStatePropertyChanged;
+            // CRITICAL: Force stop the hook daemon process before shutting down the main app.
+            // This prevents the "zombie" typing behavior after exit.
+            _mainWindowViewModel.TryStopDaemon();
         }
 
         _mainWindow?.RequestExitAndClose();

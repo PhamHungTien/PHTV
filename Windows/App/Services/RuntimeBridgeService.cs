@@ -256,7 +256,7 @@ public sealed class RuntimeBridgeService {
                 try {
                     if (!process.HasExited) {
                         process.Kill(true);
-                        process.WaitForExit(1200);
+                        process.WaitForExit(2000); // Give it more time to release hooks
                     }
                 } catch {
                     // Continue stopping other processes.
