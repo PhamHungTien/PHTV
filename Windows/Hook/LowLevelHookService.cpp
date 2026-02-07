@@ -1331,13 +1331,10 @@ void LowLevelHookService::processEngineOutput(const phtv::windows_host::EngineOu
         }
 
         if (isAddressBar) {
-            // macOS-style Hack: Send ESC key to clear browser's inline autocomplete
-            // before we start deleting characters with Backspace. 
-            // This prevents the browser from "holding onto" the suggested URL.
-            sendVirtualKey(VK_ESCAPE, true);
-            sendVirtualKey(VK_ESCAPE, false);
-            
-            // Also send a Zero Width Space to interrupt the suggestion engine
+            // macOS PORT: Reliable Address Bar Fix
+            // 1. Send an invisible 'Ghost' character (0x202F) to break the browser's autocomplete state.
+            // 2. Increment backspaceCount so the first Backspace deletes this Ghost char.
+            // 3. Subsequent Backspaces delete the actual text.
             sendEmptyCharacter();
             if (backspaceCount < (MAX_BUFF - 1)) {
                 backspaceCount++;
