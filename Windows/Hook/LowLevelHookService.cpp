@@ -1139,11 +1139,14 @@ void LowLevelHookService::refreshRuntimeConfigIfNeeded(bool force) {
         macrosWriteTime_ = macrosWriteTime;
     }
 
-    // Always ensure global vLanguage is perfectly in sync with config
+    // Always ensure global vLanguage and vFixRecommendBrowser are perfectly in sync with config
     vLanguage = runtimeConfig_.language == 0 ? 0 : 1;
+    vFixRecommendBrowser = runtimeConfig_.fixRecommendBrowser == 0 ? 0 : 1;
 
-    std::cerr << "[PHTV] Config reloaded. Language: " << (vLanguage == 1 ? "VI" : "EN") 
-              << ", Input: " << runtimeConfig_.inputType << "\n";
+    if (isBrowserFixDebugEnabled()) {
+        std::cerr << "[PHTV] Config reloaded. Language: " << (vLanguage == 1 ? "VI" : "EN") 
+                  << ", FixBrowser: " << vFixRecommendBrowser << "\n";
+    }
 
     nextAppContextCheckAt_ = std::chrono::steady_clock::time_point::min();
     resetAddressBarCache();
