@@ -84,10 +84,82 @@ function Normalize-LocalizationForWindows1258 {
         [Parameter(Mandatory = $true)][string]$OutputPath
     )
 
-    # CP1258 does not represent every decomposed combining sequence (e.g. U+031B horn).
-    # Normalize to precomposed NFC to preserve Vietnamese diacritics and avoid LGHT0311.
+    function Is-CombiningMark([char]$Character) {
+        $category = [Globalization.CharUnicodeInfo]::GetUnicodeCategory($Character)
+        return $category -eq [Globalization.UnicodeCategory]::NonSpacingMark `
+            -or $category -eq [Globalization.UnicodeCategory]::SpacingCombiningMark `
+            -or $category -eq [Globalization.UnicodeCategory]::EnclosingMark
+    }
+
+    # CP1258 stores Vietnamese as:
+    # - Precomposed base vowels (ă â ê ô ơ ư)
+    # - Combining tone marks (grave/acute/hook/tilde/dot below)
+    # Convert arbitrary Unicode Vietnamese to this representable form.
+    $baseCompositionMap = @{
+        "a|$([char]0x0306)" = "ă"; "A|$([char]0x0306)" = "Ă"
+        "a|$([char]0x0302)" = "â"; "A|$([char]0x0302)" = "Â"
+        "e|$([char]0x0302)" = "ê"; "E|$([char]0x0302)" = "Ê"
+        "o|$([char]0x0302)" = "ô"; "O|$([char]0x0302)" = "Ô"
+        "o|$([char]0x031B)" = "ơ"; "O|$([char]0x031B)" = "Ơ"
+        "u|$([char]0x031B)" = "ư"; "U|$([char]0x031B)" = "Ư"
+    }
+
     $content = Get-Content -Path $InputPath -Raw -Encoding UTF8
-    $normalized = $content.Normalize([Text.NormalizationForm]::FormC)
+    $nfd = $content.Normalize([Text.NormalizationForm]::FormD)
+    $builder = [Text.StringBuilder]::new($nfd.Length)
+
+    $i = 0
+    while ($i -lt $nfd.Length) {
+        $baseChar = $nfd[$i]
+        if (Is-CombiningMark $baseChar) {
+            $builder.Append($baseChar) | Out-Null
+            $i++
+            continue
+        }
+
+        $j = $i + 1
+        $marks = [Collections.Generic.List[char]]::new()
+        while ($j -lt $nfd.Length -and (Is-CombiningMark $nfd[$j])) {
+            $marks.Add($nfd[$j])
+            $j++
+        }
+
+        $composedBase = [string]$baseChar
+        $baseMarkIndex = -1
+        for ($markIndex = 0; $markIndex -lt $marks.Count; $markIndex++) {
+            $key = ("{0}|{1}" -f [string]$baseChar, [string]$marks[$markIndex])
+            if ($baseCompositionMap.ContainsKey($key)) {
+                $composedBase = $baseCompositionMap[$key]
+                $baseMarkIndex = $markIndex
+                break
+            }
+        }
+
+        $builder.Append($composedBase) | Out-Null
+        for ($markIndex = 0; $markIndex -lt $marks.Count; $markIndex++) {
+            if ($markIndex -eq $baseMarkIndex) {
+                continue
+            }
+            $builder.Append($marks[$markIndex]) | Out-Null
+        }
+
+        $i = $j
+    }
+
+    $normalized = $builder.ToString()
+
+    # Validate CP1258 encodability early to fail with clear diagnostics.
+    $cp1258 = [Text.Encoding]::GetEncoding(
+        1258,
+        [Text.EncoderExceptionFallback]::new(),
+        [Text.DecoderExceptionFallback]::new()
+    )
+    try {
+        [void]$cp1258.GetBytes($normalized)
+    } catch {
+        throw "Localization contains characters not representable in codepage 1258: $InputPath`n$($_.Exception.Message)"
+    }
+
     [IO.File]::WriteAllText($OutputPath, $normalized, [Text.UTF8Encoding]::new($false))
 }
 
