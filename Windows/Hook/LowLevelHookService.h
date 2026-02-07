@@ -75,6 +75,10 @@ private:
     bool isCliBlocked() const;
     bool detectIdeTerminalByUiAutomation() const;
 
+    void sendAddressBarSelection(int count);
+    void processAddressBarOutput(const phtv::windows_host::EngineOutput& output,
+                                 Uint16 engineKeyCode, int backspaceCount);
+
     struct ForegroundAppContext {
         DWORD processId = 0;
         HWND windowHandle = nullptr;

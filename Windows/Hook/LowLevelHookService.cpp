@@ -1509,6 +1509,81 @@ bool LowLevelHookService::detectIdeTerminalByUiAutomation() const {
     return isTerminalPanel;
 }
 
+void LowLevelHookService::sendAddressBarSelection(int count) {
+    if (count <= 0) {
+        return;
+    }
+
+    // Hold Shift, press Left Arrow N times to select N characters backwards.
+    // Sending Shift as a separate event ensures all Left presses are treated as selection.
+    sendVirtualKey(VK_LSHIFT, true);
+
+    for (int i = 0; i < count; ++i) {
+        sendVirtualKey(VK_LEFT, true, KEYEVENTF_EXTENDEDKEY);
+        sendVirtualKey(VK_LEFT, false, KEYEVENTF_EXTENDEDKEY);
+
+        // Handle double-code tables: one engine char may be 2 code points.
+        if (IS_DOUBLE_CODE(vCodeTable) && !syncKeyLengths_.empty()) {
+            const Uint8 length = syncKeyLengths_.back();
+            syncKeyLengths_.pop_back();
+            if (length > 1) {
+                sendVirtualKey(VK_LEFT, true, KEYEVENTF_EXTENDEDKEY);
+                sendVirtualKey(VK_LEFT, false, KEYEVENTF_EXTENDEDKEY);
+            }
+        }
+
+        if (i + 1 < count) {
+            sleepMicroseconds(1500);
+        }
+    }
+
+    sendVirtualKey(VK_LSHIFT, false);
+}
+
+void LowLevelHookService::processAddressBarOutput(
+    const phtv::windows_host::EngineOutput& output,
+    Uint16 engineKeyCode, int backspaceCount) {
+    // Address bar strategy: Empty char → Shift+Left selection → new text replaces selection.
+    // This avoids backspace, which re-triggers Chromium autocomplete on Windows.
+
+    const Uint8 capsStatus = currentCapsStatus();
+    constexpr int kPostEmptyCharDelayUs = 3000;
+    constexpr int kPostSelectionDelayUs = 2000;
+
+    // 1. Wait for Edge to process the empty char that was already sent by caller.
+    sleepMicroseconds(kPostEmptyCharDelayUs);
+
+    // 2. Select (backspaceCount) chars backwards using Shift+Left.
+    //    backspaceCount already includes +1 for the empty char.
+    if (backspaceCount > 0) {
+        sendAddressBarSelection(backspaceCount);
+        sleepMicroseconds(kPostSelectionDelayUs);
+    }
+
+    // 3. Send new text - the first character replaces the selection,
+    //    subsequent characters are inserted normally.
+    if (output.code == vReplaceMaro) {
+        sendEngineSequence(output.macroChars, false, false);
+
+        Uint32 rawKey = engineKeyCode;
+        if (capsStatus != 0) {
+            rawKey |= CAPS_MASK;
+        }
+        sendEngineData(rawKey);
+        return;
+    }
+
+    sendEngineSequence(output.committedChars, true, false);
+
+    if (output.code == vRestore || output.code == vRestoreAndStartNewSession) {
+        sendRestoreBreakKey(engineKeyCode, capsStatus);
+    }
+
+    if (output.code == vRestoreAndStartNewSession) {
+        session_.startSession();
+    }
+}
+
 void LowLevelHookService::processEngineOutput(const phtv::windows_host::EngineOutput& output,
                                               Uint16 engineKeyCode) {
     const bool useStepByStep = appContext_.useStepByStep;
@@ -1526,14 +1601,15 @@ void LowLevelHookService::processEngineOutput(const phtv::windows_host::EngineOu
         }
 
         if (isAddressBar) {
-            // macOS PORT: Reliable Address Bar Fix
-            // 1. Send an invisible 'Ghost' character (0x202F) to break the browser's autocomplete state.
-            // 2. Increment backspaceCount so the first Backspace deletes this Ghost char.
-            // 3. Subsequent Backspaces delete the actual text.
+            // Windows Address Bar Fix: Shift+Left selection strategy.
+            // Backspace re-triggers Chromium autocomplete on Windows, causing "dđ" duplication.
+            // Instead: send empty char to break autocomplete, then use Shift+Left to SELECT
+            // the characters. The new text replaces the selection atomically.
             sendEmptyCharacter();
-            if (backspaceCount < (MAX_BUFF - 1)) {
-                backspaceCount++;
-            }
+            int selectionCount = backspaceCount + 1; // +1 for the empty char
+            selectionCount = std::clamp(selectionCount, 0, 15);
+            processAddressBarOutput(output, engineKeyCode, selectionCount);
+            return;
         }
     }
 
