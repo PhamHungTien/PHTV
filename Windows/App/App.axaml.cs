@@ -79,15 +79,15 @@ public sealed partial class App : Application {
     }
 
     private void SetupTrayIcon(IClassicDesktopStyleApplicationLifetime desktop) {
-        _vietnameseTrayIcon = TryLoadWindowIcon("avares://PHTV.Windows/Assets/tray_vi.ico")
-            ?? TryLoadWindowIcon("avares://PHTV.Windows/Assets/tray_vi.png");
-        _englishTrayIcon = TryLoadWindowIcon("avares://PHTV.Windows/Assets/tray_en.ico")
-            ?? TryLoadWindowIcon("avares://PHTV.Windows/Assets/tray_en.png");
-        _inactiveTrayIcon = TryLoadWindowIcon("avares://PHTV.Windows/Assets/menubar_icon.ico")
-            ?? TryLoadWindowIcon("avares://PHTV.Windows/Assets/menubar_icon.png")
+        _vietnameseTrayIcon = TryLoadWindowIcon("avares://PHTV/Assets/tray_vi.ico")
+            ?? TryLoadWindowIcon("avares://PHTV/Assets/tray_vi.png");
+        _englishTrayIcon = TryLoadWindowIcon("avares://PHTV/Assets/tray_en.ico")
+            ?? TryLoadWindowIcon("avares://PHTV/Assets/tray_en.png");
+        _inactiveTrayIcon = TryLoadWindowIcon("avares://PHTV/Assets/menubar_icon.ico")
+            ?? TryLoadWindowIcon("avares://PHTV/Assets/menubar_icon.png")
             ?? _englishTrayIcon;
-        var fallbackIcon = TryLoadWindowIcon("avares://PHTV.Windows/Assets/PHTV.ico")
-            ?? TryLoadWindowIcon("avares://PHTV.Windows/Assets/icon.png");
+        var fallbackIcon = TryLoadWindowIcon("avares://PHTV/Assets/PHTV.ico")
+            ?? TryLoadWindowIcon("avares://PHTV/Assets/icon.png");
         var isVietnamese = _mainWindowViewModel?.State.IsVietnameseEnabled ?? true;
         var useVietnameseIcon = _mainWindowViewModel?.State.UseVietnameseMenubarIcon ?? true;
         var vietnameseModeIcon = useVietnameseIcon ? _vietnameseTrayIcon : _inactiveTrayIcon;

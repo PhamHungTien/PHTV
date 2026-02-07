@@ -5,8 +5,8 @@
   <Application.Resources>
     <FontFamily x:Key="InterFontFamily">avares://Avalonia.Fonts.Inter/Assets#Inter</FontFamily>
   </Application.Resources>
-  <Application.Styles>
-    <FluentTheme/>
-    <StyleInclude Source="avares://PHTV.Windows/Styles/Theme.axaml"/>
-  </Application.Styles>
+      <Application.Styles>
+          <FluentTheme />
+          <StyleInclude Source="avares://PHTV/Styles/Theme.axaml"/>
+      </Application.Styles>
 </Application>
