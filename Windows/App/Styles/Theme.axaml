@@ -453,4 +453,53 @@
     <Setter Property="Foreground" Value="{DynamicResource PhtvTextTertiaryBrush}"/>
     <Setter Property="FontSize" Value="11"/>
   </Style>
+
+  <!-- About Tab Styles -->
+  <Style Selector="TextBlock.about-subtitle">
+    <Setter Property="FontSize" Value="13"/>
+    <Setter Property="FontStyle" Value="Italic"/>
+    <Setter Property="FontWeight" Value="Medium"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvTextSecondaryBrush}"/>
+  </Style>
+
+  <Style Selector="TextBlock.about-muted">
+    <Setter Property="FontSize" Value="13"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvTextTertiaryBrush}"/>
+  </Style>
+
+  <Style Selector="Border.version-badge">
+    <Setter Property="CornerRadius" Value="12"/>
+    <Setter Property="Padding" Value="10,4"/>
+    <Setter Property="Background" Value="{DynamicResource PhtvAccentSoftBrush}"/>
+  </Style>
+
+  <Style Selector="TextBlock.version-badge-text">
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvAccentBrush}"/>
+    <Setter Property="FontFamily" Value="Consolas, Courier New, monospace"/>
+  </Style>
+
+  <Style Selector="Border.about-info-card">
+    <Setter Property="Background" Value="{DynamicResource PhtvCardBrush}"/>
+    <Setter Property="CornerRadius" Value="12"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource PhtvBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Padding" Value="14"/>
+    <Setter Property="BoxShadow" Value="0 2 8 0 #0D000000"/>
+  </Style>
+
+  <Style Selector="Border.about-icon-tile">
+    <Setter Property="Width" Value="42"/>
+    <Setter Property="Height" Value="42"/>
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="Background" Value="{DynamicResource PhtvAccentSoftBrush}"/>
+  </Style>
+
+  <Style Selector="TextBlock.about-icon-glyph">
+    <Setter Property="FontSize" Value="18"/>
+    <Setter Property="HorizontalAlignment" Value="Center"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+    <Setter Property="Foreground" Value="{DynamicResource PhtvAccentBrush}"/>
+  </Style>
 </Styles>

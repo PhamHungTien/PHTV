@@ -4,60 +4,94 @@
              x:Class="PHTV.Windows.Views.Tabs.AboutTabView"
              x:DataType="vm:AboutTabViewModel">
   <ScrollViewer VerticalScrollBarVisibility="Auto">
-    <StackPanel Margin="32,54,32,32" Spacing="20" MaxWidth="760">
-      <Border Classes="settings-header" Padding="26">
-        <StackPanel HorizontalAlignment="Center" Spacing="10">
-          <Border Width="96" Height="96" CornerRadius="22" ClipToBounds="True">
-            <Image Source="/Assets/icon.png" Stretch="UniformToFill"/>
-          </Border>
+    <StackPanel Margin="32,20,32,32" Spacing="24" MaxWidth="760">
+      <!-- App Icon and Header Section (Centered like macOS) -->
+      <StackPanel HorizontalAlignment="Center" Spacing="16" Margin="0,20,0,0">
+        <Border Width="100" Height="100" CornerRadius="22" ClipToBounds="True" BoxShadow="0 4 12 0 #20000000">
+          <Image Source="/Assets/icon.png" Stretch="UniformToFill"/>
+        </Border>
+        
+        <StackPanel Spacing="6" HorizontalAlignment="Center">
           <TextBlock Text="PHTV" FontSize="32" FontWeight="Bold" HorizontalAlignment="Center"/>
           <TextBlock Classes="about-subtitle" Text="Precision Hybrid Typing Vietnamese" HorizontalAlignment="Center"/>
           <TextBlock Classes="about-muted" Text="Bộ gõ tiếng Việt dành cho Windows" HorizontalAlignment="Center"/>
-          <Border Classes="status-pill" HorizontalAlignment="Center">
-            <TextBlock Classes="status-pill-text" Text="Phiên bản 1.0 Windows Preview"/>
+        </StackPanel>
+
+        <!-- Version Badge -->
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+          <TextBlock Text="Phiên bản" FontSize="12" Foreground="{DynamicResource PhtvTextSecondaryBrush}" VerticalAlignment="Center"/>
+          <Border Classes="version-badge">
+            <TextBlock Classes="version-badge-text" Text="{Binding VersionDisplay}"/>
           </Border>
         </StackPanel>
-      </Border>
+      </StackPanel>
 
-      <Border Classes="settings-card">
-        <StackPanel>
-          <Border Classes="settings-card-header blue">
-            <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="👤"/></Border>
-              <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Phát triển bởi"/><TextBlock Classes="settings-card-subtitle" Text="Phạm Hùng Tiến"/></StackPanel>
-            </Grid>
-          </Border>
-          <StackPanel Margin="16" Spacing="10">
-            <TextBlock Text="Công nghệ: Avalonia UI + Shared C/C++ Engine"/>
-            <TextBlock Text="Nền tảng: Windows (x64/arm64)"/>
-            <TextBlock Text="Giấy phép: GPL v3.0"/>
-          </StackPanel>
+      <Border Classes="settings-divider" Margin="40,0"/>
+
+      <!-- Info Cards Section (Vertical stack of cards like macOS) -->
+      <StackPanel Spacing="16" HorizontalAlignment="Stretch">
+        <Border Classes="about-info-card">
+          <Grid ColumnDefinitions="Auto, *">
+            <Border Classes="about-icon-tile">
+              <TextBlock Classes="about-icon-glyph" Text="👤"/>
+            </Border>
+            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+              <TextBlock Text="Phát triển bởi" FontSize="11" Foreground="{DynamicResource PhtvTextSecondaryBrush}"/>
+              <TextBlock Text="Phạm Hùng Tiến" FontSize="14" FontWeight="Medium"/>
+            </StackPanel>
+          </Grid>
+        </Border>
+
+        <Border Classes="about-info-card">
+          <Grid ColumnDefinitions="Auto, *">
+            <Border Classes="about-icon-tile">
+              <TextBlock Classes="about-icon-glyph" Text="📅"/>
+            </Border>
+            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+              <TextBlock Text="Năm phát hành" FontSize="11" Foreground="{DynamicResource PhtvTextSecondaryBrush}"/>
+              <TextBlock Text="2026" FontSize="14" FontWeight="Medium"/>
+            </StackPanel>
+          </Grid>
+        </Border>
+
+        <Border Classes="about-info-card">
+          <Grid ColumnDefinitions="Auto, *">
+            <Border Classes="about-icon-tile">
+              <TextBlock Classes="about-icon-glyph" Text="⚙"/>
+            </Border>
+            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+              <TextBlock Text="Công nghệ sử dụng" FontSize="11" Foreground="{DynamicResource PhtvTextSecondaryBrush}"/>
+              <TextBlock Text="Avalonia UI, .NET 8 &amp; C/C++" FontSize="14" FontWeight="Medium"/>
+            </StackPanel>
+          </Grid>
+        </Border>
+      </StackPanel>
+
+      <Border Classes="settings-divider" Margin="40,0"/>
+
+      <!-- Support Section -->
+      <StackPanel Spacing="16" HorizontalAlignment="Center">
+        <TextBlock Text="Hỗ trợ phát triển" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+        <TextBlock Text="Nếu PHTV hữu ích, bạn có thể ủng hộ để giúp phát triển thêm các tính năng mới" 
+                   TextWrapping="Wrap" TextAlignment="Center" MaxWidth="400"
+                   FontSize="13" Foreground="{DynamicResource PhtvTextSecondaryBrush}"/>
+        
+        <StackPanel Spacing="12">
+          <WrapPanel HorizontalAlignment="Center" Classes="settings-actions">
+            <Button Content="Website" Command="{Binding DataContext.OpenWebsiteCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+            <Button Content="GitHub" Command="{Binding DataContext.OpenGitHubCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+            <Button Classes="primary" Content="Ủng hộ ngay" Command="{Binding DataContext.OpenDonateCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+          </WrapPanel>
         </StackPanel>
-      </Border>
+      </StackPanel>
 
-      <Border Classes="settings-card">
-        <StackPanel>
-          <Border Classes="settings-card-header red">
-            <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="❤"/></Border>
-              <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Hỗ trợ phát triển"/><TextBlock Classes="settings-card-subtitle" Text="Giúp dự án phát triển thêm tính năng mới"/></StackPanel>
-            </Grid>
-          </Border>
-          <StackPanel Margin="16" Spacing="8">
-            <TextBlock Text="Nếu PHTV hữu ích, bạn có thể ủng hộ để duy trì và mở rộng dự án." TextWrapping="Wrap"/>
-            <WrapPanel>
-              <Button Content="Website"
-                      Command="{Binding DataContext.OpenWebsiteCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-              <Button Content="GitHub"
-                      Command="{Binding DataContext.OpenGitHubCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-              <Button Content="Ủng hộ"
-                      Command="{Binding DataContext.OpenDonateCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-            </WrapPanel>
-          </StackPanel>
-        </StackPanel>
-      </Border>
+      <Rectangle Height="20"/>
 
-      <TextBlock Classes="about-muted" HorizontalAlignment="Center" Text="Copyright © 2026 Phạm Hùng Tiến"/>
+      <!-- Footer -->
+      <StackPanel Spacing="4" HorizontalAlignment="Center">
+        <TextBlock Classes="about-muted" Text="Copyright © 2026 Phạm Hùng Tiến" HorizontalAlignment="Center"/>
+        <TextBlock Classes="about-muted" FontSize="11" Opacity="0.7" Text="All rights reserved" HorizontalAlignment="Center"/>
+      </StackPanel>
     </StackPanel>
   </ScrollViewer>
 </UserControl>

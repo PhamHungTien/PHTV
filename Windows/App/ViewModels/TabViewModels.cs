@@ -66,4 +66,6 @@ public sealed class AboutTabViewModel : SettingsTabViewModel {
     public override string Title => "PHTV";
     public override string Subtitle => "Precision Hybrid Typing Vietnamese";
     public override string IconGlyph => "ⓘ";
+
+    public string VersionDisplay => $"v{System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3) ?? "1.0.0"}";
 }
