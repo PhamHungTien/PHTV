@@ -368,6 +368,10 @@
     <Setter Property="Opacity" Value="0.9"/>
   </Style>
 
+  <Style Selector="Panel.settings-actions > Button, WrapPanel.settings-actions > Button">
+    <Setter Property="Margin" Value="0,0,8,8"/>
+  </Style>
+
   <Style Selector="ToggleButton.hotkey-chip">
     <Setter Property="MinWidth" Value="72"/>
     <Setter Property="Padding" Value="12,8"/>

@@ -85,12 +85,10 @@
           </StackPanel>
         </Border>
         
-        <StackPanel Spacing="12">
-          <WrapPanel HorizontalAlignment="Center" Classes="settings-actions">
-            <Button Content="Website" Command="{Binding DataContext.OpenWebsiteCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-            <Button Content="GitHub" Command="{Binding DataContext.OpenGitHubCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-            <Button Classes="primary" Content="Ủng hộ ngay" Command="{Binding DataContext.OpenDonateCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-          </WrapPanel>
+        <StackPanel Orientation="Horizontal" Spacing="16" HorizontalAlignment="Center">
+          <Button Content="Website" Command="{Binding DataContext.OpenWebsiteCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+          <Button Content="GitHub" Command="{Binding DataContext.OpenGitHubCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+          <Button Classes="primary" Content="Ủng hộ ngay" Command="{Binding DataContext.OpenDonateCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
         </StackPanel>
       </StackPanel>
 
