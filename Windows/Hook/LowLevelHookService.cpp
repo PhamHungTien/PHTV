@@ -588,6 +588,7 @@ bool LowLevelHookService::start() {
     HINSTANCE moduleHandle = GetModuleHandleW(nullptr);
     keyboardHook_ = SetWindowsHookExW(WH_KEYBOARD_LL, KeyboardHookProc, moduleHandle, 0);
     if (keyboardHook_ == nullptr) {
+        std::cerr << "[PHTV] SetWindowsHookEx(WH_KEYBOARD_LL) failed, error=" << GetLastError() << "\n";
         unregisterSystemHotkeys();
         shutdownUiAutomation();
         resetAddressBarCache();
@@ -598,6 +599,7 @@ bool LowLevelHookService::start() {
 
     mouseHook_ = SetWindowsHookExW(WH_MOUSE_LL, MouseHookProc, moduleHandle, 0);
     if (mouseHook_ == nullptr) {
+        std::cerr << "[PHTV] SetWindowsHookEx(WH_MOUSE_LL) failed, error=" << GetLastError() << "\n";
         UnhookWindowsHookEx(keyboardHook_);
         keyboardHook_ = nullptr;
         unregisterSystemHotkeys();
@@ -609,6 +611,12 @@ bool LowLevelHookService::start() {
     }
 
     running_ = true;
+    std::cerr << "[PHTV] Hooks installed successfully. switchKeyStatus=0x"
+              << std::hex << vSwitchKeyStatus << std::dec
+              << " emojiEnabled=" << runtimeConfig_.emojiHotkeyEnabled
+              << " emojiStatus=0x" << std::hex << runtimeConfig_.emojiHotkeyStatus << std::dec
+              << " switchRegistered=" << switchHotkeyRegistered_
+              << " emojiRegistered=" << emojiHotkeyRegistered_ << "\n";
     return true;
 }
 
@@ -705,8 +713,13 @@ LRESULT LowLevelHookService::handleKeyboard(WPARAM wParam, LPARAM lParam) {
 
     if (isModifierKey(vkCode)) {
         const bool consumedRestore = handleCustomRestoreOnModifierChange(vkCode, isKeyDown, previousModifierMask);
-        const bool consumedModifierOnlyHotkey = handleModifierOnlyHotkeysOnModifierChange(vkCode, isKeyDown, previousModifierMask);
-        if (consumedRestore || consumedModifierOnlyHotkey) {
+        // Modifier-only hotkeys (switch/emoji) still execute their action inside
+        // handleModifierOnlyHotkeysOnModifierChange, but we intentionally let the
+        // modifier key-up pass through to the application.  Consuming it would
+        // leave the focused app with a stuck modifier (it saw the key-down but
+        // never the matching key-up).
+        handleModifierOnlyHotkeysOnModifierChange(vkCode, isKeyDown, previousModifierMask);
+        if (consumedRestore) {
             return 1;
         }
 
@@ -1003,6 +1016,7 @@ bool LowLevelHookService::handleRegisteredHotkeyMessage(int hotkeyId) {
 
 void LowLevelHookService::updateRegisteredSystemHotkeys() {
     if (!hasThreadMessageQueue_) {
+        std::cerr << "[PHTV] updateRegisteredSystemHotkeys: no message queue yet\n";
         return;
     }
 
@@ -1015,6 +1029,11 @@ void LowLevelHookService::updateRegisteredSystemHotkeys() {
         kEmojiSystemHotkeyId,
         runtimeConfig_.emojiHotkeyStatus,
         runtimeConfig_.emojiHotkeyEnabled != 0);
+    std::cerr << "[PHTV] System hotkeys updated: switchReg=" << switchHotkeyRegistered_
+              << " (isModOnly=" << isModifierOnlyHotkey(vSwitchKeyStatus) << ")"
+              << " emojiReg=" << emojiHotkeyRegistered_
+              << " (isModOnly=" << isModifierOnlyHotkey(runtimeConfig_.emojiHotkeyStatus) << ")"
+              << "\n";
 }
 
 void LowLevelHookService::unregisterSystemHotkeys() {
@@ -1186,6 +1205,7 @@ bool LowLevelHookService::handleModifierOnlyHotkeysOnModifierChange(Uint16 virtu
 
 void LowLevelHookService::toggleLanguageByHotkey() {
     const int newLanguage = vLanguage == 0 ? 1 : 0;
+    std::cerr << "[PHTV] Switch hotkey fired: " << (newLanguage == 1 ? "EN→VI" : "VI→EN") << "\n";
     vLanguage = newLanguage;
     runtimeConfig_.language = newLanguage;
     persistRuntimeLanguageState();
@@ -1199,10 +1219,39 @@ void LowLevelHookService::triggerEmojiPanel() {
 #else
     constexpr Uint16 kEmojiTriggerVirtualKey = 0xBE;
 #endif
+
+    std::cerr << "[PHTV] Emoji hotkey fired, modifierMask=0x"
+              << std::hex << modifierMask_ << std::dec << "\n";
+
+    // Release any physically-held modifier keys so the OS receives a clean
+    // Win+. instead of e.g. Ctrl+Win+. which would not open the emoji panel.
+    const Uint32 savedMask = modifierMask_;
+    if (savedMask & kMaskControl) {
+        sendVirtualKey(VK_LCONTROL, false);
+    }
+    if (savedMask & kMaskShift) {
+        sendVirtualKey(VK_LSHIFT, false);
+    }
+    if (savedMask & kMaskAlt) {
+        sendVirtualKey(VK_LMENU, false);
+    }
+
     sendVirtualKey(VK_LWIN, true);
     sendVirtualKey(kEmojiTriggerVirtualKey, true);
     sendVirtualKey(kEmojiTriggerVirtualKey, false);
     sendVirtualKey(VK_LWIN, false);
+
+    // Re-press modifiers that the user is still physically holding so that
+    // the OS modifier state stays consistent with the physical keyboard.
+    if (savedMask & kMaskAlt) {
+        sendVirtualKey(VK_LMENU, true);
+    }
+    if (savedMask & kMaskShift) {
+        sendVirtualKey(VK_LSHIFT, true);
+    }
+    if (savedMask & kMaskControl) {
+        sendVirtualKey(VK_LCONTROL, true);
+    }
 }
 
 void LowLevelHookService::persistRuntimeLanguageState() {
@@ -1845,8 +1894,15 @@ void LowLevelHookService::refreshRuntimeConfigIfNeeded(bool force) {
     vLanguage = runtimeConfig_.language == 0 ? 0 : 1;
     vFixRecommendBrowser = runtimeConfig_.fixRecommendBrowser == 0 ? 0 : 1;
 
+    std::cerr << "[PHTV] Config reloaded. lang=" << (vLanguage == 1 ? "VI" : "EN")
+              << " switchKey=0x" << std::hex << vSwitchKeyStatus << std::dec
+              << " emojiEnabled=" << runtimeConfig_.emojiHotkeyEnabled
+              << " emojiKey=0x" << std::hex << runtimeConfig_.emojiHotkeyStatus << std::dec
+              << " switchReg=" << switchHotkeyRegistered_
+              << " emojiReg=" << emojiHotkeyRegistered_ << "\n";
+
     if (isBrowserFixDebugEnabled()) {
-        std::cerr << "[PHTV] Config reloaded. Language: " << (vLanguage == 1 ? "VI" : "EN") 
+        std::cerr << "[PHTV] Config reloaded. Language: " << (vLanguage == 1 ? "VI" : "EN")
                   << ", FixBrowser: " << vFixRecommendBrowser << "\n";
     }
 
