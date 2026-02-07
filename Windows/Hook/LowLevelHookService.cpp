@@ -133,7 +133,7 @@ const std::unordered_set<std::wstring> kSlowTerminalExecutables = {
     L"tsh.exe"
 };
 
-const std::array<std::wstring_view, 15> kTerminalTitleKeywords = {
+const std::array<std::wstring_view, 18> kTerminalTitleKeywords = {
     L"terminal",
     L"powershell",
     L"cmd",
@@ -148,7 +148,10 @@ const std::array<std::wstring_view, 15> kTerminalTitleKeywords = {
     L"mingu",
     L"cygwin",
     L"msys",
-    L"tool window: terminal"
+    L"tool window: terminal",
+    L"command prompt",
+    L"git bash",
+    L"npm"
 };
 
 const std::array<std::wstring_view, 10> kAddressBarKeywords = {
