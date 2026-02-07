@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <?define ProductVersion = "1.0.0" ?>
+    <?define Manufacturer = "Pham Hung Tien" ?>
+    <?define ProductName = "PHTV" ?>
+    <?define UpgradeCode = "a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6" ?>
+
+    <Product Id="*" 
+             Name="$(var.ProductName)" 
+             Language="1033" 
+             Version="$(var.ProductVersion)" 
+             Manufacturer="$(var.Manufacturer)" 
+             UpgradeCode="$(var.UpgradeCode)">
+        
+        <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+        <MajorUpgrade DowngradeErrorMessage="Một phiên bản mới hơn của [ProductName] đã được cài đặt." />
+        <MediaTemplate EmbedCab="yes" />
+
+        <!-- Icon cho Add/Remove Programs -->
+        <Icon Id="AppIcon" SourceFile="Assets\icon.ico" />
+        <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+        <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Khởi chạy PHTV ngay sau khi cài đặt" />
+
+        <!-- Cấu trúc thư mục -->
+        <Directory Id="TARGETDIR" Name="SourceDir">
+            <Directory Id="ProgramFiles64Folder">
+                <Directory Id="INSTALLFOLDER" Name="$(var.ProductName)">
+                    <Directory Id="DictionariesFolder" Name="Dictionaries" />
+                </Directory>
+            </Directory>
+            <Directory Id="ProgramMenuFolder">
+                <Directory Id="ApplicationProgramsFolder" Name="$(var.ProductName)"/>
+            </Directory>
+            <Directory Id="DesktopFolder" Name="Desktop" />
+        </Directory>
+
+        <!-- Thành phần file -->
+        <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+            <Component Id="MainExecutable" Guid="*">
+                <File Id="PHTVEXE" Source="Source\PHTV.exe" KeyPath="yes" Checksum="yes">
+                    <Shortcut Id="StartMenuShortcut" 
+                              Directory="ApplicationProgramsFolder" 
+                              Name="$(var.ProductName)" 
+                              WorkingDirectory="INSTALLFOLDER" 
+                              Icon="AppIcon" 
+                              Advertise="yes" />
+                    <Shortcut Id="DesktopShortcut" 
+                              Directory="DesktopFolder" 
+                              Name="$(var.ProductName)" 
+                              WorkingDirectory="INSTALLFOLDER" 
+                              Icon="AppIcon" 
+                              Advertise="yes" />
+                </File>
+                <RemoveFolder Id="CleanupShortcut" Directory="ApplicationProgramsFolder" On="uninstall" />
+            </Component>
+        </ComponentGroup>
+
+        <ComponentGroup Id="DictionaryComponents" Directory="DictionariesFolder">
+            <Component Id="EnDict" Guid="*">
+                <File Id="en_dict.bin" Source="Source\Dictionaries\en_dict.bin" KeyPath="yes" />
+            </Component>
+            <Component Id="ViDict" Guid="*">
+                <File Id="vi_dict.bin" Source="Source\Dictionaries\vi_dict.bin" KeyPath="yes" />
+            </Component>
+        </ComponentGroup>
+
+        <!-- Giao diện cài đặt -->
+        <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+        <UIRef Id="WixUI_InstallDir" />
+        
+        <!-- Khởi chạy ứng dụng sau khi cài -->
+        <Property Id="WixShellExecTarget" Value="[#PHTVEXE]" />
+        <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
+
+        <Feature Id="ProductFeature" Title="PHTV" Level="1">
+            <ComponentGroupRef Id="ProductComponents" />
+            <ComponentGroupRef Id="DictionaryComponents" />
+        </Feature>
+    </Product>
+</Wix>
