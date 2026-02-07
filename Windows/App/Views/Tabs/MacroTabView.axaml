@@ -24,7 +24,7 @@
 
       <Border Classes="settings-card">
         <StackPanel>
-          <Border Classes="settings-card-header">
+          <Border Classes="settings-card-header green">
             <Grid ColumnDefinitions="40,*">
               <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="✎"/></Border>
               <StackPanel Grid.Column="1" Spacing="2">
@@ -47,7 +47,7 @@
       <Grid ColumnDefinitions="5*,7*">
         <Border Classes="settings-card" Grid.Column="0" Margin="0,0,8,0">
           <StackPanel>
-            <Border Classes="settings-card-header">
+            <Border Classes="settings-card-header green">
               <Grid ColumnDefinitions="40,*" RowDefinitions="Auto,Auto">
                 <Border Classes="settings-card-icon">
                   <TextBlock Classes="settings-card-icon-text" Text="▤"/>
@@ -74,7 +74,7 @@
 
         <Border Classes="settings-card" Grid.Column="1" Margin="8,0,0,0">
           <StackPanel>
-            <Border Classes="settings-card-header">
+            <Border Classes="settings-card-header green">
               <Grid ColumnDefinitions="40,*" RowDefinitions="Auto,Auto">
                 <Border Classes="settings-card-icon">
                   <TextBlock Classes="settings-card-icon-text" Text="☰"/>

@@ -20,7 +20,7 @@
 
       <Border Classes="settings-card">
         <StackPanel>
-          <Border Classes="settings-card-header">
+          <Border Classes="settings-card-header teal">
             <Grid ColumnDefinitions="40,*">
               <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="⌬"/></Border>
               <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Chuyển đổi theo ứng dụng"/><TextBlock Classes="settings-card-subtitle" Text="Tự chuyển Việt/Anh và ghi nhớ bảng mã"/></StackPanel>
@@ -37,7 +37,7 @@
       <Grid ColumnDefinitions="*,*">
         <Border Classes="settings-card" Grid.Column="0" Margin="0,0,8,0">
           <StackPanel>
-            <Border Classes="settings-card-header">
+            <Border Classes="settings-card-header teal">
               <Grid ColumnDefinitions="40,*" RowDefinitions="Auto,Auto">
                 <Border Classes="settings-card-icon">
                   <TextBlock Classes="settings-card-icon-text" Text="⊘"/>
@@ -63,7 +63,7 @@
 
         <Border Classes="settings-card" Grid.Column="1" Margin="8,0,0,0">
           <StackPanel>
-            <Border Classes="settings-card-header">
+            <Border Classes="settings-card-header teal">
               <Grid ColumnDefinitions="40,*" RowDefinitions="Auto,Auto">
                 <Border Classes="settings-card-icon">
                   <TextBlock Classes="settings-card-icon-text" Text="⌁"/>
@@ -90,7 +90,7 @@
 
       <Border Classes="settings-card">
         <StackPanel>
-          <Border Classes="settings-card-header">
+          <Border Classes="settings-card-header teal">
             <Grid ColumnDefinitions="40,*">
               <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="◈"/></Border>
               <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Tương thích nâng cao"/><TextBlock Classes="settings-card-subtitle" Text="Tùy chọn cho app và bố cục đặc biệt"/></StackPanel>

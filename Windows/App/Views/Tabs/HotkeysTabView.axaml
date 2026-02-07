@@ -19,7 +19,7 @@
 
       <Border Classes="settings-card">
         <StackPanel>
-          <Border Classes="settings-card-header">
+          <Border Classes="settings-card-header indigo">
             <Grid ColumnDefinitions="40,*">
               <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="⌘"/></Border>
               <StackPanel Grid.Column="1" Spacing="2">
@@ -67,7 +67,7 @@
 
       <Border Classes="settings-card">
         <StackPanel>
-          <Border Classes="settings-card-header">
+          <Border Classes="settings-card-header indigo">
             <Grid ColumnDefinitions="40,*">
               <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="↶"/></Border>
               <StackPanel Grid.Column="1" Spacing="2">
@@ -110,7 +110,7 @@
 
       <Border Classes="settings-card">
         <StackPanel>
-          <Border Classes="settings-card-header">
+          <Border Classes="settings-card-header indigo">
             <Grid ColumnDefinitions="40,*">
               <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="⏸"/></Border>
               <StackPanel Grid.Column="1" Spacing="2">
@@ -153,7 +153,7 @@
 
       <Border Classes="settings-card">
         <StackPanel>
-          <Border Classes="settings-card-header">
+          <Border Classes="settings-card-header indigo">
             <Grid ColumnDefinitions="40,*">
               <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="☺"/></Border>
               <StackPanel Grid.Column="1" Spacing="2">

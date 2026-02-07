@@ -18,49 +18,28 @@
         </Grid>
       </Border>
 
-            <Border Classes="settings-card">
+      <Border Classes="settings-card">
+        <StackPanel>
+          <Border Classes="settings-card-header orange">
+            <Grid ColumnDefinitions="40,*">
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="⏻"/></Border>
+              <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Khởi động cùng hệ thống"/><TextBlock Classes="settings-card-subtitle" Text="Tự mở PHTV khi đăng nhập Windows"/></StackPanel>
+            </Grid>
+          </Border>
+          <StackPanel Margin="16" Spacing="8">
+            <Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Bật khởi động cùng Windows"/><TextBlock Classes="settings-row-subtitle" Text="Đăng ký startup qua user registry (HKCU)"/></StackPanel><ToggleSwitch Grid.Column="1" IsChecked="{Binding State.RunOnStartup}"/></Grid>
+          </StackPanel>
+        </StackPanel>
+      </Border>
 
-              <StackPanel>
-
-                <Border Classes="settings-card-header">
-
-                  <Grid ColumnDefinitions="40,*">
-
-                    <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="⏻"/></Border>
-
-                    <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Khởi động cùng hệ thống"/><TextBlock Classes="settings-card-subtitle" Text="Tự mở PHTV khi đăng nhập Windows"/></StackPanel>
-
-                  </Grid>
-
-                </Border>
-
-                <StackPanel Margin="16" Spacing="8">
-
-                  <Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Bật khởi động cùng Windows"/><TextBlock Classes="settings-row-subtitle" Text="Đăng ký startup qua user registry (HKCU)"/></StackPanel><ToggleSwitch Grid.Column="1" IsChecked="{Binding State.RunOnStartup}"/></Grid>
-
-                </StackPanel>
-
-              </StackPanel>
-
-            </Border>
-
-      
-
-            <Border Classes="settings-card">
-
-              <StackPanel>
-
-                <Border Classes="settings-card-header">
-
-                  <Grid ColumnDefinitions="40,*">
-
-                    <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="◧"/></Border>
-
-                    <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Giao diện"/><TextBlock Classes="settings-card-subtitle" Text="Tùy chỉnh hiển thị cửa sổ"/></StackPanel>
-
-                  </Grid>
-
-                </Border>
+      <Border Classes="settings-card">
+        <StackPanel>
+          <Border Classes="settings-card-header orange">
+            <Grid ColumnDefinitions="40,*">
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="◧"/></Border>
+              <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Giao diện"/><TextBlock Classes="settings-card-subtitle" Text="Tùy chỉnh hiển thị cửa sổ"/></StackPanel>
+            </Grid>
+          </Border>
           <StackPanel Margin="16" Spacing="8">
             <Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Cài đặt luôn ở trên"/><TextBlock Classes="settings-row-subtitle" Text="Giữ cửa sổ Cài đặt nằm trên app khác"/></StackPanel><ToggleSwitch Grid.Column="1" IsChecked="{Binding State.SettingsWindowAlwaysOnTop}"/></Grid>
           </StackPanel>
@@ -69,7 +48,7 @@
 
       <Border Classes="settings-card">
         <StackPanel>
-          <Border Classes="settings-card-header">
+          <Border Classes="settings-card-header orange">
             <Grid ColumnDefinitions="40,*">
               <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="▭"/></Border>
               <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Thanh menu"/><TextBlock Classes="settings-card-subtitle" Text="Tùy chỉnh biểu tượng trạng thái"/></StackPanel>
@@ -83,7 +62,7 @@
 
       <Border Classes="settings-card">
         <StackPanel>
-          <Border Classes="settings-card-header">
+          <Border Classes="settings-card-header orange">
             <Grid ColumnDefinitions="40,*">
               <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="⬇"/></Border>
               <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Cập nhật"/><TextBlock Classes="settings-card-subtitle" Text="Thiết lập kiểm tra và cài đặt cập nhật"/></StackPanel>
@@ -105,7 +84,7 @@
 
       <Border Classes="settings-card">
         <StackPanel>
-          <Border Classes="settings-card-header">
+          <Border Classes="settings-card-header orange">
             <Grid ColumnDefinitions="40,*">
               <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="▦"/></Border>
               <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Dữ liệu &amp; sao lưu"/><TextBlock Classes="settings-card-subtitle" Text="Sao lưu, khôi phục và đặt lại"/></StackPanel>

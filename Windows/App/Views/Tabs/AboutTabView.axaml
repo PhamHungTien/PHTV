@@ -21,9 +21,9 @@
 
       <Border Classes="settings-card">
         <StackPanel>
-          <Border Classes="settings-card-header">
+          <Border Classes="settings-card-header blue">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="◉"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="👤"/></Border>
               <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Phát triển bởi"/><TextBlock Classes="settings-card-subtitle" Text="Phạm Hùng Tiến"/></StackPanel>
             </Grid>
           </Border>
@@ -37,9 +37,9 @@
 
       <Border Classes="settings-card">
         <StackPanel>
-          <Border Classes="settings-card-header">
+          <Border Classes="settings-card-header red">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="♡"/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text="❤"/></Border>
               <StackPanel Grid.Column="1" Spacing="2"><TextBlock Classes="settings-card-title" Text="Hỗ trợ phát triển"/><TextBlock Classes="settings-card-subtitle" Text="Giúp dự án phát triển thêm tính năng mới"/></StackPanel>
             </Grid>
           </Border>

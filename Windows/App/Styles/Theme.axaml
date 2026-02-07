@@ -177,7 +177,7 @@
   </Style>
 
   <Style Selector="Border.settings-header">
-    <Setter Property="Background" Value="{DynamicResource PhtvCardBrush}"/>
+    <Setter Property="Background" Value="#0A007AFF"/> <!-- Subtle Blue Tint -->
     <Setter Property="CornerRadius" Value="12"/>
     <Setter Property="Padding" Value="20"/>
     <Setter Property="BorderBrush" Value="{DynamicResource PhtvBorderBrush}"/>
@@ -222,7 +222,7 @@
   </Style>
 
   <Style Selector="Border.settings-card-header">
-    <Setter Property="Background" Value="{DynamicResource PhtvCardHeaderBrush}"/>
+    <Setter Property="Background" Value="#0A007AFF"/> <!-- Consistent Subtle Blue Tint -->
     <Setter Property="Padding" Value="16,12"/>
     <Setter Property="BorderBrush" Value="{DynamicResource PhtvBorderBrush}"/>
     <Setter Property="BorderThickness" Value="0,0,0,1"/>
