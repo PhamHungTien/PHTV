@@ -35,19 +35,19 @@
               <TextBlock Classes="settings-row-title" Text="Phím bổ trợ"/>
               <UniformGrid Columns="5">
                 <ToggleButton Classes="hotkey-selector-button" Margin="0,0,4,0" IsChecked="{Binding State.SwitchHotkeyControl}">
-                  <StackPanel><TextBlock Classes="symbol" Text="⌃"/><TextBlock Classes="label" Text="Control"/></StackPanel>
+                  <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="⌃"/><TextBlock Classes="label" Text="Control"/></StackPanel>
                 </ToggleButton>
                 <ToggleButton Classes="hotkey-selector-button" Margin="4,0,4,0" IsChecked="{Binding State.SwitchHotkeyOption}">
-                  <StackPanel><TextBlock Classes="symbol" Text="⌥"/><TextBlock Classes="label" Text="Option"/></StackPanel>
+                  <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="⌥"/><TextBlock Classes="label" Text="Option"/></StackPanel>
                 </ToggleButton>
                 <ToggleButton Classes="hotkey-selector-button" Margin="4,0,4,0" IsChecked="{Binding State.SwitchHotkeyCommand}">
-                  <StackPanel><TextBlock Classes="symbol" Text="⌘"/><TextBlock Classes="label" Text="Win"/></StackPanel>
+                  <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="⌘"/><TextBlock Classes="label" Text="Win"/></StackPanel>
                 </ToggleButton>
                 <ToggleButton Classes="hotkey-selector-button" Margin="4,0,4,0" IsChecked="{Binding State.SwitchHotkeyShift}">
-                  <StackPanel><TextBlock Classes="symbol" Text="⇧"/><TextBlock Classes="label" Text="Shift"/></StackPanel>
+                  <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="⇧"/><TextBlock Classes="label" Text="Shift"/></StackPanel>
                 </ToggleButton>
                 <ToggleButton Classes="hotkey-selector-button" Margin="4,0,0,0" IsChecked="{Binding State.SwitchHotkeyFn}">
-                  <StackPanel><TextBlock Classes="symbol" Text="fn"/><TextBlock Classes="label" Text="Function"/></StackPanel>
+                  <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="fn"/><TextBlock Classes="label" Text="Function"/></StackPanel>
                 </ToggleButton>
               </UniformGrid>
               <TextBlock Classes="hotkey-hint" Text="Mặc định: Control + Shift. Nhấn phím để bật/tắt modifier."/>
