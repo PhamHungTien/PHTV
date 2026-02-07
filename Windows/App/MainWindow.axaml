@@ -31,7 +31,15 @@
           </Grid>
           <TextBox Watermark="Tìm kiếm cài đặt..." 
                    Classes="sidebar-search"
-                   Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+                   Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}">
+            <TextBox.InnerLeftContent>
+              <TextBlock Text="🔍" 
+                         VerticalAlignment="Center" 
+                         Margin="10,0,0,0" 
+                         FontSize="12" 
+                         Opacity="0.5"/>
+            </TextBox.InnerLeftContent>
+          </TextBox>
         </StackPanel>
 
         <ScrollViewer VerticalScrollBarVisibility="Auto">
