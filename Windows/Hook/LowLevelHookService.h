@@ -37,6 +37,40 @@ private:
     void setModifierDown(Uint16 virtualKey);
     void setModifierUp(Uint16 virtualKey);
     bool isModifierKey(Uint16 virtualKey) const;
+    bool hotkeyModifiersMatchExact(int hotkeyStatus, Uint32 currentModifierMask) const;
+    bool hotkeyModifiersAreHeld(int hotkeyStatus, Uint32 currentModifierMask) const;
+    bool isModifierOnlyHotkey(int hotkeyStatus) const;
+    bool isHotkeyMatch(int hotkeyStatus,
+                       Uint16 engineKeyCode,
+                       Uint32 currentModifierMask,
+                       bool checkKeyCode) const;
+    bool handleHotkeysOnKeyDown(Uint16 engineKeyCode);
+    bool handleSwitchHotkey(Uint16 engineKeyCode);
+    bool handleEmojiHotkey(Uint16 engineKeyCode);
+    bool handleModifierOnlyHotkeysOnModifierChange(Uint16 virtualKey,
+                                                   bool isKeyDown,
+                                                   Uint32 previousModifierMask);
+    bool handleRegisteredHotkeyMessage(int hotkeyId);
+    void updateRegisteredSystemHotkeys();
+    void unregisterSystemHotkeys();
+    bool registerSystemHotkey(int hotkeyId, int hotkeyStatus, bool enabled);
+    bool tryBuildSystemHotkey(int hotkeyStatus, UINT& outModifiers, UINT& outVirtualKey) const;
+    bool shouldHandleSwitchHotkeyWithHook() const;
+    bool shouldHandleEmojiHotkeyWithHook() const;
+    void toggleLanguageByHotkey();
+    void triggerEmojiPanel();
+    void persistRuntimeLanguageState();
+    void updatePauseKeyState(Uint32 previousModifierMask, Uint32 currentModifierMask);
+    bool isPauseModifierHeld(Uint32 currentModifierMask) const;
+    bool handleCustomRestoreOnModifierChange(Uint16 virtualKey,
+                                             bool isKeyDown,
+                                             Uint32 previousModifierMask);
+    bool isRestoreModifierVirtualKey(Uint16 virtualKey) const;
+    bool isRestoreModifierReleased(Uint16 virtualKey,
+                                   Uint32 previousModifierMask,
+                                   Uint32 currentModifierMask) const;
+    bool tryRestoreCurrentWordWithoutBreakKey(Uint16 fallbackEngineKeyCode);
+    void processEngineOutputWithoutRestoreBreak(const phtv::windows_host::EngineOutput& output);
 
     Uint8 currentCapsStatus() const;
     bool hasOtherControlKey() const;
@@ -131,6 +165,16 @@ private:
     bool hasLastKeyDownTime_;
     double cliSpeedFactor_;
     std::chrono::steady_clock::time_point cliBlockUntil_;
+    bool pauseKeyPressed_;
+    int savedLanguageBeforePause_;
+    bool restoreModifierPressed_;
+    bool keyPressedWithRestoreModifier_;
+    bool switchModifierOnlyArmed_;
+    bool keyPressedWithSwitchModifiers_;
+    bool emojiModifierOnlyArmed_;
+    bool keyPressedWithEmojiModifiers_;
+    bool switchHotkeyRegistered_;
+    bool emojiHotkeyRegistered_;
 };
 
 } // namespace phtv::windows_hook

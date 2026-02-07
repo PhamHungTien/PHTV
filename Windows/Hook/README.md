@@ -7,6 +7,8 @@
 Luồng xử lý được thiết kế theo mô hình OpenKey win32:
 
 - Hook `WH_KEYBOARD_LL` / `WH_MOUSE_LL`
+- `RegisterHotKey` cho combo có phím chính (ổn định hơn, ít miss event)
+- Fallback về `WH_KEYBOARD_LL` cho modifier-only/Fn hoặc khi hotkey bị chiếm dụng
 - Gọi engine trên mỗi `KeyDown`
 - Synthesize output bằng `SendInput`
 - Đồng bộ backspace cho bảng mã double-code (VNI/Unicode Compound)

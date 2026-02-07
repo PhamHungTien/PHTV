@@ -178,6 +178,7 @@ public sealed class MainWindowViewModel : ObservableObject {
         _daemonStatusTimer.Tick += (_, _) => {
             RefreshInputDaemonStatus();
             AutoRecoverInputDaemon();
+            SyncLanguageStateFromRuntime();
         };
 
         _currentTab = _tabViewModels[_selectedTabId];
@@ -262,6 +263,7 @@ public sealed class MainWindowViewModel : ObservableObject {
     public void AttachWindow(Window window) {
         _window = window;
         ApplyWindowTopmost();
+        ApplyWindowShowInTaskbar();
     }
 
     public void InitializeAfterWindowReady() {
@@ -272,6 +274,8 @@ public sealed class MainWindowViewModel : ObservableObject {
         _initialized = true;
         LoadInitialSettings();
         HookStateEvents();
+        ApplyWindowTopmost();
+        ApplyWindowShowInTaskbar();
         RefreshCommandStates();
         InitializeRuntimeBridge();
         _daemonStatusTimer.Start();
@@ -444,7 +448,13 @@ public sealed class MainWindowViewModel : ObservableObject {
             snapshot?.ApplyTo(State);
 
             if (_startupService.IsSupported) {
-                State.RunOnStartup = _startupService.IsEnabled();
+                var isStartupEnabled = _startupService.IsEnabled();
+                State.RunOnStartup = isStartupEnabled;
+
+                // Normalize legacy startup entries so future launches can detect startup activation reliably.
+                if (isStartupEnabled) {
+                    _startupService.TrySetEnabled(true, out _);
+                }
             }
         } catch (Exception ex) {
             StatusMessage = $"Không tải được cấu hình: {ex.Message}";
@@ -480,6 +490,10 @@ public sealed class MainWindowViewModel : ObservableObject {
             ApplyWindowTopmost();
         }
 
+        if (propertyName == nameof(SettingsState.ShowIconOnDock)) {
+            ApplyWindowShowInTaskbar();
+        }
+
         if (propertyName == nameof(SettingsState.RunOnStartup)) {
             SyncRunOnStartupSetting();
         }
@@ -504,6 +518,11 @@ public sealed class MainWindowViewModel : ObservableObject {
         }
 
         RefreshCommandStates();
+
+        if (ReferenceEquals(sender, State.ExcludedApps) || ReferenceEquals(sender, State.StepByStepApps)) {
+            TrySyncRuntimeArtifactsImmediately();
+        }
+
         ScheduleSave();
     }
 
@@ -571,6 +590,12 @@ public sealed class MainWindowViewModel : ObservableObject {
         }
     }
 
+    private void ApplyWindowShowInTaskbar() {
+        if (_window is not null) {
+            _window.ShowInTaskbar = State.ShowIconOnDock;
+        }
+    }
+
     private void SyncRunOnStartupSetting() {
         if (_isApplyingSnapshot || _isSyncingStartup || !_startupService.IsSupported) {
             return;
@@ -628,6 +653,18 @@ public sealed class MainWindowViewModel : ObservableObject {
         _runtimeBridgeService.WriteRuntimeArtifacts(State);
     }
 
+    private void TrySyncRuntimeArtifactsImmediately() {
+        if (_isApplyingSnapshot) {
+            return;
+        }
+
+        try {
+            SyncRuntimeArtifacts();
+        } catch (Exception ex) {
+            InputDaemonStatus = $"Không đồng bộ runtime config: {ex.Message}";
+        }
+    }
+
     private void RefreshInputDaemonStatus() {
         if (!_runtimeBridgeService.IsSupported) {
             IsInputDaemonRunning = false;
@@ -647,6 +684,22 @@ public sealed class MainWindowViewModel : ObservableObject {
         InputDaemonStatus = string.IsNullOrWhiteSpace(daemonPath)
             ? "Hook daemon: Chưa chạy (không tìm thấy executable)."
             : $"Hook daemon: Chưa chạy (sẵn sàng tại {daemonPath}).";
+    }
+
+    private void SyncLanguageStateFromRuntime() {
+        if (!_runtimeBridgeService.IsSupported) {
+            return;
+        }
+
+        if (!_runtimeBridgeService.TryReadRuntimeLanguage(out var runtimeVietnameseEnabled)) {
+            return;
+        }
+
+        if (State.IsVietnameseEnabled == runtimeVietnameseEnabled) {
+            return;
+        }
+
+        State.IsVietnameseEnabled = runtimeVietnameseEnabled;
     }
 
     private void AutoRecoverInputDaemon() {

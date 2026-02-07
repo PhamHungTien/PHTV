@@ -37,6 +37,7 @@ public sealed class SettingsSnapshot {
     public bool SafeMode { get; set; }
 
     public bool RunOnStartup { get; set; }
+    public bool ShowSettingsOnStartup { get; set; }
     public bool SettingsWindowAlwaysOnTop { get; set; }
     public bool UseVietnameseMenubarIcon { get; set; } = true;
     public bool ShowIconOnDock { get; set; } = true;
@@ -94,6 +95,7 @@ public sealed class SettingsSnapshot {
             SafeMode = state.SafeMode,
 
             RunOnStartup = state.RunOnStartup,
+            ShowSettingsOnStartup = state.ShowSettingsOnStartup,
             SettingsWindowAlwaysOnTop = state.SettingsWindowAlwaysOnTop,
             UseVietnameseMenubarIcon = state.UseVietnameseMenubarIcon,
             ShowIconOnDock = state.ShowIconOnDock,
@@ -156,6 +158,7 @@ public sealed class SettingsSnapshot {
         state.SafeMode = SafeMode;
 
         state.RunOnStartup = RunOnStartup;
+        state.ShowSettingsOnStartup = ShowSettingsOnStartup;
         state.SettingsWindowAlwaysOnTop = SettingsWindowAlwaysOnTop;
         state.UseVietnameseMenubarIcon = UseVietnameseMenubarIcon;
         state.ShowIconOnDock = ShowIconOnDock;

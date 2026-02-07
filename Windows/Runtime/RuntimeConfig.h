@@ -36,6 +36,8 @@ struct RuntimeConfig {
     int autoRestoreEnglishWord = 1;
     int sendKeyStepByStep = 0;
     int performLayoutCompat = 0;
+    int emojiHotkeyEnabled = 1;
+    int emojiHotkeyStatus = 0x100 | KEY_E;
     int fixRecommendBrowser = 1;
     std::vector<std::string> excludedApps;
     std::vector<std::string> stepByStepApps;
@@ -50,5 +52,9 @@ std::filesystem::path runtimeMacrosPath();
 // Returns true when engine state was applied successfully.
 // Returns false only if there was a hard I/O error while reading existing files.
 bool loadAndApplyRuntimeConfig(RuntimeConfig& outConfig, std::string& errorMessage);
+
+// Updates only the "language" field in runtime-config.ini so UI and daemon stay in sync.
+// language: 0 = English, non-zero = Vietnamese.
+bool persistRuntimeLanguage(int language, std::string& errorMessage);
 
 } // namespace phtv::windows_runtime

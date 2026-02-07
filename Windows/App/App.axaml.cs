@@ -4,6 +4,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform;
 using Avalonia.Threading;
+using PHTV.Windows.Services;
 using PHTV.Windows.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -14,6 +15,10 @@ using System.Threading;
 namespace PHTV.Windows;
 
 public sealed partial class App : Application {
+    private const int TraySettingsBurstClickThreshold = 3;
+    private static readonly TimeSpan TraySettingsBurstWindow = TimeSpan.FromMilliseconds(900);
+    private static readonly TimeSpan TrayToggleDebounce = TimeSpan.FromMilliseconds(240);
+
     private MainWindow? _mainWindow;
     private MainWindowViewModel? _mainWindowViewModel;
     private TrayIcon? _trayIcon;
@@ -49,12 +54,17 @@ public sealed partial class App : Application {
 
     // System options
     private NativeMenuItem? _runOnStartupItem;
+    private NativeMenuItem? _showSettingsOnStartupItem;
     private NativeMenuItem? _showIconOnDockItem;
 
     private readonly Dictionary<string, NativeMenuItem> _inputMethodItems = new(StringComparer.Ordinal);
     private readonly Dictionary<string, NativeMenuItem> _codeTableItems = new(StringComparer.Ordinal);
     private bool _isUpdatingTrayMenu;
+    private int _trayClickBurstCount;
+    private DateTime _trayClickBurstStartedUtc = DateTime.MinValue;
+    private DispatcherTimer? _trayClickDebounceTimer;
     private DateTime _ignoreTrayClickUntilUtc = DateTime.MinValue;
+    private bool _startedFromStartupEntry;
     private EventWaitHandle? _activateEvent;
     private RegisteredWaitHandle? _activateEventWaitHandle;
 
@@ -64,6 +74,7 @@ public sealed partial class App : Application {
 
     public override void OnFrameworkInitializationCompleted() {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) {
+            _startedFromStartupEntry = IsStartupActivation(desktop.Args);
             _mainWindowViewModel = new MainWindowViewModel();
             _mainWindow = new MainWindow(_mainWindowViewModel);
             desktop.MainWindow = _mainWindow;
@@ -71,6 +82,7 @@ public sealed partial class App : Application {
 
             _mainWindowViewModel.State.PropertyChanged += OnViewModelStatePropertyChanged;
             SetupTrayIcon(desktop);
+            ApplyInitialWindowVisibility();
             StartSingleInstanceActivationListener();
             desktop.Exit += (_, _) => StopSingleInstanceActivationListener();
         }
@@ -79,6 +91,8 @@ public sealed partial class App : Application {
     }
 
     private void SetupTrayIcon(IClassicDesktopStyleApplicationLifetime desktop) {
+        EnsureTrayClickDebounceTimer();
+
         _vietnameseTrayIcon = TryLoadWindowIcon("avares://PHTV/Assets/tray_vi.ico")
             ?? TryLoadWindowIcon("avares://PHTV/Assets/tray_vi.png");
         _englishTrayIcon = TryLoadWindowIcon("avares://PHTV/Assets/tray_en.ico")
@@ -253,6 +267,9 @@ public sealed partial class App : Application {
         _runOnStartupItem = CreateToggleItem("Khởi động cùng máy", () => _mainWindowViewModel!.State.RunOnStartup, v => _mainWindowViewModel!.State.RunOnStartup = v);
         systemMenu.Add(_runOnStartupItem);
 
+        _showSettingsOnStartupItem = CreateToggleItem("Mở Cài đặt khi khởi động", () => _mainWindowViewModel!.State.ShowSettingsOnStartup, v => _mainWindowViewModel!.State.ShowSettingsOnStartup = v);
+        systemMenu.Add(_showSettingsOnStartupItem);
+
         _showIconOnDockItem = CreateToggleItem("Hiện icon trên Taskbar", () => _mainWindowViewModel!.State.ShowIconOnDock, v => _mainWindowViewModel!.State.ShowIconOnDock = v);
         systemMenu.Add(_showIconOnDockItem);
 
@@ -318,13 +335,15 @@ public sealed partial class App : Application {
             if (DateTime.UtcNow < _ignoreTrayClickUntilUtc) {
                 return;
             }
-            _mainWindowViewModel?.ToggleVietnameseEnabled();
-            UpdateTrayPresentation();
+
+            RegisterTrayClick();
         });
     }
 
     private void SuppressTrayClickTemporarily() {
         _ignoreTrayClickUntilUtc = DateTime.UtcNow.AddMilliseconds(450);
+        _trayClickDebounceTimer?.Stop();
+        ResetTrayClickBurst();
     }
 
     private void OnViewModelStatePropertyChanged(object? sender, PropertyChangedEventArgs e) {
@@ -380,6 +399,7 @@ public sealed partial class App : Application {
 
             // System
             if (_runOnStartupItem is not null) _runOnStartupItem.IsChecked = state.RunOnStartup;
+            if (_showSettingsOnStartupItem is not null) _showSettingsOnStartupItem.IsChecked = state.ShowSettingsOnStartup;
             if (_showIconOnDockItem is not null) _showIconOnDockItem.IsChecked = state.ShowIconOnDock;
 
             foreach (var (method, item) in _inputMethodItems) {
@@ -469,5 +489,87 @@ public sealed partial class App : Application {
 
             _mainWindow.ShowFromTray();
         });
+    }
+
+    private void EnsureTrayClickDebounceTimer() {
+        if (_trayClickDebounceTimer is not null) {
+            return;
+        }
+
+        _trayClickDebounceTimer = new DispatcherTimer {
+            Interval = TrayToggleDebounce
+        };
+        _trayClickDebounceTimer.Tick += OnTrayClickDebounceTimerTick;
+    }
+
+    private void OnTrayClickDebounceTimerTick(object? sender, EventArgs e) {
+        _trayClickDebounceTimer?.Stop();
+        if (_trayClickBurstCount <= 0) {
+            return;
+        }
+
+        ResetTrayClickBurst();
+        _mainWindowViewModel?.ToggleVietnameseEnabled();
+        UpdateTrayPresentation();
+    }
+
+    private void RegisterTrayClick() {
+        var nowUtc = DateTime.UtcNow;
+        if (_trayClickBurstStartedUtc == DateTime.MinValue ||
+            (nowUtc - _trayClickBurstStartedUtc) > TraySettingsBurstWindow) {
+            _trayClickBurstStartedUtc = nowUtc;
+            _trayClickBurstCount = 0;
+        }
+
+        _trayClickBurstCount++;
+        if (_trayClickBurstCount >= TraySettingsBurstClickThreshold) {
+            _trayClickDebounceTimer?.Stop();
+            ResetTrayClickBurst();
+            SuppressTrayClickTemporarily();
+            ShowSettingsWindow(SettingsTabId.System);
+            return;
+        }
+
+        _trayClickDebounceTimer?.Stop();
+        _trayClickDebounceTimer?.Start();
+    }
+
+    private void ResetTrayClickBurst() {
+        _trayClickBurstCount = 0;
+        _trayClickBurstStartedUtc = DateTime.MinValue;
+    }
+
+    private static bool IsStartupActivation(IReadOnlyList<string>? args) {
+        if (args is null || args.Count == 0) {
+            return false;
+        }
+
+        foreach (var arg in args) {
+            if (string.Equals(arg, WindowsStartupService.StartupLaunchArgument, StringComparison.OrdinalIgnoreCase)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void ApplyInitialWindowVisibility() {
+        if (_mainWindow is null || _mainWindowViewModel is null || !_startedFromStartupEntry) {
+            return;
+        }
+
+        var shouldShowSettingsOnStartup = _mainWindowViewModel.State.ShowSettingsOnStartup;
+        Dispatcher.UIThread.Post(() => {
+            if (_mainWindow is null || _mainWindowViewModel is null) {
+                return;
+            }
+
+            if (!shouldShowSettingsOnStartup) {
+                _mainWindow.Hide();
+                return;
+            }
+
+            ShowSettingsWindow(SettingsTabId.System);
+        }, DispatcherPriority.Background);
     }
 }

@@ -316,6 +316,8 @@ bool loadAndApplyRuntimeConfig(RuntimeConfig& outConfig, std::string& errorMessa
         config.autoRestoreEnglishWord = readBoolAsInt(values, "auto_restore_english_word", config.autoRestoreEnglishWord);
         config.sendKeyStepByStep = readBoolAsInt(values, "send_key_step_by_step", config.sendKeyStepByStep);
         config.performLayoutCompat = readBoolAsInt(values, "perform_layout_compat", config.performLayoutCompat);
+        config.emojiHotkeyEnabled = readBoolAsInt(values, "emoji_hotkey_enabled", config.emojiHotkeyEnabled);
+        config.emojiHotkeyStatus = readInt(values, "emoji_hotkey_status", config.emojiHotkeyStatus);
         config.fixRecommendBrowser = readBoolAsInt(values, "fix_recommend_browser", config.fixRecommendBrowser);
         config.excludedApps = readEscapedList(values, "excluded_apps");
         config.stepByStepApps = readEscapedList(values, "step_by_step_apps");
@@ -335,6 +337,97 @@ bool loadAndApplyRuntimeConfig(RuntimeConfig& outConfig, std::string& errorMessa
 
     applyConfigToEngine(config);
     outConfig = config;
+    return true;
+}
+
+bool persistRuntimeLanguage(int language, std::string& errorMessage) {
+    errorMessage.clear();
+
+    const int normalizedLanguage = language == 0 ? 0 : 1;
+    const std::filesystem::path configPath = runtimeConfigPath();
+    const std::filesystem::path tempPath = configPath.string() + ".tmp";
+
+    std::error_code ec;
+    std::filesystem::create_directories(configPath.parent_path(), ec);
+    if (ec) {
+        errorMessage = "Cannot create runtime directory: " + ec.message();
+        return false;
+    }
+
+    std::vector<std::string> lines;
+    lines.reserve(128);
+
+    {
+        std::ifstream input(configPath);
+        std::string line;
+        while (std::getline(input, line)) {
+            lines.push_back(line);
+        }
+    }
+
+    bool foundLanguage = false;
+    for (std::string& line : lines) {
+        const std::string trimmed = trim(line);
+        if (trimmed.empty() || trimmed[0] == '#' || trimmed[0] == ';') {
+            continue;
+        }
+
+        const size_t separator = trimmed.find('=');
+        if (separator == std::string::npos || separator == 0) {
+            continue;
+        }
+
+        std::string key = trim(trimmed.substr(0, separator));
+        std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) {
+            return static_cast<char>(std::tolower(c));
+        });
+
+        if (key == "language") {
+            line = "language=" + std::to_string(normalizedLanguage);
+            foundLanguage = true;
+        }
+    }
+
+    if (!foundLanguage) {
+        lines.push_back("language=" + std::to_string(normalizedLanguage));
+    }
+
+    {
+        std::ofstream output(tempPath, std::ios::trunc);
+        if (!output.is_open()) {
+            errorMessage = "Cannot write temporary runtime-config.ini";
+            return false;
+        }
+
+        for (const std::string& line : lines) {
+            output << line << '\n';
+            if (!output.good()) {
+                errorMessage = "Failed while writing runtime-config.ini";
+                return false;
+            }
+        }
+    }
+
+    ec.clear();
+    std::filesystem::rename(tempPath, configPath, ec);
+    if (!ec) {
+        return true;
+    }
+
+    ec.clear();
+    std::filesystem::copy_file(tempPath,
+                               configPath,
+                               std::filesystem::copy_options::overwrite_existing,
+                               ec);
+    if (ec) {
+        errorMessage = "Cannot finalize runtime-config.ini: " + ec.message();
+        std::error_code cleanupEc;
+        std::filesystem::remove(tempPath, cleanupEc);
+        return false;
+    }
+
+    std::error_code cleanupEc;
+    std::filesystem::remove(tempPath, cleanupEc);
     return true;
 }
 

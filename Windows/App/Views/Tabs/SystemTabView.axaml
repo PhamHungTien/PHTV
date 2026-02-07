@@ -13,6 +13,7 @@
           </StackPanel>
           <StackPanel Grid.Column="1" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Center">
             <Border Classes="status-pill"><TextBlock Classes="status-pill-text" Text="{Binding State.RunOnStartup, StringFormat='Tự khởi động: {0}'}"/></Border>
+            <Border Classes="status-pill"><TextBlock Classes="status-pill-text" Text="{Binding State.ShowSettingsOnStartup, StringFormat='Mở cài đặt khi khởi động: {0}'}"/></Border>
             <Border Classes="status-pill"><TextBlock Classes="status-pill-text" Text="{Binding State.ShowIconOnDock, StringFormat='Dock: {0}'}"/></Border>
           </StackPanel>
         </Grid>
@@ -29,6 +30,8 @@
           </Border>
           <StackPanel Margin="16" Spacing="8">
             <Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Bật khởi động cùng Windows"/><TextBlock Classes="settings-row-subtitle" Text="Đăng ký startup qua user registry (HKCU)"/></StackPanel><ToggleSwitch Grid.Column="1" IsChecked="{Binding State.RunOnStartup}"/></Grid>
+            <Border Classes="settings-divider"/>
+            <Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="2"><TextBlock Classes="settings-row-title" Text="Mở cửa sổ cài đặt khi khởi động"/><TextBlock Classes="settings-row-subtitle" Text="Nếu tắt, app sẽ chạy nền ở tray khi auto-start"/></StackPanel><ToggleSwitch Grid.Column="1" IsChecked="{Binding State.ShowSettingsOnStartup}"/></Grid>
           </StackPanel>
         </StackPanel>
       </Border>

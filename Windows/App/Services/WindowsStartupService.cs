@@ -8,6 +8,7 @@ namespace PHTV.Windows.Services;
 public sealed class WindowsStartupService {
     private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string StartupEntryName = "PHTV";
+    internal const string StartupLaunchArgument = "--startup";
 
     [SupportedOSPlatformGuard("windows")]
     public bool IsSupported => OperatingSystem.IsWindows();
@@ -56,7 +57,7 @@ public sealed class WindowsStartupService {
                     return false;
                 }
 
-                key.SetValue(StartupEntryName, $"\"{executablePath}\"");
+                key.SetValue(StartupEntryName, BuildStartupCommand(executablePath));
             } else {
                 key.DeleteValue(StartupEntryName, false);
             }
@@ -78,5 +79,9 @@ public sealed class WindowsStartupService {
         } catch {
             return string.Empty;
         }
+    }
+
+    private static string BuildStartupCommand(string executablePath) {
+        return $"\"{executablePath}\" {StartupLaunchArgument}";
     }
 }

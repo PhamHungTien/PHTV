@@ -178,6 +178,49 @@ public sealed class RuntimeBridgeService {
         File.WriteAllText(RuntimeMacrosPath, runtimeMacros, Utf8WithoutBom);
     }
 
+    public bool TryReadRuntimeLanguage(out bool isVietnamese) {
+        isVietnamese = true;
+
+        if (!IsSupported || !File.Exists(RuntimeConfigPath)) {
+            return false;
+        }
+
+        try {
+            using var stream = new FileStream(RuntimeConfigPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            using var reader = new StreamReader(stream, Encoding.UTF8, true);
+
+            string? line;
+            while ((line = reader.ReadLine()) is not null) {
+                var trimmed = line.Trim();
+                if (trimmed.Length == 0 || trimmed[0] == '#' || trimmed[0] == ';') {
+                    continue;
+                }
+
+                var separator = trimmed.IndexOf('=');
+                if (separator <= 0) {
+                    continue;
+                }
+
+                var key = trimmed[..separator].Trim();
+                if (!key.Equals("language", StringComparison.OrdinalIgnoreCase)) {
+                    continue;
+                }
+
+                var rawValue = trimmed[(separator + 1)..].Trim();
+                if (!int.TryParse(rawValue, out var parsed)) {
+                    return false;
+                }
+
+                isVietnamese = parsed != 0;
+                return true;
+            }
+        } catch {
+            return false;
+        }
+
+        return false;
+    }
+
     public bool IsDaemonRunning() {
         if (!IsSupported) {
             return false;

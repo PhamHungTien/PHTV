@@ -6,6 +6,7 @@
 #include <array>
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <cstdlib>
 #include <cwctype>
 #include <filesystem>
@@ -15,6 +16,7 @@
 #include <oleauto.h>
 #include <string>
 #include <thread>
+#include <tlhelp32.h>
 #include <uiautomationclient.h>
 #include <unordered_set>
 #include <utility>
@@ -28,6 +30,10 @@
 #define PROCESS_QUERY_LIMITED_INFORMATION PROCESS_QUERY_INFORMATION
 #endif
 
+#ifndef MOD_NOREPEAT
+#define MOD_NOREPEAT 0x4000
+#endif
+
 namespace {
 
 constexpr Uint32 kMaskShift = 0x01;
@@ -35,6 +41,8 @@ constexpr Uint32 kMaskControl = 0x02;
 constexpr Uint32 kMaskAlt = 0x04;
 constexpr Uint32 kMaskCapital = 0x08;
 constexpr Uint32 kMaskWin = 0x10;
+constexpr int kSwitchSystemHotkeyId = 0x5601;
+constexpr int kEmojiSystemHotkeyId = 0x5602;
 
 constexpr int kAppContextRefreshMs = 120;
 
@@ -331,6 +339,38 @@ std::wstring utf8ToWide(const std::string& value) {
     return output;
 }
 
+std::string wideToUtf8(const std::wstring& value) {
+    if (value.empty()) {
+        return {};
+    }
+
+    int required = WideCharToMultiByte(CP_UTF8,
+                                       0,
+                                       value.c_str(),
+                                       static_cast<int>(value.size()),
+                                       nullptr,
+                                       0,
+                                       nullptr,
+                                       nullptr);
+    if (required <= 0) {
+        return {};
+    }
+
+    std::string output(static_cast<size_t>(required), '\0');
+    if (WideCharToMultiByte(CP_UTF8,
+                            0,
+                            value.c_str(),
+                            static_cast<int>(value.size()),
+                            output.data(),
+                            required,
+                            nullptr,
+                            nullptr) <= 0) {
+        return {};
+    }
+
+    return output;
+}
+
 bool wildcardMatch(std::wstring_view text, std::wstring_view pattern) {
     size_t textIndex = 0;
     size_t patternIndex = 0;
@@ -387,6 +427,38 @@ bool hasFileExtension(const std::wstring& lowerRule) {
     return dotPos != std::wstring::npos && dotPos + 1 < lowerRule.size();
 }
 
+std::wstring normalizePathSeparators(std::wstring value) {
+    std::replace(value.begin(), value.end(), L'/', L'\\');
+    return value;
+}
+
+std::wstring queryProcessNameById(DWORD processId) {
+    if (processId == 0) {
+        return {};
+    }
+
+    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (snapshot == INVALID_HANDLE_VALUE) {
+        return {};
+    }
+
+    PROCESSENTRY32W entry {};
+    entry.dwSize = sizeof(entry);
+    std::wstring processName;
+
+    if (Process32FirstW(snapshot, &entry) != FALSE) {
+        do {
+            if (entry.th32ProcessID == processId) {
+                processName.assign(entry.szExeFile);
+                break;
+            }
+        } while (Process32NextW(snapshot, &entry) != FALSE);
+    }
+
+    CloseHandle(snapshot);
+    return processName;
+}
+
 bool matchesRuntimeRule(const std::string& rawRule,
                         const std::wstring& processNameLower,
                         const std::wstring& processStemLower,
@@ -397,17 +469,23 @@ bool matchesRuntimeRule(const std::string& rawRule,
         return false;
     }
 
+    if (ruleLower.size() > 1 && ruleLower.front() == L'"' && ruleLower.back() == L'"') {
+        ruleLower = trimWide(ruleLower.substr(1, ruleLower.size() - 2));
+    }
+    ruleLower = normalizePathSeparators(ruleLower);
+    const std::wstring processPathComparable = normalizePathSeparators(processPathLower);
+
     const bool hasWildcard = ruleLower.find(L'*') != std::wstring::npos;
     if (hasWildcard) {
         return wildcardMatch(processNameLower, ruleLower) ||
                wildcardMatch(processStemLower, ruleLower) ||
-               wildcardMatch(processPathLower, ruleLower) ||
+               wildcardMatch(processPathComparable, ruleLower) ||
                wildcardMatch(titleLower, ruleLower);
     }
 
     if (processNameLower == ruleLower ||
         processStemLower == ruleLower ||
-        processPathLower == ruleLower ||
+        processPathComparable == ruleLower ||
         titleLower == ruleLower) {
         return true;
     }
@@ -418,7 +496,7 @@ bool matchesRuntimeRule(const std::string& rawRule,
 
     return processNameLower.find(ruleLower) != std::wstring::npos ||
            processStemLower.find(ruleLower) != std::wstring::npos ||
-           processPathLower.find(ruleLower) != std::wstring::npos ||
+           processPathComparable.find(ruleLower) != std::wstring::npos ||
            titleLower.find(ruleLower) != std::wstring::npos;
 }
 
@@ -426,6 +504,15 @@ bool isBrowserFixDebugEnabled() {
     static int cachedValue = -1;
     if (cachedValue < 0) {
         const char* envValue = std::getenv("PHTV_DEBUG_BROWSER_FIX");
+        cachedValue = (envValue != nullptr && envValue[0] != '\0' && envValue[0] != '0') ? 1 : 0;
+    }
+    return cachedValue == 1;
+}
+
+bool isAppRuleDebugEnabled() {
+    static int cachedValue = -1;
+    if (cachedValue < 0) {
+        const char* envValue = std::getenv("PHTV_DEBUG_APP_RULE");
         cachedValue = (envValue != nullptr && envValue[0] != '\0' && envValue[0] != '0') ? 1 : 0;
     }
     return cachedValue == 1;
@@ -462,7 +549,17 @@ LowLevelHookService::LowLevelHookService()
       lastKeyDownTime_(),
       hasLastKeyDownTime_(false),
       cliSpeedFactor_(1.0),
-      cliBlockUntil_() {
+      cliBlockUntil_(),
+      pauseKeyPressed_(false),
+      savedLanguageBeforePause_(0),
+      restoreModifierPressed_(false),
+      keyPressedWithRestoreModifier_(false),
+      switchModifierOnlyArmed_(false),
+      keyPressedWithSwitchModifiers_(false),
+      emojiModifierOnlyArmed_(false),
+      keyPressedWithEmojiModifiers_(false),
+      switchHotkeyRegistered_(false),
+      emojiHotkeyRegistered_(false) {
 }
 
 LowLevelHookService::~LowLevelHookService() {
@@ -486,13 +583,16 @@ bool LowLevelHookService::start() {
     MSG msg;
     PeekMessageW(&msg, nullptr, WM_USER, WM_USER, PM_NOREMOVE);
     hasThreadMessageQueue_ = true;
+    updateRegisteredSystemHotkeys();
 
     HINSTANCE moduleHandle = GetModuleHandleW(nullptr);
     keyboardHook_ = SetWindowsHookExW(WH_KEYBOARD_LL, KeyboardHookProc, moduleHandle, 0);
     if (keyboardHook_ == nullptr) {
+        unregisterSystemHotkeys();
         shutdownUiAutomation();
         resetAddressBarCache();
         instance_ = nullptr;
+        hasThreadMessageQueue_ = false;
         return false;
     }
 
@@ -500,9 +600,11 @@ bool LowLevelHookService::start() {
     if (mouseHook_ == nullptr) {
         UnhookWindowsHookEx(keyboardHook_);
         keyboardHook_ = nullptr;
+        unregisterSystemHotkeys();
         shutdownUiAutomation();
         resetAddressBarCache();
         instance_ = nullptr;
+        hasThreadMessageQueue_ = false;
         return false;
     }
 
@@ -512,6 +614,8 @@ bool LowLevelHookService::start() {
 
 void LowLevelHookService::stop() {
     if (!running_) {
+        unregisterSystemHotkeys();
+        hasThreadMessageQueue_ = false;
         shutdownUiAutomation();
         resetAddressBarCache();
         return;
@@ -531,10 +635,12 @@ void LowLevelHookService::stop() {
     clearSyncState();
     resetAddressBarCache();
     appContext_ = {};
+    unregisterSystemHotkeys();
     shutdownUiAutomation();
 
     if (hasThreadMessageQueue_) {
         PostQuitMessage(0);
+        hasThreadMessageQueue_ = false;
     }
 
     if (instance_ == this) {
@@ -545,6 +651,11 @@ void LowLevelHookService::stop() {
 int LowLevelHookService::runMessageLoop() {
     MSG msg {};
     while (running_ && GetMessageW(&msg, nullptr, 0, 0) > 0) {
+        if (msg.message == WM_HOTKEY) {
+            handleRegisteredHotkeyMessage(static_cast<int>(msg.wParam));
+            continue;
+        }
+
         TranslateMessage(&msg);
         DispatchMessageW(&msg);
     }
@@ -582,13 +693,23 @@ LRESULT LowLevelHookService::handleKeyboard(WPARAM wParam, LPARAM lParam) {
     }
 
     const Uint16 vkCode = static_cast<Uint16>(keyData->vkCode);
+    const Uint32 previousModifierMask = modifierMask_;
     if (isKeyDown) {
         setModifierDown(vkCode);
     } else {
         setModifierUp(vkCode);
     }
 
+    refreshRuntimeConfigIfNeeded(false);
+    updatePauseKeyState(previousModifierMask, modifierMask_);
+
     if (isModifierKey(vkCode)) {
+        const bool consumedRestore = handleCustomRestoreOnModifierChange(vkCode, isKeyDown, previousModifierMask);
+        const bool consumedModifierOnlyHotkey = handleModifierOnlyHotkeysOnModifierChange(vkCode, isKeyDown, previousModifierMask);
+        if (consumedRestore || consumedModifierOnlyHotkey) {
+            return 1;
+        }
+
         return CallNextHookEx(keyboardHook_, HC_ACTION, wParam, lParam);
     }
 
@@ -600,7 +721,18 @@ LRESULT LowLevelHookService::handleKeyboard(WPARAM wParam, LPARAM lParam) {
         return CallNextHookEx(keyboardHook_, HC_ACTION, wParam, lParam);
     }
 
-    refreshRuntimeConfigIfNeeded(false);
+    if (restoreModifierPressed_) {
+        keyPressedWithRestoreModifier_ = true;
+    }
+    if (switchModifierOnlyArmed_ && hotkeyModifiersAreHeld(vSwitchKeyStatus, modifierMask_)) {
+        keyPressedWithSwitchModifiers_ = true;
+    }
+    if (emojiModifierOnlyArmed_ &&
+        runtimeConfig_.emojiHotkeyEnabled != 0 &&
+        hotkeyModifiersAreHeld(runtimeConfig_.emojiHotkeyStatus, modifierMask_)) {
+        keyPressedWithEmojiModifiers_ = true;
+    }
+
     ensureDictionariesLoaded(false);
     refreshForegroundAppContext(false);
 
@@ -614,6 +746,10 @@ LRESULT LowLevelHookService::handleKeyboard(WPARAM wParam, LPARAM lParam) {
     Uint16 engineKeyCode = 0;
     if (!phtv::windows_adapter::mapVirtualKeyToEngine(vkCode, engineKeyCode)) {
         return CallNextHookEx(keyboardHook_, HC_ACTION, wParam, lParam);
+    }
+
+    if (handleHotkeysOnKeyDown(engineKeyCode)) {
+        return 1;
     }
 
     // CRITICAL: Immediate pass-through if language is set to English (0)
@@ -756,6 +892,503 @@ bool LowLevelHookService::isModifierKey(Uint16 virtualKey) const {
             return true;
         default:
             return false;
+    }
+}
+
+bool LowLevelHookService::hotkeyModifiersMatchExact(int hotkeyStatus, Uint32 currentModifierMask) const {
+    const bool hasShift = (currentModifierMask & kMaskShift) != 0;
+    const bool hasControl = (currentModifierMask & kMaskControl) != 0;
+    const bool hasOption = (currentModifierMask & kMaskAlt) != 0;
+    const bool hasCommand = (currentModifierMask & kMaskWin) != 0;
+
+    if (HAS_SHIFT(hotkeyStatus) != (hasShift ? 1 : 0)) {
+        return false;
+    }
+    if (HAS_CONTROL(hotkeyStatus) != (hasControl ? 1 : 0)) {
+        return false;
+    }
+    if (HAS_OPTION(hotkeyStatus) != (hasOption ? 1 : 0)) {
+        return false;
+    }
+    if (HAS_COMMAND(hotkeyStatus) != (hasCommand ? 1 : 0)) {
+        return false;
+    }
+
+    // Windows low-level hook does not expose a stable Fn flag.
+    if (HAS_FN(hotkeyStatus)) {
+        return false;
+    }
+
+    return true;
+}
+
+bool LowLevelHookService::hotkeyModifiersAreHeld(int hotkeyStatus, Uint32 currentModifierMask) const {
+    const bool hasShift = (currentModifierMask & kMaskShift) != 0;
+    const bool hasControl = (currentModifierMask & kMaskControl) != 0;
+    const bool hasOption = (currentModifierMask & kMaskAlt) != 0;
+    const bool hasCommand = (currentModifierMask & kMaskWin) != 0;
+
+    if (HAS_SHIFT(hotkeyStatus) && !hasShift) {
+        return false;
+    }
+    if (HAS_CONTROL(hotkeyStatus) && !hasControl) {
+        return false;
+    }
+    if (HAS_OPTION(hotkeyStatus) && !hasOption) {
+        return false;
+    }
+    if (HAS_COMMAND(hotkeyStatus) && !hasCommand) {
+        return false;
+    }
+
+    // Windows low-level hook does not expose a stable Fn flag.
+    if (HAS_FN(hotkeyStatus)) {
+        return false;
+    }
+
+    return true;
+}
+
+bool LowLevelHookService::isModifierOnlyHotkey(int hotkeyStatus) const {
+    return GET_SWITCH_KEY(hotkeyStatus) == 0xFE;
+}
+
+bool LowLevelHookService::isHotkeyMatch(int hotkeyStatus,
+                                        Uint16 engineKeyCode,
+                                        Uint32 currentModifierMask,
+                                        bool checkKeyCode) const {
+    if (!hotkeyModifiersMatchExact(hotkeyStatus, currentModifierMask)) {
+        return false;
+    }
+
+    if (!checkKeyCode) {
+        return true;
+    }
+
+    return GET_SWITCH_KEY(hotkeyStatus) == engineKeyCode;
+}
+
+bool LowLevelHookService::shouldHandleSwitchHotkeyWithHook() const {
+    if (isModifierOnlyHotkey(vSwitchKeyStatus)) {
+        return true;
+    }
+
+    return !switchHotkeyRegistered_;
+}
+
+bool LowLevelHookService::shouldHandleEmojiHotkeyWithHook() const {
+    if (runtimeConfig_.emojiHotkeyEnabled == 0) {
+        return false;
+    }
+
+    if (isModifierOnlyHotkey(runtimeConfig_.emojiHotkeyStatus)) {
+        return true;
+    }
+
+    return !emojiHotkeyRegistered_;
+}
+
+bool LowLevelHookService::handleRegisteredHotkeyMessage(int hotkeyId) {
+    switch (hotkeyId) {
+        case kSwitchSystemHotkeyId:
+            toggleLanguageByHotkey();
+            return true;
+        case kEmojiSystemHotkeyId:
+            triggerEmojiPanel();
+            return true;
+        default:
+            return false;
+    }
+}
+
+void LowLevelHookService::updateRegisteredSystemHotkeys() {
+    if (!hasThreadMessageQueue_) {
+        return;
+    }
+
+    unregisterSystemHotkeys();
+    switchHotkeyRegistered_ = registerSystemHotkey(
+        kSwitchSystemHotkeyId,
+        vSwitchKeyStatus,
+        true);
+    emojiHotkeyRegistered_ = registerSystemHotkey(
+        kEmojiSystemHotkeyId,
+        runtimeConfig_.emojiHotkeyStatus,
+        runtimeConfig_.emojiHotkeyEnabled != 0);
+}
+
+void LowLevelHookService::unregisterSystemHotkeys() {
+    if (hasThreadMessageQueue_) {
+        UnregisterHotKey(nullptr, kSwitchSystemHotkeyId);
+        UnregisterHotKey(nullptr, kEmojiSystemHotkeyId);
+    }
+
+    switchHotkeyRegistered_ = false;
+    emojiHotkeyRegistered_ = false;
+}
+
+bool LowLevelHookService::registerSystemHotkey(int hotkeyId, int hotkeyStatus, bool enabled) {
+    if (!enabled || !hasThreadMessageQueue_) {
+        return false;
+    }
+
+    UINT modifiers = 0;
+    UINT virtualKey = 0;
+    if (!tryBuildSystemHotkey(hotkeyStatus, modifiers, virtualKey)) {
+        return false;
+    }
+
+    if (RegisterHotKey(nullptr, hotkeyId, modifiers, virtualKey) == 0) {
+        std::cerr << "[PHTV] RegisterHotKey failed (id=" << hotkeyId
+                  << ", error=" << GetLastError() << ")\n";
+        return false;
+    }
+
+    std::cerr << "[PHTV] RegisterHotKey success (id=" << hotkeyId << ")\n";
+    return true;
+}
+
+bool LowLevelHookService::tryBuildSystemHotkey(int hotkeyStatus,
+                                               UINT& outModifiers,
+                                               UINT& outVirtualKey) const {
+    outModifiers = 0;
+    outVirtualKey = 0;
+
+    const int engineKeyCode = GET_SWITCH_KEY(hotkeyStatus);
+    if (engineKeyCode == 0xFE || HAS_FN(hotkeyStatus)) {
+        return false;
+    }
+
+    std::uint16_t virtualKey = 0;
+    if (!phtv::windows_adapter::mapEngineKeyToVirtualKey(static_cast<Uint16>(engineKeyCode), virtualKey)) {
+        return false;
+    }
+
+    UINT modifiers = MOD_NOREPEAT;
+    if (HAS_CONTROL(hotkeyStatus)) {
+        modifiers |= MOD_CONTROL;
+    }
+    if (HAS_OPTION(hotkeyStatus)) {
+        modifiers |= MOD_ALT;
+    }
+    if (HAS_COMMAND(hotkeyStatus)) {
+        modifiers |= MOD_WIN;
+    }
+    if (HAS_SHIFT(hotkeyStatus)) {
+        modifiers |= MOD_SHIFT;
+    }
+
+    // Avoid claiming single-key global hotkeys; only combinations are supported.
+    if ((modifiers & (MOD_CONTROL | MOD_ALT | MOD_WIN | MOD_SHIFT)) == 0) {
+        return false;
+    }
+
+    outModifiers = modifiers;
+    outVirtualKey = static_cast<UINT>(virtualKey);
+    return true;
+}
+
+bool LowLevelHookService::handleHotkeysOnKeyDown(Uint16 engineKeyCode) {
+    if (handleSwitchHotkey(engineKeyCode)) {
+        return true;
+    }
+
+    if (handleEmojiHotkey(engineKeyCode)) {
+        return true;
+    }
+
+    return false;
+}
+
+bool LowLevelHookService::handleSwitchHotkey(Uint16 engineKeyCode) {
+    if (!shouldHandleSwitchHotkeyWithHook() || isModifierOnlyHotkey(vSwitchKeyStatus)) {
+        return false;
+    }
+
+    if (!isHotkeyMatch(vSwitchKeyStatus, engineKeyCode, modifierMask_, true)) {
+        return false;
+    }
+
+    toggleLanguageByHotkey();
+    return true;
+}
+
+bool LowLevelHookService::handleEmojiHotkey(Uint16 engineKeyCode) {
+    if (!shouldHandleEmojiHotkeyWithHook()) {
+        return false;
+    }
+
+    if (isModifierOnlyHotkey(runtimeConfig_.emojiHotkeyStatus)) {
+        return false;
+    }
+
+    if (!isHotkeyMatch(runtimeConfig_.emojiHotkeyStatus, engineKeyCode, modifierMask_, true)) {
+        return false;
+    }
+
+    triggerEmojiPanel();
+    return true;
+}
+
+bool LowLevelHookService::handleModifierOnlyHotkeysOnModifierChange(Uint16 virtualKey,
+                                                                    bool isKeyDown,
+                                                                    Uint32 previousModifierMask) {
+    (void)virtualKey;
+
+    if (isKeyDown) {
+        if (isModifierOnlyHotkey(vSwitchKeyStatus) &&
+            hotkeyModifiersAreHeld(vSwitchKeyStatus, modifierMask_)) {
+            switchModifierOnlyArmed_ = true;
+            keyPressedWithSwitchModifiers_ = false;
+        }
+
+        if (runtimeConfig_.emojiHotkeyEnabled != 0 &&
+            isModifierOnlyHotkey(runtimeConfig_.emojiHotkeyStatus) &&
+            hotkeyModifiersAreHeld(runtimeConfig_.emojiHotkeyStatus, modifierMask_)) {
+            emojiModifierOnlyArmed_ = true;
+            keyPressedWithEmojiModifiers_ = false;
+        }
+
+        return false;
+    }
+
+    bool consumed = false;
+
+    if (switchModifierOnlyArmed_) {
+        const bool stillHeld = hotkeyModifiersAreHeld(vSwitchKeyStatus, modifierMask_);
+        if (!stillHeld) {
+            if (hotkeyModifiersMatchExact(vSwitchKeyStatus, previousModifierMask) &&
+                !keyPressedWithSwitchModifiers_) {
+                toggleLanguageByHotkey();
+                consumed = true;
+            }
+            switchModifierOnlyArmed_ = false;
+            keyPressedWithSwitchModifiers_ = false;
+        }
+    }
+
+    if (emojiModifierOnlyArmed_) {
+        const bool stillHeld = hotkeyModifiersAreHeld(runtimeConfig_.emojiHotkeyStatus, modifierMask_);
+        if (!stillHeld) {
+            if (runtimeConfig_.emojiHotkeyEnabled != 0 &&
+                hotkeyModifiersMatchExact(runtimeConfig_.emojiHotkeyStatus, previousModifierMask) &&
+                !keyPressedWithEmojiModifiers_) {
+                triggerEmojiPanel();
+                consumed = true;
+            }
+            emojiModifierOnlyArmed_ = false;
+            keyPressedWithEmojiModifiers_ = false;
+        }
+    }
+
+    return consumed;
+}
+
+void LowLevelHookService::toggleLanguageByHotkey() {
+    const int newLanguage = vLanguage == 0 ? 1 : 0;
+    vLanguage = newLanguage;
+    runtimeConfig_.language = newLanguage;
+    persistRuntimeLanguageState();
+    clearSyncState();
+    session_.startSession();
+}
+
+void LowLevelHookService::triggerEmojiPanel() {
+#ifdef VK_OEM_PERIOD
+    constexpr Uint16 kEmojiTriggerVirtualKey = VK_OEM_PERIOD;
+#else
+    constexpr Uint16 kEmojiTriggerVirtualKey = 0xBE;
+#endif
+    sendVirtualKey(VK_LWIN, true);
+    sendVirtualKey(kEmojiTriggerVirtualKey, true);
+    sendVirtualKey(kEmojiTriggerVirtualKey, false);
+    sendVirtualKey(VK_LWIN, false);
+}
+
+void LowLevelHookService::persistRuntimeLanguageState() {
+    std::string errorMessage;
+    if (!phtv::windows_runtime::persistRuntimeLanguage(vLanguage, errorMessage) && !errorMessage.empty()) {
+        std::cerr << "[PHTV] Cannot persist runtime language: " << errorMessage << "\n";
+    }
+}
+
+void LowLevelHookService::updatePauseKeyState(Uint32 previousModifierMask, Uint32 currentModifierMask) {
+    if (runtimeConfig_.pauseKeyEnabled == 0) {
+        if (pauseKeyPressed_) {
+            vLanguage = savedLanguageBeforePause_;
+            runtimeConfig_.language = vLanguage;
+            pauseKeyPressed_ = false;
+            clearSyncState();
+            session_.startSession();
+        }
+        return;
+    }
+
+    if (!pauseKeyPressed_ && isPauseModifierHeld(currentModifierMask)) {
+        savedLanguageBeforePause_ = vLanguage;
+        if (vLanguage != 0) {
+            vLanguage = 0;
+            runtimeConfig_.language = 0;
+            clearSyncState();
+            session_.startSession();
+        }
+        pauseKeyPressed_ = true;
+        return;
+    }
+
+    if (pauseKeyPressed_ &&
+        isPauseModifierHeld(previousModifierMask) &&
+        !isPauseModifierHeld(currentModifierMask)) {
+        vLanguage = savedLanguageBeforePause_;
+        runtimeConfig_.language = vLanguage;
+        pauseKeyPressed_ = false;
+        clearSyncState();
+        session_.startSession();
+    }
+}
+
+bool LowLevelHookService::isPauseModifierHeld(Uint32 currentModifierMask) const {
+    switch (runtimeConfig_.pauseKey) {
+        case KEY_LEFT_OPTION:
+        case KEY_RIGHT_OPTION:
+            return (currentModifierMask & kMaskAlt) != 0;
+        case KEY_LEFT_CONTROL:
+        case KEY_RIGHT_CONTROL:
+            return (currentModifierMask & kMaskControl) != 0;
+        case KEY_LEFT_SHIFT:
+        case KEY_RIGHT_SHIFT:
+            return (currentModifierMask & kMaskShift) != 0;
+        case KEY_LEFT_COMMAND:
+        case KEY_RIGHT_COMMAND:
+            return (currentModifierMask & kMaskWin) != 0;
+        default:
+            return false;
+    }
+}
+
+bool LowLevelHookService::handleCustomRestoreOnModifierChange(Uint16 virtualKey,
+                                                              bool isKeyDown,
+                                                              Uint32 previousModifierMask) {
+    if (runtimeConfig_.restoreOnEscape == 0) {
+        restoreModifierPressed_ = false;
+        keyPressedWithRestoreModifier_ = false;
+        return false;
+    }
+
+    const int customRestoreKey = runtimeConfig_.customEscapeKey;
+    if (customRestoreKey <= 0 || customRestoreKey == KEY_ESC) {
+        restoreModifierPressed_ = false;
+        keyPressedWithRestoreModifier_ = false;
+        return false;
+    }
+
+    if (isKeyDown) {
+        if (isRestoreModifierVirtualKey(virtualKey)) {
+            restoreModifierPressed_ = true;
+            keyPressedWithRestoreModifier_ = false;
+        }
+        return false;
+    }
+
+    if (!restoreModifierPressed_) {
+        return false;
+    }
+
+    const bool shouldRestore = !keyPressedWithRestoreModifier_ &&
+                               isRestoreModifierReleased(virtualKey, previousModifierMask, modifierMask_);
+    restoreModifierPressed_ = false;
+    keyPressedWithRestoreModifier_ = false;
+    if (!shouldRestore) {
+        return false;
+    }
+
+    return tryRestoreCurrentWordWithoutBreakKey(KEY_ESC);
+}
+
+bool LowLevelHookService::isRestoreModifierVirtualKey(Uint16 virtualKey) const {
+    switch (runtimeConfig_.customEscapeKey) {
+        case KEY_LEFT_OPTION:
+        case KEY_RIGHT_OPTION:
+            return virtualKey == VK_LMENU || virtualKey == VK_RMENU;
+        case KEY_LEFT_CONTROL:
+        case KEY_RIGHT_CONTROL:
+            return virtualKey == VK_LCONTROL || virtualKey == VK_RCONTROL;
+        default:
+            return false;
+    }
+}
+
+bool LowLevelHookService::isRestoreModifierReleased(Uint16 virtualKey,
+                                                    Uint32 previousModifierMask,
+                                                    Uint32 currentModifierMask) const {
+    switch (runtimeConfig_.customEscapeKey) {
+        case KEY_LEFT_OPTION:
+        case KEY_RIGHT_OPTION:
+            return (virtualKey == VK_LMENU || virtualKey == VK_RMENU) &&
+                   ((previousModifierMask & kMaskAlt) != 0) &&
+                   ((currentModifierMask & kMaskAlt) == 0);
+        case KEY_LEFT_CONTROL:
+        case KEY_RIGHT_CONTROL:
+            return (virtualKey == VK_LCONTROL || virtualKey == VK_RCONTROL) &&
+                   ((previousModifierMask & kMaskControl) != 0) &&
+                   ((currentModifierMask & kMaskControl) == 0);
+        default:
+            return false;
+    }
+}
+
+bool LowLevelHookService::tryRestoreCurrentWordWithoutBreakKey(Uint16 fallbackEngineKeyCode) {
+    auto output = session_.processKeyDown(
+        fallbackEngineKeyCode,
+        currentCapsStatus(),
+        hasOtherControlKey());
+
+    if (output.code == vDoNothing) {
+        return false;
+    }
+
+    processEngineOutputWithoutRestoreBreak(output);
+    return true;
+}
+
+void LowLevelHookService::processEngineOutputWithoutRestoreBreak(
+    const phtv::windows_host::EngineOutput& output) {
+    const bool useStepByStep = appContext_.useStepByStep;
+    int backspaceCount = std::clamp(static_cast<int>(output.backspaceCount), 0, 15);
+
+    const bool isCli = appContext_.isTerminal;
+    const int scaledBackspaceDelay = isCli
+        ? scaleCliDelay(appContext_.backspaceDelayUs)
+        : appContext_.backspaceDelayUs;
+    const int scaledWaitAfterBackspace = isCli
+        ? scaleCliDelay(appContext_.waitAfterBackspaceUs)
+        : appContext_.waitAfterBackspaceUs;
+    const int scaledTextDelay = isCli
+        ? scaleCliDelay(appContext_.textDelayUs)
+        : appContext_.textDelayUs;
+
+    if (backspaceCount > 0) {
+        for (int i = 0; i < backspaceCount; ++i) {
+            sendBackspace(useStepByStep);
+            if (useStepByStep && scaledBackspaceDelay > 0) {
+                sleepMicroseconds(scaledBackspaceDelay);
+            }
+        }
+
+        if (useStepByStep && scaledWaitAfterBackspace > 0) {
+            sleepMicroseconds(scaledWaitAfterBackspace);
+        }
+    }
+
+    if (output.code == vReplaceMaro) {
+        sendEngineSequence(output.macroChars, false, useStepByStep, scaledTextDelay);
+        return;
+    }
+
+    sendEngineSequence(output.committedChars, true, useStepByStep, scaledTextDelay);
+
+    if (output.code == vRestoreAndStartNewSession) {
+        session_.startSession();
     }
 }
 
@@ -1189,6 +1822,14 @@ void LowLevelHookService::refreshRuntimeConfigIfNeeded(bool force) {
 
     runtimeConfig_ = std::move(loadedConfig);
     runtimeConfigLoaded_ = true;
+    updateRegisteredSystemHotkeys();
+    pauseKeyPressed_ = false;
+    restoreModifierPressed_ = false;
+    keyPressedWithRestoreModifier_ = false;
+    switchModifierOnlyArmed_ = false;
+    keyPressedWithSwitchModifiers_ = false;
+    emojiModifierOnlyArmed_ = false;
+    keyPressedWithEmojiModifiers_ = false;
     hasConfigFile_ = hasConfig;
     hasMacrosFile_ = hasMacros;
     hasConfigWriteTime_ = hasConfigWriteTime;
@@ -1280,6 +1921,10 @@ void LowLevelHookService::refreshForegroundAppContext(bool force) {
         }
     }
 
+    if (newContext.processName.empty()) {
+        newContext.processName = queryProcessNameById(processId);
+    }
+
     const std::wstring processNameLower = toLowerWide(newContext.processName);
     const std::wstring processPathLower = toLowerWide(newContext.processPath);
     const std::wstring titleLower = toLowerWide(newContext.windowTitle);
@@ -1310,6 +1955,7 @@ void LowLevelHookService::refreshForegroundAppContext(bool force) {
         }
     }
 
+    std::string matchedExcludedRule;
     for (const auto& appRule : runtimeConfig_.excludedApps) {
         if (matchesRuntimeRule(appRule,
                                processNameLower,
@@ -1317,11 +1963,13 @@ void LowLevelHookService::refreshForegroundAppContext(bool force) {
                                processPathLower,
                                titleLower)) {
             newContext.isExcluded = true;
+            matchedExcludedRule = appRule;
             break;
         }
     }
 
     bool matchesStepByStepRule = false;
+    std::string matchedStepByStepRule;
     for (const auto& appRule : runtimeConfig_.stepByStepApps) {
         if (matchesRuntimeRule(appRule,
                                processNameLower,
@@ -1329,6 +1977,7 @@ void LowLevelHookService::refreshForegroundAppContext(bool force) {
                                processPathLower,
                                titleLower)) {
             matchesStepByStepRule = true;
+            matchedStepByStepRule = appRule;
             break;
         }
     }
@@ -1377,6 +2026,18 @@ void LowLevelHookService::refreshForegroundAppContext(bool force) {
                             newContext.isExcluded != appContext_.isExcluded ||
                             newContext.useStepByStep != appContext_.useStepByStep ||
                             newContext.isTerminal != appContext_.isTerminal;
+
+    if (appChanged && isAppRuleDebugEnabled()) {
+        std::cerr << "[PHTV AppRule] process="
+                  << wideToUtf8(processNameLower)
+                  << " excluded=" << (newContext.isExcluded ? 1 : 0)
+                  << " stepByStep=" << (newContext.useStepByStep ? 1 : 0)
+                  << " terminal=" << (newContext.isTerminal ? 1 : 0)
+                  << " matchExcluded=\"" << matchedExcludedRule << "\""
+                  << " matchStepByStep=\"" << matchedStepByStepRule << "\""
+                  << " title=\"" << wideToUtf8(titleLower) << "\""
+                  << "\n";
+    }
 
     appContext_ = std::move(newContext);
 

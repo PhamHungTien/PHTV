@@ -69,6 +69,7 @@ public sealed class SettingsState : ObservableObject {
     private bool _safeMode;
 
     private bool _runOnStartup;
+    private bool _showSettingsOnStartup;
     private bool _settingsWindowAlwaysOnTop;
     private bool _useVietnameseMenubarIcon = true;
     private bool _showIconOnDock = true;
@@ -350,6 +351,7 @@ public sealed class SettingsState : ObservableObject {
     public bool SafeMode { get => _safeMode; set => SetProperty(ref _safeMode, value); }
 
     public bool RunOnStartup { get => _runOnStartup; set => SetProperty(ref _runOnStartup, value); }
+    public bool ShowSettingsOnStartup { get => _showSettingsOnStartup; set => SetProperty(ref _showSettingsOnStartup, value); }
     public bool SettingsWindowAlwaysOnTop { get => _settingsWindowAlwaysOnTop; set => SetProperty(ref _settingsWindowAlwaysOnTop, value); }
     public bool UseVietnameseMenubarIcon { get => _useVietnameseMenubarIcon; set => SetProperty(ref _useVietnameseMenubarIcon, value); }
     public bool ShowIconOnDock { get => _showIconOnDock; set => SetProperty(ref _showIconOnDock, value); }
