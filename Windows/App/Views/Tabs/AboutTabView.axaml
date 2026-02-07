@@ -75,6 +75,15 @@
         <TextBlock Text="Nếu PHTV hữu ích, bạn có thể ủng hộ để giúp phát triển thêm các tính năng mới" 
                    TextWrapping="Wrap" TextAlignment="Center" MaxWidth="400"
                    FontSize="13" Foreground="{DynamicResource PhtvTextSecondaryBrush}"/>
+
+        <Border Classes="about-info-card" HorizontalAlignment="Center" Padding="12" Width="220">
+          <StackPanel Spacing="8">
+            <Border CornerRadius="8" ClipToBounds="True">
+              <Image Source="/Assets/donate.png" Stretch="Uniform"/>
+            </Border>
+            <TextBlock Text="Quét mã để ủng hộ" FontSize="11" HorizontalAlignment="Center" Foreground="{DynamicResource PhtvTextSecondaryBrush}"/>
+          </StackPanel>
+        </Border>
         
         <StackPanel Spacing="12">
           <WrapPanel HorizontalAlignment="Center" Classes="settings-actions">
