@@ -182,7 +182,7 @@ $candleArguments = @(
     "-dProductVersion=$ProductVersion",
     "-out", $WixObjPath,
     $WxsPath
-) + $localizationArguments + @(
+) + @(
     "-ext", "WixUIExtension",
     "-ext", "WixUtilExtension"
 )
