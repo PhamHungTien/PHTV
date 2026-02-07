@@ -90,13 +90,20 @@ public sealed class MainWindowViewModel : ObservableObject {
         };
 
         _allTabs = new List<SidebarTabEntry> {
-            new(SettingsTabId.Typing, "Bộ gõ", "⌨", "Nhập liệu", "telex", "vni", "typing", "spell", "code table"),
-            new(SettingsTabId.Hotkeys, "Phím tắt", "⌘", "Nhập liệu", "hotkey", "shortcut", "pause", "restore"),
-            new(SettingsTabId.Macro, "Gõ tắt", "✎", "Nhập liệu", "macro", "snippet", "category", "expand"),
-            new(SettingsTabId.Apps, "Ứng dụng", "▦", "Nhập liệu", "apps", "exclude", "compatibility", "layout"),
-            new(SettingsTabId.System, "Hệ thống", "⚙", "Hệ thống", "startup", "update", "backup", "dock", "interface"),
-            new(SettingsTabId.BugReport, "Báo lỗi", "⚠", "Hỗ trợ", "bug", "report", "debug", "logs"),
-            new(SettingsTabId.About, "Thông tin", "ⓘ", "Hỗ trợ", "about", "version", "donate")
+            new(SettingsTabId.Typing, "Bộ gõ", "⌨", "Nhập liệu", 
+                "telex", "vni", "simple", "chính tả", "spell", "bảng mã", "unicode", "tcvn3", "vni windows", "hiện đại", "viết hoa", "phụ âm", "zfwj"),
+            new(SettingsTabId.Hotkeys, "Phím tắt", "", "Nhập liệu", 
+                "hotkey", "shortcut", "tạm dừng", "pause", "khôi phục", "restore", "chuyển chế độ", "esc", "alt", "ctrl", "win", "fn", "picker", "emoji"),
+            new(SettingsTabId.Macro, "Gõ tắt", "✎", "Nhập liệu", 
+                "macro", "snippet", "danh mục", "category", "viết hoa macro", "auto caps", "xuất", "nhập", "export", "import"),
+            new(SettingsTabId.Apps, "Ứng dụng", "▦", "Nhập liệu", 
+                "apps", "loại trừ", "exclude", "tương thích", "compatibility", "layout", "dvorak", "colemak", "gửi từng phím", "step by step", "thanh địa chỉ", "browser", "chrome", "edge"),
+            new(SettingsTabId.System, "Hệ thống", "⚙", "Hệ thống", 
+                "startup", "khởi động cùng windows", "cập nhật", "update", "beta", "sao lưu", "backup", "reset", "mặc định", "topmost", "luôn hiện", "menubar", "khay hệ thống", "tray"),
+            new(SettingsTabId.BugReport, "Báo lỗi", "⚠", "Hỗ trợ", 
+                "bug", "report", "lỗi", "nhật ký", "logs", "crash", "hệ thống", "system info", "github", "email"),
+            new(SettingsTabId.About, "Thông tin", "ⓘ", "Hỗ trợ", 
+                "about", "phiên bản", "version", "tác giả", "phạm hùng tiến", "donate", "ủng hộ", "website", "github source")
         };
 
         SidebarEntries = new ObservableCollection<SidebarEntry>();
