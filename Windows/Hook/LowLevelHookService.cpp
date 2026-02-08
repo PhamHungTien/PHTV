@@ -43,6 +43,8 @@ constexpr Uint32 kMaskCapital = 0x08;
 constexpr Uint32 kMaskWin = 0x10;
 constexpr int kSwitchSystemHotkeyId = 0x5601;
 constexpr int kEmojiSystemHotkeyId = 0x5602;
+constexpr wchar_t kRuntimeConfigChangedEventName[] = L"Local\\PHTV.Windows.RuntimeConfigChanged";
+constexpr auto kRegisteredHotkeySuppressWindow = std::chrono::milliseconds(180);
 
 constexpr int kAppContextRefreshMs = 120;
 
@@ -559,7 +561,10 @@ LowLevelHookService::LowLevelHookService()
       emojiModifierOnlyArmed_(false),
       keyPressedWithEmojiModifiers_(false),
       switchHotkeyRegistered_(false),
-      emojiHotkeyRegistered_(false) {
+      emojiHotkeyRegistered_(false),
+      suppressSwitchHotkeyMessageUntil_(std::chrono::steady_clock::time_point::min()),
+      suppressEmojiHotkeyMessageUntil_(std::chrono::steady_clock::time_point::min()),
+      runtimeConfigChangedEvent_(nullptr) {
 }
 
 LowLevelHookService::~LowLevelHookService() {
@@ -577,6 +582,7 @@ bool LowLevelHookService::start() {
     resetAddressBarCache();
     ensureDictionariesLoaded(true);
     initializeUiAutomation();
+    initializeRuntimeConfigSignal();
     refreshRuntimeConfigIfNeeded(true);
     refreshForegroundAppContext(true);
 
@@ -590,6 +596,7 @@ bool LowLevelHookService::start() {
     if (keyboardHook_ == nullptr) {
         std::cerr << "[PHTV] SetWindowsHookEx(WH_KEYBOARD_LL) failed, error=" << GetLastError() << "\n";
         unregisterSystemHotkeys();
+        shutdownRuntimeConfigSignal();
         shutdownUiAutomation();
         resetAddressBarCache();
         instance_ = nullptr;
@@ -603,6 +610,7 @@ bool LowLevelHookService::start() {
         UnhookWindowsHookEx(keyboardHook_);
         keyboardHook_ = nullptr;
         unregisterSystemHotkeys();
+        shutdownRuntimeConfigSignal();
         shutdownUiAutomation();
         resetAddressBarCache();
         instance_ = nullptr;
@@ -624,6 +632,7 @@ void LowLevelHookService::stop() {
     if (!running_) {
         unregisterSystemHotkeys();
         hasThreadMessageQueue_ = false;
+        shutdownRuntimeConfigSignal();
         shutdownUiAutomation();
         resetAddressBarCache();
         return;
@@ -644,6 +653,7 @@ void LowLevelHookService::stop() {
     resetAddressBarCache();
     appContext_ = {};
     unregisterSystemHotkeys();
+    shutdownRuntimeConfigSignal();
     shutdownUiAutomation();
 
     if (hasThreadMessageQueue_) {
@@ -668,6 +678,39 @@ int LowLevelHookService::runMessageLoop() {
         DispatchMessageW(&msg);
     }
     return static_cast<int>(msg.wParam);
+}
+
+void LowLevelHookService::initializeRuntimeConfigSignal() {
+    if (runtimeConfigChangedEvent_ != nullptr) {
+        return;
+    }
+
+    runtimeConfigChangedEvent_ = CreateEventW(
+        nullptr,
+        FALSE,
+        FALSE,
+        kRuntimeConfigChangedEventName);
+    if (runtimeConfigChangedEvent_ == nullptr) {
+        std::cerr << "[PHTV] CreateEvent for runtime config signal failed, error=" << GetLastError() << "\n";
+    }
+}
+
+void LowLevelHookService::shutdownRuntimeConfigSignal() {
+    if (runtimeConfigChangedEvent_ == nullptr) {
+        return;
+    }
+
+    CloseHandle(runtimeConfigChangedEvent_);
+    runtimeConfigChangedEvent_ = nullptr;
+}
+
+bool LowLevelHookService::consumeRuntimeConfigSignal() const {
+    if (runtimeConfigChangedEvent_ == nullptr) {
+        return false;
+    }
+
+    const DWORD waitResult = WaitForSingleObject(runtimeConfigChangedEvent_, 0);
+    return waitResult == WAIT_OBJECT_0;
 }
 
 LRESULT CALLBACK LowLevelHookService::KeyboardHookProc(int nCode, WPARAM wParam, LPARAM lParam) {
@@ -708,7 +751,8 @@ LRESULT LowLevelHookService::handleKeyboard(WPARAM wParam, LPARAM lParam) {
         setModifierUp(vkCode);
     }
 
-    refreshRuntimeConfigIfNeeded(false);
+    const bool hasRuntimeSignal = consumeRuntimeConfigSignal();
+    const bool configReloadedThisEvent = refreshRuntimeConfigIfNeeded(hasRuntimeSignal);
     updatePauseKeyState(previousModifierMask, modifierMask_);
 
     if (isModifierKey(vkCode)) {
@@ -761,7 +805,7 @@ LRESULT LowLevelHookService::handleKeyboard(WPARAM wParam, LPARAM lParam) {
         return CallNextHookEx(keyboardHook_, HC_ACTION, wParam, lParam);
     }
 
-    if (handleHotkeysOnKeyDown(engineKeyCode)) {
+    if (handleHotkeysOnKeyDown(engineKeyCode, configReloadedThisEvent)) {
         return 1;
     }
 
@@ -981,15 +1025,15 @@ bool LowLevelHookService::isHotkeyMatch(int hotkeyStatus,
     return GET_SWITCH_KEY(hotkeyStatus) == engineKeyCode;
 }
 
-bool LowLevelHookService::shouldHandleSwitchHotkeyWithHook() const {
+bool LowLevelHookService::shouldHandleSwitchHotkeyWithHook(bool forceHookHotkeyHandling) const {
     if (isModifierOnlyHotkey(vSwitchKeyStatus)) {
         return true;
     }
 
-    return !switchHotkeyRegistered_;
+    return forceHookHotkeyHandling || !switchHotkeyRegistered_;
 }
 
-bool LowLevelHookService::shouldHandleEmojiHotkeyWithHook() const {
+bool LowLevelHookService::shouldHandleEmojiHotkeyWithHook(bool forceHookHotkeyHandling) const {
     if (runtimeConfig_.emojiHotkeyEnabled == 0) {
         return false;
     }
@@ -998,15 +1042,22 @@ bool LowLevelHookService::shouldHandleEmojiHotkeyWithHook() const {
         return true;
     }
 
-    return !emojiHotkeyRegistered_;
+    return forceHookHotkeyHandling || !emojiHotkeyRegistered_;
 }
 
 bool LowLevelHookService::handleRegisteredHotkeyMessage(int hotkeyId) {
+    const auto now = std::chrono::steady_clock::now();
     switch (hotkeyId) {
         case kSwitchSystemHotkeyId:
+            if (now < suppressSwitchHotkeyMessageUntil_) {
+                return true;
+            }
             toggleLanguageByHotkey();
             return true;
         case kEmojiSystemHotkeyId:
+            if (now < suppressEmojiHotkeyMessageUntil_) {
+                return true;
+            }
             triggerEmojiPanel();
             return true;
         default:
@@ -1107,20 +1158,21 @@ bool LowLevelHookService::tryBuildSystemHotkey(int hotkeyStatus,
     return true;
 }
 
-bool LowLevelHookService::handleHotkeysOnKeyDown(Uint16 engineKeyCode) {
-    if (handleSwitchHotkey(engineKeyCode)) {
+bool LowLevelHookService::handleHotkeysOnKeyDown(Uint16 engineKeyCode,
+                                                 bool forceHookHotkeyHandling) {
+    if (handleSwitchHotkey(engineKeyCode, forceHookHotkeyHandling)) {
         return true;
     }
 
-    if (handleEmojiHotkey(engineKeyCode)) {
+    if (handleEmojiHotkey(engineKeyCode, forceHookHotkeyHandling)) {
         return true;
     }
 
     return false;
 }
 
-bool LowLevelHookService::handleSwitchHotkey(Uint16 engineKeyCode) {
-    if (!shouldHandleSwitchHotkeyWithHook() || isModifierOnlyHotkey(vSwitchKeyStatus)) {
+bool LowLevelHookService::handleSwitchHotkey(Uint16 engineKeyCode, bool forceHookHotkeyHandling) {
+    if (!shouldHandleSwitchHotkeyWithHook(forceHookHotkeyHandling) || isModifierOnlyHotkey(vSwitchKeyStatus)) {
         return false;
     }
 
@@ -1128,12 +1180,15 @@ bool LowLevelHookService::handleSwitchHotkey(Uint16 engineKeyCode) {
         return false;
     }
 
+    if (switchHotkeyRegistered_) {
+        suppressSwitchHotkeyMessageUntil_ = std::chrono::steady_clock::now() + kRegisteredHotkeySuppressWindow;
+    }
     toggleLanguageByHotkey();
     return true;
 }
 
-bool LowLevelHookService::handleEmojiHotkey(Uint16 engineKeyCode) {
-    if (!shouldHandleEmojiHotkeyWithHook()) {
+bool LowLevelHookService::handleEmojiHotkey(Uint16 engineKeyCode, bool forceHookHotkeyHandling) {
+    if (!shouldHandleEmojiHotkeyWithHook(forceHookHotkeyHandling)) {
         return false;
     }
 
@@ -1145,6 +1200,9 @@ bool LowLevelHookService::handleEmojiHotkey(Uint16 engineKeyCode) {
         return false;
     }
 
+    if (emojiHotkeyRegistered_) {
+        suppressEmojiHotkeyMessageUntil_ = std::chrono::steady_clock::now() + kRegisteredHotkeySuppressWindow;
+    }
     triggerEmojiPanel();
     return true;
 }
@@ -1804,10 +1862,10 @@ void LowLevelHookService::ensureDictionariesLoaded(bool force) {
     }
 }
 
-void LowLevelHookService::refreshRuntimeConfigIfNeeded(bool force) {
+bool LowLevelHookService::refreshRuntimeConfigIfNeeded(bool force) {
     const auto now = std::chrono::steady_clock::now();
     if (!force && now < nextConfigCheckAt_) {
-        return;
+        return false;
     }
 
     nextConfigCheckAt_ = now + std::chrono::milliseconds(250);
@@ -1818,13 +1876,13 @@ void LowLevelHookService::refreshRuntimeConfigIfNeeded(bool force) {
     std::error_code ec;
     const bool hasConfig = std::filesystem::exists(configPath, ec);
     if (ec) {
-        return;
+        return false;
     }
 
     ec.clear();
     const bool hasMacros = std::filesystem::exists(macrosPath, ec);
     if (ec) {
-        return;
+        return false;
     }
 
     std::filesystem::file_time_type configWriteTime {};
@@ -1857,7 +1915,7 @@ void LowLevelHookService::refreshRuntimeConfigIfNeeded(bool force) {
     }
 
     if (!shouldReload) {
-        return;
+        return false;
     }
 
     phtv::windows_runtime::RuntimeConfig loadedConfig;
@@ -1866,7 +1924,7 @@ void LowLevelHookService::refreshRuntimeConfigIfNeeded(bool force) {
         if (!errorMessage.empty()) {
             std::cerr << "[PHTV] Runtime config load failed: " << errorMessage << "\n";
         }
-        return;
+        return false;
     }
 
     runtimeConfig_ = std::move(loadedConfig);
@@ -1879,6 +1937,8 @@ void LowLevelHookService::refreshRuntimeConfigIfNeeded(bool force) {
     keyPressedWithSwitchModifiers_ = false;
     emojiModifierOnlyArmed_ = false;
     keyPressedWithEmojiModifiers_ = false;
+    suppressSwitchHotkeyMessageUntil_ = std::chrono::steady_clock::time_point::min();
+    suppressEmojiHotkeyMessageUntil_ = std::chrono::steady_clock::time_point::min();
     hasConfigFile_ = hasConfig;
     hasMacrosFile_ = hasMacros;
     hasConfigWriteTime_ = hasConfigWriteTime;
@@ -1911,6 +1971,7 @@ void LowLevelHookService::refreshRuntimeConfigIfNeeded(bool force) {
     refreshForegroundAppContext(true);
     clearSyncState();
     session_.startSession();
+    return true;
 }
 
 void LowLevelHookService::refreshForegroundAppContext(bool force) {

@@ -8,12 +8,14 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
+using System.Threading;
 
 namespace PHTV.Windows.Services;
 
 public sealed class RuntimeBridgeService {
     private const string RuntimeConfigFileName = "runtime-config.ini";
     private const string RuntimeMacrosFileName = "runtime-macros.tsv";
+    private const string RuntimeConfigChangedEventName = @"Local\PHTV.Windows.RuntimeConfigChanged";
     private const string EnglishDictionaryFileName = "en_dict.bin";
     private const string VietnameseDictionaryFileName = "vi_dict.bin";
     private const string DaemonProcessName = "phtv_windows_hook_daemon";
@@ -172,10 +174,12 @@ public sealed class RuntimeBridgeService {
         Directory.CreateDirectory(RuntimeDirectory);
 
         var runtimeConfig = BuildRuntimeConfigContent(state);
-        File.WriteAllText(RuntimeConfigPath, runtimeConfig, Utf8WithoutBom);
+        WriteAllTextAtomically(RuntimeConfigPath, runtimeConfig);
 
         var runtimeMacros = BuildRuntimeMacrosContent(state);
-        File.WriteAllText(RuntimeMacrosPath, runtimeMacros, Utf8WithoutBom);
+        WriteAllTextAtomically(RuntimeMacrosPath, runtimeMacros);
+
+        SignalRuntimeConfigChanged();
     }
 
     public bool TryReadRuntimeLanguage(out bool isVietnamese) {
@@ -816,6 +820,46 @@ public sealed class RuntimeBridgeService {
 
     private static int ToInt(bool value) {
         return value ? 1 : 0;
+    }
+
+    private static void SignalRuntimeConfigChanged() {
+        if (!OperatingSystem.IsWindows()) {
+            return;
+        }
+
+        try {
+            using var changedEvent = new EventWaitHandle(
+                initialState: false,
+                mode: EventResetMode.AutoReset,
+                name: RuntimeConfigChangedEventName);
+            changedEvent.Set();
+        } catch {
+            // Runtime signal is best-effort.
+        }
+    }
+
+    private static void WriteAllTextAtomically(string destinationPath, string content) {
+        var directory = Path.GetDirectoryName(destinationPath);
+        if (!string.IsNullOrWhiteSpace(directory)) {
+            Directory.CreateDirectory(directory);
+        }
+
+        var tempPath = Path.Combine(
+            directory ?? ".",
+            $".{Path.GetFileName(destinationPath)}.{Guid.NewGuid():N}.tmp");
+
+        try {
+            File.WriteAllText(tempPath, content, Utf8WithoutBom);
+            File.Move(tempPath, destinationPath, overwrite: true);
+        } finally {
+            try {
+                if (File.Exists(tempPath)) {
+                    File.Delete(tempPath);
+                }
+            } catch {
+                // Ignore best-effort temp cleanup.
+            }
+        }
     }
 
     private static string EscapeField(string value) {

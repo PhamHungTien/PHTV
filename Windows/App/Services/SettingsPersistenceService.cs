@@ -36,12 +36,12 @@ public sealed class SettingsPersistenceService {
 
     public void Save(SettingsSnapshot snapshot) {
         var json = JsonSerializer.Serialize(snapshot, JsonOptions);
-        File.WriteAllText(SettingsFilePath, json);
+        WriteAllTextAtomically(SettingsFilePath, json);
     }
 
     public void SaveToFile(SettingsSnapshot snapshot, string filePath) {
         var json = JsonSerializer.Serialize(snapshot, JsonOptions);
-        File.WriteAllText(filePath, json);
+        WriteAllTextAtomically(filePath, json);
     }
 
     public SettingsSnapshot? LoadFromFile(string filePath) {
@@ -63,5 +63,29 @@ public sealed class SettingsPersistenceService {
         Directory.CreateDirectory(exportDir);
         var ts = DateTime.Now.ToString("yyyyMMdd-HHmmss");
         return Path.Combine(exportDir, $"{prefix}-{ts}.json");
+    }
+
+    private static void WriteAllTextAtomically(string destinationPath, string content) {
+        var directory = Path.GetDirectoryName(destinationPath);
+        if (!string.IsNullOrWhiteSpace(directory)) {
+            Directory.CreateDirectory(directory);
+        }
+
+        var tempPath = Path.Combine(
+            directory ?? ".",
+            $".{Path.GetFileName(destinationPath)}.{Guid.NewGuid():N}.tmp");
+
+        try {
+            File.WriteAllText(tempPath, content);
+            File.Move(tempPath, destinationPath, overwrite: true);
+        } finally {
+            try {
+                if (File.Exists(tempPath)) {
+                    File.Delete(tempPath);
+                }
+            } catch {
+                // Ignore best-effort temp cleanup.
+            }
+        }
     }
 }

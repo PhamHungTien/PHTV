@@ -564,12 +564,12 @@ public sealed partial class App : Application {
             return;
         }
 
-        var shouldShowSettingsOnStartup = _mainWindowViewModel.State.ShowSettingsOnStartup;
         Dispatcher.UIThread.Post(() => {
             if (_mainWindow is null || _mainWindowViewModel is null) {
                 return;
             }
 
+            var shouldShowSettingsOnStartup = _mainWindowViewModel.State.ShowSettingsOnStartup;
             if (!shouldShowSettingsOnStartup) {
                 _mainWindow.Hide();
                 return;

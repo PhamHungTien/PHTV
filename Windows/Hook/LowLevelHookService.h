@@ -44,9 +44,9 @@ private:
                        Uint16 engineKeyCode,
                        Uint32 currentModifierMask,
                        bool checkKeyCode) const;
-    bool handleHotkeysOnKeyDown(Uint16 engineKeyCode);
-    bool handleSwitchHotkey(Uint16 engineKeyCode);
-    bool handleEmojiHotkey(Uint16 engineKeyCode);
+    bool handleHotkeysOnKeyDown(Uint16 engineKeyCode, bool forceHookHotkeyHandling);
+    bool handleSwitchHotkey(Uint16 engineKeyCode, bool forceHookHotkeyHandling);
+    bool handleEmojiHotkey(Uint16 engineKeyCode, bool forceHookHotkeyHandling);
     bool handleModifierOnlyHotkeysOnModifierChange(Uint16 virtualKey,
                                                    bool isKeyDown,
                                                    Uint32 previousModifierMask);
@@ -55,8 +55,8 @@ private:
     void unregisterSystemHotkeys();
     bool registerSystemHotkey(int hotkeyId, int hotkeyStatus, bool enabled);
     bool tryBuildSystemHotkey(int hotkeyStatus, UINT& outModifiers, UINT& outVirtualKey) const;
-    bool shouldHandleSwitchHotkeyWithHook() const;
-    bool shouldHandleEmojiHotkeyWithHook() const;
+    bool shouldHandleSwitchHotkeyWithHook(bool forceHookHotkeyHandling) const;
+    bool shouldHandleEmojiHotkeyWithHook(bool forceHookHotkeyHandling) const;
     void toggleLanguageByHotkey();
     void triggerEmojiPanel();
     void persistRuntimeLanguageState();
@@ -74,7 +74,10 @@ private:
 
     Uint8 currentCapsStatus() const;
     bool hasOtherControlKey() const;
-    void refreshRuntimeConfigIfNeeded(bool force);
+    bool refreshRuntimeConfigIfNeeded(bool force);
+    void initializeRuntimeConfigSignal();
+    void shutdownRuntimeConfigSignal();
+    bool consumeRuntimeConfigSignal() const;
     void refreshForegroundAppContext(bool force);
     void ensureDictionariesLoaded(bool force);
     void initializeUiAutomation();
@@ -175,6 +178,9 @@ private:
     bool keyPressedWithEmojiModifiers_;
     bool switchHotkeyRegistered_;
     bool emojiHotkeyRegistered_;
+    std::chrono::steady_clock::time_point suppressSwitchHotkeyMessageUntil_;
+    std::chrono::steady_clock::time_point suppressEmojiHotkeyMessageUntil_;
+    HANDLE runtimeConfigChangedEvent_;
 };
 
 } // namespace phtv::windows_hook

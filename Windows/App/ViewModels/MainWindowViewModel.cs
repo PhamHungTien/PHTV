@@ -24,6 +24,70 @@ public sealed class MainWindowViewModel : ObservableObject {
         WriteIndented = true,
         PropertyNameCaseInsensitive = true
     };
+    private static readonly HashSet<string> TransientStatePropertyNames = new(StringComparer.Ordinal) {
+        nameof(SettingsState.SelectedCategory),
+        nameof(SettingsState.SelectedMacro),
+        nameof(SettingsState.SelectedExcludedApp),
+        nameof(SettingsState.SelectedStepByStepApp),
+        nameof(SettingsState.SwitchHotkeyDisplay),
+        nameof(SettingsState.EmojiHotkeyDisplay),
+        nameof(SettingsState.RestoreKeyEscSelected),
+        nameof(SettingsState.RestoreKeyOptionSelected),
+        nameof(SettingsState.RestoreKeyControlSelected),
+        nameof(SettingsState.PauseKeyAltSelected),
+        nameof(SettingsState.PauseKeyControlSelected),
+        nameof(SettingsState.PauseKeyShiftSelected),
+        nameof(SettingsState.SwitchHotkeyControl),
+        nameof(SettingsState.SwitchHotkeyOption),
+        nameof(SettingsState.SwitchHotkeyCommand),
+        nameof(SettingsState.SwitchHotkeyShift),
+        nameof(SettingsState.SwitchHotkeyFn),
+        nameof(SettingsState.SwitchHotkeyPrimary),
+        nameof(SettingsState.EmojiHotkeyControl),
+        nameof(SettingsState.EmojiHotkeyOption),
+        nameof(SettingsState.EmojiHotkeyCommand),
+        nameof(SettingsState.EmojiHotkeyShift),
+        nameof(SettingsState.EmojiHotkeyFn),
+        nameof(SettingsState.EmojiHotkeyPrimary)
+    };
+    private static readonly HashSet<string> RuntimeSyncPropertyNames = new(StringComparer.Ordinal) {
+        nameof(SettingsState.IsVietnameseEnabled),
+        nameof(SettingsState.InputMethod),
+        nameof(SettingsState.CodeTable),
+        nameof(SettingsState.CheckSpelling),
+        nameof(SettingsState.UseModernOrthography),
+        nameof(SettingsState.UpperCaseFirstChar),
+        nameof(SettingsState.AutoRestoreEnglishWord),
+        nameof(SettingsState.QuickTelex),
+        nameof(SettingsState.AllowConsonantZFWJ),
+        nameof(SettingsState.QuickStartConsonant),
+        nameof(SettingsState.QuickEndConsonant),
+        nameof(SettingsState.SwitchHotkey),
+        nameof(SettingsState.RestoreOnEscape),
+        nameof(SettingsState.RestoreKey),
+        nameof(SettingsState.PauseKeyEnabled),
+        nameof(SettingsState.PauseKey),
+        nameof(SettingsState.EmojiHotkeyEnabled),
+        nameof(SettingsState.EmojiHotkey),
+        nameof(SettingsState.UseMacro),
+        nameof(SettingsState.UseMacroInEnglishMode),
+        nameof(SettingsState.AutoCapsMacro),
+        nameof(SettingsState.UseSmartSwitchKey),
+        nameof(SettingsState.RememberCode),
+        nameof(SettingsState.SendKeyStepByStep),
+        nameof(SettingsState.PerformLayoutCompat)
+    };
+    private static readonly HashSet<string> ImmediatePersistPropertyNames = new(StringComparer.Ordinal) {
+        nameof(SettingsState.SwitchHotkey),
+        nameof(SettingsState.RestoreOnEscape),
+        nameof(SettingsState.RestoreKey),
+        nameof(SettingsState.PauseKeyEnabled),
+        nameof(SettingsState.PauseKey),
+        nameof(SettingsState.EmojiHotkeyEnabled),
+        nameof(SettingsState.EmojiHotkey),
+        nameof(SettingsState.ShowSettingsOnStartup),
+        nameof(SettingsState.RunOnStartup)
+    };
 
     private readonly List<SidebarTabEntry> _allTabs;
     private readonly Dictionary<SettingsTabId, SettingsTabViewModel> _tabViewModels;
@@ -478,11 +542,19 @@ public sealed class MainWindowViewModel : ObservableObject {
     private void OnStatePropertyChanged(object? sender, PropertyChangedEventArgs e) {
         var propertyName = e.PropertyName ?? string.Empty;
 
+        if (propertyName.Length == 0) {
+            return;
+        }
+
         if (propertyName is nameof(SettingsState.SelectedCategory)
             or nameof(SettingsState.SelectedMacro)
             or nameof(SettingsState.SelectedExcludedApp)
             or nameof(SettingsState.SelectedStepByStepApp)) {
             RefreshCommandStates();
+            return;
+        }
+
+        if (TransientStatePropertyNames.Contains(propertyName)) {
             return;
         }
 
@@ -496,6 +568,15 @@ public sealed class MainWindowViewModel : ObservableObject {
 
         if (propertyName == nameof(SettingsState.RunOnStartup)) {
             SyncRunOnStartupSetting();
+        }
+
+        if (RuntimeSyncPropertyNames.Contains(propertyName)) {
+            TrySyncRuntimeArtifactsImmediately();
+        }
+
+        if (ImmediatePersistPropertyNames.Contains(propertyName)) {
+            PersistStateNow();
+            return;
         }
 
         ScheduleSave();
@@ -544,10 +625,12 @@ public sealed class MainWindowViewModel : ObservableObject {
         }
 
         RefreshCommandStates();
+        TrySyncRuntimeArtifactsImmediately();
         ScheduleSave();
     }
 
     private void OnMacroItemPropertyChanged(object? sender, PropertyChangedEventArgs e) {
+        TrySyncRuntimeArtifactsImmediately();
         ScheduleSave();
     }
 
@@ -573,6 +656,8 @@ public sealed class MainWindowViewModel : ObservableObject {
         if (_isApplyingSnapshot) {
             return;
         }
+
+        _saveDebounceTimer.Stop();
 
         try {
             var snapshot = SettingsSnapshot.FromState(State);
@@ -612,7 +697,6 @@ public sealed class MainWindowViewModel : ObservableObject {
             StatusMessage = State.RunOnStartup
                 ? "Đã bật khởi động cùng Windows."
                 : "Đã tắt khởi động cùng Windows.";
-            ScheduleSave();
         } finally {
             _isSyncingStartup = false;
         }
