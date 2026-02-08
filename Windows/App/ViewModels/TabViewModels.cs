@@ -1,3 +1,5 @@
+using System.Windows.Input;
+
 namespace PHTV.Windows.ViewModels;
 
 public abstract class SettingsTabViewModel : ObservableObject {
@@ -37,11 +39,26 @@ public sealed class MacroTabViewModel : SettingsTabViewModel {
 }
 
 public sealed class AppsTabViewModel : SettingsTabViewModel {
-    public AppsTabViewModel(SettingsState state) : base(state) { }
+    public AppsTabViewModel(
+        SettingsState state,
+        ICommand addExcludedAppCommand,
+        ICommand removeExcludedAppCommand,
+        ICommand addStepByStepAppCommand,
+        ICommand removeStepByStepAppCommand) : base(state) {
+        AddExcludedAppCommand = addExcludedAppCommand;
+        RemoveExcludedAppCommand = removeExcludedAppCommand;
+        AddStepByStepAppCommand = addStepByStepAppCommand;
+        RemoveStepByStepAppCommand = removeStepByStepAppCommand;
+    }
     public override SettingsTabId Id => SettingsTabId.Apps;
     public override string Title => "Ứng dụng & Tương thích";
     public override string Subtitle => "Quản lý chuyển đổi theo từng ứng dụng và tối ưu khả năng tương thích.";
     public override string IconGlyph => "▦";
+
+    public ICommand AddExcludedAppCommand { get; }
+    public ICommand RemoveExcludedAppCommand { get; }
+    public ICommand AddStepByStepAppCommand { get; }
+    public ICommand RemoveStepByStepAppCommand { get; }
 }
 
 public sealed class SystemTabViewModel : SettingsTabViewModel {

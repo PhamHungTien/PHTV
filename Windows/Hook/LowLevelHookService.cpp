@@ -667,17 +667,51 @@ void LowLevelHookService::stop() {
 }
 
 int LowLevelHookService::runMessageLoop() {
+    // OpenKey-style message loop: use MsgWaitForMultipleObjects to wake
+    // immediately when the settings app signals a config change, instead of
+    // only detecting changes on the next keystroke.  This ensures hotkey
+    // re-registration happens within milliseconds of the user changing a
+    // setting, even when no keyboard activity is occurring.
+    const DWORD handleCount = (runtimeConfigChangedEvent_ != nullptr) ? 1 : 0;
+    const HANDLE waitHandles[1] = { runtimeConfigChangedEvent_ };
+
     MSG msg {};
-    while (running_ && GetMessageW(&msg, nullptr, 0, 0) > 0) {
-        if (msg.message == WM_HOTKEY) {
-            handleRegisteredHotkeyMessage(static_cast<int>(msg.wParam));
-            continue;
+    while (running_) {
+        const DWORD waitResult = MsgWaitForMultipleObjects(
+            handleCount,
+            waitHandles,
+            FALSE,
+            INFINITE,
+            QS_ALLINPUT);
+
+        if (!running_) {
+            break;
         }
 
-        TranslateMessage(&msg);
-        DispatchMessageW(&msg);
+        // Config-change event signaled — reload config and re-register
+        // hotkeys immediately, before processing any queued messages.
+        if (waitResult == WAIT_OBJECT_0 && handleCount > 0) {
+            refreshRuntimeConfigIfNeeded(true);
+        }
+
+        // Drain all pending messages (WM_HOTKEY, hook callbacks, WM_QUIT, …).
+        while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
+            if (msg.message == WM_QUIT) {
+                running_ = false;
+                return static_cast<int>(msg.wParam);
+            }
+
+            if (msg.message == WM_HOTKEY) {
+                handleRegisteredHotkeyMessage(static_cast<int>(msg.wParam));
+                continue;
+            }
+
+            TranslateMessage(&msg);
+            DispatchMessageW(&msg);
+        }
     }
-    return static_cast<int>(msg.wParam);
+
+    return 0;
 }
 
 void LowLevelHookService::initializeRuntimeConfigSignal() {

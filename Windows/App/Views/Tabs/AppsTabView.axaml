@@ -50,13 +50,13 @@
                   <Button Content="Thêm">
                     <Button.Flyout>
                       <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                        <MenuItem Header="Từ ứng dụng đang chạy" Command="{Binding DataContext.AddExcludedAppCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="Running"/>
-                        <MenuItem Header="Chọn file .exe..." Command="{Binding DataContext.AddExcludedAppCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="File"/>
-                        <MenuItem Header="Nhập thủ công..." Command="{Binding DataContext.AddExcludedAppCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="Manual"/>
+                        <MenuItem Header="Từ ứng dụng đang chạy" Command="{Binding AddExcludedAppCommand}" CommandParameter="Running"/>
+                        <MenuItem Header="Chọn file .exe..." Command="{Binding AddExcludedAppCommand}" CommandParameter="File"/>
+                        <MenuItem Header="Nhập thủ công..." Command="{Binding AddExcludedAppCommand}" CommandParameter="Manual"/>
                       </MenuFlyout>
                     </Button.Flyout>
                   </Button>
-                  <Button Content="Xóa" Command="{Binding DataContext.RemoveExcludedAppCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                  <Button Content="Xóa" Command="{Binding RemoveExcludedAppCommand}"/>
                 </WrapPanel>
               </Grid>
             </Border>
@@ -90,13 +90,13 @@
                   <Button Content="Thêm">
                     <Button.Flyout>
                       <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                        <MenuItem Header="Từ ứng dụng đang chạy" Command="{Binding DataContext.AddStepByStepAppCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="Running"/>
-                        <MenuItem Header="Chọn file .exe..." Command="{Binding DataContext.AddStepByStepAppCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="File"/>
-                        <MenuItem Header="Nhập thủ công..." Command="{Binding DataContext.AddStepByStepAppCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="Manual"/>
+                        <MenuItem Header="Từ ứng dụng đang chạy" Command="{Binding AddStepByStepAppCommand}" CommandParameter="Running"/>
+                        <MenuItem Header="Chọn file .exe..." Command="{Binding AddStepByStepAppCommand}" CommandParameter="File"/>
+                        <MenuItem Header="Nhập thủ công..." Command="{Binding AddStepByStepAppCommand}" CommandParameter="Manual"/>
                       </MenuFlyout>
                     </Button.Flyout>
                   </Button>
-                  <Button Content="Xóa" Command="{Binding DataContext.RemoveStepByStepAppCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                  <Button Content="Xóa" Command="{Binding RemoveStepByStepAppCommand}"/>
                 </WrapPanel>
               </Grid>
             </Border>

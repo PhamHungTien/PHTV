@@ -76,14 +76,33 @@ public sealed partial class App : Application {
     public override void OnFrameworkInitializationCompleted() {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) {
             _startedFromStartupEntry = IsStartupActivation(desktop.Args);
+
+            // CRITICAL: Set ShutdownMode BEFORE MainWindow so the app stays
+            // alive from the tray even when no window is shown.
+            desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
             _mainWindowViewModel = new MainWindowViewModel();
             _mainWindow = new MainWindow(_mainWindowViewModel);
-            desktop.MainWindow = _mainWindow;
-            desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+            // Avalonia automatically calls MainWindow.Show() when the app
+            // starts.  When launched from a startup entry with
+            // "ShowSettingsOnStartup" disabled, we must NOT assign MainWindow
+            // so the window stays hidden.  The window is still created and
+            // ready — ShowFromTray() will make it visible on demand.
+            var shouldShowWindow = !_startedFromStartupEntry
+                || _mainWindowViewModel.State.ShowSettingsOnStartup;
+
+            if (shouldShowWindow) {
+                desktop.MainWindow = _mainWindow;
+            }
 
             _mainWindowViewModel.State.PropertyChanged += OnViewModelStatePropertyChanged;
             SetupTrayIcon(desktop);
-            ApplyInitialWindowVisibility();
+
+            if (shouldShowWindow && _startedFromStartupEntry) {
+                ShowSettingsWindow(SettingsTabId.System);
+            }
+
             StartSingleInstanceActivationListener();
             desktop.Exit += (_, _) => StopSingleInstanceActivationListener();
         }
@@ -559,23 +578,4 @@ public sealed partial class App : Application {
         return false;
     }
 
-    private void ApplyInitialWindowVisibility() {
-        if (_mainWindow is null || _mainWindowViewModel is null || !_startedFromStartupEntry) {
-            return;
-        }
-
-        Dispatcher.UIThread.Post(() => {
-            if (_mainWindow is null || _mainWindowViewModel is null) {
-                return;
-            }
-
-            var shouldShowSettingsOnStartup = _mainWindowViewModel.State.ShowSettingsOnStartup;
-            if (!shouldShowSettingsOnStartup) {
-                _mainWindow.Hide();
-                return;
-            }
-
-            ShowSettingsWindow(SettingsTabId.System);
-        }, DispatcherPriority.Background);
-    }
 }

@@ -143,11 +143,20 @@ public sealed class MainWindowViewModel : ObservableObject {
 
         State = new SettingsState();
 
+        // App commands must be created before _tabViewModels so that
+        // AppsTabViewModel can expose them directly (MenuFlyout popups
+        // render in a detached visual tree and cannot reach Window via
+        // RelativeSource).
+        _addExcludedAppCommand = new RelayCommand<object>(async p => await AddExcludedAppAsync(p));
+        _removeExcludedAppCommand = new RelayCommand(RemoveExcludedApp, () => !string.IsNullOrWhiteSpace(State.SelectedExcludedApp));
+        _addStepByStepAppCommand = new RelayCommand<object>(async p => await AddStepByStepAppAsync(p));
+        _removeStepByStepAppCommand = new RelayCommand(RemoveStepByStepApp, () => !string.IsNullOrWhiteSpace(State.SelectedStepByStepApp));
+
         _tabViewModels = new Dictionary<SettingsTabId, SettingsTabViewModel> {
             { SettingsTabId.Typing, new TypingTabViewModel(State) },
             { SettingsTabId.Hotkeys, new HotkeysTabViewModel(State) },
             { SettingsTabId.Macro, new MacroTabViewModel(State) },
-            { SettingsTabId.Apps, new AppsTabViewModel(State) },
+            { SettingsTabId.Apps, new AppsTabViewModel(State, _addExcludedAppCommand, _removeExcludedAppCommand, _addStepByStepAppCommand, _removeStepByStepAppCommand) },
             { SettingsTabId.System, new SystemTabViewModel(State) },
             { SettingsTabId.BugReport, new BugReportTabViewModel(State) },
             { SettingsTabId.About, new AboutTabViewModel(State) }
@@ -181,11 +190,6 @@ public sealed class MainWindowViewModel : ObservableObject {
         _deleteMacroCommand = new RelayCommand(DeleteMacro, () => State.SelectedMacro is not null);
         _exportMacrosCommand = new AsyncRelayCommand(ExportMacrosAsync, () => State.Macros.Count > 0);
         _importMacrosCommand = new AsyncRelayCommand(ImportMacrosAsync);
-
-        _addExcludedAppCommand = new RelayCommand<object>(async p => await AddExcludedAppAsync(p));
-        _removeExcludedAppCommand = new RelayCommand(RemoveExcludedApp, () => !string.IsNullOrWhiteSpace(State.SelectedExcludedApp));
-        _addStepByStepAppCommand = new RelayCommand<object>(async p => await AddStepByStepAppAsync(p));
-        _removeStepByStepAppCommand = new RelayCommand(RemoveStepByStepApp, () => !string.IsNullOrWhiteSpace(State.SelectedStepByStepApp));
 
         _checkForUpdatesCommand = new RelayCommand(CheckForUpdates);
         _openGuideCommand = new RelayCommand(OpenGuide);
