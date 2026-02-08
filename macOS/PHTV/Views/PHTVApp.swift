@@ -18,9 +18,8 @@ struct PHTVApp: App {
     init() {
         NSLog("PHTV-APP-INIT-START")
 
-        // CRITICAL: Initialize AppState FIRST to avoid recursive dispatch_once lock
-        // EmojiHotkeyManager.handleSettingsChanged() calls AppState.shared
-        // If AppState is initializing when the notification fires, we get recursive lock
+        // CRITICAL: Initialize AppState first so all shared state is ready
+        // before any notification-driven services start.
         _ = AppState.shared
         MemoryPressureMonitor.shared.start()
         URLCache.shared = URLCache(
@@ -31,10 +30,6 @@ struct PHTVApp: App {
 
         // Initialize SettingsNotificationObserver to listen for notifications
         _ = SettingsNotificationObserver.shared
-
-        // Initialize EmojiHotkeyManager directly in SwiftUI init
-        NSLog("PHTV-APP-INIT-EMOJI")
-        _ = EmojiHotkeyManager.shared
         NSLog("PHTV-APP-INIT-END")
     }
 

@@ -16,4 +16,8 @@ import Foundation
         // Force initialization - this will trigger the singleton's init()
         _ = EmojiHotkeyManager.shared
     }
+
+    @MainActor @objc static func openEmojiPicker() {
+        EmojiPickerManager.shared.show()
+    }
 }

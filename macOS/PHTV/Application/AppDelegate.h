@@ -31,6 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
 -(void)onMacroSelected;
 -(void)onQuickConvert;
 -(void)setQuickConvertString;
+-(void)onEmojiHotkeyTriggered;
 
 -(void)setDockIconVisible:(BOOL)visible;
 -(void)showIcon:(BOOL)onDock;
@@ -58,5 +59,4 @@ AppDelegate* _Nullable GetAppDelegateInstance(void);
 #ifdef __cplusplus
 }
 #endif
-
 

@@ -26,6 +26,29 @@ static inline int PHTVReadIntWithFallback(NSUserDefaults *defaults, NSString *ke
     return (int)[defaults integerForKey:key];
 }
 
+static inline void PHTVLoadEmojiHotkeySettings(NSUserDefaults *defaults,
+                                                volatile int *enabled,
+                                                volatile int *modifiers,
+                                                volatile int *keyCode) {
+    // Default: enabled + Command+E
+    id enabledObject = [defaults objectForKey:@"vEnableEmojiHotkey"];
+    *enabled = (enabledObject == nil) ? 1 : ([defaults boolForKey:@"vEnableEmojiHotkey"] ? 1 : 0);
+
+    id modifiersObject = [defaults objectForKey:@"vEmojiHotkeyModifiers"];
+    if (modifiersObject == nil) {
+        *modifiers = (int)NSEventModifierFlagCommand;
+    } else {
+        *modifiers = (int)[defaults integerForKey:@"vEmojiHotkeyModifiers"];
+    }
+
+    id keyCodeObject = [defaults objectForKey:@"vEmojiHotkeyKeyCode"];
+    if (keyCodeObject == nil) {
+        *keyCode = 14; // E key default
+    } else {
+        *keyCode = (int)[defaults integerForKey:@"vEmojiHotkeyKeyCode"];
+    }
+}
+
 AppDelegate* appDelegate;
 static int sLastUpperCaseFirstCharSetting = -1;
 
@@ -83,6 +106,11 @@ volatile int vPauseKey = 58; //pause key code (default: Left Option = 58)
 
 // Auto restore English word feature
 volatile int vAutoRestoreEnglishWord = 0; //auto restore English words (default: OFF)
+
+// Emoji picker hotkey (handled in event tap callback, OpenKey style)
+volatile int vEnableEmojiHotkey = 1;
+volatile int vEmojiHotkeyModifiers = NSEventModifierFlagCommand;
+volatile int vEmojiHotkeyKeyCode = 14; // E key
 
 int vShowIconOnDock = 0; //new on version 2.0
 static BOOL settingsWindowOpen = NO; // Track if settings window is open (to keep dock icon visible)
@@ -908,12 +936,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
     // Initialize English word dictionary for auto-restore feature
     [self initEnglishWordDictionary];
-    // Initialize EmojiHotkeyManager via Swift bridge
-    @try {
-        [EmojiHotkeyBridge initializeEmojiHotkeyManager];
-    } @catch (NSException *exception) {
-        NSLog(@"[EmojiHotkey] init failed: %@", exception);
-    }
 
     // Load ALL settings from UserDefaults BEFORE initializing event tap
     // This ensures settings persist across restart/wake from sleep
@@ -969,6 +991,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     } else {
         NSLog(@"[AppDelegate] No saved hotkey found, using default: 0x%X", vSwitchKeyStatus);
     }
+
+    // Emoji picker hotkey settings
+    PHTVLoadEmojiHotkeySettings(defaults, &vEnableEmojiHotkey, &vEmojiHotkeyModifiers, &vEmojiHotkeyKeyCode);
 
     NSLog(@"[AppDelegate] All settings loaded from UserDefaults");
 
@@ -1152,6 +1177,11 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(handleHotkeyChanged:)
                                                  name:@"HotkeyChanged"
+                                               object:nil];
+
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleEmojiHotkeySettingsChanged:)
+                                                 name:@"EmojiHotkeySettingsChanged"
                                                object:nil];
     
     [[NSNotificationCenter defaultCenter] addObserver:self
@@ -1405,6 +1435,19 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     }
 }
 
+- (void)handleEmojiHotkeySettingsChanged:(NSNotification *)notification {
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    PHTVLoadEmojiHotkeySettings(defaults, &vEnableEmojiHotkey, &vEmojiHotkeyModifiers, &vEmojiHotkeyKeyCode);
+
+    // Memory barrier to ensure event tap thread sees new values immediately
+    __sync_synchronize();
+
+    #ifdef DEBUG
+    NSLog(@"[SwiftUI] Emoji hotkey changed: enabled=%d modifiers=0x%X keyCode=%d",
+          vEnableEmojiHotkey, vEmojiHotkeyModifiers, vEmojiHotkeyKeyCode);
+    #endif
+}
+
 - (void)handleTCCDatabaseChanged:(NSNotification *)notification {
     NSLog(@"[TCC] TCC database change notification received in AppDelegate");
     NSLog(@"[TCC] userInfo: %@", notification.userInfo);
@@ -1497,6 +1540,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     int oldQuickEndConsonant = vQuickEndConsonant;
     int oldRememberCode = vRememberCode;
     int oldPerformLayoutCompat = vPerformLayoutCompat;
+    int oldEnableEmojiHotkey = vEnableEmojiHotkey;
+    int oldEmojiHotkeyModifiers = vEmojiHotkeyModifiers;
+    int oldEmojiHotkeyKeyCode = vEmojiHotkeyKeyCode;
     
     vCheckSpelling = PHTVReadIntWithFallback(defaults, @"Spelling", 1);
     vUseModernOrthography = PHTVReadIntWithFallback(defaults, @"ModernOrthography", vUseModernOrthography);
@@ -1524,6 +1570,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
     // Auto restore English word feature
     vAutoRestoreEnglishWord = PHTVReadIntWithFallback(defaults, @"vAutoRestoreEnglishWord", vAutoRestoreEnglishWord);
+
+    // Emoji picker hotkey
+    PHTVLoadEmojiHotkeySettings(defaults, &vEnableEmojiHotkey, &vEmojiHotkeyModifiers, &vEmojiHotkeyKeyCode);
 
     BOOL justEnabledUppercase = NO;
     if (sLastUpperCaseFirstCharSetting != -1) {
@@ -1559,7 +1608,15 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                          oldQuickEndConsonant != vQuickEndConsonant ||
                          oldRememberCode != vRememberCode ||
                          oldPerformLayoutCompat != vPerformLayoutCompat);
-        PHTV_LIVE_LOG(@"settings loaded; changedGroup1=%@ changedGroup2=%@ useMacro=%d upperCaseFirst=%d", changed1 ? @"YES" : @"NO", changed2 ? @"YES" : @"NO", vUseMacro, vUpperCaseFirstChar);
+        BOOL changedEmoji = (oldEnableEmojiHotkey != vEnableEmojiHotkey ||
+                             oldEmojiHotkeyModifiers != vEmojiHotkeyModifiers ||
+                             oldEmojiHotkeyKeyCode != vEmojiHotkeyKeyCode);
+        PHTV_LIVE_LOG(@"settings loaded; changedGroup1=%@ changedGroup2=%@ changedEmoji=%@ useMacro=%d upperCaseFirst=%d",
+                      changed1 ? @"YES" : @"NO",
+                      changed2 ? @"YES" : @"NO",
+                      changedEmoji ? @"YES" : @"NO",
+                      vUseMacro,
+                      vUpperCaseFirstChar);
     }
 
     // If SmartSwitchKey was just enabled, sync once to current app immediately.
@@ -1573,6 +1630,8 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     NSLog(@"[SwiftUI] Settings reloaded from UserDefaults");
     NSLog(@"  - useMacro=%d, autoCapsMacro=%d, useMacroInEnglishMode=%d", vUseMacro, vAutoCapsMacro, vUseMacroInEnglishMode);
     NSLog(@"  - performLayoutCompat=%d", vPerformLayoutCompat);
+    NSLog(@"  - emojiHotkey enabled=%d modifiers=0x%X keyCode=%d",
+          vEnableEmojiHotkey, vEmojiHotkeyModifiers, vEmojiHotkeyKeyCode);
     #endif
     
     // Apply dock icon visibility immediately with async dispatch
@@ -2729,6 +2788,16 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     }
 }
 
+-(void)onEmojiHotkeyTriggered {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        @try {
+            [EmojiHotkeyBridge openEmojiPicker];
+        } @catch (NSException *exception) {
+            NSLog(@"[EmojiHotkey] failed to open picker: %@", exception);
+        }
+    });
+}
+
 - (void)toggleSpellCheck:(id)sender {
     vCheckSpelling = !vCheckSpelling;
     __sync_synchronize();
@@ -3160,6 +3229,11 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     [[NSNotificationCenter defaultCenter] addObserver: self
                                              selector: @selector(handleHotkeyChanged:)
                                                  name: @"HotkeyChanged"
+                                               object: NULL];
+
+    [[NSNotificationCenter defaultCenter] addObserver: self
+                                             selector: @selector(handleEmojiHotkeySettingsChanged:)
+                                                 name: @"EmojiHotkeySettingsChanged"
                                                object: NULL];
 
     // Listen for TCC database changes (posted by PHTVManager)

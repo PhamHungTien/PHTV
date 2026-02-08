@@ -451,6 +451,9 @@ extern AppDelegate* appDelegate;
 extern volatile int vSendKeyStepByStep;
 extern volatile int vPerformLayoutCompat;
 extern volatile int vTempOffPHTV;
+extern volatile int vEnableEmojiHotkey;
+extern volatile int vEmojiHotkeyModifiers;
+extern volatile int vEmojiHotkeyKeyCode;
 
 extern "C" {
 
@@ -2445,24 +2448,26 @@ static bool _pendingUppercasePrimeCheck = true;
         }
     }
             
-    bool checkHotKey(int hotKeyData, bool checkKeyCode=true) {
+    static inline bool checkHotKeyWithFlags(int hotKeyData, bool checkKeyCode, CGEventFlags flags, CGKeyCode keycode) {
         if ((hotKeyData & (~0x8000)) == EMPTY_HOTKEY)
             return false;
-        if (HAS_CONTROL(hotKeyData) ^ GET_BOOL(_lastFlag & kCGEventFlagMaskControl))
+        if (HAS_CONTROL(hotKeyData) ^ GET_BOOL(flags & kCGEventFlagMaskControl))
             return false;
-        if (HAS_OPTION(hotKeyData) ^ GET_BOOL(_lastFlag & kCGEventFlagMaskAlternate))
+        if (HAS_OPTION(hotKeyData) ^ GET_BOOL(flags & kCGEventFlagMaskAlternate))
             return false;
-        if (HAS_COMMAND(hotKeyData) ^ GET_BOOL(_lastFlag & kCGEventFlagMaskCommand))
+        if (HAS_COMMAND(hotKeyData) ^ GET_BOOL(flags & kCGEventFlagMaskCommand))
             return false;
-        if (HAS_SHIFT(hotKeyData) ^ GET_BOOL(_lastFlag & kCGEventFlagMaskShift))
+        if (HAS_SHIFT(hotKeyData) ^ GET_BOOL(flags & kCGEventFlagMaskShift))
             return false;
-        if (HAS_FN(hotKeyData) ^ GET_BOOL(_lastFlag & kCGEventFlagMaskSecondaryFn))
+        if (HAS_FN(hotKeyData) ^ GET_BOOL(flags & kCGEventFlagMaskSecondaryFn))
             return false;
-        if (checkKeyCode) {
-            if (GET_SWITCH_KEY(hotKeyData) != _keycode)
-                return false;
-        }
+        if (checkKeyCode && GET_SWITCH_KEY(hotKeyData) != keycode)
+            return false;
         return true;
+    }
+
+    bool checkHotKey(int hotKeyData, bool checkKeyCode=true) {
+        return checkHotKeyWithFlags(hotKeyData, checkKeyCode, _lastFlag, _keycode);
     }
 
     // Check if ALL modifier keys required by a hotkey are currently held
@@ -2734,14 +2739,45 @@ static bool _pendingUppercasePrimeCheck = true;
         return result;
     }
 
-    // Handle hotkey press (switch language or convert tool)
+    static inline CGEventFlags RelevantEmojiModifierFlags(CGEventFlags flags) {
+        return flags & (kCGEventFlagMaskCommand |
+                        kCGEventFlagMaskAlternate |
+                        kCGEventFlagMaskControl |
+                        kCGEventFlagMaskShift);
+    }
+
+    static inline BOOL CheckEmojiHotkey(CGKeyCode keycode, CGEventFlags flags) {
+        if (!vEnableEmojiHotkey) return NO;
+        if ((CGKeyCode)vEmojiHotkeyKeyCode != keycode) return NO;
+
+        // Keep behavior strict and predictable: require at least one modifier.
+        CGEventFlags expectedModifiers = RelevantEmojiModifierFlags((CGEventFlags)vEmojiHotkeyModifiers);
+        if (expectedModifiers == 0) return NO;
+        return RelevantEmojiModifierFlags(flags) == expectedModifiers;
+    }
+
+    // Handle hotkey press (switch language / convert tool / emoji picker)
     // Returns NULL if hotkey was triggered (consuming the event), otherwise returns the original event
     static inline CGEventRef HandleHotkeyPress(CGEventType type, CGKeyCode keycode) {
         if (type != kCGEventKeyDown) return NULL;
 
+        BOOL switchHotkeyHasKey = GET_SWITCH_KEY(vSwitchKeyStatus) != 0xFE;
+        BOOL convertHotkeyHasKey = GET_SWITCH_KEY(convertToolHotKey) != 0xFE;
+        BOOL isSwitchHotkeyKey = switchHotkeyHasKey && GET_SWITCH_KEY(vSwitchKeyStatus) == keycode;
+        BOOL isConvertHotkeyKey = convertHotkeyHasKey && GET_SWITCH_KEY(convertToolHotKey) == keycode;
+        BOOL isEmojiHotkeyKey = vEnableEmojiHotkey && ((CGKeyCode)vEmojiHotkeyKeyCode == keycode);
+
+        // OpenKey style: clear stale modifier tracking on unrelated key presses.
+        if (!isSwitchHotkeyKey && !isConvertHotkeyKey && !isEmojiHotkeyKey) {
+            _lastFlag = 0;
+            _hasJustUsedHotKey = false;
+            return NULL;
+        }
+
         // Check switch language hotkey
-        if (GET_SWITCH_KEY(vSwitchKeyStatus) == keycode &&
-            checkHotKey(vSwitchKeyStatus, GET_SWITCH_KEY(vSwitchKeyStatus) != 0xFE)) {
+        if (isSwitchHotkeyKey &&
+            (checkHotKey(vSwitchKeyStatus, true) ||
+             checkHotKeyWithFlags(vSwitchKeyStatus, true, _flag, keycode))) {
             switchLanguage();
             _lastFlag = 0;
             _hasJustUsedHotKey = true;
@@ -2749,9 +2785,18 @@ static bool _pendingUppercasePrimeCheck = true;
         }
 
         // Check convert tool hotkey
-        if (GET_SWITCH_KEY(convertToolHotKey) == keycode &&
-            checkHotKey(convertToolHotKey, GET_SWITCH_KEY(convertToolHotKey) != 0xFE)) {
+        if (isConvertHotkeyKey &&
+            (checkHotKey(convertToolHotKey, true) ||
+             checkHotKeyWithFlags(convertToolHotKey, true, _flag, keycode))) {
             [appDelegate onQuickConvert];
+            _lastFlag = 0;
+            _hasJustUsedHotKey = true;
+            return (CGEventRef)-1;  // Special marker to indicate "consume event"
+        }
+
+        // Check emoji picker hotkey
+        if (isEmojiHotkeyKey && CheckEmojiHotkey(keycode, _flag)) {
+            [appDelegate onEmojiHotkeyTriggered];
             _lastFlag = 0;
             _hasJustUsedHotKey = true;
             return (CGEventRef)-1;  // Special marker to indicate "consume event"
