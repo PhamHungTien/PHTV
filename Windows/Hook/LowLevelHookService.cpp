@@ -1341,8 +1341,14 @@ void LowLevelHookService::triggerEmojiPanel() {
     }
 
     if (emojiPickerEvent_ != nullptr) {
-        SetEvent(emojiPickerEvent_);
-        std::cerr << "[PHTV] Signaled PHTV Picker event\n";
+        if (SetEvent(emojiPickerEvent_)) {
+            std::cerr << "[PHTV] Signaled PHTV Picker event\n";
+        } else {
+            // Handle became invalid (app exited), close and retry next time
+            std::cerr << "[PHTV] SetEvent failed, error=" << GetLastError() << "\n";
+            CloseHandle(emojiPickerEvent_);
+            emojiPickerEvent_ = nullptr;
+        }
     } else {
         // Fallback: open system emoji panel via Win+.
         std::cerr << "[PHTV] Picker event not available, falling back to Win+.\n";

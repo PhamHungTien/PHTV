@@ -39,6 +39,8 @@ public partial class EmojiPickerWindow : Window {
         viewModel.OnGifSelected = OnGifSelected;
         viewModel.OnStickerSelected = OnStickerSelected;
         viewModel.OnClose = () => Close();
+
+        Deactivated += (_, _) => Close();
     }
 
     public void ShowAtMousePosition() {
@@ -73,10 +75,6 @@ public partial class EmojiPickerWindow : Window {
         base.OnKeyDown(e);
     }
 
-    protected override void OnDeactivated(EventArgs e) {
-        base.OnDeactivated(e);
-        Close();
-    }
 
     private void OnHeaderPointerPressed(object? sender, PointerPressedEventArgs e) {
         if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)

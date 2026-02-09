@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Timers;
 using Avalonia.Controls;
 using PHTV.Windows.Data;
 using PHTV.Windows.Models;
@@ -14,7 +13,7 @@ public sealed class EmojiPickerViewModel : INotifyPropertyChanged {
     private string _searchText = string.Empty;
     private int _selectedSubCategory;
     private bool _isLoading;
-    private readonly Timer _searchDebounceTimer;
+    private readonly System.Timers.Timer _searchDebounceTimer;
     private readonly string _dataFilePath;
 
     public Action<string>? OnEmojiSelected { get; set; }
