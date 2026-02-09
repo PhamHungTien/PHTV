@@ -69,7 +69,7 @@ public sealed class EmojiPickerViewModel : INotifyPropertyChanged {
             "PHTV");
         _dataFilePath = Path.Combine(appData, "picker-prefs.json");
 
-        _searchDebounceTimer = new Timer(350) { AutoReset = false };
+        _searchDebounceTimer = new System.Timers.Timer(350) { AutoReset = false };
         _searchDebounceTimer.Elapsed += (_, _) => {
             Avalonia.Threading.Dispatcher.UIThread.Post(ExecuteSearch);
         };
