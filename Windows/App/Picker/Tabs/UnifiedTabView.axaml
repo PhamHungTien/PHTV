@@ -1,0 +1,89 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:picker="clr-namespace:PHTV.Windows.Picker"
+             x:Class="PHTV.Windows.Picker.Tabs.UnifiedTabView"
+             x:DataType="picker:EmojiPickerViewModel">
+
+  <DockPanel>
+    <!-- Search bar -->
+    <Border DockPanel.Dock="Top" Margin="12,8" Padding="8,6"
+            CornerRadius="8" Background="#15FFFFFF">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <TextBlock Grid.Column="0" Text="🔍" FontSize="13"
+                   VerticalAlignment="Center" Margin="0,0,6,0"
+                   Foreground="#70FFFFFF" />
+        <TextBox Grid.Column="1"
+                 Text="{Binding SearchText, Mode=TwoWay}"
+                 Watermark="Tìm icons, GIFs, stickers..."
+                 FontSize="13"
+                 Background="Transparent"
+                 BorderThickness="0"
+                 Foreground="#CCFFFFFF"
+                 CaretBrush="#CCFFFFFF"
+                 Name="SearchBox" />
+        <Button Grid.Column="2"
+                Content="✕" FontSize="11"
+                Background="Transparent"
+                Foreground="#60FFFFFF"
+                Padding="4,2"
+                IsVisible="{Binding SearchText.Length}"
+                Click="OnClearSearch"
+                Cursor="Hand" />
+      </Grid>
+    </Border>
+
+    <!-- Scrollable content -->
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+      <StackPanel Spacing="8" Margin="12,4,12,12">
+        <!-- Recent Emojis section (when no search) -->
+        <StackPanel IsVisible="{Binding !SearchText.Length}">
+          <TextBlock Text="Gần đây" FontSize="11" Foreground="#70FFFFFF"
+                     Margin="0,0,0,4"
+                     IsVisible="{Binding RecentEmojis.Count}" />
+          <WrapPanel Name="RecentEmojisPanel" />
+        </StackPanel>
+
+        <!-- Frequently Used section (when no search) -->
+        <StackPanel IsVisible="{Binding !SearchText.Length}">
+          <TextBlock Text="Hay dùng" FontSize="11" Foreground="#70FFFFFF"
+                     Margin="0,0,0,4"
+                     IsVisible="{Binding FrequentlyUsedEmojis.Count}" />
+          <WrapPanel Name="FrequentEmojisPanel" />
+        </StackPanel>
+
+        <!-- Emoji search results -->
+        <StackPanel IsVisible="{Binding SearchText.Length}">
+          <TextBlock Text="Emoji" FontSize="11" Foreground="#70FFFFFF"
+                     Margin="0,0,0,4"
+                     IsVisible="{Binding EmojiSearchResults.Count}" />
+          <WrapPanel Name="EmojiResultsPanel" />
+        </StackPanel>
+
+        <!-- GIF section header -->
+        <TextBlock Text="{Binding SearchText.Length, StringFormat='GIFs'}"
+                   FontSize="11" Foreground="#70FFFFFF"
+                   Margin="0,4,0,4"
+                   IsVisible="{Binding GifResults.Count}" />
+        <!-- GIF grid -->
+        <WrapPanel Name="GifResultsPanel" />
+
+        <!-- Sticker section header -->
+        <TextBlock Text="Stickers"
+                   FontSize="11" Foreground="#70FFFFFF"
+                   Margin="0,4,0,4"
+                   IsVisible="{Binding StickerResults.Count}" />
+        <!-- Sticker grid -->
+        <WrapPanel Name="StickerResultsPanel" />
+
+        <!-- Loading indicator -->
+        <TextBlock Text="Đang tải..."
+                   FontSize="12"
+                   Foreground="#60FFFFFF"
+                   HorizontalAlignment="Center"
+                   Margin="0,20"
+                   IsVisible="{Binding IsLoading}" />
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</UserControl>

@@ -181,6 +181,7 @@ private:
     std::chrono::steady_clock::time_point suppressSwitchHotkeyMessageUntil_;
     std::chrono::steady_clock::time_point suppressEmojiHotkeyMessageUntil_;
     HANDLE runtimeConfigChangedEvent_;
+    HANDLE emojiPickerEvent_;
 };
 
 } // namespace phtv::windows_hook

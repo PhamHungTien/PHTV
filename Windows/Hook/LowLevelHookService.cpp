@@ -564,7 +564,8 @@ LowLevelHookService::LowLevelHookService()
       emojiHotkeyRegistered_(false),
       suppressSwitchHotkeyMessageUntil_(std::chrono::steady_clock::time_point::min()),
       suppressEmojiHotkeyMessageUntil_(std::chrono::steady_clock::time_point::min()),
-      runtimeConfigChangedEvent_(nullptr) {
+      runtimeConfigChangedEvent_(nullptr),
+      emojiPickerEvent_(nullptr) {
 }
 
 LowLevelHookService::~LowLevelHookService() {
@@ -727,15 +728,26 @@ void LowLevelHookService::initializeRuntimeConfigSignal() {
     if (runtimeConfigChangedEvent_ == nullptr) {
         std::cerr << "[PHTV] CreateEvent for runtime config signal failed, error=" << GetLastError() << "\n";
     }
+
+    // Try to open the emoji picker event (created by the C# app)
+    if (emojiPickerEvent_ == nullptr) {
+        emojiPickerEvent_ = OpenEventW(EVENT_MODIFY_STATE, FALSE, L"Local\\PHTV.Windows.OpenEmojiPicker");
+        if (emojiPickerEvent_ == nullptr) {
+            std::cerr << "[PHTV] OpenEvent for emoji picker failed (app may not be running), error=" << GetLastError() << "\n";
+        }
+    }
 }
 
 void LowLevelHookService::shutdownRuntimeConfigSignal() {
-    if (runtimeConfigChangedEvent_ == nullptr) {
-        return;
+    if (runtimeConfigChangedEvent_ != nullptr) {
+        CloseHandle(runtimeConfigChangedEvent_);
+        runtimeConfigChangedEvent_ = nullptr;
     }
 
-    CloseHandle(runtimeConfigChangedEvent_);
-    runtimeConfigChangedEvent_ = nullptr;
+    if (emojiPickerEvent_ != nullptr) {
+        CloseHandle(emojiPickerEvent_);
+        emojiPickerEvent_ = nullptr;
+    }
 }
 
 bool LowLevelHookService::consumeRuntimeConfigSignal() const {
@@ -1306,17 +1318,11 @@ void LowLevelHookService::toggleLanguageByHotkey() {
 }
 
 void LowLevelHookService::triggerEmojiPanel() {
-#ifdef VK_OEM_PERIOD
-    constexpr Uint16 kEmojiTriggerVirtualKey = VK_OEM_PERIOD;
-#else
-    constexpr Uint16 kEmojiTriggerVirtualKey = 0xBE;
-#endif
-
     std::cerr << "[PHTV] Emoji hotkey fired, modifierMask=0x"
               << std::hex << modifierMask_ << std::dec << "\n";
 
-    // Release any physically-held modifier keys so the OS receives a clean
-    // Win+. instead of e.g. Ctrl+Win+. which would not open the emoji panel.
+    // Release any physically-held modifier keys so they don't interfere
+    // with the picker or the fallback Win+. shortcut.
     const Uint32 savedMask = modifierMask_;
     if (savedMask & kMaskControl) {
         sendVirtualKey(VK_LCONTROL, false);
@@ -1328,10 +1334,30 @@ void LowLevelHookService::triggerEmojiPanel() {
         sendVirtualKey(VK_LMENU, false);
     }
 
-    sendVirtualKey(VK_LWIN, true);
-    sendVirtualKey(kEmojiTriggerVirtualKey, true);
-    sendVirtualKey(kEmojiTriggerVirtualKey, false);
-    sendVirtualKey(VK_LWIN, false);
+    // Try to signal the PHTV Picker event (custom picker in the C# app).
+    // If the event handle is not available (app not running), try to open it.
+    if (emojiPickerEvent_ == nullptr) {
+        emojiPickerEvent_ = OpenEventW(EVENT_MODIFY_STATE, FALSE, L"Local\\PHTV.Windows.OpenEmojiPicker");
+    }
+
+    if (emojiPickerEvent_ != nullptr) {
+        SetEvent(emojiPickerEvent_);
+        std::cerr << "[PHTV] Signaled PHTV Picker event\n";
+    } else {
+        // Fallback: open system emoji panel via Win+.
+        std::cerr << "[PHTV] Picker event not available, falling back to Win+.\n";
+
+#ifdef VK_OEM_PERIOD
+        constexpr Uint16 kEmojiTriggerVirtualKey = VK_OEM_PERIOD;
+#else
+        constexpr Uint16 kEmojiTriggerVirtualKey = 0xBE;
+#endif
+
+        sendVirtualKey(VK_LWIN, true);
+        sendVirtualKey(kEmojiTriggerVirtualKey, true);
+        sendVirtualKey(kEmojiTriggerVirtualKey, false);
+        sendVirtualKey(VK_LWIN, false);
+    }
 
     // Re-press modifiers that the user is still physically holding so that
     // the OS modifier state stays consistent with the physical keyboard.

@@ -4,6 +4,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform;
 using Avalonia.Threading;
+using PHTV.Windows.Picker;
 using PHTV.Windows.Services;
 using PHTV.Windows.ViewModels;
 using System;
@@ -68,6 +69,9 @@ public sealed partial class App : Application {
     private bool _startedFromStartupEntry;
     private EventWaitHandle? _activateEvent;
     private RegisteredWaitHandle? _activateEventWaitHandle;
+    private EventWaitHandle? _emojiPickerEvent;
+    private RegisteredWaitHandle? _emojiPickerWaitHandle;
+    private EmojiPickerWindow? _emojiPickerWindow;
 
     public override void Initialize() {
         AvaloniaXamlLoader.Load(this);
@@ -104,7 +108,8 @@ public sealed partial class App : Application {
             }
 
             StartSingleInstanceActivationListener();
-            desktop.Exit += (_, _) => StopSingleInstanceActivationListener();
+            StartEmojiPickerListener();
+            desktop.Exit += (_, _) => StopEventListeners();
         }
 
         base.OnFrameworkInitializationCompleted();
@@ -490,14 +495,55 @@ public sealed partial class App : Application {
         }
     }
 
-    private void StopSingleInstanceActivationListener() {
+    private void StartEmojiPickerListener() {
+        try {
+            _emojiPickerEvent = new EventWaitHandle(
+                initialState: false,
+                mode: EventResetMode.AutoReset,
+                name: @"Local\PHTV.Windows.OpenEmojiPicker");
+
+            _emojiPickerWaitHandle = ThreadPool.RegisterWaitForSingleObject(
+                _emojiPickerEvent,
+                static (state, timedOut) => {
+                    if (timedOut || state is not App app) return;
+                    Dispatcher.UIThread.Post(() => app.ShowEmojiPicker());
+                },
+                this,
+                Timeout.Infinite,
+                executeOnlyOnce: false);
+        } catch (Exception ex) {
+            StartupDiagnostics.WriteException("Failed to initialize emoji picker listener", ex);
+        }
+    }
+
+    private void ShowEmojiPicker() {
+        // Toggle: if already open, close it
+        if (_emojiPickerWindow is { IsVisible: true }) {
+            _emojiPickerWindow.Close();
+            _emojiPickerWindow = null;
+            return;
+        }
+
+        var previousWindow = EmojiInsertionService.SaveForegroundWindow();
+        var viewModel = new EmojiPickerViewModel();
+        _emojiPickerWindow = new EmojiPickerWindow(viewModel, previousWindow);
+        _emojiPickerWindow.Closed += (_, _) => _emojiPickerWindow = null;
+        _emojiPickerWindow.ShowAtMousePosition();
+    }
+
+    private void StopEventListeners() {
         try {
             _activateEventWaitHandle?.Unregister(null);
             _activateEventWaitHandle = null;
             _activateEvent?.Dispose();
             _activateEvent = null;
+
+            _emojiPickerWaitHandle?.Unregister(null);
+            _emojiPickerWaitHandle = null;
+            _emojiPickerEvent?.Dispose();
+            _emojiPickerEvent = null;
         } catch (Exception ex) {
-            StartupDiagnostics.WriteException("Failed to dispose single-instance activation listener", ex);
+            StartupDiagnostics.WriteException("Failed to dispose event listeners", ex);
         }
     }
 

@@ -1,0 +1,52 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:picker="clr-namespace:PHTV.Windows.Picker"
+             x:Class="PHTV.Windows.Picker.Tabs.EmojiCategoriesTabView"
+             x:DataType="picker:EmojiPickerViewModel">
+
+  <DockPanel>
+    <!-- Search bar -->
+    <Border DockPanel.Dock="Top" Margin="12,8" Padding="8,6"
+            CornerRadius="8" Background="#15FFFFFF">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <TextBlock Grid.Column="0" Text="🔍" FontSize="13"
+                   VerticalAlignment="Center" Margin="0,0,6,0"
+                   Foreground="#70FFFFFF" />
+        <TextBox Grid.Column="1"
+                 Text="{Binding SearchText, Mode=TwoWay}"
+                 Watermark="Tìm emoji..."
+                 FontSize="13"
+                 Background="Transparent"
+                 BorderThickness="0"
+                 Foreground="#CCFFFFFF"
+                 CaretBrush="#CCFFFFFF"
+                 Name="SearchBox" />
+        <Button Grid.Column="2"
+                Content="✕" FontSize="11"
+                Background="Transparent"
+                Foreground="#60FFFFFF"
+                Padding="4,2"
+                IsVisible="{Binding SearchText.Length}"
+                Click="OnClearSearch"
+                Cursor="Hand" />
+      </Grid>
+    </Border>
+
+    <!-- Sub-category tabs -->
+    <ScrollViewer DockPanel.Dock="Top"
+                  HorizontalScrollBarVisibility="Auto"
+                  VerticalScrollBarVisibility="Disabled"
+                  Margin="12,0,12,4">
+      <StackPanel Orientation="Horizontal" Spacing="2" Name="SubCategoryTabs" />
+    </ScrollViewer>
+
+    <!-- Separator -->
+    <Border DockPanel.Dock="Top" Height="1" Background="#15808080" Margin="12,0" />
+
+    <!-- Emoji grid -->
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+      <WrapPanel Name="EmojiGrid" Margin="12,8,12,12" />
+    </ScrollViewer>
+  </DockPanel>
+</UserControl>
