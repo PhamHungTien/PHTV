@@ -17,12 +17,15 @@
         </Grid>
       </Border>
 
+      <!-- DataContext switched to SettingsState to avoid nested property path binding issues -->
+      <StackPanel Spacing="20" DataContext="{Binding State}">
+
       <!-- Chuyển chế độ gõ -->
       <Border Classes="settings-card">
         <StackPanel>
           <Border Classes="settings-card-header indigo">
             <Grid ColumnDefinitions="40,*">
-              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text=""/></Border>
+              <Border Classes="settings-card-icon"><TextBlock Classes="settings-card-icon-text" Text=""/></Border>
               <StackPanel Grid.Column="1" Spacing="2">
                 <TextBlock Classes="settings-card-title" Text="Chuyển chế độ gõ"/>
                 <TextBlock Classes="settings-card-subtitle" Text="Thiết lập phím tắt nhanh theo kiểu Windows"/>
@@ -34,31 +37,31 @@
             <StackPanel Spacing="8">
               <TextBlock Classes="settings-row-title" Text="Phím bổ trợ"/>
               <UniformGrid Columns="5">
-                <ToggleButton Classes="hotkey-selector-button" Margin="0,0,4,0" IsChecked="{Binding State.SwitchHotkeyControl, Mode=TwoWay}">
+                <ToggleButton Classes="hotkey-selector-button" Margin="0,0,4,0" IsChecked="{Binding SwitchHotkeyControl}">
                   <StackPanel HorizontalAlignment="Center">
                     <TextBlock Classes="symbol" Text="Ctrl"/>
                     <TextBlock Classes="label" Text="Control"/>
                   </StackPanel>
                 </ToggleButton>
-                <ToggleButton Classes="hotkey-selector-button" Margin="4,0,4,0" IsChecked="{Binding State.SwitchHotkeyOption, Mode=TwoWay}">
+                <ToggleButton Classes="hotkey-selector-button" Margin="4,0,4,0" IsChecked="{Binding SwitchHotkeyOption}">
                   <StackPanel HorizontalAlignment="Center">
                     <TextBlock Classes="symbol" Text="Alt"/>
                     <TextBlock Classes="label" Text="Alt"/>
                   </StackPanel>
                 </ToggleButton>
-                <ToggleButton Classes="hotkey-selector-button" Margin="4,0,4,0" IsChecked="{Binding State.SwitchHotkeyCommand, Mode=TwoWay}">
+                <ToggleButton Classes="hotkey-selector-button" Margin="4,0,4,0" IsChecked="{Binding SwitchHotkeyCommand}">
                   <StackPanel HorizontalAlignment="Center">
-                    <TextBlock Classes="symbol" Text=""/>
+                    <TextBlock Classes="symbol" Text=""/>
                     <TextBlock Classes="label" Text="Win"/>
                   </StackPanel>
                 </ToggleButton>
-                <ToggleButton Classes="hotkey-selector-button" Margin="4,0,4,0" IsChecked="{Binding State.SwitchHotkeyShift, Mode=TwoWay}">
+                <ToggleButton Classes="hotkey-selector-button" Margin="4,0,4,0" IsChecked="{Binding SwitchHotkeyShift}">
                   <StackPanel HorizontalAlignment="Center">
                     <TextBlock Classes="symbol" Text="⇧"/>
                     <TextBlock Classes="label" Text="Shift"/>
                   </StackPanel>
                 </ToggleButton>
-                <ToggleButton Classes="hotkey-selector-button" Margin="4,0,0,0" IsChecked="{Binding State.SwitchHotkeyFn, Mode=TwoWay}">
+                <ToggleButton Classes="hotkey-selector-button" Margin="4,0,0,0" IsChecked="{Binding SwitchHotkeyFn}">
                   <StackPanel HorizontalAlignment="Center">
                     <TextBlock Classes="symbol" Text="fn"/>
                     <TextBlock Classes="label" Text="Fn"/>
@@ -77,14 +80,14 @@
               </StackPanel>
               <ComboBox Grid.Column="1"
                         Classes="hotkey-primary-selector"
-                        ItemsSource="{Binding State.SwitchHotkeyPrimaryOptions}"
-                        SelectedItem="{Binding State.SwitchHotkeyPrimary, Mode=TwoWay}"/>
+                        ItemsSource="{Binding SwitchHotkeyPrimaryOptions}"
+                        SelectedItem="{Binding SwitchHotkeyPrimary}"/>
             </Grid>
 
             <Border Classes="hotkey-preview">
               <StackPanel Spacing="2">
                 <TextBlock Classes="hotkey-preview-label" Text="Tổ hợp hiện tại"/>
-                <TextBlock Classes="hotkey-preview-value" Text="{Binding State.SwitchHotkeyDisplay}"/>
+                <TextBlock Classes="hotkey-preview-value" Text="{Binding SwitchHotkeyDisplay}"/>
               </StackPanel>
             </Border>
           </StackPanel>
@@ -110,19 +113,19 @@
                 <TextBlock Classes="settings-row-title" Text="Hoàn tác về ký tự gốc"/>
                 <TextBlock Classes="settings-row-subtitle" Text="Dùng phím hoàn tác để trả về ký tự trước khi biến đổi"/>
               </StackPanel>
-              <ToggleSwitch Grid.Column="1" IsChecked="{Binding State.RestoreOnEscape, Mode=TwoWay}"/>
+              <ToggleSwitch Grid.Column="1" IsChecked="{Binding RestoreOnEscape}"/>
             </Grid>
-            
-            <StackPanel Spacing="8" IsVisible="{Binding State.RestoreOnEscape}">
+
+            <StackPanel Spacing="8" IsVisible="{Binding RestoreOnEscape}">
               <TextBlock Classes="settings-row-title" Text="Chọn phím hoàn tác"/>
               <UniformGrid Columns="3">
-                <ToggleButton Classes="hotkey-selector-button" Margin="0,0,6,0" IsChecked="{Binding State.RestoreKeyEscSelected, Mode=TwoWay}">
+                <ToggleButton Classes="hotkey-selector-button" Margin="0,0,6,0" IsChecked="{Binding RestoreKeyEscSelected}">
                   <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="⎋"/><TextBlock Classes="label" Text="ESC"/></StackPanel>
                 </ToggleButton>
-                <ToggleButton Classes="hotkey-selector-button" Margin="6,0,6,0" IsChecked="{Binding State.RestoreKeyOptionSelected, Mode=TwoWay}">
+                <ToggleButton Classes="hotkey-selector-button" Margin="6,0,6,0" IsChecked="{Binding RestoreKeyOptionSelected}">
                   <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="Alt"/><TextBlock Classes="label" Text="Alt"/></StackPanel>
                 </ToggleButton>
-                <ToggleButton Classes="hotkey-selector-button" Margin="6,0,0,0" IsChecked="{Binding State.RestoreKeyControlSelected, Mode=TwoWay}">
+                <ToggleButton Classes="hotkey-selector-button" Margin="6,0,0,0" IsChecked="{Binding RestoreKeyControlSelected}">
                   <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="Ctrl"/><TextBlock Classes="label" Text="Ctrl"/></StackPanel>
                 </ToggleButton>
               </UniformGrid>
@@ -150,19 +153,19 @@
                 <TextBlock Classes="settings-row-title" Text="Bật phím tạm dừng"/>
                 <TextBlock Classes="settings-row-subtitle" Text="Giữ phím để tạm chuyển sang English"/>
               </StackPanel>
-              <ToggleSwitch Grid.Column="1" IsChecked="{Binding State.PauseKeyEnabled, Mode=TwoWay}"/>
+              <ToggleSwitch Grid.Column="1" IsChecked="{Binding PauseKeyEnabled}"/>
             </Grid>
-            
-            <StackPanel Spacing="8" IsVisible="{Binding State.PauseKeyEnabled}">
+
+            <StackPanel Spacing="8" IsVisible="{Binding PauseKeyEnabled}">
               <TextBlock Classes="settings-row-title" Text="Phím tạm dừng"/>
               <UniformGrid Columns="3">
-                <ToggleButton Classes="hotkey-selector-button" Margin="0,0,6,0" IsChecked="{Binding State.PauseKeyAltSelected, Mode=TwoWay}">
+                <ToggleButton Classes="hotkey-selector-button" Margin="0,0,6,0" IsChecked="{Binding PauseKeyAltSelected}">
                   <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="Alt"/><TextBlock Classes="label" Text="Alt"/></StackPanel>
                 </ToggleButton>
-                <ToggleButton Classes="hotkey-selector-button" Margin="6,0,6,0" IsChecked="{Binding State.PauseKeyControlSelected, Mode=TwoWay}">
+                <ToggleButton Classes="hotkey-selector-button" Margin="6,0,6,0" IsChecked="{Binding PauseKeyControlSelected}">
                   <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="Ctrl"/><TextBlock Classes="label" Text="Ctrl"/></StackPanel>
                 </ToggleButton>
-                <ToggleButton Classes="hotkey-selector-button" Margin="6,0,0,0" IsChecked="{Binding State.PauseKeyShiftSelected, Mode=TwoWay}">
+                <ToggleButton Classes="hotkey-selector-button" Margin="6,0,0,0" IsChecked="{Binding PauseKeyShiftSelected}">
                   <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="⇧"/><TextBlock Classes="label" Text="Shift"/></StackPanel>
                 </ToggleButton>
               </UniformGrid>
@@ -190,28 +193,28 @@
                 <TextBlock Classes="settings-row-title" Text="Bật hotkey PHTV Picker"/>
                 <TextBlock Classes="settings-row-subtitle" Text="Mở nhanh picker trong mọi ứng dụng"/>
               </StackPanel>
-              <ToggleSwitch Grid.Column="1" IsChecked="{Binding State.EmojiHotkeyEnabled, Mode=TwoWay}"/>
+              <ToggleSwitch Grid.Column="1" IsChecked="{Binding EmojiHotkeyEnabled}"/>
             </Grid>
 
-            <StackPanel IsVisible="{Binding State.EmojiHotkeyEnabled}" Spacing="16">
+            <StackPanel IsVisible="{Binding EmojiHotkeyEnabled}" Spacing="16">
               <Border Classes="settings-divider"/>
 
               <StackPanel Spacing="8">
                 <TextBlock Classes="settings-row-title" Text="Phím bổ trợ"/>
                 <UniformGrid Columns="5">
-                  <ToggleButton Classes="hotkey-selector-button" Margin="0,0,4,0" IsChecked="{Binding State.EmojiHotkeyControl, Mode=TwoWay}">
+                  <ToggleButton Classes="hotkey-selector-button" Margin="0,0,4,0" IsChecked="{Binding EmojiHotkeyControl}">
                     <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="Ctrl"/><TextBlock Classes="label" Text="Ctrl"/></StackPanel>
                   </ToggleButton>
-                  <ToggleButton Classes="hotkey-selector-button" Margin="4,0,4,0" IsChecked="{Binding State.EmojiHotkeyOption, Mode=TwoWay}">
+                  <ToggleButton Classes="hotkey-selector-button" Margin="4,0,4,0" IsChecked="{Binding EmojiHotkeyOption}">
                     <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="Alt"/><TextBlock Classes="label" Text="Alt"/></StackPanel>
                   </ToggleButton>
-                  <ToggleButton Classes="hotkey-selector-button" Margin="4,0,4,0" IsChecked="{Binding State.EmojiHotkeyCommand, Mode=TwoWay}">
-                    <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text=""/><TextBlock Classes="label" Text="Win"/></StackPanel>
+                  <ToggleButton Classes="hotkey-selector-button" Margin="4,0,4,0" IsChecked="{Binding EmojiHotkeyCommand}">
+                    <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text=""/><TextBlock Classes="label" Text="Win"/></StackPanel>
                   </ToggleButton>
-                  <ToggleButton Classes="hotkey-selector-button" Margin="4,0,4,0" IsChecked="{Binding State.EmojiHotkeyShift, Mode=TwoWay}">
+                  <ToggleButton Classes="hotkey-selector-button" Margin="4,0,4,0" IsChecked="{Binding EmojiHotkeyShift}">
                     <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="⇧"/><TextBlock Classes="label" Text="Shift"/></StackPanel>
                   </ToggleButton>
-                  <ToggleButton Classes="hotkey-selector-button" Margin="4,0,0,0" IsChecked="{Binding State.EmojiHotkeyFn, Mode=TwoWay}">
+                  <ToggleButton Classes="hotkey-selector-button" Margin="4,0,0,0" IsChecked="{Binding EmojiHotkeyFn}">
                     <StackPanel HorizontalAlignment="Center"><TextBlock Classes="symbol" Text="fn"/><TextBlock Classes="label" Text="Fn"/></StackPanel>
                   </ToggleButton>
                 </UniformGrid>
@@ -224,20 +227,22 @@
                 </StackPanel>
                 <ComboBox Grid.Column="1"
                           Classes="hotkey-primary-selector"
-                          ItemsSource="{Binding State.EmojiHotkeyPrimaryOptions}"
-                          SelectedItem="{Binding State.EmojiHotkeyPrimary, Mode=TwoWay}"/>
+                          ItemsSource="{Binding EmojiHotkeyPrimaryOptions}"
+                          SelectedItem="{Binding EmojiHotkeyPrimary}"/>
               </Grid>
 
               <Border Classes="hotkey-preview">
                 <StackPanel Spacing="2">
                   <TextBlock Classes="hotkey-preview-label" Text="Tổ hợp hiện tại"/>
-                  <TextBlock Classes="hotkey-preview-value" Text="{Binding State.EmojiHotkeyDisplay}"/>
+                  <TextBlock Classes="hotkey-preview-value" Text="{Binding EmojiHotkeyDisplay}"/>
                 </StackPanel>
               </Border>
             </StackPanel>
           </StackPanel>
         </StackPanel>
       </Border>
+
+      </StackPanel>
     </StackPanel>
   </ScrollViewer>
 </UserControl>
