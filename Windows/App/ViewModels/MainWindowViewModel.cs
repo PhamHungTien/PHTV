@@ -77,6 +77,11 @@ public sealed class MainWindowViewModel : ObservableObject {
         nameof(SettingsState.SendKeyStepByStep),
         nameof(SettingsState.PerformLayoutCompat)
     };
+    private static readonly HashSet<string> HotkeyRestartPropertyNames = new(StringComparer.Ordinal) {
+        nameof(SettingsState.SwitchHotkey),
+        nameof(SettingsState.EmojiHotkey),
+        nameof(SettingsState.EmojiHotkeyEnabled),
+    };
     private static readonly HashSet<string> ImmediatePersistPropertyNames = new(StringComparer.Ordinal) {
         nameof(SettingsState.SwitchHotkey),
         nameof(SettingsState.RestoreOnEscape),
@@ -96,6 +101,7 @@ public sealed class MainWindowViewModel : ObservableObject {
     private readonly BugReportService _bugReportService;
     private readonly RuntimeBridgeService _runtimeBridgeService;
     private readonly DispatcherTimer _saveDebounceTimer;
+    private readonly DispatcherTimer _hotkeyRestartDebounceTimer;
     private readonly DispatcherTimer _daemonStatusTimer;
 
     private readonly AsyncRelayCommand _addCategoryCommand;
@@ -239,6 +245,13 @@ public sealed class MainWindowViewModel : ObservableObject {
         _saveDebounceTimer.Tick += (_, _) => {
             _saveDebounceTimer.Stop();
             PersistStateNow();
+        };
+        _hotkeyRestartDebounceTimer = new DispatcherTimer {
+            Interval = TimeSpan.FromMilliseconds(800)
+        };
+        _hotkeyRestartDebounceTimer.Tick += (_, _) => {
+            _hotkeyRestartDebounceTimer.Stop();
+            RestartDaemonForHotkeyChange();
         };
         _daemonStatusTimer = new DispatcherTimer {
             Interval = TimeSpan.FromSeconds(2)
@@ -578,6 +591,10 @@ public sealed class MainWindowViewModel : ObservableObject {
             TrySyncRuntimeArtifactsImmediately();
         }
 
+        if (HotkeyRestartPropertyNames.Contains(propertyName)) {
+            ScheduleHotkeyDaemonRestart();
+        }
+
         if (ImmediatePersistPropertyNames.Contains(propertyName)) {
             PersistStateNow();
             return;
@@ -739,6 +756,35 @@ public sealed class MainWindowViewModel : ObservableObject {
 
     private void SyncRuntimeArtifacts() {
         _runtimeBridgeService.WriteRuntimeArtifacts(State);
+    }
+
+    private void ScheduleHotkeyDaemonRestart() {
+        if (_isApplyingSnapshot || !_runtimeBridgeService.IsSupported) {
+            return;
+        }
+
+        _hotkeyRestartDebounceTimer.Stop();
+        _hotkeyRestartDebounceTimer.Start();
+    }
+
+    private void RestartDaemonForHotkeyChange() {
+        if (!_runtimeBridgeService.IsSupported) {
+            return;
+        }
+
+        try {
+            SyncRuntimeArtifacts();
+
+            if (_runtimeBridgeService.TryRestartDaemon(out var message)) {
+                RefreshInputDaemonStatus();
+                StatusMessage = $"Đã cập nhật phím tắt: {message}";
+            } else {
+                RefreshInputDaemonStatus();
+                StatusMessage = $"Không khởi động lại daemon sau khi đổi phím tắt: {message}";
+            }
+        } catch (Exception ex) {
+            StatusMessage = $"Lỗi khi đồng bộ phím tắt: {ex.Message}";
+        }
     }
 
     private void TrySyncRuntimeArtifactsImmediately() {
