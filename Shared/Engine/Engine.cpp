@@ -2101,8 +2101,10 @@ void vKeyHandleEvent(const vKeyEvent& event,
         }
 
         if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp) {
-            if (isSentenceTerminator(data, capsStatus)) {
-                _upperCaseStatus = 2;
+            if (data == KEY_ENTER || data == KEY_RETURN) {
+                _upperCaseStatus = 2; // Capitalize immediately after newline
+            } else if (isSentenceTerminator(data, capsStatus)) {
+                _upperCaseStatus = 1; // Pending: needs space to confirm (e.g. "." "?" "!")
             } else if (_upperCaseStatus > 0 && isUppercaseSkippablePunctuation(data, capsStatus)) {
                 // Keep pending uppercase across quotes/brackets/parentheses
             } else {
