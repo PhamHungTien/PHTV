@@ -322,6 +322,34 @@ static inline bool isUppercaseSkippablePunctuation(const Uint16& data, const Uin
     return false;
 }
 
+static inline bool isEnglishLetterKeyCode(const Uint16& keyCode) {
+    switch (keyCode) {
+        case KEY_A: case KEY_B: case KEY_C: case KEY_D: case KEY_E:
+        case KEY_F: case KEY_G: case KEY_H: case KEY_I: case KEY_J:
+        case KEY_K: case KEY_L: case KEY_M: case KEY_N: case KEY_O:
+        case KEY_P: case KEY_Q: case KEY_R: case KEY_S: case KEY_T:
+        case KEY_U: case KEY_V: case KEY_W: case KEY_X: case KEY_Y:
+        case KEY_Z:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static inline int getEnglishLookupStateLength() {
+    int lookupLen = _stateIndex;
+    // Defensive trim: if a non-letter key was ever appended to KeyStates,
+    // do not include it in English dictionary lookup.
+    while (lookupLen > 0) {
+        Uint16 keyCode = static_cast<Uint16>(KeyStates[lookupLen - 1] & CHAR_MASK);
+        if (isEnglishLetterKeyCode(keyCode)) {
+            break;
+        }
+        lookupLen--;
+    }
+    return lookupLen;
+}
+
 void setKeyData(const Byte& index, const Uint16& keyCode, const bool& isCaps) {
     if (index < 0 || index >= MAX_BUFF)
         return;
@@ -1954,11 +1982,12 @@ void vKeyHandleEvent(const vKeyEvent& event,
                 checkSpelling(true);
             }
             bool shouldRestoreEnglish = false;
-            if (_stateIndex > 2) { // must have at least 2 keys + 1 word break
-                shouldRestoreEnglish = checkIfEnglishWord(KeyStates, _stateIndex - 1);
+            int englishStateIndex = getEnglishLookupStateLength();
+            if (englishStateIndex > 1) { // must have at least 2 letter keys
+                shouldRestoreEnglish = checkIfEnglishWord(KeyStates, englishStateIndex);
                 if (!shouldRestoreEnglish) {
-                    if (isEnglishWordFromKeyStates(KeyStates, _stateIndex - 1) &&
-                        !isVietnameseWordFromKeyStates(KeyStates, _stateIndex - 1) &&
+                    if (isEnglishWordFromKeyStates(KeyStates, englishStateIndex) &&
+                        !isVietnameseWordFromKeyStates(KeyStates, englishStateIndex) &&
                         !isVietnameseWordFromTypingWord(_index)) {
                         shouldRestoreEnglish = true;
                     }
@@ -2014,8 +2043,8 @@ void vKeyHandleEvent(const vKeyEvent& event,
                     }
                 }
             }
-            // IMPORTANT: Check _index > 0 (must have display chars) and _stateIndex > 1 (at least 2 keys pressed)
-            if (_index > 0 && _stateIndex > 1 && shouldRestoreEnglish) {
+            // IMPORTANT: Check _index > 0 (must have display chars) and englishStateIndex > 1 (at least 2 keys pressed)
+            if (_index > 0 && englishStateIndex > 1 && shouldRestoreEnglish) {
                 // Auto restore English word feature
                 // checkIfEnglishWord returns true only if:
                 // - Word exists in English dictionary AND
@@ -2026,20 +2055,20 @@ void vKeyHandleEvent(const vKeyEvent& event,
                 // _stateIndex=6 but _index=5, so we must delete based on display count
                 // to avoid deleting characters before the word
                 hBPC = _index;  // Backspace count = display character count
-                hNCC = _stateIndex;  // Insert count = original keystroke count (English word)
+                hNCC = englishStateIndex;  // Insert count = original keystroke count (English word)
                 hExt = 5;  // Signal: This is Auto English restore (not Text Replacement)
-                for (i = 0; i < _stateIndex; i++) {
+                for (i = 0; i < englishStateIndex; i++) {
                     TypingWord[i] = KeyStates[i];
-                    hData[_stateIndex - 1 - i] = KeyStates[i];
+                    hData[englishStateIndex - 1 - i] = KeyStates[i];
                 }
                 // Apply uppercase first character if enabled
                 // Use _shouldUpperCaseEnglishRestore which was set when first char was typed
                 // Also check if current app is NOT excluded from uppercase feature
-                if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _shouldUpperCaseEnglishRestore && _stateIndex > 0) {
-                    hData[_stateIndex - 1] |= CAPS_MASK;
+                if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _shouldUpperCaseEnglishRestore && englishStateIndex > 0) {
+                    hData[englishStateIndex - 1] |= CAPS_MASK;
                 }
                 _shouldUpperCaseEnglishRestore = false;
-                _index = _stateIndex;
+                _index = englishStateIndex;
                 // CRITICAL FIX: Reset session immediately to prevent state pollution
                 // Without this, when typing fast or multiple words, _index/_stateIndex retain old values
                 // causing intermittent failures ("sometimes works, sometimes doesn't")
@@ -2052,12 +2081,12 @@ void vKeyHandleEvent(const vKeyEvent& event,
                 #endif
             #ifdef DEBUG
             } else if (_stateIndex > 0) {
-                std::string word = keyStatesToString(KeyStates, _stateIndex);
+                std::string word = keyStatesToString(KeyStates, englishStateIndex);
                 fprintf(stderr, "[AutoEnglish] ✗ WORD BREAK NO RESTORE: word='%s', _index=%d, _stateIndex=%d, blocked by: ",
                        word.c_str(), _index, _stateIndex);
                 if (_index <= 0) fprintf(stderr, "_index<=0 ");
-                if (_stateIndex <= 1) fprintf(stderr, "_stateIndex<=1 ");
-                if (!checkIfEnglishWord(KeyStates, _stateIndex)) fprintf(stderr, "notEnglish ");
+                if (englishStateIndex <= 1) fprintf(stderr, "englishStateIndex<=1 ");
+                if (!checkIfEnglishWord(KeyStates, englishStateIndex)) fprintf(stderr, "notEnglish ");
                 fprintf(stderr, "\n");
                 fflush(stderr);
             #endif
@@ -2127,11 +2156,12 @@ void vKeyHandleEvent(const vKeyEvent& event,
             checkSpelling(true); //force check spelling (ignore tempDisableKey for Auto English)
         }
         bool shouldRestoreEnglish = false;
-        if (vAutoRestoreEnglishWord && _index > 0 && _stateIndex > 2) { // must have at least 2 keys + 1 space
-            shouldRestoreEnglish = checkIfEnglishWord(KeyStates, _stateIndex - 1);
+        int englishStateIndex = getEnglishLookupStateLength();
+        if (vAutoRestoreEnglishWord && _index > 0 && englishStateIndex > 1) { // must have at least 2 letter keys
+            shouldRestoreEnglish = checkIfEnglishWord(KeyStates, englishStateIndex);
             if (!shouldRestoreEnglish) {
-                if (isEnglishWordFromKeyStates(KeyStates, _stateIndex - 1) &&
-                    !isVietnameseWordFromKeyStates(KeyStates, _stateIndex - 1) &&
+                if (isEnglishWordFromKeyStates(KeyStates, englishStateIndex) &&
+                    !isVietnameseWordFromKeyStates(KeyStates, englishStateIndex) &&
                     !isVietnameseWordFromTypingWord(_index)) {
                     shouldRestoreEnglish = true;
                 }
@@ -2203,7 +2233,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             fprintf(stderr, "[AutoEnglish] Macro matched, Auto English skipped\n");
             fflush(stderr);
             #endif
-        } else if (vAutoRestoreEnglishWord && _index > 0 && _stateIndex > 1 && shouldRestoreEnglish) {
+        } else if (vAutoRestoreEnglishWord && _index > 0 && englishStateIndex > 1 && shouldRestoreEnglish) {
             // PRIORITY FIX: Check Auto English BEFORE Quick Consonant
             // Auto English should have higher priority to prevent conflicts
             // (e.g., "search" ending in "ch" shouldn't trigger Quick Consonant)
@@ -2220,20 +2250,20 @@ void vKeyHandleEvent(const vKeyEvent& event,
             // _stateIndex=6 but _index=5, so we must delete based on display count
             // to avoid deleting the space before the word
             hBPC = _index;  // Backspace count = display character count
-            hNCC = _stateIndex;  // Insert count = original keystroke count (English word)
+            hNCC = englishStateIndex;  // Insert count = original keystroke count (English word)
             hExt = 5;  // Signal: This is Auto English restore (not Text Replacement)
-            for (i = 0; i < _stateIndex; i++) {
+            for (i = 0; i < englishStateIndex; i++) {
                 TypingWord[i] = KeyStates[i];
-                hData[_stateIndex - 1 - i] = KeyStates[i];
+                hData[englishStateIndex - 1 - i] = KeyStates[i];
             }
             // Apply uppercase first character if enabled
             // Use _shouldUpperCaseEnglishRestore which was set when first char was typed
             // Also check if current app is NOT excluded from uppercase feature
-            if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _shouldUpperCaseEnglishRestore && _stateIndex > 0) {
-                hData[_stateIndex - 1] |= CAPS_MASK;
+            if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _shouldUpperCaseEnglishRestore && englishStateIndex > 0) {
+                hData[englishStateIndex - 1] |= CAPS_MASK;
             }
             _shouldUpperCaseEnglishRestore = false;
-            _index = _stateIndex;
+            _index = englishStateIndex;
             _spaceCount++;
             // Reset session after restore to prevent re-triggering on next key (e.g., arrow keys)
             // This is different from vRestoreAndStartNewSession which also sends the break key
@@ -2247,12 +2277,12 @@ void vKeyHandleEvent(const vKeyEvent& event,
             #ifdef DEBUG
             // Log why Auto English didn't trigger (for debugging random failures)
             if (vAutoRestoreEnglishWord && _stateIndex > 0) {
-                std::string word = keyStatesToString(KeyStates, _stateIndex);
+                std::string word = keyStatesToString(KeyStates, englishStateIndex);
                 fprintf(stderr, "[AutoEnglish] ✗ SPACE NO RESTORE: word='%s', _stateIndex=%d, _index=%d, blocked by: ",
                        word.c_str(), _stateIndex, _index);
                 if (_index <= 0) fprintf(stderr, "_index<=0 ");
-                if (_stateIndex <= 1) fprintf(stderr, "_stateIndex<=1 ");
-                if (!checkIfEnglishWord(KeyStates, _stateIndex)) fprintf(stderr, "notEnglishWord ");
+                if (englishStateIndex <= 1) fprintf(stderr, "englishStateIndex<=1 ");
+                if (!checkIfEnglishWord(KeyStates, englishStateIndex)) fprintf(stderr, "notEnglishWord ");
                 fprintf(stderr, "\n");
                 fflush(stderr);
             }
