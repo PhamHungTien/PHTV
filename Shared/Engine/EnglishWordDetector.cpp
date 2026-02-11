@@ -755,6 +755,53 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
     // This fixes cases like "footer" (foot + er), "zoomed" (zoom + ed) when
     // full word is missing in dictionary but still clearly English.
     if (!isEnglish && hasTelexConflict(wordBuf, stateIndex)) {
+        auto tryDerivedReplacement = [&](const char* suffixFrom,
+                                         int suffixFromLen,
+                                         const char* suffixTo,
+                                         int suffixToLen) -> bool {
+            if (stateIndex <= suffixFromLen + 1) return false;
+            if (!endsWithSuffix(idx, stateIndex, suffixFrom, suffixFromLen)) return false;
+
+            int stemLen = stateIndex - suffixFromLen;
+            int derivedLen = stemLen + suffixToLen;
+            if (derivedLen < 2 || derivedLen >= 32) return false;
+
+            uint8_t derivedIdx[32];
+            for (int i = 0; i < stemLen; i++) {
+                derivedIdx[i] = idx[i];
+            }
+            for (int i = 0; i < suffixToLen; i++) {
+                derivedIdx[stemLen + i] = static_cast<uint8_t>(suffixTo[i] - 'a');
+            }
+
+            if (!searchBinaryTrie(engNodes, derivedIdx, derivedLen)) return false;
+
+            bool derivedNonVietnameseStart = startsWithNonVietnameseCluster(derivedIdx, derivedLen);
+            if (!derivedNonVietnameseStart && vieNodes && searchBinaryTrie(vieNodes, derivedIdx, derivedLen)) {
+                return false;
+            }
+
+            #ifdef DEBUG
+            char derivedWord[32];
+            for (int i = 0; i < derivedLen; i++) {
+                derivedWord[i] = static_cast<char>('a' + derivedIdx[i]);
+            }
+            derivedWord[derivedLen] = '\0';
+            fprintf(stderr, "[AutoEnglish] RESTORE: '%s' via derived base '%s'\n", wordBuf, derivedWord); fflush(stderr);
+            #endif
+            return true;
+        };
+
+        // Derivational fallback for words like:
+        // - responsible -> responsibility / responsibilities
+        // - possible -> possibility / possibilities
+        if (tryDerivedReplacement("abilities", 9, "able", 4) ||
+            tryDerivedReplacement("ibilities", 9, "ible", 4) ||
+            tryDerivedReplacement("ability", 7, "able", 4) ||
+            tryDerivedReplacement("ibility", 7, "ible", 4)) {
+            return true;
+        }
+
         static const struct { const char* s; int len; } suffixes[] = {
             {"ing", 3},
             {"ers", 3},
