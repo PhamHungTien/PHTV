@@ -187,6 +187,7 @@ static bool _isCaps = false;
 static int _spaceCount = 0; //add: July 30th, 2019
 static bool _hasHandledMacro = false; //for macro flag August 9th, 2019
 static volatile Byte _upperCaseStatus = 0; //for Write upper case for the first letter; 2: will upper case (VOLATILE for thread safety)
+static bool _upperCaseNeedsSpaceConfirm = false; //true when uppercase was triggered by . ? ! (needs space before capitalizing)
 static bool _shouldUpperCaseEnglishRestore = false; //track if English restore should uppercase first char
 static volatile Byte _snapshotUpperCaseFirstChar = 0; //snapshot of vUpperCaseFirstChar at session start (prevents mid-typing setting changes)
 static bool _isCharKeyCode;
@@ -681,6 +682,7 @@ void startNewSession() {
     _spaceCount = 0;
     _longWordHelper.clear();
     _upperCaseStatus = 0;
+    _upperCaseNeedsSpaceConfirm = false;
     // Snapshot settings at session start to prevent mid-typing changes from affecting this word
     _snapshotUpperCaseFirstChar = vUpperCaseFirstChar;
 }
@@ -2101,10 +2103,11 @@ void vKeyHandleEvent(const vKeyEvent& event,
         }
 
         if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp) {
-            if (data == KEY_ENTER || data == KEY_RETURN) {
-                _upperCaseStatus = 2; // Capitalize immediately after newline
-            } else if (isSentenceTerminator(data, capsStatus)) {
-                _upperCaseStatus = 1; // Pending: needs space to confirm (e.g. "." "?" "!")
+            if (isSentenceTerminator(data, capsStatus)) {
+                _upperCaseStatus = 2;
+                // Period, question mark, exclamation need space before capitalizing (e.g. "iegglobal.vn" should not capitalize "v")
+                // Enter/Return capitalize immediately (no space expected after newline)
+                _upperCaseNeedsSpaceConfirm = (data != KEY_ENTER && data != KEY_RETURN);
             } else if (_upperCaseStatus > 0 && isUppercaseSkippablePunctuation(data, capsStatus)) {
                 // Keep pending uppercase across quotes/brackets/parentheses
             } else {
@@ -2261,8 +2264,8 @@ void vKeyHandleEvent(const vKeyEvent& event,
             hMacroKey.clear();
             _hasHandledMacro = false;  // Reset when starting new word
         }
-        if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _upperCaseStatus == 1) {
-            _upperCaseStatus = 2;
+        if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _upperCaseNeedsSpaceConfirm) {
+            _upperCaseNeedsSpaceConfirm = false; // Space confirms: allow capitalize on next character
         }
         //save word
         if (_spaceCount == 1) {
@@ -2317,8 +2320,10 @@ void vKeyHandleEvent(const vKeyEvent& event,
                 // PERFORMANCE FIX: Removed file I/O from keystroke handler
                 // Debug logging moved to stderr (use PHTV_DEBUG=1 environment variable)
                 Byte savedUpperCaseStatus = _upperCaseStatus;
+                bool savedNeedsSpaceConfirm = _upperCaseNeedsSpaceConfirm;
                 startNewSession();
                 _upperCaseStatus = savedUpperCaseStatus;
+                _upperCaseNeedsSpaceConfirm = savedNeedsSpaceConfirm;
                 _specialChar.clear();
                 restoreLastTypingState();
             } else { //August 23rd continue check grammar
@@ -2338,8 +2343,10 @@ void vKeyHandleEvent(const vKeyEvent& event,
             // FIX: Save space count BEFORE startNewSession() resets it
             int savedSpaceCount = _spaceCount;
             Byte savedUpperCaseStatus = _upperCaseStatus;
+            bool savedNeedsSpaceConfirm = _upperCaseNeedsSpaceConfirm;
             startNewSession();
             _upperCaseStatus = savedUpperCaseStatus;
+            _upperCaseNeedsSpaceConfirm = savedNeedsSpaceConfirm;
             //continue save space
             saveWord(KEY_SPACE, savedSpaceCount);
             // _spaceCount is already 0 from startNewSession()
@@ -2442,12 +2449,13 @@ void vKeyHandleEvent(const vKeyEvent& event,
         }
         
         if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp) {
-            if (_index == 1 && _upperCaseStatus == 2) {
+            if (_index == 1 && _upperCaseStatus == 2 && !_upperCaseNeedsSpaceConfirm) {
                 upperCaseFirstCharacter();
                 // Track for English restore - in case Vietnamese transform didn't happen
                 _shouldUpperCaseEnglishRestore = true;
             }
             _upperCaseStatus = 0;
+            _upperCaseNeedsSpaceConfirm = false;
         }
         
         //case [ ]
