@@ -30,6 +30,13 @@ private:
 
     static LRESULT CALLBACK KeyboardHookProc(int nCode, WPARAM wParam, LPARAM lParam);
     static LRESULT CALLBACK MouseHookProc(int nCode, WPARAM wParam, LPARAM lParam);
+    static void CALLBACK ForegroundEventProc(HWINEVENTHOOK hWinEventHook,
+                                             DWORD event,
+                                             HWND hwnd,
+                                             LONG idObject,
+                                             LONG idChild,
+                                             DWORD dwEventThread,
+                                             DWORD dwmsEventTime);
 
     LRESULT handleKeyboard(WPARAM wParam, LPARAM lParam);
     LRESULT handleMouse(WPARAM wParam, LPARAM lParam);
@@ -138,6 +145,7 @@ private:
 
     HHOOK keyboardHook_;
     HHOOK mouseHook_;
+    HWINEVENTHOOK foregroundEventHook_;
     bool running_;
     bool hasThreadMessageQueue_;
     bool runtimeConfigLoaded_;

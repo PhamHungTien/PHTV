@@ -77,6 +77,7 @@ target_link_libraries(phtv_windows_hook
         oleaut32
         uiautomationcore
         uuid
+        imm32
 )
 
 add_executable(phtv_windows_console

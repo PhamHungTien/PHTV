@@ -21,6 +21,7 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+#include <imm.h>
 #include "Engine.h"
 #include "DictionaryBootstrap.h"
 #include "RuntimeConfig.h"
@@ -529,6 +530,7 @@ LowLevelHookService* LowLevelHookService::instance_ = nullptr;
 LowLevelHookService::LowLevelHookService()
     : keyboardHook_(nullptr),
       mouseHook_(nullptr),
+      foregroundEventHook_(nullptr),
       running_(false),
       hasThreadMessageQueue_(false),
       runtimeConfigLoaded_(false),
@@ -619,6 +621,19 @@ bool LowLevelHookService::start() {
         return false;
     }
 
+    // Register for foreground window change events so that browser/terminal
+    // detection is always up-to-date before the next keystroke arrives
+    // (e.g. after Alt+Tab or taskbar click).
+    foregroundEventHook_ = SetWinEventHook(
+        EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND,
+        nullptr, ForegroundEventProc,
+        0, 0,
+        WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
+    if (foregroundEventHook_ == nullptr) {
+        std::cerr << "[PHTV] SetWinEventHook(EVENT_SYSTEM_FOREGROUND) failed, error="
+                  << GetLastError() << " (non-fatal)\n";
+    }
+
     running_ = true;
     std::cerr << "[PHTV] Hooks installed successfully. switchKeyStatus=0x"
               << std::hex << vSwitchKeyStatus << std::dec
@@ -637,6 +652,11 @@ void LowLevelHookService::stop() {
         shutdownUiAutomation();
         resetAddressBarCache();
         return;
+    }
+
+    if (foregroundEventHook_ != nullptr) {
+        UnhookWinEvent(foregroundEventHook_);
+        foregroundEventHook_ = nullptr;
     }
 
     if (mouseHook_ != nullptr) {
@@ -668,7 +688,7 @@ void LowLevelHookService::stop() {
 }
 
 int LowLevelHookService::runMessageLoop() {
-    // OpenKey-style message loop: use MsgWaitForMultipleObjects to wake
+    // Use MsgWaitForMultipleObjects to wake
     // immediately when the settings app signals a config change, instead of
     // only detecting changes on the next keystroke.  This ensures hotkey
     // re-registration happens within milliseconds of the user changing a
@@ -773,6 +793,22 @@ LRESULT CALLBACK LowLevelHookService::MouseHookProc(int nCode, WPARAM wParam, LP
     return instance_->handleMouse(wParam, lParam);
 }
 
+// Detect foreground window changes immediately via EVENT_SYSTEM_FOREGROUND
+// so that browser/terminal context is always up-to-date before the next
+// keystroke arrives.
+void CALLBACK LowLevelHookService::ForegroundEventProc(
+    HWINEVENTHOOK /*hWinEventHook*/,
+    DWORD event,
+    HWND /*hwnd*/,
+    LONG /*idObject*/,
+    LONG /*idChild*/,
+    DWORD /*dwEventThread*/,
+    DWORD /*dwmsEventTime*/) {
+    if (event == EVENT_SYSTEM_FOREGROUND && instance_ != nullptr) {
+        instance_->refreshForegroundAppContext(true);
+    }
+}
+
 LRESULT LowLevelHookService::handleKeyboard(WPARAM wParam, LPARAM lParam) {
     auto* keyData = reinterpret_cast<KBDLLHOOKSTRUCT*>(lParam);
     if (keyData == nullptr) {
@@ -781,6 +817,33 @@ LRESULT LowLevelHookService::handleKeyboard(WPARAM wParam, LPARAM lParam) {
 
     if (keyData->dwExtraInfo == kInjectedEventTag) {
         return CallNextHookEx(keyboardHook_, HC_ACTION, wParam, lParam);
+    }
+
+    // Skip events injected by other programs (virtual keyboards, remote
+    // desktop, accessibility tools, macro software, etc.).  We check the
+    // LLKHF_INJECTED flag which Windows sets on all SendInput / keybd_event
+    // injected events, combined with non-zero dwExtraInfo.
+    if ((keyData->flags & LLKHF_INJECTED) != 0 && keyData->dwExtraInfo != 0) {
+        return CallNextHookEx(keyboardHook_, HC_ACTION, wParam, lParam);
+    }
+
+    // Skip processing when another IME (Japanese, Chinese, Korean, etc.) is
+    // active to avoid conflicts between input methods.
+    // Use SendMessageTimeoutW to avoid deadlocks in the low-level hook context.
+    {
+        HWND hForeground = GetForegroundWindow();
+        if (hForeground != nullptr) {
+            HWND hIME = ImmGetDefaultIMEWnd(hForeground);
+            if (hIME != nullptr) {
+                DWORD_PTR imeResult = 0;
+                LRESULT sent = SendMessageTimeoutW(
+                    hIME, WM_IME_CONTROL, IMC_GETOPENSTATUS, 0,
+                    SMTO_ABORTIFHUNG, 10, &imeResult);
+                if (sent != 0 && imeResult != 0) {
+                    return CallNextHookEx(keyboardHook_, HC_ACTION, wParam, lParam);
+                }
+            }
+        }
     }
 
     const bool isKeyDown = (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN);
@@ -853,6 +916,13 @@ LRESULT LowLevelHookService::handleKeyboard(WPARAM wParam, LPARAM lParam) {
 
     if (handleHotkeysOnKeyDown(engineKeyCode, configReloadedThisEvent)) {
         return 1;
+    }
+
+    // Win+key combinations are always system shortcuts (Win+E, Win+R, Win+D,
+    // Win+L, etc.).  If the combination was not already consumed as a PHTV
+    // hotkey above, pass it through immediately so the OS can handle it.
+    if ((modifierMask_ & kMaskWin) != 0) {
+        return CallNextHookEx(keyboardHook_, HC_ACTION, wParam, lParam);
     }
 
     // CRITICAL: Immediate pass-through if language is set to English (0)
@@ -1582,7 +1652,7 @@ Uint8 LowLevelHookService::currentCapsStatus() const {
 }
 
 bool LowLevelHookService::hasOtherControlKey() const {
-    return (modifierMask_ & (kMaskControl | kMaskAlt)) != 0;
+    return (modifierMask_ & (kMaskControl | kMaskAlt | kMaskWin)) != 0;
 }
 
 void LowLevelHookService::initializeUiAutomation() {
@@ -2490,7 +2560,7 @@ void LowLevelHookService::processEngineOutput(const phtv::windows_host::EngineOu
         }
 
         if (appContext_.isChromiumBrowser && backspaceCount > 0) {
-            // Chromium fallback (OpenKey-style): if address-bar detection misses,
+            // Chromium fallback: if address-bar detection misses,
             // pre-select one character then let normal backspace flow continue.
             sendVirtualKey(VK_LSHIFT, true);
             sendVirtualKey(VK_LEFT, true, KEYEVENTF_EXTENDEDKEY);
@@ -2501,6 +2571,16 @@ void LowLevelHookService::processEngineOutput(const phtv::windows_host::EngineOu
             }
             if (isBrowserFixDebugEnabled()) {
                 std::cerr << "[PHTV BrowserFix] Chromium fallback selection applied"
+                          << " adjustedBackspace=" << backspaceCount << "\n";
+            }
+        } else if (!appContext_.isChromiumBrowser && backspaceCount > 0) {
+            // For non-Chromium browsers (Firefox, etc.), send an empty
+            // character (U+202F) to break autocomplete/suggestion selection,
+            // then add one extra backspace to remove it.
+            sendEmptyCharacter();
+            backspaceCount++;
+            if (isBrowserFixDebugEnabled()) {
+                std::cerr << "[PHTV BrowserFix] Non-Chromium empty char fix applied"
                           << " adjustedBackspace=" << backspaceCount << "\n";
             }
         }
