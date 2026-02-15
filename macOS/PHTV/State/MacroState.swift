@@ -100,7 +100,6 @@ final class MacroState: ObservableObject {
         defaults.set(emojiHotkeyModifiersRaw, forKey: UserDefaultsKey.emojiHotkeyModifiers)
         defaults.set(Int(emojiHotkeyKeyCode), forKey: UserDefaultsKey.emojiHotkeyKeyCode)
 
-        defaults.synchronize()
     }
 
     // MARK: - Setup Observers

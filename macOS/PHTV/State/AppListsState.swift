@@ -104,7 +104,6 @@ final class AppListsState: ObservableObject {
             NSLog("[AppListsState] Failed to encode upper case excluded apps: %@", error.localizedDescription)
         }
 
-        defaults.synchronize()
     }
 
     func reloadFromDefaults() {
@@ -170,7 +169,6 @@ final class AppListsState: ObservableObject {
         do {
             let data = try JSONEncoder().encode(excludedApps)
             UserDefaults.standard.set(data, forKey: UserDefaultsKey.excludedApps)
-            UserDefaults.standard.synchronize()
 
             // Notify backend with hot reload
             liveLog("posting ExcludedAppsChanged")
@@ -209,7 +207,6 @@ final class AppListsState: ObservableObject {
         do {
             let data = try JSONEncoder().encode(sendKeyStepByStepApps)
             UserDefaults.standard.set(data, forKey: UserDefaultsKey.sendKeyStepByStepApps)
-            UserDefaults.standard.synchronize()
 
             // Notify backend with hot reload
             liveLog("posting SendKeyStepByStepAppsChanged")
@@ -242,7 +239,6 @@ final class AppListsState: ObservableObject {
         do {
             let data = try JSONEncoder().encode(upperCaseExcludedApps)
             UserDefaults.standard.set(data, forKey: UserDefaultsKey.upperCaseExcludedApps)
-            UserDefaults.standard.synchronize()
 
             // Notify backend with hot reload
             liveLog("posting UpperCaseExcludedAppsChanged")

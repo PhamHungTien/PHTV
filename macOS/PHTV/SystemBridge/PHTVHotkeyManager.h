@@ -20,23 +20,17 @@
 + (void)initialize;
 
 // Hotkey Detection
-+ (CGEventRef)handleHotkeyPress:(CGEventType)type keycode:(CGKeyCode)keycode flags:(CGEventFlags)flags;
 + (BOOL)checkHotKey:(int)hotKeyData checkKeyCode:(BOOL)checkKeyCode currentKeycode:(CGKeyCode)keycode currentFlags:(CGEventFlags)flags;
 + (BOOL)hotkeyModifiersAreHeld:(int)hotKeyData currentFlags:(CGEventFlags)flags;
 + (BOOL)isModifierOnlyHotkey:(int)hotKeyData;
 
-// Language Switching
-+ (void)switchLanguage;
-
-// Macro Triggering
-+ (void)handleMacro;
-
 // Pause Key Management
 + (BOOL)isPauseKeyPressed;
-+ (void)setPauseKeyPressed:(BOOL)pressed;
++ (CGEventFlags)pauseModifierMaskForCurrentPauseKey;
++ (BOOL)isPauseKeyActiveForFlags:(CGEventFlags)flags;
 + (CGEventFlags)stripPauseModifier:(CGEventFlags)flags;
-+ (void)handlePauseKeyPress;
-+ (void)handlePauseKeyRelease;
++ (void)handlePauseKeyPressWithFlags:(CGEventFlags)flags;
++ (void)handlePauseKeyReleaseFromFlags:(CGEventFlags)oldFlags toFlags:(CGEventFlags)newFlags;
 
 // Keyboard Layout Compatibility
 + (CGKeyCode)convertEventToKeyboardLayoutCompatKeyCode:(CGEventRef)event fallback:(CGKeyCode)fallback;

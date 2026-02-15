@@ -13,37 +13,10 @@
 - (instancetype)initWithHostBundle:(NSBundle *)hostBundle delegate:(id<SPUStandardUserDriverDelegate>)delegate {
     self = [super initWithHostBundle:hostBundle delegate:delegate];
     if (self) {
-        // Load auto-install setting from UserDefaults
-        // Default to YES if not set
-        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-        if ([defaults objectForKey:@"vAutoInstallUpdates"] == nil) {
-            _silentAutoInstallEnabled = YES;
-        } else {
-            _silentAutoInstallEnabled = [defaults boolForKey:@"vAutoInstallUpdates"];
-        }
-
-        // Observe changes to auto-install setting
-        [[NSNotificationCenter defaultCenter] addObserver:self
-                                                 selector:@selector(handleAutoInstallSettingChanged:)
-                                                     name:NSUserDefaultsDidChangeNotification
-                                                   object:nil];
-
-        NSLog(@"[PHSilentUserDriver] Initialized - silent auto-install: %@", _silentAutoInstallEnabled ? @"ON" : @"OFF");
+        // Auto-install is now always enabled for all users.
+        NSLog(@"[PHSilentUserDriver] Initialized - silent auto-install: ON");
     }
     return self;
-}
-
-- (void)dealloc {
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
-}
-
-- (void)handleAutoInstallSettingChanged:(NSNotification *)notification {
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    BOOL newValue = [defaults boolForKey:@"vAutoInstallUpdates"];
-    if (newValue != _silentAutoInstallEnabled) {
-        _silentAutoInstallEnabled = newValue;
-        NSLog(@"[PHSilentUserDriver] Silent auto-install changed to: %@", _silentAutoInstallEnabled ? @"ON" : @"OFF");
-    }
 }
 
 #pragma mark - SPUUserDriver Protocol Methods (Sparkle 2.x)
@@ -66,20 +39,8 @@
     };
     [[NSNotificationCenter defaultCenter] postNotificationName:@"SparkleUpdateFound" object:info];
 
-    // If silent auto-install is enabled, immediately install
-    if (self.silentAutoInstallEnabled) {
-        NSLog(@"[PHSilentUserDriver] Silent auto-install enabled - installing update automatically");
-        reply(SPUUserUpdateChoiceInstall);
-        return;
-    }
-
-    // If not auto-install, show custom update banner via notification
-    NSLog(@"[PHSilentUserDriver] Showing custom update UI");
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"SparkleShowUpdateBanner" object:info];
-
-    // Dismiss the standard UI since we're using custom UI
-    // The user will trigger install via our custom banner
-    reply(SPUUserUpdateChoiceDismiss);
+    NSLog(@"[PHSilentUserDriver] Silent auto-install enabled - installing update automatically");
+    reply(SPUUserUpdateChoiceInstall);
 }
 
 /// Called when no update is found
@@ -117,16 +78,8 @@
 /// Called when extraction/installation is ready
 - (void)showReadyToInstallAndRelaunch:(void (^)(SPUUserUpdateChoice))reply {
     NSLog(@"[PHSilentUserDriver] Ready to install and relaunch");
-
-    if (self.silentAutoInstallEnabled) {
-        NSLog(@"[PHSilentUserDriver] Auto-installing and relaunching");
-        reply(SPUUserUpdateChoiceInstall);
-    } else {
-        // Show notification that update is ready
-        [[NSNotificationCenter defaultCenter] postNotificationName:@"SparkleUpdateReadyToInstall" object:nil];
-        // Let user decide via our custom UI
-        reply(SPUUserUpdateChoiceDismiss);
-    }
+    NSLog(@"[PHSilentUserDriver] Auto-installing and relaunching");
+    reply(SPUUserUpdateChoiceInstall);
 }
 
 /// Called when update has been installed and app will relaunch

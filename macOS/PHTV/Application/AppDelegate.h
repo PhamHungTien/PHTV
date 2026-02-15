@@ -36,11 +36,6 @@ NS_ASSUME_NONNULL_BEGIN
 -(void)setDockIconVisible:(BOOL)visible;
 -(void)showIcon:(BOOL)onDock;
 
-// Accessibility monitoring methods
-- (void)startAccessibilityMonitoring;
-- (void)stopAccessibilityMonitoring;
-- (void)checkAccessibilityStatus;
-- (void)handleAccessibilityRevoked;
 - (void)setupSwiftUIBridge;
 - (void)loadExistingMacros;
 - (void)handleSettingsReset:(NSNotification * _Nullable)notification;
@@ -59,4 +54,3 @@ AppDelegate* _Nullable GetAppDelegateInstance(void);
 #ifdef __cplusplus
 }
 #endif
-

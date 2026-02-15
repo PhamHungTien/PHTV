@@ -168,12 +168,6 @@ static BOOL _vSafeMode = NO;
     return YES;
 }
 
-#pragma mark - AX Session Recovery
-
-+ (void)tryToRestoreSessionFromAX {
-    // Placeholder - will be implemented when extracting from PHTV.mm
-}
-
 #pragma mark - Safe Mode
 
 + (BOOL)isSafeModeEnabled {
@@ -183,7 +177,6 @@ static BOOL _vSafeMode = NO;
 + (void)setSafeModeEnabled:(BOOL)enabled {
     _vSafeMode = enabled;
     [[NSUserDefaults standardUserDefaults] setBool:enabled forKey:@"SafeMode"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
 
     if (enabled) {
         NSLog(@"[SafeMode] ENABLED - Accessibility API calls will be skipped");

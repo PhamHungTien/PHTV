@@ -106,7 +106,6 @@ final class AppState: ObservableObject {
 
     func saveSettings() {
         SettingsObserver.shared.suspendNotifications()
-        let defaults = UserDefaults.standard
 
         // Save all sub-states
         inputMethodState.saveSettings()
@@ -115,7 +114,6 @@ final class AppState: ObservableObject {
         uiState.saveSettings()
         appListsState.saveSettings()
 
-        defaults.synchronize()
 
         // Notify Objective-C backend
         liveLog("posting PHTVSettingsChanged")
@@ -302,7 +300,6 @@ final class AppState: ObservableObject {
             let defaults = UserDefaults.standard
             let language = value ? 1 : 0
             defaults.set(language, forKey: UserDefaultsKey.inputMethod)
-            defaults.synchronize()
 
             // Play beep if enabled (volume adjusted)
             if self.uiState.beepOnModeSwitch && self.uiState.beepVolume > 0.0 {
@@ -527,16 +524,6 @@ final class AppState: ObservableObject {
     var updateCheckFrequency: UpdateCheckFrequency {
         get { systemState.updateCheckFrequency }
         set { systemState.updateCheckFrequency = newValue }
-    }
-
-    var betaChannelEnabled: Bool {
-        get { systemState.betaChannelEnabled }
-        set { systemState.betaChannelEnabled = newValue }
-    }
-
-    var autoInstallUpdates: Bool {
-        get { systemState.autoInstallUpdates }
-        set { systemState.autoInstallUpdates = newValue }
     }
 
     var showCustomUpdateBanner: Bool {

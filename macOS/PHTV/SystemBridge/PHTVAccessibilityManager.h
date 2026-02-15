@@ -20,9 +20,6 @@
 // AX Text Replacement
 + (BOOL)replaceFocusedTextViaAX:(NSInteger)backspaceCount insertText:(NSString*)insertText;
 
-// AX Session Recovery
-+ (void)tryToRestoreSessionFromAX;
-
 // Safe Mode
 + (BOOL)isSafeModeEnabled;
 + (void)setSafeModeEnabled:(BOOL)enabled;

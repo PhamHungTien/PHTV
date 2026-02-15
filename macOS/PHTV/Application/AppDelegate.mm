@@ -12,6 +12,9 @@
 #include <stdlib.h>
 #include <string.h>
 #import "AppDelegate.h"
+#import "AppDelegate+Private.h"
+#import "AppDelegate+Accessibility.h"
+#import "AppDelegate+Sparkle.h"
 #import "SparkleManager.h"
 #import "../SystemBridge/PHTVManager.h"
 #import "../SystemBridge/PHTVCacheManager.h"
@@ -47,6 +50,34 @@ static inline void PHTVLoadEmojiHotkeySettings(NSUserDefaults *defaults,
     } else {
         *keyCode = (int)[defaults integerForKey:@"vEmojiHotkeyKeyCode"];
     }
+}
+
+static inline void PHTVSetIntegerDefault(NSUserDefaults *defaults, NSInteger value, NSString *key) {
+    [defaults setInteger:value forKey:key];
+}
+
+static inline void PHTVSetIntDefault(NSUserDefaults *defaults,
+                                     volatile int *target,
+                                     int value,
+                                     NSString *key) {
+    *target = value;
+    PHTVSetIntegerDefault(defaults, value, key);
+}
+
+static inline void PHTVSetIntDefault(NSUserDefaults *defaults,
+                                     int *target,
+                                     int value,
+                                     NSString *key) {
+    *target = value;
+    PHTVSetIntegerDefault(defaults, value, key);
+}
+
+static inline void PHTVSetBoolDefault(NSUserDefaults *defaults, BOOL value, NSString *key) {
+    [defaults setBool:value forKey:key];
+}
+
+static inline void PHTVSetDoubleDefault(NSUserDefaults *defaults, double value, NSString *key) {
+    [defaults setDouble:value forKey:key];
 }
 
 static inline void PHTVAppendHotkeyComponent(NSMutableString *hotKey,
@@ -169,34 +200,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     } \
 } while(0)
 
-@interface AppDelegate ()
-@property (nonatomic, strong) NSStatusItem *statusItem;
-@property (nonatomic, strong) NSMenu *statusMenu;
-
-// Live settings: status bar font size (set from SwiftUI)
-@property (nonatomic, assign) CGFloat statusBarFontSize;
-
-// Performance optimization properties
-@property (nonatomic, strong) dispatch_queue_t updateQueue;
-@property (nonatomic, assign) NSInteger lastInputMethod;
-@property (nonatomic, assign) NSInteger lastCodeTable;
-@property (nonatomic, assign) BOOL isUpdatingUI;
-
-// Throttle live applies from NSUserDefaultsDidChangeNotification
-@property (nonatomic, assign) CFAbsoluteTime lastDefaultsApplyTime;
-
-// Accessibility monitoring
-@property (nonatomic, strong) NSTimer *accessibilityMonitor;
-@property (nonatomic, assign) BOOL wasAccessibilityEnabled;
-@property (nonatomic, assign) NSUInteger accessibilityStableCount;
-@property (nonatomic, assign) BOOL isAttemptingTCCRepair;
-@property (nonatomic, assign) BOOL didAttemptTCCRepairOnce;
-
-// Health watchdog
-@property (nonatomic, strong) NSTimer *healthCheckTimer;
-@end
-
-
 @implementation AppDelegate {
     // Excluded app state management
     NSInteger _savedLanguageBeforeExclusion;  // Saved language state before entering excluded app
@@ -211,8 +214,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     BOOL _isUpdatingLanguage;
     BOOL _isUpdatingInputType;
     BOOL _isUpdatingCodeTable;
-
-    BOOL _needsRelaunchAfterPermission;
 
     NSMenuItem* menuInputMethod;
     
@@ -486,406 +487,8 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
         // Save current version
         [[NSUserDefaults standardUserDefaults] setObject:currentVersion forKey:@"LastRunVersion"];
-        [[NSUserDefaults standardUserDefaults] synchronize];
     } else {
         [NSApp terminate:0];
-    }
-}
-
-- (void)startAccessibilityMonitoring {
-    [self startAccessibilityMonitoringWithInterval:[self currentMonitoringInterval] resetState:YES];
-}
-
-// Start monitoring with specific interval
-- (void)startAccessibilityMonitoringWithInterval:(NSTimeInterval)interval {
-    // Default: reset state (for backward compatibility)
-    [self startAccessibilityMonitoringWithInterval:interval resetState:YES];
-}
-
-// Start monitoring with specific interval, optionally resetting state
-- (void)startAccessibilityMonitoringWithInterval:(NSTimeInterval)interval resetState:(BOOL)resetState {
-    // Stop existing timer if any
-    [self stopAccessibilityMonitoring];
-
-    // CRITICAL: Uses test event tap creation - ONLY reliable method (Apple recommended)
-    // MJAccessibilityIsEnabled() returns TRUE even when permission is revoked!
-    // Dynamic interval: 1.0s when waiting for permission, 20s when granted (lower overhead)
-    self.accessibilityMonitor = [NSTimer scheduledTimerWithTimeInterval:interval
-                                                                  target:self
-                                                                selector:@selector(checkAccessibilityStatus)
-                                                                userInfo:nil
-                                                                 repeats:YES];
-    if (@available(macOS 10.12, *)) {
-        // Small tolerance reduces wakeups while keeping fast detection
-        self.accessibilityMonitor.tolerance = interval * 0.2;
-    }
-
-    // ONLY set initial state on first start, NOT when just changing interval
-    // This fixes the bug where permission grant detection fails because state is reset mid-check
-    if (resetState) {
-        self.wasAccessibilityEnabled = [PHTVManager canCreateEventTap];
-    }
-
-    NSLog(@"[Accessibility] Started monitoring via test event tap (interval: %.1fs, resetState: %@)", interval, resetState ? @"YES" : @"NO");
-}
-
-// Get appropriate monitoring interval based on current permission state
-- (NSTimeInterval)currentMonitoringInterval {
-    // When waiting for permission: check every 1.0 seconds
-    // When permission granted: check every 20 seconds to reduce overhead
-    return self.wasAccessibilityEnabled ? 20.0 : 1.0;
-}
-
-- (void)stopAccessibilityMonitoring {
-    if (self.accessibilityMonitor) {
-        [self.accessibilityMonitor invalidate];
-        self.accessibilityMonitor = nil;
-        #ifdef DEBUG
-        NSLog(@"[Accessibility] Stopped monitoring");
-        #endif
-    }
-}
-
-- (void)startHealthCheckMonitoring {
-    [self stopHealthCheckMonitoring];
-        // Lower frequency monitoring to reduce wakeups while keeping idle recovery
-        // Event-based checks handle active typing; timer covers idle periods
-        self.healthCheckTimer = [NSTimer scheduledTimerWithTimeInterval:10.0
-                                                              target:self
-                                                            selector:@selector(runHealthCheck)
-                                                            userInfo:nil
-                                                             repeats:YES];
-    if (@available(macOS 10.12, *)) {
-        self.healthCheckTimer.tolerance = 1.0;
-    }
-}
-
-- (void)stopHealthCheckMonitoring {
-    if (self.healthCheckTimer) {
-        [self.healthCheckTimer invalidate];
-        self.healthCheckTimer = nil;
-    }
-}
-
-- (void)runHealthCheck {
-    // Skip checks if accessibility permission is missing; restart flow will handle it
-    // Use test tap - reliable check (MJAccessibilityIsEnabled is unreliable)
-    if (![PHTVManager canCreateEventTap]) {
-        return;
-    }
-    [PHTVManager ensureEventTapAlive];
-}
-
-- (void)checkAccessibilityStatus {
-    // CRITICAL: Use test event tap creation - ONLY reliable way to check permission
-    // MJAccessibilityIsEnabled() returns TRUE even after user removes app from list
-    BOOL isEnabled = [PHTVManager canCreateEventTap];
-
-    // Only log and notify when status CHANGES (reduce console spam and CPU)
-    BOOL statusChanged = (self.wasAccessibilityEnabled != isEnabled);
-
-    if (statusChanged) {
-        NSLog(@"[Accessibility] Status CHANGED: was=%@, now=%@",
-              self.wasAccessibilityEnabled ? @"YES" : @"NO",
-              isEnabled ? @"YES" : @"NO");
-
-        // Notify SwiftUI only on change
-        [[NSNotificationCenter defaultCenter] postNotificationName:@"AccessibilityStatusChanged"
-                                                            object:@(isEnabled)];
-
-        // IMPORTANT: Restart timer with appropriate interval based on new permission state
-        // When permission granted: switch to 20s interval (low overhead)
-        // When permission revoked: switch to 1.0s interval
-        // CRITICAL: resetState:NO to preserve wasAccessibilityEnabled for transition detection below
-        NSTimeInterval newInterval = isEnabled ? 20.0 : 1.0;
-        NSLog(@"[Accessibility] Adjusting monitoring interval to %.1fs", newInterval);
-        [self startAccessibilityMonitoringWithInterval:newInterval resetState:NO];
-    }
-
-    // Permission was just granted (transition from disabled to enabled)
-    if (!self.wasAccessibilityEnabled && isEnabled) {
-        NSLog(@"[Accessibility] ✅ Permission GRANTED (via test tap) - Initializing...");
-        self.accessibilityStableCount = 0;
-        [self performAccessibilityGrantedRestart];
-    }
-    // Permission was revoked while app is running (transition from enabled to disabled)
-    else if (self.wasAccessibilityEnabled && !isEnabled) {
-        NSLog(@"[Accessibility] 🛑 CRITICAL - Permission REVOKED (test tap failed)!");
-        self.accessibilityStableCount = 0;
-        [self handleAccessibilityRevoked];
-    }
-    else if (isEnabled) {
-        // Permission stable - increment counter
-        self.accessibilityStableCount++;
-    }
-
-    // Update state
-    self.wasAccessibilityEnabled = isEnabled;
-}
-
-- (void)performAccessibilityGrantedRestart {
-    NSLog(@"[Accessibility] Permission granted - Initializing event tap...");
-
-    // Save current version to track successful permission grant
-    NSString *currentVersion = [[NSBundle mainBundle] infoDictionary][@"CFBundleShortVersionString"];
-    [[NSUserDefaults standardUserDefaults] setObject:currentVersion forKey:@"LastRunVersion"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
-
-    // Stop monitoring (permission granted)
-    [self stopAccessibilityMonitoring];
-
-    // Invalidate permission cache to ensure fresh check
-    [PHTVManager invalidatePermissionCache];
-
-    // Initialize event tap with retry mechanism
-    dispatch_async(dispatch_get_main_queue(), ^{
-        BOOL initSuccess = NO;
-
-        // Try up to 3 times with delays to handle TCC propagation
-        for (int attempt = 1; attempt <= 3; attempt++) {
-            NSLog(@"[EventTap] Init attempt %d/3", attempt);
-
-            if ([PHTVManager initEventTap]) {
-                NSLog(@"[EventTap] Initialized successfully on attempt %d - App ready!", attempt);
-                initSuccess = YES;
-                break;
-            }
-
-            if (attempt < 3) {
-                // Wait progressively longer between attempts
-                usleep(100000 * attempt);  // 100ms, 200ms
-
-                // Force permission recheck
-                [PHTVManager invalidatePermissionCache];
-            }
-        }
-
-        if (!initSuccess) {
-            NSLog(@"[EventTap] Failed to initialize after 3 attempts");
-
-            // Show alert suggesting relaunch
-            NSAlert *alert = [[NSAlert alloc] init];
-            [alert setMessageText:@"🔄 Cần khởi động lại ứng dụng"];
-            [alert setInformativeText:@"PHTV đã nhận quyền nhưng cần khởi động lại để quyền có hiệu lực.\n\nBạn có muốn khởi động lại ngay không?"];
-            [alert addButtonWithTitle:@"Khởi động lại ngay"];
-            [alert addButtonWithTitle:@"Để sau"];
-            [alert setAlertStyle:NSAlertStyleInformational];
-
-            NSModalResponse response = [alert runModal];
-            if (response == NSAlertFirstButtonReturn) {
-                [self relaunchAppAfterPermissionGrant];
-            } else {
-                [self onControlPanelSelected];
-            }
-        } else {
-            // Success - start normal operation
-
-            // Start monitoring for permission revocation
-            [self startAccessibilityMonitoring];
-            [self startHealthCheckMonitoring];
-
-            // Start TCC notification listener
-            [PHTVManager startTCCNotificationListener];
-
-            // Update menu bar to normal state
-            [self fillDataWithAnimation:YES];
-
-            // Show UI if requested
-            NSInteger showui = [[NSUserDefaults standardUserDefaults] integerForKey:@"ShowUIOnStartup"];
-            if (showui == 1) {
-                [self onControlPanelSelected];
-            }
-
-            // Clear first-launch relaunch flag - we now initialize immediately without restart
-            if (self->_needsRelaunchAfterPermission) {
-                self->_needsRelaunchAfterPermission = NO;
-                NSLog(@"[Accessibility] Initialized successfully - skipping forced relaunch");
-            }
-        }
-        [self setQuickConvertString];
-    });
-}
-
-- (void)relaunchAppAfterPermissionGrant {
-    NSString *bundlePath = [[NSBundle mainBundle] bundlePath];
-    if (bundlePath.length == 0) {
-        NSLog(@"[Accessibility] Relaunch skipped: bundle path missing");
-        return;
-    }
-
-    NSURL *bundleURL = [NSURL fileURLWithPath:bundlePath];
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.6 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        if (@available(macOS 10.15, *)) {
-            NSWorkspaceOpenConfiguration *config = [NSWorkspaceOpenConfiguration configuration];
-            [[NSWorkspace sharedWorkspace] openApplicationAtURL:bundleURL
-                                                  configuration:config
-                                              completionHandler:^(NSRunningApplication * _Nullable app, NSError * _Nullable error) {
-                if (error) {
-                    NSLog(@"[Accessibility] Relaunch failed: %@", error.localizedDescription ?: @"unknown error");
-                    return;
-                }
-                NSLog(@"[Accessibility] Relaunching app to finalize permission");
-                [NSApp terminate:nil];
-            }];
-        } else {
-            // Fallback for older macOS versions
-            #pragma clang diagnostic push
-            #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-            NSError *error = nil;
-            NSRunningApplication *app = [[NSWorkspace sharedWorkspace] launchApplicationAtURL:bundleURL
-                                                                          options:NSWorkspaceLaunchDefault
-                                                                    configuration:@{}
-                                                                            error:&error];
-            #pragma clang diagnostic pop
-            if (!app) {
-                NSLog(@"[Accessibility] Relaunch failed: %@", error.localizedDescription ?: @"unknown error");
-                return;
-            }
-            NSLog(@"[Accessibility] Relaunching app to finalize permission");
-            [NSApp terminate:nil];
-        }
-    });
-}
-
-- (void)handleAccessibilityRevoked {
-    // CRITICAL: Stop event tap IMMEDIATELY on MAIN THREAD to prevent system freeze
-    // CFRunLoopRemoveSource MUST be called on the same thread it was added (main thread)
-    if ([PHTVManager isInited]) {
-        NSLog(@"🛑 CRITICAL: Accessibility revoked! Stopping event tap immediately...");
-        [PHTVManager stopEventTap];
-    }
-
-    // Show alert
-    dispatch_async(dispatch_get_main_queue(), ^{
-        NSAlert *alert = [[NSAlert alloc] init];
-        [alert setMessageText:@"⚠️  Quyền trợ năng đã bị tắt!"];
-        [alert setInformativeText:@"PHTV cần quyền trợ năng để hoạt động.\n\nỨng dụng sẽ tự động hoạt động lại khi bạn cấp quyền."];
-        [alert setAlertStyle:NSAlertStyleWarning];
-        [alert addButtonWithTitle:@"Mở cài đặt"];
-        [alert addButtonWithTitle:@"Đóng"];
-
-        NSModalResponse response = [alert runModal];
-        if (response == NSAlertFirstButtonReturn) {
-            [PHTVAccessibilityManager openAccessibilityPreferences];
-
-            // Invalidate cache for fresh permission check
-            [PHTVManager invalidatePermissionCache];
-            NSLog(@"[Accessibility] User opening System Settings to re-grant");
-        }
-
-        // Update menu bar to show disabled state
-        if (self.statusItem && self.statusItem.button) {
-            NSFont *statusFont = [NSFont monospacedSystemFontOfSize:12 weight:NSFontWeightSemibold];
-            NSDictionary *attributes = @{
-                NSFontAttributeName: statusFont,
-                NSForegroundColorAttributeName: [NSColor systemRedColor]
-            };
-            NSAttributedString *title = [[NSAttributedString alloc] initWithString:@"⚠️" attributes:attributes];
-            self.statusItem.button.attributedTitle = title;
-        }
-    });
-
-    // Attempt automatic TCC repair if the app vanished from the Accessibility list
-    [self attemptAutomaticTCCRepairIfNeeded];
-}
-
-// Auto-repair flow for corrupted/missing TCC entries (macOS occasionally drops the app from the list)
-- (void)attemptAutomaticTCCRepairIfNeeded {
-    if (self.isAttemptingTCCRepair || self.didAttemptTCCRepairOnce) {
-        return;
-    }
-    self.isAttemptingTCCRepair = YES;
-
-    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
-        BOOL isCorrupt = [PHTVManager isTCCEntryCorrupt];
-        if (!isCorrupt) {
-            self.isAttemptingTCCRepair = NO;
-            return;
-        }
-
-        NSLog(@"[Accessibility] ⚠️ TCC entry missing/corrupt - attempting automatic repair");
-
-        NSError *error = nil;
-        BOOL fixed = [PHTVManager autoFixTCCEntryWithError:&error];
-        if (fixed) {
-            NSLog(@"[Accessibility] ✅ TCC auto-repair succeeded, restarting tccd...");
-            [PHTVManager restartTCCDaemon];
-            [PHTVManager invalidatePermissionCache];
-
-            dispatch_async(dispatch_get_main_queue(), ^{
-                // Immediately resume fast monitoring to detect the new permission
-                [self startAccessibilityMonitoringWithInterval:0.3 resetState:YES];
-            });
-        } else {
-            NSLog(@"[Accessibility] ❌ TCC auto-repair failed: %@", error.localizedDescription ?: @"unknown error");
-        }
-
-        self.didAttemptTCCRepairOnce = YES;
-        self.isAttemptingTCCRepair = NO;
-    });
-}
-
-// Handle when app needs relaunch for permission to take effect
-// This is triggered when AXIsProcessTrusted=YES but CGEventTapCreate fails persistently
-// This happens because macOS TCC cache is not invalidated for the running process
-- (void)handleAccessibilityNeedsRelaunch {
-    static BOOL isShowingRelaunchAlert = NO;
-
-    // Prevent showing multiple alerts
-    if (isShowingRelaunchAlert) {
-        return;
-    }
-
-    isShowingRelaunchAlert = YES;
-    NSLog(@"[Accessibility] 🔄 Handling relaunch request - permission granted but not effective yet");
-
-    dispatch_async(dispatch_get_main_queue(), ^{
-        // First, try to initialize event tap one more time
-        // Sometimes it works after a short delay
-        if (![PHTVManager isInited]) {
-            NSLog(@"[Accessibility] Attempting event tap initialization before relaunch prompt...");
-            if ([PHTVManager initEventTap]) {
-                NSLog(@"[Accessibility] ✅ Event tap initialized successfully! No relaunch needed.");
-                [PHTVManager resetAxYesTapNoCounter];
-                isShowingRelaunchAlert = NO;
-
-                // Update UI and start monitoring
-                [self startAccessibilityMonitoring];
-                [self startHealthCheckMonitoring];
-                [self fillDataWithAnimation:YES];
-                return;
-            }
-        }
-
-        // Event tap still won't initialize - show relaunch prompt
-        NSAlert *alert = [[NSAlert alloc] init];
-        [alert setMessageText:@"🔄 Cần khởi động lại ứng dụng"];
-        [alert setInformativeText:@"PHTV đã nhận được quyền trợ năng từ hệ thống, nhưng cần khởi động lại để quyền có hiệu lực.\n\nĐây là yêu cầu bảo mật của macOS. Bạn có muốn khởi động lại ngay không?"];
-        [alert setAlertStyle:NSAlertStyleInformational];
-        [alert addButtonWithTitle:@"Khởi động lại"];
-        [alert addButtonWithTitle:@"Để sau"];
-
-        NSModalResponse response = [alert runModal];
-        isShowingRelaunchAlert = NO;
-
-        if (response == NSAlertFirstButtonReturn) {
-            NSLog(@"[Accessibility] User requested relaunch to apply permission");
-            [PHTVManager resetAxYesTapNoCounter];
-            [self relaunchAppAfterPermissionGrant];
-        } else {
-            NSLog(@"[Accessibility] User deferred relaunch");
-            // Reset counter so we don't spam the user
-            [PHTVManager resetAxYesTapNoCounter];
-        }
-    });
-}
-
-- (void)checkAccessibilityAndRestart {
-    // Legacy method - kept for compatibility
-    // Now handled by checkAccessibilityStatus
-    // Use test tap - reliable check (MJAccessibilityIsEnabled is unreliable)
-    if ([PHTVManager canCreateEventTap]) {
-        [self performAccessibilityGrantedRestart];
     }
 }
 
@@ -914,7 +517,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
     BOOL isFirstLaunch = ([[NSUserDefaults standardUserDefaults] boolForKey:@"NonFirstTime"] == 0);
     // Use test tap - reliable check (MJAccessibilityIsEnabled is unreliable)
-    _needsRelaunchAfterPermission = (isFirstLaunch && ![PHTVManager canCreateEventTap]);
+    self.needsRelaunchAfterPermission = (isFirstLaunch && ![PHTVManager canCreateEventTap]);
 
     appDelegate = self;
     
@@ -1081,7 +684,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         [self loadDefaultConfig];
         // Mark as non-first-time to prevent re-initialization on next launch
         [[NSUserDefaults standardUserDefaults] setInteger:1 forKey:@"NonFirstTime"];
-        [[NSUserDefaults standardUserDefaults] synchronize];
         NSLog(@"[AppDelegate] First launch: loaded default config and marked NonFirstTime");
     }
 
@@ -1113,7 +715,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                 // Update UserDefaults to match reality
                 [[NSUserDefaults standardUserDefaults] setInteger:0 forKey:@"RunOnStartup"];
                 [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"PHTV_RunOnStartup"];
-                [[NSUserDefaults standardUserDefaults] synchronize];
 
                 // Notify SwiftUI to update toggle to OFF
                 [[NSNotificationCenter defaultCenter] postNotificationName:@"RunOnStartupChanged"
@@ -1443,7 +1044,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         __sync_synchronize();
 
         [[NSUserDefaults standardUserDefaults] setInteger:vSwitchKeyStatus forKey:@"SwitchKeyStatus"];
-        [[NSUserDefaults standardUserDefaults] synchronize];
 
         // Update UI to reflect hotkey change
         [self fillData];
@@ -1755,13 +1355,11 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         }
 
         [defaults setObject:binaryData forKey:@"macroData"];
-        [defaults synchronize];
 
         initMacroMap((const unsigned char *)[binaryData bytes], (int)[binaryData length]);
         PHTV_LIVE_LOG(@"macros synced: count=%u", macroCount);
     } else {
         [defaults removeObjectForKey:@"macroData"];
-        [defaults synchronize];
 
         uint16_t macroCount = 0;
         NSMutableData *emptyData = [NSMutableData data];
@@ -1854,64 +1452,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 - (void)handleCustomDictionaryUpdated:(NSNotification *)notification {
     PHTV_LIVE_LOG(@"received CustomDictionaryUpdated");
     [self syncCustomDictionaryFromUserDefaults];
-}
-
-#pragma mark - Sparkle Update Handlers
-
-- (void)handleSparkleManualCheck:(NSNotification *)notification {
-    NSLog(@"[Sparkle] Manual check requested from UI");
-    [[SparkleManager shared] checkForUpdatesWithFeedback];
-}
-
-- (void)handleSparkleUpdateFound:(NSNotification *)notification {
-    NSDictionary *updateInfo = notification.object;
-
-    dispatch_async(dispatch_get_main_queue(), ^{
-        // Forward to SwiftUI in legacy format for compatibility
-        [[NSNotificationCenter defaultCenter] postNotificationName:@"CheckForUpdatesResponse"
-                                                            object:@{
-            @"message": [NSString stringWithFormat:@"Phiên bản mới %@ có sẵn", updateInfo[@"version"]],
-            @"isError": @NO,
-            @"updateAvailable": @YES,
-            @"latestVersion": updateInfo[@"version"],
-            @"downloadUrl": updateInfo[@"downloadURL"],
-            @"releaseNotes": updateInfo[@"releaseNotes"]
-        }];
-    });
-}
-
-// Show "up to date" alert when user manually checks for updates (only for manual checks)
-- (void)handleSparkleNoUpdate:(NSNotification *)notification {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        NSString *currentVersion = [[NSBundle mainBundle] infoDictionary][@"CFBundleShortVersionString"];
-
-        NSAlert *alert = [[NSAlert alloc] init];
-        [alert setMessageText:@"Đã cập nhật"];
-        [alert setInformativeText:[NSString stringWithFormat:@"Bạn đang sử dụng phiên bản mới nhất của PHTV (%@).", currentVersion]];
-        [alert addButtonWithTitle:@"OK"];
-        [alert setAlertStyle:NSAlertStyleInformational];
-        [alert runModal];
-    });
-}
-
-- (void)handleUpdateFrequencyChanged:(NSNotification *)notification {
-    if (NSNumber *interval = notification.object) {
-        NSLog(@"[Sparkle] Update frequency changed to: %.0f seconds", [interval doubleValue]);
-        [[SparkleManager shared] setUpdateCheckInterval:[interval doubleValue]];
-    }
-}
-
-- (void)handleBetaChannelChanged:(NSNotification *)notification {
-    if (NSNumber *enabled = notification.object) {
-        NSLog(@"[Sparkle] Beta channel changed to: %@", [enabled boolValue] ? @"ENABLED" : @"DISABLED");
-        [[SparkleManager shared] setBetaChannelEnabled:[enabled boolValue]];
-    }
-}
-
-- (void)handleSparkleInstallUpdate:(NSNotification *)notification {
-    NSLog(@"[Sparkle] Install update requested from custom banner");
-    // Trigger Sparkle's native update UI which will handle download and installation
-    [[SparkleManager shared] checkForUpdatesWithFeedback];
 }
 
 - (void)handleSettingsReset:(NSNotification *)notification {
@@ -2155,61 +1695,59 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
 -(void)loadDefaultConfig {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    
-    vLanguage = 1; [defaults setInteger:vLanguage forKey:@"InputMethod"];
-    vInputType = 0; [defaults setInteger:vInputType forKey:@"InputType"];
-    vFreeMark = 0; [defaults setInteger:vFreeMark forKey:@"FreeMark"];
-    vCheckSpelling = 1; [defaults setInteger:vCheckSpelling forKey:@"Spelling"];
-    vCodeTable = 0; [defaults setInteger:vCodeTable forKey:@"CodeTable"];
-    vSwitchKeyStatus = PHTV_DEFAULT_SWITCH_HOTKEY_STATUS; [defaults setInteger:vSwitchKeyStatus forKey:@"SwitchKeyStatus"];
-    vQuickTelex = 0; [defaults setInteger:vQuickTelex forKey:@"QuickTelex"];
-    vUseModernOrthography = 1; [defaults setInteger:vUseModernOrthography forKey:@"ModernOrthography"];
-    vFixRecommendBrowser = 1; [defaults setInteger:vFixRecommendBrowser forKey:@"FixRecommendBrowser"];
-    vUseMacro = 1; [defaults setInteger:vUseMacro forKey:@"UseMacro"];
-    vUseMacroInEnglishMode = 0; [defaults setInteger:vUseMacroInEnglishMode forKey:@"UseMacroInEnglishMode"];
-    vSendKeyStepByStep = 0; [defaults setInteger:vSendKeyStepByStep forKey:@"SendKeyStepByStep"];
-    vUseSmartSwitchKey = 1; [defaults setInteger:vUseSmartSwitchKey forKey:@"UseSmartSwitchKey"];
-    vUpperCaseFirstChar = 0;[[NSUserDefaults standardUserDefaults] setInteger:vUpperCaseFirstChar forKey:@"UpperCaseFirstChar"];
-    vTempOffSpelling = 0; [defaults setInteger:vTempOffSpelling forKey:@"vTempOffSpelling"];
-    vAllowConsonantZFWJ = 1; [defaults setInteger:vAllowConsonantZFWJ forKey:@"vAllowConsonantZFWJ"]; // Always enabled
-    vQuickStartConsonant = 0; [defaults setInteger:vQuickStartConsonant forKey:@"vQuickStartConsonant"];
-    vQuickEndConsonant = 0; [defaults setInteger:vQuickEndConsonant forKey:@"vQuickEndConsonant"];
-    vRememberCode = 1; [defaults setInteger:vRememberCode forKey:@"vRememberCode"];
-    vOtherLanguage = 1; [defaults setInteger:vOtherLanguage forKey:@"vOtherLanguage"];
-    vTempOffPHTV = 0; [defaults setInteger:vTempOffPHTV forKey:@"vTempOffPHTV"];
+
+    PHTVSetIntDefault(defaults, &vLanguage, 1, @"InputMethod");
+    PHTVSetIntDefault(defaults, &vInputType, 0, @"InputType");
+    PHTVSetIntDefault(defaults, &vFreeMark, 0, @"FreeMark");
+    PHTVSetIntDefault(defaults, &vCheckSpelling, 1, @"Spelling");
+    PHTVSetIntDefault(defaults, &vCodeTable, 0, @"CodeTable");
+    PHTVSetIntDefault(defaults, &vSwitchKeyStatus, PHTV_DEFAULT_SWITCH_HOTKEY_STATUS, @"SwitchKeyStatus");
+    PHTVSetIntDefault(defaults, &vQuickTelex, 0, @"QuickTelex");
+    PHTVSetIntDefault(defaults, &vUseModernOrthography, 1, @"ModernOrthography");
+    PHTVSetIntDefault(defaults, &vFixRecommendBrowser, 1, @"FixRecommendBrowser");
+    PHTVSetIntDefault(defaults, &vUseMacro, 1, @"UseMacro");
+    PHTVSetIntDefault(defaults, &vUseMacroInEnglishMode, 0, @"UseMacroInEnglishMode");
+    PHTVSetIntDefault(defaults, &vSendKeyStepByStep, 0, @"SendKeyStepByStep");
+    PHTVSetIntDefault(defaults, &vUseSmartSwitchKey, 1, @"UseSmartSwitchKey");
+    PHTVSetIntDefault(defaults, &vUpperCaseFirstChar, 0, @"UpperCaseFirstChar");
+    PHTVSetIntDefault(defaults, &vTempOffSpelling, 0, @"vTempOffSpelling");
+    PHTVSetIntDefault(defaults, &vAllowConsonantZFWJ, 1, @"vAllowConsonantZFWJ"); // Always enabled
+    PHTVSetIntDefault(defaults, &vQuickStartConsonant, 0, @"vQuickStartConsonant");
+    PHTVSetIntDefault(defaults, &vQuickEndConsonant, 0, @"vQuickEndConsonant");
+    PHTVSetIntDefault(defaults, &vRememberCode, 1, @"vRememberCode");
+    PHTVSetIntDefault(defaults, &vOtherLanguage, 1, @"vOtherLanguage");
+    PHTVSetIntDefault(defaults, &vTempOffPHTV, 0, @"vTempOffPHTV");
 
     // Auto restore English words - default: ON for new users
-    vAutoRestoreEnglishWord = 1; [defaults setInteger:vAutoRestoreEnglishWord forKey:@"vAutoRestoreEnglishWord"];
+    PHTVSetIntDefault(defaults, &vAutoRestoreEnglishWord, 1, @"vAutoRestoreEnglishWord");
 
     // Restore to raw keys (customizable key) - default: ON with ESC key
-    vRestoreOnEscape = 1; [defaults setInteger:vRestoreOnEscape forKey:@"vRestoreOnEscape"];
-    vCustomEscapeKey = 0; [defaults setInteger:vCustomEscapeKey forKey:@"vCustomEscapeKey"];
+    PHTVSetIntDefault(defaults, &vRestoreOnEscape, 1, @"vRestoreOnEscape");
+    PHTVSetIntDefault(defaults, &vCustomEscapeKey, 0, @"vCustomEscapeKey");
 
-    vShowIconOnDock = 0; [defaults setInteger:vShowIconOnDock forKey:@"vShowIconOnDock"];
-    vPerformLayoutCompat = 0; [defaults setInteger:vPerformLayoutCompat forKey:@"vPerformLayoutCompat"];
+    PHTVSetIntDefault(defaults, &vShowIconOnDock, 0, @"vShowIconOnDock");
+    PHTVSetIntDefault(defaults, &vPerformLayoutCompat, 0, @"vPerformLayoutCompat");
 
-    [defaults setInteger:1 forKey:@"GrayIcon"];
-    [defaults setBool:NO forKey:@"PHTV_RunOnStartup"];
-    [defaults setInteger:0 forKey:@"RunOnStartup"];
-    [defaults setInteger:0 forKey:@"vSettingsWindowAlwaysOnTop"];
-    [defaults setInteger:0 forKey:@"vBeepOnModeSwitch"];
-    [defaults setDouble:0.5 forKey:@"vBeepVolume"];
-    [defaults setDouble:18.0 forKey:@"vMenuBarIconSize"];
-    [defaults setInteger:0 forKey:@"vUseVietnameseMenubarIcon"];
+    PHTVSetIntegerDefault(defaults, 1, @"GrayIcon");
+    PHTVSetBoolDefault(defaults, NO, @"PHTV_RunOnStartup");
+    PHTVSetIntegerDefault(defaults, 0, @"RunOnStartup");
+    PHTVSetIntegerDefault(defaults, 0, @"vSettingsWindowAlwaysOnTop");
+    PHTVSetIntegerDefault(defaults, 0, @"vBeepOnModeSwitch");
+    PHTVSetDoubleDefault(defaults, 0.5, @"vBeepVolume");
+    PHTVSetDoubleDefault(defaults, 18.0, @"vMenuBarIconSize");
+    PHTVSetIntegerDefault(defaults, 0, @"vUseVietnameseMenubarIcon");
 
-    [defaults setInteger:86400 forKey:@"SUScheduledCheckInterval"];
-    [defaults setBool:NO forKey:@"SUEnableBetaChannel"];
-    [defaults setBool:YES forKey:@"vAutoInstallUpdates"];
+    PHTVSetIntegerDefault(defaults, 86400, @"SUScheduledCheckInterval");
+    PHTVSetBoolDefault(defaults, YES, @"vAutoInstallUpdates");
 
-    [defaults setBool:YES forKey:@"vIncludeSystemInfo"];
-    [defaults setBool:NO forKey:@"vIncludeLogs"];
-    [defaults setBool:YES forKey:@"vIncludeCrashLogs"];
+    PHTVSetBoolDefault(defaults, YES, @"vIncludeSystemInfo");
+    PHTVSetBoolDefault(defaults, NO, @"vIncludeLogs");
+    PHTVSetBoolDefault(defaults, YES, @"vIncludeCrashLogs");
 
     // IMPORTANT: DO NOT reset macroList/macroData here!
     // User's custom abbreviations should be preserved when resetting other settings.
     // If user wants to clear macros, they can do it from the Macro Settings UI.
 
-    [defaults synchronize];
 
     [self fillData];
 }
@@ -2284,7 +1822,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                                     // Update UserDefaults on success
                                     [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"PHTV_RunOnStartup"];
                                     [[NSUserDefaults standardUserDefaults] setInteger:1 forKey:@"RunOnStartup"];
-                                    [[NSUserDefaults standardUserDefaults] synchronize];
 
                                     // Notify SwiftUI
                                     [[NSNotificationCenter defaultCenter] postNotificationName:@"RunOnStartupChanged"
@@ -2346,7 +1883,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     if (actualSuccess) {
         [[NSUserDefaults standardUserDefaults] setBool:val forKey:@"PHTV_RunOnStartup"];
         [[NSUserDefaults standardUserDefaults] setInteger:(val ? 1 : 0) forKey:@"RunOnStartup"];
-        [[NSUserDefaults standardUserDefaults] synchronize];
 
         // Notify SwiftUI to sync UI
         [[NSNotificationCenter defaultCenter] postNotificationName:@"RunOnStartupChanged"
@@ -2398,7 +1934,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     
     // Save to UserDefaults first
     [[NSUserDefaults standardUserDefaults] setBool:onDock forKey:@"vShowIconOnDock"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
     vShowIconOnDock = onDock ? 1 : 0;
     
     // Apply activation policy on main thread
@@ -2813,7 +2348,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     __sync_synchronize();
     
     [[NSUserDefaults standardUserDefaults] setInteger:vCheckSpelling forKey:@"Spelling"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
     
     // Sync engine state
     vSetCheckSpelling();
@@ -2829,7 +2363,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     __sync_synchronize();
     
     [[NSUserDefaults standardUserDefaults] setInteger:vAllowConsonantZFWJ forKey:@"vAllowConsonantZFWJ"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
     
     // Sync engine state
     RequestNewSession();
@@ -2844,7 +2377,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     __sync_synchronize();
     
     [[NSUserDefaults standardUserDefaults] setInteger:vUseModernOrthography forKey:@"ModernOrthography"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
     
     RequestNewSession();
     [self fillData];
@@ -2856,7 +2388,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     __sync_synchronize();
     
     [[NSUserDefaults standardUserDefaults] setInteger:vQuickTelex forKey:@"QuickTelex"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
     
     RequestNewSession();
     [self fillData];
@@ -2868,7 +2399,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     __sync_synchronize();
     
     [[NSUserDefaults standardUserDefaults] setInteger:vUpperCaseFirstChar forKey:@"UpperCaseFirstChar"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
     
     RequestNewSession();
     [self fillData];
@@ -2880,7 +2410,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     __sync_synchronize();
     
     [[NSUserDefaults standardUserDefaults] setInteger:vAutoRestoreEnglishWord forKey:@"vAutoRestoreEnglishWord"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
     
     RequestNewSession();
     [self fillData];
@@ -2899,7 +2428,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     if ([defaults integerForKey:@"NonFirstTime"] == 0) {
         [defaults setInteger:1 forKey:@"NonFirstTime"];
-        [defaults synchronize];
         NSLog(@"Marking NonFirstTime after user opened settings");
     }
 
@@ -3029,7 +2557,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         if (vLanguage == 1) {  // Currently in Vietnamese mode
             vLanguage = 0;  // Switch to English
             [[NSUserDefaults standardUserDefaults] setInteger:vLanguage forKey:@"InputMethod"];
-            [[NSUserDefaults standardUserDefaults] synchronize];
             
             // CRITICAL: Reset engine session when forcing mode change
             RequestNewSession();
@@ -3051,7 +2578,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
             // Restore Vietnamese mode
             vLanguage = 1;
             [[NSUserDefaults standardUserDefaults] setInteger:vLanguage forKey:@"InputMethod"];
-            [[NSUserDefaults standardUserDefaults] synchronize];
             
             // CRITICAL: Reset engine session when restoring mode
             RequestNewSession();
@@ -3113,7 +2639,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         if (!vSendKeyStepByStep) {  // Currently disabled
             vSendKeyStepByStep = YES;  // Enable
             [[NSUserDefaults standardUserDefaults] setBool:vSendKeyStepByStep forKey:@"SendKeyStepByStep"];
-            [[NSUserDefaults standardUserDefaults] synchronize];
 
             NSLog(@"[SendKeyStepByStepApp] Entered app '%@' - enabled send key step by step", bundleIdentifier);
         } else {
@@ -3128,7 +2653,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
             // Restore disabled state
             vSendKeyStepByStep = NO;
             [[NSUserDefaults standardUserDefaults] setBool:vSendKeyStepByStep forKey:@"SendKeyStepByStep"];
-            [[NSUserDefaults standardUserDefaults] synchronize];
 
             NSLog(@"[SendKeyStepByStepApp] Left app '%@' - disabled send key step by step", bundleIdentifier);
         } else {
@@ -3285,37 +2809,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                                                                                                  name:NSUserDefaultsDidChangeNotification
                                                                                              object:NULL];
 
-    // Sparkle update notifications
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(handleSparkleManualCheck:)
-                                                 name:@"SparkleManualCheck"
-                                               object:nil];
-
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(handleSparkleUpdateFound:)
-                                                 name:@"SparkleUpdateFound"
-                                               object:NULL];
-
-    // Show "up to date" alert when user manually checks (SparkleManager only sends this for manual checks)
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(handleSparkleNoUpdate:)
-                                                 name:@"SparkleNoUpdateFound"
-                                               object:NULL];
-
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(handleUpdateFrequencyChanged:)
-                                                 name:@"UpdateCheckFrequencyChanged"
-                                               object:NULL];
-
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(handleBetaChannelChanged:)
-                                                 name:@"BetaChannelChanged"
-                                               object:NULL];
-
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(handleSparkleInstallUpdate:)
-                                                 name:@"SparkleInstallUpdate"
-                                               object:nil];
+    [self registerSparkleObservers];
 
 }
 @end

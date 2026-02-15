@@ -146,9 +146,6 @@ struct SettingsItem: Identifiable {
             title: "Tần suất kiểm tra cập nhật", iconName: "clock.fill", tab: .system,
             keywords: ["update frequency", "cập nhật", "tự động", "kiểm tra", "tần suất"]),
         SettingsItem(
-            title: "Kênh Beta", iconName: "testtube.2", tab: .system,
-            keywords: ["beta", "beta channel", "thử nghiệm", "không ổn định"]),
-        SettingsItem(
             title: "Kiểm tra cập nhật", iconName: "arrow.clockwise.circle.fill", tab: .system,
             keywords: ["update", "cập nhật", "new version", "phiên bản mới", "kiểm tra"]),
         SettingsItem(

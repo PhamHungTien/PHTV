@@ -12,7 +12,6 @@
 @interface SparkleManager ()
 @property (nonatomic, strong) SPUUpdater *updater;
 @property (nonatomic, strong) PHSilentUserDriver *customUserDriver;
-@property (nonatomic, assign) BOOL betaChannelEnabled;
 @property (nonatomic, assign) BOOL isManualCheck;  // Track if this is a user-initiated check
 @end
 
@@ -47,10 +46,7 @@
             NSLog(@"[Sparkle] Failed to start updater: %@", error);
         }
 
-        // Load preferences
-        _betaChannelEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"SUEnableBetaChannel"];
-
-        NSLog(@"[Sparkle] Initialized with PHSilentUserDriver - Beta channel: %@", _betaChannelEnabled ? @"ON" : @"OFF");
+        NSLog(@"[Sparkle] Initialized with PHSilentUserDriver (stable channel only)");
     }
     return self;
 }
@@ -71,23 +67,11 @@
 - (void)setUpdateCheckInterval:(NSTimeInterval)interval {
     NSLog(@"[Sparkle] Update interval set to %.0f seconds", interval);
     [[NSUserDefaults standardUserDefaults] setDouble:interval forKey:@"SUScheduledCheckInterval"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
-}
-
-- (void)setBetaChannelEnabled:(BOOL)enabled {
-    NSLog(@"[Sparkle] Beta channel %@", enabled ? @"ENABLED" : @"DISABLED");
-    _betaChannelEnabled = enabled;
-    [[NSUserDefaults standardUserDefaults] setBool:enabled forKey:@"SUEnableBetaChannel"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
 #pragma mark - SPUUpdaterDelegate
 
 - (nullable NSString *)feedURLStringForUpdater:(SPUUpdater *)updater {
-    if (self.betaChannelEnabled) {
-        NSLog(@"[Sparkle] Using BETA feed");
-        return @"https://phamhungtien.github.io/PHTV/appcast-beta.xml";
-    }
     NSLog(@"[Sparkle] Using STABLE feed");
     return nil; // Use Info.plist value
 }

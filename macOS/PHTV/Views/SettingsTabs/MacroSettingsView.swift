@@ -598,7 +598,6 @@ struct MacroSettingsView: View {
         let defaults = UserDefaults.standard
         if let encoded = try? JSONEncoder().encode(macros) {
             defaults.set(encoded, forKey: UserDefaultsKey.macroList)
-            defaults.synchronize()
             Self.cachedMacros = macros
             Self.cachedMacrosData = encoded
             print("[MacroSettings] Saved \(macros.count) macros to UserDefaults")

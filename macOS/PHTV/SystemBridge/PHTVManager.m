@@ -701,7 +701,6 @@ extern Boolean AXIsProcessTrusted(void) __attribute__((weak_import));
 +(void)setSafeModeEnabled:(BOOL)enabled {
     vSafeMode = enabled;
     [[NSUserDefaults standardUserDefaults] setBool:enabled forKey:@"SafeMode"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
 
     if (enabled) {
         NSLog(@"[SafeMode] ENABLED - Accessibility API calls will be skipped");
@@ -714,7 +713,6 @@ extern Boolean AXIsProcessTrusted(void) __attribute__((weak_import));
     // Clear the AX test flag on normal app termination
     // This prevents false positive safe mode activation on next launch
     [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"AXTestInProgress"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
     NSLog(@"[SafeMode] Cleared AX test flag on normal termination");
 }
 

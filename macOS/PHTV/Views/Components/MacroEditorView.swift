@@ -319,7 +319,6 @@ struct MacroEditorView: View {
         // Save to UserDefaults atomically then notify immediately (no artificial delay)
         if let encoded = try? JSONEncoder().encode(macros) {
             defaults.set(encoded, forKey: UserDefaultsKey.macroList)
-            defaults.synchronize()
             print("[MacroEditor] Saved \(macros.count) macros to UserDefaults")
             print("[MacroEditor] macroList data size: \(encoded.count) bytes")
 

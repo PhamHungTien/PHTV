@@ -109,7 +109,6 @@
     if (!savedHash) {
         // First run - save current hash
         [[NSUserDefaults standardUserDefaults] setObject:currentHash forKey:@"BinaryHashAtLastRun"];
-        [[NSUserDefaults standardUserDefaults] synchronize];
 
         NSLog(@"[BinaryIntegrity] First run - saved hash: %@...",
               [currentHash substringToIndex:MIN(16, currentHash.length)]);
@@ -128,7 +127,6 @@
 
         // Update saved hash
         [[NSUserDefaults standardUserDefaults] setObject:currentHash forKey:@"BinaryHashAtLastRun"];
-        [[NSUserDefaults standardUserDefaults] synchronize];
 
         // Post notification for UI
         dispatch_async(dispatch_get_main_queue(), ^{

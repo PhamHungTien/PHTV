@@ -118,7 +118,6 @@ final class InputMethodState: ObservableObject {
         defaults.set(Int(pauseKey), forKey: UserDefaultsKey.pauseKey)
         defaults.set(pauseKeyName, forKey: UserDefaultsKey.pauseKeyName)
 
-        defaults.synchronize()
     }
 
     func reloadFromDefaults() {
@@ -149,7 +148,6 @@ final class InputMethodState: ObservableObject {
             SettingsObserver.shared.suspendNotifications()
             let defaults = UserDefaults.standard
             defaults.set(newMethod.toIndex(), forKey: UserDefaultsKey.inputType)
-            defaults.synchronize()
             NotificationCenter.default.post(
                 name: NotificationName.inputMethodChanged,
                 object: NSNumber(value: newMethod.toIndex()))
@@ -161,7 +159,6 @@ final class InputMethodState: ObservableObject {
             SettingsObserver.shared.suspendNotifications()
             let defaults = UserDefaults.standard
             defaults.set(newTable.toIndex(), forKey: UserDefaultsKey.codeTable)
-            defaults.synchronize()
             NotificationCenter.default.post(
                 name: NotificationName.codeTableChanged,
                 object: NSNumber(value: newTable.toIndex()))
@@ -175,7 +172,6 @@ final class InputMethodState: ObservableObject {
                 SettingsObserver.shared.suspendNotifications()
                 let defaults = UserDefaults.standard
                 defaults.set(value, forKey: UserDefaultsKey.upperCaseFirstChar)
-                defaults.synchronize()
                 NotificationCenter.default.post(
                     name: NotificationName.phtvSettingsChanged, object: nil
                 )

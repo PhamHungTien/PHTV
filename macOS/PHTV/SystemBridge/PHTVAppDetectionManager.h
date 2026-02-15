@@ -30,10 +30,6 @@
 + (BOOL)isMediumTerminalApp:(NSString*)bundleId;
 + (BOOL)isSlowTerminalApp:(NSString*)bundleId;
 
-// Focused App Detection
-+ (NSString*)getFocusedAppBundleId;
-+ (pid_t)getFocusedAppPID;
-
 // Utility
 + (BOOL)bundleIdMatchesAppSet:(NSString*)bundleId appSet:(NSSet*)appSet;
 

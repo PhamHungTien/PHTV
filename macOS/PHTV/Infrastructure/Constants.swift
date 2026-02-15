@@ -71,8 +71,6 @@ enum UserDefaultsKey {
 
     // MARK: - Sparkle Updates
     static let updateCheckInterval = "SUScheduledCheckInterval"
-    static let betaChannelEnabled = "SUEnableBetaChannel"
-    static let autoInstallUpdates = "vAutoInstallUpdates"
 
     // MARK: - Debug
     static let liveDebug = "PHTV_LIVE_DEBUG"
@@ -135,7 +133,6 @@ enum NotificationName {
     // MARK: - Updates
     static let checkForUpdatesResponse = NSNotification.Name("CheckForUpdatesResponse")
     static let updateCheckFrequencyChanged = NSNotification.Name("UpdateCheckFrequencyChanged")
-    static let betaChannelChanged = NSNotification.Name("BetaChannelChanged")
     static let sparkleShowUpdateBanner = NSNotification.Name("SparkleShowUpdateBanner")
     static let sparkleManualCheck = NSNotification.Name("SparkleManualCheck")
     static let sparkleInstallUpdate = NSNotification.Name("SparkleInstallUpdate")
@@ -291,8 +288,6 @@ enum Defaults {
 
     // MARK: - Updates
     static let updateCheckInterval = 86400  // 1 day in seconds
-    static let betaChannelEnabled = false
-    static let autoInstallUpdates = true
 
     // MARK: - Bug Report
     static let includeSystemInfo = true

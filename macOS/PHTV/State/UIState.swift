@@ -96,7 +96,6 @@ final class UIState: ObservableObject {
         defaults.set(menuBarIconSize, forKey: UserDefaultsKey.menuBarIconSize)
         defaults.set(useVietnameseMenubarIcon, forKey: UserDefaultsKey.useVietnameseMenubarIcon)
 
-        defaults.synchronize()
     }
 
     // MARK: - Hotkey Encoding/Decoding
@@ -152,7 +151,6 @@ final class UIState: ObservableObject {
                 let switchKeyStatus = self.encodeSwitchKeyStatus()
                 UserDefaults.standard.set(switchKeyStatus, forKey: UserDefaultsKey.switchKeyStatus)
                 UserDefaults.standard.set(self.beepOnModeSwitch, forKey: UserDefaultsKey.beepOnModeSwitch)
-                UserDefaults.standard.synchronize()
                 // Notify backend about hotkey change
                 self.liveLog("posting HotkeyChanged (0x\(String(switchKeyStatus, radix: 16)))")
                 NotificationCenter.default.post(
@@ -198,7 +196,6 @@ final class UIState: ObservableObject {
                 SettingsObserver.shared.suspendNotifications()
                 let defaults = UserDefaults.standard
                 defaults.set(value, forKey: UserDefaultsKey.menuBarIconSize)
-                defaults.synchronize()
                 self.liveLog("Saved menuBarIconSize: \(value)")
             }.store(in: &cancellables)
 
@@ -210,7 +207,6 @@ final class UIState: ObservableObject {
                 SettingsObserver.shared.suspendNotifications()
                 let defaults = UserDefaults.standard
                 defaults.set(value, forKey: UserDefaultsKey.useVietnameseMenubarIcon)
-                defaults.synchronize()
                 self.liveLog("Saved useVietnameseMenubarIcon: \(value)")
             }.store(in: &cancellables)
     }

@@ -271,18 +271,6 @@ static NSSet* _disableVietnameseAppSet = nil;
     return [self bundleIdMatchesAppSet:bundleId appSet:_slowTerminalAppSet];
 }
 
-#pragma mark - Focused App Detection
-
-+ (NSString*)getFocusedAppBundleId {
-    // Placeholder - will be implemented when extracting from PHTV.mm
-    return nil;
-}
-
-+ (pid_t)getFocusedAppPID {
-    // Placeholder - will be implemented when extracting from PHTV.mm
-    return 0;
-}
-
 #pragma mark - Utility
 
 + (BOOL)bundleIdMatchesAppSet:(NSString*)bundleId appSet:(NSSet*)appSet {

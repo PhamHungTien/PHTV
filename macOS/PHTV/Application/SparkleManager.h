@@ -26,9 +26,6 @@ NS_ASSUME_NONNULL_BEGIN
 /// Configure update check interval in seconds
 - (void)setUpdateCheckInterval:(NSTimeInterval)interval;
 
-/// Enable or disable beta channel
-- (void)setBetaChannelEnabled:(BOOL)enabled;
-
 // installUpdateSilently removed - auto-install is now handled directly by PHSilentUserDriver
 
 @end

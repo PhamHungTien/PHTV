@@ -219,7 +219,7 @@ struct SystemSettingsView: View {
     private var updateSection: some View {
         SettingsCard(
             title: "Cập nhật",
-            subtitle: "Thiết lập kiểm tra và cài đặt cập nhật",
+            subtitle: "Thiết lập kiểm tra cập nhật",
             icon: "arrow.down.circle.fill"
         ) {
             VStack(spacing: 0) {
@@ -250,26 +250,6 @@ struct SystemSettingsView: View {
                     .frame(width: 130)
                 }
                 .padding(.vertical, 5)
-
-                SettingsDivider()
-
-                SettingsToggleRow(
-                    icon: "square.and.arrow.down.fill",
-                    iconColor: .accentColor,
-                    title: "Tự động cài đặt cập nhật",
-                    subtitle: "Cài đặt khi có phiên bản mới",
-                    isOn: $appState.autoInstallUpdates
-                )
-
-                SettingsDivider()
-
-                SettingsToggleRow(
-                    icon: "testtube.2",
-                    iconColor: .accentColor,
-                    title: "Kênh beta",
-                    subtitle: "Nhận bản cập nhật beta (có thể chưa ổn định)",
-                    isOn: $appState.betaChannelEnabled
-                )
 
                 SettingsDivider()
 
@@ -410,7 +390,7 @@ struct SystemSettingsView: View {
             UserDefaultsKey.beepOnModeSwitch, UserDefaultsKey.beepVolume, UserDefaultsKey.menuBarIconSize, UserDefaultsKey.useVietnameseMenubarIcon,
 
             // Update settings
-            UserDefaultsKey.updateCheckInterval, UserDefaultsKey.betaChannelEnabled, UserDefaultsKey.autoInstallUpdates,
+            UserDefaultsKey.updateCheckInterval,
 
             // Bug report settings
             UserDefaultsKey.includeSystemInfo, UserDefaultsKey.includeLogs, UserDefaultsKey.includeCrashLogs
@@ -509,6 +489,10 @@ struct SystemSettingsView: View {
             }
         }
 
+        // Auto-install updates is always ON and beta channel is not supported.
+        defaults.removeObject(forKey: "SUEnableBetaChannel")
+        defaults.set(true, forKey: "vAutoInstallUpdates")
+
         // Apply macros
         if let macros = backup.macros {
             if let encoded = try? JSONEncoder().encode(macros) {
@@ -557,7 +541,6 @@ struct SystemSettingsView: View {
             }
         }
 
-        defaults.synchronize()
 
         // Reload all settings
         appState.loadSettings()

@@ -33,8 +33,6 @@ final class SystemState: ObservableObject {
 
     // Sparkle update configuration
     @Published var updateCheckFrequency: UpdateCheckFrequency = .daily
-    @Published var betaChannelEnabled: Bool = false
-    @Published var autoInstallUpdates: Bool = true
     @Published var showCustomUpdateBanner: Bool = false
     @Published var customUpdateBannerInfo: UpdateBannerInfo? = nil
 
@@ -89,14 +87,10 @@ final class SystemState: ObservableObject {
             updateInterval = Defaults.updateCheckInterval
         }
         updateCheckFrequency = UpdateCheckFrequency.from(interval: updateInterval)
-        betaChannelEnabled = defaults.bool(forKey: UserDefaultsKey.betaChannelEnabled)
 
-        // Auto install updates - default to true if not set
-        if defaults.object(forKey: UserDefaultsKey.autoInstallUpdates) == nil {
-            autoInstallUpdates = true
-        } else {
-            autoInstallUpdates = defaults.bool(forKey: UserDefaultsKey.autoInstallUpdates)
-        }
+        // Always use stable channel and always auto-install updates.
+        defaults.removeObject(forKey: "SUEnableBetaChannel")
+        defaults.set(true, forKey: "vAutoInstallUpdates")
 
         // Load bug report settings
         includeSystemInfo = defaults.object(forKey: UserDefaultsKey.includeSystemInfo) as? Bool ?? Defaults.includeSystemInfo
@@ -120,15 +114,14 @@ final class SystemState: ObservableObject {
 
         // Save Sparkle settings
         defaults.set(updateCheckFrequency.rawValue, forKey: UserDefaultsKey.updateCheckInterval)
-        defaults.set(betaChannelEnabled, forKey: UserDefaultsKey.betaChannelEnabled)
-        defaults.set(autoInstallUpdates, forKey: UserDefaultsKey.autoInstallUpdates)
+        defaults.removeObject(forKey: "SUEnableBetaChannel")
+        defaults.set(true, forKey: "vAutoInstallUpdates")
 
         // Save bug report settings
         defaults.set(includeSystemInfo, forKey: UserDefaultsKey.includeSystemInfo)
         defaults.set(includeLogs, forKey: UserDefaultsKey.includeLogs)
         defaults.set(includeCrashLogs, forKey: UserDefaultsKey.includeCrashLogs)
 
-        defaults.synchronize()
     }
 
     // MARK: - Accessibility
@@ -201,7 +194,6 @@ final class SystemState: ObservableObject {
             let defaults = UserDefaults.standard
             defaults.set(actualStatus, forKey: UserDefaultsKey.runOnStartup)
             defaults.set(actualStatus ? 1 : 0, forKey: UserDefaultsKey.runOnStartupLegacy)
-            defaults.synchronize()
 
             NSLog("[LoginItem] ✅ UI synced to actual status: %@", actualStatus ? "ON" : "OFF")
         }
@@ -247,7 +239,6 @@ final class SystemState: ObservableObject {
             SettingsObserver.shared.suspendNotifications()
             let defaults = UserDefaults.standard
             defaults.set(value, forKey: UserDefaultsKey.settingsWindowAlwaysOnTop)
-            defaults.synchronize()
         }.store(in: &cancellables)
 
         // Observer for system settings
@@ -269,35 +260,11 @@ final class SystemState: ObservableObject {
             SettingsObserver.shared.suspendNotifications()
             let defaults = UserDefaults.standard
             defaults.set(frequency.rawValue, forKey: UserDefaultsKey.updateCheckInterval)
-            defaults.synchronize()
 
             NotificationCenter.default.post(
                 name: NotificationName.updateCheckFrequencyChanged,
                 object: NSNumber(value: frequency.rawValue)
             )
-        }.store(in: &cancellables)
-
-        // Beta channel observer
-        $betaChannelEnabled.sink { [weak self] enabled in
-            guard let self = self, !self.isLoadingSettings else { return }
-            SettingsObserver.shared.suspendNotifications()
-            let defaults = UserDefaults.standard
-            defaults.set(enabled, forKey: UserDefaultsKey.betaChannelEnabled)
-            defaults.synchronize()
-
-            NotificationCenter.default.post(
-                name: NotificationName.betaChannelChanged,
-                object: NSNumber(value: enabled)
-            )
-        }.store(in: &cancellables)
-
-        // Auto install updates observer
-        $autoInstallUpdates.sink { [weak self] enabled in
-            guard let self = self, !self.isLoadingSettings else { return }
-            SettingsObserver.shared.suspendNotifications()
-            let defaults = UserDefaults.standard
-            defaults.set(enabled, forKey: UserDefaultsKey.autoInstallUpdates)
-            defaults.synchronize()
         }.store(in: &cancellables)
 
         // Bug report settings observers
@@ -427,8 +394,6 @@ final class SystemState: ObservableObject {
 
         let checkInterval = Defaults.updateCheckInterval
         updateCheckFrequency = UpdateCheckFrequency.from(interval: checkInterval)
-        betaChannelEnabled = Defaults.betaChannelEnabled
-        autoInstallUpdates = Defaults.autoInstallUpdates
 
         includeSystemInfo = Defaults.includeSystemInfo
         includeLogs = Defaults.includeLogs

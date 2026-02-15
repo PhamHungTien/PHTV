@@ -16,6 +16,28 @@
 #import <libproc.h>
 #import <Cocoa/Cocoa.h>
 
+static const uint64_t PHTVExternalDeleteResetThresholdMs = 30000;
+
+static BOOL PHTVAXAttributeContainsSearchKeyword(AXUIElementRef element, CFStringRef attributeName) {
+    if (element == NULL || attributeName == NULL) {
+        return NO;
+    }
+
+    CFTypeRef attributeValue = NULL;
+    AXError error = AXUIElementCopyAttributeValue(element, attributeName, &attributeValue);
+    if (error != kAXErrorSuccess || attributeValue == NULL) {
+        return NO;
+    }
+
+    BOOL matches = NO;
+    if (CFGetTypeID(attributeValue) == CFStringGetTypeID()) {
+        matches = [PHTVSpotlightManager containsSearchKeyword:(__bridge NSString *)attributeValue];
+    }
+
+    CFRelease(attributeValue);
+    return matches;
+}
+
 @implementation PHTVSpotlightManager
 
 // Text Replacement detection
@@ -70,48 +92,13 @@ static int _externalDeleteCount = 0;
             }
             // AXTextField or AXTextArea → check additional attributes
             else if ([roleStr isEqualToString:@"AXTextField"] || [roleStr isEqualToString:@"AXTextArea"]) {
-                CFTypeRef attr = NULL;
-
-                // Check subrole
-                if (!isSearchField && AXUIElementCopyAttributeValue(element, kAXSubroleAttribute, &attr) == kAXErrorSuccess) {
-                    if (attr != NULL && CFGetTypeID(attr) == CFStringGetTypeID()) {
-                        if ([self containsSearchKeyword:(__bridge NSString *)attr]) {
-                            isSearchField = YES;
-                        }
-                    }
-                    if (attr) { CFRelease(attr); attr = NULL; }
-                }
-
-                // Check AXIdentifier
-                if (!isSearchField && AXUIElementCopyAttributeValue(element, kAXIdentifierAttribute, &attr) == kAXErrorSuccess) {
-                    if (attr != NULL && CFGetTypeID(attr) == CFStringGetTypeID()) {
-                        if ([self containsSearchKeyword:(__bridge NSString *)attr]) {
-                            isSearchField = YES;
-                        }
-                    }
-                    if (attr) { CFRelease(attr); attr = NULL; }
-                }
-
-                // Check AXDescription
-                if (!isSearchField && AXUIElementCopyAttributeValue(element, kAXDescriptionAttribute, &attr) == kAXErrorSuccess) {
-                    if (attr != NULL && CFGetTypeID(attr) == CFStringGetTypeID()) {
-                        if ([self containsSearchKeyword:(__bridge NSString *)attr]) {
-                            isSearchField = YES;
-                        }
-                    }
-                    if (attr) { CFRelease(attr); attr = NULL; }
-                }
-
-                // Check AXPlaceholderValue (placeholder text like "Search..." or "Tìm kiếm...")
-                if (!isSearchField && AXUIElementCopyAttributeValue(element, kAXPlaceholderValueAttribute, &attr) == kAXErrorSuccess) {
-                    if (attr != NULL && CFGetTypeID(attr) == CFStringGetTypeID()) {
-                        if ([self containsSearchKeyword:(__bridge NSString *)attr]) {
-                            isSearchField = YES;
-                        }
-                    }
-                    if (attr) { CFRelease(attr); attr = NULL; }
-                }
+                isSearchField = PHTVAXAttributeContainsSearchKeyword(element, kAXSubroleAttribute) ||
+                                PHTVAXAttributeContainsSearchKeyword(element, kAXIdentifierAttribute) ||
+                                PHTVAXAttributeContainsSearchKeyword(element, kAXDescriptionAttribute) ||
+                                PHTVAXAttributeContainsSearchKeyword(element, kAXPlaceholderValueAttribute);
             }
+        }
+        if (role != NULL) {
             CFRelease(role);
         }
     }
@@ -420,7 +407,7 @@ static int _externalDeleteCount = 0;
     // Reset count if too much time passed (>30000ms = 30 seconds)
     if (_lastExternalDeleteTime != 0) {
         uint64_t elapsed_ms = [PHTVTimingManager machTimeToMs:now - _lastExternalDeleteTime];
-        if (elapsed_ms > 30000) {
+        if (elapsed_ms > PHTVExternalDeleteResetThresholdMs) {
             _externalDeleteCount = 0;
         }
     }
