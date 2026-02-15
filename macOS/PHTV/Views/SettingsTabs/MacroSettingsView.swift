@@ -324,7 +324,7 @@ struct MacroSettingsView: View {
             editingMacro = nil
             editingCategory = nil
         }
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("MacrosUpdated")))
+        .onReceive(NotificationCenter.default.publisher(for: NotificationName.macrosUpdated))
         { notification in
             // Note: .onReceive already runs on main thread in SwiftUI
             print("[MacroSettings] Received MacrosUpdated notification, reloading...")
@@ -372,7 +372,7 @@ struct MacroSettingsView: View {
 
     private func loadMacros() {
         let defaults = UserDefaults.standard
-        if let data = defaults.data(forKey: "macroList") {
+        if let data = defaults.data(forKey: UserDefaultsKey.macroList) {
             if let cached = Self.cachedMacrosData, cached == data {
                 macros = Self.cachedMacros
                 return
@@ -597,12 +597,12 @@ struct MacroSettingsView: View {
     private func saveMacros() {
         let defaults = UserDefaults.standard
         if let encoded = try? JSONEncoder().encode(macros) {
-            defaults.set(encoded, forKey: "macroList")
+            defaults.set(encoded, forKey: UserDefaultsKey.macroList)
             defaults.synchronize()
             Self.cachedMacros = macros
             Self.cachedMacrosData = encoded
             print("[MacroSettings] Saved \(macros.count) macros to UserDefaults")
-            NotificationCenter.default.post(name: NSNotification.Name("MacrosUpdated"), object: nil)
+            NotificationCenter.default.post(name: NotificationName.macrosUpdated, object: nil)
         } else {
             print("[MacroSettings] ERROR: Failed to encode macros")
         }

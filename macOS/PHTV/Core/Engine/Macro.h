@@ -14,8 +14,6 @@
 #include <string>
 #include "DataType.h"
 
-using namespace std;
-
 // Snippet types for dynamic content
 enum SnippetTypeEnum {
     SNIPPET_STATIC = 0,     // Fixed text (default)
@@ -28,9 +26,9 @@ enum SnippetTypeEnum {
 };
 
 struct MacroData {
-    string macroText; //ex: "ms"
-    string macroContent; //ex: "millisecond" or format string for snippets
-    vector<Uint32> macroContentCode; //converted of macroContent
+    std::string macroText; //ex: "ms"
+    std::string macroContent; //ex: "millisecond" or format string for snippets
+    std::vector<Uint32> macroContentCode; //converted of macroContent
     int snippetType; //0=static, 1=date, 2=time, etc.
 };
 
@@ -44,32 +42,34 @@ extern "C" {
 /**
  * convert all macro data to save on disk
  */
-void getMacroSaveData(vector<Byte>& outData);
+void getMacroSaveData(std::vector<Byte>& outData);
 
 /**
  * Use to find full text by macro
  */
-bool findMacro(vector<Uint32>& key, vector<Uint32>& macroContentCode);
+bool findMacro(std::vector<Uint32>& key, std::vector<Uint32>& macroContentCode);
 
 /**
  * check has this macro or not
  */
-bool hasMacro(const string& macroName);
+bool hasMacro(const std::string& macroName);
 
 /**
  * Get all macro to show on macro table
  */
-void getAllMacro(vector<vector<Uint32>>& keys, vector<string>& macroTexts, vector<string>& macroContents);
+void getAllMacro(std::vector<std::vector<Uint32>>& keys,
+                 std::vector<std::string>& macroTexts,
+                 std::vector<std::string>& macroContents);
 
 /**
  * add new macro to memory
  */
-bool addMacro(const string& macroText, const string& macroContent);
+bool addMacro(const std::string& macroText, const std::string& macroContent);
 
 /**
  * delete macro from memory
  */
-bool deleteMacro(const string& macroText);
+bool deleteMacro(const std::string& macroText);
 
 /**
  * When table code changed, we have to call this function to reload all macroContentCode
@@ -79,11 +79,11 @@ void onTableCodeChange();
 /**
  * Save all macro data to disk
  */
-void saveToFile(const string& path);
+void saveToFile(const std::string& path);
 
 /**
  * Load macro data from disk
  */
-void readFromFile(const string& path, const bool& append=true);
+void readFromFile(const std::string& path, const bool& append=true);
 
 #endif /* Macro_h */

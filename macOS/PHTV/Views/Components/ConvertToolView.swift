@@ -581,16 +581,16 @@ struct ConvertToolView: View {
         // Perform conversion in background
         DispatchQueue.global(qos: .userInitiated).async {
             // Save current code table
-            let originalCodeTable = UserDefaults.standard.integer(forKey: "CodeTable")
+            let originalCodeTable = UserDefaults.standard.integer(forKey: UserDefaultsKey.codeTable)
 
             // Set source code table for conversion
-            UserDefaults.standard.set(sourceCode.rawValue, forKey: "CodeTable")
+            UserDefaults.standard.set(sourceCode.rawValue, forKey: UserDefaultsKey.codeTable)
 
             // Perform the conversion
             let success = PHTVManager.quickConvert()
 
             // Restore original code table
-            UserDefaults.standard.set(originalCodeTable, forKey: "CodeTable")
+            UserDefaults.standard.set(originalCodeTable, forKey: UserDefaultsKey.codeTable)
 
             // Get the converted content
             let pasteboard = NSPasteboard.general

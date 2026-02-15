@@ -63,10 +63,10 @@ struct SystemSettingsView: View {
         .sheet(isPresented: $showingConvertTool) {
             ConvertToolView()
         }
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowConvertToolSheet"))) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: NotificationName.showConvertToolSheet)) { _ in
             showingConvertTool = true
         }
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenConvertToolSheet"))) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: NotificationName.openConvertToolSheet)) { _ in
             showingConvertTool = true
         }
         .alert("Khôi phục mặc định?", isPresented: $showingResetAlert) {
@@ -379,41 +379,41 @@ struct SystemSettingsView: View {
         var settings: [String: AnyCodableValue] = [:]
         let settingsKeys = [
             // Input method & code table
-            "InputType", "CodeTable",
+            UserDefaultsKey.inputType, UserDefaultsKey.codeTable,
 
             // System settings
-            "PHTV_RunOnStartup", "vPerformLayoutCompat", "vShowIconOnDock",
-            "vSettingsWindowAlwaysOnTop", "SafeMode",
+            UserDefaultsKey.runOnStartup, UserDefaultsKey.performLayoutCompat, UserDefaultsKey.showIconOnDock,
+            UserDefaultsKey.settingsWindowAlwaysOnTop, UserDefaultsKey.safeMode,
 
             // Switch key (hotkey)
-            "SwitchKeyStatus",
+            UserDefaultsKey.switchKeyStatus,
 
             // Input behavior
-            "Spelling", "ModernOrthography", "QuickTelex",
-            "SendKeyStepByStep", "UseMacro", "UseMacroInEnglishMode", "vAutoCapsMacro",
-            "UseSmartSwitchKey", "UpperCaseFirstChar", "vAllowConsonantZFWJ",
-            "vQuickStartConsonant", "vQuickEndConsonant", "vRememberCode",
+            UserDefaultsKey.spelling, UserDefaultsKey.modernOrthography, UserDefaultsKey.quickTelex,
+            UserDefaultsKey.sendKeyStepByStep, UserDefaultsKey.useMacro, UserDefaultsKey.useMacroInEnglishMode, UserDefaultsKey.autoCapsMacro,
+            UserDefaultsKey.useSmartSwitchKey, UserDefaultsKey.upperCaseFirstChar, UserDefaultsKey.allowConsonantZFWJ,
+            UserDefaultsKey.quickStartConsonant, UserDefaultsKey.quickEndConsonant, UserDefaultsKey.rememberCode,
 
             // Auto restore English
-            "vAutoRestoreEnglishWord",
+            UserDefaultsKey.autoRestoreEnglishWord,
 
             // Restore key
-            "vRestoreOnEscape", "vCustomEscapeKey",
+            UserDefaultsKey.restoreOnEscape, UserDefaultsKey.customEscapeKey,
 
             // Pause key
-            "vPauseKeyEnabled", "vPauseKey", "vPauseKeyName",
+            UserDefaultsKey.pauseKeyEnabled, UserDefaultsKey.pauseKey, UserDefaultsKey.pauseKeyName,
 
             // Emoji hotkey
-            "vEnableEmojiHotkey", "vEmojiHotkeyModifiers", "vEmojiHotkeyKeyCode",
+            UserDefaultsKey.enableEmojiHotkey, UserDefaultsKey.emojiHotkeyModifiers, UserDefaultsKey.emojiHotkeyKeyCode,
 
             // Audio & display
-            "vBeepOnModeSwitch", "vBeepVolume", "vMenuBarIconSize", "vUseVietnameseMenubarIcon",
+            UserDefaultsKey.beepOnModeSwitch, UserDefaultsKey.beepVolume, UserDefaultsKey.menuBarIconSize, UserDefaultsKey.useVietnameseMenubarIcon,
 
             // Update settings
-            "SUScheduledCheckInterval", "SUEnableBetaChannel", "vAutoInstallUpdates",
+            UserDefaultsKey.updateCheckInterval, UserDefaultsKey.betaChannelEnabled, UserDefaultsKey.autoInstallUpdates,
 
             // Bug report settings
-            "vIncludeSystemInfo", "vIncludeLogs", "vIncludeCrashLogs"
+            UserDefaultsKey.includeSystemInfo, UserDefaultsKey.includeLogs, UserDefaultsKey.includeCrashLogs
         ]
 
         for key in settingsKeys {
@@ -424,35 +424,35 @@ struct SystemSettingsView: View {
 
         // Load macros
         var macros: [MacroItem]?
-        if let data = defaults.data(forKey: "macroList"),
+        if let data = defaults.data(forKey: UserDefaultsKey.macroList),
            let items = try? JSONDecoder().decode([MacroItem].self, from: data) {
             macros = items
         }
 
         // Load categories
         var categories: [MacroCategory]?
-        if let data = defaults.data(forKey: "macroCategories"),
+        if let data = defaults.data(forKey: UserDefaultsKey.macroCategories),
            let items = try? JSONDecoder().decode([MacroCategory].self, from: data) {
             categories = items
         }
 
         // Load excluded apps (new format)
         var excludedAppsV2: [ExcludedApp]?
-        if let data = defaults.data(forKey: "ExcludedApps"),
+        if let data = defaults.data(forKey: UserDefaultsKey.excludedApps),
            let apps = try? JSONDecoder().decode([ExcludedApp].self, from: data) {
             excludedAppsV2 = apps
         }
 
         // Load send key step by step apps
         var stepByStepApps: [ExcludedApp]?
-        if let data = defaults.data(forKey: "SendKeyStepByStepApps"),
+        if let data = defaults.data(forKey: UserDefaultsKey.sendKeyStepByStepApps),
            let apps = try? JSONDecoder().decode([ExcludedApp].self, from: data) {
             stepByStepApps = apps
         }
 
         // Load uppercase excluded apps
         var upperCaseExcludedApps: [ExcludedApp]?
-        if let data = defaults.data(forKey: "UpperCaseExcludedApps"),
+        if let data = defaults.data(forKey: UserDefaultsKey.upperCaseExcludedApps),
            let apps = try? JSONDecoder().decode([ExcludedApp].self, from: data) {
             upperCaseExcludedApps = apps
         }
@@ -512,14 +512,14 @@ struct SystemSettingsView: View {
         // Apply macros
         if let macros = backup.macros {
             if let encoded = try? JSONEncoder().encode(macros) {
-                defaults.set(encoded, forKey: "macroList")
+                defaults.set(encoded, forKey: UserDefaultsKey.macroList)
             }
         }
 
         // Apply categories
         if let categories = backup.macroCategories {
             if let encoded = try? JSONEncoder().encode(categories) {
-                defaults.set(encoded, forKey: "macroCategories")
+                defaults.set(encoded, forKey: UserDefaultsKey.macroCategories)
             }
         }
 
@@ -527,7 +527,7 @@ struct SystemSettingsView: View {
         if let excludedAppsV2 = backup.excludedAppsV2 {
             // New format with full app info
             if let encoded = try? JSONEncoder().encode(excludedAppsV2) {
-                defaults.set(encoded, forKey: "ExcludedApps")
+                defaults.set(encoded, forKey: UserDefaultsKey.excludedApps)
             }
         } else if let excludedApps = backup.excludedApps {
             // Legacy format: convert bundle IDs to ExcludedApp objects
@@ -539,21 +539,21 @@ struct SystemSettingsView: View {
                 )
             }
             if let encoded = try? JSONEncoder().encode(apps) {
-                defaults.set(encoded, forKey: "ExcludedApps")
+                defaults.set(encoded, forKey: UserDefaultsKey.excludedApps)
             }
         }
 
         // Apply send key step by step apps
         if let stepByStepApps = backup.sendKeyStepByStepApps {
             if let encoded = try? JSONEncoder().encode(stepByStepApps) {
-                defaults.set(encoded, forKey: "SendKeyStepByStepApps")
+                defaults.set(encoded, forKey: UserDefaultsKey.sendKeyStepByStepApps)
             }
         }
 
         // Apply uppercase excluded apps
         if let upperCaseExcludedApps = backup.upperCaseExcludedApps {
             if let encoded = try? JSONEncoder().encode(upperCaseExcludedApps) {
-                defaults.set(encoded, forKey: "UpperCaseExcludedApps")
+                defaults.set(encoded, forKey: UserDefaultsKey.upperCaseExcludedApps)
             }
         }
 
@@ -563,13 +563,16 @@ struct SystemSettingsView: View {
         appState.loadSettings()
 
         // Notify all components
-        NotificationCenter.default.post(name: NSNotification.Name("MacrosUpdated"), object: nil)
-        NotificationCenter.default.post(name: NSNotification.Name("CustomDictionaryUpdated"), object: nil)
-        NotificationCenter.default.post(name: NSNotification.Name("ExcludedAppsChanged"), object: nil)
-        NotificationCenter.default.post(name: NSNotification.Name("UpperCaseExcludedAppsChanged"), object: nil)
-        NotificationCenter.default.post(name: NSNotification.Name("PHTVSettingsChanged"), object: nil)
-        NotificationCenter.default.post(name: NSNotification.Name("HotkeyChanged"), object: NSNumber(value: defaults.integer(forKey: "SwitchKeyStatus")))
-        NotificationCenter.default.post(name: NSNotification.Name("EmojiHotkeySettingsChanged"), object: nil)
+        NotificationCenter.default.post(name: NotificationName.macrosUpdated, object: nil)
+        NotificationCenter.default.post(name: NotificationName.customDictionaryUpdated, object: nil)
+        NotificationCenter.default.post(name: NotificationName.excludedAppsChanged, object: nil)
+        NotificationCenter.default.post(name: NotificationName.upperCaseExcludedAppsChanged, object: nil)
+        NotificationCenter.default.post(name: NotificationName.phtvSettingsChanged, object: nil)
+        NotificationCenter.default.post(
+            name: NotificationName.hotkeyChanged,
+            object: NSNumber(value: defaults.integer(forKey: UserDefaultsKey.switchKeyStatus))
+        )
+        NotificationCenter.default.post(name: NotificationName.emojiHotkeySettingsChanged, object: nil)
 
         importData = nil
         successMessage = "Đã nhập cài đặt thành công!"
@@ -587,7 +590,7 @@ struct SystemSettingsView: View {
         // Trigger Sparkle update check
         // Sparkle will handle the UI via UpdateBannerView or notification when no update
         NotificationCenter.default.post(
-            name: NSNotification.Name("SparkleManualCheck"),
+            name: NotificationName.sparkleManualCheck,
             object: nil
         )
 

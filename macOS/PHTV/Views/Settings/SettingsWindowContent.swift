@@ -63,7 +63,7 @@ struct SettingsWindowContent: View {
 
             // Also post notification for AppDelegate to track state
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                NotificationCenter.default.post(name: NSNotification.Name("PHTVShowDockIcon"), object: nil, userInfo: ["visible": true])
+                NotificationCenter.default.post(name: NotificationName.phtvShowDockIcon, object: nil, userInfo: ["visible": true])
             }
 
             // Update window level based on user preference
@@ -78,7 +78,7 @@ struct SettingsWindowContent: View {
             // Check if onboarding should be shown (first launch)
             checkAndShowOnboarding()
         }
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowOnboarding"))) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: NotificationName.showOnboarding)) { _ in
             withAnimation(.easeInOut(duration: 0.3)) {
                 showOnboarding = true
             }
@@ -98,7 +98,7 @@ struct SettingsWindowContent: View {
             URLCache.shared.removeAllCachedResponses()
 
             // Post notification for AppDelegate to restore state
-            NotificationCenter.default.post(name: NSNotification.Name("PHTVShowDockIcon"), object: nil, userInfo: ["visible": userPrefersDock])
+            NotificationCenter.default.post(name: NotificationName.phtvShowDockIcon, object: nil, userInfo: ["visible": userPrefersDock])
 
             // Also set activation policy directly
             DispatchQueue.main.async {

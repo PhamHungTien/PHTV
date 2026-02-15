@@ -18,7 +18,7 @@ enum SettingsWindowHelper {
             // SwiftUI Window scenes have identifiers like "settings-AppWindow-1"
             if identifier.hasPrefix("settings") {
                 // Set window level based on user preference
-                let alwaysOnTop = UserDefaults.standard.bool(forKey: "vSettingsWindowAlwaysOnTop")
+                let alwaysOnTop = UserDefaults.standard.bool(forKey: UserDefaultsKey.settingsWindowAlwaysOnTop)
                 window.level = alwaysOnTop ? .floating : .normal
 
                 // FIX: Ensure robust window behavior matching SettingsWindowContent

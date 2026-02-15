@@ -42,46 +42,35 @@ static NSDictionary* _keyStringToKeyCodeMap = nil;
 }
 
 + (BOOL)checkHotKey:(int)hotKeyData checkKeyCode:(BOOL)checkKeyCode currentKeycode:(CGKeyCode)keycode currentFlags:(CGEventFlags)flags {
-    if ((hotKeyData & (~0x8000)) == EMPTY_HOTKEY)
+    if (IS_EMPTY_HOTKEY(hotKeyData))
         return NO;
-    if (HAS_CONTROL(hotKeyData) ^ GET_BOOL(flags & kCGEventFlagMaskControl))
+    if (!HOTKEY_MATCHES_FLAGS(hotKeyData,
+                              flags,
+                              kCGEventFlagMaskControl,
+                              kCGEventFlagMaskAlternate,
+                              kCGEventFlagMaskCommand,
+                              kCGEventFlagMaskShift,
+                              kCGEventFlagMaskSecondaryFn))
         return NO;
-    if (HAS_OPTION(hotKeyData) ^ GET_BOOL(flags & kCGEventFlagMaskAlternate))
+    if (checkKeyCode && !HOTKEY_KEY_MATCHES(hotKeyData, keycode))
         return NO;
-    if (HAS_COMMAND(hotKeyData) ^ GET_BOOL(flags & kCGEventFlagMaskCommand))
-        return NO;
-    if (HAS_SHIFT(hotKeyData) ^ GET_BOOL(flags & kCGEventFlagMaskShift))
-        return NO;
-    if (HAS_FN(hotKeyData) ^ GET_BOOL(flags & kCGEventFlagMaskSecondaryFn))
-        return NO;
-    if (checkKeyCode) {
-        if (GET_SWITCH_KEY(hotKeyData) != keycode)
-            return NO;
-    }
     return YES;
 }
 
 + (BOOL)hotkeyModifiersAreHeld:(int)hotKeyData currentFlags:(CGEventFlags)flags {
-    if ((hotKeyData & (~0x8000)) == EMPTY_HOTKEY)
+    if (IS_EMPTY_HOTKEY(hotKeyData))
         return NO;
-
-    // Check if all required modifiers are present in current flags
-    if (HAS_CONTROL(hotKeyData) && !(flags & kCGEventFlagMaskControl))
-        return NO;
-    if (HAS_OPTION(hotKeyData) && !(flags & kCGEventFlagMaskAlternate))
-        return NO;
-    if (HAS_COMMAND(hotKeyData) && !(flags & kCGEventFlagMaskCommand))
-        return NO;
-    if (HAS_SHIFT(hotKeyData) && !(flags & kCGEventFlagMaskShift))
-        return NO;
-    if (HAS_FN(hotKeyData) && !(flags & kCGEventFlagMaskSecondaryFn))
-        return NO;
-
-    return YES;
+    return HOTKEY_MODIFIERS_HELD(hotKeyData,
+                                 flags,
+                                 kCGEventFlagMaskControl,
+                                 kCGEventFlagMaskAlternate,
+                                 kCGEventFlagMaskCommand,
+                                 kCGEventFlagMaskShift,
+                                 kCGEventFlagMaskSecondaryFn);
 }
 
 + (BOOL)isModifierOnlyHotkey:(int)hotKeyData {
-    return GET_SWITCH_KEY(hotKeyData) == 0xFE;
+    return !HOTKEY_HAS_KEY(hotKeyData);
 }
 
 #pragma mark - Language Switching

@@ -130,7 +130,7 @@ struct UpdateBannerView: View {
     private func installUpdate() {
         // Notify Sparkle to proceed with update installation
         NotificationCenter.default.post(
-            name: NSNotification.Name("SparkleInstallUpdate"),
+            name: NotificationName.sparkleInstallUpdate,
             object: nil
         )
         // Dismiss banner - Sparkle will show its own UI

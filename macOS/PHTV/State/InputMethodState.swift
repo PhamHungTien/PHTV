@@ -37,8 +37,8 @@ final class InputMethodState: ObservableObject {
 
     // Pause Vietnamese input when holding a key
     @Published var pauseKeyEnabled: Bool = false
-    @Published var pauseKey: UInt16 = 58  // Default: Left Option
-    @Published var pauseKeyName: String = "Option"
+    @Published var pauseKey: UInt16 = Defaults.pauseKeyCode
+    @Published var pauseKeyName: String = Defaults.pauseKeyName
 
     private var cancellables = Set<AnyCancellable>()
     var isLoadingSettings = false

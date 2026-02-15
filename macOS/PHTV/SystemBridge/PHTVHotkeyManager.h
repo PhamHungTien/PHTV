@@ -12,16 +12,7 @@
 #import <Foundation/Foundation.h>
 #import <ApplicationServices/ApplicationServices.h>
 #import <Carbon/Carbon.h>
-
-// Hotkey data structure macros (from Engine.h)
-#define GET_SWITCH_KEY(data) (data & 0xFF)
-#define HAS_CONTROL(data) ((data & 0x100) ? 1 : 0)
-#define HAS_OPTION(data) ((data & 0x200) ? 1 : 0)
-#define HAS_COMMAND(data) ((data & 0x400) ? 1 : 0)
-#define HAS_SHIFT(data) ((data & 0x800) ? 1 : 0)
-#define HAS_FN(data) ((data & 0x1000) ? 1 : 0)
-#define GET_BOOL(data) (data ? 1 : 0)
-#define EMPTY_HOTKEY 0xFE0000FE
+#include "../Core/PHTVHotkey.h"
 
 @interface PHTVHotkeyManager : NSObject
 

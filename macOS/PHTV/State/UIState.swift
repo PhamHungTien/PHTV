@@ -20,7 +20,7 @@ final class UIState: ObservableObject {
     @Published var switchKeyShift: Bool = true
     @Published var switchKeyFn: Bool = false
     @Published var switchKeyCode: UInt16 = KeyCode.noKey  // KeyCode.noKey = modifier only mode
-    @Published var switchKeyName: String = "Không"  // Display name for the key
+    @Published var switchKeyName: String = KeyCode.modifierOnlyDisplayName  // Display name for the key
     @Published var beepOnModeSwitch: Bool = false  // Play beep sound when switching mode
 
     // Audio and Display settings
@@ -48,6 +48,16 @@ final class UIState: ObservableObject {
 
     // MARK: - Load/Save Settings
 
+    private func applyDefaultSwitchHotkey() {
+        switchKeyCode = Defaults.switchKeyCode
+        switchKeyControl = Defaults.switchKeyControl
+        switchKeyOption = Defaults.switchKeyOption
+        switchKeyCommand = Defaults.switchKeyCommand
+        switchKeyShift = Defaults.switchKeyShift
+        switchKeyFn = Defaults.switchKeyFn
+        switchKeyName = Defaults.switchKeyName
+    }
+
     func loadSettings() {
         let defaults = UserDefaults.standard
 
@@ -56,24 +66,18 @@ final class UIState: ObservableObject {
         if switchKeyStatus != 0 {
             decodeSwitchKeyStatus(switchKeyStatus)
         } else {
-            // Default: Ctrl + Shift (0x9FE = Ctrl + Shift + no key)
-            switchKeyCode = KeyCode.noKey  // No key (modifier only)
-            switchKeyControl = true
-            switchKeyOption = false
-            switchKeyCommand = false
-            switchKeyShift = true
-            switchKeyName = "Không"
+            applyDefaultSwitchHotkey()
         }
         beepOnModeSwitch = defaults.bool(forKey: UserDefaultsKey.beepOnModeSwitch)
 
         // Load audio and display settings
         beepVolume = defaults.double(forKey: UserDefaultsKey.beepVolume)
         if beepVolume == 0 { beepVolume = 0.5 } // Default if not set
-        print("[UIState] Loaded beepVolume: \(beepVolume)")
+        liveLog("Loaded beepVolume: \(beepVolume)")
 
         menuBarIconSize = defaults.double(forKey: UserDefaultsKey.menuBarIconSize)
         if menuBarIconSize == 0 { menuBarIconSize = 18.0 } // Default if not set
-        print("[UIState] Loaded menuBarIconSize: \(menuBarIconSize)")
+        liveLog("Loaded menuBarIconSize: \(menuBarIconSize)")
 
         useVietnameseMenubarIcon = defaults.bool(forKey: UserDefaultsKey.useVietnameseMenubarIcon)
     }
@@ -99,7 +103,7 @@ final class UIState: ObservableObject {
 
     /// Decode vSwitchKeyStatus from backend format
     private func decodeSwitchKeyStatus(_ status: Int) {
-        switchKeyCode = UInt16(status & 0xFF)
+        switchKeyCode = UInt16(status & KeyCode.keyMask)
         switchKeyControl = (status & KeyCode.controlMask) != 0
         switchKeyOption = (status & KeyCode.optionMask) != 0
         switchKeyCommand = (status & KeyCode.commandMask) != 0
@@ -123,27 +127,7 @@ final class UIState: ObservableObject {
 
     /// Convert key code to display name
     private func keyCodeToName(_ keyCode: UInt16) -> String {
-        // Special case: KeyCode.noKey means no key (modifier only mode)
-        if keyCode == KeyCode.noKey {
-            return "Không"
-        }
-
-        let keyNames: [UInt16: String] = [
-            0x00: "A", 0x01: "S", 0x02: "D", 0x03: "F", 0x04: "H",
-            0x05: "G", 0x06: "Z", 0x07: "X", 0x08: "C", 0x09: "V",
-            0x0B: "B", 0x0C: "Q", 0x0D: "W", 0x0E: "E", 0x0F: "R",
-            0x10: "Y", 0x11: "T", 0x12: "1", 0x13: "2", 0x14: "3",
-            0x15: "4", 0x16: "6", 0x17: "5", 0x18: "=", 0x19: "9",
-            0x1A: "7", 0x1B: "-", 0x1C: "8", 0x1D: "0", 0x1E: "]",
-            0x1F: "O", 0x20: "U", 0x21: "[", 0x22: "I", 0x23: "P",
-            0x25: "L", 0x26: "J", 0x27: "'", 0x28: "K", 0x29: ";",
-            0x2A: "\\", 0x2B: ",", 0x2C: "/", 0x2D: "N", 0x2E: "M",
-            0x2F: ".", 0x31: "Space", 0x32: "`",
-            0x7A: "F1", 0x78: "F2", 0x63: "F3", 0x76: "F4",
-            0x60: "F5", 0x61: "F6", 0x62: "F7", 0x64: "F8",
-            0x65: "F9", 0x6D: "F10", 0x67: "F11", 0x6F: "F12",
-        ]
-        return keyNames[keyCode] ?? "Key \(keyCode)"
+        KeyCode.name(for: keyCode)
     }
 
     // MARK: - Setup Observers
@@ -215,7 +199,7 @@ final class UIState: ObservableObject {
                 let defaults = UserDefaults.standard
                 defaults.set(value, forKey: UserDefaultsKey.menuBarIconSize)
                 defaults.synchronize()
-                print("[UIState] Saved menuBarIconSize: \(value)")
+                self.liveLog("Saved menuBarIconSize: \(value)")
             }.store(in: &cancellables)
 
         // Debounced persistence for Vietnamese menubar icon
@@ -227,7 +211,7 @@ final class UIState: ObservableObject {
                 let defaults = UserDefaults.standard
                 defaults.set(value, forKey: UserDefaultsKey.useVietnameseMenubarIcon)
                 defaults.synchronize()
-                print("[UIState] Saved useVietnameseMenubarIcon: \(value)")
+                self.liveLog("Saved useVietnameseMenubarIcon: \(value)")
             }.store(in: &cancellables)
     }
 

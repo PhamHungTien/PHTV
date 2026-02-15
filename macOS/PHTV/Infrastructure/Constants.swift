@@ -25,6 +25,7 @@ enum UserDefaultsKey {
     static let useMacro = "UseMacro"
     static let useMacroInEnglishMode = "UseMacroInEnglishMode"
     static let autoCapsMacro = "vAutoCapsMacro"
+    static let macroList = "macroList"
     static let macroCategories = "macroCategories"
     static let useSmartSwitchKey = "UseSmartSwitchKey"
     static let upperCaseFirstChar = "UpperCaseFirstChar"
@@ -97,8 +98,11 @@ enum NotificationName {
     static let phtvSettingsChanged = NSNotification.Name("PHTVSettingsChanged")
     static let inputMethodChanged = NSNotification.Name("InputMethodChanged")
     static let codeTableChanged = NSNotification.Name("CodeTableChanged")
+    static let toggleEnabled = NSNotification.Name("ToggleEnabled")
     static let hotkeyChanged = NSNotification.Name("HotkeyChanged")
     static let settingsResetToDefaults = NSNotification.Name("SettingsResetToDefaults")
+    static let macrosUpdated = NSNotification.Name("MacrosUpdated")
+    static let customDictionaryUpdated = NSNotification.Name("CustomDictionaryUpdated")
 
     // MARK: - App Lists
     static let excludedAppsChanged = NSNotification.Name("ExcludedAppsChanged")
@@ -112,16 +116,29 @@ enum NotificationName {
     static let accessibilityStatusChanged = NSNotification.Name("AccessibilityStatusChanged")
     static let runOnStartupChanged = NSNotification.Name("RunOnStartupChanged")
     static let applicationWillTerminate = NSNotification.Name("ApplicationWillTerminate")
+    static let showSettings = NSNotification.Name("ShowSettings")
+    static let createSettingsWindow = NSNotification.Name("CreateSettingsWindow")
+    static let phtvShowDockIcon = NSNotification.Name("PHTVShowDockIcon")
 
     // MARK: - UI Updates
     static let menuBarIconSizeChanged = NSNotification.Name("MenuBarIconSizeChanged")
     static let menuBarIconPreferenceChanged = NSNotification.Name("MenuBarIconPreferenceChanged")
+    static let showAboutTab = NSNotification.Name("ShowAboutTab")
+    static let showMacroTab = NSNotification.Name("ShowMacroTab")
+    static let showOnboarding = NSNotification.Name("ShowOnboarding")
+    static let showConvertToolSheet = NSNotification.Name("ShowConvertToolSheet")
+    static let openConvertToolSheet = NSNotification.Name("OpenConvertToolSheet")
+    static let showConvertTool = NSNotification.Name("ShowConvertTool")
+    static let openConvertTool = NSNotification.Name("OpenConvertTool")
+    static let showAbout = NSNotification.Name("ShowAbout")
 
     // MARK: - Updates
     static let checkForUpdatesResponse = NSNotification.Name("CheckForUpdatesResponse")
     static let updateCheckFrequencyChanged = NSNotification.Name("UpdateCheckFrequencyChanged")
     static let betaChannelChanged = NSNotification.Name("BetaChannelChanged")
     static let sparkleShowUpdateBanner = NSNotification.Name("SparkleShowUpdateBanner")
+    static let sparkleManualCheck = NSNotification.Name("SparkleManualCheck")
+    static let sparkleInstallUpdate = NSNotification.Name("SparkleInstallUpdate")
 }
 
 // MARK: - Key Codes
@@ -129,9 +146,23 @@ enum NotificationName {
 enum KeyCode {
     // MARK: - Special Keys
     static let noKey: UInt16 = 0xFE  // Modifier-only mode (no physical key)
+    static let keyMask = 0x00FF
+    static let tab: UInt16 = 48
+    static let delete: UInt16 = 51
     static let escape: UInt16 = 53
+    static let leftCommand: UInt16 = 55
+    static let rightCommand: UInt16 = 54
+    static let leftControl: UInt16 = 59
+    static let rightControl: UInt16 = 62
     static let leftOption: UInt16 = 58
+    static let rightOption: UInt16 = 61
+    static let space: UInt16 = 49
     static let eKey: UInt16 = 14
+    static let home: UInt16 = 115
+    static let pageUp: UInt16 = 116
+    static let end: UInt16 = 119
+    static let pageDown: UInt16 = 121
+    static let modifierOnlyDisplayName = "Không"
 
     // MARK: - Modifier Masks (for SwitchKeyStatus encoding)
     static let controlMask = 0x100
@@ -167,6 +198,38 @@ enum KeyCode {
         0x60: "F5", 0x61: "F6", 0x62: "F7", 0x64: "F8",
         0x65: "F9", 0x6D: "F10", 0x67: "F11", 0x6F: "F12"
     ]
+
+    static func isModifierOnly(_ keyCode: UInt16) -> Bool {
+        keyCode == noKey
+    }
+
+    static func name(for keyCode: UInt16) -> String {
+        if isModifierOnly(keyCode) {
+            return modifierOnlyDisplayName
+        }
+        return keyNames[keyCode] ?? "Key \(keyCode)"
+    }
+}
+
+enum HotkeyFormatter {
+    static func switchHotkeyString(
+        control: Bool,
+        option: Bool,
+        shift: Bool,
+        command: Bool,
+        fn: Bool,
+        keyCode: UInt16,
+        keyName: String
+    ) -> String {
+        var parts: [String] = []
+        if fn { parts.append("fn") }
+        if control { parts.append("⌃") }
+        if option { parts.append("⌥") }
+        if shift { parts.append("⇧") }
+        if command { parts.append("⌘") }
+        if !KeyCode.isModifierOnly(keyCode) { parts.append(keyName) }
+        return parts.isEmpty ? "Chưa đặt" : parts.joined()
+    }
 }
 
 // MARK: - Default Values
@@ -218,7 +281,7 @@ enum Defaults {
     static let switchKeyShift = true
     static let switchKeyFn = false
     static let switchKeyCode = KeyCode.noKey
-    static let switchKeyName = "Không"
+    static let switchKeyName = KeyCode.modifierOnlyDisplayName
     static let beepOnModeSwitch = false
 
     // MARK: - Audio & Display

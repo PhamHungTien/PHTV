@@ -18,6 +18,7 @@
 #import <string.h>
 #include <limits>
 #import "Engine.h"
+#include "../Core/PHTVConstants.h"
 #import "../Application/AppDelegate.h"
 #import "PHTVManager.h"
 
@@ -333,8 +334,21 @@ NSString* getBundleIdFromPID(pid_t pid) {
 
 #define DYNA_DATA(macro, pos) (macro ? pData->macroData[pos] : pData->charData[pos])
 #define MAX_UNICODE_STRING  20
-#define EMPTY_HOTKEY 0xFE0000FE
 #define LOAD_DATA(VAR, KEY) VAR = (int)[[NSUserDefaults standardUserDefaults] integerForKey:@#KEY]
+
+static NSString * const kConvertToolDontAlertWhenCompletedKey = @"convertToolDontAlertWhenCompleted";
+static NSString * const kConvertToolToAllCapsKey = @"convertToolToAllCaps";
+static NSString * const kConvertToolToAllNonCapsKey = @"convertToolToAllNonCaps";
+static NSString * const kConvertToolToCapsFirstLetterKey = @"convertToolToCapsFirstLetter";
+static NSString * const kConvertToolToCapsEachWordKey = @"convertToolToCapsEachWord";
+static NSString * const kConvertToolRemoveMarkKey = @"convertToolRemoveMark";
+static NSString * const kConvertToolFromCodeKey = @"convertToolFromCode";
+static NSString * const kConvertToolToCodeKey = @"convertToolToCode";
+static NSString * const kConvertToolHotKeyKey = @"convertToolHotKey";
+
+static inline Uint8 ClampConvertCodeTable(NSInteger value) {
+    return static_cast<Uint8>(phtv_clamp_code_table(static_cast<int>(value)));
+}
 
 // Ignore code for Modifier keys and numpad
 // Reference: https://eastmanreference.com/complete-list-of-applescript-key-codes
@@ -1475,7 +1489,7 @@ static bool _pendingUppercasePrimeCheck = true;
     bool _willContinuteSending = false;
     bool _willSendControlKey = false;
     
-    vector<Uint16> _syncKey;
+    std::vector<Uint16> _syncKey;
     
     Uint16 _uniChar[2];
     int _i, _j, _k;
@@ -1498,7 +1512,7 @@ static bool _pendingUppercasePrimeCheck = true;
     int _savedLanguageBeforePause = 1; // Save language state before pause (1 = Vietnamese, 0 = English)
 
     int _languageTemp = 0; //use for smart switch key
-    vector<Byte> savedSmartSwitchKeyData; ////use for smart switch key
+    std::vector<Byte> savedSmartSwitchKeyData; ////use for smart switch key
     
     NSString* _frontMostApp = @"UnknownApp";
     
@@ -1704,8 +1718,8 @@ static bool _pendingUppercasePrimeCheck = true;
         // Typical typing buffer is ~50 chars, reserve for safety margin
         _syncKey.reserve(SYNC_KEY_RESERVE_SIZE);
 
-        eventBackSpaceDown = CGEventCreateKeyboardEvent (myEventSource, 51, true);
-        eventBackSpaceUp = CGEventCreateKeyboardEvent (myEventSource, 51, false);
+        eventBackSpaceDown = CGEventCreateKeyboardEvent (myEventSource, KEY_DELETE, true);
+        eventBackSpaceUp = CGEventCreateKeyboardEvent (myEventSource, KEY_DELETE, false);
         
         // Apply NonCoalesced flag to global backspace events
         CGEventSetFlags(eventBackSpaceDown, CGEventGetFlags(eventBackSpaceDown) | kCGEventFlagMaskNonCoalesced);
@@ -1721,17 +1735,19 @@ static bool _pendingUppercasePrimeCheck = true;
         initSmartSwitchKey((Byte*)data.bytes, (int)data.length);
         
         //init convert tool
-        convertToolDontAlertWhenCompleted = ![prefs boolForKey:@"convertToolDontAlertWhenCompleted"];
-        convertToolToAllCaps = [prefs boolForKey:@"convertToolToAllCaps"];
-        convertToolToAllNonCaps = [prefs boolForKey:@"convertToolToAllNonCaps"];
-        convertToolToCapsFirstLetter = [prefs boolForKey:@"convertToolToCapsFirstLetter"];
-        convertToolToCapsEachWord = [prefs boolForKey:@"convertToolToCapsEachWord"];
-        convertToolRemoveMark = [prefs boolForKey:@"convertToolRemoveMark"];
-        convertToolFromCode = [prefs integerForKey:@"convertToolFromCode"];
-        convertToolToCode = [prefs integerForKey:@"convertToolToCode"];
-        convertToolHotKey = (int)[prefs integerForKey:@"convertToolHotKey"];
-        if (convertToolHotKey == 0) {
-            convertToolHotKey = EMPTY_HOTKEY;
+        resetConvertToolOptions();
+        gConvertToolOptions.dontAlertWhenCompleted = ![prefs boolForKey:kConvertToolDontAlertWhenCompletedKey];
+        gConvertToolOptions.toAllCaps = [prefs boolForKey:kConvertToolToAllCapsKey];
+        gConvertToolOptions.toAllNonCaps = [prefs boolForKey:kConvertToolToAllNonCapsKey];
+        gConvertToolOptions.toCapsFirstLetter = [prefs boolForKey:kConvertToolToCapsFirstLetterKey];
+        gConvertToolOptions.toCapsEachWord = [prefs boolForKey:kConvertToolToCapsEachWordKey];
+        gConvertToolOptions.removeMark = [prefs boolForKey:kConvertToolRemoveMarkKey];
+        gConvertToolOptions.fromCode = ClampConvertCodeTable([prefs integerForKey:kConvertToolFromCodeKey]);
+        gConvertToolOptions.toCode = ClampConvertCodeTable([prefs integerForKey:kConvertToolToCodeKey]);
+        normalizeConvertToolOptions();
+        gConvertToolOptions.hotKey = (int)[prefs integerForKey:kConvertToolHotKeyKey];
+        if (gConvertToolOptions.hotKey == 0) {
+            gConvertToolOptions.hotKey = defaultConvertToolOptions().hotKey;
         }
     }
     
@@ -1862,38 +1878,36 @@ static bool _pendingUppercasePrimeCheck = true;
         // This prevents the settings window (which is often excluded/English) from polluting the global language state
         // or overwriting the saved state of the previous app.
         if ([_frontMostApp isEqualToString:PHTV_BUNDLE]) {
-            _languageTemp = -1; // Reset temp value to avoid using state from previous app switch
+            _languageTemp = SMART_SWITCH_NOT_FOUND; // Reset temp value to avoid using state from previous app switch
             return;
         }
 
-        _languageTemp = getAppInputMethodStatus(string(_frontMostApp.UTF8String), vLanguage | (vCodeTable << 1));
+        _languageTemp = getAppInputMethodStatus(std::string(_frontMostApp.UTF8String),
+                                               encodeSmartSwitchInputState(vLanguage, vCodeTable));
 
-        if ((_languageTemp & 0x01) != vLanguage) { //for input method
-            if (_languageTemp != -1) {
-                // PERFORMANCE: Update state directly without triggering callbacks
-                // onImputMethodChanged would cause cascading updates
-                vLanguage = _languageTemp;
-                [[NSUserDefaults standardUserDefaults] setInteger:vLanguage forKey:@"InputMethod"];
-                RequestNewSession();  // Direct call, no cascading
-                [appDelegate fillData];  // Update UI only
-
-                // Notify SwiftUI (use separate notification for smart switch to avoid sound)
-                [[NSNotificationCenter defaultCenter] postNotificationName:@"LanguageChangedFromSmartSwitch"
-                                                                    object:@(vLanguage)];
-            } else {
-                saveSmartSwitchKeyData();
-            }
+        if (_languageTemp == SMART_SWITCH_NOT_FOUND) {
+            saveSmartSwitchKeyData();
+            return;
         }
-        if (vRememberCode && (_languageTemp >> 1) != vCodeTable) { //for remember table code feature
-            if (_languageTemp != -1) {
-                // PERFORMANCE: Update state directly
-                vCodeTable = (_languageTemp >> 1);
-                [[NSUserDefaults standardUserDefaults] setInteger:vCodeTable forKey:@"CodeTable"];
-                RequestNewSession();
-                [appDelegate fillData];
-            } else {
-                saveSmartSwitchKeyData();
-            }
+
+        if (decodeSmartSwitchInputMethod(_languageTemp) != vLanguage) { //for input method
+            // PERFORMANCE: Update state directly without triggering callbacks
+            // onImputMethodChanged would cause cascading updates
+            vLanguage = decodeSmartSwitchInputMethod(_languageTemp);
+            [[NSUserDefaults standardUserDefaults] setInteger:vLanguage forKey:@"InputMethod"];
+            RequestNewSession();  // Direct call, no cascading
+            [appDelegate fillData];  // Update UI only
+
+            // Notify SwiftUI (use separate notification for smart switch to avoid sound)
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"LanguageChangedFromSmartSwitch"
+                                                                object:@(vLanguage)];
+        }
+        if (vRememberCode && decodeSmartSwitchCodeTable(_languageTemp) != vCodeTable) { //for remember table code feature
+            // PERFORMANCE: Update state directly
+            vCodeTable = decodeSmartSwitchCodeTable(_languageTemp);
+            [[NSUserDefaults standardUserDefaults] setInteger:vCodeTable forKey:@"CodeTable"];
+            RequestNewSession();
+            [appDelegate fillData];
         }
     }
     
@@ -1917,7 +1931,8 @@ static bool _pendingUppercasePrimeCheck = true;
             return;
         }
 
-        setAppInputMethodStatus(string(_frontMostApp.UTF8String), vLanguage | (vCodeTable << 1));
+        setAppInputMethodStatus(std::string(_frontMostApp.UTF8String),
+                                encodeSmartSwitchInputState(vLanguage, vCodeTable));
         saveSmartSwitchKeyData();
     }
     
@@ -1939,7 +1954,8 @@ static bool _pendingUppercasePrimeCheck = true;
             return;
         }
 
-        setAppInputMethodStatus(string(_frontMostApp.UTF8String), vLanguage | (vCodeTable << 1));
+        setAppInputMethodStatus(std::string(_frontMostApp.UTF8String),
+                                encodeSmartSwitchInputState(vLanguage, vCodeTable));
         saveSmartSwitchKeyData();
     }
     
@@ -2094,8 +2110,8 @@ static bool _pendingUppercasePrimeCheck = true;
 
     void SendPhysicalBackspace() {
         if (_phtvPostToHIDTap) {
-            CGEventRef bsDown = CGEventCreateKeyboardEvent(myEventSource, 51, true);
-            CGEventRef bsUp = CGEventCreateKeyboardEvent(myEventSource, 51, false);
+            CGEventRef bsDown = CGEventCreateKeyboardEvent(myEventSource, KEY_DELETE, true);
+            CGEventRef bsUp = CGEventCreateKeyboardEvent(myEventSource, KEY_DELETE, false);
             if (_phtvKeyboardType != 0) {
                 CGEventSetIntegerValueField(bsDown, kCGKeyboardEventKeyboardType, _phtvKeyboardType);
                 CGEventSetIntegerValueField(bsUp, kCGKeyboardEventKeyboardType, _phtvKeyboardType);
@@ -2451,19 +2467,17 @@ static bool _pendingUppercasePrimeCheck = true;
     }
             
     static inline bool checkHotKeyWithFlags(int hotKeyData, bool checkKeyCode, CGEventFlags flags, CGKeyCode keycode) {
-        if ((hotKeyData & (~0x8000)) == EMPTY_HOTKEY)
+        if (IS_EMPTY_HOTKEY(hotKeyData))
             return false;
-        if (HAS_CONTROL(hotKeyData) ^ GET_BOOL(flags & kCGEventFlagMaskControl))
+        if (!HOTKEY_MATCHES_FLAGS(hotKeyData,
+                                  flags,
+                                  kCGEventFlagMaskControl,
+                                  kCGEventFlagMaskAlternate,
+                                  kCGEventFlagMaskCommand,
+                                  kCGEventFlagMaskShift,
+                                  kCGEventFlagMaskSecondaryFn))
             return false;
-        if (HAS_OPTION(hotKeyData) ^ GET_BOOL(flags & kCGEventFlagMaskAlternate))
-            return false;
-        if (HAS_COMMAND(hotKeyData) ^ GET_BOOL(flags & kCGEventFlagMaskCommand))
-            return false;
-        if (HAS_SHIFT(hotKeyData) ^ GET_BOOL(flags & kCGEventFlagMaskShift))
-            return false;
-        if (HAS_FN(hotKeyData) ^ GET_BOOL(flags & kCGEventFlagMaskSecondaryFn))
-            return false;
-        if (checkKeyCode && GET_SWITCH_KEY(hotKeyData) != keycode)
+        if (checkKeyCode && !HOTKEY_KEY_MATCHES(hotKeyData, keycode))
             return false;
         return true;
     }
@@ -2476,27 +2490,20 @@ static bool _pendingUppercasePrimeCheck = true;
     // This is used to detect if user is in the process of pressing a modifier combo
     // Returns true if current flags CONTAIN all required modifiers (may have extra modifiers)
     bool hotkeyModifiersAreHeld(int hotKeyData, CGEventFlags currentFlags) {
-        if ((hotKeyData & (~0x8000)) == EMPTY_HOTKEY)
+        if (IS_EMPTY_HOTKEY(hotKeyData))
             return false;
-
-        // Check if all required modifiers are present in current flags
-        if (HAS_CONTROL(hotKeyData) && !(currentFlags & kCGEventFlagMaskControl))
-            return false;
-        if (HAS_OPTION(hotKeyData) && !(currentFlags & kCGEventFlagMaskAlternate))
-            return false;
-        if (HAS_COMMAND(hotKeyData) && !(currentFlags & kCGEventFlagMaskCommand))
-            return false;
-        if (HAS_SHIFT(hotKeyData) && !(currentFlags & kCGEventFlagMaskShift))
-            return false;
-        if (HAS_FN(hotKeyData) && !(currentFlags & kCGEventFlagMaskSecondaryFn))
-            return false;
-
-        return true;
+        return HOTKEY_MODIFIERS_HELD(hotKeyData,
+                                     currentFlags,
+                                     kCGEventFlagMaskControl,
+                                     kCGEventFlagMaskAlternate,
+                                     kCGEventFlagMaskCommand,
+                                     kCGEventFlagMaskShift,
+                                     kCGEventFlagMaskSecondaryFn);
     }
 
     // Check if this is a modifier-only hotkey (no specific key required, keycode = 0xFE)
     bool isModifierOnlyHotkey(int hotKeyData) {
-        return GET_SWITCH_KEY(hotKeyData) == 0xFE;
+        return !HOTKEY_HAS_KEY(hotKeyData);
     }
 
     void switchLanguage() {
@@ -2664,7 +2671,7 @@ static bool _pendingUppercasePrimeCheck = true;
 
     // Convert keyboard event to QWERTY-equivalent keycode for layout compatibility
     // This function handles international keyboard layouts by mapping characters to QWERTY keycodes
-    CGKeyCode ConvertEventToKeyboadLayoutCompatKeyCode(CGEventRef keyEvent, CGKeyCode fallbackKeyCode) {
+    CGKeyCode ConvertEventToKeyboardLayoutCompatKeyCode(CGEventRef keyEvent, CGKeyCode fallbackKeyCode) {
         // Fast path: check cache first
         CGKeyCode rawKeyCode = (CGKeyCode)CGEventGetIntegerValueField(keyEvent, kCGKeyboardEventKeycode);
         if (_layoutCacheValid && rawKeyCode < 256 && _layoutCache[rawKeyCode] != 0xFFFF) {
@@ -2750,7 +2757,7 @@ static bool _pendingUppercasePrimeCheck = true;
     }
 
     static inline bool isEmojiModifierOnlyHotkey() {
-        return (vEmojiHotkeyKeyCode & 0xFF) == 0xFE;
+        return !HOTKEY_RAW_KEY_HAS_KEY(vEmojiHotkeyKeyCode);
     }
 
     // Check if ALL emoji hotkey modifiers are currently held
@@ -2778,10 +2785,10 @@ static bool _pendingUppercasePrimeCheck = true;
     static inline CGEventRef HandleHotkeyPress(CGEventType type, CGKeyCode keycode) {
         if (type != kCGEventKeyDown) return NULL;
 
-        BOOL switchHotkeyHasKey = GET_SWITCH_KEY(vSwitchKeyStatus) != 0xFE;
-        BOOL convertHotkeyHasKey = GET_SWITCH_KEY(convertToolHotKey) != 0xFE;
-        BOOL isSwitchHotkeyKey = switchHotkeyHasKey && GET_SWITCH_KEY(vSwitchKeyStatus) == keycode;
-        BOOL isConvertHotkeyKey = convertHotkeyHasKey && GET_SWITCH_KEY(convertToolHotKey) == keycode;
+        BOOL switchHotkeyHasKey = HOTKEY_HAS_KEY(vSwitchKeyStatus);
+        BOOL convertHotkeyHasKey = HOTKEY_HAS_KEY(gConvertToolOptions.hotKey);
+        BOOL isSwitchHotkeyKey = switchHotkeyHasKey && HOTKEY_KEY_MATCHES(vSwitchKeyStatus, keycode);
+        BOOL isConvertHotkeyKey = convertHotkeyHasKey && HOTKEY_KEY_MATCHES(gConvertToolOptions.hotKey, keycode);
         BOOL isEmojiHotkeyKey = vEnableEmojiHotkey && ((CGKeyCode)vEmojiHotkeyKeyCode == keycode);
 
         // OpenKey style: clear stale modifier tracking on unrelated key presses.
@@ -2803,8 +2810,8 @@ static bool _pendingUppercasePrimeCheck = true;
 
         // Check convert tool hotkey
         if (isConvertHotkeyKey &&
-            (checkHotKey(convertToolHotKey, true) ||
-             checkHotKeyWithFlags(convertToolHotKey, true, _flag, keycode))) {
+            (checkHotKey(gConvertToolOptions.hotKey, true) ||
+             checkHotKeyWithFlags(gConvertToolOptions.hotKey, true, _flag, keycode))) {
             [appDelegate onQuickConvert];
             _lastFlag = 0;
             _hasJustUsedHotKey = true;
@@ -2824,36 +2831,41 @@ static bool _pendingUppercasePrimeCheck = true;
         return NULL;
     }
 
+    static inline CGEventFlags PauseKeyModifierMask(int pauseKey) {
+        switch (pauseKey) {
+            case KEY_LEFT_OPTION:
+            case KEY_RIGHT_OPTION:
+                return kCGEventFlagMaskAlternate;
+            case KEY_LEFT_CONTROL:
+            case KEY_RIGHT_CONTROL:
+                return kCGEventFlagMaskControl;
+            case KEY_LEFT_SHIFT:
+            case KEY_RIGHT_SHIFT:
+                return kCGEventFlagMaskShift;
+            case KEY_LEFT_COMMAND:
+            case KEY_RIGHT_COMMAND:
+                return kCGEventFlagMaskCommand;
+            case KEY_FUNCTION:
+                return kCGEventFlagMaskSecondaryFn;
+            default:
+                return 0;
+        }
+    }
+
     // Check if a given key matches the pause key configuration
     static inline BOOL IsPauseKeyPressed(CGEventFlags flags) {
         if (!vPauseKeyEnabled || vPauseKey <= 0) return NO;
-
-        if (vPauseKey == KEY_LEFT_OPTION || vPauseKey == KEY_RIGHT_OPTION) {
-            return (flags & kCGEventFlagMaskAlternate) != 0;
-        } else if (vPauseKey == KEY_LEFT_CONTROL || vPauseKey == KEY_RIGHT_CONTROL) {
-            return (flags & kCGEventFlagMaskControl) != 0;
-        } else if (vPauseKey == KEY_LEFT_SHIFT || vPauseKey == KEY_RIGHT_SHIFT) {
-            return (flags & kCGEventFlagMaskShift) != 0;
-        } else if (vPauseKey == KEY_LEFT_COMMAND || vPauseKey == KEY_RIGHT_COMMAND) {
-            return (flags & kCGEventFlagMaskCommand) != 0;
-        } else if (vPauseKey == 63) {  // Fn key
-            return (flags & kCGEventFlagMaskSecondaryFn) != 0;
-        }
-        return NO;
+        const CGEventFlags pauseModifierMask = PauseKeyModifierMask(vPauseKey);
+        return pauseModifierMask != 0 && ((flags & pauseModifierMask) != 0);
     }
 
     // Strip pause modifier from event flags to prevent special characters
     static inline CGEventFlags StripPauseModifier(CGEventFlags flags) {
-        if (vPauseKey == KEY_LEFT_OPTION || vPauseKey == KEY_RIGHT_OPTION) {
-            return flags & ~kCGEventFlagMaskAlternate;
-        } else if (vPauseKey == KEY_LEFT_CONTROL || vPauseKey == KEY_RIGHT_CONTROL) {
-            return flags & ~kCGEventFlagMaskControl;
-        } else if (vPauseKey == KEY_LEFT_COMMAND || vPauseKey == KEY_RIGHT_COMMAND) {
-            return flags & ~kCGEventFlagMaskCommand;
-        } else if (vPauseKey == 63) {  // Fn key
-            return flags & ~kCGEventFlagMaskSecondaryFn;
+        const CGEventFlags pauseModifierMask = PauseKeyModifierMask(vPauseKey);
+        if (pauseModifierMask == 0) {
+            return flags;
         }
-        return flags;
+        return flags & ~pauseModifierMask;
     }
 
     // Handle pause key press - temporarily disable Vietnamese input
@@ -2887,14 +2899,14 @@ static bool _pendingUppercasePrimeCheck = true;
     // This ensures fast Spotlight detection
     static inline void HandleSpotlightCacheInvalidation(CGEventType type, CGKeyCode keycode, CGEventFlags flag) {
         // Detect Cmd+Space hotkey and invalidate cache immediately
-        if (type == kCGEventKeyDown && keycode == 49 && (flag & kCGEventFlagMaskCommand)) {
+        if (type == kCGEventKeyDown && keycode == KEY_SPACE && (flag & kCGEventFlagMaskCommand)) {
             InvalidateSpotlightCache();
             return;
         }
 
         // Detect ESC key (keycode 53) to invalidate cache when user closes Spotlight
         // IMPROVED: Only invalidate if we were recently detecting Spotlight to avoid false invalidations
-        if (type == kCGEventKeyDown && keycode == 53) {
+        if (type == kCGEventKeyDown && keycode == KEY_ESC) {
             // Check if we recently thought Spotlight was active
             BOOL wasSpotlightActive = [PHTVCacheManager getCachedSpotlightActive];
             if (wasSpotlightActive) {
@@ -3044,16 +3056,9 @@ static bool _pendingUppercasePrimeCheck = true;
             CGEventFlags otherModifiers = _flag & ~kCGEventFlagMaskNonCoalesced;
             
             // Remove the pause key's modifier from the check
-            if (vPauseKey == KEY_LEFT_OPTION || vPauseKey == KEY_RIGHT_OPTION) {
-                otherModifiers &= ~kCGEventFlagMaskAlternate;
-            } else if (vPauseKey == KEY_LEFT_CONTROL || vPauseKey == KEY_RIGHT_CONTROL) {
-                otherModifiers &= ~kCGEventFlagMaskControl;
-            } else if (vPauseKey == KEY_LEFT_COMMAND || vPauseKey == KEY_RIGHT_COMMAND) {
-                otherModifiers &= ~kCGEventFlagMaskCommand;
-            } else if (vPauseKey == KEY_LEFT_SHIFT || vPauseKey == KEY_RIGHT_SHIFT) {
-                otherModifiers &= ~kCGEventFlagMaskShift;
-            } else if (vPauseKey == 63) {  // Fn key
-                otherModifiers &= ~kCGEventFlagMaskSecondaryFn;
+            const CGEventFlags pauseModifierMask = PauseKeyModifierMask(vPauseKey);
+            if (pauseModifierMask != 0) {
+                otherModifiers &= ~pauseModifierMask;
             }
             
             // Only strip if no other significant modifiers are pressed
@@ -3070,7 +3075,7 @@ static bool _pendingUppercasePrimeCheck = true;
 
         if (type == kCGEventKeyDown && vPerformLayoutCompat) {
             // If conversion fail, use current keycode
-           _keycode = ConvertEventToKeyboadLayoutCompatKeyCode(event, _keycode);
+           _keycode = ConvertEventToKeyboardLayoutCompatKeyCode(event, _keycode);
         }
         
         //switch language shortcut; convert hotkey
@@ -3089,8 +3094,7 @@ static bool _pendingUppercasePrimeCheck = true;
                                                    kCGEventFlagMaskHelp)) != 0;
                 if (hasFocusModifiers ||
                     _keycode == KEY_TAB ||
-                    _keycode == KEY_LEFT || _keycode == KEY_RIGHT || _keycode == KEY_UP || _keycode == KEY_DOWN ||
-                    _keycode == 115 || _keycode == 119 || _keycode == 116 || _keycode == 121) { // Home, End, PgUp, PgDown
+                    phtv_mac_key_is_navigation(_keycode)) {
                     _pendingUppercasePrimeCheck = true;
                 }
                 if (_pendingUppercasePrimeCheck && IsUppercasePrimeCandidateKey(_keycode, _flag)) {
@@ -3113,10 +3117,10 @@ static bool _pendingUppercasePrimeCheck = true;
             // This prevents modifier-only hotkeys (like Cmd+Shift) from triggering
             // when user presses a key combo like Cmd+Shift+S
             bool switchIsModifierOnly = isModifierOnlyHotkey(vSwitchKeyStatus);
-            bool convertIsModifierOnly = isModifierOnlyHotkey(convertToolHotKey);
+            bool convertIsModifierOnly = isModifierOnlyHotkey(gConvertToolOptions.hotKey);
             if (switchIsModifierOnly || convertIsModifierOnly) {
                 bool switchModifiersHeld = switchIsModifierOnly && hotkeyModifiersAreHeld(vSwitchKeyStatus, _flag);
-                bool convertModifiersHeld = convertIsModifierOnly && hotkeyModifiersAreHeld(convertToolHotKey, _flag);
+                bool convertModifiersHeld = convertIsModifierOnly && hotkeyModifiersAreHeld(gConvertToolOptions.hotKey, _flag);
                 if (switchModifiersHeld || convertModifiersHeld) {
                     _keyPressedWhileSwitchModifiersHeld = true;
                 }
@@ -3201,7 +3205,7 @@ static bool _pendingUppercasePrimeCheck = true;
                 // This prevents Cmd+Shift from triggering when user presses Cmd+Shift+S
                 bool switchIsModifierOnly = isModifierOnlyHotkey(vSwitchKeyStatus);
                 bool canTriggerSwitch = !switchIsModifierOnly || !_keyPressedWhileSwitchModifiersHeld;
-                if (canTriggerSwitch && checkHotKey(vSwitchKeyStatus, GET_SWITCH_KEY(vSwitchKeyStatus) != 0xFE)) {
+                if (canTriggerSwitch && checkHotKey(vSwitchKeyStatus, HOTKEY_HAS_KEY(vSwitchKeyStatus))) {
                     _lastFlag = 0;
                     _keyPressedWhileSwitchModifiersHeld = false;
                     switchLanguage();
@@ -3210,9 +3214,9 @@ static bool _pendingUppercasePrimeCheck = true;
                 }
 
                 // Check convert tool hotkey with same exact match logic
-                bool convertIsModifierOnly = isModifierOnlyHotkey(convertToolHotKey);
+                bool convertIsModifierOnly = isModifierOnlyHotkey(gConvertToolOptions.hotKey);
                 bool canTriggerConvert = !convertIsModifierOnly || !_keyPressedWhileSwitchModifiersHeld;
-                if (canTriggerConvert && checkHotKey(convertToolHotKey, GET_SWITCH_KEY(convertToolHotKey) != 0xFE)) {
+                if (canTriggerConvert && checkHotKey(gConvertToolOptions.hotKey, HOTKEY_HAS_KEY(gConvertToolOptions.hotKey))) {
                     _lastFlag = 0;
                     _keyPressedWhileSwitchModifiersHeld = false;
                     [appDelegate onQuickConvert];
@@ -3484,8 +3488,7 @@ static bool _pendingUppercasePrimeCheck = true;
 
             if (pData->code == vDoNothing) { //do nothing
                 // Navigation keys: trigger session restore to support keyboard-based edit-in-place
-                if (_keycode == KEY_LEFT || _keycode == KEY_RIGHT || _keycode == KEY_UP || _keycode == KEY_DOWN ||
-                    _keycode == 115 || _keycode == 119 || _keycode == 116 || _keycode == 121) { // Home, End, PgUp, PgDown
+                if (phtv_mac_key_is_navigation(_keycode)) {
                     // TryToRestoreSessionFromAX();
                 }
 

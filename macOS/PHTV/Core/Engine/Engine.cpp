@@ -14,6 +14,8 @@
 #include "Macro.h"
 #include <cstdio>
 
+using namespace std;
+
 static vector<Uint8> _charKeyCode = {
     KEY_BACKQUOTE, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0, KEY_MINUS, KEY_EQUALS,
     KEY_LEFT_BRACKET, KEY_RIGHT_BRACKET, KEY_BACK_SLASH,

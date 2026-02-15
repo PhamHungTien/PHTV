@@ -25,6 +25,8 @@
 
 #include "../phtv_mac_keys.h"
 
+using namespace std;
+
 // ============================================================================
 // Binary Trie Format (PHT3)
 // - Header: "PHT3" (4) + node_count (4) + word_count (4) = 12 bytes

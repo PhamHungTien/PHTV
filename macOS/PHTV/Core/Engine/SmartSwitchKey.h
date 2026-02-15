@@ -12,27 +12,41 @@
 #include "DataType.h"
 #include <string>
 
-using namespace std;
+constexpr int SMART_SWITCH_NOT_FOUND = -1;
+constexpr int SMART_SWITCH_LANGUAGE_MASK = 0x01;
+constexpr int SMART_SWITCH_CODE_TABLE_SHIFT = 1;
 
-void initSmartSwitchKey(const Byte* pData, const int& size);
+inline int encodeSmartSwitchInputState(int inputMethod, int codeTable) {
+    return (inputMethod & SMART_SWITCH_LANGUAGE_MASK) | (codeTable << SMART_SWITCH_CODE_TABLE_SHIFT);
+}
+
+inline int decodeSmartSwitchInputMethod(int state) {
+    return state & SMART_SWITCH_LANGUAGE_MASK;
+}
+
+inline int decodeSmartSwitchCodeTable(int state) {
+    return state >> SMART_SWITCH_CODE_TABLE_SHIFT;
+}
+
+void initSmartSwitchKey(const Byte* pData, int size);
 
 /**
  * convert all data to save on disk
  */
-void getSmartSwitchKeySaveData(vector<Byte>& outData);
+void getSmartSwitchKeySaveData(std::vector<Byte>& outData);
 
 /**
- * find and get language input method, if don't has set @currentInputMethod value for this app
+ * Find and get encoded input state for bundleId.
+ * If not found, defaultInputState is inserted for this bundle.
  * return:
- * -1: don't have this bundleId
- * 0: English
- * 1: Vietnamese
+ * SMART_SWITCH_NOT_FOUND: bundleId was not present before this call.
+ * Otherwise: encoded value from encodeSmartSwitchInputState().
  */
-int getAppInputMethodStatus(const string& bundleId, const int& currentInputMethod);
+int getAppInputMethodStatus(const std::string& bundleId, int defaultInputState);
 
 /**
- * Set default language for this @bundleId
+ * Set encoded input state for this bundleId.
  */
-void setAppInputMethodStatus(const string& bundleId, const int& language);
+void setAppInputMethodStatus(const std::string& bundleId, int inputState);
 
 #endif /* SmartSwitchKey_h */

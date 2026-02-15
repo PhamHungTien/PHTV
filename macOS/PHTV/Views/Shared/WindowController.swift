@@ -61,7 +61,7 @@ class SwiftUIWindowController: NSWindowController, NSWindowDelegate {
         // Restore dock icon state to user preference when closing settings
         if window?.title == "Cài đặt PHTV" || window?.title == "Cài đặt" {
             let appDelegate = NSApplication.shared.delegate as? AppDelegate
-            let showDock = UserDefaults.standard.bool(forKey: "vShowIconOnDock")
+            let showDock = UserDefaults.standard.bool(forKey: UserDefaultsKey.showIconOnDock)
             appDelegate?.showIcon(showDock)
         }
     }

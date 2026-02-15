@@ -27,7 +27,7 @@ final class EmojiHotkeyManager: ObservableObject {
     nonisolated(unsafe) private var settingsObserver: NSObjectProtocol?
     private var isEnabled: Bool = false
     private var modifiers: NSEvent.ModifierFlags = .command
-    private var keyCode: UInt16 = 14  // E key default
+    private var keyCode: UInt16 = KeyCode.eKey
 
     // Modifier-only mode tracking
     nonisolated(unsafe) private var lastModifierFlags: NSEvent.ModifierFlags = []
@@ -43,7 +43,7 @@ final class EmojiHotkeyManager: ObservableObject {
     private init() {
         // Use block-based observer with .main queue for thread safety
         settingsObserver = NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("EmojiHotkeySettingsChanged"),
+            forName: NotificationName.emojiHotkeySettingsChanged,
             object: nil,
             queue: .main
         ) { [weak self] _ in
@@ -253,8 +253,8 @@ final class EmojiHotkeyManager: ObservableObject {
     private func keyCodeSymbol(_ keyCode: UInt16) -> String {
         switch keyCode {
         case 41: return ";"
-        case 14: return "E"
-        case 49: return "Space"
+        case KeyCode.eKey: return "E"
+        case KeyCode.space: return "Space"
         case 44: return "/"
         case 39: return "'"
         case 43: return ","

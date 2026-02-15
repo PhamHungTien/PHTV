@@ -48,19 +48,19 @@ struct SettingsView: View {
             }
             lastTab = newValue
         }
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowAboutTab"))) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: NotificationName.showAboutTab)) { _ in
             selectedTab = .about
         }
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowMacroTab"))) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: NotificationName.showMacroTab)) { _ in
             selectedTab = .macro
         }
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowConvertToolSheet"))) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: NotificationName.showConvertToolSheet)) { _ in
             // Switch to System tab first, then SystemSettingsView will show the sheet
             if selectedTab != .system {
                 selectedTab = .system
                 // Post notification for SystemSettingsView after it's mounted
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                    NotificationCenter.default.post(name: NSNotification.Name("OpenConvertToolSheet"), object: nil)
+                    NotificationCenter.default.post(name: NotificationName.openConvertToolSheet, object: nil)
                 }
             }
         }
@@ -115,7 +115,7 @@ struct SettingsView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    NotificationCenter.default.post(name: NSNotification.Name("ShowOnboarding"), object: nil)
+                    NotificationCenter.default.post(name: NotificationName.showOnboarding, object: nil)
                 } label: {
                     Image(systemName: "questionmark.circle")
                 }

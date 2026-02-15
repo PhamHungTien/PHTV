@@ -11,15 +11,15 @@
 
 #include <locale>
 #include <codecvt>
+#include <string>
 
 #include "DataType.h"
+#include "../PHTVHotkey.h"
 #include "Vietnamese.h"
 #include "Macro.h"
 #include "SmartSwitchKey.h"
 #include "ConvertTool.h"
 #include "EnglishWordDetector.h"
-
-#define IS_DEBUG 1
 
 #ifndef LOBYTE
 #define LOBYTE(data) (data & 0xFF)
@@ -27,19 +27,6 @@
 #ifndef HIBYTE
 #define HIBYTE(data) ((data>>8) & 0xFF)
 #endif // !HIBYTE
-
-#define GET_SWITCH_KEY(data) (data & 0xFF)
-#define HAS_CONTROL(data) ((data & 0x100) ? 1 : 0)
-#define HAS_OPTION(data) ((data & 0x200) ? 1 : 0)
-#define HAS_COMMAND(data) ((data & 0x400) ? 1 : 0)
-#define HAS_SHIFT(data) ((data & 0x800) ? 1 : 0)
-#define HAS_FN(data) ((data & 0x1000) ? 1 : 0)
-#define GET_BOOL(data) (data ? 1 : 0)
-#define HAS_BEEP(data) (data & 0x8000)
-#define SET_SWITCH_KEY(data, key) data = (data & 0xFF) | key
-#define SET_CONTROL_KEY(data, val) data|=val<<8;
-#define SET_OPTION_KEY(data, val) data|=val<<9;
-#define SET_COMMAND_KEY(data, val) data|=val<<10;
 
 //define these variable in your application
 //API
@@ -299,12 +286,12 @@ bool vRestoreToRawKeys();
 /**
  * Restore session with word
  */
-void vRestoreSessionWithWord(const wstring& word);
+void vRestoreSessionWithWord(const std::wstring& word);
 
 /**
  * some utils function
  */
-wstring utf8ToWideString(const string& str);
-string wideStringToUtf8(const wstring& str);
+std::wstring utf8ToWideString(const std::string& str);
+std::string wideStringToUtf8(const std::wstring& str);
 
 #endif /* Engine_h */

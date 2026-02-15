@@ -15,8 +15,7 @@ struct HotkeyConfigView: View {
     @EnvironmentObject var appState: AppState
     @State private var isRecording = false
     
-    // 0xFE = modifier only mode (no key needed, just press and release modifiers)
-    private let modifierOnlyKeyCode: UInt16 = 0xFE
+    private let modifierOnlyKeyCode: UInt16 = KeyCode.noKey
 
     // Check if hotkey conflicts with restore key
     private var hasRestoreHotkeyConflict: Bool {
@@ -130,11 +129,11 @@ struct HotkeyConfigView: View {
                             // Clear button - only show if a real key is set
                             if !isRecording && appState.switchKeyCode != modifierOnlyKeyCode {
                                 Button(action: {
-                                    withAnimation(.easeInOut(duration: 0.2)) {
-                                        appState.switchKeyCode = modifierOnlyKeyCode
-                                        appState.switchKeyName = "Không"
-                                    }
-                                }) {
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            appState.switchKeyCode = modifierOnlyKeyCode
+                                            appState.switchKeyName = KeyCode.modifierOnlyDisplayName
+                                        }
+                                    }) {
                                     Image(systemName: "xmark.circle.fill")
                                         .foregroundStyle(.secondary)
                                         .imageScale(.medium)
@@ -276,7 +275,9 @@ struct HotkeyConfigView: View {
         if appState.switchKeyOption { parts.append("⌥") }
         
         // Only add key name if it's a real key (not modifier-only mode)
-        if appState.switchKeyCode != modifierOnlyKeyCode && !appState.switchKeyName.isEmpty && appState.switchKeyName != "Không" {
+        if appState.switchKeyCode != modifierOnlyKeyCode &&
+            !appState.switchKeyName.isEmpty &&
+            appState.switchKeyName != KeyCode.modifierOnlyDisplayName {
             parts.append(appState.switchKeyName)
         }
         
@@ -594,13 +595,13 @@ struct PauseKeyConfigView: View {
         guard appState.pauseKeyEnabled else { return false }
 
         // Check if pause key matches switch key code (if set)
-        if appState.switchKeyCode != 0xFE && appState.pauseKey == appState.switchKeyCode {
+        if !KeyCode.isModifierOnly(appState.switchKeyCode) && appState.pauseKey == appState.switchKeyCode {
             return true
         }
 
         // Check if pause key matches any switch modifier
-        if appState.pauseKey == 58 && appState.switchKeyOption { return true }  // Option
-        if appState.pauseKey == 59 && appState.switchKeyControl { return true } // Control
+        if appState.pauseKey == KeyCode.leftOption && appState.switchKeyOption { return true }  // Option
+        if appState.pauseKey == KeyCode.leftControl && appState.switchKeyControl { return true } // Control
 
         return false
     }
@@ -630,14 +631,14 @@ struct PauseKeyConfigView: View {
                         PauseKeyButton(
                             symbol: "⌃",
                             name: "Control",
-                            keyCode: 59,
+                            keyCode: KeyCode.leftControl,
                             selectedKeyCode: $appState.pauseKey,
                             selectedKeyName: $appState.pauseKeyName
                         )
                         PauseKeyButton(
                             symbol: "⌥",
                             name: "Option",
-                            keyCode: 58,
+                            keyCode: KeyCode.leftOption,
                             selectedKeyCode: $appState.pauseKey,
                             selectedKeyName: $appState.pauseKeyName
                         )
@@ -786,8 +787,7 @@ struct EmojiHotkeyConfigView: View {
     @EnvironmentObject var appState: AppState
     @State private var isRecording = false
 
-    // 0xFE = modifier only mode (no key needed, just press and release modifiers)
-    private let modifierOnlyKeyCode: UInt16 = 0xFE
+    private let modifierOnlyKeyCode: UInt16 = KeyCode.noKey
 
     // Computed properties for modifier bindings
     private var emojiHotkeyControl: Binding<Bool> {
@@ -1046,13 +1046,13 @@ struct EmojiHotkeyConfigView: View {
     private var emojiKeyName: String {
         let keyCode = appState.emojiHotkeyKeyCode
         if keyCode == modifierOnlyKeyCode {
-            return "Không"
+            return KeyCode.modifierOnlyDisplayName
         }
         // Common key codes for emoji hotkeys
         switch keyCode {
         case 41: return ";"
-        case 14: return "E"
-        case 49: return "Space"
+        case KeyCode.eKey: return "E"
+        case KeyCode.space: return "Space"
         case 44: return "/"
         case 39: return "'"
         case 43: return ","
@@ -1062,7 +1062,7 @@ struct EmojiHotkeyConfigView: View {
             if let char = keyCodeToCharacter(keyCode) {
                 return String(char).uppercased()
             }
-            return "Key\(keyCode)"
+            return KeyCode.name(for: keyCode)
         }
     }
 

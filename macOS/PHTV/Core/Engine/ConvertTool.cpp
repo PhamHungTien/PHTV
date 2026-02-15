@@ -5,176 +5,347 @@
 //  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
-#include <locale>
-#include <codecvt>
+
 #include <algorithm>
+#include <array>
+#include <cwctype>
+#include <map>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
 #include "ConvertTool.h"
 #include "Engine.h"
-#include <iostream>
-#include <memory.h>
+#include "../PHTVConstants.h"
 
-//option
-bool convertToolDontAlertWhenCompleted = false;
-bool convertToolToAllCaps = false;
-bool convertToolToAllNonCaps = false;
-bool convertToolToCapsFirstLetter = false;
-bool convertToolToCapsEachWord = false;
-bool convertToolRemoveMark = false;
-Uint8 convertToolFromCode = 0;
-Uint8 convertToolToCode = 0;
-int convertToolHotKey = 0;
+namespace {
+constexpr Uint8 kDefaultCodeTable = static_cast<Uint8>(PHTVCodeTableUnicode);
+constexpr Uint8 kMinCodeTable = static_cast<Uint8>(PHTVCodeTableUnicode);
+constexpr Uint8 kMaxCodeTable = static_cast<Uint8>(PHTVCodeTableCP1258);
+constexpr size_t kCodeTableCount = static_cast<size_t>(PHTVCodeTableCP1258) + 1;
+constexpr ConvertToolOptions kDefaultConvertToolOptions = {
+    false,           // dontAlertWhenCompleted
+    false,           // toAllCaps
+    false,           // toAllNonCaps
+    false,           // toCapsFirstLetter
+    false,           // toCapsEachWord
+    false,           // removeMark
+    kDefaultCodeTable,
+    kDefaultCodeTable,
+    static_cast<int>(EMPTY_HOTKEY)
+};
 
-static vector<Uint8> _breakCode = {'.', '?', '!'};
+struct ConvertToolOptionsSnapshot {
+    bool toAllCaps;
+    bool toAllNonCaps;
+    bool toCapsFirstLetter;
+    bool toCapsEachWord;
+    bool removeMark;
+    Uint8 fromCode;
+    Uint8 toCode;
+};
 
-static bool findKeyCode(const Uint32& charCode, const Uint8& code, int& j, int& k) {
-    //find character which has tone/mark
-    for (map<Uint32, vector<Uint16>>::iterator it = _codeTable[code].begin(); it != _codeTable[code].end(); ++it) {
-        for (int z = 0; z < it->second.size(); z++) {
-            if (charCode == it->second[z]) {
-                j = it->first;
-                k = z;
-                return true;
-            }//end if
-        }
+struct KeyCodeLookupEntry {
+    Uint32 keyCode;
+    size_t variantIndex;
+};
+
+typedef std::unordered_map<Uint16, KeyCodeLookupEntry> ReverseLookupTable;
+
+static const std::array<Uint16, 3> kBreakCode = {'.', '?', '!'};
+
+static Uint8 sanitizeCodeTable(const Uint8 codeTable) {
+    if (codeTable < kMinCodeTable || codeTable > kMaxCodeTable) {
+        return kDefaultCodeTable;
     }
-    return false;
+    return codeTable;
 }
 
-static Uint16 getUnicodeCompoundMarkIndex(const Uint16& mark) {
-    for (int i = 0; i < 5; i++) {
+static ConvertToolOptionsSnapshot snapshotConvertToolOptions() {
+    ConvertToolOptionsSnapshot options = {
+        gConvertToolOptions.toAllCaps,
+        gConvertToolOptions.toAllNonCaps,
+        gConvertToolOptions.toCapsFirstLetter,
+        gConvertToolOptions.toCapsEachWord,
+        gConvertToolOptions.removeMark,
+        sanitizeCodeTable(gConvertToolOptions.fromCode),
+        sanitizeCodeTable(gConvertToolOptions.toCode)
+    };
+
+    if (options.toAllCaps) {
+        // All-caps wins over all other case transforms.
+        options.toAllNonCaps = false;
+        options.toCapsFirstLetter = false;
+        options.toCapsEachWord = false;
+    } else if (options.toAllNonCaps) {
+        // All-lowercase conflicts with sentence/title caps.
+        options.toCapsFirstLetter = false;
+        options.toCapsEachWord = false;
+    }
+
+    return options;
+}
+
+static ReverseLookupTable buildReverseLookupForCodeTable(const Uint8 codeTable) {
+    ReverseLookupTable reverseLookup;
+    const std::map<Uint32, std::vector<Uint16>>& table = _codeTable[codeTable];
+    for (std::map<Uint32, std::vector<Uint16>>::const_iterator tableIt = table.begin();
+         tableIt != table.end();
+         ++tableIt) {
+        const Uint32 sourceKeyCode = tableIt->first;
+        const std::vector<Uint16>& variants = tableIt->second;
+        for (size_t idx = 0; idx < variants.size(); ++idx) {
+            reverseLookup.insert(std::make_pair(variants[idx], KeyCodeLookupEntry{sourceKeyCode, idx}));
+        }
+    }
+    return reverseLookup;
+}
+
+static const ReverseLookupTable& getReverseLookupTable(const Uint8 codeTable) {
+    const Uint8 safeCodeTable = sanitizeCodeTable(codeTable);
+    static const std::array<ReverseLookupTable, kCodeTableCount> reverseLookupTables = []() {
+        std::array<ReverseLookupTable, kCodeTableCount> tables;
+        for (Uint8 table = kMinCodeTable; table <= kMaxCodeTable; ++table) {
+            tables[table] = buildReverseLookupForCodeTable(table);
+        }
+        return tables;
+    }();
+    return reverseLookupTables[safeCodeTable];
+}
+
+static bool findKeyCode(const Uint16 charCode,
+                        const Uint8 codeTable,
+                        Uint32& sourceKeyCode,
+                        size_t& sourceVariantIndex) {
+    const ReverseLookupTable& reverseLookup = getReverseLookupTable(codeTable);
+    const ReverseLookupTable::const_iterator it = reverseLookup.find(charCode);
+    if (it == reverseLookup.end()) {
+        return false;
+    }
+    sourceKeyCode = it->second.keyCode;
+    sourceVariantIndex = it->second.variantIndex;
+    return true;
+}
+
+static Uint16 getUnicodeCompoundMarkIndex(const Uint16 mark) {
+    for (size_t i = 0; i < 5; ++i) {
         if (mark == _unicodeCompoundMark[i]) {
-            return ((i + 1) << 13);
+            return static_cast<Uint16>((i + 1) << 13);
         }
     }
     return 0;
 }
 
-string convertUtil(const string& sourceString) {
-    wstring data = utf8ToWideString(sourceString);
-    Uint16 t = 0, target;
-    int j, k, p;
-    vector<wchar_t> _temp;
+static bool getTargetCharacter(const ConvertToolOptionsSnapshot& options,
+                               const Uint32 sourceKeyCode,
+                               const size_t sourceVariantIndex,
+                               const bool shouldUpperCase,
+                               Uint16& targetCharacter) {
+    const std::map<Uint32, std::vector<Uint16>>::const_iterator targetIt =
+        _codeTable[options.toCode].find(sourceKeyCode);
+    if (targetIt == _codeTable[options.toCode].end()) {
+        return false;
+    }
+
+    const std::vector<Uint16>& targetVariants = targetIt->second;
+    if (sourceVariantIndex >= targetVariants.size()) {
+        return false;
+    }
+
+    size_t targetVariantIndex = sourceVariantIndex;
+    const bool forceUpperCase = options.toAllCaps || shouldUpperCase;
+    const bool forceLowerCase = options.toAllNonCaps || options.toCapsFirstLetter || options.toCapsEachWord;
+
+    if (forceUpperCase && (targetVariantIndex % 2 != 0) && targetVariantIndex > 0) {
+        targetVariantIndex--;
+    } else if (forceLowerCase && (targetVariantIndex % 2 == 0) && (targetVariantIndex + 1) < targetVariants.size()) {
+        targetVariantIndex++;
+    }
+
+    targetCharacter = targetVariants[targetVariantIndex];
+
+    // Remove mark/tone and keep explicit all-caps/all-lower options.
+    if (options.removeMark) {
+        targetCharacter = keyCodeToCharacter(static_cast<Uint8>(sourceKeyCode));
+        if (options.toAllCaps) {
+            targetCharacter = static_cast<Uint16>(towupper(targetCharacter));
+        } else if (options.toAllNonCaps) {
+            targetCharacter = static_cast<Uint16>(towlower(targetCharacter));
+        }
+    }
+
+    return true;
+}
+
+static void appendTargetByCode(const Uint8 codeTable,
+                               const Uint16 targetCharacter,
+                               std::vector<wchar_t>& output) {
+    switch (codeTable) {
+        case PHTVCodeTableUnicode:
+        case PHTVCodeTableTCVN3:
+            output.push_back(static_cast<wchar_t>(targetCharacter));
+            return;
+
+        case PHTVCodeTableVNIWindows:
+        case PHTVCodeTableCP1258: {
+            const Uint8 lowByte = static_cast<Uint8>(targetCharacter & 0xFF);
+            const Uint8 highByte = static_cast<Uint8>((targetCharacter >> 8) & 0xFF);
+            output.push_back(static_cast<wchar_t>(lowByte));
+            if (highByte > 32) {
+                output.push_back(static_cast<wchar_t>(highByte));
+            }
+            return;
+        }
+
+        case PHTVCodeTableUnicodeComposite:
+            if ((targetCharacter >> 13) > 0) {
+                output.push_back(static_cast<wchar_t>(targetCharacter & 0x1FFF));
+                output.push_back(static_cast<wchar_t>(_unicodeCompoundMark[(targetCharacter >> 13) - 1]));
+            } else {
+                output.push_back(static_cast<wchar_t>(targetCharacter));
+            }
+            return;
+
+        default:
+            output.push_back(static_cast<wchar_t>(targetCharacter));
+            return;
+    }
+}
+
+static bool tryConvertCharacter(const Uint16 sourceCharacter,
+                                const ConvertToolOptionsSnapshot& options,
+                                const bool shouldUpperCase,
+                                std::vector<wchar_t>& output) {
+    Uint32 sourceKeyCode = 0;
+    size_t sourceVariantIndex = 0;
+
+    if (!findKeyCode(sourceCharacter, options.fromCode, sourceKeyCode, sourceVariantIndex)) {
+        return false;
+    }
+
+    Uint16 targetCharacter = 0;
+    if (!getTargetCharacter(options,
+                            sourceKeyCode,
+                            sourceVariantIndex,
+                            shouldUpperCase,
+                            targetCharacter)) {
+        return false;
+    }
+
+    appendTargetByCode(options.toCode, targetCharacter, output);
+    return true;
+}
+
+static bool isSentenceBreakCharacter(const Uint16 character) {
+    return std::find(kBreakCode.begin(), kBreakCode.end(), character) != kBreakCode.end();
+}
+} // namespace
+
+// Option values loaded from preferences.
+ConvertToolOptions gConvertToolOptions = kDefaultConvertToolOptions;
+
+ConvertToolOptions defaultConvertToolOptions() {
+    return kDefaultConvertToolOptions;
+}
+
+void resetConvertToolOptions() {
+    gConvertToolOptions = kDefaultConvertToolOptions;
+}
+
+void normalizeConvertToolOptions() {
+    gConvertToolOptions.fromCode = sanitizeCodeTable(gConvertToolOptions.fromCode);
+    gConvertToolOptions.toCode = sanitizeCodeTable(gConvertToolOptions.toCode);
+
+    if (gConvertToolOptions.toAllCaps) {
+        gConvertToolOptions.toAllNonCaps = false;
+        gConvertToolOptions.toCapsFirstLetter = false;
+        gConvertToolOptions.toCapsEachWord = false;
+    } else if (gConvertToolOptions.toAllNonCaps) {
+        gConvertToolOptions.toCapsFirstLetter = false;
+        gConvertToolOptions.toCapsEachWord = false;
+    }
+}
+
+std::string convertUtil(const std::string& sourceString) {
+    const ConvertToolOptionsSnapshot options = snapshotConvertToolOptions();
+    const std::wstring data = utf8ToWideString(sourceString);
+
+    std::vector<wchar_t> converted;
+    converted.reserve(data.size() + 4);
+
     bool hasBreak = false;
-    bool shouldUpperCase = false;
-    if (convertToolToCapsFirstLetter || convertToolToCapsEachWord)
-        shouldUpperCase = true;
-    if (convertToolToAllNonCaps)
-        shouldUpperCase = false;
-    
-    for (int i = 0; i < data.size(); i++) {
-        p = 0;
-        //find char with tone/mark
-        if (i < data.size() - 1) {
-            switch (convertToolFromCode) {
-                case 2: //VNI
-                case 4: //1258
-                    t = (Uint16)data[i] | (data[i+1] << 8);
-                    p = 1;
+    bool shouldUpperCase = options.toCapsFirstLetter || options.toCapsEachWord;
+
+    for (size_t i = 0; i < data.size(); ++i) {
+        if (i + 1 < data.size()) {
+            Uint16 compoundCharacter = static_cast<Uint16>(data[i]);
+            size_t consumedExtraChars = 0;
+            bool hasCompoundCandidate = false;
+
+            switch (options.fromCode) {
+                case PHTVCodeTableVNIWindows:
+                case PHTVCodeTableCP1258:
+                    compoundCharacter = static_cast<Uint16>(data[i]) |
+                                        static_cast<Uint16>(static_cast<Uint16>(data[i + 1]) << 8);
+                    consumedExtraChars = 1;
+                    hasCompoundCandidate = true;
                     break;
-                case 3:{ //Unicode Compound
-                    target = getUnicodeCompoundMarkIndex(data[i+1]);
-                    if (target > 0){
-                        t = (Uint16)data[i] | target;
-                        p = 1;
-                    } else {
-                        t = (Uint16)data[i];
+
+                case PHTVCodeTableUnicodeComposite: {
+                    const Uint16 mark = getUnicodeCompoundMarkIndex(static_cast<Uint16>(data[i + 1]));
+                    if (mark > 0) {
+                        compoundCharacter = static_cast<Uint16>(data[i]) | mark;
+                        consumedExtraChars = 1;
+                        hasCompoundCandidate = true;
                     }
                     break;
                 }
+
                 default:
-                    t = (Uint16)data[i];
                     break;
             }
-            
-            if (findKeyCode(t, convertToolFromCode, j, k)) {
-                i += p;
-                target = _codeTable[convertToolToCode][j][k];
-                if ((convertToolToAllCaps || shouldUpperCase) && k % 2 != 0) {
-                    target = _codeTable[convertToolToCode][j][k-1];
-                } else if ((convertToolToAllNonCaps || !shouldUpperCase) && k % 2 == 0) {
-                    target = _codeTable[convertToolToCode][j][k+1];
-                }
-                
-                //remove mark/tone
-                if (convertToolRemoveMark) {
-                    target = keyCodeToCharacter((Uint8)j);
-                    if (convertToolToAllCaps) {
-                        target = towupper(target);
-                    } else if (convertToolToAllNonCaps) {
-                        target = towlower(target);
-                    }
-                }
-                
-                if (convertToolToCode == 0 || convertToolToCode == 1) { //Unicode
-                    _temp.push_back(target);
-                } else if (convertToolToCode == 2 || convertToolToCode == 4) { //VNI, VN Locale 1258
-                    if (HIBYTE(target) > 32) {
-                        _temp.push_back((Uint8)target);
-                        _temp.push_back(target>>8);
-                    } else {
-                        _temp.push_back((Uint8)target);
-                    }
-                } else if (convertToolToCode == 3) { //Unicode Compound
-                    if ((target >> 13) > 0) {
-                        _temp.push_back(target & 0x1FFF);
-                        _temp.push_back(_unicodeCompoundMark[(target>>13) - 1]);
-                    } else {
-                        _temp.push_back(target);
-                    }
-                }
+
+            if (hasCompoundCandidate &&
+                tryConvertCharacter(compoundCharacter, options, shouldUpperCase, converted)) {
+                i += consumedExtraChars;
                 shouldUpperCase = false;
                 hasBreak = false;
                 continue;
             }
         }
-        
-        //find primary keycode first
-        t = (Uint16)data[i];
-        if (findKeyCode(t, convertToolFromCode, j, k)) {
-            target = _codeTable[convertToolToCode][j][k];
-            if ((convertToolToAllCaps || shouldUpperCase) && k % 2 != 0) {
-                target = _codeTable[convertToolToCode][j][k-1];
-            } else if ((convertToolToAllNonCaps || !shouldUpperCase) && k % 2 == 0) {
-                target = _codeTable[convertToolToCode][j][k+1];
-            }
-            
-            //remove mark/tone
-            if (convertToolRemoveMark) {
-                target = keyCodeToCharacter((Uint8)j);
-                if (convertToolToAllCaps) {
-                    target = towupper(target);
-                } else if (convertToolToAllNonCaps){
-                    target = towlower(target);
-                }
-            }
-            
-            _temp.push_back(target);
+
+        const Uint16 singleCharacter = static_cast<Uint16>(data[i]);
+        if (tryConvertCharacter(singleCharacter, options, shouldUpperCase, converted)) {
             shouldUpperCase = false;
             hasBreak = false;
             continue;
         }
-        
-        //if dont find => normal char
-        if (convertToolToAllCaps || shouldUpperCase)
-            _temp.push_back(towupper(data[i]));
-        else if (convertToolToAllNonCaps || !shouldUpperCase)
-            _temp.push_back(towlower(data[i]));
-        else
-            _temp.push_back(data[i]);
-        
-        if (t == '\n' || (hasBreak && t == ' ')) {
-            if (convertToolToCapsFirstLetter || convertToolToCapsEachWord)
+
+        const bool forceUpperCase = options.toAllCaps || shouldUpperCase;
+        const bool forceLowerCase = options.toAllNonCaps || options.toCapsFirstLetter || options.toCapsEachWord;
+
+        if (forceUpperCase) {
+            converted.push_back(static_cast<wchar_t>(towupper(data[i])));
+        } else if (forceLowerCase) {
+            converted.push_back(static_cast<wchar_t>(towlower(data[i])));
+        } else {
+            converted.push_back(data[i]);
+        }
+
+        if (singleCharacter == '\n' || (hasBreak && singleCharacter == ' ')) {
+            if (options.toCapsFirstLetter || options.toCapsEachWord) {
                 shouldUpperCase = true;
-        } else if (t == ' ' && convertToolToCapsEachWord) {
+            }
+        } else if (singleCharacter == ' ' && options.toCapsEachWord) {
             shouldUpperCase = true;
-        } else if (std::find(_breakCode.begin(), _breakCode.end(), t) != _breakCode.end()) {
+        } else if (isSentenceBreakCharacter(singleCharacter)) {
             hasBreak = true;
         } else {
             shouldUpperCase = false;
             hasBreak = false;
         }
     }
-    _temp.push_back(0);
-    wstring str(_temp.begin(), _temp.end());
-    return wideStringToUtf8(str);
+
+    const std::wstring result(converted.begin(), converted.end());
+    return wideStringToUtf8(result);
 }

@@ -318,7 +318,7 @@ struct MacroEditorView: View {
 
         // Save to UserDefaults atomically then notify immediately (no artificial delay)
         if let encoded = try? JSONEncoder().encode(macros) {
-            defaults.set(encoded, forKey: "macroList")
+            defaults.set(encoded, forKey: UserDefaultsKey.macroList)
             defaults.synchronize()
             print("[MacroEditor] Saved \(macros.count) macros to UserDefaults")
             print("[MacroEditor] macroList data size: \(encoded.count) bytes")
@@ -326,13 +326,13 @@ struct MacroEditorView: View {
             // Post notification with macro ID and action for animation
             if let macroId = savedMacroId {
                 NotificationCenter.default.post(
-                    name: NSNotification.Name("MacrosUpdated"),
+                    name: NotificationName.macrosUpdated,
                     object: nil,
                     userInfo: ["macroId": macroId, "action": action]
                 )
                 print("[MacroEditor] Notification posted with action: \(action), macroId: \(macroId)")
             } else {
-                NotificationCenter.default.post(name: NSNotification.Name("MacrosUpdated"), object: nil)
+                NotificationCenter.default.post(name: NotificationName.macrosUpdated, object: nil)
                 print("[MacroEditor] Notification posted")
             }
 
@@ -347,7 +347,7 @@ struct MacroEditorView: View {
 
     private func loadMacros() -> [MacroItem] {
         let defaults = UserDefaults.standard
-        if let data = defaults.data(forKey: "macroList"),
+        if let data = defaults.data(forKey: UserDefaultsKey.macroList),
             let macros = try? JSONDecoder().decode([MacroItem].self, from: data)
         {
             return macros

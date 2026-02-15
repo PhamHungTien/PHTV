@@ -11,6 +11,7 @@
 #import "PHTVAppDetectionManager.h"
 #import "PHTVTimingManager.h"
 #import "../Application/AppDelegate.h"
+#import "../Core/phtv_mac_keys.h"
 #import <mach/mach_time.h>
 #import <libproc.h>
 #import <Cocoa/Cocoa.h>
@@ -448,9 +449,8 @@ static int _externalDeleteCount = 0;
 + (void)handleSpotlightCacheInvalidation:(CGEventType)type keycode:(CGKeyCode)keycode flags:(CGEventFlags)flags {
     // Check if Cmd+Space was pressed (Spotlight shortcut)
     // ALSO: Invalidate on ANY Command key press to support Apple Intelligence (Double Cmd) and other overlays
-    // 55 = kVK_Command (Left Command), 54 = kVK_RightCommand (Right Command), 49 = kVK_Space
-    BOOL isCommandKey = (keycode == 55 || keycode == 54);
-    BOOL isCmdSpace = (keycode == 49 && (flags & kCGEventFlagMaskCommand));
+    BOOL isCommandKey = (keycode == KEY_LEFT_COMMAND || keycode == KEY_RIGHT_COMMAND);
+    BOOL isCmdSpace = (keycode == KEY_SPACE && (flags & kCGEventFlagMaskCommand));
 
     if (type == kCGEventKeyDown && (isCmdSpace || isCommandKey)) {
         [PHTVCacheManager invalidateSpotlightCache];

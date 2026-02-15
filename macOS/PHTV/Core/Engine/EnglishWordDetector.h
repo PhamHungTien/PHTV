@@ -15,8 +15,6 @@
 #include <string>
 #include "DataType.h"
 
-using namespace std;
-
 /**
  * Auto English Restore Feature
  * Detects when user types an English word in Vietnamese mode and auto-restores it.
@@ -30,7 +28,7 @@ using namespace std;
  * @param filePath Path to the dictionary file (one word per line)
  * @return true if loaded successfully
  */
-bool initEnglishDictionary(const string& filePath);
+bool initEnglishDictionary(const std::string& filePath);
 
 /**
  * Initialize the Vietnamese word dictionary from a file
@@ -38,7 +36,7 @@ bool initEnglishDictionary(const string& filePath);
  * @param filePath Path to the dictionary file (one word per line, with or without diacritics)
  * @return true if loaded successfully
  */
-bool initVietnameseDictionary(const string& filePath);
+bool initVietnameseDictionary(const std::string& filePath);
 
 /**
  * Check if the dictionary has been initialized
@@ -60,7 +58,7 @@ size_t getVietnameseDictionarySize();
  * @param word The word to check (lowercase)
  * @return true if the word exists
  */
-bool isEnglishWord(const string& word);
+bool isEnglishWord(const std::string& word);
 bool isEnglishWordFromKeyStates(const Uint32* keyStates, int stateIndex);
 
 /**
@@ -77,7 +75,7 @@ bool isVietnameseWordFromKeyStates(const Uint32* keyStates, int stateIndex);
  * @param count Number of key codes
  * @return The ASCII string representation
  */
-string keyStatesToString(const Uint32* keyCodes, int count);
+std::string keyStatesToString(const Uint32* keyCodes, int count);
 
 /**
  * Check if the current typed word (from KeyStates) should be restored to English

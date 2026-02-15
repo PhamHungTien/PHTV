@@ -11,18 +11,24 @@
 
 #include "DataType.h"
 #include <string>
-using namespace std;
 
-extern bool convertToolDontAlertWhenCompleted;
-extern bool convertToolToAllCaps;
-extern bool convertToolToAllNonCaps;
-extern bool convertToolToCapsFirstLetter;
-extern bool convertToolToCapsEachWord;
-extern bool convertToolRemoveMark;
-extern Uint8 convertToolFromCode;
-extern Uint8 convertToolToCode;
-extern int convertToolHotKey;
+struct ConvertToolOptions {
+    bool dontAlertWhenCompleted;
+    bool toAllCaps;
+    bool toAllNonCaps;
+    bool toCapsFirstLetter;
+    bool toCapsEachWord;
+    bool removeMark;
+    Uint8 fromCode;
+    Uint8 toCode;
+    int hotKey;
+};
 
-string convertUtil(const string& sourceString);
+extern ConvertToolOptions gConvertToolOptions;
+
+ConvertToolOptions defaultConvertToolOptions();
+void resetConvertToolOptions();
+std::string convertUtil(const std::string& sourceString);
+void normalizeConvertToolOptions();
 
 #endif /* ConvertTool_h */

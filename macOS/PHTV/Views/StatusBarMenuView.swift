@@ -21,21 +21,21 @@ struct StatusBarMenuView: View {
     private func openConvertTool() {
         openSettingsWindow()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-            NotificationCenter.default.post(name: NSNotification.Name("ShowConvertToolSheet"), object: nil)
+            NotificationCenter.default.post(name: NotificationName.showConvertToolSheet, object: nil)
         }
     }
 
     // Get current hotkey string
     private var hotkeyString: String {
-        var parts: [String] = []
-        if appState.switchKeyControl { parts.append("⌃") }
-        if appState.switchKeyOption { parts.append("⌥") }
-        if appState.switchKeyShift { parts.append("⇧") }
-        if appState.switchKeyCommand { parts.append("⌘") }
-        if appState.switchKeyCode != 0xFE {
-            parts.append(appState.switchKeyName)
-        }
-        return parts.isEmpty ? "Chưa đặt" : parts.joined()
+        HotkeyFormatter.switchHotkeyString(
+            control: appState.switchKeyControl,
+            option: appState.switchKeyOption,
+            shift: appState.switchKeyShift,
+            command: appState.switchKeyCommand,
+            fn: appState.switchKeyFn,
+            keyCode: appState.switchKeyCode,
+            keyName: appState.switchKeyName
+        )
     }
 
     // Get app version
@@ -46,16 +46,16 @@ struct StatusBarMenuView: View {
     // Quick convert with specific code tables
     private func quickConvert(from source: Int, to target: Int) {
         // Save current code table
-        let originalCodeTable = UserDefaults.standard.integer(forKey: "CodeTable")
+        let originalCodeTable = UserDefaults.standard.integer(forKey: UserDefaultsKey.codeTable)
 
         // Set source code table for conversion
-        UserDefaults.standard.set(source, forKey: "CodeTable")
+        UserDefaults.standard.set(source, forKey: UserDefaultsKey.codeTable)
 
         // Perform the conversion
         let success = PHTVManager.quickConvert()
 
         // Restore original code table
-        UserDefaults.standard.set(originalCodeTable, forKey: "CodeTable")
+        UserDefaults.standard.set(originalCodeTable, forKey: UserDefaultsKey.codeTable)
 
         // Play sound to indicate result
         if success {
@@ -66,7 +66,7 @@ struct StatusBarMenuView: View {
     // Check for updates
     private func checkForUpdates() {
         NotificationCenter.default.post(
-            name: NSNotification.Name("SparkleManualCheck"),
+            name: NotificationName.sparkleManualCheck,
             object: nil
         )
     }
@@ -315,7 +315,7 @@ struct StatusBarMenuView: View {
         Button {
             openSettingsWindow()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                NotificationCenter.default.post(name: NSNotification.Name("ShowAboutTab"), object: nil)
+                NotificationCenter.default.post(name: NotificationName.showAboutTab, object: nil)
             }
         } label: {
             Label("Về PHTV v\(appVersion)", systemImage: "info.circle")

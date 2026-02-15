@@ -11,6 +11,10 @@
 #ifndef PHTVConstants_h
 #define PHTVConstants_h
 
+// Single source of truth for key code + engine masks.
+#include "Engine/DataType.h"
+#include "PHTVHotkey.h"
+
 #pragma mark - Application Info
 #define PHTV_APP_NAME                           "PHTV"
 #define PHTV_APP_FULL_NAME                      "PHTV - Bộ gõ Tiếng Việt"
@@ -65,47 +69,51 @@ typedef enum : int {
     PHTVProcessNewSession
 } PHTVProcessState;
 
-#pragma mark - Bit Masks (Optimized)
+#pragma mark - Bit Masks (Engine-aligned)
 // Character composition masks
-#define PHTV_MASK_CAPS                          0x10000
-#define PHTV_MASK_TONE                          0x20000
-#define PHTV_MASK_TONE_W                        0x40000
+#define PHTV_MASK_CAPS                          CAPS_MASK
+#define PHTV_MASK_TONE                          TONE_MASK
+#define PHTV_MASK_TONE_W                        TONEW_MASK
 
 // Mark masks (diacritics)
-#define PHTV_MASK_MARK_ACUTE                    0x80000      // Sắc (á)
-#define PHTV_MASK_MARK_GRAVE                    0x100000     // Huyền (à)
-#define PHTV_MASK_MARK_HOOK                     0x200000     // Hỏi (ả)
-#define PHTV_MASK_MARK_TILDE                    0x400000     // Ngã (ã)
-#define PHTV_MASK_MARK_DOT                      0x800000     // Nặng (ạ)
-#define PHTV_MASK_MARK_ALL                      0xF80000
+#define PHTV_MASK_MARK_ACUTE                    MARK1_MASK
+#define PHTV_MASK_MARK_GRAVE                    MARK2_MASK
+#define PHTV_MASK_MARK_HOOK                     MARK3_MASK
+#define PHTV_MASK_MARK_TILDE                    MARK4_MASK
+#define PHTV_MASK_MARK_DOT                      MARK5_MASK
+#define PHTV_MASK_MARK_ALL                      MARK_MASK
 
 // Character info masks
-#define PHTV_MASK_CHAR_CODE                     0xFFFF
-#define PHTV_MASK_STANDALONE                    0x1000000
-#define PHTV_MASK_IS_CHAR_CODE                  0x2000000
-#define PHTV_MASK_PURE_CHAR                     0x80000000
+#define PHTV_MASK_CHAR_CODE                     CHAR_MASK
+#define PHTV_MASK_STANDALONE                    STANDALONE_MASK
+#define PHTV_MASK_IS_CHAR_CODE                  CHAR_CODE_MASK
+#define PHTV_MASK_PURE_CHAR                     PURE_CHARACTER_MASK
 
 // Special features
-#define PHTV_MASK_END_CONSONANT                 0x4000
-#define PHTV_MASK_CONSONANT_ALLOWED             0x8000
+#define PHTV_MASK_END_CONSONANT                 END_CONSONANT_MASK
+#define PHTV_MASK_CONSONANT_ALLOWED             CONSONANT_ALLOW_MASK
 
 #pragma mark - Modifier Keys
-#define PHTV_GET_KEY(data)                      ((data) & 0xFF)
-#define PHTV_HAS_CONTROL(data)                  (((data) & 0x100) != 0)
-#define PHTV_HAS_OPTION(data)                   (((data) & 0x200) != 0)
-#define PHTV_HAS_COMMAND(data)                  (((data) & 0x400) != 0)
-#define PHTV_HAS_SHIFT(data)                    (((data) & 0x800) != 0)
-#define PHTV_HAS_BEEP(data)                     (((data) & 0x8000) != 0)
+#define PHTV_GET_KEY(data)                      GET_SWITCH_KEY(data)
+#define PHTV_GET_BOOL(data)                     GET_BOOL(data)
 
-#define PHTV_SET_KEY(data, key)                 ((data) = ((data) & ~0xFF) | (key))
-#define PHTV_SET_CONTROL(data, val)             ((data) |= ((val) << 8))
-#define PHTV_SET_OPTION(data, val)              ((data) |= ((val) << 9))
-#define PHTV_SET_COMMAND(data, val)             ((data) |= ((val) << 10))
+#define PHTV_HAS_CONTROL(data)                  HAS_CONTROL(data)
+#define PHTV_HAS_OPTION(data)                   HAS_OPTION(data)
+#define PHTV_HAS_COMMAND(data)                  HAS_COMMAND(data)
+#define PHTV_HAS_SHIFT(data)                    HAS_SHIFT(data)
+#define PHTV_HAS_BEEP(data)                     HAS_BEEP(data)
+#define PHTV_DEFAULT_SWITCH_STATUS              PHTV_DEFAULT_SWITCH_HOTKEY_STATUS
+
+#define PHTV_SET_KEY(data, key)                 SET_SWITCH_KEY(data, key)
+#define PHTV_SET_CONTROL(data, val)             SET_CONTROL_KEY(data, val)
+#define PHTV_SET_OPTION(data, val)              SET_OPTION_KEY(data, val)
+#define PHTV_SET_COMMAND(data, val)             SET_COMMAND_KEY(data, val)
+#define PHTV_SET_SHIFT(data, val)               SET_SHIFT_KEY(data, val)
+#define PHTV_SET_BEEP(data, val)                SET_BEEP_KEY(data, val)
 
 #pragma mark - Character Utilities
 #define PHTV_LOW_BYTE(data)                     ((data) & 0xFF)
 #define PHTV_HIGH_BYTE(data)                    (((data) >> 8) & 0xFF)
-#define PHTV_GET_BOOL(data)                     ((data) ? 1 : 0)
 
 #pragma mark - Vowel Check
 #define PHTV_IS_VOWEL(code)                     \
@@ -114,14 +122,21 @@ typedef enum : int {
 
 #define PHTV_IS_CONSONANT(code)                 (!PHTV_IS_VOWEL(code))
 
-#pragma mark - Performance Optimization
-// Inline functions for critical path
+#pragma mark - Performance Helpers
 static inline int phtv_is_valid_range(int val, int min, int max) {
     return (val >= min && val <= max);
 }
 
 static inline int phtv_clamp(int val, int min, int max) {
     return (val < min) ? min : ((val > max) ? max : val);
+}
+
+static inline int phtv_is_valid_code_table(int codeTable) {
+    return phtv_is_valid_range(codeTable, PHTVCodeTableUnicode, PHTVCodeTableCP1258);
+}
+
+static inline int phtv_clamp_code_table(int codeTable) {
+    return phtv_clamp(codeTable, PHTVCodeTableUnicode, PHTVCodeTableCP1258);
 }
 
 #endif /* PHTVConstants_h */

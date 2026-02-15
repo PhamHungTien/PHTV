@@ -17,42 +17,42 @@ extension AppDelegate {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleInputMethodChanged(_:)),
-            name: NSNotification.Name("InputMethodChanged"),
+            name: NotificationName.inputMethodChanged,
             object: nil
         )
         
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleCodeTableChanged(_:)),
-            name: NSNotification.Name("CodeTableChanged"),
+            name: NotificationName.codeTableChanged,
             object: nil
         )
         
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleToggleEnabled(_:)),
-            name: NSNotification.Name("ToggleEnabled"),
+            name: NotificationName.toggleEnabled,
             object: nil
         )
         
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleShowConvertTool),
-            name: NSNotification.Name("ShowConvertTool"),
+            name: NotificationName.showConvertTool,
             object: nil
         )
 
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleOpenConvertTool),
-            name: NSNotification.Name("OpenConvertTool"),
+            name: NotificationName.openConvertTool,
             object: nil
         )
 
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleShowAbout),
-            name: NSNotification.Name("ShowAbout"),
+            name: NotificationName.showAbout,
             object: nil
         )
     }
@@ -92,7 +92,7 @@ extension AppDelegate {
             // Open settings window and navigate to System tab, then show convert tool
             if let openWindow = NSApp.windows.first(where: { $0.identifier?.rawValue == "settings" }) {
                 // Set window level based on user preference
-                let alwaysOnTop = UserDefaults.standard.bool(forKey: "vSettingsWindowAlwaysOnTop")
+                let alwaysOnTop = UserDefaults.standard.bool(forKey: UserDefaultsKey.settingsWindowAlwaysOnTop)
                 openWindow.level = alwaysOnTop ? .floating : .normal
                 
                 // FIX: Ensure robust window behavior
@@ -103,13 +103,13 @@ extension AppDelegate {
                 openWindow.makeKeyAndOrderFront(nil)
             } else {
                 // Post notification to open settings first (will be handled by SettingsNotificationObserver)
-                NotificationCenter.default.post(name: NSNotification.Name("ShowSettings"), object: nil)
+                NotificationCenter.default.post(name: NotificationName.showSettings, object: nil)
             }
             NSApp.activate(ignoringOtherApps: true)
 
             // Post notification to show convert tool sheet
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                NotificationCenter.default.post(name: NSNotification.Name("ShowConvertToolSheet"), object: nil)
+                NotificationCenter.default.post(name: NotificationName.showConvertToolSheet, object: nil)
             }
         }
     }

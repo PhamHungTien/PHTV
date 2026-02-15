@@ -43,10 +43,34 @@ static inline void PHTVLoadEmojiHotkeySettings(NSUserDefaults *defaults,
 
     id keyCodeObject = [defaults objectForKey:@"vEmojiHotkeyKeyCode"];
     if (keyCodeObject == nil) {
-        *keyCode = 14; // E key default
+        *keyCode = KEY_E; // E key default
     } else {
         *keyCode = (int)[defaults integerForKey:@"vEmojiHotkeyKeyCode"];
     }
+}
+
+static inline void PHTVAppendHotkeyComponent(NSMutableString *hotKey,
+                                             BOOL *hasComponent,
+                                             NSString *component) {
+    if (*hasComponent) {
+        [hotKey appendString:@" + "];
+    }
+    [hotKey appendString:component];
+    *hasComponent = YES;
+}
+
+static inline NSString *PHTVHotkeyKeyDisplayLabel(unsigned short keyCode) {
+    if (keyCode == kVK_Space || keyCode == KEY_SPACE) {
+        return @"␣";
+    }
+
+    const Uint16 keyChar = keyCodeToCharacter(static_cast<Uint32>(keyCode) | CAPS_MASK);
+    if (keyChar >= 33 && keyChar <= 126) {
+        const unichar displayChar = (unichar)keyChar;
+        return [NSString stringWithCharacters:&displayChar length:1];
+    }
+
+    return [NSString stringWithFormat:@"KEY_%hu", keyCode];
 }
 
 AppDelegate* appDelegate;
@@ -78,8 +102,7 @@ volatile int vUseModernOrthography = 1;
 volatile int vQuickTelex = 0;
 // Default: Ctrl + Shift (no key, modifier only)
 // Format: bits 0-7 = keycode (0xFE = no key), bit 8 = Control, bit 11 = Shift
-#define DEFAULT_SWITCH_STATUS 0x9FE // Ctrl(0x100) + Shift(0x800) + NoKey(0xFE)
-volatile int vSwitchKeyStatus = DEFAULT_SWITCH_STATUS;
+volatile int vSwitchKeyStatus = PHTV_DEFAULT_SWITCH_HOTKEY_STATUS;
 volatile int vFixRecommendBrowser = 1;
 volatile int vUseMacro = 1;
 volatile int vUseMacroInEnglishMode = 1;
@@ -98,11 +121,11 @@ volatile int vTempOffPHTV = 0; //new on version 2.0
 
 // Restore to raw keys (customizable key)
 volatile int vRestoreOnEscape = 1; //enable restore to raw keys feature (default: ON)
-volatile int vCustomEscapeKey = 0; //custom restore key code (0 = default ESC = 53)
+volatile int vCustomEscapeKey = 0; //custom restore key code (0 = default ESC = KEY_ESC)
 
 // Pause Vietnamese input when holding a key
 volatile int vPauseKeyEnabled = 0; //enable pause key feature (default: OFF)
-volatile int vPauseKey = 58; //pause key code (default: Left Option = 58)
+volatile int vPauseKey = KEY_LEFT_OPTION; //pause key code (default: Left Option)
 
 // Auto restore English word feature
 volatile int vAutoRestoreEnglishWord = 0; //auto restore English words (default: OFF)
@@ -110,15 +133,12 @@ volatile int vAutoRestoreEnglishWord = 0; //auto restore English words (default:
 // Emoji picker hotkey (handled in event tap callback, OpenKey style)
 volatile int vEnableEmojiHotkey = 1;
 volatile int vEmojiHotkeyModifiers = NSEventModifierFlagCommand;
-volatile int vEmojiHotkeyKeyCode = 14; // E key
+volatile int vEmojiHotkeyKeyCode = KEY_E; // E key
 
 int vShowIconOnDock = 0; //new on version 2.0
 static BOOL settingsWindowOpen = NO; // Track if settings window is open (to keep dock icon visible)
 
 volatile int vPerformLayoutCompat = 0;
-
-extern int convertToolHotKey;
-extern bool convertToolDontAlertWhenCompleted;
 
 static inline BOOL PHTVLiveDebugEnabled(void) {
     static int cachedEnabled = -1;
@@ -1429,7 +1449,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         [self fillData];
 
         #ifdef DEBUG
-        BOOL hasBeep = ((vSwitchKeyStatus & 0x8000) != 0);
+        BOOL hasBeep = HAS_BEEP(vSwitchKeyStatus);
         NSLog(@"[SwiftUI] Hotkey changed to: 0x%X (beep=%@)", vSwitchKeyStatus, hasBeep ? @"YES" : @"NO");
         #endif
     }
@@ -2106,41 +2126,31 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 }
 
 -(void)setQuickConvertString {
-    NSMutableString* hotKey = [NSMutableString stringWithString:@""];
-    bool hasAdd = false;
-    if (convertToolHotKey & 0x100) {
-        [hotKey appendString:@"⌃"];
-        hasAdd = true;
+    NSMutableString *hotKey = [NSMutableString string];
+    BOOL hasComponent = NO;
+    const int quickConvertHotkey = gConvertToolOptions.hotKey;
+
+    if (HAS_CONTROL(quickConvertHotkey)) {
+        PHTVAppendHotkeyComponent(hotKey, &hasComponent, @"⌃");
     }
-    if (convertToolHotKey & 0x200) {
-        if (hasAdd)
-            [hotKey appendString:@" + "];
-        [hotKey appendString:@"⌥"];
-        hasAdd = true;
+    if (HAS_OPTION(quickConvertHotkey)) {
+        PHTVAppendHotkeyComponent(hotKey, &hasComponent, @"⌥");
     }
-    if (convertToolHotKey & 0x400) {
-        if (hasAdd)
-            [hotKey appendString:@" + "];
-        [hotKey appendString:@"⌘"];
-        hasAdd = true;
+    if (HAS_COMMAND(quickConvertHotkey)) {
+        PHTVAppendHotkeyComponent(hotKey, &hasComponent, @"⌘");
     }
-    if (convertToolHotKey & 0x800) {
-        if (hasAdd)
-            [hotKey appendString:@" + "];
-        [hotKey appendString:@"⇧"];
-        hasAdd = true;
+    if (HAS_SHIFT(quickConvertHotkey)) {
+        PHTVAppendHotkeyComponent(hotKey, &hasComponent, @"⇧");
     }
-    
-    unsigned short k = ((convertToolHotKey>>24) & 0xFF);
-    if (k != 0xFE) {
-        if (hasAdd)
-            [hotKey appendString:@" + "];
-        if (k == kVK_Space)
-            [hotKey appendFormat:@"%@", @"␣ "];
-        else
-            [hotKey appendFormat:@"%c", k];
+
+    if (HOTKEY_HAS_KEY(quickConvertHotkey)) {
+        const unsigned short keyCode = (unsigned short)GET_SWITCH_KEY(quickConvertHotkey);
+        PHTVAppendHotkeyComponent(hotKey, &hasComponent, PHTVHotkeyKeyDisplayLabel(keyCode));
     }
-    [mnuQuickConvert setTitle: hasAdd ? [NSString stringWithFormat:@"Chuyển mã nhanh - [%@]", [hotKey uppercaseString]] : @"Chuyển mã nhanh"];
+
+    [mnuQuickConvert setTitle:hasComponent
+                             ? [NSString stringWithFormat:@"Chuyển mã nhanh - [%@]", [hotKey uppercaseString]]
+                             : @"Chuyển mã nhanh"];
 }
 
 -(void)loadDefaultConfig {
@@ -2151,7 +2161,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     vFreeMark = 0; [defaults setInteger:vFreeMark forKey:@"FreeMark"];
     vCheckSpelling = 1; [defaults setInteger:vCheckSpelling forKey:@"Spelling"];
     vCodeTable = 0; [defaults setInteger:vCodeTable forKey:@"CodeTable"];
-    vSwitchKeyStatus = DEFAULT_SWITCH_STATUS; [defaults setInteger:vSwitchKeyStatus forKey:@"SwitchKeyStatus"];
+    vSwitchKeyStatus = PHTV_DEFAULT_SWITCH_HOTKEY_STATUS; [defaults setInteger:vSwitchKeyStatus forKey:@"SwitchKeyStatus"];
     vQuickTelex = 0; [defaults setInteger:vQuickTelex forKey:@"QuickTelex"];
     vUseModernOrthography = 1; [defaults setInteger:vUseModernOrthography forKey:@"ModernOrthography"];
     vFixRecommendBrowser = 1; [defaults setInteger:vFixRecommendBrowser forKey:@"FixRecommendBrowser"];
@@ -2780,7 +2790,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
 -(void)onQuickConvert {
     if ([PHTVManager quickConvert]) {
-        if (!convertToolDontAlertWhenCompleted) {
+        if (!gConvertToolOptions.dontAlertWhenCompleted) {
             [PHTVManager showMessage: nil message:@"Chuyển mã thành công!" subMsg:@"Kết quả đã được lưu trong clipboard."];
         }
     } else {

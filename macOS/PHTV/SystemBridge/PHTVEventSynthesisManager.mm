@@ -9,6 +9,7 @@
 #import "PHTVEventSynthesisManager.h"
 #import "PHTVAppDetectionManager.h"
 #import "PHTVTimingManager.h"
+#import "../Core/phtv_mac_keys.h"
 #import <vector>
 
 @implementation PHTVEventSynthesisManager
@@ -37,8 +38,8 @@ static std::vector<Uint16> _syncKey;
         _myEventSource = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
 
         // Pre-create backspace events for performance
-        _eventBackSpaceDown = CGEventCreateKeyboardEvent(_myEventSource, (CGKeyCode)51, true);
-        _eventBackSpaceUp = CGEventCreateKeyboardEvent(_myEventSource, (CGKeyCode)51, false);
+        _eventBackSpaceDown = CGEventCreateKeyboardEvent(_myEventSource, (CGKeyCode)KEY_DELETE, true);
+        _eventBackSpaceUp = CGEventCreateKeyboardEvent(_myEventSource, (CGKeyCode)KEY_DELETE, false);
         
         // Apply NonCoalesced flag to global backspace events
         CGEventSetFlags(_eventBackSpaceDown, CGEventGetFlags(_eventBackSpaceDown) | kCGEventFlagMaskNonCoalesced);

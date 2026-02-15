@@ -26,15 +26,15 @@ struct HotkeySettingsView: View {
     }
 
     private var hotkeyString: String {
-        var parts: [String] = []
-        if appState.switchKeyControl { parts.append("⌃") }
-        if appState.switchKeyOption { parts.append("⌥") }
-        if appState.switchKeyShift { parts.append("⇧") }
-        if appState.switchKeyCommand { parts.append("⌘") }
-        if appState.switchKeyCode != 0xFE {
-            parts.append(appState.switchKeyName)
-        }
-        return parts.isEmpty ? "Chưa đặt" : parts.joined()
+        HotkeyFormatter.switchHotkeyString(
+            control: appState.switchKeyControl,
+            option: appState.switchKeyOption,
+            shift: appState.switchKeyShift,
+            command: appState.switchKeyCommand,
+            fn: appState.switchKeyFn,
+            keyCode: appState.switchKeyCode,
+            keyName: appState.switchKeyName
+        )
     }
 
     var body: some View {

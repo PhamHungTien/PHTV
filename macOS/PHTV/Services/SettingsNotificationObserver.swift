@@ -21,7 +21,7 @@ final class SettingsNotificationObserver {
     private func setupObservers() {
         // Listen for ShowSettings notification
         let showSettingsObserver = NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("ShowSettings"),
+            forName: NotificationName.showSettings,
             object: nil,
             queue: .main
         ) { _ in
@@ -33,7 +33,7 @@ final class SettingsNotificationObserver {
 
         // Listen for CreateSettingsWindow notification
         let createWindowObserver = NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("CreateSettingsWindow"),
+            forName: NotificationName.createSettingsWindow,
             object: nil,
             queue: .main
         ) { _ in
