@@ -13,6 +13,8 @@ struct ExcludedAppsView: View {
     @EnvironmentObject var appState: AppState
     @Binding var showingFilePicker: Bool
     @Binding var showingRunningApps: Bool
+    @Binding var showingBundleIdInput: Bool
+    @State private var manualBundleId = ""
     var showHeader: Bool = true
     
     var body: some View {
@@ -47,8 +49,25 @@ struct ExcludedAppsView: View {
                 }
             }
         }
+        .sheet(isPresented: $showingBundleIdInput) {
+            ManualBundleIdInputView { bundleId in
+                let name = resolveAppName(for: bundleId)
+                let app = ExcludedApp(bundleIdentifier: bundleId, name: name, path: "")
+                appState.addExcludedApp(app)
+            }
+        }
     }
-    
+
+    private func resolveAppName(for bundleId: String) -> String {
+        // Try to find the app name from running applications
+        if let runningApp = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == bundleId }),
+           let name = runningApp.localizedName {
+            return name
+        }
+        // Fallback: use last component of bundle ID as name
+        return bundleId.components(separatedBy: ".").last ?? bundleId
+    }
+
     private func handleFilePickerResult(_ result: Result<[URL], Error>) {
         guard case .success(let urls) = result else { return }
         
@@ -76,9 +95,18 @@ struct ExcludedAppsView: View {
                 Button(action: { showingRunningApps = true }) {
                     Label("Chọn từ ứng dụng đang chạy", systemImage: "apps.iphone")
                 }
-                
+
                 Button(action: { showingFilePicker = true }) {
                     Label("Chọn từ thư mục Applications", systemImage: "folder")
+                }
+
+                Divider()
+
+                Button(action: {
+                    manualBundleId = ""
+                    showingBundleIdInput = true
+                }) {
+                    Label("Nhập Bundle ID thủ công", systemImage: "keyboard")
                 }
             } label: {
                 Label("Thêm", systemImage: "plus.circle.fill")
@@ -350,7 +378,7 @@ struct RunningAppsPickerView: View {
     private func loadRunningApps() {
         let workspace = NSWorkspace.shared
         let apps = workspace.runningApplications
-            .filter { $0.activationPolicy == .regular }
+            .filter { $0.activationPolicy != .prohibited }
             .compactMap { app -> ExcludedApp? in
                 guard let bundleId = app.bundleIdentifier,
                       let name = app.localizedName,
@@ -410,10 +438,80 @@ private struct RunningAppRow: View {
     }
 }
 
+// MARK: - Manual Bundle ID Input
+struct ManualBundleIdInputView: View {
+    @Environment(\.dismiss) private var dismiss
+    let onSubmit: (String) -> Void
+
+    @State private var bundleId = ""
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Text("Nhập Bundle ID")
+                    .font(.headline)
+
+                Spacer()
+
+                Button("Huỷ") {
+                    dismiss()
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+            }
+            .padding()
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Bundle ID của ứng dụng")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+
+                TextField("com.example.app", text: $bundleId)
+                    .settingsTextField()
+                    .textFieldStyle(.roundedBorder)
+
+                Text("Mẹo: Mở Terminal và chạy lệnh sau để tìm Bundle ID:")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Text("osascript -e 'id of app \"Tên App\"'")
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .padding(6)
+                    .background(Color(NSColor.controlBackgroundColor))
+                    .cornerRadius(4)
+            }
+            .padding(.horizontal)
+
+            Spacer()
+
+            Divider()
+
+            HStack {
+                Spacer()
+
+                Button("Thêm") {
+                    let trimmed = bundleId.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !trimmed.isEmpty {
+                        onSubmit(trimmed)
+                        dismiss()
+                    }
+                }
+                .adaptiveProminentButtonStyle()
+                .disabled(bundleId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+            .padding()
+        }
+        .frame(width: 400, height: 280)
+    }
+}
+
 #Preview {
     ExcludedAppsView(
         showingFilePicker: .constant(false),
-        showingRunningApps: .constant(false)
+        showingRunningApps: .constant(false),
+        showingBundleIdInput: .constant(false)
     )
         .environmentObject(AppState.shared)
         .frame(width: 400)

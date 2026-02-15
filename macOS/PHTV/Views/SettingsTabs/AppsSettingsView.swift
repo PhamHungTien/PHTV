@@ -12,8 +12,10 @@ struct AppsSettingsView: View {
     @EnvironmentObject var appState: AppState
     @State private var showingExcludedFilePicker = false
     @State private var showingExcludedRunningApps = false
+    @State private var showingExcludedBundleIdInput = false
     @State private var showingStepByStepFilePicker = false
     @State private var showingStepByStepRunningApps = false
+    @State private var showingStepByStepBundleIdInput = false
 
     var body: some View {
         ScrollView {
@@ -76,6 +78,12 @@ struct AppsSettingsView: View {
                             Button(action: { showingExcludedFilePicker = true }) {
                                 Label("Chọn từ thư mục Applications", systemImage: "folder")
                             }
+
+                            Divider()
+
+                            Button(action: { showingExcludedBundleIdInput = true }) {
+                                Label("Nhập Bundle ID thủ công", systemImage: "keyboard")
+                            }
                         } label: {
                             Label("Thêm", systemImage: "plus.circle.fill")
                                 .font(.system(size: 13, weight: .medium))
@@ -87,6 +95,7 @@ struct AppsSettingsView: View {
                     ExcludedAppsView(
                         showingFilePicker: $showingExcludedFilePicker,
                         showingRunningApps: $showingExcludedRunningApps,
+                        showingBundleIdInput: $showingExcludedBundleIdInput,
                         showHeader: false
                     )
                 }
@@ -120,6 +129,12 @@ struct AppsSettingsView: View {
                             Button(action: { showingStepByStepFilePicker = true }) {
                                 Label("Chọn từ thư mục Applications", systemImage: "folder")
                             }
+
+                            Divider()
+
+                            Button(action: { showingStepByStepBundleIdInput = true }) {
+                                Label("Nhập Bundle ID thủ công", systemImage: "keyboard")
+                            }
                         } label: {
                             Label("Thêm", systemImage: "plus.circle.fill")
                                 .font(.system(size: 13, weight: .medium))
@@ -131,6 +146,7 @@ struct AppsSettingsView: View {
                     SendKeyStepByStepAppsView(
                         showingFilePicker: $showingStepByStepFilePicker,
                         showingRunningApps: $showingStepByStepRunningApps,
+                        showingBundleIdInput: $showingStepByStepBundleIdInput,
                         showHeader: false
                     )
                 }

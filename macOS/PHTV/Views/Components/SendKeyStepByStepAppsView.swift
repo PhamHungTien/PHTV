@@ -13,6 +13,7 @@ struct SendKeyStepByStepAppsView: View {
     @EnvironmentObject var appState: AppState
     @Binding var showingFilePicker: Bool
     @Binding var showingRunningApps: Bool
+    @Binding var showingBundleIdInput: Bool
     var showHeader: Bool = true
 
     var body: some View {
@@ -47,6 +48,21 @@ struct SendKeyStepByStepAppsView: View {
                 }
             }
         }
+        .sheet(isPresented: $showingBundleIdInput) {
+            ManualBundleIdInputView { bundleId in
+                let name = resolveAppName(for: bundleId)
+                let app = SendKeyStepByStepApp(bundleIdentifier: bundleId, name: name, path: "")
+                appState.addSendKeyStepByStepApp(app)
+            }
+        }
+    }
+
+    private func resolveAppName(for bundleId: String) -> String {
+        if let runningApp = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == bundleId }),
+           let name = runningApp.localizedName {
+            return name
+        }
+        return bundleId.components(separatedBy: ".").last ?? bundleId
     }
 
     private func handleFilePickerResult(_ result: Result<[URL], Error>) {
@@ -79,6 +95,12 @@ struct SendKeyStepByStepAppsView: View {
 
                 Button(action: { showingFilePicker = true }) {
                     Label("Chọn từ thư mục Applications", systemImage: "folder")
+                }
+
+                Divider()
+
+                Button(action: { showingBundleIdInput = true }) {
+                    Label("Nhập Bundle ID thủ công", systemImage: "keyboard")
                 }
             } label: {
                 Label("Thêm", systemImage: "plus.circle.fill")
@@ -350,7 +372,7 @@ struct SendKeyStepByStepRunningAppsPickerView: View {
     private func loadRunningApps() {
         let workspace = NSWorkspace.shared
         let apps = workspace.runningApplications
-            .filter { $0.activationPolicy == .regular }
+            .filter { $0.activationPolicy != .prohibited }
             .compactMap { app -> SendKeyStepByStepApp? in
                 guard let bundleId = app.bundleIdentifier,
                       let name = app.localizedName,
@@ -413,7 +435,8 @@ private struct SendKeyStepByStepRunningAppRow: View {
 #Preview {
     SendKeyStepByStepAppsView(
         showingFilePicker: .constant(false),
-        showingRunningApps: .constant(false)
+        showingRunningApps: .constant(false),
+        showingBundleIdInput: .constant(false)
     )
         .environmentObject(AppState.shared)
         .frame(width: 400)

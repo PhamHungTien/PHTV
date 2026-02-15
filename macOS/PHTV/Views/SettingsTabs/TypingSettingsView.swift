@@ -206,6 +206,7 @@ struct UpperCaseExcludedAppsSection: View {
     @EnvironmentObject var appState: AppState
     @Binding var showingFilePicker: Bool
     @Binding var showingRunningApps: Bool
+    @State private var showingBundleIdInput = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -228,6 +229,12 @@ struct UpperCaseExcludedAppsSection: View {
 
                     Button(action: { showingFilePicker = true }) {
                         Label("Chọn từ thư mục Applications", systemImage: "folder")
+                    }
+
+                    Divider()
+
+                    Button(action: { showingBundleIdInput = true }) {
+                        Label("Nhập Bundle ID thủ công", systemImage: "keyboard")
                     }
                 } label: {
                     Label("Thêm", systemImage: "plus.circle.fill")
@@ -265,6 +272,21 @@ struct UpperCaseExcludedAppsSection: View {
                 }
             }
         }
+        .sheet(isPresented: $showingBundleIdInput) {
+            ManualBundleIdInputView { bundleId in
+                let name = resolveAppName(for: bundleId)
+                let app = ExcludedApp(bundleIdentifier: bundleId, name: name, path: "")
+                appState.addUpperCaseExcludedApp(app)
+            }
+        }
+    }
+
+    private func resolveAppName(for bundleId: String) -> String {
+        if let runningApp = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == bundleId }),
+           let name = runningApp.localizedName {
+            return name
+        }
+        return bundleId.components(separatedBy: ".").last ?? bundleId
     }
 
     private func handleFilePickerResult(_ result: Result<[URL], Error>) {
@@ -534,7 +556,7 @@ struct UpperCaseRunningAppsPickerView: View {
     private func loadRunningApps() {
         let workspace = NSWorkspace.shared
         let apps = workspace.runningApplications
-            .filter { $0.activationPolicy == .regular }
+            .filter { $0.activationPolicy != .prohibited }
             .compactMap { app -> ExcludedApp? in
                 guard let bundleId = app.bundleIdentifier,
                       let name = app.localizedName,
