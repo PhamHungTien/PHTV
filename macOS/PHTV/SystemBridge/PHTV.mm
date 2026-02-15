@@ -1490,6 +1490,8 @@ static bool _pendingUppercasePrimeCheck = true;
     // (e.g., Cmd+Shift should NOT trigger when user presses Cmd+Shift+S)
     bool _keyPressedWhileSwitchModifiersHeld = false;
 
+    // For emoji hotkey modifier-only mode - prevent prefix matching
+    bool _keyPressedWhileEmojiModifiersHeld = false;
 
     // For pause key detection - temporarily disable Vietnamese when holding key
     bool _pauseKeyPressed = false;
@@ -2743,14 +2745,29 @@ static bool _pendingUppercasePrimeCheck = true;
         return flags & (kCGEventFlagMaskCommand |
                         kCGEventFlagMaskAlternate |
                         kCGEventFlagMaskControl |
-                        kCGEventFlagMaskShift);
+                        kCGEventFlagMaskShift |
+                        kCGEventFlagMaskSecondaryFn);
+    }
+
+    static inline bool isEmojiModifierOnlyHotkey() {
+        return (vEmojiHotkeyKeyCode & 0xFF) == 0xFE;
+    }
+
+    // Check if ALL emoji hotkey modifiers are currently held
+    static inline bool emojiHotkeyModifiersAreHeld(CGEventFlags currentFlags) {
+        CGEventFlags expected = RelevantEmojiModifierFlags((CGEventFlags)vEmojiHotkeyModifiers);
+        if (expected == 0) return false;
+        CGEventFlags current = RelevantEmojiModifierFlags(currentFlags);
+        return (current & expected) == expected;
     }
 
     static inline BOOL CheckEmojiHotkey(CGKeyCode keycode, CGEventFlags flags) {
         if (!vEnableEmojiHotkey) return NO;
+        // Skip modifier-only emoji hotkeys here (handled in flagsChanged)
+        if (isEmojiModifierOnlyHotkey()) return NO;
         if ((CGKeyCode)vEmojiHotkeyKeyCode != keycode) return NO;
 
-        // Keep behavior strict and predictable: require at least one modifier.
+        // Require at least one modifier for key+modifier combos
         CGEventFlags expectedModifiers = RelevantEmojiModifierFlags((CGEventFlags)vEmojiHotkeyModifiers);
         if (expectedModifiers == 0) return NO;
         return RelevantEmojiModifierFlags(flags) == expectedModifiers;
@@ -3104,13 +3121,19 @@ static bool _pendingUppercasePrimeCheck = true;
                     _keyPressedWhileSwitchModifiersHeld = true;
                 }
             }
+
+            // Track key presses for emoji modifier-only hotkey
+            if (vEnableEmojiHotkey && isEmojiModifierOnlyHotkey() && emojiHotkeyModifiersAreHeld(_flag)) {
+                _keyPressedWhileEmojiModifiersHeld = true;
+            }
         } else if (type == kCGEventFlagsChanged) {
             if (_lastFlag == 0 || _lastFlag < _flag) {
                 // Pressing more modifiers
                 _lastFlag = _flag;
 
-                // Reset switch modifier tracking when modifiers change (user starting a new combo)
+                // Reset modifier tracking when modifiers change (user starting a new combo)
                 _keyPressedWhileSwitchModifiersHeld = false;
+                _keyPressedWhileEmojiModifiersHeld = false;
 
                 // Check if restore modifier key is being pressed
                 if (vRestoreOnEscape && vCustomEscapeKey > 0) {
@@ -3197,6 +3220,19 @@ static bool _pendingUppercasePrimeCheck = true;
                     return NULL;
                 }
 
+                // Check emoji picker modifier-only hotkey
+                if (vEnableEmojiHotkey && isEmojiModifierOnlyHotkey() && !_keyPressedWhileEmojiModifiersHeld) {
+                    CGEventFlags expectedEmoji = RelevantEmojiModifierFlags((CGEventFlags)vEmojiHotkeyModifiers);
+                    CGEventFlags lastEmoji = RelevantEmojiModifierFlags(_lastFlag);
+                    if (expectedEmoji != 0 && lastEmoji == expectedEmoji) {
+                        _lastFlag = 0;
+                        _keyPressedWhileEmojiModifiersHeld = false;
+                        [appDelegate onEmojiHotkeyTriggered];
+                        _hasJustUsedHotKey = true;
+                        return NULL;
+                    }
+                }
+
                 //check temporarily turn off spell checking
                 if (vTempOffSpelling && !_hasJustUsedHotKey && _lastFlag & kCGEventFlagMaskControl) {
                     vTempOffSpellChecking();
@@ -3206,6 +3242,7 @@ static bool _pendingUppercasePrimeCheck = true;
                 }
                 _lastFlag = 0;
                 _keyPressedWhileSwitchModifiersHeld = false;
+                _keyPressedWhileEmojiModifiersHeld = false;
                 _hasJustUsedHotKey = false;
             }
         }

@@ -786,6 +786,9 @@ struct EmojiHotkeyConfigView: View {
     @EnvironmentObject var appState: AppState
     @State private var isRecording = false
 
+    // 0xFE = modifier only mode (no key needed, just press and release modifiers)
+    private let modifierOnlyKeyCode: UInt16 = 0xFE
+
     // Computed properties for modifier bindings
     private var emojiHotkeyControl: Binding<Bool> {
         Binding(
@@ -847,6 +850,21 @@ struct EmojiHotkeyConfigView: View {
         )
     }
 
+    private var emojiHotkeyFn: Binding<Bool> {
+        Binding(
+            get: { appState.emojiHotkeyModifiers.contains(.function) },
+            set: { newValue in
+                var modifiers = appState.emojiHotkeyModifiers
+                if newValue {
+                    modifiers.insert(.function)
+                } else {
+                    modifiers.remove(.function)
+                }
+                appState.emojiHotkeyModifiers = modifiers
+            }
+        )
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             // Enable toggle
@@ -873,6 +891,7 @@ struct EmojiHotkeyConfigView: View {
                         ModifierKeyButton(symbol: "⇧", name: "Shift", isOn: emojiHotkeyShift)
                         ModifierKeyButton(symbol: "⌘", name: "Command", isOn: emojiHotkeyCommand)
                         ModifierKeyButton(symbol: "⌥", name: "Option", isOn: emojiHotkeyOption)
+                        ModifierKeyButton(symbol: "fn", name: "Fn", isOn: emojiHotkeyFn)
                     }
 
                     Text("Mặc định: ⌘E")
@@ -884,10 +903,16 @@ struct EmojiHotkeyConfigView: View {
 
                 // Key Selection Section
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Phím chính")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.primary)
+                    HStack {
+                        Text("Phím chính")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.primary)
+
+                        Text("(tùy chọn)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
 
                     HStack(spacing: 16) {
                         // Key selector button
@@ -907,6 +932,21 @@ struct EmojiHotkeyConfigView: View {
                                     .animation(.easeInOut(duration: 0.2), value: keyDisplayText)
 
                                 Spacer()
+
+                                // Clear button - only show if a real key is set
+                                if !isRecording && appState.emojiHotkeyKeyCode != modifierOnlyKeyCode {
+                                    Button(action: {
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            appState.emojiHotkeyKeyCode = modifierOnlyKeyCode
+                                        }
+                                    }) {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundStyle(.secondary)
+                                            .imageScale(.medium)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .transition(.scale.combined(with: .opacity))
+                                }
                             }
                             .padding(.horizontal, 14)
                             .padding(.vertical, 10)
@@ -972,24 +1012,42 @@ struct EmojiHotkeyConfigView: View {
                         }
                     }
 
-                    Text("💡 Mẹo: Dùng tổ hợp phím như ⌘E hoặc ⌃⇧E để mở emoji nhanh")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 4)
+                    // Help text for modifier-only mode
+                    if isModifierOnlyMode {
+                        Text("💡 Chế độ chỉ dùng phím bổ trợ: Bấm và thả tổ hợp phím để mở emoji")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .padding(.top, 4)
+                    } else {
+                        Text("💡 Mẹo: Dùng tổ hợp phím như ⌘E hoặc ⌃⇧E để mở emoji nhanh")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 4)
+                    }
                 }
             }
         }
+    }
+
+    private var isModifierOnlyMode: Bool {
+        appState.emojiHotkeyKeyCode == modifierOnlyKeyCode
     }
 
     private var keyDisplayText: String {
         if isRecording {
             return "Nhấn phím..."
         }
+        if isModifierOnlyMode {
+            return "Không dùng (chỉ modifier)"
+        }
         return emojiKeyName
     }
 
     private var emojiKeyName: String {
         let keyCode = appState.emojiHotkeyKeyCode
+        if keyCode == modifierOnlyKeyCode {
+            return "Không"
+        }
         // Common key codes for emoji hotkeys
         switch keyCode {
         case 41: return ";"
@@ -1010,19 +1068,26 @@ struct EmojiHotkeyConfigView: View {
 
     private var hasValidHotkey: Bool {
         // Valid if at least one modifier is selected
-        return !appState.emojiHotkeyModifiers.isEmpty
+        let modifiers = appState.emojiHotkeyModifiers
+        return modifiers.contains(.control) || modifiers.contains(.shift) ||
+               modifiers.contains(.command) || modifiers.contains(.option) ||
+               modifiers.contains(.function)
     }
 
     private var currentHotkeyDisplay: String {
         var parts: [String] = []
         let modifiers = appState.emojiHotkeyModifiers
 
+        if modifiers.contains(.function) { parts.append("fn") }
         if modifiers.contains(.control) { parts.append("⌃") }
         if modifiers.contains(.shift) { parts.append("⇧") }
         if modifiers.contains(.command) { parts.append("⌘") }
         if modifiers.contains(.option) { parts.append("⌥") }
 
-        parts.append(emojiKeyName)
+        // Only add key name if it's a real key (not modifier-only mode)
+        if !isModifierOnlyMode {
+            parts.append(emojiKeyName)
+        }
 
         return parts.isEmpty ? "Chưa đặt" : parts.joined(separator: " + ")
     }

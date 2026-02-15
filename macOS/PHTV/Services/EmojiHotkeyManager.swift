@@ -14,6 +14,7 @@ import Combine
 
 /// Singleton manager for PHTV Picker hotkey
 /// Monitors global keyboard events and triggers PHTV Picker when hotkey is pressed
+/// Supports both key+modifier combos and modifier-only mode (including Fn key)
 @MainActor
 final class EmojiHotkeyManager: ObservableObject {
 
@@ -21,10 +22,23 @@ final class EmojiHotkeyManager: ObservableObject {
 
     nonisolated(unsafe) private var globalMonitor: Any?
     nonisolated(unsafe) private var localMonitor: Any?
+    nonisolated(unsafe) private var globalFlagsMonitor: Any?
+    nonisolated(unsafe) private var localFlagsMonitor: Any?
     nonisolated(unsafe) private var settingsObserver: NSObjectProtocol?
     private var isEnabled: Bool = false
     private var modifiers: NSEvent.ModifierFlags = .command
     private var keyCode: UInt16 = 14  // E key default
+
+    // Modifier-only mode tracking
+    nonisolated(unsafe) private var lastModifierFlags: NSEvent.ModifierFlags = []
+    nonisolated(unsafe) private var keyPressedWhileModifiersHeld: Bool = false
+
+    private var isModifierOnlyMode: Bool {
+        keyCode == KeyCode.noKey
+    }
+
+    /// Relevant modifiers including Fn (.function)
+    private static let relevantModifiers: NSEvent.ModifierFlags = [.command, .option, .control, .shift, .function]
 
     private init() {
         // Use block-based observer with .main queue for thread safety
@@ -57,7 +71,7 @@ final class EmojiHotkeyManager: ObservableObject {
             }
         }
     }
-    
+
     @MainActor
     func syncFromAppState(_ appState: AppState) {
         let wasEnabled = isEnabled
@@ -78,7 +92,7 @@ final class EmojiHotkeyManager: ObservableObject {
             }
         }
     }
-    
+
     func registerHotkey(modifiers: NSEvent.ModifierFlags, keyCode: UInt16) {
         unregisterHotkey()
 
@@ -89,9 +103,21 @@ final class EmojiHotkeyManager: ObservableObject {
         // Capture values to avoid main-actor access from background thread
         let capturedKeyCode = self.keyCode
         let capturedModifiers = self.modifiers
+        let capturedRelevantModifiers = Self.relevantModifiers
+
+        if keyCode == KeyCode.noKey {
+            // Modifier-only mode: monitor flagsChanged events
+            registerModifierOnlyHotkey(capturedModifiers: capturedModifiers, relevantModifiers: capturedRelevantModifiers)
+        } else {
+            // Key+modifier mode: monitor keyDown events
+            registerKeyDownHotkey(capturedKeyCode: capturedKeyCode, capturedModifiers: capturedModifiers, relevantModifiers: capturedRelevantModifiers)
+        }
+    }
+
+    private func registerKeyDownHotkey(capturedKeyCode: UInt16, capturedModifiers: NSEvent.ModifierFlags, relevantModifiers: NSEvent.ModifierFlags) {
+        let filteredCapturedModifiers = capturedModifiers.intersection(relevantModifiers)
 
         globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            // Dispatch to main thread to access self properties safely
             Task { @MainActor [weak self] in
                 self?.handleKeyEvent(event)
             }
@@ -100,15 +126,13 @@ final class EmojiHotkeyManager: ObservableObject {
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             // Quick check to consume event IMMEDIATELY if it matches hotkey
             // This prevents system beep sound
-            // Use captured values to avoid main-actor isolation issues
             guard event.keyCode == capturedKeyCode else {
                 return event
             }
 
-            let relevantModifiers: NSEvent.ModifierFlags = [.command, .option, .control, .shift]
             let eventModifiers = event.modifierFlags.intersection(relevantModifiers)
 
-            guard eventModifiers == capturedModifiers else {
+            guard eventModifiers == filteredCapturedModifiers else {
                 return event
             }
 
@@ -121,7 +145,52 @@ final class EmojiHotkeyManager: ObservableObject {
             return nil
         }
     }
-    
+
+    private func registerModifierOnlyHotkey(capturedModifiers: NSEvent.ModifierFlags, relevantModifiers: NSEvent.ModifierFlags) {
+        let filteredCapturedModifiers = capturedModifiers.intersection(relevantModifiers)
+
+        // Also monitor keyDown to track if any key is pressed while modifiers are held
+        globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] _ in
+            self?.keyPressedWhileModifiersHeld = true
+        }
+
+        localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            self?.keyPressedWhileModifiersHeld = true
+            return event
+        }
+
+        // Monitor flagsChanged for modifier press/release
+        globalFlagsMonitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
+            self?.handleFlagsChanged(event, capturedModifiers: filteredCapturedModifiers, relevantModifiers: relevantModifiers)
+        }
+
+        localFlagsMonitor = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
+            self?.handleFlagsChanged(event, capturedModifiers: filteredCapturedModifiers, relevantModifiers: relevantModifiers)
+            return event
+        }
+    }
+
+    private func handleFlagsChanged(_ event: NSEvent, capturedModifiers: NSEvent.ModifierFlags, relevantModifiers: NSEvent.ModifierFlags) {
+        let currentFlags = event.modifierFlags.intersection(relevantModifiers)
+
+        if currentFlags.rawValue > lastModifierFlags.rawValue {
+            // Pressing more modifiers
+            lastModifierFlags = currentFlags
+            keyPressedWhileModifiersHeld = false
+        } else if currentFlags.rawValue < lastModifierFlags.rawValue {
+            // Releasing modifiers - check if the combo matched
+            if !keyPressedWhileModifiersHeld && lastModifierFlags == capturedModifiers {
+                Task { @MainActor in
+                    EmojiHotkeyManager.shared.openEmojiPicker()
+                }
+            }
+            lastModifierFlags = currentFlags
+            if currentFlags.isEmpty {
+                keyPressedWhileModifiersHeld = false
+            }
+        }
+    }
+
     func unregisterHotkey() {
         if let monitor = globalMonitor {
             NSEvent.removeMonitor(monitor)
@@ -133,7 +202,19 @@ final class EmojiHotkeyManager: ObservableObject {
             localMonitor = nil
         }
 
+        if let monitor = globalFlagsMonitor {
+            NSEvent.removeMonitor(monitor)
+            globalFlagsMonitor = nil
+        }
+
+        if let monitor = localFlagsMonitor {
+            NSEvent.removeMonitor(monitor)
+            localFlagsMonitor = nil
+        }
+
         isEnabled = false
+        lastModifierFlags = []
+        keyPressedWhileModifiersHeld = false
     }
 
     @discardableResult
@@ -142,10 +223,10 @@ final class EmojiHotkeyManager: ObservableObject {
             return false
         }
 
-        let relevantModifiers: NSEvent.ModifierFlags = [.command, .option, .control, .shift]
-        let eventModifiers = event.modifierFlags.intersection(relevantModifiers)
+        let eventModifiers = event.modifierFlags.intersection(Self.relevantModifiers)
+        let expectedModifiers = modifiers.intersection(Self.relevantModifiers)
 
-        guard eventModifiers == modifiers else {
+        guard eventModifiers == expectedModifiers else {
             return false
         }
 
@@ -158,16 +239,17 @@ final class EmojiHotkeyManager: ObservableObject {
             EmojiPickerManager.shared.show()
         }
     }
-    
+
     private func modifierSymbols(_ modifiers: NSEvent.ModifierFlags) -> String {
         var symbols = ""
+        if modifiers.contains(.function) { symbols += "fn" }
         if modifiers.contains(.control) { symbols += "⌃" }
         if modifiers.contains(.option) { symbols += "⌥" }
         if modifiers.contains(.shift) { symbols += "⇧" }
         if modifiers.contains(.command) { symbols += "⌘" }
         return symbols
     }
-    
+
     private func keyCodeSymbol(_ keyCode: UInt16) -> String {
         switch keyCode {
         case 41: return ";"
@@ -184,7 +266,7 @@ final class EmojiHotkeyManager: ObservableObject {
             return "Key\(keyCode)"
         }
     }
-    
+
     private func keyCodeToCharacter(_ keyCode: UInt16) -> Character? {
         let event = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: true)
         var length = 0
@@ -210,6 +292,12 @@ final class EmojiHotkeyManager: ObservableObject {
             NSEvent.removeMonitor(monitor)
         }
         if let monitor = localMonitor {
+            NSEvent.removeMonitor(monitor)
+        }
+        if let monitor = globalFlagsMonitor {
+            NSEvent.removeMonitor(monitor)
+        }
+        if let monitor = localFlagsMonitor {
             NSEvent.removeMonitor(monitor)
         }
     }
