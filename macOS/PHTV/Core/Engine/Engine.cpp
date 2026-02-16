@@ -338,6 +338,16 @@ static inline bool isEnglishLetterKeyCode(const Uint16& keyCode) {
     }
 }
 
+static inline bool isDigitKeyCode(const Uint16& keyCode) {
+    switch (keyCode) {
+        case KEY_0: case KEY_1: case KEY_2: case KEY_3: case KEY_4:
+        case KEY_5: case KEY_6: case KEY_7: case KEY_8: case KEY_9:
+            return true;
+        default:
+            return false;
+    }
+}
+
 static inline int getEnglishLookupStateLength() {
     int lookupLen = _stateIndex;
     // Defensive trim: if a non-letter key was ever appended to KeyStates,
@@ -352,6 +362,17 @@ static inline int getEnglishLookupStateLength() {
     return lookupLen;
 }
 
+static inline bool hasOnlyTrailingDigitKeyStates(const int startIndex) {
+    if (startIndex < 0 || startIndex >= _stateIndex) return false;
+    for (int idx = startIndex; idx < _stateIndex; idx++) {
+        Uint16 keyCode = static_cast<Uint16>(KeyStates[idx] & CHAR_MASK);
+        if (!isDigitKeyCode(keyCode)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 static inline bool hasOnlyEnglishLetterKeyStates(const int length) {
     if (length <= 0) return false;
     for (int idx = 0; idx < length; idx++) {
@@ -361,6 +382,16 @@ static inline bool hasOnlyEnglishLetterKeyStates(const int length) {
         }
     }
     return true;
+}
+
+static inline bool hasVietnameseTransformsInTypingWord(const int length) {
+    if (length <= 0) return false;
+    for (int idx = 0; idx < length && idx < MAX_BUFF; idx++) {
+        if (TypingWord[idx] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void setKeyData(const Byte& index, const Uint16& keyCode, const bool& isCaps) {
@@ -1998,7 +2029,14 @@ void vKeyHandleEvent(const vKeyEvent& event,
             int englishStateIndex = getEnglishLookupStateLength();
             bool isPureLetterToken = (englishStateIndex == _stateIndex) &&
                                      hasOnlyEnglishLetterKeyStates(_stateIndex);
-            if (englishStateIndex > 1 && isPureLetterToken) { // must have at least 2 letter keys and no digits/symbols
+            bool isLetterWithNumericSuffixToken =
+                (englishStateIndex > 0 && englishStateIndex < _stateIndex) &&
+                hasOnlyEnglishLetterKeyStates(englishStateIndex) &&
+                hasOnlyTrailingDigitKeyStates(englishStateIndex);
+            bool canAutoRestoreToken = isPureLetterToken || isLetterWithNumericSuffixToken;
+            int restoreStateIndex = isLetterWithNumericSuffixToken ? _stateIndex : englishStateIndex;
+
+            if (englishStateIndex > 1 && canAutoRestoreToken) {
                 shouldRestoreEnglish = checkIfEnglishWord(KeyStates, englishStateIndex);
                 if (!shouldRestoreEnglish) {
                     if (isEnglishWordFromKeyStates(KeyStates, englishStateIndex) &&
@@ -2057,9 +2095,20 @@ void vKeyHandleEvent(const vKeyEvent& event,
                         #endif
                     }
                 }
+
+                // Mixed tokens like "power1" should restore only when Vietnamese transform happened
+                // (e.g. "pơer1" -> "power1"), avoid no-op restore for plain "int1234".
+                if (shouldRestoreEnglish && isLetterWithNumericSuffixToken &&
+                    !hasVietnameseTransformsInTypingWord(_index)) {
+                    shouldRestoreEnglish = false;
+                    #ifdef DEBUG
+                    fprintf(stderr, "[AutoEnglish] SKIP RESTORE WORDBREAK: no Vietnamese transform in mixed token\n");
+                    fflush(stderr);
+                    #endif
+                }
             }
             // IMPORTANT: Check _index > 0 (must have display chars) and englishStateIndex > 1 (at least 2 keys pressed)
-            if (_index > 0 && englishStateIndex > 1 && isPureLetterToken && shouldRestoreEnglish) {
+            if (_index > 0 && restoreStateIndex > 1 && canAutoRestoreToken && shouldRestoreEnglish) {
                 // Auto restore English word feature
                 // checkIfEnglishWord returns true only if:
                 // - Word exists in English dictionary AND
@@ -2070,20 +2119,20 @@ void vKeyHandleEvent(const vKeyEvent& event,
                 // _stateIndex=6 but _index=5, so we must delete based on display count
                 // to avoid deleting characters before the word
                 hBPC = _index;  // Backspace count = display character count
-                hNCC = englishStateIndex;  // Insert count = original keystroke count (English word)
+                hNCC = restoreStateIndex;  // Insert count = original keystroke count (restore full mixed token if needed)
                 hExt = 5;  // Signal: This is Auto English restore (not Text Replacement)
-                for (i = 0; i < englishStateIndex; i++) {
+                for (i = 0; i < restoreStateIndex; i++) {
                     TypingWord[i] = KeyStates[i];
-                    hData[englishStateIndex - 1 - i] = KeyStates[i];
+                    hData[restoreStateIndex - 1 - i] = KeyStates[i];
                 }
                 // Apply uppercase first character if enabled
                 // Use _shouldUpperCaseEnglishRestore which was set when first char was typed
                 // Also check if current app is NOT excluded from uppercase feature
-                if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _shouldUpperCaseEnglishRestore && englishStateIndex > 0) {
-                    hData[englishStateIndex - 1] |= CAPS_MASK;
+                if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _shouldUpperCaseEnglishRestore && restoreStateIndex > 0) {
+                    hData[restoreStateIndex - 1] |= CAPS_MASK;
                 }
                 _shouldUpperCaseEnglishRestore = false;
-                _index = englishStateIndex;
+                _index = restoreStateIndex;
                 // CRITICAL FIX: Reset session immediately to prevent state pollution
                 // Without this, when typing fast or multiple words, _index/_stateIndex retain old values
                 // causing intermittent failures ("sometimes works, sometimes doesn't")
@@ -2101,7 +2150,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
                        word.c_str(), _index, _stateIndex);
                 if (_index <= 0) fprintf(stderr, "_index<=0 ");
                 if (englishStateIndex <= 1) fprintf(stderr, "englishStateIndex<=1 ");
-                if (!isPureLetterToken) fprintf(stderr, "containsNonLetter ");
+                if (!canAutoRestoreToken) fprintf(stderr, "invalidTokenShape ");
                 if (!checkIfEnglishWord(KeyStates, englishStateIndex)) fprintf(stderr, "notEnglish ");
                 fprintf(stderr, "\n");
                 fflush(stderr);
@@ -2182,7 +2231,14 @@ void vKeyHandleEvent(const vKeyEvent& event,
         int englishStateIndex = getEnglishLookupStateLength();
         bool isPureLetterToken = (englishStateIndex == _stateIndex) &&
                                  hasOnlyEnglishLetterKeyStates(_stateIndex);
-        if (vAutoRestoreEnglishWord && _index > 0 && englishStateIndex > 1 && isPureLetterToken) { // must have at least 2 letter keys and no digits/symbols
+        bool isLetterWithNumericSuffixToken =
+            (englishStateIndex > 0 && englishStateIndex < _stateIndex) &&
+            hasOnlyEnglishLetterKeyStates(englishStateIndex) &&
+            hasOnlyTrailingDigitKeyStates(englishStateIndex);
+        bool canAutoRestoreToken = isPureLetterToken || isLetterWithNumericSuffixToken;
+        int restoreStateIndex = isLetterWithNumericSuffixToken ? _stateIndex : englishStateIndex;
+
+        if (vAutoRestoreEnglishWord && _index > 0 && englishStateIndex > 1 && canAutoRestoreToken) {
             shouldRestoreEnglish = checkIfEnglishWord(KeyStates, englishStateIndex);
             if (!shouldRestoreEnglish) {
                 if (isEnglishWordFromKeyStates(KeyStates, englishStateIndex) &&
@@ -2248,6 +2304,17 @@ void vKeyHandleEvent(const vKeyEvent& event,
                     #endif
                 }
             }
+
+            // Mixed tokens like "power1" should restore only when Vietnamese transform happened
+            // (e.g. "pơer1" -> "power1"), avoid no-op restore for plain "int1234".
+            if (shouldRestoreEnglish && isLetterWithNumericSuffixToken &&
+                !hasVietnameseTransformsInTypingWord(_index)) {
+                shouldRestoreEnglish = false;
+                #ifdef DEBUG
+                fprintf(stderr, "[AutoEnglish] SKIP RESTORE SPACE: no Vietnamese transform in mixed token\n");
+                fflush(stderr);
+                #endif
+            }
         }
 
         if (vUseMacro && !_hasHandledMacro && findMacro(hMacroKey, hMacroData)) { //macro
@@ -2258,7 +2325,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             fprintf(stderr, "[AutoEnglish] Macro matched, Auto English skipped\n");
             fflush(stderr);
             #endif
-        } else if (vAutoRestoreEnglishWord && _index > 0 && englishStateIndex > 1 && isPureLetterToken && shouldRestoreEnglish) {
+        } else if (vAutoRestoreEnglishWord && _index > 0 && restoreStateIndex > 1 && canAutoRestoreToken && shouldRestoreEnglish) {
             // PRIORITY FIX: Check Auto English BEFORE Quick Consonant
             // Auto English should have higher priority to prevent conflicts
             // (e.g., "search" ending in "ch" shouldn't trigger Quick Consonant)
@@ -2275,20 +2342,20 @@ void vKeyHandleEvent(const vKeyEvent& event,
             // _stateIndex=6 but _index=5, so we must delete based on display count
             // to avoid deleting the space before the word
             hBPC = _index;  // Backspace count = display character count
-            hNCC = englishStateIndex;  // Insert count = original keystroke count (English word)
+            hNCC = restoreStateIndex;  // Insert count = original keystroke count (restore full mixed token if needed)
             hExt = 5;  // Signal: This is Auto English restore (not Text Replacement)
-            for (i = 0; i < englishStateIndex; i++) {
+            for (i = 0; i < restoreStateIndex; i++) {
                 TypingWord[i] = KeyStates[i];
-                hData[englishStateIndex - 1 - i] = KeyStates[i];
+                hData[restoreStateIndex - 1 - i] = KeyStates[i];
             }
             // Apply uppercase first character if enabled
             // Use _shouldUpperCaseEnglishRestore which was set when first char was typed
             // Also check if current app is NOT excluded from uppercase feature
-            if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _shouldUpperCaseEnglishRestore && englishStateIndex > 0) {
-                hData[englishStateIndex - 1] |= CAPS_MASK;
+            if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _shouldUpperCaseEnglishRestore && restoreStateIndex > 0) {
+                hData[restoreStateIndex - 1] |= CAPS_MASK;
             }
             _shouldUpperCaseEnglishRestore = false;
-            _index = englishStateIndex;
+            _index = restoreStateIndex;
             _spaceCount++;
             // Reset session after restore to prevent re-triggering on next key (e.g., arrow keys)
             // This is different from vRestoreAndStartNewSession which also sends the break key
@@ -2312,7 +2379,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
                        word.c_str(), _stateIndex, _index);
                 if (_index <= 0) fprintf(stderr, "_index<=0 ");
                 if (englishStateIndex <= 1) fprintf(stderr, "englishStateIndex<=1 ");
-                if (!isPureLetterToken) fprintf(stderr, "containsNonLetter ");
+                if (!canAutoRestoreToken) fprintf(stderr, "invalidTokenShape ");
                 if (!checkIfEnglishWord(KeyStates, englishStateIndex)) fprintf(stderr, "notEnglishWord ");
                 fprintf(stderr, "\n");
                 fflush(stderr);

@@ -219,9 +219,15 @@ int main(int argc, char** argv) {
         true));
 
     results.push_back(runWordBreakCase(
-        "Alnum token terminal1234 should NOT restore on DOT",
+        "Telex-conflict token terminal1234 should restore full raw keys on DOT",
         "terminal1234",
         {"terminal"},
+        true));
+
+    results.push_back(runWordBreakCase(
+        "Alnum token int1234 should NOT restore on DOT",
+        "int1234",
+        {"int"},
         false));
 
     results.push_back(runWordBreakCase(
