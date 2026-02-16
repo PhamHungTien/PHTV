@@ -253,6 +253,28 @@ bool isMacroBreakCode(const int& data) {
     return _macroBreakCodeSet.count(data) > 0;
 }
 
+static inline bool isBracketPunctuationBreak(const Uint16& data) {
+    return data == KEY_LEFT_BRACKET || data == KEY_RIGHT_BRACKET;
+}
+
+static inline bool isShiftedNumericPunctuationBreak(const Uint16& data, const Uint8& capsStatus) {
+    if (capsStatus != 1) {
+        return false;
+    }
+
+    // Shift+1 => !, Shift+9 => (, Shift+0 => )
+    return data == KEY_1 || data == KEY_9 || data == KEY_0;
+}
+
+static inline bool isAutoRestoreWordBreak(const vKeyEvent& event,
+                                          const vKeyEventState& state,
+                                          const Uint16& data,
+                                          const Uint8& capsStatus) {
+    return isWordBreak(event, state, data) ||
+           isBracketPunctuationBreak(data) ||
+           isShiftedNumericPunctuationBreak(data, capsStatus);
+}
+
 static inline bool isLikelyUppercaseAbbreviation(const Uint32* keyStates, int count) {
     if (count <= 0) return false;
     if (count > 12) return false;
@@ -1996,8 +2018,9 @@ void vKeyHandleEvent(const vKeyEvent& event,
 
     _isCaps = (capsStatus == 1 || //shift
                capsStatus == 2); //caps lock
+    const bool isAutoRestoreBreakKey = isAutoRestoreWordBreak(event, state, data, capsStatus);
     if ((IS_NUMBER_KEY(data) && capsStatus == 1)
-        || otherControlKey || isWordBreak(event, state, data) || (_index == 0 && IS_NUMBER_KEY(data))) {
+        || otherControlKey || isAutoRestoreBreakKey || (_index == 0 && IS_NUMBER_KEY(data))) {
         hCode = vDoNothing;
         hBPC = 0;
         hNCC = 0;
@@ -2011,7 +2034,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             #ifdef DEBUG
             fprintf(stderr, "[AutoEnglish] CONFLICT: Macro matched, auto English skipped\n"); fflush(stderr);
             #endif
-        } else if (vAutoRestoreEnglishWord && isWordBreak(event, state, data)) {
+        } else if (vAutoRestoreEnglishWord && isAutoRestoreBreakKey) {
             // PRIORITY FIX: Check Auto English BEFORE Quick Consonant
             // Auto English should have higher priority to prevent conflicts
             // (e.g., "search." ending in "ch" shouldn't trigger Quick Consonant)
@@ -2160,7 +2183,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             // Quick Consonant for Vietnamese typing shortcuts
             // Now checked AFTER Auto English to avoid conflicts
             checkQuickConsonant();
-        } else if (isWordBreak(event, state, data)) { //restore raw keys if word is invalid Vietnamese
+        } else if (isAutoRestoreBreakKey) { //restore raw keys if word is invalid Vietnamese
             if (!tempDisableKey && vCheckSpelling) {
                 checkSpelling(true); //force check spelling before restore decision
             }

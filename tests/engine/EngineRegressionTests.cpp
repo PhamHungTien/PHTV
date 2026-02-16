@@ -147,13 +147,15 @@ CaseResult runWordBreakCase(const std::string& name,
                             const std::string& token,
                             const std::vector<std::string>& customEnglish,
                             bool expectRestore,
-                            bool autoRestoreEnglish = true) {
+                            bool autoRestoreEnglish = true,
+                            Uint16 breakKeyCode = KEY_DOT,
+                            Uint8 breakCapsStatus = 0) {
     setCustomEnglishWords(customEnglish);
     int savedAutoRestoreEnglish = vAutoRestoreEnglishWord;
     vAutoRestoreEnglishWord = autoRestoreEnglish ? 1 : 0;
     vKeyHookState* state = static_cast<vKeyHookState*>(vKeyInit());
     feedWord(token);
-    vKeyHandleEvent(vKeyEvent::Keyboard, vKeyEventState::KeyDown, KEY_DOT, 0, false);
+    vKeyHandleEvent(vKeyEvent::Keyboard, vKeyEventState::KeyDown, breakKeyCode, breakCapsStatus, false);
     vAutoRestoreEnglishWord = savedAutoRestoreEnglish;
 
     bool restored = (state->code == vRestore || state->code == vRestoreAndStartNewSession);
@@ -161,7 +163,9 @@ CaseResult runWordBreakCase(const std::string& name,
 
     std::string detail = "code=" + std::to_string(state->code) +
                          ", backspace=" + std::to_string(state->backspaceCount) +
-                         ", newChar=" + std::to_string(state->newCharCount);
+                         ", newChar=" + std::to_string(state->newCharCount) +
+                         ", breakKey=" + std::to_string(breakKeyCode) +
+                         ", caps=" + std::to_string(breakCapsStatus);
 
     return {name, pass, detail};
 }
@@ -236,6 +240,96 @@ int main(int argc, char** argv) {
         {},
         true,
         false));
+
+    results.push_back(runWordBreakCase(
+        "Telex-modified English word terminal should restore on COMMA",
+        "terminal",
+        {"terminal"},
+        true,
+        true,
+        KEY_COMMA,
+        0));
+
+    results.push_back(runWordBreakCase(
+        "Telex-modified English word terminal should restore on QUESTION MARK",
+        "terminal",
+        {"terminal"},
+        true,
+        true,
+        KEY_SLASH,
+        1));
+
+    results.push_back(runWordBreakCase(
+        "Telex-modified English word terminal should restore on EXCLAMATION MARK",
+        "terminal",
+        {"terminal"},
+        true,
+        true,
+        KEY_1,
+        1));
+
+    results.push_back(runWordBreakCase(
+        "Telex-modified English word terminal should restore on LEFT PARENTHESIS",
+        "terminal",
+        {"terminal"},
+        true,
+        true,
+        KEY_9,
+        1));
+
+    results.push_back(runWordBreakCase(
+        "Telex-modified English word terminal should restore on RIGHT PARENTHESIS",
+        "terminal",
+        {"terminal"},
+        true,
+        true,
+        KEY_0,
+        1));
+
+    results.push_back(runWordBreakCase(
+        "Telex-modified English word terminal should restore on LEFT BRACKET",
+        "terminal",
+        {"terminal"},
+        true,
+        true,
+        KEY_LEFT_BRACKET,
+        0));
+
+    results.push_back(runWordBreakCase(
+        "Telex-conflict token terminal1234 should restore full raw keys on RIGHT BRACKET",
+        "terminal1234",
+        {"terminal"},
+        true,
+        true,
+        KEY_RIGHT_BRACKET,
+        0));
+
+    results.push_back(runWordBreakCase(
+        "Alnum token int1234 should NOT restore on EXCLAMATION MARK",
+        "int1234",
+        {"int"},
+        false,
+        true,
+        KEY_1,
+        1));
+
+    results.push_back(runWordBreakCase(
+        "Alnum token int1234 should NOT restore on RIGHT PARENTHESIS",
+        "int1234",
+        {"int"},
+        false,
+        true,
+        KEY_0,
+        1));
+
+    results.push_back(runWordBreakCase(
+        "Wrong-spelling token user should restore raw keys on EXCLAMATION MARK",
+        "user",
+        {},
+        true,
+        false,
+        KEY_1,
+        1));
 
     int failed = 0;
     for (const auto& r : results) {
