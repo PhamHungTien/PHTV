@@ -352,6 +352,17 @@ static inline int getEnglishLookupStateLength() {
     return lookupLen;
 }
 
+static inline bool hasOnlyEnglishLetterKeyStates(const int length) {
+    if (length <= 0) return false;
+    for (int idx = 0; idx < length; idx++) {
+        Uint16 keyCode = static_cast<Uint16>(KeyStates[idx] & CHAR_MASK);
+        if (!isEnglishLetterKeyCode(keyCode)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void setKeyData(const Byte& index, const Uint16& keyCode, const bool& isCaps) {
     if (index < 0 || index >= MAX_BUFF)
         return;
@@ -1985,7 +1996,9 @@ void vKeyHandleEvent(const vKeyEvent& event,
             }
             bool shouldRestoreEnglish = false;
             int englishStateIndex = getEnglishLookupStateLength();
-            if (englishStateIndex > 1) { // must have at least 2 letter keys
+            bool isPureLetterToken = (englishStateIndex == _stateIndex) &&
+                                     hasOnlyEnglishLetterKeyStates(_stateIndex);
+            if (englishStateIndex > 1 && isPureLetterToken) { // must have at least 2 letter keys and no digits/symbols
                 shouldRestoreEnglish = checkIfEnglishWord(KeyStates, englishStateIndex);
                 if (!shouldRestoreEnglish) {
                     if (isEnglishWordFromKeyStates(KeyStates, englishStateIndex) &&
@@ -2046,7 +2059,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
                 }
             }
             // IMPORTANT: Check _index > 0 (must have display chars) and englishStateIndex > 1 (at least 2 keys pressed)
-            if (_index > 0 && englishStateIndex > 1 && shouldRestoreEnglish) {
+            if (_index > 0 && englishStateIndex > 1 && isPureLetterToken && shouldRestoreEnglish) {
                 // Auto restore English word feature
                 // checkIfEnglishWord returns true only if:
                 // - Word exists in English dictionary AND
@@ -2088,6 +2101,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
                        word.c_str(), _index, _stateIndex);
                 if (_index <= 0) fprintf(stderr, "_index<=0 ");
                 if (englishStateIndex <= 1) fprintf(stderr, "englishStateIndex<=1 ");
+                if (!isPureLetterToken) fprintf(stderr, "containsNonLetter ");
                 if (!checkIfEnglishWord(KeyStates, englishStateIndex)) fprintf(stderr, "notEnglish ");
                 fprintf(stderr, "\n");
                 fflush(stderr);
@@ -2159,7 +2173,9 @@ void vKeyHandleEvent(const vKeyEvent& event,
         }
         bool shouldRestoreEnglish = false;
         int englishStateIndex = getEnglishLookupStateLength();
-        if (vAutoRestoreEnglishWord && _index > 0 && englishStateIndex > 1) { // must have at least 2 letter keys
+        bool isPureLetterToken = (englishStateIndex == _stateIndex) &&
+                                 hasOnlyEnglishLetterKeyStates(_stateIndex);
+        if (vAutoRestoreEnglishWord && _index > 0 && englishStateIndex > 1 && isPureLetterToken) { // must have at least 2 letter keys and no digits/symbols
             shouldRestoreEnglish = checkIfEnglishWord(KeyStates, englishStateIndex);
             if (!shouldRestoreEnglish) {
                 if (isEnglishWordFromKeyStates(KeyStates, englishStateIndex) &&
@@ -2235,7 +2251,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             fprintf(stderr, "[AutoEnglish] Macro matched, Auto English skipped\n");
             fflush(stderr);
             #endif
-        } else if (vAutoRestoreEnglishWord && _index > 0 && englishStateIndex > 1 && shouldRestoreEnglish) {
+        } else if (vAutoRestoreEnglishWord && _index > 0 && englishStateIndex > 1 && isPureLetterToken && shouldRestoreEnglish) {
             // PRIORITY FIX: Check Auto English BEFORE Quick Consonant
             // Auto English should have higher priority to prevent conflicts
             // (e.g., "search" ending in "ch" shouldn't trigger Quick Consonant)
@@ -2284,6 +2300,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
                        word.c_str(), _stateIndex, _index);
                 if (_index <= 0) fprintf(stderr, "_index<=0 ");
                 if (englishStateIndex <= 1) fprintf(stderr, "englishStateIndex<=1 ");
+                if (!isPureLetterToken) fprintf(stderr, "containsNonLetter ");
                 if (!checkIfEnglishWord(KeyStates, englishStateIndex)) fprintf(stderr, "notEnglishWord ");
                 fprintf(stderr, "\n");
                 fflush(stderr);
