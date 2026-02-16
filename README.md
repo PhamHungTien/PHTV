@@ -6,7 +6,7 @@
 
 ### Bộ gõ tiếng Việt hiện đại cho macOS
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/PhamHungTien/PHTV/release.yml?branch=main&label=Build)](../../actions/workflows/release.yml)
 [![macOS 13+](https://img.shields.io/badge/macOS-13+-blue.svg)](https://www.apple.com/macos/)
 [![Universal Binary](https://img.shields.io/badge/Universal-Intel%20%2B%20Apple%20Silicon-red.svg)](https://support.apple.com/en-us/HT211814)
@@ -341,7 +341,7 @@ Mọi đóng góp đều được chào đón! Xem [CONTRIBUTING.md](CONTRIBUTIN
 
 ## License & Credits
 
-PHTV được phát hành dưới giấy phép **[GPL v3.0](LICENSE)**.
+PHTV được phát hành dưới giấy phép **[GNU AGPL v3.0](LICENSE)**.
 
 ### Cảm ơn đặc biệt
 
