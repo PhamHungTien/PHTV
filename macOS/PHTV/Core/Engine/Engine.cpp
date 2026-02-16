@@ -2111,6 +2111,13 @@ void vKeyHandleEvent(const vKeyEvent& event,
             // Quick Consonant for Vietnamese typing shortcuts
             // Now checked AFTER Auto English to avoid conflicts
             checkQuickConsonant();
+        } else if (isWordBreak(event, state, data)) { //restore raw keys if word is invalid Vietnamese
+            if (!tempDisableKey && vCheckSpelling) {
+                checkSpelling(true); //force check spelling before restore decision
+            }
+            if (tempDisableKey && !checkRestoreIfWrongSpelling(vRestoreAndStartNewSession)) {
+                hCode = vDoNothing;
+            }
         }
         
         _isCharKeyCode = state == KeyDown && std::find(_charKeyCode.begin(), _charKeyCode.end(), data) != _charKeyCode.end();
@@ -2290,6 +2297,11 @@ void vKeyHandleEvent(const vKeyEvent& event,
         } else if ((vQuickStartConsonant || vQuickEndConsonant) && !tempDisableKey && checkQuickConsonant()) {
             // Quick Consonant for Vietnamese typing shortcuts
             // Now checked AFTER Auto English to avoid conflicts
+            _spaceCount++;
+        } else if (tempDisableKey && !_hasHandledMacro) { //restore raw keys if word is invalid Vietnamese
+            if (!checkRestoreIfWrongSpelling(vRestore)) {
+                hCode = vDoNothing;
+            }
             _spaceCount++;
         } else { //do nothing with SPACE KEY
             #ifdef DEBUG

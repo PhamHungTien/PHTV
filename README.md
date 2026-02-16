@@ -317,6 +317,7 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 ### Nhà phát triển
 - **[GitHub Actions Workflows](.github/workflows/README.md)** - CI/CD, auto-update, và release automation
 - **[Scripts](scripts/)** - Scripts tự động hóa (Homebrew, Sparkle, DMG creation)
+- **Engine Regression Tests** - Chạy `./scripts/run_engine_regression_tests.sh` để kiểm tra các lỗi hồi quy quan trọng của bộ gõ
 - **[Contributing](CONTRIBUTING.md)** - Hướng dẫn đóng góp
 - **[Security](SECURITY.md)** - Chính sách bảo mật
 
