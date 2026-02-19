@@ -352,6 +352,12 @@ extension UserDefaults {
         }
         return defaultValue
     }
+
+    /// Always use stable update channel and auto-install updates.
+    func enforceStableUpdateChannel() {
+        removeObject(forKey: UserDefaultsKey.sparkleBetaChannel)
+        set(true, forKey: UserDefaultsKey.autoInstallUpdates)
+    }
 }
 
 // MARK: - Settings Bootstrap

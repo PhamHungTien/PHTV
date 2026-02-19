@@ -92,8 +92,7 @@ final class SystemState: ObservableObject {
         updateCheckFrequency = UpdateCheckFrequency.from(interval: updateInterval)
 
         // Always use stable channel and always auto-install updates.
-        defaults.removeObject(forKey: UserDefaultsKey.sparkleBetaChannel)
-        defaults.set(true, forKey: UserDefaultsKey.autoInstallUpdates)
+        defaults.enforceStableUpdateChannel()
 
         // Load bug report settings
         includeSystemInfo = defaults.bool(
@@ -123,8 +122,7 @@ final class SystemState: ObservableObject {
 
         // Save Sparkle settings
         defaults.set(updateCheckFrequency.rawValue, forKey: UserDefaultsKey.updateCheckInterval)
-        defaults.removeObject(forKey: UserDefaultsKey.sparkleBetaChannel)
-        defaults.set(true, forKey: UserDefaultsKey.autoInstallUpdates)
+        defaults.enforceStableUpdateChannel()
 
         // Save bug report settings
         defaults.set(includeSystemInfo, forKey: UserDefaultsKey.includeSystemInfo)

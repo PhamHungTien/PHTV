@@ -490,8 +490,7 @@ struct SystemSettingsView: View {
         }
 
         // Auto-install updates is always ON and beta channel is not supported.
-        defaults.removeObject(forKey: UserDefaultsKey.sparkleBetaChannel)
-        defaults.set(true, forKey: UserDefaultsKey.autoInstallUpdates)
+        defaults.enforceStableUpdateChannel()
 
         // Apply macros
         if let macros = backup.macros {
