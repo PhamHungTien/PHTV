@@ -362,7 +362,7 @@ final class SystemState: ObservableObject {
                     self.isUpdatingRunOnStartup = true
                     self.runOnStartup = enabled
                     self.isUpdatingRunOnStartup = false
-                    print("[SystemState] ✅ RunOnStartup synced from notification: \(enabled)")
+                    PHTVLogger.shared.info("[SystemState] RunOnStartup synced from notification: \(enabled)")
                 }
             }
         }

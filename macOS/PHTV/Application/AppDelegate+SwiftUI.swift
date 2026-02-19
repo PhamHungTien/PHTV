@@ -61,19 +61,19 @@ extension AppDelegate {
         guard let inputMethod = notification.object as? Int else { return }
         // Update existing vInputType variable
         // This will be implemented to call existing methods
-        print("Input method changed to: \(inputMethod)")
+        PHTVLogger.shared.input("Input method changed to: \(inputMethod)")
     }
     
     @objc private func handleCodeTableChanged(_ notification: Notification) {
         guard let codeTable = notification.object as? Int else { return }
         // Update existing vCodeTable variable
-        print("Code table changed to: \(codeTable)")
+        PHTVLogger.shared.input("Code table changed to: \(codeTable)")
     }
     
     @objc private func handleToggleEnabled(_ notification: Notification) {
         guard let enabled = notification.object as? Bool else { return }
         // Toggle PHTV on/off
-        print("PHTV enabled: \(enabled)")
+        PHTVLogger.shared.sync("PHTV enabled changed: \(enabled)")
     }
     
     @objc private func handleShowConvertTool() {
@@ -92,7 +92,10 @@ extension AppDelegate {
             // Open settings window and navigate to System tab, then show convert tool
             if let openWindow = NSApp.windows.first(where: { $0.identifier?.rawValue == "settings" }) {
                 // Set window level based on user preference
-                let alwaysOnTop = UserDefaults.standard.bool(forKey: UserDefaultsKey.settingsWindowAlwaysOnTop)
+                let alwaysOnTop = UserDefaults.standard.bool(
+                    forKey: UserDefaultsKey.settingsWindowAlwaysOnTop,
+                    default: Defaults.settingsWindowAlwaysOnTop
+                )
                 openWindow.level = alwaysOnTop ? .floating : .normal
                 
                 // FIX: Ensure robust window behavior

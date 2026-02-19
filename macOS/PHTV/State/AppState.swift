@@ -63,7 +63,7 @@ final class AppState: ObservableObject {
         isLoadingSettings = true
         loadSettings()
         isLoadingSettings = false
-        print("[AppState] Init complete")
+        PHTVLogger.shared.debug("AppState init complete")
 
         // Delay observer setup to avoid crashes during initialization
         DispatchQueue.main.async { [weak self] in

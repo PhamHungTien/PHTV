@@ -140,9 +140,7 @@ final class MacroState: ObservableObject {
             // Save settings when emoji hotkey changes
             self.saveSettings()
             // Post notification to trigger sync in EmojiHotkeyManager
-            #if DEBUG
-            print("[MacroState] Posting EmojiHotkeySettingsChanged notification")
-            #endif
+            PHTVLogger.shared.debug("[MacroState] Posting EmojiHotkeySettingsChanged notification")
             NotificationCenter.default.post(name: NotificationName.emojiHotkeySettingsChanged, object: nil)
         }.store(in: &cancellables)
     }
