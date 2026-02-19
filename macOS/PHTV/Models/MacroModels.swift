@@ -132,6 +132,49 @@ struct MacroItem: Identifiable, Hashable, Codable {
     }
 }
 
+// MARK: - Macro Storage
+
+enum MacroStorage {
+    static func load(defaults: UserDefaults = .standard) -> [MacroItem] {
+        guard let data = defaults.data(forKey: UserDefaultsKey.macroList) else {
+            return []
+        }
+        return decode(data) ?? []
+    }
+
+    static func decode(_ data: Data) -> [MacroItem]? {
+        do {
+            return try JSONDecoder().decode([MacroItem].self, from: data)
+        } catch {
+            PHTVLogger.shared.error("[MacroStorage] Failed to decode macro list: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    static func save(_ macros: [MacroItem], defaults: UserDefaults = .standard) -> Data? {
+        do {
+            let encoded = try JSONEncoder().encode(macros)
+            defaults.set(encoded, forKey: UserDefaultsKey.macroList)
+            return encoded
+        } catch {
+            PHTVLogger.shared.error("[MacroStorage] Failed to encode macro list: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    static func postUpdated(macroId: UUID? = nil, action: String? = nil) {
+        if let macroId, let action {
+            NotificationCenter.default.post(
+                name: NotificationName.macrosUpdated,
+                object: nil,
+                userInfo: ["macroId": macroId, "action": action]
+            )
+            return
+        }
+        NotificationCenter.default.post(name: NotificationName.macrosUpdated, object: nil)
+    }
+}
+
 // MARK: - Macro Intelligence Extension
 
 extension MacroItem {

@@ -238,8 +238,7 @@ struct MacroEditorView: View {
         }
 
         // Load existing macros
-        let defaults = UserDefaults.standard
-        var macros = loadMacros()
+        var macros = MacroStorage.load()
         var trimmedName = macroName.trimmingCharacters(in: .whitespaces)
         var trimmedCode = macroCode.trimmingCharacters(in: .whitespaces)
         // Normalize Unicode to NFC to avoid duplicate variants and ensure stable encoding
@@ -317,21 +316,16 @@ struct MacroEditorView: View {
         macros.sort { $0.shortcut.localizedCompare($1.shortcut) == .orderedAscending }
 
         // Save to UserDefaults atomically then notify immediately (no artificial delay)
-        if let encoded = try? JSONEncoder().encode(macros) {
-            defaults.set(encoded, forKey: UserDefaultsKey.macroList)
+        if let encoded = MacroStorage.save(macros) {
             PHTVLogger.shared.macro("[MacroEditor] Saved \(macros.count) macros to UserDefaults")
             PHTVLogger.shared.debug("[MacroEditor] macroList data size: \(encoded.count) bytes")
 
             // Post notification with macro ID and action for animation
-            if let macroId = savedMacroId {
-                NotificationCenter.default.post(
-                    name: NotificationName.macrosUpdated,
-                    object: nil,
-                    userInfo: ["macroId": macroId, "action": action]
-                )
-                PHTVLogger.shared.macro("[MacroEditor] Notification posted with action: \(action), macroId: \(macroId)")
+            if let savedMacroId {
+                MacroStorage.postUpdated(macroId: savedMacroId, action: action)
+                PHTVLogger.shared.macro("[MacroEditor] Notification posted with action: \(action), macroId: \(savedMacroId)")
             } else {
-                NotificationCenter.default.post(name: NotificationName.macrosUpdated, object: nil)
+                MacroStorage.postUpdated()
                 PHTVLogger.shared.macro("[MacroEditor] Notification posted")
             }
 
@@ -344,16 +338,6 @@ struct MacroEditorView: View {
         }
     }
 
-    private func loadMacros() -> [MacroItem] {
-        let defaults = UserDefaults.standard
-        if let data = defaults.data(forKey: UserDefaultsKey.macroList),
-            let macros = try? JSONDecoder().decode([MacroItem].self, from: data)
-        {
-            return macros
-        }
-        return []
-    }
-
     // MARK: - MACRO INTELLIGENCE: Conflict Detection
 
     private func updateConflicts() {
@@ -363,7 +347,7 @@ struct MacroEditorView: View {
         }
 
         let trimmedName = macroName.trimmingCharacters(in: .whitespaces)
-        let allMacros = loadMacros()
+        let allMacros = MacroStorage.load()
 
         // Create a temporary macro to check conflicts
         let tempMacro = MacroItem(

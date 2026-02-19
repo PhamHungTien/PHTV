@@ -377,7 +377,7 @@ struct MacroSettingsView: View {
                 macros = Self.cachedMacros
                 return
             }
-            if let loadedMacros = try? JSONDecoder().decode([MacroItem].self, from: data) {
+            if let loadedMacros = MacroStorage.decode(data) {
                 macros = loadedMacros
                 Self.cachedMacros = loadedMacros
                 Self.cachedMacrosData = data
@@ -595,13 +595,11 @@ struct MacroSettingsView: View {
     }
 
     private func saveMacros() {
-        let defaults = UserDefaults.standard
-        if let encoded = try? JSONEncoder().encode(macros) {
-            defaults.set(encoded, forKey: UserDefaultsKey.macroList)
+        if let encoded = MacroStorage.save(macros) {
             Self.cachedMacros = macros
             Self.cachedMacrosData = encoded
             PHTVLogger.shared.macro("[MacroSettings] Saved \(macros.count) macros to UserDefaults")
-            NotificationCenter.default.post(name: NotificationName.macrosUpdated, object: nil)
+            MacroStorage.postUpdated()
         } else {
             PHTVLogger.shared.error("[MacroSettings] Failed to encode macros")
         }
