@@ -60,6 +60,7 @@ final class AppState: ObservableObject {
     // MARK: - Initialization
 
     private init() {
+        SettingsBootstrap.registerDefaults()
         isLoadingSettings = true
         loadSettings()
         isLoadingSettings = false

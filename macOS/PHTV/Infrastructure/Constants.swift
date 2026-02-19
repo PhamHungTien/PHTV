@@ -351,6 +351,68 @@ extension UserDefaults {
     }
 }
 
+// MARK: - Settings Bootstrap
+
+@objcMembers
+final class SettingsBootstrap: NSObject {
+    /// Registers all default settings used by both Swift and Objective-C layers.
+    static func registerDefaults() {
+        UserDefaults.standard.register(defaults: registrationDefaults())
+    }
+
+    private static func registrationDefaults() -> [String: Any] {
+        [
+            UserDefaultsKey.inputMethod: 1,
+            UserDefaultsKey.inputType: Defaults.inputMethod.toIndex(),
+            UserDefaultsKey.codeTable: Defaults.codeTable.toIndex(),
+            UserDefaultsKey.spelling: Defaults.checkSpelling,
+            UserDefaultsKey.modernOrthography: Defaults.useModernOrthography,
+            UserDefaultsKey.quickTelex: Defaults.quickTelex,
+            UserDefaultsKey.useMacro: Defaults.useMacro,
+            UserDefaultsKey.useMacroInEnglishMode: Defaults.useMacroInEnglishMode,
+            UserDefaultsKey.autoCapsMacro: Defaults.autoCapsMacro,
+            UserDefaultsKey.sendKeyStepByStep: Defaults.sendKeyStepByStep,
+            UserDefaultsKey.useSmartSwitchKey: Defaults.useSmartSwitchKey,
+            UserDefaultsKey.upperCaseFirstChar: Defaults.upperCaseFirstChar,
+            UserDefaultsKey.allowConsonantZFWJ: Defaults.allowConsonantZFWJ,
+            UserDefaultsKey.quickStartConsonant: Defaults.quickStartConsonant,
+            UserDefaultsKey.quickEndConsonant: Defaults.quickEndConsonant,
+            UserDefaultsKey.rememberCode: Defaults.rememberCode,
+            UserDefaultsKey.autoRestoreEnglishWord: Defaults.autoRestoreEnglishWord,
+            UserDefaultsKey.restoreOnEscape: Defaults.restoreOnEscape,
+            UserDefaultsKey.customEscapeKey: Int(Defaults.restoreKeyCode),
+            UserDefaultsKey.pauseKeyEnabled: Defaults.pauseKeyEnabled,
+            UserDefaultsKey.pauseKey: Int(Defaults.pauseKeyCode),
+            UserDefaultsKey.pauseKeyName: Defaults.pauseKeyName,
+            UserDefaultsKey.switchKeyStatus: Defaults.defaultSwitchKeyStatus,
+            UserDefaultsKey.beepOnModeSwitch: Defaults.beepOnModeSwitch,
+            UserDefaultsKey.beepVolume: Defaults.beepVolume,
+            UserDefaultsKey.menuBarIconSize: Defaults.menuBarIconSize,
+            UserDefaultsKey.useVietnameseMenubarIcon: Defaults.useVietnameseMenubarIcon,
+            UserDefaultsKey.showIconOnDock: Defaults.showIconOnDock,
+            UserDefaultsKey.performLayoutCompat: Defaults.performLayoutCompat,
+            UserDefaultsKey.settingsWindowAlwaysOnTop: Defaults.settingsWindowAlwaysOnTop,
+            UserDefaultsKey.safeMode: Defaults.safeMode,
+            UserDefaultsKey.enableEmojiHotkey: Defaults.enableEmojiHotkey,
+            UserDefaultsKey.emojiHotkeyModifiers: Int(Defaults.emojiHotkeyModifiers),
+            UserDefaultsKey.emojiHotkeyKeyCode: Int(Defaults.emojiHotkeyKeyCode),
+            UserDefaultsKey.runOnStartup: Defaults.runOnStartup,
+            UserDefaultsKey.runOnStartupLegacy: 0,
+            UserDefaultsKey.updateCheckInterval: Defaults.updateCheckInterval,
+            UserDefaultsKey.includeSystemInfo: Defaults.includeSystemInfo,
+            UserDefaultsKey.includeLogs: Defaults.includeLogs,
+            UserDefaultsKey.includeCrashLogs: Defaults.includeCrashLogs,
+            "vAutoInstallUpdates": true,
+            "FreeMark": 0,
+            "FixRecommendBrowser": 1,
+            "vTempOffSpelling": 0,
+            "vOtherLanguage": 1,
+            "vTempOffPHTV": 0,
+            "GrayIcon": 1
+        ]
+    }
+}
+
 // MARK: - Timing Constants
 
 enum Timing {

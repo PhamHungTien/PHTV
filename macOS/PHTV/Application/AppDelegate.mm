@@ -515,6 +515,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     _isUpdatingInputType = NO;
     _isUpdatingCodeTable = NO;
 
+    // Single-source registration for UserDefaults defaults shared across Swift and ObjC layers.
+    [SettingsBootstrap registerDefaults];
+
     BOOL isFirstLaunch = ([[NSUserDefaults standardUserDefaults] boolForKey:@"NonFirstTime"] == 0);
     // Use test tap - reliable check (MJAccessibilityIsEnabled is unreliable)
     self.needsRelaunchAfterPermission = (isFirstLaunch && ![PHTVManager canCreateEventTap]);
