@@ -327,7 +327,7 @@ struct MacroSettingsView: View {
         .onReceive(NotificationCenter.default.publisher(for: NotificationName.macrosUpdated))
         { notification in
             // Note: .onReceive already runs on main thread in SwiftUI
-            print("[MacroSettings] Received MacrosUpdated notification, reloading...")
+            PHTVLogger.shared.macro("[MacroSettings] Received MacrosUpdated notification, reloading...")
 
             // Check if notification contains info about added/edited macro
             if let userInfo = notification.userInfo,
@@ -407,7 +407,7 @@ struct MacroSettingsView: View {
             selectedMacro = nil
         }
 
-        print(
+        PHTVLogger.shared.macro(
             "[MacroSettings] Deleted macro: \(deletedMacro.shortcut) -> \(deletedMacro.expansion)")
         saveMacros()
     }
@@ -493,9 +493,9 @@ struct MacroSettingsView: View {
                 let jsonData = try encoder.encode(exportData)
 
                 try jsonData.write(to: url)
-                print("[MacroSettings] Exported \(macros.count) macros to: \(url.path)")
+                PHTVLogger.shared.macro("[MacroSettings] Exported \(macros.count) macros to: \(url.path)")
             } catch {
-                print("[MacroSettings] Export failed: \(error.localizedDescription)")
+                PHTVLogger.shared.error("[MacroSettings] Export failed: \(error.localizedDescription)")
             }
         }
     }
@@ -584,7 +584,7 @@ struct MacroSettingsView: View {
                     .sorted { $0.shortcut.localizedCompare($1.shortcut) == .orderedAscending }
                 saveMacros()
             } catch {
-                print("[MacroSettings] Import failed: \(error.localizedDescription)")
+                PHTVLogger.shared.error("[MacroSettings] Import failed: \(error.localizedDescription)")
             }
         }
     }
@@ -600,10 +600,10 @@ struct MacroSettingsView: View {
             defaults.set(encoded, forKey: UserDefaultsKey.macroList)
             Self.cachedMacros = macros
             Self.cachedMacrosData = encoded
-            print("[MacroSettings] Saved \(macros.count) macros to UserDefaults")
+            PHTVLogger.shared.macro("[MacroSettings] Saved \(macros.count) macros to UserDefaults")
             NotificationCenter.default.post(name: NotificationName.macrosUpdated, object: nil)
         } else {
-            print("[MacroSettings] ERROR: Failed to encode macros")
+            PHTVLogger.shared.error("[MacroSettings] Failed to encode macros")
         }
     }
 }

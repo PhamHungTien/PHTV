@@ -490,8 +490,8 @@ struct SystemSettingsView: View {
         }
 
         // Auto-install updates is always ON and beta channel is not supported.
-        defaults.removeObject(forKey: "SUEnableBetaChannel")
-        defaults.set(true, forKey: "vAutoInstallUpdates")
+        defaults.removeObject(forKey: UserDefaultsKey.sparkleBetaChannel)
+        defaults.set(true, forKey: UserDefaultsKey.autoInstallUpdates)
 
         // Apply macros
         if let macros = backup.macros {
@@ -568,7 +568,7 @@ struct SystemSettingsView: View {
     }
 
     private func checkForUpdates() {
-        print("[SystemSettings] User clicked 'Kiểm tra cập nhật' button")
+        PHTVLogger.shared.ui("[SystemSettings] User clicked 'Kiểm tra cập nhật' button")
 
         // Trigger Sparkle update check
         // Sparkle will handle the UI via UpdateBannerView or notification when no update
@@ -577,7 +577,7 @@ struct SystemSettingsView: View {
             object: nil
         )
 
-        print("[SystemSettings] Posted SparkleManualCheck notification")
+        PHTVLogger.shared.ui("[SystemSettings] Posted SparkleManualCheck notification")
     }
 }
 

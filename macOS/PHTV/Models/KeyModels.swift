@@ -51,7 +51,7 @@ enum RestoreKey: Int, CaseIterable, Identifiable, Sendable {
         case Int(KeyCode.leftControl), Int(KeyCode.rightControl): return .control
         default:
             // Invalid key code - log warning and default to ESC
-            print("[WARNING] Invalid restore key code: \(keyCode), defaulting to ESC")
+            PHTVLogger.shared.warning("[KeyModels] Invalid restore key code: \(keyCode), defaulting to ESC")
             return .esc
         }
     }

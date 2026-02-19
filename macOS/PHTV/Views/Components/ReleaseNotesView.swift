@@ -15,9 +15,9 @@ struct ReleaseNotesView: View {
 
     init(info: UpdateBannerInfo) {
         self.info = info
-        print("[ReleaseNotesView] Init with version: \(info.version)")
-        print("[ReleaseNotesView] releaseNotes length: \(info.releaseNotes.count)")
-        print("[ReleaseNotesView] releaseNotes preview: \(String(info.releaseNotes.prefix(200)))")
+        PHTVLogger.shared.ui("[ReleaseNotesView] Init with version: \(info.version)")
+        PHTVLogger.shared.ui("[ReleaseNotesView] releaseNotes length: \(info.releaseNotes.count)")
+        PHTVLogger.shared.ui("[ReleaseNotesView] releaseNotes preview: \(String(info.releaseNotes.prefix(200)))")
     }
 
     var body: some View {

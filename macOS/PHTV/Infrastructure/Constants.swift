@@ -68,9 +68,12 @@ enum UserDefaultsKey {
     static let excludedApps = "ExcludedApps"
     static let sendKeyStepByStepApps = "SendKeyStepByStepApps"
     static let upperCaseExcludedApps = "UpperCaseExcludedApps"
+    static let klipyCustomerID = "KlipyCustomerID"
 
     // MARK: - Sparkle Updates
     static let updateCheckInterval = "SUScheduledCheckInterval"
+    static let sparkleBetaChannel = "SUEnableBetaChannel"
+    static let autoInstallUpdates = "vAutoInstallUpdates"
 
     // MARK: - Debug
     static let liveDebug = "PHTV_LIVE_DEBUG"
@@ -402,7 +405,7 @@ final class SettingsBootstrap: NSObject {
             UserDefaultsKey.includeSystemInfo: Defaults.includeSystemInfo,
             UserDefaultsKey.includeLogs: Defaults.includeLogs,
             UserDefaultsKey.includeCrashLogs: Defaults.includeCrashLogs,
-            "vAutoInstallUpdates": true,
+            UserDefaultsKey.autoInstallUpdates: true,
             "FreeMark": 0,
             "FixRecommendBrowser": 1,
             "vTempOffSpelling": 0,

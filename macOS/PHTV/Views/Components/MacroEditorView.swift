@@ -279,14 +279,14 @@ struct MacroEditorView: View {
                 return
             }
 
-            print("[MacroEditor] Editing macro: \(editingMacro.shortcut)")
+            PHTVLogger.shared.macro("[MacroEditor] Editing macro: \(editingMacro.shortcut)")
             macros[index].shortcut = trimmedName
             macros[index].expansion = trimmedCode
             macros[index].categoryId = selectedCategoryId
             macros[index].snippetType = snippetType
             savedMacroId = editingMacro.id
             action = "edited"
-            print("[MacroEditor] Updated to: \(trimmedName) -> \(trimmedCode), category: \(selectedCategoryId?.uuidString ?? "nil"), type: \(snippetType.rawValue)")
+            PHTVLogger.shared.macro("[MacroEditor] Updated to: \(trimmedName) -> \(trimmedCode), category: \(selectedCategoryId?.uuidString ?? "nil"), type: \(snippetType.rawValue)")
         } else {
             // ADD MODE: Check if macro already exists
             if macros.contains(where: { $0.shortcut.lowercased() == trimmedName.lowercased() }) {
@@ -304,12 +304,12 @@ struct MacroEditorView: View {
             macros.append(newMacro)
             savedMacroId = newMacro.id
             action = "added"
-            print("[MacroEditor] Added new macro: \(newMacro.shortcut) -> \(newMacro.expansion), category: \(selectedCategoryId?.uuidString ?? "nil"), type: \(snippetType.rawValue)")
+            PHTVLogger.shared.macro("[MacroEditor] Added new macro: \(newMacro.shortcut) -> \(newMacro.expansion), category: \(selectedCategoryId?.uuidString ?? "nil"), type: \(snippetType.rawValue)")
 
             // Auto-enable macro feature when creating first macro
             if !appState.useMacro {
                 appState.useMacro = true
-                print("[MacroEditor] Auto-enabled macro feature")
+                PHTVLogger.shared.macro("[MacroEditor] Auto-enabled macro feature")
             }
         }
 
@@ -319,8 +319,8 @@ struct MacroEditorView: View {
         // Save to UserDefaults atomically then notify immediately (no artificial delay)
         if let encoded = try? JSONEncoder().encode(macros) {
             defaults.set(encoded, forKey: UserDefaultsKey.macroList)
-            print("[MacroEditor] Saved \(macros.count) macros to UserDefaults")
-            print("[MacroEditor] macroList data size: \(encoded.count) bytes")
+            PHTVLogger.shared.macro("[MacroEditor] Saved \(macros.count) macros to UserDefaults")
+            PHTVLogger.shared.debug("[MacroEditor] macroList data size: \(encoded.count) bytes")
 
             // Post notification with macro ID and action for animation
             if let macroId = savedMacroId {
@@ -329,10 +329,10 @@ struct MacroEditorView: View {
                     object: nil,
                     userInfo: ["macroId": macroId, "action": action]
                 )
-                print("[MacroEditor] Notification posted with action: \(action), macroId: \(macroId)")
+                PHTVLogger.shared.macro("[MacroEditor] Notification posted with action: \(action), macroId: \(macroId)")
             } else {
                 NotificationCenter.default.post(name: NotificationName.macrosUpdated, object: nil)
-                print("[MacroEditor] Notification posted")
+                PHTVLogger.shared.macro("[MacroEditor] Notification posted")
             }
 
             // Close the editor promptly
@@ -340,7 +340,7 @@ struct MacroEditorView: View {
         } else {
             errorMessage = "Không thể lưu gõ tắt"
             showError = true
-            print("[MacroEditor] ERROR: Failed to encode macros")
+            PHTVLogger.shared.error("[MacroEditor] Failed to encode macros")
         }
     }
 

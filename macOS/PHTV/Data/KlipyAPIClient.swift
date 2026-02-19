@@ -72,11 +72,11 @@ class KlipyAPIClient: ObservableObject {
 
     // Customer ID - unique user identifier (có thể dùng UUID)
     private let customerId: String = {
-        if let saved = UserDefaults.standard.string(forKey: "KlipyCustomerID") {
+        if let saved = UserDefaults.standard.string(forKey: UserDefaultsKey.klipyCustomerID) {
             return saved
         }
         let newId = UUID().uuidString
-        UserDefaults.standard.set(newId, forKey: "KlipyCustomerID")
+        UserDefaults.standard.set(newId, forKey: UserDefaultsKey.klipyCustomerID)
         return newId
     }()
 
@@ -103,7 +103,7 @@ class KlipyAPIClient: ObservableObject {
     }
 
     func saveAPIKey(_ key: String) {
-        print("[Klipy] Please hardcode your app key in PHTVApp.swift")
+        PHTVLogger.shared.warning("[Klipy] Please hardcode your app key in PHTVApp.swift")
     }
 
     private var hasValidAppKey: Bool {
@@ -144,9 +144,9 @@ class KlipyAPIClient: ObservableObject {
     ) {
         guard hasValidAppKey else {
             if case .search = request {
-                print("\(media.logPrefix) Please set your app key for search")
+                PHTVLogger.shared.warning("\(media.logPrefix) Please set your app key for search")
             } else {
-                print("\(media.logPrefix) Please set your app key")
+                PHTVLogger.shared.warning("\(media.logPrefix) Please set your app key")
             }
             needsAPIKey = true
             return
@@ -156,9 +156,9 @@ class KlipyAPIClient: ObservableObject {
 
         guard let url = buildURL(media: media, request: request, limit: limit) else {
             if case .search = request {
-                print("\(media.logPrefix) Invalid search URL")
+                PHTVLogger.shared.error("\(media.logPrefix) Invalid search URL")
             } else {
-                print("\(media.logPrefix) Invalid URL")
+                PHTVLogger.shared.error("\(media.logPrefix) Invalid URL")
             }
             DispatchQueue.main.async { [weak self] in
                 self?.isLoading = false
@@ -168,24 +168,24 @@ class KlipyAPIClient: ObservableObject {
 
         switch request {
         case .trending:
-            print("\(media.logPrefix) Fetching trending from: \(url.absoluteString)")
+            PHTVLogger.shared.info("\(media.logPrefix) Fetching trending from: \(url.absoluteString)")
         case .search(let query):
-            print("\(media.logPrefix) Searching for: \(query)")
+            PHTVLogger.shared.info("\(media.logPrefix) Searching for: \(query)")
         }
 
         URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
             guard let self = self else { return }
 
             if let httpResponse = response as? HTTPURLResponse {
-                print("\(media.logPrefix) Response status: \(httpResponse.statusCode)")
+                PHTVLogger.shared.debug("\(media.logPrefix) Response status: \(httpResponse.statusCode)")
             }
 
             guard let data = data, error == nil else {
                 switch request {
                 case .trending:
-                    print("\(media.logPrefix) Error fetching trending: \(error?.localizedDescription ?? "unknown")")
+                    PHTVLogger.shared.error("\(media.logPrefix) Error fetching trending: \(error?.localizedDescription ?? "unknown")")
                 case .search:
-                    print("\(media.logPrefix) Error searching: \(error?.localizedDescription ?? "unknown")")
+                    PHTVLogger.shared.error("\(media.logPrefix) Error searching: \(error?.localizedDescription ?? "unknown")")
                 }
                 DispatchQueue.main.async {
                     self.isLoading = false
@@ -197,9 +197,9 @@ class KlipyAPIClient: ObservableObject {
                 let result = try JSONDecoder().decode(KlipyResponse.self, from: data)
                 switch request {
                 case .trending:
-                    print("\(media.logPrefix) Successfully decoded \(result.data.data.count) \(media.itemDisplayName)")
+                    PHTVLogger.shared.info("\(media.logPrefix) Successfully decoded \(result.data.data.count) \(media.itemDisplayName)")
                 case .search:
-                    print("\(media.logPrefix) Search found \(result.data.data.count) \(media.itemDisplayName)")
+                    PHTVLogger.shared.info("\(media.logPrefix) Search found \(result.data.data.count) \(media.itemDisplayName)")
                 }
                 DispatchQueue.main.async {
                     switch target {
@@ -215,7 +215,7 @@ class KlipyAPIClient: ObservableObject {
                     self.isLoading = false
                 }
             } catch {
-                print("\(media.logPrefix) Decode error: \(error)")
+                PHTVLogger.shared.error("\(media.logPrefix) Decode error: \(error.localizedDescription)")
                 DispatchQueue.main.async {
                     self.isLoading = false
                 }
@@ -387,7 +387,7 @@ class KlipyAPIClient: ObservableObject {
                     }
                 }
 
-                print("[Klipy Cache] Cleaned cache from \(totalSize / 1024 / 1024)MB to \(currentSize / 1024 / 1024)MB")
+                PHTVLogger.shared.info("[Klipy Cache] Cleaned cache from \(totalSize / 1024 / 1024)MB to \(currentSize / 1024 / 1024)MB")
             }
         }
     }
@@ -400,14 +400,14 @@ class KlipyAPIClient: ObservableObject {
             return
         }
 
-        print("[Klipy Ads] Tracking impression for ad: \(gif.id)")
+        PHTVLogger.shared.info("[Klipy Ads] Tracking impression for ad: \(gif.id)")
 
         // Fire impression tracking pixel
         URLSession.shared.dataTask(with: url) { _, _, error in
             if let error = error {
-                print("[Klipy Ads] Impression tracking error: \(error.localizedDescription)")
+                PHTVLogger.shared.warning("[Klipy Ads] Impression tracking error: \(error.localizedDescription)")
             } else {
-                print("[Klipy Ads] Impression tracked successfully")
+                PHTVLogger.shared.debug("[Klipy Ads] Impression tracked successfully")
             }
         }.resume()
     }
@@ -418,14 +418,14 @@ class KlipyAPIClient: ObservableObject {
             return
         }
 
-        print("[Klipy Ads] Tracking click for ad: \(gif.id)")
+        PHTVLogger.shared.info("[Klipy Ads] Tracking click for ad: \(gif.id)")
 
         // Fire click tracking pixel
         URLSession.shared.dataTask(with: url) { _, _, error in
             if let error = error {
-                print("[Klipy Ads] Click tracking error: \(error.localizedDescription)")
+                PHTVLogger.shared.warning("[Klipy Ads] Click tracking error: \(error.localizedDescription)")
             } else {
-                print("[Klipy Ads] Click tracked successfully")
+                PHTVLogger.shared.debug("[Klipy Ads] Click tracked successfully")
             }
         }.resume()
     }
@@ -436,7 +436,7 @@ class KlipyAPIClient: ObservableObject {
             return
         }
 
-        print("[Klipy Ads] Opening ad target: \(targetURL)")
+        PHTVLogger.shared.info("[Klipy Ads] Opening ad target: \(targetURL)")
         NSWorkspace.shared.open(url)
     }
 }
