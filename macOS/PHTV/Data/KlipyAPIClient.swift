@@ -16,6 +16,44 @@ import Combine
 class KlipyAPIClient: ObservableObject {
     static let shared = KlipyAPIClient()
 
+    private enum MediaKind {
+        case gifs
+        case stickers
+
+        var pathComponent: String {
+            switch self {
+            case .gifs: return "gifs"
+            case .stickers: return "stickers"
+            }
+        }
+
+        var logPrefix: String {
+            switch self {
+            case .gifs: return "[Klipy]"
+            case .stickers: return "[Klipy Stickers]"
+            }
+        }
+
+        var itemDisplayName: String {
+            switch self {
+            case .gifs: return "GIFs"
+            case .stickers: return "Stickers"
+            }
+        }
+    }
+
+    private enum RequestKind {
+        case trending
+        case search(query: String)
+    }
+
+    private enum OutputTarget {
+        case trendingGIFs
+        case searchResults
+        case trendingStickers
+        case stickerSearchResults
+    }
+
     // KLIPY API - Free unlimited (không giới hạn request)
     // App key cho PHTV từ https://partner.klipy.com/api-keys
     // Key được obfuscate để tránh bot scan trực tiếp
@@ -68,36 +106,87 @@ class KlipyAPIClient: ObservableObject {
         print("[Klipy] Please hardcode your app key in PHTVApp.swift")
     }
 
-    /// Fetch trending GIFs
-    func fetchTrending(limit: Int = 24) {
-        guard appKey != "YOUR_KLIPY_APP_KEY_HERE" else {
-            print("[Klipy] Please set your app key")
+    private var hasValidAppKey: Bool {
+        appKey != "YOUR_KLIPY_APP_KEY_HERE"
+    }
+
+    private func buildURL(
+        media: MediaKind,
+        request: RequestKind,
+        limit: Int
+    ) -> URL? {
+        var components = URLComponents(string: "\(baseURL)/\(appKey)/\(media.pathComponent)")
+        switch request {
+        case .trending:
+            components?.path.append("/trending")
+            components?.queryItems = [
+                URLQueryItem(name: "customer_id", value: customerId),
+                URLQueryItem(name: "per_page", value: String(limit)),
+                URLQueryItem(name: "domain", value: domain)
+            ]
+        case .search(let query):
+            components?.path.append("/search")
+            components?.queryItems = [
+                URLQueryItem(name: "q", value: query),
+                URLQueryItem(name: "customer_id", value: customerId),
+                URLQueryItem(name: "per_page", value: String(limit)),
+                URLQueryItem(name: "domain", value: domain)
+            ]
+        }
+        return components?.url
+    }
+
+    private func performFetch(
+        media: MediaKind,
+        request: RequestKind,
+        limit: Int,
+        target: OutputTarget
+    ) {
+        guard hasValidAppKey else {
+            if case .search = request {
+                print("\(media.logPrefix) Please set your app key for search")
+            } else {
+                print("\(media.logPrefix) Please set your app key")
+            }
             needsAPIKey = true
             return
         }
 
         isLoading = true
 
-        // Klipy API: GET /api/v1/{app_key}/gifs/trending
-        let urlString = "\(baseURL)/\(appKey)/gifs/trending?customer_id=\(customerId)&per_page=\(limit)&domain=\(domain)"
-        print("[Klipy] Fetching trending from: \(urlString)")
-        guard let url = URL(string: urlString) else {
-            print("[Klipy] Invalid URL")
-            DispatchQueue.main.async {
-                self.isLoading = false
+        guard let url = buildURL(media: media, request: request, limit: limit) else {
+            if case .search = request {
+                print("\(media.logPrefix) Invalid search URL")
+            } else {
+                print("\(media.logPrefix) Invalid URL")
+            }
+            DispatchQueue.main.async { [weak self] in
+                self?.isLoading = false
             }
             return
+        }
+
+        switch request {
+        case .trending:
+            print("\(media.logPrefix) Fetching trending from: \(url.absoluteString)")
+        case .search(let query):
+            print("\(media.logPrefix) Searching for: \(query)")
         }
 
         URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
             guard let self = self else { return }
 
             if let httpResponse = response as? HTTPURLResponse {
-                print("[Klipy] Response status: \(httpResponse.statusCode)")
+                print("\(media.logPrefix) Response status: \(httpResponse.statusCode)")
             }
 
             guard let data = data, error == nil else {
-                print("[Klipy] Error fetching trending: \(error?.localizedDescription ?? "unknown")")
+                switch request {
+                case .trending:
+                    print("\(media.logPrefix) Error fetching trending: \(error?.localizedDescription ?? "unknown")")
+                case .search:
+                    print("\(media.logPrefix) Error searching: \(error?.localizedDescription ?? "unknown")")
+                }
                 DispatchQueue.main.async {
                     self.isLoading = false
                 }
@@ -106,18 +195,37 @@ class KlipyAPIClient: ObservableObject {
 
             do {
                 let result = try JSONDecoder().decode(KlipyResponse.self, from: data)
-                print("[Klipy] Successfully decoded \(result.data.data.count) GIFs")
+                switch request {
+                case .trending:
+                    print("\(media.logPrefix) Successfully decoded \(result.data.data.count) \(media.itemDisplayName)")
+                case .search:
+                    print("\(media.logPrefix) Search found \(result.data.data.count) \(media.itemDisplayName)")
+                }
                 DispatchQueue.main.async {
-                    self.trendingGIFs = result.data.data
+                    switch target {
+                    case .trendingGIFs:
+                        self.trendingGIFs = result.data.data
+                    case .searchResults:
+                        self.searchResults = result.data.data
+                    case .trendingStickers:
+                        self.trendingStickers = result.data.data
+                    case .stickerSearchResults:
+                        self.stickerSearchResults = result.data.data
+                    }
                     self.isLoading = false
                 }
             } catch {
-                print("[Klipy] Decode error: \(error)")
+                print("\(media.logPrefix) Decode error: \(error)")
                 DispatchQueue.main.async {
                     self.isLoading = false
                 }
             }
         }.resume()
+    }
+
+    /// Fetch trending GIFs
+    func fetchTrending(limit: Int = 24) {
+        performFetch(media: .gifs, request: .trending, limit: limit, target: .trendingGIFs)
     }
 
     /// Search GIFs
@@ -126,106 +234,14 @@ class KlipyAPIClient: ObservableObject {
             searchResults = []
             return
         }
-
-        guard appKey != "YOUR_KLIPY_APP_KEY_HERE" else {
-            print("[Klipy] Please set your app key for search")
-            needsAPIKey = true
-            return
-        }
-
-        isLoading = true
-
-        let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
-        // Klipy API: GET /api/v1/{app_key}/gifs/search
-        let urlString = "\(baseURL)/\(appKey)/gifs/search?q=\(encodedQuery)&customer_id=\(customerId)&per_page=\(limit)&domain=\(domain)"
-        print("[Klipy] Searching for: \(query)")
-        guard let url = URL(string: urlString) else {
-            print("[Klipy] Invalid search URL")
-            DispatchQueue.main.async {
-                self.isLoading = false
-            }
-            return
-        }
-
-        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
-            guard let self = self else { return }
-
-            guard let data = data, error == nil else {
-                print("[Klipy] Error searching: \(error?.localizedDescription ?? "unknown")")
-                DispatchQueue.main.async {
-                    self.isLoading = false
-                }
-                return
-            }
-
-            do {
-                let result = try JSONDecoder().decode(KlipyResponse.self, from: data)
-                print("[Klipy] Search found \(result.data.data.count) GIFs")
-                DispatchQueue.main.async {
-                    self.searchResults = result.data.data
-                    self.isLoading = false
-                }
-            } catch {
-                print("[Klipy] Decode error: \(error)")
-                DispatchQueue.main.async {
-                    self.isLoading = false
-                }
-            }
-        }.resume()
+        performFetch(media: .gifs, request: .search(query: query), limit: limit, target: .searchResults)
     }
 
     // MARK: - Stickers API
 
     /// Fetch trending Stickers
     func fetchTrendingStickers(limit: Int = 24) {
-        guard appKey != "YOUR_KLIPY_APP_KEY_HERE" else {
-            print("[Klipy] Please set your app key")
-            needsAPIKey = true
-            return
-        }
-
-        isLoading = true
-
-        // Klipy API: GET /api/v1/{app_key}/stickers/trending
-        let urlString = "\(baseURL)/\(appKey)/stickers/trending?customer_id=\(customerId)&per_page=\(limit)&domain=\(domain)"
-        print("[Klipy Stickers] Fetching trending from: \(urlString)")
-        guard let url = URL(string: urlString) else {
-            print("[Klipy Stickers] Invalid URL")
-            DispatchQueue.main.async {
-                self.isLoading = false
-            }
-            return
-        }
-
-        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
-            guard let self = self else { return }
-
-            if let httpResponse = response as? HTTPURLResponse {
-                print("[Klipy Stickers] Response status: \(httpResponse.statusCode)")
-            }
-
-            guard let data = data, error == nil else {
-                print("[Klipy Stickers] Error fetching trending: \(error?.localizedDescription ?? "unknown")")
-                DispatchQueue.main.async {
-                    self.isLoading = false
-                }
-                return
-            }
-
-            do {
-                let result = try JSONDecoder().decode(KlipyResponse.self, from: data)
-                print("[Klipy Stickers] Successfully decoded \(result.data.data.count) Stickers")
-                DispatchQueue.main.async {
-                    self.trendingStickers = result.data.data
-                    self.isLoading = false
-                }
-            } catch {
-                print("[Klipy Stickers] Decode error: \(error)")
-                DispatchQueue.main.async {
-                    self.isLoading = false
-                }
-            }
-        }.resume()
+        performFetch(media: .stickers, request: .trending, limit: limit, target: .trendingStickers)
     }
 
     /// Search Stickers
@@ -234,52 +250,7 @@ class KlipyAPIClient: ObservableObject {
             stickerSearchResults = []
             return
         }
-
-        guard appKey != "YOUR_KLIPY_APP_KEY_HERE" else {
-            print("[Klipy Stickers] Please set your app key for search")
-            needsAPIKey = true
-            return
-        }
-
-        isLoading = true
-
-        let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
-        // Klipy API: GET /api/v1/{app_key}/stickers/search
-        let urlString = "\(baseURL)/\(appKey)/stickers/search?q=\(encodedQuery)&customer_id=\(customerId)&per_page=\(limit)&domain=\(domain)"
-        print("[Klipy Stickers] Searching for: \(query)")
-        guard let url = URL(string: urlString) else {
-            print("[Klipy Stickers] Invalid search URL")
-            DispatchQueue.main.async {
-                self.isLoading = false
-            }
-            return
-        }
-
-        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
-            guard let self = self else { return }
-
-            guard let data = data, error == nil else {
-                print("[Klipy Stickers] Error searching: \(error?.localizedDescription ?? "unknown")")
-                DispatchQueue.main.async {
-                    self.isLoading = false
-                }
-                return
-            }
-
-            do {
-                let result = try JSONDecoder().decode(KlipyResponse.self, from: data)
-                print("[Klipy Stickers] Search found \(result.data.data.count) Stickers")
-                DispatchQueue.main.async {
-                    self.stickerSearchResults = result.data.data
-                    self.isLoading = false
-                }
-            } catch {
-                print("[Klipy Stickers] Decode error: \(error)")
-                DispatchQueue.main.async {
-                    self.isLoading = false
-                }
-            }
-        }.resume()
+        performFetch(media: .stickers, request: .search(query: query), limit: limit, target: .stickerSearchResults)
     }
 
     // MARK: - Recent Items Tracking
