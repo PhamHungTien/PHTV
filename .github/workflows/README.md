@@ -9,21 +9,21 @@ File `release.yml` tự động build, sign và tạo release cho PHTV.
 - ✅ Build tự động với Xcode trên macOS 26
 - ✅ Code signing với Apple Development certificate
 - ✅ Tạo DMG với Applications symlink
-- ✅ Sign update với Sparkle EdDSA
-- ✅ Tạo GitHub Release với artifacts
-- ✅ Tự động cập nhật appcast.xml
+- ✅ Tạo ZIP + checksums cho release assets
+- ✅ Generate và ký `docs/appcast.xml` bằng Sparkle `generate_appcast`
 - ✅ Tự động cập nhật Homebrew formula
 - ✅ Sync với homebrew-tap repository
-- ✅ Tự động tăng build number và commit Info.plist
+- ✅ Tự động set build number bằng `GITHUB_RUN_NUMBER` và commit Info.plist
 
 ### Các Jobs trong Workflow
 
 | Job | Runner | Mô tả |
 |-----|--------|-------|
-| `build` | macos-26 | Build app, tạo DMG, sign với Sparkle |
-| `release` | ubuntu-latest | Upload DMG lên GitHub Releases |
-| `update-appcast` | ubuntu-latest | Thêm entry mới vào appcast.xml |
+| `build` | macos-26 | Build app, tạo DMG/ZIP, generate appcast |
+| `release` | ubuntu-latest | Upload DMG/ZIP/checksums lên GitHub Releases |
+| `publish-appcast` | ubuntu-latest | Commit `docs/appcast.xml` đã được Sparkle ký |
 | `update-homebrew` | ubuntu-latest | Cập nhật Homebrew formula và sync tap |
+| `update-plist` | ubuntu-latest | Commit `macOS/PHTV/Info.plist` về main |
 
 ### Cách sử dụng
 
@@ -124,28 +124,21 @@ Password bạn đã dùng khi export file .p12.
 
 ---
 
-### Không có Code Signing Certificate?
+### Thiếu certificate hoặc Sparkle key?
 
-Workflow vẫn hoạt động! App sẽ:
-- ✅ Build thành công
-- ✅ Tạo DMG với Applications symlink
-- ✅ Tạo release trên GitHub
-- ✅ Auto-update vẫn hoạt động (nếu có SPARKLE_PRIVATE_KEY)
-- ⚠️ macOS sẽ hiện cảnh báo "unidentified developer" khi mở lần đầu
-
-Users có thể bypass bằng cách:
-1. Click chuột phải vào app
-2. Chọn "Open"
-3. Click "Open" trong dialog
+Release workflow hiện tại áp dụng fail-fast:
+- ❌ Thiếu `CERTIFICATES_P12` hoặc `CERTIFICATE_PASSWORD` sẽ dừng ở bước import certificate
+- ❌ Thiếu `SPARKLE_PRIVATE_KEY` sẽ dừng ở bước generate appcast
+- ✅ Mục tiêu là không phát hành release/update feed ở trạng thái không ký hợp lệ
 
 ---
 
 ### Build Number Tự động
 
 Workflow tự động:
-1. Đọc `CFBundleVersion` từ Info.plist
-2. Tăng lên 1 cho mỗi release
-3. Sau khi release thành công, commit lại Info.plist với build number mới
+1. Dùng `GITHUB_RUN_NUMBER` làm `CFBundleVersion`
+2. Build app với `MARKETING_VERSION` và `CURRENT_PROJECT_VERSION`
+3. Sau khi release thành công, commit lại Info.plist với version/build number mới
 
 Ví dụ:
 - Release 1.4.4 → build 18
@@ -194,8 +187,8 @@ xcodebuild -scheme PHTV -configuration Release clean build
 # Test DMG creation
 ./scripts/create_dmg.sh
 
-# Test Sparkle signing
-./scripts/sign_update.sh ~/Desktop/PHTV-1.4.5.dmg
+# Test Sparkle appcast generation (sau khi có ZIP)
+SPARKLE_PRIVATE_KEY="..." /tmp/Sparkle/bin/generate_appcast /path/to/archives
 ```
 
 ---
@@ -210,24 +203,24 @@ Push tag v1.4.5
 │  BUILD (macos-26)                                           │
 │  • Checkout code                                            │
 │  • Import certificate                                       │
-│  • Increment build number (17 → 18)                         │
+│  • Compute build number từ GITHUB_RUN_NUMBER                │
 │  • Build with Xcode                                         │
-│  • Create signed DMG                                        │
-│  • Sign with Sparkle EdDSA                                  │
+│  • Create DMG + ZIP                                         │
+│  • Generate signed docs/appcast.xml với Sparkle             │
 └─────────────────────────────────────────────────────────────┘
     │
     ▼
 ┌─────────────────────────────────────────────────────────────┐
 │  RELEASE (ubuntu-latest)                                    │
 │  • Create GitHub Release                                    │
-│  • Upload DMG as asset                                      │
+│  • Upload DMG/ZIP/checksums as assets                       │
 └─────────────────────────────────────────────────────────────┘
     │
     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  UPDATE-APPCAST (ubuntu-latest)                             │
-│  • Add new entry to appcast.xml                             │
-│  • Commit and push to main                                  │
+│  PUBLISH-APPCAST (ubuntu-latest)                            │
+│  • Commit docs/appcast.xml artifact                         │
+│  • Push to main                                              │
 │  • GitHub Pages auto-deploy                                 │
 └─────────────────────────────────────────────────────────────┘
     │

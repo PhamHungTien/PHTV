@@ -11,6 +11,10 @@ on:
         required: true
         type: string
 
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
@@ -23,10 +27,10 @@ jobs:
     runs-on: macos-26
     outputs:
       version: ${{ steps.version.outputs.version }}
-      build_number: ${{ steps.version.outputs.build_number }}
+      build_number: ${{ steps.set_versions.outputs.build_number }}
       dmg_name: ${{ steps.dmg.outputs.name }}
       dmg_size: ${{ steps.dmg.outputs.size }}
-      signature: ${{ steps.sign.outputs.signature }}
+      zip_name: ${{ steps.zip.outputs.name }}
 
     steps:
       - name: Checkout
@@ -50,17 +54,21 @@ jobs:
             VERSION="${GITHUB_REF_NAME#v}"
           fi
 
-          CURRENT_BUILD=$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" macOS/PHTV/Info.plist)
-          BUILD_NUMBER=$((CURRENT_BUILD + 1))
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "📦 Version: $VERSION"
 
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
-          echo "📦 Version: $VERSION (Build $BUILD_NUMBER)"
+      - name: Compute build number
+        id: set_versions
+        run: |
+          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
+
+          echo "build_number=$BUILD_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "✅ BUILD_NUMBER=$BUILD_NUMBER"
 
       - name: Update Info.plist
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          BUILD="${{ steps.version.outputs.build_number }}"
+          BUILD="${{ steps.set_versions.outputs.build_number }}"
 
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" macOS/PHTV/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD" macOS/PHTV/Info.plist
@@ -123,13 +131,18 @@ jobs:
       - name: Build
         working-directory: macOS
         run: |
+          set -o pipefail
           echo "🔐 Building with mandatory code signing..."
           echo "Identity: ${{ steps.certificate.outputs.identity }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          BUILD_NUMBER="${{ steps.set_versions.outputs.build_number }}"
 
           xcodebuild -project PHTV.xcodeproj -scheme PHTV \
             -configuration Release \
             -derivedDataPath ./build \
             -arch arm64 -arch x86_64 \
+            MARKETING_VERSION="$VERSION" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
             ONLY_ACTIVE_ARCH=NO \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="${{ steps.certificate.outputs.identity }}" \
@@ -192,38 +205,67 @@ jobs:
           echo "size=$SIZE" >> $GITHUB_OUTPUT
           echo "✅ DMG created: $DMG_NAME ($SIZE bytes)"
 
+      - name: Create ZIP
+        id: zip
+        working-directory: macOS
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          APP_PATH="./build/Build/Products/Release/PHTV.app"
+          ZIP_NAME="PHTV-$VERSION.zip"
+
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_NAME"
+          echo "name=$ZIP_NAME" >> "$GITHUB_OUTPUT"
+          echo "✅ ZIP created: $ZIP_NAME"
+
       - name: Download Sparkle
+        working-directory: macOS
         run: |
           curl -sL "https://github.com/sparkle-project/Sparkle/releases/download/${{ env.SPARKLE_VERSION }}/Sparkle-for-Swift-Package-Manager.zip" -o sparkle.zip
           unzip -q sparkle.zip -d /tmp/Sparkle
           echo "✅ Sparkle downloaded"
 
-      - name: Sign update
-        id: sign
+      - name: Generate Sparkle appcast
         working-directory: macOS
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
-          DMG_NAME="${{ steps.dmg.outputs.name }}"
-
           if [ -z "$SPARKLE_PRIVATE_KEY" ]; then
-            echo "⚠️ No SPARKLE_PRIVATE_KEY"
-            echo "signature=" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          echo "$SPARKLE_PRIVATE_KEY" > /tmp/sparkle.key
-          RESULT=$(/tmp/Sparkle/bin/sign_update "$DMG_NAME" -f /tmp/sparkle.key)
-          SIGNATURE=$(echo "$RESULT" | grep -o 'sparkle:edSignature="[^"]*"' | cut -d'"' -f2)
-          rm /tmp/sparkle.key
-
-          if [ -z "$SIGNATURE" ]; then
-            echo "❌ Failed to sign"
+            echo "❌ Error: SPARKLE_PRIVATE_KEY secret is missing."
             exit 1
           fi
 
-          echo "signature=$SIGNATURE" >> $GITHUB_OUTPUT
-          echo "✅ Signed"
+          VERSION="${{ steps.version.outputs.version }}"
+          ZIP_NAME="${{ steps.zip.outputs.name }}"
+          ARCHIVES_DIR="$RUNNER_TEMP/sparkle_archives"
+          mkdir -p "$ARCHIVES_DIR"
+          cp "$ZIP_NAME" "$ARCHIVES_DIR/"
+          if git show origin/main:docs/appcast.xml > "$ARCHIVES_DIR/appcast.xml" 2>/dev/null; then
+            echo "✅ Using latest docs/appcast.xml from origin/main"
+          else
+            cp ../docs/appcast.xml "$ARCHIVES_DIR/appcast.xml"
+            echo "⚠️ Falling back to docs/appcast.xml from current checkout"
+          fi
+
+          GENERATE_APPCAST="/tmp/Sparkle/bin/generate_appcast"
+          if [ ! -x "$GENERATE_APPCAST" ]; then
+            echo "❌ Error: generate_appcast binary not found at $GENERATE_APPCAST"
+            exit 1
+          fi
+
+          DOWNLOAD_PREFIX="https://github.com/${{ github.repository }}/releases/download/v$VERSION/"
+          echo "$SPARKLE_PRIVATE_KEY" | "$GENERATE_APPCAST" \
+            --ed-key-file - \
+            --download-url-prefix "$DOWNLOAD_PREFIX" \
+            --maximum-versions 0 \
+            "$ARCHIVES_DIR"
+
+          cp "$ARCHIVES_DIR/appcast.xml" ../docs/appcast.xml
+
+          if ! grep -q "sparkle:edSignature" ../docs/appcast.xml; then
+            echo "❌ Error: docs/appcast.xml has no sparkle:edSignature"
+            exit 1
+          fi
+          echo "✅ docs/appcast.xml generated and signed"
 
       - name: Upload DMG artifact
         uses: actions/upload-artifact@v4
@@ -231,6 +273,20 @@ jobs:
           name: dmg
           path: macOS/${{ steps.dmg.outputs.name }}
           retention-days: 1
+
+      - name: Upload ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: zip
+          path: macOS/${{ steps.zip.outputs.name }}
+          retention-days: 1
+
+      - name: Upload appcast artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: appcast
+          path: docs/appcast.xml
+          retention-days: 7
 
       - name: Upload build log
         if: always()
@@ -251,112 +307,67 @@ jobs:
         with:
           name: dmg
 
+      - name: Download ZIP
+        uses: actions/download-artifact@v4
+        with:
+          name: zip
+
+      - name: Generate checksums
+        run: |
+          sha256sum "${{ needs.build.outputs.dmg_name }}" > checksums.txt
+          sha256sum "${{ needs.build.outputs.zip_name }}" >> checksums.txt
+          cat checksums.txt
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.build.outputs.version }}
           name: PHTV ${{ needs.build.outputs.version }}
-          files: ${{ needs.build.outputs.dmg_name }}
           generate_release_notes: true
+          prerelease: ${{ contains(needs.build.outputs.version, '-') }}
+          files: |
+            ${{ needs.build.outputs.dmg_name }}
+            ${{ needs.build.outputs.zip_name }}
+            checksums.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  update-appcast:
-    name: Update Appcast
+  publish-appcast:
+    name: Publish Appcast
     runs-on: ubuntu-latest
     needs: [build, release]
 
     steps:
-      - name: Checkout
+      - name: Checkout main
         uses: actions/checkout@v4
         with:
           ref: main
 
-      - name: Update appcast.xml
-        env:
-          VERSION: ${{ needs.build.outputs.version }}
-          BUILD: ${{ needs.build.outputs.build_number }}
-          SIZE: ${{ needs.build.outputs.dmg_size }}
-          SIGNATURE: ${{ needs.build.outputs.signature }}
-          DMG_NAME: ${{ needs.build.outputs.dmg_name }}
-          REPO: ${{ github.repository }}
+      - name: Download appcast artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: appcast
+          path: /tmp/phtv-appcast
+
+      - name: Commit and push appcast.xml
         run: |
-          python3 - << 'EOF'
-          import os
-          import sys
-          from datetime import datetime
+          cp /tmp/phtv-appcast/appcast.xml docs/appcast.xml
 
-          version = os.environ['VERSION']
-          build = os.environ['BUILD']
-          size = os.environ['SIZE']
-          signature = os.environ['SIGNATURE']
-          dmg_name = os.environ['DMG_NAME']
-          repo = os.environ['REPO']
-
-          download_url = f"https://github.com/{repo}/releases/download/v{version}/{dmg_name}"
-          release_url = f"https://github.com/{repo}/releases/tag/v{version}"
-          date = datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S +0000")
-
-          new_item = f'''        <item>
-              <title>PHTV {version}</title>
-              <link>{release_url}</link>
-              <sparkle:version>{build}</sparkle:version>
-              <sparkle:shortVersionString>{version}</sparkle:shortVersionString>
-              <description><![CDATA[
-                  <h2>PHTV {version}</h2>
-                  <p>See release notes: <a href="{release_url}">GitHub Release</a></p>
-              ]]></description>
-              <pubDate>{date}</pubDate>
-              <enclosure
-                  url="{download_url}"
-                  sparkle:version="{build}"
-                  sparkle:shortVersionString="{version}"
-                  sparkle:edSignature="{signature}"
-                  length="{size}"
-                  type="application/octet-stream"/>
-              <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
-          </item>
-          '''
-
-          marker = '<!-- Most recent version first -->'
-
-          with open('docs/appcast.xml', 'r') as f:
-              content = f.read()
-
-          if marker not in content:
-              print("❌ Marker not found")
-              sys.exit(1)
-
-          if f'<sparkle:shortVersionString>{version}</sparkle:shortVersionString>' in content:
-              print(f"⚠️ Version {version} already exists")
-              sys.exit(0)
-
-          new_content = content.replace(marker, marker + '\n' + new_item)
-
-          with open('docs/appcast.xml', 'w') as f:
-              f.write(new_content)
-
-          print("✅ Appcast updated")
-          EOF
-
-      - name: Commit and push
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/appcast.xml
-
-          if git diff --cached --quiet; then
-            echo "No changes"
-          else
-            git commit -m "chore: update appcast for v${{ needs.build.outputs.version }}"
-            git push
-            echo "✅ Pushed"
+          if git diff --quiet -- docs/appcast.xml; then
+            echo "No docs/appcast.xml changes to commit."
+            exit 0
           fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/appcast.xml
+          git commit -m "chore: update appcast for v${{ needs.build.outputs.version }} [skip ci]"
+          git push origin main
 
   update-homebrew:
     name: Update Homebrew Tap
     runs-on: ubuntu-latest
-    needs: [build, release, update-appcast]
+    needs: [build, release, publish-appcast]
 
     steps:
       - name: Sync to homebrew-tap
@@ -399,7 +410,7 @@ jobs:
   update-plist:
     name: Update Info.plist
     runs-on: ubuntu-latest
-    needs: [build, release, update-appcast, update-homebrew]
+    needs: [build, release, publish-appcast, update-homebrew]
 
     steps:
       - name: Checkout
