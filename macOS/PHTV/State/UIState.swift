@@ -36,7 +36,7 @@ final class UIState: ObservableObject {
         if let env, !env.isEmpty {
             return env != "0"
         }
-        return UserDefaults.standard.integer(forKey: UserDefaultsKey.liveDebug) != 0
+        return UserDefaults.standard.integer(forKey: UserDefaultsKey.liveDebug, default: 0) != 0
     }
 
     private func liveLog(_ message: String) {
@@ -48,38 +48,34 @@ final class UIState: ObservableObject {
 
     // MARK: - Load/Save Settings
 
-    private func applyDefaultSwitchHotkey() {
-        switchKeyCode = Defaults.switchKeyCode
-        switchKeyControl = Defaults.switchKeyControl
-        switchKeyOption = Defaults.switchKeyOption
-        switchKeyCommand = Defaults.switchKeyCommand
-        switchKeyShift = Defaults.switchKeyShift
-        switchKeyFn = Defaults.switchKeyFn
-        switchKeyName = Defaults.switchKeyName
-    }
-
     func loadSettings() {
         let defaults = UserDefaults.standard
 
         // Load hotkey from SwitchKeyStatus (backend format)
-        let switchKeyStatus = defaults.integer(forKey: UserDefaultsKey.switchKeyStatus)
-        if switchKeyStatus != 0 {
-            decodeSwitchKeyStatus(switchKeyStatus)
-        } else {
-            applyDefaultSwitchHotkey()
-        }
-        beepOnModeSwitch = defaults.bool(forKey: UserDefaultsKey.beepOnModeSwitch)
+        let switchKeyStatus = defaults.integer(
+            forKey: UserDefaultsKey.switchKeyStatus,
+            default: Defaults.defaultSwitchKeyStatus
+        )
+        decodeSwitchKeyStatus(switchKeyStatus)
+        beepOnModeSwitch = defaults.bool(
+            forKey: UserDefaultsKey.beepOnModeSwitch,
+            default: Defaults.beepOnModeSwitch
+        )
 
         // Load audio and display settings
-        beepVolume = defaults.double(forKey: UserDefaultsKey.beepVolume)
-        if beepVolume == 0 { beepVolume = 0.5 } // Default if not set
+        beepVolume = defaults.double(forKey: UserDefaultsKey.beepVolume, default: Defaults.beepVolume)
         liveLog("Loaded beepVolume: \(beepVolume)")
 
-        menuBarIconSize = defaults.double(forKey: UserDefaultsKey.menuBarIconSize)
-        if menuBarIconSize == 0 { menuBarIconSize = 18.0 } // Default if not set
+        menuBarIconSize = defaults.double(
+            forKey: UserDefaultsKey.menuBarIconSize,
+            default: Defaults.menuBarIconSize
+        )
         liveLog("Loaded menuBarIconSize: \(menuBarIconSize)")
 
-        useVietnameseMenubarIcon = defaults.bool(forKey: UserDefaultsKey.useVietnameseMenubarIcon)
+        useVietnameseMenubarIcon = defaults.bool(
+            forKey: UserDefaultsKey.useVietnameseMenubarIcon,
+            default: Defaults.useVietnameseMenubarIcon
+        )
     }
 
     func saveSettings() {

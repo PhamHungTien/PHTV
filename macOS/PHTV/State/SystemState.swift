@@ -70,22 +70,25 @@ final class SystemState: ObservableObject {
             runOnStartup = status
             isUpdatingRunOnStartup = false
         } else {
-            runOnStartup = defaults.bool(forKey: UserDefaultsKey.runOnStartup)
+            runOnStartup = defaults.bool(forKey: UserDefaultsKey.runOnStartup, default: Defaults.runOnStartup)
         }
 
-        performLayoutCompat = defaults.bool(forKey: UserDefaultsKey.performLayoutCompat)
-        showIconOnDock = defaults.bool(forKey: UserDefaultsKey.showIconOnDock)
-        settingsWindowAlwaysOnTop = defaults.bool(forKey: UserDefaultsKey.settingsWindowAlwaysOnTop)
-        safeMode = defaults.bool(forKey: UserDefaultsKey.safeMode)
+        performLayoutCompat = defaults.bool(
+            forKey: UserDefaultsKey.performLayoutCompat,
+            default: Defaults.performLayoutCompat
+        )
+        showIconOnDock = defaults.bool(forKey: UserDefaultsKey.showIconOnDock, default: Defaults.showIconOnDock)
+        settingsWindowAlwaysOnTop = defaults.bool(
+            forKey: UserDefaultsKey.settingsWindowAlwaysOnTop,
+            default: Defaults.settingsWindowAlwaysOnTop
+        )
+        safeMode = defaults.bool(forKey: UserDefaultsKey.safeMode, default: Defaults.safeMode)
 
         // Load Sparkle settings
-        let updateIntervalObject = defaults.object(forKey: UserDefaultsKey.updateCheckInterval)
-        let updateInterval: Int
-        if let number = updateIntervalObject as? NSNumber {
-            updateInterval = number.intValue
-        } else {
-            updateInterval = Defaults.updateCheckInterval
-        }
+        let updateInterval = defaults.integer(
+            forKey: UserDefaultsKey.updateCheckInterval,
+            default: Defaults.updateCheckInterval
+        )
         updateCheckFrequency = UpdateCheckFrequency.from(interval: updateInterval)
 
         // Always use stable channel and always auto-install updates.
@@ -93,9 +96,15 @@ final class SystemState: ObservableObject {
         defaults.set(true, forKey: "vAutoInstallUpdates")
 
         // Load bug report settings
-        includeSystemInfo = defaults.object(forKey: UserDefaultsKey.includeSystemInfo) as? Bool ?? Defaults.includeSystemInfo
-        includeLogs = defaults.object(forKey: UserDefaultsKey.includeLogs) as? Bool ?? Defaults.includeLogs
-        includeCrashLogs = defaults.object(forKey: UserDefaultsKey.includeCrashLogs) as? Bool ?? Defaults.includeCrashLogs
+        includeSystemInfo = defaults.bool(
+            forKey: UserDefaultsKey.includeSystemInfo,
+            default: Defaults.includeSystemInfo
+        )
+        includeLogs = defaults.bool(forKey: UserDefaultsKey.includeLogs, default: Defaults.includeLogs)
+        includeCrashLogs = defaults.bool(
+            forKey: UserDefaultsKey.includeCrashLogs,
+            default: Defaults.includeCrashLogs
+        )
     }
 
     func saveSettings() {

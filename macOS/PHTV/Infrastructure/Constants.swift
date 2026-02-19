@@ -280,6 +280,16 @@ enum Defaults {
     static let switchKeyCode = KeyCode.noKey
     static let switchKeyName = KeyCode.modifierOnlyDisplayName
     static let beepOnModeSwitch = false
+    static var defaultSwitchKeyStatus: Int {
+        var status = Int(switchKeyCode)
+        if switchKeyControl { status |= KeyCode.controlMask }
+        if switchKeyOption { status |= KeyCode.optionMask }
+        if switchKeyCommand { status |= KeyCode.commandMask }
+        if switchKeyShift { status |= KeyCode.shiftMask }
+        if switchKeyFn { status |= KeyCode.fnMask }
+        if beepOnModeSwitch { status |= KeyCode.beepMask }
+        return status
+    }
 
     // MARK: - Audio & Display
     static let beepVolume = 0.5
@@ -322,6 +332,20 @@ extension UserDefaults {
         }
         if let numberValue = value as? NSNumber {
             return numberValue.intValue
+        }
+        return defaultValue
+    }
+
+    /// Reads a Double with explicit fallback when the key is missing.
+    func double(forKey key: String, default defaultValue: Double) -> Double {
+        guard let value = object(forKey: key) else {
+            return defaultValue
+        }
+        if let doubleValue = value as? Double {
+            return doubleValue
+        }
+        if let numberValue = value as? NSNumber {
+            return numberValue.doubleValue
         }
         return defaultValue
     }

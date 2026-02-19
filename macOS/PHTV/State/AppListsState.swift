@@ -28,7 +28,7 @@ final class AppListsState: ObservableObject {
         if let env, !env.isEmpty {
             return env != "0"
         }
-        return UserDefaults.standard.integer(forKey: UserDefaultsKey.liveDebug) != 0
+        return UserDefaults.standard.integer(forKey: UserDefaultsKey.liveDebug, default: 0) != 0
     }
 
     private func liveLog(_ message: String) {
@@ -40,40 +40,44 @@ final class AppListsState: ObservableObject {
 
     // MARK: - Load/Save Settings
 
+    private func decodeList<T: Decodable>(
+        _ type: [T].Type,
+        from defaults: UserDefaults,
+        key: String,
+        label: String
+    ) -> [T] {
+        guard let data = defaults.data(forKey: key) else {
+            return []
+        }
+        do {
+            return try JSONDecoder().decode(type, from: data)
+        } catch {
+            NSLog("[AppListsState] Failed to decode %@: %@", label, error.localizedDescription)
+            return []
+        }
+    }
+
     func loadSettings() {
         let defaults = UserDefaults.standard
 
-        // Load excluded apps
-        if let data = defaults.data(forKey: UserDefaultsKey.excludedApps) {
-            do {
-                excludedApps = try JSONDecoder().decode([ExcludedApp].self, from: data)
-            } catch {
-                NSLog("[AppListsState] Failed to decode excluded apps: %@", error.localizedDescription)
-                // Keep default empty array
-                excludedApps = []
-            }
-        }
-
-        // Load send key step by step apps
-        if let data = defaults.data(forKey: UserDefaultsKey.sendKeyStepByStepApps) {
-            do {
-                sendKeyStepByStepApps = try JSONDecoder().decode([SendKeyStepByStepApp].self, from: data)
-            } catch {
-                NSLog("[AppListsState] Failed to decode send key step by step apps: %@", error.localizedDescription)
-                // Keep default empty array
-                sendKeyStepByStepApps = []
-            }
-        }
-
-        // Load upper case excluded apps
-        if let data = defaults.data(forKey: UserDefaultsKey.upperCaseExcludedApps) {
-            do {
-                upperCaseExcludedApps = try JSONDecoder().decode([ExcludedApp].self, from: data)
-            } catch {
-                NSLog("[AppListsState] Failed to decode upper case excluded apps: %@", error.localizedDescription)
-                upperCaseExcludedApps = []
-            }
-        }
+        excludedApps = decodeList(
+            [ExcludedApp].self,
+            from: defaults,
+            key: UserDefaultsKey.excludedApps,
+            label: "excluded apps"
+        )
+        sendKeyStepByStepApps = decodeList(
+            [SendKeyStepByStepApp].self,
+            from: defaults,
+            key: UserDefaultsKey.sendKeyStepByStepApps,
+            label: "send key step by step apps"
+        )
+        upperCaseExcludedApps = decodeList(
+            [ExcludedApp].self,
+            from: defaults,
+            key: UserDefaultsKey.upperCaseExcludedApps,
+            label: "upper case excluded apps"
+        )
     }
 
     func saveSettings() {
@@ -109,40 +113,34 @@ final class AppListsState: ObservableObject {
     func reloadFromDefaults() {
         let defaults = UserDefaults.standard
 
-        // Reload excluded apps if changed
-        if let data = defaults.data(forKey: UserDefaultsKey.excludedApps) {
-            do {
-                let newApps = try JSONDecoder().decode([ExcludedApp].self, from: data)
-                if newApps != excludedApps {
-                    excludedApps = newApps
-                }
-            } catch {
-                NSLog("[AppListsState] Failed to reload excluded apps: %@", error.localizedDescription)
-            }
+        let newExcludedApps = decodeList(
+            [ExcludedApp].self,
+            from: defaults,
+            key: UserDefaultsKey.excludedApps,
+            label: "excluded apps"
+        )
+        if newExcludedApps != excludedApps {
+            excludedApps = newExcludedApps
         }
 
-        // Reload send key step by step apps if changed
-        if let data = defaults.data(forKey: UserDefaultsKey.sendKeyStepByStepApps) {
-            do {
-                let newApps = try JSONDecoder().decode([SendKeyStepByStepApp].self, from: data)
-                if newApps != sendKeyStepByStepApps {
-                    sendKeyStepByStepApps = newApps
-                }
-            } catch {
-                NSLog("[AppListsState] Failed to reload send key step by step apps: %@", error.localizedDescription)
-            }
+        let newSendKeyStepByStepApps = decodeList(
+            [SendKeyStepByStepApp].self,
+            from: defaults,
+            key: UserDefaultsKey.sendKeyStepByStepApps,
+            label: "send key step by step apps"
+        )
+        if newSendKeyStepByStepApps != sendKeyStepByStepApps {
+            sendKeyStepByStepApps = newSendKeyStepByStepApps
         }
 
-        // Reload upper case excluded apps if changed
-        if let data = defaults.data(forKey: UserDefaultsKey.upperCaseExcludedApps) {
-            do {
-                let newApps = try JSONDecoder().decode([ExcludedApp].self, from: data)
-                if newApps != upperCaseExcludedApps {
-                    upperCaseExcludedApps = newApps
-                }
-            } catch {
-                NSLog("[AppListsState] Failed to reload upper case excluded apps: %@", error.localizedDescription)
-            }
+        let newUpperCaseExcludedApps = decodeList(
+            [ExcludedApp].self,
+            from: defaults,
+            key: UserDefaultsKey.upperCaseExcludedApps,
+            label: "upper case excluded apps"
+        )
+        if newUpperCaseExcludedApps != upperCaseExcludedApps {
+            upperCaseExcludedApps = newUpperCaseExcludedApps
         }
     }
 
