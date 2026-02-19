@@ -135,11 +135,22 @@ struct MacroItem: Identifiable, Hashable, Codable {
 // MARK: - Macro Storage
 
 enum MacroStorage {
+    private static let corruptedBackupSuffix = ".corruptedBackup"
+
     static func load(defaults: UserDefaults = .standard) -> [MacroItem] {
         guard let data = defaults.data(forKey: UserDefaultsKey.macroList) else {
             return []
         }
-        return decode(data) ?? []
+        if let decoded = decode(data) {
+            return decoded
+        }
+
+        // Self-heal corrupted payload to avoid decode errors on every launch.
+        let backupKey = UserDefaultsKey.macroList + corruptedBackupSuffix
+        defaults.set(data, forKey: backupKey)
+        defaults.removeObject(forKey: UserDefaultsKey.macroList)
+        PHTVLogger.shared.warning("[MacroStorage] Corrupted macro list was backed up to \(backupKey) and reset")
+        return []
     }
 
     static func decode(_ data: Data) -> [MacroItem]? {

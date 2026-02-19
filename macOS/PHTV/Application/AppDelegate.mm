@@ -14,6 +14,9 @@
 #import "AppDelegate.h"
 #import "AppDelegate+Private.h"
 #import "AppDelegate+Accessibility.h"
+#import "AppDelegate+AppMonitoring.h"
+#import "AppDelegate+InputState.h"
+#import "AppDelegate+SettingsActions.h"
 #import "AppDelegate+Sparkle.h"
 #import "SparkleManager.h"
 #import "../SystemBridge/PHTVManager.h"
@@ -46,9 +49,6 @@ static NSString *const PHTVDefaultsKeyInitialToolTipDelay = @"NSInitialToolTipDe
 static NSString *const PHTVDefaultsKeyMacroList = @"macroList";
 static NSString *const PHTVDefaultsKeyMacroData = @"macroData";
 static NSString *const PHTVDefaultsKeyCustomDictionary = @"customDictionary";
-static NSString *const PHTVDefaultsKeyExcludedApps = @"ExcludedApps";
-static NSString *const PHTVDefaultsKeySendKeyStepByStepApps = @"SendKeyStepByStepApps";
-static NSString *const PHTVDefaultsKeyUpperCaseExcludedApps = @"UpperCaseExcludedApps";
 static NSString *const PHTVDefaultsKeySendKeyStepByStep = @"SendKeyStepByStep";
 
 static NSString *const PHTVNotificationLanguageChangedFromObjC = @"LanguageChangedFromObjC";
@@ -59,23 +59,16 @@ static NSString *const PHTVNotificationShowMacroTab = @"ShowMacroTab";
 static NSString *const PHTVNotificationShowAboutTab = @"ShowAboutTab";
 static NSString *const PHTVNotificationInputMethodChanged = @"InputMethodChanged";
 static NSString *const PHTVNotificationCodeTableChanged = @"CodeTableChanged";
-static NSString *const PHTVNotificationSettingsChanged = @"PHTVSettingsChanged";
 static NSString *const PHTVNotificationShowDockIcon = @"PHTVShowDockIcon";
-static NSString *const PHTVNotificationHotkeyChanged = @"HotkeyChanged";
-static NSString *const PHTVNotificationEmojiHotkeySettingsChanged = @"EmojiHotkeySettingsChanged";
-static NSString *const PHTVNotificationLanguageChangedFromSwiftUI = @"LanguageChangedFromSwiftUI";
-static NSString *const PHTVNotificationMacrosUpdated = @"MacrosUpdated";
 static NSString *const PHTVNotificationCustomDictionaryUpdated = @"CustomDictionaryUpdated";
 static NSString *const PHTVNotificationSettingsReset = @"SettingsReset";
 static NSString *const PHTVNotificationAccessibilityPermissionLost = @"AccessibilityPermissionLost";
 static NSString *const PHTVNotificationAccessibilityNeedsRelaunch = @"AccessibilityNeedsRelaunch";
-static NSString *const PHTVNotificationExcludedAppsChanged = @"ExcludedAppsChanged";
-static NSString *const PHTVNotificationSendKeyStepByStepAppsChanged = @"SendKeyStepByStepAppsChanged";
-static NSString *const PHTVNotificationUpperCaseExcludedAppsChanged = @"UpperCaseExcludedAppsChanged";
-static NSString *const PHTVNotificationMenuBarIconSizeChanged = @"MenuBarIconSizeChanged";
 static NSString *const PHTVNotificationSettingsResetComplete = @"SettingsResetComplete";
 static NSString *const PHTVNotificationLanguageChangedFromBackend = @"LanguageChangedFromBackend";
-static NSString *const PHTVNotificationLanguageChangedFromExcludedApp = @"LanguageChangedFromExcludedApp";
+static NSString *const PHTVNotificationUserInfoEnabledKey = @"enabled";
+static NSString *const PHTVNotificationUserInfoVisibleKey = @"visible";
+static NSString *const PHTVNotificationUserInfoForceFrontKey = @"forceFront";
 
 static inline int PHTVReadIntWithFallback(NSUserDefaults *defaults, NSString *key, int fallbackValue) {
     if ([defaults objectForKey:key] == nil) {
@@ -105,6 +98,41 @@ static inline void PHTVLoadEmojiHotkeySettings(NSUserDefaults *defaults,
     } else {
         *keyCode = (int)[defaults integerForKey:PHTVDefaultsKeyEmojiHotkeyKeyCode];
     }
+}
+
+static inline NSUInteger PHTVFoldSettingsToken(NSUInteger token, id _Nullable value) {
+    const NSUInteger hashValue = value ? (NSUInteger)[value hash] : 0u;
+    return (token * 16777619u) ^ hashValue;
+}
+
+static inline NSUInteger PHTVComputeSettingsToken(NSUserDefaults *defaults) {
+    NSUInteger token = 2166136261u;
+
+    token = PHTVFoldSettingsToken(token, [defaults objectForKey:PHTVDefaultsKeySpelling]);
+    token = PHTVFoldSettingsToken(token, [defaults objectForKey:PHTVDefaultsKeyModernOrthography]);
+    token = PHTVFoldSettingsToken(token, [defaults objectForKey:PHTVDefaultsKeyQuickTelex]);
+    token = PHTVFoldSettingsToken(token, [defaults objectForKey:@"UseMacro"]);
+    token = PHTVFoldSettingsToken(token, [defaults objectForKey:@"UseMacroInEnglishMode"]);
+    token = PHTVFoldSettingsToken(token, [defaults objectForKey:@"vAutoCapsMacro"]);
+    token = PHTVFoldSettingsToken(token, [defaults objectForKey:PHTVDefaultsKeySendKeyStepByStep]);
+    token = PHTVFoldSettingsToken(token, [defaults objectForKey:@"UseSmartSwitchKey"]);
+    token = PHTVFoldSettingsToken(token, [defaults objectForKey:PHTVDefaultsKeyUpperCaseFirstChar]);
+    token = PHTVFoldSettingsToken(token, [defaults objectForKey:PHTVDefaultsKeyAllowConsonantZFWJ]);
+    token = PHTVFoldSettingsToken(token, [defaults objectForKey:@"vQuickStartConsonant"]);
+    token = PHTVFoldSettingsToken(token, [defaults objectForKey:@"vQuickEndConsonant"]);
+    token = PHTVFoldSettingsToken(token, [defaults objectForKey:@"vRememberCode"]);
+    token = PHTVFoldSettingsToken(token, [defaults objectForKey:@"vPerformLayoutCompat"]);
+    token = PHTVFoldSettingsToken(token, [defaults objectForKey:PHTVDefaultsKeyShowIconOnDock]);
+    token = PHTVFoldSettingsToken(token, [defaults objectForKey:@"vRestoreOnEscape"]);
+    token = PHTVFoldSettingsToken(token, [defaults objectForKey:@"vCustomEscapeKey"]);
+    token = PHTVFoldSettingsToken(token, [defaults objectForKey:@"vPauseKeyEnabled"]);
+    token = PHTVFoldSettingsToken(token, [defaults objectForKey:@"vPauseKey"]);
+    token = PHTVFoldSettingsToken(token, [defaults objectForKey:PHTVDefaultsKeyAutoRestoreEnglishWord]);
+    token = PHTVFoldSettingsToken(token, [defaults objectForKey:PHTVDefaultsKeyEnableEmojiHotkey]);
+    token = PHTVFoldSettingsToken(token, [defaults objectForKey:PHTVDefaultsKeyEmojiHotkeyModifiers]);
+    token = PHTVFoldSettingsToken(token, [defaults objectForKey:PHTVDefaultsKeyEmojiHotkeyKeyCode]);
+
+    return token;
 }
 
 static inline void PHTVSetIntegerDefault(NSUserDefaults *defaults, NSInteger value, NSString *key) {
@@ -256,20 +284,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 } while(0)
 
 @implementation AppDelegate {
-    // Excluded app state management
-    NSInteger _savedLanguageBeforeExclusion;  // Saved language state before entering excluded app
-    NSString* _previousBundleIdentifier;       // Track the previous app's bundle ID
-    BOOL _isInExcludedApp;                     // Flag to track if currently in an excluded app
-
-    // Send key step by step app state management
-    BOOL _savedSendKeyStepByStepBeforeApp;     // Saved sendKeyStepByStep state before entering app
-    BOOL _isInSendKeyStepByStepApp;            // Flag to track if currently in a send key step by step app
-
-    // Re-entry guards to prevent notification ping-pong (performance optimization)
-    BOOL _isUpdatingLanguage;
-    BOOL _isUpdatingInputType;
-    BOOL _isUpdatingCodeTable;
-
     NSMenuItem* menuInputMethod;
     
     NSMenuItem* mnuTelex;
@@ -557,18 +571,18 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     self.isUpdatingUI = NO;
 
     // Initialize excluded app state tracking
-    _savedLanguageBeforeExclusion = 0;  // Default to English
-    _previousBundleIdentifier = nil;
-    _isInExcludedApp = NO;
+    self.savedLanguageBeforeExclusion = 0;  // Default to English
+    self.previousBundleIdentifier = nil;
+    self.isInExcludedApp = NO;
 
     // Initialize send key step by step app state tracking
-    _savedSendKeyStepByStepBeforeApp = NO;  // Default to disabled
-    _isInSendKeyStepByStepApp = NO;
+    self.savedSendKeyStepByStepBeforeApp = NO;  // Default to disabled
+    self.isInSendKeyStepByStepApp = NO;
 
     // Initialize re-entry guards
-    _isUpdatingLanguage = NO;
-    _isUpdatingInputType = NO;
-    _isUpdatingCodeTable = NO;
+    self.isUpdatingLanguage = NO;
+    self.isUpdatingInputType = NO;
+    self.isUpdatingCodeTable = NO;
 
     // Single-source registration for UserDefaults defaults shared across Swift and ObjC layers.
     [SettingsBootstrap registerDefaults];
@@ -676,6 +690,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     // Emoji picker hotkey settings
     PHTVLoadEmojiHotkeySettings(defaults, &vEnableEmojiHotkey, &vEmojiHotkeyModifiers, &vEmojiHotkeyKeyCode);
 
+    self.lastSettingsChangeToken = PHTVComputeSettingsToken(defaults);
     NSLog(@"[AppDelegate] All settings loaded from UserDefaults");
 
     // Memory barrier to ensure event tap thread sees all values
@@ -777,7 +792,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                 // Notify SwiftUI to update toggle to OFF
                 [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationRunOnStartupChanged
                                                                     object:nil
-                                                                  userInfo:@{@"enabled": @(NO)}];
+                                                                  userInfo:@{PHTVNotificationUserInfoEnabledKey: @(NO)}];
             }
             // User disabled but macOS still has it enabled (rare case)
             else if (!savedEnabled && actuallyEnabled) {
@@ -842,35 +857,10 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                                                  name:PHTVNotificationCodeTableChanged
                                                object:nil];
     
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(handleSettingsChanged:)
-                                                 name:PHTVNotificationSettingsChanged
-                                               object:nil];
-    
     // Listen for dock icon visibility changes from SwiftUI
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(handleShowDockIconNotification:)
                                                  name:PHTVNotificationShowDockIcon
-                                               object:nil];
-    
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(handleHotkeyChanged:)
-                                                 name:PHTVNotificationHotkeyChanged
-                                               object:nil];
-
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(handleEmojiHotkeySettingsChanged:)
-                                                 name:PHTVNotificationEmojiHotkeySettingsChanged
-                                               object:nil];
-    
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(handleLanguageChangedFromSwiftUI:)
-                                                 name:PHTVNotificationLanguageChangedFromSwiftUI
-                                               object:nil];
-    
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(handleMacrosUpdated:)
-                                                 name:PHTVNotificationMacrosUpdated
                                                object:nil];
 
     [[NSNotificationCenter defaultCenter] addObserver:self
@@ -896,53 +886,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                                                  name:PHTVNotificationAccessibilityNeedsRelaunch
                                                object:nil];
 
-    // Excluded apps changes: apply immediately (don't wait for app switch)
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(handleExcludedAppsChanged:)
-                                                 name:PHTVNotificationExcludedAppsChanged
-                                               object:nil];
-
-    // Send key step by step apps changes: apply immediately
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(handleSendKeyStepByStepAppsChanged:)
-                                                 name:PHTVNotificationSendKeyStepByStepAppsChanged
-                                               object:nil];
-
-    // Upper case excluded apps changes: apply immediately
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(handleUpperCaseExcludedAppsChanged:)
-                                                 name:PHTVNotificationUpperCaseExcludedAppsChanged
-                                               object:nil];
-
-    // Menu bar font size changes
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(handleMenuBarIconSizeChanged:)
-                                                 name:PHTVNotificationMenuBarIconSizeChanged
-                                               object:nil];
-}
-
-- (void)handleExcludedAppsChanged:(NSNotification *)notification {
-    // Re-evaluate current app against the updated excluded list.
-    NSRunningApplication *frontmost = [[NSWorkspace sharedWorkspace] frontmostApplication];
-    if (frontmost.bundleIdentifier.length > 0) {
-        [self checkExcludedApp:frontmost.bundleIdentifier];
-    }
-}
-
-- (void)handleSendKeyStepByStepAppsChanged:(NSNotification *)notification {
-    // Re-evaluate current app against the updated send key step by step list.
-    NSRunningApplication *frontmost = [[NSWorkspace sharedWorkspace] frontmostApplication];
-    if (frontmost.bundleIdentifier.length > 0) {
-        [self checkSendKeyStepByStepApp:frontmost.bundleIdentifier];
-    }
-}
-
-- (void)handleUpperCaseExcludedAppsChanged:(NSNotification *)notification {
-    // Re-evaluate current app against the updated upper case excluded list.
-    NSRunningApplication *frontmost = [[NSWorkspace sharedWorkspace] frontmostApplication];
-    if (frontmost.bundleIdentifier.length > 0) {
-        [self checkUpperCaseExcludedApp:frontmost.bundleIdentifier];
-    }
 }
 
 - (void)handleMenuBarIconSizeChanged:(NSNotification *)notification {
@@ -963,133 +906,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
     self.statusBarFontSize = size;
     [self fillData];
-}
-
-- (void)handleLanguageChangedFromSwiftUI:(NSNotification *)notification {
-    // Re-entry guard: prevent notification ping-pong
-    if (_isUpdatingLanguage) {
-        #ifdef DEBUG
-        NSLog(@"[SwiftUI] Ignoring language change (already updating)");
-        #endif
-        return;
-    }
-
-    NSNumber *language = notification.object;
-    if (language) {
-        int newLanguage = language.intValue;
-        if (vLanguage != newLanguage) {
-            #ifdef DEBUG
-            NSLog(@"[SwiftUI] Language changing from %d to %d", vLanguage, newLanguage);
-            #endif
-
-            _isUpdatingLanguage = YES;
-
-            #ifdef DEBUG
-            NSLog(@"========================================");
-            NSLog(@"[SwiftUI] CHANGING LANGUAGE: %d -> %d", vLanguage, newLanguage);
-            NSLog(@"========================================");
-            #endif
-
-            // CRITICAL: Synchronous state change to prevent race conditions
-            // 1. Update global variable
-            vLanguage = newLanguage;
-
-            // If we are currently in an excluded app, update the "saved" language
-            // so that when we switch back to a normal app, it restores the new selection.
-            if (_isInExcludedApp) {
-                _savedLanguageBeforeExclusion = newLanguage;
-            }
-
-            // 2. Memory barrier to ensure event tap thread sees new value
-            __sync_synchronize();
-
-            // 3. Save to UserDefaults (async - no synchronize, auto-saves periodically)
-            [[NSUserDefaults standardUserDefaults] setInteger:vLanguage forKey:PHTVDefaultsKeyInputMethod];
-
-            // 4. Reset engine state IMMEDIATELY (synchronous!)
-            RequestNewSession();
-
-            // 4. Update UI
-            [self fillData];
-
-            // 5. Notify engine (async is OK since state is reset) - only if SmartSwitchKey enabled
-            if (vUseSmartSwitchKey) {
-                dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-                    OnInputMethodChanged();
-                });
-            }
-
-            NSLog(@"[SwiftUI] Language changed to: %d (engine reset complete)", vLanguage);
-
-            _isUpdatingLanguage = NO;
-        }
-    }
-}
-
-- (void)handleInputMethodChanged:(NSNotification *)notification {
-    // Re-entry guard: prevent notification ping-pong
-    if (_isUpdatingInputType) {
-        #ifdef DEBUG
-        NSLog(@"[SwiftUI] Ignoring input method change (already updating)");
-        #endif
-        return;
-    }
-
-    NSNumber *inputMethod = notification.object;
-    if (inputMethod) {
-        int newIndex = inputMethod.intValue;
-        if (vInputType != newIndex) {
-            #ifdef DEBUG
-            NSLog(@"[SwiftUI] Input method changing from %d to %d", vInputType, newIndex);
-            #endif
-
-            _isUpdatingInputType = YES;
-
-            #ifdef DEBUG
-            NSLog(@"========================================");
-            NSLog(@"[SwiftUI] CHANGING INPUT TYPE: %d -> %d", vInputType, newIndex);
-            NSLog(@"========================================");
-            #endif
-
-            // CRITICAL: All changes must be synchronous to prevent race conditions
-            // 1. Update global variable
-            vInputType = newIndex;
-
-            // 2. Memory barrier to ensure event tap thread sees new value
-            __sync_synchronize();
-
-            // 3. Save to UserDefaults (async - no synchronize, auto-saves periodically)
-            [[NSUserDefaults standardUserDefaults] setInteger:newIndex forKey:PHTVDefaultsKeyInputType];
-
-            // 4. Reset engine state IMMEDIATELY (synchronous, not async!)
-            RequestNewSession();
-
-            // 4. Update UI
-            [self fillData];
-
-            // 5. Notify engine (can be async since state is already reset) - only if SmartSwitchKey enabled
-            if (vUseSmartSwitchKey) {
-                dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-                    OnInputMethodChanged();
-                });
-            }
-
-            NSLog(@"[SwiftUI] Input method changed to: %d (engine reset complete)", newIndex);
-
-            _isUpdatingInputType = NO;
-        }
-    }
-}
-
-- (void)handleCodeTableChanged:(NSNotification *)notification {
-    NSNumber *codeTable = notification.object;
-    if (codeTable) {
-        int newIndex = codeTable.intValue;
-        [self onCodeTableChanged:newIndex];
-        #ifdef DEBUG
-        NSLog(@"[SwiftUI] Code table changed to: %d", newIndex);
-        #endif
-    }
 }
 
 - (void)handleHotkeyChanged:(NSNotification *)notification {
@@ -1154,41 +970,44 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
 // Handle dock icon visibility notification from SwiftUI
 - (void)handleShowDockIconNotification:(NSNotification *)notification {
-    BOOL desiredDockVisible = [[notification.userInfo objectForKey:@"visible"] boolValue];
-    NSLog(@"[AppDelegate] handleShowDockIconNotification: visible=%d", desiredDockVisible);
+    NSDictionary *userInfo = notification.userInfo ?: @{};
+    BOOL desiredDockVisible = [[userInfo objectForKey:PHTVNotificationUserInfoVisibleKey] boolValue];
+    BOOL shouldForceFront = [[userInfo objectForKey:PHTVNotificationUserInfoForceFrontKey] boolValue];
+    NSLog(@"[AppDelegate] handleShowDockIconNotification: visible=%d forceFront=%d", desiredDockVisible, shouldForceFront);
 
-    // Track real settings visibility (notification can also represent user preference)
-    BOOL wasSettingsOpen = settingsWindowOpen;
-    BOOL settingsVisible = [self isSettingsWindowVisible];
-    settingsWindowOpen = settingsVisible;
-
-    BOOL shouldResetSession = wasSettingsOpen && !settingsVisible;
     dispatch_async(dispatch_get_main_queue(), ^{
+        BOOL wasSettingsOpen = settingsWindowOpen;
+        BOOL settingsVisible = [self isSettingsWindowVisible];
+        settingsWindowOpen = settingsVisible;
+        BOOL shouldResetSession = wasSettingsOpen && !settingsVisible;
+
         if (settingsVisible) {
+            // Keep regular activation policy while settings exists, but only force front
+            // when notification explicitly asks for it (open action).
             [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
-            [NSApp activateIgnoringOtherApps:YES];
 
-            // Bring settings window to front
-            for (NSWindow *window in [NSApp windows]) {
-                NSString *identifier = window.identifier;
-                if (identifier && [identifier hasPrefix:@"settings"]) {
-                    [window makeKeyAndOrderFront:nil];
-                    // FORCE window to be main/key to prevent sinking
-                    [window makeKeyWindow];
-                    [window orderFrontRegardless];
-                    NSLog(@"[AppDelegate] Brought settings window to front: %@", identifier);
-                    break;
+            if (shouldForceFront) {
+                [NSApp activateIgnoringOtherApps:YES];
+
+                for (NSWindow *window in [NSApp windows]) {
+                    NSString *identifier = window.identifier;
+                    if (identifier && [identifier hasPrefix:@"settings"]) {
+                        [window makeKeyAndOrderFront:nil];
+                        NSLog(@"[AppDelegate] Brought settings window to front: %@", identifier);
+                        break;
+                    }
                 }
+            } else {
+                NSLog(@"[AppDelegate] Settings window visible; skip force front to avoid reopen loop");
             }
-
-            NSLog(@"[AppDelegate] Dock icon shown (settings window open)");
         } else {
-            // Restore to desired dock visibility (user preference), but don't steal focus
+            // Restore to desired dock visibility (user preference), without forcing focus.
             NSApplicationActivationPolicy policy = desiredDockVisible ? NSApplicationActivationPolicyRegular : NSApplicationActivationPolicyAccessory;
             [NSApp setActivationPolicy:policy];
             NSLog(@"[AppDelegate] Dock icon restored to desired visibility: %d", desiredDockVisible);
         }
-        // If settings just closed, reset session state to avoid stuck input context
+
+        // If settings just closed, reset session state to avoid stuck input context.
         if (shouldResetSession) {
             RequestNewSession();
             [PHTVCacheManager invalidateSpotlightCache];
@@ -1200,6 +1019,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     PHTV_LIVE_LOG(@"received PHTVSettingsChanged");
     // Reload settings from UserDefaults when SwiftUI changes them
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    const NSUInteger settingsToken = PHTVComputeSettingsToken(defaults);
 
     // Capture previous values for group-1 settings to decide whether to reset session.
     int oldCheckSpelling = vCheckSpelling;
@@ -1218,6 +1038,12 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     int oldQuickEndConsonant = vQuickEndConsonant;
     int oldRememberCode = vRememberCode;
     int oldPerformLayoutCompat = vPerformLayoutCompat;
+    int oldShowIconOnDock = vShowIconOnDock;
+    int oldRestoreOnEscape = vRestoreOnEscape;
+    int oldCustomEscapeKey = vCustomEscapeKey;
+    int oldPauseKeyEnabled = vPauseKeyEnabled;
+    int oldPauseKey = vPauseKey;
+    int oldAutoRestoreEnglishWord = vAutoRestoreEnglishWord;
     int oldEnableEmojiHotkey = vEnableEmojiHotkey;
     int oldEmojiHotkeyModifiers = vEmojiHotkeyModifiers;
     int oldEmojiHotkeyKeyCode = vEmojiHotkeyKeyCode;
@@ -1257,76 +1083,99 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         justEnabledUppercase = (sLastUpperCaseFirstCharSetting == 0 && vUpperCaseFirstChar != 0);
     }
 
-    // Memory barrier to ensure event tap thread sees new values immediately
-    __sync_synchronize();
+    BOOL changed1 = (oldCheckSpelling != vCheckSpelling ||
+                     oldModernOrthography != vUseModernOrthography ||
+                     oldQuickTelex != vQuickTelex);
+    BOOL changed2 = (oldUseMacro != vUseMacro ||
+                     oldUseMacroInEnglishMode != vUseMacroInEnglishMode ||
+                     oldAutoCapsMacro != vAutoCapsMacro ||
+                     oldSendKeyStepByStep != vSendKeyStepByStep ||
+                     oldUseSmartSwitchKey != vUseSmartSwitchKey ||
+                     oldUpperCaseFirstChar != vUpperCaseFirstChar ||
+                     oldAllowConsonantZFWJ != vAllowConsonantZFWJ ||
+                     oldQuickStartConsonant != vQuickStartConsonant ||
+                     oldQuickEndConsonant != vQuickEndConsonant ||
+                     oldRememberCode != vRememberCode ||
+                     oldPerformLayoutCompat != vPerformLayoutCompat);
+    BOOL changedRestorePause = (oldRestoreOnEscape != vRestoreOnEscape ||
+                                oldCustomEscapeKey != vCustomEscapeKey ||
+                                oldPauseKeyEnabled != vPauseKeyEnabled ||
+                                oldPauseKey != vPauseKey ||
+                                oldAutoRestoreEnglishWord != vAutoRestoreEnglishWord);
+    BOOL changedEmoji = (oldEnableEmojiHotkey != vEnableEmojiHotkey ||
+                         oldEmojiHotkeyModifiers != vEmojiHotkeyModifiers ||
+                         oldEmojiHotkeyKeyCode != vEmojiHotkeyKeyCode);
+    BOOL changedDockVisibility = (oldShowIconOnDock != vShowIconOnDock);
 
-    // Sync spell checking state specifically (fixes issue where vCheckSpelling is reset to stale _useSpellCheckingBefore)
-    vSetCheckSpelling();
+    BOOL changedSessionSettings = (changed1 || changed2 || changedRestorePause || changedEmoji);
+    BOOL changedAny = (changedSessionSettings || changedDockVisibility);
 
-    // Always reset the session on any settings change.
-    // This matches the "restart app" effect without requiring restart.
-    RequestNewSession();
+    // No effective change, skip expensive reset/session churn.
+    if (!changedAny) {
+        self.lastSettingsChangeToken = settingsToken;
+        return;
+    }
 
-    // Prime auto-capitalization when the feature is just enabled
-    if (justEnabledUppercase) {
-        vPrimeUpperCaseFirstChar();
+    if (changedSessionSettings) {
+        // Memory barrier to ensure event tap thread sees new values immediately.
+        __sync_synchronize();
+
+        // Sync spell checking state specifically (fixes issue where vCheckSpelling is reset to stale _useSpellCheckingBefore).
+        vSetCheckSpelling();
+
+        // Reset engine state only when an engine-related setting actually changed.
+        RequestNewSession();
+
+        // Prime auto-capitalization when the feature is just enabled.
+        if (justEnabledUppercase) {
+            vPrimeUpperCaseFirstChar();
+        }
     }
 
     if (PHTVLiveDebugEnabled()) {
-        BOOL changed1 = (oldCheckSpelling != vCheckSpelling ||
-                         oldModernOrthography != vUseModernOrthography ||
-                         oldQuickTelex != vQuickTelex);
-        BOOL changed2 = (oldUseMacro != vUseMacro ||
-                         oldUseMacroInEnglishMode != vUseMacroInEnglishMode ||
-                         oldAutoCapsMacro != vAutoCapsMacro ||
-                         oldSendKeyStepByStep != vSendKeyStepByStep ||
-                         oldUpperCaseFirstChar != vUpperCaseFirstChar ||
-                         oldAllowConsonantZFWJ != vAllowConsonantZFWJ ||
-                         oldQuickStartConsonant != vQuickStartConsonant ||
-                         oldQuickEndConsonant != vQuickEndConsonant ||
-                         oldRememberCode != vRememberCode ||
-                         oldPerformLayoutCompat != vPerformLayoutCompat);
-        BOOL changedEmoji = (oldEnableEmojiHotkey != vEnableEmojiHotkey ||
-                             oldEmojiHotkeyModifiers != vEmojiHotkeyModifiers ||
-                             oldEmojiHotkeyKeyCode != vEmojiHotkeyKeyCode);
-        PHTV_LIVE_LOG(@"settings loaded; changedGroup1=%@ changedGroup2=%@ changedEmoji=%@ useMacro=%d upperCaseFirst=%d",
+        PHTV_LIVE_LOG(@"settings loaded; changedGroup1=%@ changedGroup2=%@ changedRestorePause=%@ changedEmoji=%@ changedDock=%@ useMacro=%d upperCaseFirst=%d",
                       changed1 ? @"YES" : @"NO",
                       changed2 ? @"YES" : @"NO",
+                      changedRestorePause ? @"YES" : @"NO",
                       changedEmoji ? @"YES" : @"NO",
+                      changedDockVisibility ? @"YES" : @"NO",
                       vUseMacro,
                       vUpperCaseFirstChar);
     }
 
     // If SmartSwitchKey was just enabled, sync once to current app immediately.
-    if (oldUseSmartSwitchKey == 0 && vUseSmartSwitchKey != 0 && [PHTVManager isInited]) {
+    if (changedSessionSettings && oldUseSmartSwitchKey == 0 && vUseSmartSwitchKey != 0 && [PHTVManager isInited]) {
         OnActiveAppChanged();
     }
 
     sLastUpperCaseFirstCharSetting = vUpperCaseFirstChar;
+    self.lastSettingsChangeToken = settingsToken;
     
     #ifdef DEBUG
-    NSLog(@"[SwiftUI] Settings reloaded from UserDefaults");
-    NSLog(@"  - useMacro=%d, autoCapsMacro=%d, useMacroInEnglishMode=%d", vUseMacro, vAutoCapsMacro, vUseMacroInEnglishMode);
-    NSLog(@"  - performLayoutCompat=%d", vPerformLayoutCompat);
-    NSLog(@"  - emojiHotkey enabled=%d modifiers=0x%X keyCode=%d",
-          vEnableEmojiHotkey, vEmojiHotkeyModifiers, vEmojiHotkeyKeyCode);
+    if (changedAny) {
+        NSLog(@"[SwiftUI] Settings reloaded from UserDefaults");
+        NSLog(@"  - useMacro=%d, autoCapsMacro=%d, useMacroInEnglishMode=%d", vUseMacro, vAutoCapsMacro, vUseMacroInEnglishMode);
+        NSLog(@"  - performLayoutCompat=%d", vPerformLayoutCompat);
+        NSLog(@"  - emojiHotkey enabled=%d modifiers=0x%X keyCode=%d",
+              vEnableEmojiHotkey, vEmojiHotkeyModifiers, vEmojiHotkeyKeyCode);
+    }
     #endif
     
-    // Apply dock icon visibility immediately with async dispatch
-    // BUT only if settings window is not currently open (it needs dock icon visible)
-    dispatch_async(dispatch_get_main_queue(), ^{
-        // CRITICAL FIX: Use isSettingsWindowVisible check instead of fragile boolean
-        if ([self isSettingsWindowVisible] || settingsWindowOpen) {
-            // Settings window is open - keep dock icon visible regardless of preference
-            NSLog(@"[AppDelegate] Settings window open (verified), keeping dock icon visible");
-            return;
-        }
-        NSApplicationActivationPolicy policy = vShowIconOnDock ? NSApplicationActivationPolicyRegular : NSApplicationActivationPolicyAccessory;
-        [NSApp setActivationPolicy:policy];
-        if (vShowIconOnDock) {
-            [NSApp activate];
-        }
-    });
+    if (changedDockVisibility) {
+        // Apply dock icon visibility immediately with async dispatch.
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if ([self isSettingsWindowVisible]) {
+                // Settings window is open - keep dock icon visible regardless of preference.
+                NSLog(@"[AppDelegate] Settings window open (verified), keeping dock icon visible");
+                return;
+            }
+            NSApplicationActivationPolicy policy = vShowIconOnDock ? NSApplicationActivationPolicyRegular : NSApplicationActivationPolicyAccessory;
+            [NSApp setActivationPolicy:policy];
+            if (vShowIconOnDock) {
+                [NSApp activate];
+            }
+        });
+    }
 
     // IMPORTANT:
     // Do NOT push values back into SwiftUI AppState here.
@@ -1357,7 +1206,11 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         PHTV_LIVE_LOG(@"applied SwitchKeyStatus from defaults: 0x%X", vSwitchKeyStatus);
     }
 
-    // Apply all typing-related toggles
+    // Apply typing/system settings only when relevant defaults changed.
+    const NSUInteger settingsToken = PHTVComputeSettingsToken(defaults);
+    if (settingsToken == self.lastSettingsChangeToken) {
+        return;
+    }
     [self handleSettingsChanged:nil];
 }
 
@@ -1789,7 +1642,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     PHTVSetIntegerDefault(defaults, 1, @"GrayIcon");
     PHTVSetBoolDefault(defaults, NO, PHTVDefaultsKeyRunOnStartupLegacy);
     PHTVSetIntegerDefault(defaults, 0, PHTVDefaultsKeyRunOnStartup);
-    PHTVSetIntegerDefault(defaults, 0, @"vSettingsWindowAlwaysOnTop");
+    PHTVSetIntegerDefault(defaults, 1, @"vSettingsWindowAlwaysOnTop");
     PHTVSetIntegerDefault(defaults, 0, @"vBeepOnModeSwitch");
     PHTVSetDoubleDefault(defaults, 0.5, @"vBeepVolume");
     PHTVSetDoubleDefault(defaults, 18.0, @"vMenuBarIconSize");
@@ -1882,16 +1735,16 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                                     [[NSUserDefaults standardUserDefaults] setInteger:1 forKey:PHTVDefaultsKeyRunOnStartup];
 
                                     // Notify SwiftUI
-                                    [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationRunOnStartupChanged
-                                                                                        object:nil
-                                                                                      userInfo:@{@"enabled": @(YES)}];
+                        [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationRunOnStartupChanged
+                                                                            object:nil
+                                                                          userInfo:@{PHTVNotificationUserInfoEnabledKey: @(YES)}];
                                 } else {
                                     NSLog(@"❌ [LoginItem] Registration still failed: %@", retryError.localizedDescription);
 
                                     // Notify SwiftUI to revert toggle
-                                    [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationRunOnStartupChanged
-                                                                                        object:nil
-                                                                                      userInfo:@{@"enabled": @(NO)}];
+                        [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationRunOnStartupChanged
+                                                                            object:nil
+                                                                          userInfo:@{PHTVNotificationUserInfoEnabledKey: @(NO)}];
                                 }
                             });
                             return;  // Exit early - retry will handle notification
@@ -1943,9 +1796,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         [[NSUserDefaults standardUserDefaults] setInteger:(val ? 1 : 0) forKey:PHTVDefaultsKeyRunOnStartup];
 
         // Notify SwiftUI to sync UI
-        [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationRunOnStartupChanged
-                                                            object:nil
-                                                          userInfo:@{@"enabled": @(val)}];
+    [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationRunOnStartupChanged
+                                                        object:nil
+                                                      userInfo:@{PHTVNotificationUserInfoEnabledKey: @(val)}];
 
         NSLog(@"[LoginItem] ✅ Launch at Login %@ - UserDefaults saved and UI notified", val ? @"ENABLED" : @"DISABLED");
     } else {
@@ -1953,9 +1806,9 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
         NSLog(@"[LoginItem] ❌ Operation failed - reverting toggle to %@", val ? @"OFF" : @"ON");
 
         // Notify SwiftUI to revert toggle
-        [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationRunOnStartupChanged
-                                                            object:nil
-                                                          userInfo:@{@"enabled": @(!val)}];
+    [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationRunOnStartupChanged
+                                                        object:nil
+                                                      userInfo:@{PHTVNotificationUserInfoEnabledKey: @(!val)}];
     }
 }
 
@@ -1997,7 +1850,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     // Apply activation policy on main thread
     dispatch_async(dispatch_get_main_queue(), ^{
         // If settings window is open, keep the app in regular mode to prevent sinking
-        if ([self isSettingsWindowVisible] || settingsWindowOpen) {
+        if ([self isSettingsWindowVisible]) {
             [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
             [NSApp activateIgnoringOtherApps:YES];
 
@@ -2197,189 +2050,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     [mnuAutoRestoreEnglishWord setState:vAutoRestoreEnglishWord ? NSControlStateValueOn : NSControlStateValueOff];
 }
 
--(void)onImputMethodChanged:(BOOL)willNotify {
-    // Re-entry guard: prevent notification ping-pong
-    if (_isUpdatingLanguage) {
-        #ifdef DEBUG
-        NSLog(@"[MenuBar] Ignoring language change (already updating)");
-        #endif
-        return;
-    }
-
-    NSInteger intInputMethod = [[NSUserDefaults standardUserDefaults] integerForKey:PHTVDefaultsKeyInputMethod];
-    intInputMethod = (intInputMethod == 0) ? 1 : 0;
-
-    if (vLanguage == (int)intInputMethod) {
-        #ifdef DEBUG
-        NSLog(@"[MenuBar] Language already at %d, skipping", vLanguage);
-        #endif
-        return;
-    }
-
-    #ifdef DEBUG
-    NSLog(@"[MenuBar] Language changing from %d to %d", vLanguage, (int)intInputMethod);
-    #endif
-
-    _isUpdatingLanguage = YES;
-
-    #ifdef DEBUG
-    NSLog(@"========================================");
-    NSLog(@"[MenuBar] TOGGLING LANGUAGE: %d -> %d", vLanguage, (int)intInputMethod);
-    NSLog(@"========================================");
-    #endif
-
-    // CRITICAL: Synchronous state change to prevent race conditions
-    // 1. Update global variable
-    vLanguage = (int)intInputMethod;
-
-    // If we are currently in an excluded app, update the "saved" language
-    // so that when we switch back to a normal app, it restores the new selection.
-    if (_isInExcludedApp) {
-        _savedLanguageBeforeExclusion = vLanguage;
-    }
-
-    // 2. Memory barrier to ensure event tap thread sees new value
-    __sync_synchronize();
-
-    // 3. Save to UserDefaults (async - no synchronize, auto-saves periodically)
-    [[NSUserDefaults standardUserDefaults] setInteger:intInputMethod forKey:PHTVDefaultsKeyInputMethod];
-
-    // 4. Reset engine state IMMEDIATELY (synchronous!)
-    RequestNewSession();
-
-    // 4. Update UI
-    [self fillData];
-
-    // 5. Notify SwiftUI about language change
-    [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationLanguageChangedFromBackend object:@(vLanguage)];
-
-    // 6. Notify engine (async is OK since state is already reset) - only if SmartSwitchKey enabled
-    if (willNotify && vUseSmartSwitchKey) {
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-            OnInputMethodChanged();
-        });
-    }
-
-    #ifdef DEBUG
-    NSLog(@"[MenuBar] Language changed to: %d (engine reset complete)", vLanguage);
-    #endif
-
-    _isUpdatingLanguage = NO;
-}
-
 #pragma mark -StatusBar menu action
-- (void)onInputMethodSelected {
-    [self onImputMethodChanged:YES];
-}
-
-- (void)onInputTypeSelected:(id)sender {
-    NSMenuItem *menuItem = (NSMenuItem*) sender;
-    [self onInputTypeSelectedIndex:(int)menuItem.tag];
-}
-
-- (void)onInputTypeSelectedIndex:(int)index {
-    // Re-entry guard: prevent notification ping-pong
-    if (_isUpdatingInputType) {
-        NSLog(@"[MenuBar] Ignoring input type change (already updating)");
-        return;
-    }
-
-    if (vInputType == index) {
-        NSLog(@"[MenuBar] Input type already at %d, skipping", index);
-        return;
-    }
-
-    NSLog(@"[MenuBar] Input type changing from %d to %d", vInputType, index);
-
-    _isUpdatingInputType = YES;
-
-    NSLog(@"========================================");
-    NSLog(@"[MenuBar] CHANGING INPUT TYPE: %d -> %d", vInputType, index);
-    NSLog(@"========================================");
-
-    // CRITICAL: Synchronous state change to prevent race conditions
-    // 1. Update global variable
-    vInputType = index;
-
-    // 2. Memory barrier to ensure event tap thread sees new value
-    __sync_synchronize();
-
-    // 3. Save to UserDefaults (async - no synchronize, auto-saves periodically)
-    [[NSUserDefaults standardUserDefaults] setInteger:index forKey:PHTVDefaultsKeyInputType];
-
-    // 4. Reset engine state IMMEDIATELY (synchronous!)
-    RequestNewSession();
-
-    // 4. Update UI
-    [self fillData];
-
-    // 5. Notify SwiftUI about input type change
-    [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationLanguageChangedFromBackend object:@(vLanguage)];
-
-    // 6. Notify engine (async is OK since state is already reset) - only if SmartSwitchKey enabled
-    if (vUseSmartSwitchKey) {
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-            OnInputMethodChanged();
-        });
-    }
-
-    NSLog(@"[MenuBar] Input type changed to: %d (engine reset complete)", index);
-
-    _isUpdatingInputType = NO;
-}
-
-- (void)onCodeTableChanged:(int)index {
-    // Re-entry guard: prevent notification ping-pong
-    if (_isUpdatingCodeTable) {
-        NSLog(@"[MenuBar] Ignoring code table change (already updating)");
-        return;
-    }
-
-    if (vCodeTable == index) {
-        NSLog(@"[MenuBar] Code table already at %d, skipping", index);
-        return;
-    }
-
-    NSLog(@"[MenuBar] Code table changing from %d to %d", vCodeTable, index);
-
-    _isUpdatingCodeTable = YES;
-
-    NSLog(@"========================================");
-    NSLog(@"[MenuBar] CHANGING CODE TABLE: %d -> %d", vCodeTable, index);
-    NSLog(@"========================================");
-
-    // CRITICAL: Synchronous state change to prevent race conditions
-    // 1. Update global variable
-    vCodeTable = index;
-
-    // 2. Memory barrier to ensure event tap thread sees new value
-    __sync_synchronize();
-
-    // 3. Save to UserDefaults (async - no synchronize, auto-saves periodically)
-    [[NSUserDefaults standardUserDefaults] setInteger:index forKey:PHTVDefaultsKeyCodeTable];
-
-    // 4. Reset engine state IMMEDIATELY (synchronous!)
-    RequestNewSession();
-
-    // 4. Update UI
-    [self fillData];
-
-    // 5. Notify engine (async is OK since state is reset)
-    // Always refresh macro conversion state when code table changes.
-    // OnTableCodeChange() will internally skip per-app persistence when RememberCode is off.
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        OnTableCodeChange();
-    });
-
-    NSLog(@"[MenuBar] Code table changed to: %d (engine reset complete)", index);
-
-    _isUpdatingCodeTable = NO;
-}
-
-- (void)onCodeSelected:(id)sender {
-    NSMenuItem *menuItem = (NSMenuItem*) sender;
-    [self onCodeTableChanged:(int)menuItem.tag];
-}
 
 -(void)onQuickConvert {
     if ([PHTVManager quickConvert]) {
@@ -2399,79 +2070,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
             NSLog(@"[EmojiHotkey] failed to open picker: %@", exception);
         }
     });
-}
-
-- (void)toggleSpellCheck:(id)sender {
-    vCheckSpelling = !vCheckSpelling;
-    __sync_synchronize();
-    
-    [[NSUserDefaults standardUserDefaults] setInteger:vCheckSpelling forKey:PHTVDefaultsKeySpelling];
-    
-    // Sync engine state
-    vSetCheckSpelling();
-    RequestNewSession();
-    [self fillData];
-    
-    // Notify SwiftUI to update its state
-    [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationSettingsChanged object:nil];
-}
-
-- (void)toggleAllowConsonantZFWJ:(id)sender {
-    vAllowConsonantZFWJ = !vAllowConsonantZFWJ;
-    __sync_synchronize();
-    
-    [[NSUserDefaults standardUserDefaults] setInteger:vAllowConsonantZFWJ forKey:PHTVDefaultsKeyAllowConsonantZFWJ];
-    
-    // Sync engine state
-    RequestNewSession();
-    [self fillData];
-    
-    // Notify SwiftUI to update its state
-    [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationSettingsChanged object:nil];
-}
-
-- (void)toggleModernOrthography:(id)sender {
-    vUseModernOrthography = !vUseModernOrthography;
-    __sync_synchronize();
-    
-    [[NSUserDefaults standardUserDefaults] setInteger:vUseModernOrthography forKey:PHTVDefaultsKeyModernOrthography];
-    
-    RequestNewSession();
-    [self fillData];
-    [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationSettingsChanged object:nil];
-}
-
-- (void)toggleQuickTelex:(id)sender {
-    vQuickTelex = !vQuickTelex;
-    __sync_synchronize();
-    
-    [[NSUserDefaults standardUserDefaults] setInteger:vQuickTelex forKey:PHTVDefaultsKeyQuickTelex];
-    
-    RequestNewSession();
-    [self fillData];
-    [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationSettingsChanged object:nil];
-}
-
-- (void)toggleUpperCaseFirstChar:(id)sender {
-    vUpperCaseFirstChar = !vUpperCaseFirstChar;
-    __sync_synchronize();
-    
-    [[NSUserDefaults standardUserDefaults] setInteger:vUpperCaseFirstChar forKey:PHTVDefaultsKeyUpperCaseFirstChar];
-    
-    RequestNewSession();
-    [self fillData];
-    [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationSettingsChanged object:nil];
-}
-
-- (void)toggleAutoRestoreEnglishWord:(id)sender {
-    vAutoRestoreEnglishWord = !vAutoRestoreEnglishWord;
-    __sync_synchronize();
-    
-    [[NSUserDefaults standardUserDefaults] setInteger:vAutoRestoreEnglishWord forKey:PHTVDefaultsKeyAutoRestoreEnglishWord];
-    
-    RequestNewSession();
-    [self fillData];
-    [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationSettingsChanged object:nil];
 }
 
 // MARK: - UI Actions (SwiftUI Integration)
@@ -2525,349 +2123,5 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 #pragma mark -Short key event
 -(void)onSwitchLanguage {
     [self onInputMethodSelected];
-}
-
-#pragma mark Reset PHTV after mac computer awake
--(void)receiveWakeNote: (NSNotification*)note {
-    // Force stop/start on wake to ensure fresh connection to Window Server
-    // This fixes issues where event tap dies during sleep or Mach port becomes invalid
-    [PHTVManager stopEventTap];
-    [PHTVManager initEventTap];
-}
-
--(void)receiveSleepNote: (NSNotification*)note {
-    [PHTVManager stopEventTap];
-}
-
--(void)receiveActiveSpaceChanged: (NSNotification*)note {
-    RequestNewSession();
-}
-
--(void)activeAppChanged: (NSNotification*)note {
-    NSRunningApplication *activeApp = [[note userInfo] objectForKey:NSWorkspaceApplicationKey];
-    NSString *bundleId = activeApp.bundleIdentifier;
-
-    // CRITICAL: Update focus cache immediately to prevent race conditions in smart switch logic.
-    // This ensures that OnActiveAppChanged and other background tasks see the correct app.
-    if (bundleId) {
-        [PHTVCacheManager updateSpotlightCache:NO pid:0 bundleId:bundleId];
-    }
-
-    // CRITICAL FIX: Handle exclusion logic BEFORE smart switch logic.
-    // This ensures that if we are leaving an excluded app (which forced English mode),
-    // the global vLanguage is restored to its proper value BEFORE smart switch
-    // logic decides what to save or load for the new app.
-    if (bundleId) {
-        [self checkExcludedApp:bundleId];
-    }
-
-    // Handle smart switch logic only for non-excluded apps.
-    if (!_isInExcludedApp && vUseSmartSwitchKey && [PHTVManager isInited]) {
-        OnActiveAppChanged();
-    }
-
-    // Invalidate Spotlight cache on app switch to ensure fresh detection
-    // This prevents stale Spotlight detection when switching between apps
-    [PHTVCacheManager invalidateSpotlightCache];
-
-    // Check other app-specific behaviors
-    if (bundleId) {
-        [self checkSendKeyStepByStepApp:bundleId];
-        [self checkUpperCaseExcludedApp:bundleId];
-    }
-}
-
--(void)checkExcludedApp:(NSString *)bundleIdentifier {
-    // Skip if bundle ID is nil or same as previous app
-    if (!bundleIdentifier || [bundleIdentifier isEqualToString:_previousBundleIdentifier]) {
-        return;
-    }
-
-    // Load excluded apps from UserDefaults
-    NSData *data = [[NSUserDefaults standardUserDefaults] dataForKey:PHTVDefaultsKeyExcludedApps];
-    NSArray *excludedApps = nil;
-    if (data) {
-        NSError *error;
-        excludedApps = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
-        if (error) {
-            excludedApps = nil;
-        }
-    }
-
-    // Check if current app is excluded
-    BOOL isExcluded = NO;
-    if (excludedApps) {
-        for (NSDictionary *app in excludedApps) {
-            NSString *excludedBundleId = app[@"bundleIdentifier"];
-            if ([bundleIdentifier isEqualToString:excludedBundleId]) {
-                isExcluded = YES;
-                break;
-            }
-        }
-    }
-
-    // Handle state transition
-    if (isExcluded && !_isInExcludedApp) {
-        // Entering an excluded app - save current language and switch to English
-        _savedLanguageBeforeExclusion = vLanguage;
-        _isInExcludedApp = YES;
-
-        if (vLanguage == 1) {  // Currently in Vietnamese mode
-            vLanguage = 0;  // Switch to English
-            [[NSUserDefaults standardUserDefaults] setInteger:vLanguage forKey:PHTVDefaultsKeyInputMethod];
-            
-            // CRITICAL: Reset engine session when forcing mode change
-            RequestNewSession();
-            [self fillData];
-
-            NSLog(@"[ExcludedApp] Entered excluded app '%@' - switched to English (saved state: Vietnamese)", bundleIdentifier);
-
-            // Notify SwiftUI (use special notification to avoid beep sound)
-            [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationLanguageChangedFromExcludedApp object:@(vLanguage)];
-        } else {
-            NSLog(@"[ExcludedApp] Entered excluded app '%@' - already in English (saved state: English)", bundleIdentifier);
-        }
-    }
-    else if (!isExcluded && _isInExcludedApp) {
-        // Leaving an excluded app - restore previous language state
-        _isInExcludedApp = NO;
-
-        if (_savedLanguageBeforeExclusion == 1 && vLanguage == 0) {
-            // Restore Vietnamese mode
-            vLanguage = 1;
-            [[NSUserDefaults standardUserDefaults] setInteger:vLanguage forKey:PHTVDefaultsKeyInputMethod];
-            
-            // CRITICAL: Reset engine session when restoring mode
-            RequestNewSession();
-            [self fillData];
-
-            NSLog(@"[ExcludedApp] Left excluded app, switched to '%@' - restored Vietnamese mode", bundleIdentifier);
-
-            // Notify SwiftUI (use special notification to avoid beep sound)
-            [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationLanguageChangedFromExcludedApp object:@(vLanguage)];
-        } else {
-            NSLog(@"[ExcludedApp] Left excluded app, switched to '%@' - staying in English", bundleIdentifier);
-        }
-    }
-    else if (isExcluded && _isInExcludedApp) {
-        // Moving between excluded apps - stay in English
-        NSLog(@"[ExcludedApp] Moved from excluded app to another excluded app '%@' - staying in English", bundleIdentifier);
-    }
-    // else: moving between non-excluded apps, no action needed
-
-    // Update previous bundle identifier
-    _previousBundleIdentifier = bundleIdentifier;
-}
-
--(void)checkSendKeyStepByStepApp:(NSString *)bundleIdentifier {
-    // Skip if bundle ID is nil
-    if (!bundleIdentifier) {
-        return;
-    }
-
-    // Load send key step by step apps from UserDefaults
-    NSData *data = [[NSUserDefaults standardUserDefaults] dataForKey:PHTVDefaultsKeySendKeyStepByStepApps];
-    NSArray *sendKeyStepByStepApps = nil;
-    if (data) {
-        NSError *error;
-        sendKeyStepByStepApps = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
-        if (error) {
-            sendKeyStepByStepApps = nil;
-        }
-    }
-
-    // Check if current app is in the list
-    BOOL isInList = NO;
-    if (sendKeyStepByStepApps) {
-        for (NSDictionary *app in sendKeyStepByStepApps) {
-            NSString *appBundleId = app[@"bundleIdentifier"];
-            if ([bundleIdentifier isEqualToString:appBundleId]) {
-                isInList = YES;
-                break;
-            }
-        }
-    }
-
-    // Handle state transition
-    if (isInList && !_isInSendKeyStepByStepApp) {
-        // Entering a send key step by step app - save current state and enable
-        _savedSendKeyStepByStepBeforeApp = vSendKeyStepByStep;
-        _isInSendKeyStepByStepApp = YES;
-
-        if (!vSendKeyStepByStep) {  // Currently disabled
-            vSendKeyStepByStep = YES;  // Enable
-            [[NSUserDefaults standardUserDefaults] setBool:vSendKeyStepByStep forKey:PHTVDefaultsKeySendKeyStepByStep];
-
-            NSLog(@"[SendKeyStepByStepApp] Entered app '%@' - enabled send key step by step", bundleIdentifier);
-        } else {
-            NSLog(@"[SendKeyStepByStepApp] Entered app '%@' - already enabled", bundleIdentifier);
-        }
-    }
-    else if (!isInList && _isInSendKeyStepByStepApp) {
-        // Leaving a send key step by step app - restore previous state
-        _isInSendKeyStepByStepApp = NO;
-
-        if (!_savedSendKeyStepByStepBeforeApp && vSendKeyStepByStep) {
-            // Restore disabled state
-            vSendKeyStepByStep = NO;
-            [[NSUserDefaults standardUserDefaults] setBool:vSendKeyStepByStep forKey:PHTVDefaultsKeySendKeyStepByStep];
-
-            NSLog(@"[SendKeyStepByStepApp] Left app '%@' - disabled send key step by step", bundleIdentifier);
-        } else {
-            NSLog(@"[SendKeyStepByStepApp] Left app '%@' - keeping send key step by step state", bundleIdentifier);
-        }
-    }
-    else if (isInList && _isInSendKeyStepByStepApp) {
-        // Moving between apps in the list - stay enabled
-        NSLog(@"[SendKeyStepByStepApp] Moved to another app in list '%@' - keeping enabled", bundleIdentifier);
-    }
-    // else: moving between apps not in the list, no action needed
-}
-
--(void)checkUpperCaseExcludedApp:(NSString *)bundleIdentifier {
-    // Skip if bundle ID is nil
-    if (!bundleIdentifier) {
-        return;
-    }
-
-    // Load upper case excluded apps from UserDefaults
-    NSData *data = [[NSUserDefaults standardUserDefaults] dataForKey:PHTVDefaultsKeyUpperCaseExcludedApps];
-    NSArray *upperCaseExcludedApps = nil;
-    if (data) {
-        NSError *error;
-        upperCaseExcludedApps = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
-        if (error) {
-            upperCaseExcludedApps = nil;
-        }
-    }
-
-    // Check if current app is in the list
-    BOOL isExcluded = NO;
-    if (upperCaseExcludedApps) {
-        for (NSDictionary *app in upperCaseExcludedApps) {
-            NSString *appBundleId = app[@"bundleIdentifier"];
-            if ([bundleIdentifier isEqualToString:appBundleId]) {
-                isExcluded = YES;
-                break;
-            }
-        }
-    }
-
-    // Set the global flag
-    vUpperCaseExcludedForCurrentApp = isExcluded ? 1 : 0;
-
-    if (isExcluded) {
-        NSLog(@"[UpperCaseExcludedApp] App '%@' is excluded from uppercase first char", bundleIdentifier);
-    }
-}
-
-#pragma mark - SwiftUI Notification Handlers
-
-/**
- * Handler for InputMethodChanged notification from SwiftUI
- * Called when user changes input method (Telex, VNI, etc.)
- */
-- (void)onInputMethodChangedFromSwiftUI:(NSNotification *)notification {
-    NSNumber *newInputMethodValue = (NSNumber *)notification.object;
-    if (newInputMethodValue) {
-        int index = [newInputMethodValue intValue];
-        NSLog(@"[SwiftUI] InputMethodChanged notification received: %d", index);
-        [self onInputTypeSelectedIndex:index];
-    }
-}
-
-/**
- * Handler for CodeTableChanged notification from SwiftUI
- * Called when user changes character encoding table (Unicode, TCVN, VNI Windows, etc.)
- */
-- (void)onCodeTableChangedFromSwiftUI:(NSNotification *)notification {
-    NSNumber *newCodeTableValue = (NSNumber *)notification.object;
-    if (newCodeTableValue) {
-        int index = [newCodeTableValue intValue];
-        NSLog(@"[SwiftUI] CodeTableChanged notification received: %d", index);
-        [self onCodeTableChanged:index];
-    }
-}
-
--(void)registerSupportedNotification {
-    PHTV_LIVE_LOG(@"registerSupportedNotification registering observers");
-    [[[NSWorkspace sharedWorkspace] notificationCenter] addObserver: self
-                                                           selector: @selector(receiveWakeNote:)
-                                                               name: NSWorkspaceDidWakeNotification object: NULL];
-    
-    [[[NSWorkspace sharedWorkspace] notificationCenter] addObserver: self
-                                                           selector: @selector(receiveSleepNote:)
-                                                               name: NSWorkspaceWillSleepNotification object: NULL];
-    
-    [[[NSWorkspace sharedWorkspace] notificationCenter] addObserver: self
-                                                           selector: @selector(receiveActiveSpaceChanged:)
-                                                               name: NSWorkspaceActiveSpaceDidChangeNotification object: NULL];
-    
-    [[[NSWorkspace sharedWorkspace] notificationCenter] addObserver: self
-                                                           selector: @selector(activeAppChanged:)
-                                                               name: NSWorkspaceDidActivateApplicationNotification object: NULL];
-    
-    // Listen for SwiftUI setting changes (hot-reload without restart)
-    [[NSNotificationCenter defaultCenter] addObserver: self
-                                             selector: @selector(onInputMethodChangedFromSwiftUI:)
-                                                 name: PHTVNotificationInputMethodChanged
-                                               object: NULL];
-    
-    [[NSNotificationCenter defaultCenter] addObserver: self
-                                             selector: @selector(onCodeTableChangedFromSwiftUI:)
-                                                 name: PHTVNotificationCodeTableChanged
-                                               object: NULL];
-    
-    [[NSNotificationCenter defaultCenter] addObserver: self
-                                             selector: @selector(handleHotkeyChanged:)
-                                                 name: PHTVNotificationHotkeyChanged
-                                               object: NULL];
-
-    [[NSNotificationCenter defaultCenter] addObserver: self
-                                             selector: @selector(handleEmojiHotkeySettingsChanged:)
-                                                 name: PHTVNotificationEmojiHotkeySettingsChanged
-                                               object: NULL];
-
-    // Listen for TCC database changes (posted by PHTVManager)
-    [[NSNotificationCenter defaultCenter] addObserver: self
-                                             selector: @selector(handleTCCDatabaseChanged:)
-                                                 name: @"TCCDatabaseChanged"
-                                               object: NULL];
-
-        // Also observe the full set of SwiftUI-driven live settings.
-        // Some builds/flows rely on registerSupportedNotification rather than setupSwiftUIBridge.
-        [[NSNotificationCenter defaultCenter] addObserver:self
-                                                                                         selector:@selector(handleSettingsChanged:)
-                                                                                                 name:PHTVNotificationSettingsChanged
-                                                                                             object:NULL];
-
-        [[NSNotificationCenter defaultCenter] addObserver:self
-                                                                                         selector:@selector(handleMacrosUpdated:)
-                                                                                                 name:PHTVNotificationMacrosUpdated
-                                                                                             object:NULL];
-
-        [[NSNotificationCenter defaultCenter] addObserver:self
-                                                                                         selector:@selector(handleExcludedAppsChanged:)
-                                                                                                 name:PHTVNotificationExcludedAppsChanged
-                                                                                             object:NULL];
-
-        [[NSNotificationCenter defaultCenter] addObserver:self
-                                                                                         selector:@selector(handleMenuBarIconSizeChanged:)
-                                                                                                 name:PHTVNotificationMenuBarIconSizeChanged
-                                                                                             object:NULL];
-
-        [[NSNotificationCenter defaultCenter] addObserver:self
-                                                                                         selector:@selector(handleLanguageChangedFromSwiftUI:)
-                                                                                                 name:PHTVNotificationLanguageChangedFromSwiftUI
-                                                                                             object:NULL];
-
-        // Apply live updates when defaults are changed outside SwiftUI.
-        [[NSNotificationCenter defaultCenter] addObserver:self
-                                                                                         selector:@selector(handleUserDefaultsDidChange:)
-                                                                                                 name:NSUserDefaultsDidChangeNotification
-                                                                                             object:NULL];
-
-    [self registerSparkleObservers];
-
 }
 @end

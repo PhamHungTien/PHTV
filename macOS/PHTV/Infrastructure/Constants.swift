@@ -145,6 +145,7 @@ enum NotificationName {
 
 enum NotificationUserInfoKey {
     static let visible = "visible"
+    static let forceFront = "forceFront"
     static let enabled = "enabled"
     static let macroId = "macroId"
     static let action = "action"
@@ -285,7 +286,7 @@ enum Defaults {
     static let runOnStartup = false
     static let performLayoutCompat = false
     static let showIconOnDock = false
-    static let settingsWindowAlwaysOnTop = false
+    static let settingsWindowAlwaysOnTop = true
     static let safeMode = false
 
     // MARK: - Hotkey

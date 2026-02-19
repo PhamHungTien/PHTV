@@ -245,6 +245,7 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           ZIP_NAME="${{ steps.zip.outputs.name }}"
           ARCHIVES_DIR="$RUNNER_TEMP/sparkle_archives"
+          export ARCHIVES_DIR
           mkdir -p "$ARCHIVES_DIR"
           cp "$ZIP_NAME" "$ARCHIVES_DIR/"
           if git show origin/main:docs/appcast.xml > "$ARCHIVES_DIR/appcast.xml" 2>/dev/null; then
@@ -253,6 +254,49 @@ jobs:
             cp ../docs/appcast.xml "$ARCHIVES_DIR/appcast.xml"
             echo "⚠️ Falling back to docs/appcast.xml from current checkout"
           fi
+
+          python3 << 'PY'
+          import os
+          import base64
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          appcast_path = Path(os.environ["ARCHIVES_DIR"]) / "appcast.xml"
+          spark_ns = "http://www.andymatuschak.org/xml-namespaces/sparkle"
+          sig_key = f"{{{spark_ns}}}edSignature"
+
+          tree = ET.parse(appcast_path)
+          root = tree.getroot()
+          channel = root.find("./channel")
+          if channel is None:
+              raise SystemExit("❌ Invalid appcast.xml: missing channel element")
+
+          removed_titles = []
+          for item in list(channel.findall("item")):
+              enclosure = item.find("enclosure")
+              if enclosure is None:
+                  continue
+              signature = enclosure.attrib.get(sig_key, "")
+              is_valid = False
+              if signature:
+                  try:
+                      decoded = base64.b64decode(signature, validate=True)
+                      is_valid = len(decoded) == 64
+                  except Exception:
+                      is_valid = False
+              if not is_valid:
+                  title = (item.findtext("title") or "unknown").strip()
+                  removed_titles.append(title)
+                  channel.remove(item)
+
+          if removed_titles:
+              print(f"⚠️ Removed {len(removed_titles)} invalid appcast item(s) before generation:")
+              for title in removed_titles:
+                  print(f"  - {title}")
+              tree.write(appcast_path, encoding="utf-8", xml_declaration=True)
+          else:
+              print("✅ Existing appcast signatures are valid")
+          PY
 
           GENERATE_APPCAST="/tmp/Sparkle/bin/generate_appcast"
           if [ ! -x "$GENERATE_APPCAST" ]; then
@@ -269,11 +313,42 @@ jobs:
 
           cp "$ARCHIVES_DIR/appcast.xml" ../docs/appcast.xml
 
-          if ! grep -q "sparkle:edSignature" ../docs/appcast.xml; then
-            echo "❌ Error: docs/appcast.xml has no sparkle:edSignature"
-            exit 1
-          fi
-          echo "✅ docs/appcast.xml generated and signed"
+          python3 << 'PY'
+          import base64
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          appcast = Path("../docs/appcast.xml")
+          spark_ns = "http://www.andymatuschak.org/xml-namespaces/sparkle"
+          sig_key = f"{{{spark_ns}}}edSignature"
+          tree = ET.parse(appcast)
+          items = tree.findall(".//item")
+
+          if not items:
+              raise SystemExit("❌ Error: docs/appcast.xml has no <item> entries")
+
+          invalid = []
+          for item in items:
+              enclosure = item.find("enclosure")
+              if enclosure is None:
+                  continue
+              title = (item.findtext("title") or "unknown").strip()
+              signature = enclosure.attrib.get(sig_key, "")
+              try:
+                  decoded = base64.b64decode(signature, validate=True)
+                  if len(decoded) != 64:
+                      raise ValueError(f"decoded signature length is {len(decoded)}, expected 64")
+              except Exception as exc:
+                  invalid.append((title, str(exc)))
+
+          if invalid:
+              print("❌ Error: invalid Sparkle signatures found in docs/appcast.xml")
+              for title, reason in invalid:
+                  print(f"  - {title}: {reason}")
+              raise SystemExit(1)
+
+          print(f"✅ docs/appcast.xml generated and signed ({len(items)} items validated)")
+          PY
 
       - name: Upload DMG artifact
         uses: actions/upload-artifact@v4

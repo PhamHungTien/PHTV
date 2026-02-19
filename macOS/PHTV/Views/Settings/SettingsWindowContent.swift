@@ -13,6 +13,9 @@ struct SettingsWindowContent: View {
     @EnvironmentObject var appState: AppState
     @State private var windowObservers: [NSObjectProtocol] = []
     @State private var showOnboarding: Bool = false
+    @State private var isClosingSettingsWindow: Bool = false
+    @State private var pendingDockShowWorkItem: DispatchWorkItem?
+    @State private var windowLifecycleToken = UUID()
 
     var body: some View {
         OnboardingContainer(showOnboarding: $showOnboarding) {
@@ -25,6 +28,10 @@ struct SettingsWindowContent: View {
             }
         }
         .onAppear {
+            isClosingSettingsWindow = false
+            windowLifecycleToken = UUID()
+            pendingDockShowWorkItem?.cancel()
+            pendingDockShowWorkItem = nil
             // Show dock icon when settings window opens
             // This prevents the window from being hidden when app loses focus
 
@@ -61,14 +68,28 @@ struct SettingsWindowContent: View {
                 }
             }
 
-            // Also post notification for AppDelegate to track state
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            // Also post notification for AppDelegate to track state.
+            // Guard with lifecycle token so delayed callbacks from a previous open
+            // cannot revive a just-closed settings window.
+            let lifecycleToken = windowLifecycleToken
+            let showDockWorkItem = DispatchWorkItem { [lifecycleToken] in
+                guard lifecycleToken == windowLifecycleToken, !isClosingSettingsWindow else { return }
+                let hasVisibleSettingsWindow = NSApp.windows.contains { window in
+                    window.identifier?.rawValue.hasPrefix("settings") == true && window.isVisible
+                }
+                guard hasVisibleSettingsWindow else { return }
+
                 NotificationCenter.default.post(
                     name: NotificationName.phtvShowDockIcon,
                     object: nil,
-                    userInfo: [NotificationUserInfoKey.visible: true]
+                    userInfo: [
+                        NotificationUserInfoKey.visible: true,
+                        NotificationUserInfoKey.forceFront: true
+                    ]
                 )
             }
+            pendingDockShowWorkItem = showDockWorkItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: showDockWorkItem)
 
             // Update window level based on user preference
             updateSettingsWindowLevel()
@@ -88,24 +109,36 @@ struct SettingsWindowContent: View {
             }
         }
         .onDisappear {
+            pendingDockShowWorkItem?.cancel()
+            pendingDockShowWorkItem = nil
+            windowLifecycleToken = UUID()
+
+            // Remove window observers for this lifecycle.
+            removeWindowObservers()
+
+            let hasVisibleSettingsWindow = NSApp.windows.contains { window in
+                window.identifier?.rawValue.hasPrefix("settings") == true && window.isVisible
+            }
+            let isActualClose = isClosingSettingsWindow || !hasVisibleSettingsWindow
+            guard isActualClose else { return }
+
             // Restore dock icon to user preference when settings closes
             let userPrefersDock = appState.showIconOnDock
-
-            // Remove window observers
-            removeWindowObservers()
 
             // Stop login item monitoring when Settings closes
             appState.systemState.stopLoginItemStatusMonitoring()
 
             // Clear transient caches to release memory
             AppIconCache.shared.clear()
-            URLCache.shared.removeAllCachedResponses()
 
             // Post notification for AppDelegate to restore state
             NotificationCenter.default.post(
                 name: NotificationName.phtvShowDockIcon,
                 object: nil,
-                userInfo: [NotificationUserInfoKey.visible: userPrefersDock]
+                userInfo: [
+                    NotificationUserInfoKey.visible: userPrefersDock,
+                    NotificationUserInfoKey.forceFront: false
+                ]
             )
 
             // Also set activation policy directly
@@ -113,6 +146,8 @@ struct SettingsWindowContent: View {
                 let policy: NSApplication.ActivationPolicy = userPrefersDock ? .regular : .accessory
                 NSApp.setActivationPolicy(policy)
             }
+
+            isClosingSettingsWindow = false
         }
         .onChange(of: appState.settingsWindowAlwaysOnTop) { _ in
             // Update window level when user toggles the setting
@@ -160,8 +195,10 @@ struct SettingsWindowContent: View {
                 guard let windowID,
                       let window = NSApp.windows.first(where: { ObjectIdentifier($0) == windowID }),
                       isSettingsWindow(window) else { return }
-                if appState.settingsWindowAlwaysOnTop {
-                    applySettingsWindowBehavior(forceFront: true)
+                if appState.settingsWindowAlwaysOnTop, !isClosingSettingsWindow {
+                    // Re-apply window level only. Do not force front here, otherwise
+                    // clicking close can immediately reopen the settings window.
+                    applySettingsWindowBehavior(forceFront: false)
                 }
             }
         }
@@ -176,9 +213,27 @@ struct SettingsWindowContent: View {
                 guard let windowID,
                       let window = NSApp.windows.first(where: { ObjectIdentifier($0) == windowID }),
                       isSettingsWindow(window) else { return }
-                if appState.settingsWindowAlwaysOnTop {
-                    applySettingsWindowBehavior(forceFront: true)
+                if appState.settingsWindowAlwaysOnTop, !isClosingSettingsWindow {
+                    applySettingsWindowBehavior(forceFront: false)
                 }
+            }
+        }
+
+        let willCloseObserver = center.addObserver(
+            forName: NSWindow.willCloseNotification,
+            object: nil,
+            queue: .main
+        ) { notification in
+            let windowID = (notification.object as? NSWindow).map(ObjectIdentifier.init)
+            MainActor.assumeIsolated {
+                guard let windowID,
+                      let window = NSApp.windows.first(where: { ObjectIdentifier($0) == windowID }),
+                      isSettingsWindow(window) else { return }
+                isClosingSettingsWindow = true
+                pendingDockShowWorkItem?.cancel()
+                pendingDockShowWorkItem = nil
+                windowLifecycleToken = UUID()
+                appState.systemState.stopLoginItemStatusMonitoring()
             }
         }
 
@@ -192,6 +247,7 @@ struct SettingsWindowContent: View {
                 guard let windowID,
                       let window = NSApp.windows.first(where: { ObjectIdentifier($0) == windowID }),
                       isSettingsWindow(window),
+                      !isClosingSettingsWindow,
                       appState.settingsWindowAlwaysOnTop,
                       !window.isMiniaturized else { return }
                 // If the window is occluded while always-on-top is enabled, bring it back.
@@ -205,6 +261,7 @@ struct SettingsWindowContent: View {
             becomeObserver,
             resignKeyObserver,
             resignMainObserver,
+            willCloseObserver,
             occlusionObserver
         ]
     }
@@ -262,7 +319,10 @@ struct SettingsWindowContent: View {
         // Standard behavior: participate in Cycle, move to active space
         window.collectionBehavior = [.managed, .participatesInCycle, .moveToActiveSpace, .fullScreenAuxiliary]
 
-        guard forceFront, !window.isMiniaturized else { return }
+        guard forceFront,
+              !window.isMiniaturized,
+              window.isVisible,
+              !isClosingSettingsWindow else { return }
 
         if appState.settingsWindowAlwaysOnTop {
             window.orderFrontRegardless()

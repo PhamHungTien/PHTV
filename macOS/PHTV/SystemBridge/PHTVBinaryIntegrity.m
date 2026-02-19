@@ -20,10 +20,10 @@
         return @"Unknown (no executable path)";
     }
 
-    // Use 'file' command to check architectures
+    // Prefer lipo for robust architecture listing.
     NSTask *task = [[NSTask alloc] init];
-    [task setLaunchPath:@"/usr/bin/file"];
-    [task setArguments:@[executablePath]];
+    [task setLaunchPath:@"/usr/bin/lipo"];
+    [task setArguments:@[@"-archs", executablePath]];
 
     NSPipe *pipe = [NSPipe pipe];
     [task setStandardOutput:pipe];
@@ -36,21 +36,55 @@
         NSData *data = [[pipe fileHandleForReading] readDataToEndOfFile];
         NSString *output = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
 
-        // Parse output to determine architectures
-        if ([output containsString:@"2 architectures"]) {
-            // Universal Binary - GOOD
-            if ([output containsString:@"arm64"] && [output containsString:@"x86_64"]) {
+        if (task.terminationStatus == 0) {
+            NSCharacterSet *whitespace = [NSCharacterSet whitespaceAndNewlineCharacterSet];
+            NSArray<NSString *> *tokens = [[output stringByTrimmingCharactersInSet:whitespace]
+                                           componentsSeparatedByCharactersInSet:whitespace];
+            NSSet<NSString *> *knownArchitectures = [NSSet setWithArray:@[@"arm64", @"arm64e", @"x86_64", @"i386"]];
+            NSMutableArray<NSString *> *architectures = [NSMutableArray array];
+
+            for (NSString *token in tokens) {
+                if (token.length == 0) { continue; }
+                if ([knownArchitectures containsObject:token]) {
+                    [architectures addObject:token];
+                }
+            }
+
+            if (architectures.count >= 2 &&
+                [architectures containsObject:@"arm64"] &&
+                [architectures containsObject:@"x86_64"]) {
                 return @"Universal (arm64 + x86_64)";
             }
-            return @"Universal (2 architectures)";
-        } else if ([output containsString:@"1 architecture"]) {
-            // Single architecture - POTENTIALLY MODIFIED
-            if ([output containsString:@"arm64"]) {
-                return @"arm64 only (stripped by CleanMyMac?)";
-            } else if ([output containsString:@"x86_64"]) {
-                return @"x86_64 only";
+            if (architectures.count == 1) {
+                return [NSString stringWithFormat:@"%@ only", architectures.firstObject];
             }
-            return @"Single architecture";
+            if (architectures.count > 1) {
+                return [NSString stringWithFormat:@"Multiple (%@)", [architectures componentsJoinedByString:@" + "]];
+            }
+        }
+
+        // Fallback for environments where lipo is unavailable.
+        NSTask *fallbackTask = [[NSTask alloc] init];
+        [fallbackTask setLaunchPath:@"/usr/bin/file"];
+        [fallbackTask setArguments:@[executablePath]];
+
+        NSPipe *fallbackPipe = [NSPipe pipe];
+        [fallbackTask setStandardOutput:fallbackPipe];
+        [fallbackTask setStandardError:fallbackPipe];
+
+        [fallbackTask launch];
+        [fallbackTask waitUntilExit];
+
+        NSData *fallbackData = [[fallbackPipe fileHandleForReading] readDataToEndOfFile];
+        NSString *fallbackOutput = [[NSString alloc] initWithData:fallbackData encoding:NSUTF8StringEncoding];
+        if ([fallbackOutput containsString:@"arm64"] && [fallbackOutput containsString:@"x86_64"]) {
+            return @"Universal (arm64 + x86_64)";
+        }
+        if ([fallbackOutput containsString:@"arm64"]) {
+            return @"arm64 only";
+        }
+        if ([fallbackOutput containsString:@"x86_64"]) {
+            return @"x86_64 only";
         }
 
         return @"Unknown";
@@ -157,7 +191,7 @@
     // Step 1: Check if binary changed since last run
     BOOL binaryChanged = [self hasBinaryChangedSinceLastRun];
     if (binaryChanged) {
-        NSLog(@"[BinaryIntegrity] ⚠️ Binary was modified between app runs - likely by CleanMyMac");
+        NSLog(@"[BinaryIntegrity] ⚠️ Binary hash changed since last run");
     }
 
     // Step 2: Get architecture info
@@ -181,8 +215,8 @@
         if (status == 0) {
             NSLog(@"[BinaryIntegrity] ✅ Code signature is valid");
 
-            // Warn if architecture was stripped OR binary changed
-            if ([archInfo containsString:@"CleanMyMac"] || binaryChanged) {
+            // Warn if hash changed, but keep app healthy when signature stays valid.
+            if (binaryChanged) {
                 NSLog(@"[BinaryIntegrity] ⚠️ WARNING: Binary appears to have been modified");
                 NSLog(@"[BinaryIntegrity] ⚠️ This may cause Accessibility permission issues");
                 NSLog(@"[BinaryIntegrity] ⚠️ Recommendation: Reinstall app from original build");
@@ -192,11 +226,9 @@
                     [[NSNotificationCenter defaultCenter] postNotificationName:@"BinaryModifiedWarning"
                                                                         object:archInfo];
                 });
-
-                return NO;  // Signature valid but binary modified
             }
 
-            return YES;  // All good
+            return YES;
         } else {
             NSData *errorData = [[pipe fileHandleForReading] readDataToEndOfFile];
             NSString *errorOutput = [[NSString alloc] initWithData:errorData encoding:NSUTF8StringEncoding];

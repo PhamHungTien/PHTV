@@ -20,6 +20,7 @@
 #import "Engine.h"
 #include "../Core/PHTVConstants.h"
 #import "../Application/AppDelegate.h"
+#import "../Application/AppDelegate+InputState.h"
 #import "PHTVManager.h"
 
 // Import new manager classes

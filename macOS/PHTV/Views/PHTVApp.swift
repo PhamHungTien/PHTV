@@ -24,8 +24,8 @@ struct PHTVApp: App {
         MemoryPressureMonitor.shared.start()
         URLCache.shared = URLCache(
             memoryCapacity: 8 * 1024 * 1024,
-            diskCapacity: 50 * 1024 * 1024,
-            diskPath: "PHTVURLCache"
+            diskCapacity: 0,
+            diskPath: nil
         )
 
         // Initialize SettingsNotificationObserver to listen for notifications

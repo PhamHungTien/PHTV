@@ -61,6 +61,9 @@ final class AppState: ObservableObject {
 
     private init() {
         SettingsBootstrap.registerDefaults()
+#if DEBUG
+        DebugSelfTests.runOnce()
+#endif
         isLoadingSettings = true
         loadSettings()
         isLoadingSettings = false

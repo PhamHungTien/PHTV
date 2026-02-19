@@ -21,6 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) NSInteger lastCodeTable;
 @property (nonatomic, assign) BOOL isUpdatingUI;
 @property (nonatomic, assign) CFAbsoluteTime lastDefaultsApplyTime;
+@property (nonatomic, assign) NSUInteger lastSettingsChangeToken;
 
 @property (nonatomic, strong, nullable) NSTimer *accessibilityMonitor;
 @property (nonatomic, assign) BOOL wasAccessibilityEnabled;
@@ -30,8 +31,24 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, nullable) NSTimer *healthCheckTimer;
 @property (nonatomic, assign) BOOL needsRelaunchAfterPermission;
 
+@property (nonatomic, assign) NSInteger savedLanguageBeforeExclusion;
+@property (nonatomic, copy, nullable) NSString *previousBundleIdentifier;
+@property (nonatomic, assign) BOOL isInExcludedApp;
+@property (nonatomic, assign) BOOL savedSendKeyStepByStepBeforeApp;
+@property (nonatomic, assign) BOOL isInSendKeyStepByStepApp;
+@property (nonatomic, assign) BOOL isUpdatingLanguage;
+@property (nonatomic, assign) BOOL isUpdatingInputType;
+@property (nonatomic, assign) BOOL isUpdatingCodeTable;
+
 - (void)onControlPanelSelected;
 - (void)fillDataWithAnimation:(BOOL)animated;
+- (void)handleHotkeyChanged:(NSNotification * _Nullable)notification;
+- (void)handleEmojiHotkeySettingsChanged:(NSNotification * _Nullable)notification;
+- (void)handleTCCDatabaseChanged:(NSNotification * _Nullable)notification;
+- (void)handleMenuBarIconSizeChanged:(NSNotification * _Nullable)notification;
+- (void)handleSettingsChanged:(NSNotification * _Nullable)notification;
+- (void)handleMacrosUpdated:(NSNotification * _Nullable)notification;
+- (void)handleUserDefaultsDidChange:(NSNotification * _Nullable)notification;
 @end
 
 NS_ASSUME_NONNULL_END
