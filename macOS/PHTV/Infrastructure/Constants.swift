@@ -295,6 +295,38 @@ enum Defaults {
     static let includeCrashLogs = true
 }
 
+// MARK: - UserDefaults Helpers
+
+extension UserDefaults {
+    /// Reads a Bool with explicit fallback when the key is missing.
+    func bool(forKey key: String, default defaultValue: Bool) -> Bool {
+        guard let value = object(forKey: key) else {
+            return defaultValue
+        }
+        if let boolValue = value as? Bool {
+            return boolValue
+        }
+        if let numberValue = value as? NSNumber {
+            return numberValue.boolValue
+        }
+        return defaultValue
+    }
+
+    /// Reads an Int with explicit fallback when the key is missing.
+    func integer(forKey key: String, default defaultValue: Int) -> Int {
+        guard let value = object(forKey: key) else {
+            return defaultValue
+        }
+        if let intValue = value as? Int {
+            return intValue
+        }
+        if let numberValue = value as? NSNumber {
+            return numberValue.intValue
+        }
+        return defaultValue
+    }
+}
+
 // MARK: - Timing Constants
 
 enum Timing {

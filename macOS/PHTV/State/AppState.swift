@@ -49,7 +49,7 @@ final class AppState: ObservableObject {
         if let env, !env.isEmpty {
             return env != "0"
         }
-        return UserDefaults.standard.integer(forKey: UserDefaultsKey.liveDebug) != 0
+        return UserDefaults.standard.integer(forKey: UserDefaultsKey.liveDebug, default: 0) != 0
     }
 
     private func liveLog(_ message: String) {
@@ -81,8 +81,8 @@ final class AppState: ObservableObject {
         let defaults = UserDefaults.standard
 
         // Load global isEnabled state
-        let inputMethod_saved = defaults.integer(forKey: UserDefaultsKey.inputMethod)
-        isEnabled = (inputMethod_saved == 1)
+        let inputMethodSaved = defaults.integer(forKey: UserDefaultsKey.inputMethod, default: 1)
+        isEnabled = (inputMethodSaved == 1)
 
         // Load all sub-states
         inputMethodState.isLoadingSettings = true
@@ -145,8 +145,8 @@ final class AppState: ObservableObject {
 
         // Reload global isEnabled state
         let defaults = UserDefaults.standard
-        let inputMethod_saved = defaults.integer(forKey: UserDefaultsKey.inputMethod)
-        let newIsEnabled = (inputMethod_saved == 1)
+        let inputMethodSaved = defaults.integer(forKey: UserDefaultsKey.inputMethod, default: 1)
+        let newIsEnabled = (inputMethodSaved == 1)
         if newIsEnabled != isEnabled {
             isEnabled = newIsEnabled
         }

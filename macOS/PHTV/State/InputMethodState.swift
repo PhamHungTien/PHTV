@@ -51,38 +51,69 @@ final class InputMethodState: ObservableObject {
         let defaults = UserDefaults.standard
 
         // Load input method and code table
-        let inputTypeIndex = defaults.integer(forKey: UserDefaultsKey.inputType)
+        let inputTypeIndex = defaults.integer(
+            forKey: UserDefaultsKey.inputType,
+            default: Defaults.inputMethod.toIndex()
+        )
         inputMethod = InputMethod.from(index: inputTypeIndex)
 
-        let codeTableIndex = defaults.integer(forKey: UserDefaultsKey.codeTable)
+        let codeTableIndex = defaults.integer(
+            forKey: UserDefaultsKey.codeTable,
+            default: Defaults.codeTable.toIndex()
+        )
         codeTable = CodeTable.from(index: codeTableIndex)
 
         // Load input settings
-        checkSpelling = defaults.object(forKey: UserDefaultsKey.spelling) as? Bool ?? Defaults.checkSpelling
-        useModernOrthography = defaults.bool(forKey: UserDefaultsKey.modernOrthography)
-        quickTelex = defaults.bool(forKey: UserDefaultsKey.quickTelex)
-        sendKeyStepByStep = defaults.bool(forKey: UserDefaultsKey.sendKeyStepByStep)
-        useSmartSwitchKey = defaults.bool(forKey: UserDefaultsKey.useSmartSwitchKey)
-        upperCaseFirstChar = defaults.bool(forKey: UserDefaultsKey.upperCaseFirstChar)
-        allowConsonantZFWJ = defaults.object(forKey: UserDefaultsKey.allowConsonantZFWJ) as? Bool ?? Defaults.allowConsonantZFWJ
-        quickStartConsonant = defaults.bool(forKey: UserDefaultsKey.quickStartConsonant)
-        quickEndConsonant = defaults.bool(forKey: UserDefaultsKey.quickEndConsonant)
-        rememberCode = defaults.bool(forKey: UserDefaultsKey.rememberCode)
+        checkSpelling = defaults.bool(forKey: UserDefaultsKey.spelling, default: Defaults.checkSpelling)
+        useModernOrthography = defaults.bool(
+            forKey: UserDefaultsKey.modernOrthography,
+            default: Defaults.useModernOrthography
+        )
+        quickTelex = defaults.bool(forKey: UserDefaultsKey.quickTelex, default: Defaults.quickTelex)
+        sendKeyStepByStep = defaults.bool(
+            forKey: UserDefaultsKey.sendKeyStepByStep,
+            default: Defaults.sendKeyStepByStep
+        )
+        useSmartSwitchKey = defaults.bool(
+            forKey: UserDefaultsKey.useSmartSwitchKey,
+            default: Defaults.useSmartSwitchKey
+        )
+        upperCaseFirstChar = defaults.bool(
+            forKey: UserDefaultsKey.upperCaseFirstChar,
+            default: Defaults.upperCaseFirstChar
+        )
+        allowConsonantZFWJ = defaults.bool(
+            forKey: UserDefaultsKey.allowConsonantZFWJ,
+            default: Defaults.allowConsonantZFWJ
+        )
+        quickStartConsonant = defaults.bool(
+            forKey: UserDefaultsKey.quickStartConsonant,
+            default: Defaults.quickStartConsonant
+        )
+        quickEndConsonant = defaults.bool(
+            forKey: UserDefaultsKey.quickEndConsonant,
+            default: Defaults.quickEndConsonant
+        )
+        rememberCode = defaults.bool(forKey: UserDefaultsKey.rememberCode, default: Defaults.rememberCode)
 
         // Auto restore English words
-        autoRestoreEnglishWord = defaults.bool(forKey: UserDefaultsKey.autoRestoreEnglishWord)
+        autoRestoreEnglishWord = defaults.bool(
+            forKey: UserDefaultsKey.autoRestoreEnglishWord,
+            default: Defaults.autoRestoreEnglishWord
+        )
 
         // Restore to raw keys (customizable key)
-        restoreOnEscape = defaults.object(forKey: UserDefaultsKey.restoreOnEscape) as? Bool ?? Defaults.restoreOnEscape
-        let restoreKeyCode = defaults.integer(forKey: UserDefaultsKey.customEscapeKey)
+        restoreOnEscape = defaults.bool(forKey: UserDefaultsKey.restoreOnEscape, default: Defaults.restoreOnEscape)
+        let restoreKeyCode = defaults.integer(
+            forKey: UserDefaultsKey.customEscapeKey,
+            default: Int(Defaults.restoreKeyCode)
+        )
         restoreKey = RestoreKey.from(keyCode: restoreKeyCode == 0 ? Int(Defaults.restoreKeyCode) : restoreKeyCode)
 
         // Pause Vietnamese input when holding a key
-        pauseKeyEnabled = defaults.object(forKey: UserDefaultsKey.pauseKeyEnabled) as? Bool ?? Defaults.pauseKeyEnabled
-        pauseKey = UInt16(defaults.integer(forKey: UserDefaultsKey.pauseKey))
-        if pauseKey == 0 {
-            pauseKey = Defaults.pauseKeyCode
-        }
+        pauseKeyEnabled = defaults.bool(forKey: UserDefaultsKey.pauseKeyEnabled, default: Defaults.pauseKeyEnabled)
+        let savedPauseKey = defaults.integer(forKey: UserDefaultsKey.pauseKey, default: Int(Defaults.pauseKeyCode))
+        pauseKey = UInt16(savedPauseKey == 0 ? Int(Defaults.pauseKeyCode) : savedPauseKey)
         pauseKeyName = defaults.string(forKey: UserDefaultsKey.pauseKeyName) ?? Defaults.pauseKeyName
     }
 
@@ -123,10 +154,16 @@ final class InputMethodState: ObservableObject {
     func reloadFromDefaults() {
         let defaults = UserDefaults.standard
 
-        let inputTypeIndex = defaults.integer(forKey: UserDefaultsKey.inputType)
+        let inputTypeIndex = defaults.integer(
+            forKey: UserDefaultsKey.inputType,
+            default: Defaults.inputMethod.toIndex()
+        )
         let newInputMethod = InputMethod.from(index: inputTypeIndex)
 
-        let codeTableIndex = defaults.integer(forKey: UserDefaultsKey.codeTable)
+        let codeTableIndex = defaults.integer(
+            forKey: UserDefaultsKey.codeTable,
+            default: Defaults.codeTable.toIndex()
+        )
         let newCodeTable = CodeTable.from(index: codeTableIndex)
 
         // Update only if values changed to avoid unnecessary refreshes

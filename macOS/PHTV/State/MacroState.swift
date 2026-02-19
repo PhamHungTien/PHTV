@@ -47,9 +47,12 @@ final class MacroState: ObservableObject {
         let defaults = UserDefaults.standard
 
         // Load macro settings
-        useMacro = defaults.bool(forKey: UserDefaultsKey.useMacro)
-        useMacroInEnglishMode = defaults.bool(forKey: UserDefaultsKey.useMacroInEnglishMode)
-        autoCapsMacro = defaults.bool(forKey: UserDefaultsKey.autoCapsMacro)
+        useMacro = defaults.bool(forKey: UserDefaultsKey.useMacro, default: Defaults.useMacro)
+        useMacroInEnglishMode = defaults.bool(
+            forKey: UserDefaultsKey.useMacroInEnglishMode,
+            default: Defaults.useMacroInEnglishMode
+        )
+        autoCapsMacro = defaults.bool(forKey: UserDefaultsKey.autoCapsMacro, default: Defaults.autoCapsMacro)
 
         // Load macro categories (filter out default category if present)
         if let categoriesData = defaults.data(forKey: UserDefaultsKey.macroCategories) {
@@ -63,18 +66,23 @@ final class MacroState: ObservableObject {
             }
         }
 
-        // Load emoji hotkey settings (default true for first-time users)
-        if defaults.object(forKey: UserDefaultsKey.enableEmojiHotkey) != nil {
-            enableEmojiHotkey = defaults.bool(forKey: UserDefaultsKey.enableEmojiHotkey)
-        } else {
-            enableEmojiHotkey = true  // Default enabled for new users
-        }
-        emojiHotkeyModifiersRaw = defaults.integer(forKey: UserDefaultsKey.emojiHotkeyModifiers)
+        // Load emoji hotkey settings
+        enableEmojiHotkey = defaults.bool(
+            forKey: UserDefaultsKey.enableEmojiHotkey,
+            default: Defaults.enableEmojiHotkey
+        )
+        emojiHotkeyModifiersRaw = defaults.integer(
+            forKey: UserDefaultsKey.emojiHotkeyModifiers,
+            default: Int(Defaults.emojiHotkeyModifiers)
+        )
         if emojiHotkeyModifiersRaw == 0 {
-            emojiHotkeyModifiersRaw = Int(NSEvent.ModifierFlags.command.rawValue)  // Default: Command
+            emojiHotkeyModifiersRaw = Int(Defaults.emojiHotkeyModifiers)
         }
-        let savedKeyCode = defaults.integer(forKey: UserDefaultsKey.emojiHotkeyKeyCode)
-        emojiHotkeyKeyCode = savedKeyCode > 0 ? UInt16(savedKeyCode) : KeyCode.eKey  // Default: E key
+        let savedKeyCode = defaults.integer(
+            forKey: UserDefaultsKey.emojiHotkeyKeyCode,
+            default: Int(Defaults.emojiHotkeyKeyCode)
+        )
+        emojiHotkeyKeyCode = savedKeyCode > 0 ? UInt16(savedKeyCode) : Defaults.emojiHotkeyKeyCode
     }
 
     func saveSettings() {

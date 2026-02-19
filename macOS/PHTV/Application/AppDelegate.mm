@@ -136,7 +136,7 @@ volatile int vQuickTelex = 0;
 volatile int vSwitchKeyStatus = PHTV_DEFAULT_SWITCH_HOTKEY_STATUS;
 volatile int vFixRecommendBrowser = 1;
 volatile int vUseMacro = 1;
-volatile int vUseMacroInEnglishMode = 1;
+volatile int vUseMacroInEnglishMode = 0;
 volatile int vAutoCapsMacro = 0;
 volatile int vSendKeyStepByStep = 0;
 volatile int vUseSmartSwitchKey = 1;
@@ -159,7 +159,7 @@ volatile int vPauseKeyEnabled = 0; //enable pause key feature (default: OFF)
 volatile int vPauseKey = KEY_LEFT_OPTION; //pause key code (default: Left Option)
 
 // Auto restore English word feature
-volatile int vAutoRestoreEnglishWord = 0; //auto restore English words (default: OFF)
+volatile int vAutoRestoreEnglishWord = 1; //auto restore English words (default: ON)
 
 // Emoji picker hotkey (handled in event tap callback, OpenKey style)
 volatile int vEnableEmojiHotkey = 1;
