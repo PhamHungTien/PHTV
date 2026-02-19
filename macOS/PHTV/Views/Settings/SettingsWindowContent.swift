@@ -63,7 +63,11 @@ struct SettingsWindowContent: View {
 
             // Also post notification for AppDelegate to track state
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                NotificationCenter.default.post(name: NotificationName.phtvShowDockIcon, object: nil, userInfo: ["visible": true])
+                NotificationCenter.default.post(
+                    name: NotificationName.phtvShowDockIcon,
+                    object: nil,
+                    userInfo: [NotificationUserInfoKey.visible: true]
+                )
             }
 
             // Update window level based on user preference
@@ -98,7 +102,11 @@ struct SettingsWindowContent: View {
             URLCache.shared.removeAllCachedResponses()
 
             // Post notification for AppDelegate to restore state
-            NotificationCenter.default.post(name: NotificationName.phtvShowDockIcon, object: nil, userInfo: ["visible": userPrefersDock])
+            NotificationCenter.default.post(
+                name: NotificationName.phtvShowDockIcon,
+                object: nil,
+                userInfo: [NotificationUserInfoKey.visible: userPrefersDock]
+            )
 
             // Also set activation policy directly
             DispatchQueue.main.async {

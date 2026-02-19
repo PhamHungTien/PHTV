@@ -141,6 +141,20 @@ enum NotificationName {
     static let sparkleInstallUpdate = NSNotification.Name("SparkleInstallUpdate")
 }
 
+// MARK: - Notification UserInfo Keys
+
+enum NotificationUserInfoKey {
+    static let visible = "visible"
+    static let enabled = "enabled"
+    static let macroId = "macroId"
+    static let action = "action"
+}
+
+enum MacroUpdateAction {
+    static let added = "added"
+    static let edited = "edited"
+}
+
 // MARK: - Key Codes
 
 enum KeyCode {

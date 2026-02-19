@@ -331,15 +331,15 @@ struct MacroSettingsView: View {
 
             // Check if notification contains info about added/edited macro
             if let userInfo = notification.userInfo,
-               let macroId = userInfo["macroId"] as? UUID,
-               let action = userInfo["action"] as? String {
+               let macroId = userInfo[NotificationUserInfoKey.macroId] as? UUID,
+               let action = userInfo[NotificationUserInfoKey.action] as? String {
 
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
                     loadMacros()
 
-                    if action == "added" {
+                    if action == MacroUpdateAction.added {
                         recentlyAddedId = macroId
-                    } else if action == "edited" {
+                    } else if action == MacroUpdateAction.edited {
                         recentlyEditedId = macroId
                     }
                 }

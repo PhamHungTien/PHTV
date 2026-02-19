@@ -284,7 +284,7 @@ struct MacroEditorView: View {
             macros[index].categoryId = selectedCategoryId
             macros[index].snippetType = snippetType
             savedMacroId = editingMacro.id
-            action = "edited"
+            action = MacroUpdateAction.edited
             PHTVLogger.shared.macro("[MacroEditor] Updated to: \(trimmedName) -> \(trimmedCode), category: \(selectedCategoryId?.uuidString ?? "nil"), type: \(snippetType.rawValue)")
         } else {
             // ADD MODE: Check if macro already exists
@@ -302,7 +302,7 @@ struct MacroEditorView: View {
                 snippetType: snippetType)
             macros.append(newMacro)
             savedMacroId = newMacro.id
-            action = "added"
+            action = MacroUpdateAction.added
             PHTVLogger.shared.macro("[MacroEditor] Added new macro: \(newMacro.shortcut) -> \(newMacro.expansion), category: \(selectedCategoryId?.uuidString ?? "nil"), type: \(snippetType.rawValue)")
 
             // Auto-enable macro feature when creating first macro

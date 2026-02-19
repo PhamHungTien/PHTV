@@ -167,7 +167,10 @@ enum MacroStorage {
             NotificationCenter.default.post(
                 name: NotificationName.macrosUpdated,
                 object: nil,
-                userInfo: ["macroId": macroId, "action": action]
+                userInfo: [
+                    NotificationUserInfoKey.macroId: macroId,
+                    NotificationUserInfoKey.action: action
+                ]
             )
             return
         }

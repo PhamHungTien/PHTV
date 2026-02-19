@@ -355,7 +355,7 @@ final class SystemState: ObservableObject {
         ) { [weak self] notification in
             guard let self = self else { return }
             if let userInfo = notification.userInfo,
-               let enabled = userInfo["enabled"] as? Bool {
+               let enabled = userInfo[NotificationUserInfoKey.enabled] as? Bool {
                 Task { @MainActor in
                     self.isUpdatingRunOnStartup = true
                     self.runOnStartup = enabled
