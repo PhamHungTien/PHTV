@@ -862,8 +862,11 @@ struct AccessibilityStepView: View {
                     )
 
                     Button("Mở Cài đặt Quyền riêng tư") {
-                        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
-                        NSWorkspace.shared.open(url)
+                        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                            NSWorkspace.shared.open(url)
+                        } else {
+                            PHTVLogger.shared.error("[Onboarding] Invalid accessibility settings URL")
+                        }
                     }
                     .buttonStyle(OnboardingPrimaryButtonStyle())
                 }
