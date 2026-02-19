@@ -12,11 +12,11 @@ on:
         type: string
 
 concurrency:
-  group: release-${{ github.workflow }}-${{ github.ref }}
+  group: release-${{ github.repository }}-${{ github.workflow }}
   cancel-in-progress: false
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   SPARKLE_VERSION: "2.8.1"
@@ -25,6 +25,8 @@ jobs:
   build:
     name: Build PHTV
     runs-on: macos-26
+    permissions:
+      contents: read
     outputs:
       version: ${{ steps.version.outputs.version }}
       build_number: ${{ steps.set_versions.outputs.build_number }}
@@ -52,6 +54,12 @@ jobs:
             VERSION="${{ github.event.inputs.version }}"
           else
             VERSION="${GITHUB_REF_NAME#v}"
+          fi
+
+          if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "❌ Invalid version format: $VERSION"
+            echo "Expected SemVer, e.g. 1.4.0 or 1.4.0-beta.1"
+            exit 1
           fi
 
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
@@ -300,6 +308,8 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     needs: build
+    permissions:
+      contents: write
 
     steps:
       - name: Download DMG
@@ -336,6 +346,8 @@ jobs:
     name: Publish Appcast
     runs-on: ubuntu-latest
     needs: [build, release]
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout main
@@ -351,6 +363,10 @@ jobs:
 
       - name: Commit and push appcast.xml
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git pull --rebase origin main
           cp /tmp/phtv-appcast/appcast.xml docs/appcast.xml
 
           if git diff --quiet -- docs/appcast.xml; then
@@ -358,16 +374,25 @@ jobs:
             exit 0
           fi
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs/appcast.xml
           git commit -m "chore: update appcast for v${{ needs.build.outputs.version }} [skip ci]"
-          git push origin main
+          for attempt in 1 2 3; do
+            if git push origin main; then
+              echo "✅ Appcast pushed"
+              exit 0
+            fi
+            echo "⚠️ Push failed, retrying with rebase ($attempt/3)..."
+            git pull --rebase origin main
+          done
+          echo "❌ Failed to push appcast after retries"
+          exit 1
 
   update-homebrew:
     name: Update Homebrew Tap
     runs-on: ubuntu-latest
     needs: [build, release, publish-appcast]
+    permissions:
+      contents: read
 
     steps:
       - name: Sync to homebrew-tap
@@ -375,6 +400,7 @@ jobs:
           TAP_REPO_TOKEN: ${{ secrets.TAP_REPO_TOKEN }}
           VERSION: ${{ needs.build.outputs.version }}
           DMG_NAME: ${{ needs.build.outputs.dmg_name }}
+          DMG_SIZE: ${{ needs.build.outputs.dmg_size }}
           REPO: ${{ github.repository }}
         run: |
           if [ -z "$TAP_REPO_TOKEN" ]; then
@@ -383,7 +409,18 @@ jobs:
           fi
 
           # Download DMG and calculate SHA256
-          curl -sL "https://github.com/$REPO/releases/download/v$VERSION/$DMG_NAME" -o "$DMG_NAME"
+          curl -fSL --retry 5 --retry-all-errors --retry-delay 2 \
+            "https://github.com/$REPO/releases/download/v$VERSION/$DMG_NAME" \
+            -o "$DMG_NAME"
+          if [ ! -s "$DMG_NAME" ]; then
+            echo "❌ Downloaded DMG is missing or empty"
+            exit 1
+          fi
+          ACTUAL_SIZE=$(stat -c%s "$DMG_NAME")
+          if [ "$ACTUAL_SIZE" != "$DMG_SIZE" ]; then
+            echo "❌ Downloaded file size mismatch: expected $DMG_SIZE, got $ACTUAL_SIZE"
+            exit 1
+          fi
           SHA256=$(sha256sum "$DMG_NAME" | cut -d' ' -f1)
           echo "✅ SHA256: $SHA256"
 
@@ -411,6 +448,8 @@ jobs:
     name: Update Info.plist
     runs-on: ubuntu-latest
     needs: [build, release, publish-appcast, update-homebrew]
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout
@@ -455,7 +494,15 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes to Info.plist"
           else
-            git commit -m "chore: bump version to $VERSION ($BUILD_NUMBER)"
-            git push
-            echo "✅ Info.plist committed"
+            git commit -m "chore: bump version to $VERSION ($BUILD_NUMBER) [skip ci]"
+            for attempt in 1 2 3; do
+              if git push; then
+                echo "✅ Info.plist committed"
+                exit 0
+              fi
+              echo "⚠️ Push failed, retrying with rebase ($attempt/3)..."
+              git pull --rebase origin main
+            done
+            echo "❌ Failed to push Info.plist after retries"
+            exit 1
           fi
