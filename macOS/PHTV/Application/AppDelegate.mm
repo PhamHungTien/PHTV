@@ -25,7 +25,6 @@
 #import "AppDelegate+Sparkle.h"
 #import "AppDelegate+StatusBarMenu.h"
 #import "AppDelegate+UIActions.h"
-#import "SparkleManager.h"
 #import "../SystemBridge/PHTVManager.h"
 #import "PHTV-Swift.h"
 #include "../Core/Engine/Engine.h"
