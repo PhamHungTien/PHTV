@@ -21,7 +21,6 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
         _ = notification
         NSLog("🔴🔴🔴 [AppDelegate] applicationDidFinishLaunching STARTED 🔴🔴🔴")
 
-        updateQueue = DispatchQueue(label: "com.phtv.updateQueue")
         lastInputMethod = -1
         lastCodeTable = -1
         isUpdatingUI = false

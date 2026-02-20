@@ -33,7 +33,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, nullable) NSMenuItem *mnuUpperCaseFirstChar;
 @property (nonatomic, strong, nullable) NSMenuItem *mnuAutoRestoreEnglishWord;
 @property (nonatomic, assign) CGFloat statusBarFontSize;
-@property (nonatomic, strong) dispatch_queue_t updateQueue;
 @property (nonatomic, assign) NSInteger lastInputMethod;
 @property (nonatomic, assign) NSInteger lastCodeTable;
 @property (nonatomic, assign) BOOL isUpdatingUI;

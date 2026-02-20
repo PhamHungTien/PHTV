@@ -59,6 +59,11 @@ import Foundation
         return token
     }
 
+    @objc(phtv_currentSettingsTokenFromUserDefaults)
+    class func phtv_currentSettingsTokenFromUserDefaults() -> UInt {
+        return phtv_computeSettingsToken(defaults: .standard)
+    }
+
     @objc(phtv_loadEmojiHotkeySettingsFromDefaults)
     class func phtv_loadEmojiHotkeySettingsFromDefaults() {
         let defaults = UserDefaults.standard

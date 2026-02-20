@@ -139,6 +139,11 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
         _ = notification
         phtvSettingsBridgeLiveLog("received PHTVSettingsChanged")
 
+        let currentToken = PHTVManager.phtv_currentSettingsTokenFromUserDefaults()
+        if currentToken == lastSettingsChangeToken {
+            return
+        }
+
         let old = PHTVManager.runtimeSettingsSnapshot() ?? [:]
         let settingsToken = PHTVManager.loadRuntimeSettingsFromUserDefaults()
         let new = PHTVManager.runtimeSettingsSnapshot() ?? [:]
