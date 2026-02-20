@@ -2448,23 +2448,23 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
                 if (_keycode == KEY_SPACE &&
                     (pData->backspaceCount > 0 || pData->newCharCount > 0)) {
-                    unsigned long long matchedElapsedMs = 0;
-                    PHTVTextReplacementDecision decision =
-                        (PHTVTextReplacementDecision)[PHTVSpotlightDetectionService detectTextReplacementForCode:pData->code
-                                                                                                         extCode:pData->extCode
-                                                                                                  backspaceCount:(int)pData->backspaceCount
-                                                                                                    newCharCount:(int)pData->newCharCount
-                                                                                             externalDeleteCount:externalDeleteCount
-                                                                         restoreAndStartNewSessionCode:vRestoreAndStartNewSession
-                                                                                         willProcessCode:vWillProcess
-                                                                                             restoreCode:vRestore
-                                                                                            deleteWindowMs:TEXT_REPLACEMENT_DELETE_WINDOW_MS
-                                                                                         matchedElapsedMs:&matchedElapsedMs];
+                    PHTVTextReplacementDecisionBox *textReplacementDecisionBox =
+                        [PHTVTextReplacementDecisionService evaluateForSpaceKey:YES
+                                                                          code:pData->code
+                                                                       extCode:pData->extCode
+                                                                backspaceCount:(int32_t)pData->backspaceCount
+                                                                  newCharCount:(int32_t)pData->newCharCount
+                                                           externalDeleteCount:(int32_t)externalDeleteCount
+                                                       restoreAndStartNewSessionCode:vRestoreAndStartNewSession
+                                                                       willProcessCode:vWillProcess
+                                                                           restoreCode:vRestore
+                                                                          deleteWindowMs:TEXT_REPLACEMENT_DELETE_WINDOW_MS];
+                    PHTVTextReplacementDecision decision = (PHTVTextReplacementDecision)textReplacementDecisionBox.decision;
 
                     if (decision == PHTVTextReplacementDecisionExternalDelete) {
 #ifdef DEBUG
                         NSLog(@"[TextReplacement] Text replacement detected - passing through event (code=%d, backspace=%d, newChar=%d, deleteCount=%d, elapsedMs=%llu)",
-                              pData->code, (int)pData->backspaceCount, (int)pData->newCharCount, externalDeleteCount, matchedElapsedMs);
+                              pData->code, (int)pData->backspaceCount, (int)pData->newCharCount, externalDeleteCount, textReplacementDecisionBox.matchedElapsedMs);
 #endif
                         // CRITICAL: Return event to let macOS insert Space
                         return event;
@@ -2483,7 +2483,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                         return event;
                     }
 
-                    if (decision == PHTVTextReplacementDecisionFallbackNoMatch) {
+                    if (textReplacementDecisionBox.isFallbackNoMatch) {
                         // Detection FAILED - will process normally (potential bug!)
 #ifdef DEBUG
                         NSLog(@"[PHTV TextReplacement] ❌ NOT DETECTED - Will process normally (code=%d, backspace=%d, newChar=%d) - MAY CAUSE DUPLICATE!",
