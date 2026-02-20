@@ -81,6 +81,16 @@ final class PHTVAppContextService: NSObject {
         PHTVCacheStateService.bundleIdFromPID(pid, safeMode: safeMode)
     }
 
+    @objc(shouldDisableVietnameseForBundleId:)
+    class func shouldDisableVietnamese(forBundleId bundleId: String?) -> Bool {
+        PHTVAppDetectionService.shouldDisableVietnamese(bundleId)
+    }
+
+    @objc(needsNiceSpaceForBundleId:)
+    class func needsNiceSpace(forBundleId bundleId: String?) -> Bool {
+        PHTVAppDetectionService.needsNiceSpace(bundleId)
+    }
+
     @objc(focusedBundleIdForSafeMode:cacheDurationMs:)
     class func focusedBundleId(forSafeMode safeMode: Bool, cacheDurationMs: UInt64) -> String? {
         guard !safeMode else {

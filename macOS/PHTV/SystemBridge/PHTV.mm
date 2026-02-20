@@ -649,7 +649,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         NSString *bundleId = getFocusedAppBundleId();
         pid_t cachePid = targetPID;
 
-        BOOL shouldDisable = [PHTVAppDetectionService shouldDisableVietnamese:bundleId];
+        BOOL shouldDisable = [PHTVAppContextService shouldDisableVietnameseForBundleId:bundleId];
 
         // Update cache only when we have a valid PID, to avoid cross-app leakage
         lastResult = shouldDisable;
@@ -1028,7 +1028,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             InsertKeyLength(1);
 
         _newChar = 0x202F; //empty char
-        if ([PHTVAppDetectionService needsNiceSpace:FRONT_APP]) {
+        if ([PHTVAppContextService needsNiceSpaceForBundleId:FRONT_APP]) {
             _newChar = 0x200C; //Unicode character with empty space
         }
 
