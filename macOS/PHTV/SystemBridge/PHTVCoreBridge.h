@@ -35,6 +35,13 @@ void PHTVSetConvertToolOptions(BOOL dontAlertWhenCompleted,
 int PHTVDefaultConvertToolHotKey(void);
 void PHTVResetConvertToolOptions(void);
 void PHTVNormalizeConvertToolOptions(void);
+NSData * _Nonnull PHTVSmartSwitchSerializedData(void);
+int PHTVSmartSwitchNotFound(void);
+int PHTVSmartSwitchEncodeState(int inputMethod, int codeTable);
+int PHTVSmartSwitchDecodeInputMethod(int state);
+int PHTVSmartSwitchDecodeCodeTable(int state);
+int PHTVSmartSwitchGetAppState(NSString * _Nonnull bundleId, int defaultInputState);
+void PHTVSmartSwitchSetAppState(NSString * _Nonnull bundleId, int inputState);
 BOOL PHTVGetSafeMode(void);
 void PHTVSetSafeMode(BOOL enabled);
 BOOL PHTVRunAccessibilitySmokeTest(void);

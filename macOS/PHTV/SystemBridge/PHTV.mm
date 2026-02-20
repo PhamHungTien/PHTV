@@ -735,9 +735,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     // For emoji hotkey modifier-only mode - prevent prefix matching
     bool _keyPressedWhileEmojiModifiersHeld = false;
 
-    int _languageTemp = 0; //use for smart switch key
-    std::vector<Byte> savedSmartSwitchKeyData; ////use for smart switch key
-    
     NSString* _frontMostApp = @"UnknownApp";
     
     void PHTVInit() {
@@ -877,12 +874,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         return [PHTVAppDetectionService isSpotlightLikeApp:bundleId];
     }
     
-    void saveSmartSwitchKeyData() {
-        getSmartSwitchKeySaveData(savedSmartSwitchKeyData);
-        NSData* _data = [NSData dataWithBytes:savedSmartSwitchKeyData.data() length:savedSmartSwitchKeyData.size()];
-        [PHTVSmartSwitchPersistenceService saveSmartSwitchData:_data];
-    }
-    
     void OnActiveAppChanged() { //use for smart switch key; improved on Sep 28th, 2019
         if (!vUseSmartSwitchKey && !vRememberCode) {
             return;  // Skip if features disabled - performance optimization
@@ -900,22 +891,23 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         // This prevents the settings window (which is often excluded/English) from polluting the global language state
         // or overwriting the saved state of the previous app.
         if ([_frontMostApp isEqualToString:PHTV_BUNDLE]) {
-            _languageTemp = SMART_SWITCH_NOT_FOUND; // Reset temp value to avoid using state from previous app switch
             return;
         }
 
-        _languageTemp = getAppInputMethodStatus(std::string(_frontMostApp.UTF8String),
-                                               encodeSmartSwitchInputState(vLanguage, vCodeTable));
+        int languageTemp = (int)[PHTVSmartSwitchRuntimeService appStateForBundleId:_frontMostApp
+                                                                     defaultLanguage:vLanguage
+                                                                    defaultCodeTable:vCodeTable];
 
-        if (_languageTemp == SMART_SWITCH_NOT_FOUND) {
-            saveSmartSwitchKeyData();
+        if ([PHTVSmartSwitchRuntimeService isNotFoundState:languageTemp]) {
+            [PHTVSmartSwitchRuntimeService persistSnapshot];
             return;
         }
 
-        if (decodeSmartSwitchInputMethod(_languageTemp) != vLanguage) { //for input method
+        int targetLanguage = (int)[PHTVSmartSwitchRuntimeService decodedLanguageFromState:languageTemp];
+        if (targetLanguage != vLanguage) { //for input method
             // PERFORMANCE: Update state directly without triggering callbacks
             // onImputMethodChanged would cause cascading updates
-            vLanguage = decodeSmartSwitchInputMethod(_languageTemp);
+            vLanguage = targetLanguage;
             [PHTVSmartSwitchPersistenceService saveInputMethod:vLanguage];
             RequestNewSession();  // Direct call, no cascading
             [appDelegate fillData];  // Update UI only
@@ -924,9 +916,10 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             [[NSNotificationCenter defaultCenter] postNotificationName:@"LanguageChangedFromSmartSwitch"
                                                                 object:@(vLanguage)];
         }
-        if (vRememberCode && decodeSmartSwitchCodeTable(_languageTemp) != vCodeTable) { //for remember table code feature
+        int targetCodeTable = (int)[PHTVSmartSwitchRuntimeService decodedCodeTableFromState:languageTemp];
+        if (vRememberCode && targetCodeTable != vCodeTable) { //for remember table code feature
             // PERFORMANCE: Update state directly
-            vCodeTable = decodeSmartSwitchCodeTable(_languageTemp);
+            vCodeTable = targetCodeTable;
             [PHTVSmartSwitchPersistenceService saveCodeTable:vCodeTable];
             RequestNewSession();
             [appDelegate fillData];
@@ -953,9 +946,10 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             return;
         }
 
-        setAppInputMethodStatus(std::string(_frontMostApp.UTF8String),
-                                encodeSmartSwitchInputState(vLanguage, vCodeTable));
-        saveSmartSwitchKeyData();
+        [PHTVSmartSwitchRuntimeService updateAppStateForBundleId:_frontMostApp
+                                                        language:vLanguage
+                                                       codeTable:vCodeTable];
+        [PHTVSmartSwitchRuntimeService persistSnapshot];
     }
     
     void OnInputMethodChanged() {
@@ -976,9 +970,10 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             return;
         }
 
-        setAppInputMethodStatus(std::string(_frontMostApp.UTF8String),
-                                encodeSmartSwitchInputState(vLanguage, vCodeTable));
-        saveSmartSwitchKeyData();
+        [PHTVSmartSwitchRuntimeService updateAppStateForBundleId:_frontMostApp
+                                                        language:vLanguage
+                                                       codeTable:vCodeTable];
+        [PHTVSmartSwitchRuntimeService persistSnapshot];
     }
     
     void OnSpellCheckingChanged() {
