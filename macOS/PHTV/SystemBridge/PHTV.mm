@@ -202,20 +202,6 @@ NSString* getBundleIdFromPID(pid_t pid) {
 #define MAX_UNICODE_STRING  20
 #define LOAD_DATA(VAR, KEY) VAR = (int)[[NSUserDefaults standardUserDefaults] integerForKey:@#KEY]
 
-static NSString * const kConvertToolDontAlertWhenCompletedKey = @"convertToolDontAlertWhenCompleted";
-static NSString * const kConvertToolToAllCapsKey = @"convertToolToAllCaps";
-static NSString * const kConvertToolToAllNonCapsKey = @"convertToolToAllNonCaps";
-static NSString * const kConvertToolToCapsFirstLetterKey = @"convertToolToCapsFirstLetter";
-static NSString * const kConvertToolToCapsEachWordKey = @"convertToolToCapsEachWord";
-static NSString * const kConvertToolRemoveMarkKey = @"convertToolRemoveMark";
-static NSString * const kConvertToolFromCodeKey = @"convertToolFromCode";
-static NSString * const kConvertToolToCodeKey = @"convertToolToCode";
-static NSString * const kConvertToolHotKeyKey = @"convertToolHotKey";
-
-static inline Uint8 ClampConvertCodeTable(NSInteger value) {
-    return static_cast<Uint8>(phtv_clamp_code_table(static_cast<int>(value)));
-}
-
 extern AppDelegate* appDelegate;
 extern volatile int vSendKeyStepByStep;
 extern volatile int vPerformLayoutCompat;
@@ -969,21 +955,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         data = [prefs objectForKey:@"smartSwitchKey"];
         initSmartSwitchKey((Byte*)data.bytes, (int)data.length);
         
-        //init convert tool
-        resetConvertToolOptions();
-        gConvertToolOptions.dontAlertWhenCompleted = ![prefs boolForKey:kConvertToolDontAlertWhenCompletedKey];
-        gConvertToolOptions.toAllCaps = [prefs boolForKey:kConvertToolToAllCapsKey];
-        gConvertToolOptions.toAllNonCaps = [prefs boolForKey:kConvertToolToAllNonCapsKey];
-        gConvertToolOptions.toCapsFirstLetter = [prefs boolForKey:kConvertToolToCapsFirstLetterKey];
-        gConvertToolOptions.toCapsEachWord = [prefs boolForKey:kConvertToolToCapsEachWordKey];
-        gConvertToolOptions.removeMark = [prefs boolForKey:kConvertToolRemoveMarkKey];
-        gConvertToolOptions.fromCode = ClampConvertCodeTable([prefs integerForKey:kConvertToolFromCodeKey]);
-        gConvertToolOptions.toCode = ClampConvertCodeTable([prefs integerForKey:kConvertToolToCodeKey]);
-        normalizeConvertToolOptions();
-        gConvertToolOptions.hotKey = (int)[prefs integerForKey:kConvertToolHotKeyKey];
-        if (gConvertToolOptions.hotKey == 0) {
-            gConvertToolOptions.hotKey = defaultConvertToolOptions().hotKey;
-        }
+        [PHTVConvertToolSettingsService loadFromUserDefaults];
     }
     
     static void RequestNewSessionInternal(bool allowUppercasePrime) {
