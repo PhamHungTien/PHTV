@@ -880,8 +880,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     void saveSmartSwitchKeyData() {
         getSmartSwitchKeySaveData(savedSmartSwitchKeyData);
         NSData* _data = [NSData dataWithBytes:savedSmartSwitchKeyData.data() length:savedSmartSwitchKeyData.size()];
-        NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
-        [prefs setObject:_data forKey:@"smartSwitchKey"];
+        [PHTVSmartSwitchPersistenceService saveSmartSwitchData:_data];
     }
     
     void OnActiveAppChanged() { //use for smart switch key; improved on Sep 28th, 2019
@@ -917,7 +916,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             // PERFORMANCE: Update state directly without triggering callbacks
             // onImputMethodChanged would cause cascading updates
             vLanguage = decodeSmartSwitchInputMethod(_languageTemp);
-            [[NSUserDefaults standardUserDefaults] setInteger:vLanguage forKey:@"InputMethod"];
+            [PHTVSmartSwitchPersistenceService saveInputMethod:vLanguage];
             RequestNewSession();  // Direct call, no cascading
             [appDelegate fillData];  // Update UI only
 
@@ -928,7 +927,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         if (vRememberCode && decodeSmartSwitchCodeTable(_languageTemp) != vCodeTable) { //for remember table code feature
             // PERFORMANCE: Update state directly
             vCodeTable = decodeSmartSwitchCodeTable(_languageTemp);
-            [[NSUserDefaults standardUserDefaults] setInteger:vCodeTable forKey:@"CodeTable"];
+            [PHTVSmartSwitchPersistenceService saveCodeTable:vCodeTable];
             RequestNewSession();
             [appDelegate fillData];
         }
