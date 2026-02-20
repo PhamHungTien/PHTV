@@ -20,6 +20,7 @@
 #include "../Core/PHTVConstants.h"
 #import "../Application/AppDelegate.h"
 #import "../Application/AppDelegate+InputState.h"
+#import "../Application/AppDelegate+StatusBarMenu.h"
 #import "../Application/AppDelegate+UIActions.h"
 #import "PHTVManager.h"
 #import "PHTV-Swift.h"

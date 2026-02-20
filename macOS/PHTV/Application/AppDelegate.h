@@ -14,13 +14,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface AppDelegate : NSObject <NSApplicationDelegate, NSMenuDelegate>
 
--(void)fillData;  // Update UI status bar and menu items
-
 -(void)loadDefaultConfig;
 
 -(void)setGrayIcon:(BOOL)val;
-
--(void)setQuickConvertString;
 
 - (void)setupSwiftUIBridge;
 - (void)loadExistingMacros;

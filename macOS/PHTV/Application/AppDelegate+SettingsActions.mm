@@ -6,6 +6,7 @@
 //
 
 #import "AppDelegate+SettingsActions.h"
+#import "AppDelegate+StatusBarMenu.h"
 #include "../Core/Engine/Engine.h"
 
 static NSString *const PHTVDefaultsKeySpelling = @"Spelling";

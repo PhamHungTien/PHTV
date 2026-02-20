@@ -9,6 +9,7 @@
 #import "AppDelegate+InputState.h"
 #import "AppDelegate+Private.h"
 #import "AppDelegate+Sparkle.h"
+#import "AppDelegate+StatusBarMenu.h"
 #import "../SystemBridge/PHTVManager.h"
 #import "PHTV-Swift.h"
 

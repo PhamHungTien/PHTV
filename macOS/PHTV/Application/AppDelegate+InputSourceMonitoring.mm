@@ -7,6 +7,7 @@
 
 #import "AppDelegate+InputSourceMonitoring.h"
 #import "AppDelegate+Private.h"
+#import "AppDelegate+StatusBarMenu.h"
 #import <Carbon/Carbon.h>
 
 static NSString *const PHTVDefaultsKeyInputMethod = @"InputMethod";

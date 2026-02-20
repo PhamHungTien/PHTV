@@ -6,6 +6,7 @@
 //
 
 #import "AppDelegate+LoginItem.h"
+#import "AppDelegate+StatusBarMenu.h"
 #import <ServiceManagement/ServiceManagement.h>
 
 static NSString *const PHTVDefaultsKeyRunOnStartup = @"RunOnStartup";

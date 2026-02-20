@@ -7,6 +7,7 @@
 
 #import "AppDelegate+InputState.h"
 #import "AppDelegate+Private.h"
+#import "AppDelegate+StatusBarMenu.h"
 
 static NSString *const PHTVInputStateDefaultsKeyInputMethod = @"InputMethod";
 static NSString *const PHTVInputStateDefaultsKeyInputType = @"InputType";
