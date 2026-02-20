@@ -223,6 +223,7 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
 
 #if DEBUG
         if changedAny {
+            let checkSpelling = new["checkSpelling"]?.intValue ?? 0
             let useMacro = new["useMacro"]?.intValue ?? 0
             let autoCapsMacro = new["autoCapsMacro"]?.intValue ?? 0
             let useMacroInEnglishMode = new["useMacroInEnglishMode"]?.intValue ?? 0
@@ -232,6 +233,7 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
             let keyCode = new["emojiHotkeyKeyCode"]?.intValue ?? 0
 
             NSLog("[SwiftUI] Settings reloaded from UserDefaults")
+            NSLog("  - checkSpelling=%d", checkSpelling)
             NSLog("  - useMacro=%d, autoCapsMacro=%d, useMacroInEnglishMode=%d",
                   useMacro, autoCapsMacro, useMacroInEnglishMode)
             NSLog("  - performLayoutCompat=%d", performLayoutCompat)

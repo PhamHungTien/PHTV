@@ -117,11 +117,19 @@ import Foundation
         )
         PHTVSetCurrentCodeTable(codeTable)
 
+        let checkSpelling = phtv_readIntWithFallback(
+            defaults: defaults,
+            key: "Spelling",
+            fallback: Int32(PHTVGetCheckSpelling())
+        )
+        PHTVSetCheckSpelling(checkSpelling)
+
         NSLog(
-            "[AppDelegate] Loaded core settings: language=%d, inputType=%d, codeTable=%d",
+            "[AppDelegate] Loaded core settings: language=%d, inputType=%d, codeTable=%d, spelling=%d",
             language,
             inputType,
-            codeTable
+            codeTable,
+            checkSpelling
         )
 
         PHTVSetUseModernOrthography(

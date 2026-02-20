@@ -1369,30 +1369,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         }
     }
             
-    static inline bool checkHotKeyWithFlags(int hotKeyData, bool checkKeyCode, CGEventFlags flags, CGKeyCode keycode) {
-        return [PHTVHotkeyService checkHotKey:(int32_t)hotKeyData
-                                 checkKeyCode:checkKeyCode
-                               currentKeycode:(uint16_t)keycode
-                                  currentFlags:(uint64_t)flags];
-    }
-
-    bool checkHotKey(int hotKeyData, bool checkKeyCode=true) {
-        return checkHotKeyWithFlags(hotKeyData, checkKeyCode, _lastFlag, _keycode);
-    }
-
-    // Check if ALL modifier keys required by a hotkey are currently held
-    // This is used to detect if user is in the process of pressing a modifier combo
-    // Returns true if current flags CONTAIN all required modifiers (may have extra modifiers)
-    bool hotkeyModifiersAreHeld(int hotKeyData, CGEventFlags currentFlags) {
-        return [PHTVHotkeyService hotkeyModifiersAreHeld:(int32_t)hotKeyData
-                                            currentFlags:(uint64_t)currentFlags];
-    }
-
-    // Check if this is a modifier-only hotkey (no specific key required, keycode = 0xFE)
-    bool isModifierOnlyHotkey(int hotKeyData) {
-        return [PHTVHotkeyService isModifierOnlyHotkey:(int32_t)hotKeyData];
-    }
-
     void switchLanguage() {
         // Beep is now handled by SwiftUI when LanguageChangedFromBackend notification is posted
 
@@ -1534,78 +1510,41 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                                                                                fallback:(uint16_t)fallbackKeyCode];
     }
 
-    static inline CGEventFlags RelevantEmojiModifierFlags(CGEventFlags flags) {
-        return flags & (kCGEventFlagMaskCommand |
-                        kCGEventFlagMaskAlternate |
-                        kCGEventFlagMaskControl |
-                        kCGEventFlagMaskShift |
-                        kCGEventFlagMaskSecondaryFn);
-    }
-
-    static inline bool isEmojiModifierOnlyHotkey() {
-        return !HOTKEY_RAW_KEY_HAS_KEY(vEmojiHotkeyKeyCode);
-    }
-
-    // Check if ALL emoji hotkey modifiers are currently held
-    static inline bool emojiHotkeyModifiersAreHeld(CGEventFlags currentFlags) {
-        CGEventFlags expected = RelevantEmojiModifierFlags((CGEventFlags)vEmojiHotkeyModifiers);
-        if (expected == 0) return false;
-        CGEventFlags current = RelevantEmojiModifierFlags(currentFlags);
-        return (current & expected) == expected;
-    }
-
-    static inline BOOL CheckEmojiHotkey(CGKeyCode keycode, CGEventFlags flags) {
-        if (!vEnableEmojiHotkey) return NO;
-        // Skip modifier-only emoji hotkeys here (handled in flagsChanged)
-        if (isEmojiModifierOnlyHotkey()) return NO;
-        if ((CGKeyCode)vEmojiHotkeyKeyCode != keycode) return NO;
-
-        // Require at least one modifier for key+modifier combos
-        CGEventFlags expectedModifiers = RelevantEmojiModifierFlags((CGEventFlags)vEmojiHotkeyModifiers);
-        if (expectedModifiers == 0) return NO;
-        return RelevantEmojiModifierFlags(flags) == expectedModifiers;
-    }
-
     // Handle hotkey press (switch language / convert tool / emoji picker)
     // Returns NULL if hotkey was triggered (consuming the event), otherwise returns the original event
     static inline CGEventRef HandleHotkeyPress(CGEventType type, CGKeyCode keycode) {
         if (type != kCGEventKeyDown) return NULL;
 
-        BOOL switchHotkeyHasKey = HOTKEY_HAS_KEY(vSwitchKeyStatus);
-        BOOL convertHotkeyHasKey = HOTKEY_HAS_KEY(gConvertToolOptions.hotKey);
-        BOOL isSwitchHotkeyKey = switchHotkeyHasKey && HOTKEY_KEY_MATCHES(vSwitchKeyStatus, keycode);
-        BOOL isConvertHotkeyKey = convertHotkeyHasKey && HOTKEY_KEY_MATCHES(gConvertToolOptions.hotKey, keycode);
-        BOOL isEmojiHotkeyKey = vEnableEmojiHotkey && ((CGKeyCode)vEmojiHotkeyKeyCode == keycode);
+        int keyDownHotkeyAction = [PHTVHotkeyService evaluateKeyDownHotkeyActionForKeyCode:(uint16_t)keycode
+                                                                                   lastFlags:(uint64_t)_lastFlag
+                                                                                currentFlags:(uint64_t)_flag
+                                                                                 switchHotkey:(int32_t)vSwitchKeyStatus
+                                                                                convertHotkey:(int32_t)gConvertToolOptions.hotKey
+                                                                                 emojiEnabled:(int32_t)vEnableEmojiHotkey
+                                                                               emojiModifiers:(int32_t)vEmojiHotkeyModifiers
+                                                                          emojiHotkeyKeyCode:(int32_t)vEmojiHotkeyKeyCode];
 
-        // OpenKey style: clear stale modifier tracking on unrelated key presses.
-        if (!isSwitchHotkeyKey && !isConvertHotkeyKey && !isEmojiHotkeyKey) {
+        if (keyDownHotkeyAction == PHTVKeyDownHotkeyActionClearStaleModifiers) {
             _lastFlag = 0;
             _hasJustUsedHotKey = false;
             return NULL;
         }
 
-        // Check switch language hotkey
-        if (isSwitchHotkeyKey &&
-            (checkHotKey(vSwitchKeyStatus, true) ||
-             checkHotKeyWithFlags(vSwitchKeyStatus, true, _flag, keycode))) {
+        if (keyDownHotkeyAction == PHTVKeyDownHotkeyActionSwitchLanguage) {
             switchLanguage();
             _lastFlag = 0;
             _hasJustUsedHotKey = true;
             return (CGEventRef)-1;  // Special marker to indicate "consume event"
         }
 
-        // Check convert tool hotkey
-        if (isConvertHotkeyKey &&
-            (checkHotKey(gConvertToolOptions.hotKey, true) ||
-             checkHotKeyWithFlags(gConvertToolOptions.hotKey, true, _flag, keycode))) {
+        if (keyDownHotkeyAction == PHTVKeyDownHotkeyActionQuickConvert) {
             [PHTVRuntimeUIBridgeService triggerQuickConvert];
             _lastFlag = 0;
             _hasJustUsedHotKey = true;
             return (CGEventRef)-1;  // Special marker to indicate "consume event"
         }
 
-        // Check emoji picker hotkey
-        if (isEmojiHotkeyKey && CheckEmojiHotkey(keycode, _flag)) {
+        if (keyDownHotkeyAction == PHTVKeyDownHotkeyActionEmojiPicker) {
             [PHTVRuntimeUIBridgeService triggerEmojiHotkey];
             _lastFlag = 0;
             _hasJustUsedHotKey = true;
@@ -1618,24 +1557,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     }
 
     static inline CGEventFlags PauseModifierMaskForKeyCode(int pauseKey) {
-        switch (pauseKey) {
-            case KEY_LEFT_OPTION:
-            case KEY_RIGHT_OPTION:
-                return kCGEventFlagMaskAlternate;
-            case KEY_LEFT_CONTROL:
-            case KEY_RIGHT_CONTROL:
-                return kCGEventFlagMaskControl;
-            case KEY_LEFT_SHIFT:
-            case KEY_RIGHT_SHIFT:
-                return kCGEventFlagMaskShift;
-            case KEY_LEFT_COMMAND:
-            case KEY_RIGHT_COMMAND:
-                return kCGEventFlagMaskCommand;
-            case KEY_FUNCTION:
-                return kCGEventFlagMaskSecondaryFn;
-            default:
-                return 0;
-        }
+        return (CGEventFlags)[PHTVHotkeyService pauseModifierMaskForKeyCode:(int32_t)pauseKey];
     }
 
     static inline CGEventFlags PauseKeyModifierMask(void) {
@@ -1644,11 +1566,8 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
     // Strip pause modifier from event flags to prevent special characters
     static inline CGEventFlags StripPauseModifier(CGEventFlags flags) {
-        CGEventFlags pauseMask = PauseKeyModifierMask();
-        if (pauseMask == 0) {
-            return flags;
-        }
-        return flags & ~pauseMask;
+        return (CGEventFlags)[PHTVHotkeyService stripPauseModifierForFlags:(uint64_t)flags
+                                                               pauseKeyCode:(int32_t)vPauseKey];
     }
 
     // Handle pause key press - temporarily disable Vietnamese input
@@ -1657,8 +1576,8 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             return;
         }
 
-        CGEventFlags pauseMask = PauseKeyModifierMask();
-        if (pauseMask == 0 || (flags & pauseMask) == 0) {
+        if (![PHTVHotkeyService shouldActivatePauseModeWithFlags:(uint64_t)flags
+                                                    pauseKeyCode:(int32_t)vPauseKey]) {
             return;
         }
 
@@ -1675,14 +1594,9 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             return;
         }
 
-        CGEventFlags pauseMask = PauseKeyModifierMask();
-        if (pauseMask == 0) {
-            return;
-        }
-
-        BOOL wasPressed = (oldFlags & pauseMask) != 0;
-        BOOL isPressed = (newFlags & pauseMask) != 0;
-        if (!isPressed && wasPressed) {
+        if ([PHTVHotkeyService shouldReleasePauseModeFromOldFlags:(uint64_t)oldFlags
+                                                         newFlags:(uint64_t)newFlags
+                                                     pauseKeyCode:(int32_t)vPauseKey]) {
             vLanguage = _savedLanguageBeforePause;
             _pauseKeyPressed = false;
         }
@@ -1831,25 +1745,25 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
             // Track if any key is pressed while restore modifier is held
             // Only track if custom restore key is actually set (Option or Control)
-            if (vRestoreOnEscape && vCustomEscapeKey > 0 && _restoreModifierPressed) {
+            if ([PHTVHotkeyService shouldMarkKeyPressedWithRestoreModifierWithRestoreOnEscape:(int32_t)vRestoreOnEscape
+                                                                                customEscapeKey:(int32_t)vCustomEscapeKey
+                                                                         restoreModifierPressed:_restoreModifierPressed]) {
                 _keyPressedWithRestoreModifier = true;
             }
 
             // Track if any key is pressed while switch hotkey modifiers are held
             // This prevents modifier-only hotkeys (like Cmd+Shift) from triggering
             // when user presses a key combo like Cmd+Shift+S
-            bool switchIsModifierOnly = isModifierOnlyHotkey(vSwitchKeyStatus);
-            bool convertIsModifierOnly = isModifierOnlyHotkey(gConvertToolOptions.hotKey);
-            if (switchIsModifierOnly || convertIsModifierOnly) {
-                bool switchModifiersHeld = switchIsModifierOnly && hotkeyModifiersAreHeld(vSwitchKeyStatus, _flag);
-                bool convertModifiersHeld = convertIsModifierOnly && hotkeyModifiersAreHeld(gConvertToolOptions.hotKey, _flag);
-                if (switchModifiersHeld || convertModifiersHeld) {
-                    _keyPressedWhileSwitchModifiersHeld = true;
-                }
+            if ([PHTVHotkeyService shouldMarkSwitchModifiersHeldForFlags:(uint64_t)_flag
+                                                            switchHotkey:(int32_t)vSwitchKeyStatus
+                                                           convertHotkey:(int32_t)gConvertToolOptions.hotKey]) {
+                _keyPressedWhileSwitchModifiersHeld = true;
             }
 
-            // Track key presses for emoji modifier-only hotkey
-            if (vEnableEmojiHotkey && isEmojiModifierOnlyHotkey() && emojiHotkeyModifiersAreHeld(_flag)) {
+            if ([PHTVHotkeyService shouldMarkEmojiModifiersHeldForFlags:(uint64_t)_flag
+                                                            emojiEnabled:(int32_t)vEnableEmojiHotkey
+                                                          emojiModifiers:(int32_t)vEmojiHotkeyModifiers
+                                                     emojiHotkeyKeyCode:(int32_t)vEmojiHotkeyKeyCode]) {
                 _keyPressedWhileEmojiModifiersHeld = true;
             }
         } else if (type == kCGEventFlagsChanged) {
@@ -1862,110 +1776,101 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 _keyPressedWhileEmojiModifiersHeld = false;
 
                 // Check if restore modifier key is being pressed
-                if (vRestoreOnEscape && vCustomEscapeKey > 0) {
-                    bool isOptionKey = (vCustomEscapeKey == KEY_LEFT_OPTION || vCustomEscapeKey == KEY_RIGHT_OPTION);
-                    bool isControlKey = (vCustomEscapeKey == KEY_LEFT_CONTROL || vCustomEscapeKey == KEY_RIGHT_CONTROL);
-
-                    if ((isOptionKey && (_flag & kCGEventFlagMaskAlternate)) ||
-                        (isControlKey && (_flag & kCGEventFlagMaskControl))) {
-                        _restoreModifierPressed = true;
-                        _keyPressedWithRestoreModifier = false;
-                    }
+                if ([PHTVHotkeyService shouldEnterRestoreModifierStateWithRestoreOnEscape:(int32_t)vRestoreOnEscape
+                                                                             customEscapeKey:(int32_t)vCustomEscapeKey
+                                                                                       flags:(uint64_t)_flag]) {
+                    _restoreModifierPressed = true;
+                    _keyPressedWithRestoreModifier = false;
                 }
 
                 // Check if pause key is being pressed - temporarily disable Vietnamese
                 HandlePauseKeyPress(_flag);
             } else if (_lastFlag > _flag)  {
                 // Releasing modifiers - check for restore modifier key first
-                if (vRestoreOnEscape && _restoreModifierPressed && !_keyPressedWithRestoreModifier) {
-                    bool isOptionKey = (vCustomEscapeKey == KEY_LEFT_OPTION || vCustomEscapeKey == KEY_RIGHT_OPTION);
-                    bool isControlKey = (vCustomEscapeKey == KEY_LEFT_CONTROL || vCustomEscapeKey == KEY_RIGHT_CONTROL);
+                if ([PHTVHotkeyService shouldAttemptRestoreOnModifierReleaseWithRestoreOnEscape:(int32_t)vRestoreOnEscape
+                                                                           restoreModifierPressed:_restoreModifierPressed
+                                                                   keyPressedWithRestoreModifier:_keyPressedWithRestoreModifier
+                                                                                 customEscapeKey:(int32_t)vCustomEscapeKey
+                                                                                       oldFlags:(uint64_t)_lastFlag
+                                                                                       newFlags:(uint64_t)_flag]) {
+                    // Restore modifier released without any other key press - trigger restore
+                    if (vRestoreToRawKeys()) {
+                        // Successfully restored - pData now contains restore info
+                        // Send backspaces to delete Vietnamese characters
+                        if (pData->backspaceCount > 0 && pData->backspaceCount < MAX_BUFF) {
+                            SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeNone);
+                        }
 
-                    bool optionReleased = isOptionKey && (_lastFlag & kCGEventFlagMaskAlternate) && !(_flag & kCGEventFlagMaskAlternate);
-                    bool controlReleased = isControlKey && (_lastFlag & kCGEventFlagMaskControl) && !(_flag & kCGEventFlagMaskControl);
+                        // Send the raw ASCII characters
+                        SendNewCharString();
 
-                    if (optionReleased || controlReleased) {
-                        // Restore modifier released without any other key press - trigger restore
-                                            if (vRestoreToRawKeys()) {
-                                                // Successfully restored - pData now contains restore info
-                                                // Send backspaces to delete Vietnamese characters
-                                                if (pData->backspaceCount > 0 && pData->backspaceCount < MAX_BUFF) {
-                                                    SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeNone);
-                                                }
-                        
-                                                // Send the raw ASCII characters
-                                                SendNewCharString();
-                        
-                                                _lastFlag = 0;
-                                                _restoreModifierPressed = false;
-                                                _keyPressedWithRestoreModifier = false;
-                                                return NULL;
-                                            }                        _restoreModifierPressed = false;
+                        _lastFlag = 0;
+                        _restoreModifierPressed = false;
                         _keyPressedWithRestoreModifier = false;
+                        return NULL;
                     }
+
+                    _restoreModifierPressed = false;
+                    _keyPressedWithRestoreModifier = false;
                 }
 
                 // Reset restore modifier state when releasing any modifier
-                if (_restoreModifierPressed) {
-                    bool isOptionKey = (vCustomEscapeKey == KEY_LEFT_OPTION || vCustomEscapeKey == KEY_RIGHT_OPTION);
-                    bool isControlKey = (vCustomEscapeKey == KEY_LEFT_CONTROL || vCustomEscapeKey == KEY_RIGHT_CONTROL);
-
-                    bool optionReleased = isOptionKey && (_lastFlag & kCGEventFlagMaskAlternate) && !(_flag & kCGEventFlagMaskAlternate);
-                    bool controlReleased = isControlKey && (_lastFlag & kCGEventFlagMaskControl) && !(_flag & kCGEventFlagMaskControl);
-
-                    if (optionReleased || controlReleased) {
-                        _restoreModifierPressed = false;
-                        _keyPressedWithRestoreModifier = false;
-                    }
+                if ([PHTVHotkeyService shouldResetRestoreModifierStateWithRestoreModifierPressed:_restoreModifierPressed
+                                                                                customEscapeKey:(int32_t)vCustomEscapeKey
+                                                                                      oldFlags:(uint64_t)_lastFlag
+                                                                                      newFlags:(uint64_t)_flag]) {
+                    _restoreModifierPressed = false;
+                    _keyPressedWithRestoreModifier = false;
                 }
 
                 // Check if pause key is being released - restore Vietnamese mode
                 HandlePauseKeyRelease(_lastFlag, _flag);
 
-                // Check switch hotkey - only trigger if no other key was pressed
-                // while the modifier combination was held (exact match requirement)
-                // This prevents Cmd+Shift from triggering when user presses Cmd+Shift+S
-                bool switchIsModifierOnly = isModifierOnlyHotkey(vSwitchKeyStatus);
-                bool canTriggerSwitch = !switchIsModifierOnly || !_keyPressedWhileSwitchModifiersHeld;
-                if (canTriggerSwitch && checkHotKey(vSwitchKeyStatus, HOTKEY_HAS_KEY(vSwitchKeyStatus))) {
+                int releaseAction = [PHTVHotkeyService evaluateModifierReleaseActionWithLastFlags:(uint64_t)_lastFlag
+                                                                                      switchHotkey:(int32_t)vSwitchKeyStatus
+                                                                                     convertHotkey:(int32_t)gConvertToolOptions.hotKey
+                                                                                      emojiEnabled:(int32_t)vEnableEmojiHotkey
+                                                                                    emojiModifiers:(int32_t)vEmojiHotkeyModifiers
+                                                                                      emojiKeyCode:(int32_t)vEmojiHotkeyKeyCode
+                                                    keyPressedWhileSwitchModifiersHeld:_keyPressedWhileSwitchModifiersHeld
+                                                     keyPressedWhileEmojiModifiersHeld:_keyPressedWhileEmojiModifiersHeld
+                                                                     hasJustUsedHotkey:_hasJustUsedHotKey
+                                                               tempOffSpellingEnabled:(int32_t)vTempOffSpelling
+                                                                 tempOffEngineEnabled:(int32_t)vTempOffPHTV];
+
+                if (releaseAction == PHTVModifierReleaseActionSwitchLanguage) {
                     _lastFlag = 0;
                     _keyPressedWhileSwitchModifiersHeld = false;
+                    _keyPressedWhileEmojiModifiersHeld = false;
                     switchLanguage();
                     _hasJustUsedHotKey = true;
                     return NULL;
                 }
 
-                // Check convert tool hotkey with same exact match logic
-                bool convertIsModifierOnly = isModifierOnlyHotkey(gConvertToolOptions.hotKey);
-                bool canTriggerConvert = !convertIsModifierOnly || !_keyPressedWhileSwitchModifiersHeld;
-                if (canTriggerConvert && checkHotKey(gConvertToolOptions.hotKey, HOTKEY_HAS_KEY(gConvertToolOptions.hotKey))) {
+                if (releaseAction == PHTVModifierReleaseActionQuickConvert) {
                     _lastFlag = 0;
                     _keyPressedWhileSwitchModifiersHeld = false;
+                    _keyPressedWhileEmojiModifiersHeld = false;
                     [PHTVRuntimeUIBridgeService triggerQuickConvert];
                     _hasJustUsedHotKey = true;
                     return NULL;
                 }
 
-                // Check emoji picker modifier-only hotkey
-                if (vEnableEmojiHotkey && isEmojiModifierOnlyHotkey() && !_keyPressedWhileEmojiModifiersHeld) {
-                    CGEventFlags expectedEmoji = RelevantEmojiModifierFlags((CGEventFlags)vEmojiHotkeyModifiers);
-                    CGEventFlags lastEmoji = RelevantEmojiModifierFlags(_lastFlag);
-                    if (expectedEmoji != 0 && lastEmoji == expectedEmoji) {
-                        _lastFlag = 0;
-                        _keyPressedWhileEmojiModifiersHeld = false;
-                        [PHTVRuntimeUIBridgeService triggerEmojiHotkey];
-                        _hasJustUsedHotKey = true;
-                        return NULL;
-                    }
+                if (releaseAction == PHTVModifierReleaseActionEmojiPicker) {
+                    _lastFlag = 0;
+                    _keyPressedWhileSwitchModifiersHeld = false;
+                    _keyPressedWhileEmojiModifiersHeld = false;
+                    [PHTVRuntimeUIBridgeService triggerEmojiHotkey];
+                    _hasJustUsedHotKey = true;
+                    return NULL;
                 }
 
-                //check temporarily turn off spell checking
-                if (vTempOffSpelling && !_hasJustUsedHotKey && _lastFlag & kCGEventFlagMaskControl) {
+                if (releaseAction == PHTVModifierReleaseActionTempOffSpelling) {
                     vTempOffSpellChecking();
-                }
-                if (vTempOffPHTV && !_hasJustUsedHotKey && _lastFlag & kCGEventFlagMaskCommand) {
+                } else if (releaseAction == PHTVModifierReleaseActionTempOffEngine) {
                     vTempOffEngine();
                 }
+
                 _lastFlag = 0;
                 _keyPressedWhileSwitchModifiersHeld = false;
                 _keyPressedWhileEmojiModifiersHeld = false;
@@ -2094,8 +1999,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                                                                                                          safeMode:vSafeMode
                                                                                            spotlightCacheDurationMs:SPOTLIGHT_CACHE_DURATION_MS
                                                                                            appCharacteristicsMaxAgeMs:kAppCharacteristicsCacheMaxAgeMs];
-            NSString *eventTargetBundleId = targetContext.eventTargetBundleId;
-            NSString *focusedBundleId = targetContext.focusedBundleId;
             BOOL spotlightActive = targetContext.spotlightActive;
             NSString *effectiveBundleId = targetContext.effectiveBundleId;
 
@@ -2135,6 +2038,8 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             _phtvCliPendingBackspaceCount = 0;
 
 #ifdef DEBUG
+            NSString *eventTargetBundleId = targetContext.eventTargetBundleId;
+            NSString *focusedBundleId = targetContext.focusedBundleId;
             // Diagnostic logs: either we believe the target is Spotlight-like, or AX says Spotlight is active.
             // This helps detect bundle-id mismatches (e.g. Spotlight field hosted by another process).
             if (_phtvPostToHIDTap || spotlightActive) {
@@ -2255,12 +2160,12 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                                                                               needsPrecomposedBatched:appChars.needsPrecomposedBatched
                                                                                     browserFixEnabled:vFixRecommendBrowser
                                                                                            isNotionApp:isNotionApp];
+                
+                #ifdef DEBUG
                 BOOL isSpecialApp = inputStrategy.isSpecialApp;
                 BOOL isPotentialShortcut = inputStrategy.isPotentialShortcut;
                 BOOL isBrowserFix = inputStrategy.isBrowserFix;
                 BOOL shouldSkipSpace = inputStrategy.shouldSkipSpace;
-                
-                #ifdef DEBUG
                 // Always log browser fix status to debug why it might be skipped
                 NSLog(@"[BrowserFix] Status: vFix=%d, app=%@, isBrowser=%d => isFix=%d | bs=%d, ext=%d", 
                       vFixRecommendBrowser, effectiveBundleId, isBrowserApp, isBrowserFix, 

@@ -217,6 +217,15 @@ import Foundation
 
     @objc(syncSpellingSetting)
     class func syncSpellingSetting() {
+        let defaults = UserDefaults.standard
+        let spellingEnabled: Int32
+        if defaults.object(forKey: "Spelling") == nil {
+            spellingEnabled = Int32(PHTVGetCheckSpelling())
+        } else {
+            spellingEnabled = defaults.bool(forKey: "Spelling") ? 1 : 0
+        }
+
+        PHTVSetCheckSpelling(spellingEnabled)
         PHTVSyncSpellCheckingState()
     }
 

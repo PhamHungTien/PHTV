@@ -14,12 +14,14 @@
 		4602026F2F2814260040B043 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 460202652F2814260040B043 /* Carbon.framework */; };
 		460202712F2814260040B043 /* ServiceManagement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 460202672F2814260040B043 /* ServiceManagement.framework */; };
 		460202732F2814260040B043 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 460202742F2814260040B043 /* Sparkle */; };
+		4602036A2F2816C90040B043 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4602036B2F2816C90040B043 /* AppIntents.framework */; };
 		460203682F2816C90040B043 /* PHTV.icon in Resources */ = {isa = PBXBuildFile; fileRef = 460203672F2816C90040B043 /* PHTV.icon */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		460202432F2814250040B043 /* PHTV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PHTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		460202602F2814260040B043 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
+		4602036B2F2816C90040B043 /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppIntents.framework; path = System/Library/Frameworks/AppIntents.framework; sourceTree = SDKROOT; };
 		460202612F2814260040B043 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		460202622F2814260040B043 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		460202632F2814260040B043 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
@@ -55,6 +57,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				460202732F2814260040B043 /* Sparkle in Frameworks */,
+				4602036A2F2816C90040B043 /* AppIntents.framework in Frameworks */,
 				4602026F2F2814260040B043 /* Carbon.framework in Frameworks */,
 				4602026A2F2814260040B043 /* AppKit.framework in Frameworks */,
 				460202712F2814260040B043 /* ServiceManagement.framework in Frameworks */,
@@ -89,6 +92,7 @@
 			isa = PBXGroup;
 			children = (
 				460202602F2814260040B043 /* AppKit.framework */,
+				4602036B2F2816C90040B043 /* AppIntents.framework */,
 				460202652F2814260040B043 /* Carbon.framework */,
 				460202632F2814260040B043 /* Cocoa.framework */,
 				460202622F2814260040B043 /* CoreGraphics.framework */,
@@ -337,6 +341,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = F9XPW22T8M;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_APP_INTENTS_METADATA_GENERATION = NO;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
 				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
@@ -390,6 +395,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = F9XPW22T8M;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_APP_INTENTS_METADATA_GENERATION = NO;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
 				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;

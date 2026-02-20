@@ -23,6 +23,34 @@ import Foundation
     private static let maxTestTapRetries = 3
     private static let testTapRetryDelayUsec: useconds_t = 50_000
 
+    @objc static func hasListenEventAccess() -> Bool {
+        if #available(macOS 10.15, *) {
+            return CGPreflightListenEventAccess()
+        }
+        return true
+    }
+
+    @objc static func hasPostEventAccess() -> Bool {
+        if #available(macOS 10.15, *) {
+            return CGPreflightPostEventAccess()
+        }
+        return true
+    }
+
+    @objc static func requestListenEventAccess() -> Bool {
+        if #available(macOS 10.15, *) {
+            return CGRequestListenEventAccess()
+        }
+        return true
+    }
+
+    @objc static func requestPostEventAccess() -> Bool {
+        if #available(macOS 10.15, *) {
+            return CGRequestPostEventAccess()
+        }
+        return true
+    }
+
     @objc static func invalidatePermissionCache() {
         lastPermissionCheckTime = 0
         lastPermissionCheckResult = false
@@ -38,6 +66,22 @@ import Foundation
     }
 
     @objc static func canCreateEventTap() -> Bool {
+        let canListen = hasListenEventAccess()
+        let canPost = hasPostEventAccess()
+        if !canListen || !canPost {
+            if !canListen {
+                NSLog("[Permission] Input Monitoring (ListenEvent) is NOT granted")
+            }
+            if !canPost {
+                NSLog("[Permission] Accessibility/Event Synthesis (PostEvent) is NOT granted")
+            }
+            lastPermissionCheckResult = false
+            lastPermissionCheckTime = Date().timeIntervalSince1970
+            lastPermissionOutcome = false
+            hasLastPermissionOutcome = true
+            return false
+        }
+
         let now = Date().timeIntervalSince1970
 
         if now < permissionBackoffUntil {

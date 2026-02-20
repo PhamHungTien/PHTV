@@ -536,4 +536,18 @@ final class PHTVAccessibilityService: NSObject {
         """
         NSAppleScript(source: script)?.executeAndReturnError(nil)
     }
+
+    @objc class func openInputMonitoringPreferences() {
+        if let url = URL(
+            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"
+        ), NSWorkspace.shared.open(url) {
+            return
+        }
+
+        if let fallbackURL = URL(
+            string: "x-apple.systempreferences:com.apple.preference.security?Privacy"
+        ) {
+            _ = NSWorkspace.shared.open(fallbackURL)
+        }
+    }
 }

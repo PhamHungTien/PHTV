@@ -10,6 +10,23 @@ import Foundation
 import AppKit
 import Carbon
 
+@objc enum PHTVModifierReleaseAction: Int32 {
+    case none = 0
+    case switchLanguage = 1
+    case quickConvert = 2
+    case emojiPicker = 3
+    case tempOffSpelling = 4
+    case tempOffEngine = 5
+}
+
+@objc enum PHTVKeyDownHotkeyAction: Int32 {
+    case none = 0
+    case clearStaleModifiers = 1
+    case switchLanguage = 2
+    case quickConvert = 3
+    case emojiPicker = 4
+}
+
 @objcMembers
 final class PHTVHotkeyService: NSObject {
     private static let hotkeyKeyMask: UInt32 = 0x00FF
@@ -28,6 +45,11 @@ final class PHTVHotkeyService: NSObject {
     private static let shiftFlagMask = CGEventFlags.maskShift.rawValue
     private static let fnFlagMask = CGEventFlags.maskSecondaryFn.rawValue
     private static let layoutCacheNoValue: UInt16 = .max
+    private static let relevantModifierFlagsMask = commandFlagMask
+        | optionFlagMask
+        | controlFlagMask
+        | shiftFlagMask
+        | fnFlagMask
 
     // Reverse mapping from layout character -> US keycode
     private static let layoutKeyStringToKeyCodeMap: [String: UInt16] = [
@@ -162,6 +184,362 @@ final class PHTVHotkeyService: NSObject {
     class func isModifierOnlyHotkey(_ hotKeyData: Int32) -> Bool {
         let data = UInt32(bitPattern: hotKeyData)
         return !hasHotkeyKey(data)
+    }
+
+    private class func isOptionRestoreKey(_ customEscapeKey: Int32) -> Bool {
+        Int(customEscapeKey) == kVK_Option || Int(customEscapeKey) == kVK_RightOption
+    }
+
+    private class func isControlRestoreKey(_ customEscapeKey: Int32) -> Bool {
+        Int(customEscapeKey) == kVK_Control || Int(customEscapeKey) == kVK_RightControl
+    }
+
+    private class func isRestoreModifierReleased(
+        customEscapeKey: Int32,
+        oldFlags: UInt64,
+        newFlags: UInt64
+    ) -> Bool {
+        let optionReleased = isOptionRestoreKey(customEscapeKey)
+            && (oldFlags & optionFlagMask) != 0
+            && (newFlags & optionFlagMask) == 0
+        let controlReleased = isControlRestoreKey(customEscapeKey)
+            && (oldFlags & controlFlagMask) != 0
+            && (newFlags & controlFlagMask) == 0
+        return optionReleased || controlReleased
+    }
+
+    @objc(shouldEnterRestoreModifierStateWithRestoreOnEscape:customEscapeKey:flags:)
+    class func shouldEnterRestoreModifierState(
+        restoreOnEscape: Int32,
+        customEscapeKey: Int32,
+        flags: UInt64
+    ) -> Bool {
+        guard restoreOnEscape != 0, customEscapeKey > 0 else {
+            return false
+        }
+        if isOptionRestoreKey(customEscapeKey) {
+            return (flags & optionFlagMask) != 0
+        }
+        if isControlRestoreKey(customEscapeKey) {
+            return (flags & controlFlagMask) != 0
+        }
+        return false
+    }
+
+    @objc(shouldAttemptRestoreOnModifierReleaseWithRestoreOnEscape:restoreModifierPressed:keyPressedWithRestoreModifier:customEscapeKey:oldFlags:newFlags:)
+    class func shouldAttemptRestoreOnModifierRelease(
+        restoreOnEscape: Int32,
+        restoreModifierPressed: Bool,
+        keyPressedWithRestoreModifier: Bool,
+        customEscapeKey: Int32,
+        oldFlags: UInt64,
+        newFlags: UInt64
+    ) -> Bool {
+        guard restoreOnEscape != 0 else {
+            return false
+        }
+        guard restoreModifierPressed, !keyPressedWithRestoreModifier else {
+            return false
+        }
+        return isRestoreModifierReleased(
+            customEscapeKey: customEscapeKey,
+            oldFlags: oldFlags,
+            newFlags: newFlags
+        )
+    }
+
+    @objc(shouldResetRestoreModifierStateWithRestoreModifierPressed:customEscapeKey:oldFlags:newFlags:)
+    class func shouldResetRestoreModifierState(
+        restoreModifierPressed: Bool,
+        customEscapeKey: Int32,
+        oldFlags: UInt64,
+        newFlags: UInt64
+    ) -> Bool {
+        guard restoreModifierPressed else {
+            return false
+        }
+        return isRestoreModifierReleased(
+            customEscapeKey: customEscapeKey,
+            oldFlags: oldFlags,
+            newFlags: newFlags
+        )
+    }
+
+    @objc(shouldMarkKeyPressedWithRestoreModifierWithRestoreOnEscape:customEscapeKey:restoreModifierPressed:)
+    class func shouldMarkKeyPressedWithRestoreModifier(
+        restoreOnEscape: Int32,
+        customEscapeKey: Int32,
+        restoreModifierPressed: Bool
+    ) -> Bool {
+        restoreOnEscape != 0 && customEscapeKey > 0 && restoreModifierPressed
+    }
+
+    @objc(relevantHotkeyModifierFlags:)
+    class func relevantHotkeyModifierFlags(_ flags: UInt64) -> UInt64 {
+        flags & relevantModifierFlagsMask
+    }
+
+    @objc(isEmojiModifierOnlyHotkeyForKeyCode:)
+    class func isEmojiModifierOnlyHotkey(forKeyCode emojiHotkeyKeyCode: Int32) -> Bool {
+        let key = UInt32(bitPattern: emojiHotkeyKeyCode) & hotkeyKeyMask
+        return key == hotkeyNoKey
+    }
+
+    @objc(emojiHotkeyModifiersAreHeld:emojiModifiers:)
+    class func emojiHotkeyModifiersAreHeld(_ currentFlags: UInt64, emojiModifiers: Int32) -> Bool {
+        let expected = relevantHotkeyModifierFlags(UInt64(UInt32(bitPattern: emojiModifiers)))
+        if expected == 0 {
+            return false
+        }
+        let current = relevantHotkeyModifierFlags(currentFlags)
+        return (current & expected) == expected
+    }
+
+    @objc(checkEmojiHotkeyEnabled:keycode:flags:emojiModifiers:emojiHotkeyKeyCode:)
+    class func checkEmojiHotkey(
+        enabled: Int32,
+        keycode: UInt16,
+        flags: UInt64,
+        emojiModifiers: Int32,
+        emojiHotkeyKeyCode: Int32
+    ) -> Bool {
+        if enabled == 0 {
+            return false
+        }
+        if isEmojiModifierOnlyHotkey(forKeyCode: emojiHotkeyKeyCode) {
+            return false
+        }
+
+        let expectedKeycode = UInt16(truncatingIfNeeded: emojiHotkeyKeyCode)
+        if expectedKeycode != keycode {
+            return false
+        }
+
+        let expectedModifiers = relevantHotkeyModifierFlags(UInt64(UInt32(bitPattern: emojiModifiers)))
+        if expectedModifiers == 0 {
+            return false
+        }
+
+        return relevantHotkeyModifierFlags(flags) == expectedModifiers
+    }
+
+    @objc(evaluateKeyDownHotkeyActionForKeyCode:lastFlags:currentFlags:switchHotkey:convertHotkey:emojiEnabled:emojiModifiers:emojiHotkeyKeyCode:)
+    class func evaluateKeyDownHotkeyAction(
+        forKeyCode keyCode: UInt16,
+        lastFlags: UInt64,
+        currentFlags: UInt64,
+        switchHotkey: Int32,
+        convertHotkey: Int32,
+        emojiEnabled: Int32,
+        emojiModifiers: Int32,
+        emojiHotkeyKeyCode: Int32
+    ) -> Int32 {
+        let switchData = UInt32(bitPattern: switchHotkey)
+        let convertData = UInt32(bitPattern: convertHotkey)
+
+        let switchHasKey = hasHotkeyKey(switchData)
+        let convertHasKey = hasHotkeyKey(convertData)
+
+        let isSwitchHotkeyKey = switchHasKey && keyMatches(switchData, currentKeycode: keyCode)
+        let isConvertHotkeyKey = convertHasKey && keyMatches(convertData, currentKeycode: keyCode)
+        let isEmojiHotkeyKey = emojiEnabled != 0
+            && UInt16(truncatingIfNeeded: emojiHotkeyKeyCode) == keyCode
+
+        if !isSwitchHotkeyKey && !isConvertHotkeyKey && !isEmojiHotkeyKey {
+            return PHTVKeyDownHotkeyAction.clearStaleModifiers.rawValue
+        }
+
+        if isSwitchHotkeyKey {
+            let matchedOnLastFlags = checkHotKey(
+                switchHotkey,
+                checkKeyCode: true,
+                currentKeycode: keyCode,
+                currentFlags: lastFlags
+            )
+            let matchedOnCurrentFlags = checkHotKey(
+                switchHotkey,
+                checkKeyCode: true,
+                currentKeycode: keyCode,
+                currentFlags: currentFlags
+            )
+            if matchedOnLastFlags || matchedOnCurrentFlags {
+                return PHTVKeyDownHotkeyAction.switchLanguage.rawValue
+            }
+        }
+
+        if isConvertHotkeyKey {
+            let matchedOnLastFlags = checkHotKey(
+                convertHotkey,
+                checkKeyCode: true,
+                currentKeycode: keyCode,
+                currentFlags: lastFlags
+            )
+            let matchedOnCurrentFlags = checkHotKey(
+                convertHotkey,
+                checkKeyCode: true,
+                currentKeycode: keyCode,
+                currentFlags: currentFlags
+            )
+            if matchedOnLastFlags || matchedOnCurrentFlags {
+                return PHTVKeyDownHotkeyAction.quickConvert.rawValue
+            }
+        }
+
+        if isEmojiHotkeyKey && checkEmojiHotkey(
+            enabled: emojiEnabled,
+            keycode: keyCode,
+            flags: currentFlags,
+            emojiModifiers: emojiModifiers,
+            emojiHotkeyKeyCode: emojiHotkeyKeyCode
+        ) {
+            return PHTVKeyDownHotkeyAction.emojiPicker.rawValue
+        }
+
+        return PHTVKeyDownHotkeyAction.none.rawValue
+    }
+
+    @objc(shouldMarkSwitchModifiersHeldForFlags:switchHotkey:convertHotkey:)
+    class func shouldMarkSwitchModifiersHeld(
+        forFlags flags: UInt64,
+        switchHotkey: Int32,
+        convertHotkey: Int32
+    ) -> Bool {
+        let switchIsModifierOnly = isModifierOnlyHotkey(switchHotkey)
+        let convertIsModifierOnly = isModifierOnlyHotkey(convertHotkey)
+        if !switchIsModifierOnly && !convertIsModifierOnly {
+            return false
+        }
+
+        let switchModifiersHeld = switchIsModifierOnly
+            && hotkeyModifiersAreHeld(switchHotkey, currentFlags: flags)
+        let convertModifiersHeld = convertIsModifierOnly
+            && hotkeyModifiersAreHeld(convertHotkey, currentFlags: flags)
+        return switchModifiersHeld || convertModifiersHeld
+    }
+
+    @objc(shouldMarkEmojiModifiersHeldForFlags:emojiEnabled:emojiModifiers:emojiHotkeyKeyCode:)
+    class func shouldMarkEmojiModifiersHeld(
+        forFlags flags: UInt64,
+        emojiEnabled: Int32,
+        emojiModifiers: Int32,
+        emojiHotkeyKeyCode: Int32
+    ) -> Bool {
+        guard emojiEnabled != 0 else {
+            return false
+        }
+        guard isEmojiModifierOnlyHotkey(forKeyCode: emojiHotkeyKeyCode) else {
+            return false
+        }
+        return emojiHotkeyModifiersAreHeld(flags, emojiModifiers: emojiModifiers)
+    }
+
+    @objc(evaluateModifierReleaseActionWithLastFlags:switchHotkey:convertHotkey:emojiEnabled:emojiModifiers:emojiKeyCode:keyPressedWhileSwitchModifiersHeld:keyPressedWhileEmojiModifiersHeld:hasJustUsedHotkey:tempOffSpellingEnabled:tempOffEngineEnabled:)
+    class func evaluateModifierReleaseAction(
+        lastFlags: UInt64,
+        switchHotkey: Int32,
+        convertHotkey: Int32,
+        emojiEnabled: Int32,
+        emojiModifiers: Int32,
+        emojiKeyCode: Int32,
+        keyPressedWhileSwitchModifiersHeld: Bool,
+        keyPressedWhileEmojiModifiersHeld: Bool,
+        hasJustUsedHotkey: Bool,
+        tempOffSpellingEnabled: Int32,
+        tempOffEngineEnabled: Int32
+    ) -> Int32 {
+        let switchHasKey = hasHotkeyKey(UInt32(bitPattern: switchHotkey))
+        let switchIsModifierOnly = isModifierOnlyHotkey(switchHotkey)
+        let canTriggerSwitch = !switchIsModifierOnly || !keyPressedWhileSwitchModifiersHeld
+        let switchMatched = checkHotKey(
+            switchHotkey,
+            checkKeyCode: switchHasKey,
+            currentKeycode: 0,
+            currentFlags: lastFlags
+        )
+        if canTriggerSwitch && switchMatched {
+            return PHTVModifierReleaseAction.switchLanguage.rawValue
+        }
+
+        let convertHasKey = hasHotkeyKey(UInt32(bitPattern: convertHotkey))
+        let convertIsModifierOnly = isModifierOnlyHotkey(convertHotkey)
+        let canTriggerConvert = !convertIsModifierOnly || !keyPressedWhileSwitchModifiersHeld
+        let convertMatched = checkHotKey(
+            convertHotkey,
+            checkKeyCode: convertHasKey,
+            currentKeycode: 0,
+            currentFlags: lastFlags
+        )
+        if canTriggerConvert && convertMatched {
+            return PHTVModifierReleaseAction.quickConvert.rawValue
+        }
+
+        if emojiEnabled != 0 &&
+            isEmojiModifierOnlyHotkey(forKeyCode: emojiKeyCode) &&
+            !keyPressedWhileEmojiModifiersHeld {
+            let expectedEmoji = relevantHotkeyModifierFlags(UInt64(UInt32(bitPattern: emojiModifiers)))
+            let lastEmoji = relevantHotkeyModifierFlags(lastFlags)
+            if expectedEmoji != 0 && lastEmoji == expectedEmoji {
+                return PHTVModifierReleaseAction.emojiPicker.rawValue
+            }
+        }
+
+        if tempOffSpellingEnabled != 0 &&
+            !hasJustUsedHotkey &&
+            (lastFlags & controlFlagMask) != 0 {
+            return PHTVModifierReleaseAction.tempOffSpelling.rawValue
+        }
+
+        if tempOffEngineEnabled != 0 &&
+            !hasJustUsedHotkey &&
+            (lastFlags & commandFlagMask) != 0 {
+            return PHTVModifierReleaseAction.tempOffEngine.rawValue
+        }
+
+        return PHTVModifierReleaseAction.none.rawValue
+    }
+
+    @objc(pauseModifierMaskForKeyCode:)
+    class func pauseModifierMask(forKeyCode keyCode: Int32) -> UInt64 {
+        switch Int(keyCode) {
+        case kVK_Option, kVK_RightOption:
+            return optionFlagMask
+        case kVK_Control, kVK_RightControl:
+            return controlFlagMask
+        case kVK_Shift, kVK_RightShift:
+            return shiftFlagMask
+        case kVK_Command, kVK_RightCommand:
+            return commandFlagMask
+        case kVK_Function:
+            return fnFlagMask
+        default:
+            return 0
+        }
+    }
+
+    @objc(stripPauseModifierForFlags:pauseKeyCode:)
+    class func stripPauseModifier(forFlags flags: UInt64, pauseKeyCode: Int32) -> UInt64 {
+        let pauseMask = pauseModifierMask(forKeyCode: pauseKeyCode)
+        if pauseMask == 0 {
+            return flags
+        }
+        return flags & ~pauseMask
+    }
+
+    @objc(shouldActivatePauseModeWithFlags:pauseKeyCode:)
+    class func shouldActivatePauseMode(withFlags flags: UInt64, pauseKeyCode: Int32) -> Bool {
+        let pauseMask = pauseModifierMask(forKeyCode: pauseKeyCode)
+        return pauseMask != 0 && (flags & pauseMask) != 0
+    }
+
+    @objc(shouldReleasePauseModeFromOldFlags:newFlags:pauseKeyCode:)
+    class func shouldReleasePauseMode(fromOldFlags oldFlags: UInt64, newFlags: UInt64, pauseKeyCode: Int32) -> Bool {
+        let pauseMask = pauseModifierMask(forKeyCode: pauseKeyCode)
+        if pauseMask == 0 {
+            return false
+        }
+        let wasPressed = (oldFlags & pauseMask) != 0
+        let isPressed = (newFlags & pauseMask) != 0
+        return wasPressed && !isPressed
     }
 
     @objc(convertKeyStringToKeyCode:fallback:)
