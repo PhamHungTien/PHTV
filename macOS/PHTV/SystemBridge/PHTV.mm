@@ -1080,37 +1080,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                                                                                fallback:(uint16_t)fallbackKeyCode];
     }
 
-    // Handle hotkey press (switch language / convert tool / emoji picker)
-    // Returns NULL if hotkey was triggered (consuming the event), otherwise returns the original event
-    static inline CGEventRef HandleHotkeyPress(CGEventType type, CGKeyCode keycode) {
-        if (type != kCGEventKeyDown) return NULL;
-
-        int keyDownHotkeyAction = [PHTVHotkeyService evaluateKeyDownHotkeyActionForKeyCode:(uint16_t)keycode
-                                                                                   lastFlags:(uint64_t)_lastFlag
-                                                                                currentFlags:(uint64_t)_flag
-                                                                                 switchHotkey:(int32_t)vSwitchKeyStatus
-                                                                                convertHotkey:(int32_t)gConvertToolOptions.hotKey
-                                                                                 emojiEnabled:(int32_t)vEnableEmojiHotkey
-                                                                               emojiModifiers:(int32_t)vEmojiHotkeyModifiers
-                                                                          emojiHotkeyKeyCode:(int32_t)vEmojiHotkeyKeyCode];
-
-        if (keyDownHotkeyAction == PHTVKeyDownHotkeyActionClearStaleModifiers) {
-            _lastFlag = 0;
-            _hasJustUsedHotKey = false;
-            return NULL;
-        }
-
-        if ([PHTVRuntimeUIBridgeService handleKeyDownHotkeyAction:(int32_t)keyDownHotkeyAction]) {
-            _lastFlag = 0;
-            _hasJustUsedHotKey = true;
-            return (CGEventRef)-1;  // Special marker to indicate "consume event"
-        }
-
-        // Only mark as used hotkey if we had modifiers pressed
-        _hasJustUsedHotKey = _lastFlag != 0;
-        return NULL;
-    }
-
     /**
      * MAIN HOOK entry, very important function.
      * MAIN Callback.
@@ -1211,10 +1180,25 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
            _keycode = ConvertEventToKeyboardLayoutCompatKeyCode(event, _keycode);
         }
         
-        //switch language shortcut; convert hotkey
-        CGEventRef hotkeyResult = HandleHotkeyPress(type, _keycode);
-        if (hotkeyResult == (CGEventRef)-1) {
-            return NULL;  // Hotkey was triggered, consume event
+        // Switch-language / quick-convert / emoji hotkey handling
+        if (type == kCGEventKeyDown) {
+            PHTVKeyDownHotkeyEvaluationBox *hotkeyEvaluation = [PHTVHotkeyService processKeyDownHotkeyWithKeyCode:(uint16_t)_keycode
+                                                                                                        lastFlags:(uint64_t)_lastFlag
+                                                                                                     currentFlags:(uint64_t)_flag
+                                                                                                      switchHotkey:(int32_t)vSwitchKeyStatus
+                                                                                                     convertHotkey:(int32_t)gConvertToolOptions.hotKey
+                                                                                                      emojiEnabled:(int32_t)vEnableEmojiHotkey
+                                                                                                    emojiModifiers:(int32_t)vEmojiHotkeyModifiers
+                                                                                               emojiHotkeyKeyCode:(int32_t)vEmojiHotkeyKeyCode];
+            _lastFlag = (CGEventFlags)hotkeyEvaluation.lastFlags;
+            _hasJustUsedHotKey = hotkeyEvaluation.hasJustUsedHotKey;
+            if (hotkeyEvaluation.action != PHTVKeyDownHotkeyActionNone) {
+                if ([PHTVRuntimeUIBridgeService handleKeyDownHotkeyAction:(int32_t)hotkeyEvaluation.action]) {
+                    _lastFlag = 0;
+                    _hasJustUsedHotKey = true;
+                    return NULL;
+                }
+            }
         }
 
         if (type == kCGEventKeyDown) {

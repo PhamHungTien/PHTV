@@ -49,6 +49,21 @@ final class PHTVPauseTransitionBox: NSObject {
 }
 
 @objcMembers
+final class PHTVKeyDownHotkeyEvaluationBox: NSObject {
+    let consumeEvent: Bool
+    let action: Int32
+    let lastFlags: UInt64
+    let hasJustUsedHotKey: Bool
+
+    init(consumeEvent: Bool, action: Int32, lastFlags: UInt64, hasJustUsedHotKey: Bool) {
+        self.consumeEvent = consumeEvent
+        self.action = action
+        self.lastFlags = lastFlags
+        self.hasJustUsedHotKey = hasJustUsedHotKey
+    }
+}
+
+@objcMembers
 final class PHTVHotkeyService: NSObject {
     private static let hotkeyKeyMask: UInt32 = 0x00FF
     private static let hotkeyControlMask: UInt32 = 0x0100
@@ -417,6 +432,45 @@ final class PHTVHotkeyService: NSObject {
         }
 
         return PHTVKeyDownHotkeyAction.none.rawValue
+    }
+
+    @objc(processKeyDownHotkeyWithKeyCode:lastFlags:currentFlags:switchHotkey:convertHotkey:emojiEnabled:emojiModifiers:emojiHotkeyKeyCode:)
+    class func processKeyDownHotkey(
+        withKeyCode keyCode: UInt16,
+        lastFlags: UInt64,
+        currentFlags: UInt64,
+        switchHotkey: Int32,
+        convertHotkey: Int32,
+        emojiEnabled: Int32,
+        emojiModifiers: Int32,
+        emojiHotkeyKeyCode: Int32
+    ) -> PHTVKeyDownHotkeyEvaluationBox {
+        let action = evaluateKeyDownHotkeyAction(
+            forKeyCode: keyCode,
+            lastFlags: lastFlags,
+            currentFlags: currentFlags,
+            switchHotkey: switchHotkey,
+            convertHotkey: convertHotkey,
+            emojiEnabled: emojiEnabled,
+            emojiModifiers: emojiModifiers,
+            emojiHotkeyKeyCode: emojiHotkeyKeyCode
+        )
+
+        if action == PHTVKeyDownHotkeyAction.clearStaleModifiers.rawValue {
+            return PHTVKeyDownHotkeyEvaluationBox(
+                consumeEvent: false,
+                action: PHTVKeyDownHotkeyAction.none.rawValue,
+                lastFlags: 0,
+                hasJustUsedHotKey: false
+            )
+        }
+
+        return PHTVKeyDownHotkeyEvaluationBox(
+            consumeEvent: false,
+            action: action,
+            lastFlags: lastFlags,
+            hasJustUsedHotKey: lastFlags != 0
+        )
     }
 
     @objc(shouldMarkSwitchModifiersHeldForFlags:switchHotkey:convertHotkey:)
