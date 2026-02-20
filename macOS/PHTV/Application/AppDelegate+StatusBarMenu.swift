@@ -153,7 +153,7 @@ private enum PHTVStatusBarMenuCache {
         let inputMethod = Int(PHTVManager.currentLanguage())
         let inputType = Int(PHTVManager.currentInputType())
         let codeTable = Int(PHTVManager.currentCodeTable())
-        let runtimeSettings = PHTVManager.runtimeSettingsSnapshot() ?? [:]
+        let runtimeSettings = PHTVManager.runtimeSettingsSnapshot()
 
         let desiredSize = statusBarFontSize > 0 ? statusBarFontSize : 12.0
         if PHTVStatusBarMenuCache.statusFont == nil || PHTVStatusBarMenuCache.lastFontSize != desiredSize {

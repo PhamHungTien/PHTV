@@ -113,7 +113,7 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
     @objc func handleEmojiHotkeySettingsChanged(_ notification: Notification?) {
         _ = notification
         PHTVManager.loadEmojiHotkeySettingsFromDefaults()
-        let snapshot = PHTVManager.runtimeSettingsSnapshot() ?? [:]
+        let snapshot = PHTVManager.runtimeSettingsSnapshot()
 
 #if DEBUG
         let enabled = snapshot["enableEmojiHotkey"]?.intValue ?? 0
@@ -144,9 +144,9 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
             return
         }
 
-        let old = PHTVManager.runtimeSettingsSnapshot() ?? [:]
+        let old = PHTVManager.runtimeSettingsSnapshot()
         let settingsToken = PHTVManager.loadRuntimeSettingsFromUserDefaults()
-        let new = PHTVManager.runtimeSettingsSnapshot() ?? [:]
+        let new = PHTVManager.runtimeSettingsSnapshot()
 
         func changed(_ key: String) -> Bool {
             old[key]?.intValue != new[key]?.intValue
