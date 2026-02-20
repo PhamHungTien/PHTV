@@ -20,7 +20,6 @@ extern CGEventRef PHTVCallback(CGEventTapProxy proxy,
                                   CGEventRef event,
                                   void *refcon);
 
-extern BOOL vSafeMode;
 extern void RequestNewSession(void);
 extern void InvalidateLayoutCache(void);
 extern void OnInputMethodChanged(void);
@@ -98,6 +97,9 @@ static int PHTVToggleRuntimeIntSetting(volatile int *target,
 +(BOOL)phtv_hasBinaryChangedSinceLastRun;
 +(BOOL)phtv_checkBinaryIntegrity;
 +(BOOL)phtv_quickConvert;
++(BOOL)phtv_isSafeModeEnabled;
++(void)phtv_setSafeModeEnabled:(BOOL)enabled;
++(void)phtv_clearAXTestFlag;
 
 @end
 
@@ -684,25 +686,15 @@ static NSUInteger         _tapRecreateCount = 0;
 #pragma mark - Safe Mode
 
 +(BOOL)isSafeModeEnabled {
-    return vSafeMode;
+    return [self phtv_isSafeModeEnabled];
 }
 
 +(void)setSafeModeEnabled:(BOOL)enabled {
-    vSafeMode = enabled;
-    [[NSUserDefaults standardUserDefaults] setBool:enabled forKey:@"SafeMode"];
-
-    if (enabled) {
-        NSLog(@"[SafeMode] ENABLED - Accessibility API calls will be skipped");
-    } else {
-        NSLog(@"[SafeMode] DISABLED - Normal Accessibility API calls");
-    }
+    [self phtv_setSafeModeEnabled:enabled];
 }
 
 +(void)clearAXTestFlag {
-    // Clear the AX test flag on normal app termination
-    // This prevents false positive safe mode activation on next launch
-    [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"AXTestInProgress"];
-    NSLog(@"[SafeMode] Cleared AX test flag on normal termination");
+    [self phtv_clearAXTestFlag];
 }
 
 #pragma mark - Binary Integrity Check

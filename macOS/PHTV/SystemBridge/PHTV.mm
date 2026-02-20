@@ -173,6 +173,14 @@ static inline BOOL IsTextReplacementFixEnabled(void) {
 // Note: Not static - exported for PHTVManager access
 BOOL vSafeMode = NO;
 
+extern "C" BOOL PHTVGetSafeMode(void) {
+    return vSafeMode;
+}
+
+extern "C" void PHTVSetSafeMode(BOOL enabled) {
+    vSafeMode = enabled;
+}
+
 // Check if Spotlight or similar overlay is currently active using Accessibility API
 // OPTIMIZED: Results cached for 50ms to avoid repeated AX API calls while remaining responsive
 BOOL isSpotlightActive(void) {
