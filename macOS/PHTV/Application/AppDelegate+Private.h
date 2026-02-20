@@ -15,6 +15,23 @@ NS_ASSUME_NONNULL_BEGIN
 @interface AppDelegate ()
 @property (nonatomic, strong) NSStatusItem *statusItem;
 @property (nonatomic, strong) NSMenu *statusMenu;
+@property (nonatomic, strong, nullable) NSMenuItem *menuInputMethod;
+@property (nonatomic, strong, nullable) NSMenuItem *mnuTelex;
+@property (nonatomic, strong, nullable) NSMenuItem *mnuVNI;
+@property (nonatomic, strong, nullable) NSMenuItem *mnuSimpleTelex1;
+@property (nonatomic, strong, nullable) NSMenuItem *mnuSimpleTelex2;
+@property (nonatomic, strong, nullable) NSMenuItem *mnuUnicode;
+@property (nonatomic, strong, nullable) NSMenuItem *mnuTCVN;
+@property (nonatomic, strong, nullable) NSMenuItem *mnuVNIWindows;
+@property (nonatomic, strong, nullable) NSMenuItem *mnuUnicodeComposite;
+@property (nonatomic, strong, nullable) NSMenuItem *mnuVietnameseLocaleCP1258;
+@property (nonatomic, strong, nullable) NSMenuItem *mnuQuickConvert;
+@property (nonatomic, strong, nullable) NSMenuItem *mnuSpellCheck;
+@property (nonatomic, strong, nullable) NSMenuItem *mnuAllowConsonantZFWJ;
+@property (nonatomic, strong, nullable) NSMenuItem *mnuModernOrthography;
+@property (nonatomic, strong, nullable) NSMenuItem *mnuQuickTelex;
+@property (nonatomic, strong, nullable) NSMenuItem *mnuUpperCaseFirstChar;
+@property (nonatomic, strong, nullable) NSMenuItem *mnuAutoRestoreEnglishWord;
 @property (nonatomic, assign) CGFloat statusBarFontSize;
 @property (nonatomic, strong) dispatch_queue_t updateQueue;
 @property (nonatomic, assign) NSInteger lastInputMethod;

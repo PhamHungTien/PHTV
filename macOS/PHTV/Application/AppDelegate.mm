@@ -306,6 +306,24 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     NSMenuItem* mnuAutoRestoreEnglishWord;
 }
 
+@synthesize menuInputMethod;
+@synthesize mnuTelex;
+@synthesize mnuVNI;
+@synthesize mnuSimpleTelex1;
+@synthesize mnuSimpleTelex2;
+@synthesize mnuUnicode;
+@synthesize mnuTCVN;
+@synthesize mnuVNIWindows;
+@synthesize mnuUnicodeComposite;
+@synthesize mnuVietnameseLocaleCP1258;
+@synthesize mnuQuickConvert;
+@synthesize mnuSpellCheck;
+@synthesize mnuAllowConsonantZFWJ;
+@synthesize mnuModernOrthography;
+@synthesize mnuQuickTelex;
+@synthesize mnuUpperCaseFirstChar;
+@synthesize mnuAutoRestoreEnglishWord;
+
 - (void)dealloc {
     [self stopInputSourceMonitoring];
     
