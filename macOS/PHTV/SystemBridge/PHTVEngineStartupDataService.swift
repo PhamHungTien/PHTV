@@ -15,7 +15,6 @@ final class PHTVEngineStartupDataService: NSObject {
         let macroData = defaults.data(forKey: "macroData") ?? Data()
         PHTVEngineDataBridge.initializeMacroMap(with: macroData)
 
-        let smartSwitchData = defaults.data(forKey: "smartSwitchKey") ?? Data()
-        PHTVEngineDataBridge.initializeSmartSwitchKey(with: smartSwitchData)
+        PHTVSmartSwitchRuntimeService.loadFromPersistedData()
     }
 }

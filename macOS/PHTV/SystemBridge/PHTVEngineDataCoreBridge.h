@@ -16,7 +16,6 @@ extern "C" {
 #endif
 
 void PHTVEngineInitializeMacroMap(const unsigned char *_Nullable data, int length);
-void PHTVEngineInitializeSmartSwitchKey(const unsigned char *_Nullable data, int length);
 
 bool PHTVEngineInitializeEnglishDictionary(const char *_Nullable path);
 unsigned long PHTVEngineEnglishDictionarySize(void);

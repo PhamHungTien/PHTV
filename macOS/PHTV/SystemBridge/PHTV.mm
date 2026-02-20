@@ -1533,14 +1533,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         return NULL;
     }
 
-    static inline CGEventFlags PauseModifierMaskForKeyCode(int pauseKey) {
-        return (CGEventFlags)[PHTVHotkeyService pauseModifierMaskForKeyCode:(int32_t)pauseKey];
-    }
-
-    static inline CGEventFlags PauseKeyModifierMask(void) {
-        return PauseModifierMaskForKeyCode(vPauseKey);
-    }
-
     // Strip pause modifier from event flags to prevent special characters
     static inline CGEventFlags StripPauseModifier(CGEventFlags flags) {
         return (CGEventFlags)[PHTVHotkeyService stripPauseModifierForFlags:(uint64_t)flags
@@ -1549,12 +1541,12 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
     // Handle pause key press - temporarily disable Vietnamese input
     static inline void HandlePauseKeyPress(CGEventFlags flags) {
-        if (_pauseKeyPressed || !vPauseKeyEnabled || vPauseKey <= 0) {
-            return;
-        }
-
-        if (![PHTVHotkeyService shouldActivatePauseModeWithFlags:(uint64_t)flags
-                                                    pauseKeyCode:(int32_t)vPauseKey]) {
+        int action = [PHTVHotkeyService evaluatePauseStateActionWithOldFlags:0
+                                                                     newFlags:(uint64_t)flags
+                                                              pauseKeyEnabled:(int32_t)vPauseKeyEnabled
+                                                                 pauseKeyCode:(int32_t)vPauseKey
+                                                                  pausePressed:_pauseKeyPressed];
+        if (action != PHTVPauseStateActionActivate) {
             return;
         }
 
@@ -1567,13 +1559,12 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
     // Handle pause key release - restore Vietnamese input
     static inline void HandlePauseKeyRelease(CGEventFlags oldFlags, CGEventFlags newFlags) {
-        if (!_pauseKeyPressed) {
-            return;
-        }
-
-        if ([PHTVHotkeyService shouldReleasePauseModeFromOldFlags:(uint64_t)oldFlags
-                                                         newFlags:(uint64_t)newFlags
-                                                     pauseKeyCode:(int32_t)vPauseKey]) {
+        int action = [PHTVHotkeyService evaluatePauseStateActionWithOldFlags:(uint64_t)oldFlags
+                                                                     newFlags:(uint64_t)newFlags
+                                                              pauseKeyEnabled:(int32_t)vPauseKeyEnabled
+                                                                 pauseKeyCode:(int32_t)vPauseKey
+                                                                  pausePressed:_pauseKeyPressed];
+        if (action == PHTVPauseStateActionRelease) {
             vLanguage = _savedLanguageBeforePause;
             _pauseKeyPressed = false;
         }
@@ -1665,21 +1656,8 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         // If pause key is being held, strip pause modifier from events to prevent special characters
         // BUT only if no other modifiers are pressed (to preserve system shortcuts like Option+Cmd+V)
         if (_pauseKeyPressed && (type == kCGEventKeyDown || type == kCGEventKeyUp)) {
-            // Check if other modifiers are pressed (excluding the pause key modifier)
-            CGEventFlags otherModifiers = _flag & ~kCGEventFlagMaskNonCoalesced;
-            
-            // Remove the pause key's modifier from the check
-            const CGEventFlags pauseModifierMask = PauseKeyModifierMask();
-            if (pauseModifierMask != 0) {
-                otherModifiers &= ~pauseModifierMask;
-            }
-            
-            // Only strip if no other significant modifiers are pressed
-            // This preserves system shortcuts like Option+Cmd+V (move file)
-            BOOL hasOtherModifiers = (otherModifiers & (kCGEventFlagMaskCommand | kCGEventFlagMaskControl | 
-                                                         kCGEventFlagMaskAlternate | kCGEventFlagMaskShift)) != 0;
-            
-            if (!hasOtherModifiers) {
+            if ([PHTVHotkeyService shouldStripPauseModifierWithFlags:(uint64_t)_flag
+                                                         pauseKeyCode:(int32_t)vPauseKey]) {
                 CGEventFlags newFlags = StripPauseModifier(_flag);
                 CGEventSetFlags(event, newFlags);
                 _flag = newFlags;  // Update local flag as well

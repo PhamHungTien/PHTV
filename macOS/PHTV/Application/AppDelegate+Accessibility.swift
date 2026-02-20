@@ -272,11 +272,15 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
 
             var fixed = false
             var repairError: Error?
-            do {
-                try PHTVManager.autoFixTCCEntry()
+            var objcError: NSError?
+            if PHTVManager.autoFixTCCEntry(withError: &objcError) {
                 fixed = true
-            } catch {
-                repairError = error
+            } else {
+                repairError = objcError ?? NSError(
+                    domain: "PHTV.TCCRepair",
+                    code: -1,
+                    userInfo: [NSLocalizedDescriptionKey: "Automatic TCC repair failed"]
+                )
             }
             if fixed {
                 NSLog("[Accessibility] ✅ TCC auto-repair succeeded, restarting tccd...")

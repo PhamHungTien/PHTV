@@ -27,6 +27,12 @@ import Carbon
     case emojiPicker = 4
 }
 
+@objc enum PHTVPauseStateAction: Int32 {
+    case none = 0
+    case activate = 1
+    case release = 2
+}
+
 @objcMembers
 final class PHTVHotkeyService: NSObject {
     private static let hotkeyKeyMask: UInt32 = 0x00FF
@@ -575,6 +581,45 @@ final class PHTVHotkeyService: NSObject {
     @objc(flagsReleasePlanModifierReleaseAction:)
     class func flagsReleasePlanModifierReleaseAction(_ plan: Int32) -> Int32 {
         (plan >> 8) & 0xFF
+    }
+
+    @objc(evaluatePauseStateActionWithOldFlags:newFlags:pauseKeyEnabled:pauseKeyCode:pausePressed:)
+    class func evaluatePauseStateAction(
+        oldFlags: UInt64,
+        newFlags: UInt64,
+        pauseKeyEnabled: Int32,
+        pauseKeyCode: Int32,
+        pausePressed: Bool
+    ) -> Int32 {
+        guard pauseKeyEnabled != 0, pauseKeyCode > 0 else {
+            return PHTVPauseStateAction.none.rawValue
+        }
+
+        if !pausePressed {
+            if shouldActivatePauseMode(withFlags: newFlags, pauseKeyCode: pauseKeyCode) {
+                return PHTVPauseStateAction.activate.rawValue
+            }
+            return PHTVPauseStateAction.none.rawValue
+        }
+
+        if shouldReleasePauseMode(fromOldFlags: oldFlags, newFlags: newFlags, pauseKeyCode: pauseKeyCode) {
+            return PHTVPauseStateAction.release.rawValue
+        }
+
+        return PHTVPauseStateAction.none.rawValue
+    }
+
+    @objc(shouldStripPauseModifierWithFlags:pauseKeyCode:)
+    class func shouldStripPauseModifier(withFlags flags: UInt64, pauseKeyCode: Int32) -> Bool {
+        var otherModifiers = flags & ~CGEventFlags.maskNonCoalesced.rawValue
+
+        let pauseMask = pauseModifierMask(forKeyCode: pauseKeyCode)
+        if pauseMask != 0 {
+            otherModifiers &= ~pauseMask
+        }
+
+        let significantModifiers = commandFlagMask | controlFlagMask | optionFlagMask | shiftFlagMask
+        return (otherModifiers & significantModifiers) == 0
     }
 
     @objc(pauseModifierMaskForKeyCode:)
