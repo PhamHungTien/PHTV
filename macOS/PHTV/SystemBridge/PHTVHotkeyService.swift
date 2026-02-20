@@ -75,6 +75,41 @@ final class PHTVUppercasePrimeTransitionBox: NSObject {
 }
 
 @objcMembers
+final class PHTVModifierPressTransitionBox: NSObject {
+    let lastFlags: UInt64
+    let keyPressedWithRestoreModifier: Bool
+    let restoreModifierPressed: Bool
+    let keyPressedWhileSwitchModifiersHeld: Bool
+    let keyPressedWhileEmojiModifiersHeld: Bool
+    let shouldUpdateLanguage: Bool
+    let language: Int32
+    let pausePressed: Bool
+    let savedLanguage: Int32
+
+    init(
+        lastFlags: UInt64,
+        keyPressedWithRestoreModifier: Bool,
+        restoreModifierPressed: Bool,
+        keyPressedWhileSwitchModifiersHeld: Bool,
+        keyPressedWhileEmojiModifiersHeld: Bool,
+        shouldUpdateLanguage: Bool,
+        language: Int32,
+        pausePressed: Bool,
+        savedLanguage: Int32
+    ) {
+        self.lastFlags = lastFlags
+        self.keyPressedWithRestoreModifier = keyPressedWithRestoreModifier
+        self.restoreModifierPressed = restoreModifierPressed
+        self.keyPressedWhileSwitchModifiersHeld = keyPressedWhileSwitchModifiersHeld
+        self.keyPressedWhileEmojiModifiersHeld = keyPressedWhileEmojiModifiersHeld
+        self.shouldUpdateLanguage = shouldUpdateLanguage
+        self.language = language
+        self.pausePressed = pausePressed
+        self.savedLanguage = savedLanguage
+    }
+}
+
+@objcMembers
 final class PHTVHotkeyService: NSObject {
     private static let hotkeyKeyMask: UInt32 = 0x00FF
     private static let hotkeyControlMask: UInt32 = 0x0100
@@ -791,6 +826,52 @@ final class PHTVHotkeyService: NSObject {
         return PHTVUppercasePrimeTransitionBox(
             shouldAttemptPrime: shouldAttemptPrime,
             pending: nextPending
+        )
+    }
+
+    @objc(modifierPressTransitionForFlags:restoreOnEscape:customEscapeKey:keyPressedWithRestoreModifier:restoreModifierPressed:pauseKeyEnabled:pauseKeyCode:pausePressed:currentLanguage:savedLanguage:)
+    class func modifierPressTransition(
+        forFlags flags: UInt64,
+        restoreOnEscape: Int32,
+        customEscapeKey: Int32,
+        keyPressedWithRestoreModifier: Bool,
+        restoreModifierPressed: Bool,
+        pauseKeyEnabled: Int32,
+        pauseKeyCode: Int32,
+        pausePressed: Bool,
+        currentLanguage: Int32,
+        savedLanguage: Int32
+    ) -> PHTVModifierPressTransitionBox {
+        var nextKeyPressedWithRestoreModifier = keyPressedWithRestoreModifier
+        var nextRestoreModifierPressed = restoreModifierPressed
+        if shouldEnterRestoreModifierState(
+            restoreOnEscape: restoreOnEscape,
+            customEscapeKey: customEscapeKey,
+            flags: flags
+        ) {
+            nextRestoreModifierPressed = true
+            nextKeyPressedWithRestoreModifier = false
+        }
+
+        let pausePressTransition = pauseTransitionForPress(
+            withFlags: flags,
+            pauseKeyEnabled: pauseKeyEnabled,
+            pauseKeyCode: pauseKeyCode,
+            pausePressed: pausePressed,
+            currentLanguage: currentLanguage,
+            savedLanguage: savedLanguage
+        )
+
+        return PHTVModifierPressTransitionBox(
+            lastFlags: flags,
+            keyPressedWithRestoreModifier: nextKeyPressedWithRestoreModifier,
+            restoreModifierPressed: nextRestoreModifierPressed,
+            keyPressedWhileSwitchModifiersHeld: false,
+            keyPressedWhileEmojiModifiersHeld: false,
+            shouldUpdateLanguage: pausePressTransition.shouldUpdateLanguage,
+            language: pausePressTransition.language,
+            pausePressed: pausePressTransition.pausePressed,
+            savedLanguage: pausePressTransition.savedLanguage
         )
     }
 

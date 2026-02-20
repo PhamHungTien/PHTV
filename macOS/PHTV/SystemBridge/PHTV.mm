@@ -1247,32 +1247,27 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             }
         } else if (type == kCGEventFlagsChanged) {
             if (_lastFlag == 0 || _lastFlag < _flag) {
-                // Pressing more modifiers
-                _lastFlag = _flag;
+                PHTVModifierPressTransitionBox *modifierPressTransition =
+                    [PHTVHotkeyService modifierPressTransitionForFlags:(uint64_t)_flag
+                                                       restoreOnEscape:(int32_t)vRestoreOnEscape
+                                                       customEscapeKey:(int32_t)vCustomEscapeKey
+                                        keyPressedWithRestoreModifier:_keyPressedWithRestoreModifier
+                                                restoreModifierPressed:_restoreModifierPressed
+                                                       pauseKeyEnabled:(int32_t)vPauseKeyEnabled
+                                                          pauseKeyCode:(int32_t)vPauseKey
+                                                           pausePressed:_pauseKeyPressed
+                                                        currentLanguage:(int32_t)vLanguage
+                                                          savedLanguage:(int32_t)_savedLanguageBeforePause];
 
-                // Reset modifier tracking when modifiers change (user starting a new combo)
-                _keyPressedWhileSwitchModifiersHeld = false;
-                _keyPressedWhileEmojiModifiersHeld = false;
-
-                // Check if restore modifier key is being pressed
-                if ([PHTVHotkeyService shouldEnterRestoreModifierStateWithRestoreOnEscape:(int32_t)vRestoreOnEscape
-                                                                             customEscapeKey:(int32_t)vCustomEscapeKey
-                                                                                       flags:(uint64_t)_flag]) {
-                    _restoreModifierPressed = true;
-                    _keyPressedWithRestoreModifier = false;
-                }
-
-                // Check if pause key is being pressed - temporarily disable Vietnamese
-                PHTVPauseTransitionBox *pausePressTransition = [PHTVHotkeyService pauseTransitionForPressWithFlags:(uint64_t)_flag
-                                                                                                      pauseKeyEnabled:(int32_t)vPauseKeyEnabled
-                                                                                                         pauseKeyCode:(int32_t)vPauseKey
-                                                                                                          pausePressed:_pauseKeyPressed
-                                                                                                       currentLanguage:(int32_t)vLanguage
-                                                                                                         savedLanguage:(int32_t)_savedLanguageBeforePause];
-                _savedLanguageBeforePause = (int)pausePressTransition.savedLanguage;
-                _pauseKeyPressed = pausePressTransition.pausePressed;
-                if (pausePressTransition.shouldUpdateLanguage) {
-                    vLanguage = pausePressTransition.language;
+                _lastFlag = (CGEventFlags)modifierPressTransition.lastFlags;
+                _keyPressedWithRestoreModifier = modifierPressTransition.keyPressedWithRestoreModifier;
+                _restoreModifierPressed = modifierPressTransition.restoreModifierPressed;
+                _keyPressedWhileSwitchModifiersHeld = modifierPressTransition.keyPressedWhileSwitchModifiersHeld;
+                _keyPressedWhileEmojiModifiersHeld = modifierPressTransition.keyPressedWhileEmojiModifiersHeld;
+                _pauseKeyPressed = modifierPressTransition.pausePressed;
+                _savedLanguageBeforePause = (int)modifierPressTransition.savedLanguage;
+                if (modifierPressTransition.shouldUpdateLanguage) {
+                    vLanguage = modifierPressTransition.language;
                 }
             } else if (_lastFlag > _flag)  {
                 int releasePlan = [PHTVHotkeyService evaluateFlagsReleasePlanWithRestoreOnEscape:(int32_t)vRestoreOnEscape
