@@ -16,7 +16,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 -(void)fillData;  // Update UI status bar and menu items
 
--(void)setRunOnStartup:(BOOL)val;
 -(void)loadDefaultConfig;
 
 -(void)setGrayIcon:(BOOL)val;
