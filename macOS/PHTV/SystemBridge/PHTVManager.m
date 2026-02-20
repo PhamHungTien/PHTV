@@ -7,8 +7,6 @@
 //
 
 #import "PHTVManager.h"
-#import "PHTVBinaryIntegrity.h"
-#import "PHTVAccessibilityManager.h"
 #import "PHTV-Swift.h"
 #import <unistd.h>
 #import <math.h>
@@ -21,6 +19,7 @@ extern CGEventRef PHTVCallback(CGEventTapProxy proxy,
                                   void *refcon);
 
 extern NSString* ConvertUtil(NSString* str);
+extern BOOL vSafeMode;
 
 // No-op callback used only for permission test tap to satisfy nonnull parameter requirements
 static CGEventRef PHTVTestTapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event, void *refcon) {
@@ -467,11 +466,18 @@ static const useconds_t kTestTapRetryDelayUs = 50000;  // 50ms between retries
 #pragma mark - Safe Mode
 
 +(BOOL)isSafeModeEnabled {
-    return [PHTVAccessibilityManager isSafeModeEnabled];
+    return vSafeMode;
 }
 
 +(void)setSafeModeEnabled:(BOOL)enabled {
-    [PHTVAccessibilityManager setSafeModeEnabled:enabled];
+    vSafeMode = enabled;
+    [[NSUserDefaults standardUserDefaults] setBool:enabled forKey:@"SafeMode"];
+
+    if (enabled) {
+        NSLog(@"[SafeMode] ENABLED - Accessibility API calls will be skipped");
+    } else {
+        NSLog(@"[SafeMode] DISABLED - Normal Accessibility API calls");
+    }
 }
 
 +(void)clearAXTestFlag {
@@ -482,22 +488,22 @@ static const useconds_t kTestTapRetryDelayUs = 50000;  // 50ms between retries
 }
 
 #pragma mark - Binary Integrity Check
-// Implementation delegated to PHTVBinaryIntegrity class for better code organization
+// Implementation delegated directly to Swift service.
 
 +(NSString*)getBinaryArchitectures {
-    return [PHTVBinaryIntegrity getBinaryArchitectures];
+    return [PHTVBinaryIntegrityService getBinaryArchitectures];
 }
 
 +(NSString*)getBinaryHash {
-    return [PHTVBinaryIntegrity getBinaryHash];
+    return [PHTVBinaryIntegrityService getBinaryHash];
 }
 
 +(BOOL)hasBinaryChangedSinceLastRun {
-    return [PHTVBinaryIntegrity hasBinaryChangedSinceLastRun];
+    return [PHTVBinaryIntegrityService hasBinaryChangedSinceLastRun];
 }
 
 +(BOOL)checkBinaryIntegrity {
-    return [PHTVBinaryIntegrity checkBinaryIntegrity];
+    return [PHTVBinaryIntegrityService checkBinaryIntegrity];
 }
 
 @end

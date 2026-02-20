@@ -25,7 +25,6 @@
 
 // Import new manager classes
 #import "PHTVCacheManager.h"
-#import "PHTVAccessibilityManager.h"
 
 // Forward declarations for functions used before definition (inside extern "C" block)
 extern "C" {
@@ -946,7 +945,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     
     static void RequestNewSessionInternal(bool allowUppercasePrime) {
         // Reset AX context caches on new session (often triggered by mouse click/focus change).
-        [PHTVAccessibilityManager invalidateContextDetectionCaches];
+        [PHTVAccessibilityService invalidateContextDetectionCaches];
 
         // Acquire barrier: ensure we see latest config changes before processing
         __atomic_thread_fence(__ATOMIC_ACQUIRE);
@@ -1602,9 +1601,9 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             _phtvPendingBackspaceCount = 0;
 
             BOOL shouldVerify = (backspaceCount > 0);
-            BOOL axSucceeded = [PHTVAccessibilityManager replaceFocusedTextViaAX:backspaceCount
-                                                                      insertText:insertStr
-                                                                          verify:shouldVerify];
+            BOOL axSucceeded = vSafeMode ? NO : [PHTVAccessibilityService replaceFocusedTextViaAX:backspaceCount
+                                                                                        insertText:insertStr
+                                                                                            verify:shouldVerify];
             if (axSucceeded) {
                 goto FinalizeSend;
             }
@@ -1755,9 +1754,9 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
             // Try AX API first - atomic and most reliable for Spotlight
             BOOL shouldVerify = (pData->backspaceCount > 0);
-            BOOL axSucceeded = [PHTVAccessibilityManager replaceFocusedTextViaAX:pData->backspaceCount
-                                                                      insertText:macroString
-                                                                          verify:shouldVerify];
+            BOOL axSucceeded = vSafeMode ? NO : [PHTVAccessibilityService replaceFocusedTextViaAX:pData->backspaceCount
+                                                                                        insertText:macroString
+                                                                                            verify:shouldVerify];
             if (axSucceeded) {
                 #ifdef DEBUG
                 NSLog(@"[Macro] Spotlight: AX API succeeded, macro='%@'", macroString);
@@ -2445,7 +2444,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             BOOL isJetBrainsApp = [PHTVAppDetectionService isJetBrainsApp:effectiveBundleId];
             BOOL isTerminalPanel = NO;
             if (!isTerminalApp && !isJetBrainsApp) {
-                isTerminalPanel = [PHTVAccessibilityManager isTerminalPanelFocused];
+                isTerminalPanel = vSafeMode ? NO : [PHTVAccessibilityService isTerminalPanelFocused];
             }
             // Best-effort: Force CLI mode for all JetBrains apps to avoid terminal swallowing
             _phtvIsCliTarget = (isTerminalApp || isTerminalPanel || isJetBrainsApp);
@@ -2625,7 +2624,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                     if (pData->backspaceCount > 0) {
                         // DETECT ADDRESS BAR:
                         // Use accurate AX API check (cached) instead of unreliable spotlightActive
-                        BOOL isAddrBar = [PHTVAccessibilityManager isFocusedElementAddressBar];
+                        BOOL isAddrBar = vSafeMode ? NO : [PHTVAccessibilityService isFocusedElementAddressBar];
                         
                         #ifdef DEBUG
                         NSLog(@"[BrowserFix] isFocusedElementAddressBar returned: %d", isAddrBar);
@@ -2664,7 +2663,8 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                     // If Notion Code Block detected, fallback to standard backspace (no Shift+Left, no EmptyChar)
                     // This fixes duplicates in code blocks where Shift+Left might fail to select or text is raw
                     BOOL isNotionCodeBlockDetected = [effectiveBundleId isEqualToString:@"notion.id"] &&
-                                                     [PHTVAccessibilityManager isNotionCodeBlock];
+                                                     !vSafeMode &&
+                                                     [PHTVAccessibilityService isNotionCodeBlock];
 
                     if (isNotionCodeBlockDetected) {
                         // Do nothing here.

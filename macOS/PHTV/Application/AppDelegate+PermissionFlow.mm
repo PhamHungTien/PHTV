@@ -6,8 +6,8 @@
 //
 
 #import "AppDelegate+PermissionFlow.h"
-#import "../SystemBridge/PHTVAccessibilityManager.h"
 #import "../SystemBridge/PHTVManager.h"
+#import "PHTV-Swift.h"
 
 static NSString *const PHTVDefaultsKeyLastRunVersion = @"LastRunVersion";
 
@@ -36,7 +36,7 @@ static NSString *const PHTVDefaultsKeyLastRunVersion = @"LastRunVersion";
     NSModalResponse res = [alert runModal];
 
     if (res == 1001) {
-        [PHTVAccessibilityManager openAccessibilityPreferences];
+        [PHTVAccessibilityService openAccessibilityPreferences];
 
         [PHTVManager invalidatePermissionCache];
         NSLog(@"[Accessibility] User opening System Settings - cache invalidated");

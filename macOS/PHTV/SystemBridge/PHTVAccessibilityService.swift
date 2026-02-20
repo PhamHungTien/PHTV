@@ -517,4 +517,23 @@ final class PHTVAccessibilityService: NSObject {
         terminalCacheLock.unlock()
         return isTerminalPanel
     }
+
+    @objc class func openAccessibilityPreferences() {
+        let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
+        _ = AXIsProcessTrustedWithOptions(options)
+
+        if let url = URL(
+            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+        ), NSWorkspace.shared.open(url) {
+            return
+        }
+
+        let script = """
+        tell application "System Preferences"
+            activate
+            set current pane to pane "com.apple.preference.universalaccess"
+        end tell
+        """
+        NSAppleScript(source: script)?.executeAndReturnError(nil)
+    }
 }

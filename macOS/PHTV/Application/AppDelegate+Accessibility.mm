@@ -8,7 +8,7 @@
 #import "AppDelegate+Accessibility.h"
 #import "AppDelegate+Private.h"
 #import "../SystemBridge/PHTVManager.h"
-#import "../SystemBridge/PHTVAccessibilityManager.h"
+#import "PHTV-Swift.h"
 #include <unistd.h>
 
 @implementation AppDelegate (Accessibility)
@@ -286,7 +286,7 @@
 
         NSModalResponse response = [alert runModal];
         if (response == NSAlertFirstButtonReturn) {
-            [PHTVAccessibilityManager openAccessibilityPreferences];
+            [PHTVAccessibilityService openAccessibilityPreferences];
 
             // Invalidate cache for fresh permission check
             [PHTVManager invalidatePermissionCache];
