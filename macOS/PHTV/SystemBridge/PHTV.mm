@@ -384,8 +384,8 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                                                   (uint64_t)_phtvCliTextDelayUs * 3);
     }
 
-    static inline void ConfigureCliProfile(NSString *bundleId) {
-        switch ([PHTVCliProfileService profileCodeForBundleId:bundleId]) {
+    static inline void ConfigureCliProfileForCode(int32_t profileCode) {
+        switch (profileCode) {
             case 1:
                 ApplyCliProfile(kPHTVCliProfileIDE);
                 return;
@@ -2182,15 +2182,14 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             NSString *eventTargetBundleId = (eventTargetPID > 0) ? getBundleIdFromPID(eventTargetPID) : nil;
             NSString *focusedBundleId = getFocusedAppBundleId();
             
-            // Determine if target is a browser for later logic
-            BOOL isTargetBrowser = (eventTargetBundleId != nil && [PHTVAppDetectionService isBrowserApp:eventTargetBundleId]);
-            
             // Check if Spotlight is active.
             // Note: We MUST check this even if target is a browser, because Spotlight can be invoked OVER a browser.
             // Spotlight detection service handles performance/caching to avoid lag.
             BOOL spotlightActive = isSpotlightActive();
             
             NSString *effectiveBundleId = (spotlightActive && focusedBundleId != nil) ? focusedBundleId : (eventTargetBundleId ?: focusedBundleId);
+            PHTVAppRuntimeFlagsBox *runtimeFlags = [PHTVAppContextService runtimeFlagsForEffectiveBundleId:effectiveBundleId
+                                                                                         eventTargetBundleId:eventTargetBundleId];
 
             // PERFORMANCE: Cache app characteristics once per callback
             // This eliminates 5-10 function calls throughout the callback
@@ -2201,10 +2200,10 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             // BROWSER FIX: Browsers (Chromium, Safari, Firefox, etc.) don't support 
             // HID tap posting or AX API for their address bar autocomplete.
             // When spotlightActive=true on a browser address bar, we should NOT use Spotlight-style handling.
-            BOOL isBrowser = isTargetBrowser || [PHTVAppDetectionService isBrowserApp:effectiveBundleId];
+            BOOL isBrowser = runtimeFlags.isBrowser;
             _phtvPostToHIDTap = (!isBrowser && spotlightActive) || appChars.isSpotlightLike;
-            BOOL isTerminalApp = [PHTVAppDetectionService isTerminalApp:effectiveBundleId];
-            BOOL isJetBrainsApp = [PHTVAppDetectionService isJetBrainsApp:effectiveBundleId];
+            BOOL isTerminalApp = runtimeFlags.isTerminalApp;
+            BOOL isJetBrainsApp = runtimeFlags.isJetBrainsApp;
             BOOL isTerminalPanel = NO;
             if (!isTerminalApp && !isJetBrainsApp) {
                 isTerminalPanel = vSafeMode ? NO : [PHTVAccessibilityService isTerminalPanelFocused];
@@ -2213,7 +2212,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             _phtvIsCliTarget = (isTerminalApp || isTerminalPanel || isJetBrainsApp);
             _phtvPostToSessionForCli = _phtvIsCliTarget;
             if (_phtvIsCliTarget) {
-                ConfigureCliProfile(effectiveBundleId);
+                ConfigureCliProfileForCode(runtimeFlags.cliProfileCode);
             } else {
                 _phtvCliBackspaceDelayUs = 0;
                 _phtvCliWaitAfterBackspaceUs = 0;

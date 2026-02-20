@@ -10,6 +10,24 @@ import Foundation
 import Darwin
 
 @objcMembers
+final class PHTVAppRuntimeFlagsBox: NSObject {
+    let isBrowser: Bool
+    let isTerminalApp: Bool
+    let isJetBrainsApp: Bool
+    let cliProfileCode: Int32
+
+    init(isBrowser: Bool,
+         isTerminalApp: Bool,
+         isJetBrainsApp: Bool,
+         cliProfileCode: Int32) {
+        self.isBrowser = isBrowser
+        self.isTerminalApp = isTerminalApp
+        self.isJetBrainsApp = isJetBrainsApp
+        self.cliProfileCode = cliProfileCode
+    }
+}
+
+@objcMembers
 final class PHTVAppContextService: NSObject {
     private class var frontmostBundleId: String? {
         NSWorkspace.shared.frontmostApplication?.bundleIdentifier
@@ -88,5 +106,24 @@ final class PHTVAppContextService: NSObject {
         )
 
         return box
+    }
+
+    @objc(runtimeFlagsForEffectiveBundleId:eventTargetBundleId:)
+    class func runtimeFlags(forEffectiveBundleId effectiveBundleId: String?,
+                            eventTargetBundleId: String?) -> PHTVAppRuntimeFlagsBox {
+        let isTargetBrowser = eventTargetBundleId.map(PHTVAppDetectionService.isBrowserApp(_:)) ?? false
+        let isEffectiveBrowser = effectiveBundleId.map(PHTVAppDetectionService.isBrowserApp(_:)) ?? false
+        let isBrowser = isTargetBrowser || isEffectiveBrowser
+
+        let isTerminalApp = effectiveBundleId.map(PHTVAppDetectionService.isTerminalApp(_:)) ?? false
+        let isJetBrainsApp = effectiveBundleId.map(PHTVAppDetectionService.isJetBrainsApp(_:)) ?? false
+        let cliProfileCode = PHTVCliProfileService.profileCode(forBundleId: effectiveBundleId)
+
+        return PHTVAppRuntimeFlagsBox(
+            isBrowser: isBrowser,
+            isTerminalApp: isTerminalApp,
+            isJetBrainsApp: isJetBrainsApp,
+            cliProfileCode: cliProfileCode
+        )
     }
 }
