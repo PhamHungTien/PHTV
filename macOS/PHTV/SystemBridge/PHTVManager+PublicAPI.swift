@@ -65,11 +65,13 @@ import Foundation
     }
 
     @objc(initEventTap)
+    @discardableResult
     class func initEventTap() -> Bool {
         PHTVEventTapService.initEventTap()
     }
 
     @objc(stopEventTap)
+    @discardableResult
     class func stopEventTap() -> Bool {
         PHTVEventTapService.stopEventTap()
     }
@@ -100,6 +102,7 @@ import Foundation
     }
 
     @objc(showMessage:message:subMsg:)
+    @MainActor
     class func showMessage(_ window: NSWindow?, message msg: String, subMsg: String) {
         let alert = NSAlert()
         alert.messageText = msg

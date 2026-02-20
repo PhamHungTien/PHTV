@@ -229,12 +229,16 @@ extern "C" {
     }
 
     __attribute__((always_inline)) static inline BOOL isSpotlightLikeApp(NSString* bundleId) {
-        return [PHTVAppDetectionService isSpotlightLikeApp:bundleId];
+        return getAppCharacteristics(bundleId).isSpotlightLike;
     }
 
     // Check if app needs precomposed Unicode but with batched sending (not AX API)
     __attribute__((always_inline)) static inline BOOL needsPrecomposedBatched(NSString* bundleId) {
-        return [PHTVAppDetectionService needsPrecomposedBatched:bundleId];
+        return getAppCharacteristics(bundleId).needsPrecomposedBatched;
+    }
+
+    __attribute__((always_inline)) static inline BOOL needsStepByStepApp(NSString* bundleId) {
+        return getAppCharacteristics(bundleId).needsStepByStep;
     }
 
     // Cache the effective target bundle id for the current event tap callback.
@@ -806,8 +810,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         return (result != nil) ? result : FRONT_APP;
     }    
     BOOL containUnicodeCompoundApp(NSString* topApp) {
-        // Optimized to use NSSet for O(1) lookup instead of O(n) array iteration
-        return [PHTVAppDetectionService containsUnicodeCompound:topApp];
+        return getAppCharacteristics(topApp).containsUnicodeCompound;
     }
     
     void OnActiveAppChanged() { //use for smart switch key; improved on Sep 28th, 2019
@@ -1543,7 +1546,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         }
 
         //send real data - use step by step for timing sensitive apps like Spotlight
-        BOOL useStepByStep = _phtvIsCliTarget || vSendKeyStepByStep || [PHTVAppDetectionService needsStepByStep:effectiveTarget];
+        BOOL useStepByStep = _phtvIsCliTarget || vSendKeyStepByStep || needsStepByStepApp(effectiveTarget);
         if (!useStepByStep) {
             SendNewCharString(true);
         } else {
