@@ -670,6 +670,31 @@ final class PHTVHotkeyService: NSObject {
         return pauseMask != 0 && (flags & pauseMask) != 0
     }
 
+    @objc(isUppercasePrimeCandidateWithCharacter:flags:)
+    class func isUppercasePrimeCandidate(character: UInt16, flags: UInt64) -> Bool {
+        let blockedModifierMask = commandFlagMask
+            | controlFlagMask
+            | optionFlagMask
+            | fnFlagMask
+            | CGEventFlags.maskNumericPad.rawValue
+            | CGEventFlags.maskHelp.rawValue
+
+        if (flags & blockedModifierMask) != 0 {
+            return false
+        }
+
+        if character == 0 {
+            return false
+        }
+
+        switch UnicodeScalar(Int(character)) {
+        case " ", "\t", "\n", "\r":
+            return false
+        default:
+            return true
+        }
+    }
+
     @objc(shouldReleasePauseModeFromOldFlags:newFlags:pauseKeyCode:)
     class func shouldReleasePauseMode(fromOldFlags oldFlags: UInt64, newFlags: UInt64, pauseKeyCode: Int32) -> Bool {
         let pauseMask = pauseModifierMask(forKeyCode: pauseKeyCode)

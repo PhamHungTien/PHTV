@@ -262,26 +262,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                                                   (uint64_t)profile.postSendBlockUs);
     }
 
-    static inline BOOL IsUppercasePrimeCandidateKey(CGKeyCode keycode, CGEventFlags flags) {
-        if ((flags & kCGEventFlagMaskCommand) ||
-            (flags & kCGEventFlagMaskControl) ||
-            (flags & kCGEventFlagMaskAlternate) ||
-            (flags & kCGEventFlagMaskSecondaryFn) ||
-            (flags & kCGEventFlagMaskNumericPad) ||
-            (flags & kCGEventFlagMaskHelp)) {
-            return NO;
-        }
-        Uint32 keyWithCaps = keycode | (((flags & kCGEventFlagMaskShift) || (flags & kCGEventFlagMaskAlphaShift)) ? CAPS_MASK : 0);
-        Uint16 ch = keyCodeToCharacter(keyWithCaps);
-        if (ch == 0) {
-            return NO;
-        }
-        if (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r') {
-            return NO;
-        }
-        return YES;
-    }
-
     static bool _pendingUppercasePrimeCheck = true;
 
     __attribute__((always_inline)) static inline void PostSyntheticEvent(CGEventTapProxy proxy, CGEventRef e) {
@@ -1250,7 +1230,11 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                     phtv_mac_key_is_navigation(_keycode)) {
                     _pendingUppercasePrimeCheck = true;
                 }
-                if (_pendingUppercasePrimeCheck && IsUppercasePrimeCandidateKey(_keycode, _flag)) {
+                Uint32 keyWithCaps = _keycode | (((_flag & kCGEventFlagMaskShift) || (_flag & kCGEventFlagMaskAlphaShift)) ? CAPS_MASK : 0);
+                Uint16 keyCharacter = keyCodeToCharacter(keyWithCaps);
+                if (_pendingUppercasePrimeCheck &&
+                    [PHTVHotkeyService isUppercasePrimeCandidateWithCharacter:(uint16_t)keyCharacter
+                                                                         flags:(uint64_t)_flag]) {
                     BOOL shouldPrime = [PHTVAccessibilityService shouldPrimeUppercaseFromAXWithSafeMode:vSafeMode
                                                                                          uppercaseEnabled:vUpperCaseFirstChar
                                                                                         uppercaseExcluded:vUpperCaseExcludedForCurrentApp];
