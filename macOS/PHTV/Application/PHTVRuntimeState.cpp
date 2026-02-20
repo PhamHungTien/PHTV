@@ -1,13 +1,13 @@
 //
-//  PHTVRuntimeState.mm
+//  PHTVRuntimeState.cpp
 //  PHTV
 //
 //  Global runtime state and C bridge accessors used by Swift/ObjC wrappers.
 //
 
-#import <Carbon/Carbon.h>
-#import <Cocoa/Cocoa.h>
 #include "../Core/Engine/Engine.h"
+
+static const int PHTVCommandModifierFlag = 1 << 20;
 
 // see document in Engine.h
 // VOLATILE: Ensures thread-safe reads in event tap callback
@@ -51,7 +51,7 @@ volatile int vAutoRestoreEnglishWord = 1; //auto restore English words (default:
 
 // Emoji picker hotkey (handled in event tap callback, OpenKey style)
 volatile int vEnableEmojiHotkey = 1;
-volatile int vEmojiHotkeyModifiers = NSEventModifierFlagCommand;
+volatile int vEmojiHotkeyModifiers = PHTVCommandModifierFlag;
 volatile int vEmojiHotkeyKeyCode = KEY_E; // E key
 
 int vShowIconOnDock = 0; //new on version 2.0
@@ -86,20 +86,20 @@ extern "C" {
         __sync_synchronize();
     }
 
-    BOOL PHTVIsSmartSwitchKeyEnabled(void) {
+    bool PHTVIsSmartSwitchKeyEnabled(void) {
         return vUseSmartSwitchKey != 0;
     }
 
-    BOOL PHTVIsSendKeyStepByStepEnabled(void) {
+    bool PHTVIsSendKeyStepByStepEnabled(void) {
         return vSendKeyStepByStep != 0;
     }
 
-    void PHTVSetSendKeyStepByStepEnabled(BOOL enabled) {
+    void PHTVSetSendKeyStepByStepEnabled(bool enabled) {
         vSendKeyStepByStep = enabled ? 1 : 0;
         __sync_synchronize();
     }
 
-    void PHTVSetUpperCaseExcludedForCurrentApp(BOOL excluded) {
+    void PHTVSetUpperCaseExcludedForCurrentApp(bool excluded) {
         vUpperCaseExcludedForCurrentApp = excluded ? 1 : 0;
     }
 
@@ -166,7 +166,7 @@ extern "C" {
         __sync_synchronize();
     }
 
-    void PHTVSetShowIconOnDock(BOOL visible) {
+    void PHTVSetShowIconOnDock(bool visible) {
         vShowIconOnDock = visible ? 1 : 0;
         __sync_synchronize();
     }
@@ -262,7 +262,7 @@ extern "C" {
         __sync_synchronize();
     }
 
-    void PHTVSetUseSmartSwitchKey(BOOL enabled) {
+    void PHTVSetUseSmartSwitchKey(bool enabled) {
         vUseSmartSwitchKey = enabled ? 1 : 0;
         __sync_synchronize();
     }

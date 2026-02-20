@@ -17,7 +17,6 @@
 #include <limits>
 #import "Engine.h"
 #include "../Core/PHTVConstants.h"
-#import "PHTVManager.h"
 #import <Sparkle/Sparkle.h>
 #import "PHTV-Swift.h"
 
