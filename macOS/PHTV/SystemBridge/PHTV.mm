@@ -2335,34 +2335,20 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 // we should NOT use Spotlight-style handling.
                 BOOL isBrowserApp = targetContext.isBrowser;
                 BOOL isSpotlightTarget = targetContext.postToHIDTap;
-                
-                // Check if this is a special app (Spotlight-like or WhatsApp-like)
-                // Also treat as special when spotlightActive (search field detected via AX API)
-                // EXCEPT for browsers - they don't support AX API for autocomplete, so ignore spotlightActive for them
-                BOOL isSpecialApp = isSpotlightTarget || appChars.needsPrecomposedBatched;
-
-                // BROWSER SHORTCUT FIX: Avoid sending empty character for common shortcut prefixes (like /)
-                // or when a new session just started without any previous context.
-                // This prevents browsers from deleting the shortcut token (e.g., "/p") 
-                // when PHTV tries to break the autocomplete.
-                BOOL isPotentialShortcut = (_keycode == KEY_SLASH);
-                
-                // fix autocomplete - Unified browser fix strategy
-                // CRITICAL FIX: NEVER send empty character for SPACE key!
-                
-                // REFINED HYBRID STRATEGY (Final Safety Fix):
-                // 1. Browsers (Content/Sheets): Default to Simple Backspace.
-                //    - SAFE: No 'Shift+Left' (prevents selection errors in Sheets).
-                //    - SAFE: No 'SendEmptyCharacter' (prevents "iệt Nam" deletion bug).
-                // 2. Browsers (Address Bar): Use 'Shift+Left' ONLY if detected (isFocusedElementAddressBar).
-                //    - FIX: Breaks autocomplete suggestions to prevent "dđ", "chaào".
-                
-                BOOL isBrowserFix = vFixRecommendBrowser && isBrowserApp;
-                
-                // Allow Browser Fix for KEY_SPACE if there is backspace count (restoring word)
-                // This fixes "play" -> "pplay" bug where standard backspace fails in address bar on Space key
-                BOOL isSpaceRestore = (_keycode == KEY_SPACE && pData->backspaceCount > 0);
-                BOOL shouldSkipSpace = (_keycode == KEY_SPACE && !isSpaceRestore);
+                BOOL isNotionApp = [effectiveBundleId isEqualToString:@"notion.id"];
+                PHTVInputStrategyBox *inputStrategy = [PHTVInputStrategyService strategyForSpaceKey:(_keycode == KEY_SPACE)
+                                                                                            slashKey:(_keycode == KEY_SLASH)
+                                                                                             extCode:pData->extCode
+                                                                                      backspaceCount:(int32_t)pData->backspaceCount
+                                                                                        isBrowserApp:isBrowserApp
+                                                                                    isSpotlightTarget:isSpotlightTarget
+                                                                              needsPrecomposedBatched:appChars.needsPrecomposedBatched
+                                                                                    browserFixEnabled:vFixRecommendBrowser
+                                                                                           isNotionApp:isNotionApp];
+                BOOL isSpecialApp = inputStrategy.isSpecialApp;
+                BOOL isPotentialShortcut = inputStrategy.isPotentialShortcut;
+                BOOL isBrowserFix = inputStrategy.isBrowserFix;
+                BOOL shouldSkipSpace = inputStrategy.shouldSkipSpace;
                 
                 #ifdef DEBUG
                 // Always log browser fix status to debug why it might be skipped
@@ -2376,7 +2362,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 }
                 #endif
 
-                if (isBrowserFix && pData->extCode != 4 && !isSpecialApp && !shouldSkipSpace && !isPotentialShortcut) {
+                if (inputStrategy.shouldTryBrowserAddressBarFix) {
                     if (pData->backspaceCount > 0) {
                         // DETECT ADDRESS BAR:
                         // Use accurate AX API check (cached) instead of unreliable spotlightActive
@@ -2409,8 +2395,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                     }
                     // CRITICAL: Force fall through to standard backspace logic below.
                 } 
-                else if (vFixRecommendBrowser && pData->extCode != 4 && (!isSpecialApp || [effectiveBundleId isEqualToString:@"notion.id"]) && _keycode != KEY_SPACE &&
-                         !isPotentialShortcut && !isBrowserApp) {
+                else if (inputStrategy.shouldTryLegacyNonBrowserFix) {
                     // Legacy logic for non-browser apps (Electron, Slack, etc.)
                     // Keep original behavior: shift-left for Chromium, EmptyChar for others
                     BOOL useShiftLeft = appChars.containsUnicodeCompound && pData->backspaceCount > 0;
@@ -2418,7 +2403,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                     // NOTION CODE BLOCK FIX:
                     // If Notion Code Block detected, fallback to standard backspace (no Shift+Left, no EmptyChar)
                     // This fixes duplicates in code blocks where Shift+Left might fail to select or text is raw
-                    BOOL isNotionCodeBlockDetected = [effectiveBundleId isEqualToString:@"notion.id"] &&
+                    BOOL isNotionCodeBlockDetected = isNotionApp &&
                                                      !vSafeMode &&
                                                      [PHTVAccessibilityService isNotionCodeBlock];
 
@@ -2448,7 +2433,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                     pData->backspaceCount = 15;
                 }
 #ifdef DEBUG
-                if (_keycode == KEY_SPACE && vFixRecommendBrowser && pData->extCode != 4 && !isSpecialApp) {
+                if (inputStrategy.shouldLogSpaceSkip) {
                     NSLog(@"[TextReplacement] SKIPPED SendEmptyCharacter for SPACE to avoid Text Replacement conflict");
                 }
 #endif
