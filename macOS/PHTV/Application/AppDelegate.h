@@ -28,9 +28,6 @@ NS_ASSUME_NONNULL_BEGIN
 -(void)setQuickConvertString;
 -(void)onEmojiHotkeyTriggered;
 
--(void)setDockIconVisible:(BOOL)visible;
--(void)showIcon:(BOOL)onDock;
-
 - (void)setupSwiftUIBridge;
 - (void)loadExistingMacros;
 - (void)handleSettingsReset:(NSNotification * _Nullable)notification;

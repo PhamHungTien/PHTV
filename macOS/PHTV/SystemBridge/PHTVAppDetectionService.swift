@@ -52,7 +52,7 @@ private struct BundlePatternSet {
 }
 
 // Swift source of truth for app detection rules.
-// ObjC/ObjC++ callers keep using PHTVAppDetectionManager as a thin bridge.
+// ObjC/ObjC++ code can call this service directly via PHTV-Swift.h.
 @objcMembers
 final class PHTVAppDetectionService: NSObject {
     private static let niceSpaceApps = BundlePatternSet([

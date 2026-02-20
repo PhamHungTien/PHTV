@@ -21,14 +21,11 @@
 #import "../Application/AppDelegate.h"
 #import "../Application/AppDelegate+InputState.h"
 #import "PHTVManager.h"
+#import "PHTV-Swift.h"
 
 // Import new manager classes
 #import "PHTVCacheManager.h"
-#import "PHTVTimingManager.h"
-#import "PHTVAppDetectionManager.h"
-#import "PHTVSpotlightManager.h"
 #import "PHTVAccessibilityManager.h"
-#import "PHTVHotkeyManager.h"
 
 // Forward declarations for functions used before definition (inside extern "C" block)
 extern "C" {
@@ -37,6 +34,19 @@ extern "C" {
 }
 
 #define FRONT_APP [[NSWorkspace sharedWorkspace] frontmostApplication].bundleIdentifier
+
+typedef NS_ENUM(NSInteger, DelayType) {
+    DelayTypeNone = 0,
+    DelayTypeSpotlight = 2
+};
+
+typedef NS_ENUM(NSInteger, PHTVTextReplacementDecision) {
+    PHTVTextReplacementDecisionNone = 0,
+    PHTVTextReplacementDecisionExternalDelete = 1,
+    PHTVTextReplacementDecisionPattern2A = 2,
+    PHTVTextReplacementDecisionPattern2B = 3,
+    PHTVTextReplacementDecisionFallbackNoMatch = 4
+};
 
 // Performance & Cache Configuration
 static const uint64_t SPOTLIGHT_CACHE_DURATION_MS = 150;     // Spotlight detection cache timeout (balanced for lower CPU)
@@ -158,7 +168,10 @@ BOOL vSafeMode = NO;
 // Check if Spotlight or similar overlay is currently active using Accessibility API
 // OPTIMIZED: Results cached for 50ms to avoid repeated AX API calls while remaining responsive
 BOOL isSpotlightActive(void) {
-    return [PHTVSpotlightManager isSpotlightActive];
+    if (vSafeMode) {
+        return NO;
+    }
+    return [PHTVSpotlightDetectionService isSpotlightActive];
 }
 
 // Get bundle ID from process ID
@@ -194,6 +207,8 @@ extern volatile int vTempOffPHTV;
 extern volatile int vEnableEmojiHotkey;
 extern volatile int vEmojiHotkeyModifiers;
 extern volatile int vEmojiHotkeyKeyCode;
+extern volatile int vPauseKeyEnabled;
+extern volatile int vPauseKey;
 
 extern "C" {
 
@@ -216,12 +231,12 @@ extern "C" {
     }
 
     __attribute__((always_inline)) static inline BOOL isSpotlightLikeApp(NSString* bundleId) {
-        return [PHTVAppDetectionManager isSpotlightLikeApp:bundleId];
+        return [PHTVAppDetectionService isSpotlightLikeApp:bundleId];
     }
 
     // Check if app needs precomposed Unicode but with batched sending (not AX API)
     __attribute__((always_inline)) static inline BOOL needsPrecomposedBatched(NSString* bundleId) {
-        return [PHTVAppDetectionManager needsPrecomposedBatched:bundleId];
+        return [PHTVAppDetectionService needsPrecomposedBatched:bundleId];
     }
 
     // Cache the effective target bundle id for the current event tap callback.
@@ -368,20 +383,20 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     }
 
     static inline void ConfigureCliProfile(NSString *bundleId) {
-        if ([PHTVAppDetectionManager isVSCodeFamilyApp:bundleId] ||
-            [PHTVAppDetectionManager isJetBrainsApp:bundleId]) {
+        if ([PHTVAppDetectionService isVSCodeFamilyApp:bundleId] ||
+            [PHTVAppDetectionService isJetBrainsApp:bundleId]) {
             ApplyCliProfile(kPHTVCliProfileIDE);
             return;
         }
-        if ([PHTVAppDetectionManager isFastTerminalApp:bundleId]) {
+        if ([PHTVAppDetectionService isFastTerminalApp:bundleId]) {
             ApplyCliProfile(kPHTVCliProfileFast);
             return;
         }
-        if ([PHTVAppDetectionManager isMediumTerminalApp:bundleId]) {
+        if ([PHTVAppDetectionService isMediumTerminalApp:bundleId]) {
             ApplyCliProfile(kPHTVCliProfileMedium);
             return;
         }
-        if ([PHTVAppDetectionManager isSlowTerminalApp:bundleId]) {
+        if ([PHTVAppDetectionService isSlowTerminalApp:bundleId]) {
             ApplyCliProfile(kPHTVCliProfileSlow);
             return;
         }
@@ -638,7 +653,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         NSString *bundleId = getFocusedAppBundleId();
         pid_t cachePid = targetPID;
 
-        BOOL shouldDisable = [PHTVAppDetectionManager shouldDisableVietnamese:bundleId];
+        BOOL shouldDisable = [PHTVAppDetectionService shouldDisableVietnamese:bundleId];
 
         // Update cache only when we have a valid PID, to avoid cross-app leakage
         lastResult = shouldDisable;
@@ -650,12 +665,12 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
     // Legacy check (for backward compatibility)
     BOOL shouldDisableVietnamese(NSString* bundleId) {
-        return [PHTVAppDetectionManager shouldDisableVietnamese:bundleId];
+        return [PHTVAppDetectionService shouldDisableVietnamese:bundleId];
     }
 
     // Legacy check (for backward compatibility)
     BOOL needsStepByStep(NSString* bundleId) {
-        return [PHTVAppDetectionManager needsStepByStep:bundleId];
+        return [PHTVAppDetectionService needsStepByStep:bundleId];
     }
 
     CGEventSourceRef myEventSource = NULL;
@@ -679,6 +694,8 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     int _i, _j, _k;
     Uint32 _tempChar;
     bool _hasJustUsedHotKey = false;
+    bool _pauseKeyPressed = false;
+    int _savedLanguageBeforePause = 1;
 
     // For restore key detection with modifier keys
     bool _restoreModifierPressed = false;
@@ -999,7 +1016,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             return FRONT_APP;
         }
     
-        // Ensure cache is reasonably fresh (within 10ms - matches PHTVSpotlightManager)
+        // Ensure cache is reasonably fresh (within 10ms - matches Spotlight detection cache policy)
         // isSpotlightActive() is always called before getFocusedAppBundleId() in the hot path
         uint64_t now = mach_absolute_time();
         
@@ -1023,11 +1040,11 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     }    
     BOOL containUnicodeCompoundApp(NSString* topApp) {
         // Optimized to use NSSet for O(1) lookup instead of O(n) array iteration
-        return [PHTVAppDetectionManager containsUnicodeCompound:topApp];
+        return [PHTVAppDetectionService containsUnicodeCompound:topApp];
     }
     
     BOOL needsForcePrecomposed(NSString* bundleId) {
-        return [PHTVAppDetectionManager isSpotlightLikeApp:bundleId];
+        return [PHTVAppDetectionService isSpotlightLikeApp:bundleId];
     }
     
     void saveSmartSwitchKeyData() {
@@ -1254,7 +1271,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             InsertKeyLength(1);
 
         _newChar = 0x202F; //empty char
-        if ([PHTVAppDetectionManager needsNiceSpace:FRONT_APP]) {
+        if ([PHTVAppDetectionService needsNiceSpace:FRONT_APP]) {
             _newChar = 0x200C; //Unicode character with empty space
         }
 
@@ -1645,10 +1662,10 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     }
             
     static inline bool checkHotKeyWithFlags(int hotKeyData, bool checkKeyCode, CGEventFlags flags, CGKeyCode keycode) {
-        return [PHTVHotkeyManager checkHotKey:hotKeyData
+        return [PHTVHotkeyService checkHotKey:(int32_t)hotKeyData
                                  checkKeyCode:checkKeyCode
-                               currentKeycode:keycode
-                                  currentFlags:flags];
+                               currentKeycode:(uint16_t)keycode
+                                  currentFlags:(uint64_t)flags];
     }
 
     bool checkHotKey(int hotKeyData, bool checkKeyCode=true) {
@@ -1659,12 +1676,13 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     // This is used to detect if user is in the process of pressing a modifier combo
     // Returns true if current flags CONTAIN all required modifiers (may have extra modifiers)
     bool hotkeyModifiersAreHeld(int hotKeyData, CGEventFlags currentFlags) {
-        return [PHTVHotkeyManager hotkeyModifiersAreHeld:hotKeyData currentFlags:currentFlags];
+        return [PHTVHotkeyService hotkeyModifiersAreHeld:(int32_t)hotKeyData
+                                            currentFlags:(uint64_t)currentFlags];
     }
 
     // Check if this is a modifier-only hotkey (no specific key required, keycode = 0xFE)
     bool isModifierOnlyHotkey(int hotKeyData) {
-        return [PHTVHotkeyManager isModifierOnlyHotkey:hotKeyData];
+        return [PHTVHotkeyService isModifierOnlyHotkey:(int32_t)hotKeyData];
     }
 
     void switchLanguage() {
@@ -1799,11 +1817,12 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     }
 
     extern "C" void InvalidateLayoutCache() {
-        [PHTVHotkeyManager invalidateLayoutCache];
+        [PHTVHotkeyService invalidateLayoutCache];
     }
 
     CGKeyCode ConvertEventToKeyboardLayoutCompatKeyCode(CGEventRef keyEvent, CGKeyCode fallbackKeyCode) {
-        return [PHTVHotkeyManager convertEventToKeyboardLayoutCompatKeyCode:keyEvent fallback:fallbackKeyCode];
+        return (CGKeyCode)[PHTVHotkeyService convertEventToKeyboardLayoutCompatKeyCode:keyEvent
+                                                                               fallback:(uint16_t)fallbackKeyCode];
     }
 
     static inline CGEventFlags RelevantEmojiModifierFlags(CGEventFlags flags) {
@@ -1889,29 +1908,81 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         return NULL;
     }
 
+    static inline CGEventFlags PauseModifierMaskForKeyCode(int pauseKey) {
+        switch (pauseKey) {
+            case KEY_LEFT_OPTION:
+            case KEY_RIGHT_OPTION:
+                return kCGEventFlagMaskAlternate;
+            case KEY_LEFT_CONTROL:
+            case KEY_RIGHT_CONTROL:
+                return kCGEventFlagMaskControl;
+            case KEY_LEFT_SHIFT:
+            case KEY_RIGHT_SHIFT:
+                return kCGEventFlagMaskShift;
+            case KEY_LEFT_COMMAND:
+            case KEY_RIGHT_COMMAND:
+                return kCGEventFlagMaskCommand;
+            case KEY_FUNCTION:
+                return kCGEventFlagMaskSecondaryFn;
+            default:
+                return 0;
+        }
+    }
+
     static inline CGEventFlags PauseKeyModifierMask(void) {
-        return [PHTVHotkeyManager pauseModifierMaskForCurrentPauseKey];
+        return PauseModifierMaskForKeyCode(vPauseKey);
     }
 
     // Strip pause modifier from event flags to prevent special characters
     static inline CGEventFlags StripPauseModifier(CGEventFlags flags) {
-        return [PHTVHotkeyManager stripPauseModifier:flags];
+        CGEventFlags pauseMask = PauseKeyModifierMask();
+        if (pauseMask == 0) {
+            return flags;
+        }
+        return flags & ~pauseMask;
     }
 
     // Handle pause key press - temporarily disable Vietnamese input
     static inline void HandlePauseKeyPress(CGEventFlags flags) {
-        [PHTVHotkeyManager handlePauseKeyPressWithFlags:flags];
+        if (_pauseKeyPressed || !vPauseKeyEnabled || vPauseKey <= 0) {
+            return;
+        }
+
+        CGEventFlags pauseMask = PauseKeyModifierMask();
+        if (pauseMask == 0 || (flags & pauseMask) == 0) {
+            return;
+        }
+
+        _savedLanguageBeforePause = vLanguage;
+        if (vLanguage == 1) {
+            vLanguage = 0;
+        }
+        _pauseKeyPressed = true;
     }
 
     // Handle pause key release - restore Vietnamese input
     static inline void HandlePauseKeyRelease(CGEventFlags oldFlags, CGEventFlags newFlags) {
-        [PHTVHotkeyManager handlePauseKeyReleaseFromFlags:oldFlags toFlags:newFlags];
+        if (!_pauseKeyPressed) {
+            return;
+        }
+
+        CGEventFlags pauseMask = PauseKeyModifierMask();
+        if (pauseMask == 0) {
+            return;
+        }
+
+        BOOL wasPressed = (oldFlags & pauseMask) != 0;
+        BOOL isPressed = (newFlags & pauseMask) != 0;
+        if (!isPressed && wasPressed) {
+            vLanguage = _savedLanguageBeforePause;
+            _pauseKeyPressed = false;
+        }
     }
 
     // Handle Spotlight cache invalidation on Cmd+Space and modifier changes
     // This ensures fast Spotlight detection
     static inline void HandleSpotlightCacheInvalidation(CGEventType type, CGKeyCode keycode, CGEventFlags flag) {
-        [PHTVSpotlightManager handleSpotlightCacheInvalidation:type keycode:keycode flags:flag];
+        [PHTVSpotlightDetectionService handleSpotlightCacheInvalidation:type keycode:keycode flags:flag];
     }
 
     // Event tap health monitoring - checks tap status and recovers if needed
@@ -2007,7 +2078,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         // We track these to avoid duplicate characters when SendEmptyCharacter() is called
         if (IsTextReplacementFixEnabled() && type == kCGEventKeyDown && _keycode == KEY_DELETE) {
             // This is an external delete event (not from PHTV since we already filtered myEventSource)
-            [PHTVSpotlightManager trackExternalDelete];
+            [PHTVSpotlightDetectionService trackExternalDelete];
 #ifdef DEBUG
             NSLog(@"[TextReplacement] External DELETE detected");
 #endif
@@ -2016,8 +2087,8 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         // Also track space after deletes to detect text replacement pattern (only if fix enabled)
         if (IsTextReplacementFixEnabled() && type == kCGEventKeyDown && _keycode == KEY_SPACE) {
 #ifdef DEBUG
-            int externalDeleteCount = [PHTVSpotlightManager getExternalDeleteCount];
-            unsigned long long elapsed_ms = [PHTVSpotlightManager elapsedSinceLastExternalDeleteMs];
+            int externalDeleteCount = (int)[PHTVSpotlightDetectionService externalDeleteCountValue];
+            unsigned long long elapsed_ms = [PHTVSpotlightDetectionService elapsedSinceLastExternalDeleteMs];
             NSLog(@"[TextReplacement] SPACE key pressed: deleteCount=%d, elapsedMs=%llu, sourceID=%lld",
                   externalDeleteCount, elapsed_ms,
                   CGEventGetIntegerValueField(event, kCGEventSourceStateID));
@@ -2029,7 +2100,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
         // If pause key is being held, strip pause modifier from events to prevent special characters
         // BUT only if no other modifiers are pressed (to preserve system shortcuts like Option+Cmd+V)
-        if ([PHTVHotkeyManager isPauseKeyPressed] && (type == kCGEventKeyDown || type == kCGEventKeyUp)) {
+        if (_pauseKeyPressed && (type == kCGEventKeyDown || type == kCGEventKeyUp)) {
             // Check if other modifiers are pressed (excluding the pause key modifier)
             CGEventFlags otherModifiers = _flag & ~kCGEventFlagMaskNonCoalesced;
             
@@ -2350,11 +2421,11 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             NSString *focusedBundleId = getFocusedAppBundleId();
             
             // Determine if target is a browser for later logic
-            BOOL isTargetBrowser = (eventTargetBundleId != nil && [PHTVAppDetectionManager isBrowserApp:eventTargetBundleId]);
+            BOOL isTargetBrowser = (eventTargetBundleId != nil && [PHTVAppDetectionService isBrowserApp:eventTargetBundleId]);
             
             // Check if Spotlight is active.
             // Note: We MUST check this even if target is a browser, because Spotlight can be invoked OVER a browser.
-            // PHTVSpotlightManager handles performance/caching to avoid lag.
+            // Spotlight detection service handles performance/caching to avoid lag.
             BOOL spotlightActive = isSpotlightActive();
             
             NSString *effectiveBundleId = (spotlightActive && focusedBundleId != nil) ? focusedBundleId : (eventTargetBundleId ?: focusedBundleId);
@@ -2368,10 +2439,10 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             // BROWSER FIX: Browsers (Chromium, Safari, Firefox, etc.) don't support 
             // HID tap posting or AX API for their address bar autocomplete.
             // When spotlightActive=true on a browser address bar, we should NOT use Spotlight-style handling.
-            BOOL isBrowser = isTargetBrowser || [PHTVAppDetectionManager isBrowserApp:effectiveBundleId];
+            BOOL isBrowser = isTargetBrowser || [PHTVAppDetectionService isBrowserApp:effectiveBundleId];
             _phtvPostToHIDTap = (!isBrowser && spotlightActive) || appChars.isSpotlightLike;
-            BOOL isTerminalApp = [PHTVAppDetectionManager isTerminalApp:effectiveBundleId];
-            BOOL isJetBrainsApp = [PHTVAppDetectionManager isJetBrainsApp:effectiveBundleId];
+            BOOL isTerminalApp = [PHTVAppDetectionService isTerminalApp:effectiveBundleId];
+            BOOL isJetBrainsApp = [PHTVAppDetectionService isJetBrainsApp:effectiveBundleId];
             BOOL isTerminalPanel = NO;
             if (!isTerminalApp && !isJetBrainsApp) {
                 isTerminalPanel = [PHTVAccessibilityManager isTerminalPanelFocused];
@@ -2508,7 +2579,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 // BROWSER FIX: Browsers (Chromium, Safari, Firefox, etc.) don't support AX API properly
                 // for their address bar autocomplete. When spotlightActive=true on a browser, 
                 // we should NOT use Spotlight-style handling.
-                BOOL isBrowserApp = [PHTVAppDetectionManager isBrowserApp:effectiveBundleId];
+                BOOL isBrowserApp = [PHTVAppDetectionService isBrowserApp:effectiveBundleId];
                 
                 // Check if this is a special app (Spotlight-like or WhatsApp-like)
                 // Also treat as special when spotlightActive (search field detected via AX API)
@@ -2634,7 +2705,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 BOOL textReplacementFixEnabled = IsTextReplacementFixEnabled();
                 int externalDeleteCount = 0;
                 if (textReplacementFixEnabled) {
-                    externalDeleteCount = [PHTVSpotlightManager getExternalDeleteCount];
+                    externalDeleteCount = (int)[PHTVSpotlightDetectionService externalDeleteCountValue];
                 }
 
                 // Log for debugging text replacement issues (only in Debug builds)
@@ -2651,16 +2722,16 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                     (pData->backspaceCount > 0 || pData->newCharCount > 0)) {
                     unsigned long long matchedElapsedMs = 0;
                     PHTVTextReplacementDecision decision =
-                        [PHTVSpotlightManager detectTextReplacementForCode:pData->code
-                                                                    extCode:pData->extCode
-                                                             backspaceCount:(int)pData->backspaceCount
-                                                               newCharCount:(int)pData->newCharCount
-                                                        externalDeleteCount:externalDeleteCount
-                                            restoreAndStartNewSessionCode:vRestoreAndStartNewSession
-                                                            willProcessCode:vWillProcess
-                                                                restoreCode:vRestore
-                                                               deleteWindowMs:TEXT_REPLACEMENT_DELETE_WINDOW_MS
-                                                            matchedElapsedMs:&matchedElapsedMs];
+                        (PHTVTextReplacementDecision)[PHTVSpotlightDetectionService detectTextReplacementForCode:pData->code
+                                                                                                         extCode:pData->extCode
+                                                                                                  backspaceCount:(int)pData->backspaceCount
+                                                                                                    newCharCount:(int)pData->newCharCount
+                                                                                             externalDeleteCount:externalDeleteCount
+                                                                         restoreAndStartNewSessionCode:vRestoreAndStartNewSession
+                                                                                         willProcessCode:vWillProcess
+                                                                                             restoreCode:vRestore
+                                                                                            deleteWindowMs:TEXT_REPLACEMENT_DELETE_WINDOW_MS
+                                                                                         matchedElapsedMs:&matchedElapsedMs];
 
                     if (decision == PHTVTextReplacementDecisionExternalDelete) {
 #ifdef DEBUG

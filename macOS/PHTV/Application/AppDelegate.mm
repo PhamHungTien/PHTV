@@ -15,12 +15,13 @@
 #import "AppDelegate+Private.h"
 #import "AppDelegate+Accessibility.h"
 #import "AppDelegate+AppMonitoring.h"
+#import "AppDelegate+DockVisibility.h"
 #import "AppDelegate+InputState.h"
+#import "AppDelegate+InputSourceMonitoring.h"
 #import "AppDelegate+SettingsActions.h"
 #import "AppDelegate+Sparkle.h"
 #import "SparkleManager.h"
 #import "../SystemBridge/PHTVManager.h"
-#import "../SystemBridge/PHTVCacheManager.h"
 #import "../SystemBridge/PHTVAccessibilityManager.h"
 #import "PHTV-Swift.h"
 #include "../Core/Engine/Engine.h"
@@ -68,8 +69,6 @@ static NSString *const PHTVNotificationAccessibilityNeedsRelaunch = @"Accessibil
 static NSString *const PHTVNotificationSettingsResetComplete = @"SettingsResetComplete";
 static NSString *const PHTVNotificationLanguageChangedFromBackend = @"LanguageChangedFromBackend";
 static NSString *const PHTVNotificationUserInfoEnabledKey = @"enabled";
-static NSString *const PHTVNotificationUserInfoVisibleKey = @"visible";
-static NSString *const PHTVNotificationUserInfoForceFrontKey = @"forceFront";
 
 static inline int PHTVReadIntWithFallback(NSUserDefaults *defaults, NSString *key, int fallbackValue) {
     if ([defaults objectForKey:key] == nil) {
@@ -251,7 +250,6 @@ volatile int vEmojiHotkeyModifiers = NSEventModifierFlagCommand;
 volatile int vEmojiHotkeyKeyCode = KEY_E; // E key
 
 int vShowIconOnDock = 0; //new on version 2.0
-static BOOL settingsWindowOpen = NO; // Track if settings window is open (to keep dock icon visible)
 
 volatile int vPerformLayoutCompat = 0;
 
@@ -307,217 +305,10 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     NSMenuItem* mnuQuickTelex;
     NSMenuItem* mnuUpperCaseFirstChar;
     NSMenuItem* mnuAutoRestoreEnglishWord;
-    
-    id _appearanceObserver;
-    id _inputSourceObserver;
-    NSInteger _savedLanguageBeforeNonLatin;  // Saved language state before switching to non-Latin input source
-    BOOL _isInNonLatinInputSource;           // Flag to track if currently using non-Latin input source
-}
-
-- (void)observeAppearanceChanges {
-    _appearanceObserver = [[NSDistributedNotificationCenter defaultCenter] addObserverForName:@"AppleInterfaceThemeChangedNotification"
-                                                                                       object:nil
-                                                                                        queue:[NSOperationQueue mainQueue]
-                                                                                   usingBlock:^(NSNotification *note) {
-        [self fillData];
-    }];
-}
-
-// Check if input source is Latin-based (can type Vietnamese)
-// Returns NO for non-Latin scripts: Japanese, Chinese, Korean, Arabic, Hebrew, Thai, Hindi, Greek, Cyrillic, etc.
-- (BOOL)isLatinInputSource:(TISInputSourceRef)inputSource {
-    if (inputSource == NULL) return YES;  // Assume Latin if we can't determine
-    
-    // First, check input source ID for common non-Latin input methods
-    CFStringRef sourceID = (CFStringRef)TISGetInputSourceProperty(inputSource, kTISPropertyInputSourceID);
-    if (sourceID != NULL) {
-        NSString *sourceIDStr = (__bridge NSString *)sourceID;
-        
-        // Known non-Latin input source patterns (fast path)
-        static NSArray *nonLatinPatterns = nil;
-        static dispatch_once_t patternToken;
-        dispatch_once(&patternToken, ^{
-            nonLatinPatterns = @[
-                // Japanese
-                @"com.apple.inputmethod.Kotoeri", @"com.apple.inputmethod.Japanese",
-                @"com.google.inputmethod.Japanese", @"jp.co.atok",
-                // Chinese
-                @"com.apple.inputmethod.SCIM", @"com.apple.inputmethod.TCIM",
-                @"com.apple.inputmethod.ChineseHandwriting",
-                @"com.sogou.inputmethod", @"com.baidu.inputmethod",
-                @"com.tencent.inputmethod", @"com.iflytek.inputmethod",
-                // Korean
-                @"com.apple.inputmethod.Korean", @"com.apple.inputmethod.KoreanIM",
-                // Arabic
-                @"com.apple.keylayout.Arabic", @"com.apple.keylayout.ArabicPC",
-                // Hebrew
-                @"com.apple.keylayout.Hebrew", @"com.apple.keylayout.HebrewQWERTY",
-                // Thai
-                @"com.apple.keylayout.Thai", @"com.apple.keylayout.ThaiPattachote",
-                // Hindi/Devanagari
-                @"com.apple.keylayout.Devanagari", @"com.apple.keylayout.Hindi",
-                @"com.apple.inputmethod.Hindi",
-                // Greek
-                @"com.apple.keylayout.Greek", @"com.apple.keylayout.GreekPolytonic",
-                // Cyrillic (Russian, Ukrainian, etc.)
-                @"com.apple.keylayout.Russian", @"com.apple.keylayout.RussianPC",
-                @"com.apple.keylayout.Ukrainian", @"com.apple.keylayout.Bulgarian",
-                @"com.apple.keylayout.Serbian", @"com.apple.keylayout.Macedonian",
-                // Georgian
-                @"com.apple.keylayout.Georgian",
-                // Armenian
-                @"com.apple.keylayout.Armenian",
-                // Tamil, Telugu, Kannada, Malayalam, etc.
-                @"com.apple.keylayout.Tamil", @"com.apple.keylayout.Telugu",
-                @"com.apple.keylayout.Kannada", @"com.apple.keylayout.Malayalam",
-                @"com.apple.keylayout.Gujarati", @"com.apple.keylayout.Punjabi",
-                @"com.apple.keylayout.Bengali", @"com.apple.keylayout.Oriya",
-                // Myanmar, Khmer, Lao
-                @"com.apple.keylayout.Myanmar", @"com.apple.keylayout.Khmer",
-                @"com.apple.keylayout.Lao",
-                // Tibetan, Nepali, Sinhala
-                @"com.apple.keylayout.Tibetan", @"com.apple.keylayout.Nepali",
-                @"com.apple.keylayout.Sinhala",
-                // Emoji/Symbol input (should not trigger Vietnamese)
-                @"com.apple.CharacterPaletteIM", @"com.apple.PressAndHold",
-                @"com.apple.inputmethod.EmojiFunctionRowItem"
-            ];
-        });
-        
-        for (NSString *pattern in nonLatinPatterns) {
-            if ([sourceIDStr containsString:pattern]) {
-                return NO;  // Non-Latin input source detected
-            }
-        }
-    }
-    
-    // Fallback: Check language code
-    CFArrayRef languages = (CFArrayRef)TISGetInputSourceProperty(inputSource, kTISPropertyInputSourceLanguages);
-    if (languages == NULL || CFArrayGetCount(languages) == 0) return YES;
-    
-    CFStringRef langRef = (CFStringRef)CFArrayGetValueAtIndex(languages, 0);
-    if (langRef == NULL) return YES;
-    
-    NSString *language = (__bridge NSString *)langRef;
-    
-    // Latin-based languages that can type Vietnamese
-    static NSSet *latinLanguages = nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        latinLanguages = [[NSSet alloc] initWithArray:@[
-            // Western European
-            @"en", @"de", @"fr", @"es", @"it", @"pt", @"nl", @"ca",
-            // Nordic
-            @"da", @"sv", @"no", @"nb", @"nn", @"fi", @"is", @"fo",
-            // Eastern European (Latin script)
-            @"pl", @"cs", @"sk", @"hu", @"ro", @"hr", @"sl", @"sr-Latn",
-            // Baltic
-            @"et", @"lv", @"lt",
-            // Other European
-            @"sq", @"bs", @"mt",
-            // Turkish & Turkic (Latin script)
-            @"tr", @"az", @"uz", @"tk",
-            // Southeast Asian (Latin script)
-            @"id", @"ms", @"vi", @"tl", @"jv", @"su",
-            // African (Latin script)
-            @"sw", @"ha", @"yo", @"ig", @"zu", @"xh", @"af",
-            // Pacific
-            @"mi", @"sm", @"to", @"haw",
-            // Celtic
-            @"ga", @"gd", @"cy", @"br",
-            // Other
-            @"eo", @"la", @"mul"
-        ]];
-    });
-    
-    return [latinLanguages containsObject:language];
-}
-
-// Handle input source change notification
-// Supports auto-switching for ALL non-Latin keyboards:
-// Japanese, Chinese, Korean, Arabic, Hebrew, Thai, Hindi, Greek, Cyrillic, Georgian, Armenian, etc.
-- (void)handleInputSourceChanged:(NSNotification *)notification {
-    // Invalidate layout compatibility cache
-    InvalidateLayoutCache();
-
-    // Only process if vOtherLanguage is enabled (user wants auto-switching)
-    if (!vOtherLanguage) return;
-    
-    TISInputSourceRef currentInputSource = TISCopyCurrentKeyboardInputSource();
-    if (currentInputSource == NULL) return;
-    
-    BOOL isLatin = [self isLatinInputSource:currentInputSource];
-    
-    // Get localized name for better logging
-    CFStringRef localizedName = (CFStringRef)TISGetInputSourceProperty(currentInputSource, kTISPropertyLocalizedName);
-    CFStringRef sourceID = (CFStringRef)TISGetInputSourceProperty(currentInputSource, kTISPropertyInputSourceID);
-    NSString *displayName = localizedName ? (__bridge NSString *)localizedName : 
-                           (sourceID ? (__bridge NSString *)sourceID : @"Unknown");
-    
-    CFRelease(currentInputSource);
-    
-    if (!isLatin && !_isInNonLatinInputSource) {
-        // Switching TO non-Latin input source → save state and switch to English
-        _savedLanguageBeforeNonLatin = vLanguage;
-        _isInNonLatinInputSource = YES;
-        
-        if (vLanguage != 0) {
-            NSLog(@"[InputSource] Detected non-Latin keyboard: %@ → Auto-switching PHTV to English", displayName);
-            
-            vLanguage = 0;  // Switch to English
-            __sync_synchronize();
-            [[NSUserDefaults standardUserDefaults] setInteger:vLanguage forKey:PHTVDefaultsKeyInputMethod];
-            RequestNewSession();
-            [self fillData];
-            
-            // Notify SwiftUI
-            [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationLanguageChangedFromObjC 
-                                                                object:@(vLanguage)];
-        }
-    } else if (isLatin && _isInNonLatinInputSource) {
-        // Switching back TO Latin input source → restore previous state
-        _isInNonLatinInputSource = NO;
-        
-        if (_savedLanguageBeforeNonLatin != 0 && vLanguage == 0) {
-            NSLog(@"[InputSource] Detected Latin keyboard: %@ → Restoring PHTV to Vietnamese", displayName);
-            
-            vLanguage = (int)_savedLanguageBeforeNonLatin;
-            __sync_synchronize();
-            [[NSUserDefaults standardUserDefaults] setInteger:vLanguage forKey:PHTVDefaultsKeyInputMethod];
-            RequestNewSession();
-            [self fillData];
-            
-            // Notify SwiftUI
-            [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationLanguageChangedFromObjC 
-                                                                object:@(vLanguage)];
-        }
-    }
-}
-
-// Start observing input source changes
-- (void)startInputSourceMonitoring {
-    _isInNonLatinInputSource = NO;
-    _savedLanguageBeforeNonLatin = 0;
-    
-    // Listen for keyboard input source changes
-    _inputSourceObserver = [[NSDistributedNotificationCenter defaultCenter] 
-        addObserverForName:(NSString *)kTISNotifySelectedKeyboardInputSourceChanged
-                    object:nil
-                     queue:[NSOperationQueue mainQueue]
-                usingBlock:^(NSNotification *note) {
-        [self handleInputSourceChanged:note];
-    }];
-    
-    NSLog(@"[InputSource] Started monitoring input source changes");
 }
 
 - (void)dealloc {
-    if (_appearanceObserver) {
-        [[NSDistributedNotificationCenter defaultCenter] removeObserver:_appearanceObserver];
-    }
-    if (_inputSourceObserver) {
-        [[NSDistributedNotificationCenter defaultCenter] removeObserver:_inputSourceObserver];
-    }
+    [self stopInputSourceMonitoring];
     
     [self stopAccessibilityMonitoring];
     [self stopHealthCheckMonitoring];
@@ -954,81 +745,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)),
                   dispatch_get_main_queue(), ^{
         [self checkAccessibilityStatus];
-    });
-}
-
-// Helper to robustly check if settings window is visible
-- (NSWindow *)currentSettingsWindow {
-    for (NSWindow *window in [NSApp windows]) {
-        NSString *identifier = window.identifier;
-        // SwiftUI windows have identifier starting with "settings" (set in PHTVApp.swift)
-        if (identifier && [identifier hasPrefix:@"settings"]) {
-            return window;
-        }
-    }
-    return nil;
-}
-
-- (BOOL)isSettingsWindowVisible {
-    NSWindow *window = [self currentSettingsWindow];
-    return window != nil && window.isVisible;
-}
-
-// Handle dock icon visibility notification from SwiftUI
-- (void)handleShowDockIconNotification:(NSNotification *)notification {
-    NSDictionary *userInfo = notification.userInfo ?: @{};
-    BOOL desiredDockVisible = [[userInfo objectForKey:PHTVNotificationUserInfoVisibleKey] boolValue];
-    BOOL shouldForceFront = [[userInfo objectForKey:PHTVNotificationUserInfoForceFrontKey] boolValue];
-
-    CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
-    BOOL sameAsLastRequest = self.hasLastDockVisibilityRequest &&
-                             self.lastDockVisibilityRequest == desiredDockVisible &&
-                             self.lastDockForceFrontRequest == shouldForceFront;
-    if (sameAsLastRequest && !shouldForceFront &&
-        (now - self.lastDockVisibilityRequestTime) < 0.20) {
-        return;
-    }
-    self.hasLastDockVisibilityRequest = YES;
-    self.lastDockVisibilityRequest = desiredDockVisible;
-    self.lastDockForceFrontRequest = shouldForceFront;
-    self.lastDockVisibilityRequestTime = now;
-
-    PHTV_LIVE_LOG(@"handleShowDockIconNotification: visible=%d forceFront=%d", desiredDockVisible, shouldForceFront);
-
-    dispatch_async(dispatch_get_main_queue(), ^{
-        BOOL wasSettingsOpen = settingsWindowOpen;
-        NSWindow *settingsWindow = [self currentSettingsWindow];
-        BOOL settingsVisible = settingsWindow != nil && settingsWindow.isVisible;
-        settingsWindowOpen = settingsVisible;
-        BOOL shouldResetSession = wasSettingsOpen && !settingsVisible;
-
-        if (settingsVisible) {
-            // Keep regular activation policy while settings exists, but only force front
-            // when notification explicitly asks for it (open action).
-            [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
-
-            if (shouldForceFront) {
-                BOOL alreadyFront = NSApp.isActive && (settingsWindow.isKeyWindow || settingsWindow.isMainWindow);
-                if (!alreadyFront) {
-                    [NSApp activateIgnoringOtherApps:YES];
-                    [settingsWindow makeKeyAndOrderFront:nil];
-                    PHTV_LIVE_LOG(@"Brought settings window to front: %@", settingsWindow.identifier);
-                }
-            } else {
-                PHTV_LIVE_LOG(@"Settings window visible; skip force front to avoid reopen loop");
-            }
-        } else {
-            // Restore to desired dock visibility (user preference), without forcing focus.
-            NSApplicationActivationPolicy policy = desiredDockVisible ? NSApplicationActivationPolicyRegular : NSApplicationActivationPolicyAccessory;
-            [NSApp setActivationPolicy:policy];
-            PHTV_LIVE_LOG(@"Dock icon restored to desired visibility: %d", desiredDockVisible);
-        }
-
-        // If settings just closed, reset session state to avoid stuck input context.
-        if (shouldResetSession) {
-            RequestNewSession();
-            [PHTVCacheManager invalidateSpotlightCache];
-        }
     });
 }
 
@@ -1844,66 +1560,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 
 -(void)setGrayIcon:(BOOL)val {
     [self fillData];
-}
-
--(void)setDockIconVisible:(BOOL)visible {
-    PHTV_LIVE_LOG(@"setDockIconVisible called with: %d", visible);
-    
-    // Track whether settings window is open (don't modify vShowIconOnDock - that's user preference)
-    settingsWindowOpen = visible;
-    
-    dispatch_async(dispatch_get_main_queue(), ^{
-        // Only change dock visibility, don't affect menu bar
-        // LSUIElement in Info.plist keeps app hidden from dock by default
-        // This toggles visibility temporarily for settings window
-        if (visible) {
-            // Show icon on dock (regular app)
-            [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
-            // Activate app and bring windows to front
-            [NSApp activateIgnoringOtherApps:YES];
-        } else {
-            // Settings closed - restore to user preference
-            BOOL userPrefersDock = [[NSUserDefaults standardUserDefaults] boolForKey:PHTVDefaultsKeyShowIconOnDock];
-            NSApplicationActivationPolicy policy = userPrefersDock ? NSApplicationActivationPolicyRegular : NSApplicationActivationPolicyAccessory;
-            [NSApp setActivationPolicy:policy];
-        }
-    });
-}
-
--(void)showIcon:(BOOL)onDock {
-    PHTV_LIVE_LOG(@"showIcon called with onDock: %d", onDock);
-    
-    // Save to UserDefaults first
-    [[NSUserDefaults standardUserDefaults] setBool:onDock forKey:PHTVDefaultsKeyShowIconOnDock];
-    vShowIconOnDock = onDock ? 1 : 0;
-    
-    // Apply activation policy on main thread
-    dispatch_async(dispatch_get_main_queue(), ^{
-        // If settings window is open, keep the app in regular mode to prevent sinking
-        if ([self isSettingsWindowVisible]) {
-            [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
-            [NSApp activateIgnoringOtherApps:YES];
-
-            // Bring settings window to front to avoid unintended hiding
-            for (NSWindow *window in [NSApp windows]) {
-                NSString *identifier = window.identifier;
-                if (identifier && [identifier hasPrefix:@"settings"]) {
-                    [window makeKeyAndOrderFront:nil];
-                    [window orderFrontRegardless];
-                    break;
-                }
-            }
-            return;
-        }
-
-        NSApplicationActivationPolicy policy = onDock ? NSApplicationActivationPolicyRegular : NSApplicationActivationPolicyAccessory;
-        [NSApp setActivationPolicy: policy];
-        
-        // If showing dock icon, activate the app to refresh the dock
-        if (onDock) {
-            [NSApp activateIgnoringOtherApps:YES];
-        }
-    });
 }
 
 #pragma mark -StatusBar menu data

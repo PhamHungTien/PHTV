@@ -26,6 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL lastDockVisibilityRequest;
 @property (nonatomic, assign) BOOL lastDockForceFrontRequest;
 @property (nonatomic, assign) CFAbsoluteTime lastDockVisibilityRequestTime;
+@property (nonatomic, assign) BOOL settingsWindowOpen;
 
 @property (nonatomic, strong, nullable) NSTimer *accessibilityMonitor;
 @property (nonatomic, assign) BOOL wasAccessibilityEnabled;
@@ -43,6 +44,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL isUpdatingLanguage;
 @property (nonatomic, assign) BOOL isUpdatingInputType;
 @property (nonatomic, assign) BOOL isUpdatingCodeTable;
+@property (nonatomic, strong, nullable) id appearanceObserver;
+@property (nonatomic, strong, nullable) id inputSourceObserver;
+@property (nonatomic, assign) NSInteger savedLanguageBeforeNonLatin;
+@property (nonatomic, assign) BOOL isInNonLatinInputSource;
 
 - (void)onControlPanelSelected;
 - (void)fillDataWithAnimation:(BOOL)animated;

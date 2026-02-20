@@ -18,15 +18,18 @@ struct PHTVApp: App {
     init() {
         NSLog("PHTV-APP-INIT-START")
 
-        // CRITICAL: Initialize AppState first so all shared state is ready
-        // before any notification-driven services start.
-        _ = AppState.shared
-        MemoryPressureMonitor.shared.start()
+        // Configure memory-only URL cache before any service can create URL sessions.
+        // This avoids fallback disk cache paths that may fail in sandboxed contexts.
         URLCache.shared = URLCache(
             memoryCapacity: 8 * 1024 * 1024,
             diskCapacity: 0,
             diskPath: nil
         )
+
+        // CRITICAL: Initialize AppState first so all shared state is ready
+        // before any notification-driven services start.
+        _ = AppState.shared
+        MemoryPressureMonitor.shared.start()
 
         // Initialize SettingsNotificationObserver to listen for notifications
         _ = SettingsNotificationObserver.shared
