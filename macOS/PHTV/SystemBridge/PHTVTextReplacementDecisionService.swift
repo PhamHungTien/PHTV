@@ -12,17 +12,26 @@ final class PHTVTextReplacementDecisionBox: NSObject {
     let decision: Int32
     let matchedElapsedMs: UInt64
     let shouldBypassEvent: Bool
+    let isExternalDelete: Bool
+    let isPatternMatch: Bool
+    let patternLabel: String?
     let isFallbackNoMatch: Bool
 
     init(
         decision: Int32,
         matchedElapsedMs: UInt64,
         shouldBypassEvent: Bool,
+        isExternalDelete: Bool,
+        isPatternMatch: Bool,
+        patternLabel: String?,
         isFallbackNoMatch: Bool
     ) {
         self.decision = decision
         self.matchedElapsedMs = matchedElapsedMs
         self.shouldBypassEvent = shouldBypassEvent
+        self.isExternalDelete = isExternalDelete
+        self.isPatternMatch = isPatternMatch
+        self.patternLabel = patternLabel
         self.isFallbackNoMatch = isFallbackNoMatch
     }
 }
@@ -52,6 +61,9 @@ final class PHTVTextReplacementDecisionService: NSObject {
                 decision: 0,
                 matchedElapsedMs: 0,
                 shouldBypassEvent: false,
+                isExternalDelete: false,
+                isPatternMatch: false,
+                patternLabel: nil,
                 isFallbackNoMatch: false
             )
         }
@@ -76,11 +88,24 @@ final class PHTVTextReplacementDecisionService: NSObject {
             decision == decisionExternalDelete ||
             decision == decisionPattern2A ||
             decision == decisionPattern2B
+        let isExternalDelete = decision == decisionExternalDelete
+        let isPatternMatch = decision == decisionPattern2A || decision == decisionPattern2B
+        let patternLabel: String?
+        if decision == decisionPattern2A {
+            patternLabel = "2a"
+        } else if decision == decisionPattern2B {
+            patternLabel = "2b"
+        } else {
+            patternLabel = nil
+        }
 
         return PHTVTextReplacementDecisionBox(
             decision: decision,
             matchedElapsedMs: matchedElapsedMs,
             shouldBypassEvent: shouldBypassEvent,
+            isExternalDelete: isExternalDelete,
+            isPatternMatch: isPatternMatch,
+            patternLabel: patternLabel,
             isFallbackNoMatch: decision == decisionFallbackNoMatch
         )
     }

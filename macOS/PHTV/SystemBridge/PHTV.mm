@@ -35,14 +35,6 @@ typedef NS_ENUM(NSInteger, DelayType) {
     DelayTypeSpotlight = 2
 };
 
-typedef NS_ENUM(NSInteger, PHTVTextReplacementDecision) {
-    PHTVTextReplacementDecisionNone = 0,
-    PHTVTextReplacementDecisionExternalDelete = 1,
-    PHTVTextReplacementDecisionPattern2A = 2,
-    PHTVTextReplacementDecisionPattern2B = 3,
-    PHTVTextReplacementDecisionFallbackNoMatch = 4
-};
-
 // Cached app behavior used across the event callback.
 typedef struct {
     BOOL isSpotlightLike;
@@ -2462,9 +2454,8 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                                                                        willProcessCode:vWillProcess
                                                                            restoreCode:vRestore
                                                                           deleteWindowMs:TEXT_REPLACEMENT_DELETE_WINDOW_MS];
-                    PHTVTextReplacementDecision decision = (PHTVTextReplacementDecision)textReplacementDecisionBox.decision;
 
-                    if (decision == PHTVTextReplacementDecisionExternalDelete) {
+                    if (textReplacementDecisionBox.isExternalDelete) {
 #ifdef DEBUG
                         NSLog(@"[TextReplacement] Text replacement detected - passing through event (code=%d, backspace=%d, newChar=%d, deleteCount=%d, elapsedMs=%llu)",
                               pData->code, (int)pData->backspaceCount, (int)pData->newCharCount, externalDeleteCount, textReplacementDecisionBox.matchedElapsedMs);
@@ -2473,11 +2464,10 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                         return event;
                     }
 
-                    if (decision == PHTVTextReplacementDecisionPattern2A ||
-                        decision == PHTVTextReplacementDecisionPattern2B) {
+                    if (textReplacementDecisionBox.isPatternMatch) {
 #ifdef DEBUG
                         NSLog(@"[PHTV TextReplacement] Pattern %@ matched: code=%d, backspace=%d, newChar=%d, keycode=%d",
-                              decision == PHTVTextReplacementDecisionPattern2A ? @"2a" : @"2b",
+                              textReplacementDecisionBox.patternLabel ?: @"?",
                               pData->code, (int)pData->backspaceCount, (int)pData->newCharCount, _keycode);
                         NSLog(@"[PHTV TextReplacement] ✅ DETECTED - Skipping processing (code=%d, backspace=%d, newChar=%d)",
                               pData->code, (int)pData->backspaceCount, (int)pData->newCharCount);
