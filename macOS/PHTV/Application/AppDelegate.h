@@ -20,14 +20,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 -(void)setGrayIcon:(BOOL)val;
 
--(void)onMacroSelected;
--(void)onQuickConvert;
 -(void)setQuickConvertString;
--(void)onEmojiHotkeyTriggered;
 
 - (void)setupSwiftUIBridge;
 - (void)loadExistingMacros;
-- (void)handleSettingsReset:(NSNotification * _Nullable)notification;
 
 @end
 

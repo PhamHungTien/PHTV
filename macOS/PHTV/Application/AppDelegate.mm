@@ -21,6 +21,7 @@
 #import "AppDelegate+PermissionFlow.h"
 #import "AppDelegate+SettingsActions.h"
 #import "AppDelegate+Sparkle.h"
+#import "AppDelegate+UIActions.h"
 #import "SparkleManager.h"
 #import "../SystemBridge/PHTVManager.h"
 #import "PHTV-Swift.h"
@@ -65,7 +66,6 @@ static NSString *const PHTVNotificationCustomDictionaryUpdated = @"CustomDiction
 static NSString *const PHTVNotificationSettingsReset = @"SettingsReset";
 static NSString *const PHTVNotificationAccessibilityPermissionLost = @"AccessibilityPermissionLost";
 static NSString *const PHTVNotificationAccessibilityNeedsRelaunch = @"AccessibilityNeedsRelaunch";
-static NSString *const PHTVNotificationSettingsResetComplete = @"SettingsResetComplete";
 static NSString *const PHTVNotificationLanguageChangedFromBackend = @"LanguageChangedFromBackend";
 static NSString *const PHTVNotificationUserInfoEnabledKey = @"enabled";
 
@@ -1023,65 +1023,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     [self syncCustomDictionaryFromUserDefaults];
 }
 
-- (void)handleSettingsReset:(NSNotification *)notification {
-    // Settings have been reset, post confirmation to UI
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationSettingsResetComplete object:nil];
-        
-        #ifdef DEBUG
-        NSLog(@"[Settings Reset] Reset complete, UI will refresh");
-        #endif
-    });
-}
-
-- (void)onShowMacroTab:(NSNotification *)notification {
-    // First open settings window, then switch to macro tab
-    [self onControlPanelSelected];
-}
-
-- (void)onShowAboutTab:(NSNotification *)notification {
-    // First open settings window
-    [self onControlPanelSelected];
-}
-
-#pragma mark - Menu Creation Helpers
-
-/**
- * Modern helper method to create menu items efficiently
- */
-- (NSMenuItem *)createMenuItem:(NSString *)title action:(SEL)action {
-    return [self createMenuItem:title action:action tag:0];
-}
-
-- (NSMenuItem *)createMenuItem:(NSString *)title action:(SEL)action tag:(NSInteger)tag {
-    return [self createMenuItem:title action:action keyEquiv:@"" modifiers:0 tag:tag];
-}
-
-- (NSMenuItem *)createMenuItem:(NSString *)title 
-                        action:(SEL)action 
-                      keyEquiv:(NSString *)key 
-                     modifiers:(NSEventModifierFlags)modifiers {
-    return [self createMenuItem:title action:action keyEquiv:key modifiers:modifiers tag:0];
-}
-
-- (NSMenuItem *)createMenuItem:(NSString *)title 
-                        action:(SEL)action 
-                      keyEquiv:(NSString *)key 
-                     modifiers:(NSEventModifierFlags)modifiers 
-                           tag:(NSInteger)tag {
-    NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:title 
-                                                  action:action 
-                                           keyEquivalent:key];
-    item.target = self;
-    if (modifiers != 0) {
-        item.keyEquivalentModifierMask = modifiers;
-    }
-    if (tag != 0) {
-        item.tag = tag;
-    }
-    return item;
-}
-
 #pragma mark - Status Bar Menu
 
 -(void) createStatusBarMenu {
@@ -1499,60 +1440,4 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     [mnuAutoRestoreEnglishWord setState:vAutoRestoreEnglishWord ? NSControlStateValueOn : NSControlStateValueOff];
 }
 
-#pragma mark -StatusBar menu action
-
--(void)onQuickConvert {
-    if ([PHTVManager quickConvert]) {
-        if (!gConvertToolOptions.dontAlertWhenCompleted) {
-            [PHTVManager showMessage: nil message:@"Chuyển mã thành công!" subMsg:@"Kết quả đã được lưu trong clipboard."];
-        }
-    } else {
-        [PHTVManager showMessage: nil message:@"Không có dữ liệu trong clipboard!" subMsg:@"Hãy sao chép một đoạn text để chuyển đổi!"];
-    }
-}
-
--(void)onEmojiHotkeyTriggered {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        @try {
-            [EmojiHotkeyBridge openEmojiPicker];
-        } @catch (NSException *exception) {
-            NSLog(@"[EmojiHotkey] failed to open picker: %@", exception);
-        }
-    });
-}
-
-// MARK: - UI Actions (SwiftUI Integration)
-// Old Storyboard-based window methods - replaced with SwiftUI
-// Kept for backward compatibility during transition
-
--(void) onControlPanelSelected {
-    // Show dock icon when opening settings
-    [self setDockIconVisible:YES];
-
-    // Mark that user has opened settings, so defaults won't overwrite their changes
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    if ([defaults integerForKey:PHTVDefaultsKeyNonFirstTime] == 0) {
-        [defaults setInteger:1 forKey:PHTVDefaultsKeyNonFirstTime];
-        NSLog(@"Marking NonFirstTime after user opened settings");
-    }
-
-    // Post notification - SettingsWindowManager in Swift will handle it
-    NSLog(@"[AppDelegate] Posting ShowSettings notification");
-    [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationShowSettings object:nil];
-}
-
--(void) onMacroSelected {
-    // Show SwiftUI Macro tab
-    [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationShowMacroTab object:nil];
-}
-
--(void) onAboutSelected {
-    // Show SwiftUI About tab
-    [[NSNotificationCenter defaultCenter] postNotificationName:PHTVNotificationShowAboutTab object:nil];
-}
-
-#pragma mark -Short key event
--(void)onSwitchLanguage {
-    [self onInputMethodSelected];
-}
 @end
