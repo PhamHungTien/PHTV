@@ -7,6 +7,7 @@
 //
 
 #import "PHTVCacheManager.h"
+#import "PHTV-Swift.h"
 #import <Cocoa/Cocoa.h>
 #import <os/lock.h>
 #import <mach/mach_time.h>
@@ -31,18 +32,6 @@ static os_unfair_lock _appCharCacheLock = OS_UNFAIR_LOCK_INIT;
 static NSString* _lastCachedBundleId = nil;
 static uint64_t _lastCacheInvalidationTime = 0;
 
-// Spotlight Cache
-static BOOL _cachedSpotlightActive = NO;
-static uint64_t _lastSpotlightCheckTime = 0;
-static pid_t _cachedFocusedPID = 0;
-static NSString* _cachedFocusedBundleId = nil;
-static uint64_t _lastSpotlightInvalidationTime = 0;  // NEW: Track when cache was invalidated
-static os_unfair_lock _spotlightCacheLock = OS_UNFAIR_LOCK_INIT;
-
-// Layout Cache
-static CGKeyCode _layoutCache[256];
-static BOOL _layoutCacheValid = NO;
-
 // Shared mach time conversion cache
 static mach_timebase_info_data_t _cacheTimebaseInfo;
 static dispatch_once_t _cacheTimebaseInitToken;
@@ -63,10 +52,6 @@ static inline uint64_t PHTVCacheMachTimeToMs(uint64_t machTime) {
 
         // Initialize App Characteristics cache
         _appCharacteristicsCache = [[NSMutableDictionary alloc] init];
-
-        // Initialize Layout cache
-        memset(_layoutCache, 0, sizeof(_layoutCache));
-        _layoutCacheValid = NO;
     }
 }
 
@@ -225,77 +210,37 @@ static inline uint64_t PHTVCacheMachTimeToMs(uint64_t machTime) {
 #pragma mark - Spotlight Cache
 
 + (BOOL)getCachedSpotlightActive {
-    os_unfair_lock_lock(&_spotlightCacheLock);
-    BOOL isActive = _cachedSpotlightActive;
-    os_unfair_lock_unlock(&_spotlightCacheLock);
-    return isActive;
+    return [PHTVCacheStateService cachedSpotlightActive];
 }
 
 + (pid_t)getCachedFocusedPID {
-    os_unfair_lock_lock(&_spotlightCacheLock);
-    pid_t pid = _cachedFocusedPID;
-    os_unfair_lock_unlock(&_spotlightCacheLock);
-    return pid;
+    return (pid_t)[PHTVCacheStateService cachedFocusedPID];
 }
 
 + (NSString*)getCachedFocusedBundleId {
-    os_unfair_lock_lock(&_spotlightCacheLock);
-    NSString* bundleId = _cachedFocusedBundleId;
-    os_unfair_lock_unlock(&_spotlightCacheLock);
-    return bundleId;
+    return [PHTVCacheStateService cachedFocusedBundleId];
 }
 
 + (uint64_t)getLastSpotlightCheckTime {
-    os_unfair_lock_lock(&_spotlightCacheLock);
-    uint64_t time = _lastSpotlightCheckTime;
-    os_unfair_lock_unlock(&_spotlightCacheLock);
-    return time;
+    return [PHTVCacheStateService lastSpotlightCheckTime];
 }
 
 + (uint64_t)getLastSpotlightInvalidationTime {
-    os_unfair_lock_lock(&_spotlightCacheLock);
-    uint64_t time = _lastSpotlightInvalidationTime;
-    os_unfair_lock_unlock(&_spotlightCacheLock);
-    return time;
+    return [PHTVCacheStateService lastSpotlightInvalidationTime];
 }
 
 + (void)updateSpotlightCache:(BOOL)isActive pid:(pid_t)pid bundleId:(NSString*)bundleId {
-    os_unfair_lock_lock(&_spotlightCacheLock);
-    _cachedSpotlightActive = isActive;
-    _lastSpotlightCheckTime = mach_absolute_time();
-    _cachedFocusedPID = pid;
-    _cachedFocusedBundleId = bundleId;
-    os_unfair_lock_unlock(&_spotlightCacheLock);
+    [PHTVCacheStateService updateSpotlightCache:isActive
+                                            pid:(int32_t)pid
+                                       bundleId:bundleId];
 }
 
 + (void)invalidateSpotlightCache {
-    uint64_t now = mach_absolute_time();
-    os_unfair_lock_lock(&_spotlightCacheLock);
-
-    uint64_t elapsedSinceLastInvalidationMs = (_lastSpotlightInvalidationTime > 0)
-        ? PHTVCacheMachTimeToMs(now - _lastSpotlightInvalidationTime)
-        : UINT64_MAX;
-    BOOL alreadyInvalid = (!_cachedSpotlightActive &&
-                           _cachedFocusedPID == 0 &&
-                           _cachedFocusedBundleId == nil);
-
-    // Avoid redundant invalidations/logging bursts from back-to-back event callbacks.
-    if (alreadyInvalid && elapsedSinceLastInvalidationMs < SPOTLIGHT_INVALIDATION_DEDUP_MS) {
-        os_unfair_lock_unlock(&_spotlightCacheLock);
-        return;
-    }
-
-    BOOL wasActive = _cachedSpotlightActive;
-    _cachedSpotlightActive = NO;
-    _lastSpotlightCheckTime = 0;
-    _cachedFocusedPID = 0;
-    _cachedFocusedBundleId = nil;
-    _lastSpotlightInvalidationTime = now;  // Record when invalidated
-    os_unfair_lock_unlock(&_spotlightCacheLock);
+    int status = (int)[PHTVCacheStateService invalidateSpotlightCacheWithDedupWindowMs:SPOTLIGHT_INVALIDATION_DEDUP_MS];
 
     // Log cache invalidation only in debug builds.
 #ifdef DEBUG
-    if (wasActive) {
+    if (status == 2) {
         NSLog(@"[Spotlight] 🔄 CACHE INVALIDATED (was active)");
     }
 #endif
@@ -304,26 +249,19 @@ static inline uint64_t PHTVCacheMachTimeToMs(uint64_t machTime) {
 #pragma mark - Layout Cache
 
 + (CGKeyCode)getCachedLayoutConversion:(CGKeyCode)keycode {
-    if (keycode >= 256) {
-        return 0;
-    }
-    return _layoutCache[keycode];
+    return (CGKeyCode)[PHTVCacheStateService cachedLayoutConversion:(uint16_t)keycode];
 }
 
 + (void)setCachedLayoutConversion:(CGKeyCode)keycode result:(CGKeyCode)result {
-    if (keycode < 256) {
-        _layoutCache[keycode] = result;
-        _layoutCacheValid = YES;
-    }
+    [PHTVCacheStateService setCachedLayoutConversion:(uint16_t)keycode result:(uint16_t)result];
 }
 
 + (void)invalidateLayoutCache {
-    memset(_layoutCache, 0, sizeof(_layoutCache));
-    _layoutCacheValid = NO;
+    [PHTVCacheStateService invalidateLayoutCache];
 }
 
 + (BOOL)isLayoutCacheValid {
-    return _layoutCacheValid;
+    return [PHTVCacheStateService isLayoutCacheValid];
 }
 
 @end
