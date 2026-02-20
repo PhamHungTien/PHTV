@@ -29,9 +29,6 @@
 + (BOOL)isSafeModeEnabled;
 + (void)setSafeModeEnabled:(BOOL)enabled;
 
-// AX Error Logging
-+ (void)logAXError:(AXError)error operation:(const char*)operation;
-
 // Permission UI
 + (void)openAccessibilityPreferences;
 
