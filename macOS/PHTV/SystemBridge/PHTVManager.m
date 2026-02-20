@@ -24,6 +24,7 @@ extern CGEventRef PHTVCallback(CGEventTapProxy proxy,
 extern NSString* ConvertUtil(NSString* str);
 extern BOOL vSafeMode;
 extern void RequestNewSession(void);
+extern void InvalidateLayoutCache(void);
 extern volatile int vLanguage;
 extern volatile int vInputType;
 extern int vFreeMark;
@@ -476,6 +477,23 @@ static const useconds_t kTestTapRetryDelayUs = 50000;  // 50ms between retries
 
 +(void)requestNewSession {
     RequestNewSession();
+}
+
++(void)invalidateLayoutCache {
+    InvalidateLayoutCache();
+}
+
++(int)currentLanguage {
+    return vLanguage;
+}
+
++(void)setCurrentLanguage:(int)language {
+    vLanguage = language;
+    __sync_synchronize();
+}
+
++(int)otherLanguageMode {
+    return vOtherLanguage;
 }
 
 +(void)setDockIconRuntimeVisible:(BOOL)visible {

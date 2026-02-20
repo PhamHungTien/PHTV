@@ -47,6 +47,10 @@
 +(NSString*)getBuildDate;
 +(void)showMessage:(NSWindow*)window message:(NSString*)msg subMsg:(NSString*)subMsg;
 +(void)requestNewSession;
++(void)invalidateLayoutCache;
++(int)currentLanguage;
++(void)setCurrentLanguage:(int)language;
++(int)otherLanguageMode;
 +(void)setDockIconRuntimeVisible:(BOOL)visible;
 +(int)toggleSpellCheckSetting;
 +(int)toggleAllowConsonantZFWJSetting;
