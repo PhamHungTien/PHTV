@@ -22,6 +22,18 @@ void InvalidateLayoutCache(void);
 void OnInputMethodChanged(void);
 void OnTableCodeChange(void);
 void OnActiveAppChanged(void);
+int PHTVGetCurrentLanguage(void);
+void PHTVSetCurrentLanguage(int language);
+int PHTVGetCurrentInputType(void);
+void PHTVSetCurrentInputType(int inputType);
+int PHTVGetCurrentCodeTable(void);
+void PHTVSetCurrentCodeTable(int codeTable);
+BOOL PHTVIsSmartSwitchKeyEnabled(void);
+BOOL PHTVIsSendKeyStepByStepEnabled(void);
+void PHTVSetSendKeyStepByStepEnabled(BOOL enabled);
+void PHTVSetUpperCaseExcludedForCurrentApp(BOOL excluded);
+int PHTVGetSwitchKeyStatus(void);
+void PHTVSetSwitchKeyStatus(int status);
 
 #ifdef __cplusplus
 }

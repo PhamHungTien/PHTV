@@ -100,6 +100,18 @@ static int PHTVToggleRuntimeIntSetting(volatile int *target,
 +(void)phtv_notifyInputMethodChanged;
 +(void)phtv_notifyTableCodeChanged;
 +(void)phtv_notifyActiveAppChanged;
++(int)phtv_currentLanguage;
++(void)phtv_setCurrentLanguage:(int)language;
++(int)phtv_currentInputType;
++(void)phtv_setCurrentInputType:(int)inputType;
++(int)phtv_currentCodeTable;
++(void)phtv_setCurrentCodeTable:(int)codeTable;
++(BOOL)phtv_isSmartSwitchKeyEnabled;
++(BOOL)phtv_isSendKeyStepByStepEnabled;
++(void)phtv_setSendKeyStepByStepEnabled:(BOOL)enabled;
++(void)phtv_setUpperCaseExcludedForCurrentApp:(BOOL)excluded;
++(int)phtv_currentSwitchKeyStatus;
++(void)phtv_setSwitchKeyStatus:(int)status;
 
 @end
 
@@ -384,12 +396,11 @@ static NSUInteger         _tapRecreateCount = 0;
 }
 
 +(int)currentLanguage {
-    return vLanguage;
+    return [self phtv_currentLanguage];
 }
 
 +(void)setCurrentLanguage:(int)language {
-    vLanguage = language;
-    __sync_synchronize();
+    [self phtv_setCurrentLanguage:language];
 }
 
 +(int)otherLanguageMode {
@@ -397,25 +408,23 @@ static NSUInteger         _tapRecreateCount = 0;
 }
 
 +(int)currentInputType {
-    return vInputType;
+    return [self phtv_currentInputType];
 }
 
 +(void)setCurrentInputType:(int)inputType {
-    vInputType = inputType;
-    __sync_synchronize();
+    [self phtv_setCurrentInputType:inputType];
 }
 
 +(int)currentCodeTable {
-    return vCodeTable;
+    return [self phtv_currentCodeTable];
 }
 
 +(void)setCurrentCodeTable:(int)codeTable {
-    vCodeTable = codeTable;
-    __sync_synchronize();
+    [self phtv_setCurrentCodeTable:codeTable];
 }
 
 +(BOOL)isSmartSwitchKeyEnabled {
-    return vUseSmartSwitchKey != 0;
+    return [self phtv_isSmartSwitchKeyEnabled];
 }
 
 +(void)notifyInputMethodChanged {
@@ -431,16 +440,15 @@ static NSUInteger         _tapRecreateCount = 0;
 }
 
 +(BOOL)isSendKeyStepByStepEnabled {
-    return vSendKeyStepByStep != 0;
+    return [self phtv_isSendKeyStepByStepEnabled];
 }
 
 +(void)setSendKeyStepByStepEnabled:(BOOL)enabled {
-    vSendKeyStepByStep = enabled ? 1 : 0;
-    __sync_synchronize();
+    [self phtv_setSendKeyStepByStepEnabled:enabled];
 }
 
 +(void)setUpperCaseExcludedForCurrentApp:(BOOL)excluded {
-    vUpperCaseExcludedForCurrentApp = excluded ? 1 : 0;
+    [self phtv_setUpperCaseExcludedForCurrentApp:excluded];
 }
 
 +(NSDictionary<NSString *, NSNumber *> *)runtimeSettingsSnapshot {
@@ -473,12 +481,11 @@ static NSUInteger         _tapRecreateCount = 0;
 }
 
 +(int)currentSwitchKeyStatus {
-    return vSwitchKeyStatus;
+    return [self phtv_currentSwitchKeyStatus];
 }
 
 +(void)setSwitchKeyStatus:(int)status {
-    vSwitchKeyStatus = status;
-    __sync_synchronize();
+    [self phtv_setSwitchKeyStatus:status];
 }
 
 +(void)loadEmojiHotkeySettingsFromDefaults {

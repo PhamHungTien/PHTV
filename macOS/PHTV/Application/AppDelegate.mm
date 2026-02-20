@@ -80,6 +80,61 @@ int vShowIconOnDock = 0; //new on version 2.0
 
 volatile int vPerformLayoutCompat = 0;
 
+extern "C" {
+    int PHTVGetCurrentLanguage(void) {
+        return vLanguage;
+    }
+
+    void PHTVSetCurrentLanguage(int language) {
+        vLanguage = language;
+        __sync_synchronize();
+    }
+
+    int PHTVGetCurrentInputType(void) {
+        return vInputType;
+    }
+
+    void PHTVSetCurrentInputType(int inputType) {
+        vInputType = inputType;
+        __sync_synchronize();
+    }
+
+    int PHTVGetCurrentCodeTable(void) {
+        return vCodeTable;
+    }
+
+    void PHTVSetCurrentCodeTable(int codeTable) {
+        vCodeTable = codeTable;
+        __sync_synchronize();
+    }
+
+    BOOL PHTVIsSmartSwitchKeyEnabled(void) {
+        return vUseSmartSwitchKey != 0;
+    }
+
+    BOOL PHTVIsSendKeyStepByStepEnabled(void) {
+        return vSendKeyStepByStep != 0;
+    }
+
+    void PHTVSetSendKeyStepByStepEnabled(BOOL enabled) {
+        vSendKeyStepByStep = enabled ? 1 : 0;
+        __sync_synchronize();
+    }
+
+    void PHTVSetUpperCaseExcludedForCurrentApp(BOOL excluded) {
+        vUpperCaseExcludedForCurrentApp = excluded ? 1 : 0;
+    }
+
+    int PHTVGetSwitchKeyStatus(void) {
+        return vSwitchKeyStatus;
+    }
+
+    void PHTVSetSwitchKeyStatus(int status) {
+        vSwitchKeyStatus = status;
+        __sync_synchronize();
+    }
+}
+
 @implementation AppDelegate
 
 @end
