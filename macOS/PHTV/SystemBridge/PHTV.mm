@@ -180,15 +180,12 @@ extern "C" void PHTVSetSafeMode(BOOL enabled) {
 // Check if Spotlight or similar overlay is currently active using Accessibility API
 // OPTIMIZED: Results cached for 50ms to avoid repeated AX API calls while remaining responsive
 BOOL isSpotlightActive(void) {
-    if (vSafeMode) {
-        return NO;
-    }
-    return [PHTVSpotlightDetectionService isSpotlightActive];
+    return [PHTVAppContextService spotlightActiveForSafeMode:vSafeMode];
 }
 
 // Get bundle ID from process ID
 NSString* getBundleIdFromPID(pid_t pid) {
-    return [PHTVCacheStateService bundleIdFromPID:(int32_t)pid safeMode:vSafeMode];
+    return [PHTVAppContextService bundleIdFromPID:(int32_t)pid safeMode:vSafeMode];
 }
 #define OTHER_CONTROL_KEY (_flag & kCGEventFlagMaskCommand) || (_flag & kCGEventFlagMaskControl) || \
                             (_flag & kCGEventFlagMaskAlternate) || (_flag & kCGEventFlagMaskSecondaryFn) || \
@@ -217,38 +214,17 @@ extern "C" {
             return chars;
         }
 
-        int invalidationReason = (int)[PHTVCacheStateService prepareAppCharacteristicsCacheForBundleId:bundleId
-                                                                                              maxAgeMs:kAppCharacteristicsCacheMaxAgeMs];
-#ifdef DEBUG
-        if (invalidationReason == 1) {
-            NSLog(@"[Cache] App switched to %@, invalidating app characteristics cache", bundleId);
-        } else if (invalidationReason == 2) {
-            NSLog(@"[Cache] 10s elapsed, invalidating cache for browser responsiveness");
-        }
-#endif
-
-        PHTVAppCharacteristicsBox *box = [PHTVCacheStateService appCharacteristicsForBundleId:bundleId];
-        if (box) {
-            chars.isSpotlightLike = box.isSpotlightLike;
-            chars.needsPrecomposedBatched = box.needsPrecomposedBatched;
-            chars.needsStepByStep = box.needsStepByStep;
-            chars.containsUnicodeCompound = box.containsUnicodeCompound;
-            chars.isSafari = box.isSafari;
+        PHTVAppCharacteristicsBox *box = [PHTVAppContextService appCharacteristicsForBundleId:bundleId
+                                                                                 maxAgeMs:kAppCharacteristicsCacheMaxAgeMs];
+        if (!box) {
             return chars;
         }
 
-        chars.isSpotlightLike = [PHTVAppDetectionService isSpotlightLikeApp:bundleId];
-        chars.needsPrecomposedBatched = [PHTVAppDetectionService needsPrecomposedBatched:bundleId];
-        chars.needsStepByStep = [PHTVAppDetectionService needsStepByStep:bundleId];
-        chars.containsUnicodeCompound = [PHTVAppDetectionService containsUnicodeCompound:bundleId];
-        chars.isSafari = [PHTVAppDetectionService isSafariApp:bundleId];
-
-        [PHTVCacheStateService setAppCharacteristicsForBundleId:bundleId
-                                                isSpotlightLike:chars.isSpotlightLike
-                                         needsPrecomposedBatched:chars.needsPrecomposedBatched
-                                                 needsStepByStep:chars.needsStepByStep
-                                         containsUnicodeCompound:chars.containsUnicodeCompound
-                                                        isSafari:chars.isSafari];
+        chars.isSpotlightLike = box.isSpotlightLike;
+        chars.needsPrecomposedBatched = box.needsPrecomposedBatched;
+        chars.needsStepByStep = box.needsStepByStep;
+        chars.containsUnicodeCompound = box.containsUnicodeCompound;
+        chars.isSafari = box.isSafari;
         return chars;
     }
 
@@ -685,16 +661,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         return shouldDisable;
     }
 
-    // Legacy check (for backward compatibility)
-    BOOL shouldDisableVietnamese(NSString* bundleId) {
-        return [PHTVAppDetectionService shouldDisableVietnamese:bundleId];
-    }
-
-    // Legacy check (for backward compatibility)
-    BOOL needsStepByStep(NSString* bundleId) {
-        return [PHTVAppDetectionService needsStepByStep:bundleId];
-    }
-
     CGEventSourceRef myEventSource = NULL;
     vKeyHookState* pData;
     CGEventRef eventBackSpaceDown;
@@ -835,38 +801,13 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     // This is important for overlay windows like Spotlight, which aren't the frontmost app
     // OPTIMIZED: Uses the cache populated by isSpotlightActive()
     NSString* getFocusedAppBundleId() {
-        // Safe Mode: Skip AX API calls entirely, use frontmost app
-        // This prevents crashes on unsupported hardware (OCLP Macs)
-        if (vSafeMode) {
-            return FRONT_APP;
-        }
-    
-        // Ensure cache is reasonably fresh (within 10ms - matches Spotlight detection cache policy)
-        // isSpotlightActive() is always called before getFocusedAppBundleId() in the hot path
-        uint64_t now = mach_absolute_time();
-        
-        uint64_t lastCheck = [PHTVCacheStateService lastSpotlightCheckTime];
-        NSString *cachedBundleId = [PHTVCacheStateService cachedFocusedBundleId];
-    
-        uint64_t elapsed_ms = mach_time_to_ms(now - lastCheck);
-        if (elapsed_ms < SPOTLIGHT_CACHE_DURATION_MS && lastCheck > 0 && cachedBundleId != nil) {
-            return cachedBundleId;
-        }
-    
-        // Cache miss or too old - trigger a fresh check via isSpotlightActive.
-        isSpotlightActive();
-    
-        NSString *result = [PHTVCacheStateService cachedFocusedBundleId];
-    
+        NSString *result = [PHTVAppContextService focusedBundleIdForSafeMode:vSafeMode
+                                                              cacheDurationMs:SPOTLIGHT_CACHE_DURATION_MS];
         return (result != nil) ? result : FRONT_APP;
     }    
     BOOL containUnicodeCompoundApp(NSString* topApp) {
         // Optimized to use NSSet for O(1) lookup instead of O(n) array iteration
         return [PHTVAppDetectionService containsUnicodeCompound:topApp];
-    }
-    
-    BOOL needsForcePrecomposed(NSString* bundleId) {
-        return [PHTVAppDetectionService isSpotlightLikeApp:bundleId];
     }
     
     void OnActiveAppChanged() { //use for smart switch key; improved on Sep 28th, 2019
@@ -1602,7 +1543,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         }
 
         //send real data - use step by step for timing sensitive apps like Spotlight
-        BOOL useStepByStep = _phtvIsCliTarget || vSendKeyStepByStep || needsStepByStep(effectiveTarget);
+        BOOL useStepByStep = _phtvIsCliTarget || vSendKeyStepByStep || [PHTVAppDetectionService needsStepByStep:effectiveTarget];
         if (!useStepByStep) {
             SendNewCharString(true);
         } else {
