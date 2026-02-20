@@ -129,7 +129,7 @@ import Foundation
         }
 
         let reason = (type == .tapDisabledByTimeout) ? "timeout" : "user input"
-        NSLog("[EventTap] Disabled by %s — attempting to re-enable", reason)
+        NSLog("[EventTap] Disabled by %@ — attempting to re-enable", reason)
 
         tapReenableCount += 1
         if let tap = eventTap {
