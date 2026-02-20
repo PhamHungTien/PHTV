@@ -13,6 +13,11 @@ import ApplicationServices
 
 @objcMembers
 final class PHTVSpotlightDetectionService: NSObject {
+    private static let spotlightForceRecheckAfterInvalidationMs: UInt64 = 100
+    private static let spotlightCacheDurationMs: UInt64 = 150
+    private static let spotlightInvalidationDedupMs: UInt64 = 30
+    private static let spotlightBundleId = "com.apple.Spotlight"
+
     private static let externalDeleteResetThresholdMs: UInt64 = 30_000
     private static let searchKeywords: [String] = [
         "search",
@@ -93,6 +98,98 @@ final class PHTVSpotlightDetectionService: NSObject {
                 attributeContainsSearchKeyword(element, kAXPlaceholderValueAttribute)
         }
 
+        return false
+    }
+
+    @objc class func isSpotlightActive() -> Bool {
+        let now = mach_absolute_time()
+
+        var cachedResult = PHTVCacheStateService.cachedSpotlightActive()
+        var lastCheck = PHTVCacheStateService.lastSpotlightCheckTime()
+        let lastInvalidation = PHTVCacheStateService.lastSpotlightInvalidationTime()
+
+        var elapsedMs = PHTVTimingService.machTimeToMs(now - lastCheck)
+        let elapsedSinceInvalidationMs = lastInvalidation > 0
+            ? PHTVTimingService.machTimeToMs(now - lastInvalidation)
+            : UInt64.max
+
+        // Skip cache immediately after invalidation to avoid stale transitions.
+        if elapsedSinceInvalidationMs < spotlightForceRecheckAfterInvalidationMs {
+            lastCheck = 0
+            elapsedMs = UInt64.max
+        }
+
+        // Prevent stale YES if previous cache came from browser address bar.
+        if lastCheck > 0 && cachedResult {
+            let cachedBundleId = PHTVCacheStateService.cachedFocusedBundleId()
+            if cachedBundleId != nil && PHTVAppDetectionService.isBrowserApp(cachedBundleId) {
+                _ = PHTVCacheStateService.invalidateSpotlightCache(dedupWindowMs: spotlightInvalidationDedupMs)
+                lastCheck = 0
+                elapsedMs = UInt64.max
+                cachedResult = false
+            }
+        }
+
+        if elapsedMs < spotlightCacheDurationMs && lastCheck > 0 {
+            return cachedResult
+        }
+
+        guard let focusedElement = focusedElement() else {
+            PHTVCacheStateService.updateSpotlightCache(false, pid: 0, bundleId: nil)
+            return false
+        }
+
+        var focusedPID: pid_t = 0
+        guard AXUIElementGetPid(focusedElement, &focusedPID) == .success, focusedPID != 0 else {
+            PHTVCacheStateService.updateSpotlightCache(false, pid: 0, bundleId: nil)
+            return false
+        }
+
+        let bundleId = PHTVCacheStateService.bundleIdFromPID(Int32(focusedPID), safeMode: false)
+
+        if let bundleId, bundleId == Bundle.main.bundleIdentifier {
+            PHTVCacheStateService.updateSpotlightCache(false, pid: Int32(focusedPID), bundleId: bundleId)
+            return false
+        }
+
+        let elementLooksLikeSearchField = isElementSpotlight(focusedElement, bundleId: bundleId)
+        if elementLooksLikeSearchField {
+            if !cachedResult {
+                NSLog("[Spotlight] ✅ DETECTED: bundleId=%@, pid=%d", bundleId ?? "(nil)", Int32(focusedPID))
+            }
+            PHTVCacheStateService.updateSpotlightCache(true, pid: Int32(focusedPID), bundleId: bundleId)
+            return true
+        }
+
+        if let bundleId,
+           bundleId == spotlightBundleId || bundleId.hasPrefix(spotlightBundleId) {
+            if !cachedResult {
+                NSLog("[Spotlight] ✅ DETECTED (by bundleId): bundleId=%@, pid=%d", bundleId, Int32(focusedPID))
+            }
+            PHTVCacheStateService.updateSpotlightCache(true, pid: Int32(focusedPID), bundleId: bundleId)
+            return true
+        }
+
+        if bundleId == nil {
+            // Equivalent to PROC_PIDPATHINFO_MAXSIZE (4 * MAXPATHLEN) in libproc.
+            let procPidPathBufferSize = 4096
+            var pathBuffer = [CChar](repeating: 0, count: procPidPathBufferSize)
+            if proc_pidpath(focusedPID, &pathBuffer, UInt32(pathBuffer.count)) > 0 {
+                let path = String(cString: pathBuffer)
+                if path.contains("Spotlight") {
+                    if !cachedResult {
+                        NSLog("[Spotlight] ✅ DETECTED (by path): path=%@, pid=%d", path, Int32(focusedPID))
+                    }
+                    PHTVCacheStateService.updateSpotlightCache(true, pid: Int32(focusedPID), bundleId: spotlightBundleId)
+                    return true
+                }
+            }
+        }
+
+        if cachedResult {
+            NSLog("[Spotlight] ❌ LOST: now focused on bundleId=%@, pid=%d", bundleId ?? "(nil)", Int32(focusedPID))
+        }
+        PHTVCacheStateService.updateSpotlightCache(false, pid: Int32(focusedPID), bundleId: bundleId)
         return false
     }
 
