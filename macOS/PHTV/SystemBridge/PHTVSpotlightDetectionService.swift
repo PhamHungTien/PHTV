@@ -34,6 +34,25 @@ final class PHTVSpotlightDetectionService: NSObject {
     nonisolated(unsafe) private static var lock = NSLock()
     nonisolated(unsafe) private static var lastEventFlags: CGEventFlags = []
 
+    private class func spotlightDebugEnabled() -> Bool {
+#if DEBUG
+        if let env = ProcessInfo.processInfo.environment["PHTV_SPOTLIGHT_DEBUG"], !env.isEmpty {
+            return env != "0"
+        }
+        if let stored = UserDefaults.standard.object(forKey: "PHTV_SPOTLIGHT_DEBUG") as? NSNumber {
+            return stored.intValue != 0
+        }
+#endif
+        return false
+    }
+
+    private class func spotlightDebugLog(_ message: @autoclosure () -> String) {
+        guard spotlightDebugEnabled() else {
+            return
+        }
+        NSLog("[Spotlight] %@", message())
+    }
+
     @objc class func containsSearchKeyword(_ value: String?) -> Bool {
         guard let lower = value?.lowercased(), !lower.isEmpty else {
             return false
@@ -156,7 +175,7 @@ final class PHTVSpotlightDetectionService: NSObject {
         let elementLooksLikeSearchField = isElementSpotlight(focusedElement, bundleId: bundleId)
         if elementLooksLikeSearchField {
             if !cachedResult {
-                NSLog("[Spotlight] ✅ DETECTED: bundleId=%@, pid=%d", bundleId ?? "(nil)", Int32(focusedPID))
+                spotlightDebugLog("✅ DETECTED: bundleId=\(bundleId ?? "(nil)"), pid=\(Int32(focusedPID))")
             }
             PHTVCacheStateService.updateSpotlightCache(true, pid: Int32(focusedPID), bundleId: bundleId)
             return true
@@ -165,7 +184,7 @@ final class PHTVSpotlightDetectionService: NSObject {
         if let bundleId,
            bundleId == spotlightBundleId || bundleId.hasPrefix(spotlightBundleId) {
             if !cachedResult {
-                NSLog("[Spotlight] ✅ DETECTED (by bundleId): bundleId=%@, pid=%d", bundleId, Int32(focusedPID))
+                spotlightDebugLog("✅ DETECTED (by bundleId): bundleId=\(bundleId), pid=\(Int32(focusedPID))")
             }
             PHTVCacheStateService.updateSpotlightCache(true, pid: Int32(focusedPID), bundleId: bundleId)
             return true
@@ -183,7 +202,7 @@ final class PHTVSpotlightDetectionService: NSObject {
                 }
                 if path.contains("Spotlight") {
                     if !cachedResult {
-                        NSLog("[Spotlight] ✅ DETECTED (by path): path=%@, pid=%d", path, Int32(focusedPID))
+                        spotlightDebugLog("✅ DETECTED (by path): path=\(path), pid=\(Int32(focusedPID))")
                     }
                     PHTVCacheStateService.updateSpotlightCache(true, pid: Int32(focusedPID), bundleId: spotlightBundleId)
                     return true
@@ -192,7 +211,7 @@ final class PHTVSpotlightDetectionService: NSObject {
         }
 
         if cachedResult {
-            NSLog("[Spotlight] ❌ LOST: now focused on bundleId=%@, pid=%d", bundleId ?? "(nil)", Int32(focusedPID))
+            spotlightDebugLog("❌ LOST: now focused on bundleId=\(bundleId ?? "(nil)"), pid=\(Int32(focusedPID))")
         }
         PHTVCacheStateService.updateSpotlightCache(false, pid: Int32(focusedPID), bundleId: bundleId)
         return false
@@ -296,11 +315,9 @@ final class PHTVSpotlightDetectionService: NSObject {
 
     private class func invalidateSpotlightCache() {
         let status = PHTVCacheStateService.invalidateSpotlightCache(dedupWindowMs: spotlightInvalidationDedupMs)
-#if DEBUG
         if status == 2 {
-            NSLog("[Spotlight] 🔄 CACHE INVALIDATED (was active)")
+            spotlightDebugLog("🔄 CACHE INVALIDATED (was active)")
         }
-#endif
     }
 
     @objc class func trackExternalDelete() {
