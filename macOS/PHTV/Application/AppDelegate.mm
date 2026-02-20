@@ -18,11 +18,11 @@
 #import "AppDelegate+DockVisibility.h"
 #import "AppDelegate+InputState.h"
 #import "AppDelegate+InputSourceMonitoring.h"
+#import "AppDelegate+PermissionFlow.h"
 #import "AppDelegate+SettingsActions.h"
 #import "AppDelegate+Sparkle.h"
 #import "SparkleManager.h"
 #import "../SystemBridge/PHTVManager.h"
-#import "../SystemBridge/PHTVAccessibilityManager.h"
 #import "PHTV-Swift.h"
 #include "../Core/Engine/Engine.h"
 
@@ -45,7 +45,6 @@ static NSString *const PHTVDefaultsKeyRunOnStartupLegacy = @"PHTV_RunOnStartup";
 static NSString *const PHTVDefaultsKeyShowIconOnDock = @"vShowIconOnDock";
 static NSString *const PHTVDefaultsKeyShowUIOnStartup = @"ShowUIOnStartup";
 static NSString *const PHTVDefaultsKeyNonFirstTime = @"NonFirstTime";
-static NSString *const PHTVDefaultsKeyLastRunVersion = @"LastRunVersion";
 static NSString *const PHTVDefaultsKeyInitialToolTipDelay = @"NSInitialToolTipDelay";
 static NSString *const PHTVDefaultsKeyMacroList = @"macroList";
 static NSString *const PHTVDefaultsKeyMacroListCorruptedBackup = @"macroList.corruptedBackup";
@@ -312,45 +311,6 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     
     [self stopAccessibilityMonitoring];
     [self stopHealthCheckMonitoring];
-}
-
--(void)askPermission {
-    NSAlert *alert = [[NSAlert alloc] init];
-
-    // Check if this is after an app update
-    NSString *currentVersion = [[NSBundle mainBundle] infoDictionary][@"CFBundleShortVersionString"];
-    NSString *lastVersion = [[NSUserDefaults standardUserDefaults] stringForKey:PHTVDefaultsKeyLastRunVersion];
-
-    if (lastVersion && ![lastVersion isEqualToString:currentVersion]) {
-        // App was updated
-        [alert setMessageText:@"PHTV đã được cập nhật!"];
-        [alert setInformativeText:[NSString stringWithFormat:@"Do macOS yêu cầu bảo mật, bạn cần cấp lại quyền trợ năng sau khi cập nhật ứng dụng lên phiên bản %@.\n\nỨng dụng sẽ tự động khởi động lại sau khi bạn cấp quyền.", currentVersion]];
-    } else {
-        // First run or no permission yet
-        [alert setMessageText:@"PHTV cần bạn cấp quyền để có thể hoạt động!"];
-        [alert setInformativeText:@"Ứng dụng sẽ tự động khởi động lại sau khi bạn cấp quyền."];
-    }
-
-    [alert addButtonWithTitle:@"Không"];
-    [alert addButtonWithTitle:@"Cấp quyền"];
-
-    [alert.window makeKeyAndOrderFront:nil];
-    [alert.window setLevel:NSStatusWindowLevel];
-
-    NSModalResponse res = [alert runModal];
-
-    if (res == 1001) {
-        [PHTVAccessibilityManager openAccessibilityPreferences];
-
-        // Invalidate permission cache for fresh check
-        [PHTVManager invalidatePermissionCache];
-        NSLog(@"[Accessibility] User opening System Settings - cache invalidated");
-
-        // Save current version
-        [[NSUserDefaults standardUserDefaults] setObject:currentVersion forKey:PHTVDefaultsKeyLastRunVersion];
-    } else {
-        [NSApp terminate:0];
-    }
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {

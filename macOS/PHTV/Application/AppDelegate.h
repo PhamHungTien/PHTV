@@ -14,8 +14,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface AppDelegate : NSObject <NSApplicationDelegate, NSMenuDelegate>
 
--(void)askPermission;
-
 -(void)fillData;  // Update UI status bar and menu items
 
 -(void)setRunOnStartup:(BOOL)val;
