@@ -159,13 +159,18 @@ final class SystemState: ObservableObject {
             await checkLoginItemStatus()
         }
 
-        NSLog("[LoginItem] Periodic status monitoring started (interval: 5s)")
+        NSLog(
+            "[LoginItem] Periodic status monitoring started (interval: %.1fs)",
+            Timing.loginItemCheckInterval
+        )
     }
 
     /// Stop periodic monitoring of login item status
     func stopLoginItemStatusMonitoring() {
+        guard loginItemCheckTimer != nil else { return }
         loginItemCheckTimer?.invalidate()
         loginItemCheckTimer = nil
+        NSLog("[LoginItem] Periodic status monitoring stopped")
     }
 
     /// Check if SMAppService status matches our UI state

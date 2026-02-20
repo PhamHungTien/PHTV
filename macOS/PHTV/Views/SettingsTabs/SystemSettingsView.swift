@@ -352,6 +352,16 @@ struct SystemSettingsView: View {
         Self.dateFormatter.string(from: date)
     }
 
+    private func decodeStoredValue<T: Decodable>(_ type: T.Type, key: String, defaults: UserDefaults) -> T? {
+        guard let data = defaults.data(forKey: key) else { return nil }
+        return try? JSONDecoder().decode(T.self, from: data)
+    }
+
+    private func saveStoredValue<T: Encodable>(_ value: T, key: String, defaults: UserDefaults) {
+        guard let encoded = try? JSONEncoder().encode(value) else { return }
+        defaults.set(encoded, forKey: key)
+    }
+
     private func createBackup() -> SettingsBackup {
         let defaults = UserDefaults.standard
 
@@ -409,32 +419,32 @@ struct SystemSettingsView: View {
         }
 
         // Load categories
-        var categories: [MacroCategory]?
-        if let data = defaults.data(forKey: UserDefaultsKey.macroCategories),
-           let items = try? JSONDecoder().decode([MacroCategory].self, from: data) {
-            categories = items
-        }
+        let categories: [MacroCategory]? = decodeStoredValue(
+            [MacroCategory].self,
+            key: UserDefaultsKey.macroCategories,
+            defaults: defaults
+        )
 
         // Load excluded apps (new format)
-        var excludedAppsV2: [ExcludedApp]?
-        if let data = defaults.data(forKey: UserDefaultsKey.excludedApps),
-           let apps = try? JSONDecoder().decode([ExcludedApp].self, from: data) {
-            excludedAppsV2 = apps
-        }
+        let excludedAppsV2: [ExcludedApp]? = decodeStoredValue(
+            [ExcludedApp].self,
+            key: UserDefaultsKey.excludedApps,
+            defaults: defaults
+        )
 
         // Load send key step by step apps
-        var stepByStepApps: [ExcludedApp]?
-        if let data = defaults.data(forKey: UserDefaultsKey.sendKeyStepByStepApps),
-           let apps = try? JSONDecoder().decode([ExcludedApp].self, from: data) {
-            stepByStepApps = apps
-        }
+        let stepByStepApps: [ExcludedApp]? = decodeStoredValue(
+            [ExcludedApp].self,
+            key: UserDefaultsKey.sendKeyStepByStepApps,
+            defaults: defaults
+        )
 
         // Load uppercase excluded apps
-        var upperCaseExcludedApps: [ExcludedApp]?
-        if let data = defaults.data(forKey: UserDefaultsKey.upperCaseExcludedApps),
-           let apps = try? JSONDecoder().decode([ExcludedApp].self, from: data) {
-            upperCaseExcludedApps = apps
-        }
+        let upperCaseExcludedApps: [ExcludedApp]? = decodeStoredValue(
+            [ExcludedApp].self,
+            key: UserDefaultsKey.upperCaseExcludedApps,
+            defaults: defaults
+        )
 
         return SettingsBackup(
             version: "2.0",
@@ -498,17 +508,13 @@ struct SystemSettingsView: View {
 
         // Apply categories
         if let categories = backup.macroCategories {
-            if let encoded = try? JSONEncoder().encode(categories) {
-                defaults.set(encoded, forKey: UserDefaultsKey.macroCategories)
-            }
+            saveStoredValue(categories, key: UserDefaultsKey.macroCategories, defaults: defaults)
         }
 
         // Apply excluded apps (prefer new format, fallback to legacy)
         if let excludedAppsV2 = backup.excludedAppsV2 {
             // New format with full app info
-            if let encoded = try? JSONEncoder().encode(excludedAppsV2) {
-                defaults.set(encoded, forKey: UserDefaultsKey.excludedApps)
-            }
+            saveStoredValue(excludedAppsV2, key: UserDefaultsKey.excludedApps, defaults: defaults)
         } else if let excludedApps = backup.excludedApps {
             // Legacy format: convert bundle IDs to ExcludedApp objects
             let apps = excludedApps.map { bundleId in
@@ -518,23 +524,17 @@ struct SystemSettingsView: View {
                     path: ""
                 )
             }
-            if let encoded = try? JSONEncoder().encode(apps) {
-                defaults.set(encoded, forKey: UserDefaultsKey.excludedApps)
-            }
+            saveStoredValue(apps, key: UserDefaultsKey.excludedApps, defaults: defaults)
         }
 
         // Apply send key step by step apps
         if let stepByStepApps = backup.sendKeyStepByStepApps {
-            if let encoded = try? JSONEncoder().encode(stepByStepApps) {
-                defaults.set(encoded, forKey: UserDefaultsKey.sendKeyStepByStepApps)
-            }
+            saveStoredValue(stepByStepApps, key: UserDefaultsKey.sendKeyStepByStepApps, defaults: defaults)
         }
 
         // Apply uppercase excluded apps
         if let upperCaseExcludedApps = backup.upperCaseExcludedApps {
-            if let encoded = try? JSONEncoder().encode(upperCaseExcludedApps) {
-                defaults.set(encoded, forKey: UserDefaultsKey.upperCaseExcludedApps)
-            }
+            saveStoredValue(upperCaseExcludedApps, key: UserDefaultsKey.upperCaseExcludedApps, defaults: defaults)
         }
 
 
