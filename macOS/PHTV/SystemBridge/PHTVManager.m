@@ -25,6 +25,8 @@ extern NSString* ConvertUtil(NSString* str);
 extern BOOL vSafeMode;
 extern void RequestNewSession(void);
 extern void InvalidateLayoutCache(void);
+extern void OnInputMethodChanged(void);
+extern void OnTableCodeChange(void);
 extern volatile int vLanguage;
 extern volatile int vInputType;
 extern int vFreeMark;
@@ -494,6 +496,36 @@ static const useconds_t kTestTapRetryDelayUs = 50000;  // 50ms between retries
 
 +(int)otherLanguageMode {
     return vOtherLanguage;
+}
+
++(int)currentInputType {
+    return vInputType;
+}
+
++(void)setCurrentInputType:(int)inputType {
+    vInputType = inputType;
+    __sync_synchronize();
+}
+
++(int)currentCodeTable {
+    return vCodeTable;
+}
+
++(void)setCurrentCodeTable:(int)codeTable {
+    vCodeTable = codeTable;
+    __sync_synchronize();
+}
+
++(BOOL)isSmartSwitchKeyEnabled {
+    return vUseSmartSwitchKey != 0;
+}
+
++(void)notifyInputMethodChanged {
+    OnInputMethodChanged();
+}
+
++(void)notifyTableCodeChanged {
+    OnTableCodeChange();
 }
 
 +(void)setDockIconRuntimeVisible:(BOOL)visible {

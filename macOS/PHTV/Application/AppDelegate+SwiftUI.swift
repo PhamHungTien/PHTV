@@ -17,14 +17,14 @@ extension AppDelegate {
         // Subscribe to notifications from SwiftUI
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(handleInputMethodChanged(_:)),
+            selector: #selector(handleLegacyInputMethodChanged(_:)),
             name: NotificationName.inputMethodChanged,
             object: nil
         )
-        
+
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(handleCodeTableChanged(_:)),
+            selector: #selector(handleLegacyCodeTableChanged(_:)),
             name: NotificationName.codeTableChanged,
             object: nil
         )
@@ -58,14 +58,14 @@ extension AppDelegate {
         )
     }
     
-    @objc private func handleInputMethodChanged(_ notification: Notification) {
+    @objc private func handleLegacyInputMethodChanged(_ notification: Notification) {
         guard let inputMethod = notification.object as? Int else { return }
         // Update existing vInputType variable
         // This will be implemented to call existing methods
         PHTVLogger.shared.input("Input method changed to: \(inputMethod)")
     }
-    
-    @objc private func handleCodeTableChanged(_ notification: Notification) {
+
+    @objc private func handleLegacyCodeTableChanged(_ notification: Notification) {
         guard let codeTable = notification.object as? Int else { return }
         // Update existing vCodeTable variable
         PHTVLogger.shared.input("Code table changed to: \(codeTable)")

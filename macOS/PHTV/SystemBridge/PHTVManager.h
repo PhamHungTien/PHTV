@@ -51,6 +51,13 @@
 +(int)currentLanguage;
 +(void)setCurrentLanguage:(int)language;
 +(int)otherLanguageMode;
++(int)currentInputType;
++(void)setCurrentInputType:(int)inputType;
++(int)currentCodeTable;
++(void)setCurrentCodeTable:(int)codeTable;
++(BOOL)isSmartSwitchKeyEnabled;
++(void)notifyInputMethodChanged;
++(void)notifyTableCodeChanged;
 +(void)setDockIconRuntimeVisible:(BOOL)visible;
 +(int)toggleSpellCheckSetting;
 +(int)toggleAllowConsonantZFWJSetting;
