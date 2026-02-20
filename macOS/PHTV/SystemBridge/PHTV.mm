@@ -52,23 +52,7 @@ static const NSUInteger SYNC_KEY_RESERVE_SIZE = 256;         // Pre-allocated bu
 
 // Timing delay constants (all in microseconds)
 static const int64_t kPHTVEventMarker = 0x50485456; // "PHTV"
-static const useconds_t CLI_BACKSPACE_DELAY_FAST_US = 6000;
-static const useconds_t CLI_WAIT_AFTER_BACKSPACE_FAST_US = 18000;
-static const useconds_t CLI_TEXT_DELAY_FAST_US = 5000;
-static const useconds_t CLI_BACKSPACE_DELAY_MEDIUM_US = 9000;
-static const useconds_t CLI_WAIT_AFTER_BACKSPACE_MEDIUM_US = 27000;
-static const useconds_t CLI_TEXT_DELAY_MEDIUM_US = 7000;
-static const useconds_t CLI_BACKSPACE_DELAY_SLOW_US = 12000;
-static const useconds_t CLI_WAIT_AFTER_BACKSPACE_SLOW_US = 36000;
-static const useconds_t CLI_TEXT_DELAY_SLOW_US = 9000;
-static const useconds_t CLI_BACKSPACE_DELAY_DEFAULT_US = 8000;
-static const useconds_t CLI_WAIT_AFTER_BACKSPACE_DEFAULT_US = 24000;
-static const useconds_t CLI_TEXT_DELAY_DEFAULT_US = 6000;
 static const int CLI_TEXT_CHUNK_SIZE_DEFAULT = 20;
-static const int CLI_TEXT_CHUNK_SIZE_ONE_BY_ONE = 1;
-static const useconds_t CLI_BACKSPACE_DELAY_IDE_US = 8000;
-static const useconds_t CLI_WAIT_AFTER_BACKSPACE_IDE_US = 25000;
-static const useconds_t CLI_TEXT_DELAY_IDE_US = 8000;
 static const useconds_t CLI_POST_SEND_BLOCK_MIN_US = 20000;
 static const useconds_t CLI_PRE_BACKSPACE_DELAY_US = 4000;
 static const uint64_t CLI_SPEED_FAST_THRESHOLD_US = 20000;
@@ -294,77 +278,22 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         return (uint64_t)((double)baseDelay * _phtvCliSpeedFactor);
     }
 
-    struct PHTVCliProfile {
-        useconds_t backspaceDelayUs;
-        useconds_t waitAfterBackspaceUs;
-        useconds_t textDelayUs;
-        int textChunkSize;
-    };
-
-    static const PHTVCliProfile kPHTVCliProfileIDE = {
-        CLI_BACKSPACE_DELAY_IDE_US,
-        CLI_WAIT_AFTER_BACKSPACE_IDE_US,
-        CLI_TEXT_DELAY_IDE_US,
-        CLI_TEXT_CHUNK_SIZE_ONE_BY_ONE
-    };
-
-    static const PHTVCliProfile kPHTVCliProfileFast = {
-        CLI_BACKSPACE_DELAY_FAST_US,
-        CLI_WAIT_AFTER_BACKSPACE_FAST_US,
-        CLI_TEXT_DELAY_FAST_US,
-        CLI_TEXT_CHUNK_SIZE_ONE_BY_ONE
-    };
-
-    static const PHTVCliProfile kPHTVCliProfileMedium = {
-        CLI_BACKSPACE_DELAY_MEDIUM_US,
-        CLI_WAIT_AFTER_BACKSPACE_MEDIUM_US,
-        CLI_TEXT_DELAY_MEDIUM_US,
-        CLI_TEXT_CHUNK_SIZE_ONE_BY_ONE
-    };
-
-    static const PHTVCliProfile kPHTVCliProfileSlow = {
-        CLI_BACKSPACE_DELAY_SLOW_US,
-        CLI_WAIT_AFTER_BACKSPACE_SLOW_US,
-        CLI_TEXT_DELAY_SLOW_US,
-        CLI_TEXT_CHUNK_SIZE_ONE_BY_ONE
-    };
-
-    static const PHTVCliProfile kPHTVCliProfileDefault = {
-        CLI_BACKSPACE_DELAY_DEFAULT_US,
-        CLI_WAIT_AFTER_BACKSPACE_DEFAULT_US,
-        CLI_TEXT_DELAY_DEFAULT_US,
-        CLI_TEXT_CHUNK_SIZE_ONE_BY_ONE
-    };
-
-    static inline void ApplyCliProfile(const PHTVCliProfile &profile) {
-        _phtvCliBackspaceDelayUs = profile.backspaceDelayUs;
-        _phtvCliWaitAfterBackspaceUs = profile.waitAfterBackspaceUs;
-        _phtvCliTextDelayUs = profile.textDelayUs;
-        _phtvCliTextChunkSize = profile.textChunkSize;
-        _phtvCliPostSendBlockUs = (useconds_t)MAX((uint64_t)CLI_POST_SEND_BLOCK_MIN_US,
-                                                  (uint64_t)_phtvCliTextDelayUs * 3);
-    }
-
-    static inline void ConfigureCliProfileForCode(int32_t profileCode) {
-        switch (profileCode) {
-            case 1:
-                ApplyCliProfile(kPHTVCliProfileIDE);
-                return;
-            case 2:
-                ApplyCliProfile(kPHTVCliProfileFast);
-                return;
-            case 3:
-                ApplyCliProfile(kPHTVCliProfileMedium);
-                return;
-            case 4:
-                ApplyCliProfile(kPHTVCliProfileSlow);
-                return;
-            default:
-                break;
+    static inline void ApplyCliProfile(PHTVCliTimingProfileBox *profile) {
+        if (profile == nil) {
+            _phtvCliBackspaceDelayUs = 0;
+            _phtvCliWaitAfterBackspaceUs = 0;
+            _phtvCliTextDelayUs = 0;
+            _phtvCliTextChunkSize = (int)[PHTVCliProfileService nonCliTextChunkSize];
+            _phtvCliPostSendBlockUs = CLI_POST_SEND_BLOCK_MIN_US;
+            return;
         }
 
-        // Default terminal profile
-        ApplyCliProfile(kPHTVCliProfileDefault);
+        _phtvCliBackspaceDelayUs = (useconds_t)profile.backspaceDelayUs;
+        _phtvCliWaitAfterBackspaceUs = (useconds_t)profile.waitAfterBackspaceUs;
+        _phtvCliTextDelayUs = (useconds_t)profile.textDelayUs;
+        _phtvCliTextChunkSize = (int)profile.textChunkSize;
+        _phtvCliPostSendBlockUs = (useconds_t)MAX((uint64_t)CLI_POST_SEND_BLOCK_MIN_US,
+                                                  (uint64_t)profile.postSendBlockUs);
     }
 
     static inline BOOL IsUppercasePrimeCandidateKey(CGKeyCode keycode, CGEventFlags flags) {
@@ -1053,7 +982,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             goto FinalizeSend;
         } else {
             if (_phtvIsCliTarget) {
-                int chunkSize = (_phtvCliTextChunkSize > 0) ? _phtvCliTextChunkSize : CLI_TEXT_CHUNK_SIZE_ONE_BY_ONE;
+                int chunkSize = (_phtvCliTextChunkSize > 0) ? _phtvCliTextChunkSize : 1;
                 SendUnicodeStringChunked(_finalCharString, _finalCharSize, chunkSize, _phtvCliTextDelayUs);
                 goto FinalizeSend;
             }
@@ -1610,12 +1539,13 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             _phtvIsCliTarget = targetContext.isCliTarget;
             _phtvPostToSessionForCli = _phtvIsCliTarget;
             if (_phtvIsCliTarget) {
-                ConfigureCliProfileForCode(targetContext.cliProfileCode);
+                ApplyCliProfile(targetContext.cliTimingProfile);
             } else {
                 _phtvCliBackspaceDelayUs = 0;
                 _phtvCliWaitAfterBackspaceUs = 0;
                 _phtvCliTextDelayUs = 0;
-                _phtvCliTextChunkSize = CLI_TEXT_CHUNK_SIZE_DEFAULT;
+                _phtvCliTextChunkSize = (int)[PHTVCliProfileService nonCliTextChunkSize];
+                _phtvCliPostSendBlockUs = CLI_POST_SEND_BLOCK_MIN_US;
             }
             if (_phtvIsCliTarget) {
                 uint64_t now = mach_absolute_time();

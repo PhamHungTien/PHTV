@@ -23,7 +23,7 @@ final class PHTVEventTargetContextBox: NSObject {
     let isTerminalPanel: Bool
     let isCliTarget: Bool
     let postToHIDTap: Bool
-    let cliProfileCode: Int32
+    let cliTimingProfile: PHTVCliTimingProfileBox?
 
     init(eventTargetBundleId: String?,
          focusedBundleId: String?,
@@ -36,7 +36,7 @@ final class PHTVEventTargetContextBox: NSObject {
          isTerminalPanel: Bool,
          isCliTarget: Bool,
          postToHIDTap: Bool,
-         cliProfileCode: Int32) {
+         cliTimingProfile: PHTVCliTimingProfileBox?) {
         self.eventTargetBundleId = eventTargetBundleId
         self.focusedBundleId = focusedBundleId
         self.effectiveBundleId = effectiveBundleId
@@ -48,7 +48,7 @@ final class PHTVEventTargetContextBox: NSObject {
         self.isTerminalPanel = isTerminalPanel
         self.isCliTarget = isCliTarget
         self.postToHIDTap = postToHIDTap
-        self.cliProfileCode = cliProfileCode
+        self.cliTimingProfile = cliTimingProfile
     }
 }
 
@@ -213,7 +213,13 @@ final class PHTVAppContextService: NSObject {
             ? PHTVAccessibilityService.isTerminalPanelFocused()
             : false
         let isCliTarget = isTerminalApp || isJetBrainsApp || isTerminalPanel
-        let cliProfileCode = PHTVCliProfileService.profileCode(forBundleId: effectiveBundleId)
+        let cliTimingProfile: PHTVCliTimingProfileBox? = {
+            guard isCliTarget else {
+                return nil
+            }
+            let profileCode = PHTVCliProfileService.profileCode(forBundleId: effectiveBundleId)
+            return PHTVCliProfileService.profile(forCode: profileCode)
+        }()
         let postToHIDTap = (!isBrowser && spotlightActive) || appCharacteristics.isSpotlightLike
 
         return PHTVEventTargetContextBox(
@@ -228,7 +234,7 @@ final class PHTVAppContextService: NSObject {
             isTerminalPanel: isTerminalPanel,
             isCliTarget: isCliTarget,
             postToHIDTap: postToHIDTap,
-            cliProfileCode: cliProfileCode
+            cliTimingProfile: cliTimingProfile
         )
     }
 }
