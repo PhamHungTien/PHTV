@@ -23,9 +23,6 @@
 #import "PHTVManager.h"
 #import "PHTV-Swift.h"
 
-// Import new manager classes
-#import "PHTVCacheManager.h"
-
 // Forward declarations for functions used before definition (inside extern "C" block)
 extern "C" {
     NSString* getBundleIdFromPID(pid_t pid);
@@ -46,6 +43,15 @@ typedef NS_ENUM(NSInteger, PHTVTextReplacementDecision) {
     PHTVTextReplacementDecisionPattern2B = 3,
     PHTVTextReplacementDecisionFallbackNoMatch = 4
 };
+
+// Cached app behavior used across the event callback.
+typedef struct {
+    BOOL isSpotlightLike;
+    BOOL needsPrecomposedBatched;
+    BOOL needsStepByStep;
+    BOOL containsUnicodeCompound;
+    BOOL isSafari;
+} AppCharacteristics;
 
 // Performance & Cache Configuration
 static const uint64_t SPOTLIGHT_CACHE_DURATION_MS = 150;     // Spotlight detection cache timeout (balanced for lower CPU)
@@ -175,7 +181,7 @@ BOOL isSpotlightActive(void) {
 
 // Get bundle ID from process ID
 NSString* getBundleIdFromPID(pid_t pid) {
-    return [PHTVCacheManager getBundleIdFromPID:pid];
+    return [PHTVCacheStateService bundleIdFromPID:(int32_t)pid safeMode:vSafeMode];
 }
 #define OTHER_CONTROL_KEY (_flag & kCGEventFlagMaskCommand) || (_flag & kCGEventFlagMaskControl) || \
                             (_flag & kCGEventFlagMaskAlternate) || (_flag & kCGEventFlagMaskSecondaryFn) || \
@@ -215,10 +221,13 @@ extern "C" {
     // Cache state and computation are centralized in Swift services.
     static inline AppCharacteristics getAppCharacteristics(NSString* bundleId) {
         const uint64_t kAppCharacteristicsCacheMaxAgeMs = 10000;
-        int invalidationReason = 0;
-        AppCharacteristics chars = [PHTVCacheManager getOrComputeAppCharacteristics:bundleId
-                                                                           maxAgeMs:kAppCharacteristicsCacheMaxAgeMs
-                                                                  invalidationReason:&invalidationReason];
+        AppCharacteristics chars = {NO, NO, NO, NO, NO};
+        if (!bundleId || bundleId.length == 0) {
+            return chars;
+        }
+
+        int invalidationReason = (int)[PHTVCacheStateService prepareAppCharacteristicsCacheForBundleId:bundleId
+                                                                                              maxAgeMs:kAppCharacteristicsCacheMaxAgeMs];
 #ifdef DEBUG
         if (invalidationReason == 1) {
             NSLog(@"[Cache] App switched to %@, invalidating app characteristics cache", bundleId);
@@ -226,6 +235,29 @@ extern "C" {
             NSLog(@"[Cache] 10s elapsed, invalidating cache for browser responsiveness");
         }
 #endif
+
+        PHTVAppCharacteristicsBox *box = [PHTVCacheStateService appCharacteristicsForBundleId:bundleId];
+        if (box) {
+            chars.isSpotlightLike = box.isSpotlightLike;
+            chars.needsPrecomposedBatched = box.needsPrecomposedBatched;
+            chars.needsStepByStep = box.needsStepByStep;
+            chars.containsUnicodeCompound = box.containsUnicodeCompound;
+            chars.isSafari = box.isSafari;
+            return chars;
+        }
+
+        chars.isSpotlightLike = [PHTVAppDetectionService isSpotlightLikeApp:bundleId];
+        chars.needsPrecomposedBatched = [PHTVAppDetectionService needsPrecomposedBatched:bundleId];
+        chars.needsStepByStep = [PHTVAppDetectionService needsStepByStep:bundleId];
+        chars.containsUnicodeCompound = [PHTVAppDetectionService containsUnicodeCompound:bundleId];
+        chars.isSafari = [PHTVAppDetectionService isSafariApp:bundleId];
+
+        [PHTVCacheStateService setAppCharacteristicsForBundleId:bundleId
+                                                isSpotlightLike:chars.isSpotlightLike
+                                         needsPrecomposedBatched:chars.needsPrecomposedBatched
+                                                 needsStepByStep:chars.needsStepByStep
+                                         containsUnicodeCompound:chars.containsUnicodeCompound
+                                                        isSafari:chars.isSafari];
         return chars;
     }
 
@@ -1019,21 +1051,18 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         // isSpotlightActive() is always called before getFocusedAppBundleId() in the hot path
         uint64_t now = mach_absolute_time();
         
-        // Use PHTVCacheManager (thread-safe)
-        uint64_t lastCheck = [PHTVCacheManager getLastSpotlightCheckTime];
-        NSString *cachedBundleId = [PHTVCacheManager getCachedFocusedBundleId];
+        uint64_t lastCheck = [PHTVCacheStateService lastSpotlightCheckTime];
+        NSString *cachedBundleId = [PHTVCacheStateService cachedFocusedBundleId];
     
         uint64_t elapsed_ms = mach_time_to_ms(now - lastCheck);
         if (elapsed_ms < SPOTLIGHT_CACHE_DURATION_MS && lastCheck > 0 && cachedBundleId != nil) {
             return cachedBundleId;
         }
     
-        // Cache miss or too old - trigger a fresh check via isSpotlightActive
-        // This will update PHTVCacheManager
+        // Cache miss or too old - trigger a fresh check via isSpotlightActive.
         isSpotlightActive();
     
-        // Read fresh result from PHTVCacheManager
-        NSString *result = [PHTVCacheManager getCachedFocusedBundleId];
+        NSString *result = [PHTVCacheStateService cachedFocusedBundleId];
     
         return (result != nil) ? result : FRONT_APP;
     }    

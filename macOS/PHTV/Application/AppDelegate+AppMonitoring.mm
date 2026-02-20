@@ -9,8 +9,8 @@
 #import "AppDelegate+InputState.h"
 #import "AppDelegate+Private.h"
 #import "AppDelegate+Sparkle.h"
-#import "../SystemBridge/PHTVCacheManager.h"
 #import "../SystemBridge/PHTVManager.h"
+#import "PHTV-Swift.h"
 
 static NSString *const PHTVDefaultsKeyInputMethod = @"InputMethod";
 static NSString *const PHTVDefaultsKeyExcludedApps = @"ExcludedApps";
@@ -31,6 +31,7 @@ static NSString *const PHTVNotificationUpperCaseExcludedAppsChanged = @"UpperCas
 static NSString *const PHTVNotificationMenuBarIconSizeChanged = @"MenuBarIconSizeChanged";
 static NSString *const PHTVNotificationLanguageChangedFromExcludedApp = @"LanguageChangedFromExcludedApp";
 static NSString *const PHTVNotificationTCCDatabaseChanged = @"TCCDatabaseChanged";
+static const uint64_t PHTVSpotlightInvalidationDedupMs = 30;
 
 extern volatile int vLanguage;
 extern volatile int vUseSmartSwitchKey;
@@ -130,7 +131,7 @@ static BOOL PHTVListContainsBundleIdentifier(NSArray<NSDictionary *> * _Nullable
     // CRITICAL: Update focus cache immediately to prevent race conditions in smart switch logic.
     // This ensures that OnActiveAppChanged and other background tasks see the correct app.
     if (bundleId) {
-        [PHTVCacheManager updateSpotlightCache:NO pid:0 bundleId:bundleId];
+        [PHTVCacheStateService updateSpotlightCache:NO pid:0 bundleId:bundleId];
     }
 
     // CRITICAL FIX: Handle exclusion logic BEFORE smart switch logic.
@@ -147,7 +148,8 @@ static BOOL PHTVListContainsBundleIdentifier(NSArray<NSDictionary *> * _Nullable
     }
 
     // Invalidate Spotlight cache on app switch to ensure fresh detection.
-    [PHTVCacheManager invalidateSpotlightCache];
+    __unused NSInteger cacheStatus = [PHTVCacheStateService
+        invalidateSpotlightCacheWithDedupWindowMs:PHTVSpotlightInvalidationDedupMs];
 
     // Check other app-specific behaviors.
     if (bundleId) {
