@@ -9,6 +9,7 @@
 #import "PHTVManager.h"
 #import "PHTVBinaryIntegrity.h"
 #import "PHTVAccessibilityManager.h"
+#import "PHTV-Swift.h"
 #import <unistd.h>
 #import <math.h>
 
@@ -49,6 +50,8 @@ static BOOL _lastPermissionCheckResult = NO;
 static NSTimeInterval _lastPermissionCheckTime = 0;
 static NSInteger _permissionFailureCount = 0;
 static NSTimeInterval _permissionBackoffUntil = 0;
+static BOOL _lastPermissionOutcome = NO;
+static BOOL _hasLastPermissionOutcome = NO;
 
 // Dynamic cache TTL: NO CACHE when waiting for permission (immediate detection), long when permission granted
 // This ensures instant detection when user grants permission while avoiding excessive test taps when running normally
@@ -66,8 +69,6 @@ static BOOL _systemSettingsIsOpen = NO;
 static int _axYesTapNoCount = 0;
 static const int kMaxAxYesTapNoBeforeRelaunch = 5;  // After 5 consecutive occurrences, suggest relaunch
 
-// TCC notification observer
-static id _tccNotificationObserver = nil;
 
 // Check if app is registered in TCC database for Accessibility
 // Returns YES if app is present in TCC (regardless of permission state)
@@ -134,6 +135,7 @@ static BOOL IsAppRegisteredInTCC(void) {
     _lastPermissionCheckResult = NO;
     _permissionFailureCount = 0;
     _permissionBackoffUntil = 0;
+    _hasLastPermissionOutcome = NO;
     NSLog(@"[Permission] Cache invalidated - next check will be fresh");
 }
 
@@ -263,77 +265,12 @@ extern Boolean AXIsProcessTrusted(void) __attribute__((weak_import));
 
 // Start listening for TCC database changes
 +(void)startTCCNotificationListener {
-    if (_tccNotificationObserver != nil) {
-        NSLog(@"[TCC] Notification listener already started");
-        return;
-    }
-
-    NSLog(@"[TCC] Starting notification listener...");
-
-    // Listen to distributed notification for TCC changes
-    // macOS posts this notification when TCC database is modified
-    NSDistributedNotificationCenter *center = [NSDistributedNotificationCenter defaultCenter];
-
-    _tccNotificationObserver = [center addObserverForName:@"com.apple.accessibility.api"
-                                                   object:nil
-                                                    queue:[NSOperationQueue mainQueue]
-                                               usingBlock:^(NSNotification *notification) {
-        NSLog(@"[TCC] 🔔 TCC notification received: %@", notification.name);
-        NSLog(@"[TCC] userInfo: %@", notification.userInfo);
-
-        // Invalidate cache immediately
-        [self invalidatePermissionCache];
-
-        // Post internal notification for app to handle
-        [[NSNotificationCenter defaultCenter] postNotificationName:@"TCCDatabaseChanged"
-                                                            object:nil
-                                                          userInfo:notification.userInfo];
-
-        // Check permission after a brief delay to let TCC settle
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)),
-                      dispatch_get_main_queue(), ^{
-            BOOL hasPermission = [self canCreateEventTap];
-            NSLog(@"[TCC] Post-notification check: %@", hasPermission ? @"GRANTED" : @"DENIED");
-
-            // Notify observers about permission change
-            [[NSNotificationCenter defaultCenter] postNotificationName:@"AccessibilityStatusChanged"
-                                                                object:@(hasPermission)];
-        });
-    }];
-
-    // Also listen for com.apple.TCC.access.changed
-    id observer2 = [center addObserverForName:@"com.apple.TCC.access.changed"
-                                       object:nil
-                                        queue:[NSOperationQueue mainQueue]
-                                   usingBlock:^(NSNotification *notification) {
-        NSLog(@"[TCC] 🔔 TCC access changed notification: %@", notification.userInfo);
-
-        [self invalidatePermissionCache];
-
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)),
-                      dispatch_get_main_queue(), ^{
-            BOOL hasPermission = [self canCreateEventTap];
-            [[NSNotificationCenter defaultCenter] postNotificationName:@"AccessibilityStatusChanged"
-                                                                object:@(hasPermission)];
-        });
-    }];
-
-    // Store both observers (we'll use an array)
-    if (_tccNotificationObserver == nil) {
-        _tccNotificationObserver = observer2;
-    }
-
-    NSLog(@"[TCC] Notification listener started successfully");
+    [PHTVTCCNotificationService startListening];
 }
 
 // Stop listening for TCC changes
 +(void)stopTCCNotificationListener {
-    if (_tccNotificationObserver != nil) {
-        NSLog(@"[TCC] Stopping notification listener...");
-        [[NSDistributedNotificationCenter defaultCenter] removeObserver:_tccNotificationObserver];
-        _tccNotificationObserver = nil;
-        NSLog(@"[TCC] Notification listener stopped");
-    }
+    [PHTVTCCNotificationService stopListening];
 }
 
 // Helper: Try to create test tap with retries
@@ -429,18 +366,24 @@ extern Boolean AXIsProcessTrusted(void) __attribute__((weak_import));
     if (hasPermission) {
         _permissionFailureCount = 0;
         _permissionBackoffUntil = 0;
-        NSLog(@"[Permission] Check: TestTap=SUCCESS");
+        if (!_hasLastPermissionOutcome || !_lastPermissionOutcome) {
+            NSLog(@"[Permission] Check: TestTap=SUCCESS");
+        }
     } else {
         _permissionFailureCount++;
         // Exponential backoff starting at 0.25s, max 15s
         NSTimeInterval backoff = MIN(15.0, pow(2.0, MIN(_permissionFailureCount, 6)) * 0.25);
         _permissionBackoffUntil = now + backoff;
-        NSLog(@"[Permission] Check: TestTap=FAILED (count=%ld) — backing off for %.2fs", (long)_permissionFailureCount, backoff);
+        if (!_hasLastPermissionOutcome || _lastPermissionOutcome || (_permissionFailureCount % 5 == 1)) {
+            NSLog(@"[Permission] Check: TestTap=FAILED (count=%ld) — backing off for %.2fs", (long)_permissionFailureCount, backoff);
+        }
     }
 
     // Update cache
     _lastPermissionCheckResult = hasPermission;
     _lastPermissionCheckTime = now;
+    _lastPermissionOutcome = hasPermission;
+    _hasLastPermissionOutcome = YES;
 
     return hasPermission;
 }

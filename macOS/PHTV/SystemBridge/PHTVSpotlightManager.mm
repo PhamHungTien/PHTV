@@ -58,8 +58,26 @@
     return [PHTVSpotlightDetectionService elapsedSinceLastExternalDeleteMs];
 }
 
-+ (unsigned long long)consumeRecentExternalDeleteWithinMs:(unsigned long long)thresholdMs {
-    return [PHTVSpotlightDetectionService consumeRecentExternalDeleteWithinMs:thresholdMs];
++ (PHTVTextReplacementDecision)detectTextReplacementForCode:(int)code
+                                                    extCode:(int)extCode
+                                             backspaceCount:(int)backspaceCount
+                                               newCharCount:(int)newCharCount
+                                        externalDeleteCount:(int)externalDeleteCount
+                            restoreAndStartNewSessionCode:(int)restoreAndStartNewSessionCode
+                                            willProcessCode:(int)willProcessCode
+                                                restoreCode:(int)restoreCode
+                                               deleteWindowMs:(unsigned long long)deleteWindowMs
+                                            matchedElapsedMs:(unsigned long long *)matchedElapsedMs {
+    return (PHTVTextReplacementDecision)[PHTVSpotlightDetectionService detectTextReplacementForCode:code
+                                                                                             extCode:extCode
+                                                                                      backspaceCount:backspaceCount
+                                                                                        newCharCount:newCharCount
+                                                                                 externalDeleteCount:externalDeleteCount
+                                                                     restoreAndStartNewSessionCode:restoreAndStartNewSessionCode
+                                                                                     willProcessCode:willProcessCode
+                                                                                         restoreCode:restoreCode
+                                                                                        deleteWindowMs:deleteWindowMs
+                                                                                     matchedElapsedMs:matchedElapsedMs];
 }
 
 #pragma mark - Cache Invalidation Coordination

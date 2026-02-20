@@ -335,8 +335,7 @@ final class PHTVSpotlightDetectionService: NSObject {
         return PHTVTimingService.machTimeToMs(now - lastExternalDeleteTime)
     }
 
-    @objc(consumeRecentExternalDeleteWithinMs:)
-    class func consumeRecentExternalDelete(withinMs thresholdMs: UInt64) -> UInt64 {
+    private class func consumeRecentExternalDelete(withinMs thresholdMs: UInt64) -> UInt64 {
         let now = mach_absolute_time()
         lock.lock()
         defer { lock.unlock() }
@@ -355,5 +354,51 @@ final class PHTVSpotlightDetectionService: NSObject {
             return UInt64.max
         }
         return elapsedMs
+    }
+
+    @objc(detectTextReplacementForCode:extCode:backspaceCount:newCharCount:externalDeleteCount:restoreAndStartNewSessionCode:willProcessCode:restoreCode:deleteWindowMs:matchedElapsedMs:)
+    class func detectTextReplacement(
+        forCode code: Int,
+        extCode: Int,
+        backspaceCount: Int,
+        newCharCount: Int,
+        externalDeleteCount: Int,
+        restoreAndStartNewSessionCode: Int,
+        willProcessCode: Int,
+        restoreCode: Int,
+        deleteWindowMs: UInt64,
+        matchedElapsedMs: UnsafeMutablePointer<UInt64>?
+    ) -> Int {
+        guard backspaceCount > 0 || newCharCount > 0 else {
+            return 0
+        }
+
+        // Exclude Auto English restore flow.
+        guard extCode != 5, code != restoreAndStartNewSessionCode else {
+            return 0
+        }
+
+        if externalDeleteCount > 0 {
+            let elapsed = consumeRecentExternalDelete(withinMs: deleteWindowMs)
+            guard elapsed != UInt64.max else {
+                return 0
+            }
+            matchedElapsedMs?.pointee = elapsed
+            return 1
+        }
+
+        let pattern2a = newCharCount >= backspaceCount * 2
+        let pattern2b = (code == willProcessCode || code == restoreCode) &&
+            backspaceCount > 0 &&
+            backspaceCount == newCharCount &&
+            backspaceCount <= 10
+
+        if pattern2a {
+            return 2
+        }
+        if pattern2b {
+            return 3
+        }
+        return 4
     }
 }

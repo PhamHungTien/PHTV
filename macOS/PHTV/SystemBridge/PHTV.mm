@@ -2631,85 +2631,70 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 // 1. External DELETE detected (arrow key selection) - HIGH CONFIDENCE
                 // 2. Short backspace + code=3 without DELETE (mouse click selection) - FALLBACK
                 // Can be enabled via Settings > Compatibility > "Sửa lỗi Text Replacement"
-                BOOL skipProcessing = NO;
-                int externalDeleteCount = [PHTVSpotlightManager getExternalDeleteCount];
+                BOOL textReplacementFixEnabled = IsTextReplacementFixEnabled();
+                int externalDeleteCount = 0;
+                if (textReplacementFixEnabled) {
+                    externalDeleteCount = [PHTVSpotlightManager getExternalDeleteCount];
+                }
 
                 // Log for debugging text replacement issues (only in Debug builds)
                 #ifdef DEBUG
-                if (IsTextReplacementFixEnabled() &&
+                if (textReplacementFixEnabled &&
                     (pData->backspaceCount > 0 || pData->newCharCount > 0)) {
                     NSLog(@"[PHTV TextReplacement] Key=%d: code=%d, extCode=%d, backspace=%d, newChar=%d, deleteCount=%d",
                           _keycode, pData->code, pData->extCode, (int)pData->backspaceCount, (int)pData->newCharCount, externalDeleteCount);
                 }
                 #endif
 
-                if (IsTextReplacementFixEnabled() &&
+                if (textReplacementFixEnabled &&
                     _keycode == KEY_SPACE &&
                     (pData->backspaceCount > 0 || pData->newCharCount > 0)) {
+                    unsigned long long matchedElapsedMs = 0;
+                    PHTVTextReplacementDecision decision =
+                        [PHTVSpotlightManager detectTextReplacementForCode:pData->code
+                                                                    extCode:pData->extCode
+                                                             backspaceCount:(int)pData->backspaceCount
+                                                               newCharCount:(int)pData->newCharCount
+                                                        externalDeleteCount:externalDeleteCount
+                                            restoreAndStartNewSessionCode:vRestoreAndStartNewSession
+                                                            willProcessCode:vWillProcess
+                                                                restoreCode:vRestore
+                                                               deleteWindowMs:TEXT_REPLACEMENT_DELETE_WINDOW_MS
+                                                            matchedElapsedMs:&matchedElapsedMs];
 
-                    // Method 1: External DELETE detected (arrow key selection)
-                    if (externalDeleteCount > 0) {
-
-                    // CRITICAL FIX: Exclude Auto English from Text Replacement detection
-                    // Auto English uses extCode=5 and vRestoreAndStartNewSession
-                    // Without this exclusion, Auto English restore gets skipped!
-                    if (pData->extCode != 5 && pData->code != vRestoreAndStartNewSession) {
-
-                    uint64_t elapsed_since_delete = [PHTVSpotlightManager consumeRecentExternalDeleteWithinMs:TEXT_REPLACEMENT_DELETE_WINDOW_MS];
-
-                    // Text replacement pattern: delete + space within 30 seconds (allow slow menu selection)
-                    if (elapsed_since_delete != std::numeric_limits<uint64_t>::max()) {
-                        // This is macOS Text Replacement, skip processing
-                        skipProcessing = YES;
+                    if (decision == PHTVTextReplacementDecisionExternalDelete) {
 #ifdef DEBUG
                         NSLog(@"[TextReplacement] Text replacement detected - passing through event (code=%d, backspace=%d, newChar=%d, deleteCount=%d, elapsedMs=%llu)",
-                              pData->code, (int)pData->backspaceCount, (int)pData->newCharCount, externalDeleteCount, elapsed_since_delete);
+                              pData->code, (int)pData->backspaceCount, (int)pData->newCharCount, externalDeleteCount, matchedElapsedMs);
 #endif
                         // CRITICAL: Return event to let macOS insert Space
                         return event;
                     }
-                    }  // End of Auto English exclusion check
-                    }  // End of externalDeleteCount check
 
-                    // Method 2: Mouse click detection (FALLBACK)
-                    // When user clicks with mouse, macOS does NOT send DELETE events via CGEventTap
-                    // Detection patterns (with Auto English exclusions):
-                    // 2a. Significant char jump: newChar >= backspace*2 (e.g., "dc"→"được": 4>=2*2, "ko"→"không": 5>=2*2)
-                    // 2b. Equal counts pattern: backspace==newChar + short length (e.g., some Text Replacements don't expand)
-                    // EXCLUSIONS: Auto English has extCode=5, vRestoreAndStartNewSession - skip these
-                    else if (externalDeleteCount == 0 &&
-                             pData->extCode != 5 &&  // EXCLUDE: Auto English restore (extCode=5)
-                             pData->code != vRestoreAndStartNewSession) {  // EXCLUDE: Auto English word break
-                        BOOL pattern2a = (pData->newCharCount >= pData->backspaceCount * 2);  // Text expanded 2x or more
-                        BOOL pattern2b = ((pData->code == vWillProcess || pData->code == vRestore) &&
-                                         pData->backspaceCount > 0 &&
-                                         pData->backspaceCount == pData->newCharCount &&
-                                         pData->backspaceCount <= 10);  // Equal counts, short word
-
-                        if (pattern2a || pattern2b) {
-                        #ifdef DEBUG
+                    if (decision == PHTVTextReplacementDecisionPattern2A ||
+                        decision == PHTVTextReplacementDecisionPattern2B) {
+#ifdef DEBUG
                         NSLog(@"[PHTV TextReplacement] Pattern %@ matched: code=%d, backspace=%d, newChar=%d, keycode=%d",
-                              pattern2a ? @"2a" : @"2b",
+                              decision == PHTVTextReplacementDecisionPattern2A ? @"2a" : @"2b",
                               pData->code, (int)pData->backspaceCount, (int)pData->newCharCount, _keycode);
-                        #endif
-                        // Text replacement detected
-                        skipProcessing = YES;
+#endif
                         NSLog(@"[PHTV TextReplacement] ✅ DETECTED - Skipping processing (code=%d, backspace=%d, newChar=%d)",
                               pData->code, (int)pData->backspaceCount, (int)pData->newCharCount);
                         // CRITICAL: Return event to let macOS insert Space
                         return event;
-                        } else {
-                            // Detection FAILED - will process normally (potential bug!)
-                            NSLog(@"[PHTV TextReplacement] ❌ NOT DETECTED - Will process normally (code=%d, backspace=%d, newChar=%d) - MAY CAUSE DUPLICATE!",
-                                  pData->code, (int)pData->backspaceCount, (int)pData->newCharCount);
-                        }
+                    }
+
+                    if (decision == PHTVTextReplacementDecisionFallbackNoMatch) {
+                        // Detection FAILED - will process normally (potential bug!)
+                        NSLog(@"[PHTV TextReplacement] ❌ NOT DETECTED - Will process normally (code=%d, backspace=%d, newChar=%d) - MAY CAUSE DUPLICATE!",
+                              pData->code, (int)pData->backspaceCount, (int)pData->newCharCount);
                     }
                 }
 
                 // No need for HID tap forcing or aggressive delays anymore
 
                 //send backspace
-                if (!skipProcessing && pData->backspaceCount > 0 && pData->backspaceCount < MAX_BUFF) {
+                if (pData->backspaceCount > 0 && pData->backspaceCount < MAX_BUFF) {
                     // Use Spotlight-style deferred backspace when in search field (spotlightActive) or Spotlight-like app
                     // EXCEPT for Chromium apps - they don't support AX API properly
                     if ((!isBrowserApp && spotlightActive) || appChars.isSpotlightLike) {
@@ -2719,15 +2704,13 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                         PHTVSpotlightDebugLog([NSString stringWithFormat:@"deferBackspace=%d newCharCount=%d", (int)pData->backspaceCount, (int)pData->newCharCount]);
 #endif
                     } else {
-                        // Send backspaces for all apps
-                        // Safari/Chromium browsers use Shift+Left strategy (handled above)
-                        if (pData->backspaceCount > 0) {
-                            if (appChars.needsStepByStep) {
-                                SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeSpotlight);
-                            } else {
-                                // Browsers, terminals, and normal apps
-                                SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeNone);
-                            }
+                        // Send backspaces for all apps.
+                        // Safari/Chromium browsers use Shift+Left strategy (handled above).
+                        if (appChars.needsStepByStep) {
+                            SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeSpotlight);
+                        } else {
+                            // Browsers, terminals, and normal apps
+                            SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeNone);
                         }
                     }
                 }
@@ -2736,65 +2719,59 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 // IMPORTANT: For Spotlight-like targets we rely on SendNewCharString(), which can
                 // perform deterministic replacement (AX) and/or per-character Unicode posting.
                 // Forcing step-by-step here would skip deferred deletions and cause duplicated letters.
-                // TEXT REPLACEMENT FIX: Skip if already determined we should skip processing
                 // EXCEPTION: Auto English restore (extCode=5) on Chromium apps should use step-by-step
                 // because Chromium's autocomplete interferes with AX API and Unicode string posting
-                if (!skipProcessing) {
-                    // For Spotlight-like targets we rely on SendNewCharString(), which can
-                    // perform deterministic replacement (AX) and/or per-character Unicode posting.
-                    // EXCEPT for browsers - they don't support AX API properly
-                    BOOL isSpotlightTarget = (!isBrowserApp && spotlightActive) || appChars.isSpotlightLike;
-                    // Only use step-by-step for explicitly configured apps
-                    // FIX #121: Also use step-by-step for auto English restore + Enter/Return
-                    // This ensures Terminal receives characters before the Enter key
-                    BOOL isAutoEnglishWithEnter = (pData->code == vRestoreAndStartNewSession) &&
-                                                  (_keycode == KEY_ENTER || _keycode == KEY_RETURN);
-                    BOOL useStepByStep = (!isSpotlightTarget) &&
-                                         (_phtvIsCliTarget ||
-                                          vSendKeyStepByStep ||
-                                          appChars.needsStepByStep ||
-                                          isAutoEnglishWithEnter);
+                BOOL isSpotlightTarget = (!isBrowserApp && spotlightActive) || appChars.isSpotlightLike;
+                // Only use step-by-step for explicitly configured apps
+                // FIX #121: Also use step-by-step for auto English restore + Enter/Return
+                // This ensures Terminal receives characters before the Enter key
+                BOOL isAutoEnglishWithEnter = (pData->code == vRestoreAndStartNewSession) &&
+                                              (_keycode == KEY_ENTER || _keycode == KEY_RETURN);
+                BOOL useStepByStep = (!isSpotlightTarget) &&
+                                     (_phtvIsCliTarget ||
+                                      vSendKeyStepByStep ||
+                                      appChars.needsStepByStep ||
+                                      isAutoEnglishWithEnter);
 #ifdef DEBUG
-                    if (isSpotlightTarget) {
-                        PHTVSpotlightDebugLog([NSString stringWithFormat:@"willSend stepByStep=%d backspaceCount=%d newCharCount=%d", (int)useStepByStep, (int)pData->backspaceCount, (int)pData->newCharCount]);
-                    }
+                if (isSpotlightTarget) {
+                    PHTVSpotlightDebugLog([NSString stringWithFormat:@"willSend stepByStep=%d backspaceCount=%d newCharCount=%d", (int)useStepByStep, (int)pData->backspaceCount, (int)pData->newCharCount]);
+                }
 #endif
-                    if (!useStepByStep) {
-                        SendNewCharString();
-                    } else {
-                        if (pData->newCharCount > 0 && pData->newCharCount <= MAX_BUFF) {
-                            useconds_t cliTextDelay = 0;
-                            if (_phtvIsCliTarget) {
-                                cliTextDelay = PHTVScaleCliDelay(_phtvCliTextDelayUs);
-                            }
-                            for (int i = pData->newCharCount - 1; i >= 0; i--) {
-                                SendKeyCode(pData->charData[i]);
-                                if (cliTextDelay > 0 && i > 0) {
-                                    usleep(cliTextDelay);
-                                }
-                            }
-                            if (_phtvIsCliTarget && pData->newCharCount > 0) {
-                                uint64_t totalBlockUs = PHTVScaleCliDelay64(_phtvCliPostSendBlockUs);
-                                if (cliTextDelay > 0 && pData->newCharCount > 1) {
-                                    totalBlockUs += (uint64_t)cliTextDelay * (uint64_t)(pData->newCharCount - 1);
-                                }
-                                SetCliBlockForMicroseconds(totalBlockUs);
+                if (!useStepByStep) {
+                    SendNewCharString();
+                } else {
+                    if (pData->newCharCount > 0 && pData->newCharCount <= MAX_BUFF) {
+                        useconds_t cliTextDelay = 0;
+                        if (_phtvIsCliTarget) {
+                            cliTextDelay = PHTVScaleCliDelay(_phtvCliTextDelayUs);
+                        }
+                        for (int i = pData->newCharCount - 1; i >= 0; i--) {
+                            SendKeyCode(pData->charData[i]);
+                            if (cliTextDelay > 0 && i > 0) {
+                                usleep(cliTextDelay);
                             }
                         }
-                        if (pData->code == vRestore || pData->code == vRestoreAndStartNewSession) {
-                            #ifdef DEBUG
-                            if (pData->code == vRestoreAndStartNewSession) {
-                                fprintf(stderr, "[AutoEnglish] PROCESSING RESTORE: backspace=%d, newChar=%d, skipProcessing=%d\n",
-                                       (int)pData->backspaceCount, (int)pData->newCharCount, skipProcessing);
-                                fflush(stderr);
+                        if (_phtvIsCliTarget && pData->newCharCount > 0) {
+                            uint64_t totalBlockUs = PHTVScaleCliDelay64(_phtvCliPostSendBlockUs);
+                            if (cliTextDelay > 0 && pData->newCharCount > 1) {
+                                totalBlockUs += (uint64_t)cliTextDelay * (uint64_t)(pData->newCharCount - 1);
                             }
-                            #endif
-                            // No delay needed before final key
-                            SendKeyCode(_keycode | ((_flag & kCGEventFlagMaskAlphaShift) || (_flag & kCGEventFlagMaskShift) ? CAPS_MASK : 0));
+                            SetCliBlockForMicroseconds(totalBlockUs);
                         }
+                    }
+                    if (pData->code == vRestore || pData->code == vRestoreAndStartNewSession) {
+                        #ifdef DEBUG
                         if (pData->code == vRestoreAndStartNewSession) {
-                            startNewSession();
+                            fprintf(stderr, "[AutoEnglish] PROCESSING RESTORE: backspace=%d, newChar=%d\n",
+                                   (int)pData->backspaceCount, (int)pData->newCharCount);
+                            fflush(stderr);
                         }
+                        #endif
+                        // No delay needed before final key
+                        SendKeyCode(_keycode | ((_flag & kCGEventFlagMaskAlphaShift) || (_flag & kCGEventFlagMaskShift) ? CAPS_MASK : 0));
+                    }
+                    if (pData->code == vRestoreAndStartNewSession) {
+                        startNewSession();
                     }
                 }
             } else if (pData->code == vReplaceMaro) { //MACRO

@@ -13,6 +13,14 @@
 #import <ApplicationServices/ApplicationServices.h>
 #import <Carbon/Carbon.h>
 
+typedef NS_ENUM(NSInteger, PHTVTextReplacementDecision) {
+    PHTVTextReplacementDecisionNone = 0,
+    PHTVTextReplacementDecisionExternalDelete = 1,
+    PHTVTextReplacementDecisionPattern2A = 2,
+    PHTVTextReplacementDecisionPattern2B = 3,
+    PHTVTextReplacementDecisionFallbackNoMatch = 4
+};
+
 @interface PHTVSpotlightManager : NSObject
 
 // Initialization
@@ -31,7 +39,16 @@
 + (void)trackExternalDelete;
 + (int)getExternalDeleteCount;
 + (unsigned long long)elapsedSinceLastExternalDeleteMs;
-+ (unsigned long long)consumeRecentExternalDeleteWithinMs:(unsigned long long)thresholdMs;
++ (PHTVTextReplacementDecision)detectTextReplacementForCode:(int)code
+                                                    extCode:(int)extCode
+                                             backspaceCount:(int)backspaceCount
+                                               newCharCount:(int)newCharCount
+                                        externalDeleteCount:(int)externalDeleteCount
+                            restoreAndStartNewSessionCode:(int)restoreAndStartNewSessionCode
+                                            willProcessCode:(int)willProcessCode
+                                                restoreCode:(int)restoreCode
+                                               deleteWindowMs:(unsigned long long)deleteWindowMs
+                                            matchedElapsedMs:(unsigned long long *)matchedElapsedMs;
 
 // Cache Invalidation Coordination
 + (void)handleSpotlightCacheInvalidation:(CGEventType)type keycode:(CGKeyCode)keycode flags:(CGEventFlags)flags;
