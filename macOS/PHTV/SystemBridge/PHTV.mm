@@ -10,7 +10,6 @@
 #import <Foundation/Foundation.h>
 #import <libproc.h>
 #import <ApplicationServices/ApplicationServices.h>
-#import <os/log.h>
 #import <mach/mach_time.h>
 #import <unistd.h>
 #import <stdlib.h>
@@ -90,10 +89,6 @@ static const double CLI_SPEED_FACTOR_SLOW = 1.3;
     // AXValueType values are stable across macOS; CFRange is typically 4.
     #define PHTV_AXVALUE_CFRANGE_TYPE ((AXValueType)4)
 #endif
-
-// Modern logging subsystem
-static os_log_t phtv_log;
-static dispatch_once_t log_init_token;
 
 // High-resolution timing
 static mach_timebase_info_data_t timebase_info;
@@ -656,10 +651,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     NSString* _frontMostApp = @"UnknownApp";
     
     void PHTVInit() {
-        // Initialize logging infrastructure first
-        dispatch_once(&log_init_token, ^{
-            phtv_log = os_log_create("com.phamhungtien.phtv", "Engine");
-        });
         dispatch_once(&timebase_init_token, ^{
             mach_timebase_info(&timebase_info);
         });
@@ -1697,48 +1688,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         }
     }
 
-    // Handle Spotlight cache invalidation on Cmd+Space and modifier changes
-    // This ensures fast Spotlight detection
-    static inline void HandleSpotlightCacheInvalidation(CGEventType type, CGKeyCode keycode, CGEventFlags flag) {
-        [PHTVEventContextBridgeService handleSpotlightCacheInvalidationForType:type
-                                                                       keycode:(uint16_t)keycode
-                                                                         flags:flag];
-    }
-
-    // Event tap health monitoring - checks tap status and recovers if needed
-    // Returns YES if tap is healthy, NO if recovery was attempted
-    static inline BOOL CheckAndRecoverEventTap(CGEventType type) {
-        if (__builtin_expect(type != kCGEventKeyDown, 1)) {
-            return YES;
-        }
-        // BROWSER FIX: More aggressive health check for faster recovery
-        // Reduced intervals to catch tap disable within 5-10 keystrokes instead of 15-50
-        // Smart skip: after 1000 healthy checks, reduce frequency to save CPU
-        static NSUInteger eventCounter = 0;
-        static NSUInteger recoveryCounter = 0;
-        static NSUInteger healthyCounter = 0;
-
-        // Balanced checking for responsiveness vs CPU usage
-        // 25 events when recovering/initial, 50 when stable
-        NSUInteger checkInterval = (healthyCounter > 2000) ? 50 : 25;
-
-        if (__builtin_expect(++eventCounter % checkInterval == 0, 0)) {
-            if (__builtin_expect(![PHTVManager isEventTapEnabled], 0)) {
-                healthyCounter = 0; // Reset healthy counter on failure
-                // Throttle log: only log every 10th recovery to reduce overhead
-                if (++recoveryCounter % 10 == 1) {
-                    os_log_error(phtv_log, "[EventTap] Detected disabled tap — recovering (occurrence #%lu)", (unsigned long)recoveryCounter);
-                }
-                [PHTVManager ensureEventTapAlive];
-                return NO;
-            } else {
-                // Tap is healthy, increment counter
-                if (__builtin_expect(healthyCounter < 2000, 1)) healthyCounter++;
-            }
-        }
-        return YES;
-    }
-
     /**
      * MAIN HOOK entry, very important function.
      * MAIN Callback.
@@ -1774,8 +1723,10 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         // REMOVED: Permission checking in callback - causes kernel deadlock
         // Permission is now checked ONLY via test event tap creation in timer (safe approach)
 
-        // Perform periodic health check and recovery
-        CheckAndRecoverEventTap(type);
+        // Perform periodic health check and recovery.
+        // Explicitly consume result to satisfy warn_unused_result import behavior.
+        BOOL tapHealthOk = [PHTVEventTapHealthService checkAndRecoverForEventType:type];
+        (void)tapHealthOk;
 
         // Skip events injected by PHTV itself (marker-based)
         if (CGEventGetIntegerValueField(event, kCGEventSourceUserData) == kPHTVEventMarker) {
@@ -1815,8 +1766,10 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 #endif
         }
 
-        // Handle Spotlight detection optimization
-        HandleSpotlightCacheInvalidation(type, _keycode, _flag);
+        // Handle Spotlight detection optimization.
+        [PHTVEventContextBridgeService handleSpotlightCacheInvalidationForType:type
+                                                                       keycode:(uint16_t)_keycode
+                                                                         flags:_flag];
 
         // If pause key is being held, strip pause modifier from events to prevent special characters
         // BUT only if no other modifiers are pressed (to preserve system shortcuts like Option+Cmd+V)
