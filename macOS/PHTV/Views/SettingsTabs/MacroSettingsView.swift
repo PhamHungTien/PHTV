@@ -372,25 +372,17 @@ struct MacroSettingsView: View {
 
     private func loadMacros() {
         let defaults = UserDefaults.standard
-        if let data = defaults.data(forKey: UserDefaultsKey.macroList) {
-            if let cached = Self.cachedMacrosData, cached == data {
-                macros = Self.cachedMacros
-                return
-            }
-            if let loadedMacros = MacroStorage.decode(data) {
-                macros = loadedMacros
-                Self.cachedMacros = loadedMacros
-                Self.cachedMacrosData = data
-            } else {
-                macros = []
-                Self.cachedMacros = []
-                Self.cachedMacrosData = data
-            }
-        } else {
-            macros = []
-            Self.cachedMacros = []
-            Self.cachedMacrosData = nil
+        if let data = defaults.data(forKey: UserDefaultsKey.macroList),
+           let cached = Self.cachedMacrosData,
+           cached == data {
+            macros = Self.cachedMacros
+            return
         }
+
+        let loadedMacros = MacroStorage.load(defaults: defaults)
+        macros = loadedMacros
+        Self.cachedMacros = loadedMacros
+        Self.cachedMacrosData = defaults.data(forKey: UserDefaultsKey.macroList)
     }
 
     private func deleteMacro() {

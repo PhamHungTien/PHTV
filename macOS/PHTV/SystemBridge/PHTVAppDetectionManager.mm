@@ -20,6 +20,7 @@ static NSSet* _terminalAppSet = nil;
 static NSSet* _fastTerminalAppSet = nil;
 static NSSet* _mediumTerminalAppSet = nil;
 static NSSet* _slowTerminalAppSet = nil;
+static NSSet* _vscodeFamilyAppSet = nil;
 static NSSet* _forcePrecomposedAppSet = nil;
 static NSSet* _precomposedBatchedAppSet = nil;
 static NSSet* _stepByStepAppSet = nil;
@@ -196,6 +197,18 @@ static NSSet* _disableVietnameseAppSet = nil;
         // Slow terminals (reserved for apps that still drop chars with medium delays)
         _slowTerminalAppSet = [NSSet setWithArray:@[]];
 
+        // VSCode family (includes Cursor / VSCodium and other VSCode forks)
+        _vscodeFamilyAppSet = [NSSet setWithArray:@[
+            @"com.microsoft.vscode",
+            @"com.microsoft.vscodeinsiders",
+            @"com.visualstudio.code.oss",
+            @"com.vscodium",
+            @"com.vscodium.codium",
+            @"com.google.antigravity",
+            @"com.todesktop.cursor",
+            @"com.todesktop.230313mzl4w4u92"
+        ]];
+
         // Force precomposed Unicode
         _forcePrecomposedAppSet = [NSSet setWithArray:@[@"com.apple.Spotlight",
                                                          @"com.apple.systemuiserver",
@@ -269,6 +282,47 @@ static NSSet* _disableVietnameseAppSet = nil;
 
 + (BOOL)isSlowTerminalApp:(NSString*)bundleId {
     return [self bundleIdMatchesAppSet:bundleId appSet:_slowTerminalAppSet];
+}
+
++ (BOOL)isVSCodeFamilyApp:(NSString*)bundleId {
+    if (!bundleId) {
+        return NO;
+    }
+    return [_vscodeFamilyAppSet containsObject:[bundleId lowercaseString]];
+}
+
++ (BOOL)isJetBrainsApp:(NSString*)bundleId {
+    if (!bundleId) {
+        return NO;
+    }
+    NSString *lower = [bundleId lowercaseString];
+    return [lower hasPrefix:@"com.jetbrains."] || [lower isEqualToString:@"com.google.android.studio"];
+}
+
++ (BOOL)isIDEApp:(NSString*)bundleId {
+    return [self isVSCodeFamilyApp:bundleId] || [self isJetBrainsApp:bundleId];
+}
+
++ (BOOL)containsTerminalKeyword:(NSString*)value {
+    if (!value || value.length == 0) {
+        return NO;
+    }
+    NSString *lower = [value lowercaseString];
+    return ([lower containsString:@"terminal"] ||
+            [lower containsString:@"xterm"] ||
+            [lower containsString:@"shell"] ||
+            [lower containsString:@"console"] ||
+            [lower containsString:@"vscode-terminal"] ||
+            [lower containsString:@"terminal.integrated"] ||
+            [lower containsString:@"xterm.js"] ||
+            [lower containsString:@"terminalview"] ||
+            [lower containsString:@"terminalpanel"] ||
+            [lower containsString:@"toolwindow terminal"] ||
+            [lower containsString:@"tool window: terminal"] ||
+            [lower containsString:@"terminal tool window"] ||
+            [lower containsString:@"command line"] ||
+            [lower containsString:@"pty"] ||
+            [lower containsString:@"tty"]);
 }
 
 #pragma mark - Utility

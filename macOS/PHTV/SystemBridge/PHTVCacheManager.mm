@@ -269,6 +269,7 @@ static BOOL _layoutCacheValid = NO;
 + (void)invalidateSpotlightCache {
     os_unfair_lock_lock(&_spotlightCacheLock);
     BOOL wasActive = _cachedSpotlightActive;
+    _cachedSpotlightActive = NO;
     _lastSpotlightCheckTime = 0;
     _cachedFocusedPID = 0;
     _cachedFocusedBundleId = nil;

@@ -153,11 +153,13 @@ enum MacroStorage {
         return []
     }
 
-    static func decode(_ data: Data) -> [MacroItem]? {
+    static func decode(_ data: Data, shouldLogError: Bool = true) -> [MacroItem]? {
         do {
             return try JSONDecoder().decode([MacroItem].self, from: data)
         } catch {
-            PHTVLogger.shared.error("[MacroStorage] Failed to decode macro list: \(error.localizedDescription)")
+            if shouldLogError {
+                PHTVLogger.shared.error("[MacroStorage] Failed to decode macro list: \(error.localizedDescription)")
+            }
             return nil
         }
     }

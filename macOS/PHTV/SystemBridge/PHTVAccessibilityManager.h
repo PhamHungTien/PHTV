@@ -19,6 +19,11 @@
 
 // AX Text Replacement
 + (BOOL)replaceFocusedTextViaAX:(NSInteger)backspaceCount insertText:(NSString*)insertText;
++ (BOOL)replaceFocusedTextViaAX:(NSInteger)backspaceCount insertText:(NSString*)insertText verify:(BOOL)verify;
++ (void)invalidateAddressBarCache;
++ (BOOL)isFocusedElementAddressBar;
++ (BOOL)isTerminalPanelFocused;
++ (BOOL)isNotionCodeBlock;
 
 // Safe Mode
 + (BOOL)isSafeModeEnabled;

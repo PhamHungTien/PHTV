@@ -210,7 +210,10 @@ final class SystemState: ObservableObject {
 
     func setupObservers() {
         // Observer for runOnStartup
-        $runOnStartup.sink { [weak self] value in
+        $runOnStartup
+            .dropFirst()
+            .removeDuplicates()
+            .sink { [weak self] value in
             guard let self = self, !self.isLoadingSettings, !self.isUpdatingRunOnStartup else {
                 NSLog("[SystemState] runOnStartup observer skipped")
                 return
@@ -231,7 +234,10 @@ final class SystemState: ObservableObject {
         }.store(in: &cancellables)
 
         // Observer for showIconOnDock
-        $showIconOnDock.sink { [weak self] value in
+        $showIconOnDock
+            .dropFirst()
+            .removeDuplicates()
+            .sink { [weak self] value in
             guard let self = self, !self.isLoadingSettings else { return }
             SettingsObserver.shared.suspendNotifications()
             let defaults = UserDefaults.standard
@@ -241,7 +247,10 @@ final class SystemState: ObservableObject {
         }.store(in: &cancellables)
 
         // Observer for settingsWindowAlwaysOnTop
-        $settingsWindowAlwaysOnTop.sink { [weak self] value in
+        $settingsWindowAlwaysOnTop
+            .dropFirst()
+            .removeDuplicates()
+            .sink { [weak self] value in
             guard let self = self, !self.isLoadingSettings else { return }
             SettingsObserver.shared.suspendNotifications()
             let defaults = UserDefaults.standard
@@ -254,6 +263,7 @@ final class SystemState: ObservableObject {
             $safeMode.map { _ in () }.eraseToAnyPublisher()
         ])
         .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
+        .dropFirst()
         .sink { [weak self] _ in
             guard let self = self, !self.isLoadingSettings else { return }
             self.saveSettings()
@@ -262,7 +272,10 @@ final class SystemState: ObservableObject {
         }.store(in: &cancellables)
 
         // Update frequency observer
-        $updateCheckFrequency.sink { [weak self] frequency in
+        $updateCheckFrequency
+            .dropFirst()
+            .removeDuplicates()
+            .sink { [weak self] frequency in
             guard let self = self, !self.isLoadingSettings else { return }
             SettingsObserver.shared.suspendNotifications()
             let defaults = UserDefaults.standard
@@ -281,6 +294,7 @@ final class SystemState: ObservableObject {
             $includeCrashLogs.map { _ in () }.eraseToAnyPublisher()
         ])
         .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
+        .dropFirst()
         .sink { [weak self] _ in
             guard let self = self, !self.isLoadingSettings else { return }
             self.saveSettings()

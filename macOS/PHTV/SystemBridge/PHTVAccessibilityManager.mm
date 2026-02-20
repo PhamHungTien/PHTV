@@ -11,6 +11,8 @@
 #import <AppKit/AppKit.h>
 #import "PHTVManager.h"
 #import <os/log.h>
+#import <mach/mach_time.h>
+#import <unistd.h>
 
 // External declarations for AX
 extern Boolean AXIsProcessTrustedWithOptions(CFDictionaryRef options) __attribute__((weak_import));
@@ -26,8 +28,114 @@ extern CFStringRef kAXTrustedCheckOptionPrompt __attribute__((weak_import));
     #define PHTV_AXVALUE_CFRANGE_TYPE ((AXValueType)4)
 #endif
 
-// Safe Mode variable (moved from PHTV.mm)
-static BOOL _vSafeMode = NO;
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern BOOL vSafeMode;
+NSString* getFocusedAppBundleId(void);
+#ifdef __cplusplus
+}
+#endif
+
+static mach_timebase_info_data_t _phtvAXTimebaseInfo;
+static dispatch_once_t _phtvAXTimebaseInitToken;
+static BOOL _lastAddressBarResult = NO;
+static uint64_t _lastAddressBarCheckTime = 0;
+
+static inline uint64_t PHTVAXMachTimeToMs(uint64_t machTime) {
+    return (machTime * _phtvAXTimebaseInfo.numer) / (_phtvAXTimebaseInfo.denom * 1000000);
+}
+
+static NSString *PHTVGetFocusedWindowTitleForFrontmostApp(void) {
+    if (__atomic_load_n(&vSafeMode, __ATOMIC_RELAXED)) return nil;
+    NSRunningApplication *frontmost = [[NSWorkspace sharedWorkspace] frontmostApplication];
+    if (!frontmost) return nil;
+
+    AXUIElementRef appEl = AXUIElementCreateApplication(frontmost.processIdentifier);
+    if (!appEl) return nil;
+
+    NSString *title = nil;
+    CFTypeRef focusedWindow = NULL;
+    if (AXUIElementCopyAttributeValue(appEl, kAXFocusedWindowAttribute, &focusedWindow) == kAXErrorSuccess &&
+        focusedWindow != NULL) {
+        CFTypeRef titleRef = NULL;
+        if (AXUIElementCopyAttributeValue((AXUIElementRef)focusedWindow, kAXTitleAttribute, &titleRef) == kAXErrorSuccess) {
+            if (titleRef && CFGetTypeID(titleRef) == CFStringGetTypeID()) {
+                title = [(__bridge NSString *)titleRef copy];
+            }
+            if (titleRef) CFRelease(titleRef);
+        }
+        CFRelease(focusedWindow);
+    }
+    CFRelease(appEl);
+    return title;
+}
+
+static inline BOOL PHTVStringEqualCanonicalForAX(NSString *lhs, NSString *rhs) {
+    if (lhs == rhs) {
+        return YES;
+    }
+    if (!lhs || !rhs) {
+        return NO;
+    }
+    if ([lhs isEqualToString:rhs]) {
+        return YES;
+    }
+    NSString *lhsNorm = [lhs precomposedStringWithCanonicalMapping];
+    NSString *rhsNorm = [rhs precomposedStringWithCanonicalMapping];
+    if ([lhsNorm isEqualToString:rhsNorm]) {
+        return YES;
+    }
+    NSString *lhsDecomp = [lhs decomposedStringWithCanonicalMapping];
+    NSString *rhsDecomp = [rhs decomposedStringWithCanonicalMapping];
+    return [lhsDecomp isEqualToString:rhsDecomp];
+}
+
+static inline BOOL PHTVStringHasCanonicalPrefixForAX(NSString *value, NSString *prefix) {
+    if (!value || !prefix) {
+        return NO;
+    }
+    if ([value hasPrefix:prefix]) {
+        return YES;
+    }
+    NSString *valueNorm = [value precomposedStringWithCanonicalMapping];
+    NSString *prefixNorm = [prefix precomposedStringWithCanonicalMapping];
+    if ([valueNorm hasPrefix:prefixNorm]) {
+        return YES;
+    }
+    NSString *valueDecomp = [value decomposedStringWithCanonicalMapping];
+    NSString *prefixDecomp = [prefix decomposedStringWithCanonicalMapping];
+    return [valueDecomp hasPrefix:prefixDecomp];
+}
+
+static inline NSInteger PHTVCalculateDeleteStartForAX(NSString *valueStr, NSInteger caretLocation, NSInteger backspaceCount) {
+    if (backspaceCount <= 0) {
+        return caretLocation;
+    }
+    NSInteger start = caretLocation - backspaceCount;
+    if (start < 0) start = 0;
+    if (start < caretLocation && caretLocation <= (NSInteger)valueStr.length) {
+        NSString *textToDelete = [valueStr substringWithRange:NSMakeRange(start, caretLocation - start)];
+        NSString *composedText = [textToDelete precomposedStringWithCanonicalMapping];
+        NSInteger composedLen = (NSInteger)composedText.length;
+        if (composedLen != backspaceCount && composedLen > 0) {
+            NSInteger actualStart = caretLocation;
+            NSInteger composedCount = 0;
+            while (actualStart > 0 && composedCount < backspaceCount) {
+                actualStart--;
+                unichar c = [valueStr characterAtIndex:actualStart];
+                if (!(c >= 0x0300 && c <= 0x036F) &&
+                    !(c >= 0x1DC0 && c <= 0x1DFF) &&
+                    !(c >= 0x20D0 && c <= 0x20FF) &&
+                    !(c >= 0xFE20 && c <= 0xFE2F)) {
+                    composedCount++;
+                }
+            }
+            start = actualStart;
+        }
+    }
+    return start;
+}
 
 @implementation PHTVAccessibilityManager
 
@@ -36,15 +144,22 @@ static BOOL _vSafeMode = NO;
 + (void)initialize {
     if (self == [PHTVAccessibilityManager class]) {
         // Load Safe Mode from user defaults
-        _vSafeMode = [[NSUserDefaults standardUserDefaults] boolForKey:@"SafeMode"];
+        vSafeMode = [[NSUserDefaults standardUserDefaults] boolForKey:@"SafeMode"];
+        dispatch_once(&_phtvAXTimebaseInitToken, ^{
+            mach_timebase_info(&_phtvAXTimebaseInfo);
+        });
     }
 }
 
 #pragma mark - AX Text Replacement
 
 + (BOOL)replaceFocusedTextViaAX:(NSInteger)backspaceCount insertText:(NSString*)insertText {
+    return [self replaceFocusedTextViaAX:backspaceCount insertText:insertText verify:NO];
+}
+
++ (BOOL)replaceFocusedTextViaAX:(NSInteger)backspaceCount insertText:(NSString*)insertText verify:(BOOL)verify {
     // Safe Mode: Skip AX API calls entirely
-    if (_vSafeMode) {
+    if (vSafeMode) {
         return NO;
     }
 
@@ -87,56 +202,25 @@ static BOOL _vSafeMode = NO;
     if (caretLocation > (NSInteger)valueStr.length) caretLocation = (NSInteger)valueStr.length;
 
     // Calculate replacement position
-    NSInteger start;
+    NSInteger start = caretLocation;
+    NSInteger len = 0;
+    BOOL selectionAtEnd = (selectedLength > 0 && caretLocation + selectedLength == (NSInteger)valueStr.length);
 
-    // If there's selected text, replace it instead of using backspaceCount
-    if (selectedLength > 0) {
-        // User has highlighted text - replace the selected range
+    if (selectedLength > 0 && !selectionAtEnd) {
+        // User has highlighted text in-place - replace the selected range only
         start = caretLocation;
-    } else {
-        // No selection - use backspaceCount to calculate how much to delete
-        start = caretLocation - backspaceCount;
-    }
-
-    if (start < 0) start = 0;
-
-    // Calculate replacement length
-    NSInteger len;
-
-    if (selectedLength > 0) {
-        // User has selected text - use the selected length
         len = selectedLength;
     } else {
-        // No selection - use backspaceCount to calculate deletion length
-        if (backspaceCount > 0 && start < caretLocation) {
-            NSString *textToDelete = [valueStr substringWithRange:NSMakeRange(start, caretLocation - start)];
-            // Get composed form length - this is what engine expects
-            NSString *composedText = [textToDelete precomposedStringWithCanonicalMapping];
-            NSInteger composedLen = (NSInteger)composedText.length;
-
-            // If composed length differs from backspaceCount, the text in Spotlight
-            // may be in decomposed form - recalculate start position
-            if (composedLen != backspaceCount && composedLen > 0) {
-                // Try to find correct start by counting composed characters backwards
-                NSInteger actualStart = caretLocation;
-                NSInteger composedCount = 0;
-                while (actualStart > 0 && composedCount < backspaceCount) {
-                    actualStart--;
-                    // Check if this is a base character (not combining mark)
-                    unichar c = [valueStr characterAtIndex:actualStart];
-                    // Skip combining marks (0x0300-0x036F, 0x1DC0-0x1DFF, etc.)
-                    if (!(c >= 0x0300 && c <= 0x036F) &&
-                        !(c >= 0x1DC0 && c <= 0x1DFF) &&
-                        !(c >= 0x20D0 && c <= 0x20FF) &&
-                        !(c >= 0xFE20 && c <= 0xFE2F)) {
-                        composedCount++;
-                    }
-                }
-                start = actualStart;
-            }
+        // No selection OR Spotlight autocomplete suffix selection.
+        // Always respect backspaceCount to keep IME state consistent.
+        NSInteger deleteStart = PHTVCalculateDeleteStartForAX(valueStr, caretLocation, backspaceCount);
+        if (selectionAtEnd) {
+            start = deleteStart;
+            len = (caretLocation - deleteStart) + selectedLength;
+        } else {
+            start = deleteStart;
+            len = caretLocation - deleteStart;
         }
-
-        len = caretLocation - start;
     }
 
     // Clamp length to valid range
@@ -163,19 +247,370 @@ static BOOL _vSafeMode = NO;
         CFRelease(newRange);
     }
 
+    if (verify) {
+        // Verify the value actually changed (Spotlight may ignore sets or apply async).
+        BOOL verified = NO;
+        for (int attempt = 0; attempt < 2; attempt++) {
+            CFTypeRef verifyValueRef = NULL;
+            AXError verifyError = AXUIElementCopyAttributeValue(focusedElement, kAXValueAttribute, &verifyValueRef);
+            NSString *verifyStr = (verifyError == kAXErrorSuccess && verifyValueRef &&
+                                   CFGetTypeID(verifyValueRef) == CFStringGetTypeID())
+                ? (__bridge NSString *)verifyValueRef : @"";
+            if (verifyValueRef) CFRelease(verifyValueRef);
+            if (verifyError == kAXErrorSuccess) {
+                if (PHTVStringEqualCanonicalForAX(verifyStr, newValue)) {
+                    verified = YES;
+                    break;
+                }
+                if (selectionAtEnd && PHTVStringHasCanonicalPrefixForAX(verifyStr, newValue)) {
+                    verified = YES;
+                    break;
+                }
+            }
+            if (attempt == 0) {
+                usleep(2000);
+            }
+        }
+        if (!verified) {
+            if (valueRef) CFRelease(valueRef);
+            CFRelease(focusedElement);
+            return NO;
+        }
+    }
+
     if (valueRef) CFRelease(valueRef);
     CFRelease(focusedElement);
     return YES;
 }
 
+#pragma mark - AX Context Detection
+
++ (void)invalidateAddressBarCache {
+    _lastAddressBarCheckTime = 0;
+    _lastAddressBarResult = NO;
+}
+
++ (BOOL)isNotionCodeBlock {
+    if (vSafeMode) return NO;
+
+    AXUIElementRef systemWide = AXUIElementCreateSystemWide();
+    AXUIElementRef focusedElement = NULL;
+    BOOL isCodeBlock = NO;
+
+    if (AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement) == kAXErrorSuccess) {
+        NSArray *attributesToCheck = @[(__bridge NSString *)kAXRoleDescriptionAttribute,
+                                       (__bridge NSString *)kAXDescriptionAttribute,
+                                       (__bridge NSString *)kAXHelpAttribute];
+
+        // Check focused element
+        for (NSString *attr in attributesToCheck) {
+            CFTypeRef valueRef = NULL;
+            if (AXUIElementCopyAttributeValue(focusedElement, (__bridge CFStringRef)attr, &valueRef) == kAXErrorSuccess) {
+                if (valueRef && CFGetTypeID(valueRef) == CFStringGetTypeID()) {
+                    NSString *value = (__bridge NSString *)valueRef;
+                    if ([value rangeOfString:@"code" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+                        isCodeBlock = YES;
+                    }
+                }
+                if (valueRef) CFRelease(valueRef);
+            }
+            if (isCodeBlock) break;
+        }
+
+        // Check Parent (Code Blocks in Notion are often containers)
+        if (!isCodeBlock) {
+            AXUIElementRef parent = NULL;
+            if (AXUIElementCopyAttributeValue(focusedElement, kAXParentAttribute, (CFTypeRef *)&parent) == kAXErrorSuccess) {
+                for (NSString *attr in attributesToCheck) {
+                    CFTypeRef valueRef = NULL;
+                    if (AXUIElementCopyAttributeValue(parent, (__bridge CFStringRef)attr, &valueRef) == kAXErrorSuccess) {
+                        if (valueRef && CFGetTypeID(valueRef) == CFStringGetTypeID()) {
+                            NSString *value = (__bridge NSString *)valueRef;
+                            if ([value rangeOfString:@"code" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+                                isCodeBlock = YES;
+                            }
+                        }
+                        if (valueRef) CFRelease(valueRef);
+                    }
+                    if (isCodeBlock) break;
+                }
+                CFRelease(parent);
+            }
+        }
+
+        CFRelease(focusedElement);
+    }
+    CFRelease(systemWide);
+    return isCodeBlock;
+}
+
++ (BOOL)isTerminalPanelFocused {
+    if (vSafeMode) return NO;
+
+    static BOOL lastResult = NO;
+    static uint64_t lastCheckTime = 0;
+
+    dispatch_once(&_phtvAXTimebaseInitToken, ^{
+        mach_timebase_info(&_phtvAXTimebaseInfo);
+    });
+
+    uint64_t now = mach_absolute_time();
+    uint64_t elapsed_ms = PHTVAXMachTimeToMs(now - lastCheckTime);
+    if (lastCheckTime != 0 && elapsed_ms < 50) {
+        return lastResult;
+    }
+
+    AXUIElementRef systemWide = AXUIElementCreateSystemWide();
+    AXUIElementRef focusedElement = NULL;
+    BOOL isTerminalPanel = NO;
+
+    if (AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement) == kAXErrorSuccess &&
+        focusedElement != NULL) {
+        NSArray *attributesToCheck = @[(__bridge NSString *)kAXDescriptionAttribute,
+                                       (__bridge NSString *)kAXRoleDescriptionAttribute,
+                                       (__bridge NSString *)kAXHelpAttribute,
+                                       (__bridge NSString *)kAXTitleAttribute,
+                                       @"AXIdentifier",
+                                       (__bridge NSString *)kAXRoleAttribute,
+                                       (__bridge NSString *)kAXSubroleAttribute];
+
+        NSString *bundleId = getFocusedAppBundleId();
+        BOOL isIDE = [PHTVAppDetectionManager isIDEApp:bundleId];
+        NSString *windowTitle = nil;
+        if (isIDE) {
+            windowTitle = PHTVGetFocusedWindowTitleForFrontmostApp();
+        }
+
+        // Check focused element and parent levels (IDE terminals often live in container)
+        AXUIElementRef current = focusedElement;
+        for (int level = 0; level < 8 && current != NULL; level++) {
+            for (NSString *attr in attributesToCheck) {
+                CFTypeRef valueRef = NULL;
+                if (AXUIElementCopyAttributeValue(current, (__bridge CFStringRef)attr, &valueRef) == kAXErrorSuccess) {
+                    if (valueRef && CFGetTypeID(valueRef) == CFStringGetTypeID()) {
+                        NSString *value = (__bridge NSString *)valueRef;
+                        if ([PHTVAppDetectionManager containsTerminalKeyword:value]) {
+                            isTerminalPanel = YES;
+                        }
+                        if (isIDE && !isTerminalPanel &&
+                            ([value isEqualToString:@"AXTextArea"] || [value isEqualToString:@"AXGroup"] || [value isEqualToString:@"AXScrollArea"])) {
+                            if ([PHTVAppDetectionManager containsTerminalKeyword:windowTitle]) {
+                                isTerminalPanel = YES;
+                            }
+                        }
+                    }
+                    if (valueRef) CFRelease(valueRef);
+                }
+                if (isTerminalPanel) {
+                    break;
+                }
+            }
+            if (isTerminalPanel) {
+                break;
+            }
+            AXUIElementRef parent = NULL;
+            if (AXUIElementCopyAttributeValue(current, kAXParentAttribute, (CFTypeRef *)&parent) != kAXErrorSuccess ||
+                parent == NULL) {
+                break;
+            }
+            if (current != focusedElement) {
+                CFRelease(current);
+            }
+            current = parent;
+        }
+
+        if (current != NULL && current != focusedElement) {
+            CFRelease(current);
+        }
+        CFRelease(focusedElement);
+    }
+    CFRelease(systemWide);
+
+    if (!isTerminalPanel) {
+        NSString *bundleId = getFocusedAppBundleId();
+        if ([PHTVAppDetectionManager isIDEApp:bundleId]) {
+            NSString *windowTitle = PHTVGetFocusedWindowTitleForFrontmostApp();
+            if ([PHTVAppDetectionManager containsTerminalKeyword:windowTitle]) {
+                isTerminalPanel = YES;
+            }
+        }
+    }
+
+    lastResult = isTerminalPanel;
+    lastCheckTime = now;
+    return isTerminalPanel;
+}
+
++ (BOOL)isFocusedElementAddressBar {
+    if (vSafeMode) return NO;
+
+    dispatch_once(&_phtvAXTimebaseInitToken, ^{
+        mach_timebase_info(&_phtvAXTimebaseInfo);
+    });
+
+    uint64_t now = mach_absolute_time();
+    uint64_t elapsed_ms = PHTVAXMachTimeToMs(now - _lastAddressBarCheckTime);
+
+    // Cache valid for 500ms
+    if (_lastAddressBarCheckTime > 0 && elapsed_ms < 500) {
+        return _lastAddressBarResult;
+    }
+
+    BOOL isAddressBar = YES; // Default to YES (Address Bar) for safety
+    AXUIElementRef systemWide = AXUIElementCreateSystemWide();
+    AXUIElementRef focusedElement = NULL;
+
+    if (AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement) == kAXErrorSuccess) {
+        // Debug Log: Start inspection
+#ifdef DEBUG
+        NSLog(@"[AX Debug] Inspecting Focused Element...");
+#endif
+
+        // STRATEGY 1: Role-based Identification (Fast & Reliable)
+        CFStringRef roleRef = NULL;
+        if (AXUIElementCopyAttributeValue(focusedElement, kAXRoleAttribute, (CFTypeRef *)&roleRef) == kAXErrorSuccess) {
+            NSString *role = (__bridge NSString *)roleRef;
+#ifdef DEBUG
+            NSLog(@"[AX Debug] Role: %@", role);
+#endif
+
+            if ([role isEqualToString:@"AXTextField"] ||
+                [role isEqualToString:@"AXSearchField"] ||
+                [role isEqualToString:@"AXComboBox"]) {
+
+#ifdef DEBUG
+                NSLog(@"[AX Debug] -> MATCH: Known Input Role. Returning YES.");
+#endif
+
+                isAddressBar = YES;
+                CFRelease(roleRef);
+                CFRelease(focusedElement);
+                CFRelease(systemWide);
+
+                _lastAddressBarResult = isAddressBar;
+                _lastAddressBarCheckTime = now;
+                return YES;
+            }
+            CFRelease(roleRef);
+        }
+
+        // STRATEGY 2: Positive Identification (Keywords)
+        BOOL positiveMatch = NO;
+        NSArray *attributesToCheck = @[(__bridge NSString *)kAXTitleAttribute,
+                                       (__bridge NSString *)kAXDescriptionAttribute,
+                                       (__bridge NSString *)kAXRoleDescriptionAttribute,
+                                       @"AXIdentifier"];
+
+        for (NSString *attr in attributesToCheck) {
+            CFTypeRef valueRef = NULL;
+            if (AXUIElementCopyAttributeValue(focusedElement, (__bridge CFStringRef)attr, &valueRef) == kAXErrorSuccess) {
+                if (valueRef && CFGetTypeID(valueRef) == CFStringGetTypeID()) {
+                    NSString *value = (__bridge NSString *)valueRef;
+#ifdef DEBUG
+                    NSLog(@"[AX Debug] Checking Attribute %@: %@", attr, value);
+#endif
+
+                    if ([value rangeOfString:@"Address" options:NSCaseInsensitiveSearch].location != NSNotFound ||
+                        [value rangeOfString:@"Omnibox" options:NSCaseInsensitiveSearch].location != NSNotFound ||
+                        [value rangeOfString:@"Location" options:NSCaseInsensitiveSearch].location != NSNotFound ||
+                        [value rangeOfString:@"URL" options:NSCaseInsensitiveSearch].location != NSNotFound ||
+                        [value rangeOfString:@"Search" options:NSCaseInsensitiveSearch].location != NSNotFound ||
+                        [value rangeOfString:@"Địa chỉ" options:NSCaseInsensitiveSearch].location != NSNotFound ||
+                        [value rangeOfString:@"Tìm kiếm" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+                        positiveMatch = YES;
+                    }
+                }
+                if (valueRef) CFRelease(valueRef);
+            }
+            if (positiveMatch) break;
+        }
+
+        if (positiveMatch) {
+#ifdef DEBUG
+            NSLog(@"[AX Debug] -> MATCH: Positive Keyword found. Returning YES.");
+#endif
+            isAddressBar = YES;
+        } else {
+            // STRATEGY 3: Negative Identification (Web Area)
+#ifdef DEBUG
+            NSLog(@"[AX Debug] No positive match. Checking Parent Hierarchy for AXWebArea...");
+#endif
+
+            BOOL foundWebArea = NO;
+            AXUIElementRef currentElement = focusedElement;
+            CFRetain(currentElement); // Keep +1 for the loop
+
+            // Walk up up to 12 levels to find AXWebArea
+            for (int i = 0; i < 12; i++) {
+                AXUIElementRef parent = NULL;
+                if (AXUIElementCopyAttributeValue(currentElement, kAXParentAttribute, (CFTypeRef *)&parent) == kAXErrorSuccess) {
+                    CFStringRef parentRoleRef = NULL;
+                    if (AXUIElementCopyAttributeValue(parent, kAXRoleAttribute, (CFTypeRef *)&parentRoleRef) == kAXErrorSuccess) {
+                        NSString *parentRole = (__bridge NSString *)parentRoleRef;
+#ifdef DEBUG
+                        NSLog(@"[AX Debug] Parent Level %d Role: %@", i + 1, parentRole);
+#endif
+
+                        if ([parentRole isEqualToString:@"AXWebArea"]) {
+                            foundWebArea = YES;
+                            CFRelease(parentRoleRef);
+                            CFRelease(parent);
+                            break;
+                        }
+                        CFRelease(parentRoleRef);
+                    }
+
+                    CFRelease(currentElement);
+                    currentElement = parent; // Move up
+                } else {
+#ifdef DEBUG
+                    NSLog(@"[AX Debug] Parent walk stopped at level %d (No Parent)", i + 1);
+#endif
+                    break; // No parent
+                }
+            }
+            CFRelease(currentElement);
+
+            if (foundWebArea) {
+#ifdef DEBUG
+                NSLog(@"[AX Debug] -> Found AXWebArea. It's Content. Returning NO.");
+#endif
+                isAddressBar = NO;
+            } else {
+#ifdef DEBUG
+                NSLog(@"[AX Debug] -> No AXWebArea found. Assuming Address Bar. Returning YES.");
+#endif
+                isAddressBar = YES;
+            }
+        }
+        CFRelease(focusedElement);
+    } else {
+        // AX Failed
+#ifdef DEBUG
+        NSLog(@"[AX Debug] Failed to get Focused Element. Fallback logic.");
+#endif
+
+        if (_lastAddressBarCheckTime > 0 && elapsed_ms < 2000) {
+            isAddressBar = _lastAddressBarResult;
+        } else {
+            isAddressBar = YES;
+        }
+    }
+    CFRelease(systemWide);
+
+    _lastAddressBarResult = isAddressBar;
+    _lastAddressBarCheckTime = now;
+    return isAddressBar;
+}
+
 #pragma mark - Safe Mode
 
 + (BOOL)isSafeModeEnabled {
-    return _vSafeMode;
+    return vSafeMode;
 }
 
 + (void)setSafeModeEnabled:(BOOL)enabled {
-    _vSafeMode = enabled;
+    vSafeMode = enabled;
     [[NSUserDefaults standardUserDefaults] setBool:enabled forKey:@"SafeMode"];
 
     if (enabled) {

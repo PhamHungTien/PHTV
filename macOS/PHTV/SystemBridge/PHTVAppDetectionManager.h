@@ -29,6 +29,11 @@
 + (BOOL)isFastTerminalApp:(NSString*)bundleId;
 + (BOOL)isMediumTerminalApp:(NSString*)bundleId;
 + (BOOL)isSlowTerminalApp:(NSString*)bundleId;
+// IDE / Terminal panel helpers
++ (BOOL)isVSCodeFamilyApp:(NSString*)bundleId;
++ (BOOL)isJetBrainsApp:(NSString*)bundleId;
++ (BOOL)isIDEApp:(NSString*)bundleId;
++ (BOOL)containsTerminalKeyword:(NSString*)value;
 
 // Utility
 + (BOOL)bundleIdMatchesAppSet:(NSString*)bundleId appSet:(NSSet*)appSet;

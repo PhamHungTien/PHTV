@@ -47,6 +47,7 @@ static NSString *const PHTVDefaultsKeyNonFirstTime = @"NonFirstTime";
 static NSString *const PHTVDefaultsKeyLastRunVersion = @"LastRunVersion";
 static NSString *const PHTVDefaultsKeyInitialToolTipDelay = @"NSInitialToolTipDelay";
 static NSString *const PHTVDefaultsKeyMacroList = @"macroList";
+static NSString *const PHTVDefaultsKeyMacroListCorruptedBackup = @"macroList.corruptedBackup";
 static NSString *const PHTVDefaultsKeyMacroData = @"macroData";
 static NSString *const PHTVDefaultsKeyCustomDictionary = @"customDictionary";
 static NSString *const PHTVDefaultsKeySendKeyStepByStep = @"SendKeyStepByStep";
@@ -1226,6 +1227,19 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                                                            error:&error];
         if (error || ![macros isKindOfClass:[NSArray class]]) {
             NSLog(@"[AppDelegate] ERROR: Failed to parse macroList: %@", error);
+            [defaults setObject:macroListData forKey:PHTVDefaultsKeyMacroListCorruptedBackup];
+            [defaults removeObjectForKey:PHTVDefaultsKeyMacroList];
+            [defaults removeObjectForKey:PHTVDefaultsKeyMacroData];
+
+            uint16_t macroCount = 0;
+            NSMutableData *emptyData = [NSMutableData data];
+            [emptyData appendBytes:&macroCount length:2];
+            initMacroMap((const unsigned char *)[emptyData bytes], (int)[emptyData length]);
+            PHTV_LIVE_LOG(@"macroList parse failed, backed up to %@ and reset", PHTVDefaultsKeyMacroListCorruptedBackup);
+
+            if (resetSession) {
+                RequestNewSession();
+            }
             return;
         }
 

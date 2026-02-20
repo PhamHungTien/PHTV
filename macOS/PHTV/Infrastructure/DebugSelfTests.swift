@@ -86,7 +86,7 @@ enum DebugSelfTests {
 
         let invalidData = Data([0x00, 0x01, 0x02])
         assertCondition(
-            MacroStorage.decode(invalidData) == nil,
+            MacroStorage.decode(invalidData, shouldLogError: false) == nil,
             "Invalid macro payload should fail decoding"
         )
 

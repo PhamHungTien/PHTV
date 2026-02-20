@@ -404,9 +404,8 @@ struct SystemSettingsView: View {
 
         // Load macros
         var macros: [MacroItem]?
-        if let data = defaults.data(forKey: UserDefaultsKey.macroList),
-           let items = try? JSONDecoder().decode([MacroItem].self, from: data) {
-            macros = items
+        if defaults.data(forKey: UserDefaultsKey.macroList) != nil {
+            macros = MacroStorage.load(defaults: defaults)
         }
 
         // Load categories
@@ -494,9 +493,7 @@ struct SystemSettingsView: View {
 
         // Apply macros
         if let macros = backup.macros {
-            if let encoded = try? JSONEncoder().encode(macros) {
-                defaults.set(encoded, forKey: UserDefaultsKey.macroList)
-            }
+            _ = MacroStorage.save(macros, defaults: defaults)
         }
 
         // Apply categories

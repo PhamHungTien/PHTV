@@ -8,6 +8,7 @@
 
 #import "PHTVManager.h"
 #import "PHTVBinaryIntegrity.h"
+#import "PHTVAccessibilityManager.h"
 #import <unistd.h>
 #import <math.h>
 
@@ -19,9 +20,6 @@ extern CGEventRef PHTVCallback(CGEventTapProxy proxy,
                                   void *refcon);
 
 extern NSString* ConvertUtil(NSString* str);
-
-// Safe Mode variable from PHTV.mm
-extern BOOL vSafeMode;
 
 // No-op callback used only for permission test tap to satisfy nonnull parameter requirements
 static CGEventRef PHTVTestTapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event, void *refcon) {
@@ -695,18 +693,11 @@ extern Boolean AXIsProcessTrusted(void) __attribute__((weak_import));
 #pragma mark - Safe Mode
 
 +(BOOL)isSafeModeEnabled {
-    return vSafeMode;
+    return [PHTVAccessibilityManager isSafeModeEnabled];
 }
 
 +(void)setSafeModeEnabled:(BOOL)enabled {
-    vSafeMode = enabled;
-    [[NSUserDefaults standardUserDefaults] setBool:enabled forKey:@"SafeMode"];
-
-    if (enabled) {
-        NSLog(@"[SafeMode] ENABLED - Accessibility API calls will be skipped");
-    } else {
-        NSLog(@"[SafeMode] DISABLED - Normal Accessibility API calls");
-    }
+    [PHTVAccessibilityManager setSafeModeEnabled:enabled];
 }
 
 +(void)clearAXTestFlag {

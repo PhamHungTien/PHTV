@@ -120,6 +120,7 @@ final class MacroState: ObservableObject {
             $autoCapsMacro
         )
         .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
+        .dropFirst()
         .sink { [weak self] _ in
             guard let self = self, !self.isLoadingSettings else { return }
             self.saveSettings()
@@ -135,6 +136,7 @@ final class MacroState: ObservableObject {
             $emojiHotkeyKeyCode.map { _ in () }
         )
         .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
+        .dropFirst()
         .sink { [weak self] in
             guard let self = self, !self.isLoadingSettings else { return }
             // Save settings when emoji hotkey changes

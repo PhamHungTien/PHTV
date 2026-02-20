@@ -180,7 +180,10 @@ final class InputMethodState: ObservableObject {
 
     func setupObservers() {
         // Observer for input method
-        $inputMethod.sink { [weak self] newMethod in
+        $inputMethod
+            .dropFirst()
+            .removeDuplicates()
+            .sink { [weak self] newMethod in
             guard let self = self, !self.isLoadingSettings else { return }
             SettingsObserver.shared.suspendNotifications()
             let defaults = UserDefaults.standard
@@ -191,7 +194,10 @@ final class InputMethodState: ObservableObject {
         }.store(in: &cancellables)
 
         // Observer for code table
-        $codeTable.sink { [weak self] newTable in
+        $codeTable
+            .dropFirst()
+            .removeDuplicates()
+            .sink { [weak self] newTable in
             guard let self = self, !self.isLoadingSettings else { return }
             SettingsObserver.shared.suspendNotifications()
             let defaults = UserDefaults.standard
@@ -203,6 +209,7 @@ final class InputMethodState: ObservableObject {
 
         // Uppercase first character: apply immediately (no debounce)
         $upperCaseFirstChar
+            .dropFirst()
             .removeDuplicates()
             .sink { [weak self] value in
                 guard let self = self, !self.isLoadingSettings else { return }
@@ -233,6 +240,7 @@ final class InputMethodState: ObservableObject {
             $pauseKeyName.map { _ in () }.eraseToAnyPublisher()
         ])
         .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
+        .dropFirst()
         .sink { [weak self] _ in
             guard let self = self, !self.isLoadingSettings else { return }
             self.saveSettings()
