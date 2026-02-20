@@ -8,11 +8,6 @@
 
 #import "PHTVCacheManager.h"
 #import "PHTV-Swift.h"
-#import <Cocoa/Cocoa.h>
-#import <os/lock.h>
-#import <mach/mach_time.h>
-#import <libproc.h>
-#import <Carbon/Carbon.h>
 
 static const uint64_t SPOTLIGHT_INVALIDATION_DEDUP_MS = 30;  // Skip duplicate invalidations within 30ms
 
