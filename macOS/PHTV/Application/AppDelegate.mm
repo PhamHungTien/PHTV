@@ -7,6 +7,7 @@
 //
 
 #import "AppDelegate.h"
+#import "AppDelegate+Private.h"
 
 AppDelegate* appDelegate;
 
