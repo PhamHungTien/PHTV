@@ -157,12 +157,6 @@ static inline void PHTVSpotlightDebugLog(NSString *message) {
 }
 #endif
 
-// Check if text replacement fix is enabled via settings (always enabled)
-// Note: This feature is always enabled to fix macOS native text replacement conflicts
-static inline BOOL IsTextReplacementFixEnabled(void) {
-    return YES;  // Always enabled - matches PHTVApp.swift computed property
-}
-
 // Safe Mode: Disable all Accessibility API calls for unsupported hardware
 // When enabled, the app will use fallback methods that don't rely on AX APIs
 // which may crash on Macs running macOS via OpenCore Legacy Patcher (OCLP)
@@ -1835,11 +1829,11 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         _flag = CGEventGetFlags(event);
         _keycode = (CGKeyCode)CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
 
-        // TEXT REPLACEMENT DETECTION: Track external delete events (only if fix enabled)
+        // TEXT REPLACEMENT DETECTION: Track external delete events.
         // When macOS Text Replacement is triggered (e.g., "ko" -> "không"),
         // macOS sends synthetic delete events that we didn't generate
         // We track these to avoid duplicate characters when SendEmptyCharacter() is called
-        if (IsTextReplacementFixEnabled() && type == kCGEventKeyDown && _keycode == KEY_DELETE) {
+        if (type == kCGEventKeyDown && _keycode == KEY_DELETE) {
             // This is an external delete event (not from PHTV since we already filtered myEventSource)
             [PHTVSpotlightDetectionService trackExternalDelete];
 #ifdef DEBUG
@@ -1847,8 +1841,8 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 #endif
         }
 
-        // Also track space after deletes to detect text replacement pattern (only if fix enabled)
-        if (IsTextReplacementFixEnabled() && type == kCGEventKeyDown && _keycode == KEY_SPACE) {
+        // Also track space after deletes to detect text replacement pattern.
+        if (type == kCGEventKeyDown && _keycode == KEY_SPACE) {
 #ifdef DEBUG
             int externalDeleteCount = (int)[PHTVSpotlightDetectionService externalDeleteCountValue];
             unsigned long long elapsed_ms = [PHTVSpotlightDetectionService elapsedSinceLastExternalDeleteMs];
@@ -2442,24 +2436,17 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 // Detection methods:
                 // 1. External DELETE detected (arrow key selection) - HIGH CONFIDENCE
                 // 2. Short backspace + code=3 without DELETE (mouse click selection) - FALLBACK
-                // Can be enabled via Settings > Compatibility > "Sửa lỗi Text Replacement"
-                BOOL textReplacementFixEnabled = IsTextReplacementFixEnabled();
-                int externalDeleteCount = 0;
-                if (textReplacementFixEnabled) {
-                    externalDeleteCount = (int)[PHTVSpotlightDetectionService externalDeleteCountValue];
-                }
+                int externalDeleteCount = (int)[PHTVSpotlightDetectionService externalDeleteCountValue];
 
                 // Log for debugging text replacement issues (only in Debug builds)
                 #ifdef DEBUG
-                if (textReplacementFixEnabled &&
-                    (pData->backspaceCount > 0 || pData->newCharCount > 0)) {
+                if (pData->backspaceCount > 0 || pData->newCharCount > 0) {
                     NSLog(@"[PHTV TextReplacement] Key=%d: code=%d, extCode=%d, backspace=%d, newChar=%d, deleteCount=%d",
                           _keycode, pData->code, pData->extCode, (int)pData->backspaceCount, (int)pData->newCharCount, externalDeleteCount);
                 }
                 #endif
 
-                if (textReplacementFixEnabled &&
-                    _keycode == KEY_SPACE &&
+                if (_keycode == KEY_SPACE &&
                     (pData->backspaceCount > 0 || pData->newCharCount > 0)) {
                     unsigned long long matchedElapsedMs = 0;
                     PHTVTextReplacementDecision decision =
