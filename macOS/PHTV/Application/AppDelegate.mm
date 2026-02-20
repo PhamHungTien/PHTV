@@ -133,6 +133,229 @@ extern "C" {
         vSwitchKeyStatus = status;
         __sync_synchronize();
     }
+
+    int PHTVGetCheckSpelling(void) {
+        return vCheckSpelling;
+    }
+
+    void PHTVSetCheckSpelling(int value) {
+        vCheckSpelling = value;
+        __sync_synchronize();
+    }
+
+    int PHTVGetAllowConsonantZFWJ(void) {
+        return vAllowConsonantZFWJ;
+    }
+
+    void PHTVSetAllowConsonantZFWJ(int value) {
+        vAllowConsonantZFWJ = value;
+        __sync_synchronize();
+    }
+
+    int PHTVGetUseModernOrthography(void) {
+        return vUseModernOrthography;
+    }
+
+    void PHTVSetUseModernOrthography(int value) {
+        vUseModernOrthography = value;
+        __sync_synchronize();
+    }
+
+    int PHTVGetQuickTelex(void) {
+        return vQuickTelex;
+    }
+
+    void PHTVSetQuickTelex(int value) {
+        vQuickTelex = value;
+        __sync_synchronize();
+    }
+
+    int PHTVGetUpperCaseFirstChar(void) {
+        return vUpperCaseFirstChar;
+    }
+
+    void PHTVSetUpperCaseFirstChar(int value) {
+        vUpperCaseFirstChar = value;
+        __sync_synchronize();
+    }
+
+    int PHTVGetAutoRestoreEnglishWord(void) {
+        return vAutoRestoreEnglishWord;
+    }
+
+    void PHTVSetAutoRestoreEnglishWord(int value) {
+        vAutoRestoreEnglishWord = value;
+        __sync_synchronize();
+    }
+
+    void PHTVSetShowIconOnDock(BOOL visible) {
+        vShowIconOnDock = visible ? 1 : 0;
+        __sync_synchronize();
+    }
+
+    int PHTVGetUseMacro(void) {
+        return vUseMacro;
+    }
+
+    int PHTVGetUseMacroInEnglishMode(void) {
+        return vUseMacroInEnglishMode;
+    }
+
+    int PHTVGetAutoCapsMacro(void) {
+        return vAutoCapsMacro;
+    }
+
+    int PHTVGetQuickStartConsonant(void) {
+        return vQuickStartConsonant;
+    }
+
+    int PHTVGetQuickEndConsonant(void) {
+        return vQuickEndConsonant;
+    }
+
+    int PHTVGetRememberCode(void) {
+        return vRememberCode;
+    }
+
+    int PHTVGetPerformLayoutCompat(void) {
+        return vPerformLayoutCompat;
+    }
+
+    int PHTVGetShowIconOnDock(void) {
+        return vShowIconOnDock;
+    }
+
+    int PHTVGetRestoreOnEscape(void) {
+        return vRestoreOnEscape;
+    }
+
+    int PHTVGetCustomEscapeKey(void) {
+        return vCustomEscapeKey;
+    }
+
+    int PHTVGetPauseKeyEnabled(void) {
+        return vPauseKeyEnabled;
+    }
+
+    int PHTVGetPauseKey(void) {
+        return vPauseKey;
+    }
+
+    int PHTVGetEnableEmojiHotkey(void) {
+        return vEnableEmojiHotkey;
+    }
+
+    int PHTVGetEmojiHotkeyModifiers(void) {
+        return vEmojiHotkeyModifiers;
+    }
+
+    int PHTVGetEmojiHotkeyKeyCode(void) {
+        return vEmojiHotkeyKeyCode;
+    }
+
+    void PHTVSetEmojiHotkeySettings(int enabled, int modifiers, int keyCode) {
+        vEnableEmojiHotkey = enabled;
+        vEmojiHotkeyModifiers = modifiers;
+        vEmojiHotkeyKeyCode = keyCode;
+        __sync_synchronize();
+    }
+
+    int PHTVGetFreeMark(void) {
+        return vFreeMark;
+    }
+
+    void PHTVSetFreeMark(int value) {
+        vFreeMark = value;
+        __sync_synchronize();
+    }
+
+    void PHTVSetUseMacro(int value) {
+        vUseMacro = value;
+        __sync_synchronize();
+    }
+
+    void PHTVSetUseMacroInEnglishMode(int value) {
+        vUseMacroInEnglishMode = value;
+        __sync_synchronize();
+    }
+
+    void PHTVSetAutoCapsMacro(int value) {
+        vAutoCapsMacro = value;
+        __sync_synchronize();
+    }
+
+    void PHTVSetUseSmartSwitchKey(BOOL enabled) {
+        vUseSmartSwitchKey = enabled ? 1 : 0;
+        __sync_synchronize();
+    }
+
+    void PHTVSetQuickStartConsonant(int value) {
+        vQuickStartConsonant = value;
+        __sync_synchronize();
+    }
+
+    void PHTVSetQuickEndConsonant(int value) {
+        vQuickEndConsonant = value;
+        __sync_synchronize();
+    }
+
+    void PHTVSetRememberCode(int value) {
+        vRememberCode = value;
+        __sync_synchronize();
+    }
+
+    void PHTVSetPerformLayoutCompat(int value) {
+        vPerformLayoutCompat = value;
+        __sync_synchronize();
+    }
+
+    void PHTVSetRestoreOnEscape(int value) {
+        vRestoreOnEscape = value;
+        __sync_synchronize();
+    }
+
+    void PHTVSetCustomEscapeKey(int value) {
+        vCustomEscapeKey = value;
+        __sync_synchronize();
+    }
+
+    void PHTVSetPauseKeyEnabled(int value) {
+        vPauseKeyEnabled = value;
+        __sync_synchronize();
+    }
+
+    void PHTVSetPauseKey(int value) {
+        vPauseKey = value;
+        __sync_synchronize();
+    }
+
+    void PHTVSetFixRecommendBrowser(int value) {
+        vFixRecommendBrowser = value;
+        __sync_synchronize();
+    }
+
+    void PHTVSetTempOffSpelling(int value) {
+        vTempOffSpelling = value;
+        __sync_synchronize();
+    }
+
+    void PHTVSetOtherLanguage(int value) {
+        vOtherLanguage = value;
+        __sync_synchronize();
+    }
+
+    void PHTVSetTempOffPHTV(int value) {
+        vTempOffPHTV = value;
+        __sync_synchronize();
+    }
+
+    int PHTVDefaultSwitchHotkeyStatus(void) {
+        return PHTV_DEFAULT_SWITCH_HOTKEY_STATUS;
+    }
+
+    int PHTVDefaultPauseKey(void) {
+        return KEY_LEFT_OPTION;
+    }
 }
 
 @implementation AppDelegate

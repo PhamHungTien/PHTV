@@ -9,7 +9,6 @@
 #import "PHTVManager.h"
 #import <Sparkle/Sparkle.h>
 #import "PHTV-Swift.h"
-#import "../Application/PHTVSettingsRuntime.h"
 #import "../Core/PHTVHotkey.h"
 #import "PHTVCoreBridge.h"
 
@@ -55,29 +54,6 @@ extern volatile int vEmojiHotkeyModifiers;
 extern volatile int vEmojiHotkeyKeyCode;
 extern void PHTVSetCheckSpellingCpp(void) __asm("__Z17vSetCheckSpellingv");
 
-static NSString *const PHTVDefaultsKeySpelling = @"Spelling";
-static NSString *const PHTVDefaultsKeyAllowConsonantZFWJ = @"vAllowConsonantZFWJ";
-static NSString *const PHTVDefaultsKeyModernOrthography = @"ModernOrthography";
-static NSString *const PHTVDefaultsKeyQuickTelex = @"QuickTelex";
-static NSString *const PHTVDefaultsKeyUpperCaseFirstChar = @"UpperCaseFirstChar";
-static NSString *const PHTVDefaultsKeyAutoRestoreEnglishWord = @"vAutoRestoreEnglishWord";
-
-static int PHTVToggleRuntimeIntSetting(volatile int *target,
-                                       NSString *key,
-                                       BOOL syncSpellingBeforeSessionReset) {
-    *target = !(*target);
-    __sync_synchronize();
-
-    [[NSUserDefaults standardUserDefaults] setInteger:*target forKey:key];
-
-    if (syncSpellingBeforeSessionReset) {
-        PHTVSetCheckSpellingCpp();
-    }
-
-    RequestNewSession();
-    return *target;
-}
-
 @interface PHTVManager (PHTVSystemServicesBridge)
 
 +(BOOL)phtv_isTCCEntryCorrupt;
@@ -112,6 +88,17 @@ static int PHTVToggleRuntimeIntSetting(volatile int *target,
 +(void)phtv_setUpperCaseExcludedForCurrentApp:(BOOL)excluded;
 +(int)phtv_currentSwitchKeyStatus;
 +(void)phtv_setSwitchKeyStatus:(int)status;
++(void)phtv_setDockIconRuntimeVisible:(BOOL)visible;
++(int)phtv_toggleSpellCheckSetting;
++(int)phtv_toggleAllowConsonantZFWJSetting;
++(int)phtv_toggleModernOrthographySetting;
++(int)phtv_toggleQuickTelexSetting;
++(int)phtv_toggleUpperCaseFirstCharSetting;
++(int)phtv_toggleAutoRestoreEnglishWordSetting;
++(NSDictionary<NSString *, NSNumber *> *)phtv_runtimeSettingsSnapshot;
++(void)phtv_loadEmojiHotkeySettingsFromDefaults;
++(NSUInteger)phtv_loadRuntimeSettingsFromUserDefaults;
++(void)phtv_loadDefaultConfig;
 
 @end
 
@@ -452,32 +439,7 @@ static NSUInteger         _tapRecreateCount = 0;
 }
 
 +(NSDictionary<NSString *, NSNumber *> *)runtimeSettingsSnapshot {
-    return @{
-        @"checkSpelling": @(vCheckSpelling),
-        @"useModernOrthography": @(vUseModernOrthography),
-        @"quickTelex": @(vQuickTelex),
-        @"switchKeyStatus": @(vSwitchKeyStatus),
-        @"useMacro": @(vUseMacro),
-        @"useMacroInEnglishMode": @(vUseMacroInEnglishMode),
-        @"autoCapsMacro": @(vAutoCapsMacro),
-        @"sendKeyStepByStep": @(vSendKeyStepByStep),
-        @"useSmartSwitchKey": @(vUseSmartSwitchKey),
-        @"upperCaseFirstChar": @(vUpperCaseFirstChar),
-        @"allowConsonantZFWJ": @(vAllowConsonantZFWJ),
-        @"quickStartConsonant": @(vQuickStartConsonant),
-        @"quickEndConsonant": @(vQuickEndConsonant),
-        @"rememberCode": @(vRememberCode),
-        @"performLayoutCompat": @(vPerformLayoutCompat),
-        @"showIconOnDock": @(vShowIconOnDock),
-        @"restoreOnEscape": @(vRestoreOnEscape),
-        @"customEscapeKey": @(vCustomEscapeKey),
-        @"pauseKeyEnabled": @(vPauseKeyEnabled),
-        @"pauseKey": @(vPauseKey),
-        @"autoRestoreEnglishWord": @(vAutoRestoreEnglishWord),
-        @"enableEmojiHotkey": @(vEnableEmojiHotkey),
-        @"emojiHotkeyModifiers": @(vEmojiHotkeyModifiers),
-        @"emojiHotkeyKeyCode": @(vEmojiHotkeyKeyCode)
-    };
+    return [self phtv_runtimeSettingsSnapshot];
 }
 
 +(int)currentSwitchKeyStatus {
@@ -489,9 +451,7 @@ static NSUInteger         _tapRecreateCount = 0;
 }
 
 +(void)loadEmojiHotkeySettingsFromDefaults {
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    PHTVLoadEmojiHotkeySettings(defaults, &vEnableEmojiHotkey, &vEmojiHotkeyModifiers, &vEmojiHotkeyKeyCode);
-    __sync_synchronize();
+    [self phtv_loadEmojiHotkeySettingsFromDefaults];
 }
 
 +(void)syncSpellingSetting {
@@ -499,183 +459,39 @@ static NSUInteger         _tapRecreateCount = 0;
 }
 
 +(void)setDockIconRuntimeVisible:(BOOL)visible {
-    vShowIconOnDock = visible ? 1 : 0;
+    [self phtv_setDockIconRuntimeVisible:visible];
 }
 
 +(int)toggleSpellCheckSetting {
-    return PHTVToggleRuntimeIntSetting(&vCheckSpelling, PHTVDefaultsKeySpelling, YES);
+    return [self phtv_toggleSpellCheckSetting];
 }
 
 +(int)toggleAllowConsonantZFWJSetting {
-    return PHTVToggleRuntimeIntSetting(&vAllowConsonantZFWJ, PHTVDefaultsKeyAllowConsonantZFWJ, NO);
+    return [self phtv_toggleAllowConsonantZFWJSetting];
 }
 
 +(int)toggleModernOrthographySetting {
-    return PHTVToggleRuntimeIntSetting(&vUseModernOrthography, PHTVDefaultsKeyModernOrthography, NO);
+    return [self phtv_toggleModernOrthographySetting];
 }
 
 +(int)toggleQuickTelexSetting {
-    return PHTVToggleRuntimeIntSetting(&vQuickTelex, PHTVDefaultsKeyQuickTelex, NO);
+    return [self phtv_toggleQuickTelexSetting];
 }
 
 +(int)toggleUpperCaseFirstCharSetting {
-    return PHTVToggleRuntimeIntSetting(&vUpperCaseFirstChar, PHTVDefaultsKeyUpperCaseFirstChar, NO);
+    return [self phtv_toggleUpperCaseFirstCharSetting];
 }
 
 +(int)toggleAutoRestoreEnglishWordSetting {
-    return PHTVToggleRuntimeIntSetting(&vAutoRestoreEnglishWord, PHTVDefaultsKeyAutoRestoreEnglishWord, NO);
+    return [self phtv_toggleAutoRestoreEnglishWordSetting];
 }
 
 +(NSUInteger)loadRuntimeSettingsFromUserDefaults {
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-
-    vLanguage = PHTVReadIntWithFallback(defaults, @"InputMethod", vLanguage);
-    vInputType = PHTVReadIntWithFallback(defaults, @"InputType", vInputType);
-    vCodeTable = PHTVReadIntWithFallback(defaults, @"CodeTable", vCodeTable);
-    NSLog(@"[AppDelegate] Loaded core settings: language=%d, inputType=%d, codeTable=%d",
-          vLanguage, vInputType, vCodeTable);
-
-    vUseModernOrthography = PHTVReadIntWithFallback(defaults, @"ModernOrthography", vUseModernOrthography);
-    vQuickTelex = PHTVReadIntWithFallback(defaults, @"QuickTelex", vQuickTelex);
-    vFreeMark = PHTVReadIntWithFallback(defaults, @"FreeMark", vFreeMark);
-
-    vUseMacro = PHTVReadIntWithFallback(defaults, @"UseMacro", vUseMacro);
-    vUseMacroInEnglishMode = PHTVReadIntWithFallback(defaults, @"UseMacroInEnglishMode", vUseMacroInEnglishMode);
-    vAutoCapsMacro = PHTVReadIntWithFallback(defaults, @"vAutoCapsMacro", vAutoCapsMacro);
-
-    vSendKeyStepByStep = PHTVReadIntWithFallback(defaults, @"SendKeyStepByStep", vSendKeyStepByStep);
-    vUseSmartSwitchKey = PHTVReadIntWithFallback(defaults, @"UseSmartSwitchKey", vUseSmartSwitchKey);
-    vUpperCaseFirstChar = PHTVReadIntWithFallback(defaults, @"UpperCaseFirstChar", vUpperCaseFirstChar);
-    vAllowConsonantZFWJ = PHTVReadIntWithFallback(defaults, @"vAllowConsonantZFWJ", 1);
-    vQuickStartConsonant = PHTVReadIntWithFallback(defaults, @"vQuickStartConsonant", vQuickStartConsonant);
-    vQuickEndConsonant = PHTVReadIntWithFallback(defaults, @"vQuickEndConsonant", vQuickEndConsonant);
-    vRememberCode = PHTVReadIntWithFallback(defaults, @"vRememberCode", vRememberCode);
-    vPerformLayoutCompat = PHTVReadIntWithFallback(defaults, @"vPerformLayoutCompat", vPerformLayoutCompat);
-
-    vRestoreOnEscape = PHTVReadIntWithFallback(defaults, @"vRestoreOnEscape", vRestoreOnEscape);
-    vCustomEscapeKey = PHTVReadIntWithFallback(defaults, @"vCustomEscapeKey", vCustomEscapeKey);
-
-    vPauseKeyEnabled = PHTVReadIntWithFallback(defaults, @"vPauseKeyEnabled", vPauseKeyEnabled);
-    vPauseKey = PHTVReadIntWithFallback(defaults, @"vPauseKey", vPauseKey);
-
-    vAutoRestoreEnglishWord = PHTVReadIntWithFallback(defaults, @"vAutoRestoreEnglishWord", vAutoRestoreEnglishWord);
-    vShowIconOnDock = PHTVReadIntWithFallback(defaults, @"vShowIconOnDock", vShowIconOnDock);
-
-    NSInteger savedHotkey = [defaults integerForKey:@"SwitchKeyStatus"];
-    if (savedHotkey != 0) {
-        vSwitchKeyStatus = (int)savedHotkey;
-        NSLog(@"[AppDelegate] Loaded hotkey from UserDefaults: 0x%X", vSwitchKeyStatus);
-    } else {
-        NSLog(@"[AppDelegate] No saved hotkey found, using default: 0x%X", vSwitchKeyStatus);
-    }
-
-    PHTVLoadEmojiHotkeySettings(defaults, &vEnableEmojiHotkey, &vEmojiHotkeyModifiers, &vEmojiHotkeyKeyCode);
-
-    NSUInteger settingsToken = PHTVComputeSettingsToken(defaults);
-    NSLog(@"[AppDelegate] All settings loaded from UserDefaults");
-
-    __sync_synchronize();
-    return settingsToken;
+    return [self phtv_loadRuntimeSettingsFromUserDefaults];
 }
 
 +(void)loadDefaultConfig {
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-
-    vLanguage = 1;
-    [defaults setInteger:vLanguage forKey:@"InputMethod"];
-
-    vInputType = 0;
-    [defaults setInteger:vInputType forKey:@"InputType"];
-
-    vFreeMark = 0;
-    [defaults setInteger:vFreeMark forKey:@"FreeMark"];
-
-    vCheckSpelling = 1;
-    [defaults setInteger:vCheckSpelling forKey:@"Spelling"];
-
-    vCodeTable = 0;
-    [defaults setInteger:vCodeTable forKey:@"CodeTable"];
-
-    vSwitchKeyStatus = PHTV_DEFAULT_SWITCH_HOTKEY_STATUS;
-    [defaults setInteger:vSwitchKeyStatus forKey:@"SwitchKeyStatus"];
-
-    vQuickTelex = 0;
-    [defaults setInteger:vQuickTelex forKey:@"QuickTelex"];
-
-    vUseModernOrthography = 1;
-    [defaults setInteger:vUseModernOrthography forKey:@"ModernOrthography"];
-
-    vFixRecommendBrowser = 1;
-    [defaults setInteger:vFixRecommendBrowser forKey:@"FixRecommendBrowser"];
-
-    vUseMacro = 1;
-    [defaults setInteger:vUseMacro forKey:@"UseMacro"];
-
-    vUseMacroInEnglishMode = 0;
-    [defaults setInteger:vUseMacroInEnglishMode forKey:@"UseMacroInEnglishMode"];
-
-    vSendKeyStepByStep = 0;
-    [defaults setInteger:vSendKeyStepByStep forKey:@"SendKeyStepByStep"];
-
-    vUseSmartSwitchKey = 1;
-    [defaults setInteger:vUseSmartSwitchKey forKey:@"UseSmartSwitchKey"];
-
-    vUpperCaseFirstChar = 0;
-    [defaults setInteger:vUpperCaseFirstChar forKey:@"UpperCaseFirstChar"];
-
-    vTempOffSpelling = 0;
-    [defaults setInteger:vTempOffSpelling forKey:@"vTempOffSpelling"];
-
-    vAllowConsonantZFWJ = 1;
-    [defaults setInteger:vAllowConsonantZFWJ forKey:@"vAllowConsonantZFWJ"];
-
-    vQuickStartConsonant = 0;
-    [defaults setInteger:vQuickStartConsonant forKey:@"vQuickStartConsonant"];
-
-    vQuickEndConsonant = 0;
-    [defaults setInteger:vQuickEndConsonant forKey:@"vQuickEndConsonant"];
-
-    vRememberCode = 1;
-    [defaults setInteger:vRememberCode forKey:@"vRememberCode"];
-
-    vOtherLanguage = 1;
-    [defaults setInteger:vOtherLanguage forKey:@"vOtherLanguage"];
-
-    vTempOffPHTV = 0;
-    [defaults setInteger:vTempOffPHTV forKey:@"vTempOffPHTV"];
-
-    vAutoRestoreEnglishWord = 1;
-    [defaults setInteger:vAutoRestoreEnglishWord forKey:@"vAutoRestoreEnglishWord"];
-
-    vRestoreOnEscape = 1;
-    [defaults setInteger:vRestoreOnEscape forKey:@"vRestoreOnEscape"];
-
-    vCustomEscapeKey = 0;
-    [defaults setInteger:vCustomEscapeKey forKey:@"vCustomEscapeKey"];
-
-    vShowIconOnDock = 0;
-    [defaults setInteger:vShowIconOnDock forKey:@"vShowIconOnDock"];
-
-    vPerformLayoutCompat = 0;
-    [defaults setInteger:vPerformLayoutCompat forKey:@"vPerformLayoutCompat"];
-
-    [defaults setInteger:1 forKey:@"GrayIcon"];
-    [defaults setBool:NO forKey:@"PHTV_RunOnStartup"];
-    [defaults setInteger:0 forKey:@"RunOnStartup"];
-    [defaults setInteger:1 forKey:@"vSettingsWindowAlwaysOnTop"];
-    [defaults setInteger:0 forKey:@"vBeepOnModeSwitch"];
-    [defaults setDouble:0.5 forKey:@"vBeepVolume"];
-    [defaults setDouble:18.0 forKey:@"vMenuBarIconSize"];
-    [defaults setInteger:0 forKey:@"vUseVietnameseMenubarIcon"];
-
-    [defaults setInteger:86400 forKey:@"SUScheduledCheckInterval"];
-    [defaults setBool:YES forKey:@"vAutoInstallUpdates"];
-
-    [defaults setBool:YES forKey:@"vIncludeSystemInfo"];
-    [defaults setBool:NO forKey:@"vIncludeLogs"];
-    [defaults setBool:YES forKey:@"vIncludeCrashLogs"];
-
-    __sync_synchronize();
+    [self phtv_loadDefaultConfig];
 }
 
 #pragma mark - Convert Feature
