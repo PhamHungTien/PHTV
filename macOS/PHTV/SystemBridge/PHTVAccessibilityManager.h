@@ -21,6 +21,8 @@
 + (BOOL)replaceFocusedTextViaAX:(NSInteger)backspaceCount insertText:(NSString*)insertText;
 + (BOOL)replaceFocusedTextViaAX:(NSInteger)backspaceCount insertText:(NSString*)insertText verify:(BOOL)verify;
 + (void)invalidateAddressBarCache;
++ (void)invalidateNotionCodeBlockCache;
++ (void)invalidateContextDetectionCaches;
 + (BOOL)isFocusedElementAddressBar;
 + (BOOL)isTerminalPanelFocused;
 + (BOOL)isNotionCodeBlock;

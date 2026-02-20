@@ -61,6 +61,10 @@ final class MacroState: ObservableObject {
                 macroCategories = categories.filter { $0.id != MacroCategory.defaultCategory.id }
             } catch {
                 NSLog("[MacroState] Failed to decode macro categories: %@", error.localizedDescription)
+                let backupKey = UserDefaultsKey.macroCategories + ".corruptedBackup"
+                defaults.set(categoriesData, forKey: backupKey)
+                defaults.removeObject(forKey: UserDefaultsKey.macroCategories)
+                NSLog("[MacroState] Corrupted macro categories were backed up to %@ and reset", backupKey)
                 // Keep default empty array
                 macroCategories = []
             }

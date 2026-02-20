@@ -19,6 +19,9 @@ final class PHTVAccessibilityService: NSObject {
     nonisolated(unsafe) private static var addressBarCacheLock = NSLock()
     nonisolated(unsafe) private static var lastAddressBarResult = false
     nonisolated(unsafe) private static var lastAddressBarCheckTime: UInt64 = 0
+    nonisolated(unsafe) private static var notionCodeBlockCacheLock = NSLock()
+    nonisolated(unsafe) private static var lastNotionCodeBlockResult = false
+    nonisolated(unsafe) private static var lastNotionCodeBlockCheckTime: UInt64 = 0
 
     @objc(stringEqualCanonicalForAX:rhs:)
     class func stringEqualCanonicalForAX(_ lhs: String?, rhs: String?) -> Bool {
@@ -302,6 +305,30 @@ final class PHTVAccessibilityService: NSObject {
         writeAddressBarCache(result: false, checkTime: 0)
     }
 
+    private class func readNotionCodeBlockCache() -> (result: Bool, checkTime: UInt64) {
+        notionCodeBlockCacheLock.lock()
+        let result = lastNotionCodeBlockResult
+        let checkTime = lastNotionCodeBlockCheckTime
+        notionCodeBlockCacheLock.unlock()
+        return (result, checkTime)
+    }
+
+    private class func writeNotionCodeBlockCache(result: Bool, checkTime: UInt64) {
+        notionCodeBlockCacheLock.lock()
+        lastNotionCodeBlockResult = result
+        lastNotionCodeBlockCheckTime = checkTime
+        notionCodeBlockCacheLock.unlock()
+    }
+
+    @objc class func invalidateNotionCodeBlockCache() {
+        writeNotionCodeBlockCache(result: false, checkTime: 0)
+    }
+
+    @objc class func invalidateContextDetectionCaches() {
+        invalidateAddressBarCache()
+        invalidateNotionCodeBlockCache()
+    }
+
     @objc class func isFocusedElementAddressBar() -> Bool {
         let now = mach_absolute_time()
         let cache = readAddressBarCache()
@@ -377,35 +404,48 @@ final class PHTVAccessibilityService: NSObject {
     }
 
     @objc class func isNotionCodeBlock() -> Bool {
-        guard let focused = focusedElement() else {
-            return false
+        let now = mach_absolute_time()
+        let cache = readNotionCodeBlockCache()
+        let elapsedMs = PHTVTimingService.machTimeToMs(now - cache.checkTime)
+
+        // Cache valid for 120ms to reduce AX pressure in hot typing path.
+        if cache.checkTime > 0 && elapsedMs < 120 {
+            return cache.result
         }
 
+        var isCodeBlock = false
         let attributes: [String] = [
             kAXRoleDescriptionAttribute,
             kAXDescriptionAttribute,
             kAXHelpAttribute
         ]
 
-        for attr in attributes {
-            if let value = stringAttribute(focused, attr),
-               value.range(of: "code", options: String.CompareOptions.caseInsensitive) != nil {
-                return true
+        if let focused = focusedElement() {
+            for attr in attributes {
+                if let value = stringAttribute(focused, attr),
+                   value.range(of: "code", options: String.CompareOptions.caseInsensitive) != nil {
+                    isCodeBlock = true
+                    break
+                }
             }
-        }
 
-        guard let parent = elementAttribute(focused, kAXParentAttribute) else {
-            return false
-        }
-
-        for attr in attributes {
-            if let value = stringAttribute(parent, attr),
-               value.range(of: "code", options: String.CompareOptions.caseInsensitive) != nil {
-                return true
+            if !isCodeBlock,
+               let parent = elementAttribute(focused, kAXParentAttribute) {
+                for attr in attributes {
+                    if let value = stringAttribute(parent, attr),
+                       value.range(of: "code", options: String.CompareOptions.caseInsensitive) != nil {
+                        isCodeBlock = true
+                        break
+                    }
+                }
             }
+        } else if cache.checkTime > 0 && elapsedMs < 500 {
+            // AX can fail transiently while focus changes; keep recent stable result.
+            isCodeBlock = cache.result
         }
 
-        return false
+        writeNotionCodeBlockCache(result: isCodeBlock, checkTime: now)
+        return isCodeBlock
     }
 
     @objc class func isTerminalPanelFocused() -> Bool {

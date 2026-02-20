@@ -928,8 +928,8 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     }
     
     static void RequestNewSessionInternal(bool allowUppercasePrime) {
-        // Reset Address Bar cache on new session (often triggered by mouse click/focus change)
-        [PHTVAccessibilityManager invalidateAddressBarCache];
+        // Reset AX context caches on new session (often triggered by mouse click/focus change).
+        [PHTVAccessibilityManager invalidateContextDetectionCaches];
 
         // Acquire barrier: ensure we see latest config changes before processing
         __atomic_thread_fence(__ATOMIC_ACQUIRE);
@@ -2677,17 +2677,19 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                         NSLog(@"[PHTV TextReplacement] Pattern %@ matched: code=%d, backspace=%d, newChar=%d, keycode=%d",
                               decision == PHTVTextReplacementDecisionPattern2A ? @"2a" : @"2b",
                               pData->code, (int)pData->backspaceCount, (int)pData->newCharCount, _keycode);
-#endif
                         NSLog(@"[PHTV TextReplacement] ✅ DETECTED - Skipping processing (code=%d, backspace=%d, newChar=%d)",
                               pData->code, (int)pData->backspaceCount, (int)pData->newCharCount);
+#endif
                         // CRITICAL: Return event to let macOS insert Space
                         return event;
                     }
 
                     if (decision == PHTVTextReplacementDecisionFallbackNoMatch) {
                         // Detection FAILED - will process normally (potential bug!)
+#ifdef DEBUG
                         NSLog(@"[PHTV TextReplacement] ❌ NOT DETECTED - Will process normally (code=%d, backspace=%d, newChar=%d) - MAY CAUSE DUPLICATE!",
                               pData->code, (int)pData->backspaceCount, (int)pData->newCharCount);
+#endif
                     }
                 }
 

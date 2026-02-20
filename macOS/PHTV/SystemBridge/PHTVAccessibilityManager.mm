@@ -54,6 +54,14 @@ extern BOOL vSafeMode;
     [PHTVAccessibilityService invalidateAddressBarCache];
 }
 
++ (void)invalidateNotionCodeBlockCache {
+    [PHTVAccessibilityService invalidateNotionCodeBlockCache];
+}
+
++ (void)invalidateContextDetectionCaches {
+    [PHTVAccessibilityService invalidateContextDetectionCaches];
+}
+
 + (BOOL)isNotionCodeBlock {
     if (vSafeMode) return NO;
     return [PHTVAccessibilityService isNotionCodeBlock];
