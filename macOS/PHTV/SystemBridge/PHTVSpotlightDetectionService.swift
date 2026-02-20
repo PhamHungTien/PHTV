@@ -28,7 +28,6 @@ final class PHTVSpotlightDetectionService: NSObject {
         "lọc"
     ]
 
-    nonisolated(unsafe) private static var externalDeleteDetected = false
     nonisolated(unsafe) private static var lastExternalDeleteTime: UInt64 = 0
     nonisolated(unsafe) private static var externalDeleteCount = 0
 
@@ -318,13 +317,6 @@ final class PHTVSpotlightDetectionService: NSObject {
 
         lastExternalDeleteTime = now
         externalDeleteCount += 1
-        externalDeleteDetected = true
-    }
-
-    @objc class func hasRecentExternalDeletes() -> Bool {
-        lock.lock()
-        defer { lock.unlock() }
-        return externalDeleteDetected
     }
 
     @objc class func externalDeleteCountValue() -> Int {
@@ -356,7 +348,6 @@ final class PHTVSpotlightDetectionService: NSObject {
         let elapsedMs = PHTVTimingService.machTimeToMs(now - lastExternalDeleteTime)
 
         // Always consume once inspected so stale counters don't leak into later spaces.
-        externalDeleteDetected = false
         lastExternalDeleteTime = 0
         externalDeleteCount = 0
 
@@ -364,13 +355,5 @@ final class PHTVSpotlightDetectionService: NSObject {
             return UInt64.max
         }
         return elapsedMs
-    }
-
-    @objc class func resetExternalDeleteTracking() {
-        lock.lock()
-        defer { lock.unlock() }
-        externalDeleteDetected = false
-        lastExternalDeleteTime = 0
-        externalDeleteCount = 0
     }
 }

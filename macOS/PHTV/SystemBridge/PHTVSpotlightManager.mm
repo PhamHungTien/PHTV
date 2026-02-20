@@ -50,10 +50,6 @@
     [PHTVSpotlightDetectionService trackExternalDelete];
 }
 
-+ (BOOL)hasRecentExternalDeletes {
-    return [PHTVSpotlightDetectionService hasRecentExternalDeletes];
-}
-
 + (int)getExternalDeleteCount {
     return (int)[PHTVSpotlightDetectionService externalDeleteCountValue];
 }
@@ -64,10 +60,6 @@
 
 + (unsigned long long)consumeRecentExternalDeleteWithinMs:(unsigned long long)thresholdMs {
     return [PHTVSpotlightDetectionService consumeRecentExternalDeleteWithinMs:thresholdMs];
-}
-
-+ (void)resetExternalDeleteTracking {
-    [PHTVSpotlightDetectionService resetExternalDeleteTracking];
 }
 
 #pragma mark - Cache Invalidation Coordination

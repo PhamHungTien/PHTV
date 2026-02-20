@@ -29,11 +29,9 @@
 
 // Text Replacement Detection
 + (void)trackExternalDelete;
-+ (BOOL)hasRecentExternalDeletes;
 + (int)getExternalDeleteCount;
 + (unsigned long long)elapsedSinceLastExternalDeleteMs;
 + (unsigned long long)consumeRecentExternalDeleteWithinMs:(unsigned long long)thresholdMs;
-+ (void)resetExternalDeleteTracking;
 
 // Cache Invalidation Coordination
 + (void)handleSpotlightCacheInvalidation:(CGEventType)type keycode:(CGKeyCode)keycode flags:(CGEventFlags)flags;
