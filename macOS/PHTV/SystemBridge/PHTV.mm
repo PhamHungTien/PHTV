@@ -385,22 +385,21 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     }
 
     static inline void ConfigureCliProfile(NSString *bundleId) {
-        if ([PHTVAppDetectionService isVSCodeFamilyApp:bundleId] ||
-            [PHTVAppDetectionService isJetBrainsApp:bundleId]) {
-            ApplyCliProfile(kPHTVCliProfileIDE);
-            return;
-        }
-        if ([PHTVAppDetectionService isFastTerminalApp:bundleId]) {
-            ApplyCliProfile(kPHTVCliProfileFast);
-            return;
-        }
-        if ([PHTVAppDetectionService isMediumTerminalApp:bundleId]) {
-            ApplyCliProfile(kPHTVCliProfileMedium);
-            return;
-        }
-        if ([PHTVAppDetectionService isSlowTerminalApp:bundleId]) {
-            ApplyCliProfile(kPHTVCliProfileSlow);
-            return;
+        switch ([PHTVCliProfileService profileCodeForBundleId:bundleId]) {
+            case 1:
+                ApplyCliProfile(kPHTVCliProfileIDE);
+                return;
+            case 2:
+                ApplyCliProfile(kPHTVCliProfileFast);
+                return;
+            case 3:
+                ApplyCliProfile(kPHTVCliProfileMedium);
+                return;
+            case 4:
+                ApplyCliProfile(kPHTVCliProfileSlow);
+                return;
+            default:
+                break;
         }
 
         // Default terminal profile
