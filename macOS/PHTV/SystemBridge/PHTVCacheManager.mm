@@ -11,6 +11,12 @@
 
 static const uint64_t SPOTLIGHT_INVALIDATION_DEDUP_MS = 30;  // Skip duplicate invalidations within 30ms
 
+@interface PHTVCacheManager ()
++ (BOOL)tryGetAppCharacteristics:(NSString*)bundleId outCharacteristics:(AppCharacteristics*)outCharacteristics;
++ (void)setAppCharacteristics:(AppCharacteristics)characteristics forBundleId:(NSString*)bundleId;
++ (int)prepareAppCharacteristicsCacheForBundleId:(NSString*)bundleId maxAgeMs:(uint64_t)maxAgeMs;
+@end
+
 @implementation PHTVCacheManager
 
 #pragma mark - Initialization
@@ -35,12 +41,6 @@ static const uint64_t SPOTLIGHT_INVALIDATION_DEDUP_MS = 30;  // Skip duplicate i
 }
 
 #pragma mark - App Characteristics Cache
-
-+ (AppCharacteristics)getAppCharacteristics:(NSString*)bundleId {
-    AppCharacteristics characteristics = {NO, NO, NO, NO, NO};
-    [self tryGetAppCharacteristics:bundleId outCharacteristics:&characteristics];
-    return characteristics;
-}
 
 + (BOOL)tryGetAppCharacteristics:(NSString*)bundleId outCharacteristics:(AppCharacteristics*)outCharacteristics {
     if (outCharacteristics == NULL) {
@@ -99,18 +99,6 @@ static const uint64_t SPOTLIGHT_INVALIDATION_DEDUP_MS = 30;  // Skip duplicate i
 
     [self setAppCharacteristics:characteristics forBundleId:bundleId];
     return characteristics;
-}
-
-+ (void)invalidateAppCharacteristicsCache {
-    [PHTVCacheStateService invalidateAppCharacteristicsCache];
-}
-
-+ (NSString*)getLastCachedBundleId {
-    return [PHTVCacheStateService lastCachedBundleId];
-}
-
-+ (void)setLastCachedBundleId:(NSString*)bundleId {
-    [PHTVCacheStateService setLastCachedBundleId:bundleId];
 }
 
 #pragma mark - Spotlight Cache
