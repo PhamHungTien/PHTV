@@ -48,6 +48,12 @@
 +(void)showMessage:(NSWindow*)window message:(NSString*)msg subMsg:(NSString*)subMsg;
 +(void)requestNewSession;
 +(void)setDockIconRuntimeVisible:(BOOL)visible;
++(int)toggleSpellCheckSetting;
++(int)toggleAllowConsonantZFWJSetting;
++(int)toggleModernOrthographySetting;
++(int)toggleQuickTelexSetting;
++(int)toggleUpperCaseFirstCharSetting;
++(int)toggleAutoRestoreEnglishWordSetting;
 
 // Convert feature
 +(BOOL)quickConvert;

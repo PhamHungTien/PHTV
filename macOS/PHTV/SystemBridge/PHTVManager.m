@@ -23,11 +23,41 @@ extern NSString* ConvertUtil(NSString* str);
 extern BOOL vSafeMode;
 extern void RequestNewSession(void);
 extern int vShowIconOnDock;
+extern volatile int vCheckSpelling;
+extern volatile int vAllowConsonantZFWJ;
+extern volatile int vUseModernOrthography;
+extern volatile int vQuickTelex;
+extern volatile int vUpperCaseFirstChar;
+extern volatile int vAutoRestoreEnglishWord;
+extern void PHTVSetCheckSpellingCpp(void) __asm("__Z17vSetCheckSpellingv");
+
+static NSString *const PHTVDefaultsKeySpelling = @"Spelling";
+static NSString *const PHTVDefaultsKeyAllowConsonantZFWJ = @"vAllowConsonantZFWJ";
+static NSString *const PHTVDefaultsKeyModernOrthography = @"ModernOrthography";
+static NSString *const PHTVDefaultsKeyQuickTelex = @"QuickTelex";
+static NSString *const PHTVDefaultsKeyUpperCaseFirstChar = @"UpperCaseFirstChar";
+static NSString *const PHTVDefaultsKeyAutoRestoreEnglishWord = @"vAutoRestoreEnglishWord";
 
 // No-op callback used only for permission test tap to satisfy nonnull parameter requirements
 static CGEventRef PHTVTestTapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event, void *refcon) {
     // Simply pass events through unchanged
     return event;
+}
+
+static int PHTVToggleRuntimeIntSetting(volatile int *target,
+                                       NSString *key,
+                                       BOOL syncSpellingBeforeSessionReset) {
+    *target = !(*target);
+    __sync_synchronize();
+
+    [[NSUserDefaults standardUserDefaults] setInteger:*target forKey:key];
+
+    if (syncSpellingBeforeSessionReset) {
+        PHTVSetCheckSpellingCpp();
+    }
+
+    RequestNewSession();
+    return *target;
 }
 
 @interface PHTVManager ()
@@ -423,6 +453,30 @@ static const useconds_t kTestTapRetryDelayUs = 50000;  // 50ms between retries
 
 +(void)setDockIconRuntimeVisible:(BOOL)visible {
     vShowIconOnDock = visible ? 1 : 0;
+}
+
++(int)toggleSpellCheckSetting {
+    return PHTVToggleRuntimeIntSetting(&vCheckSpelling, PHTVDefaultsKeySpelling, YES);
+}
+
++(int)toggleAllowConsonantZFWJSetting {
+    return PHTVToggleRuntimeIntSetting(&vAllowConsonantZFWJ, PHTVDefaultsKeyAllowConsonantZFWJ, NO);
+}
+
++(int)toggleModernOrthographySetting {
+    return PHTVToggleRuntimeIntSetting(&vUseModernOrthography, PHTVDefaultsKeyModernOrthography, NO);
+}
+
++(int)toggleQuickTelexSetting {
+    return PHTVToggleRuntimeIntSetting(&vQuickTelex, PHTVDefaultsKeyQuickTelex, NO);
+}
+
++(int)toggleUpperCaseFirstCharSetting {
+    return PHTVToggleRuntimeIntSetting(&vUpperCaseFirstChar, PHTVDefaultsKeyUpperCaseFirstChar, NO);
+}
+
++(int)toggleAutoRestoreEnglishWordSetting {
+    return PHTVToggleRuntimeIntSetting(&vAutoRestoreEnglishWord, PHTVDefaultsKeyAutoRestoreEnglishWord, NO);
 }
 
 +(void)showMessage:(NSWindow*)window message:(NSString*)msg subMsg:(NSString*)subMsg {
