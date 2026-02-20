@@ -6,6 +6,7 @@
 //
 
 #import "AppDelegate+Sparkle.h"
+#import <Sparkle/Sparkle.h>
 #import "PHTV-Swift.h"
 
 @implementation AppDelegate (Sparkle)

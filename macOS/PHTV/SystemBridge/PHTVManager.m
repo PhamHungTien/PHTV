@@ -7,6 +7,7 @@
 //
 
 #import "PHTVManager.h"
+#import <Sparkle/Sparkle.h>
 #import "PHTV-Swift.h"
 #import <unistd.h>
 #import <math.h>

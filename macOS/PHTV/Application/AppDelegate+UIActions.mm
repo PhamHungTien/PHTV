@@ -9,6 +9,7 @@
 #import "AppDelegate+DockVisibility.h"
 #import "AppDelegate+InputState.h"
 #import "../SystemBridge/PHTVManager.h"
+#import <Sparkle/Sparkle.h>
 #import "PHTV-Swift.h"
 #include "../Core/Engine/Engine.h"
 

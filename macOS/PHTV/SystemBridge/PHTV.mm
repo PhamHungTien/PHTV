@@ -23,6 +23,7 @@
 #import "../Application/AppDelegate+StatusBarMenu.h"
 #import "../Application/AppDelegate+UIActions.h"
 #import "PHTVManager.h"
+#import <Sparkle/Sparkle.h>
 #import "PHTV-Swift.h"
 
 // Forward declarations for functions used before definition (inside extern "C" block)

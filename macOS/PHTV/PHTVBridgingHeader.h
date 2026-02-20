@@ -16,7 +16,6 @@
 #import "Application/AppDelegate.h"
 #import "Application/AppDelegate+DockVisibility.h"
 #import "Application/AppDelegate+LoginItem.h"
-#import "Application/PHSilentUserDriver.h"
 
 // Global AppDelegate instance (defined in AppDelegate.mm)
 // Note: Accessed on main thread only, safe despite concurrency warning

@@ -13,6 +13,7 @@
 #import "AppDelegate+Sparkle.h"
 #import "AppDelegate+StatusBarMenu.h"
 #import "../SystemBridge/PHTVManager.h"
+#import <Sparkle/Sparkle.h>
 #import "PHTV-Swift.h"
 
 static NSString *const PHTVDefaultsKeyInputMethod = @"InputMethod";

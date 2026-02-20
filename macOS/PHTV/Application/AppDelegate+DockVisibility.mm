@@ -8,6 +8,7 @@
 #import "AppDelegate+DockVisibility.h"
 #import "AppDelegate+Private.h"
 #import "PHTVLiveDebug.h"
+#import <Sparkle/Sparkle.h>
 #import "PHTV-Swift.h"
 
 static NSString *const PHTVDefaultsKeyShowIconOnDock = @"vShowIconOnDock";
