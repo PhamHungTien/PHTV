@@ -201,7 +201,6 @@ NSString* getBundleIdFromPID(pid_t pid) {
 #define DYNA_DATA(macro, pos) (macro ? pData->macroData[pos] : pData->charData[pos])
 #define MAX_UNICODE_STRING  20
 
-extern AppDelegate* appDelegate;
 extern volatile int vSendKeyStepByStep;
 extern volatile int vPerformLayoutCompat;
 extern volatile int vTempOffPHTV;
@@ -910,11 +909,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             vLanguage = targetLanguage;
             [PHTVSmartSwitchPersistenceService saveInputMethod:vLanguage];
             RequestNewSession();  // Direct call, no cascading
-            [appDelegate fillData];  // Update UI only
-
-            // Notify SwiftUI (use separate notification for smart switch to avoid sound)
-            [[NSNotificationCenter defaultCenter] postNotificationName:@"LanguageChangedFromSmartSwitch"
-                                                                object:@(vLanguage)];
+            [PHTVRuntimeUIBridgeService refreshAfterSmartSwitchLanguageChange:vLanguage];
         }
         int targetCodeTable = (int)[PHTVSmartSwitchRuntimeService decodedCodeTableFromState:languageTemp];
         if (vRememberCode && targetCodeTable != vCodeTable) { //for remember table code feature
@@ -922,7 +917,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             vCodeTable = targetCodeTable;
             [PHTVSmartSwitchPersistenceService saveCodeTable:vCodeTable];
             RequestNewSession();
-            [appDelegate fillData];
+            [PHTVRuntimeUIBridgeService refreshAfterSmartSwitchCodeTableChange];
         }
     }
     
@@ -1518,7 +1513,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
         // onImputMethodChanged handles: toggle, save, RequestNewSession, fillData, notify
         // No need to modify vLanguage here or call startNewSession separately
-        [appDelegate onImputMethodChanged:YES];
+        [PHTVRuntimeUIBridgeService handleInputMethodChangeFromHotkey];
     }
     
     void handleMacro() {
@@ -1717,7 +1712,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         if (isConvertHotkeyKey &&
             (checkHotKey(gConvertToolOptions.hotKey, true) ||
              checkHotKeyWithFlags(gConvertToolOptions.hotKey, true, _flag, keycode))) {
-            [appDelegate onQuickConvert];
+            [PHTVRuntimeUIBridgeService triggerQuickConvert];
             _lastFlag = 0;
             _hasJustUsedHotKey = true;
             return (CGEventRef)-1;  // Special marker to indicate "consume event"
@@ -1725,7 +1720,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
         // Check emoji picker hotkey
         if (isEmojiHotkeyKey && CheckEmojiHotkey(keycode, _flag)) {
-            [appDelegate onEmojiHotkeyTriggered];
+            [PHTVRuntimeUIBridgeService triggerEmojiHotkey];
             _lastFlag = 0;
             _hasJustUsedHotKey = true;
             return (CGEventRef)-1;  // Special marker to indicate "consume event"
@@ -2096,7 +2091,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 if (canTriggerConvert && checkHotKey(gConvertToolOptions.hotKey, HOTKEY_HAS_KEY(gConvertToolOptions.hotKey))) {
                     _lastFlag = 0;
                     _keyPressedWhileSwitchModifiersHeld = false;
-                    [appDelegate onQuickConvert];
+                    [PHTVRuntimeUIBridgeService triggerQuickConvert];
                     _hasJustUsedHotKey = true;
                     return NULL;
                 }
@@ -2108,7 +2103,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                     if (expectedEmoji != 0 && lastEmoji == expectedEmoji) {
                         _lastFlag = 0;
                         _keyPressedWhileEmojiModifiersHeld = false;
-                        [appDelegate onEmojiHotkeyTriggered];
+                        [PHTVRuntimeUIBridgeService triggerEmojiHotkey];
                         _hasJustUsedHotKey = true;
                         return NULL;
                     }
