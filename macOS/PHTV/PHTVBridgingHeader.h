@@ -12,18 +12,6 @@
 #import <Foundation/Foundation.h>
 #import <AppKit/AppKit.h>
 
-// Application
-#import "Application/AppDelegate.h"
-#import "Application/AppDelegate+DockVisibility.h"
-#import "Application/AppDelegate+InputState.h"
-#import "Application/AppDelegate+LoginItem.h"
-#import "Application/AppDelegate+Private.h"
-#import "Application/AppDelegate+StatusBarMenu.h"
-
-// Global AppDelegate instance (defined in AppDelegate.mm)
-// Note: Accessed on main thread only, safe despite concurrency warning
-extern AppDelegate* _Nullable appDelegate;
-
 // SystemBridge
 #import "SystemBridge/PHTVEngineDataCoreBridge.h"
 #import "SystemBridge/PHTVCoreBridge.h"

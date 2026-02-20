@@ -26,6 +26,7 @@ extern "C" {
 }
 
 #define FRONT_APP [[NSWorkspace sharedWorkspace] frontmostApplication].bundleIdentifier
+static NSString *const PHTVBundleIdentifier = @"com.phamhungtien.phtv";
 
 typedef NS_ENUM(NSInteger, DelayType) {
     DelayTypeNone = 0,
@@ -772,7 +773,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         // CRITICAL FIX: Ignore PHTV's own settings window in smart switch logic
         // This prevents the settings window (which is often excluded/English) from polluting the global language state
         // or overwriting the saved state of the previous app.
-        if ([_frontMostApp isEqualToString:PHTV_BUNDLE]) {
+        if ([_frontMostApp isEqualToString:PHTVBundleIdentifier]) {
             return;
         }
 
@@ -820,7 +821,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
         // CRITICAL FIX: Ignore PHTV's own settings window.
         // Changing settings shouldn't save the new language for PHTV itself.
-        if ([_frontMostApp isEqualToString:PHTV_BUNDLE]) {
+        if ([_frontMostApp isEqualToString:PHTVBundleIdentifier]) {
             return;
         }
 
@@ -844,7 +845,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         }
 
         // CRITICAL FIX: Ignore PHTV's own settings window.
-        if ([_frontMostApp isEqualToString:PHTV_BUNDLE]) {
+        if ([_frontMostApp isEqualToString:PHTVBundleIdentifier]) {
             return;
         }
 
