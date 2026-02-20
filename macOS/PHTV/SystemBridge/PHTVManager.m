@@ -547,6 +547,54 @@ static const useconds_t kTestTapRetryDelayUs = 50000;  // 50ms between retries
     vUpperCaseExcludedForCurrentApp = excluded ? 1 : 0;
 }
 
++(NSDictionary<NSString *, NSNumber *> *)runtimeSettingsSnapshot {
+    return @{
+        @"checkSpelling": @(vCheckSpelling),
+        @"useModernOrthography": @(vUseModernOrthography),
+        @"quickTelex": @(vQuickTelex),
+        @"switchKeyStatus": @(vSwitchKeyStatus),
+        @"useMacro": @(vUseMacro),
+        @"useMacroInEnglishMode": @(vUseMacroInEnglishMode),
+        @"autoCapsMacro": @(vAutoCapsMacro),
+        @"sendKeyStepByStep": @(vSendKeyStepByStep),
+        @"useSmartSwitchKey": @(vUseSmartSwitchKey),
+        @"upperCaseFirstChar": @(vUpperCaseFirstChar),
+        @"allowConsonantZFWJ": @(vAllowConsonantZFWJ),
+        @"quickStartConsonant": @(vQuickStartConsonant),
+        @"quickEndConsonant": @(vQuickEndConsonant),
+        @"rememberCode": @(vRememberCode),
+        @"performLayoutCompat": @(vPerformLayoutCompat),
+        @"showIconOnDock": @(vShowIconOnDock),
+        @"restoreOnEscape": @(vRestoreOnEscape),
+        @"customEscapeKey": @(vCustomEscapeKey),
+        @"pauseKeyEnabled": @(vPauseKeyEnabled),
+        @"pauseKey": @(vPauseKey),
+        @"autoRestoreEnglishWord": @(vAutoRestoreEnglishWord),
+        @"enableEmojiHotkey": @(vEnableEmojiHotkey),
+        @"emojiHotkeyModifiers": @(vEmojiHotkeyModifiers),
+        @"emojiHotkeyKeyCode": @(vEmojiHotkeyKeyCode)
+    };
+}
+
++(int)currentSwitchKeyStatus {
+    return vSwitchKeyStatus;
+}
+
++(void)setSwitchKeyStatus:(int)status {
+    vSwitchKeyStatus = status;
+    __sync_synchronize();
+}
+
++(void)loadEmojiHotkeySettingsFromDefaults {
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    PHTVLoadEmojiHotkeySettings(defaults, &vEnableEmojiHotkey, &vEmojiHotkeyModifiers, &vEmojiHotkeyKeyCode);
+    __sync_synchronize();
+}
+
++(void)syncSpellingSetting {
+    PHTVSetCheckSpellingCpp();
+}
+
 +(void)setDockIconRuntimeVisible:(BOOL)visible {
     vShowIconOnDock = visible ? 1 : 0;
 }

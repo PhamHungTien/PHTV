@@ -62,6 +62,11 @@
 +(BOOL)isSendKeyStepByStepEnabled;
 +(void)setSendKeyStepByStepEnabled:(BOOL)enabled;
 +(void)setUpperCaseExcludedForCurrentApp:(BOOL)excluded;
++(NSDictionary<NSString *, NSNumber *> *)runtimeSettingsSnapshot;
++(int)currentSwitchKeyStatus;
++(void)setSwitchKeyStatus:(int)status;
++(void)loadEmojiHotkeySettingsFromDefaults;
++(void)syncSpellingSetting;
 +(void)setDockIconRuntimeVisible:(BOOL)visible;
 +(int)toggleSpellCheckSetting;
 +(int)toggleAllowConsonantZFWJSetting;
