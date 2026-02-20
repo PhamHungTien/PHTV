@@ -340,4 +340,33 @@ final class PHTVAppDetectionService: NSObject {
         }
         return false
     }
+
+    @objc(bundleIdMatchesAppSet:appSet:)
+    class func bundleIdMatchesAppSet(_ bundleId: String?, appSet: NSSet?) -> Bool {
+        guard let bundleId,
+              let appSet = appSet as? Set<AnyHashable> else {
+            return false
+        }
+
+        let normalizedBundleId = bundleId.lowercased()
+
+        if appSet.contains(bundleId as AnyHashable) || appSet.contains(normalizedBundleId as AnyHashable) {
+            return true
+        }
+
+        for patternAny in appSet {
+            guard let pattern = patternAny as? String else {
+                continue
+            }
+            let normalizedPattern = pattern.lowercased()
+            if normalizedPattern.hasSuffix("*") {
+                let prefix = String(normalizedPattern.dropLast())
+                if normalizedBundleId.hasPrefix(prefix) {
+                    return true
+                }
+            }
+        }
+
+        return false
+    }
 }

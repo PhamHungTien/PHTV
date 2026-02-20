@@ -80,32 +80,7 @@
 #pragma mark - Utility
 
 + (BOOL)bundleIdMatchesAppSet:(NSString*)bundleId appSet:(NSSet*)appSet {
-    if (!bundleId || !appSet) {
-        return NO;
-    }
-
-    NSString *normalizedBundleId = [bundleId lowercaseString];
-
-    // Exact match
-    if ([appSet containsObject:bundleId] || [appSet containsObject:normalizedBundleId]) {
-        return YES;
-    }
-
-    // Prefix match (for bundle IDs like "com.apple.*")
-    for (NSString *pattern in appSet) {
-        if (![pattern isKindOfClass:[NSString class]]) {
-            continue;
-        }
-        NSString *normalizedPattern = [pattern lowercaseString];
-        if ([normalizedPattern hasSuffix:@"*"]) {
-            NSString *prefix = [normalizedPattern substringToIndex:normalizedPattern.length - 1];
-            if ([normalizedBundleId hasPrefix:prefix]) {
-                return YES;
-            }
-        }
-    }
-
-    return NO;
+    return [PHTVAppDetectionService bundleIdMatchesAppSet:bundleId appSet:appSet];
 }
 
 @end
