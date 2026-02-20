@@ -110,6 +110,23 @@ final class PHTVModifierPressTransitionBox: NSObject {
 }
 
 @objcMembers
+final class PHTVKeyDownModifierTrackingBox: NSObject {
+    let keyPressedWithRestoreModifier: Bool
+    let keyPressedWhileSwitchModifiersHeld: Bool
+    let keyPressedWhileEmojiModifiersHeld: Bool
+
+    init(
+        keyPressedWithRestoreModifier: Bool,
+        keyPressedWhileSwitchModifiersHeld: Bool,
+        keyPressedWhileEmojiModifiersHeld: Bool
+    ) {
+        self.keyPressedWithRestoreModifier = keyPressedWithRestoreModifier
+        self.keyPressedWhileSwitchModifiersHeld = keyPressedWhileSwitchModifiersHeld
+        self.keyPressedWhileEmojiModifiersHeld = keyPressedWhileEmojiModifiersHeld
+    }
+}
+
+@objcMembers
 final class PHTVHotkeyService: NSObject {
     private static let hotkeyKeyMask: UInt32 = 0x00FF
     private static let hotkeyControlMask: UInt32 = 0x0100
@@ -826,6 +843,56 @@ final class PHTVHotkeyService: NSObject {
         return PHTVUppercasePrimeTransitionBox(
             shouldAttemptPrime: shouldAttemptPrime,
             pending: nextPending
+        )
+    }
+
+    @objc(keyDownModifierTrackingForFlags:restoreOnEscape:customEscapeKey:restoreModifierPressed:keyPressedWithRestoreModifier:switchHotkey:convertHotkey:keyPressedWhileSwitchModifiersHeld:emojiEnabled:emojiModifiers:emojiHotkeyKeyCode:keyPressedWhileEmojiModifiersHeld:)
+    class func keyDownModifierTracking(
+        forFlags flags: UInt64,
+        restoreOnEscape: Int32,
+        customEscapeKey: Int32,
+        restoreModifierPressed: Bool,
+        keyPressedWithRestoreModifier: Bool,
+        switchHotkey: Int32,
+        convertHotkey: Int32,
+        keyPressedWhileSwitchModifiersHeld: Bool,
+        emojiEnabled: Int32,
+        emojiModifiers: Int32,
+        emojiHotkeyKeyCode: Int32,
+        keyPressedWhileEmojiModifiersHeld: Bool
+    ) -> PHTVKeyDownModifierTrackingBox {
+        var nextKeyPressedWithRestoreModifier = keyPressedWithRestoreModifier
+        if shouldMarkKeyPressedWithRestoreModifier(
+            restoreOnEscape: restoreOnEscape,
+            customEscapeKey: customEscapeKey,
+            restoreModifierPressed: restoreModifierPressed
+        ) {
+            nextKeyPressedWithRestoreModifier = true
+        }
+
+        var nextKeyPressedWhileSwitchModifiersHeld = keyPressedWhileSwitchModifiersHeld
+        if shouldMarkSwitchModifiersHeld(
+            forFlags: flags,
+            switchHotkey: switchHotkey,
+            convertHotkey: convertHotkey
+        ) {
+            nextKeyPressedWhileSwitchModifiersHeld = true
+        }
+
+        var nextKeyPressedWhileEmojiModifiersHeld = keyPressedWhileEmojiModifiersHeld
+        if shouldMarkEmojiModifiersHeld(
+            forFlags: flags,
+            emojiEnabled: emojiEnabled,
+            emojiModifiers: emojiModifiers,
+            emojiHotkeyKeyCode: emojiHotkeyKeyCode
+        ) {
+            nextKeyPressedWhileEmojiModifiersHeld = true
+        }
+
+        return PHTVKeyDownModifierTrackingBox(
+            keyPressedWithRestoreModifier: nextKeyPressedWithRestoreModifier,
+            keyPressedWhileSwitchModifiersHeld: nextKeyPressedWhileSwitchModifiersHeld,
+            keyPressedWhileEmojiModifiersHeld: nextKeyPressedWhileEmojiModifiersHeld
         )
     }
 

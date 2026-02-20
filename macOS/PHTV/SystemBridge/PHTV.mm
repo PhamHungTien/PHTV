@@ -1222,29 +1222,22 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 }
             }
 
-            // Track if any key is pressed while restore modifier is held
-            // Only track if custom restore key is actually set (Option or Control)
-            if ([PHTVHotkeyService shouldMarkKeyPressedWithRestoreModifierWithRestoreOnEscape:(int32_t)vRestoreOnEscape
-                                                                                customEscapeKey:(int32_t)vCustomEscapeKey
-                                                                         restoreModifierPressed:_restoreModifierPressed]) {
-                _keyPressedWithRestoreModifier = true;
-            }
-
-            // Track if any key is pressed while switch hotkey modifiers are held
-            // This prevents modifier-only hotkeys (like Cmd+Shift) from triggering
-            // when user presses a key combo like Cmd+Shift+S
-            if ([PHTVHotkeyService shouldMarkSwitchModifiersHeldForFlags:(uint64_t)_flag
-                                                            switchHotkey:(int32_t)vSwitchKeyStatus
-                                                           convertHotkey:(int32_t)gConvertToolOptions.hotKey]) {
-                _keyPressedWhileSwitchModifiersHeld = true;
-            }
-
-            if ([PHTVHotkeyService shouldMarkEmojiModifiersHeldForFlags:(uint64_t)_flag
-                                                            emojiEnabled:(int32_t)vEnableEmojiHotkey
-                                                          emojiModifiers:(int32_t)vEmojiHotkeyModifiers
-                                                     emojiHotkeyKeyCode:(int32_t)vEmojiHotkeyKeyCode]) {
-                _keyPressedWhileEmojiModifiersHeld = true;
-            }
+            PHTVKeyDownModifierTrackingBox *keyDownModifierTracking =
+                [PHTVHotkeyService keyDownModifierTrackingForFlags:(uint64_t)_flag
+                                                    restoreOnEscape:(int32_t)vRestoreOnEscape
+                                                    customEscapeKey:(int32_t)vCustomEscapeKey
+                                             restoreModifierPressed:_restoreModifierPressed
+                                         keyPressedWithRestoreModifier:_keyPressedWithRestoreModifier
+                                                        switchHotkey:(int32_t)vSwitchKeyStatus
+                                                       convertHotkey:(int32_t)gConvertToolOptions.hotKey
+                                     keyPressedWhileSwitchModifiersHeld:_keyPressedWhileSwitchModifiersHeld
+                                                        emojiEnabled:(int32_t)vEnableEmojiHotkey
+                                                      emojiModifiers:(int32_t)vEmojiHotkeyModifiers
+                                                 emojiHotkeyKeyCode:(int32_t)vEmojiHotkeyKeyCode
+                                      keyPressedWhileEmojiModifiersHeld:_keyPressedWhileEmojiModifiersHeld];
+            _keyPressedWithRestoreModifier = keyDownModifierTracking.keyPressedWithRestoreModifier;
+            _keyPressedWhileSwitchModifiersHeld = keyDownModifierTracking.keyPressedWhileSwitchModifiersHeld;
+            _keyPressedWhileEmojiModifiersHeld = keyDownModifierTracking.keyPressedWhileEmojiModifiersHeld;
         } else if (type == kCGEventFlagsChanged) {
             if (_lastFlag == 0 || _lastFlag < _flag) {
                 PHTVModifierPressTransitionBox *modifierPressTransition =
