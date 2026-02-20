@@ -10,6 +10,7 @@ import Foundation
 import Darwin
 import AppKit
 import ApplicationServices
+import Carbon
 
 @objcMembers
 final class PHTVSpotlightDetectionService: NSObject {
@@ -32,6 +33,7 @@ final class PHTVSpotlightDetectionService: NSObject {
     nonisolated(unsafe) private static var externalDeleteCount = 0
 
     nonisolated(unsafe) private static var lock = NSLock()
+    nonisolated(unsafe) private static var lastEventFlags: CGEventFlags = []
 
     @objc class func containsSearchKeyword(_ value: String?) -> Bool {
         guard let lower = value?.lowercased(), !lower.isEmpty else {
@@ -256,6 +258,46 @@ final class PHTVSpotlightDetectionService: NSObject {
         }
 
         return false
+    }
+
+    @objc(handleSpotlightCacheInvalidation:keycode:flags:)
+    class func handleSpotlightCacheInvalidation(_ type: CGEventType, keycode: CGKeyCode, flags: CGEventFlags) {
+        let isCmdSpace = (type == .keyDown &&
+                          keycode == CGKeyCode(kVK_Space) &&
+                          flags.contains(.maskCommand))
+        if isCmdSpace {
+            invalidateSpotlightCache()
+            return
+        }
+
+        if type == .keyDown && keycode == CGKeyCode(kVK_Escape) {
+            if PHTVCacheStateService.cachedSpotlightActive() {
+                invalidateSpotlightCache()
+            }
+            return
+        }
+
+        if type == .leftMouseDown || type == .rightMouseDown {
+            if PHTVCacheStateService.cachedSpotlightActive() {
+                invalidateSpotlightCache()
+            }
+        }
+
+        let flagChangeMask = CGEventFlags.maskCommand.rawValue
+        if type == .flagsChanged &&
+           ((flags.rawValue ^ lastEventFlags.rawValue) & flagChangeMask) != 0 {
+            invalidateSpotlightCache()
+        }
+        lastEventFlags = flags
+    }
+
+    private class func invalidateSpotlightCache() {
+        let status = PHTVCacheStateService.invalidateSpotlightCache(dedupWindowMs: spotlightInvalidationDedupMs)
+#if DEBUG
+        if status == 2 {
+            NSLog("[Spotlight] 🔄 CACHE INVALIDATED (was active)")
+        }
+#endif
     }
 
     @objc class func trackExternalDelete() {

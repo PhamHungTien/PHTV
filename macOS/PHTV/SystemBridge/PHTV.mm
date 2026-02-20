@@ -169,14 +169,6 @@ static inline BOOL IsTextReplacementFixEnabled(void) {
 // Note: Not static - exported for PHTVManager access
 BOOL vSafeMode = NO;
 
-// Force invalidate Spotlight detection cache
-// Call this when Cmd+Space is detected or when modifier keys change
-static inline void InvalidateSpotlightCache(void) {
-    // CRITICAL FIX: Always invalidate PHTVCacheManager cache
-    // This ensures PHTVSpotlightManager::isSpotlightActive() rechecks immediately
-    [PHTVCacheManager invalidateSpotlightCache];
-}
-
 // Track external delete events (not from PHTV) which may indicate text replacement
 static inline void TrackExternalDelete(void) {
     dispatch_once(&timebase_init_token, ^{
@@ -2016,41 +2008,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     // Handle Spotlight cache invalidation on Cmd+Space and modifier changes
     // This ensures fast Spotlight detection
     static inline void HandleSpotlightCacheInvalidation(CGEventType type, CGKeyCode keycode, CGEventFlags flag) {
-        // Detect Cmd+Space hotkey and invalidate cache immediately
-        if (type == kCGEventKeyDown && keycode == KEY_SPACE && (flag & kCGEventFlagMaskCommand)) {
-            InvalidateSpotlightCache();
-            return;
-        }
-
-        // Detect ESC key (keycode 53) to invalidate cache when user closes Spotlight
-        // IMPROVED: Only invalidate if we were recently detecting Spotlight to avoid false invalidations
-        if (type == kCGEventKeyDown && keycode == KEY_ESC) {
-            // Check if we recently thought Spotlight was active
-            BOOL wasSpotlightActive = [PHTVCacheManager getCachedSpotlightActive];
-            if (wasSpotlightActive) {
-                InvalidateSpotlightCache();
-            }
-            return;
-        }
-
-        // Invalidate on mouse clicks to handle user clicking outside Spotlight to close it
-        // This catches the case where user closes Spotlight without ESC or keyboard
-        if (type == kCGEventLeftMouseDown || type == kCGEventRightMouseDown) {
-            BOOL wasSpotlightActive = [PHTVCacheManager getCachedSpotlightActive];
-            if (wasSpotlightActive) {
-                InvalidateSpotlightCache();
-            }
-        }
-
-        // Track Command modifier transitions only.
-        // Option/Control frequently change during normal typing shortcuts and can
-        // cause unnecessary Spotlight cache churn.
-        static CGEventFlags _lastEventFlags = 0;
-        CGEventFlags flagChangeMask = kCGEventFlagMaskCommand;
-        if ((type == kCGEventFlagsChanged) && (((flag ^ _lastEventFlags) & flagChangeMask) != 0)) {
-            InvalidateSpotlightCache();
-        }
-        _lastEventFlags = flag;
+        [PHTVSpotlightManager handleSpotlightCacheInvalidation:type keycode:keycode flags:flag];
     }
 
     // Event tap health monitoring - checks tap status and recovers if needed
