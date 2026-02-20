@@ -8,6 +8,15 @@
 import Foundation
 
 @objc extension PHTVManager {
+    private static let smartSwitchSpotlightCacheDurationMs: UInt64 = 150
+
+    private class func smartSwitchFocusedBundleId() -> String? {
+        PHTVAppContextService.focusedBundleId(
+            forSafeMode: PHTVGetSafeMode(),
+            cacheDurationMs: smartSwitchSpotlightCacheDurationMs
+        )
+    }
+
     @objc(phtv_requestNewSession)
     class func phtv_requestNewSession() {
         RequestNewSession()
@@ -20,7 +29,12 @@ import Foundation
 
     @objc(phtv_notifyInputMethodChanged)
     class func phtv_notifyInputMethodChanged() {
-        OnInputMethodChanged()
+        PHTVSmartSwitchBridgeService.handleInputMethodChanged(
+            forBundleId: smartSwitchFocusedBundleId(),
+            useSmartSwitchKey: phtv_isSmartSwitchKeyEnabled() ? 1 : 0,
+            currentLanguage: phtv_currentLanguage(),
+            currentCodeTable: phtv_currentCodeTable()
+        )
     }
 
     @objc(phtv_notifyTableCodeChanged)
@@ -30,7 +44,13 @@ import Foundation
 
     @objc(phtv_notifyActiveAppChanged)
     class func phtv_notifyActiveAppChanged() {
-        OnActiveAppChanged()
+        PHTVSmartSwitchBridgeService.handleActiveAppChanged(
+            forBundleId: smartSwitchFocusedBundleId(),
+            useSmartSwitchKey: phtv_isSmartSwitchKeyEnabled() ? 1 : 0,
+            rememberCode: Int32(PHTVGetRememberCode()),
+            currentLanguage: phtv_currentLanguage(),
+            currentCodeTable: phtv_currentCodeTable()
+        )
     }
 
     @objc(phtv_currentLanguage)

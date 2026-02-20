@@ -44,9 +44,7 @@ BOOL PHTVRunAccessibilitySmokeTest(void);
 #endif
 void RequestNewSession(void);
 void InvalidateLayoutCache(void);
-void OnInputMethodChanged(void);
 void OnTableCodeChange(void);
-void OnActiveAppChanged(void);
 int PHTVGetCurrentLanguage(void);
 void PHTVSetCurrentLanguage(int language);
 int PHTVGetCurrentInputType(void);

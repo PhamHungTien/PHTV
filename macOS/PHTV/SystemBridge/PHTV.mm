@@ -755,27 +755,12 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         return getAppCharacteristics(topApp).containsUnicodeCompound;
     }
     
-    void OnActiveAppChanged() { //use for smart switch key; improved on Sep 28th, 2019
-        [PHTVSmartSwitchBridgeService handleActiveAppChangedForBundleId:getFocusedAppBundleId()
-                                                      useSmartSwitchKey:(int32_t)vUseSmartSwitchKey
-                                                            rememberCode:(int32_t)vRememberCode
-                                                         currentLanguage:(int32_t)vLanguage
-                                                        currentCodeTable:(int32_t)vCodeTable];
-    }
-    
     void OnTableCodeChange() {
         onTableCodeChange();  // Update macro state
         [PHTVSmartSwitchBridgeService handleTableCodeChangedForBundleId:getFocusedAppBundleId()
                                                             rememberCode:(int32_t)vRememberCode
                                                          currentLanguage:(int32_t)vLanguage
                                                         currentCodeTable:(int32_t)vCodeTable];
-    }
-    
-    void OnInputMethodChanged() {
-        [PHTVSmartSwitchBridgeService handleInputMethodChangedForBundleId:getFocusedAppBundleId()
-                                                         useSmartSwitchKey:(int32_t)vUseSmartSwitchKey
-                                                          currentLanguage:(int32_t)vLanguage
-                                                         currentCodeTable:(int32_t)vCodeTable];
     }
     
     void OnSpellCheckingChanged() {
