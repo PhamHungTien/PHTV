@@ -84,4 +84,34 @@ import Foundation
     class func phtv_checkBinaryIntegrity() -> Bool {
         PHTVBinaryIntegrityService.checkBinaryIntegrity()
     }
+
+    @objc(phtv_quickConvert)
+    class func phtv_quickConvert() -> Bool {
+        let pasteboard = NSPasteboard.general
+        var htmlString = pasteboard.string(forType: .html)
+        var rawString = pasteboard.string(forType: .string)
+        var converted = false
+
+        if let html = htmlString {
+            htmlString = ConvertUtil(html)
+            converted = true
+        }
+        if let raw = rawString {
+            rawString = ConvertUtil(raw)
+            converted = true
+        }
+
+        guard converted else {
+            return false
+        }
+
+        pasteboard.clearContents()
+        if let htmlString {
+            pasteboard.setString(htmlString, forType: .html)
+        }
+        if let rawString {
+            pasteboard.setString(rawString, forType: .string)
+        }
+        return true
+    }
 }

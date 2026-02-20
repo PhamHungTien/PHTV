@@ -27,5 +27,6 @@ extern AppDelegate* _Nullable appDelegate;
 // SystemBridge
 #import "SystemBridge/PHTVManager.h"
 #import "SystemBridge/PHTVEngineDataBridge.h"
+#import "SystemBridge/PHTVCoreBridge.h"
 
 #endif /* PHTVBridgingHeader_h */

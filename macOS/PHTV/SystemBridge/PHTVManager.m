@@ -11,6 +11,7 @@
 #import "PHTV-Swift.h"
 #import "../Application/PHTVSettingsRuntime.h"
 #import "../Core/PHTVHotkey.h"
+#import "PHTVCoreBridge.h"
 
 extern void PHTVInit(void);
 
@@ -19,7 +20,6 @@ extern CGEventRef PHTVCallback(CGEventTapProxy proxy,
                                   CGEventRef event,
                                   void *refcon);
 
-extern NSString* ConvertUtil(NSString* str);
 extern BOOL vSafeMode;
 extern void RequestNewSession(void);
 extern void InvalidateLayoutCache(void);
@@ -97,6 +97,7 @@ static int PHTVToggleRuntimeIntSetting(volatile int *target,
 +(NSString *)phtv_getBinaryHash;
 +(BOOL)phtv_hasBinaryChangedSinceLastRun;
 +(BOOL)phtv_checkBinaryIntegrity;
++(BOOL)phtv_quickConvert;
 
 @end
 
@@ -671,29 +672,7 @@ static NSUInteger         _tapRecreateCount = 0;
 #pragma mark - Convert Feature
 
 +(BOOL)quickConvert {
-    NSPasteboard *pasteboard = [NSPasteboard generalPasteboard];
-    NSString *htmlString = [pasteboard stringForType:NSPasteboardTypeHTML];
-    NSString *rawString = [pasteboard stringForType:NSPasteboardTypeString];
-    bool converted = false;
-    
-    if (htmlString != nil) {
-        htmlString = ConvertUtil(htmlString);
-        converted = true;
-    }
-    if (rawString != nil) {
-        rawString = ConvertUtil(rawString);
-        converted = true;
-    }
-    if (converted) {
-        [pasteboard clearContents];
-        if (htmlString != nil)
-            [pasteboard setString:htmlString forType:NSPasteboardTypeHTML];
-        if (rawString != nil)
-            [pasteboard setString:rawString forType:NSPasteboardTypeString];
-        
-        return YES;
-    }
-    return NO;
+    return [self phtv_quickConvert];
 }
 
 #pragma mark - Application Support
