@@ -54,8 +54,9 @@ final class PHTVCacheStateService: NSObject {
     nonisolated(unsafe) private static var _cachedFocusedBundleId: String?
     nonisolated(unsafe) private static var _lastSpotlightInvalidationTime: UInt64 = 0
 
+    private static let layoutCacheNoValue: UInt16 = .max
     nonisolated(unsafe) private static var layoutLock = NSLock()
-    nonisolated(unsafe) private static var layoutCache = Array<UInt16>(repeating: 0, count: 256)
+    nonisolated(unsafe) private static var layoutCache = Array<UInt16>(repeating: layoutCacheNoValue, count: 256)
     nonisolated(unsafe) private static var layoutCacheValid = false
 
     // MARK: - PID Cache
@@ -294,10 +295,11 @@ final class PHTVCacheStateService: NSObject {
 
     @objc class func cachedLayoutConversion(_ keycode: UInt16) -> UInt16 {
         let index = Int(keycode)
-        guard index < 256 else { return 0 }
+        guard index < 256 else { return layoutCacheNoValue }
 
         layoutLock.lock()
         defer { layoutLock.unlock() }
+        guard layoutCacheValid else { return layoutCacheNoValue }
         return layoutCache[index]
     }
 
@@ -306,14 +308,17 @@ final class PHTVCacheStateService: NSObject {
         guard index < 256 else { return }
 
         layoutLock.lock()
+        if !layoutCacheValid {
+            layoutCache = Array<UInt16>(repeating: layoutCacheNoValue, count: 256)
+            layoutCacheValid = true
+        }
         layoutCache[index] = result
-        layoutCacheValid = true
         layoutLock.unlock()
     }
 
     @objc class func invalidateLayoutCache() {
         layoutLock.lock()
-        layoutCache = Array<UInt16>(repeating: 0, count: 256)
+        layoutCache = Array<UInt16>(repeating: layoutCacheNoValue, count: 256)
         layoutCacheValid = false
         layoutLock.unlock()
     }
