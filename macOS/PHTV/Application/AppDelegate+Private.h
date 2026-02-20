@@ -49,7 +49,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) NSInteger savedLanguageBeforeNonLatin;
 @property (nonatomic, assign) BOOL isInNonLatinInputSource;
 
-- (void)onControlPanelSelected;
 - (void)fillDataWithAnimation:(BOOL)animated;
 - (void)handleHotkeyChanged:(NSNotification * _Nullable)notification;
 - (void)handleEmojiHotkeySettingsChanged:(NSNotification * _Nullable)notification;

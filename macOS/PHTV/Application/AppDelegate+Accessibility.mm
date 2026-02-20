@@ -7,6 +7,7 @@
 
 #import "AppDelegate+Accessibility.h"
 #import "AppDelegate+Private.h"
+#import "AppDelegate+UIActions.h"
 #import "../SystemBridge/PHTVManager.h"
 #import "PHTV-Swift.h"
 #include <unistd.h>
