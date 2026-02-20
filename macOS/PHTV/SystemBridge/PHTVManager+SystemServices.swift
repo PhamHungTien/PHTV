@@ -9,6 +9,31 @@ import AppKit
 import Foundation
 
 @objc extension PHTVManager {
+    @objc(phtv_requestNewSession)
+    class func phtv_requestNewSession() {
+        RequestNewSession()
+    }
+
+    @objc(phtv_invalidateLayoutCache)
+    class func phtv_invalidateLayoutCache() {
+        InvalidateLayoutCache()
+    }
+
+    @objc(phtv_notifyInputMethodChanged)
+    class func phtv_notifyInputMethodChanged() {
+        OnInputMethodChanged()
+    }
+
+    @objc(phtv_notifyTableCodeChanged)
+    class func phtv_notifyTableCodeChanged() {
+        OnTableCodeChange()
+    }
+
+    @objc(phtv_notifyActiveAppChanged)
+    class func phtv_notifyActiveAppChanged() {
+        OnActiveAppChanged()
+    }
+
     @objc(phtv_isTCCEntryCorrupt)
     class func phtv_isTCCEntryCorrupt() -> Bool {
         if canCreateEventTap() {

@@ -17,6 +17,11 @@ extern "C" {
 NSString * _Nullable ConvertUtil(NSString * _Nonnull str);
 BOOL PHTVGetSafeMode(void);
 void PHTVSetSafeMode(BOOL enabled);
+void RequestNewSession(void);
+void InvalidateLayoutCache(void);
+void OnInputMethodChanged(void);
+void OnTableCodeChange(void);
+void OnActiveAppChanged(void);
 
 #ifdef __cplusplus
 }

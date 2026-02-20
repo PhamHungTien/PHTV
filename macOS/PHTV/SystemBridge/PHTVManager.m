@@ -20,11 +20,6 @@ extern CGEventRef PHTVCallback(CGEventTapProxy proxy,
                                   CGEventRef event,
                                   void *refcon);
 
-extern void RequestNewSession(void);
-extern void InvalidateLayoutCache(void);
-extern void OnInputMethodChanged(void);
-extern void OnTableCodeChange(void);
-extern void OnActiveAppChanged(void);
 extern volatile int vLanguage;
 extern volatile int vInputType;
 extern int vFreeMark;
@@ -100,6 +95,11 @@ static int PHTVToggleRuntimeIntSetting(volatile int *target,
 +(BOOL)phtv_isSafeModeEnabled;
 +(void)phtv_setSafeModeEnabled:(BOOL)enabled;
 +(void)phtv_clearAXTestFlag;
++(void)phtv_requestNewSession;
++(void)phtv_invalidateLayoutCache;
++(void)phtv_notifyInputMethodChanged;
++(void)phtv_notifyTableCodeChanged;
++(void)phtv_notifyActiveAppChanged;
 
 @end
 
@@ -376,11 +376,11 @@ static NSUInteger         _tapRecreateCount = 0;
 }
 
 +(void)requestNewSession {
-    RequestNewSession();
+    [self phtv_requestNewSession];
 }
 
 +(void)invalidateLayoutCache {
-    InvalidateLayoutCache();
+    [self phtv_invalidateLayoutCache];
 }
 
 +(int)currentLanguage {
@@ -419,15 +419,15 @@ static NSUInteger         _tapRecreateCount = 0;
 }
 
 +(void)notifyInputMethodChanged {
-    OnInputMethodChanged();
+    [self phtv_notifyInputMethodChanged];
 }
 
 +(void)notifyTableCodeChanged {
-    OnTableCodeChange();
+    [self phtv_notifyTableCodeChanged];
 }
 
 +(void)notifyActiveAppChanged {
-    OnActiveAppChanged();
+    [self phtv_notifyActiveAppChanged];
 }
 
 +(BOOL)isSendKeyStepByStepEnabled {
