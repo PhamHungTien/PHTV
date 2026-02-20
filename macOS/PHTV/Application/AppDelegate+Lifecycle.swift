@@ -133,6 +133,10 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
     func applicationWillTerminate(_ notification: Notification) {
         _ = notification
 
+        stopInputSourceMonitoring()
+        stopAccessibilityMonitoring()
+        stopHealthCheckMonitoring()
+
         PHTVManager.clearAXTestFlag()
 
         NotificationCenter.default.post(name: phtvNotificationApplicationWillTerminate, object: nil)

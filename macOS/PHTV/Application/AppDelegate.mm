@@ -9,25 +9,6 @@
 #import <Carbon/Carbon.h>
 #import <Cocoa/Cocoa.h>
 #import "AppDelegate.h"
-#import "AppDelegate+Private.h"
-#import "AppDelegate+Accessibility.h"
-#import "AppDelegate+AppMonitoring.h"
-#import "AppDelegate+Defaults.h"
-#import "AppDelegate+DockVisibility.h"
-#import "AppDelegate+InputState.h"
-#import "AppDelegate+InputSourceMonitoring.h"
-#import "AppDelegate+LoginItem.h"
-#import "AppDelegate+MacroData.h"
-#import "AppDelegate+PermissionFlow.h"
-#import "AppDelegate+RuntimeSettings.h"
-#import "AppDelegate+SettingsBridge.h"
-#import "AppDelegate+SettingsActions.h"
-#import "AppDelegate+Sparkle.h"
-#import "AppDelegate+StatusBarMenu.h"
-#import "AppDelegate+UIActions.h"
-#import "../SystemBridge/PHTVManager.h"
-#import <Sparkle/Sparkle.h>
-#import "PHTV-Swift.h"
 #include "../Core/Engine/Engine.h"
 
 AppDelegate* appDelegate;
@@ -100,12 +81,5 @@ int vShowIconOnDock = 0; //new on version 2.0
 volatile int vPerformLayoutCompat = 0;
 
 @implementation AppDelegate
-
-- (void)dealloc {
-    [self stopInputSourceMonitoring];
-    
-    [self stopAccessibilityMonitoring];
-    [self stopHealthCheckMonitoring];
-}
 
 @end
