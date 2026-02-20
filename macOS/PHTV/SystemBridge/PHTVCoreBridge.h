@@ -22,7 +22,6 @@ CGEventRef _Nullable PHTVCallback(CGEventTapProxy _Nullable proxy,
                                   CGEventRef _Nonnull event,
                                   void * _Nullable refcon);
 NSString * _Nonnull PHTVBuildDateString(void);
-void PHTVSyncSpellCheckingState(void);
 void PHTVSetConvertToolOptions(bool dontAlertWhenCompleted,
                                bool toAllCaps,
                                bool toAllNonCaps,
@@ -44,7 +43,6 @@ BOOL PHTVRunAccessibilitySmokeTest(void);
 #endif
 void RequestNewSession(void);
 void InvalidateLayoutCache(void);
-void OnTableCodeChange(void);
 int PHTVGetCurrentLanguage(void);
 void PHTVSetCurrentLanguage(int language);
 int PHTVGetCurrentInputType(void);

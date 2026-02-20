@@ -64,6 +64,14 @@ void PHTVEngineSetCheckSpellingValue(int value) {
     vCheckSpelling = value;
 }
 
+void PHTVEngineApplyCheckSpelling(void) {
+    vSetCheckSpelling();
+}
+
+void PHTVEngineNotifyTableCodeChanged(void) {
+    onTableCodeChange();
+}
+
 int PHTVEngineQuickConvertHotkey(void) {
     return gConvertToolOptions.hotKey;
 }

@@ -755,22 +755,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         return getAppCharacteristics(topApp).containsUnicodeCompound;
     }
     
-    void OnTableCodeChange() {
-        onTableCodeChange();  // Update macro state
-        [PHTVSmartSwitchBridgeService handleTableCodeChangedForBundleId:getFocusedAppBundleId()
-                                                            rememberCode:(int32_t)vRememberCode
-                                                         currentLanguage:(int32_t)vLanguage
-                                                        currentCodeTable:(int32_t)vCodeTable];
-    }
-    
-    void OnSpellCheckingChanged() {
-        vSetCheckSpelling();
-    }
-
-    void PHTVSyncSpellCheckingState() {
-        OnSpellCheckingChanged();
-    }
-    
     void InsertKeyLength(const Uint8& len) {
         _syncKey.push_back(len);
     }

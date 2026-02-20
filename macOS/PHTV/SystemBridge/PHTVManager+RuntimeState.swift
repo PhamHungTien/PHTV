@@ -39,7 +39,13 @@ import Foundation
 
     @objc(phtv_notifyTableCodeChanged)
     class func phtv_notifyTableCodeChanged() {
-        OnTableCodeChange()
+        PHTVEngineNotifyTableCodeChanged()
+        PHTVSmartSwitchBridgeService.handleTableCodeChanged(
+            forBundleId: smartSwitchFocusedBundleId(),
+            rememberCode: Int32(PHTVGetRememberCode()),
+            currentLanguage: phtv_currentLanguage(),
+            currentCodeTable: phtv_currentCodeTable()
+        )
     }
 
     @objc(phtv_notifyActiveAppChanged)

@@ -29,6 +29,8 @@ unsigned long PHTVEngineCustomVietnameseWordCount(void);
 void PHTVEngineClearCustomDictionary(void);
 
 void PHTVEngineSetCheckSpellingValue(int value);
+void PHTVEngineApplyCheckSpelling(void);
+void PHTVEngineNotifyTableCodeChanged(void);
 
 int PHTVEngineQuickConvertHotkey(void);
 bool PHTVEngineHotkeyHasControl(int hotkey);
