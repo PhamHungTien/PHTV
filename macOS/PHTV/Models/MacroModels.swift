@@ -141,7 +141,7 @@ enum MacroStorage {
         guard let data = defaults.data(forKey: UserDefaultsKey.macroList) else {
             return []
         }
-        if let decoded = decode(data) {
+        if let decoded = decode(data, shouldLogError: false) {
             return decoded
         }
 

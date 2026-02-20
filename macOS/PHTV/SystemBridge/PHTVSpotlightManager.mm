@@ -10,13 +10,12 @@
 #import "PHTVCacheManager.h"
 #import "PHTVAppDetectionManager.h"
 #import "PHTVTimingManager.h"
+#import "PHTV-Swift.h"
 #import "../Application/AppDelegate.h"
 #import "../Core/phtv_mac_keys.h"
 #import <mach/mach_time.h>
 #import <libproc.h>
 #import <Cocoa/Cocoa.h>
-
-static const uint64_t PHTVExternalDeleteResetThresholdMs = 30000;
 
 static BOOL PHTVAXAttributeContainsSearchKeyword(AXUIElementRef element, CFStringRef attributeName) {
     if (element == NULL || attributeName == NULL) {
@@ -40,32 +39,16 @@ static BOOL PHTVAXAttributeContainsSearchKeyword(AXUIElementRef element, CFStrin
 
 @implementation PHTVSpotlightManager
 
-// Text Replacement detection
-static BOOL _externalDeleteDetected = NO;
-static uint64_t _lastExternalDeleteTime = 0;
-static int _externalDeleteCount = 0;
-
 #pragma mark - Initialization
 
 + (void)initialize {
-    if (self == [PHTVSpotlightManager class]) {
-        // Initialize state
-        _externalDeleteDetected = NO;
-        _lastExternalDeleteTime = 0;
-        _externalDeleteCount = 0;
-    }
+    // No-op. State tracking lives in PHTVSpotlightDetectionService.
 }
 
 #pragma mark - Spotlight Detection
 
 + (BOOL)containsSearchKeyword:(NSString*)str {
-    if (str == nil) return NO;
-    NSString *lower = [str lowercaseString];
-    return [lower containsString:@"search"] ||
-           [lower containsString:@"tìm kiếm"] ||
-           [lower containsString:@"tìm"] ||
-           [lower containsString:@"filter"] ||
-           [lower containsString:@"lọc"];
+    return [PHTVSpotlightDetectionService containsSearchKeyword:str];
 }
 
 + (BOOL)isElementSpotlight:(AXUIElementRef)element bundleId:(NSString*)bundleId {
@@ -402,33 +385,19 @@ static int _externalDeleteCount = 0;
 #pragma mark - Text Replacement Detection
 
 + (void)trackExternalDelete {
-    uint64_t now = mach_absolute_time();
-
-    // Reset count if too much time passed (>30000ms = 30 seconds)
-    if (_lastExternalDeleteTime != 0) {
-        uint64_t elapsed_ms = [PHTVTimingManager machTimeToMs:now - _lastExternalDeleteTime];
-        if (elapsed_ms > PHTVExternalDeleteResetThresholdMs) {
-            _externalDeleteCount = 0;
-        }
-    }
-
-    _lastExternalDeleteTime = now;
-    _externalDeleteCount++;
-    _externalDeleteDetected = YES;
+    [PHTVSpotlightDetectionService trackExternalDelete];
 }
 
 + (BOOL)hasRecentExternalDeletes {
-    return _externalDeleteDetected;
+    return [PHTVSpotlightDetectionService hasRecentExternalDeletes];
 }
 
 + (int)getExternalDeleteCount {
-    return _externalDeleteCount;
+    return (int)[PHTVSpotlightDetectionService externalDeleteCountValue];
 }
 
 + (void)resetExternalDeleteTracking {
-    _externalDeleteDetected = NO;
-    _lastExternalDeleteTime = 0;
-    _externalDeleteCount = 0;
+    [PHTVSpotlightDetectionService resetExternalDeleteTracking];
 }
 
 #pragma mark - Cache Invalidation Coordination

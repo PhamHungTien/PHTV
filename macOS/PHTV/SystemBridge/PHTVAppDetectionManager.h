@@ -13,9 +13,6 @@
 
 @interface PHTVAppDetectionManager : NSObject
 
-// Initialization
-+ (void)initialize;
-
 // Bundle ID Matching
 + (BOOL)isBrowserApp:(NSString*)bundleId;
 + (BOOL)isSpotlightLikeApp:(NSString*)bundleId;

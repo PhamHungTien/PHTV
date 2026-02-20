@@ -16,6 +16,7 @@
 // Performance & Cache Configuration
 static const uint64_t PID_CACHE_CLEAN_INTERVAL_MS = 60000;   // 60 seconds
 static const NSUInteger PID_CACHE_INITIAL_CAPACITY = 128;
+static const uint64_t SPOTLIGHT_INVALIDATION_DEDUP_MS = 30;  // Skip duplicate invalidations within 30ms
 
 @implementation PHTVCacheManager
 
@@ -41,6 +42,17 @@ static os_unfair_lock _spotlightCacheLock = OS_UNFAIR_LOCK_INIT;
 // Layout Cache
 static CGKeyCode _layoutCache[256];
 static BOOL _layoutCacheValid = NO;
+
+// Shared mach time conversion cache
+static mach_timebase_info_data_t _cacheTimebaseInfo;
+static dispatch_once_t _cacheTimebaseInitToken;
+
+static inline uint64_t PHTVCacheMachTimeToMs(uint64_t machTime) {
+    dispatch_once(&_cacheTimebaseInitToken, ^{
+        mach_timebase_info(&_cacheTimebaseInfo);
+    });
+    return (machTime * _cacheTimebaseInfo.numer) / (_cacheTimebaseInfo.denom * 1000000);
+}
 
 #pragma mark - Initialization
 
@@ -77,12 +89,7 @@ static BOOL _layoutCacheValid = NO;
 
     // Smart cache cleanup: Check every 60 seconds
     uint64_t now = mach_absolute_time();
-    static mach_timebase_info_data_t timebase;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        mach_timebase_info(&timebase);
-    });
-    uint64_t elapsed_ms = (now - _lastCacheCleanTime) * timebase.numer / (timebase.denom * 1000000);
+    uint64_t elapsed_ms = PHTVCacheMachTimeToMs(now - _lastCacheCleanTime);
 
     if (__builtin_expect(elapsed_ms > PID_CACHE_CLEAN_INTERVAL_MS, 0)) {
         [_pidBundleCache removeAllObjects];
@@ -157,12 +164,7 @@ static BOOL _layoutCacheValid = NO;
     os_unfair_lock_lock(&_pidCacheLock);
 
     if (_pidBundleCache != nil) {
-        static mach_timebase_info_data_t timebase;
-        static dispatch_once_t onceToken;
-        dispatch_once(&onceToken, ^{
-            mach_timebase_info(&timebase);
-        });
-        uint64_t elapsed_ms = (now - _lastCacheCleanTime) * timebase.numer / (timebase.denom * 1000000);
+        uint64_t elapsed_ms = PHTVCacheMachTimeToMs(now - _lastCacheCleanTime);
 
         if (elapsed_ms > PID_CACHE_CLEAN_INTERVAL_MS) {
             [_pidBundleCache removeAllObjects];
@@ -267,19 +269,36 @@ static BOOL _layoutCacheValid = NO;
 }
 
 + (void)invalidateSpotlightCache {
+    uint64_t now = mach_absolute_time();
     os_unfair_lock_lock(&_spotlightCacheLock);
+
+    uint64_t elapsedSinceLastInvalidationMs = (_lastSpotlightInvalidationTime > 0)
+        ? PHTVCacheMachTimeToMs(now - _lastSpotlightInvalidationTime)
+        : UINT64_MAX;
+    BOOL alreadyInvalid = (!_cachedSpotlightActive &&
+                           _cachedFocusedPID == 0 &&
+                           _cachedFocusedBundleId == nil);
+
+    // Avoid redundant invalidations/logging bursts from back-to-back event callbacks.
+    if (alreadyInvalid && elapsedSinceLastInvalidationMs < SPOTLIGHT_INVALIDATION_DEDUP_MS) {
+        os_unfair_lock_unlock(&_spotlightCacheLock);
+        return;
+    }
+
     BOOL wasActive = _cachedSpotlightActive;
     _cachedSpotlightActive = NO;
     _lastSpotlightCheckTime = 0;
     _cachedFocusedPID = 0;
     _cachedFocusedBundleId = nil;
-    _lastSpotlightInvalidationTime = mach_absolute_time();  // Record when invalidated
+    _lastSpotlightInvalidationTime = now;  // Record when invalidated
     os_unfair_lock_unlock(&_spotlightCacheLock);
 
-    // Log cache invalidation
+    // Log cache invalidation only in debug builds.
+#ifdef DEBUG
     if (wasActive) {
         NSLog(@"[Spotlight] 🔄 CACHE INVALIDATED (was active)");
     }
+#endif
 }
 
 #pragma mark - Layout Cache

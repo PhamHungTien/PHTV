@@ -2042,10 +2042,12 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             }
         }
 
-        // Track modifier flag changes to invalidate cache on significant changes
+        // Track Command modifier transitions only.
+        // Option/Control frequently change during normal typing shortcuts and can
+        // cause unnecessary Spotlight cache churn.
         static CGEventFlags _lastEventFlags = 0;
-        CGEventFlags flagChangeMask = kCGEventFlagMaskCommand | kCGEventFlagMaskAlternate | kCGEventFlagMaskControl;
-        if ((type == kCGEventFlagsChanged) && ((flag ^ _lastEventFlags) & flagChangeMask)) {
+        CGEventFlags flagChangeMask = kCGEventFlagMaskCommand;
+        if ((type == kCGEventFlagsChanged) && (((flag ^ _lastEventFlags) & flagChangeMask) != 0)) {
             InvalidateSpotlightCache();
         }
         _lastEventFlags = flag;
