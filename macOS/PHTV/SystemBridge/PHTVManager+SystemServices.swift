@@ -112,6 +112,11 @@ import Foundation
         PHTVSetCurrentLanguage(language)
     }
 
+    @objc(phtv_otherLanguageMode)
+    class func phtv_otherLanguageMode() -> Int32 {
+        Int32(PHTVGetOtherLanguage())
+    }
+
     @objc(phtv_currentInputType)
     class func phtv_currentInputType() -> Int32 {
         Int32(PHTVGetCurrentInputType())

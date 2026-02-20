@@ -9,7 +9,6 @@
 #import "PHTVManager.h"
 #import <Sparkle/Sparkle.h>
 #import "PHTV-Swift.h"
-#import "../Core/PHTVHotkey.h"
 #import "PHTVCoreBridge.h"
 
 extern void PHTVInit(void);
@@ -19,39 +18,6 @@ extern CGEventRef PHTVCallback(CGEventTapProxy proxy,
                                   CGEventRef event,
                                   void *refcon);
 
-extern volatile int vLanguage;
-extern volatile int vInputType;
-extern int vFreeMark;
-extern volatile int vCodeTable;
-extern int vShowIconOnDock;
-extern volatile int vCheckSpelling;
-extern volatile int vAllowConsonantZFWJ;
-extern volatile int vUseModernOrthography;
-extern volatile int vQuickTelex;
-extern volatile int vUseMacro;
-extern volatile int vUseMacroInEnglishMode;
-extern volatile int vAutoCapsMacro;
-extern volatile int vSendKeyStepByStep;
-extern volatile int vUseSmartSwitchKey;
-extern volatile int vUpperCaseExcludedForCurrentApp;
-extern volatile int vFixRecommendBrowser;
-extern volatile int vUpperCaseFirstChar;
-extern volatile int vTempOffSpelling;
-extern volatile int vQuickStartConsonant;
-extern volatile int vQuickEndConsonant;
-extern volatile int vRememberCode;
-extern volatile int vOtherLanguage;
-extern volatile int vTempOffPHTV;
-extern volatile int vPerformLayoutCompat;
-extern volatile int vRestoreOnEscape;
-extern volatile int vCustomEscapeKey;
-extern volatile int vPauseKeyEnabled;
-extern volatile int vPauseKey;
-extern volatile int vAutoRestoreEnglishWord;
-extern volatile int vSwitchKeyStatus;
-extern volatile int vEnableEmojiHotkey;
-extern volatile int vEmojiHotkeyModifiers;
-extern volatile int vEmojiHotkeyKeyCode;
 extern void PHTVSetCheckSpellingCpp(void) __asm("__Z17vSetCheckSpellingv");
 
 @interface PHTVManager (PHTVSystemServicesBridge)
@@ -78,6 +44,7 @@ extern void PHTVSetCheckSpellingCpp(void) __asm("__Z17vSetCheckSpellingv");
 +(void)phtv_notifyActiveAppChanged;
 +(int)phtv_currentLanguage;
 +(void)phtv_setCurrentLanguage:(int)language;
++(int)phtv_otherLanguageMode;
 +(int)phtv_currentInputType;
 +(void)phtv_setCurrentInputType:(int)inputType;
 +(int)phtv_currentCodeTable;
@@ -391,7 +358,7 @@ static NSUInteger         _tapRecreateCount = 0;
 }
 
 +(int)otherLanguageMode {
-    return vOtherLanguage;
+    return [self phtv_otherLanguageMode];
 }
 
 +(int)currentInputType {

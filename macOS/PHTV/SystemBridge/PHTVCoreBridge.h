@@ -83,6 +83,7 @@ void PHTVSetOtherLanguage(int value);
 void PHTVSetTempOffPHTV(int value);
 int PHTVDefaultSwitchHotkeyStatus(void);
 int PHTVDefaultPauseKey(void);
+int PHTVGetOtherLanguage(void);
 
 #ifdef __cplusplus
 }

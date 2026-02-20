@@ -356,6 +356,10 @@ extern "C" {
     int PHTVDefaultPauseKey(void) {
         return KEY_LEFT_OPTION;
     }
+
+    int PHTVGetOtherLanguage(void) {
+        return vOtherLanguage;
+    }
 }
 
 @implementation AppDelegate
