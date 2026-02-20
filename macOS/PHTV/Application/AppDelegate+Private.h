@@ -22,6 +22,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL isUpdatingUI;
 @property (nonatomic, assign) CFAbsoluteTime lastDefaultsApplyTime;
 @property (nonatomic, assign) NSUInteger lastSettingsChangeToken;
+@property (nonatomic, assign) BOOL hasLastDockVisibilityRequest;
+@property (nonatomic, assign) BOOL lastDockVisibilityRequest;
+@property (nonatomic, assign) BOOL lastDockForceFrontRequest;
+@property (nonatomic, assign) CFAbsoluteTime lastDockVisibilityRequestTime;
 
 @property (nonatomic, strong, nullable) NSTimer *accessibilityMonitor;
 @property (nonatomic, assign) BOOL wasAccessibilityEnabled;

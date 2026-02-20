@@ -958,15 +958,20 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 }
 
 // Helper to robustly check if settings window is visible
-- (BOOL)isSettingsWindowVisible {
+- (NSWindow *)currentSettingsWindow {
     for (NSWindow *window in [NSApp windows]) {
         NSString *identifier = window.identifier;
         // SwiftUI windows have identifier starting with "settings" (set in PHTVApp.swift)
-        if (identifier && [identifier hasPrefix:@"settings"] && window.isVisible) {
-            return YES;
+        if (identifier && [identifier hasPrefix:@"settings"]) {
+            return window;
         }
     }
-    return NO;
+    return nil;
+}
+
+- (BOOL)isSettingsWindowVisible {
+    NSWindow *window = [self currentSettingsWindow];
+    return window != nil && window.isVisible;
 }
 
 // Handle dock icon visibility notification from SwiftUI
@@ -974,11 +979,26 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     NSDictionary *userInfo = notification.userInfo ?: @{};
     BOOL desiredDockVisible = [[userInfo objectForKey:PHTVNotificationUserInfoVisibleKey] boolValue];
     BOOL shouldForceFront = [[userInfo objectForKey:PHTVNotificationUserInfoForceFrontKey] boolValue];
+
+    CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
+    BOOL sameAsLastRequest = self.hasLastDockVisibilityRequest &&
+                             self.lastDockVisibilityRequest == desiredDockVisible &&
+                             self.lastDockForceFrontRequest == shouldForceFront;
+    if (sameAsLastRequest && !shouldForceFront &&
+        (now - self.lastDockVisibilityRequestTime) < 0.20) {
+        return;
+    }
+    self.hasLastDockVisibilityRequest = YES;
+    self.lastDockVisibilityRequest = desiredDockVisible;
+    self.lastDockForceFrontRequest = shouldForceFront;
+    self.lastDockVisibilityRequestTime = now;
+
     NSLog(@"[AppDelegate] handleShowDockIconNotification: visible=%d forceFront=%d", desiredDockVisible, shouldForceFront);
 
     dispatch_async(dispatch_get_main_queue(), ^{
         BOOL wasSettingsOpen = settingsWindowOpen;
-        BOOL settingsVisible = [self isSettingsWindowVisible];
+        NSWindow *settingsWindow = [self currentSettingsWindow];
+        BOOL settingsVisible = settingsWindow != nil && settingsWindow.isVisible;
         settingsWindowOpen = settingsVisible;
         BOOL shouldResetSession = wasSettingsOpen && !settingsVisible;
 
@@ -988,15 +1008,11 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
             [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
 
             if (shouldForceFront) {
-                [NSApp activateIgnoringOtherApps:YES];
-
-                for (NSWindow *window in [NSApp windows]) {
-                    NSString *identifier = window.identifier;
-                    if (identifier && [identifier hasPrefix:@"settings"]) {
-                        [window makeKeyAndOrderFront:nil];
-                        NSLog(@"[AppDelegate] Brought settings window to front: %@", identifier);
-                        break;
-                    }
+                BOOL alreadyFront = NSApp.isActive && (settingsWindow.isKeyWindow || settingsWindow.isMainWindow);
+                if (!alreadyFront) {
+                    [NSApp activateIgnoringOtherApps:YES];
+                    [settingsWindow makeKeyAndOrderFront:nil];
+                    NSLog(@"[AppDelegate] Brought settings window to front: %@", settingsWindow.identifier);
                 }
             } else {
                 NSLog(@"[AppDelegate] Settings window visible; skip force front to avoid reopen loop");

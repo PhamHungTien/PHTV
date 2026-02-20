@@ -15,6 +15,7 @@ struct SettingsWindowContent: View {
     @State private var showOnboarding: Bool = false
     @State private var isClosingSettingsWindow: Bool = false
     @State private var pendingDockShowWorkItem: DispatchWorkItem?
+    @State private var pendingCloseWorkItem: DispatchWorkItem?
     @State private var windowLifecycleToken = UUID()
 
     var body: some View {
@@ -32,6 +33,8 @@ struct SettingsWindowContent: View {
             windowLifecycleToken = UUID()
             pendingDockShowWorkItem?.cancel()
             pendingDockShowWorkItem = nil
+            pendingCloseWorkItem?.cancel()
+            pendingCloseWorkItem = nil
             // Show dock icon when settings window opens
             // This prevents the window from being hidden when app loses focus
 
@@ -111,43 +114,24 @@ struct SettingsWindowContent: View {
         .onDisappear {
             pendingDockShowWorkItem?.cancel()
             pendingDockShowWorkItem = nil
-            windowLifecycleToken = UUID()
-
             // Remove window observers for this lifecycle.
             removeWindowObservers()
 
-            let hasVisibleSettingsWindow = NSApp.windows.contains { window in
-                window.identifier?.rawValue.hasPrefix("settings") == true && window.isVisible
+            // Delay close cleanup a bit to avoid transient SwiftUI disappear/reappear flapping.
+            let lifecycleToken = windowLifecycleToken
+            let closeWorkItem = DispatchWorkItem { [lifecycleToken] in
+                guard lifecycleToken == windowLifecycleToken else { return }
+
+                let hasVisibleSettingsWindow = NSApp.windows.contains { window in
+                    window.identifier?.rawValue.hasPrefix("settings") == true && window.isVisible
+                }
+                let isActualClose = isClosingSettingsWindow || !hasVisibleSettingsWindow
+                guard isActualClose else { return }
+
+                finalizeSettingsWindowClose()
             }
-            let isActualClose = isClosingSettingsWindow || !hasVisibleSettingsWindow
-            guard isActualClose else { return }
-
-            // Restore dock icon to user preference when settings closes
-            let userPrefersDock = appState.showIconOnDock
-
-            // Stop login item monitoring when Settings closes
-            appState.systemState.stopLoginItemStatusMonitoring()
-
-            // Clear transient caches to release memory
-            AppIconCache.shared.clear()
-
-            // Post notification for AppDelegate to restore state
-            NotificationCenter.default.post(
-                name: NotificationName.phtvShowDockIcon,
-                object: nil,
-                userInfo: [
-                    NotificationUserInfoKey.visible: userPrefersDock,
-                    NotificationUserInfoKey.forceFront: false
-                ]
-            )
-
-            // Also set activation policy directly
-            DispatchQueue.main.async {
-                let policy: NSApplication.ActivationPolicy = userPrefersDock ? .regular : .accessory
-                NSApp.setActivationPolicy(policy)
-            }
-
-            isClosingSettingsWindow = false
+            pendingCloseWorkItem = closeWorkItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15, execute: closeWorkItem)
         }
         .onChange(of: appState.settingsWindowAlwaysOnTop) { _ in
             // Update window level when user toggles the setting
@@ -272,6 +256,38 @@ struct SettingsWindowContent: View {
             NotificationCenter.default.removeObserver(observer)
         }
         windowObservers.removeAll()
+    }
+
+    @MainActor
+    private func finalizeSettingsWindowClose() {
+        pendingCloseWorkItem?.cancel()
+        pendingCloseWorkItem = nil
+        windowLifecycleToken = UUID()
+
+        // Restore dock icon to user preference when settings closes.
+        let userPrefersDock = appState.showIconOnDock
+
+        // Stop login item monitoring when Settings closes.
+        appState.systemState.stopLoginItemStatusMonitoring()
+
+        // Clear transient caches to release memory.
+        AppIconCache.shared.clear()
+
+        NotificationCenter.default.post(
+            name: NotificationName.phtvShowDockIcon,
+            object: nil,
+            userInfo: [
+                NotificationUserInfoKey.visible: userPrefersDock,
+                NotificationUserInfoKey.forceFront: false
+            ]
+        )
+
+        DispatchQueue.main.async {
+            let policy: NSApplication.ActivationPolicy = userPrefersDock ? .regular : .accessory
+            NSApp.setActivationPolicy(policy)
+        }
+
+        isClosingSettingsWindow = false
     }
 
     /// Check if onboarding should be shown (first time user)
