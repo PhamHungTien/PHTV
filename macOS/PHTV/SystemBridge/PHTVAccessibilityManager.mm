@@ -8,6 +8,7 @@
 
 #import "PHTVAccessibilityManager.h"
 #import "PHTVAppDetectionManager.h"
+#import "PHTV-Swift.h"
 #import <AppKit/AppKit.h>
 #import "PHTVManager.h"
 #import <os/log.h>
@@ -37,14 +38,8 @@ NSString* getFocusedAppBundleId(void);
 }
 #endif
 
-static mach_timebase_info_data_t _phtvAXTimebaseInfo;
-static dispatch_once_t _phtvAXTimebaseInitToken;
 static BOOL _lastAddressBarResult = NO;
 static uint64_t _lastAddressBarCheckTime = 0;
-
-static inline uint64_t PHTVAXMachTimeToMs(uint64_t machTime) {
-    return (machTime * _phtvAXTimebaseInfo.numer) / (_phtvAXTimebaseInfo.denom * 1000000);
-}
 
 static NSString *PHTVGetFocusedWindowTitleForFrontmostApp(void) {
     if (__atomic_load_n(&vSafeMode, __ATOMIC_RELAXED)) return nil;
@@ -71,72 +66,6 @@ static NSString *PHTVGetFocusedWindowTitleForFrontmostApp(void) {
     return title;
 }
 
-static inline BOOL PHTVStringEqualCanonicalForAX(NSString *lhs, NSString *rhs) {
-    if (lhs == rhs) {
-        return YES;
-    }
-    if (!lhs || !rhs) {
-        return NO;
-    }
-    if ([lhs isEqualToString:rhs]) {
-        return YES;
-    }
-    NSString *lhsNorm = [lhs precomposedStringWithCanonicalMapping];
-    NSString *rhsNorm = [rhs precomposedStringWithCanonicalMapping];
-    if ([lhsNorm isEqualToString:rhsNorm]) {
-        return YES;
-    }
-    NSString *lhsDecomp = [lhs decomposedStringWithCanonicalMapping];
-    NSString *rhsDecomp = [rhs decomposedStringWithCanonicalMapping];
-    return [lhsDecomp isEqualToString:rhsDecomp];
-}
-
-static inline BOOL PHTVStringHasCanonicalPrefixForAX(NSString *value, NSString *prefix) {
-    if (!value || !prefix) {
-        return NO;
-    }
-    if ([value hasPrefix:prefix]) {
-        return YES;
-    }
-    NSString *valueNorm = [value precomposedStringWithCanonicalMapping];
-    NSString *prefixNorm = [prefix precomposedStringWithCanonicalMapping];
-    if ([valueNorm hasPrefix:prefixNorm]) {
-        return YES;
-    }
-    NSString *valueDecomp = [value decomposedStringWithCanonicalMapping];
-    NSString *prefixDecomp = [prefix decomposedStringWithCanonicalMapping];
-    return [valueDecomp hasPrefix:prefixDecomp];
-}
-
-static inline NSInteger PHTVCalculateDeleteStartForAX(NSString *valueStr, NSInteger caretLocation, NSInteger backspaceCount) {
-    if (backspaceCount <= 0) {
-        return caretLocation;
-    }
-    NSInteger start = caretLocation - backspaceCount;
-    if (start < 0) start = 0;
-    if (start < caretLocation && caretLocation <= (NSInteger)valueStr.length) {
-        NSString *textToDelete = [valueStr substringWithRange:NSMakeRange(start, caretLocation - start)];
-        NSString *composedText = [textToDelete precomposedStringWithCanonicalMapping];
-        NSInteger composedLen = (NSInteger)composedText.length;
-        if (composedLen != backspaceCount && composedLen > 0) {
-            NSInteger actualStart = caretLocation;
-            NSInteger composedCount = 0;
-            while (actualStart > 0 && composedCount < backspaceCount) {
-                actualStart--;
-                unichar c = [valueStr characterAtIndex:actualStart];
-                if (!(c >= 0x0300 && c <= 0x036F) &&
-                    !(c >= 0x1DC0 && c <= 0x1DFF) &&
-                    !(c >= 0x20D0 && c <= 0x20FF) &&
-                    !(c >= 0xFE20 && c <= 0xFE2F)) {
-                    composedCount++;
-                }
-            }
-            start = actualStart;
-        }
-    }
-    return start;
-}
-
 @implementation PHTVAccessibilityManager
 
 #pragma mark - Initialization
@@ -145,9 +74,6 @@ static inline NSInteger PHTVCalculateDeleteStartForAX(NSString *valueStr, NSInte
     if (self == [PHTVAccessibilityManager class]) {
         // Load Safe Mode from user defaults
         vSafeMode = [[NSUserDefaults standardUserDefaults] boolForKey:@"SafeMode"];
-        dispatch_once(&_phtvAXTimebaseInitToken, ^{
-            mach_timebase_info(&_phtvAXTimebaseInfo);
-        });
     }
 }
 
@@ -213,7 +139,9 @@ static inline NSInteger PHTVCalculateDeleteStartForAX(NSString *valueStr, NSInte
     } else {
         // No selection OR Spotlight autocomplete suffix selection.
         // Always respect backspaceCount to keep IME state consistent.
-        NSInteger deleteStart = PHTVCalculateDeleteStartForAX(valueStr, caretLocation, backspaceCount);
+        NSInteger deleteStart = [PHTVAccessibilityService calculateDeleteStartForAX:valueStr
+                                                                       caretLocation:caretLocation
+                                                                      backspaceCount:backspaceCount];
         if (selectionAtEnd) {
             start = deleteStart;
             len = (caretLocation - deleteStart) + selectedLength;
@@ -258,11 +186,12 @@ static inline NSInteger PHTVCalculateDeleteStartForAX(NSString *valueStr, NSInte
                 ? (__bridge NSString *)verifyValueRef : @"";
             if (verifyValueRef) CFRelease(verifyValueRef);
             if (verifyError == kAXErrorSuccess) {
-                if (PHTVStringEqualCanonicalForAX(verifyStr, newValue)) {
+                if ([PHTVAccessibilityService stringEqualCanonicalForAX:verifyStr rhs:newValue]) {
                     verified = YES;
                     break;
                 }
-                if (selectionAtEnd && PHTVStringHasCanonicalPrefixForAX(verifyStr, newValue)) {
+                if (selectionAtEnd &&
+                    [PHTVAccessibilityService stringHasCanonicalPrefixForAX:verifyStr prefix:newValue]) {
                     verified = YES;
                     break;
                 }
@@ -350,12 +279,8 @@ static inline NSInteger PHTVCalculateDeleteStartForAX(NSString *valueStr, NSInte
     static BOOL lastResult = NO;
     static uint64_t lastCheckTime = 0;
 
-    dispatch_once(&_phtvAXTimebaseInitToken, ^{
-        mach_timebase_info(&_phtvAXTimebaseInfo);
-    });
-
     uint64_t now = mach_absolute_time();
-    uint64_t elapsed_ms = PHTVAXMachTimeToMs(now - lastCheckTime);
+    uint64_t elapsed_ms = [PHTVTimingService machTimeToMs:(now - lastCheckTime)];
     if (lastCheckTime != 0 && elapsed_ms < 50) {
         return lastResult;
     }
@@ -444,12 +369,8 @@ static inline NSInteger PHTVCalculateDeleteStartForAX(NSString *valueStr, NSInte
 + (BOOL)isFocusedElementAddressBar {
     if (vSafeMode) return NO;
 
-    dispatch_once(&_phtvAXTimebaseInitToken, ^{
-        mach_timebase_info(&_phtvAXTimebaseInfo);
-    });
-
     uint64_t now = mach_absolute_time();
-    uint64_t elapsed_ms = PHTVAXMachTimeToMs(now - _lastAddressBarCheckTime);
+    uint64_t elapsed_ms = [PHTVTimingService machTimeToMs:(now - _lastAddressBarCheckTime)];
 
     // Cache valid for 500ms
     if (_lastAddressBarCheckTime > 0 && elapsed_ms < 500) {
