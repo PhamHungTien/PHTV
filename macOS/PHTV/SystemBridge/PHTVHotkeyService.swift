@@ -127,6 +127,44 @@ final class PHTVKeyDownModifierTrackingBox: NSObject {
 }
 
 @objcMembers
+final class PHTVModifierReleaseTransitionBox: NSObject {
+    let shouldAttemptRestore: Bool
+    let shouldResetRestoreState: Bool
+    let releaseAction: Int32
+    let shouldUpdateLanguage: Bool
+    let language: Int32
+    let pausePressed: Bool
+    let savedLanguage: Int32
+    let lastFlags: UInt64
+    let keyPressedWhileSwitchModifiersHeld: Bool
+    let keyPressedWhileEmojiModifiersHeld: Bool
+
+    init(
+        shouldAttemptRestore: Bool,
+        shouldResetRestoreState: Bool,
+        releaseAction: Int32,
+        shouldUpdateLanguage: Bool,
+        language: Int32,
+        pausePressed: Bool,
+        savedLanguage: Int32,
+        lastFlags: UInt64,
+        keyPressedWhileSwitchModifiersHeld: Bool,
+        keyPressedWhileEmojiModifiersHeld: Bool
+    ) {
+        self.shouldAttemptRestore = shouldAttemptRestore
+        self.shouldResetRestoreState = shouldResetRestoreState
+        self.releaseAction = releaseAction
+        self.shouldUpdateLanguage = shouldUpdateLanguage
+        self.language = language
+        self.pausePressed = pausePressed
+        self.savedLanguage = savedLanguage
+        self.lastFlags = lastFlags
+        self.keyPressedWhileSwitchModifiersHeld = keyPressedWhileSwitchModifiersHeld
+        self.keyPressedWhileEmojiModifiersHeld = keyPressedWhileEmojiModifiersHeld
+    }
+}
+
+@objcMembers
 final class PHTVHotkeyService: NSObject {
     private static let hotkeyKeyMask: UInt32 = 0x00FF
     private static let hotkeyControlMask: UInt32 = 0x0100
@@ -939,6 +977,73 @@ final class PHTVHotkeyService: NSObject {
             language: pausePressTransition.language,
             pausePressed: pausePressTransition.pausePressed,
             savedLanguage: pausePressTransition.savedLanguage
+        )
+    }
+
+    @objc(modifierReleaseTransitionWithRestoreOnEscape:restoreModifierPressed:keyPressedWithRestoreModifier:customEscapeKey:oldFlags:newFlags:switchHotkey:convertHotkey:emojiEnabled:emojiModifiers:emojiKeyCode:keyPressedWhileSwitchModifiersHeld:keyPressedWhileEmojiModifiersHeld:hasJustUsedHotkey:tempOffSpellingEnabled:tempOffEngineEnabled:pauseKeyEnabled:pauseKeyCode:pausePressed:currentLanguage:savedLanguage:)
+    class func modifierReleaseTransition(
+        restoreOnEscape: Int32,
+        restoreModifierPressed: Bool,
+        keyPressedWithRestoreModifier: Bool,
+        customEscapeKey: Int32,
+        oldFlags: UInt64,
+        newFlags: UInt64,
+        switchHotkey: Int32,
+        convertHotkey: Int32,
+        emojiEnabled: Int32,
+        emojiModifiers: Int32,
+        emojiKeyCode: Int32,
+        keyPressedWhileSwitchModifiersHeld: Bool,
+        keyPressedWhileEmojiModifiersHeld: Bool,
+        hasJustUsedHotkey: Bool,
+        tempOffSpellingEnabled: Int32,
+        tempOffEngineEnabled: Int32,
+        pauseKeyEnabled: Int32,
+        pauseKeyCode: Int32,
+        pausePressed: Bool,
+        currentLanguage: Int32,
+        savedLanguage: Int32
+    ) -> PHTVModifierReleaseTransitionBox {
+        let releasePlan = evaluateFlagsReleasePlan(
+            restoreOnEscape: restoreOnEscape,
+            restoreModifierPressed: restoreModifierPressed,
+            keyPressedWithRestoreModifier: keyPressedWithRestoreModifier,
+            customEscapeKey: customEscapeKey,
+            oldFlags: oldFlags,
+            newFlags: newFlags,
+            switchHotkey: switchHotkey,
+            convertHotkey: convertHotkey,
+            emojiEnabled: emojiEnabled,
+            emojiModifiers: emojiModifiers,
+            emojiKeyCode: emojiKeyCode,
+            keyPressedWhileSwitchModifiersHeld: keyPressedWhileSwitchModifiersHeld,
+            keyPressedWhileEmojiModifiersHeld: keyPressedWhileEmojiModifiersHeld,
+            hasJustUsedHotkey: hasJustUsedHotkey,
+            tempOffSpellingEnabled: tempOffSpellingEnabled,
+            tempOffEngineEnabled: tempOffEngineEnabled
+        )
+
+        let pauseReleaseTransition = pauseTransitionForRelease(
+            withOldFlags: oldFlags,
+            newFlags: newFlags,
+            pauseKeyEnabled: pauseKeyEnabled,
+            pauseKeyCode: pauseKeyCode,
+            pausePressed: pausePressed,
+            currentLanguage: currentLanguage,
+            savedLanguage: savedLanguage
+        )
+
+        return PHTVModifierReleaseTransitionBox(
+            shouldAttemptRestore: flagsReleasePlanShouldAttemptRestore(releasePlan),
+            shouldResetRestoreState: flagsReleasePlanShouldResetRestoreState(releasePlan),
+            releaseAction: flagsReleasePlanModifierReleaseAction(releasePlan),
+            shouldUpdateLanguage: pauseReleaseTransition.shouldUpdateLanguage,
+            language: pauseReleaseTransition.language,
+            pausePressed: pauseReleaseTransition.pausePressed,
+            savedLanguage: pauseReleaseTransition.savedLanguage,
+            lastFlags: 0,
+            keyPressedWhileSwitchModifiersHeld: false,
+            keyPressedWhileEmojiModifiersHeld: false
         )
     }
 
