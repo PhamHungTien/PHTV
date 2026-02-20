@@ -65,13 +65,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, nullable) id inputSourceObserver;
 @property (nonatomic, assign) NSInteger savedLanguageBeforeNonLatin;
 @property (nonatomic, assign) BOOL isInNonLatinInputSource;
-
-- (void)handleHotkeyChanged:(NSNotification * _Nullable)notification;
-- (void)handleEmojiHotkeySettingsChanged:(NSNotification * _Nullable)notification;
-- (void)handleTCCDatabaseChanged:(NSNotification * _Nullable)notification;
-- (void)handleMenuBarIconSizeChanged:(NSNotification * _Nullable)notification;
-- (void)handleSettingsChanged:(NSNotification * _Nullable)notification;
-- (void)handleUserDefaultsDidChange:(NSNotification * _Nullable)notification;
 @end
 
 NS_ASSUME_NONNULL_END

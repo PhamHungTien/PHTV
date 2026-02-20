@@ -7,6 +7,7 @@
 
 #import "AppDelegate+MacroData.h"
 #import "PHTVLiveDebug.h"
+#import "PHTVSettingsRuntime.h"
 #include "../Core/Engine/Engine.h"
 
 static NSString *const PHTVDefaultsKeyMacroList = @"macroList";
@@ -14,13 +15,6 @@ static NSString *const PHTVDefaultsKeyMacroListCorruptedBackup = @"macroList.cor
 static NSString *const PHTVDefaultsKeyMacroData = @"macroData";
 static NSString *const PHTVDefaultsKeyCustomDictionary = @"customDictionary";
 static NSString *const PHTVDefaultsKeySpelling = @"Spelling";
-
-static inline int PHTVReadIntWithFallback(NSUserDefaults *defaults, NSString *key, int fallbackValue) {
-    if ([defaults objectForKey:key] == nil) {
-        return fallbackValue;
-    }
-    return (int)[defaults integerForKey:key];
-}
 
 #ifdef __cplusplus
 extern "C" {
