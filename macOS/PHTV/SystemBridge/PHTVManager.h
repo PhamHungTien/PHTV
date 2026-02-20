@@ -54,6 +54,8 @@
 +(int)toggleQuickTelexSetting;
 +(int)toggleUpperCaseFirstCharSetting;
 +(int)toggleAutoRestoreEnglishWordSetting;
++(NSUInteger)loadRuntimeSettingsFromUserDefaults;
++(void)loadDefaultConfig;
 
 // Convert feature
 +(BOOL)quickConvert;
