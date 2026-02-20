@@ -27,6 +27,7 @@ extern void RequestNewSession(void);
 extern void InvalidateLayoutCache(void);
 extern void OnInputMethodChanged(void);
 extern void OnTableCodeChange(void);
+extern void OnActiveAppChanged(void);
 extern volatile int vLanguage;
 extern volatile int vInputType;
 extern int vFreeMark;
@@ -41,6 +42,7 @@ extern volatile int vUseMacroInEnglishMode;
 extern volatile int vAutoCapsMacro;
 extern volatile int vSendKeyStepByStep;
 extern volatile int vUseSmartSwitchKey;
+extern volatile int vUpperCaseExcludedForCurrentApp;
 extern volatile int vFixRecommendBrowser;
 extern volatile int vUpperCaseFirstChar;
 extern volatile int vTempOffSpelling;
@@ -526,6 +528,23 @@ static const useconds_t kTestTapRetryDelayUs = 50000;  // 50ms between retries
 
 +(void)notifyTableCodeChanged {
     OnTableCodeChange();
+}
+
++(void)notifyActiveAppChanged {
+    OnActiveAppChanged();
+}
+
++(BOOL)isSendKeyStepByStepEnabled {
+    return vSendKeyStepByStep != 0;
+}
+
++(void)setSendKeyStepByStepEnabled:(BOOL)enabled {
+    vSendKeyStepByStep = enabled ? 1 : 0;
+    __sync_synchronize();
+}
+
++(void)setUpperCaseExcludedForCurrentApp:(BOOL)excluded {
+    vUpperCaseExcludedForCurrentApp = excluded ? 1 : 0;
 }
 
 +(void)setDockIconRuntimeVisible:(BOOL)visible {

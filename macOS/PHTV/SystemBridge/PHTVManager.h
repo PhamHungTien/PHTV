@@ -58,6 +58,10 @@
 +(BOOL)isSmartSwitchKeyEnabled;
 +(void)notifyInputMethodChanged;
 +(void)notifyTableCodeChanged;
++(void)notifyActiveAppChanged;
++(BOOL)isSendKeyStepByStepEnabled;
++(void)setSendKeyStepByStepEnabled:(BOOL)enabled;
++(void)setUpperCaseExcludedForCurrentApp:(BOOL)excluded;
 +(void)setDockIconRuntimeVisible:(BOOL)visible;
 +(int)toggleSpellCheckSetting;
 +(int)toggleAllowConsonantZFWJSetting;
