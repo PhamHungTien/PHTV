@@ -174,6 +174,42 @@ final class PHTVCacheStateService: NSObject {
         return appCharacteristicsCache[bundleId]
     }
 
+    // Returns:
+    // 0 = no invalidation
+    // 1 = invalidated due to app switch
+    // 2 = invalidated due to age (or first use)
+    @objc(prepareAppCharacteristicsCacheForBundleId:maxAgeMs:)
+    class func prepareAppCharacteristicsCache(forBundleId bundleId: String?, maxAgeMs: UInt64) -> Int {
+        guard let bundleId, !bundleId.isEmpty else {
+            return 0
+        }
+
+        let now = mach_absolute_time()
+        appCharLock.lock()
+        defer { appCharLock.unlock() }
+
+        var reason = 0
+        if let lastBundleId = _lastCachedBundleId, lastBundleId != bundleId {
+            reason = 1
+        } else if _lastAppCharCacheInvalidationTime == 0 {
+            reason = 2
+        } else {
+            let elapsedMs = PHTVTimingService.machTimeToMs(now - _lastAppCharCacheInvalidationTime)
+            if elapsedMs > maxAgeMs {
+                reason = 2
+            }
+        }
+
+        guard reason != 0 else {
+            return 0
+        }
+
+        appCharacteristicsCache.removeAll(keepingCapacity: false)
+        _lastCachedBundleId = bundleId
+        _lastAppCharCacheInvalidationTime = now
+        return reason
+    }
+
     @objc(setAppCharacteristicsForBundleId:isSpotlightLike:needsPrecomposedBatched:needsStepByStep:containsUnicodeCompound:isSafari:)
     class func setAppCharacteristics(
         forBundleId bundleId: String?,

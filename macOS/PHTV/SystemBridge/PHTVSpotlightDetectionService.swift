@@ -177,7 +177,11 @@ final class PHTVSpotlightDetectionService: NSObject {
             let procPidPathBufferSize = 4096
             var pathBuffer = [CChar](repeating: 0, count: procPidPathBufferSize)
             if proc_pidpath(focusedPID, &pathBuffer, UInt32(pathBuffer.count)) > 0 {
-                let path = String(cString: pathBuffer)
+                let path = pathBuffer.withUnsafeBufferPointer { buffer in
+                    let end = buffer.firstIndex(of: 0) ?? buffer.count
+                    let utf8Bytes = buffer.prefix(end).map { UInt8(bitPattern: $0) }
+                    return String(decoding: utf8Bytes, as: UTF8.self)
+                }
                 if path.contains("Spotlight") {
                     if !cachedResult {
                         NSLog("[Spotlight] ✅ DETECTED (by path): path=%@, pid=%d", path, Int32(focusedPID))
@@ -327,6 +331,39 @@ final class PHTVSpotlightDetectionService: NSObject {
         lock.lock()
         defer { lock.unlock() }
         return externalDeleteCount
+    }
+
+    @objc class func elapsedSinceLastExternalDeleteMs() -> UInt64 {
+        let now = mach_absolute_time()
+        lock.lock()
+        defer { lock.unlock() }
+        guard lastExternalDeleteTime != 0 else {
+            return 0
+        }
+        return PHTVTimingService.machTimeToMs(now - lastExternalDeleteTime)
+    }
+
+    @objc(consumeRecentExternalDeleteWithinMs:)
+    class func consumeRecentExternalDelete(withinMs thresholdMs: UInt64) -> UInt64 {
+        let now = mach_absolute_time()
+        lock.lock()
+        defer { lock.unlock() }
+
+        guard externalDeleteCount > 0, lastExternalDeleteTime != 0 else {
+            return UInt64.max
+        }
+
+        let elapsedMs = PHTVTimingService.machTimeToMs(now - lastExternalDeleteTime)
+
+        // Always consume once inspected so stale counters don't leak into later spaces.
+        externalDeleteDetected = false
+        lastExternalDeleteTime = 0
+        externalDeleteCount = 0
+
+        guard elapsedMs < thresholdMs else {
+            return UInt64.max
+        }
+        return elapsedMs
     }
 
     @objc class func resetExternalDeleteTracking() {

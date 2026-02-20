@@ -10,7 +10,6 @@
 #import <Foundation/Foundation.h>
 #import <libproc.h>
 #import <ApplicationServices/ApplicationServices.h>
-#import <os/lock.h>
 #import <os/log.h>
 #import <mach/mach_time.h>
 #import <unistd.h>
@@ -45,6 +44,7 @@ static const uint64_t SPOTLIGHT_CACHE_DURATION_MS = 150;     // Spotlight detect
 static const uint64_t DEBUG_LOG_THROTTLE_MS = 500;           // Debug log throttling interval
 #endif
 static const uint64_t APP_SWITCH_CACHE_DURATION_MS = 100;    // App switch detection cache timeout
+static const uint64_t TEXT_REPLACEMENT_DELETE_WINDOW_MS = 30000;  // Max gap from external delete to replacement space
 static const NSUInteger SYNC_KEY_RESERVE_SIZE = 256;         // Pre-allocated buffer size for typing sync
 
 // Timing delay constants (all in microseconds)
@@ -143,20 +143,6 @@ static inline void PHTVSpotlightDebugLog(NSString *message) {
 }
 #endif
 
-static NSMutableDictionary<NSString*, NSValue*> *_appCharacteristicsCache = nil;
-static os_unfair_lock _appCharCacheLock = OS_UNFAIR_LOCK_INIT;
-static NSString* _lastCachedBundleId = nil;  // Track last app to detect switches
-static uint64_t _lastCacheInvalidationTime = 0;  // Periodic cache invalidation
-
-// Text Replacement detection (for macOS native text replacement)
-// macOS Text Replacement does NOT send delete events via CGEventTap when using mouse!
-// We use multiple detection methods:
-// 1. External DELETE events (works for arrow key selection)
-// 2. Unexpected character count jump (works for mouse click selection)
-static BOOL _externalDeleteDetected = NO;
-static uint64_t _lastExternalDeleteTime = 0;
-static int _externalDeleteCount = 0;
-
 // Check if text replacement fix is enabled via settings (always enabled)
 // Note: This feature is always enabled to fix macOS native text replacement conflicts
 static inline BOOL IsTextReplacementFixEnabled(void) {
@@ -168,29 +154,6 @@ static inline BOOL IsTextReplacementFixEnabled(void) {
 // which may crash on Macs running macOS via OpenCore Legacy Patcher (OCLP)
 // Note: Not static - exported for PHTVManager access
 BOOL vSafeMode = NO;
-
-// Track external delete events (not from PHTV) which may indicate text replacement
-static inline void TrackExternalDelete(void) {
-    dispatch_once(&timebase_init_token, ^{
-        mach_timebase_info(&timebase_info);
-    });
-
-    uint64_t now = mach_absolute_time();
-
-    // Reset count if too much time passed (>30000ms = 30 seconds)
-    // Allow up to 30 seconds for user to select suggestion using mouse or keyboard
-    // IMPORTANT: Only check timeout if we have a previous timestamp (not first delete)
-    if (_lastExternalDeleteTime != 0) {
-        uint64_t elapsed_ms = mach_time_to_ms(now - _lastExternalDeleteTime);
-        if (elapsed_ms > 30000) {
-            _externalDeleteCount = 0;
-        }
-    }
-
-    _externalDeleteCount++;
-    _lastExternalDeleteTime = now;
-    _externalDeleteDetected = YES;
-}
 
 // Check if Spotlight or similar overlay is currently active using Accessibility API
 // OPTIMIZED: Results cached for 50ms to avoid repeated AX API calls while remaining responsive
@@ -234,67 +197,29 @@ extern volatile int vEmojiHotkeyKeyCode;
 
 extern "C" {
 
-    // Get cached app characteristics or compute and cache them
-    // This reduces 5-10 function calls per keystroke to 1 dictionary lookup
-    // PERFORMANCE: Critical hot path optimization - ~15ms savings per keystroke
+    // Get cached app characteristics or compute and cache them.
+    // Cache state is centralized in PHTVCacheStateService (Swift) to reduce duplicated mutable state.
     static inline AppCharacteristics getAppCharacteristics(NSString* bundleId) {
         if (!bundleId) {
             AppCharacteristics empty = {NO, NO, NO, NO, NO};
             return empty;
         }
 
-        // Fast path: check cache with lock
-        os_unfair_lock_lock(&_appCharCacheLock);
-
-        // Initialize cache on first use
-        if (__builtin_expect(_appCharacteristicsCache == nil, 0)) {
-            _appCharacteristicsCache = [NSMutableDictionary dictionaryWithCapacity:32];
-        }
-
-        // CRITICAL FIX: Invalidate cache on app switch or periodically
-        // Reduced from 30s to 10s for better browser detection responsiveness
-        // This fixes WhatsApp and browser issues where behavior changes dynamically
-        uint64_t now = mach_absolute_time();
-        static mach_timebase_info_data_t timebase;
-        if (timebase.denom == 0) {
-            mach_timebase_info(&timebase);
-        }
-        uint64_t nowMs = (now * timebase.numer) / (timebase.denom * 1000000);
-
-        BOOL shouldInvalidate = NO;
-
-        // Invalidate on app switch (different bundle ID)
-        if (_lastCachedBundleId != nil && ![_lastCachedBundleId isEqualToString:bundleId]) {
-            shouldInvalidate = YES;
-            #ifdef DEBUG
-            NSLog(@"[Cache] App switched: %@ -> %@, invalidating cache", _lastCachedBundleId, bundleId);
-            #endif
-        }
-
-        // BROWSER FIX: Invalidate every 10 seconds (reduced from 30s)
-        // Browsers change behavior dynamically (search bar vs page content, tab switches)
-        // Faster invalidation ensures adaptive delays respond to current context
-        if (nowMs - _lastCacheInvalidationTime > 10000) {
-            shouldInvalidate = YES;
-            _lastCacheInvalidationTime = nowMs;
-            #ifdef DEBUG
+        const uint64_t kAppCharacteristicsCacheMaxAgeMs = 10000;
+        int invalidationReason = [PHTVCacheManager prepareAppCharacteristicsCacheForBundleId:bundleId
+                                                                                     maxAgeMs:kAppCharacteristicsCacheMaxAgeMs];
+#ifdef DEBUG
+        if (invalidationReason == 1) {
+            NSLog(@"[Cache] App switched to %@, invalidating app characteristics cache", bundleId);
+        } else if (invalidationReason == 2) {
             NSLog(@"[Cache] 10s elapsed, invalidating cache for browser responsiveness");
-            #endif
         }
+#endif
 
-        if (shouldInvalidate) {
-            [_appCharacteristicsCache removeAllObjects];
-            _lastCachedBundleId = bundleId;
+        AppCharacteristics cachedChars;
+        if ([PHTVCacheManager tryGetAppCharacteristics:bundleId outCharacteristics:&cachedChars]) {
+            return cachedChars;
         }
-
-        NSValue *cached = _appCharacteristicsCache[bundleId];
-        if (cached) {
-            AppCharacteristics chars;
-            [cached getValue:&chars];
-            os_unfair_lock_unlock(&_appCharCacheLock);
-            return chars;
-        }
-        os_unfair_lock_unlock(&_appCharCacheLock);
 
         // Compute characteristics (slow path - only once per app)
         AppCharacteristics chars;
@@ -304,10 +229,7 @@ extern "C" {
         chars.containsUnicodeCompound = [PHTVAppDetectionManager containsUnicodeCompound:bundleId];
         chars.isSafari = [PHTVAppDetectionManager isSafariApp:bundleId];
 
-        // Cache for future use
-        os_unfair_lock_lock(&_appCharCacheLock);
-        _appCharacteristicsCache[bundleId] = [NSValue valueWithBytes:&chars objCType:@encode(AppCharacteristics)];
-        os_unfair_lock_unlock(&_appCharCacheLock);
+        [PHTVCacheManager setAppCharacteristics:chars forBundleId:bundleId];
 
         return chars;
     }
@@ -2104,7 +2026,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         // We track these to avoid duplicate characters when SendEmptyCharacter() is called
         if (IsTextReplacementFixEnabled() && type == kCGEventKeyDown && _keycode == KEY_DELETE) {
             // This is an external delete event (not from PHTV since we already filtered myEventSource)
-            TrackExternalDelete();
+            [PHTVSpotlightManager trackExternalDelete];
 #ifdef DEBUG
             NSLog(@"[TextReplacement] External DELETE detected");
 #endif
@@ -2113,13 +2035,10 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         // Also track space after deletes to detect text replacement pattern (only if fix enabled)
         if (IsTextReplacementFixEnabled() && type == kCGEventKeyDown && _keycode == KEY_SPACE) {
 #ifdef DEBUG
-            dispatch_once(&timebase_init_token, ^{
-                mach_timebase_info(&timebase_info);
-            });
-            uint64_t now = mach_absolute_time();
-            uint64_t elapsed_ms = (_lastExternalDeleteTime != 0) ? mach_time_to_ms(now - _lastExternalDeleteTime) : 0;
+            int externalDeleteCount = [PHTVSpotlightManager getExternalDeleteCount];
+            unsigned long long elapsed_ms = [PHTVSpotlightManager elapsedSinceLastExternalDeleteMs];
             NSLog(@"[TextReplacement] SPACE key pressed: deleteCount=%d, elapsedMs=%llu, sourceID=%lld",
-                  _externalDeleteCount, elapsed_ms,
+                  externalDeleteCount, elapsed_ms,
                   CGEventGetIntegerValueField(event, kCGEventSourceStateID));
 #endif
         }
@@ -2732,13 +2651,14 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 // 2. Short backspace + code=3 without DELETE (mouse click selection) - FALLBACK
                 // Can be enabled via Settings > Compatibility > "Sửa lỗi Text Replacement"
                 BOOL skipProcessing = NO;
+                int externalDeleteCount = [PHTVSpotlightManager getExternalDeleteCount];
 
                 // Log for debugging text replacement issues (only in Debug builds)
                 #ifdef DEBUG
                 if (IsTextReplacementFixEnabled() &&
                     (pData->backspaceCount > 0 || pData->newCharCount > 0)) {
                     NSLog(@"[PHTV TextReplacement] Key=%d: code=%d, extCode=%d, backspace=%d, newChar=%d, deleteCount=%d",
-                          _keycode, pData->code, pData->extCode, (int)pData->backspaceCount, (int)pData->newCharCount, _externalDeleteCount);
+                          _keycode, pData->code, pData->extCode, (int)pData->backspaceCount, (int)pData->newCharCount, externalDeleteCount);
                 }
                 #endif
 
@@ -2747,43 +2667,28 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                     (pData->backspaceCount > 0 || pData->newCharCount > 0)) {
 
                     // Method 1: External DELETE detected (arrow key selection)
-                    if (_externalDeleteCount > 0 && _lastExternalDeleteTime != 0) {
+                    if (externalDeleteCount > 0) {
 
                     // CRITICAL FIX: Exclude Auto English from Text Replacement detection
                     // Auto English uses extCode=5 and vRestoreAndStartNewSession
                     // Without this exclusion, Auto English restore gets skipped!
                     if (pData->extCode != 5 && pData->code != vRestoreAndStartNewSession) {
 
-                    // Check how long ago the delete happened
-                    dispatch_once(&timebase_init_token, ^{
-                        mach_timebase_info(&timebase_info);
-                    });
-                    uint64_t now = mach_absolute_time();
-                    uint64_t elapsed_since_delete = mach_time_to_ms(now - _lastExternalDeleteTime);
+                    uint64_t elapsed_since_delete = [PHTVSpotlightManager consumeRecentExternalDeleteWithinMs:TEXT_REPLACEMENT_DELETE_WINDOW_MS];
 
                     // Text replacement pattern: delete + space within 30 seconds (allow slow menu selection)
-                    if (elapsed_since_delete < 30000) {
+                    if (elapsed_since_delete != std::numeric_limits<uint64_t>::max()) {
                         // This is macOS Text Replacement, skip processing
                         skipProcessing = YES;
 #ifdef DEBUG
                         NSLog(@"[TextReplacement] Text replacement detected - passing through event (code=%d, backspace=%d, newChar=%d, deleteCount=%d, elapsedMs=%llu)",
-                              pData->code, (int)pData->backspaceCount, (int)pData->newCharCount, _externalDeleteCount, elapsed_since_delete);
+                              pData->code, (int)pData->backspaceCount, (int)pData->newCharCount, externalDeleteCount, elapsed_since_delete);
 #endif
-                        // Reset detection for next time
-                        _externalDeleteCount = 0;
-                        _externalDeleteDetected = NO;
-                        _lastExternalDeleteTime = 0;
-
                         // CRITICAL: Return event to let macOS insert Space
                         return event;
-                    } else {
-                        // Too old, reset the counter
-                        _externalDeleteCount = 0;
-                        _externalDeleteDetected = NO;
-                        _lastExternalDeleteTime = 0;
                     }
                     }  // End of Auto English exclusion check
-                    }  // End of _externalDeleteCount check
+                    }  // End of externalDeleteCount check
 
                     // Method 2: Mouse click detection (FALLBACK)
                     // When user clicks with mouse, macOS does NOT send DELETE events via CGEventTap
@@ -2791,7 +2696,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                     // 2a. Significant char jump: newChar >= backspace*2 (e.g., "dc"→"được": 4>=2*2, "ko"→"không": 5>=2*2)
                     // 2b. Equal counts pattern: backspace==newChar + short length (e.g., some Text Replacements don't expand)
                     // EXCLUSIONS: Auto English has extCode=5, vRestoreAndStartNewSession - skip these
-                    else if (_externalDeleteCount == 0 &&
+                    else if (externalDeleteCount == 0 &&
                              pData->extCode != 5 &&  // EXCLUDE: Auto English restore (extCode=5)
                              pData->code != vRestoreAndStartNewSession) {  // EXCLUDE: Auto English word break
                         BOOL pattern2a = (pData->newCharCount >= pData->backspaceCount * 2);  // Text expanded 2x or more

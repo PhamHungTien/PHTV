@@ -33,6 +33,9 @@ typedef struct {
 
 // App Characteristics Cache
 + (AppCharacteristics)getAppCharacteristics:(NSString*)bundleId;
++ (BOOL)tryGetAppCharacteristics:(NSString*)bundleId outCharacteristics:(AppCharacteristics*)outCharacteristics;
++ (void)setAppCharacteristics:(AppCharacteristics)characteristics forBundleId:(NSString*)bundleId;
++ (int)prepareAppCharacteristicsCacheForBundleId:(NSString*)bundleId maxAgeMs:(uint64_t)maxAgeMs;
 + (void)invalidateAppCharacteristicsCache;
 + (NSString*)getLastCachedBundleId;
 + (void)setLastCachedBundleId:(NSString*)bundleId;

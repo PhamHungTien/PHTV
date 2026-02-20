@@ -58,6 +58,14 @@
     return (int)[PHTVSpotlightDetectionService externalDeleteCountValue];
 }
 
++ (unsigned long long)elapsedSinceLastExternalDeleteMs {
+    return [PHTVSpotlightDetectionService elapsedSinceLastExternalDeleteMs];
+}
+
++ (unsigned long long)consumeRecentExternalDeleteWithinMs:(unsigned long long)thresholdMs {
+    return [PHTVSpotlightDetectionService consumeRecentExternalDeleteWithinMs:thresholdMs];
+}
+
 + (void)resetExternalDeleteTracking {
     [PHTVSpotlightDetectionService resetExternalDeleteTracking];
 }

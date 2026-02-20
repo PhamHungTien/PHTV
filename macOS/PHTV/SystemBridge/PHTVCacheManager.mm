@@ -38,16 +38,39 @@ static const uint64_t SPOTLIGHT_INVALIDATION_DEDUP_MS = 30;  // Skip duplicate i
 
 + (AppCharacteristics)getAppCharacteristics:(NSString*)bundleId {
     AppCharacteristics characteristics = {NO, NO, NO, NO, NO};
+    [self tryGetAppCharacteristics:bundleId outCharacteristics:&characteristics];
+    return characteristics;
+}
+
++ (BOOL)tryGetAppCharacteristics:(NSString*)bundleId outCharacteristics:(AppCharacteristics*)outCharacteristics {
+    if (outCharacteristics == NULL) {
+        return NO;
+    }
+
     PHTVAppCharacteristicsBox *box = [PHTVCacheStateService appCharacteristicsForBundleId:bundleId];
     if (!box) {
-        return characteristics;
+        return NO;
     }
-    characteristics.isSpotlightLike = box.isSpotlightLike;
-    characteristics.needsPrecomposedBatched = box.needsPrecomposedBatched;
-    characteristics.needsStepByStep = box.needsStepByStep;
-    characteristics.containsUnicodeCompound = box.containsUnicodeCompound;
-    characteristics.isSafari = box.isSafari;
-    return characteristics;
+
+    outCharacteristics->isSpotlightLike = box.isSpotlightLike;
+    outCharacteristics->needsPrecomposedBatched = box.needsPrecomposedBatched;
+    outCharacteristics->needsStepByStep = box.needsStepByStep;
+    outCharacteristics->containsUnicodeCompound = box.containsUnicodeCompound;
+    outCharacteristics->isSafari = box.isSafari;
+    return YES;
+}
+
++ (void)setAppCharacteristics:(AppCharacteristics)characteristics forBundleId:(NSString*)bundleId {
+    [PHTVCacheStateService setAppCharacteristicsForBundleId:bundleId
+                                           isSpotlightLike:characteristics.isSpotlightLike
+                                    needsPrecomposedBatched:characteristics.needsPrecomposedBatched
+                                            needsStepByStep:characteristics.needsStepByStep
+                                    containsUnicodeCompound:characteristics.containsUnicodeCompound
+                                                   isSafari:characteristics.isSafari];
+}
+
++ (int)prepareAppCharacteristicsCacheForBundleId:(NSString*)bundleId maxAgeMs:(uint64_t)maxAgeMs {
+    return (int)[PHTVCacheStateService prepareAppCharacteristicsCacheForBundleId:bundleId maxAgeMs:maxAgeMs];
 }
 
 + (void)invalidateAppCharacteristicsCache {
