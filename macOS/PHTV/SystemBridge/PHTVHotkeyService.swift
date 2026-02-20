@@ -498,6 +498,85 @@ final class PHTVHotkeyService: NSObject {
         return PHTVModifierReleaseAction.none.rawValue
     }
 
+    // Packed release plan format:
+    // - bit 0: should attempt restore-to-raw-keys
+    // - bit 1: should reset restore-modifier state
+    // - bits 8...15: PHTVModifierReleaseAction value
+    @objc(evaluateFlagsReleasePlanWithRestoreOnEscape:restoreModifierPressed:keyPressedWithRestoreModifier:customEscapeKey:oldFlags:newFlags:switchHotkey:convertHotkey:emojiEnabled:emojiModifiers:emojiKeyCode:keyPressedWhileSwitchModifiersHeld:keyPressedWhileEmojiModifiersHeld:hasJustUsedHotkey:tempOffSpellingEnabled:tempOffEngineEnabled:)
+    class func evaluateFlagsReleasePlan(
+        restoreOnEscape: Int32,
+        restoreModifierPressed: Bool,
+        keyPressedWithRestoreModifier: Bool,
+        customEscapeKey: Int32,
+        oldFlags: UInt64,
+        newFlags: UInt64,
+        switchHotkey: Int32,
+        convertHotkey: Int32,
+        emojiEnabled: Int32,
+        emojiModifiers: Int32,
+        emojiKeyCode: Int32,
+        keyPressedWhileSwitchModifiersHeld: Bool,
+        keyPressedWhileEmojiModifiersHeld: Bool,
+        hasJustUsedHotkey: Bool,
+        tempOffSpellingEnabled: Int32,
+        tempOffEngineEnabled: Int32
+    ) -> Int32 {
+        let shouldAttemptRestore = shouldAttemptRestoreOnModifierRelease(
+            restoreOnEscape: restoreOnEscape,
+            restoreModifierPressed: restoreModifierPressed,
+            keyPressedWithRestoreModifier: keyPressedWithRestoreModifier,
+            customEscapeKey: customEscapeKey,
+            oldFlags: oldFlags,
+            newFlags: newFlags
+        )
+
+        let shouldResetRestore = shouldResetRestoreModifierState(
+            restoreModifierPressed: restoreModifierPressed,
+            customEscapeKey: customEscapeKey,
+            oldFlags: oldFlags,
+            newFlags: newFlags
+        )
+
+        let releaseAction = evaluateModifierReleaseAction(
+            lastFlags: oldFlags,
+            switchHotkey: switchHotkey,
+            convertHotkey: convertHotkey,
+            emojiEnabled: emojiEnabled,
+            emojiModifiers: emojiModifiers,
+            emojiKeyCode: emojiKeyCode,
+            keyPressedWhileSwitchModifiersHeld: keyPressedWhileSwitchModifiersHeld,
+            keyPressedWhileEmojiModifiersHeld: keyPressedWhileEmojiModifiersHeld,
+            hasJustUsedHotkey: hasJustUsedHotkey,
+            tempOffSpellingEnabled: tempOffSpellingEnabled,
+            tempOffEngineEnabled: tempOffEngineEnabled
+        )
+
+        var plan: Int32 = 0
+        if shouldAttemptRestore {
+            plan |= 1
+        }
+        if shouldResetRestore {
+            plan |= 1 << 1
+        }
+        plan |= (releaseAction & 0xFF) << 8
+        return plan
+    }
+
+    @objc(flagsReleasePlanShouldAttemptRestore:)
+    class func flagsReleasePlanShouldAttemptRestore(_ plan: Int32) -> Bool {
+        (plan & 1) != 0
+    }
+
+    @objc(flagsReleasePlanShouldResetRestoreState:)
+    class func flagsReleasePlanShouldResetRestoreState(_ plan: Int32) -> Bool {
+        (plan & (1 << 1)) != 0
+    }
+
+    @objc(flagsReleasePlanModifierReleaseAction:)
+    class func flagsReleasePlanModifierReleaseAction(_ plan: Int32) -> Int32 {
+        (plan >> 8) & 0xFF
+    }
+
     @objc(pauseModifierMaskForKeyCode:)
     class func pauseModifierMask(forKeyCode keyCode: Int32) -> UInt64 {
         switch Int(keyCode) {

@@ -133,4 +133,44 @@ final class PHTVRuntimeUIBridgeService: NSObject {
             }
         }
     }
+
+    @objc class func handleKeyDownHotkeyAction(_ action: Int32) -> Bool {
+        guard let keyAction = PHTVKeyDownHotkeyAction(rawValue: action) else {
+            return false
+        }
+
+        switch keyAction {
+        case .switchLanguage:
+            handleInputMethodChangeFromHotkey()
+            return true
+        case .quickConvert:
+            triggerQuickConvert()
+            return true
+        case .emojiPicker:
+            triggerEmojiHotkey()
+            return true
+        case .none, .clearStaleModifiers:
+            return false
+        }
+    }
+
+    @objc class func handleModifierReleaseHotkeyAction(_ action: Int32) -> Bool {
+        guard let releaseAction = PHTVModifierReleaseAction(rawValue: action) else {
+            return false
+        }
+
+        switch releaseAction {
+        case .switchLanguage:
+            handleInputMethodChangeFromHotkey()
+            return true
+        case .quickConvert:
+            triggerQuickConvert()
+            return true
+        case .emojiPicker:
+            triggerEmojiHotkey()
+            return true
+        case .none, .tempOffSpelling, .tempOffEngine:
+            return false
+        }
+    }
 }

@@ -1369,14 +1369,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         }
     }
             
-    void switchLanguage() {
-        // Beep is now handled by SwiftUI when LanguageChangedFromBackend notification is posted
-
-        // onImputMethodChanged handles: toggle, save, RequestNewSession, fillData, notify
-        // No need to modify vLanguage here or call startNewSession separately
-        [PHTVRuntimeUIBridgeService handleInputMethodChangeFromHotkey];
-    }
-    
     void handleMacro() {
         // PERFORMANCE: Use cached bundle ID instead of querying AX API
         NSString *effectiveTarget = _phtvEffectiveTargetBundleId ?: getFocusedAppBundleId();
@@ -1530,22 +1522,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             return NULL;
         }
 
-        if (keyDownHotkeyAction == PHTVKeyDownHotkeyActionSwitchLanguage) {
-            switchLanguage();
-            _lastFlag = 0;
-            _hasJustUsedHotKey = true;
-            return (CGEventRef)-1;  // Special marker to indicate "consume event"
-        }
-
-        if (keyDownHotkeyAction == PHTVKeyDownHotkeyActionQuickConvert) {
-            [PHTVRuntimeUIBridgeService triggerQuickConvert];
-            _lastFlag = 0;
-            _hasJustUsedHotKey = true;
-            return (CGEventRef)-1;  // Special marker to indicate "consume event"
-        }
-
-        if (keyDownHotkeyAction == PHTVKeyDownHotkeyActionEmojiPicker) {
-            [PHTVRuntimeUIBridgeService triggerEmojiHotkey];
+        if ([PHTVRuntimeUIBridgeService handleKeyDownHotkeyAction:(int32_t)keyDownHotkeyAction]) {
             _lastFlag = 0;
             _hasJustUsedHotKey = true;
             return (CGEventRef)-1;  // Special marker to indicate "consume event"
@@ -1786,13 +1763,29 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 // Check if pause key is being pressed - temporarily disable Vietnamese
                 HandlePauseKeyPress(_flag);
             } else if (_lastFlag > _flag)  {
+                int releasePlan = [PHTVHotkeyService evaluateFlagsReleasePlanWithRestoreOnEscape:(int32_t)vRestoreOnEscape
+                                                                            restoreModifierPressed:_restoreModifierPressed
+                                                                    keyPressedWithRestoreModifier:_keyPressedWithRestoreModifier
+                                                                                  customEscapeKey:(int32_t)vCustomEscapeKey
+                                                                                        oldFlags:(uint64_t)_lastFlag
+                                                                                        newFlags:(uint64_t)_flag
+                                                                                     switchHotkey:(int32_t)vSwitchKeyStatus
+                                                                                    convertHotkey:(int32_t)gConvertToolOptions.hotKey
+                                                                                     emojiEnabled:(int32_t)vEnableEmojiHotkey
+                                                                                   emojiModifiers:(int32_t)vEmojiHotkeyModifiers
+                                                                                     emojiKeyCode:(int32_t)vEmojiHotkeyKeyCode
+                                                       keyPressedWhileSwitchModifiersHeld:_keyPressedWhileSwitchModifiersHeld
+                                                        keyPressedWhileEmojiModifiersHeld:_keyPressedWhileEmojiModifiersHeld
+                                                                        hasJustUsedHotkey:_hasJustUsedHotKey
+                                                                  tempOffSpellingEnabled:(int32_t)vTempOffSpelling
+                                                                    tempOffEngineEnabled:(int32_t)vTempOffPHTV];
+
+                BOOL shouldAttemptRestore = [PHTVHotkeyService flagsReleasePlanShouldAttemptRestore:releasePlan];
+                BOOL shouldResetRestoreState = [PHTVHotkeyService flagsReleasePlanShouldResetRestoreState:releasePlan];
+                int releaseAction = [PHTVHotkeyService flagsReleasePlanModifierReleaseAction:releasePlan];
+
                 // Releasing modifiers - check for restore modifier key first
-                if ([PHTVHotkeyService shouldAttemptRestoreOnModifierReleaseWithRestoreOnEscape:(int32_t)vRestoreOnEscape
-                                                                           restoreModifierPressed:_restoreModifierPressed
-                                                                   keyPressedWithRestoreModifier:_keyPressedWithRestoreModifier
-                                                                                 customEscapeKey:(int32_t)vCustomEscapeKey
-                                                                                       oldFlags:(uint64_t)_lastFlag
-                                                                                       newFlags:(uint64_t)_flag]) {
+                if (shouldAttemptRestore) {
                     // Restore modifier released without any other key press - trigger restore
                     if (vRestoreToRawKeys()) {
                         // Successfully restored - pData now contains restore info
@@ -1815,10 +1808,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 }
 
                 // Reset restore modifier state when releasing any modifier
-                if ([PHTVHotkeyService shouldResetRestoreModifierStateWithRestoreModifierPressed:_restoreModifierPressed
-                                                                                customEscapeKey:(int32_t)vCustomEscapeKey
-                                                                                      oldFlags:(uint64_t)_lastFlag
-                                                                                      newFlags:(uint64_t)_flag]) {
+                if (shouldResetRestoreState) {
                     _restoreModifierPressed = false;
                     _keyPressedWithRestoreModifier = false;
                 }
@@ -1826,41 +1816,10 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 // Check if pause key is being released - restore Vietnamese mode
                 HandlePauseKeyRelease(_lastFlag, _flag);
 
-                int releaseAction = [PHTVHotkeyService evaluateModifierReleaseActionWithLastFlags:(uint64_t)_lastFlag
-                                                                                      switchHotkey:(int32_t)vSwitchKeyStatus
-                                                                                     convertHotkey:(int32_t)gConvertToolOptions.hotKey
-                                                                                      emojiEnabled:(int32_t)vEnableEmojiHotkey
-                                                                                    emojiModifiers:(int32_t)vEmojiHotkeyModifiers
-                                                                                      emojiKeyCode:(int32_t)vEmojiHotkeyKeyCode
-                                                    keyPressedWhileSwitchModifiersHeld:_keyPressedWhileSwitchModifiersHeld
-                                                     keyPressedWhileEmojiModifiersHeld:_keyPressedWhileEmojiModifiersHeld
-                                                                     hasJustUsedHotkey:_hasJustUsedHotKey
-                                                               tempOffSpellingEnabled:(int32_t)vTempOffSpelling
-                                                                 tempOffEngineEnabled:(int32_t)vTempOffPHTV];
-
-                if (releaseAction == PHTVModifierReleaseActionSwitchLanguage) {
+                if ([PHTVRuntimeUIBridgeService handleModifierReleaseHotkeyAction:(int32_t)releaseAction]) {
                     _lastFlag = 0;
                     _keyPressedWhileSwitchModifiersHeld = false;
                     _keyPressedWhileEmojiModifiersHeld = false;
-                    switchLanguage();
-                    _hasJustUsedHotKey = true;
-                    return NULL;
-                }
-
-                if (releaseAction == PHTVModifierReleaseActionQuickConvert) {
-                    _lastFlag = 0;
-                    _keyPressedWhileSwitchModifiersHeld = false;
-                    _keyPressedWhileEmojiModifiersHeld = false;
-                    [PHTVRuntimeUIBridgeService triggerQuickConvert];
-                    _hasJustUsedHotKey = true;
-                    return NULL;
-                }
-
-                if (releaseAction == PHTVModifierReleaseActionEmojiPicker) {
-                    _lastFlag = 0;
-                    _keyPressedWhileSwitchModifiersHeld = false;
-                    _keyPressedWhileEmojiModifiersHeld = false;
-                    [PHTVRuntimeUIBridgeService triggerEmojiHotkey];
                     _hasJustUsedHotKey = true;
                     return NULL;
                 }
