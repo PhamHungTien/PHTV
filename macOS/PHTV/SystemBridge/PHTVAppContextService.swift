@@ -54,6 +54,11 @@ final class PHTVEventTargetContextBox: NSObject {
 
 @objcMembers
 final class PHTVAppContextService: NSObject {
+    nonisolated(unsafe) private static var shouldDisableLock = NSLock()
+    nonisolated(unsafe) private static var shouldDisableLastPid: Int32 = -1
+    nonisolated(unsafe) private static var shouldDisableLastCheckTime: UInt64 = 0
+    nonisolated(unsafe) private static var shouldDisableLastResult = false
+
     private class var frontmostBundleId: String? {
         NSWorkspace.shared.frontmostApplication?.bundleIdentifier
     }
@@ -89,6 +94,38 @@ final class PHTVAppContextService: NSObject {
     @objc(needsNiceSpaceForBundleId:)
     class func needsNiceSpace(forBundleId bundleId: String?) -> Bool {
         PHTVAppDetectionService.needsNiceSpace(bundleId)
+    }
+
+    @objc(shouldDisableVietnameseForTargetPid:cacheDurationMs:safeMode:spotlightCacheDurationMs:)
+    class func shouldDisableVietnamese(forTargetPid targetPid: Int32,
+                                       cacheDurationMs: UInt64,
+                                       safeMode: Bool,
+                                       spotlightCacheDurationMs: UInt64) -> Bool {
+        let now = mach_absolute_time()
+
+        shouldDisableLock.lock()
+        let lastPid = shouldDisableLastPid
+        let lastCheckTime = shouldDisableLastCheckTime
+        let lastResult = shouldDisableLastResult
+        shouldDisableLock.unlock()
+
+        if targetPid > 0, targetPid == lastPid, lastCheckTime > 0 {
+            let elapsedMs = PHTVTimingService.machTimeToMs(now - lastCheckTime)
+            if elapsedMs < cacheDurationMs {
+                return lastResult
+            }
+        }
+
+        let bundleId = focusedBundleId(forSafeMode: safeMode, cacheDurationMs: spotlightCacheDurationMs)
+        let shouldDisable = shouldDisableVietnamese(forBundleId: bundleId)
+
+        shouldDisableLock.lock()
+        shouldDisableLastPid = targetPid > 0 ? targetPid : -1
+        shouldDisableLastCheckTime = now
+        shouldDisableLastResult = shouldDisable
+        shouldDisableLock.unlock()
+
+        return shouldDisable
     }
 
     @objc(focusedBundleIdForSafeMode:cacheDurationMs:)

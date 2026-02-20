@@ -610,34 +610,12 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     }
 
     // Check if Vietnamese input should be disabled for current app (using PID)
-    // PERFORMANCE: inline for hot path (called on every keystroke)
     __attribute__((always_inline)) static inline BOOL shouldDisableVietnameseForEvent(CGEventRef event) {
-        static pid_t lastPid = -1;
-        static uint64_t lastCheckTime = 0;
-        static BOOL lastResult = NO;
-
-        uint64_t now = mach_absolute_time();
         pid_t targetPID = (pid_t)CGEventGetIntegerValueField(event, kCGEventTargetUnixProcessID);
-
-        // Fast path: reuse last decision if same PID and checked recently
-        // Very short cache for immediate app-switch response
-        uint64_t elapsed_ms = mach_time_to_ms(now - lastCheckTime);
-        if (__builtin_expect(targetPID > 0 && targetPID == lastPid && elapsed_ms < APP_SWITCH_CACHE_DURATION_MS, 1)) {
-            return lastResult;
-        }
-
-        // Use getFocusedAppBundleId() which is now optimized with focus cache
-        NSString *bundleId = getFocusedAppBundleId();
-        pid_t cachePid = targetPID;
-
-        BOOL shouldDisable = [PHTVAppContextService shouldDisableVietnameseForBundleId:bundleId];
-
-        // Update cache only when we have a valid PID, to avoid cross-app leakage
-        lastResult = shouldDisable;
-        lastCheckTime = now;
-        lastPid = (cachePid > 0) ? cachePid : -1;
-
-        return shouldDisable;
+        return [PHTVAppContextService shouldDisableVietnameseForTargetPid:(int32_t)targetPID
+                                                           cacheDurationMs:APP_SWITCH_CACHE_DURATION_MS
+                                                                  safeMode:vSafeMode
+                                                   spotlightCacheDurationMs:SPOTLIGHT_CACHE_DURATION_MS];
     }
 
     CGEventSourceRef myEventSource = NULL;
