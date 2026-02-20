@@ -200,7 +200,6 @@ NSString* getBundleIdFromPID(pid_t pid) {
 
 #define DYNA_DATA(macro, pos) (macro ? pData->macroData[pos] : pData->charData[pos])
 #define MAX_UNICODE_STRING  20
-#define LOAD_DATA(VAR, KEY) VAR = (int)[[NSUserDefaults standardUserDefaults] integerForKey:@#KEY]
 
 extern AppDelegate* appDelegate;
 extern volatile int vSendKeyStepByStep;
@@ -750,125 +749,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             mach_timebase_info(&timebase_info);
         });
 
-        //load saved data
-        LOAD_DATA(vLanguage, InputMethod); if (vLanguage < 0) vLanguage = 1;
-        LOAD_DATA(vInputType, InputType); if (vInputType < 0) vInputType = 0;
-        vFreeMark = 0;//(int)[[NSUserDefaults standardUserDefaults] integerForKey:@"FreeMark"];
-        LOAD_DATA(vCodeTable, CodeTable); if (vCodeTable < 0) vCodeTable = 0;
-
-        // Spell checking default to YES (1) if not set
-        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"Spelling"] == nil) {
-            vCheckSpelling = 1;
-            [[NSUserDefaults standardUserDefaults] setInteger:1 forKey:@"Spelling"];
-        } else {
-            LOAD_DATA(vCheckSpelling, Spelling);
-        }
-
-        // Modern orthography default to YES (1) if not set
-        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"ModernOrthography"] == nil) {
-            vUseModernOrthography = 1;
-            [[NSUserDefaults standardUserDefaults] setInteger:1 forKey:@"ModernOrthography"];
-        } else {
-            LOAD_DATA(vUseModernOrthography, ModernOrthography);
-        }
-
-        // Quick telex default to NO (0) if not set
-        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"QuickTelex"] == nil) {
-            vQuickTelex = 0;
-            [[NSUserDefaults standardUserDefaults] setInteger:0 forKey:@"QuickTelex"];
-        } else {
-            LOAD_DATA(vQuickTelex, QuickTelex);
-        }
-
-        // FixRecommendBrowser default to YES (1) if not set
-        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"FixRecommendBrowser"] == nil) {
-            vFixRecommendBrowser = 1;
-            [[NSUserDefaults standardUserDefaults] setInteger:1 forKey:@"FixRecommendBrowser"];
-        } else {
-            LOAD_DATA(vFixRecommendBrowser, FixRecommendBrowser);
-        }
-
-        // Macro support default to NO (0) if not set
-        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"UseMacro"] == nil) {
-            vUseMacro = 0;
-            [[NSUserDefaults standardUserDefaults] setInteger:0 forKey:@"UseMacro"];
-        } else {
-            LOAD_DATA(vUseMacro, UseMacro);
-        }
-
-        // Macro in English mode default to NO (0) if not set
-        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"UseMacroInEnglishMode"] == nil) {
-            vUseMacroInEnglishMode = 0;
-            [[NSUserDefaults standardUserDefaults] setInteger:0 forKey:@"UseMacroInEnglishMode"];
-        } else {
-            LOAD_DATA(vUseMacroInEnglishMode, UseMacroInEnglishMode);
-        }
-
-        LOAD_DATA(vAutoCapsMacro, vAutoCapsMacro);
-
-        // Send key step by step default to NO (0) if not set
-        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"SendKeyStepByStep"] == nil) {
-            vSendKeyStepByStep = 0;
-            [[NSUserDefaults standardUserDefaults] setInteger:0 forKey:@"SendKeyStepByStep"];
-        } else {
-            LOAD_DATA(vSendKeyStepByStep, SendKeyStepByStep);
-        }
-
-        // Smart switch key default to YES (1) if not set
-        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"UseSmartSwitchKey"] == nil) {
-            vUseSmartSwitchKey = 1;
-            [[NSUserDefaults standardUserDefaults] setInteger:1 forKey:@"UseSmartSwitchKey"];
-        } else {
-            LOAD_DATA(vUseSmartSwitchKey, UseSmartSwitchKey);
-        }
-
-        // Uppercase first char default to NO (0) if not set
-        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"UpperCaseFirstChar"] == nil) {
-            vUpperCaseFirstChar = 0;
-            [[NSUserDefaults standardUserDefaults] setInteger:0 forKey:@"UpperCaseFirstChar"];
-        } else {
-            LOAD_DATA(vUpperCaseFirstChar, UpperCaseFirstChar);
-        }
-
-        LOAD_DATA(vTempOffSpelling, vTempOffSpelling);
-
-        // Allow consonant ZFWJ default to YES (1) if not set
-        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"vAllowConsonantZFWJ"] == nil) {
-            vAllowConsonantZFWJ = 1;
-            [[NSUserDefaults standardUserDefaults] setInteger:1 forKey:@"vAllowConsonantZFWJ"];
-        } else {
-            LOAD_DATA(vAllowConsonantZFWJ, vAllowConsonantZFWJ);
-        }
-
-        // Quick end consonant default to NO (0) if not set
-        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"vQuickEndConsonant"] == nil) {
-            vQuickEndConsonant = 0;
-            [[NSUserDefaults standardUserDefaults] setInteger:0 forKey:@"vQuickEndConsonant"];
-        } else {
-            LOAD_DATA(vQuickEndConsonant, vQuickEndConsonant);
-        }
-
-        // Quick start consonant default to NO (0) if not set
-        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"vQuickStartConsonant"] == nil) {
-            vQuickStartConsonant = 0;
-            [[NSUserDefaults standardUserDefaults] setInteger:0 forKey:@"vQuickStartConsonant"];
-        } else {
-            LOAD_DATA(vQuickStartConsonant, vQuickStartConsonant);
-        }
-
-        // Remember code default to YES (1) if not set
-        if ([[NSUserDefaults standardUserDefaults] objectForKey:@"vRememberCode"] == nil) {
-            vRememberCode = 1;
-            [[NSUserDefaults standardUserDefaults] setInteger:1 forKey:@"vRememberCode"];
-        } else {
-            LOAD_DATA(vRememberCode, vRememberCode);
-        }
-
-        LOAD_DATA(vOtherLanguage, vOtherLanguage);
-        LOAD_DATA(vTempOffPHTV, vTempOffPHTV);
-
-        LOAD_DATA(vPerformLayoutCompat, vPerformLayoutCompat);
-        LOAD_DATA(vSafeMode, SafeMode);
+        [PHTVCoreSettingsBootstrapService loadFromUserDefaults];
 
         // Auto-detect AX crash: Check if previous AX test caused crash
         // If AXTestInProgress flag is still set, previous launch crashed during AX test
@@ -906,31 +787,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             }
         }
 
-        // Auto-enable layout compatibility for non-US keyboard layouts
-        // Check if user has never set this preference (key doesn't exist)
-        NSUserDefaults *layoutDefaults = [NSUserDefaults standardUserDefaults];
-        if ([layoutDefaults objectForKey:@"vPerformLayoutCompat"] == nil) {
-            // First run - auto-detect keyboard layout
-            TISInputSourceRef currentKeyboard = TISCopyCurrentKeyboardInputSource();
-            if (currentKeyboard != NULL) {
-                CFStringRef sourceID = (CFStringRef)TISGetInputSourceProperty(currentKeyboard, kTISPropertyInputSourceID);
-                if (sourceID != NULL) {
-                    NSString *keyboardID = (__bridge NSString *)sourceID;
-                    // Check if NOT a standard US keyboard layout
-                    // US layouts typically contain "US" or "ABC" in their ID
-                    BOOL isUSLayout = [keyboardID containsString:@".US"] ||
-                                      [keyboardID containsString:@".ABC"] ||
-                                      [keyboardID isEqualToString:@"com.apple.keylayout.US"];
-                    if (!isUSLayout) {
-                        // Auto-enable layout compatibility for non-US keyboards (QWERTZ, AZERTY, etc.)
-                        vPerformLayoutCompat = 1;
-                        [layoutDefaults setInteger:vPerformLayoutCompat forKey:@"vPerformLayoutCompat"];
-                        os_log_info(phtv_log, "[PHTV] Auto-enabled layout compatibility for non-US keyboard: %{public}@", keyboardID);
-                    }
-                }
-                CFRelease(currentKeyboard);
-            }
-        }
+        [PHTVLayoutCompatibilityService autoEnableIfNeeded];
 
         myEventSource = CGEventSourceCreate(kCGEventSourceStatePrivate);
         pData = (vKeyHookState*)vKeyInit();
@@ -946,15 +803,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         CGEventSetFlags(eventBackSpaceDown, CGEventGetFlags(eventBackSpaceDown) | kCGEventFlagMaskNonCoalesced);
         CGEventSetFlags(eventBackSpaceUp, CGEventGetFlags(eventBackSpaceUp) | kCGEventFlagMaskNonCoalesced);
         
-        //init and load macro data
-        NSUserDefaults *prefs = [NSUserDefaults standardUserDefaults];
-        NSData *data = [prefs objectForKey:@"macroData"];
-        initMacroMap((Byte*)data.bytes, (int)data.length);
-        
-        //init and load smart switch key data
-        data = [prefs objectForKey:@"smartSwitchKey"];
-        initSmartSwitchKey((Byte*)data.bytes, (int)data.length);
-        
+        [PHTVEngineStartupDataService loadFromUserDefaults];
         [PHTVConvertToolSettingsService loadFromUserDefaults];
     }
     

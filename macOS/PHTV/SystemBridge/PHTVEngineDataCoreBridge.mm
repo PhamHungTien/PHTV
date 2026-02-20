@@ -7,6 +7,7 @@
 
 #include "PHTVEngineDataCoreBridge.h"
 #include "../Core/Engine/Engine.h"
+#include "../Core/Engine/SmartSwitchKey.h"
 
 extern "C" {
 
@@ -16,6 +17,14 @@ void PHTVEngineInitializeMacroMap(const unsigned char *data, int length) {
         return;
     }
     initMacroMap(data, length);
+}
+
+void PHTVEngineInitializeSmartSwitchKey(const unsigned char *data, int length) {
+    if (!data || length <= 0) {
+        initSmartSwitchKey(nullptr, 0);
+        return;
+    }
+    initSmartSwitchKey(data, length);
 }
 
 bool PHTVEngineInitializeEnglishDictionary(const char *path) {

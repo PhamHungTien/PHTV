@@ -17,6 +17,13 @@ final class PHTVEngineDataBridge: NSObject {
         }
     }
 
+    class func initializeSmartSwitchKey(with data: Data) {
+        data.withUnsafeBytes { rawBuffer in
+            let base = rawBuffer.bindMemory(to: UInt8.self).baseAddress
+            PHTVEngineInitializeSmartSwitchKey(base, Int32(rawBuffer.count))
+        }
+    }
+
     class func initializeEnglishDictionary(atPath path: String) -> Bool {
         return path.withCString { cPath in
             PHTVEngineInitializeEnglishDictionary(cPath)
