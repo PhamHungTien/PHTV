@@ -8,6 +8,7 @@
 
 #import "PHTVHotkeyManager.h"
 #import "PHTVCacheManager.h"
+#import "PHTV-Swift.h"
 #import "../Core/phtv_mac_keys.h"
 #import <Cocoa/Cocoa.h>
 
@@ -139,35 +140,19 @@ static inline CGEventFlags PHTVPauseModifierMaskForKeyCode(int pauseKey) {
 }
 
 + (BOOL)checkHotKey:(int)hotKeyData checkKeyCode:(BOOL)checkKeyCode currentKeycode:(CGKeyCode)keycode currentFlags:(CGEventFlags)flags {
-    if (IS_EMPTY_HOTKEY(hotKeyData))
-        return NO;
-    if (!HOTKEY_MATCHES_FLAGS(hotKeyData,
-                              flags,
-                              kCGEventFlagMaskControl,
-                              kCGEventFlagMaskAlternate,
-                              kCGEventFlagMaskCommand,
-                              kCGEventFlagMaskShift,
-                              kCGEventFlagMaskSecondaryFn))
-        return NO;
-    if (checkKeyCode && !HOTKEY_KEY_MATCHES(hotKeyData, keycode))
-        return NO;
-    return YES;
+    return [PHTVHotkeyService checkHotKey:(int32_t)hotKeyData
+                             checkKeyCode:checkKeyCode
+                           currentKeycode:(uint16_t)keycode
+                             currentFlags:(uint64_t)flags];
 }
 
 + (BOOL)hotkeyModifiersAreHeld:(int)hotKeyData currentFlags:(CGEventFlags)flags {
-    if (IS_EMPTY_HOTKEY(hotKeyData))
-        return NO;
-    return HOTKEY_MODIFIERS_HELD(hotKeyData,
-                                 flags,
-                                 kCGEventFlagMaskControl,
-                                 kCGEventFlagMaskAlternate,
-                                 kCGEventFlagMaskCommand,
-                                 kCGEventFlagMaskShift,
-                                 kCGEventFlagMaskSecondaryFn);
+    return [PHTVHotkeyService hotkeyModifiersAreHeld:(int32_t)hotKeyData
+                                        currentFlags:(uint64_t)flags];
 }
 
 + (BOOL)isModifierOnlyHotkey:(int)hotKeyData {
-    return !HOTKEY_HAS_KEY(hotKeyData);
+    return [PHTVHotkeyService isModifierOnlyHotkey:(int32_t)hotKeyData];
 }
 
 + (BOOL)isPauseKeyPressed {
