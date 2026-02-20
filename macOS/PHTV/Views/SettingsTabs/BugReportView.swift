@@ -1191,7 +1191,7 @@ struct BugReportView: View {
             ## 🔐 Quyền & Trạng thái
             - **Accessibility Permission:** \(appState.hasAccessibilityPermission ? "✅ Granted" : "❌ Denied")
             - **Event Tap:** \(checkEventTapStatus())
-            - **Binary Architecture:** \(PHTVManager.getBinaryArchitectures() ?? "Unknown")
+            - **Binary Architecture:** \(PHTVManager.getBinaryArchitectures())
             - **Binary Integrity:** \(PHTVManager.checkBinaryIntegrity() ? "✅ Intact" : "⚠️ Modified (CleanMyMac?)")
             - **Front App:** \(getFrontAppInfo())
             - **Excluded Apps:** \(appState.excludedApps.isEmpty ? "Không có" : "\(appState.excludedApps.count) app(s)")
