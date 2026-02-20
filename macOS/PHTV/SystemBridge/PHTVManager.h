@@ -26,8 +26,7 @@
 +(BOOL)hasPermissionLost;
 +(void)markPermissionLost;
 
-// COMPREHENSIVE permission check using multiple methods
-// Uses BOTH AXIsProcessTrusted() AND test event tap for reliable detection
+// Permission check based on test event tap creation (reliable runtime signal)
 +(BOOL)canCreateEventTap;
 +(void)invalidatePermissionCache;  // Force fresh check on next call
 +(BOOL)forcePermissionCheck;       // Bypasses all caching, resets counters

@@ -69,48 +69,6 @@ static BOOL _systemSettingsIsOpen = NO;
 static int _axYesTapNoCount = 0;
 static const int kMaxAxYesTapNoBeforeRelaunch = 5;  // After 5 consecutive occurrences, suggest relaunch
 
-
-// Check if app is registered in TCC database for Accessibility
-// Returns YES if app is present in TCC (regardless of permission state)
-// Returns NO if TCC entry is corrupt/missing (app won't appear in System Settings)
-static BOOL IsAppRegisteredInTCC(void) {
-    // Try to query TCC database using tccutil
-    // This checks if the app has ANY entry in TCC for Accessibility service
-    NSTask *task = [[NSTask alloc] init];
-    NSPipe *pipe = [NSPipe pipe];
-
-    [task setLaunchPath:@"/usr/bin/tccutil"];
-    [task setArguments:@[@"query", @"Accessibility"]];
-    [task setStandardOutput:pipe];
-    [task setStandardError:[NSPipe pipe]];
-
-    NSError *error = nil;
-    if (@available(macOS 10.13, *)) {
-        [task launchAndReturnError:&error];
-    } else {
-        [task launch];
-    }
-
-    if (error) {
-        NSLog(@"[TCC] Failed to query TCC database: %@", error);
-        return YES;  // Assume registered if we can't check
-    }
-
-    [task waitUntilExit];
-
-    NSData *data = [[pipe fileHandleForReading] readDataToEndOfFile];
-    NSString *output = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-
-    // Check if our bundle ID appears in the output
-    NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
-    BOOL isRegistered = [output containsString:bundleID];
-
-    NSLog(@"[TCC] App registration check: %@ (bundleID: %@)",
-          isRegistered ? @"REGISTERED" : @"NOT FOUND", bundleID);
-
-    return isRegistered;
-}
-
 #pragma mark - Core Functionality
 
 +(BOOL)hasPermissionLost {
@@ -148,7 +106,7 @@ static BOOL IsAppRegisteredInTCC(void) {
     }
 
     // Permission denied - check if app is registered in TCC
-    BOOL isRegistered = IsAppRegisteredInTCC();
+    BOOL isRegistered = [PHTVTCCMaintenanceService isAppRegisteredInTCC];
     if (!isRegistered) {
         NSLog(@"[TCC] ⚠️ CORRUPT ENTRY DETECTED - App not found in TCC database!");
         return YES;
@@ -160,106 +118,13 @@ static BOOL IsAppRegisteredInTCC(void) {
 // Automatically fix TCC entry corruption by running tccutil reset
 // Returns YES if successful, NO if failed or user cancelled
 +(BOOL)autoFixTCCEntryWithError:(NSError **)error {
-    NSLog(@"[TCC] Auto-fix initiated...");
-
-    NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
-
-    // Create the shell script that will reset TCC
-    NSString *script = [NSString stringWithFormat:@"#!/bin/sh\ntccutil reset Accessibility %@\nexit 0", bundleID];
-
-    // Write script to temporary file
-    NSString *tempPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"phtv_tcc_reset.sh"];
-    NSError *writeError = nil;
-    [script writeToFile:tempPath atomically:YES encoding:NSUTF8StringEncoding error:&writeError];
-
-    if (writeError) {
-        NSLog(@"[TCC] Failed to create temp script: %@", writeError);
-        if (error) *error = writeError;
-        return NO;
-    }
-
-    // Make script executable
-    [[NSFileManager defaultManager] setAttributes:@{NSFilePosixPermissions: @(0755)}
-                                     ofItemAtPath:tempPath
-                                            error:nil];
-
-    // Use osascript to run with administrator privileges
-    // This will show the native macOS authentication dialog
-    NSString *osascript = [NSString stringWithFormat:
-        @"do shell script \"sh '%@'\" with administrator privileges", tempPath];
-
-    NSAppleScript *appleScript = [[NSAppleScript alloc] initWithSource:osascript];
-    NSDictionary *errorDict = nil;
-    [appleScript executeAndReturnError:&errorDict];
-
-    // Clean up temp file
-    [[NSFileManager defaultManager] removeItemAtPath:tempPath error:nil];
-
-    if (errorDict) {
-        NSLog(@"[TCC] Auto-fix failed or cancelled: %@", errorDict);
-        if (error) {
-            *error = [NSError errorWithDomain:@"com.phamhungtien.phtv.tcc"
-                                         code:-1
-                                     userInfo:errorDict];
-        }
-        return NO;
-    }
-
-    NSLog(@"[TCC] Auto-fix completed successfully");
-
-    // Invalidate cache to trigger fresh check
-    [self invalidatePermissionCache];
-
-    // Wait briefly for TCC to update
-    usleep(200000);  // 200ms
-
-    return YES;
+    return [PHTVTCCMaintenanceService autoFixTCCEntryWithError:error];
 }
 
 // Restart per-user tccd daemon to force TCC to reload fresh entries
 +(void)restartTCCDaemon {
-    NSLog(@"[TCC] Restarting tccd daemon to refresh permissions...");
-
-    NSString *service = [NSString stringWithFormat:@"gui/%d/com.apple.tccd", getuid()];
-
-    NSTask *kickstart = [[NSTask alloc] init];
-    [kickstart setLaunchPath:@"/bin/launchctl"];
-    [kickstart setArguments:@[@"kickstart", @"-k", service]];
-
-    NSPipe *stderrPipe = [NSPipe pipe];
-    [kickstart setStandardError:stderrPipe];
-
-    NSError *error = nil;
-    if (@available(macOS 10.13, *)) {
-        [kickstart launchAndReturnError:&error];
-    } else {
-        [kickstart launch];
-    }
-    [kickstart waitUntilExit];
-
-    int status = [kickstart terminationStatus];
-    if (status != 0 || error) {
-        NSData *errData = [[stderrPipe fileHandleForReading] readDataToEndOfFile];
-        NSString *errOutput = [[NSString alloc] initWithData:errData encoding:NSUTF8StringEncoding];
-        NSLog(@"[TCC] launchctl kickstart failed (status=%d, error=%@, output=%@)", status, error.localizedDescription ?: @"-", errOutput ?: @"-");
-
-        // Fallback: killall tccd (per-user daemon auto-restarts)
-        NSTask *killTask = [[NSTask alloc] init];
-        [killTask setLaunchPath:@"/usr/bin/killall"];
-        [killTask setArguments:@[@"-KILL", @"tccd"]];
-        [killTask launch];
-        [killTask waitUntilExit];
-        NSLog(@"[TCC] killall tccd fallback status=%d", [killTask terminationStatus]);
-    } else {
-        NSLog(@"[TCC] launchctl kickstart succeeded (status=%d)", status);
-    }
-
-    // Allow daemon to restart before next permission check
-    usleep(150000); // 150ms
+    [PHTVTCCMaintenanceService restartTCCDaemon];
 }
-
-// Forward declaration for AXIsProcessTrusted
-extern Boolean AXIsProcessTrusted(void) __attribute__((weak_import));
 
 #pragma mark - TCC Notification Listener
 
@@ -291,7 +156,9 @@ extern Boolean AXIsProcessTrusted(void) __attribute__((weak_import));
             CFMachPortInvalidate(testTap);
             CFRelease(testTap);
             #ifdef DEBUG
-            NSLog(@"[Permission] Test tap SUCCESS on attempt %d", attempt + 1);
+            if (attempt > 0) {
+                NSLog(@"[Permission] Test tap SUCCESS on attempt %d", attempt + 1);
+            }
             #endif
             return YES;
         }
