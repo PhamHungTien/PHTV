@@ -731,7 +731,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     
     static void RequestNewSessionInternal(bool allowUppercasePrime) {
         // Reset AX context caches on new session (often triggered by mouse click/focus change).
-        [PHTVAccessibilityService invalidateContextDetectionCaches];
+        [PHTVEventContextBridgeService invalidateAccessibilityContextCaches];
 
         // Acquire barrier: ensure we see latest config changes before processing
         __atomic_thread_fence(__ATOMIC_ACQUIRE);
@@ -1359,9 +1359,10 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             _phtvPendingBackspaceCount = 0;
 
             BOOL shouldVerify = (backspaceCount > 0);
-            BOOL axSucceeded = vSafeMode ? NO : [PHTVAccessibilityService replaceFocusedTextViaAX:backspaceCount
-                                                                                        insertText:insertStr
-                                                                                            verify:shouldVerify];
+            BOOL axSucceeded = [PHTVEventContextBridgeService replaceFocusedTextViaAXWithBackspaceCount:(int32_t)backspaceCount
+                                                                                               insertText:insertStr
+                                                                                                   verify:shouldVerify
+                                                                                                 safeMode:vSafeMode];
             if (axSucceeded) {
                 goto FinalizeSend;
             }
@@ -1512,9 +1513,10 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
             // Try AX API first - atomic and most reliable for Spotlight
             BOOL shouldVerify = (pData->backspaceCount > 0);
-            BOOL axSucceeded = vSafeMode ? NO : [PHTVAccessibilityService replaceFocusedTextViaAX:pData->backspaceCount
-                                                                                        insertText:macroString
-                                                                                            verify:shouldVerify];
+            BOOL axSucceeded = [PHTVEventContextBridgeService replaceFocusedTextViaAXWithBackspaceCount:(int32_t)pData->backspaceCount
+                                                                                               insertText:macroString
+                                                                                                   verify:shouldVerify
+                                                                                                 safeMode:vSafeMode];
             if (axSucceeded) {
                 #ifdef DEBUG
                 NSLog(@"[Macro] Spotlight: AX API succeeded, macro='%@'", macroString);
@@ -1739,7 +1741,9 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     // Handle Spotlight cache invalidation on Cmd+Space and modifier changes
     // This ensures fast Spotlight detection
     static inline void HandleSpotlightCacheInvalidation(CGEventType type, CGKeyCode keycode, CGEventFlags flag) {
-        [PHTVSpotlightDetectionService handleSpotlightCacheInvalidation:type keycode:keycode flags:flag];
+        [PHTVEventContextBridgeService handleSpotlightCacheInvalidationForType:type
+                                                                       keycode:(uint16_t)keycode
+                                                                         flags:flag];
     }
 
     // Event tap health monitoring - checks tap status and recovers if needed
@@ -1835,7 +1839,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         // We track these to avoid duplicate characters when SendEmptyCharacter() is called
         if (type == kCGEventKeyDown && _keycode == KEY_DELETE) {
             // This is an external delete event (not from PHTV since we already filtered myEventSource)
-            [PHTVSpotlightDetectionService trackExternalDelete];
+            [PHTVEventContextBridgeService trackExternalDelete];
 #ifdef DEBUG
             NSLog(@"[TextReplacement] External DELETE detected");
 #endif
@@ -1844,8 +1848,8 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         // Also track space after deletes to detect text replacement pattern.
         if (type == kCGEventKeyDown && _keycode == KEY_SPACE) {
 #ifdef DEBUG
-            int externalDeleteCount = (int)[PHTVSpotlightDetectionService externalDeleteCountValue];
-            unsigned long long elapsed_ms = [PHTVSpotlightDetectionService elapsedSinceLastExternalDeleteMs];
+            int externalDeleteCount = (int)[PHTVEventContextBridgeService externalDeleteCountValue];
+            unsigned long long elapsed_ms = [PHTVEventContextBridgeService elapsedSinceLastExternalDeleteMs];
             NSLog(@"[TextReplacement] SPACE key pressed: deleteCount=%d, elapsedMs=%llu, sourceID=%lld",
                   externalDeleteCount, elapsed_ms,
                   CGEventGetIntegerValueField(event, kCGEventSourceStateID));
@@ -2360,7 +2364,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                     if (pData->backspaceCount > 0) {
                         // DETECT ADDRESS BAR:
                         // Use accurate AX API check (cached) instead of unreliable spotlightActive
-                        BOOL isAddrBar = vSafeMode ? NO : [PHTVAccessibilityService isFocusedElementAddressBar];
+                        BOOL isAddrBar = [PHTVEventContextBridgeService isFocusedElementAddressBarForSafeMode:vSafeMode];
                         
                         #ifdef DEBUG
                         NSLog(@"[BrowserFix] isFocusedElementAddressBar returned: %d", isAddrBar);
@@ -2398,8 +2402,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                     // If Notion Code Block detected, fallback to standard backspace (no Shift+Left, no EmptyChar)
                     // This fixes duplicates in code blocks where Shift+Left might fail to select or text is raw
                     BOOL isNotionCodeBlockDetected = isNotionApp &&
-                                                     !vSafeMode &&
-                                                     [PHTVAccessibilityService isNotionCodeBlock];
+                                                     [PHTVEventContextBridgeService isNotionCodeBlockForSafeMode:vSafeMode];
 
                     if (isNotionCodeBlockDetected) {
                         // Do nothing here.
@@ -2436,7 +2439,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 // Detection methods:
                 // 1. External DELETE detected (arrow key selection) - HIGH CONFIDENCE
                 // 2. Short backspace + code=3 without DELETE (mouse click selection) - FALLBACK
-                int externalDeleteCount = (int)[PHTVSpotlightDetectionService externalDeleteCountValue];
+                int externalDeleteCount = (int)[PHTVEventContextBridgeService externalDeleteCountValue];
 
                 // Log for debugging text replacement issues (only in Debug builds)
                 #ifdef DEBUG
