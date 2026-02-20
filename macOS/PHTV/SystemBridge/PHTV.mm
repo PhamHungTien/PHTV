@@ -2302,7 +2302,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                         _syncKey.clear();
                     } else if (pData->extCode == 2) { //delete key
                         if (_syncKey.size() > 0) {
-                            if (_syncKey.back() > 1 && (vCodeTable == 2 || !containUnicodeCompoundApp(effectiveBundleId))) {
+                            if (_syncKey.back() > 1 && (vCodeTable == 2 || !appChars.containsUnicodeCompound)) {
                                 //send one more backspace
                                 PostSyntheticEvent(_proxy, eventBackSpaceDown);
                                 PostSyntheticEvent(_proxy, eventBackSpaceUp);
@@ -2333,12 +2333,13 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 // BROWSER FIX: Browsers (Chromium, Safari, Firefox, etc.) don't support AX API properly
                 // for their address bar autocomplete. When spotlightActive=true on a browser, 
                 // we should NOT use Spotlight-style handling.
-                BOOL isBrowserApp = [PHTVAppDetectionService isBrowserApp:effectiveBundleId];
+                BOOL isBrowserApp = targetContext.isBrowser;
+                BOOL isSpotlightTarget = targetContext.postToHIDTap;
                 
                 // Check if this is a special app (Spotlight-like or WhatsApp-like)
                 // Also treat as special when spotlightActive (search field detected via AX API)
                 // EXCEPT for browsers - they don't support AX API for autocomplete, so ignore spotlightActive for them
-                BOOL isSpecialApp = (!isBrowserApp && spotlightActive) || appChars.isSpotlightLike || appChars.needsPrecomposedBatched;
+                BOOL isSpecialApp = isSpotlightTarget || appChars.needsPrecomposedBatched;
 
                 // BROWSER SHORTCUT FIX: Avoid sending empty character for common shortcut prefixes (like /)
                 // or when a new session just started without any previous context.
@@ -2525,7 +2526,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 if (pData->backspaceCount > 0 && pData->backspaceCount < MAX_BUFF) {
                     // Use Spotlight-style deferred backspace when in search field (spotlightActive) or Spotlight-like app
                     // EXCEPT for Chromium apps - they don't support AX API properly
-                    if ((!isBrowserApp && spotlightActive) || appChars.isSpotlightLike) {
+                    if (isSpotlightTarget) {
                         // Defer deletion to AX replacement inside SendNewCharString().
                         _phtvPendingBackspaceCount = (int)pData->backspaceCount;
 #ifdef DEBUG
@@ -2549,7 +2550,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 // Forcing step-by-step here would skip deferred deletions and cause duplicated letters.
                 // EXCEPTION: Auto English restore (extCode=5) on Chromium apps should use step-by-step
                 // because Chromium's autocomplete interferes with AX API and Unicode string posting
-                BOOL isSpotlightTarget = (!isBrowserApp && spotlightActive) || appChars.isSpotlightLike;
                 // Only use step-by-step for explicitly configured apps
                 // FIX #121: Also use step-by-step for auto English restore + Enter/Return
                 // This ensures Terminal receives characters before the Enter key
