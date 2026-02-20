@@ -7,12 +7,10 @@
 
 #import "AppDelegate+DockVisibility.h"
 #import "AppDelegate+Private.h"
+#import "PHTVLiveDebug.h"
 #import "PHTV-Swift.h"
-#include <stdlib.h>
-#include <string.h>
 
 static NSString *const PHTVDefaultsKeyShowIconOnDock = @"vShowIconOnDock";
-static NSString *const PHTVDefaultsKeyLiveDebug = @"PHTV_LIVE_DEBUG";
 static NSString *const PHTVNotificationUserInfoVisibleKey = @"visible";
 static NSString *const PHTVNotificationUserInfoForceFrontKey = @"forceFront";
 static const uint64_t PHTVSpotlightInvalidationDedupMs = 30;
@@ -26,21 +24,8 @@ void RequestNewSession(void);
 #endif
 extern int vShowIconOnDock;
 
-static inline BOOL PHTVDockLiveDebugEnabled(void) {
-    const char *env = getenv("PHTV_LIVE_DEBUG");
-    if (env != NULL && env[0] != '\0') {
-        return strcmp(env, "0") != 0;
-    }
-
-    id stored = [[NSUserDefaults standardUserDefaults] objectForKey:PHTVDefaultsKeyLiveDebug];
-    if ([stored respondsToSelector:@selector(intValue)]) {
-        return [stored intValue] != 0;
-    }
-    return NO;
-}
-
 #define PHTV_DOCK_LOG(fmt, ...) do { \
-    if (PHTVDockLiveDebugEnabled()) { \
+    if (PHTVLiveDebugEnabled()) { \
         NSLog(@"[PHTV Live] " fmt, ##__VA_ARGS__); \
     } \
 } while(0)

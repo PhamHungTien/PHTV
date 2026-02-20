@@ -8,8 +8,6 @@
 
 #import <Carbon/Carbon.h>
 #import <Cocoa/Cocoa.h>
-#include <stdlib.h>
-#include <string.h>
 #import "AppDelegate.h"
 #import "AppDelegate+Private.h"
 #import "AppDelegate+Accessibility.h"
@@ -25,6 +23,7 @@
 #import "AppDelegate+Sparkle.h"
 #import "AppDelegate+StatusBarMenu.h"
 #import "AppDelegate+UIActions.h"
+#import "PHTVLiveDebug.h"
 #import "SparkleManager.h"
 #import "../SystemBridge/PHTVManager.h"
 #import "PHTV-Swift.h"
@@ -33,7 +32,6 @@
 static NSString *const PHTVDefaultsKeyEnableEmojiHotkey = @"vEnableEmojiHotkey";
 static NSString *const PHTVDefaultsKeyEmojiHotkeyModifiers = @"vEmojiHotkeyModifiers";
 static NSString *const PHTVDefaultsKeyEmojiHotkeyKeyCode = @"vEmojiHotkeyKeyCode";
-static NSString *const PHTVDefaultsKeyLiveDebug = @"PHTV_LIVE_DEBUG";
 static NSString *const PHTVDefaultsKeyInputMethod = @"InputMethod";
 static NSString *const PHTVDefaultsKeyInputType = @"InputType";
 static NSString *const PHTVDefaultsKeyCodeTable = @"CodeTable";
@@ -198,35 +196,6 @@ volatile int vEmojiHotkeyKeyCode = KEY_E; // E key
 int vShowIconOnDock = 0; //new on version 2.0
 
 volatile int vPerformLayoutCompat = 0;
-
-static inline BOOL PHTVLiveDebugEnabled(void) {
-    static int cachedEnabled = -1;
-    if (__builtin_expect(cachedEnabled != -1, 1)) {
-        return cachedEnabled == 1;
-    }
-
-    const char *env = getenv("PHTV_LIVE_DEBUG");
-    if (env != NULL && env[0] != '\0') {
-        cachedEnabled = (strcmp(env, "0") != 0) ? 1 : 0;
-        return cachedEnabled == 1;
-    }
-
-    // Fallback: allow enabling via UserDefaults for easier debugging.
-    id stored = [[NSUserDefaults standardUserDefaults] objectForKey:PHTVDefaultsKeyLiveDebug];
-    if ([stored respondsToSelector:@selector(intValue)]) {
-        cachedEnabled = ([stored intValue] != 0) ? 1 : 0;
-        return cachedEnabled == 1;
-    }
-    
-    cachedEnabled = 0;
-    return NO;
-}
-
-#define PHTV_LIVE_LOG(fmt, ...) do { \
-    if (PHTVLiveDebugEnabled()) { \
-        NSLog(@"[PHTV Live] " fmt, ##__VA_ARGS__); \
-    } \
-} while(0)
 
 @implementation AppDelegate
 

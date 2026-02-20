@@ -6,16 +6,14 @@
 //
 
 #import "AppDelegate+MacroData.h"
+#import "PHTVLiveDebug.h"
 #include "../Core/Engine/Engine.h"
-#include <stdlib.h>
-#include <string.h>
 
 static NSString *const PHTVDefaultsKeyMacroList = @"macroList";
 static NSString *const PHTVDefaultsKeyMacroListCorruptedBackup = @"macroList.corruptedBackup";
 static NSString *const PHTVDefaultsKeyMacroData = @"macroData";
 static NSString *const PHTVDefaultsKeyCustomDictionary = @"customDictionary";
 static NSString *const PHTVDefaultsKeySpelling = @"Spelling";
-static NSString *const PHTVDefaultsKeyLiveDebug = @"PHTV_LIVE_DEBUG";
 
 static inline int PHTVReadIntWithFallback(NSUserDefaults *defaults, NSString *key, int fallbackValue) {
     if ([defaults objectForKey:key] == nil) {
@@ -23,34 +21,6 @@ static inline int PHTVReadIntWithFallback(NSUserDefaults *defaults, NSString *ke
     }
     return (int)[defaults integerForKey:key];
 }
-
-static inline BOOL PHTVLiveDebugEnabled(void) {
-    static int cachedEnabled = -1;
-    if (__builtin_expect(cachedEnabled != -1, 1)) {
-        return cachedEnabled == 1;
-    }
-
-    const char *env = getenv("PHTV_LIVE_DEBUG");
-    if (env != NULL && env[0] != '\0') {
-        cachedEnabled = (strcmp(env, "0") != 0) ? 1 : 0;
-        return cachedEnabled == 1;
-    }
-
-    id stored = [[NSUserDefaults standardUserDefaults] objectForKey:PHTVDefaultsKeyLiveDebug];
-    if ([stored respondsToSelector:@selector(intValue)]) {
-        cachedEnabled = ([stored intValue] != 0) ? 1 : 0;
-        return cachedEnabled == 1;
-    }
-
-    cachedEnabled = 0;
-    return NO;
-}
-
-#define PHTV_LIVE_LOG(fmt, ...) do { \
-    if (PHTVLiveDebugEnabled()) { \
-        NSLog(@"[PHTV Live] " fmt, ##__VA_ARGS__); \
-    } \
-} while(0)
 
 #ifdef __cplusplus
 extern "C" {
