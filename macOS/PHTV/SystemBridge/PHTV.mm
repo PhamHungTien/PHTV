@@ -205,10 +205,11 @@ extern volatile int vPauseKey;
 
 extern "C" {
 
+    static const uint64_t kAppCharacteristicsCacheMaxAgeMs = 10000;
+
     // Get cached app characteristics or compute and cache them.
     // Cache state and computation are centralized in Swift services.
     static inline AppCharacteristics getAppCharacteristics(NSString* bundleId) {
-        const uint64_t kAppCharacteristicsCacheMaxAgeMs = 10000;
         AppCharacteristics chars = {NO, NO, NO, NO, NO};
         if (!bundleId || bundleId.length == 0) {
             return chars;
@@ -2179,40 +2180,32 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             // resolve to an unrelated foreground app (e.g. Console). When Spotlight is AX-focused, prefer
             // the AX-focused owner.
             pid_t eventTargetPID = (pid_t)CGEventGetIntegerValueField(event, kCGEventTargetUnixProcessID);
-            NSString *eventTargetBundleId = (eventTargetPID > 0) ? getBundleIdFromPID(eventTargetPID) : nil;
-            NSString *focusedBundleId = getFocusedAppBundleId();
-            
-            // Check if Spotlight is active.
-            // Note: We MUST check this even if target is a browser, because Spotlight can be invoked OVER a browser.
-            // Spotlight detection service handles performance/caching to avoid lag.
-            BOOL spotlightActive = isSpotlightActive();
-            
-            NSString *effectiveBundleId = (spotlightActive && focusedBundleId != nil) ? focusedBundleId : (eventTargetBundleId ?: focusedBundleId);
-            PHTVAppRuntimeFlagsBox *runtimeFlags = [PHTVAppContextService runtimeFlagsForEffectiveBundleId:effectiveBundleId
-                                                                                         eventTargetBundleId:eventTargetBundleId];
+            PHTVEventTargetContextBox *targetContext = [PHTVAppContextService eventTargetContextForEventTargetPid:(int32_t)eventTargetPID
+                                                                                                         safeMode:vSafeMode
+                                                                                           spotlightCacheDurationMs:SPOTLIGHT_CACHE_DURATION_MS
+                                                                                           appCharacteristicsMaxAgeMs:kAppCharacteristicsCacheMaxAgeMs];
+            NSString *eventTargetBundleId = targetContext.eventTargetBundleId;
+            NSString *focusedBundleId = targetContext.focusedBundleId;
+            BOOL spotlightActive = targetContext.spotlightActive;
+            NSString *effectiveBundleId = targetContext.effectiveBundleId;
 
-            // PERFORMANCE: Cache app characteristics once per callback
-            // This eliminates 5-10 function calls throughout the callback
-            AppCharacteristics appChars = getAppCharacteristics(effectiveBundleId);
+            AppCharacteristics appChars = {NO, NO, NO, NO, NO};
+            PHTVAppCharacteristicsBox *appCharsBox = targetContext.appCharacteristics;
+            if (appCharsBox) {
+                appChars.isSpotlightLike = appCharsBox.isSpotlightLike;
+                appChars.needsPrecomposedBatched = appCharsBox.needsPrecomposedBatched;
+                appChars.needsStepByStep = appCharsBox.needsStepByStep;
+                appChars.containsUnicodeCompound = appCharsBox.containsUnicodeCompound;
+                appChars.isSafari = appCharsBox.isSafari;
+            }
 
             // Cache for send routines called later in this callback.
             _phtvEffectiveTargetBundleId = effectiveBundleId;
-            // BROWSER FIX: Browsers (Chromium, Safari, Firefox, etc.) don't support 
-            // HID tap posting or AX API for their address bar autocomplete.
-            // When spotlightActive=true on a browser address bar, we should NOT use Spotlight-style handling.
-            BOOL isBrowser = runtimeFlags.isBrowser;
-            _phtvPostToHIDTap = (!isBrowser && spotlightActive) || appChars.isSpotlightLike;
-            BOOL isTerminalApp = runtimeFlags.isTerminalApp;
-            BOOL isJetBrainsApp = runtimeFlags.isJetBrainsApp;
-            BOOL isTerminalPanel = NO;
-            if (!isTerminalApp && !isJetBrainsApp) {
-                isTerminalPanel = vSafeMode ? NO : [PHTVAccessibilityService isTerminalPanelFocused];
-            }
-            // Best-effort: Force CLI mode for all JetBrains apps to avoid terminal swallowing
-            _phtvIsCliTarget = (isTerminalApp || isTerminalPanel || isJetBrainsApp);
+            _phtvPostToHIDTap = targetContext.postToHIDTap;
+            _phtvIsCliTarget = targetContext.isCliTarget;
             _phtvPostToSessionForCli = _phtvIsCliTarget;
             if (_phtvIsCliTarget) {
-                ConfigureCliProfileForCode(runtimeFlags.cliProfileCode);
+                ConfigureCliProfileForCode(targetContext.cliProfileCode);
             } else {
                 _phtvCliBackspaceDelayUs = 0;
                 _phtvCliWaitAfterBackspaceUs = 0;

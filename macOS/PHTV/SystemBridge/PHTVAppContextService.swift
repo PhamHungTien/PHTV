@@ -10,19 +10,44 @@ import Foundation
 import Darwin
 
 @objcMembers
-final class PHTVAppRuntimeFlagsBox: NSObject {
+final class PHTVEventTargetContextBox: NSObject {
+    let eventTargetBundleId: String?
+    let focusedBundleId: String?
+    let effectiveBundleId: String?
+    let spotlightActive: Bool
+    let appCharacteristics: PHTVAppCharacteristicsBox
+
     let isBrowser: Bool
     let isTerminalApp: Bool
     let isJetBrainsApp: Bool
+    let isTerminalPanel: Bool
+    let isCliTarget: Bool
+    let postToHIDTap: Bool
     let cliProfileCode: Int32
 
-    init(isBrowser: Bool,
+    init(eventTargetBundleId: String?,
+         focusedBundleId: String?,
+         effectiveBundleId: String?,
+         spotlightActive: Bool,
+         appCharacteristics: PHTVAppCharacteristicsBox,
+         isBrowser: Bool,
          isTerminalApp: Bool,
          isJetBrainsApp: Bool,
+         isTerminalPanel: Bool,
+         isCliTarget: Bool,
+         postToHIDTap: Bool,
          cliProfileCode: Int32) {
+        self.eventTargetBundleId = eventTargetBundleId
+        self.focusedBundleId = focusedBundleId
+        self.effectiveBundleId = effectiveBundleId
+        self.spotlightActive = spotlightActive
+        self.appCharacteristics = appCharacteristics
         self.isBrowser = isBrowser
         self.isTerminalApp = isTerminalApp
         self.isJetBrainsApp = isJetBrainsApp
+        self.isTerminalPanel = isTerminalPanel
+        self.isCliTarget = isCliTarget
+        self.postToHIDTap = postToHIDTap
         self.cliProfileCode = cliProfileCode
     }
 }
@@ -31,6 +56,16 @@ final class PHTVAppRuntimeFlagsBox: NSObject {
 final class PHTVAppContextService: NSObject {
     private class var frontmostBundleId: String? {
         NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+    }
+
+    private class func makeDefaultAppCharacteristics() -> PHTVAppCharacteristicsBox {
+        PHTVAppCharacteristicsBox(
+            isSpotlightLike: false,
+            needsPrecomposedBatched: false,
+            needsStepByStep: false,
+            containsUnicodeCompound: false,
+            isSafari: false
+        )
     }
 
     @objc(spotlightActiveForSafeMode:)
@@ -108,21 +143,44 @@ final class PHTVAppContextService: NSObject {
         return box
     }
 
-    @objc(runtimeFlagsForEffectiveBundleId:eventTargetBundleId:)
-    class func runtimeFlags(forEffectiveBundleId effectiveBundleId: String?,
-                            eventTargetBundleId: String?) -> PHTVAppRuntimeFlagsBox {
+    @objc(eventTargetContextForEventTargetPid:safeMode:spotlightCacheDurationMs:appCharacteristicsMaxAgeMs:)
+    class func eventTargetContext(forEventTargetPid eventTargetPid: Int32,
+                                  safeMode: Bool,
+                                  spotlightCacheDurationMs: UInt64,
+                                  appCharacteristicsMaxAgeMs: UInt64) -> PHTVEventTargetContextBox {
+        let eventTargetBundleId = eventTargetPid > 0 ? bundleId(fromPID: eventTargetPid, safeMode: safeMode) : nil
+        let spotlightActive = spotlightActive(forSafeMode: safeMode)
+        let focusedBundleId = focusedBundleId(forSafeMode: safeMode, cacheDurationMs: spotlightCacheDurationMs)
+        let effectiveBundleId = (spotlightActive && focusedBundleId != nil) ? focusedBundleId : (eventTargetBundleId ?? focusedBundleId)
+
+        let appCharacteristics = appCharacteristics(forBundleId: effectiveBundleId, maxAgeMs: appCharacteristicsMaxAgeMs)
+            ?? makeDefaultAppCharacteristics()
+
         let isTargetBrowser = eventTargetBundleId.map(PHTVAppDetectionService.isBrowserApp(_:)) ?? false
         let isEffectiveBrowser = effectiveBundleId.map(PHTVAppDetectionService.isBrowserApp(_:)) ?? false
         let isBrowser = isTargetBrowser || isEffectiveBrowser
 
         let isTerminalApp = effectiveBundleId.map(PHTVAppDetectionService.isTerminalApp(_:)) ?? false
         let isJetBrainsApp = effectiveBundleId.map(PHTVAppDetectionService.isJetBrainsApp(_:)) ?? false
+        let isTerminalPanel = (!safeMode && !isTerminalApp && !isJetBrainsApp)
+            ? PHTVAccessibilityService.isTerminalPanelFocused()
+            : false
+        let isCliTarget = isTerminalApp || isJetBrainsApp || isTerminalPanel
         let cliProfileCode = PHTVCliProfileService.profileCode(forBundleId: effectiveBundleId)
+        let postToHIDTap = (!isBrowser && spotlightActive) || appCharacteristics.isSpotlightLike
 
-        return PHTVAppRuntimeFlagsBox(
+        return PHTVEventTargetContextBox(
+            eventTargetBundleId: eventTargetBundleId,
+            focusedBundleId: focusedBundleId,
+            effectiveBundleId: effectiveBundleId,
+            spotlightActive: spotlightActive,
+            appCharacteristics: appCharacteristics,
             isBrowser: isBrowser,
             isTerminalApp: isTerminalApp,
             isJetBrainsApp: isJetBrainsApp,
+            isTerminalPanel: isTerminalPanel,
+            isCliTarget: isCliTarget,
+            postToHIDTap: postToHIDTap,
             cliProfileCode: cliProfileCode
         )
     }
