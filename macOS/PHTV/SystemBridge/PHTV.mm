@@ -93,9 +93,11 @@ static const double CLI_SPEED_FACTOR_SLOW = 1.3;
 static mach_timebase_info_data_t timebase_info;
 static dispatch_once_t timebase_init_token;
 
+#ifdef DEBUG
 static inline uint64_t mach_time_to_ms(uint64_t mach_time) {
     return (mach_time * timebase_info.numer) / (timebase_info.denom * 1000000);
 }
+#endif
 
 static inline uint64_t mach_time_to_us(uint64_t mach_time) {
     return (mach_time * timebase_info.numer) / (timebase_info.denom * 1000);
@@ -1752,67 +1754,8 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         }
 
         //if "turn off Vietnamese when in other language" mode on
-        // PERFORMANCE: Cache language check to avoid expensive TIS calls on every keystroke
-        if(vOtherLanguage){
-            static NSString *cachedLanguage = nil;
-            static uint64_t lastLanguageCheckTime = 0;
-            NSString *currentLanguage = nil;
-
-            // Check language at most once every 1 second (keyboard layout doesn't change that often)
-            uint64_t now = mach_absolute_time();
-            uint64_t elapsed_ms = mach_time_to_ms(now - lastLanguageCheckTime);
-            if (__builtin_expect(lastLanguageCheckTime == 0 || elapsed_ms > 1000, 0)) {
-                TISInputSourceRef isource = TISCopyCurrentKeyboardInputSource();
-                if (isource != NULL) {
-                    CFArrayRef languages = (CFArrayRef) TISGetInputSourceProperty(isource, kTISPropertyInputSourceLanguages);
-
-                    if (languages != NULL && CFArrayGetCount(languages) > 0) {
-                        // MEMORY BUG FIX: CFArrayGetValueAtIndex returns borrowed reference - do NOT CFRelease
-                        CFStringRef langRef = (CFStringRef)CFArrayGetValueAtIndex(languages, 0);
-                        cachedLanguage = [(__bridge NSString *)langRef copy];
-                    }
-                    CFRelease(isource);  // Only release isource (we copied it)
-                    lastLanguageCheckTime = now;
-                }
-            }
-
-            currentLanguage = cachedLanguage;
-            // Allow Latin-based keyboard layouts that can type Vietnamese
-            // This includes: en (English), de (German), fr (French), es (Spanish),
-            // it (Italian), pt (Portuguese), nl (Dutch), da (Danish), sv (Swedish),
-            // Only block non-Latin keyboards like Chinese, Japanese, Korean, Arabic, Hebrew, etc.
-            // All Latin-script based keyboards are allowed for Vietnamese input
-            static NSSet *latinLanguages = nil;
-            static dispatch_once_t onceToken;
-            dispatch_once(&onceToken, ^{
-                latinLanguages = [[NSSet alloc] initWithArray:@[
-                    // Western European
-                    @"en", @"de", @"fr", @"es", @"it", @"pt", @"nl", @"ca",  // English, German, French, Spanish, Italian, Portuguese, Dutch, Catalan
-                    // Nordic
-                    @"da", @"sv", @"no", @"nb", @"nn", @"fi", @"is", @"fo",  // Danish, Swedish, Norwegian, Finnish, Icelandic, Faroese
-                    // Eastern European (Latin script)
-                    @"pl", @"cs", @"sk", @"hu", @"ro", @"hr", @"sl", @"sr-Latn",  // Polish, Czech, Slovak, Hungarian, Romanian, Croatian, Slovenian, Serbian Latin
-                    // Baltic
-                    @"et", @"lv", @"lt",  // Estonian, Latvian, Lithuanian
-                    // Other European
-                    @"sq", @"bs", @"mt",  // Albanian, Bosnian, Maltese
-                    // Turkish & Turkic (Latin script)
-                    @"tr", @"az", @"uz", @"tk",  // Turkish, Azerbaijani, Uzbek, Turkmen
-                    // Southeast Asian (Latin script)
-                    @"id", @"ms", @"vi", @"tl", @"jv", @"su",  // Indonesian, Malay, Vietnamese, Tagalog, Javanese, Sundanese
-                    // African (Latin script)
-                    @"sw", @"ha", @"yo", @"ig", @"zu", @"xh", @"af",  // Swahili, Hausa, Yoruba, Igbo, Zulu, Xhosa, Afrikaans
-                    // Pacific
-                    @"mi", @"sm", @"to", @"haw",  // Maori, Samoan, Tongan, Hawaiian
-                    // Celtic
-                    @"ga", @"gd", @"cy", @"br",  // Irish, Scottish Gaelic, Welsh, Breton
-                    // Other
-                    @"eo", @"la",  // Esperanto, Latin
-                    // Romanizations (Pinyin, Romaji often report base language but use Latin)
-                    @"mul"  // Multiple languages (generic Latin)
-                ]];
-            });
-            if (currentLanguage && ![latinLanguages containsObject:currentLanguage]) {
+        if (vOtherLanguage) {
+            if (![PHTVInputSourceLanguageService shouldAllowVietnameseForOtherLanguageMode]) {
                 return event;
             }
         }

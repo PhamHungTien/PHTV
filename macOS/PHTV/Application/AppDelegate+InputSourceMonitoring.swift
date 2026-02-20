@@ -15,51 +15,6 @@ private let phtvInputSourceChangedNotification =
     Notification.Name(rawValue: kTISNotifySelectedKeyboardInputSourceChanged as String)
 private let phtvAppearanceChangedNotification = Notification.Name("AppleInterfaceThemeChangedNotification")
 
-private let phtvNonLatinInputSourcePatterns: [String] = [
-    "com.apple.inputmethod.Kotoeri", "com.apple.inputmethod.Japanese",
-    "com.google.inputmethod.Japanese", "jp.co.atok",
-    "com.apple.inputmethod.SCIM", "com.apple.inputmethod.TCIM",
-    "com.apple.inputmethod.ChineseHandwriting",
-    "com.sogou.inputmethod", "com.baidu.inputmethod",
-    "com.tencent.inputmethod", "com.iflytek.inputmethod",
-    "com.apple.inputmethod.Korean", "com.apple.inputmethod.KoreanIM",
-    "com.apple.keylayout.Arabic", "com.apple.keylayout.ArabicPC",
-    "com.apple.keylayout.Hebrew", "com.apple.keylayout.HebrewQWERTY",
-    "com.apple.keylayout.Thai", "com.apple.keylayout.ThaiPattachote",
-    "com.apple.keylayout.Devanagari", "com.apple.keylayout.Hindi",
-    "com.apple.inputmethod.Hindi",
-    "com.apple.keylayout.Greek", "com.apple.keylayout.GreekPolytonic",
-    "com.apple.keylayout.Russian", "com.apple.keylayout.RussianPC",
-    "com.apple.keylayout.Ukrainian", "com.apple.keylayout.Bulgarian",
-    "com.apple.keylayout.Serbian", "com.apple.keylayout.Macedonian",
-    "com.apple.keylayout.Georgian",
-    "com.apple.keylayout.Armenian",
-    "com.apple.keylayout.Tamil", "com.apple.keylayout.Telugu",
-    "com.apple.keylayout.Kannada", "com.apple.keylayout.Malayalam",
-    "com.apple.keylayout.Gujarati", "com.apple.keylayout.Punjabi",
-    "com.apple.keylayout.Bengali", "com.apple.keylayout.Oriya",
-    "com.apple.keylayout.Myanmar", "com.apple.keylayout.Khmer",
-    "com.apple.keylayout.Lao",
-    "com.apple.keylayout.Tibetan", "com.apple.keylayout.Nepali",
-    "com.apple.keylayout.Sinhala",
-    "com.apple.CharacterPaletteIM", "com.apple.PressAndHold",
-    "com.apple.inputmethod.EmojiFunctionRowItem"
-]
-
-private let phtvLatinLanguages: Set<String> = [
-    "en", "de", "fr", "es", "it", "pt", "nl", "ca",
-    "da", "sv", "no", "nb", "nn", "fi", "is", "fo",
-    "pl", "cs", "sk", "hu", "ro", "hr", "sl", "sr-Latn",
-    "et", "lv", "lt",
-    "sq", "bs", "mt",
-    "tr", "az", "uz", "tk",
-    "id", "ms", "vi", "tl", "jv", "su",
-    "sw", "ha", "yo", "ig", "zu", "xh", "af",
-    "mi", "sm", "to", "haw",
-    "ga", "gd", "cy", "br",
-    "eo", "la", "mul"
-]
-
 private func phtvInputSourceProperty(_ inputSource: TISInputSource, _ key: CFString) -> AnyObject? {
     guard let rawValue = TISGetInputSourceProperty(inputSource, key) else {
         return nil
@@ -82,23 +37,7 @@ private func phtvInputSourceProperty(_ inputSource: TISInputSource, _ key: CFStr
     }
 
     func isLatinInputSource(_ inputSource: TISInputSource?) -> Bool {
-        guard let inputSource else {
-            return true
-        }
-
-        let sourceID = phtvInputSourceProperty(inputSource, kTISPropertyInputSourceID) as? String
-        if let sourceID {
-            for pattern in phtvNonLatinInputSourcePatterns where sourceID.contains(pattern) {
-                return false
-            }
-        }
-
-        let languages = phtvInputSourceProperty(inputSource, kTISPropertyInputSourceLanguages) as? [String]
-        guard let language = languages?.first else {
-            return true
-        }
-
-        return phtvLatinLanguages.contains(language)
+        PHTVInputSourceLanguageService.isLatinInputSource(inputSource)
     }
 
     @objc func handleInputSourceChanged(_ notification: Notification) {
