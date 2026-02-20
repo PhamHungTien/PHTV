@@ -183,7 +183,9 @@ final class SystemState: ObservableObject {
         if let lastChange = lastRunOnStartupChangeTime {
             let timeSinceChange = Date().timeIntervalSince(lastChange)
             if timeSinceChange < Timing.loginItemGracePeriod {
+                #if DEBUG
                 NSLog("[LoginItem] Skipping check - user changed setting %.1fs ago (< 10s grace period)", timeSinceChange)
+                #endif
                 return
             }
         }

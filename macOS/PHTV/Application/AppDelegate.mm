@@ -993,7 +993,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
     self.lastDockForceFrontRequest = shouldForceFront;
     self.lastDockVisibilityRequestTime = now;
 
-    NSLog(@"[AppDelegate] handleShowDockIconNotification: visible=%d forceFront=%d", desiredDockVisible, shouldForceFront);
+    PHTV_LIVE_LOG(@"handleShowDockIconNotification: visible=%d forceFront=%d", desiredDockVisible, shouldForceFront);
 
     dispatch_async(dispatch_get_main_queue(), ^{
         BOOL wasSettingsOpen = settingsWindowOpen;
@@ -1012,16 +1012,16 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
                 if (!alreadyFront) {
                     [NSApp activateIgnoringOtherApps:YES];
                     [settingsWindow makeKeyAndOrderFront:nil];
-                    NSLog(@"[AppDelegate] Brought settings window to front: %@", settingsWindow.identifier);
+                    PHTV_LIVE_LOG(@"Brought settings window to front: %@", settingsWindow.identifier);
                 }
             } else {
-                NSLog(@"[AppDelegate] Settings window visible; skip force front to avoid reopen loop");
+                PHTV_LIVE_LOG(@"Settings window visible; skip force front to avoid reopen loop");
             }
         } else {
             // Restore to desired dock visibility (user preference), without forcing focus.
             NSApplicationActivationPolicy policy = desiredDockVisible ? NSApplicationActivationPolicyRegular : NSApplicationActivationPolicyAccessory;
             [NSApp setActivationPolicy:policy];
-            NSLog(@"[AppDelegate] Dock icon restored to desired visibility: %d", desiredDockVisible);
+            PHTV_LIVE_LOG(@"Dock icon restored to desired visibility: %d", desiredDockVisible);
         }
 
         // If settings just closed, reset session state to avoid stuck input context.
@@ -1847,7 +1847,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 }
 
 -(void)setDockIconVisible:(BOOL)visible {
-    NSLog(@"[AppDelegate] setDockIconVisible called with: %d", visible);
+    PHTV_LIVE_LOG(@"setDockIconVisible called with: %d", visible);
     
     // Track whether settings window is open (don't modify vShowIconOnDock - that's user preference)
     settingsWindowOpen = visible;
@@ -1871,7 +1871,7 @@ static inline BOOL PHTVLiveDebugEnabled(void) {
 }
 
 -(void)showIcon:(BOOL)onDock {
-    NSLog(@"[AppDelegate] showIcon called with onDock: %d", onDock);
+    PHTV_LIVE_LOG(@"showIcon called with onDock: %d", onDock);
     
     // Save to UserDefaults first
     [[NSUserDefaults standardUserDefaults] setBool:onDock forKey:PHTVDefaultsKeyShowIconOnDock];
