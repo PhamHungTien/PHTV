@@ -151,44 +151,10 @@ extern "C" {
 
     static const uint64_t kAppCharacteristicsCacheMaxAgeMs = 10000;
 
-    // Get cached app characteristics or compute and cache them.
-    // Cache state and computation are centralized in Swift services.
-    static inline AppCharacteristics getAppCharacteristics(NSString* bundleId) {
-        AppCharacteristics chars = {NO, NO, NO, NO, NO};
-        if (!bundleId || bundleId.length == 0) {
-            return chars;
-        }
-
-        PHTVAppCharacteristicsBox *box = [PHTVAppContextService appCharacteristicsForBundleId:bundleId
-                                                                                 maxAgeMs:kAppCharacteristicsCacheMaxAgeMs];
-        if (!box) {
-            return chars;
-        }
-
-        chars.isSpotlightLike = box.isSpotlightLike;
-        chars.needsPrecomposedBatched = box.needsPrecomposedBatched;
-        chars.needsStepByStep = box.needsStepByStep;
-        chars.containsUnicodeCompound = box.containsUnicodeCompound;
-        chars.isSafari = box.isSafari;
-        return chars;
-    }
-
-    __attribute__((always_inline)) static inline BOOL isSpotlightLikeApp(NSString* bundleId) {
-        return getAppCharacteristics(bundleId).isSpotlightLike;
-    }
-
-    // Check if app needs precomposed Unicode but with batched sending (not AX API)
-    __attribute__((always_inline)) static inline BOOL needsPrecomposedBatched(NSString* bundleId) {
-        return getAppCharacteristics(bundleId).needsPrecomposedBatched;
-    }
-
-    __attribute__((always_inline)) static inline BOOL needsStepByStepApp(NSString* bundleId) {
-        return getAppCharacteristics(bundleId).needsStepByStep;
-    }
-
     // Cache the effective target bundle id for the current event tap callback.
     // This avoids re-querying AX focus inside hot-path send routines.
 static NSString* _phtvEffectiveTargetBundleId = nil;
+static AppCharacteristics _phtvCurrentAppCharacteristics = {NO, NO, NO, NO, NO};
 static BOOL _phtvPostToHIDTap = NO;
 static BOOL _phtvPostToSessionForCli = NO;
 static BOOL _phtvIsCliTarget = NO;
@@ -500,9 +466,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         NSString *result = [PHTVAppContextService focusedBundleIdForSafeMode:vSafeMode
                                                               cacheDurationMs:SPOTLIGHT_CACHE_DURATION_MS];
         return (result != nil) ? result : FRONT_APP;
-    }    
-    BOOL containUnicodeCompoundApp(NSString* topApp) {
-        return getAppCharacteristics(topApp).containsUnicodeCompound;
     }
     
     void InsertKeyLength(const Uint8& len) {
@@ -694,8 +657,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         if (IS_DOUBLE_CODE(vCodeTable)) { //VNI or Unicode Compound
             if (!_syncKey.empty()) {
                 if (_syncKey.back() > 1) {
-                    NSString *effectiveTarget = _phtvEffectiveTargetBundleId ?: getFocusedAppBundleId();
-                    if (!(vCodeTable == 3 && containUnicodeCompoundApp(effectiveTarget))) {
+                    if (!(vCodeTable == 3 && _phtvCurrentAppCharacteristics.containsUnicodeCompound)) {
                         SendPhysicalBackspace();
                     }
                 }
@@ -718,9 +680,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         
         if (IS_DOUBLE_CODE(vCodeTable)) { //VNI or Unicode Compound
             if (_syncKey.back() > 1) {
-                // PERFORMANCE: Use cached bundle ID instead of querying AX API on every backspace
-                NSString *effectiveTarget = _phtvEffectiveTargetBundleId ?: getFocusedAppBundleId();
-                if (!(vCodeTable == 3 && containUnicodeCompoundApp(effectiveTarget))) {
+                if (!(vCodeTable == 3 && _phtvCurrentAppCharacteristics.containsUnicodeCompound)) {
                     PostSyntheticEvent(_proxy, eventVkeyDown);
                     PostSyntheticEvent(_proxy, eventVkeyUp);
                 }
@@ -848,14 +808,10 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         _willContinuteSending = false;
         _willSendControlKey = false;
         
-        // Prefer the effective target bundle id cached by the callback.
-        // Fallback to focused app only if cache isn't available.
-        NSString *effectiveTarget = _phtvEffectiveTargetBundleId ?: getFocusedAppBundleId();
-        // Treat as Spotlight target if the callback decided to use HID/Spotlight-safe path.
-        // This covers cases where Spotlight is active but bundle-id matching is imperfect.
-        BOOL isSpotlightTarget = _phtvPostToHIDTap || isSpotlightLikeApp(effectiveTarget);
-        // WhatsApp and similar apps need precomposed Unicode but with batched sending (not AX API)
-        BOOL isPrecomposedBatched = needsPrecomposedBatched(effectiveTarget);
+        // Treat as Spotlight target if callback selected HID/Spotlight-safe path.
+        BOOL isSpotlightTarget = _phtvPostToHIDTap || _phtvCurrentAppCharacteristics.isSpotlightLike;
+        // Some apps need precomposed Unicode but still rely on batched synthetic events.
+        BOOL isPrecomposedBatched = _phtvCurrentAppCharacteristics.needsPrecomposedBatched;
         // Force precomposed for: Unicode Compound (code 3) on Spotlight, OR any Unicode on WhatsApp-like apps
         BOOL forcePrecomposed = ((vCodeTable == 3) && isSpotlightTarget) ||
                                  ((vCodeTable == 0 || vCodeTable == 3) && isPrecomposedBatched);
@@ -1015,7 +971,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         // PERFORMANCE: Use cached bundle ID instead of querying AX API
         NSString *effectiveTarget = _phtvEffectiveTargetBundleId ?: getFocusedAppBundleId();
         // Use _phtvPostToHIDTap which includes spotlightActive (search field detected via AX)
-        BOOL isSpotlightLike = _phtvPostToHIDTap || isSpotlightLikeApp(effectiveTarget);
+        BOOL isSpotlightLike = _phtvPostToHIDTap || _phtvCurrentAppCharacteristics.isSpotlightLike;
 
         #ifdef DEBUG
         NSLog(@"[Macro] handleMacro: target='%@', isSpotlight=%d (postToHID=%d), backspaceCount=%d, macroSize=%zu",
@@ -1102,7 +1058,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         }
 
         //send real data - use step by step for timing sensitive apps like Spotlight
-        BOOL useStepByStep = _phtvIsCliTarget || vSendKeyStepByStep || needsStepByStepApp(effectiveTarget);
+        BOOL useStepByStep = _phtvIsCliTarget || vSendKeyStepByStep || _phtvCurrentAppCharacteristics.needsStepByStep;
         if (!useStepByStep) {
             SendNewCharString(true);
         } else {
@@ -1520,6 +1476,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
             // Cache for send routines called later in this callback.
             _phtvEffectiveTargetBundleId = effectiveBundleId;
+            _phtvCurrentAppCharacteristics = appChars;
             _phtvPostToHIDTap = targetContext.postToHIDTap;
             _phtvIsCliTarget = targetContext.isCliTarget;
             _phtvPostToSessionForCli = _phtvIsCliTarget;
