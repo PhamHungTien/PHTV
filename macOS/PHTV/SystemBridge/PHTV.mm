@@ -751,41 +751,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
         [PHTVCoreSettingsBootstrapService loadFromUserDefaults];
 
-        // Auto-detect AX crash: Check if previous AX test caused crash
-        // If AXTestInProgress flag is still set, previous launch crashed during AX test
-        NSUserDefaults *axDefaults = [NSUserDefaults standardUserDefaults];
-        if ([axDefaults boolForKey:@"AXTestInProgress"]) {
-            // Previous launch crashed during AX API call - auto-enable safe mode
-            vSafeMode = YES;
-            [axDefaults setBool:YES forKey:@"SafeMode"];
-            [axDefaults setBool:NO forKey:@"AXTestInProgress"];
-            os_log_error(phtv_log, "[PHTV] ⚠️ Auto-enabled Safe Mode: Previous AX API call crashed");
-            NSLog(@"[PHTV] ⚠️ Auto-enabled Safe Mode due to previous AX crash");
-        }
-
-        // Test AX API if not in safe mode
-        if (!vSafeMode) {
-            // Set flag before attempting AX call
-            [axDefaults setBool:YES forKey:@"AXTestInProgress"];
-
-            // Attempt a simple AX API call
-            @try {
-                AXUIElementRef testSystemWide = AXUIElementCreateSystemWide();
-                if (testSystemWide != NULL) {
-                    CFRelease(testSystemWide);
-                }
-                // AX test passed - clear the flag
-                [axDefaults setBool:NO forKey:@"AXTestInProgress"];
-                os_log_info(phtv_log, "[PHTV] AX API test passed");
-            }
-            @catch (NSException *exception) {
-                // AX test threw exception - enable safe mode
-                vSafeMode = YES;
-                [axDefaults setBool:YES forKey:@"SafeMode"];
-                [axDefaults setBool:NO forKey:@"AXTestInProgress"];
-                os_log_error(phtv_log, "[PHTV] ⚠️ AX API test failed with exception, enabling Safe Mode");
-            }
-        }
+        [PHTVSafeModeStartupService recoverAndValidateAccessibilityState];
 
         [PHTVLayoutCompatibilityService autoEnableIfNeeded];
 

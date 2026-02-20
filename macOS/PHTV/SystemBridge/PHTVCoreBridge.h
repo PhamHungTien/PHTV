@@ -37,6 +37,7 @@ void PHTVResetConvertToolOptions(void);
 void PHTVNormalizeConvertToolOptions(void);
 BOOL PHTVGetSafeMode(void);
 void PHTVSetSafeMode(BOOL enabled);
+BOOL PHTVRunAccessibilitySmokeTest(void);
 void RequestNewSession(void);
 void InvalidateLayoutCache(void);
 void OnInputMethodChanged(void);
