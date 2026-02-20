@@ -28,6 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
 +(void)clearCustomDictionary;
 
 +(void)setCheckSpellingValue:(int)value;
++(NSString *)quickConvertMenuTitle;
 
 @end
 
