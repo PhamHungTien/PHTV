@@ -21,6 +21,8 @@ CGEventRef _Nullable PHTVCallback(CGEventTapProxy _Nullable proxy,
                                   CGEventType type,
                                   CGEventRef _Nonnull event,
                                   void * _Nullable refcon);
+NSString * _Nonnull PHTVBuildDateString(void);
+void PHTVSyncSpellCheckingState(void);
 BOOL PHTVGetSafeMode(void);
 void PHTVSetSafeMode(BOOL enabled);
 void RequestNewSession(void);

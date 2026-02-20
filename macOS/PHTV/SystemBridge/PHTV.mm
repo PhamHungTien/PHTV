@@ -1044,6 +1044,10 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         RequestNewSessionInternal(true);
     }
 
+    NSString* PHTVBuildDateString() {
+        return [NSString stringWithUTF8String:__DATE__];
+    }
+
     NSString* ConvertUtil(NSString* str) {
         return [NSString stringWithUTF8String:convertUtil([str UTF8String]).c_str()];
     }
@@ -1193,6 +1197,10 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     
     void OnSpellCheckingChanged() {
         vSetCheckSpelling();
+    }
+
+    void PHTVSyncSpellCheckingState() {
+        OnSpellCheckingChanged();
     }
     
     void InsertKeyLength(const Uint8& len) {
