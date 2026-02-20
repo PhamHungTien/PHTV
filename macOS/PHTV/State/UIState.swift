@@ -8,6 +8,21 @@
 
 import SwiftUI
 import Combine
+import AppKit
+
+private enum MenuBarIconMetrics {
+    static let minSize: Double = 12.0
+    static let hardMaxSize: Double = 18.0
+
+    static var nativeMaxSize: Double {
+        let statusBarBound = Double(NSStatusBar.system.thickness - 4.0)
+        return max(minSize, min(hardMaxSize, statusBarBound))
+    }
+
+    static func clamp(_ value: Double) -> Double {
+        min(max(value, minSize), nativeMaxSize)
+    }
+}
 
 /// Manages UI settings, hotkeys, and display preferences
 @MainActor
@@ -66,10 +81,14 @@ final class UIState: ObservableObject {
         beepVolume = defaults.double(forKey: UserDefaultsKey.beepVolume, default: Defaults.beepVolume)
         liveLog("Loaded beepVolume: \(beepVolume)")
 
-        menuBarIconSize = defaults.double(
+        let loadedMenuBarIconSize = defaults.double(
             forKey: UserDefaultsKey.menuBarIconSize,
             default: Defaults.menuBarIconSize
         )
+        menuBarIconSize = MenuBarIconMetrics.clamp(loadedMenuBarIconSize)
+        if loadedMenuBarIconSize != menuBarIconSize {
+            defaults.set(menuBarIconSize, forKey: UserDefaultsKey.menuBarIconSize)
+        }
         liveLog("Loaded menuBarIconSize: \(menuBarIconSize)")
 
         useVietnameseMenubarIcon = defaults.bool(
@@ -89,7 +108,7 @@ final class UIState: ObservableObject {
 
         // Save audio and display settings
         defaults.set(beepVolume, forKey: UserDefaultsKey.beepVolume)
-        defaults.set(menuBarIconSize, forKey: UserDefaultsKey.menuBarIconSize)
+        defaults.set(MenuBarIconMetrics.clamp(menuBarIconSize), forKey: UserDefaultsKey.menuBarIconSize)
         defaults.set(useVietnameseMenubarIcon, forKey: UserDefaultsKey.useVietnameseMenubarIcon)
 
     }
@@ -157,10 +176,16 @@ final class UIState: ObservableObject {
         // Immediate UI update for menu bar icon size
         $menuBarIconSize
             .sink { [weak self] value in
-                guard let self = self, !self.isLoadingSettings else { return }
+                guard let self = self else { return }
+                let clamped = MenuBarIconMetrics.clamp(value)
+                if clamped != value {
+                    self.menuBarIconSize = clamped
+                    return
+                }
+                guard !self.isLoadingSettings else { return }
                 NotificationCenter.default.post(
                     name: NotificationName.menuBarIconSizeChanged,
-                    object: NSNumber(value: value)
+                    object: NSNumber(value: clamped)
                 )
             }.store(in: &cancellables)
 
@@ -191,8 +216,9 @@ final class UIState: ObservableObject {
                 guard let self = self, !self.isLoadingSettings else { return }
                 SettingsObserver.shared.suspendNotifications()
                 let defaults = UserDefaults.standard
-                defaults.set(value, forKey: UserDefaultsKey.menuBarIconSize)
-                self.liveLog("Saved menuBarIconSize: \(value)")
+                let clamped = MenuBarIconMetrics.clamp(value)
+                defaults.set(clamped, forKey: UserDefaultsKey.menuBarIconSize)
+                self.liveLog("Saved menuBarIconSize: \(clamped)")
             }.store(in: &cancellables)
 
         // Debounced persistence for Vietnamese menubar icon

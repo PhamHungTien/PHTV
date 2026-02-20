@@ -23,6 +23,32 @@ final class PHTVAccessibilityService: NSObject {
     nonisolated(unsafe) private static var lastNotionCodeBlockResult = false
     nonisolated(unsafe) private static var lastNotionCodeBlockCheckTime: UInt64 = 0
 
+    private static let uppercaseAbbreviationSet: Set<String> = [
+        "mr", "mrs", "ms", "dr", "prof", "sr", "jr", "st",
+        "vs", "etc", "eg", "ie",
+        "tp", "q", "p", "ths", "ts", "gs", "pgs"
+    ]
+
+    private class func isAsciiWhitespace(_ c: unichar) -> Bool {
+        c == 0x20 || c == 0x09 || c == 0x0A || c == 0x0D
+    }
+
+    private class func isAsciiLetter(_ c: unichar) -> Bool {
+        (c >= 0x41 && c <= 0x5A) || (c >= 0x61 && c <= 0x7A)
+    }
+
+    private class func isAsciiDigit(_ c: unichar) -> Bool {
+        c >= 0x30 && c <= 0x39
+    }
+
+    private class func isAsciiClosingPunct(_ c: unichar) -> Bool {
+        c == 0x22 || c == 0x27 || c == 0x29 || c == 0x5D || c == 0x7D
+    }
+
+    private class func isAsciiSentenceTerminator(_ c: unichar) -> Bool {
+        c == 0x2E || c == 0x21 || c == 0x3F
+    }
+
     @objc(stringEqualCanonicalForAX:rhs:)
     class func stringEqualCanonicalForAX(_ lhs: String?, rhs: String?) -> Bool {
         if lhs == rhs {
@@ -38,6 +64,130 @@ final class PHTVAccessibilityService: NSObject {
             return true
         }
         return lhs.decomposedStringWithCanonicalMapping == rhs.decomposedStringWithCanonicalMapping
+    }
+
+    @objc(shouldPrimeUppercaseFromAXWithSafeMode:uppercaseEnabled:uppercaseExcluded:)
+    class func shouldPrimeUppercaseFromAX(safeMode: Bool,
+                                          uppercaseEnabled: Bool,
+                                          uppercaseExcluded: Bool) -> Bool {
+        guard uppercaseEnabled, !uppercaseExcluded, !safeMode else {
+            return false
+        }
+
+        let systemWide = AXUIElementCreateSystemWide()
+        guard let focusedElement = elementAttribute(systemWide, kAXFocusedUIElementAttribute) else {
+            return false
+        }
+
+        var valueRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(focusedElement, kAXValueAttribute as CFString, &valueRef) == .success else {
+            return false
+        }
+
+        let valueString: String
+        if let valueRef,
+           CFGetTypeID(valueRef) == CFStringGetTypeID(),
+           let casted = valueRef as? String {
+            valueString = casted
+        } else {
+            valueString = ""
+        }
+
+        let valueNSString = valueString as NSString
+        var caretLocation = valueNSString.length
+        var rangeRef: CFTypeRef?
+        if AXUIElementCopyAttributeValue(focusedElement, kAXSelectedTextRangeAttribute as CFString, &rangeRef) == .success,
+           let rangeRef,
+           CFGetTypeID(rangeRef) == AXValueGetTypeID() {
+            var sel = CFRange()
+            if AXValueGetValue((rangeRef as! AXValue), .cfRange, &sel) {
+                caretLocation = sel.location
+            }
+        }
+
+        if caretLocation <= 0 {
+            return true
+        }
+        if caretLocation > valueNSString.length {
+            caretLocation = valueNSString.length
+        }
+
+        var idx = caretLocation - 1
+
+        while idx >= 0 && isAsciiWhitespace(valueNSString.character(at: idx)) {
+            idx -= 1
+        }
+        if idx < 0 {
+            return true
+        }
+
+        var progressed = true
+        while progressed {
+            progressed = false
+            while idx >= 0 && isAsciiClosingPunct(valueNSString.character(at: idx)) {
+                idx -= 1
+                progressed = true
+            }
+            while idx >= 0 && isAsciiWhitespace(valueNSString.character(at: idx)) {
+                idx -= 1
+                progressed = true
+            }
+        }
+        if idx < 0 {
+            return true
+        }
+
+        let lastChar = valueNSString.character(at: idx)
+        if !isAsciiSentenceTerminator(lastChar) {
+            return false
+        }
+
+        if lastChar != 0x2E {
+            return true
+        }
+
+        var end = idx - 1
+        while end >= 0 && isAsciiWhitespace(valueNSString.character(at: end)) {
+            end -= 1
+        }
+        if end < 0 {
+            return false
+        }
+
+        var start = end
+        while start >= 0 {
+            let c = valueNSString.character(at: start)
+            if isAsciiLetter(c) || isAsciiDigit(c) {
+                start -= 1
+                continue
+            }
+            break
+        }
+
+        let tokenStart = start + 1
+        let tokenLength = end - start
+        if tokenLength <= 0 {
+            return false
+        }
+
+        let token = valueNSString.substring(with: NSRange(location: tokenStart, length: tokenLength)).lowercased()
+
+        var allDigits = true
+        for char in token.utf16 {
+            if !isAsciiDigit(char) {
+                allDigits = false
+                break
+            }
+        }
+        if allDigits {
+            return false
+        }
+
+        if token.count == 1 {
+            return false
+        }
+
+        return !uppercaseAbbreviationSet.contains(token)
     }
 
     @objc(stringHasCanonicalPrefixForAX:prefix:)

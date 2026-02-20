@@ -42,10 +42,20 @@ struct PHTVApp: App {
             StatusBarMenuView()
                 .environmentObject(appState)
         } label: {
-            // Use app icon (template); add slash when in English mode
-            let size = CGFloat(appState.menuBarIconSize)
-            Image(nsImage: makeMenuBarIconImage(size: size, slashed: !appState.isEnabled, useVietnameseIcon: appState.useVietnameseMenubarIcon))
-                .renderingMode(.template)
+            let size = nativeMenuBarIconSize(CGFloat(appState.menuBarIconSize))
+            let iconName = menuBarIconAssetName(
+                isEnabled: appState.isEnabled,
+                useVietnameseIcon: appState.useVietnameseMenubarIcon
+            )
+
+            if let nsImage = makeMenuBarIconImage(named: iconName, size: size) {
+                Image(nsImage: nsImage)
+                    .renderingMode(.original)
+                    .id("\(iconName)-\(Int(size * 100))")
+            } else {
+                Text(appState.isEnabled ? "Vi" : "En")
+                    .font(.system(size: max(11, size * 0.72), weight: .semibold, design: .rounded))
+            }
         }
         .menuBarExtraStyle(.menu)
         // Note: MenuBarExtra automatically updates when appState.isEnabled changes
@@ -68,48 +78,47 @@ struct PHTVApp: App {
 @MainActor
 private var menuBarIconCache: [String: NSImage] = [:]
 
+private func menuBarIconAssetName(isEnabled: Bool, useVietnameseIcon: Bool) -> String {
+    if !isEnabled {
+        return "menubar_english"
+    }
+    if useVietnameseIcon {
+        return "menubar_vietnamese"
+    }
+    return "menubar_icon"
+}
+
 @MainActor
-private func makeMenuBarIconImage(size: CGFloat, slashed: Bool, useVietnameseIcon: Bool) -> NSImage {
-    let cacheKey = "\(size)-\(slashed)-\(useVietnameseIcon)"
+private func makeMenuBarIconImage(named iconName: String, size: CGFloat) -> NSImage? {
+    let quantizedSize = (size * 100).rounded() / 100
+    let cacheKey = "\(iconName)-\(quantizedSize)"
     if let cached = menuBarIconCache[cacheKey] {
         return cached
     }
 
-    let targetSize = NSSize(width: size, height: size)
-    let img = NSImage(size: targetSize)
-    img.lockFocus()
-    defer { img.unlockFocus() }
-
-    let rect = NSRect(origin: .zero, size: targetSize)
-
-    let baseIcon: NSImage? = {
-        if slashed {
-            if let englishIcon = NSImage(named: "menubar_english") {
-                return englishIcon
-            }
-        }
-        if useVietnameseIcon, let vietnameseIcon = NSImage(named: "menubar_vietnamese") {
-            return vietnameseIcon
-        }
-        if let img = NSImage(named: "menubar_icon") {
-            return img
-        }
-        return NSApplication.shared.applicationIconImage
-    }()
-
-    if let baseIcon {
-        baseIcon.draw(
-            in: rect,
-            from: .zero,
-            operation: .sourceOver,
-            fraction: 1.0,
-            respectFlipped: true,
-            hints: [.interpolation: NSImageInterpolation.high]
-        )
+    guard let baseIcon = NSImage(named: NSImage.Name(iconName)) else {
+        return nil
     }
 
-    img.isTemplate = true
-    img.size = targetSize
-    menuBarIconCache[cacheKey] = img
-    return img
+    let targetSize = NSSize(width: quantizedSize, height: quantizedSize)
+    let renderedImage = NSImage(size: targetSize)
+    renderedImage.lockFocus()
+    baseIcon.draw(
+        in: NSRect(origin: .zero, size: targetSize),
+        from: .zero,
+        operation: .sourceOver,
+        fraction: 1.0,
+        respectFlipped: true,
+        hints: [.interpolation: NSImageInterpolation.high]
+    )
+    renderedImage.unlockFocus()
+    renderedImage.size = targetSize
+    menuBarIconCache[cacheKey] = renderedImage
+    return renderedImage
+}
+
+private func nativeMenuBarIconSize(_ requestedSize: CGFloat) -> CGFloat {
+    let minSize: CGFloat = 12.0
+    let maxNativeSize = max(minSize, min(18.0, NSStatusBar.system.thickness - 6.0))
+    return min(max(requestedSize, minSize), maxNativeSize)
 }

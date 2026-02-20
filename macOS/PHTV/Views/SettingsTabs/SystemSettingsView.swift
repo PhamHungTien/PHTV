@@ -8,6 +8,7 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+import AppKit
 
 struct SystemSettingsView: View {
     @EnvironmentObject var appState: AppState
@@ -25,6 +26,11 @@ struct SystemSettingsView: View {
     @State private var exportBackup = SettingsBackup(version: "2.0", exportDate: "")
 
     private static let isoFormatter = ISO8601DateFormatter()
+
+    private var nativeMenuBarIconMaxSize: Double {
+        let statusBarBound = Double(NSStatusBar.system.thickness - 6.0)
+        return max(12.0, min(18.0, statusBarBound))
+    }
 
     var body: some View {
         ScrollView {
@@ -189,7 +195,7 @@ struct SystemSettingsView: View {
                     title: "Kích thước icon",
                     subtitle: "Điều chỉnh kích thước icon trên menu bar",
                     minValue: 12.0,
-                    maxValue: 20.0,
+                    maxValue: nativeMenuBarIconMaxSize,
                     step: 0.01,
                     value: $appState.menuBarIconSize,
                     valueFormatter: { String(format: "%.0f px", $0) }

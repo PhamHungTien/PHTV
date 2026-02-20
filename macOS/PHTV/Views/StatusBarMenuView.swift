@@ -76,18 +76,9 @@ struct StatusBarMenuView: View {
         // MARK: - Trạng thái
         // ═══════════════════════════════════════════
         Section {
-            Picker("", selection: Binding(
-                get: { appState.isEnabled },
-                set: { appState.isEnabled = $0 }
-            )) {
-                Label("Tiếng Việt", systemImage: "v.circle.fill")
-                    .tag(true)
-                Label("Tiếng Anh", systemImage: "e.circle.fill")
-                    .tag(false)
+            Toggle(isOn: $appState.isEnabled) {
+                Label("Bật Tiếng Việt (\(hotkeyString))", systemImage: "character")
             }
-            .pickerStyle(.inline)
-            .labelsHidden()
-
         }
 
         Divider()

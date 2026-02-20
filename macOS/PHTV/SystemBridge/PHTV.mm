@@ -78,17 +78,6 @@ static const double CLI_SPEED_FACTOR_FAST = 2.1;
 static const double CLI_SPEED_FACTOR_MEDIUM = 1.6;
 static const double CLI_SPEED_FACTOR_SLOW = 1.3;
 
-// AXValueType constant name differs across SDK versions.
-#if defined(kAXValueTypeCFRange)
-    #define PHTV_AXVALUE_CFRANGE_TYPE kAXValueTypeCFRange
-#elif defined(kAXValueCFRangeType)
-    #define PHTV_AXVALUE_CFRANGE_TYPE kAXValueCFRangeType
-#else
-    // Fallback for older SDKs where the CFRange constant isn't exposed.
-    // AXValueType values are stable across macOS; CFRange is typically 4.
-    #define PHTV_AXVALUE_CFRANGE_TYPE ((AXValueType)4)
-#endif
-
 // High-resolution timing
 static mach_timebase_info_data_t timebase_info;
 static dispatch_once_t timebase_init_token;
@@ -378,26 +367,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         ApplyCliProfile(kPHTVCliProfileDefault);
     }
 
-    static inline BOOL IsAsciiWhitespace(unichar c) {
-        return c == ' ' || c == '\t' || c == '\n' || c == '\r';
-    }
-
-    static inline BOOL IsAsciiLetter(unichar c) {
-        return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
-    }
-
-    static inline BOOL IsAsciiDigit(unichar c) {
-        return (c >= '0' && c <= '9');
-    }
-
-    static inline BOOL IsAsciiClosingPunct(unichar c) {
-        return c == '"' || c == '\'' || c == ')' || c == ']' || c == '}';
-    }
-
-    static inline BOOL IsAsciiSentenceTerminator(unichar c) {
-        return c == '.' || c == '!' || c == '?';
-    }
-
     static inline BOOL IsUppercasePrimeCandidateKey(CGKeyCode keycode, CGEventFlags flags) {
         if ((flags & kCGEventFlagMaskCommand) ||
             (flags & kCGEventFlagMaskControl) ||
@@ -415,157 +384,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         if (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r') {
             return NO;
         }
-        return YES;
-    }
-
-    static NSSet<NSString *> *UppercaseAbbreviationSet(void) {
-        static NSSet<NSString *> *set = nil;
-        static dispatch_once_t onceToken;
-        dispatch_once(&onceToken, ^{
-            set = [NSSet setWithArray:@[
-                @"mr", @"mrs", @"ms", @"dr", @"prof", @"sr", @"jr", @"st",
-                @"vs", @"etc", @"eg", @"ie",
-                @"tp", @"q", @"p", @"ths", @"ts", @"gs", @"pgs"
-            ]];
-        });
-        return set;
-    }
-
-    static BOOL ShouldPrimeUppercaseFromAX(BOOL *outReliable) {
-        if (outReliable) {
-            *outReliable = NO;
-        }
-        if (!vUpperCaseFirstChar || vUpperCaseExcludedForCurrentApp || vSafeMode) {
-            return NO;
-        }
-
-        AXUIElementRef systemWide = AXUIElementCreateSystemWide();
-        AXUIElementRef focusedElement = NULL;
-        AXError error = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute, (CFTypeRef *)&focusedElement);
-        CFRelease(systemWide);
-        if (error != kAXErrorSuccess || focusedElement == NULL) {
-            return NO;
-        }
-
-        CFTypeRef valueRef = NULL;
-        error = AXUIElementCopyAttributeValue(focusedElement, kAXValueAttribute, &valueRef);
-        if (error != kAXErrorSuccess) {
-            CFRelease(focusedElement);
-            return NO;
-        }
-
-        if (outReliable) {
-            *outReliable = YES;
-        }
-
-        NSString *valueStr = @"";
-        if (valueRef && CFGetTypeID(valueRef) == CFStringGetTypeID()) {
-            valueStr = [(__bridge NSString *)valueRef copy];
-        }
-
-        // Read caret position
-        CFTypeRef rangeRef = NULL;
-        NSInteger caretLocation = (NSInteger)valueStr.length;
-        error = AXUIElementCopyAttributeValue(focusedElement, kAXSelectedTextRangeAttribute, &rangeRef);
-        if (error == kAXErrorSuccess && rangeRef && CFGetTypeID(rangeRef) == AXValueGetTypeID()) {
-            CFRange sel;
-            if (AXValueGetValue((AXValueRef)rangeRef, PHTV_AXVALUE_CFRANGE_TYPE, &sel)) {
-                caretLocation = (NSInteger)sel.location;
-            }
-        }
-        if (rangeRef) CFRelease(rangeRef);
-        if (valueRef) CFRelease(valueRef);
-        CFRelease(focusedElement);
-
-        if (caretLocation <= 0) {
-            return YES;
-        }
-        if (caretLocation > (NSInteger)valueStr.length) {
-            caretLocation = (NSInteger)valueStr.length;
-        }
-
-        NSInteger idx = caretLocation - 1;
-
-        // Skip trailing whitespace
-        while (idx >= 0 && IsAsciiWhitespace([valueStr characterAtIndex:idx])) {
-            idx--;
-        }
-        if (idx < 0) {
-            return YES;
-        }
-
-        // Skip closing punctuation and any whitespace before it
-        BOOL progressed = YES;
-        while (progressed) {
-            progressed = NO;
-            while (idx >= 0 && IsAsciiClosingPunct([valueStr characterAtIndex:idx])) {
-                idx--;
-                progressed = YES;
-            }
-            while (idx >= 0 && IsAsciiWhitespace([valueStr characterAtIndex:idx])) {
-                idx--;
-                progressed = YES;
-            }
-        }
-        if (idx < 0) {
-            return YES;
-        }
-
-        unichar lastChar = [valueStr characterAtIndex:idx];
-        if (!IsAsciiSentenceTerminator(lastChar)) {
-            return NO;
-        }
-
-        if (lastChar != '.') {
-            return YES;
-        }
-
-        // Dot: check previous token to avoid abbreviations like "Dr." or "tp."
-        NSInteger end = idx - 1;
-        while (end >= 0 && IsAsciiWhitespace([valueStr characterAtIndex:end])) {
-            end--;
-        }
-        if (end < 0) {
-            return NO;
-        }
-
-        NSInteger start = end;
-        while (start >= 0) {
-            unichar c = [valueStr characterAtIndex:start];
-            if (IsAsciiLetter(c) || IsAsciiDigit(c)) {
-                start--;
-                continue;
-            }
-            break;
-        }
-
-        NSRange tokenRange = NSMakeRange(start + 1, end - start);
-        if (tokenRange.length == 0) {
-            return NO;
-        }
-
-        NSString *token = [[valueStr substringWithRange:tokenRange] lowercaseString];
-
-        // Numeric token like "3."
-        BOOL allDigits = YES;
-        for (NSUInteger i = 0; i < token.length; i++) {
-            if (!IsAsciiDigit([token characterAtIndex:i])) {
-                allDigits = NO;
-                break;
-            }
-        }
-        if (allDigits) {
-            return NO;
-        }
-
-        if (token.length == 1) {
-            return NO;
-        }
-
-        if ([UppercaseAbbreviationSet() containsObject:token]) {
-            return NO;
-        }
-
         return YES;
     }
 
@@ -711,8 +529,9 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
         _pendingUppercasePrimeCheck = true;
         if (allowUppercasePrime) {
-            BOOL axReliable = NO;
-            BOOL shouldPrime = ShouldPrimeUppercaseFromAX(&axReliable);
+            BOOL shouldPrime = [PHTVAccessibilityService shouldPrimeUppercaseFromAXWithSafeMode:vSafeMode
+                                                                                 uppercaseEnabled:vUpperCaseFirstChar
+                                                                                uppercaseExcluded:vUpperCaseExcludedForCurrentApp];
             if (shouldPrime) {
                 vPrimeUpperCaseFirstChar();
                 _pendingUppercasePrimeCheck = false;
@@ -1583,8 +1402,9 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                     _pendingUppercasePrimeCheck = true;
                 }
                 if (_pendingUppercasePrimeCheck && IsUppercasePrimeCandidateKey(_keycode, _flag)) {
-                    BOOL axReliable = NO;
-                    BOOL shouldPrime = ShouldPrimeUppercaseFromAX(&axReliable);
+                    BOOL shouldPrime = [PHTVAccessibilityService shouldPrimeUppercaseFromAXWithSafeMode:vSafeMode
+                                                                                         uppercaseEnabled:vUpperCaseFirstChar
+                                                                                        uppercaseExcluded:vUpperCaseExcludedForCurrentApp];
                     if (shouldPrime) {
                         vPrimeUpperCaseFirstChar();
                     }
