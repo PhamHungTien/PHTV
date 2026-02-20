@@ -14,10 +14,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface AppDelegate : NSObject <NSApplicationDelegate, NSMenuDelegate>
 
--(void)loadDefaultConfig;
-
--(void)setGrayIcon:(BOOL)val;
-
 - (void)setupSwiftUIBridge;
 - (void)loadExistingMacros;
 
