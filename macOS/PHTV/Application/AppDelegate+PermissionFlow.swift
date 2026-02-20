@@ -10,7 +10,7 @@ import Foundation
 
 private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
 
-@objc extension AppDelegate {
+@MainActor @objc extension AppDelegate {
     func askPermission() {
         let alert = NSAlert()
 

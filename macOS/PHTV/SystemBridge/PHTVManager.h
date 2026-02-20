@@ -46,6 +46,8 @@
 // Utilities
 +(NSString*)getBuildDate;
 +(void)showMessage:(NSWindow*)window message:(NSString*)msg subMsg:(NSString*)subMsg;
++(void)requestNewSession;
++(void)setDockIconRuntimeVisible:(BOOL)visible;
 
 // Convert feature
 +(BOOL)quickConvert;

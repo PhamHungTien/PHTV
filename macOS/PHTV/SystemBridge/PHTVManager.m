@@ -21,6 +21,8 @@ extern CGEventRef PHTVCallback(CGEventTapProxy proxy,
 
 extern NSString* ConvertUtil(NSString* str);
 extern BOOL vSafeMode;
+extern void RequestNewSession(void);
+extern int vShowIconOnDock;
 
 // No-op callback used only for permission test tap to satisfy nonnull parameter requirements
 static CGEventRef PHTVTestTapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event, void *refcon) {
@@ -413,6 +415,14 @@ static const useconds_t kTestTapRetryDelayUs = 50000;  // 50ms between retries
 
 +(NSString*)getBuildDate {
     return [NSString stringWithUTF8String:__DATE__];
+}
+
++(void)requestNewSession {
+    RequestNewSession();
+}
+
++(void)setDockIconRuntimeVisible:(BOOL)visible {
+    vShowIconOnDock = visible ? 1 : 0;
 }
 
 +(void)showMessage:(NSWindow*)window message:(NSString*)msg subMsg:(NSString*)subMsg {

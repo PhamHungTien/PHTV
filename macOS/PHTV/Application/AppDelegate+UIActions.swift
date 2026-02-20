@@ -14,7 +14,7 @@ private let phtvNotificationShowMacroTab = Notification.Name("ShowMacroTab")
 private let phtvNotificationShowAboutTab = Notification.Name("ShowAboutTab")
 private let convertToolDontAlertWhenCompletedKey = "convertToolDontAlertWhenCompleted"
 
-@objc extension AppDelegate {
+@MainActor @objc extension AppDelegate {
     func handleSettingsReset(_ notification: Notification?) {
         _ = notification
 
