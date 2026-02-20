@@ -1175,43 +1175,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         return NULL;
     }
 
-    // Strip pause modifier from event flags to prevent special characters
-    static inline CGEventFlags StripPauseModifier(CGEventFlags flags) {
-        return (CGEventFlags)[PHTVHotkeyService stripPauseModifierForFlags:(uint64_t)flags
-                                                               pauseKeyCode:(int32_t)vPauseKey];
-    }
-
-    // Handle pause key press - temporarily disable Vietnamese input
-    static inline void HandlePauseKeyPress(CGEventFlags flags) {
-        int action = [PHTVHotkeyService evaluatePauseStateActionWithOldFlags:0
-                                                                     newFlags:(uint64_t)flags
-                                                              pauseKeyEnabled:(int32_t)vPauseKeyEnabled
-                                                                 pauseKeyCode:(int32_t)vPauseKey
-                                                                  pausePressed:_pauseKeyPressed];
-        if (action != PHTVPauseStateActionActivate) {
-            return;
-        }
-
-        _savedLanguageBeforePause = vLanguage;
-        if (vLanguage == 1) {
-            vLanguage = 0;
-        }
-        _pauseKeyPressed = true;
-    }
-
-    // Handle pause key release - restore Vietnamese input
-    static inline void HandlePauseKeyRelease(CGEventFlags oldFlags, CGEventFlags newFlags) {
-        int action = [PHTVHotkeyService evaluatePauseStateActionWithOldFlags:(uint64_t)oldFlags
-                                                                     newFlags:(uint64_t)newFlags
-                                                              pauseKeyEnabled:(int32_t)vPauseKeyEnabled
-                                                                 pauseKeyCode:(int32_t)vPauseKey
-                                                                  pausePressed:_pauseKeyPressed];
-        if (action == PHTVPauseStateActionRelease) {
-            vLanguage = _savedLanguageBeforePause;
-            _pauseKeyPressed = false;
-        }
-    }
-
     /**
      * MAIN HOOK entry, very important function.
      * MAIN Callback.
@@ -1300,7 +1263,8 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         if (_pauseKeyPressed && (type == kCGEventKeyDown || type == kCGEventKeyUp)) {
             if ([PHTVHotkeyService shouldStripPauseModifierWithFlags:(uint64_t)_flag
                                                          pauseKeyCode:(int32_t)vPauseKey]) {
-                CGEventFlags newFlags = StripPauseModifier(_flag);
+                CGEventFlags newFlags = (CGEventFlags)[PHTVHotkeyService stripPauseModifierForFlags:(uint64_t)_flag
+                                                                                        pauseKeyCode:(int32_t)vPauseKey];
                 CGEventSetFlags(event, newFlags);
                 _flag = newFlags;  // Update local flag as well
             }
@@ -1382,7 +1346,17 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 }
 
                 // Check if pause key is being pressed - temporarily disable Vietnamese
-                HandlePauseKeyPress(_flag);
+                PHTVPauseTransitionBox *pausePressTransition = [PHTVHotkeyService pauseTransitionForPressWithFlags:(uint64_t)_flag
+                                                                                                      pauseKeyEnabled:(int32_t)vPauseKeyEnabled
+                                                                                                         pauseKeyCode:(int32_t)vPauseKey
+                                                                                                          pausePressed:_pauseKeyPressed
+                                                                                                       currentLanguage:(int32_t)vLanguage
+                                                                                                         savedLanguage:(int32_t)_savedLanguageBeforePause];
+                _savedLanguageBeforePause = (int)pausePressTransition.savedLanguage;
+                _pauseKeyPressed = pausePressTransition.pausePressed;
+                if (pausePressTransition.shouldUpdateLanguage) {
+                    vLanguage = pausePressTransition.language;
+                }
             } else if (_lastFlag > _flag)  {
                 int releasePlan = [PHTVHotkeyService evaluateFlagsReleasePlanWithRestoreOnEscape:(int32_t)vRestoreOnEscape
                                                                             restoreModifierPressed:_restoreModifierPressed
@@ -1435,7 +1409,18 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 }
 
                 // Check if pause key is being released - restore Vietnamese mode
-                HandlePauseKeyRelease(_lastFlag, _flag);
+                PHTVPauseTransitionBox *pauseReleaseTransition = [PHTVHotkeyService pauseTransitionForReleaseWithOldFlags:(uint64_t)_lastFlag
+                                                                                                                  newFlags:(uint64_t)_flag
+                                                                                                           pauseKeyEnabled:(int32_t)vPauseKeyEnabled
+                                                                                                              pauseKeyCode:(int32_t)vPauseKey
+                                                                                                               pausePressed:_pauseKeyPressed
+                                                                                                            currentLanguage:(int32_t)vLanguage
+                                                                                                              savedLanguage:(int32_t)_savedLanguageBeforePause];
+                _savedLanguageBeforePause = (int)pauseReleaseTransition.savedLanguage;
+                _pauseKeyPressed = pauseReleaseTransition.pausePressed;
+                if (pauseReleaseTransition.shouldUpdateLanguage) {
+                    vLanguage = pauseReleaseTransition.language;
+                }
 
                 if ([PHTVRuntimeUIBridgeService handleModifierReleaseHotkeyAction:(int32_t)releaseAction]) {
                     _lastFlag = 0;

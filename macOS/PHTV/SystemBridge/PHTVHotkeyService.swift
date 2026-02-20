@@ -34,6 +34,21 @@ import Carbon
 }
 
 @objcMembers
+final class PHTVPauseTransitionBox: NSObject {
+    let shouldUpdateLanguage: Bool
+    let language: Int32
+    let pausePressed: Bool
+    let savedLanguage: Int32
+
+    init(shouldUpdateLanguage: Bool, language: Int32, pausePressed: Bool, savedLanguage: Int32) {
+        self.shouldUpdateLanguage = shouldUpdateLanguage
+        self.language = language
+        self.pausePressed = pausePressed
+        self.savedLanguage = savedLanguage
+    }
+}
+
+@objcMembers
 final class PHTVHotkeyService: NSObject {
     private static let hotkeyKeyMask: UInt32 = 0x00FF
     private static let hotkeyControlMask: UInt32 = 0x0100
@@ -664,6 +679,80 @@ final class PHTVHotkeyService: NSObject {
         let wasPressed = (oldFlags & pauseMask) != 0
         let isPressed = (newFlags & pauseMask) != 0
         return wasPressed && !isPressed
+    }
+
+    @objc(pauseTransitionForPressWithFlags:pauseKeyEnabled:pauseKeyCode:pausePressed:currentLanguage:savedLanguage:)
+    class func pauseTransitionForPress(
+        withFlags flags: UInt64,
+        pauseKeyEnabled: Int32,
+        pauseKeyCode: Int32,
+        pausePressed: Bool,
+        currentLanguage: Int32,
+        savedLanguage: Int32
+    ) -> PHTVPauseTransitionBox {
+        let action = evaluatePauseStateAction(
+            oldFlags: 0,
+            newFlags: flags,
+            pauseKeyEnabled: pauseKeyEnabled,
+            pauseKeyCode: pauseKeyCode,
+            pausePressed: pausePressed
+        )
+
+        guard action == PHTVPauseStateAction.activate.rawValue else {
+            return PHTVPauseTransitionBox(
+                shouldUpdateLanguage: false,
+                language: currentLanguage,
+                pausePressed: pausePressed,
+                savedLanguage: savedLanguage
+            )
+        }
+
+        var nextLanguage = currentLanguage
+        if currentLanguage == 1 {
+            nextLanguage = 0
+        }
+
+        return PHTVPauseTransitionBox(
+            shouldUpdateLanguage: nextLanguage != currentLanguage,
+            language: nextLanguage,
+            pausePressed: true,
+            savedLanguage: currentLanguage
+        )
+    }
+
+    @objc(pauseTransitionForReleaseWithOldFlags:newFlags:pauseKeyEnabled:pauseKeyCode:pausePressed:currentLanguage:savedLanguage:)
+    class func pauseTransitionForRelease(
+        withOldFlags oldFlags: UInt64,
+        newFlags: UInt64,
+        pauseKeyEnabled: Int32,
+        pauseKeyCode: Int32,
+        pausePressed: Bool,
+        currentLanguage: Int32,
+        savedLanguage: Int32
+    ) -> PHTVPauseTransitionBox {
+        let action = evaluatePauseStateAction(
+            oldFlags: oldFlags,
+            newFlags: newFlags,
+            pauseKeyEnabled: pauseKeyEnabled,
+            pauseKeyCode: pauseKeyCode,
+            pausePressed: pausePressed
+        )
+
+        guard action == PHTVPauseStateAction.release.rawValue else {
+            return PHTVPauseTransitionBox(
+                shouldUpdateLanguage: false,
+                language: currentLanguage,
+                pausePressed: pausePressed,
+                savedLanguage: savedLanguage
+            )
+        }
+
+        return PHTVPauseTransitionBox(
+            shouldUpdateLanguage: true,
+            language: savedLanguage,
+            pausePressed: false,
+            savedLanguage: savedLanguage
+        )
     }
 
     @objc(convertKeyStringToKeyCode:fallback:)
