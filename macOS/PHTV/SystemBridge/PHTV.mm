@@ -1203,29 +1203,22 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
         if (type == kCGEventKeyDown) {
             if (vUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp) {
-                bool hasFocusModifiers = (_flag & (kCGEventFlagMaskCommand |
-                                                   kCGEventFlagMaskControl |
-                                                   kCGEventFlagMaskAlternate |
-                                                   kCGEventFlagMaskSecondaryFn |
-                                                   kCGEventFlagMaskNumericPad |
-                                                   kCGEventFlagMaskHelp)) != 0;
-                if (hasFocusModifiers ||
-                    _keycode == KEY_TAB ||
-                    phtv_mac_key_is_navigation(_keycode)) {
-                    _pendingUppercasePrimeCheck = true;
-                }
                 Uint32 keyWithCaps = _keycode | (((_flag & kCGEventFlagMaskShift) || (_flag & kCGEventFlagMaskAlphaShift)) ? CAPS_MASK : 0);
                 Uint16 keyCharacter = keyCodeToCharacter(keyWithCaps);
-                if (_pendingUppercasePrimeCheck &&
-                    [PHTVHotkeyService isUppercasePrimeCandidateWithCharacter:(uint16_t)keyCharacter
-                                                                         flags:(uint64_t)_flag]) {
+                BOOL isNavigationKey = phtv_mac_key_is_navigation(_keycode);
+                PHTVUppercasePrimeTransitionBox *uppercaseTransition = [PHTVHotkeyService uppercasePrimeTransitionForPending:_pendingUppercasePrimeCheck
+                                                                                                                     flags:(uint64_t)_flag
+                                                                                                                   keyCode:(uint16_t)_keycode
+                                                                                                              keyCharacter:(uint16_t)keyCharacter
+                                                                                                           isNavigationKey:isNavigationKey];
+                _pendingUppercasePrimeCheck = uppercaseTransition.pending;
+                if (uppercaseTransition.shouldAttemptPrime) {
                     BOOL shouldPrime = [PHTVAccessibilityService shouldPrimeUppercaseFromAXWithSafeMode:vSafeMode
                                                                                          uppercaseEnabled:vUpperCaseFirstChar
                                                                                         uppercaseExcluded:vUpperCaseExcludedForCurrentApp];
                     if (shouldPrime) {
                         vPrimeUpperCaseFirstChar();
                     }
-                    _pendingUppercasePrimeCheck = false;
                 }
             }
 

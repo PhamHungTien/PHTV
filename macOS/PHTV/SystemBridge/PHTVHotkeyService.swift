@@ -64,6 +64,17 @@ final class PHTVKeyDownHotkeyEvaluationBox: NSObject {
 }
 
 @objcMembers
+final class PHTVUppercasePrimeTransitionBox: NSObject {
+    let shouldAttemptPrime: Bool
+    let pending: Bool
+
+    init(shouldAttemptPrime: Bool, pending: Bool) {
+        self.shouldAttemptPrime = shouldAttemptPrime
+        self.pending = pending
+    }
+}
+
+@objcMembers
 final class PHTVHotkeyService: NSObject {
     private static let hotkeyKeyMask: UInt32 = 0x00FF
     private static let hotkeyControlMask: UInt32 = 0x0100
@@ -747,6 +758,40 @@ final class PHTVHotkeyService: NSObject {
         default:
             return true
         }
+    }
+
+    @objc(uppercasePrimeTransitionForPending:flags:keyCode:keyCharacter:isNavigationKey:)
+    class func uppercasePrimeTransition(
+        forPending pending: Bool,
+        flags: UInt64,
+        keyCode: UInt16,
+        keyCharacter: UInt16,
+        isNavigationKey: Bool
+    ) -> PHTVUppercasePrimeTransitionBox {
+        let focusModifierMask = commandFlagMask
+            | controlFlagMask
+            | optionFlagMask
+            | fnFlagMask
+            | CGEventFlags.maskNumericPad.rawValue
+            | CGEventFlags.maskHelp.rawValue
+
+        var nextPending = pending
+        let hasFocusModifiers = (flags & focusModifierMask) != 0
+        if hasFocusModifiers || keyCode == UInt16(kVK_Tab) || isNavigationKey {
+            nextPending = true
+        }
+
+        let shouldAttemptPrime = nextPending
+            && isUppercasePrimeCandidate(character: keyCharacter, flags: flags)
+
+        if shouldAttemptPrime {
+            nextPending = false
+        }
+
+        return PHTVUppercasePrimeTransitionBox(
+            shouldAttemptPrime: shouldAttemptPrime,
+            pending: nextPending
+        )
     }
 
     @objc(shouldReleasePauseModeFromOldFlags:newFlags:pauseKeyCode:)
