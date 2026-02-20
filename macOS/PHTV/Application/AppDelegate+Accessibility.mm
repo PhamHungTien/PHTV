@@ -366,7 +366,6 @@
             NSLog(@"[Accessibility] Attempting event tap initialization before relaunch prompt...");
             if ([PHTVManager initEventTap]) {
                 NSLog(@"[Accessibility] ✅ Event tap initialized successfully! No relaunch needed.");
-                [PHTVManager resetAxYesTapNoCounter];
                 isShowingRelaunchAlert = NO;
 
                 // Update UI and start monitoring
@@ -390,12 +389,9 @@
 
         if (response == NSAlertFirstButtonReturn) {
             NSLog(@"[Accessibility] User requested relaunch to apply permission");
-            [PHTVManager resetAxYesTapNoCounter];
             [self relaunchAppAfterPermissionGrant];
         } else {
             NSLog(@"[Accessibility] User deferred relaunch");
-            // Reset counter so we don't spam the user
-            [PHTVManager resetAxYesTapNoCounter];
         }
     });
 }

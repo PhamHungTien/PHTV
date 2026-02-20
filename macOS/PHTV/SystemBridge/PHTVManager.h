@@ -40,14 +40,6 @@
 +(void)startTCCNotificationListener;  // Start listening for TCC database changes
 +(void)stopTCCNotificationListener;   // Stop listening
 
-// System Settings detection for adaptive polling
-+(BOOL)isSystemSettingsOpen;
-+(void)updateSystemSettingsState;
-
-// Relaunch detection - tracks when app needs restart for permission to work
-+(BOOL)shouldSuggestRelaunch;
-+(void)resetAxYesTapNoCounter;
-
 // Table codes
 +(NSArray*)getTableCodes;
 

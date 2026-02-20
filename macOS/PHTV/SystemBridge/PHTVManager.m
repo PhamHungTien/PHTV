@@ -62,13 +62,6 @@ static const NSTimeInterval kCacheTTLPermissionGranted = 5.0;     // 5s when gra
 static const int kMaxTestTapRetries = 3;           // Number of retry attempts
 static const useconds_t kTestTapRetryDelayUs = 50000;  // 50ms between retries
 
-// Track if System Settings is currently open (for aggressive polling)
-static BOOL _systemSettingsIsOpen = NO;
-
-// Track consecutive AX=YES but Tap=NO states (indicates need for relaunch)
-static int _axYesTapNoCount = 0;
-static const int kMaxAxYesTapNoBeforeRelaunch = 5;  // After 5 consecutive occurrences, suggest relaunch
-
 #pragma mark - Core Functionality
 
 +(BOOL)hasPermissionLost {
@@ -175,34 +168,6 @@ static const int kMaxAxYesTapNoBeforeRelaunch = 5;  // After 5 consecutive occur
     return NO;
 }
 
-// Check if System Settings (Privacy & Security) is currently open
-+(BOOL)isSystemSettingsOpen {
-    NSRunningApplication *frontApp = [[NSWorkspace sharedWorkspace] frontmostApplication];
-    if (frontApp) {
-        NSString *bundleId = frontApp.bundleIdentifier;
-        // System Settings on macOS 13+ is "com.apple.systempreferences"
-        // System Preferences on older macOS is also "com.apple.systempreferences"
-        return [bundleId isEqualToString:@"com.apple.systempreferences"] ||
-               [bundleId isEqualToString:@"com.apple.Accessibility-Settings.extension"];
-    }
-    return NO;
-}
-
-// Update System Settings open state
-+(void)updateSystemSettingsState {
-    _systemSettingsIsOpen = [self isSystemSettingsOpen];
-}
-
-// Check if we should suggest app relaunch
-+(BOOL)shouldSuggestRelaunch {
-    return _axYesTapNoCount >= kMaxAxYesTapNoBeforeRelaunch;
-}
-
-// Reset the AX=YES Tap=NO counter
-+(void)resetAxYesTapNoCounter {
-    _axYesTapNoCount = 0;
-}
-
 // SIMPLE permission check using ONLY test event tap (Apple recommended)
 // This is the ONLY reliable way to check accessibility permission
 // AXIsProcessTrusted() is unreliable - it can return YES even when permission is not effective
@@ -258,7 +223,6 @@ static const int kMaxAxYesTapNoBeforeRelaunch = 5;  // After 5 consecutive occur
 // Force permission check (bypasses all caching)
 +(BOOL)forcePermissionCheck {
     [self invalidatePermissionCache];
-    _axYesTapNoCount = 0;
     return [self canCreateEventTap];
 }
 
