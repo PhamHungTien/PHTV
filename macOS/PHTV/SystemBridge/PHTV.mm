@@ -26,7 +26,6 @@ extern "C" {
 }
 
 #define FRONT_APP [[NSWorkspace sharedWorkspace] frontmostApplication].bundleIdentifier
-static NSString *const PHTVBundleIdentifier = @"com.phamhungtien.phtv";
 
 typedef NS_ENUM(NSInteger, DelayType) {
     DelayTypeNone = 0,
@@ -648,7 +647,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     // For emoji hotkey modifier-only mode - prevent prefix matching
     bool _keyPressedWhileEmojiModifiersHeld = false;
 
-    NSString* _frontMostApp = @"UnknownApp";
     
     void PHTVInit() {
         dispatch_once(&timebase_init_token, ^{
@@ -758,101 +756,26 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     }
     
     void OnActiveAppChanged() { //use for smart switch key; improved on Sep 28th, 2019
-        if (!vUseSmartSwitchKey && !vRememberCode) {
-            return;  // Skip if features disabled - performance optimization
-        }
-
-        // Use the optimized focused app bundle ID
-        _frontMostApp = getFocusedAppBundleId();
-
-        // CRITICAL: Guard against nil bundleIdentifier during app switching transitions
-        if (_frontMostApp == nil) {
-            return;  // Skip if no frontmost app - prevents crash on NULL UTF8String
-        }
-
-        // CRITICAL FIX: Ignore PHTV's own settings window in smart switch logic
-        // This prevents the settings window (which is often excluded/English) from polluting the global language state
-        // or overwriting the saved state of the previous app.
-        if ([_frontMostApp isEqualToString:PHTVBundleIdentifier]) {
-            return;
-        }
-
-        int languageTemp = (int)[PHTVSmartSwitchRuntimeService appStateForBundleId:_frontMostApp
-                                                                     defaultLanguage:vLanguage
-                                                                    defaultCodeTable:vCodeTable];
-
-        if ([PHTVSmartSwitchRuntimeService isNotFoundState:languageTemp]) {
-            [PHTVSmartSwitchRuntimeService persistSnapshot];
-            return;
-        }
-
-        int targetLanguage = (int)[PHTVSmartSwitchRuntimeService decodedLanguageFromState:languageTemp];
-        if (targetLanguage != vLanguage) { //for input method
-            // PERFORMANCE: Update state directly without triggering callbacks
-            // onImputMethodChanged would cause cascading updates
-            vLanguage = targetLanguage;
-            [PHTVSmartSwitchPersistenceService saveInputMethod:vLanguage];
-            RequestNewSession();  // Direct call, no cascading
-            [PHTVRuntimeUIBridgeService refreshAfterSmartSwitchLanguageChange:vLanguage];
-        }
-        int targetCodeTable = (int)[PHTVSmartSwitchRuntimeService decodedCodeTableFromState:languageTemp];
-        if (vRememberCode && targetCodeTable != vCodeTable) { //for remember table code feature
-            // PERFORMANCE: Update state directly
-            vCodeTable = targetCodeTable;
-            [PHTVSmartSwitchPersistenceService saveCodeTable:vCodeTable];
-            RequestNewSession();
-            [PHTVRuntimeUIBridgeService refreshAfterSmartSwitchCodeTableChange];
-        }
+        [PHTVSmartSwitchBridgeService handleActiveAppChangedForBundleId:getFocusedAppBundleId()
+                                                      useSmartSwitchKey:(int32_t)vUseSmartSwitchKey
+                                                            rememberCode:(int32_t)vRememberCode
+                                                         currentLanguage:(int32_t)vLanguage
+                                                        currentCodeTable:(int32_t)vCodeTable];
     }
     
     void OnTableCodeChange() {
         onTableCodeChange();  // Update macro state
-        if (!vRememberCode) {
-            return;  // Skip if disabled
-        }
-
-        // PERFORMANCE: Just save the mapping, don't trigger more updates
-        _frontMostApp = getFocusedAppBundleId();
-
-        // CRITICAL: Guard against nil bundleIdentifier
-        if (_frontMostApp == nil) {
-            return;  // Skip if no frontmost app - prevents crash
-        }
-
-        // CRITICAL FIX: Ignore PHTV's own settings window.
-        // Changing settings shouldn't save the new language for PHTV itself.
-        if ([_frontMostApp isEqualToString:PHTVBundleIdentifier]) {
-            return;
-        }
-
-        [PHTVSmartSwitchRuntimeService updateAppStateForBundleId:_frontMostApp
-                                                        language:vLanguage
-                                                       codeTable:vCodeTable];
-        [PHTVSmartSwitchRuntimeService persistSnapshot];
+        [PHTVSmartSwitchBridgeService handleTableCodeChangedForBundleId:getFocusedAppBundleId()
+                                                            rememberCode:(int32_t)vRememberCode
+                                                         currentLanguage:(int32_t)vLanguage
+                                                        currentCodeTable:(int32_t)vCodeTable];
     }
     
     void OnInputMethodChanged() {
-        if (!vUseSmartSwitchKey) {
-            return;  // Skip if disabled
-        }
-
-        // PERFORMANCE: Just save the mapping, don't trigger more updates
-        _frontMostApp = getFocusedAppBundleId();
-
-        // CRITICAL: Guard against nil bundleIdentifier
-        if (_frontMostApp == nil) {
-            return;  // Skip if no frontmost app - prevents crash
-        }
-
-        // CRITICAL FIX: Ignore PHTV's own settings window.
-        if ([_frontMostApp isEqualToString:PHTVBundleIdentifier]) {
-            return;
-        }
-
-        [PHTVSmartSwitchRuntimeService updateAppStateForBundleId:_frontMostApp
-                                                        language:vLanguage
-                                                       codeTable:vCodeTable];
-        [PHTVSmartSwitchRuntimeService persistSnapshot];
+        [PHTVSmartSwitchBridgeService handleInputMethodChangedForBundleId:getFocusedAppBundleId()
+                                                         useSmartSwitchKey:(int32_t)vUseSmartSwitchKey
+                                                          currentLanguage:(int32_t)vLanguage
+                                                         currentCodeTable:(int32_t)vCodeTable];
     }
     
     void OnSpellCheckingChanged() {
