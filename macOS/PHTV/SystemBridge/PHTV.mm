@@ -24,7 +24,6 @@
 
 // Forward declarations for functions used before definition (inside extern "C" block)
 extern "C" {
-    NSString* getBundleIdFromPID(pid_t pid);
     NSString* getFocusedAppBundleId(void);
 }
 
@@ -163,16 +162,6 @@ extern "C" void PHTVSetSafeMode(BOOL enabled) {
     vSafeMode = enabled;
 }
 
-// Check if Spotlight or similar overlay is currently active using Accessibility API
-// OPTIMIZED: Results cached for 50ms to avoid repeated AX API calls while remaining responsive
-BOOL isSpotlightActive(void) {
-    return [PHTVAppContextService spotlightActiveForSafeMode:vSafeMode];
-}
-
-// Get bundle ID from process ID
-NSString* getBundleIdFromPID(pid_t pid) {
-    return [PHTVAppContextService bundleIdFromPID:(int32_t)pid safeMode:vSafeMode];
-}
 #define OTHER_CONTROL_KEY (_flag & kCGEventFlagMaskCommand) || (_flag & kCGEventFlagMaskControl) || \
                             (_flag & kCGEventFlagMaskAlternate) || (_flag & kCGEventFlagMaskSecondaryFn) || \
                             (_flag & kCGEventFlagMaskNumericPad) || (_flag & kCGEventFlagMaskHelp)
@@ -789,7 +778,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     
     // Get bundle ID of the actually focused app (not just frontmost)
     // This is important for overlay windows like Spotlight, which aren't the frontmost app
-    // OPTIMIZED: Uses the cache populated by isSpotlightActive()
+    // Uses Spotlight/focus caches maintained by PHTVAppContextService.
     NSString* getFocusedAppBundleId() {
         NSString *result = [PHTVAppContextService focusedBundleIdForSafeMode:vSafeMode
                                                               cacheDurationMs:SPOTLIGHT_CACHE_DURATION_MS];
