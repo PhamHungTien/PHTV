@@ -73,6 +73,34 @@ static const uint64_t SPOTLIGHT_INVALIDATION_DEDUP_MS = 30;  // Skip duplicate i
     return (int)[PHTVCacheStateService prepareAppCharacteristicsCacheForBundleId:bundleId maxAgeMs:maxAgeMs];
 }
 
++ (AppCharacteristics)getOrComputeAppCharacteristics:(NSString*)bundleId maxAgeMs:(uint64_t)maxAgeMs invalidationReason:(int*)outInvalidationReason {
+    AppCharacteristics characteristics = {NO, NO, NO, NO, NO};
+    if (!bundleId || bundleId.length == 0) {
+        if (outInvalidationReason != NULL) {
+            *outInvalidationReason = 0;
+        }
+        return characteristics;
+    }
+
+    int invalidationReason = [self prepareAppCharacteristicsCacheForBundleId:bundleId maxAgeMs:maxAgeMs];
+    if (outInvalidationReason != NULL) {
+        *outInvalidationReason = invalidationReason;
+    }
+
+    if ([self tryGetAppCharacteristics:bundleId outCharacteristics:&characteristics]) {
+        return characteristics;
+    }
+
+    characteristics.isSpotlightLike = [PHTVAppDetectionService isSpotlightLikeApp:bundleId];
+    characteristics.needsPrecomposedBatched = [PHTVAppDetectionService needsPrecomposedBatched:bundleId];
+    characteristics.needsStepByStep = [PHTVAppDetectionService needsStepByStep:bundleId];
+    characteristics.containsUnicodeCompound = [PHTVAppDetectionService containsUnicodeCompound:bundleId];
+    characteristics.isSafari = [PHTVAppDetectionService isSafariApp:bundleId];
+
+    [self setAppCharacteristics:characteristics forBundleId:bundleId];
+    return characteristics;
+}
+
 + (void)invalidateAppCharacteristicsCache {
     [PHTVCacheStateService invalidateAppCharacteristicsCache];
 }

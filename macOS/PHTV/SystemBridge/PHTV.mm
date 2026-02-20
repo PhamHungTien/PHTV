@@ -198,16 +198,13 @@ extern volatile int vEmojiHotkeyKeyCode;
 extern "C" {
 
     // Get cached app characteristics or compute and cache them.
-    // Cache state is centralized in PHTVCacheStateService (Swift) to reduce duplicated mutable state.
+    // Cache state and computation are centralized in Swift services.
     static inline AppCharacteristics getAppCharacteristics(NSString* bundleId) {
-        if (!bundleId) {
-            AppCharacteristics empty = {NO, NO, NO, NO, NO};
-            return empty;
-        }
-
         const uint64_t kAppCharacteristicsCacheMaxAgeMs = 10000;
-        int invalidationReason = [PHTVCacheManager prepareAppCharacteristicsCacheForBundleId:bundleId
-                                                                                     maxAgeMs:kAppCharacteristicsCacheMaxAgeMs];
+        int invalidationReason = 0;
+        AppCharacteristics chars = [PHTVCacheManager getOrComputeAppCharacteristics:bundleId
+                                                                           maxAgeMs:kAppCharacteristicsCacheMaxAgeMs
+                                                                  invalidationReason:&invalidationReason];
 #ifdef DEBUG
         if (invalidationReason == 1) {
             NSLog(@"[Cache] App switched to %@, invalidating app characteristics cache", bundleId);
@@ -215,22 +212,6 @@ extern "C" {
             NSLog(@"[Cache] 10s elapsed, invalidating cache for browser responsiveness");
         }
 #endif
-
-        AppCharacteristics cachedChars;
-        if ([PHTVCacheManager tryGetAppCharacteristics:bundleId outCharacteristics:&cachedChars]) {
-            return cachedChars;
-        }
-
-        // Compute characteristics (slow path - only once per app)
-        AppCharacteristics chars;
-        chars.isSpotlightLike = [PHTVAppDetectionManager isSpotlightLikeApp:bundleId];
-        chars.needsPrecomposedBatched = [PHTVAppDetectionManager needsPrecomposedBatched:bundleId];
-        chars.needsStepByStep = [PHTVAppDetectionManager needsStepByStep:bundleId];
-        chars.containsUnicodeCompound = [PHTVAppDetectionManager containsUnicodeCompound:bundleId];
-        chars.isSafari = [PHTVAppDetectionManager isSafariApp:bundleId];
-
-        [PHTVCacheManager setAppCharacteristics:chars forBundleId:bundleId];
-
         return chars;
     }
 
