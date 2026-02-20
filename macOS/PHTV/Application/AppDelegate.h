@@ -24,6 +24,7 @@ extern "C" {
 
 // Global function to get AppDelegate instance
 AppDelegate* _Nullable GetAppDelegateInstance(void);
+void SetAppDelegateInstance(AppDelegate* _Nullable instance);
 
 #ifdef __cplusplus
 }
