@@ -15,7 +15,6 @@ NS_ASSUME_NONNULL_BEGIN
 @interface AppDelegate : NSObject <NSApplicationDelegate, NSMenuDelegate>
 
 - (void)setupSwiftUIBridge;
-- (void)loadExistingMacros;
 
 @end
 

@@ -71,7 +71,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)handleTCCDatabaseChanged:(NSNotification * _Nullable)notification;
 - (void)handleMenuBarIconSizeChanged:(NSNotification * _Nullable)notification;
 - (void)handleSettingsChanged:(NSNotification * _Nullable)notification;
-- (void)handleMacrosUpdated:(NSNotification * _Nullable)notification;
 - (void)handleUserDefaultsDidChange:(NSNotification * _Nullable)notification;
 @end
 

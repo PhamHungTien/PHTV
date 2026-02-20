@@ -7,6 +7,7 @@
 
 #import "AppDelegate+AppMonitoring.h"
 #import "AppDelegate+InputState.h"
+#import "AppDelegate+MacroData.h"
 #import "AppDelegate+Private.h"
 #import "AppDelegate+Sparkle.h"
 #import "AppDelegate+StatusBarMenu.h"
