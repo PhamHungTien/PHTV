@@ -12,44 +12,18 @@
 #import "PHTVCoreBridge.h"
 #import "PHTVManager+SwiftBridgePrivate.h"
 
-extern void PHTVInit(void);
-
-extern CGEventRef PHTVCallback(CGEventTapProxy proxy,
-                                  CGEventType type,
-                                  CGEventRef event,
-                                  void *refcon);
-
 extern void PHTVSetCheckSpellingCpp(void) __asm("__Z17vSetCheckSpellingv");
 
-@implementation PHTVManager {
-
-}
-
-static BOOL _isInited = NO;
-static BOOL _permissionLost = NO;  // CRITICAL: Flag to prevent event processing when permission is revoked
-
-static CFMachPortRef      eventTap;
-static CGEventMask        eventMask;
-static CFRunLoopSourceRef runLoopSource;
-static NSUInteger         _tapReenableCount = 0;
-static NSUInteger         _tapRecreateCount = 0;
+@implementation PHTVManager
 
 #pragma mark - Core Functionality
 
 +(BOOL)hasPermissionLost {
-    return _permissionLost;
+    return [PHTVEventTapService hasPermissionLost];
 }
 
 +(void)markPermissionLost {
-    _permissionLost = YES;
-
-    // CRITICAL: INVALIDATE event tap IMMEDIATELY (not just disable)
-    // This must happen synchronously in callback thread to prevent kernel deadlock
-    if (eventTap != nil) {
-        CGEventTapEnable(eventTap, false);
-        CFMachPortInvalidate(eventTap);  // Invalidate to stop receiving events completely
-        NSLog(@"🛑🛑🛑 EMERGENCY: Event tap INVALIDATED due to permission loss!");
-    }
+    [PHTVEventTapService markPermissionLost];
 }
 
 // Invalidate permission check cache - forces fresh check on next call
@@ -98,174 +72,30 @@ static NSUInteger         _tapRecreateCount = 0;
 }
 
 +(BOOL)isInited {
-    return _isInited;
+    return [PHTVEventTapService isEventTapInited];
 }
 
 +(BOOL)initEventTap {
-    if (_isInited)
-        return true;
-
-    // Reset permission lost flag (fresh start)
-    _permissionLost = NO;
-
-    // Invalidate permission check cache on init
-    [PHTVPermissionService invalidatePermissionCache];
-
-    // Initialize PHTV engine
-    PHTVInit();
-
-    // Create an event tap. We are interested in key presses.
-    eventMask = ((1 << kCGEventKeyDown) |
-                 (1 << kCGEventKeyUp) |
-                 (1 << kCGEventFlagsChanged) |
-                 (1 << kCGEventLeftMouseDown) |
-                 (1 << kCGEventRightMouseDown));
-
-    // Prefer HID-level event tap for better timing (fixes swallowed keystrokes in terminals)
-    eventTap = CGEventTapCreate(kCGHIDEventTap,
-                                kCGHeadInsertEventTap,
-                                0,
-                                eventMask,
-                                PHTVCallback,
-                                NULL);
-
-    if (!eventTap) {
-        NSLog(@"[EventTap] HID tap failed, falling back to session tap");
-        eventTap = CGEventTapCreate(kCGSessionEventTap,
-                                    kCGHeadInsertEventTap,
-                                    0,
-                                    eventMask,
-                                    PHTVCallback,
-                                    NULL);
-    }
-
-    if (!eventTap) {
-        fprintf(stderr, "Failed to create event tap\n");
-        return NO;
-    }
-
-    _isInited = YES;
-    
-    // Create a run loop source.
-    runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap, 0);
-    
-    // Add to the MAIN run loop (don't create new run loop!)
-    CFRunLoopAddSource(CFRunLoopGetMain(), runLoopSource, kCFRunLoopCommonModes);
-    
-    // Enable the event tap.
-    CGEventTapEnable(eventTap, true);
-    
-    // IMPORTANT: Do NOT call CFRunLoopRun() here!
-    // The main run loop is already running. Calling CFRunLoopRun() would:
-    // 1. Block the current thread indefinitely
-    // 2. Prevent UI updates and menu bar interactions
-    // 3. Make the app unresponsive
-    //
-    // The event tap will receive events automatically from the main run loop.
-    
-    NSLog(@"[EventTap] Enabled and added to main run loop");
-    
-    return YES;
+    return [PHTVEventTapService initEventTap];
 }
 
 +(BOOL)stopEventTap {
-    if (_isInited) {
-        NSLog(@"[EventTap] Stopping...");
-
-        // Disable the event tap first (safe to call even if already disabled)
-        if (eventTap != nil) {
-            CGEventTapEnable(eventTap, false);
-        }
-
-        // Remove from run loop (MUST be on main thread)
-        if (runLoopSource != nil) {
-            CFRunLoopRemoveSource(CFRunLoopGetMain(), runLoopSource, kCFRunLoopCommonModes);
-            CFRelease(runLoopSource);
-            runLoopSource = nil;
-        }
-
-        // Invalidate and release the event tap (safe even if already invalidated)
-        if (eventTap != nil) {
-            // Check if port is still valid before invalidating
-            if (CFMachPortIsValid(eventTap)) {
-                CFMachPortInvalidate(eventTap);
-            }
-            CFRelease(eventTap);
-            eventTap = nil;
-        }
-
-        _isInited = false;
-        _permissionLost = NO;  // Reset flag when fully stopped
-
-        NSLog(@"[EventTap] Stopped successfully");
-    }
-    return YES;
+    return [PHTVEventTapService stopEventTap];
 }
 
 // Recover when the event tap is disabled by the system (timeout/user input)
 +(void)handleEventTapDisabled:(CGEventType)type {
-    if (!_isInited) return;
-
-    const char *reason = (type == kCGEventTapDisabledByTimeout) ? "timeout" : "user input";
-    NSLog(@"[EventTap] Disabled by %s — attempting to re-enable", reason);
-
-    _tapReenableCount++;
-    CGEventTapEnable(eventTap, true);
-
-    // If re-enable failed (tap still disabled), recreate it on the main queue to avoid deadlocks
-    if (!CGEventTapIsEnabled(eventTap)) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            if (!_isInited) return;
-            NSLog(@"[EventTap] Re-enabling failed, recreating event tap");
-            _tapRecreateCount++;
-            [self stopEventTap];
-            [self initEventTap];
-        });
-    }
+    [PHTVEventTapService handleEventTapDisabled:type];
 }
 
 // Query current state of the tap
 +(BOOL)isEventTapEnabled {
-    if (!_isInited || eventTap == nil) return NO;
-    return CGEventTapIsEnabled(eventTap);
+    return [PHTVEventTapService isEventTapEnabled];
 }
 
 // Ensure the tap stays alive for long-running sessions
 +(void)ensureEventTapAlive {
-    if (!_isInited) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            if (!_isInited) {
-                [self initEventTap];
-            }
-        });
-        return;
-    }
-
-    if (eventTap == nil) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self initEventTap];
-        });
-        return;
-    }
-
-    // Check if tap is disabled OR not receiving events properly
-    BOOL isEnabled = CGEventTapIsEnabled(eventTap);
-    
-    if (!isEnabled) {
-        _tapReenableCount++;
-        NSLog(@"[EventTap] Health check: tap disabled — re-enabling (count=%lu)", (unsigned long)_tapReenableCount);
-        CGEventTapEnable(eventTap, true);
-
-        if (!CGEventTapIsEnabled(eventTap)) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                if (!_isInited) return;
-                _tapRecreateCount++;
-                NSLog(@"[EventTap] Health check: re-enable failed — recreating tap (count=%lu)", (unsigned long)_tapRecreateCount);
-                [self stopEventTap];
-                [self initEventTap];
-            });
-        }
-    }
+    [PHTVEventTapService ensureEventTapAlive];
 }
 
 #pragma mark - Table Codes

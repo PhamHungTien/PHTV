@@ -9,12 +9,18 @@
 #define PHTVCoreBridge_h
 
 #import <Foundation/Foundation.h>
+#import <ApplicationServices/ApplicationServices.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 NSString * _Nullable ConvertUtil(NSString * _Nonnull str);
+void PHTVInit(void);
+CGEventRef _Nullable PHTVCallback(CGEventTapProxy _Nullable proxy,
+                                  CGEventType type,
+                                  CGEventRef _Nonnull event,
+                                  void * _Nullable refcon);
 BOOL PHTVGetSafeMode(void);
 void PHTVSetSafeMode(BOOL enabled);
 void RequestNewSession(void);
