@@ -11,8 +11,6 @@
 #import "PHTV-Swift.h"
 #import "../Application/PHTVSettingsRuntime.h"
 #import "../Core/PHTVHotkey.h"
-#import <unistd.h>
-#import <math.h>
 
 extern void PHTVInit(void);
 
@@ -70,12 +68,6 @@ static NSString *const PHTVDefaultsKeyQuickTelex = @"QuickTelex";
 static NSString *const PHTVDefaultsKeyUpperCaseFirstChar = @"UpperCaseFirstChar";
 static NSString *const PHTVDefaultsKeyAutoRestoreEnglishWord = @"vAutoRestoreEnglishWord";
 
-// No-op callback used only for permission test tap to satisfy nonnull parameter requirements
-static CGEventRef PHTVTestTapCallback(CGEventTapProxy proxy, CGEventType type, CGEventRef event, void *refcon) {
-    // Simply pass events through unchanged
-    return event;
-}
-
 static int PHTVToggleRuntimeIntSetting(volatile int *target,
                                        NSString *key,
                                        BOOL syncSpellingBeforeSessionReset) {
@@ -92,7 +84,19 @@ static int PHTVToggleRuntimeIntSetting(volatile int *target,
     return *target;
 }
 
-@interface PHTVManager ()
+@interface PHTVManager (PHTVSystemServicesBridge)
+
++(BOOL)phtv_isTCCEntryCorrupt;
++(BOOL)phtv_autoFixTCCEntryWithError:(NSError **)error;
++(void)phtv_restartTCCDaemon;
++(void)phtv_startTCCNotificationListener;
++(void)phtv_stopTCCNotificationListener;
++(NSArray *)phtv_getTableCodes;
++(NSString *)phtv_getApplicationSupportFolder;
++(NSString *)phtv_getBinaryArchitectures;
++(NSString *)phtv_getBinaryHash;
++(BOOL)phtv_hasBinaryChangedSinceLastRun;
++(BOOL)phtv_checkBinaryIntegrity;
 
 @end
 
@@ -108,23 +112,6 @@ static CGEventMask        eventMask;
 static CFRunLoopSourceRef runLoopSource;
 static NSUInteger         _tapReenableCount = 0;
 static NSUInteger         _tapRecreateCount = 0;
-
-// Cache for canCreateEventTap to avoid creating test taps too frequently
-static BOOL _lastPermissionCheckResult = NO;
-static NSTimeInterval _lastPermissionCheckTime = 0;
-static NSInteger _permissionFailureCount = 0;
-static NSTimeInterval _permissionBackoffUntil = 0;
-static BOOL _lastPermissionOutcome = NO;
-static BOOL _hasLastPermissionOutcome = NO;
-
-// Dynamic cache TTL: NO CACHE when waiting for permission (immediate detection), long when permission granted
-// This ensures instant detection when user grants permission while avoiding excessive test taps when running normally
-static const NSTimeInterval kCacheTTLWaitingForPermission = 0.0;  // NO CACHE when waiting - CRITICAL for fast detection
-static const NSTimeInterval kCacheTTLPermissionGranted = 5.0;     // 5s when granted (reduced from 10s)
-
-// Retry configuration for test tap creation
-static const int kMaxTestTapRetries = 3;           // Number of retry attempts
-static const useconds_t kTestTapRetryDelayUs = 50000;  // 50ms between retries
 
 #pragma mark - Core Functionality
 
@@ -146,148 +133,47 @@ static const useconds_t kTestTapRetryDelayUs = 50000;  // 50ms between retries
 
 // Invalidate permission check cache - forces fresh check on next call
 +(void)invalidatePermissionCache {
-    _lastPermissionCheckTime = 0;
-    _lastPermissionCheckResult = NO;
-    _permissionFailureCount = 0;
-    _permissionBackoffUntil = 0;
-    _hasLastPermissionOutcome = NO;
-    NSLog(@"[Permission] Cache invalidated - next check will be fresh");
+    [PHTVPermissionService invalidatePermissionCache];
 }
 
 // Check if TCC entry is corrupt (app not appearing in System Settings)
 +(BOOL)isTCCEntryCorrupt {
-    // If permission check fails but app is not registered in TCC, entry is corrupt
-    BOOL hasPermission = [self canCreateEventTap];
-    if (hasPermission) {
-        return NO;  // Permission granted - TCC entry is fine
-    }
-
-    // Permission denied - check if app is registered in TCC
-    BOOL isRegistered = [PHTVTCCMaintenanceService isAppRegisteredInTCC];
-    if (!isRegistered) {
-        NSLog(@"[TCC] ⚠️ CORRUPT ENTRY DETECTED - App not found in TCC database!");
-        return YES;
-    }
-
-    return NO;  // App is registered, just waiting for user to grant permission
+    return [self phtv_isTCCEntryCorrupt];
 }
 
 // Automatically fix TCC entry corruption by running tccutil reset
 // Returns YES if successful, NO if failed or user cancelled
 +(BOOL)autoFixTCCEntryWithError:(NSError **)error {
-    return [PHTVTCCMaintenanceService autoFixTCCEntryWithError:error];
+    return [self phtv_autoFixTCCEntryWithError:error];
 }
 
 // Restart per-user tccd daemon to force TCC to reload fresh entries
 +(void)restartTCCDaemon {
-    [PHTVTCCMaintenanceService restartTCCDaemon];
+    [self phtv_restartTCCDaemon];
 }
 
 #pragma mark - TCC Notification Listener
 
 // Start listening for TCC database changes
 +(void)startTCCNotificationListener {
-    [PHTVTCCNotificationService startListening];
+    [self phtv_startTCCNotificationListener];
 }
 
 // Stop listening for TCC changes
 +(void)stopTCCNotificationListener {
-    [PHTVTCCNotificationService stopListening];
-}
-
-// Helper: Try to create test tap with retries
-// Returns YES if test tap was successfully created (permission granted)
-+(BOOL)tryCreateTestTapWithRetries {
-    for (int attempt = 0; attempt < kMaxTestTapRetries; attempt++) {
-        CFMachPortRef testTap = CGEventTapCreate(
-            kCGSessionEventTap,
-            kCGTailAppendEventTap,
-            kCGEventTapOptionDefault,
-            CGEventMaskBit(kCGEventKeyDown),
-            PHTVTestTapCallback,
-            NULL
-        );
-
-        if (testTap != NULL) {
-            // Success - clean up and return
-            CFMachPortInvalidate(testTap);
-            CFRelease(testTap);
-            #ifdef DEBUG
-            if (attempt > 0) {
-                NSLog(@"[Permission] Test tap SUCCESS on attempt %d", attempt + 1);
-            }
-            #endif
-            return YES;
-        }
-
-        // Failed - wait briefly before retry (except on last attempt)
-        if (attempt < kMaxTestTapRetries - 1) {
-            usleep(kTestTapRetryDelayUs);
-        }
-    }
-
-    #ifdef DEBUG
-    NSLog(@"[Permission] Test tap FAILED after %d attempts", kMaxTestTapRetries);
-    #endif
-    return NO;
+    [self phtv_stopTCCNotificationListener];
 }
 
 // SIMPLE permission check using ONLY test event tap (Apple recommended)
 // This is the ONLY reliable way to check accessibility permission
 // AXIsProcessTrusted() is unreliable - it can return YES even when permission is not effective
 +(BOOL)canCreateEventTap {
-    NSTimeInterval now = [[NSDate date] timeIntervalSince1970];
-
-    // Honor exponential backoff when permission is repeatedly denied.
-    // This prevents CGEventTapCreate hammering the system every 300ms while user hasn't granted permission.
-    if (now < _permissionBackoffUntil) {
-#ifdef DEBUG
-        NSLog(@"[Permission] Backoff active for %.2fs (failures=%ld)", _permissionBackoffUntil - now, (long)_permissionFailureCount);
-#endif
-        return NO;
-    }
-
-    // Use DYNAMIC cache TTL based on current state
-    // When waiting for permission (NO): NO CACHE - every check is fresh
-    // When permission granted: use 5s TTL to reduce overhead
-    NSTimeInterval cacheTTL = _lastPermissionCheckResult ? kCacheTTLPermissionGranted : kCacheTTLWaitingForPermission;
-
-    if (cacheTTL > 0 && (now - _lastPermissionCheckTime < cacheTTL)) {
-        return _lastPermissionCheckResult;
-    }
-
-    // ONLY trust test event tap creation - this is the ONLY reliable method
-    BOOL hasPermission = [self tryCreateTestTapWithRetries];
-
-    if (hasPermission) {
-        _permissionFailureCount = 0;
-        _permissionBackoffUntil = 0;
-        if (!_hasLastPermissionOutcome || !_lastPermissionOutcome) {
-            NSLog(@"[Permission] Check: TestTap=SUCCESS");
-        }
-    } else {
-        _permissionFailureCount++;
-        // Exponential backoff starting at 0.25s, max 15s
-        NSTimeInterval backoff = MIN(15.0, pow(2.0, MIN(_permissionFailureCount, 6)) * 0.25);
-        _permissionBackoffUntil = now + backoff;
-        if (!_hasLastPermissionOutcome || _lastPermissionOutcome || (_permissionFailureCount % 5 == 1)) {
-            NSLog(@"[Permission] Check: TestTap=FAILED (count=%ld) — backing off for %.2fs", (long)_permissionFailureCount, backoff);
-        }
-    }
-
-    // Update cache
-    _lastPermissionCheckResult = hasPermission;
-    _lastPermissionCheckTime = now;
-    _lastPermissionOutcome = hasPermission;
-    _hasLastPermissionOutcome = YES;
-
-    return hasPermission;
+    return [PHTVPermissionService canCreateEventTap];
 }
 
 // Force permission check (bypasses all caching)
 +(BOOL)forcePermissionCheck {
-    [self invalidatePermissionCache];
-    return [self canCreateEventTap];
+    return [PHTVPermissionService forcePermissionCheck];
 }
 
 +(BOOL)isInited {
@@ -302,8 +188,7 @@ static const useconds_t kTestTapRetryDelayUs = 50000;  // 50ms between retries
     _permissionLost = NO;
 
     // Invalidate permission check cache on init
-    _lastPermissionCheckTime = 0;
-    _lastPermissionCheckResult = NO;
+    [PHTVPermissionService invalidatePermissionCache];
 
     // Initialize PHTV engine
     PHTVInit();
@@ -465,18 +350,26 @@ static const useconds_t kTestTapRetryDelayUs = 50000;  // 50ms between retries
 #pragma mark - Table Codes
 
 +(NSArray*)getTableCodes {
-    return [[NSArray alloc] initWithObjects:
-            @"Unicode",
-            @"TCVN3 (ABC)",
-            @"VNI Windows",
-            @"Unicode tổ hợp",
-            @"Vietnamese Locale CP 1258", nil];
+    return [self phtv_getTableCodes];
 }
 
 #pragma mark - Utilities
 
 +(NSString*)getBuildDate {
     return [NSString stringWithUTF8String:__DATE__];
+}
+
++(void)showMessage:(NSWindow*)window message:(NSString*)msg subMsg:(NSString*)subMsg {
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert setMessageText:msg];
+    [alert setInformativeText:subMsg];
+    [alert addButtonWithTitle:@"OK"];
+    if (window) {
+        [alert beginSheetModalForWindow:window completionHandler:^(NSModalResponse returnCode) {
+        }];
+    } else {
+        [alert runModal];
+    }
 }
 
 +(void)requestNewSession {
@@ -775,19 +668,6 @@ static const useconds_t kTestTapRetryDelayUs = 50000;  // 50ms between retries
     __sync_synchronize();
 }
 
-+(void)showMessage:(NSWindow*)window message:(NSString*)msg subMsg:(NSString*)subMsg {
-    NSAlert *alert = [[NSAlert alloc] init];
-    [alert setMessageText:msg];
-    [alert setInformativeText:subMsg];
-    [alert addButtonWithTitle:@"OK"];
-    if (window) {
-        [alert beginSheetModalForWindow:window completionHandler:^(NSModalResponse returnCode) {
-        }];
-    } else {
-        [alert runModal];
-    }
-}
-
 #pragma mark - Convert Feature
 
 +(BOOL)quickConvert {
@@ -819,9 +699,7 @@ static const useconds_t kTestTapRetryDelayUs = 50000;  // 50ms between retries
 #pragma mark - Application Support
 
 +(NSString*)getApplicationSupportFolder {
-    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES);
-    NSString *applicationSupportDirectory = [paths firstObject];
-    return [NSString stringWithFormat:@"%@/PHTV", applicationSupportDirectory];
+    return [self phtv_getApplicationSupportFolder];
 }
 
 #pragma mark - Safe Mode
@@ -849,22 +727,22 @@ static const useconds_t kTestTapRetryDelayUs = 50000;  // 50ms between retries
 }
 
 #pragma mark - Binary Integrity Check
-// Implementation delegated directly to Swift service.
+// Public API wrappers delegate to Swift service helpers.
 
 +(NSString*)getBinaryArchitectures {
-    return [PHTVBinaryIntegrityService getBinaryArchitectures];
+    return [self phtv_getBinaryArchitectures];
 }
 
 +(NSString*)getBinaryHash {
-    return [PHTVBinaryIntegrityService getBinaryHash];
+    return [self phtv_getBinaryHash];
 }
 
 +(BOOL)hasBinaryChangedSinceLastRun {
-    return [PHTVBinaryIntegrityService hasBinaryChangedSinceLastRun];
+    return [self phtv_hasBinaryChangedSinceLastRun];
 }
 
 +(BOOL)checkBinaryIntegrity {
-    return [PHTVBinaryIntegrityService checkBinaryIntegrity];
+    return [self phtv_checkBinaryIntegrity];
 }
 
 @end
