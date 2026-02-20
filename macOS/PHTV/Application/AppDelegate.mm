@@ -7,6 +7,8 @@
 //
 
 #import "AppDelegate.h"
+// Keep this import here so Objective-C runtime synthesizes private property accessors
+// (e.g. setUpdateQueue:) used by Swift lifecycle/category extensions.
 #import "AppDelegate+Private.h"
 
 AppDelegate* appDelegate;
