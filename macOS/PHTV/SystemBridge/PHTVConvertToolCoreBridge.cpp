@@ -1,22 +1,21 @@
 //
-//  PHTVConvertToolCoreBridge.mm
+//  PHTVConvertToolCoreBridge.cpp
 //  PHTV
 //
 //  C bridge for ConvertTool C++ options.
 //
 
-#import "PHTVCoreBridge.h"
 #include "../Core/Engine/ConvertTool.h"
 #include "../Core/PHTVConstants.h"
 
 extern "C" {
 
-void PHTVSetConvertToolOptions(BOOL dontAlertWhenCompleted,
-                               BOOL toAllCaps,
-                               BOOL toAllNonCaps,
-                               BOOL toCapsFirstLetter,
-                               BOOL toCapsEachWord,
-                               BOOL removeMark,
+void PHTVSetConvertToolOptions(bool dontAlertWhenCompleted,
+                               bool toAllCaps,
+                               bool toAllNonCaps,
+                               bool toCapsFirstLetter,
+                               bool toCapsEachWord,
+                               bool removeMark,
                                int fromCode,
                                int toCode,
                                int hotKey) {

@@ -23,12 +23,12 @@ CGEventRef _Nullable PHTVCallback(CGEventTapProxy _Nullable proxy,
                                   void * _Nullable refcon);
 NSString * _Nonnull PHTVBuildDateString(void);
 void PHTVSyncSpellCheckingState(void);
-void PHTVSetConvertToolOptions(BOOL dontAlertWhenCompleted,
-                               BOOL toAllCaps,
-                               BOOL toAllNonCaps,
-                               BOOL toCapsFirstLetter,
-                               BOOL toCapsEachWord,
-                               BOOL removeMark,
+void PHTVSetConvertToolOptions(bool dontAlertWhenCompleted,
+                               bool toAllCaps,
+                               bool toAllNonCaps,
+                               bool toCapsFirstLetter,
+                               bool toCapsEachWord,
+                               bool removeMark,
                                int fromCode,
                                int toCode,
                                int hotKey);
