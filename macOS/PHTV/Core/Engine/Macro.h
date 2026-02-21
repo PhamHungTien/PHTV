@@ -40,45 +40,8 @@ extern "C" {
 }
 
 /**
- * convert all macro data to save on disk
- */
-void getMacroSaveData(std::vector<Byte>& outData);
-
-/**
  * Use to find full text by macro
  */
 bool findMacro(std::vector<Uint32>& key, std::vector<Uint32>& macroContentCode);
-
-/**
- * check has this macro or not
- */
-bool hasMacro(const std::string& macroName);
-
-/**
- * Get all macro to show on macro table
- */
-void getAllMacro(std::vector<std::vector<Uint32>>& keys,
-                 std::vector<std::string>& macroTexts,
-                 std::vector<std::string>& macroContents);
-
-/**
- * add new macro to memory
- */
-bool addMacro(const std::string& macroText, const std::string& macroContent);
-
-/**
- * delete macro from memory
- */
-bool deleteMacro(const std::string& macroText);
-
-/**
- * Save all macro data to disk
- */
-void saveToFile(const std::string& path);
-
-/**
- * Load macro data from disk
- */
-void readFromFile(const std::string& path, const bool& append=true);
 
 #endif /* Macro_h */
