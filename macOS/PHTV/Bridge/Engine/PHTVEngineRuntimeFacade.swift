@@ -9,6 +9,7 @@ import Foundation
 
 @objcMembers
 final class PHTVEngineRuntimeFacade: NSObject {
+    private static let eventMarker: Int64 = 0x5048_5456 // "PHTV"
     private static let unicodeCompoundMarks: [UInt16] = [0x0301, 0x0300, 0x0309, 0x0303, 0x0323]
 
     @objc class func initializeAndGetKeyHookState() {
@@ -22,7 +23,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func eventMarkerValue() -> Int64 {
-        Int64(phtvEventMarkerValue())
+        eventMarker
     }
 
     class func handleMouseDown() {
@@ -539,11 +540,11 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func lowByte(_ value: UInt32) -> UInt16 {
-        UInt16(phtvEngineLowByte(value))
+        UInt16(truncatingIfNeeded: value & 0x00FF)
     }
 
     class func hiByte(_ value: UInt32) -> UInt16 {
-        UInt16(phtvEngineHiByte(value))
+        UInt16(truncatingIfNeeded: (value >> 8) & 0x00FF)
     }
 
     class func unicodeCompoundMarkAt(_ index: Int32) -> UInt16 {

@@ -489,24 +489,10 @@ inline std::uint16_t phtvEngineMacroKeyCodeToCharacter(const std::uint32_t keyDa
     return keyCodeToCharacter(static_cast<Uint32>(keyData));
 }
 
-inline std::uint16_t phtvEngineLowByte(const std::uint32_t data) noexcept {
-    return static_cast<std::uint16_t>(data & 0xFF);
-}
-
-inline std::uint16_t phtvEngineHiByte(const std::uint32_t data) noexcept {
-    return static_cast<std::uint16_t>((data >> 8) & 0xFF);
-}
-
 // MARK: - Runtime flag helpers
 
 inline bool phtvRuntimeIsDoubleCode(const int codeTable) noexcept {
     return codeTable == 2 || codeTable == 3;
-}
-
-// MARK: - Event marker
-
-inline std::int64_t phtvEventMarkerValue() noexcept {
-    return 0x50485456; // "PHTV"
 }
 
 // MARK: - Engine output state (pData) field accessors
