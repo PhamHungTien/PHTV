@@ -306,15 +306,7 @@ extern volatile int vPauseKey;
         if ([PHTVEventRuntimeContextService postToHIDTapEnabled]) {
             CGEventRef bsDown = CGEventCreateKeyboardEvent(myEventSource, KEY_DELETE, true);
             CGEventRef bsUp = CGEventCreateKeyboardEvent(myEventSource, KEY_DELETE, false);
-            if ([PHTVEventRuntimeContextService currentKeyboardTypeValue] != 0) {
-                CGEventSetIntegerValueField(bsDown, kCGKeyboardEventKeyboardType, [PHTVEventRuntimeContextService currentKeyboardTypeValue]);
-                CGEventSetIntegerValueField(bsUp, kCGKeyboardEventKeyboardType, [PHTVEventRuntimeContextService currentKeyboardTypeValue]);
-            }
-            CGEventFlags bsFlags = CGEventGetFlags(bsDown);
-            bsFlags |= kCGEventFlagMaskNonCoalesced;
-            bsFlags &= ~kCGEventFlagMaskSecondaryFn;
-            CGEventSetFlags(bsDown, bsFlags);
-            CGEventSetFlags(bsUp, bsFlags);
+            ApplyKeyboardTypeAndFlags(bsDown, bsUp);
             PostSyntheticEvent(bsDown);
             PostSyntheticEvent(bsUp);
             [PHTVTimingService spotlightTinyDelay];
@@ -402,14 +394,7 @@ extern volatile int vPauseKey;
 
             CGEventRef newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
             CGEventRef newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
-            if ([PHTVEventRuntimeContextService currentKeyboardTypeValue] != 0) {
-                CGEventSetIntegerValueField(newEventDown, kCGKeyboardEventKeyboardType, [PHTVEventRuntimeContextService currentKeyboardTypeValue]);
-                CGEventSetIntegerValueField(newEventUp, kCGKeyboardEventKeyboardType, [PHTVEventRuntimeContextService currentKeyboardTypeValue]);
-            }
-            CGEventFlags flags = CGEventGetFlags(newEventDown) | kCGEventFlagMaskNonCoalesced;
-            flags &= ~kCGEventFlagMaskSecondaryFn;
-            CGEventSetFlags(newEventDown, flags);
-            CGEventSetFlags(newEventUp, flags);
+            ApplyKeyboardTypeAndFlags(newEventDown, newEventUp);
             CGEventKeyboardSetUnicodeString(newEventDown, chunkLen, chars + i);
             CGEventKeyboardSetUnicodeString(newEventUp, chunkLen, chars + i);
             PostSyntheticEvent(newEventDown);
@@ -597,15 +582,7 @@ extern volatile int vPauseKey;
 
             CGEventRef newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
             CGEventRef newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
-            if ([PHTVEventRuntimeContextService currentKeyboardTypeValue] != 0) {
-                CGEventSetIntegerValueField(newEventDown, kCGKeyboardEventKeyboardType, [PHTVEventRuntimeContextService currentKeyboardTypeValue]);
-                CGEventSetIntegerValueField(newEventUp, kCGKeyboardEventKeyboardType, [PHTVEventRuntimeContextService currentKeyboardTypeValue]);
-            }
-            CGEventFlags uFlags = CGEventGetFlags(newEventDown) | kCGEventFlagMaskNonCoalesced;
-            // Clear Fn/Globe flag to prevent triggering system hotkeys
-            uFlags &= ~kCGEventFlagMaskSecondaryFn;
-            CGEventSetFlags(newEventDown, uFlags);
-            CGEventSetFlags(newEventUp, uFlags);
+            ApplyKeyboardTypeAndFlags(newEventDown, newEventUp);
             CGEventKeyboardSetUnicodeString(newEventDown, _finalCharSize, _finalCharString);
             CGEventKeyboardSetUnicodeString(newEventUp, _finalCharSize, _finalCharString);
             PostSyntheticEvent(newEventDown);
@@ -627,10 +604,7 @@ extern volatile int vPauseKey;
             }
             CGEventRef newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
             CGEventRef newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
-            if ([PHTVEventRuntimeContextService currentKeyboardTypeValue] != 0) {
-                CGEventSetIntegerValueField(newEventDown, kCGKeyboardEventKeyboardType, [PHTVEventRuntimeContextService currentKeyboardTypeValue]);
-                CGEventSetIntegerValueField(newEventUp, kCGKeyboardEventKeyboardType, [PHTVEventRuntimeContextService currentKeyboardTypeValue]);
-            }
+            ApplyKeyboardTypeAndFlags(newEventDown, newEventUp);
             CGEventKeyboardSetUnicodeString(newEventDown, _finalCharSize, _finalCharString);
             CGEventKeyboardSetUnicodeString(newEventUp, _finalCharSize, _finalCharString);
             PostSyntheticEvent(newEventDown);
