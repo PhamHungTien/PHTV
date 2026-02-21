@@ -121,9 +121,9 @@ enum DebugSelfTests {
         let digitOne = EngineMacroKeyMap.character(for: key1)
         let symbolExclamation = EngineMacroKeyMap.character(for: key1 | capsMask)
         let shiftedSpace = EngineMacroKeyMap.character(for: UInt32(kVK_Space) | capsMask)
-        let unicodeLookup = PHTVEngineRuntimeFacade.findCodeTableSourceKey(codeTable: 0, character: 0x00E2)
-        let unicodeVariants = PHTVEngineRuntimeFacade.codeTableVariantCount(codeTable: 0, keyCode: 0)
-        let vniCharacter = PHTVEngineRuntimeFacade.codeTableCharacterForKey(
+        let unicodeLookup = EngineCodeTableLookup.findSourceKey(codeTable: 0, character: 0x00E2)
+        let unicodeVariants = EngineCodeTableLookup.variantCount(codeTable: 0, keyCode: 0)
+        let vniCharacter = EngineCodeTableLookup.characterForKey(
             codeTable: 2,
             keyCode: 0,
             variantIndex: 1

@@ -139,7 +139,7 @@ final class PHTVConvertToolTextConversionService: NSObject {
         shouldUpperCase: Bool,
         output: inout [UInt16]
     ) -> Bool {
-        guard let (sourceKeyCode, sourceVariantIndex) = PHTVEngineRuntimeFacade.findCodeTableSourceKey(
+        guard let (sourceKeyCode, sourceVariantIndex) = EngineCodeTableLookup.findSourceKey(
             codeTable: options.fromCode,
             character: sourceCharacter
         ) else {
@@ -149,7 +149,7 @@ final class PHTVConvertToolTextConversionService: NSObject {
         var targetVariantIndex = sourceVariantIndex
         let forceUpperCase = options.toAllCaps || shouldUpperCase
         let forceLowerCase = options.toAllNonCaps || options.toCapsFirstLetter || options.toCapsEachWord
-        let targetVariantCount = PHTVEngineRuntimeFacade.codeTableVariantCount(
+        let targetVariantCount = EngineCodeTableLookup.variantCount(
             codeTable: options.toCode,
             keyCode: sourceKeyCode
         )
@@ -162,7 +162,7 @@ final class PHTVConvertToolTextConversionService: NSObject {
             targetVariantIndex += 1
         }
 
-        guard var targetCharacter = PHTVEngineRuntimeFacade.codeTableCharacterForKey(
+        guard var targetCharacter = EngineCodeTableLookup.characterForKey(
             codeTable: options.toCode,
             keyCode: sourceKeyCode,
             variantIndex: targetVariantIndex
