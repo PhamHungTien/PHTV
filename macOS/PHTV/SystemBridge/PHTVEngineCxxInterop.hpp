@@ -15,6 +15,11 @@
 #include "../Core/Engine/Engine.h"
 
 extern volatile int vSendKeyStepByStep;
+extern volatile int vPerformLayoutCompat;
+extern volatile int vEnableEmojiHotkey;
+extern volatile int vEmojiHotkeyModifiers;
+extern volatile int vEmojiHotkeyKeyCode;
+extern int vShowIconOnDock;
 
 inline void phtvEngineInitializeMacroMap(const std::uint8_t *data, const int length) noexcept {
     if (!data || length <= 0) {
@@ -142,6 +147,226 @@ inline int phtvRuntimeCheckSpelling() noexcept {
 inline void phtvRuntimeSetCheckSpelling(const int value) noexcept {
     vCheckSpelling = value;
     phtvRuntimeBarrier();
+}
+
+inline int phtvRuntimeAllowConsonantZFWJ() noexcept {
+    return vAllowConsonantZFWJ;
+}
+
+inline void phtvRuntimeSetAllowConsonantZFWJ(const int value) noexcept {
+    vAllowConsonantZFWJ = value;
+    phtvRuntimeBarrier();
+}
+
+inline int phtvRuntimeUseModernOrthography() noexcept {
+    return vUseModernOrthography;
+}
+
+inline void phtvRuntimeSetUseModernOrthography(const int value) noexcept {
+    vUseModernOrthography = value;
+    phtvRuntimeBarrier();
+}
+
+inline int phtvRuntimeQuickTelex() noexcept {
+    return vQuickTelex;
+}
+
+inline void phtvRuntimeSetQuickTelex(const int value) noexcept {
+    vQuickTelex = value;
+    phtvRuntimeBarrier();
+}
+
+inline int phtvRuntimeUpperCaseFirstChar() noexcept {
+    return vUpperCaseFirstChar;
+}
+
+inline void phtvRuntimeSetUpperCaseFirstChar(const int value) noexcept {
+    vUpperCaseFirstChar = value;
+    phtvRuntimeBarrier();
+}
+
+inline int phtvRuntimeAutoRestoreEnglishWord() noexcept {
+    return vAutoRestoreEnglishWord;
+}
+
+inline void phtvRuntimeSetAutoRestoreEnglishWord(const int value) noexcept {
+    vAutoRestoreEnglishWord = value;
+    phtvRuntimeBarrier();
+}
+
+inline void phtvRuntimeSetShowIconOnDock(const bool visible) noexcept {
+    vShowIconOnDock = visible ? 1 : 0;
+    phtvRuntimeBarrier();
+}
+
+inline int phtvRuntimeUseMacro() noexcept {
+    return vUseMacro;
+}
+
+inline int phtvRuntimeUseMacroInEnglishMode() noexcept {
+    return vUseMacroInEnglishMode;
+}
+
+inline int phtvRuntimeAutoCapsMacro() noexcept {
+    return vAutoCapsMacro;
+}
+
+inline int phtvRuntimeQuickStartConsonant() noexcept {
+    return vQuickStartConsonant;
+}
+
+inline int phtvRuntimeQuickEndConsonant() noexcept {
+    return vQuickEndConsonant;
+}
+
+inline int phtvRuntimeRememberCode() noexcept {
+    return vRememberCode;
+}
+
+inline int phtvRuntimePerformLayoutCompat() noexcept {
+    return vPerformLayoutCompat;
+}
+
+inline int phtvRuntimeShowIconOnDock() noexcept {
+    return vShowIconOnDock;
+}
+
+inline int phtvRuntimeRestoreOnEscape() noexcept {
+    return vRestoreOnEscape;
+}
+
+inline int phtvRuntimeCustomEscapeKey() noexcept {
+    return vCustomEscapeKey;
+}
+
+inline int phtvRuntimePauseKeyEnabled() noexcept {
+    return vPauseKeyEnabled;
+}
+
+inline int phtvRuntimePauseKey() noexcept {
+    return vPauseKey;
+}
+
+inline int phtvRuntimeEnableEmojiHotkey() noexcept {
+    return vEnableEmojiHotkey;
+}
+
+inline int phtvRuntimeEmojiHotkeyModifiers() noexcept {
+    return vEmojiHotkeyModifiers;
+}
+
+inline int phtvRuntimeEmojiHotkeyKeyCode() noexcept {
+    return vEmojiHotkeyKeyCode;
+}
+
+inline void phtvRuntimeSetEmojiHotkeySettings(const int enabled,
+                                              const int modifiers,
+                                              const int keyCode) noexcept {
+    vEnableEmojiHotkey = enabled;
+    vEmojiHotkeyModifiers = modifiers;
+    vEmojiHotkeyKeyCode = keyCode;
+    phtvRuntimeBarrier();
+}
+
+inline int phtvRuntimeFreeMark() noexcept {
+    return vFreeMark;
+}
+
+inline void phtvRuntimeSetFreeMark(const int value) noexcept {
+    vFreeMark = value;
+    phtvRuntimeBarrier();
+}
+
+inline void phtvRuntimeSetUseMacro(const int value) noexcept {
+    vUseMacro = value;
+    phtvRuntimeBarrier();
+}
+
+inline void phtvRuntimeSetUseMacroInEnglishMode(const int value) noexcept {
+    vUseMacroInEnglishMode = value;
+    phtvRuntimeBarrier();
+}
+
+inline void phtvRuntimeSetAutoCapsMacro(const int value) noexcept {
+    vAutoCapsMacro = value;
+    phtvRuntimeBarrier();
+}
+
+inline void phtvRuntimeSetUseSmartSwitchKey(const bool enabled) noexcept {
+    vUseSmartSwitchKey = enabled ? 1 : 0;
+    phtvRuntimeBarrier();
+}
+
+inline void phtvRuntimeSetQuickStartConsonant(const int value) noexcept {
+    vQuickStartConsonant = value;
+    phtvRuntimeBarrier();
+}
+
+inline void phtvRuntimeSetQuickEndConsonant(const int value) noexcept {
+    vQuickEndConsonant = value;
+    phtvRuntimeBarrier();
+}
+
+inline void phtvRuntimeSetRememberCode(const int value) noexcept {
+    vRememberCode = value;
+    phtvRuntimeBarrier();
+}
+
+inline void phtvRuntimeSetPerformLayoutCompat(const int value) noexcept {
+    vPerformLayoutCompat = value;
+    phtvRuntimeBarrier();
+}
+
+inline void phtvRuntimeSetRestoreOnEscape(const int value) noexcept {
+    vRestoreOnEscape = value;
+    phtvRuntimeBarrier();
+}
+
+inline void phtvRuntimeSetCustomEscapeKey(const int value) noexcept {
+    vCustomEscapeKey = value;
+    phtvRuntimeBarrier();
+}
+
+inline void phtvRuntimeSetPauseKeyEnabled(const int value) noexcept {
+    vPauseKeyEnabled = value;
+    phtvRuntimeBarrier();
+}
+
+inline void phtvRuntimeSetPauseKey(const int value) noexcept {
+    vPauseKey = value;
+    phtvRuntimeBarrier();
+}
+
+inline void phtvRuntimeSetFixRecommendBrowser(const int value) noexcept {
+    vFixRecommendBrowser = value;
+    phtvRuntimeBarrier();
+}
+
+inline void phtvRuntimeSetTempOffSpelling(const int value) noexcept {
+    vTempOffSpelling = value;
+    phtvRuntimeBarrier();
+}
+
+inline void phtvRuntimeSetOtherLanguage(const int value) noexcept {
+    vOtherLanguage = value;
+    phtvRuntimeBarrier();
+}
+
+inline void phtvRuntimeSetTempOffPHTV(const int value) noexcept {
+    vTempOffPHTV = value;
+    phtvRuntimeBarrier();
+}
+
+inline int phtvRuntimeDefaultSwitchHotkeyStatus() noexcept {
+    return PHTV_DEFAULT_SWITCH_HOTKEY_STATUS;
+}
+
+inline int phtvRuntimeDefaultPauseKey() noexcept {
+    return KEY_LEFT_OPTION;
+}
+
+inline int phtvRuntimeOtherLanguage() noexcept {
+    return vOtherLanguage;
 }
 
 inline int phtvEngineQuickConvertHotkey() noexcept {

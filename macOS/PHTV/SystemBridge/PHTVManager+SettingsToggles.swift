@@ -39,8 +39,8 @@ import Foundation
     @objc(phtv_toggleAllowConsonantZFWJSetting)
     class func phtv_toggleAllowConsonantZFWJSetting() -> Int32 {
         phtv_toggleRuntimeIntSetting(
-            currentValue: { Int32(PHTVGetAllowConsonantZFWJ()) },
-            applyValue: { PHTVSetAllowConsonantZFWJ($0) },
+            currentValue: { Int32(phtvRuntimeAllowConsonantZFWJ()) },
+            applyValue: { phtvRuntimeSetAllowConsonantZFWJ($0) },
             defaultsKey: "vAllowConsonantZFWJ",
             syncSpellingBeforeSessionReset: false
         )
@@ -49,8 +49,8 @@ import Foundation
     @objc(phtv_toggleModernOrthographySetting)
     class func phtv_toggleModernOrthographySetting() -> Int32 {
         phtv_toggleRuntimeIntSetting(
-            currentValue: { Int32(PHTVGetUseModernOrthography()) },
-            applyValue: { PHTVSetUseModernOrthography($0) },
+            currentValue: { Int32(phtvRuntimeUseModernOrthography()) },
+            applyValue: { phtvRuntimeSetUseModernOrthography($0) },
             defaultsKey: "ModernOrthography",
             syncSpellingBeforeSessionReset: false
         )
@@ -59,8 +59,8 @@ import Foundation
     @objc(phtv_toggleQuickTelexSetting)
     class func phtv_toggleQuickTelexSetting() -> Int32 {
         phtv_toggleRuntimeIntSetting(
-            currentValue: { Int32(PHTVGetQuickTelex()) },
-            applyValue: { PHTVSetQuickTelex($0) },
+            currentValue: { Int32(phtvRuntimeQuickTelex()) },
+            applyValue: { phtvRuntimeSetQuickTelex($0) },
             defaultsKey: "QuickTelex",
             syncSpellingBeforeSessionReset: false
         )
@@ -69,8 +69,8 @@ import Foundation
     @objc(phtv_toggleUpperCaseFirstCharSetting)
     class func phtv_toggleUpperCaseFirstCharSetting() -> Int32 {
         phtv_toggleRuntimeIntSetting(
-            currentValue: { Int32(PHTVGetUpperCaseFirstChar()) },
-            applyValue: { PHTVSetUpperCaseFirstChar($0) },
+            currentValue: { Int32(phtvRuntimeUpperCaseFirstChar()) },
+            applyValue: { phtvRuntimeSetUpperCaseFirstChar($0) },
             defaultsKey: "UpperCaseFirstChar",
             syncSpellingBeforeSessionReset: false
         )
@@ -79,8 +79,8 @@ import Foundation
     @objc(phtv_toggleAutoRestoreEnglishWordSetting)
     class func phtv_toggleAutoRestoreEnglishWordSetting() -> Int32 {
         phtv_toggleRuntimeIntSetting(
-            currentValue: { Int32(PHTVGetAutoRestoreEnglishWord()) },
-            applyValue: { PHTVSetAutoRestoreEnglishWord($0) },
+            currentValue: { Int32(phtvRuntimeAutoRestoreEnglishWord()) },
+            applyValue: { phtvRuntimeSetAutoRestoreEnglishWord($0) },
             defaultsKey: "vAutoRestoreEnglishWord",
             syncSpellingBeforeSessionReset: false
         )
@@ -90,29 +90,29 @@ import Foundation
     class func phtv_runtimeSettingsSnapshot() -> [String: NSNumber] {
         [
             "checkSpelling": NSNumber(value: phtvRuntimeCheckSpelling()),
-            "useModernOrthography": NSNumber(value: PHTVGetUseModernOrthography()),
-            "quickTelex": NSNumber(value: PHTVGetQuickTelex()),
+            "useModernOrthography": NSNumber(value: phtvRuntimeUseModernOrthography()),
+            "quickTelex": NSNumber(value: phtvRuntimeQuickTelex()),
             "switchKeyStatus": NSNumber(value: phtvRuntimeSwitchKeyStatus()),
-            "useMacro": NSNumber(value: PHTVGetUseMacro()),
-            "useMacroInEnglishMode": NSNumber(value: PHTVGetUseMacroInEnglishMode()),
-            "autoCapsMacro": NSNumber(value: PHTVGetAutoCapsMacro()),
+            "useMacro": NSNumber(value: phtvRuntimeUseMacro()),
+            "useMacroInEnglishMode": NSNumber(value: phtvRuntimeUseMacroInEnglishMode()),
+            "autoCapsMacro": NSNumber(value: phtvRuntimeAutoCapsMacro()),
             "sendKeyStepByStep": NSNumber(value: phtvRuntimeIsSendKeyStepByStepEnabled() ? 1 : 0),
             "useSmartSwitchKey": NSNumber(value: phtvRuntimeIsSmartSwitchKeyEnabled() ? 1 : 0),
-            "upperCaseFirstChar": NSNumber(value: PHTVGetUpperCaseFirstChar()),
-            "allowConsonantZFWJ": NSNumber(value: PHTVGetAllowConsonantZFWJ()),
-            "quickStartConsonant": NSNumber(value: PHTVGetQuickStartConsonant()),
-            "quickEndConsonant": NSNumber(value: PHTVGetQuickEndConsonant()),
-            "rememberCode": NSNumber(value: PHTVGetRememberCode()),
-            "performLayoutCompat": NSNumber(value: PHTVGetPerformLayoutCompat()),
-            "showIconOnDock": NSNumber(value: PHTVGetShowIconOnDock()),
-            "restoreOnEscape": NSNumber(value: PHTVGetRestoreOnEscape()),
-            "customEscapeKey": NSNumber(value: PHTVGetCustomEscapeKey()),
-            "pauseKeyEnabled": NSNumber(value: PHTVGetPauseKeyEnabled()),
-            "pauseKey": NSNumber(value: PHTVGetPauseKey()),
-            "autoRestoreEnglishWord": NSNumber(value: PHTVGetAutoRestoreEnglishWord()),
-            "enableEmojiHotkey": NSNumber(value: PHTVGetEnableEmojiHotkey()),
-            "emojiHotkeyModifiers": NSNumber(value: PHTVGetEmojiHotkeyModifiers()),
-            "emojiHotkeyKeyCode": NSNumber(value: PHTVGetEmojiHotkeyKeyCode())
+            "upperCaseFirstChar": NSNumber(value: phtvRuntimeUpperCaseFirstChar()),
+            "allowConsonantZFWJ": NSNumber(value: phtvRuntimeAllowConsonantZFWJ()),
+            "quickStartConsonant": NSNumber(value: phtvRuntimeQuickStartConsonant()),
+            "quickEndConsonant": NSNumber(value: phtvRuntimeQuickEndConsonant()),
+            "rememberCode": NSNumber(value: phtvRuntimeRememberCode()),
+            "performLayoutCompat": NSNumber(value: phtvRuntimePerformLayoutCompat()),
+            "showIconOnDock": NSNumber(value: phtvRuntimeShowIconOnDock()),
+            "restoreOnEscape": NSNumber(value: phtvRuntimeRestoreOnEscape()),
+            "customEscapeKey": NSNumber(value: phtvRuntimeCustomEscapeKey()),
+            "pauseKeyEnabled": NSNumber(value: phtvRuntimePauseKeyEnabled()),
+            "pauseKey": NSNumber(value: phtvRuntimePauseKey()),
+            "autoRestoreEnglishWord": NSNumber(value: phtvRuntimeAutoRestoreEnglishWord()),
+            "enableEmojiHotkey": NSNumber(value: phtvRuntimeEnableEmojiHotkey()),
+            "emojiHotkeyModifiers": NSNumber(value: phtvRuntimeEmojiHotkeyModifiers()),
+            "emojiHotkeyKeyCode": NSNumber(value: phtvRuntimeEmojiHotkeyKeyCode())
         ]
     }
 }

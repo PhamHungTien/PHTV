@@ -35,7 +35,7 @@ final class PHTVLayoutCompatibilityService: NSObject {
             return
         }
 
-        PHTVSetPerformLayoutCompat(1)
+        phtvRuntimeSetPerformLayoutCompat(1)
         defaults.set(1, forKey: keyLayoutCompat)
 
         NSLog("[PHTV] Auto-enabled layout compatibility for non-US keyboard: %@", keyboardID)

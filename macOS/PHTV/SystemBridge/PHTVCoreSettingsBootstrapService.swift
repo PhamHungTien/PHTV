@@ -37,7 +37,7 @@ final class PHTVCoreSettingsBootstrapService: NSObject {
         }
         phtvRuntimeSetCurrentInputType(inputType)
 
-        PHTVSetFreeMark(0)
+        phtvRuntimeSetFreeMark(0)
 
         var codeTable = Int32(defaults.integer(forKey: "CodeTable"))
         if codeTable < 0 {
@@ -48,52 +48,52 @@ final class PHTVCoreSettingsBootstrapService: NSObject {
         phtvRuntimeSetCheckSpelling(
             readPersistedInt(defaults: defaults, key: "Spelling", defaultValue: 1)
         )
-        PHTVSetUseModernOrthography(
+        phtvRuntimeSetUseModernOrthography(
             readPersistedInt(defaults: defaults, key: "ModernOrthography", defaultValue: 1)
         )
-        PHTVSetQuickTelex(
+        phtvRuntimeSetQuickTelex(
             readPersistedInt(defaults: defaults, key: "QuickTelex", defaultValue: 0)
         )
-        PHTVSetFixRecommendBrowser(
+        phtvRuntimeSetFixRecommendBrowser(
             readPersistedInt(defaults: defaults, key: "FixRecommendBrowser", defaultValue: 1)
         )
 
-        PHTVSetUseMacro(
+        phtvRuntimeSetUseMacro(
             readPersistedInt(defaults: defaults, key: "UseMacro", defaultValue: 0)
         )
-        PHTVSetUseMacroInEnglishMode(
+        phtvRuntimeSetUseMacroInEnglishMode(
             readPersistedInt(defaults: defaults, key: "UseMacroInEnglishMode", defaultValue: 0)
         )
-        PHTVSetAutoCapsMacro(Int32(defaults.integer(forKey: "vAutoCapsMacro")))
+        phtvRuntimeSetAutoCapsMacro(Int32(defaults.integer(forKey: "vAutoCapsMacro")))
 
         phtvRuntimeSetSendKeyStepByStepEnabled(
             readPersistedInt(defaults: defaults, key: "SendKeyStepByStep", defaultValue: 0) != 0
         )
-        PHTVSetUseSmartSwitchKey(
+        phtvRuntimeSetUseSmartSwitchKey(
             readPersistedInt(defaults: defaults, key: "UseSmartSwitchKey", defaultValue: 1) != 0
         )
-        PHTVSetUpperCaseFirstChar(
+        phtvRuntimeSetUpperCaseFirstChar(
             readPersistedInt(defaults: defaults, key: "UpperCaseFirstChar", defaultValue: 0)
         )
 
-        PHTVSetTempOffSpelling(Int32(defaults.integer(forKey: "vTempOffSpelling")))
+        phtvRuntimeSetTempOffSpelling(Int32(defaults.integer(forKey: "vTempOffSpelling")))
 
-        PHTVSetAllowConsonantZFWJ(
+        phtvRuntimeSetAllowConsonantZFWJ(
             readPersistedInt(defaults: defaults, key: "vAllowConsonantZFWJ", defaultValue: 1)
         )
-        PHTVSetQuickEndConsonant(
+        phtvRuntimeSetQuickEndConsonant(
             readPersistedInt(defaults: defaults, key: "vQuickEndConsonant", defaultValue: 0)
         )
-        PHTVSetQuickStartConsonant(
+        phtvRuntimeSetQuickStartConsonant(
             readPersistedInt(defaults: defaults, key: "vQuickStartConsonant", defaultValue: 0)
         )
-        PHTVSetRememberCode(
+        phtvRuntimeSetRememberCode(
             readPersistedInt(defaults: defaults, key: "vRememberCode", defaultValue: 1)
         )
 
-        PHTVSetOtherLanguage(Int32(defaults.integer(forKey: "vOtherLanguage")))
-        PHTVSetTempOffPHTV(Int32(defaults.integer(forKey: "vTempOffPHTV")))
-        PHTVSetPerformLayoutCompat(Int32(defaults.integer(forKey: "vPerformLayoutCompat")))
+        phtvRuntimeSetOtherLanguage(Int32(defaults.integer(forKey: "vOtherLanguage")))
+        phtvRuntimeSetTempOffPHTV(Int32(defaults.integer(forKey: "vTempOffPHTV")))
+        phtvRuntimeSetPerformLayoutCompat(Int32(defaults.integer(forKey: "vPerformLayoutCompat")))
 
         PHTVSetSafeMode(defaults.bool(forKey: "SafeMode"))
     }

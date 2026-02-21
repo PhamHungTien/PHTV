@@ -89,7 +89,7 @@ import Foundation
             keyCode = Int32(defaults.integer(forKey: "vEmojiHotkeyKeyCode"))
         }
 
-        PHTVSetEmojiHotkeySettings(enabled, modifiers, keyCode)
+        phtvRuntimeSetEmojiHotkeySettings(enabled, modifiers, keyCode)
     }
 
     @objc(phtv_loadRuntimeSettingsFromUserDefaults)
@@ -132,47 +132,47 @@ import Foundation
             checkSpelling
         )
 
-        PHTVSetUseModernOrthography(
+        phtvRuntimeSetUseModernOrthography(
             phtv_readIntWithFallback(
                 defaults: defaults,
                 key: "ModernOrthography",
-                fallback: Int32(PHTVGetUseModernOrthography())
+                fallback: Int32(phtvRuntimeUseModernOrthography())
             )
         )
-        PHTVSetQuickTelex(
+        phtvRuntimeSetQuickTelex(
             phtv_readIntWithFallback(
                 defaults: defaults,
                 key: "QuickTelex",
-                fallback: Int32(PHTVGetQuickTelex())
+                fallback: Int32(phtvRuntimeQuickTelex())
             )
         )
-        PHTVSetFreeMark(
+        phtvRuntimeSetFreeMark(
             phtv_readIntWithFallback(
                 defaults: defaults,
                 key: "FreeMark",
-                fallback: Int32(PHTVGetFreeMark())
+                fallback: Int32(phtvRuntimeFreeMark())
             )
         )
 
-        PHTVSetUseMacro(
+        phtvRuntimeSetUseMacro(
             phtv_readIntWithFallback(
                 defaults: defaults,
                 key: "UseMacro",
-                fallback: Int32(PHTVGetUseMacro())
+                fallback: Int32(phtvRuntimeUseMacro())
             )
         )
-        PHTVSetUseMacroInEnglishMode(
+        phtvRuntimeSetUseMacroInEnglishMode(
             phtv_readIntWithFallback(
                 defaults: defaults,
                 key: "UseMacroInEnglishMode",
-                fallback: Int32(PHTVGetUseMacroInEnglishMode())
+                fallback: Int32(phtvRuntimeUseMacroInEnglishMode())
             )
         )
-        PHTVSetAutoCapsMacro(
+        phtvRuntimeSetAutoCapsMacro(
             phtv_readIntWithFallback(
                 defaults: defaults,
                 key: "vAutoCapsMacro",
-                fallback: Int32(PHTVGetAutoCapsMacro())
+                fallback: Int32(phtvRuntimeAutoCapsMacro())
             )
         )
 
@@ -183,97 +183,97 @@ import Foundation
                 fallback: phtvRuntimeIsSendKeyStepByStepEnabled() ? 1 : 0
             ) != 0
         )
-        PHTVSetUseSmartSwitchKey(
+        phtvRuntimeSetUseSmartSwitchKey(
             phtv_readIntWithFallback(
                 defaults: defaults,
                 key: "UseSmartSwitchKey",
                 fallback: phtvRuntimeIsSmartSwitchKeyEnabled() ? 1 : 0
             ) != 0
         )
-        PHTVSetUpperCaseFirstChar(
+        phtvRuntimeSetUpperCaseFirstChar(
             phtv_readIntWithFallback(
                 defaults: defaults,
                 key: "UpperCaseFirstChar",
-                fallback: Int32(PHTVGetUpperCaseFirstChar())
+                fallback: Int32(phtvRuntimeUpperCaseFirstChar())
             )
         )
-        PHTVSetAllowConsonantZFWJ(
+        phtvRuntimeSetAllowConsonantZFWJ(
             phtv_readIntWithFallback(
                 defaults: defaults,
                 key: "vAllowConsonantZFWJ",
                 fallback: 1
             )
         )
-        PHTVSetQuickStartConsonant(
+        phtvRuntimeSetQuickStartConsonant(
             phtv_readIntWithFallback(
                 defaults: defaults,
                 key: "vQuickStartConsonant",
-                fallback: Int32(PHTVGetQuickStartConsonant())
+                fallback: Int32(phtvRuntimeQuickStartConsonant())
             )
         )
-        PHTVSetQuickEndConsonant(
+        phtvRuntimeSetQuickEndConsonant(
             phtv_readIntWithFallback(
                 defaults: defaults,
                 key: "vQuickEndConsonant",
-                fallback: Int32(PHTVGetQuickEndConsonant())
+                fallback: Int32(phtvRuntimeQuickEndConsonant())
             )
         )
-        PHTVSetRememberCode(
+        phtvRuntimeSetRememberCode(
             phtv_readIntWithFallback(
                 defaults: defaults,
                 key: "vRememberCode",
-                fallback: Int32(PHTVGetRememberCode())
+                fallback: Int32(phtvRuntimeRememberCode())
             )
         )
-        PHTVSetPerformLayoutCompat(
+        phtvRuntimeSetPerformLayoutCompat(
             phtv_readIntWithFallback(
                 defaults: defaults,
                 key: "vPerformLayoutCompat",
-                fallback: Int32(PHTVGetPerformLayoutCompat())
+                fallback: Int32(phtvRuntimePerformLayoutCompat())
             )
         )
 
-        PHTVSetRestoreOnEscape(
+        phtvRuntimeSetRestoreOnEscape(
             phtv_readIntWithFallback(
                 defaults: defaults,
                 key: "vRestoreOnEscape",
-                fallback: Int32(PHTVGetRestoreOnEscape())
+                fallback: Int32(phtvRuntimeRestoreOnEscape())
             )
         )
-        PHTVSetCustomEscapeKey(
+        phtvRuntimeSetCustomEscapeKey(
             phtv_readIntWithFallback(
                 defaults: defaults,
                 key: "vCustomEscapeKey",
-                fallback: Int32(PHTVGetCustomEscapeKey())
+                fallback: Int32(phtvRuntimeCustomEscapeKey())
             )
         )
-        PHTVSetPauseKeyEnabled(
+        phtvRuntimeSetPauseKeyEnabled(
             phtv_readIntWithFallback(
                 defaults: defaults,
                 key: "vPauseKeyEnabled",
-                fallback: Int32(PHTVGetPauseKeyEnabled())
+                fallback: Int32(phtvRuntimePauseKeyEnabled())
             )
         )
-        PHTVSetPauseKey(
+        phtvRuntimeSetPauseKey(
             phtv_readIntWithFallback(
                 defaults: defaults,
                 key: "vPauseKey",
-                fallback: Int32(PHTVGetPauseKey())
+                fallback: Int32(phtvRuntimePauseKey())
             )
         )
 
-        PHTVSetAutoRestoreEnglishWord(
+        phtvRuntimeSetAutoRestoreEnglishWord(
             phtv_readIntWithFallback(
                 defaults: defaults,
                 key: "vAutoRestoreEnglishWord",
-                fallback: Int32(PHTVGetAutoRestoreEnglishWord())
+                fallback: Int32(phtvRuntimeAutoRestoreEnglishWord())
             )
         )
-        PHTVSetShowIconOnDock(
+        phtvRuntimeSetShowIconOnDock(
             phtv_readIntWithFallback(
                 defaults: defaults,
                 key: "vShowIconOnDock",
-                fallback: Int32(PHTVGetShowIconOnDock())
+                fallback: Int32(phtvRuntimeShowIconOnDock())
             ) != 0
         )
 
@@ -302,7 +302,7 @@ import Foundation
         phtvRuntimeSetCurrentInputType(0)
         defaults.set(0, forKey: "InputType")
 
-        PHTVSetFreeMark(0)
+        phtvRuntimeSetFreeMark(0)
         defaults.set(0, forKey: "FreeMark")
 
         phtvRuntimeSetCheckSpelling(1)
@@ -311,68 +311,68 @@ import Foundation
         phtvRuntimeSetCurrentCodeTable(0)
         defaults.set(0, forKey: "CodeTable")
 
-        let defaultSwitchHotkey = PHTVDefaultSwitchHotkeyStatus()
+        let defaultSwitchHotkey = phtvRuntimeDefaultSwitchHotkeyStatus()
         phtvRuntimeSetSwitchKeyStatus(defaultSwitchHotkey)
         defaults.set(Int(defaultSwitchHotkey), forKey: "SwitchKeyStatus")
 
-        PHTVSetQuickTelex(0)
+        phtvRuntimeSetQuickTelex(0)
         defaults.set(0, forKey: "QuickTelex")
 
-        PHTVSetUseModernOrthography(1)
+        phtvRuntimeSetUseModernOrthography(1)
         defaults.set(1, forKey: "ModernOrthography")
 
-        PHTVSetFixRecommendBrowser(1)
+        phtvRuntimeSetFixRecommendBrowser(1)
         defaults.set(1, forKey: "FixRecommendBrowser")
 
-        PHTVSetUseMacro(1)
+        phtvRuntimeSetUseMacro(1)
         defaults.set(1, forKey: "UseMacro")
 
-        PHTVSetUseMacroInEnglishMode(0)
+        phtvRuntimeSetUseMacroInEnglishMode(0)
         defaults.set(0, forKey: "UseMacroInEnglishMode")
 
         phtvRuntimeSetSendKeyStepByStepEnabled(false)
         defaults.set(0, forKey: "SendKeyStepByStep")
 
-        PHTVSetUseSmartSwitchKey(true)
+        phtvRuntimeSetUseSmartSwitchKey(true)
         defaults.set(1, forKey: "UseSmartSwitchKey")
 
-        PHTVSetUpperCaseFirstChar(0)
+        phtvRuntimeSetUpperCaseFirstChar(0)
         defaults.set(0, forKey: "UpperCaseFirstChar")
 
-        PHTVSetTempOffSpelling(0)
+        phtvRuntimeSetTempOffSpelling(0)
         defaults.set(0, forKey: "vTempOffSpelling")
 
-        PHTVSetAllowConsonantZFWJ(1)
+        phtvRuntimeSetAllowConsonantZFWJ(1)
         defaults.set(1, forKey: "vAllowConsonantZFWJ")
 
-        PHTVSetQuickStartConsonant(0)
+        phtvRuntimeSetQuickStartConsonant(0)
         defaults.set(0, forKey: "vQuickStartConsonant")
 
-        PHTVSetQuickEndConsonant(0)
+        phtvRuntimeSetQuickEndConsonant(0)
         defaults.set(0, forKey: "vQuickEndConsonant")
 
-        PHTVSetRememberCode(1)
+        phtvRuntimeSetRememberCode(1)
         defaults.set(1, forKey: "vRememberCode")
 
-        PHTVSetOtherLanguage(1)
+        phtvRuntimeSetOtherLanguage(1)
         defaults.set(1, forKey: "vOtherLanguage")
 
-        PHTVSetTempOffPHTV(0)
+        phtvRuntimeSetTempOffPHTV(0)
         defaults.set(0, forKey: "vTempOffPHTV")
 
-        PHTVSetAutoRestoreEnglishWord(1)
+        phtvRuntimeSetAutoRestoreEnglishWord(1)
         defaults.set(1, forKey: "vAutoRestoreEnglishWord")
 
-        PHTVSetRestoreOnEscape(1)
+        phtvRuntimeSetRestoreOnEscape(1)
         defaults.set(1, forKey: "vRestoreOnEscape")
 
-        PHTVSetCustomEscapeKey(0)
+        phtvRuntimeSetCustomEscapeKey(0)
         defaults.set(0, forKey: "vCustomEscapeKey")
 
-        PHTVSetShowIconOnDock(false)
+        phtvRuntimeSetShowIconOnDock(false)
         defaults.set(0, forKey: "vShowIconOnDock")
 
-        PHTVSetPerformLayoutCompat(0)
+        phtvRuntimeSetPerformLayoutCompat(0)
         defaults.set(0, forKey: "vPerformLayoutCompat")
 
         defaults.set(1, forKey: "GrayIcon")
@@ -391,8 +391,8 @@ import Foundation
         defaults.set(false, forKey: "vIncludeLogs")
         defaults.set(true, forKey: "vIncludeCrashLogs")
 
-        let defaultPauseKey = PHTVDefaultPauseKey()
-        PHTVSetPauseKeyEnabled(0)
-        PHTVSetPauseKey(defaultPauseKey)
+        let defaultPauseKey = phtvRuntimeDefaultPauseKey()
+        phtvRuntimeSetPauseKeyEnabled(0)
+        phtvRuntimeSetPauseKey(defaultPauseKey)
     }
 }

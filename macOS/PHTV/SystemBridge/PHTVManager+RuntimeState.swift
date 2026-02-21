@@ -42,7 +42,7 @@ import Foundation
         phtvEngineNotifyTableCodeChanged()
         PHTVSmartSwitchBridgeService.handleTableCodeChanged(
             forBundleId: smartSwitchFocusedBundleId(),
-            rememberCode: Int32(PHTVGetRememberCode()),
+            rememberCode: Int32(phtvRuntimeRememberCode()),
             currentLanguage: phtv_currentLanguage(),
             currentCodeTable: phtv_currentCodeTable()
         )
@@ -53,7 +53,7 @@ import Foundation
         PHTVSmartSwitchBridgeService.handleActiveAppChanged(
             forBundleId: smartSwitchFocusedBundleId(),
             useSmartSwitchKey: phtv_isSmartSwitchKeyEnabled() ? 1 : 0,
-            rememberCode: Int32(PHTVGetRememberCode()),
+            rememberCode: Int32(phtvRuntimeRememberCode()),
             currentLanguage: phtv_currentLanguage(),
             currentCodeTable: phtv_currentCodeTable()
         )
@@ -71,7 +71,7 @@ import Foundation
 
     @objc(phtv_otherLanguageMode)
     class func phtv_otherLanguageMode() -> Int32 {
-        Int32(PHTVGetOtherLanguage())
+        Int32(phtvRuntimeOtherLanguage())
     }
 
     @objc(phtv_currentInputType)
@@ -126,6 +126,6 @@ import Foundation
 
     @objc(phtv_setDockIconRuntimeVisible:)
     class func phtv_setDockIconRuntimeVisible(_ visible: Bool) {
-        PHTVSetShowIconOnDock(visible)
+        phtvRuntimeSetShowIconOnDock(visible)
     }
 }
