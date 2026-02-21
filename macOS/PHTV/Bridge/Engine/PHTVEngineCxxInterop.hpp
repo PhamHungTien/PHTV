@@ -38,10 +38,6 @@ inline bool phtvEngineInitializeVietnameseDictionary(const char *path) {
     return initVietnameseDictionary(std::string(path));
 }
 
-inline void phtvEngineClearCustomDictionary() noexcept {
-    clearCustomDictionary();
-}
-
 inline void phtvRuntimeBarrier() noexcept {
     __sync_synchronize();
 }
@@ -419,12 +415,6 @@ inline int phtvEngineDataMacroDataSize() noexcept {
 inline std::uint32_t phtvEngineDataMacroDataAt(const int index) noexcept {
     if (!pData || index < 0 || index >= static_cast<int>(pData->macroData.size())) return 0;
     return pData->macroData[index];
-}
-
-// MARK: - Session helpers
-
-inline void phtvRuntimeStartNewSession() noexcept {
-    startNewSession();
 }
 
 // MARK: - Runtime flag getters

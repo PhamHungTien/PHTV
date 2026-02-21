@@ -7,6 +7,14 @@
 
 import Foundation
 
+private func phtvCallStartNewSession() {
+    startNewSession()
+}
+
+private func phtvCallClearCustomDictionary() {
+    clearCustomDictionary()
+}
+
 @objcMembers
 final class PHTVEngineRuntimeFacade: NSObject {
     private static let eventMarker: Int64 = 0x5048_5456 // "PHTV"
@@ -389,7 +397,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func startNewSession() {
-        phtvRuntimeStartNewSession()
+        phtvCallStartNewSession()
     }
 
     class func initializeMacroMap(_ data: UnsafePointer<UInt8>?, _ count: Int32) {
@@ -425,7 +433,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func clearCustomDictionary() {
-        phtvEngineClearCustomDictionary()
+        phtvCallClearCustomDictionary()
     }
 
     class func hotkeyDisplayCharacter(_ keyCode: UInt16) -> UInt16 {

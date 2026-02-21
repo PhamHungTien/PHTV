@@ -53,6 +53,8 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - Swift facade goi truc tiep `getEnglishDictionarySize`, `getVietnameseDictionarySize`
 - Da bo wrapper macro map init:
   - Swift facade goi truc tiep `initMacroMap(...)`
+- Da bo wrappers session/custom-dictionary clear:
+  - Swift facade goi truc tiep `startNewSession`, `clearCustomDictionary`
 
 ## Lo trinh migrate
 
