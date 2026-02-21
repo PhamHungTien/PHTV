@@ -59,15 +59,6 @@ inline void phtvRuntimeBarrier() noexcept {
 
 extern vKeyHookState* pData __attribute__((swift_attr("nonisolated(unsafe)")));
 
-inline int phtvEngineDataMacroDataSize() noexcept {
-    return pData ? static_cast<int>(pData->macroData.size()) : 0;
-}
-
-inline std::uint32_t phtvEngineDataMacroDataAt(const int index) noexcept {
-    if (!pData || index < 0 || index >= static_cast<int>(pData->macroData.size())) return 0;
-    return pData->macroData[index];
-}
-
 #endif
 
 #endif /* PHTVEngineCxxInterop_hpp */

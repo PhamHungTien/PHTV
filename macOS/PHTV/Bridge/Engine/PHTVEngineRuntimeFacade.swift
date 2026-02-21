@@ -733,11 +733,23 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func engineDataMacroDataSize() -> Int32 {
-        Int32(phtvEngineDataMacroDataSize())
+        guard let engineData = pData else {
+            return 0
+        }
+        return Int32(engineData.pointee.macroData.size())
     }
 
     class func engineDataMacroDataAt(_ index: Int32) -> UInt32 {
-        UInt32(phtvEngineDataMacroDataAt(index))
+        guard let engineData = pData, index >= 0 else {
+            return 0
+        }
+
+        let macroData = engineData.pointee.macroData
+        let safeIndex = Int(index)
+        guard safeIndex < Int(macroData.size()) else {
+            return 0
+        }
+        return UInt32(macroData[safeIndex])
     }
 
     class func lowByte(_ value: UInt32) -> UInt16 {
