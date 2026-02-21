@@ -7,16 +7,6 @@
 
 import Foundation
 
-private let snippetTypeStatic: Int = 0
-private let snippetTypeDate: Int = 1
-private let snippetTypeTime: Int = 2
-private let snippetTypeDateTime: Int = 3
-private let snippetTypeClipboard: Int = 4
-private let snippetTypeRandom: Int = 5
-private let snippetTypeCounter: Int = 6
-private let snippetTokenCharacters: Set<Character> = ["d", "M", "y", "H", "m", "s"]
-private let snippetCounterLock = NSLock()
-nonisolated(unsafe) private var snippetCounterValues: [String: Int] = [:]
 private let macroLookupLock = NSLock()
 
 private struct MacroLookupEntry {
@@ -80,120 +70,6 @@ private let macroCharacterToKeyState: [UInt16: UInt32] = {
 
     return mapping
 }()
-
-private func twoDigitString(_ value: Int) -> String {
-    String(format: "%02d", value)
-}
-
-private func formatDateTimeSnippet(_ format: String) -> String {
-    let now = Date()
-    let components = Calendar.current.dateComponents([.day, .month, .year, .hour, .minute, .second], from: now)
-    let day = components.day ?? 0
-    let month = components.month ?? 0
-    let year = components.year ?? 0
-    let hour = components.hour ?? 0
-    let minute = components.minute ?? 0
-    let second = components.second ?? 0
-
-    var output = ""
-    var lastCharacter: Character?
-    var repeatCount = 0
-
-    func flushRepeat() {
-        guard let character = lastCharacter, repeatCount > 0 else {
-            return
-        }
-
-        switch character {
-        case "d":
-            output.append(repeatCount >= 2 ? twoDigitString(day) : String(day))
-        case "M":
-            output.append(repeatCount >= 2 ? twoDigitString(month) : String(month))
-        case "y":
-            if repeatCount >= 4 {
-                output.append(String(year))
-            } else {
-                output.append(twoDigitString(year % 100))
-            }
-        case "H":
-            output.append(repeatCount >= 2 ? twoDigitString(hour) : String(hour))
-        case "m":
-            output.append(repeatCount >= 2 ? twoDigitString(minute) : String(minute))
-        case "s":
-            output.append(repeatCount >= 2 ? twoDigitString(second) : String(second))
-        default:
-            for _ in 0..<repeatCount {
-                output.append(character)
-            }
-        }
-
-        repeatCount = 0
-    }
-
-    for character in format {
-        if character == lastCharacter, snippetTokenCharacters.contains(character) {
-            repeatCount += 1
-        } else {
-            flushRepeat()
-            lastCharacter = character
-            repeatCount = 1
-        }
-    }
-    flushRepeat()
-
-    return output
-}
-
-private func randomSnippetValue(from list: String) -> String {
-    guard !list.isEmpty else {
-        return ""
-    }
-
-    let items = list
-        .split(separator: ",", omittingEmptySubsequences: false)
-        .compactMap { part -> String? in
-            let trimmed = String(part).trimmingCharacters(in: CharacterSet(charactersIn: " \t"))
-            return trimmed.isEmpty ? nil : trimmed
-        }
-
-    guard !items.isEmpty else {
-        return list
-    }
-    return items[Int.random(in: 0..<items.count)]
-}
-
-private func counterSnippetValue(prefix: String) -> String {
-    snippetCounterLock.lock()
-    defer {
-        snippetCounterLock.unlock()
-    }
-
-    let nextValue = (snippetCounterValues[prefix] ?? 0) + 1
-    snippetCounterValues[prefix] = nextValue
-    return "\(prefix)\(nextValue)"
-}
-
-private func computeSnippetContent(snippetType: Int, format: String) -> String {
-    switch snippetType {
-    case snippetTypeDate:
-        return formatDateTimeSnippet(format.isEmpty ? "dd/MM/yyyy" : format)
-    case snippetTypeTime:
-        return formatDateTimeSnippet(format.isEmpty ? "HH:mm:ss" : format)
-    case snippetTypeDateTime:
-        return formatDateTimeSnippet(format.isEmpty ? "dd/MM/yyyy HH:mm" : format)
-    case snippetTypeClipboard:
-        // Clipboard snippets are handled in AppDelegate layer.
-        return ""
-    case snippetTypeRandom:
-        return randomSnippetValue(from: format)
-    case snippetTypeCounter:
-        return counterSnippetValue(prefix: format)
-    case snippetTypeStatic:
-        return format
-    default:
-        return format
-    }
-}
 
 private func caseTransformedScalar(_ character: UInt16, upper: Bool) -> UInt16 {
     guard let scalar = UnicodeScalar(Int(character)) else {
@@ -302,7 +178,7 @@ private func macroMapFromBinaryData(_ data: UnsafePointer<UInt8>, size: Int) -> 
             snippetType = Int32(data[cursor])
             cursor += 1
         } else {
-            snippetType = Int32(snippetTypeStatic)
+            snippetType = EngineMacroSnippetType.staticContent
         }
 
         let key = convertedMacroCodes(
@@ -314,7 +190,7 @@ private func macroMapFromBinaryData(_ data: UnsafePointer<UInt8>, size: Int) -> 
         }
 
         let staticContentCode: [UInt32]
-        if snippetType == Int32(snippetTypeStatic) {
+        if snippetType == EngineMacroSnippetType.staticContent {
             staticContentCode = convertedMacroCodes(
                 from: macroContent,
                 activeCodeTable: activeCodeTable
@@ -412,15 +288,15 @@ private func macroContentCode(
     for entry: MacroLookupEntry,
     codeTable: Int32
 ) -> [UInt32] {
-    if entry.snippetType == Int32(snippetTypeStatic) {
+    if entry.snippetType == EngineMacroSnippetType.staticContent {
         return entry.staticContentCode
     }
-    if entry.snippetType == Int32(snippetTypeClipboard) {
+    if entry.snippetType == EngineMacroSnippetType.clipboard {
         return []
     }
 
-    let dynamicContent = computeSnippetContent(
-        snippetType: Int(entry.snippetType),
+    let dynamicContent = EngineMacroSnippetRuntime.content(
+        snippetType: entry.snippetType,
         format: entry.snippetFormat
     )
     return convertedMacroCodes(from: dynamicContent, activeCodeTable: codeTable)
