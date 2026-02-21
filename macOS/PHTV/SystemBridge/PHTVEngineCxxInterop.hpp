@@ -565,6 +565,32 @@ inline std::uint32_t phtvEngineDataMacroDataAt(const int index) noexcept {
     return pData->macroData[index];
 }
 
+inline const std::uint32_t* phtvEngineDataMacroDataPtr() noexcept {
+    return pData ? pData->macroData.data() : nullptr;
+}
+
+// MARK: - Engine action codes
+
+inline int phtvEngineVRestoreCode() noexcept {
+    return static_cast<int>(vRestore);
+}
+
+inline int phtvEngineVRestoreAndStartNewSessionCode() noexcept {
+    return static_cast<int>(vRestoreAndStartNewSession);
+}
+
+// MARK: - Session helpers
+
+inline void phtvRuntimeStartNewSession() noexcept {
+    startNewSession();
+}
+
+// MARK: - Runtime flag getters
+
+inline int phtvRuntimeFixRecommendBrowser() noexcept {
+    return vFixRecommendBrowser;
+}
+
 #endif
 
 #endif /* PHTVEngineCxxInterop_hpp */

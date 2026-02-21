@@ -32,8 +32,6 @@ static const NSUInteger SYNC_KEY_RESERVE_SIZE = 256;         // Pre-allocated bu
 // PHTV event marker – used to skip our own synthetic events in the callback.
 static const int64_t kPHTVEventMarker = 0x50485456; // "PHTV"
 
-#define DYNA_DATA(macro, pos) (macro ? pData->macroData[pos] : pData->charData[pos])
-#define MAX_UNICODE_STRING  20
 
 extern volatile int vSendKeyStepByStep;
 extern volatile int vPerformLayoutCompat;
@@ -119,252 +117,6 @@ extern volatile int vPauseKey;
     }
     
 
-    void SendNewCharString(const bool& dataFromMacro=false,
-                           const Uint16& offset=0,
-                           const CGKeyCode keycode=0,
-                           const CGEventFlags flags=0) {
-        int outputIndex = 0;
-        int loopIndex = 0;
-        int newCharSize = dataFromMacro ? (int)pData->macroData.size() : (int)pData->newCharCount;
-        Uint16 newCharString[MAX_UNICODE_STRING];
-        bool willContinueSending = false;
-        bool willSendControlKey = false;
-
-        // Treat as Spotlight target if callback selected HID/Spotlight-safe path.
-        BOOL isSpotlightTarget = [PHTVEventRuntimeContextService postToHIDTapEnabled] || [PHTVEventRuntimeContextService appIsSpotlightLike];
-        // Some apps need precomposed Unicode but still rely on batched synthetic events.
-        BOOL isPrecomposedBatched = [PHTVEventRuntimeContextService appNeedsPrecomposedBatched];
-        // Force precomposed for: Unicode Compound (code 3) on Spotlight, OR any Unicode on WhatsApp-like apps
-        BOOL forcePrecomposed = ((vCodeTable == 3) && isSpotlightTarget) ||
-                                 ((vCodeTable == 0 || vCodeTable == 3) && isPrecomposedBatched);
-
-        if (newCharSize > 0) {
-            for (loopIndex = dataFromMacro ? (int)offset : (int)pData->newCharCount - 1 - (int)offset;
-                dataFromMacro ? loopIndex < (int)pData->macroData.size() : loopIndex >= 0;
-                 dataFromMacro ? loopIndex++ : loopIndex--) {
-
-                if (outputIndex >= 16) {
-                    willContinueSending = true;
-                    break;
-                }
-
-                Uint32 tempChar = DYNA_DATA(dataFromMacro, loopIndex);
-                if (tempChar & PURE_CHARACTER_MASK) {
-                    newCharString[outputIndex++] = tempChar;
-                    if (IS_DOUBLE_CODE(vCodeTable)) {
-                        [PHTVKeyEventSenderService insertKeyLength:1];
-                    }
-                } else if (!(tempChar & CHAR_CODE_MASK)) {
-                    if (IS_DOUBLE_CODE(vCodeTable))
-                        [PHTVKeyEventSenderService insertKeyLength:1];
-                    newCharString[outputIndex++] = keyCodeToCharacter(tempChar);
-                } else {
-                    if (vCodeTable == 0) {  //unicode 2 bytes code
-                        newCharString[outputIndex++] = tempChar;
-                    } else if (vCodeTable == 1 || vCodeTable == 2 || vCodeTable == 4) { //others such as VNI Windows, TCVN3: 1 byte code
-                        UniChar newChar = tempChar;
-                        UniChar newCharHi = HIBYTE(newChar);
-                        newChar = LOBYTE(newChar);
-                        newCharString[outputIndex++] = newChar;
-
-                        if (newCharHi > 32) {
-                            if (vCodeTable == 2) //VNI
-                                [PHTVKeyEventSenderService insertKeyLength:2];
-                            newCharString[outputIndex++] = newCharHi;
-                            newCharSize++;
-                        } else {
-                            if (vCodeTable == 2) //VNI
-                                [PHTVKeyEventSenderService insertKeyLength:1];
-                        }
-                    } else if (vCodeTable == 3) { //Unicode Compound
-                        UniChar newChar = tempChar;
-                        UniChar newCharHi = (newChar >> 13);
-                        newChar &= 0x1FFF;
-
-                        // Always build compound form first (will be converted to precomposed later if needed)
-                        [PHTVKeyEventSenderService insertKeyLength:(newCharHi > 0 ? 2 : 1)];
-                        newCharString[outputIndex++] = newChar;
-                        if (newCharHi > 0) {
-                            newCharSize++;
-                            newCharString[outputIndex++] = _unicodeCompoundMark[newCharHi - 1];
-                        }
-                    }
-                }
-            }//end for
-        }
-
-        if (!willContinueSending && (pData->code == vRestore || pData->code == vRestoreAndStartNewSession)) { //if is restore
-            if (keyCodeToCharacter(keycode) != 0) {
-                newCharSize++;
-                newCharString[outputIndex++] = keyCodeToCharacter(keycode | ((flags & kCGEventFlagMaskAlphaShift) || (flags & kCGEventFlagMaskShift) ? CAPS_MASK : 0));
-            } else {
-                willSendControlKey = true;
-            }
-        }
-        if (!willContinueSending && pData->code == vRestoreAndStartNewSession) {
-            startNewSession();
-        }
-
-        // If we need to force precomposed Unicode (for apps like Spotlight),
-        // convert the entire string from compound to precomposed form
-        Uint16 _finalCharString[MAX_UNICODE_STRING];
-        int _finalCharSize = willContinueSending ? 16 : newCharSize - (int)offset;
-
-        if (forcePrecomposed && _finalCharSize > 0) {
-            // Create NSString from Unicode characters and get precomposed version
-            NSString *tempStr = [NSString stringWithCharacters:(const unichar *)newCharString length:_finalCharSize];
-            NSString *precomposed = [tempStr precomposedStringWithCanonicalMapping];
-            _finalCharSize = (int)[precomposed length];
-            [precomposed getCharacters:(unichar *)_finalCharString range:NSMakeRange(0, _finalCharSize)];
-        } else {
-            // Use original string
-            memcpy(_finalCharString, newCharString, _finalCharSize * sizeof(Uint16));
-        }
-
-        if (isSpotlightTarget) {
-            // Try AX API first - it's atomic and most reliable when it works
-            NSString *insertStr = [NSString stringWithCharacters:(const unichar *)_finalCharString length:_finalCharSize];
-            int backspaceCount = (int)[PHTVEventRuntimeContextService takePendingBackspaceCount];
-
-            BOOL shouldVerify = (backspaceCount > 0);
-            BOOL axSucceeded = [PHTVEventContextBridgeService replaceFocusedTextViaAXWithBackspaceCount:(int32_t)backspaceCount
-                                                                                               insertText:insertStr
-                                                                                                   verify:shouldVerify
-                                                                                                 safeMode:vSafeMode];
-            if (axSucceeded) {
-                goto FinalizeSend;
-            }
-
-            // AX failed - fallback to synthetic events
-            [PHTVKeyEventSenderService sendBackspaceSequenceWithDelay:(int32_t)backspaceCount];
-            [PHTVKeyEventSenderService sendUnicodeStringChunked:_finalCharString
-                                                            len:(int32_t)_finalCharSize
-                                                      chunkSize:(int32_t)_finalCharSize
-                                                   interDelayUs:0];
-            goto FinalizeSend;
-        } else {
-            if ([PHTVEventRuntimeContextService isCliTargetEnabled]) {
-                int chunkSize = (int)[PHTVCliRuntimeStateService cliTextChunkSize];
-                if (chunkSize < 1) chunkSize = 1;
-                [PHTVKeyEventSenderService sendUnicodeStringChunked:_finalCharString
-                                                                len:(int32_t)_finalCharSize
-                                                          chunkSize:(int32_t)chunkSize
-                                                       interDelayUs:[PHTVCliRuntimeStateService cliTextDelayUs]];
-                goto FinalizeSend;
-            }
-            [PHTVKeyEventSenderService sendUnicodeStringChunked:_finalCharString
-                                                            len:(int32_t)_finalCharSize
-                                                      chunkSize:(int32_t)_finalCharSize
-                                                   interDelayUs:0];
-        }
-
-    FinalizeSend:
-        if (willContinueSending) {
-            SendNewCharString(dataFromMacro, dataFromMacro ? (Uint16)loopIndex : 16, keycode, flags);
-        }
-
-        //the case when hCode is vRestore or vRestoreAndStartNewSession, the word is invalid and last key is control key such as TAB, LEFT ARROW, RIGHT ARROW,...
-        if (willSendControlKey) {
-            [PHTVKeyEventSenderService sendKeyCode:(uint32_t)keycode];
-        }
-    }
-            
-    void handleMacro(CGKeyCode keycode, CGEventFlags flags) {
-        // PERFORMANCE: Use cached bundle ID instead of querying AX API
-        NSString *effectiveTarget = [PHTVEventRuntimeContextService effectiveTargetBundleIdValue];
-        if (effectiveTarget == nil) {
-            effectiveTarget = [PHTVAppContextService focusedBundleIdForSafeMode:vSafeMode
-                                                                 cacheDurationMs:SPOTLIGHT_CACHE_DURATION_MS];
-            if (effectiveTarget == nil) {
-                effectiveTarget = FRONT_APP;
-            }
-        }
-        PHTVMacroPlanBox *macroPlan =
-            [PHTVInputStrategyService macroPlanForPostToHIDTap:[PHTVEventRuntimeContextService postToHIDTapEnabled]
-                                            appIsSpotlightLike:[PHTVEventRuntimeContextService appIsSpotlightLike]
-                                              browserFixEnabled:vFixRecommendBrowser
-                                           originalBackspaceCount:(int32_t)pData->backspaceCount
-                                                     cliTarget:[PHTVEventRuntimeContextService isCliTargetEnabled]
-                                              globalStepByStep:vSendKeyStepByStep
-                                              appNeedsStepByStep:[PHTVEventRuntimeContextService appNeedsStepByStep]];
-        BOOL isSpotlightLike = macroPlan.isSpotlightLikeTarget;
-
-        #ifdef DEBUG
-        NSLog(@"[Macro] handleMacro: target='%@', isSpotlight=%d (postToHID=%d), backspaceCount=%d, macroSize=%zu",
-              effectiveTarget, isSpotlightLike, [PHTVEventRuntimeContextService postToHIDTapEnabled], (int)pData->backspaceCount, pData->macroData.size());
-        #endif
-
-        // CRITICAL FIX: Spotlight requires AX API for macro replacement
-        // Synthetic backspace events don't work reliably in Spotlight
-        if (macroPlan.shouldTryAXReplacement) {
-            BOOL replacedByAX =
-                [PHTVEngineDataBridge replaceSpotlightLikeMacroIfNeeded:(isSpotlightLike ? 1 : 0)
-                                                         backspaceCount:(int32_t)pData->backspaceCount
-                                                              macroData:pData->macroData.data()
-                                                                  count:(int32_t)pData->macroData.size()
-                                                              codeTable:(int32_t)vCodeTable
-                                                               safeMode:vSafeMode];
-            if (replacedByAX) {
-                #ifdef DEBUG
-                NSLog(@"[Macro] Spotlight: AX API succeeded");
-                #endif
-                return;
-            }
-
-            #ifdef DEBUG
-            NSLog(@"[Macro] Spotlight: AX API failed, falling back to synthetic events");
-            #endif
-            // AX failed - fallback to synthetic events below
-        }
-
-        //fix autocomplete
-        if (macroPlan.shouldApplyBrowserFix) {
-            [PHTVKeyEventSenderService sendEmptyCharacter];
-            pData->backspaceCount = (Byte)macroPlan.adjustedBackspaceCount;
-        }
-
-        // Send backspace if needed
-        if (pData->backspaceCount > 0) {
-            [PHTVKeyEventSenderService sendBackspaceSequenceWithDelay:(int32_t)pData->backspaceCount];
-        }
-
-        //send real data - use step by step for timing sensitive apps like Spotlight
-        BOOL useStepByStep = macroPlan.useStepByStepSend;
-        if (!useStepByStep) {
-            SendNewCharString(true, 0, keycode, flags);
-        } else {
-            int32_t macroCount = (int32_t)pData->macroData.size();
-            double cliSpeedFactor = [PHTVCliRuntimeStateService currentSpeedFactor];
-            uint64_t scaledCliTextDelayUs = [PHTVEventRuntimeContextService isCliTargetEnabled] ? (uint64_t)[PHTVTimingService scaleDelayUseconds:[PHTVTimingService clampToUseconds:[PHTVCliRuntimeStateService cliTextDelayUs]] factor:cliSpeedFactor] : 0;
-            uint64_t scaledCliPostSendBlockUs = [PHTVEventRuntimeContextService isCliTargetEnabled] ? [PHTVTimingService scaleDelayMicroseconds:[PHTVCliRuntimeStateService cliPostSendBlockUs] factor:cliSpeedFactor] : 0;
-            PHTVSendSequencePlanBox *sendPlan =
-                [PHTVSendSequenceService sequencePlanForCliTarget:[PHTVEventRuntimeContextService isCliTargetEnabled]
-                                                         itemCount:macroCount
-                                              scaledCliTextDelayUs:(int64_t)scaledCliTextDelayUs
-                                         scaledCliPostSendBlockUs:(int64_t)scaledCliPostSendBlockUs];
-            useconds_t interItemDelayUs = [PHTVTimingService clampToUseconds:(uint64_t)MAX((int64_t)0, sendPlan.interItemDelayUs)];
-
-            for (int i = 0; i < (int)pData->macroData.size(); i++) {
-                if (pData->macroData[i] & PURE_CHARACTER_MASK) {
-                    [PHTVKeyEventSenderService sendPureCharacter:(uint16_t)pData->macroData[i]];
-                } else {
-                    [PHTVKeyEventSenderService sendKeyCode:(uint32_t)pData->macroData[i]];
-                }
-                if (interItemDelayUs > 0 && i + 1 < (int)pData->macroData.size()) {
-                    usleep(interItemDelayUs);
-                }
-            }
-            if (sendPlan.shouldScheduleCliBlock) {
-                [PHTVCliRuntimeStateService scheduleBlockForMicroseconds:(uint64_t)MAX((int64_t)0, sendPlan.cliBlockUs)
-                                                              nowMachTime:mach_absolute_time()];
-            }
-        }
-
-        // Send trigger key for non-Spotlight apps
-        if (macroPlan.shouldSendTriggerKey) {
-            [PHTVKeyEventSenderService sendKeyCode:(uint32_t)(keycode | (flags & kCGEventFlagMaskShift ? CAPS_MASK : 0))];
-        }
-    }
 
     CGKeyCode ConvertEventToKeyboardLayoutCompatKeyCode(CGEventRef keyEvent, CGKeyCode fallbackKeyCode) {
         return (CGKeyCode)[PHTVHotkeyService convertEventToKeyboardLayoutCompatKeyCode:keyEvent
@@ -534,7 +286,10 @@ extern volatile int vPauseKey;
                         }
 
                         // Send the raw ASCII characters
-                        SendNewCharString(false, 0, eventKeycode, eventFlags);
+                        [PHTVCharacterOutputService sendNewCharStringWithDataFromMacro:NO
+                                                                                offset:0
+                                                                               keycode:(uint16_t)eventKeycode
+                                                                                 flags:(uint64_t)eventFlags];
                         return NULL;
                     }
                 }
@@ -589,7 +344,8 @@ extern volatile int vPauseKey;
                                                                                                 safeMode:vSafeMode
                                                                                   spotlightCacheDurationMs:SPOTLIGHT_CACHE_DURATION_MS
                                                                                appCharacteristicsMaxAgeMs:kAppCharacteristicsCacheMaxAgeMs];
-                    handleMacro(eventKeycode, eventFlags);
+                    [PHTVCharacterOutputService handleMacroWithKeycode:(uint16_t)eventKeycode
+                                                                  flags:(uint64_t)eventFlags];
                     return NULL;
                 }
             }
@@ -927,7 +683,10 @@ extern volatile int vPauseKey;
                 }
 #endif
                 if (!useStepByStep) {
-                    SendNewCharString(false, 0, eventKeycode, eventFlags);
+                    [PHTVCharacterOutputService sendNewCharStringWithDataFromMacro:NO
+                                                                            offset:0
+                                                                           keycode:(uint16_t)eventKeycode
+                                                                             flags:(uint64_t)eventFlags];
                 } else {
                     if (pData->newCharCount > 0 && pData->newCharCount <= MAX_BUFF) {
                         int32_t newCharCount = (int32_t)pData->newCharCount;
@@ -968,7 +727,8 @@ extern volatile int vPauseKey;
                     }
                 }
             } else if (signalAction == PHTVEngineSignalActionReplaceMacro) { //MACRO
-                handleMacro(eventKeycode, eventFlags);
+                [PHTVCharacterOutputService handleMacroWithKeycode:(uint16_t)eventKeycode
+                                                             flags:(uint64_t)eventFlags];
             }
 
             return NULL;
