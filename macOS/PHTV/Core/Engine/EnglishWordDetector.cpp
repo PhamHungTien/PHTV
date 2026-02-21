@@ -78,6 +78,14 @@ extern "C" int phtvCustomDictionaryEnglishCount();
 extern "C" int phtvCustomDictionaryVietnameseCount();
 extern "C" int phtvCustomDictionaryContainsEnglishWord(const char* wordCString);
 extern "C" int phtvCustomDictionaryContainsVietnameseWord(const char* wordCString);
+extern "C" int phtvDictionaryInitEnglish(const char* filePath);
+extern "C" int phtvDictionaryInitVietnamese(const char* filePath);
+extern "C" int phtvDictionaryIsEnglishInitialized();
+extern "C" int phtvDictionaryEnglishWordCount();
+extern "C" int phtvDictionaryVietnameseWordCount();
+extern "C" int phtvDictionaryContainsEnglishIndices(const uint8_t* indices, int length);
+extern "C" int phtvDictionaryContainsVietnameseIndices(const uint8_t* indices, int length);
+extern "C" void phtvDictionaryClear();
 
 static void initKcLookup() {
     if (kcInit) return;
@@ -188,6 +196,24 @@ static inline bool customVietnameseContainsWord(const char* wordCString) {
         return false;
     }
     return phtvCustomDictionaryContainsVietnameseWord(wordCString) != 0;
+}
+
+static inline bool dictionaryEnglishInitialized() {
+    return phtvDictionaryIsEnglishInitialized() != 0;
+}
+
+static inline bool dictionaryEnglishContainsIndices(const uint8_t* indices, int length) {
+    if (!indices || length <= 0 || length > 30) {
+        return false;
+    }
+    return phtvDictionaryContainsEnglishIndices(indices, length) != 0;
+}
+
+static inline bool dictionaryVietnameseContainsIndices(const uint8_t* indices, int length) {
+    if (!indices || length <= 0 || length > 30) {
+        return false;
+    }
+    return phtvDictionaryContainsVietnameseIndices(indices, length) != 0;
 }
 
 // ============================================================================
@@ -396,13 +422,12 @@ static bool loadBinaryTrie(const char* path,
 }
 
 // ============================================================================
-// Public API
+// Weak fallback bridge for standalone C++ targets (no Swift linkage)
 // ============================================================================
-bool initEnglishDictionary(const string& filePath) {
+static bool fallbackInitEnglishDictionary(const string& filePath) {
     if (engInit) return true;
     initKcLookup();
 
-    // Convert path to .bin
     string binPath = filePath;
     size_t dotPos = binPath.rfind('.');
     if (dotPos != string::npos) {
@@ -415,7 +440,6 @@ bool initEnglishDictionary(const string& filePath) {
         return true;
     }
 
-    // Try _dict suffix
     if (dotPos != string::npos) {
         string baseName = filePath.substr(0, dotPos);
         if (baseName.length() >= 6 && baseName.substr(baseName.length() - 6) == "_words") {
@@ -431,7 +455,7 @@ bool initEnglishDictionary(const string& filePath) {
     return false;
 }
 
-bool initVietnameseDictionary(const string& filePath) {
+static bool fallbackInitVietnameseDictionary(const string& filePath) {
     if (vieInit) return true;
     initKcLookup();
 
@@ -462,12 +486,100 @@ bool initVietnameseDictionary(const string& filePath) {
     return false;
 }
 
-bool isEnglishDictionaryInitialized() { return engInit; }
-size_t getEnglishDictionarySize() { return engWordCount; }
-size_t getVietnameseDictionarySize() { return vieWordCount; }
+static void fallbackClearDictionaries() {
+    if (engMmap) {
+#ifdef _WIN32
+        free(engMmap);
+#else
+        munmap(engMmap, engMmapSize);
+#endif
+        engMmap = nullptr;
+        engNodes = nullptr;
+    }
+    if (vieMmap) {
+#ifdef _WIN32
+        free(vieMmap);
+#else
+        munmap(vieMmap, vieMmapSize);
+#endif
+        vieMmap = nullptr;
+        vieNodes = nullptr;
+    }
+
+    engInit = false;
+    vieInit = false;
+    engWordCount = 0;
+    vieWordCount = 0;
+    engNodeCount = 0;
+    vieNodeCount = 0;
+}
+
+extern "C" __attribute__((weak)) int phtvDictionaryInitEnglish(const char* filePath) {
+    if (!filePath) return 0;
+    return fallbackInitEnglishDictionary(string(filePath)) ? 1 : 0;
+}
+
+extern "C" __attribute__((weak)) int phtvDictionaryInitVietnamese(const char* filePath) {
+    if (!filePath) return 0;
+    return fallbackInitVietnameseDictionary(string(filePath)) ? 1 : 0;
+}
+
+extern "C" __attribute__((weak)) int phtvDictionaryIsEnglishInitialized() {
+    return engInit ? 1 : 0;
+}
+
+extern "C" __attribute__((weak)) int phtvDictionaryEnglishWordCount() {
+    return static_cast<int>(engWordCount);
+}
+
+extern "C" __attribute__((weak)) int phtvDictionaryVietnameseWordCount() {
+    return static_cast<int>(vieWordCount);
+}
+
+extern "C" __attribute__((weak)) int phtvDictionaryContainsEnglishIndices(const uint8_t* indices, int length) {
+    if (!engInit || !engNodes || !indices || length <= 0 || length > 30) {
+        return 0;
+    }
+    return searchBinaryTrie(engNodes, indices, length) ? 1 : 0;
+}
+
+extern "C" __attribute__((weak)) int phtvDictionaryContainsVietnameseIndices(const uint8_t* indices, int length) {
+    if (!vieInit || !vieNodes || !indices || length <= 0 || length > 30) {
+        return 0;
+    }
+    return searchBinaryTrie(vieNodes, indices, length) ? 1 : 0;
+}
+
+extern "C" __attribute__((weak)) void phtvDictionaryClear() {
+    fallbackClearDictionaries();
+}
+
+// ============================================================================
+// Public API
+// ============================================================================
+bool initEnglishDictionary(const string& filePath) {
+    if (dictionaryEnglishInitialized()) return true;
+    initKcLookup();
+    return phtvDictionaryInitEnglish(filePath.c_str()) != 0;
+}
+
+bool initVietnameseDictionary(const string& filePath) {
+    initKcLookup();
+    return phtvDictionaryInitVietnamese(filePath.c_str()) != 0;
+}
+
+bool isEnglishDictionaryInitialized() { return dictionaryEnglishInitialized(); }
+size_t getEnglishDictionarySize() {
+    const int count = phtvDictionaryEnglishWordCount();
+    return count > 0 ? static_cast<size_t>(count) : 0;
+}
+size_t getVietnameseDictionarySize() {
+    const int count = phtvDictionaryVietnameseWordCount();
+    return count > 0 ? static_cast<size_t>(count) : 0;
+}
 
 bool isEnglishWord(const string& word) {
-    if (!engInit || !engNodes || word.empty()) return false;
+    if (!dictionaryEnglishInitialized() || word.empty()) return false;
     uint8_t idx[32];
     int len = 0;
     for (size_t i = 0; i < word.length() && len < 30; i++) {
@@ -476,12 +588,12 @@ bool isEnglishWord(const string& word) {
         else if (c >= 'A' && c <= 'Z') idx[len++] = c - 'A';
         else return false;
     }
-    return searchBinaryTrie(engNodes, idx, len);
+    return dictionaryEnglishContainsIndices(idx, len);
 }
 
 bool isEnglishWordFromKeyStates(const Uint32* keyStates, int stateIndex) {
     if (stateIndex <= 0 || stateIndex > 30) return false;
-    if (!engInit && customEnglishWordCountCache == 0) return false;
+    if (!dictionaryEnglishInitialized() && customEnglishWordCountCache == 0) return false;
 
     initKcLookup();
 
@@ -499,13 +611,12 @@ bool isEnglishWordFromKeyStates(const Uint32* keyStates, int stateIndex) {
         return true;
     }
 
-    if (!engInit || !engNodes) return false;
-    return searchBinaryTrie(engNodes, idx, stateIndex);
+    return dictionaryEnglishContainsIndices(idx, stateIndex);
 }
 
 bool isVietnameseWordFromKeyStates(const Uint32* keyStates, int stateIndex) {
     if (stateIndex <= 0 || stateIndex > 30) return false;
-    if (!vieInit && customVietnameseWordCountCache == 0) return false;
+    if (phtvDictionaryVietnameseWordCount() <= 0 && customVietnameseWordCountCache == 0) return false;
 
     initKcLookup();
 
@@ -523,11 +634,11 @@ bool isVietnameseWordFromKeyStates(const Uint32* keyStates, int stateIndex) {
         return true;
     }
 
-    if (!vieInit || !vieNodes) return false;
-    return searchBinaryTrie(vieNodes, idx, stateIndex);
+    return dictionaryVietnameseContainsIndices(idx, stateIndex);
 }
 
 string keyStatesToString(const Uint32* keyCodes, int count) {
+    initKcLookup();
     string result;
     result.reserve(count);
     for (int i = 0; i < count; i++) {
@@ -547,7 +658,7 @@ string keyStatesToString(const Uint32* keyCodes, int count) {
 // ============================================================================
 bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
     // Quick validation
-    if (!engInit) {
+    if (!dictionaryEnglishInitialized()) {
         #ifdef DEBUG
         fprintf(stderr, "[AutoEnglish] FAILED: Dictionary not initialized\n"); fflush(stderr);
         #endif
@@ -604,7 +715,7 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
     // PRIORITY 3: Check built-in Vietnamese dictionary FIRST
     // This prevents Telex patterns from being incorrectly restored as English
     // Examples: "cos" → "có", "max" → "mã", etc.
-    if (vieInit && vieNodes && searchBinaryTrie(vieNodes, idx, stateIndex)) {
+    if (dictionaryVietnameseContainsIndices(idx, stateIndex)) {
         #ifdef DEBUG
         fprintf(stderr, "[AutoEnglish] SKIP: '%s' found in Vietnamese dictionary\n", word.c_str()); fflush(stderr);
         #endif
@@ -626,7 +737,7 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
     //   "fix" (f+i+x) → "fi" starts with 'f' (NOT Vietnamese) → skip tone mark → allow "fix"
     //   "aws" (a+w+s) → "aw" starts with 'a' (Vietnamese vowel) → check tone mark → block "aws" (ắ)
     //   "eee" (e+e+e) → "ee" starts with 'e' (Vietnamese vowel) → check tone mark → block "eee" (ê + e)
-    if (vieInit && vieNodes && stateIndex >= 2) {
+    if (stateIndex >= 2) {
         uint8_t lastKey = keyStates[stateIndex - 1] & 0x3F;
         // Telex tone marks: s(sắc), f(huyền), r(hỏi), x(ngã), j(nặng), w(horn), a/o/e(^), [](ơ/ư)
         // Special-case 'd' only when the word starts with 'd' (e.g., "did" -> "đi").
@@ -736,10 +847,10 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
                                           firstKey == KEY_W);
 
                 // Check Vietnamese dictionary without tone mark if starts with Vietnamese consonant OR vowel
-                if ((isVietnameseConsonant || isVietnameseVowel) && searchBinaryTrie(vieNodes, idx, stateIndex - 1)) {
+                if ((isVietnameseConsonant || isVietnameseVowel) && dictionaryVietnameseContainsIndices(idx, stateIndex - 1)) {
                     // EXCEPTION: Allow English only if the word is clearly non-Vietnamese by its start cluster.
                     // This keeps English like "footer" while preserving Vietnamese priority for words like "theme" -> "thêm".
-                    if (stateIndex >= 4 && engNodes && searchBinaryTrie(engNodes, idx, stateIndex)) {
+                    if (stateIndex >= 4 && dictionaryEnglishContainsIndices(idx, stateIndex)) {
                         if (startsWithNonVietnameseCluster(idx, stateIndex)) {
                             #ifdef DEBUG
                             fprintf(stderr, "[AutoEnglish] ALLOW: '%s' starts with non-Vietnamese cluster\n", wordBuf); fflush(stderr);
@@ -766,15 +877,14 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
     }
 
     // PRIORITY 4: Check built-in English dictionary (only if NOT in Vietnamese)
-    // SAFETY: Check engNodes is not null before dereferencing (prevents race condition crash)
-    if (!engNodes) {
+    if (!dictionaryEnglishInitialized()) {
         #ifdef DEBUG
         fprintf(stderr, "[AutoEnglish] SKIP: '%s' - English dictionary not loaded\n", word.c_str()); fflush(stderr);
         #endif
         return false;
     }
 
-    bool isEnglish = searchBinaryTrie(engNodes, idx, stateIndex);
+    bool isEnglish = dictionaryEnglishContainsIndices(idx, stateIndex);
 
     // IMPROVED FIX: Check if word has tone mark ở giữa and not in dictionary
     // Issue #57: "livestream" with 'e+s' creating 'é' was not being restored
@@ -827,9 +937,9 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
 
             // Try the toneless version
             if (tonelessLen >= 2 && tonelessLen < 32) {
-                if (searchBinaryTrie(engNodes, tonelessIdx, tonelessLen)) {
+                if (dictionaryEnglishContainsIndices(tonelessIdx, tonelessLen)) {
                     // Check Vietnamese without tone mark too
-                    if (!vieInit || !vieNodes || !searchBinaryTrie(vieNodes, tonelessIdx, tonelessLen)) {
+                    if (!dictionaryVietnameseContainsIndices(tonelessIdx, tonelessLen)) {
                         #ifdef DEBUG
                         char tonelessWord[32];
                         for (int i = 0; i < tonelessLen; i++) tonelessWord[i] = 'a' + tonelessIdx[i];
@@ -875,10 +985,10 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
                 derivedIdx[stemLen + i] = static_cast<uint8_t>(suffixTo[i] - 'a');
             }
 
-            if (!searchBinaryTrie(engNodes, derivedIdx, derivedLen)) return false;
+            if (!dictionaryEnglishContainsIndices(derivedIdx, derivedLen)) return false;
 
             bool derivedNonVietnameseStart = startsWithNonVietnameseCluster(derivedIdx, derivedLen);
-            if (!derivedNonVietnameseStart && vieNodes && searchBinaryTrie(vieNodes, derivedIdx, derivedLen)) {
+            if (!derivedNonVietnameseStart && dictionaryVietnameseContainsIndices(derivedIdx, derivedLen)) {
                 return false;
             }
 
@@ -920,11 +1030,11 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
 
             // IMPROVED: Try both direct base and toneless base
             // This handles cases like "footed" with tone mark in "foot"
-            bool baseFoundInEnglish = searchBinaryTrie(engNodes, idx, baseLen);
+            bool baseFoundInEnglish = dictionaryEnglishContainsIndices(idx, baseLen);
 
             if (baseFoundInEnglish) {
                 bool baseNonVietnameseStart = startsWithNonVietnameseCluster(idx, baseLen);
-                if (baseNonVietnameseStart || !vieNodes || !searchBinaryTrie(vieNodes, idx, baseLen)) {
+                if (baseNonVietnameseStart || !dictionaryVietnameseContainsIndices(idx, baseLen)) {
                     #ifdef DEBUG
                     fprintf(stderr, "[AutoEnglish] RESTORE: '%s' via English base + suffix '%s'\n", wordBuf, suf.s); fflush(stderr);
                     #endif
@@ -958,9 +1068,9 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
 
                 // Check toneless base version
                 if (tonelessBaseLen >= 2 && tonelessBaseLen < 32) {
-                    if (searchBinaryTrie(engNodes, tonelessBase, tonelessBaseLen)) {
+                    if (dictionaryEnglishContainsIndices(tonelessBase, tonelessBaseLen)) {
                         bool baseNonVietnameseStart = startsWithNonVietnameseCluster(tonelessBase, tonelessBaseLen);
-                        if (baseNonVietnameseStart || !vieNodes || !searchBinaryTrie(vieNodes, tonelessBase, tonelessBaseLen)) {
+                        if (baseNonVietnameseStart || !dictionaryVietnameseContainsIndices(tonelessBase, tonelessBaseLen)) {
                             #ifdef DEBUG
                             fprintf(stderr, "[AutoEnglish] RESTORE: '%s' via English base (tone removed) + suffix '%s'\n", wordBuf, suf.s); fflush(stderr);
                             #endif
@@ -976,27 +1086,7 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
 }
 
 void clearEnglishDictionary() {
-    if (engMmap) {
-#ifdef _WIN32
-        free(engMmap);
-#else
-        munmap(engMmap, engMmapSize);
-#endif
-        engMmap = nullptr;
-        engNodes = nullptr;
-    }
-    if (vieMmap) {
-#ifdef _WIN32
-        free(vieMmap);
-#else
-        munmap(vieMmap, vieMmapSize);
-#endif
-        vieMmap = nullptr;
-        vieNodes = nullptr;
-    }
-    engInit = vieInit = false;
-    engWordCount = vieWordCount = 0;
-    engNodeCount = vieNodeCount = 0;
+    phtvDictionaryClear();
 }
 
 // ============================================================================

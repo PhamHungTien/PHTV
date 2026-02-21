@@ -61,6 +61,10 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - Swift facade goi truc tiep `vKeyHandleEvent` va `vEnglishMode`
 - Da bo wrappers code-table lookup:
   - Swift facade mang `_codeTable` data sang Swift de tra `findCodeTableSourceKey` / `variantCount` / `characterForKey`
+- Da dua built-in dictionary runtime (English/Vietnamese binary trie) sang Swift bridge:
+  - Them `Bridge/Engine/PHTVDictionaryTrieBridge.swift` cho load/search/count/clear trie
+  - `EnglishWordDetector.cpp` hien route built-in dictionary qua C bridge
+  - Giu weak C++ fallback de regression test standalone (khong link Swift) van chay
 
 ## Lo trinh migrate
 
