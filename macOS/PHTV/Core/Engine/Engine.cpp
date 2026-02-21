@@ -399,15 +399,6 @@ static inline void setSpellCheckingEnabled(const bool enabled) {
     phtvRuntimeSetCheckSpellingValue(enabled ? 1 : 0);
 }
 
-static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-wstring utf8ToWideString(const string& str) {
-    return converter.from_bytes(str.c_str());
-}
-
-string wideStringToUtf8(const wstring& str) {
-    return converter.to_bytes(str.c_str());
-}
-
 void vPrimeUpperCaseFirstChar() {
     if (phtvRuntimeUpperCaseFirstCharEnabled() && !phtvRuntimeUpperCaseExcludedForCurrentApp()) {
         _upperCaseStatus = 2; // Ready to uppercase the next valid character

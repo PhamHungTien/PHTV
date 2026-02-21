@@ -9,8 +9,6 @@
 #ifndef Engine_h
 #define Engine_h
 
-#include <locale>
-#include <codecvt>
 #include <string>
 #include <vector>
 
@@ -90,11 +88,5 @@ bool vRestoreToRawKeys();
  * Restore session with word
  */
 void vRestoreSessionWithWord(const std::wstring& word);
-
-/**
- * some utils function
- */
-std::wstring utf8ToWideString(const std::string& str);
-std::string wideStringToUtf8(const std::wstring& str);
 
 #endif /* Engine_h */

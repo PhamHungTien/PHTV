@@ -105,6 +105,8 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da bo API C++ `initMacroMap(...)`:
   - Swift (`PHTVEngineDataBridge`) goi truc tiep C bridge `phtvLoadMacroMapFromBinary(...)`
   - Bo declaration/definition `initMacroMap(...)` khoi `Engine.h` va `Engine.cpp`
+- Da bo utility C++ khong con su dung:
+  - Xoa `utf8ToWideString(...)` va `wideStringToUtf8(...)` khoi `Engine.h`/`Engine.cpp`
 - Da dua `vAutoRestoreEnglishWord` sang Swift storage:
   - Them C bridge `phtvRuntimeAutoRestoreEnglishWordEnabled()` do `PHTVEngineRuntimeFacade.swift` cung cap
   - `Engine.cpp` doc runtime setting qua bridge thay vi global C++
