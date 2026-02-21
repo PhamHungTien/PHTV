@@ -24,7 +24,7 @@ import Foundation
 
     @objc(phtv_invalidateLayoutCache)
     class func phtv_invalidateLayoutCache() {
-        phtvRuntimeInvalidateLayoutCache()
+        PHTVHotkeyService.invalidateLayoutCache()
     }
 
     @objc(phtv_notifyInputMethodChanged)

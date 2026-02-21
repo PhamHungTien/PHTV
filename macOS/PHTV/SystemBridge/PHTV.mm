@@ -991,10 +991,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         }
     }
 
-    void InvalidateLayoutCache() {
-        [PHTVHotkeyService invalidateLayoutCache];
-    }
-
     CGKeyCode ConvertEventToKeyboardLayoutCompatKeyCode(CGEventRef keyEvent, CGKeyCode fallbackKeyCode) {
         return (CGKeyCode)[PHTVHotkeyService convertEventToKeyboardLayoutCompatKeyCode:keyEvent
                                                                                fallback:(uint16_t)fallbackKeyCode];

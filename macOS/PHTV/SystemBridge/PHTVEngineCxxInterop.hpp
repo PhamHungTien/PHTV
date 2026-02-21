@@ -29,7 +29,6 @@ extern "C" CGEventRef PHTVCallback(CGEventTapProxy proxy,
                                    CGEventRef event,
                                    void *refcon);
 extern "C" void RequestNewSession(void);
-extern "C" void InvalidateLayoutCache(void);
 extern "C" const char *PHTVBuildDateCString(void);
 
 inline void phtvRuntimeInitializeEventTapCore() noexcept {
@@ -49,10 +48,6 @@ inline const char *phtvBuildDateCString() noexcept {
 
 inline void phtvRuntimeRequestNewSession() noexcept {
     RequestNewSession();
-}
-
-inline void phtvRuntimeInvalidateLayoutCache() noexcept {
-    InvalidateLayoutCache();
 }
 
 inline void phtvEngineInitializeMacroMap(const std::uint8_t *data, const int length) noexcept {
