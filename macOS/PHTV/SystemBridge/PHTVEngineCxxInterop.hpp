@@ -23,12 +23,12 @@ extern volatile int vEmojiHotkeyModifiers;
 extern volatile int vEmojiHotkeyKeyCode;
 extern volatile int vSafeMode;
 extern int vShowIconOnDock;
-extern "C" void PHTVInit(void);
-extern "C" CGEventRef PHTVCallback(CGEventTapProxy proxy,
-                                   CGEventType type,
-                                   CGEventRef event,
-                                   void *refcon);
-extern "C" void RequestNewSession(void);
+void PHTVInit(void);
+CGEventRef PHTVCallback(CGEventTapProxy proxy,
+                        CGEventType type,
+                        CGEventRef event,
+                        void *refcon);
+void RequestNewSession(void);
 
 inline void phtvRuntimeInitializeEventTapCore() noexcept {
     PHTVInit();

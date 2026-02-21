@@ -109,8 +109,6 @@ extern volatile int vPauseKeyEnabled;
 extern volatile int vPauseKey;
 extern volatile int vSafeMode;
 
-extern "C" {
-
     static const uint64_t kAppCharacteristicsCacheMaxAgeMs = 10000;
 
     // Cache the effective target bundle id for the current event tap callback.
@@ -1651,4 +1649,3 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         return event;
         } // @autoreleasepool
     }
-}
