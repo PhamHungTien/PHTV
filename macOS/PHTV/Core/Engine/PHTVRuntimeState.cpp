@@ -7,12 +7,5 @@
 
 #include "Engine.h"
 
-// see document in Engine.h
-// VOLATILE: Ensures thread-safe reads in event tap callback
-// These are written on main thread, read on event tap thread
-volatile int vInputType = 0;
-int vFreeMark = 0;
-volatile int vCodeTable = 0;
-volatile int vCheckSpelling = 1;
-volatile int vUseModernOrthography = 1;
-volatile int vQuickTelex = 0;
+// Runtime state now lives in Swift bridge (`PHTVEngineRuntimeFacade.swift`).
+// Keep this file for target structure compatibility.

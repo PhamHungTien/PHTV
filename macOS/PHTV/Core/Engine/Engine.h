@@ -26,55 +26,6 @@
 #define HIBYTE(data) ((data>>8) & 0xFF)
 #endif // !HIBYTE
 
-//define these variable in your application
-//API
-/*
- * 0: Telex
- * 1: VNI
- * VOLATILE: Read by event tap thread, written by main thread
- */
-extern volatile int vInputType;
-
-/**
- * 0: No
- * 1: Yes
- */
-extern int vFreeMark;
-
-/*
- * 0: Unicode
- * 1: TCVN3 (ABC)
- * 2: VNI-Windows
- * VOLATILE: Read by event tap thread, written by main thread
- */
-extern volatile int vCodeTable;
-
-/**
- * 0: No
- * 1: Yes
- */
-extern volatile int vCheckSpelling;
-
-/*
- * 0: òa, úy
- * 1: oà uý
-*/
-extern volatile int vUseModernOrthography;
-
-/**
- * 0: No
- * 1: Yes
- * (cc=ch, gg=gi, kk=kh, nn=ng, qq=qu, pp=ph, tt=th, uu=ươ)
- */
-extern volatile int vQuickTelex;
-
-/**
- * Work together with vCheckSpelling
- * 0: No
- * 1: Yes
- *
- */
-
 /**
  * Prime uppercase for the next character when auto-capitalization is enabled.
  */

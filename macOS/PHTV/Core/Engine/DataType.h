@@ -123,18 +123,26 @@ struct vKeyHookState {
 #define IS_CONSONANT(keyCode) !(keyCode == KEY_A || keyCode == KEY_E || keyCode == KEY_U || keyCode == KEY_Y || keyCode == KEY_I || keyCode == KEY_O)
 //#define IS_MARK_KEY(keyCode) (keyCode == KEY_S || keyCode == KEY_F || keyCode == KEY_R || keyCode == KEY_J || keyCode == KEY_X)
 #define CHR(index) (Uint16)TypingWord[index]
+
+#ifdef __cplusplus
+extern "C" int phtvRuntimeInputTypeValue();
+#define PHTV_CURRENT_INPUT_TYPE() (phtvRuntimeInputTypeValue())
+#else
+#define PHTV_CURRENT_INPUT_TYPE() (0)
+#endif
+
 #define IS_SPECIALKEY(keyCode) \
-        (vInputType == vTelex ? \
+        (PHTV_CURRENT_INPUT_TYPE() == vTelex ? \
             keyCode == KEY_W || keyCode == KEY_E || keyCode == KEY_R || keyCode == KEY_O || keyCode == KEY_LEFT_BRACKET || \
             keyCode == KEY_RIGHT_BRACKET || keyCode == KEY_A || keyCode == KEY_S || keyCode == KEY_D || keyCode == KEY_F || keyCode == KEY_J || \
             keyCode == KEY_Z || keyCode == KEY_X || keyCode == KEY_W \
-        : (vInputType == vVNI ? \
+        : (PHTV_CURRENT_INPUT_TYPE() == vVNI ? \
             keyCode == KEY_1 || keyCode == KEY_2 || keyCode == KEY_3 || keyCode == KEY_4 || \
             keyCode == KEY_5 || keyCode == KEY_6 || keyCode == KEY_7 || keyCode == KEY_8 || keyCode == KEY_9 || keyCode == KEY_0 \
-        : (vInputType == vSimpleTelex1 ? \
+        : (PHTV_CURRENT_INPUT_TYPE() == vSimpleTelex1 ? \
             keyCode == KEY_W || keyCode == KEY_E || keyCode == KEY_R || keyCode == KEY_O || keyCode == KEY_A || keyCode == KEY_S || \
             keyCode == KEY_D || keyCode == KEY_F || keyCode == KEY_J ||   keyCode == KEY_Z || keyCode == KEY_X || keyCode == KEY_W \
-        : (vInputType == vSimpleTelex2 ? \
+        : (PHTV_CURRENT_INPUT_TYPE() == vSimpleTelex2 ? \
             keyCode == KEY_W || keyCode == KEY_E || keyCode == KEY_R || keyCode == KEY_O || keyCode == KEY_A || keyCode == KEY_S || \
             keyCode == KEY_D || keyCode == KEY_F || keyCode == KEY_J ||   keyCode == KEY_Z || keyCode == KEY_X || keyCode == KEY_W : false))))
 

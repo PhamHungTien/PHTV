@@ -21,9 +21,20 @@ extern "C" int phtvRuntimeAutoRestoreEnglishWordEnabled();
 extern "C" int phtvRuntimeUpperCaseFirstCharEnabled();
 extern "C" int phtvRuntimeUpperCaseExcludedForCurrentApp();
 extern "C" int phtvRuntimeUseMacroEnabled();
+extern "C" int phtvRuntimeInputTypeValue();
+extern "C" int phtvRuntimeCodeTableValue();
+extern "C" int phtvRuntimeCheckSpellingValue();
+extern "C" void phtvRuntimeSetCheckSpellingValue(int value);
+extern "C" int phtvRuntimeUseModernOrthographyEnabled();
+extern "C" int phtvRuntimeQuickTelexEnabled();
+extern "C" int phtvRuntimeFreeMarkEnabled();
 extern "C" int phtvRuntimeAllowConsonantZFWJEnabled();
 extern "C" int phtvRuntimeQuickStartConsonantEnabled();
 extern "C" int phtvRuntimeQuickEndConsonantEnabled();
+
+static int phtvFallbackCheckSpellingValue = 1;
+static int phtvFallbackInputTypeValue = vTelex;
+static int phtvFallbackCodeTableValue = 0;
 
 extern "C" __attribute__((weak)) int phtvRuntimeRestoreOnEscapeEnabled() {
     // Standalone regression binary fallback: keep restore feature enabled by default.
@@ -45,6 +56,34 @@ extern "C" __attribute__((weak)) int phtvRuntimeUpperCaseExcludedForCurrentApp()
 
 extern "C" __attribute__((weak)) int phtvRuntimeUseMacroEnabled() {
     return 1;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeInputTypeValue() {
+    return phtvFallbackInputTypeValue;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeCodeTableValue() {
+    return phtvFallbackCodeTableValue;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeCheckSpellingValue() {
+    return phtvFallbackCheckSpellingValue;
+}
+
+extern "C" __attribute__((weak)) void phtvRuntimeSetCheckSpellingValue(int value) {
+    phtvFallbackCheckSpellingValue = value;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeUseModernOrthographyEnabled() {
+    return 1;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeQuickTelexEnabled() {
+    return 0;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeFreeMarkEnabled() {
+    return 0;
 }
 
 extern "C" __attribute__((weak)) int phtvRuntimeAllowConsonantZFWJEnabled() {
@@ -79,6 +118,13 @@ static vector<Uint8> _macroBreakCode = {
 static std::unordered_set<Uint8> _breakCodeSet;
 static std::unordered_set<Uint8> _macroBreakCodeSet;
 static bool _lookupSetsInitialized = false;
+static int runtimeInputTypeSnapshot = vTelex;
+static int runtimeCodeTableSnapshot = 0;
+
+static inline void refreshRuntimeLayoutSnapshot() {
+    runtimeInputTypeSnapshot = phtvRuntimeInputTypeValue();
+    runtimeCodeTableSnapshot = phtvRuntimeCodeTableValue();
+}
 
 static Uint16 ProcessingChar[][11] = {
     {KEY_S, KEY_F, KEY_R, KEY_X, KEY_J, KEY_A, KEY_O, KEY_E, KEY_W, KEY_D, KEY_Z}, //Telex
@@ -87,21 +133,45 @@ static Uint16 ProcessingChar[][11] = {
     {KEY_S, KEY_F, KEY_R, KEY_X, KEY_J, KEY_A, KEY_O, KEY_E, KEY_W, KEY_D, KEY_Z} //Simple Telex 2
 };
 
-#define IS_KEY_Z(key) (ProcessingChar[vInputType][10] == key)
-#define IS_KEY_D(key) (ProcessingChar[vInputType][9] == key)
-#define IS_KEY_W(key) ((vInputType != vVNI) ? ProcessingChar[vInputType][8] == key : \
-                                    (vInputType == vVNI ? (ProcessingChar[vInputType][8] == key || ProcessingChar[vInputType][7] == key) : false))
-#define IS_KEY_DOUBLE(key) ((vInputType != vVNI) ? (ProcessingChar[vInputType][5] == key || ProcessingChar[vInputType][6] == key || ProcessingChar[vInputType][7] == key) :\
-                                        (vInputType == vVNI ? ProcessingChar[vInputType][6] == key : false))
-#define IS_KEY_S(key) (ProcessingChar[vInputType][0] == key)
-#define IS_KEY_F(key) (ProcessingChar[vInputType][1] == key)
-#define IS_KEY_R(key) (ProcessingChar[vInputType][2] == key)
-#define IS_KEY_X(key) (ProcessingChar[vInputType][3] == key)
-#define IS_KEY_J(key) (ProcessingChar[vInputType][4] == key)
+#define IS_KEY_Z(key) (ProcessingChar[runtimeInputTypeSnapshot][10] == key)
+#define IS_KEY_D(key) (ProcessingChar[runtimeInputTypeSnapshot][9] == key)
+#define IS_KEY_W(key) ((runtimeInputTypeSnapshot != vVNI) ? ProcessingChar[runtimeInputTypeSnapshot][8] == key : \
+                                    (runtimeInputTypeSnapshot == vVNI ? (ProcessingChar[runtimeInputTypeSnapshot][8] == key || ProcessingChar[runtimeInputTypeSnapshot][7] == key) : false))
+#define IS_KEY_DOUBLE(key) ((runtimeInputTypeSnapshot != vVNI) ? (ProcessingChar[runtimeInputTypeSnapshot][5] == key || ProcessingChar[runtimeInputTypeSnapshot][6] == key || ProcessingChar[runtimeInputTypeSnapshot][7] == key) :\
+                                        (runtimeInputTypeSnapshot == vVNI ? ProcessingChar[runtimeInputTypeSnapshot][6] == key : false))
+#define IS_KEY_S(key) (ProcessingChar[runtimeInputTypeSnapshot][0] == key)
+#define IS_KEY_F(key) (ProcessingChar[runtimeInputTypeSnapshot][1] == key)
+#define IS_KEY_R(key) (ProcessingChar[runtimeInputTypeSnapshot][2] == key)
+#define IS_KEY_X(key) (ProcessingChar[runtimeInputTypeSnapshot][3] == key)
+#define IS_KEY_J(key) (ProcessingChar[runtimeInputTypeSnapshot][4] == key)
 
-#define IS_MARK_KEY(keyCode) (((vInputType != vVNI) && (keyCode == KEY_S || keyCode == KEY_F || keyCode == KEY_R || keyCode == KEY_J || keyCode == KEY_X)) || \
-                                        (vInputType == vVNI && (keyCode == KEY_1 || keyCode == KEY_2 || keyCode == KEY_3 || keyCode == KEY_5 || keyCode == KEY_4)))
+#define IS_MARK_KEY(keyCode) (((runtimeInputTypeSnapshot != vVNI) && (keyCode == KEY_S || keyCode == KEY_F || keyCode == KEY_R || keyCode == KEY_J || keyCode == KEY_X)) || \
+                                        (runtimeInputTypeSnapshot == vVNI && (keyCode == KEY_1 || keyCode == KEY_2 || keyCode == KEY_3 || keyCode == KEY_5 || keyCode == KEY_4)))
 #define IS_BRACKET_KEY(key) (key == KEY_LEFT_BRACKET || key == KEY_RIGHT_BRACKET)
+
+static inline bool isSpecialKeyForCurrentInputType(const Uint16 keyCode) {
+    switch (runtimeInputTypeSnapshot) {
+    case vTelex:
+        return keyCode == KEY_W || keyCode == KEY_E || keyCode == KEY_R || keyCode == KEY_O ||
+               keyCode == KEY_LEFT_BRACKET || keyCode == KEY_RIGHT_BRACKET || keyCode == KEY_A ||
+               keyCode == KEY_S || keyCode == KEY_D || keyCode == KEY_F || keyCode == KEY_J ||
+               keyCode == KEY_Z || keyCode == KEY_X;
+    case vVNI:
+        return keyCode == KEY_1 || keyCode == KEY_2 || keyCode == KEY_3 || keyCode == KEY_4 ||
+               keyCode == KEY_5 || keyCode == KEY_6 || keyCode == KEY_7 || keyCode == KEY_8 ||
+               keyCode == KEY_9 || keyCode == KEY_0;
+    case vSimpleTelex1:
+    case vSimpleTelex2:
+        return keyCode == KEY_W || keyCode == KEY_E || keyCode == KEY_R || keyCode == KEY_O ||
+               keyCode == KEY_A || keyCode == KEY_S || keyCode == KEY_D || keyCode == KEY_F ||
+               keyCode == KEY_J || keyCode == KEY_Z || keyCode == KEY_X;
+    default:
+        return false;
+    }
+}
+
+#undef IS_SPECIALKEY
+#define IS_SPECIALKEY(keyCode) isSpecialKeyForCurrentInputType(keyCode)
 
 #define VSI vowelStartIndex
 #define VEI vowelEndIndex
@@ -245,6 +315,14 @@ static bool _willTempOffEngine = false;
 void findAndCalculateVowel(const bool& forGrammar=false);
 void insertMark(const Uint32& markMask, const bool& canModifyFlag=true);
 
+static inline bool isSpellCheckingEnabled() {
+    return phtvRuntimeCheckSpellingValue() != 0;
+}
+
+static inline void setSpellCheckingEnabled(const bool enabled) {
+    phtvRuntimeSetCheckSpellingValue(enabled ? 1 : 0);
+}
+
 static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 wstring utf8ToWideString(const string& str) {
     return converter.from_bytes(str.c_str());
@@ -261,9 +339,10 @@ void vPrimeUpperCaseFirstChar() {
 }
 
 void* vKeyInit() {
+    refreshRuntimeLayoutSnapshot();
     _index = 0;
     _stateIndex = 0;
-    _useSpellCheckingBefore = vCheckSpelling;
+    _useSpellCheckingBefore = isSpellCheckingEnabled();
     _typingStatesData.clear();
     _typingStates.clear();
     _longWordHelper.clear();
@@ -706,7 +785,7 @@ void insertKey(const Uint16& keyCode, const bool& isCaps, const bool& isCheckSpe
         setKeyData(_index++, keyCode, isCaps);
     }
     
-    if (vCheckSpelling && isCheckSpelling)
+    if (isSpellCheckingEnabled() && isCheckSpelling)
         checkSpelling();
     
     //allow d after consonant
@@ -799,7 +878,7 @@ void restoreLastTypingState() {
                     TypingWord[i] = _typingStatesData[i];
                 }
                 _index = (Byte)_typingStatesData.size();
-                if (vCheckSpelling) {
+                if (isSpellCheckingEnabled()) {
                     checkSpelling();
                 } else {
                     // Ensure tempDisableKey doesn't stay stuck after restore when spell check is off.
@@ -872,6 +951,8 @@ void checkCorrectVowel(vector<vector<Uint16>>& charset, int& i, int& k, const Ui
 }
 
 Uint32 getCharacterCode(const Uint32& data) {
+    const int codeTable = runtimeCodeTableSnapshot;
+
     capsElem = (data & CAPS_MASK) ? 0 : 1;
     key = data & CHAR_MASK;
     if (data & MARK_MASK) { //has mark
@@ -910,18 +991,18 @@ Uint32 getCharacterCode(const Uint32& data) {
         } else if (data & TONEW_MASK) {
             key |= TONEW_MASK;
         }
-        if (_codeTable[vCodeTable].find(key) == _codeTable[vCodeTable].end())
+        if (_codeTable[codeTable].find(key) == _codeTable[codeTable].end())
             return data; //not found
         
-        return _codeTable[vCodeTable][key][markElem] | CHAR_CODE_MASK;
+        return _codeTable[codeTable][key][markElem] | CHAR_CODE_MASK;
     } else { //doesn't has mark
-        if (_codeTable[vCodeTable].find(key) == _codeTable[vCodeTable].end())
+        if (_codeTable[codeTable].find(key) == _codeTable[codeTable].end())
             return data; //not found
         
         if (data & TONE_MASK) {
-            return _codeTable[vCodeTable][key][capsElem] | CHAR_CODE_MASK;
+            return _codeTable[codeTable][key][capsElem] | CHAR_CODE_MASK;
         } else if (data & TONEW_MASK) {
-            return _codeTable[vCodeTable][key][capsElem + 2] | CHAR_CODE_MASK;
+            return _codeTable[codeTable][key][capsElem + 2] | CHAR_CODE_MASK;
         } else {
             return data; //not found
         }
@@ -1316,7 +1397,7 @@ void insertMark(const Uint32& markMask, const bool& canModifyFlag) {
         VWSM = VEI;
         hBPC = (_index - VEI);
     } else { //vowel = 2 or 3
-        if (vUseModernOrthography == 0)
+        if (phtvRuntimeUseModernOrthographyEnabled() == 0)
             handleOldMark();
         else
             handleModernMark();
@@ -1659,7 +1740,7 @@ void handleMainKey(const Uint16& data, const bool& isCaps) {
                 }
             }
             if (hasToneW) {
-                if (vCheckSpelling) {
+                if (isSpellCheckingEnabled()) {
                     checkSpelling(true);
                 }
                 if (_spellingOK && _spellingVowelOK) {
@@ -1821,7 +1902,7 @@ void handleMainKey(const Uint16& data, const bool& isCaps) {
     }
 
     //check Vowel
-    if (vInputType == vVNI) {
+    if (runtimeInputTypeSnapshot == vVNI) {
         for (i = _index-1; i >= 0; i--) {
             if (CHR(i) == KEY_O || CHR(i) == KEY_A || CHR(i) == KEY_E) {
                 VEI = i;
@@ -1830,7 +1911,7 @@ void handleMainKey(const Uint16& data, const bool& isCaps) {
         }
     }
 
-    keyForAEO = ((vInputType != vVNI) ? data : ((data == KEY_7 || data == KEY_8 ? KEY_W : (data == KEY_6 ? TypingWord[VEI] : data))));
+    keyForAEO = ((runtimeInputTypeSnapshot != vVNI) ? data : ((data == KEY_7 || data == KEY_8 ? KEY_W : (data == KEY_6 ? TypingWord[VEI] : data))));
     vector<vector<Uint16>>& charset = _vowel[keyForAEO];
     isCorect = false;
     isChanged = false;
@@ -1846,7 +1927,7 @@ void handleMainKey(const Uint16& data, const bool& isCaps) {
             if (IS_KEY_DOUBLE(data)) {
                 insertAOE(keyForAEO, isCaps);
             } else if (IS_KEY_W(data)) {
-                if (vInputType == vVNI) {
+                if (runtimeInputTypeSnapshot == vVNI) {
                     for (j = _index-1; j >= 0; j--) {
                         if (CHR(j) == KEY_O || CHR(j) == KEY_U ||CHR(j) == KEY_A || CHR(j) == KEY_E) {
                             VEI = j;
@@ -1863,7 +1944,7 @@ void handleMainKey(const Uint16& data, const bool& isCaps) {
     }
 
     if (!isChanged) {
-        if (data == KEY_W && vInputType != vSimpleTelex1) {
+        if (data == KEY_W && runtimeInputTypeSnapshot != vSimpleTelex1) {
             checkForStandaloneChar(data, isCaps, KEY_U);
         } else {
             insertKey(data, isCaps);
@@ -1939,12 +2020,12 @@ bool checkRestoreIfWrongSpelling(const int& handleCode) {
 
 void vTempOffSpellChecking() {
     if (_useSpellCheckingBefore) {
-        vCheckSpelling = vCheckSpelling ? 0 : 1;
+        setSpellCheckingEnabled(!isSpellCheckingEnabled());
     }
 }
 
 void vSetCheckSpelling() {
-    _useSpellCheckingBefore = vCheckSpelling;
+    _useSpellCheckingBefore = isSpellCheckingEnabled();
 }
 
 void vTempOffEngine(const bool& off) {
@@ -2005,6 +2086,7 @@ bool checkQuickConsonant() {
 /*==========================================================================================================*/
 
 void vEnglishMode(const vKeyEventState& state, const Uint16& data, const bool& isCaps, const bool& otherControlKey) {
+    refreshRuntimeLayoutSnapshot();
     hCode = vDoNothing;
     if (state == vKeyEventState::MouseDown || (otherControlKey && !isCaps)) {
         hMacroKey.clear();
@@ -2043,13 +2125,15 @@ void vKeyHandleEvent(const vKeyEvent& event,
                      const Uint16& data,
                      const Uint8& capsStatus,
                      const bool& otherControlKey) {
+    refreshRuntimeLayoutSnapshot();
+
     // PERFORMANCE: Debug logging only in debug builds (hot path - called on every keystroke)
     #ifdef DEBUG
     static int lastInputType = -1;
-    if (vInputType != lastInputType) {
-        printf("[Engine] vInputType CHANGED TO %d (was %d)\n", vInputType, lastInputType);
+    if (runtimeInputTypeSnapshot != lastInputType) {
+        printf("[Engine] vInputType CHANGED TO %d (was %d)\n", runtimeInputTypeSnapshot, lastInputType);
         fflush(stdout);
-        lastInputType = vInputType;
+        lastInputType = runtimeInputTypeSnapshot;
     }
     #endif
 
@@ -2094,7 +2178,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
                    eventType, stateType, _stateIndex, _index, data);
             fflush(stderr);
             #endif
-            if (vCheckSpelling) {
+            if (isSpellCheckingEnabled()) {
                 checkSpelling(true);
             }
             bool shouldRestoreEnglish = false;
@@ -2233,7 +2317,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             // Now checked AFTER Auto English to avoid conflicts
             checkQuickConsonant();
         } else if (isAutoRestoreBreakKey) { //restore raw keys if word is invalid Vietnamese
-            if (!tempDisableKey && vCheckSpelling) {
+            if (!tempDisableKey && isSpellCheckingEnabled()) {
                 checkSpelling(true); //force check spelling before restore decision
             }
             if (tempDisableKey && !checkRestoreIfWrongSpelling(vRestoreAndStartNewSession)) {
@@ -2258,7 +2342,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
         
         if (hCode == vDoNothing) {
             startNewSession();
-            vCheckSpelling = _useSpellCheckingBefore;
+            setSpellCheckingEnabled(_useSpellCheckingBefore);
             _willTempOffEngine = false;
         } else if (hCode == vReplaceMaro || _hasHandleQuickConsonant) {
             _index = 0;
@@ -2296,7 +2380,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
         // CRITICAL FIX: Always run checkSpelling() for Auto English
         // Even when tempDisableKey=true, we need accurate _index for Auto English check
         // This ensures _index is up-to-date before checking English words
-        if (vCheckSpelling) {
+        if (isSpellCheckingEnabled()) {
             checkSpelling(true); //force check spelling (ignore tempDisableKey for Auto English)
         }
         bool shouldRestoreEnglish = false;
@@ -2475,7 +2559,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
                 saveWord();
             }
         }
-        vCheckSpelling = _useSpellCheckingBefore;
+        setSpellCheckingEnabled(_useSpellCheckingBefore);
         _willTempOffEngine = false;
     } else if (data == KEY_DELETE) {
         hCode = vDoNothing;
@@ -2506,7 +2590,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
                     _longWordHelper.pop_back();
                     _index++;
                 }
-                if (vCheckSpelling)
+                if (isSpellCheckingEnabled())
                     checkSpelling();
             }
             if (phtvRuntimeUseMacroEnabled() && hMacroKey.size() > 0) {
@@ -2578,7 +2662,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
         }
 
         bool allowSpecialDespiteTempDisable = allowMarkDespiteTempDisable || allowVowelChangeDespiteTempDisable;
-        if (vCheckSpelling && allowSpecialDespiteTempDisable) {
+        if (isSpellCheckingEnabled() && allowSpecialDespiteTempDisable) {
             checkSpelling(true);
             
             // Fix for Issue #123: If word is invalid Vietnamese (tempDisableKey=true),
@@ -2595,8 +2679,11 @@ void vKeyHandleEvent(const vKeyEvent& event,
             }
         }
 
+        const bool quickTelexEnabled = phtvRuntimeQuickTelexEnabled() != 0;
+        const bool freeMarkEnabled = phtvRuntimeFreeMarkEnabled() != 0;
+
         if (!IS_SPECIALKEY(data) || (tempDisableKey && !allowSpecialDespiteTempDisable)) { //do nothing
-            if (vQuickTelex && IS_QUICK_TELEX_KEY(data)) {
+            if (quickTelexEnabled && IS_QUICK_TELEX_KEY(data)) {
                 handleQuickTelex(data, _isCaps);
                 return;
             } else {
@@ -2613,7 +2700,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             handleMainKey(data, _isCaps);
         }
 
-        if (!vFreeMark && !IS_KEY_D(data)) {
+        if (!freeMarkEnabled && !IS_KEY_D(data)) {
             if (hCode == vDoNothing) {
                 checkGrammar(-1);
             } else {
@@ -2659,7 +2746,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
         }
         
         //case [ ]
-        if (IS_BRACKET_KEY(data) && (( IS_BRACKET_KEY((Uint16)hData[0])) || vInputType == vSimpleTelex1 || vInputType == vSimpleTelex2)) {
+        if (IS_BRACKET_KEY(data) && (( IS_BRACKET_KEY((Uint16)hData[0])) || runtimeInputTypeSnapshot == vSimpleTelex1 || runtimeInputTypeSnapshot == vSimpleTelex2)) {
             if (_index - (hCode == vWillProcess ? hBPC : 0) > 0) {
                 _index--;
                 saveWord();
@@ -2680,8 +2767,11 @@ void vKeyHandleEvent(const vKeyEvent& event,
 
 // Helper to reverse mapping from Unicode char to Engine Key + Flags
 Uint32 getEngineCharFromUnicode(const Uint16& ch) {
+    refreshRuntimeLayoutSnapshot();
+    const int codeTable = runtimeCodeTableSnapshot;
+
     // Iterate code table
-    for (auto const& item : _codeTable[vCodeTable]) {
+    for (auto const& item : _codeTable[codeTable]) {
         Uint32 key = item.first;
         const vector<Uint16>& val = item.second;
         for (int i = 0; i < val.size(); i++) {

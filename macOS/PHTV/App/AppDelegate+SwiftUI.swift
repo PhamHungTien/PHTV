@@ -60,14 +60,13 @@ extension AppDelegate {
     
     @objc private func handleLegacyInputMethodChanged(_ notification: Notification) {
         guard let inputMethod = notification.object as? Int else { return }
-        // Update existing vInputType variable
-        // This will be implemented to call existing methods
+        // Runtime bridge now owns input-type state.
         PHTVLogger.shared.input("Input method changed to: \(inputMethod)")
     }
 
     @objc private func handleLegacyCodeTableChanged(_ notification: Notification) {
         guard let codeTable = notification.object as? Int else { return }
-        // Update existing vCodeTable variable
+        // Runtime bridge now owns code-table state.
         PHTVLogger.shared.input("Code table changed to: \(codeTable)")
     }
     

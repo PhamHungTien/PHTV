@@ -27,6 +27,8 @@ private struct MacroLookupEntry {
 
 nonisolated(unsafe) private var macroLookupMap: [[UInt32]: MacroLookupEntry] = [:]
 nonisolated(unsafe) private var engineDataPointer: UnsafeMutablePointer<vKeyHookState>?
+nonisolated(unsafe) private var runtimeInputType: Int32 = 0
+nonisolated(unsafe) private var runtimeCodeTable: Int32 = 0
 nonisolated(unsafe) private var runtimeLanguage: Int32 = 1
 nonisolated(unsafe) private var runtimeSwitchKeyStatus: Int32 = Int32(Defaults.defaultSwitchKeyStatus)
 nonisolated(unsafe) private var runtimeFixRecommendBrowser: Int32 = 1
@@ -34,6 +36,10 @@ nonisolated(unsafe) private var runtimeUseMacro: Int32 = 1
 nonisolated(unsafe) private var runtimeUseMacroInEnglishMode: Int32 = 0
 nonisolated(unsafe) private var runtimeUseSmartSwitchKey: Int32 = 1
 nonisolated(unsafe) private var runtimeAutoCapsMacro: Int32 = 0
+nonisolated(unsafe) private var runtimeCheckSpelling: Int32 = 1
+nonisolated(unsafe) private var runtimeUseModernOrthography: Int32 = 1
+nonisolated(unsafe) private var runtimeQuickTelex: Int32 = 0
+nonisolated(unsafe) private var runtimeFreeMark: Int32 = 0
 nonisolated(unsafe) private var runtimeAllowConsonantZFWJ: Int32 = 1
 nonisolated(unsafe) private var runtimeQuickStartConsonant: Int32 = 0
 nonisolated(unsafe) private var runtimeQuickEndConsonant: Int32 = 0
@@ -581,6 +587,42 @@ func phtvRuntimeUseMacroEnabled() -> Int32 {
     runtimeUseMacro
 }
 
+@_cdecl("phtvRuntimeInputTypeValue")
+func phtvRuntimeInputTypeValue() -> Int32 {
+    runtimeInputType
+}
+
+@_cdecl("phtvRuntimeCodeTableValue")
+func phtvRuntimeCodeTableValue() -> Int32 {
+    runtimeCodeTable
+}
+
+@_cdecl("phtvRuntimeCheckSpellingValue")
+func phtvRuntimeCheckSpellingValue() -> Int32 {
+    runtimeCheckSpelling
+}
+
+@_cdecl("phtvRuntimeSetCheckSpellingValue")
+func phtvRuntimeSetCheckSpellingValue(_ value: Int32) {
+    runtimeCheckSpelling = value
+    OSMemoryBarrier()
+}
+
+@_cdecl("phtvRuntimeUseModernOrthographyEnabled")
+func phtvRuntimeUseModernOrthographyEnabled() -> Int32 {
+    runtimeUseModernOrthography
+}
+
+@_cdecl("phtvRuntimeQuickTelexEnabled")
+func phtvRuntimeQuickTelexEnabled() -> Int32 {
+    runtimeQuickTelex
+}
+
+@_cdecl("phtvRuntimeFreeMarkEnabled")
+func phtvRuntimeFreeMarkEnabled() -> Int32 {
+    runtimeFreeMark
+}
+
 @_cdecl("phtvRuntimeAllowConsonantZFWJEnabled")
 func phtvRuntimeAllowConsonantZFWJEnabled() -> Int32 {
     runtimeAllowConsonantZFWJ
@@ -831,20 +873,20 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func currentInputType() -> Int32 {
-        Int32(vInputType)
+        runtimeInputType
     }
 
     class func setCurrentInputType(_ inputType: Int32) {
-        vInputType = inputType
+        runtimeInputType = inputType
         OSMemoryBarrier()
     }
 
     class func currentCodeTable() -> Int32 {
-        Int32(vCodeTable)
+        runtimeCodeTable
     }
 
     class func setCurrentCodeTable(_ codeTable: Int32) {
-        vCodeTable = codeTable
+        runtimeCodeTable = codeTable
         OSMemoryBarrier()
     }
 
@@ -906,11 +948,11 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func checkSpelling() -> Int32 {
-        Int32(vCheckSpelling)
+        runtimeCheckSpelling
     }
 
     class func setCheckSpelling(_ value: Int32) {
-        vCheckSpelling = value
+        runtimeCheckSpelling = value
         OSMemoryBarrier()
     }
 
@@ -919,29 +961,29 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func useModernOrthography() -> Int32 {
-        Int32(vUseModernOrthography)
+        runtimeUseModernOrthography
     }
 
     class func setUseModernOrthography(_ value: Int32) {
-        vUseModernOrthography = value
+        runtimeUseModernOrthography = value
         OSMemoryBarrier()
     }
 
     class func quickTelex() -> Int32 {
-        Int32(vQuickTelex)
+        runtimeQuickTelex
     }
 
     class func setQuickTelex(_ value: Int32) {
-        vQuickTelex = value
+        runtimeQuickTelex = value
         OSMemoryBarrier()
     }
 
     class func freeMark() -> Int32 {
-        Int32(vFreeMark)
+        runtimeFreeMark
     }
 
     class func setFreeMark(_ value: Int32) {
-        vFreeMark = value
+        runtimeFreeMark = value
         OSMemoryBarrier()
     }
 
