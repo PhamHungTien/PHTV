@@ -220,12 +220,12 @@ import Foundation
         let defaults = UserDefaults.standard
         let spellingEnabled: Int32
         if defaults.object(forKey: "Spelling") == nil {
-            spellingEnabled = Int32(PHTVGetCheckSpelling())
+            spellingEnabled = Int32(phtvRuntimeCheckSpelling())
         } else {
             spellingEnabled = defaults.bool(forKey: "Spelling") ? 1 : 0
         }
 
-        PHTVSetCheckSpelling(spellingEnabled)
+        phtvRuntimeSetCheckSpelling(spellingEnabled)
         phtvEngineApplyCheckSpelling()
     }
 

@@ -99,30 +99,30 @@ import Foundation
         let language = phtv_readIntWithFallback(
             defaults: defaults,
             key: "InputMethod",
-            fallback: Int32(PHTVGetCurrentLanguage())
+            fallback: Int32(phtvRuntimeCurrentLanguage())
         )
-        PHTVSetCurrentLanguage(language)
+        phtvRuntimeSetCurrentLanguage(language)
 
         let inputType = phtv_readIntWithFallback(
             defaults: defaults,
             key: "InputType",
-            fallback: Int32(PHTVGetCurrentInputType())
+            fallback: Int32(phtvRuntimeCurrentInputType())
         )
-        PHTVSetCurrentInputType(inputType)
+        phtvRuntimeSetCurrentInputType(inputType)
 
         let codeTable = phtv_readIntWithFallback(
             defaults: defaults,
             key: "CodeTable",
-            fallback: Int32(PHTVGetCurrentCodeTable())
+            fallback: Int32(phtvRuntimeCurrentCodeTable())
         )
-        PHTVSetCurrentCodeTable(codeTable)
+        phtvRuntimeSetCurrentCodeTable(codeTable)
 
         let checkSpelling = phtv_readIntWithFallback(
             defaults: defaults,
             key: "Spelling",
-            fallback: Int32(PHTVGetCheckSpelling())
+            fallback: Int32(phtvRuntimeCheckSpelling())
         )
-        PHTVSetCheckSpelling(checkSpelling)
+        phtvRuntimeSetCheckSpelling(checkSpelling)
 
         NSLog(
             "[AppDelegate] Loaded core settings: language=%d, inputType=%d, codeTable=%d, spelling=%d",
@@ -176,18 +176,18 @@ import Foundation
             )
         )
 
-        PHTVSetSendKeyStepByStepEnabled(
+        phtvRuntimeSetSendKeyStepByStepEnabled(
             phtv_readIntWithFallback(
                 defaults: defaults,
                 key: "SendKeyStepByStep",
-                fallback: PHTVIsSendKeyStepByStepEnabled() ? 1 : 0
+                fallback: phtvRuntimeIsSendKeyStepByStepEnabled() ? 1 : 0
             ) != 0
         )
         PHTVSetUseSmartSwitchKey(
             phtv_readIntWithFallback(
                 defaults: defaults,
                 key: "UseSmartSwitchKey",
-                fallback: PHTVIsSmartSwitchKeyEnabled() ? 1 : 0
+                fallback: phtvRuntimeIsSmartSwitchKeyEnabled() ? 1 : 0
             ) != 0
         )
         PHTVSetUpperCaseFirstChar(
@@ -279,10 +279,10 @@ import Foundation
 
         let savedHotkey = defaults.integer(forKey: "SwitchKeyStatus")
         if savedHotkey != 0 {
-            PHTVSetSwitchKeyStatus(Int32(savedHotkey))
+            phtvRuntimeSetSwitchKeyStatus(Int32(savedHotkey))
             NSLog("[AppDelegate] Loaded hotkey from UserDefaults: 0x%X", savedHotkey)
         } else {
-            NSLog("[AppDelegate] No saved hotkey found, using default: 0x%X", PHTVGetSwitchKeyStatus())
+            NSLog("[AppDelegate] No saved hotkey found, using default: 0x%X", phtvRuntimeSwitchKeyStatus())
         }
 
         phtv_loadEmojiHotkeySettingsFromDefaults()
@@ -296,23 +296,23 @@ import Foundation
     class func phtv_loadDefaultConfig() {
         let defaults = UserDefaults.standard
 
-        PHTVSetCurrentLanguage(1)
+        phtvRuntimeSetCurrentLanguage(1)
         defaults.set(1, forKey: "InputMethod")
 
-        PHTVSetCurrentInputType(0)
+        phtvRuntimeSetCurrentInputType(0)
         defaults.set(0, forKey: "InputType")
 
         PHTVSetFreeMark(0)
         defaults.set(0, forKey: "FreeMark")
 
-        PHTVSetCheckSpelling(1)
+        phtvRuntimeSetCheckSpelling(1)
         defaults.set(1, forKey: "Spelling")
 
-        PHTVSetCurrentCodeTable(0)
+        phtvRuntimeSetCurrentCodeTable(0)
         defaults.set(0, forKey: "CodeTable")
 
         let defaultSwitchHotkey = PHTVDefaultSwitchHotkeyStatus()
-        PHTVSetSwitchKeyStatus(defaultSwitchHotkey)
+        phtvRuntimeSetSwitchKeyStatus(defaultSwitchHotkey)
         defaults.set(Int(defaultSwitchHotkey), forKey: "SwitchKeyStatus")
 
         PHTVSetQuickTelex(0)
@@ -330,7 +330,7 @@ import Foundation
         PHTVSetUseMacroInEnglishMode(0)
         defaults.set(0, forKey: "UseMacroInEnglishMode")
 
-        PHTVSetSendKeyStepByStepEnabled(false)
+        phtvRuntimeSetSendKeyStepByStepEnabled(false)
         defaults.set(0, forKey: "SendKeyStepByStep")
 
         PHTVSetUseSmartSwitchKey(true)

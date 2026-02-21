@@ -29,13 +29,13 @@ final class PHTVCoreSettingsBootstrapService: NSObject {
         if language < 0 {
             language = 1
         }
-        PHTVSetCurrentLanguage(language)
+        phtvRuntimeSetCurrentLanguage(language)
 
         var inputType = Int32(defaults.integer(forKey: "InputType"))
         if inputType < 0 {
             inputType = 0
         }
-        PHTVSetCurrentInputType(inputType)
+        phtvRuntimeSetCurrentInputType(inputType)
 
         PHTVSetFreeMark(0)
 
@@ -43,9 +43,9 @@ final class PHTVCoreSettingsBootstrapService: NSObject {
         if codeTable < 0 {
             codeTable = 0
         }
-        PHTVSetCurrentCodeTable(codeTable)
+        phtvRuntimeSetCurrentCodeTable(codeTable)
 
-        PHTVSetCheckSpelling(
+        phtvRuntimeSetCheckSpelling(
             readPersistedInt(defaults: defaults, key: "Spelling", defaultValue: 1)
         )
         PHTVSetUseModernOrthography(
@@ -66,7 +66,7 @@ final class PHTVCoreSettingsBootstrapService: NSObject {
         )
         PHTVSetAutoCapsMacro(Int32(defaults.integer(forKey: "vAutoCapsMacro")))
 
-        PHTVSetSendKeyStepByStepEnabled(
+        phtvRuntimeSetSendKeyStepByStepEnabled(
             readPersistedInt(defaults: defaults, key: "SendKeyStepByStep", defaultValue: 0) != 0
         )
         PHTVSetUseSmartSwitchKey(

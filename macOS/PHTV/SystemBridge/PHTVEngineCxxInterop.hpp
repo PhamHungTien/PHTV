@@ -14,6 +14,8 @@
 
 #include "../Core/Engine/Engine.h"
 
+extern volatile int vSendKeyStepByStep;
+
 inline void phtvEngineInitializeMacroMap(const std::uint8_t *data, const int length) noexcept {
     if (!data || length <= 0) {
         initMacroMap(nullptr, 0);
@@ -74,6 +76,72 @@ inline void phtvEngineApplyCheckSpelling() noexcept {
 
 inline void phtvEngineNotifyTableCodeChanged() noexcept {
     onTableCodeChange();
+}
+
+inline void phtvRuntimeBarrier() noexcept {
+    __sync_synchronize();
+}
+
+inline int phtvRuntimeCurrentLanguage() noexcept {
+    return vLanguage;
+}
+
+inline void phtvRuntimeSetCurrentLanguage(const int language) noexcept {
+    vLanguage = language;
+    phtvRuntimeBarrier();
+}
+
+inline int phtvRuntimeCurrentInputType() noexcept {
+    return vInputType;
+}
+
+inline void phtvRuntimeSetCurrentInputType(const int inputType) noexcept {
+    vInputType = inputType;
+    phtvRuntimeBarrier();
+}
+
+inline int phtvRuntimeCurrentCodeTable() noexcept {
+    return vCodeTable;
+}
+
+inline void phtvRuntimeSetCurrentCodeTable(const int codeTable) noexcept {
+    vCodeTable = codeTable;
+    phtvRuntimeBarrier();
+}
+
+inline bool phtvRuntimeIsSmartSwitchKeyEnabled() noexcept {
+    return vUseSmartSwitchKey != 0;
+}
+
+inline bool phtvRuntimeIsSendKeyStepByStepEnabled() noexcept {
+    return vSendKeyStepByStep != 0;
+}
+
+inline void phtvRuntimeSetSendKeyStepByStepEnabled(const bool enabled) noexcept {
+    vSendKeyStepByStep = enabled ? 1 : 0;
+    phtvRuntimeBarrier();
+}
+
+inline void phtvRuntimeSetUpperCaseExcludedForCurrentApp(const bool excluded) noexcept {
+    vUpperCaseExcludedForCurrentApp = excluded ? 1 : 0;
+}
+
+inline int phtvRuntimeSwitchKeyStatus() noexcept {
+    return vSwitchKeyStatus;
+}
+
+inline void phtvRuntimeSetSwitchKeyStatus(const int status) noexcept {
+    vSwitchKeyStatus = status;
+    phtvRuntimeBarrier();
+}
+
+inline int phtvRuntimeCheckSpelling() noexcept {
+    return vCheckSpelling;
+}
+
+inline void phtvRuntimeSetCheckSpelling(const int value) noexcept {
+    vCheckSpelling = value;
+    phtvRuntimeBarrier();
 }
 
 inline int phtvEngineQuickConvertHotkey() noexcept {

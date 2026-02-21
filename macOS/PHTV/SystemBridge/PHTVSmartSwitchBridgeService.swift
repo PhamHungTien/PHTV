@@ -40,7 +40,7 @@ final class PHTVSmartSwitchBridgeService: NSObject {
 
         let targetLanguage = PHTVSmartSwitchRuntimeService.decodedLanguage(fromState: state)
         if targetLanguage != currentLanguage {
-            PHTVSetCurrentLanguage(targetLanguage)
+            phtvRuntimeSetCurrentLanguage(targetLanguage)
             PHTVSmartSwitchPersistenceService.saveInputMethod(targetLanguage)
             PHTVManager.requestNewSession()
             Task { @MainActor in
@@ -50,7 +50,7 @@ final class PHTVSmartSwitchBridgeService: NSObject {
 
         let targetCodeTable = PHTVSmartSwitchRuntimeService.decodedCodeTable(fromState: state)
         if rememberCode != 0, targetCodeTable != currentCodeTable {
-            PHTVSetCurrentCodeTable(targetCodeTable)
+            phtvRuntimeSetCurrentCodeTable(targetCodeTable)
             PHTVSmartSwitchPersistenceService.saveCodeTable(targetCodeTable)
             PHTVManager.requestNewSession()
             Task { @MainActor in

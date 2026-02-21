@@ -29,8 +29,8 @@ import Foundation
     @objc(phtv_toggleSpellCheckSetting)
     class func phtv_toggleSpellCheckSetting() -> Int32 {
         phtv_toggleRuntimeIntSetting(
-            currentValue: { Int32(PHTVGetCheckSpelling()) },
-            applyValue: { PHTVSetCheckSpelling($0) },
+            currentValue: { Int32(phtvRuntimeCheckSpelling()) },
+            applyValue: { phtvRuntimeSetCheckSpelling($0) },
             defaultsKey: "Spelling",
             syncSpellingBeforeSessionReset: true
         )
@@ -89,15 +89,15 @@ import Foundation
     @objc(phtv_runtimeSettingsSnapshot)
     class func phtv_runtimeSettingsSnapshot() -> [String: NSNumber] {
         [
-            "checkSpelling": NSNumber(value: PHTVGetCheckSpelling()),
+            "checkSpelling": NSNumber(value: phtvRuntimeCheckSpelling()),
             "useModernOrthography": NSNumber(value: PHTVGetUseModernOrthography()),
             "quickTelex": NSNumber(value: PHTVGetQuickTelex()),
-            "switchKeyStatus": NSNumber(value: PHTVGetSwitchKeyStatus()),
+            "switchKeyStatus": NSNumber(value: phtvRuntimeSwitchKeyStatus()),
             "useMacro": NSNumber(value: PHTVGetUseMacro()),
             "useMacroInEnglishMode": NSNumber(value: PHTVGetUseMacroInEnglishMode()),
             "autoCapsMacro": NSNumber(value: PHTVGetAutoCapsMacro()),
-            "sendKeyStepByStep": NSNumber(value: PHTVIsSendKeyStepByStepEnabled() ? 1 : 0),
-            "useSmartSwitchKey": NSNumber(value: PHTVIsSmartSwitchKeyEnabled() ? 1 : 0),
+            "sendKeyStepByStep": NSNumber(value: phtvRuntimeIsSendKeyStepByStepEnabled() ? 1 : 0),
+            "useSmartSwitchKey": NSNumber(value: phtvRuntimeIsSmartSwitchKeyEnabled() ? 1 : 0),
             "upperCaseFirstChar": NSNumber(value: PHTVGetUpperCaseFirstChar()),
             "allowConsonantZFWJ": NSNumber(value: PHTVGetAllowConsonantZFWJ()),
             "quickStartConsonant": NSNumber(value: PHTVGetQuickStartConsonant()),

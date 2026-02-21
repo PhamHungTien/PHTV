@@ -59,68 +59,6 @@ int vShowIconOnDock = 0; //new on version 2.0
 volatile int vPerformLayoutCompat = 0;
 
 extern "C" {
-    int PHTVGetCurrentLanguage(void) {
-        return vLanguage;
-    }
-
-    void PHTVSetCurrentLanguage(int language) {
-        vLanguage = language;
-        __sync_synchronize();
-    }
-
-    int PHTVGetCurrentInputType(void) {
-        return vInputType;
-    }
-
-    void PHTVSetCurrentInputType(int inputType) {
-        vInputType = inputType;
-        __sync_synchronize();
-    }
-
-    int PHTVGetCurrentCodeTable(void) {
-        return vCodeTable;
-    }
-
-    void PHTVSetCurrentCodeTable(int codeTable) {
-        vCodeTable = codeTable;
-        __sync_synchronize();
-    }
-
-    bool PHTVIsSmartSwitchKeyEnabled(void) {
-        return vUseSmartSwitchKey != 0;
-    }
-
-    bool PHTVIsSendKeyStepByStepEnabled(void) {
-        return vSendKeyStepByStep != 0;
-    }
-
-    void PHTVSetSendKeyStepByStepEnabled(bool enabled) {
-        vSendKeyStepByStep = enabled ? 1 : 0;
-        __sync_synchronize();
-    }
-
-    void PHTVSetUpperCaseExcludedForCurrentApp(bool excluded) {
-        vUpperCaseExcludedForCurrentApp = excluded ? 1 : 0;
-    }
-
-    int PHTVGetSwitchKeyStatus(void) {
-        return vSwitchKeyStatus;
-    }
-
-    void PHTVSetSwitchKeyStatus(int status) {
-        vSwitchKeyStatus = status;
-        __sync_synchronize();
-    }
-
-    int PHTVGetCheckSpelling(void) {
-        return vCheckSpelling;
-    }
-
-    void PHTVSetCheckSpelling(int value) {
-        vCheckSpelling = value;
-        __sync_synchronize();
-    }
-
     int PHTVGetAllowConsonantZFWJ(void) {
         return vAllowConsonantZFWJ;
     }
