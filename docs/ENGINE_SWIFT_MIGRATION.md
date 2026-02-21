@@ -90,6 +90,8 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - Call site dung enum Swift `CodeTable` (khong can import `Core/PHTVConstants.h`)
 - Da bo phu thuoc `KEY_*` constants trong Swift key sender:
   - Dung `KeyCode.delete` / `KeyCode.leftArrow`
+- Da bo Swift C++ interop compiler flag:
+  - `OTHER_SWIFT_FLAGS` khong con `-cxx-interoperability-mode=default` (Debug/Release)
 - Da bo wrappers code-table lookup:
   - Swift facade mang `_codeTable` data sang Swift de tra `findCodeTableSourceKey` / `variantCount` / `characterForKey`
 - Da dua built-in dictionary runtime (English/Vietnamese binary trie) sang Swift bridge:
