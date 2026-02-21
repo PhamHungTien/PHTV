@@ -306,6 +306,38 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     // For emoji hotkey modifier-only mode - prevent prefix matching
     bool _keyPressedWhileEmojiModifiersHeld = false;
 
+    __attribute__((always_inline)) static inline PHTVEventTargetContextBox *PrepareTargetContextForEvent(CGEventRef event, pid_t eventTargetPID) {
+        PHTVEventTargetContextBox *targetContext =
+            [PHTVAppContextService eventTargetContextForEventTargetPid:(int32_t)eventTargetPID
+                                                              safeMode:vSafeMode
+                                                spotlightCacheDurationMs:SPOTLIGHT_CACHE_DURATION_MS
+                                             appCharacteristicsMaxAgeMs:kAppCharacteristicsCacheMaxAgeMs];
+
+        PHTVAppCharacteristicsBox *appChars = targetContext.appCharacteristics;
+        if (appChars == nil) {
+            appChars = [PHTVAppContextService defaultAppCharacteristics];
+        }
+
+        _phtvEffectiveTargetBundleId = targetContext.effectiveBundleId;
+        _phtvCurrentAppCharacteristics = appChars;
+        _phtvPostToHIDTap = targetContext.postToHIDTap;
+        _phtvIsCliTarget = targetContext.isCliTarget;
+        _phtvPostToSessionForCli = _phtvIsCliTarget;
+
+        if (_phtvIsCliTarget) {
+            ApplyCliProfile(targetContext.cliTimingProfile);
+            UpdateCliSpeedFactor(mach_absolute_time());
+        } else {
+            ApplyCliProfile(nil);
+            _phtvCliSpeedFactor = 1.0;
+            _phtvCliLastKeyDownTime = 0;
+        }
+
+        _phtvKeyboardType = CGEventGetIntegerValueField(event, kCGKeyboardEventKeyboardType);
+        _phtvPendingBackspaceCount = 0;
+        return targetContext;
+    }
+
     
     void PHTVInit() {
         dispatch_once(&timebase_init_token, ^{
@@ -1265,6 +1297,8 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                              OTHER_CONTROL_KEY);
 
                 if (pData->code == vReplaceMaro) { //handle macro in english mode
+                    pid_t eventTargetPID = (pid_t)CGEventGetIntegerValueField(event, kCGEventTargetUnixProcessID);
+                    (void)PrepareTargetContextForEvent(event, eventTargetPID);
                     handleMacro();
                     return NULL;
                 }
@@ -1299,38 +1333,13 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             // resolve to an unrelated foreground app (e.g. Console). When Spotlight is AX-focused, prefer
             // the AX-focused owner.
             pid_t eventTargetPID = (pid_t)CGEventGetIntegerValueField(event, kCGEventTargetUnixProcessID);
-            PHTVEventTargetContextBox *targetContext = [PHTVAppContextService eventTargetContextForEventTargetPid:(int32_t)eventTargetPID
-                                                                                                         safeMode:vSafeMode
-                                                                                           spotlightCacheDurationMs:SPOTLIGHT_CACHE_DURATION_MS
-                                                                                           appCharacteristicsMaxAgeMs:kAppCharacteristicsCacheMaxAgeMs];
+            PHTVEventTargetContextBox *targetContext = PrepareTargetContextForEvent(event, eventTargetPID);
             BOOL spotlightActive = targetContext.spotlightActive;
             NSString *effectiveBundleId = targetContext.effectiveBundleId;
             PHTVAppCharacteristicsBox *appChars = targetContext.appCharacteristics;
             if (appChars == nil) {
                 appChars = [PHTVAppContextService defaultAppCharacteristics];
             }
-
-            // Cache for send routines called later in this callback.
-            _phtvEffectiveTargetBundleId = effectiveBundleId;
-            _phtvCurrentAppCharacteristics = appChars;
-            _phtvPostToHIDTap = targetContext.postToHIDTap;
-            _phtvIsCliTarget = targetContext.isCliTarget;
-            _phtvPostToSessionForCli = _phtvIsCliTarget;
-            if (_phtvIsCliTarget) {
-                ApplyCliProfile(targetContext.cliTimingProfile);
-            } else {
-                ApplyCliProfile(nil);
-            }
-            if (_phtvIsCliTarget) {
-                uint64_t now = mach_absolute_time();
-                UpdateCliSpeedFactor(now);
-            } else {
-                _phtvCliSpeedFactor = 1.0;
-                _phtvCliLastKeyDownTime = 0;
-            }
-
-            _phtvKeyboardType = CGEventGetIntegerValueField(event, kCGKeyboardEventKeyboardType);
-            _phtvPendingBackspaceCount = 0;
 
 #ifdef DEBUG
             NSString *eventTargetBundleId = targetContext.eventTargetBundleId;
