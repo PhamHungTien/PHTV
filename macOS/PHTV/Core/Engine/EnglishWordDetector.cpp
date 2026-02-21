@@ -66,9 +66,18 @@ static size_t vieMmapSize = 0;
 alignas(64) static uint8_t kcToIdx[64];
 static bool kcInit = false;
 
-// Custom dictionary: user-added words for better accuracy
-static std::unordered_set<std::string> customEnglishWords;
-static std::unordered_set<std::string> customVietnameseWords;
+// Custom dictionary (Swift-backed runtime bridge)
+static volatile int customEnglishWordCountCache = 0;
+static volatile int customVietnameseWordCountCache = 0;
+static std::unordered_set<std::string> customEnglishWordsFallback;
+static std::unordered_set<std::string> customVietnameseWordsFallback;
+
+extern "C" void phtvCustomDictionaryClear();
+extern "C" void phtvCustomDictionaryLoadJSON(const char* jsonData, int length);
+extern "C" int phtvCustomDictionaryEnglishCount();
+extern "C" int phtvCustomDictionaryVietnameseCount();
+extern "C" int phtvCustomDictionaryContainsEnglishWord(const char* wordCString);
+extern "C" int phtvCustomDictionaryContainsVietnameseWord(const char* wordCString);
 
 static void initKcLookup() {
     if (kcInit) return;
@@ -83,6 +92,102 @@ static void initKcLookup() {
     kcToIdx[KEY_V] = 21; kcToIdx[KEY_W] = 22; kcToIdx[KEY_X] = 23;
     kcToIdx[KEY_Y] = 24; kcToIdx[KEY_Z] = 25;
     kcInit = true;
+}
+
+static inline void lowercaseAsciiInPlace(std::string& word) {
+    for (size_t i = 0; i < word.length(); i++) {
+        if (word[i] >= 'A' && word[i] <= 'Z') {
+            word[i] = static_cast<char>(word[i] - 'A' + 'a');
+        }
+    }
+}
+
+static void parseCustomDictionaryFallback(const char* jsonData, int length) {
+    customEnglishWordsFallback.clear();
+    customVietnameseWordsFallback.clear();
+
+    if (!jsonData || length < 2) {
+        return;
+    }
+
+    std::string json(jsonData, static_cast<size_t>(length));
+    size_t pos = 0;
+    while (pos < json.length()) {
+        size_t wordKeyPos = json.find("\"word\":", pos);
+        if (wordKeyPos == std::string::npos) break;
+
+        size_t wordStart = json.find("\"", wordKeyPos + 7);
+        if (wordStart == std::string::npos) break;
+        wordStart++;
+        size_t wordEnd = json.find("\"", wordStart);
+        if (wordEnd == std::string::npos) break;
+        std::string word = json.substr(wordStart, wordEnd - wordStart);
+
+        size_t typeKeyPos = json.find("\"type\":", wordEnd);
+        if (typeKeyPos == std::string::npos) {
+            pos = wordEnd + 1;
+            continue;
+        }
+
+        size_t typeStart = json.find("\"", typeKeyPos + 7);
+        if (typeStart == std::string::npos) break;
+        typeStart++;
+        size_t typeEnd = json.find("\"", typeStart);
+        if (typeEnd == std::string::npos) break;
+        std::string type = json.substr(typeStart, typeEnd - typeStart);
+
+        lowercaseAsciiInPlace(word);
+        lowercaseAsciiInPlace(type);
+
+        if (type == "en" || type == "english") {
+            customEnglishWordsFallback.insert(word);
+        } else if (type == "vi" || type == "vietnamese") {
+            customVietnameseWordsFallback.insert(word);
+        }
+
+        pos = typeEnd + 1;
+    }
+}
+
+extern "C" __attribute__((weak)) void phtvCustomDictionaryClear() {
+    customEnglishWordsFallback.clear();
+    customVietnameseWordsFallback.clear();
+}
+
+extern "C" __attribute__((weak)) void phtvCustomDictionaryLoadJSON(const char* jsonData, int length) {
+    parseCustomDictionaryFallback(jsonData, length);
+}
+
+extern "C" __attribute__((weak)) int phtvCustomDictionaryEnglishCount() {
+    return static_cast<int>(customEnglishWordsFallback.size());
+}
+
+extern "C" __attribute__((weak)) int phtvCustomDictionaryVietnameseCount() {
+    return static_cast<int>(customVietnameseWordsFallback.size());
+}
+
+extern "C" __attribute__((weak)) int phtvCustomDictionaryContainsEnglishWord(const char* wordCString) {
+    if (!wordCString) return 0;
+    return customEnglishWordsFallback.count(wordCString) != 0 ? 1 : 0;
+}
+
+extern "C" __attribute__((weak)) int phtvCustomDictionaryContainsVietnameseWord(const char* wordCString) {
+    if (!wordCString) return 0;
+    return customVietnameseWordsFallback.count(wordCString) != 0 ? 1 : 0;
+}
+
+static inline bool customEnglishContainsWord(const char* wordCString) {
+    if (!wordCString || customEnglishWordCountCache <= 0) {
+        return false;
+    }
+    return phtvCustomDictionaryContainsEnglishWord(wordCString) != 0;
+}
+
+static inline bool customVietnameseContainsWord(const char* wordCString) {
+    if (!wordCString || customVietnameseWordCountCache <= 0) {
+        return false;
+    }
+    return phtvCustomDictionaryContainsVietnameseWord(wordCString) != 0;
 }
 
 // ============================================================================
@@ -376,7 +481,7 @@ bool isEnglishWord(const string& word) {
 
 bool isEnglishWordFromKeyStates(const Uint32* keyStates, int stateIndex) {
     if (stateIndex <= 0 || stateIndex > 30) return false;
-    if (!engInit && customEnglishWords.empty()) return false;
+    if (!engInit && customEnglishWordCountCache == 0) return false;
 
     initKcLookup();
 
@@ -390,7 +495,7 @@ bool isEnglishWordFromKeyStates(const Uint32* keyStates, int stateIndex) {
     }
     wordBuf[stateIndex] = '\0';
 
-    if (!customEnglishWords.empty() && customEnglishWords.count(wordBuf)) {
+    if (customEnglishContainsWord(wordBuf)) {
         return true;
     }
 
@@ -400,7 +505,7 @@ bool isEnglishWordFromKeyStates(const Uint32* keyStates, int stateIndex) {
 
 bool isVietnameseWordFromKeyStates(const Uint32* keyStates, int stateIndex) {
     if (stateIndex <= 0 || stateIndex > 30) return false;
-    if (!vieInit && customVietnameseWords.empty()) return false;
+    if (!vieInit && customVietnameseWordCountCache == 0) return false;
 
     initKcLookup();
 
@@ -414,7 +519,7 @@ bool isVietnameseWordFromKeyStates(const Uint32* keyStates, int stateIndex) {
     }
     wordBuf[stateIndex] = '\0';
 
-    if (!customVietnameseWords.empty() && customVietnameseWords.count(wordBuf)) {
+    if (customVietnameseContainsWord(wordBuf)) {
         return true;
     }
 
@@ -481,7 +586,7 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
     #endif
 
     // PRIORITY 1: Check custom Vietnamese - if user marked as Vietnamese, never restore
-    if (!customVietnameseWords.empty() && customVietnameseWords.count(word)) {
+    if (customVietnameseContainsWord(word.c_str())) {
         #ifdef DEBUG
         fprintf(stderr, "[AutoEnglish] SKIP: '%s' is in custom Vietnamese dictionary\n", word.c_str()); fflush(stderr);
         #endif
@@ -489,7 +594,7 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
     }
 
     // PRIORITY 2: Check custom English - if user marked as English, always restore
-    if (!customEnglishWords.empty() && customEnglishWords.count(word)) {
+    if (customEnglishContainsWord(word.c_str())) {
         #ifdef DEBUG
         fprintf(stderr, "[AutoEnglish] RESTORE: '%s' is in custom English dictionary\n", word.c_str()); fflush(stderr);
         #endif
@@ -899,73 +1004,21 @@ void clearEnglishDictionary() {
 // ============================================================================
 
 void clearCustomDictionary() {
-    customEnglishWords.clear();
-    customVietnameseWords.clear();
+    phtvCustomDictionaryClear();
+    customEnglishWordCountCache = 0;
+    customVietnameseWordCountCache = 0;
 }
 
 size_t getCustomEnglishWordCount() {
-    return customEnglishWords.size();
+    return static_cast<size_t>(customEnglishWordCountCache);
 }
 
 size_t getCustomVietnameseWordCount() {
-    return customVietnameseWords.size();
+    return static_cast<size_t>(customVietnameseWordCountCache);
 }
 
-// Simple JSON parser for custom dictionary
-// Expected format: [{"word":"abc","type":"en"},...]
 void initCustomDictionary(const char* jsonData, int length) {
-    clearCustomDictionary();
-
-    if (!jsonData || length < 2) return;
-
-    std::string json(jsonData, length);
-    size_t pos = 0;
-
-    while (pos < json.length()) {
-        // Find "word":"
-        size_t wordKeyPos = json.find("\"word\":", pos);
-        if (wordKeyPos == std::string::npos) break;
-
-        // Find the word value
-        size_t wordStart = json.find("\"", wordKeyPos + 7);
-        if (wordStart == std::string::npos) break;
-        wordStart++; // Skip opening quote
-
-        size_t wordEnd = json.find("\"", wordStart);
-        if (wordEnd == std::string::npos) break;
-
-        std::string word = json.substr(wordStart, wordEnd - wordStart);
-
-        // Find "type":"
-        size_t typeKeyPos = json.find("\"type\":", wordEnd);
-        if (typeKeyPos == std::string::npos) {
-            pos = wordEnd + 1;
-            continue;
-        }
-
-        size_t typeStart = json.find("\"", typeKeyPos + 7);
-        if (typeStart == std::string::npos) break;
-        typeStart++; // Skip opening quote
-
-        size_t typeEnd = json.find("\"", typeStart);
-        if (typeEnd == std::string::npos) break;
-
-        std::string type = json.substr(typeStart, typeEnd - typeStart);
-
-        // Convert word to lowercase
-        for (size_t i = 0; i < word.length(); i++) {
-            if (word[i] >= 'A' && word[i] <= 'Z') {
-                word[i] = word[i] - 'A' + 'a';
-            }
-        }
-
-        // Add to appropriate set
-        if (type == "en" || type == "english") {
-            customEnglishWords.insert(word);
-        } else if (type == "vi" || type == "vietnamese") {
-            customVietnameseWords.insert(word);
-        }
-
-        pos = typeEnd + 1;
-    }
+    phtvCustomDictionaryLoadJSON(jsonData, length);
+    customEnglishWordCountCache = phtvCustomDictionaryEnglishCount();
+    customVietnameseWordCountCache = phtvCustomDictionaryVietnameseCount();
 }
