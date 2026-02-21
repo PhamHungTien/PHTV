@@ -16,329 +16,48 @@
 #include "../../Core/Engine/Engine.h"
 #include "../../Core/PHTVConstants.h"
 
-extern volatile int vSendKeyStepByStep;
-extern volatile int vPerformLayoutCompat;
-extern volatile int vEnableEmojiHotkey;
-extern volatile int vEmojiHotkeyModifiers;
-extern volatile int vEmojiHotkeyKeyCode;
-extern volatile int vSafeMode;
-extern int vShowIconOnDock;
+extern volatile int vLanguage __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vInputType __attribute__((swift_attr("nonisolated(unsafe)")));
+extern int vFreeMark __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vCodeTable __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vSwitchKeyStatus __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vCheckSpelling __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vUseModernOrthography __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vQuickTelex __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vFixRecommendBrowser __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vUseMacro __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vUseMacroInEnglishMode __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vAutoCapsMacro __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vUseSmartSwitchKey __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vUpperCaseFirstChar __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vUpperCaseExcludedForCurrentApp __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vTempOffSpelling __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vAllowConsonantZFWJ __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vQuickStartConsonant __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vQuickEndConsonant __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vRememberCode __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vOtherLanguage __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vTempOffPHTV __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vRestoreOnEscape __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vCustomEscapeKey __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vPauseKeyEnabled __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vPauseKey __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vAutoRestoreEnglishWord __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vSendKeyStepByStep __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vPerformLayoutCompat __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vEnableEmojiHotkey __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vEmojiHotkeyModifiers __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vEmojiHotkeyKeyCode __attribute__((swift_attr("nonisolated(unsafe)")));
+extern volatile int vSafeMode __attribute__((swift_attr("nonisolated(unsafe)")));
+extern int vShowIconOnDock __attribute__((swift_attr("nonisolated(unsafe)")));
 
 inline void phtvRuntimeBarrier() noexcept {
     __sync_synchronize();
 }
 
-inline int phtvRuntimeCurrentLanguage() noexcept {
-    return vLanguage;
-}
-
-inline void phtvRuntimeSetCurrentLanguage(const int language) noexcept {
-    vLanguage = language;
-    phtvRuntimeBarrier();
-}
-
-inline int phtvRuntimeCurrentInputType() noexcept {
-    return vInputType;
-}
-
-inline void phtvRuntimeSetCurrentInputType(const int inputType) noexcept {
-    vInputType = inputType;
-    phtvRuntimeBarrier();
-}
-
-inline int phtvRuntimeCurrentCodeTable() noexcept {
-    return vCodeTable;
-}
-
-inline void phtvRuntimeSetCurrentCodeTable(const int codeTable) noexcept {
-    vCodeTable = codeTable;
-    phtvRuntimeBarrier();
-}
-
-inline bool phtvRuntimeIsSmartSwitchKeyEnabled() noexcept {
-    return vUseSmartSwitchKey != 0;
-}
-
-inline bool phtvRuntimeIsSendKeyStepByStepEnabled() noexcept {
-    return vSendKeyStepByStep != 0;
-}
-
-inline void phtvRuntimeSetSendKeyStepByStepEnabled(const bool enabled) noexcept {
-    vSendKeyStepByStep = enabled ? 1 : 0;
-    phtvRuntimeBarrier();
-}
-
-inline void phtvRuntimeSetUpperCaseExcludedForCurrentApp(const bool excluded) noexcept {
-    vUpperCaseExcludedForCurrentApp = excluded ? 1 : 0;
-}
-
-inline int phtvRuntimeSwitchKeyStatus() noexcept {
-    return vSwitchKeyStatus;
-}
-
-inline void phtvRuntimeSetSwitchKeyStatus(const int status) noexcept {
-    vSwitchKeyStatus = status;
-    phtvRuntimeBarrier();
-}
-
-inline bool phtvRuntimeSafeMode() noexcept {
-    return vSafeMode != 0;
-}
-
-inline void phtvRuntimeSetSafeMode(const bool enabled) noexcept {
-    vSafeMode = enabled ? 1 : 0;
-    phtvRuntimeBarrier();
-}
-
-inline int phtvRuntimeCheckSpelling() noexcept {
-    return vCheckSpelling;
-}
-
-inline void phtvRuntimeSetCheckSpelling(const int value) noexcept {
-    vCheckSpelling = value;
-    phtvRuntimeBarrier();
-}
-
-inline int phtvRuntimeAllowConsonantZFWJ() noexcept {
-    return vAllowConsonantZFWJ;
-}
-
-inline void phtvRuntimeSetAllowConsonantZFWJ(const int value) noexcept {
-    vAllowConsonantZFWJ = value;
-    phtvRuntimeBarrier();
-}
-
-inline int phtvRuntimeUseModernOrthography() noexcept {
-    return vUseModernOrthography;
-}
-
-inline void phtvRuntimeSetUseModernOrthography(const int value) noexcept {
-    vUseModernOrthography = value;
-    phtvRuntimeBarrier();
-}
-
-inline int phtvRuntimeQuickTelex() noexcept {
-    return vQuickTelex;
-}
-
-inline void phtvRuntimeSetQuickTelex(const int value) noexcept {
-    vQuickTelex = value;
-    phtvRuntimeBarrier();
-}
-
-inline int phtvRuntimeUpperCaseFirstChar() noexcept {
-    return vUpperCaseFirstChar;
-}
-
-inline void phtvRuntimeSetUpperCaseFirstChar(const int value) noexcept {
-    vUpperCaseFirstChar = value;
-    phtvRuntimeBarrier();
-}
-
-inline int phtvRuntimeAutoRestoreEnglishWord() noexcept {
-    return vAutoRestoreEnglishWord;
-}
-
-inline void phtvRuntimeSetAutoRestoreEnglishWord(const int value) noexcept {
-    vAutoRestoreEnglishWord = value;
-    phtvRuntimeBarrier();
-}
-
-inline void phtvRuntimeSetShowIconOnDock(const bool visible) noexcept {
-    vShowIconOnDock = visible ? 1 : 0;
-    phtvRuntimeBarrier();
-}
-
-inline int phtvRuntimeUseMacro() noexcept {
-    return vUseMacro;
-}
-
-inline int phtvRuntimeUseMacroInEnglishMode() noexcept {
-    return vUseMacroInEnglishMode;
-}
-
-inline int phtvRuntimeAutoCapsMacro() noexcept {
-    return vAutoCapsMacro;
-}
-
-inline int phtvRuntimeQuickStartConsonant() noexcept {
-    return vQuickStartConsonant;
-}
-
-inline int phtvRuntimeQuickEndConsonant() noexcept {
-    return vQuickEndConsonant;
-}
-
-inline int phtvRuntimeRememberCode() noexcept {
-    return vRememberCode;
-}
-
-inline int phtvRuntimePerformLayoutCompat() noexcept {
-    return vPerformLayoutCompat;
-}
-
-inline int phtvRuntimeShowIconOnDock() noexcept {
-    return vShowIconOnDock;
-}
-
-inline int phtvRuntimeRestoreOnEscape() noexcept {
-    return vRestoreOnEscape;
-}
-
-inline int phtvRuntimeCustomEscapeKey() noexcept {
-    return vCustomEscapeKey;
-}
-
-inline int phtvRuntimePauseKeyEnabled() noexcept {
-    return vPauseKeyEnabled;
-}
-
-inline int phtvRuntimePauseKey() noexcept {
-    return vPauseKey;
-}
-
-inline int phtvRuntimeEnableEmojiHotkey() noexcept {
-    return vEnableEmojiHotkey;
-}
-
-inline int phtvRuntimeEmojiHotkeyModifiers() noexcept {
-    return vEmojiHotkeyModifiers;
-}
-
-inline int phtvRuntimeEmojiHotkeyKeyCode() noexcept {
-    return vEmojiHotkeyKeyCode;
-}
-
-inline void phtvRuntimeSetEmojiHotkeySettings(const int enabled,
-                                              const int modifiers,
-                                              const int keyCode) noexcept {
-    vEnableEmojiHotkey = enabled;
-    vEmojiHotkeyModifiers = modifiers;
-    vEmojiHotkeyKeyCode = keyCode;
-    phtvRuntimeBarrier();
-}
-
-inline int phtvRuntimeFreeMark() noexcept {
-    return vFreeMark;
-}
-
-inline void phtvRuntimeSetFreeMark(const int value) noexcept {
-    vFreeMark = value;
-    phtvRuntimeBarrier();
-}
-
-inline void phtvRuntimeSetUseMacro(const int value) noexcept {
-    vUseMacro = value;
-    phtvRuntimeBarrier();
-}
-
-inline void phtvRuntimeSetUseMacroInEnglishMode(const int value) noexcept {
-    vUseMacroInEnglishMode = value;
-    phtvRuntimeBarrier();
-}
-
-inline void phtvRuntimeSetAutoCapsMacro(const int value) noexcept {
-    vAutoCapsMacro = value;
-    phtvRuntimeBarrier();
-}
-
-inline void phtvRuntimeSetUseSmartSwitchKey(const bool enabled) noexcept {
-    vUseSmartSwitchKey = enabled ? 1 : 0;
-    phtvRuntimeBarrier();
-}
-
-inline void phtvRuntimeSetQuickStartConsonant(const int value) noexcept {
-    vQuickStartConsonant = value;
-    phtvRuntimeBarrier();
-}
-
-inline void phtvRuntimeSetQuickEndConsonant(const int value) noexcept {
-    vQuickEndConsonant = value;
-    phtvRuntimeBarrier();
-}
-
-inline void phtvRuntimeSetRememberCode(const int value) noexcept {
-    vRememberCode = value;
-    phtvRuntimeBarrier();
-}
-
-inline void phtvRuntimeSetPerformLayoutCompat(const int value) noexcept {
-    vPerformLayoutCompat = value;
-    phtvRuntimeBarrier();
-}
-
-inline void phtvRuntimeSetRestoreOnEscape(const int value) noexcept {
-    vRestoreOnEscape = value;
-    phtvRuntimeBarrier();
-}
-
-inline void phtvRuntimeSetCustomEscapeKey(const int value) noexcept {
-    vCustomEscapeKey = value;
-    phtvRuntimeBarrier();
-}
-
-inline void phtvRuntimeSetPauseKeyEnabled(const int value) noexcept {
-    vPauseKeyEnabled = value;
-    phtvRuntimeBarrier();
-}
-
-inline void phtvRuntimeSetPauseKey(const int value) noexcept {
-    vPauseKey = value;
-    phtvRuntimeBarrier();
-}
-
-inline void phtvRuntimeSetFixRecommendBrowser(const int value) noexcept {
-    vFixRecommendBrowser = value;
-    phtvRuntimeBarrier();
-}
-
-inline void phtvRuntimeSetTempOffSpelling(const int value) noexcept {
-    vTempOffSpelling = value;
-    phtvRuntimeBarrier();
-}
-
-inline void phtvRuntimeSetOtherLanguage(const int value) noexcept {
-    vOtherLanguage = value;
-    phtvRuntimeBarrier();
-}
-
-inline void phtvRuntimeSetTempOffPHTV(const int value) noexcept {
-    vTempOffPHTV = value;
-    phtvRuntimeBarrier();
-}
-
-inline int phtvRuntimeOtherLanguage() noexcept {
-    return vOtherLanguage;
-}
-
 // MARK: - Engine output state (pData) field accessors
 
-extern vKeyHookState* pData;
-
-inline std::uint8_t phtvEngineDataCode() noexcept {
-    return pData ? pData->code : 0;
-}
-
-inline std::uint8_t phtvEngineDataExtCode() noexcept {
-    return pData ? pData->extCode : 0;
-}
-
-inline std::uint8_t phtvEngineDataBackspaceCount() noexcept {
-    return pData ? pData->backspaceCount : 0;
-}
-
-inline void phtvEngineDataSetBackspaceCount(const std::uint8_t count) noexcept {
-    if (pData) pData->backspaceCount = count;
-}
-
-inline std::uint8_t phtvEngineDataNewCharCount() noexcept {
-    return pData ? pData->newCharCount : 0;
-}
-
-inline std::uint32_t phtvEngineDataCharAt(const int index) noexcept {
-    if (!pData || index < 0 || index >= MAX_BUFF) return 0;
-    return pData->charData[index];
-}
+extern vKeyHookState* pData __attribute__((swift_attr("nonisolated(unsafe)")));
 
 inline int phtvEngineDataMacroDataSize() noexcept {
     return pData ? static_cast<int>(pData->macroData.size()) : 0;
@@ -347,28 +66,6 @@ inline int phtvEngineDataMacroDataSize() noexcept {
 inline std::uint32_t phtvEngineDataMacroDataAt(const int index) noexcept {
     if (!pData || index < 0 || index >= static_cast<int>(pData->macroData.size())) return 0;
     return pData->macroData[index];
-}
-
-// MARK: - Runtime flag getters
-
-inline int phtvRuntimeFixRecommendBrowser() noexcept {
-    return vFixRecommendBrowser;
-}
-
-inline int phtvRuntimeUpperCaseExcludedForCurrentApp() noexcept {
-    return vUpperCaseExcludedForCurrentApp;
-}
-
-inline int phtvRuntimeTempOffPHTV() noexcept {
-    return vTempOffPHTV;
-}
-
-inline int phtvRuntimeTempOffSpelling() noexcept {
-    return vTempOffSpelling;
-}
-
-inline void phtvEngineInitializeAndGetKeyHookState() noexcept {
-    pData = static_cast<vKeyHookState*>(vKeyInit());
 }
 
 #endif

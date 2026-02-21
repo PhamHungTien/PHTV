@@ -150,7 +150,8 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     @objc class func initializeAndGetKeyHookState() {
-        phtvEngineInitializeAndGetKeyHookState()
+        let rawState = vKeyInit()
+        pData = rawState?.assumingMemoryBound(to: vKeyHookState.self)
     }
 
     @objc class func notifyTableCodeChanged() {
@@ -210,47 +211,52 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func safeModeEnabled() -> Bool {
-        phtvRuntimeSafeMode()
+        vSafeMode != 0
     }
 
     class func rememberCode() -> Int32 {
-        Int32(phtvRuntimeRememberCode())
+        Int32(vRememberCode)
     }
 
     class func setRememberCode(_ value: Int32) {
-        phtvRuntimeSetRememberCode(value)
+        vRememberCode = value
+        phtvRuntimeBarrier()
     }
 
     class func currentLanguage() -> Int32 {
-        Int32(phtvRuntimeCurrentLanguage())
+        Int32(vLanguage)
     }
 
     class func setCurrentLanguage(_ language: Int32) {
-        phtvRuntimeSetCurrentLanguage(language)
+        vLanguage = language
+        phtvRuntimeBarrier()
     }
 
     class func otherLanguageMode() -> Int32 {
-        Int32(phtvRuntimeOtherLanguage())
+        Int32(vOtherLanguage)
     }
 
     class func setOtherLanguageMode(_ value: Int32) {
-        phtvRuntimeSetOtherLanguage(value)
+        vOtherLanguage = value
+        phtvRuntimeBarrier()
     }
 
     class func currentInputType() -> Int32 {
-        Int32(phtvRuntimeCurrentInputType())
+        Int32(vInputType)
     }
 
     class func setCurrentInputType(_ inputType: Int32) {
-        phtvRuntimeSetCurrentInputType(inputType)
+        vInputType = inputType
+        phtvRuntimeBarrier()
     }
 
     class func currentCodeTable() -> Int32 {
-        Int32(phtvRuntimeCurrentCodeTable())
+        Int32(vCodeTable)
     }
 
     class func setCurrentCodeTable(_ codeTable: Int32) {
-        phtvRuntimeSetCurrentCodeTable(codeTable)
+        vCodeTable = codeTable
+        phtvRuntimeBarrier()
     }
 
     class func isDoubleCode(_ codeTable: Int32) -> Bool {
@@ -258,59 +264,65 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func isSmartSwitchKeyEnabled() -> Bool {
-        phtvRuntimeIsSmartSwitchKeyEnabled()
+        vUseSmartSwitchKey != 0
     }
 
     class func setSmartSwitchKeyEnabled(_ enabled: Bool) {
-        phtvRuntimeSetUseSmartSwitchKey(enabled)
+        vUseSmartSwitchKey = enabled ? 1 : 0
+        phtvRuntimeBarrier()
     }
 
     class func isSendKeyStepByStepEnabled() -> Bool {
-        phtvRuntimeIsSendKeyStepByStepEnabled()
+        vSendKeyStepByStep != 0
     }
 
     class func setSendKeyStepByStepEnabled(_ enabled: Bool) {
-        phtvRuntimeSetSendKeyStepByStepEnabled(enabled)
+        vSendKeyStepByStep = enabled ? 1 : 0
+        phtvRuntimeBarrier()
     }
 
     class func setUpperCaseExcludedForCurrentApp(_ excluded: Bool) {
-        phtvRuntimeSetUpperCaseExcludedForCurrentApp(excluded)
+        vUpperCaseExcludedForCurrentApp = excluded ? 1 : 0
     }
 
     class func switchKeyStatus() -> Int32 {
-        Int32(phtvRuntimeSwitchKeyStatus())
+        Int32(vSwitchKeyStatus)
     }
 
     class func setSwitchKeyStatus(_ status: Int32) {
-        phtvRuntimeSetSwitchKeyStatus(status)
+        vSwitchKeyStatus = status
+        phtvRuntimeBarrier()
     }
 
     class func setShowIconOnDock(_ visible: Bool) {
-        phtvRuntimeSetShowIconOnDock(visible)
+        vShowIconOnDock = visible ? 1 : 0
+        phtvRuntimeBarrier()
     }
 
     class func showIconOnDock() -> Int32 {
-        Int32(phtvRuntimeShowIconOnDock())
+        Int32(vShowIconOnDock)
     }
 
     class func upperCaseFirstChar() -> Int32 {
-        Int32(phtvRuntimeUpperCaseFirstChar())
+        Int32(vUpperCaseFirstChar)
     }
 
     class func setUpperCaseFirstChar(_ value: Int32) {
-        phtvRuntimeSetUpperCaseFirstChar(value)
+        vUpperCaseFirstChar = value
+        phtvRuntimeBarrier()
     }
 
     class func upperCaseExcludedForCurrentApp() -> Int32 {
-        Int32(phtvRuntimeUpperCaseExcludedForCurrentApp())
+        Int32(vUpperCaseExcludedForCurrentApp)
     }
 
     class func checkSpelling() -> Int32 {
-        Int32(phtvRuntimeCheckSpelling())
+        Int32(vCheckSpelling)
     }
 
     class func setCheckSpelling(_ value: Int32) {
-        phtvRuntimeSetCheckSpelling(value)
+        vCheckSpelling = value
+        phtvRuntimeBarrier()
     }
 
     class func applyCheckSpelling() {
@@ -318,139 +330,157 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func useModernOrthography() -> Int32 {
-        Int32(phtvRuntimeUseModernOrthography())
+        Int32(vUseModernOrthography)
     }
 
     class func setUseModernOrthography(_ value: Int32) {
-        phtvRuntimeSetUseModernOrthography(value)
+        vUseModernOrthography = value
+        phtvRuntimeBarrier()
     }
 
     class func quickTelex() -> Int32 {
-        Int32(phtvRuntimeQuickTelex())
+        Int32(vQuickTelex)
     }
 
     class func setQuickTelex(_ value: Int32) {
-        phtvRuntimeSetQuickTelex(value)
+        vQuickTelex = value
+        phtvRuntimeBarrier()
     }
 
     class func freeMark() -> Int32 {
-        Int32(phtvRuntimeFreeMark())
+        Int32(vFreeMark)
     }
 
     class func setFreeMark(_ value: Int32) {
-        phtvRuntimeSetFreeMark(value)
+        vFreeMark = value
+        phtvRuntimeBarrier()
     }
 
     class func useMacro() -> Int32 {
-        Int32(phtvRuntimeUseMacro())
+        Int32(vUseMacro)
     }
 
     class func setUseMacro(_ value: Int32) {
-        phtvRuntimeSetUseMacro(value)
+        vUseMacro = value
+        phtvRuntimeBarrier()
     }
 
     class func useMacroInEnglishMode() -> Int32 {
-        Int32(phtvRuntimeUseMacroInEnglishMode())
+        Int32(vUseMacroInEnglishMode)
     }
 
     class func setUseMacroInEnglishMode(_ value: Int32) {
-        phtvRuntimeSetUseMacroInEnglishMode(value)
+        vUseMacroInEnglishMode = value
+        phtvRuntimeBarrier()
     }
 
     class func autoCapsMacro() -> Int32 {
-        Int32(phtvRuntimeAutoCapsMacro())
+        Int32(vAutoCapsMacro)
     }
 
     class func setAutoCapsMacro(_ value: Int32) {
-        phtvRuntimeSetAutoCapsMacro(value)
+        vAutoCapsMacro = value
+        phtvRuntimeBarrier()
     }
 
     class func allowConsonantZFWJ() -> Int32 {
-        Int32(phtvRuntimeAllowConsonantZFWJ())
+        Int32(vAllowConsonantZFWJ)
     }
 
     class func setAllowConsonantZFWJ(_ value: Int32) {
-        phtvRuntimeSetAllowConsonantZFWJ(value)
+        vAllowConsonantZFWJ = value
+        phtvRuntimeBarrier()
     }
 
     class func quickStartConsonant() -> Int32 {
-        Int32(phtvRuntimeQuickStartConsonant())
+        Int32(vQuickStartConsonant)
     }
 
     class func setQuickStartConsonant(_ value: Int32) {
-        phtvRuntimeSetQuickStartConsonant(value)
+        vQuickStartConsonant = value
+        phtvRuntimeBarrier()
     }
 
     class func quickEndConsonant() -> Int32 {
-        Int32(phtvRuntimeQuickEndConsonant())
+        Int32(vQuickEndConsonant)
     }
 
     class func setQuickEndConsonant(_ value: Int32) {
-        phtvRuntimeSetQuickEndConsonant(value)
+        vQuickEndConsonant = value
+        phtvRuntimeBarrier()
     }
 
     class func performLayoutCompat() -> Int32 {
-        Int32(phtvRuntimePerformLayoutCompat())
+        Int32(vPerformLayoutCompat)
     }
 
     class func setPerformLayoutCompat(_ value: Int32) {
-        phtvRuntimeSetPerformLayoutCompat(value)
+        vPerformLayoutCompat = value
+        phtvRuntimeBarrier()
     }
 
     class func restoreOnEscape() -> Int32 {
-        Int32(phtvRuntimeRestoreOnEscape())
+        Int32(vRestoreOnEscape)
     }
 
     class func setRestoreOnEscape(_ value: Int32) {
-        phtvRuntimeSetRestoreOnEscape(value)
+        vRestoreOnEscape = value
+        phtvRuntimeBarrier()
     }
 
     class func customEscapeKey() -> Int32 {
-        Int32(phtvRuntimeCustomEscapeKey())
+        Int32(vCustomEscapeKey)
     }
 
     class func setCustomEscapeKey(_ value: Int32) {
-        phtvRuntimeSetCustomEscapeKey(value)
+        vCustomEscapeKey = value
+        phtvRuntimeBarrier()
     }
 
     class func pauseKeyEnabled() -> Int32 {
-        Int32(phtvRuntimePauseKeyEnabled())
+        Int32(vPauseKeyEnabled)
     }
 
     class func setPauseKeyEnabled(_ value: Int32) {
-        phtvRuntimeSetPauseKeyEnabled(value)
+        vPauseKeyEnabled = value
+        phtvRuntimeBarrier()
     }
 
     class func pauseKey() -> Int32 {
-        Int32(phtvRuntimePauseKey())
+        Int32(vPauseKey)
     }
 
     class func setPauseKey(_ value: Int32) {
-        phtvRuntimeSetPauseKey(value)
+        vPauseKey = value
+        phtvRuntimeBarrier()
     }
 
     class func autoRestoreEnglishWord() -> Int32 {
-        Int32(phtvRuntimeAutoRestoreEnglishWord())
+        Int32(vAutoRestoreEnglishWord)
     }
 
     class func setAutoRestoreEnglishWord(_ value: Int32) {
-        phtvRuntimeSetAutoRestoreEnglishWord(value)
+        vAutoRestoreEnglishWord = value
+        phtvRuntimeBarrier()
     }
 
     class func enableEmojiHotkey() -> Int32 {
-        Int32(phtvRuntimeEnableEmojiHotkey())
+        Int32(vEnableEmojiHotkey)
     }
 
     class func emojiHotkeyModifiers() -> Int32 {
-        Int32(phtvRuntimeEmojiHotkeyModifiers())
+        Int32(vEmojiHotkeyModifiers)
     }
 
     class func emojiHotkeyKeyCode() -> Int32 {
-        Int32(phtvRuntimeEmojiHotkeyKeyCode())
+        Int32(vEmojiHotkeyKeyCode)
     }
 
     class func setEmojiHotkeySettings(_ enabled: Int32, _ modifiers: Int32, _ keyCode: Int32) {
-        phtvRuntimeSetEmojiHotkeySettings(enabled, modifiers, keyCode)
+        vEnableEmojiHotkey = enabled
+        vEmojiHotkeyModifiers = modifiers
+        vEmojiHotkeyKeyCode = keyCode
+        phtvRuntimeBarrier()
     }
 
     class func defaultSwitchHotkeyStatus() -> Int32 {
@@ -462,31 +492,35 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func setFixRecommendBrowser(_ value: Int32) {
-        phtvRuntimeSetFixRecommendBrowser(value)
+        vFixRecommendBrowser = value
+        phtvRuntimeBarrier()
     }
 
     class func setTempOffSpelling(_ value: Int32) {
-        phtvRuntimeSetTempOffSpelling(value)
+        vTempOffSpelling = value
+        phtvRuntimeBarrier()
     }
 
     class func setTempOffEngine(_ value: Int32) {
-        phtvRuntimeSetTempOffPHTV(value)
+        vTempOffPHTV = value
+        phtvRuntimeBarrier()
     }
 
     class func setSafeMode(_ enabled: Bool) {
-        phtvRuntimeSetSafeMode(enabled)
+        vSafeMode = enabled ? 1 : 0
+        phtvRuntimeBarrier()
     }
 
     class func tempOffSpelling() -> Int32 {
-        Int32(phtvRuntimeTempOffSpelling())
+        Int32(vTempOffSpelling)
     }
 
     class func tempOffEngine() -> Int32 {
-        Int32(phtvRuntimeTempOffPHTV())
+        Int32(vTempOffPHTV)
     }
 
     class func fixRecommendBrowser() -> Int32 {
-        Int32(phtvRuntimeFixRecommendBrowser())
+        Int32(vFixRecommendBrowser)
     }
 
     class func startNewSession() {
@@ -650,27 +684,52 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func engineDataCode() -> Int32 {
-        Int32(phtvEngineDataCode())
+        guard let engineData = pData else {
+            return 0
+        }
+        return Int32(engineData.pointee.code)
     }
 
     class func engineDataExtCode() -> Int32 {
-        Int32(phtvEngineDataExtCode())
+        guard let engineData = pData else {
+            return 0
+        }
+        return Int32(engineData.pointee.extCode)
     }
 
     class func engineDataBackspaceCount() -> Int32 {
-        Int32(phtvEngineDataBackspaceCount())
+        guard let engineData = pData else {
+            return 0
+        }
+        return Int32(engineData.pointee.backspaceCount)
     }
 
     class func setEngineDataBackspaceCount(_ count: UInt8) {
-        phtvEngineDataSetBackspaceCount(count)
+        guard let engineData = pData else {
+            return
+        }
+        engineData.pointee.backspaceCount = count
     }
 
     class func engineDataNewCharCount() -> Int32 {
-        Int32(phtvEngineDataNewCharCount())
+        guard let engineData = pData else {
+            return 0
+        }
+        return Int32(engineData.pointee.newCharCount)
     }
 
     class func engineDataCharAt(_ index: Int32) -> UInt32 {
-        UInt32(phtvEngineDataCharAt(index))
+        guard let engineData = pData,
+              index >= 0,
+              index < engineMaxBufferValue else {
+            return 0
+        }
+
+        return withUnsafePointer(to: engineData.pointee.charData) { bufferPointer in
+            bufferPointer.withMemoryRebound(to: UInt32.self, capacity: Int(engineMaxBufferValue)) { elementPointer in
+                elementPointer[Int(index)]
+            }
+        }
     }
 
     class func engineDataMacroDataSize() -> Int32 {
