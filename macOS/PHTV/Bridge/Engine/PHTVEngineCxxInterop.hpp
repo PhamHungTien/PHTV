@@ -421,27 +421,8 @@ inline int phtvRuntimeTempOffSpelling() noexcept {
     return vTempOffSpelling;
 }
 
-// MARK: - Engine function wrappers
-
 inline void phtvEngineInitializeAndGetKeyHookState() noexcept {
     pData = static_cast<vKeyHookState*>(vKeyInit());
-}
-
-inline void phtvEngineHandleKeyboardKeyDown(const std::uint16_t keyCode,
-                                             const std::uint8_t capsStatus,
-                                             const bool hasOtherControlKey) noexcept {
-    vKeyHandleEvent(vKeyEvent::Keyboard, vKeyEventState::KeyDown,
-                    keyCode, capsStatus, hasOtherControlKey);
-}
-
-inline void phtvEngineHandleMouseDown() noexcept {
-    vKeyHandleEvent(vKeyEvent::Mouse, vKeyEventState::MouseDown, 0);
-}
-
-inline void phtvEngineHandleEnglishModeKeyDown(const std::uint16_t keyCode,
-                                                const bool isCaps,
-                                                const bool hasOtherControlKey) noexcept {
-    vEnglishMode(vKeyEventState::KeyDown, keyCode, isCaps, hasOtherControlKey);
 }
 
 #endif

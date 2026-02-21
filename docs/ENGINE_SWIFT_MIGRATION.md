@@ -57,6 +57,8 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - Swift facade goi truc tiep `startNewSession`, `clearCustomDictionary`
 - Da bo wrappers dictionary init:
   - Swift facade tao `std.string` truc tiep va goi `initEnglishDictionary`, `initVietnameseDictionary`
+- Da bo wrappers key-event forwarding:
+  - Swift facade goi truc tiep `vKeyHandleEvent` va `vEnglishMode`
 
 ## Lo trinh migrate
 
