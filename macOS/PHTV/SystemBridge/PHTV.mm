@@ -410,10 +410,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     void RequestNewSession() {
         RequestNewSessionInternal(true);
     }
-
-    const char *PHTVBuildDateCString() {
-        return __DATE__;
-    }
     
     void InsertKeyLength(const Uint8& len) {
         _syncKey.push_back(len);

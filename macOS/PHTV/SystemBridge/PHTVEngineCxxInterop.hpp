@@ -29,7 +29,6 @@ extern "C" CGEventRef PHTVCallback(CGEventTapProxy proxy,
                                    CGEventRef event,
                                    void *refcon);
 extern "C" void RequestNewSession(void);
-extern "C" const char *PHTVBuildDateCString(void);
 
 inline void phtvRuntimeInitializeEventTapCore() noexcept {
     PHTVInit();
@@ -40,10 +39,6 @@ inline CGEventRef phtvRuntimeHandleEventTapCallback(CGEventTapProxy proxy,
                                                      CGEventRef event,
                                                      void *refcon) noexcept {
     return PHTVCallback(proxy, type, event, refcon);
-}
-
-inline const char *phtvBuildDateCString() noexcept {
-    return PHTVBuildDateCString();
 }
 
 inline void phtvRuntimeRequestNewSession() noexcept {

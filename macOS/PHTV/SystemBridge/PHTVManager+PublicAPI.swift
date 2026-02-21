@@ -9,6 +9,19 @@ import AppKit
 import Foundation
 
 @objc extension PHTVManager {
+    private class func resolvedBuildDateString() -> String {
+        guard let executableURL = Bundle.main.executableURL,
+              let attributes = try? FileManager.default.attributesOfItem(atPath: executableURL.path),
+              let modifiedAt = attributes[.modificationDate] as? Date else {
+            return ""
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "MMM d yyyy"
+        return formatter.string(from: modifiedAt)
+    }
+
     @objc(hasPermissionLost)
     class func hasPermissionLost() -> Bool {
         PHTVEventTapService.hasPermissionLost()
@@ -98,7 +111,7 @@ import Foundation
 
     @objc(getBuildDate)
     class func getBuildDate() -> String {
-        String(validatingCString: phtvBuildDateCString()) ?? ""
+        resolvedBuildDateString()
     }
 
     @objc(showMessage:message:subMsg:)
