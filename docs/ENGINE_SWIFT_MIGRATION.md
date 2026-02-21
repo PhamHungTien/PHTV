@@ -64,6 +64,7 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - Bo wrapper `hotkeyDisplayCharacter`, call site goi truc tiep `macroKeyCodeToCharacter(...)`
   - Bo wrappers default setting (`defaultSwitchHotkeyStatus`, `defaultPauseKey`), call site dung truc tiep `Defaults`/`KeyCode`
   - Bo wrappers pass-through `applyCheckSpelling`, `tempOffSpellChecking`, `tempOffEngineNow`; call site goi truc tiep C API
+  - Bo wrappers key-event/session forwarding (`handleMouseDown`, `handleKeyboardKeyDown`, `handleEnglishModeKeyDown`, `primeUpperCaseFirstChar`, `restoreToRawKeys`, `barrier`); call site goi truc tiep C API/`OSMemoryBarrier`
 - Da bo wrappers key-event forwarding:
   - Swift facade goi truc tiep `vKeyHandleEvent` va `vEnglishMode`
 - Da bo wrappers code-table lookup:

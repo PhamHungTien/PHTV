@@ -662,10 +662,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
         KeyCode.pageUp,
         KeyCode.pageDown
     ]
-    private static let keyEventKeyboard = vKeyEvent(rawValue: 0)
-    private static let keyEventMouse = vKeyEvent(rawValue: 1)
-    private static let keyEventStateKeyDown = vKeyEventState(rawValue: 0)
-    private static let keyEventStateMouseDown = vKeyEventState(rawValue: 2)
     // Mirror keyCodeToCharacter mapping in Core/Engine/Vietnamese.cpp.
     private static let macroKeyToCharacterUnshifted: [UInt16: UInt16] = [
         0: 0x0061, 11: 0x0062, 8: 0x0063, 2: 0x0064, 14: 0x0065, 3: 0x0066, 5: 0x0067, 4: 0x0068,
@@ -785,44 +781,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func eventMarkerValue() -> Int64 {
         eventMarker
-    }
-
-    class func handleMouseDown() {
-        vKeyHandleEvent(keyEventMouse, keyEventStateMouseDown, 0, 0, false)
-    }
-
-    class func handleKeyboardKeyDown(
-        keyCode: UInt16,
-        capsStatus: UInt8,
-        hasOtherControlKey: Bool
-    ) {
-        vKeyHandleEvent(
-            keyEventKeyboard,
-            keyEventStateKeyDown,
-            keyCode,
-            capsStatus,
-            hasOtherControlKey
-        )
-    }
-
-    class func handleEnglishModeKeyDown(
-        keyCode: UInt16,
-        isCaps: Bool,
-        hasOtherControlKey: Bool
-    ) {
-        vEnglishMode(keyEventStateKeyDown, keyCode, isCaps, hasOtherControlKey)
-    }
-
-    class func primeUpperCaseFirstChar() {
-        vPrimeUpperCaseFirstChar()
-    }
-
-    class func restoreToRawKeys() -> Bool {
-        vRestoreToRawKeys()
-    }
-
-    class func barrier() {
-        OSMemoryBarrier()
     }
 
     class func safeModeEnabled() -> Bool {

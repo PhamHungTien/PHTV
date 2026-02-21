@@ -14,6 +14,8 @@ import Foundation
 final class PHTVEngineSessionService: NSObject {
 
     private static let kSyncKeyReserveSize: Int32 = 256
+    private static let keyEventMouse = vKeyEvent(rawValue: 1)
+    private static let keyEventStateMouseDown = vKeyEventState(rawValue: 2)
 
     @objc class func boot() {
         PHTVCoreSettingsBootstrapService.loadFromUserDefaults()
@@ -34,7 +36,7 @@ final class PHTVEngineSessionService: NSObject {
         PHTVEventContextBridgeService.invalidateAccessibilityContextCaches()
 
         // Acquire barrier: ensure we see latest config changes before processing
-        PHTVEngineRuntimeFacade.barrier()
+        OSMemoryBarrier()
 
         #if DEBUG
         let dbgInputType = PHTVEngineRuntimeFacade.currentInputType()
@@ -50,7 +52,7 @@ final class PHTVEngineSessionService: NSObject {
         // - _specialChar and _typingStates (critical for typing state)
         // - vCheckSpelling restoration
         // - _willTempOffEngine flag
-        PHTVEngineRuntimeFacade.handleMouseDown()
+        vKeyHandleEvent(keyEventMouse, keyEventStateMouseDown, 0, 0, false)
 
         let currentCodeTable = PHTVEngineRuntimeFacade.currentCodeTable()
         let sessionResetTransition = PHTVHotkeyService.sessionResetTransition(
@@ -64,12 +66,12 @@ final class PHTVEngineSessionService: NSObject {
             PHTVTypingSyncStateService.clearSyncKey()
         }
         if sessionResetTransition.shouldPrimeUppercaseFirstChar {
-            PHTVEngineRuntimeFacade.primeUpperCaseFirstChar()
+            vPrimeUpperCaseFirstChar()
         }
         PHTVModifierRuntimeStateService.applySessionResetTransition(sessionResetTransition)
 
         // Release barrier: ensure state reset is visible to all threads
-        PHTVEngineRuntimeFacade.barrier()
+        OSMemoryBarrier()
 
         #if DEBUG
         NSLog("[RequestNewSession] Session reset complete")

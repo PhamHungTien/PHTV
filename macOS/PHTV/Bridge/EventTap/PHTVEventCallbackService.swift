@@ -18,6 +18,8 @@ final class PHTVEventCallbackService {
     private static let kAppSwitchCacheDurationMs: UInt64 = 100
     private static let kTextReplacementDeleteWindowMs: UInt64 = 30000
     private static let kAppCharacteristicsCacheMaxAgeMs: UInt64 = 10000
+    private static let keyEventKeyboard = vKeyEvent(rawValue: 0)
+    private static let keyEventStateKeyDown = vKeyEventState(rawValue: 0)
     #if DEBUG
     private static let kDebugLogThrottleMs: UInt64 = 500
     #endif
@@ -144,7 +146,7 @@ final class PHTVEventCallbackService {
                     uppercaseEnabled: Int32(PHTVEngineRuntimeFacade.upperCaseFirstChar()),
                     uppercaseExcluded: Int32(PHTVEngineRuntimeFacade.upperCaseExcludedForCurrentApp()))
                 if shouldPrime {
-                    PHTVEngineRuntimeFacade.primeUpperCaseFirstChar()
+                    vPrimeUpperCaseFirstChar()
                 }
             }
 
@@ -194,7 +196,7 @@ final class PHTVEventCallbackService {
                 // Releasing modifiers - check for restore modifier key first
                 if shouldAttemptRestore {
                     // Restore modifier released without any other key press - trigger restore
-                    if PHTVEngineRuntimeFacade.restoreToRawKeys() {
+                    if vRestoreToRawKeys() {
                         // Successfully restored - pData now contains restore info
                         // Send backspaces to delete Vietnamese characters
                         let bsCount = Int(PHTVEngineRuntimeFacade.engineDataBackspaceCount())
@@ -251,12 +253,11 @@ final class PHTVEventCallbackService {
         if currentLanguage == 0 {
             if PHTVEngineRuntimeFacade.useMacro() != 0 && PHTVEngineRuntimeFacade.useMacroInEnglishMode() != 0 &&
                type == .keyDown {
-                PHTVEngineRuntimeFacade.handleEnglishModeKeyDown(
-                    keyCode: eventKeycode,
-                    isCaps: eventFlags.contains(.maskShift) || eventFlags.contains(.maskAlphaShift),
-                    hasOtherControlKey: PHTVEventContextBridgeService.hasOtherControlKey(
-                        withFlags: eventFlags.rawValue)
-                )
+                vEnglishMode(
+                    keyEventStateKeyDown,
+                    eventKeycode,
+                    eventFlags.contains(.maskShift) || eventFlags.contains(.maskAlphaShift),
+                    PHTVEventContextBridgeService.hasOtherControlKey(withFlags: eventFlags.rawValue))
 
                 if Int(PHTVEngineRuntimeFacade.engineDataCode()) == PHTVEngineRuntimeFacade.engineReplaceMacroCode() {
                     _ = PHTVEventContextBridgeService.prepareTargetContextAndConfigureRuntime(
@@ -345,12 +346,12 @@ final class PHTVEventCallbackService {
         // Send event signal to Engine
         let capsStatus: UInt8 = eventFlags.contains(.maskShift) ? 1
             : (eventFlags.contains(.maskAlphaShift) ? 2 : 0)
-        PHTVEngineRuntimeFacade.handleKeyboardKeyDown(
-            keyCode: eventKeycode,
-            capsStatus: capsStatus,
-            hasOtherControlKey: PHTVEventContextBridgeService.hasOtherControlKey(
-                withFlags: eventFlags.rawValue)
-        )
+        vKeyHandleEvent(
+            keyEventKeyboard,
+            keyEventStateKeyDown,
+            eventKeycode,
+            capsStatus,
+            PHTVEventContextBridgeService.hasOtherControlKey(withFlags: eventFlags.rawValue))
 
         #if DEBUG
         if eventKeycode == CGKeyCode(KeyCode.space) {
