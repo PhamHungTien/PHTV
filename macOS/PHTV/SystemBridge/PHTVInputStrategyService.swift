@@ -31,18 +31,9 @@ enum PHTVEngineSignalAction: Int32 {
     case replaceMacro = 3
 }
 
-@objcMembers
-final class PHTVBackspaceAdjustmentBox: NSObject {
+private struct PHTVBackspaceAdjustment {
     let action: Int32
     let adjustedBackspaceCount: Int32
-
-    init(
-        action: Int32,
-        adjustedBackspaceCount: Int32
-    ) {
-        self.action = action
-        self.adjustedBackspaceCount = adjustedBackspaceCount
-    }
 }
 
 @objcMembers
@@ -111,8 +102,7 @@ final class PHTVMacroPlanBox: NSObject {
     }
 }
 
-@objcMembers
-final class PHTVInputStrategyBox: NSObject {
+private struct PHTVInputStrategy {
     let isSpecialApp: Bool
     let isPotentialShortcut: Bool
     let isBrowserFix: Bool
@@ -120,24 +110,6 @@ final class PHTVInputStrategyBox: NSObject {
     let shouldTryBrowserAddressBarFix: Bool
     let shouldTryLegacyNonBrowserFix: Bool
     let shouldLogSpaceSkip: Bool
-
-    init(
-        isSpecialApp: Bool,
-        isPotentialShortcut: Bool,
-        isBrowserFix: Bool,
-        shouldSkipSpace: Bool,
-        shouldTryBrowserAddressBarFix: Bool,
-        shouldTryLegacyNonBrowserFix: Bool,
-        shouldLogSpaceSkip: Bool
-    ) {
-        self.isSpecialApp = isSpecialApp
-        self.isPotentialShortcut = isPotentialShortcut
-        self.isBrowserFix = isBrowserFix
-        self.shouldSkipSpace = shouldSkipSpace
-        self.shouldTryBrowserAddressBarFix = shouldTryBrowserAddressBarFix
-        self.shouldTryLegacyNonBrowserFix = shouldTryLegacyNonBrowserFix
-        self.shouldLogSpaceSkip = shouldLogSpaceSkip
-    }
 }
 
 @objcMembers
@@ -177,8 +149,7 @@ final class PHTVProcessSignalPlanBox: NSObject {
 
 @objcMembers
 final class PHTVInputStrategyService: NSObject {
-    @objc(strategyForSpaceKey:slashKey:extCode:backspaceCount:isBrowserApp:isSpotlightTarget:needsPrecomposedBatched:browserFixEnabled:isNotionApp:)
-    class func strategy(
+    private class func strategy(
         forSpaceKey isSpaceKey: Bool,
         slashKey isSlashKey: Bool,
         extCode: Int32,
@@ -188,7 +159,7 @@ final class PHTVInputStrategyService: NSObject {
         needsPrecomposedBatched: Bool,
         browserFixEnabled: Bool,
         isNotionApp: Bool
-    ) -> PHTVInputStrategyBox {
+    ) -> PHTVInputStrategy {
         let isSpecialApp = isSpotlightTarget || needsPrecomposedBatched
         let isPotentialShortcut = isSlashKey
         let isBrowserFix = browserFixEnabled && isBrowserApp
@@ -219,7 +190,7 @@ final class PHTVInputStrategyService: NSObject {
             extCode != 4 &&
             !isSpecialApp
 
-        return PHTVInputStrategyBox(
+        return PHTVInputStrategy(
             isSpecialApp: isSpecialApp,
             isPotentialShortcut: isPotentialShortcut,
             isBrowserFix: isBrowserFix,
@@ -230,24 +201,23 @@ final class PHTVInputStrategyService: NSObject {
         )
     }
 
-    @objc(backspaceAdjustmentForBrowserAddressBarFix:addressBarDetected:legacyNonBrowserFix:containsUnicodeCompound:notionCodeBlockDetected:backspaceCount:)
-    class func backspaceAdjustment(
+    private class func backspaceAdjustment(
         forBrowserAddressBarFix shouldTryBrowserAddressBarFix: Bool,
         addressBarDetected isAddressBarDetected: Bool,
         legacyNonBrowserFix shouldTryLegacyNonBrowserFix: Bool,
         containsUnicodeCompound: Bool,
         notionCodeBlockDetected isNotionCodeBlockDetected: Bool,
         backspaceCount: Int32
-    ) -> PHTVBackspaceAdjustmentBox {
+    ) -> PHTVBackspaceAdjustment {
         guard backspaceCount > 0 else {
-            return PHTVBackspaceAdjustmentBox(
+            return PHTVBackspaceAdjustment(
                 action: PHTVBackspaceAdjustmentAction.none.rawValue,
                 adjustedBackspaceCount: max(0, backspaceCount)
             )
         }
 
         if shouldTryBrowserAddressBarFix && isAddressBarDetected {
-            return PHTVBackspaceAdjustmentBox(
+            return PHTVBackspaceAdjustment(
                 action: PHTVBackspaceAdjustmentAction.sendEmptyCharacter.rawValue,
                 adjustedBackspaceCount: backspaceCount + 1
             )
@@ -255,18 +225,18 @@ final class PHTVInputStrategyService: NSObject {
 
         if shouldTryLegacyNonBrowserFix && !isNotionCodeBlockDetected {
             if containsUnicodeCompound {
-                return PHTVBackspaceAdjustmentBox(
+                return PHTVBackspaceAdjustment(
                     action: PHTVBackspaceAdjustmentAction.sendShiftLeftThenBackspace.rawValue,
                     adjustedBackspaceCount: backspaceCount - 1
                 )
             }
-            return PHTVBackspaceAdjustmentBox(
+            return PHTVBackspaceAdjustment(
                 action: PHTVBackspaceAdjustmentAction.sendEmptyCharacter.rawValue,
                 adjustedBackspaceCount: backspaceCount + 1
             )
         }
 
-        return PHTVBackspaceAdjustmentBox(
+        return PHTVBackspaceAdjustment(
             action: PHTVBackspaceAdjustmentAction.none.rawValue,
             adjustedBackspaceCount: backspaceCount
         )
@@ -308,8 +278,7 @@ final class PHTVInputStrategyService: NSObject {
         )
     }
 
-    @objc(sanitizedBackspaceCountForAdjustedCount:maxBuffer:safetyLimit:)
-    class func sanitizedBackspaceCount(
+    private class func sanitizedBackspaceCount(
         forAdjustedCount adjustedCount: Int32,
         maxBuffer: Int32,
         safetyLimit: Int32
@@ -419,8 +388,7 @@ final class PHTVInputStrategyService: NSObject {
         }
     }
 
-    @objc(shouldBypassSpaceForFigmaWithBundleId:keyCode:backspaceCount:newCharCount:spaceKeyCode:)
-    class func shouldBypassSpaceForFigma(
+    private class func shouldBypassSpaceForFigma(
         withBundleId bundleId: String?,
         keyCode: Int32,
         backspaceCount: Int32,
