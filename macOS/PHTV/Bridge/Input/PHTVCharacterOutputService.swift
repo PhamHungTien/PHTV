@@ -168,6 +168,7 @@ final class PHTVCharacterOutputService: NSObject {
             appNeedsStepByStep: PHTVEventRuntimeContextService.appNeedsStepByStep())
 
         let isSpotlightLike = macroPlan.isSpotlightLikeTarget
+        let macroDataSize = Int(PHTVEngineRuntimeFacade.engineDataMacroDataSize())
 
         #if DEBUG
         NSLog("[Macro] handleMacro: target='%@', isSpotlight=%d (postToHID=%d), backspaceCount=%d, macroSize=%d",
@@ -175,15 +176,15 @@ final class PHTVCharacterOutputService: NSObject {
               isSpotlightLike ? 1 : 0,
               PHTVEventRuntimeContextService.postToHIDTapEnabled() ? 1 : 0,
               Int(PHTVEngineRuntimeFacade.engineDataBackspaceCount()),
-              PHTVEngineRuntimeFacade.engineDataMacroDataSize())
+              macroDataSize)
         #endif
 
         if macroPlan.shouldTryAXReplacement {
+            let macroData = macroDataSnapshot(count: macroDataSize)
             let replacedByAX = PHTVEngineDataBridge.replaceSpotlightLikeMacroIfNeeded(
                 isSpotlightLike ? 1 : 0,
                 backspaceCount: Int32(PHTVEngineRuntimeFacade.engineDataBackspaceCount()),
-                macroData: PHTVEngineRuntimeFacade.engineDataMacroDataPointer(),
-                count: Int32(PHTVEngineRuntimeFacade.engineDataMacroDataSize()),
+                macroData: macroData,
                 codeTable: Int32(PHTVEngineRuntimeFacade.currentCodeTable()),
                 safeMode: PHTVEngineRuntimeFacade.safeModeEnabled())
             if replacedByAX {
@@ -312,5 +313,15 @@ final class PHTVCharacterOutputService: NSObject {
                 break
             }
         }
+    }
+
+    private static func macroDataSnapshot(count: Int) -> [UInt32] {
+        guard count > 0 else { return [] }
+        var snapshot: [UInt32] = []
+        snapshot.reserveCapacity(count)
+        for index in 0..<count {
+            snapshot.append(PHTVEngineRuntimeFacade.engineDataMacroDataAt(Int32(index)))
+        }
+        return snapshot
     }
 }

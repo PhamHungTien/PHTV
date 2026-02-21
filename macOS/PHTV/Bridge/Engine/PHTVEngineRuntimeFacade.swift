@@ -536,10 +536,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
         UInt32(phtvEngineDataMacroDataAt(index))
     }
 
-    class func engineDataMacroDataPointer() -> UnsafePointer<UInt32>? {
-        phtvEngineDataMacroDataPtr()
-    }
-
     class func lowByte(_ value: UInt32) -> UInt16 {
         UInt16(phtvEngineLowByte(value))
     }
@@ -550,14 +546,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func unicodeCompoundMarkAt(_ index: Int32) -> UInt16 {
         phtvEngineUnicodeCompoundMarkAt(index)
-    }
-
-    class func interopProbeValue() -> Int32 {
-        Int32(phtvEngineInteropProbeValue())
-    }
-
-    class func interopAdd(_ lhs: Int32, _ rhs: Int32) -> Int32 {
-        Int32(phtvEngineInteropAdd(lhs, rhs))
     }
 
     class func isNavigationKey(_ keyCode: UInt16) -> Bool {

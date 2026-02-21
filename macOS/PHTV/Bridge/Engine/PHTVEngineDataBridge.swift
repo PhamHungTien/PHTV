@@ -103,13 +103,11 @@ final class PHTVEngineDataBridge: NSObject {
         return "Chuyển mã nhanh - [\(components.joined(separator: " + ").uppercased())]"
     }
 
-    @objc(macroStringFromMacroData:count:codeTable:)
     class func macroString(
-        fromMacroData macroData: UnsafePointer<UInt32>?,
-        count: Int32,
+        fromMacroData macroData: [UInt32],
         codeTable: Int32
-    ) -> NSString {
-        guard let macroData, count > 0 else {
+    ) -> String {
+        guard !macroData.isEmpty else {
             return ""
         }
 
@@ -118,8 +116,7 @@ final class PHTVEngineDataBridge: NSObject {
         let pureCharacterMask = PHTVEngineRuntimeFacade.pureCharacterMask()
 
         var resultScalars = String.UnicodeScalarView()
-        for index in 0..<Int(count) {
-            let data = macroData[index]
+        for data in macroData {
             var character: UInt16 = 0
 
             if (data & pureCharacterMask) != 0 {
@@ -141,15 +138,13 @@ final class PHTVEngineDataBridge: NSObject {
             resultScalars.append(scalar)
         }
 
-        return String(resultScalars) as NSString
+        return String(resultScalars)
     }
 
-    @objc(replaceSpotlightLikeMacroIfNeeded:backspaceCount:macroData:count:codeTable:safeMode:)
     class func replaceSpotlightLikeMacroIfNeeded(
         _ spotlightLike: Int32,
         backspaceCount: Int32,
-        macroData: UnsafePointer<UInt32>?,
-        count: Int32,
+        macroData: [UInt32],
         codeTable: Int32,
         safeMode: Bool
     ) -> Bool {
@@ -159,9 +154,8 @@ final class PHTVEngineDataBridge: NSObject {
 
         let macroText = macroString(
             fromMacroData: macroData,
-            count: count,
             codeTable: codeTable
-        ) as String
+        )
         let shouldVerify = backspaceCount > 0
 
         return PHTVEventContextBridgeService.replaceFocusedTextViaAX(

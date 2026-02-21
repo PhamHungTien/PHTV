@@ -5,6 +5,7 @@
 //  Lightweight regression checks for debug builds.
 //
 
+import Carbon
 import Foundation
 
 #if DEBUG
@@ -107,13 +108,18 @@ enum DebugSelfTests {
     }
 
     private static func runCxxInteropChecks() {
-        let probe = Int(PHTVEngineRuntimeFacade.interopProbeValue())
-        let sum = Int(PHTVEngineRuntimeFacade.interopAdd(20, 22))
+        let packedValue: UInt32 = 0x1234
+        let low = Int(PHTVEngineRuntimeFacade.lowByte(packedValue))
+        let high = Int(PHTVEngineRuntimeFacade.hiByte(packedValue))
+        let spaceKey = Int(PHTVEngineRuntimeFacade.spaceKeyCode())
+        let maxBuffer = Int(PHTVEngineRuntimeFacade.engineMaxBuffer())
         assertCondition(
-            probe == 20260221 && sum == 42,
+            low == 0x34 && high == 0x12 && spaceKey == kVK_Space && maxBuffer > 0,
             "Swift/C++ interop check should pass"
         )
-        PHTVLogger.shared.debug("[CxxInterop] probe=\(probe), sum=\(sum), valid=true")
+        PHTVLogger.shared.debug(
+            "[CxxInterop] low=\(low), high=\(high), spaceKey=\(spaceKey), maxBuffer=\(maxBuffer), valid=true"
+        )
     }
 
     private static func runConvertToolParityChecks() {

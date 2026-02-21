@@ -24,15 +24,6 @@ extern volatile int vEmojiHotkeyKeyCode;
 extern volatile int vSafeMode;
 extern int vShowIconOnDock;
 
-inline constexpr int phtvEngineInteropProbeValue() noexcept {
-    return 20260221;
-}
-
-inline int phtvEngineInteropAdd(const int lhs, const int rhs) noexcept {
-    return lhs + rhs;
-}
-
-
 inline void phtvEngineInitializeMacroMap(const std::uint8_t *data, const int length) noexcept {
     if (!data || length <= 0) {
         initMacroMap(nullptr, 0);
@@ -561,10 +552,6 @@ inline int phtvEngineDataMacroDataSize() noexcept {
 inline std::uint32_t phtvEngineDataMacroDataAt(const int index) noexcept {
     if (!pData || index < 0 || index >= static_cast<int>(pData->macroData.size())) return 0;
     return pData->macroData[index];
-}
-
-inline const std::uint32_t* phtvEngineDataMacroDataPtr() noexcept {
-    return pData ? pData->macroData.data() : nullptr;
 }
 
 // MARK: - Engine action codes
