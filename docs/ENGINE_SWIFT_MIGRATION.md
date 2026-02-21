@@ -116,6 +116,9 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - Dong bo lai cache count custom dictionary trong fallback detector + them case regression `qes` de khoa behavior custom-English restore
   - Da xoa API wrapper C++ legacy trong `EnglishWordDetector.cpp` va xoa file header `Core/Engine/EnglishWordDetector.h`
   - Da dua `EnglishWordDetector.cpp` ra khoi app target: fallback detector runtime nay chay trong `tests/engine/EnglishWordDetectorFallback.cpp` cho regression binary standalone
+- Da tach weak fallback runtime/macro khoi `Engine.cpp`:
+  - Cac fallback `phtvRuntime*` va `phtvLoadMacroMapFromBinary` / `phtvFindMacroContentForNormalizedKeys` duoc chuyen sang `tests/engine/EnglishWordDetectorFallback.cpp`
+  - `Engine.cpp` khong con chua code fallback cho regression standalone
 - Da xoa C++ global runtime pointer bridge file:
   - Xoa `Bridge/Engine/PHTVEngineGlobals.cpp`
   - HookState duoc truy cap qua C bridge `phtvEngineHook*` (khong con pointer C++ trong Swift)
@@ -137,11 +140,11 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da dua `vRestoreOnEscape` sang Swift storage:
   - Them C bridge `phtvRuntimeRestoreOnEscapeEnabled()` do `PHTVEngineRuntimeFacade.swift` cung cap
   - `Engine.cpp` doc runtime setting qua bridge thay vi global C++
-  - Giu weak fallback trong `Engine.cpp` de regression binary standalone (khong link Swift) van chay
+  - Giu weak fallback trong `tests/engine/EnglishWordDetectorFallback.cpp` de regression binary standalone (khong link Swift) van chay
 - Da dua `vAutoCapsMacro` sang Swift storage:
   - Them C bridge `phtvRuntimeAutoCapsMacroValue()` do `PHTVEngineRuntimeFacade.swift` cung cap
   - Logic macro trong `Engine.cpp` doc runtime setting qua bridge thay vi global C++
-  - Giu weak fallback trong `Engine.cpp` de regression binary standalone van giu behavior mac dinh
+  - Giu weak fallback trong `tests/engine/EnglishWordDetectorFallback.cpp` de regression binary standalone van giu behavior mac dinh
 - Da don dep module macro C++ tach rieng:
   - Gop `initMacroMap(...)` va `findMacro(...)` vao `Engine.cpp`
   - Xoa `Core/Engine/Macro.cpp`
@@ -153,37 +156,37 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da dua `vAutoRestoreEnglishWord` sang Swift storage:
   - Them C bridge `phtvRuntimeAutoRestoreEnglishWordEnabled()` do `PHTVEngineRuntimeFacade.swift` cung cap
   - `Engine.cpp` doc runtime setting qua bridge thay vi global C++
-  - Giu weak fallback trong `Engine.cpp` de regression binary standalone van giu behavior mac dinh
+  - Giu weak fallback trong `tests/engine/EnglishWordDetectorFallback.cpp` de regression binary standalone van giu behavior mac dinh
 - Da dua cap state auto-uppercase sang Swift storage:
   - `vUpperCaseFirstChar`
   - `vUpperCaseExcludedForCurrentApp`
   - `Engine.cpp` doc qua `phtvRuntimeUpperCaseFirstCharEnabled()` va `phtvRuntimeUpperCaseExcludedForCurrentApp()`
-  - Giu weak fallback trong `Engine.cpp` cho regression binary standalone
+  - Giu weak fallback trong `tests/engine/EnglishWordDetectorFallback.cpp` cho regression binary standalone
 - Da dua `vUseMacro` sang Swift storage:
   - Them C bridge `phtvRuntimeUseMacroEnabled()` do `PHTVEngineRuntimeFacade.swift` cung cap
   - `Engine.cpp` doc runtime setting qua bridge thay vi global C++
-  - Giu weak fallback trong `Engine.cpp` de regression binary standalone van giu behavior mac dinh
+  - Giu weak fallback trong `tests/engine/EnglishWordDetectorFallback.cpp` de regression binary standalone van giu behavior mac dinh
 - Da dua nhom Quick Consonant flags sang Swift storage:
   - `vAllowConsonantZFWJ`
   - `vQuickStartConsonant`
   - `vQuickEndConsonant`
   - `Engine.cpp` doc qua cac bridge `phtvRuntimeAllowConsonantZFWJEnabled()`, `phtvRuntimeQuickStartConsonantEnabled()`, `phtvRuntimeQuickEndConsonantEnabled()`
-  - Giu weak fallback trong `Engine.cpp` de regression binary standalone van giu default cu
+  - Giu weak fallback trong `tests/engine/EnglishWordDetectorFallback.cpp` de regression binary standalone van giu default cu
 - Da dua nhom typing behavior flags sang Swift storage:
   - `vUseModernOrthography`
   - `vQuickTelex`
   - `vFreeMark`
   - `Engine.cpp` doc qua cac bridge `phtvRuntimeUseModernOrthographyEnabled()`, `phtvRuntimeQuickTelexEnabled()`, `phtvRuntimeFreeMarkEnabled()`
-  - Giu weak fallback trong `Engine.cpp` de regression binary standalone van giu default cu
+  - Giu weak fallback trong `tests/engine/EnglishWordDetectorFallback.cpp` de regression binary standalone van giu default cu
 - Da dua `vCheckSpelling` sang Swift storage:
   - Them bridge `phtvRuntimeCheckSpellingValue()` va `phtvRuntimeSetCheckSpellingValue(...)` trong `PHTVEngineRuntimeFacade.swift`
   - `Engine.cpp` doc/ghi spell-check runtime qua bridge thay vi global C++
-  - Giu weak fallback trong `Engine.cpp` cho regression binary standalone
+  - Giu weak fallback trong `tests/engine/EnglishWordDetectorFallback.cpp` cho regression binary standalone
 - Da dua `vInputType` va `vCodeTable` sang Swift storage:
   - Them bridge `phtvRuntimeInputTypeValue()` va `phtvRuntimeCodeTableValue()` trong `PHTVEngineRuntimeFacade.swift`
   - `Engine.cpp` lay snapshot runtime dau moi key event de dung trong xu ly Telex/VNI va code table conversion
   - Bo extern/definition tuong ung khoi `PHTVEngineCxxInterop.hpp`, `Engine.h`, `PHTVRuntimeState.cpp`
-  - Giu weak fallback trong `Engine.cpp` cho regression binary standalone
+  - Giu weak fallback trong `tests/engine/EnglishWordDetectorFallback.cpp` cho regression binary standalone
   - Don dep macro runtime cu trong `EngineDataTypes.inc` (`PHTV_CURRENT_INPUT_TYPE` / `IS_SPECIALKEY`) vi `Engine.cpp` da tu quan ly snapshot input type
 - Da bo file interop wrapper C++:
   - Xoa `Bridge/Engine/PHTVEngineCxxInterop.hpp`

@@ -74,6 +74,95 @@ static volatile int customEnglishWordCountCache = 0;
 static volatile int customVietnameseWordCountCache = 0;
 static std::unordered_set<std::string> customEnglishWordsFallback;
 static std::unordered_set<std::string> customVietnameseWordsFallback;
+static int fallbackCheckSpellingValue = 1;
+static int fallbackInputTypeValue = vTelex;
+static int fallbackCodeTableValue = 0;
+
+extern "C" __attribute__((weak)) int phtvRuntimeRestoreOnEscapeEnabled() {
+    // Standalone regression binary fallback: keep restore feature enabled by default.
+    return 1;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeAutoRestoreEnglishWordEnabled() {
+    // Standalone regression binary fallback: keep auto-restore feature enabled by default.
+    return 1;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeUpperCaseFirstCharEnabled() {
+    return 0;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeUpperCaseExcludedForCurrentApp() {
+    return 0;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeUseMacroEnabled() {
+    return 1;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeInputTypeValue() {
+    return fallbackInputTypeValue;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeCodeTableValue() {
+    return fallbackCodeTableValue;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeCheckSpellingValue() {
+    return fallbackCheckSpellingValue;
+}
+
+extern "C" __attribute__((weak)) void phtvRuntimeSetCheckSpellingValue(int value) {
+    fallbackCheckSpellingValue = value;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeUseModernOrthographyEnabled() {
+    return 1;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeQuickTelexEnabled() {
+    return 0;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeFreeMarkEnabled() {
+    return 0;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeAllowConsonantZFWJEnabled() {
+    return 1;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeQuickStartConsonantEnabled() {
+    return 0;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeQuickEndConsonantEnabled() {
+    return 0;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeAutoCapsMacroValue() {
+    // Standalone regression binary fallback: preserve legacy default OFF.
+    return 0;
+}
+
+extern "C" __attribute__((weak)) void phtvLoadMacroMapFromBinary(const uint8_t* data, int size) {
+    (void)data;
+    (void)size;
+}
+
+extern "C" __attribute__((weak)) int phtvFindMacroContentForNormalizedKeys(const uint32_t* normalizedKeyBuffer,
+                                                                            int keyCount,
+                                                                            int autoCapsEnabled,
+                                                                            uint32_t* outputBuffer,
+                                                                            int outputCapacity) {
+    (void)normalizedKeyBuffer;
+    (void)keyCount;
+    (void)autoCapsEnabled;
+    (void)outputBuffer;
+    (void)outputCapacity;
+    // Standalone regression fallback: no Swift macro storage available.
+    return -1;
+}
 
 static void initKcLookup() {
     if (kcInit) return;
