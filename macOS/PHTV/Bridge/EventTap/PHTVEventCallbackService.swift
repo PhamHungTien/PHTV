@@ -376,7 +376,7 @@ final class PHTVEventCallbackService {
         #endif
 
         let signalAction = Int(PHTVInputStrategyService.engineSignalAction(
-            forEngineCode: Int32(PHTVEngineRuntimeFacade.engineDataCode()),
+            forEngineCode: PHTVEngineRuntimeFacade.engineDataCode(),
             doNothingCode: EngineSignalCode.doNothing,
             willProcessCode: EngineSignalCode.willProcess,
             restoreCode: EngineSignalCode.restore,
@@ -393,7 +393,7 @@ final class PHTVEventCallbackService {
             let shouldSendExtraBackspace =
                 PHTVEventContextBridgeService.applyDoNothingSyncStateTransition(
                     forCodeTable: currTable,
-                    extCode: Int32(PHTVEngineRuntimeFacade.engineDataExtCode()),
+                    extCode: PHTVEngineRuntimeFacade.engineDataExtCode(),
                     containsUnicodeCompound: appChars.containsUnicodeCompound)
             if shouldSendExtraBackspace {
                 PHTVKeyEventSenderService.sendPhysicalBackspace()
@@ -408,9 +408,9 @@ final class PHTVEventCallbackService {
                 keyCode: Int32(eventKeycode),
                 spaceKeyCode: Int32(KeyCode.space),
                 slashKeyCode: Int32(KeyCode.slash),
-                extCode: Int32(PHTVEngineRuntimeFacade.engineDataExtCode()),
-                backspaceCount: Int32(PHTVEngineRuntimeFacade.engineDataBackspaceCount()),
-                newCharCount: Int32(PHTVEngineRuntimeFacade.engineDataNewCharCount()),
+                extCode: PHTVEngineRuntimeFacade.engineDataExtCode(),
+                backspaceCount: PHTVEngineRuntimeFacade.engineDataBackspaceCount(),
+                newCharCount: PHTVEngineRuntimeFacade.engineDataNewCharCount(),
                 isBrowserApp: isBrowserApp,
                 isSpotlightTarget: isSpotlightTarget,
                 needsPrecomposedBatched: appChars.needsPrecomposedBatched,
@@ -471,7 +471,7 @@ final class PHTVEventCallbackService {
                 legacyNonBrowserFix: processSignalPlan.shouldTryLegacyNonBrowserFix,
                 containsUnicodeCompound: appChars.containsUnicodeCompound,
                 notionCodeBlockDetected: isNotionCodeBlockDetected,
-                backspaceCount: Int32(PHTVEngineRuntimeFacade.engineDataBackspaceCount()),
+                backspaceCount: PHTVEngineRuntimeFacade.engineDataBackspaceCount(),
                 maxBuffer: EngineSignalCode.maxBuffer,
                 safetyLimit: 15)
 
@@ -507,8 +507,8 @@ final class PHTVEventCallbackService {
                 PHTVTextReplacementDecisionService.shouldEvaluate(
                     forKeyCode: Int32(eventKeycode),
                     spaceKeyCode: Int32(KeyCode.space),
-                    backspaceCount: Int32(PHTVEngineRuntimeFacade.engineDataBackspaceCount()),
-                    newCharCount: Int32(PHTVEngineRuntimeFacade.engineDataNewCharCount()))
+                    backspaceCount: PHTVEngineRuntimeFacade.engineDataBackspaceCount(),
+                    newCharCount: PHTVEngineRuntimeFacade.engineDataNewCharCount())
 
             #if DEBUG
             if shouldEvaluateTextReplacement {
@@ -522,10 +522,10 @@ final class PHTVEventCallbackService {
             if shouldEvaluateTextReplacement {
                 let textReplacementDecision = PHTVTextReplacementDecisionService.evaluate(
                     forSpaceKey: true,
-                    code: Int32(PHTVEngineRuntimeFacade.engineDataCode()),
-                    extCode: Int32(PHTVEngineRuntimeFacade.engineDataExtCode()),
-                    backspaceCount: Int32(PHTVEngineRuntimeFacade.engineDataBackspaceCount()),
-                    newCharCount: Int32(PHTVEngineRuntimeFacade.engineDataNewCharCount()),
+                    code: PHTVEngineRuntimeFacade.engineDataCode(),
+                    extCode: PHTVEngineRuntimeFacade.engineDataExtCode(),
+                    backspaceCount: PHTVEngineRuntimeFacade.engineDataBackspaceCount(),
+                    newCharCount: PHTVEngineRuntimeFacade.engineDataNewCharCount(),
                     externalDeleteCount: externalDeleteCount,
                     restoreAndStartNewSessionCode: EngineSignalCode.restoreAndStartNewSession,
                     willProcessCode: EngineSignalCode.willProcess,
@@ -568,7 +568,7 @@ final class PHTVEventCallbackService {
                 globalStepByStep: PHTVEngineRuntimeFacade.isSendKeyStepByStepEnabled(),
                 appNeedsStepByStep: appChars.needsStepByStep,
                 keyCode: Int32(eventKeycode),
-                engineCode: Int32(PHTVEngineRuntimeFacade.engineDataCode()),
+                engineCode: PHTVEngineRuntimeFacade.engineDataCode(),
                 restoreCode: EngineSignalCode.restore,
                 restoreAndStartNewSessionCode: EngineSignalCode.restoreAndStartNewSession,
                 enterKeyCode: Int32(KeyCode.enter),

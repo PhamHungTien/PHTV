@@ -162,7 +162,7 @@ final class PHTVCharacterOutputService: NSObject {
             forPostToHIDTap: PHTVEventRuntimeContextService.postToHIDTapEnabled(),
             appIsSpotlightLike: PHTVEventRuntimeContextService.appIsSpotlightLike(),
             browserFixEnabled: PHTVEngineRuntimeFacade.fixRecommendBrowser() != 0,
-            originalBackspaceCount: Int32(PHTVEngineRuntimeFacade.engineDataBackspaceCount()),
+            originalBackspaceCount: PHTVEngineRuntimeFacade.engineDataBackspaceCount(),
             cliTarget: PHTVEventRuntimeContextService.isCliTargetEnabled(),
             globalStepByStep: PHTVEngineRuntimeFacade.isSendKeyStepByStepEnabled(),
             appNeedsStepByStep: PHTVEventRuntimeContextService.appNeedsStepByStep())
@@ -183,7 +183,7 @@ final class PHTVCharacterOutputService: NSObject {
             let macroData = macroDataSnapshot(count: macroDataSize)
             let replacedByAX = PHTVEngineDataBridge.replaceSpotlightLikeMacroIfNeeded(
                 isSpotlightLike ? 1 : 0,
-                backspaceCount: Int32(PHTVEngineRuntimeFacade.engineDataBackspaceCount()),
+                backspaceCount: PHTVEngineRuntimeFacade.engineDataBackspaceCount(),
                 macroData: macroData,
                 codeTable: Int32(PHTVEngineRuntimeFacade.currentCodeTable()),
                 safeMode: PHTVEngineRuntimeFacade.safeModeEnabled())
@@ -205,7 +205,7 @@ final class PHTVCharacterOutputService: NSObject {
 
         if PHTVEngineRuntimeFacade.engineDataBackspaceCount() > 0 {
             PHTVKeyEventSenderService.sendBackspaceSequenceWithDelay(
-                Int32(PHTVEngineRuntimeFacade.engineDataBackspaceCount()))
+                PHTVEngineRuntimeFacade.engineDataBackspaceCount())
         }
 
         if !macroPlan.useStepByStepSend {
