@@ -252,9 +252,11 @@ final class PHTVEventCallbackService {
             if PHTVEngineRuntimeFacade.useMacro() != 0 && PHTVEngineRuntimeFacade.useMacroInEnglishMode() != 0 &&
                type == .keyDown {
                 PHTVEngineRuntimeFacade.handleEnglishModeKeyDown(
-                    eventKeycode,
-                    eventFlags.contains(.maskShift) || eventFlags.contains(.maskAlphaShift),
-                    PHTVEventContextBridgeService.hasOtherControlKey(withFlags: eventFlags.rawValue))
+                    keyCode: eventKeycode,
+                    isCaps: eventFlags.contains(.maskShift) || eventFlags.contains(.maskAlphaShift),
+                    hasOtherControlKey: PHTVEventContextBridgeService.hasOtherControlKey(
+                        withFlags: eventFlags.rawValue)
+                )
 
                 if Int(PHTVEngineRuntimeFacade.engineDataCode()) == PHTVEngineRuntimeFacade.engineReplaceMacroCode() {
                     _ = PHTVEventContextBridgeService.prepareTargetContextAndConfigureRuntime(
@@ -344,9 +346,11 @@ final class PHTVEventCallbackService {
         let capsStatus: UInt8 = eventFlags.contains(.maskShift) ? 1
             : (eventFlags.contains(.maskAlphaShift) ? 2 : 0)
         PHTVEngineRuntimeFacade.handleKeyboardKeyDown(
-            eventKeycode,
-            capsStatus,
-            PHTVEventContextBridgeService.hasOtherControlKey(withFlags: eventFlags.rawValue))
+            keyCode: eventKeycode,
+            capsStatus: capsStatus,
+            hasOtherControlKey: PHTVEventContextBridgeService.hasOtherControlKey(
+                withFlags: eventFlags.rawValue)
+        )
 
         #if DEBUG
         if eventKeycode == CGKeyCode(PHTVEngineRuntimeFacade.spaceKeyCode()) {

@@ -38,26 +38,10 @@ final class PHTVEngineRuntimeFacade: NSObject {
         phtvEngineHandleKeyboardKeyDown(keyCode, capsStatus, hasOtherControlKey)
     }
 
-    class func handleKeyboardKeyDown(
-        _ keyCode: UInt16,
-        _ capsStatus: UInt8,
-        _ hasOtherControlKey: Bool
-    ) {
-        phtvEngineHandleKeyboardKeyDown(keyCode, capsStatus, hasOtherControlKey)
-    }
-
     class func handleEnglishModeKeyDown(
         keyCode: UInt16,
         isCaps: Bool,
         hasOtherControlKey: Bool
-    ) {
-        phtvEngineHandleEnglishModeKeyDown(keyCode, isCaps, hasOtherControlKey)
-    }
-
-    class func handleEnglishModeKeyDown(
-        _ keyCode: UInt16,
-        _ isCaps: Bool,
-        _ hasOtherControlKey: Bool
     ) {
         phtvEngineHandleEnglishModeKeyDown(keyCode, isCaps, hasOtherControlKey)
     }
