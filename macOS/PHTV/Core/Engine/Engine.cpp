@@ -9,6 +9,8 @@
 #include <algorithm>
 #include <unordered_set>
 #include "Engine.h"
+#include "Vietnamese.h"
+#include "EnglishWordDetector.h"
 #include <string.h>
 #include <list>
 #include <cstdio>

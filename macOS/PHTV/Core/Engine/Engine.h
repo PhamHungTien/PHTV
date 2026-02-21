@@ -14,8 +14,6 @@
 
 #include "DataType.h"
 #include "../PHTVHotkey.h"
-#include "Vietnamese.h"
-#include "EnglishWordDetector.h"
 
 #ifndef LOBYTE
 #define LOBYTE(data) (data & 0xFF)
