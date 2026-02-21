@@ -9,7 +9,7 @@ import Carbon
 import Foundation
 
 private func phtvCallClearCustomDictionary() {
-    clearCustomDictionary()
+    phtvCustomDictionaryClear()
 }
 
 private func phtvCallStartNewSession() {
@@ -30,13 +30,12 @@ final class PHTVEngineDataBridge: NSObject {
             guard cPath[0] != 0 else {
                 return false
             }
-            let cppPath = std.string(cPath)
-            return initEnglishDictionary(cppPath)
+            return phtvDictionaryInitEnglish(cPath) != 0
         }
     }
 
     class func englishDictionarySize() -> UInt {
-        return UInt(getEnglishDictionarySize())
+        return UInt(phtvDictionaryEnglishWordCount())
     }
 
     class func initializeVietnameseDictionary(atPath path: String) -> Bool {
@@ -44,28 +43,27 @@ final class PHTVEngineDataBridge: NSObject {
             guard cPath[0] != 0 else {
                 return false
             }
-            let cppPath = std.string(cPath)
-            return initVietnameseDictionary(cppPath)
+            return phtvDictionaryInitVietnamese(cPath) != 0
         }
     }
 
     class func vietnameseDictionarySize() -> UInt {
-        return UInt(getVietnameseDictionarySize())
+        return UInt(phtvDictionaryVietnameseWordCount())
     }
 
     class func initializeCustomDictionary(withJSONData jsonData: Data) {
         jsonData.withUnsafeBytes { rawBuffer in
             let base = rawBuffer.bindMemory(to: CChar.self).baseAddress
-            initCustomDictionary(base, Int32(rawBuffer.count))
+            phtvCustomDictionaryLoadJSON(base, Int32(rawBuffer.count))
         }
     }
 
     class func customEnglishWordCount() -> UInt {
-        return UInt(getCustomEnglishWordCount())
+        return UInt(phtvCustomDictionaryEnglishCount())
     }
 
     class func customVietnameseWordCount() -> UInt {
-        return UInt(getCustomVietnameseWordCount())
+        return UInt(phtvCustomDictionaryVietnameseCount())
     }
 
     class func clearCustomDictionary() {

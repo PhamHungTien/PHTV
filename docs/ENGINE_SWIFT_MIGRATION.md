@@ -57,6 +57,9 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - Bo pass-through `startNewSession` khoi `PHTVEngineRuntimeFacade`
 - Da bo wrappers dictionary init:
   - Swift facade tao `std.string` truc tiep va goi `initEnglishDictionary`, `initVietnameseDictionary`
+- Da bo phu thuoc `EnglishWordDetector.h` trong Swift data bridge:
+  - `PHTVEngineDataBridge` goi truc tiep C bridge `phtvDictionary*` va `phtvCustomDictionary*`
+  - `PHTVBridgingHeader.h` khong con import `Core/Engine/EnglishWordDetector.h`
 - Da don gian hoa `PHTVEngineRuntimeFacade`:
   - Bo cac pass-through methods dictionary/custom-dictionary (`initialize*Dictionary`, `*DictionarySize`, `initCustomDictionary`, `getCustom*WordCount`, `clearCustomDictionary`)
   - `PHTVEngineDataBridge` goi truc tiep C++ API thay vi qua them 1 lop wrapper

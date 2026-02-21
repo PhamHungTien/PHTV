@@ -14,7 +14,6 @@
 
 // Bridge
 #import "Core/Engine/Engine.h"
-#import "Core/Engine/EnglishWordDetector.h"
 #import "Core/PHTVConstants.h"
 
 #endif /* PHTVBridgingHeader_h */
