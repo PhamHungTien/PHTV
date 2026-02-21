@@ -1,5 +1,5 @@
 //
-//  EnglishWordDetector.cpp
+//  EnglishWordDetectorFallback.cpp
 //  PHTV
 //
 //  Created by Phạm Hùng Tiến on 2026.

@@ -7,9 +7,10 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 ## Trang thai hien tai
 
 - Swift files: 140
-- C/C++ headers/sources: 5
+- C/C++ headers/sources: 4
 - Cac file C/C++ con lai tap trung o:
   - `macOS/PHTV/Core/Engine/*`
+  - `tests/engine/EnglishWordDetectorFallback.cpp`
   - `tests/engine/EngineRegressionTests.cpp`
 
 ## Da hoan thanh (pha don dep)
@@ -114,6 +115,7 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - `tests/engine/EngineRegressionTests.cpp` tiep tuc bo call truc tiep `vKey*`/`vKeyHookState` tu `Engine.h`, chuyen sang `phtvEngine*` C bridge
   - Dong bo lai cache count custom dictionary trong fallback detector + them case regression `qes` de khoa behavior custom-English restore
   - Da xoa API wrapper C++ legacy trong `EnglishWordDetector.cpp` va xoa file header `Core/Engine/EnglishWordDetector.h`
+  - Da dua `EnglishWordDetector.cpp` ra khoi app target: fallback detector runtime nay chay trong `tests/engine/EnglishWordDetectorFallback.cpp` cho regression binary standalone
 - Da xoa C++ global runtime pointer bridge file:
   - Xoa `Bridge/Engine/PHTVEngineGlobals.cpp`
   - HookState duoc truy cap qua C bridge `phtvEngineHook*` (khong con pointer C++ trong Swift)
@@ -224,7 +226,7 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 ### Pha 4: Port English/Vietnamese detector sang Swift
 
 - Port dictionary loader/lookup (co the giu binary format `*.bin`).
-- Thay `EnglishWordDetector.cpp` bang Swift implementation.
+- Da thay `EnglishWordDetector.cpp` trong app target bang Swift implementation; fallback C++ chi con o regression tests.
 - Dam bao khong tang latency keydown.
 
 ### Pha 5: Port core key processor sang Swift
