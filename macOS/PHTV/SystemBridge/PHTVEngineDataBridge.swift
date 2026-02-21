@@ -102,4 +102,45 @@ final class PHTVEngineDataBridge: NSObject {
         }
         return "Chuyển mã nhanh - [\(components.joined(separator: " + ").uppercased())]"
     }
+
+    @objc(macroStringFromMacroData:count:codeTable:)
+    class func macroString(
+        fromMacroData macroData: UnsafePointer<UInt32>?,
+        count: Int32,
+        codeTable: Int32
+    ) -> NSString {
+        guard let macroData, count > 0 else {
+            return ""
+        }
+
+        let capsMask = PHTVEngineCapsMask()
+        let charCodeMask = PHTVEngineCharCodeMask()
+        let pureCharacterMask = PHTVEnginePureCharacterMask()
+
+        var resultScalars = String.UnicodeScalarView()
+        for index in 0..<Int(count) {
+            let data = macroData[index]
+            var character: UInt16 = 0
+
+            if (data & pureCharacterMask) != 0 {
+                character = UInt16(truncatingIfNeeded: data & ~capsMask)
+            } else if (data & charCodeMask) == 0 {
+                character = PHTVEngineMacroKeyCodeToCharacter(data)
+                if character == 0 {
+                    continue
+                }
+            } else if codeTable == 0 {
+                character = UInt16(truncatingIfNeeded: data & 0xFFFF)
+            } else {
+                character = PHTVEngineLowByte(data)
+            }
+
+            guard character != 0, let scalar = UnicodeScalar(Int(character)) else {
+                continue
+            }
+            resultScalars.append(scalar)
+        }
+
+        return String(resultScalars) as NSString
+    }
 }

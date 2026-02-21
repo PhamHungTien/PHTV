@@ -108,4 +108,24 @@ int PHTVEngineSpaceKeyCode(void) {
     return KEY_SPACE;
 }
 
+uint32_t PHTVEngineCapsMask(void) {
+    return CAPS_MASK;
+}
+
+uint32_t PHTVEngineCharCodeMask(void) {
+    return CHAR_CODE_MASK;
+}
+
+uint32_t PHTVEnginePureCharacterMask(void) {
+    return PURE_CHARACTER_MASK;
+}
+
+uint16_t PHTVEngineMacroKeyCodeToCharacter(uint32_t keyData) {
+    return keyCodeToCharacter((Uint32)keyData);
+}
+
+uint16_t PHTVEngineLowByte(uint32_t data) {
+    return (uint16_t)LOBYTE(data);
+}
+
 } // extern "C"

@@ -929,51 +929,10 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         // CRITICAL FIX: Spotlight requires AX API for macro replacement
         // Synthetic backspace events don't work reliably in Spotlight
         if (isSpotlightLike) {
-            // Convert macro data to NSString
-            // Macro data can contain: PURE_CHARACTER_MASK, CHAR_CODE_MASK (Vietnamese), or normal keycodes
-            NSMutableString *macroString = [NSMutableString string];
-            for (int i = 0; i < pData->macroData.size(); i++) {
-                Uint32 data = pData->macroData[i];
-                Uint16 ch;
-
-                if (data & PURE_CHARACTER_MASK) {
-                    // Pure Unicode character (special chars) - use directly, remove CAPS_MASK
-                    ch = data & ~CAPS_MASK;
-                    #ifdef DEBUG
-                    NSLog(@"[Macro] [%d] PURE_CHAR: 0x%X → '%C'", i, data, (unichar)ch);
-                    #endif
-                } else if (!(data & CHAR_CODE_MASK)) {
-                    // Normal keycode (a-z, 0-9, etc.) - convert using keyCodeToCharacter()
-                    ch = keyCodeToCharacter(data);
-                    if (ch == 0) {
-                        // Keycode cannot be converted (e.g., function keys)
-                        #ifdef DEBUG
-                        NSLog(@"[Macro] [%d] KEYCODE: 0x%X → SKIP (no conversion)", i, data);
-                        #endif
-                        continue; // Skip this keycode
-                    }
-                    #ifdef DEBUG
-                    NSLog(@"[Macro] [%d] KEYCODE: 0x%X → '%C'", i, data, (unichar)ch);
-                    #endif
-                } else {
-                    // CHAR_CODE_MASK (Vietnamese diacritics)
-                    if (vCodeTable == 0) {
-                        // Unicode mode - use directly (ạ, ù, ế, etc.)
-                        ch = data & 0xFFFF;
-                        #ifdef DEBUG
-                        NSLog(@"[Macro] [%d] CHAR_CODE (Unicode): 0x%X → '%C'", i, data, (unichar)ch);
-                        #endif
-                    } else {
-                        // VNI/TCVN mode - extract low byte
-                        ch = LOBYTE(data);
-                        #ifdef DEBUG
-                        NSLog(@"[Macro] [%d] CHAR_CODE (VNI/TCVN): 0x%X → '%C'", i, data, (unichar)ch);
-                        #endif
-                        // High byte handling would go here for VNI if needed
-                    }
-                }
-                [macroString appendFormat:@"%C", (unichar)ch];
-            }
+            NSString *macroString =
+                [PHTVEngineDataBridge macroStringFromMacroData:pData->macroData.data()
+                                                         count:(int32_t)pData->macroData.size()
+                                                     codeTable:(int32_t)vCodeTable];
 
             // Try AX API first - atomic and most reliable for Spotlight
             BOOL shouldVerify = (pData->backspaceCount > 0);
