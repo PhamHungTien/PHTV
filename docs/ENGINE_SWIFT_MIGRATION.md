@@ -85,7 +85,11 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - `PHTVEngineRuntimeFacade` doc `code/extCode/backspace/newChar/charData/macroData` qua `phtvEngineHook*`
   - Swift khong con truy cap truc tiep `vKeyHookState` / `vKeyInit`
 - Da bo include `Core/Engine/Engine.h` khoi `PHTVBridgingHeader.h`:
-  - Bridging header hien dung `Core/Engine/PHTVEngineCBridge.h` + `Core/PHTVConstants.h`
+  - Bridging header chi con dung `Core/Engine/PHTVEngineCBridge.h`
+- Da bo phu thuoc `PHTVCodeTable*` constants trong Swift:
+  - Call site dung enum Swift `CodeTable` (khong can import `Core/PHTVConstants.h`)
+- Da bo phu thuoc `KEY_*` constants trong Swift key sender:
+  - Dung `KeyCode.delete` / `KeyCode.leftArrow`
 - Da bo wrappers code-table lookup:
   - Swift facade mang `_codeTable` data sang Swift de tra `findCodeTableSourceKey` / `variantCount` / `characterForKey`
 - Da dua built-in dictionary runtime (English/Vietnamese binary trie) sang Swift bridge:
@@ -103,7 +107,7 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
     - `keyStatesToString(...)`
 - Da xoa C++ global runtime pointer bridge file:
   - Xoa `Bridge/Engine/PHTVEngineGlobals.cpp`
-  - Runtime pointer `vKeyHookState*` duoc quan ly trong `PHTVEngineRuntimeFacade.swift`
+  - HookState duoc truy cap qua C bridge `phtvEngineHook*` (khong con pointer C++ trong Swift)
   - Bo `extern pData` khoi `PHTVEngineCxxInterop.hpp`
 - Da dua mot nhom runtime settings phu tro (khong can cho core C++) sang Swift storage:
   - `vSendKeyStepByStep`
@@ -172,7 +176,7 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - Don dep macro runtime cu trong `DataType.h` (`PHTV_CURRENT_INPUT_TYPE` / `IS_SPECIALKEY`) vi `Engine.cpp` da tu quan ly snapshot input type
 - Da bo file interop wrapper C++:
   - Xoa `Bridge/Engine/PHTVEngineCxxInterop.hpp`
-  - `PHTVBridgingHeader.h` import truc tiep `Core/Engine/Engine.h` va `Core/PHTVConstants.h`
+  - `PHTVBridgingHeader.h` hien import `Core/Engine/PHTVEngineCBridge.h`
 
 ## Lo trinh migrate
 

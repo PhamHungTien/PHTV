@@ -53,15 +53,15 @@ class PHTVKeyEventSenderService: NSObject {
     @objc class func sendPhysicalBackspace() {
         guard let source = eventSource else { return }
         if PHTVEventRuntimeContextService.postToHIDTapEnabled() {
-            guard let bsDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(KEY_DELETE.rawValue), keyDown: true),
-                  let bsUp   = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(KEY_DELETE.rawValue), keyDown: false) else { return }
+            guard let bsDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(KeyCode.delete), keyDown: true),
+                  let bsUp   = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(KeyCode.delete), keyDown: false) else { return }
             PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: bsDown, keyUp: bsUp, eventMarker: EventSourceMarker.phtv)
             postSyntheticEvent(bsDown)
             postSyntheticEvent(bsUp)
             PHTVTimingService.spotlightTinyDelay()
         } else {
-            guard let bsDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(KEY_DELETE.rawValue), keyDown: true),
-                  let bsUp   = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(KEY_DELETE.rawValue), keyDown: false) else { return }
+            guard let bsDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(KeyCode.delete), keyDown: true),
+                  let bsUp   = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(KeyCode.delete), keyDown: false) else { return }
             bsDown.flags.insert(.maskNonCoalesced)
             bsUp.flags.insert(.maskNonCoalesced)
             postSyntheticEvent(bsDown)
@@ -75,7 +75,7 @@ class PHTVKeyEventSenderService: NSObject {
         guard EngineInputClassification.isDoubleCodeTable(codeTable) else { return }
         if !PHTVTypingSyncStateService.syncKeyIsEmpty() {
             if PHTVTypingSyncStateService.syncKeyBackValue() > 1 {
-                if !(codeTable == PHTVCodeTableUnicodeComposite.rawValue &&
+                if !(codeTable == Int32(CodeTable.unicodeComposite.toIndex()) &&
                      PHTVEventRuntimeContextService.appContainsUnicodeCompound()) {
                     sendPhysicalBackspace()
                 }
@@ -96,8 +96,8 @@ class PHTVKeyEventSenderService: NSObject {
 
     @objc class func sendShiftAndLeftArrow() {
         guard let source = eventSource else { return }
-        guard let down = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(KEY_LEFT.rawValue), keyDown: true),
-              let up   = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(KEY_LEFT.rawValue), keyDown: false) else { return }
+        guard let down = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(KeyCode.leftArrow), keyDown: true),
+              let up   = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(KeyCode.leftArrow), keyDown: false) else { return }
         var flags = down.flags
         flags.insert(.maskShift)
         down.flags = flags
@@ -107,7 +107,7 @@ class PHTVKeyEventSenderService: NSObject {
         let codeTable = PHTVEngineRuntimeFacade.currentCodeTable()
         if EngineInputClassification.isDoubleCodeTable(codeTable) && !PHTVTypingSyncStateService.syncKeyIsEmpty() {
             if PHTVTypingSyncStateService.syncKeyBackValue() > 1 {
-                if !(codeTable == PHTVCodeTableUnicodeComposite.rawValue &&
+                if !(codeTable == Int32(CodeTable.unicodeComposite.toIndex()) &&
                      PHTVEventRuntimeContextService.appContainsUnicodeCompound()) {
                     postSyntheticEvent(down)
                     postSyntheticEvent(up)
@@ -170,7 +170,7 @@ class PHTVKeyEventSenderService: NSObject {
         } else {
             // Unicode character code case
             switch codeTable {
-            case PHTVCodeTableUnicode.rawValue: // 0 — 2-byte Unicode
+            case Int32(CodeTable.unicode.toIndex()): // 0 — 2-byte Unicode
                 guard let down = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true),
                       let up   = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false) else { return }
                 PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: down, keyUp: up, eventMarker: EventSourceMarker.phtv)
@@ -182,9 +182,9 @@ class PHTVKeyEventSenderService: NSObject {
                     PHTVTimingService.spotlightTinyDelay()
                 }
 
-            case PHTVCodeTableTCVN3.rawValue,    // 1
-                 PHTVCodeTableVNIWindows.rawValue, // 2
-                 PHTVCodeTableCP1258.rawValue:     // 4 — 1-byte codes
+            case Int32(CodeTable.tcvn.toIndex()),       // 1
+                 Int32(CodeTable.vniWindows.toIndex()), // 2
+                 Int32(CodeTable.cp1258.toIndex()):     // 4 — 1-byte codes
                 let newCharHi = UInt16(EnginePackedData.highByte(data))
                 newChar = UInt16(EnginePackedData.lowByte(data))
                 guard let down = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true),
@@ -198,7 +198,7 @@ class PHTVKeyEventSenderService: NSObject {
                     PHTVTimingService.spotlightTinyDelay()
                 }
                 if newCharHi > 32 {
-                    if codeTable == PHTVCodeTableVNIWindows.rawValue {
+                    if codeTable == Int32(CodeTable.vniWindows.toIndex()) {
                         insertKeyLength(2)
                     }
                     var hi = newCharHi
@@ -213,12 +213,12 @@ class PHTVKeyEventSenderService: NSObject {
                         PHTVTimingService.spotlightTinyDelay()
                     }
                 } else {
-                    if codeTable == PHTVCodeTableVNIWindows.rawValue {
+                    if codeTable == Int32(CodeTable.vniWindows.toIndex()) {
                         insertKeyLength(1)
                     }
                 }
 
-            case PHTVCodeTableUnicodeComposite.rawValue: // 3 — Unicode Compound
+            case Int32(CodeTable.unicodeComposite.toIndex()): // 3 — Unicode Compound
                 let newCharHi = UInt16(newChar >> 13)
                 newChar &= 0x1FFF
                 let len = newCharHi > 0 ? 2 : 1

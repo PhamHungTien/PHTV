@@ -208,8 +208,8 @@ enum EngineInputClassification {
     ]
 
     static func isDoubleCodeTable(_ codeTable: Int32) -> Bool {
-        codeTable == Int32(PHTVCodeTableVNIWindows.rawValue) ||
-        codeTable == Int32(PHTVCodeTableUnicodeComposite.rawValue)
+        codeTable == Int32(CodeTable.vniWindows.toIndex()) ||
+        codeTable == Int32(CodeTable.unicodeComposite.toIndex())
     }
 
     static func isNavigationKey(_ keyCode: UInt16) -> Bool {

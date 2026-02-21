@@ -28,9 +28,9 @@ final class PHTVConvertToolTextConversionService: NSObject {
     private static let keyToCode = "convertToolToCode"
 
     private static let breakCodes: Set<UInt16> = [46, 63, 33] // . ? !
-    private static let defaultCodeTable = Int32(PHTVCodeTableUnicode.rawValue)
-    private static let minCodeTable = Int32(PHTVCodeTableUnicode.rawValue)
-    private static let maxCodeTable = Int32(PHTVCodeTableCP1258.rawValue)
+    private static let defaultCodeTable = Int32(CodeTable.unicode.toIndex())
+    private static let minCodeTable = Int32(CodeTable.unicode.toIndex())
+    private static let maxCodeTable = Int32(CodeTable.cp1258.toIndex())
 
     @objc(convertText:)
     class func convertText(_ text: String) -> String {
@@ -58,13 +58,13 @@ final class PHTVConvertToolTextConversionService: NSObject {
                 var hasCompoundCandidate = false
 
                 switch options.fromCode {
-                case Int32(PHTVCodeTableVNIWindows.rawValue),
-                     Int32(PHTVCodeTableCP1258.rawValue):
+                case Int32(CodeTable.vniWindows.toIndex()),
+                     Int32(CodeTable.cp1258.toIndex()):
                     compoundCharacter = source[index] | (source[index + 1] << 8)
                     consumedExtra = 1
                     hasCompoundCandidate = true
 
-                case Int32(PHTVCodeTableUnicodeComposite.rawValue):
+                case Int32(CodeTable.unicodeComposite.toIndex()):
                     let mark = unicodeCompoundMarkIndex(for: source[index + 1])
                     if mark > 0 {
                         compoundCharacter = source[index] | mark
@@ -194,12 +194,12 @@ final class PHTVConvertToolTextConversionService: NSObject {
         output: inout [UInt16]
     ) {
         switch codeTable {
-        case Int32(PHTVCodeTableUnicode.rawValue),
-             Int32(PHTVCodeTableTCVN3.rawValue):
+        case Int32(CodeTable.unicode.toIndex()),
+             Int32(CodeTable.tcvn.toIndex()):
             output.append(targetCharacter)
 
-        case Int32(PHTVCodeTableVNIWindows.rawValue),
-             Int32(PHTVCodeTableCP1258.rawValue):
+        case Int32(CodeTable.vniWindows.toIndex()),
+             Int32(CodeTable.cp1258.toIndex()):
             let lowByte = targetCharacter & 0x00FF
             let highByte = (targetCharacter >> 8) & 0x00FF
             output.append(lowByte)
@@ -207,7 +207,7 @@ final class PHTVConvertToolTextConversionService: NSObject {
                 output.append(highByte)
             }
 
-        case Int32(PHTVCodeTableUnicodeComposite.rawValue):
+        case Int32(CodeTable.unicodeComposite.toIndex()):
             let markIndex = Int32(targetCharacter >> 13)
             if markIndex > 0 {
                 output.append(targetCharacter & 0x1FFF)

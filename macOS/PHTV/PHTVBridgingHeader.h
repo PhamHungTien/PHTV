@@ -14,6 +14,5 @@
 
 // Bridge
 #import "Core/Engine/PHTVEngineCBridge.h"
-#import "Core/PHTVConstants.h"
 
 #endif /* PHTVBridgingHeader_h */
