@@ -12,7 +12,7 @@
 #import <Foundation/Foundation.h>
 #import <AppKit/AppKit.h>
 
-// SystemBridge
-#import "SystemBridge/PHTVEngineCxxInterop.hpp"
+// Bridge
+#import "Bridge/Engine/PHTVEngineCxxInterop.hpp"
 
 #endif /* PHTVBridgingHeader_h */

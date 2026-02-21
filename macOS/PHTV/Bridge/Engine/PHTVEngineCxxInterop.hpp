@@ -13,8 +13,8 @@
 #include <cstdint>
 #include <ApplicationServices/ApplicationServices.h>
 
-#include "../Core/Engine/Engine.h"
-#include "../Core/PHTVConstants.h"
+#include "../../Core/Engine/Engine.h"
+#include "../../Core/PHTVConstants.h"
 
 extern volatile int vSendKeyStepByStep;
 extern volatile int vPerformLayoutCompat;

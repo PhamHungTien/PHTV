@@ -1,87 +1,124 @@
-# PHTV Architecture (Cross-Platform)
+# PHTV Architecture
 
-## Mục tiêu
+## Tổng quan
 
-- Một codebase engine duy nhất cho tất cả nền tảng.
-- Tách rõ `Engine Core` và `Platform Integration`.
-- Giữ tương thích macOS hiện tại trong khi mở rộng Windows/Linux.
+PHTV là bộ gõ tiếng Việt cho macOS, xây dựng hoàn toàn bằng Swift với lõi xử lý ngôn ngữ viết bằng C++. Kiến trúc tách biệt rõ ràng giữa engine xử lý (C++) và lớp tích hợp hệ thống (Swift).
 
-## Repository Layout
+## Cấu trúc thư mục
 
 ```text
-PHTV/
-├── Shared/
-│   ├── Engine/        # Canonical shared engine (C/C++)
-│   └── Platforms/     # Internal key-id definitions per platform
-├── macOS/
-│   └── PHTV/
-│       ├── Core/Engine/  # Compatibility wrappers -> Shared/Engine
-│       └── SystemBridge/ # macOS integration (CGEvent/AX/...) 
-├── Windows/
-│   ├── Runtime/       # Engine globals for Windows process
-│   ├── Adapter/       # Win32 VK -> engine key-id mapping
-│   ├── Host/          # Engine session facade + smoke host
-│   ├── Hook/          # Low-level hook daemon (OpenKey-style runtime path)
-│   └── App/           # Windows desktop UI (SwiftUI-structure port)
-└── Linux/
-    ├── Runtime/       # Engine globals for Linux process
-    ├── Adapter/       # keysym -> engine key-id mapping
-    ├── Host/          # Engine session facade + smoke host
-    └── IBus/          # IBus/Fcitx bridge foundation
+macOS/PHTV/
+├── App/                      # AppDelegate và vòng đời ứng dụng
+├── Bridge/                   # Lớp tích hợp giữa engine C++ và hệ thống macOS
+│   ├── Accessibility/        # CGAccessibility / AX API bridge
+│   ├── CLI/                  # CLI profile service
+│   ├── Context/              # App context, Spotlight detection
+│   ├── Engine/               # C++ interop, engine session, startup data
+│   ├── EventTap/             # CGEventTap callback, tap lifecycle, health
+│   ├── Hotkey/               # Hotkey, input source, layout compatibility
+│   ├── Input/                # Character output, key sender, send sequence, timing
+│   ├── Manager/              # PHTVManager (public API + extensions)
+│   ├── SmartSwitch/          # Smart switch logic, persistence, runtime
+│   └── System/               # Permission, TCC, safe mode, binary integrity, etc.
+├── Core/
+│   └── Engine/               # C++ engine source (xử lý tiếng Việt)
+├── Data/                     # Persistence, API clients, database
+├── Models/                   # Value types và domain models
+├── Resources/                # Từ điển, localization, assets
+├── Services/                 # Business logic độc lập với UI
+├── State/                    # Observable state objects (SwiftUI)
+├── Tools/                    # Build-time tools và data generators
+├── UI/                       # SwiftUI views và components
+└── Utilities/                # Tiện ích dùng chung (logger, cache, constants)
 ```
 
-## Design Rules
+## Luồng xử lý sự kiện
 
-1. `Shared/Engine` là nguồn duy nhất của logic xử lý tiếng Việt.
-2. Adapter từng nền tảng chỉ làm nhiệm vụ map key/event và commit output.
-3. Runtime từng nền tảng sở hữu globals của engine (`vLanguage`, `vInputType`, ...).
-4. Không fork logic engine theo từng OS.
+```
+CGEventTap (main run loop)
+    └─► Bridge/EventTap/PHTVEventCallbackService
+            ├─► Bridge/Context/PHTVEventContextBridgeService  (AX context)
+            ├─► Bridge/Hotkey/PHTVHotkeyService               (hotkey check)
+            ├─► Core/Engine (C++ vKeyHandleEvent)             (xử lý tiếng Việt)
+            └─► Bridge/Input/PHTVCharacterOutputService       (commit kết quả)
+```
+
+## Các lớp kiến trúc
+
+### Core/Engine (C++)
+Engine xử lý tiếng Việt thuần C++. Không phụ thuộc vào platform. Nhận keycode và trả về chuỗi kết quả. Globals engine (`pData`, `vLanguage`, v.v.) sống ở `Bridge/Engine/PHTVEngineGlobals.cpp`.
+
+### Bridge/Engine
+- `PHTVEngineCxxInterop.hpp` — Wrapper inline C++ → Swift (không argument label)
+- `PHTVEngineGlobals.cpp` — Định nghĩa global `pData`
+- `PHTVEngineSessionService.swift` — Khởi động engine (`boot()`), quản lý session
+- `PHTVEngineDataBridge.swift` — Đọc kết quả xử lý từ engine
+- `PHTVEngineStartupDataService.swift` — Load startup data từ UserDefaults
+
+### Bridge/EventTap
+- `PHTVEventTapService.swift` — Tạo, bật, tắt CGEventTap
+- `PHTVEventCallbackService.swift` — Callback chính (~700 dòng Swift), thay thế `PHTVCallback` cũ trong ObjC++
+- `PHTVEventTapHealthService.swift` — Giám sát và tái tạo tap khi cần
+
+### Bridge/Input
+- `PHTVCharacterOutputService.swift` — Commit chuỗi ra ứng dụng đích
+- `PHTVKeyEventSenderService.swift` — Gửi CGEvent key
+- `PHTVSendSequenceService.swift` — Gửi từng ký tự theo thứ tự
+- `PHTVInputStrategyService.swift` — Chọn chiến lược output (AX vs CGEvent)
+- `PHTVTimingService.swift` — Điều chỉnh timing delay
+
+### Bridge/Context
+- `PHTVEventContextBridgeService.swift` — Lấy AX context của cửa sổ đang focus
+- `PHTVAppContextService.swift` — Bundle ID, smart switch context
+- `PHTVAppDetectionService.swift` — Nhận dạng loại ứng dụng
+- `PHTVSpotlightDetectionService.swift` — Phát hiện Spotlight đang mở
+
+### Bridge/Manager
+`PHTVManager` là entry point ObjC cho phần còn lại của app (AppDelegate, settings). Chia thành các extension theo chức năng:
+- `PHTVManager+PublicAPI` — API công khai
+- `PHTVManager+RuntimeState` — Runtime state bridge
+- `PHTVManager+SettingsLoading` — Load settings
+- `PHTVManager+SettingsToggles` — Toggle settings
+- `PHTVManager+SystemUtilities` — Tiện ích hệ thống
+
+### App/
+AppDelegate được chia thành nhiều extension:
+- `AppDelegate+Lifecycle` — applicationDidFinishLaunching, terminate
+- `AppDelegate+Accessibility` — AX permission flow
+- `AppDelegate+InputSourceMonitoring` — Theo dõi input source
+- `AppDelegate+AppMonitoring` — NSWorkspace notifications
+- v.v.
+
+### UI/
+SwiftUI views. Không chứa business logic. Nhận state từ `State/` và gọi action qua `Services/`.
+
+## Quy tắc thiết kế
+
+1. **Engine C++ không phụ thuộc Swift/ObjC.** Mọi giao tiếp qua wrapper inline trong `PHTVEngineCxxInterop.hpp`.
+2. **Không argument label cho C++ free function trong Swift.** Swift import C++ free functions dưới dạng positional.
+3. **`@MainActor.assumeIsolated`** dùng trong EventTap callback (tap chạy trên main run loop).
+4. **`nonisolated(unsafe)`** cho static vars trong các service không có actor isolation.
+5. **Xcode tự phát hiện file** qua `PBXFileSystemSynchronizedRootGroup` — di chuyển file trong filesystem là đủ, không cần sửa `.xcodeproj`.
+
+## Interop C++ ↔ Swift
+
+File `Bridge/Engine/PHTVEngineCxxInterop.hpp` được import qua bridging header:
+
+```objc
+// PHTVBridgingHeader.h
+#import "Bridge/Engine/PHTVEngineCxxInterop.hpp"
+```
+
+Build flag: `-cxx-interoperability-mode=default` (Swift 5.9+).
+
+Tất cả wrapper đều là `inline` `noexcept` function, không phải class method, để Swift có thể gọi mà không cần argument label.
 
 ## Build
 
-### macOS app (current production app)
-
-Dùng Xcode project hiện tại trong `macOS/`.
-
-### Shared core (CMake)
-
-macOS:
-
 ```bash
-cmake -S . -B build -G Xcode
-cmake --build build --target phtv_engine_shared
+# Mở project
+open macOS/PHTV.xcodeproj
+
+# Build từ command line
+xcodebuild -project macOS/PHTV.xcodeproj -scheme PHTV build
 ```
-
-Windows/Linux (Ninja):
-
-```bash
-cmake -S . -B build -G Ninja
-cmake --build build --target phtv_engine_shared
-```
-
-### Windows foundation target
-
-```bash
-cmake -S . -B build -G Ninja
-cmake --build build --target phtv_windows_console
-```
-
-### Windows settings app (Avalonia)
-
-```bash
-dotnet build Windows/App/PHTV.Windows.csproj
-./Windows/App/build-windows.sh win-x64 Release false
-```
-
-`Windows/App` hiện đã có đầy đủ luồng cấu hình (autosave, import/export, macro/app list management, bug-report workflow, startup integration).
-
-### Linux foundation target
-
-```bash
-cmake -S . -B build -G Ninja
-cmake --build build --target phtv_linux_console
-```
-
-## Migration Note
-
-`macOS/PHTV/Core/Engine/*` đã được chuyển thành wrappers để bảo toàn đường dẫn cũ trong Xcode và giảm rủi ro khi refactor.
