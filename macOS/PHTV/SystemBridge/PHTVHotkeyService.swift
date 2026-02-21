@@ -165,6 +165,35 @@ final class PHTVModifierReleaseTransitionBox: NSObject {
 }
 
 @objcMembers
+final class PHTVSessionResetTransitionBox: NSObject {
+    let shouldClearSyncKey: Bool
+    let shouldPrimeUppercaseFirstChar: Bool
+    let pendingUppercasePrimeCheck: Bool
+    let lastFlags: UInt64
+    let willContinueSending: Bool
+    let willSendControlKey: Bool
+    let hasJustUsedHotKey: Bool
+
+    init(
+        shouldClearSyncKey: Bool,
+        shouldPrimeUppercaseFirstChar: Bool,
+        pendingUppercasePrimeCheck: Bool,
+        lastFlags: UInt64,
+        willContinueSending: Bool,
+        willSendControlKey: Bool,
+        hasJustUsedHotKey: Bool
+    ) {
+        self.shouldClearSyncKey = shouldClearSyncKey
+        self.shouldPrimeUppercaseFirstChar = shouldPrimeUppercaseFirstChar
+        self.pendingUppercasePrimeCheck = pendingUppercasePrimeCheck
+        self.lastFlags = lastFlags
+        self.willContinueSending = willContinueSending
+        self.willSendControlKey = willSendControlKey
+        self.hasJustUsedHotKey = hasJustUsedHotKey
+    }
+}
+
+@objcMembers
 final class PHTVHotkeyService: NSObject {
     private static let hotkeyKeyMask: UInt32 = 0x00FF
     private static let hotkeyControlMask: UInt32 = 0x0100
@@ -1044,6 +1073,40 @@ final class PHTVHotkeyService: NSObject {
             lastFlags: 0,
             keyPressedWhileSwitchModifiersHeld: false,
             keyPressedWhileEmojiModifiersHeld: false
+        )
+    }
+
+    @objc(sessionResetTransitionForCodeTable:allowUppercasePrime:safeMode:uppercaseEnabled:uppercaseExcluded:)
+    class func sessionResetTransition(
+        forCodeTable codeTable: Int32,
+        allowUppercasePrime: Bool,
+        safeMode: Bool,
+        uppercaseEnabled: Int32,
+        uppercaseExcluded: Int32
+    ) -> PHTVSessionResetTransitionBox {
+        let shouldClearSyncKey = (codeTable == 2 || codeTable == 3)
+        var pendingUppercasePrimeCheck = true
+
+        var shouldPrimeUppercaseFirstChar = false
+        if allowUppercasePrime {
+            shouldPrimeUppercaseFirstChar = PHTVAccessibilityService.shouldPrimeUppercaseFromAX(
+                safeMode: safeMode,
+                uppercaseEnabled: uppercaseEnabled != 0,
+                uppercaseExcluded: uppercaseExcluded != 0
+            )
+            if shouldPrimeUppercaseFirstChar {
+                pendingUppercasePrimeCheck = false
+            }
+        }
+
+        return PHTVSessionResetTransitionBox(
+            shouldClearSyncKey: shouldClearSyncKey,
+            shouldPrimeUppercaseFirstChar: shouldPrimeUppercaseFirstChar,
+            pendingUppercasePrimeCheck: pendingUppercasePrimeCheck,
+            lastFlags: 0,
+            willContinueSending: false,
+            willSendControlKey: false,
+            hasJustUsedHotKey: false
         )
     }
 

@@ -367,28 +367,25 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         // - _willTempOffEngine flag
         vKeyHandleEvent(vKeyEvent::Mouse, vKeyEventState::MouseDown, 0);
 
-        // Clear VNI/Unicode Compound sync tracking
         int currentCodeTable = __atomic_load_n(&vCodeTable, __ATOMIC_RELAXED);
-        if (IS_DOUBLE_CODE(currentCodeTable)) {
+        PHTVSessionResetTransitionBox *sessionResetTransition =
+            [PHTVHotkeyService sessionResetTransitionForCodeTable:(int32_t)currentCodeTable
+                                                allowUppercasePrime:allowUppercasePrime
+                                                           safeMode:vSafeMode
+                                                    uppercaseEnabled:(int32_t)vUpperCaseFirstChar
+                                                   uppercaseExcluded:(int32_t)vUpperCaseExcludedForCurrentApp];
+
+        if (sessionResetTransition.shouldClearSyncKey) {
             _syncKey.clear();
         }
-
-        _pendingUppercasePrimeCheck = true;
-        if (allowUppercasePrime) {
-            BOOL shouldPrime = [PHTVAccessibilityService shouldPrimeUppercaseFromAXWithSafeMode:vSafeMode
-                                                                                 uppercaseEnabled:vUpperCaseFirstChar
-                                                                                uppercaseExcluded:vUpperCaseExcludedForCurrentApp];
-            if (shouldPrime) {
-                vPrimeUpperCaseFirstChar();
-                _pendingUppercasePrimeCheck = false;
-            }
+        if (sessionResetTransition.shouldPrimeUppercaseFirstChar) {
+            vPrimeUpperCaseFirstChar();
         }
-
-        // Reset additional state variables
-        _lastFlag = 0;
-        _willContinuteSending = false;
-        _willSendControlKey = false;
-        _hasJustUsedHotKey = false;
+        _pendingUppercasePrimeCheck = sessionResetTransition.pendingUppercasePrimeCheck;
+        _lastFlag = (CGEventFlags)sessionResetTransition.lastFlags;
+        _willContinuteSending = sessionResetTransition.willContinueSending;
+        _willSendControlKey = sessionResetTransition.willSendControlKey;
+        _hasJustUsedHotKey = sessionResetTransition.hasJustUsedHotKey;
 
         // Release barrier: ensure state reset is visible to all threads
         __atomic_thread_fence(__ATOMIC_RELEASE);
