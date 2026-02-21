@@ -35,6 +35,7 @@
 				Core/Engine/EngineBridgeExports.inc,
 				Core/Engine/EngineCoreLogic.inc,
 				Core/Engine/EngineDataTypes.inc,
+				Core/Engine/EngineRestoreSession.inc,
 				Core/Engine/PHTVEngineCBridge.inc,
 				Core/Engine/VietnameseData.inc,
 				Info.plist,
