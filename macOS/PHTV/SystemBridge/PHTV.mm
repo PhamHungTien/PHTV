@@ -1505,14 +1505,16 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 #endif
                 }
 
-                PHTVBackspaceAdjustmentBox *backspaceAdjustment =
-                    [PHTVInputStrategyService backspaceAdjustmentForBrowserAddressBarFix:processSignalPlan.shouldTryBrowserAddressBarFix
-                                                                        addressBarDetected:isAddrBar
-                                                                      legacyNonBrowserFix:processSignalPlan.shouldTryLegacyNonBrowserFix
-                                                                  containsUnicodeCompound:appChars.containsUnicodeCompound
-                                                                  notionCodeBlockDetected:isNotionCodeBlockDetected
-                                                                           backspaceCount:(int32_t)pData->backspaceCount];
-                int adjustmentAction = (int)backspaceAdjustment.action;
+                PHTVResolvedBackspacePlanBox *resolvedBackspacePlan =
+                    [PHTVInputStrategyService resolvedBackspacePlanForBrowserAddressBarFix:processSignalPlan.shouldTryBrowserAddressBarFix
+                                                                           addressBarDetected:isAddrBar
+                                                                         legacyNonBrowserFix:processSignalPlan.shouldTryLegacyNonBrowserFix
+                                                                     containsUnicodeCompound:appChars.containsUnicodeCompound
+                                                                     notionCodeBlockDetected:isNotionCodeBlockDetected
+                                                                              backspaceCount:(int32_t)pData->backspaceCount
+                                                                                  maxBuffer:(int32_t)MAX_BUFF
+                                                                                 safetyLimit:15];
+                int adjustmentAction = (int)resolvedBackspacePlan.adjustmentAction;
                 if (adjustmentAction == PHTVBackspaceAdjustmentActionSendShiftLeftThenBackspace) {
                     SendShiftAndLeftArrow();
                     SendPhysicalBackspace();
@@ -1525,15 +1527,13 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                     SendEmptyCharacter();
                 }
 
-                int adjustedBackspaceCount = (int)[PHTVInputStrategyService sanitizedBackspaceCountForAdjustedCount:(int32_t)backspaceAdjustment.adjustedBackspaceCount
-                                                                                                           maxBuffer:(int32_t)MAX_BUFF
-                                                                                                          safetyLimit:15];
+                int adjustedBackspaceCount = (int)resolvedBackspacePlan.sanitizedBackspaceCount;
                 pData->backspaceCount = (Byte)adjustedBackspaceCount;
 
                 // SAFETY LOG: A single Vietnamese word transformation should never delete more than 15 chars.
-                if (adjustedBackspaceCount >= 15 && (int)backspaceAdjustment.adjustedBackspaceCount > 15) {
+                if (resolvedBackspacePlan.isSafetyClampApplied) {
 #ifdef DEBUG
-                    NSLog(@"[PHTV Safety] Blocked excessive backspaceCount: %d -> 15 (Key=%d)", (int)backspaceAdjustment.adjustedBackspaceCount, _keycode);
+                    NSLog(@"[PHTV Safety] Blocked excessive backspaceCount: %d -> 15 (Key=%d)", (int)resolvedBackspacePlan.adjustedBackspaceCount, _keycode);
 #endif
                 }
 #ifdef DEBUG

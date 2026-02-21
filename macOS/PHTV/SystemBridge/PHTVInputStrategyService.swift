@@ -46,6 +46,26 @@ final class PHTVBackspaceAdjustmentBox: NSObject {
 }
 
 @objcMembers
+final class PHTVResolvedBackspacePlanBox: NSObject {
+    let adjustmentAction: Int32
+    let adjustedBackspaceCount: Int32
+    let sanitizedBackspaceCount: Int32
+    let isSafetyClampApplied: Bool
+
+    init(
+        adjustmentAction: Int32,
+        adjustedBackspaceCount: Int32,
+        sanitizedBackspaceCount: Int32,
+        isSafetyClampApplied: Bool
+    ) {
+        self.adjustmentAction = adjustmentAction
+        self.adjustedBackspaceCount = adjustedBackspaceCount
+        self.sanitizedBackspaceCount = sanitizedBackspaceCount
+        self.isSafetyClampApplied = isSafetyClampApplied
+    }
+}
+
+@objcMembers
 final class PHTVCharacterSendPlanBox: NSObject {
     let deferBackspaceToAX: Bool
     let useStepByStepCharacterSend: Bool
@@ -298,6 +318,40 @@ final class PHTVInputStrategyService: NSObject {
         count = min(count, maxBuffer)
         count = min(count, safetyLimit)
         return count
+    }
+
+    @objc(resolvedBackspacePlanForBrowserAddressBarFix:addressBarDetected:legacyNonBrowserFix:containsUnicodeCompound:notionCodeBlockDetected:backspaceCount:maxBuffer:safetyLimit:)
+    class func resolvedBackspacePlan(
+        forBrowserAddressBarFix shouldTryBrowserAddressBarFix: Bool,
+        addressBarDetected isAddressBarDetected: Bool,
+        legacyNonBrowserFix shouldTryLegacyNonBrowserFix: Bool,
+        containsUnicodeCompound: Bool,
+        notionCodeBlockDetected isNotionCodeBlockDetected: Bool,
+        backspaceCount: Int32,
+        maxBuffer: Int32,
+        safetyLimit: Int32
+    ) -> PHTVResolvedBackspacePlanBox {
+        let adjustment = backspaceAdjustment(
+            forBrowserAddressBarFix: shouldTryBrowserAddressBarFix,
+            addressBarDetected: isAddressBarDetected,
+            legacyNonBrowserFix: shouldTryLegacyNonBrowserFix,
+            containsUnicodeCompound: containsUnicodeCompound,
+            notionCodeBlockDetected: isNotionCodeBlockDetected,
+            backspaceCount: backspaceCount
+        )
+        let sanitized = sanitizedBackspaceCount(
+            forAdjustedCount: adjustment.adjustedBackspaceCount,
+            maxBuffer: maxBuffer,
+            safetyLimit: safetyLimit
+        )
+        let isSafetyClampApplied = adjustment.adjustedBackspaceCount > safetyLimit
+
+        return PHTVResolvedBackspacePlanBox(
+            adjustmentAction: adjustment.action,
+            adjustedBackspaceCount: adjustment.adjustedBackspaceCount,
+            sanitizedBackspaceCount: sanitized,
+            isSafetyClampApplied: isSafetyClampApplied
+        )
     }
 
     @objc(shouldTemporarilyUseUnicodeCodeTableForCurrentCodeTable:spotlightActive:spotlightLikeApp:)
