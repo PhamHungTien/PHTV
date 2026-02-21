@@ -37,25 +37,6 @@ static const int CLI_TEXT_CHUNK_SIZE_DEFAULT = 20;
 static const useconds_t CLI_POST_SEND_BLOCK_MIN_US = 20000;
 static const useconds_t CLI_PRE_BACKSPACE_DELAY_US = 4000;
 
-// High-resolution timing
-static mach_timebase_info_data_t timebase_info;
-static dispatch_once_t timebase_init_token;
-
-#ifdef DEBUG
-static inline uint64_t mach_time_to_ms(uint64_t mach_time) {
-    return (mach_time * timebase_info.numer) / (timebase_info.denom * 1000000);
-}
-#endif
-
-static inline uint64_t mach_time_to_us(uint64_t mach_time) {
-    return (mach_time * timebase_info.numer) / (timebase_info.denom * 1000);
-}
-
-static inline uint64_t us_to_mach_time(uint64_t microseconds) {
-    // Convert microseconds to mach absolute time units
-    return (microseconds * timebase_info.denom * 1000) / timebase_info.numer;
-}
-
 static inline useconds_t PHTVClampUseconds(uint64_t microseconds) {
     if (microseconds > static_cast<uint64_t>(std::numeric_limits<useconds_t>::max())) {
         return std::numeric_limits<useconds_t>::max();
@@ -79,12 +60,9 @@ static inline void PHTVSpotlightDebugLog(NSString *message) {
     if (!PHTVSpotlightDebugEnabled()) {
         return;
     }
-    dispatch_once(&timebase_init_token, ^{
-        mach_timebase_info(&timebase_info);
-    });
     static uint64_t lastLogTime = 0;
     uint64_t now = mach_absolute_time();
-    if (lastLogTime != 0 && mach_time_to_ms(now - lastLogTime) < DEBUG_LOG_THROTTLE_MS) {
+    if (lastLogTime != 0 && [PHTVTimingService machTimeToMs:(now - lastLogTime)] < DEBUG_LOG_THROTTLE_MS) {
         return;
     }
     lastLogTime = now;
@@ -150,26 +128,20 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
     static inline void SetCliBlockForMicroseconds(uint64_t microseconds) {
         if (microseconds == 0) return;
-        dispatch_once(&timebase_init_token, ^{
-            mach_timebase_info(&timebase_info);
-        });
         uint64_t now = mach_absolute_time();
-        uint64_t until = now + us_to_mach_time(microseconds);
+        uint64_t until = now + [PHTVTimingService microsecondsToMachTime:microseconds];
         if (until > _phtvCliBlockUntil) {
             _phtvCliBlockUntil = until;
         }
     }
 
     static inline void UpdateCliSpeedFactor(uint64_t now) {
-        dispatch_once(&timebase_init_token, ^{
-            mach_timebase_info(&timebase_info);
-        });
         if (_phtvCliLastKeyDownTime == 0) {
             _phtvCliLastKeyDownTime = now;
             _phtvCliSpeedFactor = 1.0;
             return;
         }
-        uint64_t deltaUs = mach_time_to_us(now - _phtvCliLastKeyDownTime);
+        uint64_t deltaUs = [PHTVTimingService machTimeToUs:(now - _phtvCliLastKeyDownTime)];
         _phtvCliLastKeyDownTime = now;
         _phtvCliSpeedFactor = [PHTVCliProfileService nextCliSpeedFactorForDeltaUs:deltaUs
                                                                       currentFactor:_phtvCliSpeedFactor];
@@ -325,10 +297,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
     
     void PHTVInit() {
-        dispatch_once(&timebase_init_token, ^{
-            mach_timebase_info(&timebase_info);
-        });
-
         [PHTVCoreSettingsBootstrapService loadFromUserDefaults];
 
         [PHTVSafeModeStartupService recoverAndValidateAccessibilityState];
@@ -1004,12 +972,9 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
         // CLI stabilization: block briefly after synthetic injection to avoid interleaving
         if (type == kCGEventKeyDown && _phtvCliBlockUntil != 0) {
-            dispatch_once(&timebase_init_token, ^{
-                mach_timebase_info(&timebase_info);
-            });
             uint64_t now = mach_absolute_time();
             if (now < _phtvCliBlockUntil) {
-                uint64_t remainUs = mach_time_to_us(_phtvCliBlockUntil - now);
+                uint64_t remainUs = [PHTVTimingService machTimeToUs:(_phtvCliBlockUntil - now)];
                 if (remainUs > 0) {
                     usleep(PHTVClampUseconds(remainUs));
                 }

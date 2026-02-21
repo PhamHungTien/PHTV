@@ -27,6 +27,14 @@ final class PHTVTimingService: NSObject {
         return (machTime * UInt64(timebase.numer)) / (UInt64(timebase.denom) * 1_000)
     }
 
+    @objc class func microsecondsToMachTime(_ microseconds: UInt64) -> UInt64 {
+        let timebase = timebaseInfo
+        guard timebase.numer > 0 else {
+            return 0
+        }
+        return (microseconds * UInt64(timebase.denom) * 1_000) / UInt64(timebase.numer)
+    }
+
     // Intentionally kept as no-op to preserve current behavior.
     @objc class func spotlightTinyDelay() {
     }
