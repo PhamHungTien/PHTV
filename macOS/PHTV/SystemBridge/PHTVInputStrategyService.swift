@@ -14,6 +14,15 @@ enum PHTVBackspaceAdjustmentAction: Int32 {
     case sendShiftLeftThenBackspace = 2
 }
 
+@objc
+enum PHTVSyncKeyAction: Int32 {
+    case none = 0
+    case clear = 1
+    case pop = 2
+    case popAndSendBackspace = 3
+    case insertOne = 4
+}
+
 @objcMembers
 final class PHTVBackspaceAdjustmentBox: NSObject {
     let action: Int32
@@ -45,6 +54,32 @@ final class PHTVCharacterSendPlanBox: NSObject {
         self.useStepByStepCharacterSend = useStepByStepCharacterSend
         self.shouldSendRestoreTriggerKey = shouldSendRestoreTriggerKey
         self.shouldStartNewSessionAfterSend = shouldStartNewSessionAfterSend
+    }
+}
+
+@objcMembers
+final class PHTVMacroPlanBox: NSObject {
+    let isSpotlightLikeTarget: Bool
+    let shouldTryAXReplacement: Bool
+    let shouldApplyBrowserFix: Bool
+    let adjustedBackspaceCount: Int32
+    let useStepByStepSend: Bool
+    let shouldSendTriggerKey: Bool
+
+    init(
+        isSpotlightLikeTarget: Bool,
+        shouldTryAXReplacement: Bool,
+        shouldApplyBrowserFix: Bool,
+        adjustedBackspaceCount: Int32,
+        useStepByStepSend: Bool,
+        shouldSendTriggerKey: Bool
+    ) {
+        self.isSpotlightLikeTarget = isSpotlightLikeTarget
+        self.shouldTryAXReplacement = shouldTryAXReplacement
+        self.shouldApplyBrowserFix = shouldApplyBrowserFix
+        self.adjustedBackspaceCount = adjustedBackspaceCount
+        self.useStepByStepSend = useStepByStepSend
+        self.shouldSendTriggerKey = shouldSendTriggerKey
     }
 }
 
@@ -227,5 +262,61 @@ final class PHTVInputStrategyService: NSObject {
         spotlightLikeApp: Bool
     ) -> Bool {
         return currentCodeTable == 3 && (spotlightActive || spotlightLikeApp)
+    }
+
+    @objc(macroPlanForPostToHIDTap:appIsSpotlightLike:browserFixEnabled:originalBackspaceCount:cliTarget:globalStepByStep:appNeedsStepByStep:)
+    class func macroPlan(
+        forPostToHIDTap postToHIDTap: Bool,
+        appIsSpotlightLike: Bool,
+        browserFixEnabled: Bool,
+        originalBackspaceCount: Int32,
+        cliTarget: Bool,
+        globalStepByStep: Bool,
+        appNeedsStepByStep: Bool
+    ) -> PHTVMacroPlanBox {
+        let isSpotlightLikeTarget = postToHIDTap || appIsSpotlightLike
+        let shouldApplyBrowserFix = browserFixEnabled
+        let adjustedBackspaceCount = originalBackspaceCount + (shouldApplyBrowserFix ? 1 : 0)
+        let useStepByStepSend = cliTarget || globalStepByStep || appNeedsStepByStep
+
+        return PHTVMacroPlanBox(
+            isSpotlightLikeTarget: isSpotlightLikeTarget,
+            shouldTryAXReplacement: isSpotlightLikeTarget,
+            shouldApplyBrowserFix: shouldApplyBrowserFix,
+            adjustedBackspaceCount: adjustedBackspaceCount,
+            useStepByStepSend: useStepByStepSend,
+            shouldSendTriggerKey: !isSpotlightLikeTarget
+        )
+    }
+
+    @objc(syncKeyActionForCodeTable:extCode:hasSyncKey:syncKeyBackValue:containsUnicodeCompound:)
+    class func syncKeyAction(
+        forCodeTable codeTable: Int32,
+        extCode: Int32,
+        hasSyncKey: Bool,
+        syncKeyBackValue: Int32,
+        containsUnicodeCompound: Bool
+    ) -> Int32 {
+        let isDoubleCode = (codeTable == 2 || codeTable == 3)
+        guard isDoubleCode else {
+            return PHTVSyncKeyAction.none.rawValue
+        }
+
+        switch extCode {
+        case 1:
+            return PHTVSyncKeyAction.clear.rawValue
+        case 2:
+            guard hasSyncKey else {
+                return PHTVSyncKeyAction.none.rawValue
+            }
+            if syncKeyBackValue > 1 && (codeTable == 2 || !containsUnicodeCompound) {
+                return PHTVSyncKeyAction.popAndSendBackspace.rawValue
+            }
+            return PHTVSyncKeyAction.pop.rawValue
+        case 3:
+            return PHTVSyncKeyAction.insertOne.rawValue
+        default:
+            return PHTVSyncKeyAction.none.rawValue
+        }
     }
 }

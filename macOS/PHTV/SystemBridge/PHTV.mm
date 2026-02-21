@@ -893,8 +893,15 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     void handleMacro() {
         // PERFORMANCE: Use cached bundle ID instead of querying AX API
         NSString *effectiveTarget = _phtvEffectiveTargetBundleId ?: getFocusedAppBundleId();
-        // Use _phtvPostToHIDTap which includes spotlightActive (search field detected via AX)
-        BOOL isSpotlightLike = _phtvPostToHIDTap || PHTVCurrentAppIsSpotlightLike();
+        PHTVMacroPlanBox *macroPlan =
+            [PHTVInputStrategyService macroPlanForPostToHIDTap:_phtvPostToHIDTap
+                                            appIsSpotlightLike:PHTVCurrentAppIsSpotlightLike()
+                                              browserFixEnabled:vFixRecommendBrowser
+                                           originalBackspaceCount:(int32_t)pData->backspaceCount
+                                                     cliTarget:_phtvIsCliTarget
+                                              globalStepByStep:vSendKeyStepByStep
+                                              appNeedsStepByStep:PHTVCurrentAppNeedsStepByStep()];
+        BOOL isSpotlightLike = macroPlan.isSpotlightLikeTarget;
 
         #ifdef DEBUG
         NSLog(@"[Macro] handleMacro: target='%@', isSpotlight=%d (postToHID=%d), backspaceCount=%d, macroSize=%zu",
@@ -903,7 +910,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
         // CRITICAL FIX: Spotlight requires AX API for macro replacement
         // Synthetic backspace events don't work reliably in Spotlight
-        if (isSpotlightLike) {
+        if (macroPlan.shouldTryAXReplacement) {
             BOOL replacedByAX =
                 [PHTVEngineDataBridge replaceSpotlightLikeMacroIfNeeded:(isSpotlightLike ? 1 : 0)
                                                          backspaceCount:(int32_t)pData->backspaceCount
@@ -925,9 +932,9 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         }
 
         //fix autocomplete
-        if (vFixRecommendBrowser) {
+        if (macroPlan.shouldApplyBrowserFix) {
             SendEmptyCharacter();
-            pData->backspaceCount++;
+            pData->backspaceCount = (Byte)macroPlan.adjustedBackspaceCount;
         }
 
         // Send backspace if needed
@@ -936,7 +943,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         }
 
         //send real data - use step by step for timing sensitive apps like Spotlight
-        BOOL useStepByStep = _phtvIsCliTarget || vSendKeyStepByStep || PHTVCurrentAppNeedsStepByStep();
+        BOOL useStepByStep = macroPlan.useStepByStepSend;
         if (!useStepByStep) {
             SendNewCharString(true);
         } else {
@@ -964,7 +971,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         }
 
         // Send trigger key for non-Spotlight apps
-        if (!isSpotlightLike) {
+        if (macroPlan.shouldSendTriggerKey) {
             SendKeyCode(_keycode | (_flag & kCGEventFlagMaskShift ? CAPS_MASK : 0));
         }
     }
@@ -1407,22 +1414,24 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
                 // Use atomic read for thread safety
                 int currentCodeTable = __atomic_load_n(&vCodeTable, __ATOMIC_RELAXED);
-                if (IS_DOUBLE_CODE(currentCodeTable)) { //VNI
-                    if (pData->extCode == 1) { //break key
-                        _syncKey.clear();
-                    } else if (pData->extCode == 2) { //delete key
-                        if (_syncKey.size() > 0) {
-                            if (_syncKey.back() > 1 && (vCodeTable == 2 || !appChars.containsUnicodeCompound)) {
-                                //send one more backspace
-                                PostSyntheticEvent(_proxy, eventBackSpaceDown);
-                                PostSyntheticEvent(_proxy, eventBackSpaceUp);
-                            }
-                            _syncKey.pop_back();
-                        }
-                       
-                    } else if (pData->extCode == 3) { //normal key
-                        InsertKeyLength(1);
-                    }
+                BOOL hasSyncKey = !_syncKey.empty();
+                int syncKeyBackValue = hasSyncKey ? (int)_syncKey.back() : 0;
+                int syncKeyAction = (int)[PHTVInputStrategyService syncKeyActionForCodeTable:(int32_t)currentCodeTable
+                                                                                      extCode:(int32_t)pData->extCode
+                                                                                   hasSyncKey:hasSyncKey
+                                                                               syncKeyBackValue:(int32_t)syncKeyBackValue
+                                                                      containsUnicodeCompound:appChars.containsUnicodeCompound];
+                if (syncKeyAction == PHTVSyncKeyActionClear) {
+                    _syncKey.clear();
+                } else if (syncKeyAction == PHTVSyncKeyActionPopAndSendBackspace) {
+                    // Send one more backspace before popping sync length.
+                    PostSyntheticEvent(_proxy, eventBackSpaceDown);
+                    PostSyntheticEvent(_proxy, eventBackSpaceUp);
+                    _syncKey.pop_back();
+                } else if (syncKeyAction == PHTVSyncKeyActionPop) {
+                    _syncKey.pop_back();
+                } else if (syncKeyAction == PHTVSyncKeyActionInsertOne) {
+                    InsertKeyLength(1);
                 }
                 return event;
             } else if (pData->code == vWillProcess || pData->code == vRestore || pData->code == vRestoreAndStartNewSession) { //handle result signal
