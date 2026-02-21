@@ -32,6 +32,7 @@
 		460202802F2814260040B043 /* Exceptions for "PHTV" folder in "PHTV" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Core/Engine/EngineBridgeExports.inc,
 				Core/Engine/EngineDataTypes.inc,
 				Core/Engine/PHTVEngineCBridge.inc,
 				Core/Engine/VietnameseData.inc,

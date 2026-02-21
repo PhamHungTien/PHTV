@@ -119,6 +119,9 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da tach weak fallback runtime/macro khoi `Engine.cpp`:
   - Cac fallback `phtvRuntime*` va `phtvLoadMacroMapFromBinary` / `phtvFindMacroContentForNormalizedKeys` duoc chuyen sang `tests/engine/EnglishWordDetectorFallback.cpp`
   - `Engine.cpp` khong con chua code fallback cho regression standalone
+- Da tach C bridge exports khoi than `Engine.cpp`:
+  - Cac ham `phtvEngine*`/`phtvEngineHook*` duoc gom vao `Core/Engine/EngineBridgeExports.inc`
+  - `Engine.cpp` include lai file nay o cuoi de giam coupling giua core logic va ABI layer
 - Da xoa C++ global runtime pointer bridge file:
   - Xoa `Bridge/Engine/PHTVEngineGlobals.cpp`
   - HookState duoc truy cap qua C bridge `phtvEngineHook*` (khong con pointer C++ trong Swift)
