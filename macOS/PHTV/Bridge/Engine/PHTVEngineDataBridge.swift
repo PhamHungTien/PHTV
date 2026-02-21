@@ -81,7 +81,8 @@ final class PHTVEngineDataBridge: NSObject {
             return "␣"
         }
 
-        let keyChar = PHTVEngineRuntimeFacade.hotkeyDisplayCharacter(keyCode)
+        let keyChar = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(
+            UInt32(keyCode) | PHTVEngineRuntimeFacade.capsMask())
         if keyChar >= 33,
            keyChar <= 126,
            let scalar = UnicodeScalar(Int(keyChar)) {

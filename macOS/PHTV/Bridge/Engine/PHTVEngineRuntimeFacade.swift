@@ -1146,10 +1146,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
         runtimeFixRecommendBrowser
     }
 
-    class func hotkeyDisplayCharacter(_ keyCode: UInt16) -> UInt16 {
-        macroKeyCodeToCharacter(UInt32(keyCode) | capsMask())
-    }
-
     class func findCodeTableSourceKey(
         codeTable: Int32,
         character: UInt16
