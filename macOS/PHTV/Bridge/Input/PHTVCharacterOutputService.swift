@@ -69,8 +69,8 @@ final class PHTVCharacterOutputService: NSObject {
         }
 
         let engineCode = Int(PHTVEngineRuntimeFacade.engineDataCode())
-        let vRestoreCode = Int(PHTVEngineRuntimeFacade.engineRestoreCode())
-        let vRestoreNewCode = Int(PHTVEngineRuntimeFacade.engineRestoreAndStartNewSessionCode())
+        let vRestoreCode = Int(EngineSignalCode.restore)
+        let vRestoreNewCode = Int(EngineSignalCode.restoreAndStartNewSession)
         let capsMask = EngineBitMask.caps
 
         if !willContinueSending && (engineCode == vRestoreCode || engineCode == vRestoreNewCode) {

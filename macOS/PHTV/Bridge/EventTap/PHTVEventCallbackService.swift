@@ -200,7 +200,7 @@ final class PHTVEventCallbackService {
                         // Successfully restored - pData now contains restore info
                         // Send backspaces to delete Vietnamese characters
                         let bsCount = Int(PHTVEngineRuntimeFacade.engineDataBackspaceCount())
-                        if bsCount > 0 && bsCount < Int(PHTVEngineRuntimeFacade.engineMaxBuffer()) {
+                        if bsCount > 0 && bsCount < Int(EngineSignalCode.maxBuffer) {
                             PHTVKeyEventSenderService.sendBackspaceSequenceWithDelay(Int32(bsCount))
                         }
                         // Send the raw ASCII characters
@@ -259,7 +259,7 @@ final class PHTVEventCallbackService {
                     eventFlags.contains(.maskShift) || eventFlags.contains(.maskAlphaShift),
                     PHTVEventContextBridgeService.hasOtherControlKey(withFlags: eventFlags.rawValue))
 
-                if Int(PHTVEngineRuntimeFacade.engineDataCode()) == PHTVEngineRuntimeFacade.engineReplaceMacroCode() {
+                if PHTVEngineRuntimeFacade.engineDataCode() == EngineSignalCode.replaceMacro {
                     _ = PHTVEventContextBridgeService.prepareTargetContextAndConfigureRuntime(
                         forEvent: event,
                         safeMode: PHTVEngineRuntimeFacade.safeModeEnabled(),
@@ -360,8 +360,8 @@ final class PHTVEventCallbackService {
                   PHTVEngineRuntimeFacade.engineDataBackspaceCount(), PHTVEngineRuntimeFacade.engineDataNewCharCount())
         }
         if PHTVEngineRuntimeFacade.engineDataExtCode() == 5 {
-            if Int(PHTVEngineRuntimeFacade.engineDataCode()) == PHTVEngineRuntimeFacade.engineRestoreCode() ||
-               Int(PHTVEngineRuntimeFacade.engineDataCode()) == PHTVEngineRuntimeFacade.engineRestoreAndStartNewSessionCode() {
+            if PHTVEngineRuntimeFacade.engineDataCode() == EngineSignalCode.restore ||
+               PHTVEngineRuntimeFacade.engineDataCode() == EngineSignalCode.restoreAndStartNewSession {
                 NSLog("[AutoEnglish] ✓ RESTORE TRIGGERED: code=%d, backspace=%d, newChar=%d, keycode=%d (0x%X)",
                       PHTVEngineRuntimeFacade.engineDataCode(), PHTVEngineRuntimeFacade.engineDataBackspaceCount(),
                       PHTVEngineRuntimeFacade.engineDataNewCharCount(), eventKeycode, eventKeycode)
@@ -369,7 +369,7 @@ final class PHTVEventCallbackService {
                 NSLog("[AutoEnglish] ⚠️ WARNING: extCode=5 but code=%d (not restore!)", PHTVEngineRuntimeFacade.engineDataCode())
             }
         } else if eventKeycode == CGKeyCode(KeyCode.space) &&
-                  Int(PHTVEngineRuntimeFacade.engineDataCode()) == PHTVEngineRuntimeFacade.engineDoNothingCode() {
+                  PHTVEngineRuntimeFacade.engineDataCode() == EngineSignalCode.doNothing {
             NSLog("[AutoEnglish] ✗ NO RESTORE on SPACE: code=%d, extCode=%d",
                   PHTVEngineRuntimeFacade.engineDataCode(), PHTVEngineRuntimeFacade.engineDataExtCode())
         }
@@ -377,11 +377,11 @@ final class PHTVEventCallbackService {
 
         let signalAction = Int(PHTVInputStrategyService.engineSignalAction(
             forEngineCode: Int32(PHTVEngineRuntimeFacade.engineDataCode()),
-            doNothingCode: Int32(PHTVEngineRuntimeFacade.engineDoNothingCode()),
-            willProcessCode: Int32(PHTVEngineRuntimeFacade.engineWillProcessCode()),
-            restoreCode: Int32(PHTVEngineRuntimeFacade.engineRestoreCode()),
-            restoreAndStartNewSessionCode: Int32(PHTVEngineRuntimeFacade.engineRestoreAndStartNewSessionCode()),
-            replaceMacroCode: Int32(PHTVEngineRuntimeFacade.engineReplaceMacroCode())))
+            doNothingCode: EngineSignalCode.doNothing,
+            willProcessCode: EngineSignalCode.willProcess,
+            restoreCode: EngineSignalCode.restore,
+            restoreAndStartNewSessionCode: EngineSignalCode.restoreAndStartNewSession,
+            replaceMacroCode: EngineSignalCode.replaceMacro))
 
         if signalAction == PHTVEngineSignalAction.doNothing.rawValue {
             // Navigation keys: trigger session restore to support keyboard-based edit-in-place
@@ -422,7 +422,7 @@ final class PHTVEventCallbackService {
             }
 
             #if DEBUG
-            if Int(PHTVEngineRuntimeFacade.engineDataCode()) == PHTVEngineRuntimeFacade.engineRestoreAndStartNewSessionCode() {
+            if PHTVEngineRuntimeFacade.engineDataCode() == EngineSignalCode.restoreAndStartNewSession {
                 fputs("[AutoEnglish] vRestoreAndStartNewSession START: backspace=\(PHTVEngineRuntimeFacade.engineDataBackspaceCount()), newChar=\(PHTVEngineRuntimeFacade.engineDataNewCharCount()), keycode=\(eventKeycode)\n", stderr)
             }
             #endif
@@ -472,7 +472,7 @@ final class PHTVEventCallbackService {
                 containsUnicodeCompound: appChars.containsUnicodeCompound,
                 notionCodeBlockDetected: isNotionCodeBlockDetected,
                 backspaceCount: Int32(PHTVEngineRuntimeFacade.engineDataBackspaceCount()),
-                maxBuffer: Int32(PHTVEngineRuntimeFacade.engineMaxBuffer()),
+                maxBuffer: EngineSignalCode.maxBuffer,
                 safetyLimit: 15)
 
             let adjustmentAction = Int(resolvedBackspacePlan.adjustmentAction)
@@ -527,9 +527,9 @@ final class PHTVEventCallbackService {
                     backspaceCount: Int32(PHTVEngineRuntimeFacade.engineDataBackspaceCount()),
                     newCharCount: Int32(PHTVEngineRuntimeFacade.engineDataNewCharCount()),
                     externalDeleteCount: externalDeleteCount,
-                    restoreAndStartNewSessionCode: Int32(PHTVEngineRuntimeFacade.engineRestoreAndStartNewSessionCode()),
-                    willProcessCode: Int32(PHTVEngineRuntimeFacade.engineWillProcessCode()),
-                    restoreCode: Int32(PHTVEngineRuntimeFacade.engineRestoreCode()),
+                    restoreAndStartNewSessionCode: EngineSignalCode.restoreAndStartNewSession,
+                    willProcessCode: EngineSignalCode.willProcess,
+                    restoreCode: EngineSignalCode.restore,
                     deleteWindowMs: kTextReplacementDeleteWindowMs)
 
                 if textReplacementDecision.shouldBypassEvent {
@@ -569,14 +569,14 @@ final class PHTVEventCallbackService {
                 appNeedsStepByStep: appChars.needsStepByStep,
                 keyCode: Int32(eventKeycode),
                 engineCode: Int32(PHTVEngineRuntimeFacade.engineDataCode()),
-                restoreCode: Int32(PHTVEngineRuntimeFacade.engineRestoreCode()),
-                restoreAndStartNewSessionCode: Int32(PHTVEngineRuntimeFacade.engineRestoreAndStartNewSessionCode()),
+                restoreCode: EngineSignalCode.restore,
+                restoreAndStartNewSessionCode: EngineSignalCode.restoreAndStartNewSession,
                 enterKeyCode: Int32(KeyCode.enter),
                 returnKeyCode: Int32(KeyCode.returnKey))
 
             // Send backspace
             let bsCount = Int(PHTVEngineRuntimeFacade.engineDataBackspaceCount())
-            if bsCount > 0 && bsCount < Int(PHTVEngineRuntimeFacade.engineMaxBuffer()) {
+            if bsCount > 0 && bsCount < Int(EngineSignalCode.maxBuffer) {
                 if characterSendPlan.deferBackspaceToAX {
                     PHTVEventRuntimeContextService.setPendingBackspaceCount(Int32(bsCount))
                     #if DEBUG
@@ -605,7 +605,7 @@ final class PHTVEventCallbackService {
                     keycode: eventKeycode, flags: eventFlags.rawValue)
             } else {
                 let newCharCount = Int(PHTVEngineRuntimeFacade.engineDataNewCharCount())
-                if newCharCount > 0 && newCharCount <= Int(PHTVEngineRuntimeFacade.engineMaxBuffer()) {
+                if newCharCount > 0 && newCharCount <= Int(EngineSignalCode.maxBuffer) {
                     let cliSpeedFactor = PHTVCliRuntimeStateService.currentSpeedFactor()
                     let isCli = PHTVEventRuntimeContextService.isCliTargetEnabled()
                     let scaledCliTextDelayUs: UInt64 = isCli
@@ -641,7 +641,7 @@ final class PHTVEventCallbackService {
                 }
                 if characterSendPlan.shouldSendRestoreTriggerKey {
                     #if DEBUG
-                    if Int(PHTVEngineRuntimeFacade.engineDataCode()) == PHTVEngineRuntimeFacade.engineRestoreAndStartNewSessionCode() {
+                    if PHTVEngineRuntimeFacade.engineDataCode() == EngineSignalCode.restoreAndStartNewSession {
                         fputs("[AutoEnglish] PROCESSING RESTORE: backspace=\(PHTVEngineRuntimeFacade.engineDataBackspaceCount()), newChar=\(PHTVEngineRuntimeFacade.engineDataNewCharCount())\n", stderr)
                     }
                     #endif

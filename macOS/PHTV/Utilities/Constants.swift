@@ -186,6 +186,15 @@ enum EnginePackedData {
     }
 }
 
+enum EngineSignalCode {
+    static let doNothing: Int32 = 0
+    static let willProcess: Int32 = 1
+    static let restore: Int32 = 3
+    static let replaceMacro: Int32 = 4
+    static let restoreAndStartNewSession: Int32 = 5
+    static let maxBuffer: Int32 = 32
+}
+
 // MARK: - Key Codes
 
 enum KeyCode {

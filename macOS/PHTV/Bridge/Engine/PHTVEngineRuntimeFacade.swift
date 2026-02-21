@@ -640,13 +640,6 @@ func phtvRuntimeQuickEndConsonantEnabled() -> Int32 {
 
 @objcMembers
 final class PHTVEngineRuntimeFacade: NSObject {
-    // Mirror constants in Core/Engine/DataType.h.
-    private static let engineDoNothingCodeValue: Int32 = 0
-    private static let engineWillProcessCodeValue: Int32 = 1
-    private static let engineRestoreCodeValue: Int32 = 3
-    private static let engineReplaceMacroCodeValue: Int32 = 4
-    private static let engineRestoreAndStartNewSessionCodeValue: Int32 = 5
-    private static let engineMaxBufferValue: Int32 = 32
     private static let navigationKeyCodes: Set<UInt16> = [
         KeyCode.leftArrow,
         KeyCode.rightArrow,
@@ -1121,30 +1114,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
         return macroKeyToCharacterUnshifted[keyCode] ?? 0
     }
 
-    class func engineDoNothingCode() -> Int32 {
-        engineDoNothingCodeValue
-    }
-
-    class func engineWillProcessCode() -> Int32 {
-        engineWillProcessCodeValue
-    }
-
-    class func engineReplaceMacroCode() -> Int32 {
-        engineReplaceMacroCodeValue
-    }
-
-    class func engineRestoreCode() -> Int32 {
-        engineRestoreCodeValue
-    }
-
-    class func engineRestoreAndStartNewSessionCode() -> Int32 {
-        engineRestoreAndStartNewSessionCodeValue
-    }
-
-    class func engineMaxBuffer() -> Int32 {
-        engineMaxBufferValue
-    }
-
     class func engineDataCode() -> Int32 {
         guard let engineData = engineDataPointer else {
             return 0
@@ -1183,12 +1152,12 @@ final class PHTVEngineRuntimeFacade: NSObject {
     class func engineDataCharAt(_ index: Int32) -> UInt32 {
         guard let engineData = engineDataPointer,
               index >= 0,
-              index < engineMaxBufferValue else {
+              index < EngineSignalCode.maxBuffer else {
             return 0
         }
 
         return withUnsafePointer(to: engineData.pointee.charData) { bufferPointer in
-            bufferPointer.withMemoryRebound(to: UInt32.self, capacity: Int(engineMaxBufferValue)) { elementPointer in
+            bufferPointer.withMemoryRebound(to: UInt32.self, capacity: Int(EngineSignalCode.maxBuffer)) { elementPointer in
                 elementPointer[Int(index)]
             }
         }

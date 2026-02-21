@@ -112,7 +112,7 @@ enum DebugSelfTests {
         let low = Int(EnginePackedData.lowByte(packedValue))
         let high = Int(EnginePackedData.highByte(packedValue))
         let spaceKey = Int(KeyCode.space)
-        let maxBuffer = Int(PHTVEngineRuntimeFacade.engineMaxBuffer())
+        let maxBuffer = Int(EngineSignalCode.maxBuffer)
         let capsMask = EngineBitMask.caps
         let keyA: UInt32 = 0
         let key1: UInt32 = 18
