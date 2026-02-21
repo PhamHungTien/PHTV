@@ -11,6 +11,7 @@
 #ifdef __cplusplus
 
 #include <cstdint>
+#include <ApplicationServices/ApplicationServices.h>
 
 #include "../Core/Engine/Engine.h"
 #include "../Core/PHTVConstants.h"
@@ -22,9 +23,25 @@ extern volatile int vEmojiHotkeyModifiers;
 extern volatile int vEmojiHotkeyKeyCode;
 extern volatile int vSafeMode;
 extern int vShowIconOnDock;
+extern "C" void PHTVInit(void);
+extern "C" CGEventRef PHTVCallback(CGEventTapProxy proxy,
+                                   CGEventType type,
+                                   CGEventRef event,
+                                   void *refcon);
 extern "C" void RequestNewSession(void);
 extern "C" void InvalidateLayoutCache(void);
 extern "C" const char *PHTVBuildDateCString(void);
+
+inline void phtvRuntimeInitializeEventTapCore() noexcept {
+    PHTVInit();
+}
+
+inline CGEventRef phtvRuntimeHandleEventTapCallback(CGEventTapProxy proxy,
+                                                     CGEventType type,
+                                                     CGEventRef event,
+                                                     void *refcon) noexcept {
+    return PHTVCallback(proxy, type, event, refcon);
+}
 
 inline const char *phtvBuildDateCString() noexcept {
     return PHTVBuildDateCString();

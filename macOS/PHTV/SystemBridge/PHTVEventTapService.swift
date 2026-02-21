@@ -46,7 +46,7 @@ import Foundation
         permissionLost = false
         PHTVPermissionService.invalidatePermissionCache()
 
-        PHTVInit()
+        phtvRuntimeInitializeEventTapCore()
 
         let mask = eventMaskBit(.keyDown)
             | eventMaskBit(.keyUp)
@@ -55,7 +55,7 @@ import Foundation
             | eventMaskBit(.rightMouseDown)
 
         let callback: CGEventTapCallBack = { proxy, type, event, refcon in
-            return PHTVCallback(proxy, type, event, refcon)
+            return phtvRuntimeHandleEventTapCallback(proxy, type, event, refcon)
         }
 
         eventTap = CGEvent.tapCreate(
