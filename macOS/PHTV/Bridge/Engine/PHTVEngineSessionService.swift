@@ -23,7 +23,6 @@ final class PHTVEngineSessionService: NSObject {
         PHTVEngineRuntimeFacade.initializeAndGetKeyHookState()
         PHTVTypingSyncStateService.setupSyncKeyCapacity(kSyncKeyReserveSize)
         PHTVEngineStartupDataService.loadFromUserDefaults()
-        PHTVConvertToolSettingsService.loadFromUserDefaults()
     }
 
     @objc class func requestNewSession() {

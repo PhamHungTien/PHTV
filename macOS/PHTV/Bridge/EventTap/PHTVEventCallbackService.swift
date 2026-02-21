@@ -109,11 +109,12 @@ final class PHTVEventCallbackService {
 
         // Switch-language / quick-convert / emoji hotkey handling
         if type == .keyDown {
+            let quickConvertHotkey = PHTVConvertToolHotkeyService.currentHotkey()
             let hotkeyAction = PHTVEventContextBridgeService.processKeyDownHotkeyAndApplyState(
                 forKeyCode: eventKeycode,
                 currentFlags: eventFlags.rawValue,
                 switchHotkey: Int32(PHTVEngineRuntimeFacade.switchKeyStatus()),
-                convertHotkey: Int32(PHTVEngineRuntimeFacade.quickConvertHotkey()),
+                convertHotkey: quickConvertHotkey,
                 emojiEnabled: Int32(PHTVEngineRuntimeFacade.enableEmojiHotkey()),
                 emojiModifiers: Int32(PHTVEngineRuntimeFacade.emojiHotkeyModifiers()),
                 emojiHotkeyKeyCode: Int32(PHTVEngineRuntimeFacade.emojiHotkeyKeyCode()))
@@ -152,7 +153,7 @@ final class PHTVEventCallbackService {
                 restoreOnEscape: Int32(PHTVEngineRuntimeFacade.restoreOnEscape()),
                 customEscapeKey: Int32(PHTVEngineRuntimeFacade.customEscapeKey()),
                 switchHotkey: Int32(PHTVEngineRuntimeFacade.switchKeyStatus()),
-                convertHotkey: Int32(PHTVEngineRuntimeFacade.quickConvertHotkey()),
+                convertHotkey: PHTVConvertToolHotkeyService.currentHotkey(),
                 emojiEnabled: Int32(PHTVEngineRuntimeFacade.enableEmojiHotkey()),
                 emojiModifiers: Int32(PHTVEngineRuntimeFacade.emojiHotkeyModifiers()),
                 emojiHotkeyKeyCode: Int32(PHTVEngineRuntimeFacade.emojiHotkeyKeyCode()))
@@ -177,7 +178,7 @@ final class PHTVEventCallbackService {
                     restoreOnEscape: Int32(PHTVEngineRuntimeFacade.restoreOnEscape()),
                     customEscapeKey: Int32(PHTVEngineRuntimeFacade.customEscapeKey()),
                     switchHotkey: Int32(PHTVEngineRuntimeFacade.switchKeyStatus()),
-                    convertHotkey: Int32(PHTVEngineRuntimeFacade.quickConvertHotkey()),
+                    convertHotkey: PHTVConvertToolHotkeyService.currentHotkey(),
                     emojiEnabled: Int32(PHTVEngineRuntimeFacade.enableEmojiHotkey()),
                     emojiModifiers: Int32(PHTVEngineRuntimeFacade.emojiHotkeyModifiers()),
                     emojiKeyCode: Int32(PHTVEngineRuntimeFacade.emojiHotkeyKeyCode()),

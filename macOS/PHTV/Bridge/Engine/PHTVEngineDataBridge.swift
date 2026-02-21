@@ -76,24 +76,24 @@ final class PHTVEngineDataBridge: NSObject {
     }
 
     class func quickConvertMenuTitle() -> String {
-        let quickConvertHotkey = PHTVEngineRuntimeFacade.quickConvertHotkey()
+        let quickConvertHotkey = PHTVConvertToolHotkeyService.currentHotkey()
         var components: [String] = []
 
-        if PHTVEngineRuntimeFacade.hotkeyHasControl(quickConvertHotkey) {
+        if PHTVConvertToolHotkeyService.hasControl(quickConvertHotkey) {
             components.append("⌃")
         }
-        if PHTVEngineRuntimeFacade.hotkeyHasOption(quickConvertHotkey) {
+        if PHTVConvertToolHotkeyService.hasOption(quickConvertHotkey) {
             components.append("⌥")
         }
-        if PHTVEngineRuntimeFacade.hotkeyHasCommand(quickConvertHotkey) {
+        if PHTVConvertToolHotkeyService.hasCommand(quickConvertHotkey) {
             components.append("⌘")
         }
-        if PHTVEngineRuntimeFacade.hotkeyHasShift(quickConvertHotkey) {
+        if PHTVConvertToolHotkeyService.hasShift(quickConvertHotkey) {
             components.append("⇧")
         }
 
-        if PHTVEngineRuntimeFacade.hotkeyHasKey(quickConvertHotkey) {
-            let keyCode = PHTVEngineRuntimeFacade.hotkeySwitchKey(quickConvertHotkey)
+        if PHTVConvertToolHotkeyService.hasKey(quickConvertHotkey) {
+            let keyCode = PHTVConvertToolHotkeyService.switchKey(quickConvertHotkey)
             components.append(hotkeyKeyDisplayLabel(keyCode))
         }
 
