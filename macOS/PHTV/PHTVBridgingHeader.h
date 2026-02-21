@@ -13,6 +13,7 @@
 #import <AppKit/AppKit.h>
 
 // Bridge
-#import "Bridge/Engine/PHTVEngineCxxInterop.hpp"
+#import "Core/Engine/Engine.h"
+#import "Core/PHTVConstants.h"
 
 #endif /* PHTVBridgingHeader_h */

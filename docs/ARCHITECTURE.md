@@ -49,7 +49,6 @@ CGEventTap (main run loop)
 Engine xử lý tiếng Việt thuần C++. Không phụ thuộc vào platform. Nhận keycode và trả về chuỗi kết quả. Runtime pointer state (`vKeyHookState*`) hiện được quản lý phía Swift facade.
 
 ### Bridge/Engine
-- `PHTVEngineCxxInterop.hpp` — Wrapper inline C++ → Swift (không argument label)
 - `PHTVEngineSessionService.swift` — Khởi động engine (`boot()`), quản lý session
 - `PHTVEngineDataBridge.swift` — Đọc kết quả xử lý từ engine
 - `PHTVEngineStartupDataService.swift` — Load startup data từ UserDefaults
@@ -93,7 +92,7 @@ SwiftUI views. Không chứa business logic. Nhận state từ `State/` và gọ
 
 ## Quy tắc thiết kế
 
-1. **Engine C++ không phụ thuộc Swift/ObjC.** Mọi giao tiếp qua wrapper inline trong `PHTVEngineCxxInterop.hpp`.
+1. **Engine C++ không phụ thuộc Swift/ObjC.** Swift gọi trực tiếp C/C++ API qua bridging header.
 2. **Không argument label cho C++ free function trong Swift.** Swift import C++ free functions dưới dạng positional.
 3. **`@MainActor.assumeIsolated`** dùng trong EventTap callback (tap chạy trên main run loop).
 4. **`nonisolated(unsafe)`** cho static vars trong các service không có actor isolation.
@@ -101,16 +100,15 @@ SwiftUI views. Không chứa business logic. Nhận state từ `State/` và gọ
 
 ## Interop C++ ↔ Swift
 
-File `Bridge/Engine/PHTVEngineCxxInterop.hpp` được import qua bridging header:
+Bridging header import trực tiếp C/C++ headers:
 
 ```objc
 // PHTVBridgingHeader.h
-#import "Bridge/Engine/PHTVEngineCxxInterop.hpp"
+#import "Core/Engine/Engine.h"
+#import "Core/PHTVConstants.h"
 ```
 
 Build flag: `-cxx-interoperability-mode=default` (Swift 5.9+).
-
-Tất cả wrapper đều là `inline` `noexcept` function, không phải class method, để Swift có thể gọi mà không cần argument label.
 
 ## Build
 

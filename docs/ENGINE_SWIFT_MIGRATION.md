@@ -10,7 +10,6 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - C/C++ headers/sources: 20
 - Cac file C/C++ con lai tap trung o:
   - `macOS/PHTV/Core/Engine/*`
-  - `macOS/PHTV/Bridge/Engine/PHTVEngineCxxInterop.hpp`
   - `macOS/PHTV/PHTVBridgingHeader.h`
   - `macOS/PHTV/Core/*.h`
   - `tests/engine/EngineRegressionTests.cpp`
@@ -134,6 +133,9 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - `Engine.cpp` lay snapshot runtime dau moi key event de dung trong xu ly Telex/VNI va code table conversion
   - Bo extern/definition tuong ung khoi `PHTVEngineCxxInterop.hpp`, `Engine.h`, `PHTVRuntimeState.cpp`
   - Giu weak fallback trong `Engine.cpp` cho regression binary standalone
+- Da bo file interop wrapper C++:
+  - Xoa `Bridge/Engine/PHTVEngineCxxInterop.hpp`
+  - `PHTVBridgingHeader.h` import truc tiep `Core/Engine/Engine.h` va `Core/PHTVConstants.h`
 
 ## Lo trinh migrate
 
