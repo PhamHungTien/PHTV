@@ -1336,10 +1336,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             PHTVEventTargetContextBox *targetContext = PrepareTargetContextForEvent(event, eventTargetPID);
             BOOL spotlightActive = targetContext.spotlightActive;
             NSString *effectiveBundleId = targetContext.effectiveBundleId;
-            PHTVAppCharacteristicsBox *appChars = targetContext.appCharacteristics;
-            if (appChars == nil) {
-                appChars = [PHTVAppContextService defaultAppCharacteristics];
-            }
+            PHTVAppCharacteristicsBox *appChars = _phtvCurrentAppCharacteristics;
 
 #ifdef DEBUG
             NSString *eventTargetBundleId = targetContext.eventTargetBundleId;
