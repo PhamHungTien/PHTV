@@ -8,7 +8,6 @@
 import Foundation
 
 private let phtvDefaultsKeyMacroList = "macroList"
-private let phtvDefaultsKeyMacroListCorruptedBackup = "macroList.corruptedBackup"
 private let phtvDefaultsKeyMacroData = "macroData"
 private let phtvDefaultsKeyCustomDictionary = "customDictionary"
 private let phtvDefaultsKeySpelling = "Spelling"
@@ -30,105 +29,27 @@ private func phtvMacroLiveLog(_ message: String) {
     NSLog("[PHTV Live] %@", message)
 }
 
-private extension Data {
-    mutating func appendUInt8(_ value: UInt8) {
-        var value = value
-        Swift.withUnsafeBytes(of: &value) { rawBuffer in
-            append(contentsOf: rawBuffer)
-        }
-    }
-
-    mutating func appendUInt16(_ value: UInt16) {
-        var valueLE = value.littleEndian
-        Swift.withUnsafeBytes(of: &valueLE) { rawBuffer in
-            append(contentsOf: rawBuffer)
-        }
-    }
-}
-
 @MainActor extension AppDelegate {
     private func syncMacrosFromUserDefaults(resetSession: Bool) {
         let defaults = UserDefaults.standard
         let macroListData = defaults.data(forKey: phtvDefaultsKeyMacroList)
+        let macros = MacroStorage.load(defaults: defaults)
 
-        if let macroListData, !macroListData.isEmpty {
-            let decoded: Any
-            do {
-                decoded = try JSONSerialization.jsonObject(with: macroListData, options: .mutableContainers)
-            } catch {
-                NSLog("[AppDelegate] ERROR: Failed to parse macroList: %@", String(describing: error))
-                defaults.set(macroListData, forKey: phtvDefaultsKeyMacroListCorruptedBackup)
-                defaults.removeObject(forKey: phtvDefaultsKeyMacroList)
-                defaults.removeObject(forKey: phtvDefaultsKeyMacroData)
+        if macros.isEmpty {
+            defaults.removeObject(forKey: phtvDefaultsKeyMacroData)
+            let emptyData = MacroStorage.engineBinaryData(from: [])
+            PHTVEngineDataBridge.initializeMacroMap(with: emptyData)
 
-                var emptyData = Data()
-                emptyData.appendUInt16(0)
-                PHTVEngineDataBridge.initializeMacroMap(with: emptyData)
-                phtvMacroLiveLog("macroList parse failed, backed up to \(phtvDefaultsKeyMacroListCorruptedBackup) and reset")
-
-                if resetSession {
-                    PHTVManager.requestNewSession()
-                }
-                return
+            if macroListData != nil && defaults.data(forKey: phtvDefaultsKeyMacroList) == nil {
+                phtvMacroLiveLog("macroList parse failed, backed up and reset")
+            } else {
+                phtvMacroLiveLog("macros cleared")
             }
-
-            guard let macros = decoded as? [[String: Any]] else {
-                NSLog("[AppDelegate] ERROR: Failed to parse macroList: root is not array")
-                defaults.set(macroListData, forKey: phtvDefaultsKeyMacroListCorruptedBackup)
-                defaults.removeObject(forKey: phtvDefaultsKeyMacroList)
-                defaults.removeObject(forKey: phtvDefaultsKeyMacroData)
-
-                var emptyData = Data()
-                emptyData.appendUInt16(0)
-                PHTVEngineDataBridge.initializeMacroMap(with: emptyData)
-                phtvMacroLiveLog("macroList parse failed, backed up to \(phtvDefaultsKeyMacroListCorruptedBackup) and reset")
-
-                if resetSession {
-                    PHTVManager.requestNewSession()
-                }
-                return
-            }
-
-            let snippetTypeMap: [String: UInt8] = [
-                "static": 0,
-                "date": 1,
-                "time": 2,
-                "datetime": 3,
-                "clipboard": 4,
-                "random": 5,
-                "counter": 6
-            ]
-
-            var binaryData = Data()
-            binaryData.appendUInt16(UInt16(macros.count))
-
-            for macro in macros {
-                let shortcut = (macro["shortcut"] as? String) ?? ""
-                let expansion = (macro["expansion"] as? String) ?? ""
-                let snippetTypeStr = (macro["snippetType"] as? String) ?? "static"
-
-                let shortcutData = shortcut.data(using: .utf8) ?? Data()
-                binaryData.appendUInt8(UInt8(truncatingIfNeeded: shortcutData.count))
-                binaryData.append(shortcutData)
-
-                let expansionData = expansion.data(using: .utf8) ?? Data()
-                binaryData.appendUInt16(UInt16(truncatingIfNeeded: expansionData.count))
-                binaryData.append(expansionData)
-
-                let snippetType = snippetTypeMap[snippetTypeStr] ?? 0
-                binaryData.appendUInt8(snippetType)
-            }
-
+        } else {
+            let binaryData = MacroStorage.engineBinaryData(from: macros)
             defaults.set(binaryData, forKey: phtvDefaultsKeyMacroData)
             PHTVEngineDataBridge.initializeMacroMap(with: binaryData)
             phtvMacroLiveLog("macros synced: count=\(macros.count)")
-        } else {
-            defaults.removeObject(forKey: phtvDefaultsKeyMacroData)
-
-            var emptyData = Data()
-            emptyData.appendUInt16(0)
-            PHTVEngineDataBridge.initializeMacroMap(with: emptyData)
-            phtvMacroLiveLog("macros cleared")
         }
 
         if resetSession {

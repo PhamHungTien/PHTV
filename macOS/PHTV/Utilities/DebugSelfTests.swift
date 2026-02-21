@@ -79,6 +79,17 @@ enum DebugSelfTests {
         let savedData = MacroStorage.save([macroA, macroB], defaults: defaults)
         assertCondition(savedData != nil, "Saving macros should return encoded data")
 
+        let macroDate = MacroItem(shortcut: "dt", expansion: "dd/MM/yyyy", snippetType: .date)
+        let enginePayload = MacroStorage.engineBinaryData(from: [macroA, macroDate])
+        assertCondition(
+            enginePayload.count > 2 && enginePayload[0] == 2 && enginePayload[1] == 0,
+            "Engine macro payload should begin with little-endian macro count"
+        )
+        assertCondition(
+            enginePayload.last == 1,
+            "Engine macro payload should encode snippet type for each macro"
+        )
+
         let loaded = MacroStorage.load(defaults: defaults)
         let shortcuts = loaded.map { $0.shortcut }.sorted()
         assertCondition(

@@ -137,6 +137,25 @@ struct MacroItem: Identifiable, Hashable, Codable {
 enum MacroStorage {
     private static let corruptedBackupSuffix = ".corruptedBackup"
 
+    static func engineBinaryData(from macros: [MacroItem]) -> Data {
+        var binaryData = Data()
+        binaryData.appendUInt16(UInt16(truncatingIfNeeded: macros.count))
+
+        for macro in macros {
+            let shortcutData = macro.shortcut.data(using: .utf8) ?? Data()
+            binaryData.appendUInt8(UInt8(truncatingIfNeeded: shortcutData.count))
+            binaryData.append(shortcutData)
+
+            let expansionData = macro.expansion.data(using: .utf8) ?? Data()
+            binaryData.appendUInt16(UInt16(truncatingIfNeeded: expansionData.count))
+            binaryData.append(expansionData)
+
+            binaryData.appendUInt8(macro.snippetType.engineCode)
+        }
+
+        return binaryData
+    }
+
     static func load(defaults: UserDefaults = .standard) -> [MacroItem] {
         guard let data = defaults.data(forKey: UserDefaultsKey.macroList) else {
             return []
@@ -188,6 +207,43 @@ enum MacroStorage {
             return
         }
         NotificationCenter.default.post(name: NotificationName.macrosUpdated, object: nil)
+    }
+}
+
+private extension SnippetType {
+    var engineCode: UInt8 {
+        switch self {
+        case .static:
+            return 0
+        case .date:
+            return 1
+        case .time:
+            return 2
+        case .datetime:
+            return 3
+        case .clipboard:
+            return 4
+        case .random:
+            return 5
+        case .counter:
+            return 6
+        }
+    }
+}
+
+private extension Data {
+    mutating func appendUInt8(_ value: UInt8) {
+        var value = value
+        Swift.withUnsafeBytes(of: &value) { rawBuffer in
+            append(contentsOf: rawBuffer)
+        }
+    }
+
+    mutating func appendUInt16(_ value: UInt16) {
+        var valueLE = value.littleEndian
+        Swift.withUnsafeBytes(of: &valueLE) { rawBuffer in
+            append(contentsOf: rawBuffer)
+        }
     }
 }
 
