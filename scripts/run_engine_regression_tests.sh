@@ -13,7 +13,6 @@ clang++ \
   -Wno-deprecated-declarations \
   -I"$ROOT_DIR/macOS/PHTV/Core/Engine" \
   -I"$ROOT_DIR/macOS/PHTV/Core" \
-  "$ROOT_DIR/macOS/PHTV/Core/Engine/Vietnamese.cpp" \
   "$ROOT_DIR/tests/engine/EnglishWordDetectorFallback.cpp" \
   "$ROOT_DIR/macOS/PHTV/Core/Engine/Engine.cpp" \
   "$ROOT_DIR/tests/engine/EngineRegressionTests.cpp" \

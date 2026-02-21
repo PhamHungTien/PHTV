@@ -7,7 +7,7 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 ## Trang thai hien tai
 
 - Swift files: 140
-- C/C++ headers/sources: 4
+- C/C++ headers/sources: 3
 - Cac file C/C++ con lai tap trung o:
   - `macOS/PHTV/Core/Engine/*`
   - `tests/engine/EnglishWordDetectorFallback.cpp`
@@ -40,7 +40,7 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - `vSetCheckSpelling`, `vPrimeUpperCaseFirstChar`, `vRestoreToRawKeys`, `vTempOffSpellChecking`, `vTempOffEngine`
   - Swift facade goi truc tiep `v*` function va da xoa wrappers tuong ung trong `PHTVEngineCxxInterop.hpp`
 - Da port keycode->character macro map sang Swift facade:
-  - `macroKeyCodeToCharacter` hien dung bang map Swift (mirror `Vietnamese.cpp`)
+  - `macroKeyCodeToCharacter` hien dung bang map Swift (mirror `VietnameseData.inc`)
   - `hotkeyDisplayCharacter` hien tai suy ra truc tiep tu mapping Swift
   - da xoa wrapper `phtvEngineMacroKeyCodeToCharacter` trong `PHTVEngineCxxInterop.hpp`
 - Da bo wrapper `phtvEngineSetCheckSpellingValue`:
@@ -200,6 +200,8 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - Keycode constants duoc gom vao `Core/Engine/DataType.h`
 - Da xoa wrapper `PHTVBridgingHeader.h`:
   - Build setting `SWIFT_OBJC_BRIDGING_HEADER` hien tro truc tiep `PHTV/Core/Engine/PHTVEngineCBridge.h`
+- Da internalize `Vietnamese.cpp` vao `Engine.cpp`:
+  - Bang du lieu keycode/vowel/consonant duoc include noi bo qua `Core/Engine/VietnameseData.inc`
 
 ## Lo trinh migrate
 
@@ -231,7 +233,7 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 
 ### Pha 5: Port core key processor sang Swift
 
-- Port `Engine.cpp` + `Vietnamese.cpp` (xu ly key event, tone/mark/session, restore).
+- Port `Engine.cpp` (bao gom phan du lieu/trien khai tieng Viet dang internalized qua `VietnameseData.inc`) cho xu ly key event, tone/mark/session, restore.
 - Tao golden parity test theo chuoi key event.
 - Kiem tra cac case: telex, vni, quick telex, macro, auto restore, restore key.
 

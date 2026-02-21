@@ -218,7 +218,7 @@ enum EngineInputClassification {
 }
 
 enum EngineMacroKeyMap {
-    // Mirror keyCodeToCharacter mapping in Core/Engine/Vietnamese.cpp.
+    // Mirror keyCodeToCharacter mapping in Core/Engine/VietnameseData.inc.
     private static let unshifted: [UInt16: UInt16] = [
         0: 0x0061, 11: 0x0062, 8: 0x0063, 2: 0x0064, 14: 0x0065, 3: 0x0066, 5: 0x0067, 4: 0x0068,
         34: 0x0069, 38: 0x006A, 40: 0x006B, 37: 0x006C, 46: 0x006D, 45: 0x006E, 31: 0x006F, 35: 0x0070,
