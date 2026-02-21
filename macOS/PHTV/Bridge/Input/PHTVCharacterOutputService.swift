@@ -8,6 +8,7 @@
 
 import CoreGraphics
 import Darwin
+import AppKit
 import Foundation
 
 private let kSpotlightCacheDurationMs: UInt64 = 150

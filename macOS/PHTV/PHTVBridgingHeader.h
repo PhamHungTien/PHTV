@@ -9,9 +9,6 @@
 #ifndef PHTVBridgingHeader_h
 #define PHTVBridgingHeader_h
 
-#import <Foundation/Foundation.h>
-#import <AppKit/AppKit.h>
-
 // Bridge
 #import "Core/Engine/PHTVEngineCBridge.h"
 

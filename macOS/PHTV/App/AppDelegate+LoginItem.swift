@@ -5,6 +5,7 @@
 //  Swift port of AppDelegate+LoginItem.mm.
 //
 
+import AppKit
 import Foundation
 import ServiceManagement
 

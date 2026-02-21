@@ -7,6 +7,7 @@
 //
 
 import CoreGraphics
+import AppKit
 import Foundation
 
 @objc(PHTVKeyEventSenderService)
