@@ -26,7 +26,7 @@
 #include <vector>
 #include <cstdio>
 
-#include "PHTVEngineCBridge.h"
+#include "PHTVEngineCBridge.inc"
 
 using namespace std;
 

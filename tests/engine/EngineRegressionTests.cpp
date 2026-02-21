@@ -1,5 +1,5 @@
 #include "EngineDataTypes.inc"
-#include "PHTVEngineCBridge.h"
+#include "PHTVEngineCBridge.inc"
 
 #include <iostream>
 #include <string>

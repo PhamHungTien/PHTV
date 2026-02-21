@@ -1,10 +1,10 @@
 //
-//  PHTVEngineCBridge.h
+//  PHTVEngineCBridge.inc
 //  PHTV
 //
 
-#ifndef PHTVEngineCBridge_h
-#define PHTVEngineCBridge_h
+#ifndef PHTVEngineCBridge_inc
+#define PHTVEngineCBridge_inc
 
 #include <stdint.h>
 
@@ -92,4 +92,4 @@ int phtvDetectorKeyStatesToAscii(const uint32_t* keyStates,
 }
 #endif
 
-#endif /* PHTVEngineCBridge_h */
+#endif /* PHTVEngineCBridge_inc */

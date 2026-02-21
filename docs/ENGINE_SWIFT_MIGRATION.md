@@ -84,7 +84,7 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - `PHTVEngineRuntimeFacade` doc `code/extCode/backspace/newChar/charData/macroData` qua `phtvEngineHook*`
   - Swift khong con truy cap truc tiep `vKeyHookState` / `vKeyInit`
 - Da bo include `Core/Engine/Engine.h` khoi `PHTVBridgingHeader.h`:
-  - Bridging header chi con dung `Core/Engine/PHTVEngineCBridge.h`
+  - Bridging header chi con dung `Core/Engine/PHTVEngineCBridge.inc`
 - Da bo phu thuoc `PHTVCodeTable*` constants trong Swift:
   - Call site dung enum Swift `CodeTable` (khong can import `Core/PHTVConstants.h`)
 - Da bo phu thuoc `KEY_*` constants trong Swift key sender:
@@ -109,8 +109,8 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da route callsite detector trong `Engine.cpp` sang C bridge:
   - `Engine.cpp` goi truc tiep `phtvDetector*` thay vi include `EnglishWordDetector.h`
   - Them helper bridge-string de debug auto-English (`phtvDetectorKeyStatesToAscii`)
-  - Mo rong declaration trong `Core/Engine/PHTVEngineCBridge.h` cho nhom runtime/dictionary/detector APIs
-  - `EnglishWordDetector.cpp` import chung `PHTVEngineCBridge.h` thay cho block `extern "C"` khai bao thu cong
+  - Mo rong declaration trong `Core/Engine/PHTVEngineCBridge.inc` cho nhom runtime/dictionary/detector APIs
+  - `EnglishWordDetector.cpp` import chung `PHTVEngineCBridge.inc` thay cho block `extern "C"` khai bao thu cong
   - `tests/engine/EngineRegressionTests.cpp` goi `phtvDictionary*`/`phtvCustomDictionary*` thay vi include `EnglishWordDetector.h`
   - `tests/engine/EngineRegressionTests.cpp` tiep tuc bo call truc tiep `vKey*`/`vKeyHookState` tu `Engine.h`, chuyen sang `phtvEngine*` C bridge
   - Dong bo lai cache count custom dictionary trong fallback detector + them case regression `qes` de khoa behavior custom-English restore
@@ -187,7 +187,7 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - Don dep macro runtime cu trong `EngineDataTypes.inc` (`PHTV_CURRENT_INPUT_TYPE` / `IS_SPECIALKEY`) vi `Engine.cpp` da tu quan ly snapshot input type
 - Da bo file interop wrapper C++:
   - Xoa `Bridge/Engine/PHTVEngineCxxInterop.hpp`
-  - `PHTVBridgingHeader.h` hien import `Core/Engine/PHTVEngineCBridge.h`
+  - `PHTVBridgingHeader.h` hien import `Core/Engine/PHTVEngineCBridge.inc`
 - Da xoa cac legacy headers khong con su dung:
   - `macOS/PHTV/Core/PHTVConstants.h`
   - `macOS/PHTV/Core/PHTVHotkey.h`
@@ -199,7 +199,7 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da loai bo `Core/phtv_mac_keys.h`:
   - Keycode constants duoc gom vao `Core/Engine/EngineDataTypes.inc`
 - Da xoa wrapper `PHTVBridgingHeader.h`:
-  - Build setting `SWIFT_OBJC_BRIDGING_HEADER` hien tro truc tiep `PHTV/Core/Engine/PHTVEngineCBridge.h`
+  - Build setting `SWIFT_OBJC_BRIDGING_HEADER` hien tro truc tiep `PHTV/Core/Engine/PHTVEngineCBridge.inc`
 - Da internalize `Vietnamese.cpp` vao `Engine.cpp`:
   - Bang du lieu keycode/vowel/consonant duoc include noi bo qua `Core/Engine/VietnameseData.inc`
 
@@ -240,7 +240,7 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 ### Pha 6: Bo C++ interop
 
 - Xoa `PHTVEngineCxxInterop.hpp`.
-- Da xoa wrapper `PHTVBridgingHeader.h`; `SWIFT_OBJC_BRIDGING_HEADER` tro truc tiep `PHTVEngineCBridge.h`.
+- Da xoa wrapper `PHTVBridgingHeader.h`; `SWIFT_OBJC_BRIDGING_HEADER` tro truc tiep `PHTVEngineCBridge.inc`.
 - Xoa toan bo C/C++ source/header con lai trong `macOS/PHTV/Core/Engine`.
 - Chuyen regression tests C++ sang Swift tests.
 

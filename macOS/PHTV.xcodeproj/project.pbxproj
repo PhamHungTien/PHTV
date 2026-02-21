@@ -33,6 +33,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Core/Engine/EngineDataTypes.inc,
+				Core/Engine/PHTVEngineCBridge.inc,
 				Core/Engine/VietnameseData.inc,
 				Info.plist,
 			);
@@ -369,7 +370,7 @@
 				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = PHTV/Core/Engine/PHTVEngineCBridge.h;
+				SWIFT_OBJC_BRIDGING_HEADER = PHTV/Core/Engine/PHTVEngineCBridge.inc;
 			};
 			name = Debug;
 		};
@@ -425,7 +426,7 @@
 				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = PHTV/Core/Engine/PHTVEngineCBridge.h;
+				SWIFT_OBJC_BRIDGING_HEADER = PHTV/Core/Engine/PHTVEngineCBridge.inc;
 			};
 			name = Release;
 		};

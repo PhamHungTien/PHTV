@@ -10,7 +10,7 @@
 #include <map>
 #include <unordered_set>
 #include <string>
-#include "PHTVEngineCBridge.h"
+#include "PHTVEngineCBridge.inc"
 #include "EngineDataTypes.inc"
 #include <string.h>
 #include <list>
