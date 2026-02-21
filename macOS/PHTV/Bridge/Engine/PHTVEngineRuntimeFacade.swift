@@ -26,6 +26,7 @@ private struct MacroLookupEntry {
 }
 
 nonisolated(unsafe) private var macroLookupMap: [[UInt32]: MacroLookupEntry] = [:]
+nonisolated(unsafe) private var engineDataPointer: UnsafeMutablePointer<vKeyHookState>?
 private let macroCharacterToKeyState: [UInt16: UInt32] = {
     var mapping: [UInt16: UInt32] = [:]
     let capsMask = PHTVEngineRuntimeFacade.capsMask()
@@ -666,7 +667,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     @objc class func initializeAndGetKeyHookState() {
         let rawState = vKeyInit()
-        pData = rawState?.assumingMemoryBound(to: vKeyHookState.self)
+        engineDataPointer = rawState?.assumingMemoryBound(to: vKeyHookState.self)
     }
 
     @objc class func notifyTableCodeChanged() {
@@ -1199,42 +1200,42 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func engineDataCode() -> Int32 {
-        guard let engineData = pData else {
+        guard let engineData = engineDataPointer else {
             return 0
         }
         return Int32(engineData.pointee.code)
     }
 
     class func engineDataExtCode() -> Int32 {
-        guard let engineData = pData else {
+        guard let engineData = engineDataPointer else {
             return 0
         }
         return Int32(engineData.pointee.extCode)
     }
 
     class func engineDataBackspaceCount() -> Int32 {
-        guard let engineData = pData else {
+        guard let engineData = engineDataPointer else {
             return 0
         }
         return Int32(engineData.pointee.backspaceCount)
     }
 
     class func setEngineDataBackspaceCount(_ count: UInt8) {
-        guard let engineData = pData else {
+        guard let engineData = engineDataPointer else {
             return
         }
         engineData.pointee.backspaceCount = count
     }
 
     class func engineDataNewCharCount() -> Int32 {
-        guard let engineData = pData else {
+        guard let engineData = engineDataPointer else {
             return 0
         }
         return Int32(engineData.pointee.newCharCount)
     }
 
     class func engineDataCharAt(_ index: Int32) -> UInt32 {
-        guard let engineData = pData,
+        guard let engineData = engineDataPointer,
               index >= 0,
               index < engineMaxBufferValue else {
             return 0
@@ -1248,14 +1249,14 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func engineDataMacroDataSize() -> Int32 {
-        guard let engineData = pData else {
+        guard let engineData = engineDataPointer else {
             return 0
         }
         return Int32(engineData.pointee.macroData.size())
     }
 
     class func engineDataMacroDataAt(_ index: Int32) -> UInt32 {
-        guard let engineData = pData, index >= 0 else {
+        guard let engineData = engineDataPointer, index >= 0 else {
             return 0
         }
 

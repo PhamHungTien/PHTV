@@ -46,11 +46,10 @@ CGEventTap (main run loop)
 ## Các lớp kiến trúc
 
 ### Core/Engine (C++)
-Engine xử lý tiếng Việt thuần C++. Không phụ thuộc vào platform. Nhận keycode và trả về chuỗi kết quả. Globals engine (`pData`, `vLanguage`, v.v.) sống ở `Bridge/Engine/PHTVEngineGlobals.cpp`.
+Engine xử lý tiếng Việt thuần C++. Không phụ thuộc vào platform. Nhận keycode và trả về chuỗi kết quả. Runtime pointer state (`vKeyHookState*`) hiện được quản lý phía Swift facade.
 
 ### Bridge/Engine
 - `PHTVEngineCxxInterop.hpp` — Wrapper inline C++ → Swift (không argument label)
-- `PHTVEngineGlobals.cpp` — Định nghĩa global `pData`
 - `PHTVEngineSessionService.swift` — Khởi động engine (`boot()`), quản lý session
 - `PHTVEngineDataBridge.swift` — Đọc kết quả xử lý từ engine
 - `PHTVEngineStartupDataService.swift` — Load startup data từ UserDefaults

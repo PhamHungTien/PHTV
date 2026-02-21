@@ -48,10 +48,6 @@ extern volatile int vEmojiHotkeyKeyCode __attribute__((swift_attr("nonisolated(u
 extern volatile int vSafeMode __attribute__((swift_attr("nonisolated(unsafe)")));
 extern int vShowIconOnDock __attribute__((swift_attr("nonisolated(unsafe)")));
 
-// MARK: - Engine output state (pData) field accessors
-
-extern vKeyHookState* pData __attribute__((swift_attr("nonisolated(unsafe)")));
-
 #endif
 
 #endif /* PHTVEngineCxxInterop_hpp */

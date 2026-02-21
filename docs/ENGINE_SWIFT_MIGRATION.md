@@ -74,6 +74,10 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
     - `isEnglishWordFromKeyStates(...)`
     - `isVietnameseWordFromKeyStates(...)`
     - `keyStatesToString(...)`
+- Da xoa C++ global runtime pointer bridge file:
+  - Xoa `Bridge/Engine/PHTVEngineGlobals.cpp`
+  - Runtime pointer `vKeyHookState*` duoc quan ly trong `PHTVEngineRuntimeFacade.swift`
+  - Bo `extern pData` khoi `PHTVEngineCxxInterop.hpp`
 
 ## Lo trinh migrate
 
