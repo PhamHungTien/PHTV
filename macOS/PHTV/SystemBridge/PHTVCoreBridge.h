@@ -15,7 +15,6 @@
 extern "C" {
 #endif
 
-NSString * _Nullable ConvertUtil(NSString * _Nonnull str);
 void PHTVInit(void);
 CGEventRef _Nullable PHTVCallback(CGEventTapProxy _Nullable proxy,
                                   CGEventType type,

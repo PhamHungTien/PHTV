@@ -85,6 +85,12 @@ import Foundation
         PHTVBinaryIntegrityService.checkBinaryIntegrity()
     }
 
+    private class func convertTextWithEngine(_ text: String) -> String {
+        text.withCString { source in
+            String(validatingCString: phtvEngineConvertUtf8(source)) ?? text
+        }
+    }
+
     @objc(phtv_quickConvert)
     class func phtv_quickConvert() -> Bool {
         let pasteboard = NSPasteboard.general
@@ -93,11 +99,11 @@ import Foundation
         var converted = false
 
         if let html = htmlString {
-            htmlString = ConvertUtil(html)
+            htmlString = convertTextWithEngine(html)
             converted = true
         }
         if let raw = rawString {
-            rawString = ConvertUtil(raw)
+            rawString = convertTextWithEngine(raw)
             converted = true
         }
 

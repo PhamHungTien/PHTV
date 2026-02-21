@@ -73,6 +73,12 @@ inline void phtvEngineClearCustomDictionary() noexcept {
     clearCustomDictionary();
 }
 
+inline const char *phtvEngineConvertUtf8(const char *source) noexcept {
+    static thread_local std::string converted;
+    converted = convertUtil(source ? std::string(source) : std::string());
+    return converted.c_str();
+}
+
 inline void phtvEngineSetCheckSpellingValue(const int value) noexcept {
     vCheckSpelling = value;
 }
