@@ -97,8 +97,11 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - Giu weak fallback trong `Engine.cpp` de regression binary standalone (khong link Swift) van chay
 - Da dua `vAutoCapsMacro` sang Swift storage:
   - Them C bridge `phtvRuntimeAutoCapsMacroValue()` do `PHTVEngineRuntimeFacade.swift` cung cap
-  - `Macro.cpp` doc runtime setting qua bridge thay vi global C++
-  - Giu weak fallback trong `Macro.cpp` de regression binary standalone van giu behavior mac dinh
+  - Logic macro trong `Engine.cpp` doc runtime setting qua bridge thay vi global C++
+  - Giu weak fallback trong `Engine.cpp` de regression binary standalone van giu behavior mac dinh
+- Da don dep module macro C++ tach rieng:
+  - Gop `initMacroMap(...)` va `findMacro(...)` vao `Engine.cpp`
+  - Xoa `Core/Engine/Macro.cpp`
 - Da dua `vAutoRestoreEnglishWord` sang Swift storage:
   - Them C bridge `phtvRuntimeAutoRestoreEnglishWordEnabled()` do `PHTVEngineRuntimeFacade.swift` cung cap
   - `Engine.cpp` doc runtime setting qua bridge thay vi global C++
@@ -157,7 +160,7 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 
 - Port parser/serializer macro binary.
 - Port snippet runtime (date/time/random/counter).
-- Bao dam behavior giong module `Macro.cpp`.
+- Bao dam behavior giong logic macro hien tai trong `Engine.cpp`.
 
 ### Pha 4: Port English/Vietnamese detector sang Swift
 

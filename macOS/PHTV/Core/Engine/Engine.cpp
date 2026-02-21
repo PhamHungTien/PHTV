@@ -15,7 +15,13 @@
 
 using namespace std;
 
-bool findMacro(vector<Uint32>& key, vector<Uint32>& macroContentCode);
+extern "C" void phtvLoadMacroMapFromBinary(const Byte* data, int size);
+extern "C" int phtvFindMacroContentForNormalizedKeys(const Uint32* normalizedKeyBuffer,
+                                                     int keyCount,
+                                                     int autoCapsEnabled,
+                                                     Uint32* outputBuffer,
+                                                     int outputCapacity);
+extern "C" int phtvRuntimeAutoCapsMacroValue();
 
 extern "C" int phtvRuntimeRestoreOnEscapeEnabled();
 extern "C" int phtvRuntimeAutoRestoreEnglishWordEnabled();
@@ -99,6 +105,30 @@ extern "C" __attribute__((weak)) int phtvRuntimeQuickEndConsonantEnabled() {
     return 0;
 }
 
+extern "C" __attribute__((weak)) int phtvRuntimeAutoCapsMacroValue() {
+    // Standalone regression binary fallback: preserve legacy default OFF.
+    return 0;
+}
+
+extern "C" __attribute__((weak)) void phtvLoadMacroMapFromBinary(const Byte* data, int size) {
+    (void)data;
+    (void)size;
+}
+
+extern "C" __attribute__((weak)) int phtvFindMacroContentForNormalizedKeys(const Uint32* normalizedKeyBuffer,
+                                                                            int keyCount,
+                                                                            int autoCapsEnabled,
+                                                                            Uint32* outputBuffer,
+                                                                            int outputCapacity) {
+    (void)normalizedKeyBuffer;
+    (void)keyCount;
+    (void)autoCapsEnabled;
+    (void)outputBuffer;
+    (void)outputCapacity;
+    // Standalone regression fallback: no Swift macro storage available.
+    return -1;
+}
+
 static vector<Uint8> _charKeyCode = {
     KEY_BACKQUOTE, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0, KEY_MINUS, KEY_EQUALS,
     KEY_LEFT_BRACKET, KEY_RIGHT_BRACKET, KEY_BACK_SLASH,
@@ -125,6 +155,57 @@ static int runtimeCodeTableSnapshot = 0;
 static inline void refreshRuntimeLayoutSnapshot() {
     runtimeInputTypeSnapshot = phtvRuntimeInputTypeValue();
     runtimeCodeTableSnapshot = phtvRuntimeCodeTableValue();
+}
+
+extern "C" {
+void initMacroMap(const Byte* pData, const int& size) {
+    phtvLoadMacroMapFromBinary(pData, size);
+}
+}
+
+static bool findMacro(vector<Uint32>& key, vector<Uint32>& macroContentCode) {
+    for (size_t i = 0; i < key.size(); i++) {
+        key[i] = getCharacterCode(key[i]);
+    }
+
+    const Uint32* keyBuffer = key.empty() ? nullptr : key.data();
+    const int keyCount = static_cast<int>(key.size());
+
+    const int requiredLength = phtvFindMacroContentForNormalizedKeys(
+        keyBuffer,
+        keyCount,
+        phtvRuntimeAutoCapsMacroValue(),
+        nullptr,
+        0
+    );
+    if (requiredLength < 0) {
+        macroContentCode.clear();
+        return false;
+    }
+
+    if (requiredLength == 0) {
+        macroContentCode.clear();
+        return true;
+    }
+
+    macroContentCode.assign(static_cast<size_t>(requiredLength), 0);
+    const int actualLength = phtvFindMacroContentForNormalizedKeys(
+        keyBuffer,
+        keyCount,
+        phtvRuntimeAutoCapsMacroValue(),
+        macroContentCode.data(),
+        requiredLength
+    );
+    if (actualLength < 0) {
+        macroContentCode.clear();
+        return false;
+    }
+
+    if (actualLength < requiredLength) {
+        macroContentCode.resize(static_cast<size_t>(actualLength));
+    }
+
+    return true;
 }
 
 static Uint16 ProcessingChar[][11] = {
