@@ -48,6 +48,17 @@ extern volatile int vPauseKey;
 
     static const uint64_t kAppCharacteristicsCacheMaxAgeMs = 10000;
 
+    static inline void SetCliBlockForMicroseconds(uint64_t microseconds) {
+        [PHTVCliRuntimeStateService scheduleBlockForMicroseconds:microseconds
+                                                     nowMachTime:mach_absolute_time()];
+    }
+
+    __attribute__((always_inline)) static inline void ApplyKeyboardTypeAndFlags(CGEventRef down, CGEventRef up) {
+        [PHTVEventContextBridgeService configureSyntheticKeyEventsWithKeyDown:down
+                                                                        keyUp:up
+                                                                  eventMarker:kPHTVEventMarker];
+    }
+
     __attribute__((always_inline)) static inline void PostSyntheticEvent(CGEventRef e) {
         CGEventSetIntegerValueField(e, kCGEventSourceUserData, kPHTVEventMarker);
         if ([PHTVEventRuntimeContextService postToHIDTapEnabled]) {
