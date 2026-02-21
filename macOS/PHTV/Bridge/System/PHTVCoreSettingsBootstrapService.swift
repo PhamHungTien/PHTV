@@ -29,72 +29,72 @@ final class PHTVCoreSettingsBootstrapService: NSObject {
         if language < 0 {
             language = 1
         }
-        phtvRuntimeSetCurrentLanguage(language)
+        PHTVEngineRuntimeFacade.setCurrentLanguage(language)
 
         var inputType = Int32(defaults.integer(forKey: "InputType"))
         if inputType < 0 {
             inputType = 0
         }
-        phtvRuntimeSetCurrentInputType(inputType)
+        PHTVEngineRuntimeFacade.setCurrentInputType(inputType)
 
-        phtvRuntimeSetFreeMark(0)
+        PHTVEngineRuntimeFacade.setFreeMark(0)
 
         var codeTable = Int32(defaults.integer(forKey: "CodeTable"))
         if codeTable < 0 {
             codeTable = 0
         }
-        phtvRuntimeSetCurrentCodeTable(codeTable)
+        PHTVEngineRuntimeFacade.setCurrentCodeTable(codeTable)
 
-        phtvRuntimeSetCheckSpelling(
+        PHTVEngineRuntimeFacade.setCheckSpelling(
             readPersistedInt(defaults: defaults, key: "Spelling", defaultValue: 1)
         )
-        phtvRuntimeSetUseModernOrthography(
+        PHTVEngineRuntimeFacade.setUseModernOrthography(
             readPersistedInt(defaults: defaults, key: "ModernOrthography", defaultValue: 1)
         )
-        phtvRuntimeSetQuickTelex(
+        PHTVEngineRuntimeFacade.setQuickTelex(
             readPersistedInt(defaults: defaults, key: "QuickTelex", defaultValue: 0)
         )
-        phtvRuntimeSetFixRecommendBrowser(
+        PHTVEngineRuntimeFacade.setFixRecommendBrowser(
             readPersistedInt(defaults: defaults, key: "FixRecommendBrowser", defaultValue: 1)
         )
 
-        phtvRuntimeSetUseMacro(
+        PHTVEngineRuntimeFacade.setUseMacro(
             readPersistedInt(defaults: defaults, key: "UseMacro", defaultValue: 0)
         )
-        phtvRuntimeSetUseMacroInEnglishMode(
+        PHTVEngineRuntimeFacade.setUseMacroInEnglishMode(
             readPersistedInt(defaults: defaults, key: "UseMacroInEnglishMode", defaultValue: 0)
         )
-        phtvRuntimeSetAutoCapsMacro(Int32(defaults.integer(forKey: "vAutoCapsMacro")))
+        PHTVEngineRuntimeFacade.setAutoCapsMacro(Int32(defaults.integer(forKey: "vAutoCapsMacro")))
 
-        phtvRuntimeSetSendKeyStepByStepEnabled(
+        PHTVEngineRuntimeFacade.setSendKeyStepByStepEnabled(
             readPersistedInt(defaults: defaults, key: "SendKeyStepByStep", defaultValue: 0) != 0
         )
-        phtvRuntimeSetUseSmartSwitchKey(
+        PHTVEngineRuntimeFacade.setSmartSwitchKeyEnabled(
             readPersistedInt(defaults: defaults, key: "UseSmartSwitchKey", defaultValue: 1) != 0
         )
-        phtvRuntimeSetUpperCaseFirstChar(
+        PHTVEngineRuntimeFacade.setUpperCaseFirstChar(
             readPersistedInt(defaults: defaults, key: "UpperCaseFirstChar", defaultValue: 0)
         )
 
-        phtvRuntimeSetTempOffSpelling(Int32(defaults.integer(forKey: "vTempOffSpelling")))
+        PHTVEngineRuntimeFacade.setTempOffSpelling(Int32(defaults.integer(forKey: "vTempOffSpelling")))
 
-        phtvRuntimeSetAllowConsonantZFWJ(
+        PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(
             readPersistedInt(defaults: defaults, key: "vAllowConsonantZFWJ", defaultValue: 1)
         )
-        phtvRuntimeSetQuickEndConsonant(
+        PHTVEngineRuntimeFacade.setQuickEndConsonant(
             readPersistedInt(defaults: defaults, key: "vQuickEndConsonant", defaultValue: 0)
         )
-        phtvRuntimeSetQuickStartConsonant(
+        PHTVEngineRuntimeFacade.setQuickStartConsonant(
             readPersistedInt(defaults: defaults, key: "vQuickStartConsonant", defaultValue: 0)
         )
-        phtvRuntimeSetRememberCode(
+        PHTVEngineRuntimeFacade.setRememberCode(
             readPersistedInt(defaults: defaults, key: "vRememberCode", defaultValue: 1)
         )
 
-        phtvRuntimeSetOtherLanguage(Int32(defaults.integer(forKey: "vOtherLanguage")))
-        phtvRuntimeSetTempOffPHTV(Int32(defaults.integer(forKey: "vTempOffPHTV")))
-        phtvRuntimeSetPerformLayoutCompat(Int32(defaults.integer(forKey: "vPerformLayoutCompat")))
+        PHTVEngineRuntimeFacade.setOtherLanguageMode(Int32(defaults.integer(forKey: "vOtherLanguage")))
+        PHTVEngineRuntimeFacade.setTempOffEngine(Int32(defaults.integer(forKey: "vTempOffPHTV")))
+        PHTVEngineRuntimeFacade.setPerformLayoutCompat(Int32(defaults.integer(forKey: "vPerformLayoutCompat")))
 
-        phtvRuntimeSetSafeMode(defaults.bool(forKey: "SafeMode"))
+        PHTVEngineRuntimeFacade.setSafeMode(defaults.bool(forKey: "SafeMode"))
     }
 }

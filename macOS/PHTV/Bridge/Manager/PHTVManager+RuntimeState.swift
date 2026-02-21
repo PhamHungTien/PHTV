@@ -12,7 +12,7 @@ import Foundation
 
     private class func smartSwitchFocusedBundleId() -> String? {
         PHTVAppContextService.focusedBundleId(
-            forSafeMode: phtvRuntimeSafeMode(),
+            forSafeMode: PHTVEngineRuntimeFacade.safeModeEnabled(),
             cacheDurationMs: smartSwitchSpotlightCacheDurationMs
         )
     }
@@ -39,10 +39,10 @@ import Foundation
 
     @objc(phtv_notifyTableCodeChanged)
     class func phtv_notifyTableCodeChanged() {
-        phtvEngineNotifyTableCodeChanged()
+        PHTVEngineRuntimeFacade.notifyTableCodeChanged()
         PHTVSmartSwitchBridgeService.handleTableCodeChanged(
             forBundleId: smartSwitchFocusedBundleId(),
-            rememberCode: Int32(phtvRuntimeRememberCode()),
+            rememberCode: PHTVEngineRuntimeFacade.rememberCode(),
             currentLanguage: phtv_currentLanguage(),
             currentCodeTable: phtv_currentCodeTable()
         )
@@ -53,7 +53,7 @@ import Foundation
         PHTVSmartSwitchBridgeService.handleActiveAppChanged(
             forBundleId: smartSwitchFocusedBundleId(),
             useSmartSwitchKey: phtv_isSmartSwitchKeyEnabled() ? 1 : 0,
-            rememberCode: Int32(phtvRuntimeRememberCode()),
+            rememberCode: PHTVEngineRuntimeFacade.rememberCode(),
             currentLanguage: phtv_currentLanguage(),
             currentCodeTable: phtv_currentCodeTable()
         )
@@ -61,71 +61,71 @@ import Foundation
 
     @objc(phtv_currentLanguage)
     class func phtv_currentLanguage() -> Int32 {
-        Int32(phtvRuntimeCurrentLanguage())
+        PHTVEngineRuntimeFacade.currentLanguage()
     }
 
     @objc(phtv_setCurrentLanguage:)
     class func phtv_setCurrentLanguage(_ language: Int32) {
-        phtvRuntimeSetCurrentLanguage(language)
+        PHTVEngineRuntimeFacade.setCurrentLanguage(language)
     }
 
     @objc(phtv_otherLanguageMode)
     class func phtv_otherLanguageMode() -> Int32 {
-        Int32(phtvRuntimeOtherLanguage())
+        PHTVEngineRuntimeFacade.otherLanguageMode()
     }
 
     @objc(phtv_currentInputType)
     class func phtv_currentInputType() -> Int32 {
-        Int32(phtvRuntimeCurrentInputType())
+        PHTVEngineRuntimeFacade.currentInputType()
     }
 
     @objc(phtv_setCurrentInputType:)
     class func phtv_setCurrentInputType(_ inputType: Int32) {
-        phtvRuntimeSetCurrentInputType(inputType)
+        PHTVEngineRuntimeFacade.setCurrentInputType(inputType)
     }
 
     @objc(phtv_currentCodeTable)
     class func phtv_currentCodeTable() -> Int32 {
-        Int32(phtvRuntimeCurrentCodeTable())
+        PHTVEngineRuntimeFacade.currentCodeTable()
     }
 
     @objc(phtv_setCurrentCodeTable:)
     class func phtv_setCurrentCodeTable(_ codeTable: Int32) {
-        phtvRuntimeSetCurrentCodeTable(codeTable)
+        PHTVEngineRuntimeFacade.setCurrentCodeTable(codeTable)
     }
 
     @objc(phtv_isSmartSwitchKeyEnabled)
     class func phtv_isSmartSwitchKeyEnabled() -> Bool {
-        phtvRuntimeIsSmartSwitchKeyEnabled()
+        PHTVEngineRuntimeFacade.isSmartSwitchKeyEnabled()
     }
 
     @objc(phtv_isSendKeyStepByStepEnabled)
     class func phtv_isSendKeyStepByStepEnabled() -> Bool {
-        phtvRuntimeIsSendKeyStepByStepEnabled()
+        PHTVEngineRuntimeFacade.isSendKeyStepByStepEnabled()
     }
 
     @objc(phtv_setSendKeyStepByStepEnabled:)
     class func phtv_setSendKeyStepByStepEnabled(_ enabled: Bool) {
-        phtvRuntimeSetSendKeyStepByStepEnabled(enabled)
+        PHTVEngineRuntimeFacade.setSendKeyStepByStepEnabled(enabled)
     }
 
     @objc(phtv_setUpperCaseExcludedForCurrentApp:)
     class func phtv_setUpperCaseExcludedForCurrentApp(_ excluded: Bool) {
-        phtvRuntimeSetUpperCaseExcludedForCurrentApp(excluded)
+        PHTVEngineRuntimeFacade.setUpperCaseExcludedForCurrentApp(excluded)
     }
 
     @objc(phtv_currentSwitchKeyStatus)
     class func phtv_currentSwitchKeyStatus() -> Int32 {
-        Int32(phtvRuntimeSwitchKeyStatus())
+        PHTVEngineRuntimeFacade.switchKeyStatus()
     }
 
     @objc(phtv_setSwitchKeyStatus:)
     class func phtv_setSwitchKeyStatus(_ status: Int32) {
-        phtvRuntimeSetSwitchKeyStatus(status)
+        PHTVEngineRuntimeFacade.setSwitchKeyStatus(status)
     }
 
     @objc(phtv_setDockIconRuntimeVisible:)
     class func phtv_setDockIconRuntimeVisible(_ visible: Bool) {
-        phtvRuntimeSetShowIconOnDock(visible)
+        PHTVEngineRuntimeFacade.setShowIconOnDock(visible)
     }
 }

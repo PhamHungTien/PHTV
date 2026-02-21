@@ -20,7 +20,7 @@ final class PHTVEngineSessionService: NSObject {
         PHTVSafeModeStartupService.recoverAndValidateAccessibilityState()
         PHTVLayoutCompatibilityService.autoEnableIfNeeded()
         PHTVKeyEventSenderService.initializeEventSource()
-        phtvEngineInitializeAndGetKeyHookState()
+        PHTVEngineRuntimeFacade.initializeAndGetKeyHookState()
         PHTVTypingSyncStateService.setupSyncKeyCapacity(kSyncKeyReserveSize)
         PHTVEngineStartupDataService.loadFromUserDefaults()
         PHTVConvertToolSettingsService.loadFromUserDefaults()
@@ -35,12 +35,12 @@ final class PHTVEngineSessionService: NSObject {
         PHTVEventContextBridgeService.invalidateAccessibilityContextCaches()
 
         // Acquire barrier: ensure we see latest config changes before processing
-        phtvRuntimeBarrier()
+        PHTVEngineRuntimeFacade.barrier()
 
         #if DEBUG
-        let dbgInputType = phtvRuntimeCurrentInputType()
-        let dbgCodeTable = phtvRuntimeCurrentCodeTable()
-        let dbgLanguage  = phtvRuntimeCurrentLanguage()
+        let dbgInputType = PHTVEngineRuntimeFacade.currentInputType()
+        let dbgCodeTable = PHTVEngineRuntimeFacade.currentCodeTable()
+        let dbgLanguage = PHTVEngineRuntimeFacade.currentLanguage()
         NSLog("[RequestNewSession] vInputType=%d, vCodeTable=%d, vLanguage=%d",
               dbgInputType, dbgCodeTable, dbgLanguage)
         #endif
@@ -51,26 +51,26 @@ final class PHTVEngineSessionService: NSObject {
         // - _specialChar and _typingStates (critical for typing state)
         // - vCheckSpelling restoration
         // - _willTempOffEngine flag
-        phtvEngineHandleMouseDown()
+        PHTVEngineRuntimeFacade.handleMouseDown()
 
-        let currentCodeTable = Int32(phtvRuntimeCurrentCodeTable())
+        let currentCodeTable = PHTVEngineRuntimeFacade.currentCodeTable()
         let sessionResetTransition = PHTVHotkeyService.sessionResetTransition(
             forCodeTable: currentCodeTable,
             allowUppercasePrime: allowUppercasePrime,
-            safeMode: phtvRuntimeSafeMode(),
-            uppercaseEnabled: Int32(phtvRuntimeUpperCaseFirstChar()),
-            uppercaseExcluded: Int32(phtvRuntimeUpperCaseExcludedForCurrentApp()))
+            safeMode: PHTVEngineRuntimeFacade.safeModeEnabled(),
+            uppercaseEnabled: PHTVEngineRuntimeFacade.upperCaseFirstChar(),
+            uppercaseExcluded: PHTVEngineRuntimeFacade.upperCaseExcludedForCurrentApp())
 
         if sessionResetTransition.shouldClearSyncKey {
             PHTVTypingSyncStateService.clearSyncKey()
         }
         if sessionResetTransition.shouldPrimeUppercaseFirstChar {
-            phtvEnginePrimeUpperCaseFirstChar()
+            PHTVEngineRuntimeFacade.primeUpperCaseFirstChar()
         }
         PHTVModifierRuntimeStateService.applySessionResetTransition(sessionResetTransition)
 
         // Release barrier: ensure state reset is visible to all threads
-        phtvRuntimeBarrier()
+        PHTVEngineRuntimeFacade.barrier()
 
         #if DEBUG
         NSLog("[RequestNewSession] Session reset complete")
