@@ -143,4 +143,32 @@ final class PHTVEngineDataBridge: NSObject {
 
         return String(resultScalars) as NSString
     }
+
+    @objc(replaceSpotlightLikeMacroIfNeeded:backspaceCount:macroData:count:codeTable:safeMode:)
+    class func replaceSpotlightLikeMacroIfNeeded(
+        _ spotlightLike: Int32,
+        backspaceCount: Int32,
+        macroData: UnsafePointer<UInt32>?,
+        count: Int32,
+        codeTable: Int32,
+        safeMode: Bool
+    ) -> Bool {
+        guard spotlightLike != 0 else {
+            return false
+        }
+
+        let macroText = macroString(
+            fromMacroData: macroData,
+            count: count,
+            codeTable: codeTable
+        ) as String
+        let shouldVerify = backspaceCount > 0
+
+        return PHTVEventContextBridgeService.replaceFocusedTextViaAX(
+            backspaceCount: backspaceCount,
+            insertText: macroText,
+            verify: shouldVerify,
+            safeMode: safeMode
+        )
+    }
 }

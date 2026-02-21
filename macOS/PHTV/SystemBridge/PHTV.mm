@@ -929,20 +929,16 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         // CRITICAL FIX: Spotlight requires AX API for macro replacement
         // Synthetic backspace events don't work reliably in Spotlight
         if (isSpotlightLike) {
-            NSString *macroString =
-                [PHTVEngineDataBridge macroStringFromMacroData:pData->macroData.data()
-                                                         count:(int32_t)pData->macroData.size()
-                                                     codeTable:(int32_t)vCodeTable];
-
-            // Try AX API first - atomic and most reliable for Spotlight
-            BOOL shouldVerify = (pData->backspaceCount > 0);
-            BOOL axSucceeded = [PHTVEventContextBridgeService replaceFocusedTextViaAXWithBackspaceCount:(int32_t)pData->backspaceCount
-                                                                                               insertText:macroString
-                                                                                                   verify:shouldVerify
-                                                                                                 safeMode:vSafeMode];
-            if (axSucceeded) {
+            BOOL replacedByAX =
+                [PHTVEngineDataBridge replaceSpotlightLikeMacroIfNeeded:(isSpotlightLike ? 1 : 0)
+                                                         backspaceCount:(int32_t)pData->backspaceCount
+                                                              macroData:pData->macroData.data()
+                                                                  count:(int32_t)pData->macroData.size()
+                                                              codeTable:(int32_t)vCodeTable
+                                                               safeMode:vSafeMode];
+            if (replacedByAX) {
                 #ifdef DEBUG
-                NSLog(@"[Macro] Spotlight: AX API succeeded, macro='%@'", macroString);
+                NSLog(@"[Macro] Spotlight: AX API succeeded");
                 #endif
                 return;
             }
