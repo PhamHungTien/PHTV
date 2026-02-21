@@ -148,10 +148,14 @@ static void parseCustomDictionaryFallback(const char* jsonData, int length) {
 extern "C" __attribute__((weak)) void phtvCustomDictionaryClear() {
     customEnglishWordsFallback.clear();
     customVietnameseWordsFallback.clear();
+    customEnglishWordCountCache = 0;
+    customVietnameseWordCountCache = 0;
 }
 
 extern "C" __attribute__((weak)) void phtvCustomDictionaryLoadJSON(const char* jsonData, int length) {
     parseCustomDictionaryFallback(jsonData, length);
+    customEnglishWordCountCache = static_cast<int>(customEnglishWordsFallback.size());
+    customVietnameseWordCountCache = static_cast<int>(customVietnameseWordsFallback.size());
 }
 
 extern "C" __attribute__((weak)) int phtvCustomDictionaryEnglishCount() {
@@ -173,14 +177,26 @@ extern "C" __attribute__((weak)) int phtvCustomDictionaryContainsVietnameseWord(
 }
 
 static inline bool customEnglishContainsWord(const char* wordCString) {
-    if (!wordCString || customEnglishWordCountCache <= 0) {
+    if (!wordCString) {
+        return false;
+    }
+    if (customEnglishWordCountCache <= 0) {
+        customEnglishWordCountCache = phtvCustomDictionaryEnglishCount();
+    }
+    if (customEnglishWordCountCache <= 0) {
         return false;
     }
     return phtvCustomDictionaryContainsEnglishWord(wordCString) != 0;
 }
 
 static inline bool customVietnameseContainsWord(const char* wordCString) {
-    if (!wordCString || customVietnameseWordCountCache <= 0) {
+    if (!wordCString) {
+        return false;
+    }
+    if (customVietnameseWordCountCache <= 0) {
+        customVietnameseWordCountCache = phtvCustomDictionaryVietnameseCount();
+    }
+    if (customVietnameseWordCountCache <= 0) {
         return false;
     }
     return phtvCustomDictionaryContainsVietnameseWord(wordCString) != 0;

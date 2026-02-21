@@ -113,6 +113,7 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - Mo rong declaration trong `Core/Engine/PHTVEngineCBridge.h` cho nhom runtime/dictionary/detector APIs
   - `EnglishWordDetector.cpp` import chung `PHTVEngineCBridge.h` thay cho block `extern "C"` khai bao thu cong
   - `tests/engine/EngineRegressionTests.cpp` goi `phtvDictionary*`/`phtvCustomDictionary*` thay vi include `EnglishWordDetector.h`
+  - Dong bo lai cache count custom dictionary trong fallback detector + them case regression `qes` de khoa behavior custom-English restore
 - Da xoa C++ global runtime pointer bridge file:
   - Xoa `Bridge/Engine/PHTVEngineGlobals.cpp`
   - HookState duoc truy cap qua C bridge `phtvEngineHook*` (khong con pointer C++ trong Swift)

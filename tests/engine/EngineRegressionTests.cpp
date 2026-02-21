@@ -194,6 +194,12 @@ int main(int argc, char** argv) {
         true));
 
     results.push_back(runSpaceCase(
+        "Custom-English token qes should restore on SPACE",
+        "qes",
+        {"qes"},
+        true));
+
+    results.push_back(runSpaceCase(
         "Alnum token int1234 should NOT restore on SPACE",
         "int1234",
         {"int"},
