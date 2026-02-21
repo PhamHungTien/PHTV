@@ -62,6 +62,7 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - `PHTVEngineDataBridge` goi truc tiep C++ API thay vi qua them 1 lop wrapper
   - Bo wrappers keycode constants (`space/delete/slash/enter/return`), call site dung truc tiep `KeyCode`
   - Bo wrapper `hotkeyDisplayCharacter`, call site goi truc tiep `macroKeyCodeToCharacter(...)`
+  - Bo wrappers default setting (`defaultSwitchHotkeyStatus`, `defaultPauseKey`), call site dung truc tiep `Defaults`/`KeyCode`
 - Da bo wrappers key-event forwarding:
   - Swift facade goi truc tiep `vKeyHandleEvent` va `vEnglishMode`
 - Da bo wrappers code-table lookup:

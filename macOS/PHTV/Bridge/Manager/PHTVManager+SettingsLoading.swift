@@ -311,7 +311,7 @@ import Foundation
         PHTVEngineRuntimeFacade.setCurrentCodeTable(0)
         defaults.set(0, forKey: "CodeTable")
 
-        let defaultSwitchHotkey = PHTVEngineRuntimeFacade.defaultSwitchHotkeyStatus()
+        let defaultSwitchHotkey = Int32(Defaults.defaultSwitchKeyStatus)
         PHTVEngineRuntimeFacade.setSwitchKeyStatus(defaultSwitchHotkey)
         defaults.set(Int(defaultSwitchHotkey), forKey: "SwitchKeyStatus")
 
@@ -391,7 +391,7 @@ import Foundation
         defaults.set(false, forKey: "vIncludeLogs")
         defaults.set(true, forKey: "vIncludeCrashLogs")
 
-        let defaultPauseKey = PHTVEngineRuntimeFacade.defaultPauseKey()
+        let defaultPauseKey = Int32(KeyCode.leftOption)
         PHTVEngineRuntimeFacade.setPauseKeyEnabled(0)
         PHTVEngineRuntimeFacade.setPauseKey(defaultPauseKey)
     }

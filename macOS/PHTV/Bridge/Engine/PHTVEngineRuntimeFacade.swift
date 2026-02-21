@@ -1106,14 +1106,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
         OSMemoryBarrier()
     }
 
-    class func defaultSwitchHotkeyStatus() -> Int32 {
-        Int32(Defaults.defaultSwitchKeyStatus)
-    }
-
-    class func defaultPauseKey() -> Int32 {
-        Int32(KeyCode.leftOption)
-    }
-
     class func setFixRecommendBrowser(_ value: Int32) {
         runtimeFixRecommendBrowser = value
         OSMemoryBarrier()
