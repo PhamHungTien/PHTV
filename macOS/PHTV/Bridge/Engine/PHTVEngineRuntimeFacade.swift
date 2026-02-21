@@ -33,11 +33,14 @@ nonisolated(unsafe) private var runtimeFixRecommendBrowser: Int32 = 1
 nonisolated(unsafe) private var runtimeUseMacroInEnglishMode: Int32 = 0
 nonisolated(unsafe) private var runtimeUseSmartSwitchKey: Int32 = 1
 nonisolated(unsafe) private var runtimeAutoCapsMacro: Int32 = 0
+nonisolated(unsafe) private var runtimeUpperCaseFirstChar: Int32 = 0
+nonisolated(unsafe) private var runtimeUpperCaseExcludedForCurrentApp: Int32 = 0
 nonisolated(unsafe) private var runtimeRememberCode: Int32 = 1
 nonisolated(unsafe) private var runtimeOtherLanguage: Int32 = 1
 nonisolated(unsafe) private var runtimeTempOffSpelling: Int32 = 0
 nonisolated(unsafe) private var runtimeTempOffEngine: Int32 = 0
 nonisolated(unsafe) private var runtimeRestoreOnEscape: Int32 = 1
+nonisolated(unsafe) private var runtimeAutoRestoreEnglishWord: Int32 = 1
 nonisolated(unsafe) private var runtimeCustomEscapeKey: Int32 = 0
 nonisolated(unsafe) private var runtimePauseKeyEnabled: Int32 = 0
 nonisolated(unsafe) private var runtimePauseKey: Int32 = Int32(KeyCode.leftOption)
@@ -554,6 +557,21 @@ func phtvRuntimeAutoCapsMacroValue() -> Int32 {
     runtimeAutoCapsMacro
 }
 
+@_cdecl("phtvRuntimeAutoRestoreEnglishWordEnabled")
+func phtvRuntimeAutoRestoreEnglishWordEnabled() -> Int32 {
+    runtimeAutoRestoreEnglishWord
+}
+
+@_cdecl("phtvRuntimeUpperCaseFirstCharEnabled")
+func phtvRuntimeUpperCaseFirstCharEnabled() -> Int32 {
+    runtimeUpperCaseFirstChar
+}
+
+@_cdecl("phtvRuntimeUpperCaseExcludedForCurrentApp")
+func phtvRuntimeUpperCaseExcludedForCurrentApp() -> Int32 {
+    runtimeUpperCaseExcludedForCurrentApp
+}
+
 private func phtvCallStartNewSession() {
     startNewSession()
 }
@@ -829,7 +847,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func setUpperCaseExcludedForCurrentApp(_ excluded: Bool) {
-        vUpperCaseExcludedForCurrentApp = excluded ? 1 : 0
+        runtimeUpperCaseExcludedForCurrentApp = excluded ? 1 : 0
     }
 
     class func switchKeyStatus() -> Int32 {
@@ -851,16 +869,16 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func upperCaseFirstChar() -> Int32 {
-        Int32(vUpperCaseFirstChar)
+        runtimeUpperCaseFirstChar
     }
 
     class func setUpperCaseFirstChar(_ value: Int32) {
-        vUpperCaseFirstChar = value
+        runtimeUpperCaseFirstChar = value
         OSMemoryBarrier()
     }
 
     class func upperCaseExcludedForCurrentApp() -> Int32 {
-        Int32(vUpperCaseExcludedForCurrentApp)
+        runtimeUpperCaseExcludedForCurrentApp
     }
 
     class func checkSpelling() -> Int32 {
@@ -1003,11 +1021,11 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func autoRestoreEnglishWord() -> Int32 {
-        Int32(vAutoRestoreEnglishWord)
+        runtimeAutoRestoreEnglishWord
     }
 
     class func setAutoRestoreEnglishWord(_ value: Int32) {
-        vAutoRestoreEnglishWord = value
+        runtimeAutoRestoreEnglishWord = value
         OSMemoryBarrier()
     }
 

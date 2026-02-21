@@ -81,20 +81,6 @@ extern volatile int vQuickTelex;
 extern volatile int vUseMacro;
 
 /**
- * Auto write upper case character for first letter.
- * 0: No
- * 1: Yes
- */
-extern volatile int vUpperCaseFirstChar;
-
-/**
- * Current app is excluded from uppercase first char feature.
- * 0: No (apply uppercase)
- * 1: Yes (skip uppercase for this app)
- */
-extern volatile int vUpperCaseExcludedForCurrentApp;
-
-/**
  * Allow write word with consonant Z, F, W, J
  * 0: No
  * 1: Yes
@@ -116,15 +102,6 @@ extern volatile int vQuickStartConsonant;
  * k -> ch: bak -> bach,...
  */
 extern volatile int vQuickEndConsonant;
-
-/**
- * Auto restore English word feature
- * When enabled, automatically restores English words when typed in Vietnamese mode
- * Example: typing "tẻminal" → restores to "terminal"
- * 0: Disabled
- * 1: Enabled
- */
-extern volatile int vAutoRestoreEnglishWord;
 
 /**
  * Prime uppercase for the next character when auto-capitalization is enabled.

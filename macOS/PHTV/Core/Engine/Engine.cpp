@@ -17,10 +17,26 @@
 using namespace std;
 
 extern "C" int phtvRuntimeRestoreOnEscapeEnabled();
+extern "C" int phtvRuntimeAutoRestoreEnglishWordEnabled();
+extern "C" int phtvRuntimeUpperCaseFirstCharEnabled();
+extern "C" int phtvRuntimeUpperCaseExcludedForCurrentApp();
 
 extern "C" __attribute__((weak)) int phtvRuntimeRestoreOnEscapeEnabled() {
     // Standalone regression binary fallback: keep restore feature enabled by default.
     return 1;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeAutoRestoreEnglishWordEnabled() {
+    // Standalone regression binary fallback: keep auto-restore feature enabled by default.
+    return 1;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeUpperCaseFirstCharEnabled() {
+    return 0;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeUpperCaseExcludedForCurrentApp() {
+    return 0;
 }
 
 static vector<Uint8> _charKeyCode = {
@@ -198,7 +214,7 @@ static bool _hasHandledMacro = false; //for macro flag August 9th, 2019
 static volatile Byte _upperCaseStatus = 0; //for Write upper case for the first letter; 2: will upper case (VOLATILE for thread safety)
 static bool _upperCaseNeedsSpaceConfirm = false; //true when uppercase was triggered by . ? ! (needs space before capitalizing)
 static bool _shouldUpperCaseEnglishRestore = false; //track if English restore should uppercase first char
-static volatile Byte _snapshotUpperCaseFirstChar = 0; //snapshot of vUpperCaseFirstChar at session start (prevents mid-typing setting changes)
+static volatile Byte _snapshotUpperCaseFirstChar = 0; // snapshot uppercase-first setting at session start (prevents mid-typing setting changes)
 static bool _isCharKeyCode;
 static vector<Uint32> _specialChar;
 static bool _useSpellCheckingBefore;
@@ -219,7 +235,7 @@ string wideStringToUtf8(const wstring& str) {
 }
 
 void vPrimeUpperCaseFirstChar() {
-    if (vUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp) {
+    if (phtvRuntimeUpperCaseFirstCharEnabled() && !phtvRuntimeUpperCaseExcludedForCurrentApp()) {
         _upperCaseStatus = 2; // Ready to uppercase the next valid character
     }
 }
@@ -785,7 +801,7 @@ void startNewSession() {
     _upperCaseStatus = 0;
     _upperCaseNeedsSpaceConfirm = false;
     // Snapshot settings at session start to prevent mid-typing changes from affecting this word
-    _snapshotUpperCaseFirstChar = vUpperCaseFirstChar;
+    _snapshotUpperCaseFirstChar = static_cast<Byte>(phtvRuntimeUpperCaseFirstCharEnabled());
 }
 
 void checkCorrectVowel(vector<vector<Uint16>>& charset, int& i, int& k, const Uint16& markKey) {
@@ -2041,7 +2057,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             #ifdef DEBUG
             fprintf(stderr, "[AutoEnglish] CONFLICT: Macro matched, auto English skipped\n"); fflush(stderr);
             #endif
-        } else if (vAutoRestoreEnglishWord && isAutoRestoreBreakKey) {
+        } else if (phtvRuntimeAutoRestoreEnglishWordEnabled() && isAutoRestoreBreakKey) {
             // PRIORITY FIX: Check Auto English BEFORE Quick Consonant
             // Auto English should have higher priority to prevent conflicts
             // (e.g., "search." ending in "ch" shouldn't trigger Quick Consonant)
@@ -2158,7 +2174,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
                 // Apply uppercase first character if enabled
                 // Use _shouldUpperCaseEnglishRestore which was set when first char was typed
                 // Also check if current app is NOT excluded from uppercase feature
-                if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _shouldUpperCaseEnglishRestore && restoreStateIndex > 0) {
+                if (_snapshotUpperCaseFirstChar && !phtvRuntimeUpperCaseExcludedForCurrentApp() && _shouldUpperCaseEnglishRestore && restoreStateIndex > 0) {
                     hData[restoreStateIndex - 1] |= CAPS_MASK;
                 }
                 _shouldUpperCaseEnglishRestore = false;
@@ -2233,7 +2249,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             }
         }
 
-        if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp) {
+        if (_snapshotUpperCaseFirstChar && !phtvRuntimeUpperCaseExcludedForCurrentApp()) {
             if (isSentenceTerminator(data, capsStatus)) {
                 _upperCaseStatus = 2;
                 // Period, question mark, exclamation need space before capitalizing (e.g. "iegglobal.vn" should not capitalize "v")
@@ -2268,7 +2284,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
         bool canAutoRestoreToken = isPureLetterToken || isLetterWithNumericSuffixToken;
         int restoreStateIndex = isLetterWithNumericSuffixToken ? _stateIndex : englishStateIndex;
 
-        if (vAutoRestoreEnglishWord && _index > 0 && englishStateIndex > 1 && canAutoRestoreToken) {
+        if (phtvRuntimeAutoRestoreEnglishWordEnabled() && _index > 0 && englishStateIndex > 1 && canAutoRestoreToken) {
             shouldRestoreEnglish = checkIfEnglishWord(KeyStates, englishStateIndex);
             if (!shouldRestoreEnglish) {
                 if (isEnglishWordFromKeyStates(KeyStates, englishStateIndex) &&
@@ -2355,7 +2371,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             fprintf(stderr, "[AutoEnglish] Macro matched, Auto English skipped\n");
             fflush(stderr);
             #endif
-        } else if (vAutoRestoreEnglishWord && _index > 0 && restoreStateIndex > 1 && canAutoRestoreToken && shouldRestoreEnglish) {
+        } else if (phtvRuntimeAutoRestoreEnglishWordEnabled() && _index > 0 && restoreStateIndex > 1 && canAutoRestoreToken && shouldRestoreEnglish) {
             // PRIORITY FIX: Check Auto English BEFORE Quick Consonant
             // Auto English should have higher priority to prevent conflicts
             // (e.g., "search" ending in "ch" shouldn't trigger Quick Consonant)
@@ -2381,7 +2397,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             // Apply uppercase first character if enabled
             // Use _shouldUpperCaseEnglishRestore which was set when first char was typed
             // Also check if current app is NOT excluded from uppercase feature
-            if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _shouldUpperCaseEnglishRestore && restoreStateIndex > 0) {
+            if (_snapshotUpperCaseFirstChar && !phtvRuntimeUpperCaseExcludedForCurrentApp() && _shouldUpperCaseEnglishRestore && restoreStateIndex > 0) {
                 hData[restoreStateIndex - 1] |= CAPS_MASK;
             }
             _shouldUpperCaseEnglishRestore = false;
@@ -2403,7 +2419,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
         } else { //do nothing with SPACE KEY
             #ifdef DEBUG
             // Log why Auto English didn't trigger (for debugging random failures)
-            if (vAutoRestoreEnglishWord && _stateIndex > 0) {
+            if (phtvRuntimeAutoRestoreEnglishWordEnabled() && _stateIndex > 0) {
                 std::string word = keyStatesToString(KeyStates, englishStateIndex);
                 fprintf(stderr, "[AutoEnglish] ✗ SPACE NO RESTORE: word='%s', _stateIndex=%d, _index=%d, blocked by: ",
                        word.c_str(), _stateIndex, _index);
@@ -2422,7 +2438,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             hMacroKey.clear();
             _hasHandledMacro = false;  // Reset when starting new word
         }
-        if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp && _upperCaseNeedsSpaceConfirm) {
+        if (_snapshotUpperCaseFirstChar && !phtvRuntimeUpperCaseExcludedForCurrentApp() && _upperCaseNeedsSpaceConfirm) {
             _upperCaseNeedsSpaceConfirm = false; // Space confirms: allow capitalize on next character
         }
         //save word
@@ -2606,7 +2622,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             }
         }
         
-        if (_snapshotUpperCaseFirstChar && !vUpperCaseExcludedForCurrentApp) {
+        if (_snapshotUpperCaseFirstChar && !phtvRuntimeUpperCaseExcludedForCurrentApp()) {
             if (_index == 1 && _upperCaseStatus == 2 && !_upperCaseNeedsSpaceConfirm) {
                 upperCaseFirstCharacter();
                 // Track for English restore - in case Vietnamese transform didn't happen
