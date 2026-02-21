@@ -98,7 +98,7 @@ import Foundation
 
     @objc(getBuildDate)
     class func getBuildDate() -> String {
-        PHTVBuildDateString()
+        String(validatingCString: phtvBuildDateCString()) ?? ""
     }
 
     @objc(showMessage:message:subMsg:)

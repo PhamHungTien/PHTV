@@ -411,8 +411,8 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         RequestNewSessionInternal(true);
     }
 
-    NSString* PHTVBuildDateString() {
-        return [NSString stringWithUTF8String:__DATE__];
+    const char *PHTVBuildDateCString() {
+        return __DATE__;
     }
     
     void InsertKeyLength(const Uint8& len) {
@@ -991,7 +991,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         }
     }
 
-    extern "C" void InvalidateLayoutCache() {
+    void InvalidateLayoutCache() {
         [PHTVHotkeyService invalidateLayoutCache];
     }
 

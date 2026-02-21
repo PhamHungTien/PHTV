@@ -19,12 +19,12 @@ import Foundation
 
     @objc(phtv_requestNewSession)
     class func phtv_requestNewSession() {
-        RequestNewSession()
+        phtvRuntimeRequestNewSession()
     }
 
     @objc(phtv_invalidateLayoutCache)
     class func phtv_invalidateLayoutCache() {
-        InvalidateLayoutCache()
+        phtvRuntimeInvalidateLayoutCache()
     }
 
     @objc(phtv_notifyInputMethodChanged)

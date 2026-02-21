@@ -22,6 +22,21 @@ extern volatile int vEmojiHotkeyModifiers;
 extern volatile int vEmojiHotkeyKeyCode;
 extern volatile int vSafeMode;
 extern int vShowIconOnDock;
+extern "C" void RequestNewSession(void);
+extern "C" void InvalidateLayoutCache(void);
+extern "C" const char *PHTVBuildDateCString(void);
+
+inline const char *phtvBuildDateCString() noexcept {
+    return PHTVBuildDateCString();
+}
+
+inline void phtvRuntimeRequestNewSession() noexcept {
+    RequestNewSession();
+}
+
+inline void phtvRuntimeInvalidateLayoutCache() noexcept {
+    InvalidateLayoutCache();
+}
 
 inline void phtvEngineInitializeMacroMap(const std::uint8_t *data, const int length) noexcept {
     if (!data || length <= 0) {

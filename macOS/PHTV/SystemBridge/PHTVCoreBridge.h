@@ -20,9 +20,6 @@ CGEventRef _Nullable PHTVCallback(CGEventTapProxy _Nullable proxy,
                                   CGEventType type,
                                   CGEventRef _Nonnull event,
                                   void * _Nullable refcon);
-NSString * _Nonnull PHTVBuildDateString(void);
-void RequestNewSession(void);
-void InvalidateLayoutCache(void);
 
 #ifdef __cplusplus
 }
