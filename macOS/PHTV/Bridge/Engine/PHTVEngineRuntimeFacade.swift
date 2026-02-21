@@ -121,6 +121,10 @@ final class PHTVEngineRuntimeFacade: NSObject {
         phtvRuntimeSetCurrentCodeTable(codeTable)
     }
 
+    class func isDoubleCode(_ codeTable: Int32) -> Bool {
+        phtvRuntimeIsDoubleCode(codeTable)
+    }
+
     class func isSmartSwitchKeyEnabled() -> Bool {
         phtvRuntimeIsSmartSwitchKeyEnabled()
     }
@@ -175,6 +179,10 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setCheckSpelling(_ value: Int32) {
         phtvRuntimeSetCheckSpelling(value)
+    }
+
+    class func applyCheckSpelling() {
+        phtvEngineApplyCheckSpelling()
     }
 
     class func useModernOrthography() -> Int32 {
@@ -357,8 +365,88 @@ final class PHTVEngineRuntimeFacade: NSObject {
         Int32(phtvEngineQuickConvertHotkey())
     }
 
+    class func convertUtf8(_ source: UnsafePointer<CChar>) -> UnsafePointer<CChar>? {
+        phtvEngineConvertUtf8(source)
+    }
+
+    class func initializeMacroMap(_ data: UnsafePointer<UInt8>?, _ count: Int32) {
+        phtvEngineInitializeMacroMap(data, count)
+    }
+
+    class func initializeEnglishDictionary(_ path: UnsafePointer<CChar>) -> Bool {
+        phtvEngineInitializeEnglishDictionary(path)
+    }
+
+    class func englishDictionarySize() -> Int32 {
+        Int32(phtvEngineEnglishDictionarySize())
+    }
+
+    class func initializeVietnameseDictionary(_ path: UnsafePointer<CChar>) -> Bool {
+        phtvEngineInitializeVietnameseDictionary(path)
+    }
+
+    class func vietnameseDictionarySize() -> Int32 {
+        Int32(phtvEngineVietnameseDictionarySize())
+    }
+
+    class func initializeCustomDictionary(_ data: UnsafePointer<CChar>?, _ count: Int32) {
+        phtvEngineInitializeCustomDictionary(data, count)
+    }
+
+    class func customEnglishWordCount() -> Int32 {
+        Int32(phtvEngineCustomEnglishWordCount())
+    }
+
+    class func customVietnameseWordCount() -> Int32 {
+        Int32(phtvEngineCustomVietnameseWordCount())
+    }
+
+    class func clearCustomDictionary() {
+        phtvEngineClearCustomDictionary()
+    }
+
+    class func setCheckSpellingValue(_ value: Int32) {
+        phtvEngineSetCheckSpellingValue(value)
+    }
+
+    class func hotkeyDisplayCharacter(_ keyCode: UInt16) -> UInt16 {
+        UInt16(phtvEngineHotkeyDisplayCharacter(keyCode))
+    }
+
+    class func hotkeyHasControl(_ hotkey: Int32) -> Bool {
+        phtvEngineHotkeyHasControl(hotkey)
+    }
+
+    class func hotkeyHasOption(_ hotkey: Int32) -> Bool {
+        phtvEngineHotkeyHasOption(hotkey)
+    }
+
+    class func hotkeyHasCommand(_ hotkey: Int32) -> Bool {
+        phtvEngineHotkeyHasCommand(hotkey)
+    }
+
+    class func hotkeyHasShift(_ hotkey: Int32) -> Bool {
+        phtvEngineHotkeyHasShift(hotkey)
+    }
+
+    class func hotkeyHasKey(_ hotkey: Int32) -> Bool {
+        phtvEngineHotkeyHasKey(hotkey)
+    }
+
+    class func hotkeySwitchKey(_ hotkey: Int32) -> UInt16 {
+        phtvEngineHotkeySwitchKey(hotkey)
+    }
+
     class func capsMask() -> UInt32 {
         UInt32(phtvEngineCapsMask())
+    }
+
+    class func charCodeMask() -> UInt32 {
+        UInt32(phtvEngineCharCodeMask())
+    }
+
+    class func pureCharacterMask() -> UInt32 {
+        UInt32(phtvEnginePureCharacterMask())
     }
 
     class func macroKeyCodeToCharacter(_ keyData: UInt32) -> UInt16 {
@@ -431,6 +519,38 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func engineDataCharAt(_ index: Int32) -> UInt32 {
         UInt32(phtvEngineDataCharAt(index))
+    }
+
+    class func engineDataMacroDataSize() -> Int32 {
+        Int32(phtvEngineDataMacroDataSize())
+    }
+
+    class func engineDataMacroDataAt(_ index: Int32) -> UInt32 {
+        UInt32(phtvEngineDataMacroDataAt(index))
+    }
+
+    class func engineDataMacroDataPointer() -> UnsafePointer<UInt32>? {
+        phtvEngineDataMacroDataPtr()
+    }
+
+    class func lowByte(_ value: UInt32) -> UInt16 {
+        UInt16(phtvEngineLowByte(value))
+    }
+
+    class func hiByte(_ value: UInt32) -> UInt16 {
+        UInt16(phtvEngineHiByte(value))
+    }
+
+    class func unicodeCompoundMarkAt(_ index: Int32) -> UInt16 {
+        phtvEngineUnicodeCompoundMarkAt(index)
+    }
+
+    class func interopProbeValue() -> Int32 {
+        Int32(phtvEngineInteropProbeValue())
+    }
+
+    class func interopAdd(_ lhs: Int32, _ rhs: Int32) -> Int32 {
+        Int32(phtvEngineInteropAdd(lhs, rhs))
     }
 
     class func isNavigationKey(_ keyCode: UInt16) -> Bool {

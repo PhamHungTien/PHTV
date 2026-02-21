@@ -16,13 +16,13 @@ final class PHTVSafeModeStartupService: NSObject {
         let defaults = UserDefaults.standard
 
         if defaults.bool(forKey: keyAXTestInProgress) {
-            phtvRuntimeSetSafeMode(true)
+            PHTVEngineRuntimeFacade.setSafeMode(true)
             defaults.set(true, forKey: keySafeMode)
             defaults.set(false, forKey: keyAXTestInProgress)
             NSLog("[PHTV] ⚠️ Auto-enabled Safe Mode due to previous AX crash")
         }
 
-        guard !phtvRuntimeSafeMode() else {
+        guard !PHTVEngineRuntimeFacade.safeModeEnabled() else {
             return
         }
 
@@ -34,7 +34,7 @@ final class PHTVSafeModeStartupService: NSObject {
             return
         }
 
-        phtvRuntimeSetSafeMode(true)
+        PHTVEngineRuntimeFacade.setSafeMode(true)
         defaults.set(true, forKey: keySafeMode)
         defaults.set(false, forKey: keyAXTestInProgress)
         NSLog("[PHTV] ⚠️ AX API test failed, enabling Safe Mode")

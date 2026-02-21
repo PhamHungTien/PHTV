@@ -95,8 +95,8 @@ enum DebugSelfTests {
     }
 
     private static func runCxxInteropChecks() {
-        let probe = Int(phtvEngineInteropProbeValue())
-        let sum = Int(phtvEngineInteropAdd(20, 22))
+        let probe = Int(PHTVEngineRuntimeFacade.interopProbeValue())
+        let sum = Int(PHTVEngineRuntimeFacade.interopAdd(20, 22))
         assertCondition(
             probe == 20260221 && sum == 42,
             "Swift/C++ interop check should pass"

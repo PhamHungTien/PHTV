@@ -233,13 +233,13 @@ import Foundation
         let defaults = UserDefaults.standard
         let spellingEnabled: Int32
         if defaults.object(forKey: "Spelling") == nil {
-            spellingEnabled = Int32(phtvRuntimeCheckSpelling())
+            spellingEnabled = PHTVEngineRuntimeFacade.checkSpelling()
         } else {
             spellingEnabled = defaults.bool(forKey: "Spelling") ? 1 : 0
         }
 
-        phtvRuntimeSetCheckSpelling(spellingEnabled)
-        phtvEngineApplyCheckSpelling()
+        PHTVEngineRuntimeFacade.setCheckSpelling(spellingEnabled)
+        PHTVEngineRuntimeFacade.applyCheckSpelling()
     }
 
     @objc(setDockIconRuntimeVisible:)

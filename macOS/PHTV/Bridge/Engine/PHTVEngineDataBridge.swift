@@ -13,59 +13,59 @@ final class PHTVEngineDataBridge: NSObject {
     class func initializeMacroMap(with data: Data) {
         data.withUnsafeBytes { rawBuffer in
             let base = rawBuffer.bindMemory(to: UInt8.self).baseAddress
-            phtvEngineInitializeMacroMap(base, Int32(rawBuffer.count))
+            PHTVEngineRuntimeFacade.initializeMacroMap(base, Int32(rawBuffer.count))
         }
     }
 
     class func initializeEnglishDictionary(atPath path: String) -> Bool {
         return path.withCString { cPath in
-            phtvEngineInitializeEnglishDictionary(cPath)
+            PHTVEngineRuntimeFacade.initializeEnglishDictionary(cPath)
         }
     }
 
     class func englishDictionarySize() -> UInt {
-        return UInt(phtvEngineEnglishDictionarySize())
+        return UInt(PHTVEngineRuntimeFacade.englishDictionarySize())
     }
 
     class func initializeVietnameseDictionary(atPath path: String) -> Bool {
         return path.withCString { cPath in
-            phtvEngineInitializeVietnameseDictionary(cPath)
+            PHTVEngineRuntimeFacade.initializeVietnameseDictionary(cPath)
         }
     }
 
     class func vietnameseDictionarySize() -> UInt {
-        return UInt(phtvEngineVietnameseDictionarySize())
+        return UInt(PHTVEngineRuntimeFacade.vietnameseDictionarySize())
     }
 
     class func initializeCustomDictionary(withJSONData jsonData: Data) {
         jsonData.withUnsafeBytes { rawBuffer in
             let base = rawBuffer.bindMemory(to: CChar.self).baseAddress
-            phtvEngineInitializeCustomDictionary(base, Int32(rawBuffer.count))
+            PHTVEngineRuntimeFacade.initializeCustomDictionary(base, Int32(rawBuffer.count))
         }
     }
 
     class func customEnglishWordCount() -> UInt {
-        return UInt(phtvEngineCustomEnglishWordCount())
+        return UInt(PHTVEngineRuntimeFacade.customEnglishWordCount())
     }
 
     class func customVietnameseWordCount() -> UInt {
-        return UInt(phtvEngineCustomVietnameseWordCount())
+        return UInt(PHTVEngineRuntimeFacade.customVietnameseWordCount())
     }
 
     class func clearCustomDictionary() {
-        phtvEngineClearCustomDictionary()
+        PHTVEngineRuntimeFacade.clearCustomDictionary()
     }
 
     class func setCheckSpellingValue(_ value: Int32) {
-        phtvEngineSetCheckSpellingValue(value)
+        PHTVEngineRuntimeFacade.setCheckSpellingValue(value)
     }
 
     private class func hotkeyKeyDisplayLabel(_ keyCode: UInt16) -> String {
-        if keyCode == UInt16(kVK_Space) || Int32(keyCode) == Int32(phtvEngineSpaceKeyCode()) {
+        if keyCode == UInt16(kVK_Space) || Int32(keyCode) == PHTVEngineRuntimeFacade.spaceKeyCode() {
             return "␣"
         }
 
-        let keyChar = phtvEngineHotkeyDisplayCharacter(keyCode)
+        let keyChar = PHTVEngineRuntimeFacade.hotkeyDisplayCharacter(keyCode)
         if keyChar >= 33,
            keyChar <= 126,
            let scalar = UnicodeScalar(Int(keyChar)) {
@@ -76,24 +76,24 @@ final class PHTVEngineDataBridge: NSObject {
     }
 
     class func quickConvertMenuTitle() -> String {
-        let quickConvertHotkey = Int32(phtvEngineQuickConvertHotkey())
+        let quickConvertHotkey = PHTVEngineRuntimeFacade.quickConvertHotkey()
         var components: [String] = []
 
-        if phtvEngineHotkeyHasControl(quickConvertHotkey) {
+        if PHTVEngineRuntimeFacade.hotkeyHasControl(quickConvertHotkey) {
             components.append("⌃")
         }
-        if phtvEngineHotkeyHasOption(quickConvertHotkey) {
+        if PHTVEngineRuntimeFacade.hotkeyHasOption(quickConvertHotkey) {
             components.append("⌥")
         }
-        if phtvEngineHotkeyHasCommand(quickConvertHotkey) {
+        if PHTVEngineRuntimeFacade.hotkeyHasCommand(quickConvertHotkey) {
             components.append("⌘")
         }
-        if phtvEngineHotkeyHasShift(quickConvertHotkey) {
+        if PHTVEngineRuntimeFacade.hotkeyHasShift(quickConvertHotkey) {
             components.append("⇧")
         }
 
-        if phtvEngineHotkeyHasKey(quickConvertHotkey) {
-            let keyCode = phtvEngineHotkeySwitchKey(quickConvertHotkey)
+        if PHTVEngineRuntimeFacade.hotkeyHasKey(quickConvertHotkey) {
+            let keyCode = PHTVEngineRuntimeFacade.hotkeySwitchKey(quickConvertHotkey)
             components.append(hotkeyKeyDisplayLabel(keyCode))
         }
 
@@ -113,9 +113,9 @@ final class PHTVEngineDataBridge: NSObject {
             return ""
         }
 
-        let capsMask = phtvEngineCapsMask()
-        let charCodeMask = phtvEngineCharCodeMask()
-        let pureCharacterMask = phtvEnginePureCharacterMask()
+        let capsMask = PHTVEngineRuntimeFacade.capsMask()
+        let charCodeMask = PHTVEngineRuntimeFacade.charCodeMask()
+        let pureCharacterMask = PHTVEngineRuntimeFacade.pureCharacterMask()
 
         var resultScalars = String.UnicodeScalarView()
         for index in 0..<Int(count) {
@@ -125,14 +125,14 @@ final class PHTVEngineDataBridge: NSObject {
             if (data & pureCharacterMask) != 0 {
                 character = UInt16(truncatingIfNeeded: data & ~capsMask)
             } else if (data & charCodeMask) == 0 {
-                character = phtvEngineMacroKeyCodeToCharacter(data)
+                character = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(data)
                 if character == 0 {
                     continue
                 }
             } else if codeTable == 0 {
                 character = UInt16(truncatingIfNeeded: data & 0xFFFF)
             } else {
-                character = phtvEngineLowByte(data)
+                character = PHTVEngineRuntimeFacade.lowByte(data)
             }
 
             guard character != 0, let scalar = UnicodeScalar(Int(character)) else {

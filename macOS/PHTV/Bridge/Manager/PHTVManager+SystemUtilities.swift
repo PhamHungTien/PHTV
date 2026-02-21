@@ -87,7 +87,10 @@ import Foundation
 
     private class func convertTextWithEngine(_ text: String) -> String {
         text.withCString { source in
-            String(validatingCString: phtvEngineConvertUtf8(source)) ?? text
+            guard let converted = PHTVEngineRuntimeFacade.convertUtf8(source) else {
+                return text
+            }
+            return String(validatingCString: converted) ?? text
         }
     }
 
@@ -123,12 +126,12 @@ import Foundation
 
     @objc(phtv_isSafeModeEnabled)
     class func phtv_isSafeModeEnabled() -> Bool {
-        phtvRuntimeSafeMode()
+        PHTVEngineRuntimeFacade.safeModeEnabled()
     }
 
     @objc(phtv_setSafeModeEnabled:)
     class func phtv_setSafeModeEnabled(_ enabled: Bool) {
-        phtvRuntimeSetSafeMode(enabled)
+        PHTVEngineRuntimeFacade.setSafeMode(enabled)
         UserDefaults.standard.set(enabled, forKey: "SafeMode")
 
         if enabled {

@@ -25,7 +25,7 @@ class PHTVKeyEventSenderService: NSObject {
     // MARK: - Core event dispatch
 
     @objc class func postSyntheticEvent(_ event: CGEvent) {
-        event.setIntegerValueField(.eventSourceUserData, value: phtvEventMarkerValue())
+        event.setIntegerValueField(.eventSourceUserData, value: PHTVEngineRuntimeFacade.eventMarkerValue())
         if PHTVEventRuntimeContextService.postToHIDTapEnabled() {
             event.post(tap: .cghidEventTap)
         } else if PHTVEventRuntimeContextService.postToSessionForCliEnabled() {
@@ -44,7 +44,7 @@ class PHTVKeyEventSenderService: NSObject {
     }
 
     @objc class func consumeSyncKeyOnBackspace() {
-        guard phtvRuntimeIsDoubleCode(phtvRuntimeCurrentCodeTable()) else { return }
+        guard PHTVEngineRuntimeFacade.isDoubleCode(PHTVEngineRuntimeFacade.currentCodeTable()) else { return }
         PHTVTypingSyncStateService.consumeSyncKeyOnBackspace()
     }
 
@@ -55,7 +55,7 @@ class PHTVKeyEventSenderService: NSObject {
         if PHTVEventRuntimeContextService.postToHIDTapEnabled() {
             guard let bsDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(KEY_DELETE.rawValue), keyDown: true),
                   let bsUp   = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(KEY_DELETE.rawValue), keyDown: false) else { return }
-            PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: bsDown, keyUp: bsUp, eventMarker: phtvEventMarkerValue())
+            PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: bsDown, keyUp: bsUp, eventMarker: PHTVEngineRuntimeFacade.eventMarkerValue())
             postSyntheticEvent(bsDown)
             postSyntheticEvent(bsUp)
             PHTVTimingService.spotlightTinyDelay()
@@ -71,8 +71,8 @@ class PHTVKeyEventSenderService: NSObject {
 
     @objc class func sendBackspace() {
         sendPhysicalBackspace()
-        let codeTable = phtvRuntimeCurrentCodeTable()
-        guard phtvRuntimeIsDoubleCode(codeTable) else { return }
+        let codeTable = PHTVEngineRuntimeFacade.currentCodeTable()
+        guard PHTVEngineRuntimeFacade.isDoubleCode(codeTable) else { return }
         if !PHTVTypingSyncStateService.syncKeyIsEmpty() {
             if PHTVTypingSyncStateService.syncKeyBackValue() > 1 {
                 if !(codeTable == PHTVCodeTableUnicodeComposite.rawValue &&
@@ -104,8 +104,8 @@ class PHTVKeyEventSenderService: NSObject {
         up.flags = flags
         postSyntheticEvent(down)
         postSyntheticEvent(up)
-        let codeTable = phtvRuntimeCurrentCodeTable()
-        if phtvRuntimeIsDoubleCode(codeTable) && !PHTVTypingSyncStateService.syncKeyIsEmpty() {
+        let codeTable = PHTVEngineRuntimeFacade.currentCodeTable()
+        if PHTVEngineRuntimeFacade.isDoubleCode(codeTable) && !PHTVTypingSyncStateService.syncKeyIsEmpty() {
             if PHTVTypingSyncStateService.syncKeyBackValue() > 1 {
                 if !(codeTable == PHTVCodeTableUnicodeComposite.rawValue &&
                      PHTVEventRuntimeContextService.appContainsUnicodeCompound()) {
@@ -123,7 +123,7 @@ class PHTVKeyEventSenderService: NSObject {
         guard let source = eventSource else { return }
         guard let down = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true),
               let up   = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false) else { return }
-        PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: down, keyUp: up, eventMarker: phtvEventMarkerValue())
+        PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: down, keyUp: up, eventMarker: PHTVEngineRuntimeFacade.eventMarkerValue())
         var char = ch
         down.keyboardSetUnicodeString(stringLength: 1, unicodeString: &char)
         up.keyboardSetUnicodeString(stringLength: 1, unicodeString: &char)
@@ -132,8 +132,8 @@ class PHTVKeyEventSenderService: NSObject {
         if PHTVEventRuntimeContextService.postToHIDTapEnabled() {
             PHTVTimingService.spotlightTinyDelay()
         }
-        let codeTable = phtvRuntimeCurrentCodeTable()
-        if phtvRuntimeIsDoubleCode(codeTable) {
+        let codeTable = PHTVEngineRuntimeFacade.currentCodeTable()
+        if PHTVEngineRuntimeFacade.isDoubleCode(codeTable) {
             insertKeyLength(1)
         }
     }
@@ -141,13 +141,13 @@ class PHTVKeyEventSenderService: NSObject {
     @objc class func sendKeyCode(_ data: UInt32) {
         guard let source = eventSource else { return }
         var newChar = UInt16(data & 0xFFFF)
-        let codeTable = phtvRuntimeCurrentCodeTable()
-        let charCodeMask = phtvEngineCharCodeMask()
-        let capsMask = phtvEngineCapsMask()
+        let codeTable = PHTVEngineRuntimeFacade.currentCodeTable()
+        let charCodeMask = PHTVEngineRuntimeFacade.charCodeMask()
+        let capsMask = PHTVEngineRuntimeFacade.capsMask()
 
         if (data & charCodeMask) == 0 {
             // Direct keycode case
-            if phtvRuntimeIsDoubleCode(codeTable) {
+            if PHTVEngineRuntimeFacade.isDoubleCode(codeTable) {
                 insertKeyLength(1)
             }
             guard let down = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(newChar), keyDown: true),
@@ -161,7 +161,7 @@ class PHTVKeyEventSenderService: NSObject {
             flags.insert(.maskNonCoalesced)
             flags.remove(.maskSecondaryFn)
             down.flags = flags
-            PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: down, keyUp: up, eventMarker: phtvEventMarkerValue())
+            PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: down, keyUp: up, eventMarker: PHTVEngineRuntimeFacade.eventMarkerValue())
             postSyntheticEvent(down)
             postSyntheticEvent(up)
             if PHTVEventRuntimeContextService.postToHIDTapEnabled() {
@@ -173,7 +173,7 @@ class PHTVKeyEventSenderService: NSObject {
             case PHTVCodeTableUnicode.rawValue: // 0 — 2-byte Unicode
                 guard let down = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true),
                       let up   = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false) else { return }
-                PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: down, keyUp: up, eventMarker: phtvEventMarkerValue())
+                PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: down, keyUp: up, eventMarker: PHTVEngineRuntimeFacade.eventMarkerValue())
                 down.keyboardSetUnicodeString(stringLength: 1, unicodeString: &newChar)
                 up.keyboardSetUnicodeString(stringLength: 1, unicodeString: &newChar)
                 postSyntheticEvent(down)
@@ -185,11 +185,11 @@ class PHTVKeyEventSenderService: NSObject {
             case PHTVCodeTableTCVN3.rawValue,    // 1
                  PHTVCodeTableVNIWindows.rawValue, // 2
                  PHTVCodeTableCP1258.rawValue:     // 4 — 1-byte codes
-                let newCharHi = UInt16(phtvEngineHiByte(data))
-                newChar = UInt16(phtvEngineLowByte(data))
+                let newCharHi = UInt16(PHTVEngineRuntimeFacade.hiByte(data))
+                newChar = UInt16(PHTVEngineRuntimeFacade.lowByte(data))
                 guard let down = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true),
                       let up   = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false) else { return }
-                PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: down, keyUp: up, eventMarker: phtvEventMarkerValue())
+                PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: down, keyUp: up, eventMarker: PHTVEngineRuntimeFacade.eventMarkerValue())
                 down.keyboardSetUnicodeString(stringLength: 1, unicodeString: &newChar)
                 up.keyboardSetUnicodeString(stringLength: 1, unicodeString: &newChar)
                 postSyntheticEvent(down)
@@ -204,7 +204,7 @@ class PHTVKeyEventSenderService: NSObject {
                     var hi = newCharHi
                     guard let down2 = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true),
                           let up2   = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false) else { return }
-                    PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: down2, keyUp: up2, eventMarker: phtvEventMarkerValue())
+                    PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: down2, keyUp: up2, eventMarker: PHTVEngineRuntimeFacade.eventMarkerValue())
                     down2.keyboardSetUnicodeString(stringLength: 1, unicodeString: &hi)
                     up2.keyboardSetUnicodeString(stringLength: 1, unicodeString: &hi)
                     postSyntheticEvent(down2)
@@ -223,10 +223,10 @@ class PHTVKeyEventSenderService: NSObject {
                 newChar &= 0x1FFF
                 let len = newCharHi > 0 ? 2 : 1
                 insertKeyLength(Int32(len))
-                var uniChars: [UInt16] = [newChar, newCharHi > 0 ? phtvEngineUnicodeCompoundMarkAt(Int32(newCharHi) - 1) : 0]
+                var uniChars: [UInt16] = [newChar, newCharHi > 0 ? PHTVEngineRuntimeFacade.unicodeCompoundMarkAt(Int32(newCharHi) - 1) : 0]
                 guard let down = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true),
                       let up   = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false) else { return }
-                PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: down, keyUp: up, eventMarker: phtvEventMarkerValue())
+                PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: down, keyUp: up, eventMarker: PHTVEngineRuntimeFacade.eventMarkerValue())
                 down.keyboardSetUnicodeString(stringLength: len, unicodeString: &uniChars)
                 up.keyboardSetUnicodeString(stringLength: len, unicodeString: &uniChars)
                 postSyntheticEvent(down)
@@ -242,8 +242,8 @@ class PHTVKeyEventSenderService: NSObject {
     }
 
     @objc class func sendEmptyCharacter() {
-        let codeTable = phtvRuntimeCurrentCodeTable()
-        if phtvRuntimeIsDoubleCode(codeTable) {
+        let codeTable = PHTVEngineRuntimeFacade.currentCodeTable()
+        if PHTVEngineRuntimeFacade.isDoubleCode(codeTable) {
             insertKeyLength(1)
         }
         guard let source = eventSource else { return }
@@ -254,7 +254,7 @@ class PHTVKeyEventSenderService: NSObject {
         }
         guard let down = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true),
               let up   = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false) else { return }
-        PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: down, keyUp: up, eventMarker: phtvEventMarkerValue())
+        PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: down, keyUp: up, eventMarker: PHTVEngineRuntimeFacade.eventMarkerValue())
         down.keyboardSetUnicodeString(stringLength: 1, unicodeString: &newChar)
         up.keyboardSetUnicodeString(stringLength: 1, unicodeString: &newChar)
         postSyntheticEvent(down)
@@ -292,7 +292,7 @@ class PHTVKeyEventSenderService: NSObject {
             let chunkLen = min(effectiveChunkSize, Int(len) - i)
             guard let down = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true),
                   let up   = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false) else { break }
-            PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: down, keyUp: up, eventMarker: phtvEventMarkerValue())
+            PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: down, keyUp: up, eventMarker: PHTVEngineRuntimeFacade.eventMarkerValue())
             down.keyboardSetUnicodeString(stringLength: chunkLen, unicodeString: chars + i)
             up.keyboardSetUnicodeString(stringLength: chunkLen, unicodeString: chars + i)
             postSyntheticEvent(down)
