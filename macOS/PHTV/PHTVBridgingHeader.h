@@ -16,5 +16,6 @@
 #import "SystemBridge/PHTVEngineDataCoreBridge.h"
 #import "SystemBridge/PHTVCoreBridge.h"
 #import "SystemBridge/PHTVCxxInteropTrial.hpp"
+#import "SystemBridge/PHTVEngineCxxInterop.hpp"
 
 #endif /* PHTVBridgingHeader_h */

@@ -32,22 +32,6 @@ void PHTVEngineSetCheckSpellingValue(int value);
 void PHTVEngineApplyCheckSpelling(void);
 void PHTVEngineNotifyTableCodeChanged(void);
 
-int PHTVEngineQuickConvertHotkey(void);
-bool PHTVEngineHotkeyHasControl(int hotkey);
-bool PHTVEngineHotkeyHasOption(int hotkey);
-bool PHTVEngineHotkeyHasCommand(int hotkey);
-bool PHTVEngineHotkeyHasShift(int hotkey);
-bool PHTVEngineHotkeyHasKey(int hotkey);
-uint16_t PHTVEngineHotkeySwitchKey(int hotkey);
-uint16_t PHTVEngineHotkeyDisplayCharacter(uint16_t keyCode);
-int PHTVEngineSpaceKeyCode(void);
-
-uint32_t PHTVEngineCapsMask(void);
-uint32_t PHTVEngineCharCodeMask(void);
-uint32_t PHTVEnginePureCharacterMask(void);
-uint16_t PHTVEngineMacroKeyCodeToCharacter(uint32_t keyData);
-uint16_t PHTVEngineLowByte(uint32_t data);
-
 #ifdef __cplusplus
 }
 #endif

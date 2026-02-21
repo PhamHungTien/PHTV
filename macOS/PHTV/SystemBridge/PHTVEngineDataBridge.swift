@@ -61,11 +61,11 @@ final class PHTVEngineDataBridge: NSObject {
     }
 
     private class func hotkeyKeyDisplayLabel(_ keyCode: UInt16) -> String {
-        if keyCode == UInt16(kVK_Space) || Int32(keyCode) == Int32(PHTVEngineSpaceKeyCode()) {
+        if keyCode == UInt16(kVK_Space) || Int32(keyCode) == Int32(phtvEngineSpaceKeyCode()) {
             return "␣"
         }
 
-        let keyChar = PHTVEngineHotkeyDisplayCharacter(keyCode)
+        let keyChar = phtvEngineHotkeyDisplayCharacter(keyCode)
         if keyChar >= 33,
            keyChar <= 126,
            let scalar = UnicodeScalar(Int(keyChar)) {
@@ -76,24 +76,24 @@ final class PHTVEngineDataBridge: NSObject {
     }
 
     class func quickConvertMenuTitle() -> String {
-        let quickConvertHotkey = Int32(PHTVEngineQuickConvertHotkey())
+        let quickConvertHotkey = Int32(phtvEngineQuickConvertHotkey())
         var components: [String] = []
 
-        if PHTVEngineHotkeyHasControl(quickConvertHotkey) {
+        if phtvEngineHotkeyHasControl(quickConvertHotkey) {
             components.append("⌃")
         }
-        if PHTVEngineHotkeyHasOption(quickConvertHotkey) {
+        if phtvEngineHotkeyHasOption(quickConvertHotkey) {
             components.append("⌥")
         }
-        if PHTVEngineHotkeyHasCommand(quickConvertHotkey) {
+        if phtvEngineHotkeyHasCommand(quickConvertHotkey) {
             components.append("⌘")
         }
-        if PHTVEngineHotkeyHasShift(quickConvertHotkey) {
+        if phtvEngineHotkeyHasShift(quickConvertHotkey) {
             components.append("⇧")
         }
 
-        if PHTVEngineHotkeyHasKey(quickConvertHotkey) {
-            let keyCode = PHTVEngineHotkeySwitchKey(quickConvertHotkey)
+        if phtvEngineHotkeyHasKey(quickConvertHotkey) {
+            let keyCode = phtvEngineHotkeySwitchKey(quickConvertHotkey)
             components.append(hotkeyKeyDisplayLabel(keyCode))
         }
 
@@ -113,9 +113,9 @@ final class PHTVEngineDataBridge: NSObject {
             return ""
         }
 
-        let capsMask = PHTVEngineCapsMask()
-        let charCodeMask = PHTVEngineCharCodeMask()
-        let pureCharacterMask = PHTVEnginePureCharacterMask()
+        let capsMask = phtvEngineCapsMask()
+        let charCodeMask = phtvEngineCharCodeMask()
+        let pureCharacterMask = phtvEnginePureCharacterMask()
 
         var resultScalars = String.UnicodeScalarView()
         for index in 0..<Int(count) {
@@ -125,14 +125,14 @@ final class PHTVEngineDataBridge: NSObject {
             if (data & pureCharacterMask) != 0 {
                 character = UInt16(truncatingIfNeeded: data & ~capsMask)
             } else if (data & charCodeMask) == 0 {
-                character = PHTVEngineMacroKeyCodeToCharacter(data)
+                character = phtvEngineMacroKeyCodeToCharacter(data)
                 if character == 0 {
                     continue
                 }
             } else if codeTable == 0 {
                 character = UInt16(truncatingIfNeeded: data & 0xFFFF)
             } else {
-                character = PHTVEngineLowByte(data)
+                character = phtvEngineLowByte(data)
             }
 
             guard character != 0, let scalar = UnicodeScalar(Int(character)) else {
