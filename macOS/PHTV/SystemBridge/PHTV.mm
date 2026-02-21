@@ -55,12 +55,6 @@ static const int64_t kPHTVEventMarker = 0x50485456; // "PHTV"
 static const int CLI_TEXT_CHUNK_SIZE_DEFAULT = 20;
 static const useconds_t CLI_POST_SEND_BLOCK_MIN_US = 20000;
 static const useconds_t CLI_PRE_BACKSPACE_DELAY_US = 4000;
-static const uint64_t CLI_SPEED_FAST_THRESHOLD_US = 20000;
-static const uint64_t CLI_SPEED_MEDIUM_THRESHOLD_US = 32000;
-static const uint64_t CLI_SPEED_SLOW_THRESHOLD_US = 48000;
-static const double CLI_SPEED_FACTOR_FAST = 2.1;
-static const double CLI_SPEED_FACTOR_MEDIUM = 1.6;
-static const double CLI_SPEED_FACTOR_SLOW = 1.3;
 
 // High-resolution timing
 static mach_timebase_info_data_t timebase_info;
@@ -185,22 +179,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         }
     }
 
-    static inline double PHTVComputeCliSpeedFactor(uint64_t deltaUs) {
-        if (deltaUs == 0) {
-            return 1.0;
-        }
-        if (deltaUs <= CLI_SPEED_FAST_THRESHOLD_US) {
-            return CLI_SPEED_FACTOR_FAST;
-        }
-        if (deltaUs <= CLI_SPEED_MEDIUM_THRESHOLD_US) {
-            return CLI_SPEED_FACTOR_MEDIUM;
-        }
-        if (deltaUs <= CLI_SPEED_SLOW_THRESHOLD_US) {
-            return CLI_SPEED_FACTOR_SLOW;
-        }
-        return 1.0;
-    }
-
     static inline void UpdateCliSpeedFactor(uint64_t now) {
         dispatch_once(&timebase_init_token, ^{
             mach_timebase_info(&timebase_info);
@@ -212,15 +190,8 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         }
         uint64_t deltaUs = mach_time_to_us(now - _phtvCliLastKeyDownTime);
         _phtvCliLastKeyDownTime = now;
-        double target = PHTVComputeCliSpeedFactor(deltaUs);
-        if (target >= _phtvCliSpeedFactor) {
-            _phtvCliSpeedFactor = target;
-        } else {
-            _phtvCliSpeedFactor = (_phtvCliSpeedFactor * 0.7) + (target * 0.3);
-            if (_phtvCliSpeedFactor < 1.0) {
-                _phtvCliSpeedFactor = 1.0;
-            }
-        }
+        _phtvCliSpeedFactor = [PHTVCliProfileService nextCliSpeedFactorForDeltaUs:deltaUs
+                                                                      currentFactor:_phtvCliSpeedFactor];
     }
 
     static inline useconds_t PHTVScaleCliDelay(useconds_t baseDelay) {

@@ -48,6 +48,12 @@ final class PHTVCliProfileService: NSObject {
     )
     private static let minimumPostSendBlockUs: UInt32 = 20_000
     private static let nonCliTextChunkSizeValue: Int32 = 20
+    private static let cliSpeedFastThresholdUs: UInt64 = 20_000
+    private static let cliSpeedMediumThresholdUs: UInt64 = 32_000
+    private static let cliSpeedSlowThresholdUs: UInt64 = 48_000
+    private static let cliSpeedFactorFast = 2.1
+    private static let cliSpeedFactorMedium = 1.6
+    private static let cliSpeedFactorSlow = 1.3
 
     @objc(profileCodeForBundleId:)
     class func profileCode(forBundleId bundleId: String?) -> Int32 {
@@ -86,5 +92,32 @@ final class PHTVCliProfileService: NSObject {
 
     @objc class func nonCliTextChunkSize() -> Int32 {
         nonCliTextChunkSizeValue
+    }
+
+    @objc(nextCliSpeedFactorForDeltaUs:currentFactor:)
+    class func nextCliSpeedFactor(forDeltaUs deltaUs: UInt64, currentFactor: Double) -> Double {
+        let targetFactor = cliSpeedTargetFactor(forDeltaUs: deltaUs)
+        if targetFactor >= currentFactor {
+            return targetFactor
+        }
+
+        let smoothed = (currentFactor * 0.7) + (targetFactor * 0.3)
+        return max(1.0, smoothed)
+    }
+
+    private class func cliSpeedTargetFactor(forDeltaUs deltaUs: UInt64) -> Double {
+        if deltaUs == 0 {
+            return 1.0
+        }
+        if deltaUs <= cliSpeedFastThresholdUs {
+            return cliSpeedFactorFast
+        }
+        if deltaUs <= cliSpeedMediumThresholdUs {
+            return cliSpeedFactorMedium
+        }
+        if deltaUs <= cliSpeedSlowThresholdUs {
+            return cliSpeedFactorSlow
+        }
+        return 1.0
     }
 }
