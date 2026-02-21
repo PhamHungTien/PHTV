@@ -1436,13 +1436,27 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 }
                 return event;
             } else if (signalAction == PHTVEngineSignalActionProcessSignal) { //handle result signal
+                // BROWSER FIX: Browsers (Chromium, Safari, Firefox, etc.) don't support AX API properly
+                // for their address bar autocomplete. When spotlightActive=true on a browser, 
+                // we should NOT use Spotlight-style handling.
+                BOOL isBrowserApp = targetContext.isBrowser;
+                BOOL isSpotlightTarget = targetContext.postToHIDTap;
+                PHTVProcessSignalPlanBox *processSignalPlan =
+                    [PHTVInputStrategyService processSignalPlanForBundleId:effectiveBundleId
+                                                                    keyCode:(int32_t)_keycode
+                                                               spaceKeyCode:(int32_t)KEY_SPACE
+                                                               slashKeyCode:(int32_t)KEY_SLASH
+                                                                     extCode:(int32_t)pData->extCode
+                                                              backspaceCount:(int32_t)pData->backspaceCount
+                                                                newCharCount:(int32_t)pData->newCharCount
+                                                                isBrowserApp:isBrowserApp
+                                                            isSpotlightTarget:isSpotlightTarget
+                                                      needsPrecomposedBatched:appChars.needsPrecomposedBatched
+                                                            browserFixEnabled:vFixRecommendBrowser];
+
                 // FIGMA FIX: Force pass-through for Space key to support "Hand tool" (Hold Space)
                 // When PHTV consumes Space and sends a synthetic one, it breaks the "hold" state.
-                if ([PHTVInputStrategyService shouldBypassSpaceForFigmaWithBundleId:effectiveBundleId
-                                                                             keyCode:(int32_t)_keycode
-                                                                      backspaceCount:(int32_t)pData->backspaceCount
-                                                                        newCharCount:(int32_t)pData->newCharCount
-                                                                         spaceKeyCode:(int32_t)KEY_SPACE]) {
+                if (processSignalPlan.shouldBypassForFigma) {
                     return event;
                 }
 
@@ -1454,27 +1468,11 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 }
                 #endif
 
-                // BROWSER FIX: Browsers (Chromium, Safari, Firefox, etc.) don't support AX API properly
-                // for their address bar autocomplete. When spotlightActive=true on a browser, 
-                // we should NOT use Spotlight-style handling.
-                BOOL isBrowserApp = targetContext.isBrowser;
-                BOOL isSpotlightTarget = targetContext.postToHIDTap;
-                BOOL isNotionApp = [PHTVAppDetectionService isNotionApp:effectiveBundleId];
-                PHTVInputStrategyBox *inputStrategy = [PHTVInputStrategyService strategyForSpaceKey:(_keycode == KEY_SPACE)
-                                                                                            slashKey:(_keycode == KEY_SLASH)
-                                                                                             extCode:pData->extCode
-                                                                                      backspaceCount:(int32_t)pData->backspaceCount
-                                                                                        isBrowserApp:isBrowserApp
-                                                                                    isSpotlightTarget:isSpotlightTarget
-                                                                              needsPrecomposedBatched:appChars.needsPrecomposedBatched
-                                                                                    browserFixEnabled:vFixRecommendBrowser
-                                                                                           isNotionApp:isNotionApp];
-                
                 #ifdef DEBUG
-                BOOL isSpecialApp = inputStrategy.isSpecialApp;
-                BOOL isPotentialShortcut = inputStrategy.isPotentialShortcut;
-                BOOL isBrowserFix = inputStrategy.isBrowserFix;
-                BOOL shouldSkipSpace = inputStrategy.shouldSkipSpace;
+                BOOL isSpecialApp = processSignalPlan.isSpecialApp;
+                BOOL isPotentialShortcut = processSignalPlan.isPotentialShortcut;
+                BOOL isBrowserFix = processSignalPlan.isBrowserFix;
+                BOOL shouldSkipSpace = processSignalPlan.shouldSkipSpace;
                 // Always log browser fix status to debug why it might be skipped
                 NSLog(@"[BrowserFix] Status: vFix=%d, app=%@, isBrowser=%d => isFix=%d | bs=%d, ext=%d", 
                       vFixRecommendBrowser, effectiveBundleId, isBrowserApp, isBrowserFix, 
@@ -1487,7 +1485,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 #endif
 
                 BOOL isAddrBar = NO;
-                if (inputStrategy.shouldTryBrowserAddressBarFix) {
+                if (processSignalPlan.shouldTryBrowserAddressBarFix) {
                     // Use accurate AX API check (cached) instead of unreliable spotlightActive.
                     isAddrBar = [PHTVEventContextBridgeService isFocusedElementAddressBarForSafeMode:vSafeMode];
 #ifdef DEBUG
@@ -1496,9 +1494,9 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 }
 
                 BOOL isNotionCodeBlockDetected = NO;
-                if (inputStrategy.shouldTryLegacyNonBrowserFix) {
+                if (processSignalPlan.shouldTryLegacyNonBrowserFix) {
                     // Notion code block should use standard backspace path.
-                    isNotionCodeBlockDetected = isNotionApp &&
+                    isNotionCodeBlockDetected = processSignalPlan.isNotionApp &&
                         [PHTVEventContextBridgeService isNotionCodeBlockForSafeMode:vSafeMode];
 #ifdef DEBUG
                     if (isNotionCodeBlockDetected) {
@@ -1508,9 +1506,9 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 }
 
                 PHTVBackspaceAdjustmentBox *backspaceAdjustment =
-                    [PHTVInputStrategyService backspaceAdjustmentForBrowserAddressBarFix:inputStrategy.shouldTryBrowserAddressBarFix
+                    [PHTVInputStrategyService backspaceAdjustmentForBrowserAddressBarFix:processSignalPlan.shouldTryBrowserAddressBarFix
                                                                         addressBarDetected:isAddrBar
-                                                                      legacyNonBrowserFix:inputStrategy.shouldTryLegacyNonBrowserFix
+                                                                      legacyNonBrowserFix:processSignalPlan.shouldTryLegacyNonBrowserFix
                                                                   containsUnicodeCompound:appChars.containsUnicodeCompound
                                                                   notionCodeBlockDetected:isNotionCodeBlockDetected
                                                                            backspaceCount:(int32_t)pData->backspaceCount];
@@ -1539,7 +1537,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 #endif
                 }
 #ifdef DEBUG
-                if (inputStrategy.shouldLogSpaceSkip) {
+                if (processSignalPlan.shouldLogSpaceSkip) {
                     NSLog(@"[TextReplacement] SKIPPED SendEmptyCharacter for SPACE to avoid Text Replacement conflict");
                 }
 #endif

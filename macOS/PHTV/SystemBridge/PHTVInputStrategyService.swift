@@ -121,6 +121,41 @@ final class PHTVInputStrategyBox: NSObject {
 }
 
 @objcMembers
+final class PHTVProcessSignalPlanBox: NSObject {
+    let shouldBypassForFigma: Bool
+    let isNotionApp: Bool
+    let isSpecialApp: Bool
+    let isPotentialShortcut: Bool
+    let isBrowserFix: Bool
+    let shouldSkipSpace: Bool
+    let shouldTryBrowserAddressBarFix: Bool
+    let shouldTryLegacyNonBrowserFix: Bool
+    let shouldLogSpaceSkip: Bool
+
+    init(
+        shouldBypassForFigma: Bool,
+        isNotionApp: Bool,
+        isSpecialApp: Bool,
+        isPotentialShortcut: Bool,
+        isBrowserFix: Bool,
+        shouldSkipSpace: Bool,
+        shouldTryBrowserAddressBarFix: Bool,
+        shouldTryLegacyNonBrowserFix: Bool,
+        shouldLogSpaceSkip: Bool
+    ) {
+        self.shouldBypassForFigma = shouldBypassForFigma
+        self.isNotionApp = isNotionApp
+        self.isSpecialApp = isSpecialApp
+        self.isPotentialShortcut = isPotentialShortcut
+        self.isBrowserFix = isBrowserFix
+        self.shouldSkipSpace = shouldSkipSpace
+        self.shouldTryBrowserAddressBarFix = shouldTryBrowserAddressBarFix
+        self.shouldTryLegacyNonBrowserFix = shouldTryLegacyNonBrowserFix
+        self.shouldLogSpaceSkip = shouldLogSpaceSkip
+    }
+}
+
+@objcMembers
 final class PHTVInputStrategyService: NSObject {
     @objc(strategyForSpaceKey:slashKey:extCode:backspaceCount:isBrowserApp:isSpotlightTarget:needsPrecomposedBatched:browserFixEnabled:isNotionApp:)
     class func strategy(
@@ -345,6 +380,52 @@ final class PHTVInputStrategyService: NSObject {
             return false
         }
         return bundleId == "com.figma.Desktop"
+    }
+
+    @objc(processSignalPlanForBundleId:keyCode:spaceKeyCode:slashKeyCode:extCode:backspaceCount:newCharCount:isBrowserApp:isSpotlightTarget:needsPrecomposedBatched:browserFixEnabled:)
+    class func processSignalPlan(
+        forBundleId bundleId: String?,
+        keyCode: Int32,
+        spaceKeyCode: Int32,
+        slashKeyCode: Int32,
+        extCode: Int32,
+        backspaceCount: Int32,
+        newCharCount: Int32,
+        isBrowserApp: Bool,
+        isSpotlightTarget: Bool,
+        needsPrecomposedBatched: Bool,
+        browserFixEnabled: Bool
+    ) -> PHTVProcessSignalPlanBox {
+        let isNotionApp = PHTVAppDetectionService.isNotionApp(bundleId)
+        let inputStrategy = strategy(
+            forSpaceKey: keyCode == spaceKeyCode,
+            slashKey: keyCode == slashKeyCode,
+            extCode: extCode,
+            backspaceCount: backspaceCount,
+            isBrowserApp: isBrowserApp,
+            isSpotlightTarget: isSpotlightTarget,
+            needsPrecomposedBatched: needsPrecomposedBatched,
+            browserFixEnabled: browserFixEnabled,
+            isNotionApp: isNotionApp
+        )
+
+        return PHTVProcessSignalPlanBox(
+            shouldBypassForFigma: shouldBypassSpaceForFigma(
+                withBundleId: bundleId,
+                keyCode: keyCode,
+                backspaceCount: backspaceCount,
+                newCharCount: newCharCount,
+                spaceKeyCode: spaceKeyCode
+            ),
+            isNotionApp: isNotionApp,
+            isSpecialApp: inputStrategy.isSpecialApp,
+            isPotentialShortcut: inputStrategy.isPotentialShortcut,
+            isBrowserFix: inputStrategy.isBrowserFix,
+            shouldSkipSpace: inputStrategy.shouldSkipSpace,
+            shouldTryBrowserAddressBarFix: inputStrategy.shouldTryBrowserAddressBarFix,
+            shouldTryLegacyNonBrowserFix: inputStrategy.shouldTryLegacyNonBrowserFix,
+            shouldLogSpaceSkip: inputStrategy.shouldLogSpaceSkip
+        )
     }
 
     @objc(engineSignalActionForEngineCode:doNothingCode:willProcessCode:restoreCode:restoreAndStartNewSessionCode:replaceMacroCode:)
