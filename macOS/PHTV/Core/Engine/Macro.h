@@ -72,11 +72,6 @@ bool addMacro(const std::string& macroText, const std::string& macroContent);
 bool deleteMacro(const std::string& macroText);
 
 /**
- * When table code changed, we have to call this function to reload all macroContentCode
- */
-void onTableCodeChange();
-
-/**
  * Save all macro data to disk
  */
 void saveToFile(const std::string& path);

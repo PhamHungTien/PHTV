@@ -14,7 +14,9 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     @objc class func notifyTableCodeChanged() {
-        phtvEngineNotifyTableCodeChanged()
+        let macros = MacroStorage.load(defaults: .standard)
+        let macroData = MacroStorage.engineBinaryData(from: macros)
+        PHTVEngineDataBridge.initializeMacroMap(with: macroData)
     }
 
     class func eventMarkerValue() -> Int64 {

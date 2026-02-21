@@ -97,10 +97,6 @@ inline void phtvEngineApplyCheckSpelling() noexcept {
     vSetCheckSpelling();
 }
 
-inline void phtvEngineNotifyTableCodeChanged() noexcept {
-    onTableCodeChange();
-}
-
 inline void phtvRuntimeBarrier() noexcept {
     __sync_synchronize();
 }

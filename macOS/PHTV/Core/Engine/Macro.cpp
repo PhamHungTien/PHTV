@@ -475,25 +475,6 @@ bool deleteMacro(const string& macroText) {
     return false;
 }
 
-void onTableCodeChange() {
-    std::lock_guard<std::mutex> lock(macroMapMutex);
-
-    // vCodeTable affects how both macro keys and macro contents are converted.
-    // Rebuild the whole map to keep macros working immediately when the code table changes.
-    std::map<std::vector<Uint32>, MacroData> rebuilt;
-
-    for (auto &entry : macroMap) {
-        MacroData data = entry.second;
-
-        std::vector<Uint32> newKey;
-        convert(data.macroText, newKey);
-        convert(data.macroContent, data.macroContentCode);
-        rebuilt[std::move(newKey)] = std::move(data);
-    }
-
-    macroMap.swap(rebuilt);
-}
-
 void saveToFile(const string& path) {
     ofstream myfile;
     myfile.open(path.c_str());

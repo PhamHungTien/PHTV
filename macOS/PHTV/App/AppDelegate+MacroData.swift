@@ -8,7 +8,6 @@
 import Foundation
 
 private let phtvDefaultsKeyMacroList = "macroList"
-private let phtvDefaultsKeyMacroData = "macroData"
 private let phtvDefaultsKeyCustomDictionary = "customDictionary"
 private let phtvDefaultsKeySpelling = "Spelling"
 
@@ -36,7 +35,6 @@ private func phtvMacroLiveLog(_ message: String) {
         let macros = MacroStorage.load(defaults: defaults)
 
         if macros.isEmpty {
-            defaults.removeObject(forKey: phtvDefaultsKeyMacroData)
             let emptyData = MacroStorage.engineBinaryData(from: [])
             PHTVEngineDataBridge.initializeMacroMap(with: emptyData)
 
@@ -47,7 +45,6 @@ private func phtvMacroLiveLog(_ message: String) {
             }
         } else {
             let binaryData = MacroStorage.engineBinaryData(from: macros)
-            defaults.set(binaryData, forKey: phtvDefaultsKeyMacroData)
             PHTVEngineDataBridge.initializeMacroMap(with: binaryData)
             phtvMacroLiveLog("macros synced: count=\(macros.count)")
         }
