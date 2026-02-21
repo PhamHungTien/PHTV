@@ -13,7 +13,7 @@ final class PHTVEngineDataBridge: NSObject {
     class func initializeMacroMap(with data: Data) {
         data.withUnsafeBytes { rawBuffer in
             let base = rawBuffer.bindMemory(to: UInt8.self).baseAddress
-            PHTVEngineRuntimeFacade.initializeMacroMap(base, Int32(rawBuffer.count))
+            phtvLoadMacroMapFromBinary(base, Int32(rawBuffer.count))
         }
     }
 

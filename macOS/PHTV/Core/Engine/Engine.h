@@ -32,11 +32,6 @@
 void vPrimeUpperCaseFirstChar();
 
 /**
- * Call when you need to load macro data from disk.
- */
-extern "C" void initMacroMap(const Byte* pData, const int& size);
-
-/**
  * Call this function first to receive data pointer
  */
 void* vKeyInit();

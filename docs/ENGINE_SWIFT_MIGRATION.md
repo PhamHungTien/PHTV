@@ -51,7 +51,7 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da bo wrappers dictionary size:
   - Swift facade goi truc tiep `getEnglishDictionarySize`, `getVietnameseDictionarySize`
 - Da bo wrapper macro map init:
-  - Swift facade goi truc tiep `initMacroMap(...)`
+  - Swift facade goi truc tiep `phtvLoadMacroMapFromBinary(...)`
 - Da bo wrappers session/custom-dictionary clear:
   - Swift facade goi truc tiep `startNewSession`, `clearCustomDictionary`
 - Da bo wrappers dictionary init:
@@ -102,6 +102,9 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da don dep module macro C++ tach rieng:
   - Gop `initMacroMap(...)` va `findMacro(...)` vao `Engine.cpp`
   - Xoa `Core/Engine/Macro.cpp`
+- Da bo API C++ `initMacroMap(...)`:
+  - Swift (`PHTVEngineDataBridge`) goi truc tiep C bridge `phtvLoadMacroMapFromBinary(...)`
+  - Bo declaration/definition `initMacroMap(...)` khoi `Engine.h` va `Engine.cpp`
 - Da dua `vAutoRestoreEnglishWord` sang Swift storage:
   - Them C bridge `phtvRuntimeAutoRestoreEnglishWordEnabled()` do `PHTVEngineRuntimeFacade.swift` cung cap
   - `Engine.cpp` doc runtime setting qua bridge thay vi global C++

@@ -157,12 +157,6 @@ static inline void refreshRuntimeLayoutSnapshot() {
     runtimeCodeTableSnapshot = phtvRuntimeCodeTableValue();
 }
 
-extern "C" {
-void initMacroMap(const Byte* pData, const int& size) {
-    phtvLoadMacroMapFromBinary(pData, size);
-}
-}
-
 static bool findMacro(vector<Uint32>& key, vector<Uint32>& macroContentCode) {
     for (size_t i = 0; i < key.size(); i++) {
         key[i] = getCharacterCode(key[i]);
