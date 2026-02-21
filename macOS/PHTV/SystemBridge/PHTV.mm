@@ -977,26 +977,28 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         if (!useStepByStep) {
             SendNewCharString(true);
         } else {
-            useconds_t cliTextDelay = 0;
-            if (_phtvIsCliTarget) {
-                cliTextDelay = PHTVScaleCliDelay(_phtvCliTextDelayUs);
-            }
+            int32_t macroCount = (int32_t)pData->macroData.size();
+            uint64_t scaledCliTextDelayUs = _phtvIsCliTarget ? (uint64_t)PHTVScaleCliDelay(_phtvCliTextDelayUs) : 0;
+            uint64_t scaledCliPostSendBlockUs = _phtvIsCliTarget ? PHTVScaleCliDelay64(_phtvCliPostSendBlockUs) : 0;
+            PHTVSendSequencePlanBox *sendPlan =
+                [PHTVSendSequenceService sequencePlanForCliTarget:_phtvIsCliTarget
+                                                         itemCount:macroCount
+                                              scaledCliTextDelayUs:(int64_t)scaledCliTextDelayUs
+                                         scaledCliPostSendBlockUs:(int64_t)scaledCliPostSendBlockUs];
+            useconds_t interItemDelayUs = PHTVClampUseconds((uint64_t)MAX((int64_t)0, sendPlan.interItemDelayUs));
+
             for (int i = 0; i < pData->macroData.size(); i++) {
                 if (pData->macroData[i] & PURE_CHARACTER_MASK) {
                     SendPureCharacter(pData->macroData[i]);
                 } else {
                     SendKeyCode(pData->macroData[i]);
                 }
-                if (cliTextDelay > 0 && i + 1 < pData->macroData.size()) {
-                    usleep(cliTextDelay);
+                if (interItemDelayUs > 0 && i + 1 < pData->macroData.size()) {
+                    usleep(interItemDelayUs);
                 }
             }
-            if (_phtvIsCliTarget && pData->macroData.size() > 0) {
-                uint64_t totalBlockUs = PHTVScaleCliDelay64(_phtvCliPostSendBlockUs);
-                if (cliTextDelay > 0 && pData->macroData.size() > 1) {
-                    totalBlockUs += (uint64_t)cliTextDelay * (uint64_t)(pData->macroData.size() - 1);
-                }
-                SetCliBlockForMicroseconds(totalBlockUs);
+            if (sendPlan.shouldScheduleCliBlock) {
+                SetCliBlockForMicroseconds((uint64_t)MAX((int64_t)0, sendPlan.cliBlockUs));
             }
         }
 
@@ -1644,22 +1646,24 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                     SendNewCharString();
                 } else {
                     if (pData->newCharCount > 0 && pData->newCharCount <= MAX_BUFF) {
-                        useconds_t cliTextDelay = 0;
-                        if (_phtvIsCliTarget) {
-                            cliTextDelay = PHTVScaleCliDelay(_phtvCliTextDelayUs);
-                        }
+                        int32_t newCharCount = (int32_t)pData->newCharCount;
+                        uint64_t scaledCliTextDelayUs = _phtvIsCliTarget ? (uint64_t)PHTVScaleCliDelay(_phtvCliTextDelayUs) : 0;
+                        uint64_t scaledCliPostSendBlockUs = _phtvIsCliTarget ? PHTVScaleCliDelay64(_phtvCliPostSendBlockUs) : 0;
+                        PHTVSendSequencePlanBox *sendPlan =
+                            [PHTVSendSequenceService sequencePlanForCliTarget:_phtvIsCliTarget
+                                                                     itemCount:newCharCount
+                                                          scaledCliTextDelayUs:(int64_t)scaledCliTextDelayUs
+                                                     scaledCliPostSendBlockUs:(int64_t)scaledCliPostSendBlockUs];
+                        useconds_t interItemDelayUs = PHTVClampUseconds((uint64_t)MAX((int64_t)0, sendPlan.interItemDelayUs));
+
                         for (int i = pData->newCharCount - 1; i >= 0; i--) {
                             SendKeyCode(pData->charData[i]);
-                            if (cliTextDelay > 0 && i > 0) {
-                                usleep(cliTextDelay);
+                            if (interItemDelayUs > 0 && i > 0) {
+                                usleep(interItemDelayUs);
                             }
                         }
-                        if (_phtvIsCliTarget && pData->newCharCount > 0) {
-                            uint64_t totalBlockUs = PHTVScaleCliDelay64(_phtvCliPostSendBlockUs);
-                            if (cliTextDelay > 0 && pData->newCharCount > 1) {
-                                totalBlockUs += (uint64_t)cliTextDelay * (uint64_t)(pData->newCharCount - 1);
-                            }
-                            SetCliBlockForMicroseconds(totalBlockUs);
+                        if (sendPlan.shouldScheduleCliBlock) {
+                            SetCliBlockForMicroseconds((uint64_t)MAX((int64_t)0, sendPlan.cliBlockUs));
                         }
                     }
                     if (characterSendPlan.shouldSendRestoreTriggerKey) {
