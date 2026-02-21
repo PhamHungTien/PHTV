@@ -8,6 +8,10 @@
 import Carbon
 import Foundation
 
+private func phtvCallClearCustomDictionary() {
+    clearCustomDictionary()
+}
+
 @objcMembers
 final class PHTVEngineDataBridge: NSObject {
     class func initializeMacroMap(with data: Data) {
@@ -19,41 +23,49 @@ final class PHTVEngineDataBridge: NSObject {
 
     class func initializeEnglishDictionary(atPath path: String) -> Bool {
         return path.withCString { cPath in
-            PHTVEngineRuntimeFacade.initializeEnglishDictionary(cPath)
+            guard cPath[0] != 0 else {
+                return false
+            }
+            let cppPath = std.string(cPath)
+            return initEnglishDictionary(cppPath)
         }
     }
 
     class func englishDictionarySize() -> UInt {
-        return UInt(PHTVEngineRuntimeFacade.englishDictionarySize())
+        return UInt(getEnglishDictionarySize())
     }
 
     class func initializeVietnameseDictionary(atPath path: String) -> Bool {
         return path.withCString { cPath in
-            PHTVEngineRuntimeFacade.initializeVietnameseDictionary(cPath)
+            guard cPath[0] != 0 else {
+                return false
+            }
+            let cppPath = std.string(cPath)
+            return initVietnameseDictionary(cppPath)
         }
     }
 
     class func vietnameseDictionarySize() -> UInt {
-        return UInt(PHTVEngineRuntimeFacade.vietnameseDictionarySize())
+        return UInt(getVietnameseDictionarySize())
     }
 
     class func initializeCustomDictionary(withJSONData jsonData: Data) {
         jsonData.withUnsafeBytes { rawBuffer in
             let base = rawBuffer.bindMemory(to: CChar.self).baseAddress
-            PHTVEngineRuntimeFacade.initializeCustomDictionary(base, Int32(rawBuffer.count))
+            initCustomDictionary(base, Int32(rawBuffer.count))
         }
     }
 
     class func customEnglishWordCount() -> UInt {
-        return UInt(PHTVEngineRuntimeFacade.customEnglishWordCount())
+        return UInt(getCustomEnglishWordCount())
     }
 
     class func customVietnameseWordCount() -> UInt {
-        return UInt(PHTVEngineRuntimeFacade.customVietnameseWordCount())
+        return UInt(getCustomVietnameseWordCount())
     }
 
     class func clearCustomDictionary() {
-        PHTVEngineRuntimeFacade.clearCustomDictionary()
+        phtvCallClearCustomDictionary()
     }
 
     private class func hotkeyKeyDisplayLabel(_ keyCode: UInt16) -> String {

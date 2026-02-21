@@ -642,10 +642,6 @@ private func phtvCallStartNewSession() {
     startNewSession()
 }
 
-private func phtvCallClearCustomDictionary() {
-    clearCustomDictionary()
-}
-
 @objcMembers
 final class PHTVEngineRuntimeFacade: NSObject {
     private static let eventMarker: Int64 = 0x5048_5456 // "PHTV"
@@ -1156,46 +1152,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func startNewSession() {
         phtvCallStartNewSession()
-    }
-
-    class func initializeEnglishDictionary(_ path: UnsafePointer<CChar>) -> Bool {
-        if path[0] == 0 {
-            return false
-        }
-        let cppPath = std.string(path)
-        return initEnglishDictionary(cppPath)
-    }
-
-    class func englishDictionarySize() -> Int32 {
-        Int32(getEnglishDictionarySize())
-    }
-
-    class func initializeVietnameseDictionary(_ path: UnsafePointer<CChar>) -> Bool {
-        if path[0] == 0 {
-            return false
-        }
-        let cppPath = std.string(path)
-        return initVietnameseDictionary(cppPath)
-    }
-
-    class func vietnameseDictionarySize() -> Int32 {
-        Int32(getVietnameseDictionarySize())
-    }
-
-    class func initializeCustomDictionary(_ data: UnsafePointer<CChar>?, _ count: Int32) {
-        initCustomDictionary(data, count)
-    }
-
-    class func customEnglishWordCount() -> Int32 {
-        Int32(getCustomEnglishWordCount())
-    }
-
-    class func customVietnameseWordCount() -> Int32 {
-        Int32(getCustomVietnameseWordCount())
-    }
-
-    class func clearCustomDictionary() {
-        phtvCallClearCustomDictionary()
     }
 
     class func hotkeyDisplayCharacter(_ keyCode: UInt16) -> UInt16 {
