@@ -428,10 +428,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
         phtvEngineClearCustomDictionary()
     }
 
-    class func setCheckSpellingValue(_ value: Int32) {
-        phtvEngineSetCheckSpellingValue(value)
-    }
-
     class func hotkeyDisplayCharacter(_ keyCode: UInt16) -> UInt16 {
         macroKeyCodeToCharacter(UInt32(keyCode) | capsMask())
     }

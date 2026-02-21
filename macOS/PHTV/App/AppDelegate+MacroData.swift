@@ -96,7 +96,7 @@ private func phtvMacroLiveLog(_ message: String) {
         } else {
             spellCheckEnabled = defaults.integer(forKey: phtvDefaultsKeySpelling)
         }
-        PHTVEngineDataBridge.setCheckSpellingValue(Int32(spellCheckEnabled))
+        PHTVEngineRuntimeFacade.setCheckSpelling(Int32(spellCheckEnabled))
         NSLog("[EnglishWordDetector] Spell check enabled: %d", spellCheckEnabled)
     }
 

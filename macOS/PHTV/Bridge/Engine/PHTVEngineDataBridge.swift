@@ -56,10 +56,6 @@ final class PHTVEngineDataBridge: NSObject {
         PHTVEngineRuntimeFacade.clearCustomDictionary()
     }
 
-    class func setCheckSpellingValue(_ value: Int32) {
-        PHTVEngineRuntimeFacade.setCheckSpellingValue(value)
-    }
-
     private class func hotkeyKeyDisplayLabel(_ keyCode: UInt16) -> String {
         if keyCode == UInt16(kVK_Space) || Int32(keyCode) == PHTVEngineRuntimeFacade.spaceKeyCode() {
             return "␣"

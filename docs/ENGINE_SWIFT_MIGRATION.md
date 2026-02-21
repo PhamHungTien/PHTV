@@ -45,6 +45,8 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - `macroKeyCodeToCharacter` hien dung bang map Swift (mirror `Vietnamese.cpp`)
   - `hotkeyDisplayCharacter` hien tai suy ra truc tiep tu mapping Swift
   - da xoa wrapper `phtvEngineMacroKeyCodeToCharacter` trong `PHTVEngineCxxInterop.hpp`
+- Da bo wrapper `phtvEngineSetCheckSpellingValue`:
+  - bootstrap dictionary goi truc tiep `PHTVEngineRuntimeFacade.setCheckSpelling(...)`
 
 ## Lo trinh migrate
 

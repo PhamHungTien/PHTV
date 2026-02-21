@@ -74,10 +74,6 @@ inline void phtvEngineClearCustomDictionary() noexcept {
     clearCustomDictionary();
 }
 
-inline void phtvEngineSetCheckSpellingValue(const int value) noexcept {
-    vCheckSpelling = value;
-}
-
 inline void phtvRuntimeBarrier() noexcept {
     __sync_synchronize();
 }
