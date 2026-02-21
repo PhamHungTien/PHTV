@@ -92,23 +92,22 @@ SwiftUI views. Không chứa business logic. Nhận state từ `State/` và gọ
 
 ## Quy tắc thiết kế
 
-1. **Engine C++ không phụ thuộc Swift/ObjC.** Swift gọi trực tiếp C/C++ API qua bridging header.
-2. **Không argument label cho C++ free function trong Swift.** Swift import C++ free functions dưới dạng positional.
+1. **Engine C++ không phụ thuộc Swift/ObjC.** Swift gọi qua C bridge (`phtvEngine*`, `phtvRuntime*`, `phtvDictionary*`) để giữ ABI ổn định.
+2. **Bridge API là điểm vào duy nhất từ Swift.** Tránh include trực tiếp C++ headers vào Swift call site.
 3. **`@MainActor.assumeIsolated`** dùng trong EventTap callback (tap chạy trên main run loop).
 4. **`nonisolated(unsafe)`** cho static vars trong các service không có actor isolation.
 5. **Xcode tự phát hiện file** qua `PBXFileSystemSynchronizedRootGroup` — di chuyển file trong filesystem là đủ, không cần sửa `.xcodeproj`.
 
 ## Interop C++ ↔ Swift
 
-Bridging header import trực tiếp C/C++ headers:
+Bridging header import C bridge header:
 
 ```objc
 // PHTVBridgingHeader.h
-#import "Core/Engine/Engine.h"
-#import "Core/PHTVConstants.h"
+#import "Core/Engine/PHTVEngineCBridge.h"
 ```
 
-Build flag: `-cxx-interoperability-mode=default` (Swift 5.9+).
+Project không còn dùng flag Swift C++ interop (`-cxx-interoperability-mode=default`).
 
 ## Build
 

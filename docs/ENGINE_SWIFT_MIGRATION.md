@@ -6,12 +6,12 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 
 ## Trang thai hien tai
 
-- Swift files: 132
-- C/C++ headers/sources: 20
+- Swift files: 140
+- C/C++ headers/sources: 11
 - Cac file C/C++ con lai tap trung o:
   - `macOS/PHTV/Core/Engine/*`
+  - `macOS/PHTV/Core/phtv_mac_keys.h`
   - `macOS/PHTV/PHTVBridgingHeader.h`
-  - `macOS/PHTV/Core/*.h`
   - `tests/engine/EngineRegressionTests.cpp`
 
 ## Da hoan thanh (pha don dep)
@@ -187,6 +187,10 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da bo file interop wrapper C++:
   - Xoa `Bridge/Engine/PHTVEngineCxxInterop.hpp`
   - `PHTVBridgingHeader.h` hien import `Core/Engine/PHTVEngineCBridge.h`
+- Da xoa cac legacy headers khong con su dung:
+  - `macOS/PHTV/Core/PHTVConstants.h`
+  - `macOS/PHTV/Core/PHTVHotkey.h`
+  - `macOS/PHTV/Core/mac.h`
 
 ## Lo trinh migrate
 
@@ -225,7 +229,7 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 ### Pha 6: Bo C++ interop
 
 - Xoa `PHTVEngineCxxInterop.hpp`.
-- Xoa `PHTVBridgingHeader.h` + flag `-cxx-interoperability-mode=default`.
+- Xoa `PHTVBridgingHeader.h` sau khi khong con C bridge.
 - Xoa toan bo C/C++ source/header con lai trong `macOS/PHTV/Core/Engine`.
 - Chuyen regression tests C++ sang Swift tests.
 
