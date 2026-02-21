@@ -6,44 +6,40 @@
 #include <vector>
 
 // -----------------------------------------------------------------------------
-// Minimal runtime globals required by Engine.h extern declarations
+// Runtime bridge stubs for standalone regression binary (no Swift runtime linked)
 // -----------------------------------------------------------------------------
-volatile int vLanguage = 1;
-volatile int vInputType = vTelex;
-int vFreeMark = 0;
-volatile int vCodeTable = 0;
-volatile int vSwitchKeyStatus = DEFAULT_SWITCH_HOTKEY_STATUS;
-volatile int vCheckSpelling = 1;
-volatile int vUseModernOrthography = 0;
-volatile int vQuickTelex = 0;
-volatile int vFixRecommendBrowser = 1;
-volatile int vUseMacro = 0;
-volatile int vUseMacroInEnglishMode = 0;
-volatile int vAutoCapsMacro = 1;
-volatile int vUseSmartSwitchKey = 0;
-volatile int vUpperCaseFirstChar = 0;
-volatile int vUpperCaseExcludedForCurrentApp = 0;
-volatile int vTempOffSpelling = 0;
-volatile int vAllowConsonantZFWJ = 0;
-volatile int vQuickStartConsonant = 0;
-volatile int vQuickEndConsonant = 0;
-volatile int vRememberCode = 0;
-volatile int vOtherLanguage = 0;
-volatile int vTempOffPHTV = 0;
-volatile int vRestoreOnEscape = 1;
-volatile int vCustomEscapeKey = 0;
-volatile int vPauseKeyEnabled = 0;
-volatile int vPauseKey = KEY_LEFT_OPTION;
-volatile int vAutoRestoreEnglishWord = 1;
+static int runtimeRestoreOnEscape = 1;
+static int runtimeAutoRestoreEnglishWord = 1;
+static int runtimeUpperCaseFirstChar = 0;
+static int runtimeUpperCaseExcludedForCurrentApp = 0;
+static int runtimeUseMacro = 0;
+static int runtimeInputType = vTelex;
+static int runtimeCodeTable = 0;
+static int runtimeCheckSpelling = 1;
+static int runtimeUseModernOrthography = 0;
+static int runtimeQuickTelex = 0;
+static int runtimeFreeMark = 0;
+static int runtimeAllowConsonantZFWJ = 0;
+static int runtimeQuickStartConsonant = 0;
+static int runtimeQuickEndConsonant = 0;
+static int runtimeAutoCapsMacro = 1;
 
-// -----------------------------------------------------------------------------
-// Macro stubs (Engine references findMacro, but macro behavior is not under test)
-// -----------------------------------------------------------------------------
-bool findMacro(std::vector<Uint32>& key, std::vector<Uint32>& macroContentCode) {
-    (void)key;
-    (void)macroContentCode;
-    return false;
-}
+extern "C" int phtvRuntimeRestoreOnEscapeEnabled() { return runtimeRestoreOnEscape; }
+extern "C" int phtvRuntimeAutoRestoreEnglishWordEnabled() { return runtimeAutoRestoreEnglishWord; }
+extern "C" int phtvRuntimeUpperCaseFirstCharEnabled() { return runtimeUpperCaseFirstChar; }
+extern "C" int phtvRuntimeUpperCaseExcludedForCurrentApp() { return runtimeUpperCaseExcludedForCurrentApp; }
+extern "C" int phtvRuntimeUseMacroEnabled() { return runtimeUseMacro; }
+extern "C" int phtvRuntimeInputTypeValue() { return runtimeInputType; }
+extern "C" int phtvRuntimeCodeTableValue() { return runtimeCodeTable; }
+extern "C" int phtvRuntimeCheckSpellingValue() { return runtimeCheckSpelling; }
+extern "C" void phtvRuntimeSetCheckSpellingValue(int value) { runtimeCheckSpelling = value; }
+extern "C" int phtvRuntimeUseModernOrthographyEnabled() { return runtimeUseModernOrthography; }
+extern "C" int phtvRuntimeQuickTelexEnabled() { return runtimeQuickTelex; }
+extern "C" int phtvRuntimeFreeMarkEnabled() { return runtimeFreeMark; }
+extern "C" int phtvRuntimeAllowConsonantZFWJEnabled() { return runtimeAllowConsonantZFWJ; }
+extern "C" int phtvRuntimeQuickStartConsonantEnabled() { return runtimeQuickStartConsonant; }
+extern "C" int phtvRuntimeQuickEndConsonantEnabled() { return runtimeQuickEndConsonant; }
+extern "C" int phtvRuntimeAutoCapsMacroValue() { return runtimeAutoCapsMacro; }
 
 namespace {
 
@@ -126,12 +122,12 @@ CaseResult runSpaceCase(const std::string& name,
                         bool expectRestore,
                         bool autoRestoreEnglish = true) {
     setCustomEnglishWords(customEnglish);
-    int savedAutoRestoreEnglish = vAutoRestoreEnglishWord;
-    vAutoRestoreEnglishWord = autoRestoreEnglish ? 1 : 0;
+    int savedAutoRestoreEnglish = runtimeAutoRestoreEnglishWord;
+    runtimeAutoRestoreEnglishWord = autoRestoreEnglish ? 1 : 0;
     vKeyHookState* state = static_cast<vKeyHookState*>(vKeyInit());
     feedWord(token);
     vKeyHandleEvent(vKeyEvent::Keyboard, vKeyEventState::KeyDown, KEY_SPACE, 0, false);
-    vAutoRestoreEnglishWord = savedAutoRestoreEnglish;
+    runtimeAutoRestoreEnglishWord = savedAutoRestoreEnglish;
 
     bool restored = (state->code == vRestore || state->code == vRestoreAndStartNewSession);
     bool pass = (restored == expectRestore);
@@ -151,12 +147,12 @@ CaseResult runWordBreakCase(const std::string& name,
                             Uint16 breakKeyCode = KEY_DOT,
                             Uint8 breakCapsStatus = 0) {
     setCustomEnglishWords(customEnglish);
-    int savedAutoRestoreEnglish = vAutoRestoreEnglishWord;
-    vAutoRestoreEnglishWord = autoRestoreEnglish ? 1 : 0;
+    int savedAutoRestoreEnglish = runtimeAutoRestoreEnglishWord;
+    runtimeAutoRestoreEnglishWord = autoRestoreEnglish ? 1 : 0;
     vKeyHookState* state = static_cast<vKeyHookState*>(vKeyInit());
     feedWord(token);
     vKeyHandleEvent(vKeyEvent::Keyboard, vKeyEventState::KeyDown, breakKeyCode, breakCapsStatus, false);
-    vAutoRestoreEnglishWord = savedAutoRestoreEnglish;
+    runtimeAutoRestoreEnglishWord = savedAutoRestoreEnglish;
 
     bool restored = (state->code == vRestore || state->code == vRestoreAndStartNewSession);
     bool pass = (restored == expectRestore);
