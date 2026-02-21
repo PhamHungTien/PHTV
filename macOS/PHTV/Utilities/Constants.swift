@@ -165,6 +165,8 @@ enum KeyCode {
     static let tab: UInt16 = 48
     static let delete: UInt16 = 51
     static let escape: UInt16 = 53
+    static let enter: UInt16 = 76
+    static let returnKey: UInt16 = 36
     static let leftCommand: UInt16 = 55
     static let rightCommand: UInt16 = 54
     static let leftControl: UInt16 = 59
@@ -172,7 +174,12 @@ enum KeyCode {
     static let leftOption: UInt16 = 58
     static let rightOption: UInt16 = 61
     static let space: UInt16 = 49
+    static let slash: UInt16 = 44
     static let eKey: UInt16 = 14
+    static let leftArrow: UInt16 = 123
+    static let rightArrow: UInt16 = 124
+    static let downArrow: UInt16 = 125
+    static let upArrow: UInt16 = 126
     static let home: UInt16 = 115
     static let pageUp: UInt16 = 116
     static let end: UInt16 = 119

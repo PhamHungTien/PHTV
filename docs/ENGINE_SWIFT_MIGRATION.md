@@ -32,6 +32,12 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - wrappers `phtvEngineConvertUtf8`, `phtvConvertTool*` trong `PHTVEngineCxxInterop.hpp`
 - Convert tool runtime va self-check hien chay bang Swift:
   - `macOS/PHTV/Bridge/System/PHTVConvertToolTextConversionService.swift`
+- Da dua cac engine constant wrappers sang Swift facade:
+  - key code constants (`space/delete/slash/enter/return`)
+  - mask constants (`CAPS_MASK`, `CHAR_CODE_MASK`, `PURE_CHARACTER_MASK`)
+  - action/result constants (`vDoNothing`, `vWillProcess`, `vRestore`, `vReplaceMaro`, `vRestoreAndStartNewSession`)
+  - max buffer constant (`MAX_BUFF`) va navigation-key check
+  - da xoa wrappers tuong ung trong `PHTVEngineCxxInterop.hpp`
 
 ## Lo trinh migrate
 

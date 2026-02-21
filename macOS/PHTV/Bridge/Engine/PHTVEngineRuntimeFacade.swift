@@ -11,6 +11,26 @@ import Foundation
 final class PHTVEngineRuntimeFacade: NSObject {
     private static let eventMarker: Int64 = 0x5048_5456 // "PHTV"
     private static let unicodeCompoundMarks: [UInt16] = [0x0301, 0x0300, 0x0309, 0x0303, 0x0323]
+    // Mirror constants in Core/Engine/DataType.h.
+    private static let engineCapsMask: UInt32 = 0x0001_0000
+    private static let engineCharCodeMask: UInt32 = 0x0200_0000
+    private static let enginePureCharacterMask: UInt32 = 0x8000_0000
+    private static let engineDoNothingCodeValue: Int32 = 0
+    private static let engineWillProcessCodeValue: Int32 = 1
+    private static let engineRestoreCodeValue: Int32 = 3
+    private static let engineReplaceMacroCodeValue: Int32 = 4
+    private static let engineRestoreAndStartNewSessionCodeValue: Int32 = 5
+    private static let engineMaxBufferValue: Int32 = 32
+    private static let navigationKeyCodes: Set<UInt16> = [
+        KeyCode.leftArrow,
+        KeyCode.rightArrow,
+        KeyCode.upArrow,
+        KeyCode.downArrow,
+        KeyCode.home,
+        KeyCode.end,
+        KeyCode.pageUp,
+        KeyCode.pageDown
+    ]
 
     @objc class func initializeAndGetKeyHookState() {
         phtvEngineInitializeAndGetKeyHookState()
@@ -432,15 +452,15 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func capsMask() -> UInt32 {
-        UInt32(phtvEngineCapsMask())
+        engineCapsMask
     }
 
     class func charCodeMask() -> UInt32 {
-        UInt32(phtvEngineCharCodeMask())
+        engineCharCodeMask
     }
 
     class func pureCharacterMask() -> UInt32 {
-        UInt32(phtvEnginePureCharacterMask())
+        enginePureCharacterMask
     }
 
     class func macroKeyCodeToCharacter(_ keyData: UInt32) -> UInt16 {
@@ -448,47 +468,47 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func keyDeleteCode() -> Int32 {
-        Int32(phtvEngineKeyDeleteCode())
+        Int32(KeyCode.delete)
     }
 
     class func keySlashCode() -> Int32 {
-        Int32(phtvEngineKeySlashCode())
+        Int32(KeyCode.slash)
     }
 
     class func keyEnterCode() -> Int32 {
-        Int32(phtvEngineKeyEnterCode())
+        Int32(KeyCode.enter)
     }
 
     class func keyReturnCode() -> Int32 {
-        Int32(phtvEngineKeyReturnCode())
+        Int32(KeyCode.returnKey)
     }
 
     class func spaceKeyCode() -> Int32 {
-        Int32(phtvEngineSpaceKeyCode())
+        Int32(KeyCode.space)
     }
 
     class func engineDoNothingCode() -> Int32 {
-        Int32(phtvEngineVDoNothingCode())
+        engineDoNothingCodeValue
     }
 
     class func engineWillProcessCode() -> Int32 {
-        Int32(phtvEngineVWillProcessCode())
+        engineWillProcessCodeValue
     }
 
     class func engineReplaceMacroCode() -> Int32 {
-        Int32(phtvEngineVReplaceMaroCode())
+        engineReplaceMacroCodeValue
     }
 
     class func engineRestoreCode() -> Int32 {
-        Int32(phtvEngineVRestoreCode())
+        engineRestoreCodeValue
     }
 
     class func engineRestoreAndStartNewSessionCode() -> Int32 {
-        Int32(phtvEngineVRestoreAndStartNewSessionCode())
+        engineRestoreAndStartNewSessionCodeValue
     }
 
     class func engineMaxBuffer() -> Int32 {
-        Int32(phtvEngineMaxBuff())
+        engineMaxBufferValue
     }
 
     class func engineDataCode() -> Int32 {
@@ -540,6 +560,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func isNavigationKey(_ keyCode: UInt16) -> Bool {
-        phtvMacKeyIsNavigation(keyCode)
+        navigationKeyCodes.contains(keyCode)
     }
 }

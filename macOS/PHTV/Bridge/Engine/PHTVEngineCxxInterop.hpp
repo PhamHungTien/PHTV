@@ -427,22 +427,6 @@ inline bool phtvEngineCodeTableCharacterForKey(const int codeTable,
     return true;
 }
 
-inline int phtvEngineSpaceKeyCode() noexcept {
-    return KEY_SPACE;
-}
-
-inline std::uint32_t phtvEngineCapsMask() noexcept {
-    return CAPS_MASK;
-}
-
-inline std::uint32_t phtvEngineCharCodeMask() noexcept {
-    return CHAR_CODE_MASK;
-}
-
-inline std::uint32_t phtvEnginePureCharacterMask() noexcept {
-    return PURE_CHARACTER_MASK;
-}
-
 inline std::uint16_t phtvEngineMacroKeyCodeToCharacter(const std::uint32_t keyData) noexcept {
     return keyCodeToCharacter(static_cast<Uint32>(keyData));
 }
@@ -485,16 +469,6 @@ inline std::uint32_t phtvEngineDataMacroDataAt(const int index) noexcept {
     return pData->macroData[index];
 }
 
-// MARK: - Engine action codes
-
-inline int phtvEngineVRestoreCode() noexcept {
-    return static_cast<int>(vRestore);
-}
-
-inline int phtvEngineVRestoreAndStartNewSessionCode() noexcept {
-    return static_cast<int>(vRestoreAndStartNewSession);
-}
-
 // MARK: - Session helpers
 
 inline void phtvRuntimeStartNewSession() noexcept {
@@ -517,42 +491,6 @@ inline int phtvRuntimeTempOffPHTV() noexcept {
 
 inline int phtvRuntimeTempOffSpelling() noexcept {
     return vTempOffSpelling;
-}
-
-// MARK: - Engine action codes (additional)
-
-inline int phtvEngineVDoNothingCode() noexcept {
-    return static_cast<int>(vDoNothing);
-}
-
-inline int phtvEngineVWillProcessCode() noexcept {
-    return static_cast<int>(vWillProcess);
-}
-
-inline int phtvEngineVReplaceMaroCode() noexcept {
-    return static_cast<int>(vReplaceMaro);
-}
-
-inline int phtvEngineMaxBuff() noexcept {
-    return MAX_BUFF;
-}
-
-// MARK: - Key code constants
-
-inline int phtvEngineKeyDeleteCode() noexcept {
-    return KEY_DELETE;
-}
-
-inline int phtvEngineKeySlashCode() noexcept {
-    return KEY_SLASH;
-}
-
-inline int phtvEngineKeyEnterCode() noexcept {
-    return KEY_ENTER;
-}
-
-inline int phtvEngineKeyReturnCode() noexcept {
-    return KEY_RETURN;
 }
 
 // MARK: - Engine function wrappers
@@ -592,10 +530,6 @@ inline void phtvEngineTempOffSpellChecking() noexcept {
 
 inline void phtvEngineTempOffEngine() noexcept {
     vTempOffEngine();
-}
-
-inline bool phtvMacKeyIsNavigation(const std::uint16_t keyCode) noexcept {
-    return phtv_mac_key_is_navigation(keyCode);
 }
 
 #endif
