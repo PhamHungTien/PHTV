@@ -54,22 +54,6 @@ inline unsigned long phtvEngineVietnameseDictionarySize() noexcept {
     return static_cast<unsigned long>(getVietnameseDictionarySize());
 }
 
-inline void phtvEngineInitializeCustomDictionary(const char *jsonData, const int length) noexcept {
-    if (!jsonData || length <= 0) {
-        initCustomDictionary(nullptr, 0);
-        return;
-    }
-    initCustomDictionary(jsonData, length);
-}
-
-inline unsigned long phtvEngineCustomEnglishWordCount() noexcept {
-    return static_cast<unsigned long>(getCustomEnglishWordCount());
-}
-
-inline unsigned long phtvEngineCustomVietnameseWordCount() noexcept {
-    return static_cast<unsigned long>(getCustomVietnameseWordCount());
-}
-
 inline void phtvEngineClearCustomDictionary() noexcept {
     clearCustomDictionary();
 }

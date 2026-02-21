@@ -413,15 +413,15 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func initializeCustomDictionary(_ data: UnsafePointer<CChar>?, _ count: Int32) {
-        phtvEngineInitializeCustomDictionary(data, count)
+        initCustomDictionary(data, count)
     }
 
     class func customEnglishWordCount() -> Int32 {
-        Int32(phtvEngineCustomEnglishWordCount())
+        Int32(getCustomEnglishWordCount())
     }
 
     class func customVietnameseWordCount() -> Int32 {
-        Int32(phtvEngineCustomVietnameseWordCount())
+        Int32(getCustomVietnameseWordCount())
     }
 
     class func clearCustomDictionary() {
