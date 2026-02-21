@@ -1,5 +1,5 @@
 #include "Engine.h"
-#include "EnglishWordDetector.h"
+#include "PHTVEngineCBridge.h"
 
 #include <iostream>
 #include <string>
@@ -93,7 +93,7 @@ Uint16 keyCodeForChar(char ch) {
 }
 
 void setCustomEnglishWords(const std::vector<std::string>& words) {
-    clearCustomDictionary();
+    phtvCustomDictionaryClear();
 
     std::string json = "[";
     for (size_t i = 0; i < words.size(); i++) {
@@ -102,7 +102,7 @@ void setCustomEnglishWords(const std::vector<std::string>& words) {
     }
     json += "]";
 
-    initCustomDictionary(json.c_str(), static_cast<int>(json.size()));
+    phtvCustomDictionaryLoadJSON(json.c_str(), static_cast<int>(json.size()));
 }
 
 void feedWord(const std::string& token) {
@@ -175,8 +175,8 @@ int main(int argc, char** argv) {
     std::string enPath = (argc > 1) ? argv[1] : defaultEnPath;
     std::string viPath = (argc > 2) ? argv[2] : defaultViPath;
 
-    bool enOk = initEnglishDictionary(enPath);
-    bool viOk = initVietnameseDictionary(viPath);
+    bool enOk = phtvDictionaryInitEnglish(enPath.c_str()) != 0;
+    bool viOk = phtvDictionaryInitVietnamese(viPath.c_str()) != 0;
     if (!enOk) {
         std::cerr << "[FAIL] Cannot initialize English dictionary: " << enPath << "\n";
         return 2;
@@ -334,8 +334,8 @@ int main(int argc, char** argv) {
         if (!r.pass) failed++;
     }
 
-    clearCustomDictionary();
-    clearEnglishDictionary();
+    phtvCustomDictionaryClear();
+    phtvDictionaryClear();
 
     if (failed > 0) {
         std::cerr << "\nRegression tests failed: " << failed << " case(s).\n";
