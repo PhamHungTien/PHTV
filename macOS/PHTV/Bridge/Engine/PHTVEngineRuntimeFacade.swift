@@ -17,6 +17,15 @@ private let snippetTypeCounter: Int = 6
 private let snippetTokenCharacters: Set<Character> = ["d", "M", "y", "H", "m", "s"]
 private let snippetCounterLock = NSLock()
 nonisolated(unsafe) private var snippetCounterValues: [String: Int] = [:]
+private let macroLookupLock = NSLock()
+
+private struct MacroLookupEntry {
+    let snippetType: Int32
+    let snippetFormat: String
+    let staticContentCode: [UInt32]
+}
+
+nonisolated(unsafe) private var macroLookupMap: [[UInt32]: MacroLookupEntry] = [:]
 private let macroCharacterToKeyState: [UInt16: UInt32] = {
     var mapping: [UInt16: UInt32] = [:]
     let capsMask = PHTVEngineRuntimeFacade.capsMask()
@@ -151,6 +160,300 @@ private func computeSnippetContent(snippetType: Int, format: String) -> String {
     }
 }
 
+private func caseTransformedScalar(_ character: UInt16, upper: Bool) -> UInt16 {
+    guard let scalar = UnicodeScalar(Int(character)) else {
+        return character
+    }
+    let transformed = upper ? String(scalar).uppercased() : String(scalar).lowercased()
+    guard transformed.utf16.count == 1, let value = transformed.utf16.first else {
+        return character
+    }
+    return value
+}
+
+private func convertedMacroCodes(from text: String, activeCodeTable: Int32) -> [UInt32] {
+    guard !text.isEmpty else {
+        return []
+    }
+
+    let charCodeMask = PHTVEngineRuntimeFacade.charCodeMask()
+    let pureCharacterMask = PHTVEngineRuntimeFacade.pureCharacterMask()
+    var converted: [UInt32] = []
+    converted.reserveCapacity(text.unicodeScalars.count)
+
+    for scalar in text.unicodeScalars {
+        let scalarValue = scalar.value
+        if scalarValue <= UInt32(UInt16.max) {
+            let character = UInt16(scalarValue)
+
+            if let keyState = macroCharacterToKeyState[character] {
+                converted.append(keyState)
+                continue
+            }
+
+            if let source = PHTVEngineRuntimeFacade.findCodeTableSourceKey(
+                codeTable: 0,
+                character: character
+            ),
+               let mappedCharacter = PHTVEngineRuntimeFacade.codeTableCharacterForKey(
+                   codeTable: activeCodeTable,
+                   keyCode: source.keyCode,
+                   variantIndex: source.variantIndex
+               ) {
+                converted.append(UInt32(mappedCharacter) | charCodeMask)
+                continue
+            }
+        }
+
+        converted.append(scalarValue | pureCharacterMask)
+    }
+
+    return converted
+}
+
+private func readUInt16LE(from data: UnsafePointer<UInt8>, cursor: inout Int, size: Int) -> UInt16? {
+    guard cursor + 2 <= size else {
+        return nil
+    }
+    let value = UInt16(data[cursor]) | (UInt16(data[cursor + 1]) << 8)
+    cursor += 2
+    return value
+}
+
+private func macroMapFromBinaryData(_ data: UnsafePointer<UInt8>, size: Int) -> [[UInt32]: MacroLookupEntry] {
+    guard size >= 2 else {
+        return [:]
+    }
+
+    let activeCodeTable = PHTVEngineRuntimeFacade.currentCodeTable()
+    var result: [[UInt32]: MacroLookupEntry] = [:]
+    var cursor = 0
+    guard let macroCountRaw = readUInt16LE(from: data, cursor: &cursor, size: size) else {
+        return [:]
+    }
+
+    let macroCount = Int(macroCountRaw)
+    for _ in 0..<macroCount {
+        guard cursor < size else {
+            break
+        }
+
+        let textLength = Int(data[cursor])
+        cursor += 1
+        guard cursor + textLength <= size else {
+            break
+        }
+        let macroText = String(
+            decoding: UnsafeBufferPointer(start: data.advanced(by: cursor), count: textLength),
+            as: UTF8.self
+        )
+        cursor += textLength
+
+        guard let contentLengthRaw = readUInt16LE(from: data, cursor: &cursor, size: size) else {
+            break
+        }
+        let contentLength = Int(contentLengthRaw)
+        guard cursor + contentLength <= size else {
+            break
+        }
+        let macroContent = String(
+            decoding: UnsafeBufferPointer(start: data.advanced(by: cursor), count: contentLength),
+            as: UTF8.self
+        )
+        cursor += contentLength
+
+        let snippetType: Int32
+        if cursor < size {
+            snippetType = Int32(data[cursor])
+            cursor += 1
+        } else {
+            snippetType = Int32(snippetTypeStatic)
+        }
+
+        let key = convertedMacroCodes(
+            from: macroText,
+            activeCodeTable: activeCodeTable
+        )
+        guard !key.isEmpty else {
+            continue
+        }
+
+        let staticContentCode: [UInt32]
+        if snippetType == Int32(snippetTypeStatic) {
+            staticContentCode = convertedMacroCodes(
+                from: macroContent,
+                activeCodeTable: activeCodeTable
+            )
+        } else {
+            staticContentCode = []
+        }
+
+        result[key] = MacroLookupEntry(
+            snippetType: snippetType,
+            snippetFormat: macroContent,
+            staticContentCode: staticContentCode
+        )
+    }
+
+    return result
+}
+
+private func lowercasedMacroLookupCode(_ code: UInt32, codeTable: Int32) -> UInt32? {
+    let charCodeMask = PHTVEngineRuntimeFacade.charCodeMask()
+    let capsMask = PHTVEngineRuntimeFacade.capsMask()
+
+    if (code & charCodeMask) == 0 {
+        let lowered = code & ~capsMask
+        return lowered == code ? nil : lowered
+    }
+
+    let character = UInt16(truncatingIfNeeded: code)
+    guard let source = PHTVEngineRuntimeFacade.findCodeTableSourceKey(
+        codeTable: codeTable,
+        character: character
+    ) else {
+        return nil
+    }
+
+    let variantIndex = source.variantIndex
+    guard variantIndex % 2 == 0 else {
+        return nil
+    }
+    let loweredVariantIndex = variantIndex + 1
+    guard loweredVariantIndex < PHTVEngineRuntimeFacade.codeTableVariantCount(
+        codeTable: codeTable,
+        keyCode: source.keyCode
+    ),
+    let loweredCharacter = PHTVEngineRuntimeFacade.codeTableCharacterForKey(
+        codeTable: codeTable,
+        keyCode: source.keyCode,
+        variantIndex: loweredVariantIndex
+    ) else {
+        return nil
+    }
+    return UInt32(loweredCharacter) | charCodeMask
+}
+
+private func uppercasedMacroOutputCode(_ code: UInt32, codeTable: Int32) -> UInt32 {
+    let charCodeMask = PHTVEngineRuntimeFacade.charCodeMask()
+
+    let keyCharacter = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(code)
+    if keyCharacter != 0 {
+        let upperCharacter = caseTransformedScalar(keyCharacter, upper: true)
+        if let mappedKeyState = macroCharacterToKeyState[upperCharacter] {
+            return mappedKeyState
+        }
+    }
+
+    guard (code & charCodeMask) != 0 else {
+        return code
+    }
+
+    let character = UInt16(truncatingIfNeeded: code)
+    guard let source = PHTVEngineRuntimeFacade.findCodeTableSourceKey(
+        codeTable: codeTable,
+        character: character
+    ) else {
+        return code
+    }
+
+    let variantIndex = source.variantIndex
+    guard variantIndex % 2 != 0 else {
+        return code
+    }
+    let upperVariantIndex = variantIndex - 1
+    guard upperVariantIndex >= 0,
+          let upperCharacter = PHTVEngineRuntimeFacade.codeTableCharacterForKey(
+              codeTable: codeTable,
+              keyCode: source.keyCode,
+              variantIndex: upperVariantIndex
+          ) else {
+        return code
+    }
+    return UInt32(upperCharacter) | charCodeMask
+}
+
+private func macroContentCode(
+    for entry: MacroLookupEntry,
+    codeTable: Int32
+) -> [UInt32] {
+    if entry.snippetType == Int32(snippetTypeStatic) {
+        return entry.staticContentCode
+    }
+    if entry.snippetType == Int32(snippetTypeClipboard) {
+        return []
+    }
+
+    let dynamicContent = computeSnippetContent(
+        snippetType: Int(entry.snippetType),
+        format: entry.snippetFormat
+    )
+    return convertedMacroCodes(from: dynamicContent, activeCodeTable: codeTable)
+}
+
+private func applyAutoCapsToMacroContent(
+    _ content: [UInt32],
+    allCaps: Bool,
+    codeTable: Int32
+) -> [UInt32] {
+    guard !content.isEmpty else {
+        return content
+    }
+
+    var output = content
+    for index in output.indices {
+        if index == 0 || allCaps {
+            output[index] = uppercasedMacroOutputCode(output[index], codeTable: codeTable)
+        }
+    }
+    return output
+}
+
+private func findMacroContentForNormalizedKeys(
+    _ keys: [UInt32],
+    autoCapsEnabled: Bool,
+    codeTable: Int32
+) -> [UInt32]? {
+    macroLookupLock.lock()
+    defer {
+        macroLookupLock.unlock()
+    }
+
+    if let directEntry = macroLookupMap[keys] {
+        return macroContentCode(for: directEntry, codeTable: codeTable)
+    }
+
+    guard autoCapsEnabled, !keys.isEmpty else {
+        return nil
+    }
+
+    var candidate = keys
+    guard let firstLowerCode = lowercasedMacroLookupCode(candidate[0], codeTable: codeTable) else {
+        return nil
+    }
+    candidate[0] = firstLowerCode
+
+    var allCaps = false
+    if candidate.count > 1,
+       let secondLowerCode = lowercasedMacroLookupCode(candidate[1], codeTable: codeTable) {
+        candidate[1] = secondLowerCode
+        allCaps = true
+        if candidate.count > 2 {
+            for index in 2..<candidate.count {
+                if let lowered = lowercasedMacroLookupCode(candidate[index], codeTable: codeTable) {
+                    candidate[index] = lowered
+                }
+            }
+        }
+    }
+
+    guard let entry = macroLookupMap[candidate] else {
+        return nil
+    }
+    let baseContent = macroContentCode(for: entry, codeTable: codeTable)
+    return applyAutoCapsToMacroContent(baseContent, allCaps: allCaps, codeTable: codeTable)
+}
+
 @_cdecl("phtvComputeSnippetContent")
 func phtvComputeSnippetContent(
     _ snippetType: Int32,
@@ -187,43 +490,10 @@ func phtvConvertUtf8ToMacroCode(
     _ outputCapacity: Int32
 ) -> Int32 {
     let text = utf8CString.map { String(cString: $0) } ?? ""
-    guard !text.isEmpty else {
-        return 0
-    }
-
-    let activeCodeTable = PHTVEngineRuntimeFacade.currentCodeTable()
-    let charCodeMask = PHTVEngineRuntimeFacade.charCodeMask()
-    let pureCharacterMask = PHTVEngineRuntimeFacade.pureCharacterMask()
-
-    var converted: [UInt32] = []
-    converted.reserveCapacity(text.unicodeScalars.count)
-
-    for scalar in text.unicodeScalars {
-        let scalarValue = scalar.value
-        if scalarValue <= UInt32(UInt16.max) {
-            let character = UInt16(scalarValue)
-
-            if let keyState = macroCharacterToKeyState[character] {
-                converted.append(keyState)
-                continue
-            }
-
-            if let source = PHTVEngineRuntimeFacade.findCodeTableSourceKey(
-                codeTable: 0,
-                character: character
-            ),
-               let mappedCharacter = PHTVEngineRuntimeFacade.codeTableCharacterForKey(
-                   codeTable: activeCodeTable,
-                   keyCode: source.keyCode,
-                   variantIndex: source.variantIndex
-               ) {
-                converted.append(UInt32(mappedCharacter) | charCodeMask)
-                continue
-            }
-        }
-
-        converted.append(scalarValue | pureCharacterMask)
-    }
+    let converted = convertedMacroCodes(
+        from: text,
+        activeCodeTable: PHTVEngineRuntimeFacade.currentCodeTable()
+    )
 
     let requiredLength = Int32(converted.count)
     guard let outputBuffer, outputCapacity > 0 else {
@@ -234,6 +504,74 @@ func phtvConvertUtf8ToMacroCode(
     if copyCount > 0 {
         for index in 0..<copyCount {
             outputBuffer[index] = converted[index]
+        }
+    }
+
+    return requiredLength
+}
+
+@_cdecl("phtvLoadMacroMapFromBinary")
+func phtvLoadMacroMapFromBinary(
+    _ data: UnsafePointer<UInt8>?,
+    _ size: Int32
+) {
+    guard let data, size > 0 else {
+        macroLookupLock.lock()
+        macroLookupMap = [:]
+        macroLookupLock.unlock()
+        return
+    }
+
+    let parsedMap = macroMapFromBinaryData(data, size: Int(size))
+    macroLookupLock.lock()
+    macroLookupMap = parsedMap
+    macroLookupLock.unlock()
+}
+
+@_cdecl("phtvFindMacroContentForNormalizedKeys")
+func phtvFindMacroContentForNormalizedKeys(
+    _ normalizedKeyBuffer: UnsafePointer<UInt32>?,
+    _ keyCount: Int32,
+    _ autoCapsEnabled: Int32,
+    _ outputBuffer: UnsafeMutablePointer<UInt32>?,
+    _ outputCapacity: Int32
+) -> Int32 {
+    guard keyCount >= 0 else {
+        return -1
+    }
+
+    let keys: [UInt32]
+    if keyCount == 0 {
+        keys = []
+    } else {
+        guard let normalizedKeyBuffer else {
+            return -1
+        }
+        keys = Array(
+            UnsafeBufferPointer(
+                start: normalizedKeyBuffer,
+                count: Int(keyCount)
+            )
+        )
+    }
+    let codeTable = PHTVEngineRuntimeFacade.currentCodeTable()
+    guard let content = findMacroContentForNormalizedKeys(
+        keys,
+        autoCapsEnabled: autoCapsEnabled != 0,
+        codeTable: codeTable
+    ) else {
+        return -1
+    }
+
+    let requiredLength = Int32(content.count)
+    guard let outputBuffer, outputCapacity > 0 else {
+        return requiredLength
+    }
+
+    let copiedLength = min(Int(outputCapacity), content.count)
+    if copiedLength > 0 {
+        for index in 0..<copiedLength {
+            outputBuffer[index] = content[index]
         }
     }
 
