@@ -1508,21 +1508,16 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                     SendEmptyCharacter();
                 }
 
-                int adjustedBackspaceCount = (int)backspaceAdjustment.adjustedBackspaceCount;
-                if (adjustedBackspaceCount < 0) {
-                    adjustedBackspaceCount = 0;
-                } else if (adjustedBackspaceCount > MAX_BUFF) {
-                    adjustedBackspaceCount = MAX_BUFF;
-                }
+                int adjustedBackspaceCount = (int)[PHTVInputStrategyService sanitizedBackspaceCountForAdjustedCount:(int32_t)backspaceAdjustment.adjustedBackspaceCount
+                                                                                                           maxBuffer:(int32_t)MAX_BUFF
+                                                                                                          safetyLimit:15];
                 pData->backspaceCount = (Byte)adjustedBackspaceCount;
 
-                // SAFETY LIMIT: A single Vietnamese word transformation should never delete more than 15 chars.
-                // This prevents massive text loss ("iệt Nam" bug) if logic fails or race conditions occur.
-                if (pData->backspaceCount > 15) {
+                // SAFETY LOG: A single Vietnamese word transformation should never delete more than 15 chars.
+                if (adjustedBackspaceCount >= 15 && (int)backspaceAdjustment.adjustedBackspaceCount > 15) {
 #ifdef DEBUG
-                    NSLog(@"[PHTV Safety] Blocked excessive backspaceCount: %d -> 15 (Key=%d)", (int)pData->backspaceCount, _keycode);
+                    NSLog(@"[PHTV Safety] Blocked excessive backspaceCount: %d -> 15 (Key=%d)", (int)backspaceAdjustment.adjustedBackspaceCount, _keycode);
 #endif
-                    pData->backspaceCount = 15;
                 }
 #ifdef DEBUG
                 if (inputStrategy.shouldLogSpaceSkip) {
@@ -1558,22 +1553,18 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                                                                            restoreCode:vRestore
                                                                           deleteWindowMs:TEXT_REPLACEMENT_DELETE_WINDOW_MS];
 
-                    if (textReplacementDecisionBox.isExternalDelete) {
+                    if (textReplacementDecisionBox.shouldBypassEvent) {
 #ifdef DEBUG
-                        NSLog(@"[TextReplacement] Text replacement detected - passing through event (code=%d, backspace=%d, newChar=%d, deleteCount=%d, elapsedMs=%llu)",
-                              pData->code, (int)pData->backspaceCount, (int)pData->newCharCount, externalDeleteCount, textReplacementDecisionBox.matchedElapsedMs);
-#endif
-                        // CRITICAL: Return event to let macOS insert Space
-                        return event;
-                    }
-
-                    if (textReplacementDecisionBox.isPatternMatch) {
-#ifdef DEBUG
-                        NSLog(@"[PHTV TextReplacement] Pattern %@ matched: code=%d, backspace=%d, newChar=%d, keycode=%d",
-                              textReplacementDecisionBox.patternLabel ?: @"?",
-                              pData->code, (int)pData->backspaceCount, (int)pData->newCharCount, _keycode);
-                        NSLog(@"[PHTV TextReplacement] ✅ DETECTED - Skipping processing (code=%d, backspace=%d, newChar=%d)",
-                              pData->code, (int)pData->backspaceCount, (int)pData->newCharCount);
+                        if (textReplacementDecisionBox.isExternalDelete) {
+                            NSLog(@"[TextReplacement] Text replacement detected - passing through event (code=%d, backspace=%d, newChar=%d, deleteCount=%d, elapsedMs=%llu)",
+                                  pData->code, (int)pData->backspaceCount, (int)pData->newCharCount, externalDeleteCount, textReplacementDecisionBox.matchedElapsedMs);
+                        } else if (textReplacementDecisionBox.isPatternMatch) {
+                            NSLog(@"[PHTV TextReplacement] Pattern %@ matched: code=%d, backspace=%d, newChar=%d, keycode=%d",
+                                  textReplacementDecisionBox.patternLabel ?: @"?",
+                                  pData->code, (int)pData->backspaceCount, (int)pData->newCharCount, _keycode);
+                            NSLog(@"[PHTV TextReplacement] ✅ DETECTED - Skipping processing (code=%d, backspace=%d, newChar=%d)",
+                                  pData->code, (int)pData->backspaceCount, (int)pData->newCharCount);
+                        }
 #endif
                         // CRITICAL: Return event to let macOS insert Space
                         return event;
@@ -1610,8 +1601,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 #ifdef DEBUG
                         PHTVSpotlightDebugLog([NSString stringWithFormat:@"deferBackspace=%d newCharCount=%d", (int)pData->backspaceCount, (int)pData->newCharCount]);
 #endif
-                    } else if (characterSendPlan.useStepByStepBackspace) {
-                        SendBackspaceSequenceWithDelay(pData->backspaceCount);
                     } else {
                         SendBackspaceSequenceWithDelay(pData->backspaceCount);
                     }

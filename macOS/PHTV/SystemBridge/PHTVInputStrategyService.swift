@@ -31,20 +31,17 @@ final class PHTVBackspaceAdjustmentBox: NSObject {
 @objcMembers
 final class PHTVCharacterSendPlanBox: NSObject {
     let deferBackspaceToAX: Bool
-    let useStepByStepBackspace: Bool
     let useStepByStepCharacterSend: Bool
     let shouldSendRestoreTriggerKey: Bool
     let shouldStartNewSessionAfterSend: Bool
 
     init(
         deferBackspaceToAX: Bool,
-        useStepByStepBackspace: Bool,
         useStepByStepCharacterSend: Bool,
         shouldSendRestoreTriggerKey: Bool,
         shouldStartNewSessionAfterSend: Bool
     ) {
         self.deferBackspaceToAX = deferBackspaceToAX
-        self.useStepByStepBackspace = useStepByStepBackspace
         self.useStepByStepCharacterSend = useStepByStepCharacterSend
         self.shouldSendRestoreTriggerKey = shouldSendRestoreTriggerKey
         self.shouldStartNewSessionAfterSend = shouldStartNewSessionAfterSend
@@ -205,11 +202,22 @@ final class PHTVInputStrategyService: NSObject {
 
         return PHTVCharacterSendPlanBox(
             deferBackspaceToAX: isSpotlightTarget,
-            useStepByStepBackspace: !isSpotlightTarget && appNeedsStepByStepEnabled,
             useStepByStepCharacterSend: useStepByStepCharacterSend,
             shouldSendRestoreTriggerKey: shouldSendRestoreTriggerKey,
             shouldStartNewSessionAfterSend: useStepByStepCharacterSend && engineCode == restoreAndStartNewSessionCode
         )
+    }
+
+    @objc(sanitizedBackspaceCountForAdjustedCount:maxBuffer:safetyLimit:)
+    class func sanitizedBackspaceCount(
+        forAdjustedCount adjustedCount: Int32,
+        maxBuffer: Int32,
+        safetyLimit: Int32
+    ) -> Int32 {
+        var count = max(0, adjustedCount)
+        count = min(count, maxBuffer)
+        count = min(count, safetyLimit)
+        return count
     }
 
     @objc(shouldTemporarilyUseUnicodeCodeTableForCurrentCodeTable:spotlightActive:spotlightLikeApp:)
