@@ -510,7 +510,7 @@ struct CustomSlider: NSViewRepresentable {
 
     func updateNSView(_ nsView: NSSlider, context: Context) {
         // Update value if changed
-        if abs(nsView.doubleValue - value) > 0.001 {
+        if Swift.abs(nsView.doubleValue - value) > 0.001 {
             nsView.doubleValue = value
         }
 

@@ -18,6 +18,7 @@ enum DebugSelfTests {
 
         runUserDefaultsHelperChecks()
         runMacroStorageChecks()
+        runCxxInteropChecks()
 
         PHTVLogger.shared.debug("[DebugSelfTests] All debug checks passed")
     }
@@ -46,7 +47,7 @@ enum DebugSelfTests {
         defaults.set(NSNumber(value: 1.25), forKey: "numeric_double")
         let value = defaults.double(forKey: "numeric_double", default: 0.0)
         assertCondition(
-            abs(value - 1.25) < 0.000_001,
+            Swift.abs(value - 1.25) < 0.000_001,
             "Numeric double value should be readable"
         )
 
@@ -91,6 +92,13 @@ enum DebugSelfTests {
         )
 
         MacroStorage.postUpdated(macroId: UUID(), action: MacroUpdateAction.added)
+    }
+
+    private static func runCxxInteropChecks() {
+        assertCondition(
+            PHTVCxxInteropTrialService.verify(),
+            "Swift/C++ interop trial should pass"
+        )
     }
 
     private static func makeIsolatedDefaults() -> (UserDefaults, String) {

@@ -156,7 +156,7 @@ struct NonDraggableSlider: NSViewRepresentable {
         let slider = container.slider
         slider.minValue = range.lowerBound
         slider.maxValue = range.upperBound
-        if abs(slider.doubleValue - value) > 0.001 {
+        if Swift.abs(slider.doubleValue - value) > 0.001 {
             slider.doubleValue = value
         }
         
