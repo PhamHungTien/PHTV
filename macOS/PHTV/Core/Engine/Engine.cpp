@@ -11,36 +11,11 @@
 #include "Engine.h"
 #include "PHTVEngineCBridge.h"
 #include "Vietnamese.h"
-#include "EnglishWordDetector.h"
 #include <string.h>
 #include <list>
 #include <cstdio>
 
 using namespace std;
-
-extern "C" void phtvLoadMacroMapFromBinary(const Byte* data, int size);
-extern "C" int phtvFindMacroContentForNormalizedKeys(const Uint32* normalizedKeyBuffer,
-                                                     int keyCount,
-                                                     int autoCapsEnabled,
-                                                     Uint32* outputBuffer,
-                                                     int outputCapacity);
-extern "C" int phtvRuntimeAutoCapsMacroValue();
-
-extern "C" int phtvRuntimeRestoreOnEscapeEnabled();
-extern "C" int phtvRuntimeAutoRestoreEnglishWordEnabled();
-extern "C" int phtvRuntimeUpperCaseFirstCharEnabled();
-extern "C" int phtvRuntimeUpperCaseExcludedForCurrentApp();
-extern "C" int phtvRuntimeUseMacroEnabled();
-extern "C" int phtvRuntimeInputTypeValue();
-extern "C" int phtvRuntimeCodeTableValue();
-extern "C" int phtvRuntimeCheckSpellingValue();
-extern "C" void phtvRuntimeSetCheckSpellingValue(int value);
-extern "C" int phtvRuntimeUseModernOrthographyEnabled();
-extern "C" int phtvRuntimeQuickTelexEnabled();
-extern "C" int phtvRuntimeFreeMarkEnabled();
-extern "C" int phtvRuntimeAllowConsonantZFWJEnabled();
-extern "C" int phtvRuntimeQuickStartConsonantEnabled();
-extern "C" int phtvRuntimeQuickEndConsonantEnabled();
 
 static int phtvFallbackCheckSpellingValue = 1;
 static int phtvFallbackInputTypeValue = vTelex;
@@ -158,6 +133,37 @@ static int runtimeCodeTableSnapshot = 0;
 static inline void refreshRuntimeLayoutSnapshot() {
     runtimeInputTypeSnapshot = phtvRuntimeInputTypeValue();
     runtimeCodeTableSnapshot = phtvRuntimeCodeTableValue();
+}
+
+static inline bool detectorIsEnglishWordFromKeyStates(const Uint32* keyStates, int stateIndex) {
+    return phtvDetectorIsEnglishWordFromKeyStates(keyStates, stateIndex) != 0;
+}
+
+static inline bool detectorIsVietnameseWordFromKeyStates(const Uint32* keyStates, int stateIndex) {
+    return phtvDetectorIsVietnameseWordFromKeyStates(keyStates, stateIndex) != 0;
+}
+
+static inline bool detectorShouldRestoreEnglishWord(const Uint32* keyStates, int stateIndex) {
+    return phtvDetectorShouldRestoreEnglishWord(keyStates, stateIndex) != 0;
+}
+
+static std::string detectorKeyStatesToString(const Uint32* keyStates, int count) {
+    if (!keyStates || count <= 0) {
+        return std::string();
+    }
+
+    std::vector<char> outputBuffer(static_cast<size_t>(count) + 1, '\0');
+    const int outputLength = phtvDetectorKeyStatesToAscii(
+        keyStates,
+        count,
+        outputBuffer.data(),
+        static_cast<int>(outputBuffer.size())
+    );
+    if (outputLength <= 0) {
+        return std::string();
+    }
+
+    return std::string(outputBuffer.data(), static_cast<size_t>(outputLength));
 }
 
 static bool findMacro(vector<Uint32>& key, vector<Uint32>& macroContentCode) {
@@ -299,7 +305,7 @@ static inline bool isVietnameseWordFromTypingWord(const int length) {
     for (int i = 0; i < len; i++) {
         buf[i] = TypingWord[i] & 0x3F;
     }
-    return isVietnameseWordFromKeyStates(buf, len);
+    return detectorIsVietnameseWordFromKeyStates(buf, len);
 }
 
 /**
@@ -358,7 +364,7 @@ static bool isVietnameseFromCanonicalTelex(const int length) {
     }
 
     if (len < 2) return false; // Too short for dictionary lookup
-    return isVietnameseWordFromKeyStates(buf, len);
+    return detectorIsVietnameseWordFromKeyStates(buf, len);
 }
 
 static int capsElem;
@@ -487,7 +493,7 @@ static inline bool isLikelyUppercaseAbbreviation(const Uint32* keyStates, int co
 
     // Small abbreviation list (lowercase)
     if (count <= 5) {
-        std::string word = keyStatesToString(keyStates, count);
+        std::string word = detectorKeyStatesToString(keyStates, count);
         if ((int)word.size() == count) {
             static const std::unordered_set<std::string> kAbbrev = {
                 "mr", "mrs", "ms", "dr", "prof", "sr", "jr", "st",
@@ -2263,10 +2269,10 @@ void vKeyHandleEvent(const vKeyEvent& event,
             int restoreStateIndex = isLetterWithNumericSuffixToken ? _stateIndex : englishStateIndex;
 
             if (englishStateIndex > 1 && canAutoRestoreToken) {
-                shouldRestoreEnglish = checkIfEnglishWord(KeyStates, englishStateIndex);
+                shouldRestoreEnglish = detectorShouldRestoreEnglishWord(KeyStates, englishStateIndex);
                 if (!shouldRestoreEnglish) {
-                    if (isEnglishWordFromKeyStates(KeyStates, englishStateIndex) &&
-                        !isVietnameseWordFromKeyStates(KeyStates, englishStateIndex) &&
+                    if (detectorIsEnglishWordFromKeyStates(KeyStates, englishStateIndex) &&
+                        !detectorIsVietnameseWordFromKeyStates(KeyStates, englishStateIndex) &&
                         !isVietnameseWordFromTypingWord(_index)) {
                         shouldRestoreEnglish = true;
                     }
@@ -2313,7 +2319,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
                             break;
                         }
                     }
-                    if (isTypingWordPureEnglish && isEnglishWordFromKeyStates(TypingWord, _index)) {
+                    if (isTypingWordPureEnglish && detectorIsEnglishWordFromKeyStates(TypingWord, _index)) {
                         shouldRestoreEnglish = false;
                         #ifdef DEBUG
                         fprintf(stderr, "[AutoEnglish] SKIP RESTORE: TypingWord is already clean English\n");
@@ -2371,13 +2377,13 @@ void vKeyHandleEvent(const vKeyEvent& event,
                 #endif
             #ifdef DEBUG
             } else if (_stateIndex > 0) {
-                std::string word = keyStatesToString(KeyStates, englishStateIndex);
+                std::string word = detectorKeyStatesToString(KeyStates, englishStateIndex);
                 fprintf(stderr, "[AutoEnglish] ✗ WORD BREAK NO RESTORE: word='%s', _index=%d, _stateIndex=%d, blocked by: ",
                        word.c_str(), _index, _stateIndex);
                 if (_index <= 0) fprintf(stderr, "_index<=0 ");
                 if (englishStateIndex <= 1) fprintf(stderr, "englishStateIndex<=1 ");
                 if (!canAutoRestoreToken) fprintf(stderr, "invalidTokenShape ");
-                if (!checkIfEnglishWord(KeyStates, englishStateIndex)) fprintf(stderr, "notEnglish ");
+                if (!detectorShouldRestoreEnglishWord(KeyStates, englishStateIndex)) fprintf(stderr, "notEnglish ");
                 fprintf(stderr, "\n");
                 fflush(stderr);
             #endif
@@ -2465,10 +2471,10 @@ void vKeyHandleEvent(const vKeyEvent& event,
         int restoreStateIndex = isLetterWithNumericSuffixToken ? _stateIndex : englishStateIndex;
 
         if (phtvRuntimeAutoRestoreEnglishWordEnabled() && _index > 0 && englishStateIndex > 1 && canAutoRestoreToken) {
-            shouldRestoreEnglish = checkIfEnglishWord(KeyStates, englishStateIndex);
+            shouldRestoreEnglish = detectorShouldRestoreEnglishWord(KeyStates, englishStateIndex);
             if (!shouldRestoreEnglish) {
-                if (isEnglishWordFromKeyStates(KeyStates, englishStateIndex) &&
-                    !isVietnameseWordFromKeyStates(KeyStates, englishStateIndex) &&
+                if (detectorIsEnglishWordFromKeyStates(KeyStates, englishStateIndex) &&
+                    !detectorIsVietnameseWordFromKeyStates(KeyStates, englishStateIndex) &&
                     !isVietnameseWordFromTypingWord(_index)) {
                     shouldRestoreEnglish = true;
                 }
@@ -2522,7 +2528,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
                         break;
                     }
                 }
-                if (isTypingWordPureEnglish && isEnglishWordFromKeyStates(TypingWord, _index)) {
+                if (isTypingWordPureEnglish && detectorIsEnglishWordFromKeyStates(TypingWord, _index)) {
                     shouldRestoreEnglish = false;
                     #ifdef DEBUG
                     fprintf(stderr, "[AutoEnglish] SKIP RESTORE SPACE: TypingWord is already clean English\n");
@@ -2600,13 +2606,13 @@ void vKeyHandleEvent(const vKeyEvent& event,
             #ifdef DEBUG
             // Log why Auto English didn't trigger (for debugging random failures)
             if (phtvRuntimeAutoRestoreEnglishWordEnabled() && _stateIndex > 0) {
-                std::string word = keyStatesToString(KeyStates, englishStateIndex);
+                std::string word = detectorKeyStatesToString(KeyStates, englishStateIndex);
                 fprintf(stderr, "[AutoEnglish] ✗ SPACE NO RESTORE: word='%s', _stateIndex=%d, _index=%d, blocked by: ",
                        word.c_str(), _stateIndex, _index);
                 if (_index <= 0) fprintf(stderr, "_index<=0 ");
                 if (englishStateIndex <= 1) fprintf(stderr, "englishStateIndex<=1 ");
                 if (!canAutoRestoreToken) fprintf(stderr, "invalidTokenShape ");
-                if (!checkIfEnglishWord(KeyStates, englishStateIndex)) fprintf(stderr, "notEnglishWord ");
+                if (!detectorShouldRestoreEnglishWord(KeyStates, englishStateIndex)) fprintf(stderr, "notEnglishWord ");
                 fprintf(stderr, "\n");
                 fflush(stderr);
             }
@@ -2784,7 +2790,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             // When a Telex mark is restored/removed (e.g., pressing 's' twice to toggle sắc),
             // the key was already added to KeyStates via insertState() at line 1712.
             // Decrementing _stateIndex causes English word detection to fail because
-            // checkIfEnglishWord() would see "addres" (6 chars) instead of "address" (7 chars).
+            // detectorShouldRestoreEnglishWord() would see "addres" (6 chars) instead of "address" (7 chars).
             // The key IS being inserted into TypingWord via insertKey() above, so _stateIndex
             // should remain in sync with the actual number of keys pressed.
         }

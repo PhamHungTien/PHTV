@@ -39,6 +39,55 @@ uint32_t phtvEngineHookCharAt(int index);
 int phtvEngineHookMacroDataSize(void);
 uint32_t phtvEngineHookMacroDataAt(int index);
 
+void phtvLoadMacroMapFromBinary(const uint8_t* data, int size);
+int phtvFindMacroContentForNormalizedKeys(const uint32_t* normalizedKeyBuffer,
+                                          int keyCount,
+                                          int autoCapsEnabled,
+                                          uint32_t* outputBuffer,
+                                          int outputCapacity);
+
+int phtvRuntimeAutoCapsMacroValue(void);
+int phtvRuntimeRestoreOnEscapeEnabled(void);
+int phtvRuntimeAutoRestoreEnglishWordEnabled(void);
+int phtvRuntimeUpperCaseFirstCharEnabled(void);
+int phtvRuntimeUpperCaseExcludedForCurrentApp(void);
+int phtvRuntimeUseMacroEnabled(void);
+int phtvRuntimeInputTypeValue(void);
+int phtvRuntimeCodeTableValue(void);
+int phtvRuntimeCheckSpellingValue(void);
+void phtvRuntimeSetCheckSpellingValue(int value);
+int phtvRuntimeUseModernOrthographyEnabled(void);
+int phtvRuntimeQuickTelexEnabled(void);
+int phtvRuntimeFreeMarkEnabled(void);
+int phtvRuntimeAllowConsonantZFWJEnabled(void);
+int phtvRuntimeQuickStartConsonantEnabled(void);
+int phtvRuntimeQuickEndConsonantEnabled(void);
+
+int phtvCustomDictionaryEnglishCount(void);
+int phtvCustomDictionaryVietnameseCount(void);
+int phtvCustomDictionaryContainsEnglishWord(const char* wordCString);
+int phtvCustomDictionaryContainsVietnameseWord(const char* wordCString);
+void phtvCustomDictionaryLoadJSON(const char* jsonData, int length);
+void phtvCustomDictionaryClear(void);
+
+int phtvDictionaryInitEnglish(const char* filePath);
+int phtvDictionaryInitVietnamese(const char* filePath);
+int phtvDictionaryIsEnglishInitialized(void);
+int phtvDictionaryEnglishWordCount(void);
+int phtvDictionaryVietnameseWordCount(void);
+int phtvDictionaryContainsEnglishIndices(const uint8_t* indices, int length);
+int phtvDictionaryContainsVietnameseIndices(const uint8_t* indices, int length);
+void phtvDictionaryClear(void);
+
+int phtvDetectorShouldRestoreEnglishWord(const uint32_t* keyStates, int stateIndex);
+int phtvDetectorIsEnglishWordUtf8(const char* wordCString);
+int phtvDetectorIsEnglishWordFromKeyStates(const uint32_t* keyStates, int stateIndex);
+int phtvDetectorIsVietnameseWordFromKeyStates(const uint32_t* keyStates, int stateIndex);
+int phtvDetectorKeyStatesToAscii(const uint32_t* keyStates,
+                                 int count,
+                                 char* outputBuffer,
+                                 int outputBufferSize);
+
 #ifdef __cplusplus
 }
 #endif
