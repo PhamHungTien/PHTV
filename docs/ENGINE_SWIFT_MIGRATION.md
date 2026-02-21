@@ -24,6 +24,14 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - `macOS/PHTV/Core/Engine/Engine.h`
 - Smart Switch runtime hien da duoc thay the bang Swift:
   - `macOS/PHTV/Bridge/SmartSwitch/PHTVSmartSwitchRuntimeService.swift`
+- Da xoa module C++ `ConvertTool`:
+  - `macOS/PHTV/Core/Engine/ConvertTool.h`
+  - `macOS/PHTV/Core/Engine/ConvertTool.cpp`
+- Da bo C++ debug interop cho convert tool:
+  - `macOS/PHTV/Bridge/Engine/PHTVEngineDebugInteropFacade.swift`
+  - wrappers `phtvEngineConvertUtf8`, `phtvConvertTool*` trong `PHTVEngineCxxInterop.hpp`
+- Convert tool runtime va self-check hien chay bang Swift:
+  - `macOS/PHTV/Bridge/System/PHTVConvertToolTextConversionService.swift`
 
 ## Lo trinh migrate
 

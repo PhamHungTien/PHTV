@@ -17,7 +17,6 @@
 #include "../PHTVHotkey.h"
 #include "Vietnamese.h"
 #include "Macro.h"
-#include "ConvertTool.h"
 #include "EnglishWordDetector.h"
 
 #ifndef LOBYTE

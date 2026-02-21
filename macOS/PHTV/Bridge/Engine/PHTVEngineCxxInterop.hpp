@@ -74,12 +74,6 @@ inline void phtvEngineClearCustomDictionary() noexcept {
     clearCustomDictionary();
 }
 
-inline const char *phtvEngineConvertUtf8(const char *source) noexcept {
-    static thread_local std::string converted;
-    converted = convertUtil(source ? std::string(source) : std::string());
-    return converted.c_str();
-}
-
 inline void phtvEngineSetCheckSpellingValue(const int value) noexcept {
     vCheckSpelling = value;
 }
@@ -381,34 +375,6 @@ inline int phtvRuntimeDefaultPauseKey() noexcept {
 
 inline int phtvRuntimeOtherLanguage() noexcept {
     return vOtherLanguage;
-}
-
-inline void phtvConvertToolResetOptions() noexcept {
-    resetConvertToolOptions();
-}
-
-inline void phtvConvertToolNormalizeOptions() noexcept {
-    normalizeConvertToolOptions();
-}
-
-inline void phtvConvertToolSetOptions(const bool dontAlertWhenCompleted,
-                                      const bool toAllCaps,
-                                      const bool toAllNonCaps,
-                                      const bool toCapsFirstLetter,
-                                      const bool toCapsEachWord,
-                                      const bool removeMark,
-                                      const int fromCode,
-                                      const int toCode,
-                                      const int hotKey) noexcept {
-    gConvertToolOptions.dontAlertWhenCompleted = dontAlertWhenCompleted;
-    gConvertToolOptions.toAllCaps = toAllCaps;
-    gConvertToolOptions.toAllNonCaps = toAllNonCaps;
-    gConvertToolOptions.toCapsFirstLetter = toCapsFirstLetter;
-    gConvertToolOptions.toCapsEachWord = toCapsEachWord;
-    gConvertToolOptions.removeMark = removeMark;
-    gConvertToolOptions.fromCode = static_cast<Uint8>(phtv_clamp_code_table(fromCode));
-    gConvertToolOptions.toCode = static_cast<Uint8>(phtv_clamp_code_table(toCode));
-    gConvertToolOptions.hotKey = hotKey;
 }
 
 inline std::uint16_t phtvEngineHotkeyDisplayCharacter(const std::uint16_t keyCode) noexcept {
