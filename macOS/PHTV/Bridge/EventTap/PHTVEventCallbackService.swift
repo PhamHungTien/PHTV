@@ -134,7 +134,7 @@ final class PHTVEventCallbackService {
                PHTVEngineRuntimeFacade.upperCaseExcludedForCurrentApp() == 0 {
                 let keyWithCaps = UInt32(eventKeycode) |
                     ((eventFlags.contains(.maskShift) || eventFlags.contains(.maskAlphaShift))
-                     ? PHTVEngineRuntimeFacade.capsMask() : 0)
+                     ? EngineBitMask.caps : 0)
                 let keyCharacter = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(keyWithCaps)
                 let isNavigationKey = PHTVEngineRuntimeFacade.isNavigationKey(eventKeycode)
                 let shouldPrime = PHTVEventContextBridgeService.shouldPrimeUppercaseOnKeyDown(
@@ -648,7 +648,7 @@ final class PHTVEventCallbackService {
                     PHTVKeyEventSenderService.sendKeyCode(
                         UInt32(eventKeycode) |
                         ((eventFlags.contains(.maskAlphaShift) || eventFlags.contains(.maskShift))
-                         ? PHTVEngineRuntimeFacade.capsMask() : 0))
+                         ? EngineBitMask.caps : 0))
                 }
                 if characterSendPlan.shouldStartNewSessionAfterSend {
                     PHTVEngineDataBridge.startNewSession()

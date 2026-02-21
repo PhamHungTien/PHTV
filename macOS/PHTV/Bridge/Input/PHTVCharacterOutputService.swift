@@ -39,8 +39,8 @@ final class PHTVCharacterOutputService: NSObject {
         let forcePrecomposed = ((codeTable == 3) && isSpotlightTarget)
                             || ((codeTable == 0 || codeTable == 3) && isPrecomposedBatched)
 
-        let pureCharMask = PHTVEngineRuntimeFacade.pureCharacterMask()
-        let charCodeMask = PHTVEngineRuntimeFacade.charCodeMask()
+        let pureCharMask = EngineBitMask.pureCharacter
+        let charCodeMask = EngineBitMask.charCode
 
         if newCharSize > 0 {
             if dataFromMacro {
@@ -71,7 +71,7 @@ final class PHTVCharacterOutputService: NSObject {
         let engineCode = Int(PHTVEngineRuntimeFacade.engineDataCode())
         let vRestoreCode = Int(PHTVEngineRuntimeFacade.engineRestoreCode())
         let vRestoreNewCode = Int(PHTVEngineRuntimeFacade.engineRestoreAndStartNewSessionCode())
-        let capsMask = PHTVEngineRuntimeFacade.capsMask()
+        let capsMask = EngineBitMask.caps
 
         if !willContinueSending && (engineCode == vRestoreCode || engineCode == vRestoreNewCode) {
             if PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(UInt32(keycode)) != 0 {
@@ -230,7 +230,7 @@ final class PHTVCharacterOutputService: NSObject {
                 scaledCliPostSendBlockUs: Int64(scaledCliPostSendBlockUs))
             let interItemDelayUs = PHTVTimingService.clampToUseconds(
                 UInt64(max(Int64(0), sendPlan.interItemDelayUs)))
-            let pureCharMask = PHTVEngineRuntimeFacade.pureCharacterMask()
+            let pureCharMask = EngineBitMask.pureCharacter
             let totalMacroSize = Int(PHTVEngineRuntimeFacade.engineDataMacroDataSize())
             for i in 0..<totalMacroSize {
                 let macroItem = PHTVEngineRuntimeFacade.engineDataMacroDataAt(Int32(i))
@@ -253,7 +253,7 @@ final class PHTVCharacterOutputService: NSObject {
         if macroPlan.shouldSendTriggerKey {
             let hasCaps = (flags & CGEventFlags.maskShift.rawValue) != 0
             PHTVKeyEventSenderService.sendKeyCode(
-                UInt32(keycode) | (hasCaps ? PHTVEngineRuntimeFacade.capsMask() : 0))
+                UInt32(keycode) | (hasCaps ? EngineBitMask.caps : 0))
         }
     }
 

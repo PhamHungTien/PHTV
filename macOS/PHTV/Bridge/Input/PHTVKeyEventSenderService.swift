@@ -142,8 +142,8 @@ class PHTVKeyEventSenderService: NSObject {
         guard let source = eventSource else { return }
         var newChar = UInt16(data & 0xFFFF)
         let codeTable = PHTVEngineRuntimeFacade.currentCodeTable()
-        let charCodeMask = PHTVEngineRuntimeFacade.charCodeMask()
-        let capsMask = PHTVEngineRuntimeFacade.capsMask()
+        let charCodeMask = EngineBitMask.charCode
+        let capsMask = EngineBitMask.caps
 
         if (data & charCodeMask) == 0 {
             // Direct keycode case

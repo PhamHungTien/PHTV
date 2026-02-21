@@ -160,6 +160,12 @@ enum EventSourceMarker {
     static let phtv: Int64 = 0x5048_5456 // "PHTV"
 }
 
+enum EngineBitMask {
+    static let caps: UInt32 = 0x0001_0000
+    static let charCode: UInt32 = 0x0200_0000
+    static let pureCharacter: UInt32 = 0x8000_0000
+}
+
 // MARK: - Key Codes
 
 enum KeyCode {

@@ -63,7 +63,7 @@ nonisolated(unsafe) private var runtimePerformLayoutCompat: Int32 = 0
 nonisolated(unsafe) private var runtimeSafeMode: Int32 = 0
 private let macroCharacterToKeyState: [UInt16: UInt32] = {
     var mapping: [UInt16: UInt32] = [:]
-    let capsMask = PHTVEngineRuntimeFacade.capsMask()
+    let capsMask = EngineBitMask.caps
 
     for rawKeyCode: UInt32 in 0..<256 {
         let unshifted = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(rawKeyCode)
@@ -211,8 +211,8 @@ private func convertedMacroCodes(from text: String, activeCodeTable: Int32) -> [
         return []
     }
 
-    let charCodeMask = PHTVEngineRuntimeFacade.charCodeMask()
-    let pureCharacterMask = PHTVEngineRuntimeFacade.pureCharacterMask()
+    let charCodeMask = EngineBitMask.charCode
+    let pureCharacterMask = EngineBitMask.pureCharacter
     var converted: [UInt32] = []
     converted.reserveCapacity(text.unicodeScalars.count)
 
@@ -334,8 +334,8 @@ private func macroMapFromBinaryData(_ data: UnsafePointer<UInt8>, size: Int) -> 
 }
 
 private func lowercasedMacroLookupCode(_ code: UInt32, codeTable: Int32) -> UInt32? {
-    let charCodeMask = PHTVEngineRuntimeFacade.charCodeMask()
-    let capsMask = PHTVEngineRuntimeFacade.capsMask()
+    let charCodeMask = EngineBitMask.charCode
+    let capsMask = EngineBitMask.caps
 
     if (code & charCodeMask) == 0 {
         let lowered = code & ~capsMask
@@ -370,7 +370,7 @@ private func lowercasedMacroLookupCode(_ code: UInt32, codeTable: Int32) -> UInt
 }
 
 private func uppercasedMacroOutputCode(_ code: UInt32, codeTable: Int32) -> UInt32 {
-    let charCodeMask = PHTVEngineRuntimeFacade.charCodeMask()
+    let charCodeMask = EngineBitMask.charCode
 
     let keyCharacter = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(code)
     if keyCharacter != 0 {
@@ -642,9 +642,6 @@ func phtvRuntimeQuickEndConsonantEnabled() -> Int32 {
 final class PHTVEngineRuntimeFacade: NSObject {
     private static let unicodeCompoundMarks: [UInt16] = [0x0301, 0x0300, 0x0309, 0x0303, 0x0323]
     // Mirror constants in Core/Engine/DataType.h.
-    private static let engineCapsMask: UInt32 = 0x0001_0000
-    private static let engineCharCodeMask: UInt32 = 0x0200_0000
-    private static let enginePureCharacterMask: UInt32 = 0x8000_0000
     private static let engineDoNothingCodeValue: Int32 = 0
     private static let engineWillProcessCodeValue: Int32 = 1
     private static let engineRestoreCodeValue: Int32 = 3
@@ -1112,26 +1109,14 @@ final class PHTVEngineRuntimeFacade: NSObject {
         return variants[Int(variantIndex)]
     }
 
-    class func capsMask() -> UInt32 {
-        engineCapsMask
-    }
-
-    class func charCodeMask() -> UInt32 {
-        engineCharCodeMask
-    }
-
-    class func pureCharacterMask() -> UInt32 {
-        enginePureCharacterMask
-    }
-
     class func macroKeyCodeToCharacter(_ keyData: UInt32) -> UInt16 {
-        let allowedMask = UInt32(KeyCode.keyMask) | engineCapsMask
+        let allowedMask = UInt32(KeyCode.keyMask) | EngineBitMask.caps
         guard (keyData & ~allowedMask) == 0 else {
             return 0
         }
 
         let keyCode = UInt16(truncatingIfNeeded: keyData & UInt32(KeyCode.keyMask))
-        if (keyData & engineCapsMask) != 0 {
+        if (keyData & EngineBitMask.caps) != 0 {
             return macroKeyToCharacterShifted[keyCode] ?? 0
         }
         return macroKeyToCharacterUnshifted[keyCode] ?? 0

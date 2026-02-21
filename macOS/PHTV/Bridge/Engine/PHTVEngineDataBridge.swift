@@ -82,7 +82,7 @@ final class PHTVEngineDataBridge: NSObject {
         }
 
         let keyChar = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(
-            UInt32(keyCode) | PHTVEngineRuntimeFacade.capsMask())
+            UInt32(keyCode) | EngineBitMask.caps)
         if keyChar >= 33,
            keyChar <= 126,
            let scalar = UnicodeScalar(Int(keyChar)) {
@@ -128,9 +128,9 @@ final class PHTVEngineDataBridge: NSObject {
             return ""
         }
 
-        let capsMask = PHTVEngineRuntimeFacade.capsMask()
-        let charCodeMask = PHTVEngineRuntimeFacade.charCodeMask()
-        let pureCharacterMask = PHTVEngineRuntimeFacade.pureCharacterMask()
+        let capsMask = EngineBitMask.caps
+        let charCodeMask = EngineBitMask.charCode
+        let pureCharacterMask = EngineBitMask.pureCharacter
 
         var resultScalars = String.UnicodeScalarView()
         for data in macroData {
