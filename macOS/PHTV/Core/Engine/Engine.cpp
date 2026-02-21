@@ -21,6 +21,9 @@ extern "C" int phtvRuntimeAutoRestoreEnglishWordEnabled();
 extern "C" int phtvRuntimeUpperCaseFirstCharEnabled();
 extern "C" int phtvRuntimeUpperCaseExcludedForCurrentApp();
 extern "C" int phtvRuntimeUseMacroEnabled();
+extern "C" int phtvRuntimeAllowConsonantZFWJEnabled();
+extern "C" int phtvRuntimeQuickStartConsonantEnabled();
+extern "C" int phtvRuntimeQuickEndConsonantEnabled();
 
 extern "C" __attribute__((weak)) int phtvRuntimeRestoreOnEscapeEnabled() {
     // Standalone regression binary fallback: keep restore feature enabled by default.
@@ -42,6 +45,18 @@ extern "C" __attribute__((weak)) int phtvRuntimeUpperCaseExcludedForCurrentApp()
 
 extern "C" __attribute__((weak)) int phtvRuntimeUseMacroEnabled() {
     return 1;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeAllowConsonantZFWJEnabled() {
+    return 1;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeQuickStartConsonantEnabled() {
+    return 0;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeQuickEndConsonantEnabled() {
+    return 0;
 }
 
 static vector<Uint8> _charKeyCode = {
@@ -473,6 +488,9 @@ void checkSpelling(const bool& forceCheckVowel=false) {
     }
 
     if (_spellingEndIndex > 0) {
+        const bool quickStartConsonantEnabled = phtvRuntimeQuickStartConsonantEnabled() != 0;
+        const bool allowConsonantZFWJEnabled = phtvRuntimeAllowConsonantZFWJEnabled() != 0;
+        const bool quickEndConsonantEnabled = phtvRuntimeQuickEndConsonantEnabled() != 0;
         j = 0;
         //Check first consonant
         if (IS_CONSONANT(CHR(0))) {
@@ -482,8 +500,8 @@ void checkSpelling(const bool& forceCheckVowel=false) {
                     _spellingFlag = true;
                 for (j = 0; j < _consonantTable[i].size(); j++) {
                     if (_spellingEndIndex > j &&
-                        (_consonantTable[i][j] & ~(vQuickStartConsonant ? END_CONSONANT_MASK : 0)) != CHR(j) &&
-                        (_consonantTable[i][j] & ~(vAllowConsonantZFWJ ? CONSONANT_ALLOW_MASK : 0)) != CHR(j)) {
+                        (_consonantTable[i][j] & ~(quickStartConsonantEnabled ? END_CONSONANT_MASK : 0)) != CHR(j) &&
+                        (_consonantTable[i][j] & ~(allowConsonantZFWJEnabled ? CONSONANT_ALLOW_MASK : 0)) != CHR(j)) {
                         _spellingFlag = true;
                         break;
                     }
@@ -545,7 +563,7 @@ void checkSpelling(const bool& forceCheckVowel=false) {
    
                 for (j = 0; j < _endConsonantTable[ii].size(); j++) {
                     if (_spellingEndIndex > k+j &&
-                        (_endConsonantTable[ii][j] & ~(vQuickEndConsonant ? END_CONSONANT_MASK : 0)) != CHR(k + j)) {
+                        (_endConsonantTable[ii][j] & ~(quickEndConsonantEnabled ? END_CONSONANT_MASK : 0)) != CHR(k + j)) {
                         _spellingFlag = true;
                         break;
                     }
@@ -816,8 +834,9 @@ void checkCorrectVowel(vector<vector<Uint16>>& charset, int& i, int& k, const Ui
         return;
     }
     k = _index - 1;
+    const bool quickEndConsonantEnabled = phtvRuntimeQuickEndConsonantEnabled() != 0;
     for (j = (int)charset[i].size() - 1; j >= 0; j--) {
-        if ((charset[i][j] & ~(vQuickEndConsonant ? END_CONSONANT_MASK : 0)) != CHR(k)) {
+        if ((charset[i][j] & ~(quickEndConsonantEnabled ? END_CONSONANT_MASK : 0)) != CHR(k)) {
             isCorect = false;
             return;
         }
@@ -1938,9 +1957,11 @@ bool vRestoreToRawKeys() {
 
 bool checkQuickConsonant() {
     if (_index <= 1) return false;
+    const bool quickStartConsonantEnabled = phtvRuntimeQuickStartConsonantEnabled() != 0;
+    const bool quickEndConsonantEnabled = phtvRuntimeQuickEndConsonantEnabled() != 0;
     l = 0;
     if (_index > 0) {
-        if (vQuickStartConsonant && _quickStartConsonant.find(CHR(0)) != _quickStartConsonant.end()) {
+        if (quickStartConsonantEnabled && _quickStartConsonant.find(CHR(0)) != _quickStartConsonant.end()) {
             hCode = vRestore;
             hBPC = _index;
             hNCC = _index + 1;
@@ -1954,7 +1975,7 @@ bool checkQuickConsonant() {
             TypingWord[0] = _quickStartConsonant[CHR(0)][0] | (TypingWord[0] & CAPS_MASK ? CAPS_MASK : 0);
             l = 1;;
         }
-        if (vQuickEndConsonant &&
+        if (quickEndConsonantEnabled &&
             (_index-2 >= 0 && !IS_CONSONANT(CHR(_index-2))) &&
             _quickEndConsonant.find(CHR(_index-1)) != _quickEndConsonant.end()) {
             hCode = vRestore;
@@ -2207,7 +2228,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
                 fflush(stderr);
             #endif
             }
-        } else if ((vQuickStartConsonant || vQuickEndConsonant) && !tempDisableKey && isMacroBreakCode(data)) {
+        } else if ((phtvRuntimeQuickStartConsonantEnabled() || phtvRuntimeQuickEndConsonantEnabled()) && !tempDisableKey && isMacroBreakCode(data)) {
             // Quick Consonant for Vietnamese typing shortcuts
             // Now checked AFTER Auto English to avoid conflicts
             checkQuickConsonant();
@@ -2412,7 +2433,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             // This is different from vRestoreAndStartNewSession which also sends the break key
             _index = 0;
             _stateIndex = 0;
-        } else if ((vQuickStartConsonant || vQuickEndConsonant) && !tempDisableKey && checkQuickConsonant()) {
+        } else if ((phtvRuntimeQuickStartConsonantEnabled() || phtvRuntimeQuickEndConsonantEnabled()) && !tempDisableKey && checkQuickConsonant()) {
             // Quick Consonant for Vietnamese typing shortcuts
             // Now checked AFTER Auto English to avoid conflicts
             _spaceCount++;

@@ -76,29 +76,6 @@ extern volatile int vQuickTelex;
  */
 
 /**
- * Allow write word with consonant Z, F, W, J
- * 0: No
- * 1: Yes
- */
-extern volatile int vAllowConsonantZFWJ;
-
-/**
- * 0: No; 1: Yes
- * f -> ph: fanh -> phanh,...
- * j ->gi: jang -> giang,...
- * w ->qu: wen -> quen,...
- */
-extern volatile int vQuickStartConsonant;
-
-/**
- * 0: No; 1: Yes
- * g -> ng: hag -> hang,...
- * h -> nh: vih -> vinh,...
- * k -> ch: bak -> bach,...
- */
-extern volatile int vQuickEndConsonant;
-
-/**
  * Prime uppercase for the next character when auto-capitalization is enabled.
  */
 void vPrimeUpperCaseFirstChar();

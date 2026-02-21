@@ -113,6 +113,12 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - Them C bridge `phtvRuntimeUseMacroEnabled()` do `PHTVEngineRuntimeFacade.swift` cung cap
   - `Engine.cpp` doc runtime setting qua bridge thay vi global C++
   - Giu weak fallback trong `Engine.cpp` de regression binary standalone van giu behavior mac dinh
+- Da dua nhom Quick Consonant flags sang Swift storage:
+  - `vAllowConsonantZFWJ`
+  - `vQuickStartConsonant`
+  - `vQuickEndConsonant`
+  - `Engine.cpp` doc qua cac bridge `phtvRuntimeAllowConsonantZFWJEnabled()`, `phtvRuntimeQuickStartConsonantEnabled()`, `phtvRuntimeQuickEndConsonantEnabled()`
+  - Giu weak fallback trong `Engine.cpp` de regression binary standalone van giu default cu
 
 ## Lo trinh migrate
 

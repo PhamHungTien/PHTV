@@ -34,6 +34,9 @@ nonisolated(unsafe) private var runtimeUseMacro: Int32 = 1
 nonisolated(unsafe) private var runtimeUseMacroInEnglishMode: Int32 = 0
 nonisolated(unsafe) private var runtimeUseSmartSwitchKey: Int32 = 1
 nonisolated(unsafe) private var runtimeAutoCapsMacro: Int32 = 0
+nonisolated(unsafe) private var runtimeAllowConsonantZFWJ: Int32 = 1
+nonisolated(unsafe) private var runtimeQuickStartConsonant: Int32 = 0
+nonisolated(unsafe) private var runtimeQuickEndConsonant: Int32 = 0
 nonisolated(unsafe) private var runtimeUpperCaseFirstChar: Int32 = 0
 nonisolated(unsafe) private var runtimeUpperCaseExcludedForCurrentApp: Int32 = 0
 nonisolated(unsafe) private var runtimeRememberCode: Int32 = 1
@@ -578,6 +581,21 @@ func phtvRuntimeUseMacroEnabled() -> Int32 {
     runtimeUseMacro
 }
 
+@_cdecl("phtvRuntimeAllowConsonantZFWJEnabled")
+func phtvRuntimeAllowConsonantZFWJEnabled() -> Int32 {
+    runtimeAllowConsonantZFWJ
+}
+
+@_cdecl("phtvRuntimeQuickStartConsonantEnabled")
+func phtvRuntimeQuickStartConsonantEnabled() -> Int32 {
+    runtimeQuickStartConsonant
+}
+
+@_cdecl("phtvRuntimeQuickEndConsonantEnabled")
+func phtvRuntimeQuickEndConsonantEnabled() -> Int32 {
+    runtimeQuickEndConsonant
+}
+
 private func phtvCallStartNewSession() {
     startNewSession()
 }
@@ -955,29 +973,29 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func allowConsonantZFWJ() -> Int32 {
-        Int32(vAllowConsonantZFWJ)
+        runtimeAllowConsonantZFWJ
     }
 
     class func setAllowConsonantZFWJ(_ value: Int32) {
-        vAllowConsonantZFWJ = value
+        runtimeAllowConsonantZFWJ = value
         OSMemoryBarrier()
     }
 
     class func quickStartConsonant() -> Int32 {
-        Int32(vQuickStartConsonant)
+        runtimeQuickStartConsonant
     }
 
     class func setQuickStartConsonant(_ value: Int32) {
-        vQuickStartConsonant = value
+        runtimeQuickStartConsonant = value
         OSMemoryBarrier()
     }
 
     class func quickEndConsonant() -> Int32 {
-        Int32(vQuickEndConsonant)
+        runtimeQuickEndConsonant
     }
 
     class func setQuickEndConsonant(_ value: Int32) {
-        vQuickEndConsonant = value
+        runtimeQuickEndConsonant = value
         OSMemoryBarrier()
     }
 
