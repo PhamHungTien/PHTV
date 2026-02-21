@@ -78,9 +78,6 @@ static int _phtvPendingBackspaceCount = 0;
         return _phtvCurrentAppCharacteristics != nil && _phtvCurrentAppCharacteristics.containsUnicodeCompound;
     }
 
-    __attribute__((always_inline)) static inline void SpotlightTinyDelay(void) {
-    }
-
     static inline void SetCliBlockForMicroseconds(uint64_t microseconds) {
         [PHTVCliRuntimeStateService scheduleBlockForMicroseconds:microseconds
                                                      nowMachTime:mach_absolute_time()];
@@ -296,7 +293,7 @@ static int _phtvPendingBackspaceCount = 0;
         CGEventKeyboardSetUnicodeString(_newEventUp, 1, &ch);
         PostSyntheticEvent(_proxy, _newEventDown);
         PostSyntheticEvent(_proxy, _newEventUp);
-        if (_phtvPostToHIDTap) SpotlightTinyDelay();
+        if (_phtvPostToHIDTap) [PHTVTimingService spotlightTinyDelay];
         CFRelease(_newEventDown);
         CFRelease(_newEventUp);
         if (IS_DOUBLE_CODE(vCodeTable)) {
@@ -331,7 +328,7 @@ static int _phtvPendingBackspaceCount = 0;
             ApplyKeyboardTypeAndFlags(_newEventDown, _newEventUp);
             PostSyntheticEvent(_proxy, _newEventDown);
             PostSyntheticEvent(_proxy, _newEventUp);
-            if (_phtvPostToHIDTap) SpotlightTinyDelay();
+            if (_phtvPostToHIDTap) [PHTVTimingService spotlightTinyDelay];
         } else {
             if (vCodeTable == 0) { //unicode 2 bytes code
                 _newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
@@ -341,7 +338,7 @@ static int _phtvPendingBackspaceCount = 0;
                 CGEventKeyboardSetUnicodeString(_newEventUp, 1, &_newChar);
                 PostSyntheticEvent(_proxy, _newEventDown);
                 PostSyntheticEvent(_proxy, _newEventUp);
-                if (_phtvPostToHIDTap) SpotlightTinyDelay();
+                if (_phtvPostToHIDTap) [PHTVTimingService spotlightTinyDelay];
             } else if (vCodeTable == 1 || vCodeTable == 2 || vCodeTable == 4) { //others such as VNI Windows, TCVN3: 1 byte code
                 _newCharHi = HIBYTE(_newChar);
                 _newChar = LOBYTE(_newChar);
@@ -353,7 +350,7 @@ static int _phtvPendingBackspaceCount = 0;
                 CGEventKeyboardSetUnicodeString(_newEventUp, 1, &_newChar);
                 PostSyntheticEvent(_proxy, _newEventDown);
                 PostSyntheticEvent(_proxy, _newEventUp);
-                if (_phtvPostToHIDTap) SpotlightTinyDelay();
+                if (_phtvPostToHIDTap) [PHTVTimingService spotlightTinyDelay];
                 if (_newCharHi > 32) {
                     if (vCodeTable == 2) //VNI
                         InsertKeyLength(2);
@@ -366,7 +363,7 @@ static int _phtvPendingBackspaceCount = 0;
                     CGEventKeyboardSetUnicodeString(_newEventUp, 1, &_newCharHi);
                     PostSyntheticEvent(_proxy, _newEventDown);
                     PostSyntheticEvent(_proxy, _newEventUp);
-                    if (_phtvPostToHIDTap) SpotlightTinyDelay();
+                    if (_phtvPostToHIDTap) [PHTVTimingService spotlightTinyDelay];
                 } else {
                     if (vCodeTable == 2) //VNI
                         InsertKeyLength(1);
@@ -384,7 +381,7 @@ static int _phtvPendingBackspaceCount = 0;
                 CGEventKeyboardSetUnicodeString(_newEventUp, (_newCharHi > 0 ? 2 : 1), _uniChar);
                 PostSyntheticEvent(_proxy, _newEventDown);
                 PostSyntheticEvent(_proxy, _newEventUp);
-                if (_phtvPostToHIDTap) SpotlightTinyDelay();
+                if (_phtvPostToHIDTap) [PHTVTimingService spotlightTinyDelay];
             }
         }
         CFRelease(_newEventDown);
@@ -407,7 +404,7 @@ static int _phtvPendingBackspaceCount = 0;
         CGEventKeyboardSetUnicodeString(_newEventUp, 1, &_newChar);
         PostSyntheticEvent(_proxy, _newEventDown);
         PostSyntheticEvent(_proxy, _newEventUp);
-        if (_phtvPostToHIDTap) SpotlightTinyDelay();
+        if (_phtvPostToHIDTap) [PHTVTimingService spotlightTinyDelay];
         CFRelease(_newEventDown);
         CFRelease(_newEventUp);
 
@@ -441,7 +438,7 @@ static int _phtvPendingBackspaceCount = 0;
             CGEventSetFlags(bsUp, bsFlags);
             PostSyntheticEvent(_proxy, bsDown);
             PostSyntheticEvent(_proxy, bsUp);
-            SpotlightTinyDelay();
+            [PHTVTimingService spotlightTinyDelay];
             CFRelease(bsDown);
             CFRelease(bsUp);
         } else {
