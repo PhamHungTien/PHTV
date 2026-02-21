@@ -1626,44 +1626,35 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
                 // No need for HID tap forcing or aggressive delays anymore
 
+                PHTVCharacterSendPlanBox *characterSendPlan =
+                    [PHTVInputStrategyService characterSendPlanForSpotlightTarget:isSpotlightTarget
+                                                                        cliTarget:_phtvIsCliTarget
+                                                                 globalStepByStep:vSendKeyStepByStep
+                                                                 appNeedsStepByStep:appChars.needsStepByStep
+                                                                           keyCode:(int32_t)_keycode
+                                                                        engineCode:(int32_t)pData->code
+                                                                       restoreCode:(int32_t)vRestore
+                                                          restoreAndStartNewSessionCode:(int32_t)vRestoreAndStartNewSession
+                                                                       enterKeyCode:(int32_t)KEY_ENTER
+                                                                      returnKeyCode:(int32_t)KEY_RETURN];
+
                 //send backspace
                 if (pData->backspaceCount > 0 && pData->backspaceCount < MAX_BUFF) {
-                    // Use Spotlight-style deferred backspace when in search field (spotlightActive) or Spotlight-like app
-                    // EXCEPT for Chromium apps - they don't support AX API properly
-                    if (isSpotlightTarget) {
+                    if (characterSendPlan.deferBackspaceToAX) {
                         // Defer deletion to AX replacement inside SendNewCharString().
                         _phtvPendingBackspaceCount = (int)pData->backspaceCount;
 #ifdef DEBUG
                         PHTVSpotlightDebugLog([NSString stringWithFormat:@"deferBackspace=%d newCharCount=%d", (int)pData->backspaceCount, (int)pData->newCharCount]);
 #endif
+                    } else if (characterSendPlan.useStepByStepBackspace) {
+                        SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeSpotlight);
                     } else {
-                        // Send backspaces for all apps.
-                        // Safari/Chromium browsers use Shift+Left strategy (handled above).
-                        if (appChars.needsStepByStep) {
-                            SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeSpotlight);
-                        } else {
-                            // Browsers, terminals, and normal apps
-                            SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeNone);
-                        }
+                        SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeNone);
                     }
                 }
 
                 //send new character - use step by step for timing sensitive apps like Spotlight
-                // IMPORTANT: For Spotlight-like targets we rely on SendNewCharString(), which can
-                // perform deterministic replacement (AX) and/or per-character Unicode posting.
-                // Forcing step-by-step here would skip deferred deletions and cause duplicated letters.
-                // EXCEPTION: Auto English restore (extCode=5) on Chromium apps should use step-by-step
-                // because Chromium's autocomplete interferes with AX API and Unicode string posting
-                // Only use step-by-step for explicitly configured apps
-                // FIX #121: Also use step-by-step for auto English restore + Enter/Return
-                // This ensures Terminal receives characters before the Enter key
-                BOOL isAutoEnglishWithEnter = (pData->code == vRestoreAndStartNewSession) &&
-                                              (_keycode == KEY_ENTER || _keycode == KEY_RETURN);
-                BOOL useStepByStep = (!isSpotlightTarget) &&
-                                     (_phtvIsCliTarget ||
-                                      vSendKeyStepByStep ||
-                                      appChars.needsStepByStep ||
-                                      isAutoEnglishWithEnter);
+                BOOL useStepByStep = characterSendPlan.useStepByStepCharacterSend;
 #ifdef DEBUG
                 if (isSpotlightTarget) {
                     PHTVSpotlightDebugLog([NSString stringWithFormat:@"willSend stepByStep=%d backspaceCount=%d newCharCount=%d", (int)useStepByStep, (int)pData->backspaceCount, (int)pData->newCharCount]);
@@ -1691,7 +1682,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                             SetCliBlockForMicroseconds(totalBlockUs);
                         }
                     }
-                    if (pData->code == vRestore || pData->code == vRestoreAndStartNewSession) {
+                    if (characterSendPlan.shouldSendRestoreTriggerKey) {
                         #ifdef DEBUG
                         if (pData->code == vRestoreAndStartNewSession) {
                             fprintf(stderr, "[AutoEnglish] PROCESSING RESTORE: backspace=%d, newChar=%d\n",
@@ -1702,7 +1693,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                         // No delay needed before final key
                         SendKeyCode(_keycode | ((_flag & kCGEventFlagMaskAlphaShift) || (_flag & kCGEventFlagMaskShift) ? CAPS_MASK : 0));
                     }
-                    if (pData->code == vRestoreAndStartNewSession) {
+                    if (characterSendPlan.shouldStartNewSessionAfterSend) {
                         startNewSession();
                     }
                 }

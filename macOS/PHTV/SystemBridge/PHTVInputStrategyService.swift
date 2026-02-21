@@ -29,6 +29,29 @@ final class PHTVBackspaceAdjustmentBox: NSObject {
 }
 
 @objcMembers
+final class PHTVCharacterSendPlanBox: NSObject {
+    let deferBackspaceToAX: Bool
+    let useStepByStepBackspace: Bool
+    let useStepByStepCharacterSend: Bool
+    let shouldSendRestoreTriggerKey: Bool
+    let shouldStartNewSessionAfterSend: Bool
+
+    init(
+        deferBackspaceToAX: Bool,
+        useStepByStepBackspace: Bool,
+        useStepByStepCharacterSend: Bool,
+        shouldSendRestoreTriggerKey: Bool,
+        shouldStartNewSessionAfterSend: Bool
+    ) {
+        self.deferBackspaceToAX = deferBackspaceToAX
+        self.useStepByStepBackspace = useStepByStepBackspace
+        self.useStepByStepCharacterSend = useStepByStepCharacterSend
+        self.shouldSendRestoreTriggerKey = shouldSendRestoreTriggerKey
+        self.shouldStartNewSessionAfterSend = shouldStartNewSessionAfterSend
+    }
+}
+
+@objcMembers
 final class PHTVInputStrategyBox: NSObject {
     let isSpecialApp: Bool
     let isPotentialShortcut: Bool
@@ -149,6 +172,43 @@ final class PHTVInputStrategyService: NSObject {
         return PHTVBackspaceAdjustmentBox(
             action: PHTVBackspaceAdjustmentAction.none.rawValue,
             adjustedBackspaceCount: backspaceCount
+        )
+    }
+
+    @objc(characterSendPlanForSpotlightTarget:cliTarget:globalStepByStep:appNeedsStepByStep:keyCode:engineCode:restoreCode:restoreAndStartNewSessionCode:enterKeyCode:returnKeyCode:)
+    class func characterSendPlan(
+        forSpotlightTarget isSpotlightTarget: Bool,
+        cliTarget isCliTarget: Bool,
+        globalStepByStep globalStepByStepEnabled: Bool,
+        appNeedsStepByStep appNeedsStepByStepEnabled: Bool,
+        keyCode: Int32,
+        engineCode: Int32,
+        restoreCode: Int32,
+        restoreAndStartNewSessionCode: Int32,
+        enterKeyCode: Int32,
+        returnKeyCode: Int32
+    ) -> PHTVCharacterSendPlanBox {
+        let isAutoEnglishWithEnter =
+            engineCode == restoreAndStartNewSessionCode &&
+            (keyCode == enterKeyCode || keyCode == returnKeyCode)
+
+        let useStepByStepCharacterSend =
+            !isSpotlightTarget &&
+            (isCliTarget ||
+             globalStepByStepEnabled ||
+             appNeedsStepByStepEnabled ||
+             isAutoEnglishWithEnter)
+
+        let shouldSendRestoreTriggerKey =
+            useStepByStepCharacterSend &&
+            (engineCode == restoreCode || engineCode == restoreAndStartNewSessionCode)
+
+        return PHTVCharacterSendPlanBox(
+            deferBackspaceToAX: isSpotlightTarget,
+            useStepByStepBackspace: !isSpotlightTarget && appNeedsStepByStepEnabled,
+            useStepByStepCharacterSend: useStepByStepCharacterSend,
+            shouldSendRestoreTriggerKey: shouldSendRestoreTriggerKey,
+            shouldStartNewSessionAfterSend: useStepByStepCharacterSend && engineCode == restoreAndStartNewSessionCode
         )
     }
 }
