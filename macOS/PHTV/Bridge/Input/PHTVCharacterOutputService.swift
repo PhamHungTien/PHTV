@@ -86,7 +86,7 @@ final class PHTVCharacterOutputService: NSObject {
             }
         }
         if !willContinueSending && engineCode == vRestoreNewCode {
-            PHTVEngineRuntimeFacade.startNewSession()
+            PHTVEngineDataBridge.startNewSession()
         }
 
         let finalCharSize = willContinueSending ? 16 : outputIndex

@@ -12,6 +12,10 @@ private func phtvCallClearCustomDictionary() {
     clearCustomDictionary()
 }
 
+private func phtvCallStartNewSession() {
+    startNewSession()
+}
+
 @objcMembers
 final class PHTVEngineDataBridge: NSObject {
     class func initializeMacroMap(with data: Data) {
@@ -66,6 +70,10 @@ final class PHTVEngineDataBridge: NSObject {
 
     class func clearCustomDictionary() {
         phtvCallClearCustomDictionary()
+    }
+
+    class func startNewSession() {
+        phtvCallStartNewSession()
     }
 
     private class func hotkeyKeyDisplayLabel(_ keyCode: UInt16) -> String {

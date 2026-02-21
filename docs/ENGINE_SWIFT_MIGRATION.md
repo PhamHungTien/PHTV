@@ -53,7 +53,8 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da bo wrapper macro map init:
   - Swift facade goi truc tiep `phtvLoadMacroMapFromBinary(...)`
 - Da bo wrappers session/custom-dictionary clear:
-  - Swift facade goi truc tiep `startNewSession`, `clearCustomDictionary`
+  - `PHTVEngineDataBridge` goi truc tiep `startNewSession`, `clearCustomDictionary`
+  - Bo pass-through `startNewSession` khoi `PHTVEngineRuntimeFacade`
 - Da bo wrappers dictionary init:
   - Swift facade tao `std.string` truc tiep va goi `initEnglishDictionary`, `initVietnameseDictionary`
 - Da don gian hoa `PHTVEngineRuntimeFacade`:

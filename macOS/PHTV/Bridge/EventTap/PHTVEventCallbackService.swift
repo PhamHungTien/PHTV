@@ -650,7 +650,7 @@ final class PHTVEventCallbackService {
                          ? PHTVEngineRuntimeFacade.capsMask() : 0))
                 }
                 if characterSendPlan.shouldStartNewSessionAfterSend {
-                    PHTVEngineRuntimeFacade.startNewSession()
+                    PHTVEngineDataBridge.startNewSession()
                 }
             }
 

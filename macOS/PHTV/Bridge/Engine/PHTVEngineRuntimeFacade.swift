@@ -638,10 +638,6 @@ func phtvRuntimeQuickEndConsonantEnabled() -> Int32 {
     runtimeQuickEndConsonant
 }
 
-private func phtvCallStartNewSession() {
-    startNewSession()
-}
-
 @objcMembers
 final class PHTVEngineRuntimeFacade: NSObject {
     private static let eventMarker: Int64 = 0x5048_5456 // "PHTV"
@@ -1148,10 +1144,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func fixRecommendBrowser() -> Int32 {
         runtimeFixRecommendBrowser
-    }
-
-    class func startNewSession() {
-        phtvCallStartNewSession()
     }
 
     class func hotkeyDisplayCharacter(_ keyCode: UInt16) -> UInt16 {
