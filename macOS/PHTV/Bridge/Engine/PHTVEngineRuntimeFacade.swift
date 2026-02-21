@@ -433,7 +433,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func hotkeyDisplayCharacter(_ keyCode: UInt16) -> UInt16 {
-        UInt16(phtvEngineHotkeyDisplayCharacter(keyCode))
+        macroKeyCodeToCharacter(UInt32(keyCode) | capsMask())
     }
 
     class func findCodeTableSourceKey(

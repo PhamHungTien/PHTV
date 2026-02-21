@@ -43,6 +43,7 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - Swift facade goi truc tiep `v*` function va da xoa wrappers tuong ung trong `PHTVEngineCxxInterop.hpp`
 - Da port keycode->character macro map sang Swift facade:
   - `macroKeyCodeToCharacter` hien dung bang map Swift (mirror `Vietnamese.cpp`)
+  - `hotkeyDisplayCharacter` hien tai suy ra truc tiep tu mapping Swift
   - da xoa wrapper `phtvEngineMacroKeyCodeToCharacter` trong `PHTVEngineCxxInterop.hpp`
 
 ## Lo trinh migrate

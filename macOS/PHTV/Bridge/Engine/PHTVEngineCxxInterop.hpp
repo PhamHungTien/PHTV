@@ -365,10 +365,6 @@ inline int phtvRuntimeOtherLanguage() noexcept {
     return vOtherLanguage;
 }
 
-inline std::uint16_t phtvEngineHotkeyDisplayCharacter(const std::uint16_t keyCode) noexcept {
-    return static_cast<std::uint16_t>(keyCodeToCharacter(static_cast<Uint32>(keyCode) | CAPS_MASK));
-}
-
 inline bool phtvEngineFindCodeTableSourceKey(const int codeTable,
                                              const std::uint16_t character,
                                              std::uint32_t* outKeyCode,
