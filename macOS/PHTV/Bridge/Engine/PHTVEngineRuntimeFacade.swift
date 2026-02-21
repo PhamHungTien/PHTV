@@ -821,14 +821,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
         vRestoreToRawKeys()
     }
 
-    class func tempOffSpellChecking() {
-        vTempOffSpellChecking()
-    }
-
-    class func tempOffEngineNow() {
-        vTempOffEngine(true)
-    }
-
     class func barrier() {
         OSMemoryBarrier()
     }
@@ -946,10 +938,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
     class func setCheckSpelling(_ value: Int32) {
         runtimeCheckSpelling = value
         OSMemoryBarrier()
-    }
-
-    class func applyCheckSpelling() {
-        vSetCheckSpelling()
     }
 
     class func useModernOrthography() -> Int32 {

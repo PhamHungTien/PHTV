@@ -239,7 +239,7 @@ import Foundation
         }
 
         PHTVEngineRuntimeFacade.setCheckSpelling(spellingEnabled)
-        PHTVEngineRuntimeFacade.applyCheckSpelling()
+        vSetCheckSpelling()
     }
 
     @objc(setDockIconRuntimeVisible:)

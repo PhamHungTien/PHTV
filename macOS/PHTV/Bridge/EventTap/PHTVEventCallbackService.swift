@@ -219,9 +219,9 @@ final class PHTVEventCallbackService {
                 }
 
                 if releaseAction == PHTVModifierReleaseAction.tempOffSpelling.rawValue {
-                    PHTVEngineRuntimeFacade.tempOffSpellChecking()
+                    vTempOffSpellChecking()
                 } else if releaseAction == PHTVModifierReleaseAction.tempOffEngine.rawValue {
-                    PHTVEngineRuntimeFacade.tempOffEngineNow()
+                    vTempOffEngine(true)
                 }
 
                 PHTVModifierRuntimeStateService.setHasJustUsedHotKeyValue(false)
