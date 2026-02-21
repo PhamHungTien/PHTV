@@ -319,4 +319,21 @@ final class PHTVInputStrategyService: NSObject {
             return PHTVSyncKeyAction.none.rawValue
         }
     }
+
+    @objc(shouldBypassSpaceForFigmaWithBundleId:keyCode:backspaceCount:newCharCount:spaceKeyCode:)
+    class func shouldBypassSpaceForFigma(
+        withBundleId bundleId: String?,
+        keyCode: Int32,
+        backspaceCount: Int32,
+        newCharCount: Int32,
+        spaceKeyCode: Int32
+    ) -> Bool {
+        guard keyCode == spaceKeyCode else {
+            return false
+        }
+        guard backspaceCount == 0, newCharCount == 1 else {
+            return false
+        }
+        return bundleId == "com.figma.Desktop"
+    }
 }

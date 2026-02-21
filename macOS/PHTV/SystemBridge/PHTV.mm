@@ -1437,7 +1437,11 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             } else if (pData->code == vWillProcess || pData->code == vRestore || pData->code == vRestoreAndStartNewSession) { //handle result signal
                 // FIGMA FIX: Force pass-through for Space key to support "Hand tool" (Hold Space)
                 // When PHTV consumes Space and sends a synthetic one, it breaks the "hold" state.
-                if (_keycode == KEY_SPACE && pData->backspaceCount == 0 && pData->newCharCount == 1 && [effectiveBundleId isEqualToString:@"com.figma.Desktop"]) {
+                if ([PHTVInputStrategyService shouldBypassSpaceForFigmaWithBundleId:effectiveBundleId
+                                                                             keyCode:(int32_t)_keycode
+                                                                      backspaceCount:(int32_t)pData->backspaceCount
+                                                                        newCharCount:(int32_t)pData->newCharCount
+                                                                         spaceKeyCode:(int32_t)KEY_SPACE]) {
                     return event;
                 }
 
