@@ -9,20 +9,13 @@
 #include "Macro.h"
 #include "Vietnamese.h"
 #include "Engine.h"
-#include <iostream>
 #include <memory.h>
 #include <cstring>
-#include <fstream>
 #include <mutex>
 #include <ctime>
 #include <sstream>
 #include <iomanip>
 #include <random>
-
-#ifdef __APPLE__
-#include <CoreFoundation/CoreFoundation.h>
-#include <ApplicationServices/ApplicationServices.h>
-#endif
 
 using namespace std;
 
@@ -42,7 +35,7 @@ static std::mutex counterMutex;
 
 // Format date/time using custom format string
 // d=day, M=month, y=year, H=hour, m=minute, s=second
-static string formatDateTime(const string& format, bool includeTime) {
+static string formatDateTime(const string& format) {
     time_t now = time(nullptr);
     tm* ltm = localtime(&now);
 
@@ -112,23 +105,23 @@ static string formatDateTime(const string& format, bool includeTime) {
 
 static string getCurrentDate(const string& format) {
     if (format.empty()) {
-        return formatDateTime("dd/MM/yyyy", false);
+        return formatDateTime("dd/MM/yyyy");
     }
-    return formatDateTime(format, false);
+    return formatDateTime(format);
 }
 
 static string getCurrentTime(const string& format) {
     if (format.empty()) {
-        return formatDateTime("HH:mm:ss", true);
+        return formatDateTime("HH:mm:ss");
     }
-    return formatDateTime(format, true);
+    return formatDateTime(format);
 }
 
 static string getCurrentDateTime(const string& format) {
     if (format.empty()) {
-        return formatDateTime("dd/MM/yyyy HH:mm", true);
+        return formatDateTime("dd/MM/yyyy HH:mm");
     }
-    return formatDateTime(format, true);
+    return formatDateTime(format);
 }
 
 static string getRandomFromList(const string& listStr) {
@@ -159,18 +152,6 @@ static string getAndIncrementCounter(const string& prefix) {
     std::lock_guard<std::mutex> lock(counterMutex);
     int value = ++counterValues[prefix];
     return prefix + to_string(value);
-}
-
-// Reset counter for a specific prefix or all counters
-extern "C" {
-void resetSnippetCounter(const char* prefix) {
-    std::lock_guard<std::mutex> lock(counterMutex);
-    if (prefix && strlen(prefix) > 0) {
-        counterValues.erase(prefix);
-    } else {
-        counterValues.clear();
-    }
-}
 }
 
 // Compute dynamic snippet content based on type
