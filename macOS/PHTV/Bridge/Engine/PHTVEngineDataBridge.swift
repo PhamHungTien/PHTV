@@ -77,7 +77,7 @@ final class PHTVEngineDataBridge: NSObject {
     }
 
     private class func hotkeyKeyDisplayLabel(_ keyCode: UInt16) -> String {
-        if keyCode == UInt16(kVK_Space) || Int32(keyCode) == PHTVEngineRuntimeFacade.spaceKeyCode() {
+        if keyCode == UInt16(kVK_Space) || keyCode == KeyCode.space {
             return "␣"
         }
 

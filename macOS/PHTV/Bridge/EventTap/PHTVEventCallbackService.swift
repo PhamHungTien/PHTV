@@ -76,8 +76,8 @@ final class PHTVEventCallbackService {
         if type == .keyDown {
             PHTVTextReplacementDecisionService.handleKeyDownTextReplacementTracking(
                 forKeyCode: Int32(eventKeycode),
-                deleteKeyCode: Int32(PHTVEngineRuntimeFacade.keyDeleteCode()),
-                spaceKeyCode: Int32(PHTVEngineRuntimeFacade.spaceKeyCode()),
+                deleteKeyCode: Int32(KeyCode.delete),
+                spaceKeyCode: Int32(KeyCode.space),
                 sourceStateID: event.getIntegerValueField(.eventSourceStateID))
         }
 
@@ -353,7 +353,7 @@ final class PHTVEventCallbackService {
         )
 
         #if DEBUG
-        if eventKeycode == CGKeyCode(PHTVEngineRuntimeFacade.spaceKeyCode()) {
+        if eventKeycode == CGKeyCode(KeyCode.space) {
             NSLog("[TextReplacement] Engine result for SPACE: code=%d, extCode=%d, backspace=%d, newChar=%d",
                   PHTVEngineRuntimeFacade.engineDataCode(), PHTVEngineRuntimeFacade.engineDataExtCode(),
                   PHTVEngineRuntimeFacade.engineDataBackspaceCount(), PHTVEngineRuntimeFacade.engineDataNewCharCount())
@@ -367,7 +367,7 @@ final class PHTVEventCallbackService {
             } else {
                 NSLog("[AutoEnglish] ⚠️ WARNING: extCode=5 but code=%d (not restore!)", PHTVEngineRuntimeFacade.engineDataCode())
             }
-        } else if eventKeycode == CGKeyCode(PHTVEngineRuntimeFacade.spaceKeyCode()) &&
+        } else if eventKeycode == CGKeyCode(KeyCode.space) &&
                   Int(PHTVEngineRuntimeFacade.engineDataCode()) == PHTVEngineRuntimeFacade.engineDoNothingCode() {
             NSLog("[AutoEnglish] ✗ NO RESTORE on SPACE: code=%d, extCode=%d",
                   PHTVEngineRuntimeFacade.engineDataCode(), PHTVEngineRuntimeFacade.engineDataExtCode())
@@ -405,8 +405,8 @@ final class PHTVEventCallbackService {
             let processSignalPlan = PHTVInputStrategyService.processSignalPlan(
                 forBundleId: effectiveBundleId,
                 keyCode: Int32(eventKeycode),
-                spaceKeyCode: Int32(PHTVEngineRuntimeFacade.spaceKeyCode()),
-                slashKeyCode: Int32(PHTVEngineRuntimeFacade.keySlashCode()),
+                spaceKeyCode: Int32(KeyCode.space),
+                slashKeyCode: Int32(KeyCode.slash),
                 extCode: Int32(PHTVEngineRuntimeFacade.engineDataExtCode()),
                 backspaceCount: Int32(PHTVEngineRuntimeFacade.engineDataBackspaceCount()),
                 newCharCount: Int32(PHTVEngineRuntimeFacade.engineDataNewCharCount()),
@@ -505,7 +505,7 @@ final class PHTVEventCallbackService {
             let shouldEvaluateTextReplacement =
                 PHTVTextReplacementDecisionService.shouldEvaluate(
                     forKeyCode: Int32(eventKeycode),
-                    spaceKeyCode: Int32(PHTVEngineRuntimeFacade.spaceKeyCode()),
+                    spaceKeyCode: Int32(KeyCode.space),
                     backspaceCount: Int32(PHTVEngineRuntimeFacade.engineDataBackspaceCount()),
                     newCharCount: Int32(PHTVEngineRuntimeFacade.engineDataNewCharCount()))
 
@@ -570,8 +570,8 @@ final class PHTVEventCallbackService {
                 engineCode: Int32(PHTVEngineRuntimeFacade.engineDataCode()),
                 restoreCode: Int32(PHTVEngineRuntimeFacade.engineRestoreCode()),
                 restoreAndStartNewSessionCode: Int32(PHTVEngineRuntimeFacade.engineRestoreAndStartNewSessionCode()),
-                enterKeyCode: Int32(PHTVEngineRuntimeFacade.keyEnterCode()),
-                returnKeyCode: Int32(PHTVEngineRuntimeFacade.keyReturnCode()))
+                enterKeyCode: Int32(KeyCode.enter),
+                returnKeyCode: Int32(KeyCode.returnKey))
 
             // Send backspace
             let bsCount = Int(PHTVEngineRuntimeFacade.engineDataBackspaceCount())

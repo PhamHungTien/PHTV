@@ -111,7 +111,7 @@ enum DebugSelfTests {
         let packedValue: UInt32 = 0x1234
         let low = Int(PHTVEngineRuntimeFacade.lowByte(packedValue))
         let high = Int(PHTVEngineRuntimeFacade.hiByte(packedValue))
-        let spaceKey = Int(PHTVEngineRuntimeFacade.spaceKeyCode())
+        let spaceKey = Int(KeyCode.space)
         let maxBuffer = Int(PHTVEngineRuntimeFacade.engineMaxBuffer())
         let capsMask = PHTVEngineRuntimeFacade.capsMask()
         let keyA: UInt32 = 0

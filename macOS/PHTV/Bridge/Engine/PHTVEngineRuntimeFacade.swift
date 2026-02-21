@@ -1214,26 +1214,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
         return macroKeyToCharacterUnshifted[keyCode] ?? 0
     }
 
-    class func keyDeleteCode() -> Int32 {
-        Int32(KeyCode.delete)
-    }
-
-    class func keySlashCode() -> Int32 {
-        Int32(KeyCode.slash)
-    }
-
-    class func keyEnterCode() -> Int32 {
-        Int32(KeyCode.enter)
-    }
-
-    class func keyReturnCode() -> Int32 {
-        Int32(KeyCode.returnKey)
-    }
-
-    class func spaceKeyCode() -> Int32 {
-        Int32(KeyCode.space)
-    }
-
     class func engineDoNothingCode() -> Int32 {
         engineDoNothingCodeValue
     }
