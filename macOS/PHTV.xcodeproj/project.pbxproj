@@ -15,7 +15,6 @@
 		460202712F2814260040B043 /* ServiceManagement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 460202672F2814260040B043 /* ServiceManagement.framework */; };
 		460202732F2814260040B043 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 460202742F2814260040B043 /* Sparkle */; };
 		460203682F2816C90040B043 /* PHTV.icon in Resources */ = {isa = PBXBuildFile; fileRef = 460203672F2816C90040B043 /* PHTV.icon */; };
-		4602036A2F2816C90040B043 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4602036B2F2816C90040B043 /* AppIntents.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,7 +26,6 @@
 		460202652F2814260040B043 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
 		460202672F2814260040B043 /* ServiceManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ServiceManagement.framework; path = System/Library/Frameworks/ServiceManagement.framework; sourceTree = SDKROOT; };
 		460203672F2816C90040B043 /* PHTV.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = PHTV.icon; sourceTree = "<group>"; };
-		4602036B2F2816C90040B043 /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppIntents.framework; path = System/Library/Frameworks/AppIntents.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -57,7 +55,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				460202732F2814260040B043 /* Sparkle in Frameworks */,
-				4602036A2F2816C90040B043 /* AppIntents.framework in Frameworks */,
 				4602026F2F2814260040B043 /* Carbon.framework in Frameworks */,
 				4602026A2F2814260040B043 /* AppKit.framework in Frameworks */,
 				460202712F2814260040B043 /* ServiceManagement.framework in Frameworks */,
@@ -92,7 +89,6 @@
 			isa = PBXGroup;
 			children = (
 				460202602F2814260040B043 /* AppKit.framework */,
-				4602036B2F2816C90040B043 /* AppIntents.framework */,
 				460202652F2814260040B043 /* Carbon.framework */,
 				460202632F2814260040B043 /* Cocoa.framework */,
 				460202622F2814260040B043 /* CoreGraphics.framework */,
@@ -339,9 +335,10 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 104;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = F9XPW22T8M;
-				ENABLE_APP_INTENTS_METADATA_GENERATION = NO;
-				ENABLE_HARDENED_RUNTIME = YES;
+					DEVELOPMENT_TEAM = F9XPW22T8M;
+					ENABLE_APP_INTENTS_METADATA_GENERATION = NO;
+					EXTRACT_APP_INTENTS_METADATA = NO;
+					ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
 				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
@@ -393,9 +390,10 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 104;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = F9XPW22T8M;
-				ENABLE_APP_INTENTS_METADATA_GENERATION = NO;
-				ENABLE_HARDENED_RUNTIME = YES;
+					DEVELOPMENT_TEAM = F9XPW22T8M;
+					ENABLE_APP_INTENTS_METADATA_GENERATION = NO;
+					EXTRACT_APP_INTENTS_METADATA = NO;
+					ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
 				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
