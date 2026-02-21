@@ -24,20 +24,6 @@ extern volatile int vEmojiHotkeyKeyCode;
 extern volatile int vSafeMode;
 extern int vShowIconOnDock;
 
-inline bool phtvEngineInitializeEnglishDictionary(const char *path) {
-    if (!path || path[0] == '\0') {
-        return false;
-    }
-    return initEnglishDictionary(std::string(path));
-}
-
-inline bool phtvEngineInitializeVietnameseDictionary(const char *path) {
-    if (!path || path[0] == '\0') {
-        return false;
-    }
-    return initVietnameseDictionary(std::string(path));
-}
-
 inline void phtvRuntimeBarrier() noexcept {
     __sync_synchronize();
 }

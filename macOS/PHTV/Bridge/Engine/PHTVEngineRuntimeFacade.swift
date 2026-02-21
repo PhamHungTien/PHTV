@@ -405,7 +405,11 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func initializeEnglishDictionary(_ path: UnsafePointer<CChar>) -> Bool {
-        phtvEngineInitializeEnglishDictionary(path)
+        if path[0] == 0 {
+            return false
+        }
+        let cppPath = std.string(path)
+        return initEnglishDictionary(cppPath)
     }
 
     class func englishDictionarySize() -> Int32 {
@@ -413,7 +417,11 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func initializeVietnameseDictionary(_ path: UnsafePointer<CChar>) -> Bool {
-        phtvEngineInitializeVietnameseDictionary(path)
+        if path[0] == 0 {
+            return false
+        }
+        let cppPath = std.string(path)
+        return initVietnameseDictionary(cppPath)
     }
 
     class func vietnameseDictionarySize() -> Int32 {
