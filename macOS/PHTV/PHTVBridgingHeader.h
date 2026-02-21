@@ -13,7 +13,6 @@
 #import <AppKit/AppKit.h>
 
 // SystemBridge
-#import "SystemBridge/PHTVCxxInteropTrial.hpp"
 #import "SystemBridge/PHTVEngineCxxInterop.hpp"
 
 #endif /* PHTVBridgingHeader_h */

@@ -95,10 +95,13 @@ enum DebugSelfTests {
     }
 
     private static func runCxxInteropChecks() {
+        let probe = Int(phtvEngineInteropProbeValue())
+        let sum = Int(phtvEngineInteropAdd(20, 22))
         assertCondition(
-            PHTVCxxInteropTrialService.verify(),
-            "Swift/C++ interop trial should pass"
+            probe == 20260221 && sum == 42,
+            "Swift/C++ interop check should pass"
         )
+        PHTVLogger.shared.debug("[CxxInterop] probe=\(probe), sum=\(sum), valid=true")
     }
 
     private static func makeIsolatedDefaults() -> (UserDefaults, String) {

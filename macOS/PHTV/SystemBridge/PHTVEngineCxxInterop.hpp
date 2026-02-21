@@ -30,6 +30,14 @@ CGEventRef PHTVCallback(CGEventTapProxy proxy,
                         void *refcon);
 void RequestNewSession(void);
 
+inline constexpr int phtvEngineInteropProbeValue() noexcept {
+    return 20260221;
+}
+
+inline int phtvEngineInteropAdd(const int lhs, const int rhs) noexcept {
+    return lhs + rhs;
+}
+
 inline void phtvRuntimeInitializeEventTapCore() noexcept {
     PHTVInit();
 }
