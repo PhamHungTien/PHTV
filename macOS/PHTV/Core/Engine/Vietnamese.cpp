@@ -6,8 +6,10 @@
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
-#include "Vietnamese.h"
-#include "iostream"
+#include "DataType.h"
+#include <iostream>
+#include <map>
+#include <vector>
 using namespace std;
 
 //unicode

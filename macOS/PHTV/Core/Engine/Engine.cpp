@@ -7,10 +7,11 @@
 //
 #include <iostream>
 #include <algorithm>
+#include <map>
 #include <unordered_set>
 #include <string>
 #include "PHTVEngineCBridge.h"
-#include "Vietnamese.h"
+#include "DataType.h"
 #include <string.h>
 #include <list>
 #include <cstdio>
@@ -32,6 +33,27 @@ void vSetCheckSpelling();
 void vTempOffEngine(const bool& off);
 bool vRestoreToRawKeys();
 void vRestoreSessionWithWord(const std::wstring& word);
+
+extern Uint16 douKey[2][2];
+
+extern map<Uint16, vector<vector<Uint16>>> _vowel;
+extern map<Uint16, vector<vector<Uint32>>> _vowelCombine;
+extern map<Uint16, vector<vector<Uint16>>> _vowelForMark;
+extern vector<vector<Uint16>> _consonantD;
+extern vector<vector<Uint16>> _consonantTable;
+extern vector<vector<Uint16>> _endConsonantTable;
+extern vector<Uint16> _standaloneWbad;
+extern vector<vector<Uint16>> _doubleWAllowed;
+
+extern map<Uint32, vector<Uint16>> _codeTable[];
+extern Uint16 _unicodeCompoundMark[];
+
+extern map<Uint32, vector<Uint16>> _quickTelex;
+extern map<Uint16, vector<Uint16>> _quickStartConsonant;
+extern map<Uint16, vector<Uint16>> _quickEndConsonant;
+extern map<Uint32, Uint32> _characterMap;
+
+extern Uint16 keyCodeToCharacter(const Uint32& keyCode);
 
 static int phtvFallbackCheckSpellingValue = 1;
 static int phtvFallbackInputTypeValue = vTelex;

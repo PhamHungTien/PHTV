@@ -7,7 +7,7 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 ## Trang thai hien tai
 
 - Swift files: 140
-- C/C++ headers/sources: 8
+- C/C++ headers/sources: 7
 - Cac file C/C++ con lai tap trung o:
   - `macOS/PHTV/Core/Engine/*`
   - `macOS/PHTV/Core/phtv_mac_keys.h`
@@ -194,6 +194,8 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - `macOS/PHTV/Core/mac.h`
 - Da loai bo `Core/Engine/Engine.h`:
   - Header nay khong con call site ben ngoai; declaration duoc internal hoa trong `Engine.cpp`
+- Da loai bo `Core/Engine/Vietnamese.h`:
+  - Declaration cho bang du lieu tieng Viet duoc internal hoa trong `Engine.cpp`
 
 ## Lo trinh migrate
 
