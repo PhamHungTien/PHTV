@@ -10,6 +10,7 @@ import Foundation
 @objcMembers
 final class PHTVConvertToolHotkeyService: NSObject {
     private static let keyHotKey = "convertToolHotKey"
+    private static let defaultHotkey = Int32(bitPattern: 0xFE0000FE) // EMPTY_HOTKEY
 
     private static let hotkeyKeyMask: UInt32 = 0x00FF
     private static let hotkeyControlMask: UInt32 = 0x0100
@@ -24,7 +25,7 @@ final class PHTVConvertToolHotkeyService: NSObject {
         if defaultsHotkey != 0 {
             return defaultsHotkey
         }
-        return PHTVEngineRuntimeFacade.convertToolDefaultHotKey()
+        return defaultHotkey
     }
 
     class func hasControl(_ hotkey: Int32) -> Bool {

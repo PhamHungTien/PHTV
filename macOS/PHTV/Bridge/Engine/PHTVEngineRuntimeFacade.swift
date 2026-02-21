@@ -361,46 +361,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
         phtvRuntimeStartNewSession()
     }
 
-    class func convertToolDefaultHotKey() -> Int32 {
-        Int32(phtvConvertToolDefaultHotKey())
-    }
-
-    class func convertToolResetOptions() {
-        phtvConvertToolResetOptions()
-    }
-
-    class func convertToolSetOptions(
-        _ dontAlertWhenCompleted: Bool,
-        _ toAllCaps: Bool,
-        _ toAllNonCaps: Bool,
-        _ toCapsFirstLetter: Bool,
-        _ toCapsEachWord: Bool,
-        _ removeMark: Bool,
-        _ fromCode: Int32,
-        _ toCode: Int32,
-        _ hotKey: Int32
-    ) {
-        phtvConvertToolSetOptions(
-            dontAlertWhenCompleted,
-            toAllCaps,
-            toAllNonCaps,
-            toCapsFirstLetter,
-            toCapsEachWord,
-            removeMark,
-            fromCode,
-            toCode,
-            hotKey
-        )
-    }
-
-    class func convertToolNormalizeOptions() {
-        phtvConvertToolNormalizeOptions()
-    }
-
-    class func convertUtf8(_ source: UnsafePointer<CChar>) -> UnsafePointer<CChar>? {
-        phtvEngineConvertUtf8(source)
-    }
-
     class func initializeMacroMap(_ data: UnsafePointer<UInt8>?, _ count: Int32) {
         phtvEngineInitializeMacroMap(data, count)
     }

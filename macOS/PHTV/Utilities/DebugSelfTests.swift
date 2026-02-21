@@ -106,7 +106,7 @@ enum DebugSelfTests {
     }
 
     private static func runConvertToolParityChecks() {
-        let hotKey = PHTVEngineRuntimeFacade.convertToolDefaultHotKey()
+        let hotKey = PHTVEngineDebugInteropFacade.convertToolDefaultHotKey()
         let options: [(Bool, Bool, Bool, Bool, Bool, Int32, Int32)] = [
             (false, false, false, false, false, 0, 0), // identity
             (true, false, false, false, false, 0, 0),  // all caps
@@ -132,8 +132,8 @@ enum DebugSelfTests {
              removeMark,
              fromCode,
              toCode) in options {
-            PHTVEngineRuntimeFacade.convertToolResetOptions()
-            PHTVEngineRuntimeFacade.convertToolSetOptions(
+            PHTVEngineDebugInteropFacade.convertToolResetOptions()
+            PHTVEngineDebugInteropFacade.convertToolSetOptions(
                 false,
                 toAllCaps,
                 toAllNonCaps,
@@ -144,7 +144,7 @@ enum DebugSelfTests {
                 toCode,
                 hotKey
             )
-            PHTVEngineRuntimeFacade.convertToolNormalizeOptions()
+            PHTVEngineDebugInteropFacade.convertToolNormalizeOptions()
 
             let (defaults, suiteName) = makeIsolatedDefaults()
             defaults.set(toAllCaps, forKey: "convertToolToAllCaps")
@@ -170,7 +170,7 @@ enum DebugSelfTests {
 
     private static func legacyConvertToolConvert(_ text: String) -> String {
         text.withCString { source in
-            guard let converted = PHTVEngineRuntimeFacade.convertUtf8(source) else {
+            guard let converted = PHTVEngineDebugInteropFacade.convertUtf8(source) else {
                 return text
             }
             return String(validatingCString: converted) ?? text
