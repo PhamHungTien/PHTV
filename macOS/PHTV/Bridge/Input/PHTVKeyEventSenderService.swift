@@ -44,7 +44,7 @@ class PHTVKeyEventSenderService: NSObject {
     }
 
     @objc class func consumeSyncKeyOnBackspace() {
-        guard PHTVEngineRuntimeFacade.isDoubleCode(PHTVEngineRuntimeFacade.currentCodeTable()) else { return }
+        guard EngineInputClassification.isDoubleCodeTable(PHTVEngineRuntimeFacade.currentCodeTable()) else { return }
         PHTVTypingSyncStateService.consumeSyncKeyOnBackspace()
     }
 
@@ -72,7 +72,7 @@ class PHTVKeyEventSenderService: NSObject {
     @objc class func sendBackspace() {
         sendPhysicalBackspace()
         let codeTable = PHTVEngineRuntimeFacade.currentCodeTable()
-        guard PHTVEngineRuntimeFacade.isDoubleCode(codeTable) else { return }
+        guard EngineInputClassification.isDoubleCodeTable(codeTable) else { return }
         if !PHTVTypingSyncStateService.syncKeyIsEmpty() {
             if PHTVTypingSyncStateService.syncKeyBackValue() > 1 {
                 if !(codeTable == PHTVCodeTableUnicodeComposite.rawValue &&
@@ -105,7 +105,7 @@ class PHTVKeyEventSenderService: NSObject {
         postSyntheticEvent(down)
         postSyntheticEvent(up)
         let codeTable = PHTVEngineRuntimeFacade.currentCodeTable()
-        if PHTVEngineRuntimeFacade.isDoubleCode(codeTable) && !PHTVTypingSyncStateService.syncKeyIsEmpty() {
+        if EngineInputClassification.isDoubleCodeTable(codeTable) && !PHTVTypingSyncStateService.syncKeyIsEmpty() {
             if PHTVTypingSyncStateService.syncKeyBackValue() > 1 {
                 if !(codeTable == PHTVCodeTableUnicodeComposite.rawValue &&
                      PHTVEventRuntimeContextService.appContainsUnicodeCompound()) {
@@ -133,7 +133,7 @@ class PHTVKeyEventSenderService: NSObject {
             PHTVTimingService.spotlightTinyDelay()
         }
         let codeTable = PHTVEngineRuntimeFacade.currentCodeTable()
-        if PHTVEngineRuntimeFacade.isDoubleCode(codeTable) {
+        if EngineInputClassification.isDoubleCodeTable(codeTable) {
             insertKeyLength(1)
         }
     }
@@ -147,7 +147,7 @@ class PHTVKeyEventSenderService: NSObject {
 
         if (data & charCodeMask) == 0 {
             // Direct keycode case
-            if PHTVEngineRuntimeFacade.isDoubleCode(codeTable) {
+            if EngineInputClassification.isDoubleCodeTable(codeTable) {
                 insertKeyLength(1)
             }
             guard let down = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(newChar), keyDown: true),
@@ -243,7 +243,7 @@ class PHTVKeyEventSenderService: NSObject {
 
     @objc class func sendEmptyCharacter() {
         let codeTable = PHTVEngineRuntimeFacade.currentCodeTable()
-        if PHTVEngineRuntimeFacade.isDoubleCode(codeTable) {
+        if EngineInputClassification.isDoubleCodeTable(codeTable) {
             insertKeyLength(1)
         }
         guard let source = eventSource else { return }

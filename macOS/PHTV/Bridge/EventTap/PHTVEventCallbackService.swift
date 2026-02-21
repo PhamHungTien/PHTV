@@ -136,7 +136,7 @@ final class PHTVEventCallbackService {
                     ((eventFlags.contains(.maskShift) || eventFlags.contains(.maskAlphaShift))
                      ? EngineBitMask.caps : 0)
                 let keyCharacter = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(keyWithCaps)
-                let isNavigationKey = PHTVEngineRuntimeFacade.isNavigationKey(eventKeycode)
+                let isNavigationKey = EngineInputClassification.isNavigationKey(eventKeycode)
                 let shouldPrime = PHTVEventContextBridgeService.shouldPrimeUppercaseOnKeyDown(
                     withFlags: eventFlags.rawValue,
                     keyCode: eventKeycode,
@@ -385,7 +385,7 @@ final class PHTVEventCallbackService {
 
         if signalAction == PHTVEngineSignalAction.doNothing.rawValue {
             // Navigation keys: trigger session restore to support keyboard-based edit-in-place
-            if PHTVEngineRuntimeFacade.isNavigationKey(eventKeycode) {
+            if EngineInputClassification.isNavigationKey(eventKeycode) {
                 // TryToRestoreSessionFromAX -- commented out
             }
 

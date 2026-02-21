@@ -70,6 +70,7 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - Bo wrappers mask constants (`capsMask`, `charCodeMask`, `pureCharacterMask`); call site dung hang `EngineBitMask`
   - Bo wrappers packed-data helpers (`lowByte`, `hiByte`, `unicodeCompoundMarkAt`); call site dung utility `EnginePackedData`
   - Bo wrappers engine signal constants (`engineDoNothingCode`, `engineWillProcessCode`, `engineRestoreCode`, `engineReplaceMacroCode`, `engineRestoreAndStartNewSessionCode`, `engineMaxBuffer`); call site dung hang `EngineSignalCode`
+  - Bo wrappers input classification (`isDoubleCode`, `isNavigationKey`); call site dung utility `EngineInputClassification`
 - Da bo wrappers key-event forwarding:
   - Swift facade goi truc tiep `vKeyHandleEvent` va `vEnglishMode`
 - Da bo wrappers code-table lookup:

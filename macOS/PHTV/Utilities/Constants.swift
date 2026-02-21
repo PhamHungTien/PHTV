@@ -195,6 +195,28 @@ enum EngineSignalCode {
     static let maxBuffer: Int32 = 32
 }
 
+enum EngineInputClassification {
+    private static let navigationKeyCodes: Set<UInt16> = [
+        KeyCode.leftArrow,
+        KeyCode.rightArrow,
+        KeyCode.upArrow,
+        KeyCode.downArrow,
+        KeyCode.home,
+        KeyCode.end,
+        KeyCode.pageUp,
+        KeyCode.pageDown
+    ]
+
+    static func isDoubleCodeTable(_ codeTable: Int32) -> Bool {
+        codeTable == Int32(PHTVCodeTableVNIWindows.rawValue) ||
+        codeTable == Int32(PHTVCodeTableUnicodeComposite.rawValue)
+    }
+
+    static func isNavigationKey(_ keyCode: UInt16) -> Bool {
+        navigationKeyCodes.contains(keyCode)
+    }
+}
+
 // MARK: - Key Codes
 
 enum KeyCode {

@@ -269,11 +269,11 @@ final class PHTVCharacterOutputService: NSObject {
         if (tempChar & pureCharMask) != 0 {
             newCharString[outputIndex] = UInt16(tempChar & 0xFFFF)
             outputIndex += 1
-            if PHTVEngineRuntimeFacade.isDoubleCode(Int32(codeTable)) {
+            if EngineInputClassification.isDoubleCodeTable(Int32(codeTable)) {
                 PHTVKeyEventSenderService.insertKeyLength(1)
             }
         } else if (tempChar & charCodeMask) == 0 {
-            if PHTVEngineRuntimeFacade.isDoubleCode(Int32(codeTable)) {
+            if EngineInputClassification.isDoubleCodeTable(Int32(codeTable)) {
                 PHTVKeyEventSenderService.insertKeyLength(1)
             }
             newCharString[outputIndex] = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(tempChar)

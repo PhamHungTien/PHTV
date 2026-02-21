@@ -640,16 +640,6 @@ func phtvRuntimeQuickEndConsonantEnabled() -> Int32 {
 
 @objcMembers
 final class PHTVEngineRuntimeFacade: NSObject {
-    private static let navigationKeyCodes: Set<UInt16> = [
-        KeyCode.leftArrow,
-        KeyCode.rightArrow,
-        KeyCode.upArrow,
-        KeyCode.downArrow,
-        KeyCode.home,
-        KeyCode.end,
-        KeyCode.pageUp,
-        KeyCode.pageDown
-    ]
     // Mirror keyCodeToCharacter mapping in Core/Engine/Vietnamese.cpp.
     private static let macroKeyToCharacterUnshifted: [UInt16: UInt16] = [
         0: 0x0061, 11: 0x0062, 8: 0x0063, 2: 0x0064, 14: 0x0065, 3: 0x0066, 5: 0x0067, 4: 0x0068,
@@ -808,10 +798,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
     class func setCurrentCodeTable(_ codeTable: Int32) {
         runtimeCodeTable = codeTable
         OSMemoryBarrier()
-    }
-
-    class func isDoubleCode(_ codeTable: Int32) -> Bool {
-        codeTable == 2 || codeTable == 3
     }
 
     class func isSmartSwitchKeyEnabled() -> Bool {
@@ -1183,7 +1169,4 @@ final class PHTVEngineRuntimeFacade: NSObject {
         return UInt32(macroData[safeIndex])
     }
 
-    class func isNavigationKey(_ keyCode: UInt16) -> Bool {
-        navigationKeyCodes.contains(keyCode)
-    }
 }
