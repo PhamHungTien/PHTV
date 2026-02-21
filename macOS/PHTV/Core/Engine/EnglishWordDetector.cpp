@@ -26,6 +26,7 @@
 #include <cstdio>
 
 #include "../phtv_mac_keys.h"
+#include "PHTVEngineCBridge.h"
 
 using namespace std;
 
@@ -73,29 +74,6 @@ static volatile int customEnglishWordCountCache = 0;
 static volatile int customVietnameseWordCountCache = 0;
 static std::unordered_set<std::string> customEnglishWordsFallback;
 static std::unordered_set<std::string> customVietnameseWordsFallback;
-
-extern "C" void phtvCustomDictionaryClear();
-extern "C" void phtvCustomDictionaryLoadJSON(const char* jsonData, int length);
-extern "C" int phtvCustomDictionaryEnglishCount();
-extern "C" int phtvCustomDictionaryVietnameseCount();
-extern "C" int phtvCustomDictionaryContainsEnglishWord(const char* wordCString);
-extern "C" int phtvCustomDictionaryContainsVietnameseWord(const char* wordCString);
-extern "C" int phtvDictionaryInitEnglish(const char* filePath);
-extern "C" int phtvDictionaryInitVietnamese(const char* filePath);
-extern "C" int phtvDictionaryIsEnglishInitialized();
-extern "C" int phtvDictionaryEnglishWordCount();
-extern "C" int phtvDictionaryVietnameseWordCount();
-extern "C" int phtvDictionaryContainsEnglishIndices(const uint8_t* indices, int length);
-extern "C" int phtvDictionaryContainsVietnameseIndices(const uint8_t* indices, int length);
-extern "C" void phtvDictionaryClear();
-extern "C" int phtvDetectorShouldRestoreEnglishWord(const Uint32* keyStates, int stateIndex);
-extern "C" int phtvDetectorIsEnglishWordUtf8(const char* wordCString);
-extern "C" int phtvDetectorIsEnglishWordFromKeyStates(const Uint32* keyStates, int stateIndex);
-extern "C" int phtvDetectorIsVietnameseWordFromKeyStates(const Uint32* keyStates, int stateIndex);
-extern "C" int phtvDetectorKeyStatesToAscii(const Uint32* keyStates,
-                                             int count,
-                                             char* outputBuffer,
-                                             int outputBufferSize);
 
 static void initKcLookup() {
     if (kcInit) return;
