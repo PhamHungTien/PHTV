@@ -66,6 +66,7 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - Bo wrappers pass-through `applyCheckSpelling`, `tempOffSpellChecking`, `tempOffEngineNow`; call site goi truc tiep C API
   - Bo wrappers key-event/session forwarding (`handleMouseDown`, `handleKeyboardKeyDown`, `handleEnglishModeKeyDown`, `primeUpperCaseFirstChar`, `restoreToRawKeys`, `barrier`); call site goi truc tiep C API/`OSMemoryBarrier`
   - Bo wrapper `notifyTableCodeChanged`; call site tu tai nap macro binary qua `PHTVEngineDataBridge`
+  - Bo wrapper `eventMarkerValue`; call site dung chung hang `EventSourceMarker.phtv`
 - Da bo wrappers key-event forwarding:
   - Swift facade goi truc tiep `vKeyHandleEvent` va `vEnglishMode`
 - Da bo wrappers code-table lookup:

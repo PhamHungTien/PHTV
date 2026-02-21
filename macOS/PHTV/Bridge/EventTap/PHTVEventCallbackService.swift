@@ -66,7 +66,7 @@ final class PHTVEventCallbackService {
         _ = tapHealthOk
 
         // Skip events injected by PHTV itself (marker-based)
-        if event.getIntegerValueField(.eventSourceUserData) == PHTVEngineRuntimeFacade.eventMarkerValue() {
+        if event.getIntegerValueField(.eventSourceUserData) == EventSourceMarker.phtv {
             return Unmanaged.passRetained(event)
         }
 

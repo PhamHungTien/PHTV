@@ -640,7 +640,6 @@ func phtvRuntimeQuickEndConsonantEnabled() -> Int32 {
 
 @objcMembers
 final class PHTVEngineRuntimeFacade: NSObject {
-    private static let eventMarker: Int64 = 0x5048_5456 // "PHTV"
     private static let unicodeCompoundMarks: [UInt16] = [0x0301, 0x0300, 0x0309, 0x0303, 0x0323]
     // Mirror constants in Core/Engine/DataType.h.
     private static let engineCapsMask: UInt32 = 0x0001_0000
@@ -771,10 +770,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
     @objc class func initializeAndGetKeyHookState() {
         let rawState = vKeyInit()
         engineDataPointer = rawState?.assumingMemoryBound(to: vKeyHookState.self)
-    }
-
-    class func eventMarkerValue() -> Int64 {
-        eventMarker
     }
 
     class func safeModeEnabled() -> Bool {

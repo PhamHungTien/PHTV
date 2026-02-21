@@ -156,6 +156,10 @@ enum MacroUpdateAction {
     static let edited = "edited"
 }
 
+enum EventSourceMarker {
+    static let phtv: Int64 = 0x5048_5456 // "PHTV"
+}
+
 // MARK: - Key Codes
 
 enum KeyCode {
