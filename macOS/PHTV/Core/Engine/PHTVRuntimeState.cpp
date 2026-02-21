@@ -24,8 +24,5 @@ volatile int vAllowConsonantZFWJ = 1;
 volatile int vQuickStartConsonant = 0;
 volatile int vQuickEndConsonant = 0;
 
-// Restore to raw keys (customizable key)
-volatile int vRestoreOnEscape = 1; //enable restore to raw keys feature (default: ON)
-
 // Auto restore English word feature
 volatile int vAutoRestoreEnglishWord = 1; //auto restore English words (default: ON)

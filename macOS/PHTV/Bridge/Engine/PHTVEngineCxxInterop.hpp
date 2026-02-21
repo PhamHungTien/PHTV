@@ -26,7 +26,6 @@ extern volatile int vUpperCaseExcludedForCurrentApp __attribute__((swift_attr("n
 extern volatile int vAllowConsonantZFWJ __attribute__((swift_attr("nonisolated(unsafe)")));
 extern volatile int vQuickStartConsonant __attribute__((swift_attr("nonisolated(unsafe)")));
 extern volatile int vQuickEndConsonant __attribute__((swift_attr("nonisolated(unsafe)")));
-extern volatile int vRestoreOnEscape __attribute__((swift_attr("nonisolated(unsafe)")));
 extern volatile int vAutoRestoreEnglishWord __attribute__((swift_attr("nonisolated(unsafe)")));
 
 #endif

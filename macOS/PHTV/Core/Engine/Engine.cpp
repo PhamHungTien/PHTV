@@ -16,6 +16,13 @@
 
 using namespace std;
 
+extern "C" int phtvRuntimeRestoreOnEscapeEnabled();
+
+extern "C" __attribute__((weak)) int phtvRuntimeRestoreOnEscapeEnabled() {
+    // Standalone regression binary fallback: keep restore feature enabled by default.
+    return 1;
+}
+
 static vector<Uint8> _charKeyCode = {
     KEY_BACKQUOTE, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0, KEY_MINUS, KEY_EQUALS,
     KEY_LEFT_BRACKET, KEY_RIGHT_BRACKET, KEY_BACK_SLASH,
@@ -2007,7 +2014,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
     // NEW FEATURE: Restore key - ESC only
     // Note: Modifier keys (Option, Control) are handled in PHTV.mm via kCGEventFlagsChanged
     // We ONLY handle ESC key here to avoid conflicts with typing (e.g. VNI number keys)
-    if (vRestoreOnEscape && _index > 0 && data == KEY_ESC) {
+    if (phtvRuntimeRestoreOnEscapeEnabled() && _index > 0 && data == KEY_ESC) {
         if (restoreToRawKeys()) {
             // Successfully restored - let the engine handle vRestore code
             // Don't call startNewSession() here as it will clear hCode

@@ -125,13 +125,6 @@ extern volatile int vQuickStartConsonant;
 extern volatile int vQuickEndConsonant;
 
 /**
- * Restore to raw keys feature (default: ON)
- * When enabled, pressing ESC (or custom key) will restore typed text to raw keys
- * (user → úẻ → restore key → user)
- */
-extern volatile int vRestoreOnEscape;
-
-/**
  * Auto restore English word feature
  * When enabled, automatically restores English words when typed in Vietnamese mode
  * Example: typing "tẻminal" → restores to "terminal"

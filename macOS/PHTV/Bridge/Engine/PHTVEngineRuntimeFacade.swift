@@ -36,6 +36,7 @@ nonisolated(unsafe) private var runtimeRememberCode: Int32 = 1
 nonisolated(unsafe) private var runtimeOtherLanguage: Int32 = 1
 nonisolated(unsafe) private var runtimeTempOffSpelling: Int32 = 0
 nonisolated(unsafe) private var runtimeTempOffEngine: Int32 = 0
+nonisolated(unsafe) private var runtimeRestoreOnEscape: Int32 = 1
 nonisolated(unsafe) private var runtimeCustomEscapeKey: Int32 = 0
 nonisolated(unsafe) private var runtimePauseKeyEnabled: Int32 = 0
 nonisolated(unsafe) private var runtimePauseKey: Int32 = Int32(KeyCode.leftOption)
@@ -542,6 +543,11 @@ func phtvFindMacroContentForNormalizedKeys(
     return requiredLength
 }
 
+@_cdecl("phtvRuntimeRestoreOnEscapeEnabled")
+func phtvRuntimeRestoreOnEscapeEnabled() -> Int32 {
+    runtimeRestoreOnEscape
+}
+
 private func phtvCallStartNewSession() {
     startNewSession()
 }
@@ -955,11 +961,11 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func restoreOnEscape() -> Int32 {
-        Int32(vRestoreOnEscape)
+        runtimeRestoreOnEscape
     }
 
     class func setRestoreOnEscape(_ value: Int32) {
-        vRestoreOnEscape = value
+        runtimeRestoreOnEscape = value
         OSMemoryBarrier()
     }
 

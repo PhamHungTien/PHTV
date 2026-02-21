@@ -92,6 +92,10 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - `vTempOffSpelling`, `vTempOffPHTV`
   - `vCustomEscapeKey`, `vPauseKeyEnabled`, `vPauseKey`
   - Da bo cac extern tuong ung khoi `PHTVEngineCxxInterop.hpp` va `Core/Engine/Engine.h`, dong thoi xoa dinh nghia khoi `Core/Engine/PHTVRuntimeState.cpp`
+- Da dua `vRestoreOnEscape` sang Swift storage:
+  - Them C bridge `phtvRuntimeRestoreOnEscapeEnabled()` do `PHTVEngineRuntimeFacade.swift` cung cap
+  - `Engine.cpp` doc runtime setting qua bridge thay vi global C++
+  - Giu weak fallback trong `Engine.cpp` de regression binary standalone (khong link Swift) van chay
 
 ## Lo trinh migrate
 
