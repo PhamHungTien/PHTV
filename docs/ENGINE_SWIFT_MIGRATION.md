@@ -77,8 +77,10 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - Bo wrapper `macroKeyCodeToCharacter`; call site dung utility `EngineMacroKeyMap`
   - Bo wrappers code-table lookup (`findCodeTableSourceKey`, `codeTableVariantCount`, `codeTableCharacterForKey`); call site dung utility `EngineCodeTableLookup`
   - Tach snippet runtime (`date/time/random/counter`) sang utility `EngineMacroSnippetRuntime`
-- Da bo wrappers key-event forwarding:
-  - Swift facade goi truc tiep `vKeyHandleEvent` va `vEnglishMode`
+- Da chuyen callsite key-event forwarding sang C bridge:
+  - Swift facade goi `phtvEngineHandleEvent` va `phtvEngineHandleEnglishMode` thay vi goi truc tiep C++ API
+- Da chuyen nhom control API engine sang C bridge `phtvEngine*`:
+  - `primeUpperCaseFirstChar`, `restoreToRawKeys`, `tempOffSpellChecking`, `tempOffEngine`, `setCheckSpelling`, `startNewSession`
 - Da bo wrappers code-table lookup:
   - Swift facade mang `_codeTable` data sang Swift de tra `findCodeTableSourceKey` / `variantCount` / `characterForKey`
 - Da dua built-in dictionary runtime (English/Vietnamese binary trie) sang Swift bridge:

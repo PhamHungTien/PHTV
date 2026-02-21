@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <unordered_set>
 #include "Engine.h"
+#include "PHTVEngineCBridge.h"
 #include "Vietnamese.h"
 #include "EnglishWordDetector.h"
 #include <string.h>
@@ -2930,4 +2931,47 @@ void vRestoreSessionWithWord(const wstring& word) {
             vKeyHandleEvent(vKeyEvent::Keyboard, vKeyEventState::KeyDown, keyCode, isCaps ? 1 : 0, false);
         }
     }
+}
+
+extern "C" void phtvEngineHandleEvent(int event, int state, uint16_t data, uint8_t capsStatus, int otherControlKey) {
+    vKeyHandleEvent(
+        static_cast<vKeyEvent>(event),
+        static_cast<vKeyEventState>(state),
+        static_cast<Uint16>(data),
+        static_cast<Uint8>(capsStatus),
+        otherControlKey != 0
+    );
+}
+
+extern "C" void phtvEngineHandleEnglishMode(int state, uint16_t data, int isCaps, int otherControlKey) {
+    vEnglishMode(
+        static_cast<vKeyEventState>(state),
+        static_cast<Uint16>(data),
+        isCaps != 0,
+        otherControlKey != 0
+    );
+}
+
+extern "C" void phtvEnginePrimeUpperCaseFirstChar(void) {
+    vPrimeUpperCaseFirstChar();
+}
+
+extern "C" int phtvEngineRestoreToRawKeys(void) {
+    return vRestoreToRawKeys() ? 1 : 0;
+}
+
+extern "C" void phtvEngineTempOffSpellChecking(void) {
+    vTempOffSpellChecking();
+}
+
+extern "C" void phtvEngineTempOff(int off) {
+    vTempOffEngine(off != 0);
+}
+
+extern "C" void phtvEngineSetCheckSpelling(void) {
+    vSetCheckSpelling();
+}
+
+extern "C" void phtvEngineStartNewSession(void) {
+    startNewSession();
 }

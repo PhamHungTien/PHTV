@@ -13,7 +13,7 @@ private func phtvCallClearCustomDictionary() {
 }
 
 private func phtvCallStartNewSession() {
-    startNewSession()
+    phtvEngineStartNewSession()
 }
 
 @objcMembers

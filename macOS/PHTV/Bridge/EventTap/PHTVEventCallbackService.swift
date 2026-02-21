@@ -18,8 +18,8 @@ final class PHTVEventCallbackService {
     private static let kAppSwitchCacheDurationMs: UInt64 = 100
     private static let kTextReplacementDeleteWindowMs: UInt64 = 30000
     private static let kAppCharacteristicsCacheMaxAgeMs: UInt64 = 10000
-    private static let keyEventKeyboard = vKeyEvent(rawValue: 0)
-    private static let keyEventStateKeyDown = vKeyEventState(rawValue: 0)
+    private static let keyEventKeyboard: Int32 = Int32(PHTV_ENGINE_EVENT_KEYBOARD)
+    private static let keyEventStateKeyDown: Int32 = Int32(PHTV_ENGINE_EVENT_STATE_KEY_DOWN)
     #if DEBUG
     private static let kDebugLogThrottleMs: UInt64 = 500
     #endif
@@ -146,7 +146,7 @@ final class PHTVEventCallbackService {
                     uppercaseEnabled: Int32(PHTVEngineRuntimeFacade.upperCaseFirstChar()),
                     uppercaseExcluded: Int32(PHTVEngineRuntimeFacade.upperCaseExcludedForCurrentApp()))
                 if shouldPrime {
-                    vPrimeUpperCaseFirstChar()
+                    phtvEnginePrimeUpperCaseFirstChar()
                 }
             }
 
@@ -196,7 +196,7 @@ final class PHTVEventCallbackService {
                 // Releasing modifiers - check for restore modifier key first
                 if shouldAttemptRestore {
                     // Restore modifier released without any other key press - trigger restore
-                    if vRestoreToRawKeys() {
+                    if phtvEngineRestoreToRawKeys() != 0 {
                         // Successfully restored - pData now contains restore info
                         // Send backspaces to delete Vietnamese characters
                         let bsCount = Int(PHTVEngineRuntimeFacade.engineDataBackspaceCount())
@@ -221,9 +221,9 @@ final class PHTVEventCallbackService {
                 }
 
                 if releaseAction == PHTVModifierReleaseAction.tempOffSpelling.rawValue {
-                    vTempOffSpellChecking()
+                    phtvEngineTempOffSpellChecking()
                 } else if releaseAction == PHTVModifierReleaseAction.tempOffEngine.rawValue {
-                    vTempOffEngine(true)
+                    phtvEngineTempOff(1)
                 }
 
                 PHTVModifierRuntimeStateService.setHasJustUsedHotKeyValue(false)
@@ -253,11 +253,11 @@ final class PHTVEventCallbackService {
         if currentLanguage == 0 {
             if PHTVEngineRuntimeFacade.useMacro() != 0 && PHTVEngineRuntimeFacade.useMacroInEnglishMode() != 0 &&
                type == .keyDown {
-                vEnglishMode(
+                phtvEngineHandleEnglishMode(
                     keyEventStateKeyDown,
                     eventKeycode,
-                    eventFlags.contains(.maskShift) || eventFlags.contains(.maskAlphaShift),
-                    PHTVEventContextBridgeService.hasOtherControlKey(withFlags: eventFlags.rawValue))
+                    (eventFlags.contains(.maskShift) || eventFlags.contains(.maskAlphaShift)) ? 1 : 0,
+                    PHTVEventContextBridgeService.hasOtherControlKey(withFlags: eventFlags.rawValue) ? 1 : 0)
 
                 if PHTVEngineRuntimeFacade.engineDataCode() == EngineSignalCode.replaceMacro {
                     _ = PHTVEventContextBridgeService.prepareTargetContextAndConfigureRuntime(
@@ -346,12 +346,12 @@ final class PHTVEventCallbackService {
         // Send event signal to Engine
         let capsStatus: UInt8 = eventFlags.contains(.maskShift) ? 1
             : (eventFlags.contains(.maskAlphaShift) ? 2 : 0)
-        vKeyHandleEvent(
+        phtvEngineHandleEvent(
             keyEventKeyboard,
             keyEventStateKeyDown,
             eventKeycode,
             capsStatus,
-            PHTVEventContextBridgeService.hasOtherControlKey(withFlags: eventFlags.rawValue))
+            PHTVEventContextBridgeService.hasOtherControlKey(withFlags: eventFlags.rawValue) ? 1 : 0)
 
         #if DEBUG
         if eventKeycode == CGKeyCode(KeyCode.space) {

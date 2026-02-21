@@ -14,8 +14,8 @@ import Foundation
 final class PHTVEngineSessionService: NSObject {
 
     private static let kSyncKeyReserveSize: Int32 = 256
-    private static let keyEventMouse = vKeyEvent(rawValue: 1)
-    private static let keyEventStateMouseDown = vKeyEventState(rawValue: 2)
+    private static let keyEventMouse: Int32 = Int32(PHTV_ENGINE_EVENT_MOUSE)
+    private static let keyEventStateMouseDown: Int32 = Int32(PHTV_ENGINE_EVENT_STATE_MOUSE_DOWN)
 
     @objc class func boot() {
         PHTVCoreSettingsBootstrapService.loadFromUserDefaults()
@@ -52,7 +52,7 @@ final class PHTVEngineSessionService: NSObject {
         // - _specialChar and _typingStates (critical for typing state)
         // - vCheckSpelling restoration
         // - _willTempOffEngine flag
-        vKeyHandleEvent(keyEventMouse, keyEventStateMouseDown, 0, 0, false)
+        phtvEngineHandleEvent(keyEventMouse, keyEventStateMouseDown, 0, 0, 0)
 
         let currentCodeTable = PHTVEngineRuntimeFacade.currentCodeTable()
         let sessionResetTransition = PHTVHotkeyService.sessionResetTransition(
@@ -66,7 +66,7 @@ final class PHTVEngineSessionService: NSObject {
             PHTVTypingSyncStateService.clearSyncKey()
         }
         if sessionResetTransition.shouldPrimeUppercaseFirstChar {
-            vPrimeUpperCaseFirstChar()
+            phtvEnginePrimeUpperCaseFirstChar()
         }
         PHTVModifierRuntimeStateService.applySessionResetTransition(sessionResetTransition)
 
