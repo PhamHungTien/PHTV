@@ -27,6 +27,25 @@ private struct MacroLookupEntry {
 
 nonisolated(unsafe) private var macroLookupMap: [[UInt32]: MacroLookupEntry] = [:]
 nonisolated(unsafe) private var engineDataPointer: UnsafeMutablePointer<vKeyHookState>?
+nonisolated(unsafe) private var runtimeLanguage: Int32 = 1
+nonisolated(unsafe) private var runtimeSwitchKeyStatus: Int32 = Int32(Defaults.defaultSwitchKeyStatus)
+nonisolated(unsafe) private var runtimeFixRecommendBrowser: Int32 = 1
+nonisolated(unsafe) private var runtimeUseMacroInEnglishMode: Int32 = 0
+nonisolated(unsafe) private var runtimeUseSmartSwitchKey: Int32 = 1
+nonisolated(unsafe) private var runtimeRememberCode: Int32 = 1
+nonisolated(unsafe) private var runtimeOtherLanguage: Int32 = 1
+nonisolated(unsafe) private var runtimeTempOffSpelling: Int32 = 0
+nonisolated(unsafe) private var runtimeTempOffEngine: Int32 = 0
+nonisolated(unsafe) private var runtimeCustomEscapeKey: Int32 = 0
+nonisolated(unsafe) private var runtimePauseKeyEnabled: Int32 = 0
+nonisolated(unsafe) private var runtimePauseKey: Int32 = Int32(KeyCode.leftOption)
+nonisolated(unsafe) private var runtimeSendKeyStepByStep: Int32 = 0
+nonisolated(unsafe) private var runtimeEnableEmojiHotkey: Int32 = 1
+nonisolated(unsafe) private var runtimeEmojiHotkeyModifiers: Int32 = 1 << 20
+nonisolated(unsafe) private var runtimeEmojiHotkeyKeyCode: Int32 = Int32(KeyCode.eKey)
+nonisolated(unsafe) private var runtimeShowIconOnDock: Int32 = 0
+nonisolated(unsafe) private var runtimePerformLayoutCompat: Int32 = 0
+nonisolated(unsafe) private var runtimeSafeMode: Int32 = 0
 private let macroCharacterToKeyState: [UInt16: UInt32] = {
     var mapping: [UInt16: UInt32] = [:]
     let capsMask = PHTVEngineRuntimeFacade.capsMask()
@@ -727,33 +746,33 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func safeModeEnabled() -> Bool {
-        vSafeMode != 0
+        runtimeSafeMode != 0
     }
 
     class func rememberCode() -> Int32 {
-        Int32(vRememberCode)
+        runtimeRememberCode
     }
 
     class func setRememberCode(_ value: Int32) {
-        vRememberCode = value
+        runtimeRememberCode = value
         OSMemoryBarrier()
     }
 
     class func currentLanguage() -> Int32 {
-        Int32(vLanguage)
+        runtimeLanguage
     }
 
     class func setCurrentLanguage(_ language: Int32) {
-        vLanguage = language
+        runtimeLanguage = language
         OSMemoryBarrier()
     }
 
     class func otherLanguageMode() -> Int32 {
-        Int32(vOtherLanguage)
+        runtimeOtherLanguage
     }
 
     class func setOtherLanguageMode(_ value: Int32) {
-        vOtherLanguage = value
+        runtimeOtherLanguage = value
         OSMemoryBarrier()
     }
 
@@ -780,20 +799,20 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func isSmartSwitchKeyEnabled() -> Bool {
-        vUseSmartSwitchKey != 0
+        runtimeUseSmartSwitchKey != 0
     }
 
     class func setSmartSwitchKeyEnabled(_ enabled: Bool) {
-        vUseSmartSwitchKey = enabled ? 1 : 0
+        runtimeUseSmartSwitchKey = enabled ? 1 : 0
         OSMemoryBarrier()
     }
 
     class func isSendKeyStepByStepEnabled() -> Bool {
-        vSendKeyStepByStep != 0
+        runtimeSendKeyStepByStep != 0
     }
 
     class func setSendKeyStepByStepEnabled(_ enabled: Bool) {
-        vSendKeyStepByStep = enabled ? 1 : 0
+        runtimeSendKeyStepByStep = enabled ? 1 : 0
         OSMemoryBarrier()
     }
 
@@ -802,21 +821,21 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func switchKeyStatus() -> Int32 {
-        Int32(vSwitchKeyStatus)
+        runtimeSwitchKeyStatus
     }
 
     class func setSwitchKeyStatus(_ status: Int32) {
-        vSwitchKeyStatus = status
+        runtimeSwitchKeyStatus = status
         OSMemoryBarrier()
     }
 
     class func setShowIconOnDock(_ visible: Bool) {
-        vShowIconOnDock = visible ? 1 : 0
+        runtimeShowIconOnDock = visible ? 1 : 0
         OSMemoryBarrier()
     }
 
     class func showIconOnDock() -> Int32 {
-        Int32(vShowIconOnDock)
+        runtimeShowIconOnDock
     }
 
     class func upperCaseFirstChar() -> Int32 {
@@ -882,11 +901,11 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func useMacroInEnglishMode() -> Int32 {
-        Int32(vUseMacroInEnglishMode)
+        runtimeUseMacroInEnglishMode
     }
 
     class func setUseMacroInEnglishMode(_ value: Int32) {
-        vUseMacroInEnglishMode = value
+        runtimeUseMacroInEnglishMode = value
         OSMemoryBarrier()
     }
 
@@ -927,11 +946,11 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func performLayoutCompat() -> Int32 {
-        Int32(vPerformLayoutCompat)
+        runtimePerformLayoutCompat
     }
 
     class func setPerformLayoutCompat(_ value: Int32) {
-        vPerformLayoutCompat = value
+        runtimePerformLayoutCompat = value
         OSMemoryBarrier()
     }
 
@@ -945,29 +964,29 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func customEscapeKey() -> Int32 {
-        Int32(vCustomEscapeKey)
+        runtimeCustomEscapeKey
     }
 
     class func setCustomEscapeKey(_ value: Int32) {
-        vCustomEscapeKey = value
+        runtimeCustomEscapeKey = value
         OSMemoryBarrier()
     }
 
     class func pauseKeyEnabled() -> Int32 {
-        Int32(vPauseKeyEnabled)
+        runtimePauseKeyEnabled
     }
 
     class func setPauseKeyEnabled(_ value: Int32) {
-        vPauseKeyEnabled = value
+        runtimePauseKeyEnabled = value
         OSMemoryBarrier()
     }
 
     class func pauseKey() -> Int32 {
-        Int32(vPauseKey)
+        runtimePauseKey
     }
 
     class func setPauseKey(_ value: Int32) {
-        vPauseKey = value
+        runtimePauseKey = value
         OSMemoryBarrier()
     }
 
@@ -981,21 +1000,21 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func enableEmojiHotkey() -> Int32 {
-        Int32(vEnableEmojiHotkey)
+        runtimeEnableEmojiHotkey
     }
 
     class func emojiHotkeyModifiers() -> Int32 {
-        Int32(vEmojiHotkeyModifiers)
+        runtimeEmojiHotkeyModifiers
     }
 
     class func emojiHotkeyKeyCode() -> Int32 {
-        Int32(vEmojiHotkeyKeyCode)
+        runtimeEmojiHotkeyKeyCode
     }
 
     class func setEmojiHotkeySettings(_ enabled: Int32, _ modifiers: Int32, _ keyCode: Int32) {
-        vEnableEmojiHotkey = enabled
-        vEmojiHotkeyModifiers = modifiers
-        vEmojiHotkeyKeyCode = keyCode
+        runtimeEnableEmojiHotkey = enabled
+        runtimeEmojiHotkeyModifiers = modifiers
+        runtimeEmojiHotkeyKeyCode = keyCode
         OSMemoryBarrier()
     }
 
@@ -1008,35 +1027,35 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func setFixRecommendBrowser(_ value: Int32) {
-        vFixRecommendBrowser = value
+        runtimeFixRecommendBrowser = value
         OSMemoryBarrier()
     }
 
     class func setTempOffSpelling(_ value: Int32) {
-        vTempOffSpelling = value
+        runtimeTempOffSpelling = value
         OSMemoryBarrier()
     }
 
     class func setTempOffEngine(_ value: Int32) {
-        vTempOffPHTV = value
+        runtimeTempOffEngine = value
         OSMemoryBarrier()
     }
 
     class func setSafeMode(_ enabled: Bool) {
-        vSafeMode = enabled ? 1 : 0
+        runtimeSafeMode = enabled ? 1 : 0
         OSMemoryBarrier()
     }
 
     class func tempOffSpelling() -> Int32 {
-        Int32(vTempOffSpelling)
+        runtimeTempOffSpelling
     }
 
     class func tempOffEngine() -> Int32 {
-        Int32(vTempOffPHTV)
+        runtimeTempOffEngine
     }
 
     class func fixRecommendBrowser() -> Int32 {
-        Int32(vFixRecommendBrowser)
+        runtimeFixRecommendBrowser
     }
 
     class func startNewSession() {

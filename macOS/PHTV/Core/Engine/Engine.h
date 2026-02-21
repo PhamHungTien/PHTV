@@ -29,13 +29,6 @@
 //define these variable in your application
 //API
 /*
- * 0: English
- * 1: Vietnamese
- * VOLATILE: Read by event tap thread, written by main thread
- */
-extern volatile int vLanguage;
-
-/*
  * 0: Telex
  * 1: VNI
  * VOLATILE: Read by event tap thread, written by main thread
@@ -55,17 +48,6 @@ extern int vFreeMark;
  * VOLATILE: Read by event tap thread, written by main thread
  */
 extern volatile int vCodeTable;
-
-/*
- * first 8 bit: keycode
- * bit 8: Control on/off
- * bit 9: Option on/off
- * bit 10: Command on/off
- * bit 11: Shift on/off
- * bit 12: Fn on/off
- * bit 15: Beep on/off
- */
-extern volatile int vSwitchKeyStatus;
 
 /**
  * 0: No
@@ -93,22 +75,10 @@ extern volatile int vQuickTelex;
  *
  */
 
-/*
- * Fix recommend browser's address, excel,...
- * 0: No
- * 1: Yes
- */
-extern volatile int vFixRecommendBrowser;
-
 /**
  * Macro on or off
  */
 extern volatile int vUseMacro;
-
-/**
- * Still use macro if you are in english mode
- */
-extern volatile int vUseMacroInEnglishMode;
 
 /**
  * Ex: define: btw -> by the way
@@ -116,13 +86,6 @@ extern volatile int vUseMacroInEnglishMode;
  * Type: `BTW` -> `BY THE WAY`
  */
 extern volatile int vAutoCapsMacro;
-
-/**
- * auto switch language when switch app
- * 0: No
- * 1: Yes
- */
-extern volatile int vUseSmartSwitchKey;
 
 /**
  * Auto write upper case character for first letter.
@@ -137,13 +100,6 @@ extern volatile int vUpperCaseFirstChar;
  * 1: Yes (skip uppercase for this app)
  */
 extern volatile int vUpperCaseExcludedForCurrentApp;
-
-/**
- * Temporarily turn off spell checking with Ctrl key
- * 0: No
- * 1: Yes
- */
-extern volatile int vTempOffSpelling;
 
 /**
  * Allow write word with consonant Z, F, W, J
@@ -169,48 +125,11 @@ extern volatile int vQuickStartConsonant;
 extern volatile int vQuickEndConsonant;
 
 /**
- * 0: No; 1: Yes
- * Auto remember table code for each application
- */
-extern volatile int vRememberCode;
-
-/**
- * 0: No; 1: Yes
- * Turn off Vietnamese when typing in another language.
- */
-extern volatile int vOtherLanguage;
-
-/**
- * 0: No; 1: Yes
- * Temporarily turn off PHTV  by hot key (Command on mac, Alt on Windows and Linux)
- */
-extern volatile int vTempOffPHTV;
-
-/**
  * Restore to raw keys feature (default: ON)
  * When enabled, pressing ESC (or custom key) will restore typed text to raw keys
  * (user → úẻ → restore key → user)
  */
 extern volatile int vRestoreOnEscape;
-
-/**
- * Custom key code for restore function (default: KEY_ESC = 53)
- * Can be any key: ESC, Option, Control
- * Set to 0 to use default ESC key
- */
-extern volatile int vCustomEscapeKey;
-
-/**
- * Enable pause Vietnamese input when holding a key
- * When enabled, holding the pause key temporarily switches to English mode
- */
-extern volatile int vPauseKeyEnabled;
-
-/**
- * Custom key code for pause function (default: KEY_LEFT_OPTION = 58)
- * Can be any key: Option, Control, Shift, Command, Fn, or any other key
- */
-extern volatile int vPauseKey;
 
 /**
  * Auto restore English word feature

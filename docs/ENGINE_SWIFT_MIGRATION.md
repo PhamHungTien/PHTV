@@ -78,6 +78,20 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - Xoa `Bridge/Engine/PHTVEngineGlobals.cpp`
   - Runtime pointer `vKeyHookState*` duoc quan ly trong `PHTVEngineRuntimeFacade.swift`
   - Bo `extern pData` khoi `PHTVEngineCxxInterop.hpp`
+- Da dua mot nhom runtime settings phu tro (khong can cho core C++) sang Swift storage:
+  - `vSendKeyStepByStep`
+  - `vEnableEmojiHotkey`, `vEmojiHotkeyModifiers`, `vEmojiHotkeyKeyCode`
+  - `vShowIconOnDock`
+  - `vPerformLayoutCompat`
+  - `vSafeMode`
+  - Da bo cac extern tuong ung khoi `PHTVEngineCxxInterop.hpp` va xoa dinh nghia khoi `Core/Engine/PHTVRuntimeState.cpp`
+- Da dua them nhom runtime state khong duoc core C++ su dung truc tiep sang Swift storage:
+  - `vLanguage`, `vSwitchKeyStatus`, `vFixRecommendBrowser`
+  - `vUseMacroInEnglishMode`, `vUseSmartSwitchKey`
+  - `vRememberCode`, `vOtherLanguage`
+  - `vTempOffSpelling`, `vTempOffPHTV`
+  - `vCustomEscapeKey`, `vPauseKeyEnabled`, `vPauseKey`
+  - Da bo cac extern tuong ung khoi `PHTVEngineCxxInterop.hpp` va `Core/Engine/Engine.h`, dong thoi xoa dinh nghia khoi `Core/Engine/PHTVRuntimeState.cpp`
 
 ## Lo trinh migrate
 
