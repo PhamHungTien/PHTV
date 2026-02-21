@@ -12,7 +12,6 @@
 #import <ApplicationServices/ApplicationServices.h>
 #import <mach/mach_time.h>
 #import <unistd.h>
-#import <stdlib.h>
 #import <string.h>
 #include <limits>
 #import "Engine.h"
@@ -43,32 +42,6 @@ static inline useconds_t PHTVClampUseconds(uint64_t microseconds) {
     }
     return static_cast<useconds_t>(microseconds);
 }
-
-#ifdef DEBUG
-static inline BOOL PHTVSpotlightDebugEnabled(void) {
-    // Opt-in logging to avoid noisy Console output.
-    // Enable by launching with env var: PHTV_SPOTLIGHT_DEBUG=1
-    static int enabled = -1;
-    if (enabled < 0) {
-        const char *env = getenv("PHTV_SPOTLIGHT_DEBUG");
-        enabled = (env != NULL && env[0] != '\0' && strcmp(env, "0") != 0) ? 1 : 0;
-    }
-    return enabled == 1;
-}
-
-static inline void PHTVSpotlightDebugLog(NSString *message) {
-    if (!PHTVSpotlightDebugEnabled()) {
-        return;
-    }
-    static uint64_t lastLogTime = 0;
-    uint64_t now = mach_absolute_time();
-    if (lastLogTime != 0 && [PHTVTimingService machTimeToMs:(now - lastLogTime)] < DEBUG_LOG_THROTTLE_MS) {
-        return;
-    }
-    lastLogTime = now;
-    NSLog(@"[PHTV Spotlight] %@", message);
-}
-#endif
 
 #define OTHER_CONTROL_KEY (_flag & kCGEventFlagMaskCommand) || (_flag & kCGEventFlagMaskControl) || \
                             (_flag & kCGEventFlagMaskAlternate) || (_flag & kCGEventFlagMaskSecondaryFn) || \
@@ -1270,14 +1243,15 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             // This helps detect bundle-id mismatches (e.g. Spotlight field hosted by another process).
             if (_phtvPostToHIDTap || spotlightActive) {
                 int currentCodeTable = __atomic_load_n(&vCodeTable, __ATOMIC_RELAXED);
-                PHTVSpotlightDebugLog([NSString stringWithFormat:@"spotlightActive=%d targetPID=%d eventTarget=%@ focused=%@ effective=%@ codeTable=%d keycode=%d",
-                                      (int)spotlightActive,
-                                      (int)eventTargetPID,
-                                      eventTargetBundleId,
-                                      focusedBundleId,
-                                      effectiveBundleId,
-                                      currentCodeTable,
-                                      (int)_keycode]);
+                [PHTVSpotlightDetectionService emitRuntimeDebugLog:[NSString stringWithFormat:@"spotlightActive=%d targetPID=%d eventTarget=%@ focused=%@ effective=%@ codeTable=%d keycode=%d",
+                                                                  (int)spotlightActive,
+                                                                  (int)eventTargetPID,
+                                                                  eventTargetBundleId,
+                                                                  focusedBundleId,
+                                                                  effectiveBundleId,
+                                                                  currentCodeTable,
+                                                                  (int)_keycode]
+                                                          throttleMs:DEBUG_LOG_THROTTLE_MS];
             }
 #endif
 
@@ -1551,7 +1525,8 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                         // Defer deletion to AX replacement inside SendNewCharString().
                         _phtvPendingBackspaceCount = (int)pData->backspaceCount;
 #ifdef DEBUG
-                        PHTVSpotlightDebugLog([NSString stringWithFormat:@"deferBackspace=%d newCharCount=%d", (int)pData->backspaceCount, (int)pData->newCharCount]);
+                        [PHTVSpotlightDetectionService emitRuntimeDebugLog:[NSString stringWithFormat:@"deferBackspace=%d newCharCount=%d", (int)pData->backspaceCount, (int)pData->newCharCount]
+                                                                  throttleMs:DEBUG_LOG_THROTTLE_MS];
 #endif
                     } else {
                         SendBackspaceSequenceWithDelay(pData->backspaceCount);
@@ -1562,7 +1537,8 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 BOOL useStepByStep = characterSendPlan.useStepByStepCharacterSend;
 #ifdef DEBUG
                 if (isSpotlightTarget) {
-                    PHTVSpotlightDebugLog([NSString stringWithFormat:@"willSend stepByStep=%d backspaceCount=%d newCharCount=%d", (int)useStepByStep, (int)pData->backspaceCount, (int)pData->newCharCount]);
+                    [PHTVSpotlightDetectionService emitRuntimeDebugLog:[NSString stringWithFormat:@"willSend stepByStep=%d backspaceCount=%d newCharCount=%d", (int)useStepByStep, (int)pData->backspaceCount, (int)pData->newCharCount]
+                                                              throttleMs:DEBUG_LOG_THROTTLE_MS];
                 }
 #endif
                 if (!useStepByStep) {

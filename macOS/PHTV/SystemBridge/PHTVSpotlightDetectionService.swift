@@ -30,6 +30,7 @@ final class PHTVSpotlightDetectionService: NSObject {
 
     nonisolated(unsafe) private static var lastExternalDeleteTime: UInt64 = 0
     nonisolated(unsafe) private static var externalDeleteCount = 0
+    nonisolated(unsafe) private static var lastRuntimeDebugLogTime: UInt64 = 0
 
     nonisolated(unsafe) private static var lock = NSLock()
     nonisolated(unsafe) private static var lastEventFlags: CGEventFlags = []
@@ -51,6 +52,24 @@ final class PHTVSpotlightDetectionService: NSObject {
             return
         }
         NSLog("[Spotlight] %@", message())
+    }
+
+    @objc(emitRuntimeDebugLog:throttleMs:)
+    class func emitRuntimeDebugLog(_ message: String, throttleMs: UInt64) {
+        guard spotlightDebugEnabled() else {
+            return
+        }
+
+        let now = mach_absolute_time()
+        if throttleMs > 0, lastRuntimeDebugLogTime > 0 {
+            let elapsedMs = PHTVTimingService.machTimeToMs(now - lastRuntimeDebugLogTime)
+            if elapsedMs < throttleMs {
+                return
+            }
+        }
+
+        lastRuntimeDebugLogTime = now
+        NSLog("[PHTV Spotlight] %@", message)
     }
 
     @objc class func containsSearchKeyword(_ value: String?) -> Bool {
