@@ -9,8 +9,10 @@ import Foundation
 
 #if DEBUG
 enum PHTVEngineDebugInteropFacade {
+    private static let defaultHotkey = Int32(bitPattern: 0xFE0000FE) // EMPTY_HOTKEY
+
     static func convertToolDefaultHotKey() -> Int32 {
-        Int32(phtvConvertToolDefaultHotKey())
+        defaultHotkey
     }
 
     static func convertToolResetOptions() {

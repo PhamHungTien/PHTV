@@ -396,10 +396,6 @@ inline int phtvRuntimeOtherLanguage() noexcept {
     return vOtherLanguage;
 }
 
-inline int phtvConvertToolDefaultHotKey() noexcept {
-    return defaultConvertToolOptions().hotKey;
-}
-
 inline void phtvConvertToolResetOptions() noexcept {
     resetConvertToolOptions();
 }

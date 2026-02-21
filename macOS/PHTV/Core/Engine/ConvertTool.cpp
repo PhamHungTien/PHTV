@@ -244,10 +244,6 @@ static bool isSentenceBreakCharacter(const Uint16 character) {
 // Option values loaded from preferences.
 ConvertToolOptions gConvertToolOptions = kDefaultConvertToolOptions;
 
-ConvertToolOptions defaultConvertToolOptions() {
-    return kDefaultConvertToolOptions;
-}
-
 void resetConvertToolOptions() {
     gConvertToolOptions = kDefaultConvertToolOptions;
 }

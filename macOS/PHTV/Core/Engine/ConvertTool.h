@@ -26,7 +26,6 @@ struct ConvertToolOptions {
 
 extern ConvertToolOptions gConvertToolOptions;
 
-ConvertToolOptions defaultConvertToolOptions();
 void resetConvertToolOptions();
 std::string convertUtil(const std::string& sourceString);
 void normalizeConvertToolOptions();
