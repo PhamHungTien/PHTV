@@ -311,11 +311,11 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func defaultSwitchHotkeyStatus() -> Int32 {
-        Int32(phtvRuntimeDefaultSwitchHotkeyStatus())
+        Int32(Defaults.defaultSwitchKeyStatus)
     }
 
     class func defaultPauseKey() -> Int32 {
-        Int32(phtvRuntimeDefaultPauseKey())
+        Int32(KeyCode.leftOption)
     }
 
     class func setFixRecommendBrowser(_ value: Int32) {

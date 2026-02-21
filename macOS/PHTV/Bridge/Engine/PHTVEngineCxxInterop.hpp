@@ -365,14 +365,6 @@ inline void phtvRuntimeSetTempOffPHTV(const int value) noexcept {
     phtvRuntimeBarrier();
 }
 
-inline int phtvRuntimeDefaultSwitchHotkeyStatus() noexcept {
-    return PHTV_DEFAULT_SWITCH_HOTKEY_STATUS;
-}
-
-inline int phtvRuntimeDefaultPauseKey() noexcept {
-    return KEY_LEFT_OPTION;
-}
-
 inline int phtvRuntimeOtherLanguage() noexcept {
     return vOtherLanguage;
 }
