@@ -355,6 +355,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 2.1.4;
+				OTHER_SWIFT_FLAGS = "$(inherited) -cxx-interoperability-mode=default";
 				PRODUCT_BUNDLE_IDENTIFIER = com.phamhungtien.phtv;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -366,7 +367,6 @@
 				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				OTHER_SWIFT_FLAGS = "$(inherited) -cxx-interoperability-mode=default";
 				SWIFT_OBJC_BRIDGING_HEADER = PHTV/PHTVBridgingHeader.h;
 			};
 			name = Debug;
@@ -411,6 +411,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 2.1.4;
+				OTHER_SWIFT_FLAGS = "$(inherited) -cxx-interoperability-mode=default";
 				PRODUCT_BUNDLE_IDENTIFIER = com.phamhungtien.phtv;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -422,7 +423,6 @@
 				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				OTHER_SWIFT_FLAGS = "$(inherited) -cxx-interoperability-mode=default";
 				SWIFT_OBJC_BRIDGING_HEADER = PHTV/PHTVBridgingHeader.h;
 			};
 			name = Release;

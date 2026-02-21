@@ -5,7 +5,7 @@
 //  Global runtime state shared by engine and Swift C++ interop wrappers.
 //
 
-#include "../Core/Engine/Engine.h"
+#include "Engine.h"
 
 static const int PHTVCommandModifierFlag = 1 << 20;
 
@@ -57,3 +57,4 @@ volatile int vEmojiHotkeyKeyCode = KEY_E; // E key
 int vShowIconOnDock = 0; //new on version 2.0
 
 volatile int vPerformLayoutCompat = 0;
+volatile int vSafeMode = 0;

@@ -117,12 +117,12 @@ import Foundation
 
     @objc(phtv_isSafeModeEnabled)
     class func phtv_isSafeModeEnabled() -> Bool {
-        PHTVGetSafeMode()
+        phtvRuntimeSafeMode()
     }
 
     @objc(phtv_setSafeModeEnabled:)
     class func phtv_setSafeModeEnabled(_ enabled: Bool) {
-        PHTVSetSafeMode(enabled)
+        phtvRuntimeSetSafeMode(enabled)
         UserDefaults.standard.set(enabled, forKey: "SafeMode")
 
         if enabled {

@@ -22,20 +22,6 @@ CGEventRef _Nullable PHTVCallback(CGEventTapProxy _Nullable proxy,
                                   CGEventRef _Nonnull event,
                                   void * _Nullable refcon);
 NSString * _Nonnull PHTVBuildDateString(void);
-void PHTVSetConvertToolOptions(bool dontAlertWhenCompleted,
-                               bool toAllCaps,
-                               bool toAllNonCaps,
-                               bool toCapsFirstLetter,
-                               bool toCapsEachWord,
-                               bool removeMark,
-                               int fromCode,
-                               int toCode,
-                               int hotKey);
-int PHTVDefaultConvertToolHotKey(void);
-void PHTVResetConvertToolOptions(void);
-void PHTVNormalizeConvertToolOptions(void);
-BOOL PHTVGetSafeMode(void);
-void PHTVSetSafeMode(BOOL enabled);
 #ifdef __cplusplus
 BOOL PHTVRunAccessibilitySmokeTest(void) noexcept;
 #else

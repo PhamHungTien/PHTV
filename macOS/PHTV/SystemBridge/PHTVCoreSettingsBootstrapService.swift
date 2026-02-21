@@ -95,6 +95,6 @@ final class PHTVCoreSettingsBootstrapService: NSObject {
         phtvRuntimeSetTempOffPHTV(Int32(defaults.integer(forKey: "vTempOffPHTV")))
         phtvRuntimeSetPerformLayoutCompat(Int32(defaults.integer(forKey: "vPerformLayoutCompat")))
 
-        PHTVSetSafeMode(defaults.bool(forKey: "SafeMode"))
+        phtvRuntimeSetSafeMode(defaults.bool(forKey: "SafeMode"))
     }
 }

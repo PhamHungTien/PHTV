@@ -92,20 +92,6 @@ static inline void PHTVSpotlightDebugLog(NSString *message) {
 }
 #endif
 
-// Safe Mode: Disable all Accessibility API calls for unsupported hardware
-// When enabled, the app will use fallback methods that don't rely on AX APIs
-// which may crash on Macs running macOS via OpenCore Legacy Patcher (OCLP)
-// Note: Not static - exported for PHTVManager access
-BOOL vSafeMode = NO;
-
-extern "C" BOOL PHTVGetSafeMode(void) {
-    return vSafeMode;
-}
-
-extern "C" void PHTVSetSafeMode(BOOL enabled) {
-    vSafeMode = enabled;
-}
-
 #define OTHER_CONTROL_KEY (_flag & kCGEventFlagMaskCommand) || (_flag & kCGEventFlagMaskControl) || \
                             (_flag & kCGEventFlagMaskAlternate) || (_flag & kCGEventFlagMaskSecondaryFn) || \
                             (_flag & kCGEventFlagMaskNumericPad) || (_flag & kCGEventFlagMaskHelp)
@@ -121,6 +107,7 @@ extern volatile int vEmojiHotkeyModifiers;
 extern volatile int vEmojiHotkeyKeyCode;
 extern volatile int vPauseKeyEnabled;
 extern volatile int vPauseKey;
+extern volatile int vSafeMode;
 
 extern "C" {
 

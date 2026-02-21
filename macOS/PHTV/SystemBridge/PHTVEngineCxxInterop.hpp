@@ -13,12 +13,14 @@
 #include <cstdint>
 
 #include "../Core/Engine/Engine.h"
+#include "../Core/PHTVConstants.h"
 
 extern volatile int vSendKeyStepByStep;
 extern volatile int vPerformLayoutCompat;
 extern volatile int vEnableEmojiHotkey;
 extern volatile int vEmojiHotkeyModifiers;
 extern volatile int vEmojiHotkeyKeyCode;
+extern volatile int vSafeMode;
 extern int vShowIconOnDock;
 
 inline void phtvEngineInitializeMacroMap(const std::uint8_t *data, const int length) noexcept {
@@ -137,6 +139,15 @@ inline int phtvRuntimeSwitchKeyStatus() noexcept {
 
 inline void phtvRuntimeSetSwitchKeyStatus(const int status) noexcept {
     vSwitchKeyStatus = status;
+    phtvRuntimeBarrier();
+}
+
+inline bool phtvRuntimeSafeMode() noexcept {
+    return vSafeMode != 0;
+}
+
+inline void phtvRuntimeSetSafeMode(const bool enabled) noexcept {
+    vSafeMode = enabled ? 1 : 0;
     phtvRuntimeBarrier();
 }
 
@@ -371,6 +382,38 @@ inline int phtvRuntimeOtherLanguage() noexcept {
 
 inline int phtvEngineQuickConvertHotkey() noexcept {
     return gConvertToolOptions.hotKey;
+}
+
+inline int phtvConvertToolDefaultHotKey() noexcept {
+    return defaultConvertToolOptions().hotKey;
+}
+
+inline void phtvConvertToolResetOptions() noexcept {
+    resetConvertToolOptions();
+}
+
+inline void phtvConvertToolNormalizeOptions() noexcept {
+    normalizeConvertToolOptions();
+}
+
+inline void phtvConvertToolSetOptions(const bool dontAlertWhenCompleted,
+                                      const bool toAllCaps,
+                                      const bool toAllNonCaps,
+                                      const bool toCapsFirstLetter,
+                                      const bool toCapsEachWord,
+                                      const bool removeMark,
+                                      const int fromCode,
+                                      const int toCode,
+                                      const int hotKey) noexcept {
+    gConvertToolOptions.dontAlertWhenCompleted = dontAlertWhenCompleted;
+    gConvertToolOptions.toAllCaps = toAllCaps;
+    gConvertToolOptions.toAllNonCaps = toAllNonCaps;
+    gConvertToolOptions.toCapsFirstLetter = toCapsFirstLetter;
+    gConvertToolOptions.toCapsEachWord = toCapsEachWord;
+    gConvertToolOptions.removeMark = removeMark;
+    gConvertToolOptions.fromCode = static_cast<Uint8>(phtv_clamp_code_table(fromCode));
+    gConvertToolOptions.toCode = static_cast<Uint8>(phtv_clamp_code_table(toCode));
+    gConvertToolOptions.hotKey = hotKey;
 }
 
 inline bool phtvEngineHotkeyHasControl(const int hotkey) noexcept {

@@ -12,7 +12,7 @@ import Foundation
 
     private class func smartSwitchFocusedBundleId() -> String? {
         PHTVAppContextService.focusedBundleId(
-            forSafeMode: PHTVGetSafeMode(),
+            forSafeMode: phtvRuntimeSafeMode(),
             cacheDurationMs: smartSwitchSpotlightCacheDurationMs
         )
     }
