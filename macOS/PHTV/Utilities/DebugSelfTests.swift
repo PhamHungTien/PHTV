@@ -113,12 +113,28 @@ enum DebugSelfTests {
         let high = Int(PHTVEngineRuntimeFacade.hiByte(packedValue))
         let spaceKey = Int(PHTVEngineRuntimeFacade.spaceKeyCode())
         let maxBuffer = Int(PHTVEngineRuntimeFacade.engineMaxBuffer())
+        let capsMask = PHTVEngineRuntimeFacade.capsMask()
+        let keyA: UInt32 = 0
+        let key1: UInt32 = 18
+        let lowercaseA = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(keyA)
+        let uppercaseA = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(keyA | capsMask)
+        let digitOne = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(key1)
+        let symbolExclamation = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(key1 | capsMask)
+        let shiftedSpace = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(UInt32(kVK_Space) | capsMask)
         assertCondition(
-            low == 0x34 && high == 0x12 && spaceKey == kVK_Space && maxBuffer > 0,
+            low == 0x34 &&
+            high == 0x12 &&
+            spaceKey == kVK_Space &&
+            maxBuffer > 0 &&
+            lowercaseA == 0x0061 &&
+            uppercaseA == 0x0041 &&
+            digitOne == 0x0031 &&
+            symbolExclamation == 0x0021 &&
+            shiftedSpace == 0,
             "Swift/C++ interop check should pass"
         )
         PHTVLogger.shared.debug(
-            "[CxxInterop] low=\(low), high=\(high), spaceKey=\(spaceKey), maxBuffer=\(maxBuffer), valid=true"
+            "[CxxInterop] low=\(low), high=\(high), spaceKey=\(spaceKey), maxBuffer=\(maxBuffer), macroMap=true, valid=true"
         )
     }
 

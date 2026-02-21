@@ -423,10 +423,6 @@ inline bool phtvEngineCodeTableCharacterForKey(const int codeTable,
     return true;
 }
 
-inline std::uint16_t phtvEngineMacroKeyCodeToCharacter(const std::uint32_t keyData) noexcept {
-    return keyCodeToCharacter(static_cast<Uint32>(keyData));
-}
-
 // MARK: - Engine output state (pData) field accessors
 
 extern vKeyHookState* pData;

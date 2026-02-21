@@ -41,6 +41,9 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da bo cac wrapper pass-through cho engine function:
   - `vSetCheckSpelling`, `vPrimeUpperCaseFirstChar`, `vRestoreToRawKeys`, `vTempOffSpellChecking`, `vTempOffEngine`
   - Swift facade goi truc tiep `v*` function va da xoa wrappers tuong ung trong `PHTVEngineCxxInterop.hpp`
+- Da port keycode->character macro map sang Swift facade:
+  - `macroKeyCodeToCharacter` hien dung bang map Swift (mirror `Vietnamese.cpp`)
+  - da xoa wrapper `phtvEngineMacroKeyCodeToCharacter` trong `PHTVEngineCxxInterop.hpp`
 
 ## Lo trinh migrate
 
