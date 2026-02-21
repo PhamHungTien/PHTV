@@ -22,15 +22,6 @@
 
 #define FRONT_APP [[NSWorkspace sharedWorkspace] frontmostApplication].bundleIdentifier
 
-// Cached app behavior used across the event callback.
-typedef struct {
-    BOOL isSpotlightLike;
-    BOOL needsPrecomposedBatched;
-    BOOL needsStepByStep;
-    BOOL containsUnicodeCompound;
-    BOOL isSafari;
-} AppCharacteristics;
-
 // Performance & Cache Configuration
 static const uint64_t SPOTLIGHT_CACHE_DURATION_MS = 150;     // Spotlight detection cache timeout (balanced for lower CPU)
 #ifdef DEBUG
@@ -138,7 +129,7 @@ extern "C" {
     // Cache the effective target bundle id for the current event tap callback.
     // This avoids re-querying AX focus inside hot-path send routines.
 static NSString* _phtvEffectiveTargetBundleId = nil;
-static AppCharacteristics _phtvCurrentAppCharacteristics = {NO, NO, NO, NO, NO};
+static PHTVAppCharacteristicsBox* _phtvCurrentAppCharacteristics = nil;
 static BOOL _phtvPostToHIDTap = NO;
 static BOOL _phtvPostToSessionForCli = NO;
 static BOOL _phtvIsCliTarget = NO;
@@ -152,6 +143,22 @@ static int _phtvPendingBackspaceCount = 0;
 static uint64_t _phtvCliBlockUntil = 0;
 static useconds_t _phtvCliPostSendBlockUs = CLI_POST_SEND_BLOCK_MIN_US;
 static uint64_t _phtvCliLastKeyDownTime = 0;
+
+    __attribute__((always_inline)) static inline BOOL PHTVCurrentAppIsSpotlightLike(void) {
+        return _phtvCurrentAppCharacteristics != nil && _phtvCurrentAppCharacteristics.isSpotlightLike;
+    }
+
+    __attribute__((always_inline)) static inline BOOL PHTVCurrentAppNeedsPrecomposedBatched(void) {
+        return _phtvCurrentAppCharacteristics != nil && _phtvCurrentAppCharacteristics.needsPrecomposedBatched;
+    }
+
+    __attribute__((always_inline)) static inline BOOL PHTVCurrentAppNeedsStepByStep(void) {
+        return _phtvCurrentAppCharacteristics != nil && _phtvCurrentAppCharacteristics.needsStepByStep;
+    }
+
+    __attribute__((always_inline)) static inline BOOL PHTVCurrentAppContainsUnicodeCompound(void) {
+        return _phtvCurrentAppCharacteristics != nil && _phtvCurrentAppCharacteristics.containsUnicodeCompound;
+    }
 
     __attribute__((always_inline)) static inline void SpotlightTinyDelay(void) {
     }
@@ -588,7 +595,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         if (IS_DOUBLE_CODE(vCodeTable)) { //VNI or Unicode Compound
             if (!_syncKey.empty()) {
                 if (_syncKey.back() > 1) {
-                    if (!(vCodeTable == 3 && _phtvCurrentAppCharacteristics.containsUnicodeCompound)) {
+                    if (!(vCodeTable == 3 && PHTVCurrentAppContainsUnicodeCompound())) {
                         SendPhysicalBackspace();
                     }
                 }
@@ -611,7 +618,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         
         if (IS_DOUBLE_CODE(vCodeTable)) { //VNI or Unicode Compound
             if (_syncKey.back() > 1) {
-                if (!(vCodeTable == 3 && _phtvCurrentAppCharacteristics.containsUnicodeCompound)) {
+                if (!(vCodeTable == 3 && PHTVCurrentAppContainsUnicodeCompound())) {
                     PostSyntheticEvent(_proxy, eventVkeyDown);
                     PostSyntheticEvent(_proxy, eventVkeyUp);
                 }
@@ -725,9 +732,9 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         _willSendControlKey = false;
         
         // Treat as Spotlight target if callback selected HID/Spotlight-safe path.
-        BOOL isSpotlightTarget = _phtvPostToHIDTap || _phtvCurrentAppCharacteristics.isSpotlightLike;
+        BOOL isSpotlightTarget = _phtvPostToHIDTap || PHTVCurrentAppIsSpotlightLike();
         // Some apps need precomposed Unicode but still rely on batched synthetic events.
-        BOOL isPrecomposedBatched = _phtvCurrentAppCharacteristics.needsPrecomposedBatched;
+        BOOL isPrecomposedBatched = PHTVCurrentAppNeedsPrecomposedBatched();
         // Force precomposed for: Unicode Compound (code 3) on Spotlight, OR any Unicode on WhatsApp-like apps
         BOOL forcePrecomposed = ((vCodeTable == 3) && isSpotlightTarget) ||
                                  ((vCodeTable == 0 || vCodeTable == 3) && isPrecomposedBatched);
@@ -887,7 +894,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         // PERFORMANCE: Use cached bundle ID instead of querying AX API
         NSString *effectiveTarget = _phtvEffectiveTargetBundleId ?: getFocusedAppBundleId();
         // Use _phtvPostToHIDTap which includes spotlightActive (search field detected via AX)
-        BOOL isSpotlightLike = _phtvPostToHIDTap || _phtvCurrentAppCharacteristics.isSpotlightLike;
+        BOOL isSpotlightLike = _phtvPostToHIDTap || PHTVCurrentAppIsSpotlightLike();
 
         #ifdef DEBUG
         NSLog(@"[Macro] handleMacro: target='%@', isSpotlight=%d (postToHID=%d), backspaceCount=%d, macroSize=%zu",
@@ -929,7 +936,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         }
 
         //send real data - use step by step for timing sensitive apps like Spotlight
-        BOOL useStepByStep = _phtvIsCliTarget || vSendKeyStepByStep || _phtvCurrentAppCharacteristics.needsStepByStep;
+        BOOL useStepByStep = _phtvIsCliTarget || vSendKeyStepByStep || PHTVCurrentAppNeedsStepByStep();
         if (!useStepByStep) {
             SendNewCharString(true);
         } else {
@@ -1293,15 +1300,13 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                                                                                            appCharacteristicsMaxAgeMs:kAppCharacteristicsCacheMaxAgeMs];
             BOOL spotlightActive = targetContext.spotlightActive;
             NSString *effectiveBundleId = targetContext.effectiveBundleId;
-
-            AppCharacteristics appChars = {NO, NO, NO, NO, NO};
-            PHTVAppCharacteristicsBox *appCharsBox = targetContext.appCharacteristics;
-            if (appCharsBox) {
-                appChars.isSpotlightLike = appCharsBox.isSpotlightLike;
-                appChars.needsPrecomposedBatched = appCharsBox.needsPrecomposedBatched;
-                appChars.needsStepByStep = appCharsBox.needsStepByStep;
-                appChars.containsUnicodeCompound = appCharsBox.containsUnicodeCompound;
-                appChars.isSafari = appCharsBox.isSafari;
+            PHTVAppCharacteristicsBox *appChars = targetContext.appCharacteristics;
+            if (appChars == nil) {
+                appChars = [[PHTVAppCharacteristicsBox alloc] initWithIsSpotlightLike:NO
+                                                               needsPrecomposedBatched:NO
+                                                                       needsStepByStep:NO
+                                                               containsUnicodeCompound:NO
+                                                                              isSafari:NO];
             }
 
             // Cache for send routines called later in this callback.
