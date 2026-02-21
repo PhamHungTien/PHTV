@@ -131,6 +131,8 @@ final class PHTVModifierReleaseTransitionBox: NSObject {
     let shouldAttemptRestore: Bool
     let shouldResetRestoreState: Bool
     let releaseAction: Int32
+    let restoreModifierPressed: Bool
+    let keyPressedWithRestoreModifier: Bool
     let shouldUpdateLanguage: Bool
     let language: Int32
     let pausePressed: Bool
@@ -143,6 +145,8 @@ final class PHTVModifierReleaseTransitionBox: NSObject {
         shouldAttemptRestore: Bool,
         shouldResetRestoreState: Bool,
         releaseAction: Int32,
+        restoreModifierPressed: Bool,
+        keyPressedWithRestoreModifier: Bool,
         shouldUpdateLanguage: Bool,
         language: Int32,
         pausePressed: Bool,
@@ -154,6 +158,8 @@ final class PHTVModifierReleaseTransitionBox: NSObject {
         self.shouldAttemptRestore = shouldAttemptRestore
         self.shouldResetRestoreState = shouldResetRestoreState
         self.releaseAction = releaseAction
+        self.restoreModifierPressed = restoreModifierPressed
+        self.keyPressedWithRestoreModifier = keyPressedWithRestoreModifier
         self.shouldUpdateLanguage = shouldUpdateLanguage
         self.language = language
         self.pausePressed = pausePressed
@@ -1062,10 +1068,18 @@ final class PHTVHotkeyService: NSObject {
             savedLanguage: savedLanguage
         )
 
+        let shouldAttemptRestore = flagsReleasePlanShouldAttemptRestore(releasePlan)
+        let shouldResetRestoreState = flagsReleasePlanShouldResetRestoreState(releasePlan)
+        let shouldClearRestoreState = shouldAttemptRestore || shouldResetRestoreState
+        let nextRestoreModifierPressed = shouldClearRestoreState ? false : restoreModifierPressed
+        let nextKeyPressedWithRestoreModifier = shouldClearRestoreState ? false : keyPressedWithRestoreModifier
+
         return PHTVModifierReleaseTransitionBox(
-            shouldAttemptRestore: flagsReleasePlanShouldAttemptRestore(releasePlan),
-            shouldResetRestoreState: flagsReleasePlanShouldResetRestoreState(releasePlan),
+            shouldAttemptRestore: shouldAttemptRestore,
+            shouldResetRestoreState: shouldResetRestoreState,
             releaseAction: flagsReleasePlanModifierReleaseAction(releasePlan),
+            restoreModifierPressed: nextRestoreModifierPressed,
+            keyPressedWithRestoreModifier: nextKeyPressedWithRestoreModifier,
             shouldUpdateLanguage: pauseReleaseTransition.shouldUpdateLanguage,
             language: pauseReleaseTransition.language,
             pausePressed: pauseReleaseTransition.pausePressed,

@@ -1255,7 +1255,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                                                                    savedLanguage:(int32_t)_savedLanguageBeforePause];
 
                 BOOL shouldAttemptRestore = modifierReleaseTransition.shouldAttemptRestore;
-                BOOL shouldResetRestoreState = modifierReleaseTransition.shouldResetRestoreState;
                 int releaseAction = (int)modifierReleaseTransition.releaseAction;
 
                 // Releasing modifiers - check for restore modifier key first
@@ -1272,20 +1271,13 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                         SendNewCharString();
 
                         _lastFlag = (CGEventFlags)modifierReleaseTransition.lastFlags;
-                        _restoreModifierPressed = false;
-                        _keyPressedWithRestoreModifier = false;
+                        _restoreModifierPressed = modifierReleaseTransition.restoreModifierPressed;
+                        _keyPressedWithRestoreModifier = modifierReleaseTransition.keyPressedWithRestoreModifier;
                         return NULL;
                     }
-
-                    _restoreModifierPressed = false;
-                    _keyPressedWithRestoreModifier = false;
                 }
-
-                // Reset restore modifier state when releasing any modifier
-                if (shouldResetRestoreState) {
-                    _restoreModifierPressed = false;
-                    _keyPressedWithRestoreModifier = false;
-                }
+                _restoreModifierPressed = modifierReleaseTransition.restoreModifierPressed;
+                _keyPressedWithRestoreModifier = modifierReleaseTransition.keyPressedWithRestoreModifier;
 
                 _savedLanguageBeforePause = (int)modifierReleaseTransition.savedLanguage;
                 _pauseKeyPressed = modifierReleaseTransition.pausePressed;
