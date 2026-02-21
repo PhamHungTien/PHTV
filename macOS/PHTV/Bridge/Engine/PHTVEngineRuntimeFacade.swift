@@ -67,19 +67,19 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func primeUpperCaseFirstChar() {
-        phtvEnginePrimeUpperCaseFirstChar()
+        vPrimeUpperCaseFirstChar()
     }
 
     class func restoreToRawKeys() -> Bool {
-        phtvEngineRestoreToRawKeys()
+        vRestoreToRawKeys()
     }
 
     class func tempOffSpellChecking() {
-        phtvEngineTempOffSpellChecking()
+        vTempOffSpellChecking()
     }
 
     class func tempOffEngineNow() {
-        phtvEngineTempOffEngine()
+        vTempOffEngine(true)
     }
 
     class func barrier() {
@@ -191,7 +191,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func applyCheckSpelling() {
-        phtvEngineApplyCheckSpelling()
+        vSetCheckSpelling()
     }
 
     class func useModernOrthography() -> Int32 {

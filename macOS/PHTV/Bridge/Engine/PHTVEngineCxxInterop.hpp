@@ -78,10 +78,6 @@ inline void phtvEngineSetCheckSpellingValue(const int value) noexcept {
     vCheckSpelling = value;
 }
 
-inline void phtvEngineApplyCheckSpelling() noexcept {
-    vSetCheckSpelling();
-}
-
 inline void phtvRuntimeBarrier() noexcept {
     __sync_synchronize();
 }
@@ -514,22 +510,6 @@ inline void phtvEngineHandleEnglishModeKeyDown(const std::uint16_t keyCode,
                                                 const bool isCaps,
                                                 const bool hasOtherControlKey) noexcept {
     vEnglishMode(vKeyEventState::KeyDown, keyCode, isCaps, hasOtherControlKey);
-}
-
-inline bool phtvEngineRestoreToRawKeys() noexcept {
-    return vRestoreToRawKeys();
-}
-
-inline void phtvEnginePrimeUpperCaseFirstChar() noexcept {
-    vPrimeUpperCaseFirstChar();
-}
-
-inline void phtvEngineTempOffSpellChecking() noexcept {
-    vTempOffSpellChecking();
-}
-
-inline void phtvEngineTempOffEngine() noexcept {
-    vTempOffEngine();
 }
 
 #endif

@@ -38,6 +38,9 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - action/result constants (`vDoNothing`, `vWillProcess`, `vRestore`, `vReplaceMaro`, `vRestoreAndStartNewSession`)
   - max buffer constant (`MAX_BUFF`) va navigation-key check
   - da xoa wrappers tuong ung trong `PHTVEngineCxxInterop.hpp`
+- Da bo cac wrapper pass-through cho engine function:
+  - `vSetCheckSpelling`, `vPrimeUpperCaseFirstChar`, `vRestoreToRawKeys`, `vTempOffSpellChecking`, `vTempOffEngine`
+  - Swift facade goi truc tiep `v*` function va da xoa wrappers tuong ung trong `PHTVEngineCxxInterop.hpp`
 
 ## Lo trinh migrate
 
