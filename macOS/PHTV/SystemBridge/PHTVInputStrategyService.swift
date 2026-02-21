@@ -7,6 +7,27 @@
 
 import Foundation
 
+@objc
+enum PHTVBackspaceAdjustmentAction: Int32 {
+    case none = 0
+    case sendEmptyCharacter = 1
+    case sendShiftLeftThenBackspace = 2
+}
+
+@objcMembers
+final class PHTVBackspaceAdjustmentBox: NSObject {
+    let action: Int32
+    let adjustedBackspaceCount: Int32
+
+    init(
+        action: Int32,
+        adjustedBackspaceCount: Int32
+    ) {
+        self.action = action
+        self.adjustedBackspaceCount = adjustedBackspaceCount
+    }
+}
+
 @objcMembers
 final class PHTVInputStrategyBox: NSObject {
     let isSpecialApp: Bool
@@ -86,6 +107,48 @@ final class PHTVInputStrategyService: NSObject {
             shouldTryBrowserAddressBarFix: shouldTryBrowserAddressBarFix,
             shouldTryLegacyNonBrowserFix: shouldTryLegacyNonBrowserFix,
             shouldLogSpaceSkip: shouldLogSpaceSkip
+        )
+    }
+
+    @objc(backspaceAdjustmentForBrowserAddressBarFix:addressBarDetected:legacyNonBrowserFix:containsUnicodeCompound:notionCodeBlockDetected:backspaceCount:)
+    class func backspaceAdjustment(
+        forBrowserAddressBarFix shouldTryBrowserAddressBarFix: Bool,
+        addressBarDetected isAddressBarDetected: Bool,
+        legacyNonBrowserFix shouldTryLegacyNonBrowserFix: Bool,
+        containsUnicodeCompound: Bool,
+        notionCodeBlockDetected isNotionCodeBlockDetected: Bool,
+        backspaceCount: Int32
+    ) -> PHTVBackspaceAdjustmentBox {
+        guard backspaceCount > 0 else {
+            return PHTVBackspaceAdjustmentBox(
+                action: PHTVBackspaceAdjustmentAction.none.rawValue,
+                adjustedBackspaceCount: max(0, backspaceCount)
+            )
+        }
+
+        if shouldTryBrowserAddressBarFix && isAddressBarDetected {
+            return PHTVBackspaceAdjustmentBox(
+                action: PHTVBackspaceAdjustmentAction.sendEmptyCharacter.rawValue,
+                adjustedBackspaceCount: backspaceCount + 1
+            )
+        }
+
+        if shouldTryLegacyNonBrowserFix && !isNotionCodeBlockDetected {
+            if containsUnicodeCompound {
+                return PHTVBackspaceAdjustmentBox(
+                    action: PHTVBackspaceAdjustmentAction.sendShiftLeftThenBackspace.rawValue,
+                    adjustedBackspaceCount: backspaceCount - 1
+                )
+            }
+            return PHTVBackspaceAdjustmentBox(
+                action: PHTVBackspaceAdjustmentAction.sendEmptyCharacter.rawValue,
+                adjustedBackspaceCount: backspaceCount + 1
+            )
+        }
+
+        return PHTVBackspaceAdjustmentBox(
+            action: PHTVBackspaceAdjustmentAction.none.rawValue,
+            adjustedBackspaceCount: backspaceCount
         )
     }
 }

@@ -1503,66 +1503,54 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 }
                 #endif
 
-                if (inputStrategy.shouldTryBrowserAddressBarFix) {
-                    if (pData->backspaceCount > 0) {
-                        // DETECT ADDRESS BAR:
-                        // Use accurate AX API check (cached) instead of unreliable spotlightActive
-                        BOOL isAddrBar = [PHTVEventContextBridgeService isFocusedElementAddressBarForSafeMode:vSafeMode];
-                        
-                        #ifdef DEBUG
-                        NSLog(@"[BrowserFix] isFocusedElementAddressBar returned: %d", isAddrBar);
-                        #endif
-
-                        if (isAddrBar) {
+                BOOL isAddrBar = NO;
+                if (inputStrategy.shouldTryBrowserAddressBarFix && pData->backspaceCount > 0) {
+                    // Use accurate AX API check (cached) instead of unreliable spotlightActive.
+                    isAddrBar = [PHTVEventContextBridgeService isFocusedElementAddressBarForSafeMode:vSafeMode];
 #ifdef DEBUG
-                            NSLog(@"[PHTV Browser] Address Bar Detected (AX) -> Using SendEmptyCharacter (Fix Doubling)");
+                    NSLog(@"[BrowserFix] isFocusedElementAddressBar returned: %d", isAddrBar);
 #endif
-                            // Revert to SendEmptyCharacter strategy for Address Bar (like v1.7.6)
-                            // This fixes the "doubling first character" bug where Shift+Left fails
-                            // in some browser profiles/contexts (especially on first char).
-                            // SendEmptyCharacter reliably breaks the autocomplete state.
-                            SendEmptyCharacter();
-                            pData->backspaceCount++;
-                            
-                            // Note: We do NOT consume backspaces here. We let the standard logic below
-                            // handle the actual backspacing. This ensures:
-                            // 1. Empty char is sent.
-                            // 2. Standard backspace sequence runs: deletes Empty char, then deletes original chars.
-                        } else {
-                            // Content Mode (Sheets, Docs, Forms)
-                            // Do nothing here, let standard SendBackspaceSequence handle it below.
-                            // Standard Backspace is the safest method for web editors.
-                        }
-                    }
-                    // CRITICAL: Force fall through to standard backspace logic below.
-                } 
-                else if (inputStrategy.shouldTryLegacyNonBrowserFix) {
-                    // Legacy logic for non-browser apps (Electron, Slack, etc.)
-                    // Keep original behavior: shift-left for Chromium, EmptyChar for others
-                    BOOL useShiftLeft = appChars.containsUnicodeCompound && pData->backspaceCount > 0;
-                    
-                    // NOTION CODE BLOCK FIX:
-                    // If Notion Code Block detected, fallback to standard backspace (no Shift+Left, no EmptyChar)
-                    // This fixes duplicates in code blocks where Shift+Left might fail to select or text is raw
-                    BOOL isNotionCodeBlockDetected = isNotionApp &&
-                                                     [PHTVEventContextBridgeService isNotionCodeBlockForSafeMode:vSafeMode];
-
-                    if (isNotionCodeBlockDetected) {
-                        // Do nothing here.
-                        // Falls through to SendBackspaceSequence below (Standard Backspace)
-                        #ifdef DEBUG
-                        NSLog(@"[Notion] Code Block detected - using Standard Backspace");
-                        #endif
-                    }
-                    else if (useShiftLeft) {
-                        SendShiftAndLeftArrow();
-                        SendPhysicalBackspace();
-                        pData->backspaceCount--;
-                    } else {
-                        SendEmptyCharacter();
-                        pData->backspaceCount++;
-                    }
                 }
+
+                BOOL isNotionCodeBlockDetected = NO;
+                if (inputStrategy.shouldTryLegacyNonBrowserFix && pData->backspaceCount > 0) {
+                    // Notion code block should use standard backspace path.
+                    isNotionCodeBlockDetected = isNotionApp &&
+                        [PHTVEventContextBridgeService isNotionCodeBlockForSafeMode:vSafeMode];
+#ifdef DEBUG
+                    if (isNotionCodeBlockDetected) {
+                        NSLog(@"[Notion] Code Block detected - using Standard Backspace");
+                    }
+#endif
+                }
+
+                PHTVBackspaceAdjustmentBox *backspaceAdjustment =
+                    [PHTVInputStrategyService backspaceAdjustmentForBrowserAddressBarFix:inputStrategy.shouldTryBrowserAddressBarFix
+                                                                        addressBarDetected:isAddrBar
+                                                                      legacyNonBrowserFix:inputStrategy.shouldTryLegacyNonBrowserFix
+                                                                  containsUnicodeCompound:appChars.containsUnicodeCompound
+                                                                  notionCodeBlockDetected:isNotionCodeBlockDetected
+                                                                           backspaceCount:(int32_t)pData->backspaceCount];
+                int adjustmentAction = (int)backspaceAdjustment.action;
+                if (adjustmentAction == PHTVBackspaceAdjustmentActionSendShiftLeftThenBackspace) {
+                    SendShiftAndLeftArrow();
+                    SendPhysicalBackspace();
+                } else if (adjustmentAction == PHTVBackspaceAdjustmentActionSendEmptyCharacter) {
+#ifdef DEBUG
+                    if (isAddrBar) {
+                        NSLog(@"[PHTV Browser] Address Bar Detected (AX) -> Using SendEmptyCharacter (Fix Doubling)");
+                    }
+#endif
+                    SendEmptyCharacter();
+                }
+
+                int adjustedBackspaceCount = (int)backspaceAdjustment.adjustedBackspaceCount;
+                if (adjustedBackspaceCount < 0) {
+                    adjustedBackspaceCount = 0;
+                } else if (adjustedBackspaceCount > MAX_BUFF) {
+                    adjustedBackspaceCount = MAX_BUFF;
+                }
+                pData->backspaceCount = (Byte)adjustedBackspaceCount;
 
                 // SAFETY LIMIT: A single Vietnamese word transformation should never delete more than 15 chars.
                 // This prevents massive text loss ("iệt Nam" bug) if logic fails or race conditions occur.
