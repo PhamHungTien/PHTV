@@ -13,7 +13,6 @@
 #include <vector>
 
 #include "DataType.h"
-#include "../PHTVHotkey.h"
 
 #ifndef LOBYTE
 #define LOBYTE(data) (data & 0xFF)
