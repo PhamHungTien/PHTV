@@ -10,9 +10,6 @@
 
 #ifdef __cplusplus
 
-#include <cstdint>
-#include <ApplicationServices/ApplicationServices.h>
-
 #include "../../Core/Engine/Engine.h"
 #include "../../Core/PHTVConstants.h"
 
@@ -50,10 +47,6 @@ extern volatile int vEmojiHotkeyModifiers __attribute__((swift_attr("nonisolated
 extern volatile int vEmojiHotkeyKeyCode __attribute__((swift_attr("nonisolated(unsafe)")));
 extern volatile int vSafeMode __attribute__((swift_attr("nonisolated(unsafe)")));
 extern int vShowIconOnDock __attribute__((swift_attr("nonisolated(unsafe)")));
-
-inline void phtvRuntimeBarrier() noexcept {
-    __sync_synchronize();
-}
 
 // MARK: - Engine output state (pData) field accessors
 

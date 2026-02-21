@@ -207,7 +207,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func barrier() {
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func safeModeEnabled() -> Bool {
@@ -220,7 +220,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setRememberCode(_ value: Int32) {
         vRememberCode = value
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func currentLanguage() -> Int32 {
@@ -229,7 +229,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setCurrentLanguage(_ language: Int32) {
         vLanguage = language
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func otherLanguageMode() -> Int32 {
@@ -238,7 +238,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setOtherLanguageMode(_ value: Int32) {
         vOtherLanguage = value
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func currentInputType() -> Int32 {
@@ -247,7 +247,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setCurrentInputType(_ inputType: Int32) {
         vInputType = inputType
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func currentCodeTable() -> Int32 {
@@ -256,7 +256,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setCurrentCodeTable(_ codeTable: Int32) {
         vCodeTable = codeTable
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func isDoubleCode(_ codeTable: Int32) -> Bool {
@@ -269,7 +269,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setSmartSwitchKeyEnabled(_ enabled: Bool) {
         vUseSmartSwitchKey = enabled ? 1 : 0
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func isSendKeyStepByStepEnabled() -> Bool {
@@ -278,7 +278,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setSendKeyStepByStepEnabled(_ enabled: Bool) {
         vSendKeyStepByStep = enabled ? 1 : 0
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func setUpperCaseExcludedForCurrentApp(_ excluded: Bool) {
@@ -291,12 +291,12 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setSwitchKeyStatus(_ status: Int32) {
         vSwitchKeyStatus = status
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func setShowIconOnDock(_ visible: Bool) {
         vShowIconOnDock = visible ? 1 : 0
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func showIconOnDock() -> Int32 {
@@ -309,7 +309,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setUpperCaseFirstChar(_ value: Int32) {
         vUpperCaseFirstChar = value
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func upperCaseExcludedForCurrentApp() -> Int32 {
@@ -322,7 +322,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setCheckSpelling(_ value: Int32) {
         vCheckSpelling = value
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func applyCheckSpelling() {
@@ -335,7 +335,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setUseModernOrthography(_ value: Int32) {
         vUseModernOrthography = value
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func quickTelex() -> Int32 {
@@ -344,7 +344,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setQuickTelex(_ value: Int32) {
         vQuickTelex = value
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func freeMark() -> Int32 {
@@ -353,7 +353,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setFreeMark(_ value: Int32) {
         vFreeMark = value
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func useMacro() -> Int32 {
@@ -362,7 +362,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setUseMacro(_ value: Int32) {
         vUseMacro = value
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func useMacroInEnglishMode() -> Int32 {
@@ -371,7 +371,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setUseMacroInEnglishMode(_ value: Int32) {
         vUseMacroInEnglishMode = value
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func autoCapsMacro() -> Int32 {
@@ -380,7 +380,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setAutoCapsMacro(_ value: Int32) {
         vAutoCapsMacro = value
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func allowConsonantZFWJ() -> Int32 {
@@ -389,7 +389,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setAllowConsonantZFWJ(_ value: Int32) {
         vAllowConsonantZFWJ = value
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func quickStartConsonant() -> Int32 {
@@ -398,7 +398,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setQuickStartConsonant(_ value: Int32) {
         vQuickStartConsonant = value
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func quickEndConsonant() -> Int32 {
@@ -407,7 +407,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setQuickEndConsonant(_ value: Int32) {
         vQuickEndConsonant = value
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func performLayoutCompat() -> Int32 {
@@ -416,7 +416,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setPerformLayoutCompat(_ value: Int32) {
         vPerformLayoutCompat = value
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func restoreOnEscape() -> Int32 {
@@ -425,7 +425,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setRestoreOnEscape(_ value: Int32) {
         vRestoreOnEscape = value
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func customEscapeKey() -> Int32 {
@@ -434,7 +434,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setCustomEscapeKey(_ value: Int32) {
         vCustomEscapeKey = value
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func pauseKeyEnabled() -> Int32 {
@@ -443,7 +443,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setPauseKeyEnabled(_ value: Int32) {
         vPauseKeyEnabled = value
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func pauseKey() -> Int32 {
@@ -452,7 +452,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setPauseKey(_ value: Int32) {
         vPauseKey = value
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func autoRestoreEnglishWord() -> Int32 {
@@ -461,7 +461,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setAutoRestoreEnglishWord(_ value: Int32) {
         vAutoRestoreEnglishWord = value
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func enableEmojiHotkey() -> Int32 {
@@ -480,7 +480,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
         vEnableEmojiHotkey = enabled
         vEmojiHotkeyModifiers = modifiers
         vEmojiHotkeyKeyCode = keyCode
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func defaultSwitchHotkeyStatus() -> Int32 {
@@ -493,22 +493,22 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setFixRecommendBrowser(_ value: Int32) {
         vFixRecommendBrowser = value
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func setTempOffSpelling(_ value: Int32) {
         vTempOffSpelling = value
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func setTempOffEngine(_ value: Int32) {
         vTempOffPHTV = value
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func setSafeMode(_ enabled: Bool) {
         vSafeMode = enabled ? 1 : 0
-        phtvRuntimeBarrier()
+        OSMemoryBarrier()
     }
 
     class func tempOffSpelling() -> Int32 {
