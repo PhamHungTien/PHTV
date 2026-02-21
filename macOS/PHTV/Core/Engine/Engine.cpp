@@ -8,7 +8,7 @@
 #include <iostream>
 #include <algorithm>
 #include <unordered_set>
-#include "Engine.h"
+#include <string>
 #include "PHTVEngineCBridge.h"
 #include "Vietnamese.h"
 #include <string.h>
@@ -16,6 +16,22 @@
 #include <cstdio>
 
 using namespace std;
+
+void vPrimeUpperCaseFirstChar();
+void* vKeyInit();
+Uint32 getCharacterCode(const Uint32& data);
+void vKeyHandleEvent(const vKeyEvent& event,
+                     const vKeyEventState& state,
+                     const Uint16& data,
+                     const Uint8& capsStatus,
+                     const bool& otherControlKey);
+void startNewSession();
+void vEnglishMode(const vKeyEventState& state, const Uint16& data, const bool& isCaps, const bool& otherControlKey);
+void vTempOffSpellChecking();
+void vSetCheckSpelling();
+void vTempOffEngine(const bool& off);
+bool vRestoreToRawKeys();
+void vRestoreSessionWithWord(const std::wstring& word);
 
 static int phtvFallbackCheckSpellingValue = 1;
 static int phtvFallbackInputTypeValue = vTelex;
