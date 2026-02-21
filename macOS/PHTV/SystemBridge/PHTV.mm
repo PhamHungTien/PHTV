@@ -148,7 +148,6 @@ static BOOL _phtvPostToHIDTap = NO;
 static BOOL _phtvPostToSessionForCli = NO;
 static BOOL _phtvIsCliTarget = NO;
 static double _phtvCliSpeedFactor = 1.0;
-static int _phtvCliPendingBackspaceCount = 0;
 static useconds_t _phtvCliBackspaceDelayUs = 0;
 static useconds_t _phtvCliWaitAfterBackspaceUs = 0;
 static useconds_t _phtvCliTextDelayUs = 0;
@@ -1349,7 +1348,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
             _phtvKeyboardType = CGEventGetIntegerValueField(event, kCGKeyboardEventKeyboardType);
             _phtvPendingBackspaceCount = 0;
-            _phtvCliPendingBackspaceCount = 0;
 
 #ifdef DEBUG
             NSString *eventTargetBundleId = targetContext.eventTargetBundleId;
@@ -1380,8 +1378,9 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             } codeTableGuard;
 
             int currentCodeTable = __atomic_load_n(&vCodeTable, __ATOMIC_RELAXED);
-            if (currentCodeTable == 3 &&
-                (spotlightActive || appChars.isSpotlightLike)) {
+            if ([PHTVInputStrategyService shouldTemporarilyUseUnicodeCodeTableForCurrentCodeTable:(int32_t)currentCodeTable
+                                                                                   spotlightActive:spotlightActive
+                                                                                     spotlightLikeApp:appChars.isSpotlightLike]) {
                 codeTableGuard.active = true;
                 codeTableGuard.saved = currentCodeTable;
                 __atomic_store_n(&vCodeTable, 0, __ATOMIC_RELAXED);

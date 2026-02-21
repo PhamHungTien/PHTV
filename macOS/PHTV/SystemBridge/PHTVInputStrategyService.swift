@@ -211,4 +211,13 @@ final class PHTVInputStrategyService: NSObject {
             shouldStartNewSessionAfterSend: useStepByStepCharacterSend && engineCode == restoreAndStartNewSessionCode
         )
     }
+
+    @objc(shouldTemporarilyUseUnicodeCodeTableForCurrentCodeTable:spotlightActive:spotlightLikeApp:)
+    class func shouldTemporarilyUseUnicodeCodeTable(
+        forCurrentCodeTable currentCodeTable: Int32,
+        spotlightActive: Bool,
+        spotlightLikeApp: Bool
+    ) -> Bool {
+        return currentCodeTable == 3 && (spotlightActive || spotlightLikeApp)
+    }
 }
