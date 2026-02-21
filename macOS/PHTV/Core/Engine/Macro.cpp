@@ -18,6 +18,12 @@ extern "C" int phtvFindMacroContentForNormalizedKeys(const Uint32* normalizedKey
                                                      int autoCapsEnabled,
                                                      Uint32* outputBuffer,
                                                      int outputCapacity);
+extern "C" int phtvRuntimeAutoCapsMacroValue();
+
+extern "C" __attribute__((weak)) int phtvRuntimeAutoCapsMacroValue() {
+    // Standalone regression binary fallback: preserve legacy default OFF.
+    return 0;
+}
 
 extern "C" {
 void initMacroMap(const Byte* pData, const int& size) {
@@ -36,7 +42,7 @@ bool findMacro(vector<Uint32>& key, vector<Uint32>& macroContentCode) {
     const int requiredLength = phtvFindMacroContentForNormalizedKeys(
         keyBuffer,
         keyCount,
-        vAutoCapsMacro,
+        phtvRuntimeAutoCapsMacroValue(),
         nullptr,
         0
     );
@@ -54,7 +60,7 @@ bool findMacro(vector<Uint32>& key, vector<Uint32>& macroContentCode) {
     const int actualLength = phtvFindMacroContentForNormalizedKeys(
         keyBuffer,
         keyCount,
-        vAutoCapsMacro,
+        phtvRuntimeAutoCapsMacroValue(),
         macroContentCode.data(),
         requiredLength
     );

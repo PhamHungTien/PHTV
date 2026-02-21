@@ -81,13 +81,6 @@ extern volatile int vQuickTelex;
 extern volatile int vUseMacro;
 
 /**
- * Ex: define: btw -> by the way
- * Type: `Btw` -> `By the way`
- * Type: `BTW` -> `BY THE WAY`
- */
-extern volatile int vAutoCapsMacro;
-
-/**
  * Auto write upper case character for first letter.
  * 0: No
  * 1: Yes

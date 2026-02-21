@@ -17,7 +17,6 @@ volatile int vCheckSpelling = 1;
 volatile int vUseModernOrthography = 1;
 volatile int vQuickTelex = 0;
 volatile int vUseMacro = 1;
-volatile int vAutoCapsMacro = 0;
 volatile int vUpperCaseFirstChar = 0;
 volatile int vUpperCaseExcludedForCurrentApp = 0;  // 1 = current app is in uppercase excluded list
 volatile int vAllowConsonantZFWJ = 1;

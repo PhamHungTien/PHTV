@@ -96,6 +96,10 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - Them C bridge `phtvRuntimeRestoreOnEscapeEnabled()` do `PHTVEngineRuntimeFacade.swift` cung cap
   - `Engine.cpp` doc runtime setting qua bridge thay vi global C++
   - Giu weak fallback trong `Engine.cpp` de regression binary standalone (khong link Swift) van chay
+- Da dua `vAutoCapsMacro` sang Swift storage:
+  - Them C bridge `phtvRuntimeAutoCapsMacroValue()` do `PHTVEngineRuntimeFacade.swift` cung cap
+  - `Macro.cpp` doc runtime setting qua bridge thay vi global C++
+  - Giu weak fallback trong `Macro.cpp` de regression binary standalone van giu behavior mac dinh
 
 ## Lo trinh migrate
 

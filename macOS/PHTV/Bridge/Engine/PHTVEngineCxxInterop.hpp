@@ -20,7 +20,6 @@ extern volatile int vCheckSpelling __attribute__((swift_attr("nonisolated(unsafe
 extern volatile int vUseModernOrthography __attribute__((swift_attr("nonisolated(unsafe)")));
 extern volatile int vQuickTelex __attribute__((swift_attr("nonisolated(unsafe)")));
 extern volatile int vUseMacro __attribute__((swift_attr("nonisolated(unsafe)")));
-extern volatile int vAutoCapsMacro __attribute__((swift_attr("nonisolated(unsafe)")));
 extern volatile int vUpperCaseFirstChar __attribute__((swift_attr("nonisolated(unsafe)")));
 extern volatile int vUpperCaseExcludedForCurrentApp __attribute__((swift_attr("nonisolated(unsafe)")));
 extern volatile int vAllowConsonantZFWJ __attribute__((swift_attr("nonisolated(unsafe)")));

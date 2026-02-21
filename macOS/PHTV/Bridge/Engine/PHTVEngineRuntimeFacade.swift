@@ -32,6 +32,7 @@ nonisolated(unsafe) private var runtimeSwitchKeyStatus: Int32 = Int32(Defaults.d
 nonisolated(unsafe) private var runtimeFixRecommendBrowser: Int32 = 1
 nonisolated(unsafe) private var runtimeUseMacroInEnglishMode: Int32 = 0
 nonisolated(unsafe) private var runtimeUseSmartSwitchKey: Int32 = 1
+nonisolated(unsafe) private var runtimeAutoCapsMacro: Int32 = 0
 nonisolated(unsafe) private var runtimeRememberCode: Int32 = 1
 nonisolated(unsafe) private var runtimeOtherLanguage: Int32 = 1
 nonisolated(unsafe) private var runtimeTempOffSpelling: Int32 = 0
@@ -548,6 +549,11 @@ func phtvRuntimeRestoreOnEscapeEnabled() -> Int32 {
     runtimeRestoreOnEscape
 }
 
+@_cdecl("phtvRuntimeAutoCapsMacroValue")
+func phtvRuntimeAutoCapsMacroValue() -> Int32 {
+    runtimeAutoCapsMacro
+}
+
 private func phtvCallStartNewSession() {
     startNewSession()
 }
@@ -916,11 +922,11 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func autoCapsMacro() -> Int32 {
-        Int32(vAutoCapsMacro)
+        runtimeAutoCapsMacro
     }
 
     class func setAutoCapsMacro(_ value: Int32) {
-        vAutoCapsMacro = value
+        runtimeAutoCapsMacro = value
         OSMemoryBarrier()
     }
 
