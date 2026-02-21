@@ -455,12 +455,6 @@ inline std::uint16_t phtvEngineMacroKeyCodeToCharacter(const std::uint32_t keyDa
     return keyCodeToCharacter(static_cast<Uint32>(keyData));
 }
 
-// MARK: - Runtime flag helpers
-
-inline bool phtvRuntimeIsDoubleCode(const int codeTable) noexcept {
-    return codeTable == 2 || codeTable == 3;
-}
-
 // MARK: - Engine output state (pData) field accessors
 
 extern vKeyHookState* pData;

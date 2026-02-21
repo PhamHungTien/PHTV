@@ -111,7 +111,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func isDoubleCode(_ codeTable: Int32) -> Bool {
-        phtvRuntimeIsDoubleCode(codeTable)
+        codeTable == 2 || codeTable == 3
     }
 
     class func isSmartSwitchKeyEnabled() -> Bool {
