@@ -11,10 +11,11 @@
 #include "Engine.h"
 #include <string.h>
 #include <list>
-#include "Macro.h"
 #include <cstdio>
 
 using namespace std;
+
+bool findMacro(vector<Uint32>& key, vector<Uint32>& macroContentCode);
 
 extern "C" int phtvRuntimeRestoreOnEscapeEnabled();
 extern "C" int phtvRuntimeAutoRestoreEnglishWordEnabled();

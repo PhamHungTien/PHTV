@@ -12,11 +12,11 @@
 #include <locale>
 #include <codecvt>
 #include <string>
+#include <vector>
 
 #include "DataType.h"
 #include "../PHTVHotkey.h"
 #include "Vietnamese.h"
-#include "Macro.h"
 #include "EnglishWordDetector.h"
 
 #ifndef LOBYTE
@@ -30,6 +30,11 @@
  * Prime uppercase for the next character when auto-capitalization is enabled.
  */
 void vPrimeUpperCaseFirstChar();
+
+/**
+ * Call when you need to load macro data from disk.
+ */
+extern "C" void initMacroMap(const Byte* pData, const int& size);
 
 /**
  * Call this function first to receive data pointer

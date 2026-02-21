@@ -6,7 +6,6 @@
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
-#include "Macro.h"
 #include "Vietnamese.h"
 #include "Engine.h"
 
