@@ -23,6 +23,14 @@ enum PHTVSyncKeyAction: Int32 {
     case insertOne = 4
 }
 
+@objc
+enum PHTVEngineSignalAction: Int32 {
+    case none = 0
+    case doNothing = 1
+    case processSignal = 2
+    case replaceMacro = 3
+}
+
 @objcMembers
 final class PHTVBackspaceAdjustmentBox: NSObject {
     let action: Int32
@@ -136,6 +144,7 @@ final class PHTVInputStrategyService: NSObject {
         let shouldTryBrowserAddressBarFix =
             isBrowserFix &&
             extCode != 4 &&
+            backspaceCount > 0 &&
             !isSpecialApp &&
             !shouldSkipSpace &&
             !isPotentialShortcut
@@ -143,6 +152,7 @@ final class PHTVInputStrategyService: NSObject {
         let shouldTryLegacyNonBrowserFix =
             browserFixEnabled &&
             extCode != 4 &&
+            backspaceCount > 0 &&
             (!isSpecialApp || isNotionApp) &&
             !isSpaceKey &&
             !isPotentialShortcut &&
@@ -335,5 +345,26 @@ final class PHTVInputStrategyService: NSObject {
             return false
         }
         return bundleId == "com.figma.Desktop"
+    }
+
+    @objc(engineSignalActionForEngineCode:doNothingCode:willProcessCode:restoreCode:restoreAndStartNewSessionCode:replaceMacroCode:)
+    class func engineSignalAction(
+        forEngineCode code: Int32,
+        doNothingCode: Int32,
+        willProcessCode: Int32,
+        restoreCode: Int32,
+        restoreAndStartNewSessionCode: Int32,
+        replaceMacroCode: Int32
+    ) -> Int32 {
+        if code == willProcessCode || code == restoreCode || code == restoreAndStartNewSessionCode {
+            return PHTVEngineSignalAction.processSignal.rawValue
+        }
+        if code == replaceMacroCode {
+            return PHTVEngineSignalAction.replaceMacro.rawValue
+        }
+        if code == doNothingCode {
+            return PHTVEngineSignalAction.doNothing.rawValue
+        }
+        return PHTVEngineSignalAction.none.rawValue
     }
 }

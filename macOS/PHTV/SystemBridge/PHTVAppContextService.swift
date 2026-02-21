@@ -73,6 +73,11 @@ final class PHTVAppContextService: NSObject {
         )
     }
 
+    @objc(defaultAppCharacteristics)
+    class func defaultAppCharacteristics() -> PHTVAppCharacteristicsBox {
+        makeDefaultAppCharacteristics()
+    }
+
     @objc(spotlightActiveForSafeMode:)
     class func spotlightActive(forSafeMode safeMode: Bool) -> Bool {
         guard !safeMode else {
@@ -201,7 +206,7 @@ final class PHTVAppContextService: NSObject {
         let effectiveBundleId = (spotlightActive && focusedBundleId != nil) ? focusedBundleId : (eventTargetBundleId ?? focusedBundleId)
 
         let appCharacteristics = appCharacteristics(forBundleId: effectiveBundleId, maxAgeMs: appCharacteristicsMaxAgeMs)
-            ?? makeDefaultAppCharacteristics()
+            ?? defaultAppCharacteristics()
 
         let isTargetBrowser = eventTargetBundleId.map(PHTVAppDetectionService.isBrowserApp(_:)) ?? false
         let isEffectiveBrowser = effectiveBundleId.map(PHTVAppDetectionService.isBrowserApp(_:)) ?? false

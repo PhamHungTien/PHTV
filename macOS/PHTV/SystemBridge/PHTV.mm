@@ -400,15 +400,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         return [NSString stringWithUTF8String:convertUtil([str UTF8String]).c_str()];
     }
     
-    // Get bundle ID of the actually focused app (not just frontmost)
-    // This is important for overlay windows like Spotlight, which aren't the frontmost app
-    // Uses Spotlight/focus caches maintained by PHTVAppContextService.
-    NSString* getFocusedAppBundleId() {
-        NSString *result = [PHTVAppContextService focusedBundleIdForSafeMode:vSafeMode
-                                                              cacheDurationMs:SPOTLIGHT_CACHE_DURATION_MS];
-        return (result != nil) ? result : FRONT_APP;
-    }
-    
     void InsertKeyLength(const Uint8& len) {
         _syncKey.push_back(len);
     }
@@ -892,7 +883,14 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             
     void handleMacro() {
         // PERFORMANCE: Use cached bundle ID instead of querying AX API
-        NSString *effectiveTarget = _phtvEffectiveTargetBundleId ?: getFocusedAppBundleId();
+        NSString *effectiveTarget = _phtvEffectiveTargetBundleId;
+        if (effectiveTarget == nil) {
+            effectiveTarget = [PHTVAppContextService focusedBundleIdForSafeMode:vSafeMode
+                                                                 cacheDurationMs:SPOTLIGHT_CACHE_DURATION_MS];
+            if (effectiveTarget == nil) {
+                effectiveTarget = FRONT_APP;
+            }
+        }
         PHTVMacroPlanBox *macroPlan =
             [PHTVInputStrategyService macroPlanForPostToHIDTap:_phtvPostToHIDTap
                                             appIsSpotlightLike:PHTVCurrentAppIsSpotlightLike()
@@ -1309,11 +1307,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             NSString *effectiveBundleId = targetContext.effectiveBundleId;
             PHTVAppCharacteristicsBox *appChars = targetContext.appCharacteristics;
             if (appChars == nil) {
-                appChars = [[PHTVAppCharacteristicsBox alloc] initWithIsSpotlightLike:NO
-                                                               needsPrecomposedBatched:NO
-                                                                       needsStepByStep:NO
-                                                               containsUnicodeCompound:NO
-                                                                              isSafari:NO];
+                appChars = [PHTVAppContextService defaultAppCharacteristics];
             }
 
             // Cache for send routines called later in this callback.
@@ -1406,7 +1400,14 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             }
 #endif
 
-            if (pData->code == vDoNothing) { //do nothing
+            int signalAction = (int)[PHTVInputStrategyService engineSignalActionForEngineCode:(int32_t)pData->code
+                                                                                   doNothingCode:(int32_t)vDoNothing
+                                                                                 willProcessCode:(int32_t)vWillProcess
+                                                                                    restoreCode:(int32_t)vRestore
+                                                               restoreAndStartNewSessionCode:(int32_t)vRestoreAndStartNewSession
+                                                                                  replaceMacroCode:(int32_t)vReplaceMaro];
+
+            if (signalAction == PHTVEngineSignalActionDoNothing) { //do nothing
                 // Navigation keys: trigger session restore to support keyboard-based edit-in-place
                 if (phtv_mac_key_is_navigation(_keycode)) {
                     // TryToRestoreSessionFromAX();
@@ -1434,7 +1435,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                     InsertKeyLength(1);
                 }
                 return event;
-            } else if (pData->code == vWillProcess || pData->code == vRestore || pData->code == vRestoreAndStartNewSession) { //handle result signal
+            } else if (signalAction == PHTVEngineSignalActionProcessSignal) { //handle result signal
                 // FIGMA FIX: Force pass-through for Space key to support "Hand tool" (Hold Space)
                 // When PHTV consumes Space and sends a synthetic one, it breaks the "hold" state.
                 if ([PHTVInputStrategyService shouldBypassSpaceForFigmaWithBundleId:effectiveBundleId
@@ -1458,7 +1459,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 // we should NOT use Spotlight-style handling.
                 BOOL isBrowserApp = targetContext.isBrowser;
                 BOOL isSpotlightTarget = targetContext.postToHIDTap;
-                BOOL isNotionApp = [effectiveBundleId isEqualToString:@"notion.id"];
+                BOOL isNotionApp = [PHTVAppDetectionService isNotionApp:effectiveBundleId];
                 PHTVInputStrategyBox *inputStrategy = [PHTVInputStrategyService strategyForSpaceKey:(_keycode == KEY_SPACE)
                                                                                             slashKey:(_keycode == KEY_SLASH)
                                                                                              extCode:pData->extCode
@@ -1486,7 +1487,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 #endif
 
                 BOOL isAddrBar = NO;
-                if (inputStrategy.shouldTryBrowserAddressBarFix && pData->backspaceCount > 0) {
+                if (inputStrategy.shouldTryBrowserAddressBarFix) {
                     // Use accurate AX API check (cached) instead of unreliable spotlightActive.
                     isAddrBar = [PHTVEventContextBridgeService isFocusedElementAddressBarForSafeMode:vSafeMode];
 #ifdef DEBUG
@@ -1495,7 +1496,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 }
 
                 BOOL isNotionCodeBlockDetected = NO;
-                if (inputStrategy.shouldTryLegacyNonBrowserFix && pData->backspaceCount > 0) {
+                if (inputStrategy.shouldTryLegacyNonBrowserFix) {
                     // Notion code block should use standard backspace path.
                     isNotionCodeBlockDetected = isNotionApp &&
                         [PHTVEventContextBridgeService isNotionCodeBlockForSafeMode:vSafeMode];
@@ -1668,7 +1669,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                         startNewSession();
                     }
                 }
-            } else if (pData->code == vReplaceMaro) { //MACRO
+            } else if (signalAction == PHTVEngineSignalActionReplaceMacro) { //MACRO
                 handleMacro();
             }
 

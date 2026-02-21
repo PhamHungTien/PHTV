@@ -289,6 +289,10 @@ final class PHTVAppDetectionService: NSObject {
         safariApps.contains(bundleId)
     }
 
+    @objc class func isNotionApp(_ bundleId: String?) -> Bool {
+        normalizeBundleId(bundleId) == "notion.id"
+    }
+
     @objc class func shouldDisableVietnamese(_ bundleId: String?) -> Bool {
         disableVietnameseApps.contains(bundleId)
     }
