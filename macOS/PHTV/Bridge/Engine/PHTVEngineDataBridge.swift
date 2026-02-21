@@ -81,8 +81,7 @@ final class PHTVEngineDataBridge: NSObject {
             return "␣"
         }
 
-        let keyChar = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(
-            UInt32(keyCode) | EngineBitMask.caps)
+        let keyChar = EngineMacroKeyMap.character(for: UInt32(keyCode) | EngineBitMask.caps)
         if keyChar >= 33,
            keyChar <= 126,
            let scalar = UnicodeScalar(Int(keyChar)) {
@@ -139,7 +138,7 @@ final class PHTVEngineDataBridge: NSObject {
             if (data & pureCharacterMask) != 0 {
                 character = UInt16(truncatingIfNeeded: data & ~capsMask)
             } else if (data & charCodeMask) == 0 {
-                character = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(data)
+                character = EngineMacroKeyMap.character(for: data)
                 if character == 0 {
                     continue
                 }

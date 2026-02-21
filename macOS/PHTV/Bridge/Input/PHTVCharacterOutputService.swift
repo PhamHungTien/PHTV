@@ -74,11 +74,11 @@ final class PHTVCharacterOutputService: NSObject {
         let capsMask = EngineBitMask.caps
 
         if !willContinueSending && (engineCode == vRestoreCode || engineCode == vRestoreNewCode) {
-            if PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(UInt32(keycode)) != 0 {
+            if EngineMacroKeyMap.character(for: UInt32(keycode)) != 0 {
                 let hasCaps = (flags & CGEventFlags.maskAlphaShift.rawValue) != 0
                            || (flags & CGEventFlags.maskShift.rawValue) != 0
                 let withCaps = UInt32(keycode) | (hasCaps ? capsMask : 0)
-                newCharString[outputIndex] = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(withCaps)
+                newCharString[outputIndex] = EngineMacroKeyMap.character(for: withCaps)
                 outputIndex += 1
                 newCharSize += 1
             } else {
@@ -276,7 +276,7 @@ final class PHTVCharacterOutputService: NSObject {
             if EngineInputClassification.isDoubleCodeTable(Int32(codeTable)) {
                 PHTVKeyEventSenderService.insertKeyLength(1)
             }
-            newCharString[outputIndex] = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(tempChar)
+            newCharString[outputIndex] = EngineMacroKeyMap.character(for: tempChar)
             outputIndex += 1
         } else {
             switch codeTable {

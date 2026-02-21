@@ -135,7 +135,7 @@ final class PHTVEventCallbackService {
                 let keyWithCaps = UInt32(eventKeycode) |
                     ((eventFlags.contains(.maskShift) || eventFlags.contains(.maskAlphaShift))
                      ? EngineBitMask.caps : 0)
-                let keyCharacter = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(keyWithCaps)
+                let keyCharacter = EngineMacroKeyMap.character(for: keyWithCaps)
                 let isNavigationKey = EngineInputClassification.isNavigationKey(eventKeycode)
                 let shouldPrime = PHTVEventContextBridgeService.shouldPrimeUppercaseOnKeyDown(
                     withFlags: eventFlags.rawValue,

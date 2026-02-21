@@ -116,11 +116,11 @@ enum DebugSelfTests {
         let capsMask = EngineBitMask.caps
         let keyA: UInt32 = 0
         let key1: UInt32 = 18
-        let lowercaseA = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(keyA)
-        let uppercaseA = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(keyA | capsMask)
-        let digitOne = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(key1)
-        let symbolExclamation = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(key1 | capsMask)
-        let shiftedSpace = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(UInt32(kVK_Space) | capsMask)
+        let lowercaseA = EngineMacroKeyMap.character(for: keyA)
+        let uppercaseA = EngineMacroKeyMap.character(for: keyA | capsMask)
+        let digitOne = EngineMacroKeyMap.character(for: key1)
+        let symbolExclamation = EngineMacroKeyMap.character(for: key1 | capsMask)
+        let shiftedSpace = EngineMacroKeyMap.character(for: UInt32(kVK_Space) | capsMask)
         let unicodeLookup = PHTVEngineRuntimeFacade.findCodeTableSourceKey(codeTable: 0, character: 0x00E2)
         let unicodeVariants = PHTVEngineRuntimeFacade.codeTableVariantCount(codeTable: 0, keyCode: 0)
         let vniCharacter = PHTVEngineRuntimeFacade.codeTableCharacterForKey(

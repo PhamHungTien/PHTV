@@ -172,7 +172,7 @@ final class PHTVConvertToolTextConversionService: NSObject {
 
         if options.removeMark {
             let baseKeyCode = UInt32(UInt8(truncatingIfNeeded: sourceKeyCode))
-            targetCharacter = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(baseKeyCode)
+            targetCharacter = EngineMacroKeyMap.character(for: baseKeyCode)
             if options.toAllCaps {
                 targetCharacter = uppercased(targetCharacter)
             } else if options.toAllNonCaps {
