@@ -226,7 +226,7 @@ import Foundation
         }
 
         PHTVSetCheckSpelling(spellingEnabled)
-        PHTVEngineApplyCheckSpelling()
+        phtvEngineApplyCheckSpelling()
     }
 
     @objc(setDockIconRuntimeVisible:)

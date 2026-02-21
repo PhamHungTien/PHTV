@@ -13,51 +13,51 @@ final class PHTVEngineDataBridge: NSObject {
     class func initializeMacroMap(with data: Data) {
         data.withUnsafeBytes { rawBuffer in
             let base = rawBuffer.bindMemory(to: UInt8.self).baseAddress
-            PHTVEngineInitializeMacroMap(base, Int32(rawBuffer.count))
+            phtvEngineInitializeMacroMap(base, Int32(rawBuffer.count))
         }
     }
 
     class func initializeEnglishDictionary(atPath path: String) -> Bool {
         return path.withCString { cPath in
-            PHTVEngineInitializeEnglishDictionary(cPath)
+            phtvEngineInitializeEnglishDictionary(cPath)
         }
     }
 
     class func englishDictionarySize() -> UInt {
-        return UInt(PHTVEngineEnglishDictionarySize())
+        return UInt(phtvEngineEnglishDictionarySize())
     }
 
     class func initializeVietnameseDictionary(atPath path: String) -> Bool {
         return path.withCString { cPath in
-            PHTVEngineInitializeVietnameseDictionary(cPath)
+            phtvEngineInitializeVietnameseDictionary(cPath)
         }
     }
 
     class func vietnameseDictionarySize() -> UInt {
-        return UInt(PHTVEngineVietnameseDictionarySize())
+        return UInt(phtvEngineVietnameseDictionarySize())
     }
 
     class func initializeCustomDictionary(withJSONData jsonData: Data) {
         jsonData.withUnsafeBytes { rawBuffer in
             let base = rawBuffer.bindMemory(to: CChar.self).baseAddress
-            PHTVEngineInitializeCustomDictionary(base, Int32(rawBuffer.count))
+            phtvEngineInitializeCustomDictionary(base, Int32(rawBuffer.count))
         }
     }
 
     class func customEnglishWordCount() -> UInt {
-        return UInt(PHTVEngineCustomEnglishWordCount())
+        return UInt(phtvEngineCustomEnglishWordCount())
     }
 
     class func customVietnameseWordCount() -> UInt {
-        return UInt(PHTVEngineCustomVietnameseWordCount())
+        return UInt(phtvEngineCustomVietnameseWordCount())
     }
 
     class func clearCustomDictionary() {
-        PHTVEngineClearCustomDictionary()
+        phtvEngineClearCustomDictionary()
     }
 
     class func setCheckSpellingValue(_ value: Int32) {
-        PHTVEngineSetCheckSpellingValue(value)
+        phtvEngineSetCheckSpellingValue(value)
     }
 
     private class func hotkeyKeyDisplayLabel(_ keyCode: UInt16) -> String {

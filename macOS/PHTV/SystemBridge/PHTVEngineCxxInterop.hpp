@@ -2,7 +2,7 @@
 //  PHTVEngineCxxInterop.hpp
 //  PHTV
 //
-//  Swift-facing C++ interop wrappers around engine hotkey/character helpers.
+//  Swift-facing C++ interop wrappers around engine helpers.
 //
 
 #ifndef PHTVEngineCxxInterop_hpp
@@ -12,10 +12,69 @@
 
 #include <cstdint>
 
-#include "../Core/Engine/ConvertTool.h"
-#include "../Core/Engine/DataType.h"
-#include "../Core/Engine/Vietnamese.h"
-#include "../Core/PHTVHotkey.h"
+#include "../Core/Engine/Engine.h"
+
+inline void phtvEngineInitializeMacroMap(const std::uint8_t *data, const int length) noexcept {
+    if (!data || length <= 0) {
+        initMacroMap(nullptr, 0);
+        return;
+    }
+    initMacroMap(data, length);
+}
+
+inline bool phtvEngineInitializeEnglishDictionary(const char *path) {
+    if (!path || path[0] == '\0') {
+        return false;
+    }
+    return initEnglishDictionary(std::string(path));
+}
+
+inline unsigned long phtvEngineEnglishDictionarySize() noexcept {
+    return static_cast<unsigned long>(getEnglishDictionarySize());
+}
+
+inline bool phtvEngineInitializeVietnameseDictionary(const char *path) {
+    if (!path || path[0] == '\0') {
+        return false;
+    }
+    return initVietnameseDictionary(std::string(path));
+}
+
+inline unsigned long phtvEngineVietnameseDictionarySize() noexcept {
+    return static_cast<unsigned long>(getVietnameseDictionarySize());
+}
+
+inline void phtvEngineInitializeCustomDictionary(const char *jsonData, const int length) noexcept {
+    if (!jsonData || length <= 0) {
+        initCustomDictionary(nullptr, 0);
+        return;
+    }
+    initCustomDictionary(jsonData, length);
+}
+
+inline unsigned long phtvEngineCustomEnglishWordCount() noexcept {
+    return static_cast<unsigned long>(getCustomEnglishWordCount());
+}
+
+inline unsigned long phtvEngineCustomVietnameseWordCount() noexcept {
+    return static_cast<unsigned long>(getCustomVietnameseWordCount());
+}
+
+inline void phtvEngineClearCustomDictionary() noexcept {
+    clearCustomDictionary();
+}
+
+inline void phtvEngineSetCheckSpellingValue(const int value) noexcept {
+    vCheckSpelling = value;
+}
+
+inline void phtvEngineApplyCheckSpelling() noexcept {
+    vSetCheckSpelling();
+}
+
+inline void phtvEngineNotifyTableCodeChanged() noexcept {
+    onTableCodeChange();
+}
 
 inline int phtvEngineQuickConvertHotkey() noexcept {
     return gConvertToolOptions.hotKey;
