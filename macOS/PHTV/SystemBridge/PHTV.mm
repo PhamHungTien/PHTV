@@ -27,11 +27,6 @@ extern "C" {
 
 #define FRONT_APP [[NSWorkspace sharedWorkspace] frontmostApplication].bundleIdentifier
 
-typedef NS_ENUM(NSInteger, DelayType) {
-    DelayTypeNone = 0,
-    DelayTypeSpotlight = 2
-};
-
 // Cached app behavior used across the event callback.
 typedef struct {
     BOOL isSpotlightLike;
@@ -523,9 +518,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         CFRelease(_newEventUp);
     }
 
-    // Forward declarations for adaptive delay functions
-    uint64_t getAdaptiveDelay(uint64_t baseDelay, uint64_t maxDelay);
-
     void SendEmptyCharacter() {
         if (IS_DOUBLE_CODE(vCodeTable)) //VNI or Unicode Compound
             InsertKeyLength(1);
@@ -697,7 +689,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
     // Consolidated helper function to send multiple backspaces
     // Delays and throttling removed for standard application behavior
-    void SendBackspaceSequenceWithDelay(int count, DelayType delayType) {
+    void SendBackspaceSequenceWithDelay(int count) {
         if (count <= 0) return;
 
         if (_phtvIsCliTarget) {
@@ -864,7 +856,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             }
 
             // AX failed - fallback to synthetic events
-            SendBackspaceSequenceWithDelay(backspaceCount, DelayTypeNone);
+            SendBackspaceSequenceWithDelay(backspaceCount);
 
             _newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
             _newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
@@ -957,7 +949,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
 
         // Send backspace if needed
         if (pData->backspaceCount > 0) {
-            SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeNone);
+            SendBackspaceSequenceWithDelay(pData->backspaceCount);
         }
 
         //send real data - use step by step for timing sensitive apps like Spotlight
@@ -1219,7 +1211,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                         // Successfully restored - pData now contains restore info
                         // Send backspaces to delete Vietnamese characters
                         if (pData->backspaceCount > 0 && pData->backspaceCount < MAX_BUFF) {
-                            SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeNone);
+                            SendBackspaceSequenceWithDelay(pData->backspaceCount);
                         }
 
                         // Send the raw ASCII characters
@@ -1345,11 +1337,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             if (_phtvIsCliTarget) {
                 ApplyCliProfile(targetContext.cliTimingProfile);
             } else {
-                _phtvCliBackspaceDelayUs = 0;
-                _phtvCliWaitAfterBackspaceUs = 0;
-                _phtvCliTextDelayUs = 0;
-                _phtvCliTextChunkSize = (int)[PHTVCliProfileService nonCliTextChunkSize];
-                _phtvCliPostSendBlockUs = CLI_POST_SEND_BLOCK_MIN_US;
+                ApplyCliProfile(nil);
             }
             if (_phtvIsCliTarget) {
                 uint64_t now = mach_absolute_time();
@@ -1647,9 +1635,9 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                         PHTVSpotlightDebugLog([NSString stringWithFormat:@"deferBackspace=%d newCharCount=%d", (int)pData->backspaceCount, (int)pData->newCharCount]);
 #endif
                     } else if (characterSendPlan.useStepByStepBackspace) {
-                        SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeSpotlight);
+                        SendBackspaceSequenceWithDelay(pData->backspaceCount);
                     } else {
-                        SendBackspaceSequenceWithDelay(pData->backspaceCount, DelayTypeNone);
+                        SendBackspaceSequenceWithDelay(pData->backspaceCount);
                     }
                 }
 
