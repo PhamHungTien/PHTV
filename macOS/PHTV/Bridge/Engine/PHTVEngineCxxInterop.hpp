@@ -39,19 +39,11 @@ inline bool phtvEngineInitializeEnglishDictionary(const char *path) {
     return initEnglishDictionary(std::string(path));
 }
 
-inline unsigned long phtvEngineEnglishDictionarySize() noexcept {
-    return static_cast<unsigned long>(getEnglishDictionarySize());
-}
-
 inline bool phtvEngineInitializeVietnameseDictionary(const char *path) {
     if (!path || path[0] == '\0') {
         return false;
     }
     return initVietnameseDictionary(std::string(path));
-}
-
-inline unsigned long phtvEngineVietnameseDictionarySize() noexcept {
-    return static_cast<unsigned long>(getVietnameseDictionarySize());
 }
 
 inline void phtvEngineClearCustomDictionary() noexcept {

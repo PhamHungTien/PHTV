@@ -49,6 +49,8 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - bootstrap dictionary goi truc tiep `PHTVEngineRuntimeFacade.setCheckSpelling(...)`
 - Da bo wrappers custom dictionary count/init:
   - Swift facade goi truc tiep `initCustomDictionary`, `getCustomEnglishWordCount`, `getCustomVietnameseWordCount`
+- Da bo wrappers dictionary size:
+  - Swift facade goi truc tiep `getEnglishDictionarySize`, `getVietnameseDictionarySize`
 
 ## Lo trinh migrate
 

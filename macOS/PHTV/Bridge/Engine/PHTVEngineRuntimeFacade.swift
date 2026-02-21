@@ -401,7 +401,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func englishDictionarySize() -> Int32 {
-        Int32(phtvEngineEnglishDictionarySize())
+        Int32(getEnglishDictionarySize())
     }
 
     class func initializeVietnameseDictionary(_ path: UnsafePointer<CChar>) -> Bool {
@@ -409,7 +409,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func vietnameseDictionarySize() -> Int32 {
-        Int32(phtvEngineVietnameseDictionarySize())
+        Int32(getVietnameseDictionarySize())
     }
 
     class func initializeCustomDictionary(_ data: UnsafePointer<CChar>?, _ count: Int32) {
