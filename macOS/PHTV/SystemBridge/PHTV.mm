@@ -29,9 +29,8 @@ static const uint64_t APP_SWITCH_CACHE_DURATION_MS = 100;    // App switch detec
 static const uint64_t TEXT_REPLACEMENT_DELETE_WINDOW_MS = 30000;  // Max gap from external delete to replacement space
 static const NSUInteger SYNC_KEY_RESERVE_SIZE = 256;         // Pre-allocated buffer size for typing sync
 
-// Timing delay constants (all in microseconds)
+// PHTV event marker – used to skip our own synthetic events in the callback.
 static const int64_t kPHTVEventMarker = 0x50485456; // "PHTV"
-static const useconds_t CLI_PRE_BACKSPACE_DELAY_US = 4000;
 
 #define DYNA_DATA(macro, pos) (macro ? pData->macroData[pos] : pData->charData[pos])
 #define MAX_UNICODE_STRING  20
@@ -48,33 +47,7 @@ extern volatile int vPauseKey;
 
     static const uint64_t kAppCharacteristicsCacheMaxAgeMs = 10000;
 
-    static inline void SetCliBlockForMicroseconds(uint64_t microseconds) {
-        [PHTVCliRuntimeStateService scheduleBlockForMicroseconds:microseconds
-                                                     nowMachTime:mach_absolute_time()];
-    }
-
-    __attribute__((always_inline)) static inline void ApplyKeyboardTypeAndFlags(CGEventRef down, CGEventRef up) {
-        [PHTVEventContextBridgeService configureSyntheticKeyEventsWithKeyDown:down
-                                                                        keyUp:up
-                                                                  eventMarker:kPHTVEventMarker];
-    }
-
-    __attribute__((always_inline)) static inline void PostSyntheticEvent(CGEventRef e) {
-        CGEventSetIntegerValueField(e, kCGEventSourceUserData, kPHTVEventMarker);
-        if ([PHTVEventRuntimeContextService postToHIDTapEnabled]) {
-            CGEventPost(kCGHIDEventTap, e);
-        } else if ([PHTVEventRuntimeContextService postToSessionForCliEnabled]) {
-            CGEventPost(kCGSessionEventTap, e);
-        } else {
-            CGEventTapProxy currentProxy = (CGEventTapProxy)(uintptr_t)[PHTVEventRuntimeContextService eventTapProxyRawValue];
-            CGEventTapPostEvent(currentProxy, e);
-        }
-    }
-
-    CGEventSourceRef myEventSource = NULL;
     vKeyHookState* pData;
-    CGEventRef eventBackSpaceDown;
-    CGEventRef eventBackSpaceUp;
 
     
     void PHTVInit() {
@@ -84,18 +57,11 @@ extern volatile int vPauseKey;
 
         [PHTVLayoutCompatibilityService autoEnableIfNeeded];
 
-        myEventSource = CGEventSourceCreate(kCGEventSourceStatePrivate);
+        [PHTVKeyEventSenderService initializeEventSource];
         pData = (vKeyHookState*)vKeyInit();
 
         [PHTVTypingSyncStateService setupSyncKeyCapacity:(int32_t)SYNC_KEY_RESERVE_SIZE];
 
-        eventBackSpaceDown = CGEventCreateKeyboardEvent (myEventSource, KEY_DELETE, true);
-        eventBackSpaceUp = CGEventCreateKeyboardEvent (myEventSource, KEY_DELETE, false);
-        
-        // Apply NonCoalesced flag to global backspace events
-        CGEventSetFlags(eventBackSpaceDown, CGEventGetFlags(eventBackSpaceDown) | kCGEventFlagMaskNonCoalesced);
-        CGEventSetFlags(eventBackSpaceUp, CGEventGetFlags(eventBackSpaceUp) | kCGEventFlagMaskNonCoalesced);
-        
         [PHTVEngineStartupDataService loadFromUserDefaults];
         [PHTVConvertToolSettingsService loadFromUserDefaults];
     }
@@ -152,313 +118,6 @@ extern volatile int vPauseKey;
         RequestNewSessionInternal(true);
     }
     
-    void InsertKeyLength(const Uint8& len) {
-        [PHTVTypingSyncStateService appendSyncKeyLength:(int32_t)len];
-    }
-    
-    void SendPureCharacter(const Uint16& ch) {
-        CGEventRef newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
-        CGEventRef newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
-        ApplyKeyboardTypeAndFlags(newEventDown, newEventUp);
-        CGEventKeyboardSetUnicodeString(newEventDown, 1, &ch);
-        CGEventKeyboardSetUnicodeString(newEventUp, 1, &ch);
-        PostSyntheticEvent(newEventDown);
-        PostSyntheticEvent(newEventUp);
-        if ([PHTVEventRuntimeContextService postToHIDTapEnabled]) [PHTVTimingService spotlightTinyDelay];
-        CFRelease(newEventDown);
-        CFRelease(newEventUp);
-        if (IS_DOUBLE_CODE(vCodeTable)) {
-            InsertKeyLength(1);
-        }
-    }
-    
-    void SendKeyCode(Uint32 data) {
-        UniChar newChar = (Uint16)data;
-        UniChar newCharHi = 0;
-        if (!(data & CHAR_CODE_MASK)) {
-            if (IS_DOUBLE_CODE(vCodeTable)) //VNI
-                InsertKeyLength(1);
-            
-            CGEventRef newEventDown = CGEventCreateKeyboardEvent(myEventSource, newChar, true);
-            CGEventRef newEventUp = CGEventCreateKeyboardEvent(myEventSource, newChar, false);
-            CGEventFlags privateFlag = CGEventGetFlags(newEventDown);
-            
-            if (data & CAPS_MASK) {
-                privateFlag |= kCGEventFlagMaskShift;
-            } else {
-                privateFlag &= ~kCGEventFlagMaskShift;
-            }
-            privateFlag |= kCGEventFlagMaskNonCoalesced;
-            
-            // CRITICAL FIX: Clear Fn/Globe flag to prevent triggering system hotkeys
-            // (e.g., Fn+E opens Character Viewer/Emoji picker on macOS)
-            // This prevents the bug where typing 'eee' triggers the emoji picker
-            privateFlag &= ~kCGEventFlagMaskSecondaryFn;
-            
-            CGEventSetFlags(newEventDown, privateFlag);
-            CGEventSetFlags(newEventUp, privateFlag);
-            ApplyKeyboardTypeAndFlags(newEventDown, newEventUp);
-            PostSyntheticEvent(newEventDown);
-            PostSyntheticEvent(newEventUp);
-            if ([PHTVEventRuntimeContextService postToHIDTapEnabled]) [PHTVTimingService spotlightTinyDelay];
-            CFRelease(newEventDown);
-            CFRelease(newEventUp);
-        } else {
-            if (vCodeTable == 0) { //unicode 2 bytes code
-                CGEventRef newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
-                CGEventRef newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
-                ApplyKeyboardTypeAndFlags(newEventDown, newEventUp);
-                CGEventKeyboardSetUnicodeString(newEventDown, 1, &newChar);
-                CGEventKeyboardSetUnicodeString(newEventUp, 1, &newChar);
-                PostSyntheticEvent(newEventDown);
-                PostSyntheticEvent(newEventUp);
-                if ([PHTVEventRuntimeContextService postToHIDTapEnabled]) [PHTVTimingService spotlightTinyDelay];
-                CFRelease(newEventDown);
-                CFRelease(newEventUp);
-            } else if (vCodeTable == 1 || vCodeTable == 2 || vCodeTable == 4) { //others such as VNI Windows, TCVN3: 1 byte code
-                newCharHi = HIBYTE(newChar);
-                newChar = LOBYTE(newChar);
-                
-                CGEventRef newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
-                CGEventRef newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
-                ApplyKeyboardTypeAndFlags(newEventDown, newEventUp);
-                CGEventKeyboardSetUnicodeString(newEventDown, 1, &newChar);
-                CGEventKeyboardSetUnicodeString(newEventUp, 1, &newChar);
-                PostSyntheticEvent(newEventDown);
-                PostSyntheticEvent(newEventUp);
-                if ([PHTVEventRuntimeContextService postToHIDTapEnabled]) [PHTVTimingService spotlightTinyDelay];
-                if (newCharHi > 32) {
-                    if (vCodeTable == 2) //VNI
-                        InsertKeyLength(2);
-                    CFRelease(newEventDown);
-                    CFRelease(newEventUp);
-                    newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
-                    newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
-                    ApplyKeyboardTypeAndFlags(newEventDown, newEventUp);
-                    CGEventKeyboardSetUnicodeString(newEventDown, 1, &newCharHi);
-                    CGEventKeyboardSetUnicodeString(newEventUp, 1, &newCharHi);
-                    PostSyntheticEvent(newEventDown);
-                    PostSyntheticEvent(newEventUp);
-                    if ([PHTVEventRuntimeContextService postToHIDTapEnabled]) [PHTVTimingService spotlightTinyDelay];
-                } else {
-                    if (vCodeTable == 2) //VNI
-                        InsertKeyLength(1);
-                }
-                CFRelease(newEventDown);
-                CFRelease(newEventUp);
-            } else if (vCodeTable == 3) { //Unicode Compound
-                UniChar uniChar[2];
-                newCharHi = (newChar >> 13);
-                newChar &= 0x1FFF;
-                uniChar[0] = newChar;
-                uniChar[1] = newCharHi > 0 ? (_unicodeCompoundMark[newCharHi - 1]) : 0;
-                InsertKeyLength(newCharHi > 0 ? 2 : 1);
-                CGEventRef newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
-                CGEventRef newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
-                ApplyKeyboardTypeAndFlags(newEventDown, newEventUp);
-                CGEventKeyboardSetUnicodeString(newEventDown, (newCharHi > 0 ? 2 : 1), uniChar);
-                CGEventKeyboardSetUnicodeString(newEventUp, (newCharHi > 0 ? 2 : 1), uniChar);
-                PostSyntheticEvent(newEventDown);
-                PostSyntheticEvent(newEventUp);
-                if ([PHTVEventRuntimeContextService postToHIDTapEnabled]) [PHTVTimingService spotlightTinyDelay];
-                CFRelease(newEventDown);
-                CFRelease(newEventUp);
-            }
-        }
-    }
-
-    void SendEmptyCharacter() {
-        if (IS_DOUBLE_CODE(vCodeTable)) //VNI or Unicode Compound
-            InsertKeyLength(1);
-
-        UniChar newChar = 0x202F; //empty char
-        if ([PHTVAppContextService needsNiceSpaceForBundleId:FRONT_APP]) {
-            newChar = 0x200C; //Unicode character with empty space
-        }
-
-        CGEventRef newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
-        CGEventRef newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
-        ApplyKeyboardTypeAndFlags(newEventDown, newEventUp);
-        CGEventKeyboardSetUnicodeString(newEventDown, 1, &newChar);
-        CGEventKeyboardSetUnicodeString(newEventUp, 1, &newChar);
-        PostSyntheticEvent(newEventDown);
-        PostSyntheticEvent(newEventUp);
-        if ([PHTVEventRuntimeContextService postToHIDTapEnabled]) [PHTVTimingService spotlightTinyDelay];
-        CFRelease(newEventDown);
-        CFRelease(newEventUp);
-
-        // BROWSER FIX REMOVED: Shift+Left strategy eliminates need for delays
-        // No delay needed after empty character - the select-then-delete approach handles it
-    }
-    
-    void SendVirtualKey(const Byte& vKey) {
-        CGEventRef eventVkeyDown = CGEventCreateKeyboardEvent (myEventSource, vKey, true);
-        CGEventRef eventVkeyUp = CGEventCreateKeyboardEvent (myEventSource, vKey, false);
-        
-        PostSyntheticEvent(eventVkeyDown);
-        PostSyntheticEvent(eventVkeyUp);
-        
-        CFRelease(eventVkeyDown);
-        CFRelease(eventVkeyUp);
-    }
-
-    void SendPhysicalBackspace() {
-        if ([PHTVEventRuntimeContextService postToHIDTapEnabled]) {
-            CGEventRef bsDown = CGEventCreateKeyboardEvent(myEventSource, KEY_DELETE, true);
-            CGEventRef bsUp = CGEventCreateKeyboardEvent(myEventSource, KEY_DELETE, false);
-            ApplyKeyboardTypeAndFlags(bsDown, bsUp);
-            PostSyntheticEvent(bsDown);
-            PostSyntheticEvent(bsUp);
-            [PHTVTimingService spotlightTinyDelay];
-            CFRelease(bsDown);
-            CFRelease(bsUp);
-        } else {
-            PostSyntheticEvent(eventBackSpaceDown);
-            PostSyntheticEvent(eventBackSpaceUp);
-        }
-    }
-
-    static inline void ConsumeSyncKeyOnBackspace() {
-        if (!IS_DOUBLE_CODE(vCodeTable)) {
-            return;
-        }
-        [PHTVTypingSyncStateService consumeSyncKeyOnBackspace];
-    }
-
-    void SendBackspace() {
-        SendPhysicalBackspace();
-
-        if (IS_DOUBLE_CODE(vCodeTable)) { //VNI or Unicode Compound
-            if (![PHTVTypingSyncStateService syncKeyIsEmpty]) {
-                if ([PHTVTypingSyncStateService syncKeyBackValue] > 1) {
-                    if (!(vCodeTable == 3 && [PHTVEventRuntimeContextService appContainsUnicodeCompound])) {
-                        SendPhysicalBackspace();
-                    }
-                }
-                [PHTVTypingSyncStateService popSyncKeyIfAny];
-            }
-        }
-    }
-
-
-    void SendShiftAndLeftArrow() {
-        CGEventRef eventVkeyDown = CGEventCreateKeyboardEvent (myEventSource, KEY_LEFT, true);
-        CGEventRef eventVkeyUp = CGEventCreateKeyboardEvent (myEventSource, KEY_LEFT, false);
-        CGEventFlags privateFlag = CGEventGetFlags(eventVkeyDown);
-        privateFlag |= kCGEventFlagMaskShift;
-        CGEventSetFlags(eventVkeyDown, privateFlag);
-        CGEventSetFlags(eventVkeyUp, privateFlag);
-        
-        PostSyntheticEvent(eventVkeyDown);
-        PostSyntheticEvent(eventVkeyUp);
-        
-        if (IS_DOUBLE_CODE(vCodeTable) && ![PHTVTypingSyncStateService syncKeyIsEmpty]) { //VNI or Unicode Compound
-            if ([PHTVTypingSyncStateService syncKeyBackValue] > 1) {
-                if (!(vCodeTable == 3 && [PHTVEventRuntimeContextService appContainsUnicodeCompound])) {
-                    PostSyntheticEvent(eventVkeyDown);
-                    PostSyntheticEvent(eventVkeyUp);
-                }
-            }
-            [PHTVTypingSyncStateService popSyncKeyIfAny];
-        }
-        CFRelease(eventVkeyDown);
-        CFRelease(eventVkeyUp);
-    }
-
-    void SendUnicodeStringChunked(const Uint16* chars, int len, int chunkSize, uint64_t interDelayUs) {
-        if (len <= 0 || chars == nullptr) {
-            return;
-        }
-        if (chunkSize < 1) {
-            chunkSize = 1;
-        }
-        double cliSpeedFactor = [PHTVCliRuntimeStateService currentSpeedFactor];
-        uint64_t cliPostSendBlockUs = [PHTVCliRuntimeStateService cliPostSendBlockUs];
-        uint64_t effectiveDelayUs = interDelayUs;
-        if ([PHTVEventRuntimeContextService isCliTargetEnabled] && interDelayUs > 0) {
-            effectiveDelayUs = [PHTVTimingService scaleDelayMicroseconds:interDelayUs factor:cliSpeedFactor];
-        }
-        if ([PHTVEventRuntimeContextService isCliTargetEnabled]) {
-            uint64_t totalBlockUs = [PHTVTimingService scaleDelayMicroseconds:cliPostSendBlockUs factor:cliSpeedFactor];
-            if (effectiveDelayUs > 0 && len > 1) {
-                totalBlockUs += effectiveDelayUs * (uint64_t)(len - 1);
-            }
-            SetCliBlockForMicroseconds(totalBlockUs);
-        }
-
-        for (int i = 0; i < len; i += chunkSize) {
-            int chunkLen = len - i;
-            if (chunkLen > chunkSize) {
-                chunkLen = chunkSize;
-            }
-
-            CGEventRef newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
-            CGEventRef newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
-            ApplyKeyboardTypeAndFlags(newEventDown, newEventUp);
-            CGEventKeyboardSetUnicodeString(newEventDown, chunkLen, chars + i);
-            CGEventKeyboardSetUnicodeString(newEventUp, chunkLen, chars + i);
-            PostSyntheticEvent(newEventDown);
-            PostSyntheticEvent(newEventUp);
-            CFRelease(newEventDown);
-            CFRelease(newEventUp);
-            if (effectiveDelayUs > 0 && (i + chunkSize) < len) {
-                useconds_t sleepUs = [PHTVTimingService clampToUseconds:effectiveDelayUs];
-                usleep(sleepUs);
-            }
-        }
-
-        if ([PHTVEventRuntimeContextService isCliTargetEnabled]) {
-            uint64_t totalBlockUs = [PHTVTimingService scaleDelayMicroseconds:cliPostSendBlockUs factor:cliSpeedFactor];
-            if (effectiveDelayUs > 0 && len > 1) {
-                totalBlockUs += effectiveDelayUs * (uint64_t)(len - 1);
-            }
-            SetCliBlockForMicroseconds(totalBlockUs);
-        }
-    }
-
-    // Consolidated helper function to send multiple backspaces
-    // Delays and throttling removed for standard application behavior
-    void SendBackspaceSequenceWithDelay(int count) {
-        if (count <= 0) return;
-
-        if ([PHTVEventRuntimeContextService isCliTargetEnabled]) {
-            double cliSpeedFactor = [PHTVCliRuntimeStateService currentSpeedFactor];
-            uint64_t cliBackspaceDelayUs = [PHTVCliRuntimeStateService cliBackspaceDelayUs];
-            uint64_t cliWaitAfterBackspaceUs = [PHTVCliRuntimeStateService cliWaitAfterBackspaceUs];
-            uint64_t cliPostSendBlockUs = [PHTVCliRuntimeStateService cliPostSendBlockUs];
-            useconds_t backspaceDelay = [PHTVTimingService scaleDelayUseconds:[PHTVTimingService clampToUseconds:cliBackspaceDelayUs] factor:cliSpeedFactor];
-            useconds_t waitDelay = [PHTVTimingService scaleDelayUseconds:[PHTVTimingService clampToUseconds:cliWaitAfterBackspaceUs] factor:cliSpeedFactor];
-            uint64_t totalBlockUs = [PHTVTimingService scaleDelayMicroseconds:cliPostSendBlockUs factor:cliSpeedFactor];
-            if (backspaceDelay > 0 && count > 0) {
-                totalBlockUs += (uint64_t)backspaceDelay * (uint64_t)count;
-            }
-            totalBlockUs += (uint64_t)waitDelay;
-            SetCliBlockForMicroseconds(totalBlockUs);
-            if (cliSpeedFactor > 1.05) {
-                useconds_t preDelay = [PHTVTimingService scaleDelayUseconds:CLI_PRE_BACKSPACE_DELAY_US factor:cliSpeedFactor];
-                if (preDelay > 0) {
-                    usleep(preDelay);
-                }
-            }
-            for (int i = 0; i < count; i++) {
-                SendPhysicalBackspace();
-                ConsumeSyncKeyOnBackspace();
-                if (backspaceDelay > 0) {
-                    usleep(backspaceDelay);
-                }
-            }
-            if (waitDelay > 0) {
-                usleep(waitDelay);
-            }
-            SetCliBlockForMicroseconds(totalBlockUs);
-            return;
-        }
-
-        // Always use standard backspace method
-        for (int i = 0; i < count; i++) {
-            SendBackspace();
-        }
-    }
 
     void SendNewCharString(const bool& dataFromMacro=false,
                            const Uint16& offset=0,
@@ -470,7 +129,7 @@ extern volatile int vPauseKey;
         Uint16 newCharString[MAX_UNICODE_STRING];
         bool willContinueSending = false;
         bool willSendControlKey = false;
-        
+
         // Treat as Spotlight target if callback selected HID/Spotlight-safe path.
         BOOL isSpotlightTarget = [PHTVEventRuntimeContextService postToHIDTapEnabled] || [PHTVEventRuntimeContextService appIsSpotlightLike];
         // Some apps need precomposed Unicode but still rely on batched synthetic events.
@@ -478,26 +137,26 @@ extern volatile int vPauseKey;
         // Force precomposed for: Unicode Compound (code 3) on Spotlight, OR any Unicode on WhatsApp-like apps
         BOOL forcePrecomposed = ((vCodeTable == 3) && isSpotlightTarget) ||
                                  ((vCodeTable == 0 || vCodeTable == 3) && isPrecomposedBatched);
-        
+
         if (newCharSize > 0) {
             for (loopIndex = dataFromMacro ? (int)offset : (int)pData->newCharCount - 1 - (int)offset;
                 dataFromMacro ? loopIndex < (int)pData->macroData.size() : loopIndex >= 0;
                  dataFromMacro ? loopIndex++ : loopIndex--) {
-                
+
                 if (outputIndex >= 16) {
                     willContinueSending = true;
                     break;
                 }
-                
+
                 Uint32 tempChar = DYNA_DATA(dataFromMacro, loopIndex);
                 if (tempChar & PURE_CHARACTER_MASK) {
                     newCharString[outputIndex++] = tempChar;
                     if (IS_DOUBLE_CODE(vCodeTable)) {
-                        InsertKeyLength(1);
+                        [PHTVKeyEventSenderService insertKeyLength:1];
                     }
                 } else if (!(tempChar & CHAR_CODE_MASK)) {
-                    if (IS_DOUBLE_CODE(vCodeTable)) //VNI
-                        InsertKeyLength(1);
+                    if (IS_DOUBLE_CODE(vCodeTable))
+                        [PHTVKeyEventSenderService insertKeyLength:1];
                     newCharString[outputIndex++] = keyCodeToCharacter(tempChar);
                 } else {
                     if (vCodeTable == 0) {  //unicode 2 bytes code
@@ -507,34 +166,33 @@ extern volatile int vPauseKey;
                         UniChar newCharHi = HIBYTE(newChar);
                         newChar = LOBYTE(newChar);
                         newCharString[outputIndex++] = newChar;
-                        
+
                         if (newCharHi > 32) {
                             if (vCodeTable == 2) //VNI
-                                InsertKeyLength(2);
+                                [PHTVKeyEventSenderService insertKeyLength:2];
                             newCharString[outputIndex++] = newCharHi;
                             newCharSize++;
                         } else {
                             if (vCodeTable == 2) //VNI
-                                InsertKeyLength(1);
+                                [PHTVKeyEventSenderService insertKeyLength:1];
                         }
                     } else if (vCodeTable == 3) { //Unicode Compound
                         UniChar newChar = tempChar;
                         UniChar newCharHi = (newChar >> 13);
                         newChar &= 0x1FFF;
-                        
+
                         // Always build compound form first (will be converted to precomposed later if needed)
-                        InsertKeyLength(newCharHi > 0 ? 2 : 1);
+                        [PHTVKeyEventSenderService insertKeyLength:(newCharHi > 0 ? 2 : 1)];
                         newCharString[outputIndex++] = newChar;
                         if (newCharHi > 0) {
                             newCharSize++;
                             newCharString[outputIndex++] = _unicodeCompoundMark[newCharHi - 1];
                         }
-                        
                     }
                 }
             }//end for
         }
-        
+
         if (!willContinueSending && (pData->code == vRestore || pData->code == vRestoreAndStartNewSession)) { //if is restore
             if (keyCodeToCharacter(keycode) != 0) {
                 newCharSize++;
@@ -546,12 +204,12 @@ extern volatile int vPauseKey;
         if (!willContinueSending && pData->code == vRestoreAndStartNewSession) {
             startNewSession();
         }
-        
-        // If we need to force precomposed Unicode (for apps like Spotlight), 
+
+        // If we need to force precomposed Unicode (for apps like Spotlight),
         // convert the entire string from compound to precomposed form
         Uint16 _finalCharString[MAX_UNICODE_STRING];
         int _finalCharSize = willContinueSending ? 16 : newCharSize - (int)offset;
-        
+
         if (forcePrecomposed && _finalCharSize > 0) {
             // Create NSString from Unicode characters and get precomposed version
             NSString *tempStr = [NSString stringWithCharacters:(const unichar *)newCharString length:_finalCharSize];
@@ -578,49 +236,36 @@ extern volatile int vPauseKey;
             }
 
             // AX failed - fallback to synthetic events
-            SendBackspaceSequenceWithDelay(backspaceCount);
-
-            CGEventRef newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
-            CGEventRef newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
-            ApplyKeyboardTypeAndFlags(newEventDown, newEventUp);
-            CGEventKeyboardSetUnicodeString(newEventDown, _finalCharSize, _finalCharString);
-            CGEventKeyboardSetUnicodeString(newEventUp, _finalCharSize, _finalCharString);
-            PostSyntheticEvent(newEventDown);
-            PostSyntheticEvent(newEventUp);
-            CFRelease(newEventDown);
-            CFRelease(newEventUp);
+            [PHTVKeyEventSenderService sendBackspaceSequenceWithDelay:(int32_t)backspaceCount];
+            [PHTVKeyEventSenderService sendUnicodeStringChunked:_finalCharString
+                                                            len:(int32_t)_finalCharSize
+                                                      chunkSize:(int32_t)_finalCharSize
+                                                   interDelayUs:0];
             goto FinalizeSend;
         } else {
             if ([PHTVEventRuntimeContextService isCliTargetEnabled]) {
                 int chunkSize = (int)[PHTVCliRuntimeStateService cliTextChunkSize];
-                if (chunkSize < 1) {
-                    chunkSize = 1;
-                }
-                SendUnicodeStringChunked(_finalCharString,
-                                         _finalCharSize,
-                                         chunkSize,
-                                         [PHTVCliRuntimeStateService cliTextDelayUs]);
+                if (chunkSize < 1) chunkSize = 1;
+                [PHTVKeyEventSenderService sendUnicodeStringChunked:_finalCharString
+                                                                len:(int32_t)_finalCharSize
+                                                          chunkSize:(int32_t)chunkSize
+                                                       interDelayUs:[PHTVCliRuntimeStateService cliTextDelayUs]];
                 goto FinalizeSend;
             }
-            CGEventRef newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
-            CGEventRef newEventUp = CGEventCreateKeyboardEvent(myEventSource, 0, false);
-            ApplyKeyboardTypeAndFlags(newEventDown, newEventUp);
-            CGEventKeyboardSetUnicodeString(newEventDown, _finalCharSize, _finalCharString);
-            CGEventKeyboardSetUnicodeString(newEventUp, _finalCharSize, _finalCharString);
-            PostSyntheticEvent(newEventDown);
-            PostSyntheticEvent(newEventUp);
-            CFRelease(newEventDown);
-            CFRelease(newEventUp);
+            [PHTVKeyEventSenderService sendUnicodeStringChunked:_finalCharString
+                                                            len:(int32_t)_finalCharSize
+                                                      chunkSize:(int32_t)_finalCharSize
+                                                   interDelayUs:0];
         }
 
     FinalizeSend:
         if (willContinueSending) {
             SendNewCharString(dataFromMacro, dataFromMacro ? (Uint16)loopIndex : 16, keycode, flags);
         }
-        
+
         //the case when hCode is vRestore or vRestoreAndStartNewSession, the word is invalid and last key is control key such as TAB, LEFT ARROW, RIGHT ARROW,...
         if (willSendControlKey) {
-            SendKeyCode(keycode);
+            [PHTVKeyEventSenderService sendKeyCode:(uint32_t)keycode];
         }
     }
             
@@ -674,13 +319,13 @@ extern volatile int vPauseKey;
 
         //fix autocomplete
         if (macroPlan.shouldApplyBrowserFix) {
-            SendEmptyCharacter();
+            [PHTVKeyEventSenderService sendEmptyCharacter];
             pData->backspaceCount = (Byte)macroPlan.adjustedBackspaceCount;
         }
 
         // Send backspace if needed
         if (pData->backspaceCount > 0) {
-            SendBackspaceSequenceWithDelay(pData->backspaceCount);
+            [PHTVKeyEventSenderService sendBackspaceSequenceWithDelay:(int32_t)pData->backspaceCount];
         }
 
         //send real data - use step by step for timing sensitive apps like Spotlight
@@ -699,24 +344,25 @@ extern volatile int vPauseKey;
                                          scaledCliPostSendBlockUs:(int64_t)scaledCliPostSendBlockUs];
             useconds_t interItemDelayUs = [PHTVTimingService clampToUseconds:(uint64_t)MAX((int64_t)0, sendPlan.interItemDelayUs)];
 
-            for (int i = 0; i < pData->macroData.size(); i++) {
+            for (int i = 0; i < (int)pData->macroData.size(); i++) {
                 if (pData->macroData[i] & PURE_CHARACTER_MASK) {
-                    SendPureCharacter(pData->macroData[i]);
+                    [PHTVKeyEventSenderService sendPureCharacter:(uint16_t)pData->macroData[i]];
                 } else {
-                    SendKeyCode(pData->macroData[i]);
+                    [PHTVKeyEventSenderService sendKeyCode:(uint32_t)pData->macroData[i]];
                 }
-                if (interItemDelayUs > 0 && i + 1 < pData->macroData.size()) {
+                if (interItemDelayUs > 0 && i + 1 < (int)pData->macroData.size()) {
                     usleep(interItemDelayUs);
                 }
             }
             if (sendPlan.shouldScheduleCliBlock) {
-                SetCliBlockForMicroseconds((uint64_t)MAX((int64_t)0, sendPlan.cliBlockUs));
+                [PHTVCliRuntimeStateService scheduleBlockForMicroseconds:(uint64_t)MAX((int64_t)0, sendPlan.cliBlockUs)
+                                                              nowMachTime:mach_absolute_time()];
             }
         }
 
         // Send trigger key for non-Spotlight apps
         if (macroPlan.shouldSendTriggerKey) {
-            SendKeyCode(keycode | (flags & kCGEventFlagMaskShift ? CAPS_MASK : 0));
+            [PHTVKeyEventSenderService sendKeyCode:(uint32_t)(keycode | (flags & kCGEventFlagMaskShift ? CAPS_MASK : 0))];
         }
     }
 
@@ -761,11 +407,6 @@ extern volatile int vPauseKey;
 
         // Skip events injected by PHTV itself (marker-based)
         if (CGEventGetIntegerValueField(event, kCGEventSourceUserData) == kPHTVEventMarker) {
-            return event;
-        }
-
-        //dont handle my event
-        if (CGEventGetIntegerValueField(event, kCGEventSourceStateID) == CGEventSourceGetSourceStateID(myEventSource)) {
             return event;
         }
 
@@ -889,7 +530,7 @@ extern volatile int vPauseKey;
                         // Successfully restored - pData now contains restore info
                         // Send backspaces to delete Vietnamese characters
                         if (pData->backspaceCount > 0 && pData->backspaceCount < MAX_BUFF) {
-                            SendBackspaceSequenceWithDelay(pData->backspaceCount);
+                            [PHTVKeyEventSenderService sendBackspaceSequenceWithDelay:(int32_t)pData->backspaceCount];
                         }
 
                         // Send the raw ASCII characters
@@ -1081,8 +722,7 @@ extern volatile int vPauseKey;
                                                                          containsUnicodeCompound:appChars.containsUnicodeCompound];
                 if (shouldSendExtraBackspace) {
                     // Send one more backspace before popping sync length.
-                    PostSyntheticEvent(eventBackSpaceDown);
-                    PostSyntheticEvent(eventBackSpaceUp);
+                    [PHTVKeyEventSenderService sendPhysicalBackspace];
                 }
                 return event;
             } else if (signalAction == PHTVEngineSignalActionProcessSignal) { //handle result signal
@@ -1166,15 +806,15 @@ extern volatile int vPauseKey;
                                                                                  safetyLimit:15];
                 int adjustmentAction = (int)resolvedBackspacePlan.adjustmentAction;
                 if (adjustmentAction == PHTVBackspaceAdjustmentActionSendShiftLeftThenBackspace) {
-                    SendShiftAndLeftArrow();
-                    SendPhysicalBackspace();
+                    [PHTVKeyEventSenderService sendShiftAndLeftArrow];
+                    [PHTVKeyEventSenderService sendPhysicalBackspace];
                 } else if (adjustmentAction == PHTVBackspaceAdjustmentActionSendEmptyCharacter) {
 #ifdef DEBUG
                     if (isAddrBar) {
                         NSLog(@"[PHTV Browser] Address Bar Detected (AX) -> Using SendEmptyCharacter (Fix Doubling)");
                     }
 #endif
-                    SendEmptyCharacter();
+                    [PHTVKeyEventSenderService sendEmptyCharacter];
                 }
 
                 int adjustedBackspaceCount = (int)resolvedBackspacePlan.sanitizedBackspaceCount;
@@ -1274,7 +914,7 @@ extern volatile int vPauseKey;
                                                                   throttleMs:DEBUG_LOG_THROTTLE_MS];
 #endif
                     } else {
-                        SendBackspaceSequenceWithDelay(pData->backspaceCount);
+                        [PHTVKeyEventSenderService sendBackspaceSequenceWithDelay:(int32_t)pData->backspaceCount];
                     }
                 }
 
@@ -1302,13 +942,14 @@ extern volatile int vPauseKey;
                         useconds_t interItemDelayUs = [PHTVTimingService clampToUseconds:(uint64_t)MAX((int64_t)0, sendPlan.interItemDelayUs)];
 
                         for (int i = pData->newCharCount - 1; i >= 0; i--) {
-                            SendKeyCode(pData->charData[i]);
+                            [PHTVKeyEventSenderService sendKeyCode:(uint32_t)pData->charData[i]];
                             if (interItemDelayUs > 0 && i > 0) {
                                 usleep(interItemDelayUs);
                             }
                         }
                         if (sendPlan.shouldScheduleCliBlock) {
-                            SetCliBlockForMicroseconds((uint64_t)MAX((int64_t)0, sendPlan.cliBlockUs));
+                            [PHTVCliRuntimeStateService scheduleBlockForMicroseconds:(uint64_t)MAX((int64_t)0, sendPlan.cliBlockUs)
+                                                                          nowMachTime:mach_absolute_time()];
                         }
                     }
                     if (characterSendPlan.shouldSendRestoreTriggerKey) {
@@ -1320,7 +961,7 @@ extern volatile int vPauseKey;
                         }
                         #endif
                         // No delay needed before final key
-                        SendKeyCode(eventKeycode | ((eventFlags & kCGEventFlagMaskAlphaShift) || (eventFlags & kCGEventFlagMaskShift) ? CAPS_MASK : 0));
+                        [PHTVKeyEventSenderService sendKeyCode:(uint32_t)(eventKeycode | ((eventFlags & kCGEventFlagMaskAlphaShift) || (eventFlags & kCGEventFlagMaskShift) ? CAPS_MASK : 0))];
                     }
                     if (characterSendPlan.shouldStartNewSessionAfterSend) {
                         startNewSession();

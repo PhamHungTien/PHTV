@@ -504,6 +504,67 @@ inline std::uint16_t phtvEngineLowByte(const std::uint32_t data) noexcept {
     return static_cast<std::uint16_t>(data & 0xFF);
 }
 
+inline std::uint16_t phtvEngineHiByte(const std::uint32_t data) noexcept {
+    return static_cast<std::uint16_t>((data >> 8) & 0xFF);
+}
+
+// MARK: - Runtime flag helpers
+
+inline bool phtvRuntimeIsDoubleCode(const int codeTable) noexcept {
+    return codeTable == 2 || codeTable == 3;
+}
+
+// MARK: - Event marker
+
+inline std::int64_t phtvEventMarkerValue() noexcept {
+    return 0x50485456; // "PHTV"
+}
+
+// MARK: - Unicode Compound mark table
+
+inline std::uint16_t phtvEngineUnicodeCompoundMarkAt(const int index) noexcept {
+    extern Uint16 _unicodeCompoundMark[];
+    return (index >= 0) ? _unicodeCompoundMark[index] : 0;
+}
+
+// MARK: - Engine output state (pData) field accessors
+
+extern vKeyHookState* pData;
+
+inline std::uint8_t phtvEngineDataCode() noexcept {
+    return pData ? pData->code : 0;
+}
+
+inline std::uint8_t phtvEngineDataExtCode() noexcept {
+    return pData ? pData->extCode : 0;
+}
+
+inline std::uint8_t phtvEngineDataBackspaceCount() noexcept {
+    return pData ? pData->backspaceCount : 0;
+}
+
+inline void phtvEngineDataSetBackspaceCount(const std::uint8_t count) noexcept {
+    if (pData) pData->backspaceCount = count;
+}
+
+inline std::uint8_t phtvEngineDataNewCharCount() noexcept {
+    return pData ? pData->newCharCount : 0;
+}
+
+inline std::uint32_t phtvEngineDataCharAt(const int index) noexcept {
+    if (!pData || index < 0 || index >= MAX_BUFF) return 0;
+    return pData->charData[index];
+}
+
+inline int phtvEngineDataMacroDataSize() noexcept {
+    return pData ? static_cast<int>(pData->macroData.size()) : 0;
+}
+
+inline std::uint32_t phtvEngineDataMacroDataAt(const int index) noexcept {
+    if (!pData || index < 0 || index >= static_cast<int>(pData->macroData.size())) return 0;
+    return pData->macroData[index];
+}
+
 #endif
 
 #endif /* PHTVEngineCxxInterop_hpp */
