@@ -19,6 +19,7 @@ enum DebugSelfTests {
         runUserDefaultsHelperChecks()
         runMacroStorageChecks()
         runCxxInteropChecks()
+        runConvertToolParityChecks()
 
         PHTVLogger.shared.debug("[DebugSelfTests] All debug checks passed")
     }
@@ -102,6 +103,78 @@ enum DebugSelfTests {
             "Swift/C++ interop check should pass"
         )
         PHTVLogger.shared.debug("[CxxInterop] probe=\(probe), sum=\(sum), valid=true")
+    }
+
+    private static func runConvertToolParityChecks() {
+        let hotKey = PHTVEngineRuntimeFacade.convertToolDefaultHotKey()
+        let options: [(Bool, Bool, Bool, Bool, Bool, Int32, Int32)] = [
+            (false, false, false, false, false, 0, 0), // identity
+            (true, false, false, false, false, 0, 0),  // all caps
+            (false, true, false, false, false, 0, 0),  // all lowercase
+            (false, false, true, false, false, 0, 0),  // sentence caps
+            (false, false, false, true, false, 0, 0),  // title caps
+            (false, false, false, false, true, 0, 0),  // remove mark
+            (false, false, false, false, false, 0, 1), // unicode -> tcvn3
+            (false, false, false, false, false, 0, 2), // unicode -> vni
+            (false, false, false, false, false, 0, 3), // unicode -> unicode composite
+            (false, false, false, false, false, 0, 4)  // unicode -> cp1258
+        ]
+        let samples = [
+            "Tiếng Việt rất tuyệt vời!",
+            "xin chào. hôm nay trời đẹp?",
+            "ĐẶNG thị THẢO"
+        ]
+
+        for (toAllCaps,
+             toAllNonCaps,
+             toCapsFirstLetter,
+             toCapsEachWord,
+             removeMark,
+             fromCode,
+             toCode) in options {
+            PHTVEngineRuntimeFacade.convertToolResetOptions()
+            PHTVEngineRuntimeFacade.convertToolSetOptions(
+                false,
+                toAllCaps,
+                toAllNonCaps,
+                toCapsFirstLetter,
+                toCapsEachWord,
+                removeMark,
+                fromCode,
+                toCode,
+                hotKey
+            )
+            PHTVEngineRuntimeFacade.convertToolNormalizeOptions()
+
+            let (defaults, suiteName) = makeIsolatedDefaults()
+            defaults.set(toAllCaps, forKey: "convertToolToAllCaps")
+            defaults.set(toAllNonCaps, forKey: "convertToolToAllNonCaps")
+            defaults.set(toCapsFirstLetter, forKey: "convertToolToCapsFirstLetter")
+            defaults.set(toCapsEachWord, forKey: "convertToolToCapsEachWord")
+            defaults.set(removeMark, forKey: "convertToolRemoveMark")
+            defaults.set(Int(fromCode), forKey: "convertToolFromCode")
+            defaults.set(Int(toCode), forKey: "convertToolToCode")
+
+            for sample in samples {
+                let swiftConverted = PHTVConvertToolTextConversionService.convert(sample, defaults: defaults)
+                let cxxConverted = legacyConvertToolConvert(sample)
+                assertCondition(
+                    swiftConverted == cxxConverted,
+                    "ConvertTool parity mismatch for from=\(fromCode), to=\(toCode), input=\(sample)"
+                )
+            }
+
+            clear(defaults: defaults, suiteName: suiteName)
+        }
+    }
+
+    private static func legacyConvertToolConvert(_ text: String) -> String {
+        text.withCString { source in
+            guard let converted = PHTVEngineRuntimeFacade.convertUtf8(source) else {
+                return text
+            }
+            return String(validatingCString: converted) ?? text
+        }
     }
 
     private static func makeIsolatedDefaults() -> (UserDefaults, String) {

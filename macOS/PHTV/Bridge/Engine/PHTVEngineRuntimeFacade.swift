@@ -365,6 +365,46 @@ final class PHTVEngineRuntimeFacade: NSObject {
         Int32(phtvEngineQuickConvertHotkey())
     }
 
+    class func convertToolDefaultHotKey() -> Int32 {
+        Int32(phtvConvertToolDefaultHotKey())
+    }
+
+    class func convertToolCurrentHotKey() -> Int32 {
+        Int32(phtvConvertToolCurrentHotKey())
+    }
+
+    class func convertToolResetOptions() {
+        phtvConvertToolResetOptions()
+    }
+
+    class func convertToolSetOptions(
+        _ dontAlertWhenCompleted: Bool,
+        _ toAllCaps: Bool,
+        _ toAllNonCaps: Bool,
+        _ toCapsFirstLetter: Bool,
+        _ toCapsEachWord: Bool,
+        _ removeMark: Bool,
+        _ fromCode: Int32,
+        _ toCode: Int32,
+        _ hotKey: Int32
+    ) {
+        phtvConvertToolSetOptions(
+            dontAlertWhenCompleted,
+            toAllCaps,
+            toAllNonCaps,
+            toCapsFirstLetter,
+            toCapsEachWord,
+            removeMark,
+            fromCode,
+            toCode,
+            hotKey
+        )
+    }
+
+    class func convertToolNormalizeOptions() {
+        phtvConvertToolNormalizeOptions()
+    }
+
     class func convertUtf8(_ source: UnsafePointer<CChar>) -> UnsafePointer<CChar>? {
         phtvEngineConvertUtf8(source)
     }
@@ -411,6 +451,43 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func hotkeyDisplayCharacter(_ keyCode: UInt16) -> UInt16 {
         UInt16(phtvEngineHotkeyDisplayCharacter(keyCode))
+    }
+
+    class func findCodeTableSourceKey(
+        codeTable: Int32,
+        character: UInt16
+    ) -> (keyCode: UInt32, variantIndex: Int32)? {
+        var keyCode: UInt32 = 0
+        var variantIndex: Int32 = 0
+        let found = phtvEngineFindCodeTableSourceKey(
+            codeTable,
+            character,
+            &keyCode,
+            &variantIndex
+        )
+        return found ? (keyCode, variantIndex) : nil
+    }
+
+    class func codeTableVariantCount(
+        codeTable: Int32,
+        keyCode: UInt32
+    ) -> Int32 {
+        Int32(phtvEngineCodeTableVariantCountForKey(codeTable, keyCode))
+    }
+
+    class func codeTableCharacterForKey(
+        codeTable: Int32,
+        keyCode: UInt32,
+        variantIndex: Int32
+    ) -> UInt16? {
+        var character: UInt16 = 0
+        let found = phtvEngineCodeTableCharacterForKey(
+            codeTable,
+            keyCode,
+            variantIndex,
+            &character
+        )
+        return found ? character : nil
     }
 
     class func hotkeyHasControl(_ hotkey: Int32) -> Bool {

@@ -86,12 +86,7 @@ import Foundation
     }
 
     private class func convertTextWithEngine(_ text: String) -> String {
-        text.withCString { source in
-            guard let converted = PHTVEngineRuntimeFacade.convertUtf8(source) else {
-                return text
-            }
-            return String(validatingCString: converted) ?? text
-        }
+        PHTVConvertToolTextConversionService.convertText(text)
     }
 
     @objc(phtv_quickConvert)

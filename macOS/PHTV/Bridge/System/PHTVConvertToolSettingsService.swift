@@ -22,12 +22,14 @@ final class PHTVConvertToolSettingsService: NSObject {
     @objc class func loadFromUserDefaults() {
         let defaults = UserDefaults.standard
 
-        phtvConvertToolResetOptions()
+        PHTVEngineRuntimeFacade.convertToolResetOptions()
 
         let hotKey = Int32(defaults.integer(forKey: keyHotKey))
-        let resolvedHotKey: Int32 = hotKey == 0 ? Int32(phtvConvertToolDefaultHotKey()) : hotKey
+        let resolvedHotKey: Int32 = hotKey == 0
+            ? PHTVEngineRuntimeFacade.convertToolDefaultHotKey()
+            : hotKey
 
-        phtvConvertToolSetOptions(
+        PHTVEngineRuntimeFacade.convertToolSetOptions(
             !defaults.bool(forKey: keyDontAlertWhenCompleted),
             defaults.bool(forKey: keyToAllCaps),
             defaults.bool(forKey: keyToAllNonCaps),
@@ -39,6 +41,6 @@ final class PHTVConvertToolSettingsService: NSObject {
             resolvedHotKey
         )
 
-        phtvConvertToolNormalizeOptions()
+        PHTVEngineRuntimeFacade.convertToolNormalizeOptions()
     }
 }
