@@ -35,6 +35,34 @@ final class PHTVTimingService: NSObject {
         return (microseconds * UInt64(timebase.denom) * 1_000) / UInt64(timebase.numer)
     }
 
+    @objc class func clampToUseconds(_ microseconds: UInt64) -> useconds_t {
+        let clamped = min(microseconds, UInt64(useconds_t.max))
+        return useconds_t(clamped)
+    }
+
+    @objc(scaleDelayUseconds:factor:)
+    class func scaleDelayUseconds(_ baseDelay: useconds_t, factor: Double) -> useconds_t {
+        guard baseDelay > 0 else {
+            return 0
+        }
+        guard factor > 1.05 else {
+            return baseDelay
+        }
+        let scaled = UInt64(Double(baseDelay) * factor)
+        return clampToUseconds(scaled)
+    }
+
+    @objc(scaleDelayMicroseconds:factor:)
+    class func scaleDelayMicroseconds(_ baseDelay: UInt64, factor: Double) -> UInt64 {
+        guard baseDelay > 0 else {
+            return 0
+        }
+        guard factor > 1.05 else {
+            return baseDelay
+        }
+        return UInt64(Double(baseDelay) * factor)
+    }
+
     // Intentionally kept as no-op to preserve current behavior.
     @objc class func spotlightTinyDelay() {
     }

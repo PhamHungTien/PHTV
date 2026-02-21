@@ -13,7 +13,6 @@
 #import <mach/mach_time.h>
 #import <unistd.h>
 #import <string.h>
-#include <limits>
 #import "Engine.h"
 #include "../Core/PHTVConstants.h"
 #import <Sparkle/Sparkle.h>
@@ -35,13 +34,6 @@ static const int64_t kPHTVEventMarker = 0x50485456; // "PHTV"
 static const int CLI_TEXT_CHUNK_SIZE_DEFAULT = 20;
 static const useconds_t CLI_POST_SEND_BLOCK_MIN_US = 20000;
 static const useconds_t CLI_PRE_BACKSPACE_DELAY_US = 4000;
-
-static inline useconds_t PHTVClampUseconds(uint64_t microseconds) {
-    if (microseconds > static_cast<uint64_t>(std::numeric_limits<useconds_t>::max())) {
-        return std::numeric_limits<useconds_t>::max();
-    }
-    return static_cast<useconds_t>(microseconds);
-}
 
 #define OTHER_CONTROL_KEY (_flag & kCGEventFlagMaskCommand) || (_flag & kCGEventFlagMaskControl) || \
                             (_flag & kCGEventFlagMaskAlternate) || (_flag & kCGEventFlagMaskSecondaryFn) || \
@@ -118,27 +110,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         _phtvCliLastKeyDownTime = now;
         _phtvCliSpeedFactor = [PHTVCliProfileService nextCliSpeedFactorForDeltaUs:deltaUs
                                                                       currentFactor:_phtvCliSpeedFactor];
-    }
-
-    static inline useconds_t PHTVScaleCliDelay(useconds_t baseDelay) {
-        if (baseDelay == 0) {
-            return 0;
-        }
-        if (_phtvCliSpeedFactor <= 1.05) {
-            return baseDelay;
-        }
-        double scaled = (double)baseDelay * _phtvCliSpeedFactor;
-        return PHTVClampUseconds((uint64_t)scaled);
-    }
-
-    static inline uint64_t PHTVScaleCliDelay64(uint64_t baseDelay) {
-        if (baseDelay == 0) {
-            return 0;
-        }
-        if (_phtvCliSpeedFactor <= 1.05) {
-            return baseDelay;
-        }
-        return (uint64_t)((double)baseDelay * _phtvCliSpeedFactor);
     }
 
     static inline void ApplyCliProfile(PHTVCliTimingProfileBox *profile) {
@@ -579,10 +550,10 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         }
         uint64_t effectiveDelayUs = interDelayUs;
         if (_phtvIsCliTarget && interDelayUs > 0) {
-            effectiveDelayUs = PHTVScaleCliDelay64(interDelayUs);
+            effectiveDelayUs = [PHTVTimingService scaleDelayMicroseconds:interDelayUs factor:_phtvCliSpeedFactor];
         }
         if (_phtvIsCliTarget) {
-            uint64_t totalBlockUs = PHTVScaleCliDelay64(_phtvCliPostSendBlockUs);
+            uint64_t totalBlockUs = [PHTVTimingService scaleDelayMicroseconds:_phtvCliPostSendBlockUs factor:_phtvCliSpeedFactor];
             if (effectiveDelayUs > 0 && len > 1) {
                 totalBlockUs += effectiveDelayUs * (uint64_t)(len - 1);
             }
@@ -612,13 +583,13 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             CFRelease(_newEventDown);
             CFRelease(_newEventUp);
             if (effectiveDelayUs > 0 && (i + chunkSize) < len) {
-                useconds_t sleepUs = PHTVClampUseconds(effectiveDelayUs);
+                useconds_t sleepUs = [PHTVTimingService clampToUseconds:effectiveDelayUs];
                 usleep(sleepUs);
             }
         }
 
         if (_phtvIsCliTarget) {
-            uint64_t totalBlockUs = PHTVScaleCliDelay64(_phtvCliPostSendBlockUs);
+            uint64_t totalBlockUs = [PHTVTimingService scaleDelayMicroseconds:_phtvCliPostSendBlockUs factor:_phtvCliSpeedFactor];
             if (effectiveDelayUs > 0 && len > 1) {
                 totalBlockUs += effectiveDelayUs * (uint64_t)(len - 1);
             }
@@ -632,16 +603,16 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         if (count <= 0) return;
 
         if (_phtvIsCliTarget) {
-            useconds_t backspaceDelay = PHTVScaleCliDelay(_phtvCliBackspaceDelayUs);
-            useconds_t waitDelay = PHTVScaleCliDelay(_phtvCliWaitAfterBackspaceUs);
-            uint64_t totalBlockUs = PHTVScaleCliDelay64(_phtvCliPostSendBlockUs);
+            useconds_t backspaceDelay = [PHTVTimingService scaleDelayUseconds:_phtvCliBackspaceDelayUs factor:_phtvCliSpeedFactor];
+            useconds_t waitDelay = [PHTVTimingService scaleDelayUseconds:_phtvCliWaitAfterBackspaceUs factor:_phtvCliSpeedFactor];
+            uint64_t totalBlockUs = [PHTVTimingService scaleDelayMicroseconds:_phtvCliPostSendBlockUs factor:_phtvCliSpeedFactor];
             if (backspaceDelay > 0 && count > 0) {
                 totalBlockUs += (uint64_t)backspaceDelay * (uint64_t)count;
             }
             totalBlockUs += (uint64_t)waitDelay;
             SetCliBlockForMicroseconds(totalBlockUs);
             if (_phtvCliSpeedFactor > 1.05) {
-                useconds_t preDelay = PHTVScaleCliDelay(CLI_PRE_BACKSPACE_DELAY_US);
+                useconds_t preDelay = [PHTVTimingService scaleDelayUseconds:CLI_PRE_BACKSPACE_DELAY_US factor:_phtvCliSpeedFactor];
                 if (preDelay > 0) {
                     usleep(preDelay);
                 }
@@ -896,14 +867,14 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             SendNewCharString(true);
         } else {
             int32_t macroCount = (int32_t)pData->macroData.size();
-            uint64_t scaledCliTextDelayUs = _phtvIsCliTarget ? (uint64_t)PHTVScaleCliDelay(_phtvCliTextDelayUs) : 0;
-            uint64_t scaledCliPostSendBlockUs = _phtvIsCliTarget ? PHTVScaleCliDelay64(_phtvCliPostSendBlockUs) : 0;
+            uint64_t scaledCliTextDelayUs = _phtvIsCliTarget ? (uint64_t)[PHTVTimingService scaleDelayUseconds:_phtvCliTextDelayUs factor:_phtvCliSpeedFactor] : 0;
+            uint64_t scaledCliPostSendBlockUs = _phtvIsCliTarget ? [PHTVTimingService scaleDelayMicroseconds:_phtvCliPostSendBlockUs factor:_phtvCliSpeedFactor] : 0;
             PHTVSendSequencePlanBox *sendPlan =
                 [PHTVSendSequenceService sequencePlanForCliTarget:_phtvIsCliTarget
                                                          itemCount:macroCount
                                               scaledCliTextDelayUs:(int64_t)scaledCliTextDelayUs
                                          scaledCliPostSendBlockUs:(int64_t)scaledCliPostSendBlockUs];
-            useconds_t interItemDelayUs = PHTVClampUseconds((uint64_t)MAX((int64_t)0, sendPlan.interItemDelayUs));
+            useconds_t interItemDelayUs = [PHTVTimingService clampToUseconds:(uint64_t)MAX((int64_t)0, sendPlan.interItemDelayUs)];
 
             for (int i = 0; i < pData->macroData.size(); i++) {
                 if (pData->macroData[i] & PURE_CHARACTER_MASK) {
@@ -949,7 +920,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             if (now < _phtvCliBlockUntil) {
                 uint64_t remainUs = [PHTVTimingService machTimeToUs:(_phtvCliBlockUntil - now)];
                 if (remainUs > 0) {
-                    usleep(PHTVClampUseconds(remainUs));
+                    usleep([PHTVTimingService clampToUseconds:remainUs]);
                 }
             }
         }
@@ -1546,14 +1517,14 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 } else {
                     if (pData->newCharCount > 0 && pData->newCharCount <= MAX_BUFF) {
                         int32_t newCharCount = (int32_t)pData->newCharCount;
-                        uint64_t scaledCliTextDelayUs = _phtvIsCliTarget ? (uint64_t)PHTVScaleCliDelay(_phtvCliTextDelayUs) : 0;
-                        uint64_t scaledCliPostSendBlockUs = _phtvIsCliTarget ? PHTVScaleCliDelay64(_phtvCliPostSendBlockUs) : 0;
+                        uint64_t scaledCliTextDelayUs = _phtvIsCliTarget ? (uint64_t)[PHTVTimingService scaleDelayUseconds:_phtvCliTextDelayUs factor:_phtvCliSpeedFactor] : 0;
+                        uint64_t scaledCliPostSendBlockUs = _phtvIsCliTarget ? [PHTVTimingService scaleDelayMicroseconds:_phtvCliPostSendBlockUs factor:_phtvCliSpeedFactor] : 0;
                         PHTVSendSequencePlanBox *sendPlan =
                             [PHTVSendSequenceService sequencePlanForCliTarget:_phtvIsCliTarget
                                                                      itemCount:newCharCount
                                                           scaledCliTextDelayUs:(int64_t)scaledCliTextDelayUs
                                                      scaledCliPostSendBlockUs:(int64_t)scaledCliPostSendBlockUs];
-                        useconds_t interItemDelayUs = PHTVClampUseconds((uint64_t)MAX((int64_t)0, sendPlan.interItemDelayUs));
+                        useconds_t interItemDelayUs = [PHTVTimingService clampToUseconds:(uint64_t)MAX((int64_t)0, sendPlan.interItemDelayUs)];
 
                         for (int i = pData->newCharCount - 1; i >= 0; i--) {
                             SendKeyCode(pData->charData[i]);
