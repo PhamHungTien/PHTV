@@ -58,6 +58,9 @@ enum ConvertInputMode: String, CaseIterable, Identifiable {
 }
 
 struct ConvertToolView: View {
+    private static let convertToolFromCodeKey = "convertToolFromCode"
+    private static let convertToolToCodeKey = "convertToolToCode"
+
     @Environment(\.dismiss) private var dismiss
 
     @State private var inputMode: ConvertInputMode = .clipboard
@@ -566,7 +569,7 @@ struct ConvertToolView: View {
         isConverting = true
         showResult = false
 
-        // Capture values for use in async closure
+        // Capture values for the conversion flow
         let sourceCode = sourceCodeTable
         let targetCode = targetCodeTable
         let mode = inputMode
@@ -578,40 +581,37 @@ struct ConvertToolView: View {
             pasteboard.setString(textToConvert, forType: .string)
         }
 
-        // Perform conversion in background
-        DispatchQueue.global(qos: .userInitiated).async {
-            // Save current code table
-            let originalCodeTable = UserDefaults.standard.integer(forKey: UserDefaultsKey.codeTable)
+        // Execute on main queue because settings observers are @MainActor.
+        DispatchQueue.main.async {
+            let defaults = UserDefaults.standard
+            let originalFromCode = defaults.integer(forKey: Self.convertToolFromCodeKey)
+            let originalToCode = defaults.integer(forKey: Self.convertToolToCodeKey)
 
-            // Set source code table for conversion
-            UserDefaults.standard.set(sourceCode.rawValue, forKey: UserDefaultsKey.codeTable)
+            defaults.set(sourceCode.rawValue, forKey: Self.convertToolFromCodeKey)
+            defaults.set(targetCode.rawValue, forKey: Self.convertToolToCodeKey)
 
-            // Perform the conversion
             let success = PHTVManager.quickConvert()
 
-            // Restore original code table
-            UserDefaults.standard.set(originalCodeTable, forKey: UserDefaultsKey.codeTable)
+            defaults.set(originalFromCode, forKey: Self.convertToolFromCodeKey)
+            defaults.set(originalToCode, forKey: Self.convertToolToCodeKey)
 
-            // Get the converted content
             let pasteboard = NSPasteboard.general
             let newContent = pasteboard.string(forType: .string) ?? ""
 
-            DispatchQueue.main.async {
-                isConverting = false
-                showResult = true
+            isConverting = false
+            showResult = true
 
-                if success && !newContent.isEmpty && newContent != textToConvert {
-                    isSuccess = true
-                    convertedContent = newContent
-                    resultMessage = "Đã chuyển đổi \(textToConvert.count) ký tự từ \(sourceCode.displayName) sang \(targetCode.displayName)"
-                    NSSound.beep()
-                } else if newContent == textToConvert {
-                    isSuccess = false
-                    resultMessage = "Văn bản không thay đổi. Có thể văn bản đã ở định dạng \(targetCode.displayName) hoặc không chứa ký tự tiếng Việt."
-                } else {
-                    isSuccess = false
-                    resultMessage = "Không thể chuyển đổi. Văn bản có thể không đúng định dạng \(sourceCode.displayName)."
-                }
+            if success && !newContent.isEmpty && newContent != textToConvert {
+                isSuccess = true
+                convertedContent = newContent
+                resultMessage = "Đã chuyển đổi \(textToConvert.count) ký tự từ \(sourceCode.displayName) sang \(targetCode.displayName)"
+                NSSound.beep()
+            } else if newContent == textToConvert {
+                isSuccess = false
+                resultMessage = "Văn bản không thay đổi. Có thể văn bản đã ở định dạng \(targetCode.displayName) hoặc không chứa ký tự tiếng Việt."
+            } else {
+                isSuccess = false
+                resultMessage = "Không thể chuyển đổi. Văn bản có thể không đúng định dạng \(sourceCode.displayName)."
             }
         }
     }
