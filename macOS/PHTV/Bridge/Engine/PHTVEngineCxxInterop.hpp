@@ -24,14 +24,6 @@ extern volatile int vEmojiHotkeyKeyCode;
 extern volatile int vSafeMode;
 extern int vShowIconOnDock;
 
-inline void phtvEngineInitializeMacroMap(const std::uint8_t *data, const int length) noexcept {
-    if (!data || length <= 0) {
-        initMacroMap(nullptr, 0);
-        return;
-    }
-    initMacroMap(data, length);
-}
-
 inline bool phtvEngineInitializeEnglishDictionary(const char *path) {
     if (!path || path[0] == '\0') {
         return false;

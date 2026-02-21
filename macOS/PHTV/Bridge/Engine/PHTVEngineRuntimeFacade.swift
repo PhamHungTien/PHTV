@@ -393,7 +393,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func initializeMacroMap(_ data: UnsafePointer<UInt8>?, _ count: Int32) {
-        phtvEngineInitializeMacroMap(data, count)
+        initMacroMap(data, count)
     }
 
     class func initializeEnglishDictionary(_ path: UnsafePointer<CChar>) -> Bool {
