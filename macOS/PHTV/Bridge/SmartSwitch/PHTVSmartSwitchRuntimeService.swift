@@ -89,7 +89,7 @@ final class PHTVSmartSwitchRuntimeService: NSObject {
             ensureLoadedLocked()
             return serializedDataLocked()
         }
-        PHTVSmartSwitchPersistenceService.saveSmartSwitchData(data as NSData)
+        PHTVSmartSwitchPersistenceService.saveSmartSwitchData(data)
     }
 
     @objc class func loadFromPersistedData() {

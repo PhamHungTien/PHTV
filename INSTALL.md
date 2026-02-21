@@ -115,7 +115,7 @@ cd PHTV/macOS
 
 # Build với Xcode
 # Universal Binary - hỗ trợ cả Intel và Apple Silicon
-xcodebuild -scheme PHTV -configuration Release
+xcodebuild -scheme PHTV -configuration Release -destination 'platform=macOS,arch=arm64'
 
 # App sẽ được build tại: build/Release/PHTV.app
 ```

@@ -44,7 +44,7 @@ if [ ! -f "$DMG_PATH" ]; then
     echo -e "${RED}❌ Error: DMG file not found at $DMG_PATH${NC}"
     echo ""
     echo "Please build and create the DMG first using:"
-    echo -e "${BLUE}  xcodebuild -project PHTV.xcodeproj -configuration Release${NC}"
+    echo -e "${BLUE}  xcodebuild -project PHTV.xcodeproj -configuration Release -destination 'platform=macOS,arch=arm64'${NC}"
     echo -e "${BLUE}  # Then create DMG${NC}"
     exit 1
 fi

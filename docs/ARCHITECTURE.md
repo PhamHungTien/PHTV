@@ -120,5 +120,11 @@ Tất cả wrapper đều là `inline` `noexcept` function, không phải class 
 open macOS/PHTV.xcodeproj
 
 # Build từ command line
-xcodebuild -project macOS/PHTV.xcodeproj -scheme PHTV build
+xcodebuild -project macOS/PHTV.xcodeproj -scheme PHTV -destination 'platform=macOS,arch=arm64' build
 ```
+
+## Swift Migration Status
+
+- Smart Switch runtime đã chạy hoàn toàn bằng Swift (`Bridge/SmartSwitch/*`).
+- C++ `SmartSwitchKey` đã được loại bỏ khỏi `Core/Engine`.
+- Kế hoạch migrate engine còn lại sang Swift: xem `docs/ENGINE_SWIFT_MIGRATION.md`.

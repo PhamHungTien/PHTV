@@ -43,7 +43,7 @@ fi
 if [ ! -d "$APP_PATH" ]; then
     echo "Error: PHTV.app not found at $APP_PATH"
     echo "Please build the app first with:"
-    echo "  xcodebuild -scheme PHTV -configuration Release clean build"
+    echo "  xcodebuild -scheme PHTV -configuration Release -destination 'platform=macOS,arch=arm64' clean build"
     exit 1
 fi
 
