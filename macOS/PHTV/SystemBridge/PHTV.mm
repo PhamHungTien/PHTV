@@ -20,11 +20,6 @@
 #import <Sparkle/Sparkle.h>
 #import "PHTV-Swift.h"
 
-// Forward declarations for functions used before definition (inside extern "C" block)
-extern "C" {
-    NSString* getFocusedAppBundleId(void);
-}
-
 #define FRONT_APP [[NSWorkspace sharedWorkspace] frontmostApplication].bundleIdentifier
 
 // Cached app behavior used across the event callback.
@@ -238,9 +233,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         } else {
             CGEventTapPostEvent(proxy, e);
         }
-    }
-
-    void ThrottleCliInjection() {
     }
 
     __attribute__((always_inline)) static inline void ApplyKeyboardTypeAndFlags(CGEventRef down, CGEventRef up) {
@@ -726,21 +718,6 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         }
     }
 
-    void SendCutKey() {
-        CGEventRef eventVkeyDown = CGEventCreateKeyboardEvent (myEventSource, KEY_X, true);
-        CGEventRef eventVkeyUp = CGEventCreateKeyboardEvent (myEventSource, KEY_X, false);
-        _privateFlag = CGEventGetFlags(eventVkeyDown);
-        _privateFlag |= NX_COMMANDMASK;
-        CGEventSetFlags(eventVkeyDown, _privateFlag);
-        CGEventSetFlags(eventVkeyUp, _privateFlag);
-        
-        PostSyntheticEvent(_proxy, eventVkeyDown);
-        PostSyntheticEvent(_proxy, eventVkeyUp);
-        
-        CFRelease(eventVkeyDown);
-        CFRelease(eventVkeyUp);
-    }
-    
     void SendNewCharString(const bool& dataFromMacro=false, const Uint16& offset=0) {
         _j = 0;
         _newCharSize = dataFromMacro ? pData->macroData.size() : pData->newCharCount;
