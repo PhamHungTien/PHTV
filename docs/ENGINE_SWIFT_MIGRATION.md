@@ -69,6 +69,11 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - Them `Bridge/Engine/PHTVAutoEnglishRestoreBridge.swift` cho logic `checkIfEnglishWord(...)`
   - `EnglishWordDetector.cpp` route qua `phtvDetectorShouldRestoreEnglishWord(...)`
   - Giu weak C++ fallback de regression test standalone tiep tuc pass
+  - Route them cac API detector con lai qua Swift bridge:
+    - `isEnglishWord(...)`
+    - `isEnglishWordFromKeyStates(...)`
+    - `isVietnameseWordFromKeyStates(...)`
+    - `keyStatesToString(...)`
 
 ## Lo trinh migrate
 

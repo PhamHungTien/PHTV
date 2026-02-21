@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <cstring>
 #include <cstdlib>
+#include <algorithm>
 #ifdef _WIN32
 #else
 #include <sys/mman.h>
@@ -21,6 +22,7 @@
 #include <unistd.h>
 #endif
 #include <unordered_set>
+#include <vector>
 #include <cstdio>
 
 #include "../phtv_mac_keys.h"
@@ -87,6 +89,13 @@ extern "C" int phtvDictionaryContainsEnglishIndices(const uint8_t* indices, int 
 extern "C" int phtvDictionaryContainsVietnameseIndices(const uint8_t* indices, int length);
 extern "C" void phtvDictionaryClear();
 extern "C" int phtvDetectorShouldRestoreEnglishWord(const Uint32* keyStates, int stateIndex);
+extern "C" int phtvDetectorIsEnglishWordUtf8(const char* wordCString);
+extern "C" int phtvDetectorIsEnglishWordFromKeyStates(const Uint32* keyStates, int stateIndex);
+extern "C" int phtvDetectorIsVietnameseWordFromKeyStates(const Uint32* keyStates, int stateIndex);
+extern "C" int phtvDetectorKeyStatesToAscii(const Uint32* keyStates,
+                                             int count,
+                                             char* outputBuffer,
+                                             int outputBufferSize);
 
 static void initKcLookup() {
     if (kcInit) return;
@@ -579,7 +588,7 @@ size_t getVietnameseDictionarySize() {
     return count > 0 ? static_cast<size_t>(count) : 0;
 }
 
-bool isEnglishWord(const string& word) {
+static bool isEnglishWordFallback(const string& word) {
     if (!dictionaryEnglishInitialized() || word.empty()) return false;
     uint8_t idx[32];
     int len = 0;
@@ -592,7 +601,7 @@ bool isEnglishWord(const string& word) {
     return dictionaryEnglishContainsIndices(idx, len);
 }
 
-bool isEnglishWordFromKeyStates(const Uint32* keyStates, int stateIndex) {
+static bool isEnglishWordFromKeyStatesFallback(const Uint32* keyStates, int stateIndex) {
     if (stateIndex <= 0 || stateIndex > 30) return false;
     if (!dictionaryEnglishInitialized() && customEnglishWordCountCache == 0) return false;
 
@@ -615,7 +624,7 @@ bool isEnglishWordFromKeyStates(const Uint32* keyStates, int stateIndex) {
     return dictionaryEnglishContainsIndices(idx, stateIndex);
 }
 
-bool isVietnameseWordFromKeyStates(const Uint32* keyStates, int stateIndex) {
+static bool isVietnameseWordFromKeyStatesFallback(const Uint32* keyStates, int stateIndex) {
     if (stateIndex <= 0 || stateIndex > 30) return false;
     if (phtvDictionaryVietnameseWordCount() <= 0 && customVietnameseWordCountCache == 0) return false;
 
@@ -638,7 +647,7 @@ bool isVietnameseWordFromKeyStates(const Uint32* keyStates, int stateIndex) {
     return dictionaryVietnameseContainsIndices(idx, stateIndex);
 }
 
-string keyStatesToString(const Uint32* keyCodes, int count) {
+static string keyStatesToStringFallback(const Uint32* keyCodes, int count) {
     initKcLookup();
     string result;
     result.reserve(count);
@@ -649,6 +658,76 @@ string keyStatesToString(const Uint32* keyCodes, int count) {
         }
     }
     return result;
+}
+
+extern "C" __attribute__((weak)) int phtvDetectorIsEnglishWordUtf8(const char* wordCString) {
+    if (!wordCString) return 0;
+    return isEnglishWordFallback(string(wordCString)) ? 1 : 0;
+}
+
+extern "C" __attribute__((weak)) int phtvDetectorIsEnglishWordFromKeyStates(const Uint32* keyStates, int stateIndex) {
+    return isEnglishWordFromKeyStatesFallback(keyStates, stateIndex) ? 1 : 0;
+}
+
+extern "C" __attribute__((weak)) int phtvDetectorIsVietnameseWordFromKeyStates(const Uint32* keyStates, int stateIndex) {
+    return isVietnameseWordFromKeyStatesFallback(keyStates, stateIndex) ? 1 : 0;
+}
+
+extern "C" __attribute__((weak)) int phtvDetectorKeyStatesToAscii(const Uint32* keyStates,
+                                                                    int count,
+                                                                    char* outputBuffer,
+                                                                    int outputBufferSize) {
+    if (!keyStates || count <= 0) {
+        if (outputBuffer && outputBufferSize > 0) {
+            outputBuffer[0] = '\0';
+        }
+        return 0;
+    }
+
+    const string fallback = keyStatesToStringFallback(keyStates, count);
+    if (!outputBuffer || outputBufferSize <= 0) {
+        return static_cast<int>(fallback.size());
+    }
+
+    const int writableLength = outputBufferSize - 1;
+    const int copiedLength = std::min(static_cast<int>(fallback.size()), std::max(0, writableLength));
+    if (copiedLength > 0) {
+        memcpy(outputBuffer, fallback.data(), static_cast<size_t>(copiedLength));
+    }
+    outputBuffer[copiedLength] = '\0';
+    return copiedLength;
+}
+
+bool isEnglishWord(const string& word) {
+    if (word.empty()) return false;
+    return phtvDetectorIsEnglishWordUtf8(word.c_str()) != 0;
+}
+
+bool isEnglishWordFromKeyStates(const Uint32* keyStates, int stateIndex) {
+    return phtvDetectorIsEnglishWordFromKeyStates(keyStates, stateIndex) != 0;
+}
+
+bool isVietnameseWordFromKeyStates(const Uint32* keyStates, int stateIndex) {
+    return phtvDetectorIsVietnameseWordFromKeyStates(keyStates, stateIndex) != 0;
+}
+
+string keyStatesToString(const Uint32* keyCodes, int count) {
+    if (!keyCodes || count <= 0) {
+        return string();
+    }
+
+    std::vector<char> outputBuffer(static_cast<size_t>(count) + 1, '\0');
+    const int outputLength = phtvDetectorKeyStatesToAscii(
+        keyCodes,
+        count,
+        outputBuffer.data(),
+        static_cast<int>(outputBuffer.size())
+    );
+    if (outputLength <= 0) {
+        return string();
+    }
+
+    return string(outputBuffer.data(), static_cast<size_t>(outputLength));
 }
 
 // ============================================================================

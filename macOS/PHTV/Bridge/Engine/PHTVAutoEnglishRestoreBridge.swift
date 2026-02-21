@@ -173,6 +173,28 @@ private func decodeDetectorWord(
     return DetectorDecodedWord(indices: indices, keyCodes: keyCodes, cString: cString)
 }
 
+private func decodeDetectorAsciiWord(_ wordCString: UnsafePointer<CChar>) -> [UInt8]? {
+    var output: [UInt8] = []
+    output.reserveCapacity(detectorMaxWordLength)
+
+    var cursor = wordCString
+    while cursor.pointee != 0 && output.count < detectorMaxWordLength {
+        let raw = UInt8(bitPattern: cursor.pointee)
+
+        if raw >= 97 && raw <= 122 {
+            output.append(raw - 97)
+        } else if raw >= 65 && raw <= 90 {
+            output.append(raw - 65)
+        } else {
+            return nil
+        }
+
+        cursor = cursor.advanced(by: 1)
+    }
+
+    return output.isEmpty ? nil : output
+}
+
 private func detectorContainsCustomEnglish(_ cString: [CChar]) -> Bool {
     guard phtvCustomDictionaryEnglishCount() > 0 else {
         return false
@@ -640,6 +662,120 @@ private func detectorShouldRestoreEnglish(
     }
 
     return isEnglish
+}
+
+@_cdecl("phtvDetectorIsEnglishWordUtf8")
+func phtvDetectorIsEnglishWordUtf8(_ wordCString: UnsafePointer<CChar>?) -> Int32 {
+    guard phtvDictionaryIsEnglishInitialized() != 0,
+          let wordCString,
+          let indices = decodeDetectorAsciiWord(wordCString) else {
+        return 0
+    }
+
+    return detectorContainsEnglish(indices, length: indices.count) ? 1 : 0
+}
+
+@_cdecl("phtvDetectorIsEnglishWordFromKeyStates")
+func phtvDetectorIsEnglishWordFromKeyStates(
+    _ keyStates: UnsafePointer<UInt32>?,
+    _ stateIndex: Int32
+) -> Int32 {
+    let length = Int(stateIndex)
+    guard let keyStates,
+          length > 0,
+          length <= detectorMaxWordLength else {
+        return 0
+    }
+
+    guard phtvDictionaryIsEnglishInitialized() != 0 || phtvCustomDictionaryEnglishCount() > 0 else {
+        return 0
+    }
+
+    guard let decoded = decodeDetectorWord(keyStates: keyStates, length: length) else {
+        return 0
+    }
+
+    if detectorContainsCustomEnglish(decoded.cString) {
+        return 1
+    }
+
+    return detectorContainsEnglish(decoded.indices, length: length) ? 1 : 0
+}
+
+@_cdecl("phtvDetectorIsVietnameseWordFromKeyStates")
+func phtvDetectorIsVietnameseWordFromKeyStates(
+    _ keyStates: UnsafePointer<UInt32>?,
+    _ stateIndex: Int32
+) -> Int32 {
+    let length = Int(stateIndex)
+    guard let keyStates,
+          length > 0,
+          length <= detectorMaxWordLength else {
+        return 0
+    }
+
+    guard phtvDictionaryVietnameseWordCount() > 0 || phtvCustomDictionaryVietnameseCount() > 0 else {
+        return 0
+    }
+
+    guard let decoded = decodeDetectorWord(keyStates: keyStates, length: length) else {
+        return 0
+    }
+
+    if detectorContainsCustomVietnamese(decoded.cString) {
+        return 1
+    }
+
+    return detectorContainsVietnamese(decoded.indices, length: length) ? 1 : 0
+}
+
+@_cdecl("phtvDetectorKeyStatesToAscii")
+func phtvDetectorKeyStatesToAscii(
+    _ keyStates: UnsafePointer<UInt32>?,
+    _ count: Int32,
+    _ outputBuffer: UnsafeMutablePointer<CChar>?,
+    _ outputBufferSize: Int32
+) -> Int32 {
+    guard let keyStates else {
+        if let outputBuffer, outputBufferSize > 0 {
+            outputBuffer[0] = 0
+        }
+        return 0
+    }
+
+    let length = max(0, Int(count))
+    var asciiChars: [CChar] = []
+    asciiChars.reserveCapacity(length)
+
+    for i in 0..<length {
+        let keyCode = UInt8(keyStates[i] & detectorKeyMask)
+        let keyCodeInt = Int(keyCode)
+        guard keyCodeInt < detectorKeyCodeToIndex.count else {
+            continue
+        }
+
+        let letterIndex = detectorKeyCodeToIndex[keyCodeInt]
+        guard letterIndex < 26 else {
+            continue
+        }
+
+        asciiChars.append(Int8(bitPattern: letterIndex &+ 97))
+    }
+
+    guard let outputBuffer, outputBufferSize > 0 else {
+        return Int32(asciiChars.count)
+    }
+
+    let writableLength = max(0, Int(outputBufferSize) - 1)
+    let copiedLength = min(writableLength, asciiChars.count)
+    if copiedLength > 0 {
+        for i in 0..<copiedLength {
+            outputBuffer[i] = asciiChars[i]
+        }
+    }
+    outputBuffer[copiedLength] = 0
+
+    return Int32(copiedLength)
 }
 
 @_cdecl("phtvDetectorShouldRestoreEnglishWord")
