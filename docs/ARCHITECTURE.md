@@ -100,11 +100,10 @@ SwiftUI views. Không chứa business logic. Nhận state từ `State/` và gọ
 
 ## Interop C++ ↔ Swift
 
-Bridging header import C bridge header:
+Swift bridge config trỏ trực tiếp tới C bridge header:
 
-```objc
-// PHTVBridgingHeader.h
-#import "Core/Engine/PHTVEngineCBridge.h"
+```text
+SWIFT_OBJC_BRIDGING_HEADER = PHTV/Core/Engine/PHTVEngineCBridge.h
 ```
 
 Project không còn dùng flag Swift C++ interop (`-cxx-interoperability-mode=default`).
