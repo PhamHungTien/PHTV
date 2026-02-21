@@ -1263,26 +1263,32 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                     vLanguage = modifierPressTransition.language;
                 }
             } else if (_lastFlag > _flag)  {
-                int releasePlan = [PHTVHotkeyService evaluateFlagsReleasePlanWithRestoreOnEscape:(int32_t)vRestoreOnEscape
-                                                                            restoreModifierPressed:_restoreModifierPressed
-                                                                    keyPressedWithRestoreModifier:_keyPressedWithRestoreModifier
-                                                                                  customEscapeKey:(int32_t)vCustomEscapeKey
-                                                                                        oldFlags:(uint64_t)_lastFlag
-                                                                                        newFlags:(uint64_t)_flag
-                                                                                     switchHotkey:(int32_t)vSwitchKeyStatus
-                                                                                    convertHotkey:(int32_t)gConvertToolOptions.hotKey
-                                                                                     emojiEnabled:(int32_t)vEnableEmojiHotkey
-                                                                                   emojiModifiers:(int32_t)vEmojiHotkeyModifiers
-                                                                                     emojiKeyCode:(int32_t)vEmojiHotkeyKeyCode
-                                                       keyPressedWhileSwitchModifiersHeld:_keyPressedWhileSwitchModifiersHeld
-                                                        keyPressedWhileEmojiModifiersHeld:_keyPressedWhileEmojiModifiersHeld
-                                                                        hasJustUsedHotkey:_hasJustUsedHotKey
-                                                                  tempOffSpellingEnabled:(int32_t)vTempOffSpelling
-                                                                    tempOffEngineEnabled:(int32_t)vTempOffPHTV];
+                PHTVModifierReleaseTransitionBox *modifierReleaseTransition =
+                    [PHTVHotkeyService modifierReleaseTransitionWithRestoreOnEscape:(int32_t)vRestoreOnEscape
+                                                             restoreModifierPressed:_restoreModifierPressed
+                                                     keyPressedWithRestoreModifier:_keyPressedWithRestoreModifier
+                                                                   customEscapeKey:(int32_t)vCustomEscapeKey
+                                                                          oldFlags:(uint64_t)_lastFlag
+                                                                          newFlags:(uint64_t)_flag
+                                                                       switchHotkey:(int32_t)vSwitchKeyStatus
+                                                                      convertHotkey:(int32_t)gConvertToolOptions.hotKey
+                                                                       emojiEnabled:(int32_t)vEnableEmojiHotkey
+                                                                     emojiModifiers:(int32_t)vEmojiHotkeyModifiers
+                                                                       emojiKeyCode:(int32_t)vEmojiHotkeyKeyCode
+                                             keyPressedWhileSwitchModifiersHeld:_keyPressedWhileSwitchModifiersHeld
+                                              keyPressedWhileEmojiModifiersHeld:_keyPressedWhileEmojiModifiersHeld
+                                                              hasJustUsedHotkey:_hasJustUsedHotKey
+                                                        tempOffSpellingEnabled:(int32_t)vTempOffSpelling
+                                                          tempOffEngineEnabled:(int32_t)vTempOffPHTV
+                                                                pauseKeyEnabled:(int32_t)vPauseKeyEnabled
+                                                                   pauseKeyCode:(int32_t)vPauseKey
+                                                                    pausePressed:_pauseKeyPressed
+                                                                 currentLanguage:(int32_t)vLanguage
+                                                                   savedLanguage:(int32_t)_savedLanguageBeforePause];
 
-                BOOL shouldAttemptRestore = [PHTVHotkeyService flagsReleasePlanShouldAttemptRestore:releasePlan];
-                BOOL shouldResetRestoreState = [PHTVHotkeyService flagsReleasePlanShouldResetRestoreState:releasePlan];
-                int releaseAction = [PHTVHotkeyService flagsReleasePlanModifierReleaseAction:releasePlan];
+                BOOL shouldAttemptRestore = modifierReleaseTransition.shouldAttemptRestore;
+                BOOL shouldResetRestoreState = modifierReleaseTransition.shouldResetRestoreState;
+                int releaseAction = (int)modifierReleaseTransition.releaseAction;
 
                 // Releasing modifiers - check for restore modifier key first
                 if (shouldAttemptRestore) {
@@ -1297,7 +1303,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                         // Send the raw ASCII characters
                         SendNewCharString();
 
-                        _lastFlag = 0;
+                        _lastFlag = (CGEventFlags)modifierReleaseTransition.lastFlags;
                         _restoreModifierPressed = false;
                         _keyPressedWithRestoreModifier = false;
                         return NULL;
@@ -1313,24 +1319,16 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                     _keyPressedWithRestoreModifier = false;
                 }
 
-                // Check if pause key is being released - restore Vietnamese mode
-                PHTVPauseTransitionBox *pauseReleaseTransition = [PHTVHotkeyService pauseTransitionForReleaseWithOldFlags:(uint64_t)_lastFlag
-                                                                                                                  newFlags:(uint64_t)_flag
-                                                                                                           pauseKeyEnabled:(int32_t)vPauseKeyEnabled
-                                                                                                              pauseKeyCode:(int32_t)vPauseKey
-                                                                                                               pausePressed:_pauseKeyPressed
-                                                                                                            currentLanguage:(int32_t)vLanguage
-                                                                                                              savedLanguage:(int32_t)_savedLanguageBeforePause];
-                _savedLanguageBeforePause = (int)pauseReleaseTransition.savedLanguage;
-                _pauseKeyPressed = pauseReleaseTransition.pausePressed;
-                if (pauseReleaseTransition.shouldUpdateLanguage) {
-                    vLanguage = pauseReleaseTransition.language;
+                _savedLanguageBeforePause = (int)modifierReleaseTransition.savedLanguage;
+                _pauseKeyPressed = modifierReleaseTransition.pausePressed;
+                if (modifierReleaseTransition.shouldUpdateLanguage) {
+                    vLanguage = modifierReleaseTransition.language;
                 }
 
                 if ([PHTVRuntimeUIBridgeService handleModifierReleaseHotkeyAction:(int32_t)releaseAction]) {
-                    _lastFlag = 0;
-                    _keyPressedWhileSwitchModifiersHeld = false;
-                    _keyPressedWhileEmojiModifiersHeld = false;
+                    _lastFlag = (CGEventFlags)modifierReleaseTransition.lastFlags;
+                    _keyPressedWhileSwitchModifiersHeld = modifierReleaseTransition.keyPressedWhileSwitchModifiersHeld;
+                    _keyPressedWhileEmojiModifiersHeld = modifierReleaseTransition.keyPressedWhileEmojiModifiersHeld;
                     _hasJustUsedHotKey = true;
                     return NULL;
                 }
@@ -1341,9 +1339,9 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                     vTempOffEngine();
                 }
 
-                _lastFlag = 0;
-                _keyPressedWhileSwitchModifiersHeld = false;
-                _keyPressedWhileEmojiModifiersHeld = false;
+                _lastFlag = (CGEventFlags)modifierReleaseTransition.lastFlags;
+                _keyPressedWhileSwitchModifiersHeld = modifierReleaseTransition.keyPressedWhileSwitchModifiersHeld;
+                _keyPressedWhileEmojiModifiersHeld = modifierReleaseTransition.keyPressedWhileEmojiModifiersHeld;
                 _hasJustUsedHotKey = false;
             }
         }
