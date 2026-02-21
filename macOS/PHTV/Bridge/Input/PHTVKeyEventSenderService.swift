@@ -185,8 +185,8 @@ class PHTVKeyEventSenderService: NSObject {
             case PHTVCodeTableTCVN3.rawValue,    // 1
                  PHTVCodeTableVNIWindows.rawValue, // 2
                  PHTVCodeTableCP1258.rawValue:     // 4 — 1-byte codes
-                let newCharHi = UInt16(PHTVEngineRuntimeFacade.hiByte(data))
-                newChar = UInt16(PHTVEngineRuntimeFacade.lowByte(data))
+                let newCharHi = UInt16(EnginePackedData.highByte(data))
+                newChar = UInt16(EnginePackedData.lowByte(data))
                 guard let down = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true),
                       let up   = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false) else { return }
                 PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: down, keyUp: up, eventMarker: EventSourceMarker.phtv)
@@ -223,7 +223,7 @@ class PHTVKeyEventSenderService: NSObject {
                 newChar &= 0x1FFF
                 let len = newCharHi > 0 ? 2 : 1
                 insertKeyLength(Int32(len))
-                var uniChars: [UInt16] = [newChar, newCharHi > 0 ? PHTVEngineRuntimeFacade.unicodeCompoundMarkAt(Int32(newCharHi) - 1) : 0]
+                var uniChars: [UInt16] = [newChar, newCharHi > 0 ? EnginePackedData.unicodeCompoundMark(at: Int32(newCharHi) - 1) : 0]
                 guard let down = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: true),
                       let up   = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false) else { return }
                 PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: down, keyUp: up, eventMarker: EventSourceMarker.phtv)

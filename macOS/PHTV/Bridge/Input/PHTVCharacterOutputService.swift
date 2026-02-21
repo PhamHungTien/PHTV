@@ -284,8 +284,8 @@ final class PHTVCharacterOutputService: NSObject {
                 newCharString[outputIndex] = UInt16(tempChar & 0xFFFF)
                 outputIndex += 1
             case 1, 2, 4: // TCVN3, VNI Windows, CP1258 — 1-byte codes
-                let newCharHi = UInt16(PHTVEngineRuntimeFacade.hiByte(tempChar))
-                let newCharLo = UInt16(PHTVEngineRuntimeFacade.lowByte(tempChar))
+                let newCharHi = UInt16(EnginePackedData.highByte(tempChar))
+                let newCharLo = UInt16(EnginePackedData.lowByte(tempChar))
                 newCharString[outputIndex] = newCharLo
                 outputIndex += 1
                 if newCharHi > 32 {
@@ -305,8 +305,7 @@ final class PHTVCharacterOutputService: NSObject {
                 outputIndex += 1
                 if newCharHi > 0 {
                     newCharSize += 1
-                    newCharString[outputIndex] = PHTVEngineRuntimeFacade.unicodeCompoundMarkAt(
-                        Int32(newCharHi) - 1)
+                    newCharString[outputIndex] = EnginePackedData.unicodeCompoundMark(at: Int32(newCharHi) - 1)
                     outputIndex += 1
                 }
             default:

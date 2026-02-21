@@ -109,8 +109,8 @@ enum DebugSelfTests {
 
     private static func runCxxInteropChecks() {
         let packedValue: UInt32 = 0x1234
-        let low = Int(PHTVEngineRuntimeFacade.lowByte(packedValue))
-        let high = Int(PHTVEngineRuntimeFacade.hiByte(packedValue))
+        let low = Int(EnginePackedData.lowByte(packedValue))
+        let high = Int(EnginePackedData.highByte(packedValue))
         let spaceKey = Int(KeyCode.space)
         let maxBuffer = Int(PHTVEngineRuntimeFacade.engineMaxBuffer())
         let capsMask = EngineBitMask.caps

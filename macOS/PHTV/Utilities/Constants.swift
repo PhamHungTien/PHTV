@@ -166,6 +166,26 @@ enum EngineBitMask {
     static let pureCharacter: UInt32 = 0x8000_0000
 }
 
+enum EnginePackedData {
+    static let unicodeCompoundMarks: [UInt16] = [0x0301, 0x0300, 0x0309, 0x0303, 0x0323]
+
+    static func lowByte(_ value: UInt32) -> UInt16 {
+        UInt16(truncatingIfNeeded: value & 0x00FF)
+    }
+
+    static func highByte(_ value: UInt32) -> UInt16 {
+        UInt16(truncatingIfNeeded: (value >> 8) & 0x00FF)
+    }
+
+    static func unicodeCompoundMark(at index: Int32) -> UInt16 {
+        let safeIndex = Int(index)
+        guard unicodeCompoundMarks.indices.contains(safeIndex) else {
+            return 0
+        }
+        return unicodeCompoundMarks[safeIndex]
+    }
+}
+
 // MARK: - Key Codes
 
 enum KeyCode {

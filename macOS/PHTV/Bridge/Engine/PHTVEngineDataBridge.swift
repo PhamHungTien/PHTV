@@ -146,7 +146,7 @@ final class PHTVEngineDataBridge: NSObject {
             } else if codeTable == 0 {
                 character = UInt16(truncatingIfNeeded: data & 0xFFFF)
             } else {
-                character = PHTVEngineRuntimeFacade.lowByte(data)
+                character = EnginePackedData.lowByte(data)
             }
 
             guard character != 0, let scalar = UnicodeScalar(Int(character)) else {

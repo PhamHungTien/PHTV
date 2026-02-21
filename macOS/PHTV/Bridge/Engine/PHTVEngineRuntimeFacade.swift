@@ -640,7 +640,6 @@ func phtvRuntimeQuickEndConsonantEnabled() -> Int32 {
 
 @objcMembers
 final class PHTVEngineRuntimeFacade: NSObject {
-    private static let unicodeCompoundMarks: [UInt16] = [0x0301, 0x0300, 0x0309, 0x0303, 0x0323]
     // Mirror constants in Core/Engine/DataType.h.
     private static let engineDoNothingCodeValue: Int32 = 0
     private static let engineWillProcessCodeValue: Int32 = 1
@@ -1213,22 +1212,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
             return 0
         }
         return UInt32(macroData[safeIndex])
-    }
-
-    class func lowByte(_ value: UInt32) -> UInt16 {
-        UInt16(truncatingIfNeeded: value & 0x00FF)
-    }
-
-    class func hiByte(_ value: UInt32) -> UInt16 {
-        UInt16(truncatingIfNeeded: (value >> 8) & 0x00FF)
-    }
-
-    class func unicodeCompoundMarkAt(_ index: Int32) -> UInt16 {
-        let safeIndex = Int(index)
-        guard unicodeCompoundMarks.indices.contains(safeIndex) else {
-            return 0
-        }
-        return unicodeCompoundMarks[safeIndex]
     }
 
     class func isNavigationKey(_ keyCode: UInt16) -> Bool {

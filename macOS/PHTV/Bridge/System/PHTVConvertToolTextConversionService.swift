@@ -211,7 +211,7 @@ final class PHTVConvertToolTextConversionService: NSObject {
             let markIndex = Int32(targetCharacter >> 13)
             if markIndex > 0 {
                 output.append(targetCharacter & 0x1FFF)
-                output.append(PHTVEngineRuntimeFacade.unicodeCompoundMarkAt(markIndex - 1))
+                output.append(EnginePackedData.unicodeCompoundMark(at: markIndex - 1))
             } else {
                 output.append(targetCharacter)
             }
@@ -223,7 +223,7 @@ final class PHTVConvertToolTextConversionService: NSObject {
 
     private class func unicodeCompoundMarkIndex(for mark: UInt16) -> UInt16 {
         for index in 0..<5 {
-            if mark == PHTVEngineRuntimeFacade.unicodeCompoundMarkAt(Int32(index)) {
+            if mark == EnginePackedData.unicodeCompoundMark(at: Int32(index)) {
                 return UInt16((index + 1) << 13)
             }
         }
