@@ -17,12 +17,60 @@ final class PHTVEngineRuntimeFacade: NSObject {
         phtvEngineNotifyTableCodeChanged()
     }
 
+    class func eventMarkerValue() -> Int64 {
+        Int64(phtvEventMarkerValue())
+    }
+
     class func handleMouseDown() {
         phtvEngineHandleMouseDown()
     }
 
+    class func handleKeyboardKeyDown(
+        keyCode: UInt16,
+        capsStatus: UInt8,
+        hasOtherControlKey: Bool
+    ) {
+        phtvEngineHandleKeyboardKeyDown(keyCode, capsStatus, hasOtherControlKey)
+    }
+
+    class func handleKeyboardKeyDown(
+        _ keyCode: UInt16,
+        _ capsStatus: UInt8,
+        _ hasOtherControlKey: Bool
+    ) {
+        phtvEngineHandleKeyboardKeyDown(keyCode, capsStatus, hasOtherControlKey)
+    }
+
+    class func handleEnglishModeKeyDown(
+        keyCode: UInt16,
+        isCaps: Bool,
+        hasOtherControlKey: Bool
+    ) {
+        phtvEngineHandleEnglishModeKeyDown(keyCode, isCaps, hasOtherControlKey)
+    }
+
+    class func handleEnglishModeKeyDown(
+        _ keyCode: UInt16,
+        _ isCaps: Bool,
+        _ hasOtherControlKey: Bool
+    ) {
+        phtvEngineHandleEnglishModeKeyDown(keyCode, isCaps, hasOtherControlKey)
+    }
+
     class func primeUpperCaseFirstChar() {
         phtvEnginePrimeUpperCaseFirstChar()
+    }
+
+    class func restoreToRawKeys() -> Bool {
+        phtvEngineRestoreToRawKeys()
+    }
+
+    class func tempOffSpellChecking() {
+        phtvEngineTempOffSpellChecking()
+    }
+
+    class func tempOffEngineNow() {
+        phtvEngineTempOffEngine()
     }
 
     class func barrier() {
@@ -287,5 +335,105 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setSafeMode(_ enabled: Bool) {
         phtvRuntimeSetSafeMode(enabled)
+    }
+
+    class func tempOffSpelling() -> Int32 {
+        Int32(phtvRuntimeTempOffSpelling())
+    }
+
+    class func tempOffEngine() -> Int32 {
+        Int32(phtvRuntimeTempOffPHTV())
+    }
+
+    class func fixRecommendBrowser() -> Int32 {
+        Int32(phtvRuntimeFixRecommendBrowser())
+    }
+
+    class func startNewSession() {
+        phtvRuntimeStartNewSession()
+    }
+
+    class func quickConvertHotkey() -> Int32 {
+        Int32(phtvEngineQuickConvertHotkey())
+    }
+
+    class func capsMask() -> UInt32 {
+        UInt32(phtvEngineCapsMask())
+    }
+
+    class func macroKeyCodeToCharacter(_ keyData: UInt32) -> UInt16 {
+        UInt16(phtvEngineMacroKeyCodeToCharacter(keyData))
+    }
+
+    class func keyDeleteCode() -> Int32 {
+        Int32(phtvEngineKeyDeleteCode())
+    }
+
+    class func keySlashCode() -> Int32 {
+        Int32(phtvEngineKeySlashCode())
+    }
+
+    class func keyEnterCode() -> Int32 {
+        Int32(phtvEngineKeyEnterCode())
+    }
+
+    class func keyReturnCode() -> Int32 {
+        Int32(phtvEngineKeyReturnCode())
+    }
+
+    class func spaceKeyCode() -> Int32 {
+        Int32(phtvEngineSpaceKeyCode())
+    }
+
+    class func engineDoNothingCode() -> Int32 {
+        Int32(phtvEngineVDoNothingCode())
+    }
+
+    class func engineWillProcessCode() -> Int32 {
+        Int32(phtvEngineVWillProcessCode())
+    }
+
+    class func engineReplaceMacroCode() -> Int32 {
+        Int32(phtvEngineVReplaceMaroCode())
+    }
+
+    class func engineRestoreCode() -> Int32 {
+        Int32(phtvEngineVRestoreCode())
+    }
+
+    class func engineRestoreAndStartNewSessionCode() -> Int32 {
+        Int32(phtvEngineVRestoreAndStartNewSessionCode())
+    }
+
+    class func engineMaxBuffer() -> Int32 {
+        Int32(phtvEngineMaxBuff())
+    }
+
+    class func engineDataCode() -> Int32 {
+        Int32(phtvEngineDataCode())
+    }
+
+    class func engineDataExtCode() -> Int32 {
+        Int32(phtvEngineDataExtCode())
+    }
+
+    class func engineDataBackspaceCount() -> Int32 {
+        Int32(phtvEngineDataBackspaceCount())
+    }
+
+    class func setEngineDataBackspaceCount(_ count: UInt8) {
+        phtvEngineDataSetBackspaceCount(count)
+    }
+
+    class func engineDataNewCharCount() -> Int32 {
+        Int32(phtvEngineDataNewCharCount())
+    }
+
+    class func engineDataCharAt(_ index: Int32) -> UInt32 {
+        UInt32(phtvEngineDataCharAt(index))
+    }
+
+    class func isNavigationKey(_ keyCode: UInt16) -> Bool {
+        phtvMacKeyIsNavigation(keyCode)
     }
 }
