@@ -1072,27 +1072,12 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         _flag = CGEventGetFlags(event);
         _keycode = (CGKeyCode)CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
 
-        // TEXT REPLACEMENT DETECTION: Track external delete events.
-        // When macOS Text Replacement is triggered (e.g., "ko" -> "không"),
-        // macOS sends synthetic delete events that we didn't generate
-        // We track these to avoid duplicate characters when SendEmptyCharacter() is called
-        if (type == kCGEventKeyDown && _keycode == KEY_DELETE) {
-            // This is an external delete event (not from PHTV since we already filtered myEventSource)
-            [PHTVEventContextBridgeService trackExternalDelete];
-#ifdef DEBUG
-            NSLog(@"[TextReplacement] External DELETE detected");
-#endif
-        }
-
-        // Also track space after deletes to detect text replacement pattern.
-        if (type == kCGEventKeyDown && _keycode == KEY_SPACE) {
-#ifdef DEBUG
-            int externalDeleteCount = (int)[PHTVEventContextBridgeService externalDeleteCountValue];
-            unsigned long long elapsed_ms = [PHTVEventContextBridgeService elapsedSinceLastExternalDeleteMs];
-            NSLog(@"[TextReplacement] SPACE key pressed: deleteCount=%d, elapsedMs=%llu, sourceID=%lld",
-                  externalDeleteCount, elapsed_ms,
-                  CGEventGetIntegerValueField(event, kCGEventSourceStateID));
-#endif
+        // Track text-replacement keydown patterns (external DELETE and following SPACE).
+        if (type == kCGEventKeyDown) {
+            [PHTVTextReplacementDecisionService handleKeyDownTextReplacementTrackingForKeyCode:(int32_t)_keycode
+                                                                                 deleteKeyCode:(int32_t)KEY_DELETE
+                                                                                  spaceKeyCode:(int32_t)KEY_SPACE
+                                                                                  sourceStateID:CGEventGetIntegerValueField(event, kCGEventSourceStateID)];
         }
 
         // Handle Spotlight detection optimization.

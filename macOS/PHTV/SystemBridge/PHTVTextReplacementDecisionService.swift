@@ -43,6 +43,35 @@ final class PHTVTextReplacementDecisionService: NSObject {
     private static let decisionPattern2B: Int32 = 3
     private static let decisionFallbackNoMatch: Int32 = 4
 
+    @objc(handleKeyDownTextReplacementTrackingForKeyCode:deleteKeyCode:spaceKeyCode:sourceStateID:)
+    class func handleKeyDownTextReplacementTracking(
+        forKeyCode keyCode: Int32,
+        deleteKeyCode: Int32,
+        spaceKeyCode: Int32,
+        sourceStateID: Int64
+    ) {
+        if keyCode == deleteKeyCode {
+            PHTVEventContextBridgeService.trackExternalDelete()
+#if DEBUG
+            NSLog("[TextReplacement] External DELETE detected")
+#endif
+            return
+        }
+
+#if DEBUG
+        if keyCode == spaceKeyCode {
+            let externalDeleteCount = Int(PHTVEventContextBridgeService.externalDeleteCountValue())
+            let elapsedMs = PHTVEventContextBridgeService.elapsedSinceLastExternalDeleteMs()
+            NSLog(
+                "[TextReplacement] SPACE key pressed: deleteCount=%d, elapsedMs=%llu, sourceID=%lld",
+                externalDeleteCount,
+                elapsedMs,
+                sourceStateID
+            )
+        }
+#endif
+    }
+
     @objc(shouldEvaluateForKeyCode:spaceKeyCode:backspaceCount:newCharCount:)
     class func shouldEvaluate(
         forKeyCode keyCode: Int32,
