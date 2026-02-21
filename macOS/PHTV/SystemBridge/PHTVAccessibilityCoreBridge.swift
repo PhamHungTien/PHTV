@@ -8,8 +8,9 @@
 import ApplicationServices
 import Foundation
 
-@_cdecl("PHTVRunAccessibilitySmokeTest")
-func phtvRunAccessibilitySmokeTestExport() -> Bool {
-    _ = AXUIElementCreateSystemWide()
-    return true
+enum PHTVAccessibilityCoreBridge {
+    static func runAccessibilitySmokeTest() -> Bool {
+        _ = AXUIElementCreateSystemWide()
+        return true
+    }
 }

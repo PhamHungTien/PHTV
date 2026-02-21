@@ -28,7 +28,7 @@ final class PHTVSafeModeStartupService: NSObject {
 
         defaults.set(true, forKey: keyAXTestInProgress)
 
-        if PHTVRunAccessibilitySmokeTest() {
+        if PHTVAccessibilityCoreBridge.runAccessibilitySmokeTest() {
             defaults.set(false, forKey: keyAXTestInProgress)
             NSLog("[PHTV] AX API test passed")
             return
