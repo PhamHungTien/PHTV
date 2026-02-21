@@ -9,6 +9,8 @@ import Foundation
 
 @objcMembers
 final class PHTVEngineRuntimeFacade: NSObject {
+    private static let unicodeCompoundMarks: [UInt16] = [0x0301, 0x0300, 0x0309, 0x0303, 0x0323]
+
     @objc class func initializeAndGetKeyHookState() {
         phtvEngineInitializeAndGetKeyHookState()
     }
@@ -545,7 +547,11 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func unicodeCompoundMarkAt(_ index: Int32) -> UInt16 {
-        phtvEngineUnicodeCompoundMarkAt(index)
+        let safeIndex = Int(index)
+        guard unicodeCompoundMarks.indices.contains(safeIndex) else {
+            return 0
+        }
+        return unicodeCompoundMarks[safeIndex]
     }
 
     class func isNavigationKey(_ keyCode: UInt16) -> Bool {

@@ -509,13 +509,6 @@ inline std::int64_t phtvEventMarkerValue() noexcept {
     return 0x50485456; // "PHTV"
 }
 
-// MARK: - Unicode Compound mark table
-
-inline std::uint16_t phtvEngineUnicodeCompoundMarkAt(const int index) noexcept {
-    extern Uint16 _unicodeCompoundMark[];
-    return (index >= 0) ? _unicodeCompoundMark[index] : 0;
-}
-
 // MARK: - Engine output state (pData) field accessors
 
 extern vKeyHookState* pData;
