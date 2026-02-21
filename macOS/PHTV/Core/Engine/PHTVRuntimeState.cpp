@@ -16,7 +16,6 @@ volatile int vCodeTable = 0;
 volatile int vCheckSpelling = 1;
 volatile int vUseModernOrthography = 1;
 volatile int vQuickTelex = 0;
-volatile int vUseMacro = 1;
 volatile int vAllowConsonantZFWJ = 1;
 volatile int vQuickStartConsonant = 0;
 volatile int vQuickEndConsonant = 0;

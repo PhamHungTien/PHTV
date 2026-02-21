@@ -30,6 +30,7 @@ nonisolated(unsafe) private var engineDataPointer: UnsafeMutablePointer<vKeyHook
 nonisolated(unsafe) private var runtimeLanguage: Int32 = 1
 nonisolated(unsafe) private var runtimeSwitchKeyStatus: Int32 = Int32(Defaults.defaultSwitchKeyStatus)
 nonisolated(unsafe) private var runtimeFixRecommendBrowser: Int32 = 1
+nonisolated(unsafe) private var runtimeUseMacro: Int32 = 1
 nonisolated(unsafe) private var runtimeUseMacroInEnglishMode: Int32 = 0
 nonisolated(unsafe) private var runtimeUseSmartSwitchKey: Int32 = 1
 nonisolated(unsafe) private var runtimeAutoCapsMacro: Int32 = 0
@@ -572,6 +573,11 @@ func phtvRuntimeUpperCaseExcludedForCurrentApp() -> Int32 {
     runtimeUpperCaseExcludedForCurrentApp
 }
 
+@_cdecl("phtvRuntimeUseMacroEnabled")
+func phtvRuntimeUseMacroEnabled() -> Int32 {
+    runtimeUseMacro
+}
+
 private func phtvCallStartNewSession() {
     startNewSession()
 }
@@ -922,11 +928,11 @@ final class PHTVEngineRuntimeFacade: NSObject {
     }
 
     class func useMacro() -> Int32 {
-        Int32(vUseMacro)
+        runtimeUseMacro
     }
 
     class func setUseMacro(_ value: Int32) {
-        vUseMacro = value
+        runtimeUseMacro = value
         OSMemoryBarrier()
     }
 

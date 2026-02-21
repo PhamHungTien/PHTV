@@ -20,6 +20,7 @@ extern "C" int phtvRuntimeRestoreOnEscapeEnabled();
 extern "C" int phtvRuntimeAutoRestoreEnglishWordEnabled();
 extern "C" int phtvRuntimeUpperCaseFirstCharEnabled();
 extern "C" int phtvRuntimeUpperCaseExcludedForCurrentApp();
+extern "C" int phtvRuntimeUseMacroEnabled();
 
 extern "C" __attribute__((weak)) int phtvRuntimeRestoreOnEscapeEnabled() {
     // Standalone regression binary fallback: keep restore feature enabled by default.
@@ -37,6 +38,10 @@ extern "C" __attribute__((weak)) int phtvRuntimeUpperCaseFirstCharEnabled() {
 
 extern "C" __attribute__((weak)) int phtvRuntimeUpperCaseExcludedForCurrentApp() {
     return 0;
+}
+
+extern "C" __attribute__((weak)) int phtvRuntimeUseMacroEnabled() {
+    return 1;
 }
 
 static vector<Uint8> _charKeyCode = {
@@ -1615,7 +1620,7 @@ void upperCaseFirstCharacter() {
         TypingWord[0] |= CAPS_MASK;
         hData[0] = GET(TypingWord[0]);
         _upperCaseStatus = 0;
-        if (vUseMacro)
+        if (phtvRuntimeUseMacroEnabled())
             hMacroKey[0] |= CAPS_MASK;
     }
 }
@@ -2050,7 +2055,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
         hExt = 1; //word break
         
         //check macro feature
-        if (vUseMacro && isMacroBreakCode(data) && !_hasHandledMacro && findMacro(hMacroKey, hMacroData)) {
+        if (phtvRuntimeUseMacroEnabled() && isMacroBreakCode(data) && !_hasHandledMacro && findMacro(hMacroKey, hMacroData)) {
             hCode = vReplaceMaro;
             hBPC = (Byte)hMacroKey.size();
             _hasHandledMacro = true;
@@ -2240,7 +2245,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
         }
 
         //insert key for macro function
-        if (vUseMacro) {
+        if (phtvRuntimeUseMacroEnabled()) {
             if (_isCharKeyCode) {
                 hMacroKey.push_back(data | (_isCaps ? CAPS_MASK : 0));
             } else {
@@ -2363,7 +2368,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             }
         }
 
-        if (vUseMacro && !_hasHandledMacro && findMacro(hMacroKey, hMacroData)) { //macro
+        if (phtvRuntimeUseMacroEnabled() && !_hasHandledMacro && findMacro(hMacroKey, hMacroData)) { //macro
             hCode = vReplaceMaro;
             hBPC = (Byte)hMacroKey.size();
             _spaceCount++;
@@ -2434,7 +2439,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
             hCode = vDoNothing;
             _spaceCount++;
         }
-        if (vUseMacro) {
+        if (phtvRuntimeUseMacroEnabled()) {
             hMacroKey.clear();
             _hasHandledMacro = false;  // Reset when starting new word
         }
@@ -2483,7 +2488,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
                 if (vCheckSpelling)
                     checkSpelling();
             }
-            if (vUseMacro && hMacroKey.size() > 0) {
+            if (phtvRuntimeUseMacroEnabled() && hMacroKey.size() > 0) {
                 hMacroKey.pop_back();
             }
             
@@ -2607,7 +2612,7 @@ void vKeyHandleEvent(const vKeyEvent& event,
         }
         
         //insert or replace key for macro feature
-        if (vUseMacro) {
+        if (phtvRuntimeUseMacroEnabled()) {
             if (hCode == vDoNothing) {
                 hMacroKey.push_back(data | (_isCaps ? CAPS_MASK : 0));
             } else if (hCode == vWillProcess || hCode == vRestore) {

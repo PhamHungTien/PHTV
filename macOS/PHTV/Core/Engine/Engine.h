@@ -76,11 +76,6 @@ extern volatile int vQuickTelex;
  */
 
 /**
- * Macro on or off
- */
-extern volatile int vUseMacro;
-
-/**
  * Allow write word with consonant Z, F, W, J
  * 0: No
  * 1: Yes

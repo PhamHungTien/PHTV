@@ -109,6 +109,10 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - `vUpperCaseExcludedForCurrentApp`
   - `Engine.cpp` doc qua `phtvRuntimeUpperCaseFirstCharEnabled()` va `phtvRuntimeUpperCaseExcludedForCurrentApp()`
   - Giu weak fallback trong `Engine.cpp` cho regression binary standalone
+- Da dua `vUseMacro` sang Swift storage:
+  - Them C bridge `phtvRuntimeUseMacroEnabled()` do `PHTVEngineRuntimeFacade.swift` cung cap
+  - `Engine.cpp` doc runtime setting qua bridge thay vi global C++
+  - Giu weak fallback trong `Engine.cpp` de regression binary standalone van giu behavior mac dinh
 
 ## Lo trinh migrate
 
