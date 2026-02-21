@@ -7,6 +7,160 @@
 
 import Foundation
 
+private let snippetTypeStatic: Int = 0
+private let snippetTypeDate: Int = 1
+private let snippetTypeTime: Int = 2
+private let snippetTypeDateTime: Int = 3
+private let snippetTypeClipboard: Int = 4
+private let snippetTypeRandom: Int = 5
+private let snippetTypeCounter: Int = 6
+private let snippetTokenCharacters: Set<Character> = ["d", "M", "y", "H", "m", "s"]
+private let snippetCounterLock = NSLock()
+nonisolated(unsafe) private var snippetCounterValues: [String: Int] = [:]
+
+private func twoDigitString(_ value: Int) -> String {
+    String(format: "%02d", value)
+}
+
+private func formatDateTimeSnippet(_ format: String) -> String {
+    let now = Date()
+    let components = Calendar.current.dateComponents([.day, .month, .year, .hour, .minute, .second], from: now)
+    let day = components.day ?? 0
+    let month = components.month ?? 0
+    let year = components.year ?? 0
+    let hour = components.hour ?? 0
+    let minute = components.minute ?? 0
+    let second = components.second ?? 0
+
+    var output = ""
+    var lastCharacter: Character?
+    var repeatCount = 0
+
+    func flushRepeat() {
+        guard let character = lastCharacter, repeatCount > 0 else {
+            return
+        }
+
+        switch character {
+        case "d":
+            output.append(repeatCount >= 2 ? twoDigitString(day) : String(day))
+        case "M":
+            output.append(repeatCount >= 2 ? twoDigitString(month) : String(month))
+        case "y":
+            if repeatCount >= 4 {
+                output.append(String(year))
+            } else {
+                output.append(twoDigitString(year % 100))
+            }
+        case "H":
+            output.append(repeatCount >= 2 ? twoDigitString(hour) : String(hour))
+        case "m":
+            output.append(repeatCount >= 2 ? twoDigitString(minute) : String(minute))
+        case "s":
+            output.append(repeatCount >= 2 ? twoDigitString(second) : String(second))
+        default:
+            for _ in 0..<repeatCount {
+                output.append(character)
+            }
+        }
+
+        repeatCount = 0
+    }
+
+    for character in format {
+        if character == lastCharacter, snippetTokenCharacters.contains(character) {
+            repeatCount += 1
+        } else {
+            flushRepeat()
+            lastCharacter = character
+            repeatCount = 1
+        }
+    }
+    flushRepeat()
+
+    return output
+}
+
+private func randomSnippetValue(from list: String) -> String {
+    guard !list.isEmpty else {
+        return ""
+    }
+
+    let items = list
+        .split(separator: ",", omittingEmptySubsequences: false)
+        .compactMap { part -> String? in
+            let trimmed = String(part).trimmingCharacters(in: CharacterSet(charactersIn: " \t"))
+            return trimmed.isEmpty ? nil : trimmed
+        }
+
+    guard !items.isEmpty else {
+        return list
+    }
+    return items[Int.random(in: 0..<items.count)]
+}
+
+private func counterSnippetValue(prefix: String) -> String {
+    snippetCounterLock.lock()
+    defer {
+        snippetCounterLock.unlock()
+    }
+
+    let nextValue = (snippetCounterValues[prefix] ?? 0) + 1
+    snippetCounterValues[prefix] = nextValue
+    return "\(prefix)\(nextValue)"
+}
+
+private func computeSnippetContent(snippetType: Int, format: String) -> String {
+    switch snippetType {
+    case snippetTypeDate:
+        return formatDateTimeSnippet(format.isEmpty ? "dd/MM/yyyy" : format)
+    case snippetTypeTime:
+        return formatDateTimeSnippet(format.isEmpty ? "HH:mm:ss" : format)
+    case snippetTypeDateTime:
+        return formatDateTimeSnippet(format.isEmpty ? "dd/MM/yyyy HH:mm" : format)
+    case snippetTypeClipboard:
+        // Clipboard snippets are handled in AppDelegate layer.
+        return ""
+    case snippetTypeRandom:
+        return randomSnippetValue(from: format)
+    case snippetTypeCounter:
+        return counterSnippetValue(prefix: format)
+    case snippetTypeStatic:
+        return format
+    default:
+        return format
+    }
+}
+
+@_cdecl("phtvComputeSnippetContent")
+func phtvComputeSnippetContent(
+    _ snippetType: Int32,
+    _ formatCString: UnsafePointer<CChar>?,
+    _ outputBuffer: UnsafeMutablePointer<CChar>?,
+    _ outputCapacity: Int32
+) -> Int32 {
+    let format = formatCString.map { String(cString: $0) } ?? ""
+    let content = computeSnippetContent(snippetType: Int(snippetType), format: format)
+    let utf8Bytes = Array(content.utf8)
+    let requiredLength = Int32(utf8Bytes.count)
+
+    guard let outputBuffer, outputCapacity > 0 else {
+        return requiredLength
+    }
+
+    let maxWritableLength = max(0, Int(outputCapacity) - 1)
+    let copiedLength = min(Int(requiredLength), maxWritableLength)
+
+    if copiedLength > 0 {
+        for index in 0..<copiedLength {
+            outputBuffer[index] = CChar(bitPattern: utf8Bytes[index])
+        }
+    }
+    outputBuffer[copiedLength] = 0
+
+    return requiredLength
+}
+
 private func phtvCallStartNewSession() {
     startNewSession()
 }

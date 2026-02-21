@@ -12,10 +12,6 @@
 #include <memory.h>
 #include <cstring>
 #include <mutex>
-#include <ctime>
-#include <sstream>
-#include <iomanip>
-#include <random>
 
 using namespace std;
 
@@ -25,154 +21,34 @@ map<vector<Uint32>, MacroData> macroMap;
 // Thread safety: protect macroMap access between main thread (AppDelegate) and event tap thread
 static std::mutex macroMapMutex;
 
-// Counter storage for SNIPPET_COUNTER type
-static std::map<std::string, int> counterValues;
-static std::mutex counterMutex;
+extern "C" int phtvComputeSnippetContent(int snippetType,
+                                         const char* format,
+                                         char* outputBuffer,
+                                         int outputCapacity);
 
-// ============================================================================
-// Snippet Helper Functions
-// ============================================================================
-
-// Format date/time using custom format string
-// d=day, M=month, y=year, H=hour, m=minute, s=second
-static string formatDateTime(const string& format) {
-    time_t now = time(nullptr);
-    tm* ltm = localtime(&now);
-
-    ostringstream oss;
-    char lastChar = 0;
-    int repeatCount = 0;
-
-    auto flushRepeat = [&]() {
-        if (repeatCount == 0) return;
-        switch (lastChar) {
-            case 'd':
-                if (repeatCount >= 2)
-                    oss << setfill('0') << setw(2) << ltm->tm_mday;
-                else
-                    oss << ltm->tm_mday;
-                break;
-            case 'M':
-                if (repeatCount >= 2)
-                    oss << setfill('0') << setw(2) << (ltm->tm_mon + 1);
-                else
-                    oss << (ltm->tm_mon + 1);
-                break;
-            case 'y':
-                if (repeatCount >= 4)
-                    oss << (ltm->tm_year + 1900);
-                else
-                    oss << setfill('0') << setw(2) << ((ltm->tm_year + 1900) % 100);
-                break;
-            case 'H':
-                if (repeatCount >= 2)
-                    oss << setfill('0') << setw(2) << ltm->tm_hour;
-                else
-                    oss << ltm->tm_hour;
-                break;
-            case 'm':
-                if (repeatCount >= 2)
-                    oss << setfill('0') << setw(2) << ltm->tm_min;
-                else
-                    oss << ltm->tm_min;
-                break;
-            case 's':
-                if (repeatCount >= 2)
-                    oss << setfill('0') << setw(2) << ltm->tm_sec;
-                else
-                    oss << ltm->tm_sec;
-                break;
-            default:
-                for (int i = 0; i < repeatCount; i++) oss << lastChar;
-                break;
-        }
-        repeatCount = 0;
-    };
-
-    for (char c : format) {
-        if (c == lastChar && (c == 'd' || c == 'M' || c == 'y' || c == 'H' || c == 'm' || c == 's')) {
-            repeatCount++;
-        } else {
-            flushRepeat();
-            lastChar = c;
-            repeatCount = 1;
-        }
-    }
-    flushRepeat();
-
-    return oss.str();
-}
-
-static string getCurrentDate(const string& format) {
-    if (format.empty()) {
-        return formatDateTime("dd/MM/yyyy");
-    }
-    return formatDateTime(format);
-}
-
-static string getCurrentTime(const string& format) {
-    if (format.empty()) {
-        return formatDateTime("HH:mm:ss");
-    }
-    return formatDateTime(format);
-}
-
-static string getCurrentDateTime(const string& format) {
-    if (format.empty()) {
-        return formatDateTime("dd/MM/yyyy HH:mm");
-    }
-    return formatDateTime(format);
-}
-
-static string getRandomFromList(const string& listStr) {
-    if (listStr.empty()) return "";
-
-    vector<string> items;
-    stringstream ss(listStr);
-    string item;
-    while (getline(ss, item, ',')) {
-        // Trim whitespace
-        size_t start = item.find_first_not_of(" \t");
-        size_t end = item.find_last_not_of(" \t");
-        if (start != string::npos && end != string::npos) {
-            items.push_back(item.substr(start, end - start + 1));
-        }
+static string computeSnippet(const int snippetType, const string& format) {
+    const int requiredLength = phtvComputeSnippetContent(
+        snippetType,
+        format.c_str(),
+        nullptr,
+        0
+    );
+    if (requiredLength <= 0) {
+        return "";
     }
 
-    if (items.empty()) return listStr;
-
-    // Random selection
-    static random_device rd;
-    static mt19937 gen(rd());
-    uniform_int_distribution<> dis(0, (int)items.size() - 1);
-    return items[dis(gen)];
-}
-
-static string getAndIncrementCounter(const string& prefix) {
-    std::lock_guard<std::mutex> lock(counterMutex);
-    int value = ++counterValues[prefix];
-    return prefix + to_string(value);
-}
-
-// Compute dynamic snippet content based on type
-static string computeSnippet(int snippetType, const string& format) {
-    switch (snippetType) {
-        case SNIPPET_DATE:
-            return getCurrentDate(format);
-        case SNIPPET_TIME:
-            return getCurrentTime(format);
-        case SNIPPET_DATETIME:
-            return getCurrentDateTime(format);
-        case SNIPPET_CLIPBOARD:
-            // Clipboard will be handled by Objective-C bridge
-            return ""; // Placeholder, actual content set by AppDelegate
-        case SNIPPET_RANDOM:
-            return getRandomFromList(format);
-        case SNIPPET_COUNTER:
-            return getAndIncrementCounter(format);
-        default:
-            return format;
+    vector<char> buffer(static_cast<size_t>(requiredLength) + 1, '\0');
+    const int actualLength = phtvComputeSnippetContent(
+        snippetType,
+        format.c_str(),
+        buffer.data(),
+        static_cast<int>(buffer.size())
+    );
+    if (actualLength <= 0) {
+        return "";
     }
+
+    return string(buffer.data(), static_cast<size_t>(actualLength));
 }
 
 extern volatile int vCodeTable;
