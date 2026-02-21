@@ -26,7 +26,6 @@
 #include <vector>
 #include <cstdio>
 
-#include "../phtv_mac_keys.h"
 #include "PHTVEngineCBridge.h"
 
 using namespace std;
