@@ -23,12 +23,6 @@ extern volatile int vEmojiHotkeyModifiers;
 extern volatile int vEmojiHotkeyKeyCode;
 extern volatile int vSafeMode;
 extern int vShowIconOnDock;
-void PHTVInit(void);
-CGEventRef PHTVCallback(CGEventTapProxy proxy,
-                        CGEventType type,
-                        CGEventRef event,
-                        void *refcon);
-void RequestNewSession(void);
 
 inline constexpr int phtvEngineInteropProbeValue() noexcept {
     return 20260221;
@@ -38,20 +32,6 @@ inline int phtvEngineInteropAdd(const int lhs, const int rhs) noexcept {
     return lhs + rhs;
 }
 
-inline void phtvRuntimeInitializeEventTapCore() noexcept {
-    PHTVInit();
-}
-
-inline CGEventRef phtvRuntimeHandleEventTapCallback(CGEventTapProxy proxy,
-                                                     CGEventType type,
-                                                     CGEventRef event,
-                                                     void *refcon) noexcept {
-    return PHTVCallback(proxy, type, event, refcon);
-}
-
-inline void phtvRuntimeRequestNewSession() noexcept {
-    RequestNewSession();
-}
 
 inline void phtvEngineInitializeMacroMap(const std::uint8_t *data, const int length) noexcept {
     if (!data || length <= 0) {
@@ -589,6 +569,97 @@ inline void phtvRuntimeStartNewSession() noexcept {
 
 inline int phtvRuntimeFixRecommendBrowser() noexcept {
     return vFixRecommendBrowser;
+}
+
+inline int phtvRuntimeUpperCaseExcludedForCurrentApp() noexcept {
+    return vUpperCaseExcludedForCurrentApp;
+}
+
+inline int phtvRuntimeTempOffPHTV() noexcept {
+    return vTempOffPHTV;
+}
+
+inline int phtvRuntimeTempOffSpelling() noexcept {
+    return vTempOffSpelling;
+}
+
+// MARK: - Engine action codes (additional)
+
+inline int phtvEngineVDoNothingCode() noexcept {
+    return static_cast<int>(vDoNothing);
+}
+
+inline int phtvEngineVWillProcessCode() noexcept {
+    return static_cast<int>(vWillProcess);
+}
+
+inline int phtvEngineVReplaceMaroCode() noexcept {
+    return static_cast<int>(vReplaceMaro);
+}
+
+inline int phtvEngineMaxBuff() noexcept {
+    return MAX_BUFF;
+}
+
+// MARK: - Key code constants
+
+inline int phtvEngineKeyDeleteCode() noexcept {
+    return KEY_DELETE;
+}
+
+inline int phtvEngineKeySlashCode() noexcept {
+    return KEY_SLASH;
+}
+
+inline int phtvEngineKeyEnterCode() noexcept {
+    return KEY_ENTER;
+}
+
+inline int phtvEngineKeyReturnCode() noexcept {
+    return KEY_RETURN;
+}
+
+// MARK: - Engine function wrappers
+
+inline void phtvEngineInitializeAndGetKeyHookState() noexcept {
+    pData = static_cast<vKeyHookState*>(vKeyInit());
+}
+
+inline void phtvEngineHandleKeyboardKeyDown(const std::uint16_t keyCode,
+                                             const std::uint8_t capsStatus,
+                                             const bool hasOtherControlKey) noexcept {
+    vKeyHandleEvent(vKeyEvent::Keyboard, vKeyEventState::KeyDown,
+                    keyCode, capsStatus, hasOtherControlKey);
+}
+
+inline void phtvEngineHandleMouseDown() noexcept {
+    vKeyHandleEvent(vKeyEvent::Mouse, vKeyEventState::MouseDown, 0);
+}
+
+inline void phtvEngineHandleEnglishModeKeyDown(const std::uint16_t keyCode,
+                                                const bool isCaps,
+                                                const bool hasOtherControlKey) noexcept {
+    vEnglishMode(vKeyEventState::KeyDown, keyCode, isCaps, hasOtherControlKey);
+}
+
+inline bool phtvEngineRestoreToRawKeys() noexcept {
+    return vRestoreToRawKeys();
+}
+
+inline void phtvEnginePrimeUpperCaseFirstChar() noexcept {
+    vPrimeUpperCaseFirstChar();
+}
+
+inline void phtvEngineTempOffSpellChecking() noexcept {
+    vTempOffSpellChecking();
+}
+
+inline void phtvEngineTempOffEngine() noexcept {
+    vTempOffEngine();
+}
+
+inline bool phtvMacKeyIsNavigation(const std::uint16_t keyCode) noexcept {
+    return phtv_mac_key_is_navigation(keyCode);
 }
 
 #endif

@@ -19,7 +19,7 @@ import Foundation
 
     @objc(phtv_requestNewSession)
     class func phtv_requestNewSession() {
-        phtvRuntimeRequestNewSession()
+        PHTVEngineSessionService.requestNewSession()
     }
 
     @objc(phtv_invalidateLayoutCache)
