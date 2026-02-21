@@ -396,16 +396,8 @@ inline int phtvRuntimeOtherLanguage() noexcept {
     return vOtherLanguage;
 }
 
-inline int phtvEngineQuickConvertHotkey() noexcept {
-    return gConvertToolOptions.hotKey;
-}
-
 inline int phtvConvertToolDefaultHotKey() noexcept {
     return defaultConvertToolOptions().hotKey;
-}
-
-inline int phtvConvertToolCurrentHotKey() noexcept {
-    return gConvertToolOptions.hotKey;
 }
 
 inline void phtvConvertToolResetOptions() noexcept {
@@ -434,30 +426,6 @@ inline void phtvConvertToolSetOptions(const bool dontAlertWhenCompleted,
     gConvertToolOptions.fromCode = static_cast<Uint8>(phtv_clamp_code_table(fromCode));
     gConvertToolOptions.toCode = static_cast<Uint8>(phtv_clamp_code_table(toCode));
     gConvertToolOptions.hotKey = hotKey;
-}
-
-inline bool phtvEngineHotkeyHasControl(const int hotkey) noexcept {
-    return HAS_CONTROL(hotkey) != 0;
-}
-
-inline bool phtvEngineHotkeyHasOption(const int hotkey) noexcept {
-    return HAS_OPTION(hotkey) != 0;
-}
-
-inline bool phtvEngineHotkeyHasCommand(const int hotkey) noexcept {
-    return HAS_COMMAND(hotkey) != 0;
-}
-
-inline bool phtvEngineHotkeyHasShift(const int hotkey) noexcept {
-    return HAS_SHIFT(hotkey) != 0;
-}
-
-inline bool phtvEngineHotkeyHasKey(const int hotkey) noexcept {
-    return HOTKEY_HAS_KEY(hotkey) != 0;
-}
-
-inline std::uint16_t phtvEngineHotkeySwitchKey(const int hotkey) noexcept {
-    return static_cast<std::uint16_t>(GET_SWITCH_KEY(hotkey));
 }
 
 inline std::uint16_t phtvEngineHotkeyDisplayCharacter(const std::uint16_t keyCode) noexcept {

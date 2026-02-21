@@ -361,16 +361,8 @@ final class PHTVEngineRuntimeFacade: NSObject {
         phtvRuntimeStartNewSession()
     }
 
-    class func quickConvertHotkey() -> Int32 {
-        Int32(phtvEngineQuickConvertHotkey())
-    }
-
     class func convertToolDefaultHotKey() -> Int32 {
         Int32(phtvConvertToolDefaultHotKey())
-    }
-
-    class func convertToolCurrentHotKey() -> Int32 {
-        Int32(phtvConvertToolCurrentHotKey())
     }
 
     class func convertToolResetOptions() {
@@ -488,30 +480,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
             &character
         )
         return found ? character : nil
-    }
-
-    class func hotkeyHasControl(_ hotkey: Int32) -> Bool {
-        phtvEngineHotkeyHasControl(hotkey)
-    }
-
-    class func hotkeyHasOption(_ hotkey: Int32) -> Bool {
-        phtvEngineHotkeyHasOption(hotkey)
-    }
-
-    class func hotkeyHasCommand(_ hotkey: Int32) -> Bool {
-        phtvEngineHotkeyHasCommand(hotkey)
-    }
-
-    class func hotkeyHasShift(_ hotkey: Int32) -> Bool {
-        phtvEngineHotkeyHasShift(hotkey)
-    }
-
-    class func hotkeyHasKey(_ hotkey: Int32) -> Bool {
-        phtvEngineHotkeyHasKey(hotkey)
-    }
-
-    class func hotkeySwitchKey(_ hotkey: Int32) -> UInt16 {
-        phtvEngineHotkeySwitchKey(hotkey)
     }
 
     class func capsMask() -> UInt32 {
