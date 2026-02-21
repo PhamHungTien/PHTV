@@ -1549,17 +1549,21 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 // 1. External DELETE detected (arrow key selection) - HIGH CONFIDENCE
                 // 2. Short backspace + code=3 without DELETE (mouse click selection) - FALLBACK
                 int externalDeleteCount = (int)[PHTVEventContextBridgeService externalDeleteCountValue];
+                BOOL shouldEvaluateTextReplacement =
+                    [PHTVTextReplacementDecisionService shouldEvaluateForKeyCode:(int32_t)_keycode
+                                                                     spaceKeyCode:(int32_t)KEY_SPACE
+                                                                   backspaceCount:(int32_t)pData->backspaceCount
+                                                                     newCharCount:(int32_t)pData->newCharCount];
 
                 // Log for debugging text replacement issues (only in Debug builds)
                 #ifdef DEBUG
-                if (pData->backspaceCount > 0 || pData->newCharCount > 0) {
+                if (shouldEvaluateTextReplacement) {
                     NSLog(@"[PHTV TextReplacement] Key=%d: code=%d, extCode=%d, backspace=%d, newChar=%d, deleteCount=%d",
                           _keycode, pData->code, pData->extCode, (int)pData->backspaceCount, (int)pData->newCharCount, externalDeleteCount);
                 }
                 #endif
 
-                if (_keycode == KEY_SPACE &&
-                    (pData->backspaceCount > 0 || pData->newCharCount > 0)) {
+                if (shouldEvaluateTextReplacement) {
                     PHTVTextReplacementDecisionBox *textReplacementDecisionBox =
                         [PHTVTextReplacementDecisionService evaluateForSpaceKey:YES
                                                                           code:pData->code

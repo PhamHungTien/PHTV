@@ -43,6 +43,16 @@ final class PHTVTextReplacementDecisionService: NSObject {
     private static let decisionPattern2B: Int32 = 3
     private static let decisionFallbackNoMatch: Int32 = 4
 
+    @objc(shouldEvaluateForKeyCode:spaceKeyCode:backspaceCount:newCharCount:)
+    class func shouldEvaluate(
+        forKeyCode keyCode: Int32,
+        spaceKeyCode: Int32,
+        backspaceCount: Int32,
+        newCharCount: Int32
+    ) -> Bool {
+        keyCode == spaceKeyCode && (backspaceCount > 0 || newCharCount > 0)
+    }
+
     @objc(evaluateForSpaceKey:code:extCode:backspaceCount:newCharCount:externalDeleteCount:restoreAndStartNewSessionCode:willProcessCode:restoreCode:deleteWindowMs:)
     class func evaluate(
         forSpaceKey isSpaceKey: Bool,
