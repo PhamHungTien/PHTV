@@ -1,4 +1,4 @@
-#include "Engine.h"
+#include "DataType.h"
 #include "PHTVEngineCBridge.h"
 
 #include <iostream>
@@ -112,7 +112,11 @@ void feedWord(const std::string& token) {
             std::cerr << "Unsupported token char: '" << ch << "'\n";
             continue;
         }
-        vKeyHandleEvent(vKeyEvent::Keyboard, vKeyEventState::KeyDown, code, 0, false);
+        phtvEngineHandleEvent(PHTV_ENGINE_EVENT_KEYBOARD,
+                              PHTV_ENGINE_EVENT_STATE_KEY_DOWN,
+                              code,
+                              0,
+                              0);
     }
 }
 
@@ -124,17 +128,22 @@ CaseResult runSpaceCase(const std::string& name,
     setCustomEnglishWords(customEnglish);
     int savedAutoRestoreEnglish = runtimeAutoRestoreEnglishWord;
     runtimeAutoRestoreEnglishWord = autoRestoreEnglish ? 1 : 0;
-    vKeyHookState* state = static_cast<vKeyHookState*>(vKeyInit());
+    phtvEngineInitialize();
     feedWord(token);
-    vKeyHandleEvent(vKeyEvent::Keyboard, vKeyEventState::KeyDown, KEY_SPACE, 0, false);
+    phtvEngineHandleEvent(PHTV_ENGINE_EVENT_KEYBOARD,
+                          PHTV_ENGINE_EVENT_STATE_KEY_DOWN,
+                          KEY_SPACE,
+                          0,
+                          0);
     runtimeAutoRestoreEnglishWord = savedAutoRestoreEnglish;
 
-    bool restored = (state->code == vRestore || state->code == vRestoreAndStartNewSession);
+    int code = phtvEngineHookCode();
+    bool restored = (code == vRestore || code == vRestoreAndStartNewSession);
     bool pass = (restored == expectRestore);
 
-    std::string detail = "code=" + std::to_string(state->code) +
-                         ", backspace=" + std::to_string(state->backspaceCount) +
-                         ", newChar=" + std::to_string(state->newCharCount);
+    std::string detail = "code=" + std::to_string(code) +
+                         ", backspace=" + std::to_string(phtvEngineHookBackspaceCount()) +
+                         ", newChar=" + std::to_string(phtvEngineHookNewCharCount());
 
     return {name, pass, detail};
 }
@@ -149,17 +158,22 @@ CaseResult runWordBreakCase(const std::string& name,
     setCustomEnglishWords(customEnglish);
     int savedAutoRestoreEnglish = runtimeAutoRestoreEnglishWord;
     runtimeAutoRestoreEnglishWord = autoRestoreEnglish ? 1 : 0;
-    vKeyHookState* state = static_cast<vKeyHookState*>(vKeyInit());
+    phtvEngineInitialize();
     feedWord(token);
-    vKeyHandleEvent(vKeyEvent::Keyboard, vKeyEventState::KeyDown, breakKeyCode, breakCapsStatus, false);
+    phtvEngineHandleEvent(PHTV_ENGINE_EVENT_KEYBOARD,
+                          PHTV_ENGINE_EVENT_STATE_KEY_DOWN,
+                          breakKeyCode,
+                          breakCapsStatus,
+                          0);
     runtimeAutoRestoreEnglishWord = savedAutoRestoreEnglish;
 
-    bool restored = (state->code == vRestore || state->code == vRestoreAndStartNewSession);
+    int code = phtvEngineHookCode();
+    bool restored = (code == vRestore || code == vRestoreAndStartNewSession);
     bool pass = (restored == expectRestore);
 
-    std::string detail = "code=" + std::to_string(state->code) +
-                         ", backspace=" + std::to_string(state->backspaceCount) +
-                         ", newChar=" + std::to_string(state->newCharCount) +
+    std::string detail = "code=" + std::to_string(code) +
+                         ", backspace=" + std::to_string(phtvEngineHookBackspaceCount()) +
+                         ", newChar=" + std::to_string(phtvEngineHookNewCharCount()) +
                          ", breakKey=" + std::to_string(breakKeyCode) +
                          ", caps=" + std::to_string(breakCapsStatus);
 
