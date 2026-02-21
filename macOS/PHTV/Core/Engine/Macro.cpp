@@ -25,6 +25,9 @@ extern "C" int phtvComputeSnippetContent(int snippetType,
                                          const char* format,
                                          char* outputBuffer,
                                          int outputCapacity);
+extern "C" int phtvConvertUtf8ToMacroCode(const char* utf8CString,
+                                          Uint32* outputBuffer,
+                                          int outputCapacity);
 
 static string computeSnippet(const int snippetType, const string& format) {
     const int requiredLength = phtvComputeSnippetContent(
@@ -61,6 +64,33 @@ static int _kMacro;
 
 static void convert(const string& str, vector<Uint32>& outData) {
     outData.clear();
+    if (str.empty()) {
+        return;
+    }
+
+    vector<Uint32> bridgeBuffer(str.size(), 0);
+    int requiredLength = phtvConvertUtf8ToMacroCode(
+        str.c_str(),
+        bridgeBuffer.data(),
+        static_cast<int>(bridgeBuffer.size())
+    );
+    if (requiredLength > static_cast<int>(bridgeBuffer.size())) {
+        bridgeBuffer.resize(static_cast<size_t>(requiredLength), 0);
+        requiredLength = phtvConvertUtf8ToMacroCode(
+            str.c_str(),
+            bridgeBuffer.data(),
+            static_cast<int>(bridgeBuffer.size())
+        );
+    }
+    if (requiredLength >= 0 && requiredLength <= static_cast<int>(bridgeBuffer.size())) {
+        outData.assign(
+            bridgeBuffer.begin(),
+            bridgeBuffer.begin() + static_cast<size_t>(requiredLength)
+        );
+        return;
+    }
+
+    // Fallback to legacy conversion if Swift bridge fails.
     wstring data = utf8ToWideString(str);
     Uint32 t = 0;
     int kSign = -1;

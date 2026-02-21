@@ -17,6 +17,25 @@ private let snippetTypeCounter: Int = 6
 private let snippetTokenCharacters: Set<Character> = ["d", "M", "y", "H", "m", "s"]
 private let snippetCounterLock = NSLock()
 nonisolated(unsafe) private var snippetCounterValues: [String: Int] = [:]
+private let macroCharacterToKeyState: [UInt16: UInt32] = {
+    var mapping: [UInt16: UInt32] = [:]
+    let capsMask = PHTVEngineRuntimeFacade.capsMask()
+
+    for rawKeyCode: UInt32 in 0..<256 {
+        let unshifted = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(rawKeyCode)
+        if unshifted != 0 && mapping[unshifted] == nil {
+            mapping[unshifted] = rawKeyCode
+        }
+
+        let shiftedKeyCode = rawKeyCode | capsMask
+        let shifted = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(shiftedKeyCode)
+        if shifted != 0 && mapping[shifted] == nil {
+            mapping[shifted] = shiftedKeyCode
+        }
+    }
+
+    return mapping
+}()
 
 private func twoDigitString(_ value: Int) -> String {
     String(format: "%02d", value)
@@ -157,6 +176,66 @@ func phtvComputeSnippetContent(
         }
     }
     outputBuffer[copiedLength] = 0
+
+    return requiredLength
+}
+
+@_cdecl("phtvConvertUtf8ToMacroCode")
+func phtvConvertUtf8ToMacroCode(
+    _ utf8CString: UnsafePointer<CChar>?,
+    _ outputBuffer: UnsafeMutablePointer<UInt32>?,
+    _ outputCapacity: Int32
+) -> Int32 {
+    let text = utf8CString.map { String(cString: $0) } ?? ""
+    guard !text.isEmpty else {
+        return 0
+    }
+
+    let activeCodeTable = PHTVEngineRuntimeFacade.currentCodeTable()
+    let charCodeMask = PHTVEngineRuntimeFacade.charCodeMask()
+    let pureCharacterMask = PHTVEngineRuntimeFacade.pureCharacterMask()
+
+    var converted: [UInt32] = []
+    converted.reserveCapacity(text.unicodeScalars.count)
+
+    for scalar in text.unicodeScalars {
+        let scalarValue = scalar.value
+        if scalarValue <= UInt32(UInt16.max) {
+            let character = UInt16(scalarValue)
+
+            if let keyState = macroCharacterToKeyState[character] {
+                converted.append(keyState)
+                continue
+            }
+
+            if let source = PHTVEngineRuntimeFacade.findCodeTableSourceKey(
+                codeTable: 0,
+                character: character
+            ),
+               let mappedCharacter = PHTVEngineRuntimeFacade.codeTableCharacterForKey(
+                   codeTable: activeCodeTable,
+                   keyCode: source.keyCode,
+                   variantIndex: source.variantIndex
+               ) {
+                converted.append(UInt32(mappedCharacter) | charCodeMask)
+                continue
+            }
+        }
+
+        converted.append(scalarValue | pureCharacterMask)
+    }
+
+    let requiredLength = Int32(converted.count)
+    guard let outputBuffer, outputCapacity > 0 else {
+        return requiredLength
+    }
+
+    let copyCount = min(Int(outputCapacity), converted.count)
+    if copyCount > 0 {
+        for index in 0..<copyCount {
+            outputBuffer[index] = converted[index]
+        }
+    }
 
     return requiredLength
 }
