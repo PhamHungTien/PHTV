@@ -1,13 +1,13 @@
 //
-//  DataType.h
+//  EngineDataTypes.inc
 //  PHTV
 //
 //  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
-#ifndef DataType_h
-#define DataType_h
+#ifndef ENGINE_DATA_TYPES_INC
+#define ENGINE_DATA_TYPES_INC
 
 #include <vector>
 
@@ -243,4 +243,4 @@ static inline int phtv_mac_key_is_modifier(const int keyCode) {
 
 #define IS_NUMBER_KEY(code) (code == KEY_1 || code == KEY_2 || code == KEY_3 || code == KEY_4 || code == KEY_5 || code == KEY_6 || code == KEY_7 || code == KEY_8 || code == KEY_9 || code == KEY_0)
 
-#endif /* DataType_h */
+#endif /* ENGINE_DATA_TYPES_INC */

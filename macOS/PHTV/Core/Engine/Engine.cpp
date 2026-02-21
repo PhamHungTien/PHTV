@@ -11,7 +11,7 @@
 #include <unordered_set>
 #include <string>
 #include "PHTVEngineCBridge.h"
-#include "DataType.h"
+#include "EngineDataTypes.inc"
 #include <string.h>
 #include <list>
 #include <cstdio>

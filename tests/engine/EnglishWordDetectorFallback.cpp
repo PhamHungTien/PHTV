@@ -9,7 +9,7 @@
 //  O(1) load time + O(k) lookup where k = word length
 //
 
-#include "DataType.h"
+#include "EngineDataTypes.inc"
 #include <cstdint>
 #include <cstring>
 #include <cstdlib>
