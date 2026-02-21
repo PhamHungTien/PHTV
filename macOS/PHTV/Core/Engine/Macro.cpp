@@ -68,62 +68,24 @@ static void convert(const string& str, vector<Uint32>& outData) {
         return;
     }
 
-    vector<Uint32> bridgeBuffer(str.size(), 0);
-    int requiredLength = phtvConvertUtf8ToMacroCode(
+    const int requiredLength = phtvConvertUtf8ToMacroCode(
+        str.c_str(),
+        nullptr,
+        0
+    );
+    if (requiredLength <= 0) {
+        return;
+    }
+
+    vector<Uint32> bridgeBuffer(static_cast<size_t>(requiredLength), 0);
+    const int actualLength = phtvConvertUtf8ToMacroCode(
         str.c_str(),
         bridgeBuffer.data(),
         static_cast<int>(bridgeBuffer.size())
     );
-    if (requiredLength > static_cast<int>(bridgeBuffer.size())) {
-        bridgeBuffer.resize(static_cast<size_t>(requiredLength), 0);
-        requiredLength = phtvConvertUtf8ToMacroCode(
-            str.c_str(),
-            bridgeBuffer.data(),
-            static_cast<int>(bridgeBuffer.size())
-        );
-    }
-    if (requiredLength >= 0 && requiredLength <= static_cast<int>(bridgeBuffer.size())) {
-        outData.assign(
-            bridgeBuffer.begin(),
-            bridgeBuffer.begin() + static_cast<size_t>(requiredLength)
-        );
+    if (actualLength > 0 && actualLength <= static_cast<int>(bridgeBuffer.size())) {
+        outData.assign(bridgeBuffer.begin(), bridgeBuffer.begin() + static_cast<size_t>(actualLength));
         return;
-    }
-
-    // Fallback to legacy conversion if Swift bridge fails.
-    wstring data = utf8ToWideString(str);
-    Uint32 t = 0;
-    int kSign = -1;
-    int k = 0;
-    for (int i = 0; i < data.size(); i++) {
-        t = (Uint32)data[i];
-        
-        //find normal character fist
-        if (_characterMap.find(t) != _characterMap.end()) {
-            outData.push_back(_characterMap[t]);
-            continue;
-        }
-        
-        //find character which has tone/mark
-        for (map<Uint32, vector<Uint16>>::iterator it = _codeTable[0].begin(); it != _codeTable[0].end(); ++it) {
-            kSign = -1;
-            k = 0;
-            for (int j = 0; j < it->second.size(); j++) {
-                if ((Uint16)t == it->second[j]) {
-                    kSign = 0;
-                    outData.push_back(_codeTable[vCodeTable][it->first][k] | CHAR_CODE_MASK);
-                    break;
-                }//end if
-                k++;
-            }
-            if (kSign != -1)
-                break;
-        }
-        if (kSign != -1)
-            continue;
-        
-        //find other character
-        outData.push_back(t | PURE_CHARACTER_MASK); //mark it as pure character
     }
 }
 
