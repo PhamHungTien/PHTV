@@ -454,62 +454,6 @@ private func findMacroContentForNormalizedKeys(
     return applyAutoCapsToMacroContent(baseContent, allCaps: allCaps, codeTable: codeTable)
 }
 
-@_cdecl("phtvComputeSnippetContent")
-func phtvComputeSnippetContent(
-    _ snippetType: Int32,
-    _ formatCString: UnsafePointer<CChar>?,
-    _ outputBuffer: UnsafeMutablePointer<CChar>?,
-    _ outputCapacity: Int32
-) -> Int32 {
-    let format = formatCString.map { String(cString: $0) } ?? ""
-    let content = computeSnippetContent(snippetType: Int(snippetType), format: format)
-    let utf8Bytes = Array(content.utf8)
-    let requiredLength = Int32(utf8Bytes.count)
-
-    guard let outputBuffer, outputCapacity > 0 else {
-        return requiredLength
-    }
-
-    let maxWritableLength = max(0, Int(outputCapacity) - 1)
-    let copiedLength = min(Int(requiredLength), maxWritableLength)
-
-    if copiedLength > 0 {
-        for index in 0..<copiedLength {
-            outputBuffer[index] = CChar(bitPattern: utf8Bytes[index])
-        }
-    }
-    outputBuffer[copiedLength] = 0
-
-    return requiredLength
-}
-
-@_cdecl("phtvConvertUtf8ToMacroCode")
-func phtvConvertUtf8ToMacroCode(
-    _ utf8CString: UnsafePointer<CChar>?,
-    _ outputBuffer: UnsafeMutablePointer<UInt32>?,
-    _ outputCapacity: Int32
-) -> Int32 {
-    let text = utf8CString.map { String(cString: $0) } ?? ""
-    let converted = convertedMacroCodes(
-        from: text,
-        activeCodeTable: PHTVEngineRuntimeFacade.currentCodeTable()
-    )
-
-    let requiredLength = Int32(converted.count)
-    guard let outputBuffer, outputCapacity > 0 else {
-        return requiredLength
-    }
-
-    let copyCount = min(Int(outputCapacity), converted.count)
-    if copyCount > 0 {
-        for index in 0..<copyCount {
-            outputBuffer[index] = converted[index]
-        }
-    }
-
-    return requiredLength
-}
-
 @_cdecl("phtvLoadMacroMapFromBinary")
 func phtvLoadMacroMapFromBinary(
     _ data: UnsafePointer<UInt8>?,
