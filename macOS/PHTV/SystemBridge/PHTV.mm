@@ -31,8 +31,6 @@ static const NSUInteger SYNC_KEY_RESERVE_SIZE = 256;         // Pre-allocated bu
 
 // Timing delay constants (all in microseconds)
 static const int64_t kPHTVEventMarker = 0x50485456; // "PHTV"
-static const int CLI_TEXT_CHUNK_SIZE_DEFAULT = 20;
-static const useconds_t CLI_POST_SEND_BLOCK_MIN_US = 20000;
 static const useconds_t CLI_PRE_BACKSPACE_DELAY_US = 4000;
 
 #define OTHER_CONTROL_KEY (_flag & kCGEventFlagMaskCommand) || (_flag & kCGEventFlagMaskControl) || \
@@ -61,16 +59,8 @@ static PHTVAppCharacteristicsBox* _phtvCurrentAppCharacteristics = nil;
 static BOOL _phtvPostToHIDTap = NO;
 static BOOL _phtvPostToSessionForCli = NO;
 static BOOL _phtvIsCliTarget = NO;
-static double _phtvCliSpeedFactor = 1.0;
-static useconds_t _phtvCliBackspaceDelayUs = 0;
-static useconds_t _phtvCliWaitAfterBackspaceUs = 0;
-static useconds_t _phtvCliTextDelayUs = 0;
-static int _phtvCliTextChunkSize = CLI_TEXT_CHUNK_SIZE_DEFAULT;
 static int64_t _phtvKeyboardType = 0;
 static int _phtvPendingBackspaceCount = 0;
-static uint64_t _phtvCliBlockUntil = 0;
-static useconds_t _phtvCliPostSendBlockUs = CLI_POST_SEND_BLOCK_MIN_US;
-static uint64_t _phtvCliLastKeyDownTime = 0;
 
     __attribute__((always_inline)) static inline BOOL PHTVCurrentAppIsSpotlightLike(void) {
         return _phtvCurrentAppCharacteristics != nil && _phtvCurrentAppCharacteristics.isSpotlightLike;
@@ -92,42 +82,16 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
     }
 
     static inline void SetCliBlockForMicroseconds(uint64_t microseconds) {
-        if (microseconds == 0) return;
-        uint64_t now = mach_absolute_time();
-        uint64_t until = now + [PHTVTimingService microsecondsToMachTime:microseconds];
-        if (until > _phtvCliBlockUntil) {
-            _phtvCliBlockUntil = until;
-        }
+        [PHTVCliRuntimeStateService scheduleBlockForMicroseconds:microseconds
+                                                     nowMachTime:mach_absolute_time()];
     }
 
     static inline void UpdateCliSpeedFactor(uint64_t now) {
-        if (_phtvCliLastKeyDownTime == 0) {
-            _phtvCliLastKeyDownTime = now;
-            _phtvCliSpeedFactor = 1.0;
-            return;
-        }
-        uint64_t deltaUs = [PHTVTimingService machTimeToUs:(now - _phtvCliLastKeyDownTime)];
-        _phtvCliLastKeyDownTime = now;
-        _phtvCliSpeedFactor = [PHTVCliProfileService nextCliSpeedFactorForDeltaUs:deltaUs
-                                                                      currentFactor:_phtvCliSpeedFactor];
+        [PHTVCliRuntimeStateService updateSpeedFactorForNowMachTime:now];
     }
 
     static inline void ApplyCliProfile(PHTVCliTimingProfileBox *profile) {
-        if (profile == nil) {
-            _phtvCliBackspaceDelayUs = 0;
-            _phtvCliWaitAfterBackspaceUs = 0;
-            _phtvCliTextDelayUs = 0;
-            _phtvCliTextChunkSize = (int)[PHTVCliProfileService nonCliTextChunkSize];
-            _phtvCliPostSendBlockUs = CLI_POST_SEND_BLOCK_MIN_US;
-            return;
-        }
-
-        _phtvCliBackspaceDelayUs = (useconds_t)profile.backspaceDelayUs;
-        _phtvCliWaitAfterBackspaceUs = (useconds_t)profile.waitAfterBackspaceUs;
-        _phtvCliTextDelayUs = (useconds_t)profile.textDelayUs;
-        _phtvCliTextChunkSize = (int)profile.textChunkSize;
-        _phtvCliPostSendBlockUs = (useconds_t)MAX((uint64_t)CLI_POST_SEND_BLOCK_MIN_US,
-                                                  (uint64_t)profile.postSendBlockUs);
+        [PHTVCliRuntimeStateService applyProfile:profile];
     }
 
     static bool _pendingUppercasePrimeCheck = true;
@@ -230,8 +194,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             UpdateCliSpeedFactor(mach_absolute_time());
         } else {
             ApplyCliProfile(nil);
-            _phtvCliSpeedFactor = 1.0;
-            _phtvCliLastKeyDownTime = 0;
+            [PHTVCliRuntimeStateService resetSpeedState];
         }
 
         _phtvKeyboardType = CGEventGetIntegerValueField(event, kCGKeyboardEventKeyboardType);
@@ -548,12 +511,14 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         if (chunkSize < 1) {
             chunkSize = 1;
         }
+        double cliSpeedFactor = [PHTVCliRuntimeStateService currentSpeedFactor];
+        uint64_t cliPostSendBlockUs = [PHTVCliRuntimeStateService cliPostSendBlockUs];
         uint64_t effectiveDelayUs = interDelayUs;
         if (_phtvIsCliTarget && interDelayUs > 0) {
-            effectiveDelayUs = [PHTVTimingService scaleDelayMicroseconds:interDelayUs factor:_phtvCliSpeedFactor];
+            effectiveDelayUs = [PHTVTimingService scaleDelayMicroseconds:interDelayUs factor:cliSpeedFactor];
         }
         if (_phtvIsCliTarget) {
-            uint64_t totalBlockUs = [PHTVTimingService scaleDelayMicroseconds:_phtvCliPostSendBlockUs factor:_phtvCliSpeedFactor];
+            uint64_t totalBlockUs = [PHTVTimingService scaleDelayMicroseconds:cliPostSendBlockUs factor:cliSpeedFactor];
             if (effectiveDelayUs > 0 && len > 1) {
                 totalBlockUs += effectiveDelayUs * (uint64_t)(len - 1);
             }
@@ -589,7 +554,7 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         }
 
         if (_phtvIsCliTarget) {
-            uint64_t totalBlockUs = [PHTVTimingService scaleDelayMicroseconds:_phtvCliPostSendBlockUs factor:_phtvCliSpeedFactor];
+            uint64_t totalBlockUs = [PHTVTimingService scaleDelayMicroseconds:cliPostSendBlockUs factor:cliSpeedFactor];
             if (effectiveDelayUs > 0 && len > 1) {
                 totalBlockUs += effectiveDelayUs * (uint64_t)(len - 1);
             }
@@ -603,16 +568,20 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         if (count <= 0) return;
 
         if (_phtvIsCliTarget) {
-            useconds_t backspaceDelay = [PHTVTimingService scaleDelayUseconds:_phtvCliBackspaceDelayUs factor:_phtvCliSpeedFactor];
-            useconds_t waitDelay = [PHTVTimingService scaleDelayUseconds:_phtvCliWaitAfterBackspaceUs factor:_phtvCliSpeedFactor];
-            uint64_t totalBlockUs = [PHTVTimingService scaleDelayMicroseconds:_phtvCliPostSendBlockUs factor:_phtvCliSpeedFactor];
+            double cliSpeedFactor = [PHTVCliRuntimeStateService currentSpeedFactor];
+            uint64_t cliBackspaceDelayUs = [PHTVCliRuntimeStateService cliBackspaceDelayUs];
+            uint64_t cliWaitAfterBackspaceUs = [PHTVCliRuntimeStateService cliWaitAfterBackspaceUs];
+            uint64_t cliPostSendBlockUs = [PHTVCliRuntimeStateService cliPostSendBlockUs];
+            useconds_t backspaceDelay = [PHTVTimingService scaleDelayUseconds:[PHTVTimingService clampToUseconds:cliBackspaceDelayUs] factor:cliSpeedFactor];
+            useconds_t waitDelay = [PHTVTimingService scaleDelayUseconds:[PHTVTimingService clampToUseconds:cliWaitAfterBackspaceUs] factor:cliSpeedFactor];
+            uint64_t totalBlockUs = [PHTVTimingService scaleDelayMicroseconds:cliPostSendBlockUs factor:cliSpeedFactor];
             if (backspaceDelay > 0 && count > 0) {
                 totalBlockUs += (uint64_t)backspaceDelay * (uint64_t)count;
             }
             totalBlockUs += (uint64_t)waitDelay;
             SetCliBlockForMicroseconds(totalBlockUs);
-            if (_phtvCliSpeedFactor > 1.05) {
-                useconds_t preDelay = [PHTVTimingService scaleDelayUseconds:CLI_PRE_BACKSPACE_DELAY_US factor:_phtvCliSpeedFactor];
+            if (cliSpeedFactor > 1.05) {
+                useconds_t preDelay = [PHTVTimingService scaleDelayUseconds:CLI_PRE_BACKSPACE_DELAY_US factor:cliSpeedFactor];
                 if (preDelay > 0) {
                     usleep(preDelay);
                 }
@@ -773,8 +742,14 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             goto FinalizeSend;
         } else {
             if (_phtvIsCliTarget) {
-                int chunkSize = (_phtvCliTextChunkSize > 0) ? _phtvCliTextChunkSize : 1;
-                SendUnicodeStringChunked(_finalCharString, _finalCharSize, chunkSize, _phtvCliTextDelayUs);
+                int chunkSize = (int)[PHTVCliRuntimeStateService cliTextChunkSize];
+                if (chunkSize < 1) {
+                    chunkSize = 1;
+                }
+                SendUnicodeStringChunked(_finalCharString,
+                                         _finalCharSize,
+                                         chunkSize,
+                                         [PHTVCliRuntimeStateService cliTextDelayUs]);
                 goto FinalizeSend;
             }
             _newEventDown = CGEventCreateKeyboardEvent(myEventSource, 0, true);
@@ -867,8 +842,9 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
             SendNewCharString(true);
         } else {
             int32_t macroCount = (int32_t)pData->macroData.size();
-            uint64_t scaledCliTextDelayUs = _phtvIsCliTarget ? (uint64_t)[PHTVTimingService scaleDelayUseconds:_phtvCliTextDelayUs factor:_phtvCliSpeedFactor] : 0;
-            uint64_t scaledCliPostSendBlockUs = _phtvIsCliTarget ? [PHTVTimingService scaleDelayMicroseconds:_phtvCliPostSendBlockUs factor:_phtvCliSpeedFactor] : 0;
+            double cliSpeedFactor = [PHTVCliRuntimeStateService currentSpeedFactor];
+            uint64_t scaledCliTextDelayUs = _phtvIsCliTarget ? (uint64_t)[PHTVTimingService scaleDelayUseconds:[PHTVTimingService clampToUseconds:[PHTVCliRuntimeStateService cliTextDelayUs]] factor:cliSpeedFactor] : 0;
+            uint64_t scaledCliPostSendBlockUs = _phtvIsCliTarget ? [PHTVTimingService scaleDelayMicroseconds:[PHTVCliRuntimeStateService cliPostSendBlockUs] factor:cliSpeedFactor] : 0;
             PHTVSendSequencePlanBox *sendPlan =
                 [PHTVSendSequenceService sequencePlanForCliTarget:_phtvIsCliTarget
                                                          itemCount:macroCount
@@ -915,13 +891,10 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
         }
 
         // CLI stabilization: block briefly after synthetic injection to avoid interleaving
-        if (type == kCGEventKeyDown && _phtvCliBlockUntil != 0) {
-            uint64_t now = mach_absolute_time();
-            if (now < _phtvCliBlockUntil) {
-                uint64_t remainUs = [PHTVTimingService machTimeToUs:(_phtvCliBlockUntil - now)];
-                if (remainUs > 0) {
-                    usleep([PHTVTimingService clampToUseconds:remainUs]);
-                }
+        if (type == kCGEventKeyDown) {
+            uint64_t remainUs = [PHTVCliRuntimeStateService remainingBlockMicrosecondsForNowMachTime:mach_absolute_time()];
+            if (remainUs > 0) {
+                usleep([PHTVTimingService clampToUseconds:remainUs]);
             }
         }
 
@@ -1517,8 +1490,9 @@ static uint64_t _phtvCliLastKeyDownTime = 0;
                 } else {
                     if (pData->newCharCount > 0 && pData->newCharCount <= MAX_BUFF) {
                         int32_t newCharCount = (int32_t)pData->newCharCount;
-                        uint64_t scaledCliTextDelayUs = _phtvIsCliTarget ? (uint64_t)[PHTVTimingService scaleDelayUseconds:_phtvCliTextDelayUs factor:_phtvCliSpeedFactor] : 0;
-                        uint64_t scaledCliPostSendBlockUs = _phtvIsCliTarget ? [PHTVTimingService scaleDelayMicroseconds:_phtvCliPostSendBlockUs factor:_phtvCliSpeedFactor] : 0;
+                        double cliSpeedFactor = [PHTVCliRuntimeStateService currentSpeedFactor];
+                        uint64_t scaledCliTextDelayUs = _phtvIsCliTarget ? (uint64_t)[PHTVTimingService scaleDelayUseconds:[PHTVTimingService clampToUseconds:[PHTVCliRuntimeStateService cliTextDelayUs]] factor:cliSpeedFactor] : 0;
+                        uint64_t scaledCliPostSendBlockUs = _phtvIsCliTarget ? [PHTVTimingService scaleDelayMicroseconds:[PHTVCliRuntimeStateService cliPostSendBlockUs] factor:cliSpeedFactor] : 0;
                         PHTVSendSequencePlanBox *sendPlan =
                             [PHTVSendSequenceService sequencePlanForCliTarget:_phtvIsCliTarget
                                                                      itemCount:newCharCount
