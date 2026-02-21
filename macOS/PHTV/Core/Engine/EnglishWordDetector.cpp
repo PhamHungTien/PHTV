@@ -86,6 +86,7 @@ extern "C" int phtvDictionaryVietnameseWordCount();
 extern "C" int phtvDictionaryContainsEnglishIndices(const uint8_t* indices, int length);
 extern "C" int phtvDictionaryContainsVietnameseIndices(const uint8_t* indices, int length);
 extern "C" void phtvDictionaryClear();
+extern "C" int phtvDetectorShouldRestoreEnglishWord(const Uint32* keyStates, int stateIndex);
 
 static void initKcLookup() {
     if (kcInit) return;
@@ -656,7 +657,7 @@ string keyStatesToString(const Uint32* keyCodes, int count) {
 // Logic: Vietnamese-first - only restore if NOT Vietnamese AND IS English
 // Priority: Custom Vietnamese > Custom English > Built-in Vietnamese > Built-in English
 // ============================================================================
-bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
+static bool checkIfEnglishWordFallback(const Uint32* keyStates, int stateIndex) {
     // Quick validation
     if (!dictionaryEnglishInitialized()) {
         #ifdef DEBUG
@@ -1083,6 +1084,14 @@ bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
     }
 
     return isEnglish;
+}
+
+extern "C" __attribute__((weak)) int phtvDetectorShouldRestoreEnglishWord(const Uint32* keyStates, int stateIndex) {
+    return checkIfEnglishWordFallback(keyStates, stateIndex) ? 1 : 0;
+}
+
+bool checkIfEnglishWord(const Uint32* keyStates, int stateIndex) {
+    return phtvDetectorShouldRestoreEnglishWord(keyStates, stateIndex) != 0;
 }
 
 void clearEnglishDictionary() {
