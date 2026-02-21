@@ -29,6 +29,15 @@ void phtvEngineTempOffSpellChecking(void);
 void phtvEngineTempOff(int off);
 void phtvEngineSetCheckSpelling(void);
 void phtvEngineStartNewSession(void);
+void phtvEngineInitialize(void);
+int phtvEngineHookCode(void);
+int phtvEngineHookExtCode(void);
+int phtvEngineHookBackspaceCount(void);
+void phtvEngineHookSetBackspaceCount(uint8_t count);
+int phtvEngineHookNewCharCount(void);
+uint32_t phtvEngineHookCharAt(int index);
+int phtvEngineHookMacroDataSize(void);
+uint32_t phtvEngineHookMacroDataAt(int index);
 
 #ifdef __cplusplus
 }

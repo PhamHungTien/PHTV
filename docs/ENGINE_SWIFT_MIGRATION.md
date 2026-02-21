@@ -81,6 +81,11 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - Swift facade goi `phtvEngineHandleEvent` va `phtvEngineHandleEnglishMode` thay vi goi truc tiep C++ API
 - Da chuyen nhom control API engine sang C bridge `phtvEngine*`:
   - `primeUpperCaseFirstChar`, `restoreToRawKeys`, `tempOffSpellChecking`, `tempOffEngine`, `setCheckSpelling`, `startNewSession`
+- Da chuyen doc HookState sang C bridge:
+  - `PHTVEngineRuntimeFacade` doc `code/extCode/backspace/newChar/charData/macroData` qua `phtvEngineHook*`
+  - Swift khong con truy cap truc tiep `vKeyHookState` / `vKeyInit`
+- Da bo include `Core/Engine/Engine.h` khoi `PHTVBridgingHeader.h`:
+  - Bridging header hien dung `Core/Engine/PHTVEngineCBridge.h` + `Core/PHTVConstants.h`
 - Da bo wrappers code-table lookup:
   - Swift facade mang `_codeTable` data sang Swift de tra `findCodeTableSourceKey` / `variantCount` / `characterForKey`
 - Da dua built-in dictionary runtime (English/Vietnamese binary trie) sang Swift bridge:
