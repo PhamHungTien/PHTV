@@ -311,60 +311,6 @@ inline int phtvRuntimeOtherLanguage() noexcept {
     return vOtherLanguage;
 }
 
-inline bool phtvEngineFindCodeTableSourceKey(const int codeTable,
-                                             const std::uint16_t character,
-                                             std::uint32_t* outKeyCode,
-                                             int* outVariantIndex) noexcept {
-    const int safeCodeTable = phtv_clamp_code_table(codeTable);
-    const std::map<Uint32, std::vector<Uint16>>& table = _codeTable[safeCodeTable];
-    for (std::map<Uint32, std::vector<Uint16>>::const_iterator tableIt = table.begin();
-         tableIt != table.end();
-         ++tableIt) {
-        const std::vector<Uint16>& variants = tableIt->second;
-        for (size_t idx = 0; idx < variants.size(); ++idx) {
-            if (variants[idx] != character) continue;
-            if (outKeyCode) {
-                *outKeyCode = tableIt->first;
-            }
-            if (outVariantIndex) {
-                *outVariantIndex = static_cast<int>(idx);
-            }
-            return true;
-        }
-    }
-    return false;
-}
-
-inline int phtvEngineCodeTableVariantCountForKey(const int codeTable,
-                                                 const std::uint32_t keyCode) noexcept {
-    const int safeCodeTable = phtv_clamp_code_table(codeTable);
-    const std::map<Uint32, std::vector<Uint16>>& table = _codeTable[safeCodeTable];
-    const std::map<Uint32, std::vector<Uint16>>::const_iterator it = table.find(keyCode);
-    if (it == table.end()) {
-        return 0;
-    }
-    return static_cast<int>(it->second.size());
-}
-
-inline bool phtvEngineCodeTableCharacterForKey(const int codeTable,
-                                               const std::uint32_t keyCode,
-                                               const int variantIndex,
-                                               std::uint16_t* outCharacter) noexcept {
-    const int safeCodeTable = phtv_clamp_code_table(codeTable);
-    const std::map<Uint32, std::vector<Uint16>>& table = _codeTable[safeCodeTable];
-    const std::map<Uint32, std::vector<Uint16>>::const_iterator it = table.find(keyCode);
-    if (it == table.end()) {
-        return false;
-    }
-    if (variantIndex < 0 || variantIndex >= static_cast<int>(it->second.size())) {
-        return false;
-    }
-    if (outCharacter) {
-        *outCharacter = it->second[static_cast<size_t>(variantIndex)];
-    }
-    return true;
-}
-
 // MARK: - Engine output state (pData) field accessors
 
 extern vKeyHookState* pData;

@@ -121,6 +121,13 @@ enum DebugSelfTests {
         let digitOne = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(key1)
         let symbolExclamation = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(key1 | capsMask)
         let shiftedSpace = PHTVEngineRuntimeFacade.macroKeyCodeToCharacter(UInt32(kVK_Space) | capsMask)
+        let unicodeLookup = PHTVEngineRuntimeFacade.findCodeTableSourceKey(codeTable: 0, character: 0x00E2)
+        let unicodeVariants = PHTVEngineRuntimeFacade.codeTableVariantCount(codeTable: 0, keyCode: 0)
+        let vniCharacter = PHTVEngineRuntimeFacade.codeTableCharacterForKey(
+            codeTable: 2,
+            keyCode: 0,
+            variantIndex: 1
+        )
         assertCondition(
             low == 0x34 &&
             high == 0x12 &&
@@ -130,11 +137,15 @@ enum DebugSelfTests {
             uppercaseA == 0x0041 &&
             digitOne == 0x0031 &&
             symbolExclamation == 0x0021 &&
-            shiftedSpace == 0,
+            shiftedSpace == 0 &&
+            unicodeLookup?.keyCode == 0 &&
+            unicodeLookup?.variantIndex == 1 &&
+            unicodeVariants == 14 &&
+            vniCharacter == 0xE261,
             "Swift/C++ interop check should pass"
         )
         PHTVLogger.shared.debug(
-            "[CxxInterop] low=\(low), high=\(high), spaceKey=\(spaceKey), maxBuffer=\(maxBuffer), macroMap=true, valid=true"
+            "[CxxInterop] low=\(low), high=\(high), spaceKey=\(spaceKey), maxBuffer=\(maxBuffer), macroMap=true, codeTableMap=true, valid=true"
         )
     }
 
