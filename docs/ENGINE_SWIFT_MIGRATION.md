@@ -122,6 +122,9 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da tach C bridge exports khoi than `Engine.cpp`:
   - Cac ham `phtvEngine*`/`phtvEngineHook*` duoc gom vao `Core/Engine/EngineBridgeExports.inc`
   - `Engine.cpp` include lai file nay o cuoi de giam coupling giua core logic va ABI layer
+- Da tach toan bo core processing logic ra file include rieng:
+  - Khoi logic chinh duoc gom vao `Core/Engine/EngineCoreLogic.inc`
+  - `Engine.cpp` gio dong vai tro translation unit mỏng (include data + core logic + bridge exports)
 - Da xoa C++ global runtime pointer bridge file:
   - Xoa `Bridge/Engine/PHTVEngineGlobals.cpp`
   - HookState duoc truy cap qua C bridge `phtvEngineHook*` (khong con pointer C++ trong Swift)
