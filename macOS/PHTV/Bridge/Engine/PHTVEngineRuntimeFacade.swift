@@ -773,12 +773,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
         engineDataPointer = rawState?.assumingMemoryBound(to: vKeyHookState.self)
     }
 
-    @objc class func notifyTableCodeChanged() {
-        let macros = MacroStorage.load(defaults: .standard)
-        let macroData = MacroStorage.engineBinaryData(from: macros)
-        PHTVEngineDataBridge.initializeMacroMap(with: macroData)
-    }
-
     class func eventMarkerValue() -> Int64 {
         eventMarker
     }

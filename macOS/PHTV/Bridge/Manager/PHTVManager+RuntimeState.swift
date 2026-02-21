@@ -39,7 +39,9 @@ import Foundation
 
     @objc(phtv_notifyTableCodeChanged)
     class func phtv_notifyTableCodeChanged() {
-        PHTVEngineRuntimeFacade.notifyTableCodeChanged()
+        let macros = MacroStorage.load(defaults: .standard)
+        let macroData = MacroStorage.engineBinaryData(from: macros)
+        PHTVEngineDataBridge.initializeMacroMap(with: macroData)
         PHTVSmartSwitchBridgeService.handleTableCodeChanged(
             forBundleId: smartSwitchFocusedBundleId(),
             rememberCode: PHTVEngineRuntimeFacade.rememberCode(),
