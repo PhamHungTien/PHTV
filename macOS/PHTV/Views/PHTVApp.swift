@@ -50,7 +50,7 @@ struct PHTVApp: App {
 
             if let nsImage = makeMenuBarIconImage(named: iconName, size: size) {
                 Image(nsImage: nsImage)
-                    .renderingMode(.original)
+                    .renderingMode(.template)
                     .id("\(iconName)-\(Int(size * 100))")
             } else {
                 Text(appState.isEnabled ? "Vi" : "En")
@@ -96,9 +96,10 @@ private func makeMenuBarIconImage(named iconName: String, size: CGFloat) -> NSIm
         return cached
     }
 
-    guard let baseIcon = NSImage(named: NSImage.Name(iconName)) else {
+    guard let baseIcon = NSImage(named: NSImage.Name(iconName))?.copy() as? NSImage else {
         return nil
     }
+    baseIcon.isTemplate = true
 
     let targetSize = NSSize(width: quantizedSize, height: quantizedSize)
     let renderedImage = NSImage(size: targetSize)
@@ -113,6 +114,7 @@ private func makeMenuBarIconImage(named iconName: String, size: CGFloat) -> NSIm
     )
     renderedImage.unlockFocus()
     renderedImage.size = targetSize
+    renderedImage.isTemplate = true
     menuBarIconCache[cacheKey] = renderedImage
     return renderedImage
 }
