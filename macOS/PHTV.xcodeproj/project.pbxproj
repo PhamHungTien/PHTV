@@ -43,6 +43,7 @@
 				Core/Engine/EngineEnglishMode.inc,
 				Core/Engine/EngineKeyHandleEvent.inc,
 				Core/Engine/EngineKeyHandleEventWordBreak.inc,
+				Core/Engine/EngineKeyHandleEventSpace.inc,
 				Core/Engine/EngineGrammarCheck.inc,
 				Core/Engine/EngineRestoreSession.inc,
 				Core/Engine/EngineRuntimeAdapters.inc,
