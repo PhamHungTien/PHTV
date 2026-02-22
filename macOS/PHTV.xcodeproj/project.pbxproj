@@ -34,6 +34,8 @@
 			membershipExceptions = (
 				Core/Engine/EngineBridgeExports.inc,
 				Core/Engine/EngineCoreLogic.inc,
+				Core/Engine/EngineInputKeyMacros.inc,
+				Core/Engine/EngineCoreState.inc,
 				Core/Engine/EngineDataTypes.inc,
 				Core/Engine/EngineKeyCodeTypes.inc,
 				Core/Engine/EngineMacKeyCodes.inc,
