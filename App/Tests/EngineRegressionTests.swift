@@ -58,6 +58,12 @@ final class EngineRegressionTests: XCTestCase {
         phtvCustomDictionaryLoadJSON(json, Int32(json.utf8.count))
     }
 
+    private func customDictionaryContainsVietnameseWord(_ word: String) -> Bool {
+        word.withCString { ptr in
+            phtvCustomDictionaryContainsVietnameseWord(ptr) != 0
+        }
+    }
+
     private func keyCode(for ch: Character) -> UInt16 {
         switch ch {
         case "a": return KEY_A; case "b": return KEY_B; case "c": return KEY_C
@@ -215,6 +221,28 @@ final class EngineRegressionTests: XCTestCase {
             "SPACE quick-consonant mismatch for token='\(token)'",
             file: file, line: line
         )
+    }
+
+    // MARK: - Built-in dictionary regressions (Issue #135)
+
+    func testDakLakBuiltInTelexFormsPersistAfterDictionaryClear() {
+        phtvCustomDictionaryClear()
+        for token in ["lawsk", "lawks", "ddawsk", "ddawks"] {
+            XCTAssertTrue(
+                customDictionaryContainsVietnameseWord(token),
+                "Built-in Vietnamese form should persist after clear: \(token)"
+            )
+        }
+    }
+
+    func testDakLakBuiltInTelexFormsPersistAfterCustomDictionaryLoad() {
+        setCustomEnglishWords(["terminal"])
+        for token in ["lawsk", "lawks", "ddawsk", "ddawks"] {
+            XCTAssertTrue(
+                customDictionaryContainsVietnameseWord(token),
+                "Built-in Vietnamese form should persist after custom load: \(token)"
+            )
+        }
     }
 
     // MARK: - Space tests

@@ -9,9 +9,16 @@ import Foundation
 
 private let customDictionaryLock = NSLock()
 
+// Built-in Vietnamese Telex forms that would otherwise look like English when
+// quick-end consonant is off (e.g. "lawsk", "ddawsk" for "Lắk", "Đắk").
+private let builtInVietnameseTelex: Set<String> = [
+    "lawsk", "lawks",
+    "ddawsk", "ddawks",
+]
+
 private final class CustomDictionaryStateBox: @unchecked Sendable {
     var customEnglishWordsSwift: Set<String> = []
-    var customVietnameseWordsSwift: Set<String> = []
+    var customVietnameseWordsSwift: Set<String> = builtInVietnameseTelex
 }
 
 private let customDictionaryState = CustomDictionaryStateBox()
@@ -36,7 +43,7 @@ private func setCustomDictionaryWords(
 
 @_cdecl("phtvCustomDictionaryClear")
 func phtvCustomDictionaryClear() {
-    setCustomDictionaryWords(english: [], vietnamese: [])
+    setCustomDictionaryWords(english: [], vietnamese: builtInVietnameseTelex)
 }
 
 @_cdecl("phtvCustomDictionaryLoadJSON")
@@ -78,7 +85,10 @@ func phtvCustomDictionaryLoadJSON(_ jsonData: UnsafePointer<CChar>?, _ length: I
         }
     }
 
-    setCustomDictionaryWords(english: english, vietnamese: vietnamese)
+    setCustomDictionaryWords(
+        english: english,
+        vietnamese: vietnamese.union(builtInVietnameseTelex)
+    )
 }
 
 @_cdecl("phtvCustomDictionaryEnglishCount")
