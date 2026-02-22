@@ -33,7 +33,7 @@ Xem [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md). Bằng cách tham gia, bạn đ�
 3. **Build & test:**
 
    ```bash
-   open macOS/PHTV.xcodeproj
+   open App/PHTV.xcodeproj
    ```
 
 4. **Commit & push:**
@@ -89,26 +89,26 @@ Format: `<type>: <mô tả>`
 
 ```
 PHTV/
-├── docs/                   # Tài liệu và hình ảnh
-├── macOS/                  # Mã nguồn chính cho macOS
+├── App/                    # Mã nguồn chính cho macOS
 │   ├── PHTV/
-│   │   ├── Application/    # AppDelegate, entry point
-│   │   ├── Core/           # Core engine xử lý
-│   │   │   ├── Engine/     # C++ Engine logic
-│   │   │   ├── Config/     # Cấu hình hằng số
-│   │   │   └── Platforms/  # Mã nguồn đặc thù nền tảng
-│   │   ├── Managers/       # Quản lý logic nghiệp vụ
-│   │   ├── Resources/      # Tài nguyên (ảnh, dữ liệu từ điển)
-│   │   ├── Tools/          # Công cụ hỗ trợ (scripts python, etc.)
-│   │   └── UI/             # Giao diện người dùng (SwiftUI)
-│   │       ├── Controllers/ # Window/Status bar controllers
-│   │       ├── Models/     # Data models
-│   │       ├── Settings/   # Màn hình cài đặt
-│   │       ├── State/      # Quản lý trạng thái ứng dụng
-│   │       ├── Views/      # Các view SwiftUI
-│   │       └── ...
+│   │   ├── App/            # AppDelegate và vòng đời ứng dụng
+│   │   ├── Engine/         # Engine xử lý tiếng Việt (Swift)
+│   │   ├── Input/          # EventTap, Hotkey, xử lý phím
+│   │   ├── Context/        # App context, Smart Switch
+│   │   ├── System/         # Permission, TCC, Safe Mode, binary integrity
+│   │   ├── Manager/        # PHTVManager (public API)
+│   │   ├── Models/         # Data models
+│   │   ├── State/          # Observable state (SwiftUI)
+│   │   ├── Data/           # Persistence, API clients
+│   │   ├── Services/       # Business logic độc lập với UI
+│   │   ├── UI/             # SwiftUI views và components
+│   │   ├── Utilities/      # Tiện ích dùng chung
+│   │   └── Resources/      # Từ điển, localization, assets
+│   ├── Tests/              # Engine regression tests
 │   └── PHTV.xcodeproj/     # Xcode project
+├── docs/                   # Tài liệu, kiến trúc, hình ảnh
 ├── scripts/                # Scripts tự động hóa (build, release)
+│   └── tools/              # Build tools (generate_dict_binary.py, etc.)
 └── README.md
 ```
 
@@ -119,16 +119,15 @@ PHTV/
 ```bash
 # Clone project
 git clone https://github.com/PhamHungTien/PHTV.git
-cd PHTV/macOS
 
 # Build project (Universal Binary - Intel + Apple Silicon)
-xcodebuild -project PHTV.xcodeproj -scheme PHTV
+xcodebuild -project App/PHTV.xcodeproj -scheme PHTV -destination 'platform=macOS' build
 
-# Run tests (nếu có)
-xcodebuild -project PHTV.xcodeproj -scheme PHTV test
+# Run engine regression tests
+./scripts/run_engine_regression_tests.sh
 
 # Clean build
-xcodebuild -project PHTV.xcodeproj clean
+xcodebuild -project App/PHTV.xcodeproj clean
 ```
 
 ### Debugging
@@ -164,11 +163,6 @@ func toggleVietnameseMode(enabled: Bool) {
 }
 ```
 
-### Objective-C/C++ Code Style
-
-- Sử dụng 4 spaces cho indentation
-- PascalCase cho tên class/struct
-
 ---
 
 <div align="center">
@@ -181,6 +175,6 @@ Mọi đóng góp, dù lớn hay nhỏ, đều được trân trọng và ghi nh
 
 **[⬆️ Về đầu trang](#-hướng-dẫn-đóng-góp)**
 
-[🏠 Trang chủ](README.md) • [📦 Cài đặt](INSTALL.md) • [💬 FAQ](FAQ.md)
+[🏠 Trang chủ](README.md) • [📦 Cài đặt](docs/INSTALL.md) • [💬 FAQ](docs/FAQ.md)
 
 </div>

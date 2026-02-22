@@ -17,7 +17,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/PhamHungTien/PHTV)](../../stargazers)
 [![Sponsor](https://img.shields.io/badge/❤️_Sponsor-PHTV-ea4aaa?style=flat&logo=github-sponsors)](https://phamhungtien.com/PHTV/#donate)
 
-[**Tải về**](https://phamhungtien.com/PHTV/) | [**Tài liệu**](INSTALL.md) | [**Báo lỗi**](../../issues) | [**FAQ**](FAQ.md) | [**☕ Ủng hộ**](https://phamhungtien.com/PHTV/#donate)
+[**Tải về**](https://phamhungtien.com/PHTV/) | [**Tài liệu**](docs/INSTALL.md) | [**Báo lỗi**](../../issues) | [**FAQ**](docs/FAQ.md) | [**☕ Ủng hộ**](https://phamhungtien.com/PHTV/#donate)
 
 </div>
 
@@ -25,7 +25,7 @@
 
 ## Giới thiệu
 
-**PHTV (Precision Hybrid Typing Vietnamese)** là bộ gõ tiếng Việt **offline, nhanh, và riêng tư** cho macOS 13+. Được phát triển bằng Swift/SwiftUI với engine C++ từ OpenKey, mang đến trải nghiệm gõ tiếng Việt mượt mà và tích hợp sâu vào hệ thống.
+**PHTV (Precision Hybrid Typing Vietnamese)** là bộ gõ tiếng Việt **offline, nhanh, và riêng tư** cho macOS 13+. Được phát triển hoàn toàn bằng Swift/SwiftUI, mang đến trải nghiệm gõ tiếng Việt mượt mà và tích hợp sâu vào hệ thống.
 
 ✨ **Tự động cập nhật** - Nhận phiên bản mới ngay khi ra mắt với Sparkle framework. Không cần tải lại thủ công!
 
@@ -39,7 +39,7 @@ brew install --cask phamhungtien/tap/phtv
 open /Applications/PHTV.app
 ```
 
-**⚠️ Quan trọng:** Trước khi sử dụng, bạn **phải tắt các tính năng tự động sửa lỗi của macOS** (Correct spelling, Capitalize words,...) trong *System Settings → Keyboard → Edit Input Sources* để tránh xung đột. Xem [hướng dẫn chi tiết tại đây](INSTALL.md#️-chuẩn-bị-trước-khi-cài-đặt).
+**⚠️ Quan trọng:** Trước khi sử dụng, bạn **phải tắt các tính năng tự động sửa lỗi của macOS** (Correct spelling, Capitalize words,...) trong *System Settings → Keyboard → Edit Input Sources* để tránh xung đột. Xem [hướng dẫn chi tiết tại đây](docs/INSTALL.md#️-chuẩn-bị-trước-khi-cài-đặt).
 
 **Sau khi cài:**
 1. Cho phép quyền **Accessibility** trong System Settings
@@ -215,29 +215,14 @@ open https://github.com/PhamHungTien/PHTV/releases/latest
 
 ```bash
 git clone https://github.com/PhamHungTien/PHTV.git
-cd PHTV/macOS
+cd PHTV/App
 open PHTV.xcodeproj
 # Build với Cmd+B, chạy với Cmd+R
 ```
 
 > **Lưu ý**: Ứng dụng cần quyền **Accessibility** để hoạt động. Vào **System Settings > Privacy & Security > Accessibility** và thêm PHTV.
 
-Build bản Settings app cho Windows:
-
-```bash
-cd PHTV
-dotnet build Windows/App/PHTV.Windows.csproj
-./Windows/build-all.sh
-# output: Windows/App/publish/win-x64/PHTV.exe
-```
-
-### Kiến trúc đa nền tảng (mới)
-
-- Engine dùng chung đã được chuẩn hóa tại `Shared/Engine`.
-- Nền tảng tích hợp tách riêng tại `Windows/` và `Linux/`.
-- macOS hiện tại giữ tương thích qua wrapper tại `macOS/PHTV/Core/Engine`.
-
-Xem chi tiết: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+Xem chi tiết kiến trúc: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 ### 🤖 CI/CD & Release Automation
 
@@ -296,8 +281,7 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 ## Công nghệ
 
 ### Core
-- **Swift 6.0** + **SwiftUI** - Giao diện native hiện đại
-- **C/C++** - Engine xử lý input (từ OpenKey)
+- **Swift 6.0** + **SwiftUI** - Giao diện native hiện đại, 100% Swift
 - **CGEvent API** - Event interception và xử lý bàn phím
 - **Accessibility API** - Hỗ trợ Spotlight và các app đặc biệt
 - **NSUserDefaults** - Lưu trữ cấu hình local
@@ -311,13 +295,14 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 ## Tài liệu
 
 ### Người dùng
-- **[Cài đặt](INSTALL.md)** - Hướng dẫn cài đặt chi tiết
-- **[FAQ](FAQ.md)** - Các câu hỏi thường gặp
+- **[Cài đặt](docs/INSTALL.md)** - Hướng dẫn cài đặt chi tiết
+- **[FAQ](docs/FAQ.md)** - Các câu hỏi thường gặp
 
 ### Nhà phát triển
 - **[GitHub Actions Workflows](.github/workflows/README.md)** - CI/CD, auto-update, và release automation
 - **[Scripts](scripts/)** - Scripts tự động hóa (Homebrew, Sparkle, DMG creation)
 - **Engine Regression Tests** - Chạy `./scripts/run_engine_regression_tests.sh` để kiểm tra các lỗi hồi quy quan trọng của bộ gõ
+- **[Kiến trúc](docs/ARCHITECTURE.md)** - Thiết kế hệ thống và cấu trúc mã nguồn
 - **[Contributing](CONTRIBUTING.md)** - Hướng dẫn đóng góp
 - **[Security](SECURITY.md)** - Chính sách bảo mật
 

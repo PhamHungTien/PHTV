@@ -6,30 +6,28 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 
 ## Trang thai hien tai
 
-- Swift files: 140
-- C/C++ headers/sources: 3
-- Cac file C/C++ con lai tap trung o:
-  - `macOS/PHTV/Core/Engine/*`
-  - `tests/engine/EnglishWordDetectorFallback.cpp`
-  - `tests/engine/EngineRegressionTests.cpp`
+- **Migration hoàn tất: 100% Swift**
+- Không còn file `.cpp`/`.cc`/`.h`/`.hpp` trong app target
+- Regression tests chạy hoàn toàn bằng Swift XCTest tại `App/Tests/`
+- C bridge header (`App/PHTV/Engine/PHTVEngineCBridge.inc`) chỉ khai báo API, implementation là Swift
 
 ## Da hoan thanh (pha don dep)
 
 - Da xoa module C++ `SmartSwitchKey`:
-  - `macOS/PHTV/Core/Engine/SmartSwitchKey.h`
-  - `macOS/PHTV/Core/Engine/SmartSwitchKey.cpp`
+  - `App/PHTV/Engine/SmartSwitchKey.h`
+  - `App/PHTV/Engine/SmartSwitchKey.cpp`
 - Da bo include `SmartSwitchKey.h` khoi:
-  - `macOS/PHTV/Core/Engine/Engine.h`
+  - `App/PHTV/Engine/Engine.h`
 - Smart Switch runtime hien da duoc thay the bang Swift:
-  - `macOS/PHTV/Bridge/SmartSwitch/PHTVSmartSwitchRuntimeService.swift`
+  - `App/PHTV/Context/PHTVSmartSwitchRuntimeService.swift`
 - Da xoa module C++ `ConvertTool`:
-  - `macOS/PHTV/Core/Engine/ConvertTool.h`
-  - `macOS/PHTV/Core/Engine/ConvertTool.cpp`
+  - `App/PHTV/Engine/ConvertTool.h`
+  - `App/PHTV/Engine/ConvertTool.cpp`
 - Da bo C++ debug interop cho convert tool:
-  - `macOS/PHTV/Bridge/Engine/PHTVEngineDebugInteropFacade.swift`
+  - `App/PHTV/Engine/PHTVEngineDebugInteropFacade.swift`
   - wrappers `phtvEngineConvertUtf8`, `phtvConvertTool*` trong `PHTVEngineCxxInterop.hpp`
 - Convert tool runtime va self-check hien chay bang Swift:
-  - `macOS/PHTV/Bridge/System/PHTVConvertToolTextConversionService.swift`
+  - `App/PHTV/System/PHTVConvertToolTextConversionService.swift`
 - Da dua cac engine constant wrappers sang Swift facade:
   - key code constants (`space/delete/slash/enter/return`)
   - mask constants (`CAPS_MASK`, `CHAR_CODE_MASK`, `PURE_CHARACTER_MASK`)
@@ -111,13 +109,13 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
   - Them helper bridge-string de debug auto-English (`phtvDetectorKeyStatesToAscii`)
   - Mo rong declaration trong `Core/Engine/PHTVEngineCBridge.inc` cho nhom runtime/dictionary/detector APIs
   - `EnglishWordDetector.cpp` import chung `PHTVEngineCBridge.inc` thay cho block `extern "C"` khai bao thu cong
-  - `tests/engine/EngineRegressionTests.cpp` goi `phtvDictionary*`/`phtvCustomDictionary*` thay vi include `EnglishWordDetector.h`
-  - `tests/engine/EngineRegressionTests.cpp` tiep tuc bo call truc tiep `vKey*`/`vKeyHookState` tu `Engine.h`, chuyen sang `phtvEngine*` C bridge
+  - `App/Tests/EngineRegressionTests.swift` goi `phtvDictionary*`/`phtvCustomDictionary*` thay vi include `EnglishWordDetector.h`
+  - `App/Tests/EngineRegressionTests.swift` tiep tuc bo call truc tiep `vKey*`/`vKeyHookState` tu `Engine.h`, chuyen sang `phtvEngine*` C bridge
   - Dong bo lai cache count custom dictionary trong fallback detector + them case regression `qes` de khoa behavior custom-English restore
   - Da xoa API wrapper C++ legacy trong `EnglishWordDetector.cpp` va xoa file header `Core/Engine/EnglishWordDetector.h`
-  - Da dua `EnglishWordDetector.cpp` ra khoi app target: fallback detector runtime nay chay trong `tests/engine/EnglishWordDetectorFallback.cpp` cho regression binary standalone
+  - Da dua `EnglishWordDetector.cpp` ra khoi app target: fallback detector runtime nay chay trong `App/Tests/EngineRegressionTests.swift` cho regression binary standalone
 - Da tach weak fallback runtime/macro khoi `Engine.cpp`:
-  - Cac fallback `phtvRuntime*` va `phtvLoadMacroMapFromBinary` / `phtvFindMacroContentForNormalizedKeys` duoc chuyen sang `tests/engine/EnglishWordDetectorFallback.cpp`
+  - Cac fallback `phtvRuntime*` va `phtvLoadMacroMapFromBinary` / `phtvFindMacroContentForNormalizedKeys` duoc chuyen sang `App/Tests/EngineRegressionTests.swift`
   - `Engine.cpp` khong con chua code fallback cho regression standalone
 - Da tach C bridge exports khoi than `Engine.cpp`:
   - Cac ham `phtvEngine*`/`phtvEngineHook*` duoc gom vao `Core/Engine/EngineBridgeExports.inc`
@@ -218,11 +216,11 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da dua `vRestoreOnEscape` sang Swift storage:
   - Them C bridge `phtvRuntimeRestoreOnEscapeEnabled()` do `PHTVEngineRuntimeFacade.swift` cung cap
   - `Engine.cpp` doc runtime setting qua bridge thay vi global C++
-  - Giu weak fallback trong `tests/engine/EnglishWordDetectorFallback.cpp` de regression binary standalone (khong link Swift) van chay
+  - Giu weak fallback trong `App/Tests/EngineRegressionTests.swift` de regression binary standalone (khong link Swift) van chay
 - Da dua `vAutoCapsMacro` sang Swift storage:
   - Them C bridge `phtvRuntimeAutoCapsMacroValue()` do `PHTVEngineRuntimeFacade.swift` cung cap
   - Logic macro trong `Engine.cpp` doc runtime setting qua bridge thay vi global C++
-  - Giu weak fallback trong `tests/engine/EnglishWordDetectorFallback.cpp` de regression binary standalone van giu behavior mac dinh
+  - Giu weak fallback trong `App/Tests/EngineRegressionTests.swift` de regression binary standalone van giu behavior mac dinh
 - Da don dep module macro C++ tach rieng:
   - Gop `initMacroMap(...)` va `findMacro(...)` vao `Engine.cpp`
   - Xoa `Core/Engine/Macro.cpp`
@@ -234,45 +232,45 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da dua `vAutoRestoreEnglishWord` sang Swift storage:
   - Them C bridge `phtvRuntimeAutoRestoreEnglishWordEnabled()` do `PHTVEngineRuntimeFacade.swift` cung cap
   - `Engine.cpp` doc runtime setting qua bridge thay vi global C++
-  - Giu weak fallback trong `tests/engine/EnglishWordDetectorFallback.cpp` de regression binary standalone van giu behavior mac dinh
+  - Giu weak fallback trong `App/Tests/EngineRegressionTests.swift` de regression binary standalone van giu behavior mac dinh
 - Da dua cap state auto-uppercase sang Swift storage:
   - `vUpperCaseFirstChar`
   - `vUpperCaseExcludedForCurrentApp`
   - `Engine.cpp` doc qua `phtvRuntimeUpperCaseFirstCharEnabled()` va `phtvRuntimeUpperCaseExcludedForCurrentApp()`
-  - Giu weak fallback trong `tests/engine/EnglishWordDetectorFallback.cpp` cho regression binary standalone
+  - Giu weak fallback trong `App/Tests/EngineRegressionTests.swift` cho regression binary standalone
 - Da dua `vUseMacro` sang Swift storage:
   - Them C bridge `phtvRuntimeUseMacroEnabled()` do `PHTVEngineRuntimeFacade.swift` cung cap
   - `Engine.cpp` doc runtime setting qua bridge thay vi global C++
-  - Giu weak fallback trong `tests/engine/EnglishWordDetectorFallback.cpp` de regression binary standalone van giu behavior mac dinh
+  - Giu weak fallback trong `App/Tests/EngineRegressionTests.swift` de regression binary standalone van giu behavior mac dinh
 - Da dua nhom Quick Consonant flags sang Swift storage:
   - `vAllowConsonantZFWJ`
   - `vQuickStartConsonant`
   - `vQuickEndConsonant`
   - `Engine.cpp` doc qua cac bridge `phtvRuntimeAllowConsonantZFWJEnabled()`, `phtvRuntimeQuickStartConsonantEnabled()`, `phtvRuntimeQuickEndConsonantEnabled()`
-  - Giu weak fallback trong `tests/engine/EnglishWordDetectorFallback.cpp` de regression binary standalone van giu default cu
+  - Giu weak fallback trong `App/Tests/EngineRegressionTests.swift` de regression binary standalone van giu default cu
 - Da dua nhom typing behavior flags sang Swift storage:
   - `vUseModernOrthography`
   - `vQuickTelex`
   - `vFreeMark`
   - `Engine.cpp` doc qua cac bridge `phtvRuntimeUseModernOrthographyEnabled()`, `phtvRuntimeQuickTelexEnabled()`, `phtvRuntimeFreeMarkEnabled()`
-  - Giu weak fallback trong `tests/engine/EnglishWordDetectorFallback.cpp` de regression binary standalone van giu default cu
+  - Giu weak fallback trong `App/Tests/EngineRegressionTests.swift` de regression binary standalone van giu default cu
 - Da dua `vCheckSpelling` sang Swift storage:
   - Them bridge `phtvRuntimeCheckSpellingValue()` va `phtvRuntimeSetCheckSpellingValue(...)` trong `PHTVEngineRuntimeFacade.swift`
   - `Engine.cpp` doc/ghi spell-check runtime qua bridge thay vi global C++
-  - Giu weak fallback trong `tests/engine/EnglishWordDetectorFallback.cpp` cho regression binary standalone
+  - Giu weak fallback trong `App/Tests/EngineRegressionTests.swift` cho regression binary standalone
 - Da dua `vInputType` va `vCodeTable` sang Swift storage:
   - Them bridge `phtvRuntimeInputTypeValue()` va `phtvRuntimeCodeTableValue()` trong `PHTVEngineRuntimeFacade.swift`
   - `Engine.cpp` lay snapshot runtime dau moi key event de dung trong xu ly Telex/VNI va code table conversion
   - Bo extern/definition tuong ung khoi `PHTVEngineCxxInterop.hpp`, `Engine.h`, `PHTVRuntimeState.cpp`
-  - Giu weak fallback trong `tests/engine/EnglishWordDetectorFallback.cpp` cho regression binary standalone
+  - Giu weak fallback trong `App/Tests/EngineRegressionTests.swift` cho regression binary standalone
   - Don dep macro runtime cu trong `EngineDataTypes.inc` (`PHTV_CURRENT_INPUT_TYPE` / `IS_SPECIALKEY`) vi `Engine.cpp` da tu quan ly snapshot input type
 - Da bo file interop wrapper C++:
   - Xoa `Bridge/Engine/PHTVEngineCxxInterop.hpp`
   - `PHTVBridgingHeader.h` hien import `Core/Engine/PHTVEngineCBridge.inc`
 - Da xoa cac legacy headers khong con su dung:
-  - `macOS/PHTV/Core/PHTVConstants.h`
-  - `macOS/PHTV/Core/PHTVHotkey.h`
-  - `macOS/PHTV/Core/mac.h`
+  - `App/PHTV/Engine/PHTVConstants.h`
+  - `App/PHTV/Engine/PHTVHotkey.h`
+  - `App/PHTV/Engine/mac.h`
 - Da loai bo `Core/Engine/Engine.h`:
   - Header nay khong con call site ben ngoai; declaration duoc internal hoa trong `Engine.cpp`
 - Da loai bo `Core/Engine/Vietnamese.h`:
@@ -280,7 +278,7 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da loai bo `Core/phtv_mac_keys.h`:
   - Keycode constants duoc gom vao `Core/Engine/EngineDataTypes.inc`
 - Da xoa wrapper `PHTVBridgingHeader.h`:
-  - Build setting `SWIFT_OBJC_BRIDGING_HEADER` hien tro truc tiep `PHTV/Core/Engine/PHTVEngineCBridge.inc`
+  - Build setting `SWIFT_OBJC_BRIDGING_HEADER` hien tro truc tiep `PHTV/Engine/PHTVEngineCBridge.inc`
 - Da internalize `Vietnamese.cpp` vao `Engine.cpp`:
   - Bang du lieu keycode/vowel/consonant duoc include noi bo qua `Core/Engine/VietnameseData.inc`
 
@@ -322,7 +320,7 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 
 - Xoa `PHTVEngineCxxInterop.hpp`.
 - Da xoa wrapper `PHTVBridgingHeader.h`; `SWIFT_OBJC_BRIDGING_HEADER` tro truc tiep `PHTVEngineCBridge.inc`.
-- Xoa toan bo C/C++ source/header con lai trong `macOS/PHTV/Core/Engine`.
+- Xoa toan bo C/C++ source/header con lai trong `App/PHTV/Engine`.
 - Chuyen regression tests C++ sang Swift tests.
 
 ## Tieu chi "100% Swift"

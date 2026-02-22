@@ -2,77 +2,89 @@
 
 ## Tổng quan
 
-PHTV là bộ gõ tiếng Việt cho macOS, xây dựng hoàn toàn bằng Swift với lõi xử lý ngôn ngữ viết bằng C++. Kiến trúc tách biệt rõ ràng giữa engine xử lý (C++) và lớp tích hợp hệ thống (Swift).
+PHTV là bộ gõ tiếng Việt cho macOS, xây dựng **100% bằng Swift**. Engine xử lý tiếng Việt đã được port hoàn toàn sang Swift, không còn phụ thuộc C/C++.
 
 ## Cấu trúc thư mục
 
 ```text
-macOS/PHTV/
+App/PHTV/
 ├── App/                      # AppDelegate và vòng đời ứng dụng
-├── Bridge/                   # Lớp tích hợp giữa engine C++ và hệ thống macOS
-│   ├── Accessibility/        # CGAccessibility / AX API bridge
-│   ├── CLI/                  # CLI profile service
-│   ├── Context/              # App context, Spotlight detection
-│   ├── Engine/               # C++ interop, engine session, startup data
-│   ├── EventTap/             # CGEventTap callback, tap lifecycle, health
-│   ├── Hotkey/               # Hotkey, input source, layout compatibility
-│   ├── Input/                # Character output, key sender, send sequence, timing
-│   ├── Manager/              # PHTVManager (public API + extensions)
-│   ├── SmartSwitch/          # Smart switch logic, persistence, runtime
-│   └── System/               # Permission, TCC, safe mode, binary integrity, etc.
-├── Core/
-│   └── Engine/               # C++ engine source (xử lý tiếng Việt)
+├── Engine/                   # Engine xử lý tiếng Việt (Swift) + C bridge header
+├── Input/                    # EventTap, Hotkey, xử lý phím đầu vào
+├── Context/                  # App context, Spotlight detection, Smart Switch
+├── System/                   # Permission, TCC, Safe Mode, binary integrity
+├── Manager/                  # PHTVManager (public API + extensions)
 ├── Data/                     # Persistence, API clients, database
 ├── Models/                   # Value types và domain models
 ├── Resources/                # Từ điển, localization, assets
 ├── Services/                 # Business logic độc lập với UI
 ├── State/                    # Observable state objects (SwiftUI)
-├── Tools/                    # Build-time tools và data generators
 ├── UI/                       # SwiftUI views và components
 └── Utilities/                # Tiện ích dùng chung (logger, cache, constants)
+
+App/Tests/                    # Engine regression tests (XCTest)
+scripts/tools/                # Build-time tools (generate_dict_binary.py, etc.)
 ```
 
 ## Luồng xử lý sự kiện
 
 ```
 CGEventTap (main run loop)
-    └─► Bridge/EventTap/PHTVEventCallbackService
-            ├─► Bridge/Context/PHTVEventContextBridgeService  (AX context)
-            ├─► Bridge/Hotkey/PHTVHotkeyService               (hotkey check)
-            ├─► Core/Engine (C++ vKeyHandleEvent)             (xử lý tiếng Việt)
-            └─► Bridge/Input/PHTVCharacterOutputService       (commit kết quả)
+    └─► Input/PHTVEventCallbackService
+            ├─► Context/PHTVEventContextBridgeService  (AX context)
+            ├─► Input/PHTVHotkeyService                (hotkey check)
+            ├─► Engine/PHTVEngineCore (vKeyHandleEvent) (xử lý tiếng Việt)
+            └─► Input/PHTVCharacterOutputService        (commit kết quả)
 ```
 
 ## Các lớp kiến trúc
 
-### Core/Engine (C++)
-Engine xử lý tiếng Việt thuần C++. Không phụ thuộc vào platform. Nhận keycode và trả về chuỗi kết quả. Runtime pointer state (`vKeyHookState*`) hiện được quản lý phía Swift facade.
+### Engine/
+Engine xử lý tiếng Việt viết bằng Swift. Nhận keycode và trả về chuỗi kết quả. Runtime state được quản lý bởi `PHTVEngineRuntimeFacade`. Giao tiếp với C bridge qua `PHTVEngineCBridge.inc`.
 
-### Bridge/Engine
+- `PHTVEngineCore.swift` — Logic xử lý key event, tone/mark/session
 - `PHTVEngineSessionService.swift` — Khởi động engine (`boot()`), quản lý session
 - `PHTVEngineDataBridge.swift` — Đọc kết quả xử lý từ engine
+- `PHTVEngineRuntimeFacade.swift` — Facade cho runtime state
 - `PHTVEngineStartupDataService.swift` — Load startup data từ UserDefaults
+- `PHTVDictionaryTrieBridge.swift` — Dictionary trie (English/Vietnamese)
+- `PHTVAutoEnglishRestoreBridge.swift` — Auto-English restore detector
+- `PHTVEngineCBridge.inc` — C bridge header (Swift bridging header)
 
-### Bridge/EventTap
+### Input/
 - `PHTVEventTapService.swift` — Tạo, bật, tắt CGEventTap
-- `PHTVEventCallbackService.swift` — Callback chính (~700 dòng Swift), thay thế `PHTVCallback` cũ trong ObjC++
+- `PHTVEventCallbackService.swift` — Callback chính xử lý key event
 - `PHTVEventTapHealthService.swift` — Giám sát và tái tạo tap khi cần
-
-### Bridge/Input
 - `PHTVCharacterOutputService.swift` — Commit chuỗi ra ứng dụng đích
 - `PHTVKeyEventSenderService.swift` — Gửi CGEvent key
 - `PHTVSendSequenceService.swift` — Gửi từng ký tự theo thứ tự
 - `PHTVInputStrategyService.swift` — Chọn chiến lược output (AX vs CGEvent)
 - `PHTVTimingService.swift` — Điều chỉnh timing delay
+- `PHTVHotkeyService.swift` — Xử lý hotkey chuyển ngôn ngữ
+- `PHTVInputSourceLanguageService.swift` — Phát hiện ngôn ngữ input source
+- `PHTVLayoutCompatibilityService.swift` — Hỗ trợ Dvorak, Colemak, v.v.
 
-### Bridge/Context
+### Context/
 - `PHTVEventContextBridgeService.swift` — Lấy AX context của cửa sổ đang focus
 - `PHTVAppContextService.swift` — Bundle ID, smart switch context
 - `PHTVAppDetectionService.swift` — Nhận dạng loại ứng dụng
 - `PHTVSpotlightDetectionService.swift` — Phát hiện Spotlight đang mở
+- `PHTVSmartSwitchRuntimeService.swift` — Smart Switch state transitions
+- `PHTVSmartSwitchPersistenceService.swift` — Lưu trữ Smart Switch state
+- `PHTVSmartSwitchBridgeService.swift` — Bridge cho Smart Switch
 
-### Bridge/Manager
-`PHTVManager` là entry point ObjC cho phần còn lại của app (AppDelegate, settings). Chia thành các extension theo chức năng:
+### System/
+- `PHTVPermissionService.swift` — Quản lý Accessibility permission
+- `PHTVTCCMaintenanceService.swift` / `PHTVTCCNotificationService.swift` — TCC
+- `PHTVSafeModeStartupService.swift` — Khởi động Safe Mode
+- `PHTVBinaryIntegrityService.swift` — Kiểm tra tính toàn vẹn binary
+- `PHTVCacheStateService.swift` — Cache state
+- `PHTVConvertToolTextConversionService.swift` — Convert bảng mã
+- `PHTVAccessibilityService.swift` — CGAccessibility / AX API
+- `PHTVCliProfileService.swift` — CLI profile (Claude Code patch)
+
+### Manager/
+`PHTVManager` là public API cho AppDelegate và Settings. Chia thành các extension:
 - `PHTVManager+PublicAPI` — API công khai
 - `PHTVManager+RuntimeState` — Runtime state bridge
 - `PHTVManager+SettingsLoading` — Load settings
@@ -92,34 +104,33 @@ SwiftUI views. Không chứa business logic. Nhận state từ `State/` và gọ
 
 ## Quy tắc thiết kế
 
-1. **Engine C++ không phụ thuộc Swift/ObjC.** Swift gọi qua C bridge (`phtvEngine*`, `phtvRuntime*`, `phtvDictionary*`) để giữ ABI ổn định.
-2. **Bridge API là điểm vào duy nhất từ Swift.** Tránh include trực tiếp C++ headers vào Swift call site.
-3. **`@MainActor.assumeIsolated`** dùng trong EventTap callback (tap chạy trên main run loop).
-4. **`nonisolated(unsafe)`** cho static vars trong các service không có actor isolation.
-5. **Xcode tự phát hiện file** qua `PBXFileSystemSynchronizedRootGroup` — di chuyển file trong filesystem là đủ, không cần sửa `.xcodeproj`.
+1. **100% Swift** — Không còn C/C++ source trong app target. C bridge header (`PHTVEngineCBridge.inc`) chỉ khai báo API, implementation là Swift.
+2. **Engine không phụ thuộc platform.** Swift gọi qua C bridge (`phtvEngine*`, `phtvRuntime*`, `phtvDictionary*`) để giữ ABI ổn định.
+3. **`@MainActor`** trên `AppDelegate` và các service chạy trên main thread.
+4. **`MainActor.assumeIsolated`** dùng trong EventTap callback (tap chạy trên main run loop).
+5. **`nonisolated(unsafe)`** cho static vars trong các service không có actor isolation.
+6. **Xcode tự phát hiện file** qua `PBXFileSystemSynchronizedRootGroup` — di chuyển file trong filesystem là đủ, không cần sửa `.xcodeproj`.
 
-## Interop C++ ↔ Swift
-
-Swift bridge config trỏ trực tiếp tới C bridge header:
+## Swift Bridge Config
 
 ```text
-SWIFT_OBJC_BRIDGING_HEADER = PHTV/Core/Engine/PHTVEngineCBridge.inc
+SWIFT_OBJC_BRIDGING_HEADER = PHTV/Engine/PHTVEngineCBridge.inc
+HEADER_SEARCH_PATHS = $(SRCROOT)/PHTV/Engine
 ```
-
-Project không còn dùng flag Swift C++ interop (`-cxx-interoperability-mode=default`).
 
 ## Build
 
 ```bash
 # Mở project
-open macOS/PHTV.xcodeproj
+open App/PHTV.xcodeproj
 
 # Build từ command line
-xcodebuild -project macOS/PHTV.xcodeproj -scheme PHTV -destination 'platform=macOS,arch=arm64' build
+xcodebuild -project App/PHTV.xcodeproj -scheme PHTV -destination 'platform=macOS' build
+
+# Chạy regression tests
+./scripts/run_engine_regression_tests.sh
 ```
 
-## Swift Migration Status
+## Migration Status
 
-- Smart Switch runtime đã chạy hoàn toàn bằng Swift (`Bridge/SmartSwitch/*`).
-- C++ `SmartSwitchKey` đã được loại bỏ khỏi `Core/Engine`.
-- Kế hoạch migrate engine còn lại sang Swift: xem `docs/ENGINE_SWIFT_MIGRATION.md`.
+Engine đã được port **hoàn toàn sang Swift**. Không còn file `.cpp`/`.cc`/`.h`/`.hpp` trong app target. Xem lịch sử migration chi tiết tại [ENGINE_SWIFT_MIGRATION.md](ENGINE_SWIFT_MIGRATION.md).
