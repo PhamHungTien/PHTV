@@ -8,9 +8,10 @@
 import Foundation
 import Sparkle
 
+@MainActor
 @objcMembers
-final class SparkleManager: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverDelegate {
-    nonisolated(unsafe) private static let sharedInstance = SparkleManager()
+final class SparkleManager: NSObject, @preconcurrency SPUUpdaterDelegate, @preconcurrency SPUStandardUserDriverDelegate {
+    private static let sharedInstance = SparkleManager()
 
     @objc(shared)
     class func shared() -> SparkleManager {
