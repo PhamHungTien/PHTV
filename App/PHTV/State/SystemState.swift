@@ -131,6 +131,10 @@ final class SystemState: ObservableObject {
 
     }
 
+    func reloadFromDefaults() {
+        loadSettings()
+    }
+
     // MARK: - Accessibility
 
     func checkAccessibilityPermission() {

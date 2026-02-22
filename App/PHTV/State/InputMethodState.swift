@@ -43,12 +43,47 @@ final class InputMethodState: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     var isLoadingSettings = false
 
+    private static let autoRestoreEnglishLegacyKeys: [String] = [
+        "RestoreIfInvalidWord"
+    ]
+
+    private func decodeBoolPreference(_ value: Any?) -> Bool? {
+        if let boolValue = value as? Bool {
+            return boolValue
+        }
+        if let numberValue = value as? NSNumber {
+            return numberValue.boolValue
+        }
+        if let stringValue = value as? String {
+            switch stringValue.lowercased() {
+            case "1", "true", "yes":
+                return true
+            case "0", "false", "no":
+                return false
+            default:
+                return nil
+            }
+        }
+        return nil
+    }
+
     init() {}
 
     // MARK: - Load/Save Settings
 
     func loadSettings() {
         let defaults = UserDefaults.standard
+
+        let migratedAutoRestoreKey = defaults.migrateValueIfMissing(
+            forKey: UserDefaultsKey.autoRestoreEnglishWord,
+            fromLegacyKeys: Self.autoRestoreEnglishLegacyKeys,
+            transform: { [weak self] legacyValue in
+                self?.decodeBoolPreference(legacyValue)
+            }
+        )
+        if migratedAutoRestoreKey {
+            NSLog("[InputMethodState] Migrated legacy auto-restore setting to %@", UserDefaultsKey.autoRestoreEnglishWord)
+        }
 
         // Load input method and code table
         let inputTypeIndex = defaults.integer(
@@ -152,28 +187,7 @@ final class InputMethodState: ObservableObject {
     }
 
     func reloadFromDefaults() {
-        let defaults = UserDefaults.standard
-
-        let inputTypeIndex = defaults.integer(
-            forKey: UserDefaultsKey.inputType,
-            default: Defaults.inputMethod.toIndex()
-        )
-        let newInputMethod = InputMethod.from(index: inputTypeIndex)
-
-        let codeTableIndex = defaults.integer(
-            forKey: UserDefaultsKey.codeTable,
-            default: Defaults.codeTable.toIndex()
-        )
-        let newCodeTable = CodeTable.from(index: codeTableIndex)
-
-        // Update only if values changed to avoid unnecessary refreshes
-        if newInputMethod != inputMethod {
-            inputMethod = newInputMethod
-        }
-
-        if newCodeTable != codeTable {
-            codeTable = newCodeTable
-        }
+        loadSettings()
     }
 
     // MARK: - Setup Observers

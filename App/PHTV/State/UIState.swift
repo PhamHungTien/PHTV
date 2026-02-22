@@ -81,24 +81,16 @@ final class UIState: ObservableObject {
         return nil
     }
 
-    private func persistedPreferenceValue(_ key: String, defaults: UserDefaults) -> Any? {
-        guard let bundleIdentifier = Bundle.main.bundleIdentifier,
-              let persistedDomain = defaults.persistentDomain(forName: bundleIdentifier) else {
-            return nil
-        }
-        return persistedDomain[key]
-    }
-
     private func resolveMenuBarIconSize(from defaults: UserDefaults) -> (value: Double, sourceKey: String?) {
         if let currentValue = decodeDoublePreference(
-            persistedPreferenceValue(UserDefaultsKey.menuBarIconSize, defaults: defaults)
+            defaults.persistedObject(forKey: UserDefaultsKey.menuBarIconSize)
         ) {
             return (currentValue, UserDefaultsKey.menuBarIconSize)
         }
 
         for legacyKey in Self.legacyMenuBarIconSizeKeys {
             if let legacyValue = decodeDoublePreference(
-                persistedPreferenceValue(legacyKey, defaults: defaults)
+                defaults.persistedObject(forKey: legacyKey)
             ) {
                 return (legacyValue, legacyKey)
             }
@@ -169,6 +161,10 @@ final class UIState: ObservableObject {
         defaults.set(sanitizeMenuBarIconSize(menuBarIconSize), forKey: UserDefaultsKey.menuBarIconSize)
         defaults.set(useVietnameseMenubarIcon, forKey: UserDefaultsKey.useVietnameseMenubarIcon)
 
+    }
+
+    func reloadFromDefaults() {
+        loadSettings()
     }
 
     // MARK: - Hotkey Encoding/Decoding

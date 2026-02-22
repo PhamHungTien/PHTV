@@ -124,6 +124,10 @@ final class MacroState: ObservableObject {
 
     }
 
+    func reloadFromDefaults() {
+        loadSettings()
+    }
+
     // MARK: - Setup Observers
 
     func setupObservers() {

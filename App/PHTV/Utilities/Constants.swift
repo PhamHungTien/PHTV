@@ -433,6 +433,41 @@ enum Defaults {
 // MARK: - UserDefaults Helpers
 
 extension UserDefaults {
+    /// Reads a value only if it was explicitly persisted (ignores register(defaults:)).
+    func persistedObject(forKey key: String) -> Any? {
+        guard let bundleIdentifier = Bundle.main.bundleIdentifier,
+              let persistedDomain = persistentDomain(forName: bundleIdentifier) else {
+            return nil
+        }
+        return persistedDomain[key]
+    }
+
+    /// Migrates the first available legacy key into `key` when `key` has no persisted value.
+    @discardableResult
+    func migrateValueIfMissing(
+        forKey key: String,
+        fromLegacyKeys legacyKeys: [String],
+        transform: ((Any) -> Any?)? = nil
+    ) -> Bool {
+        guard persistedObject(forKey: key) == nil else {
+            return false
+        }
+
+        for legacyKey in legacyKeys {
+            guard let legacyValue = persistedObject(forKey: legacyKey) else { continue }
+            let migratedValue: Any
+            if let transform {
+                guard let transformedValue = transform(legacyValue) else { continue }
+                migratedValue = transformedValue
+            } else {
+                migratedValue = legacyValue
+            }
+            set(migratedValue, forKey: key)
+            return true
+        }
+        return false
+    }
+
     /// Reads a Bool with explicit fallback when the key is missing.
     func bool(forKey key: String, default defaultValue: Bool) -> Bool {
         guard let value = object(forKey: key) else {

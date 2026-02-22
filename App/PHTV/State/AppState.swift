@@ -144,6 +144,8 @@ final class AppState: ObservableObject {
 
         // Reload sub-states
         inputMethodState.isLoadingSettings = true
+        macroState.isLoadingSettings = true
+        systemState.isLoadingSettings = true
         uiState.isLoadingSettings = true
         appListsState.isLoadingSettings = true
 
@@ -157,9 +159,14 @@ final class AppState: ObservableObject {
 
         // Reload each sub-state
         inputMethodState.reloadFromDefaults()
+        macroState.reloadFromDefaults()
+        systemState.reloadFromDefaults()
+        uiState.reloadFromDefaults()
         appListsState.reloadFromDefaults()
 
         inputMethodState.isLoadingSettings = false
+        macroState.isLoadingSettings = false
+        systemState.isLoadingSettings = false
         uiState.isLoadingSettings = false
         appListsState.isLoadingSettings = false
         isLoadingSettings = false
