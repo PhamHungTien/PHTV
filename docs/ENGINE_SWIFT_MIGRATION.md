@@ -155,6 +155,9 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da tach nhom standalone/caps helpers:
   - `reverseLastStandaloneChar`, `checkForStandaloneChar`, `upperCaseFirstCharacter` duoc dua vao `Core/Engine/EngineStandaloneAndCaps.inc`
   - Cum nay gom logic ky tu standalone ([, ]) va auto-cap helper, tach rieng de giam coupling trong state machine chinh
+- Da tach nhom main-key dispatch:
+  - Toan bo `handleMainKey(...)` duoc dua vao `Core/Engine/EngineMainKeyHandling.inc`
+  - Cum nay la nhanh xu ly trung tam cho mark/double-key/w-standalone, tach rieng de tiep tuc port sang Swift theo behavior regression
 - Da xoa C++ global runtime pointer bridge file:
   - Xoa `Bridge/Engine/PHTVEngineGlobals.cpp`
   - HookState duoc truy cap qua C bridge `phtvEngineHook*` (khong con pointer C++ trong Swift)
