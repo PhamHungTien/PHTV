@@ -289,10 +289,13 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
                            selector: #selector(handleLanguageChangedFromSwiftUI(_:)),
                            name: phtvNotificationLanguageChangedFromSwiftUI,
                            object: nil)
-        center.addObserver(self,
-                           selector: Selector(("handleUserDefaultsDidChange:")),
-                           name: UserDefaults.didChangeNotification,
-                           object: nil)
+        userDefaultsObserver = center.addObserver(
+            forName: UserDefaults.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleUserDefaultsDidChange(nil)
+        }
 
         registerSparkleObservers()
     }

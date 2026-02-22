@@ -60,6 +60,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var isUpdatingCodeTable = false
     var appearanceObserver: Any?
     var inputSourceObserver: Any?
+    var userDefaultsObserver: Any?
     var savedLanguageBeforeNonLatin = 0
     var isInNonLatinInputSource = false
 }

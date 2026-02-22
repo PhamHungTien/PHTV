@@ -15,6 +15,7 @@
 		460202712F2814260040B043 /* ServiceManagement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 460202672F2814260040B043 /* ServiceManagement.framework */; };
 		460202732F2814260040B043 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 460202742F2814260040B043 /* Sparkle */; };
 		460203682F2816C90040B043 /* PHTV.icon in Resources */ = {isa = PBXBuildFile; fileRef = 460203672F2816C90040B043 /* PHTV.icon */; };
+		46020A082F3000000040B043 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46020A072F3000000040B043 /* XCTest.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +27,8 @@
 		460202652F2814260040B043 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
 		460202672F2814260040B043 /* ServiceManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ServiceManagement.framework; path = System/Library/Frameworks/ServiceManagement.framework; sourceTree = SDKROOT; };
 		460203672F2816C90040B043 /* PHTV.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = PHTV.icon; sourceTree = "<group>"; };
+		46020A012F3000000040B043 /* PHEngineTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PHEngineTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		46020A072F3000000040B043 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -48,6 +51,11 @@
 			path = PHTV;
 			sourceTree = "<group>";
 		};
+		46020A022F3000000040B043 /* PHEngineTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PHEngineTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,6 +73,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		46020A052F3000000040B043 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				46020A082F3000000040B043 /* XCTest.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -73,6 +89,7 @@
 			children = (
 				460203672F2816C90040B043 /* PHTV.icon */,
 				460202452F2814250040B043 /* PHTV */,
+				46020A022F3000000040B043 /* PHEngineTests */,
 				460202692F2814260040B043 /* Frameworks */,
 				460202442F2814250040B043 /* Products */,
 			);
@@ -82,6 +99,7 @@
 			isa = PBXGroup;
 			children = (
 				460202432F2814250040B043 /* PHTV.app */,
+				46020A012F3000000040B043 /* PHEngineTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,6 +113,7 @@
 				460202622F2814260040B043 /* CoreGraphics.framework */,
 				460202612F2814260040B043 /* Foundation.framework */,
 				460202672F2814260040B043 /* ServiceManagement.framework */,
+				46020A072F3000000040B043 /* XCTest.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -125,6 +144,27 @@
 			productReference = 460202432F2814250040B043 /* PHTV.app */;
 			productType = "com.apple.product-type.application";
 		};
+		46020A032F3000000040B043 /* PHEngineTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 46020A0E2F3000000040B043 /* Build configuration list for PBXNativeTarget "PHEngineTests" */;
+			buildPhases = (
+				46020A042F3000000040B043 /* Sources */,
+				46020A052F3000000040B043 /* Frameworks */,
+				46020A062F3000000040B043 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				46020A0A2F3000000040B043 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				46020A022F3000000040B043 /* PHEngineTests */,
+			);
+			name = PHEngineTests;
+			productName = PHEngineTests;
+			productReference = 46020A012F3000000040B043 /* PHEngineTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -137,6 +177,10 @@
 				TargetAttributes = {
 					460202422F2814250040B043 = {
 						CreatedOnToolsVersion = 26.2;
+					};
+					46020A032F3000000040B043 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = 460202422F2814250040B043;
 					};
 				};
 			};
@@ -159,6 +203,7 @@
 			projectRoot = "";
 			targets = (
 				460202422F2814250040B043 /* PHTV */,
+				46020A032F3000000040B043 /* PHEngineTests */,
 			);
 		};
 /* End PBXProject section */
@@ -172,6 +217,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		46020A062F3000000040B043 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -182,7 +234,32 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		46020A042F3000000040B043 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXContainerItemProxy section */
+		46020A0B2F3000000040B043 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4602023B2F2814250040B043 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 460202422F2814250040B043;
+			remoteInfo = PHTV;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		46020A0A2F3000000040B043 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 460202422F2814250040B043 /* PHTV */;
+			targetProxy = 46020A0B2F3000000040B043 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		4602024C2F2814260040B043 /* Debug */ = {
@@ -428,6 +505,52 @@
 			};
 			name = Release;
 		};
+		46020A0C2F3000000040B043 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "-";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = F9XPW22T8M;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path",
+					"@loader_path/../Frameworks",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.phamhungtien.phtv.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PHTV.app/Contents/MacOS/PHTV";
+			};
+			name = Debug;
+		};
+		46020A0D2F3000000040B043 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "-";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = F9XPW22T8M;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path",
+					"@loader_path/../Frameworks",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.phamhungtien.phtv.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PHTV.app/Contents/MacOS/PHTV";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -445,6 +568,15 @@
 			buildConfigurations = (
 				4602024F2F2814260040B043 /* Debug */,
 				460202502F2814260040B043 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		46020A0E2F3000000040B043 /* Build configuration list for PBXNativeTarget "PHEngineTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				46020A0C2F3000000040B043 /* Debug */,
+				46020A0D2F3000000040B043 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

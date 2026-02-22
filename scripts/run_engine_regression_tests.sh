@@ -2,22 +2,11 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-BUILD_DIR="$ROOT_DIR/.build"
-BIN="$BUILD_DIR/engine_regression_tests"
+PROJECT="$ROOT_DIR/macOS/PHTV.xcodeproj"
 
-mkdir -p "$BUILD_DIR"
-
-clang++ \
-  -std=c++17 \
-  -O2 \
-  -Wno-deprecated-declarations \
-  -I"$ROOT_DIR/macOS/PHTV/Core/Engine" \
-  -I"$ROOT_DIR/macOS/PHTV/Core" \
-  "$ROOT_DIR/tests/engine/EnglishWordDetectorFallback.cpp" \
-  "$ROOT_DIR/macOS/PHTV/Core/Engine/Engine.cpp" \
-  "$ROOT_DIR/tests/engine/EngineRegressionTests.cpp" \
-  -o "$BIN"
-
-"$BIN" \
-  "$ROOT_DIR/macOS/PHTV/Resources/Dictionaries/en_dict.bin" \
-  "$ROOT_DIR/macOS/PHTV/Resources/Dictionaries/vi_dict.bin"
+xcodebuild \
+  -project "$PROJECT" \
+  -scheme PHTV \
+  -destination 'platform=macOS' \
+  test \
+  2>&1 | grep -E "Test Suite|Test Case|passed|failed|\*\* TEST"
