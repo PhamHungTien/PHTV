@@ -36,6 +36,8 @@
 				Core/Engine/EngineCoreLogic.inc,
 				Core/Engine/EngineDataTypes.inc,
 				Core/Engine/EngineCharacterTransform.inc,
+				Core/Engine/EngineCharacterLookup.inc,
+				Core/Engine/EngineVowelOps.inc,
 				Core/Engine/EngineMarkHandling.inc,
 				Core/Engine/EngineMarkHandlingVowelCheck.inc,
 				Core/Engine/EngineMarkHandlingModernMark.inc,
