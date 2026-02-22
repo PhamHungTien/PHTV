@@ -176,6 +176,9 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da tach nhanh SPACE trong key-event loop:
   - Nhanh `else if (data == KEY_SPACE)` duoc dua vao `Core/Engine/EngineKeyHandleEventSpace.inc`
   - Cum nay gom auto-English restore tren SPACE, macro priority va luong save-word/session-reset sau break key
+- Da tach hau xu ly SPACE:
+  - Phan finalize sau nhanh SPACE duoc dua vao `Core/Engine/EngineKeyHandleEventSpaceFinalize.inc`
+  - Cum nay gom clear macro-key, save word/special char va reset spell-checking flags sau break
 - Da tach nhanh DELETE trong key-event loop:
   - Nhanh `else if (data == KEY_DELETE)` duoc dua vao `Core/Engine/EngineKeyHandleEventDelete.inc`
   - Cum nay gom restore typing-state, rollback macro-key, va grammar refresh sau backspace/delete
