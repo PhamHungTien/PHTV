@@ -185,6 +185,9 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da tach nhanh main-flow trong key-event loop:
   - Nhanh `else { //START AND CHECK KEY }` duoc dua vao `Core/Engine/EngineKeyHandleEventMainFlow.inc`
   - Cum nay gom luong insert-state, special-key handling, grammar pass va cap nhat macro/uppercase state
+- Da tach hau xu ly main-flow:
+  - Phan grammar/restore/macro/uppercase/bracket sau main-flow duoc dua vao `Core/Engine/EngineKeyHandleEventMainFlowPost.inc`
+  - Muc tieu la tach rieng path quyet dinh key va path cap nhat state de de doi chieu khi port sang Swift
 - Da xoa C++ global runtime pointer bridge file:
   - Xoa `Bridge/Engine/PHTVEngineGlobals.cpp`
   - HookState duoc truy cap qua C bridge `phtvEngineHook*` (khong con pointer C++ trong Swift)
