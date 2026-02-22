@@ -128,6 +128,9 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da tach nhom restore-session helper khoi core logic:
   - `getEngineCharFromUnicode(...)` va `vRestoreSessionWithWord(...)` duoc dua vao `Core/Engine/EngineRestoreSession.inc`
   - `EngineCoreLogic.inc` include file nay o cuoi de de doc va de port dan sang Swift
+- Da tach nhom runtime adapters khoi `EngineCoreLogic.inc`:
+  - Cac helper snapshot runtime + detector/macro adapter dau file duoc gom vao `Core/Engine/EngineRuntimeAdapters.inc`
+  - Muc tieu: phan tach ro adapter layer va processing state machine de migrate theo cum nho
 - Da xoa C++ global runtime pointer bridge file:
   - Xoa `Bridge/Engine/PHTVEngineGlobals.cpp`
   - HookState duoc truy cap qua C bridge `phtvEngineHook*` (khong con pointer C++ trong Swift)
