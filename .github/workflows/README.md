@@ -23,7 +23,7 @@ File `release.yml` tự động build, sign và tạo release cho PHTV.
 | `release` | ubuntu-latest | Upload DMG/ZIP/checksums lên GitHub Releases |
 | `publish-appcast` | ubuntu-latest | Commit `docs/appcast.xml` đã được Sparkle ký |
 | `update-homebrew` | ubuntu-latest | Cập nhật Homebrew formula và sync tap |
-| `update-plist` | ubuntu-latest | Commit `macOS/PHTV/Info.plist` về main |
+| `update-plist` | ubuntu-latest | Commit `App/PHTV/Info.plist` về main |
 
 ### Cách sử dụng
 
@@ -96,7 +96,7 @@ Private key (keep secret, add to GitHub Secrets):
 [private key content]
 ```
 
-**Lưu ý**: Public key đã được thêm vào `PHTV/Info.plist` key `SUPublicEDKey`
+**Lưu ý**: Public key đã được thêm vào `App/PHTV/Info.plist` key `SUPublicEDKey`
 
 #### CERTIFICATES_P12
 

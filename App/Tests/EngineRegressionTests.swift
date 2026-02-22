@@ -88,6 +88,37 @@ final class EngineRegressionTests: XCTestCase {
         code == HookCodeState.restoreAndStartNewSession.rawValue
     }
 
+    private func decodeOutputCharacter(_ data: UInt32, codeTable: Int32) -> UInt16 {
+        let capsMask = EngineBitMask.caps
+        let pureCharacterMask = EngineBitMask.pureCharacter
+        let charCodeMask = EngineBitMask.charCode
+
+        if (data & pureCharacterMask) != 0 {
+            return UInt16(truncatingIfNeeded: data & ~capsMask)
+        }
+        if (data & charCodeMask) == 0 {
+            return EngineMacroKeyMap.character(for: data)
+        }
+        if codeTable == Int32(CodeTable.unicode.toIndex()) {
+            return UInt16(truncatingIfNeeded: data & 0xFFFF)
+        }
+        return EnginePackedData.lowByte(data)
+    }
+
+    private func hookOutputWord() -> String {
+        let count = Int(engineHookNewCharCount())
+        guard count > 0 else { return "" }
+        let codeTable = PHTVEngineRuntimeFacade.currentCodeTable()
+        var scalars: [UnicodeScalar] = []
+        scalars.reserveCapacity(count)
+        for i in stride(from: count - 1, through: 0, by: -1) {
+            let codePoint = decodeOutputCharacter(engineHookCharAt(Int32(i)), codeTable: codeTable)
+            guard codePoint != 0, let scalar = UnicodeScalar(Int(codePoint)) else { continue }
+            scalars.append(scalar)
+        }
+        return String(String.UnicodeScalarView(scalars))
+    }
+
     private func runSpaceCase(
         _ token: String,
         customEnglish: [String] = [],
@@ -128,6 +159,49 @@ final class EngineRegressionTests: XCTestCase {
         XCTAssertEqual(restored, expectRestore,
             "BREAK(key=\(breakKey),caps=\(breakCaps)): token='\(token)' expectRestore=\(expectRestore) got code=\(engineHookCode())",
             file: file, line: line)
+    }
+
+    private func runQuickConsonantSpaceCase(
+        _ token: String,
+        customEnglish: [String] = [],
+        quickStart: Bool,
+        quickEnd: Bool,
+        expectedOutput: String,
+        expectedBackspaceCount: Int,
+        file: StaticString = #filePath, line: UInt = #line
+    ) {
+        setCustomEnglishWords(customEnglish)
+        let savedQuickStart = PHTVEngineRuntimeFacade.quickStartConsonant()
+        let savedQuickEnd = PHTVEngineRuntimeFacade.quickEndConsonant()
+        defer {
+            PHTVEngineRuntimeFacade.setQuickStartConsonant(savedQuickStart)
+            PHTVEngineRuntimeFacade.setQuickEndConsonant(savedQuickEnd)
+        }
+
+        PHTVEngineRuntimeFacade.setQuickStartConsonant(quickStart ? 1 : 0)
+        PHTVEngineRuntimeFacade.setQuickEndConsonant(quickEnd ? 1 : 0)
+
+        engineInitialize()
+        feedWord(token)
+        engineHandleEvent(eventKeyboard, stateKeyDown, KEY_SPACE, 0, 0)
+
+        XCTAssertTrue(
+            isRestore(engineHookCode()),
+            "Quick consonant should trigger restore flow, got code=\(engineHookCode())",
+            file: file, line: line
+        )
+        XCTAssertEqual(
+            Int(engineHookBackspaceCount()),
+            expectedBackspaceCount,
+            "Unexpected backspace count for token='\(token)'",
+            file: file, line: line
+        )
+        XCTAssertEqual(
+            hookOutputWord(),
+            expectedOutput,
+            "SPACE quick-consonant mismatch for token='\(token)'",
+            file: file, line: line
+        )
     }
 
     // MARK: - Space tests
@@ -220,5 +294,40 @@ final class EngineRegressionTests: XCTestCase {
     func testWrongSpellingRestoresOnExclamationMark() {
         runWordBreakCase("user", expectRestore: true, autoRestoreEnglish: false,
                          breakKey: KEY_1, breakCaps: 1)
+    }
+
+    // MARK: - Quick consonant tests
+
+    func testQuickStartConsonantWorksWithAutoRestoreEnglishOn() {
+        runQuickConsonantSpaceCase(
+            "fan",
+            customEnglish: ["fan"],
+            quickStart: true,
+            quickEnd: false,
+            expectedOutput: "phan",
+            expectedBackspaceCount: 3
+        )
+    }
+
+    func testQuickEndConsonantWorksWithAutoRestoreEnglishOn() {
+        runQuickConsonantSpaceCase(
+            "nah",
+            customEnglish: ["nah"],
+            quickStart: false,
+            quickEnd: true,
+            expectedOutput: "nh",
+            expectedBackspaceCount: 1
+        )
+    }
+
+    func testQuickStartAndQuickEndWorkTogetherWithAutoRestoreEnglishOn() {
+        runQuickConsonantSpaceCase(
+            "fag",
+            customEnglish: ["fag"],
+            quickStart: true,
+            quickEnd: true,
+            expectedOutput: "phang",
+            expectedBackspaceCount: 3
+        )
     }
 }
