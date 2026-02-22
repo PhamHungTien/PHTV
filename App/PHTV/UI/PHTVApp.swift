@@ -38,15 +38,29 @@ struct PHTVApp: App {
 
     var body: some Scene {
         // Menu bar extra - native SwiftUI menu bar presentation.
-        MenuBarExtra(
-            "PHTV",
-            image: menuBarIconAssetName(
+        MenuBarExtra {
+            StatusBarMenuView()
+                .environmentObject(appState)
+        } label: {
+            let iconName = menuBarIconAssetName(
                 isEnabled: appState.isEnabled,
                 useVietnameseIcon: appState.useVietnameseMenubarIcon
             )
-        ) {
-            StatusBarMenuView()
-                .environmentObject(appState)
+            let iconSize = manualMenuBarIconSize(appState.menuBarIconSize)
+            let iconRenderToken = "\(iconName)-\(Int((iconSize * 10).rounded()))"
+
+            if let renderedIcon = makeMenuBarIconImage(named: iconName, size: iconSize) {
+                Image(nsImage: renderedIcon)
+                    .renderingMode(.template)
+                    .id(iconRenderToken)
+            } else {
+                Image(iconName)
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: iconSize, height: iconSize)
+                    .id("\(iconRenderToken)-fallback")
+            }
         }
         .menuBarExtraStyle(.menu)
 
@@ -72,4 +86,59 @@ private func menuBarIconAssetName(isEnabled: Bool, useVietnameseIcon: Bool) -> S
         return "menubar_vietnamese"
     }
     return "menubar_icon"
+}
+
+private func manualMenuBarIconSize(_ requestedSize: Double) -> CGFloat {
+    let bounds = menuBarIconSizeBounds()
+    guard requestedSize.isFinite else {
+        return min(max(CGFloat(Defaults.menuBarIconSize), bounds.lowerBound), bounds.upperBound)
+    }
+    return min(max(CGFloat(requestedSize), bounds.lowerBound), bounds.upperBound)
+}
+
+private func menuBarIconSizeBounds() -> ClosedRange<CGFloat> {
+    let minSize: CGFloat = 12.0
+    let nativeCap = NSStatusBar.system.thickness - 4.0
+    let maxSize = max(minSize, nativeCap)
+    return minSize...maxSize
+}
+
+@MainActor
+private var menuBarIconImageCache: [String: NSImage] = [:]
+
+@MainActor
+private func makeMenuBarIconImage(named iconName: String, size: CGFloat) -> NSImage? {
+    let bounds = menuBarIconSizeBounds()
+    let quantizedSize = min(max((size * 10).rounded() / 10, bounds.lowerBound), bounds.upperBound)
+    let cacheKey = "\(iconName)-\(quantizedSize)"
+
+    if let cachedImage = menuBarIconImageCache[cacheKey] {
+        return cachedImage
+    }
+
+    guard let baseIcon = NSImage(named: NSImage.Name(iconName))?.copy() as? NSImage else {
+        return nil
+    }
+    baseIcon.isTemplate = true
+
+    let targetSize = NSSize(width: quantizedSize, height: quantizedSize)
+    let renderedImage = NSImage(size: targetSize)
+    renderedImage.lockFocus()
+    baseIcon.draw(
+        in: NSRect(origin: .zero, size: targetSize),
+        from: .zero,
+        operation: .sourceOver,
+        fraction: 1.0,
+        respectFlipped: true,
+        hints: [.interpolation: NSImageInterpolation.high]
+    )
+    renderedImage.unlockFocus()
+    renderedImage.isTemplate = true
+    renderedImage.size = targetSize
+
+    if menuBarIconImageCache.count > 256 {
+        menuBarIconImageCache.removeAll(keepingCapacity: true)
+    }
+    menuBarIconImageCache[cacheKey] = renderedImage
+    return renderedImage
 }

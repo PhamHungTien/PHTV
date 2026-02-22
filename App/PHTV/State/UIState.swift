@@ -10,20 +10,6 @@ import SwiftUI
 import Combine
 import AppKit
 
-private enum MenuBarIconMetrics {
-    static let minSize: Double = 12.0
-    static let hardMaxSize: Double = 18.0
-
-    static var nativeMaxSize: Double {
-        let statusBarBound = Double(NSStatusBar.system.thickness - 4.0)
-        return max(minSize, min(hardMaxSize, statusBarBound))
-    }
-
-    static func clamp(_ value: Double) -> Double {
-        min(max(value, minSize), nativeMaxSize)
-    }
-}
-
 /// Manages UI settings, hotkeys, and display preferences
 @MainActor
 final class UIState: ObservableObject {
@@ -59,6 +45,68 @@ final class UIState: ObservableObject {
         NSLog("[PHTV Live] %@", message)
     }
 
+    private static let legacyMenuBarIconSizeKeys: [String] = [
+        "MenuBarIconSize",
+        "menuBarIconSize",
+        "StatusBarIconSize",
+        "statusBarIconSize",
+        "vStatusBarIconSize"
+    ]
+
+    private func menuBarIconSizeBounds() -> ClosedRange<Double> {
+        let minSize = 12.0
+        let nativeCap = Double(NSStatusBar.system.thickness - 4.0)
+        let maxSize = max(minSize, nativeCap)
+        return minSize...maxSize
+    }
+
+    private func sanitizeMenuBarIconSize(_ value: Double) -> Double {
+        let bounds = menuBarIconSizeBounds()
+        guard value.isFinite else {
+            return min(max(Defaults.menuBarIconSize, bounds.lowerBound), bounds.upperBound)
+        }
+        return min(max(value, bounds.lowerBound), bounds.upperBound)
+    }
+
+    private func decodeDoublePreference(_ value: Any?) -> Double? {
+        if let doubleValue = value as? Double {
+            return doubleValue
+        }
+        if let numberValue = value as? NSNumber {
+            return numberValue.doubleValue
+        }
+        if let stringValue = value as? String {
+            return Double(stringValue)
+        }
+        return nil
+    }
+
+    private func persistedPreferenceValue(_ key: String, defaults: UserDefaults) -> Any? {
+        guard let bundleIdentifier = Bundle.main.bundleIdentifier,
+              let persistedDomain = defaults.persistentDomain(forName: bundleIdentifier) else {
+            return nil
+        }
+        return persistedDomain[key]
+    }
+
+    private func resolveMenuBarIconSize(from defaults: UserDefaults) -> (value: Double, sourceKey: String?) {
+        if let currentValue = decodeDoublePreference(
+            persistedPreferenceValue(UserDefaultsKey.menuBarIconSize, defaults: defaults)
+        ) {
+            return (currentValue, UserDefaultsKey.menuBarIconSize)
+        }
+
+        for legacyKey in Self.legacyMenuBarIconSizeKeys {
+            if let legacyValue = decodeDoublePreference(
+                persistedPreferenceValue(legacyKey, defaults: defaults)
+            ) {
+                return (legacyValue, legacyKey)
+            }
+        }
+
+        return (Defaults.menuBarIconSize, nil)
+    }
+
     init() {}
 
     // MARK: - Load/Save Settings
@@ -88,13 +136,16 @@ final class UIState: ObservableObject {
         beepVolume = defaults.double(forKey: UserDefaultsKey.beepVolume, default: Defaults.beepVolume)
         liveLog("Loaded beepVolume: \(beepVolume)")
 
-        let loadedMenuBarIconSize = defaults.double(
-            forKey: UserDefaultsKey.menuBarIconSize,
-            default: Defaults.menuBarIconSize
-        )
-        menuBarIconSize = MenuBarIconMetrics.clamp(loadedMenuBarIconSize)
-        if loadedMenuBarIconSize != menuBarIconSize {
+        let resolvedMenuBarIconSize = resolveMenuBarIconSize(from: defaults)
+        let loadedMenuBarIconSize = resolvedMenuBarIconSize.value
+        menuBarIconSize = sanitizeMenuBarIconSize(loadedMenuBarIconSize)
+        let needsWriteBack = loadedMenuBarIconSize != menuBarIconSize ||
+            resolvedMenuBarIconSize.sourceKey != UserDefaultsKey.menuBarIconSize
+        if needsWriteBack {
             defaults.set(menuBarIconSize, forKey: UserDefaultsKey.menuBarIconSize)
+        }
+        if let sourceKey = resolvedMenuBarIconSize.sourceKey, sourceKey != UserDefaultsKey.menuBarIconSize {
+            liveLog("Migrated menuBarIconSize from legacy key '\(sourceKey)'")
         }
         liveLog("Loaded menuBarIconSize: \(menuBarIconSize)")
 
@@ -115,7 +166,7 @@ final class UIState: ObservableObject {
 
         // Save audio and display settings
         defaults.set(beepVolume, forKey: UserDefaultsKey.beepVolume)
-        defaults.set(MenuBarIconMetrics.clamp(menuBarIconSize), forKey: UserDefaultsKey.menuBarIconSize)
+        defaults.set(sanitizeMenuBarIconSize(menuBarIconSize), forKey: UserDefaultsKey.menuBarIconSize)
         defaults.set(useVietnameseMenubarIcon, forKey: UserDefaultsKey.useVietnameseMenubarIcon)
 
     }
@@ -204,15 +255,15 @@ final class UIState: ObservableObject {
         $menuBarIconSize
             .sink { [weak self] value in
                 guard let self = self else { return }
-                let clamped = MenuBarIconMetrics.clamp(value)
-                if clamped != value {
-                    self.menuBarIconSize = clamped
+                let sanitized = self.sanitizeMenuBarIconSize(value)
+                if sanitized != value {
+                    self.menuBarIconSize = sanitized
                     return
                 }
                 guard !self.isLoadingSettings else { return }
                 NotificationCenter.default.post(
                     name: NotificationName.menuBarIconSizeChanged,
-                    object: NSNumber(value: clamped)
+                    object: NSNumber(value: sanitized)
                 )
             }.store(in: &cancellables)
 
@@ -243,9 +294,9 @@ final class UIState: ObservableObject {
                 guard let self = self, !self.isLoadingSettings else { return }
                 SettingsObserver.shared.suspendNotifications()
                 let defaults = UserDefaults.standard
-                let clamped = MenuBarIconMetrics.clamp(value)
-                defaults.set(clamped, forKey: UserDefaultsKey.menuBarIconSize)
-                self.liveLog("Saved menuBarIconSize: \(clamped)")
+                let sanitized = self.sanitizeMenuBarIconSize(value)
+                defaults.set(sanitized, forKey: UserDefaultsKey.menuBarIconSize)
+                self.liveLog("Saved menuBarIconSize: \(sanitized)")
             }.store(in: &cancellables)
 
         // Debounced persistence for Vietnamese menubar icon

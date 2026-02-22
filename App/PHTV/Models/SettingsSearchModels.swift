@@ -137,6 +137,9 @@ struct SettingsItem: Identifiable {
             title: "Hiển thị icon chữ V", iconName: "flag.fill", tab: .system,
             keywords: ["vietnamese icon", "menubar icon", "thanh menu", "icon chữ V", "giao diện", "menu bar", "status bar"]),
         SettingsItem(
+            title: "Kích cỡ icon thanh menu", iconName: "arrow.up.left.and.arrow.down.right", tab: .system,
+            keywords: ["icon size", "menubar", "thanh menu", "kích thước", "giao diện", "resize", "menu bar"]),
+        SettingsItem(
             title: "Hiển thị icon trên Dock", iconName: "app.fill", tab: .system,
             keywords: ["dock icon", "show icon", "hiển thị", "dock", "giao diện", "app icon"]),
         SettingsItem(
