@@ -49,6 +49,7 @@
 					Core/Engine/EngineKeyHandleEventDelete.inc,
 					Core/Engine/EngineKeyHandleEventMainFlow.inc,
 					Core/Engine/EngineKeyHandleEventMainFlowPost.inc,
+					Core/Engine/EngineKeyHandleEventMainFlowSessionPrep.inc,
 					Core/Engine/EngineKeyHandleEventMainFlowSpellGate.inc,
 					Core/Engine/EngineGrammarCheck.inc,
 				Core/Engine/EngineRestoreSession.inc,
