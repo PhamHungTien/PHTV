@@ -1489,7 +1489,6 @@ final class PHTVVietnameseEngine {
 
     func isAutoRestoreWordBreak(event: VKeyEvent, state: VKeyEventState, data: UInt16, capsStatus: UInt8) -> Bool {
         isWordBreak(event: event, state: state, data: data) ||
-        isBracketPunctuationBreak(data) ||
         isShiftedNumericPunctuationBreak(data, capsStatus)
     }
 
