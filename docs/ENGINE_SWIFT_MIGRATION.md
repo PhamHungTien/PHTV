@@ -134,6 +134,9 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da tach nhom word-break/auto-restore heuristics:
   - Cac helper `isWordBreak(...)`, `isMacroBreakCode(...)` va nhom phan tich token English duoc dua vao `Core/Engine/EngineWordBreakHeuristics.inc`
   - `EngineCoreLogic.inc` giu callsite, con heuristic duoc tach rieng de de doi chieu voi Swift implementation
+- Da tach nhom session bootstrap:
+  - `isSpellCheckingEnabled`, `setSpellCheckingEnabled`, `vPrimeUpperCaseFirstChar`, `vKeyInit`, `setKeyData` duoc gom vao `Core/Engine/EngineSessionBootstrap.inc`
+  - `EngineCoreLogic.inc` giam coupling giua khoi bootstrap va khoi spelling/state-machine chinh
 - Da xoa C++ global runtime pointer bridge file:
   - Xoa `Bridge/Engine/PHTVEngineGlobals.cpp`
   - HookState duoc truy cap qua C bridge `phtvEngineHook*` (khong con pointer C++ trong Swift)
