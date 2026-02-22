@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-PROJECT="$ROOT_DIR/macOS/PHTV.xcodeproj"
+PROJECT="$ROOT_DIR/App/PHTV.xcodeproj"
 
 xcodebuild \
   -project "$PROJECT" \

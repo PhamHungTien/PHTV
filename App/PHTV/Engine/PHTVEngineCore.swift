@@ -224,7 +224,7 @@ final class PHTVVietnameseEngine {
     }
 
     func findMacro(_ macroKey: inout [UInt32], _ macroContent: inout [UInt32]) -> Bool {
-        var normalized = macroKey.map { getCharacterCode($0) }
+        let normalized = macroKey.map { getCharacterCode($0) }
         let keyCount = Int32(normalized.count)
         let required = normalized.withUnsafeBufferPointer { ptr in
             phtvFindMacroContentForNormalizedKeys(ptr.baseAddress, keyCount, phtvRuntimeAutoCapsMacroValue(), nil, 0)
@@ -1432,7 +1432,7 @@ final class PHTVVietnameseEngine {
     func vRestoreSessionWithWord(_ word: [UInt16]) {
         let pendingKeys = Array(keyStates.prefix(stateIdx))
         startNewSession()
-        for (i, ch) in word.prefix(ENGINE_MAX_BUFF).enumerated() {
+        for (_, ch) in word.prefix(ENGINE_MAX_BUFF).enumerated() {
             let engineChar = getEngineCharFromUnicode(ch)
             typingWord[idx] = engineChar
             keyStates[stateIdx] = engineChar

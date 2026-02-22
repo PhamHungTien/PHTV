@@ -9,7 +9,7 @@ import AppKit
 
 let PHTVBundleIdentifier = "com.phamhungtien.phtv"
 
-@objcMembers
+@MainActor @objcMembers
 class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var statusItem: NSStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     var statusMenu: NSMenu = NSMenu()

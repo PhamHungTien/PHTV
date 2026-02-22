@@ -30,7 +30,7 @@ jobs:
           xcode-version: latest-stable
 
       - name: Build
-        working-directory: macOS
+        working-directory: App
         run: |
           set -o pipefail
           xcodebuild build \
@@ -53,5 +53,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ci-build-log
-          path: macOS/build.log
+          path: App/build.log
           retention-days: 7

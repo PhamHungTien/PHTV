@@ -294,7 +294,9 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.handleUserDefaultsDidChange(nil)
+            MainActor.assumeIsolated {
+                self?.handleUserDefaultsDidChange(nil)
+            }
         }
 
         registerSparkleObservers()

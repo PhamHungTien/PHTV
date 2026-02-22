@@ -45,7 +45,7 @@ jobs:
       - name: Build (manual for CodeQL)
         run: |
           xcodebuild build \
-            -project macOS/PHTV.xcodeproj \
+            -project App/PHTV.xcodeproj \
             -scheme PHTV \
             -configuration Debug \
             -destination 'platform=macOS' \

@@ -78,8 +78,8 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           BUILD="${{ steps.set_versions.outputs.build_number }}"
 
-          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" macOS/PHTV/Info.plist
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD" macOS/PHTV/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" App/PHTV/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD" App/PHTV/Info.plist
 
           echo "✅ Updated Info.plist: $VERSION ($BUILD)"
 
@@ -137,7 +137,7 @@ jobs:
           echo "keychain=$KEYCHAIN_PATH" >> $GITHUB_OUTPUT
 
       - name: Build
-        working-directory: macOS
+        working-directory: App
         run: |
           set -o pipefail
           echo "🔐 Building with mandatory code signing..."
@@ -186,7 +186,7 @@ jobs:
 
       - name: Create DMG
         id: dmg
-        working-directory: macOS
+        working-directory: App
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           APP_PATH="./build/Build/Products/Release/PHTV.app"
@@ -215,7 +215,7 @@ jobs:
 
       - name: Create ZIP
         id: zip
-        working-directory: macOS
+        working-directory: App
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           APP_PATH="./build/Build/Products/Release/PHTV.app"
@@ -226,14 +226,14 @@ jobs:
           echo "✅ ZIP created: $ZIP_NAME"
 
       - name: Download Sparkle
-        working-directory: macOS
+        working-directory: App
         run: |
           curl -sL "https://github.com/sparkle-project/Sparkle/releases/download/${{ env.SPARKLE_VERSION }}/Sparkle-for-Swift-Package-Manager.zip" -o sparkle.zip
           unzip -q sparkle.zip -d /tmp/Sparkle
           echo "✅ Sparkle downloaded"
 
       - name: Generate Sparkle appcast
-        working-directory: macOS
+        working-directory: App
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
@@ -354,14 +354,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dmg
-          path: macOS/${{ steps.dmg.outputs.name }}
+          path: App/${{ steps.dmg.outputs.name }}
           retention-days: 1
 
       - name: Upload ZIP artifact
         uses: actions/upload-artifact@v4
         with:
           name: zip
-          path: macOS/${{ steps.zip.outputs.name }}
+          path: App/${{ steps.zip.outputs.name }}
           retention-days: 1
 
       - name: Upload appcast artifact
@@ -376,7 +376,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-log
-          path: macOS/build.log
+          path: App/build.log
           retention-days: 7
 
   release:
@@ -550,13 +550,13 @@ jobs:
           version = os.environ['VERSION']
           build = os.environ['BUILD_NUMBER']
 
-          with open('macOS/PHTV/Info.plist', 'rb') as f:
+          with open('App/PHTV/Info.plist', 'rb') as f:
               plist = plistlib.load(f)
 
           plist['CFBundleShortVersionString'] = version
           plist['CFBundleVersion'] = build
 
-          with open('macOS/PHTV/Info.plist', 'wb') as f:
+          with open('App/PHTV/Info.plist', 'wb') as f:
               plistlib.dump(plist, f)
 
           print(f"✅ Updated Info.plist to {version} ({build})")
@@ -564,7 +564,7 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add macOS/PHTV/Info.plist
+          git add App/PHTV/Info.plist
 
           if git diff --cached --quiet; then
             echo "No changes to Info.plist"
