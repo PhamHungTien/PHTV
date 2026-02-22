@@ -74,7 +74,7 @@ struct AboutView: View {
                         icon: "swift",
                         iconColor: .accentColor,
                         title: "Công nghệ sử dụng",
-                        value: "Swift, SwiftUI & C/C++"
+                        value: "Swift & SwiftUI"
                     )
                 }
                 .padding(.horizontal, 20)

@@ -3,7 +3,7 @@
 //  PHTV
 //
 //  Runtime helpers for Smart Switch state transitions and persistence.
-//  Swift-native replacement for the old C++ SmartSwitch bridge.
+//  Swift-native SmartSwitch state transition and persistence runtime.
 //
 
 import Foundation

@@ -142,7 +142,7 @@ enum DebugSelfTests {
             unicodeLookup?.variantIndex == 1 &&
             unicodeVariants == 14 &&
             vniCharacter == 0xE261,
-            "Swift/C++ interop check should pass"
+            "Engine interop check should pass"
         )
         PHTVLogger.shared.debug(
             "[CxxInterop] low=\(low), high=\(high), spaceKey=\(spaceKey), maxBuffer=\(maxBuffer), macroMap=true, codeTableMap=true, valid=true"

@@ -2,7 +2,7 @@
 //  PHTVInputSourceLanguageService.swift
 //  PHTV
 //
-//  Shared input-source language detection for Swift and ObjC++ call sites.
+//  Shared input-source language detection for Swift call sites.
 //
 
 import Carbon
