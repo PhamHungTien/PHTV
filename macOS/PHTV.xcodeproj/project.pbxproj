@@ -49,6 +49,8 @@
 				Core/Engine/EngineStandaloneAndCaps.inc,
 				Core/Engine/EngineMainKeyHandling.inc,
 				Core/Engine/EngineRestoreAndQuickConsonant.inc,
+				Core/Engine/EngineRestoreOps.inc,
+				Core/Engine/EngineQuickConsonant.inc,
 				Core/Engine/EngineEnglishMode.inc,
 				Core/Engine/EngineKeyHandleEvent.inc,
 				Core/Engine/EngineKeyHandleEventWordBreak.inc,

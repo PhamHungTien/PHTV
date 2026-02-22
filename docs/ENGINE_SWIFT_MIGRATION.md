@@ -332,6 +332,10 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Build + smoke test pass.
 - Regression test pass tren bo test key-event parity.
 
+### Split EngineRestoreAndQuickConsonant into 2 sub-includes
+- `EngineRestoreOps.inc`: handleQuickTelex, restoreToRawKeys, checkRestoreIfWrongSpelling
+- `EngineQuickConsonant.inc`: vTempOff*, vSetCheckSpelling, vRestoreToRawKeys, checkQuickConsonant
+
 ### Split EngineMarkHandlingInsertChars into 3 sub-includes
 - `EngineMarkHandlingInsertD.inc`: insertD
 - `EngineMarkHandlingInsertAOE.inc`: insertAOE
