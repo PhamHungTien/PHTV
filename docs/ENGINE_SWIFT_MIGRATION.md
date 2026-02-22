@@ -170,6 +170,9 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da tach nhanh word-break trong key-event loop:
   - Nhanh `if ((IS_NUMBER_KEY...) || otherControlKey || isAutoRestoreBreakKey || ...)` duoc dua vao `Core/Engine/EngineKeyHandleEventWordBreak.inc`
   - Muc tieu la co lap nhanh macro/auto-English/quick-consonant trong word-break de tiep tuc port theo tung behavior block
+- Da tach hau xu ly word-break:
+  - Phan cleanup session/macro/uppercase sau word-break duoc dua vao `Core/Engine/EngineKeyHandleEventWordBreakPost.inc`
+  - Muc tieu la tach rieng decision path va post-processing path de de doi chieu regression
 - Da tach nhanh SPACE trong key-event loop:
   - Nhanh `else if (data == KEY_SPACE)` duoc dua vao `Core/Engine/EngineKeyHandleEventSpace.inc`
   - Cum nay gom auto-English restore tren SPACE, macro priority va luong save-word/session-reset sau break key
