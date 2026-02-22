@@ -152,6 +152,9 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da tach nhom mark/diacritic operations:
   - `canFixVowelWithDiacriticsForMark`, `handleModernMark`, `handleOldMark`, `insertMark`, `insertD`, `insertAOE`, `insertW` duoc dua vao `Core/Engine/EngineMarkHandling.inc`
   - Cum nay chua toan bo quy tac dat dau/bien am Telex-VNI va duoc tach rieng de port theo behavior regression
+- Da tach nhom standalone/caps helpers:
+  - `reverseLastStandaloneChar`, `checkForStandaloneChar`, `upperCaseFirstCharacter` duoc dua vao `Core/Engine/EngineStandaloneAndCaps.inc`
+  - Cum nay gom logic ky tu standalone ([, ]) va auto-cap helper, tach rieng de giam coupling trong state machine chinh
 - Da xoa C++ global runtime pointer bridge file:
   - Xoa `Bridge/Engine/PHTVEngineGlobals.cpp`
   - HookState duoc truy cap qua C bridge `phtvEngineHook*` (khong con pointer C++ trong Swift)
