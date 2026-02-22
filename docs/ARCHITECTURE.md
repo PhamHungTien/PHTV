@@ -23,7 +23,7 @@ App/PHTV/
 └── Utilities/                # Tiện ích dùng chung (logger, cache, constants)
 
 App/Tests/                    # Engine regression tests (XCTest)
-scripts/tools/                # Build-time tools (generate_dict_binary.py, etc.)
+scripts/tools/                # Build-time tools (generate_dict_binary.swift, etc.)
 ```
 
 ## Luồng xử lý sự kiện

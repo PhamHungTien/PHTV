@@ -108,7 +108,7 @@ PHTV/
 │   └── PHTV.xcodeproj/     # Xcode project
 ├── docs/                   # Tài liệu, kiến trúc, hình ảnh
 ├── scripts/                # Scripts tự động hóa (build, release)
-│   └── tools/              # Build tools (generate_dict_binary.py, etc.)
+│   └── tools/              # Build tools (generate_dict_binary.swift, etc.)
 └── README.md
 ```
 

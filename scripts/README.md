@@ -6,7 +6,7 @@ Release automation is fully managed by GitHub Actions in:
 
 ## Remaining local tools
 
-### `tools/generate_dict_binary.py`
+### `tools/generate_dict_binary.swift`
 Build-time utility to regenerate dictionary binary assets when dictionary source data changes.
 
 ## Notes
