@@ -677,14 +677,21 @@ final class PHTVVietnameseEngine {
 
     // MARK: - Character lookup (EngineCharacterLookup.inc)
 
-    func checkCorrectVowel(_ charset: [[UInt16]], _ charsetIdx: Int, _ k: inout Int, _ markKey: UInt16) {
+    func checkCorrectVowel(
+        _ charset: [[UInt16]],
+        _ charsetIdx: Int,
+        _ k: inout Int,
+        _ markKey: UInt16,
+        allowEndConsonantPatternOverride: Bool? = nil
+    ) {
         if idx >= 2 && chr(idx - 1) == KEY_U && chr(idx - 2) == KEY_Q { isCorect = false; return }
         k = idx - 1
         let quickEnd = phtvRuntimeQuickEndConsonantEnabled() != 0
+        let allowEndConsonantPattern = allowEndConsonantPatternOverride ?? (quickEnd || isMarkKey(markKey))
         let row = charset[charsetIdx]
         var j = row.count - 1
         while j >= 0 {
-            let rc = row[j] & ~(quickEnd ? END_CONSONANT_MASK : 0)
+            let rc = row[j] & ~(allowEndConsonantPattern ? END_CONSONANT_MASK : 0)
             if rc != chr(k) { isCorect = false; return }
             k -= 1
             if k < 0 { break }
@@ -1349,6 +1356,26 @@ final class PHTVVietnameseEngine {
         return false
     }
 
+    func canApplyMarkOnCurrentWord(_ markKey: UInt16) -> Bool {
+        guard isMarkKey(markKey), idx > 0 else { return false }
+        for (_, patterns) in vnVowelForMark {
+            var k = idx
+            for (rowIndex, row) in patterns.enumerated() {
+                if idx < row.count { continue }
+                isCorect = true
+                checkCorrectVowel(
+                    patterns,
+                    rowIndex,
+                    &k,
+                    markKey,
+                    allowEndConsonantPatternOverride: true
+                )
+                if isCorect { return true }
+            }
+        }
+        return false
+    }
+
     // MARK: - Quick consonant (EngineQuickConsonant.inc)
 
     func checkQuickConsonant() -> Bool {
@@ -1896,7 +1923,10 @@ final class PHTVVietnameseEngine {
             checkSpelling(forceCheckVowel: true)
             if tempDisableKey && allowMarkDespiteTempDisable {
                 let allowToneOnInvalid = spellingOK && !spellingVowelOK && canFixVowelWithDiacriticsForMark()
-                if !allowToneOnInvalid { allowSpecialDespiteTempDisable = false }
+                let allowToneWithEndConsonantPattern = canApplyMarkOnCurrentWord(data)
+                if !allowToneOnInvalid && !allowToneWithEndConsonantPattern {
+                    allowSpecialDespiteTempDisable = false
+                }
             }
         }
 

@@ -39,6 +39,7 @@ final class EngineRegressionTests: XCTestCase {
         PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(1)
         PHTVEngineRuntimeFacade.setQuickStartConsonant(0)
         PHTVEngineRuntimeFacade.setQuickEndConsonant(0)
+        PHTVEngineRuntimeFacade.setUpperCaseFirstChar(0)
         PHTVEngineRuntimeFacade.setUseMacro(0)
         phtvCustomDictionaryClear()
         engineInitialize()
@@ -90,6 +91,14 @@ final class EngineRegressionTests: XCTestCase {
         }
     }
 
+    private func feedWord(_ token: String, rendered: inout String) {
+        for ch in token {
+            let code = keyCode(for: ch)
+            engineHandleEvent(eventKeyboard, stateKeyDown, code, 0, 0)
+            applyHookOutput(for: code, caps: 0, to: &rendered)
+        }
+    }
+
     private func isRestore(_ code: Int32) -> Bool {
         code == HookCodeState.restore.rawValue ||
         code == HookCodeState.restoreAndStartNewSession.rawValue
@@ -124,6 +133,63 @@ final class EngineRegressionTests: XCTestCase {
             scalars.append(scalar)
         }
         return String(String.UnicodeScalarView(scalars))
+    }
+
+    private func literalOutput(for keyCode: UInt16, caps: UInt8) -> String {
+        switch keyCode {
+        case KEY_A: return caps != 0 ? "A" : "a"
+        case KEY_B: return caps != 0 ? "B" : "b"
+        case KEY_C: return caps != 0 ? "C" : "c"
+        case KEY_D: return caps != 0 ? "D" : "d"
+        case KEY_E: return caps != 0 ? "E" : "e"
+        case KEY_F: return caps != 0 ? "F" : "f"
+        case KEY_G: return caps != 0 ? "G" : "g"
+        case KEY_H: return caps != 0 ? "H" : "h"
+        case KEY_I: return caps != 0 ? "I" : "i"
+        case KEY_J: return caps != 0 ? "J" : "j"
+        case KEY_K: return caps != 0 ? "K" : "k"
+        case KEY_L: return caps != 0 ? "L" : "l"
+        case KEY_M: return caps != 0 ? "M" : "m"
+        case KEY_N: return caps != 0 ? "N" : "n"
+        case KEY_O: return caps != 0 ? "O" : "o"
+        case KEY_P: return caps != 0 ? "P" : "p"
+        case KEY_Q: return caps != 0 ? "Q" : "q"
+        case KEY_R: return caps != 0 ? "R" : "r"
+        case KEY_S: return caps != 0 ? "S" : "s"
+        case KEY_T: return caps != 0 ? "T" : "t"
+        case KEY_U: return caps != 0 ? "U" : "u"
+        case KEY_V: return caps != 0 ? "V" : "v"
+        case KEY_W: return caps != 0 ? "W" : "w"
+        case KEY_X: return caps != 0 ? "X" : "x"
+        case KEY_Y: return caps != 0 ? "Y" : "y"
+        case KEY_Z: return caps != 0 ? "Z" : "z"
+        case KEY_0: return "0"
+        case KEY_1: return "1"
+        case KEY_2: return "2"
+        case KEY_3: return "3"
+        case KEY_4: return "4"
+        case KEY_5: return "5"
+        case KEY_6: return "6"
+        case KEY_7: return "7"
+        case KEY_8: return "8"
+        case KEY_9: return "9"
+        case KEY_SPACE: return " "
+        default: return ""
+        }
+    }
+
+    private func applyHookOutput(for keyCode: UInt16, caps: UInt8, to rendered: inout String) {
+        if engineHookCode() == HookCodeState.doNothing.rawValue {
+            rendered += literalOutput(for: keyCode, caps: caps)
+            return
+        }
+        let backspaces = Int(engineHookBackspaceCount())
+        if backspaces > 0 {
+            for _ in 0..<min(backspaces, rendered.count) {
+                rendered.removeLast()
+            }
+        }
+        rendered += hookOutputWord()
     }
 
     private func runSpaceCase(
@@ -223,6 +289,26 @@ final class EngineRegressionTests: XCTestCase {
         )
     }
 
+    private func runMarkAfterKCase(
+        _ token: String,
+        expectedOutput: String,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        engineInitialize()
+        var rendered = ""
+        feedWord(token, rendered: &rendered)
+        engineHandleEvent(eventKeyboard, stateKeyDown, KEY_S, 0, 0)
+        applyHookOutput(for: KEY_S, caps: 0, to: &rendered)
+        XCTAssertEqual(
+            rendered,
+            expectedOutput,
+            "MARK-after-k mismatch for token='\(token)'",
+            file: file,
+            line: line
+        )
+    }
+
     // MARK: - Built-in dictionary regressions (Issue #135)
 
     func testDakLakBuiltInTelexFormsPersistAfterDictionaryClear() {
@@ -243,6 +329,14 @@ final class EngineRegressionTests: XCTestCase {
                 "Built-in Vietnamese form should persist after custom load: \(token)"
             )
         }
+    }
+
+    func testLakAcceptsKsOrderingForMark() {
+        runMarkAfterKCase("lawk", expectedOutput: "lắk")
+    }
+
+    func testDakAcceptsKsOrderingForMark() {
+        runMarkAfterKCase("ddawk", expectedOutput: "đắk")
     }
 
     // MARK: - Space tests
