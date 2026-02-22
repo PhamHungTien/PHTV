@@ -31,6 +31,7 @@ final class EngineRegressionTests: XCTestCase {
         // Reset runtime to defaults matching the C++ test binary defaults
         PHTVEngineRuntimeFacade.setCurrentInputType(0)          // Telex
         PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(1)
+        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(0)
         PHTVEngineRuntimeFacade.setCheckSpelling(1)
         PHTVEngineRuntimeFacade.setUseModernOrthography(1)
         PHTVEngineRuntimeFacade.setQuickTelex(0)
@@ -124,12 +125,18 @@ final class EngineRegressionTests: XCTestCase {
         customEnglish: [String] = [],
         expectRestore: Bool,
         autoRestoreEnglish: Bool = true,
+        restoreIfWrongSpelling: Bool = false,
         file: StaticString = #filePath, line: UInt = #line
     ) {
         setCustomEnglishWords(customEnglish)
         let saved = PHTVEngineRuntimeFacade.autoRestoreEnglishWord()
+        let savedRestoreIfWrongSpelling = PHTVEngineRuntimeFacade.restoreIfWrongSpelling()
         PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(autoRestoreEnglish ? 1 : 0)
-        defer { PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(saved) }
+        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(restoreIfWrongSpelling ? 1 : 0)
+        defer {
+            PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(saved)
+            PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(savedRestoreIfWrongSpelling)
+        }
         engineInitialize()
         feedWord(token)
         engineHandleEvent(eventKeyboard, stateKeyDown, KEY_SPACE, 0, 0)
@@ -144,14 +151,20 @@ final class EngineRegressionTests: XCTestCase {
         customEnglish: [String] = [],
         expectRestore: Bool,
         autoRestoreEnglish: Bool = true,
+        restoreIfWrongSpelling: Bool = false,
         breakKey: UInt16 = KEY_DOT,
         breakCaps: UInt8 = 0,
         file: StaticString = #filePath, line: UInt = #line
     ) {
         setCustomEnglishWords(customEnglish)
         let saved = PHTVEngineRuntimeFacade.autoRestoreEnglishWord()
+        let savedRestoreIfWrongSpelling = PHTVEngineRuntimeFacade.restoreIfWrongSpelling()
         PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(autoRestoreEnglish ? 1 : 0)
-        defer { PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(saved) }
+        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(restoreIfWrongSpelling ? 1 : 0)
+        defer {
+            PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(saved)
+            PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(savedRestoreIfWrongSpelling)
+        }
         engineInitialize()
         feedWord(token)
         engineHandleEvent(eventKeyboard, stateKeyDown, breakKey, breakCaps, 0)
@@ -223,7 +236,7 @@ final class EngineRegressionTests: XCTestCase {
     }
 
     func testWrongSpellingUserRestoresOnSpace() {
-        runSpaceCase("user", expectRestore: true, autoRestoreEnglish: false)
+        runSpaceCase("user", expectRestore: true, autoRestoreEnglish: false, restoreIfWrongSpelling: true)
     }
 
     // MARK: - Word-break (DOT) tests
@@ -241,7 +254,7 @@ final class EngineRegressionTests: XCTestCase {
     }
 
     func testWrongSpellingUserRestoresOnDot() {
-        runWordBreakCase("user", expectRestore: true, autoRestoreEnglish: false)
+        runWordBreakCase("user", expectRestore: true, autoRestoreEnglish: false, restoreIfWrongSpelling: true)
     }
 
     // MARK: - Word-break (other punctuation) tests
@@ -292,7 +305,7 @@ final class EngineRegressionTests: XCTestCase {
     }
 
     func testWrongSpellingRestoresOnExclamationMark() {
-        runWordBreakCase("user", expectRestore: true, autoRestoreEnglish: false,
+        runWordBreakCase("user", expectRestore: true, autoRestoreEnglish: false, restoreIfWrongSpelling: true,
                          breakKey: KEY_1, breakCaps: 1)
     }
 
