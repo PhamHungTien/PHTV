@@ -140,6 +140,9 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da tach nhom spelling check:
   - Bien trang thai `_spelling*` va ham `checkSpelling(...)` duoc dua vao `Core/Engine/EngineSpellingCheck.inc`
   - Phan grammar/state-machine tiep tuc goi nhu cu, nhung cau truc file da tach ro de migrate logic spelling sang Swift
+- Da tach nhom grammar check:
+  - Ham `checkGrammar(...)` duoc dua vao `Core/Engine/EngineGrammarCheck.inc`
+  - Khoi này gom logic relocate mark va re-pack hook output, duoc tach rieng de doi chieu behavior khi port Swift
 - Da xoa C++ global runtime pointer bridge file:
   - Xoa `Bridge/Engine/PHTVEngineGlobals.cpp`
   - HookState duoc truy cap qua C bridge `phtvEngineHook*` (khong con pointer C++ trong Swift)
