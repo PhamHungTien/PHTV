@@ -103,6 +103,7 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
         PHTVManager.setSwitchKeyStatus(switchKeyStatus)
         UserDefaults.standard.set(Int(switchKeyStatus), forKey: phtvDefaultsKeySwitchKeyStatus)
         fillData()
+        runHotkeyHealthCheck(reason: "switch-hotkey-changed")
 
 #if DEBUG
         let hasBeep = (Int(switchKeyStatus) & 0x8000) != 0
@@ -114,6 +115,7 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
         _ = notification
         PHTVManager.loadEmojiHotkeySettingsFromDefaults()
         EmojiHotkeyBridge.refreshEmojiHotkeyRegistration()
+        runHotkeyHealthCheck(reason: "emoji-hotkey-changed")
         let snapshot = PHTVManager.runtimeSettingsSnapshot()
 
 #if DEBUG

@@ -18,14 +18,50 @@ final class PHTVConvertToolHotkeyService: NSObject {
     private static let hotkeyCommandMask: UInt32 = 0x0400
     private static let hotkeyShiftMask: UInt32 = 0x0800
     private static let hotkeyNoKey: UInt32 = 0x00FE
+    private static let hotkeyInvalidKey: UInt32 = 0x00FF
+    private static let hotkeyModifierMask: UInt32 = hotkeyControlMask | hotkeyOptionMask | hotkeyCommandMask | hotkeyShiftMask
+    private static let hotkeyAllowedMask: UInt32 = hotkeyKeyMask | hotkeyModifierMask
+
+    private class func normalizeHotkey(_ rawHotkey: Int32) -> (value: Int32, normalized: Bool) {
+        if rawHotkey == defaultHotkey {
+            return (rawHotkey, false)
+        }
+
+        let raw = UInt32(bitPattern: rawHotkey)
+        let filtered = raw & hotkeyAllowedMask
+        let modifiers = filtered & hotkeyModifierMask
+        let key = filtered & hotkeyKeyMask
+        let keyIsValid = key != hotkeyInvalidKey
+
+        guard modifiers != 0, keyIsValid else {
+            return (defaultHotkey, true)
+        }
+
+        let value = Int32(bitPattern: filtered)
+        return (value, value != rawHotkey)
+    }
 
     @objc(currentHotkey)
     class func currentHotkey() -> Int32 {
-        let defaultsHotkey = Int32(UserDefaults.standard.integer(forKey: keyHotKey))
-        if defaultsHotkey != 0 {
-            return defaultsHotkey
+        let defaults = UserDefaults.standard
+
+        guard defaults.object(forKey: keyHotKey) != nil else {
+            return defaultHotkey
         }
-        return defaultHotkey
+
+        let rawHotkey = Int32(truncatingIfNeeded: defaults.integer(forKey: keyHotKey))
+        let normalizedHotkey = normalizeHotkey(rawHotkey)
+        if normalizedHotkey.normalized {
+            defaults.set(Int(normalizedHotkey.value), forKey: keyHotKey)
+#if DEBUG
+            NSLog(
+                "[ConvertHotkey] Normalized invalid hotkey 0x%X -> 0x%X",
+                rawHotkey,
+                normalizedHotkey.value
+            )
+#endif
+        }
+        return normalizedHotkey.value
     }
 
     class func hasControl(_ hotkey: Int32) -> Bool {

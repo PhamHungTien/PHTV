@@ -20,6 +20,35 @@ import Foundation
         return Int32(defaults.integer(forKey: key))
     }
 
+    @nonobjc private class func phtv_normalizeSwitchKeyStatus(
+        _ rawStatus: Int32,
+        fallback: Int32
+    ) -> (value: Int32, normalized: Bool) {
+        let keyMask = UInt32(KeyCode.keyMask)
+        let modifierMask = UInt32(
+            KeyCode.controlMask
+            | KeyCode.optionMask
+            | KeyCode.commandMask
+            | KeyCode.shiftMask
+            | KeyCode.fnMask
+        )
+        let beepMask = UInt32(KeyCode.beepMask)
+        let allowedMask = keyMask | modifierMask | beepMask
+
+        let raw = UInt32(bitPattern: rawStatus)
+        let filtered = raw & allowedMask
+        let modifiers = filtered & modifierMask
+        let key = filtered & keyMask
+        let keyIsValid = key != UInt32(KeyCode.keyMask)
+
+        guard modifiers != 0, keyIsValid else {
+            return (fallback, true)
+        }
+
+        let value = Int32(bitPattern: filtered)
+        return (value, value != rawStatus)
+    }
+
     private class func phtv_foldSettingsToken(_ token: UInt, _ value: Any?) -> UInt {
         let hashValue = UInt(bitPattern: (value as AnyObject?)?.hash ?? 0)
         return (token &* 16_777_619) ^ hashValue
@@ -302,12 +331,29 @@ import Foundation
             ) != 0
         )
 
-        let savedHotkey = defaults.integer(forKey: "SwitchKeyStatus")
-        if savedHotkey != 0 {
-            PHTVEngineRuntimeFacade.setSwitchKeyStatus(Int32(savedHotkey))
-            NSLog("[AppDelegate] Loaded hotkey from UserDefaults: 0x%X", savedHotkey)
+        let defaultSwitchHotkey = Int32(Defaults.defaultSwitchKeyStatus)
+        let hasStoredSwitchHotkey = defaults.object(forKey: "SwitchKeyStatus") != nil
+        let rawSwitchHotkey = hasStoredSwitchHotkey
+            ? Int32(truncatingIfNeeded: defaults.integer(forKey: "SwitchKeyStatus"))
+            : defaultSwitchHotkey
+        let normalizedSwitchHotkey = phtv_normalizeSwitchKeyStatus(
+            rawSwitchHotkey,
+            fallback: defaultSwitchHotkey
+        )
+        PHTVEngineRuntimeFacade.setSwitchKeyStatus(normalizedSwitchHotkey.value)
+
+        if !hasStoredSwitchHotkey || normalizedSwitchHotkey.normalized {
+            defaults.set(Int(normalizedSwitchHotkey.value), forKey: "SwitchKeyStatus")
+        }
+
+        if normalizedSwitchHotkey.normalized {
+            NSLog(
+                "[AppDelegate] Normalized invalid SwitchKeyStatus 0x%X -> 0x%X",
+                rawSwitchHotkey,
+                normalizedSwitchHotkey.value
+            )
         } else {
-            NSLog("[AppDelegate] No saved hotkey found, using default: 0x%X", PHTVEngineRuntimeFacade.switchKeyStatus())
+            NSLog("[AppDelegate] Loaded hotkey from UserDefaults: 0x%X", normalizedSwitchHotkey.value)
         }
 
         phtv_loadEmojiHotkeySettingsFromDefaults()

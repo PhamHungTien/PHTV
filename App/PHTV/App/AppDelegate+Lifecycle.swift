@@ -73,6 +73,7 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
                 EmojiHotkeyBridge.refreshEmojiHotkeyRegistration()
             }
         }
+        runHotkeyHealthCheck(reason: "launch-bootstrap")
 
         observeAppearanceChanges()
 
@@ -85,6 +86,7 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
         NSLog("[TCC] Notification listener started at app launch")
 
         if !PHTVManager.canCreateEventTap() {
+            runHotkeyHealthCheck(reason: "launch-no-permission")
             askPermission()
             attemptAutomaticTCCRepairIfNeeded()
             startAccessibilityMonitoring()
@@ -112,6 +114,7 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
                 }
             }
 
+            self.runHotkeyHealthCheck(reason: "launch-after-eventtap-init")
             self.requestEventTapRecovery(reason: "launch", force: true)
             self.setQuickConvertString()
 

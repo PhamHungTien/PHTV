@@ -14,13 +14,22 @@ import Carbon
 class EmojiPickerManager {
     static let shared = EmojiPickerManager()
 
+    private let showDebounceInterval: CFAbsoluteTime = 0.20
     private var panel: FloatingPanel<EmojiPickerView>?
     private var previousApp: NSRunningApplication?
+    private var lastShowRequestTime: CFAbsoluteTime = 0
 
     private init() {}
 
     /// Shows the PHTV Picker at current mouse position
     func show() {
+        let now = CFAbsoluteTimeGetCurrent()
+        if (now - lastShowRequestTime) < showDebounceInterval {
+            NSLog("[PHTPPicker] Ignored duplicate show request (debounced)")
+            return
+        }
+        lastShowRequestTime = now
+
         NSLog("[PHTPPicker] Showing PHTV Picker at mouse position")
 
         // Save the currently active app so we can restore focus later

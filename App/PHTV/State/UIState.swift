@@ -67,10 +67,17 @@ final class UIState: ObservableObject {
         let defaults = UserDefaults.standard
 
         // Load hotkey from SwitchKeyStatus (backend format)
-        let switchKeyStatus = defaults.integer(
+        let storedSwitchKeyStatus = defaults.integer(
             forKey: UserDefaultsKey.switchKeyStatus,
             default: Defaults.defaultSwitchKeyStatus
         )
+        let switchKeyStatus = normalizedSwitchKeyStatus(storedSwitchKeyStatus)
+        if switchKeyStatus != storedSwitchKeyStatus {
+            defaults.set(switchKeyStatus, forKey: UserDefaultsKey.switchKeyStatus)
+            liveLog(
+                "Normalized SwitchKeyStatus from 0x\(String(storedSwitchKeyStatus, radix: 16)) to 0x\(String(switchKeyStatus, radix: 16))"
+            )
+        }
         decodeSwitchKeyStatus(switchKeyStatus)
         beepOnModeSwitch = defaults.bool(
             forKey: UserDefaultsKey.beepOnModeSwitch,
@@ -114,6 +121,26 @@ final class UIState: ObservableObject {
     }
 
     // MARK: - Hotkey Encoding/Decoding
+
+    private func normalizedSwitchKeyStatus(_ status: Int) -> Int {
+        let keyMask = KeyCode.keyMask
+        let modifierMask = KeyCode.controlMask
+            | KeyCode.optionMask
+            | KeyCode.commandMask
+            | KeyCode.shiftMask
+            | KeyCode.fnMask
+        let allowedMask = keyMask | modifierMask | KeyCode.beepMask
+
+        let filtered = status & allowedMask
+        let hasModifier = (filtered & modifierMask) != 0
+        let key = filtered & keyMask
+        let keyIsValid = key != KeyCode.keyMask
+
+        guard hasModifier, keyIsValid else {
+            return Defaults.defaultSwitchKeyStatus
+        }
+        return filtered
+    }
 
     /// Decode vSwitchKeyStatus from backend format
     private func decodeSwitchKeyStatus(_ status: Int) {
