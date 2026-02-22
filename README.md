@@ -301,7 +301,7 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 ### Nhà phát triển
 - **[GitHub Actions Workflows](.github/workflows/README.md)** - CI/CD, auto-update, và release automation
 - **[Scripts](scripts/)** - Scripts tự động hóa (Homebrew, Sparkle, DMG creation)
-- **Engine Regression Tests** - Chạy `./scripts/run_engine_regression_tests.sh` để kiểm tra các lỗi hồi quy quan trọng của bộ gõ
+- **Engine Regression Tests** - Chạy `xcodebuild -project App/PHTV.xcodeproj -scheme PHTV -configuration Debug -destination 'platform=macOS' test -only-testing:PHEngineTests/EngineRegressionTests` để kiểm tra các lỗi hồi quy quan trọng của bộ gõ
 - **[Kiến trúc](docs/ARCHITECTURE.md)** - Thiết kế hệ thống và cấu trúc mã nguồn
 - **[Contributing](CONTRIBUTING.md)** - Hướng dẫn đóng góp
 - **[Security](SECURITY.md)** - Chính sách bảo mật

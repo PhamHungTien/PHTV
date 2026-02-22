@@ -185,7 +185,12 @@ Kiểm tra step "Create DMG" - step này tạo symlink trước khi build DMG.
 xcodebuild -scheme PHTV -configuration Release clean build
 
 # Test DMG creation
-./scripts/create_dmg.sh
+APP_PATH="App/build/Build/Products/Release/PHTV.app"
+TMP_DIR=$(mktemp -d)
+cp -R "$APP_PATH" "$TMP_DIR/"
+ln -s /Applications "$TMP_DIR/Applications"
+hdiutil create -volname "PHTV" -srcfolder "$TMP_DIR" -ov -format UDZO -imagekey zlib-level=9 "PHTV-local.dmg"
+rm -rf "$TMP_DIR"
 
 # Test Sparkle appcast generation (sau khi có ZIP)
 SPARKLE_PRIVATE_KEY="..." /tmp/Sparkle/bin/generate_appcast /path/to/archives

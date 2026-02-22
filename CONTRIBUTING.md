@@ -124,7 +124,7 @@ git clone https://github.com/PhamHungTien/PHTV.git
 xcodebuild -project App/PHTV.xcodeproj -scheme PHTV -destination 'platform=macOS' build
 
 # Run engine regression tests
-./scripts/run_engine_regression_tests.sh
+xcodebuild -project App/PHTV.xcodeproj -scheme PHTV -configuration Debug -destination 'platform=macOS' test -only-testing:PHEngineTests/EngineRegressionTests
 
 # Clean build
 xcodebuild -project App/PHTV.xcodeproj clean

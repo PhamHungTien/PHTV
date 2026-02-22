@@ -106,9 +106,12 @@ jobs:
           curl -sL https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer -o $RUNNER_TEMP/AppleWWDRCAG3.cer
           security import $RUNNER_TEMP/AppleWWDRCAG3.cer -k "$KEYCHAIN_PATH" -T /usr/bin/codesign -T /usr/bin/security
 
-          # Decode P12 file using Python for absolute cross-platform reliability
-          echo "$CERTIFICATES_P12" > $RUNNER_TEMP/cert_base64.txt
-          python3 -c "import base64; open('$RUNNER_TEMP/certificate.p12', 'wb').write(base64.b64decode(open('$RUNNER_TEMP/cert_base64.txt', 'r').read()))"
+          # Decode P12 from base64
+          printf '%s' "$CERTIFICATES_P12" | tr -d '\n' | openssl base64 -d -A -out "$RUNNER_TEMP/certificate.p12"
+          if [ ! -s "$RUNNER_TEMP/certificate.p12" ]; then
+            echo "❌ Error: Failed to decode CERTIFICATES_P12."
+            exit 1
+          fi
 
           # Import P12
           security import $RUNNER_TEMP/certificate.p12 \
@@ -255,48 +258,91 @@ jobs:
             echo "⚠️ Falling back to docs/appcast.xml from current checkout"
           fi
 
-          python3 << 'PY'
-          import os
-          import base64
-          import xml.etree.ElementTree as ET
-          from pathlib import Path
+          xcrun swift - << 'SWIFT'
+          import Foundation
+          import Darwin
 
-          appcast_path = Path(os.environ["ARCHIVES_DIR"]) / "appcast.xml"
-          spark_ns = "http://www.andymatuschak.org/xml-namespaces/sparkle"
-          sig_key = f"{{{spark_ns}}}edSignature"
+          func firstCapture(pattern: String, in text: String, options: NSRegularExpression.Options = []) -> String? {
+              guard let regex = try? NSRegularExpression(pattern: pattern, options: options) else {
+                  return nil
+              }
+              let range = NSRange(text.startIndex..., in: text)
+              guard let match = regex.firstMatch(in: text, options: [], range: range),
+                    match.numberOfRanges > 1,
+                    let captureRange = Range(match.range(at: 1), in: text) else {
+                  return nil
+              }
+              return String(text[captureRange])
+          }
 
-          tree = ET.parse(appcast_path)
-          root = tree.getroot()
-          channel = root.find("./channel")
-          if channel is None:
-              raise SystemExit("❌ Invalid appcast.xml: missing channel element")
+          func normalizeTitle(_ raw: String?) -> String {
+              let collapsed = (raw ?? "unknown")
+                  .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+                  .trimmingCharacters(in: .whitespacesAndNewlines)
+              return collapsed.isEmpty ? "unknown" : collapsed
+          }
 
-          removed_titles = []
-          for item in list(channel.findall("item")):
-              enclosure = item.find("enclosure")
-              if enclosure is None:
+          func signatureValidationError(_ signature: String?) -> String? {
+              guard let raw = signature?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
+                  return "missing sparkle:edSignature"
+              }
+              guard let decoded = Data(base64Encoded: raw) else {
+                  return "signature is not valid base64"
+              }
+              return decoded.count == 64 ? nil : "decoded signature length is \(decoded.count), expected 64"
+          }
+
+          let env = ProcessInfo.processInfo.environment
+          guard let archivesDir = env["ARCHIVES_DIR"] else {
+              fputs("❌ Missing ARCHIVES_DIR\n", stderr)
+              exit(1)
+          }
+
+          let appcastURL = URL(fileURLWithPath: archivesDir).appendingPathComponent("appcast.xml")
+          let appcastContent = try String(contentsOf: appcastURL, encoding: .utf8)
+          guard appcastContent.contains("<channel>") else {
+              fputs("❌ Invalid appcast.xml: missing channel element\n", stderr)
+              exit(1)
+          }
+
+          let itemRegex = try NSRegularExpression(pattern: "<item\\b[\\s\\S]*?</item>", options: [.caseInsensitive])
+          let itemMatches = itemRegex.matches(
+              in: appcastContent,
+              options: [],
+              range: NSRange(appcastContent.startIndex..., in: appcastContent)
+          )
+
+          let signaturePattern = "(?:sparkle:edSignature|edSignature)\\s*=\\s*\"([^\"]+)\""
+          let titlePattern = "<title>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?</title>"
+          let mutableContent = NSMutableString(string: appcastContent)
+          var removedTitles: [String] = []
+
+          for match in itemMatches.reversed() {
+              guard let itemRange = Range(match.range, in: appcastContent) else {
                   continue
-              signature = enclosure.attrib.get(sig_key, "")
-              is_valid = False
-              if signature:
-                  try:
-                      decoded = base64.b64decode(signature, validate=True)
-                      is_valid = len(decoded) == 64
-                  except Exception:
-                      is_valid = False
-              if not is_valid:
-                  title = (item.findtext("title") or "unknown").strip()
-                  removed_titles.append(title)
-                  channel.remove(item)
+              }
 
-          if removed_titles:
-              print(f"⚠️ Removed {len(removed_titles)} invalid appcast item(s) before generation:")
-              for title in removed_titles:
-                  print(f"  - {title}")
-              tree.write(appcast_path, encoding="utf-8", xml_declaration=True)
-          else:
+              let itemText = String(appcastContent[itemRange])
+              let signature = firstCapture(pattern: signaturePattern, in: itemText, options: [.caseInsensitive])
+              if signatureValidationError(signature) != nil {
+                  let title = normalizeTitle(
+                      firstCapture(pattern: titlePattern, in: itemText, options: [.caseInsensitive])
+                  )
+                  removedTitles.append(title)
+                  mutableContent.deleteCharacters(in: match.range)
+              }
+          }
+
+          if removedTitles.isEmpty {
               print("✅ Existing appcast signatures are valid")
-          PY
+          } else {
+              print("⚠️ Removed \(removedTitles.count) invalid appcast item(s) before generation:")
+              for title in removedTitles {
+                  print("  - \(title)")
+              }
+              try (mutableContent as String).write(to: appcastURL, atomically: true, encoding: .utf8)
+          }
+          SWIFT
 
           GENERATE_APPCAST="/tmp/Sparkle/bin/generate_appcast"
           if [ ! -x "$GENERATE_APPCAST" ]; then
@@ -313,42 +359,81 @@ jobs:
 
           cp "$ARCHIVES_DIR/appcast.xml" ../docs/appcast.xml
 
-          python3 << 'PY'
-          import base64
-          import xml.etree.ElementTree as ET
-          from pathlib import Path
+          xcrun swift - << 'SWIFT'
+          import Foundation
+          import Darwin
 
-          appcast = Path("../docs/appcast.xml")
-          spark_ns = "http://www.andymatuschak.org/xml-namespaces/sparkle"
-          sig_key = f"{{{spark_ns}}}edSignature"
-          tree = ET.parse(appcast)
-          items = tree.findall(".//item")
+          func firstCapture(pattern: String, in text: String, options: NSRegularExpression.Options = []) -> String? {
+              guard let regex = try? NSRegularExpression(pattern: pattern, options: options) else {
+                  return nil
+              }
+              let range = NSRange(text.startIndex..., in: text)
+              guard let match = regex.firstMatch(in: text, options: [], range: range),
+                    match.numberOfRanges > 1,
+                    let captureRange = Range(match.range(at: 1), in: text) else {
+                  return nil
+              }
+              return String(text[captureRange])
+          }
 
-          if not items:
-              raise SystemExit("❌ Error: docs/appcast.xml has no <item> entries")
+          func normalizeTitle(_ raw: String?) -> String {
+              let collapsed = (raw ?? "unknown")
+                  .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+                  .trimmingCharacters(in: .whitespacesAndNewlines)
+              return collapsed.isEmpty ? "unknown" : collapsed
+          }
 
-          invalid = []
-          for item in items:
-              enclosure = item.find("enclosure")
-              if enclosure is None:
+          func signatureValidationError(_ signature: String?) -> String? {
+              guard let raw = signature?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
+                  return "missing sparkle:edSignature"
+              }
+              guard let decoded = Data(base64Encoded: raw) else {
+                  return "signature is not valid base64"
+              }
+              return decoded.count == 64 ? nil : "decoded signature length is \(decoded.count), expected 64"
+          }
+
+          let appcastURL = URL(fileURLWithPath: "../docs/appcast.xml")
+          let appcastContent = try String(contentsOf: appcastURL, encoding: .utf8)
+          let itemRegex = try NSRegularExpression(pattern: "<item\\b[\\s\\S]*?</item>", options: [.caseInsensitive])
+          let itemMatches = itemRegex.matches(
+              in: appcastContent,
+              options: [],
+              range: NSRange(appcastContent.startIndex..., in: appcastContent)
+          )
+
+          if itemMatches.isEmpty {
+              fputs("❌ Error: docs/appcast.xml has no <item> entries\n", stderr)
+              exit(1)
+          }
+
+          let signaturePattern = "(?:sparkle:edSignature|edSignature)\\s*=\\s*\"([^\"]+)\""
+          let titlePattern = "<title>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?</title>"
+          var invalid: [(title: String, reason: String)] = []
+
+          for match in itemMatches {
+              guard let itemRange = Range(match.range, in: appcastContent) else {
                   continue
-              title = (item.findtext("title") or "unknown").strip()
-              signature = enclosure.attrib.get(sig_key, "")
-              try:
-                  decoded = base64.b64decode(signature, validate=True)
-                  if len(decoded) != 64:
-                      raise ValueError(f"decoded signature length is {len(decoded)}, expected 64")
-              except Exception as exc:
-                  invalid.append((title, str(exc)))
+              }
 
-          if invalid:
+              let itemText = String(appcastContent[itemRange])
+              let title = normalizeTitle(firstCapture(pattern: titlePattern, in: itemText, options: [.caseInsensitive]))
+              let signature = firstCapture(pattern: signaturePattern, in: itemText, options: [.caseInsensitive])
+              if let reason = signatureValidationError(signature) {
+                  invalid.append((title, reason))
+              }
+          }
+
+          if !invalid.isEmpty {
               print("❌ Error: invalid Sparkle signatures found in docs/appcast.xml")
-              for title, reason in invalid:
-                  print(f"  - {title}: {reason}")
-              raise SystemExit(1)
+              for entry in invalid {
+                  print("  - \(entry.title): \(entry.reason)")
+              }
+              exit(1)
+          }
 
-          print(f"✅ docs/appcast.xml generated and signed ({len(items)} items validated)")
-          PY
+          print("✅ docs/appcast.xml generated and signed (\(itemMatches.count) items validated)")
+          SWIFT
 
       - name: Upload DMG artifact
         uses: actions/upload-artifact@v4
@@ -521,7 +606,7 @@ jobs:
 
   update-plist:
     name: Update Info.plist
-    runs-on: ubuntu-latest
+    runs-on: macos-26
     needs: [build, release, publish-appcast, update-homebrew]
     permissions:
       contents: write
@@ -543,24 +628,9 @@ jobs:
           # Pull latest changes first
           git pull origin main --rebase
 
-          python3 << 'EOF'
-          import plistlib
-          import os
-
-          version = os.environ['VERSION']
-          build = os.environ['BUILD_NUMBER']
-
-          with open('App/PHTV/Info.plist', 'rb') as f:
-              plist = plistlib.load(f)
-
-          plist['CFBundleShortVersionString'] = version
-          plist['CFBundleVersion'] = build
-
-          with open('App/PHTV/Info.plist', 'wb') as f:
-              plistlib.dump(plist, f)
-
-          print(f"✅ Updated Info.plist to {version} ({build})")
-          EOF
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" App/PHTV/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" App/PHTV/Info.plist
+          echo "✅ Updated Info.plist to $VERSION ($BUILD_NUMBER)"
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

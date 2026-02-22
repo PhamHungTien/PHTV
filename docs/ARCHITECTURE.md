@@ -128,7 +128,7 @@ open App/PHTV.xcodeproj
 xcodebuild -project App/PHTV.xcodeproj -scheme PHTV -destination 'platform=macOS' build
 
 # Chạy regression tests
-./scripts/run_engine_regression_tests.sh
+xcodebuild -project App/PHTV.xcodeproj -scheme PHTV -configuration Debug -destination 'platform=macOS' test -only-testing:PHEngineTests/EngineRegressionTests
 ```
 
 ## Migration Status
