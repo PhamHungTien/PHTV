@@ -323,6 +323,13 @@ import Foundation
                 fallback: Int32(PHTVEngineRuntimeFacade.autoRestoreEnglishWord())
             )
         )
+        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(
+            phtv_readIntWithFallback(
+                defaults: defaults,
+                key: "vRestoreIfWrongSpelling",
+                fallback: Int32(PHTVEngineRuntimeFacade.restoreIfWrongSpelling())
+            )
+        )
         PHTVEngineRuntimeFacade.setShowIconOnDock(
             phtv_readIntWithFallback(
                 defaults: defaults,

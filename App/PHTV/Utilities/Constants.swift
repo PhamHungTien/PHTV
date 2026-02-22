@@ -34,6 +34,7 @@ enum UserDefaultsKey {
     static let quickEndConsonant = "vQuickEndConsonant"
     static let rememberCode = "vRememberCode"
     static let autoRestoreEnglishWord = "vAutoRestoreEnglishWord"
+    static let restoreIfWrongSpelling = "vRestoreIfWrongSpelling"
 
     // MARK: - Restore & Pause Keys
     static let restoreOnEscape = "vRestoreOnEscape"
@@ -376,6 +377,7 @@ enum Defaults {
     static let quickEndConsonant = false
     static let rememberCode = true
     static let autoRestoreEnglishWord = true
+    static let restoreIfWrongSpelling = false
 
     // MARK: - Restore & Pause
     static let restoreOnEscape = true
@@ -545,6 +547,7 @@ final class SettingsBootstrap: NSObject {
             UserDefaultsKey.quickEndConsonant: Defaults.quickEndConsonant,
             UserDefaultsKey.rememberCode: Defaults.rememberCode,
             UserDefaultsKey.autoRestoreEnglishWord: Defaults.autoRestoreEnglishWord,
+            UserDefaultsKey.restoreIfWrongSpelling: Defaults.restoreIfWrongSpelling,
             UserDefaultsKey.restoreOnEscape: Defaults.restoreOnEscape,
             UserDefaultsKey.customEscapeKey: Int(Defaults.restoreKeyCode),
             UserDefaultsKey.pauseKeyEnabled: Defaults.pauseKeyEnabled,

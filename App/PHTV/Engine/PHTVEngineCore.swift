@@ -1700,8 +1700,10 @@ final class PHTVVietnameseEngine {
             _ = checkQuickConsonant()
         } else if isAutoRestoreBreakKey {
             if !tempDisableKey && isSpellCheckingEnabled() { checkSpelling(forceCheckVowel: true) }
-            if tempDisableKey && !checkRestoreIfWrongSpelling(HookCodeState.restoreAndStartNewSession.rawValue) {
-                hCode = HookCodeState.doNothing.rawValue
+            if tempDisableKey {
+                let didRestore = phtvRuntimeRestoreIfWrongSpellingEnabled() != 0
+                    && checkRestoreIfWrongSpelling(HookCodeState.restoreAndStartNewSession.rawValue)
+                if !didRestore { hCode = HookCodeState.doNothing.rawValue }
             }
         }
 
@@ -1805,7 +1807,9 @@ final class PHTVVietnameseEngine {
         } else if (phtvRuntimeQuickStartConsonantEnabled() != 0 || phtvRuntimeQuickEndConsonantEnabled() != 0) && !tempDisableKey && checkQuickConsonant() {
             spaceCount += 1
         } else if tempDisableKey && !hasHandledMacro {
-            if !checkRestoreIfWrongSpelling(HookCodeState.restore.rawValue) { hCode = HookCodeState.doNothing.rawValue }
+            let didRestore = phtvRuntimeRestoreIfWrongSpellingEnabled() != 0
+                && checkRestoreIfWrongSpelling(HookCodeState.restoreAndStartNewSession.rawValue)
+            if didRestore { idx = 0; stateIdx = 0 } else { hCode = HookCodeState.doNothing.rawValue }
             spaceCount += 1
         } else {
             hCode = HookCodeState.doNothing.rawValue; spaceCount += 1

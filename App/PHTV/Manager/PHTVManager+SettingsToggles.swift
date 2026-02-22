@@ -110,6 +110,7 @@ import Foundation
             "pauseKeyEnabled": NSNumber(value: PHTVEngineRuntimeFacade.pauseKeyEnabled()),
             "pauseKey": NSNumber(value: PHTVEngineRuntimeFacade.pauseKey()),
             "autoRestoreEnglishWord": NSNumber(value: PHTVEngineRuntimeFacade.autoRestoreEnglishWord()),
+            "restoreIfWrongSpelling": NSNumber(value: PHTVEngineRuntimeFacade.restoreIfWrongSpelling()),
             "enableEmojiHotkey": NSNumber(value: PHTVEngineRuntimeFacade.enableEmojiHotkey()),
             "emojiHotkeyModifiers": NSNumber(value: PHTVEngineRuntimeFacade.emojiHotkeyModifiers()),
             "emojiHotkeyKeyCode": NSNumber(value: PHTVEngineRuntimeFacade.emojiHotkeyKeyCode())

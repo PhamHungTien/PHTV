@@ -142,6 +142,16 @@ struct TypingSettingsView: View {
                         SettingsDivider()
 
                         SettingsToggleRow(
+                            icon: "arrow.uturn.backward.circle",
+                            iconColor: .accentColor,
+                            title: "Khôi phục khi gõ sai chính tả",
+                            subtitle: "Hoàn tác phím khi từ có dấu tiếng Việt nhưng sai chính tả",
+                            isOn: $appState.restoreIfWrongSpelling
+                        )
+
+                        SettingsDivider()
+
+                        SettingsToggleRow(
                             icon: "hare.fill",
                             iconColor: .accentColor,
                             title: "Gõ nhanh Telex",
