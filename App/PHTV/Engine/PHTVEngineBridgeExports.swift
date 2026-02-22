@@ -1,12 +1,16 @@
 // PHTVEngineBridgeExports.swift
 // PHTV
 //
-// @_cdecl exports replacing EngineBridgeExports.inc (C++ extern "C" functions)
+// @_cdecl exports providing the phtvEngine* C-callable interface.
 // Created by Phạm Hùng Tiến on 2026.
 
-// NOTE: These exports shadow the same symbols that Engine.cpp provides.
-// Once Engine.cpp is removed from the build target, these become the sole
-// providers of the phtvEngine* C-callable interface used by PHTV.mm.
+// MARK: - Engine event type constants (ported from PHTVEngineCBridge.inc)
+let PHTV_ENGINE_EVENT_KEYBOARD: Int32          = 0
+let PHTV_ENGINE_EVENT_MOUSE: Int32             = 1
+let PHTV_ENGINE_EVENT_STATE_KEY_DOWN: Int32    = 0
+let PHTV_ENGINE_EVENT_STATE_KEY_UP: Int32      = 1
+let PHTV_ENGINE_EVENT_STATE_MOUSE_DOWN: Int32  = 2
+let PHTV_ENGINE_EVENT_STATE_MOUSE_UP: Int32    = 3
 
 @_cdecl("phtvEngineHandleEvent")
 func phtvEngineHandleEvent(_ event: Int32, _ state: Int32, _ data: UInt16, _ capsStatus: UInt8, _ otherControlKey: Int32) {

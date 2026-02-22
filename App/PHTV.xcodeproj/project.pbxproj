@@ -45,7 +45,6 @@
 		460202802F2814260040B043 /* Exceptions for "PHTV" folder in "PHTV" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Engine/PHTVEngineCBridge.inc,
 				Info.plist,
 			);
 			target = 460202422F2814250040B043 /* PHTV */;
@@ -424,7 +423,6 @@
 				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				EXTRACT_APP_INTENTS_METADATA = NO;
-				HEADER_SEARCH_PATHS = "$(SRCROOT)/PHTV/Engine";
 				INFOPLIST_FILE = PHTV/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -445,7 +443,6 @@
 				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = PHTV/Engine/PHTVEngineCBridge.inc;
 			};
 			name = Debug;
 		};
@@ -480,7 +477,6 @@
 				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
 				EXTRACT_APP_INTENTS_METADATA = NO;
-				HEADER_SEARCH_PATHS = "$(SRCROOT)/PHTV/Engine";
 				INFOPLIST_FILE = PHTV/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -501,7 +497,6 @@
 				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = PHTV/Engine/PHTVEngineCBridge.inc;
 			};
 			name = Release;
 		};

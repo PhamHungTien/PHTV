@@ -7,6 +7,6 @@ PROJECT="$ROOT_DIR/App/PHTV.xcodeproj"
 xcodebuild \
   -project "$PROJECT" \
   -scheme PHTV \
-  -destination 'platform=macOS' \
+  -destination 'platform=macOS,arch=arm64' \
   test \
   2>&1 | grep -E "Test Suite|Test Case|passed|failed|\*\* TEST"
