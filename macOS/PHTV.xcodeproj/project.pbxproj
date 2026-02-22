@@ -48,6 +48,7 @@
 				Core/Engine/EngineKeyHandleEventSpaceFinalize.inc,
 					Core/Engine/EngineKeyHandleEventDelete.inc,
 					Core/Engine/EngineKeyHandleEventMainFlow.inc,
+					Core/Engine/EngineKeyHandleEventMainFlowDecision.inc,
 					Core/Engine/EngineKeyHandleEventMainFlowPost.inc,
 					Core/Engine/EngineKeyHandleEventMainFlowSessionPrep.inc,
 					Core/Engine/EngineKeyHandleEventMainFlowSpellGate.inc,

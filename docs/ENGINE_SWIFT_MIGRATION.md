@@ -194,6 +194,9 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da tach session-prep trong main-flow:
   - Phan xu ly `_willTempOffEngine`, save-space/special-char va `insertState(...)` duoc dua vao `Core/Engine/EngineKeyHandleEventMainFlowSessionPrep.inc`
   - Muc tieu la co lap buoc chuan bi session truoc khi vao key-decision path
+- Da tach decision path trong main-flow:
+  - Phan quyet dinh `quickTelex`/`insertKey`/`handleMainKey` duoc dua vao `Core/Engine/EngineKeyHandleEventMainFlowDecision.inc`
+  - `Core/Engine/EngineKeyHandleEventMainFlow.inc` hien gio chu yeu dong vai tro orchestration qua cac include block nho
 - Da xoa C++ global runtime pointer bridge file:
   - Xoa `Bridge/Engine/PHTVEngineGlobals.cpp`
   - HookState duoc truy cap qua C bridge `phtvEngineHook*` (khong con pointer C++ trong Swift)
