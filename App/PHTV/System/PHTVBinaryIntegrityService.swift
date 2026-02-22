@@ -51,29 +51,39 @@ final class PHTVBinaryIntegrityService: NSObject {
         Bundle.main.bundlePath
     }
 
+    private class func architectureName(for cpuType: Int32) -> String {
+        switch cpuType {
+        case 7:
+            return "i386"
+        case 12:
+            return "arm"
+        case 16_777_223:
+            return "x86_64"
+        case 16_777_228:
+            return "arm64"
+        default:
+            return "cpu_type_\(cpuType)"
+        }
+    }
+
     class func getBinaryArchitectures() -> String {
         guard let executablePath = normalizedBinaryPath() else {
             return "Unknown (no executable path)"
         }
 
-        if let result = runProcess(executablePath: "/usr/bin/lipo", arguments: ["-archs", executablePath]),
-           result.status == 0,
-           let output = result.output {
-            let tokens = output
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-                .split(whereSeparator: \.isWhitespace)
-                .map(String.init)
-
-            let knownArchitectures: Set<String> = ["arm64", "arm64e", "x86_64", "i386"]
-            let architectures = tokens.filter { knownArchitectures.contains($0) }
+        if let architectureValues = Bundle.main.executableArchitectures, !architectureValues.isEmpty {
+            var seen = Set<String>()
+            let architectures = architectureValues
+                .map { architectureName(for: $0.int32Value) }
+                .filter { seen.insert($0).inserted }
 
             if architectures.count >= 2 &&
                 architectures.contains("arm64") &&
                 architectures.contains("x86_64") {
                 return "Universal (arm64 + x86_64)"
             }
-            if architectures.count == 1 {
-                return "\(architectures[0]) only"
+            if architectures.count == 1, let architecture = architectures.first {
+                return "\(architecture) only"
             }
             if architectures.count > 1 {
                 return "Multiple (\(architectures.joined(separator: " + ")))"
