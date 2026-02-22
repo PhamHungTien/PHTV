@@ -147,6 +147,49 @@ final class PHTVEventCallbackService {
         return nil
     }
 
+    private static func englishUppercasePrimeStateFromAX(
+        keyCode: UInt16,
+        hasShift: Bool
+    ) -> PHTVEnglishUppercaseState? {
+        if let needsSpaceConfirm = englishUppercaseSentenceTerminatorSpaceRequirement(
+            keyCode: keyCode,
+            hasShift: hasShift
+        ) {
+            return PHTVEnglishUppercaseState(
+                pending: true,
+                needsSpaceConfirm: needsSpaceConfirm
+            )
+        }
+
+        if keyCode == KEY_SPACE
+            || isEnglishUppercaseSkippablePunctuation(keyCode: keyCode, hasShift: hasShift) {
+            return PHTVEnglishUppercaseState(
+                pending: true,
+                needsSpaceConfirm: false
+            )
+        }
+        return nil
+    }
+
+    private static func applyForcedEnglishUppercase(
+        to event: CGEvent,
+        eventFlags: inout CGEventFlags,
+        keyCode: UInt16
+    ) {
+        eventFlags.insert(.maskShift)
+        event.flags = eventFlags
+
+        let upperCharacter = EngineMacroKeyMap.character(
+            for: UInt32(keyCode) | EngineBitMask.caps
+        )
+        guard upperCharacter != 0 else {
+            return
+        }
+
+        var mutableUpperCharacter = upperCharacter
+        event.keyboardSetUnicodeString(stringLength: 1, unicodeString: &mutableUpperCharacter)
+    }
+
     // MARK: - Public entry point
 
     static func handle(proxy: CGEventTapProxy,
@@ -382,29 +425,50 @@ final class PHTVEventCallbackService {
         // If is in English mode
         if currentLanguage == 0 {
             if type == .keyDown {
+                let keyCode = UInt16(eventKeycode)
+                let hasShift = eventFlags.contains(.maskShift)
+                let hasCapsLock = eventFlags.contains(.maskAlphaShift)
                 let uppercaseEnabled = PHTVEngineRuntimeFacade.upperCaseFirstChar() != 0
                 let uppercaseExcluded = PHTVEngineRuntimeFacade.upperCaseExcludedForCurrentApp() != 0
                 let englishUppercaseTransitionResult = englishUppercaseTransition(
                     state: englishUppercaseState,
-                    keyCode: eventKeycode,
+                    keyCode: keyCode,
                     flags: eventFlags,
                     uppercaseEnabled: uppercaseEnabled,
                     uppercaseExcluded: uppercaseExcluded
                 )
                 englishUppercaseState = englishUppercaseTransitionResult.nextState
 
+                let shouldApplyAXPrimeState =
+                    shouldPrimeUppercaseFromAX
+                    && uppercaseEnabled
+                    && !uppercaseExcluded
+                    && !isEnglishUppercaseBlockedModifier(eventFlags)
+                    && !isEnglishLetterKeyCode(keyCode)
+
+                if shouldApplyAXPrimeState,
+                   let primedState = englishUppercasePrimeStateFromAX(
+                    keyCode: keyCode,
+                    hasShift: hasShift
+                   ) {
+                    englishUppercaseState = primedState
+                }
+
                 let canForceUppercaseByAXPrime =
                     shouldPrimeUppercaseFromAX
                     && uppercaseEnabled
                     && !uppercaseExcluded
-                    && isEnglishLetterKeyCode(UInt16(eventKeycode))
+                    && isEnglishLetterKeyCode(keyCode)
                     && !isEnglishUppercaseBlockedModifier(eventFlags)
-                    && !eventFlags.contains(.maskShift)
-                    && !eventFlags.contains(.maskAlphaShift)
+                    && !hasShift
+                    && !hasCapsLock
 
                 if englishUppercaseTransitionResult.shouldForceUppercase || canForceUppercaseByAXPrime {
-                    eventFlags.insert(.maskShift)
-                    event.flags = eventFlags
+                    applyForcedEnglishUppercase(
+                        to: event,
+                        eventFlags: &eventFlags,
+                        keyCode: keyCode
+                    )
                     englishUppercaseState = .idle
                 }
             }
