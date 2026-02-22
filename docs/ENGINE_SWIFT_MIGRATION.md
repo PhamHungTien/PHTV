@@ -161,6 +161,9 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da tach nhom restore/quick-consonant helpers:
   - `handleQuickTelex`, `restoreToRawKeys`, `checkRestoreIfWrongSpelling`, `vTempOffSpellChecking`, `vSetCheckSpelling`, `vTempOffEngine`, `vRestoreToRawKeys`, `checkQuickConsonant` duoc dua vao `Core/Engine/EngineRestoreAndQuickConsonant.inc`
   - Cum nay gom cac helper kiem soat restore session va quick consonant de tach khoi event loop chinh
+- Da tach nhom English-mode macro loop:
+  - `vEnglishMode(...)` duoc dua vao `Core/Engine/EngineEnglishMode.inc`
+  - Cum nay quan ly macro key stream trong English mode va duoc tach rieng de lam mong event loop chinh
 - Da xoa C++ global runtime pointer bridge file:
   - Xoa `Bridge/Engine/PHTVEngineGlobals.cpp`
   - HookState duoc truy cap qua C bridge `phtvEngineHook*` (khong con pointer C++ trong Swift)
