@@ -76,9 +76,11 @@ struct StatusBarMenuView: View {
         // MARK: - Trạng thái
         // ═══════════════════════════════════════════
         Section {
-            Toggle(isOn: $appState.isEnabled) {
-                Label("Bật Tiếng Việt (\(hotkeyString))", systemImage: "character")
+            Picker("Chế độ gõ (\(hotkeyString))", selection: $appState.isEnabled) {
+                Label("Tiếng Việt", image: "menubar_vietnamese").tag(true)
+                Label("Tiếng Anh", image: "menubar_english").tag(false)
             }
+            .pickerStyle(.inline)
         }
 
         Divider()
