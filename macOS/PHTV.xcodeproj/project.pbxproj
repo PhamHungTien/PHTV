@@ -39,6 +39,7 @@
 				Core/Engine/EngineMarkHandling.inc,
 				Core/Engine/EngineStandaloneAndCaps.inc,
 				Core/Engine/EngineMainKeyHandling.inc,
+				Core/Engine/EngineRestoreAndQuickConsonant.inc,
 				Core/Engine/EngineGrammarCheck.inc,
 				Core/Engine/EngineRestoreSession.inc,
 				Core/Engine/EngineRuntimeAdapters.inc,
