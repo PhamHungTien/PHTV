@@ -131,6 +131,9 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da tach nhom runtime adapters khoi `EngineCoreLogic.inc`:
   - Cac helper snapshot runtime + detector/macro adapter dau file duoc gom vao `Core/Engine/EngineRuntimeAdapters.inc`
   - Muc tieu: phan tach ro adapter layer va processing state machine de migrate theo cum nho
+- Da tach nhom word-break/auto-restore heuristics:
+  - Cac helper `isWordBreak(...)`, `isMacroBreakCode(...)` va nhom phan tich token English duoc dua vao `Core/Engine/EngineWordBreakHeuristics.inc`
+  - `EngineCoreLogic.inc` giu callsite, con heuristic duoc tach rieng de de doi chieu voi Swift implementation
 - Da xoa C++ global runtime pointer bridge file:
   - Xoa `Bridge/Engine/PHTVEngineGlobals.cpp`
   - HookState duoc truy cap qua C bridge `phtvEngineHook*` (khong con pointer C++ trong Swift)
