@@ -64,6 +64,8 @@
 				Core/Engine/EngineSessionStateOps.inc,
 				Core/Engine/EngineSpellingCheck.inc,
 				Core/Engine/EngineWordBreakHeuristics.inc,
+				Core/Engine/EngineWordBreakPredicates.inc,
+				Core/Engine/EngineWordBreakHelpers.inc,
 				Core/Engine/PHTVEngineCBridge.inc,
 				Core/Engine/VietnameseData.inc,
 				Info.plist,

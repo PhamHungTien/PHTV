@@ -332,6 +332,10 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Build + smoke test pass.
 - Regression test pass tren bo test key-event parity.
 
+### Split EngineWordBreakHeuristics into 2 sub-includes
+- `EngineWordBreakPredicates.inc`: isWordBreak, isMacroBreakCode, bracket/punct/abbrev predicates
+- `EngineWordBreakHelpers.inc`: char classification helpers (letter/digit/Vietnamese transforms)
+
 ### Split EngineMarkHandling into 4 sub-includes
 - `EngineMarkHandlingVowelCheck.inc`: canFixVowelWithDiacriticsForMark
 - `EngineMarkHandlingModernMark.inc`: handleModernMark
