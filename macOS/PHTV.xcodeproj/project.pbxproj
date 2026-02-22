@@ -38,6 +38,7 @@
 				Core/Engine/EngineRestoreSession.inc,
 				Core/Engine/EngineRuntimeAdapters.inc,
 				Core/Engine/EngineSessionBootstrap.inc,
+				Core/Engine/EngineSpellingCheck.inc,
 				Core/Engine/EngineWordBreakHeuristics.inc,
 				Core/Engine/PHTVEngineCBridge.inc,
 				Core/Engine/VietnameseData.inc,

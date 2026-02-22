@@ -137,6 +137,9 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da tach nhom session bootstrap:
   - `isSpellCheckingEnabled`, `setSpellCheckingEnabled`, `vPrimeUpperCaseFirstChar`, `vKeyInit`, `setKeyData` duoc gom vao `Core/Engine/EngineSessionBootstrap.inc`
   - `EngineCoreLogic.inc` giam coupling giua khoi bootstrap va khoi spelling/state-machine chinh
+- Da tach nhom spelling check:
+  - Bien trang thai `_spelling*` va ham `checkSpelling(...)` duoc dua vao `Core/Engine/EngineSpellingCheck.inc`
+  - Phan grammar/state-machine tiep tuc goi nhu cu, nhung cau truc file da tach ro de migrate logic spelling sang Swift
 - Da xoa C++ global runtime pointer bridge file:
   - Xoa `Bridge/Engine/PHTVEngineGlobals.cpp`
   - HookState duoc truy cap qua C bridge `phtvEngineHook*` (khong con pointer C++ trong Swift)
