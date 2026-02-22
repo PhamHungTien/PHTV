@@ -6,6 +6,9 @@ PROJECT="$ROOT_DIR/App/PHTV.xcodeproj"
 DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-$ROOT_DIR/.build/derived-data}"
 DESTINATION="${PHTV_TEST_DESTINATION:-platform=macOS}"
 
+# Avoid LaunchServices conflicts when the app is already running.
+pkill -x PHTV >/dev/null 2>&1 || true
+
 xcodebuild \
   -project "$PROJECT" \
   -scheme PHTV \
@@ -19,3 +22,5 @@ xcodebuild \
   DEVELOPMENT_TEAM="" \
   test \
   -only-testing:PHEngineTests/EngineRegressionTests
+
+pkill -x PHTV >/dev/null 2>&1 || true

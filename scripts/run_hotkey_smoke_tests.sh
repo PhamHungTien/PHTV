@@ -22,6 +22,7 @@ xcodebuild \
   CODE_SIGNING_REQUIRED=NO \
   CODE_SIGNING_ALLOWED=NO \
   DEVELOPMENT_TEAM="" \
+  -parallel-testing-enabled NO \
   test \
   -only-testing:PHEngineTests/HotkeyReliabilityTests
 
