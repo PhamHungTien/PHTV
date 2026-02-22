@@ -48,6 +48,9 @@ jobs:
       - name: Run Engine Regression Tests
         run: ./scripts/run_engine_regression_tests.sh
 
+      - name: Run Hotkey Smoke Tests (Clean Defaults)
+        run: ./scripts/run_hotkey_smoke_tests.sh
+
       - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4
