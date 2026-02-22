@@ -176,6 +176,9 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da tach nhanh DELETE trong key-event loop:
   - Nhanh `else if (data == KEY_DELETE)` duoc dua vao `Core/Engine/EngineKeyHandleEventDelete.inc`
   - Cum nay gom restore typing-state, rollback macro-key, va grammar refresh sau backspace/delete
+- Da tach nhanh main-flow trong key-event loop:
+  - Nhanh `else { //START AND CHECK KEY }` duoc dua vao `Core/Engine/EngineKeyHandleEventMainFlow.inc`
+  - Cum nay gom luong insert-state, special-key handling, grammar pass va cap nhat macro/uppercase state
 - Da xoa C++ global runtime pointer bridge file:
   - Xoa `Bridge/Engine/PHTVEngineGlobals.cpp`
   - HookState duoc truy cap qua C bridge `phtvEngineHook*` (khong con pointer C++ trong Swift)
