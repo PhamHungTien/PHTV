@@ -41,6 +41,7 @@
 				Core/Engine/EngineMainKeyHandling.inc,
 				Core/Engine/EngineRestoreAndQuickConsonant.inc,
 				Core/Engine/EngineEnglishMode.inc,
+				Core/Engine/EngineKeyHandleEvent.inc,
 				Core/Engine/EngineGrammarCheck.inc,
 				Core/Engine/EngineRestoreSession.inc,
 				Core/Engine/EngineRuntimeAdapters.inc,

@@ -164,6 +164,9 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da tach nhom English-mode macro loop:
   - `vEnglishMode(...)` duoc dua vao `Core/Engine/EngineEnglishMode.inc`
   - Cum nay quan ly macro key stream trong English mode va duoc tach rieng de lam mong event loop chinh
+- Da tach nhom key-event loop chinh:
+  - Toan bo `vKeyHandleEvent(...)` duoc dua vao `Core/Engine/EngineKeyHandleEvent.inc`
+  - Cum nay la event loop xu ly trung tam (word-break, auto-English, quick-consonant, grammar pass), tach rieng de tiep tuc port theo tung nhanh
 - Da xoa C++ global runtime pointer bridge file:
   - Xoa `Bridge/Engine/PHTVEngineGlobals.cpp`
   - HookState duoc truy cap qua C bridge `phtvEngineHook*` (khong con pointer C++ trong Swift)
