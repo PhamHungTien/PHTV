@@ -27,11 +27,6 @@ struct SystemSettingsView: View {
 
     private static let isoFormatter = ISO8601DateFormatter()
 
-    private var nativeMenuBarIconMaxSize: Double {
-        let statusBarBound = Double(NSStatusBar.system.thickness - 6.0)
-        return max(12.0, min(18.0, statusBarBound))
-    }
-
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 20) {
@@ -189,17 +184,23 @@ struct SystemSettingsView: View {
 
                 SettingsDivider()
 
-                SettingsSliderRow(
-                    icon: "arrow.up.left.and.arrow.down.right",
-                    iconColor: .accentColor,
-                    title: "Kích thước icon",
-                    subtitle: "Điều chỉnh kích thước icon trên menu bar",
-                    minValue: 12.0,
-                    maxValue: nativeMenuBarIconMaxSize,
-                    step: 0.01,
-                    value: $appState.menuBarIconSize,
-                    valueFormatter: { String(format: "%.0f px", $0) }
-                )
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: "info.circle.fill")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 24, height: 24)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Kích thước icon được quản lý tự động")
+                            .font(.system(size: 13))
+                        Text("PHTV dùng hiển thị MenuBarExtra native của SwiftUI để đồng bộ với macOS.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+                .padding(.vertical, 5)
             }
         }
     }

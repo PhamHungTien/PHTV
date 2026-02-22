@@ -240,15 +240,6 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
                 NSLog("[Accessibility] User opening System Settings to re-grant")
             }
 
-            if let button = self.statusItem.button {
-                let statusFont = NSFont.monospacedSystemFont(ofSize: 12, weight: .semibold)
-                let title = NSAttributedString(string: "⚠️",
-                                               attributes: [
-                                                   .font: statusFont,
-                                                   .foregroundColor: NSColor.systemRed
-                                               ])
-                button.attributedTitle = title
-            }
         }
 
         attemptAutomaticTCCRepairIfNeeded()

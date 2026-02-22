@@ -24,7 +24,6 @@ private let phtvNotificationMacrosUpdated = Notification.Name("MacrosUpdated")
 private let phtvNotificationExcludedAppsChanged = Notification.Name("ExcludedAppsChanged")
 private let phtvNotificationSendKeyStepByStepAppsChanged = Notification.Name("SendKeyStepByStepAppsChanged")
 private let phtvNotificationUpperCaseExcludedAppsChanged = Notification.Name("UpperCaseExcludedAppsChanged")
-private let phtvNotificationMenuBarIconSizeChanged = Notification.Name("MenuBarIconSizeChanged")
 private let phtvNotificationLanguageChangedFromExcludedApp = Notification.Name("LanguageChangedFromExcludedApp")
 private let phtvNotificationTCCDatabaseChanged = Notification.Name("TCCDatabaseChanged")
 private let phtvNotificationApplicationDidBecomeActive = NSApplication.didBecomeActiveNotification
@@ -303,10 +302,6 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
         center.addObserver(self,
                            selector: #selector(handleUpperCaseExcludedAppsChanged(_:)),
                            name: phtvNotificationUpperCaseExcludedAppsChanged,
-                           object: nil)
-        center.addObserver(self,
-                           selector: #selector(handleMenuBarIconSizeChanged(_:)),
-                           name: phtvNotificationMenuBarIconSizeChanged,
                            object: nil)
         center.addObserver(self,
                            selector: #selector(handleApplicationDidBecomeActive(_:)),

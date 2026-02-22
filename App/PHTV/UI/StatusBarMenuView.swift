@@ -12,10 +12,6 @@ struct StatusBarMenuView: View {
     @EnvironmentObject var appState: AppState
     @Environment(\.openWindow) private var openWindow
 
-    private enum LanguageMenuIconMetrics {
-        static let size: CGFloat = 12
-    }
-
     // Helper to open settings window using SwiftUI's Window scene
     private func openSettingsWindow() {
         openWindow(id: "settings")
@@ -76,18 +72,7 @@ struct StatusBarMenuView: View {
     }
 
     private func languageOptionLabel(_ title: String, imageName: String) -> some View {
-        Label {
-            Text(title)
-        } icon: {
-            Image(imageName)
-                .resizable()
-                .renderingMode(.template)
-                .interpolation(.high)
-                .frame(
-                    width: LanguageMenuIconMetrics.size,
-                    height: LanguageMenuIconMetrics.size
-                )
-        }
+        Label(title, image: imageName)
     }
 
     var body: some View {

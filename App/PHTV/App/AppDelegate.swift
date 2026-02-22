@@ -11,26 +11,6 @@ let PHTVBundleIdentifier = "com.phamhungtien.phtv"
 
 @MainActor @objcMembers
 class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
-    var statusItem: NSStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-    var statusMenu: NSMenu = NSMenu()
-    var menuInputMethod: NSMenuItem?
-    var mnuTelex: NSMenuItem?
-    var mnuVNI: NSMenuItem?
-    var mnuSimpleTelex1: NSMenuItem?
-    var mnuSimpleTelex2: NSMenuItem?
-    var mnuUnicode: NSMenuItem?
-    var mnuTCVN: NSMenuItem?
-    var mnuVNIWindows: NSMenuItem?
-    var mnuUnicodeComposite: NSMenuItem?
-    var mnuVietnameseLocaleCP1258: NSMenuItem?
-    var mnuQuickConvert: NSMenuItem?
-    var mnuSpellCheck: NSMenuItem?
-    var mnuAllowConsonantZFWJ: NSMenuItem?
-    var mnuModernOrthography: NSMenuItem?
-    var mnuQuickTelex: NSMenuItem?
-    var mnuUpperCaseFirstChar: NSMenuItem?
-    var mnuAutoRestoreEnglishWord: NSMenuItem?
-    var statusBarFontSize: CGFloat = 0
     var lastInputMethod: Int = 0
     var lastCodeTable: Int = 0
     var isUpdatingUI = false

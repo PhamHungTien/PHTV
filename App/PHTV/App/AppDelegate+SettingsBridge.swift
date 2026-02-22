@@ -82,17 +82,6 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
                            object: nil)
     }
 
-    @objc func handleMenuBarIconSizeChanged(_ notification: Notification?) {
-        let sizeValue = (notification?.object as? NSNumber)?.doubleValue
-            ?? UserDefaults.standard.double(forKey: "vMenuBarIconSize")
-
-        var size = CGFloat(sizeValue > 0 ? sizeValue : 12.0)
-        size = min(max(size, 10.0), 28.0)
-
-        statusBarFontSize = size
-        fillData()
-    }
-
     @objc func handleHotkeyChanged(_ notification: Notification?) {
         phtvSettingsBridgeLiveLog("received HotkeyChanged")
         guard let hotkey = notification?.object as? NSNumber else {
