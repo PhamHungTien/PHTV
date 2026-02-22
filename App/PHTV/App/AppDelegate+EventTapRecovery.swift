@@ -10,6 +10,7 @@ import Foundation
 
 private let phtvEventTapRecoveryDelays: [TimeInterval] = [0.0, 0.25, 0.75, 1.5, 3.0]
 private let phtvEventTapRecoveryThrottle: CFAbsoluteTime = 0.15
+private let phtvPostRecoveryEmojiRefreshDelays: [TimeInterval] = [0.0, 0.25]
 
 @MainActor extension AppDelegate {
     func requestEventTapRecovery(reason: String, force: Bool = false) {
@@ -39,6 +40,14 @@ private let phtvEventTapRecoveryThrottle: CFAbsoluteTime = 0.15
     func cancelEventTapRecovery(reason: String) {
         eventTapRecoveryToken &+= 1
         NSLog("[EventTap] Recovery schedule cancelled (%@)", reason)
+    }
+
+    private func refreshEmojiHotkeyRegistrationAfterRecovery() {
+        for delay in phtvPostRecoveryEmojiRefreshDelays {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                EmojiHotkeyBridge.refreshEmojiHotkeyRegistration()
+            }
+        }
     }
 
     private func performEventTapRecoveryAttempt(
@@ -82,6 +91,7 @@ private let phtvEventTapRecoveryThrottle: CFAbsoluteTime = 0.15
             PHTVManager.requestNewSession()
             startHealthCheckMonitoring()
             startAccessibilityMonitoring(withInterval: currentMonitoringInterval(), resetState: false)
+            refreshEmojiHotkeyRegistrationAfterRecovery()
             eventTapRecoveryToken &+= 1
             NSLog("[EventTap] Recovery (%@) succeeded on attempt %d/%d",
                   reason, attempt, totalAttempts)

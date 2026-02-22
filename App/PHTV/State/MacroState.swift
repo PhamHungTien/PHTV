@@ -82,11 +82,21 @@ final class MacroState: ObservableObject {
         if emojiHotkeyModifiersRaw == 0 {
             emojiHotkeyModifiersRaw = Int(Defaults.emojiHotkeyModifiers)
         }
-        let savedKeyCode = defaults.integer(
-            forKey: UserDefaultsKey.emojiHotkeyKeyCode,
-            default: Int(Defaults.emojiHotkeyKeyCode)
-        )
-        emojiHotkeyKeyCode = savedKeyCode > 0 ? UInt16(savedKeyCode) : Defaults.emojiHotkeyKeyCode
+        let keyCodeObject = defaults.object(forKey: UserDefaultsKey.emojiHotkeyKeyCode)
+        if keyCodeObject == nil {
+            emojiHotkeyKeyCode = Defaults.emojiHotkeyKeyCode
+        } else {
+            let savedKeyCode = defaults.integer(
+                forKey: UserDefaultsKey.emojiHotkeyKeyCode,
+                default: Int(Defaults.emojiHotkeyKeyCode)
+            )
+            if (0...Int(KeyCode.keyMask)).contains(savedKeyCode) || savedKeyCode == Int(KeyCode.noKey) {
+                emojiHotkeyKeyCode = UInt16(savedKeyCode)
+            } else {
+                emojiHotkeyKeyCode = Defaults.emojiHotkeyKeyCode
+                defaults.set(Int(Defaults.emojiHotkeyKeyCode), forKey: UserDefaultsKey.emojiHotkeyKeyCode)
+            }
+        }
     }
 
     func saveSettings() {

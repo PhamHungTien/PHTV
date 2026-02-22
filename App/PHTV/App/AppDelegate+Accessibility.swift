@@ -160,6 +160,7 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
                 self.startAccessibilityMonitoring()
                 self.startHealthCheckMonitoring()
                 self.requestEventTapRecovery(reason: "accessibilityGranted", force: true)
+                EmojiHotkeyBridge.refreshEmojiHotkeyRegistration()
                 PHTVManager.startTCCNotificationListener()
                 self.fillData(withAnimation: true)
 

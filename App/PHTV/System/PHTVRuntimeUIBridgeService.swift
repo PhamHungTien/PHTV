@@ -18,6 +18,20 @@ final class PHTVRuntimeUIBridgeService: NSObject {
         return NSApp.delegate as? AppDelegate
     }
 
+    private class func fallbackQuickConvertFromHotkey() {
+        _ = PHTVManager.quickConvert()
+#if DEBUG
+        NSLog("[Hotkey] Fallback quick-convert executed without AppDelegate")
+#endif
+    }
+
+    private class func fallbackEmojiPickerFromHotkey() {
+        EmojiHotkeyBridge.openEmojiPicker()
+#if DEBUG
+        NSLog("[Hotkey] Fallback emoji picker open executed without AppDelegate")
+#endif
+    }
+
     private class func forceToggleLanguageFromHotkey() {
         let currentLanguage = PHTVManager.currentLanguage()
         let targetLanguage: Int32 = (currentLanguage == 0) ? 1 : 0
@@ -74,6 +88,7 @@ final class PHTVRuntimeUIBridgeService: NSObject {
 
     @objc class func triggerQuickConvert() {
         guard let delegate = resolveAppDelegate() else {
+            fallbackQuickConvertFromHotkey()
             return
         }
         delegate.onQuickConvert()
@@ -81,6 +96,7 @@ final class PHTVRuntimeUIBridgeService: NSObject {
 
     @objc class func triggerEmojiHotkey() {
         guard let delegate = resolveAppDelegate() else {
+            fallbackEmojiPickerFromHotkey()
             return
         }
         delegate.onEmojiHotkeyTriggered()

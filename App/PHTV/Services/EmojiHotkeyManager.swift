@@ -97,8 +97,17 @@ final class EmojiHotkeyManager: ObservableObject {
     func registerHotkey(modifiers: NSEvent.ModifierFlags, keyCode: UInt16) {
         unregisterHotkey()
 
-        self.modifiers = modifiers
-        self.keyCode = keyCode
+        let filteredModifiers = modifiers.intersection(Self.relevantModifiers)
+        let normalizedModifiers = filteredModifiers.isEmpty ? NSEvent.ModifierFlags.command : filteredModifiers
+        let normalizedKeyCode: UInt16
+        if keyCode <= KeyCode.keyMask || keyCode == KeyCode.noKey {
+            normalizedKeyCode = keyCode
+        } else {
+            normalizedKeyCode = KeyCode.eKey
+        }
+
+        self.modifiers = normalizedModifiers
+        self.keyCode = normalizedKeyCode
         self.isEnabled = true
 
         // Capture values to avoid main-actor access from background thread
@@ -106,7 +115,7 @@ final class EmojiHotkeyManager: ObservableObject {
         let capturedModifiers = self.modifiers
         let capturedRelevantModifiers = Self.relevantModifiers
 
-        if keyCode == KeyCode.noKey {
+        if capturedKeyCode == KeyCode.noKey {
             // Modifier-only mode: monitor flagsChanged events
             registerModifierOnlyHotkey(capturedModifiers: capturedModifiers, relevantModifiers: capturedRelevantModifiers)
         } else {

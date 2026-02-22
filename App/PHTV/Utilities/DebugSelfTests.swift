@@ -6,6 +6,7 @@
 //
 
 import Carbon
+import AppKit
 import Foundation
 
 #if DEBUG
@@ -21,6 +22,7 @@ enum DebugSelfTests {
         runMacroStorageChecks()
         runCxxInteropChecks()
         runConvertToolChecks()
+        runHotkeyChecks()
 
         PHTVLogger.shared.debug("[DebugSelfTests] All debug checks passed")
     }
@@ -188,6 +190,52 @@ enum DebugSelfTests {
         assertCondition(
             sentence.hasPrefix("Xin chào."),
             "ConvertTool sentence-case conversion should capitalize first sentence character"
+        )
+    }
+
+    private static func runHotkeyChecks() {
+        let commandModifiers = Int32(NSEvent.ModifierFlags.command.rawValue)
+        let commandFlags = UInt64(CGEventFlags.maskCommand.rawValue)
+        let commandAndOptionFlags = UInt64(
+            CGEventFlags.maskCommand.rawValue | CGEventFlags.maskAlternate.rawValue
+        )
+
+        assertCondition(
+            PHTVHotkeyService.checkEmojiHotkey(
+                enabled: 1,
+                keycode: KeyCode.eKey,
+                flags: commandFlags,
+                emojiModifiers: commandModifiers,
+                emojiHotkeyKeyCode: Int32(KeyCode.eKey)
+            ),
+            "Emoji hotkey should match Command+E by default"
+        )
+
+        assertCondition(
+            !PHTVHotkeyService.checkEmojiHotkey(
+                enabled: 1,
+                keycode: KeyCode.eKey,
+                flags: commandAndOptionFlags,
+                emojiModifiers: commandModifiers,
+                emojiHotkeyKeyCode: Int32(KeyCode.eKey)
+            ),
+            "Emoji hotkey should reject mismatched extra modifiers"
+        )
+
+        assertCondition(
+            PHTVHotkeyService.checkEmojiHotkey(
+                enabled: 1,
+                keycode: 0,
+                flags: commandFlags,
+                emojiModifiers: commandModifiers,
+                emojiHotkeyKeyCode: 0
+            ),
+            "Emoji hotkey should support keycode 0"
+        )
+
+        assertCondition(
+            PHTVHotkeyService.isEmojiModifierOnlyHotkey(forKeyCode: Int32(KeyCode.noKey)),
+            "Emoji modifier-only mode should be recognized"
         )
     }
 

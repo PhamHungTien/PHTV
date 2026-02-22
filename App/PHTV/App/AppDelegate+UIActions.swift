@@ -53,9 +53,7 @@ private let convertToolDontAlertWhenCompletedKey = "convertToolDontAlertWhenComp
     }
 
     func onEmojiHotkeyTriggered() {
-        DispatchQueue.main.async {
-            EmojiHotkeyBridge.openEmojiPicker()
-        }
+        EmojiHotkeyBridge.openEmojiPicker()
     }
 
     func onControlPanelSelected() {

@@ -68,6 +68,11 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
         initEnglishWordDictionary()
         loadRuntimeSettingsFromUserDefaults()
         EmojiHotkeyBridge.initializeEmojiHotkeyManager()
+        for delay in [0.0, 0.25, 0.8] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                EmojiHotkeyBridge.refreshEmojiHotkeyRegistration()
+            }
+        }
 
         observeAppearanceChanges()
 
@@ -99,6 +104,7 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
                 self.startAccessibilityMonitoring()
                 self.startHealthCheckMonitoring()
                 self.startInputSourceMonitoring()
+                EmojiHotkeyBridge.refreshEmojiHotkeyRegistration()
 
                 let showUI = UserDefaults.standard.integer(forKey: phtvDefaultsKeyShowUIOnStartup)
                 if showUI == 1 {

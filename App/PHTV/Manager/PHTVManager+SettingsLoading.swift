@@ -68,25 +68,50 @@ import Foundation
     class func phtv_loadEmojiHotkeySettingsFromDefaults() {
         let defaults = UserDefaults.standard
 
+        let defaultEnabled: Int32 = 1
+        let defaultModifiers = Int32(NSEvent.ModifierFlags.command.rawValue)
+        let defaultKeyCode = Int32(KeyCode.eKey)
+        let modifierMask = Int32(
+            NSEvent.ModifierFlags.command.rawValue
+            | NSEvent.ModifierFlags.option.rawValue
+            | NSEvent.ModifierFlags.control.rawValue
+            | NSEvent.ModifierFlags.shift.rawValue
+            | NSEvent.ModifierFlags.function.rawValue
+        )
+
+        var shouldPersistNormalizedValues = false
+
         let enabled: Int32
         if defaults.object(forKey: "vEnableEmojiHotkey") == nil {
-            enabled = 1
+            enabled = defaultEnabled
+            shouldPersistNormalizedValues = true
         } else {
             enabled = defaults.bool(forKey: "vEnableEmojiHotkey") ? 1 : 0
         }
 
-        let modifiers: Int32
-        if defaults.object(forKey: "vEmojiHotkeyModifiers") == nil {
-            modifiers = Int32(NSEvent.ModifierFlags.command.rawValue)
-        } else {
-            modifiers = Int32(defaults.integer(forKey: "vEmojiHotkeyModifiers"))
+        let rawModifiers = Int32(defaults.integer(forKey: "vEmojiHotkeyModifiers"))
+        var modifiers = rawModifiers & modifierMask
+        if modifiers == 0 {
+            modifiers = defaultModifiers
+            shouldPersistNormalizedValues = true
+        } else if modifiers != rawModifiers {
+            shouldPersistNormalizedValues = true
         }
 
+        let rawKeyCode = defaults.integer(forKey: "vEmojiHotkeyKeyCode")
+        let isValidKeyCode = (0...Int(KeyCode.keyMask)).contains(rawKeyCode) || rawKeyCode == Int(KeyCode.noKey)
         let keyCode: Int32
-        if defaults.object(forKey: "vEmojiHotkeyKeyCode") == nil {
-            keyCode = 14
+        if isValidKeyCode {
+            keyCode = Int32(rawKeyCode)
         } else {
-            keyCode = Int32(defaults.integer(forKey: "vEmojiHotkeyKeyCode"))
+            keyCode = defaultKeyCode
+            shouldPersistNormalizedValues = true
+        }
+
+        if shouldPersistNormalizedValues {
+            defaults.set(enabled != 0, forKey: "vEnableEmojiHotkey")
+            defaults.set(Int(modifiers), forKey: "vEmojiHotkeyModifiers")
+            defaults.set(Int(keyCode), forKey: "vEmojiHotkeyKeyCode")
         }
 
         PHTVEngineRuntimeFacade.setEmojiHotkeySettings(enabled, modifiers, keyCode)

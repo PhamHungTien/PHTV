@@ -113,6 +113,7 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
     @objc func handleEmojiHotkeySettingsChanged(_ notification: Notification?) {
         _ = notification
         PHTVManager.loadEmojiHotkeySettingsFromDefaults()
+        EmojiHotkeyBridge.refreshEmojiHotkeyRegistration()
         let snapshot = PHTVManager.runtimeSettingsSnapshot()
 
 #if DEBUG
@@ -198,6 +199,9 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
         if changedSessionSettings {
             PHTVManager.syncSpellingSetting()
             PHTVManager.requestNewSession()
+            if changedEmoji {
+                EmojiHotkeyBridge.refreshEmojiHotkeyRegistration()
+            }
 
             if justEnabledUppercase {
                 // Request a fresh session already primes new typing state.
