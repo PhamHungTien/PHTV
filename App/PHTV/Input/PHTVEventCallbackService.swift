@@ -10,6 +10,16 @@ import ApplicationServices
 import Darwin
 import Foundation
 
+struct PHTVEnglishUppercaseState {
+    var pending: Bool
+    var needsSpaceConfirm: Bool
+
+    static let idle = PHTVEnglishUppercaseState(
+        pending: false,
+        needsSpaceConfirm: false
+    )
+}
+
 final class PHTVEventCallbackService {
 
     // MARK: - Constants
@@ -20,9 +30,122 @@ final class PHTVEventCallbackService {
     private static let kAppCharacteristicsCacheMaxAgeMs: UInt64 = 10000
     private static let keyEventKeyboard: Int32 = Int32(PHTV_ENGINE_EVENT_KEYBOARD)
     private static let keyEventStateKeyDown: Int32 = Int32(PHTV_ENGINE_EVENT_STATE_KEY_DOWN)
+    nonisolated(unsafe) private static var englishUppercaseState = PHTVEnglishUppercaseState.idle
     #if DEBUG
     private static let kDebugLogThrottleMs: UInt64 = 500
     #endif
+
+    // MARK: - English uppercase helpers
+
+    @objc class func resetTransientStateForTapLifecycle() {
+        englishUppercaseState = .idle
+    }
+
+    static func englishUppercaseTransition(
+        state: PHTVEnglishUppercaseState,
+        keyCode: UInt16,
+        flags: CGEventFlags,
+        uppercaseEnabled: Bool,
+        uppercaseExcluded: Bool
+    ) -> (nextState: PHTVEnglishUppercaseState, shouldForceUppercase: Bool) {
+        guard uppercaseEnabled, !uppercaseExcluded else {
+            return (.idle, false)
+        }
+
+        if isEnglishUppercaseBlockedModifier(flags) {
+            return (state, false)
+        }
+
+        let hasShift = flags.contains(.maskShift)
+        let hasCapsLock = flags.contains(.maskAlphaShift)
+        let hasShiftOrCaps = hasShift || hasCapsLock
+
+        if let needsSpaceConfirm = englishUppercaseSentenceTerminatorSpaceRequirement(
+            keyCode: keyCode,
+            hasShift: hasShift
+        ) {
+            return (
+                PHTVEnglishUppercaseState(
+                    pending: true,
+                    needsSpaceConfirm: needsSpaceConfirm
+                ),
+                false
+            )
+        }
+
+        guard state.pending else {
+            return (state, false)
+        }
+
+        if keyCode == KEY_SPACE {
+            if state.needsSpaceConfirm {
+                return (
+                    PHTVEnglishUppercaseState(
+                        pending: true,
+                        needsSpaceConfirm: false
+                    ),
+                    false
+                )
+            }
+            return (state, false)
+        }
+
+        if isEnglishUppercaseSkippablePunctuation(keyCode: keyCode, hasShift: hasShift) {
+            return (state, false)
+        }
+
+        if isEnglishLetterKeyCode(keyCode) {
+            if state.needsSpaceConfirm {
+                return (.idle, false)
+            }
+            return (.idle, !hasShiftOrCaps)
+        }
+
+        return (.idle, false)
+    }
+
+    private static func isEnglishUppercaseBlockedModifier(_ flags: CGEventFlags) -> Bool {
+        flags.contains(.maskCommand)
+            || flags.contains(.maskControl)
+            || flags.contains(.maskAlternate)
+            || flags.contains(.maskSecondaryFn)
+            || flags.contains(.maskNumericPad)
+            || flags.contains(.maskHelp)
+    }
+
+    private static func isEnglishLetterKeyCode(_ keyCode: UInt16) -> Bool {
+        switch keyCode {
+        case KEY_A, KEY_B, KEY_C, KEY_D, KEY_E, KEY_F, KEY_G, KEY_H, KEY_I, KEY_J,
+             KEY_K, KEY_L, KEY_M, KEY_N, KEY_O, KEY_P, KEY_Q, KEY_R, KEY_S, KEY_T,
+             KEY_U, KEY_V, KEY_W, KEY_X, KEY_Y, KEY_Z:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private static func isEnglishUppercaseSkippablePunctuation(keyCode: UInt16, hasShift: Bool) -> Bool {
+        if keyCode == KEY_QUOTE || keyCode == KEY_LEFT_BRACKET || keyCode == KEY_RIGHT_BRACKET {
+            return true
+        }
+        return hasShift && (keyCode == KEY_9 || keyCode == KEY_0)
+    }
+
+    private static func englishUppercaseSentenceTerminatorSpaceRequirement(
+        keyCode: UInt16,
+        hasShift: Bool
+    ) -> Bool? {
+        if keyCode == KEY_ENTER || keyCode == KEY_RETURN {
+            return false
+        }
+        if keyCode == KEY_DOT && !hasShift {
+            return true
+        }
+        if hasShift && (keyCode == KEY_SLASH || keyCode == KEY_1) {
+            return true
+        }
+        return nil
+    }
 
     // MARK: - Public entry point
 
@@ -71,8 +194,13 @@ final class PHTVEventCallbackService {
         }
 
         PHTVEventRuntimeContextService.clearCliPostFlags()
-        let eventFlags = event.flags
+        var eventFlags = event.flags
         var eventKeycode = CGKeyCode(event.getIntegerValueField(.keyboardEventKeycode))
+        let currentLanguage = PHTVEngineRuntimeFacade.currentLanguage()
+        if currentLanguage != 0 {
+            englishUppercaseState = .idle
+        }
+        var shouldPrimeUppercaseFromAX = false
 
         // Track text-replacement keydown patterns (external DELETE and following SPACE).
         if type == .keyDown {
@@ -146,7 +274,10 @@ final class PHTVEventCallbackService {
                     uppercaseEnabled: Int32(PHTVEngineRuntimeFacade.upperCaseFirstChar()),
                     uppercaseExcluded: Int32(PHTVEngineRuntimeFacade.upperCaseExcludedForCurrentApp()))
                 if shouldPrime {
-                    phtvEnginePrimeUpperCaseFirstChar()
+                    shouldPrimeUppercaseFromAX = true
+                    if currentLanguage != 0 {
+                        phtvEnginePrimeUpperCaseFirstChar()
+                    }
                 }
             }
 
@@ -249,8 +380,35 @@ final class PHTVEventCallbackService {
         }
 
         // If is in English mode
-        let currentLanguage = PHTVEngineRuntimeFacade.currentLanguage()
         if currentLanguage == 0 {
+            if type == .keyDown {
+                let uppercaseEnabled = PHTVEngineRuntimeFacade.upperCaseFirstChar() != 0
+                let uppercaseExcluded = PHTVEngineRuntimeFacade.upperCaseExcludedForCurrentApp() != 0
+                let englishUppercaseTransitionResult = englishUppercaseTransition(
+                    state: englishUppercaseState,
+                    keyCode: eventKeycode,
+                    flags: eventFlags,
+                    uppercaseEnabled: uppercaseEnabled,
+                    uppercaseExcluded: uppercaseExcluded
+                )
+                englishUppercaseState = englishUppercaseTransitionResult.nextState
+
+                let canForceUppercaseByAXPrime =
+                    shouldPrimeUppercaseFromAX
+                    && uppercaseEnabled
+                    && !uppercaseExcluded
+                    && isEnglishLetterKeyCode(UInt16(eventKeycode))
+                    && !isEnglishUppercaseBlockedModifier(eventFlags)
+                    && !eventFlags.contains(.maskShift)
+                    && !eventFlags.contains(.maskAlphaShift)
+
+                if englishUppercaseTransitionResult.shouldForceUppercase || canForceUppercaseByAXPrime {
+                    eventFlags.insert(.maskShift)
+                    event.flags = eventFlags
+                    englishUppercaseState = .idle
+                }
+            }
+
             if PHTVEngineRuntimeFacade.useMacro() != 0 && PHTVEngineRuntimeFacade.useMacroInEnglishMode() != 0 &&
                type == .keyDown {
                 phtvEngineHandleEnglishMode(

@@ -49,6 +49,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var didAttemptTCCRepairOnce = false
     var healthCheckTimer: Timer?
     var needsRelaunchAfterPermission = false
+    var eventTapRecoveryToken: UInt = 0
+    var lastEventTapRecoveryRequestTime: CFAbsoluteTime = 0
 
     var savedLanguageBeforeExclusion = 0
     var previousBundleIdentifier: String?

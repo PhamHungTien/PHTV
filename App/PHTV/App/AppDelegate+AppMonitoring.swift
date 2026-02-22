@@ -27,6 +27,7 @@ private let phtvNotificationUpperCaseExcludedAppsChanged = Notification.Name("Up
 private let phtvNotificationMenuBarIconSizeChanged = Notification.Name("MenuBarIconSizeChanged")
 private let phtvNotificationLanguageChangedFromExcludedApp = Notification.Name("LanguageChangedFromExcludedApp")
 private let phtvNotificationTCCDatabaseChanged = Notification.Name("TCCDatabaseChanged")
+private let phtvNotificationApplicationDidBecomeActive = NSApplication.didBecomeActiveNotification
 private let phtvSpotlightInvalidationDedupMs: UInt64 = 30
 
 private func phtvDecodeAppList(_ data: Data?) -> [[String: Any]]? {
@@ -83,13 +84,20 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
 
     @objc func receiveWakeNote(_ note: Notification) {
         _ = note
-        PHTVManager.stopEventTap()
-        PHTVManager.initEventTap()
+        _ = PHTVManager.stopEventTap()
+        _ = PHTVManager.initEventTap()
+        requestEventTapRecovery(reason: "didWake", force: true)
     }
 
     @objc func receiveSleepNote(_ note: Notification) {
         _ = note
-        PHTVManager.stopEventTap()
+        cancelEventTapRecovery(reason: "willSleep")
+        _ = PHTVManager.stopEventTap()
+    }
+
+    @objc func handleApplicationDidBecomeActive(_ note: Notification) {
+        _ = note
+        requestEventTapRecovery(reason: "didBecomeActive")
     }
 
     @objc func receiveActiveSpaceChanged(_ note: Notification) {
@@ -284,6 +292,10 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
         center.addObserver(self,
                            selector: Selector(("handleMenuBarIconSizeChanged:")),
                            name: phtvNotificationMenuBarIconSizeChanged,
+                           object: nil)
+        center.addObserver(self,
+                           selector: #selector(handleApplicationDidBecomeActive(_:)),
+                           name: phtvNotificationApplicationDidBecomeActive,
                            object: nil)
         center.addObserver(self,
                            selector: #selector(handleLanguageChangedFromSwiftUI(_:)),

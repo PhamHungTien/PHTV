@@ -159,6 +159,7 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
             } else {
                 self.startAccessibilityMonitoring()
                 self.startHealthCheckMonitoring()
+                self.requestEventTapRecovery(reason: "accessibilityGranted", force: true)
                 PHTVManager.startTCCNotificationListener()
                 self.fillData(withAnimation: true)
 
@@ -321,6 +322,7 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
 
                     self.startAccessibilityMonitoring()
                     self.startHealthCheckMonitoring()
+                    self.requestEventTapRecovery(reason: "accessibilityNeedsRelaunch", force: true)
                     self.fillData(withAnimation: true)
                     return
                 }

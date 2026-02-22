@@ -107,6 +107,7 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
                 }
             }
 
+            self.requestEventTapRecovery(reason: "launch", force: true)
             self.setQuickConvertString()
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
@@ -135,6 +136,7 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
     func applicationWillTerminate(_ notification: Notification) {
         _ = notification
 
+        cancelEventTapRecovery(reason: "applicationWillTerminate")
         stopInputSourceMonitoring()
         stopAccessibilityMonitoring()
         stopHealthCheckMonitoring()

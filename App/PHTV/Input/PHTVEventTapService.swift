@@ -20,6 +20,13 @@ import Foundation
         CGEventMask(1) << CGEventMask(type.rawValue)
     }
 
+    private static func resetTransientTapRuntimeState() {
+        PHTVModifierRuntimeStateService.resetTransientHotkeyState(
+            savedLanguage: PHTVEngineRuntimeFacade.currentLanguage()
+        )
+        PHTVEventCallbackService.resetTransientStateForTapLifecycle()
+    }
+
     @objc static func hasPermissionLost() -> Bool {
         permissionLost
     }
@@ -45,6 +52,7 @@ import Foundation
 
         permissionLost = false
         PHTVPermissionService.invalidatePermissionCache()
+        resetTransientTapRuntimeState()
 
         PHTVEngineSessionService.boot()
 
@@ -118,6 +126,7 @@ import Foundation
 
             isInited = false
             permissionLost = false
+            resetTransientTapRuntimeState()
             NSLog("[EventTap] Stopped successfully")
         }
         return true

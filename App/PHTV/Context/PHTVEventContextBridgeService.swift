@@ -474,6 +474,19 @@ final class PHTVModifierRuntimeStateService: NSObject {
     nonisolated(unsafe) private static var keyPressedWhileSwitchModifiersHeld = false
     nonisolated(unsafe) private static var keyPressedWhileEmojiModifiersHeld = false
 
+    @objc(resetTransientHotkeyStateWithSavedLanguage:)
+    class func resetTransientHotkeyState(savedLanguage: Int32) {
+        pendingUppercasePrimeCheck = true
+        lastFlags = 0
+        hasJustUsedHotKey = false
+        pausePressed = false
+        self.savedLanguage = savedLanguage
+        restoreModifierPressed = false
+        keyPressedWithRestoreModifier = false
+        keyPressedWhileSwitchModifiersHeld = false
+        keyPressedWhileEmojiModifiersHeld = false
+    }
+
     @objc(applySessionResetTransition:)
     class func applySessionResetTransition(_ transition: PHTVSessionResetTransitionBox) {
         pendingUppercasePrimeCheck = transition.pendingUppercasePrimeCheck

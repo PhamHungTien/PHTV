@@ -12,6 +12,10 @@ struct StatusBarMenuView: View {
     @EnvironmentObject var appState: AppState
     @Environment(\.openWindow) private var openWindow
 
+    private enum LanguageMenuIconMetrics {
+        static let size: CGFloat = 12
+    }
+
     // Helper to open settings window using SwiftUI's Window scene
     private func openSettingsWindow() {
         openWindow(id: "settings")
@@ -71,14 +75,29 @@ struct StatusBarMenuView: View {
         )
     }
 
+    private func languageOptionLabel(_ title: String, imageName: String) -> some View {
+        Label {
+            Text(title)
+        } icon: {
+            Image(imageName)
+                .resizable()
+                .renderingMode(.template)
+                .interpolation(.high)
+                .frame(
+                    width: LanguageMenuIconMetrics.size,
+                    height: LanguageMenuIconMetrics.size
+                )
+        }
+    }
+
     var body: some View {
         // ═══════════════════════════════════════════
         // MARK: - Trạng thái
         // ═══════════════════════════════════════════
         Section {
             Picker("Chế độ gõ (\(hotkeyString))", selection: $appState.isEnabled) {
-                Label("Tiếng Việt", image: "menubar_vietnamese").tag(true)
-                Label("Tiếng Anh", image: "menubar_english").tag(false)
+                languageOptionLabel("Tiếng Việt", imageName: "menubar_vietnamese").tag(true)
+                languageOptionLabel("Tiếng Anh", imageName: "menubar_english").tag(false)
             }
             .pickerStyle(.inline)
         }
