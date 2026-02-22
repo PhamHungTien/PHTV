@@ -146,6 +146,9 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Da tach nhom session-state operations:
   - Cac ham `insertKey`, `insertState`, `saveWord`, `saveSpecialChar`, `restoreLastTypingState`, `startNewSession` duoc dua vao `Core/Engine/EngineSessionStateOps.inc`
   - Muc tieu la tách thao tác buffer/session ra khoi khoi xử lý mark/tone để migrate theo từng cum de an toan
+- Da tach nhom character transform core:
+  - `checkCorrectVowel`, `getCharacterCode`, `findAndCalculateVowel`, `removeMark`, `canHasEndConsonant` duoc dua vao `Core/Engine/EngineCharacterTransform.inc`
+  - Day la cụm trung tâm cho ánh xạ key state -> ký tự output, được tách riêng để chuẩn bị port logic theo behavior tương đương
 - Da xoa C++ global runtime pointer bridge file:
   - Xoa `Bridge/Engine/PHTVEngineGlobals.cpp`
   - HookState duoc truy cap qua C bridge `phtvEngineHook*` (khong con pointer C++ trong Swift)
