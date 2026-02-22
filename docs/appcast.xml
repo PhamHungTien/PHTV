@@ -7,6 +7,14 @@
         <language>vi</language>
         <!-- Most recent version first -->
         <item>
+            <title>2.5.7</title>
+            <pubDate>Sun, 22 Feb 2026 16:55:03 +0000</pubDate>
+            <sparkle:version>209</sparkle:version>
+            <sparkle:shortVersionString>2.5.7</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v2.5.7/PHTV-2.5.7.zip" length="10807128" type="application/octet-stream" sparkle:edSignature="9QCkNf9WyvlYdlaTFKGicaXvZzNtDrJoP0Yh1906+R/4PmulOgQM8Xgg0r989j4SyqpEpUs90M2ZEJAH9NnkDQ=="/>
+        </item>
+        <item>
             <title>2.5.6</title>
             <pubDate>Sun, 22 Feb 2026 16:06:05 +0000</pubDate>
             <sparkle:version>208</sparkle:version>
