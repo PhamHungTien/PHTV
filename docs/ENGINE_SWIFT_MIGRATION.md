@@ -332,6 +332,11 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Build + smoke test pass.
 - Regression test pass tren bo test key-event parity.
 
+### Split EngineCoreState into 3 sub-includes
+- `EngineBuffers.inc`: HookState, TypingWord/KeyStates buffers, tempDisableKey
+- `EngineVietnameseHelpers.inc`: isVietnameseWordFromTypingWord, isVietnameseFromCanonicalTelex
+- `EngineSessionVars.inc`: session-scope static variables + function prototypes
+
 ### Split EngineCoreLogic into sub-includes
 - `EngineInputKeyMacros.inc`: ProcessingChar table, IS_KEY_* macros, isSpecialKeyForCurrentInputType
 - `EngineCoreState.inc`: static state globals, Vietnamese helpers, function prototypes
