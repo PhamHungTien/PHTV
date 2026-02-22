@@ -45,6 +45,7 @@
 				Core/Engine/EngineKeyHandleEventWordBreak.inc,
 				Core/Engine/EngineKeyHandleEventWordBreakPost.inc,
 				Core/Engine/EngineKeyHandleEventSpace.inc,
+				Core/Engine/EngineKeyHandleEventSpaceDecision.inc,
 				Core/Engine/EngineKeyHandleEventSpaceFinalize.inc,
 					Core/Engine/EngineKeyHandleEventDelete.inc,
 					Core/Engine/EngineKeyHandleEventMainFlow.inc,

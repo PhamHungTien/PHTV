@@ -332,6 +332,10 @@ Chuyen toan bo engine hien tai (C/C++) sang Swift de codebase macOS dat muc "100
 - Build + smoke test pass.
 - Regression test pass tren bo test key-event parity.
 
+### Split Space decision block
+- Tach `EngineKeyHandleEventSpaceDecision.inc` tu `EngineKeyHandleEventSpace.inc`
+- Space.inc giu phan tinh toan dieu kien; Decision.inc xu ly nhanh macro/restore/do-nothing.
+
 ## Thu tu uu tien de thuc hien tiep
 
 1. Pha 1 (facade API) de giam coupling ngay.
