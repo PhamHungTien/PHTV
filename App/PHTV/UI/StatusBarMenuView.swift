@@ -71,8 +71,10 @@ struct StatusBarMenuView: View {
         )
     }
 
-    private func languageOptionLabel(_ title: String, imageName: String) -> some View {
-        Label(title, image: imageName)
+    private func languageOptionLabel(_ title: String, systemImage: String) -> some View {
+        Label(title, systemImage: systemImage)
+            .labelStyle(.titleAndIcon)
+            .imageScale(.small)
     }
 
     var body: some View {
@@ -81,8 +83,8 @@ struct StatusBarMenuView: View {
         // ═══════════════════════════════════════════
         Section {
             Picker("Chế độ gõ (\(hotkeyString))", selection: $appState.isEnabled) {
-                languageOptionLabel("Tiếng Việt", imageName: "menubar_vietnamese").tag(true)
-                languageOptionLabel("Tiếng Anh", imageName: "menubar_english").tag(false)
+                languageOptionLabel("Tiếng Việt", systemImage: "v.circle").tag(true)
+                languageOptionLabel("Tiếng Anh", systemImage: "e.circle").tag(false)
             }
             .pickerStyle(.inline)
         }
