@@ -1606,9 +1606,13 @@ final class PHTVVietnameseEngine {
 
         isCaps = (capsStatus == 1 || capsStatus == 2)
         let isAutoRestoreBreakKey = isAutoRestoreWordBreak(event: event, state: state, data: data, capsStatus: capsStatus)
+        // Brackets trigger auto-restore only when there are English letters before them.
+        // When idx==0 or the key states contain no English letters (e.g. the ][ → ươ sequence),
+        // they must flow through handleMainFlow so checkForStandaloneChar can run.
+        let isBracketAutoRestore = isBracketPunctuationBreak(data) && getEnglishLookupStateLength() > 1
 
-        if (isNumberKey(data) && capsStatus == 1) || otherControlKey || isAutoRestoreBreakKey || (idx == 0 && isNumberKey(data)) {
-            handleWordBreak(event: event, state: state, data: data, capsStatus: capsStatus, otherControlKey: otherControlKey, isAutoRestoreBreakKey: isAutoRestoreBreakKey)
+        if (isNumberKey(data) && capsStatus == 1) || otherControlKey || isAutoRestoreBreakKey || isBracketAutoRestore || (idx == 0 && isNumberKey(data)) {
+            handleWordBreak(event: event, state: state, data: data, capsStatus: capsStatus, otherControlKey: otherControlKey, isAutoRestoreBreakKey: isAutoRestoreBreakKey || isBracketAutoRestore)
         } else if data == KEY_SPACE {
             handleSpace(state: state, data: data)
         } else if data == KEY_DELETE {
