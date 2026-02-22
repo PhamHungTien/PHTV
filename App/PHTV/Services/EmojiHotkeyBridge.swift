@@ -17,6 +17,10 @@ import Foundation
         _ = EmojiHotkeyManager.shared
     }
 
+    @MainActor @objc static func refreshEmojiHotkeyRegistration() {
+        EmojiHotkeyManager.shared.refreshRegistrationFromAppState()
+    }
+
     @MainActor @objc static func openEmojiPicker() {
         EmojiPickerManager.shared.show()
     }

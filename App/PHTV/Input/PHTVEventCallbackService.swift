@@ -30,7 +30,18 @@ final class PHTVEventCallbackService {
     private static let kAppCharacteristicsCacheMaxAgeMs: UInt64 = 10000
     private static let keyEventKeyboard: Int32 = Int32(PHTV_ENGINE_EVENT_KEYBOARD)
     private static let keyEventStateKeyDown: Int32 = Int32(PHTV_ENGINE_EVENT_STATE_KEY_DOWN)
-    nonisolated(unsafe) private static var englishUppercaseState = PHTVEnglishUppercaseState.idle
+    private final class EnglishUppercaseStateBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var state = PHTVEnglishUppercaseState.idle
+
+        func withLock<T>(_ body: (inout PHTVEnglishUppercaseState) -> T) -> T {
+            lock.lock()
+            defer { lock.unlock() }
+            return body(&state)
+        }
+    }
+
+    private static let englishUppercaseStateBox = EnglishUppercaseStateBox()
     #if DEBUG
     private static let kDebugLogThrottleMs: UInt64 = 500
     #endif
@@ -38,7 +49,9 @@ final class PHTVEventCallbackService {
     // MARK: - English uppercase helpers
 
     @objc class func resetTransientStateForTapLifecycle() {
-        englishUppercaseState = .idle
+        englishUppercaseStateBox.withLock { state in
+            state = .idle
+        }
     }
 
     static func englishUppercaseTransition(
@@ -241,7 +254,9 @@ final class PHTVEventCallbackService {
         var eventKeycode = CGKeyCode(event.getIntegerValueField(.keyboardEventKeycode))
         let currentLanguage = PHTVEngineRuntimeFacade.currentLanguage()
         if currentLanguage != 0 {
-            englishUppercaseState = .idle
+            englishUppercaseStateBox.withLock { state in
+                state = .idle
+            }
         }
         var shouldPrimeUppercaseFromAX = false
 
@@ -292,7 +307,7 @@ final class PHTVEventCallbackService {
                 emojiModifiers: Int32(PHTVEngineRuntimeFacade.emojiHotkeyModifiers()),
                 emojiHotkeyKeyCode: Int32(PHTVEngineRuntimeFacade.emojiHotkeyKeyCode()))
             if hotkeyAction != PHTVKeyDownHotkeyAction.none.rawValue {
-                if MainActor.assumeIsolated({ PHTVRuntimeUIBridgeService.handleKeyDownHotkeyAction(Int32(hotkeyAction)) }) {
+                if PHTVRuntimeUIBridgeService.handleKeyDownHotkeyActionFromRuntime(Int32(hotkeyAction)) {
                     PHTVModifierRuntimeStateService.setLastFlagsValue(0)
                     PHTVModifierRuntimeStateService.setHasJustUsedHotKeyValue(true)
                     return nil
@@ -389,7 +404,7 @@ final class PHTVEventCallbackService {
                     PHTVEngineRuntimeFacade.setCurrentLanguage(releaseResult.language)
                 }
 
-                if MainActor.assumeIsolated({ PHTVRuntimeUIBridgeService.handleModifierReleaseHotkeyAction(Int32(releaseAction)) }) {
+                if PHTVRuntimeUIBridgeService.handleModifierReleaseHotkeyActionFromRuntime(Int32(releaseAction)) {
                     PHTVModifierRuntimeStateService.setHasJustUsedHotKeyValue(true)
                     return nil
                 }
@@ -430,14 +445,19 @@ final class PHTVEventCallbackService {
                 let hasCapsLock = eventFlags.contains(.maskAlphaShift)
                 let uppercaseEnabled = PHTVEngineRuntimeFacade.upperCaseFirstChar() != 0
                 let uppercaseExcluded = PHTVEngineRuntimeFacade.upperCaseExcludedForCurrentApp() != 0
+                let currentUppercaseState = englishUppercaseStateBox.withLock { state in
+                    state
+                }
                 let englishUppercaseTransitionResult = englishUppercaseTransition(
-                    state: englishUppercaseState,
+                    state: currentUppercaseState,
                     keyCode: keyCode,
                     flags: eventFlags,
                     uppercaseEnabled: uppercaseEnabled,
                     uppercaseExcluded: uppercaseExcluded
                 )
-                englishUppercaseState = englishUppercaseTransitionResult.nextState
+                englishUppercaseStateBox.withLock { state in
+                    state = englishUppercaseTransitionResult.nextState
+                }
 
                 let shouldApplyAXPrimeState =
                     shouldPrimeUppercaseFromAX
@@ -451,7 +471,9 @@ final class PHTVEventCallbackService {
                     keyCode: keyCode,
                     hasShift: hasShift
                    ) {
-                    englishUppercaseState = primedState
+                    englishUppercaseStateBox.withLock { state in
+                        state = primedState
+                    }
                 }
 
                 let canForceUppercaseByAXPrime =
@@ -469,7 +491,9 @@ final class PHTVEventCallbackService {
                         eventFlags: &eventFlags,
                         keyCode: keyCode
                     )
-                    englishUppercaseState = .idle
+                    englishUppercaseStateBox.withLock { state in
+                        state = .idle
+                    }
                 }
             }
 

@@ -38,26 +38,80 @@ final class PHTVCacheStateService: NSObject {
     private static let pidCacheCleanIntervalMs: UInt64 = 60_000
     private static let pidCacheEmptyValue = ""
 
-    nonisolated(unsafe) private static var pidLock = NSLock()
-    nonisolated(unsafe) private static var pidBundleCache = [Int32: String]()
-    nonisolated(unsafe) private static var lastPidCacheCleanTime: UInt64 = 0
-
-    nonisolated(unsafe) private static var appCharLock = NSLock()
-    nonisolated(unsafe) private static var appCharacteristicsCache = [String: PHTVAppCharacteristicsBox]()
-    nonisolated(unsafe) private static var _lastCachedBundleId: String?
-    nonisolated(unsafe) private static var _lastAppCharCacheInvalidationTime: UInt64 = 0
-
-    nonisolated(unsafe) private static var spotlightLock = NSLock()
-    nonisolated(unsafe) private static var _cachedSpotlightActive = false
-    nonisolated(unsafe) private static var _lastSpotlightCheckTime: UInt64 = 0
-    nonisolated(unsafe) private static var _cachedFocusedPID: Int32 = 0
-    nonisolated(unsafe) private static var _cachedFocusedBundleId: String?
-    nonisolated(unsafe) private static var _lastSpotlightInvalidationTime: UInt64 = 0
-
     private static let layoutCacheNoValue: UInt16 = .max
-    nonisolated(unsafe) private static var layoutLock = NSLock()
-    nonisolated(unsafe) private static var layoutCache = Array<UInt16>(repeating: layoutCacheNoValue, count: 256)
-    nonisolated(unsafe) private static var layoutCacheValid = false
+
+    private struct PIDCacheState {
+        var pidBundleCache = [Int32: String]()
+        var lastPidCacheCleanTime: UInt64 = 0
+    }
+
+    private final class PIDCacheStateBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var state = PIDCacheState()
+
+        func withLock<T>(_ body: (inout PIDCacheState) -> T) -> T {
+            lock.lock()
+            defer { lock.unlock() }
+            return body(&state)
+        }
+    }
+
+    private struct AppCharacteristicsState {
+        var appCharacteristicsCache = [String: PHTVAppCharacteristicsBox]()
+        var lastCachedBundleId: String?
+        var lastAppCharCacheInvalidationTime: UInt64 = 0
+    }
+
+    private final class AppCharacteristicsStateBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var state = AppCharacteristicsState()
+
+        func withLock<T>(_ body: (inout AppCharacteristicsState) -> T) -> T {
+            lock.lock()
+            defer { lock.unlock() }
+            return body(&state)
+        }
+    }
+
+    private struct SpotlightCacheState {
+        var cachedSpotlightActive = false
+        var lastSpotlightCheckTime: UInt64 = 0
+        var cachedFocusedPID: Int32 = 0
+        var cachedFocusedBundleId: String?
+        var lastSpotlightInvalidationTime: UInt64 = 0
+    }
+
+    private final class SpotlightCacheStateBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var state = SpotlightCacheState()
+
+        func withLock<T>(_ body: (inout SpotlightCacheState) -> T) -> T {
+            lock.lock()
+            defer { lock.unlock() }
+            return body(&state)
+        }
+    }
+
+    private struct LayoutCacheState {
+        var layoutCache = Array<UInt16>(repeating: layoutCacheNoValue, count: 256)
+        var layoutCacheValid = false
+    }
+
+    private final class LayoutCacheStateBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var state = LayoutCacheState()
+
+        func withLock<T>(_ body: (inout LayoutCacheState) -> T) -> T {
+            lock.lock()
+            defer { lock.unlock() }
+            return body(&state)
+        }
+    }
+
+    private static let pidState = PIDCacheStateBox()
+    private static let appCharacteristicsState = AppCharacteristicsStateBox()
+    private static let spotlightState = SpotlightCacheStateBox()
+    private static let layoutState = LayoutCacheStateBox()
 
     // MARK: - PID Cache
 
@@ -68,38 +122,45 @@ final class PHTVCacheStateService: NSObject {
         }
 
         let now = mach_absolute_time()
-        pidLock.lock()
-        if lastPidCacheCleanTime == 0 {
-            lastPidCacheCleanTime = now
-        }
+        var didClearCache = false
+        if let cached = pidState.withLock({ state -> String? in
+            if state.lastPidCacheCleanTime == 0 {
+                state.lastPidCacheCleanTime = now
+            }
 
-        let elapsedMs = PHTVTimingService.machTimeToMs(now - lastPidCacheCleanTime)
-        if elapsedMs > pidCacheCleanIntervalMs {
-            pidBundleCache.removeAll(keepingCapacity: true)
-            lastPidCacheCleanTime = now
+            let elapsedMs = PHTVTimingService.machTimeToMs(now - state.lastPidCacheCleanTime)
+            if elapsedMs > pidCacheCleanIntervalMs {
+                state.pidBundleCache.removeAll(keepingCapacity: true)
+                state.lastPidCacheCleanTime = now
+                didClearCache = true
+            }
+            return state.pidBundleCache[pid]
+        }) {
 #if DEBUG
+            if didClearCache {
             NSLog("[Cache] PID cache cleared (interval expired)")
+            }
 #endif
-        }
-
-        if let cached = pidBundleCache[pid] {
-            pidLock.unlock()
             return cached.isEmpty ? nil : cached
         }
-        pidLock.unlock()
+#if DEBUG
+        if didClearCache {
+            NSLog("[Cache] PID cache cleared (interval expired)")
+        }
+#endif
 
         if let app = NSRunningApplication(processIdentifier: pid_t(pid)) {
             let bundleId = app.bundleIdentifier ?? pidCacheEmptyValue
-            pidLock.lock()
-            pidBundleCache[pid] = bundleId
-            pidLock.unlock()
+            pidState.withLock { state in
+                state.pidBundleCache[pid] = bundleId
+            }
             return bundleId.isEmpty ? nil : bundleId
         }
 
         if safeMode {
-            pidLock.lock()
-            pidBundleCache[pid] = pidCacheEmptyValue
-            pidLock.unlock()
+            pidState.withLock { state in
+                state.pidBundleCache[pid] = pidCacheEmptyValue
+            }
             return nil
         }
 
@@ -116,50 +177,50 @@ final class PHTVCacheStateService: NSObject {
             NSLog("PHTV DEBUG: PID=%d path=%@", pid, path)
 #endif
             if path.contains("Spotlight") {
-                pidLock.lock()
-                pidBundleCache[pid] = "com.apple.Spotlight"
-                pidLock.unlock()
+                pidState.withLock { state in
+                    state.pidBundleCache[pid] = "com.apple.Spotlight"
+                }
                 return "com.apple.Spotlight"
             }
             if path.contains("SystemUIServer") {
-                pidLock.lock()
-                pidBundleCache[pid] = "com.apple.systemuiserver"
-                pidLock.unlock()
+                pidState.withLock { state in
+                    state.pidBundleCache[pid] = "com.apple.systemuiserver"
+                }
                 return "com.apple.systemuiserver"
             }
             if path.contains("Launchpad") {
-                pidLock.lock()
-                pidBundleCache[pid] = "com.apple.launchpad.launcher"
-                pidLock.unlock()
+                pidState.withLock { state in
+                    state.pidBundleCache[pid] = "com.apple.launchpad.launcher"
+                }
                 return "com.apple.launchpad.launcher"
             }
         }
 
-        pidLock.lock()
-        pidBundleCache[pid] = pidCacheEmptyValue
-        pidLock.unlock()
+        pidState.withLock { state in
+            state.pidBundleCache[pid] = pidCacheEmptyValue
+        }
         return nil
     }
 
     @objc class func cleanPIDCacheIfNeeded() {
         let now = mach_absolute_time()
-        pidLock.lock()
-        defer { pidLock.unlock() }
-        guard !pidBundleCache.isEmpty, lastPidCacheCleanTime > 0 else {
-            return
-        }
-        let elapsedMs = PHTVTimingService.machTimeToMs(now - lastPidCacheCleanTime)
-        if elapsedMs > pidCacheCleanIntervalMs {
-            pidBundleCache.removeAll(keepingCapacity: true)
-            lastPidCacheCleanTime = now
+        pidState.withLock { state in
+            guard !state.pidBundleCache.isEmpty, state.lastPidCacheCleanTime > 0 else {
+                return
+            }
+            let elapsedMs = PHTVTimingService.machTimeToMs(now - state.lastPidCacheCleanTime)
+            if elapsedMs > pidCacheCleanIntervalMs {
+                state.pidBundleCache.removeAll(keepingCapacity: true)
+                state.lastPidCacheCleanTime = now
+            }
         }
     }
 
     @objc class func invalidatePIDCache() {
-        pidLock.lock()
-        pidBundleCache.removeAll(keepingCapacity: false)
-        lastPidCacheCleanTime = 0
-        pidLock.unlock()
+        pidState.withLock { state in
+            state.pidBundleCache.removeAll(keepingCapacity: false)
+            state.lastPidCacheCleanTime = 0
+        }
     }
 
     // MARK: - App Characteristics Cache
@@ -169,9 +230,9 @@ final class PHTVCacheStateService: NSObject {
         guard let bundleId, !bundleId.isEmpty else {
             return nil
         }
-        appCharLock.lock()
-        defer { appCharLock.unlock() }
-        return appCharacteristicsCache[bundleId]
+        return appCharacteristicsState.withLock { state in
+            state.appCharacteristicsCache[bundleId]
+        }
     }
 
     // Returns:
@@ -185,29 +246,28 @@ final class PHTVCacheStateService: NSObject {
         }
 
         let now = mach_absolute_time()
-        appCharLock.lock()
-        defer { appCharLock.unlock() }
-
-        var reason = 0
-        if let lastBundleId = _lastCachedBundleId, lastBundleId != bundleId {
-            reason = 1
-        } else if _lastAppCharCacheInvalidationTime == 0 {
-            reason = 2
-        } else {
-            let elapsedMs = PHTVTimingService.machTimeToMs(now - _lastAppCharCacheInvalidationTime)
-            if elapsedMs > maxAgeMs {
+        return appCharacteristicsState.withLock { state in
+            var reason = 0
+            if let lastBundleId = state.lastCachedBundleId, lastBundleId != bundleId {
+                reason = 1
+            } else if state.lastAppCharCacheInvalidationTime == 0 {
                 reason = 2
+            } else {
+                let elapsedMs = PHTVTimingService.machTimeToMs(now - state.lastAppCharCacheInvalidationTime)
+                if elapsedMs > maxAgeMs {
+                    reason = 2
+                }
             }
-        }
 
-        guard reason != 0 else {
-            return 0
-        }
+            guard reason != 0 else {
+                return 0
+            }
 
-        appCharacteristicsCache.removeAll(keepingCapacity: false)
-        _lastCachedBundleId = bundleId
-        _lastAppCharCacheInvalidationTime = now
-        return reason
+            state.appCharacteristicsCache.removeAll(keepingCapacity: false)
+            state.lastCachedBundleId = bundleId
+            state.lastAppCharCacheInvalidationTime = now
+            return reason
+        }
     }
 
     @objc(setAppCharacteristicsForBundleId:isSpotlightLike:needsPrecomposedBatched:needsStepByStep:containsUnicodeCompound:isSafari:)
@@ -229,71 +289,71 @@ final class PHTVCacheStateService: NSObject {
             containsUnicodeCompound: containsUnicodeCompound,
             isSafari: isSafari
         )
-        appCharLock.lock()
-        appCharacteristicsCache[bundleId] = box
-        appCharLock.unlock()
+        appCharacteristicsState.withLock { state in
+            state.appCharacteristicsCache[bundleId] = box
+        }
     }
 
     @objc class func invalidateAppCharacteristicsCache() {
-        appCharLock.lock()
-        appCharacteristicsCache.removeAll(keepingCapacity: false)
-        _lastCachedBundleId = nil
-        _lastAppCharCacheInvalidationTime = mach_absolute_time()
-        appCharLock.unlock()
+        appCharacteristicsState.withLock { state in
+            state.appCharacteristicsCache.removeAll(keepingCapacity: false)
+            state.lastCachedBundleId = nil
+            state.lastAppCharCacheInvalidationTime = mach_absolute_time()
+        }
     }
 
     @objc class func lastCachedBundleId() -> String? {
-        appCharLock.lock()
-        defer { appCharLock.unlock() }
-        return _lastCachedBundleId
+        appCharacteristicsState.withLock { state in
+            state.lastCachedBundleId
+        }
     }
 
     @objc(setLastCachedBundleId:)
     class func setLastCachedBundleId(_ bundleId: String?) {
-        appCharLock.lock()
-        _lastCachedBundleId = bundleId
-        appCharLock.unlock()
+        appCharacteristicsState.withLock { state in
+            state.lastCachedBundleId = bundleId
+        }
     }
 
     // MARK: - Spotlight Cache
 
     @objc class func cachedSpotlightActive() -> Bool {
-        spotlightLock.lock()
-        defer { spotlightLock.unlock() }
-        return _cachedSpotlightActive
+        spotlightState.withLock { state in
+            state.cachedSpotlightActive
+        }
     }
 
     @objc class func cachedFocusedPID() -> Int32 {
-        spotlightLock.lock()
-        defer { spotlightLock.unlock() }
-        return _cachedFocusedPID
+        spotlightState.withLock { state in
+            state.cachedFocusedPID
+        }
     }
 
     @objc class func cachedFocusedBundleId() -> String? {
-        spotlightLock.lock()
-        defer { spotlightLock.unlock() }
-        return _cachedFocusedBundleId
+        spotlightState.withLock { state in
+            state.cachedFocusedBundleId
+        }
     }
 
     @objc class func lastSpotlightCheckTime() -> UInt64 {
-        spotlightLock.lock()
-        defer { spotlightLock.unlock() }
-        return _lastSpotlightCheckTime
+        spotlightState.withLock { state in
+            state.lastSpotlightCheckTime
+        }
     }
 
     @objc class func lastSpotlightInvalidationTime() -> UInt64 {
-        spotlightLock.lock()
-        defer { spotlightLock.unlock() }
-        return _lastSpotlightInvalidationTime
+        spotlightState.withLock { state in
+            state.lastSpotlightInvalidationTime
+        }
     }
 
     @objc class func updateSpotlightCache(_ isActive: Bool, pid: Int32, bundleId: String?) {
-        spotlightLock.lock()
-        defer { spotlightLock.unlock() }
-        _cachedSpotlightActive = isActive
-        _lastSpotlightCheckTime = mach_absolute_time()
-        _cachedFocusedPID = pid
-        _cachedFocusedBundleId = bundleId
+        spotlightState.withLock { state in
+            state.cachedSpotlightActive = isActive
+            state.lastSpotlightCheckTime = mach_absolute_time()
+            state.cachedFocusedPID = pid
+            state.cachedFocusedBundleId = bundleId
+        }
     }
 
     // Returns:
@@ -303,28 +363,27 @@ final class PHTVCacheStateService: NSObject {
     @objc class func invalidateSpotlightCache(dedupWindowMs: UInt64) -> Int {
         let now = mach_absolute_time()
 
-        spotlightLock.lock()
-        defer { spotlightLock.unlock() }
+        return spotlightState.withLock { state in
+            let elapsedSinceLastInvalidationMs = (state.lastSpotlightInvalidationTime > 0)
+                ? PHTVTimingService.machTimeToMs(now - state.lastSpotlightInvalidationTime)
+                : UInt64.max
 
-        let elapsedSinceLastInvalidationMs = (_lastSpotlightInvalidationTime > 0)
-            ? PHTVTimingService.machTimeToMs(now - _lastSpotlightInvalidationTime)
-            : UInt64.max
+            let alreadyInvalid = (!state.cachedSpotlightActive &&
+                                  state.cachedFocusedPID == 0 &&
+                                  state.cachedFocusedBundleId == nil)
+            if alreadyInvalid && elapsedSinceLastInvalidationMs < dedupWindowMs {
+                return 0
+            }
 
-        let alreadyInvalid = (!_cachedSpotlightActive &&
-                              _cachedFocusedPID == 0 &&
-                              _cachedFocusedBundleId == nil)
-        if alreadyInvalid && elapsedSinceLastInvalidationMs < dedupWindowMs {
-            return 0
+            let wasActive = state.cachedSpotlightActive
+            state.cachedSpotlightActive = false
+            state.lastSpotlightCheckTime = 0
+            state.cachedFocusedPID = 0
+            state.cachedFocusedBundleId = nil
+            state.lastSpotlightInvalidationTime = now
+
+            return wasActive ? 2 : 1
         }
-
-        let wasActive = _cachedSpotlightActive
-        _cachedSpotlightActive = false
-        _lastSpotlightCheckTime = 0
-        _cachedFocusedPID = 0
-        _cachedFocusedBundleId = nil
-        _lastSpotlightInvalidationTime = now
-
-        return wasActive ? 2 : 1
     }
 
     // MARK: - Layout Cache
@@ -333,35 +392,35 @@ final class PHTVCacheStateService: NSObject {
         let index = Int(keycode)
         guard index < 256 else { return layoutCacheNoValue }
 
-        layoutLock.lock()
-        defer { layoutLock.unlock() }
-        guard layoutCacheValid else { return layoutCacheNoValue }
-        return layoutCache[index]
+        return layoutState.withLock { state in
+            guard state.layoutCacheValid else { return layoutCacheNoValue }
+            return state.layoutCache[index]
+        }
     }
 
     @objc class func setCachedLayoutConversion(_ keycode: UInt16, result: UInt16) {
         let index = Int(keycode)
         guard index < 256 else { return }
 
-        layoutLock.lock()
-        if !layoutCacheValid {
-            layoutCache = Array<UInt16>(repeating: layoutCacheNoValue, count: 256)
-            layoutCacheValid = true
+        layoutState.withLock { state in
+            if !state.layoutCacheValid {
+                state.layoutCache = Array<UInt16>(repeating: layoutCacheNoValue, count: 256)
+                state.layoutCacheValid = true
+            }
+            state.layoutCache[index] = result
         }
-        layoutCache[index] = result
-        layoutLock.unlock()
     }
 
     @objc class func invalidateLayoutCache() {
-        layoutLock.lock()
-        layoutCache = Array<UInt16>(repeating: layoutCacheNoValue, count: 256)
-        layoutCacheValid = false
-        layoutLock.unlock()
+        layoutState.withLock { state in
+            state.layoutCache = Array<UInt16>(repeating: layoutCacheNoValue, count: 256)
+            state.layoutCacheValid = false
+        }
     }
 
     @objc class func isLayoutCacheValid() -> Bool {
-        layoutLock.lock()
-        defer { layoutLock.unlock() }
-        return layoutCacheValid
+        layoutState.withLock { state in
+            state.layoutCacheValid
+        }
     }
 }

@@ -152,7 +152,7 @@ struct SettingsWindowContent: View {
             object: nil,
             queue: .main
         ) { _ in
-            MainActor.assumeIsolated {
+            Task { @MainActor in
                 applySettingsWindowBehavior(forceFront: appState.settingsWindowAlwaysOnTop)
             }
         }
@@ -162,7 +162,7 @@ struct SettingsWindowContent: View {
             object: nil,
             queue: .main
         ) { _ in
-            MainActor.assumeIsolated {
+            Task { @MainActor in
                 applySettingsWindowBehavior(forceFront: false)
             }
         }
@@ -175,7 +175,7 @@ struct SettingsWindowContent: View {
             queue: .main
         ) { notification in
             let windowID = (notification.object as? NSWindow).map(ObjectIdentifier.init)
-            MainActor.assumeIsolated {
+            Task { @MainActor in
                 guard let windowID,
                       let window = NSApp.windows.first(where: { ObjectIdentifier($0) == windowID }),
                       isSettingsWindow(window) else { return }
@@ -193,7 +193,7 @@ struct SettingsWindowContent: View {
             queue: .main
         ) { notification in
             let windowID = (notification.object as? NSWindow).map(ObjectIdentifier.init)
-            MainActor.assumeIsolated {
+            Task { @MainActor in
                 guard let windowID,
                       let window = NSApp.windows.first(where: { ObjectIdentifier($0) == windowID }),
                       isSettingsWindow(window) else { return }
@@ -209,7 +209,7 @@ struct SettingsWindowContent: View {
             queue: .main
         ) { notification in
             let windowID = (notification.object as? NSWindow).map(ObjectIdentifier.init)
-            MainActor.assumeIsolated {
+            Task { @MainActor in
                 guard let windowID,
                       let window = NSApp.windows.first(where: { ObjectIdentifier($0) == windowID }),
                       isSettingsWindow(window) else { return }
@@ -227,7 +227,7 @@ struct SettingsWindowContent: View {
             queue: .main
         ) { notification in
             let windowID = (notification.object as? NSWindow).map(ObjectIdentifier.init)
-            MainActor.assumeIsolated {
+            Task { @MainActor in
                 guard let windowID,
                       let window = NSApp.windows.first(where: { ObjectIdentifier($0) == windowID }),
                       isSettingsWindow(window),

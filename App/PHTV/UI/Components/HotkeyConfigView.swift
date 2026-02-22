@@ -439,7 +439,11 @@ class KeyCaptureView: NSView {
             return nil
         }
 
-        let layoutData = unsafeBitCast(layoutDataRef, to: CFData.self)
+        let propertyValue = Unmanaged<CFTypeRef>.fromOpaque(layoutDataRef).takeUnretainedValue()
+        guard CFGetTypeID(propertyValue) == CFDataGetTypeID() else {
+            return nil
+        }
+        let layoutData = unsafeDowncast(propertyValue, to: CFData.self)
         guard let keyboardLayoutPtr = CFDataGetBytePtr(layoutData) else {
             return nil
         }

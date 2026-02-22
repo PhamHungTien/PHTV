@@ -93,7 +93,7 @@ final class EnglishUppercaseFirstCharTests: XCTestCase {
     }
 
     func testManualShiftDoesNotForceUppercaseAgain() {
-        var state = transition(.idle, keyCode: KEY_RETURN).state
+        let state = transition(.idle, keyCode: KEY_RETURN).state
 
         let letterWithShift = transition(state, keyCode: KEY_E, flags: [.maskShift])
         XCTAssertFalse(letterWithShift.forceUppercase)

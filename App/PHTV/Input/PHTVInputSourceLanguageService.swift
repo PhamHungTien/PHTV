@@ -12,9 +12,12 @@ import Foundation
 final class PHTVInputSourceLanguageService: NSObject {
     private static let languageCacheRefreshMs: UInt64 = 1000
 
-    nonisolated(unsafe) private static var languageCacheLock = NSLock()
-    nonisolated(unsafe) private static var cachedPrimaryLanguage: String?
-    nonisolated(unsafe) private static var lastLanguageCheckTime: UInt64 = 0
+    private final class LanguageCacheStateBox: @unchecked Sendable {
+        let lock = NSLock()
+        var cachedPrimaryLanguage: String?
+        var lastLanguageCheckTime: UInt64 = 0
+    }
+    private static let languageCacheState = LanguageCacheStateBox()
 
     private static let nonLatinInputSourcePatterns: [String] = [
         "com.apple.inputmethod.Kotoeri", "com.apple.inputmethod.Japanese",
@@ -101,10 +104,10 @@ final class PHTVInputSourceLanguageService: NSObject {
     private class func primaryLanguageWithCaching() -> String? {
         let now = mach_absolute_time()
 
-        languageCacheLock.lock()
-        let lastCheck = lastLanguageCheckTime
-        let cached = cachedPrimaryLanguage
-        languageCacheLock.unlock()
+        languageCacheState.lock.lock()
+        let lastCheck = languageCacheState.lastLanguageCheckTime
+        let cached = languageCacheState.cachedPrimaryLanguage
+        languageCacheState.lock.unlock()
 
         if lastCheck > 0 {
             let elapsedMs = PHTVTimingService.machTimeToMs(now - lastCheck)
@@ -120,13 +123,13 @@ final class PHTVInputSourceLanguageService: NSObject {
         let languages = inputSourceProperty(inputSource, kTISPropertyInputSourceLanguages) as? [String]
         let refreshedLanguage = languages?.first
 
-        languageCacheLock.lock()
+        languageCacheState.lock.lock()
         if let refreshedLanguage {
-            cachedPrimaryLanguage = refreshedLanguage
+            languageCacheState.cachedPrimaryLanguage = refreshedLanguage
         }
-        lastLanguageCheckTime = now
-        let resolved = cachedPrimaryLanguage
-        languageCacheLock.unlock()
+        languageCacheState.lastLanguageCheckTime = now
+        let resolved = languageCacheState.cachedPrimaryLanguage
+        languageCacheState.lock.unlock()
 
         return resolved
     }

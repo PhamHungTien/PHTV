@@ -35,8 +35,7 @@ final class PHTVEngineSessionService: NSObject {
         // Reset AX context caches on new session (often triggered by mouse click/focus change).
         PHTVEventContextBridgeService.invalidateAccessibilityContextCaches()
 
-        // Acquire barrier: ensure we see latest config changes before processing
-        OSMemoryBarrier()
+        // Runtime settings are lock-backed; reading them here observes latest committed values.
 
         #if DEBUG
         let dbgInputType = PHTVEngineRuntimeFacade.currentInputType()
@@ -70,8 +69,7 @@ final class PHTVEngineSessionService: NSObject {
         }
         PHTVModifierRuntimeStateService.applySessionResetTransition(sessionResetTransition)
 
-        // Release barrier: ensure state reset is visible to all threads
-        OSMemoryBarrier()
+        // Session reset state is now applied through lock-backed services.
 
         #if DEBUG
         NSLog("[RequestNewSession] Session reset complete")

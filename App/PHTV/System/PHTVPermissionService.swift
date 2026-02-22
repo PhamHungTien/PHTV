@@ -9,12 +9,16 @@ import ApplicationServices
 import Foundation
 
 @objc final class PHTVPermissionService: NSObject {
-    nonisolated(unsafe) private static var lastPermissionCheckResult = false
-    nonisolated(unsafe) private static var lastPermissionCheckTime: TimeInterval = 0
-    nonisolated(unsafe) private static var permissionFailureCount = 0
-    nonisolated(unsafe) private static var permissionBackoffUntil: TimeInterval = 0
-    nonisolated(unsafe) private static var lastPermissionOutcome = false
-    nonisolated(unsafe) private static var hasLastPermissionOutcome = false
+    private final class PermissionStateBox: @unchecked Sendable {
+        let lock = NSLock()
+        var lastPermissionCheckResult = false
+        var lastPermissionCheckTime: TimeInterval = 0
+        var permissionFailureCount = 0
+        var permissionBackoffUntil: TimeInterval = 0
+        var lastPermissionOutcome = false
+        var hasLastPermissionOutcome = false
+    }
+    private static let permissionState = PermissionStateBox()
 
     // No cache while waiting for permission, 5s when permission is granted.
     private static let cacheTTLWaitingForPermission: TimeInterval = 0
@@ -52,11 +56,13 @@ import Foundation
     }
 
     @objc static func invalidatePermissionCache() {
-        lastPermissionCheckTime = 0
-        lastPermissionCheckResult = false
-        permissionFailureCount = 0
-        permissionBackoffUntil = 0
-        hasLastPermissionOutcome = false
+        permissionState.lock.lock()
+        permissionState.lastPermissionCheckTime = 0
+        permissionState.lastPermissionCheckResult = false
+        permissionState.permissionFailureCount = 0
+        permissionState.permissionBackoffUntil = 0
+        permissionState.hasLastPermissionOutcome = false
+        permissionState.lock.unlock()
         NSLog("[Permission] Cache invalidated - next check will be fresh")
     }
 
@@ -75,21 +81,34 @@ import Foundation
             if !canPost {
                 NSLog("[Permission] Accessibility/Event Synthesis (PostEvent) is NOT granted")
             }
-            lastPermissionCheckResult = false
-            lastPermissionCheckTime = Date().timeIntervalSince1970
-            lastPermissionOutcome = false
-            hasLastPermissionOutcome = true
+            permissionState.lock.lock()
+            permissionState.lastPermissionCheckResult = false
+            permissionState.lastPermissionCheckTime = Date().timeIntervalSince1970
+            permissionState.lastPermissionOutcome = false
+            permissionState.hasLastPermissionOutcome = true
+            permissionState.lock.unlock()
             return false
         }
 
         let now = Date().timeIntervalSince1970
+        var backoffUntil = 0.0
+        var failureCount = 0
+        var lastPermissionCheckResult = false
+        var lastPermissionCheckTime: TimeInterval = 0
 
-        if now < permissionBackoffUntil {
+        permissionState.lock.lock()
+        backoffUntil = permissionState.permissionBackoffUntil
+        failureCount = permissionState.permissionFailureCount
+        lastPermissionCheckResult = permissionState.lastPermissionCheckResult
+        lastPermissionCheckTime = permissionState.lastPermissionCheckTime
+        permissionState.lock.unlock()
+
+        if now < backoffUntil {
 #if DEBUG
             NSLog(
                 "[Permission] Backoff active for %.2fs (failures=%ld)",
-                permissionBackoffUntil - now,
-                permissionFailureCount
+                backoffUntil - now,
+                failureCount
             )
 #endif
             return false
@@ -101,32 +120,44 @@ import Foundation
         }
 
         let hasPermission = tryCreateTestTapWithRetries()
+        var shouldLogSuccess = false
+        var shouldLogFailure = false
+        var loggedFailureCount = 0
+        var loggedBackoff = 0.0
+
+        permissionState.lock.lock()
+        let previousHasLastOutcome = permissionState.hasLastPermissionOutcome
+        let previousOutcome = permissionState.lastPermissionOutcome
 
         if hasPermission {
-            permissionFailureCount = 0
-            permissionBackoffUntil = 0
-            if !hasLastPermissionOutcome || !lastPermissionOutcome {
-                NSLog("[Permission] Check: TestTap=SUCCESS")
-            }
+            permissionState.permissionFailureCount = 0
+            permissionState.permissionBackoffUntil = 0
+            shouldLogSuccess = !previousHasLastOutcome || !previousOutcome
         } else {
-            permissionFailureCount += 1
-            let exponent = min(permissionFailureCount, 6)
+            permissionState.permissionFailureCount += 1
+            let exponent = min(permissionState.permissionFailureCount, 6)
             let backoff = min(15.0, pow(2.0, Double(exponent)) * 0.25)
-            permissionBackoffUntil = now + backoff
-
-            if !hasLastPermissionOutcome || lastPermissionOutcome || (permissionFailureCount % 5 == 1) {
-                NSLog(
-                    "[Permission] Check: TestTap=FAILED (count=%ld) — backing off for %.2fs",
-                    permissionFailureCount,
-                    backoff
-                )
-            }
+            permissionState.permissionBackoffUntil = now + backoff
+            loggedFailureCount = permissionState.permissionFailureCount
+            loggedBackoff = backoff
+            shouldLogFailure = !previousHasLastOutcome || previousOutcome || (loggedFailureCount % 5 == 1)
         }
 
-        lastPermissionCheckResult = hasPermission
-        lastPermissionCheckTime = now
-        lastPermissionOutcome = hasPermission
-        hasLastPermissionOutcome = true
+        permissionState.lastPermissionCheckResult = hasPermission
+        permissionState.lastPermissionCheckTime = now
+        permissionState.lastPermissionOutcome = hasPermission
+        permissionState.hasLastPermissionOutcome = true
+        permissionState.lock.unlock()
+
+        if shouldLogSuccess {
+            NSLog("[Permission] Check: TestTap=SUCCESS")
+        } else if shouldLogFailure {
+            NSLog(
+                "[Permission] Check: TestTap=FAILED (count=%ld) — backing off for %.2fs",
+                loggedFailureCount,
+                loggedBackoff
+            )
+        }
 
         return hasPermission
     }

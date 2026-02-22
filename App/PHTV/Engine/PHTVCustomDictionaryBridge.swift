@@ -8,8 +8,13 @@
 import Foundation
 
 private let customDictionaryLock = NSLock()
-nonisolated(unsafe) private var customEnglishWordsSwift: Set<String> = []
-nonisolated(unsafe) private var customVietnameseWordsSwift: Set<String> = []
+
+private final class CustomDictionaryStateBox: @unchecked Sendable {
+    var customEnglishWordsSwift: Set<String> = []
+    var customVietnameseWordsSwift: Set<String> = []
+}
+
+private let customDictionaryState = CustomDictionaryStateBox()
 
 private func normalizedCustomDictionaryWord(_ word: String) -> String {
     let trimmed = word.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -24,8 +29,8 @@ private func setCustomDictionaryWords(
     vietnamese: Set<String>
 ) {
     customDictionaryLock.lock()
-    customEnglishWordsSwift = english
-    customVietnameseWordsSwift = vietnamese
+    customDictionaryState.customEnglishWordsSwift = english
+    customDictionaryState.customVietnameseWordsSwift = vietnamese
     customDictionaryLock.unlock()
 }
 
@@ -79,7 +84,7 @@ func phtvCustomDictionaryLoadJSON(_ jsonData: UnsafePointer<CChar>?, _ length: I
 @_cdecl("phtvCustomDictionaryEnglishCount")
 func phtvCustomDictionaryEnglishCount() -> Int32 {
     customDictionaryLock.lock()
-    let count = customEnglishWordsSwift.count
+    let count = customDictionaryState.customEnglishWordsSwift.count
     customDictionaryLock.unlock()
     return Int32(clamping: count)
 }
@@ -87,7 +92,7 @@ func phtvCustomDictionaryEnglishCount() -> Int32 {
 @_cdecl("phtvCustomDictionaryVietnameseCount")
 func phtvCustomDictionaryVietnameseCount() -> Int32 {
     customDictionaryLock.lock()
-    let count = customVietnameseWordsSwift.count
+    let count = customDictionaryState.customVietnameseWordsSwift.count
     customDictionaryLock.unlock()
     return Int32(clamping: count)
 }
@@ -104,7 +109,7 @@ func phtvCustomDictionaryContainsEnglishWord(_ wordCString: UnsafePointer<CChar>
     }
 
     customDictionaryLock.lock()
-    let contains = customEnglishWordsSwift.contains(word)
+    let contains = customDictionaryState.customEnglishWordsSwift.contains(word)
     customDictionaryLock.unlock()
     return contains ? 1 : 0
 }
@@ -121,7 +126,7 @@ func phtvCustomDictionaryContainsVietnameseWord(_ wordCString: UnsafePointer<CCh
     }
 
     customDictionaryLock.lock()
-    let contains = customVietnameseWordsSwift.contains(word)
+    let contains = customDictionaryState.customVietnameseWordsSwift.contains(word)
     customDictionaryLock.unlock()
     return contains ? 1 : 0
 }

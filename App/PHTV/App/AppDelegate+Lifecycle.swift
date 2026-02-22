@@ -42,7 +42,6 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
         let isFirstLaunch = !defaults.bool(forKey: phtvDefaultsKeyNonFirstTime)
         needsRelaunchAfterPermission = isFirstLaunch && !PHTVManager.canCreateEventTap()
 
-        SetAppDelegateInstance(self)
         // SwiftUI MenuBarExtra is the single source of truth for menu bar UI.
         // Remove legacy NSStatusItem created during AppDelegate initialization.
         NSStatusBar.system.removeStatusItem(statusItem)
@@ -57,7 +56,6 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
         for app in runningApps where app.bundleIdentifier == currentBundleID && app.processIdentifier != ProcessInfo.processInfo.processIdentifier {
             NSLog("Found existing instance (PID: %d), terminating it...", app.processIdentifier)
             app.terminate()
-            Thread.sleep(forTimeInterval: 0.5)
             break
         }
 
@@ -69,6 +67,7 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
         loadExistingMacros()
         initEnglishWordDictionary()
         loadRuntimeSettingsFromUserDefaults()
+        EmojiHotkeyBridge.initializeEmojiHotkeyManager()
 
         observeAppearanceChanges()
 

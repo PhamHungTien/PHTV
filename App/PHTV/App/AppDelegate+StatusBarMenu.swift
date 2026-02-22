@@ -18,8 +18,8 @@ private enum PHTVStatusBarMenuCache {
     func createStatusBarMenu() {
         if !Thread.isMainThread {
             NSLog("[StatusBar] createStatusBarMenu called off main thread - dispatching to main")
-            DispatchQueue.main.sync {
-                self.createStatusBarMenu()
+            DispatchQueue.main.async { [weak self] in
+                self?.createStatusBarMenu()
             }
             return
         }

@@ -54,10 +54,13 @@ final class PHTVEventTargetContextBox: NSObject {
 
 @objcMembers
 final class PHTVAppContextService: NSObject {
-    nonisolated(unsafe) private static var shouldDisableLock = NSLock()
-    nonisolated(unsafe) private static var shouldDisableLastPid: Int32 = -1
-    nonisolated(unsafe) private static var shouldDisableLastCheckTime: UInt64 = 0
-    nonisolated(unsafe) private static var shouldDisableLastResult = false
+    private final class ShouldDisableStateBox: @unchecked Sendable {
+        let lock = NSLock()
+        var lastPid: Int32 = -1
+        var lastCheckTime: UInt64 = 0
+        var lastResult = false
+    }
+    private static let shouldDisableState = ShouldDisableStateBox()
 
     private class var frontmostBundleId: String? {
         NSWorkspace.shared.frontmostApplication?.bundleIdentifier
@@ -108,11 +111,11 @@ final class PHTVAppContextService: NSObject {
                                        spotlightCacheDurationMs: UInt64) -> Bool {
         let now = mach_absolute_time()
 
-        shouldDisableLock.lock()
-        let lastPid = shouldDisableLastPid
-        let lastCheckTime = shouldDisableLastCheckTime
-        let lastResult = shouldDisableLastResult
-        shouldDisableLock.unlock()
+        shouldDisableState.lock.lock()
+        let lastPid = shouldDisableState.lastPid
+        let lastCheckTime = shouldDisableState.lastCheckTime
+        let lastResult = shouldDisableState.lastResult
+        shouldDisableState.lock.unlock()
 
         if targetPid > 0, targetPid == lastPid, lastCheckTime > 0 {
             let elapsedMs = PHTVTimingService.machTimeToMs(now - lastCheckTime)
@@ -124,11 +127,11 @@ final class PHTVAppContextService: NSObject {
         let bundleId = focusedBundleId(forSafeMode: safeMode, cacheDurationMs: spotlightCacheDurationMs)
         let shouldDisable = shouldDisableVietnamese(forBundleId: bundleId)
 
-        shouldDisableLock.lock()
-        shouldDisableLastPid = targetPid > 0 ? targetPid : -1
-        shouldDisableLastCheckTime = now
-        shouldDisableLastResult = shouldDisable
-        shouldDisableLock.unlock()
+        shouldDisableState.lock.lock()
+        shouldDisableState.lastPid = targetPid > 0 ? targetPid : -1
+        shouldDisableState.lastCheckTime = now
+        shouldDisableState.lastResult = shouldDisable
+        shouldDisableState.lock.unlock()
 
         return shouldDisable
     }

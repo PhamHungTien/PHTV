@@ -53,7 +53,7 @@ private let phtvInputStateNotificationLanguageChangedFromBackend = Notification.
         fillData()
 
         if PHTVManager.isSmartSwitchKeyEnabled() {
-            DispatchQueue.global(qos: .default).async {
+            Task.detached(priority: .utility) {
                 PHTVManager.notifyInputMethodChanged()
             }
         }
@@ -95,7 +95,7 @@ private let phtvInputStateNotificationLanguageChangedFromBackend = Notification.
         fillData()
 
         if PHTVManager.isSmartSwitchKeyEnabled() {
-            DispatchQueue.global(qos: .default).async {
+            Task.detached(priority: .utility) {
                 PHTVManager.notifyInputMethodChanged()
             }
         }
@@ -157,7 +157,7 @@ private let phtvInputStateNotificationLanguageChangedFromBackend = Notification.
                                         object: NSNumber(value: targetLanguage))
 
         if willNotify && PHTVManager.isSmartSwitchKeyEnabled() {
-            DispatchQueue.global(qos: .default).async {
+            Task.detached(priority: .utility) {
                 PHTVManager.notifyInputMethodChanged()
             }
         }
@@ -208,7 +208,7 @@ private let phtvInputStateNotificationLanguageChangedFromBackend = Notification.
                                         object: NSNumber(value: PHTVManager.currentLanguage()))
 
         if PHTVManager.isSmartSwitchKeyEnabled() {
-            DispatchQueue.global(qos: .default).async {
+            Task.detached(priority: .utility) {
                 PHTVManager.notifyInputMethodChanged()
             }
         }
@@ -242,7 +242,7 @@ private let phtvInputStateNotificationLanguageChangedFromBackend = Notification.
         PHTVManager.requestNewSession()
         fillData()
 
-        DispatchQueue.global(qos: .default).async {
+        Task.detached(priority: .utility) {
             PHTVManager.notifyTableCodeChanged()
         }
 

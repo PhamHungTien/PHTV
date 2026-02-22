@@ -36,11 +36,6 @@
 	<true/>
 	<key>NSAccessibilityUsageDescription</key>
 	<string>PHTV needs Accessibility permissions to intercept keyboard events and provide Vietnamese input.</string>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
-	</dict>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>Used for keyboard</string>
 	<key>NSHumanReadableCopyright</key>

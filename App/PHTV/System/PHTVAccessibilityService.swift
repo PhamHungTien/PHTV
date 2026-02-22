@@ -13,15 +13,27 @@ import Darwin
 
 @objcMembers
 final class PHTVAccessibilityService: NSObject {
-    nonisolated(unsafe) private static var terminalCacheLock = NSLock()
-    nonisolated(unsafe) private static var lastTerminalPanelResult = false
-    nonisolated(unsafe) private static var lastTerminalPanelCheckTime: UInt64 = 0
-    nonisolated(unsafe) private static var addressBarCacheLock = NSLock()
-    nonisolated(unsafe) private static var lastAddressBarResult = false
-    nonisolated(unsafe) private static var lastAddressBarCheckTime: UInt64 = 0
-    nonisolated(unsafe) private static var notionCodeBlockCacheLock = NSLock()
-    nonisolated(unsafe) private static var lastNotionCodeBlockResult = false
-    nonisolated(unsafe) private static var lastNotionCodeBlockCheckTime: UInt64 = 0
+    private struct AccessibilityCacheState {
+        var lastTerminalPanelResult = false
+        var lastTerminalPanelCheckTime: UInt64 = 0
+        var lastAddressBarResult = false
+        var lastAddressBarCheckTime: UInt64 = 0
+        var lastNotionCodeBlockResult = false
+        var lastNotionCodeBlockCheckTime: UInt64 = 0
+    }
+
+    private final class AccessibilityCacheStateBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var state = AccessibilityCacheState()
+
+        func withLock<T>(_ body: (inout AccessibilityCacheState) -> T) -> T {
+            lock.lock()
+            defer { lock.unlock() }
+            return body(&state)
+        }
+    }
+
+    private static let cacheState = AccessibilityCacheStateBox()
 
     private static let uppercaseAbbreviationSet: Set<String> = [
         "mr", "mrs", "ms", "dr", "prof", "sr", "jr", "st",
@@ -100,7 +112,8 @@ final class PHTVAccessibilityService: NSObject {
            let rangeRef,
            CFGetTypeID(rangeRef) == AXValueGetTypeID() {
             var sel = CFRange()
-            if AXValueGetValue((rangeRef as! AXValue), .cfRange, &sel) {
+            let axRange = unsafeDowncast(rangeRef, to: AXValue.self)
+            if AXValueGetValue(axRange, .cfRange, &sel) {
                 caretLocation = sel.location
             }
         }
@@ -278,7 +291,8 @@ final class PHTVAccessibilityService: NSObject {
            let rangeRef,
            CFGetTypeID(rangeRef) == AXValueGetTypeID() {
             var sel = CFRange()
-            if AXValueGetValue((rangeRef as! AXValue), .cfRange, &sel) {
+            let axRange = unsafeDowncast(rangeRef, to: AXValue.self)
+            if AXValueGetValue(axRange, .cfRange, &sel) {
                 caretLocation = sel.location
                 selectedLength = sel.length
             }
@@ -398,7 +412,7 @@ final class PHTVAccessibilityService: NSObject {
         guard CFGetTypeID(raw) == AXUIElementGetTypeID() else {
             return nil
         }
-        return (raw as! AXUIElement)
+        return unsafeDowncast(raw, to: AXUIElement.self)
     }
 
     private class func focusedElement() -> AXUIElement? {
@@ -437,18 +451,16 @@ final class PHTVAccessibilityService: NSObject {
     }
 
     private class func readAddressBarCache() -> (result: Bool, checkTime: UInt64) {
-        addressBarCacheLock.lock()
-        let result = lastAddressBarResult
-        let checkTime = lastAddressBarCheckTime
-        addressBarCacheLock.unlock()
-        return (result, checkTime)
+        cacheState.withLock { state in
+            (state.lastAddressBarResult, state.lastAddressBarCheckTime)
+        }
     }
 
     private class func writeAddressBarCache(result: Bool, checkTime: UInt64) {
-        addressBarCacheLock.lock()
-        lastAddressBarResult = result
-        lastAddressBarCheckTime = checkTime
-        addressBarCacheLock.unlock()
+        cacheState.withLock { state in
+            state.lastAddressBarResult = result
+            state.lastAddressBarCheckTime = checkTime
+        }
     }
 
     @objc class func invalidateAddressBarCache() {
@@ -456,18 +468,16 @@ final class PHTVAccessibilityService: NSObject {
     }
 
     private class func readNotionCodeBlockCache() -> (result: Bool, checkTime: UInt64) {
-        notionCodeBlockCacheLock.lock()
-        let result = lastNotionCodeBlockResult
-        let checkTime = lastNotionCodeBlockCheckTime
-        notionCodeBlockCacheLock.unlock()
-        return (result, checkTime)
+        cacheState.withLock { state in
+            (state.lastNotionCodeBlockResult, state.lastNotionCodeBlockCheckTime)
+        }
     }
 
     private class func writeNotionCodeBlockCache(result: Bool, checkTime: UInt64) {
-        notionCodeBlockCacheLock.lock()
-        lastNotionCodeBlockResult = result
-        lastNotionCodeBlockCheckTime = checkTime
-        notionCodeBlockCacheLock.unlock()
+        cacheState.withLock { state in
+            state.lastNotionCodeBlockResult = result
+            state.lastNotionCodeBlockCheckTime = checkTime
+        }
     }
 
     @objc class func invalidateNotionCodeBlockCache() {
@@ -600,15 +610,13 @@ final class PHTVAccessibilityService: NSObject {
 
     @objc class func isTerminalPanelFocused() -> Bool {
         let now = mach_absolute_time()
-        terminalCacheLock.lock()
-        let cachedTime = lastTerminalPanelCheckTime
-        if cachedTime != 0,
-           PHTVTimingService.machTimeToMs(now - cachedTime) < 50 {
-            let cachedResult = lastTerminalPanelResult
-            terminalCacheLock.unlock()
-            return cachedResult
+        let cached = cacheState.withLock { state in
+            (state.lastTerminalPanelResult, state.lastTerminalPanelCheckTime)
         }
-        terminalCacheLock.unlock()
+        if cached.1 != 0,
+           PHTVTimingService.machTimeToMs(now - cached.1) < 50 {
+            return cached.0
+        }
 
         var isTerminalPanel = false
         if let focused = focusedElement() {
@@ -661,10 +669,10 @@ final class PHTVAccessibilityService: NSObject {
             }
         }
 
-        terminalCacheLock.lock()
-        lastTerminalPanelResult = isTerminalPanel
-        lastTerminalPanelCheckTime = now
-        terminalCacheLock.unlock()
+        cacheState.withLock { state in
+            state.lastTerminalPanelResult = isTerminalPanel
+            state.lastTerminalPanelCheckTime = now
+        }
         return isTerminalPanel
     }
 

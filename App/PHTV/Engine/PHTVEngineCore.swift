@@ -1940,71 +1940,116 @@ final class PHTVVietnameseEngine {
 
 // MARK: - Module-level singleton + lock
 
-private let _engineLock = NSLock()
-nonisolated(unsafe) private let _engine = PHTVVietnameseEngine()
+private final class EngineStateBox: @unchecked Sendable {
+    let lock = NSLock()
+    let engine = PHTVVietnameseEngine()
+}
+
+private let engineState = EngineStateBox()
+
+private func withEngineState<T>(_ body: (PHTVVietnameseEngine) -> T) -> T {
+    engineState.lock.lock()
+    defer { engineState.lock.unlock() }
+    return body(engineState.engine)
+}
 
 // MARK: - Public C bridge functions (called from PHTVEngineBridgeExports.swift via @_cdecl)
 
 func engineHandleEvent(_ event: Int32, _ state: Int32, _ data: UInt16, _ capsStatus: UInt8, _ otherControlKey: Int32) {
-    _engineLock.lock()
-    defer { _engineLock.unlock() }
-    guard let ev = VKeyEvent(rawValue: event), let st = VKeyEventState(rawValue: state) else { return }
-    _engine.vKeyHandleEvent(event: ev, state: st, data: data, capsStatus: capsStatus, otherControlKey: otherControlKey != 0)
+    withEngineState { engine in
+        guard let ev = VKeyEvent(rawValue: event), let st = VKeyEventState(rawValue: state) else { return }
+        engine.vKeyHandleEvent(event: ev, state: st, data: data, capsStatus: capsStatus, otherControlKey: otherControlKey != 0)
+    }
 }
 
 func engineHandleEnglishMode(_ state: Int32, _ data: UInt16, _ isCaps: Int32, _ otherControlKey: Int32) {
-    _engineLock.lock()
-    defer { _engineLock.unlock() }
-    guard let st = VKeyEventState(rawValue: state) else { return }
-    _engine.vEnglishMode(state: st, data: data, isCaps: isCaps != 0, otherControlKey: otherControlKey != 0)
+    withEngineState { engine in
+        guard let st = VKeyEventState(rawValue: state) else { return }
+        engine.vEnglishMode(state: st, data: data, isCaps: isCaps != 0, otherControlKey: otherControlKey != 0)
+    }
 }
 
 func enginePrimeUpperCaseFirstChar() {
-    _engineLock.lock(); defer { _engineLock.unlock() }
-    _engine.vPrimeUpperCaseFirstChar()
+    withEngineState { engine in
+        engine.vPrimeUpperCaseFirstChar()
+    }
 }
 
 func engineRestoreToRawKeys() -> Int32 {
-    _engineLock.lock(); defer { _engineLock.unlock() }
-    return _engine.vRestoreToRawKeys() ? 1 : 0
+    withEngineState { engine in
+        engine.vRestoreToRawKeys() ? 1 : 0
+    }
 }
 
 func engineTempOffSpellChecking() {
-    _engineLock.lock(); defer { _engineLock.unlock() }
-    _engine.vTempOffSpellChecking()
+    withEngineState { engine in
+        engine.vTempOffSpellChecking()
+    }
 }
 
 func engineTempOff(_ off: Int32) {
-    _engineLock.lock(); defer { _engineLock.unlock() }
-    _engine.vTempOffEngine(off != 0)
+    withEngineState { engine in
+        engine.vTempOffEngine(off != 0)
+    }
 }
 
 func engineSetCheckSpelling() {
-    _engineLock.lock(); defer { _engineLock.unlock() }
-    _engine.vSetCheckSpelling()
+    withEngineState { engine in
+        engine.vSetCheckSpelling()
+    }
 }
 
 func engineStartNewSession() {
-    _engineLock.lock(); defer { _engineLock.unlock() }
-    _engine.startNewSession()
+    withEngineState { engine in
+        engine.startNewSession()
+    }
 }
 
 func engineInitialize() {
-    _engineLock.lock(); defer { _engineLock.unlock() }
-    _engine.vKeyInit()
+    withEngineState { engine in
+        engine.vKeyInit()
+    }
 }
 
-func engineHookCode() -> Int32 { _engine.hCode }
-func engineHookExtCode() -> Int32 { _engine.hExt }
-func engineHookBackspaceCount() -> Int32 { Int32(_engine.hBPC) }
-func engineHookSetBackspaceCount(_ count: UInt8) { _engine.hBPC = Int(count) }
-func engineHookNewCharCount() -> Int32 { Int32(_engine.hNCC) }
-func engineHookCharAt(_ index: Int32) -> UInt32 {
-    guard index >= 0 && Int(index) < ENGINE_MAX_BUFF else { return 0 }
-    return _engine.hData[Int(index)]
+func engineHookCode() -> Int32 {
+    withEngineState { engine in
+        engine.hCode
+    }
 }
-func engineHookMacroDataSize() -> Int32 { Int32(_engine.hMacroData.count) }
+func engineHookExtCode() -> Int32 {
+    withEngineState { engine in
+        engine.hExt
+    }
+}
+func engineHookBackspaceCount() -> Int32 {
+    withEngineState { engine in
+        Int32(engine.hBPC)
+    }
+}
+func engineHookSetBackspaceCount(_ count: UInt8) {
+    withEngineState { engine in
+        engine.hBPC = Int(count)
+    }
+}
+func engineHookNewCharCount() -> Int32 {
+    withEngineState { engine in
+        Int32(engine.hNCC)
+    }
+}
+func engineHookCharAt(_ index: Int32) -> UInt32 {
+    withEngineState { engine in
+        guard index >= 0 && Int(index) < ENGINE_MAX_BUFF else { return 0 }
+        return engine.hData[Int(index)]
+    }
+}
+func engineHookMacroDataSize() -> Int32 {
+    withEngineState { engine in
+        Int32(engine.hMacroData.count)
+    }
+}
 func engineHookMacroDataAt(_ index: Int32) -> UInt32 {
-    guard index >= 0 && Int(index) < _engine.hMacroData.count else { return 0 }
-    return _engine.hMacroData[Int(index)]
+    withEngineState { engine in
+        guard index >= 0 && Int(index) < engine.hMacroData.count else { return 0 }
+        return engine.hMacroData[Int(index)]
+    }
 }

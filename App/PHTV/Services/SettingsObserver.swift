@@ -16,7 +16,7 @@ final class SettingsObserver: NSObject, ObservableObject {
 
     @Published var settingsDidChange: Date?
 
-    nonisolated(unsafe) private var observer: NSObjectProtocol?
+    private var observer: NSObjectProtocol?
     private var lastNotificationTime: Date = Date()
     private var suppressUntil: Date?
 
@@ -55,9 +55,4 @@ final class SettingsObserver: NSObject, ObservableObject {
         suppressUntil = Date().addingTimeInterval(interval)
     }
 
-    deinit {
-        if let observer {
-            NotificationCenter.default.removeObserver(observer)
-        }
-    }
 }

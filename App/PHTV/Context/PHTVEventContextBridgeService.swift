@@ -378,218 +378,337 @@ final class PHTVEventContextBridgeService: NSObject {
 
 @objcMembers
 final class PHTVEventRuntimeContextService: NSObject {
-    nonisolated(unsafe) private static var effectiveTargetBundleId: String?
-    nonisolated(unsafe) private static var appCharacteristics: PHTVAppCharacteristicsBox?
-    nonisolated(unsafe) private static var postToHIDTap = false
-    nonisolated(unsafe) private static var postToSessionForCli = false
-    nonisolated(unsafe) private static var cliTarget = false
-    nonisolated(unsafe) private static var keyboardType: Int64 = 0
-    nonisolated(unsafe) private static var pendingBackspaceCount: Int32 = 0
-    nonisolated(unsafe) private static var eventTapProxyRaw: UInt64 = 0
+    private struct RuntimeContextState {
+        var effectiveTargetBundleId: String?
+        var appCharacteristics: PHTVAppCharacteristicsBox?
+        var postToHIDTap = false
+        var postToSessionForCli = false
+        var cliTarget = false
+        var keyboardType: Int64 = 0
+        var pendingBackspaceCount: Int32 = 0
+        var eventTapProxyRaw: UInt64 = 0
+    }
+
+    private final class RuntimeContextStateBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var state = RuntimeContextState()
+
+        func withLock<T>(_ body: (inout RuntimeContextState) -> T) -> T {
+            lock.lock()
+            defer { lock.unlock() }
+            return body(&state)
+        }
+    }
+
+    private static let runtimeState = RuntimeContextStateBox()
 
     @objc(configureFromTargetContext:appCharacteristics:keyboardType:)
     class func configure(from targetContext: PHTVEventTargetContextBox,
                          appCharacteristics contextCharacteristics: PHTVAppCharacteristicsBox,
                          keyboardType eventKeyboardType: Int64) {
-        effectiveTargetBundleId = targetContext.effectiveBundleId
-        appCharacteristics = contextCharacteristics
-        postToHIDTap = targetContext.postToHIDTap
-        cliTarget = targetContext.isCliTarget
-        postToSessionForCli = cliTarget
-        keyboardType = eventKeyboardType
-        pendingBackspaceCount = 0
+        runtimeState.withLock { state in
+            state.effectiveTargetBundleId = targetContext.effectiveBundleId
+            state.appCharacteristics = contextCharacteristics
+            state.postToHIDTap = targetContext.postToHIDTap
+            state.cliTarget = targetContext.isCliTarget
+            state.postToSessionForCli = state.cliTarget
+            state.keyboardType = eventKeyboardType
+            state.pendingBackspaceCount = 0
+        }
     }
 
     @objc class func clearCliPostFlags() {
-        postToSessionForCli = false
-        cliTarget = false
+        runtimeState.withLock { state in
+            state.postToSessionForCli = false
+            state.cliTarget = false
+        }
     }
 
     @objc class func appIsSpotlightLike() -> Bool {
-        appCharacteristics?.isSpotlightLike ?? false
+        runtimeState.withLock { state in
+            state.appCharacteristics?.isSpotlightLike ?? false
+        }
     }
 
     @objc class func appNeedsPrecomposedBatched() -> Bool {
-        appCharacteristics?.needsPrecomposedBatched ?? false
+        runtimeState.withLock { state in
+            state.appCharacteristics?.needsPrecomposedBatched ?? false
+        }
     }
 
     @objc class func appNeedsStepByStep() -> Bool {
-        appCharacteristics?.needsStepByStep ?? false
+        runtimeState.withLock { state in
+            state.appCharacteristics?.needsStepByStep ?? false
+        }
     }
 
     @objc class func appContainsUnicodeCompound() -> Bool {
-        appCharacteristics?.containsUnicodeCompound ?? false
+        runtimeState.withLock { state in
+            state.appCharacteristics?.containsUnicodeCompound ?? false
+        }
     }
 
     @objc class func postToHIDTapEnabled() -> Bool {
-        postToHIDTap
+        runtimeState.withLock { state in
+            state.postToHIDTap
+        }
     }
 
     @objc class func postToSessionForCliEnabled() -> Bool {
-        postToSessionForCli
+        runtimeState.withLock { state in
+            state.postToSessionForCli
+        }
     }
 
     @objc class func isCliTargetEnabled() -> Bool {
-        cliTarget
+        runtimeState.withLock { state in
+            state.cliTarget
+        }
     }
 
     @objc class func effectiveTargetBundleIdValue() -> String? {
-        effectiveTargetBundleId
+        runtimeState.withLock { state in
+            state.effectiveTargetBundleId
+        }
     }
 
     @objc class func currentKeyboardTypeValue() -> Int64 {
-        keyboardType
+        runtimeState.withLock { state in
+            state.keyboardType
+        }
     }
 
     @objc(setPendingBackspaceCount:)
     class func setPendingBackspaceCount(_ count: Int32) {
-        pendingBackspaceCount = max(0, count)
+        runtimeState.withLock { state in
+            state.pendingBackspaceCount = max(0, count)
+        }
     }
 
     @objc class func takePendingBackspaceCount() -> Int32 {
-        let count = pendingBackspaceCount
-        pendingBackspaceCount = 0
-        return count
+        runtimeState.withLock { state in
+            let count = state.pendingBackspaceCount
+            state.pendingBackspaceCount = 0
+            return count
+        }
     }
 
     @objc(setEventTapProxyRawValue:)
     class func setEventTapProxyRawValue(_ value: UInt64) {
-        eventTapProxyRaw = value
+        runtimeState.withLock { state in
+            state.eventTapProxyRaw = value
+        }
     }
 
     @objc class func eventTapProxyRawValue() -> UInt64 {
-        eventTapProxyRaw
+        runtimeState.withLock { state in
+            state.eventTapProxyRaw
+        }
     }
 }
 
 @objcMembers
 final class PHTVModifierRuntimeStateService: NSObject {
-    nonisolated(unsafe) private static var pendingUppercasePrimeCheck = true
-    nonisolated(unsafe) private static var lastFlags: UInt64 = 0
-    nonisolated(unsafe) private static var hasJustUsedHotKey = false
-    nonisolated(unsafe) private static var pausePressed = false
-    nonisolated(unsafe) private static var savedLanguage: Int32 = 1
-    nonisolated(unsafe) private static var restoreModifierPressed = false
-    nonisolated(unsafe) private static var keyPressedWithRestoreModifier = false
-    nonisolated(unsafe) private static var keyPressedWhileSwitchModifiersHeld = false
-    nonisolated(unsafe) private static var keyPressedWhileEmojiModifiersHeld = false
+    private struct ModifierRuntimeState {
+        var pendingUppercasePrimeCheck = true
+        var lastFlags: UInt64 = 0
+        var hasJustUsedHotKey = false
+        var pausePressed = false
+        var savedLanguage: Int32 = 1
+        var restoreModifierPressed = false
+        var keyPressedWithRestoreModifier = false
+        var keyPressedWhileSwitchModifiersHeld = false
+        var keyPressedWhileEmojiModifiersHeld = false
+    }
+
+    private final class ModifierRuntimeStateBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var state = ModifierRuntimeState()
+
+        func withLock<T>(_ body: (inout ModifierRuntimeState) -> T) -> T {
+            lock.lock()
+            defer { lock.unlock() }
+            return body(&state)
+        }
+    }
+
+    private static let runtimeState = ModifierRuntimeStateBox()
 
     @objc(resetTransientHotkeyStateWithSavedLanguage:)
     class func resetTransientHotkeyState(savedLanguage: Int32) {
-        pendingUppercasePrimeCheck = true
-        lastFlags = 0
-        hasJustUsedHotKey = false
-        pausePressed = false
-        self.savedLanguage = savedLanguage
-        restoreModifierPressed = false
-        keyPressedWithRestoreModifier = false
-        keyPressedWhileSwitchModifiersHeld = false
-        keyPressedWhileEmojiModifiersHeld = false
+        runtimeState.withLock { state in
+            state.pendingUppercasePrimeCheck = true
+            state.lastFlags = 0
+            state.hasJustUsedHotKey = false
+            state.pausePressed = false
+            state.savedLanguage = savedLanguage
+            state.restoreModifierPressed = false
+            state.keyPressedWithRestoreModifier = false
+            state.keyPressedWhileSwitchModifiersHeld = false
+            state.keyPressedWhileEmojiModifiersHeld = false
+        }
     }
 
     @objc(applySessionResetTransition:)
     class func applySessionResetTransition(_ transition: PHTVSessionResetTransitionBox) {
-        pendingUppercasePrimeCheck = transition.pendingUppercasePrimeCheck
-        lastFlags = transition.lastFlags
-        hasJustUsedHotKey = transition.hasJustUsedHotKey
+        runtimeState.withLock { state in
+            state.pendingUppercasePrimeCheck = transition.pendingUppercasePrimeCheck
+            state.lastFlags = transition.lastFlags
+            state.hasJustUsedHotKey = transition.hasJustUsedHotKey
+        }
     }
 
     @objc class func pendingUppercasePrimeCheckValue() -> Bool {
-        pendingUppercasePrimeCheck
+        runtimeState.withLock { state in
+            state.pendingUppercasePrimeCheck
+        }
     }
 
     @objc(setPendingUppercasePrimeCheckValue:)
     class func setPendingUppercasePrimeCheckValue(_ value: Bool) {
-        pendingUppercasePrimeCheck = value
+        runtimeState.withLock { state in
+            state.pendingUppercasePrimeCheck = value
+        }
     }
 
     @objc class func lastFlagsValue() -> UInt64 {
-        lastFlags
+        runtimeState.withLock { state in
+            state.lastFlags
+        }
     }
 
     @objc(setLastFlagsValue:)
     class func setLastFlagsValue(_ value: UInt64) {
-        lastFlags = value
+        runtimeState.withLock { state in
+            state.lastFlags = value
+        }
     }
 
     @objc class func hasJustUsedHotKeyValue() -> Bool {
-        hasJustUsedHotKey
+        runtimeState.withLock { state in
+            state.hasJustUsedHotKey
+        }
     }
 
     @objc(setHasJustUsedHotKeyValue:)
     class func setHasJustUsedHotKeyValue(_ value: Bool) {
-        hasJustUsedHotKey = value
+        runtimeState.withLock { state in
+            state.hasJustUsedHotKey = value
+        }
     }
 
     @objc class func pausePressedValue() -> Bool {
-        pausePressed
+        runtimeState.withLock { state in
+            state.pausePressed
+        }
     }
 
     @objc(setPausePressedValue:)
     class func setPausePressedValue(_ value: Bool) {
-        pausePressed = value
+        runtimeState.withLock { state in
+            state.pausePressed = value
+        }
     }
 
     @objc class func savedLanguageValue() -> Int32 {
-        savedLanguage
+        runtimeState.withLock { state in
+            state.savedLanguage
+        }
     }
 
     @objc(setSavedLanguageValue:)
     class func setSavedLanguageValue(_ value: Int32) {
-        savedLanguage = value
+        runtimeState.withLock { state in
+            state.savedLanguage = value
+        }
     }
 
     @objc class func restoreModifierPressedValue() -> Bool {
-        restoreModifierPressed
+        runtimeState.withLock { state in
+            state.restoreModifierPressed
+        }
     }
 
     @objc(setRestoreModifierPressedValue:)
     class func setRestoreModifierPressedValue(_ value: Bool) {
-        restoreModifierPressed = value
+        runtimeState.withLock { state in
+            state.restoreModifierPressed = value
+        }
     }
 
     @objc class func keyPressedWithRestoreModifierValue() -> Bool {
-        keyPressedWithRestoreModifier
+        runtimeState.withLock { state in
+            state.keyPressedWithRestoreModifier
+        }
     }
 
     @objc(setKeyPressedWithRestoreModifierValue:)
     class func setKeyPressedWithRestoreModifierValue(_ value: Bool) {
-        keyPressedWithRestoreModifier = value
+        runtimeState.withLock { state in
+            state.keyPressedWithRestoreModifier = value
+        }
     }
 
     @objc class func keyPressedWhileSwitchModifiersHeldValue() -> Bool {
-        keyPressedWhileSwitchModifiersHeld
+        runtimeState.withLock { state in
+            state.keyPressedWhileSwitchModifiersHeld
+        }
     }
 
     @objc(setKeyPressedWhileSwitchModifiersHeldValue:)
     class func setKeyPressedWhileSwitchModifiersHeldValue(_ value: Bool) {
-        keyPressedWhileSwitchModifiersHeld = value
+        runtimeState.withLock { state in
+            state.keyPressedWhileSwitchModifiersHeld = value
+        }
     }
 
     @objc class func keyPressedWhileEmojiModifiersHeldValue() -> Bool {
-        keyPressedWhileEmojiModifiersHeld
+        runtimeState.withLock { state in
+            state.keyPressedWhileEmojiModifiersHeld
+        }
     }
 
     @objc(setKeyPressedWhileEmojiModifiersHeldValue:)
     class func setKeyPressedWhileEmojiModifiersHeldValue(_ value: Bool) {
-        keyPressedWhileEmojiModifiersHeld = value
+        runtimeState.withLock { state in
+            state.keyPressedWhileEmojiModifiersHeld = value
+        }
     }
 }
 
 @objcMembers
 final class PHTVTypingSyncStateService: NSObject {
-    nonisolated(unsafe) private static var syncKey: [UInt16] = []
+    private struct TypingSyncState {
+        var syncKey: [UInt16] = []
+    }
+
+    private final class TypingSyncStateBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var state = TypingSyncState()
+
+        func withLock<T>(_ body: (inout TypingSyncState) -> T) -> T {
+            lock.lock()
+            defer { lock.unlock() }
+            return body(&state)
+        }
+    }
+
+    private static let syncState = TypingSyncStateBox()
 
     @objc(setupSyncKeyCapacity:)
     class func setupSyncKeyCapacity(_ capacity: Int32) {
         guard capacity > 0 else {
             return
         }
-        syncKey.reserveCapacity(Int(capacity))
+        syncState.withLock { state in
+            state.syncKey.reserveCapacity(Int(capacity))
+        }
     }
 
     @objc class func clearSyncKey() {
-        syncKey.removeAll(keepingCapacity: true)
+        syncState.withLock { state in
+            state.syncKey.removeAll(keepingCapacity: true)
+        }
     }
 
     @objc(appendSyncKeyLength:)
@@ -597,32 +716,42 @@ final class PHTVTypingSyncStateService: NSObject {
         guard length > 0 else {
             return
         }
-        syncKey.append(UInt16(length))
+        syncState.withLock { state in
+            state.syncKey.append(UInt16(length))
+        }
     }
 
     @objc class func syncKeyIsEmpty() -> Bool {
-        syncKey.isEmpty
+        syncState.withLock { state in
+            state.syncKey.isEmpty
+        }
     }
 
     @objc class func syncKeyBackValue() -> Int32 {
-        Int32(syncKey.last ?? 0)
+        syncState.withLock { state in
+            Int32(state.syncKey.last ?? 0)
+        }
     }
 
     @objc class func popSyncKeyIfAny() {
-        guard !syncKey.isEmpty else {
-            return
+        syncState.withLock { state in
+            guard !state.syncKey.isEmpty else {
+                return
+            }
+            state.syncKey.removeLast()
         }
-        syncKey.removeLast()
     }
 
     @objc class func consumeSyncKeyOnBackspace() {
-        guard let last = syncKey.last else {
-            return
-        }
-        if last > 1 {
-            syncKey[syncKey.count - 1] = last - 1
-        } else {
-            syncKey.removeLast()
+        syncState.withLock { state in
+            guard let last = state.syncKey.last else {
+                return
+            }
+            if last > 1 {
+                state.syncKey[state.syncKey.count - 1] = last - 1
+            } else {
+                state.syncKey.removeLast()
+            }
         }
     }
 }

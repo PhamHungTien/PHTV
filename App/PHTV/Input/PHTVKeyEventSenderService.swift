@@ -15,13 +15,31 @@ class PHTVKeyEventSenderService: NSObject {
 
     // MARK: - Event source
 
-    nonisolated(unsafe) private static var sharedEventSource: CGEventSource?
+    private final class EventSourceStateBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var sharedEventSource: CGEventSource?
 
-    @objc class func initializeEventSource() {
-        sharedEventSource = CGEventSource(stateID: .privateState)
+        func set(_ source: CGEventSource?) {
+            lock.lock()
+            sharedEventSource = source
+            lock.unlock()
+        }
+
+        func get() -> CGEventSource? {
+            lock.lock()
+            let source = sharedEventSource
+            lock.unlock()
+            return source
+        }
     }
 
-    private static var eventSource: CGEventSource? { sharedEventSource }
+    private static let eventSourceState = EventSourceStateBox()
+
+    @objc class func initializeEventSource() {
+        eventSourceState.set(CGEventSource(stateID: .privateState))
+    }
+
+    private static var eventSource: CGEventSource? { eventSourceState.get() }
 
     // MARK: - Core event dispatch
 

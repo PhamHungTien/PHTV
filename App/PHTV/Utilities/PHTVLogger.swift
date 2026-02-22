@@ -22,20 +22,23 @@ final class PHTVLogger: Sendable {
     private let maxLogAge: TimeInterval = 24 * 60 * 60  // 24 giờ
     private let queue = DispatchQueue(label: "com.phamhungtien.phtv.logger", qos: .utility)
 
-    nonisolated(unsafe) private var _lastCleanupDate: Date?
-    private let lock = NSLock()
+    private final class CleanupStateBox: @unchecked Sendable {
+        let lock = NSLock()
+        var lastCleanupDate: Date?
+    }
+    private let cleanupState = CleanupStateBox()
     private let cleanupInterval: TimeInterval = 60 * 60  // Dọn dẹp mỗi 1 giờ
 
     private var lastCleanupDate: Date? {
         get {
-            lock.lock()
-            defer { lock.unlock() }
-            return _lastCleanupDate
+            cleanupState.lock.lock()
+            defer { cleanupState.lock.unlock() }
+            return cleanupState.lastCleanupDate
         }
         set {
-            lock.lock()
-            defer { lock.unlock() }
-            _lastCleanupDate = newValue
+            cleanupState.lock.lock()
+            defer { cleanupState.lock.unlock() }
+            cleanupState.lastCleanupDate = newValue
         }
     }
 

@@ -29,6 +29,7 @@ private let phtvNotificationLanguageChangedFromExcludedApp = Notification.Name("
 private let phtvNotificationTCCDatabaseChanged = Notification.Name("TCCDatabaseChanged")
 private let phtvNotificationApplicationDidBecomeActive = NSApplication.didBecomeActiveNotification
 private let phtvSpotlightInvalidationDedupMs: UInt64 = 30
+private let phtvEmojiHotkeyWakeRefreshDelays: [TimeInterval] = [0.0, 0.3, 1.0]
 
 private func phtvDecodeAppList(_ data: Data?) -> [[String: Any]]? {
     guard let data, !data.isEmpty else {
@@ -58,6 +59,18 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
 }
 
 @MainActor extension AppDelegate {
+    private func refreshEmojiHotkeyRegistration(reason: String, settledRetries: Bool) {
+        let delays = settledRetries ? phtvEmojiHotkeyWakeRefreshDelays : [0.0]
+        for delay in delays {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                EmojiHotkeyBridge.refreshEmojiHotkeyRegistration()
+            }
+        }
+#if DEBUG
+        NSLog("[EmojiHotkey] Scheduled refresh (%@), retries=%@", reason, settledRetries ? "YES" : "NO")
+#endif
+    }
+
     @objc func handleExcludedAppsChanged(_ notification: Notification) {
         _ = notification
         if let bundleIdentifier = NSWorkspace.shared.frontmostApplication?.bundleIdentifier,
@@ -86,6 +99,7 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
         _ = note
         _ = PHTVManager.stopEventTap()
         _ = PHTVManager.initEventTap()
+        refreshEmojiHotkeyRegistration(reason: "didWake", settledRetries: true)
         requestEventTapRecovery(reason: "didWake", force: true)
     }
 
@@ -97,6 +111,7 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
 
     @objc func handleApplicationDidBecomeActive(_ note: Notification) {
         _ = note
+        refreshEmojiHotkeyRegistration(reason: "didBecomeActive", settledRetries: false)
         requestEventTapRecovery(reason: "didBecomeActive")
     }
 
@@ -258,23 +273,23 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
                            name: phtvNotificationCodeTableChanged,
                            object: nil)
         center.addObserver(self,
-                           selector: Selector(("handleHotkeyChanged:")),
+                           selector: #selector(handleHotkeyChanged(_:)),
                            name: phtvNotificationHotkeyChanged,
                            object: nil)
         center.addObserver(self,
-                           selector: Selector(("handleEmojiHotkeySettingsChanged:")),
+                           selector: #selector(handleEmojiHotkeySettingsChanged(_:)),
                            name: phtvNotificationEmojiHotkeySettingsChanged,
                            object: nil)
         center.addObserver(self,
-                           selector: Selector(("handleTCCDatabaseChanged:")),
+                           selector: #selector(handleTCCDatabaseChanged(_:)),
                            name: phtvNotificationTCCDatabaseChanged,
                            object: nil)
         center.addObserver(self,
-                           selector: Selector(("handleSettingsChanged:")),
+                           selector: #selector(handleSettingsChanged(_:)),
                            name: phtvNotificationSettingsChanged,
                            object: nil)
         center.addObserver(self,
-                           selector: Selector(("handleMacrosUpdated:")),
+                           selector: #selector(handleMacrosUpdated(_:)),
                            name: phtvNotificationMacrosUpdated,
                            object: nil)
         center.addObserver(self,
@@ -290,7 +305,7 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
                            name: phtvNotificationUpperCaseExcludedAppsChanged,
                            object: nil)
         center.addObserver(self,
-                           selector: Selector(("handleMenuBarIconSizeChanged:")),
+                           selector: #selector(handleMenuBarIconSizeChanged(_:)),
                            name: phtvNotificationMenuBarIconSizeChanged,
                            object: nil)
         center.addObserver(self,
@@ -306,7 +321,7 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            MainActor.assumeIsolated {
+            Task { @MainActor [weak self] in
                 self?.handleUserDefaultsDidChange(nil)
             }
         }

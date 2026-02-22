@@ -15,9 +15,6 @@ final class PHTVRuntimeUIBridgeService: NSObject {
     private static let inputMethodDefaultsKey = "InputMethod"
 
     private class func resolveAppDelegate() -> AppDelegate? {
-        if let delegate = GetAppDelegateInstance() {
-            return delegate
-        }
         return NSApp.delegate as? AppDelegate
     }
 
@@ -34,7 +31,7 @@ final class PHTVRuntimeUIBridgeService: NSObject {
                                         object: NSNumber(value: targetLanguage))
 
         if PHTVManager.isSmartSwitchKeyEnabled() {
-            DispatchQueue.global(qos: .default).async {
+            Task.detached(priority: .utility) {
                 PHTVManager.notifyInputMethodChanged()
             }
         }
@@ -45,93 +42,48 @@ final class PHTVRuntimeUIBridgeService: NSObject {
     }
 
     @objc class func handleInputMethodChangeFromHotkey() {
-        let action = {
-            guard let delegate = resolveAppDelegate() else {
-                forceToggleLanguageFromHotkey()
-                return
-            }
-            let before = PHTVManager.currentLanguage()
-            delegate.onImputMethodChanged(true)
-            let after = PHTVManager.currentLanguage()
-            if after == before {
-                forceToggleLanguageFromHotkey()
-            }
+        guard let delegate = resolveAppDelegate() else {
+            forceToggleLanguageFromHotkey()
+            return
         }
-        if Thread.isMainThread {
-            action()
-        } else {
-            DispatchQueue.main.async {
-                action()
-            }
+        let before = PHTVManager.currentLanguage()
+        delegate.onImputMethodChanged(true)
+        let after = PHTVManager.currentLanguage()
+        if after == before {
+            forceToggleLanguageFromHotkey()
         }
     }
 
     @objc class func refreshAfterSmartSwitchLanguageChange(_ language: Int32) {
-        let action = {
-            guard let delegate = resolveAppDelegate() else {
-                return
-            }
-            delegate.fillData()
-            NotificationCenter.default.post(
-                name: NSNotification.Name("LanguageChangedFromSmartSwitch"),
-                object: NSNumber(value: language)
-            )
+        guard let delegate = resolveAppDelegate() else {
+            return
         }
-        if Thread.isMainThread {
-            action()
-        } else {
-            DispatchQueue.main.async {
-                action()
-            }
-        }
+        delegate.fillData()
+        NotificationCenter.default.post(
+            name: NSNotification.Name("LanguageChangedFromSmartSwitch"),
+            object: NSNumber(value: language)
+        )
     }
 
     @objc class func refreshAfterSmartSwitchCodeTableChange() {
-        let action = {
-            guard let delegate = resolveAppDelegate() else {
-                return
-            }
-            delegate.fillData()
+        guard let delegate = resolveAppDelegate() else {
+            return
         }
-        if Thread.isMainThread {
-            action()
-        } else {
-            DispatchQueue.main.async {
-                action()
-            }
-        }
+        delegate.fillData()
     }
 
     @objc class func triggerQuickConvert() {
-        let action = {
-            guard let delegate = resolveAppDelegate() else {
-                return
-            }
-            delegate.onQuickConvert()
+        guard let delegate = resolveAppDelegate() else {
+            return
         }
-        if Thread.isMainThread {
-            action()
-        } else {
-            DispatchQueue.main.async {
-                action()
-            }
-        }
+        delegate.onQuickConvert()
     }
 
     @objc class func triggerEmojiHotkey() {
-        let action = {
-            guard let delegate = resolveAppDelegate() else {
-                return
-            }
-            delegate.onEmojiHotkeyTriggered()
+        guard let delegate = resolveAppDelegate() else {
+            return
         }
-        if Thread.isMainThread {
-            action()
-        } else {
-            DispatchQueue.main.async {
-                action()
-            }
-        }
+        delegate.onEmojiHotkeyTriggered()
     }
 
     @objc class func handleKeyDownHotkeyAction(_ action: Int32) -> Bool {
@@ -154,6 +106,33 @@ final class PHTVRuntimeUIBridgeService: NSObject {
         }
     }
 
+    @objc(handleKeyDownHotkeyActionFromRuntime:)
+    nonisolated class func handleKeyDownHotkeyActionFromRuntime(_ action: Int32) -> Bool {
+        guard let keyAction = PHTVKeyDownHotkeyAction(rawValue: action) else {
+            return false
+        }
+
+        switch keyAction {
+        case .switchLanguage:
+            Task { @MainActor in
+                handleInputMethodChangeFromHotkey()
+            }
+            return true
+        case .quickConvert:
+            Task { @MainActor in
+                triggerQuickConvert()
+            }
+            return true
+        case .emojiPicker:
+            Task { @MainActor in
+                triggerEmojiHotkey()
+            }
+            return true
+        case .none, .clearStaleModifiers:
+            return false
+        }
+    }
+
     @objc class func handleModifierReleaseHotkeyAction(_ action: Int32) -> Bool {
         guard let releaseAction = PHTVModifierReleaseAction(rawValue: action) else {
             return false
@@ -168,6 +147,33 @@ final class PHTVRuntimeUIBridgeService: NSObject {
             return true
         case .emojiPicker:
             triggerEmojiHotkey()
+            return true
+        case .none, .tempOffSpelling, .tempOffEngine:
+            return false
+        }
+    }
+
+    @objc(handleModifierReleaseHotkeyActionFromRuntime:)
+    nonisolated class func handleModifierReleaseHotkeyActionFromRuntime(_ action: Int32) -> Bool {
+        guard let releaseAction = PHTVModifierReleaseAction(rawValue: action) else {
+            return false
+        }
+
+        switch releaseAction {
+        case .switchLanguage:
+            Task { @MainActor in
+                handleInputMethodChangeFromHotkey()
+            }
+            return true
+        case .quickConvert:
+            Task { @MainActor in
+                triggerQuickConvert()
+            }
+            return true
+        case .emojiPicker:
+            Task { @MainActor in
+                triggerEmojiHotkey()
+            }
             return true
         case .none, .tempOffSpelling, .tempOffEngine:
             return false

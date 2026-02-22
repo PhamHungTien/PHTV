@@ -66,13 +66,3 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var savedLanguageBeforeNonLatin = 0
     var isInNonLatinInputSource = false
 }
-
-nonisolated(unsafe) private var phtvAppDelegateInstance: AppDelegate?
-
-func GetAppDelegateInstance() -> AppDelegate? {
-    phtvAppDelegateInstance
-}
-
-func SetAppDelegateInstance(_ instance: AppDelegate?) {
-    phtvAppDelegateInstance = instance
-}

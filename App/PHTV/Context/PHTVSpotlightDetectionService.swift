@@ -28,12 +28,25 @@ final class PHTVSpotlightDetectionService: NSObject {
         "lọc"
     ]
 
-    nonisolated(unsafe) private static var lastExternalDeleteTime: UInt64 = 0
-    nonisolated(unsafe) private static var externalDeleteCount = 0
-    nonisolated(unsafe) private static var lastRuntimeDebugLogTime: UInt64 = 0
+    private struct SpotlightRuntimeState {
+        var lastExternalDeleteTime: UInt64 = 0
+        var externalDeleteCount = 0
+        var lastRuntimeDebugLogTime: UInt64 = 0
+        var lastEventFlags: CGEventFlags = []
+    }
 
-    nonisolated(unsafe) private static var lock = NSLock()
-    nonisolated(unsafe) private static var lastEventFlags: CGEventFlags = []
+    private final class SpotlightRuntimeStateBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var state = SpotlightRuntimeState()
+
+        func withLock<T>(_ body: (inout SpotlightRuntimeState) -> T) -> T {
+            lock.lock()
+            defer { lock.unlock() }
+            return body(&state)
+        }
+    }
+
+    private static let runtimeState = SpotlightRuntimeStateBox()
 
     private class func spotlightDebugEnabled() -> Bool {
 #if DEBUG
@@ -61,14 +74,19 @@ final class PHTVSpotlightDetectionService: NSObject {
         }
 
         let now = mach_absolute_time()
-        if throttleMs > 0, lastRuntimeDebugLogTime > 0 {
-            let elapsedMs = PHTVTimingService.machTimeToMs(now - lastRuntimeDebugLogTime)
-            if elapsedMs < throttleMs {
-                return
+        let shouldLog = runtimeState.withLock { state -> Bool in
+            if throttleMs > 0, state.lastRuntimeDebugLogTime > 0 {
+                let elapsedMs = PHTVTimingService.machTimeToMs(now - state.lastRuntimeDebugLogTime)
+                if elapsedMs < throttleMs {
+                    return false
+                }
             }
+            state.lastRuntimeDebugLogTime = now
+            return true
         }
-
-        lastRuntimeDebugLogTime = now
+        guard shouldLog else {
+            return
+        }
         NSLog("[PHTV Spotlight] %@", message)
     }
 
@@ -99,7 +117,7 @@ final class PHTVSpotlightDetectionService: NSObject {
               CFGetTypeID(value) == AXUIElementGetTypeID() else {
             return nil
         }
-        return (value as! AXUIElement)
+        return unsafeDowncast(value, to: AXUIElement.self)
     }
 
     private class func focusedElement() -> AXUIElement? {
@@ -325,11 +343,14 @@ final class PHTVSpotlightDetectionService: NSObject {
         }
 
         let flagChangeMask = CGEventFlags.maskCommand.rawValue
-        if type == .flagsChanged &&
-           ((flags.rawValue ^ lastEventFlags.rawValue) & flagChangeMask) != 0 {
+        let shouldInvalidateFlagChange = runtimeState.withLock { state -> Bool in
+            let changed = ((flags.rawValue ^ state.lastEventFlags.rawValue) & flagChangeMask) != 0
+            state.lastEventFlags = flags
+            return type == .flagsChanged && changed
+        }
+        if shouldInvalidateFlagChange {
             invalidateSpotlightCache()
         }
-        lastEventFlags = flags
     }
 
     private class func invalidateSpotlightCache() {
@@ -341,55 +362,51 @@ final class PHTVSpotlightDetectionService: NSObject {
 
     @objc class func trackExternalDelete() {
         let now = mach_absolute_time()
-        lock.lock()
-        defer { lock.unlock() }
-
-        if lastExternalDeleteTime != 0 {
-            let elapsedMs = PHTVTimingService.machTimeToMs(now - lastExternalDeleteTime)
-            if elapsedMs > externalDeleteResetThresholdMs {
-                externalDeleteCount = 0
+        runtimeState.withLock { state in
+            if state.lastExternalDeleteTime != 0 {
+                let elapsedMs = PHTVTimingService.machTimeToMs(now - state.lastExternalDeleteTime)
+                if elapsedMs > externalDeleteResetThresholdMs {
+                    state.externalDeleteCount = 0
+                }
             }
-        }
 
-        lastExternalDeleteTime = now
-        externalDeleteCount += 1
+            state.lastExternalDeleteTime = now
+            state.externalDeleteCount += 1
+        }
     }
 
     @objc class func externalDeleteCountValue() -> Int {
-        lock.lock()
-        defer { lock.unlock() }
-        return externalDeleteCount
+        runtimeState.withLock { $0.externalDeleteCount }
     }
 
     @objc class func elapsedSinceLastExternalDeleteMs() -> UInt64 {
         let now = mach_absolute_time()
-        lock.lock()
-        defer { lock.unlock() }
-        guard lastExternalDeleteTime != 0 else {
-            return 0
+        return runtimeState.withLock { state in
+            guard state.lastExternalDeleteTime != 0 else {
+                return 0
+            }
+            return PHTVTimingService.machTimeToMs(now - state.lastExternalDeleteTime)
         }
-        return PHTVTimingService.machTimeToMs(now - lastExternalDeleteTime)
     }
 
     private class func consumeRecentExternalDelete(withinMs thresholdMs: UInt64) -> UInt64 {
         let now = mach_absolute_time()
-        lock.lock()
-        defer { lock.unlock() }
+        return runtimeState.withLock { state in
+            guard state.externalDeleteCount > 0, state.lastExternalDeleteTime != 0 else {
+                return UInt64.max
+            }
 
-        guard externalDeleteCount > 0, lastExternalDeleteTime != 0 else {
-            return UInt64.max
+            let elapsedMs = PHTVTimingService.machTimeToMs(now - state.lastExternalDeleteTime)
+
+            // Always consume once inspected so stale counters don't leak into later spaces.
+            state.lastExternalDeleteTime = 0
+            state.externalDeleteCount = 0
+
+            guard elapsedMs < thresholdMs else {
+                return UInt64.max
+            }
+            return elapsedMs
         }
-
-        let elapsedMs = PHTVTimingService.machTimeToMs(now - lastExternalDeleteTime)
-
-        // Always consume once inspected so stale counters don't leak into later spaces.
-        lastExternalDeleteTime = 0
-        externalDeleteCount = 0
-
-        guard elapsedMs < thresholdMs else {
-            return UInt64.max
-        }
-        return elapsedMs
     }
 
     @objc(detectTextReplacementForCode:extCode:backspaceCount:newCharCount:externalDeleteCount:restoreAndStartNewSessionCode:willProcessCode:restoreCode:deleteWindowMs:matchedElapsedMs:)

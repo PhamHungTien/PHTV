@@ -21,8 +21,12 @@ private struct BinaryTrieRuntimeState {
     let wordCount: Int32
 }
 
-nonisolated(unsafe) private var englishTrieState: BinaryTrieRuntimeState?
-nonisolated(unsafe) private var vietnameseTrieState: BinaryTrieRuntimeState?
+private final class DictionaryTrieStateBox: @unchecked Sendable {
+    var englishTrieState: BinaryTrieRuntimeState?
+    var vietnameseTrieState: BinaryTrieRuntimeState?
+}
+
+private let dictionaryTrieState = DictionaryTrieStateBox()
 
 private func readUInt32LittleEndian(
     _ bytes: UnsafePointer<UInt8>,
@@ -175,7 +179,7 @@ func phtvDictionaryInitEnglish(_ filePath: UnsafePointer<CChar>?) -> Int32 {
     }
 
     dictionaryTrieLock.lock()
-    let alreadyLoaded = englishTrieState != nil
+    let alreadyLoaded = dictionaryTrieState.englishTrieState != nil
     dictionaryTrieLock.unlock()
     if alreadyLoaded {
         return 1
@@ -186,8 +190,8 @@ func phtvDictionaryInitEnglish(_ filePath: UnsafePointer<CChar>?) -> Int32 {
     }
 
     dictionaryTrieLock.lock()
-    if englishTrieState == nil {
-        englishTrieState = loadedState
+    if dictionaryTrieState.englishTrieState == nil {
+        dictionaryTrieState.englishTrieState = loadedState
     }
     dictionaryTrieLock.unlock()
 
@@ -201,7 +205,7 @@ func phtvDictionaryInitVietnamese(_ filePath: UnsafePointer<CChar>?) -> Int32 {
     }
 
     dictionaryTrieLock.lock()
-    let alreadyLoaded = vietnameseTrieState != nil
+    let alreadyLoaded = dictionaryTrieState.vietnameseTrieState != nil
     dictionaryTrieLock.unlock()
     if alreadyLoaded {
         return 1
@@ -212,8 +216,8 @@ func phtvDictionaryInitVietnamese(_ filePath: UnsafePointer<CChar>?) -> Int32 {
     }
 
     dictionaryTrieLock.lock()
-    if vietnameseTrieState == nil {
-        vietnameseTrieState = loadedState
+    if dictionaryTrieState.vietnameseTrieState == nil {
+        dictionaryTrieState.vietnameseTrieState = loadedState
     }
     dictionaryTrieLock.unlock()
 
@@ -223,7 +227,7 @@ func phtvDictionaryInitVietnamese(_ filePath: UnsafePointer<CChar>?) -> Int32 {
 @_cdecl("phtvDictionaryIsEnglishInitialized")
 func phtvDictionaryIsEnglishInitialized() -> Int32 {
     dictionaryTrieLock.lock()
-    let initialized = englishTrieState != nil
+    let initialized = dictionaryTrieState.englishTrieState != nil
     dictionaryTrieLock.unlock()
     return initialized ? 1 : 0
 }
@@ -231,7 +235,7 @@ func phtvDictionaryIsEnglishInitialized() -> Int32 {
 @_cdecl("phtvDictionaryEnglishWordCount")
 func phtvDictionaryEnglishWordCount() -> Int32 {
     dictionaryTrieLock.lock()
-    let count = englishTrieState?.wordCount ?? 0
+    let count = dictionaryTrieState.englishTrieState?.wordCount ?? 0
     dictionaryTrieLock.unlock()
     return count
 }
@@ -239,7 +243,7 @@ func phtvDictionaryEnglishWordCount() -> Int32 {
 @_cdecl("phtvDictionaryVietnameseWordCount")
 func phtvDictionaryVietnameseWordCount() -> Int32 {
     dictionaryTrieLock.lock()
-    let count = vietnameseTrieState?.wordCount ?? 0
+    let count = dictionaryTrieState.vietnameseTrieState?.wordCount ?? 0
     dictionaryTrieLock.unlock()
     return count
 }
@@ -250,7 +254,7 @@ func phtvDictionaryContainsEnglishIndices(
     _ length: Int32
 ) -> Int32 {
     dictionaryTrieLock.lock()
-    let state = englishTrieState
+    let state = dictionaryTrieState.englishTrieState
     dictionaryTrieLock.unlock()
     return trieContains(state, indices: indices, length: length) ? 1 : 0
 }
@@ -261,7 +265,7 @@ func phtvDictionaryContainsVietnameseIndices(
     _ length: Int32
 ) -> Int32 {
     dictionaryTrieLock.lock()
-    let state = vietnameseTrieState
+    let state = dictionaryTrieState.vietnameseTrieState
     dictionaryTrieLock.unlock()
     return trieContains(state, indices: indices, length: length) ? 1 : 0
 }
@@ -269,7 +273,7 @@ func phtvDictionaryContainsVietnameseIndices(
 @_cdecl("phtvDictionaryClear")
 func phtvDictionaryClear() {
     dictionaryTrieLock.lock()
-    englishTrieState = nil
-    vietnameseTrieState = nil
+    dictionaryTrieState.englishTrieState = nil
+    dictionaryTrieState.vietnameseTrieState = nil
     dictionaryTrieLock.unlock()
 }

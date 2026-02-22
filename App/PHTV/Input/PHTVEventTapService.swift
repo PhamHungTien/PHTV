@@ -9,12 +9,27 @@ import ApplicationServices
 import Foundation
 
 @objc final class PHTVEventTapService: NSObject {
-    nonisolated(unsafe) private static var isInited = false
-    nonisolated(unsafe) private static var permissionLost = false
-    nonisolated(unsafe) private static var eventTap: CFMachPort?
-    nonisolated(unsafe) private static var runLoopSource: CFRunLoopSource?
-    nonisolated(unsafe) private static var tapReenableCount: UInt = 0
-    nonisolated(unsafe) private static var tapRecreateCount: UInt = 0
+    private struct EventTapRuntimeState {
+        var isInited = false
+        var permissionLost = false
+        var eventTap: CFMachPort?
+        var runLoopSource: CFRunLoopSource?
+        var tapReenableCount: UInt = 0
+        var tapRecreateCount: UInt = 0
+    }
+
+    private final class EventTapRuntimeStateBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var state = EventTapRuntimeState()
+
+        func withLock<T>(_ body: (inout EventTapRuntimeState) -> T) -> T {
+            lock.lock()
+            defer { lock.unlock() }
+            return body(&state)
+        }
+    }
+
+    private static let runtimeState = EventTapRuntimeStateBox()
 
     private static func eventMaskBit(_ type: CGEventType) -> CGEventMask {
         CGEventMask(1) << CGEventMask(type.rawValue)
@@ -28,13 +43,16 @@ import Foundation
     }
 
     @objc static func hasPermissionLost() -> Bool {
-        permissionLost
+        runtimeState.withLock { $0.permissionLost }
     }
 
     @objc static func markPermissionLost() {
-        permissionLost = true
+        let tap = runtimeState.withLock { state -> CFMachPort? in
+            state.permissionLost = true
+            return state.eventTap
+        }
 
-        if let tap = eventTap {
+        if let tap {
             CGEvent.tapEnable(tap: tap, enable: false)
             CFMachPortInvalidate(tap)
             NSLog("🛑🛑🛑 EMERGENCY: Event tap INVALIDATED due to permission loss!")
@@ -42,15 +60,15 @@ import Foundation
     }
 
     @objc static func isEventTapInited() -> Bool {
-        isInited
+        runtimeState.withLock { $0.isInited }
     }
 
     @objc static func initEventTap() -> Bool {
-        if isInited {
+        if runtimeState.withLock({ $0.isInited }) {
             return true
         }
 
-        permissionLost = false
+        runtimeState.withLock { $0.permissionLost = false }
         PHTVPermissionService.invalidatePermissionCache()
         resetTransientTapRuntimeState()
 
@@ -66,7 +84,7 @@ import Foundation
             return PHTVEventCallbackService.handle(proxy: proxy, type: type, event: event, refcon: refcon)
         }
 
-        eventTap = CGEvent.tapCreate(
+        var createdTap = CGEvent.tapCreate(
             tap: .cghidEventTap,
             place: .headInsertEventTap,
             options: .defaultTap,
@@ -75,9 +93,9 @@ import Foundation
             userInfo: nil
         )
 
-        if eventTap == nil {
+        if createdTap == nil {
             NSLog("[EventTap] HID tap failed, falling back to session tap")
-            eventTap = CGEvent.tapCreate(
+            createdTap = CGEvent.tapCreate(
                 tap: .cgSessionEventTap,
                 place: .headInsertEventTap,
                 options: .defaultTap,
@@ -87,15 +105,19 @@ import Foundation
             )
         }
 
-        guard let tap = eventTap else {
+        guard let tap = createdTap else {
             fputs("Failed to create event tap\n", stderr)
             return false
         }
 
-        isInited = true
+        let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
+        runtimeState.withLock { state in
+            state.eventTap = tap
+            state.runLoopSource = source
+            state.isInited = true
+        }
 
-        runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
-        if let source = runLoopSource {
+        if let source {
             CFRunLoopAddSource(CFRunLoopGetMain(), source, CFRunLoopMode.commonModes)
         }
 
@@ -105,27 +127,33 @@ import Foundation
     }
 
     @objc static func stopEventTap() -> Bool {
-        if isInited {
+        let (didStop, tap, source) = runtimeState.withLock { state -> (Bool, CFMachPort?, CFRunLoopSource?) in
+            guard state.isInited else {
+                return (false, nil, nil)
+            }
+            let tap = state.eventTap
+            let source = state.runLoopSource
+            state.runLoopSource = nil
+            state.eventTap = nil
+            state.isInited = false
+            state.permissionLost = false
+            return (true, tap, source)
+        }
+        if didStop {
             NSLog("[EventTap] Stopping...")
 
-            if let tap = eventTap {
+            if let tap {
                 CGEvent.tapEnable(tap: tap, enable: false)
             }
 
-            if let source = runLoopSource {
+            if let source {
                 CFRunLoopRemoveSource(CFRunLoopGetMain(), source, CFRunLoopMode.commonModes)
-                runLoopSource = nil
             }
 
-            if let tap = eventTap {
-                if CFMachPortIsValid(tap) {
-                    CFMachPortInvalidate(tap)
-                }
-                eventTap = nil
+            if let tap, CFMachPortIsValid(tap) {
+                CFMachPortInvalidate(tap)
             }
 
-            isInited = false
-            permissionLost = false
             resetTransientTapRuntimeState()
             NSLog("[EventTap] Stopped successfully")
         }
@@ -133,25 +161,28 @@ import Foundation
     }
 
     @objc static func handleEventTapDisabled(_ type: CGEventType) {
-        if !isInited {
+        if !runtimeState.withLock({ $0.isInited }) {
             return
         }
 
         let reason = (type == .tapDisabledByTimeout) ? "timeout" : "user input"
         NSLog("[EventTap] Disabled by %@ — attempting to re-enable", reason)
 
-        tapReenableCount += 1
-        if let tap = eventTap {
+        let tap = runtimeState.withLock { state -> CFMachPort? in
+            state.tapReenableCount += 1
+            return state.eventTap
+        }
+        if let tap {
             CGEvent.tapEnable(tap: tap, enable: true)
         }
 
-        if let tap = eventTap, !CGEvent.tapIsEnabled(tap: tap) {
+        if let tap, !CGEvent.tapIsEnabled(tap: tap) {
             DispatchQueue.main.async {
-                if !isInited {
+                if !runtimeState.withLock({ $0.isInited }) {
                     return
                 }
                 NSLog("[EventTap] Re-enabling failed, recreating event tap")
-                tapRecreateCount += 1
+                runtimeState.withLock { $0.tapRecreateCount += 1 }
                 _ = stopEventTap()
                 _ = initEventTap()
             }
@@ -159,23 +190,26 @@ import Foundation
     }
 
     @objc static func isEventTapEnabled() -> Bool {
-        guard isInited, let tap = eventTap else {
+        let (isInited, tap) = runtimeState.withLock { state in
+            (state.isInited, state.eventTap)
+        }
+        guard isInited, let tap else {
             return false
         }
         return CGEvent.tapIsEnabled(tap: tap)
     }
 
     @objc static func ensureEventTapAlive() {
-        if !isInited {
+        if !runtimeState.withLock({ $0.isInited }) {
             DispatchQueue.main.async {
-                if !isInited {
+                if !runtimeState.withLock({ $0.isInited }) {
                     _ = initEventTap()
                 }
             }
             return
         }
 
-        guard let tap = eventTap else {
+        guard let tap = runtimeState.withLock({ $0.eventTap }) else {
             DispatchQueue.main.async {
                 _ = initEventTap()
             }
@@ -183,16 +217,22 @@ import Foundation
         }
 
         if !CGEvent.tapIsEnabled(tap: tap) {
-            tapReenableCount += 1
+            let tapReenableCount = runtimeState.withLock { state -> UInt in
+                state.tapReenableCount += 1
+                return state.tapReenableCount
+            }
             NSLog("[EventTap] Health check: tap disabled — re-enabling (count=%lu)", tapReenableCount)
             CGEvent.tapEnable(tap: tap, enable: true)
 
             if !CGEvent.tapIsEnabled(tap: tap) {
                 DispatchQueue.main.async {
-                    if !isInited {
+                    if !runtimeState.withLock({ $0.isInited }) {
                         return
                     }
-                    tapRecreateCount += 1
+                    let tapRecreateCount = runtimeState.withLock { state -> UInt in
+                        state.tapRecreateCount += 1
+                        return state.tapRecreateCount
+                    }
                     NSLog("[EventTap] Health check: re-enable failed — recreating tap (count=%lu)", tapRecreateCount)
                     _ = stopEventTap()
                     _ = initEventTap()

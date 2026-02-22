@@ -7,49 +7,233 @@
 
 import Foundation
 
-private let macroLookupLock = NSLock()
-
 private struct MacroLookupEntry {
     let snippetType: Int32
     let snippetFormat: String
     let staticContentCode: [UInt32]
 }
 
-nonisolated(unsafe) private var macroLookupMap: [[UInt32]: MacroLookupEntry] = [:]
-nonisolated(unsafe) private var runtimeInputType: Int32 = 0
-nonisolated(unsafe) private var runtimeCodeTable: Int32 = 0
-nonisolated(unsafe) private var runtimeLanguage: Int32 = 1
-nonisolated(unsafe) private var runtimeSwitchKeyStatus: Int32 = Int32(Defaults.defaultSwitchKeyStatus)
-nonisolated(unsafe) private var runtimeFixRecommendBrowser: Int32 = 1
-nonisolated(unsafe) private var runtimeUseMacro: Int32 = 1
-nonisolated(unsafe) private var runtimeUseMacroInEnglishMode: Int32 = 0
-nonisolated(unsafe) private var runtimeUseSmartSwitchKey: Int32 = 1
-nonisolated(unsafe) private var runtimeAutoCapsMacro: Int32 = 0
-nonisolated(unsafe) private var runtimeCheckSpelling: Int32 = 1
-nonisolated(unsafe) private var runtimeUseModernOrthography: Int32 = 1
-nonisolated(unsafe) private var runtimeQuickTelex: Int32 = 0
-nonisolated(unsafe) private var runtimeFreeMark: Int32 = 0
-nonisolated(unsafe) private var runtimeAllowConsonantZFWJ: Int32 = 1
-nonisolated(unsafe) private var runtimeQuickStartConsonant: Int32 = 0
-nonisolated(unsafe) private var runtimeQuickEndConsonant: Int32 = 0
-nonisolated(unsafe) private var runtimeUpperCaseFirstChar: Int32 = 0
-nonisolated(unsafe) private var runtimeUpperCaseExcludedForCurrentApp: Int32 = 0
-nonisolated(unsafe) private var runtimeRememberCode: Int32 = 1
-nonisolated(unsafe) private var runtimeOtherLanguage: Int32 = 1
-nonisolated(unsafe) private var runtimeTempOffSpelling: Int32 = 0
-nonisolated(unsafe) private var runtimeTempOffEngine: Int32 = 0
-nonisolated(unsafe) private var runtimeRestoreOnEscape: Int32 = 1
-nonisolated(unsafe) private var runtimeAutoRestoreEnglishWord: Int32 = 1
-nonisolated(unsafe) private var runtimeCustomEscapeKey: Int32 = 0
-nonisolated(unsafe) private var runtimePauseKeyEnabled: Int32 = 0
-nonisolated(unsafe) private var runtimePauseKey: Int32 = Int32(KeyCode.leftOption)
-nonisolated(unsafe) private var runtimeSendKeyStepByStep: Int32 = 0
-nonisolated(unsafe) private var runtimeEnableEmojiHotkey: Int32 = 1
-nonisolated(unsafe) private var runtimeEmojiHotkeyModifiers: Int32 = 1 << 20
-nonisolated(unsafe) private var runtimeEmojiHotkeyKeyCode: Int32 = Int32(KeyCode.eKey)
-nonisolated(unsafe) private var runtimeShowIconOnDock: Int32 = 0
-nonisolated(unsafe) private var runtimePerformLayoutCompat: Int32 = 0
-nonisolated(unsafe) private var runtimeSafeMode: Int32 = 0
+private final class MacroLookupStateBox: @unchecked Sendable {
+    let lock = NSLock()
+    var map: [[UInt32]: MacroLookupEntry] = [:]
+}
+
+private final class RuntimeSettingsStateBox: @unchecked Sendable {
+    let lock = NSLock()
+    var inputType: Int32 = 0
+    var codeTable: Int32 = 0
+    var language: Int32 = 1
+    var switchKeyStatus: Int32 = Int32(Defaults.defaultSwitchKeyStatus)
+    var fixRecommendBrowser: Int32 = 1
+    var useMacro: Int32 = 1
+    var useMacroInEnglishMode: Int32 = 0
+    var useSmartSwitchKey: Int32 = 1
+    var autoCapsMacro: Int32 = 0
+    var checkSpelling: Int32 = 1
+    var useModernOrthography: Int32 = 1
+    var quickTelex: Int32 = 0
+    var freeMark: Int32 = 0
+    var allowConsonantZFWJ: Int32 = 1
+    var quickStartConsonant: Int32 = 0
+    var quickEndConsonant: Int32 = 0
+    var upperCaseFirstChar: Int32 = 0
+    var upperCaseExcludedForCurrentApp: Int32 = 0
+    var rememberCode: Int32 = 1
+    var otherLanguage: Int32 = 1
+    var tempOffSpelling: Int32 = 0
+    var tempOffEngine: Int32 = 0
+    var restoreOnEscape: Int32 = 1
+    var autoRestoreEnglishWord: Int32 = 1
+    var customEscapeKey: Int32 = 0
+    var pauseKeyEnabled: Int32 = 0
+    var pauseKey: Int32 = Int32(KeyCode.leftOption)
+    var sendKeyStepByStep: Int32 = 0
+    var enableEmojiHotkey: Int32 = 1
+    var emojiHotkeyModifiers: Int32 = 1 << 20
+    var emojiHotkeyKeyCode: Int32 = Int32(KeyCode.eKey)
+    var showIconOnDock: Int32 = 0
+    var performLayoutCompat: Int32 = 0
+    var safeMode: Int32 = 0
+}
+
+private let macroLookupState = MacroLookupStateBox()
+private let runtimeSettingsState = RuntimeSettingsStateBox()
+
+private func withRuntimeSettings<T>(_ body: (RuntimeSettingsStateBox) -> T) -> T {
+    runtimeSettingsState.lock.lock()
+    defer { runtimeSettingsState.lock.unlock() }
+    return body(runtimeSettingsState)
+}
+
+private var runtimeInputType: Int32 {
+    get { withRuntimeSettings { $0.inputType } }
+    set { withRuntimeSettings { $0.inputType = newValue } }
+}
+
+private var runtimeCodeTable: Int32 {
+    get { withRuntimeSettings { $0.codeTable } }
+    set { withRuntimeSettings { $0.codeTable = newValue } }
+}
+
+private var runtimeLanguage: Int32 {
+    get { withRuntimeSettings { $0.language } }
+    set { withRuntimeSettings { $0.language = newValue } }
+}
+
+private var runtimeSwitchKeyStatus: Int32 {
+    get { withRuntimeSettings { $0.switchKeyStatus } }
+    set { withRuntimeSettings { $0.switchKeyStatus = newValue } }
+}
+
+private var runtimeFixRecommendBrowser: Int32 {
+    get { withRuntimeSettings { $0.fixRecommendBrowser } }
+    set { withRuntimeSettings { $0.fixRecommendBrowser = newValue } }
+}
+
+private var runtimeUseMacro: Int32 {
+    get { withRuntimeSettings { $0.useMacro } }
+    set { withRuntimeSettings { $0.useMacro = newValue } }
+}
+
+private var runtimeUseMacroInEnglishMode: Int32 {
+    get { withRuntimeSettings { $0.useMacroInEnglishMode } }
+    set { withRuntimeSettings { $0.useMacroInEnglishMode = newValue } }
+}
+
+private var runtimeUseSmartSwitchKey: Int32 {
+    get { withRuntimeSettings { $0.useSmartSwitchKey } }
+    set { withRuntimeSettings { $0.useSmartSwitchKey = newValue } }
+}
+
+private var runtimeAutoCapsMacro: Int32 {
+    get { withRuntimeSettings { $0.autoCapsMacro } }
+    set { withRuntimeSettings { $0.autoCapsMacro = newValue } }
+}
+
+private var runtimeCheckSpelling: Int32 {
+    get { withRuntimeSettings { $0.checkSpelling } }
+    set { withRuntimeSettings { $0.checkSpelling = newValue } }
+}
+
+private var runtimeUseModernOrthography: Int32 {
+    get { withRuntimeSettings { $0.useModernOrthography } }
+    set { withRuntimeSettings { $0.useModernOrthography = newValue } }
+}
+
+private var runtimeQuickTelex: Int32 {
+    get { withRuntimeSettings { $0.quickTelex } }
+    set { withRuntimeSettings { $0.quickTelex = newValue } }
+}
+
+private var runtimeFreeMark: Int32 {
+    get { withRuntimeSettings { $0.freeMark } }
+    set { withRuntimeSettings { $0.freeMark = newValue } }
+}
+
+private var runtimeAllowConsonantZFWJ: Int32 {
+    get { withRuntimeSettings { $0.allowConsonantZFWJ } }
+    set { withRuntimeSettings { $0.allowConsonantZFWJ = newValue } }
+}
+
+private var runtimeQuickStartConsonant: Int32 {
+    get { withRuntimeSettings { $0.quickStartConsonant } }
+    set { withRuntimeSettings { $0.quickStartConsonant = newValue } }
+}
+
+private var runtimeQuickEndConsonant: Int32 {
+    get { withRuntimeSettings { $0.quickEndConsonant } }
+    set { withRuntimeSettings { $0.quickEndConsonant = newValue } }
+}
+
+private var runtimeUpperCaseFirstChar: Int32 {
+    get { withRuntimeSettings { $0.upperCaseFirstChar } }
+    set { withRuntimeSettings { $0.upperCaseFirstChar = newValue } }
+}
+
+private var runtimeUpperCaseExcludedForCurrentApp: Int32 {
+    get { withRuntimeSettings { $0.upperCaseExcludedForCurrentApp } }
+    set { withRuntimeSettings { $0.upperCaseExcludedForCurrentApp = newValue } }
+}
+
+private var runtimeRememberCode: Int32 {
+    get { withRuntimeSettings { $0.rememberCode } }
+    set { withRuntimeSettings { $0.rememberCode = newValue } }
+}
+
+private var runtimeOtherLanguage: Int32 {
+    get { withRuntimeSettings { $0.otherLanguage } }
+    set { withRuntimeSettings { $0.otherLanguage = newValue } }
+}
+
+private var runtimeTempOffSpelling: Int32 {
+    get { withRuntimeSettings { $0.tempOffSpelling } }
+    set { withRuntimeSettings { $0.tempOffSpelling = newValue } }
+}
+
+private var runtimeTempOffEngine: Int32 {
+    get { withRuntimeSettings { $0.tempOffEngine } }
+    set { withRuntimeSettings { $0.tempOffEngine = newValue } }
+}
+
+private var runtimeRestoreOnEscape: Int32 {
+    get { withRuntimeSettings { $0.restoreOnEscape } }
+    set { withRuntimeSettings { $0.restoreOnEscape = newValue } }
+}
+
+private var runtimeAutoRestoreEnglishWord: Int32 {
+    get { withRuntimeSettings { $0.autoRestoreEnglishWord } }
+    set { withRuntimeSettings { $0.autoRestoreEnglishWord = newValue } }
+}
+
+private var runtimeCustomEscapeKey: Int32 {
+    get { withRuntimeSettings { $0.customEscapeKey } }
+    set { withRuntimeSettings { $0.customEscapeKey = newValue } }
+}
+
+private var runtimePauseKeyEnabled: Int32 {
+    get { withRuntimeSettings { $0.pauseKeyEnabled } }
+    set { withRuntimeSettings { $0.pauseKeyEnabled = newValue } }
+}
+
+private var runtimePauseKey: Int32 {
+    get { withRuntimeSettings { $0.pauseKey } }
+    set { withRuntimeSettings { $0.pauseKey = newValue } }
+}
+
+private var runtimeSendKeyStepByStep: Int32 {
+    get { withRuntimeSettings { $0.sendKeyStepByStep } }
+    set { withRuntimeSettings { $0.sendKeyStepByStep = newValue } }
+}
+
+private var runtimeEnableEmojiHotkey: Int32 {
+    get { withRuntimeSettings { $0.enableEmojiHotkey } }
+    set { withRuntimeSettings { $0.enableEmojiHotkey = newValue } }
+}
+
+private var runtimeEmojiHotkeyModifiers: Int32 {
+    get { withRuntimeSettings { $0.emojiHotkeyModifiers } }
+    set { withRuntimeSettings { $0.emojiHotkeyModifiers = newValue } }
+}
+
+private var runtimeEmojiHotkeyKeyCode: Int32 {
+    get { withRuntimeSettings { $0.emojiHotkeyKeyCode } }
+    set { withRuntimeSettings { $0.emojiHotkeyKeyCode = newValue } }
+}
+
+private var runtimeShowIconOnDock: Int32 {
+    get { withRuntimeSettings { $0.showIconOnDock } }
+    set { withRuntimeSettings { $0.showIconOnDock = newValue } }
+}
+
+private var runtimePerformLayoutCompat: Int32 {
+    get { withRuntimeSettings { $0.performLayoutCompat } }
+    set { withRuntimeSettings { $0.performLayoutCompat = newValue } }
+}
+
+private var runtimeSafeMode: Int32 {
+    get { withRuntimeSettings { $0.safeMode } }
+    set { withRuntimeSettings { $0.safeMode = newValue } }
+}
 private let macroCharacterToKeyState: [UInt16: UInt32] = {
     var mapping: [UInt16: UInt32] = [:]
     let capsMask = EngineBitMask.caps
@@ -324,12 +508,12 @@ private func findMacroContentForNormalizedKeys(
     autoCapsEnabled: Bool,
     codeTable: Int32
 ) -> [UInt32]? {
-    macroLookupLock.lock()
+    macroLookupState.lock.lock()
     defer {
-        macroLookupLock.unlock()
+        macroLookupState.lock.unlock()
     }
 
-    if let directEntry = macroLookupMap[keys] {
+    if let directEntry = macroLookupState.map[keys] {
         return macroContentCode(for: directEntry, codeTable: codeTable)
     }
 
@@ -357,7 +541,7 @@ private func findMacroContentForNormalizedKeys(
         }
     }
 
-    guard let entry = macroLookupMap[candidate] else {
+    guard let entry = macroLookupState.map[candidate] else {
         return nil
     }
     let baseContent = macroContentCode(for: entry, codeTable: codeTable)
@@ -370,16 +554,16 @@ func phtvLoadMacroMapFromBinary(
     _ size: Int32
 ) {
     guard let data, size > 0 else {
-        macroLookupLock.lock()
-        macroLookupMap = [:]
-        macroLookupLock.unlock()
+        macroLookupState.lock.lock()
+        macroLookupState.map = [:]
+        macroLookupState.lock.unlock()
         return
     }
 
     let parsedMap = macroMapFromBinaryData(data, size: Int(size))
-    macroLookupLock.lock()
-    macroLookupMap = parsedMap
-    macroLookupLock.unlock()
+    macroLookupState.lock.lock()
+    macroLookupState.map = parsedMap
+    macroLookupState.lock.unlock()
 }
 
 @_cdecl("phtvFindMacroContentForNormalizedKeys")
@@ -480,7 +664,6 @@ func phtvRuntimeCheckSpellingValue() -> Int32 {
 @_cdecl("phtvRuntimeSetCheckSpellingValue")
 func phtvRuntimeSetCheckSpellingValue(_ value: Int32) {
     runtimeCheckSpelling = value
-    OSMemoryBarrier()
 }
 
 @_cdecl("phtvRuntimeUseModernOrthographyEnabled")
@@ -529,7 +712,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setRememberCode(_ value: Int32) {
         runtimeRememberCode = value
-        OSMemoryBarrier()
     }
 
     class func currentLanguage() -> Int32 {
@@ -538,7 +720,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setCurrentLanguage(_ language: Int32) {
         runtimeLanguage = language
-        OSMemoryBarrier()
     }
 
     class func otherLanguageMode() -> Int32 {
@@ -547,7 +728,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setOtherLanguageMode(_ value: Int32) {
         runtimeOtherLanguage = value
-        OSMemoryBarrier()
     }
 
     class func currentInputType() -> Int32 {
@@ -556,7 +736,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setCurrentInputType(_ inputType: Int32) {
         runtimeInputType = inputType
-        OSMemoryBarrier()
     }
 
     class func currentCodeTable() -> Int32 {
@@ -565,7 +744,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setCurrentCodeTable(_ codeTable: Int32) {
         runtimeCodeTable = codeTable
-        OSMemoryBarrier()
     }
 
     class func isSmartSwitchKeyEnabled() -> Bool {
@@ -574,7 +752,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setSmartSwitchKeyEnabled(_ enabled: Bool) {
         runtimeUseSmartSwitchKey = enabled ? 1 : 0
-        OSMemoryBarrier()
     }
 
     class func isSendKeyStepByStepEnabled() -> Bool {
@@ -583,7 +760,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setSendKeyStepByStepEnabled(_ enabled: Bool) {
         runtimeSendKeyStepByStep = enabled ? 1 : 0
-        OSMemoryBarrier()
     }
 
     class func setUpperCaseExcludedForCurrentApp(_ excluded: Bool) {
@@ -596,12 +772,10 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setSwitchKeyStatus(_ status: Int32) {
         runtimeSwitchKeyStatus = status
-        OSMemoryBarrier()
     }
 
     class func setShowIconOnDock(_ visible: Bool) {
         runtimeShowIconOnDock = visible ? 1 : 0
-        OSMemoryBarrier()
     }
 
     class func showIconOnDock() -> Int32 {
@@ -614,7 +788,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setUpperCaseFirstChar(_ value: Int32) {
         runtimeUpperCaseFirstChar = value
-        OSMemoryBarrier()
     }
 
     class func upperCaseExcludedForCurrentApp() -> Int32 {
@@ -627,7 +800,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setCheckSpelling(_ value: Int32) {
         runtimeCheckSpelling = value
-        OSMemoryBarrier()
     }
 
     class func useModernOrthography() -> Int32 {
@@ -636,7 +808,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setUseModernOrthography(_ value: Int32) {
         runtimeUseModernOrthography = value
-        OSMemoryBarrier()
     }
 
     class func quickTelex() -> Int32 {
@@ -645,7 +816,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setQuickTelex(_ value: Int32) {
         runtimeQuickTelex = value
-        OSMemoryBarrier()
     }
 
     class func freeMark() -> Int32 {
@@ -654,7 +824,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setFreeMark(_ value: Int32) {
         runtimeFreeMark = value
-        OSMemoryBarrier()
     }
 
     class func useMacro() -> Int32 {
@@ -663,7 +832,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setUseMacro(_ value: Int32) {
         runtimeUseMacro = value
-        OSMemoryBarrier()
     }
 
     class func useMacroInEnglishMode() -> Int32 {
@@ -672,7 +840,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setUseMacroInEnglishMode(_ value: Int32) {
         runtimeUseMacroInEnglishMode = value
-        OSMemoryBarrier()
     }
 
     class func autoCapsMacro() -> Int32 {
@@ -681,7 +848,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setAutoCapsMacro(_ value: Int32) {
         runtimeAutoCapsMacro = value
-        OSMemoryBarrier()
     }
 
     class func allowConsonantZFWJ() -> Int32 {
@@ -690,7 +856,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setAllowConsonantZFWJ(_ value: Int32) {
         runtimeAllowConsonantZFWJ = value
-        OSMemoryBarrier()
     }
 
     class func quickStartConsonant() -> Int32 {
@@ -699,7 +864,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setQuickStartConsonant(_ value: Int32) {
         runtimeQuickStartConsonant = value
-        OSMemoryBarrier()
     }
 
     class func quickEndConsonant() -> Int32 {
@@ -708,7 +872,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setQuickEndConsonant(_ value: Int32) {
         runtimeQuickEndConsonant = value
-        OSMemoryBarrier()
     }
 
     class func performLayoutCompat() -> Int32 {
@@ -717,7 +880,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setPerformLayoutCompat(_ value: Int32) {
         runtimePerformLayoutCompat = value
-        OSMemoryBarrier()
     }
 
     class func restoreOnEscape() -> Int32 {
@@ -726,7 +888,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setRestoreOnEscape(_ value: Int32) {
         runtimeRestoreOnEscape = value
-        OSMemoryBarrier()
     }
 
     class func customEscapeKey() -> Int32 {
@@ -735,7 +896,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setCustomEscapeKey(_ value: Int32) {
         runtimeCustomEscapeKey = value
-        OSMemoryBarrier()
     }
 
     class func pauseKeyEnabled() -> Int32 {
@@ -744,7 +904,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setPauseKeyEnabled(_ value: Int32) {
         runtimePauseKeyEnabled = value
-        OSMemoryBarrier()
     }
 
     class func pauseKey() -> Int32 {
@@ -753,7 +912,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setPauseKey(_ value: Int32) {
         runtimePauseKey = value
-        OSMemoryBarrier()
     }
 
     class func autoRestoreEnglishWord() -> Int32 {
@@ -762,7 +920,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setAutoRestoreEnglishWord(_ value: Int32) {
         runtimeAutoRestoreEnglishWord = value
-        OSMemoryBarrier()
     }
 
     class func enableEmojiHotkey() -> Int32 {
@@ -781,27 +938,22 @@ final class PHTVEngineRuntimeFacade: NSObject {
         runtimeEnableEmojiHotkey = enabled
         runtimeEmojiHotkeyModifiers = modifiers
         runtimeEmojiHotkeyKeyCode = keyCode
-        OSMemoryBarrier()
     }
 
     class func setFixRecommendBrowser(_ value: Int32) {
         runtimeFixRecommendBrowser = value
-        OSMemoryBarrier()
     }
 
     class func setTempOffSpelling(_ value: Int32) {
         runtimeTempOffSpelling = value
-        OSMemoryBarrier()
     }
 
     class func setTempOffEngine(_ value: Int32) {
         runtimeTempOffEngine = value
-        OSMemoryBarrier()
     }
 
     class func setSafeMode(_ enabled: Bool) {
         runtimeSafeMode = enabled ? 1 : 0
-        OSMemoryBarrier()
     }
 
     class func tempOffSpelling() -> Int32 {

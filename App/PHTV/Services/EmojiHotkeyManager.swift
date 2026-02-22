@@ -8,7 +8,6 @@
 
 import AppKit
 import Carbon
-import Combine
 
 // MARK: - Emoji Hotkey Manager
 
@@ -20,18 +19,18 @@ final class EmojiHotkeyManager: ObservableObject {
 
     static let shared = EmojiHotkeyManager()
 
-    nonisolated(unsafe) private var globalMonitor: Any?
-    nonisolated(unsafe) private var localMonitor: Any?
-    nonisolated(unsafe) private var globalFlagsMonitor: Any?
-    nonisolated(unsafe) private var localFlagsMonitor: Any?
-    nonisolated(unsafe) private var settingsObserver: NSObjectProtocol?
+    private var globalMonitor: Any?
+    private var localMonitor: Any?
+    private var globalFlagsMonitor: Any?
+    private var localFlagsMonitor: Any?
+    private var settingsObserver: NSObjectProtocol?
     private var isEnabled: Bool = false
     private var modifiers: NSEvent.ModifierFlags = .command
     private var keyCode: UInt16 = KeyCode.eKey
 
     // Modifier-only mode tracking
-    nonisolated(unsafe) private var lastModifierFlags: NSEvent.ModifierFlags = []
-    nonisolated(unsafe) private var keyPressedWhileModifiersHeld: Bool = false
+    private var lastModifierFlags: NSEvent.ModifierFlags = []
+    private var keyPressedWhileModifiersHeld: Bool = false
 
     private var isModifierOnlyMode: Bool {
         keyCode == KeyCode.noKey
@@ -47,7 +46,7 @@ final class EmojiHotkeyManager: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 self?.handleSettingsChanged()
             }
         }
@@ -56,9 +55,7 @@ final class EmojiHotkeyManager: ObservableObject {
         // Use asyncAfter with minimal delay to break the dispatch_once recursion
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
             guard let self = self else { return }
-            Task { @MainActor in
-                self.syncFromAppState(AppState.shared)
-            }
+            self.syncFromAppState(AppState.shared)
         }
     }
 
@@ -66,31 +63,35 @@ final class EmojiHotkeyManager: ObservableObject {
         // Delay to avoid circular dependency if called during AppState.shared initialization
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
             guard let self = self else { return }
-            Task { @MainActor in
-                self.syncFromAppState(AppState.shared)
-            }
+            self.syncFromAppState(AppState.shared)
         }
     }
 
-    @MainActor
-    func syncFromAppState(_ appState: AppState) {
-        let wasEnabled = isEnabled
-        let oldModifiers = modifiers
-        let oldKeyCode = keyCode
+    func syncFromAppState(_ appState: AppState, forceReregister: Bool = false) {
+        let desiredEnabled = appState.enableEmojiHotkey
+        let desiredModifiers = appState.emojiHotkeyModifiers
+        let desiredKeyCode = appState.emojiHotkeyKeyCode
+        let settingsChanged = (isEnabled != desiredEnabled)
+            || (modifiers != desiredModifiers)
+            || (keyCode != desiredKeyCode)
 
-        isEnabled = appState.enableEmojiHotkey
-        modifiers = appState.emojiHotkeyModifiers
-        keyCode = appState.emojiHotkeyKeyCode
-
-        if wasEnabled != isEnabled || oldModifiers != modifiers || oldKeyCode != keyCode {
-            // CRITICAL: Save desired state BEFORE unregisterHotkey() modifies isEnabled
-            let shouldEnable = isEnabled
-            unregisterHotkey()
-
-            if shouldEnable {
-                registerHotkey(modifiers: modifiers, keyCode: keyCode)
-            }
+        guard settingsChanged || forceReregister else {
+            return
         }
+
+        // Keep manager state in sync before re-registering monitors.
+        isEnabled = desiredEnabled
+        modifiers = desiredModifiers
+        keyCode = desiredKeyCode
+
+        unregisterHotkey()
+        if desiredEnabled {
+            registerHotkey(modifiers: desiredModifiers, keyCode: desiredKeyCode)
+        }
+    }
+
+    func refreshRegistrationFromAppState() {
+        syncFromAppState(AppState.shared, forceReregister: true)
     }
 
     func registerHotkey(modifiers: NSEvent.ModifierFlags, keyCode: UInt16) {
@@ -151,21 +152,49 @@ final class EmojiHotkeyManager: ObservableObject {
 
         // Also monitor keyDown to track if any key is pressed while modifiers are held
         globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] _ in
-            self?.keyPressedWhileModifiersHeld = true
+            Task { @MainActor [weak self] in
+                self?.keyPressedWhileModifiersHeld = true
+            }
         }
 
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            self?.keyPressedWhileModifiersHeld = true
+            if Thread.isMainThread {
+                self?.keyPressedWhileModifiersHeld = true
+            } else {
+                Task { @MainActor [weak self] in
+                    self?.keyPressedWhileModifiersHeld = true
+                }
+            }
             return event
         }
 
         // Monitor flagsChanged for modifier press/release
         globalFlagsMonitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
-            self?.handleFlagsChanged(event, capturedModifiers: filteredCapturedModifiers, relevantModifiers: relevantModifiers)
+            Task { @MainActor [weak self] in
+                self?.handleFlagsChanged(
+                    event,
+                    capturedModifiers: filteredCapturedModifiers,
+                    relevantModifiers: relevantModifiers
+                )
+            }
         }
 
         localFlagsMonitor = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
-            self?.handleFlagsChanged(event, capturedModifiers: filteredCapturedModifiers, relevantModifiers: relevantModifiers)
+            if Thread.isMainThread {
+                self?.handleFlagsChanged(
+                    event,
+                    capturedModifiers: filteredCapturedModifiers,
+                    relevantModifiers: relevantModifiers
+                )
+            } else {
+                Task { @MainActor [weak self] in
+                    self?.handleFlagsChanged(
+                        event,
+                        capturedModifiers: filteredCapturedModifiers,
+                        relevantModifiers: relevantModifiers
+                    )
+                }
+            }
             return event
         }
     }
@@ -235,9 +264,7 @@ final class EmojiHotkeyManager: ObservableObject {
     }
 
     private func openEmojiPicker() {
-        DispatchQueue.main.async {
-            EmojiPickerManager.shared.show()
-        }
+        EmojiPickerManager.shared.show()
     }
 
     private func modifierSymbols(_ modifiers: NSEvent.ModifierFlags) -> String {
@@ -283,22 +310,4 @@ final class EmojiHotkeyManager: ObservableObject {
         return nil
     }
 
-    deinit {
-        if let observer = settingsObserver {
-            NotificationCenter.default.removeObserver(observer)
-        }
-        // Cleanup monitors manually since we can't call main actor methods in deinit
-        if let monitor = globalMonitor {
-            NSEvent.removeMonitor(monitor)
-        }
-        if let monitor = localMonitor {
-            NSEvent.removeMonitor(monitor)
-        }
-        if let monitor = globalFlagsMonitor {
-            NSEvent.removeMonitor(monitor)
-        }
-        if let monitor = localFlagsMonitor {
-            NSEvent.removeMonitor(monitor)
-        }
-    }
 }

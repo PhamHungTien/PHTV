@@ -6,8 +6,11 @@
 import Foundation
 
 private let engineSnippetTokenCharacters: Set<Character> = ["d", "M", "y", "H", "m", "s"]
-private let engineSnippetCounterLock = NSLock()
-nonisolated(unsafe) private var engineSnippetCounterValues: [String: Int] = [:]
+private final class EngineSnippetCounterStateBox: @unchecked Sendable {
+    let lock = NSLock()
+    var values: [String: Int] = [:]
+}
+private let engineSnippetCounterState = EngineSnippetCounterStateBox()
 
 enum EngineMacroSnippetType {
     static let staticContent: Int32 = 0
@@ -102,13 +105,13 @@ enum EngineMacroSnippetRuntime {
     }
 
     private static func counterValue(prefix: String) -> String {
-        engineSnippetCounterLock.lock()
+        engineSnippetCounterState.lock.lock()
         defer {
-            engineSnippetCounterLock.unlock()
+            engineSnippetCounterState.lock.unlock()
         }
 
-        let nextValue = (engineSnippetCounterValues[prefix] ?? 0) + 1
-        engineSnippetCounterValues[prefix] = nextValue
+        let nextValue = (engineSnippetCounterState.values[prefix] ?? 0) + 1
+        engineSnippetCounterState.values[prefix] = nextValue
         return "\(prefix)\(nextValue)"
     }
 

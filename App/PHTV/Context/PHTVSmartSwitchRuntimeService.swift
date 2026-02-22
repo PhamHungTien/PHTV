@@ -18,10 +18,13 @@ final class PHTVSmartSwitchRuntimeService: NSObject {
 
     private static let queue = DispatchQueue(label: "com.phamhungtien.phtv.smartswitch.runtime")
 
-    nonisolated(unsafe) private static var isLoaded = false
-    nonisolated(unsafe) private static var stateByBundleId: [String: Int8] = [:]
-    nonisolated(unsafe) private static var cacheBundleId = ""
-    nonisolated(unsafe) private static var cacheState: Int8 = 0
+    private final class RuntimeStateBox: @unchecked Sendable {
+        var isLoaded = false
+        var stateByBundleId: [String: Int8] = [:]
+        var cacheBundleId = ""
+        var cacheState: Int8 = 0
+    }
+    private static let runtimeState = RuntimeStateBox()
 
     @objc class func appState(
         forBundleId bundleId: String,
@@ -36,20 +39,20 @@ final class PHTVSmartSwitchRuntimeService: NSObject {
         return queue.sync {
             ensureLoadedLocked()
 
-            if cacheBundleId == bundleId {
-                return Int32(cacheState)
+            if runtimeState.cacheBundleId == bundleId {
+                return Int32(runtimeState.cacheState)
             }
 
-            if let existing = stateByBundleId[bundleId] {
-                cacheBundleId = bundleId
-                cacheState = existing
+            if let existing = runtimeState.stateByBundleId[bundleId] {
+                runtimeState.cacheBundleId = bundleId
+                runtimeState.cacheState = existing
                 return Int32(existing)
             }
 
             let clampedDefault = clampToInt8(defaultState)
-            stateByBundleId[bundleId] = clampedDefault
-            cacheBundleId = bundleId
-            cacheState = clampedDefault
+            runtimeState.stateByBundleId[bundleId] = clampedDefault
+            runtimeState.cacheBundleId = bundleId
+            runtimeState.cacheState = clampedDefault
             return notFound
         }
     }
@@ -78,9 +81,9 @@ final class PHTVSmartSwitchRuntimeService: NSObject {
         let encodedState = clampToInt8(encodeState(inputMethod: language, codeTable: codeTable))
         queue.sync {
             ensureLoadedLocked()
-            stateByBundleId[bundleId] = encodedState
-            cacheBundleId = bundleId
-            cacheState = encodedState
+            runtimeState.stateByBundleId[bundleId] = encodedState
+            runtimeState.cacheBundleId = bundleId
+            runtimeState.cacheState = encodedState
         }
     }
 
@@ -123,21 +126,21 @@ private extension PHTVSmartSwitchRuntimeService {
     }
 
     static func ensureLoadedLocked() {
-        if isLoaded {
+        if runtimeState.isLoaded {
             return
         }
         loadFromUserDefaultsLocked(force: false)
     }
 
     static func loadFromUserDefaultsLocked(force: Bool) {
-        if isLoaded && !force {
+        if runtimeState.isLoaded && !force {
             return
         }
 
-        isLoaded = true
-        stateByBundleId.removeAll(keepingCapacity: false)
-        cacheBundleId.removeAll(keepingCapacity: false)
-        cacheState = 0
+        runtimeState.isLoaded = true
+        runtimeState.stateByBundleId.removeAll(keepingCapacity: false)
+        runtimeState.cacheBundleId.removeAll(keepingCapacity: false)
+        runtimeState.cacheState = 0
 
         guard let data = UserDefaults.standard.data(forKey: "smartSwitchKey"), data.count >= 2 else {
             return
@@ -167,13 +170,13 @@ private extension PHTVSmartSwitchRuntimeService {
             cursor += 1
 
             if !bundleId.isEmpty {
-                stateByBundleId[bundleId] = state
+                runtimeState.stateByBundleId[bundleId] = state
             }
         }
     }
 
     static func serializedDataLocked() -> Data {
-        let sortedEntries = stateByBundleId
+        let sortedEntries = runtimeState.stateByBundleId
             .filter { !$0.key.isEmpty && $0.key.utf8.count <= maxBundleIdBytes }
             .sorted { $0.key < $1.key }
             .prefix(maxEntryCount)

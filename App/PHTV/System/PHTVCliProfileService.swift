@@ -124,52 +124,67 @@ final class PHTVCliProfileService: NSObject {
 
 @objcMembers
 final class PHTVCliRuntimeStateService: NSObject {
-    nonisolated(unsafe) private static var runtimeCliSpeedFactor = 1.0
-    nonisolated(unsafe) private static var runtimeCliBackspaceDelayUs: UInt64 = 0
-    nonisolated(unsafe) private static var runtimeCliWaitAfterBackspaceUs: UInt64 = 0
-    nonisolated(unsafe) private static var runtimeCliTextDelayUs: UInt64 = 0
-    nonisolated(unsafe) private static var runtimeCliTextChunkSize: Int32 = PHTVCliProfileService.nonCliTextChunkSize()
-    nonisolated(unsafe) private static var runtimeCliPostSendBlockUs: UInt64 = UInt64(PHTVCliProfileService.minimumPostSendBlockUsValue)
-    nonisolated(unsafe) private static var runtimeCliLastKeyDownMachTime: UInt64 = 0
-    nonisolated(unsafe) private static var runtimeCliBlockUntilMachTime: UInt64 = 0
+    private final class CliRuntimeStateBox: @unchecked Sendable {
+        let lock = NSLock()
+        var runtimeCliSpeedFactor = 1.0
+        var runtimeCliBackspaceDelayUs: UInt64 = 0
+        var runtimeCliWaitAfterBackspaceUs: UInt64 = 0
+        var runtimeCliTextDelayUs: UInt64 = 0
+        var runtimeCliTextChunkSize: Int32 = PHTVCliProfileService.nonCliTextChunkSize()
+        var runtimeCliPostSendBlockUs: UInt64 = UInt64(PHTVCliProfileService.minimumPostSendBlockUsValue)
+        var runtimeCliLastKeyDownMachTime: UInt64 = 0
+        var runtimeCliBlockUntilMachTime: UInt64 = 0
+    }
+    private static let state = CliRuntimeStateBox()
 
     @objc(applyProfile:)
     class func applyProfile(_ profile: PHTVCliTimingProfileBox?) {
+        state.lock.lock()
+        defer { state.lock.unlock() }
+
         if let profile {
-            runtimeCliBackspaceDelayUs = UInt64(profile.backspaceDelayUs)
-            runtimeCliWaitAfterBackspaceUs = UInt64(profile.waitAfterBackspaceUs)
-            runtimeCliTextDelayUs = UInt64(profile.textDelayUs)
-            runtimeCliTextChunkSize = profile.textChunkSize
-            runtimeCliPostSendBlockUs = max(UInt64(PHTVCliProfileService.minimumPostSendBlockUsValue), UInt64(profile.postSendBlockUs))
+            state.runtimeCliBackspaceDelayUs = UInt64(profile.backspaceDelayUs)
+            state.runtimeCliWaitAfterBackspaceUs = UInt64(profile.waitAfterBackspaceUs)
+            state.runtimeCliTextDelayUs = UInt64(profile.textDelayUs)
+            state.runtimeCliTextChunkSize = profile.textChunkSize
+            state.runtimeCliPostSendBlockUs = max(
+                UInt64(PHTVCliProfileService.minimumPostSendBlockUsValue),
+                UInt64(profile.postSendBlockUs)
+            )
             return
         }
 
-        runtimeCliBackspaceDelayUs = 0
-        runtimeCliWaitAfterBackspaceUs = 0
-        runtimeCliTextDelayUs = 0
-        runtimeCliTextChunkSize = PHTVCliProfileService.nonCliTextChunkSize()
-        runtimeCliPostSendBlockUs = UInt64(PHTVCliProfileService.minimumPostSendBlockUsValue)
+        state.runtimeCliBackspaceDelayUs = 0
+        state.runtimeCliWaitAfterBackspaceUs = 0
+        state.runtimeCliTextDelayUs = 0
+        state.runtimeCliTextChunkSize = PHTVCliProfileService.nonCliTextChunkSize()
+        state.runtimeCliPostSendBlockUs = UInt64(PHTVCliProfileService.minimumPostSendBlockUsValue)
     }
 
     @objc(updateSpeedFactorForNowMachTime:)
     class func updateSpeedFactor(forNowMachTime now: UInt64) {
-        if runtimeCliLastKeyDownMachTime == 0 {
-            runtimeCliLastKeyDownMachTime = now
-            runtimeCliSpeedFactor = 1.0
+        state.lock.lock()
+        defer { state.lock.unlock() }
+
+        if state.runtimeCliLastKeyDownMachTime == 0 {
+            state.runtimeCliLastKeyDownMachTime = now
+            state.runtimeCliSpeedFactor = 1.0
             return
         }
 
-        let deltaUs = PHTVTimingService.machTimeToUs(now - runtimeCliLastKeyDownMachTime)
-        runtimeCliLastKeyDownMachTime = now
-        runtimeCliSpeedFactor = PHTVCliProfileService.nextCliSpeedFactor(
+        let deltaUs = PHTVTimingService.machTimeToUs(now - state.runtimeCliLastKeyDownMachTime)
+        state.runtimeCliLastKeyDownMachTime = now
+        state.runtimeCliSpeedFactor = PHTVCliProfileService.nextCliSpeedFactor(
             forDeltaUs: deltaUs,
-            currentFactor: runtimeCliSpeedFactor
+            currentFactor: state.runtimeCliSpeedFactor
         )
     }
 
     @objc class func resetSpeedState() {
-        runtimeCliSpeedFactor = 1.0
-        runtimeCliLastKeyDownMachTime = 0
+        state.lock.lock()
+        state.runtimeCliSpeedFactor = 1.0
+        state.runtimeCliLastKeyDownMachTime = 0
+        state.lock.unlock()
     }
 
     @objc(scheduleBlockForMicroseconds:nowMachTime:)
@@ -178,40 +193,64 @@ final class PHTVCliRuntimeStateService: NSObject {
             return
         }
         let until = now + PHTVTimingService.microsecondsToMachTime(microseconds)
-        if until > runtimeCliBlockUntilMachTime {
-            runtimeCliBlockUntilMachTime = until
+        state.lock.lock()
+        if until > state.runtimeCliBlockUntilMachTime {
+            state.runtimeCliBlockUntilMachTime = until
         }
+        state.lock.unlock()
     }
 
     @objc(remainingBlockMicrosecondsForNowMachTime:)
     class func remainingBlockMicroseconds(forNowMachTime now: UInt64) -> UInt64 {
-        guard runtimeCliBlockUntilMachTime > now else {
+        state.lock.lock()
+        let blockUntil = state.runtimeCliBlockUntilMachTime
+        state.lock.unlock()
+
+        guard blockUntil > now else {
             return 0
         }
-        return PHTVTimingService.machTimeToUs(runtimeCliBlockUntilMachTime - now)
+        return PHTVTimingService.machTimeToUs(blockUntil - now)
     }
 
     @objc class func currentSpeedFactor() -> Double {
-        runtimeCliSpeedFactor
+        state.lock.lock()
+        let value = state.runtimeCliSpeedFactor
+        state.lock.unlock()
+        return value
     }
 
     @objc class func cliBackspaceDelayUs() -> UInt64 {
-        runtimeCliBackspaceDelayUs
+        state.lock.lock()
+        let value = state.runtimeCliBackspaceDelayUs
+        state.lock.unlock()
+        return value
     }
 
     @objc class func cliWaitAfterBackspaceUs() -> UInt64 {
-        runtimeCliWaitAfterBackspaceUs
+        state.lock.lock()
+        let value = state.runtimeCliWaitAfterBackspaceUs
+        state.lock.unlock()
+        return value
     }
 
     @objc class func cliTextDelayUs() -> UInt64 {
-        runtimeCliTextDelayUs
+        state.lock.lock()
+        let value = state.runtimeCliTextDelayUs
+        state.lock.unlock()
+        return value
     }
 
     @objc class func cliTextChunkSize() -> Int32 {
-        runtimeCliTextChunkSize
+        state.lock.lock()
+        let value = state.runtimeCliTextChunkSize
+        state.lock.unlock()
+        return value
     }
 
     @objc class func cliPostSendBlockUs() -> UInt64 {
-        runtimeCliPostSendBlockUs
+        state.lock.lock()
+        let value = state.runtimeCliPostSendBlockUs
+        state.lock.unlock()
+        return value
     }
 }

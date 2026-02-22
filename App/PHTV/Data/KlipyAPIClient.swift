@@ -306,7 +306,7 @@ class KlipyAPIClient: ObservableObject {
     /// Clean old cached GIFs/Stickers (older than 7 days or if cache exceeds 100MB)
     /// Only cleans files in the PHTPMedia directory to avoid affecting other apps
     func cleanOldCache() {
-        DispatchQueue.global(qos: .background).async {
+        Task.detached(priority: .background) {
             let fileManager = FileManager.default
             let tempDir = fileManager.temporaryDirectory
             let phtpDir = tempDir.appendingPathComponent("PHTPMedia", isDirectory: true)

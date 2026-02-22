@@ -48,10 +48,10 @@ final class SystemState: ObservableObject {
     private var loginItemCheckTimer: Timer?
     private var lastRunOnStartupChangeTime: Date?
 
-    // Helper to access AppDelegate via C function
+    // Helper to access AppDelegate safely on main actor
     @MainActor
     private func getAppDelegate() -> AppDelegate? {
-        return GetAppDelegateInstance()
+        return NSApp.delegate as? AppDelegate
     }
 
     init() {}
@@ -232,7 +232,7 @@ final class SystemState: ObservableObject {
             self.lastRunOnStartupChangeTime = Date()
 
             guard let appDelegate = self.getAppDelegate() else {
-                NSLog("[SystemState] ❌ GetAppDelegateInstance() returned nil")
+                NSLog("[SystemState] ❌ NSApp.delegate as AppDelegate returned nil")
                 return
             }
 
