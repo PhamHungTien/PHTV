@@ -24,6 +24,9 @@ final class AppState: ObservableObject {
     /// Macro and emoji hotkey settings
     @Published var macroState = MacroState()
 
+    /// Clipboard history settings
+    @Published var clipboardHistoryState = ClipboardHistoryState()
+
     /// System settings, permissions, and updates
     @Published var systemState = SystemState()
 
@@ -91,18 +94,21 @@ final class AppState: ObservableObject {
         // Load all sub-states
         inputMethodState.isLoadingSettings = true
         macroState.isLoadingSettings = true
+        clipboardHistoryState.isLoadingSettings = true
         systemState.isLoadingSettings = true
         uiState.isLoadingSettings = true
         appListsState.isLoadingSettings = true
 
         inputMethodState.loadSettings()
         macroState.loadSettings()
+        clipboardHistoryState.loadSettings()
         systemState.loadSettings()
         uiState.loadSettings()
         appListsState.loadSettings()
 
         inputMethodState.isLoadingSettings = false
         macroState.isLoadingSettings = false
+        clipboardHistoryState.isLoadingSettings = false
         systemState.isLoadingSettings = false
         uiState.isLoadingSettings = false
         appListsState.isLoadingSettings = false
@@ -114,6 +120,7 @@ final class AppState: ObservableObject {
         // Save all sub-states
         inputMethodState.saveSettings()
         macroState.saveSettings()
+        clipboardHistoryState.saveSettings()
         systemState.saveSettings()
         uiState.saveSettings()
         appListsState.saveSettings()
@@ -145,6 +152,7 @@ final class AppState: ObservableObject {
         // Reload sub-states
         inputMethodState.isLoadingSettings = true
         macroState.isLoadingSettings = true
+        clipboardHistoryState.isLoadingSettings = true
         systemState.isLoadingSettings = true
         uiState.isLoadingSettings = true
         appListsState.isLoadingSettings = true
@@ -160,12 +168,14 @@ final class AppState: ObservableObject {
         // Reload each sub-state
         inputMethodState.reloadFromDefaults()
         macroState.reloadFromDefaults()
+        clipboardHistoryState.reloadFromDefaults()
         systemState.reloadFromDefaults()
         uiState.reloadFromDefaults()
         appListsState.reloadFromDefaults()
 
         inputMethodState.isLoadingSettings = false
         macroState.isLoadingSettings = false
+        clipboardHistoryState.isLoadingSettings = false
         systemState.isLoadingSettings = false
         uiState.isLoadingSettings = false
         appListsState.isLoadingSettings = false
@@ -280,6 +290,7 @@ final class AppState: ObservableObject {
         // Setup observers for all sub-states
         inputMethodState.setupObservers()
         macroState.setupObservers()
+        clipboardHistoryState.setupObservers()
         systemState.setupObservers()
         uiState.setupObservers()
 
@@ -290,6 +301,10 @@ final class AppState: ObservableObject {
         }.store(in: &cancellables)
 
         macroState.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }.store(in: &cancellables)
+
+        clipboardHistoryState.objectWillChange.sink { [weak self] _ in
             self?.objectWillChange.send()
         }.store(in: &cancellables)
 
@@ -339,6 +354,7 @@ final class AppState: ObservableObject {
         // Reset all sub-states
         inputMethodState.resetToDefaults()
         macroState.resetToDefaults()
+        clipboardHistoryState.resetToDefaults()
         systemState.resetToDefaults()
         uiState.resetToDefaults()
         appListsState.resetToDefaults()

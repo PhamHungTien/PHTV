@@ -164,6 +164,15 @@ struct HotkeySettingsView: View {
                     EmojiHotkeyConfigView()
                 }
 
+                // Clipboard History Hotkey
+                SettingsCard(
+                    title: "Lịch sử Clipboard",
+                    subtitle: "Mở nhanh lịch sử các nội dung đã sao chép",
+                    icon: "doc.on.clipboard.fill"
+                ) {
+                    ClipboardHotkeyConfigView()
+                }
+
                 Spacer(minLength: 20)
             }
             .frame(maxWidth: .infinity)

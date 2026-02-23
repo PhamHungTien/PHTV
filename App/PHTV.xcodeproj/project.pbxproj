@@ -326,8 +326,8 @@
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-					SWIFT_STRICT_CONCURRENCY = complete;
-					SWIFT_VERSION = 6.0;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
@@ -393,8 +393,8 @@
 				SDKROOT = macosx;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
-					SWIFT_STRICT_CONCURRENCY = complete;
-					SWIFT_VERSION = 6.0;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
@@ -520,8 +520,8 @@
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.phamhungtien.phtv.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-					SWIFT_STRICT_CONCURRENCY = complete;
-					SWIFT_VERSION = 6.0;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PHTV.app/Contents/MacOS/PHTV";
 			};
 			name = Debug;
@@ -544,8 +544,8 @@
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.phamhungtien.phtv.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-					SWIFT_STRICT_CONCURRENCY = complete;
-					SWIFT_VERSION = 6.0;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PHTV.app/Contents/MacOS/PHTV";
 			};
 			name = Release;

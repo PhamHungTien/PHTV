@@ -181,6 +181,14 @@ struct StatusBarMenuView: View {
 
             Divider()
 
+            Section("Clipboard") {
+                Toggle(isOn: $appState.enableClipboardHistory) {
+                    Label("Lịch sử Clipboard", systemImage: "doc.on.clipboard.fill")
+                }
+            }
+
+            Divider()
+
             Section("Chuyển đổi thông minh") {
                 Toggle(isOn: $appState.useSmartSwitchKey) {
                     Label("Chuyển thông minh theo ứng dụng", systemImage: "brain")

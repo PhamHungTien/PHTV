@@ -71,6 +71,12 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
                 EmojiHotkeyBridge.refreshEmojiHotkeyRegistration()
             }
         }
+        ClipboardHotkeyBridge.initializeClipboardHotkeyManager()
+        for delay in [0.0, 0.25, 0.8] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                ClipboardHotkeyBridge.refreshClipboardHotkeyRegistration()
+            }
+        }
         runHotkeyHealthCheck(reason: "launch-bootstrap")
 
         observeAppearanceChanges()
@@ -105,6 +111,7 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
                 self.startHealthCheckMonitoring()
                 self.startInputSourceMonitoring()
                 EmojiHotkeyBridge.refreshEmojiHotkeyRegistration()
+                ClipboardHotkeyBridge.refreshClipboardHotkeyRegistration()
 
                 let showUI = UserDefaults.standard.integer(forKey: phtvDefaultsKeyShowUIOnStartup)
                 if showUI == 1 {

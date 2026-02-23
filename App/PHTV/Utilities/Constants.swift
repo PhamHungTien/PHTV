@@ -43,6 +43,13 @@ enum UserDefaultsKey {
     static let pauseKey = "vPauseKey"
     static let pauseKeyName = "vPauseKeyName"
 
+    // MARK: - Clipboard History
+    static let enableClipboardHistory = "vEnableClipboardHistory"
+    static let clipboardHotkeyModifiers = "vClipboardHotkeyModifiers"
+    static let clipboardHotkeyKeyCode = "vClipboardHotkeyKeyCode"
+    static let clipboardHistoryMaxItems = "vClipboardHistoryMaxItems"
+    static let clipboardHistoryData = "vClipboardHistoryData"
+
     // MARK: - Emoji Hotkey
     static let enableEmojiHotkey = "vEnableEmojiHotkey"
     static let emojiHotkeyModifiers = "vEmojiHotkeyModifiers"
@@ -113,6 +120,9 @@ enum NotificationName {
 
     // MARK: - Emoji Hotkey
     static let emojiHotkeySettingsChanged = NSNotification.Name("EmojiHotkeySettingsChanged")
+
+    // MARK: - Clipboard History
+    static let clipboardHotkeySettingsChanged = NSNotification.Name("ClipboardHotkeySettingsChanged")
 
     // MARK: - System
     static let accessibilityStatusChanged = NSNotification.Name("AccessibilityStatusChanged")
@@ -276,6 +286,7 @@ enum KeyCode {
     static let rightOption: UInt16 = 61
     static let space: UInt16 = 49
     static let slash: UInt16 = 44
+    static let vKey: UInt16 = 9
     static let eKey: UInt16 = 14
     static let leftArrow: UInt16 = 123
     static let rightArrow: UInt16 = 124
@@ -385,6 +396,12 @@ enum Defaults {
     static let pauseKeyEnabled = false
     static let pauseKeyCode = KeyCode.leftOption
     static let pauseKeyName = "Option"
+
+    // MARK: - Clipboard History
+    static let enableClipboardHistory = false
+    static let clipboardHotkeyModifiers = NSEvent.ModifierFlags.control.rawValue
+    static let clipboardHotkeyKeyCode = KeyCode.vKey
+    static let clipboardHistoryMaxItems = 30
 
     // MARK: - Emoji Hotkey
     static let enableEmojiHotkey = true

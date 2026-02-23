@@ -151,6 +151,33 @@ extension AppState {
         set { macroState.emojiHotkeyModifiers = newValue }
     }
 
+    // MARK: Clipboard History State
+
+    var enableClipboardHistory: Bool {
+        get { clipboardHistoryState.enableClipboardHistory }
+        set { clipboardHistoryState.enableClipboardHistory = newValue }
+    }
+
+    var clipboardHotkeyModifiersRaw: Int {
+        get { clipboardHistoryState.clipboardHotkeyModifiersRaw }
+        set { clipboardHistoryState.clipboardHotkeyModifiersRaw = newValue }
+    }
+
+    var clipboardHotkeyKeyCode: UInt16 {
+        get { clipboardHistoryState.clipboardHotkeyKeyCode }
+        set { clipboardHistoryState.clipboardHotkeyKeyCode = newValue }
+    }
+
+    var clipboardHotkeyModifiers: NSEvent.ModifierFlags {
+        get { clipboardHistoryState.clipboardHotkeyModifiers }
+        set { clipboardHistoryState.clipboardHotkeyModifiers = newValue }
+    }
+
+    var clipboardHistoryMaxItems: Int {
+        get { clipboardHistoryState.clipboardHistoryMaxItems }
+        set { clipboardHistoryState.clipboardHistoryMaxItems = newValue }
+    }
+
     // MARK: System State
 
     var runOnStartup: Bool {
