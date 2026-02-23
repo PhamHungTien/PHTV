@@ -72,7 +72,7 @@ struct ClipboardHotkeyConfigView: View {
     private var keyDisplayText: String {
         if isRecording { return "Nhấn phím..." }
         if appState.clipboardHotkeyKeyCode == modifierOnlyKeyCode {
-            return KeyCode.modifierOnlyDisplayName
+            return "Không dùng (chỉ modifier)"
         }
         return keyCodeToName(appState.clipboardHotkeyKeyCode)
     }
@@ -158,6 +158,7 @@ struct ClipboardHotkeyConfigView: View {
                                 Text(keyDisplayText)
                                     .font(.body)
                                     .foregroundStyle(isRecording ? Color.accentColor : .primary)
+                                    .animation(.easeInOut(duration: 0.2), value: keyDisplayText)
 
                                 Spacer()
 
@@ -202,6 +203,7 @@ struct ClipboardHotkeyConfigView: View {
                             }
                         }
                         .buttonStyle(.plain)
+                        .animation(.easeInOut(duration: 0.2), value: isRecording)
                         .background(
                             ClipboardKeyEventHandler(isRecording: $isRecording, appState: appState)
                         )
@@ -209,12 +211,31 @@ struct ClipboardHotkeyConfigView: View {
                         if hasValidHotkey {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Tổ hợp hiện tại")
-                                    .font(.caption2)
+                                    .font(.caption)
                                     .foregroundStyle(.secondary)
                                 Text(currentHotkeyString)
-                                    .font(.system(size: 14, weight: .medium, design: .rounded))
-                                    .foregroundStyle(.primary)
+                                    .font(.system(.body, design: .rounded))
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.tint)
+                                    .animation(.easeInOut(duration: 0.2), value: currentHotkeyString)
                             }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background {
+                                if #available(macOS 26.0, *), SettingsVisualEffects.enableMaterials {
+                                    ZStack {
+                                        PHTVRoundedRect(cornerRadius: 10)
+                                            .fill(.ultraThinMaterial)
+                                        PHTVRoundedRect(cornerRadius: 10)
+                                            .fill(Color.accentColor.opacity(0.08))
+                                    }
+                                    .settingsGlassEffect(cornerRadius: 10)
+                                } else {
+                                    PHTVRoundedRect(cornerRadius: 10)
+                                        .fill(Color.accentColor.opacity(0.08))
+                                }
+                            }
+                            .transition(.scale.combined(with: .opacity))
                         }
                     }
                 }
