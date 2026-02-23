@@ -17,7 +17,7 @@ App/PHTV/
 ├── Data/                     # Persistence, API clients, database
 ├── Models/                   # Value types và domain models
 ├── Resources/                # Từ điển, localization, assets
-├── Services/                 # Business logic độc lập với UI
+├── Services/                 # Business logic độc lập với UI (ClipboardMonitor, ClipboardHotkeyManager, ...)
 ├── State/                    # Observable state objects (SwiftUI)
 ├── UI/                       # SwiftUI views và components
 └── Utilities/                # Tiện ích dùng chung (logger, cache, constants)

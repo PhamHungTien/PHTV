@@ -72,6 +72,13 @@ open /Applications/PHTV.app
 - **Import/Export** - Nhập xuất danh sách macro từ file
 - **Danh mục** - Tổ chức macro theo nhóm với icon và màu sắc
 
+### Lịch sử Clipboard
+- **Lưu nội dung đã sao chép** - Tự động lưu văn bản, ảnh, đường dẫn file vào lịch sử
+- **Dán nhanh bằng phím tắt** - Mặc định ⌃V (Control + V), tuỳ chỉnh trong Settings
+- **Tìm kiếm** - Tìm nhanh trong danh sách nội dung đã sao chép
+- **Giao diện Liquid Glass** - Đồng bộ với PHTV Picker, hỗ trợ kéo di chuyển
+- **Tuỳ chỉnh** - Giới hạn số mục lưu (10–100), mặc định tắt
+
 ### PHTV Picker (Emoji & GIF)
 - **Giao diện Liquid Glass** - Thiết kế hiện đại theo chuẩn Apple với hiệu ứng glass morphism
 - **1,463 Emoji từ Unicode v17.0** - Đầy đủ emoji mới nhất với categories và tìm kiếm
@@ -245,6 +252,7 @@ Xem chi tiết tại [.github/workflows/README.md](.github/workflows/README.md)
 | **Control + Shift** | Chuyển Việt/Anh (tùy chỉnh được) |
 | **ESC** | Khôi phục ký tự gốc (hoàn tác dấu) |
 | **Giữ Option** | Tạm tắt tiếng Việt (tùy chỉnh được) |
+| **Control + V** | Mở Lịch sử Clipboard (tùy chỉnh được, mặc định tắt) |
 
 ### Menu Bar
 
@@ -260,7 +268,7 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 | Tab | Nội dung |
 | --- | --- |
 | **Bộ gõ** | Phương pháp gõ, bảng mã, chính tả, Quick Telex, phụ âm nhanh |
-| **Phím tắt** | Phím chuyển ngôn ngữ, tạm tắt tiếng Việt, PHTV Picker hotkey |
+| **Phím tắt** | Phím chuyển ngôn ngữ, tạm tắt tiếng Việt, PHTV Picker hotkey, Lịch sử Clipboard |
 | **Gõ tắt** | Quản lý macro, text snippets, import/export, tự động viết hoa |
 | **Ứng dụng** | Excluded Apps, Send Key Step-by-Step, Keyboard Layout, Claude Code Fix, Safe Mode |
 | **Hệ thống** | Khởi động cùng macOS, Smart Switch, cập nhật, menu bar, phát hiện bàn phím non-Latin |

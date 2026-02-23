@@ -50,23 +50,30 @@ PHTV Picker là bảng chọn nhanh Emoji và GIF theo phong cách Liquid Glass 
 - **Tìm kiếm:** Bạn có thể tìm emoji/gif bằng cả tiếng Việt và tiếng Anh.
 - **Tự động dán:** Chỉ cần click vào emoji/gif, PHTV sẽ tự động dán vào ứng dụng bạn đang dùng.
 
-### 7. Macro (Gõ tắt) trong PHTV có gì đặc biệt?
+### 7. Lịch sử Clipboard là gì?
+Lịch sử Clipboard lưu lại các nội dung bạn đã sao chép (văn bản, ảnh, đường dẫn file) và cho phép dán lại nhanh chóng.
+- **Mặc định tắt:** Bật tại **Settings > Phím tắt > Lịch sử Clipboard**.
+- **Phím tắt:** Mặc định **⌃V** (Control + V), có thể tuỳ chỉnh modifier và phím chính.
+- **Tìm kiếm:** Gõ từ khoá để lọc nhanh trong danh sách đã sao chép.
+- **Giới hạn:** Tuỳ chỉnh số mục tối đa (10–100, mặc định 30).
+
+### 8. Macro (Gõ tắt) trong PHTV có gì đặc biệt?
 PHTV hỗ trợ Macro cực mạnh:
 - **Text Snippets:** Tự động chèn ngày giờ (`{date}`, `{time}`), nội dung clipboard, hoặc số thứ tự.
 - **Thông minh:** Tự động viết hoa macro theo ngữ cảnh (VD: `btw` -> `by the way`, `Btw` -> `By the way`).
 - **Chế độ Anh:** Bạn có thể bật macro ngay cả khi đang ở chế độ gõ tiếng Anh.
 
-### 8. "Safe Mode" là gì?
+### 9. "Safe Mode" là gì?
 Safe Mode (Chế độ an toàn) là tính năng giúp PHTV tự động phục hồi khi gặp lỗi với Accessibility API của macOS. Tính năng này đặc biệt hữu ích cho các dòng máy Mac cũ hoặc các máy chạy macOS qua OCLP (OpenCore Legacy Patcher).
 
 ---
 
 ## 🔄 Cập nhật & Gỡ cài đặt
 
-### 9. Làm sao để cập nhật PHTV lên bản mới nhất?
+### 10. Làm sao để cập nhật PHTV lên bản mới nhất?
 PHTV tích hợp sẵn Sparkle framework. Ứng dụng sẽ tự động kiểm tra và thông báo khi có phiên bản mới. Bạn chỉ cần nhấn **Install Update** để hoàn tất.
 
-### 10. Tôi muốn gỡ cài đặt sạch PHTV thì làm thế nào?
+### 11. Tôi muốn gỡ cài đặt sạch PHTV thì làm thế nào?
 Nếu cài qua Homebrew, hãy dùng lệnh:
 ```bash
 brew uninstall --zap --cask phtv

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.9] - 2026-02-23
+
+### Added
+- **Lịch sử Clipboard** — Tính năng mới lưu lại nội dung đã sao chép (văn bản, ảnh, đường dẫn file) và dán nhanh bằng phím tắt
+  - Phím tắt mặc định: **⌃V** (Control + V), tuỳ chỉnh trong Cài đặt → Phím tắt
+  - Tuỳ chỉnh số mục lưu tối đa (10–100, mặc định 30)
+  - Tìm kiếm trong lịch sử clipboard
+  - Giao diện Liquid Glass đồng bộ với PHTV Picker (macOS Tahoe)
+  - Mặc định **tắt** — bật trong Cài đặt → Phím tắt → Lịch sử Clipboard
+  - Toggle nhanh từ menu thanh trạng thái
+- **Tuỳ chọn khôi phục phím khi gõ sai** — Đưa chức năng khôi phục phím khi gõ sai chính tả ra cài đặt để người dùng bật/tắt
+  - Truy cập tại Cài đặt → Bộ gõ → Khôi phục phím khi gõ sai
+  - Toggle nhanh từ menu thanh trạng thái → Tính năng → Khôi phục
+
 ## [2.1.4] - 2026-01-26
 
 ### Fixed
