@@ -15,6 +15,8 @@ struct ClipboardHistoryView: View {
     @ObservedObject private var manager = ClipboardHistoryManager.shared
     @State private var hoveredItemId: UUID?
     @State private var searchText = ""
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var colorScheme
 
     private var filteredItems: [ClipboardHistoryItem] {
         if searchText.isEmpty { return manager.items }
@@ -31,56 +33,18 @@ struct ClipboardHistoryView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HStack {
-                Image(systemName: "doc.on.clipboard.fill")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Color.accentColor)
+            // Header with drag handle and close button
+            headerView
+                .contentShape(Rectangle())
+                .background(WindowDragHandle())
 
-                Text("Lịch sử Clipboard")
-                    .font(.system(size: 14, weight: .semibold))
-
-                Spacer()
-
-                if !manager.items.isEmpty {
-                    Button(action: {
-                        manager.clearAll()
-                    }) {
-                        Text("Xoá tất cả")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                Button(action: onClose) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 16))
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-
-            // Search
+            // Search bar
             if manager.items.count > 5 {
-                HStack(spacing: 8) {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundStyle(.secondary)
-                        .font(.system(size: 12))
-                    TextField("Tìm kiếm...", text: $searchText)
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 13))
-                }
-                .padding(8)
-                .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
-                .cornerRadius(8)
-                .padding(.horizontal, 12)
-                .padding(.bottom, 8)
+                searchBar
             }
 
             Divider()
+                .opacity(0.5)
 
             // Items list
             if filteredItems.isEmpty {
@@ -92,6 +56,7 @@ struct ClipboardHistoryView: View {
                             ClipboardItemRow(
                                 item: item,
                                 isHovered: hoveredItemId == item.id,
+                                colorScheme: colorScheme,
                                 onSelect: { onItemSelected(item) },
                                 onDelete: { manager.removeItem(item) }
                             )
@@ -101,7 +66,8 @@ struct ClipboardHistoryView: View {
 
                             if item.id != filteredItems.last?.id {
                                 Divider()
-                                    .padding(.leading, 12)
+                                    .opacity(0.4)
+                                    .padding(.leading, 54)
                             }
                         }
                     }
@@ -111,6 +77,7 @@ struct ClipboardHistoryView: View {
 
             // Footer
             Divider()
+                .opacity(0.5)
             HStack {
                 Text("\(manager.items.count) mục")
                     .font(.system(size: 11))
@@ -125,17 +92,119 @@ struct ClipboardHistoryView: View {
         }
         .frame(width: 380, height: 480)
         .background {
-            if #available(macOS 26.0, *) {
-                VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-            } else {
-                VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-            }
+            clipboardBackground
         }
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: 10)
     }
+
+    // MARK: - Header View
+
+    @ViewBuilder
+    private var headerView: some View {
+        HStack(spacing: 8) {
+            // Drag handle icon
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.secondary.opacity(0.6))
+                .frame(width: 24, height: 24)
+                .background {
+                    Circle()
+                        .fill(Color.primary.opacity(colorScheme == .dark ? 0.1 : 0.08))
+                }
+                .help("Kéo để di chuyển")
+
+            Image(systemName: "doc.on.clipboard.fill")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color.accentColor)
+
+            Text("Lịch sử Clipboard")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.primary)
+
+            Spacer()
+
+            if !manager.items.isEmpty {
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        manager.clearAll()
+                    }
+                }) {
+                    Text("Xoá tất cả")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background {
+                            PHTVRoundedRect(cornerRadius: 6)
+                                .fill(Color.primary.opacity(colorScheme == .dark ? 0.08 : 0.05))
+                        }
+                }
+                .buttonStyle(.plain)
+            }
+
+            // Close button (glass style matching PHTV Picker)
+            GlassCloseButton {
+                onClose()
+            }
+            .help("Đóng (ESC)")
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 12)
+        .padding(.bottom, 10)
+    }
+
+    // MARK: - Search Bar
+
+    @ViewBuilder
+    private var searchBar: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+                .font(.system(size: 12))
+            TextField("Tìm kiếm...", text: $searchText)
+                .textFieldStyle(.plain)
+                .font(.system(size: 13))
+        }
+        .padding(8)
+        .background {
+            PHTVRoundedRect(cornerRadius: 8)
+                .fill(Color.primary.opacity(colorScheme == .dark ? 0.08 : 0.05))
+                .overlay(
+                    PHTVRoundedRect(cornerRadius: 8)
+                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.06), lineWidth: 1)
+                )
+        }
+        .padding(.horizontal, 12)
+        .padding(.bottom, 8)
+    }
+
+    // MARK: - Background
+
+    @ViewBuilder
+    private var clipboardBackground: some View {
+        if #available(macOS 26.0, *), !reduceTransparency {
+            // Liquid Glass design for macOS 26+
+            PHTVRoundedRect(cornerRadius: 16)
+                .fill(Color(NSColor.windowBackgroundColor).opacity(colorScheme == .dark ? 0.2 : 0.25))
+                .glassEffect(
+                    .regular,
+                    in: .rect(corners: .fixed(16), isUniform: true)
+                )
+                .overlay(
+                    PHTVRoundedRect(cornerRadius: 16)
+                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.06), lineWidth: 1)
+                )
+        } else {
+            // Fallback glassmorphism for older macOS
+            ZStack {
+                PHTVRoundedRect(cornerRadius: 16)
+                    .fill(Color(NSColor.windowBackgroundColor).opacity(0.85))
+                VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
+            }
+            .clipShape(PHTVRoundedRect(cornerRadius: 16))
+        }
+    }
+
+    // MARK: - Empty State
 
     private var emptyState: some View {
         VStack(spacing: 12) {
@@ -160,6 +229,7 @@ struct ClipboardHistoryView: View {
 private struct ClipboardItemRow: View {
     let item: ClipboardHistoryItem
     let isHovered: Bool
+    let colorScheme: ColorScheme
     let onSelect: () -> Void
     let onDelete: () -> Void
 
@@ -198,7 +268,12 @@ private struct ClipboardItemRow: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(isHovered ? Color.primary.opacity(0.06) : Color.clear)
+            .background {
+                if isHovered {
+                    PHTVRoundedRect(cornerRadius: 8)
+                        .fill(Color.primary.opacity(colorScheme == .dark ? 0.1 : 0.06))
+                }
+            }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -213,7 +288,7 @@ private struct ClipboardItemRow: View {
                     .resizable()
                     .scaledToFill()
                     .frame(width: 32, height: 32)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .clipShape(PHTVRoundedRect(cornerRadius: 6))
             } else {
                 iconView("photo.fill", color: .blue)
             }
@@ -231,8 +306,8 @@ private struct ClipboardItemRow: View {
             .font(.system(size: 14))
             .foregroundStyle(color)
             .frame(width: 32, height: 32)
-            .background(color.opacity(0.1))
-            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .background(color.opacity(colorScheme == .dark ? 0.15 : 0.1))
+            .clipShape(PHTVRoundedRect(cornerRadius: 6))
     }
 
     private var timeAgoText: String {
@@ -241,25 +316,5 @@ private struct ClipboardItemRow: View {
         if interval < 3600 { return "\(Int(interval / 60)) phút trước" }
         if interval < 86400 { return "\(Int(interval / 3600)) giờ trước" }
         return "\(Int(interval / 86400)) ngày trước"
-    }
-}
-
-// MARK: - Visual Effect View
-
-struct VisualEffectView: NSViewRepresentable {
-    let material: NSVisualEffectView.Material
-    let blendingMode: NSVisualEffectView.BlendingMode
-
-    func makeNSView(context: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.material = material
-        view.blendingMode = blendingMode
-        view.state = .active
-        return view
-    }
-
-    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
-        nsView.material = material
-        nsView.blendingMode = blendingMode
     }
 }
