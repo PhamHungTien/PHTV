@@ -86,6 +86,16 @@ import Foundation
         )
     }
 
+    @objc(phtv_toggleRestoreIfWrongSpellingSetting)
+    class func phtv_toggleRestoreIfWrongSpellingSetting() -> Int32 {
+        phtv_toggleRuntimeIntSetting(
+            currentValue: { PHTVEngineRuntimeFacade.restoreIfWrongSpelling() },
+            applyValue: { PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling($0) },
+            defaultsKey: "vRestoreIfWrongSpelling",
+            syncSpellingBeforeSessionReset: false
+        )
+    }
+
     @objc(phtv_runtimeSettingsSnapshot)
     class func phtv_runtimeSettingsSnapshot() -> [String: NSNumber] {
         [
@@ -110,6 +120,7 @@ import Foundation
             "pauseKeyEnabled": NSNumber(value: PHTVEngineRuntimeFacade.pauseKeyEnabled()),
             "pauseKey": NSNumber(value: PHTVEngineRuntimeFacade.pauseKey()),
             "autoRestoreEnglishWord": NSNumber(value: PHTVEngineRuntimeFacade.autoRestoreEnglishWord()),
+            "restoreIfWrongSpelling": NSNumber(value: PHTVEngineRuntimeFacade.restoreIfWrongSpelling()),
             "enableEmojiHotkey": NSNumber(value: PHTVEngineRuntimeFacade.enableEmojiHotkey()),
             "emojiHotkeyModifiers": NSNumber(value: PHTVEngineRuntimeFacade.emojiHotkeyModifiers()),
             "emojiHotkeyKeyCode": NSNumber(value: PHTVEngineRuntimeFacade.emojiHotkeyKeyCode())

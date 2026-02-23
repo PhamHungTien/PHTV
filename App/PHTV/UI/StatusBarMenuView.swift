@@ -158,6 +158,9 @@ struct StatusBarMenuView: View {
                 Toggle(isOn: $appState.autoRestoreEnglishWord) {
                     Label("Tự động khôi phục tiếng Anh", systemImage: "character.bubble")
                 }
+                Toggle(isOn: $appState.restoreIfWrongSpelling) {
+                    Label("Khôi phục phím khi gõ sai", systemImage: "arrow.uturn.backward.circle")
+                }
             }
 
             Divider()

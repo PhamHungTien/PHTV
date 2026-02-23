@@ -77,6 +77,7 @@ import Foundation
             "vPauseKeyEnabled",
             "vPauseKey",
             "vAutoRestoreEnglishWord",
+            "vRestoreIfWrongSpelling",
             "vEnableEmojiHotkey",
             "vEmojiHotkeyModifiers",
             "vEmojiHotkeyKeyCode"
@@ -321,6 +322,13 @@ import Foundation
                 defaults: defaults,
                 key: "vAutoRestoreEnglishWord",
                 fallback: Int32(PHTVEngineRuntimeFacade.autoRestoreEnglishWord())
+            )
+        )
+        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(
+            phtv_readIntWithFallback(
+                defaults: defaults,
+                key: "vRestoreIfWrongSpelling",
+                fallback: Int32(PHTVEngineRuntimeFacade.restoreIfWrongSpelling())
             )
         )
         PHTVEngineRuntimeFacade.setShowIconOnDock(

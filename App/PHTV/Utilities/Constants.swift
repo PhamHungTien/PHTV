@@ -34,6 +34,7 @@ enum UserDefaultsKey {
     static let quickEndConsonant = "vQuickEndConsonant"
     static let rememberCode = "vRememberCode"
     static let autoRestoreEnglishWord = "vAutoRestoreEnglishWord"
+    static let restoreIfWrongSpelling = "vRestoreIfWrongSpelling"
 
     // MARK: - Restore & Pause Keys
     static let restoreOnEscape = "vRestoreOnEscape"
@@ -376,6 +377,7 @@ enum Defaults {
     static let quickEndConsonant = false
     static let rememberCode = true
     static let autoRestoreEnglishWord = true
+    static let restoreIfWrongSpelling = true
 
     // MARK: - Restore & Pause
     static let restoreOnEscape = true
