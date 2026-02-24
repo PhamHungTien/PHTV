@@ -119,6 +119,35 @@ final class EngineRegressionTests: XCTestCase {
         return String(String.UnicodeScalarView(scalars))
     }
 
+    private func renderedTypingWord(_ engine: PHTVVietnameseEngine) -> String {
+        let codeTable = PHTVEngineRuntimeFacade.currentCodeTable()
+        var scalars: [UnicodeScalar] = []
+        scalars.reserveCapacity(engine.idx)
+        for i in 0..<engine.idx {
+            let packed = engine.getCharacterCode(engine.typingWord[i])
+            let codePoint = decodeOutputCharacter(packed, codeTable: codeTable)
+            guard codePoint != 0, let scalar = UnicodeScalar(Int(codePoint)) else { continue }
+            scalars.append(scalar)
+        }
+        return String(String.UnicodeScalarView(scalars))
+    }
+
+    private func renderedToken(_ token: String) -> String {
+        let engine = PHTVVietnameseEngine()
+        engine.refreshRuntimeLayoutSnapshot()
+        engine.startNewSession()
+        for ch in token {
+            engine.vKeyHandleEvent(
+                event: .keyboard,
+                state: .keyDown,
+                data: keyCode(for: ch),
+                capsStatus: 0,
+                otherControlKey: false
+            )
+        }
+        return renderedTypingWord(engine)
+    }
+
     private func runSpaceCase(
         _ token: String,
         customEnglish: [String] = [],
@@ -366,6 +395,10 @@ final class EngineRegressionTests: XCTestCase {
         runSpaceCase("dawks", expectRestore: false)
     }
 
+    func testDakLakVariantDawksProducesMarkedSyllable() {
+        XCTAssertEqual(renderedToken("dawks"), "dắk")
+    }
+
     func testDakLakVariantDawskDoesNotRestoreOnSpace() {
         runSpaceCase("dawsk", expectRestore: false)
     }
@@ -376,6 +409,10 @@ final class EngineRegressionTests: XCTestCase {
 
     func testDakLakVariantLawksDoesNotRestoreOnSpace() {
         runSpaceCase("lawks", expectRestore: false)
+    }
+
+    func testDakLakVariantLawksProducesMarkedSyllable() {
+        XCTAssertEqual(renderedToken("lawks"), "lắk")
     }
 
     func testDakLakVariantLawskDoesNotRestoreOnSpace() {

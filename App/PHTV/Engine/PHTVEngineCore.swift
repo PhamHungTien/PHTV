@@ -1250,7 +1250,30 @@ final class PHTVVietnameseEngine {
                 }
                 if isCorect { break }
             }
-            if !isChanged { insertKey(data, isCaps) }
+            if !isChanged {
+                var markIndex = -1
+                for ii in stride(from: idx - 1, through: 0, by: -1) where (typingWord[ii] & TONEW_MASK) != 0 {
+                    markIndex = ii
+                    break
+                }
+                if markIndex >= 0 {
+                    typingWord[markIndex] &= ~MARK_MASK
+                    if isKeyS(data) { typingWord[markIndex] |= MARK1_MASK }
+                    else if isKeyF(data) { typingWord[markIndex] |= MARK2_MASK }
+                    else if isKeyR(data) { typingWord[markIndex] |= MARK3_MASK }
+                    else if isKeyX(data) { typingWord[markIndex] |= MARK4_MASK }
+                    else if isKeyJ(data) { typingWord[markIndex] |= MARK5_MASK }
+                    hCode = HookCodeState.willProcess.rawValue
+                    hBPC = 0
+                    for ii in stride(from: idx - 1, through: 0, by: -1) {
+                        hBPC += 1
+                        hData[idx - 1 - ii] = get(typingWord[ii])
+                    }
+                    hNCC = hBPC
+                } else {
+                    insertKey(data, isCaps)
+                }
+            }
             return
         }
 
@@ -1960,7 +1983,16 @@ final class PHTVVietnameseEngine {
         if isSpellCheckingEnabled() && allowSpecialDespiteTempDisable {
             checkSpelling(forceCheckVowel: true)
             if tempDisableKey && allowMarkDespiteTempDisable {
-                let allowToneOnInvalid = spellingOK && !spellingVowelOK && canFixVowelWithDiacriticsForMark()
+                var hasToneWTransform = false
+                if idx > 0 {
+                    for scan in 0..<idx where (typingWord[scan] & TONEW_MASK) != 0 {
+                        hasToneWTransform = true
+                        break
+                    }
+                }
+                let allowToneOnInvalidVowel = spellingOK && !spellingVowelOK && canFixVowelWithDiacriticsForMark()
+                let allowToneOnInvalidEndConsonant = !spellingOK && spellingVowelOK && hasToneWTransform
+                let allowToneOnInvalid = allowToneOnInvalidVowel || allowToneOnInvalidEndConsonant || hasToneWTransform
                 if !allowToneOnInvalid { allowSpecialDespiteTempDisable = false }
             }
         }
