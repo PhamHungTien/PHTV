@@ -432,6 +432,72 @@ private func isToneMarkKeyCode(lastKey: UInt8, firstKey: UInt8) -> Bool {
     return lastKey == DetectorKeyCode.d && firstKey == DetectorKeyCode.d
 }
 
+private func isDetectorToneMarkKeyCode(_ keyCode: UInt8) -> Bool {
+    keyCode == DetectorKeyCode.s ||
+    keyCode == DetectorKeyCode.f ||
+    keyCode == DetectorKeyCode.r ||
+    keyCode == DetectorKeyCode.x ||
+    keyCode == DetectorKeyCode.j
+}
+
+private func isDetectorVietnameseFinalConsonantKeyCode(_ keyCode: UInt8) -> Bool {
+    keyCode == DetectorKeyCode.c ||
+    keyCode == DetectorKeyCode.k ||
+    keyCode == DetectorKeyCode.m ||
+    keyCode == DetectorKeyCode.n ||
+    keyCode == DetectorKeyCode.p ||
+    keyCode == DetectorKeyCode.t
+}
+
+private func hasLikelyVietnameseTelexAWCodaPattern(
+    keyCodes: [UInt8],
+    length: Int
+) -> Bool {
+    guard length >= 4 else {
+        return false
+    }
+
+    let hasToneKey = keyCodes.contains(where: { isDetectorToneMarkKeyCode($0) })
+    guard hasToneKey else {
+        return false
+    }
+
+    var hasAWPattern = false
+    if length >= 2 {
+        for i in 0..<(length - 1) {
+            if keyCodes[i] != DetectorKeyCode.a {
+                continue
+            }
+            if keyCodes[i + 1] == DetectorKeyCode.w {
+                hasAWPattern = true
+                break
+            }
+            if i + 2 < length &&
+                isDetectorToneMarkKeyCode(keyCodes[i + 1]) &&
+                keyCodes[i + 2] == DetectorKeyCode.w {
+                hasAWPattern = true
+                break
+            }
+        }
+    }
+
+    guard hasAWPattern else {
+        return false
+    }
+
+    let last = keyCodes[length - 1]
+    if isDetectorVietnameseFinalConsonantKeyCode(last) {
+        return true
+    }
+    if isDetectorToneMarkKeyCode(last) &&
+        length >= 2 &&
+        isDetectorVietnameseFinalConsonantKeyCode(keyCodes[length - 2]) {
+        return true
+    }
+
+    return false
+}
+
 private func startsWithNonVietnameseKeyCluster(
     keyCodes: [UInt8],
     length: Int
@@ -574,6 +640,12 @@ private func detectorShouldRestoreEnglish(
                 }
             }
         }
+    }
+
+    if hasLikelyVietnameseTelexAWCodaPattern(keyCodes: keyCodes, length: stateIndex) &&
+        !startsWithNonVietnameseKeyCluster(keyCodes: keyCodes, length: stateIndex) &&
+        startsWithVietnameseConsonantOrVowel(keyCodes: keyCodes, length: stateIndex) {
+        return false
     }
 
     let isEnglish = detectorContainsEnglish(idx, length: stateIndex)

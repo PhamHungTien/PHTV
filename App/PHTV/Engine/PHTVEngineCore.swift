@@ -1572,6 +1572,51 @@ final class PHTVVietnameseEngine {
         return false
     }
 
+    func shouldSuppressAutoRestoreForVietnameseTelexConflict(_ englishStateIndex: Int) -> Bool {
+        guard englishStateIndex >= 4 else { return false }
+        let keySlice = Array(keyStates.prefix(englishStateIndex))
+        let token = detectorKeyStatesToString(keySlice, englishStateIndex)
+        guard token.count == englishStateIndex else { return false }
+        let chars = Array(token)
+
+        let toneKeys: Set<Character> = ["s", "f", "r", "x", "j"]
+        let codaKeys: Set<Character> = ["c", "k", "m", "n", "p", "t"]
+        let vietnameseInitials: Set<Character> = [
+            "a", "b", "c", "d", "e", "g", "h", "i", "k", "l", "m", "n",
+            "o", "p", "r", "s", "t", "u", "v", "x", "y"
+        ]
+        let nonVietnameseStarts: Set<String> = [
+            "bl", "br", "cl", "cr", "dr", "fl", "fr", "gl", "gr", "pl", "pr",
+            "sc", "sk", "sl", "sm", "sn", "sp", "st", "sw", "tw", "wr"
+        ]
+
+        guard vietnameseInitials.contains(chars[0]) else { return false }
+        if chars.count >= 2 {
+            let first2 = String([chars[0], chars[1]])
+            if nonVietnameseStarts.contains(first2) { return false }
+        }
+
+        let last = chars[chars.count - 1]
+        let hasVietnameseCodaAtEnd = codaKeys.contains(last) ||
+            (toneKeys.contains(last) && chars.count >= 2 && codaKeys.contains(chars[chars.count - 2]))
+        guard hasVietnameseCodaAtEnd else { return false }
+
+        var hasAWPattern = false
+        for i in 0..<(chars.count - 1) {
+            if chars[i] != "a" { continue }
+            if chars[i + 1] == "w" {
+                hasAWPattern = true
+                break
+            }
+            if i + 2 < chars.count && toneKeys.contains(chars[i + 1]) && chars[i + 2] == "w" {
+                hasAWPattern = true
+                break
+            }
+        }
+
+        return hasAWPattern
+    }
+
     // MARK: - English mode (EngineEnglishMode.inc)
 
     func vEnglishMode(state: VKeyEventState, data: UInt16, isCaps: Bool, otherControlKey: Bool) {
@@ -1639,6 +1684,7 @@ final class PHTVVietnameseEngine {
         } else if phtvRuntimeAutoRestoreEnglishWordEnabled() != 0 && isAutoRestoreBreakKey {
             if isSpellCheckingEnabled() { checkSpelling(forceCheckVowel: true) }
             var shouldRestoreEnglish = false
+            var suppressVietnameseTelexRestore = false
             let englishStateIndex = getEnglishLookupStateLength()
             let isPureLetter = englishStateIndex == stateIdx && hasOnlyEnglishLetterKeyStates(stateIdx)
             let isWithNumSuffix = englishStateIndex > 0 && englishStateIndex < stateIdx &&
@@ -1646,6 +1692,8 @@ final class PHTVVietnameseEngine {
                 hasOnlyTrailingDigitKeyStates(englishStateIndex)
             let canAutoRestore = isPureLetter || isWithNumSuffix
             let restoreStateIndex = isWithNumSuffix ? stateIdx : englishStateIndex
+            let shouldSuppressVietnameseTelexConflict =
+                englishStateIndex > 1 && shouldSuppressAutoRestoreForVietnameseTelexConflict(englishStateIndex)
 
             if englishStateIndex > 1 && canAutoRestore {
                 let keySlice = Array(keyStates.prefix(englishStateIndex))
@@ -1680,6 +1728,12 @@ final class PHTVVietnameseEngine {
                 if shouldRestoreEnglish && isWithNumSuffix && !hasVietnameseTransformsInTypingWord(idx) {
                     shouldRestoreEnglish = false
                 }
+                if shouldRestoreEnglish && shouldSuppressVietnameseTelexConflict {
+                    shouldRestoreEnglish = false
+                }
+            }
+            if shouldSuppressVietnameseTelexConflict {
+                suppressVietnameseTelexRestore = true
             }
 
             if idx > 0 && restoreStateIndex > 1 && canAutoRestore && shouldRestoreEnglish {
@@ -1695,7 +1749,7 @@ final class PHTVVietnameseEngine {
                 }
                 shouldUpperCaseEnglishRestore = false
                 idx = 0; stateIdx = 0
-            } else if tempDisableKey && phtvRuntimeRestoreIfWrongSpellingEnabled() != 0 {
+            } else if tempDisableKey && !suppressVietnameseTelexRestore && phtvRuntimeRestoreIfWrongSpellingEnabled() != 0 {
                 _ = checkRestoreIfWrongSpelling(HookCodeState.restoreAndStartNewSession.rawValue)
             }
         } else if (phtvRuntimeQuickStartConsonantEnabled() != 0 || phtvRuntimeQuickEndConsonantEnabled() != 0) && !tempDisableKey && isMacroBreakCode(data) {
@@ -1748,6 +1802,7 @@ final class PHTVVietnameseEngine {
     func handleSpace(state: VKeyEventState, data: UInt16) {
         if isSpellCheckingEnabled() { checkSpelling(forceCheckVowel: true) }
         var shouldRestoreEnglish = false
+        var suppressVietnameseTelexRestore = false
         let englishStateIndex = getEnglishLookupStateLength()
         let isPureLetter = englishStateIndex == stateIdx && hasOnlyEnglishLetterKeyStates(stateIdx)
         let isWithNumSuffix = englishStateIndex > 0 && englishStateIndex < stateIdx &&
@@ -1755,6 +1810,8 @@ final class PHTVVietnameseEngine {
             hasOnlyTrailingDigitKeyStates(englishStateIndex)
         let canAutoRestore = isPureLetter || isWithNumSuffix
         let restoreStateIndex = isWithNumSuffix ? stateIdx : englishStateIndex
+        let shouldSuppressVietnameseTelexConflict =
+            englishStateIndex > 1 && shouldSuppressAutoRestoreForVietnameseTelexConflict(englishStateIndex)
 
         if phtvRuntimeAutoRestoreEnglishWordEnabled() != 0 && idx > 0 && englishStateIndex > 1 && canAutoRestore {
             let keySlice = Array(keyStates.prefix(englishStateIndex))
@@ -1785,6 +1842,12 @@ final class PHTVVietnameseEngine {
             if shouldRestoreEnglish && isWithNumSuffix && !hasVietnameseTransformsInTypingWord(idx) {
                 shouldRestoreEnglish = false
             }
+            if shouldRestoreEnglish && shouldSuppressVietnameseTelexConflict {
+                shouldRestoreEnglish = false
+            }
+        }
+        if shouldSuppressVietnameseTelexConflict {
+            suppressVietnameseTelexRestore = true
         }
 
         // EngineKeyHandleEventSpaceDecision.inc
@@ -1807,7 +1870,11 @@ final class PHTVVietnameseEngine {
         } else if (phtvRuntimeQuickStartConsonantEnabled() != 0 || phtvRuntimeQuickEndConsonantEnabled() != 0) && !tempDisableKey && checkQuickConsonant() {
             spaceCount += 1
         } else if tempDisableKey && !hasHandledMacro {
-            if !(phtvRuntimeRestoreIfWrongSpellingEnabled() != 0 && checkRestoreIfWrongSpelling(HookCodeState.restore.rawValue)) { hCode = HookCodeState.doNothing.rawValue }
+            if suppressVietnameseTelexRestore {
+                hCode = HookCodeState.doNothing.rawValue
+            } else if !(phtvRuntimeRestoreIfWrongSpellingEnabled() != 0 && checkRestoreIfWrongSpelling(HookCodeState.restore.rawValue)) {
+                hCode = HookCodeState.doNothing.rawValue
+            }
             spaceCount += 1
         } else {
             hCode = HookCodeState.doNothing.rawValue; spaceCount += 1

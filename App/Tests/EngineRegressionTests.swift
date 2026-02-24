@@ -359,4 +359,30 @@ final class EngineRegressionTests: XCTestCase {
         // "noob" is in the English dictionary; must restore on comma via main detection path.
         runWordBreakCase("noob", expectRestore: true, breakKey: KEY_COMMA)
     }
+
+    // MARK: - Issue #135: Telex Vietnamese words must not auto-restore as English on space
+
+    func testDakLakVariantDawksDoesNotRestoreOnSpace() {
+        runSpaceCase("dawks", expectRestore: false)
+    }
+
+    func testDakLakVariantDawskDoesNotRestoreOnSpace() {
+        runSpaceCase("dawsk", expectRestore: false)
+    }
+
+    func testDakLakVariantDaswkDoesNotRestoreOnSpace() {
+        runSpaceCase("daswk", expectRestore: false)
+    }
+
+    func testDakLakVariantLawksDoesNotRestoreOnSpace() {
+        runSpaceCase("lawks", expectRestore: false)
+    }
+
+    func testDakLakVariantLawskDoesNotRestoreOnSpace() {
+        runSpaceCase("lawsk", expectRestore: false)
+    }
+
+    func testDakLakVariantLaswkDoesNotRestoreOnSpace() {
+        runSpaceCase("laswk", expectRestore: false)
+    }
 }
