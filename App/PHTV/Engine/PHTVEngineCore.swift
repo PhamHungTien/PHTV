@@ -1695,6 +1695,8 @@ final class PHTVVietnameseEngine {
                 }
                 shouldUpperCaseEnglishRestore = false
                 idx = 0; stateIdx = 0
+            } else if tempDisableKey && phtvRuntimeRestoreIfWrongSpellingEnabled() != 0 {
+                _ = checkRestoreIfWrongSpelling(HookCodeState.restoreAndStartNewSession.rawValue)
             }
         } else if (phtvRuntimeQuickStartConsonantEnabled() != 0 || phtvRuntimeQuickEndConsonantEnabled() != 0) && !tempDisableKey && isMacroBreakCode(data) {
             _ = checkQuickConsonant()

@@ -330,4 +330,33 @@ final class EngineRegressionTests: XCTestCase {
             expectedBackspaceCount: 3
         )
     }
+
+    // MARK: - Issue #136: wrong-spelling fallback missing in handleWordBreak
+
+    func testKosovoRestoresOnComma() {
+        // "koosvo" in Telex produces "kốvo" (oo→ô, s adds sắc).
+        // Not in English dict → wrong-spelling fallback must fire on comma with autoRestoreEnglish on.
+        runWordBreakCase("koosvo", expectRestore: true, breakKey: KEY_COMMA)
+    }
+
+    func testKosovoRestoresOnDot() {
+        // Same token, verifies the fallback works for dot as well.
+        runWordBreakCase("koosvo", expectRestore: true)
+    }
+
+    func testRoothideRestoresOnComma() {
+        // "roothide" in Telex produces "rôthide" (oo→ô).
+        // Not in English dict → wrong-spelling fallback must fire on comma.
+        runWordBreakCase("roothide", expectRestore: true, breakKey: KEY_COMMA)
+    }
+
+    func testNoobRestoresOnSpace() {
+        // "noob" in Telex produces "nôb" (oo→ô). "noob" is in the English dictionary.
+        runSpaceCase("noob", expectRestore: true)
+    }
+
+    func testNoobRestoresOnComma() {
+        // "noob" is in the English dictionary; must restore on comma via main detection path.
+        runWordBreakCase("noob", expectRestore: true, breakKey: KEY_COMMA)
+    }
 }
