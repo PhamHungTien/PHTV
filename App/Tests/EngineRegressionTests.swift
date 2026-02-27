@@ -422,4 +422,22 @@ final class EngineRegressionTests: XCTestCase {
     func testDakLakVariantLaswkDoesNotRestoreOnSpace() {
         runSpaceCase("laswk", expectRestore: false)
     }
+
+    // MARK: - sips/sisp → síp conflict (#issue)
+
+    func testSipsDoesNotRestoreOnSpace() {
+        runSpaceCase("sips", expectRestore: false)
+    }
+
+    func testSispDoesNotRestoreOnSpace() {
+        runSpaceCase("sisp", expectRestore: false)
+    }
+
+    func testSipsProducesMarkedSyllable() {
+        XCTAssertEqual(renderedToken("sips"), "síp")
+    }
+
+    func testSispProducesMarkedSyllable() {
+        XCTAssertEqual(renderedToken("sisp"), "síp")
+    }
 }

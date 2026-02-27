@@ -1637,7 +1637,17 @@ final class PHTVVietnameseEngine {
             }
         }
 
-        return hasAWPattern
+        // Also detect 4-char Telex syllable: initial + simple_vowel + (coda+tone | tone+coda)
+        // e.g. "sips" → "síp", "sisp" → "síp"
+        let simpleVowels: Set<Character> = ["a", "e", "i", "o", "u"]
+        var hasCodaTonePattern = false
+        if chars.count == 4 && simpleVowels.contains(chars[1]) {
+            let isCodaTone = codaKeys.contains(chars[2]) && toneKeys.contains(chars[3])
+            let isToneCoda = toneKeys.contains(chars[2]) && codaKeys.contains(chars[3])
+            hasCodaTonePattern = isCodaTone || isToneCoda
+        }
+
+        return hasAWPattern || hasCodaTonePattern
     }
 
     // MARK: - English mode (EngineEnglishMode.inc)
