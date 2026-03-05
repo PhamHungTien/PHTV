@@ -147,11 +147,6 @@ jobs:
             security find-identity -v -p codesigning "$KEYCHAIN_PATH" \
               | awk -F'"' '/Developer ID Application:/ { print $2 }'
           )"
-          APPLE_DEV_CANDIDATES="$(
-            security find-identity -v -p codesigning "$KEYCHAIN_PATH" \
-              | awk -F'"' '/Apple Development:/ { print $2 }'
-          )"
-
           validate_identity() {
             local identity="$1"
             local probe_bin="$RUNNER_TEMP/codesign_probe.bin"
@@ -182,26 +177,11 @@ jobs:
           done < <(printf '%s\n' "$DEV_ID_CANDIDATES")
 
           if [ -z "$IDENTITY" ]; then
-            while IFS= read -r candidate; do
-              [ -z "$candidate" ] && continue
-              if validate_identity "$candidate"; then
-                IDENTITY="$candidate"
-                IDENTITY_TYPE="apple_development"
-                break
-              fi
-              echo "⚠️ Skipping unusable identity: $candidate"
-            done < <(printf '%s\n' "$APPLE_DEV_CANDIDATES")
-          fi
-
-          if [ -z "$IDENTITY" ]; then
-            echo "⚠️ No usable signing identity after validation."
+            echo "⚠️ No usable Developer ID identity after validation."
             fallback_to_adhoc
           fi
 
           echo "🔐 Identity selected: $IDENTITY"
-          if [ "$IDENTITY_TYPE" != "developer_id" ]; then
-            echo "⚠️ Using Apple Development identity. Release will run in internal mode (not notarized)."
-          fi
           echo "identity=$IDENTITY" >> "$GITHUB_OUTPUT"
           echo "keychain=$KEYCHAIN_PATH" >> "$GITHUB_OUTPUT"
           echo "identity_type=$IDENTITY_TYPE" >> "$GITHUB_OUTPUT"
@@ -238,7 +218,7 @@ jobs:
               echo "⚠️ Falling back to internal mode (not notarized)."
             fi
           else
-            echo "ℹ️ Internal mode enabled (Apple Development signing, no notarization)."
+            echo "ℹ️ Internal mode enabled (ad-hoc signing, no notarization)."
           fi
 
           echo "mode=$MODE" >> "$GITHUB_OUTPUT"
