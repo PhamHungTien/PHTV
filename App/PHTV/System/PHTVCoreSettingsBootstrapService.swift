@@ -22,20 +22,6 @@ final class PHTVCoreSettingsBootstrapService: NSObject {
         return Int32(defaults.integer(forKey: key))
     }
 
-    private class func readAutoRestoreEnglishMode(defaults: UserDefaults) -> AutoRestoreEnglishMode {
-        defaults.autoRestoreEnglishMode()
-    }
-
-    private class func restoreIfWrongSpellingValue(
-        autoRestoreEnglishWord: Int32,
-        mode: AutoRestoreEnglishMode
-    ) -> Int32 {
-        guard autoRestoreEnglishWord != 0 else {
-            return 0
-        }
-        return mode.enablesWrongSpellingFallback ? 1 : 0
-    }
-
     @objc class func loadFromUserDefaults() {
         let defaults = UserDefaults.standard
 
@@ -91,23 +77,6 @@ final class PHTVCoreSettingsBootstrapService: NSObject {
         )
 
         PHTVEngineRuntimeFacade.setTempOffSpelling(Int32(defaults.integer(forKey: "vTempOffSpelling")))
-
-        let autoRestoreEnglishWord = readPersistedInt(
-            defaults: defaults,
-            key: UserDefaultsKey.autoRestoreEnglishWord,
-            defaultValue: Defaults.autoRestoreEnglishWord ? 1 : 0
-        )
-        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(autoRestoreEnglishWord)
-
-        let autoRestoreMode = readAutoRestoreEnglishMode(defaults: defaults)
-        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(autoRestoreMode.rawValue))
-        let restoreIfWrongSpelling = restoreIfWrongSpellingValue(
-            autoRestoreEnglishWord: autoRestoreEnglishWord,
-            mode: autoRestoreMode
-        )
-        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(restoreIfWrongSpelling)
-        defaults.set(autoRestoreMode.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
-        defaults.set(Int(restoreIfWrongSpelling), forKey: UserDefaultsKey.restoreIfWrongSpelling)
 
         PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(
             readPersistedInt(defaults: defaults, key: "vAllowConsonantZFWJ", defaultValue: 1)

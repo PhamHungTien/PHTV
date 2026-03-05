@@ -122,6 +122,11 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
             self.runHotkeyHealthCheck(reason: "launch-after-eventtap-init")
             self.requestEventTapRecovery(reason: "launch", force: true)
             self.setQuickConvertString()
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
+                NSLog("[Sparkle] Checking for updates (delayed start)...")
+                SparkleManager.shared().checkForUpdates()
+            }
         }
 
         if isFirstLaunch {

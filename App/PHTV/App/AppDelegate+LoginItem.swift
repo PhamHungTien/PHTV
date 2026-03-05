@@ -7,70 +7,176 @@
 
 import AppKit
 import Foundation
+import ServiceManagement
+
+private let phtvDefaultsKeyRunOnStartup = "RunOnStartup"
+private let phtvDefaultsKeyRunOnStartupLegacy = "PHTV_RunOnStartup"
+private let phtvNotificationRunOnStartupChanged = Notification.Name("RunOnStartupChanged")
+private let phtvNotificationUserInfoEnabledKey = "enabled"
 
 @MainActor @objc extension AppDelegate {
     @objc(syncRunOnStartupStatusWithFirstLaunch:)
     func syncRunOnStartupStatus(withFirstLaunch isFirstLaunch: Bool) {
-        let defaults = UserDefaults.standard
-        let savedEnabled = defaults.bool(forKey: UserDefaultsKey.runOnStartup) ||
-            defaults.integer(forKey: UserDefaultsKey.runOnStartupLegacy) == 1
+        if #available(macOS 13.0, *) {
+            let appService = SMAppService.mainApp
+            let actualStatus = appService.status
+            let actuallyEnabled = (actualStatus == .enabled)
 
-        let loginItemService = LoginItemService.shared
-        let currentStatus = loginItemService.status
-        let actuallyEnabled = loginItemService.isEnabled
+            let savedValue = UserDefaults.standard.integer(forKey: phtvDefaultsKeyRunOnStartup)
+            let savedEnabled = (savedValue == 1)
 
-        NSLog(
-            "[LoginItem] Startup sync - Actual: %d, Saved: %d, Status: %ld",
-            actuallyEnabled,
-            savedEnabled,
-            currentStatus.rawValue
-        )
+            NSLog("[LoginItem] Startup sync - Actual: %d, Saved: %d, Status: %ld",
+                  actuallyEnabled, savedEnabled, actualStatus.rawValue)
 
-        if isFirstLaunch {
-            NSLog("[LoginItem] First launch detected - enabling Launch at Login")
-            setRunOnStartup(true)
-            return
-        }
+            if isFirstLaunch {
+                NSLog("[LoginItem] First launch detected - enabling Launch at Login")
+                setRunOnStartup(true)
+            } else if actuallyEnabled != savedEnabled {
+                if savedEnabled && !actuallyEnabled {
+                    NSLog("[LoginItem] ⚠️ User enabled but SMAppService is disabled - syncing UI to OFF")
+                    NSLog("[LoginItem] Possible causes: code signature, system policy, or macOS disabled it")
 
-        if actuallyEnabled != savedEnabled {
-            if savedEnabled && !actuallyEnabled {
-                NSLog("[LoginItem] Status mismatch - user setting ON but service is OFF, syncing to OFF")
-                applyRunOnStartupState(enabled: false)
-            } else if !savedEnabled && actuallyEnabled {
-                NSLog("[LoginItem] Status mismatch - user setting OFF but service is ON, retrying disable")
-                setRunOnStartup(false)
+                    UserDefaults.standard.set(0, forKey: phtvDefaultsKeyRunOnStartup)
+                    UserDefaults.standard.set(false, forKey: phtvDefaultsKeyRunOnStartupLegacy)
+                    NotificationCenter.default.post(name: phtvNotificationRunOnStartupChanged,
+                                                    object: nil,
+                                                    userInfo: [phtvNotificationUserInfoEnabledKey: false])
+                } else if !savedEnabled && actuallyEnabled {
+                    NSLog("[LoginItem] User disabled but SMAppService still enabled - disabling")
+                    setRunOnStartup(false)
+                }
+            } else {
+                NSLog("[LoginItem] ✅ Status consistent: %@", actuallyEnabled ? "ENABLED" : "DISABLED")
             }
         } else {
-            NSLog("[LoginItem] ✅ Status consistent: %@", actuallyEnabled ? "ENABLED" : "DISABLED")
+            let val = UserDefaults.standard.integer(forKey: phtvDefaultsKeyRunOnStartup)
+            setRunOnStartup(val != 0)
         }
     }
 
     @objc(setRunOnStartup:)
     func setRunOnStartup(_ val: Bool) {
-        let loginItemService = LoginItemService.shared
-        NSLog("[LoginItem] Current SMAppService status: %ld", loginItemService.status.rawValue)
+        if #available(macOS 13.0, *) {
+            let appService = SMAppService.mainApp
+            var actualSuccess = false
 
-        switch loginItemService.setEnabled(val) {
-        case .enabled:
-            NSLog("[LoginItem] ✅ Launch at Login enabled")
-            applyRunOnStartupState(enabled: true)
-        case .disabled:
-            NSLog("[LoginItem] ✅ Launch at Login disabled")
-            applyRunOnStartupState(enabled: false)
-        case .requiresApproval:
-            NSLog("[LoginItem] ⚠️ Launch at Login requires user approval in System Settings")
-            applyRunOnStartupState(enabled: false)
+            NSLog("[LoginItem] Current SMAppService status: %ld", appService.status.rawValue)
+
             if val {
-                presentLoginItemApprovalPrompt()
+                if appService.status != .enabled {
+                    let bundlePath = Bundle.main.bundlePath
+                    let verifyTask = Process()
+                    verifyTask.executableURL = URL(fileURLWithPath: "/usr/bin/codesign")
+                    verifyTask.arguments = ["--verify", "--deep", "--strict", bundlePath]
+
+                    let pipe = Pipe()
+                    verifyTask.standardError = pipe
+
+                    do {
+                        try verifyTask.run()
+                        verifyTask.waitUntilExit()
+
+                        if verifyTask.terminationStatus != 0 {
+                            let errorData = pipe.fileHandleForReading.readDataToEndOfFile()
+                            let errorString = String(data: errorData, encoding: .utf8) ?? ""
+                            NSLog("⚠️ [LoginItem] Code signature verification failed: %@", errorString)
+                            NSLog("⚠️ [LoginItem] SMAppService may reject unsigned/ad-hoc signed apps")
+                        } else {
+                            NSLog("✅ [LoginItem] Code signature verified")
+                        }
+                    } catch {
+                        NSLog("⚠️ [LoginItem] Failed to verify code signature: %@", String(describing: error))
+                    }
+
+                    do {
+                        try appService.register()
+                        NSLog("✅ [LoginItem] Registered with SMAppService")
+                        actualSuccess = true
+                    } catch {
+                        let nsError = error as NSError
+                        NSLog("❌ [LoginItem] Failed to register with SMAppService")
+                        NSLog("   Error: %@", nsError.localizedDescription)
+                        NSLog("   Error Domain: %@", nsError.domain)
+                        NSLog("   Error Code: %ld", nsError.code)
+
+                        if !nsError.userInfo.isEmpty {
+                            NSLog("   Error UserInfo: %@", nsError.userInfo)
+                        }
+
+                        if nsError.domain == "SMAppServiceErrorDomain" {
+                            switch nsError.code {
+                            case 1:
+                                NSLog("   → App already registered (stale state). Trying to unregister first...")
+                                try? appService.unregister()
+
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                    do {
+                                        try appService.register()
+                                        NSLog("✅ [LoginItem] Registration succeeded on retry")
+
+                                        UserDefaults.standard.set(true, forKey: phtvDefaultsKeyRunOnStartupLegacy)
+                                        UserDefaults.standard.set(1, forKey: phtvDefaultsKeyRunOnStartup)
+                                        NotificationCenter.default.post(name: phtvNotificationRunOnStartupChanged,
+                                                                        object: nil,
+                                                                        userInfo: [phtvNotificationUserInfoEnabledKey: true])
+                                    } catch {
+                                        let retryError = error as NSError
+                                        NSLog("❌ [LoginItem] Registration still failed: %@", retryError.localizedDescription)
+                                        NotificationCenter.default.post(name: phtvNotificationRunOnStartupChanged,
+                                                                        object: nil,
+                                                                        userInfo: [phtvNotificationUserInfoEnabledKey: false])
+                                    }
+                                }
+                                return
+                            case 2:
+                                NSLog("   → Invalid code signature. App must be properly signed with Developer ID")
+                                NSLog("   → Ad-hoc signed apps (for development) are NOT supported by SMAppService")
+                                NSLog("   → Solution: Sign with Apple Developer ID certificate or use notarization")
+                            case 3:
+                                NSLog("   → Invalid Info.plist configuration")
+                            default:
+                                NSLog("   → Unknown SMAppService error")
+                            }
+                        }
+
+                        actualSuccess = false
+                    }
+                } else {
+                    NSLog("ℹ️ [LoginItem] Already enabled, skipping registration")
+                    actualSuccess = true
+                }
+            } else {
+                if appService.status == .enabled {
+                    do {
+                        try appService.unregister()
+                        NSLog("✅ [LoginItem] Unregistered from SMAppService")
+                        actualSuccess = true
+                    } catch {
+                        let nsError = error as NSError
+                        NSLog("❌ [LoginItem] Failed to unregister: %@", nsError.localizedDescription)
+                        NSLog("   Error Domain: %@, Code: %ld", nsError.domain, nsError.code)
+                        actualSuccess = false
+                    }
+                } else {
+                    NSLog("ℹ️ [LoginItem] Already disabled, skipping unregistration")
+                    actualSuccess = true
+                }
             }
-        case .failed(let error):
-            NSLog("[LoginItem] ❌ Failed to update Launch at Login")
-            NSLog("   Error: %@", error.localizedDescription)
-            NSLog("   Domain: %@, Code: %ld", error.domain, error.code)
-            if !error.userInfo.isEmpty {
-                NSLog("   UserInfo: %@", error.userInfo)
+
+            if actualSuccess {
+                UserDefaults.standard.set(val, forKey: phtvDefaultsKeyRunOnStartupLegacy)
+                UserDefaults.standard.set(val ? 1 : 0, forKey: phtvDefaultsKeyRunOnStartup)
+                NotificationCenter.default.post(name: phtvNotificationRunOnStartupChanged,
+                                                object: nil,
+                                                userInfo: [phtvNotificationUserInfoEnabledKey: val])
+                NSLog("[LoginItem] ✅ Launch at Login %@ - UserDefaults saved and UI notified",
+                      val ? "ENABLED" : "DISABLED")
+            } else {
+                NSLog("[LoginItem] ❌ Operation failed - reverting toggle to %@", val ? "OFF" : "ON")
+                NotificationCenter.default.post(name: phtvNotificationRunOnStartupChanged,
+                                                object: nil,
+                                                userInfo: [phtvNotificationUserInfoEnabledKey: !val])
             }
-            applyRunOnStartupState(enabled: loginItemService.isEnabled)
         }
     }
 
@@ -78,8 +184,8 @@ import Foundation
     func toggleStartupItem(_ sender: NSMenuItem) {
         _ = sender
 
-        let currentValue = UserDefaults.standard.bool(forKey: UserDefaultsKey.runOnStartup)
-        let newValue = !currentValue
+        let currentValue = UserDefaults.standard.integer(forKey: phtvDefaultsKeyRunOnStartup)
+        let newValue = (currentValue == 0)
 
         setRunOnStartup(newValue)
         fillData()
@@ -88,41 +194,5 @@ import Foundation
             ? "✅ PHTV sẽ tự động khởi động cùng hệ thống"
             : "❌ Đã tắt khởi động cùng hệ thống"
         NSLog("%@", message)
-    }
-
-    private func applyRunOnStartupState(enabled: Bool) {
-        persistRunOnStartup(enabled)
-        notifyRunOnStartupChanged(enabled)
-    }
-
-    private func persistRunOnStartup(_ enabled: Bool) {
-        let defaults = UserDefaults.standard
-        defaults.set(enabled, forKey: UserDefaultsKey.runOnStartup)
-        defaults.set(enabled ? 1 : 0, forKey: UserDefaultsKey.runOnStartupLegacy)
-    }
-
-    private func notifyRunOnStartupChanged(_ enabled: Bool) {
-        NotificationCenter.default.post(
-            name: NotificationName.runOnStartupChanged,
-            object: nil,
-            userInfo: [NotificationUserInfoKey.enabled: enabled]
-        )
-    }
-
-    private func presentLoginItemApprovalPrompt() {
-        let alert = NSAlert()
-        alert.alertStyle = .informational
-        alert.messageText = "Cần xác nhận trong Cài đặt hệ thống"
-        alert.informativeText = """
-        macOS yêu cầu bạn bật lại PHTV trong Login Items để cho phép tự khởi động.
-
-        Bạn có muốn mở Cài đặt hệ thống ngay bây giờ không?
-        """
-        alert.addButton(withTitle: "Mở Cài đặt")
-        alert.addButton(withTitle: "Để sau")
-
-        if alert.runModal() == .alertFirstButtonReturn {
-            LoginItemService.shared.openSystemLoginItemsSettings()
-        }
     }
 }

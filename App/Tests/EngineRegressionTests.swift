@@ -38,8 +38,6 @@ final class EngineRegressionTests: XCTestCase {
         PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(1)
         PHTVEngineRuntimeFacade.setQuickStartConsonant(0)
         PHTVEngineRuntimeFacade.setQuickEndConsonant(0)
-        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(AutoRestoreEnglishMode.nonVietnamese.rawValue))
-        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(1)
         PHTVEngineRuntimeFacade.setUseMacro(0)
         phtvCustomDictionaryClear()
         engineInitialize()
@@ -155,22 +153,12 @@ final class EngineRegressionTests: XCTestCase {
         customEnglish: [String] = [],
         expectRestore: Bool,
         autoRestoreEnglish: Bool = true,
-        autoRestoreMode: AutoRestoreEnglishMode = .nonVietnamese,
         file: StaticString = #filePath, line: UInt = #line
     ) {
         setCustomEnglishWords(customEnglish)
         let saved = PHTVEngineRuntimeFacade.autoRestoreEnglishWord()
-        let savedMode = PHTVEngineRuntimeFacade.autoRestoreEnglishWordMode()
-        let savedWrongSpelling = PHTVEngineRuntimeFacade.restoreIfWrongSpelling()
         PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(autoRestoreEnglish ? 1 : 0)
-        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(autoRestoreMode.rawValue))
-        let wrongSpellingFallback: Int32 = autoRestoreEnglish && autoRestoreMode.enablesWrongSpellingFallback ? 1 : 0
-        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(wrongSpellingFallback)
-        defer {
-            PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(saved)
-            PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(savedMode)
-            PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(savedWrongSpelling)
-        }
+        defer { PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(saved) }
         engineInitialize()
         feedWord(token)
         engineHandleEvent(eventKeyboard, stateKeyDown, KEY_SPACE, 0, 0)
@@ -185,24 +173,14 @@ final class EngineRegressionTests: XCTestCase {
         customEnglish: [String] = [],
         expectRestore: Bool,
         autoRestoreEnglish: Bool = true,
-        autoRestoreMode: AutoRestoreEnglishMode = .nonVietnamese,
         breakKey: UInt16 = KEY_DOT,
         breakCaps: UInt8 = 0,
         file: StaticString = #filePath, line: UInt = #line
     ) {
         setCustomEnglishWords(customEnglish)
         let saved = PHTVEngineRuntimeFacade.autoRestoreEnglishWord()
-        let savedMode = PHTVEngineRuntimeFacade.autoRestoreEnglishWordMode()
-        let savedWrongSpelling = PHTVEngineRuntimeFacade.restoreIfWrongSpelling()
         PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(autoRestoreEnglish ? 1 : 0)
-        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(autoRestoreMode.rawValue))
-        let wrongSpellingFallback: Int32 = autoRestoreEnglish && autoRestoreMode.enablesWrongSpellingFallback ? 1 : 0
-        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(wrongSpellingFallback)
-        defer {
-            PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(saved)
-            PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(savedMode)
-            PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(savedWrongSpelling)
-        }
+        defer { PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(saved) }
         engineInitialize()
         feedWord(token)
         engineHandleEvent(eventKeyboard, stateKeyDown, breakKey, breakCaps, 0)
@@ -265,16 +243,16 @@ final class EngineRegressionTests: XCTestCase {
         runSpaceCase("qes", customEnglish: ["qes"], expectRestore: true)
     }
 
-    func testAlnumInt1234RestoresOnSpaceInNonVietnameseMode() {
-        runSpaceCase("int1234", customEnglish: ["int"], expectRestore: true, autoRestoreMode: .nonVietnamese)
+    func testAlnumInt1234NoRestoreOnSpace() {
+        runSpaceCase("int1234", customEnglish: ["int"], expectRestore: false)
     }
 
     func testTelexConflictTerminal1234RestoresOnSpace() {
         runSpaceCase("terminal1234", customEnglish: ["terminal"], expectRestore: true)
     }
 
-    func testAutoRestoreDisabledDoesNotRestoreUserOnSpace() {
-        runSpaceCase("user", expectRestore: false, autoRestoreEnglish: false)
+    func testWrongSpellingUserRestoresOnSpace() {
+        runSpaceCase("user", expectRestore: true, autoRestoreEnglish: false)
     }
 
     // MARK: - Word-break (DOT) tests
@@ -287,12 +265,12 @@ final class EngineRegressionTests: XCTestCase {
         runWordBreakCase("terminal1234", customEnglish: ["terminal"], expectRestore: true)
     }
 
-    func testAlnumInt1234RestoresOnDotInNonVietnameseMode() {
-        runWordBreakCase("int1234", customEnglish: ["int"], expectRestore: true, autoRestoreMode: .nonVietnamese)
+    func testAlnumInt1234NoRestoreOnDot() {
+        runWordBreakCase("int1234", customEnglish: ["int"], expectRestore: false)
     }
 
-    func testAutoRestoreDisabledDoesNotRestoreUserOnDot() {
-        runWordBreakCase("user", expectRestore: false, autoRestoreEnglish: false)
+    func testWrongSpellingUserRestoresOnDot() {
+        runWordBreakCase("user", expectRestore: true, autoRestoreEnglish: false)
     }
 
     // MARK: - Word-break (other punctuation) tests
@@ -332,18 +310,18 @@ final class EngineRegressionTests: XCTestCase {
                          breakKey: KEY_RIGHT_BRACKET)
     }
 
-    func testAlnumRestoresOnExclamationMarkInNonVietnameseMode() {
-        runWordBreakCase("int1234", customEnglish: ["int"], expectRestore: true, autoRestoreMode: .nonVietnamese,
+    func testAlnumNoRestoreOnExclamationMark() {
+        runWordBreakCase("int1234", customEnglish: ["int"], expectRestore: false,
                          breakKey: KEY_1, breakCaps: 1)
     }
 
-    func testAlnumRestoresOnRightParenthesisInNonVietnameseMode() {
-        runWordBreakCase("int1234", customEnglish: ["int"], expectRestore: true, autoRestoreMode: .nonVietnamese,
+    func testAlnumNoRestoreOnRightParenthesis() {
+        runWordBreakCase("int1234", customEnglish: ["int"], expectRestore: false,
                          breakKey: KEY_0, breakCaps: 1)
     }
 
-    func testAutoRestoreDisabledDoesNotRestoreUserOnExclamationMark() {
-        runWordBreakCase("user", expectRestore: false, autoRestoreEnglish: false,
+    func testWrongSpellingRestoresOnExclamationMark() {
+        runWordBreakCase("user", expectRestore: true, autoRestoreEnglish: false,
                          breakKey: KEY_1, breakCaps: 1)
     }
 
@@ -411,68 +389,48 @@ final class EngineRegressionTests: XCTestCase {
         runWordBreakCase("noob", expectRestore: true, breakKey: KEY_COMMA)
     }
 
-    func testNonVietnameseModeRestoresUnknownNonVietnameseWordOnSpace() {
-        runSpaceCase("qwrty", expectRestore: true, autoRestoreMode: .nonVietnamese)
-    }
-
-    func testEnglishOnlyModeDoesNotRestoreUnknownNonEnglishWordOnSpace() {
-        runSpaceCase("qwrty", expectRestore: false, autoRestoreMode: .englishOnly)
-    }
-
-    func testNonVietnameseModeKeepsVietnameseDictionaryWordOnSpace() {
-        runSpaceCase("xin", expectRestore: false, autoRestoreMode: .nonVietnamese)
-    }
-
-    func testNonVietnameseModeKeepsDuocSingleWTelexOnSpace() {
-        runSpaceCase("dduowcj", expectRestore: false, autoRestoreMode: .nonVietnamese)
-    }
-
-    func testNonVietnameseModeKeepsDuocSingleWTelexOnDot() {
-        runWordBreakCase("dduowcj", expectRestore: false, autoRestoreMode: .nonVietnamese)
-    }
-
     // MARK: - Issue #135: Telex Vietnamese words must not auto-restore as English on space
 
-    func testDakLakVariantDawksRestoresOnSpaceInNonVietnameseMode() {
-        runSpaceCase("dawks", expectRestore: true, autoRestoreMode: .nonVietnamese)
+    func testDakLakVariantDawksDoesNotRestoreOnSpace() {
+        runSpaceCase("dawks", expectRestore: false)
     }
 
     func testDakLakVariantDawksProducesMarkedSyllable() {
         XCTAssertEqual(renderedToken("dawks"), "dắk")
     }
 
-    func testDakLakVariantDawskRestoresOnSpaceInNonVietnameseMode() {
-        runSpaceCase("dawsk", expectRestore: true, autoRestoreMode: .nonVietnamese)
+    func testDakLakVariantDawskDoesNotRestoreOnSpace() {
+        runSpaceCase("dawsk", expectRestore: false)
     }
 
-    func testDakLakVariantDaswkRestoresOnSpaceInNonVietnameseMode() {
-        runSpaceCase("daswk", expectRestore: true, autoRestoreMode: .nonVietnamese)
+    func testDakLakVariantDaswkDoesNotRestoreOnSpace() {
+        runSpaceCase("daswk", expectRestore: false)
     }
 
-    func testDakLakVariantLawksRestoresOnSpaceInNonVietnameseMode() {
-        runSpaceCase("lawks", expectRestore: true, autoRestoreMode: .nonVietnamese)
+    func testDakLakVariantLawksDoesNotRestoreOnSpace() {
+        runSpaceCase("lawks", expectRestore: false)
     }
 
     func testDakLakVariantLawksProducesMarkedSyllable() {
         XCTAssertEqual(renderedToken("lawks"), "lắk")
     }
 
-    func testDakLakVariantLawskRestoresOnSpaceInNonVietnameseMode() {
-        runSpaceCase("lawsk", expectRestore: true, autoRestoreMode: .nonVietnamese)
+    func testDakLakVariantLawskDoesNotRestoreOnSpace() {
+        runSpaceCase("lawsk", expectRestore: false)
     }
 
-    func testDakLakVariantLaswkRestoresOnSpaceInNonVietnameseMode() {
-        runSpaceCase("laswk", expectRestore: true, autoRestoreMode: .nonVietnamese)
+    func testDakLakVariantLaswkDoesNotRestoreOnSpace() {
+        runSpaceCase("laswk", expectRestore: false)
     }
 
     // MARK: - sips/sisp → síp conflict (#issue)
 
-    func testSipsRestoresOnSpaceInNonVietnameseMode() {
-        runSpaceCase("sips", expectRestore: true, autoRestoreMode: .nonVietnamese)
+    func testSipsDoesNotRestoreOnSpace() {
+        runSpaceCase("sips", expectRestore: false)
     }
 
-    func testSispRestoresOnSpaceInNonVietnameseMode() {
-        runSpaceCase("sisp", expectRestore: true, autoRestoreMode: .nonVietnamese)
+    func testSispDoesNotRestoreOnSpace() {
+        runSpaceCase("sisp", expectRestore: false)
     }
 
     func testSipsProducesMarkedSyllable() {

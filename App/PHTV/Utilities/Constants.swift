@@ -34,8 +34,6 @@ enum UserDefaultsKey {
     static let quickEndConsonant = "vQuickEndConsonant"
     static let rememberCode = "vRememberCode"
     static let autoRestoreEnglishWord = "vAutoRestoreEnglishWord"
-    static let autoRestoreEnglishWordMode = "vAutoRestoreEnglishWordMode"
-    // Legacy runtime key that is now derived from autoRestoreEnglishWord + mode.
     static let restoreIfWrongSpelling = "vRestoreIfWrongSpelling"
 
     // MARK: - Restore & Pause Keys
@@ -147,8 +145,11 @@ enum NotificationName {
     static let showAbout = NSNotification.Name("ShowAbout")
 
     // MARK: - Updates
+    static let checkForUpdatesResponse = NSNotification.Name("CheckForUpdatesResponse")
     static let updateCheckFrequencyChanged = NSNotification.Name("UpdateCheckFrequencyChanged")
+    static let sparkleShowUpdateBanner = NSNotification.Name("SparkleShowUpdateBanner")
     static let sparkleManualCheck = NSNotification.Name("SparkleManualCheck")
+    static let sparkleInstallUpdate = NSNotification.Name("SparkleInstallUpdate")
 }
 
 // MARK: - Notification UserInfo Keys
@@ -387,8 +388,7 @@ enum Defaults {
     static let quickEndConsonant = false
     static let rememberCode = true
     static let autoRestoreEnglishWord = true
-    static let autoRestoreEnglishWordMode = AutoRestoreEnglishMode.englishOnly
-    static let restoreIfWrongSpelling = autoRestoreEnglishWordMode.enablesWrongSpellingFallback
+    static let restoreIfWrongSpelling = true
 
     // MARK: - Restore & Pause
     static let restoreOnEscape = true
@@ -515,21 +515,6 @@ extension UserDefaults {
         return defaultValue
     }
 
-    /// Reads auto-restore mode and falls back to legacy wrong-spelling behavior.
-    func autoRestoreEnglishMode() -> AutoRestoreEnglishMode {
-        if let mode = AutoRestoreEnglishMode.from(
-            persistedValue: persistedObject(forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
-        ) {
-            return mode
-        }
-
-        let legacyRestoreIfWrongSpelling = bool(
-            forKey: UserDefaultsKey.restoreIfWrongSpelling,
-            default: Defaults.restoreIfWrongSpelling
-        )
-        return legacyRestoreIfWrongSpelling ? .nonVietnamese : .englishOnly
-    }
-
     /// Reads a Double with explicit fallback when the key is missing.
     func double(forKey key: String, default defaultValue: Double) -> Double {
         guard let value = object(forKey: key) else {
@@ -547,8 +532,6 @@ extension UserDefaults {
     /// Always use stable update channel and auto-install updates.
     func enforceStableUpdateChannel() {
         removeObject(forKey: UserDefaultsKey.sparkleBetaChannel)
-        // Force Sparkle to use Info.plist/delegate stable feed URL instead of stale persisted overrides.
-        removeObject(forKey: "SUFeedURL")
         set(true, forKey: UserDefaultsKey.autoInstallUpdates)
     }
 }
@@ -581,8 +564,6 @@ final class SettingsBootstrap: NSObject {
             UserDefaultsKey.quickEndConsonant: Defaults.quickEndConsonant,
             UserDefaultsKey.rememberCode: Defaults.rememberCode,
             UserDefaultsKey.autoRestoreEnglishWord: Defaults.autoRestoreEnglishWord,
-            UserDefaultsKey.autoRestoreEnglishWordMode: Defaults.autoRestoreEnglishWordMode.rawValue,
-            UserDefaultsKey.restoreIfWrongSpelling: Defaults.restoreIfWrongSpelling,
             UserDefaultsKey.restoreOnEscape: Defaults.restoreOnEscape,
             UserDefaultsKey.customEscapeKey: Int(Defaults.restoreKeyCode),
             UserDefaultsKey.pauseKeyEnabled: Defaults.pauseKeyEnabled,

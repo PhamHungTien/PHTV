@@ -28,19 +28,31 @@ import Foundation
     private static let testTapRetryDelayUsec: useconds_t = 50_000
 
     @objc static func hasListenEventAccess() -> Bool {
-        CGPreflightListenEventAccess()
+        if #available(macOS 10.15, *) {
+            return CGPreflightListenEventAccess()
+        }
+        return true
     }
 
     @objc static func hasPostEventAccess() -> Bool {
-        CGPreflightPostEventAccess()
+        if #available(macOS 10.15, *) {
+            return CGPreflightPostEventAccess()
+        }
+        return true
     }
 
     @objc static func requestListenEventAccess() -> Bool {
-        CGRequestListenEventAccess()
+        if #available(macOS 10.15, *) {
+            return CGRequestListenEventAccess()
+        }
+        return true
     }
 
     @objc static func requestPostEventAccess() -> Bool {
-        CGRequestPostEventAccess()
+        if #available(macOS 10.15, *) {
+            return CGRequestPostEventAccess()
+        }
+        return true
     }
 
     @objc static func invalidatePermissionCache() {

@@ -139,7 +139,7 @@ struct StatusBarMenuView: View {
 
             Section("Chính tả") {
                 Toggle(isOn: $appState.checkSpelling) {
-                    Label("Chỉ gõ đúng chính tả tiếng Việt", systemImage: "textformat.abc.dottedunderline")
+                    Label("Kiểm tra chính tả", systemImage: "textformat.abc.dottedunderline")
                 }
 
                 Toggle(isOn: $appState.useModernOrthography) {
@@ -156,23 +156,10 @@ struct StatusBarMenuView: View {
         Menu {
             Section("Khôi phục") {
                 Toggle(isOn: $appState.autoRestoreEnglishWord) {
-                    Label("Tự động khôi phục", systemImage: "character.bubble")
+                    Label("Tự động khôi phục tiếng Anh", systemImage: "character.bubble")
                 }
-
-                if appState.autoRestoreEnglishWord {
-                    Menu("Chế độ khôi phục") {
-                        ForEach(AutoRestoreEnglishMode.allCases) { mode in
-                            Button {
-                                appState.autoRestoreEnglishWordMode = mode
-                            } label: {
-                                if appState.autoRestoreEnglishWordMode == mode {
-                                    Label(mode.displayName, systemImage: "checkmark")
-                                } else {
-                                    Text(mode.displayName)
-                                }
-                            }
-                        }
-                    }
+                Toggle(isOn: $appState.restoreIfWrongSpelling) {
+                    Label("Khôi phục phím khi gõ sai", systemImage: "arrow.uturn.backward.circle")
                 }
             }
 
@@ -264,7 +251,9 @@ struct StatusBarMenuView: View {
                 Label("Đã cấp quyền Accessibility", systemImage: "checkmark.shield")
             } else {
                 Button {
-                    _ = SystemSettingsNavigator.openAccessibility()
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                        NSWorkspace.shared.open(url)
+                    }
                 } label: {
                     Label("Cần cấp quyền Accessibility", systemImage: "exclamationmark.shield")
                 }

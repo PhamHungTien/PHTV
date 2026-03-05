@@ -677,10 +677,35 @@ final class PHTVAccessibilityService: NSObject {
     }
 
     @objc class func openAccessibilityPreferences() {
-        _ = SystemSettingsNavigator.openAccessibility(promptForTrust: true)
+        let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
+        _ = AXIsProcessTrustedWithOptions(options)
+
+        if let url = URL(
+            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+        ), NSWorkspace.shared.open(url) {
+            return
+        }
+
+        let script = """
+        tell application "System Preferences"
+            activate
+            set current pane to pane "com.apple.preference.universalaccess"
+        end tell
+        """
+        NSAppleScript(source: script)?.executeAndReturnError(nil)
     }
 
     @objc class func openInputMonitoringPreferences() {
-        _ = SystemSettingsNavigator.openInputMonitoring()
+        if let url = URL(
+            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"
+        ), NSWorkspace.shared.open(url) {
+            return
+        }
+
+        if let fallbackURL = URL(
+            string: "x-apple.systempreferences:com.apple.preference.security?Privacy"
+        ) {
+            _ = NSWorkspace.shared.open(fallbackURL)
+        }
     }
 }

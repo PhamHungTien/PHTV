@@ -31,7 +31,9 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
                                                     selector: #selector(checkAccessibilityStatus),
                                                     userInfo: nil,
                                                     repeats: true)
-        accessibilityMonitor?.tolerance = interval * 0.2
+        if #available(macOS 10.12, *) {
+            accessibilityMonitor?.tolerance = interval * 0.2
+        }
 
         if resetState {
             wasAccessibilityEnabled = PHTVManager.canCreateEventTap()
@@ -62,7 +64,9 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
                                                 selector: #selector(runHealthCheck),
                                                 userInfo: nil,
                                                 repeats: true)
-        healthCheckTimer?.tolerance = 1.0
+        if #available(macOS 10.12, *) {
+            healthCheckTimer?.tolerance = 1.0
+        }
     }
 
     func stopHealthCheckMonitoring() {
@@ -185,16 +189,32 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
 
         let bundleURL = URL(fileURLWithPath: bundlePath)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-            let config = NSWorkspace.OpenConfiguration()
-            NSWorkspace.shared.openApplication(at: bundleURL, configuration: config) { _, error in
-                if let error {
+            if #available(macOS 10.15, *) {
+                let config = NSWorkspace.OpenConfiguration()
+                NSWorkspace.shared.openApplication(at: bundleURL, configuration: config) { _, error in
+                    if let error {
+                        NSLog("[Accessibility] Relaunch failed: %@", error.localizedDescription)
+                        return
+                    }
+                    NSLog("[Accessibility] Relaunching app to finalize permission")
+                    DispatchQueue.main.async {
+                        NSApp.terminate(nil)
+                    }
+                }
+            } else {
+#if swift(>=5.9)
+                do {
+                    _ = try NSWorkspace.shared.launchApplication(at: bundleURL,
+                                                                 options: [.default],
+                                                                 configuration: [:])
+                    NSLog("[Accessibility] Relaunching app to finalize permission")
+                    DispatchQueue.main.async {
+                        NSApp.terminate(nil)
+                    }
+                } catch {
                     NSLog("[Accessibility] Relaunch failed: %@", error.localizedDescription)
-                    return
                 }
-                NSLog("[Accessibility] Relaunching app to finalize permission")
-                DispatchQueue.main.async {
-                    NSApp.terminate(nil)
-                }
+#endif
             }
         }
     }

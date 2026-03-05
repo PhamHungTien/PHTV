@@ -209,7 +209,11 @@ struct StatusCard: View {
 
             if !hasPermission {
                 Button("Cấp quyền") {
-                    _ = SystemSettingsNavigator.openAccessibility()
+                    if let url = URL(
+                        string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+                    ) {
+                        NSWorkspace.shared.open(url)
+                    }
                 }
                 .controlSize(.small)
                 .buttonStyle(.borderedProminent)
@@ -288,3 +292,4 @@ struct RestoreKeyButton: View {
         }
     }
 }
+

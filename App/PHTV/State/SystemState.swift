@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import ServiceManagement
 import Combine
 
 /// Manages system settings, permissions, and updates
@@ -25,8 +26,15 @@ final class SystemState: ObservableObject {
     // Accessibility
     @Published var hasAccessibilityPermission: Bool = false
 
+    // Update notification - shown when new version is available on startup
+    @Published var updateAvailableMessage: String = ""
+    @Published var showUpdateBanner: Bool = false
+    @Published var latestVersion: String = ""
+
     // Sparkle update configuration
     @Published var updateCheckFrequency: UpdateCheckFrequency = .daily
+    @Published var showCustomUpdateBanner: Bool = false
+    @Published var customUpdateBannerInfo: UpdateBannerInfo? = nil
 
     // Bug report settings
     @Published var includeSystemInfo: Bool = true
@@ -53,12 +61,17 @@ final class SystemState: ObservableObject {
     func loadSettings() {
         let defaults = UserDefaults.standard
 
-        // Load system settings from ServiceManagement source of truth.
-        let status = LoginItemService.shared.isEnabled
-        NSLog("[SystemState] Loading runOnStartup from LoginItemService: %@", status ? "enabled" : "disabled")
-        isUpdatingRunOnStartup = true
-        runOnStartup = status
-        isUpdatingRunOnStartup = false
+        // Load system settings - check actual SMAppService status for runOnStartup
+        if #available(macOS 13.0, *) {
+            let appService = SMAppService.mainApp
+            let status = (appService.status == .enabled)
+            NSLog("[SystemState] Loading runOnStartup from SMAppService: %@", status ? "enabled" : "disabled")
+            isUpdatingRunOnStartup = true
+            runOnStartup = status
+            isUpdatingRunOnStartup = false
+        } else {
+            runOnStartup = defaults.bool(forKey: UserDefaultsKey.runOnStartup, default: Defaults.runOnStartup)
+        }
 
         performLayoutCompat = defaults.bool(
             forKey: UserDefaultsKey.performLayoutCompat,
@@ -135,17 +148,20 @@ final class SystemState: ObservableObject {
 
     /// Start periodic monitoring of login item status
     func startLoginItemStatusMonitoring() {
+        guard #available(macOS 13.0, *) else { return }
         guard loginItemCheckTimer == nil else { return }
 
         // Check every 5 seconds
         loginItemCheckTimer = Timer.scheduledTimer(withTimeInterval: Timing.loginItemCheckInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in
-                self?.checkLoginItemStatus()
+                await self?.checkLoginItemStatus()
             }
         }
 
         // Also check immediately
-        checkLoginItemStatus()
+        Task { @MainActor in
+            await checkLoginItemStatus()
+        }
 
         NSLog(
             "[LoginItem] Periodic status monitoring started (interval: %.1fs)",
@@ -161,8 +177,10 @@ final class SystemState: ObservableObject {
         NSLog("[LoginItem] Periodic status monitoring stopped")
     }
 
-    /// Check if LoginItemService status matches our UI state
-    private func checkLoginItemStatus() {
+    /// Check if SMAppService status matches our UI state
+    @available(macOS 13.0, *)
+    @MainActor
+    private func checkLoginItemStatus() async {
         guard !isUpdatingRunOnStartup else { return }
 
         // Don't override user changes immediately
@@ -176,11 +194,12 @@ final class SystemState: ObservableObject {
             }
         }
 
-        let actualStatus = LoginItemService.shared.isEnabled
+        let appService = SMAppService.mainApp
+        let actualStatus = (appService.status == .enabled)
 
         // Only log if there's a mismatch
         if actualStatus != runOnStartup {
-            NSLog("[LoginItem] ⚠️ Status mismatch detected! UI: %@, LoginItemService: %@",
+            NSLog("[LoginItem] ⚠️ Status mismatch detected! UI: %@, SMAppService: %@",
                   runOnStartup ? "ON" : "OFF", actualStatus ? "ON" : "OFF")
 
             // Update UI to match reality
@@ -308,8 +327,53 @@ final class SystemState: ObservableObject {
         }
         notificationObservers.append(observer1)
 
-        // Listen for Launch at Login changes from AppDelegate
+        // Listen for update check responses from backend
         let observer2 = NotificationCenter.default.addObserver(
+            forName: NotificationName.checkForUpdatesResponse,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self = self else { return }
+            if let response = notification.object as? [String: Any] {
+                let updateAvailable = (response["updateAvailable"] as? Bool) ?? false
+                let message = response["message"] as? String ?? ""
+                let latestVersion = response["latestVersion"] as? String ?? ""
+
+                if updateAvailable && !message.isEmpty && !latestVersion.isEmpty {
+                    Task { @MainActor in
+                        self.updateAvailableMessage = message
+                        self.latestVersion = latestVersion
+                        self.showUpdateBanner = true
+                    }
+                }
+            }
+        }
+        notificationObservers.append(observer2)
+
+        // Sparkle custom update banner
+        let observer3 = NotificationCenter.default.addObserver(
+            forName: NotificationName.sparkleShowUpdateBanner,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self = self else { return }
+            if let info = notification.object as? [String: String] {
+                Task { @MainActor in
+                    let updateInfo = UpdateBannerInfo(
+                        version: info["version"] ?? "",
+                        releaseNotes: info["releaseNotes"] ?? "",
+                        downloadURL: info["downloadURL"] ?? ""
+                    )
+                    self.customUpdateBannerInfo = updateInfo
+                    self.showCustomUpdateBanner = true
+                    NSLog("[SystemState] Showing update banner for version %@", updateInfo.version)
+                }
+            }
+        }
+        notificationObservers.append(observer3)
+
+        // Listen for Launch at Login changes from AppDelegate
+        let observer4 = NotificationCenter.default.addObserver(
             forName: NotificationName.runOnStartupChanged,
             object: nil,
             queue: .main
@@ -325,7 +389,7 @@ final class SystemState: ObservableObject {
                 }
             }
         }
-        notificationObservers.append(observer2)
+        notificationObservers.append(observer4)
 
         // Listen for app termination
         let terminateObserver = NotificationCenter.default.addObserver(

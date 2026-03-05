@@ -79,19 +79,9 @@ extension AppState {
         set { inputMethodState.autoRestoreEnglishWord = newValue }
     }
 
-    var autoRestoreEnglishWordMode: AutoRestoreEnglishMode {
-        get { inputMethodState.autoRestoreEnglishWordMode }
-        set { inputMethodState.autoRestoreEnglishWordMode = newValue }
-    }
-
     var restoreIfWrongSpelling: Bool {
-        get {
-            inputMethodState.autoRestoreEnglishWord
-            && inputMethodState.autoRestoreEnglishWordMode.enablesWrongSpellingFallback
-        }
-        set {
-            inputMethodState.autoRestoreEnglishWordMode = newValue ? .nonVietnamese : .englishOnly
-        }
+        get { inputMethodState.restoreIfWrongSpelling }
+        set { inputMethodState.restoreIfWrongSpelling = newValue }
     }
 
     var restoreOnEscape: Bool {
@@ -224,9 +214,34 @@ extension AppState {
         set { systemState.hasAccessibilityPermission = newValue }
     }
 
+    var updateAvailableMessage: String {
+        get { systemState.updateAvailableMessage }
+        set { systemState.updateAvailableMessage = newValue }
+    }
+
+    var showUpdateBanner: Bool {
+        get { systemState.showUpdateBanner }
+        set { systemState.showUpdateBanner = newValue }
+    }
+
+    var latestVersion: String {
+        get { systemState.latestVersion }
+        set { systemState.latestVersion = newValue }
+    }
+
     var updateCheckFrequency: UpdateCheckFrequency {
         get { systemState.updateCheckFrequency }
         set { systemState.updateCheckFrequency = newValue }
+    }
+
+    var showCustomUpdateBanner: Bool {
+        get { systemState.showCustomUpdateBanner }
+        set { systemState.showCustomUpdateBanner = newValue }
+    }
+
+    var customUpdateBannerInfo: UpdateBannerInfo? {
+        get { systemState.customUpdateBannerInfo }
+        set { systemState.customUpdateBannerInfo = newValue }
     }
 
     // MARK: Bug Report

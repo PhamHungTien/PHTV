@@ -393,8 +393,7 @@ struct SystemSettingsView: View {
             UserDefaultsKey.quickStartConsonant, UserDefaultsKey.quickEndConsonant, UserDefaultsKey.rememberCode,
 
             // Auto restore English
-            UserDefaultsKey.autoRestoreEnglishWord, UserDefaultsKey.autoRestoreEnglishWordMode,
-            UserDefaultsKey.restoreIfWrongSpelling,
+            UserDefaultsKey.autoRestoreEnglishWord,
 
             // Restore key
             UserDefaultsKey.restoreOnEscape, UserDefaultsKey.customEscapeKey,
@@ -575,7 +574,8 @@ struct SystemSettingsView: View {
     private func checkForUpdates() {
         PHTVLogger.shared.ui("[SystemSettings] User clicked 'Kiểm tra cập nhật' button")
 
-        // Trigger Sparkle update check with Sparkle's standard UI flow.
+        // Trigger Sparkle update check
+        // Sparkle will handle the UI via UpdateBannerView or notification when no update
         NotificationCenter.default.post(
             name: NotificationName.sparkleManualCheck,
             object: nil

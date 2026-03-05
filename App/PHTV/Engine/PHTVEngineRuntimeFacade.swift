@@ -44,8 +44,7 @@ private final class RuntimeSettingsStateBox: @unchecked Sendable {
     var tempOffEngine: Int32 = 0
     var restoreOnEscape: Int32 = 1
     var autoRestoreEnglishWord: Int32 = 1
-    var autoRestoreEnglishWordMode: Int32 = Int32(Defaults.autoRestoreEnglishWordMode.rawValue)
-    var restoreIfWrongSpelling: Int32 = Defaults.restoreIfWrongSpelling ? 1 : 0
+    var restoreIfWrongSpelling: Int32 = 1
     var customEscapeKey: Int32 = 0
     var pauseKeyEnabled: Int32 = 0
     var pauseKey: Int32 = Int32(KeyCode.leftOption)
@@ -185,11 +184,6 @@ private var runtimeRestoreOnEscape: Int32 {
 private var runtimeAutoRestoreEnglishWord: Int32 {
     get { withRuntimeSettings { $0.autoRestoreEnglishWord } }
     set { withRuntimeSettings { $0.autoRestoreEnglishWord = newValue } }
-}
-
-private var runtimeAutoRestoreEnglishWordMode: Int32 {
-    get { withRuntimeSettings { $0.autoRestoreEnglishWordMode } }
-    set { withRuntimeSettings { $0.autoRestoreEnglishWordMode = newValue } }
 }
 
 private var runtimeRestoreIfWrongSpelling: Int32 {
@@ -643,11 +637,6 @@ func phtvRuntimeAutoRestoreEnglishWordEnabled() -> Int32 {
     runtimeAutoRestoreEnglishWord
 }
 
-@_cdecl("phtvRuntimeAutoRestoreEnglishWordModeValue")
-func phtvRuntimeAutoRestoreEnglishWordModeValue() -> Int32 {
-    runtimeAutoRestoreEnglishWordMode
-}
-
 @_cdecl("phtvRuntimeRestoreIfWrongSpellingEnabled")
 func phtvRuntimeRestoreIfWrongSpellingEnabled() -> Int32 {
     runtimeRestoreIfWrongSpelling
@@ -942,14 +931,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setAutoRestoreEnglishWord(_ value: Int32) {
         runtimeAutoRestoreEnglishWord = value
-    }
-
-    class func autoRestoreEnglishWordMode() -> Int32 {
-        runtimeAutoRestoreEnglishWordMode
-    }
-
-    class func setAutoRestoreEnglishWordMode(_ value: Int32) {
-        runtimeAutoRestoreEnglishWordMode = value
     }
 
     class func restoreIfWrongSpelling() -> Int32 {

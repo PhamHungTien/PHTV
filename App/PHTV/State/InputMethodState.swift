@@ -30,7 +30,7 @@ final class InputMethodState: ObservableObject {
 
     // Auto restore English words - default: ON for new users
     @Published var autoRestoreEnglishWord: Bool = true
-    @Published var autoRestoreEnglishWordMode: AutoRestoreEnglishMode = .englishOnly
+    @Published var restoreIfWrongSpelling: Bool = true
 
     // Restore to raw keys (customizable key)
     @Published var restoreOnEscape: Bool = true
@@ -66,14 +66,6 @@ final class InputMethodState: ObservableObject {
             }
         }
         return nil
-    }
-
-    private func decodeAutoRestoreEnglishMode(_ value: Any?) -> AutoRestoreEnglishMode? {
-        AutoRestoreEnglishMode.from(persistedValue: value)
-    }
-
-    private var restoreIfWrongSpellingForRuntime: Bool {
-        autoRestoreEnglishWord && autoRestoreEnglishWordMode.enablesWrongSpellingFallback
     }
 
     init() {}
@@ -145,15 +137,10 @@ final class InputMethodState: ObservableObject {
             forKey: UserDefaultsKey.autoRestoreEnglishWord,
             default: Defaults.autoRestoreEnglishWord
         )
-
-        let hasPersistedAutoRestoreMode = decodeAutoRestoreEnglishMode(
-            defaults.persistedObject(forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
-        ) != nil
-        autoRestoreEnglishWordMode = defaults.autoRestoreEnglishMode()
-        if !hasPersistedAutoRestoreMode {
-            defaults.set(autoRestoreEnglishWordMode.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
-        }
-        defaults.set(restoreIfWrongSpellingForRuntime, forKey: UserDefaultsKey.restoreIfWrongSpelling)
+        restoreIfWrongSpelling = defaults.bool(
+            forKey: UserDefaultsKey.restoreIfWrongSpelling,
+            default: Defaults.restoreIfWrongSpelling
+        )
 
         // Restore to raw keys (customizable key)
         restoreOnEscape = defaults.bool(forKey: UserDefaultsKey.restoreOnEscape, default: Defaults.restoreOnEscape)
@@ -192,8 +179,7 @@ final class InputMethodState: ObservableObject {
 
         // Auto restore English words
         defaults.set(autoRestoreEnglishWord, forKey: UserDefaultsKey.autoRestoreEnglishWord)
-        defaults.set(autoRestoreEnglishWordMode.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
-        defaults.set(restoreIfWrongSpellingForRuntime, forKey: UserDefaultsKey.restoreIfWrongSpelling)
+        defaults.set(restoreIfWrongSpelling, forKey: UserDefaultsKey.restoreIfWrongSpelling)
 
         // Restore to raw keys (customizable key)
         defaults.set(restoreOnEscape, forKey: UserDefaultsKey.restoreOnEscape)
@@ -267,7 +253,7 @@ final class InputMethodState: ObservableObject {
             $rememberCode.map { _ in () }.eraseToAnyPublisher(),
             $sendKeyStepByStep.map { _ in () }.eraseToAnyPublisher(),
             $autoRestoreEnglishWord.map { _ in () }.eraseToAnyPublisher(),
-            $autoRestoreEnglishWordMode.map { _ in () }.eraseToAnyPublisher(),
+            $restoreIfWrongSpelling.map { _ in () }.eraseToAnyPublisher(),
             $restoreOnEscape.map { _ in () }.eraseToAnyPublisher(),
             $restoreKey.map { _ in () }.eraseToAnyPublisher(),
             $pauseKeyEnabled.map { _ in () }.eraseToAnyPublisher(),
@@ -303,7 +289,6 @@ final class InputMethodState: ObservableObject {
         quickEndConsonant = Defaults.quickEndConsonant
         rememberCode = Defaults.rememberCode
         autoRestoreEnglishWord = Defaults.autoRestoreEnglishWord
-        autoRestoreEnglishWordMode = Defaults.autoRestoreEnglishWordMode
 
         restoreOnEscape = Defaults.restoreOnEscape
         restoreKey = RestoreKey.from(keyCode: Int(Defaults.restoreKeyCode))
