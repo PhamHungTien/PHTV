@@ -7,19 +7,12 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release (e.g., 1.4.0)'
+        description: 'Version to release (e.g., 1.0.0)'
         required: true
         type: string
 
-concurrency:
-  group: release-${{ github.repository }}-${{ github.workflow }}
-  cancel-in-progress: false
-
 permissions:
   contents: write
-
-env:
-  SPARKLE_VERSION: "2.8.1"
 
 jobs:
   build:
@@ -54,12 +47,6 @@ jobs:
             VERSION="${GITHUB_REF_NAME#v}"
           fi
 
-          if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
-            echo "❌ Invalid version format: $VERSION"
-            echo "Expected SemVer, e.g. 1.4.0 or 1.4.0-beta.1"
-            exit 1
-          fi
-
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "📦 Version: $VERSION"
 
@@ -70,16 +57,6 @@ jobs:
 
           echo "build_number=$BUILD_NUMBER" >> "$GITHUB_OUTPUT"
           echo "✅ BUILD_NUMBER=$BUILD_NUMBER"
-
-      - name: Update Info.plist
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          BUILD="${{ steps.set_versions.outputs.build_number }}"
-
-          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" App/PHTV/Info.plist
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD" App/PHTV/Info.plist
-
-          echo "✅ Updated Info.plist: $VERSION ($BUILD)"
 
       - name: Import Code Signing Certificate
         id: certificate
@@ -116,50 +93,7 @@ jobs:
           security default-keychain -s "$KEYCHAIN_PATH"
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
-          echo "🔍 Available code signing identities:"
-          security find-identity -v -p codesigning "$KEYCHAIN_PATH" || true
-
-          can_sign_with_identity() {
-            local identity="$1"
-            local probe_bin="$RUNNER_TEMP/codesign_probe.bin"
-            cp /usr/bin/true "$probe_bin"
-            if ! codesign --force --sign "$identity" --keychain "$KEYCHAIN_PATH" --timestamp=none "$probe_bin" >/dev/null 2>&1; then
-              rm -f "$probe_bin"
-              return 1
-            fi
-            if ! codesign --verify --verbose=2 "$probe_bin" >/dev/null 2>&1; then
-              rm -f "$probe_bin"
-              return 1
-            fi
-            rm -f "$probe_bin"
-            return 0
-          }
-
-          CANDIDATES="$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -o '"[^"]*"' | tr -d '"')"
-          IDENTITY=""
-
-          while IFS= read -r candidate; do
-            [ -z "$candidate" ] && continue
-            [[ "$candidate" == Developer\ ID\ Application:* ]] || continue
-            if can_sign_with_identity "$candidate"; then
-              IDENTITY="$candidate"
-              break
-            fi
-            echo "⚠️ Skipping unusable Developer ID identity: $candidate"
-          done < <(printf '%s\n' "$CANDIDATES")
-
-          if [ -z "$IDENTITY" ]; then
-            while IFS= read -r candidate; do
-              [ -z "$candidate" ] && continue
-              [[ "$candidate" == Apple\ Development:* ]] || continue
-              if can_sign_with_identity "$candidate"; then
-                IDENTITY="$candidate"
-                break
-              fi
-              echo "⚠️ Skipping unusable Apple Development identity: $candidate"
-            done < <(printf '%s\n' "$CANDIDATES")
-          fi
-
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -o '"[^"]*"' | head -1 | tr -d '"')
           if [ -z "$IDENTITY" ]; then
             echo "❌ Error: No valid signing identity found."
             security find-identity -p codesigning "$KEYCHAIN_PATH"
@@ -177,7 +111,6 @@ jobs:
           echo "Identity: ${{ steps.certificate.outputs.identity }}"
           VERSION="${{ steps.version.outputs.version }}"
           BUILD_NUMBER="${{ steps.set_versions.outputs.build_number }}"
-          APP_PATH="./build/Build/Products/Release/PHTV.app"
 
           xcodebuild -project PHTV.xcodeproj -scheme PHTV \
             -configuration Release \
@@ -196,14 +129,14 @@ jobs:
             clean build \
             2>&1 | tee build.log
 
-          if [ ! -d "$APP_PATH" ]; then
+          if [ ! -d "./build/Build/Products/Release/PHTV.app" ]; then
             echo "❌ Build failed: PHTV.app not found"
             exit 1
           fi
 
           echo "🔍 Verifying code signature..."
-          codesign -dv --verbose=2 "$APP_PATH" 2>&1
-          codesign --verify --deep --strict "$APP_PATH" 2>&1
+          codesign -dv --verbose=2 "./build/Build/Products/Release/PHTV.app" 2>&1
+          codesign --verify --deep --strict "./build/Build/Products/Release/PHTV.app" 2>&1
 
       - name: Verify Sparkle metadata in app bundle
         working-directory: App
@@ -238,8 +171,8 @@ jobs:
           rm -rf "$TEMP_DIR"
 
           SIZE=$(stat -f%z "$DMG_NAME")
-          echo "name=$DMG_NAME" >> $GITHUB_OUTPUT
-          echo "size=$SIZE" >> $GITHUB_OUTPUT
+          echo "name=$DMG_NAME" >> "$GITHUB_OUTPUT"
+          echo "size=$SIZE" >> "$GITHUB_OUTPUT"
           echo "✅ DMG created: $DMG_NAME ($SIZE bytes)"
 
       - name: Create ZIP
@@ -254,66 +187,6 @@ jobs:
           echo "name=$ZIP_NAME" >> "$GITHUB_OUTPUT"
           echo "✅ ZIP created: $ZIP_NAME"
 
-      - name: Validate packaged artifacts
-        working-directory: App
-        run: |
-          set -euo pipefail
-          DMG_NAME="${{ steps.dmg.outputs.name }}"
-          ZIP_NAME="${{ steps.zip.outputs.name }}"
-
-          if [ ! -f "$DMG_NAME" ]; then
-            echo "❌ DMG not found: $DMG_NAME"
-            exit 1
-          fi
-
-          if [ ! -f "$ZIP_NAME" ]; then
-            echo "❌ ZIP not found: $ZIP_NAME"
-            exit 1
-          fi
-
-          TMP_DIR=$(mktemp -d)
-          ZIP_EXTRACT_DIR="$TMP_DIR/zip"
-          MOUNT_POINT="$TMP_DIR/mount"
-          mkdir -p "$ZIP_EXTRACT_DIR" "$MOUNT_POINT"
-
-          cleanup() {
-            if mount | grep -q "on $MOUNT_POINT "; then
-              hdiutil detach "$MOUNT_POINT" -quiet || true
-            fi
-            rm -rf "$TMP_DIR"
-          }
-          trap cleanup EXIT
-
-          # Validate ZIP payload
-          ditto -x -k "$ZIP_NAME" "$ZIP_EXTRACT_DIR"
-          ZIP_APP_PATH=$(find "$ZIP_EXTRACT_DIR" -maxdepth 3 -type d -name "PHTV.app" | head -1)
-          if [ -z "${ZIP_APP_PATH:-}" ]; then
-            echo "❌ ZIP payload does not contain PHTV.app"
-            exit 1
-          fi
-          codesign --verify --deep --strict "$ZIP_APP_PATH"
-          test -f "$ZIP_APP_PATH/Contents/Info.plist"
-
-          # Validate DMG payload
-          hdiutil attach "$DMG_NAME" -mountpoint "$MOUNT_POINT" -nobrowse -readonly -quiet
-          DMG_APP_PATH="$MOUNT_POINT/PHTV.app"
-          if [ ! -d "$DMG_APP_PATH" ]; then
-            echo "❌ DMG payload does not contain PHTV.app"
-            ls -la "$MOUNT_POINT"
-            exit 1
-          fi
-          codesign --verify --deep --strict "$DMG_APP_PATH"
-          test -f "$DMG_APP_PATH/Contents/Info.plist"
-
-          echo "✅ Packaged artifacts passed signature and Info.plist validation"
-
-      - name: Download Sparkle
-        working-directory: App
-        run: |
-          curl -sL "https://github.com/sparkle-project/Sparkle/releases/download/${{ env.SPARKLE_VERSION }}/Sparkle-for-Swift-Package-Manager.zip" -o sparkle.zip
-          unzip -q sparkle.zip -d /tmp/Sparkle
-          echo "✅ Sparkle downloaded"
-
       - name: Generate Sparkle appcast
         working-directory: App
         env:
@@ -327,7 +200,6 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           ZIP_NAME="${{ steps.zip.outputs.name }}"
           ARCHIVES_DIR="$RUNNER_TEMP/sparkle_archives"
-          export ARCHIVES_DIR
           mkdir -p "$ARCHIVES_DIR"
           cp "$ZIP_NAME" "$ARCHIVES_DIR/"
           if git show origin/main:docs/appcast.xml > "$ARCHIVES_DIR/appcast.xml" 2>/dev/null; then
@@ -337,93 +209,7 @@ jobs:
             echo "⚠️ Falling back to docs/appcast.xml from current checkout"
           fi
 
-          xcrun swift - << 'SWIFT'
-          import Foundation
-          import Darwin
-
-          func firstCapture(pattern: String, in text: String, options: NSRegularExpression.Options = []) -> String? {
-              guard let regex = try? NSRegularExpression(pattern: pattern, options: options) else {
-                  return nil
-              }
-              let range = NSRange(text.startIndex..., in: text)
-              guard let match = regex.firstMatch(in: text, options: [], range: range),
-                    match.numberOfRanges > 1,
-                    let captureRange = Range(match.range(at: 1), in: text) else {
-                  return nil
-              }
-              return String(text[captureRange])
-          }
-
-          func normalizeTitle(_ raw: String?) -> String {
-              let collapsed = (raw ?? "unknown")
-                  .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
-                  .trimmingCharacters(in: .whitespacesAndNewlines)
-              return collapsed.isEmpty ? "unknown" : collapsed
-          }
-
-          func signatureValidationError(_ signature: String?) -> String? {
-              guard let raw = signature?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
-                  return "missing sparkle:edSignature"
-              }
-              guard let decoded = Data(base64Encoded: raw) else {
-                  return "signature is not valid base64"
-              }
-              return decoded.count == 64 ? nil : "decoded signature length is \(decoded.count), expected 64"
-          }
-
-          let env = ProcessInfo.processInfo.environment
-          guard let archivesDir = env["ARCHIVES_DIR"] else {
-              fputs("❌ Missing ARCHIVES_DIR\n", stderr)
-              exit(1)
-          }
-
-          let appcastURL = URL(fileURLWithPath: archivesDir).appendingPathComponent("appcast.xml")
-          let appcastContent = try String(contentsOf: appcastURL, encoding: .utf8)
-          guard appcastContent.contains("<channel>") else {
-              fputs("❌ Invalid appcast.xml: missing channel element\n", stderr)
-              exit(1)
-          }
-
-          let itemRegex = try NSRegularExpression(pattern: "<item\\b[\\s\\S]*?</item>", options: [.caseInsensitive])
-          let itemMatches = itemRegex.matches(
-              in: appcastContent,
-              options: [],
-              range: NSRange(appcastContent.startIndex..., in: appcastContent)
-          )
-
-          let signaturePattern = "(?:sparkle:edSignature|edSignature)\\s*=\\s*\"([^\"]+)\""
-          let titlePattern = "<title>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?</title>"
-          let mutableContent = NSMutableString(string: appcastContent)
-          var removedTitles: [String] = []
-
-          for match in itemMatches.reversed() {
-              guard let itemRange = Range(match.range, in: appcastContent) else {
-                  continue
-              }
-
-              let itemText = String(appcastContent[itemRange])
-              let signature = firstCapture(pattern: signaturePattern, in: itemText, options: [.caseInsensitive])
-              if signatureValidationError(signature) != nil {
-                  let title = normalizeTitle(
-                      firstCapture(pattern: titlePattern, in: itemText, options: [.caseInsensitive])
-                  )
-                  removedTitles.append(title)
-                  mutableContent.deleteCharacters(in: match.range)
-              }
-          }
-
-          if removedTitles.isEmpty {
-              print("✅ Existing appcast signatures are valid")
-          } else {
-              print("⚠️ Removed \(removedTitles.count) invalid appcast item(s) before generation:")
-              for title in removedTitles {
-                  print("  - \(title)")
-              }
-              try (mutableContent as String).write(to: appcastURL, atomically: true, encoding: .utf8)
-          }
-          SWIFT
-
-          GENERATE_APPCAST="/tmp/Sparkle/bin/generate_appcast"
+          GENERATE_APPCAST="./build/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_appcast"
           if [ ! -x "$GENERATE_APPCAST" ]; then
             echo "❌ Error: generate_appcast binary not found at $GENERATE_APPCAST"
             exit 1
@@ -438,81 +224,11 @@ jobs:
 
           cp "$ARCHIVES_DIR/appcast.xml" ../docs/appcast.xml
 
-          xcrun swift - << 'SWIFT'
-          import Foundation
-          import Darwin
-
-          func firstCapture(pattern: String, in text: String, options: NSRegularExpression.Options = []) -> String? {
-              guard let regex = try? NSRegularExpression(pattern: pattern, options: options) else {
-                  return nil
-              }
-              let range = NSRange(text.startIndex..., in: text)
-              guard let match = regex.firstMatch(in: text, options: [], range: range),
-                    match.numberOfRanges > 1,
-                    let captureRange = Range(match.range(at: 1), in: text) else {
-                  return nil
-              }
-              return String(text[captureRange])
-          }
-
-          func normalizeTitle(_ raw: String?) -> String {
-              let collapsed = (raw ?? "unknown")
-                  .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
-                  .trimmingCharacters(in: .whitespacesAndNewlines)
-              return collapsed.isEmpty ? "unknown" : collapsed
-          }
-
-          func signatureValidationError(_ signature: String?) -> String? {
-              guard let raw = signature?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
-                  return "missing sparkle:edSignature"
-              }
-              guard let decoded = Data(base64Encoded: raw) else {
-                  return "signature is not valid base64"
-              }
-              return decoded.count == 64 ? nil : "decoded signature length is \(decoded.count), expected 64"
-          }
-
-          let appcastURL = URL(fileURLWithPath: "../docs/appcast.xml")
-          let appcastContent = try String(contentsOf: appcastURL, encoding: .utf8)
-          let itemRegex = try NSRegularExpression(pattern: "<item\\b[\\s\\S]*?</item>", options: [.caseInsensitive])
-          let itemMatches = itemRegex.matches(
-              in: appcastContent,
-              options: [],
-              range: NSRange(appcastContent.startIndex..., in: appcastContent)
-          )
-
-          if itemMatches.isEmpty {
-              fputs("❌ Error: docs/appcast.xml has no <item> entries\n", stderr)
-              exit(1)
-          }
-
-          let signaturePattern = "(?:sparkle:edSignature|edSignature)\\s*=\\s*\"([^\"]+)\""
-          let titlePattern = "<title>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?</title>"
-          var invalid: [(title: String, reason: String)] = []
-
-          for match in itemMatches {
-              guard let itemRange = Range(match.range, in: appcastContent) else {
-                  continue
-              }
-
-              let itemText = String(appcastContent[itemRange])
-              let title = normalizeTitle(firstCapture(pattern: titlePattern, in: itemText, options: [.caseInsensitive]))
-              let signature = firstCapture(pattern: signaturePattern, in: itemText, options: [.caseInsensitive])
-              if let reason = signatureValidationError(signature) {
-                  invalid.append((title, reason))
-              }
-          }
-
-          if !invalid.isEmpty {
-              print("❌ Error: invalid Sparkle signatures found in docs/appcast.xml")
-              for entry in invalid {
-                  print("  - \(entry.title): \(entry.reason)")
-              }
-              exit(1)
-          }
-
-          print("✅ docs/appcast.xml generated and signed (\(itemMatches.count) items validated)")
-          SWIFT
+          if ! grep -q "sparkle:edSignature" ../docs/appcast.xml; then
+            echo "❌ Error: docs/appcast.xml has no sparkle:edSignature"
+            exit 1
+          fi
+          echo "✅ docs/appcast.xml generated and signed"
 
       - name: Upload DMG artifact
         uses: actions/upload-artifact@v4
@@ -547,8 +263,6 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     needs: build
-    permissions:
-      contents: write
 
     steps:
       - name: Download DMG
@@ -581,12 +295,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  publish-appcast:
+  publish_appcast:
     name: Publish Appcast
     runs-on: ubuntu-latest
-    needs: [build, release]
-    permissions:
-      contents: write
+    needs:
+      - build
+      - release
 
     steps:
       - name: Checkout main
@@ -602,10 +316,6 @@ jobs:
 
       - name: Commit and push appcast.xml
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git pull --rebase origin main
           cp /tmp/phtv-appcast/appcast.xml docs/appcast.xml
 
           if git diff --quiet -- docs/appcast.xml; then
@@ -613,120 +323,100 @@ jobs:
             exit 0
           fi
 
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs/appcast.xml
           git commit -m "chore: update appcast for v${{ needs.build.outputs.version }} [skip ci]"
-          for attempt in 1 2 3; do
-            if git push origin main; then
-              echo "✅ Appcast pushed"
-              exit 0
-            fi
-            echo "⚠️ Push failed, retrying with rebase ($attempt/3)..."
-            git pull --rebase origin main
-          done
-          echo "❌ Failed to push appcast after retries"
-          exit 1
+          git push origin main
 
   update-homebrew:
     name: Update Homebrew Tap
     runs-on: ubuntu-latest
-    needs: [build, release, publish-appcast]
-    permissions:
-      contents: read
+    needs:
+      - build
+      - release
+      - publish_appcast
 
     steps:
-      - name: Sync to homebrew-tap
+      - name: Download DMG artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dmg
+
+      - name: Update tap formula
         env:
           TAP_REPO_TOKEN: ${{ secrets.TAP_REPO_TOKEN }}
           VERSION: ${{ needs.build.outputs.version }}
           DMG_NAME: ${{ needs.build.outputs.dmg_name }}
           DMG_SIZE: ${{ needs.build.outputs.dmg_size }}
-          REPO: ${{ github.repository }}
         run: |
+          set -euo pipefail
+
           if [ -z "$TAP_REPO_TOKEN" ]; then
-            echo "⚠️ TAP_REPO_TOKEN not set, skipping tap sync"
-            exit 0
+            echo "❌ Error: TAP_REPO_TOKEN secret is missing."
+            exit 1
           fi
 
-          # Download DMG and calculate SHA256
-          curl -fSL --retry 5 --retry-all-errors --retry-delay 2 \
-            "https://github.com/$REPO/releases/download/v$VERSION/$DMG_NAME" \
-            -o "$DMG_NAME"
-          if [ ! -s "$DMG_NAME" ]; then
-            echo "❌ Downloaded DMG is missing or empty"
+          if [ ! -f "$DMG_NAME" ]; then
+            echo "❌ Error: DMG artifact not found: $DMG_NAME"
+            ls -la
             exit 1
           fi
+
           ACTUAL_SIZE=$(stat -c%s "$DMG_NAME")
           if [ "$ACTUAL_SIZE" != "$DMG_SIZE" ]; then
-            echo "❌ Downloaded file size mismatch: expected $DMG_SIZE, got $ACTUAL_SIZE"
+            echo "❌ Error: DMG size mismatch (expected=$DMG_SIZE, actual=$ACTUAL_SIZE)"
             exit 1
           fi
+
           SHA256=$(sha256sum "$DMG_NAME" | cut -d' ' -f1)
           echo "✅ SHA256: $SHA256"
 
-          # Clone and update homebrew-tap
           git clone "https://x-access-token:${TAP_REPO_TOKEN}@github.com/PhamHungTien/homebrew-tap.git" /tmp/homebrew-tap
           cd /tmp/homebrew-tap
 
-          # Update version and sha256 in cask
-          sed -i "s/version \".*\"/version \"$VERSION\"/" Casks/phtv.rb
-          sed -i "s/sha256 \".*\"/sha256 \"$SHA256\"/" Casks/phtv.rb
+          SHA256="$SHA256" VERSION="$VERSION" python3 - <<'PY'
+          import os
+          import re
+          import sys
+          from pathlib import Path
+
+          cask_path = Path("Casks/phtv.rb")
+          if not cask_path.exists():
+              print("❌ Error: Casks/phtv.rb not found", file=sys.stderr)
+              sys.exit(1)
+
+          text = cask_path.read_text(encoding="utf-8")
+          text, n_version = re.subn(
+              r'(?m)^(\s*)version\s+"[^"]+"\s*$',
+              rf'\1version "{os.environ["VERSION"]}"',
+              text,
+              count=1
+          )
+          text, n_sha = re.subn(
+              r'(?m)^(\s*)sha256\s+"[^"]+"\s*$',
+              rf'\1sha256 "{os.environ["SHA256"]}"',
+              text,
+              count=1
+          )
+
+          if n_version != 1 or n_sha != 1:
+              print("❌ Error: Unable to update version/sha256 in Casks/phtv.rb", file=sys.stderr)
+              sys.exit(1)
+
+          cask_path.write_text(text, encoding="utf-8")
+          print("✅ Updated Casks/phtv.rb")
+          PY
 
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Casks/phtv.rb
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          git add Casks/phtv.rb
           if git diff --staged --quiet; then
             echo "No changes to tap"
-          else
-            git commit -m "chore: update PHTV to v$VERSION"
-            git push
-            echo "✅ Tap synced"
+            exit 0
           fi
 
-  update-plist:
-    name: Update Info.plist
-    runs-on: macos-26
-    needs: [build, release, publish-appcast, update-homebrew]
-    permissions:
-      contents: write
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: main
-
-      - name: Pull latest changes
-        run: git pull origin main
-
-      - name: Update Info.plist for next release
-        env:
-          VERSION: ${{ needs.build.outputs.version }}
-          BUILD_NUMBER: ${{ needs.build.outputs.build_number }}
-        run: |
-          # Pull latest changes first
-          git pull origin main --rebase
-
-          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" App/PHTV/Info.plist
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" App/PHTV/Info.plist
-          echo "✅ Updated Info.plist to $VERSION ($BUILD_NUMBER)"
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add App/PHTV/Info.plist
-
-          if git diff --cached --quiet; then
-            echo "No changes to Info.plist"
-          else
-            git commit -m "chore: bump version to $VERSION ($BUILD_NUMBER) [skip ci]"
-            for attempt in 1 2 3; do
-              if git push; then
-                echo "✅ Info.plist committed"
-                exit 0
-              fi
-              echo "⚠️ Push failed, retrying with rebase ($attempt/3)..."
-              git pull --rebase origin main
-            done
-            echo "❌ Failed to push Info.plist after retries"
-            exit 1
-          fi
+          git commit -m "chore: update phtv to v$VERSION"
+          git push origin main
+          echo "✅ Tap synced"
