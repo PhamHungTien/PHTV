@@ -11,6 +11,20 @@ let PHTVBundleIdentifier = "com.phamhungtien.phtv"
 
 @MainActor @objcMembers
 class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
+    private static weak var sharedInstance: AppDelegate?
+
+    static func current() -> AppDelegate? {
+        if let sharedInstance {
+            return sharedInstance
+        }
+        return NSApp.delegate as? AppDelegate
+    }
+
+    override init() {
+        super.init()
+        Self.sharedInstance = self
+    }
+
     var lastInputMethod: Int = 0
     var lastCodeTable: Int = 0
     var isUpdatingUI = false

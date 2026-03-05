@@ -37,7 +37,7 @@ struct SettingsView: View {
         .navigationSplitViewStyle(.balanced)
         .onChange(of: appState.showIconOnDock) { newValue in
             // When dock icon toggle is changed, update immediately and save
-            let appDelegate = NSApp.delegate as? AppDelegate
+            let appDelegate = AppDelegate.current()
             NSLog("[SettingsView] onChange - showIconOnDock changed to %@", newValue ? "true" : "false")
             appDelegate?.showIcon(newValue)  // This one saves to UserDefaults
         }

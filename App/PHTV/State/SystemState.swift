@@ -62,7 +62,7 @@ final class SystemState: ObservableObject {
     // Helper to access AppDelegate safely on main actor
     @MainActor
     private func getAppDelegate() -> AppDelegate? {
-        return NSApp.delegate as? AppDelegate
+        return AppDelegate.current()
     }
 
     init() {}
@@ -226,7 +226,26 @@ final class SystemState: ObservableObject {
             NSLog("[SystemState] 🔄 runOnStartup observer triggered: value=%@", value ? "ON" : "OFF")
 
             guard let appDelegate = self.getAppDelegate() else {
-                NSLog("[SystemState] ❌ NSApp.delegate as AppDelegate returned nil")
+                NSLog("[SystemState] ⚠️ AppDelegate unavailable, applying runOnStartup fallback path")
+                if #available(macOS 13.0, *) {
+                    do {
+                        if value {
+                            try SMAppService.mainApp.register()
+                        } else {
+                            try SMAppService.mainApp.unregister()
+                        }
+                    } catch {
+                        let nsError = error as NSError
+                        NSLog(
+                            "[SystemState] ❌ Fallback %@ failed: %@ (domain=%@ code=%ld)",
+                            value ? "register" : "unregister",
+                            nsError.localizedDescription,
+                            nsError.domain,
+                            nsError.code
+                        )
+                    }
+                    self.refreshRunOnStartupStatus(logContext: "observer-fallback")
+                }
                 return
             }
 

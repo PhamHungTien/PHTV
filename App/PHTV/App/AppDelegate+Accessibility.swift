@@ -235,7 +235,7 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
             let isCorrupt = PHTVManager.isTCCEntryCorrupt()
             if !isCorrupt {
                 await MainActor.run {
-                    if let app = NSApp.delegate as? AppDelegate {
+                    if let app = AppDelegate.current() {
                         app.isAttemptingTCCRepair = false
                     }
                 }
@@ -266,7 +266,7 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
             }
 
             await MainActor.run {
-                guard let app = NSApp.delegate as? AppDelegate else {
+                guard let app = AppDelegate.current() else {
                     return
                 }
                 if fixed {

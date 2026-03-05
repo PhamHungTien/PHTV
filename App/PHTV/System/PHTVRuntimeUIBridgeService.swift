@@ -15,7 +15,7 @@ final class PHTVRuntimeUIBridgeService: NSObject {
     private static let inputMethodDefaultsKey = "InputMethod"
 
     private class func resolveAppDelegate() -> AppDelegate? {
-        return NSApp.delegate as? AppDelegate
+        return AppDelegate.current()
     }
 
     private class func fallbackQuickConvertFromHotkey() {
