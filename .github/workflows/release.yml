@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   SPARKLE_VERSION: "2.8.1"
@@ -25,8 +25,6 @@ jobs:
   build:
     name: Build PHTV
     runs-on: macos-26
-    permissions:
-      contents: read
     outputs:
       version: ${{ steps.version.outputs.version }}
       build_number: ${{ steps.set_versions.outputs.build_number }}
@@ -181,9 +179,7 @@ jobs:
               break
             fi
             echo "⚠️ Skipping unusable identity: $candidate"
-          done <<EOF
-$DEV_ID_CANDIDATES
-EOF
+          done < <(printf '%s\n' "$DEV_ID_CANDIDATES")
 
           if [ -z "$IDENTITY" ]; then
             while IFS= read -r candidate; do
@@ -194,9 +190,7 @@ EOF
                 break
               fi
               echo "⚠️ Skipping unusable identity: $candidate"
-            done <<EOF
-$APPLE_DEV_CANDIDATES
-EOF
+            done < <(printf '%s\n' "$APPLE_DEV_CANDIDATES")
           fi
 
           if [ -z "$IDENTITY" ]; then
