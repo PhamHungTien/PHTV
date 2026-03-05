@@ -138,15 +138,31 @@ jobs:
           codesign -dv --verbose=2 "./build/Build/Products/Release/PHTV.app" 2>&1
           codesign --verify --deep --strict "./build/Build/Products/Release/PHTV.app" 2>&1
 
-      - name: Verify Sparkle metadata in app bundle
+      - name: Verify app bundle metadata
         working-directory: App
         run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          BUILD_NUMBER="${{ steps.set_versions.outputs.build_number }}"
           APP_INFO="./build/Build/Products/Release/PHTV.app/Contents/Info.plist"
-          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP_INFO"
-          /usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$APP_INFO"
+          APP_VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP_INFO")
+          APP_BUILD=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$APP_INFO")
+
+          echo "App CFBundleShortVersionString=$APP_VERSION"
+          echo "App CFBundleVersion=$APP_BUILD"
+
+          if [ "$APP_VERSION" != "$VERSION" ]; then
+            echo "❌ Error: app short version mismatch (expected $VERSION, got $APP_VERSION)"
+            exit 1
+          fi
+
+          if [ "$APP_BUILD" != "$BUILD_NUMBER" ]; then
+            echo "❌ Error: app build number mismatch (expected $BUILD_NUMBER, got $APP_BUILD)"
+            exit 1
+          fi
+
           /usr/libexec/PlistBuddy -c "Print :SUFeedURL" "$APP_INFO"
           /usr/libexec/PlistBuddy -c "Print :SUPublicEDKey" "$APP_INFO"
-          echo "✅ Sparkle metadata exists in app Info.plist"
+          echo "✅ App version + Sparkle metadata are correct"
 
       - name: Create DMG
         id: dmg
