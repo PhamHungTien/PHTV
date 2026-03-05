@@ -155,7 +155,7 @@ final class PHTVCharacterOutputService: NSObject {
                 forSafeMode: PHTVEngineRuntimeFacade.safeModeEnabled(),
                 cacheDurationMs: kSpotlightCacheDurationMs)
             if effectiveTarget == nil {
-                effectiveTarget = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+                effectiveTarget = PHTVAppContextService.currentFrontmostBundleId()
             }
         }
 

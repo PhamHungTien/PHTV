@@ -615,9 +615,4 @@ enum Timing {
     /// External settings observer debounce (seconds)
     static let externalSettingsDebounce = 0.1
 
-    /// Login item status check interval (seconds)
-    static let loginItemCheckInterval = 5.0
-
-    /// Grace period for login item changes (seconds)
-    static let loginItemGracePeriod = 10.0
 }

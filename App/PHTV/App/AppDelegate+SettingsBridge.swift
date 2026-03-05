@@ -9,6 +9,7 @@ import AppKit
 import Foundation
 
 private let phtvDefaultsKeySwitchKeyStatus = "SwitchKeyStatus"
+private let phtvDefaultsKeyConvertToolHotKey = "convertToolHotKey"
 
 private let phtvNotificationShowMacroTab = Notification.Name("ShowMacroTab")
 private let phtvNotificationShowAboutTab = Notification.Name("ShowAboutTab")
@@ -265,6 +266,17 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
         phtvSettingsBridgeLiveLog("received NSUserDefaultsDidChangeNotification")
 
         let defaults = UserDefaults.standard
+        let newConvertToolHotkeyValue: Int? = {
+            guard defaults.object(forKey: phtvDefaultsKeyConvertToolHotKey) != nil else {
+                return nil
+            }
+            return defaults.integer(forKey: phtvDefaultsKeyConvertToolHotKey)
+        }()
+        if newConvertToolHotkeyValue != lastConvertToolHotkeyDefaultsValue {
+            lastConvertToolHotkeyDefaultsValue = newConvertToolHotkeyValue
+            PHTVConvertToolHotkeyService.invalidateCache()
+        }
+
         let currentSwitchKeyStatus = Int(PHTVManager.currentSwitchKeyStatus())
         let newSwitchKeyStatus: Int
         if defaults.object(forKey: phtvDefaultsKeySwitchKeyStatus) == nil {

@@ -25,7 +25,6 @@ final class PHTVEventCallbackService {
     // MARK: - Constants
 
     private static let kSpotlightCacheDurationMs: UInt64 = 150
-    private static let kAppSwitchCacheDurationMs: UInt64 = 100
     private static let kTextReplacementDeleteWindowMs: UInt64 = 30000
     private static let kAppCharacteristicsCacheMaxAgeMs: UInt64 = 10000
     private static let keyEventKeyboard: Int32 = Int32(PHTV_ENGINE_EVENT_KEYBOARD)
@@ -253,12 +252,22 @@ final class PHTVEventCallbackService {
         var eventFlags = event.flags
         var eventKeycode = CGKeyCode(event.getIntegerValueField(.keyboardEventKeycode))
         let currentLanguage = PHTVEngineRuntimeFacade.currentLanguage()
+        let safeModeEnabled = PHTVEngineRuntimeFacade.safeModeEnabled()
         if currentLanguage != 0 {
             englishUppercaseStateBox.withLock { state in
                 state = .idle
             }
         }
         var shouldPrimeUppercaseFromAX = false
+        var cachedConvertHotkey: Int32?
+        func currentConvertHotkey() -> Int32 {
+            if let cachedConvertHotkey {
+                return cachedConvertHotkey
+            }
+            let hotkey = PHTVConvertToolHotkeyService.currentHotkey()
+            cachedConvertHotkey = hotkey
+            return hotkey
+        }
 
         // Track text-replacement keydown patterns (external DELETE and following SPACE).
         if type == .keyDown {
@@ -297,7 +306,7 @@ final class PHTVEventCallbackService {
 
         // Switch-language / quick-convert / emoji hotkey handling
         if type == .keyDown {
-            let quickConvertHotkey = PHTVConvertToolHotkeyService.currentHotkey()
+            let quickConvertHotkey = currentConvertHotkey()
             let hotkeyAction = PHTVEventContextBridgeService.processKeyDownHotkeyAndApplyState(
                 forKeyCode: eventKeycode,
                 currentFlags: eventFlags.rawValue,
@@ -328,7 +337,7 @@ final class PHTVEventCallbackService {
                     keyCode: eventKeycode,
                     keyCharacter: keyCharacter,
                     isNavigationKey: isNavigationKey,
-                    safeMode: PHTVEngineRuntimeFacade.safeModeEnabled(),
+                    safeMode: safeModeEnabled,
                     uppercaseEnabled: Int32(PHTVEngineRuntimeFacade.upperCaseFirstChar()),
                     uppercaseExcluded: Int32(PHTVEngineRuntimeFacade.upperCaseExcludedForCurrentApp()))
                 if shouldPrime {
@@ -344,7 +353,7 @@ final class PHTVEventCallbackService {
                 restoreOnEscape: Int32(PHTVEngineRuntimeFacade.restoreOnEscape()),
                 customEscapeKey: Int32(PHTVEngineRuntimeFacade.customEscapeKey()),
                 switchHotkey: Int32(PHTVEngineRuntimeFacade.switchKeyStatus()),
-                convertHotkey: PHTVConvertToolHotkeyService.currentHotkey(),
+                convertHotkey: currentConvertHotkey(),
                 emojiEnabled: Int32(PHTVEngineRuntimeFacade.enableEmojiHotkey()),
                 emojiModifiers: Int32(PHTVEngineRuntimeFacade.emojiHotkeyModifiers()),
                 emojiHotkeyKeyCode: Int32(PHTVEngineRuntimeFacade.emojiHotkeyKeyCode()))
@@ -369,7 +378,7 @@ final class PHTVEventCallbackService {
                     restoreOnEscape: Int32(PHTVEngineRuntimeFacade.restoreOnEscape()),
                     customEscapeKey: Int32(PHTVEngineRuntimeFacade.customEscapeKey()),
                     switchHotkey: Int32(PHTVEngineRuntimeFacade.switchKeyStatus()),
-                    convertHotkey: PHTVConvertToolHotkeyService.currentHotkey(),
+                    convertHotkey: currentConvertHotkey(),
                     emojiEnabled: Int32(PHTVEngineRuntimeFacade.enableEmojiHotkey()),
                     emojiModifiers: Int32(PHTVEngineRuntimeFacade.emojiHotkeyModifiers()),
                     emojiKeyCode: Int32(PHTVEngineRuntimeFacade.emojiHotkeyKeyCode()),
@@ -427,15 +436,6 @@ final class PHTVEventCallbackService {
 
         PHTVEventRuntimeContextService.setEventTapProxyRawValue(
             UInt64(UInt(bitPattern: UnsafeRawPointer(proxy))))
-
-        // Skip Vietnamese processing for Spotlight and similar launcher apps
-        if PHTVEventContextBridgeService.shouldDisableVietnamese(
-            forEvent: event,
-            safeMode: PHTVEngineRuntimeFacade.safeModeEnabled(),
-            cacheDurationMs: kAppSwitchCacheDurationMs,
-            spotlightCacheDurationMs: kSpotlightCacheDurationMs) {
-            return Unmanaged.passRetained(event)
-        }
 
         // If is in English mode
         if currentLanguage == 0 {
@@ -508,7 +508,7 @@ final class PHTVEventCallbackService {
                 if PHTVEngineRuntimeFacade.engineDataCode() == EngineSignalCode.replaceMacro {
                     _ = PHTVEventContextBridgeService.prepareTargetContextAndConfigureRuntime(
                         forEvent: event,
-                        safeMode: PHTVEngineRuntimeFacade.safeModeEnabled(),
+                        safeMode: safeModeEnabled,
                         spotlightCacheDurationMs: kSpotlightCacheDurationMs,
                         appCharacteristicsMaxAgeMs: kAppCharacteristicsCacheMaxAgeMs)
                     PHTVCharacterOutputService.handleMacro(
@@ -537,7 +537,8 @@ final class PHTVEventCallbackService {
             return handleKeyDown(proxy: proxy,
                                  event: event,
                                  eventKeycode: eventKeycode,
-                                 eventFlags: eventFlags)
+                                 eventFlags: eventFlags,
+                                 safeModeEnabled: safeModeEnabled)
         }
 
         return Unmanaged.passRetained(event)
@@ -548,15 +549,20 @@ final class PHTVEventCallbackService {
     private static func handleKeyDown(proxy: CGEventTapProxy,
                                       event: CGEvent,
                                       eventKeycode: CGKeyCode,
-                                      eventFlags: CGEventFlags) -> Unmanaged<CGEvent>? {
+                                      eventFlags: CGEventFlags,
+                                      safeModeEnabled: Bool) -> Unmanaged<CGEvent>? {
         let targetContext = PHTVEventContextBridgeService.prepareTargetContextAndConfigureRuntime(
             forEvent: event,
-            safeMode: PHTVEngineRuntimeFacade.safeModeEnabled(),
+            safeMode: safeModeEnabled,
             spotlightCacheDurationMs: kSpotlightCacheDurationMs,
             appCharacteristicsMaxAgeMs: kAppCharacteristicsCacheMaxAgeMs)
         let spotlightActive = targetContext.spotlightActive
         let effectiveBundleId = targetContext.effectiveBundleId
         let appChars = targetContext.appCharacteristics
+
+        if PHTVAppContextService.shouldDisableVietnamese(forBundleId: effectiveBundleId) {
+            return Unmanaged.passRetained(event)
+        }
 
         #if DEBUG
         let eventTargetPID = Int32(event.getIntegerValueField(.eventTargetUnixProcessID))
@@ -693,7 +699,7 @@ final class PHTVEventCallbackService {
             var isAddrBar = false
             if processSignalPlan.shouldTryBrowserAddressBarFix {
                 isAddrBar = PHTVEventContextBridgeService.isFocusedElementAddressBar(
-                    forSafeMode: PHTVEngineRuntimeFacade.safeModeEnabled())
+                    forSafeMode: safeModeEnabled)
                 #if DEBUG
                 NSLog("[BrowserFix] isFocusedElementAddressBar returned: %d", isAddrBar ? 1 : 0)
                 #endif
@@ -703,7 +709,7 @@ final class PHTVEventCallbackService {
             if processSignalPlan.shouldTryLegacyNonBrowserFix {
                 isNotionCodeBlockDetected = processSignalPlan.isNotionApp &&
                     PHTVEventContextBridgeService.isNotionCodeBlock(
-                        forSafeMode: PHTVEngineRuntimeFacade.safeModeEnabled())
+                        forSafeMode: safeModeEnabled)
                 #if DEBUG
                 if isNotionCodeBlockDetected {
                     NSLog("[Notion] Code Block detected - using Standard Backspace")

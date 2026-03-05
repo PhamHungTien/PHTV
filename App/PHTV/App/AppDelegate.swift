@@ -16,6 +16,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var isUpdatingUI = false
     var lastDefaultsApplyTime: CFAbsoluteTime = 0
     var lastSettingsChangeToken: UInt = 0
+    var lastConvertToolHotkeyDefaultsValue: Int?
     var hasLastDockVisibilityRequest = false
     var lastDockVisibilityRequest = false
     var lastDockForceFrontRequest = false

@@ -107,20 +107,6 @@ final class PHTVEventContextBridgeService: NSObject {
         PHTVSpotlightDetectionService.elapsedSinceLastExternalDeleteMs()
     }
 
-    @objc(shouldDisableVietnameseForEvent:safeMode:cacheDurationMs:spotlightCacheDurationMs:)
-    class func shouldDisableVietnamese(forEvent event: CGEvent,
-                                       safeMode: Bool,
-                                       cacheDurationMs: UInt64,
-                                       spotlightCacheDurationMs: UInt64) -> Bool {
-        let targetPID = Int32(event.getIntegerValueField(.eventTargetUnixProcessID))
-        return PHTVAppContextService.shouldDisableVietnamese(
-            forTargetPid: targetPID,
-            cacheDurationMs: cacheDurationMs,
-            safeMode: safeMode,
-            spotlightCacheDurationMs: spotlightCacheDurationMs
-        )
-    }
-
     @objc(prepareTargetContextAndConfigureRuntimeForEvent:safeMode:spotlightCacheDurationMs:appCharacteristicsMaxAgeMs:)
     class func prepareTargetContextAndConfigureRuntime(forEvent event: CGEvent,
                                                        safeMode: Bool,

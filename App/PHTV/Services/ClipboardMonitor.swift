@@ -81,7 +81,7 @@ final class ClipboardMonitor {
             imageData = nil
         }
 
-        let sourceApp = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+        let sourceApp = PHTVAppContextService.currentFrontmostBundleId()
 
         return ClipboardHistoryItem(
             id: UUID(),

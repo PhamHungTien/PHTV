@@ -21,6 +21,32 @@ final class PHTVConvertToolHotkeyService: NSObject {
     private static let hotkeyInvalidKey: UInt32 = 0x00FF
     private static let hotkeyModifierMask: UInt32 = hotkeyControlMask | hotkeyOptionMask | hotkeyCommandMask | hotkeyShiftMask
     private static let hotkeyAllowedMask: UInt32 = hotkeyKeyMask | hotkeyModifierMask
+    private final class HotkeyCacheStateBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var isInitialized = false
+        private var cachedHotkey = defaultHotkey
+
+        func cachedValue() -> Int32? {
+            lock.lock()
+            defer { lock.unlock() }
+            return isInitialized ? cachedHotkey : nil
+        }
+
+        func store(_ hotkey: Int32) {
+            lock.lock()
+            cachedHotkey = hotkey
+            isInitialized = true
+            lock.unlock()
+        }
+
+        func invalidate() {
+            lock.lock()
+            isInitialized = false
+            lock.unlock()
+        }
+    }
+
+    private static let hotkeyCache = HotkeyCacheStateBox()
 
     private class func normalizeHotkey(_ rawHotkey: Int32) -> (value: Int32, normalized: Bool) {
         if rawHotkey == defaultHotkey {
@@ -41,10 +67,8 @@ final class PHTVConvertToolHotkeyService: NSObject {
         return (value, value != rawHotkey)
     }
 
-    @objc(currentHotkey)
-    class func currentHotkey() -> Int32 {
+    private class func resolveHotkeyFromDefaults() -> Int32 {
         let defaults = UserDefaults.standard
-
         guard defaults.object(forKey: keyHotKey) != nil else {
             return defaultHotkey
         }
@@ -62,6 +86,22 @@ final class PHTVConvertToolHotkeyService: NSObject {
 #endif
         }
         return normalizedHotkey.value
+    }
+
+    @objc(currentHotkey)
+    class func currentHotkey() -> Int32 {
+        if let cached = hotkeyCache.cachedValue() {
+            return cached
+        }
+
+        let resolved = resolveHotkeyFromDefaults()
+        hotkeyCache.store(resolved)
+        return resolved
+    }
+
+    @objc(invalidateCache)
+    class func invalidateCache() {
+        hotkeyCache.invalidate()
     }
 
     class func hasControl(_ hotkey: Int32) -> Bool {

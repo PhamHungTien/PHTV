@@ -45,8 +45,7 @@ final class SystemState: ObservableObject {
     private var notificationObservers: [NSObjectProtocol] = []
     var isLoadingSettings = false
     private var isUpdatingRunOnStartup = false
-    private var loginItemCheckTimer: Timer?
-    private var lastRunOnStartupChangeTime: Date?
+    private var loginItemActiveObserver: NSObjectProtocol?
 
     // Helper to access AppDelegate safely on main actor
     @MainActor
@@ -61,14 +60,9 @@ final class SystemState: ObservableObject {
     func loadSettings() {
         let defaults = UserDefaults.standard
 
-        // Load system settings - check actual SMAppService status for runOnStartup
+        // Load system settings - use SMAppService status as source of truth.
         if #available(macOS 13.0, *) {
-            let appService = SMAppService.mainApp
-            let status = (appService.status == .enabled)
-            NSLog("[SystemState] Loading runOnStartup from SMAppService: %@", status ? "enabled" : "disabled")
-            isUpdatingRunOnStartup = true
-            runOnStartup = status
-            isUpdatingRunOnStartup = false
+            refreshRunOnStartupStatus(logContext: "load-settings")
         } else {
             runOnStartup = defaults.bool(forKey: UserDefaultsKey.runOnStartup, default: Defaults.runOnStartup)
         }
@@ -146,74 +140,61 @@ final class SystemState: ObservableObject {
 
     // MARK: - Login Item Monitoring
 
-    /// Start periodic monitoring of login item status
+    /// Start lightweight login-item status refresh while Settings is visible.
     func startLoginItemStatusMonitoring() {
         guard #available(macOS 13.0, *) else { return }
-        guard loginItemCheckTimer == nil else { return }
+        guard loginItemActiveObserver == nil else { return }
 
-        // Check every 5 seconds
-        loginItemCheckTimer = Timer.scheduledTimer(withTimeInterval: Timing.loginItemCheckInterval, repeats: true) { [weak self] _ in
+        loginItemActiveObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
             Task { @MainActor in
-                await self?.checkLoginItemStatus()
+                self?.refreshRunOnStartupStatus(logContext: "didBecomeActive")
             }
         }
 
-        // Also check immediately
-        Task { @MainActor in
-            await checkLoginItemStatus()
-        }
-
-        NSLog(
-            "[LoginItem] Periodic status monitoring started (interval: %.1fs)",
-            Timing.loginItemCheckInterval
-        )
+        refreshRunOnStartupStatus(logContext: "settings-open")
+        NSLog("[LoginItem] Status refresh monitoring started (active-app observer)")
     }
 
-    /// Stop periodic monitoring of login item status
+    /// Stop login-item status refresh observer.
     func stopLoginItemStatusMonitoring() {
-        guard loginItemCheckTimer != nil else { return }
-        loginItemCheckTimer?.invalidate()
-        loginItemCheckTimer = nil
-        NSLog("[LoginItem] Periodic status monitoring stopped")
+        if let observer = loginItemActiveObserver {
+            NotificationCenter.default.removeObserver(observer)
+            loginItemActiveObserver = nil
+            NSLog("[LoginItem] Status refresh monitoring stopped")
+        }
     }
 
-    /// Check if SMAppService status matches our UI state
     @available(macOS 13.0, *)
-    @MainActor
-    private func checkLoginItemStatus() async {
-        guard !isUpdatingRunOnStartup else { return }
+    private func refreshRunOnStartupStatus(logContext: String) {
+        let status = SMAppService.mainApp.status
+        let isEnabled = (status == .enabled)
 
-        // Don't override user changes immediately
-        if let lastChange = lastRunOnStartupChangeTime {
-            let timeSinceChange = Date().timeIntervalSince(lastChange)
-            if timeSinceChange < Timing.loginItemGracePeriod {
-                #if DEBUG
-                NSLog("[LoginItem] Skipping check - user changed setting %.1fs ago (< 10s grace period)", timeSinceChange)
-                #endif
-                return
-            }
-        }
-
-        let appService = SMAppService.mainApp
-        let actualStatus = (appService.status == .enabled)
-
-        // Only log if there's a mismatch
-        if actualStatus != runOnStartup {
-            NSLog("[LoginItem] ⚠️ Status mismatch detected! UI: %@, SMAppService: %@",
-                  runOnStartup ? "ON" : "OFF", actualStatus ? "ON" : "OFF")
-
-            // Update UI to match reality
+        if runOnStartup != isEnabled {
             isUpdatingRunOnStartup = true
-            runOnStartup = actualStatus
+            runOnStartup = isEnabled
             isUpdatingRunOnStartup = false
 
-            // Update UserDefaults too
             SettingsObserver.shared.suspendNotifications()
             let defaults = UserDefaults.standard
-            defaults.set(actualStatus, forKey: UserDefaultsKey.runOnStartup)
-            defaults.set(actualStatus ? 1 : 0, forKey: UserDefaultsKey.runOnStartupLegacy)
+            defaults.set(isEnabled, forKey: UserDefaultsKey.runOnStartup)
+            defaults.set(isEnabled ? 1 : 0, forKey: UserDefaultsKey.runOnStartupLegacy)
+        }
 
-            NSLog("[LoginItem] ✅ UI synced to actual status: %@", actualStatus ? "ON" : "OFF")
+        switch status {
+        case .enabled:
+            NSLog("[LoginItem] ✅ %@: enabled", logContext)
+        case .notRegistered:
+            NSLog("[LoginItem] ℹ️ %@: not registered", logContext)
+        case .requiresApproval:
+            NSLog("[LoginItem] ⚠️ %@: requires user approval in System Settings > Login Items", logContext)
+        case .notFound:
+            NSLog("[LoginItem] ⚠️ %@: login item not found; try toggling off/on", logContext)
+        @unknown default:
+            NSLog("[LoginItem] ⚠️ %@: unknown SMAppService status=%ld", logContext, status.rawValue)
         }
     }
 
@@ -232,9 +213,6 @@ final class SystemState: ObservableObject {
 
             NSLog("[SystemState] 🔄 runOnStartup observer triggered: value=%@", value ? "ON" : "OFF")
 
-            // Record timestamp
-            self.lastRunOnStartupChangeTime = Date()
-
             guard let appDelegate = self.getAppDelegate() else {
                 NSLog("[SystemState] ❌ NSApp.delegate as AppDelegate returned nil")
                 return
@@ -242,6 +220,13 @@ final class SystemState: ObservableObject {
 
             NSLog("[SystemState] ✅ Calling AppDelegate.setRunOnStartup(%@)", value ? "YES" : "NO")
             appDelegate.setRunOnStartup(value)
+
+            if #available(macOS 13.0, *) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
+                    guard let self else { return }
+                    self.refreshRunOnStartupStatus(logContext: "post-toggle-sync")
+                }
+            }
         }.store(in: &cancellables)
 
         // Observer for showIconOnDock
@@ -410,8 +395,10 @@ final class SystemState: ObservableObject {
         }
         notificationObservers.removeAll()
 
-        loginItemCheckTimer?.invalidate()
-        loginItemCheckTimer = nil
+        if let observer = loginItemActiveObserver {
+            NotificationCenter.default.removeObserver(observer)
+            loginItemActiveObserver = nil
+        }
     }
 
     func resetToDefaults() {

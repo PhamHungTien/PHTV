@@ -7,7 +7,6 @@
 //
 
 import CoreGraphics
-import AppKit
 import Foundation
 
 @objc(PHTVKeyEventSenderService)
@@ -267,7 +266,7 @@ class PHTVKeyEventSenderService: NSObject {
         }
         guard let source = eventSource else { return }
         var newChar: UInt16 = 0x202F // narrow no-break space — "empty" placeholder
-        if let bundleId = NSWorkspace.shared.frontmostApplication?.bundleIdentifier,
+        if let bundleId = PHTVAppContextService.currentFrontmostBundleId(),
            PHTVAppContextService.needsNiceSpace(forBundleId: bundleId) {
             newChar = 0x200C // zero-width non-joiner
         }

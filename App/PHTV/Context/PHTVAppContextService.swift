@@ -54,16 +54,74 @@ final class PHTVEventTargetContextBox: NSObject {
 
 @objcMembers
 final class PHTVAppContextService: NSObject {
-    private final class ShouldDisableStateBox: @unchecked Sendable {
-        let lock = NSLock()
-        var lastPid: Int32 = -1
-        var lastCheckTime: UInt64 = 0
-        var lastResult = false
+    private static let frontmostBundleCacheDurationMs: UInt64 = 1000
+
+    private final class FrontmostBundleStateBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var lastFetchTime: UInt64 = 0
+        private var cachedBundleId: String?
+
+        func read(now: UInt64, cacheDurationMs: UInt64) -> (isValid: Bool, bundleId: String?) {
+            lock.lock()
+            defer { lock.unlock() }
+
+            guard lastFetchTime > 0 else {
+                return (false, nil)
+            }
+
+            let elapsedMs = PHTVTimingService.machTimeToMs(now - lastFetchTime)
+            if elapsedMs < cacheDurationMs {
+                return (true, cachedBundleId)
+            }
+            return (false, nil)
+        }
+
+        func store(now: UInt64, bundleId: String?) {
+            lock.lock()
+            lastFetchTime = now
+            cachedBundleId = bundleId
+            lock.unlock()
+        }
+
+        func invalidate() {
+            lock.lock()
+            lastFetchTime = 0
+            cachedBundleId = nil
+            lock.unlock()
+        }
     }
-    private static let shouldDisableState = ShouldDisableStateBox()
+
+    private static let frontmostBundleState = FrontmostBundleStateBox()
+
+    private class func loadFrontmostBundleIdFromWorkspace() -> String? {
+        NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+    }
 
     private class var frontmostBundleId: String? {
-        NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+        let now = mach_absolute_time()
+        let snapshot = frontmostBundleState.read(now: now, cacheDurationMs: frontmostBundleCacheDurationMs)
+        if snapshot.isValid {
+            return snapshot.bundleId
+        }
+
+        let freshBundleId = loadFrontmostBundleIdFromWorkspace()
+        frontmostBundleState.store(now: now, bundleId: freshBundleId)
+        return freshBundleId
+    }
+
+    @objc(currentFrontmostBundleId)
+    class func currentFrontmostBundleId() -> String? {
+        frontmostBundleId
+    }
+
+    @objc(invalidateFrontmostBundleCache)
+    class func invalidateFrontmostBundleCache() {
+        frontmostBundleState.invalidate()
+    }
+
+    @objc(updateFrontmostBundleCache:)
+    class func updateFrontmostBundleCache(_ bundleId: String?) {
+        frontmostBundleState.store(now: mach_absolute_time(), bundleId: bundleId)
     }
 
     private class func makeDefaultAppCharacteristics() -> PHTVAppCharacteristicsBox {
@@ -104,40 +162,14 @@ final class PHTVAppContextService: NSObject {
         PHTVAppDetectionService.needsNiceSpace(bundleId)
     }
 
-    @objc(shouldDisableVietnameseForTargetPid:cacheDurationMs:safeMode:spotlightCacheDurationMs:)
-    class func shouldDisableVietnamese(forTargetPid targetPid: Int32,
-                                       cacheDurationMs: UInt64,
-                                       safeMode: Bool,
-                                       spotlightCacheDurationMs: UInt64) -> Bool {
-        let now = mach_absolute_time()
-
-        shouldDisableState.lock.lock()
-        let lastPid = shouldDisableState.lastPid
-        let lastCheckTime = shouldDisableState.lastCheckTime
-        let lastResult = shouldDisableState.lastResult
-        shouldDisableState.lock.unlock()
-
-        if targetPid > 0, targetPid == lastPid, lastCheckTime > 0 {
-            let elapsedMs = PHTVTimingService.machTimeToMs(now - lastCheckTime)
-            if elapsedMs < cacheDurationMs {
-                return lastResult
-            }
-        }
-
-        let bundleId = focusedBundleId(forSafeMode: safeMode, cacheDurationMs: spotlightCacheDurationMs)
-        let shouldDisable = shouldDisableVietnamese(forBundleId: bundleId)
-
-        shouldDisableState.lock.lock()
-        shouldDisableState.lastPid = targetPid > 0 ? targetPid : -1
-        shouldDisableState.lastCheckTime = now
-        shouldDisableState.lastResult = shouldDisable
-        shouldDisableState.lock.unlock()
-
-        return shouldDisable
-    }
-
     @objc(focusedBundleIdForSafeMode:cacheDurationMs:)
     class func focusedBundleId(forSafeMode safeMode: Bool, cacheDurationMs: UInt64) -> String? {
+        focusedBundleId(forSafeMode: safeMode, cacheDurationMs: cacheDurationMs, spotlightAlreadyChecked: false)
+    }
+
+    private class func focusedBundleId(forSafeMode safeMode: Bool,
+                                       cacheDurationMs: UInt64,
+                                       spotlightAlreadyChecked: Bool) -> String? {
         guard !safeMode else {
             return frontmostBundleId
         }
@@ -151,7 +183,9 @@ final class PHTVAppContextService: NSObject {
             return cachedBundleId
         }
 
-        _ = PHTVSpotlightDetectionService.isSpotlightActive()
+        if !spotlightAlreadyChecked {
+            _ = PHTVSpotlightDetectionService.isSpotlightActive()
+        }
         return PHTVCacheStateService.cachedFocusedBundleId() ?? frontmostBundleId
     }
 
@@ -205,7 +239,11 @@ final class PHTVAppContextService: NSObject {
                                   appCharacteristicsMaxAgeMs: UInt64) -> PHTVEventTargetContextBox {
         let eventTargetBundleId = eventTargetPid > 0 ? bundleId(fromPID: eventTargetPid, safeMode: safeMode) : nil
         let spotlightActive = spotlightActive(forSafeMode: safeMode)
-        let focusedBundleId = focusedBundleId(forSafeMode: safeMode, cacheDurationMs: spotlightCacheDurationMs)
+        let focusedBundleId = focusedBundleId(
+            forSafeMode: safeMode,
+            cacheDurationMs: spotlightCacheDurationMs,
+            spotlightAlreadyChecked: true
+        )
         let effectiveBundleId = (spotlightActive && focusedBundleId != nil) ? focusedBundleId : (eventTargetBundleId ?? focusedBundleId)
 
         let appCharacteristics = appCharacteristics(forBundleId: effectiveBundleId, maxAgeMs: appCharacteristicsMaxAgeMs)

@@ -72,7 +72,7 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
 
     @objc func handleExcludedAppsChanged(_ notification: Notification) {
         _ = notification
-        if let bundleIdentifier = NSWorkspace.shared.frontmostApplication?.bundleIdentifier,
+        if let bundleIdentifier = PHTVAppContextService.currentFrontmostBundleId(),
            !bundleIdentifier.isEmpty {
             checkExcludedApp(bundleIdentifier)
         }
@@ -80,7 +80,7 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
 
     @objc func handleSendKeyStepByStepAppsChanged(_ notification: Notification) {
         _ = notification
-        if let bundleIdentifier = NSWorkspace.shared.frontmostApplication?.bundleIdentifier,
+        if let bundleIdentifier = PHTVAppContextService.currentFrontmostBundleId(),
            !bundleIdentifier.isEmpty {
             checkSendKeyStepByStepApp(bundleIdentifier)
         }
@@ -88,7 +88,7 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
 
     @objc func handleUpperCaseExcludedAppsChanged(_ notification: Notification) {
         _ = notification
-        if let bundleIdentifier = NSWorkspace.shared.frontmostApplication?.bundleIdentifier,
+        if let bundleIdentifier = PHTVAppContextService.currentFrontmostBundleId(),
            !bundleIdentifier.isEmpty {
             checkUpperCaseExcludedApp(bundleIdentifier)
         }
@@ -124,8 +124,11 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
         let bundleIdentifier = activeApp?.bundleIdentifier
 
         if let bundleIdentifier, !bundleIdentifier.isEmpty {
+            PHTVAppContextService.updateFrontmostBundleCache(bundleIdentifier)
             PHTVCacheStateService.updateSpotlightCache(false, pid: 0, bundleId: bundleIdentifier)
             checkExcludedApp(bundleIdentifier)
+        } else {
+            PHTVAppContextService.invalidateFrontmostBundleCache()
         }
 
         if !isInExcludedApp && PHTVManager.isSmartSwitchKeyEnabled() && PHTVManager.isInited() {

@@ -420,12 +420,15 @@ final class PHTVAccessibilityService: NSObject {
         return elementAttribute(systemWide, kAXFocusedUIElementAttribute)
     }
 
+    private class func focusedApplicationElement() -> AXUIElement? {
+        let systemWide = AXUIElementCreateSystemWide()
+        return elementAttribute(systemWide, kAXFocusedApplicationAttribute)
+    }
+
     private class func focusedWindowTitleForFrontmostApp() -> String? {
-        guard let frontmost = NSWorkspace.shared.frontmostApplication else {
+        guard let appElement = focusedApplicationElement() else {
             return nil
         }
-
-        let appElement = AXUIElementCreateApplication(frontmost.processIdentifier)
         guard let focusedWindow = elementAttribute(appElement, kAXFocusedWindowAttribute) else {
             return nil
         }
@@ -434,7 +437,7 @@ final class PHTVAccessibilityService: NSObject {
     }
 
     private class func focusedAppBundleId() -> String? {
-        NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+        PHTVAppContextService.currentFrontmostBundleId()
     }
 
     private class func containsAddressBarKeyword(_ value: String?) -> Bool {
