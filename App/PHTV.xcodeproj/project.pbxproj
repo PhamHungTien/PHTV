@@ -194,7 +194,7 @@
 				};
 			};
 			buildConfigurationList = 4602023E2F2814250040B043 /* Build configuration list for PBXProject "PHTV" */;
-			developmentRegion = en;
+			developmentRegion = vi;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
