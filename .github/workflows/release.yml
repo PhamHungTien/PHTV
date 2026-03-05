@@ -116,7 +116,50 @@ jobs:
           security default-keychain -s "$KEYCHAIN_PATH"
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
-          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -o '"[^"]*"' | head -1 | tr -d '"')
+          echo "🔍 Available code signing identities:"
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH" || true
+
+          can_sign_with_identity() {
+            local identity="$1"
+            local probe_bin="$RUNNER_TEMP/codesign_probe.bin"
+            cp /usr/bin/true "$probe_bin"
+            if ! codesign --force --sign "$identity" --keychain "$KEYCHAIN_PATH" --timestamp=none "$probe_bin" >/dev/null 2>&1; then
+              rm -f "$probe_bin"
+              return 1
+            fi
+            if ! codesign --verify --verbose=2 "$probe_bin" >/dev/null 2>&1; then
+              rm -f "$probe_bin"
+              return 1
+            fi
+            rm -f "$probe_bin"
+            return 0
+          }
+
+          CANDIDATES="$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -o '"[^"]*"' | tr -d '"')"
+          IDENTITY=""
+
+          while IFS= read -r candidate; do
+            [ -z "$candidate" ] && continue
+            [[ "$candidate" == Developer\ ID\ Application:* ]] || continue
+            if can_sign_with_identity "$candidate"; then
+              IDENTITY="$candidate"
+              break
+            fi
+            echo "⚠️ Skipping unusable Developer ID identity: $candidate"
+          done < <(printf '%s\n' "$CANDIDATES")
+
+          if [ -z "$IDENTITY" ]; then
+            while IFS= read -r candidate; do
+              [ -z "$candidate" ] && continue
+              [[ "$candidate" == Apple\ Development:* ]] || continue
+              if can_sign_with_identity "$candidate"; then
+                IDENTITY="$candidate"
+                break
+              fi
+              echo "⚠️ Skipping unusable Apple Development identity: $candidate"
+            done < <(printf '%s\n' "$CANDIDATES")
+          fi
+
           if [ -z "$IDENTITY" ]; then
             echo "❌ Error: No valid signing identity found."
             security find-identity -p codesigning "$KEYCHAIN_PATH"
