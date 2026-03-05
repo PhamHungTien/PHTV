@@ -147,11 +147,8 @@ enum NotificationName {
     static let showAbout = NSNotification.Name("ShowAbout")
 
     // MARK: - Updates
-    static let checkForUpdatesResponse = NSNotification.Name("CheckForUpdatesResponse")
     static let updateCheckFrequencyChanged = NSNotification.Name("UpdateCheckFrequencyChanged")
-    static let sparkleShowUpdateBanner = NSNotification.Name("SparkleShowUpdateBanner")
     static let sparkleManualCheck = NSNotification.Name("SparkleManualCheck")
-    static let sparkleInstallUpdate = NSNotification.Name("SparkleInstallUpdate")
 }
 
 // MARK: - Notification UserInfo Keys
@@ -550,6 +547,8 @@ extension UserDefaults {
     /// Always use stable update channel and auto-install updates.
     func enforceStableUpdateChannel() {
         removeObject(forKey: UserDefaultsKey.sparkleBetaChannel)
+        // Force Sparkle to use Info.plist/delegate stable feed URL instead of stale persisted overrides.
+        removeObject(forKey: "SUFeedURL")
         set(true, forKey: UserDefaultsKey.autoInstallUpdates)
     }
 }

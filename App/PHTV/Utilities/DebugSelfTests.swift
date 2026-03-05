@@ -57,10 +57,15 @@ enum DebugSelfTests {
 
         defaults.set(true, forKey: UserDefaultsKey.sparkleBetaChannel)
         defaults.set(false, forKey: UserDefaultsKey.autoInstallUpdates)
+        defaults.set("https://invalid.example.com/appcast.xml", forKey: "SUFeedURL")
         defaults.enforceStableUpdateChannel()
         assertCondition(
             defaults.object(forKey: UserDefaultsKey.sparkleBetaChannel) == nil,
             "Stable channel enforcement should clear beta flag"
+        )
+        assertCondition(
+            defaults.object(forKey: "SUFeedURL") == nil,
+            "Stable channel enforcement should clear persisted Sparkle feed override"
         )
         assertCondition(
             defaults.bool(forKey: UserDefaultsKey.autoInstallUpdates, default: false),

@@ -684,8 +684,8 @@ struct SystemSettingsStepView: View {
             .padding(.horizontal, OnboardingStyle.contentHorizontalPadding)
 
             Button("Mở Cài đặt Bàn phím") {
-                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.keyboard") {
-                    NSWorkspace.shared.open(url)
+                if !SystemSettingsNavigator.openKeyboard() {
+                    PHTVLogger.shared.error("[Onboarding] Failed to open Keyboard settings")
                 }
             }
             .buttonStyle(OnboardingPrimaryButtonStyle())
@@ -862,10 +862,8 @@ struct AccessibilityStepView: View {
                     )
 
                     Button("Mở Cài đặt Quyền riêng tư") {
-                        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                            NSWorkspace.shared.open(url)
-                        } else {
-                            PHTVLogger.shared.error("[Onboarding] Invalid accessibility settings URL")
+                        if !SystemSettingsNavigator.openAccessibility() {
+                            PHTVLogger.shared.error("[Onboarding] Failed to open Accessibility settings")
                         }
                     }
                     .buttonStyle(OnboardingPrimaryButtonStyle())

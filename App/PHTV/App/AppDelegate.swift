@@ -21,7 +21,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var lastDockForceFrontRequest = false
     var lastDockVisibilityRequestTime: CFAbsoluteTime = 0
     var settingsWindowOpen = false
-    var isShowingNoUpdateAlert = false
 
     var accessibilityMonitor: Timer?
     var wasAccessibilityEnabled = false

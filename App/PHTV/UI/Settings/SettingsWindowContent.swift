@@ -20,13 +20,7 @@ struct SettingsWindowContent: View {
 
     var body: some View {
         OnboardingContainer(showOnboarding: $showOnboarding) {
-            ZStack(alignment: .top) {
-                SettingsView()
-
-                // Update banner overlay
-                UpdateBannerView()
-                    .zIndex(1000)
-            }
+            SettingsView()
         }
         .onAppear {
             isClosingSettingsWindow = false

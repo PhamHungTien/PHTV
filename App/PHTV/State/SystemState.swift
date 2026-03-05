@@ -25,15 +25,8 @@ final class SystemState: ObservableObject {
     // Accessibility
     @Published var hasAccessibilityPermission: Bool = false
 
-    // Update notification - shown when new version is available on startup
-    @Published var updateAvailableMessage: String = ""
-    @Published var showUpdateBanner: Bool = false
-    @Published var latestVersion: String = ""
-
     // Sparkle update configuration
     @Published var updateCheckFrequency: UpdateCheckFrequency = .daily
-    @Published var showCustomUpdateBanner: Bool = false
-    @Published var customUpdateBannerInfo: UpdateBannerInfo? = nil
 
     // Bug report settings
     @Published var includeSystemInfo: Bool = true
@@ -315,53 +308,8 @@ final class SystemState: ObservableObject {
         }
         notificationObservers.append(observer1)
 
-        // Listen for update check responses from backend
-        let observer2 = NotificationCenter.default.addObserver(
-            forName: NotificationName.checkForUpdatesResponse,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let self = self else { return }
-            if let response = notification.object as? [String: Any] {
-                let updateAvailable = (response["updateAvailable"] as? Bool) ?? false
-                let message = response["message"] as? String ?? ""
-                let latestVersion = response["latestVersion"] as? String ?? ""
-
-                if updateAvailable && !message.isEmpty && !latestVersion.isEmpty {
-                    Task { @MainActor in
-                        self.updateAvailableMessage = message
-                        self.latestVersion = latestVersion
-                        self.showUpdateBanner = true
-                    }
-                }
-            }
-        }
-        notificationObservers.append(observer2)
-
-        // Sparkle custom update banner
-        let observer3 = NotificationCenter.default.addObserver(
-            forName: NotificationName.sparkleShowUpdateBanner,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let self = self else { return }
-            if let info = notification.object as? [String: String] {
-                Task { @MainActor in
-                    let updateInfo = UpdateBannerInfo(
-                        version: info["version"] ?? "",
-                        releaseNotes: info["releaseNotes"] ?? "",
-                        downloadURL: info["downloadURL"] ?? ""
-                    )
-                    self.customUpdateBannerInfo = updateInfo
-                    self.showCustomUpdateBanner = true
-                    NSLog("[SystemState] Showing update banner for version %@", updateInfo.version)
-                }
-            }
-        }
-        notificationObservers.append(observer3)
-
         // Listen for Launch at Login changes from AppDelegate
-        let observer4 = NotificationCenter.default.addObserver(
+        let observer2 = NotificationCenter.default.addObserver(
             forName: NotificationName.runOnStartupChanged,
             object: nil,
             queue: .main
@@ -377,7 +325,7 @@ final class SystemState: ObservableObject {
                 }
             }
         }
-        notificationObservers.append(observer4)
+        notificationObservers.append(observer2)
 
         // Listen for app termination
         let terminateObserver = NotificationCenter.default.addObserver(

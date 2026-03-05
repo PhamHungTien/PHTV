@@ -224,34 +224,9 @@ extension AppState {
         set { systemState.hasAccessibilityPermission = newValue }
     }
 
-    var updateAvailableMessage: String {
-        get { systemState.updateAvailableMessage }
-        set { systemState.updateAvailableMessage = newValue }
-    }
-
-    var showUpdateBanner: Bool {
-        get { systemState.showUpdateBanner }
-        set { systemState.showUpdateBanner = newValue }
-    }
-
-    var latestVersion: String {
-        get { systemState.latestVersion }
-        set { systemState.latestVersion = newValue }
-    }
-
     var updateCheckFrequency: UpdateCheckFrequency {
         get { systemState.updateCheckFrequency }
         set { systemState.updateCheckFrequency = newValue }
-    }
-
-    var showCustomUpdateBanner: Bool {
-        get { systemState.showCustomUpdateBanner }
-        set { systemState.showCustomUpdateBanner = newValue }
-    }
-
-    var customUpdateBannerInfo: UpdateBannerInfo? {
-        get { systemState.customUpdateBannerInfo }
-        set { systemState.customUpdateBannerInfo = newValue }
     }
 
     // MARK: Bug Report

@@ -575,8 +575,7 @@ struct SystemSettingsView: View {
     private func checkForUpdates() {
         PHTVLogger.shared.ui("[SystemSettings] User clicked 'Kiểm tra cập nhật' button")
 
-        // Trigger Sparkle update check
-        // Sparkle will handle the UI via UpdateBannerView or notification when no update
+        // Trigger Sparkle update check with Sparkle's standard UI flow.
         NotificationCenter.default.post(
             name: NotificationName.sparkleManualCheck,
             object: nil

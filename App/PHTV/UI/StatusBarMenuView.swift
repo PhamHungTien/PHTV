@@ -264,9 +264,7 @@ struct StatusBarMenuView: View {
                 Label("Đã cấp quyền Accessibility", systemImage: "checkmark.shield")
             } else {
                 Button {
-                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                        NSWorkspace.shared.open(url)
-                    }
+                    _ = SystemSettingsNavigator.openAccessibility()
                 } label: {
                     Label("Cần cấp quyền Accessibility", systemImage: "exclamationmark.shield")
                 }

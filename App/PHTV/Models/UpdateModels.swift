@@ -37,11 +37,3 @@ enum UpdateCheckFrequency: Int, CaseIterable, Identifiable, Sendable {
         }
     }
 }
-
-// MARK: - Update Banner Info
-
-struct UpdateBannerInfo: Equatable {
-    let version: String
-    let releaseNotes: String
-    let downloadURL: String
-}

@@ -58,11 +58,11 @@
 	<key>SUAutomaticallyUpdate</key>
 	<false/>
 	<key>SUEnableAutomaticChecks</key>
-	<false/>
+	<true/>
 	<key>SUEnableSystemProfiling</key>
 	<false/>
 	<key>SUFeedURL</key>
-	<string>https://phamhungtien.github.io/PHTV/appcast.xml</string>
+	<string>https://cdn.jsdelivr.net/gh/PhamHungTien/PHTV@main/docs/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>rwQcGVAOp0UQ/YiifLx9g1KYtZQaI5z3Q3j1VMnw8pQ=</string>
 	<key>SUScheduledCheckInterval</key>
