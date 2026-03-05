@@ -150,6 +150,8 @@ enum NotificationName {
     static let sparkleShowUpdateBanner = NSNotification.Name("SparkleShowUpdateBanner")
     static let sparkleManualCheck = NSNotification.Name("SparkleManualCheck")
     static let sparkleInstallUpdate = NSNotification.Name("SparkleInstallUpdate")
+    static let sparkleUpdateFound = NSNotification.Name("SparkleUpdateFound")
+    static let sparkleNoUpdateFound = NSNotification.Name("SparkleNoUpdateFound")
 }
 
 // MARK: - Notification UserInfo Keys

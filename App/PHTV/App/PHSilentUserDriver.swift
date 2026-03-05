@@ -27,7 +27,7 @@ final class PHSilentUserDriver: SPUStandardUserDriver {
             "releaseNotes": appcastItem.itemDescription ?? "",
             "downloadURL": appcastItem.fileURL?.absoluteString ?? ""
         ]
-        NotificationCenter.default.post(name: NSNotification.Name("SparkleUpdateFound"), object: info)
+        NotificationCenter.default.post(name: NotificationName.sparkleUpdateFound, object: info)
 
         NSLog("[PHSilentUserDriver] Silent auto-install enabled - installing update automatically")
         reply(.install)

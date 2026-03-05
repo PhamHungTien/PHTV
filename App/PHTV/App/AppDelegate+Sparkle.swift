@@ -14,28 +14,28 @@ import Foundation
 
         center.addObserver(self,
                            selector: #selector(handleSparkleManualCheck(_:)),
-                           name: Notification.Name("SparkleManualCheck"),
+                           name: NotificationName.sparkleManualCheck,
                            object: nil)
 
         center.addObserver(self,
                            selector: #selector(handleSparkleUpdateFound(_:)),
-                           name: Notification.Name("SparkleUpdateFound"),
+                           name: NotificationName.sparkleUpdateFound,
                            object: nil)
 
         // Show "up to date" alert only for manual checks.
         center.addObserver(self,
                            selector: #selector(handleSparkleNoUpdate(_:)),
-                           name: Notification.Name("SparkleNoUpdateFound"),
+                           name: NotificationName.sparkleNoUpdateFound,
                            object: nil)
 
         center.addObserver(self,
                            selector: #selector(handleUpdateFrequencyChanged(_:)),
-                           name: Notification.Name("UpdateCheckFrequencyChanged"),
+                           name: NotificationName.updateCheckFrequencyChanged,
                            object: nil)
 
         center.addObserver(self,
                            selector: #selector(handleSparkleInstallUpdate(_:)),
-                           name: Notification.Name("SparkleInstallUpdate"),
+                           name: NotificationName.sparkleInstallUpdate,
                            object: nil)
     }
 
@@ -65,7 +65,7 @@ import Foundation
                 "releaseNotes": releaseNotes
             ]
 
-            NotificationCenter.default.post(name: Notification.Name("CheckForUpdatesResponse"), object: response)
+            NotificationCenter.default.post(name: NotificationName.checkForUpdatesResponse, object: response)
         }
     }
 

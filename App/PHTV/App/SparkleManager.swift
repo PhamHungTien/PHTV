@@ -10,30 +10,39 @@ import Sparkle
 
 @MainActor
 @objcMembers
-final class SparkleManager: NSObject, @preconcurrency SPUUpdaterDelegate, @preconcurrency SPUStandardUserDriverDelegate {
+final class SparkleManager: NSObject {
     private static let sharedInstance = SparkleManager()
 
     @objc(shared)
     class func shared() -> SparkleManager {
-        return sharedInstance
+        sharedInstance
     }
 
-    private lazy var customUserDriver: PHSilentUserDriver = {
-        return PHSilentUserDriver(hostBundle: .main, delegate: self)
-    }()
+    private var isManualCheck = false
+    private lazy var updaterDelegate = SparkleUpdaterDelegate(owner: self)
+    private lazy var userDriverDelegate = SparkleUserDriverDelegate(owner: self)
+
+    private lazy var customUserDriver = PHSilentUserDriver(
+        hostBundle: .main,
+        delegate: userDriverDelegate
+    )
 
     @objc private(set) lazy var updater: SPUUpdater = {
-        return SPUUpdater(hostBundle: .main,
-                          applicationBundle: .main,
-                          userDriver: customUserDriver,
-                          delegate: self)
+        SPUUpdater(
+            hostBundle: .main,
+            applicationBundle: .main,
+            userDriver: customUserDriver,
+            delegate: updaterDelegate
+        )
     }()
-
-    private var isManualCheck = false
 
     override init() {
         super.init()
+        startUpdater()
+        NSLog("[Sparkle] Initialized with PHSilentUserDriver (stable channel only)")
+    }
 
+    private func startUpdater() {
         var startError: NSError?
         do {
             try updater.start()
@@ -48,8 +57,6 @@ final class SparkleManager: NSObject, @preconcurrency SPUUpdaterDelegate, @preco
         if let startError {
             NSLog("[Sparkle] Failed to start updater: %@", startError.localizedDescription)
         }
-
-        NSLog("[Sparkle] Initialized with PHSilentUserDriver (stable channel only)")
     }
 
     /// Manually trigger update check (user-initiated, shows feedback)
@@ -72,33 +79,26 @@ final class SparkleManager: NSObject, @preconcurrency SPUUpdaterDelegate, @preco
         UserDefaults.standard.set(interval, forKey: "SUScheduledCheckInterval")
     }
 
-    // MARK: - SPUUpdaterDelegate
-
-    func feedURLString(for updater: SPUUpdater) -> String? {
-        NSLog("[Sparkle] Using STABLE feed")
-        return nil // Use Info.plist value
-    }
-
-    func updater(_ updater: SPUUpdater, didFindValidUpdate item: SUAppcastItem) {
+    fileprivate func didFindValidUpdate(_ item: SUAppcastItem) {
         NSLog("[Sparkle] didFindValidUpdate: %@ (%@)", item.displayVersionString, item.versionString)
         // Keep manual-check flag until user driver handles result.
     }
 
-    func updaterDidNotFindUpdate(_ updater: SPUUpdater) {
+    fileprivate func didNotFindUpdate() {
         NSLog("[Sparkle] No updates available (manual check: %@)", isManualCheck ? "YES" : "NO")
 
         if isManualCheck {
-            NotificationCenter.default.post(name: NSNotification.Name("SparkleNoUpdateFound"), object: nil)
+            NotificationCenter.default.post(name: NotificationName.sparkleNoUpdateFound, object: nil)
         }
 
         isManualCheck = false
     }
 
-    func updater(_ updater: SPUUpdater, didFinishLoading appcast: SUAppcast) {
+    fileprivate func didFinishLoadingAppcast(_ appcast: SUAppcast) {
         NSLog("[Sparkle] Appcast loaded: %lu items", appcast.items.count)
     }
 
-    func updater(_ updater: SPUUpdater, failedToDownloadUpdate item: SUAppcastItem, error: any Error) {
+    fileprivate func failedToDownloadUpdate(_ error: any Error) {
         let nsError = error as NSError
         NSLog("[Sparkle] Failed to download update: %@ (manual check: %@)",
               nsError.localizedDescription,
@@ -111,26 +111,80 @@ final class SparkleManager: NSObject, @preconcurrency SPUUpdaterDelegate, @preco
                 "updateAvailable": false
             ]
 
-            NotificationCenter.default.post(name: NSNotification.Name("CheckForUpdatesResponse"), object: info)
+            NotificationCenter.default.post(name: NotificationName.checkForUpdatesResponse, object: info)
         }
 
         isManualCheck = false
     }
 
-    func updater(_ updater: SPUUpdater, willInstallUpdate item: SUAppcastItem) {
+    fileprivate func willInstallUpdate(_ item: SUAppcastItem) {
         NSLog("[Sparkle] Will install update: %@", item.displayVersionString)
     }
 
-    // MARK: - SPUStandardUserDriverDelegate
+    fileprivate func clearManualCheckFlagOnUserDriverEvent() {
+        isManualCheck = false
+    }
+}
+
+@MainActor
+private final class SparkleUpdaterDelegate: NSObject, SPUUpdaterDelegate {
+    private weak var owner: SparkleManager?
+
+    init(owner: SparkleManager) {
+        self.owner = owner
+        super.init()
+    }
+
+    func feedURLString(for updater: SPUUpdater) -> String? {
+        _ = updater
+        NSLog("[Sparkle] Using STABLE feed")
+        return nil // Use Info.plist value
+    }
+
+    func updater(_ updater: SPUUpdater, didFindValidUpdate item: SUAppcastItem) {
+        _ = updater
+        owner?.didFindValidUpdate(item)
+    }
+
+    func updaterDidNotFindUpdate(_ updater: SPUUpdater) {
+        _ = updater
+        owner?.didNotFindUpdate()
+    }
+
+    func updater(_ updater: SPUUpdater, didFinishLoading appcast: SUAppcast) {
+        _ = updater
+        owner?.didFinishLoadingAppcast(appcast)
+    }
+
+    func updater(_ updater: SPUUpdater, failedToDownloadUpdate item: SUAppcastItem, error: any Error) {
+        _ = updater
+        _ = item
+        owner?.failedToDownloadUpdate(error)
+    }
+
+    func updater(_ updater: SPUUpdater, willInstallUpdate item: SUAppcastItem) {
+        _ = updater
+        owner?.willInstallUpdate(item)
+    }
+}
+
+@MainActor
+private final class SparkleUserDriverDelegate: NSObject, @preconcurrency SPUStandardUserDriverDelegate {
+    private weak var owner: SparkleManager?
+
+    init(owner: SparkleManager) {
+        self.owner = owner
+        super.init()
+    }
 
     func standardUserDriverWillHandleShowingUpdate(_ handleShowingUpdate: Bool,
                                                    forUpdate update: SUAppcastItem,
                                                    state: SPUUserUpdateState) {
+        _ = state
         NSLog("[Sparkle] standardUserDriverWillHandleShowingUpdate: %@ (handleShowingUpdate: %@)",
               update.displayVersionString,
               handleShowingUpdate ? "YES" : "NO")
-
-        isManualCheck = false
+        owner?.clearManualCheckFlagOnUserDriverEvent()
     }
 
     func standardUserDriverDidReceiveUserAttention(forUpdate update: SUAppcastItem) {
