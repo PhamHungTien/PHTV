@@ -423,6 +423,14 @@ final class EngineRegressionTests: XCTestCase {
         runSpaceCase("xin", expectRestore: false, autoRestoreMode: .nonVietnamese)
     }
 
+    func testNonVietnameseModeKeepsDuocSingleWTelexOnSpace() {
+        runSpaceCase("dduowcj", expectRestore: false, autoRestoreMode: .nonVietnamese)
+    }
+
+    func testNonVietnameseModeKeepsDuocSingleWTelexOnDot() {
+        runWordBreakCase("dduowcj", expectRestore: false, autoRestoreMode: .nonVietnamese)
+    }
+
     // MARK: - Issue #135: Telex Vietnamese words must not auto-restore as English on space
 
     func testDakLakVariantDawksRestoresOnSpaceInNonVietnameseMode() {

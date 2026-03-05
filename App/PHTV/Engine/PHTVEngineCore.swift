@@ -230,6 +230,9 @@ final class PHTVVietnameseEngine {
         if isVietnameseWordFromTypingWord(typingLength) {
             return true
         }
+        if hasVietnameseTransformsInTypingWord(typingLength) && isVietnameseFromCanonicalTelex(typingLength) {
+            return true
+        }
         return false
     }
 
