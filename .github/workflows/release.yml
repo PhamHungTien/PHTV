@@ -224,6 +224,66 @@ jobs:
 
           cp "$ARCHIVES_DIR/appcast.xml" ../docs/appcast.xml
 
+          python3 - <<'PY'
+          import sys
+          import xml.etree.ElementTree as ET
+
+          version = "${{ steps.version.outputs.version }}".strip()
+          build_number = "${{ steps.set_versions.outputs.build_number }}".strip()
+          expected_build = int(build_number)
+          ns = {"sparkle": "http://www.andymatuschak.org/xml-namespaces/sparkle"}
+          sparkle_attr_version = "{http://www.andymatuschak.org/xml-namespaces/sparkle}version"
+
+          tree = ET.parse("../docs/appcast.xml")
+          root = tree.getroot()
+          channel = root.find("channel")
+          if channel is None:
+              print("❌ Error: appcast.xml missing <channel> element")
+              sys.exit(1)
+
+          items = channel.findall("item")
+          if not items:
+              print("❌ Error: appcast.xml has no <item>")
+              sys.exit(1)
+
+          found_target_item = False
+          for item in items:
+              short_node = item.find("sparkle:shortVersionString", ns)
+              short_version = (short_node.text or "").strip() if short_node is not None else ""
+              version_node = item.find("sparkle:version", ns)
+              item_build = None
+              if version_node is not None and version_node.text:
+                  try:
+                      item_build = int(version_node.text.strip())
+                  except ValueError:
+                      item_build = None
+              if item_build is None:
+                  enclosure = item.find("enclosure")
+                  if enclosure is not None:
+                      raw_attr = enclosure.get(sparkle_attr_version)
+                      if raw_attr:
+                          try:
+                              item_build = int(raw_attr.strip())
+                          except ValueError:
+                              item_build = None
+
+              if short_version == version and item_build == expected_build:
+                  found_target_item = True
+                  break
+
+          if not found_target_item:
+              print(
+                  f"❌ Error: appcast.xml is missing release item "
+                  f"shortVersion={version} sparkle:version={expected_build}"
+              )
+              sys.exit(1)
+
+          print(
+              f"✅ appcast contains release item shortVersion={version} "
+              f"sparkle:version={expected_build}"
+          )
+          PY
+
           if ! grep -q "sparkle:edSignature" ../docs/appcast.xml; then
             echo "❌ Error: docs/appcast.xml has no sparkle:edSignature"
             exit 1
