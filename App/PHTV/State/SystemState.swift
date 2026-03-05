@@ -7,7 +7,6 @@
 //
 
 import SwiftUI
-import ServiceManagement
 import Combine
 
 /// Manages system settings, permissions, and updates
@@ -61,17 +60,12 @@ final class SystemState: ObservableObject {
     func loadSettings() {
         let defaults = UserDefaults.standard
 
-        // Load system settings - check actual SMAppService status for runOnStartup
-        if #available(macOS 13.0, *) {
-            let appService = SMAppService.mainApp
-            let status = (appService.status == .enabled)
-            NSLog("[SystemState] Loading runOnStartup from SMAppService: %@", status ? "enabled" : "disabled")
-            isUpdatingRunOnStartup = true
-            runOnStartup = status
-            isUpdatingRunOnStartup = false
-        } else {
-            runOnStartup = defaults.bool(forKey: UserDefaultsKey.runOnStartup, default: Defaults.runOnStartup)
-        }
+        // Load system settings from ServiceManagement source of truth.
+        let status = LoginItemService.shared.isEnabled
+        NSLog("[SystemState] Loading runOnStartup from LoginItemService: %@", status ? "enabled" : "disabled")
+        isUpdatingRunOnStartup = true
+        runOnStartup = status
+        isUpdatingRunOnStartup = false
 
         performLayoutCompat = defaults.bool(
             forKey: UserDefaultsKey.performLayoutCompat,
@@ -148,20 +142,17 @@ final class SystemState: ObservableObject {
 
     /// Start periodic monitoring of login item status
     func startLoginItemStatusMonitoring() {
-        guard #available(macOS 13.0, *) else { return }
         guard loginItemCheckTimer == nil else { return }
 
         // Check every 5 seconds
         loginItemCheckTimer = Timer.scheduledTimer(withTimeInterval: Timing.loginItemCheckInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in
-                await self?.checkLoginItemStatus()
+                self?.checkLoginItemStatus()
             }
         }
 
         // Also check immediately
-        Task { @MainActor in
-            await checkLoginItemStatus()
-        }
+        checkLoginItemStatus()
 
         NSLog(
             "[LoginItem] Periodic status monitoring started (interval: %.1fs)",
@@ -177,10 +168,8 @@ final class SystemState: ObservableObject {
         NSLog("[LoginItem] Periodic status monitoring stopped")
     }
 
-    /// Check if SMAppService status matches our UI state
-    @available(macOS 13.0, *)
-    @MainActor
-    private func checkLoginItemStatus() async {
+    /// Check if LoginItemService status matches our UI state
+    private func checkLoginItemStatus() {
         guard !isUpdatingRunOnStartup else { return }
 
         // Don't override user changes immediately
@@ -194,12 +183,11 @@ final class SystemState: ObservableObject {
             }
         }
 
-        let appService = SMAppService.mainApp
-        let actualStatus = (appService.status == .enabled)
+        let actualStatus = LoginItemService.shared.isEnabled
 
         // Only log if there's a mismatch
         if actualStatus != runOnStartup {
-            NSLog("[LoginItem] ⚠️ Status mismatch detected! UI: %@, SMAppService: %@",
+            NSLog("[LoginItem] ⚠️ Status mismatch detected! UI: %@, LoginItemService: %@",
                   runOnStartup ? "ON" : "OFF", actualStatus ? "ON" : "OFF")
 
             // Update UI to match reality
