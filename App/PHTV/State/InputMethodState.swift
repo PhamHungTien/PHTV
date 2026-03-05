@@ -30,7 +30,7 @@ final class InputMethodState: ObservableObject {
 
     // Auto restore English words - default: ON for new users
     @Published var autoRestoreEnglishWord: Bool = true
-    @Published var autoRestoreEnglishWordMode: AutoRestoreEnglishMode = .nonVietnamese
+    @Published var autoRestoreEnglishWordMode: AutoRestoreEnglishMode = .englishOnly
 
     // Restore to raw keys (customizable key)
     @Published var restoreOnEscape: Bool = true

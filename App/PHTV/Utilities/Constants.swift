@@ -390,7 +390,7 @@ enum Defaults {
     static let quickEndConsonant = false
     static let rememberCode = true
     static let autoRestoreEnglishWord = true
-    static let autoRestoreEnglishWordMode = AutoRestoreEnglishMode.nonVietnamese
+    static let autoRestoreEnglishWordMode = AutoRestoreEnglishMode.englishOnly
     static let restoreIfWrongSpelling = autoRestoreEnglishWordMode.enablesWrongSpellingFallback
 
     // MARK: - Restore & Pause

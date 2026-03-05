@@ -45,7 +45,7 @@ private final class RuntimeSettingsStateBox: @unchecked Sendable {
     var restoreOnEscape: Int32 = 1
     var autoRestoreEnglishWord: Int32 = 1
     var autoRestoreEnglishWordMode: Int32 = Int32(Defaults.autoRestoreEnglishWordMode.rawValue)
-    var restoreIfWrongSpelling: Int32 = 1
+    var restoreIfWrongSpelling: Int32 = Defaults.restoreIfWrongSpelling ? 1 : 0
     var customEscapeKey: Int32 = 0
     var pauseKeyEnabled: Int32 = 0
     var pauseKey: Int32 = Int32(KeyCode.leftOption)

@@ -115,7 +115,7 @@ enum AutoRestoreEnglishMode: Int, CaseIterable, Identifiable, Sendable {
     }
 
     static func from(index: Int) -> AutoRestoreEnglishMode {
-        AutoRestoreEnglishMode(rawValue: index) ?? .nonVietnamese
+        AutoRestoreEnglishMode(rawValue: index) ?? .englishOnly
     }
 
     static func from(persistedValue value: Any?) -> AutoRestoreEnglishMode? {
