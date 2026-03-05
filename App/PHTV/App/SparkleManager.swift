@@ -2,9 +2,10 @@
 //  SparkleManager.swift
 //  PHTV
 //
-//  Swift port of SparkleManager.mm while preserving ObjC API compatibility.
+//  Lightweight Sparkle wrapper using default Sparkle behavior.
 //
 
+import AppKit
 import Foundation
 import Sparkle
 
@@ -12,64 +13,39 @@ import Sparkle
 @objcMembers
 final class SparkleManager: NSObject {
     private static let sharedInstance = SparkleManager()
+    private static let updaterDelegate = SparkleUpdaterDelegate()
+    private static let userDriverDelegate = SparkleUserDriverDelegate()
 
     @objc(shared)
     class func shared() -> SparkleManager {
         sharedInstance
     }
 
-    private var isManualCheck = false
-    private lazy var updaterDelegate = SparkleUpdaterDelegate(owner: self)
-    private lazy var userDriverDelegate = SparkleUserDriverDelegate(owner: self)
-
-    private lazy var customUserDriver = PHSilentUserDriver(
-        hostBundle: .main,
-        delegate: userDriverDelegate
+    private lazy var updaterController = SPUStandardUpdaterController(
+        startingUpdater: true,
+        updaterDelegate: SparkleManager.updaterDelegate,
+        userDriverDelegate: SparkleManager.userDriverDelegate
     )
 
     @objc private(set) lazy var updater: SPUUpdater = {
-        SPUUpdater(
-            hostBundle: .main,
-            applicationBundle: .main,
-            userDriver: customUserDriver,
-            delegate: updaterDelegate
-        )
+        updaterController.updater
     }()
 
     override init() {
         super.init()
-        startUpdater()
-        NSLog("[Sparkle] Initialized with PHSilentUserDriver (stable channel only)")
+        _ = updaterController
+        NSLog("[Sparkle] Initialized with SPUStandardUpdaterController + popup pinning")
     }
 
-    private func startUpdater() {
-        var startError: NSError?
-        do {
-            try updater.start()
-        } catch let nsError as NSError {
-            startError = nsError
-        } catch {
-            startError = NSError(domain: "SparkleManager", code: -1, userInfo: [
-                NSLocalizedDescriptionKey: "Unknown Sparkle startup error"
-            ])
-        }
-
-        if let startError {
-            NSLog("[Sparkle] Failed to start updater: %@", startError.localizedDescription)
-        }
-    }
-
-    /// Manually trigger update check (user-initiated, shows feedback)
+    /// Manually trigger update check (Sparkle handles all UI)
     @objc func checkForUpdatesWithFeedback() {
-        NSLog("[Sparkle] User-initiated update check (with feedback)")
-        isManualCheck = true
+        NSLog("[Sparkle] Manual check requested")
         updater.checkForUpdates()
     }
 
-    /// Background update check (silent)
+    /// Background update check
     @objc func checkForUpdates() {
-        NSLog("[Sparkle] Background update check (silent)")
-        isManualCheck = false
+        NSLog("[Sparkle] Background check requested")
         updater.checkForUpdatesInBackground()
     }
 
@@ -78,116 +54,173 @@ final class SparkleManager: NSObject {
         NSLog("[Sparkle] Update interval set to %.0f seconds", interval)
         UserDefaults.standard.set(interval, forKey: "SUScheduledCheckInterval")
     }
-
-    fileprivate func didFindValidUpdate(_ item: SUAppcastItem) {
-        NSLog("[Sparkle] didFindValidUpdate: %@ (%@)", item.displayVersionString, item.versionString)
-        // Keep manual-check flag until user driver handles result.
-    }
-
-    fileprivate func didNotFindUpdate() {
-        NSLog("[Sparkle] No updates available (manual check: %@)", isManualCheck ? "YES" : "NO")
-
-        if isManualCheck {
-            NotificationCenter.default.post(name: NotificationName.sparkleNoUpdateFound, object: nil)
-        }
-
-        isManualCheck = false
-    }
-
-    fileprivate func didFinishLoadingAppcast(_ appcast: SUAppcast) {
-        NSLog("[Sparkle] Appcast loaded: %lu items", appcast.items.count)
-    }
-
-    fileprivate func failedToDownloadUpdate(_ error: any Error) {
-        let nsError = error as NSError
-        NSLog("[Sparkle] Failed to download update: %@ (manual check: %@)",
-              nsError.localizedDescription,
-              isManualCheck ? "YES" : "NO")
-
-        if isManualCheck {
-            let info: [String: Any] = [
-                "message": "Lỗi tải bản cập nhật: \(nsError.localizedDescription)",
-                "isError": true,
-                "updateAvailable": false
-            ]
-
-            NotificationCenter.default.post(name: NotificationName.checkForUpdatesResponse, object: info)
-        }
-
-        isManualCheck = false
-    }
-
-    fileprivate func willInstallUpdate(_ item: SUAppcastItem) {
-        NSLog("[Sparkle] Will install update: %@", item.displayVersionString)
-    }
-
-    fileprivate func clearManualCheckFlagOnUserDriverEvent() {
-        isManualCheck = false
-    }
 }
 
 @MainActor
 private final class SparkleUpdaterDelegate: NSObject, SPUUpdaterDelegate {
-    private weak var owner: SparkleManager?
-
-    init(owner: SparkleManager) {
-        self.owner = owner
-        super.init()
-    }
-
-    func feedURLString(for updater: SPUUpdater) -> String? {
-        _ = updater
-        NSLog("[Sparkle] Using STABLE feed")
-        return nil // Use Info.plist value
-    }
-
-    func updater(_ updater: SPUUpdater, didFindValidUpdate item: SUAppcastItem) {
-        _ = updater
-        owner?.didFindValidUpdate(item)
-    }
-
-    func updaterDidNotFindUpdate(_ updater: SPUUpdater) {
-        _ = updater
-        owner?.didNotFindUpdate()
-    }
-
-    func updater(_ updater: SPUUpdater, didFinishLoading appcast: SUAppcast) {
-        _ = updater
-        owner?.didFinishLoadingAppcast(appcast)
-    }
-
-    func updater(_ updater: SPUUpdater, failedToDownloadUpdate item: SUAppcastItem, error: any Error) {
-        _ = updater
-        _ = item
-        owner?.failedToDownloadUpdate(error)
-    }
-
     func updater(_ updater: SPUUpdater, willInstallUpdate item: SUAppcastItem) {
         _ = updater
-        owner?.willInstallUpdate(item)
+        NSLog("[Sparkle] Will install update: %@", item.displayVersionString)
     }
 }
 
 @MainActor
-private final class SparkleUserDriverDelegate: NSObject, @preconcurrency SPUStandardUserDriverDelegate {
-    private weak var owner: SparkleManager?
+private final class SparkleUserDriverDelegate: NSObject, SPUStandardUserDriverDelegate {
+    private final class TrackedWindow {
+        weak var window: NSWindow?
+        let originalLevel: NSWindow.Level
 
-    init(owner: SparkleManager) {
-        self.owner = owner
+        init(window: NSWindow, originalLevel: NSWindow.Level) {
+            self.window = window
+            self.originalLevel = originalLevel
+        }
+    }
+
+    private var trackedWindows: [TrackedWindow] = []
+    private var isUpdateSessionActive = false
+
+    override init() {
         super.init()
+        registerObservers()
     }
 
-    func standardUserDriverWillHandleShowingUpdate(_ handleShowingUpdate: Bool,
-                                                   forUpdate update: SUAppcastItem,
-                                                   state: SPUUserUpdateState) {
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    nonisolated var supportsGentleScheduledUpdateReminders: Bool {
+        true
+    }
+
+    nonisolated func standardUserDriverWillHandleShowingUpdate(_ handleShowingUpdate: Bool,
+                                                               forUpdate update: SUAppcastItem,
+                                                               state: SPUUserUpdateState) {
+        _ = handleShowingUpdate
+        _ = update
         _ = state
-        NSLog("[Sparkle] standardUserDriverWillHandleShowingUpdate: %@ (handleShowingUpdate: %@)",
-              update.displayVersionString,
-              handleShowingUpdate ? "YES" : "NO")
-        owner?.clearManualCheckFlagOnUserDriverEvent()
+        Task { @MainActor [weak self] in
+            self?.beginUpdateSession()
+        }
     }
 
-    func standardUserDriverDidReceiveUserAttention(forUpdate update: SUAppcastItem) {
-        NSLog("[Sparkle] User attention received for update: %@", update.displayVersionString)
+    nonisolated func standardUserDriverWillShowModalAlert() {
+        Task { @MainActor [weak self] in
+            self?.beginUpdateSession()
+        }
+    }
+
+    nonisolated func standardUserDriverDidShowModalAlert() {
+        Task { @MainActor [weak self] in
+            self?.beginUpdateSession()
+        }
+    }
+
+    nonisolated func standardUserDriverWillFinishUpdateSession() {
+        Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+            self.isUpdateSessionActive = false
+            self.restoreWindowLevels()
+        }
+    }
+
+    private func registerObservers() {
+        let center = NotificationCenter.default
+
+        center.addObserver(
+            self,
+            selector: #selector(handleWindowNotification(_:)),
+            name: NSWindow.didBecomeMainNotification,
+            object: nil
+        )
+        center.addObserver(
+            self,
+            selector: #selector(handleWindowNotification(_:)),
+            name: NSWindow.didBecomeKeyNotification,
+            object: nil
+        )
+        center.addObserver(
+            self,
+            selector: #selector(handleAppDidBecomeActive(_:)),
+            name: NSApplication.didBecomeActiveNotification,
+            object: nil
+        )
+    }
+
+    @objc
+    private func handleWindowNotification(_ notification: Notification) {
+        guard isUpdateSessionActive else {
+            return
+        }
+        guard let window = notification.object as? NSWindow, isSparkleWindow(window) else {
+            return
+        }
+
+        promoteWindow(window)
+    }
+
+    @objc
+    private func handleAppDidBecomeActive(_ notification: Notification) {
+        _ = notification
+        guard isUpdateSessionActive else {
+            return
+        }
+        bringUpdatePopupToFront()
+    }
+
+    private func beginUpdateSession() {
+        isUpdateSessionActive = true
+        bringUpdatePopupToFront()
+    }
+
+    private func bringUpdatePopupToFront() {
+        NSApp.activate(ignoringOtherApps: true)
+
+        for window in NSApp.windows where window.isVisible && isSparkleWindow(window) {
+            promoteWindow(window)
+        }
+
+        trackedWindows.removeAll { $0.window == nil }
+    }
+
+    private func promoteWindow(_ window: NSWindow) {
+        if !trackedWindows.contains(where: { $0.window === window }) {
+            trackedWindows.append(TrackedWindow(window: window, originalLevel: window.level))
+        }
+
+        window.level = .floating
+        window.collectionBehavior.insert(.fullScreenAuxiliary)
+        window.orderFrontRegardless()
+    }
+
+    private func restoreWindowLevels() {
+        for trackedWindow in trackedWindows {
+            guard let window = trackedWindow.window else {
+                continue
+            }
+            window.level = trackedWindow.originalLevel
+        }
+        trackedWindows.removeAll()
+    }
+
+    private func isSparkleWindow(_ window: NSWindow) -> Bool {
+        if let controller = window.windowController {
+            let controllerClass = type(of: controller)
+            let controllerBundleID = Bundle(for: controllerClass).bundleIdentifier ?? ""
+            if controllerBundleID.localizedCaseInsensitiveContains("sparkle") {
+                return true
+            }
+        }
+
+        if let delegate = window.delegate {
+            let delegateClass = type(of: delegate)
+            let delegateBundleID = Bundle(for: delegateClass).bundleIdentifier ?? ""
+            if delegateBundleID.localizedCaseInsensitiveContains("sparkle") {
+                return true
+            }
+        }
+
+        return false
     }
 }
