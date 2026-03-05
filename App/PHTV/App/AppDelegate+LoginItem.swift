@@ -10,6 +10,18 @@ import Foundation
 import ServiceManagement
 
 @MainActor @objc extension AppDelegate {
+    @available(macOS 13.0, *)
+    private func isRunOnStartupEffectivelyEnabled(_ status: SMAppService.Status) -> Bool {
+        switch status {
+        case .enabled, .requiresApproval:
+            return true
+        case .notRegistered, .notFound:
+            return false
+        @unknown default:
+            return false
+        }
+    }
+
     @objc(syncRunOnStartupStatusWithFirstLaunch:)
     func syncRunOnStartupStatus(withFirstLaunch isFirstLaunch: Bool) {
         _ = isFirstLaunch
@@ -25,6 +37,26 @@ import ServiceManagement
                 } else {
                     try SMAppService.mainApp.unregister()
                 }
+
+                if shouldEnable, SMAppService.mainApp.status == .requiresApproval {
+                    NSLog("[LoginItem] ℹ️ Enable requested but approval is pending; opening System Settings > Login Items")
+                    SMAppService.openSystemSettingsLoginItems()
+                }
+
+                // Keep UI state aligned with user intent first; verification comes shortly after.
+                persistRunOnStartupState(enabled: shouldEnable)
+                postRunOnStartupChanged(enabled: shouldEnable)
+
+                let verificationDelays: [TimeInterval] = shouldEnable ? [0.5, 1.5] : [0.5]
+                for delay in verificationDelays {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                        self?.refreshRunOnStartupStatus(
+                            context: shouldEnable
+                                ? "request-enable-verify"
+                                : "request-disable-verify"
+                        )
+                    }
+                }
             } catch {
                 let nsError = error as NSError
                 NSLog(
@@ -34,9 +66,8 @@ import ServiceManagement
                     nsError.domain,
                     nsError.code
                 )
+                refreshRunOnStartupStatus(context: shouldEnable ? "request-enable-failed" : "request-disable-failed")
             }
-
-            refreshRunOnStartupStatus(context: shouldEnable ? "request-enable" : "request-disable")
             return
         }
 
@@ -51,7 +82,7 @@ import ServiceManagement
 
         let currentEnabled: Bool
         if #available(macOS 13.0, *) {
-            currentEnabled = (SMAppService.mainApp.status == .enabled)
+            currentEnabled = isRunOnStartupEffectivelyEnabled(SMAppService.mainApp.status)
         } else {
             currentEnabled = UserDefaults.standard.bool(
                 forKey: UserDefaultsKey.runOnStartup,
@@ -66,7 +97,7 @@ import ServiceManagement
     private func refreshRunOnStartupStatus(context: String) {
         if #available(macOS 13.0, *) {
             let status = SMAppService.mainApp.status
-            let enabled = (status == .enabled)
+            let enabled = isRunOnStartupEffectivelyEnabled(status)
 
             persistRunOnStartupState(enabled: enabled)
             postRunOnStartupChanged(enabled: enabled)

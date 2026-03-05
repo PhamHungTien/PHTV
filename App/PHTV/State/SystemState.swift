@@ -47,6 +47,18 @@ final class SystemState: ObservableObject {
     private var isUpdatingRunOnStartup = false
     private var loginItemActiveObserver: NSObjectProtocol?
 
+    @available(macOS 13.0, *)
+    private func isRunOnStartupEffectivelyEnabled(_ status: SMAppService.Status) -> Bool {
+        switch status {
+        case .enabled, .requiresApproval:
+            return true
+        case .notRegistered, .notFound:
+            return false
+        @unknown default:
+            return false
+        }
+    }
+
     // Helper to access AppDelegate safely on main actor
     @MainActor
     private func getAppDelegate() -> AppDelegate? {
@@ -171,7 +183,7 @@ final class SystemState: ObservableObject {
     @available(macOS 13.0, *)
     private func refreshRunOnStartupStatus(logContext: String) {
         let status = SMAppService.mainApp.status
-        let isEnabled = (status == .enabled)
+        let isEnabled = isRunOnStartupEffectivelyEnabled(status)
 
         if runOnStartup != isEnabled {
             isUpdatingRunOnStartup = true
@@ -220,13 +232,6 @@ final class SystemState: ObservableObject {
 
             NSLog("[SystemState] ✅ Calling AppDelegate.setRunOnStartup(%@)", value ? "YES" : "NO")
             appDelegate.setRunOnStartup(value)
-
-            if #available(macOS 13.0, *) {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
-                    guard let self else { return }
-                    self.refreshRunOnStartupStatus(logContext: "post-toggle-sync")
-                }
-            }
         }.store(in: &cancellables)
 
         // Observer for showIconOnDock
