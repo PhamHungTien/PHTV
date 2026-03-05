@@ -83,6 +83,12 @@ import Foundation
         _ = notification
 
         DispatchQueue.main.async {
+            guard !self.isShowingNoUpdateAlert else {
+                return
+            }
+            self.isShowingNoUpdateAlert = true
+            defer { self.isShowingNoUpdateAlert = false }
+
             self.bringUpdatePopupToFront()
             let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
 
@@ -91,17 +97,10 @@ import Foundation
             alert.informativeText = "Bạn đang sử dụng phiên bản mới nhất của PHTV (\(currentVersion))."
             alert.addButton(withTitle: "OK")
             alert.alertStyle = .informational
-
-            if let parentWindow = NSApp.keyWindow ?? NSApp.mainWindow ??
-                NSApp.windows.first(where: { $0.isVisible && !$0.isMiniaturized }) {
-                parentWindow.makeKeyAndOrderFront(nil)
-                parentWindow.orderFrontRegardless()
-                alert.beginSheetModal(for: parentWindow)
-            } else {
-                alert.window.level = .floating
-                alert.window.orderFrontRegardless()
-                _ = alert.runModal()
-            }
+            alert.window.level = .floating
+            alert.window.collectionBehavior.insert(.moveToActiveSpace)
+            alert.window.orderFrontRegardless()
+            _ = alert.runModal()
         }
     }
 
