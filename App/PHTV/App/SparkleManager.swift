@@ -10,7 +10,7 @@ import Sparkle
 
 @MainActor
 @objcMembers
-final class SparkleManager: NSObject, @preconcurrency SPUUpdaterDelegate, @preconcurrency SPUStandardUserDriverDelegate {
+final class SparkleManager: NSObject, SPUUpdaterDelegate, @preconcurrency SPUStandardUserDriverDelegate {
     private static let sharedInstance = SparkleManager()
 
     @objc(shared)

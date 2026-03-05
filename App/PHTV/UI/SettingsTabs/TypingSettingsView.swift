@@ -94,8 +94,8 @@ struct TypingSettingsView: View {
                         SettingsToggleRow(
                             icon: "textformat.abc.dottedunderline",
                             iconColor: .accentColor,
-                            title: "Kiểm tra chính tả",
-                            subtitle: "Tự động sửa lỗi khi gõ sai cấu trúc tiếng Việt",
+                            title: "Chỉ gõ đúng chính tả tiếng Việt",
+                            subtitle: "Chỉ cho phép đầu ra hợp lệ theo chính tả tiếng Việt",
                             isOn: $appState.checkSpelling
                         )
 
@@ -134,20 +134,17 @@ struct TypingSettingsView: View {
                         SettingsToggleRow(
                             icon: "text.magnifyingglass",
                             iconColor: .accentColor,
-                            title: "Tự động khôi phục tiếng Anh",
-                            subtitle: "Không biến đổi từ tiếng Anh khi đang gõ tiếng Việt",
+                            title: "Tự động khôi phục",
+                            subtitle: "Không biến đổi từ không phải tiếng Việt theo chế độ bạn chọn",
                             isOn: $appState.autoRestoreEnglishWord
                         )
 
-                        SettingsDivider()
-
-                        SettingsToggleRow(
-                            icon: "arrow.uturn.backward.circle.fill",
-                            iconColor: .accentColor,
-                            title: "Khôi phục phím khi gõ sai",
-                            subtitle: "Trả về phím gốc khi từ không đúng chính tả tiếng Việt",
-                            isOn: $appState.restoreIfWrongSpelling
-                        )
+                        if appState.autoRestoreEnglishWord {
+                            SettingsDivider()
+                            AutoRestoreEnglishModeSection(
+                                selectedMode: $appState.autoRestoreEnglishWordMode
+                            )
+                        }
 
                         SettingsDivider()
 
@@ -211,6 +208,35 @@ struct TypingSettingsView: View {
 
 
 // MARK: - Upper Case Excluded Apps Section
+
+struct AutoRestoreEnglishModeSection: View {
+    @Binding var selectedMode: AutoRestoreEnglishMode
+
+    var body: some View {
+        let contentLeadingPadding: CGFloat = 38
+
+        VStack(alignment: .leading, spacing: 8) {
+            Picker("Chế độ khôi phục", selection: $selectedMode) {
+                ForEach(AutoRestoreEnglishMode.allCases) { mode in
+                    Text(mode.displayName).tag(mode)
+                }
+            }
+            .pickerStyle(.radioGroup)
+            .labelsHidden()
+            .padding(.leading, contentLeadingPadding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text(selectedMode.descriptionText)
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .padding(.leading, contentLeadingPadding)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .multilineTextAlignment(.leading)
+        .padding(.vertical, 6)
+    }
+}
 
 struct UpperCaseExcludedAppsSection: View {
     @EnvironmentObject var appState: AppState

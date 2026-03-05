@@ -34,6 +34,8 @@ enum UserDefaultsKey {
     static let quickEndConsonant = "vQuickEndConsonant"
     static let rememberCode = "vRememberCode"
     static let autoRestoreEnglishWord = "vAutoRestoreEnglishWord"
+    static let autoRestoreEnglishWordMode = "vAutoRestoreEnglishWordMode"
+    // Legacy runtime key that is now derived from autoRestoreEnglishWord + mode.
     static let restoreIfWrongSpelling = "vRestoreIfWrongSpelling"
 
     // MARK: - Restore & Pause Keys
@@ -388,7 +390,8 @@ enum Defaults {
     static let quickEndConsonant = false
     static let rememberCode = true
     static let autoRestoreEnglishWord = true
-    static let restoreIfWrongSpelling = true
+    static let autoRestoreEnglishWordMode = AutoRestoreEnglishMode.nonVietnamese
+    static let restoreIfWrongSpelling = autoRestoreEnglishWordMode.enablesWrongSpellingFallback
 
     // MARK: - Restore & Pause
     static let restoreOnEscape = true
@@ -515,6 +518,21 @@ extension UserDefaults {
         return defaultValue
     }
 
+    /// Reads auto-restore mode and falls back to legacy wrong-spelling behavior.
+    func autoRestoreEnglishMode() -> AutoRestoreEnglishMode {
+        if let mode = AutoRestoreEnglishMode.from(
+            persistedValue: persistedObject(forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
+        ) {
+            return mode
+        }
+
+        let legacyRestoreIfWrongSpelling = bool(
+            forKey: UserDefaultsKey.restoreIfWrongSpelling,
+            default: Defaults.restoreIfWrongSpelling
+        )
+        return legacyRestoreIfWrongSpelling ? .nonVietnamese : .englishOnly
+    }
+
     /// Reads a Double with explicit fallback when the key is missing.
     func double(forKey key: String, default defaultValue: Double) -> Double {
         guard let value = object(forKey: key) else {
@@ -564,6 +582,8 @@ final class SettingsBootstrap: NSObject {
             UserDefaultsKey.quickEndConsonant: Defaults.quickEndConsonant,
             UserDefaultsKey.rememberCode: Defaults.rememberCode,
             UserDefaultsKey.autoRestoreEnglishWord: Defaults.autoRestoreEnglishWord,
+            UserDefaultsKey.autoRestoreEnglishWordMode: Defaults.autoRestoreEnglishWordMode.rawValue,
+            UserDefaultsKey.restoreIfWrongSpelling: Defaults.restoreIfWrongSpelling,
             UserDefaultsKey.restoreOnEscape: Defaults.restoreOnEscape,
             UserDefaultsKey.customEscapeKey: Int(Defaults.restoreKeyCode),
             UserDefaultsKey.pauseKeyEnabled: Defaults.pauseKeyEnabled,

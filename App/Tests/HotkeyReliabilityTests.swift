@@ -8,7 +8,10 @@ final class HotkeyReliabilityTests: XCTestCase {
         "convertToolHotKey",
         "vEnableEmojiHotkey",
         "vEmojiHotkeyModifiers",
-        "vEmojiHotkeyKeyCode"
+        "vEmojiHotkeyKeyCode",
+        UserDefaultsKey.autoRestoreEnglishWord,
+        UserDefaultsKey.autoRestoreEnglishWordMode,
+        UserDefaultsKey.restoreIfWrongSpelling
     ]
 
     private var defaultsBackup: [String: Any] = [:]
@@ -112,5 +115,50 @@ final class HotkeyReliabilityTests: XCTestCase {
                 emojiHotkeyKeyCode: 0
             )
         )
+    }
+
+    func testAutoRestoreEnglishEnglishOnlyModeDisablesWrongSpellingFallback() {
+        let defaults = UserDefaults.standard
+        defaults.set(1, forKey: UserDefaultsKey.autoRestoreEnglishWord)
+        defaults.set(AutoRestoreEnglishMode.englishOnly.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
+        defaults.set(1, forKey: UserDefaultsKey.restoreIfWrongSpelling)
+
+        _ = PHTVManager.loadRuntimeSettingsFromUserDefaults()
+        let snapshot = PHTVManager.runtimeSettingsSnapshot()
+
+        XCTAssertEqual(snapshot["autoRestoreEnglishWord"]?.intValue, 1)
+        XCTAssertEqual(snapshot["autoRestoreEnglishWordMode"]?.intValue, AutoRestoreEnglishMode.englishOnly.rawValue)
+        XCTAssertEqual(snapshot["restoreIfWrongSpelling"]?.intValue, 0)
+        XCTAssertEqual(defaults.integer(forKey: UserDefaultsKey.restoreIfWrongSpelling), 0)
+    }
+
+    func testAutoRestoreEnglishNonVietnameseModeEnablesWrongSpellingFallback() {
+        let defaults = UserDefaults.standard
+        defaults.set(1, forKey: UserDefaultsKey.autoRestoreEnglishWord)
+        defaults.set(AutoRestoreEnglishMode.nonVietnamese.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
+        defaults.set(0, forKey: UserDefaultsKey.restoreIfWrongSpelling)
+
+        _ = PHTVManager.loadRuntimeSettingsFromUserDefaults()
+        let snapshot = PHTVManager.runtimeSettingsSnapshot()
+
+        XCTAssertEqual(snapshot["autoRestoreEnglishWord"]?.intValue, 1)
+        XCTAssertEqual(snapshot["autoRestoreEnglishWordMode"]?.intValue, AutoRestoreEnglishMode.nonVietnamese.rawValue)
+        XCTAssertEqual(snapshot["restoreIfWrongSpelling"]?.intValue, 1)
+        XCTAssertEqual(defaults.integer(forKey: UserDefaultsKey.restoreIfWrongSpelling), 1)
+    }
+
+    func testAutoRestoreEnglishDisabledAlwaysDisablesWrongSpellingFallback() {
+        let defaults = UserDefaults.standard
+        defaults.set(0, forKey: UserDefaultsKey.autoRestoreEnglishWord)
+        defaults.set(AutoRestoreEnglishMode.nonVietnamese.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
+        defaults.set(1, forKey: UserDefaultsKey.restoreIfWrongSpelling)
+
+        _ = PHTVManager.loadRuntimeSettingsFromUserDefaults()
+        let snapshot = PHTVManager.runtimeSettingsSnapshot()
+
+        XCTAssertEqual(snapshot["autoRestoreEnglishWord"]?.intValue, 0)
+        XCTAssertEqual(snapshot["autoRestoreEnglishWordMode"]?.intValue, AutoRestoreEnglishMode.nonVietnamese.rawValue)
+        XCTAssertEqual(snapshot["restoreIfWrongSpelling"]?.intValue, 0)
+        XCTAssertEqual(defaults.integer(forKey: UserDefaultsKey.restoreIfWrongSpelling), 0)
     }
 }

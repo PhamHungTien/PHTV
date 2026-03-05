@@ -28,11 +28,11 @@ struct SettingsItem: Identifiable {
             title: "Bảng mã", iconName: "textformat", tab: .typing,
             keywords: ["unicode", "tcvn3", "vni windows", "code table", "codepoint"]),
         SettingsItem(
-            title: "Tự động khôi phục tiếng Anh", iconName: "textformat.abc.dottedunderline", tab: .typing,
-            keywords: ["auto restore english", "tiếng anh", "english word", "terminal", "tẻminal", "khôi phục"]),
+            title: "Tự động khôi phục", iconName: "textformat.abc.dottedunderline", tab: .typing,
+            keywords: ["auto restore english", "tiếng anh", "english word", "terminal", "tẻminal", "khôi phục", "không phải tiếng việt", "chỉ tiếng anh"]),
         SettingsItem(
-            title: "Kiểm tra chính tả", iconName: "textformat.abc.dottedunderline", tab: .typing,
-            keywords: ["spell check", "chính tả", "kiểm tra", "đúng", "sai", "correction"]),
+            title: "Chỉ gõ đúng chính tả tiếng Việt", iconName: "textformat.abc.dottedunderline", tab: .typing,
+            keywords: ["spell check", "chính tả", "kiểm tra", "đúng", "sai", "tiếng việt", "correction"]),
         SettingsItem(
             title: "Phím khôi phục ký tự gốc", iconName: "arrow.uturn.backward.circle.fill", tab: .typing,
             keywords: ["restore key", "esc", "escape", "option", "control", "khôi phục", "ký tự gốc"]),

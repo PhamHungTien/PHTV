@@ -26,6 +26,28 @@ import Foundation
         return toggled
     }
 
+    @nonobjc private class func phtv_currentAutoRestoreEnglishMode(defaults: UserDefaults) -> AutoRestoreEnglishMode {
+        defaults.autoRestoreEnglishMode()
+    }
+
+    @discardableResult
+    @nonobjc private class func phtv_applyAutoRestoreEnglishSetting(
+        autoRestoreEnglishWord: Int32,
+        mode: AutoRestoreEnglishMode,
+        defaults: UserDefaults
+    ) -> Int32 {
+        let normalizedAutoRestore: Int32 = autoRestoreEnglishWord == 0 ? 0 : 1
+        let restoreIfWrongSpelling: Int32 = normalizedAutoRestore != 0 && mode.enablesWrongSpellingFallback ? 1 : 0
+
+        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(normalizedAutoRestore)
+        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(mode.rawValue))
+        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(restoreIfWrongSpelling)
+        defaults.set(Int(normalizedAutoRestore), forKey: UserDefaultsKey.autoRestoreEnglishWord)
+        defaults.set(mode.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
+        defaults.set(Int(restoreIfWrongSpelling), forKey: UserDefaultsKey.restoreIfWrongSpelling)
+        return restoreIfWrongSpelling
+    }
+
     @objc(phtv_toggleSpellCheckSetting)
     class func phtv_toggleSpellCheckSetting() -> Int32 {
         phtv_toggleRuntimeIntSetting(
@@ -78,27 +100,37 @@ import Foundation
 
     @objc(phtv_toggleAutoRestoreEnglishWordSetting)
     class func phtv_toggleAutoRestoreEnglishWordSetting() -> Int32 {
-        phtv_toggleRuntimeIntSetting(
-            currentValue: { PHTVEngineRuntimeFacade.autoRestoreEnglishWord() },
-            applyValue: { PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord($0) },
-            defaultsKey: "vAutoRestoreEnglishWord",
-            syncSpellingBeforeSessionReset: false
+        let defaults = UserDefaults.standard
+        let toggled: Int32 = PHTVEngineRuntimeFacade.autoRestoreEnglishWord() == 0 ? 1 : 0
+        let mode = phtv_currentAutoRestoreEnglishMode(defaults: defaults)
+
+        _ = phtv_applyAutoRestoreEnglishSetting(
+            autoRestoreEnglishWord: toggled,
+            mode: mode,
+            defaults: defaults
         )
+        phtv_requestNewSession()
+        return toggled
     }
 
     @objc(phtv_toggleRestoreIfWrongSpellingSetting)
     class func phtv_toggleRestoreIfWrongSpellingSetting() -> Int32 {
-        phtv_toggleRuntimeIntSetting(
-            currentValue: { PHTVEngineRuntimeFacade.restoreIfWrongSpelling() },
-            applyValue: { PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling($0) },
-            defaultsKey: "vRestoreIfWrongSpelling",
-            syncSpellingBeforeSessionReset: false
+        let defaults = UserDefaults.standard
+        let currentMode = phtv_currentAutoRestoreEnglishMode(defaults: defaults)
+        let nextMode: AutoRestoreEnglishMode = currentMode.enablesWrongSpellingFallback ? .englishOnly : .nonVietnamese
+        let restoreIfWrongSpelling = phtv_applyAutoRestoreEnglishSetting(
+            autoRestoreEnglishWord: Int32(1),
+            mode: nextMode,
+            defaults: defaults
         )
+        phtv_requestNewSession()
+        return restoreIfWrongSpelling
     }
 
     @objc(phtv_runtimeSettingsSnapshot)
     class func phtv_runtimeSettingsSnapshot() -> [String: NSNumber] {
-        [
+        let autoRestoreMode = Int(PHTVEngineRuntimeFacade.autoRestoreEnglishWordMode())
+        return [
             "checkSpelling": NSNumber(value: PHTVEngineRuntimeFacade.checkSpelling()),
             "useModernOrthography": NSNumber(value: PHTVEngineRuntimeFacade.useModernOrthography()),
             "quickTelex": NSNumber(value: PHTVEngineRuntimeFacade.quickTelex()),
@@ -120,6 +152,7 @@ import Foundation
             "pauseKeyEnabled": NSNumber(value: PHTVEngineRuntimeFacade.pauseKeyEnabled()),
             "pauseKey": NSNumber(value: PHTVEngineRuntimeFacade.pauseKey()),
             "autoRestoreEnglishWord": NSNumber(value: PHTVEngineRuntimeFacade.autoRestoreEnglishWord()),
+            "autoRestoreEnglishWordMode": NSNumber(value: autoRestoreMode),
             "restoreIfWrongSpelling": NSNumber(value: PHTVEngineRuntimeFacade.restoreIfWrongSpelling()),
             "enableEmojiHotkey": NSNumber(value: PHTVEngineRuntimeFacade.enableEmojiHotkey()),
             "emojiHotkeyModifiers": NSNumber(value: PHTVEngineRuntimeFacade.emojiHotkeyModifiers()),

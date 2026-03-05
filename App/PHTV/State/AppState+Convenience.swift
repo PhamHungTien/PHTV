@@ -79,9 +79,19 @@ extension AppState {
         set { inputMethodState.autoRestoreEnglishWord = newValue }
     }
 
+    var autoRestoreEnglishWordMode: AutoRestoreEnglishMode {
+        get { inputMethodState.autoRestoreEnglishWordMode }
+        set { inputMethodState.autoRestoreEnglishWordMode = newValue }
+    }
+
     var restoreIfWrongSpelling: Bool {
-        get { inputMethodState.restoreIfWrongSpelling }
-        set { inputMethodState.restoreIfWrongSpelling = newValue }
+        get {
+            inputMethodState.autoRestoreEnglishWord
+            && inputMethodState.autoRestoreEnglishWordMode.enablesWrongSpellingFallback
+        }
+        set {
+            inputMethodState.autoRestoreEnglishWordMode = newValue ? .nonVietnamese : .englishOnly
+        }
     }
 
     var restoreOnEscape: Bool {
