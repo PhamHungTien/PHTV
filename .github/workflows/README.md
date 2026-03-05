@@ -7,9 +7,13 @@ File `release.yml` tự động build, sign và tạo release cho PHTV.
 ### Tính năng
 
 - ✅ Build tự động với Xcode trên macOS 26
-- ✅ Code signing với Apple Development certificate
+- ✅ Tự động chọn chế độ phân phối:
+  - `public`: `Developer ID Application` + notarization/stapling
+  - `internal`: `Apple Development` (không notarization, test-only)
+- ✅ Notarize + staple app/DMG khi chạy `public` mode
 - ✅ Tạo DMG với Applications symlink
 - ✅ Tạo ZIP + checksums cho release assets
+- ✅ Verify lại app bundle trong cả DMG/ZIP (Info.plist + codesign + stapled ticket)
 - ✅ Generate và ký `docs/appcast.xml` bằng Sparkle `generate_appcast`
 - ✅ Tự động cập nhật Homebrew formula
 - ✅ Sync với homebrew-tap repository
@@ -51,7 +55,7 @@ git push origin v1.4.5
 | Secret | Mô tả |
 |--------|-------|
 | `SPARKLE_PRIVATE_KEY` | EdDSA private key để sign Sparkle updates |
-| `CERTIFICATES_P12` | Apple Development certificate (base64) |
+| `CERTIFICATES_P12` | Certificate `.p12` (Developer ID hoặc Apple Development) |
 | `CERTIFICATE_PASSWORD` | Password của file .p12 |
 
 #### Optional (để sync Homebrew tap)
@@ -59,6 +63,14 @@ git push origin v1.4.5
 | Secret | Mô tả |
 |--------|-------|
 | `TAP_REPO_TOKEN` | Personal Access Token để push sang homebrew-tap repo |
+
+#### Optional (để bật public mode với notarization)
+
+| Secret | Mô tả |
+|--------|-------|
+| `APPLE_NOTARY_API_KEY` | Nội dung private key `.p8` của App Store Connect API key |
+| `APPLE_NOTARY_KEY_ID` | Key ID của App Store Connect API key |
+| `APPLE_NOTARY_ISSUER_ID` | Issuer ID của App Store Connect API key |
 
 ---
 
@@ -103,7 +115,9 @@ Private key (keep secret, add to GitHub Secrets):
 ```bash
 # Export certificate từ Keychain Access:
 # 1. Mở Keychain Access
-# 2. Chọn certificate "Apple Development: ..." hoặc "Developer ID Application: ..."
+# 2. Chọn một trong hai:
+#    - "Developer ID Application: ..." (khuyến nghị cho public release)
+#    - "Apple Development: ..." (internal/testing)
 # 3. Export as .p12 file với password
 
 # Convert to base64
@@ -115,6 +129,16 @@ Paste kết quả vào secret `CERTIFICATES_P12`.
 #### CERTIFICATE_PASSWORD
 
 Password bạn đã dùng khi export file .p12.
+
+#### Apple Notary Secrets
+
+1. Vào App Store Connect -> Users and Access -> Integrations -> App Store Connect API
+2. Tạo API key mới (quyền tối thiểu đủ để notarize)
+3. Download file `AuthKey_XXXXXXX.p8`
+4. Thêm secrets:
+   - `APPLE_NOTARY_API_KEY`: paste toàn bộ nội dung `.p8`
+   - `APPLE_NOTARY_KEY_ID`: ví dụ `ABC123DEFG`
+   - `APPLE_NOTARY_ISSUER_ID`: UUID issuer (ví dụ `12345678-90ab-cdef-1234-567890abcdef`)
 
 #### TAP_REPO_TOKEN
 
@@ -130,6 +154,10 @@ Release workflow hiện tại áp dụng fail-fast:
 - ❌ Thiếu `CERTIFICATES_P12` hoặc `CERTIFICATE_PASSWORD` sẽ dừng ở bước import certificate
 - ❌ Thiếu `SPARKLE_PRIVATE_KEY` sẽ dừng ở bước generate appcast
 - ✅ Mục tiêu là không phát hành release/update feed ở trạng thái không ký hợp lệ
+
+Workflow tự chọn mode:
+- Nếu có `Developer ID Application` và đủ `APPLE_NOTARY_*` -> chạy `public` mode
+- Nếu chỉ có `Apple Development`, hoặc thiếu `APPLE_NOTARY_*` -> fallback `internal` mode
 
 ---
 
@@ -163,6 +191,27 @@ Workflow sử dụng `macos-26` runner. Nếu GitHub chưa có runner này, sẽ
 
 Kiểm tra step "Create DMG" - step này tạo symlink trước khi build DMG.
 
+### VirusTotal báo `MissingPlist` cho binary
+
+Workflow hiện đã fail-fast nếu artifact không chứa `.app` bundle hợp lệ (thiếu `Contents/Info.plist`) hoặc chữ ký app không hợp lệ.
+
+Lưu ý: nếu upload riêng file `PHTV.app/Contents/MacOS/PHTV` lên VirusTotal thì đó là executable rời, không phải app bundle, có thể dẫn tới cảnh báo dạng `MissingPlist`.
+
+### macOS báo "chứa phần mềm độc hại" / app bị chuyển vào thùng rác
+
+1. Kiểm tra release workflow có pass step notarization cho app và DMG
+2. Kiểm tra artifact được stapled ticket thành công (`xcrun stapler validate`)
+3. Đảm bảo release chạy `public` mode (`Developer ID Application` + `APPLE_NOTARY_*`)
+4. Không phát hành artifact từ local build chưa notarize
+
+Lưu ý: nếu workflow fallback `internal` mode thì cảnh báo Gatekeeper vẫn có thể xảy ra.
+
+### Notarization failed
+
+1. Kiểm tra `APPLE_NOTARY_API_KEY`, `APPLE_NOTARY_KEY_ID`, `APPLE_NOTARY_ISSUER_ID`
+2. Đảm bảo key `.p8` còn hiệu lực và đúng issuer/key id
+3. Mở log step `Notarize and staple ...` để xem `notarytool log` chi tiết
+
 ### Auto-update không hoạt động
 
 1. Verify `SPARKLE_PRIVATE_KEY` đã được add vào secrets
@@ -184,10 +233,13 @@ Kiểm tra step "Create DMG" - step này tạo symlink trước khi build DMG.
 # Test build
 xcodebuild -scheme PHTV -configuration Release clean build
 
+# Verify local app bundle signature/plist
+bash scripts/release/verify_app_bundle_signature.sh "App/build/Build/Products/Release/PHTV.app" "Local build"
+
 # Test DMG creation
 APP_PATH="App/build/Build/Products/Release/PHTV.app"
 TMP_DIR=$(mktemp -d)
-cp -R "$APP_PATH" "$TMP_DIR/"
+ditto "$APP_PATH" "$TMP_DIR/PHTV.app"
 ln -s /Applications "$TMP_DIR/Applications"
 hdiutil create -volname "PHTV" -srcfolder "$TMP_DIR" -ov -format UDZO -imagekey zlib-level=9 "PHTV-local.dmg"
 rm -rf "$TMP_DIR"
@@ -210,7 +262,9 @@ Push tag v1.4.5
 │  • Import certificate                                       │
 │  • Compute build number từ GITHUB_RUN_NUMBER                │
 │  • Build with Xcode                                         │
+│  • Notarize + staple app bundle                             │
 │  • Create DMG + ZIP                                         │
+│  • Notarize + staple DMG                                    │
 │  • Generate signed docs/appcast.xml với Sparkle             │
 └─────────────────────────────────────────────────────────────┘
     │

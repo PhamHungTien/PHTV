@@ -126,8 +126,17 @@ jobs:
           security default-keychain -s "$KEYCHAIN_PATH"
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
-          # Find identity
-          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -o '"[^"]*"' | head -1 | tr -d '"')
+          # Find identity (prefer Developer ID for distribution stability)
+          IDENTITY=$(
+            security find-identity -v -p codesigning "$KEYCHAIN_PATH" \
+            | awk -F'"' '/Developer ID Application:/ { print $2; exit }'
+          )
+          if [ -z "$IDENTITY" ]; then
+            IDENTITY=$(
+              security find-identity -v -p codesigning "$KEYCHAIN_PATH" \
+              | awk -F'"' '/Apple Development:/ { print $2; exit }'
+            )
+          fi
 
           if [ -z "$IDENTITY" ]; then
             echo "❌ Error: No valid signing identity found."
@@ -136,17 +145,77 @@ jobs:
           fi
 
           echo "🔐 Identity found: $IDENTITY"
+          IDENTITY_TYPE="apple_development"
+          if [[ "$IDENTITY" == Developer\ ID\ Application:* ]]; then
+            IDENTITY_TYPE="developer_id"
+          else
+            echo "⚠️ Using Apple Development identity. Release will run in internal mode (not notarized)."
+          fi
           echo "identity=$IDENTITY" >> $GITHUB_OUTPUT
           echo "keychain=$KEYCHAIN_PATH" >> $GITHUB_OUTPUT
+          echo "identity_type=$IDENTITY_TYPE" >> $GITHUB_OUTPUT
+
+      - name: Configure Distribution Mode
+        id: distribution
+        env:
+          APPLE_NOTARY_API_KEY: ${{ secrets.APPLE_NOTARY_API_KEY }}
+          APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+          APPLE_NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+
+          MODE="internal"
+          NOTARY_ENABLED="false"
+          API_KEY_PATH=""
+          API_KEY_ID=""
+          ISSUER_ID=""
+
+          if [ "${{ steps.certificate.outputs.identity_type }}" = "developer_id" ]; then
+            MODE="public"
+            if [ -n "$APPLE_NOTARY_API_KEY" ] && [ -n "$APPLE_NOTARY_KEY_ID" ] && [ -n "$APPLE_NOTARY_ISSUER_ID" ]; then
+              API_KEY_PATH="$RUNNER_TEMP/AuthKey_${APPLE_NOTARY_KEY_ID}.p8"
+              python3 - <<'PY' > "$API_KEY_PATH"
+              import os
+              import sys
+
+              key = os.environ["APPLE_NOTARY_API_KEY"]
+              if "\\n" in key and "\n" not in key:
+                  key = key.replace("\\n", "\n")
+
+              sys.stdout.write(key)
+              PY
+              chmod 600 "$API_KEY_PATH"
+
+              API_KEY_ID="$APPLE_NOTARY_KEY_ID"
+              ISSUER_ID="$APPLE_NOTARY_ISSUER_ID"
+              NOTARY_ENABLED="true"
+              echo "✅ Public mode enabled (Developer ID + notarization)"
+            else
+              MODE="internal"
+              echo "⚠️ Developer ID detected but notarization secrets are missing."
+              echo "⚠️ Falling back to internal mode (not notarized)."
+            fi
+          else
+            echo "ℹ️ Internal mode enabled (Apple Development signing, no notarization)."
+          fi
+
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          echo "notary_enabled=$NOTARY_ENABLED" >> "$GITHUB_OUTPUT"
+          echo "api_key_path=$API_KEY_PATH" >> "$GITHUB_OUTPUT"
+          echo "api_key_id=$API_KEY_ID" >> "$GITHUB_OUTPUT"
+          echo "issuer_id=$ISSUER_ID" >> "$GITHUB_OUTPUT"
 
       - name: Build
         working-directory: App
         run: |
+          set -euo pipefail
           set -o pipefail
           echo "🔐 Building with mandatory code signing..."
           echo "Identity: ${{ steps.certificate.outputs.identity }}"
           VERSION="${{ steps.version.outputs.version }}"
           BUILD_NUMBER="${{ steps.set_versions.outputs.build_number }}"
+          APP_PATH="./build/Build/Products/Release/PHTV.app"
+          VERIFY_SCRIPT="../scripts/release/verify_app_bundle_signature.sh"
 
           xcodebuild -project PHTV.xcodeproj -scheme PHTV \
             -configuration Release \
@@ -166,31 +235,42 @@ jobs:
             clean build \
             2>&1 | tee build.log
 
-          if [ ! -d "./build/Build/Products/Release/PHTV.app" ]; then
+          if [ ! -d "$APP_PATH" ]; then
             echo "❌ Build failed: PHTV.app not found"
             exit 1
           fi
 
           # Verify universal binary
           echo "🔍 Verifying binary architectures..."
-          file ./build/Build/Products/Release/PHTV.app/Contents/MacOS/PHTV
+          file "$APP_PATH/Contents/MacOS/PHTV"
 
-          # Verify signing strictly
-          echo "🔍 Verifying code signature..."
-          codesign -dv --verbose=2 "./build/Build/Products/Release/PHTV.app" 2>&1
+          # Verify app bundle integrity and signature before packaging
+          bash "$VERIFY_SCRIPT" "$APP_PATH" "Built app"
 
-          echo "🔍 Verifying signature validity..."
-          codesign --verify --deep --strict "./build/Build/Products/Release/PHTV.app" 2>&1
-          if [ $? -ne 0 ]; then
-            echo "❌ Code signature verification failed!"
-            exit 1
-          fi
-          echo "✅ Code signature is valid"
+      - name: Notarize and staple app bundle
+        if: steps.distribution.outputs.notary_enabled == 'true'
+        working-directory: App
+        run: |
+          set -euo pipefail
+
+          APP_PATH="./build/Build/Products/Release/PHTV.app"
+          NOTARY_ZIP="$RUNNER_TEMP/PHTV-notary.zip"
+
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$NOTARY_ZIP"
+
+          bash ../scripts/release/notarize_artifact.sh \
+            "$NOTARY_ZIP" \
+            "PHTV app bundle" \
+            "${{ steps.distribution.outputs.api_key_path }}" \
+            "${{ steps.distribution.outputs.api_key_id }}" \
+            "${{ steps.distribution.outputs.issuer_id }}" \
+            "$APP_PATH"
 
       - name: Create DMG
         id: dmg
         working-directory: App
         run: |
+          set -euo pipefail
           VERSION="${{ steps.version.outputs.version }}"
           APP_PATH="./build/Build/Products/Release/PHTV.app"
           DMG_NAME="PHTV-$VERSION.dmg"
@@ -200,7 +280,7 @@ jobs:
           echo "✅ Removed extended attributes from app"
 
           TEMP_DIR=$(mktemp -d)
-          cp -R "$APP_PATH" "$TEMP_DIR/"
+          ditto "$APP_PATH" "$TEMP_DIR/PHTV.app"
           ln -s /Applications "$TEMP_DIR/Applications"
 
           hdiutil create -volname "PHTV" \
@@ -220,6 +300,7 @@ jobs:
         id: zip
         working-directory: App
         run: |
+          set -euo pipefail
           VERSION="${{ steps.version.outputs.version }}"
           APP_PATH="./build/Build/Products/Release/PHTV.app"
           ZIP_NAME="PHTV-$VERSION.zip"
@@ -227,6 +308,84 @@ jobs:
           ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_NAME"
           echo "name=$ZIP_NAME" >> "$GITHUB_OUTPUT"
           echo "✅ ZIP created: $ZIP_NAME"
+
+      - name: Notarize and staple DMG
+        if: steps.distribution.outputs.notary_enabled == 'true'
+        working-directory: App
+        run: |
+          set -euo pipefail
+
+          DMG_NAME="${{ steps.dmg.outputs.name }}"
+
+          bash ../scripts/release/notarize_artifact.sh \
+            "$DMG_NAME" \
+            "PHTV release DMG" \
+            "${{ steps.distribution.outputs.api_key_path }}" \
+            "${{ steps.distribution.outputs.api_key_id }}" \
+            "${{ steps.distribution.outputs.issuer_id }}" \
+            "$DMG_NAME"
+
+      - name: Validate packaged artifacts
+        working-directory: App
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.distribution.outputs.notary_enabled }}" = "true" ]; then
+            export REQUIRE_NOTARIZED_TICKET=1
+          else
+            export REQUIRE_NOTARIZED_TICKET=0
+            echo "⚠️ Notarization validation is disabled in internal mode."
+          fi
+          VERIFY_SCRIPT="../scripts/release/verify_app_bundle_signature.sh"
+          DMG_NAME="${{ steps.dmg.outputs.name }}"
+          ZIP_NAME="${{ steps.zip.outputs.name }}"
+
+          if [ ! -f "$DMG_NAME" ]; then
+            echo "❌ DMG not found: $DMG_NAME"
+            exit 1
+          fi
+
+          if [ ! -f "$ZIP_NAME" ]; then
+            echo "❌ ZIP not found: $ZIP_NAME"
+            exit 1
+          fi
+
+          if [ "${{ steps.distribution.outputs.notary_enabled }}" = "true" ]; then
+            xcrun stapler validate -v "$DMG_NAME"
+          fi
+
+          TMP_DIR=$(mktemp -d)
+          ZIP_EXTRACT_DIR="$TMP_DIR/zip"
+          MOUNT_POINT="$TMP_DIR/mount"
+          mkdir -p "$ZIP_EXTRACT_DIR" "$MOUNT_POINT"
+
+          cleanup() {
+            if mount | grep -q "on $MOUNT_POINT "; then
+              hdiutil detach "$MOUNT_POINT" -quiet || true
+            fi
+            rm -rf "$TMP_DIR"
+          }
+          trap cleanup EXIT
+
+          # Validate ZIP payload
+          ditto -x -k "$ZIP_NAME" "$ZIP_EXTRACT_DIR"
+          ZIP_APP_PATH=$(find "$ZIP_EXTRACT_DIR" -maxdepth 3 -type d -name "PHTV.app" | head -1)
+          if [ -z "${ZIP_APP_PATH:-}" ]; then
+            echo "❌ ZIP payload does not contain PHTV.app"
+            exit 1
+          fi
+          bash "$VERIFY_SCRIPT" "$ZIP_APP_PATH" "ZIP artifact"
+
+          # Validate DMG payload
+          hdiutil attach "$DMG_NAME" -mountpoint "$MOUNT_POINT" -nobrowse -readonly -quiet
+          DMG_APP_PATH="$MOUNT_POINT/PHTV.app"
+          if [ ! -d "$DMG_APP_PATH" ]; then
+            echo "❌ DMG payload does not contain PHTV.app"
+            ls -la "$MOUNT_POINT"
+            exit 1
+          fi
+          bash "$VERIFY_SCRIPT" "$DMG_APP_PATH" "DMG artifact"
+
+          echo "✅ Packaged artifacts passed signature and Info.plist validation"
 
       - name: Download Sparkle
         working-directory: App
