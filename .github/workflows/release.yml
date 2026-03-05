@@ -174,16 +174,7 @@ jobs:
             MODE="public"
             if [ -n "$APPLE_NOTARY_API_KEY" ] && [ -n "$APPLE_NOTARY_KEY_ID" ] && [ -n "$APPLE_NOTARY_ISSUER_ID" ]; then
               API_KEY_PATH="$RUNNER_TEMP/AuthKey_${APPLE_NOTARY_KEY_ID}.p8"
-              python3 - <<'PY' > "$API_KEY_PATH"
-              import os
-              import sys
-
-              key = os.environ["APPLE_NOTARY_API_KEY"]
-              if "\\n" in key and "\n" not in key:
-                  key = key.replace("\\n", "\n")
-
-              sys.stdout.write(key)
-              PY
+              python3 -c 'import os,sys; key=os.environ["APPLE_NOTARY_API_KEY"]; key=key.replace("\\n","\n") if "\\n" in key and "\n" not in key else key; sys.stdout.write(key)' > "$API_KEY_PATH"
               chmod 600 "$API_KEY_PATH"
 
               API_KEY_ID="$APPLE_NOTARY_KEY_ID"
