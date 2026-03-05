@@ -87,249 +87,103 @@ jobs:
           CERTIFICATES_P12: ${{ secrets.CERTIFICATES_P12 }}
           CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
         run: |
-          set -euo pipefail
-
-          fallback_to_adhoc() {
-            echo "⚠️ Falling back to ad-hoc signing (internal mode)."
-            echo "identity=-" >> "$GITHUB_OUTPUT"
-            echo "keychain=" >> "$GITHUB_OUTPUT"
-            echo "identity_type=adhoc" >> "$GITHUB_OUTPUT"
-            exit 0
-          }
-
-          if [ -z "${CERTIFICATES_P12:-}" ] || [ -z "${CERTIFICATE_PASSWORD:-}" ]; then
-            echo "⚠️ CERTIFICATES_P12 or CERTIFICATE_PASSWORD secret is missing."
-            fallback_to_adhoc
+          if [ -z "$CERTIFICATES_P12" ]; then
+            echo "❌ Error: CERTIFICATES_P12 secret is missing."
+            exit 1
           fi
 
-          # Create temporary keychain
           KEYCHAIN_PATH="$RUNNER_TEMP/signing.keychain-db"
-          KEYCHAIN_PASSWORD="$(openssl rand -base64 32)"
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
 
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
-          # Import Apple WWDR Intermediate Certificate (best effort)
-          if curl -fsSL https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer -o "$RUNNER_TEMP/AppleWWDRCAG3.cer"; then
-            security import "$RUNNER_TEMP/AppleWWDRCAG3.cer" -k "$KEYCHAIN_PATH" -T /usr/bin/codesign -T /usr/bin/security || true
-          fi
+          curl -sL https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer -o "$RUNNER_TEMP/AppleWWDRCAG3.cer"
+          security import "$RUNNER_TEMP/AppleWWDRCAG3.cer" -k "$KEYCHAIN_PATH" -T /usr/bin/codesign -T /usr/bin/security
 
-          # Decode P12 from base64
-          if ! printf '%s' "$CERTIFICATES_P12" | tr -d '\n' | openssl base64 -d -A -out "$RUNNER_TEMP/certificate.p12"; then
-            echo "⚠️ Failed to decode CERTIFICATES_P12."
-            fallback_to_adhoc
-          fi
-          if [ ! -s "$RUNNER_TEMP/certificate.p12" ]; then
-            echo "⚠️ Decoded certificate.p12 is empty."
-            fallback_to_adhoc
-          fi
+          echo "$CERTIFICATES_P12" > "$RUNNER_TEMP/cert_base64.txt"
+          python3 -c "import base64; open('$RUNNER_TEMP/certificate.p12', 'wb').write(base64.b64decode(open('$RUNNER_TEMP/cert_base64.txt', 'r').read()))"
 
-          # Import P12
-          if ! security import "$RUNNER_TEMP/certificate.p12" \
+          security import "$RUNNER_TEMP/certificate.p12" \
             -k "$KEYCHAIN_PATH" \
             -P "$CERTIFICATE_PASSWORD" \
             -T /usr/bin/codesign \
             -T /usr/bin/security \
-            -A; then
-            echo "⚠️ Failed to import certificate.p12."
-            fallback_to_adhoc
-          fi
+            -A
 
-          # Add keychain to search list
           security list-keychain -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
           security default-keychain -s "$KEYCHAIN_PATH"
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
-          security find-identity -v -p codesigning "$KEYCHAIN_PATH" || true
-
-          DEV_ID_CANDIDATES="$(
-            security find-identity -v -p codesigning "$KEYCHAIN_PATH" \
-              | awk -F'"' '/Developer ID Application:/ { print $2 }'
-          )"
-          validate_identity() {
-            local identity="$1"
-            local probe_bin="$RUNNER_TEMP/codesign_probe.bin"
-            cp /usr/bin/true "$probe_bin"
-            if ! codesign --force --sign "$identity" --keychain "$KEYCHAIN_PATH" --timestamp=none "$probe_bin" >/dev/null 2>&1; then
-              rm -f "$probe_bin"
-              return 1
-            fi
-            if ! codesign --verify --verbose=2 "$probe_bin" >/dev/null 2>&1; then
-              rm -f "$probe_bin"
-              return 1
-            fi
-            rm -f "$probe_bin"
-            return 0
-          }
-
-          IDENTITY=""
-          IDENTITY_TYPE=""
-
-          while IFS= read -r candidate; do
-            [ -z "$candidate" ] && continue
-            if validate_identity "$candidate"; then
-              IDENTITY="$candidate"
-              IDENTITY_TYPE="developer_id"
-              break
-            fi
-            echo "⚠️ Skipping unusable identity: $candidate"
-          done < <(printf '%s\n' "$DEV_ID_CANDIDATES")
-
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -o '"[^"]*"' | head -1 | tr -d '"')
           if [ -z "$IDENTITY" ]; then
-            echo "⚠️ No usable Developer ID identity after validation."
-            fallback_to_adhoc
+            echo "❌ Error: No valid signing identity found."
+            security find-identity -p codesigning "$KEYCHAIN_PATH"
+            exit 1
           fi
 
-          echo "🔐 Identity selected: $IDENTITY"
+          echo "🔐 Identity found: $IDENTITY"
           echo "identity=$IDENTITY" >> "$GITHUB_OUTPUT"
           echo "keychain=$KEYCHAIN_PATH" >> "$GITHUB_OUTPUT"
-          echo "identity_type=$IDENTITY_TYPE" >> "$GITHUB_OUTPUT"
-
-      - name: Configure Distribution Mode
-        id: distribution
-        env:
-          APPLE_NOTARY_API_KEY: ${{ secrets.APPLE_NOTARY_API_KEY }}
-          APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
-          APPLE_NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
-        run: |
-          set -euo pipefail
-
-          MODE="internal"
-          NOTARY_ENABLED="false"
-          API_KEY_PATH=""
-          API_KEY_ID=""
-          ISSUER_ID=""
-
-          if [ "${{ steps.certificate.outputs.identity_type }}" = "developer_id" ]; then
-            MODE="public"
-            if [ -n "$APPLE_NOTARY_API_KEY" ] && [ -n "$APPLE_NOTARY_KEY_ID" ] && [ -n "$APPLE_NOTARY_ISSUER_ID" ]; then
-              API_KEY_PATH="$RUNNER_TEMP/AuthKey_${APPLE_NOTARY_KEY_ID}.p8"
-              python3 -c 'import os,sys; key=os.environ["APPLE_NOTARY_API_KEY"]; key=key.replace("\\n","\n") if "\\n" in key and "\n" not in key else key; sys.stdout.write(key)' > "$API_KEY_PATH"
-              chmod 600 "$API_KEY_PATH"
-
-              API_KEY_ID="$APPLE_NOTARY_KEY_ID"
-              ISSUER_ID="$APPLE_NOTARY_ISSUER_ID"
-              NOTARY_ENABLED="true"
-              echo "✅ Public mode enabled (Developer ID + notarization)"
-            else
-              MODE="internal"
-              echo "⚠️ Developer ID detected but notarization secrets are missing."
-              echo "⚠️ Falling back to internal mode (not notarized)."
-            fi
-          else
-            echo "ℹ️ Internal mode enabled (ad-hoc signing, no notarization)."
-          fi
-
-          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
-          echo "notary_enabled=$NOTARY_ENABLED" >> "$GITHUB_OUTPUT"
-          echo "api_key_path=$API_KEY_PATH" >> "$GITHUB_OUTPUT"
-          echo "api_key_id=$API_KEY_ID" >> "$GITHUB_OUTPUT"
-          echo "issuer_id=$ISSUER_ID" >> "$GITHUB_OUTPUT"
 
       - name: Build
         working-directory: App
         run: |
-          set -euo pipefail
-          set -o pipefail
-          SIGNING_IDENTITY="${{ steps.certificate.outputs.identity }}"
-          SIGNING_KEYCHAIN="${{ steps.certificate.outputs.keychain }}"
-
-          if [ "$SIGNING_IDENTITY" = "-" ]; then
-            echo "🔐 Building with ad-hoc signing (internal mode)"
-          else
-            echo "🔐 Building with certificate signing"
-            echo "Identity: $SIGNING_IDENTITY"
-          fi
-
+          echo "🔐 Building with mandatory code signing..."
+          echo "Identity: ${{ steps.certificate.outputs.identity }}"
           VERSION="${{ steps.version.outputs.version }}"
           BUILD_NUMBER="${{ steps.set_versions.outputs.build_number }}"
           APP_PATH="./build/Build/Products/Release/PHTV.app"
-          VERIFY_SCRIPT="../scripts/release/verify_app_bundle_signature.sh"
 
-          if [ -n "$SIGNING_KEYCHAIN" ]; then
-            xcodebuild -project PHTV.xcodeproj -scheme PHTV \
-              -configuration Release \
-              -derivedDataPath ./build \
-              -arch arm64 -arch x86_64 \
-              MARKETING_VERSION="$VERSION" \
-              CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
-              ONLY_ACTIVE_ARCH=NO \
-              CODE_SIGN_STYLE=Manual \
-              CODE_SIGN_IDENTITY="$SIGNING_IDENTITY" \
-              OTHER_CODE_SIGN_FLAGS="--keychain $SIGNING_KEYCHAIN" \
-              DEVELOPMENT_TEAM="" \
-              STRIP_SWIFT_SYMBOLS=NO \
-              COPY_PHASE_STRIP=NO \
-              STRIP_INSTALLED_PRODUCT=NO \
-              COMPILER_INDEX_STORE_ENABLE=NO \
-              clean build \
-              2>&1 | tee build.log
-          else
-            xcodebuild -project PHTV.xcodeproj -scheme PHTV \
-              -configuration Release \
-              -derivedDataPath ./build \
-              -arch arm64 -arch x86_64 \
-              MARKETING_VERSION="$VERSION" \
-              CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
-              ONLY_ACTIVE_ARCH=NO \
-              CODE_SIGN_STYLE=Manual \
-              CODE_SIGN_IDENTITY="$SIGNING_IDENTITY" \
-              DEVELOPMENT_TEAM="" \
-              STRIP_SWIFT_SYMBOLS=NO \
-              COPY_PHASE_STRIP=NO \
-              STRIP_INSTALLED_PRODUCT=NO \
-              COMPILER_INDEX_STORE_ENABLE=NO \
-              clean build \
-              2>&1 | tee build.log
-          fi
+          xcodebuild -project PHTV.xcodeproj -scheme PHTV \
+            -configuration Release \
+            -derivedDataPath ./build \
+            MARKETING_VERSION="$VERSION" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="${{ steps.certificate.outputs.identity }}" \
+            OTHER_CODE_SIGN_FLAGS="--keychain ${{ steps.certificate.outputs.keychain }}" \
+            DEVELOPMENT_TEAM="" \
+            STRIP_SWIFT_SYMBOLS=NO \
+            COPY_PHASE_STRIP=NO \
+            STRIP_INSTALLED_PRODUCT=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            clean build \
+            2>&1 | tee build.log
 
           if [ ! -d "$APP_PATH" ]; then
             echo "❌ Build failed: PHTV.app not found"
             exit 1
           fi
 
-          # Verify universal binary
-          echo "🔍 Verifying binary architectures..."
-          file "$APP_PATH/Contents/MacOS/PHTV"
+          echo "🔍 Verifying code signature..."
+          codesign -dv --verbose=2 "$APP_PATH" 2>&1
+          codesign --verify --deep --strict "$APP_PATH" 2>&1
 
-          # Verify app bundle integrity and signature before packaging
-          bash "$VERIFY_SCRIPT" "$APP_PATH" "Built app"
-
-      - name: Notarize and staple app bundle
-        if: steps.distribution.outputs.notary_enabled == 'true'
+      - name: Verify Sparkle metadata in app bundle
         working-directory: App
         run: |
-          set -euo pipefail
-
-          APP_PATH="./build/Build/Products/Release/PHTV.app"
-          NOTARY_ZIP="$RUNNER_TEMP/PHTV-notary.zip"
-
-          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$NOTARY_ZIP"
-
-          bash ../scripts/release/notarize_artifact.sh \
-            "$NOTARY_ZIP" \
-            "PHTV app bundle" \
-            "${{ steps.distribution.outputs.api_key_path }}" \
-            "${{ steps.distribution.outputs.api_key_id }}" \
-            "${{ steps.distribution.outputs.issuer_id }}" \
-            "$APP_PATH"
+          APP_INFO="./build/Build/Products/Release/PHTV.app/Contents/Info.plist"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP_INFO"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$APP_INFO"
+          /usr/libexec/PlistBuddy -c "Print :SUFeedURL" "$APP_INFO"
+          /usr/libexec/PlistBuddy -c "Print :SUPublicEDKey" "$APP_INFO"
+          echo "✅ Sparkle metadata exists in app Info.plist"
 
       - name: Create DMG
         id: dmg
         working-directory: App
         run: |
-          set -euo pipefail
           VERSION="${{ steps.version.outputs.version }}"
           APP_PATH="./build/Build/Products/Release/PHTV.app"
           DMG_NAME="PHTV-$VERSION.dmg"
 
-          # Remove extended attributes (quarantine) to prevent "damaged" error
           xattr -cr "$APP_PATH"
-          echo "✅ Removed extended attributes from app"
 
           TEMP_DIR=$(mktemp -d)
-          ditto "$APP_PATH" "$TEMP_DIR/PHTV.app"
+          cp -R "$APP_PATH" "$TEMP_DIR/"
           ln -s /Applications "$TEMP_DIR/Applications"
 
           hdiutil create -volname "PHTV" \
@@ -349,7 +203,6 @@ jobs:
         id: zip
         working-directory: App
         run: |
-          set -euo pipefail
           VERSION="${{ steps.version.outputs.version }}"
           APP_PATH="./build/Build/Products/Release/PHTV.app"
           ZIP_NAME="PHTV-$VERSION.zip"
@@ -358,33 +211,10 @@ jobs:
           echo "name=$ZIP_NAME" >> "$GITHUB_OUTPUT"
           echo "✅ ZIP created: $ZIP_NAME"
 
-      - name: Notarize and staple DMG
-        if: steps.distribution.outputs.notary_enabled == 'true'
-        working-directory: App
-        run: |
-          set -euo pipefail
-
-          DMG_NAME="${{ steps.dmg.outputs.name }}"
-
-          bash ../scripts/release/notarize_artifact.sh \
-            "$DMG_NAME" \
-            "PHTV release DMG" \
-            "${{ steps.distribution.outputs.api_key_path }}" \
-            "${{ steps.distribution.outputs.api_key_id }}" \
-            "${{ steps.distribution.outputs.issuer_id }}" \
-            "$DMG_NAME"
-
       - name: Validate packaged artifacts
         working-directory: App
         run: |
           set -euo pipefail
-          if [ "${{ steps.distribution.outputs.notary_enabled }}" = "true" ]; then
-            export REQUIRE_NOTARIZED_TICKET=1
-          else
-            export REQUIRE_NOTARIZED_TICKET=0
-            echo "⚠️ Notarization validation is disabled in internal mode."
-          fi
-          VERIFY_SCRIPT="../scripts/release/verify_app_bundle_signature.sh"
           DMG_NAME="${{ steps.dmg.outputs.name }}"
           ZIP_NAME="${{ steps.zip.outputs.name }}"
 
@@ -396,10 +226,6 @@ jobs:
           if [ ! -f "$ZIP_NAME" ]; then
             echo "❌ ZIP not found: $ZIP_NAME"
             exit 1
-          fi
-
-          if [ "${{ steps.distribution.outputs.notary_enabled }}" = "true" ]; then
-            xcrun stapler validate -v "$DMG_NAME"
           fi
 
           TMP_DIR=$(mktemp -d)
@@ -422,7 +248,8 @@ jobs:
             echo "❌ ZIP payload does not contain PHTV.app"
             exit 1
           fi
-          bash "$VERIFY_SCRIPT" "$ZIP_APP_PATH" "ZIP artifact"
+          codesign --verify --deep --strict "$ZIP_APP_PATH"
+          test -f "$ZIP_APP_PATH/Contents/Info.plist"
 
           # Validate DMG payload
           hdiutil attach "$DMG_NAME" -mountpoint "$MOUNT_POINT" -nobrowse -readonly -quiet
@@ -432,7 +259,8 @@ jobs:
             ls -la "$MOUNT_POINT"
             exit 1
           fi
-          bash "$VERIFY_SCRIPT" "$DMG_APP_PATH" "DMG artifact"
+          codesign --verify --deep --strict "$DMG_APP_PATH"
+          test -f "$DMG_APP_PATH/Contents/Info.plist"
 
           echo "✅ Packaged artifacts passed signature and Info.plist validation"
 
