@@ -5,6 +5,7 @@
 //  Swift port of SparkleManager.mm while preserving ObjC API compatibility.
 //
 
+import AppKit
 import Foundation
 import Sparkle
 
@@ -31,6 +32,34 @@ final class SparkleManager: NSObject, SPUUpdaterDelegate, @preconcurrency SPUSta
 
     private var isManualCheck = false
 
+    private func isSparkleWindow(_ window: NSWindow) -> Bool {
+        let className = NSStringFromClass(type(of: window))
+        if className.contains("SU") || className.localizedCaseInsensitiveContains("Sparkle") {
+            return true
+        }
+        let bundleIdentifier = Bundle(for: type(of: window)).bundleIdentifier?.lowercased() ?? ""
+        return bundleIdentifier.contains("sparkle")
+    }
+
+    private func promoteSparkleWindowsToFront() {
+        for window in NSApp.windows where isSparkleWindow(window) {
+            if window.level.rawValue < NSWindow.Level.floating.rawValue {
+                window.level = .floating
+            }
+            window.makeKeyAndOrderFront(nil)
+            window.orderFrontRegardless()
+        }
+    }
+
+    private func bringUpdateUIToFront() {
+        NSApp.activate(ignoringOtherApps: true)
+        if let window = NSApp.keyWindow ?? NSApp.mainWindow {
+            window.makeKeyAndOrderFront(nil)
+            window.orderFrontRegardless()
+        }
+        promoteSparkleWindowsToFront()
+    }
+
     override init() {
         super.init()
 
@@ -56,7 +85,14 @@ final class SparkleManager: NSObject, SPUUpdaterDelegate, @preconcurrency SPUSta
     @objc func checkForUpdatesWithFeedback() {
         NSLog("[Sparkle] User-initiated update check (with feedback)")
         isManualCheck = true
+        bringUpdateUIToFront()
         updater.checkForUpdates()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            self?.promoteSparkleWindowsToFront()
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
+            self?.promoteSparkleWindowsToFront()
+        }
     }
 
     /// Background update check (silent)
@@ -130,10 +166,15 @@ final class SparkleManager: NSObject, SPUUpdaterDelegate, @preconcurrency SPUSta
               update.displayVersionString,
               handleShowingUpdate ? "YES" : "NO")
 
+        if handleShowingUpdate {
+            bringUpdateUIToFront()
+        }
+
         isManualCheck = false
     }
 
     func standardUserDriverDidReceiveUserAttention(forUpdate update: SUAppcastItem) {
         NSLog("[Sparkle] User attention received for update: %@", update.displayVersionString)
+        bringUpdateUIToFront()
     }
 }

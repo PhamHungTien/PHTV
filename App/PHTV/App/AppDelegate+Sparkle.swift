@@ -9,6 +9,15 @@ import AppKit
 import Foundation
 
 @objc extension AppDelegate {
+    private func bringUpdatePopupToFront() {
+        NSApp.activate(ignoringOtherApps: true)
+        if let window = NSApp.keyWindow ?? NSApp.mainWindow ??
+            NSApp.windows.first(where: { $0.isVisible && !$0.isMiniaturized }) {
+            window.makeKeyAndOrderFront(nil)
+            window.orderFrontRegardless()
+        }
+    }
+
     func registerSparkleObservers() {
         let center = NotificationCenter.default
 
@@ -42,6 +51,7 @@ import Foundation
     func handleSparkleManualCheck(_ notification: Notification) {
         _ = notification
         NSLog("[Sparkle] Manual check requested from UI")
+        bringUpdatePopupToFront()
         SparkleManager.shared().checkForUpdatesWithFeedback()
     }
 
@@ -73,6 +83,7 @@ import Foundation
         _ = notification
 
         DispatchQueue.main.async {
+            self.bringUpdatePopupToFront()
             let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
 
             let alert = NSAlert()
@@ -80,7 +91,17 @@ import Foundation
             alert.informativeText = "Bạn đang sử dụng phiên bản mới nhất của PHTV (\(currentVersion))."
             alert.addButton(withTitle: "OK")
             alert.alertStyle = .informational
-            alert.runModal()
+
+            if let parentWindow = NSApp.keyWindow ?? NSApp.mainWindow ??
+                NSApp.windows.first(where: { $0.isVisible && !$0.isMiniaturized }) {
+                parentWindow.makeKeyAndOrderFront(nil)
+                parentWindow.orderFrontRegardless()
+                alert.beginSheetModal(for: parentWindow)
+            } else {
+                alert.window.level = .floating
+                alert.window.orderFrontRegardless()
+                _ = alert.runModal()
+            }
         }
     }
 
