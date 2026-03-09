@@ -257,6 +257,19 @@ final class PHTVAppDetectionService: NSObject {
         "tty"
     ]
 
+    private class func normalizedSearchTokens(from value: String?) -> [String] {
+        guard let normalized = value?
+            .folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: .current)
+            .lowercased(),
+            !normalized.isEmpty else {
+            return []
+        }
+
+        return normalized
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .filter { !$0.isEmpty }
+    }
+
     private static func normalizeBundleId(_ bundleId: String?) -> String? {
         guard let bundleId = bundleId?.trimmingCharacters(in: .whitespacesAndNewlines),
               !bundleId.isEmpty else {
@@ -340,6 +353,18 @@ final class PHTVAppDetectionService: NSObject {
             return false
         }
         for keyword in terminalKeywords where normalized.contains(keyword) {
+            return true
+        }
+        return false
+    }
+
+    @objc class func containsClaudeCodeKeyword(_ value: String?) -> Bool {
+        let tokens = normalizedSearchTokens(from: value)
+        guard !tokens.isEmpty else {
+            return false
+        }
+
+        if tokens.contains("claude") || tokens.contains("claudecode") {
             return true
         }
         return false

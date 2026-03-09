@@ -61,8 +61,8 @@
             <sparkle:version>1.2.4</sparkle:version>
             <sparkle:shortVersionString>1.2.4</sparkle:shortVersionString>
             <description><![CDATA[
-                <h3>Cải tiến Claude Code Patcher</h3>
-                <p>Phiên bản này cải tiến đáng kể tính năng <strong>Claude Code Patcher</strong> - giúp việc chuyển đổi từ Homebrew sang npm và vá lỗi gõ tiếng Việt ổn định hơn.</p>
+                <h3>Cải tiến Claude Code CLI</h3>
+                <p>Phiên bản này cải tiến đáng kể khả năng tương thích với <strong>Claude Code CLI</strong> - giúp việc chuyển đổi từ Homebrew sang npm và xử lý lỗi gõ tiếng Việt ổn định hơn.</p>
                 <h4>Tính năng mới</h4>
                 <ul>
                     <li>Cải thiện phát hiện Homebrew đa nền tảng</li>

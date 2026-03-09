@@ -16,6 +16,8 @@ final class PHTVAccessibilityService: NSObject {
     private struct AccessibilityCacheState {
         var lastTerminalPanelResult = false
         var lastTerminalPanelCheckTime: UInt64 = 0
+        var lastClaudeCodeSessionResult = false
+        var lastClaudeCodeSessionCheckTime: UInt64 = 0
         var lastAddressBarResult = false
         var lastAddressBarCheckTime: UInt64 = 0
         var lastNotionCodeBlockResult = false
@@ -677,6 +679,69 @@ final class PHTVAccessibilityService: NSObject {
             state.lastTerminalPanelCheckTime = now
         }
         return isTerminalPanel
+    }
+
+    @objc class func isClaudeCodeSessionFocused() -> Bool {
+        let now = mach_absolute_time()
+        let cached = cacheState.withLock { state in
+            (state.lastClaudeCodeSessionResult, state.lastClaudeCodeSessionCheckTime)
+        }
+        if cached.1 != 0,
+           PHTVTimingService.machTimeToMs(now - cached.1) < 50 {
+            return cached.0
+        }
+
+        let bundleId = focusedAppBundleId()
+        let isTerminalApp = PHTVAppDetectionService.isTerminalApp(bundleId)
+        let isIDEApp = PHTVAppDetectionService.isIDEApp(bundleId)
+        let isCliContainer = isTerminalApp || isIDEApp
+        var isClaudeCodeSession = false
+
+        if isCliContainer {
+            let shouldInspect = isTerminalApp || (isIDEApp && isTerminalPanelFocused())
+            if shouldInspect &&
+                PHTVAppDetectionService.containsClaudeCodeKeyword(focusedWindowTitleForFrontmostApp()) {
+                isClaudeCodeSession = true
+            } else if shouldInspect, let focused = focusedElement() {
+                let attributes: [String] = [
+                    kAXDescriptionAttribute,
+                    kAXRoleDescriptionAttribute,
+                    kAXHelpAttribute,
+                    kAXTitleAttribute,
+                    "AXIdentifier",
+                    kAXRoleAttribute,
+                    kAXSubroleAttribute
+                ]
+
+                var current: AXUIElement? = focused
+                for _ in 0..<8 {
+                    guard let currentElement = current else {
+                        break
+                    }
+
+                    for attr in attributes {
+                        if PHTVAppDetectionService.containsClaudeCodeKeyword(
+                            stringAttribute(currentElement, attr)
+                        ) {
+                            isClaudeCodeSession = true
+                            break
+                        }
+                    }
+
+                    if isClaudeCodeSession {
+                        break
+                    }
+
+                    current = elementAttribute(currentElement, kAXParentAttribute)
+                }
+            }
+        }
+
+        cacheState.withLock { state in
+            state.lastClaudeCodeSessionResult = isClaudeCodeSession
+            state.lastClaudeCodeSessionCheckTime = now
+        }
+        return isClaudeCodeSession
     }
 
     @objc class func openAccessibilityPreferences() {

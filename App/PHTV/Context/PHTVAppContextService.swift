@@ -255,15 +255,22 @@ final class PHTVAppContextService: NSObject {
 
         let isTerminalApp = effectiveBundleId.map(PHTVAppDetectionService.isTerminalApp(_:)) ?? false
         let isJetBrainsApp = effectiveBundleId.map(PHTVAppDetectionService.isJetBrainsApp(_:)) ?? false
-        let isTerminalPanel = (!safeMode && !isTerminalApp && !isJetBrainsApp)
+        let isTerminalPanel = (!safeMode && !isTerminalApp)
             ? PHTVAccessibilityService.isTerminalPanelFocused()
             : false
         let isCliTarget = isTerminalApp || isJetBrainsApp || isTerminalPanel
+        let canContainClaudeCodeSession = isTerminalApp || isTerminalPanel
+        let isClaudeCodeSession = (!safeMode && canContainClaudeCodeSession)
+            ? PHTVAccessibilityService.isClaudeCodeSessionFocused()
+            : false
         let cliTimingProfile: PHTVCliTimingProfileBox? = {
             guard isCliTarget else {
                 return nil
             }
-            let profileCode = PHTVCliProfileService.profileCode(forBundleId: effectiveBundleId)
+            let profileCode = PHTVCliProfileService.profileCode(
+                forBundleId: effectiveBundleId,
+                isClaudeCodeSession: isClaudeCodeSession
+            )
             return PHTVCliProfileService.profile(forCode: profileCode)
         }()
         let postToHIDTap = (!isBrowser && spotlightActive) || appCharacteristics.isSpotlightLike

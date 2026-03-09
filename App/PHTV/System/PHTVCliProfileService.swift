@@ -38,6 +38,7 @@ final class PHTVCliProfileService: NSObject {
         2: TimingProfile(backspaceDelayUs: 6_000, waitAfterBackspaceUs: 18_000, textDelayUs: 5_000, textChunkSize: 1),  // Fast terminal
         3: TimingProfile(backspaceDelayUs: 9_000, waitAfterBackspaceUs: 27_000, textDelayUs: 7_000, textChunkSize: 1),  // Medium terminal
         4: TimingProfile(backspaceDelayUs: 12_000, waitAfterBackspaceUs: 36_000, textDelayUs: 9_000, textChunkSize: 1), // Slow terminal
+        5: TimingProfile(backspaceDelayUs: 15_000, waitAfterBackspaceUs: 48_000, textDelayUs: 12_000, textChunkSize: 1), // Claude Code session
     ]
 
     private static let defaultProfile = TimingProfile(
@@ -57,8 +58,19 @@ final class PHTVCliProfileService: NSObject {
 
     @objc(profileCodeForBundleId:)
     class func profileCode(forBundleId bundleId: String?) -> Int32 {
+        profileCode(forBundleId: bundleId, isClaudeCodeSession: false)
+    }
+
+    @objc(profileCodeForBundleId:isClaudeCodeSession:)
+    class func profileCode(forBundleId bundleId: String?, isClaudeCodeSession: Bool) -> Int32 {
         guard let bundleId, !bundleId.isEmpty else {
             return 0
+        }
+
+        if isClaudeCodeSession &&
+            (PHTVAppDetectionService.isTerminalApp(bundleId) ||
+             PHTVAppDetectionService.isIDEApp(bundleId)) {
+            return 5
         }
 
         if PHTVAppDetectionService.isVSCodeFamilyApp(bundleId) ||

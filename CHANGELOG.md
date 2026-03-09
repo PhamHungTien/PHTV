@@ -66,7 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Phát hiện Google Docs qua URL (`docs.google.com`) hoặc tiêu đề cửa sổ
 
 ### Cải tiến
-- **Claude Code Patcher**: Cải tiến vượt bậc cơ chế vá lỗi gõ tiếng Việt, hỗ trợ Claude Code v2.1.6 đến v2.1.12+.
+- **Claude Code CLI**: Cải tiến vượt bậc cơ chế xử lý gõ tiếng Việt, hỗ trợ Claude Code v2.1.6 đến v2.1.12+.
 - **Tài liệu**: Thêm hướng dẫn chi tiết về cách fix lỗi gõ tiếng Việt trong Claude Code CLI cho cả macOS và Windows.
 - **Tính ổn định**: Tối ưu regex pattern và cơ chế tìm kiếm khối mã lỗi trong Claude Code CLI.
 
@@ -415,9 +415,9 @@ Phạm Hùng Tiến
 ## [1.2.4] - 2024-12-25
 
 ### Improved
-- **Claude Code Patcher**: Cải thiện phát hiện Homebrew (hỗ trợ Apple Silicon, Intel, Linux)
-- **Claude Code Patcher**: Hỗ trợ Fast Node Manager (fnm) ngoài nvm
-- **Claude Code Patcher**: Thêm nút "Mở Terminal" khi cài đặt tự động thất bại
+- **Claude Code CLI**: Cải thiện phát hiện Homebrew (hỗ trợ Apple Silicon, Intel, Linux)
+- **Claude Code CLI**: Hỗ trợ Fast Node Manager (fnm) ngoài nvm
+- **Claude Code CLI**: Thêm nút "Mở Terminal" khi cài đặt tự động thất bại
 
 ### Fixed
 - Sửa lỗi không tìm thấy brew (tìm động thay vì hardcode path)

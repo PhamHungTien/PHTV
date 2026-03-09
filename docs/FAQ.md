@@ -32,7 +32,7 @@ Hãy thử các bước sau:
 3. Xem chi tiết tại [Hướng dẫn cài đặt](INSTALL.md#️-chuẩn-bị-trước-khi-cài-đặt).
 
 ### 4. PHTV có hỗ trợ gõ trên các ứng dụng Terminal/IDE không?
-Có. PHTV hỗ trợ tốt trên Terminal, iTerm2, VS Code, v.v. Nếu bạn gặp vấn đề gõ tiếng Việt trong **Claude Code CLI**, hãy vào **Settings > Apps** và bật tính năng **Patch Claude Code** để khắc phục lỗi không nhận dấu.
+Có. PHTV hỗ trợ tốt trên Terminal, iTerm2, VS Code, v.v. Với **Claude Code CLI**, PHTV sẽ tự nhận diện session đang chạy và áp timing profile ổn định hơn, không cần patch riêng. Nếu bạn vẫn muốn ưu tiên độ ổn định tối đa, có thể bật thêm **Send Key Step-by-Step** trong **Settings > Apps**.
 
 ### 5. Làm sao để tạm thời tắt tiếng Việt khi gõ code?
 Bạn có thể:
