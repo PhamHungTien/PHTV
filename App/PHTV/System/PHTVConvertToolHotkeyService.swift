@@ -24,16 +24,21 @@ final class PHTVConvertToolHotkeyService: NSObject {
     private final class HotkeyCacheStateBox: @unchecked Sendable {
         private let lock = NSLock()
         private var isInitialized = false
+        private var cachedRawHotkey: Int32?
         private var cachedHotkey = defaultHotkey
 
-        func cachedValue() -> Int32? {
+        func cachedValue(for rawHotkey: Int32?) -> Int32? {
             lock.lock()
             defer { lock.unlock() }
-            return isInitialized ? cachedHotkey : nil
+            guard isInitialized, cachedRawHotkey == rawHotkey else {
+                return nil
+            }
+            return cachedHotkey
         }
 
-        func store(_ hotkey: Int32) {
+        func store(rawHotkey: Int32?, hotkey: Int32) {
             lock.lock()
+            cachedRawHotkey = rawHotkey
             cachedHotkey = hotkey
             isInitialized = true
             lock.unlock()
@@ -42,6 +47,7 @@ final class PHTVConvertToolHotkeyService: NSObject {
         func invalidate() {
             lock.lock()
             isInitialized = false
+            cachedRawHotkey = nil
             lock.unlock()
         }
     }
@@ -67,13 +73,20 @@ final class PHTVConvertToolHotkeyService: NSObject {
         return (value, value != rawHotkey)
     }
 
-    private class func resolveHotkeyFromDefaults() -> Int32 {
+    private class func rawHotkeyFromDefaults() -> Int32? {
         let defaults = UserDefaults.standard
         guard defaults.object(forKey: keyHotKey) != nil else {
-            return defaultHotkey
+            return nil
+        }
+        return Int32(truncatingIfNeeded: defaults.integer(forKey: keyHotKey))
+    }
+
+    private class func resolveHotkey(rawHotkey: Int32?) -> (value: Int32, cachedRawHotkey: Int32?) {
+        guard let rawHotkey else {
+            return (defaultHotkey, nil)
         }
 
-        let rawHotkey = Int32(truncatingIfNeeded: defaults.integer(forKey: keyHotKey))
+        let defaults = UserDefaults.standard
         let normalizedHotkey = normalizeHotkey(rawHotkey)
         if normalizedHotkey.normalized {
             defaults.set(Int(normalizedHotkey.value), forKey: keyHotKey)
@@ -85,18 +98,20 @@ final class PHTVConvertToolHotkeyService: NSObject {
             )
 #endif
         }
-        return normalizedHotkey.value
+        let cachedRawHotkey = normalizedHotkey.normalized ? normalizedHotkey.value : rawHotkey
+        return (normalizedHotkey.value, cachedRawHotkey)
     }
 
     @objc(currentHotkey)
     class func currentHotkey() -> Int32 {
-        if let cached = hotkeyCache.cachedValue() {
+        let rawHotkey = rawHotkeyFromDefaults()
+        if let cached = hotkeyCache.cachedValue(for: rawHotkey) {
             return cached
         }
 
-        let resolved = resolveHotkeyFromDefaults()
-        hotkeyCache.store(resolved)
-        return resolved
+        let resolved = resolveHotkey(rawHotkey: rawHotkey)
+        hotkeyCache.store(rawHotkey: resolved.cachedRawHotkey, hotkey: resolved.value)
+        return resolved.value
     }
 
     @objc(invalidateCache)

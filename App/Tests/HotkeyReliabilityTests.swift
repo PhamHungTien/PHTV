@@ -19,6 +19,7 @@ final class HotkeyReliabilityTests: XCTestCase {
         let defaults = UserDefaults.standard
         defaultsBackup.removeAll(keepingCapacity: true)
         missingDefaultsKeys.removeAll(keepingCapacity: true)
+        PHTVConvertToolHotkeyService.invalidateCache()
 
         for key in trackedDefaultsKeys {
             if let value = defaults.object(forKey: key) {
@@ -41,6 +42,7 @@ final class HotkeyReliabilityTests: XCTestCase {
                 defaults.removeObject(forKey: key)
             }
         }
+        PHTVConvertToolHotkeyService.invalidateCache()
 
         super.tearDown()
     }
@@ -62,6 +64,24 @@ final class HotkeyReliabilityTests: XCTestCase {
         let resolved = PHTVConvertToolHotkeyService.currentHotkey()
         let expected = Int32(bitPattern: 0xFE0000FE)
 
+        XCTAssertEqual(resolved, expected)
+        XCTAssertEqual(
+            Int32(truncatingIfNeeded: defaults.integer(forKey: "convertToolHotKey")),
+            expected
+        )
+    }
+
+    func testConvertHotkeyRefreshesCacheWhenDefaultsChange() {
+        let defaults = UserDefaults.standard
+        let validHotkey = Int32(bitPattern: 0x010E)
+        let expected = Int32(bitPattern: 0xFE0000FE)
+
+        defaults.set(Int(validHotkey), forKey: "convertToolHotKey")
+        XCTAssertEqual(PHTVConvertToolHotkeyService.currentHotkey(), validHotkey)
+
+        defaults.set(0x0041, forKey: "convertToolHotKey")
+
+        let resolved = PHTVConvertToolHotkeyService.currentHotkey()
         XCTAssertEqual(resolved, expected)
         XCTAssertEqual(
             Int32(truncatingIfNeeded: defaults.integer(forKey: "convertToolHotKey")),
