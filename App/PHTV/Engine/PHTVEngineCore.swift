@@ -87,6 +87,7 @@ final class PHTVVietnameseEngine {
     var keyForAEO: UInt16 = 0
     var isCheckedGrammar: Bool = false
     var isCaps: Bool = false
+    var skipGrammarMarkNormalizationOnce: Bool = false
 
     var spaceCount: Int = 0
     var hasHandledMacro: Bool = false
@@ -523,6 +524,7 @@ final class PHTVVietnameseEngine {
         stateIdx = 0
         hasHandledMacro = false
         hasHandleQuickConsonant = false
+        skipGrammarMarkNormalizationOnce = false
         shouldUpperCaseEnglishRestore = false
         spaceCount = 0
         longWordHelper.removeAll()
@@ -673,6 +675,14 @@ final class PHTVVietnameseEngine {
             for i in l...VEI {
                 if (typingWord[i] & MARK_MASK) == 0 { continue }
 
+                if skipGrammarMarkNormalizationOnce &&
+                   i < VEI &&
+                   (chr(VEI) == KEY_A || chr(VEI) == KEY_E || chr(VEI) == KEY_O) &&
+                   (typingWord[VEI] & (TONE_MASK | TONEW_MASK)) != 0 {
+                    skipGrammarMarkNormalizationOnce = false
+                    break
+                }
+
                 let tailStart: Int = {
                     if VEI > VSI {
                         let tailVowel = chr(VEI)
@@ -699,6 +709,8 @@ final class PHTVVietnameseEngine {
                 break
             }
         }
+
+        skipGrammarMarkNormalizationOnce = false
 
         if isCheckedGrammar {
             if hCode == HookCodeState.doNothing.rawValue { hCode = HookCodeState.willProcess.rawValue }
@@ -1096,6 +1108,12 @@ final class PHTVVietnameseEngine {
 
     func insertAOE(_ data: UInt16, _ isCaps: Bool) {
         findAndCalculateVowel()
+        let shouldPreserveEarlierMarkedVowelForCycle =
+            VEI == idx - 1 &&
+            chr(idx - 1) == data &&
+            (typingWord[idx - 1] & (MARK_MASK | TONE_MASK | TONEW_MASK)) == 0 &&
+            (data == KEY_A || data == KEY_E || data == KEY_O) &&
+            (VSI..<(idx - 1)).contains { (typingWord[$0] & MARK_MASK) != 0 }
         for ii in VSI...VEI { typingWord[ii] &= ~TONEW_MASK }
         hCode = HookCodeState.willProcess.rawValue; hBPC = 0
         var ii = idx - 1
@@ -1110,6 +1128,9 @@ final class PHTVVietnameseEngine {
                 } else {
                     typingWord[ii] |= TONE_MASK
                     if !isKeyD(data) { typingWord[ii] &= ~TONEW_MASK }
+                    if shouldPreserveEarlierMarkedVowelForCycle && ii == idx - 1 {
+                        skipGrammarMarkNormalizationOnce = true
+                    }
                     hData[idx - 1 - ii] = get(typingWord[ii])
                 }
                 break

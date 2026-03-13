@@ -525,6 +525,11 @@ final class EngineRegressionTests: XCTestCase {
         XCTAssertEqual(runtimeRenderedToken("ooso"), "óo")
     }
 
+    func testTrailingACycleAfterEarlierMarkedVowelKeepsOriginalTonePlacement() {
+        XCTAssertEqual(renderedToken("curaa"), "củâ")
+        XCTAssertEqual(renderedToken("curaaa"), "củaa")
+    }
+
     func testPlainTelexEEEEKeepsLegacyRawOutput() {
         XCTAssertEqual(renderedToken("theee"), "thee")
     }
