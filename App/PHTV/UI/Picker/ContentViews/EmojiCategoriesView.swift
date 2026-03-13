@@ -193,7 +193,9 @@ struct EmojiCategoriesView: View {
         }
         .onAppear {
             keyboardFocus = .search
-            isSearchFocused = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                isSearchFocused = true
+            }
         }
         .onChange(of: searchText) { newValue in
             keyboardFocus = .search
@@ -361,10 +363,12 @@ private struct EmojiPickerSearchField: NSViewRepresentable {
             nsView.stringValue = text
         }
 
-        if isFocused,
-           let window = nsView.window,
-           window.firstResponder !== nsView.currentEditor() {
-            window.makeFirstResponder(nsView)
+        if isFocused {
+            DispatchQueue.main.async {
+                guard let window = nsView.window,
+                      window.firstResponder !== nsView.currentEditor() else { return }
+                window.makeFirstResponder(nsView)
+            }
         }
     }
 

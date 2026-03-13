@@ -177,7 +177,6 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
             || changed("pauseKeyEnabled")
             || changed("pauseKey")
             || changed("autoRestoreEnglishWord")
-            || changed("restoreIfWrongSpelling")
 
         let changedEmoji = changed("enableEmojiHotkey")
             || changed("emojiHotkeyModifiers")

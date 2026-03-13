@@ -44,7 +44,6 @@ private final class RuntimeSettingsStateBox: @unchecked Sendable {
     var tempOffEngine: Int32 = 0
     var restoreOnEscape: Int32 = 1
     var autoRestoreEnglishWord: Int32 = 1
-    var restoreIfWrongSpelling: Int32 = 1
     var customEscapeKey: Int32 = 0
     var pauseKeyEnabled: Int32 = 0
     var pauseKey: Int32 = Int32(KeyCode.leftOption)
@@ -184,11 +183,6 @@ private var runtimeRestoreOnEscape: Int32 {
 private var runtimeAutoRestoreEnglishWord: Int32 {
     get { withRuntimeSettings { $0.autoRestoreEnglishWord } }
     set { withRuntimeSettings { $0.autoRestoreEnglishWord = newValue } }
-}
-
-private var runtimeRestoreIfWrongSpelling: Int32 {
-    get { withRuntimeSettings { $0.restoreIfWrongSpelling } }
-    set { withRuntimeSettings { $0.restoreIfWrongSpelling = newValue } }
 }
 
 private var runtimeCustomEscapeKey: Int32 {
@@ -637,11 +631,6 @@ func phtvRuntimeAutoRestoreEnglishWordEnabled() -> Int32 {
     runtimeAutoRestoreEnglishWord
 }
 
-@_cdecl("phtvRuntimeRestoreIfWrongSpellingEnabled")
-func phtvRuntimeRestoreIfWrongSpellingEnabled() -> Int32 {
-    runtimeRestoreIfWrongSpelling
-}
-
 @_cdecl("phtvRuntimeUpperCaseFirstCharEnabled")
 func phtvRuntimeUpperCaseFirstCharEnabled() -> Int32 {
     runtimeUpperCaseFirstChar
@@ -931,14 +920,6 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func setAutoRestoreEnglishWord(_ value: Int32) {
         runtimeAutoRestoreEnglishWord = value
-    }
-
-    class func restoreIfWrongSpelling() -> Int32 {
-        runtimeRestoreIfWrongSpelling
-    }
-
-    class func setRestoreIfWrongSpelling(_ value: Int32) {
-        runtimeRestoreIfWrongSpelling = value
     }
 
     class func enableEmojiHotkey() -> Int32 {

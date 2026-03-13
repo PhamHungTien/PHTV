@@ -103,21 +103,6 @@ private let detectorKeyCodeToIndex: [UInt8] = {
     return mapping
 }()
 
-private let derivationAbilitySuffix = detectorIndices(from: "ability")
-private let derivationAbilitiesSuffix = detectorIndices(from: "abilities")
-private let derivationIbilitySuffix = detectorIndices(from: "ibility")
-private let derivationIbilitiesSuffix = detectorIndices(from: "ibilities")
-private let derivationAbleSuffix = detectorIndices(from: "able")
-private let derivationIbleSuffix = detectorIndices(from: "ible")
-private let englishSuffixFallbacks: [[UInt8]] = [
-    detectorIndices(from: "ing"),
-    detectorIndices(from: "ers"),
-    detectorIndices(from: "er"),
-    detectorIndices(from: "ed"),
-    detectorIndices(from: "es"),
-    detectorIndices(from: "s")
-]
-
 private struct DetectorDecodedWord {
     let indices: [UInt8]
     let keyCodes: [UInt8]
@@ -262,14 +247,6 @@ private func isDetectorToneMarkIndex(_ index: UInt8) -> Bool {
     index == DetectorIndex.w
 }
 
-private func isDetectorTelexConflictToneMark(_ index: UInt8) -> Bool {
-    index == DetectorIndex.s ||
-    index == DetectorIndex.f ||
-    index == DetectorIndex.r ||
-    index == DetectorIndex.x ||
-    index == DetectorIndex.j
-}
-
 private func startsWithNonVietnameseCluster(
     _ indices: [UInt8],
     length: Int
@@ -311,78 +288,6 @@ private func startsWithNonVietnameseCluster(
             (first == DetectorIndex.s && second == DetectorIndex.t && third == DetectorIndex.r) ||
             (first == DetectorIndex.s && second == DetectorIndex.p && third == DetectorIndex.r) ||
             (first == DetectorIndex.s && second == DetectorIndex.c && third == DetectorIndex.r) {
-            return true
-        }
-    }
-
-    return false
-}
-
-private func hasDetectorTelexConflict(
-    _ indices: [UInt8],
-    length: Int
-) -> Bool {
-    guard length >= 2 else {
-        return false
-    }
-
-    for i in 0..<(length - 1) {
-        let c1 = indices[i]
-        let c2 = indices[i + 1]
-
-        if (c1 == DetectorIndex.a && c2 == DetectorIndex.a) ||
-            (c1 == DetectorIndex.e && c2 == DetectorIndex.e) ||
-            (c1 == DetectorIndex.o && c2 == DetectorIndex.o) {
-            return true
-        }
-
-        if (c1 == DetectorIndex.a && c2 == DetectorIndex.w) ||
-            (c1 == DetectorIndex.o && c2 == DetectorIndex.w) ||
-            (c1 == DetectorIndex.u && c2 == DetectorIndex.w) {
-            return true
-        }
-
-        if c1 == DetectorIndex.d && c2 == DetectorIndex.d {
-            return true
-        }
-
-        if isDetectorVowel(c1) && isDetectorTelexConflictToneMark(c2) {
-            return true
-        }
-    }
-
-    return false
-}
-
-private func detectorEndsWithSuffix(
-    _ indices: [UInt8],
-    length: Int,
-    suffix: [UInt8]
-) -> Bool {
-    guard !suffix.isEmpty, length >= suffix.count else {
-        return false
-    }
-
-    let start = length - suffix.count
-    for i in 0..<suffix.count where indices[start + i] != suffix[i] {
-        return false
-    }
-
-    return true
-}
-
-private func detectorToneMarkInMiddle(
-    _ indices: [UInt8],
-    length: Int
-) -> Bool {
-    guard length >= 3 else {
-        return false
-    }
-
-    for i in 0..<(length - 1) {
-        let id = indices[i]
-        let next = indices[i + 1]
-        if isDetectorToneMarkIndex(next) && isDetectorVowel(id) {
             return true
         }
     }
@@ -649,89 +554,6 @@ private func detectorShouldRestoreEnglish(
     }
 
     let isEnglish = detectorContainsEnglish(idx, length: stateIndex)
-
-    if !isEnglish && detectorToneMarkInMiddle(idx, length: stateIndex) {
-        let toneless = detectorTonelessIndices(idx, length: stateIndex)
-        if toneless.count >= 2,
-           toneless.count < 32,
-           detectorContainsEnglish(toneless, length: toneless.count),
-           !detectorContainsVietnamese(toneless, length: toneless.count) {
-            return true
-        }
-    }
-
-    if !isEnglish && hasDetectorTelexConflict(idx, length: stateIndex) {
-        func tryDerivedReplacement(_ suffixFrom: [UInt8], _ suffixTo: [UInt8]) -> Bool {
-            guard stateIndex > suffixFrom.count + 1 else {
-                return false
-            }
-            guard detectorEndsWithSuffix(idx, length: stateIndex, suffix: suffixFrom) else {
-                return false
-            }
-
-            let stemLength = stateIndex - suffixFrom.count
-            let derivedLength = stemLength + suffixTo.count
-            guard derivedLength >= 2, derivedLength < 32 else {
-                return false
-            }
-
-            var derived: [UInt8] = [UInt8](repeating: 0, count: derivedLength)
-            for i in 0..<stemLength {
-                derived[i] = idx[i]
-            }
-            for i in 0..<suffixTo.count {
-                derived[stemLength + i] = suffixTo[i]
-            }
-
-            guard detectorContainsEnglish(derived, length: derivedLength) else {
-                return false
-            }
-
-            let derivedNonVietnameseStart = startsWithNonVietnameseCluster(derived, length: derivedLength)
-            if !derivedNonVietnameseStart && detectorContainsVietnamese(derived, length: derivedLength) {
-                return false
-            }
-
-            return true
-        }
-
-        if tryDerivedReplacement(derivationAbilitiesSuffix, derivationAbleSuffix) ||
-            tryDerivedReplacement(derivationIbilitiesSuffix, derivationIbleSuffix) ||
-            tryDerivedReplacement(derivationAbilitySuffix, derivationAbleSuffix) ||
-            tryDerivedReplacement(derivationIbilitySuffix, derivationIbleSuffix) {
-            return true
-        }
-
-        for suffix in englishSuffixFallbacks {
-            guard stateIndex > suffix.count + 2 else {
-                continue
-            }
-            guard detectorEndsWithSuffix(idx, length: stateIndex, suffix: suffix) else {
-                continue
-            }
-
-            let baseLength = stateIndex - suffix.count
-            let baseFoundInEnglish = detectorContainsEnglish(idx, length: baseLength)
-
-            if baseFoundInEnglish {
-                let baseNonVietnameseStart = startsWithNonVietnameseCluster(idx, length: baseLength)
-                if baseNonVietnameseStart || !detectorContainsVietnamese(idx, length: baseLength) {
-                    return true
-                }
-            } else if baseLength >= 2 {
-                let tonelessBase = detectorTonelessIndices(idx, length: baseLength)
-                if tonelessBase.count >= 2,
-                   tonelessBase.count < 32,
-                   detectorContainsEnglish(tonelessBase, length: tonelessBase.count) {
-                    let baseNonVietnameseStart = startsWithNonVietnameseCluster(tonelessBase, length: tonelessBase.count)
-                    if baseNonVietnameseStart ||
-                        !detectorContainsVietnamese(tonelessBase, length: tonelessBase.count) {
-                        return true
-                    }
-                }
-            }
-        }
-    }
 
     return isEnglish
 }

@@ -326,7 +326,10 @@ final class PHTVVietnameseEngine {
         while runStart > 0 && chr(runStart - 1) == data { runStart -= 1 }
 
         for ii in runStart..<idx {
-            if (typingWord[ii] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) != 0 {
+            // Only stretch vowels that already carry an actual Vietnamese tone mark.
+            // Plain Telex shape transforms such as ee->ê / aa->â / oo->ô must keep the
+            // old behavior, e.g. "theee" -> "thee" instead of "thêe".
+            if (typingWord[ii] & MARK_MASK) != 0 {
                 return true
             }
         }
@@ -1479,21 +1482,6 @@ final class PHTVVietnameseEngine {
         return true
     }
 
-    func checkRestoreIfWrongSpelling(_ handleCode: Int32) -> Bool {
-        for ii in 0..<idx {
-            if !isConsonant(chr(ii)) &&
-               ((typingWord[ii] & MARK_MASK) != 0 || (typingWord[ii] & TONE_MASK) != 0 || (typingWord[ii] & TONEW_MASK) != 0) {
-                hCode = handleCode; hBPC = idx; hNCC = stateIdx
-                for i in 0..<stateIdx {
-                    typingWord[i] = keyStates[i]
-                    hData[stateIdx - 1 - i] = typingWord[i]
-                }
-                idx = stateIdx; return true
-            }
-        }
-        return false
-    }
-
     // MARK: - Quick consonant (EngineQuickConsonant.inc)
 
     func checkQuickConsonant() -> Bool {
@@ -1839,7 +1827,6 @@ final class PHTVVietnameseEngine {
         } else if phtvRuntimeAutoRestoreEnglishWordEnabled() != 0 && isAutoRestoreBreakKey {
             if isSpellCheckingEnabled() { checkSpelling(forceCheckVowel: true) }
             var shouldRestoreEnglish = false
-            var suppressVietnameseTelexRestore = false
             let englishStateIndex = getEnglishLookupStateLength()
             let isPureLetter = englishStateIndex == stateIdx && hasOnlyEnglishLetterKeyStates(stateIdx)
             let isWithNumSuffix = englishStateIndex > 0 && englishStateIndex < stateIdx &&
@@ -1887,10 +1874,6 @@ final class PHTVVietnameseEngine {
                     shouldRestoreEnglish = false
                 }
             }
-            if shouldSuppressVietnameseTelexConflict {
-                suppressVietnameseTelexRestore = true
-            }
-
             if idx > 0 && restoreStateIndex > 1 && canAutoRestore && shouldRestoreEnglish {
                 hCode = HookCodeState.restoreAndStartNewSession.rawValue
                 hBPC = idx; hNCC = restoreStateIndex; hExt = 5
@@ -1904,14 +1887,12 @@ final class PHTVVietnameseEngine {
                 }
                 shouldUpperCaseEnglishRestore = false
                 idx = 0; stateIdx = 0
-            } else if tempDisableKey && !suppressVietnameseTelexRestore && phtvRuntimeRestoreIfWrongSpellingEnabled() != 0 {
-                _ = checkRestoreIfWrongSpelling(HookCodeState.restoreAndStartNewSession.rawValue)
             }
         } else if (phtvRuntimeQuickStartConsonantEnabled() != 0 || phtvRuntimeQuickEndConsonantEnabled() != 0) && !tempDisableKey && isMacroBreakCode(data) {
             _ = checkQuickConsonant()
         } else if isAutoRestoreBreakKey {
             if !tempDisableKey && isSpellCheckingEnabled() { checkSpelling(forceCheckVowel: true) }
-            if tempDisableKey && !(phtvRuntimeRestoreIfWrongSpellingEnabled() != 0 && checkRestoreIfWrongSpelling(HookCodeState.restoreAndStartNewSession.rawValue)) {
+            if tempDisableKey {
                 hCode = HookCodeState.doNothing.rawValue
             }
         }
@@ -1957,7 +1938,6 @@ final class PHTVVietnameseEngine {
     func handleSpace(state: VKeyEventState, data: UInt16) {
         if isSpellCheckingEnabled() { checkSpelling(forceCheckVowel: true) }
         var shouldRestoreEnglish = false
-        var suppressVietnameseTelexRestore = false
         let englishStateIndex = getEnglishLookupStateLength()
         let isPureLetter = englishStateIndex == stateIdx && hasOnlyEnglishLetterKeyStates(stateIdx)
         let isWithNumSuffix = englishStateIndex > 0 && englishStateIndex < stateIdx &&
@@ -2001,10 +1981,6 @@ final class PHTVVietnameseEngine {
                 shouldRestoreEnglish = false
             }
         }
-        if shouldSuppressVietnameseTelexConflict {
-            suppressVietnameseTelexRestore = true
-        }
-
         // EngineKeyHandleEventSpaceDecision.inc
         if phtvRuntimeUseMacroEnabled() != 0 && !hasHandledMacro && findMacro(&hMacroKey, &hMacroData) {
             hCode = HookCodeState.replaceMacro.rawValue
@@ -2025,11 +2001,7 @@ final class PHTVVietnameseEngine {
         } else if (phtvRuntimeQuickStartConsonantEnabled() != 0 || phtvRuntimeQuickEndConsonantEnabled() != 0) && !tempDisableKey && checkQuickConsonant() {
             spaceCount += 1
         } else if tempDisableKey && !hasHandledMacro {
-            if suppressVietnameseTelexRestore {
-                hCode = HookCodeState.doNothing.rawValue
-            } else if !(phtvRuntimeRestoreIfWrongSpellingEnabled() != 0 && checkRestoreIfWrongSpelling(HookCodeState.restore.rawValue)) {
-                hCode = HookCodeState.doNothing.rawValue
-            }
+            hCode = HookCodeState.doNothing.rawValue
             spaceCount += 1
         } else {
             hCode = HookCodeState.doNothing.rawValue; spaceCount += 1

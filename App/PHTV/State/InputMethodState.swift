@@ -30,7 +30,6 @@ final class InputMethodState: ObservableObject {
 
     // Auto restore English words - default: ON for new users
     @Published var autoRestoreEnglishWord: Bool = true
-    @Published var restoreIfWrongSpelling: Bool = true
 
     // Restore to raw keys (customizable key)
     @Published var restoreOnEscape: Bool = true
@@ -86,6 +85,8 @@ final class InputMethodState: ObservableObject {
             NSLog("[InputMethodState] Migrated legacy auto-restore setting to %@", UserDefaultsKey.autoRestoreEnglishWord)
         }
 
+        defaults.removeObject(forKey: "vRestoreIfWrongSpelling")
+
         // Load input method and code table
         let inputTypeIndex = defaults.integer(
             forKey: UserDefaultsKey.inputType,
@@ -137,10 +138,6 @@ final class InputMethodState: ObservableObject {
             forKey: UserDefaultsKey.autoRestoreEnglishWord,
             default: Defaults.autoRestoreEnglishWord
         )
-        restoreIfWrongSpelling = defaults.bool(
-            forKey: UserDefaultsKey.restoreIfWrongSpelling,
-            default: Defaults.restoreIfWrongSpelling
-        )
 
         // Restore to raw keys (customizable key)
         restoreOnEscape = defaults.bool(forKey: UserDefaultsKey.restoreOnEscape, default: Defaults.restoreOnEscape)
@@ -179,7 +176,7 @@ final class InputMethodState: ObservableObject {
 
         // Auto restore English words
         defaults.set(autoRestoreEnglishWord, forKey: UserDefaultsKey.autoRestoreEnglishWord)
-        defaults.set(restoreIfWrongSpelling, forKey: UserDefaultsKey.restoreIfWrongSpelling)
+        defaults.removeObject(forKey: "vRestoreIfWrongSpelling")
 
         // Restore to raw keys (customizable key)
         defaults.set(restoreOnEscape, forKey: UserDefaultsKey.restoreOnEscape)
@@ -253,7 +250,6 @@ final class InputMethodState: ObservableObject {
             $rememberCode.map { _ in () }.eraseToAnyPublisher(),
             $sendKeyStepByStep.map { _ in () }.eraseToAnyPublisher(),
             $autoRestoreEnglishWord.map { _ in () }.eraseToAnyPublisher(),
-            $restoreIfWrongSpelling.map { _ in () }.eraseToAnyPublisher(),
             $restoreOnEscape.map { _ in () }.eraseToAnyPublisher(),
             $restoreKey.map { _ in () }.eraseToAnyPublisher(),
             $pauseKeyEnabled.map { _ in () }.eraseToAnyPublisher(),

@@ -251,8 +251,8 @@ final class EngineRegressionTests: XCTestCase {
         runSpaceCase("terminal1234", customEnglish: ["terminal"], expectRestore: true)
     }
 
-    func testWrongSpellingUserRestoresOnSpace() {
-        runSpaceCase("user", expectRestore: true, autoRestoreEnglish: false)
+    func testWrongSpellingUserDoesNotRestoreOnSpace() {
+        runSpaceCase("user", expectRestore: false, autoRestoreEnglish: false)
     }
 
     // MARK: - Word-break (DOT) tests
@@ -269,8 +269,8 @@ final class EngineRegressionTests: XCTestCase {
         runWordBreakCase("int1234", customEnglish: ["int"], expectRestore: false)
     }
 
-    func testWrongSpellingUserRestoresOnDot() {
-        runWordBreakCase("user", expectRestore: true, autoRestoreEnglish: false)
+    func testWrongSpellingUserDoesNotRestoreOnDot() {
+        runWordBreakCase("user", expectRestore: false, autoRestoreEnglish: false)
     }
 
     // MARK: - Word-break (other punctuation) tests
@@ -320,8 +320,8 @@ final class EngineRegressionTests: XCTestCase {
                          breakKey: KEY_0, breakCaps: 1)
     }
 
-    func testWrongSpellingRestoresOnExclamationMark() {
-        runWordBreakCase("user", expectRestore: true, autoRestoreEnglish: false,
+    func testWrongSpellingDoesNotRestoreOnExclamationMark() {
+        runWordBreakCase("user", expectRestore: false, autoRestoreEnglish: false,
                          breakKey: KEY_1, breakCaps: 1)
     }
 
@@ -360,23 +360,18 @@ final class EngineRegressionTests: XCTestCase {
         )
     }
 
-    // MARK: - Issue #136: wrong-spelling fallback missing in handleWordBreak
+    // MARK: - Wrong-spelling fallback removed
 
-    func testKosovoRestoresOnComma() {
-        // "koosvo" in Telex produces "kốvo" (oo→ô, s adds sắc).
-        // Not in English dict → wrong-spelling fallback must fire on comma with autoRestoreEnglish on.
-        runWordBreakCase("koosvo", expectRestore: true, breakKey: KEY_COMMA)
+    func testKosovoDoesNotRestoreOnComma() {
+        runWordBreakCase("koosvo", expectRestore: false, breakKey: KEY_COMMA)
     }
 
-    func testKosovoRestoresOnDot() {
-        // Same token, verifies the fallback works for dot as well.
-        runWordBreakCase("koosvo", expectRestore: true)
+    func testKosovoDoesNotRestoreOnDot() {
+        runWordBreakCase("koosvo", expectRestore: false)
     }
 
-    func testRoothideRestoresOnComma() {
-        // "roothide" in Telex produces "rôthide" (oo→ô).
-        // Not in English dict → wrong-spelling fallback must fire on comma.
-        runWordBreakCase("roothide", expectRestore: true, breakKey: KEY_COMMA)
+    func testRoothideDoesNotRestoreOnComma() {
+        runWordBreakCase("roothide", expectRestore: false, breakKey: KEY_COMMA)
     }
 
     func testNoobRestoresOnSpace() {
@@ -461,6 +456,14 @@ final class EngineRegressionTests: XCTestCase {
 
     func testElongatedDotBelowOPreservesDiacritics() {
         XCTAssertEqual(renderedToken("ojoo"), "ọoo")
+    }
+
+    func testPlainTelexEEEEKeepsLegacyRawOutput() {
+        XCTAssertEqual(renderedToken("theee"), "thee")
+    }
+
+    func testPlainTelexOOOOKeepsLegacyRawOutput() {
+        XCTAssertEqual(renderedToken("cooo"), "coo")
     }
 
     func testElongatedOiWithToneAfterStretchKeepsToneOnOriginalVowel() {
