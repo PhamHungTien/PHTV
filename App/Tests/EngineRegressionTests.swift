@@ -448,4 +448,26 @@ final class EngineRegressionTests: XCTestCase {
     func testSispProducesMarkedSyllable() {
         XCTAssertEqual(renderedToken("sisp"), "síp")
     }
+
+    // MARK: - Issue #98: elongated vowels must preserve existing Vietnamese marks
+
+    func testElongatedAcuteAAppendsRawVowels() {
+        XCTAssertEqual(renderedToken("asaa"), "áaa")
+    }
+
+    func testElongatedAcuteEAfterNhePreservesMarkPlacement() {
+        XCTAssertEqual(renderedToken("nhesee"), "nhéee")
+    }
+
+    func testElongatedDotBelowOPreservesDiacritics() {
+        XCTAssertEqual(renderedToken("ojoo"), "ọoo")
+    }
+
+    func testElongatedOiWithToneAfterStretchKeepsToneOnOriginalVowel() {
+        XCTAssertEqual(renderedToken("choiiiif"), "chòiiii")
+    }
+
+    func testElongatedOiWithToneBeforeStretchKeepsToneOnOriginalVowel() {
+        XCTAssertEqual(renderedToken("choifiii"), "chòiiii")
+    }
 }

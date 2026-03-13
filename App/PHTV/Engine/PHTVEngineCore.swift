@@ -310,6 +310,120 @@ final class PHTVVietnameseEngine {
         }
     }
 
+    func markMask(for data: UInt16) -> UInt32? {
+        if isKeyS(data) { return MARK1_MASK }
+        if isKeyF(data) { return MARK2_MASK }
+        if isKeyR(data) { return MARK3_MASK }
+        if isKeyX(data) { return MARK4_MASK }
+        if isKeyJ(data) { return MARK5_MASK }
+        return nil
+    }
+
+    func shouldAppendRawElongatedVowel(_ data: UInt16) -> Bool {
+        guard idx > 0, !isConsonant(data), chr(idx - 1) == data else { return false }
+
+        var runStart = idx - 1
+        while runStart > 0 && chr(runStart - 1) == data { runStart -= 1 }
+
+        for ii in runStart..<idx {
+            if (typingWord[ii] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) != 0 {
+                return true
+            }
+        }
+        return false
+    }
+
+    func tryInsertMarkForElongatedTrailingVowel(_ data: UInt16) -> Bool {
+        guard let markMask = markMask(for: data), idx >= 3 else { return false }
+
+        let tailVowel = chr(idx - 1)
+        guard !isConsonant(tailVowel) else { return false }
+
+        var tailStart = idx - 1
+        while tailStart > 0 && chr(tailStart - 1) == tailVowel { tailStart -= 1 }
+        guard idx - tailStart >= 2, tailStart > 0 else { return false }
+
+        var hasExistingMark = false
+        for ii in 0..<idx where (typingWord[ii] & MARK_MASK) != 0 {
+            hasExistingMark = true
+            break
+        }
+        guard !hasExistingMark else { return false }
+
+        let savedTypingWord = typingWord
+        let savedIdx = idx
+        let savedHCode = hCode
+        let savedExt = hExt
+        let savedBPC = hBPC
+        let savedNCC = hNCC
+        let savedHData = hData
+        let savedIsChanged = isChanged
+        let savedTempDisable = tempDisableKey
+        let savedVowelCount = vowelCount
+        let savedVSI = VSI
+        let savedVEI = VEI
+        let savedVWSM = VWSM
+
+        idx = tailStart + 1
+        insertMark(markMask, canModifyFlag: false)
+
+        var applied = false
+        for ii in 0..<idx where (typingWord[ii] & MARK_MASK) == markMask {
+            applied = true
+            break
+        }
+
+        if !applied {
+            typingWord = savedTypingWord
+            idx = savedIdx
+            hCode = savedHCode
+            hExt = savedExt
+            hBPC = savedBPC
+            hNCC = savedNCC
+            hData = savedHData
+            isChanged = savedIsChanged
+            tempDisableKey = savedTempDisable
+            vowelCount = savedVowelCount
+            VSI = savedVSI
+            VEI = savedVEI
+            VWSM = savedVWSM
+            return false
+        }
+
+        idx = savedIdx
+        hCode = HookCodeState.willProcess.rawValue
+        hExt = 0
+        hBPC = savedIdx
+        hNCC = savedIdx
+        for ii in stride(from: savedIdx - 1, through: 0, by: -1) {
+            hData[savedIdx - 1 - ii] = get(typingWord[ii])
+        }
+        isChanged = true
+        tempDisableKey = savedTempDisable
+        return true
+    }
+
+    func canFixVowelWithDiacriticsForElongatedMark(_ data: UInt16) -> Bool {
+        guard markMask(for: data) != nil, idx >= 3 else { return false }
+
+        let tailVowel = chr(idx - 1)
+        guard !isConsonant(tailVowel) else { return false }
+
+        var tailStart = idx - 1
+        while tailStart > 0 && chr(tailStart - 1) == tailVowel { tailStart -= 1 }
+        guard idx - tailStart >= 2, tailStart > 0 else { return false }
+
+        for ii in 0..<idx where (typingWord[ii] & MARK_MASK) != 0 {
+            return false
+        }
+
+        let savedIdx = idx
+        idx = tailStart + 1
+        let canFix = canFixVowelWithDiacriticsForMark()
+        idx = savedIdx
+        return canFix
+    }
+
     func insertState(_ keyCode: UInt16, _ isCaps: Bool) {
         if stateIdx >= ENGINE_MAX_BUFF {
             for i in 0..<(ENGINE_MAX_BUFF - 1) { keyStates[i] = keyStates[i + 1] }
@@ -1251,6 +1365,9 @@ final class PHTVVietnameseEngine {
                 if isCorect { break }
             }
             if !isChanged {
+                if tryInsertMarkForElongatedTrailingVowel(data) {
+                    return
+                }
                 var markIndex = -1
                 for ii in stride(from: idx - 1, through: 0, by: -1) where (typingWord[ii] & TONEW_MASK) != 0 {
                     markIndex = ii
@@ -1274,6 +1391,11 @@ final class PHTVVietnameseEngine {
                     insertKey(data, isCaps)
                 }
             }
+            return
+        }
+
+        if shouldAppendRawElongatedVowel(data) {
+            insertKey(data, isCaps)
             return
         }
 
@@ -2000,9 +2122,17 @@ final class PHTVVietnameseEngine {
                         break
                     }
                 }
-                let allowToneOnInvalidVowel = spellingOK && !spellingVowelOK && canFixVowelWithDiacriticsForMark()
+                let allowElongatedTonePlacement = canFixVowelWithDiacriticsForElongatedMark(data)
+                let allowToneOnInvalidVowel =
+                    spellingOK &&
+                    !spellingVowelOK &&
+                    canFixVowelWithDiacriticsForMark()
                 let allowToneOnInvalidEndConsonant = !spellingOK && spellingVowelOK && hasToneWTransform
-                let allowToneOnInvalid = allowToneOnInvalidVowel || allowToneOnInvalidEndConsonant || hasToneWTransform
+                let allowToneOnInvalid =
+                    allowToneOnInvalidVowel ||
+                    allowToneOnInvalidEndConsonant ||
+                    hasToneWTransform ||
+                    allowElongatedTonePlacement
                 if !allowToneOnInvalid { allowSpecialDespiteTempDisable = false }
             }
         }
