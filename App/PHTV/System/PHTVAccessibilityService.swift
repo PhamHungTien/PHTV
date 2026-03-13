@@ -442,17 +442,43 @@ final class PHTVAccessibilityService: NSObject {
         PHTVAppContextService.currentFrontmostBundleId()
     }
 
-    private class func containsAddressBarKeyword(_ value: String?) -> Bool {
+    private class func containsAddressBarKeyword(_ value: String?, bundleId: String?) -> Bool {
         guard let value else {
             return false
         }
-        let keywords = ["Address", "Omnibox", "Location", "URL", "Search", "Địa chỉ", "Tìm kiếm"]
+        var keywords = ["Address", "Omnibox", "Location", "URL", "Địa chỉ"]
+        if PHTVAppDetectionService.isSafariApp(bundleId) {
+            keywords.append("Smart Search")
+        }
         for keyword in keywords {
             if value.range(of: keyword, options: .caseInsensitive) != nil {
                 return true
             }
         }
         return false
+    }
+
+    class func addressBarClassification(
+        role: String?,
+        positiveKeywordMatch: Bool,
+        foundWebArea: Bool,
+        strictDetection: Bool
+    ) -> Bool {
+        if positiveKeywordMatch {
+            return true
+        }
+        if foundWebArea {
+            return false
+        }
+
+        switch role {
+        case "AXComboBox":
+            return true
+        case "AXTextField", "AXSearchField":
+            return !strictDetection
+        default:
+            return true
+        }
     }
 
     private class func readAddressBarCache() -> (result: Bool, checkTime: UInt64) {
@@ -517,6 +543,8 @@ final class PHTVAccessibilityService: NSObject {
         }
 
         var isAddressBar = true // Default to YES (Address Bar) for safety
+        let bundleId = focusedAppBundleId()
+        let strictDetection = PHTVAppDetectionService.needsStrictAddressBarDetection(bundleId)
 
         guard let focused = focusedElement() else {
             // AX failed: use recent cached result, otherwise safe default.
@@ -529,14 +557,9 @@ final class PHTVAccessibilityService: NSObject {
             return isAddressBar
         }
 
-        // Strategy 1: role-based identification
-        if let role = stringAttribute(focused, kAXRoleAttribute),
-           role == "AXTextField" || role == "AXSearchField" || role == "AXComboBox" {
-            writeAddressBarCache(result: true, checkTime: now)
-            return true
-        }
+        let role = stringAttribute(focused, kAXRoleAttribute)
 
-        // Strategy 2: positive keyword match
+        // Strategy 1: positive keyword match
         let attributesToCheck: [String] = [
             kAXTitleAttribute,
             kAXDescriptionAttribute,
@@ -546,35 +569,36 @@ final class PHTVAccessibilityService: NSObject {
 
         var positiveMatch = false
         for attr in attributesToCheck {
-            if containsAddressBarKeyword(stringAttribute(focused, attr)) {
+            if containsAddressBarKeyword(stringAttribute(focused, attr), bundleId: bundleId) {
                 positiveMatch = true
                 break
             }
         }
 
-        if positiveMatch {
-            isAddressBar = true
-        } else {
-            // Strategy 3: negative identification via parent hierarchy
-            var foundWebArea = false
-            var current: AXUIElement? = focused
+        // Strategy 2: negative identification via parent hierarchy
+        var foundWebArea = false
+        var current: AXUIElement? = focused
 
-            // Walk up to 12 levels to find AXWebArea
-            for _ in 0..<12 {
-                guard let currentElement = current,
-                      let parent = elementAttribute(currentElement, kAXParentAttribute) else {
-                    break
-                }
-
-                if stringAttribute(parent, kAXRoleAttribute) == "AXWebArea" {
-                    foundWebArea = true
-                    break
-                }
-                current = parent
+        // Walk up to 12 levels to find AXWebArea
+        for _ in 0..<12 {
+            guard let currentElement = current,
+                  let parent = elementAttribute(currentElement, kAXParentAttribute) else {
+                break
             }
 
-            isAddressBar = !foundWebArea
+            if stringAttribute(parent, kAXRoleAttribute) == "AXWebArea" {
+                foundWebArea = true
+                break
+            }
+            current = parent
         }
+
+        isAddressBar = addressBarClassification(
+            role: role,
+            positiveKeywordMatch: positiveMatch,
+            foundWebArea: foundWebArea,
+            strictDetection: strictDetection
+        )
 
         writeAddressBarCache(result: isAddressBar, checkTime: now)
         return isAddressBar

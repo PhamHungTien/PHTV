@@ -48,4 +48,42 @@ final class CompatibilityStrategyTests: XCTestCase {
         XCTAssertFalse(plan.shouldTryLegacyNonBrowserFix)
         XCTAssertTrue(plan.shouldLogSpaceSkip)
     }
+
+    func testCocCocNeedsStrictAddressBarDetection() {
+        XCTAssertTrue(PHTVAppDetectionService.needsStrictAddressBarDetection("com.coccoc.browser"))
+        XCTAssertFalse(PHTVAppDetectionService.needsStrictAddressBarDetection("com.google.Chrome"))
+    }
+
+    func testStrictAddressBarDetectionRejectsGenericTextFieldOutsideWebArea() {
+        XCTAssertFalse(
+            PHTVAccessibilityService.addressBarClassification(
+                role: "AXTextField",
+                positiveKeywordMatch: false,
+                foundWebArea: false,
+                strictDetection: true
+            )
+        )
+    }
+
+    func testStrictAddressBarDetectionStillAcceptsOmniboxKeywordMatch() {
+        XCTAssertTrue(
+            PHTVAccessibilityService.addressBarClassification(
+                role: "AXTextField",
+                positiveKeywordMatch: true,
+                foundWebArea: false,
+                strictDetection: true
+            )
+        )
+    }
+
+    func testLegacyAddressBarDetectionKeepsFallbackForGenericTextField() {
+        XCTAssertTrue(
+            PHTVAccessibilityService.addressBarClassification(
+                role: "AXTextField",
+                positiveKeywordMatch: false,
+                foundWebArea: false,
+                strictDetection: false
+            )
+        )
+    }
 }

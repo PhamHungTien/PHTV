@@ -240,6 +240,14 @@ final class PHTVAppDetectionService: NSObject {
         "com.microsoft.Outlook"
     ])
 
+    // Coc Coc's Chromium UI can expose suggestion/search inputs as plain text fields.
+    // Use stricter address-bar detection there to avoid applying omnibox fixes to
+    // unrelated browser search/history fields.
+    private static let strictAddressBarDetectionApps = BundlePatternSet([
+        "com.coccoc.browser",
+        "com.coccoc.browser.app.*"
+    ])
+
     private static let disableVietnameseApps = BundlePatternSet([
         "com.apple.apps.launcher",
         "com.apple.ScreenContinuity"
@@ -302,6 +310,10 @@ final class PHTVAppDetectionService: NSObject {
 
     @objc class func needsLegacySpaceCommitFix(_ bundleId: String?) -> Bool {
         legacySpaceCommitFixApps.contains(bundleId)
+    }
+
+    @objc class func needsStrictAddressBarDetection(_ bundleId: String?) -> Bool {
+        strictAddressBarDetectionApps.contains(bundleId)
     }
 
     @objc class func containsUnicodeCompound(_ bundleId: String?) -> Bool {
