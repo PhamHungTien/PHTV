@@ -705,24 +705,31 @@ final class PHTVEventCallbackService {
                 #endif
             }
 
+            let shouldInspectNotionCodeBlock =
+                PHTVEngineRuntimeFacade.engineDataBackspaceCount() > 0 &&
+                PHTVEngineRuntimeFacade.engineDataExtCode() != 4 &&
+                !processSignalPlan.isSpecialApp &&
+                !processSignalPlan.isPotentialShortcut
             var isNotionCodeBlockDetected = false
-            if processSignalPlan.shouldTryLegacyNonBrowserFix {
-                isNotionCodeBlockDetected = processSignalPlan.isNotionApp &&
-                    PHTVEventContextBridgeService.isNotionCodeBlock(
-                        forSafeMode: safeModeEnabled)
+            if shouldInspectNotionCodeBlock {
+                isNotionCodeBlockDetected = PHTVEventContextBridgeService.isNotionCodeBlock(
+                    forSafeMode: safeModeEnabled)
                 #if DEBUG
                 if isNotionCodeBlockDetected {
-                    NSLog("[Notion] Code Block detected - using Standard Backspace")
+                    NSLog("[Notion] Code Block detected - using selection-overwrite backspace fix")
                 }
                 #endif
             }
 
+            let shouldApplyLegacyBackspaceFix =
+                processSignalPlan.shouldTryLegacyNonBrowserFix || isNotionCodeBlockDetected
+
             let resolvedBackspacePlan = PHTVInputStrategyService.resolvedBackspacePlan(
                 forBrowserAddressBarFix: processSignalPlan.shouldTryBrowserAddressBarFix,
                 addressBarDetected: isAddrBar,
-                legacyNonBrowserFix: processSignalPlan.shouldTryLegacyNonBrowserFix,
+                legacyNonBrowserFix: shouldApplyLegacyBackspaceFix,
                 containsUnicodeCompound: appChars.containsUnicodeCompound,
-                notionCodeBlockDetected: isNotionCodeBlockDetected,
+                notionCodeBlockDetected: false,
                 backspaceCount: PHTVEngineRuntimeFacade.engineDataBackspaceCount(),
                 maxBuffer: EngineSignalCode.maxBuffer,
                 safetyLimit: 15)

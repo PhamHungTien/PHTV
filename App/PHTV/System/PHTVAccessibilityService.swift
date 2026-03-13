@@ -428,18 +428,53 @@ final class PHTVAccessibilityService: NSObject {
     }
 
     private class func focusedWindowTitleForFrontmostApp() -> String? {
-        guard let appElement = focusedApplicationElement() else {
-            return nil
-        }
-        guard let focusedWindow = elementAttribute(appElement, kAXFocusedWindowAttribute) else {
+        guard let focusedWindow = focusedWindowForFrontmostApp() else {
             return nil
         }
 
         return stringAttribute(focusedWindow, kAXTitleAttribute)
     }
 
+    private class func focusedWindowDocumentForFrontmostApp() -> String? {
+        guard let focusedWindow = focusedWindowForFrontmostApp() else {
+            return nil
+        }
+
+        return stringAttribute(focusedWindow, kAXDocumentAttribute)
+    }
+
+    private class func focusedWindowForFrontmostApp() -> AXUIElement? {
+        guard let appElement = focusedApplicationElement() else {
+            return nil
+        }
+        return elementAttribute(appElement, kAXFocusedWindowAttribute)
+    }
+
     private class func focusedAppBundleId() -> String? {
         PHTVAppContextService.currentFrontmostBundleId()
+    }
+
+    private class func isNotionWorkspaceContext() -> Bool {
+        let bundleId = focusedAppBundleId()
+        if PHTVAppDetectionService.isNotionApp(bundleId) {
+            return true
+        }
+
+        guard PHTVAppDetectionService.isBrowserApp(bundleId) else {
+            return false
+        }
+
+        if let document = focusedWindowDocumentForFrontmostApp()?.lowercased(),
+           document.contains("notion.so") || document.contains("notion.site") || document.contains("notion.com") {
+            return true
+        }
+
+        if let title = focusedWindowTitleForFrontmostApp()?.lowercased(),
+           title.contains("notion") {
+            return true
+        }
+
+        return false
     }
 
     private class func containsAddressBarKeyword(_ value: String?, bundleId: String?) -> Bool {
@@ -621,7 +656,7 @@ final class PHTVAccessibilityService: NSObject {
             kAXHelpAttribute
         ]
 
-        if let focused = focusedElement() {
+        if isNotionWorkspaceContext(), let focused = focusedElement() {
             for attr in attributes {
                 if let value = stringAttribute(focused, attr),
                    value.range(of: "code", options: String.CompareOptions.caseInsensitive) != nil {

@@ -86,4 +86,24 @@ final class CompatibilityStrategyTests: XCTestCase {
             )
         )
     }
+
+    func testUnicodeCompoundLegacyBackspaceUsesSelectionOverwritePlan() {
+        let plan = PHTVInputStrategyService.resolvedBackspacePlan(
+            forBrowserAddressBarFix: false,
+            addressBarDetected: false,
+            legacyNonBrowserFix: true,
+            containsUnicodeCompound: true,
+            notionCodeBlockDetected: false,
+            backspaceCount: 4,
+            maxBuffer: 20,
+            safetyLimit: 15
+        )
+
+        XCTAssertEqual(
+            plan.adjustmentAction,
+            PHTVBackspaceAdjustmentAction.sendShiftLeftThenBackspace.rawValue
+        )
+        XCTAssertEqual(plan.adjustedBackspaceCount, 3)
+        XCTAssertEqual(plan.sanitizedBackspaceCount, 3)
+    }
 }
