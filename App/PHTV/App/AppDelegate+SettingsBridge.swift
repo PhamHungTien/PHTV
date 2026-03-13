@@ -119,11 +119,14 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
 
     @objc func handleTCCDatabaseChanged(_ notification: Notification?) {
         NSLog("[TCC] TCC database change notification received in AppDelegate")
+#if DEBUG
         NSLog("[TCC] userInfo: %@", String(describing: notification?.userInfo))
+#endif
 
         PHTVManager.invalidatePermissionCache()
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 300_000_000) // 0.3s settle
             self.checkAccessibilityStatus()
         }
     }

@@ -181,20 +181,23 @@ private let phtvInputStateNotificationLanguageChangedFromBackend = Notification.
     @objc(onInputTypeSelectedIndex:)
     func onInputTypeSelectedIndex(_ index: Int32) {
         if isUpdatingInputType {
+#if DEBUG
             NSLog("[MenuBar] Ignoring input type change (already updating)")
+#endif
             return
         }
 
         let currentInputType = PHTVManager.currentInputType()
         if currentInputType == index {
+#if DEBUG
             NSLog("[MenuBar] Input type already at %d, skipping", index)
+#endif
             return
         }
 
-        NSLog("[MenuBar] Input type changing from %d to %d", currentInputType, index)
-        NSLog("========================================")
+#if DEBUG
         NSLog("[MenuBar] CHANGING INPUT TYPE: %d -> %d", currentInputType, index)
-        NSLog("========================================")
+#endif
 
         isUpdatingInputType = true
         defer { isUpdatingInputType = false }
@@ -213,26 +216,29 @@ private let phtvInputStateNotificationLanguageChangedFromBackend = Notification.
             }
         }
 
-        NSLog("[MenuBar] Input type changed to: %d (engine reset complete)", index)
+        NSLog("[MenuBar] Input type changed to: %d", index)
     }
 
     @objc(onCodeTableChanged:)
     func onCodeTableChanged(_ index: Int32) {
         if isUpdatingCodeTable {
+#if DEBUG
             NSLog("[MenuBar] Ignoring code table change (already updating)")
+#endif
             return
         }
 
         let currentCodeTable = PHTVManager.currentCodeTable()
         if currentCodeTable == index {
+#if DEBUG
             NSLog("[MenuBar] Code table already at %d, skipping", index)
+#endif
             return
         }
 
-        NSLog("[MenuBar] Code table changing from %d to %d", currentCodeTable, index)
-        NSLog("========================================")
+#if DEBUG
         NSLog("[MenuBar] CHANGING CODE TABLE: %d -> %d", currentCodeTable, index)
-        NSLog("========================================")
+#endif
 
         isUpdatingCodeTable = true
         defer { isUpdatingCodeTable = false }
@@ -246,7 +252,7 @@ private let phtvInputStateNotificationLanguageChangedFromBackend = Notification.
             PHTVManager.notifyTableCodeChanged()
         }
 
-        NSLog("[MenuBar] Code table changed to: %d (engine reset complete)", index)
+        NSLog("[MenuBar] Code table changed to: %d", index)
     }
 
     @objc func onCodeSelected(_ sender: Any?) {
@@ -262,7 +268,9 @@ private let phtvInputStateNotificationLanguageChangedFromBackend = Notification.
         }
 
         let index = newInputMethodValue.int32Value
+#if DEBUG
         NSLog("[SwiftUI] InputMethodChanged notification received: %d", index)
+#endif
         onInputTypeSelectedIndex(index)
     }
 
@@ -272,7 +280,9 @@ private let phtvInputStateNotificationLanguageChangedFromBackend = Notification.
         }
 
         let index = newCodeTableValue.int32Value
+#if DEBUG
         NSLog("[SwiftUI] CodeTableChanged notification received: %d", index)
+#endif
         onCodeTableChanged(index)
     }
 }
