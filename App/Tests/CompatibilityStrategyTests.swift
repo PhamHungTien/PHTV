@@ -106,4 +106,24 @@ final class CompatibilityStrategyTests: XCTestCase {
         XCTAssertEqual(plan.adjustedBackspaceCount, 3)
         XCTAssertEqual(plan.sanitizedBackspaceCount, 3)
     }
+
+    func testNotionCodeBlockAlwaysUsesSelectionOverwritePlan() {
+        let plan = PHTVInputStrategyService.resolvedBackspacePlan(
+            forBrowserAddressBarFix: false,
+            addressBarDetected: false,
+            legacyNonBrowserFix: true,
+            containsUnicodeCompound: false,
+            notionCodeBlockDetected: true,
+            backspaceCount: 4,
+            maxBuffer: 20,
+            safetyLimit: 15
+        )
+
+        XCTAssertEqual(
+            plan.adjustmentAction,
+            PHTVBackspaceAdjustmentAction.sendShiftLeftThenBackspace.rawValue
+        )
+        XCTAssertEqual(plan.adjustedBackspaceCount, 3)
+        XCTAssertEqual(plan.sanitizedBackspaceCount, 3)
+    }
 }

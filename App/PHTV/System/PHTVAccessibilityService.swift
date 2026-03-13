@@ -653,27 +653,24 @@ final class PHTVAccessibilityService: NSObject {
         let attributes: [String] = [
             kAXRoleDescriptionAttribute,
             kAXDescriptionAttribute,
-            kAXHelpAttribute
+            kAXHelpAttribute,
+            kAXTitleAttribute,
+            "AXIdentifier"
         ]
 
         if isNotionWorkspaceContext(), let focused = focusedElement() {
-            for attr in attributes {
-                if let value = stringAttribute(focused, attr),
-                   value.range(of: "code", options: String.CompareOptions.caseInsensitive) != nil {
-                    isCodeBlock = true
-                    break
-                }
-            }
-
-            if !isCodeBlock,
-               let parent = elementAttribute(focused, kAXParentAttribute) {
+            var current: AXUIElement? = focused
+            var depth = 0
+            while let element = current, depth < 6, !isCodeBlock {
                 for attr in attributes {
-                    if let value = stringAttribute(parent, attr),
+                    if let value = stringAttribute(element, attr),
                        value.range(of: "code", options: String.CompareOptions.caseInsensitive) != nil {
                         isCodeBlock = true
                         break
                     }
                 }
+                current = elementAttribute(element, kAXParentAttribute)
+                depth += 1
             }
         } else if cache.checkTime > 0 && elapsedMs < 500 {
             // AX can fail transiently while focus changes; keep recent stable result.

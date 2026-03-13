@@ -227,7 +227,14 @@ final class PHTVInputStrategyService: NSObject {
             )
         }
 
-        if shouldTryLegacyNonBrowserFix && !isNotionCodeBlockDetected {
+        if shouldTryLegacyNonBrowserFix && isNotionCodeBlockDetected {
+            return PHTVBackspaceAdjustment(
+                action: PHTVBackspaceAdjustmentAction.sendShiftLeftThenBackspace.rawValue,
+                adjustedBackspaceCount: backspaceCount - 1
+            )
+        }
+
+        if shouldTryLegacyNonBrowserFix {
             if containsUnicodeCompound {
                 return PHTVBackspaceAdjustment(
                     action: PHTVBackspaceAdjustmentAction.sendShiftLeftThenBackspace.rawValue,

@@ -729,7 +729,7 @@ final class PHTVEventCallbackService {
                 addressBarDetected: isAddrBar,
                 legacyNonBrowserFix: shouldApplyLegacyBackspaceFix,
                 containsUnicodeCompound: appChars.containsUnicodeCompound,
-                notionCodeBlockDetected: false,
+                notionCodeBlockDetected: isNotionCodeBlockDetected,
                 backspaceCount: PHTVEngineRuntimeFacade.engineDataBackspaceCount(),
                 maxBuffer: EngineSignalCode.maxBuffer,
                 safetyLimit: 15)
