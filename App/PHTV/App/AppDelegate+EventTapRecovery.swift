@@ -83,15 +83,16 @@ private func phtvEmojiHotkeyLooksValid(enabled: Int32, modifiers: Int32, keyCode
         let token = eventTapRecoveryToken
 
         for (index, delay) in phtvEventTapRecoveryDelays.enumerated() {
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
-                Task { @MainActor in
-                    self?.performEventTapRecoveryAttempt(
-                        reason: reason,
-                        attempt: index + 1,
-                        totalAttempts: phtvEventTapRecoveryDelays.count,
-                        token: token
-                    )
+            Task { @MainActor [weak self] in
+                if delay > 0 {
+                    try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
                 }
+                self?.performEventTapRecoveryAttempt(
+                    reason: reason,
+                    attempt: index + 1,
+                    totalAttempts: phtvEventTapRecoveryDelays.count,
+                    token: token
+                )
             }
         }
     }
@@ -103,7 +104,10 @@ private func phtvEmojiHotkeyLooksValid(enabled: Int32, modifiers: Int32, keyCode
 
     private func refreshEmojiHotkeyRegistrationAfterRecovery() {
         for delay in phtvPostRecoveryEmojiRefreshDelays {
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            Task { @MainActor in
+                if delay > 0 {
+                    try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                }
                 EmojiHotkeyBridge.refreshEmojiHotkeyRegistration()
             }
         }

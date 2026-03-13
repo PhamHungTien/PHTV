@@ -93,7 +93,8 @@ final class PHTVTCCNotificationService: NSObject {
             userInfo: notification.userInfo
         )
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + settledCheckDelay) {
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: UInt64(settledCheckDelay * 1_000_000_000))
             let hasPermission = PHTVManager.canCreateEventTap()
             NSLog("[TCC] Post-notification check: %@", hasPermission ? "GRANTED" : "DENIED")
             NotificationCenter.default.post(

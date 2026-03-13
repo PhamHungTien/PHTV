@@ -99,7 +99,8 @@ final class PHTVTCCMaintenanceService: NSObject {
             return false
         }
 
-        let script = "#!/bin/sh\ntccutil reset Accessibility \(bundleID)\nexit 0\n"
+        let escapedBundleID = shellEscapedSingleQuotedPath(bundleID)
+        let script = "#!/bin/sh\ntccutil reset Accessibility '\(escapedBundleID)'\nexit 0\n"
         let tempPath = (NSTemporaryDirectory() as NSString)
             .appendingPathComponent("phtv_tcc_reset_\(UUID().uuidString).sh")
 
