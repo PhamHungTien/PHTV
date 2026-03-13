@@ -32,7 +32,11 @@ private func phtvMacroLiveLog(_ message: String) {
     private func syncMacrosFromUserDefaults(resetSession: Bool) {
         let defaults = UserDefaults.standard
         let macroListData = defaults.data(forKey: phtvDefaultsKeyMacroList)
-        let macros = MacroStorage.load(defaults: defaults)
+        let userMacros = MacroStorage.load(defaults: defaults)
+        let macros = PHTVSystemTextReplacementService.runtimeMacros(
+            userMacros: userMacros,
+            defaults: defaults
+        )
 
         if macros.isEmpty {
             let emptyData = MacroStorage.engineBinaryData(from: [])
@@ -46,7 +50,10 @@ private func phtvMacroLiveLog(_ message: String) {
         } else {
             let binaryData = MacroStorage.engineBinaryData(from: macros)
             PHTVEngineDataBridge.initializeMacroMap(with: binaryData)
-            phtvMacroLiveLog("macros synced: count=\(macros.count)")
+            let systemCount = max(0, macros.count - userMacros.count)
+            phtvMacroLiveLog(
+                "macros synced: user=\(userMacros.count) system=\(systemCount) total=\(macros.count)"
+            )
         }
 
         if resetSession {

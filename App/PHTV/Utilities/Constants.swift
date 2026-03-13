@@ -24,6 +24,7 @@ enum UserDefaultsKey {
     static let sendKeyStepByStep = "SendKeyStepByStep"
     static let useMacro = "UseMacro"
     static let useMacroInEnglishMode = "UseMacroInEnglishMode"
+    static let useSystemTextReplacements = "UseSystemTextReplacements"
     static let autoCapsMacro = "vAutoCapsMacro"
     static let macroList = "macroList"
     static let macroCategories = "macroCategories"
@@ -382,6 +383,7 @@ enum Defaults {
     static let sendKeyStepByStep = false
     static let useMacro = true
     static let useMacroInEnglishMode = false
+    static let useSystemTextReplacements = false
     static let autoCapsMacro = false
     static let useSmartSwitchKey = true
     static let upperCaseFirstChar = false
@@ -557,6 +559,7 @@ final class SettingsBootstrap: NSObject {
             UserDefaultsKey.quickTelex: Defaults.quickTelex,
             UserDefaultsKey.useMacro: Defaults.useMacro,
             UserDefaultsKey.useMacroInEnglishMode: Defaults.useMacroInEnglishMode,
+            UserDefaultsKey.useSystemTextReplacements: Defaults.useSystemTextReplacements,
             UserDefaultsKey.autoCapsMacro: Defaults.autoCapsMacro,
             UserDefaultsKey.sendKeyStepByStep: Defaults.sendKeyStepByStep,
             UserDefaultsKey.useSmartSwitchKey: Defaults.useSmartSwitchKey,

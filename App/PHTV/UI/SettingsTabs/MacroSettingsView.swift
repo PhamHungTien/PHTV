@@ -12,6 +12,7 @@ import UniformTypeIdentifiers
 struct MacroSettingsView: View {
     @EnvironmentObject var appState: AppState
     @State private var macros: [MacroItem] = []
+    @State private var systemReplacementCount = 0
     @State private var selectedMacro: UUID?
     @State private var showingAddMacro = false
     @State private var editingMacro: MacroItem? = nil  // nil = not editing, set to show edit sheet
@@ -98,6 +99,45 @@ struct MacroSettingsView: View {
                         )
                         .disabled(!appState.useMacro)
                         .opacity(appState.useMacro ? 1 : 0.5)
+
+                        SettingsDivider()
+
+                        SettingsToggleRow(
+                            icon: "keyboard.badge.eye",
+                            iconColor: .compatTeal,
+                            title: "Dùng Text Replacements của macOS",
+                            subtitle: appState.useSystemTextReplacements
+                                ? "Đang ghép \(systemReplacementCount) mục từ System Settings vào runtime"
+                                : "Đọc từ Keyboard > Text Replacements, không ghi đè macro riêng",
+                            isOn: $appState.useSystemTextReplacements
+                        )
+                        .disabled(!appState.useMacro)
+                        .opacity(appState.useMacro ? 1 : 0.5)
+
+                        SettingsDivider()
+
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Làm mới từ macOS")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.primary)
+                                Text("\(systemReplacementCount) mục khả dụng trong Text Replacements")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+
+                            Button(action: refreshSystemTextReplacements) {
+                                Label("Refresh", systemImage: "arrow.clockwise")
+                                    .font(.subheadline)
+                            }
+                            .adaptiveBorderedButtonStyle()
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .disabled(!appState.useMacro || !appState.useSystemTextReplacements)
+                        .opacity(appState.useMacro && appState.useSystemTextReplacements ? 1 : 0.5)
                     }
                 }
 
@@ -315,9 +355,11 @@ struct MacroSettingsView: View {
         }
         .onAppear {
             loadMacros()
+            refreshSystemReplacementCount()
         }
         .onDisappear {
             macros = []
+            systemReplacementCount = 0
             selectedMacro = nil
             recentlyAddedId = nil
             recentlyEditedId = nil
@@ -362,6 +404,8 @@ struct MacroSettingsView: View {
                 }
             }
 
+            refreshSystemReplacementCount()
+
         }
     }
 
@@ -383,6 +427,15 @@ struct MacroSettingsView: View {
         macros = loadedMacros
         Self.cachedMacros = loadedMacros
         Self.cachedMacrosData = defaults.data(forKey: UserDefaultsKey.macroList)
+    }
+
+    private func refreshSystemReplacementCount() {
+        systemReplacementCount = PHTVSystemTextReplacementService.currentReplacementCount()
+    }
+
+    private func refreshSystemTextReplacements() {
+        refreshSystemReplacementCount()
+        NotificationCenter.default.post(name: NotificationName.macrosUpdated, object: nil)
     }
 
     private func deleteMacro() {

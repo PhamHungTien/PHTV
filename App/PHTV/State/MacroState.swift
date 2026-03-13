@@ -16,6 +16,7 @@ final class MacroState: ObservableObject {
     // Macro settings
     @Published var useMacro: Bool = true
     @Published var useMacroInEnglishMode: Bool = false
+    @Published var useSystemTextReplacements: Bool = false
     @Published var autoCapsMacro: Bool = false
     @Published var macroCategories: [MacroCategory] = []
 
@@ -51,6 +52,10 @@ final class MacroState: ObservableObject {
         useMacroInEnglishMode = defaults.bool(
             forKey: UserDefaultsKey.useMacroInEnglishMode,
             default: Defaults.useMacroInEnglishMode
+        )
+        useSystemTextReplacements = defaults.bool(
+            forKey: UserDefaultsKey.useSystemTextReplacements,
+            default: Defaults.useSystemTextReplacements
         )
         autoCapsMacro = defaults.bool(forKey: UserDefaultsKey.autoCapsMacro, default: Defaults.autoCapsMacro)
 
@@ -106,6 +111,7 @@ final class MacroState: ObservableObject {
         // Save macro settings
         defaults.set(useMacro, forKey: UserDefaultsKey.useMacro)
         defaults.set(useMacroInEnglishMode, forKey: UserDefaultsKey.useMacroInEnglishMode)
+        defaults.set(useSystemTextReplacements, forKey: UserDefaultsKey.useSystemTextReplacements)
         defaults.set(autoCapsMacro, forKey: UserDefaultsKey.autoCapsMacro)
 
         // Save macro categories (exclude default category)
@@ -147,6 +153,18 @@ final class MacroState: ObservableObject {
             )
         }.store(in: &cancellables)
 
+        $useSystemTextReplacements
+            .removeDuplicates()
+            .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
+            .dropFirst()
+            .sink { [weak self] _ in
+                guard let self = self, !self.isLoadingSettings else { return }
+                self.saveSettings()
+                NotificationCenter.default.post(name: NotificationName.phtvSettingsChanged, object: nil)
+                NotificationCenter.default.post(name: NotificationName.macrosUpdated, object: nil)
+            }
+            .store(in: &cancellables)
+
         // Observer for emoji hotkey settings
         Publishers.Merge3(
             $enableEmojiHotkey.map { _ in () },
@@ -171,6 +189,7 @@ final class MacroState: ObservableObject {
 
         useMacro = Defaults.useMacro
         useMacroInEnglishMode = Defaults.useMacroInEnglishMode
+        useSystemTextReplacements = Defaults.useSystemTextReplacements
         autoCapsMacro = Defaults.autoCapsMacro
         macroCategories = []
 

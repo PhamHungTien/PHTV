@@ -121,6 +121,11 @@ extension AppState {
         set { macroState.useMacroInEnglishMode = newValue }
     }
 
+    var useSystemTextReplacements: Bool {
+        get { macroState.useSystemTextReplacements }
+        set { macroState.useSystemTextReplacements = newValue }
+    }
+
     var autoCapsMacro: Bool {
         get { macroState.autoCapsMacro }
         set { macroState.autoCapsMacro = newValue }
