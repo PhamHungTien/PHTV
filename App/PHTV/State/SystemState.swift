@@ -9,6 +9,7 @@
 import SwiftUI
 import ServiceManagement
 import Combine
+import ApplicationServices
 
 /// Manages system settings, permissions, and updates
 @MainActor
@@ -144,9 +145,11 @@ final class SystemState: ObservableObject {
     // MARK: - Accessibility
 
     func checkAccessibilityPermission() {
-        // CRITICAL: Use PHTVManager.canCreateEventTap() - the ONLY reliable method
+        // AXIsProcessTrusted() updates immediately when the user grants accessibility
+        // in System Settings — no backoff, no test-tap overhead. This is the
+        // Apple-recommended lightweight check for UI polling.
         Task { @MainActor in
-            self.hasAccessibilityPermission = PHTVManager.canCreateEventTap()
+            self.hasAccessibilityPermission = AXIsProcessTrusted()
         }
     }
 
@@ -330,11 +333,34 @@ final class SystemState: ObservableObject {
             guard let self = self else { return }
             if let isEnabled = notification.object as? NSNumber {
                 Task { @MainActor in
-                    self.hasAccessibilityPermission = isEnabled.boolValue
+                    // Prefer AXIsProcessTrusted() as the source of truth for UI;
+                    // the notification value reflects full event-tap readiness which
+                    // may still be false while only Accessibility is granted.
+                    let axTrusted = AXIsProcessTrusted()
+                    self.hasAccessibilityPermission = axTrusted || isEnabled.boolValue
                 }
             }
         }
         notificationObservers.append(observer1)
+
+        // React immediately to macOS TCC accessibility changes without depending on
+        // the PHTVTCCNotificationService chain. This is the Apple-recommended approach
+        // for detecting accessibility permission grants in real time.
+        let tccObserver = DistributedNotificationCenter.default().addObserver(
+            forName: Notification.Name("com.apple.accessibility.api"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self = self else { return }
+            Task { @MainActor in
+                // Short settle delay: TCC database write propagates asynchronously.
+                try? await Task.sleep(nanoseconds: 200_000_000) // 200ms
+                let axTrusted = AXIsProcessTrusted()
+                self.hasAccessibilityPermission = axTrusted
+                NSLog("[SystemState] AX TCC notification → AXIsProcessTrusted=%@", axTrusted ? "YES" : "NO")
+            }
+        }
+        notificationObservers.append(tccObserver)
 
         // Listen for update check responses from backend
         let observer2 = NotificationCenter.default.addObserver(

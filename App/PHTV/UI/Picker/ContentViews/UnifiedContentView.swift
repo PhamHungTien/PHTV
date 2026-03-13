@@ -324,7 +324,11 @@ struct UnifiedContentView: View {
         }
         }
         .onAppear {
-            isSearchFocused = true
+            // Delay is required for nonactivating panels: the panel must become key
+            // before SwiftUI's @FocusState can transfer focus to the text field.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                isSearchFocused = true
+            }
             // Fetch content if empty
             if klipyClient.trendingGIFs.isEmpty {
                 klipyClient.fetchTrending()

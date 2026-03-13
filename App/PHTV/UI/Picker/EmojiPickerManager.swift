@@ -62,8 +62,16 @@ class EmojiPickerManager {
         // Show at mouse position
         panel?.showAtMousePosition()
 
-        // Make panel key to receive keyboard input
+        // makeKey() must be called after orderFrontRegardless() so the panel is
+        // visible before it becomes the key window. The content view's @FocusState
+        // then fires in the next run-loop cycle (see UnifiedContentView.onAppear).
         panel?.makeKey()
+
+        // Belt-and-suspenders: re-assert key status after one run-loop pass so that
+        // SwiftUI's focus engine can transfer focus to the search field reliably.
+        DispatchQueue.main.async { [weak self] in
+            self?.panel?.makeKey()
+        }
 
         NSLog("[EmojiPicker] Panel shown")
     }

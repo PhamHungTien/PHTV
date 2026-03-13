@@ -880,6 +880,11 @@ struct AccessibilityStepView: View {
         }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
             appState.checkAccessibilityPermission()
+            // When AX is granted, ensure AppDelegate starts the event tap
+            // (handles the case where TCC notification wasn't delivered).
+            if appState.hasAccessibilityPermission {
+                AppDelegate.current()?.checkAccessibilityAndRestart()
+            }
         }
     }
 }

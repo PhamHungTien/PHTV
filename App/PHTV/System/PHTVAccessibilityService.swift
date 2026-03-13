@@ -489,9 +489,21 @@ final class PHTVAccessibilityService: NSObject {
         writeNotionCodeBlockCache(result: false, checkTime: 0)
     }
 
+    @objc class func invalidateTerminalContextCaches() {
+        cacheState.withLock { state in
+            state.lastTerminalPanelResult = false
+            state.lastTerminalPanelCheckTime = 0
+            state.lastClaudeCodeSessionResult = false
+            state.lastClaudeCodeSessionCheckTime = 0
+        }
+    }
+
     @objc class func invalidateContextDetectionCaches() {
         invalidateAddressBarCache()
         invalidateNotionCodeBlockCache()
+        // Also reset terminal/Claude Code session caches so focus changes
+        // are reflected on the next keypress (e.g., clicking into a new session).
+        invalidateTerminalContextCaches()
     }
 
     @objc class func isFocusedElementAddressBar() -> Bool {
@@ -619,7 +631,7 @@ final class PHTVAccessibilityService: NSObject {
             (state.lastTerminalPanelResult, state.lastTerminalPanelCheckTime)
         }
         if cached.1 != 0,
-           PHTVTimingService.machTimeToMs(now - cached.1) < 50 {
+           PHTVTimingService.machTimeToMs(now - cached.1) < 100 {
             return cached.0
         }
 
@@ -686,8 +698,10 @@ final class PHTVAccessibilityService: NSObject {
         let cached = cacheState.withLock { state in
             (state.lastClaudeCodeSessionResult, state.lastClaudeCodeSessionCheckTime)
         }
+        // 200ms cache reduces AX tree traversal frequency during active typing.
+        // Claude Code sessions rarely change mid-typing; stale results are acceptable.
         if cached.1 != 0,
-           PHTVTimingService.machTimeToMs(now - cached.1) < 50 {
+           PHTVTimingService.machTimeToMs(now - cached.1) < 200 {
             return cached.0
         }
 
