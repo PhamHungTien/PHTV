@@ -58,10 +58,15 @@ class FloatingPanel<Content: View>: NSPanel, NSWindowDelegate {
         self.close()
     }
 
-    /// Shows the panel at current mouse position
+    /// Shows the panel at current mouse position, on the screen containing the cursor.
     func showAtMousePosition() {
         let mouseLocation = NSEvent.mouseLocation
-        let screenFrame = NSScreen.main?.frame ?? .zero
+        // Use the screen that actually contains the cursor (critical for multi-monitor setups).
+        // NSScreen.main returns the screen with the menu bar, which may differ from the
+        // screen the user is working on.
+        let screenFrame = NSScreen.screens.first(where: { NSMouseInRect(mouseLocation, $0.frame, false) })?.frame
+            ?? NSScreen.main?.frame
+            ?? .zero
 
         // Position panel near mouse, but ensure it stays on screen
         var origin = mouseLocation

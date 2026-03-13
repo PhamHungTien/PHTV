@@ -103,16 +103,23 @@ private func menuBarIconSizeBounds() -> ClosedRange<CGFloat> {
     return minSize...maxSize
 }
 
+// NSCache provides automatic eviction under memory pressure, unlike a plain Dictionary.
+// countLimit caps the number of entries without a full-flush eviction strategy.
+// @MainActor ensures single-threaded access matching the icon rendering pipeline.
 @MainActor
-private var menuBarIconImageCache: [String: NSImage] = [:]
+private let menuBarIconImageCache: NSCache<NSString, NSImage> = {
+    let cache = NSCache<NSString, NSImage>()
+    cache.countLimit = 64
+    return cache
+}()
 
 @MainActor
 private func makeMenuBarIconImage(named iconName: String, size: CGFloat) -> NSImage? {
     let bounds = menuBarIconSizeBounds()
     let quantizedSize = min(max((size * 10).rounded() / 10, bounds.lowerBound), bounds.upperBound)
-    let cacheKey = "\(iconName)-\(quantizedSize)"
+    let cacheKey = "\(iconName)-\(quantizedSize)" as NSString
 
-    if let cachedImage = menuBarIconImageCache[cacheKey] {
+    if let cachedImage = menuBarIconImageCache.object(forKey: cacheKey) {
         return cachedImage
     }
 
@@ -136,9 +143,6 @@ private func makeMenuBarIconImage(named iconName: String, size: CGFloat) -> NSIm
     renderedImage.isTemplate = true
     renderedImage.size = targetSize
 
-    if menuBarIconImageCache.count > 256 {
-        menuBarIconImageCache.removeAll(keepingCapacity: true)
-    }
-    menuBarIconImageCache[cacheKey] = renderedImage
+    menuBarIconImageCache.setObject(renderedImage, forKey: cacheKey)
     return renderedImage
 }
