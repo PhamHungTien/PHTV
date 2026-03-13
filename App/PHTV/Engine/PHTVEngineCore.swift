@@ -324,12 +324,22 @@ final class PHTVVietnameseEngine {
 
         var runStart = idx - 1
         while runStart > 0 && chr(runStart - 1) == data { runStart -= 1 }
+        let runLength = idx - runStart
 
         for ii in runStart..<idx {
-            // Only stretch vowels that already carry an actual Vietnamese tone mark.
-            // Plain Telex shape transforms such as ee->ê / aa->â / oo->ô must keep the
-            // old behavior, e.g. "theee" -> "thee" instead of "thêe".
-            if (typingWord[ii] & MARK_MASK) != 0 {
+            guard (typingWord[ii] & MARK_MASK) != 0 else { continue }
+
+            // O-family vowels need to preserve the full Telex cycle first:
+            //   ọ + o -> ộ
+            //   ộ + o -> ọo
+            //   ọo + o -> ọoo
+            if data == KEY_O {
+                return runLength >= 2
+            }
+
+            // For the existing elongated-vowel behavior on a/e families, append raw
+            // vowels immediately once the syllable already carries a Vietnamese mark.
+            if data == KEY_A || data == KEY_E {
                 return true
             }
         }
@@ -1067,7 +1077,7 @@ final class PHTVVietnameseEngine {
                 if (typingWord[ii] & TONE_MASK) != 0 {
                     hCode = HookCodeState.restore.rawValue
                     typingWord[ii] &= ~TONE_MASK
-                    hData[idx - 1 - ii] = typingWord[ii]
+                    hData[idx - 1 - ii] = get(typingWord[ii])
                     tempDisableKey = true
                 } else {
                     typingWord[ii] |= TONE_MASK
@@ -1095,7 +1105,7 @@ final class PHTVVietnameseEngine {
                 if (typingWord[ii] & TONE_MASK) != 0 {
                     hCode = HookCodeState.restore.rawValue
                     typingWord[ii] &= ~TONE_MASK
-                    hData[idx - 1 - ii] = typingWord[ii]
+                    hData[idx - 1 - ii] = get(typingWord[ii])
                     if data != KEY_O { tempDisableKey = true }
                 } else {
                     typingWord[ii] |= TONE_MASK
@@ -1198,11 +1208,11 @@ final class PHTVVietnameseEngine {
                             typingWord[ii] = UInt32(KEY_O) | ((typingWord[ii] & CAPS_MASK) != 0 ? CAPS_MASK : 0)
                             isRestoredW = true
                         }
-                        hData[idx - 1 - ii] = typingWord[ii]
+                        hData[idx - 1 - ii] = get(typingWord[ii])
                     } else {
                         hCode = HookCodeState.restore.rawValue
                         typingWord[ii] &= ~TONEW_MASK
-                        hData[idx - 1 - ii] = typingWord[ii]
+                        hData[idx - 1 - ii] = get(typingWord[ii])
                         isRestoredW = true
                     }
                     tempDisableKey = true
@@ -2121,7 +2131,7 @@ final class PHTVVietnameseEngine {
                 insertKey(data, isCaps)
             }
         } else {
-            hCode = HookCodeState.doNothing.rawValue; hExt = 3
+            hCode = HookCodeState.doNothing.rawValue; hBPC = 0; hNCC = 0; hExt = 3
             handleMainKey(data, isCaps)
         }
 

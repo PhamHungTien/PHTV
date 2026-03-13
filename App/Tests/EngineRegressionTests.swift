@@ -148,6 +148,56 @@ final class EngineRegressionTests: XCTestCase {
         return renderedTypingWord(engine)
     }
 
+    private func runtimeEmittedWord(for keycode: UInt16) -> String {
+        let codeTable = PHTVEngineRuntimeFacade.currentCodeTable()
+        let count = Int(engineHookNewCharCount())
+        var scalars: [UnicodeScalar] = []
+        scalars.reserveCapacity(count + 1)
+
+        if count > 0 {
+            for i in stride(from: count - 1, through: 0, by: -1) {
+                let codePoint = decodeOutputCharacter(engineHookCharAt(Int32(i)), codeTable: codeTable)
+                guard codePoint != 0, let scalar = UnicodeScalar(Int(codePoint)) else { continue }
+                scalars.append(scalar)
+            }
+        }
+
+        if isRestore(engineHookCode()) {
+            let codePoint = EngineMacroKeyMap.character(for: UInt32(keycode))
+            if codePoint != 0, let scalar = UnicodeScalar(Int(codePoint)) {
+                scalars.append(scalar)
+            }
+        }
+
+        return String(String.UnicodeScalarView(scalars))
+    }
+
+    private func runtimeRenderedToken(_ token: String) -> String {
+        engineInitialize()
+        var output = ""
+
+        for ch in token {
+            let code = keyCode(for: ch)
+            engineHandleEvent(eventKeyboard, stateKeyDown, code, 0, 0)
+
+            let backspaceCount = min(Int(engineHookBackspaceCount()), output.count)
+            if backspaceCount > 0 {
+                output.removeLast(backspaceCount)
+            }
+
+            if engineHookCode() == HookCodeState.doNothing.rawValue {
+                if let scalar = UnicodeScalar(Int(EngineMacroKeyMap.character(for: UInt32(code)))) {
+                    output.unicodeScalars.append(scalar)
+                }
+                continue
+            }
+
+            output += runtimeEmittedWord(for: code)
+        }
+
+        return output
+    }
+
     private func runSpaceCase(
         _ token: String,
         customEnglish: [String] = [],
@@ -454,8 +504,25 @@ final class EngineRegressionTests: XCTestCase {
         XCTAssertEqual(renderedToken("nhesee"), "nhéee")
     }
 
-    func testElongatedDotBelowOPreservesDiacritics() {
-        XCTAssertEqual(renderedToken("ojoo"), "ọoo")
+    func testMarkedODoubleKeyFollowsLegacyTelexCycle() {
+        XCTAssertEqual(renderedToken("ojo"), "ộ")
+        XCTAssertEqual(runtimeRenderedToken("ojo"), "ộ")
+    }
+
+    func testMarkedODoubleKeyThenReleaseHatAddsRawTail() {
+        XCTAssertEqual(renderedToken("ojoo"), "ọo")
+        XCTAssertEqual(runtimeRenderedToken("ojoo"), "ọo")
+    }
+
+    func testMarkedODoubleKeyCanStillStretchAfterLegacyCycle() {
+        XCTAssertEqual(renderedToken("ojooo"), "ọoo")
+        XCTAssertEqual(runtimeRenderedToken("ojooo"), "ọoo")
+    }
+
+    func testRuntimeElongatedAndMarkedVowelsKeepVisibleOutput() {
+        XCTAssertEqual(runtimeRenderedToken("asaa"), "áaa")
+        XCTAssertEqual(runtimeRenderedToken("nhesee"), "nhéee")
+        XCTAssertEqual(runtimeRenderedToken("ooso"), "óo")
     }
 
     func testPlainTelexEEEEKeepsLegacyRawOutput() {
@@ -473,4 +540,5 @@ final class EngineRegressionTests: XCTestCase {
     func testElongatedOiWithToneBeforeStretchKeepsToneOnOriginalVowel() {
         XCTAssertEqual(renderedToken("choifiii"), "chòiiii")
     }
+
 }
