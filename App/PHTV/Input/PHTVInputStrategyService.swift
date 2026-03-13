@@ -158,7 +158,8 @@ final class PHTVInputStrategyService: NSObject {
         isSpotlightTarget: Bool,
         needsPrecomposedBatched: Bool,
         browserFixEnabled: Bool,
-        isNotionApp: Bool
+        isNotionApp: Bool,
+        needsLegacySpaceCommitFix: Bool
     ) -> PHTVInputStrategy {
         let isSpecialApp = isSpotlightTarget || needsPrecomposedBatched
         let isPotentialShortcut = isSlashKey
@@ -180,7 +181,9 @@ final class PHTVInputStrategyService: NSObject {
             extCode != 4 &&
             backspaceCount > 0 &&
             (!isSpecialApp || isNotionApp) &&
-            !isSpaceKey &&
+            // Some editors (notably Outlook) need the placeholder+delete cycle
+            // even when Space is the commit key.
+            (!isSpaceKey || needsLegacySpaceCommitFix) &&
             !isPotentialShortcut &&
             !isBrowserApp
 
@@ -188,7 +191,8 @@ final class PHTVInputStrategyService: NSObject {
             isSpaceKey &&
             browserFixEnabled &&
             extCode != 4 &&
-            !isSpecialApp
+            !isSpecialApp &&
+            !needsLegacySpaceCommitFix
 
         return PHTVInputStrategy(
             isSpecialApp: isSpecialApp,
@@ -419,6 +423,7 @@ final class PHTVInputStrategyService: NSObject {
         browserFixEnabled: Bool
     ) -> PHTVProcessSignalPlanBox {
         let isNotionApp = PHTVAppDetectionService.isNotionApp(bundleId)
+        let needsLegacySpaceCommitFix = PHTVAppDetectionService.needsLegacySpaceCommitFix(bundleId)
         let inputStrategy = strategy(
             forSpaceKey: keyCode == spaceKeyCode,
             slashKey: keyCode == slashKeyCode,
@@ -428,7 +433,8 @@ final class PHTVInputStrategyService: NSObject {
             isSpotlightTarget: isSpotlightTarget,
             needsPrecomposedBatched: needsPrecomposedBatched,
             browserFixEnabled: browserFixEnabled,
-            isNotionApp: isNotionApp
+            isNotionApp: isNotionApp,
+            needsLegacySpaceCommitFix: needsLegacySpaceCommitFix
         )
 
         return PHTVProcessSignalPlanBox(

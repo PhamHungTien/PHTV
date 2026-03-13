@@ -234,6 +234,12 @@ final class PHTVAppDetectionService: NSObject {
         "com.apple.Safari.WebApp.*"
     ])
 
+    // Outlook can rewrite the committed word on Space unless we break the editor's
+    // replacement/autocorrect cycle before replaying the composed text.
+    private static let legacySpaceCommitFixApps = BundlePatternSet([
+        "com.microsoft.Outlook"
+    ])
+
     private static let disableVietnameseApps = BundlePatternSet([
         "com.apple.apps.launcher",
         "com.apple.ScreenContinuity"
@@ -292,6 +298,10 @@ final class PHTVAppDetectionService: NSObject {
 
     @objc class func needsStepByStep(_ bundleId: String?) -> Bool {
         stepByStepApps.contains(bundleId)
+    }
+
+    @objc class func needsLegacySpaceCommitFix(_ bundleId: String?) -> Bool {
+        legacySpaceCommitFixApps.contains(bundleId)
     }
 
     @objc class func containsUnicodeCompound(_ bundleId: String?) -> Bool {
