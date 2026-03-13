@@ -478,6 +478,10 @@ final class EngineRegressionTests: XCTestCase {
         XCTAssertEqual(renderedToken("theem"), "thêm")
     }
 
+    func testTheseUsesStandardTelexToneBeforeShapeOrdering() {
+        XCTAssertEqual(renderedToken("these"), "thế")
+    }
+
     func testTheemDoesNotRestoreOnSpace() {
         runSpaceCase("theem", expectRestore: false)
     }

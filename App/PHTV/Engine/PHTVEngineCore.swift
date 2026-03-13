@@ -326,6 +326,19 @@ final class PHTVVietnameseEngine {
         var runStart = idx - 1
         while runStart > 0 && chr(runStart - 1) == data { runStart -= 1 }
         let runLength = idx - runStart
+        let trailing = typingWord[idx - 1]
+
+        // Keep standard Telex ordering for cases like `these -> thế` and the
+        // first half of the elongated-vowel cycle (`asaa`, `nhesee`):
+        // when the syllable currently ends with a marked plain `a/e`, the next
+        // key should still be allowed to form `â/ê` before elongated-vowel
+        // logic takes over on the following repeat.
+        if (data == KEY_A || data == KEY_E) &&
+           runLength == 1 &&
+           (trailing & MARK_MASK) != 0 &&
+           (trailing & (TONE_MASK | TONEW_MASK)) == 0 {
+            return false
+        }
 
         for ii in runStart..<idx {
             guard (typingWord[ii] & MARK_MASK) != 0 else { continue }
@@ -345,6 +358,43 @@ final class PHTVVietnameseEngine {
             }
         }
         return false
+    }
+
+    func tryExpandMarkedAOEElongation(_ data: UInt16, _ isCaps: Bool) -> Bool {
+        guard (data == KEY_A || data == KEY_E), idx > 0, chr(idx - 1) == data else { return false }
+
+        var runStart = idx - 1
+        while runStart > 0 && chr(runStart - 1) == data { runStart -= 1 }
+        guard idx - runStart == 1 else { return false }
+
+        let trailing = typingWord[idx - 1]
+        guard (trailing & MARK_MASK) != 0 else { return false }
+        guard (trailing & TONE_MASK) != 0, (trailing & TONEW_MASK) == 0 else { return false }
+        guard idx + 1 < ENGINE_MAX_BUFF else { return false }
+
+        findAndCalculateVowel()
+        let vowelStart = VSI
+        let oldIdx = idx
+
+        typingWord[idx - 1] &= ~TONE_MASK
+        setKeyData(idx, data, isCaps)
+        idx += 1
+        setKeyData(idx, data, isCaps)
+        idx += 1
+
+        hCode = HookCodeState.willProcess.rawValue
+        hExt = 0
+        hBPC = oldIdx - vowelStart
+        hNCC = idx - vowelStart
+
+        var outIndex = 0
+        for ii in stride(from: idx - 1, through: vowelStart, by: -1) {
+            hData[outIndex] = get(typingWord[ii])
+            outIndex += 1
+        }
+
+        isChanged = true
+        return true
     }
 
     func tryInsertMarkForElongatedTrailingVowel(_ data: UInt16) -> Bool {
@@ -1425,6 +1475,10 @@ final class PHTVVietnameseEngine {
                     insertKey(data, isCaps)
                 }
             }
+            return
+        }
+
+        if tryExpandMarkedAOEElongation(data, isCaps) {
             return
         }
 
