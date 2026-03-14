@@ -417,13 +417,6 @@ jobs:
         with:
           name: dmg-x86_64
 
-      - name: Generate checksums
-        run: |
-          VERSION="${{ needs.build.outputs.version }}"
-          sha256sum "PHTV-$VERSION-arm64.dmg"   > checksums.txt
-          sha256sum "PHTV-$VERSION-intel.dmg"    >> checksums.txt
-          cat checksums.txt
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -434,7 +427,6 @@ jobs:
           files: |
             PHTV-${{ needs.build.outputs.version }}-arm64.dmg
             PHTV-${{ needs.build.outputs.version }}-intel.dmg
-            checksums.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
