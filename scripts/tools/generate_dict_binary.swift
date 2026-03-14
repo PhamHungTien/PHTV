@@ -133,12 +133,14 @@ private struct VietnameseTelexConversion {
     let baseWord: String
     let variants: [String]
     let hasModifier: Bool
+    let hasToneMark: Bool
 }
 
 private func vietnameseToTelexConversion(_ word: String) -> VietnameseTelexConversion? {
     var baseParts: [String] = []
     var tones: [String] = []
     var hasModifier = false
+    var hasToneMark = false
 
     for character in word {
         if let telex = vietnameseToTelexMap[character] {
@@ -149,6 +151,7 @@ private func vietnameseToTelexConversion(_ word: String) -> VietnameseTelexConve
             if let last = telex.last, toneMarks.contains(last), telex.count >= 2 {
                 baseParts.append(String(telex.dropLast()))
                 tones.append(String(last))
+                hasToneMark = true
             } else {
                 baseParts.append(telex)
             }
@@ -189,7 +192,8 @@ private func vietnameseToTelexConversion(_ word: String) -> VietnameseTelexConve
     return VietnameseTelexConversion(
         baseWord: baseWord,
         variants: Array(variants),
-        hasModifier: hasModifier || !tones.isEmpty
+        hasModifier: hasModifier || !tones.isEmpty,
+        hasToneMark: hasToneMark
     )
 }
 
@@ -414,9 +418,10 @@ private func buildVietnameseDictionary(resourcesDir: URL, englishWords: Set<Stri
                 continue
             }
 
-            // Keep tone/shape variants for Vietnamese typing, but avoid letting the
-            // plain unaccented base from marked Vietnamese words shadow a real English word.
-            if conversion.hasModifier &&
+            // Keep canonical shape-only Telex forms like "treen" -> "trên".
+            // Only drop the plain base when the Vietnamese source word already
+            // contains a tone mark and would otherwise shadow a real English word.
+            if conversion.hasToneMark &&
                 variant == conversion.baseWord &&
                 englishWords.contains(variant) {
                 continue

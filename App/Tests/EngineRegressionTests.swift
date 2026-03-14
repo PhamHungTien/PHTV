@@ -499,6 +499,14 @@ final class EngineRegressionTests: XCTestCase {
         runSpaceCase("sips", expectRestore: false)
     }
 
+    func testTreenDoesNotRestoreOnSpace() {
+        runSpaceCase("treen", expectRestore: false)
+    }
+
+    func testTreenProducesTrenWithCircumflex() {
+        XCTAssertEqual(renderedToken("treen"), "trên")
+    }
+
     func testTheemProducesThemWithCircumflex() {
         XCTAssertEqual(renderedToken("theem"), "thêm")
     }
