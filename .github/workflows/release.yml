@@ -236,6 +236,7 @@ jobs:
           APPCAST_FILE="${{ matrix.appcast_file }}"
           ARCHIVES_DIR="$RUNNER_TEMP/sparkle_archives_${{ matrix.arch }}"
           APPCAST_WORK_FILE="$ARCHIVES_DIR/appcast.xml"
+          APPCAST_OUTPUT_FILE="$ARCHIVES_DIR/$APPCAST_FILE"
           mkdir -p "$ARCHIVES_DIR"
           cp "$ZIP_NAME" "$ARCHIVES_DIR/"
 
@@ -268,8 +269,11 @@ jobs:
             exit 1
           fi
 
-          cp "$APPCAST_WORK_FILE" "$ARCHIVES_DIR/$APPCAST_FILE"
-          cp "$ARCHIVES_DIR/$APPCAST_FILE" "../docs/$APPCAST_FILE"
+          if [ "$APPCAST_OUTPUT_FILE" != "$APPCAST_WORK_FILE" ]; then
+            cp "$APPCAST_WORK_FILE" "$APPCAST_OUTPUT_FILE"
+          fi
+
+          cp "$APPCAST_OUTPUT_FILE" "../docs/$APPCAST_FILE"
 
           python3 - <<PY
           import sys
