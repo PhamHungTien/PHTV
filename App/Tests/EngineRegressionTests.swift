@@ -482,6 +482,30 @@ final class EngineRegressionTests: XCTestCase {
         XCTAssertEqual(renderedToken("these"), "thế")
     }
 
+    func testEFamilyToneBeforeShapeMatchesStandardTelexAcrossToneKeys() {
+        XCTAssertEqual(renderedToken("these"), renderedToken("thees"))
+        XCTAssertEqual(renderedToken("thefe"), renderedToken("theef"))
+        XCTAssertEqual(renderedToken("there"), renderedToken("theer"))
+        XCTAssertEqual(renderedToken("thexe"), renderedToken("theex"))
+        XCTAssertEqual(renderedToken("theje"), renderedToken("theej"))
+    }
+
+    func testAFamilyToneBeforeShapeMatchesStandardTelexAcrossToneKeys() {
+        XCTAssertEqual(renderedToken("casa"), renderedToken("caas"))
+        XCTAssertEqual(renderedToken("cafa"), renderedToken("caaf"))
+        XCTAssertEqual(renderedToken("cara"), renderedToken("caar"))
+        XCTAssertEqual(renderedToken("caxa"), renderedToken("caax"))
+        XCTAssertEqual(renderedToken("caja"), renderedToken("caaj"))
+    }
+
+    func testOFamilyToneBeforeShapeMatchesStandardTelexAcrossToneKeys() {
+        XCTAssertEqual(renderedToken("oso"), renderedToken("oos"))
+        XCTAssertEqual(renderedToken("ofo"), renderedToken("oof"))
+        XCTAssertEqual(renderedToken("oro"), renderedToken("oor"))
+        XCTAssertEqual(renderedToken("oxo"), renderedToken("oox"))
+        XCTAssertEqual(renderedToken("ojo"), renderedToken("ooj"))
+    }
+
     func testTheemDoesNotRestoreOnSpace() {
         runSpaceCase("theem", expectRestore: false)
     }
