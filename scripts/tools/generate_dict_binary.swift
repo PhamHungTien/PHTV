@@ -262,24 +262,34 @@ private func buildEnglishDictionary(resourcesDir: URL, dataDir: URL?) -> (Bool, 
         print("  Loaded \(words.count.formatted()) words so far")
     }
 
-    var localWords = Set<String>()
     // resourcesDir = <repo>/App/PHTV/Resources/Dictionaries → go up 4 levels to reach repo root
     let repoRoot = resourcesDir
         .deletingLastPathComponent()
         .deletingLastPathComponent()
         .deletingLastPathComponent()
         .deletingLastPathComponent()
-    let localCandidates: [URL] = [
+
+    // Priority words: small curated list (data/en_words.txt, resourcesDir/en_words.txt)
+    // Always kept even when total exceeds maxEnglishWords.
+    var localWords = Set<String>()
+    let priorityCandidates: [URL] = [
         dataDir?.appendingPathComponent("en_words.txt"),
-        repoRoot.appendingPathComponent("docs/dictionary/en_words.txt"),
         resourcesDir.appendingPathComponent("en_words.txt")
     ].compactMap { $0 }
-
-    for localFile in localCandidates where FileManager.default.fileExists(atPath: localFile.path) {
+    for localFile in priorityCandidates where FileManager.default.fileExists(atPath: localFile.path) {
         let fileWords = readLocalWordFile(localFile)
         localWords.formUnion(fileWords)
         words.formUnion(fileWords)
-        print("  Added local words from \(localFile.lastPathComponent) (\(localFile.deletingLastPathComponent().lastPathComponent)/), total: \(words.count.formatted())")
+        print("  Added priority words from \(localFile.lastPathComponent) (\(localFile.deletingLastPathComponent().lastPathComponent)/), total: \(words.count.formatted())")
+    }
+
+    // Supplementary words: docs/dictionary/en_words.txt — large comprehensive list,
+    // added to the pool but subject to maxEnglishWords trimming like the online source.
+    let docsDict = repoRoot.appendingPathComponent("docs/dictionary/en_words.txt")
+    if FileManager.default.fileExists(atPath: docsDict.path) {
+        let supplementWords = readLocalWordFile(docsDict)
+        words.formUnion(supplementWords)
+        print("  Added supplementary words from \(docsDict.lastPathComponent) (dictionary/), total: \(words.count.formatted())")
     }
 
     guard !words.isEmpty else {
