@@ -266,9 +266,11 @@ private func startsWithNonVietnameseCluster(
     if second != detectorInvalidIndex {
         if (first == DetectorIndex.b && (second == DetectorIndex.l || second == DetectorIndex.r)) ||
             (first == DetectorIndex.c && (second == DetectorIndex.l || second == DetectorIndex.r)) ||
+            (first == DetectorIndex.c && second == DetectorIndex.h && third != detectorInvalidIndex) ||
             (first == DetectorIndex.d && second == DetectorIndex.r) ||
             (first == DetectorIndex.f && (second == DetectorIndex.l || second == DetectorIndex.r)) ||
             (first == DetectorIndex.g && (second == DetectorIndex.l || second == DetectorIndex.r)) ||
+            (first == DetectorIndex.k && second == DetectorIndex.n) ||
             (first == DetectorIndex.p && (second == DetectorIndex.l || second == DetectorIndex.r)) ||
             (first == DetectorIndex.s && (
                 second == DetectorIndex.c || second == DetectorIndex.k ||
@@ -284,7 +286,8 @@ private func startsWithNonVietnameseCluster(
     }
 
     if third != detectorInvalidIndex {
-        if (first == DetectorIndex.s && second == DetectorIndex.h && third == DetectorIndex.r) ||
+        if (first == DetectorIndex.c && second == DetectorIndex.h && third == DetectorIndex.r) ||
+            (first == DetectorIndex.s && second == DetectorIndex.h && third == DetectorIndex.r) ||
             (first == DetectorIndex.s && second == DetectorIndex.t && third == DetectorIndex.r) ||
             (first == DetectorIndex.s && second == DetectorIndex.p && third == DetectorIndex.r) ||
             (first == DetectorIndex.s && second == DetectorIndex.c && third == DetectorIndex.r) {
@@ -407,11 +410,22 @@ private func startsWithNonVietnameseKeyCluster(
     keyCodes: [UInt8],
     length: Int
 ) -> Bool {
-    guard length >= 3 else {
+    guard length >= 2 else {
         return false
     }
 
     let first = keyCodes[0]
+
+    // Single letters that cannot start a Vietnamese word
+    if first == DetectorKeyCode.f || first == DetectorKeyCode.j ||
+       first == DetectorKeyCode.w || first == DetectorKeyCode.z {
+        return true
+    }
+
+    guard length >= 3 else {
+        return false
+    }
+
     let second = keyCodes[1]
 
     if (first == DetectorKeyCode.b && second == DetectorKeyCode.l) ||
@@ -423,6 +437,7 @@ private func startsWithNonVietnameseKeyCluster(
         (first == DetectorKeyCode.f && second == DetectorKeyCode.r) ||
         (first == DetectorKeyCode.g && second == DetectorKeyCode.l) ||
         (first == DetectorKeyCode.g && second == DetectorKeyCode.r) ||
+        (first == DetectorKeyCode.k && second == DetectorKeyCode.n) ||
         (first == DetectorKeyCode.p && second == DetectorKeyCode.l) ||
         (first == DetectorKeyCode.p && second == DetectorKeyCode.r) ||
         (first == DetectorKeyCode.s && second == DetectorKeyCode.c) ||
@@ -438,11 +453,15 @@ private func startsWithNonVietnameseKeyCluster(
         return true
     }
 
-    if length >= 4 {
-        let third = keyCodes[2]
-        if first == DetectorKeyCode.t && second == DetectorKeyCode.h && third == DetectorKeyCode.r {
-            return true
-        }
+    let third = keyCodes[2]
+
+    if (first == DetectorKeyCode.c && second == DetectorKeyCode.h && third == DetectorKeyCode.r) ||
+        (first == DetectorKeyCode.s && second == DetectorKeyCode.h && third == DetectorKeyCode.r) ||
+        (first == DetectorKeyCode.s && second == DetectorKeyCode.t && third == DetectorKeyCode.r) ||
+        (first == DetectorKeyCode.s && second == DetectorKeyCode.p && third == DetectorKeyCode.r) ||
+        (first == DetectorKeyCode.s && second == DetectorKeyCode.c && third == DetectorKeyCode.r) ||
+        (first == DetectorKeyCode.t && second == DetectorKeyCode.h && third == DetectorKeyCode.r) {
+        return true
     }
 
     return false
@@ -517,18 +536,34 @@ private func detectorShouldRestoreEnglish(
     let keyCodes = decoded.keyCodes
     let cString = decoded.cString
 
+    // Custom dictionaries always take priority over all other checks
     if detectorContainsCustomVietnamese(cString) {
         return false
     }
-
     if detectorContainsCustomEnglish(cString) {
         return true
     }
 
+    // Fast path: words starting with clusters impossible in Vietnamese restore immediately
+    // without hitting the Vietnamese dict (avoids false negatives for tech/brand names)
+    let isDefinitelyNonVietnamese = startsWithNonVietnameseCluster(idx, length: stateIndex)
+    if isDefinitelyNonVietnamese && detectorContainsEnglish(idx, length: stateIndex) {
+        return true
+    }
+
+    // Vietnamese dictionary check
     if detectorContainsVietnamese(idx, length: stateIndex) {
+        // Exception: long words (≥ 7 chars) with English-only clusters bypass Vietnamese match.
+        // Handles compound tech terms that might share short syllables with Vietnamese.
+        if stateIndex >= 7 &&
+            startsWithNonVietnameseKeyCluster(keyCodes: keyCodes, length: stateIndex) &&
+            detectorContainsEnglish(idx, length: stateIndex) {
+            return true
+        }
         return false
     }
 
+    // Tone mark at word end: likely Vietnamese telex input
     if stateIndex >= 2 {
         let firstKey = keyCodes[0]
         let lastKey = keyCodes[stateIndex - 1]
@@ -547,15 +582,14 @@ private func detectorShouldRestoreEnglish(
         }
     }
 
+    // Vietnamese "aw" coda pattern: e.g. "mawt" → "mẩt" in telex
     if hasLikelyVietnameseTelexAWCodaPattern(keyCodes: keyCodes, length: stateIndex) &&
         !startsWithNonVietnameseKeyCluster(keyCodes: keyCodes, length: stateIndex) &&
         startsWithVietnameseConsonantOrVowel(keyCodes: keyCodes, length: stateIndex) {
         return false
     }
 
-    let isEnglish = detectorContainsEnglish(idx, length: stateIndex)
-
-    return isEnglish
+    return detectorContainsEnglish(idx, length: stateIndex)
 }
 
 @_cdecl("phtvDetectorIsEnglishWordUtf8")
