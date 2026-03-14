@@ -244,7 +244,12 @@ ipados
 watchos
 tvos
 visionos
+iphone
+ipad
+imac
 macbook
+macmini
+macstudio
 airpods
 applevision
 airtag
@@ -271,6 +276,10 @@ gatekeeper
 codesign
 notarization
 appleseed
+icloud
+facetime
+keychain
+touchid
 
 # Development Tools
 yarn
@@ -280,6 +289,8 @@ bundler
 composer
 carthage
 swiftpm
+xcode
+swiftui
 meson
 esbuild
 parcel
@@ -293,6 +304,14 @@ isort
 spotless
 swiftlint
 swiftformat
+github
+gitlab
+bitbucket
+figma
+raycast
+postgres
+sqlite
+mongodb
 
 # Code Editors & IDEs
 cursor
@@ -308,6 +327,10 @@ textmate
 coteditor
 macdown
 typora
+notion
+obsidian
+slack
+zalo
 
 # Online Code Platforms
 codesandbox
@@ -315,6 +338,9 @@ jsfiddle
 pastebin
 gist
 plunker
+fshare
+youtube
+tiktok
 
 # Cloud & DevOps
 aws
@@ -338,6 +364,33 @@ packer
 render
 workers
 vectorize
+
+# Browsers & Desktop Apps
+brave
+chromium
+vivaldi
+edge
+coccoc
+obs
+
+# System & Hardware Terms
+boot
+bootable
+bootcamp
+bootloader
+reboot
+bios
+uefi
+firmware
+driver
+drivers
+hotkey
+keybind
+keycap
+trackpad
+touchpad
+wifi
+bluetooth
 hyperdrive
 queues
 
