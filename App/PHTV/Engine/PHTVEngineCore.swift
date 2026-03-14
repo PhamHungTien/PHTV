@@ -1798,61 +1798,6 @@ final class PHTVVietnameseEngine {
         return false
     }
 
-    func shouldSuppressAutoRestoreForVietnameseTelexConflict(_ englishStateIndex: Int) -> Bool {
-        guard englishStateIndex >= 4 else { return false }
-        let keySlice = Array(keyStates.prefix(englishStateIndex))
-        let token = detectorKeyStatesToString(keySlice, englishStateIndex)
-        guard token.count == englishStateIndex else { return false }
-        let chars = Array(token)
-
-        let toneKeys: Set<Character> = ["s", "f", "r", "x", "j"]
-        let codaKeys: Set<Character> = ["c", "k", "m", "n", "p", "t"]
-        let vietnameseInitials: Set<Character> = [
-            "a", "b", "c", "d", "e", "g", "h", "i", "k", "l", "m", "n",
-            "o", "p", "r", "s", "t", "u", "v", "x", "y"
-        ]
-        let nonVietnameseStarts: Set<String> = [
-            "bl", "br", "cl", "cr", "dr", "fl", "fr", "gl", "gr", "pl", "pr",
-            "sc", "sk", "sl", "sm", "sn", "sp", "st", "sw", "tw", "wr"
-        ]
-
-        guard vietnameseInitials.contains(chars[0]) else { return false }
-        if chars.count >= 2 {
-            let first2 = String([chars[0], chars[1]])
-            if nonVietnameseStarts.contains(first2) { return false }
-        }
-
-        let last = chars[chars.count - 1]
-        let hasVietnameseCodaAtEnd = codaKeys.contains(last) ||
-            (toneKeys.contains(last) && chars.count >= 2 && codaKeys.contains(chars[chars.count - 2]))
-        guard hasVietnameseCodaAtEnd else { return false }
-
-        var hasAWPattern = false
-        for i in 0..<(chars.count - 1) {
-            if chars[i] != "a" { continue }
-            if chars[i + 1] == "w" {
-                hasAWPattern = true
-                break
-            }
-            if i + 2 < chars.count && toneKeys.contains(chars[i + 1]) && chars[i + 2] == "w" {
-                hasAWPattern = true
-                break
-            }
-        }
-
-        // Also detect 4-char Telex syllable: initial + simple_vowel + (coda+tone | tone+coda)
-        // e.g. "sips" → "síp", "sisp" → "síp"
-        let simpleVowels: Set<Character> = ["a", "e", "i", "o", "u"]
-        var hasCodaTonePattern = false
-        if chars.count == 4 && simpleVowels.contains(chars[1]) {
-            let isCodaTone = codaKeys.contains(chars[2]) && toneKeys.contains(chars[3])
-            let isToneCoda = toneKeys.contains(chars[2]) && codaKeys.contains(chars[3])
-            hasCodaTonePattern = isCodaTone || isToneCoda
-        }
-
-        return hasAWPattern || hasCodaTonePattern
-    }
-
     // MARK: - English mode (EngineEnglishMode.inc)
 
     func vEnglishMode(state: VKeyEventState, data: UInt16, isCaps: Bool, otherControlKey: Bool) {
@@ -1927,9 +1872,6 @@ final class PHTVVietnameseEngine {
                 hasOnlyTrailingDigitKeyStates(englishStateIndex)
             let canAutoRestore = isPureLetter || isWithNumSuffix
             let restoreStateIndex = isWithNumSuffix ? stateIdx : englishStateIndex
-            let shouldSuppressVietnameseTelexConflict =
-                englishStateIndex > 1 && shouldSuppressAutoRestoreForVietnameseTelexConflict(englishStateIndex)
-
             if englishStateIndex > 1 && canAutoRestore {
                 let keySlice = Array(keyStates.prefix(englishStateIndex))
                 shouldRestoreEnglish = detectorShouldRestoreEnglish(keySlice, englishStateIndex)
@@ -1957,9 +1899,6 @@ final class PHTVVietnameseEngine {
                     if isPureEnglish && detectorIsEnglishWord(twSlice, idx) { shouldRestoreEnglish = false }
                 }
                 if shouldRestoreEnglish && isWithNumSuffix && !hasVietnameseTransformsInTypingWord(idx) {
-                    shouldRestoreEnglish = false
-                }
-                if shouldRestoreEnglish && shouldSuppressVietnameseTelexConflict {
                     shouldRestoreEnglish = false
                 }
             }
@@ -2034,9 +1973,6 @@ final class PHTVVietnameseEngine {
             hasOnlyTrailingDigitKeyStates(englishStateIndex)
         let canAutoRestore = isPureLetter || isWithNumSuffix
         let restoreStateIndex = isWithNumSuffix ? stateIdx : englishStateIndex
-        let shouldSuppressVietnameseTelexConflict =
-            englishStateIndex > 1 && shouldSuppressAutoRestoreForVietnameseTelexConflict(englishStateIndex)
-
         if phtvRuntimeAutoRestoreEnglishWordEnabled() != 0 && idx > 0 && englishStateIndex > 1 && canAutoRestore {
             let keySlice = Array(keyStates.prefix(englishStateIndex))
             shouldRestoreEnglish = detectorShouldRestoreEnglish(keySlice, englishStateIndex)
@@ -2060,9 +1996,6 @@ final class PHTVVietnameseEngine {
                 if isPureEnglish && detectorIsEnglishWord(twSlice, idx) { shouldRestoreEnglish = false }
             }
             if shouldRestoreEnglish && isWithNumSuffix && !hasVietnameseTransformsInTypingWord(idx) {
-                shouldRestoreEnglish = false
-            }
-            if shouldRestoreEnglish && shouldSuppressVietnameseTelexConflict {
                 shouldRestoreEnglish = false
             }
         }

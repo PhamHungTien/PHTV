@@ -128,12 +128,41 @@ private let vietnameseToTelexMap: [Character: String] = [
 ]
 
 private let toneMarks: Set<Character> = ["f", "s", "r", "x", "j"]
+private let toneBeforeShapeDigraphs: Set<String> = ["aa", "aw", "ee", "oo", "ow", "uw"]
 
 private struct VietnameseTelexConversion {
     let baseWord: String
     let variants: [String]
     let hasModifier: Bool
     let hasToneMark: Bool
+}
+
+private func toneBeforeShapeVariants(baseWord: String, tone: String) -> [String] {
+    let characters = Array(baseWord)
+    guard characters.count >= 2 else { return [] }
+
+    var variants = Set<String>()
+
+    for index in 0..<(characters.count - 1) {
+        let digraph = String(characters[index]) + String(characters[index + 1])
+        guard toneBeforeShapeDigraphs.contains(digraph) else {
+            continue
+        }
+
+        var variant = ""
+        variant.reserveCapacity(baseWord.count + tone.count)
+
+        for (characterIndex, character) in characters.enumerated() {
+            if characterIndex == index + 1 {
+                variant.append(contentsOf: tone)
+            }
+            variant.append(character)
+        }
+
+        variants.insert(variant)
+    }
+
+    return Array(variants)
 }
 
 private func vietnameseToTelexConversion(_ word: String) -> VietnameseTelexConversion? {
@@ -186,6 +215,7 @@ private func vietnameseToTelexConversion(_ word: String) -> VietnameseTelexConve
 
         if tones.count == 1, let tone = tones.first {
             variants.insert(baseWord + tone)
+            variants.formUnion(toneBeforeShapeVariants(baseWord: baseWord, tone: String(tone)))
         }
     }
 
