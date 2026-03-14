@@ -263,15 +263,23 @@ private func buildEnglishDictionary(resourcesDir: URL, dataDir: URL?) -> (Bool, 
     }
 
     var localWords = Set<String>()
+    // resourcesDir = <repo>/App/PHTV/Resources/Dictionaries → go up 4 levels to reach repo root
+    let repoRoot = resourcesDir
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
     let localCandidates: [URL] = [
         dataDir?.appendingPathComponent("en_words.txt"),
+        repoRoot.appendingPathComponent("docs/dictionary/en_words.txt"),
         resourcesDir.appendingPathComponent("en_words.txt")
     ].compactMap { $0 }
 
-    if let localFile = localCandidates.first(where: { FileManager.default.fileExists(atPath: $0.path) }) {
-        localWords = readLocalWordFile(localFile)
-        words.formUnion(localWords)
-        print("  Added local words from \(localFile.lastPathComponent), total: \(words.count.formatted())")
+    for localFile in localCandidates where FileManager.default.fileExists(atPath: localFile.path) {
+        let fileWords = readLocalWordFile(localFile)
+        localWords.formUnion(fileWords)
+        words.formUnion(fileWords)
+        print("  Added local words from \(localFile.lastPathComponent) (\(localFile.deletingLastPathComponent().lastPathComponent)/), total: \(words.count.formatted())")
     }
 
     guard !words.isEmpty else {
@@ -356,28 +364,29 @@ private func buildVietnameseDictionary(resourcesDir: URL, englishWords: Set<Stri
         break
     }
 
+    // resourcesDir = <repo>/App/PHTV/Resources/Dictionaries → go up 4 levels to reach repo root
+    let repoRoot = resourcesDir
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
     let localCandidates: [URL] = [
         dataDir?.appendingPathComponent("vi_words.txt"),
+        repoRoot.appendingPathComponent("docs/dictionary/vi_words.txt"),
         resourcesDir.appendingPathComponent("vi_words.txt")
     ].compactMap { $0 }
 
-    if let localFile = localCandidates.first(where: { FileManager.default.fileExists(atPath: $0.path) }),
-       let text = try? String(contentsOf: localFile, encoding: .utf8) {
+    for localFile in localCandidates where FileManager.default.fileExists(atPath: localFile.path) {
+        guard let text = try? String(contentsOf: localFile, encoding: .utf8) else { continue }
         for line in text.split(whereSeparator: \.isNewline) {
             let normalized = line.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !normalized.isEmpty else {
-                continue
-            }
-
+            guard !normalized.isEmpty else { continue }
             for part in normalized.replacingOccurrences(of: "-", with: " ").split(whereSeparator: \.isWhitespace) {
                 let word = part.lowercased()
-                if !word.isEmpty {
-                    vietnameseWords.insert(word)
-                }
+                if !word.isEmpty { vietnameseWords.insert(word) }
             }
         }
-
-        print("  Added local words from \(localFile.lastPathComponent), total: \(vietnameseWords.count.formatted())")
+        print("  Added local words from \(localFile.lastPathComponent) (\(localFile.deletingLastPathComponent().lastPathComponent)/), total: \(vietnameseWords.count.formatted())")
     }
 
     guard !vietnameseWords.isEmpty else {
