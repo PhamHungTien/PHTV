@@ -40,7 +40,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -392,21 +392,21 @@ jobs:
           echo "✅ docs/$APPCAST_FILE generated and signed"
 
       - name: Upload DMG artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dmg-${{ matrix.arch }}
           path: App/${{ steps.dmg.outputs.name }}
           retention-days: 1
 
       - name: Upload ZIP artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: zip-${{ matrix.arch }}
           path: App/${{ steps.zip.outputs.name }}
           retention-days: 1
 
       - name: Upload appcast artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: appcast-${{ matrix.arch }}
           path: docs/${{ matrix.appcast_file }}
@@ -414,7 +414,7 @@ jobs:
 
       - name: Upload build log
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-log-${{ matrix.arch }}
           path: App/build-${{ matrix.arch }}.log
@@ -427,22 +427,22 @@ jobs:
 
     steps:
       - name: Download DMG (arm64)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: dmg-arm64
 
       - name: Download DMG (intel)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: dmg-x86_64
 
       - name: Download ZIP (arm64)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: zip-arm64
 
       - name: Download ZIP (intel)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: zip-x86_64
 
@@ -480,18 +480,18 @@ jobs:
 
     steps:
       - name: Checkout main
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: main
 
       - name: Download appcast (arm64)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: appcast-arm64
           path: /tmp/phtv-appcast-arm64
 
       - name: Download appcast (intel)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: appcast-x86_64
           path: /tmp/phtv-appcast-intel
@@ -524,11 +524,11 @@ jobs:
 
     steps:
       - name: Download DMG artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: dmg-arm64
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: dmg-x86_64
 
