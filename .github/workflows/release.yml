@@ -16,14 +16,24 @@ permissions:
 
 jobs:
   build:
-    name: Build PHTV
+    name: Build PHTV (${{ matrix.arch }})
     runs-on: macos-26
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - arch: arm64
+            zip_suffix: arm64
+            excluded_archs: x86_64
+            appcast_file: appcast.xml
+          - arch: x86_64
+            zip_suffix: intel
+            excluded_archs: arm64
+            appcast_file: appcast-intel.xml
+
     outputs:
       version: ${{ steps.version.outputs.version }}
       build_number: ${{ steps.set_versions.outputs.build_number }}
-      dmg_name: ${{ steps.dmg.outputs.name }}
-      dmg_size: ${{ steps.dmg.outputs.size }}
-      zip_name: ${{ steps.zip.outputs.name }}
 
     steps:
       - name: Checkout
@@ -46,7 +56,6 @@ jobs:
           else
             VERSION="${GITHUB_REF_NAME#v}"
           fi
-
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "📦 Version: $VERSION"
 
@@ -54,7 +63,6 @@ jobs:
         id: set_versions
         run: |
           BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
-
           echo "build_number=$BUILD_NUMBER" >> "$GITHUB_OUTPUT"
           echo "✅ BUILD_NUMBER=$BUILD_NUMBER"
 
@@ -69,7 +77,7 @@ jobs:
             exit 1
           fi
 
-          KEYCHAIN_PATH="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PATH="$RUNNER_TEMP/signing-${{ matrix.arch }}.keychain-db"
           KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
 
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
@@ -96,7 +104,6 @@ jobs:
           IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -o '"[^"]*"' | head -1 | tr -d '"')
           if [ -z "$IDENTITY" ]; then
             echo "❌ Error: No valid signing identity found."
-            security find-identity -p codesigning "$KEYCHAIN_PATH"
             exit 1
           fi
 
@@ -104,19 +111,20 @@ jobs:
           echo "identity=$IDENTITY" >> "$GITHUB_OUTPUT"
           echo "keychain=$KEYCHAIN_PATH" >> "$GITHUB_OUTPUT"
 
-      - name: Build
+      - name: Build (${{ matrix.arch }})
         working-directory: App
         run: |
-          echo "🔐 Building with mandatory code signing..."
-          echo "Identity: ${{ steps.certificate.outputs.identity }}"
+          echo "🏗️  Building ${{ matrix.arch }} binary..."
           VERSION="${{ steps.version.outputs.version }}"
           BUILD_NUMBER="${{ steps.set_versions.outputs.build_number }}"
 
           xcodebuild -project PHTV.xcodeproj -scheme PHTV \
             -configuration Release \
-            -derivedDataPath ./build \
+            -derivedDataPath ./build-${{ matrix.arch }} \
             MARKETING_VERSION="$VERSION" \
             CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            ARCHS="${{ matrix.arch }}" \
+            EXCLUDED_ARCHS="${{ matrix.excluded_archs }}" \
             ONLY_ACTIVE_ARCH=NO \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="${{ steps.certificate.outputs.identity }}" \
@@ -127,23 +135,32 @@ jobs:
             STRIP_INSTALLED_PRODUCT=NO \
             COMPILER_INDEX_STORE_ENABLE=NO \
             clean build \
-            2>&1 | tee build.log
+            2>&1 | tee build-${{ matrix.arch }}.log
 
-          if [ ! -d "./build/Build/Products/Release/PHTV.app" ]; then
+          APP_PATH="./build-${{ matrix.arch }}/Build/Products/Release/PHTV.app"
+          if [ ! -d "$APP_PATH" ]; then
             echo "❌ Build failed: PHTV.app not found"
             exit 1
           fi
 
+          # Verify only the expected arch is present
+          ACTUAL_ARCHS=$(lipo -archs "$APP_PATH/Contents/MacOS/PHTV" 2>/dev/null || echo "unknown")
+          echo "📐 Architectures in binary: $ACTUAL_ARCHS"
+          if [[ "$ACTUAL_ARCHS" != "${{ matrix.arch }}" ]]; then
+            echo "⚠️  Warning: expected ${{ matrix.arch }}, got: $ACTUAL_ARCHS"
+          fi
+
           echo "🔍 Verifying code signature..."
-          codesign -dv --verbose=2 "./build/Build/Products/Release/PHTV.app" 2>&1
-          codesign --verify --deep --strict "./build/Build/Products/Release/PHTV.app" 2>&1
+          codesign -dv --verbose=2 "$APP_PATH" 2>&1
+          codesign --verify --deep --strict "$APP_PATH" 2>&1
 
       - name: Verify app bundle metadata
         working-directory: App
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           BUILD_NUMBER="${{ steps.set_versions.outputs.build_number }}"
-          APP_INFO="./build/Build/Products/Release/PHTV.app/Contents/Info.plist"
+          APP_INFO="./build-${{ matrix.arch }}/Build/Products/Release/PHTV.app/Contents/Info.plist"
+
           APP_VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP_INFO")
           APP_BUILD=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$APP_INFO")
 
@@ -151,29 +168,27 @@ jobs:
           echo "App CFBundleVersion=$APP_BUILD"
 
           if [ "$APP_VERSION" != "$VERSION" ]; then
-            echo "❌ Error: app short version mismatch (expected $VERSION, got $APP_VERSION)"
+            echo "❌ Version mismatch (expected $VERSION, got $APP_VERSION)"
             exit 1
           fi
-
           if [ "$APP_BUILD" != "$BUILD_NUMBER" ]; then
-            echo "❌ Error: app build number mismatch (expected $BUILD_NUMBER, got $APP_BUILD)"
+            echo "❌ Build number mismatch (expected $BUILD_NUMBER, got $APP_BUILD)"
             exit 1
           fi
 
           /usr/libexec/PlistBuddy -c "Print :SUFeedURL" "$APP_INFO"
           /usr/libexec/PlistBuddy -c "Print :SUPublicEDKey" "$APP_INFO"
-          echo "✅ App version + Sparkle metadata are correct"
+          echo "✅ App metadata correct"
 
-      - name: Create DMG
+      - name: Create DMG (${{ matrix.arch }})
         id: dmg
         working-directory: App
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          APP_PATH="./build/Build/Products/Release/PHTV.app"
-          DMG_NAME="PHTV-$VERSION.dmg"
+          APP_PATH="./build-${{ matrix.arch }}/Build/Products/Release/PHTV.app"
+          DMG_NAME="PHTV-$VERSION-${{ matrix.zip_suffix }}.dmg"
 
           xattr -cr "$APP_PATH"
-
           TEMP_DIR=$(mktemp -d)
           cp -R "$APP_PATH" "$TEMP_DIR/"
           ln -s /Applications "$TEMP_DIR/Applications"
@@ -191,19 +206,19 @@ jobs:
           echo "size=$SIZE" >> "$GITHUB_OUTPUT"
           echo "✅ DMG created: $DMG_NAME ($SIZE bytes)"
 
-      - name: Create ZIP
+      - name: Create ZIP (${{ matrix.arch }})
         id: zip
         working-directory: App
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          APP_PATH="./build/Build/Products/Release/PHTV.app"
-          ZIP_NAME="PHTV-$VERSION.zip"
+          APP_PATH="./build-${{ matrix.arch }}/Build/Products/Release/PHTV.app"
+          ZIP_NAME="PHTV-$VERSION-${{ matrix.zip_suffix }}.zip"
 
           ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_NAME"
           echo "name=$ZIP_NAME" >> "$GITHUB_OUTPUT"
           echo "✅ ZIP created: $ZIP_NAME"
 
-      - name: Generate Sparkle appcast
+      - name: Generate Sparkle appcast (${{ matrix.arch }})
         working-directory: App
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
@@ -215,19 +230,24 @@ jobs:
 
           VERSION="${{ steps.version.outputs.version }}"
           ZIP_NAME="${{ steps.zip.outputs.name }}"
-          ARCHIVES_DIR="$RUNNER_TEMP/sparkle_archives"
+          APPCAST_FILE="${{ matrix.appcast_file }}"
+          ARCHIVES_DIR="$RUNNER_TEMP/sparkle_archives_${{ matrix.arch }}"
           mkdir -p "$ARCHIVES_DIR"
           cp "$ZIP_NAME" "$ARCHIVES_DIR/"
-          if git show origin/main:docs/appcast.xml > "$ARCHIVES_DIR/appcast.xml" 2>/dev/null; then
-            echo "✅ Using latest docs/appcast.xml from origin/main"
+
+          # Seed appcast with latest committed version (creates new file if not exists yet)
+          if git show origin/main:docs/$APPCAST_FILE > "$ARCHIVES_DIR/$APPCAST_FILE" 2>/dev/null; then
+            echo "✅ Using latest docs/$APPCAST_FILE from origin/main"
+          elif [ -f "../docs/$APPCAST_FILE" ]; then
+            cp "../docs/$APPCAST_FILE" "$ARCHIVES_DIR/$APPCAST_FILE"
+            echo "⚠️  Falling back to docs/$APPCAST_FILE from current checkout"
           else
-            cp ../docs/appcast.xml "$ARCHIVES_DIR/appcast.xml"
-            echo "⚠️ Falling back to docs/appcast.xml from current checkout"
+            echo "ℹ️  $APPCAST_FILE not found — generate_appcast will create it fresh"
           fi
 
-          GENERATE_APPCAST="./build/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_appcast"
+          GENERATE_APPCAST="./build-${{ matrix.arch }}/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_appcast"
           if [ ! -x "$GENERATE_APPCAST" ]; then
-            echo "❌ Error: generate_appcast binary not found at $GENERATE_APPCAST"
+            echo "❌ Error: generate_appcast not found"
             exit 1
           fi
 
@@ -238,101 +258,86 @@ jobs:
             --maximum-versions 0 \
             "$ARCHIVES_DIR"
 
-          cp "$ARCHIVES_DIR/appcast.xml" ../docs/appcast.xml
+          cp "$ARCHIVES_DIR/$APPCAST_FILE" "../docs/$APPCAST_FILE"
 
-          python3 - <<'PY'
+          python3 - <<PY
           import sys
           import xml.etree.ElementTree as ET
 
-          version = "${{ steps.version.outputs.version }}".strip()
+          version = "$VERSION".strip()
           build_number = "${{ steps.set_versions.outputs.build_number }}".strip()
           expected_build = int(build_number)
           ns = {"sparkle": "http://www.andymatuschak.org/xml-namespaces/sparkle"}
           sparkle_attr_version = "{http://www.andymatuschak.org/xml-namespaces/sparkle}version"
 
-          tree = ET.parse("../docs/appcast.xml")
+          tree = ET.parse("../docs/$APPCAST_FILE")
           root = tree.getroot()
           channel = root.find("channel")
           if channel is None:
-              print("❌ Error: appcast.xml missing <channel> element")
+              print("❌ Error: $APPCAST_FILE missing <channel>")
               sys.exit(1)
 
           items = channel.findall("item")
           if not items:
-              print("❌ Error: appcast.xml has no <item>")
+              print("❌ Error: $APPCAST_FILE has no <item>")
               sys.exit(1)
 
-          found_target_item = False
           for item in items:
               short_node = item.find("sparkle:shortVersionString", ns)
               short_version = (short_node.text or "").strip() if short_node is not None else ""
               version_node = item.find("sparkle:version", ns)
               item_build = None
               if version_node is not None and version_node.text:
-                  try:
-                      item_build = int(version_node.text.strip())
-                  except ValueError:
-                      item_build = None
+                  try: item_build = int(version_node.text.strip())
+                  except ValueError: pass
               if item_build is None:
-                  enclosure = item.find("enclosure")
-                  if enclosure is not None:
-                      raw_attr = enclosure.get(sparkle_attr_version)
-                      if raw_attr:
-                          try:
-                              item_build = int(raw_attr.strip())
-                          except ValueError:
-                              item_build = None
-
+                  enc = item.find("enclosure")
+                  if enc is not None:
+                      raw = enc.get(sparkle_attr_version)
+                      if raw:
+                          try: item_build = int(raw.strip())
+                          except ValueError: pass
               if short_version == version and item_build == expected_build:
-                  found_target_item = True
-                  break
+                  print(f"✅ $APPCAST_FILE contains shortVersion={version} build={expected_build}")
+                  sys.exit(0)
 
-          if not found_target_item:
-              print(
-                  f"❌ Error: appcast.xml is missing release item "
-                  f"shortVersion={version} sparkle:version={expected_build}"
-              )
-              sys.exit(1)
-
-          print(
-              f"✅ appcast contains release item shortVersion={version} "
-              f"sparkle:version={expected_build}"
-          )
+          print(f"❌ $APPCAST_FILE missing item shortVersion={version} build={expected_build}")
+          sys.exit(1)
           PY
 
-          if ! grep -q "sparkle:edSignature" ../docs/appcast.xml; then
-            echo "❌ Error: docs/appcast.xml has no sparkle:edSignature"
+          if ! grep -q "sparkle:edSignature" ../docs/$APPCAST_FILE; then
+            echo "❌ Error: docs/$APPCAST_FILE has no sparkle:edSignature"
             exit 1
           fi
-          echo "✅ docs/appcast.xml generated and signed"
+          echo "✅ docs/$APPCAST_FILE generated and signed"
 
       - name: Upload DMG artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dmg
+          name: dmg-${{ matrix.arch }}
           path: App/${{ steps.dmg.outputs.name }}
           retention-days: 1
 
       - name: Upload ZIP artifact
         uses: actions/upload-artifact@v4
         with:
-          name: zip
+          name: zip-${{ matrix.arch }}
           path: App/${{ steps.zip.outputs.name }}
           retention-days: 1
 
       - name: Upload appcast artifact
         uses: actions/upload-artifact@v4
         with:
-          name: appcast
-          path: docs/appcast.xml
+          name: appcast-${{ matrix.arch }}
+          path: docs/${{ matrix.appcast_file }}
           retention-days: 7
 
       - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-log
-          path: App/build.log
+          name: build-log-${{ matrix.arch }}
+          path: App/build-${{ matrix.arch }}.log
           retention-days: 7
 
   release:
@@ -341,20 +346,33 @@ jobs:
     needs: build
 
     steps:
-      - name: Download DMG
+      - name: Download DMG (arm64)
         uses: actions/download-artifact@v4
         with:
-          name: dmg
+          name: dmg-arm64
 
-      - name: Download ZIP
+      - name: Download DMG (intel)
         uses: actions/download-artifact@v4
         with:
-          name: zip
+          name: dmg-x86_64
+
+      - name: Download ZIP (arm64)
+        uses: actions/download-artifact@v4
+        with:
+          name: zip-arm64
+
+      - name: Download ZIP (intel)
+        uses: actions/download-artifact@v4
+        with:
+          name: zip-x86_64
 
       - name: Generate checksums
         run: |
-          sha256sum "${{ needs.build.outputs.dmg_name }}" > checksums.txt
-          sha256sum "${{ needs.build.outputs.zip_name }}" >> checksums.txt
+          VERSION="${{ needs.build.outputs.version }}"
+          sha256sum "PHTV-$VERSION-arm64.dmg"   > checksums.txt
+          sha256sum "PHTV-$VERSION-intel.dmg"    >> checksums.txt
+          sha256sum "PHTV-$VERSION-arm64.zip"    >> checksums.txt
+          sha256sum "PHTV-$VERSION-intel.zip"    >> checksums.txt
           cat checksums.txt
 
       - name: Create GitHub Release
@@ -365,14 +383,16 @@ jobs:
           generate_release_notes: true
           prerelease: ${{ contains(needs.build.outputs.version, '-') }}
           files: |
-            ${{ needs.build.outputs.dmg_name }}
-            ${{ needs.build.outputs.zip_name }}
+            PHTV-${{ needs.build.outputs.version }}-arm64.dmg
+            PHTV-${{ needs.build.outputs.version }}-intel.dmg
+            PHTV-${{ needs.build.outputs.version }}-arm64.zip
+            PHTV-${{ needs.build.outputs.version }}-intel.zip
             checksums.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish_appcast:
-    name: Publish Appcast
+    name: Publish Appcasts
     runs-on: ubuntu-latest
     needs:
       - build
@@ -384,25 +404,34 @@ jobs:
         with:
           ref: main
 
-      - name: Download appcast artifact
+      - name: Download appcast (arm64)
         uses: actions/download-artifact@v4
         with:
-          name: appcast
-          path: /tmp/phtv-appcast
+          name: appcast-arm64
+          path: /tmp/phtv-appcast-arm64
 
-      - name: Commit and push appcast.xml
+      - name: Download appcast (intel)
+        uses: actions/download-artifact@v4
+        with:
+          name: appcast-x86_64
+          path: /tmp/phtv-appcast-intel
+
+      - name: Commit and push appcasts
         run: |
-          cp /tmp/phtv-appcast/appcast.xml docs/appcast.xml
-
-          if git diff --quiet -- docs/appcast.xml; then
-            echo "No docs/appcast.xml changes to commit."
-            exit 0
-          fi
+          cp /tmp/phtv-appcast-arm64/appcast.xml       docs/appcast.xml
+          cp /tmp/phtv-appcast-intel/appcast-intel.xml docs/appcast-intel.xml
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/appcast.xml
-          git commit -m "chore: update appcast for v${{ needs.build.outputs.version }} [skip ci]"
+
+          git add docs/appcast.xml docs/appcast-intel.xml
+
+          if git diff --staged --quiet; then
+            echo "No appcast changes to commit."
+            exit 0
+          fi
+
+          git commit -m "chore: update appcasts for v${{ needs.build.outputs.version }} [skip ci]"
           git push origin main
 
   update-homebrew:
@@ -414,17 +443,19 @@ jobs:
       - publish_appcast
 
     steps:
-      - name: Download DMG artifact
+      - name: Download DMG artifacts
         uses: actions/download-artifact@v4
         with:
-          name: dmg
+          name: dmg-arm64
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dmg-x86_64
 
       - name: Update tap formula
         env:
           TAP_REPO_TOKEN: ${{ secrets.TAP_REPO_TOKEN }}
           VERSION: ${{ needs.build.outputs.version }}
-          DMG_NAME: ${{ needs.build.outputs.dmg_name }}
-          DMG_SIZE: ${{ needs.build.outputs.dmg_size }}
         run: |
           set -euo pipefail
 
@@ -433,28 +464,17 @@ jobs:
             exit 1
           fi
 
-          if [ ! -f "$DMG_NAME" ]; then
-            echo "❌ Error: DMG artifact not found: $DMG_NAME"
-            ls -la
-            exit 1
-          fi
-
-          ACTUAL_SIZE=$(stat -c%s "$DMG_NAME")
-          if [ "$ACTUAL_SIZE" != "$DMG_SIZE" ]; then
-            echo "❌ Error: DMG size mismatch (expected=$DMG_SIZE, actual=$ACTUAL_SIZE)"
-            exit 1
-          fi
-
-          SHA256=$(sha256sum "$DMG_NAME" | cut -d' ' -f1)
-          echo "✅ SHA256: $SHA256"
+          SHA256_ARM64=$(sha256sum "PHTV-$VERSION-arm64.dmg" | cut -d' ' -f1)
+          SHA256_INTEL=$(sha256sum "PHTV-$VERSION-intel.dmg" | cut -d' ' -f1)
+          echo "✅ arm64 SHA256: $SHA256_ARM64"
+          echo "✅ intel SHA256: $SHA256_INTEL"
 
           git clone "https://x-access-token:${TAP_REPO_TOKEN}@github.com/PhamHungTien/homebrew-tap.git" /tmp/homebrew-tap
           cd /tmp/homebrew-tap
 
-          SHA256="$SHA256" VERSION="$VERSION" python3 - <<'PY'
-          import os
-          import re
-          import sys
+          # Update cask with arch-specific URLs and checksums
+          VERSION="$VERSION" SHA256_ARM64="$SHA256_ARM64" SHA256_INTEL="$SHA256_INTEL" python3 - <<'PY'
+          import os, re, sys
           from pathlib import Path
 
           cask_path = Path("Casks/phtv.rb")
@@ -462,23 +482,33 @@ jobs:
               print("❌ Error: Casks/phtv.rb not found", file=sys.stderr)
               sys.exit(1)
 
-          text = cask_path.read_text(encoding="utf-8")
-          text, n_version = re.subn(
-              r'(?m)^(\s*)version\s+"[^"]+"\s*$',
-              rf'\1version "{os.environ["VERSION"]}"',
-              text,
-              count=1
-          )
-          text, n_sha = re.subn(
-              r'(?m)^(\s*)sha256\s+"[^"]+"\s*$',
-              rf'\1sha256 "{os.environ["SHA256"]}"',
-              text,
-              count=1
-          )
+          v       = os.environ["VERSION"]
+          sha_arm = os.environ["SHA256_ARM64"]
+          sha_x86 = os.environ["SHA256_INTEL"]
 
-          if n_version != 1 or n_sha != 1:
-              print("❌ Error: Unable to update version/sha256 in Casks/phtv.rb", file=sys.stderr)
+          text = cask_path.read_text(encoding="utf-8")
+
+          # Update version line
+          text, n = re.subn(r'(?m)^(\s*)version\s+"[^"]+"\s*$', rf'\1version "{v}"', text, count=1)
+          if n != 1:
+              print("❌ Could not find version line in Casks/phtv.rb", file=sys.stderr)
               sys.exit(1)
+
+          # Check if cask already has arch do stanza; if so, update both shas
+          if "on_arm" in text or "arch do" in text:
+              text = re.sub(r'(on_arm\s+do.*?sha256\s+")[^"]+(")', rf'\g<1>{sha_arm}\g<2>', text, flags=re.DOTALL)
+              text = re.sub(r'(on_intel\s+do.*?sha256\s+")[^"]+(")', rf'\g<1>{sha_x86}\g<2>', text, flags=re.DOTALL)
+          else:
+              # Legacy single sha256 — replace with arch-specific block
+              # Replace the single sha256 line with an arch do block
+              text, n = re.subn(
+                  r'(?m)^(\s*)url\s+"[^"]+"\s*\n(\s*)sha256\s+"[^"]+"\s*$',
+                  rf'\1on_arm do\n\1  url "https://github.com/PhamHungTien/PHTV/releases/download/v{v}/PHTV-{v}-arm64.dmg"\n\1  sha256 "{sha_arm}"\n\1end\n\1on_intel do\n\1  url "https://github.com/PhamHungTien/PHTV/releases/download/v{v}/PHTV-{v}-intel.dmg"\n\1  sha256 "{sha_x86}"\n\1end',
+                  text, count=1
+              )
+              if n != 1:
+                  print("❌ Could not update url/sha256 in Casks/phtv.rb", file=sys.stderr)
+                  sys.exit(1)
 
           cask_path.write_text(text, encoding="utf-8")
           print("✅ Updated Casks/phtv.rb")
@@ -486,13 +516,11 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
           git add Casks/phtv.rb
           if git diff --staged --quiet; then
             echo "No changes to tap"
             exit 0
           fi
-
-          git commit -m "chore: update phtv to v$VERSION"
+          git commit -m "chore: update phtv to v$VERSION (arm64 + intel)"
           git push origin main
           echo "✅ Tap synced"

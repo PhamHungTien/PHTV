@@ -62,6 +62,23 @@ private final class SparkleUpdaterDelegate: NSObject, SPUUpdaterDelegate {
         _ = updater
         NSLog("[Sparkle] Will install update: %@", item.displayVersionString)
     }
+
+    nonisolated func feedURLString(for updater: SPUUpdater) -> String? {
+        _ = updater
+        // Route to arch-specific appcast so users only download the binary for their CPU.
+        // Legacy universal builds (pre-2.6.7) don't have this delegate, so they fall back to
+        // the hardcoded SUFeedURL (appcast.xml = arm64 feed) in Info.plist.
+        var size = 0
+        sysctlbyname("hw.optional.arm64", nil, &size, nil, 0)
+        var isArm64: Int32 = 0
+        sysctlbyname("hw.optional.arm64", &isArm64, &size, nil, 0)
+
+        let feed = isArm64 != 0
+            ? "https://phamhungtien.github.io/PHTV/appcast.xml"
+            : "https://phamhungtien.github.io/PHTV/appcast-intel.xml"
+        NSLog("[Sparkle] Using feed: %@", feed)
+        return feed
+    }
 }
 
 @MainActor
