@@ -262,41 +262,6 @@ private func buildEnglishDictionary(resourcesDir: URL, dataDir: URL?) -> (Bool, 
         print("  Loaded \(words.count.formatted()) words so far")
     }
 
-    let mandatoryWords: Set<String> = [
-        "codebase", "codespace", "database", "backend", "frontend", "server", "client",
-        "internet", "karaoke", "video", "camera", "radio", "email", "gmail",
-        "login", "logout", "signup", "signin", "admin", "website", "browser",
-        "format", "install", "update", "download", "upload", "github", "gitlab",
-        "bitbucket", "jenkins", "notion", "slack", "discord", "telegram", "whatsapp",
-        "zoom", "meet", "teams", "python", "java", "javascript", "typescript",
-        "swift", "kotlin", "golang", "script", "html", "css", "php", "sql",
-        "json", "xml", "yaml", "docker", "kubernetes", "cloud", "aws", "azure",
-        "terminal", "console", "shell", "bash", "zsh", "command", "prompt", "git",
-        "workflow", "pipeline", "action", "release", "deploy", "deployment",
-        "important", "ignorant", "year", "your", "our", "ear", "early", "their",
-        "livestream", "screenshot", "sometimes", "somewhere", "someone", "nonetheless",
-        "therefore", "however", "footer", "zoomed", "viewed", "meanwhile", "lifespan",
-        "riverside", "waterfall", "watchers", "version", "stable", "development",
-        "staging", "production", "config", "configure", "environment", "variable",
-        "package", "module", "function", "method", "class", "interface", "abstract",
-        "implement", "test", "testing", "unittest", "integration", "automation",
-        "debug", "debugger", "breakpoint", "log", "logging", "trace", "error",
-        "exception", "throw", "catch", "finally", "async", "await", "promise",
-        "callback", "event", "listener", "middleware", "decorator", "plugin",
-        "extension", "api", "rest", "graphql", "websocket", "socket", "stream",
-        "cache", "memory", "storage", "table", "column", "query", "request",
-        "response", "header", "body", "payload", "port", "host", "localhost",
-        "http", "https", "ssl", "certificate", "token", "auth", "permission",
-        "access", "deny", "allow", "grant", "revoke", "user", "role", "group",
-        "profile", "account", "data", "file", "folder", "directory", "path",
-        "filename", "transfer", "sync", "backup", "restore", "build", "compile",
-        "assembly", "link", "load", "execute", "process", "thread", "concurrent",
-        "parallel", "performance", "optimize", "refactor", "profiling", "monitor",
-        "metric", "benchmark", "analysis", "report", "chart", "graph"
-    ]
-
-    words.formUnion(mandatoryWords)
-
     var localWords = Set<String>()
     let localCandidates: [URL] = [
         dataDir?.appendingPathComponent("en_words.txt"),
@@ -314,7 +279,7 @@ private func buildEnglishDictionary(resourcesDir: URL, dataDir: URL?) -> (Bool, 
         return (false, [])
     }
 
-    let priorityWords = mandatoryWords.union(localWords)
+    let priorityWords = localWords
     let filteredWords: Set<String>
 
     if words.count > maxEnglishWords {
