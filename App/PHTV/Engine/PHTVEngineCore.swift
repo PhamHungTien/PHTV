@@ -1790,6 +1790,14 @@ final class PHTVVietnameseEngine {
         return false
     }
 
+    func hasVietnameseToneMarksInTypingWord(_ length: Int) -> Bool {
+        guard length > 0 else { return false }
+        for idx2 in 0..<min(length, ENGINE_MAX_BUFF) {
+            if (typingWord[idx2] & MARK_MASK) != 0 { return true }
+        }
+        return false
+    }
+
     func shouldSuppressAutoRestoreForVietnameseTelexConflict(_ englishStateIndex: Int) -> Bool {
         guard englishStateIndex >= 4 else { return false }
         let keySlice = Array(keyStates.prefix(englishStateIndex))
@@ -1937,12 +1945,8 @@ final class PHTVVietnameseEngine {
                         shouldRestoreEnglish = false
                     }
                 }
-                if shouldRestoreEnglish {
-                    var hasVietnameseMarks = false
-                    for k2 in 0..<idx where (typingWord[k2] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) != 0 {
-                        hasVietnameseMarks = true; break
-                    }
-                    if hasVietnameseMarks && isVietnameseFromCanonicalTelex(idx) { shouldRestoreEnglish = false }
+                if shouldRestoreEnglish && hasVietnameseToneMarksInTypingWord(idx) && isVietnameseFromCanonicalTelex(idx) {
+                    shouldRestoreEnglish = false
                 }
                 if shouldRestoreEnglish {
                     var isPureEnglish = true
@@ -2044,12 +2048,8 @@ final class PHTVVietnameseEngine {
             if shouldRestoreEnglish && idx == 1 {
                 if (typingWord[0] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) != 0 { shouldRestoreEnglish = false }
             }
-            if shouldRestoreEnglish {
-                var hasVietnameseMarks = false
-                for k2 in 0..<idx where (typingWord[k2] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) != 0 {
-                    hasVietnameseMarks = true; break
-                }
-                if hasVietnameseMarks && isVietnameseFromCanonicalTelex(idx) { shouldRestoreEnglish = false }
+            if shouldRestoreEnglish && hasVietnameseToneMarksInTypingWord(idx) && isVietnameseFromCanonicalTelex(idx) {
+                shouldRestoreEnglish = false
             }
             if shouldRestoreEnglish {
                 var isPureEnglish = true

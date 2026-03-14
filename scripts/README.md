@@ -10,8 +10,8 @@ Release automation is fully managed by GitHub Actions in:
 Build-time utility to regenerate dictionary binary assets when dictionary source data changes.
 
 Canonical dictionary sources live in:
-- `docs/dictionary/en_words.txt` and `docs/dictionary/vi_words.txt`
-- `docs/dictionary/en_words.d/*.txt` for categorized English additions that should always be preserved in `en_dict.bin`
+- `docs/dictionary/en_words.txt`
+- `docs/dictionary/vi_words.txt`
 
 ## Notes
 

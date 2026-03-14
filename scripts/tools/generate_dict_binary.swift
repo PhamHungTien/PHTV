@@ -129,12 +129,23 @@ private let vietnameseToTelexMap: [Character: String] = [
 
 private let toneMarks: Set<Character> = ["f", "s", "r", "x", "j"]
 
-private func vietnameseToTelexVariants(_ word: String) -> [String] {
+private struct VietnameseTelexConversion {
+    let baseWord: String
+    let variants: [String]
+    let hasModifier: Bool
+}
+
+private func vietnameseToTelexConversion(_ word: String) -> VietnameseTelexConversion? {
     var baseParts: [String] = []
     var tones: [String] = []
+    var hasModifier = false
 
     for character in word {
         if let telex = vietnameseToTelexMap[character] {
+            let lowercaseCharacter = character.lowercasedASCIIString
+            if telex != lowercaseCharacter {
+                hasModifier = true
+            }
             if let last = telex.last, toneMarks.contains(last), telex.count >= 2 {
                 baseParts.append(String(telex.dropLast()))
                 tones.append(String(last))
@@ -144,12 +155,12 @@ private func vietnameseToTelexVariants(_ word: String) -> [String] {
         } else if character.isASCIIAlphabetic {
             baseParts.append(character.lowercasedASCIIString)
         } else {
-            return []
+            return nil
         }
     }
 
     guard !baseParts.isEmpty else {
-        return []
+        return nil
     }
 
     let baseWord = baseParts.joined()
@@ -175,7 +186,15 @@ private func vietnameseToTelexVariants(_ word: String) -> [String] {
         }
     }
 
-    return Array(variants)
+    return VietnameseTelexConversion(
+        baseWord: baseWord,
+        variants: Array(variants),
+        hasModifier: hasModifier || !tones.isEmpty
+    )
+}
+
+private func vietnameseToTelexVariants(_ word: String) -> [String] {
+    vietnameseToTelexConversion(word)?.variants ?? []
 }
 
 private func downloadText(from urlString: String) -> String? {
@@ -239,54 +258,6 @@ private func readLocalWordFile(_ fileURL: URL) -> Set<String> {
     return words
 }
 
-private func localWordSourceFiles(named baseName: String, searchDirectories: [URL]) -> [URL] {
-    let fileManager = FileManager.default
-    var seenPaths = Set<String>()
-    var files: [URL] = []
-
-    func appendIfNeeded(_ url: URL) {
-        let standardizedPath = url.standardizedFileURL.path
-        guard !seenPaths.contains(standardizedPath) else {
-            return
-        }
-
-        seenPaths.insert(standardizedPath)
-        files.append(url)
-    }
-
-    for directory in searchDirectories {
-        let standaloneFile = directory.appendingPathComponent("\(baseName).txt")
-        if fileManager.fileExists(atPath: standaloneFile.path) {
-            appendIfNeeded(standaloneFile)
-        }
-
-        let groupedDirectory = directory.appendingPathComponent("\(baseName).d")
-        guard let childURLs = try? fileManager.contentsOfDirectory(
-            at: groupedDirectory,
-            includingPropertiesForKeys: nil,
-            options: [.skipsHiddenFiles]
-        ) else {
-            continue
-        }
-
-        for childURL in childURLs.sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
-            guard childURL.pathExtension == "txt" else {
-                continue
-            }
-
-            var isDirectory: ObjCBool = false
-            guard fileManager.fileExists(atPath: childURL.path, isDirectory: &isDirectory),
-                  !isDirectory.boolValue else {
-                continue
-            }
-
-            appendIfNeeded(childURL)
-        }
-    }
-
-    return files
-}
-
 private func buildEnglishDictionary(resourcesDir: URL, dictionarySourceDir: URL) -> (Bool, Set<String>) {
     printSection("BUILDING ENGLISH DICTIONARY")
 
@@ -316,20 +287,14 @@ private func buildEnglishDictionary(resourcesDir: URL, dictionarySourceDir: URL)
         print("  Loaded \(words.count.formatted()) words so far")
     }
 
-    // Canonical English sources live in docs/dictionary/:
-    // - en_words.txt for the broad source list
-    // - en_words.d/*.txt for curated category packs
-    // A same-named txt file inside resourcesDir is still accepted as a local override.
+    // Canonical English source lives in docs/dictionary/en_words.txt.
     var localWords = Set<String>()
-    let priorityCandidates = localWordSourceFiles(
-        named: "en_words",
-        searchDirectories: [dictionarySourceDir, resourcesDir]
-    )
-    for localFile in priorityCandidates where FileManager.default.fileExists(atPath: localFile.path) {
-        let fileWords = readLocalWordFile(localFile)
+    let canonicalEnglishFile = dictionarySourceDir.appendingPathComponent("en_words.txt")
+    if FileManager.default.fileExists(atPath: canonicalEnglishFile.path) {
+        let fileWords = readLocalWordFile(canonicalEnglishFile)
         localWords.formUnion(fileWords)
         words.formUnion(fileWords)
-        print("  Added priority words from \(localFile.lastPathComponent) (\(localFile.deletingLastPathComponent().lastPathComponent)/), total: \(words.count.formatted())")
+        print("  Added local words from \(canonicalEnglishFile.lastPathComponent) (\(canonicalEnglishFile.deletingLastPathComponent().lastPathComponent)/), total: \(words.count.formatted())")
     }
 
     guard !words.isEmpty else {
@@ -414,10 +379,8 @@ private func buildVietnameseDictionary(resourcesDir: URL, englishWords: Set<Stri
         break
     }
 
-    let localCandidates = localWordSourceFiles(
-        named: "vi_words",
-        searchDirectories: [dictionarySourceDir, resourcesDir]
-    )
+    let canonicalVietnameseFile = dictionarySourceDir.appendingPathComponent("vi_words.txt")
+    let localCandidates = [canonicalVietnameseFile]
 
     for localFile in localCandidates where FileManager.default.fileExists(atPath: localFile.path) {
         guard let text = try? String(contentsOf: localFile, encoding: .utf8) else { continue }
@@ -441,10 +404,21 @@ private func buildVietnameseDictionary(resourcesDir: URL, englishWords: Set<Stri
     var telexWords = Set<String>()
 
     for word in vietnameseWords {
-        for variant in vietnameseToTelexVariants(word) {
+        guard let conversion = vietnameseToTelexConversion(word) else {
+            continue
+        }
+        for variant in conversion.variants {
             guard variant.count >= 2,
                   variant.count <= maxTelexLength,
                   isASCIIAlphabetic(variant) else {
+                continue
+            }
+
+            // Keep tone/shape variants for Vietnamese typing, but avoid letting the
+            // plain unaccented base from marked Vietnamese words shadow a real English word.
+            if conversion.hasModifier &&
+                variant == conversion.baseWord &&
+                englishWords.contains(variant) {
                 continue
             }
 
@@ -500,7 +474,7 @@ private func cleanupTextFiles(resourcesDir: URL) {
         }
     }
 
-    print("  docs/dictionary sources are preserved")
+    print("  docs/dictionary/en_words.txt and vi_words.txt are preserved")
 }
 
 private func resolveResourcesDirectory(scriptDir: URL) -> URL {

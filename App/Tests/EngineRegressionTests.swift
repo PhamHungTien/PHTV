@@ -429,6 +429,21 @@ final class EngineRegressionTests: XCTestCase {
         runSpaceCase("noob", expectRestore: true)
     }
 
+    func testBootRestoresOnSpace() {
+        // "boot" in Telex produces "bôt" (oo→ô) and should restore on space.
+        runSpaceCase("boot", expectRestore: true)
+    }
+
+    func testDataRestoresOnSpace() {
+        // "data" is a common English token and should restore after Telex transforms.
+        runSpaceCase("data", expectRestore: true)
+    }
+
+    func testDataRestoresOnComma() {
+        // Keep word-break restore behavior aligned with the space path for "data".
+        runWordBreakCase("data", expectRestore: true, breakKey: KEY_COMMA)
+    }
+
     func testNoobRestoresOnComma() {
         // "noob" is in the English dictionary; must restore on comma via main detection path.
         runWordBreakCase("noob", expectRestore: true, breakKey: KEY_COMMA)
