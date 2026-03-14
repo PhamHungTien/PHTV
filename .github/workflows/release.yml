@@ -26,11 +26,11 @@ jobs:
       matrix:
         include:
           - arch: arm64
-            zip_suffix: arm64
+            asset_suffix: arm64
             excluded_archs: x86_64
             appcast_file: appcast.xml
           - arch: x86_64
-            zip_suffix: intel
+            asset_suffix: intel
             excluded_archs: arm64
             appcast_file: appcast-intel.xml
 
@@ -249,7 +249,7 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           APP_PATH="./build-${{ matrix.arch }}/Build/Products/Release/PHTV.app"
-          DMG_NAME="PHTV-$VERSION-${{ matrix.zip_suffix }}.dmg"
+          DMG_NAME="PHTV-$VERSION-${{ matrix.asset_suffix }}.dmg"
 
           xattr -cr "$APP_PATH"
           TEMP_DIR=$(mktemp -d)
@@ -269,18 +269,6 @@ jobs:
           echo "size=$SIZE" >> "$GITHUB_OUTPUT"
           echo "✅ DMG created: $DMG_NAME ($SIZE bytes)"
 
-      - name: Create ZIP (${{ matrix.arch }})
-        id: zip
-        working-directory: App
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          APP_PATH="./build-${{ matrix.arch }}/Build/Products/Release/PHTV.app"
-          ZIP_NAME="PHTV-$VERSION-${{ matrix.zip_suffix }}.zip"
-
-          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_NAME"
-          echo "name=$ZIP_NAME" >> "$GITHUB_OUTPUT"
-          echo "✅ ZIP created: $ZIP_NAME"
-
       - name: Generate Sparkle appcast (${{ matrix.arch }})
         working-directory: App
         env:
@@ -292,13 +280,13 @@ jobs:
           fi
 
           VERSION="${{ steps.version.outputs.version }}"
-          ZIP_NAME="${{ steps.zip.outputs.name }}"
+          DMG_NAME="${{ steps.dmg.outputs.name }}"
           APPCAST_FILE="${{ matrix.appcast_file }}"
           ARCHIVES_DIR="$RUNNER_TEMP/sparkle_archives_${{ matrix.arch }}"
           APPCAST_WORK_FILE="$ARCHIVES_DIR/appcast.xml"
           APPCAST_OUTPUT_FILE="$ARCHIVES_DIR/$APPCAST_FILE"
           mkdir -p "$ARCHIVES_DIR"
-          cp "$ZIP_NAME" "$ARCHIVES_DIR/"
+          cp "$DMG_NAME" "$ARCHIVES_DIR/"
 
           # Sparkle generate_appcast always reads/writes appcast.xml in the archive directory.
           # Seed that working filename from the architecture-specific feed, then rename afterward.
@@ -341,7 +329,7 @@ jobs:
 
           version = "$VERSION".strip()
           build_number = "${{ steps.set_versions.outputs.build_number }}".strip()
-          expected_archive = "$ZIP_NAME".strip()
+          expected_archive = "$DMG_NAME".strip()
           expected_build = int(build_number)
           ns = {"sparkle": "http://www.andymatuschak.org/xml-namespaces/sparkle"}
           sparkle_attr_version = "{http://www.andymatuschak.org/xml-namespaces/sparkle}version"
@@ -398,13 +386,6 @@ jobs:
           path: App/${{ steps.dmg.outputs.name }}
           retention-days: 1
 
-      - name: Upload ZIP artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: zip-${{ matrix.arch }}
-          path: App/${{ steps.zip.outputs.name }}
-          retention-days: 1
-
       - name: Upload appcast artifact
         uses: actions/upload-artifact@v7
         with:
@@ -436,23 +417,11 @@ jobs:
         with:
           name: dmg-x86_64
 
-      - name: Download ZIP (arm64)
-        uses: actions/download-artifact@v8
-        with:
-          name: zip-arm64
-
-      - name: Download ZIP (intel)
-        uses: actions/download-artifact@v8
-        with:
-          name: zip-x86_64
-
       - name: Generate checksums
         run: |
           VERSION="${{ needs.build.outputs.version }}"
           sha256sum "PHTV-$VERSION-arm64.dmg"   > checksums.txt
           sha256sum "PHTV-$VERSION-intel.dmg"    >> checksums.txt
-          sha256sum "PHTV-$VERSION-arm64.zip"    >> checksums.txt
-          sha256sum "PHTV-$VERSION-intel.zip"    >> checksums.txt
           cat checksums.txt
 
       - name: Create GitHub Release
@@ -465,8 +434,6 @@ jobs:
           files: |
             PHTV-${{ needs.build.outputs.version }}-arm64.dmg
             PHTV-${{ needs.build.outputs.version }}-intel.dmg
-            PHTV-${{ needs.build.outputs.version }}-arm64.zip
-            PHTV-${{ needs.build.outputs.version }}-intel.zip
             checksums.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

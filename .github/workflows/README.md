@@ -6,9 +6,9 @@ File: `.github/workflows/release.yml`
 
 Workflow release hiện đã được đồng bộ theo mẫu LunarV, với cấu trúc đơn giản:
 
-- `build` (macos-26): build, sign, tạo DMG/ZIP, generate Sparkle appcast
+- `build` (macos-26): build, sign, tạo DMG, generate Sparkle appcast
 - `release` (ubuntu-latest): tạo GitHub Release + checksums
-- `publish_appcast` (ubuntu-latest): commit `docs/appcast.xml` về `main`
+- `publish_appcast` (ubuntu-latest): commit `docs/appcast.xml` + `docs/appcast-intel.xml` về `main`
 - `update-homebrew` (ubuntu-latest): cập nhật `Casks/phtv.rb` trên `PhamHungTien/homebrew-tap`
 
 ## Trigger
@@ -27,10 +27,10 @@ Workflow release hiện đã được đồng bộ theo mẫu LunarV, với cấ
 
 1. Build app bằng `xcodebuild` (Release, manual signing)
 2. Verify code signature của `PHTV.app`
-3. Tạo `PHTV-<version>.dmg` và `PHTV-<version>.zip`
-4. Generate + sign `docs/appcast.xml` bằng Sparkle `generate_appcast`
-5. Upload assets lên GitHub Release
-6. Commit `docs/appcast.xml` lên `main`
+3. Tạo `PHTV-<version>-arm64.dmg` và `PHTV-<version>-intel.dmg`
+4. Generate + sign `docs/appcast.xml` và `docs/appcast-intel.xml` bằng Sparkle `generate_appcast`
+5. Upload DMG assets + `checksums.txt` lên GitHub Release
+6. Commit appcasts lên `main`
 7. Cập nhật Homebrew tap (`Casks/phtv.rb`) với version + SHA256 mới
 
 ## Notes
