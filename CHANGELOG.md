@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.7] - 2026-03-14
+
+### Fixed
+- **Backspace sau khôi phục tiếng Anh (#146)**: Sửa lỗi không thể xoá từ tiếng Anh được khôi phục để gõ lại tiếng Việt — phải xoá thêm cả dấu cách phía trước mới gõ được bình thường
+  - Nguyên nhân: engine không lưu raw key states của từ vừa restore vào lịch sử (`typingStates`), khiến Backspace phục hồi sai trạng thái cũ và gây lệch giữa màn hình và engine
+  - Cách sửa: lưu raw key states của từ tiếng Anh vào `typingStates` và xoá lịch sử cũ ngay khi restore; Backspace giờ hoạt động đúng: xoá space → khôi phục từ → xoá từng chữ → session sạch
+
+### Added
+- **Bản dựng riêng cho chip M và Intel**: Từ phiên bản này, PHTV được phân phối thành hai bản riêng biệt
+  - `PHTV-2.6.7-arm64` dành cho Mac chip M (Apple Silicon) — nhẹ hơn, không mang code dư thừa
+  - `PHTV-2.6.7-intel` dành cho Mac chip Intel (x86_64)
+  - Bộ gõ tự động chọn đúng feed cập nhật theo CPU (`appcast.xml` cho arm64, `appcast-intel.xml` cho Intel)
+  - **Người dùng Intel trên phiên bản cũ (≤ 2.6.6):** vui lòng tải thủ công `PHTV-2.6.7-intel.dmg` từ trang Releases
+
+### Improved
+- **Nhận diện từ tiếng Anh chính xác hơn**: Cải tiến logic phát hiện tổ hợp phụ âm không tồn tại trong tiếng Việt
+  - Thêm nhận diện chữ cái đầu `f`, `j`, `w`, `z` (flutter, javascript, webpack, zoom)
+  - Thêm tổ hợp 2 chữ: `kn` (knife, know)
+  - Thêm tổ hợp 3 chữ: `chr`, `shr`, `str`, `spr`, `scr`, `thr` (chrome, shrink, string...)
+  - Từ ≥ 7 ký tự có tổ hợp tiếng Anh được ưu tiên khôi phục dù trùng mẫu Telex
+- **Từ điển tiếng Anh mở rộng** (+900 từ): Bổ sung hàng loạt từ chuyên ngành thường thiếu trong từ điển chuẩn
+  - Viết tắt kỹ thuật: `sdk`, `gui`, `npm`, `pnpm`, `jwt`, `saml`, `oauth`, `grpc`, `tls`, `vpn`, `xss`, `csrf`, `cdn`, `ssr`, `pwa`...
+  - AI/ML: `llm`, `gpt`, `openai`, `chatgpt`, `langchain`, `gemini`, `mistral`, `quantization`, `tokenizer`, `hallucination`
+  - DevOps/Cloud: `kubectl`, `argocd`, `nginx`, `traefik`, `serverless`, `monorepo`, `webhook`, `hotfix`, `changelog`
+  - Monitoring: `datadog`, `dynatrace`, `newrelic`, `splunk`, `kibana`, `opentelemetry`
+  - Database/Messaging: `clickhouse`, `influxdb`, `rabbitmq`, `nats`, `protobuf`
+
+### Performance
+- **Tối ưu định dạng trie nhị phân (PHT4)**: Giảm kích thước `en_dict.bin` từ 103 MB xuống **78 MB** (−24%)
+  - Con trỏ node: `UInt32` (4 byte) → `UInt24` (3 byte); kích thước node: 105 → 79 byte
+  - Giữ nguyên toàn bộ 370.900+ từ, không trim
+
 ## [2.5.9] - 2026-02-23
 
 ### Added
