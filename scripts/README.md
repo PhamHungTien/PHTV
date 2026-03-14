@@ -9,9 +9,9 @@ Release automation is fully managed by GitHub Actions in:
 ### `tools/generate_dict_binary.swift`
 Build-time utility to regenerate dictionary binary assets when dictionary source data changes.
 
-Curated English sources live in:
-- `scripts/tools/data/en_words.txt` for the shared core seed list
-- `scripts/tools/data/en_words.d/*.txt` for categorized additions that should always be preserved in `en_dict.bin`
+Canonical dictionary sources live in:
+- `docs/dictionary/en_words.txt` and `docs/dictionary/vi_words.txt`
+- `docs/dictionary/en_words.d/*.txt` for categorized English additions that should always be preserved in `en_dict.bin`
 
 ## Notes
 

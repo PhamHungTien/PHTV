@@ -287,7 +287,7 @@ private func localWordSourceFiles(named baseName: String, searchDirectories: [UR
     return files
 }
 
-private func buildEnglishDictionary(resourcesDir: URL, dataDir: URL?) -> (Bool, Set<String>) {
+private func buildEnglishDictionary(resourcesDir: URL, dictionarySourceDir: URL) -> (Bool, Set<String>) {
     printSection("BUILDING ENGLISH DICTIONARY")
 
     let outputURL = resourcesDir.appendingPathComponent("en_dict.bin")
@@ -316,35 +316,20 @@ private func buildEnglishDictionary(resourcesDir: URL, dataDir: URL?) -> (Bool, 
         print("  Loaded \(words.count.formatted()) words so far")
     }
 
-    // resourcesDir = <repo>/App/PHTV/Resources/Dictionaries → go up 4 levels to reach repo root
-    let repoRoot = resourcesDir
-        .deletingLastPathComponent()
-        .deletingLastPathComponent()
-        .deletingLastPathComponent()
-        .deletingLastPathComponent()
-
-    // Priority words: curated seed files (data/en_words.txt, resourcesDir/en_words.txt)
-    // plus any categorized packs under en_words.d/. Always kept even when total
-    // exceeds maxEnglishWords.
+    // Canonical English sources live in docs/dictionary/:
+    // - en_words.txt for the broad source list
+    // - en_words.d/*.txt for curated category packs
+    // A same-named txt file inside resourcesDir is still accepted as a local override.
     var localWords = Set<String>()
     let priorityCandidates = localWordSourceFiles(
         named: "en_words",
-        searchDirectories: [dataDir, resourcesDir].compactMap { $0 }
+        searchDirectories: [dictionarySourceDir, resourcesDir]
     )
     for localFile in priorityCandidates where FileManager.default.fileExists(atPath: localFile.path) {
         let fileWords = readLocalWordFile(localFile)
         localWords.formUnion(fileWords)
         words.formUnion(fileWords)
         print("  Added priority words from \(localFile.lastPathComponent) (\(localFile.deletingLastPathComponent().lastPathComponent)/), total: \(words.count.formatted())")
-    }
-
-    // Supplementary words: docs/dictionary/en_words.txt — large comprehensive list,
-    // added to the pool but subject to maxEnglishWords trimming like the online source.
-    let docsDict = repoRoot.appendingPathComponent("docs/dictionary/en_words.txt")
-    if FileManager.default.fileExists(atPath: docsDict.path) {
-        let supplementWords = readLocalWordFile(docsDict)
-        words.formUnion(supplementWords)
-        print("  Added supplementary words from \(docsDict.lastPathComponent) (dictionary/), total: \(words.count.formatted())")
     }
 
     guard !words.isEmpty else {
@@ -387,7 +372,7 @@ private func buildEnglishDictionary(resourcesDir: URL, dataDir: URL?) -> (Bool, 
     return (true, filteredWords)
 }
 
-private func buildVietnameseDictionary(resourcesDir: URL, englishWords: Set<String>, dataDir: URL?) -> Bool {
+private func buildVietnameseDictionary(resourcesDir: URL, englishWords: Set<String>, dictionarySourceDir: URL) -> Bool {
     printSection("BUILDING VIETNAMESE DICTIONARY")
 
     let outputURL = resourcesDir.appendingPathComponent("vi_dict.bin")
@@ -429,19 +414,9 @@ private func buildVietnameseDictionary(resourcesDir: URL, englishWords: Set<Stri
         break
     }
 
-    // resourcesDir = <repo>/App/PHTV/Resources/Dictionaries → go up 4 levels to reach repo root
-    let repoRoot = resourcesDir
-        .deletingLastPathComponent()
-        .deletingLastPathComponent()
-        .deletingLastPathComponent()
-        .deletingLastPathComponent()
     let localCandidates = localWordSourceFiles(
         named: "vi_words",
-        searchDirectories: [
-            dataDir,
-            repoRoot.appendingPathComponent("docs/dictionary"),
-            resourcesDir
-        ].compactMap { $0 }
+        searchDirectories: [dictionarySourceDir, resourcesDir]
     )
 
     for localFile in localCandidates where FileManager.default.fileExists(atPath: localFile.path) {
@@ -507,30 +482,25 @@ private func buildVietnameseDictionary(resourcesDir: URL, englishWords: Set<Stri
     return true
 }
 
-private func cleanupTextFiles(resourcesDir: URL, dataDir: URL?) {
+private func cleanupTextFiles(resourcesDir: URL) {
     printSection("CLEANUP")
 
     let fileManager = FileManager.default
     for fileName in ["en_words.txt", "vi_words.txt"] {
-        var removedAny = false
-
-        for baseDir in [dataDir, resourcesDir].compactMap({ $0 }) {
-            let path = baseDir.appendingPathComponent(fileName)
-            if fileManager.fileExists(atPath: path.path) {
-                do {
-                    try fileManager.removeItem(at: path)
-                    print("  ✓ Removed \(fileName) from \(baseDir.path)")
-                    removedAny = true
-                } catch {
-                    print("  ✗ Failed to remove \(path.path): \(error.localizedDescription)")
-                }
+        let path = resourcesDir.appendingPathComponent(fileName)
+        if fileManager.fileExists(atPath: path.path) {
+            do {
+                try fileManager.removeItem(at: path)
+                print("  ✓ Removed temporary \(fileName) from \(resourcesDir.path)")
+            } catch {
+                print("  ✗ Failed to remove \(path.path): \(error.localizedDescription)")
             }
-        }
-
-        if !removedAny {
-            print("  - \(fileName) not found (already removed)")
+        } else {
+            print("  - Temporary \(fileName) not found in resources")
         }
     }
+
+    print("  docs/dictionary sources are preserved")
 }
 
 private func resolveResourcesDirectory(scriptDir: URL) -> URL {
@@ -555,7 +525,7 @@ private func resolveResourcesDirectory(scriptDir: URL) -> URL {
 
 private func printUsage() {
     print("Usage: ./scripts/tools/generate_dict_binary.swift [--cleanup] [--help]")
-    print("  --cleanup  Remove en_words.txt/vi_words.txt after successful generation")
+    print("  --cleanup  Remove temporary txt copies from Resources after successful generation")
     print("  --help     Show this help message")
 }
 
@@ -569,14 +539,17 @@ private func main() {
 
     let scriptPath = URL(fileURLWithPath: #filePath).standardizedFileURL
     let scriptDir = scriptPath.deletingLastPathComponent()
-    let dataDir = scriptDir.appendingPathComponent("data")
+    let repoRoot = scriptDir
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+    let dictionarySourceDir = repoRoot.appendingPathComponent("docs/dictionary")
     let resourcesDir = resolveResourcesDirectory(scriptDir: scriptDir)
 
     print(sparkleLine)
     print("PHTV Dictionary Generator")
     print(sparkleLine)
     print("Resources directory: \(resourcesDir.path)")
-    print("Data directory: \(dataDir.path)")
+    print("Dictionary source directory: \(dictionarySourceDir.path)")
 
     let fileManager = FileManager.default
     if !fileManager.fileExists(atPath: resourcesDir.path) {
@@ -588,12 +561,12 @@ private func main() {
         }
     }
 
-    let (englishOK, englishWords) = buildEnglishDictionary(resourcesDir: resourcesDir, dataDir: dataDir)
-    let vietnameseOK = buildVietnameseDictionary(resourcesDir: resourcesDir, englishWords: englishWords, dataDir: dataDir)
+    let (englishOK, englishWords) = buildEnglishDictionary(resourcesDir: resourcesDir, dictionarySourceDir: dictionarySourceDir)
+    let vietnameseOK = buildVietnameseDictionary(resourcesDir: resourcesDir, englishWords: englishWords, dictionarySourceDir: dictionarySourceDir)
 
     if englishOK && vietnameseOK {
         if arguments.contains("--cleanup") {
-            cleanupTextFiles(resourcesDir: resourcesDir, dataDir: dataDir)
+            cleanupTextFiles(resourcesDir: resourcesDir)
         } else {
             print("\n  Run with --cleanup to remove txt files")
         }
