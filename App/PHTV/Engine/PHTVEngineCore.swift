@@ -2082,6 +2082,13 @@ final class PHTVVietnameseEngine {
                 hData[restoreStateIndex - 1] |= CAPS_MASK
             }
             shouldUpperCaseEnglishRestore = false
+            // Save English raw key states so backspace can undo back through the word.
+            // Clear old history first (prevents mismatch when backspace restores prior words
+            // that are no longer at cursor position after the English restore).
+            typingStatesData.removeAll()
+            for i in 0..<restoreStateIndex { typingStatesData.append(typingWord[i]) }
+            typingStates.removeAll()
+            typingStates.append(typingStatesData)
             spaceCount += 1; idx = 0; stateIdx = 0
         } else if (phtvRuntimeQuickStartConsonantEnabled() != 0 || phtvRuntimeQuickEndConsonantEnabled() != 0) && !tempDisableKey && checkQuickConsonant() {
             spaceCount += 1
