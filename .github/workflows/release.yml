@@ -14,6 +14,9 @@ on:
 permissions:
   contents: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     name: Build PHTV (${{ matrix.arch }})
@@ -232,14 +235,16 @@ jobs:
           ZIP_NAME="${{ steps.zip.outputs.name }}"
           APPCAST_FILE="${{ matrix.appcast_file }}"
           ARCHIVES_DIR="$RUNNER_TEMP/sparkle_archives_${{ matrix.arch }}"
+          APPCAST_WORK_FILE="$ARCHIVES_DIR/appcast.xml"
           mkdir -p "$ARCHIVES_DIR"
           cp "$ZIP_NAME" "$ARCHIVES_DIR/"
 
-          # Seed appcast with latest committed version (creates new file if not exists yet)
-          if git show origin/main:docs/$APPCAST_FILE > "$ARCHIVES_DIR/$APPCAST_FILE" 2>/dev/null; then
+          # Sparkle generate_appcast always reads/writes appcast.xml in the archive directory.
+          # Seed that working filename from the architecture-specific feed, then rename afterward.
+          if git show origin/main:docs/$APPCAST_FILE > "$APPCAST_WORK_FILE" 2>/dev/null; then
             echo "✅ Using latest docs/$APPCAST_FILE from origin/main"
           elif [ -f "../docs/$APPCAST_FILE" ]; then
-            cp "../docs/$APPCAST_FILE" "$ARCHIVES_DIR/$APPCAST_FILE"
+            cp "../docs/$APPCAST_FILE" "$APPCAST_WORK_FILE"
             echo "⚠️  Falling back to docs/$APPCAST_FILE from current checkout"
           else
             echo "ℹ️  $APPCAST_FILE not found — generate_appcast will create it fresh"
@@ -258,6 +263,12 @@ jobs:
             --maximum-versions 0 \
             "$ARCHIVES_DIR"
 
+          if [ ! -f "$APPCAST_WORK_FILE" ]; then
+            echo "❌ Error: generate_appcast did not produce appcast.xml"
+            exit 1
+          fi
+
+          cp "$APPCAST_WORK_FILE" "$ARCHIVES_DIR/$APPCAST_FILE"
           cp "$ARCHIVES_DIR/$APPCAST_FILE" "../docs/$APPCAST_FILE"
 
           python3 - <<PY
@@ -266,6 +277,7 @@ jobs:
 
           version = "$VERSION".strip()
           build_number = "${{ steps.set_versions.outputs.build_number }}".strip()
+          expected_archive = "$ZIP_NAME".strip()
           expected_build = int(build_number)
           ns = {"sparkle": "http://www.andymatuschak.org/xml-namespaces/sparkle"}
           sparkle_attr_version = "{http://www.andymatuschak.org/xml-namespaces/sparkle}version"
@@ -286,19 +298,23 @@ jobs:
               short_node = item.find("sparkle:shortVersionString", ns)
               short_version = (short_node.text or "").strip() if short_node is not None else ""
               version_node = item.find("sparkle:version", ns)
+              enc = item.find("enclosure")
               item_build = None
               if version_node is not None and version_node.text:
                   try: item_build = int(version_node.text.strip())
                   except ValueError: pass
               if item_build is None:
-                  enc = item.find("enclosure")
                   if enc is not None:
                       raw = enc.get(sparkle_attr_version)
                       if raw:
                           try: item_build = int(raw.strip())
                           except ValueError: pass
               if short_version == version and item_build == expected_build:
-                  print(f"✅ $APPCAST_FILE contains shortVersion={version} build={expected_build}")
+                  enclosure_url = (enc.get("url") or "").strip() if enc is not None else ""
+                  if not enclosure_url.endswith(f"/{expected_archive}"):
+                      print(f"❌ $APPCAST_FILE points to unexpected archive: {enclosure_url}")
+                      sys.exit(1)
+                  print(f"✅ $APPCAST_FILE contains shortVersion={version} build={expected_build} archive={expected_archive}")
                   sys.exit(0)
 
           print(f"❌ $APPCAST_FILE missing item shortVersion={version} build={expected_build}")
