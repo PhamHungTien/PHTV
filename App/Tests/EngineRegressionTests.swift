@@ -506,6 +506,46 @@ final class EngineRegressionTests: XCTestCase {
         XCTAssertEqual(renderedToken("ojo"), renderedToken("ooj"))
     }
 
+    func testAWFamilyToneBeforeShapeMatchesStandardTelexAcrossToneKeys() {
+        XCTAssertEqual(renderedToken("asw"), renderedToken("aws"))
+        XCTAssertEqual(renderedToken("afw"), renderedToken("awf"))
+        XCTAssertEqual(renderedToken("arw"), renderedToken("awr"))
+        XCTAssertEqual(renderedToken("axw"), renderedToken("awx"))
+        XCTAssertEqual(renderedToken("ajw"), renderedToken("awj"))
+    }
+
+    func testOWFamilyToneBeforeShapeMatchesStandardTelexAcrossToneKeys() {
+        XCTAssertEqual(renderedToken("osw"), renderedToken("ows"))
+        XCTAssertEqual(renderedToken("ofw"), renderedToken("owf"))
+        XCTAssertEqual(renderedToken("orw"), renderedToken("owr"))
+        XCTAssertEqual(renderedToken("oxw"), renderedToken("owx"))
+        XCTAssertEqual(renderedToken("ojw"), renderedToken("owj"))
+    }
+
+    func testUWFamilyToneBeforeShapeMatchesStandardTelexAcrossToneKeys() {
+        XCTAssertEqual(renderedToken("usw"), renderedToken("uws"))
+        XCTAssertEqual(renderedToken("ufw"), renderedToken("uwf"))
+        XCTAssertEqual(renderedToken("urw"), renderedToken("uwr"))
+        XCTAssertEqual(renderedToken("uxw"), renderedToken("uwx"))
+        XCTAssertEqual(renderedToken("ujw"), renderedToken("uwj"))
+    }
+
+    func testUOWFamilyToneBeforeShapeMatchesStandardTelexAcrossToneKeys() {
+        XCTAssertEqual(renderedToken("uosw"), renderedToken("uows"))
+        XCTAssertEqual(renderedToken("uofw"), renderedToken("uowf"))
+        XCTAssertEqual(renderedToken("uorw"), renderedToken("uowr"))
+        XCTAssertEqual(renderedToken("uoxw"), renderedToken("uowx"))
+        XCTAssertEqual(renderedToken("uojw"), renderedToken("uowj"))
+    }
+
+    func testUYEEFamilyToneBeforeShapeMatchesStandardTelexAcrossToneKeys() {
+        XCTAssertEqual(renderedToken("uyese"), renderedToken("uyees"))
+        XCTAssertEqual(renderedToken("uyefe"), renderedToken("uyeef"))
+        XCTAssertEqual(renderedToken("uyere"), renderedToken("uyeer"))
+        XCTAssertEqual(renderedToken("uyexe"), renderedToken("uyeex"))
+        XCTAssertEqual(renderedToken("uyeje"), renderedToken("uyeej"))
+    }
+
     func testTheemDoesNotRestoreOnSpace() {
         runSpaceCase("theem", expectRestore: false)
     }
