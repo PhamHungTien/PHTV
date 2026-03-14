@@ -10,10 +10,10 @@ import Foundation
 private let dictionaryTrieLock = NSLock()
 
 private let trieHeaderSize = 12
-private let trieNodeSize = 105
-private let trieChildStride = 4
-private let trieNodeIsEndOffset = 104
-private let trieNoChild = UInt32.max
+private let trieNodeSize = 79          // 26×3 + 1 (PHT4: 3-byte child pointers)
+private let trieChildStride = 3
+private let trieNodeIsEndOffset = 78
+private let trieNoChild: UInt32 = 0xFFFFFF
 
 private struct BinaryTrieRuntimeState {
     let data: Data
@@ -37,6 +37,16 @@ private func readUInt32LittleEndian(
     let b2 = UInt32(bytes[offset + 2]) << 16
     let b3 = UInt32(bytes[offset + 3]) << 24
     return b0 | b1 | b2 | b3
+}
+
+private func readUInt24LittleEndian(
+    _ bytes: UnsafePointer<UInt8>,
+    offset: Int
+) -> UInt32 {
+    let b0 = UInt32(bytes[offset])
+    let b1 = UInt32(bytes[offset + 1]) << 8
+    let b2 = UInt32(bytes[offset + 2]) << 16
+    return b0 | b1 | b2
 }
 
 private func dictionaryCandidatePaths(for sourcePath: String) -> [String] {
@@ -85,7 +95,7 @@ private func loadTrieRuntimeState(fromPath path: String) -> BinaryTrieRuntimeSta
         guard baseAddress[0] == 0x50,
               baseAddress[1] == 0x48,
               baseAddress[2] == 0x54,
-              baseAddress[3] == 0x33 else {
+              baseAddress[3] == 0x34 else { // PHT4
             return nil
         }
 
@@ -152,7 +162,7 @@ private func trieContains(
                 return false
             }
 
-            let child = readUInt32LittleEndian(baseAddress, offset: childOffset)
+            let child = readUInt24LittleEndian(baseAddress, offset: childOffset)
             if child == trieNoChild {
                 return false
             }

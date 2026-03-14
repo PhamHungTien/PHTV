@@ -7,8 +7,8 @@ import Darwin
 import FoundationNetworking
 #endif
 
-private let trieMagic = "PHT3"
-private let maxEnglishWords = 300_000
+private let trieMagic = "PHT4"
+private let maxEnglishWords = Int.max
 private let maxEnglishLength = 45
 private let maxTelexLength = 30
 private let sparkleLine = String(repeating: "=", count: 60)
@@ -19,6 +19,12 @@ private extension Data {
         Swift.withUnsafeBytes(of: &little) { buffer in
             append(contentsOf: buffer)
         }
+    }
+
+    mutating func appendLEUInt24(_ value: UInt32) {
+        append(UInt8(value & 0xFF))
+        append(UInt8((value >> 8) & 0xFF))
+        append(UInt8((value >> 16) & 0xFF))
     }
 }
 
@@ -91,12 +97,12 @@ private final class Trie {
 
     func serialize() -> Data {
         var data = Data()
-        data.reserveCapacity(nodes.count * 105)
+        data.reserveCapacity(nodes.count * 79) // 26×3 + 1
 
         for node in nodes {
             for child in node.children {
-                let childValue = child.map { UInt32($0) } ?? UInt32.max
-                data.appendLEUInt32(childValue)
+                let childValue = child.map { UInt32($0) } ?? 0xFFFFFF
+                data.appendLEUInt24(childValue)
             }
             data.append(node.isEnd ? 1 : 0)
         }
