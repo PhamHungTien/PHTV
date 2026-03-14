@@ -322,36 +322,6 @@ private func buildVietnameseDictionary(resourcesDir: URL, englishWords: Set<Stri
 
     let blacklist: Set<String> = ["tẻm"]
 
-    let commonVietnameseWords = [
-        "và", "của", "có", "các", "là", "được", "trong", "cho", "không", "người",
-        "với", "một", "đã", "để", "những", "khi", "đến", "về", "này", "như",
-        "từ", "theo", "trên", "tại", "sau", "cũng", "hay", "còn", "nhiều", "ra",
-        "đi", "làm", "nên", "thì", "mà", "đó", "sẽ", "hơn", "vào", "nếu",
-        "rất", "hoặc", "vì", "bị", "lại", "qua", "năm", "nước", "đây", "hết",
-        "ai", "gì", "đâu", "bao", "sao", "nào", "thế", "vậy", "đều", "ừ",
-        "ờ", "ồ", "ủa", "ối", "ái", "ôi", "ơi", "ừm", "à", "ạ", "á",
-        "ả", "ã", "ư", "ơ", "ê", "ô", "tôi", "bạn", "anh", "chị",
-        "em", "ông", "bà", "cô", "chú", "bác", "họ", "chúng", "mình", "ta",
-        "ăn", "uống", "ngủ", "đọc", "viết", "nói", "nghe", "xem", "nhìn", "thấy",
-        "biết", "hiểu", "nghĩ", "muốn", "cần", "phải", "yêu", "ghét", "vui", "buồn",
-        "chạy", "đứng", "ngồi", "nằm", "nhà", "cửa", "đường", "phố", "xe", "tàu",
-        "máy", "điện", "lửa", "đất", "trời", "mây", "mưa", "gió", "nắng", "cây",
-        "hoa", "lá", "quả", "rau", "củ", "gạo", "cơm", "thịt", "cá", "trứng",
-        "sữa", "bánh", "kẹo", "trà", "cà", "phê", "bàn", "ghế", "giường", "tủ",
-        "sách", "vở", "bút", "áo", "quần", "giày", "dép", "tay", "chân", "đầu",
-        "mắt", "mũi", "miệng", "tai", "tóc", "tim", "máu", "xương", "da", "đẹp",
-        "cao", "thấp", "to", "nhỏ", "dài", "ngắn", "rộng", "hẹp", "nặng", "nhẹ",
-        "nóng", "lạnh", "ấm", "mát", "sạch", "bẩn", "mới", "cũ", "già", "trẻ",
-        "nhanh", "chậm", "đúng", "sai", "khó", "dễ", "một", "hai", "ba", "bốn",
-        "năm", "sáu", "bảy", "tám", "chín", "mười", "giờ", "phút", "giây", "ngày",
-        "đêm", "sáng", "trưa", "chiều", "tối", "tuần", "tháng", "mùa", "xuân", "hạ",
-        "thu", "đông", "mã", "lỗi", "chạy", "dừng", "lưu", "xóa", "tìm", "sửa",
-        "thêm", "bớt", "tệp", "thư", "mục", "ổ", "đĩa", "ảnh", "video", "nhạc"
-    ]
-
-    vietnameseWords.formUnion(commonVietnameseWords)
-    print("  Added \(commonVietnameseWords.count) common words")
-
     let vietnameseURLs = [
         "https://raw.githubusercontent.com/duyet/vietnamese-wordlist/master/Viet74K.txt"
     ]
