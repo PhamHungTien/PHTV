@@ -148,7 +148,7 @@ final class PHTVCharacterOutputService: NSObject {
     // MARK: - handleMacro
 
     @objc(handleMacroWithKeycode:flags:)
-    class func handleMacro(keycode: UInt16, flags: UInt64) {
+    class func handleMacro(keycode: UInt16, flags: UInt64) -> Bool {
         var effectiveTarget = PHTVEventRuntimeContextService.effectiveTargetBundleIdValue()
         if effectiveTarget == nil {
             effectiveTarget = PHTVAppContextService.focusedBundleId(
@@ -157,6 +157,16 @@ final class PHTVCharacterOutputService: NSObject {
             if effectiveTarget == nil {
                 effectiveTarget = PHTVAppContextService.currentFrontmostBundleId()
             }
+        }
+
+        if PHTVEngineRuntimeFacade.engineDataMatchedMacroSnippetType() == EngineMacroSnippetType.systemTextReplacement,
+           PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(forBundleId: effectiveTarget) {
+            PHTVEngineDataBridge.startNewSession()
+            #if DEBUG
+            NSLog("[Macro] Deferring macOS Text Replacement to native app handling for target='%@'",
+                  effectiveTarget ?? "")
+            #endif
+            return true
         }
 
         let macroPlan = PHTVInputStrategyService.macroPlan(
@@ -192,7 +202,7 @@ final class PHTVCharacterOutputService: NSObject {
                 #if DEBUG
                 NSLog("[Macro] Spotlight: AX API succeeded")
                 #endif
-                return
+                return false
             }
             #if DEBUG
             NSLog("[Macro] Spotlight: AX API failed, falling back to synthetic events")
@@ -256,6 +266,8 @@ final class PHTVCharacterOutputService: NSObject {
             PHTVKeyEventSenderService.sendKeyCode(
                 UInt32(keycode) | (hasCaps ? EngineBitMask.caps : 0))
         }
+
+        return false
     }
 
     // MARK: - Private helpers

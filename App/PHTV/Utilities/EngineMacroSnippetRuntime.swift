@@ -20,6 +20,7 @@ enum EngineMacroSnippetType {
     static let clipboard: Int32 = 4
     static let random: Int32 = 5
     static let counter: Int32 = 6
+    static let systemTextReplacement: Int32 = 7
 }
 
 enum EngineMacroSnippetRuntime {

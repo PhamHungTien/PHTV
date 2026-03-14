@@ -61,10 +61,21 @@ final class PHTVSystemTextReplacementService: NSObject {
             guard seenShortcuts.insert(key).inserted else {
                 continue
             }
-            merged.append(MacroItem(shortcut: entry.shortcut, expansion: entry.expansion))
+            merged.append(
+                MacroItem(
+                    shortcut: entry.shortcut,
+                    expansion: entry.expansion,
+                    snippetType: .systemTextReplacement
+                )
+            )
         }
 
         return merged
+    }
+
+    @objc(shouldDeferToNativeTextReplacementForBundleId:)
+    class func shouldDeferToNativeTextReplacement(forBundleId bundleId: String?) -> Bool {
+        PHTVAppDetectionService.supportsNativeSystemTextReplacements(bundleId)
     }
 
     class func rawReplacementItems(

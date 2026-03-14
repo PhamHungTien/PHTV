@@ -18,6 +18,11 @@ private final class MacroLookupStateBox: @unchecked Sendable {
     var map: [[UInt32]: MacroLookupEntry] = [:]
 }
 
+private final class MatchedMacroStateBox: @unchecked Sendable {
+    let lock = NSLock()
+    var snippetType: Int32 = EngineMacroSnippetType.staticContent
+}
+
 private final class RuntimeSettingsStateBox: @unchecked Sendable {
     let lock = NSLock()
     var inputType: Int32 = 0
@@ -57,7 +62,20 @@ private final class RuntimeSettingsStateBox: @unchecked Sendable {
 }
 
 private let macroLookupState = MacroLookupStateBox()
+private let matchedMacroState = MatchedMacroStateBox()
 private let runtimeSettingsState = RuntimeSettingsStateBox()
+
+private func setLastMatchedMacroSnippetType(_ snippetType: Int32) {
+    matchedMacroState.lock.lock()
+    matchedMacroState.snippetType = snippetType
+    matchedMacroState.lock.unlock()
+}
+
+private func lastMatchedMacroSnippetType() -> Int32 {
+    matchedMacroState.lock.lock()
+    defer { matchedMacroState.lock.unlock() }
+    return matchedMacroState.snippetType
+}
 
 private func withRuntimeSettings<T>(_ body: (RuntimeSettingsStateBox) -> T) -> T {
     runtimeSettingsState.lock.lock()
@@ -514,6 +532,7 @@ private func findMacroContentForNormalizedKeys(
     }
 
     if let directEntry = macroLookupState.map[keys] {
+        setLastMatchedMacroSnippetType(directEntry.snippetType)
         return macroContentCode(for: directEntry, codeTable: codeTable)
     }
 
@@ -544,6 +563,7 @@ private func findMacroContentForNormalizedKeys(
     guard let entry = macroLookupState.map[candidate] else {
         return nil
     }
+    setLastMatchedMacroSnippetType(entry.snippetType)
     let baseContent = macroContentCode(for: entry, codeTable: codeTable)
     return applyAutoCapsToMacroContent(baseContent, allCaps: allCaps, codeTable: codeTable)
 }
@@ -557,6 +577,7 @@ func phtvLoadMacroMapFromBinary(
         macroLookupState.lock.lock()
         macroLookupState.map = [:]
         macroLookupState.lock.unlock()
+        setLastMatchedMacroSnippetType(EngineMacroSnippetType.staticContent)
         return
     }
 
@@ -564,6 +585,7 @@ func phtvLoadMacroMapFromBinary(
     macroLookupState.lock.lock()
     macroLookupState.map = parsedMap
     macroLookupState.lock.unlock()
+    setLastMatchedMacroSnippetType(EngineMacroSnippetType.staticContent)
 }
 
 @_cdecl("phtvFindMacroContentForNormalizedKeys")
@@ -577,6 +599,8 @@ func phtvFindMacroContentForNormalizedKeys(
     guard keyCount >= 0 else {
         return -1
     }
+
+    setLastMatchedMacroSnippetType(EngineMacroSnippetType.staticContent)
 
     let keys: [UInt32]
     if keyCount == 0 {
@@ -1004,6 +1028,10 @@ final class PHTVEngineRuntimeFacade: NSObject {
             return 0
         }
         return phtvEngineHookMacroDataAt(index)
+    }
+
+    class func engineDataMatchedMacroSnippetType() -> Int32 {
+        lastMatchedMacroSnippetType()
     }
 
 }

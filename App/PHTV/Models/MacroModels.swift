@@ -48,6 +48,17 @@ enum SnippetType: String, Codable, CaseIterable {
     case clipboard = "clipboard"  // Clipboard content
     case random = "random"        // Random from list
     case counter = "counter"      // Auto-increment number
+    case systemTextReplacement = "systemTextReplacement" // Imported from macOS Text Replacements
+
+    static let allCases: [SnippetType] = [
+        .static,
+        .date,
+        .time,
+        .datetime,
+        .clipboard,
+        .random,
+        .counter
+    ]
 
     var displayName: String {
         switch self {
@@ -58,6 +69,7 @@ enum SnippetType: String, Codable, CaseIterable {
         case .clipboard: return "Clipboard"
         case .random: return "Ngẫu nhiên"
         case .counter: return "Bộ đếm"
+        case .systemTextReplacement: return "Text Replacement macOS"
         }
     }
 
@@ -70,6 +82,7 @@ enum SnippetType: String, Codable, CaseIterable {
         case .clipboard: return "(Sẽ dán nội dung từ clipboard)"
         case .random: return "giá trị 1, giá trị 2, giá trị 3"
         case .counter: return "prefix"
+        case .systemTextReplacement: return "Nội dung từ macOS Text Replacements"
         }
     }
 
@@ -82,6 +95,7 @@ enum SnippetType: String, Codable, CaseIterable {
         case .clipboard: return "Dán nội dung hiện tại từ clipboard"
         case .random: return "Chọn ngẫu nhiên từ danh sách, phân cách bằng dấu phẩy"
         case .counter: return "Số tự động tăng. VD: prefix → prefix1, prefix2..."
+        case .systemTextReplacement: return "Mục này được nhập tự động từ Text Replacements của macOS"
         }
     }
 }
@@ -227,6 +241,8 @@ private extension SnippetType {
             return 5
         case .counter:
             return 6
+        case .systemTextReplacement:
+            return 7
         }
     }
 }

@@ -511,8 +511,11 @@ final class PHTVEventCallbackService {
                         safeMode: safeModeEnabled,
                         spotlightCacheDurationMs: kSpotlightCacheDurationMs,
                         appCharacteristicsMaxAgeMs: kAppCharacteristicsCacheMaxAgeMs)
-                    PHTVCharacterOutputService.handleMacro(
+                    if PHTVCharacterOutputService.handleMacro(
                         keycode: eventKeycode, flags: eventFlags.rawValue)
+                    {
+                        return Unmanaged.passRetained(event)
+                    }
                     return nil
                 }
             }
@@ -915,8 +918,11 @@ final class PHTVEventCallbackService {
             }
 
         } else if signalAction == PHTVEngineSignalAction.replaceMacro.rawValue {
-            PHTVCharacterOutputService.handleMacro(
+            if PHTVCharacterOutputService.handleMacro(
                 keycode: eventKeycode, flags: eventFlags.rawValue)
+            {
+                return Unmanaged.passRetained(event)
+            }
         }
 
         return nil

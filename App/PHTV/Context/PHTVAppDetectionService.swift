@@ -316,6 +316,25 @@ final class PHTVAppDetectionService: NSObject {
         strictAddressBarDetectionApps.contains(bundleId)
     }
 
+    // Default to macOS-native Text Replacements for regular GUI apps and only
+    // keep PHTV fallback handling for environments that commonly bypass the
+    // system text stack (terminal/IDE/Spotlight-like contexts).
+    @objc class func supportsNativeSystemTextReplacements(_ bundleId: String?) -> Bool {
+        guard let normalized = normalizeBundleId(bundleId) else {
+            return false
+        }
+
+        if isTerminalApp(normalized) || isIDEApp(normalized) || isSpotlightLikeApp(normalized) {
+            return false
+        }
+
+        if shouldDisableVietnamese(normalized) {
+            return false
+        }
+
+        return true
+    }
+
     @objc class func containsUnicodeCompound(_ bundleId: String?) -> Bool {
         unicodeCompoundApps.contains(bundleId)
     }

@@ -37,9 +37,45 @@ final class SystemTextReplacementServiceTests: XCTestCase {
         XCTAssertEqual(merged.count, 3)
         XCTAssertEqual(merged[0].shortcut, "dc")
         XCTAssertEqual(merged[0].expansion, "do custom")
+        XCTAssertEqual(merged[0].snippetType, .static)
         XCTAssertEqual(merged[1].shortcut, "mk")
         XCTAssertEqual(merged[1].expansion, "mình")
+        XCTAssertEqual(merged[1].snippetType, .static)
         XCTAssertEqual(merged[2].shortcut, "ntn")
         XCTAssertEqual(merged[2].expansion, "như thế nào")
+        XCTAssertEqual(merged[2].snippetType, .systemTextReplacement)
+    }
+
+    func testNativeTextReplacementDeferralUsesGuiDefaultAndToolingFallback() {
+        XCTAssertTrue(
+            PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
+                forBundleId: "com.google.Chrome"
+            )
+        )
+        XCTAssertTrue(
+            PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
+                forBundleId: "com.tinyspeck.slackmacgap"
+            )
+        )
+        XCTAssertTrue(
+            PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
+                forBundleId: "com.apple.TextEdit"
+            )
+        )
+        XCTAssertFalse(
+            PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
+                forBundleId: "com.apple.Terminal"
+            )
+        )
+        XCTAssertFalse(
+            PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
+                forBundleId: "com.microsoft.vscode"
+            )
+        )
+        XCTAssertFalse(
+            PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(
+                forBundleId: nil
+            )
+        )
     }
 }
