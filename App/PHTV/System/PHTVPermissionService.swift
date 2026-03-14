@@ -27,16 +27,8 @@ import Foundation
     private static let maxTestTapRetries = 3
     private static let testTapRetryDelayUsec: useconds_t = 50_000
 
-    @objc static func hasListenEventAccess() -> Bool {
-        CGPreflightListenEventAccess()
-    }
-
     @objc static func hasPostEventAccess() -> Bool {
         CGPreflightPostEventAccess()
-    }
-
-    @objc static func requestListenEventAccess() -> Bool {
-        CGRequestListenEventAccess()
     }
 
     @objc static func requestPostEventAccess() -> Bool {
@@ -60,12 +52,8 @@ import Foundation
     }
 
     @objc static func canCreateEventTap() -> Bool {
-        let canListen = hasListenEventAccess()
         let canPost = hasPostEventAccess()
-        if !canListen || !canPost {
-            if !canListen {
-                NSLog("[Permission] Input Monitoring (ListenEvent) is NOT granted")
-            }
+        if !canPost {
             if !canPost {
                 NSLog("[Permission] Accessibility/Event Synthesis (PostEvent) is NOT granted")
             }

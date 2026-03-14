@@ -42,8 +42,6 @@
 	<string>Copyright © 2026 Phạm Hùng Tiến. All rights reserved.</string>
 	<key>NSHumanReadableDescription</key>
 	<string>Vietnamese input method with Telex, VNI support for macOS</string>
-	<key>NSInputMonitoringUsageDescription</key>
-	<string>PHTV needs Input Monitoring permissions to detect key presses for Vietnamese input.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>SKAdNetworkItems</key>
