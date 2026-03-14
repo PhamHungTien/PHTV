@@ -239,6 +239,54 @@ private func readLocalWordFile(_ fileURL: URL) -> Set<String> {
     return words
 }
 
+private func localWordSourceFiles(named baseName: String, searchDirectories: [URL]) -> [URL] {
+    let fileManager = FileManager.default
+    var seenPaths = Set<String>()
+    var files: [URL] = []
+
+    func appendIfNeeded(_ url: URL) {
+        let standardizedPath = url.standardizedFileURL.path
+        guard !seenPaths.contains(standardizedPath) else {
+            return
+        }
+
+        seenPaths.insert(standardizedPath)
+        files.append(url)
+    }
+
+    for directory in searchDirectories {
+        let standaloneFile = directory.appendingPathComponent("\(baseName).txt")
+        if fileManager.fileExists(atPath: standaloneFile.path) {
+            appendIfNeeded(standaloneFile)
+        }
+
+        let groupedDirectory = directory.appendingPathComponent("\(baseName).d")
+        guard let childURLs = try? fileManager.contentsOfDirectory(
+            at: groupedDirectory,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        ) else {
+            continue
+        }
+
+        for childURL in childURLs.sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
+            guard childURL.pathExtension == "txt" else {
+                continue
+            }
+
+            var isDirectory: ObjCBool = false
+            guard fileManager.fileExists(atPath: childURL.path, isDirectory: &isDirectory),
+                  !isDirectory.boolValue else {
+                continue
+            }
+
+            appendIfNeeded(childURL)
+        }
+    }
+
+    return files
+}
+
 private func buildEnglishDictionary(resourcesDir: URL, dataDir: URL?) -> (Bool, Set<String>) {
     printSection("BUILDING ENGLISH DICTIONARY")
 
@@ -275,13 +323,14 @@ private func buildEnglishDictionary(resourcesDir: URL, dataDir: URL?) -> (Bool, 
         .deletingLastPathComponent()
         .deletingLastPathComponent()
 
-    // Priority words: small curated list (data/en_words.txt, resourcesDir/en_words.txt)
-    // Always kept even when total exceeds maxEnglishWords.
+    // Priority words: curated seed files (data/en_words.txt, resourcesDir/en_words.txt)
+    // plus any categorized packs under en_words.d/. Always kept even when total
+    // exceeds maxEnglishWords.
     var localWords = Set<String>()
-    let priorityCandidates: [URL] = [
-        dataDir?.appendingPathComponent("en_words.txt"),
-        resourcesDir.appendingPathComponent("en_words.txt")
-    ].compactMap { $0 }
+    let priorityCandidates = localWordSourceFiles(
+        named: "en_words",
+        searchDirectories: [dataDir, resourcesDir].compactMap { $0 }
+    )
     for localFile in priorityCandidates where FileManager.default.fileExists(atPath: localFile.path) {
         let fileWords = readLocalWordFile(localFile)
         localWords.formUnion(fileWords)
@@ -386,11 +435,14 @@ private func buildVietnameseDictionary(resourcesDir: URL, englishWords: Set<Stri
         .deletingLastPathComponent()
         .deletingLastPathComponent()
         .deletingLastPathComponent()
-    let localCandidates: [URL] = [
-        dataDir?.appendingPathComponent("vi_words.txt"),
-        repoRoot.appendingPathComponent("docs/dictionary/vi_words.txt"),
-        resourcesDir.appendingPathComponent("vi_words.txt")
-    ].compactMap { $0 }
+    let localCandidates = localWordSourceFiles(
+        named: "vi_words",
+        searchDirectories: [
+            dataDir,
+            repoRoot.appendingPathComponent("docs/dictionary"),
+            resourcesDir
+        ].compactMap { $0 }
+    )
 
     for localFile in localCandidates where FileManager.default.fileExists(atPath: localFile.path) {
         guard let text = try? String(contentsOf: localFile, encoding: .utf8) else { continue }

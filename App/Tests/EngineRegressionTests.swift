@@ -434,6 +434,16 @@ final class EngineRegressionTests: XCTestCase {
         runWordBreakCase("noob", expectRestore: true, breakKey: KEY_COMMA)
     }
 
+    func testGoodnotesRestoresOnSpace() {
+        // "goodnotes" comes from the categorized modern tech source file and must remain restorable.
+        runSpaceCase("goodnotes", expectRestore: true)
+    }
+
+    func testGoodnotesRestoresOnComma() {
+        // The same curated source should continue to work across word-break paths.
+        runWordBreakCase("goodnotes", expectRestore: true, breakKey: KEY_COMMA)
+    }
+
     // MARK: - Issue #135: Telex Vietnamese words must not auto-restore as English on space
 
     func testDakLakVariantDawksDoesNotRestoreOnSpace() {
