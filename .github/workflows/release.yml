@@ -65,8 +65,68 @@ jobs:
       - name: Compute build number
         id: set_versions
         run: |
-          BUILD_NUMBER="${GITHUB_RUN_NUMBER}"
+          PREVIOUS_BUILD=$(python3 - <<'PY'
+          import subprocess
+          import xml.etree.ElementTree as ET
+
+          ns = {"sparkle": "http://www.andymatuschak.org/xml-namespaces/sparkle"}
+          sparkle_attr_version = "{http://www.andymatuschak.org/xml-namespaces/sparkle}version"
+          candidates = [
+              "docs/appcast.xml",
+              "docs/appcast-intel.xml",
+          ]
+
+          def load_text(path: str) -> str | None:
+              specs = [f"origin/main:{path}", path]
+              for spec in specs:
+                  try:
+                      if ":" in spec:
+                          return subprocess.check_output(
+                              ["git", "show", spec],
+                              text=True,
+                              stderr=subprocess.DEVNULL,
+                          )
+                      with open(spec, "r", encoding="utf-8") as handle:
+                          return handle.read()
+                  except Exception:
+                      continue
+              return None
+
+          max_build = 0
+          for path in candidates:
+              content = load_text(path)
+              if not content:
+                  continue
+
+              root = ET.fromstring(content)
+              channel = root.find("channel")
+              if channel is None:
+                  continue
+
+              for item in channel.findall("item"):
+                  version_node = item.find("sparkle:version", ns)
+                  if version_node is not None and version_node.text:
+                      try:
+                          max_build = max(max_build, int(version_node.text.strip()))
+                      except ValueError:
+                          pass
+
+                  enclosure = item.find("enclosure")
+                  if enclosure is not None:
+                      raw = enclosure.get(sparkle_attr_version)
+                      if raw:
+                          try:
+                              max_build = max(max_build, int(raw.strip()))
+                          except ValueError:
+                              pass
+
+          print(max_build)
+          PY
+          )
+
+          BUILD_NUMBER=$((PREVIOUS_BUILD + 1))
           echo "build_number=$BUILD_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "✅ Previous build: $PREVIOUS_BUILD"
           echo "✅ BUILD_NUMBER=$BUILD_NUMBER"
 
       - name: Import Code Signing Certificate
