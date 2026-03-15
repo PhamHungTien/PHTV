@@ -3,11 +3,16 @@
 import Foundation
 import Darwin
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 private let trieMagic = "PHT4"
 private let maxEnglishWords = Int.max
 private let maxEnglishLength = 45
 private let maxTelexLength = 30
 private let sparkleLine = String(repeating: "=", count: 60)
+private let upstreamRequestTimeout: TimeInterval = 20
 
 private extension Data {
     mutating func appendLEUInt32(_ value: UInt32) {
@@ -235,15 +240,71 @@ private func downloadText(from urlString: String) -> String? {
 
     print("  Downloading from \(urlString)...")
 
-    do {
-        let downloadedData = try Data(contentsOf: url)
-        guard let text = String(data: downloadedData, encoding: .utf8) else {
-            print("  ✗ Download failed: invalid UTF-8 response")
-            return nil
+    let configuration = URLSessionConfiguration.ephemeral
+    configuration.timeoutIntervalForRequest = upstreamRequestTimeout
+    configuration.timeoutIntervalForResource = upstreamRequestTimeout
+
+    let session = URLSession(configuration: configuration)
+    var request = URLRequest(url: url)
+    request.timeoutInterval = upstreamRequestTimeout
+
+    let semaphore = DispatchSemaphore(value: 0)
+    var result: Result<String, Error>?
+
+    let task = session.dataTask(with: request) { data, response, error in
+        defer { semaphore.signal() }
+
+        if let error {
+            result = .failure(error)
+            return
         }
+
+        if let httpResponse = response as? HTTPURLResponse,
+           !(200...299).contains(httpResponse.statusCode) {
+            let error = NSError(
+                domain: "PHTVDictionaryGenerator",
+                code: httpResponse.statusCode,
+                userInfo: [NSLocalizedDescriptionKey: "HTTP \(httpResponse.statusCode)"]
+            )
+            result = .failure(error)
+            return
+        }
+
+        guard let data else {
+            let error = NSError(
+                domain: "PHTVDictionaryGenerator",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "Empty response body"]
+            )
+            result = .failure(error)
+            return
+        }
+
+        guard let text = String(data: data, encoding: .utf8) else {
+            let error = NSError(
+                domain: "PHTVDictionaryGenerator",
+                code: -2,
+                userInfo: [NSLocalizedDescriptionKey: "Invalid UTF-8 response"]
+            )
+            result = .failure(error)
+            return
+        }
+
+        result = .success(text)
+    }
+
+    task.resume()
+    semaphore.wait()
+    session.finishTasksAndInvalidate()
+
+    switch result {
+    case .success(let text):
         return text
-    } catch {
+    case .failure(let error):
         print("  ✗ Download failed: \(error.localizedDescription)")
+        return nil
+    case .none:
+        print("  ✗ Download failed: unknown networking error")
         return nil
     }
 }
