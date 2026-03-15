@@ -601,7 +601,12 @@ private func buildEnglishDictionary(resourcesDir: URL, dictionarySourceDir: URL)
     return (true, filteredWords)
 }
 
-private func buildVietnameseDictionary(resourcesDir: URL, englishWords: Set<String>, dictionarySourceDir: URL) -> Bool {
+private func buildVietnameseDictionary(
+    resourcesDir: URL,
+    englishWords: Set<String>,
+    dictionarySourceDir: URL,
+    allowLocalOnlyFallback: Bool
+) -> Bool {
     printSection("BUILDING VIETNAMESE DICTIONARY")
 
     let outputURL = resourcesDir.appendingPathComponent("vi_dict.bin")
@@ -645,7 +650,13 @@ private func buildVietnameseDictionary(resourcesDir: URL, englishWords: Set<Stri
     }
 
     if !loadedUpstreamSeed {
-        print("  ⚠️ Upstream Vietnamese seed unavailable; continuing with local vi_words.txt only")
+        if allowLocalOnlyFallback {
+            print("  ⚠️ Upstream Vietnamese seed unavailable; continuing with local vi_words.txt only because --allow-local-only-vietnamese was set")
+        } else {
+            print("  ✗ Upstream Vietnamese seed unavailable; refusing to build a reduced local-only dictionary")
+            print("    Re-run with --allow-local-only-vietnamese if you intentionally want that fallback")
+            return false
+        }
     }
 
     let canonicalVietnameseFile = dictionarySourceDir.appendingPathComponent("vi_words.txt")
@@ -771,11 +782,12 @@ private func resolveResourcesDirectory(scriptDir: URL) -> URL {
 }
 
 private func printUsage() {
-    print("Usage: ./scripts/tools/generate_dict_binary.swift [--cleanup] [--check-sources] [--strict-check-sources] [--normalize-sources] [--help]")
+    print("Usage: ./scripts/tools/generate_dict_binary.swift [--cleanup] [--check-sources] [--strict-check-sources] [--normalize-sources] [--allow-local-only-vietnamese] [--help]")
     print("  --cleanup  Remove temporary txt copies from Resources after successful generation")
     print("  --check-sources  Validate local dictionary source files and print diagnostics")
     print("  --strict-check-sources  Fail if local dictionary sources contain duplicates or invalid entries")
     print("  --normalize-sources  Rewrite local dictionary sources as unique valid word lists (preserving order)")
+    print("  --allow-local-only-vietnamese  Permit building vi_dict.bin without the upstream Vietnamese seed")
     print("  --help     Show this help message")
 }
 
@@ -826,8 +838,14 @@ private func main() {
         exit(ok ? 0 : 1)
     }
 
+    let allowLocalOnlyVietnamese = arguments.contains("--allow-local-only-vietnamese")
     let (englishOK, englishWords) = buildEnglishDictionary(resourcesDir: resourcesDir, dictionarySourceDir: dictionarySourceDir)
-    let vietnameseOK = buildVietnameseDictionary(resourcesDir: resourcesDir, englishWords: englishWords, dictionarySourceDir: dictionarySourceDir)
+    let vietnameseOK = buildVietnameseDictionary(
+        resourcesDir: resourcesDir,
+        englishWords: englishWords,
+        dictionarySourceDir: dictionarySourceDir,
+        allowLocalOnlyFallback: allowLocalOnlyVietnamese
+    )
 
     if englishOK && vietnameseOK {
         if arguments.contains("--cleanup") {

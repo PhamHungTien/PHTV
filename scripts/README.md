@@ -25,6 +25,7 @@ Useful maintenance modes:
 
 `--strict-check-sources` is intended for CI and fails if local sources still contain duplicates or invalid entries.
 `--normalize-sources` removes duplicates/invalid lines while preserving the first-seen order of words.
+Default Vietnamese builds require the upstream seed list; use `--allow-local-only-vietnamese` only when you intentionally accept reduced coverage.
 
 ## Notes
 
