@@ -8,6 +8,57 @@
 
 import AppKit
 
+struct ClipboardHistoryCapturePayload: Equatable {
+    let textContent: String?
+    let imageData: Data?
+    let filePaths: [String]?
+}
+
+enum ClipboardHistoryCaptureSanitizer {
+    static let maxImageBytes = 5_000_000
+
+    static func sanitizedPayload(
+        textContent: String?,
+        imageData: Data?,
+        filePaths: [String]?
+    ) -> ClipboardHistoryCapturePayload? {
+        var sanitizedImageData = imageData
+        if let data = sanitizedImageData, data.count > maxImageBytes {
+            sanitizedImageData = nil
+        }
+
+        let hasText = textContent != nil
+        let hasImage = sanitizedImageData != nil
+        let hasFiles = !(filePaths?.isEmpty ?? true)
+        guard hasText || hasImage || hasFiles else { return nil }
+
+        return ClipboardHistoryCapturePayload(
+            textContent: textContent,
+            imageData: sanitizedImageData,
+            filePaths: hasFiles ? filePaths : nil
+        )
+    }
+}
+
+enum ClipboardHistoryPrivacyPolicy {
+    private static let sensitiveBundleIdentifiers: Set<String> = [
+        "com.1password.1password",
+        "com.agilebits.onepassword7",
+        "com.agilebits.onepassword",
+        "com.bitwarden.desktop",
+        "com.lastpass.LastPass",
+        "com.dashlane.dashlanephonefinal",
+        "org.keepassxc.keepassxc",
+        "com.apple.keychainaccess",
+        "com.apple.Passwords"
+    ]
+
+    static func shouldCaptureContent(from bundleIdentifier: String?) -> Bool {
+        guard let bundleIdentifier, !bundleIdentifier.isEmpty else { return true }
+        return !sensitiveBundleIdentifiers.contains(bundleIdentifier)
+    }
+}
+
 /// Monitors the system pasteboard for changes and records clipboard history
 @MainActor
 final class ClipboardMonitor {
@@ -55,6 +106,11 @@ final class ClipboardMonitor {
     }
 
     private func captureCurrentPasteboard(_ pasteboard: NSPasteboard) -> ClipboardHistoryItem? {
+        let sourceApp = PHTVAppContextService.currentFrontmostBundleId()
+        guard ClipboardHistoryPrivacyPolicy.shouldCaptureContent(from: sourceApp) else {
+            return nil
+        }
+
         let textContent = pasteboard.string(forType: .string)
 
         var imageData: Data?
@@ -73,22 +129,20 @@ final class ClipboardMonitor {
             filePaths = urls.map { $0.path }
         }
 
-        // Skip if nothing captured
-        guard textContent != nil || imageData != nil || filePaths != nil else { return nil }
-
-        // Skip very large image data (> 5MB) to avoid memory issues
-        if let data = imageData, data.count > 5_000_000 {
-            imageData = nil
+        guard let payload = ClipboardHistoryCaptureSanitizer.sanitizedPayload(
+            textContent: textContent,
+            imageData: imageData,
+            filePaths: filePaths
+        ) else {
+            return nil
         }
-
-        let sourceApp = PHTVAppContextService.currentFrontmostBundleId()
 
         return ClipboardHistoryItem(
             id: UUID(),
             timestamp: Date(),
-            textContent: textContent,
-            imageData: imageData,
-            filePaths: filePaths,
+            textContent: payload.textContent,
+            imageData: payload.imageData,
+            filePaths: payload.filePaths,
             sourceApp: sourceApp
         )
     }

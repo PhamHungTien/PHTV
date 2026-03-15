@@ -9,6 +9,43 @@
 import Foundation
 import AppKit
 
+@MainActor
+final class ClipboardSourceAppResolver {
+    static let shared = ClipboardSourceAppResolver()
+
+    private var nameCache: [String: String] = [:]
+
+    private init() {}
+
+    func displayName(for bundleIdentifier: String?) -> String? {
+        guard let bundleIdentifier, !bundleIdentifier.isEmpty else { return nil }
+
+        if let cachedName = nameCache[bundleIdentifier] {
+            return cachedName
+        }
+
+        let resolvedName = resolveDisplayName(for: bundleIdentifier) ?? bundleIdentifier
+        nameCache[bundleIdentifier] = resolvedName
+        return resolvedName
+    }
+
+    private func resolveDisplayName(for bundleIdentifier: String) -> String? {
+        if let runningApp = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == bundleIdentifier }),
+           let localizedName = runningApp.localizedName,
+           !localizedName.isEmpty {
+            return localizedName
+        }
+
+        guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleIdentifier),
+              let bundle = Bundle(url: appURL) else {
+            return nil
+        }
+
+        return bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
+            ?? bundle.object(forInfoDictionaryKey: "CFBundleName") as? String
+    }
+}
+
 struct ClipboardHistoryItem: Identifiable, Codable, Equatable {
     let id: UUID
     let timestamp: Date
@@ -56,6 +93,11 @@ struct ClipboardHistoryItem: Identifiable, Codable, Equatable {
     var previewImage: NSImage? {
         guard let data = imageData else { return nil }
         return NSImage(data: data)
+    }
+
+    @MainActor
+    var sourceAppDisplayName: String? {
+        ClipboardSourceAppResolver.shared.displayName(for: sourceApp)
     }
 
     static func == (lhs: ClipboardHistoryItem, rhs: ClipboardHistoryItem) -> Bool {

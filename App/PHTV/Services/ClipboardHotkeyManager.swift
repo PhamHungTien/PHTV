@@ -227,6 +227,6 @@ final class ClipboardHotkeyManager: ObservableObject {
     }
 
     private func openClipboardHistory() {
-        ClipboardHistoryManager.shared.show()
+        ClipboardHistoryManager.shared.toggleVisibility()
     }
 }

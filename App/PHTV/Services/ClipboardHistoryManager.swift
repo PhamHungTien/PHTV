@@ -10,6 +10,29 @@ import SwiftUI
 import AppKit
 import Carbon
 
+enum ClipboardHistoryStoragePolicy {
+    static let minimumItems = 10
+    static let maximumItems = 100
+
+    static func clampedMaxItems(_ value: Int) -> Int {
+        min(max(value, minimumItems), maximumItems)
+    }
+
+    static func maxItems(from defaults: UserDefaults = .standard) -> Int {
+        let rawValue = defaults.integer(
+            forKey: UserDefaultsKey.clipboardHistoryMaxItems,
+            default: Defaults.clipboardHistoryMaxItems
+        )
+        return clampedMaxItems(rawValue)
+    }
+
+    static func trimmed(_ items: [ClipboardHistoryItem], maxItems: Int) -> [ClipboardHistoryItem] {
+        let limit = clampedMaxItems(maxItems)
+        guard items.count > limit else { return items }
+        return Array(items.prefix(limit))
+    }
+}
+
 @MainActor
 final class ClipboardHistoryManager: ObservableObject {
     static let shared = ClipboardHistoryManager()
@@ -20,10 +43,25 @@ final class ClipboardHistoryManager: ObservableObject {
     private var panel: FloatingPanel<ClipboardHistoryView>?
     private var previousApp: NSRunningApplication?
     private var lastShowRequestTime: CFAbsoluteTime = 0
+    private var settingsObserver: NSObjectProtocol?
     var isPasting = false
+
+    var isVisible: Bool {
+        panel?.isVisible == true
+    }
 
     private init() {
         loadHistory()
+
+        settingsObserver = NotificationCenter.default.addObserver(
+            forName: NotificationName.clipboardHotkeySettingsChanged,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.trimItemsToConfiguredLimit()
+            }
+        }
     }
 
     // MARK: - Data Management
@@ -34,12 +72,10 @@ final class ClipboardHistoryManager: ObservableObject {
 
         // Insert at beginning
         items.insert(item, at: 0)
-
-        // Trim to max items
-        let maxItems = AppState.shared.clipboardHistoryMaxItems
-        if items.count > maxItems {
-            items = Array(items.prefix(maxItems))
-        }
+        items = ClipboardHistoryStoragePolicy.trimmed(
+            items,
+            maxItems: ClipboardHistoryStoragePolicy.maxItems()
+        )
 
         saveHistory()
     }
@@ -60,6 +96,7 @@ final class ClipboardHistoryManager: ObservableObject {
         guard let data = UserDefaults.standard.data(forKey: UserDefaultsKey.clipboardHistoryData) else { return }
         do {
             items = try JSONDecoder().decode([ClipboardHistoryItem].self, from: data)
+            trimItemsToConfiguredLimit()
         } catch {
             NSLog("[ClipboardHistory] Failed to decode history: %@", error.localizedDescription)
         }
@@ -74,7 +111,25 @@ final class ClipboardHistoryManager: ObservableObject {
         }
     }
 
+    private func trimItemsToConfiguredLimit() {
+        let trimmedItems = ClipboardHistoryStoragePolicy.trimmed(
+            items,
+            maxItems: ClipboardHistoryStoragePolicy.maxItems()
+        )
+        guard trimmedItems != items else { return }
+        items = trimmedItems
+        saveHistory()
+    }
+
     // MARK: - UI Show/Hide
+
+    func toggleVisibility() {
+        if isVisible {
+            hide()
+        } else {
+            show()
+        }
+    }
 
     func show() {
         let now = CFAbsoluteTimeGetCurrent()
@@ -114,6 +169,7 @@ final class ClipboardHistoryManager: ObservableObject {
     func hide() {
         panel?.close()
         panel = nil
+        lastShowRequestTime = 0
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
             if let app = self?.previousApp {

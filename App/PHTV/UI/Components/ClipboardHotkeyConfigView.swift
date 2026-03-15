@@ -124,7 +124,7 @@ struct ClipboardHotkeyConfigView: View {
                         ModifierKeyButton(symbol: "fn", name: "Fn", isOn: clipboardHotkeyFn)
                     }
 
-                    Text("Mặc định: ⌃V")
+                    Text("Mặc định: ⌃V. Bấm lại phím tắt hoặc Esc để đóng.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -276,6 +276,10 @@ struct ClipboardHotkeyConfigView: View {
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
                     }
+
+                    Text("Clipboard từ password manager và ứng dụng nhạy cảm sẽ không được lưu vào lịch sử.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
         }

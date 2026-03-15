@@ -27,6 +27,7 @@ private enum ClipboardHistoryListCommand {
     case moveNext
     case movePrevious
     case activateSelection
+    case deleteSelection
     case close
 }
 
@@ -46,11 +47,21 @@ struct ClipboardHistoryView: View {
     private var filteredItems: [ClipboardHistoryItem] {
         if searchText.isEmpty { return manager.items }
         return manager.items.filter { item in
-            if let text = item.textContent {
-                return text.localizedCaseInsensitiveContains(searchText)
+            if let text = item.textContent,
+               text.localizedCaseInsensitiveContains(searchText) {
+                return true
             }
-            if let paths = item.filePaths {
-                return paths.contains { $0.localizedCaseInsensitiveContains(searchText) }
+            if let paths = item.filePaths,
+               paths.contains(where: { $0.localizedCaseInsensitiveContains(searchText) }) {
+                return true
+            }
+            if let sourceApp = item.sourceApp,
+               sourceApp.localizedCaseInsensitiveContains(searchText) {
+                return true
+            }
+            if let sourceAppDisplayName = item.sourceAppDisplayName,
+               sourceAppDisplayName.localizedCaseInsensitiveContains(searchText) {
+                return true
             }
             return false
         }
@@ -89,7 +100,7 @@ struct ClipboardHistoryView: View {
                     .font(.system(size: 11))
                     .foregroundStyle(.tertiary)
                 Spacer()
-                Text("Mũi tên / Tab để chọn • Enter để dán")
+                Text("Mũi tên / Tab để chọn • Enter để dán • Delete để xoá • Esc để đóng")
                     .font(.system(size: 11))
                     .foregroundStyle(.tertiary)
             }
@@ -240,8 +251,7 @@ struct ClipboardHistoryView: View {
                     ClipboardHistoryListKeyboardHandler(
                         isActive: keyboardFocus == .list && !filteredItems.isEmpty,
                         onCommand: handleListCommand,
-                        onInsertTextIntoSearch: insertTextIntoSearch,
-                        onDeleteFromSearch: deleteLastSearchCharacter
+                        onInsertTextIntoSearch: insertTextIntoSearch
                     )
                     .frame(width: 0, height: 0)
                 )
@@ -388,6 +398,10 @@ struct ClipboardHistoryView: View {
         case .activateSelection:
             _ = activateSelectedItem()
 
+        case .deleteSelection:
+            guard let selectedItem else { return }
+            delete(selectedItem)
+
         case .close:
             onClose()
         }
@@ -396,12 +410,6 @@ struct ClipboardHistoryView: View {
     private func insertTextIntoSearch(_ text: String) {
         guard !text.isEmpty else { return }
         searchText.append(text)
-        focusSearch()
-    }
-
-    private func deleteLastSearchCharacter() {
-        guard !searchText.isEmpty else { return }
-        searchText.removeLast()
         focusSearch()
     }
 
@@ -458,9 +466,10 @@ private struct ClipboardItemRow: View {
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
 
-                    Text(timeAgoText)
+                    Text(metadataText)
                         .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
+                        .lineLimit(1)
                 }
 
                 Spacer()
@@ -529,6 +538,13 @@ private struct ClipboardItemRow: View {
         if interval < 3600 { return "\(Int(interval / 60)) phút trước" }
         if interval < 86400 { return "\(Int(interval / 3600)) giờ trước" }
         return "\(Int(interval / 86400)) ngày trước"
+    }
+
+    private var metadataText: String {
+        guard let sourceAppDisplayName = item.sourceAppDisplayName else {
+            return timeAgoText
+        }
+        return "\(sourceAppDisplayName) • \(timeAgoText)"
     }
 }
 
@@ -630,13 +646,11 @@ private struct ClipboardHistoryListKeyboardHandler: NSViewRepresentable {
     let isActive: Bool
     let onCommand: (ClipboardHistoryListCommand) -> Void
     let onInsertTextIntoSearch: (String) -> Void
-    let onDeleteFromSearch: () -> Void
 
     func makeNSView(context: Context) -> ClipboardHistoryListKeyCaptureView {
         let view = ClipboardHistoryListKeyCaptureView()
         view.onCommand = onCommand
         view.onInsertTextIntoSearch = onInsertTextIntoSearch
-        view.onDeleteFromSearch = onDeleteFromSearch
         return view
     }
 
@@ -644,7 +658,6 @@ private struct ClipboardHistoryListKeyboardHandler: NSViewRepresentable {
         nsView.isActive = isActive
         nsView.onCommand = onCommand
         nsView.onInsertTextIntoSearch = onInsertTextIntoSearch
-        nsView.onDeleteFromSearch = onDeleteFromSearch
 
         if isActive {
             DispatchQueue.main.async {
@@ -658,7 +671,6 @@ private final class ClipboardHistoryListKeyCaptureView: NSView {
     var isActive = false
     var onCommand: ((ClipboardHistoryListCommand) -> Void)?
     var onInsertTextIntoSearch: ((String) -> Void)?
-    var onDeleteFromSearch: (() -> Void)?
 
     override var acceptsFirstResponder: Bool { true }
 
@@ -695,6 +707,10 @@ private final class ClipboardHistoryListKeyCaptureView: NSView {
             onCommand?(.activateSelection)
             return true
 
+        case kVK_Delete, kVK_ForwardDelete:
+            onCommand?(.deleteSelection)
+            return true
+
         case kVK_Escape:
             onCommand?(.close)
             return true
@@ -710,11 +726,6 @@ private final class ClipboardHistoryListKeyCaptureView: NSView {
             normalizedFlags.contains(.control) ||
             normalizedFlags.contains(.option) {
             return false
-        }
-
-        if Int(event.keyCode) == kVK_Delete || Int(event.keyCode) == kVK_ForwardDelete {
-            onDeleteFromSearch?()
-            return true
         }
 
         guard let characters = event.characters, !characters.isEmpty else {

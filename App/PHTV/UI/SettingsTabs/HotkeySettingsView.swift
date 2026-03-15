@@ -167,7 +167,7 @@ struct HotkeySettingsView: View {
                 // Clipboard History Hotkey
                 SettingsCard(
                     title: "Lịch sử Clipboard",
-                    subtitle: "Mở nhanh lịch sử các nội dung đã sao chép",
+                    subtitle: "Mở nhanh lịch sử đã sao chép, bấm lại phím tắt để đóng",
                     icon: "doc.on.clipboard.fill"
                 ) {
                     ClipboardHotkeyConfigView()

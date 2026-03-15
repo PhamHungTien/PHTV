@@ -19,6 +19,6 @@ import Foundation
     }
 
     @MainActor @objc static func openClipboardHistory() {
-        ClipboardHistoryManager.shared.show()
+        ClipboardHistoryManager.shared.toggleVisibility()
     }
 }
