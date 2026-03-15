@@ -296,6 +296,143 @@ private func readLocalWordFile(_ fileURL: URL) -> Set<String> {
     return words
 }
 
+private struct LocalSourceDiagnostics {
+    let totalEntries: Int
+    let uniqueEntries: Int
+    let duplicateEntries: Int
+    let invalidEntries: Int
+}
+
+private func parseLocalEnglishWordFile(_ fileURL: URL) -> (Set<String>, LocalSourceDiagnostics) {
+    guard let text = try? String(contentsOf: fileURL, encoding: .utf8) else {
+        return ([], LocalSourceDiagnostics(totalEntries: 0, uniqueEntries: 0, duplicateEntries: 0, invalidEntries: 0))
+    }
+
+    var words = Set<String>()
+    var totalEntries = 0
+    var invalidEntries = 0
+
+    for line in text.split(whereSeparator: \.isNewline) {
+        let normalizedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedLine.isEmpty, !normalizedLine.hasPrefix("#") else {
+            continue
+        }
+
+        totalEntries += 1
+        let word = normalizedLine.lowercased()
+        guard !word.isEmpty,
+              word.count >= 2,
+              word.count <= maxEnglishLength,
+              isASCIIAlphabetic(word) else {
+            invalidEntries += 1
+            continue
+        }
+        words.insert(word)
+    }
+
+    return (
+        words,
+        LocalSourceDiagnostics(
+            totalEntries: totalEntries,
+            uniqueEntries: words.count,
+            duplicateEntries: max(0, totalEntries - invalidEntries - words.count),
+            invalidEntries: invalidEntries
+        )
+    )
+}
+
+private func parseLocalVietnameseWordFile(_ fileURL: URL) -> (Set<String>, LocalSourceDiagnostics) {
+    guard let text = try? String(contentsOf: fileURL, encoding: .utf8) else {
+        return ([], LocalSourceDiagnostics(totalEntries: 0, uniqueEntries: 0, duplicateEntries: 0, invalidEntries: 0))
+    }
+
+    var words = Set<String>()
+    var totalEntries = 0
+    var invalidEntries = 0
+
+    for line in text.split(whereSeparator: \.isNewline) {
+        let normalized = line.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalized.isEmpty, !normalized.hasPrefix("#") else {
+            continue
+        }
+
+        for part in normalized.replacingOccurrences(of: "-", with: " ").split(whereSeparator: \.isWhitespace) {
+            totalEntries += 1
+            let word = (String(part) as NSString).precomposedStringWithCanonicalMapping.lowercased()
+            guard !word.isEmpty else {
+                invalidEntries += 1
+                continue
+            }
+            words.insert(word)
+        }
+    }
+
+    return (
+        words,
+        LocalSourceDiagnostics(
+            totalEntries: totalEntries,
+            uniqueEntries: words.count,
+            duplicateEntries: max(0, totalEntries - invalidEntries - words.count),
+            invalidEntries: invalidEntries
+        )
+    )
+}
+
+private func printLocalSourceDiagnostics(name: String, diagnostics: LocalSourceDiagnostics) {
+    print(
+        "  \(name): \(diagnostics.uniqueEntries.formatted()) unique, " +
+        "\(diagnostics.duplicateEntries.formatted()) duplicates, " +
+        "\(diagnostics.invalidEntries.formatted()) invalid"
+    )
+}
+
+private func checkLocalDictionarySources(dictionarySourceDir: URL) -> Bool {
+    printSection("CHECKING LOCAL DICTIONARY SOURCES")
+
+    let englishURL = dictionarySourceDir.appendingPathComponent("en_words.txt")
+    let vietnameseURL = dictionarySourceDir.appendingPathComponent("vi_words.txt")
+
+    let (englishWords, englishDiagnostics) = parseLocalEnglishWordFile(englishURL)
+    let (vietnameseWords, vietnameseDiagnostics) = parseLocalVietnameseWordFile(vietnameseURL)
+
+    printLocalSourceDiagnostics(name: "en_words.txt", diagnostics: englishDiagnostics)
+    printLocalSourceDiagnostics(name: "vi_words.txt", diagnostics: vietnameseDiagnostics)
+
+    let ok = !englishWords.isEmpty && !vietnameseWords.isEmpty
+    if !ok {
+        print("  ✗ Dictionary source files must contain at least one valid word each")
+    }
+    return ok
+}
+
+private func normalizeLocalDictionarySources(dictionarySourceDir: URL) -> Bool {
+    printSection("NORMALIZING LOCAL DICTIONARY SOURCES")
+
+    let englishURL = dictionarySourceDir.appendingPathComponent("en_words.txt")
+    let vietnameseURL = dictionarySourceDir.appendingPathComponent("vi_words.txt")
+
+    let (englishWords, englishDiagnostics) = parseLocalEnglishWordFile(englishURL)
+    let (vietnameseWords, vietnameseDiagnostics) = parseLocalVietnameseWordFile(vietnameseURL)
+
+    guard !englishWords.isEmpty, !vietnameseWords.isEmpty else {
+        print("  ✗ Cannot normalize empty dictionary source files")
+        return false
+    }
+
+    do {
+        try englishWords.sorted().joined(separator: "\n").appending("\n").write(to: englishURL, atomically: true, encoding: .utf8)
+        try vietnameseWords.sorted().joined(separator: "\n").appending("\n").write(to: vietnameseURL, atomically: true, encoding: .utf8)
+    } catch {
+        print("  ✗ Failed to rewrite normalized sources: \(error.localizedDescription)")
+        return false
+    }
+
+    printLocalSourceDiagnostics(name: "en_words.txt", diagnostics: englishDiagnostics)
+    printLocalSourceDiagnostics(name: "vi_words.txt", diagnostics: vietnameseDiagnostics)
+    print("  ✓ Rewrote local dictionary sources as sorted unique word lists")
+    return true
+}
+
 private func buildEnglishDictionary(resourcesDir: URL, dictionarySourceDir: URL) -> (Bool, Set<String>) {
     printSection("BUILDING ENGLISH DICTIONARY")
 
@@ -421,15 +558,8 @@ private func buildVietnameseDictionary(resourcesDir: URL, englishWords: Set<Stri
     let localCandidates = [canonicalVietnameseFile]
 
     for localFile in localCandidates where FileManager.default.fileExists(atPath: localFile.path) {
-        guard let text = try? String(contentsOf: localFile, encoding: .utf8) else { continue }
-        for line in text.split(whereSeparator: \.isNewline) {
-            let normalized = line.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !normalized.isEmpty, !normalized.hasPrefix("#") else { continue }
-            for part in normalized.replacingOccurrences(of: "-", with: " ").split(whereSeparator: \.isWhitespace) {
-                let word = part.lowercased()
-                if !word.isEmpty { vietnameseWords.insert(word) }
-            }
-        }
+        let (fileWords, _) = parseLocalVietnameseWordFile(localFile)
+        vietnameseWords.formUnion(fileWords)
         print("  Added local words from \(localFile.lastPathComponent) (\(localFile.deletingLastPathComponent().lastPathComponent)/), total: \(vietnameseWords.count.formatted())")
     }
 
@@ -537,8 +667,10 @@ private func resolveResourcesDirectory(scriptDir: URL) -> URL {
 }
 
 private func printUsage() {
-    print("Usage: ./scripts/tools/generate_dict_binary.swift [--cleanup] [--help]")
+    print("Usage: ./scripts/tools/generate_dict_binary.swift [--cleanup] [--check-sources] [--normalize-sources] [--help]")
     print("  --cleanup  Remove temporary txt copies from Resources after successful generation")
+    print("  --check-sources  Validate local dictionary source files and print diagnostics")
+    print("  --normalize-sources  Rewrite local dictionary sources as sorted unique word lists")
     print("  --help     Show this help message")
 }
 
@@ -572,6 +704,16 @@ private func main() {
             print("\n✗ Failed to create resources directory: \(error.localizedDescription)")
             exit(1)
         }
+    }
+
+    if arguments.contains("--check-sources") {
+        let ok = checkLocalDictionarySources(dictionarySourceDir: dictionarySourceDir)
+        exit(ok ? 0 : 1)
+    }
+
+    if arguments.contains("--normalize-sources") {
+        let ok = normalizeLocalDictionarySources(dictionarySourceDir: dictionarySourceDir)
+        exit(ok ? 0 : 1)
     }
 
     let (englishOK, englishWords) = buildEnglishDictionary(resourcesDir: resourcesDir, dictionarySourceDir: dictionarySourceDir)

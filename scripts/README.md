@@ -15,6 +15,10 @@ Canonical dictionary sources live in:
 
 Source files may include blank lines and comment lines prefixed with `#`.
 
+Useful maintenance modes:
+- `swift scripts/tools/generate_dict_binary.swift --check-sources`
+- `swift scripts/tools/generate_dict_binary.swift --normalize-sources`
+
 ## Notes
 
 - Release, Homebrew sync, and local shell helpers were removed from `scripts/` because the logic now runs in GitHub Actions.

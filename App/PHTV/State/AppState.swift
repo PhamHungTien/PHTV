@@ -85,6 +85,10 @@ final class AppState: ObservableObject {
     // MARK: - Load/Save Settings
 
     func loadSettings() {
+        loadSettings(logSystemSettings: true)
+    }
+
+    private func loadSettings(logSystemSettings: Bool) {
         let defaults = UserDefaults.standard
 
         // Load global isEnabled state
@@ -102,7 +106,7 @@ final class AppState: ObservableObject {
         inputMethodState.loadSettings()
         macroState.loadSettings()
         clipboardHistoryState.loadSettings()
-        systemState.loadSettings()
+        systemState.loadSettings(logRunOnStartupStatus: logSystemSettings)
         uiState.loadSettings()
         appListsState.loadSettings()
 
@@ -117,7 +121,7 @@ final class AppState: ObservableObject {
     /// Bridges legacy runtime refresh requests into the SwiftUI state tree.
     func refreshFromRuntime() {
         liveLog("refreshing AppState from runtime")
-        reloadSettingsFromDefaults()
+        reloadSettingsFromDefaults(logSystemSettings: false)
         systemState.checkAccessibilityPermission()
     }
 
@@ -154,6 +158,10 @@ final class AppState: ObservableObject {
 
     /// Reload only settings that may have changed externally
     private func reloadSettingsFromDefaults() {
+        reloadSettingsFromDefaults(logSystemSettings: true)
+    }
+
+    private func reloadSettingsFromDefaults(logSystemSettings: Bool) {
         isLoadingSettings = true
 
         // Reload sub-states
@@ -176,7 +184,7 @@ final class AppState: ObservableObject {
         inputMethodState.reloadFromDefaults()
         macroState.reloadFromDefaults()
         clipboardHistoryState.reloadFromDefaults()
-        systemState.reloadFromDefaults()
+        systemState.reloadFromDefaults(logRunOnStartupStatus: logSystemSettings)
         uiState.reloadFromDefaults()
         appListsState.reloadFromDefaults()
 

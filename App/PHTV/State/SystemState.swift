@@ -95,12 +95,14 @@ final class SystemState: ObservableObject {
 
     // MARK: - Load/Save Settings
 
-    func loadSettings() {
+    func loadSettings(logRunOnStartupStatus: Bool = true) {
         let defaults = UserDefaults.standard
 
         // Load system settings - use SMAppService status as source of truth.
         if #available(macOS 13.0, *) {
-            refreshRunOnStartupStatus(logContext: "load-settings")
+            refreshRunOnStartupStatus(
+                logContext: logRunOnStartupStatus ? "load-settings" : nil
+            )
         } else {
             runOnStartup = defaults.bool(forKey: UserDefaultsKey.runOnStartup, default: Defaults.runOnStartup)
         }
@@ -163,8 +165,8 @@ final class SystemState: ObservableObject {
 
     }
 
-    func reloadFromDefaults() {
-        loadSettings()
+    func reloadFromDefaults(logRunOnStartupStatus: Bool = true) {
+        loadSettings(logRunOnStartupStatus: logRunOnStartupStatus)
     }
 
     // MARK: - Accessibility
@@ -217,7 +219,7 @@ final class SystemState: ObservableObject {
     }
 
     @available(macOS 13.0, *)
-    private func refreshRunOnStartupStatus(logContext: String) {
+    private func refreshRunOnStartupStatus(logContext: String?) {
         let status = SMAppService.mainApp.status
         let isEnabled = isRunOnStartupEffectivelyEnabled(status)
 
@@ -230,6 +232,10 @@ final class SystemState: ObservableObject {
             let defaults = UserDefaults.standard
             defaults.set(isEnabled, forKey: UserDefaultsKey.runOnStartup)
             defaults.set(isEnabled ? 1 : 0, forKey: UserDefaultsKey.runOnStartupLegacy)
+        }
+
+        guard let logContext else {
+            return
         }
 
         switch status {
