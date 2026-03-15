@@ -13,6 +13,9 @@ Canonical dictionary sources live in:
 - `docs/dictionary/en_words.txt`
 - `docs/dictionary/vi_words.txt`
 
+The English dictionary now builds fully offline from checked-in sources.
+The Vietnamese dictionary still merges the checked-in local source with an upstream seed list.
+
 Source files may include blank lines and comment lines prefixed with `#`.
 
 Useful maintenance modes:

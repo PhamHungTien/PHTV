@@ -3,10 +3,6 @@
 import Foundation
 import Darwin
 
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
-
 private let trieMagic = "PHT4"
 private let maxEnglishWords = Int.max
 private let maxEnglishLength = 45
@@ -272,30 +268,6 @@ private func writeBinaryTrie(_ trie: Trie, outputURL: URL) throws -> Int {
     return data.count
 }
 
-private func readLocalWordFile(_ fileURL: URL) -> Set<String> {
-    guard let text = try? String(contentsOf: fileURL, encoding: .utf8) else {
-        return []
-    }
-
-    var words = Set<String>()
-    for line in text.split(whereSeparator: \.isNewline) {
-        let normalizedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !normalizedLine.isEmpty, !normalizedLine.hasPrefix("#") else {
-            continue
-        }
-        let word = normalizedLine.lowercased()
-        guard !word.isEmpty,
-              word.count >= 2,
-              word.count <= maxEnglishLength,
-              isASCIIAlphabetic(word) else {
-            continue
-        }
-        words.insert(word)
-    }
-
-    return words
-}
-
 private struct LocalSourceDiagnostics {
     let totalEntries: Int
     let uniqueEntries: Int
@@ -437,64 +409,25 @@ private func buildEnglishDictionary(resourcesDir: URL, dictionarySourceDir: URL)
     printSection("BUILDING ENGLISH DICTIONARY")
 
     let outputURL = resourcesDir.appendingPathComponent("en_dict.bin")
-    var words = Set<String>()
-
-    let sourceURLs = [
-        "https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt"
-    ]
-
-    for sourceURL in sourceURLs {
-        guard let text = downloadText(from: sourceURL) else {
-            continue
-        }
-
-        for line in text.split(whereSeparator: \.isNewline) {
-            let word = line.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-            guard !word.isEmpty,
-                  word.count >= 2,
-                  word.count <= maxEnglishLength,
-                  isASCIIAlphabetic(word) else {
-                continue
-            }
-            words.insert(word)
-        }
-
-        print("  Loaded \(words.count.formatted()) words so far")
-    }
 
     // Canonical English source lives in docs/dictionary/en_words.txt.
-    var localWords = Set<String>()
     let canonicalEnglishFile = dictionarySourceDir.appendingPathComponent("en_words.txt")
-    if FileManager.default.fileExists(atPath: canonicalEnglishFile.path) {
-        let fileWords = readLocalWordFile(canonicalEnglishFile)
-        localWords.formUnion(fileWords)
-        words.formUnion(fileWords)
-        print("  Added local words from \(canonicalEnglishFile.lastPathComponent) (\(canonicalEnglishFile.deletingLastPathComponent().lastPathComponent)/), total: \(words.count.formatted())")
+    guard FileManager.default.fileExists(atPath: canonicalEnglishFile.path) else {
+        print("  ✗ Missing canonical English source: \(canonicalEnglishFile.path)")
+        return (false, [])
     }
+
+    let (words, diagnostics) = parseLocalEnglishWordFile(canonicalEnglishFile)
+    print("  Using canonical source: \(canonicalEnglishFile.lastPathComponent)")
+    printLocalSourceDiagnostics(name: canonicalEnglishFile.lastPathComponent, diagnostics: diagnostics)
 
     guard !words.isEmpty else {
         print("  ✗ No English words found")
         return (false, [])
     }
 
-    let priorityWords = localWords
-    let filteredWords: Set<String>
-
-    if words.count > maxEnglishWords {
-        let remainingSlots = max(0, maxEnglishWords - priorityWords.count)
-        let candidates = words.subtracting(priorityWords).sorted {
-            if $0.count != $1.count {
-                return $0.count < $1.count
-            }
-            return $0 < $1
-        }
-
-        filteredWords = priorityWords.union(candidates.prefix(remainingSlots))
-        print("  Trimmed to \(filteredWords.count.formatted()) words (shortest-first) to stay under \(maxEnglishWords.formatted())")
-    } else {
-        filteredWords = words
-        print("  No trimming needed: \(filteredWords.count.formatted()) words")
-    }
+    let filteredWords = words
+    print("  No trimming needed: \(filteredWords.count.formatted()) words")
 
     print("  Building trie with \(filteredWords.count.formatted()) unique words...")
     let trie = Trie()
@@ -517,7 +450,6 @@ private func buildVietnameseDictionary(resourcesDir: URL, englishWords: Set<Stri
 
     let outputURL = resourcesDir.appendingPathComponent("vi_dict.bin")
     var vietnameseWords = Set<String>()
-
     let blacklist: Set<String> = ["tẻm"]
 
     let vietnameseURLs = [
@@ -550,17 +482,27 @@ private func buildVietnameseDictionary(resourcesDir: URL, englishWords: Set<Stri
             }
         }
 
-        print("  Loaded \(vietnameseWords.count.formatted()) Vietnamese words total")
+        print("  Loaded \(vietnameseWords.count.formatted()) Vietnamese words total from upstream")
         break
     }
 
     let canonicalVietnameseFile = dictionarySourceDir.appendingPathComponent("vi_words.txt")
-    let localCandidates = [canonicalVietnameseFile]
+    guard FileManager.default.fileExists(atPath: canonicalVietnameseFile.path) else {
+        print("  ✗ Missing canonical Vietnamese source: \(canonicalVietnameseFile.path)")
+        return false
+    }
 
-    for localFile in localCandidates where FileManager.default.fileExists(atPath: localFile.path) {
-        let (fileWords, _) = parseLocalVietnameseWordFile(localFile)
-        vietnameseWords.formUnion(fileWords)
-        print("  Added local words from \(localFile.lastPathComponent) (\(localFile.deletingLastPathComponent().lastPathComponent)/), total: \(vietnameseWords.count.formatted())")
+    let (rawVietnameseWords, diagnostics) = parseLocalVietnameseWordFile(canonicalVietnameseFile)
+    print("  Using canonical source: \(canonicalVietnameseFile.lastPathComponent)")
+    printLocalSourceDiagnostics(name: canonicalVietnameseFile.lastPathComponent, diagnostics: diagnostics)
+    for word in rawVietnameseWords {
+        guard !blacklist.contains(word) else {
+            continue
+        }
+        if word.count > 3 && englishWords.contains(word) {
+            continue
+        }
+        vietnameseWords.insert(word)
     }
 
     guard !vietnameseWords.isEmpty else {
