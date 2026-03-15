@@ -279,7 +279,11 @@ private func readLocalWordFile(_ fileURL: URL) -> Set<String> {
 
     var words = Set<String>()
     for line in text.split(whereSeparator: \.isNewline) {
-        let word = line.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let normalizedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedLine.isEmpty, !normalizedLine.hasPrefix("#") else {
+            continue
+        }
+        let word = normalizedLine.lowercased()
         guard !word.isEmpty,
               word.count >= 2,
               word.count <= maxEnglishLength,
@@ -420,7 +424,7 @@ private func buildVietnameseDictionary(resourcesDir: URL, englishWords: Set<Stri
         guard let text = try? String(contentsOf: localFile, encoding: .utf8) else { continue }
         for line in text.split(whereSeparator: \.isNewline) {
             let normalized = line.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !normalized.isEmpty else { continue }
+            guard !normalized.isEmpty, !normalized.hasPrefix("#") else { continue }
             for part in normalized.replacingOccurrences(of: "-", with: " ").split(whereSeparator: \.isWhitespace) {
                 let word = part.lowercased()
                 if !word.isEmpty { vietnameseWords.insert(word) }

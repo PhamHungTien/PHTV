@@ -79,12 +79,15 @@ final class PHTVSystemTextReplacementService: NSObject {
     }
 
     class func rawReplacementItems(
-        globalDefaults: UserDefaults = UserDefaults(suiteName: UserDefaults.globalDomain) ?? .standard
+        globalDefaults: UserDefaults = .standard
     ) -> [[String: Any]] {
         if let items = globalDefaults.array(forKey: replacementsKey) as? [[String: Any]] {
             return items
         }
 
+        // Text replacements live in the global domain, but NSGlobalDomain is not a
+        // valid suite name for UserDefaults(suiteName:). Read it through standard
+        // defaults to avoid runtime warnings during app startup and tests.
         if let domain = globalDefaults.persistentDomain(forName: UserDefaults.globalDomain),
            let items = domain[replacementsKey] as? [[String: Any]] {
             return items

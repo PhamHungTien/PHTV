@@ -54,9 +54,7 @@ import Foundation
     @objc static func canCreateEventTap() -> Bool {
         let canPost = hasPostEventAccess()
         if !canPost {
-            if !canPost {
-                NSLog("[Permission] Accessibility/Event Synthesis (PostEvent) is NOT granted")
-            }
+            NSLog("[Permission] Accessibility/Event Synthesis (PostEvent) is NOT granted")
             permissionState.lock.lock()
             permissionState.lastPermissionCheckResult = false
             permissionState.lastPermissionCheckTime = Date().timeIntervalSince1970

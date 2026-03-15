@@ -114,6 +114,13 @@ final class AppState: ObservableObject {
         appListsState.isLoadingSettings = false
     }
 
+    /// Bridges legacy runtime refresh requests into the SwiftUI state tree.
+    func refreshFromRuntime() {
+        liveLog("refreshing AppState from runtime")
+        reloadSettingsFromDefaults()
+        systemState.checkAccessibilityPermission()
+    }
+
     func saveSettings() {
         SettingsObserver.shared.suspendNotifications()
 

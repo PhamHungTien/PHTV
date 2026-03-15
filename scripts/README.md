@@ -13,6 +13,8 @@ Canonical dictionary sources live in:
 - `docs/dictionary/en_words.txt`
 - `docs/dictionary/vi_words.txt`
 
+Source files may include blank lines and comment lines prefixed with `#`.
+
 ## Notes
 
 - Release, Homebrew sync, and local shell helpers were removed from `scripts/` because the logic now runs in GitHub Actions.

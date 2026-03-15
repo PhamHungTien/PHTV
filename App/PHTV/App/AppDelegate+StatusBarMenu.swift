@@ -3,27 +3,29 @@
 //  PHTV
 //
 //  Legacy NSStatusItem implementation has been retired.
-//  Menu bar UI is now fully owned by SwiftUI MenuBarExtra.
+//  Menu bar UI is now fully owned by SwiftUI MenuBarExtra, but some
+//  Objective-C-era runtime paths still call these selectors to request a UI
+//  refresh after backend state changes.
 //
 
 import Foundation
 
 @MainActor @objc extension AppDelegate {
     func createStatusBarMenu() {
-        // Retained for backward compatibility with legacy call sites.
+        AppState.shared.refreshFromRuntime()
     }
 
     func setQuickConvertString() {
-        // Retained for backward compatibility with legacy call sites.
+        AppState.shared.refreshFromRuntime()
     }
 
     func fillData() {
-        // Retained for backward compatibility with legacy call sites.
+        AppState.shared.refreshFromRuntime()
     }
 
     @objc(fillDataWithAnimation:)
     func fillData(withAnimation animated: Bool) {
         _ = animated
-        // Retained for backward compatibility with legacy call sites.
+        AppState.shared.refreshFromRuntime()
     }
 }

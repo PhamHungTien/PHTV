@@ -11,6 +11,30 @@ import ServiceManagement
 import Combine
 import ApplicationServices
 
+enum PHTVTypingPermissionState: Equatable {
+    case ready
+    case waitingForEventTap
+    case accessibilityRequired
+
+    static func resolve(accessibilityTrusted: Bool, eventTapReady: Bool) -> Self {
+        if accessibilityTrusted && eventTapReady {
+            return .ready
+        }
+        if accessibilityTrusted {
+            return .waitingForEventTap
+        }
+        return .accessibilityRequired
+    }
+
+    var hasAccessibilityPermission: Bool {
+        self != .accessibilityRequired
+    }
+
+    var isTypingPermissionReady: Bool {
+        self == .ready
+    }
+}
+
 /// Manages system settings, permissions, and updates
 @MainActor
 final class SystemState: ObservableObject {
@@ -153,12 +177,13 @@ final class SystemState: ObservableObject {
 
     private func refreshPermissionState(eventTapReady: Bool? = nil) {
         let axTrusted = AXIsProcessTrusted()
-        hasAccessibilityPermission = axTrusted
-        if let eventTapReady {
-            isTypingPermissionReady = eventTapReady
-        } else {
-            isTypingPermissionReady = axTrusted && PHTVManager.canCreateEventTap()
-        }
+        let effectiveEventTapReady = eventTapReady ?? (axTrusted ? PHTVManager.canCreateEventTap() : false)
+        let resolvedState = PHTVTypingPermissionState.resolve(
+            accessibilityTrusted: axTrusted,
+            eventTapReady: effectiveEventTapReady
+        )
+        hasAccessibilityPermission = resolvedState.hasAccessibilityPermission
+        isTypingPermissionReady = resolvedState.isTypingPermissionReady
     }
 
     // MARK: - Login Item Monitoring
