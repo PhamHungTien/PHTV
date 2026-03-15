@@ -90,6 +90,18 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
         }
 
         let switchKeyStatus = hotkey.int32Value
+        let currentSwitchKeyStatus = PHTVManager.currentSwitchKeyStatus()
+        let storedSwitchKeyStatus = Int32(
+            UserDefaults.standard.integer(
+                forKey: phtvDefaultsKeySwitchKeyStatus,
+                default: Defaults.defaultSwitchKeyStatus
+            )
+        )
+        guard switchKeyStatus != currentSwitchKeyStatus || switchKeyStatus != storedSwitchKeyStatus else {
+            phtvSettingsBridgeLiveLog(String(format: "ignored duplicate HotkeyChanged: 0x%X", switchKeyStatus))
+            return
+        }
+
         PHTVManager.setSwitchKeyStatus(switchKeyStatus)
         UserDefaults.standard.set(Int(switchKeyStatus), forKey: phtvDefaultsKeySwitchKeyStatus)
         fillData()

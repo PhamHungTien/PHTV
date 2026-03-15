@@ -324,10 +324,13 @@ final class SystemState: ObservableObject {
             $performLayoutCompat.map { _ in () }.eraseToAnyPublisher(),
             $safeMode.map { _ in () }.eraseToAnyPublisher()
         ])
+        .filter { [weak self] _ in
+            !(self?.isLoadingSettings ?? true)
+        }
         .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
         .dropFirst()
         .sink { [weak self] _ in
-            guard let self = self, !self.isLoadingSettings else { return }
+            guard let self = self else { return }
             self.saveSettings()
             NotificationCenter.default.post(
                 name: NotificationName.phtvSettingsChanged, object: nil)
@@ -355,10 +358,13 @@ final class SystemState: ObservableObject {
             $includeLogs.map { _ in () }.eraseToAnyPublisher(),
             $includeCrashLogs.map { _ in () }.eraseToAnyPublisher()
         ])
+        .filter { [weak self] _ in
+            !(self?.isLoadingSettings ?? true)
+        }
         .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
         .dropFirst()
         .sink { [weak self] _ in
-            guard let self = self, !self.isLoadingSettings else { return }
+            guard let self = self else { return }
             self.saveSettings()
         }.store(in: &cancellables)
     }

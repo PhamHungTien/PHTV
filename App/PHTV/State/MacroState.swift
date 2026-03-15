@@ -143,10 +143,13 @@ final class MacroState: ObservableObject {
             $useMacroInEnglishMode,
             $autoCapsMacro
         )
+        .filter { [weak self] _ in
+            !(self?.isLoadingSettings ?? true)
+        }
         .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
         .dropFirst()
         .sink { [weak self] _ in
-            guard let self = self, !self.isLoadingSettings else { return }
+            guard let self = self else { return }
             self.saveSettings()
             NotificationCenter.default.post(
                 name: NotificationName.phtvSettingsChanged, object: nil
@@ -155,10 +158,13 @@ final class MacroState: ObservableObject {
 
         $useSystemTextReplacements
             .removeDuplicates()
+            .filter { [weak self] _ in
+                !(self?.isLoadingSettings ?? true)
+            }
             .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
             .dropFirst()
             .sink { [weak self] _ in
-                guard let self = self, !self.isLoadingSettings else { return }
+                guard let self = self else { return }
                 self.saveSettings()
                 NotificationCenter.default.post(name: NotificationName.phtvSettingsChanged, object: nil)
                 NotificationCenter.default.post(name: NotificationName.macrosUpdated, object: nil)
@@ -171,10 +177,13 @@ final class MacroState: ObservableObject {
             $emojiHotkeyModifiersRaw.map { _ in () },
             $emojiHotkeyKeyCode.map { _ in () }
         )
+        .filter { [weak self] _ in
+            !(self?.isLoadingSettings ?? true)
+        }
         .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
         .dropFirst()
         .sink { [weak self] in
-            guard let self = self, !self.isLoadingSettings else { return }
+            guard let self = self else { return }
             // Save settings when emoji hotkey changes
             self.saveSettings()
             // Post notification to trigger sync in EmojiHotkeyManager

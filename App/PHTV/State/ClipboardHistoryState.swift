@@ -97,10 +97,13 @@ final class ClipboardHistoryState: ObservableObject {
             $clipboardHotkeyKeyCode.map { _ in () },
             $clipboardHistoryMaxItems.map { _ in () }
         )
+        .filter { [weak self] _ in
+            !(self?.isLoadingSettings ?? true)
+        }
         .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
         .dropFirst()
         .sink { [weak self] in
-            guard let self = self, !self.isLoadingSettings else { return }
+            guard let self = self else { return }
             self.saveSettings()
             NotificationCenter.default.post(name: NotificationName.clipboardHotkeySettingsChanged, object: nil)
         }.store(in: &cancellables)

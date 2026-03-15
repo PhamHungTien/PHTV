@@ -233,11 +233,22 @@ final class UIState: ObservableObject {
         ])
 
         hotkeyChanges
+            .filter { [weak self] _ in
+                !(self?.isLoadingSettings ?? true)
+            }
             .debounce(for: .milliseconds(Timing.hotkeyDebounce), scheduler: RunLoop.main)
+            .dropFirst()
             .sink { [weak self] _ in
-                guard let self = self, !self.isLoadingSettings else { return }
+                guard let self = self else { return }
                 SettingsObserver.shared.suspendNotifications()
                 let switchKeyStatus = self.encodeSwitchKeyStatus()
+                let currentStatus = UserDefaults.standard.integer(
+                    forKey: UserDefaultsKey.switchKeyStatus,
+                    default: Defaults.defaultSwitchKeyStatus
+                )
+                guard currentStatus != switchKeyStatus else {
+                    return
+                }
                 UserDefaults.standard.set(switchKeyStatus, forKey: UserDefaultsKey.switchKeyStatus)
                 UserDefaults.standard.set(self.beepOnModeSwitch, forKey: UserDefaultsKey.beepOnModeSwitch)
                 // Notify backend about hotkey change
@@ -249,6 +260,8 @@ final class UIState: ObservableObject {
 
         // Immediate UI update for menu bar icon size
         $menuBarIconSize
+            .dropFirst()
+            .removeDuplicates()
             .sink { [weak self] value in
                 guard let self = self else { return }
                 let sanitized = self.sanitizeMenuBarIconSize(value)
@@ -265,6 +278,8 @@ final class UIState: ObservableObject {
 
         // Immediate UI update for Vietnamese menubar icon preference
         $useVietnameseMenubarIcon
+            .dropFirst()
+            .removeDuplicates()
             .sink { [weak self] _ in
                 guard let self = self, !self.isLoadingSettings else { return }
                 NotificationCenter.default.post(
@@ -275,9 +290,13 @@ final class UIState: ObservableObject {
 
         // Debounced persistence for beep volume slider
         $beepVolume
+            .filter { [weak self] _ in
+                !(self?.isLoadingSettings ?? true)
+            }
             .debounce(for: .milliseconds(Timing.audioSliderDebounce), scheduler: RunLoop.main)
+            .dropFirst()
             .sink { [weak self] value in
-                guard let self = self, !self.isLoadingSettings else { return }
+                guard let self = self else { return }
                 SettingsObserver.shared.suspendNotifications()
                 let defaults = UserDefaults.standard
                 defaults.set(value, forKey: UserDefaultsKey.beepVolume)
@@ -285,9 +304,13 @@ final class UIState: ObservableObject {
 
         // Debounced persistence for menu bar icon size
         $menuBarIconSize
+            .filter { [weak self] _ in
+                !(self?.isLoadingSettings ?? true)
+            }
             .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
+            .dropFirst()
             .sink { [weak self] value in
-                guard let self = self, !self.isLoadingSettings else { return }
+                guard let self = self else { return }
                 SettingsObserver.shared.suspendNotifications()
                 let defaults = UserDefaults.standard
                 let sanitized = self.sanitizeMenuBarIconSize(value)
@@ -297,9 +320,13 @@ final class UIState: ObservableObject {
 
         // Debounced persistence for Vietnamese menubar icon
         $useVietnameseMenubarIcon
+            .filter { [weak self] _ in
+                !(self?.isLoadingSettings ?? true)
+            }
             .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
+            .dropFirst()
             .sink { [weak self] value in
-                guard let self = self, !self.isLoadingSettings else { return }
+                guard let self = self else { return }
                 SettingsObserver.shared.suspendNotifications()
                 let defaults = UserDefaults.standard
                 defaults.set(value, forKey: UserDefaultsKey.useVietnameseMenubarIcon)

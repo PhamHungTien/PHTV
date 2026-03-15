@@ -256,10 +256,13 @@ final class InputMethodState: ObservableObject {
             $pauseKey.map { _ in () }.eraseToAnyPublisher(),
             $pauseKeyName.map { _ in () }.eraseToAnyPublisher()
         ])
+        .filter { [weak self] _ in
+            !(self?.isLoadingSettings ?? true)
+        }
         .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
         .dropFirst()
         .sink { [weak self] _ in
-            guard let self = self, !self.isLoadingSettings else { return }
+            guard let self = self else { return }
             self.saveSettings()
             NotificationCenter.default.post(
                 name: NotificationName.phtvSettingsChanged, object: nil
