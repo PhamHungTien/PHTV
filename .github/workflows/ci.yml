@@ -32,6 +32,9 @@ jobs:
         with:
           xcode-version: latest-stable
 
+      - name: Validate dictionary sources
+        run: swift scripts/tools/generate_dict_binary.swift --strict-check-sources
+
       - name: Build
         working-directory: App
         run: |

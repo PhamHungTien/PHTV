@@ -334,6 +334,14 @@ private struct LocalSourceDiagnostics {
     let uniqueEntries: Int
     let duplicateEntries: Int
     let invalidEntries: Int
+
+    var hasEntries: Bool {
+        uniqueEntries > 0
+    }
+
+    var hasQualityIssues: Bool {
+        duplicateEntries > 0 || invalidEntries > 0
+    }
 }
 
 private func parseLocalEnglishWordFile(_ fileURL: URL) -> (Set<String>, LocalSourceDiagnostics) {
@@ -419,7 +427,69 @@ private func printLocalSourceDiagnostics(name: String, diagnostics: LocalSourceD
     )
 }
 
-private func checkLocalDictionarySources(dictionarySourceDir: URL) -> Bool {
+private func preferredLineEnding(for fileURL: URL) -> String {
+    guard let data = try? Data(contentsOf: fileURL), !data.isEmpty else {
+        return "\n"
+    }
+
+    return data.contains(Data([0x0D, 0x0A])) ? "\r\n" : "\n"
+}
+
+private func normalizedEnglishWordsPreservingOrder(from fileURL: URL) -> [String] {
+    guard let text = try? String(contentsOf: fileURL, encoding: .utf8) else {
+        return []
+    }
+
+    var words: [String] = []
+    var seen = Set<String>()
+
+    for line in text.split(whereSeparator: \.isNewline) {
+        let normalizedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedLine.isEmpty, !normalizedLine.hasPrefix("#") else {
+            continue
+        }
+
+        let word = normalizedLine.lowercased()
+        guard word.count >= 2,
+              word.count <= maxEnglishLength,
+              isASCIIAlphabetic(word),
+              seen.insert(word).inserted else {
+            continue
+        }
+
+        words.append(word)
+    }
+
+    return words
+}
+
+private func normalizedVietnameseWordsPreservingOrder(from fileURL: URL) -> [String] {
+    guard let text = try? String(contentsOf: fileURL, encoding: .utf8) else {
+        return []
+    }
+
+    var words: [String] = []
+    var seen = Set<String>()
+
+    for line in text.split(whereSeparator: \.isNewline) {
+        let normalized = line.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalized.isEmpty, !normalized.hasPrefix("#") else {
+            continue
+        }
+
+        for part in normalized.replacingOccurrences(of: "-", with: " ").split(whereSeparator: \.isWhitespace) {
+            let word = (String(part) as NSString).precomposedStringWithCanonicalMapping.lowercased()
+            guard !word.isEmpty, seen.insert(word).inserted else {
+                continue
+            }
+            words.append(word)
+        }
+    }
+
+    return words
+}
+
+private func checkLocalDictionarySources(dictionarySourceDir: URL, strict: Bool) -> Bool {
     printSection("CHECKING LOCAL DICTIONARY SOURCES")
 
     let englishURL = dictionarySourceDir.appendingPathComponent("en_words.txt")
@@ -431,11 +501,32 @@ private func checkLocalDictionarySources(dictionarySourceDir: URL) -> Bool {
     printLocalSourceDiagnostics(name: "en_words.txt", diagnostics: englishDiagnostics)
     printLocalSourceDiagnostics(name: "vi_words.txt", diagnostics: vietnameseDiagnostics)
 
-    let ok = !englishWords.isEmpty && !vietnameseWords.isEmpty
-    if !ok {
+    let hasWords = !englishWords.isEmpty && !vietnameseWords.isEmpty
+    if !hasWords {
         print("  ✗ Dictionary source files must contain at least one valid word each")
     }
-    return ok
+
+    if strict {
+        var hasStrictFailure = false
+
+        if englishDiagnostics.hasQualityIssues {
+            print("  ✗ en_words.txt still contains duplicates or invalid entries")
+            hasStrictFailure = true
+        }
+
+        if vietnameseDiagnostics.hasQualityIssues {
+            print("  ✗ vi_words.txt still contains duplicates or invalid entries")
+            hasStrictFailure = true
+        }
+
+        if hasWords && !hasStrictFailure {
+            print("  ✓ Local dictionary sources are normalized and strict-check clean")
+        }
+
+        return hasWords && !hasStrictFailure
+    }
+
+    return hasWords
 }
 
 private func normalizeLocalDictionarySources(dictionarySourceDir: URL) -> Bool {
@@ -444,8 +535,12 @@ private func normalizeLocalDictionarySources(dictionarySourceDir: URL) -> Bool {
     let englishURL = dictionarySourceDir.appendingPathComponent("en_words.txt")
     let vietnameseURL = dictionarySourceDir.appendingPathComponent("vi_words.txt")
 
-    let (englishWords, englishDiagnostics) = parseLocalEnglishWordFile(englishURL)
-    let (vietnameseWords, vietnameseDiagnostics) = parseLocalVietnameseWordFile(vietnameseURL)
+    let englishWords = normalizedEnglishWordsPreservingOrder(from: englishURL)
+    let vietnameseWords = normalizedVietnameseWordsPreservingOrder(from: vietnameseURL)
+    let (_, englishDiagnostics) = parseLocalEnglishWordFile(englishURL)
+    let (_, vietnameseDiagnostics) = parseLocalVietnameseWordFile(vietnameseURL)
+    let englishLineEnding = preferredLineEnding(for: englishURL)
+    let vietnameseLineEnding = preferredLineEnding(for: vietnameseURL)
 
     guard !englishWords.isEmpty, !vietnameseWords.isEmpty else {
         print("  ✗ Cannot normalize empty dictionary source files")
@@ -453,8 +548,8 @@ private func normalizeLocalDictionarySources(dictionarySourceDir: URL) -> Bool {
     }
 
     do {
-        try englishWords.sorted().joined(separator: "\n").appending("\n").write(to: englishURL, atomically: true, encoding: .utf8)
-        try vietnameseWords.sorted().joined(separator: "\n").appending("\n").write(to: vietnameseURL, atomically: true, encoding: .utf8)
+        try englishWords.joined(separator: englishLineEnding).appending(englishLineEnding).write(to: englishURL, atomically: true, encoding: .utf8)
+        try vietnameseWords.joined(separator: vietnameseLineEnding).appending(vietnameseLineEnding).write(to: vietnameseURL, atomically: true, encoding: .utf8)
     } catch {
         print("  ✗ Failed to rewrite normalized sources: \(error.localizedDescription)")
         return false
@@ -462,7 +557,7 @@ private func normalizeLocalDictionarySources(dictionarySourceDir: URL) -> Bool {
 
     printLocalSourceDiagnostics(name: "en_words.txt", diagnostics: englishDiagnostics)
     printLocalSourceDiagnostics(name: "vi_words.txt", diagnostics: vietnameseDiagnostics)
-    print("  ✓ Rewrote local dictionary sources as sorted unique word lists")
+    print("  ✓ Rewrote local dictionary sources as unique valid word lists (preserving first-seen order)")
     return true
 }
 
@@ -511,6 +606,7 @@ private func buildVietnameseDictionary(resourcesDir: URL, englishWords: Set<Stri
 
     let outputURL = resourcesDir.appendingPathComponent("vi_dict.bin")
     var vietnameseWords = Set<String>()
+    var loadedUpstreamSeed = false
     let blacklist: Set<String> = ["tẻm"]
 
     let vietnameseURLs = [
@@ -544,7 +640,12 @@ private func buildVietnameseDictionary(resourcesDir: URL, englishWords: Set<Stri
         }
 
         print("  Loaded \(vietnameseWords.count.formatted()) Vietnamese words total from upstream")
+        loadedUpstreamSeed = true
         break
+    }
+
+    if !loadedUpstreamSeed {
+        print("  ⚠️ Upstream Vietnamese seed unavailable; continuing with local vi_words.txt only")
     }
 
     let canonicalVietnameseFile = dictionarySourceDir.appendingPathComponent("vi_words.txt")
@@ -670,10 +771,11 @@ private func resolveResourcesDirectory(scriptDir: URL) -> URL {
 }
 
 private func printUsage() {
-    print("Usage: ./scripts/tools/generate_dict_binary.swift [--cleanup] [--check-sources] [--normalize-sources] [--help]")
+    print("Usage: ./scripts/tools/generate_dict_binary.swift [--cleanup] [--check-sources] [--strict-check-sources] [--normalize-sources] [--help]")
     print("  --cleanup  Remove temporary txt copies from Resources after successful generation")
     print("  --check-sources  Validate local dictionary source files and print diagnostics")
-    print("  --normalize-sources  Rewrite local dictionary sources as sorted unique word lists")
+    print("  --strict-check-sources  Fail if local dictionary sources contain duplicates or invalid entries")
+    print("  --normalize-sources  Rewrite local dictionary sources as unique valid word lists (preserving order)")
     print("  --help     Show this help message")
 }
 
@@ -710,7 +812,12 @@ private func main() {
     }
 
     if arguments.contains("--check-sources") {
-        let ok = checkLocalDictionarySources(dictionarySourceDir: dictionarySourceDir)
+        let ok = checkLocalDictionarySources(dictionarySourceDir: dictionarySourceDir, strict: false)
+        exit(ok ? 0 : 1)
+    }
+
+    if arguments.contains("--strict-check-sources") {
+        let ok = checkLocalDictionarySources(dictionarySourceDir: dictionarySourceDir, strict: true)
         exit(ok ? 0 : 1)
     }
 

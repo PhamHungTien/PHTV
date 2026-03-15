@@ -62,6 +62,9 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "📦 Version: $VERSION"
 
+      - name: Validate dictionary sources
+        run: swift scripts/tools/generate_dict_binary.swift --strict-check-sources
+
       - name: Compute build number
         id: set_versions
         run: |

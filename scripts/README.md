@@ -20,7 +20,11 @@ Source files may include blank lines and comment lines prefixed with `#`.
 
 Useful maintenance modes:
 - `swift scripts/tools/generate_dict_binary.swift --check-sources`
+- `swift scripts/tools/generate_dict_binary.swift --strict-check-sources`
 - `swift scripts/tools/generate_dict_binary.swift --normalize-sources`
+
+`--strict-check-sources` is intended for CI and fails if local sources still contain duplicates or invalid entries.
+`--normalize-sources` removes duplicates/invalid lines while preserving the first-seen order of words.
 
 ## Notes
 
