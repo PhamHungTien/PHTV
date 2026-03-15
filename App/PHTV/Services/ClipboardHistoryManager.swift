@@ -105,6 +105,10 @@ final class ClipboardHistoryManager: ObservableObject {
 
         panel?.showAtMousePosition()
         panel?.makeKey()
+
+        DispatchQueue.main.async { [weak self] in
+            self?.panel?.makeKey()
+        }
     }
 
     func hide() {
