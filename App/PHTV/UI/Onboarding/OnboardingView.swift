@@ -828,12 +828,37 @@ struct AccessibilityStepView: View {
             )
 
             VStack(spacing: 16) {
-                if appState.hasAccessibilityPermission {
+                if appState.isTypingPermissionReady {
                     OnboardingStatusCard(
                         icon: "checkmark.seal.fill",
-                        title: "Đã cấp quyền Accessibility",
-                        description: "Mọi tính năng đã sẵn sàng hoạt động.",
+                        title: "PHTV đã sẵn sàng",
+                        description: "Quyền đã được cấp và bộ gõ đã sẵn sàng hoạt động.",
                         tint: .green
+                    )
+                } else if appState.hasAccessibilityPermission {
+                    OnboardingStatusCard(
+                        icon: "clock.badge.exclamationmark.fill",
+                        title: "Đang hoàn tất khởi tạo",
+                        description: "Quyền đã được cấp, nhưng PHTV vẫn đang chờ khởi tạo lại bộ gõ.",
+                        tint: .yellow
+                    )
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Nếu chưa hoạt động")
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+
+                        OnboardingNumberedRow(number: "1", text: "Chờ vài giây để macOS áp dụng quyền.")
+                        OnboardingNumberedRow(number: "2", text: "Nếu vẫn chưa gõ được, thử đóng và mở lại PHTV.")
+                        OnboardingNumberedRow(number: "3", text: "Nếu cần, tắt rồi bật lại quyền Accessibility cho PHTV.")
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        OnboardingSurface(
+                            cornerRadius: 14,
+                            fillColor: Color(nsColor: .controlBackgroundColor),
+                            strokeColor: Color.black.opacity(0.1)
+                        )
                     )
                 } else {
                     OnboardingStatusCard(
@@ -882,7 +907,7 @@ struct AccessibilityStepView: View {
             appState.checkAccessibilityPermission()
             // When AX is granted, ensure AppDelegate starts the event tap
             // (handles the case where TCC notification wasn't delivered).
-            if appState.hasAccessibilityPermission {
+            if appState.hasAccessibilityPermission && !appState.isTypingPermissionReady {
                 AppDelegate.current()?.checkAccessibilityAndRestart()
             }
         }

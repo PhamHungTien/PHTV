@@ -550,14 +550,14 @@ struct BugReportView: View {
     // MARK: - Runtime Info Helpers
 
     private func checkEventTapStatus() -> String {
-        // Check if event tap is running using reliable test tap method
-        // AXIsProcessTrusted() is UNRELIABLE - use PHTVManager.canCreateEventTap() instead
         let hasPermission = PHTVManager.canCreateEventTap()
         let isInited = PHTVManager.isInited()
         if hasPermission && isInited {
             return "✅ Running"
         } else if hasPermission && !isInited {
             return "⚠️ Permission OK, tap not initialized"
+        } else if appState.hasAccessibilityPermission {
+            return "⚠️ Accessibility granted, event tap unavailable"
         } else {
             return "❌ No accessibility permission"
         }

@@ -175,7 +175,8 @@ struct SettingsDivider: View {
 // MARK: - Status Card
 
 struct StatusCard: View {
-    let hasPermission: Bool
+    let hasAccessibilityPermission: Bool
+    let isReady: Bool
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorScheme) private var colorScheme
 
@@ -183,31 +184,27 @@ struct StatusCard: View {
         HStack(spacing: 16) {
             ZStack {
                 Circle()
-                    .fill(hasPermission ? Color.green.opacity(0.1) : Color.orange.opacity(0.1))
+                    .fill(statusColor.opacity(0.1))
                     .frame(width: 48, height: 48)
 
-                Image(systemName: hasPermission ? "checkmark.shield.fill" : "exclamationmark.triangle.fill")
+                Image(systemName: statusIcon)
                     .font(.system(size: 24))
-                    .foregroundStyle(hasPermission ? Color.green : .orange)
+                    .foregroundStyle(statusColor)
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(hasPermission ? "Sẵn sàng" : "Thiếu quyền Trợ năng")
+                Text(statusTitle)
                     .font(.headline)
                     .foregroundStyle(.primary)
 
-                Text(
-                    hasPermission
-                        ? "Quyền Trợ năng đã được cấp"
-                        : "Cần cấp quyền Trợ năng để PHTV hoạt động ổn định"
-                )
+                Text(statusDescription)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             }
 
             Spacer()
 
-            if !hasPermission {
+            if !hasAccessibilityPermission {
                 Button("Cấp quyền") {
                     if let url = URL(
                         string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
@@ -233,9 +230,40 @@ struct StatusCard: View {
         }
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(hasPermission ? Color.green.opacity(0.4) : Color.orange.opacity(0.4), lineWidth: 1.5)
+                .stroke(statusColor.opacity(0.4), lineWidth: 1.5)
         )
-        .shadow(color: (hasPermission ? Color.green : Color.orange).opacity(colorScheme == .dark ? 0.15 : 0.08), radius: 10, x: 0, y: 4)
+        .shadow(color: statusColor.opacity(colorScheme == .dark ? 0.15 : 0.08), radius: 10, x: 0, y: 4)
+    }
+
+    private var statusColor: Color {
+        if isReady {
+            return .green
+        }
+        return hasAccessibilityPermission ? .yellow : .orange
+    }
+
+    private var statusIcon: String {
+        if isReady {
+            return "checkmark.shield.fill"
+        }
+        return hasAccessibilityPermission ? "clock.badge.exclamationmark.fill" : "exclamationmark.triangle.fill"
+    }
+
+    private var statusTitle: String {
+        if isReady {
+            return "Sẵn sàng"
+        }
+        return hasAccessibilityPermission ? "Đang hoàn tất khởi tạo" : "Thiếu quyền Trợ năng"
+    }
+
+    private var statusDescription: String {
+        if isReady {
+            return "PHTV đã sẵn sàng để gõ tiếng Việt."
+        }
+        if hasAccessibilityPermission {
+            return "Quyền đã được cấp, nhưng bộ gõ chưa sẵn sàng. Nếu chưa hoạt động, hãy mở lại ứng dụng hoặc bật lại quyền."
+        }
+        return "Cần cấp quyền Trợ năng để PHTV hoạt động ổn định."
     }
 }
 
@@ -292,4 +320,3 @@ struct RestoreKeyButton: View {
         }
     }
 }
-

@@ -214,6 +214,11 @@ extension AppState {
         set { systemState.hasAccessibilityPermission = newValue }
     }
 
+    var isTypingPermissionReady: Bool {
+        get { systemState.isTypingPermissionReady }
+        set { systemState.isTypingPermissionReady = newValue }
+    }
+
     var updateAvailableMessage: String {
         get { systemState.updateAvailableMessage }
         set { systemState.updateAvailableMessage = newValue }

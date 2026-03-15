@@ -244,8 +244,10 @@ struct StatusBarMenuView: View {
 
             Divider()
 
-            if appState.hasAccessibilityPermission {
+            if appState.isTypingPermissionReady {
                 Label("Đã cấp quyền Accessibility", systemImage: "checkmark.shield")
+            } else if appState.hasAccessibilityPermission {
+                Label("Đã cấp quyền, đang khởi tạo", systemImage: "clock.badge.exclamationmark")
             } else {
                 Button {
                     if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
