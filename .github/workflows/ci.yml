@@ -35,6 +35,15 @@ jobs:
       - name: Validate dictionary sources
         run: swift scripts/tools/generate_dict_binary.swift --strict-check-sources
 
+      - name: Verify dictionary binaries are current
+        run: |
+          set -euo pipefail
+          swift scripts/tools/generate_dict_binary.swift
+          if ! git diff --exit-code -- App/PHTV/Resources/Dictionaries/en_dict.bin App/PHTV/Resources/Dictionaries/vi_dict.bin; then
+            echo "❌ Dictionary binaries are stale. Re-run swift scripts/tools/generate_dict_binary.swift and commit the updated .bin files."
+            exit 1
+          fi
+
       - name: Build
         working-directory: App
         run: |
