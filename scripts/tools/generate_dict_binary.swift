@@ -3,20 +3,11 @@
 import Foundation
 import Darwin
 
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
-
 private let trieMagic = "PHT4"
 private let maxEnglishWords = Int.max
 private let maxEnglishLength = 45
 private let maxTelexLength = 30
 private let sparkleLine = String(repeating: "=", count: 60)
-private let upstreamRequestTimeout: TimeInterval = 20
-private let vietnameseSeedSnapshotFileName = "viet74k_seed.txt"
-private let vietnameseSeedSourceURLs = [
-    "https://raw.githubusercontent.com/duyet/vietnamese-wordlist/master/Viet74K.txt"
-]
 
 private extension Data {
     mutating func appendLEUInt32(_ value: UInt32) {
@@ -54,6 +45,10 @@ private extension Character {
 
 private func isASCIIAlphabetic(_ text: String) -> Bool {
     !text.isEmpty && text.allSatisfy { $0.isASCIIAlphabetic }
+}
+
+private func isAlphabeticUnicodeWord(_ text: String) -> Bool {
+    !text.isEmpty && text.unicodeScalars.allSatisfy(CharacterSet.letters.contains)
 }
 
 private func printSection(_ title: String) {
@@ -236,83 +231,6 @@ private func vietnameseToTelexVariants(_ word: String) -> [String] {
     vietnameseToTelexConversion(word)?.variants ?? []
 }
 
-private func downloadText(from urlString: String) -> String? {
-    guard let url = URL(string: urlString) else {
-        print("  ✗ Invalid URL: \(urlString)")
-        return nil
-    }
-
-    print("  Downloading from \(urlString)...")
-
-    let configuration = URLSessionConfiguration.ephemeral
-    configuration.timeoutIntervalForRequest = upstreamRequestTimeout
-    configuration.timeoutIntervalForResource = upstreamRequestTimeout
-
-    let session = URLSession(configuration: configuration)
-    var request = URLRequest(url: url)
-    request.timeoutInterval = upstreamRequestTimeout
-
-    let semaphore = DispatchSemaphore(value: 0)
-    var result: Result<String, Error>?
-
-    let task = session.dataTask(with: request) { data, response, error in
-        defer { semaphore.signal() }
-
-        if let error {
-            result = .failure(error)
-            return
-        }
-
-        if let httpResponse = response as? HTTPURLResponse,
-           !(200...299).contains(httpResponse.statusCode) {
-            let error = NSError(
-                domain: "PHTVDictionaryGenerator",
-                code: httpResponse.statusCode,
-                userInfo: [NSLocalizedDescriptionKey: "HTTP \(httpResponse.statusCode)"]
-            )
-            result = .failure(error)
-            return
-        }
-
-        guard let data else {
-            let error = NSError(
-                domain: "PHTVDictionaryGenerator",
-                code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "Empty response body"]
-            )
-            result = .failure(error)
-            return
-        }
-
-        guard let text = String(data: data, encoding: .utf8) else {
-            let error = NSError(
-                domain: "PHTVDictionaryGenerator",
-                code: -2,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid UTF-8 response"]
-            )
-            result = .failure(error)
-            return
-        }
-
-        result = .success(text)
-    }
-
-    task.resume()
-    semaphore.wait()
-    session.finishTasksAndInvalidate()
-
-    switch result {
-    case .success(let text):
-        return text
-    case .failure(let error):
-        print("  ✗ Download failed: \(error.localizedDescription)")
-        return nil
-    case .none:
-        print("  ✗ Download failed: unknown networking error")
-        return nil
-    }
-}
-
 @discardableResult
 private func writeBinaryTrie(_ trie: Trie, outputURL: URL) throws -> Int {
     let fileManager = FileManager.default
@@ -391,10 +309,6 @@ private func parseLocalVietnameseWordFile(_ fileURL: URL) -> (Set<String>, Local
         return ([], LocalSourceDiagnostics(totalEntries: 0, uniqueEntries: 0, duplicateEntries: 0, invalidEntries: 0))
     }
 
-    return parseVietnameseWordText(text)
-}
-
-private func parseVietnameseWordText(_ text: String) -> (Set<String>, LocalSourceDiagnostics) {
     var words = Set<String>()
     var totalEntries = 0
     var invalidEntries = 0
@@ -408,7 +322,7 @@ private func parseVietnameseWordText(_ text: String) -> (Set<String>, LocalSourc
         for part in normalized.replacingOccurrences(of: "-", with: " ").split(whereSeparator: \.isWhitespace) {
             totalEntries += 1
             let word = (String(part) as NSString).precomposedStringWithCanonicalMapping.lowercased()
-            guard !word.isEmpty else {
+            guard !word.isEmpty, isAlphabeticUnicodeWord(word) else {
                 invalidEntries += 1
                 continue
             }
@@ -476,10 +390,6 @@ private func normalizedVietnameseWordsPreservingOrder(from fileURL: URL) -> [Str
         return []
     }
 
-    return normalizedVietnameseWordsPreservingOrder(from: text)
-}
-
-private func normalizedVietnameseWordsPreservingOrder(from text: String) -> [String] {
     var words: [String] = []
     var seen = Set<String>()
 
@@ -491,7 +401,9 @@ private func normalizedVietnameseWordsPreservingOrder(from text: String) -> [Str
 
         for part in normalized.replacingOccurrences(of: "-", with: " ").split(whereSeparator: \.isWhitespace) {
             let word = (String(part) as NSString).precomposedStringWithCanonicalMapping.lowercased()
-            guard !word.isEmpty, seen.insert(word).inserted else {
+            guard !word.isEmpty,
+                  isAlphabeticUnicodeWord(word),
+                  seen.insert(word).inserted else {
                 continue
             }
             words.append(word)
@@ -501,7 +413,7 @@ private func normalizedVietnameseWordsPreservingOrder(from text: String) -> [Str
     return words
 }
 
-private func checkLocalDictionarySources(dictionarySourceDir: URL, vietnameseSeedURL: URL, strict: Bool) -> Bool {
+private func checkLocalDictionarySources(dictionarySourceDir: URL, strict: Bool) -> Bool {
     printSection("CHECKING LOCAL DICTIONARY SOURCES")
 
     let englishURL = dictionarySourceDir.appendingPathComponent("en_words.txt")
@@ -509,15 +421,13 @@ private func checkLocalDictionarySources(dictionarySourceDir: URL, vietnameseSee
 
     let (englishWords, englishDiagnostics) = parseLocalEnglishWordFile(englishURL)
     let (vietnameseWords, vietnameseDiagnostics) = parseLocalVietnameseWordFile(vietnameseURL)
-    let (seedWords, seedDiagnostics) = parseLocalVietnameseWordFile(vietnameseSeedURL)
 
     printLocalSourceDiagnostics(name: "en_words.txt", diagnostics: englishDiagnostics)
     printLocalSourceDiagnostics(name: "vi_words.txt", diagnostics: vietnameseDiagnostics)
-    printLocalSourceDiagnostics(name: vietnameseSeedURL.lastPathComponent, diagnostics: seedDiagnostics)
 
-    let hasWords = !englishWords.isEmpty && !vietnameseWords.isEmpty && !seedWords.isEmpty
+    let hasWords = !englishWords.isEmpty && !vietnameseWords.isEmpty
     if !hasWords {
-        print("  ✗ Dictionary source files and pinned Vietnamese seed must contain at least one valid word each")
+        print("  ✗ Dictionary source files must contain at least one valid word each")
     }
 
     if strict {
@@ -530,11 +440,6 @@ private func checkLocalDictionarySources(dictionarySourceDir: URL, vietnameseSee
 
         if vietnameseDiagnostics.hasQualityIssues {
             print("  ✗ vi_words.txt still contains duplicates or invalid entries")
-            hasStrictFailure = true
-        }
-
-        if seedDiagnostics.hasQualityIssues {
-            print("  ✗ \(vietnameseSeedURL.lastPathComponent) still contains duplicates or invalid entries")
             hasStrictFailure = true
         }
 
@@ -580,43 +485,6 @@ private func normalizeLocalDictionarySources(dictionarySourceDir: URL) -> Bool {
     return true
 }
 
-private func refreshVietnameseSeedSnapshot(vendorDir: URL) -> Bool {
-    printSection("REFRESHING VIETNAMESE SEED SNAPSHOT")
-
-    let outputURL = vendorDir.appendingPathComponent(vietnameseSeedSnapshotFileName)
-
-    for sourceURL in vietnameseSeedSourceURLs {
-        guard let text = downloadText(from: sourceURL) else {
-            continue
-        }
-
-        let words = normalizedVietnameseWordsPreservingOrder(from: text)
-        guard !words.isEmpty else {
-            print("  ✗ Upstream source produced no usable Vietnamese words")
-            continue
-        }
-
-        let header = [
-            "# Pinned upstream Vietnamese seed for reproducible PHTV dictionary builds",
-            "# Source: \(sourceURL)",
-            ""
-        ].joined(separator: "\n")
-
-        do {
-            try FileManager.default.createDirectory(at: vendorDir, withIntermediateDirectories: true)
-            try (header + words.joined(separator: "\n") + "\n").write(to: outputURL, atomically: true, encoding: .utf8)
-            print("  ✓ Wrote \(words.count.formatted()) Vietnamese seed words to \(outputURL.path)")
-            return true
-        } catch {
-            print("  ✗ Failed to write Vietnamese seed snapshot: \(error.localizedDescription)")
-            return false
-        }
-    }
-
-    print("  ✗ Could not refresh pinned Vietnamese seed from any upstream source")
-    return false
-}
-
 private func buildEnglishDictionary(resourcesDir: URL, dictionarySourceDir: URL) -> (Bool, Set<String>) {
     printSection("BUILDING ENGLISH DICTIONARY")
 
@@ -660,49 +528,13 @@ private func buildEnglishDictionary(resourcesDir: URL, dictionarySourceDir: URL)
 private func buildVietnameseDictionary(
     resourcesDir: URL,
     englishWords: Set<String>,
-    dictionarySourceDir: URL,
-    vietnameseSeedURL: URL,
-    allowLocalOnlyFallback: Bool
+    dictionarySourceDir: URL
 ) -> Bool {
     printSection("BUILDING VIETNAMESE DICTIONARY")
 
     let outputURL = resourcesDir.appendingPathComponent("vi_dict.bin")
     var vietnameseWords = Set<String>()
-    var loadedPinnedSeed = false
     let blacklist: Set<String> = ["tẻm"]
-
-    if FileManager.default.fileExists(atPath: vietnameseSeedURL.path) {
-        let (seedWords, diagnostics) = parseLocalVietnameseWordFile(vietnameseSeedURL)
-        print("  Using pinned upstream seed: \(vietnameseSeedURL.lastPathComponent)")
-        printLocalSourceDiagnostics(name: vietnameseSeedURL.lastPathComponent, diagnostics: diagnostics)
-
-        for word in seedWords {
-            guard !blacklist.contains(word) else {
-                continue
-            }
-
-            if word.count > 3 && englishWords.contains(word) {
-                continue
-            }
-
-            vietnameseWords.insert(word)
-        }
-
-        if !seedWords.isEmpty {
-            print("  Loaded \(vietnameseWords.count.formatted()) Vietnamese words total from pinned seed")
-            loadedPinnedSeed = true
-        }
-    }
-
-    if !loadedPinnedSeed {
-        if allowLocalOnlyFallback {
-            print("  ⚠️ Pinned Vietnamese seed unavailable; continuing with local vi_words.txt only because --allow-local-only-vietnamese was set")
-        } else {
-            print("  ✗ Pinned Vietnamese seed unavailable; refusing to build a reduced local-only dictionary")
-            print("    Re-run with --refresh-vietnamese-seed to pin the upstream source, or --allow-local-only-vietnamese if you intentionally want reduced coverage")
-            return false
-        }
-    }
 
     let canonicalVietnameseFile = dictionarySourceDir.appendingPathComponent("vi_words.txt")
     guard FileManager.default.fileExists(atPath: canonicalVietnameseFile.path) else {
@@ -826,20 +658,12 @@ private func resolveResourcesDirectory(scriptDir: URL) -> URL {
     return candidates[0]
 }
 
-private func resolveVendorDirectory(scriptDir: URL) -> URL {
-    scriptDir
-        .deletingLastPathComponent() // scripts
-        .appendingPathComponent("vendor")
-}
-
 private func printUsage() {
-    print("Usage: ./scripts/tools/generate_dict_binary.swift [--cleanup] [--check-sources] [--strict-check-sources] [--normalize-sources] [--refresh-vietnamese-seed] [--allow-local-only-vietnamese] [--help]")
+    print("Usage: ./scripts/tools/generate_dict_binary.swift [--cleanup] [--check-sources] [--strict-check-sources] [--normalize-sources] [--help]")
     print("  --cleanup  Remove temporary txt copies from Resources after successful generation")
     print("  --check-sources  Validate local dictionary source files and print diagnostics")
     print("  --strict-check-sources  Fail if local dictionary sources contain duplicates or invalid entries")
     print("  --normalize-sources  Rewrite local dictionary sources as unique valid word lists (preserving order)")
-    print("  --refresh-vietnamese-seed  Download and pin the upstream Vietnamese seed into scripts/vendor")
-    print("  --allow-local-only-vietnamese  Permit building vi_dict.bin without the upstream Vietnamese seed")
     print("  --help     Show this help message")
 }
 
@@ -858,8 +682,6 @@ private func main() {
         .deletingLastPathComponent()
     let dictionarySourceDir = repoRoot.appendingPathComponent("docs/dictionary")
     let resourcesDir = resolveResourcesDirectory(scriptDir: scriptDir)
-    let vendorDir = resolveVendorDirectory(scriptDir: scriptDir)
-    let vietnameseSeedURL = vendorDir.appendingPathComponent(vietnameseSeedSnapshotFileName)
 
     print(sparkleLine)
     print("PHTV Dictionary Generator")
@@ -878,12 +700,12 @@ private func main() {
     }
 
     if arguments.contains("--check-sources") {
-        let ok = checkLocalDictionarySources(dictionarySourceDir: dictionarySourceDir, vietnameseSeedURL: vietnameseSeedURL, strict: false)
+        let ok = checkLocalDictionarySources(dictionarySourceDir: dictionarySourceDir, strict: false)
         exit(ok ? 0 : 1)
     }
 
     if arguments.contains("--strict-check-sources") {
-        let ok = checkLocalDictionarySources(dictionarySourceDir: dictionarySourceDir, vietnameseSeedURL: vietnameseSeedURL, strict: true)
+        let ok = checkLocalDictionarySources(dictionarySourceDir: dictionarySourceDir, strict: true)
         exit(ok ? 0 : 1)
     }
 
@@ -891,20 +713,11 @@ private func main() {
         let ok = normalizeLocalDictionarySources(dictionarySourceDir: dictionarySourceDir)
         exit(ok ? 0 : 1)
     }
-
-    if arguments.contains("--refresh-vietnamese-seed") {
-        let ok = refreshVietnameseSeedSnapshot(vendorDir: vendorDir)
-        exit(ok ? 0 : 1)
-    }
-
-    let allowLocalOnlyVietnamese = arguments.contains("--allow-local-only-vietnamese")
     let (englishOK, englishWords) = buildEnglishDictionary(resourcesDir: resourcesDir, dictionarySourceDir: dictionarySourceDir)
     let vietnameseOK = buildVietnameseDictionary(
         resourcesDir: resourcesDir,
         englishWords: englishWords,
-        dictionarySourceDir: dictionarySourceDir,
-        vietnameseSeedURL: vietnameseSeedURL,
-        allowLocalOnlyFallback: allowLocalOnlyVietnamese
+        dictionarySourceDir: dictionarySourceDir
     )
 
     if englishOK && vietnameseOK {

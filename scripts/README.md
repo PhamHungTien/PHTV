@@ -13,8 +13,7 @@ Canonical dictionary sources live in:
 - `docs/dictionary/en_words.txt`
 - `docs/dictionary/vi_words.txt`
 
-The English dictionary now builds fully offline from checked-in sources.
-The Vietnamese dictionary merges `docs/dictionary/vi_words.txt` with a pinned upstream seed snapshot in `scripts/vendor/viet74k_seed.txt`.
+Both English and Vietnamese dictionaries now build fully offline from those two checked-in source files only.
 
 Source files may include blank lines and comment lines prefixed with `#`.
 
@@ -22,11 +21,9 @@ Useful maintenance modes:
 - `swift scripts/tools/generate_dict_binary.swift --check-sources`
 - `swift scripts/tools/generate_dict_binary.swift --strict-check-sources`
 - `swift scripts/tools/generate_dict_binary.swift --normalize-sources`
-- `swift scripts/tools/generate_dict_binary.swift --refresh-vietnamese-seed`
 
 `--strict-check-sources` is intended for CI and fails if local sources still contain duplicates or invalid entries.
 `--normalize-sources` removes duplicates/invalid lines while preserving the first-seen order of words.
-Default Vietnamese builds require the pinned seed snapshot; use `--refresh-vietnamese-seed` to update it, and `--allow-local-only-vietnamese` only when you intentionally accept reduced coverage.
 
 ## Notes
 
