@@ -499,6 +499,14 @@ final class EngineRegressionTests: XCTestCase {
         runSpaceCase("sips", expectRestore: false)
     }
 
+    func testWafDoesNotRestoreOnSpace() {
+        runSpaceCase("waf", expectRestore: false)
+    }
+
+    func testWafDoesNotRestoreOnComma() {
+        runWordBreakCase("waf", expectRestore: false, breakKey: KEY_COMMA)
+    }
+
     func testTreenDoesNotRestoreOnSpace() {
         runSpaceCase("treen", expectRestore: false)
     }
@@ -589,6 +597,10 @@ final class EngineRegressionTests: XCTestCase {
 
     func testSipsProducesMarkedSyllable() {
         XCTAssertEqual(renderedToken("sips"), "síp")
+    }
+
+    func testWafProducesMarkedUa() {
+        XCTAssertEqual(renderedToken("waf"), "ừa")
     }
 
     func testSispProducesMarkedSyllable() {
