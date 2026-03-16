@@ -536,6 +536,26 @@ private func detectorShouldRestoreEnglish(
     let keyCodes = decoded.keyCodes
     let cString = decoded.cString
 
+    // Vietnamese precedence rule: if the input can be interpreted as a Vietnamese
+    // Telex form, never auto-restore it as English.
+    if detectorContainsVietnamese(idx, length: stateIndex) {
+        return false
+    }
+
+    let toneless = detectorTonelessIndices(idx, length: stateIndex)
+    if toneless.count >= 2 && detectorContainsVietnamese(toneless, length: toneless.count) {
+        return false
+    }
+
+    if stateIndex >= 2 {
+        let firstKey = keyCodes[0]
+        let lastKey = keyCodes[stateIndex - 1]
+        if isToneMarkKeyCode(lastKey: lastKey, firstKey: firstKey),
+           detectorContainsVietnamese(idx, length: stateIndex - 1) {
+            return false
+        }
+    }
+
     // Custom dictionaries always take priority over all other checks
     if detectorContainsCustomVietnamese(cString) {
         return false
@@ -549,18 +569,6 @@ private func detectorShouldRestoreEnglish(
     let isDefinitelyNonVietnamese = startsWithNonVietnameseCluster(idx, length: stateIndex)
     if isDefinitelyNonVietnamese && detectorContainsEnglish(idx, length: stateIndex) {
         return true
-    }
-
-    // Vietnamese dictionary check
-    if detectorContainsVietnamese(idx, length: stateIndex) {
-        // Exception: long words (≥ 7 chars) with English-only clusters bypass Vietnamese match.
-        // Handles compound tech terms that might share short syllables with Vietnamese.
-        if stateIndex >= 7 &&
-            startsWithNonVietnameseKeyCluster(keyCodes: keyCodes, length: stateIndex) &&
-            detectorContainsEnglish(idx, length: stateIndex) {
-            return true
-        }
-        return false
     }
 
     // Tone mark at word end: likely Vietnamese telex input

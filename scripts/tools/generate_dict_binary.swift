@@ -574,15 +574,6 @@ private func buildVietnameseDictionary(
                 continue
             }
 
-            // Keep canonical shape-only Telex forms like "treen" -> "trên".
-            // Only drop the plain base when the Vietnamese source word already
-            // contains a tone mark and would otherwise shadow a real English word.
-            if conversion.hasToneMark &&
-                variant == conversion.baseWord &&
-                englishWords.contains(variant) {
-                continue
-            }
-
             telexWords.insert(variant)
 
             if variant.hasPrefix("uw") || variant.hasPrefix("ow") {
