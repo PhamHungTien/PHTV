@@ -51,9 +51,22 @@ final class PHTVSystemTextReplacementService: NSObject {
             return userMacros
         }
 
-        var merged = userMacros
+        let systemShortcutKeys = Set(
+            systemEntries.map { $0.shortcut.folding(options: [.caseInsensitive], locale: .current) }
+        )
+
+        // Keep the user macro payload, but mark colliding shortcuts as
+        // system replacements so GUI apps can defer to native replacement.
+        var merged = userMacros.map { macro -> MacroItem in
+            var runtimeMacro = macro
+            let key = normalizedText(runtimeMacro.shortcut).folding(options: [.caseInsensitive], locale: .current)
+            if systemShortcutKeys.contains(key) {
+                runtimeMacro.snippetType = .systemTextReplacement
+            }
+            return runtimeMacro
+        }
         var seenShortcuts = Set(
-            userMacros.map { normalizedText($0.shortcut).folding(options: [.caseInsensitive], locale: .current) }
+            merged.map { normalizedText($0.shortcut).folding(options: [.caseInsensitive], locale: .current) }
         )
 
         for entry in systemEntries {

@@ -37,13 +37,33 @@ final class SystemTextReplacementServiceTests: XCTestCase {
         XCTAssertEqual(merged.count, 3)
         XCTAssertEqual(merged[0].shortcut, "dc")
         XCTAssertEqual(merged[0].expansion, "do custom")
-        XCTAssertEqual(merged[0].snippetType, .static)
+        XCTAssertEqual(merged[0].snippetType, .systemTextReplacement)
         XCTAssertEqual(merged[1].shortcut, "mk")
         XCTAssertEqual(merged[1].expansion, "mình")
         XCTAssertEqual(merged[1].snippetType, .static)
         XCTAssertEqual(merged[2].shortcut, "ntn")
         XCTAssertEqual(merged[2].expansion, "như thế nào")
         XCTAssertEqual(merged[2].snippetType, .systemTextReplacement)
+    }
+
+    func testRuntimeMacrosDoNotChangeTypesWhenSystemReplacementDisabled() {
+        let userMacros = [
+            MacroItem(shortcut: "dc", expansion: "do custom"),
+            MacroItem(shortcut: "mk", expansion: "mình")
+        ]
+
+        let merged = PHTVSystemTextReplacementService.mergedRuntimeMacros(
+            userMacros: userMacros,
+            useSystemTextReplacements: false,
+            rawItems: [
+                ["on": 1, "replace": "dc", "with": "được"],
+                ["on": 1, "replace": "ntn", "with": "như thế nào"]
+            ]
+        )
+
+        XCTAssertEqual(merged.count, 2)
+        XCTAssertEqual(merged[0].snippetType, .static)
+        XCTAssertEqual(merged[1].snippetType, .static)
     }
 
     func testNativeTextReplacementDeferralUsesGuiDefaultAndToolingFallback() {
