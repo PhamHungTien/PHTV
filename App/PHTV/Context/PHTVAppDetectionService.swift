@@ -123,6 +123,7 @@ final class PHTVAppDetectionService: NSObject {
         "com.microsoft.Edge.Dev",
         "com.thebrowser.Browser",
         "company.thebrowser.Browser",
+        "company.thebrowser.dia",
         "ai.perplexity.comet",
         "com.visualkit.browser",
         "com.coccoc.browser",
@@ -251,7 +252,9 @@ final class PHTVAppDetectionService: NSObject {
     // unrelated browser search/history fields.
     private static let strictAddressBarDetectionApps = BundlePatternSet([
         "com.coccoc.browser",
-        "com.coccoc.browser.app.*"
+        "com.coccoc.browser.app.*",
+        "company.thebrowser.dia",
+        "company.thebrowser.dia.app.*"
     ])
 
     private static let disableVietnameseApps = BundlePatternSet([
