@@ -109,8 +109,10 @@ import Foundation
             shouldLogSuccess = !previousHasLastOutcome || !previousOutcome
         } else {
             permissionState.permissionFailureCount += 1
-            let exponent = min(permissionState.permissionFailureCount, 6)
-            let backoff = min(15.0, pow(2.0, Double(exponent)) * 0.25)
+            // At this point hasPostEventAccess() is known to be true (the early return at the top
+            // handles the false case). The tap failure is a macOS propagation delay, not a denial.
+            // Use a short fixed backoff so recovery happens within ~1s rather than up to 15s.
+            let backoff: TimeInterval = 1.0
             permissionState.permissionBackoffUntil = now + backoff
             loggedFailureCount = permissionState.permissionFailureCount
             loggedBackoff = backoff

@@ -321,6 +321,11 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
     }
 
     func checkAccessibilityAndRestart() {
+        // AXIsProcessTrusted() is the Apple-canonical gate for accessibility permission.
+        // When trusted, invalidate any stale backoff so canCreateEventTap() gets a fresh
+        // attempt — avoids being stuck behind exponential backoff from a propagation delay.
+        guard AXIsProcessTrusted() else { return }
+        PHTVManager.invalidatePermissionCache()
         if PHTVManager.canCreateEventTap() {
             performAccessibilityGrantedRestart()
         }
