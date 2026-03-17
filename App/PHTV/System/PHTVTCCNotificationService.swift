@@ -6,6 +6,7 @@
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
+import ApplicationServices
 import Foundation
 
 @objcMembers
