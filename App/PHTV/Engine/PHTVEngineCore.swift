@@ -53,6 +53,7 @@ final class PHTVVietnameseEngine {
     var hNCC: Int = 0
     var hData: [UInt32] = Array(repeating: 0, count: ENGINE_MAX_BUFF)
     var hMacroKey: [UInt32] = []
+    var hMacroRawKey: [UInt32] = []
     var hMacroData: [UInt32] = []
 
     // MARK: Core buffers
@@ -1804,20 +1805,24 @@ final class PHTVVietnameseEngine {
         refreshRuntimeLayoutSnapshot()
         hCode = HookCodeState.doNothing.rawValue
         if state == .mouseDown || (otherControlKey && !isCaps) {
-            hMacroKey.removeAll(); hasHandledMacro = false; willTempOffEngine = false
+            hMacroKey.removeAll(); hMacroRawKey.removeAll(); hasHandledMacro = false; willTempOffEngine = false
         } else if data == KEY_SPACE || isMacroBreakCode(data) {
-            if !hasHandledMacro && findMacro(&hMacroKey, &hMacroData) {
+            if !hasHandledMacro && (findMacro(&hMacroKey, &hMacroData) || (!hMacroRawKey.isEmpty && hMacroRawKey != hMacroKey && findMacro(&hMacroRawKey, &hMacroData))) {
                 hCode = HookCodeState.replaceMacro.rawValue
                 hBPC = hMacroKey.count
             }
-            hMacroKey.removeAll(); hasHandledMacro = false; willTempOffEngine = false
+            hMacroKey.removeAll(); hMacroRawKey.removeAll(); hasHandledMacro = false; willTempOffEngine = false
         } else if data == KEY_DELETE {
             if !hMacroKey.isEmpty { hMacroKey.removeLast() } else { willTempOffEngine = false }
+            if !hMacroRawKey.isEmpty { hMacroRawKey.removeLast() }
         } else {
             if isWordBreak(event: .keyboard, state: state, data: data) && !kCharKeyCode.contains(data) {
-                hMacroKey.removeAll(); hasHandledMacro = false; willTempOffEngine = false
+                hMacroKey.removeAll(); hMacroRawKey.removeAll(); hasHandledMacro = false; willTempOffEngine = false
             } else {
-                if !willTempOffEngine { hMacroKey.append(UInt32(data) | (isCaps ? CAPS_MASK : 0)) }
+                if !willTempOffEngine {
+                    hMacroKey.append(UInt32(data) | (isCaps ? CAPS_MASK : 0))
+                    hMacroRawKey.append(UInt32(data) | (isCaps ? CAPS_MASK : 0))
+                }
             }
         }
     }
@@ -1858,7 +1863,8 @@ final class PHTVVietnameseEngine {
         hCode = HookCodeState.doNothing.rawValue
         hBPC = 0; hNCC = 0; hExt = 1
 
-        if phtvRuntimeUseMacroEnabled() != 0 && isMacroBreakCode(data) && !hasHandledMacro && findMacro(&hMacroKey, &hMacroData) {
+        if phtvRuntimeUseMacroEnabled() != 0 && isMacroBreakCode(data) && !hasHandledMacro &&
+            (findMacro(&hMacroKey, &hMacroData) || (!hMacroRawKey.isEmpty && hMacroRawKey != hMacroKey && findMacro(&hMacroRawKey, &hMacroData))) {
             hCode = HookCodeState.replaceMacro.rawValue
             hBPC = hMacroKey.count
             hasHandledMacro = true
@@ -1944,8 +1950,9 @@ final class PHTVVietnameseEngine {
         if phtvRuntimeUseMacroEnabled() != 0 {
             if isCharKeyCode {
                 hMacroKey.append(UInt32(data) | (isCaps ? CAPS_MASK : 0))
+                hMacroRawKey.append(UInt32(data) | (isCaps ? CAPS_MASK : 0))
             } else {
-                hMacroKey.removeAll(); hasHandledMacro = false
+                hMacroKey.removeAll(); hMacroRawKey.removeAll(); hasHandledMacro = false
             }
         }
 
@@ -2000,7 +2007,8 @@ final class PHTVVietnameseEngine {
             }
         }
         // EngineKeyHandleEventSpaceDecision.inc
-        if phtvRuntimeUseMacroEnabled() != 0 && !hasHandledMacro && findMacro(&hMacroKey, &hMacroData) {
+        if phtvRuntimeUseMacroEnabled() != 0 && !hasHandledMacro &&
+            (findMacro(&hMacroKey, &hMacroData) || (!hMacroRawKey.isEmpty && hMacroRawKey != hMacroKey && findMacro(&hMacroRawKey, &hMacroData))) {
             hCode = HookCodeState.replaceMacro.rawValue
             hBPC = hMacroKey.count; spaceCount += 1
         } else if phtvRuntimeAutoRestoreEnglishWordEnabled() != 0 && idx > 0 && restoreStateIndex > 1 && canAutoRestore && shouldRestoreEnglish {
@@ -2033,7 +2041,7 @@ final class PHTVVietnameseEngine {
         }
 
         // EngineKeyHandleEventSpaceFinalize.inc
-        if phtvRuntimeUseMacroEnabled() != 0 { hMacroKey.removeAll(); hasHandledMacro = false }
+        if phtvRuntimeUseMacroEnabled() != 0 { hMacroKey.removeAll(); hMacroRawKey.removeAll(); hasHandledMacro = false }
         if snapshotUpperCaseFirstChar != 0 && phtvRuntimeUpperCaseExcludedForCurrentApp() == 0 && upperCaseNeedsSpaceConfirm {
             upperCaseNeedsSpaceConfirm = false
         }
@@ -2065,7 +2073,7 @@ final class PHTVVietnameseEngine {
                 }
                 if isSpellCheckingEnabled() { checkSpelling() }
             }
-            if phtvRuntimeUseMacroEnabled() != 0 && !hMacroKey.isEmpty { hMacroKey.removeLast() }
+            if phtvRuntimeUseMacroEnabled() != 0 && !hMacroKey.isEmpty { hMacroKey.removeLast(); if !hMacroRawKey.isEmpty { hMacroRawKey.removeLast() } }
             hBPC = 0; hNCC = 0; hExt = 2
             if idx == 0 {
                 let savedStatus = upperCaseStatus, savedSpaceConfirm = upperCaseNeedsSpaceConfirm
@@ -2160,9 +2168,13 @@ final class PHTVVietnameseEngine {
         if phtvRuntimeUseMacroEnabled() != 0 {
             if hCode == HookCodeState.doNothing.rawValue {
                 hMacroKey.append(UInt32(data) | (isCaps ? CAPS_MASK : 0))
+                hMacroRawKey.append(UInt32(data) | (isCaps ? CAPS_MASK : 0))
             } else if hCode == HookCodeState.willProcess.rawValue || hCode == HookCodeState.restore.rawValue {
                 for _ in 0..<hBPC where !hMacroKey.isEmpty { hMacroKey.removeLast() }
                 for i in (idx - hBPC)..<(hNCC + idx - hBPC) { hMacroKey.append(typingWord[i]) }
+                // hMacroRawKey always appends the raw key — never merges like hMacroKey does —
+                // so ASCII macro shortcuts (e.g. \gets) can be matched even in Vietnamese mode.
+                hMacroRawKey.append(UInt32(data) | (isCaps ? CAPS_MASK : 0))
             }
         }
 
