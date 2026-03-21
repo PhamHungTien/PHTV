@@ -179,7 +179,8 @@ final class SystemState: ObservableObject {
 
     private func refreshPermissionState(eventTapReady: Bool? = nil) {
         let axTrusted = AXIsProcessTrusted()
-        let effectiveEventTapReady = eventTapReady ?? (axTrusted ? PHTVManager.canCreateEventTap() : false)
+        let liveEventTapReady = axTrusted && PHTVManager.isInited() && PHTVManager.isEventTapEnabled()
+        let effectiveEventTapReady = eventTapReady.map { $0 || liveEventTapReady } ?? liveEventTapReady
         let resolvedState = PHTVTypingPermissionState.resolve(
             accessibilityTrusted: axTrusted,
             eventTapReady: effectiveEventTapReady

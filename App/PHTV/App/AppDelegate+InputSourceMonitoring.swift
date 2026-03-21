@@ -23,6 +23,11 @@ private func phtvInputSourceProperty(_ inputSource: TISInputSource, _ key: CFStr
 }
 
 @MainActor extension AppDelegate {
+    private func resetInputSourceTrackingState() {
+        isInNonLatinInputSource = false
+        savedLanguageBeforeNonLatin = 0
+    }
+
     @objc func observeAppearanceChanges() {
         DistributedNotificationCenter.default().addObserver(self,
                                                             selector: #selector(handleAppearanceChanged(_:)),
@@ -43,8 +48,12 @@ private func phtvInputSourceProperty(_ inputSource: TISInputSource, _ key: CFStr
     @objc func handleInputSourceChanged(_ notification: Notification) {
         _ = notification
         PHTVManager.invalidateLayoutCache()
+        syncCurrentInputSourceState(reason: "changed")
+    }
 
+    private func syncCurrentInputSourceState(reason: String) {
         if PHTVManager.otherLanguageMode() == 0 {
+            resetInputSourceTrackingState()
             return
         }
 
@@ -64,7 +73,7 @@ private func phtvInputSourceProperty(_ inputSource: TISInputSource, _ key: CFStr
             isInNonLatinInputSource = true
 
             if currentLanguage != 0 {
-                NSLog("[InputSource] Detected non-Latin keyboard: %@ -> Auto-switching PHTV to English", displayName)
+                NSLog("[InputSource] %@: non-Latin keyboard %@ -> auto-switching PHTV to English", reason, displayName)
                 applyInputMethodLanguage(0)
             }
             return
@@ -74,23 +83,26 @@ private func phtvInputSourceProperty(_ inputSource: TISInputSource, _ key: CFStr
             isInNonLatinInputSource = false
 
             if savedLanguageBeforeNonLatin != 0 && currentLanguage == 0 {
-                NSLog("[InputSource] Detected Latin keyboard: %@ -> Restoring PHTV to Vietnamese", displayName)
+                NSLog("[InputSource] %@: Latin keyboard %@ -> restoring PHTV to Vietnamese", reason, displayName)
                 applyInputMethodLanguage(savedLanguageBeforeNonLatin)
             }
         }
     }
 
     @objc func startInputSourceMonitoring() {
-        isInNonLatinInputSource = false
-        savedLanguageBeforeNonLatin = 0
+        if inputSourceObserver == nil {
+            resetInputSourceTrackingState()
 
-        DistributedNotificationCenter.default().addObserver(self,
-                                                            selector: #selector(handleInputSourceChanged(_:)),
-                                                            name: phtvInputSourceChangedNotification,
-                                                            object: nil)
-        inputSourceObserver = NSNumber(value: 1)
+            DistributedNotificationCenter.default().addObserver(self,
+                                                                selector: #selector(handleInputSourceChanged(_:)),
+                                                                name: phtvInputSourceChangedNotification,
+                                                                object: nil)
+            inputSourceObserver = NSNumber(value: 1)
 
-        NSLog("[InputSource] Started monitoring input source changes")
+            NSLog("[InputSource] Started monitoring input source changes")
+        }
+
+        syncCurrentInputSourceState(reason: "monitoring-start")
     }
 
     @objc func stopInputSourceMonitoring() {
@@ -110,7 +122,7 @@ private func phtvInputSourceProperty(_ inputSource: TISInputSource, _ key: CFStr
             self.inputSourceObserver = nil
         }
 
-        isInNonLatinInputSource = false
+        resetInputSourceTrackingState()
     }
 
     private func applyInputMethodLanguage(_ language: Int) {

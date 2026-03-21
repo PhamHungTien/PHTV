@@ -225,8 +225,12 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
 
         let oldSmartSwitch = old["useSmartSwitchKey"]?.intValue ?? 0
         let newSmartSwitch = new["useSmartSwitchKey"]?.intValue ?? 0
-        if changedSessionSettings && oldSmartSwitch == 0 && newSmartSwitch != 0 && PHTVManager.isInited() {
-            PHTVManager.notifyActiveAppChanged()
+        let oldRememberCode = old["rememberCode"]?.intValue ?? 0
+        let newRememberCode = new["rememberCode"]?.intValue ?? 0
+        let shouldReapplyFrontmostAppContext = (oldSmartSwitch == 0 && newSmartSwitch != 0)
+            || (oldRememberCode == 0 && newRememberCode != 0)
+        if changedSessionSettings && shouldReapplyFrontmostAppContext && PHTVManager.isInited() {
+            syncCurrentFrontmostAppContext(reason: "settings-enabled-smart-switch-or-remember-code")
         }
 
         phtvLastUpperCaseFirstCharSetting = newUpperCaseFirstChar

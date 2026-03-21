@@ -429,19 +429,16 @@ final class EngineRegressionTests: XCTestCase {
         runSpaceCase("noob", expectRestore: true)
     }
 
-    func testBootRestoresOnSpace() {
-        // "boot" in Telex produces "bôt" (oo→ô) and should restore on space.
-        runSpaceCase("boot", expectRestore: true)
+    func testBootDoesNotRestoreOnSpace() {
+        runSpaceCase("boot", expectRestore: false)
     }
 
-    func testDataRestoresOnSpace() {
-        // "data" is a common English token and should restore after Telex transforms.
-        runSpaceCase("data", expectRestore: true)
+    func testDataDoesNotRestoreOnSpace() {
+        runSpaceCase("data", expectRestore: false)
     }
 
-    func testDataRestoresOnComma() {
-        // Keep word-break restore behavior aligned with the space path for "data".
-        runWordBreakCase("data", expectRestore: true, breakKey: KEY_COMMA)
+    func testDataDoesNotRestoreOnComma() {
+        runWordBreakCase("data", expectRestore: false, breakKey: KEY_COMMA)
     }
 
     func testNoobRestoresOnComma() {
@@ -457,6 +454,30 @@ final class EngineRegressionTests: XCTestCase {
     func testGoodnotesRestoresOnComma() {
         // The same curated source should continue to work across word-break paths.
         runWordBreakCase("goodnotes", expectRestore: true, breakKey: KEY_COMMA)
+    }
+
+    func testHoomDoesNotRestoreOnSpace() {
+        runSpaceCase("hoom", expectRestore: false)
+    }
+
+    func testHoomDoesNotRestoreOnComma() {
+        runWordBreakCase("hoom", expectRestore: false, breakKey: KEY_COMMA)
+    }
+
+    func testHoomProducesHom() {
+        XCTAssertEqual(renderedToken("hoom"), "hôm")
+    }
+
+    func testHomoDoesNotRestoreOnSpace() {
+        runSpaceCase("homo", expectRestore: false)
+    }
+
+    func testHomoDoesNotRestoreOnComma() {
+        runWordBreakCase("homo", expectRestore: false, breakKey: KEY_COMMA)
+    }
+
+    func testHomoProducesHom() {
+        XCTAssertEqual(renderedToken("homo"), "hôm")
     }
 
     // MARK: - Issue #135: Telex Vietnamese words must not auto-restore as English on space

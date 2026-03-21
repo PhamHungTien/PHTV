@@ -60,4 +60,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var userDefaultsObserver: Any?
     var savedLanguageBeforeNonLatin = 0
     var isInNonLatinInputSource = false
+
+    // Tracks the last-seen system text replacements token so macro list
+    // can be refreshed when NSUserDictionaryReplacementItems changes.
+    var lastSystemReplacementsChangeToken: Int = 0
 }

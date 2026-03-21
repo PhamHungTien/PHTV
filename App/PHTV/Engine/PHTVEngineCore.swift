@@ -290,6 +290,19 @@ final class PHTVVietnameseEngine {
         }
     }
 
+    func hasVietnameseDictionaryMatchForAutoRestore(_ keySlice: [UInt32], englishLength: Int, typingLength: Int) -> Bool {
+        if englishLength > 0 && detectorIsVietnameseWord(keySlice, englishLength) {
+            return true
+        }
+        if isVietnameseWordFromTypingWord(typingLength) {
+            return true
+        }
+        if isVietnameseFromCanonicalTelex(typingLength) {
+            return true
+        }
+        return false
+    }
+
     // MARK: - Session operations (EngineSessionInsert.inc + EngineSessionPersist.inc)
 
     func setKeyData(_ index: Int, _ keyCode: UInt16, _ isCaps: Bool) {
@@ -1880,8 +1893,13 @@ final class PHTVVietnameseEngine {
             let restoreStateIndex = isWithNumSuffix ? stateIdx : englishStateIndex
             if englishStateIndex > 1 && canAutoRestore {
                 let keySlice = Array(keyStates.prefix(englishStateIndex))
-                shouldRestoreEnglish = detectorShouldRestoreEnglish(keySlice, englishStateIndex)
-                if !shouldRestoreEnglish {
+                let hasVietnameseDictionaryMatch = hasVietnameseDictionaryMatchForAutoRestore(
+                    keySlice,
+                    englishLength: englishStateIndex,
+                    typingLength: idx
+                )
+                shouldRestoreEnglish = !hasVietnameseDictionaryMatch && detectorShouldRestoreEnglish(keySlice, englishStateIndex)
+                if !shouldRestoreEnglish && !hasVietnameseDictionaryMatch {
                     if detectorIsEnglishWord(keySlice, englishStateIndex) &&
                        !detectorIsVietnameseWord(keySlice, englishStateIndex) &&
                        !isVietnameseWordFromTypingWord(idx) {
@@ -1893,7 +1911,7 @@ final class PHTVVietnameseEngine {
                         shouldRestoreEnglish = false
                     }
                 }
-                if shouldRestoreEnglish && hasVietnameseToneMarksInTypingWord(idx) && isVietnameseFromCanonicalTelex(idx) {
+                if shouldRestoreEnglish && hasVietnameseDictionaryMatch {
                     shouldRestoreEnglish = false
                 }
                 if shouldRestoreEnglish {
@@ -1982,8 +2000,13 @@ final class PHTVVietnameseEngine {
         let restoreStateIndex = isWithNumSuffix ? stateIdx : englishStateIndex
         if phtvRuntimeAutoRestoreEnglishWordEnabled() != 0 && idx > 0 && englishStateIndex > 1 && canAutoRestore {
             let keySlice = Array(keyStates.prefix(englishStateIndex))
-            shouldRestoreEnglish = detectorShouldRestoreEnglish(keySlice, englishStateIndex)
-            if !shouldRestoreEnglish {
+            let hasVietnameseDictionaryMatch = hasVietnameseDictionaryMatchForAutoRestore(
+                keySlice,
+                englishLength: englishStateIndex,
+                typingLength: idx
+            )
+            shouldRestoreEnglish = !hasVietnameseDictionaryMatch && detectorShouldRestoreEnglish(keySlice, englishStateIndex)
+            if !shouldRestoreEnglish && !hasVietnameseDictionaryMatch {
                 if detectorIsEnglishWord(keySlice, englishStateIndex) &&
                    !detectorIsVietnameseWord(keySlice, englishStateIndex) &&
                    !isVietnameseWordFromTypingWord(idx) { shouldRestoreEnglish = true }
@@ -1991,7 +2014,7 @@ final class PHTVVietnameseEngine {
             if shouldRestoreEnglish && idx == 1 {
                 if (typingWord[0] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) != 0 { shouldRestoreEnglish = false }
             }
-            if shouldRestoreEnglish && hasVietnameseToneMarksInTypingWord(idx) && isVietnameseFromCanonicalTelex(idx) {
+            if shouldRestoreEnglish && hasVietnameseDictionaryMatch {
                 shouldRestoreEnglish = false
             }
             if shouldRestoreEnglish {

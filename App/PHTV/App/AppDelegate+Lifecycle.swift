@@ -91,6 +91,7 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
 
         if !PHTVManager.canCreateEventTap() {
             runHotkeyHealthCheck(reason: "launch-no-permission")
+            publishTypingPermissionState(eventTapReady: false)
             askPermission()
             attemptAutomaticTCCRepairIfNeeded()
             startAccessibilityMonitoring()
@@ -104,6 +105,7 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
             }
 
             if !PHTVManager.initEventTap() {
+                self.publishTypingPermissionState(eventTapReady: false)
                 NotificationCenter.default.post(name: phtvNotificationShowSettings, object: nil)
             } else {
                 NSLog("[EventTap] Initialized successfully")
@@ -112,6 +114,8 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
                 self.startInputSourceMonitoring()
                 EmojiHotkeyBridge.refreshEmojiHotkeyRegistration()
                 ClipboardHotkeyBridge.refreshClipboardHotkeyRegistration()
+                self.publishTypingPermissionState(eventTapReady: true)
+                self.syncCurrentFrontmostAppContext(reason: "launch", forceExcludedRecheck: true)
 
                 let showUI = UserDefaults.standard.integer(forKey: phtvDefaultsKeyShowUIOnStartup)
                 if showUI == 1 {

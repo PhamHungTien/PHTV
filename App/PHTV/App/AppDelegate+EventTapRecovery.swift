@@ -203,8 +203,11 @@ private func phtvEmojiHotkeyLooksValid(enabled: Int32, modifiers: Int32, keyCode
             PHTVManager.requestNewSession()
             startHealthCheckMonitoring()
             startAccessibilityMonitoring(withInterval: currentMonitoringInterval(), resetState: false)
+            startInputSourceMonitoring()
+            syncCurrentFrontmostAppContext(reason: "\(reason)-recovered", forceExcludedRecheck: true)
             refreshEmojiHotkeyRegistrationAfterRecovery()
             runHotkeyHealthCheck(reason: "\(reason)-recovered")
+            publishTypingPermissionState(eventTapReady: true)
             eventTapRecoveryToken &+= 1
             NSLog("[EventTap] Recovery (%@) succeeded on attempt %d/%d",
                   reason, attempt, totalAttempts)
@@ -212,6 +215,7 @@ private func phtvEmojiHotkeyLooksValid(enabled: Int32, modifiers: Int32, keyCode
         }
 
         if attempt == totalAttempts {
+            publishTypingPermissionState(eventTapReady: false)
             NSLog("[EventTap] Recovery (%@) exhausted after %d attempts",
                   reason, totalAttempts)
         }

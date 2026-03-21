@@ -31,6 +31,13 @@ import Foundation
 
     private static let runtimeState = EventTapRuntimeStateBox()
 
+    private static func publishTypingReadiness(_ isReady: Bool) {
+        NotificationCenter.default.post(
+            name: NotificationName.accessibilityStatusChanged,
+            object: NSNumber(value: isReady)
+        )
+    }
+
     private static func eventMaskBit(_ type: CGEventType) -> CGEventMask {
         CGEventMask(1) << CGEventMask(type.rawValue)
     }
@@ -57,6 +64,8 @@ import Foundation
             CFMachPortInvalidate(tap)
             NSLog("🛑🛑🛑 EMERGENCY: Event tap INVALIDATED due to permission loss!")
         }
+
+        publishTypingReadiness(false)
     }
 
     @objc static func isEventTapInited() -> Bool {
@@ -64,8 +73,20 @@ import Foundation
     }
 
     @objc static func initEventTap() -> Bool {
-        if runtimeState.withLock({ $0.isInited }) {
-            return true
+        let existingTap = runtimeState.withLock { state -> CFMachPort? in
+            guard state.isInited else {
+                return nil
+            }
+            return state.eventTap
+        }
+        if let existingTap {
+            if CGEvent.tapIsEnabled(tap: existingTap) {
+                publishTypingReadiness(true)
+                return true
+            }
+
+            NSLog("[EventTap] Existing tap is disabled - recreating")
+            _ = stopEventTap()
         }
 
         runtimeState.withLock { $0.permissionLost = false }
@@ -107,6 +128,7 @@ import Foundation
 
         guard let tap = createdTap else {
             fputs("Failed to create event tap\n", stderr)
+            publishTypingReadiness(false)
             return false
         }
 
@@ -123,7 +145,9 @@ import Foundation
 
         CGEvent.tapEnable(tap: tap, enable: true)
         NSLog("[EventTap] Enabled and added to main run loop")
-        return true
+        let isReady = CGEvent.tapIsEnabled(tap: tap)
+        publishTypingReadiness(isReady)
+        return isReady
     }
 
     @objc static func stopEventTap() -> Bool {
@@ -157,6 +181,9 @@ import Foundation
             resetTransientTapRuntimeState()
             NSLog("[EventTap] Stopped successfully")
         }
+        if didStop {
+            publishTypingReadiness(false)
+        }
         return true
     }
 
@@ -174,6 +201,11 @@ import Foundation
         }
         if let tap {
             CGEvent.tapEnable(tap: tap, enable: true)
+        }
+
+        if let tap, CGEvent.tapIsEnabled(tap: tap) {
+            publishTypingReadiness(true)
+            return
         }
 
         if let tap, !CGEvent.tapIsEnabled(tap: tap) {
@@ -224,7 +256,9 @@ import Foundation
             NSLog("[EventTap] Health check: tap disabled — re-enabling (count=%lu)", tapReenableCount)
             CGEvent.tapEnable(tap: tap, enable: true)
 
-            if !CGEvent.tapIsEnabled(tap: tap) {
+            if CGEvent.tapIsEnabled(tap: tap) {
+                publishTypingReadiness(true)
+            } else {
                 DispatchQueue.main.async {
                     if !runtimeState.withLock({ $0.isInited }) {
                         return

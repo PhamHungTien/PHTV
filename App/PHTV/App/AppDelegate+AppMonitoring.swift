@@ -29,6 +29,7 @@ private let phtvNotificationTCCDatabaseChanged = Notification.Name("TCCDatabaseC
 private let phtvNotificationApplicationDidBecomeActive = NSApplication.didBecomeActiveNotification
 private let phtvSpotlightInvalidationDedupMs: UInt64 = 30
 private let phtvEmojiHotkeyWakeRefreshDelays: [TimeInterval] = [0.0, 0.3, 1.0]
+private let phtvClipboardHotkeyWakeRefreshDelays: [TimeInterval] = [0.0, 0.3, 1.0]
 
 private func phtvDecodeAppList(_ data: Data?) -> [[String: Any]]? {
     guard let data, !data.isEmpty else {
@@ -58,6 +59,35 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
 }
 
 @MainActor extension AppDelegate {
+    private func applyFrontmostAppContext(_ bundleIdentifier: String) {
+        PHTVAppContextService.updateFrontmostBundleCache(bundleIdentifier)
+        PHTVCacheStateService.updateSpotlightCache(false, pid: 0, bundleId: bundleIdentifier)
+        checkExcludedApp(bundleIdentifier)
+
+        if !isInExcludedApp && PHTVManager.isSmartSwitchKeyEnabled() && PHTVManager.isInited() {
+            PHTVManager.notifyActiveAppChanged()
+        }
+
+        _ = PHTVCacheStateService.invalidateSpotlightCache(dedupWindowMs: phtvSpotlightInvalidationDedupMs)
+        checkSendKeyStepByStepApp(bundleIdentifier)
+        checkUpperCaseExcludedApp(bundleIdentifier)
+    }
+
+    func syncCurrentFrontmostAppContext(reason: String, forceExcludedRecheck: Bool = false) {
+        guard let bundleIdentifier = PHTVAppContextService.currentFrontmostBundleId(),
+              !bundleIdentifier.isEmpty else {
+            PHTVAppContextService.invalidateFrontmostBundleCache()
+            return
+        }
+
+        if forceExcludedRecheck {
+            previousBundleIdentifier = nil
+        }
+
+        applyFrontmostAppContext(bundleIdentifier)
+        NSLog("[AppContext] Synced frontmost app context (%@): %@", reason, bundleIdentifier)
+    }
+
     private func refreshEmojiHotkeyRegistration(reason: String, settledRetries: Bool) {
         let delays = settledRetries ? phtvEmojiHotkeyWakeRefreshDelays : [0.0]
         for delay in delays {
@@ -70,10 +100,23 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
 #endif
     }
 
+    private func refreshClipboardHotkeyRegistration(reason: String, settledRetries: Bool) {
+        let delays = settledRetries ? phtvClipboardHotkeyWakeRefreshDelays : [0.0]
+        for delay in delays {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                ClipboardHotkeyBridge.refreshClipboardHotkeyRegistration()
+            }
+        }
+#if DEBUG
+        NSLog("[ClipboardHotkey] Scheduled refresh (%@), retries=%@", reason, settledRetries ? "YES" : "NO")
+#endif
+    }
+
     @objc func handleExcludedAppsChanged(_ notification: Notification) {
         _ = notification
         if let bundleIdentifier = PHTVAppContextService.currentFrontmostBundleId(),
            !bundleIdentifier.isEmpty {
+            previousBundleIdentifier = nil
             checkExcludedApp(bundleIdentifier)
         }
     }
@@ -97,20 +140,36 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
     @objc func receiveWakeNote(_ note: Notification) {
         _ = note
         _ = PHTVManager.stopEventTap()
-        _ = PHTVManager.initEventTap()
+        publishTypingPermissionState(eventTapReady: false)
+
+        let initSucceeded = PHTVManager.initEventTap()
+        let eventTapReady = initSucceeded && PHTVManager.isEventTapEnabled()
+        publishTypingPermissionState(eventTapReady: eventTapReady)
+        startInputSourceMonitoring()
+        if eventTapReady {
+            startHealthCheckMonitoring()
+        } else {
+            stopHealthCheckMonitoring()
+        }
+        syncCurrentFrontmostAppContext(reason: "didWake", forceExcludedRecheck: true)
+
         refreshEmojiHotkeyRegistration(reason: "didWake", settledRetries: true)
+        refreshClipboardHotkeyRegistration(reason: "didWake", settledRetries: true)
         requestEventTapRecovery(reason: "didWake", force: true)
     }
 
     @objc func receiveSleepNote(_ note: Notification) {
         _ = note
         cancelEventTapRecovery(reason: "willSleep")
+        stopHealthCheckMonitoring()
         _ = PHTVManager.stopEventTap()
+        publishTypingPermissionState(eventTapReady: false)
     }
 
     @objc func handleApplicationDidBecomeActive(_ note: Notification) {
         _ = note
         refreshEmojiHotkeyRegistration(reason: "didBecomeActive", settledRetries: false)
+        refreshClipboardHotkeyRegistration(reason: "didBecomeActive", settledRetries: false)
         requestEventTapRecovery(reason: "didBecomeActive")
     }
 
@@ -124,22 +183,9 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
         let bundleIdentifier = activeApp?.bundleIdentifier
 
         if let bundleIdentifier, !bundleIdentifier.isEmpty {
-            PHTVAppContextService.updateFrontmostBundleCache(bundleIdentifier)
-            PHTVCacheStateService.updateSpotlightCache(false, pid: 0, bundleId: bundleIdentifier)
-            checkExcludedApp(bundleIdentifier)
+            applyFrontmostAppContext(bundleIdentifier)
         } else {
             PHTVAppContextService.invalidateFrontmostBundleCache()
-        }
-
-        if !isInExcludedApp && PHTVManager.isSmartSwitchKeyEnabled() && PHTVManager.isInited() {
-            PHTVManager.notifyActiveAppChanged()
-        }
-
-        _ = PHTVCacheStateService.invalidateSpotlightCache(dedupWindowMs: phtvSpotlightInvalidationDedupMs)
-
-        if let bundleIdentifier, !bundleIdentifier.isEmpty {
-            checkSendKeyStepByStepApp(bundleIdentifier)
-            checkUpperCaseExcludedApp(bundleIdentifier)
         }
     }
 

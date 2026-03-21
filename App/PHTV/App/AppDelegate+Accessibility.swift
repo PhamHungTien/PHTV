@@ -8,13 +8,22 @@
 import AppKit
 import Foundation
 
-private let phtvNotificationAccessibilityStatusChanged = Notification.Name("AccessibilityStatusChanged")
 private let phtvDefaultsKeyShowUIOnStartup = "ShowUIOnStartup"
 private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
 
 @MainActor private var phtvIsShowingRelaunchAlert = false
 
 @MainActor @objc extension AppDelegate {
+    @nonobjc
+    func publishTypingPermissionState(eventTapReady: Bool? = nil) {
+        let isReady = eventTapReady ?? (PHTVManager.isInited() && PHTVManager.isEventTapEnabled())
+        NotificationCenter.default.post(
+            name: NotificationName.accessibilityStatusChanged,
+            object: NSNumber(value: isReady)
+        )
+        NSLog("[Accessibility] Published typing readiness: %@", isReady ? "READY" : "WAITING")
+    }
+
     func startAccessibilityMonitoring() {
         startAccessibilityMonitoring(withInterval: currentMonitoringInterval(), resetState: true)
     }
@@ -86,9 +95,6 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
                   wasAccessibilityEnabled ? "YES" : "NO",
                   isEnabled ? "YES" : "NO")
 
-            NotificationCenter.default.post(name: phtvNotificationAccessibilityStatusChanged,
-                                            object: NSNumber(value: isEnabled))
-
             let newInterval: TimeInterval = isEnabled ? 20.0 : 1.0
             NSLog("[Accessibility] Adjusting monitoring interval to %.1fs", newInterval)
             startAccessibilityMonitoring(withInterval: newInterval, resetState: false)
@@ -97,6 +103,7 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
         if !wasAccessibilityEnabled && isEnabled {
             NSLog("[Accessibility] ✅ Permission GRANTED (via test tap) - Initializing...")
             accessibilityStableCount = 0
+            publishTypingPermissionState(eventTapReady: false)
             performAccessibilityGrantedRestart()
         } else if wasAccessibilityEnabled && !isEnabled {
             NSLog("[Accessibility] 🛑 CRITICAL - Permission REVOKED (test tap failed)!")
@@ -138,6 +145,7 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
 
             if !initSuccess {
                 NSLog("[EventTap] Failed to initialize after 3 attempts")
+                self.publishTypingPermissionState(eventTapReady: false)
 
                 let alert = NSAlert()
                 alert.messageText = "🔄 Cần khởi động lại ứng dụng"
@@ -150,16 +158,21 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
                 if response == .alertFirstButtonReturn {
                     self.relaunchAppAfterPermissionGrant()
                 } else {
+                    self.startAccessibilityMonitoring(withInterval: 1.0, resetState: false)
+                    self.requestEventTapRecovery(reason: "accessibilityGrantedInitFailed", force: true)
                     self.onControlPanelSelected()
                 }
             } else {
                 self.startAccessibilityMonitoring()
                 self.startHealthCheckMonitoring()
+                self.startInputSourceMonitoring()
                 self.requestEventTapRecovery(reason: "accessibilityGranted", force: true)
                 EmojiHotkeyBridge.refreshEmojiHotkeyRegistration()
                 self.runHotkeyHealthCheck(reason: "accessibility-granted")
                 PHTVManager.startTCCNotificationListener()
                 self.fillData(withAnimation: true)
+                self.publishTypingPermissionState(eventTapReady: true)
+                self.syncCurrentFrontmostAppContext(reason: "accessibilityGranted", forceExcludedRecheck: true)
 
                 let showUI = UserDefaults.standard.integer(forKey: phtvDefaultsKeyShowUIOnStartup)
                 if showUI == 1 {
@@ -204,6 +217,7 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
             NSLog("🛑 CRITICAL: Accessibility revoked! Stopping event tap immediately...")
             PHTVManager.stopEventTap()
         }
+        publishTypingPermissionState(eventTapReady: false)
 
         DispatchQueue.main.async {
             let alert = NSAlert()
@@ -295,8 +309,11 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
 
                     self.startAccessibilityMonitoring()
                     self.startHealthCheckMonitoring()
+                    self.startInputSourceMonitoring()
                     self.requestEventTapRecovery(reason: "accessibilityNeedsRelaunch", force: true)
                     self.fillData(withAnimation: true)
+                    self.publishTypingPermissionState(eventTapReady: true)
+                    self.syncCurrentFrontmostAppContext(reason: "accessibilityNeedsRelaunch", forceExcludedRecheck: true)
                     return
                 }
             }
@@ -316,6 +333,8 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
                 self.relaunchAppAfterPermissionGrant()
             } else {
                 NSLog("[Accessibility] User deferred relaunch")
+                self.startAccessibilityMonitoring(withInterval: 1.0, resetState: false)
+                self.requestEventTapRecovery(reason: "accessibilityNeedsRelaunch", force: true)
             }
         }
     }
