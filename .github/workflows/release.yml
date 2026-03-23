@@ -536,14 +536,14 @@ jobs:
           echo "✅ docs/$APPCAST_FILE generated and signed"
 
       - name: Upload DMG artifact
-        uses: actions/upload-artifact@v8
+        uses: actions/upload-artifact@v6
         with:
           name: dmg-${{ matrix.arch }}
           path: App/${{ steps.dmg.outputs.name }}
           retention-days: 1
 
       - name: Upload appcast artifact
-        uses: actions/upload-artifact@v8
+        uses: actions/upload-artifact@v6
         with:
           name: appcast-${{ matrix.arch }}
           path: docs/${{ matrix.appcast_file }}
@@ -551,7 +551,7 @@ jobs:
 
       - name: Upload build log
         if: always()
-        uses: actions/upload-artifact@v8
+        uses: actions/upload-artifact@v6
         with:
           name: build-log-${{ matrix.arch }}
           path: App/build-${{ matrix.arch }}.log
