@@ -147,6 +147,31 @@ final class CompatibilityStrategyTests: XCTestCase {
         XCTAssertEqual(plan.sanitizedBackspaceCount, 3)
     }
 
+    // Notion is a precomposedBatched app (isSpecialApp=true), but the legacy fix
+    // must still be enabled so that code block inspection in PHTVEventCallbackService
+    // is not skipped due to the !isSpecialApp gate.
+    func testNotionPrecomposedBatchedStillEnablesLegacyNonBrowserFix() {
+        let plan = PHTVInputStrategyService.processSignalPlan(
+            forBundleId: "notion.id",
+            keyCode: Int32(KeyCode.vKey),
+            spaceKeyCode: Int32(KeyCode.space),
+            slashKeyCode: Int32(KeyCode.slash),
+            extCode: 0,
+            backspaceCount: 4,
+            newCharCount: 1,
+            isBrowserApp: false,
+            isSpotlightTarget: false,
+            needsPrecomposedBatched: true,
+            browserFixEnabled: true
+        )
+
+        XCTAssertTrue(plan.isNotionApp, "bundle notion.id must be flagged isNotionApp")
+        XCTAssertTrue(plan.isSpecialApp, "precomposedBatched makes Notion a special app")
+        // The legacy fix bypass (!isSpecialApp || isNotionApp) must still be true
+        // so that the event callback can enter the code block inspection path.
+        XCTAssertTrue(plan.shouldTryLegacyNonBrowserFix)
+    }
+
     func testNotionCodeBlockAlwaysUsesSelectionOverwritePlan() {
         let plan = PHTVInputStrategyService.resolvedBackspacePlan(
             forBrowserAddressBarFix: false,

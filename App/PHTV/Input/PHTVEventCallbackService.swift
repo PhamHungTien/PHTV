@@ -711,7 +711,7 @@ final class PHTVEventCallbackService {
             let shouldInspectNotionCodeBlock =
                 PHTVEngineRuntimeFacade.engineDataBackspaceCount() > 0 &&
                 PHTVEngineRuntimeFacade.engineDataExtCode() != 4 &&
-                !processSignalPlan.isSpecialApp &&
+                (!processSignalPlan.isSpecialApp || processSignalPlan.isNotionApp) &&
                 !processSignalPlan.isPotentialShortcut
             var isNotionCodeBlockDetected = false
             if shouldInspectNotionCodeBlock {
