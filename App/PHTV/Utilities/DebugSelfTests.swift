@@ -59,7 +59,14 @@ enum DebugSelfTests {
 
         defaults.set(true, forKey: UserDefaultsKey.sparkleBetaChannel)
         defaults.set(false, forKey: UserDefaultsKey.autoInstallUpdates)
-        defaults.enforceStableUpdateChannel()
+        assertCondition(
+            defaults.requiresStableUpdateChannelEnforcement(),
+            "Stable channel enforcement should detect unsupported Sparkle preferences"
+        )
+        assertCondition(
+            defaults.enforceStableUpdateChannel(),
+            "Stable channel enforcement should report when it normalizes defaults"
+        )
         assertCondition(
             defaults.object(forKey: UserDefaultsKey.sparkleBetaChannel) == nil,
             "Stable channel enforcement should clear beta flag"
@@ -67,6 +74,14 @@ enum DebugSelfTests {
         assertCondition(
             defaults.bool(forKey: UserDefaultsKey.autoInstallUpdates, default: false),
             "Stable channel enforcement should force auto install"
+        )
+        assertCondition(
+            !defaults.requiresStableUpdateChannelEnforcement(),
+            "Stable channel enforcement should become a no-op after normalization"
+        )
+        assertCondition(
+            !defaults.enforceStableUpdateChannel(),
+            "Stable channel enforcement should be idempotent on normalized defaults"
         )
     }
 

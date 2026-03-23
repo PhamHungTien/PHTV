@@ -155,7 +155,7 @@ struct SettingsWindowContent: View {
             queue: .main
         ) { _ in
             Task { @MainActor in
-                applySettingsWindowBehavior(forceFront: appState.settingsWindowAlwaysOnTop)
+                applySettingsWindowBehavior(forceFront: false)
             }
         }
 
@@ -236,9 +236,9 @@ struct SettingsWindowContent: View {
                       !isClosingSettingsWindow,
                       appState.settingsWindowAlwaysOnTop,
                       !window.isMiniaturized else { return }
-                // If the window is occluded while always-on-top is enabled, bring it back.
+                // Re-assert the floating level only; forcing front here can create
+                // a focus tug-of-war with system UI and continuously invalidate layout.
                 window.level = .floating
-                window.orderFrontRegardless()
             }
         }
 

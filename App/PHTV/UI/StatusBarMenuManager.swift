@@ -36,10 +36,23 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
         menu.delegate = self
         statusItem?.menu = menu
 
-        // Keep the icon in sync with app state
-        appState.objectWillChange
+        // Keep the icon in sync only with fields that actually affect its appearance.
+        appState.$isEnabled
+            .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.updateIcon() }
+            .sink { [weak self] _ in self?.updateIcon() }
+            .store(in: &cancellables)
+
+        appState.uiState.$useVietnameseMenubarIcon
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.updateIcon() }
+            .store(in: &cancellables)
+
+        appState.uiState.$menuBarIconSize
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.updateIcon() }
             .store(in: &cancellables)
     }
 

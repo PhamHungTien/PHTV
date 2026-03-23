@@ -23,17 +23,31 @@ import Foundation
     private final class EventTapRuntimeStateBox: @unchecked Sendable {
         private let lock = NSLock()
         private var state = EventTapRuntimeState()
+        private var lastPublishedTypingReadiness: Bool?
 
         func withLock<T>(_ body: (inout EventTapRuntimeState) -> T) -> T {
             lock.lock()
             defer { lock.unlock() }
             return body(&state)
         }
+
+        func shouldPublishTypingReadiness(_ isReady: Bool) -> Bool {
+            lock.lock()
+            defer { lock.unlock() }
+            if lastPublishedTypingReadiness == isReady {
+                return false
+            }
+            lastPublishedTypingReadiness = isReady
+            return true
+        }
     }
 
     private static let runtimeState = EventTapRuntimeStateBox()
 
     private static func publishTypingReadiness(_ isReady: Bool) {
+        guard runtimeState.shouldPublishTypingReadiness(isReady) else {
+            return
+        }
         NotificationCenter.default.post(
             name: NotificationName.accessibilityStatusChanged,
             object: NSNumber(value: isReady)

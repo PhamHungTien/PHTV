@@ -39,16 +39,8 @@ struct PHTVApp: App {
     var body: some Scene {
         // Menu bar icon and menu are managed by StatusBarMenuManager (NSStatusItem + NSMenu).
         // This gives native submenu hover behavior that SwiftUI MenuBarExtra lacks.
-
-        // Settings window - managed by SwiftUI to avoid crashes
-        Window("", id: "settings") {
-            SettingsWindowContent()
-                .environmentObject(appState)
-                .frame(minWidth: 800, maxWidth: 1000, minHeight: 600, maxHeight: 900)
+        Settings {
+            EmptyView()
         }
-        .windowStyle(.hiddenTitleBar)
-        .defaultSize(width: 950, height: 680)
-        .windowResizability(.contentSize)
     }
 }
-

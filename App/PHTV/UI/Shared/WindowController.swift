@@ -60,6 +60,7 @@ class SwiftUIWindowController: NSWindowController, NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         // Restore dock icon state to user preference when closing settings
         if window?.title == "Cài đặt PHTV" || window?.title == "Cài đặt" {
+            SettingsWindowHelper.releaseSettingsWindow()
             let appDelegate = AppDelegate.current()
             let showDock = UserDefaults.standard.bool(forKey: UserDefaultsKey.showIconOnDock)
             appDelegate?.showIcon(showDock)
@@ -68,20 +69,21 @@ class SwiftUIWindowController: NSWindowController, NSWindowDelegate {
 
 }
 
-// MARK: - Convenience Factory Methods
+    // MARK: - Convenience Factory Methods
 extension SwiftUIWindowController {
     
     static func settingsWindow() -> SwiftUIWindowController {
         let controller = SwiftUIWindowController(
-            rootView: SettingsView()
+            rootView: SettingsWindowContent()
                 .environmentObject(AppState.shared)
-                .frame(minWidth: 720, minHeight: 500),
+                .frame(minWidth: 800, minHeight: 600),
             title: "Cài đặt PHTV",
-            size: NSSize(width: 820, height: 600),
+            size: NSSize(width: 950, height: 680),
             unifiedTitlebar: true
         )
         // Set minimum window size to prevent sidebar from being too narrow
-        controller.window?.minSize = NSSize(width: 720, height: 500)
+        controller.window?.identifier = NSUserInterfaceItemIdentifier("settings-window-controller")
+        controller.window?.minSize = NSSize(width: 800, height: 600)
         return controller
     }
     

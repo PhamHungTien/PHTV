@@ -11,6 +11,8 @@ import AppKit
 
 @MainActor
 enum SettingsWindowHelper {
+    private static var settingsController: SwiftUIWindowController?
+
     static func openSettingsWindow() {
         // First, try to find and show existing settings window
         for window in NSApp.windows {
@@ -41,7 +43,30 @@ enum SettingsWindowHelper {
             }
         }
 
-        // Trigger the window opening via notification that SettingsWindowOpener listens to
-        SettingsWindowOpener.shared.requestOpenWindow()
+        let controller: SwiftUIWindowController
+        if let existingController = settingsController {
+            controller = existingController
+        } else {
+            let newController = SwiftUIWindowController.settingsWindow()
+            settingsController = newController
+            controller = newController
+        }
+
+        if let window = controller.window {
+            let alwaysOnTop = UserDefaults.standard.bool(
+                forKey: UserDefaultsKey.settingsWindowAlwaysOnTop,
+                default: Defaults.settingsWindowAlwaysOnTop
+            )
+            window.level = alwaysOnTop ? .floating : .normal
+            window.hidesOnDeactivate = false
+            window.isMovableByWindowBackground = true
+            window.collectionBehavior = [.managed, .participatesInCycle, .moveToActiveSpace, .fullScreenAuxiliary]
+        }
+
+        controller.show()
+    }
+
+    static func releaseSettingsWindow() {
+        settingsController = nil
     }
 }

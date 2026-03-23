@@ -95,11 +95,11 @@ final class SystemState: ObservableObject {
 
     // MARK: - Load/Save Settings
 
-    func loadSettings(logRunOnStartupStatus: Bool = true) {
+    func loadSettings(shouldRefreshRunOnStartupStatus: Bool = true, logRunOnStartupStatus: Bool = true) {
         let defaults = UserDefaults.standard
 
         // Load system settings - use SMAppService status as source of truth.
-        if #available(macOS 13.0, *) {
+        if #available(macOS 13.0, *), shouldRefreshRunOnStartupStatus {
             refreshRunOnStartupStatus(
                 logContext: logRunOnStartupStatus ? "load-settings" : nil
             )
@@ -126,7 +126,10 @@ final class SystemState: ObservableObject {
         updateCheckFrequency = UpdateCheckFrequency.from(interval: updateInterval)
 
         // Always use stable channel and always auto-install updates.
-        defaults.enforceStableUpdateChannel()
+        if defaults.requiresStableUpdateChannelEnforcement() {
+            SettingsObserver.shared.suspendNotifications()
+            defaults.enforceStableUpdateChannel()
+        }
 
         // Load bug report settings
         includeSystemInfo = defaults.bool(
@@ -165,8 +168,11 @@ final class SystemState: ObservableObject {
 
     }
 
-    func reloadFromDefaults(logRunOnStartupStatus: Bool = true) {
-        loadSettings(logRunOnStartupStatus: logRunOnStartupStatus)
+    func reloadFromDefaults(shouldRefreshRunOnStartupStatus: Bool = true, logRunOnStartupStatus: Bool = true) {
+        loadSettings(
+            shouldRefreshRunOnStartupStatus: shouldRefreshRunOnStartupStatus,
+            logRunOnStartupStatus: logRunOnStartupStatus
+        )
     }
 
     // MARK: - Accessibility
@@ -185,8 +191,12 @@ final class SystemState: ObservableObject {
             accessibilityTrusted: axTrusted,
             eventTapReady: effectiveEventTapReady
         )
-        hasAccessibilityPermission = resolvedState.hasAccessibilityPermission
-        isTypingPermissionReady = resolvedState.isTypingPermissionReady
+        if hasAccessibilityPermission != resolvedState.hasAccessibilityPermission {
+            hasAccessibilityPermission = resolvedState.hasAccessibilityPermission
+        }
+        if isTypingPermissionReady != resolvedState.isTypingPermissionReady {
+            isTypingPermissionReady = resolvedState.isTypingPermissionReady
+        }
     }
 
     // MARK: - Login Item Monitoring

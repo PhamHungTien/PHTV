@@ -19,6 +19,8 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
     @nonobjc
     func publishTypingPermissionState(eventTapReady: Bool? = nil) {
         let isReady = eventTapReady ?? (PHTVManager.isInited() && PHTVManager.isEventTapEnabled())
+        guard lastPublishedTypingPermissionReady != isReady else { return }
+        lastPublishedTypingPermissionReady = isReady
         NotificationCenter.default.post(
             name: NotificationName.accessibilityStatusChanged,
             object: NSNumber(value: isReady)

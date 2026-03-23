@@ -414,7 +414,7 @@ enum Defaults {
     static let runOnStartup = false
     static let performLayoutCompat = false
     static let showIconOnDock = false
-    static let settingsWindowAlwaysOnTop = true
+    static let settingsWindowAlwaysOnTop = false
     static let safeMode = false
 
     // MARK: - Hotkey
@@ -531,10 +531,28 @@ extension UserDefaults {
         return defaultValue
     }
 
+    /// Returns true when Sparkle preferences need to be normalized to the stable channel.
+    func requiresStableUpdateChannelEnforcement() -> Bool {
+        if object(forKey: UserDefaultsKey.sparkleBetaChannel) != nil {
+            return true
+        }
+        return !bool(forKey: UserDefaultsKey.autoInstallUpdates, default: true)
+    }
+
     /// Always use stable update channel and auto-install updates.
-    func enforceStableUpdateChannel() {
-        removeObject(forKey: UserDefaultsKey.sparkleBetaChannel)
-        set(true, forKey: UserDefaultsKey.autoInstallUpdates)
+    @discardableResult
+    func enforceStableUpdateChannel() -> Bool {
+        guard requiresStableUpdateChannelEnforcement() else {
+            return false
+        }
+
+        if object(forKey: UserDefaultsKey.sparkleBetaChannel) != nil {
+            removeObject(forKey: UserDefaultsKey.sparkleBetaChannel)
+        }
+        if !bool(forKey: UserDefaultsKey.autoInstallUpdates, default: true) {
+            set(true, forKey: UserDefaultsKey.autoInstallUpdates)
+        }
+        return true
     }
 }
 

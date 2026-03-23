@@ -106,7 +106,10 @@ final class AppState: ObservableObject {
         inputMethodState.loadSettings()
         macroState.loadSettings()
         clipboardHistoryState.loadSettings()
-        systemState.loadSettings(logRunOnStartupStatus: logSystemSettings)
+        systemState.loadSettings(
+            shouldRefreshRunOnStartupStatus: true,
+            logRunOnStartupStatus: logSystemSettings
+        )
         uiState.loadSettings()
         appListsState.loadSettings()
 
@@ -148,10 +151,11 @@ final class AppState: ObservableObject {
     /// Monitor external UserDefaults changes and reload settings in real-time
     private func setupExternalSettingsObserver() {
         SettingsObserver.shared.$settingsDidChange
+            .compactMap { $0 }
             .debounce(for: .seconds(Timing.externalSettingsDebounce), scheduler: DispatchQueue.main)
-            .sink { [weak self] (_: Date?) in
+            .sink { [weak self] _ in
                 guard let self = self else { return }
-                self.reloadSettingsFromDefaults()
+                self.reloadSettingsFromDefaults(logSystemSettings: false)
             }
             .store(in: &cancellables)
     }
@@ -184,7 +188,10 @@ final class AppState: ObservableObject {
         inputMethodState.reloadFromDefaults()
         macroState.reloadFromDefaults()
         clipboardHistoryState.reloadFromDefaults()
-        systemState.reloadFromDefaults(logRunOnStartupStatus: logSystemSettings)
+        systemState.reloadFromDefaults(
+            shouldRefreshRunOnStartupStatus: logSystemSettings,
+            logRunOnStartupStatus: logSystemSettings
+        )
         uiState.reloadFromDefaults()
         appListsState.reloadFromDefaults()
 
