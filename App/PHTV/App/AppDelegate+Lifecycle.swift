@@ -143,6 +143,11 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
         syncRunOnStartupStatus(withFirstLaunch: isFirstLaunch)
     }
 
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        // Keep the app alive as a menu bar agent when the settings window is closed.
+        return false
+    }
+
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         _ = sender
         _ = flag
