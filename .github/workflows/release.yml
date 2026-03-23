@@ -265,13 +265,18 @@ jobs:
 
           xattr -cr "$APP_PATH"
           TEMP_DIR=$(mktemp -d)
+          trap 'rm -rf "$TEMP_DIR"' EXIT
+
+          if ! command -v create-dmg >/dev/null 2>&1; then
+            brew install create-dmg
+          fi
+
           cp -R "$APP_PATH" "$TEMP_DIR/"
-          ln -s /Applications "$TEMP_DIR/Applications"
 
           # Include a helper script so users can bypass the Gatekeeper warning
           # without an Apple developer account. Double-clicking the .command file
           # opens Terminal and removes the quarantine flag from the installed app.
-          GATEKEEPER_SCRIPT="$TEMP_DIR/fix-gatekeeper.command"
+          GATEKEEPER_SCRIPT="$TEMP_DIR/Neu-khong-mo-duoc-PHTV.command"
           printf '%s\n' \
             '#!/bin/bash' \
             'APP="/Applications/PHTV.app"' \
@@ -287,13 +292,133 @@ jobs:
             > "$GATEKEEPER_SCRIPT"
           chmod +x "$GATEKEEPER_SCRIPT"
 
-          hdiutil create -volname "PHTV" \
-            -srcfolder "$TEMP_DIR" \
-            -ov -format UDZO \
-            -imagekey zlib-level=9 \
-            "$DMG_NAME"
+          # Add a short text guide inside the DMG so users immediately know
+          # the recommended install flow.
+          INSTALL_GUIDE="$TEMP_DIR/HUONG_DAN_CAI_DAT.txt"
+          printf '%s\n' \
+            '1) Keo PHTV.app vao Applications.' \
+            '2) Mo PHTV tu Applications (hoac Launchpad).' \
+            '3) Neu macOS canh bao khong mo duoc app, chay Neu-khong-mo-duoc-PHTV.command.' \
+            > "$INSTALL_GUIDE"
 
-          rm -rf "$TEMP_DIR"
+          # Build a visual DMG background (Vietnamese instructions + drag arrow)
+          # so users immediately understand the install flow.
+          BACKGROUND_IMG="$TEMP_DIR/dmg-background.png"
+          swift - "$BACKGROUND_IMG" <<'SWIFT'
+          import AppKit
+          import Foundation
+
+          guard CommandLine.arguments.count > 1 else {
+            fputs("Missing output file path\n", stderr)
+            exit(1)
+          }
+
+          let outputPath = CommandLine.arguments[1]
+          let width: CGFloat = 760
+          let height: CGFloat = 440
+          let canvasRect = NSRect(x: 0, y: 0, width: width, height: height)
+
+          guard let bitmap = NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: Int(width),
+            pixelsHigh: Int(height),
+            bitsPerSample: 8,
+            samplesPerPixel: 4,
+            hasAlpha: true,
+            isPlanar: false,
+            colorSpaceName: .deviceRGB,
+            bytesPerRow: 0,
+            bitsPerPixel: 0
+          ) else {
+            fputs("Unable to allocate bitmap for DMG background\n", stderr)
+            exit(1)
+          }
+
+          guard let context = NSGraphicsContext(bitmapImageRep: bitmap) else {
+            fputs("Unable to create graphics context for DMG background\n", stderr)
+            exit(1)
+          }
+
+          NSGraphicsContext.saveGraphicsState()
+          NSGraphicsContext.current = context
+
+          let background = NSGradient(colors: [
+            NSColor(calibratedRed: 0.95, green: 0.98, blue: 1.00, alpha: 1.0),
+            NSColor(calibratedRed: 0.88, green: 0.94, blue: 1.00, alpha: 1.0)
+          ])!
+          background.draw(in: canvasRect, angle: 90)
+
+          let titlePanel = NSBezierPath(
+            roundedRect: NSRect(x: 24, y: 294, width: width - 48, height: 118),
+            xRadius: 18,
+            yRadius: 18
+          )
+          NSColor(calibratedWhite: 1.0, alpha: 0.80).setFill()
+          titlePanel.fill()
+
+          let titleAttributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 30, weight: .semibold),
+            .foregroundColor: NSColor(calibratedRed: 0.10, green: 0.21, blue: 0.37, alpha: 1.0)
+          ]
+          let subtitleAttributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 15, weight: .medium),
+            .foregroundColor: NSColor(calibratedRed: 0.19, green: 0.31, blue: 0.48, alpha: 1.0)
+          ]
+
+          "Keo PHTV vao Applications de cai dat"
+            .draw(at: NSPoint(x: 48, y: 358), withAttributes: titleAttributes)
+          "Neu macOS chan app, chay Neu-khong-mo-duoc-PHTV."
+            .draw(at: NSPoint(x: 50, y: 325), withAttributes: subtitleAttributes)
+
+          let arrowColor = NSColor(calibratedRed: 0.13, green: 0.52, blue: 0.93, alpha: 0.95)
+          let arrowLine = NSBezierPath()
+          arrowLine.lineWidth = 14
+          arrowLine.lineCapStyle = .round
+          arrowLine.move(to: NSPoint(x: 286, y: 218))
+          arrowLine.line(to: NSPoint(x: 518, y: 218))
+          arrowColor.setStroke()
+          arrowLine.stroke()
+
+          let arrowHead = NSBezierPath()
+          arrowHead.move(to: NSPoint(x: 518, y: 218))
+          arrowHead.line(to: NSPoint(x: 480, y: 244))
+          arrowHead.line(to: NSPoint(x: 480, y: 192))
+          arrowHead.close()
+          arrowColor.setFill()
+          arrowHead.fill()
+
+          NSGraphicsContext.restoreGraphicsState()
+
+          guard let pngData = bitmap.representation(using: .png, properties: [:]) else {
+            fputs("Unable to generate DMG background image\n", stderr)
+            exit(1)
+          }
+
+          do {
+            try pngData.write(to: URL(fileURLWithPath: outputPath), options: .atomic)
+          } catch {
+            fputs("Failed to write DMG background image: \(error)\n", stderr)
+            exit(1)
+          }
+          SWIFT
+
+          create-dmg \
+            --overwrite \
+            --hdiutil-quiet \
+            --volname "PHTV" \
+            --window-pos 200 120 \
+            --window-size 760 440 \
+            --background "$BACKGROUND_IMG" \
+            --icon-size 108 \
+            --text-size 14 \
+            --icon "PHTV.app" 170 220 \
+            --app-drop-link 590 220 \
+            --icon "Neu-khong-mo-duoc-PHTV.command" 185 360 \
+            --hide-extension "Neu-khong-mo-duoc-PHTV.command" \
+            --icon "HUONG_DAN_CAI_DAT.txt" 590 360 \
+            --hide-extension "HUONG_DAN_CAI_DAT.txt" \
+            "$DMG_NAME" \
+            "$TEMP_DIR"
 
           SIZE=$(stat -f%z "$DMG_NAME")
           echo "name=$DMG_NAME" >> "$GITHUB_OUTPUT"
