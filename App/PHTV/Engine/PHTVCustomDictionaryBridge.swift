@@ -3,6 +3,8 @@
 //  PHTV
 //
 //  Swift runtime storage for custom English/Vietnamese dictionary words.
+//  Created by Phạm Hùng Tiến on 2026.
+//  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
 import Foundation

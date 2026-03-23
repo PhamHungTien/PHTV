@@ -3,6 +3,7 @@
 //
 // @_cdecl exports providing the phtvEngine* C-callable interface.
 // Created by Phạm Hùng Tiến on 2026.
+// Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 
 // MARK: - Engine event type constants (ported from PHTVEngineCBridge.inc)
 let PHTV_ENGINE_EVENT_KEYBOARD: Int32          = 0

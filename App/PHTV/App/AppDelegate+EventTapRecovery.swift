@@ -3,6 +3,8 @@
 //  PHTV
 //
 //  Self-healing event tap recovery for startup/wake/app-active transitions.
+//  Created by Phạm Hùng Tiến on 2026.
+//  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
 import AppKit

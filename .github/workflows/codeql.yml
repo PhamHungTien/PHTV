@@ -1,3 +1,7 @@
+# PHTV CodeQL workflow
+# Author: Phạm Hùng Tiến
+# Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
+
 name: CodeQL
 
 on:

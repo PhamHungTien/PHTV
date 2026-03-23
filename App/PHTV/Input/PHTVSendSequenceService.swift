@@ -3,6 +3,8 @@
 //  PHTV
 //
 //  Shared execution-plan helpers for step-by-step synthetic text sending.
+//  Created by Phạm Hùng Tiến on 2026.
+//  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
 import Foundation

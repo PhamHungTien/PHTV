@@ -3,6 +3,8 @@
 //  PHTV
 //
 //  Swift facade over C++ interop runtime/engine functions.
+//  Created by Phạm Hùng Tiến on 2026.
+//  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
 import Foundation

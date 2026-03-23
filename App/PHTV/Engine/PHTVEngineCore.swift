@@ -3,6 +3,7 @@
 //
 // Ported from Engine.cpp + 53 .inc files (~3900 lines C++)
 // Created by Phạm Hùng Tiến on 2026.
+// Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 
 import Foundation
 

@@ -4,6 +4,8 @@
 //
 //  Runtime helpers for Smart Switch state transitions and persistence.
 //  Swift-native SmartSwitch state transition and persistence runtime.
+//  Created by Phạm Hùng Tiến on 2026.
+//  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
 import Foundation

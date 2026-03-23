@@ -3,6 +3,8 @@
 //  PHTV
 //
 //  Runtime state bridge methods for PHTVManager.
+//  Created by Phạm Hùng Tiến on 2026.
+//  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
 import Foundation

@@ -3,6 +3,8 @@
 //  PHTV
 //
 //  Reads macOS Text Replacements and merges them into the runtime macro map.
+//  Created by Phạm Hùng Tiến on 2026.
+//  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
 import Foundation

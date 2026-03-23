@@ -3,6 +3,7 @@
 //
 // Port of tests/engine/EngineRegressionTests.cpp → Swift XCTest
 // Created by Phạm Hùng Tiến on 2026.
+// Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 
 import XCTest
 @testable import PHTV

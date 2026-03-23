@@ -6,6 +6,8 @@
 //  Menu bar UI is now fully owned by SwiftUI MenuBarExtra, but some
 //  Objective-C-era runtime paths still call these selectors to request a UI
 //  refresh after backend state changes.
+//  Created by Phạm Hùng Tiến on 2026.
+//  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
 import Foundation

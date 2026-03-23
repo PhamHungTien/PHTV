@@ -3,6 +3,7 @@
 //
 // Ported from VietnameseData.inc + EngineDataTypes.inc + EngineMacKeyCodes.inc + EngineInternalMasks.inc
 // Created by Phạm Hùng Tiến on 2026.
+// Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 
 // MARK: - Constants
 

@@ -3,6 +3,8 @@
 //  PHTV
 //
 //  Centralized app-context queries for focused app and cached characteristics.
+//  Created by Phạm Hùng Tiến on 2026.
+//  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
 import AppKit
