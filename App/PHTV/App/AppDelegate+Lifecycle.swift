@@ -42,7 +42,8 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
         let isFirstLaunch = !defaults.bool(forKey: phtvDefaultsKeyNonFirstTime)
         needsRelaunchAfterPermission = isFirstLaunch && !PHTVManager.canCreateEventTap()
 
-        // SwiftUI MenuBarExtra is the single source of truth for menu bar UI.
+        // Set up NSStatusItem + NSMenu (replaces SwiftUI MenuBarExtra for proper submenu hover).
+        StatusBarMenuManager.shared.setup()
 
         registerSupportedNotification()
 
