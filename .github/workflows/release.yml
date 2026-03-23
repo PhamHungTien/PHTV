@@ -11,6 +11,11 @@ on:
         required: true
         type: string
 
+# Prevent concurrent releases from racing on appcast commits.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
@@ -44,12 +49,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Select Latest Xcode
-        run: |
-          LATEST_XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
-          echo "Using Xcode at $LATEST_XCODE"
-          sudo xcode-select -s "$LATEST_XCODE/Contents/Developer"
-          xcodebuild -version
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
 
       - name: Determine version
         id: version
@@ -205,9 +208,6 @@ jobs:
             CODE_SIGN_IDENTITY="${{ steps.certificate.outputs.identity }}" \
             OTHER_CODE_SIGN_FLAGS="--keychain ${{ steps.certificate.outputs.keychain }}" \
             DEVELOPMENT_TEAM="" \
-            STRIP_SWIFT_SYMBOLS=NO \
-            COPY_PHASE_STRIP=NO \
-            STRIP_INSTALLED_PRODUCT=NO \
             COMPILER_INDEX_STORE_ENABLE=NO \
             clean build \
             2>&1 | tee build-${{ matrix.arch }}.log
@@ -267,6 +267,25 @@ jobs:
           TEMP_DIR=$(mktemp -d)
           cp -R "$APP_PATH" "$TEMP_DIR/"
           ln -s /Applications "$TEMP_DIR/Applications"
+
+          # Include a helper script so users can bypass the Gatekeeper warning
+          # without an Apple developer account. Double-clicking the .command file
+          # opens Terminal and removes the quarantine flag from the installed app.
+          GATEKEEPER_SCRIPT="$TEMP_DIR/fix-gatekeeper.command"
+          printf '%s\n' \
+            '#!/bin/bash' \
+            'APP="/Applications/PHTV.app"' \
+            'if [ ! -d "$APP" ]; then' \
+            '  echo "Khong tim thay PHTV.app trong /Applications."' \
+            '  echo "Hay keo PHTV vao Applications truoc, roi chay lai file nay."' \
+            '  read -p "Nhan Enter de dong..."' \
+            '  exit 1' \
+            'fi' \
+            'xattr -dr com.apple.quarantine "$APP"' \
+            'echo "Xong! Mo PHTV tu Applications hoac Launchpad nhu binh thuong."' \
+            'read -p "Nhan Enter de dong..."' \
+            > "$GATEKEEPER_SCRIPT"
+          chmod +x "$GATEKEEPER_SCRIPT"
 
           hdiutil create -volname "PHTV" \
             -srcfolder "$TEMP_DIR" \
@@ -392,14 +411,14 @@ jobs:
           echo "✅ docs/$APPCAST_FILE generated and signed"
 
       - name: Upload DMG artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v8
         with:
           name: dmg-${{ matrix.arch }}
           path: App/${{ steps.dmg.outputs.name }}
           retention-days: 1
 
       - name: Upload appcast artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v8
         with:
           name: appcast-${{ matrix.arch }}
           path: docs/${{ matrix.appcast_file }}
@@ -407,7 +426,7 @@ jobs:
 
       - name: Upload build log
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v8
         with:
           name: build-log-${{ matrix.arch }}
           path: App/build-${{ matrix.arch }}.log

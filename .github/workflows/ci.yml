@@ -141,36 +141,11 @@ jobs:
           pkill -x PHTV >/dev/null 2>&1 || true
           defaults delete "$DEFAULTS_DOMAIN" >/dev/null 2>&1 || true
 
-      - name: Upload build log (attempt 1)
-        id: upload_build_log_1
+      - name: Upload build log
         if: always()
         continue-on-error: true
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v8
         with:
           name: ci-build-log
           path: App/build.log
           retention-days: 7
-
-      - name: Upload build log (attempt 2)
-        id: upload_build_log_2
-        if: always() && steps.upload_build_log_1.outcome == 'failure'
-        continue-on-error: true
-        uses: actions/upload-artifact@v7
-        with:
-          name: ci-build-log
-          path: App/build.log
-          retention-days: 7
-
-      - name: Upload build log (attempt 3)
-        if: always() && steps.upload_build_log_1.outcome == 'failure' && steps.upload_build_log_2.outcome == 'failure'
-        continue-on-error: true
-        uses: actions/upload-artifact@v7
-        with:
-          name: ci-build-log
-          path: App/build.log
-          retention-days: 7
-
-      - name: Artifact upload warning
-        if: always() && steps.upload_build_log_1.outcome == 'failure' && steps.upload_build_log_2.outcome == 'failure'
-        run: |
-          echo "⚠️ Upload build log artifact failed due network/DNS (best effort only)."
