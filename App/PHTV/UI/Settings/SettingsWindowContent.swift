@@ -52,6 +52,8 @@ struct SettingsWindowContent: View {
                         // CRITICAL: Ensure window doesn't hide when app loses focus
                         window.hidesOnDeactivate = false
                         window.collectionBehavior = [.managed, .participatesInCycle, .moveToActiveSpace, .fullScreenAuxiliary]
+                        // Remember position/size across sessions (HIG: windows restore last frame)
+                        window.setFrameAutosaveName("PHSettingsWindow")
                         window.makeKeyAndOrderFront(nil)
                         break
                     }

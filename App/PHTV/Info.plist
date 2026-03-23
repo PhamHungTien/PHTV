@@ -37,20 +37,13 @@
 	<key>NSAccessibilityUsageDescription</key>
 	<string>PHTV needs Accessibility permissions to intercept keyboard events and provide Vietnamese input.</string>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>Used for keyboard</string>
+	<string>PHTV uses Apple Events to communicate with supported apps for improved Vietnamese text input.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2026 Phạm Hùng Tiến. All rights reserved.</string>
 	<key>NSHumanReadableDescription</key>
 	<string>Vietnamese input method with Telex, VNI support for macOS</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
-	<key>SKAdNetworkItems</key>
-	<array>
-		<dict>
-			<key>SKAdNetworkIdentifier</key>
-			<string>phamhungtien.github.io</string>
-		</dict>
-	</array>
 	<key>SUAllowsAutomaticUpdates</key>
 	<true/>
 	<key>SUAutomaticallyUpdate</key>
