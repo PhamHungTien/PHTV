@@ -512,7 +512,11 @@ final class PHTVAccessibilityService: NSObject {
         case "AXTextField", "AXSearchField":
             return !strictDetection
         default:
-            return true
+            // In strict mode (e.g. Cốc Cốc) only explicitly-identified roles are
+            // treated as address bars. Unknown roles like AXRow/AXList that appear
+            // in search-history dropdowns are rejected so the browser fix is not
+            // incorrectly applied to suggestion fields.
+            return !strictDetection
         }
     }
 

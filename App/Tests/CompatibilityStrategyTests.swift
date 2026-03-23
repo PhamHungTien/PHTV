@@ -87,6 +87,46 @@ final class CompatibilityStrategyTests: XCTestCase {
         )
     }
 
+    // Cốc Cốc: AXRow/AXList/AXGroup (search-history dropdown items) must NOT be
+    // treated as address bars in strict mode — this prevented the browser fix from
+    // incorrectly firing inside suggestion/history fields.
+    func testStrictAddressBarDetectionRejectsUnknownRoleOutsideWebArea() {
+        for role in ["AXRow", "AXList", "AXOutline", "AXGroup", "AXStaticText", "AXMenuItem"] {
+            XCTAssertFalse(
+                PHTVAccessibilityService.addressBarClassification(
+                    role: role,
+                    positiveKeywordMatch: false,
+                    foundWebArea: false,
+                    strictDetection: true
+                ),
+                "Expected strict mode to reject role '\(role)' as address bar"
+            )
+        }
+    }
+
+    func testLegacyAddressBarDetectionAcceptsUnknownRoleAsAddressBar() {
+        for role in ["AXRow", "AXList", "AXOutline", "AXGroup"] {
+            XCTAssertTrue(
+                PHTVAccessibilityService.addressBarClassification(
+                    role: role,
+                    positiveKeywordMatch: false,
+                    foundWebArea: false,
+                    strictDetection: false
+                ),
+                "Expected non-strict mode to accept role '\(role)' as potential address bar"
+            )
+        }
+    }
+
+    func testComboBoxAlwaysAddressBarRegardlessOfStrictMode() {
+        XCTAssertTrue(PHTVAccessibilityService.addressBarClassification(
+            role: "AXComboBox", positiveKeywordMatch: false, foundWebArea: false, strictDetection: true
+        ))
+        XCTAssertTrue(PHTVAccessibilityService.addressBarClassification(
+            role: "AXComboBox", positiveKeywordMatch: false, foundWebArea: false, strictDetection: false
+        ))
+    }
+
     func testUnicodeCompoundLegacyBackspaceUsesSelectionOverwritePlan() {
         let plan = PHTVInputStrategyService.resolvedBackspacePlan(
             forBrowserAddressBarFix: false,
