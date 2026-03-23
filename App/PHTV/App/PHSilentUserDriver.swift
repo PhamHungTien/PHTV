@@ -2,7 +2,7 @@
 //  PHSilentUserDriver.swift
 //  PHTV
 //
-//  Swift port of PHSilentUserDriver.m.
+//  Silent Sparkle update user driver.
 //  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //

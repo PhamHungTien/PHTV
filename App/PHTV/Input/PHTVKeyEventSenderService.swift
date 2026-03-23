@@ -3,7 +3,6 @@
 //  PHTV
 //
 //  Swift implementation of keyboard event sending helpers.
-//  Migrated from PHTV.mm — all Send* helpers live here.
 //  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //

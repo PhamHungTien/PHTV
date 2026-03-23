@@ -5,7 +5,7 @@
 // Created by Phạm Hùng Tiến on 2026.
 // Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 
-// MARK: - Engine event type constants (ported from PHTVEngineCBridge.inc)
+// MARK: - Engine event type constants
 let PHTV_ENGINE_EVENT_KEYBOARD: Int32          = 0
 let PHTV_ENGINE_EVENT_MOUSE: Int32             = 1
 let PHTV_ENGINE_EVENT_STATE_KEY_DOWN: Int32    = 0

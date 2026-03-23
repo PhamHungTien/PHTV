@@ -2,7 +2,7 @@
 //  PHTVEventContextBridgeService.swift
 //  PHTV
 //
-//  Consolidates Accessibility and Spotlight helper calls for PHTV.mm.
+//  Consolidates Accessibility and Spotlight helper calls.
 //  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //

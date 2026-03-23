@@ -2,7 +2,7 @@
 //  PHTVEngineRuntimeFacade.swift
 //  PHTV
 //
-//  Swift facade over C++ interop runtime/engine functions.
+//  Runtime state and engine bridge facade.
 //  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //

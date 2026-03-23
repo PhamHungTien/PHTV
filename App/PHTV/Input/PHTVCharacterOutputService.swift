@@ -3,7 +3,6 @@
 //  PHTV
 //
 //  Character output logic: sendNewCharString and handleMacro.
-//  Migrated from PHTV.mm.
 //  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //

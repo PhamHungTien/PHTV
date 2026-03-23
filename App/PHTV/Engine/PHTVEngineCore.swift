@@ -1,13 +1,13 @@
 // PHTVEngineCore.swift
 // PHTV
 //
-// Ported from Engine.cpp + 53 .inc files (~3900 lines C++)
+// Core Vietnamese input processing engine.
 // Created by Phạm Hùng Tiến on 2026.
 // Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 
 import Foundation
 
-// MARK: - Processing Char Table (EngineInputKeyMacros.inc)
+// MARK: - Processing Char Table
 
 private let processingChar: [[UInt16]] = [
     // Telex (0): s f r x j a o e w d z
@@ -78,7 +78,7 @@ final class PHTVVietnameseEngine {
     // MARK: Session-scoped vars
     var capsElem: Int = 0
     var markElem: Int = 0
-    var keyVal: Int = 0         // "key" in C++ (avoid keyword collision)
+    var keyVal: Int = 0
     var isCorect: Bool = false
     var isChanged: Bool = false
     var vowelCount: Int = 0

@@ -2,7 +2,7 @@
 //  AppDelegate+PermissionFlow.swift
 //  PHTV
 //
-//  Swift port of AppDelegate+PermissionFlow.mm.
+//  Permission request and recovery flow.
 //  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //

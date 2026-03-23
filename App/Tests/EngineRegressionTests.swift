@@ -1,7 +1,7 @@
 // EngineRegressionTests.swift
 // PHEngineTests
 //
-// Port of tests/engine/EngineRegressionTests.cpp → Swift XCTest
+// Engine regression coverage using XCTest
 // Created by Phạm Hùng Tiến on 2026.
 // Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 
@@ -29,7 +29,7 @@ final class EngineRegressionTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        // Reset runtime to defaults matching the C++ test binary defaults
+        // Reset runtime to known defaults for each test.
         PHTVEngineRuntimeFacade.setCurrentInputType(0)          // Telex
         PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(1)
         PHTVEngineRuntimeFacade.setCheckSpelling(1)

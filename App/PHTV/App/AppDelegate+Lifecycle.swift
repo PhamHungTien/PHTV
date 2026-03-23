@@ -2,7 +2,7 @@
 //  AppDelegate+Lifecycle.swift
 //  PHTV
 //
-//  Swift port of AppDelegate lifecycle methods.
+//  Application lifecycle coordination.
 //  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //

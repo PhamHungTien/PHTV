@@ -2,7 +2,7 @@
 //  AppDelegate+Defaults.swift
 //  PHTV
 //
-//  Swift port of AppDelegate+Defaults.mm.
+//  Default configuration helpers.
 //  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //

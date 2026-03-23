@@ -2,7 +2,7 @@
 //  AppDelegate+DockVisibility.swift
 //  PHTV
 //
-//  Swift port of AppDelegate+DockVisibility.mm.
+//  Dock visibility and window activation behavior.
 //  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //

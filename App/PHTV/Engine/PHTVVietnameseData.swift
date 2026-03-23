@@ -1,7 +1,7 @@
 // PHTVVietnameseData.swift
 // PHTV
 //
-// Ported from VietnameseData.inc + EngineDataTypes.inc + EngineMacKeyCodes.inc + EngineInternalMasks.inc
+// Core engine constants and key-code tables.
 // Created by Phạm Hùng Tiến on 2026.
 // Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 

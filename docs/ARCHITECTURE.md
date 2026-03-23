@@ -2,14 +2,14 @@
 
 ## Tổng quan
 
-PHTV là bộ gõ tiếng Việt cho macOS, xây dựng **100% bằng Swift**. Engine xử lý tiếng Việt đã được port hoàn toàn sang Swift, không còn phụ thuộc C/C++.
+PHTV là bộ gõ tiếng Việt cho macOS, được xây dựng bằng Swift. Mã nguồn được tổ chức theo từng lớp trách nhiệm rõ ràng để dễ bảo trì, kiểm thử và mở rộng.
 
 ## Cấu trúc thư mục
 
 ```text
 App/PHTV/
 ├── App/                      # AppDelegate và vòng đời ứng dụng
-├── Engine/                   # Engine xử lý tiếng Việt (Swift) + C bridge header
+├── Engine/                   # Engine xử lý tiếng Việt và bridge header
 ├── Input/                    # EventTap, Hotkey, xử lý phím đầu vào
 ├── Context/                  # App context, Spotlight detection, Smart Switch
 ├── System/                   # Permission, TCC, Safe Mode, binary integrity
@@ -104,8 +104,8 @@ SwiftUI views. Không chứa business logic. Nhận state từ `State/` và gọ
 
 ## Quy tắc thiết kế
 
-1. **100% Swift** — Không còn C/C++ source trong app target. C bridge header (`PHTVEngineCBridge.inc`) chỉ khai báo API, implementation là Swift.
-2. **Engine không phụ thuộc platform.** Swift gọi qua C bridge (`phtvEngine*`, `phtvRuntime*`, `phtvDictionary*`) để giữ ABI ổn định.
+1. **Phân lớp theo trách nhiệm** — Engine, Input, Context, System, UI và Manager được tách rõ để giới hạn phạm vi thay đổi.
+2. **Bridge ổn định** — Engine giao tiếp qua các API bridge (`phtvEngine*`, `phtvRuntime*`, `phtvDictionary*`) để giữ ranh giới rõ ràng giữa các lớp.
 3. **`@MainActor`** trên `AppDelegate` và các service chạy trên main thread.
 4. **`MainActor.assumeIsolated`** dùng trong EventTap callback (tap chạy trên main run loop).
 5. **`nonisolated(unsafe)`** cho static vars trong các service không có actor isolation.
@@ -130,7 +130,3 @@ xcodebuild -project App/PHTV.xcodeproj -scheme PHTV -destination 'platform=macOS
 # Chạy regression tests
 xcodebuild -project App/PHTV.xcodeproj -scheme PHTV -configuration Debug -destination 'platform=macOS' test -only-testing:PHEngineTests/EngineRegressionTests
 ```
-
-## Migration Status
-
-Engine đã được port **hoàn toàn sang Swift**. Không còn file `.cpp`/`.cc`/`.h`/`.hpp` trong app target. Xem lịch sử migration chi tiết tại [ENGINE_SWIFT_MIGRATION.md](ENGINE_SWIFT_MIGRATION.md).

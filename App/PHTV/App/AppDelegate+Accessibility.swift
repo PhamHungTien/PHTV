@@ -2,7 +2,7 @@
 //  AppDelegate+Accessibility.swift
 //  PHTV
 //
-//  Swift port of AppDelegate+Accessibility.mm.
+//  Accessibility permission flow and monitoring.
 //  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //

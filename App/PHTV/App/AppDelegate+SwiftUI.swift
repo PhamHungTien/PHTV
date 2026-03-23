@@ -12,7 +12,7 @@ import AppKit
 // Extension to bridge SwiftUI with existing Objective-C AppDelegate
 extension AppDelegate {
     /// Legacy bridge observers kept for backward compatibility experiments.
-    /// Main notification wiring now lives in `AppDelegate.mm` + ObjC categories.
+    /// Main notification wiring lives in the shared AppDelegate notification layer.
     func setupLegacySwiftUINotificationBridge() {
         // Subscribe to notifications from SwiftUI
         NotificationCenter.default.addObserver(

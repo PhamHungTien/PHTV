@@ -2,7 +2,7 @@
 //  PHTVCoreSettingsBootstrapService.swift
 //  PHTV
 //
-//  Bootstraps core runtime settings in C++ engine from UserDefaults.
+//  Bootstraps runtime settings from UserDefaults.
 //  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //

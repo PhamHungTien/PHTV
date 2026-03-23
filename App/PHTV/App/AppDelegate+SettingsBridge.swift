@@ -2,7 +2,7 @@
 //  AppDelegate+SettingsBridge.swift
 //  PHTV
 //
-//  Swift port of AppDelegate+SettingsBridge.mm.
+//  Settings bridge and coordination helpers.
 //  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //

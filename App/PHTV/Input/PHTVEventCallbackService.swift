@@ -3,7 +3,6 @@
 //  PHTV
 //
 //  Main event tap callback logic.
-//  Migrated from PHTV.mm (PHTVCallback, ConvertEventToKeyboardLayoutCompatKeyCode).
 //  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //

@@ -2,7 +2,7 @@
 //  AppDelegate+RuntimeSettings.swift
 //  PHTV
 //
-//  Swift port of AppDelegate+RuntimeSettings.mm.
+//  Runtime settings loading helpers.
 //  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //

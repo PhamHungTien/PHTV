@@ -2,7 +2,7 @@
 //  AppDelegate+LoginItem.swift
 //  PHTV
 //
-//  Swift port of AppDelegate+LoginItem.mm.
+//  Login item registration and status sync.
 //  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
