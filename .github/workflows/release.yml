@@ -402,8 +402,11 @@ jobs:
           }
           SWIFT
 
+          # create-dmg (Homebrew 1.2.x) does not support --overwrite.
+          # Remove any stale file first for compatibility across runners.
+          rm -f "$DMG_NAME"
+
           create-dmg \
-            --overwrite \
             --hdiutil-quiet \
             --volname "PHTV" \
             --window-pos 200 120 \
