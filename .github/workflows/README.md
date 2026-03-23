@@ -27,7 +27,7 @@ Workflow release hiện đã được đồng bộ theo mẫu LunarV, với cấ
 
 1. Build app bằng `xcodebuild` (Release, manual signing)
 2. Verify code signature của `PHTV.app`
-3. Tạo `PHTV-<version>-arm64.dmg` và `PHTV-<version>-intel.dmg` (nền hướng dẫn kéo-thả vào `Applications`, kèm `Neu-khong-mo-duoc-PHTV.command`)
+3. Tạo `PHTV-<version>-arm64.dmg` và `PHTV-<version>-intel.dmg` (nền hướng dẫn kéo-thả vào `Applications`, kèm file `Nhấp Đúp Nếu PHTV Không Mở Được`)
 4. Generate + sign `docs/appcast.xml` và `docs/appcast-intel.xml` bằng Sparkle `generate_appcast`
 5. Upload DMG assets lên GitHub Release
 6. Commit appcasts lên `main`

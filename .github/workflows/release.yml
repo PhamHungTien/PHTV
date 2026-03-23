@@ -262,6 +262,8 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           APP_PATH="./build-${{ matrix.arch }}/Build/Products/Release/PHTV.app"
           DMG_NAME="PHTV-$VERSION-${{ matrix.asset_suffix }}.dmg"
+          export LANG="en_US.UTF-8"
+          export LC_ALL="en_US.UTF-8"
 
           xattr -cr "$APP_PATH"
           TEMP_DIR=$(mktemp -d)
@@ -276,29 +278,56 @@ jobs:
           # Include a helper script so users can bypass the Gatekeeper warning
           # without an Apple developer account. Double-clicking the .command file
           # opens Terminal and removes the quarantine flag from the installed app.
-          GATEKEEPER_SCRIPT="$TEMP_DIR/Neu-khong-mo-duoc-PHTV.command"
+          GATEKEEPER_SCRIPT="$TEMP_DIR/Nhấp Đúp Nếu PHTV Không Mở Được.command"
           printf '%s\n' \
             '#!/bin/bash' \
+            'printf "\e]0;PHTV Fix\a"' \
+            'clear' \
             'APP="/Applications/PHTV.app"' \
+            '' \
+            'line() {' \
+            '  printf "%*s\n" "${COLUMNS:-72}" "" | tr " " "─"' \
+            '}' \
+            '' \
+            'echo ""' \
+            'line' \
+            'echo "  FIX CHO PHTV"' \
+            'line' \
+            'echo "  File này dùng để sửa lỗi macOS chặn mở PHTV."' \
+            'echo "  Nếu được hỏi mật khẩu, hãy nhập mật khẩu đăng nhập Mac của bạn."' \
+            'echo ""' \
             'if [ ! -d "$APP" ]; then' \
-            '  echo "Khong tim thay PHTV.app trong /Applications."' \
-            '  echo "Hay keo PHTV vao Applications truoc, roi chay lai file nay."' \
-            '  read -p "Nhan Enter de dong..."' \
+            '  echo "Không tìm thấy PHTV.app trong /Applications."' \
+            '  echo "Hãy kéo PHTV vào Applications trước, rồi nhấp đúp lại file \"Nhấp Đúp Nếu PHTV Không Mở Được\"."' \
+            '  echo ""' \
+            '  read -p "Nhấn Enter để đóng..."' \
             '  exit 1' \
             'fi' \
+            'echo "Đang áp dụng sửa lỗi cho:"' \
+            'echo "  $APP"' \
+            'echo ""' \
+            'xattr -cr "$APP"' \
             'xattr -dr com.apple.quarantine "$APP"' \
-            'echo "Xong! Mo PHTV tu Applications hoac Launchpad nhu binh thuong."' \
-            'read -p "Nhan Enter de dong..."' \
+            'STATUS=$?' \
+            'echo ""' \
+            'if [ "$STATUS" -eq 0 ]; then' \
+            '  echo "Hoàn tất. Bây giờ bạn có thể mở PHTV từ Applications hoặc Launchpad như bình thường."' \
+            '  echo "Nếu macOS vẫn chặn, vào Cài đặt hệ thống > Quyền riêng tư & Bảo mật > Bảo mật rồi bấm Vẫn mở."' \
+            'else' \
+            '  echo "Không thể tự động sửa lỗi mở app."' \
+            '  echo "Hãy vào Cài đặt hệ thống > Quyền riêng tư & Bảo mật > Bảo mật rồi bấm Vẫn mở."' \
+            'fi' \
+            'read -p "Nhấn Enter để đóng..."' \
             > "$GATEKEEPER_SCRIPT"
           chmod +x "$GATEKEEPER_SCRIPT"
 
           # Add a short text guide inside the DMG so users immediately know
           # the recommended install flow.
-          INSTALL_GUIDE="$TEMP_DIR/HUONG_DAN_CAI_DAT.txt"
+          INSTALL_GUIDE="$TEMP_DIR/Hướng dẫn cài đặt.txt"
           printf '%s\n' \
-            '1) Keo PHTV.app vao Applications.' \
-            '2) Mo PHTV tu Applications (hoac Launchpad).' \
-            '3) Neu macOS canh bao khong mo duoc app, chay Neu-khong-mo-duoc-PHTV.command.' \
+            '1) Kéo PHTV.app vào Applications.' \
+            '2) Mở PHTV từ Applications (hoặc Launchpad).' \
+            '3) Nếu không mở được app, hãy nhấp đúp vào file "Nhấp Đúp Nếu PHTV Không Mở Được".' \
             > "$INSTALL_GUIDE"
 
           # Build a visual DMG background (Vietnamese instructions + drag arrow)
@@ -314,8 +343,8 @@ jobs:
           }
 
           let outputPath = CommandLine.arguments[1]
-          let width: CGFloat = 760
-          let height: CGFloat = 440
+          let width: CGFloat = 900
+          let height: CGFloat = 520
           let canvasRect = NSRect(x: 0, y: 0, width: width, height: height)
 
           guard let bitmap = NSBitmapImageRep(
@@ -349,7 +378,7 @@ jobs:
           background.draw(in: canvasRect, angle: 90)
 
           let titlePanel = NSBezierPath(
-            roundedRect: NSRect(x: 24, y: 294, width: width - 48, height: 118),
+            roundedRect: NSRect(x: 30, y: 352, width: width - 60, height: 138),
             xRadius: 18,
             yRadius: 18
           )
@@ -365,24 +394,26 @@ jobs:
             .foregroundColor: NSColor(calibratedRed: 0.19, green: 0.31, blue: 0.48, alpha: 1.0)
           ]
 
-          "Keo PHTV vao Applications de cai dat"
-            .draw(at: NSPoint(x: 48, y: 358), withAttributes: titleAttributes)
-          "Neu macOS chan app, chay Neu-khong-mo-duoc-PHTV."
-            .draw(at: NSPoint(x: 50, y: 325), withAttributes: subtitleAttributes)
+          "Kéo PHTV vào Applications để cài đặt"
+            .draw(at: NSPoint(x: 52, y: 432), withAttributes: titleAttributes)
+          "Nếu PHTV không mở được:"
+            .draw(at: NSPoint(x: 54, y: 398), withAttributes: subtitleAttributes)
+          "hãy nhấp đúp vào 'Nhấp Đúp Nếu PHTV Không Mở Được'."
+            .draw(at: NSPoint(x: 54, y: 372), withAttributes: subtitleAttributes)
 
           let arrowColor = NSColor(calibratedRed: 0.13, green: 0.52, blue: 0.93, alpha: 0.95)
           let arrowLine = NSBezierPath()
           arrowLine.lineWidth = 14
           arrowLine.lineCapStyle = .round
-          arrowLine.move(to: NSPoint(x: 286, y: 218))
-          arrowLine.line(to: NSPoint(x: 518, y: 218))
+          arrowLine.move(to: NSPoint(x: 330, y: 255))
+          arrowLine.line(to: NSPoint(x: 610, y: 255))
           arrowColor.setStroke()
           arrowLine.stroke()
 
           let arrowHead = NSBezierPath()
-          arrowHead.move(to: NSPoint(x: 518, y: 218))
-          arrowHead.line(to: NSPoint(x: 480, y: 244))
-          arrowHead.line(to: NSPoint(x: 480, y: 192))
+          arrowHead.move(to: NSPoint(x: 610, y: 255))
+          arrowHead.line(to: NSPoint(x: 568, y: 283))
+          arrowHead.line(to: NSPoint(x: 568, y: 227))
           arrowHead.close()
           arrowColor.setFill()
           arrowHead.fill()
@@ -410,16 +441,16 @@ jobs:
             --hdiutil-quiet \
             --volname "PHTV" \
             --window-pos 200 120 \
-            --window-size 760 440 \
+            --window-size 900 520 \
             --background "$BACKGROUND_IMG" \
-            --icon-size 108 \
-            --text-size 14 \
-            --icon "PHTV.app" 170 220 \
-            --app-drop-link 590 220 \
-            --icon "Neu-khong-mo-duoc-PHTV.command" 185 360 \
-            --hide-extension "Neu-khong-mo-duoc-PHTV.command" \
-            --icon "HUONG_DAN_CAI_DAT.txt" 590 360 \
-            --hide-extension "HUONG_DAN_CAI_DAT.txt" \
+            --icon-size 96 \
+            --text-size 12 \
+            --icon "PHTV.app" 210 250 \
+            --app-drop-link 690 250 \
+            --icon "Nhấp Đúp Nếu PHTV Không Mở Được.command" 250 370 \
+            --hide-extension "Nhấp Đúp Nếu PHTV Không Mở Được.command" \
+            --icon "Hướng dẫn cài đặt.txt" 690 370 \
+            --hide-extension "Hướng dẫn cài đặt.txt" \
             "$DMG_NAME" \
             "$TEMP_DIR"
 
