@@ -112,7 +112,6 @@ struct ClipboardHistoryView: View {
             clipboardBackground
         }
         .onAppear {
-            syncSelectionWithFilteredItems()
             DispatchQueue.main.async {
                 keyboardFocus = .search
                 isSearchFieldFocused = true
@@ -320,12 +319,11 @@ struct ClipboardHistoryView: View {
             return
         }
 
-        if let selectedItemId,
-           filteredItems.contains(where: { $0.id == selectedItemId }) {
-            return
-        }
-
-        selectedItemId = filteredItems.first?.id
+        // Don't auto-select on initial open (selectedItemId is nil).
+        // Only update when a previously-selected item leaves the filtered results.
+        guard let selectedItemId else { return }
+        if filteredItems.contains(where: { $0.id == selectedItemId }) { return }
+        self.selectedItemId = filteredItems.first?.id
     }
 
     private func focusSearch() {
@@ -369,6 +367,9 @@ struct ClipboardHistoryView: View {
             return focusList(at: filteredItems.count - 1)
 
         case .activateSelection:
+            if selectedItemId == nil {
+                selectedItemId = filteredItems.first?.id
+            }
             return activateSelectedItem()
         }
     }

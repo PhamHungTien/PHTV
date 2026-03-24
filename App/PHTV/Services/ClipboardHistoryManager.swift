@@ -44,6 +44,7 @@ final class ClipboardHistoryManager: ObservableObject {
     private var previousApp: NSRunningApplication?
     private var lastShowRequestTime: CFAbsoluteTime = 0
     private var settingsObserver: NSObjectProtocol?
+    private var panelResignKeyObserver: NSObjectProtocol?
     var isPasting = false
 
     var isVisible: Bool {
@@ -164,9 +165,21 @@ final class ClipboardHistoryManager: ObservableObject {
         DispatchQueue.main.async { [weak self] in
             self?.panel?.makeKey()
         }
+
+        panelResignKeyObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.didResignKeyNotification,
+            object: panel,
+            queue: .main
+        ) { [weak self] _ in
+            self?.hide()
+        }
     }
 
     func hide() {
+        if let observer = panelResignKeyObserver {
+            NotificationCenter.default.removeObserver(observer)
+            panelResignKeyObserver = nil
+        }
         panel?.close()
         panel = nil
         lastShowRequestTime = 0
