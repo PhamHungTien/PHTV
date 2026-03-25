@@ -13,7 +13,6 @@ import Foundation
 private let phtvDefaultsKeyShowUIOnStartup = "ShowUIOnStartup"
 private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
 
-@MainActor private var phtvIsShowingRelaunchAlert = false
 
 @MainActor @objc extension AppDelegate {
     @nonobjc
@@ -129,54 +128,55 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
         stopAccessibilityMonitoring()
         PHTVManager.invalidatePermissionCache()
 
-        DispatchQueue.main.async {
-            var initSuccess = false
+        tryInitEventTap(attempt: 1)
+    }
 
-            for attempt in 1...3 {
-                NSLog("[EventTap] Init attempt %d/3", attempt)
+    private func tryInitEventTap(attempt: Int) {
+        NSLog("[EventTap] Init attempt %d/3", attempt)
 
-                if PHTVManager.initEventTap() {
-                    NSLog("[EventTap] Initialized successfully on attempt %d - App ready!", attempt)
-                    initSuccess = true
-                    break
-                }
+        if PHTVManager.initEventTap() {
+            NSLog("[EventTap] Initialized successfully on attempt %d - App ready!", attempt)
+            onEventTapInitSuccess()
+            return
+        }
 
-                if attempt < 3 {
-                    usleep(useconds_t(100_000 * attempt))
-                    PHTVManager.invalidatePermissionCache()
-                }
+        if attempt < 3 {
+            // Use asyncAfter instead of usleep to avoid blocking the main thread.
+            let delayMs = Double(100 * attempt)
+            DispatchQueue.main.asyncAfter(deadline: .now() + delayMs / 1000.0) {
+                PHTVManager.invalidatePermissionCache()
+                self.tryInitEventTap(attempt: attempt + 1)
             }
+        } else {
+            // macOS requires a process restart for the new permission to take effect
+            // at the CGEvent tap level. Restart automatically instead of asking the user.
+            NSLog("[EventTap] Failed to initialize after 3 attempts - relaunching automatically")
+            publishTypingPermissionState(eventTapReady: false)
+            relaunchAppAfterPermissionGrant()
+        }
+    }
 
-            if !initSuccess {
-                // macOS requires a process restart for the new permission to take effect
-                // at the CGEvent tap level. Restart automatically instead of asking the user.
-                NSLog("[EventTap] Failed to initialize after 3 attempts - relaunching automatically")
-                self.publishTypingPermissionState(eventTapReady: false)
-                self.relaunchAppAfterPermissionGrant()
-            } else {
-                self.startAccessibilityMonitoring()
-                self.startHealthCheckMonitoring()
-                self.startInputSourceMonitoring()
-                self.requestEventTapRecovery(reason: "accessibilityGranted", force: true)
-                EmojiHotkeyBridge.refreshEmojiHotkeyRegistration()
-                self.runHotkeyHealthCheck(reason: "accessibility-granted")
-                PHTVManager.startTCCNotificationListener()
-                self.fillData(withAnimation: true)
-                self.publishTypingPermissionState(eventTapReady: true)
-                self.syncCurrentFrontmostAppContext(reason: "accessibilityGranted", forceExcludedRecheck: true)
+    private func onEventTapInitSuccess() {
+        startAccessibilityMonitoring()
+        startHealthCheckMonitoring()
+        startInputSourceMonitoring()
+        requestEventTapRecovery(reason: "accessibilityGranted", force: true)
+        EmojiHotkeyBridge.refreshEmojiHotkeyRegistration()
+        runHotkeyHealthCheck(reason: "accessibility-granted")
+        PHTVManager.startTCCNotificationListener()
+        fillData(withAnimation: true)
+        publishTypingPermissionState(eventTapReady: true)
+        syncCurrentFrontmostAppContext(reason: "accessibilityGranted", forceExcludedRecheck: true)
+        setQuickConvertString()
 
-                let showUI = UserDefaults.standard.integer(forKey: phtvDefaultsKeyShowUIOnStartup)
-                if showUI == 1 {
-                    self.onControlPanelSelected()
-                }
+        let showUI = UserDefaults.standard.integer(forKey: phtvDefaultsKeyShowUIOnStartup)
+        if showUI == 1 {
+            onControlPanelSelected()
+        }
 
-                if self.needsRelaunchAfterPermission {
-                    self.needsRelaunchAfterPermission = false
-                    NSLog("[Accessibility] Initialized successfully - skipping forced relaunch")
-                }
-            }
-
-            self.setQuickConvertString()
+        if needsRelaunchAfterPermission {
+            needsRelaunchAfterPermission = false
+            NSLog("[Accessibility] Initialized successfully - skipping forced relaunch")
         }
     }
 
@@ -279,53 +279,6 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
                 }
                 app.didAttemptTCCRepairOnce = true
                 app.isAttemptingTCCRepair = false
-            }
-        }
-    }
-
-    func handleAccessibilityNeedsRelaunch() {
-        if phtvIsShowingRelaunchAlert {
-            return
-        }
-
-        phtvIsShowingRelaunchAlert = true
-        NSLog("[Accessibility] 🔄 Handling relaunch request - permission granted but not effective yet")
-
-        DispatchQueue.main.async {
-            if !PHTVManager.isInited() {
-                NSLog("[Accessibility] Attempting event tap initialization before relaunch prompt...")
-                if PHTVManager.initEventTap() {
-                    NSLog("[Accessibility] ✅ Event tap initialized successfully! No relaunch needed.")
-                    phtvIsShowingRelaunchAlert = false
-
-                    self.startAccessibilityMonitoring()
-                    self.startHealthCheckMonitoring()
-                    self.startInputSourceMonitoring()
-                    self.requestEventTapRecovery(reason: "accessibilityNeedsRelaunch", force: true)
-                    self.fillData(withAnimation: true)
-                    self.publishTypingPermissionState(eventTapReady: true)
-                    self.syncCurrentFrontmostAppContext(reason: "accessibilityNeedsRelaunch", forceExcludedRecheck: true)
-                    return
-                }
-            }
-
-            let alert = NSAlert()
-            alert.messageText = "🔄 Cần khởi động lại ứng dụng"
-            alert.informativeText = "PHTV đã nhận được quyền trợ năng từ hệ thống, nhưng cần khởi động lại để quyền có hiệu lực.\n\nĐây là yêu cầu bảo mật của macOS. Bạn có muốn khởi động lại ngay không?"
-            alert.alertStyle = .informational
-            alert.addButton(withTitle: "Khởi động lại")
-            alert.addButton(withTitle: "Để sau")
-
-            let response = alert.runModal()
-            phtvIsShowingRelaunchAlert = false
-
-            if response == .alertFirstButtonReturn {
-                NSLog("[Accessibility] User requested relaunch to apply permission")
-                self.relaunchAppAfterPermissionGrant()
-            } else {
-                NSLog("[Accessibility] User deferred relaunch")
-                self.startAccessibilityMonitoring(withInterval: 1.0, resetState: false)
-                self.requestEventTapRecovery(reason: "accessibilityNeedsRelaunch", force: true)
             }
         }
     }

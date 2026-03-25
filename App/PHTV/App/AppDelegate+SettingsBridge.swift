@@ -21,7 +21,6 @@ private let phtvNotificationShowDockIcon = Notification.Name("PHTVShowDockIcon")
 private let phtvNotificationCustomDictionaryUpdated = Notification.Name("CustomDictionaryUpdated")
 private let phtvNotificationSettingsReset = Notification.Name("SettingsReset")
 private let phtvNotificationAccessibilityPermissionLost = Notification.Name("AccessibilityPermissionLost")
-private let phtvNotificationAccessibilityNeedsRelaunch = Notification.Name("AccessibilityNeedsRelaunch")
 
 @MainActor private var phtvLastUpperCaseFirstCharSetting = -1
 
@@ -78,10 +77,6 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
         center.addObserver(self,
                            selector: #selector(handleAccessibilityRevoked),
                            name: phtvNotificationAccessibilityPermissionLost,
-                           object: nil)
-        center.addObserver(self,
-                           selector: #selector(handleAccessibilityNeedsRelaunch),
-                           name: phtvNotificationAccessibilityNeedsRelaunch,
                            object: nil)
     }
 
