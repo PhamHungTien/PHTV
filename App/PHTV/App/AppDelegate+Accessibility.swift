@@ -148,24 +148,11 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
             }
 
             if !initSuccess {
-                NSLog("[EventTap] Failed to initialize after 3 attempts")
+                // macOS requires a process restart for the new permission to take effect
+                // at the CGEvent tap level. Restart automatically instead of asking the user.
+                NSLog("[EventTap] Failed to initialize after 3 attempts - relaunching automatically")
                 self.publishTypingPermissionState(eventTapReady: false)
-
-                let alert = NSAlert()
-                alert.messageText = "🔄 Cần khởi động lại ứng dụng"
-                alert.informativeText = "PHTV đã nhận quyền nhưng cần khởi động lại để quyền có hiệu lực.\n\nBạn có muốn khởi động lại ngay không?"
-                alert.addButton(withTitle: "Khởi động lại ngay")
-                alert.addButton(withTitle: "Để sau")
-                alert.alertStyle = .informational
-
-                let response = alert.runModal()
-                if response == .alertFirstButtonReturn {
-                    self.relaunchAppAfterPermissionGrant()
-                } else {
-                    self.startAccessibilityMonitoring(withInterval: 1.0, resetState: false)
-                    self.requestEventTapRecovery(reason: "accessibilityGrantedInitFailed", force: true)
-                    self.onControlPanelSelected()
-                }
+                self.relaunchAppAfterPermissionGrant()
             } else {
                 self.startAccessibilityMonitoring()
                 self.startHealthCheckMonitoring()
@@ -345,12 +332,12 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
 
     func checkAccessibilityAndRestart() {
         // AXIsProcessTrusted() is the Apple-canonical gate for accessibility permission.
-        // When trusted, invalidate any stale backoff so canCreateEventTap() gets a fresh
-        // attempt — avoids being stuck behind exponential backoff from a propagation delay.
+        // Do NOT gate on canCreateEventTap() here: CGPreflightPostEventAccess() may still
+        // return false due to macOS propagation delay even when AXIsProcessTrusted() is true,
+        // causing the app to silently skip initialization. If already initialized, skip.
         guard AXIsProcessTrusted() else { return }
+        guard !PHTVManager.isInited() else { return }
         PHTVManager.invalidatePermissionCache()
-        if PHTVManager.canCreateEventTap() {
-            performAccessibilityGrantedRestart()
-        }
+        performAccessibilityGrantedRestart()
     }
 }
