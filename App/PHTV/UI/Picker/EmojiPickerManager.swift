@@ -79,7 +79,7 @@ class EmojiPickerManager {
             object: panel,
             queue: .main
         ) { [weak self] _ in
-            self?.hide()
+            MainActor.assumeIsolated { self?.hide() }
         }
 
         NSLog("[EmojiPicker] Panel shown")

@@ -171,7 +171,7 @@ final class ClipboardHistoryManager: ObservableObject {
             object: panel,
             queue: .main
         ) { [weak self] _ in
-            self?.hide()
+            MainActor.assumeIsolated { self?.hide() }
         }
     }
 

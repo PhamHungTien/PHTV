@@ -296,7 +296,7 @@ final class UIState: ObservableObject {
             .debounce(for: .milliseconds(Timing.audioSliderDebounce), scheduler: RunLoop.main)
             .dropFirst()
             .sink { [weak self] value in
-                guard let self = self else { return }
+                guard self != nil else { return }
                 SettingsObserver.shared.suspendNotifications()
                 let defaults = UserDefaults.standard
                 defaults.set(value, forKey: UserDefaultsKey.beepVolume)
