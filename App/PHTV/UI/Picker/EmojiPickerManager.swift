@@ -18,6 +18,7 @@ class EmojiPickerManager {
     private var panel: FloatingPanel<EmojiPickerView>?
     private var previousApp: NSRunningApplication?
     private var lastShowRequestTime: CFAbsoluteTime = 0
+    private var panelResignKeyObserver: NSObjectProtocol?
 
     private init() {}
 
@@ -73,12 +74,24 @@ class EmojiPickerManager {
             self?.panel?.makeKey()
         }
 
+        panelResignKeyObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.didResignKeyNotification,
+            object: panel,
+            queue: .main
+        ) { [weak self] _ in
+            self?.hide()
+        }
+
         NSLog("[EmojiPicker] Panel shown")
     }
 
     /// Hides the PHTV Picker and restores focus to previous app
     func hide() {
         NSLog("[PHTPPicker] Hiding PHTV Picker")
+        if let observer = panelResignKeyObserver {
+            NotificationCenter.default.removeObserver(observer)
+            panelResignKeyObserver = nil
+        }
         panel?.close()
         panel = nil
 
