@@ -7,6 +7,14 @@
         <language>vi</language>
         <!-- Intel (x86_64) feed — Most recent version first -->
         <item>
+            <title>2.8.5</title>
+            <pubDate>Thu, 26 Mar 2026 10:14:42 +0000</pubDate>
+            <sparkle:version>252</sparkle:version>
+            <sparkle:shortVersionString>2.8.5</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v2.8.5/PHTV-2.8.5-intel.dmg" length="9526727" type="application/octet-stream" sparkle:edSignature="EpThWve+Qy0JZgilYBtV2Y12DOkyAanhW62r7slKweVzk2aceYf9MaBRWcVt69fAKQaXN5Y0q3LlO5by2BxgAQ=="/>
+        </item>
+        <item>
             <title>2.8.4</title>
             <pubDate>Wed, 25 Mar 2026 23:28:21 +0000</pubDate>
             <sparkle:version>251</sparkle:version>
