@@ -14,6 +14,8 @@ enum SettingsWindowHelper {
     private static var settingsController: SwiftUIWindowController?
 
     static func openSettingsWindow() {
+        NSApp.setActivationPolicy(.regular)
+
         // First, try to find and show existing settings window
         for window in NSApp.windows {
             let identifier = window.identifier?.rawValue ?? ""
@@ -25,16 +27,16 @@ enum SettingsWindowHelper {
 
                 // FIX: Ensure robust window behavior matching SettingsWindowContent
                 window.hidesOnDeactivate = false
-                window.isMovableByWindowBackground = true
+                window.isMovableByWindowBackground = false
                 window.collectionBehavior = [.managed, .participatesInCycle, .moveToActiveSpace, .fullScreenAuxiliary]
-
-                // Bring window to front
-                window.makeKeyAndOrderFront(nil)
 
                 // Ensure window is not minimized
                 if window.isMiniaturized {
                     window.deminiaturize(nil)
                 }
+
+                // Bring window to front after its final state is restored.
+                window.makeKeyAndOrderFront(nil)
 
                 // Activate app
                 NSApp.activate(ignoringOtherApps: true)
@@ -59,7 +61,7 @@ enum SettingsWindowHelper {
             )
             window.level = alwaysOnTop ? .floating : .normal
             window.hidesOnDeactivate = false
-            window.isMovableByWindowBackground = true
+            window.isMovableByWindowBackground = false
             window.collectionBehavior = [.managed, .participatesInCycle, .moveToActiveSpace, .fullScreenAuxiliary]
         }
 

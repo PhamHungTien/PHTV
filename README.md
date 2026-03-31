@@ -338,6 +338,7 @@ PHTV được phát hành dưới giấy phép **[GNU AGPL v3.0](LICENSE)**.
 
 ### Cảm ơn đặc biệt
 
+- **[UniKey](https://unikey.org/)** — Phạm Kim Long — Nền tảng truyền cảm hứng cho bộ gõ tiếng Việt
 - **[OpenKey](https://github.com/tuyenvm/OpenKey)** — Mai Vũ Tuyên — Engine xử lý tiếng Việt
 
 ---

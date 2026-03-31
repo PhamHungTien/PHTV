@@ -90,7 +90,7 @@ extension AppDelegate {
     @objc private func handleOpenConvertTool() {
         DispatchQueue.main.async {
             // Open settings window and navigate to System tab, then show convert tool
-            if let openWindow = NSApp.windows.first(where: { $0.identifier?.rawValue == "settings" }) {
+            if let openWindow = NSApp.windows.first(where: { $0.identifier?.rawValue.hasPrefix("settings") == true }) {
                 // Set window level based on user preference
                 let alwaysOnTop = UserDefaults.standard.bool(
                     forKey: UserDefaultsKey.settingsWindowAlwaysOnTop,
@@ -100,7 +100,7 @@ extension AppDelegate {
                 
                 // FIX: Ensure robust window behavior
                 openWindow.hidesOnDeactivate = false
-                openWindow.isMovableByWindowBackground = true
+                openWindow.isMovableByWindowBackground = false
                 openWindow.collectionBehavior = [.managed, .participatesInCycle, .moveToActiveSpace, .fullScreenAuxiliary]
                 
                 openWindow.makeKeyAndOrderFront(nil)

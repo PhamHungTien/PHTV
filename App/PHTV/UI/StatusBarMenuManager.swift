@@ -12,6 +12,7 @@
 
 import AppKit
 import Combine
+import SwiftUI
 
 @MainActor
 final class StatusBarMenuManager: NSObject, NSMenuDelegate {
@@ -20,6 +21,7 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
     private var statusItem: NSStatusItem?
     private var cancellables = Set<AnyCancellable>()
     private let iconCache = NSCache<NSString, NSImage>()
+    private var donatePopover: NSPopover?
 
     private var appState: AppState { AppState.shared }
 
@@ -129,6 +131,7 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         menu.addItem(actionItem("Về PHTV v\(version)", image: "info.circle", sel: #selector(openAbout)))
         menu.addItem(actionItem("Kiểm tra cập nhật", image: "arrow.down.circle", sel: #selector(checkUpdates)))
+        menu.addItem(actionItem("Ủng hộ phát triển", image: "cup.and.saucer.fill", sel: #selector(showDonateQR)))
 
         let quitItem = NSMenuItem(title: "Thoát PHTV", action: #selector(quitApp), keyEquivalent: "q")
         quitItem.keyEquivalentModifierMask = .command
@@ -413,6 +416,25 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
 
     @objc private func checkUpdates() {
         NotificationCenter.default.post(name: NotificationName.sparkleManualCheck, object: nil)
+    }
+
+    @objc private func showDonateQR() {
+        // NSMenu dismisses synchronously before the selector fires, so we can
+        // show the popover immediately from the status item button.
+        guard let button = statusItem?.button else { return }
+
+        if donatePopover == nil {
+            let popover = NSPopover()
+            popover.contentViewController = NSHostingController(rootView: DonateQRPopoverView())
+            popover.behavior = .transient
+            donatePopover = popover
+        }
+
+        if donatePopover?.isShown == true {
+            donatePopover?.close()
+        } else {
+            donatePopover?.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        }
     }
 
     @objc private func quitApp() {

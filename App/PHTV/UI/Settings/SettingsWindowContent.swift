@@ -14,11 +14,32 @@ struct SettingsWindowContent: View {
     @State private var windowObservers: [NSObjectProtocol] = []
     @State private var showOnboarding: Bool = false
     @State private var isClosingSettingsWindow: Bool = false
-    @State private var pendingDockShowWorkItem: DispatchWorkItem?
     @State private var pendingCloseWorkItem: DispatchWorkItem?
     @State private var windowLifecycleToken = UUID()
+    @State private var showDonatePopover = false
 
     var body: some View {
+        configuredSettingsWindowContent
+    }
+
+    @ViewBuilder
+    private var configuredSettingsWindowContent: some View {
+        if #available(macOS 26.0, *) {
+            settingsWindowContent
+                .toolbar(removing: .title)
+                .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+                .toolbar { settingsToolbarContent }
+        } else if #available(macOS 15.0, *) {
+            settingsWindowContent
+                .toolbar(removing: .title)
+                .toolbar { settingsToolbarContent }
+        } else {
+            settingsWindowContent
+                .toolbar { settingsToolbarContent }
+        }
+    }
+
+    private var settingsWindowContent: some View {
         OnboardingContainer(showOnboarding: $showOnboarding) {
             ZStack(alignment: .top) {
                 SettingsView()
@@ -31,70 +52,9 @@ struct SettingsWindowContent: View {
         .onAppear {
             isClosingSettingsWindow = false
             windowLifecycleToken = UUID()
-            pendingDockShowWorkItem?.cancel()
-            pendingDockShowWorkItem = nil
             pendingCloseWorkItem?.cancel()
             pendingCloseWorkItem = nil
-            // Show dock icon when settings window opens
-            // This prevents the window from being hidden when app loses focus
-
-            // Use DispatchQueue.main.async to ensure run loop is ready
-            // This is crucial on first launch when app just started
-            DispatchQueue.main.async {
-                NSApp.setActivationPolicy(.regular)
-
-                // Force dock to refresh by calling activate
-                NSApp.activate(ignoringOtherApps: true)
-
-                // Bring settings window to front and ensure it stays visible
-                for window in NSApp.windows {
-                    if window.identifier?.rawValue.hasPrefix("settings") == true {
-                        // CRITICAL: Ensure window doesn't hide when app loses focus
-                        window.hidesOnDeactivate = false
-                        window.collectionBehavior = [.managed, .participatesInCycle, .moveToActiveSpace, .fullScreenAuxiliary]
-                        // Remember position/size across sessions (HIG: windows restore last frame)
-                        window.setFrameAutosaveName("PHSettingsWindow")
-                        window.makeKeyAndOrderFront(nil)
-                        break
-                    }
-                }
-
-                // Sometimes first activate doesn't work, try again after a tiny delay
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                    NSApp.activate(ignoringOtherApps: true)
-                    // Bring window to front again and re-ensure hidesOnDeactivate is false
-                    for window in NSApp.windows {
-                        if window.identifier?.rawValue.hasPrefix("settings") == true {
-                            window.hidesOnDeactivate = false
-                            window.makeKeyAndOrderFront(nil)
-                            break
-                        }
-                    }
-                }
-            }
-
-            // Also post notification for AppDelegate to track state.
-            // Guard with lifecycle token so delayed callbacks from a previous open
-            // cannot revive a just-closed settings window.
-            let lifecycleToken = windowLifecycleToken
-            let showDockWorkItem = DispatchWorkItem { [lifecycleToken] in
-                guard lifecycleToken == windowLifecycleToken, !isClosingSettingsWindow else { return }
-                let hasVisibleSettingsWindow = NSApp.windows.contains { window in
-                    window.identifier?.rawValue.hasPrefix("settings") == true && window.isVisible
-                }
-                guard hasVisibleSettingsWindow else { return }
-
-                NotificationCenter.default.post(
-                    name: NotificationName.phtvShowDockIcon,
-                    object: nil,
-                    userInfo: [
-                        NotificationUserInfoKey.visible: true,
-                        NotificationUserInfoKey.forceFront: true
-                    ]
-                )
-            }
-            pendingDockShowWorkItem = showDockWorkItem
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: showDockWorkItem)
+            applySettingsWindowBehavior(forceFront: false)
 
             // Update window level based on user preference
             updateSettingsWindowLevel()
@@ -114,8 +74,6 @@ struct SettingsWindowContent: View {
             }
         }
         .onDisappear {
-            pendingDockShowWorkItem?.cancel()
-            pendingDockShowWorkItem = nil
             appState.flushPendingSettingsForWindowClose()
             // Remove window observers for this lifecycle.
             removeWindowObservers()
@@ -139,6 +97,65 @@ struct SettingsWindowContent: View {
         .onChange(of: appState.settingsWindowAlwaysOnTop) { _ in
             // Update window level when user toggles the setting
             updateSettingsWindowLevel()
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var settingsToolbarContent: some ToolbarContent {
+        if #available(macOS 26.0, *) {
+            // Flexible spacer pushes the trio to the right edge.
+            // Flexible spacers *between* items break them into separate
+            // glass pills on macOS 26 instead of one merged capsule.
+            ToolbarSpacer(.flexible, placement: .primaryAction)
+            pinToolbarItem
+            ToolbarSpacer(.fixed, placement: .primaryAction)
+            checkForUpdatesToolbarItem
+            ToolbarSpacer(.fixed, placement: .primaryAction)
+            donateToolbarItem
+        } else {
+            pinToolbarItem
+            checkForUpdatesToolbarItem
+            donateToolbarItem
+        }
+    }
+
+    private var pinToolbarItem: some ToolbarContent {
+        ToolbarItem(placement: .primaryAction) {
+            Button {
+                appState.settingsWindowAlwaysOnTop.toggle()
+            } label: {
+                Image(systemName: appState.settingsWindowAlwaysOnTop ? "pin.fill" : "pin")
+            }
+            .help(
+                appState.settingsWindowAlwaysOnTop
+                ? "Bỏ ghim cửa sổ Cài đặt"
+                : "Ghim cửa sổ Cài đặt luôn ở trên"
+            )
+        }
+    }
+
+    private var checkForUpdatesToolbarItem: some ToolbarContent {
+        ToolbarItem(placement: .primaryAction) {
+            Button {
+                NotificationCenter.default.post(name: NotificationName.sparkleManualCheck, object: nil)
+            } label: {
+                Image(systemName: "arrow.clockwise.circle")
+            }
+            .help("Kiểm tra cập nhật")
+        }
+    }
+
+    private var donateToolbarItem: some ToolbarContent {
+        ToolbarItem(placement: .primaryAction) {
+            Button {
+                showDonatePopover.toggle()
+            } label: {
+                Image(systemName: "cup.and.saucer.fill")
+            }
+            .popover(isPresented: $showDonatePopover, arrowEdge: .bottom) {
+                DonateQRPopoverView()
+            }
+            .help("Ủng hộ phát triển")
         }
     }
 
@@ -216,8 +233,6 @@ struct SettingsWindowContent: View {
                 guard isSettingsWindow(window) else { return }
                 isClosingSettingsWindow = true
                 appState.flushPendingSettingsForWindowClose()
-                pendingDockShowWorkItem?.cancel()
-                pendingDockShowWorkItem = nil
                 windowLifecycleToken = UUID()
                 appState.systemState.stopLoginItemStatusMonitoring()
             }
@@ -324,15 +339,23 @@ struct SettingsWindowContent: View {
         // Use .floating for always-on-top, .normal for standard
         window.level = appState.settingsWindowAlwaysOnTop ? .floating : .normal
 
-        // Use opaque window background for Settings
-        window.isOpaque = true
-        window.backgroundColor = NSColor.windowBackgroundColor
+        // On macOS 26+, allow transparency so backgroundExtensionEffect() can
+        // render the glass material behind the toolbar.  On older versions keep
+        // the window fully opaque for a solid, consistent appearance.
+        if #available(macOS 26.0, *) {
+            window.isOpaque = false
+            window.backgroundColor = .clear
+        } else {
+            window.isOpaque = true
+            window.backgroundColor = NSColor.windowBackgroundColor
+        }
 
         // Ensure window doesn't disappear when app loses focus
         window.hidesOnDeactivate = false
 
-        // Ensure window is movable by background (critical for hiddenTitleBar)
-        window.isMovableByWindowBackground = true
+        // Keep dragging constrained to the real titlebar/toolbar area so
+        // sidebar clicks are never interpreted as window-drag gestures.
+        window.isMovableByWindowBackground = false
 
         // Standard behavior: participate in Cycle, move to active space
         window.collectionBehavior = [.managed, .participatesInCycle, .moveToActiveSpace, .fullScreenAuxiliary]

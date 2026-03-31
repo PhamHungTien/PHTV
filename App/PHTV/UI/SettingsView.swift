@@ -26,6 +26,39 @@ struct SettingsView: View {
     }
 
     var body: some View {
+        settingsSplitView
+            .onChange(of: appState.showIconOnDock) { newValue in
+                // When dock icon toggle is changed, update immediately and save
+                let appDelegate = AppDelegate.current()
+                NSLog("[SettingsView] onChange - showIconOnDock changed to %@", newValue ? "true" : "false")
+                appDelegate?.showIcon(newValue)  // This one saves to UserDefaults
+            }
+            .onChange(of: selectedTab) { newValue in
+                // Release cached app icons when leaving icon-heavy tabs.
+                if lastTab == .apps || lastTab == .typing {
+                    AppIconCache.shared.clear()
+                }
+                lastTab = newValue
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NotificationName.showAboutTab)) { _ in
+                selectedTab = .about
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NotificationName.showMacroTab)) { _ in
+                selectedTab = .macro
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NotificationName.showConvertToolSheet)) { _ in
+                // Switch to System tab first, then SystemSettingsView will show the sheet
+                if selectedTab != .system {
+                    selectedTab = .system
+                    // Post notification for SystemSettingsView after it's mounted
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        NotificationCenter.default.post(name: NotificationName.openConvertToolSheet, object: nil)
+                    }
+                }
+            }
+    }
+
+    private var settingsSplitView: some View {
         NavigationSplitView {
             sidebarView
         } detail: {
@@ -35,35 +68,6 @@ struct SettingsView: View {
                 .modifier(DetailViewGlassModifier())
         }
         .navigationSplitViewStyle(.balanced)
-        .onChange(of: appState.showIconOnDock) { newValue in
-            // When dock icon toggle is changed, update immediately and save
-            let appDelegate = AppDelegate.current()
-            NSLog("[SettingsView] onChange - showIconOnDock changed to %@", newValue ? "true" : "false")
-            appDelegate?.showIcon(newValue)  // This one saves to UserDefaults
-        }
-        .onChange(of: selectedTab) { newValue in
-            // Release cached app icons when leaving icon-heavy tabs.
-            if lastTab == .apps || lastTab == .typing {
-                AppIconCache.shared.clear()
-            }
-            lastTab = newValue
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NotificationName.showAboutTab)) { _ in
-            selectedTab = .about
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NotificationName.showMacroTab)) { _ in
-            selectedTab = .macro
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NotificationName.showConvertToolSheet)) { _ in
-            // Switch to System tab first, then SystemSettingsView will show the sheet
-            if selectedTab != .system {
-                selectedTab = .system
-                // Post notification for SystemSettingsView after it's mounted
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                    NotificationCenter.default.post(name: NotificationName.openConvertToolSheet, object: nil)
-                }
-            }
-        }
     }
 
     @ViewBuilder
@@ -112,16 +116,6 @@ struct SettingsView: View {
         .conditionalSearchable(text: $searchText, prompt: "Tìm nhanh cài đặt…")
         .navigationSplitViewColumnWidth(min: 160, ideal: 200, max: 240)
         .animation(nil, value: selectedTab)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    NotificationCenter.default.post(name: NotificationName.showOnboarding, object: nil)
-                } label: {
-                    Image(systemName: "questionmark.circle")
-                }
-                .help("Xem lại hướng dẫn & giới thiệu")
-            }
-        }
 
         if #available(macOS 26.0, *) {
             list
@@ -210,7 +204,9 @@ struct SettingsSidebarRow: View {
 
             Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 2)
+        .contentShape(Rectangle())
     }
 }
 

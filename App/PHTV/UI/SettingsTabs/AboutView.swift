@@ -191,6 +191,31 @@ private struct AboutCardBackground: View {
     }
 }
 
+// MARK: - Donate QR Popover View
+
+struct DonateQRPopoverView: View {
+    var body: some View {
+        VStack(spacing: 14) {
+            Text("Ủng hộ phát triển")
+                .font(.headline)
+
+            if let donateImage = NSImage(named: "donate") {
+                Image(nsImage: donateImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 210, height: 210)
+                    .clipShape(PHTVRoundedRect(cornerRadius: 12))
+            }
+
+            Text("Quét mã để ủng hộ")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(20)
+        .frame(width: 260)
+    }
+}
+
 // MARK: - App Icon View
 private struct AppIconView: View {
     var body: some View {

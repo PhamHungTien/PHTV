@@ -12,13 +12,15 @@ import AppKit
 /// Window controller for hosting SwiftUI views in NSWindow
 class SwiftUIWindowController: NSWindowController, NSWindowDelegate {
 
-    convenience init<Content: View>(rootView: Content, title: String, size: NSSize = NSSize(width: 800, height: 600), unifiedTitlebar: Bool = false) {
+    convenience init<Content: View>(
+        rootView: Content,
+        title: String,
+        size: NSSize = NSSize(width: 800, height: 600),
+        unifiedTitlebar: Bool = false,
+        frameAutosaveName: String? = nil
+    ) {
         var styleMask: NSWindow.StyleMask = [.titled, .closable, .miniaturizable, .resizable]
-        
-        if unifiedTitlebar {
-            styleMask.insert(.fullSizeContentView)
-        }
-        
+
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: size.width, height: size.height),
             styleMask: styleMask,
@@ -27,23 +29,31 @@ class SwiftUIWindowController: NSWindowController, NSWindowDelegate {
         )
         
         window.title = title
-        window.center()
-        window.contentView = NSHostingView(rootView: rootView)
-        window.setFrameAutosaveName(title)
+        window.contentViewController = NSHostingController(rootView: rootView)
+
+        let resolvedAutosaveName = frameAutosaveName ?? (!title.isEmpty ? title : nil)
+        if let resolvedAutosaveName {
+            if !window.setFrameUsingName(resolvedAutosaveName) {
+                window.center()
+            }
+            window.setFrameAutosaveName(resolvedAutosaveName)
+        } else {
+            window.center()
+        }
         
         if unifiedTitlebar {
-            // Completely hide titlebar, content extends to top
+            // Full-size content view so NavigationSplitView extends under the
+            // toolbar/titlebar — required for backgroundExtensionEffect() on macOS 26
+            // and for the modern System-Settings-style look on earlier versions.
+            window.styleMask.insert(.fullSizeContentView)
             window.titlebarAppearsTransparent = true
             window.titleVisibility = .hidden
-
-            // Remove the toolbar completely
-            window.toolbar = nil
-
-            // Make window movable by dragging background
-            window.isMovableByWindowBackground = true
-
-            // Hide title bar but keep traffic lights
-            window.standardWindowButton(.closeButton)?.superview?.superview?.isHidden = false
+            window.isMovableByWindowBackground = false
+            if #available(macOS 11.0, *) {
+                // .unified aligns toolbar items with the titlebar traffic-light area,
+                // matching the compact look used by System Settings.
+                window.toolbarStyle = .unified
+            }
         }
 
         self.init(window: window)
@@ -59,7 +69,7 @@ class SwiftUIWindowController: NSWindowController, NSWindowDelegate {
     // Handle window close to release reference
     func windowWillClose(_ notification: Notification) {
         // Restore dock icon state to user preference when closing settings
-        if window?.title == "Cài đặt PHTV" || window?.title == "Cài đặt" {
+        if window?.identifier?.rawValue.hasPrefix("settings") == true {
             Task { @MainActor in
                 AppState.shared.flushPendingSettingsForWindowClose()
             }
@@ -82,7 +92,8 @@ extension SwiftUIWindowController {
                 .frame(minWidth: 800, minHeight: 600),
             title: "Cài đặt PHTV",
             size: NSSize(width: 950, height: 680),
-            unifiedTitlebar: true
+            unifiedTitlebar: true,
+            frameAutosaveName: "PHSettingsWindow"
         )
         // Set minimum window size to prevent sidebar from being too narrow
         controller.window?.identifier = NSUserInterfaceItemIdentifier("settings-window-controller")
