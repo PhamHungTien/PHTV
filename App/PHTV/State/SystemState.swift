@@ -345,14 +345,13 @@ final class SystemState: ObservableObject {
 
         // Observer for system settings
         Publishers.MergeMany([
-            $performLayoutCompat.map { _ in () }.eraseToAnyPublisher(),
-            $safeMode.map { _ in () }.eraseToAnyPublisher()
+            $performLayoutCompat.settingsChangeEvent(),
+            $safeMode.settingsChangeEvent()
         ])
         .filter { [weak self] _ in
             !(self?.isLoadingSettings ?? true)
         }
         .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
-        .dropFirst()
         .sink { [weak self] _ in
             guard let self = self else { return }
             self.saveSettings()
@@ -378,15 +377,14 @@ final class SystemState: ObservableObject {
 
         // Bug report settings observers
         Publishers.MergeMany([
-            $includeSystemInfo.map { _ in () }.eraseToAnyPublisher(),
-            $includeLogs.map { _ in () }.eraseToAnyPublisher(),
-            $includeCrashLogs.map { _ in () }.eraseToAnyPublisher()
+            $includeSystemInfo.settingsChangeEvent(),
+            $includeLogs.settingsChangeEvent(),
+            $includeCrashLogs.settingsChangeEvent()
         ])
         .filter { [weak self] _ in
             !(self?.isLoadingSettings ?? true)
         }
         .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
-        .dropFirst()
         .sink { [weak self] _ in
             guard let self = self else { return }
             self.saveSettings()

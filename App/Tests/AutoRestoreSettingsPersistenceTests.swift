@@ -14,8 +14,10 @@ final class AutoRestoreSettingsPersistenceTests: XCTestCase {
         UserDefaultsKey.autoRestoreEnglishWord,
         UserDefaultsKey.autoRestoreEnglishWordMode,
         UserDefaultsKey.restoreIfWrongSpelling,
+        UserDefaultsKey.allowConsonantZFWJ,
         UserDefaultsKey.quickTelex,
-        UserDefaultsKey.menuBarIconSize
+        UserDefaultsKey.menuBarIconSize,
+        UserDefaultsKey.switchKeyStatus
     ]
 
     private var savedValues: [String: Any] = [:]
@@ -157,5 +159,46 @@ final class AutoRestoreSettingsPersistenceTests: XCTestCase {
             AutoRestoreEnglishMode.nonVietnamese.rawValue
         )
         XCTAssertTrue(defaults.bool(forKey: UserDefaultsKey.restoreIfWrongSpelling))
+    }
+
+    func testFirstConsonantToggleAfterObserverSetupPersists() async throws {
+        let defaults = UserDefaults.standard
+        defaults.set(false, forKey: UserDefaultsKey.allowConsonantZFWJ)
+
+        let state = await MainActor.run { () -> InputMethodState in
+            let state = InputMethodState()
+            state.isLoadingSettings = true
+            state.loadSettings()
+            state.isLoadingSettings = false
+            state.setupObservers()
+            state.allowConsonantZFWJ = true
+            return state
+        }
+
+        _ = state
+        try await Task.sleep(nanoseconds: 300_000_000)
+
+        XCTAssertTrue(defaults.bool(forKey: UserDefaultsKey.allowConsonantZFWJ))
+    }
+
+    func testFirstSwitchHotkeyChangeAfterObserverSetupPersists() async throws {
+        let defaults = UserDefaults.standard
+        defaults.set(Defaults.defaultSwitchKeyStatus, forKey: UserDefaultsKey.switchKeyStatus)
+
+        let state = await MainActor.run { () -> UIState in
+            let state = UIState()
+            state.isLoadingSettings = true
+            state.loadSettings()
+            state.isLoadingSettings = false
+            state.setupObservers()
+            state.switchKeyOption = true
+            return state
+        }
+
+        let expectedStatus = await MainActor.run { state.encodeSwitchKeyStatus() }
+        _ = state
+        try await Task.sleep(nanoseconds: 300_000_000)
+
+        XCTAssertEqual(defaults.integer(forKey: UserDefaultsKey.switchKeyStatus), expectedStatus)
     }
 }

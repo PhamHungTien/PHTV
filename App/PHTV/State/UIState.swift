@@ -223,13 +223,13 @@ final class UIState: ObservableObject {
     func setupObservers() {
         // Observer for hotkey settings
         let hotkeyChanges = Publishers.MergeMany([
-            $switchKeyCode.map { _ in () }.eraseToAnyPublisher(),
-            $switchKeyCommand.map { _ in () }.eraseToAnyPublisher(),
-            $switchKeyOption.map { _ in () }.eraseToAnyPublisher(),
-            $switchKeyControl.map { _ in () }.eraseToAnyPublisher(),
-            $switchKeyShift.map { _ in () }.eraseToAnyPublisher(),
-            $switchKeyFn.map { _ in () }.eraseToAnyPublisher(),
-            $beepOnModeSwitch.map { _ in () }.eraseToAnyPublisher()
+            $switchKeyCode.settingsChangeEvent(),
+            $switchKeyCommand.settingsChangeEvent(),
+            $switchKeyOption.settingsChangeEvent(),
+            $switchKeyControl.settingsChangeEvent(),
+            $switchKeyShift.settingsChangeEvent(),
+            $switchKeyFn.settingsChangeEvent(),
+            $beepOnModeSwitch.settingsChangeEvent()
         ])
 
         hotkeyChanges
@@ -237,7 +237,6 @@ final class UIState: ObservableObject {
                 !(self?.isLoadingSettings ?? true)
             }
             .debounce(for: .milliseconds(Timing.hotkeyDebounce), scheduler: RunLoop.main)
-            .dropFirst()
             .sink { [weak self] _ in
                 guard let self = self else { return }
                 SettingsObserver.shared.suspendNotifications()
@@ -290,11 +289,11 @@ final class UIState: ObservableObject {
 
         // Debounced persistence for beep volume slider
         $beepVolume
+            .dropFirst()
             .filter { [weak self] _ in
                 !(self?.isLoadingSettings ?? true)
             }
             .debounce(for: .milliseconds(Timing.audioSliderDebounce), scheduler: RunLoop.main)
-            .dropFirst()
             .sink { [weak self] value in
                 guard self != nil else { return }
                 SettingsObserver.shared.suspendNotifications()
@@ -304,11 +303,11 @@ final class UIState: ObservableObject {
 
         // Debounced persistence for menu bar icon size
         $menuBarIconSize
+            .dropFirst()
             .filter { [weak self] _ in
                 !(self?.isLoadingSettings ?? true)
             }
             .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
-            .dropFirst()
             .sink { [weak self] value in
                 guard let self = self else { return }
                 SettingsObserver.shared.suspendNotifications()
@@ -320,11 +319,11 @@ final class UIState: ObservableObject {
 
         // Debounced persistence for Vietnamese menubar icon
         $useVietnameseMenubarIcon
+            .dropFirst()
             .filter { [weak self] _ in
                 !(self?.isLoadingSettings ?? true)
             }
             .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
-            .dropFirst()
             .sink { [weak self] value in
                 guard let self = self else { return }
                 SettingsObserver.shared.suspendNotifications()

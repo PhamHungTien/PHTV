@@ -24,6 +24,13 @@ final class EmojiHotkeyManager: ObservableObject {
     private var globalFlagsMonitor: Any?
     private var localFlagsMonitor: Any?
     private var settingsObserver: NSObjectProtocol?
+    private let carbonHotkeyRegistration = PHTVCarbonHotkeyRegistration(
+        signature: 0x50454D4A // "PEMJ"
+    ) {
+        Task { @MainActor in
+            EmojiPickerManager.shared.show()
+        }
+    }
     private var isEnabled: Bool = false
     private var modifiers: NSEvent.ModifierFlags = .command
     private var keyCode: UInt16 = KeyCode.eKey
@@ -118,6 +125,8 @@ final class EmojiHotkeyManager: ObservableObject {
         if capturedKeyCode == KeyCode.noKey {
             // Modifier-only mode: monitor flagsChanged events
             registerModifierOnlyHotkey(capturedModifiers: capturedModifiers, relevantModifiers: capturedRelevantModifiers)
+        } else if carbonHotkeyRegistration.register(modifiers: capturedModifiers, keyCode: capturedKeyCode) {
+            // Carbon global hotkeys consume the key combo system-wide, so characters like Option+V do not leak through.
         } else {
             // Key+modifier mode: monitor keyDown events
             registerKeyDownHotkey(capturedKeyCode: capturedKeyCode, capturedModifiers: capturedModifiers, relevantModifiers: capturedRelevantModifiers)
@@ -230,6 +239,8 @@ final class EmojiHotkeyManager: ObservableObject {
     }
 
     func unregisterHotkey() {
+        carbonHotkeyRegistration.unregister()
+
         if let monitor = globalMonitor {
             NSEvent.removeMonitor(monitor)
             globalMonitor = nil

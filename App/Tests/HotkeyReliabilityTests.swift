@@ -141,4 +141,25 @@ final class HotkeyReliabilityTests: XCTestCase {
             )
         )
     }
+
+    func testCarbonHotkeyRegistrationSupportsPrintableOptionCombos() {
+        XCTAssertTrue(
+            PHTVCarbonHotkeyRegistration.canRegisterWithCarbon(
+                modifiers: [.option],
+                keyCode: KeyCode.vKey
+            )
+        )
+        XCTAssertFalse(
+            PHTVCarbonHotkeyRegistration.canRegisterWithCarbon(
+                modifiers: [.option, .function],
+                keyCode: KeyCode.vKey
+            )
+        )
+        XCTAssertFalse(
+            PHTVCarbonHotkeyRegistration.canRegisterWithCarbon(
+                modifiers: [.option],
+                keyCode: KeyCode.noKey
+            )
+        )
+    }
 }

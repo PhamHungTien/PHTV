@@ -21,6 +21,13 @@ final class ClipboardHotkeyManager: ObservableObject {
     private var globalFlagsMonitor: Any?
     private var localFlagsMonitor: Any?
     private var settingsObserver: NSObjectProtocol?
+    private let carbonHotkeyRegistration = PHTVCarbonHotkeyRegistration(
+        signature: 0x50434C50 // "PCLP"
+    ) {
+        Task { @MainActor in
+            ClipboardHistoryManager.shared.toggleVisibility()
+        }
+    }
     private var isEnabled: Bool = false
     private var modifiers: NSEvent.ModifierFlags = .control
     private var keyCode: UInt16 = KeyCode.vKey
@@ -110,6 +117,8 @@ final class ClipboardHotkeyManager: ObservableObject {
 
         if capturedKeyCode == KeyCode.noKey {
             registerModifierOnlyHotkey(capturedModifiers: capturedModifiers, relevantModifiers: capturedRelevantModifiers)
+        } else if carbonHotkeyRegistration.register(modifiers: capturedModifiers, keyCode: capturedKeyCode) {
+            // Carbon global hotkeys consume the key combo system-wide, preventing printable Option shortcuts from leaking through.
         } else {
             registerKeyDownHotkey(capturedKeyCode: capturedKeyCode, capturedModifiers: capturedModifiers, relevantModifiers: capturedRelevantModifiers)
         }
@@ -194,6 +203,8 @@ final class ClipboardHotkeyManager: ObservableObject {
     }
 
     func unregisterHotkey() {
+        carbonHotkeyRegistration.unregister()
+
         if let monitor = globalMonitor {
             NSEvent.removeMonitor(monitor)
             globalMonitor = nil

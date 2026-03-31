@@ -91,17 +91,16 @@ final class ClipboardHistoryState: ObservableObject {
     // MARK: - Setup Observers
 
     func setupObservers() {
-        Publishers.Merge4(
-            $enableClipboardHistory.map { _ in () },
-            $clipboardHotkeyModifiersRaw.map { _ in () },
-            $clipboardHotkeyKeyCode.map { _ in () },
-            $clipboardHistoryMaxItems.map { _ in () }
-        )
+        Publishers.MergeMany([
+            $enableClipboardHistory.settingsChangeEvent(),
+            $clipboardHotkeyModifiersRaw.settingsChangeEvent(),
+            $clipboardHotkeyKeyCode.settingsChangeEvent(),
+            $clipboardHistoryMaxItems.settingsChangeEvent()
+        ])
         .filter { [weak self] _ in
             !(self?.isLoadingSettings ?? true)
         }
         .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
-        .dropFirst()
         .sink { [weak self] in
             guard let self = self else { return }
             self.saveSettings()

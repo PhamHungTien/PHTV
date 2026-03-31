@@ -281,26 +281,25 @@ final class InputMethodState: ObservableObject {
 
         // Observer for other settings that need to save and notify backend
         Publishers.MergeMany([
-            $checkSpelling.map { _ in () }.eraseToAnyPublisher(),
-            $useModernOrthography.map { _ in () }.eraseToAnyPublisher(),
-            $quickTelex.map { _ in () }.eraseToAnyPublisher(),
-            $useSmartSwitchKey.map { _ in () }.eraseToAnyPublisher(),
-            $allowConsonantZFWJ.map { _ in () }.eraseToAnyPublisher(),
-            $quickStartConsonant.map { _ in () }.eraseToAnyPublisher(),
-            $quickEndConsonant.map { _ in () }.eraseToAnyPublisher(),
-            $rememberCode.map { _ in () }.eraseToAnyPublisher(),
-            $sendKeyStepByStep.map { _ in () }.eraseToAnyPublisher(),
-            $restoreOnEscape.map { _ in () }.eraseToAnyPublisher(),
-            $restoreKey.map { _ in () }.eraseToAnyPublisher(),
-            $pauseKeyEnabled.map { _ in () }.eraseToAnyPublisher(),
-            $pauseKey.map { _ in () }.eraseToAnyPublisher(),
-            $pauseKeyName.map { _ in () }.eraseToAnyPublisher()
+            $checkSpelling.settingsChangeEvent(),
+            $useModernOrthography.settingsChangeEvent(),
+            $quickTelex.settingsChangeEvent(),
+            $useSmartSwitchKey.settingsChangeEvent(),
+            $allowConsonantZFWJ.settingsChangeEvent(),
+            $quickStartConsonant.settingsChangeEvent(),
+            $quickEndConsonant.settingsChangeEvent(),
+            $rememberCode.settingsChangeEvent(),
+            $sendKeyStepByStep.settingsChangeEvent(),
+            $restoreOnEscape.settingsChangeEvent(),
+            $restoreKey.settingsChangeEvent(),
+            $pauseKeyEnabled.settingsChangeEvent(),
+            $pauseKey.settingsChangeEvent(),
+            $pauseKeyName.settingsChangeEvent()
         ])
         .filter { [weak self] _ in
             !(self?.isLoadingSettings ?? true)
         }
         .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
-        .dropFirst()
         .sink { [weak self] _ in
             guard let self = self else { return }
             self.saveSettings()

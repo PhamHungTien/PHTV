@@ -138,16 +138,15 @@ final class MacroState: ObservableObject {
 
     func setupObservers() {
         // Observer for macro settings
-        Publishers.Merge3(
-            $useMacro,
-            $useMacroInEnglishMode,
-            $autoCapsMacro
-        )
+        Publishers.MergeMany([
+            $useMacro.settingsChangeEvent(),
+            $useMacroInEnglishMode.settingsChangeEvent(),
+            $autoCapsMacro.settingsChangeEvent()
+        ])
         .filter { [weak self] _ in
             !(self?.isLoadingSettings ?? true)
         }
         .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
-        .dropFirst()
         .sink { [weak self] _ in
             guard let self = self else { return }
             self.saveSettings()
@@ -157,12 +156,12 @@ final class MacroState: ObservableObject {
         }.store(in: &cancellables)
 
         $useSystemTextReplacements
+            .dropFirst()
             .removeDuplicates()
             .filter { [weak self] _ in
                 !(self?.isLoadingSettings ?? true)
             }
             .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
-            .dropFirst()
             .sink { [weak self] _ in
                 guard let self = self else { return }
                 self.saveSettings()
@@ -172,16 +171,15 @@ final class MacroState: ObservableObject {
             .store(in: &cancellables)
 
         // Observer for emoji hotkey settings
-        Publishers.Merge3(
-            $enableEmojiHotkey.map { _ in () },
-            $emojiHotkeyModifiersRaw.map { _ in () },
-            $emojiHotkeyKeyCode.map { _ in () }
-        )
+        Publishers.MergeMany([
+            $enableEmojiHotkey.settingsChangeEvent(),
+            $emojiHotkeyModifiersRaw.settingsChangeEvent(),
+            $emojiHotkeyKeyCode.settingsChangeEvent()
+        ])
         .filter { [weak self] _ in
             !(self?.isLoadingSettings ?? true)
         }
         .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
-        .dropFirst()
         .sink { [weak self] in
             guard let self = self else { return }
             // Save settings when emoji hotkey changes
