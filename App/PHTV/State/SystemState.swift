@@ -344,17 +344,27 @@ final class SystemState: ObservableObject {
         }.store(in: &cancellables)
 
         // Observer for system settings
-        Publishers.MergeMany([
+        let systemSettingsChanges = Publishers.MergeMany([
             $performLayoutCompat.settingsChangeEvent(),
             $safeMode.settingsChangeEvent()
         ])
         .filter { [weak self] _ in
             !(self?.isLoadingSettings ?? true)
         }
+        .share()
+
+        systemSettingsChanges
+        .sink { [weak self] _ in
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self, !self.isLoadingSettings else { return }
+                self.saveSettings()
+            }
+        }.store(in: &cancellables)
+
+        systemSettingsChanges
         .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
         .sink { [weak self] _ in
             guard let self = self else { return }
-            self.saveSettings()
             NotificationCenter.default.post(
                 name: NotificationName.phtvSettingsChanged, object: nil)
         }.store(in: &cancellables)
@@ -376,7 +386,7 @@ final class SystemState: ObservableObject {
         }.store(in: &cancellables)
 
         // Bug report settings observers
-        Publishers.MergeMany([
+        let bugReportSettingsChanges = Publishers.MergeMany([
             $includeSystemInfo.settingsChangeEvent(),
             $includeLogs.settingsChangeEvent(),
             $includeCrashLogs.settingsChangeEvent()
@@ -384,10 +394,20 @@ final class SystemState: ObservableObject {
         .filter { [weak self] _ in
             !(self?.isLoadingSettings ?? true)
         }
+        .share()
+
+        bugReportSettingsChanges
+        .sink { [weak self] _ in
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self, !self.isLoadingSettings else { return }
+                self.saveSettings()
+            }
+        }.store(in: &cancellables)
+
+        bugReportSettingsChanges
         .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
         .sink { [weak self] _ in
             guard let self = self else { return }
-            self.saveSettings()
         }.store(in: &cancellables)
     }
 

@@ -91,7 +91,7 @@ final class ClipboardHistoryState: ObservableObject {
     // MARK: - Setup Observers
 
     func setupObservers() {
-        Publishers.MergeMany([
+        let clipboardChanges = Publishers.MergeMany([
             $enableClipboardHistory.settingsChangeEvent(),
             $clipboardHotkeyModifiersRaw.settingsChangeEvent(),
             $clipboardHotkeyKeyCode.settingsChangeEvent(),
@@ -100,10 +100,20 @@ final class ClipboardHistoryState: ObservableObject {
         .filter { [weak self] _ in
             !(self?.isLoadingSettings ?? true)
         }
+        .share()
+
+        clipboardChanges
+        .sink { [weak self] _ in
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self, !self.isLoadingSettings else { return }
+                self.saveSettings()
+            }
+        }.store(in: &cancellables)
+
+        clipboardChanges
         .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
         .sink { [weak self] in
             guard let self = self else { return }
-            self.saveSettings()
             NotificationCenter.default.post(name: NotificationName.clipboardHotkeySettingsChanged, object: nil)
         }.store(in: &cancellables)
     }

@@ -138,7 +138,7 @@ final class MacroState: ObservableObject {
 
     func setupObservers() {
         // Observer for macro settings
-        Publishers.MergeMany([
+        let macroSettingsChanges = Publishers.MergeMany([
             $useMacro.settingsChangeEvent(),
             $useMacroInEnglishMode.settingsChangeEvent(),
             $autoCapsMacro.settingsChangeEvent()
@@ -146,32 +146,53 @@ final class MacroState: ObservableObject {
         .filter { [weak self] _ in
             !(self?.isLoadingSettings ?? true)
         }
+        .share()
+
+        macroSettingsChanges
+        .sink { [weak self] _ in
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self, !self.isLoadingSettings else { return }
+                self.saveSettings()
+            }
+        }.store(in: &cancellables)
+
+        macroSettingsChanges
         .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
         .sink { [weak self] _ in
             guard let self = self else { return }
-            self.saveSettings()
             NotificationCenter.default.post(
                 name: NotificationName.phtvSettingsChanged, object: nil
             )
         }.store(in: &cancellables)
 
-        $useSystemTextReplacements
+        let systemTextReplacementChanges = $useSystemTextReplacements
             .dropFirst()
             .removeDuplicates()
             .filter { [weak self] _ in
                 !(self?.isLoadingSettings ?? true)
             }
+            .share()
+
+        systemTextReplacementChanges
+            .sink { [weak self] _ in
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self, !self.isLoadingSettings else { return }
+                    self.saveSettings()
+                }
+            }
+            .store(in: &cancellables)
+
+        systemTextReplacementChanges
             .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
             .sink { [weak self] _ in
                 guard let self = self else { return }
-                self.saveSettings()
                 NotificationCenter.default.post(name: NotificationName.phtvSettingsChanged, object: nil)
                 NotificationCenter.default.post(name: NotificationName.macrosUpdated, object: nil)
             }
             .store(in: &cancellables)
 
         // Observer for emoji hotkey settings
-        Publishers.MergeMany([
+        let emojiHotkeyChanges = Publishers.MergeMany([
             $enableEmojiHotkey.settingsChangeEvent(),
             $emojiHotkeyModifiersRaw.settingsChangeEvent(),
             $emojiHotkeyKeyCode.settingsChangeEvent()
@@ -179,11 +200,20 @@ final class MacroState: ObservableObject {
         .filter { [weak self] _ in
             !(self?.isLoadingSettings ?? true)
         }
+        .share()
+
+        emojiHotkeyChanges
+        .sink { [weak self] _ in
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self, !self.isLoadingSettings else { return }
+                self.saveSettings()
+            }
+        }.store(in: &cancellables)
+
+        emojiHotkeyChanges
         .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
         .sink { [weak self] in
             guard let self = self else { return }
-            // Save settings when emoji hotkey changes
-            self.saveSettings()
             // Post notification to trigger sync in EmojiHotkeyManager
             PHTVLogger.shared.debug("[MacroState] Posting EmojiHotkeySettingsChanged notification")
             NotificationCenter.default.post(name: NotificationName.emojiHotkeySettingsChanged, object: nil)

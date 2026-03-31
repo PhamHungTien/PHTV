@@ -163,6 +163,19 @@ final class UIState: ObservableObject {
 
     }
 
+    private func persistHotkeySettings() {
+        SettingsObserver.shared.suspendNotifications()
+        let defaults = UserDefaults.standard
+        defaults.set(encodeSwitchKeyStatus(), forKey: UserDefaultsKey.switchKeyStatus)
+        defaults.set(beepOnModeSwitch, forKey: UserDefaultsKey.beepOnModeSwitch)
+    }
+
+    private func persistVietnameseMenubarIconPreference(_ value: Bool) {
+        SettingsObserver.shared.suspendNotifications()
+        UserDefaults.standard.set(value, forKey: UserDefaultsKey.useVietnameseMenubarIcon)
+        liveLog("Saved useVietnameseMenubarIcon: \(value)")
+    }
+
     func reloadFromDefaults() {
         loadSettings()
     }
@@ -231,25 +244,24 @@ final class UIState: ObservableObject {
             $switchKeyFn.settingsChangeEvent(),
             $beepOnModeSwitch.settingsChangeEvent()
         ])
+        .filter { [weak self] _ in
+            !(self?.isLoadingSettings ?? true)
+        }
+        .share()
 
         hotkeyChanges
-            .filter { [weak self] _ in
-                !(self?.isLoadingSettings ?? true)
-            }
+            .sink { [weak self] _ in
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self, !self.isLoadingSettings else { return }
+                    self.persistHotkeySettings()
+                }
+            }.store(in: &cancellables)
+
+        hotkeyChanges
             .debounce(for: .milliseconds(Timing.hotkeyDebounce), scheduler: RunLoop.main)
             .sink { [weak self] _ in
                 guard let self = self else { return }
-                SettingsObserver.shared.suspendNotifications()
                 let switchKeyStatus = self.encodeSwitchKeyStatus()
-                let currentStatus = UserDefaults.standard.integer(
-                    forKey: UserDefaultsKey.switchKeyStatus,
-                    default: Defaults.defaultSwitchKeyStatus
-                )
-                guard currentStatus != switchKeyStatus else {
-                    return
-                }
-                UserDefaults.standard.set(switchKeyStatus, forKey: UserDefaultsKey.switchKeyStatus)
-                UserDefaults.standard.set(self.beepOnModeSwitch, forKey: UserDefaultsKey.beepOnModeSwitch)
                 // Notify backend about hotkey change
                 self.liveLog("posting HotkeyChanged (0x\(String(switchKeyStatus, radix: 16)))")
                 NotificationCenter.default.post(
@@ -318,19 +330,20 @@ final class UIState: ObservableObject {
             }.store(in: &cancellables)
 
         // Debounced persistence for Vietnamese menubar icon
-        $useVietnameseMenubarIcon
+        let useVietnameseMenubarIconChanges = $useVietnameseMenubarIcon
             .dropFirst()
+            .removeDuplicates()
             .filter { [weak self] _ in
                 !(self?.isLoadingSettings ?? true)
             }
-            .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
+            .share()
+
+        useVietnameseMenubarIconChanges
             .sink { [weak self] value in
                 guard let self = self else { return }
-                SettingsObserver.shared.suspendNotifications()
-                let defaults = UserDefaults.standard
-                defaults.set(value, forKey: UserDefaultsKey.useVietnameseMenubarIcon)
-                self.liveLog("Saved useVietnameseMenubarIcon: \(value)")
-            }.store(in: &cancellables)
+                self.persistVietnameseMenubarIconPreference(value)
+            }
+            .store(in: &cancellables)
     }
 
     func resetToDefaults() {

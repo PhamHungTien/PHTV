@@ -17,7 +17,8 @@ final class AutoRestoreSettingsPersistenceTests: XCTestCase {
         UserDefaultsKey.allowConsonantZFWJ,
         UserDefaultsKey.quickTelex,
         UserDefaultsKey.menuBarIconSize,
-        UserDefaultsKey.switchKeyStatus
+        UserDefaultsKey.switchKeyStatus,
+        UserDefaultsKey.useVietnameseMenubarIcon
     ]
 
     private var savedValues: [String: Any] = [:]
@@ -179,6 +180,50 @@ final class AutoRestoreSettingsPersistenceTests: XCTestCase {
         try await Task.sleep(nanoseconds: 300_000_000)
 
         XCTAssertTrue(defaults.bool(forKey: UserDefaultsKey.allowConsonantZFWJ))
+    }
+
+    func testConsonantToggleSurvivesImmediateRuntimeReload() async {
+        let defaults = UserDefaults.standard
+        defaults.set(false, forKey: UserDefaultsKey.allowConsonantZFWJ)
+
+        await MainActor.run {
+            let appState = AppState.shared
+            appState.loadSettings()
+            appState.allowConsonantZFWJ = true
+        }
+
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        let persistedValue = await MainActor.run { () -> Bool in
+            let appState = AppState.shared
+            appState.refreshFromRuntime()
+            return appState.allowConsonantZFWJ
+        }
+
+        XCTAssertTrue(persistedValue)
+        XCTAssertTrue(defaults.bool(forKey: UserDefaultsKey.allowConsonantZFWJ))
+    }
+
+    func testMenubarIconToggleSurvivesImmediateRuntimeReload() async {
+        let defaults = UserDefaults.standard
+        defaults.set(false, forKey: UserDefaultsKey.useVietnameseMenubarIcon)
+
+        await MainActor.run {
+            let appState = AppState.shared
+            appState.loadSettings()
+            appState.useVietnameseMenubarIcon = true
+        }
+
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        let persistedValue = await MainActor.run { () -> Bool in
+            let appState = AppState.shared
+            appState.refreshFromRuntime()
+            return appState.useVietnameseMenubarIcon
+        }
+
+        XCTAssertTrue(persistedValue)
+        XCTAssertTrue(defaults.bool(forKey: UserDefaultsKey.useVietnameseMenubarIcon))
     }
 
     func testFirstSwitchHotkeyChangeAfterObserverSetupPersists() async throws {
