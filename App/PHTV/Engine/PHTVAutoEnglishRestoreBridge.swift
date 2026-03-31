@@ -260,9 +260,17 @@ private func startsWithNonVietnameseCluster(
     let first = indices[0]
     let second = length > 1 ? indices[1] : detectorInvalidIndex
     let third = length > 2 ? indices[2] : detectorInvalidIndex
+    let allowZFWJ = phtvRuntimeAllowConsonantZFWJEnabled() != 0
+    let quickStart = phtvRuntimeQuickStartConsonantEnabled() != 0
 
-    if first == DetectorIndex.f || first == DetectorIndex.j || first == DetectorIndex.w || first == DetectorIndex.z {
-        return true
+    if first == DetectorIndex.f {
+        return !(allowZFWJ || quickStart)
+    }
+    if first == DetectorIndex.j {
+        return !(allowZFWJ || quickStart)
+    }
+    if first == DetectorIndex.z {
+        return !allowZFWJ
     }
 
     if second != detectorInvalidIndex {
@@ -417,11 +425,19 @@ private func startsWithNonVietnameseKeyCluster(
     }
 
     let first = keyCodes[0]
+    let allowZFWJ = phtvRuntimeAllowConsonantZFWJEnabled() != 0
+    let quickStart = phtvRuntimeQuickStartConsonantEnabled() != 0
 
-    // Single letters that cannot start a Vietnamese word
-    if first == DetectorKeyCode.f || first == DetectorKeyCode.j ||
-       first == DetectorKeyCode.w || first == DetectorKeyCode.z {
-        return true
+    // Respect typing extensions before auto-restoring. If the current layout allows
+    // these initials, auto-restore should not pre-classify them as impossible.
+    if first == DetectorKeyCode.f {
+        return !(allowZFWJ || quickStart)
+    }
+    if first == DetectorKeyCode.j {
+        return !(allowZFWJ || quickStart)
+    }
+    if first == DetectorKeyCode.z {
+        return !allowZFWJ
     }
 
     guard length >= 3 else {
@@ -479,6 +495,8 @@ private func startsWithVietnameseConsonantOrVowel(
 
     let first = keyCodes[0]
     let second = length >= 3 ? keyCodes[1] : detectorInvalidIndex
+    let allowZFWJ = phtvRuntimeAllowConsonantZFWJEnabled() != 0
+    let quickStart = phtvRuntimeQuickStartConsonantEnabled() != 0
 
     var isVietnameseConsonant = false
 
@@ -487,6 +505,12 @@ private func startsWithVietnameseConsonantOrVowel(
         first == DetectorKeyCode.l || first == DetectorKeyCode.m || first == DetectorKeyCode.n ||
         first == DetectorKeyCode.p || first == DetectorKeyCode.r || first == DetectorKeyCode.s ||
         first == DetectorKeyCode.t || first == DetectorKeyCode.v || first == DetectorKeyCode.x {
+        isVietnameseConsonant = true
+    }
+    if allowZFWJ && (first == DetectorKeyCode.f || first == DetectorKeyCode.j || first == DetectorKeyCode.z) {
+        isVietnameseConsonant = true
+    }
+    if quickStart && (first == DetectorKeyCode.f || first == DetectorKeyCode.j || first == DetectorKeyCode.w) {
         isVietnameseConsonant = true
     }
 
