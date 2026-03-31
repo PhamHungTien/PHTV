@@ -296,7 +296,26 @@ final class PHTVVietnameseEngine {
         }
     }
 
+    func shouldPreferEnglishForExtendedConsonantWord(_ keySlice: [UInt32], englishLength: Int) -> Bool {
+        guard englishLength > 0, detectorIsEnglishWord(keySlice, englishLength) else { return false }
+
+        let firstKey = UInt16(keySlice[0] & UInt32(CHAR_MASK))
+        let quickStart = phtvRuntimeQuickStartConsonantEnabled() != 0
+
+        switch firstKey {
+        case KEY_Z:
+            return true
+        case KEY_F, KEY_J, KEY_W:
+            return !quickStart
+        default:
+            return false
+        }
+    }
+
     func hasVietnameseDictionaryMatchForAutoRestore(_ keySlice: [UInt32], englishLength: Int, typingLength: Int) -> Bool {
+        if shouldPreferEnglishForExtendedConsonantWord(keySlice, englishLength: englishLength) {
+            return false
+        }
         if englishLength > 0 && detectorIsVietnameseWord(keySlice, englishLength) {
             return true
         }

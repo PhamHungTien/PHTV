@@ -86,6 +86,10 @@ final class EngineRegressionTests: XCTestCase {
         }
     }
 
+    private func detectorKeyStates(for token: String) -> [UInt32] {
+        token.map { UInt32(keyCode(for: $0)) }
+    }
+
     private func isRestore(_ code: Int32) -> Bool {
         code == HookCodeState.restore.rawValue ||
         code == HookCodeState.restoreAndStartNewSession.rawValue
@@ -646,8 +650,46 @@ final class EngineRegressionTests: XCTestCase {
                          allowConsonantZFWJ: false, breakKey: KEY_COMMA)
     }
 
-    func testIssue160ForRestoresOnSpaceWhenAllowConsonantIsEnabled() {
-        runSpaceCase("for", expectRestore: true, allowConsonantZFWJ: true)
+    func testIssue160ForRestoresOnSpaceWhenAllowConsonantIsDisabledInEnglishMode() {
+        runSpaceCase("for", expectRestore: true, allowConsonantZFWJ: false)
+    }
+
+    func testIssue160ForRestoresOnSpaceWhenAllowConsonantIsDisabledInNonVietnameseMode() {
+        runSpaceCase("for", expectRestore: true, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: false)
+    }
+
+    func testIssue160ForRestoresOnCommaWhenAllowConsonantIsDisabledInEnglishMode() {
+        runWordBreakCase("for", expectRestore: true, allowConsonantZFWJ: false, breakKey: KEY_COMMA)
+    }
+
+    func testIssue160ForRestoresOnCommaWhenAllowConsonantIsDisabledInNonVietnameseMode() {
+        runWordBreakCase("for", expectRestore: true, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: false, breakKey: KEY_COMMA)
+    }
+
+    func testIssue160DetectorRecognizesForAsEnglishWord() {
+        let keyStates = detectorKeyStates(for: "for")
+        let isEnglish = keyStates.withUnsafeBufferPointer {
+            phtvDetectorIsEnglishWordFromKeyStates($0.baseAddress, Int32($0.count))
+        }
+        XCTAssertEqual(isEnglish, 1)
+    }
+
+    func testIssue160DetectorShouldRestoreForWhenAllowConsonantIsDisabled() {
+        let savedAllowConsonantZFWJ = PHTVEngineRuntimeFacade.allowConsonantZFWJ()
+        let savedQuickStart = PHTVEngineRuntimeFacade.quickStartConsonant()
+        defer {
+            PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(savedAllowConsonantZFWJ)
+            PHTVEngineRuntimeFacade.setQuickStartConsonant(savedQuickStart)
+        }
+
+        PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(0)
+        PHTVEngineRuntimeFacade.setQuickStartConsonant(0)
+
+        let keyStates = detectorKeyStates(for: "for")
+        let shouldRestore = keyStates.withUnsafeBufferPointer {
+            phtvDetectorShouldRestoreEnglishWord($0.baseAddress, Int32($0.count))
+        }
+        XCTAssertEqual(shouldRestore, 1)
     }
 
     func testIssue160FastRestoresOnSpaceWhenAllowConsonantIsEnabled() {

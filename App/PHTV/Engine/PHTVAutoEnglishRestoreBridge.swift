@@ -544,6 +544,28 @@ private func startsWithVietnameseConsonantOrVowel(
     return isVietnameseConsonant || isVietnameseVowel
 }
 
+private func shouldPreferEnglishForExtendedInitialWord(
+    keyCodes: [UInt8],
+    length: Int,
+    hasEnglishMatch: Bool
+) -> Bool {
+    guard hasEnglishMatch, length > 0 else {
+        return false
+    }
+
+    let first = keyCodes[0]
+    let quickStart = phtvRuntimeQuickStartConsonantEnabled() != 0
+
+    switch first {
+    case DetectorKeyCode.z:
+        return true
+    case DetectorKeyCode.f, DetectorKeyCode.j, DetectorKeyCode.w:
+        return !quickStart
+    default:
+        return false
+    }
+}
+
 private func detectorShouldRestoreEnglish(
     keyStates: UnsafePointer<UInt32>,
     stateIndex: Int
@@ -561,15 +583,23 @@ private func detectorShouldRestoreEnglish(
     let idx = decoded.indices
     let keyCodes = decoded.keyCodes
     let cString = decoded.cString
+    let hasEnglishMatch = detectorContainsEnglish(idx, length: stateIndex)
+    let preferEnglishForExtendedInitial = shouldPreferEnglishForExtendedInitialWord(
+        keyCodes: keyCodes,
+        length: stateIndex,
+        hasEnglishMatch: hasEnglishMatch
+    )
 
     // Vietnamese precedence rule: if the input can be interpreted as a Vietnamese
     // Telex form, never auto-restore it as English.
-    if detectorContainsVietnamese(idx, length: stateIndex) {
+    if detectorContainsVietnamese(idx, length: stateIndex) && !preferEnglishForExtendedInitial {
         return false
     }
 
     let toneless = detectorTonelessIndices(idx, length: stateIndex)
-    if toneless.count >= 2 && detectorContainsVietnamese(toneless, length: toneless.count) {
+    if toneless.count >= 2 &&
+        detectorContainsVietnamese(toneless, length: toneless.count) &&
+        !preferEnglishForExtendedInitial {
         return false
     }
 
@@ -577,7 +607,8 @@ private func detectorShouldRestoreEnglish(
         let firstKey = keyCodes[0]
         let lastKey = keyCodes[stateIndex - 1]
         if isToneMarkKeyCode(lastKey: lastKey, firstKey: firstKey),
-           detectorContainsVietnamese(idx, length: stateIndex - 1) {
+           detectorContainsVietnamese(idx, length: stateIndex - 1),
+           !preferEnglishForExtendedInitial {
             return false
         }
     }
@@ -593,7 +624,7 @@ private func detectorShouldRestoreEnglish(
     // Fast path: words starting with clusters impossible in Vietnamese restore immediately
     // without hitting the Vietnamese dict (avoids false negatives for tech/brand names)
     let isDefinitelyNonVietnamese = startsWithNonVietnameseCluster(idx, length: stateIndex)
-    if isDefinitelyNonVietnamese && detectorContainsEnglish(idx, length: stateIndex) {
+    if isDefinitelyNonVietnamese && hasEnglishMatch {
         return true
     }
 
@@ -606,7 +637,7 @@ private func detectorShouldRestoreEnglish(
             if !startsWithNonVietnameseKeyCluster(keyCodes: keyCodes, length: stateIndex) {
                 if startsWithVietnameseConsonantOrVowel(keyCodes: keyCodes, length: stateIndex) &&
                     detectorContainsVietnamese(idx, length: stateIndex - 1) {
-                    if stateIndex >= 4 && detectorContainsEnglish(idx, length: stateIndex) &&
+                    if stateIndex >= 4 && hasEnglishMatch &&
                         startsWithNonVietnameseCluster(idx, length: stateIndex) {
                         return true
                     }
@@ -623,7 +654,7 @@ private func detectorShouldRestoreEnglish(
         return false
     }
 
-    return detectorContainsEnglish(idx, length: stateIndex)
+    return hasEnglishMatch
 }
 
 @_cdecl("phtvDetectorIsEnglishWordUtf8")
