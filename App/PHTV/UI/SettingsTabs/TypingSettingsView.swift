@@ -147,7 +147,7 @@ struct TypingSettingsView: View {
                             SettingsDivider()
 
                             AutoRestoreEnglishModeSection(
-                                selectedMode: $appState.autoRestoreEnglishWordMode
+                                inputMethodState: appState.inputMethodState
                             )
                         }
 
@@ -215,28 +215,24 @@ struct TypingSettingsView: View {
 // MARK: - Auto Restore Section
 
 struct AutoRestoreEnglishModeSection: View {
-    @Binding var selectedMode: AutoRestoreEnglishMode
+    @ObservedObject var inputMethodState: InputMethodState
 
     var body: some View {
         let contentLeadingPadding: CGFloat = 38
 
-        VStack(alignment: .leading, spacing: 8) {
-            Picker("Chế độ khôi phục", selection: $selectedMode) {
-                ForEach(AutoRestoreEnglishMode.allCases) { mode in
-                    Text(mode.displayName).tag(mode)
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(AutoRestoreEnglishMode.allCases) { mode in
+                SettingsSelectionRow(
+                    title: mode.displayName,
+                    subtitle: mode.descriptionText,
+                    isSelected: inputMethodState.autoRestoreEnglishWordMode == mode
+                ) {
+                    guard inputMethodState.autoRestoreEnglishWordMode != mode else { return }
+                    inputMethodState.autoRestoreEnglishWordMode = mode
                 }
             }
-            .pickerStyle(.radioGroup)
-            .labelsHidden()
-            .padding(.leading, contentLeadingPadding)
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            Text(selectedMode.descriptionText)
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-                .padding(.leading, contentLeadingPadding)
-                .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .padding(.leading, contentLeadingPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
         .multilineTextAlignment(.leading)
         .padding(.vertical, 6)
