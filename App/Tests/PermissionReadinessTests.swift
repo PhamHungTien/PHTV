@@ -14,6 +14,7 @@ final class PermissionReadinessTests: XCTestCase {
     func testResolveReturnsReadyWhenAccessibilityAndEventTapAreAvailable() {
         let state = PHTVTypingPermissionState.resolve(
             accessibilityTrusted: true,
+            inputMonitoringGranted: true,
             eventTapReady: true
         )
 
@@ -25,6 +26,7 @@ final class PermissionReadinessTests: XCTestCase {
     func testResolveReturnsWaitingWhenAccessibilityExistsButEventTapIsNotReady() {
         let state = PHTVTypingPermissionState.resolve(
             accessibilityTrusted: true,
+            inputMonitoringGranted: true,
             eventTapReady: false
         )
 
@@ -33,9 +35,22 @@ final class PermissionReadinessTests: XCTestCase {
         XCTAssertFalse(state.isTypingPermissionReady)
     }
 
+    func testResolveReturnsInputMonitoringRequiredWhenAccessibilityExistsButListenAccessIsMissing() {
+        let state = PHTVTypingPermissionState.resolve(
+            accessibilityTrusted: true,
+            inputMonitoringGranted: false,
+            eventTapReady: false
+        )
+
+        XCTAssertEqual(state, .inputMonitoringRequired)
+        XCTAssertTrue(state.hasAccessibilityPermission)
+        XCTAssertFalse(state.isTypingPermissionReady)
+    }
+
     func testResolveRejectsImpossibleReadyStateWithoutAccessibility() {
         let state = PHTVTypingPermissionState.resolve(
             accessibilityTrusted: false,
+            inputMonitoringGranted: true,
             eventTapReady: true
         )
 

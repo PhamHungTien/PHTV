@@ -14,16 +14,21 @@ import ApplicationServices
 enum PHTVTypingPermissionState: Equatable {
     case ready
     case waitingForEventTap
+    case inputMonitoringRequired
     case accessibilityRequired
 
-    static func resolve(accessibilityTrusted: Bool, eventTapReady: Bool) -> Self {
-        if accessibilityTrusted && eventTapReady {
-            return .ready
+    static func resolve(
+        accessibilityTrusted: Bool,
+        inputMonitoringGranted: Bool = true,
+        eventTapReady: Bool
+    ) -> Self {
+        guard accessibilityTrusted else {
+            return .accessibilityRequired
         }
-        if accessibilityTrusted {
-            return .waitingForEventTap
+        guard inputMonitoringGranted else {
+            return .inputMonitoringRequired
         }
-        return .accessibilityRequired
+        return eventTapReady ? .ready : .waitingForEventTap
     }
 
     var hasAccessibilityPermission: Bool {
@@ -50,6 +55,7 @@ final class SystemState: ObservableObject {
 
     // Accessibility / typing readiness
     @Published var hasAccessibilityPermission: Bool = false
+    @Published var hasInputMonitoringPermission: Bool = false
     @Published var isTypingPermissionReady: Bool = false
 
     // Update notification - shown when new version is available on startup
@@ -185,14 +191,21 @@ final class SystemState: ObservableObject {
 
     private func refreshPermissionState(eventTapReady: Bool? = nil) {
         let axTrusted = AXIsProcessTrusted()
-        let liveEventTapReady = axTrusted && PHTVManager.isInited() && PHTVManager.isEventTapEnabled()
+        let postEventGranted = PHTVPermissionService.hasPostEventAccess()
+        let accessibilityTrusted = axTrusted && postEventGranted
+        let inputMonitoringGranted = PHTVPermissionService.hasListenEventAccess()
+        let liveEventTapReady = accessibilityTrusted && PHTVManager.isInited() && PHTVManager.isEventTapEnabled()
         let effectiveEventTapReady = eventTapReady.map { $0 || liveEventTapReady } ?? liveEventTapReady
         let resolvedState = PHTVTypingPermissionState.resolve(
-            accessibilityTrusted: axTrusted,
+            accessibilityTrusted: accessibilityTrusted,
+            inputMonitoringGranted: inputMonitoringGranted,
             eventTapReady: effectiveEventTapReady
         )
         if hasAccessibilityPermission != resolvedState.hasAccessibilityPermission {
             hasAccessibilityPermission = resolvedState.hasAccessibilityPermission
+        }
+        if hasInputMonitoringPermission != inputMonitoringGranted {
+            hasInputMonitoringPermission = inputMonitoringGranted
         }
         if isTypingPermissionReady != resolvedState.isTypingPermissionReady {
             isTypingPermissionReady = resolvedState.isTypingPermissionReady
@@ -398,7 +411,7 @@ final class SystemState: ObservableObject {
         // React immediately to macOS TCC accessibility changes without depending on
         // the PHTVTCCNotificationService chain. This is the Apple-recommended approach
         // for detecting accessibility permission grants in real time.
-        let tccObserver = DistributedNotificationCenter.default().addObserver(
+        let accessibilityObserver = DistributedNotificationCenter.default().addObserver(
             forName: Notification.Name("com.apple.accessibility.api"),
             object: nil,
             queue: .main
@@ -408,9 +421,35 @@ final class SystemState: ObservableObject {
                 // Short settle delay: TCC database write propagates asynchronously.
                 try? await Task.sleep(nanoseconds: 200_000_000) // 200ms
                 self.refreshPermissionState()
+                let axTrusted = AXIsProcessTrusted()
+                let postEventGranted = PHTVPermissionService.hasPostEventAccess()
                 NSLog(
-                    "[SystemState] AX TCC notification → AXIsProcessTrusted=%@, eventTapReady=%@",
-                    self.hasAccessibilityPermission ? "YES" : "NO",
+                    "[SystemState] AX TCC notification → AX=%@, PostEvent=%@, InputMonitoring=%@, eventTapReady=%@",
+                    axTrusted ? "YES" : "NO",
+                    postEventGranted ? "YES" : "NO",
+                    self.hasInputMonitoringPermission ? "YES" : "NO",
+                    self.isTypingPermissionReady ? "YES" : "NO"
+                )
+            }
+        }
+        notificationObservers.append(accessibilityObserver)
+
+        let tccObserver = DistributedNotificationCenter.default().addObserver(
+            forName: Notification.Name("com.apple.TCC.access.changed"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self = self else { return }
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 200_000_000) // 200ms
+                self.refreshPermissionState()
+                let axTrusted = AXIsProcessTrusted()
+                let postEventGranted = PHTVPermissionService.hasPostEventAccess()
+                NSLog(
+                    "[SystemState] Generic TCC notification → AX=%@, PostEvent=%@, InputMonitoring=%@, eventTapReady=%@",
+                    axTrusted ? "YES" : "NO",
+                    postEventGranted ? "YES" : "NO",
+                    self.hasInputMonitoringPermission ? "YES" : "NO",
                     self.isTypingPermissionReady ? "YES" : "NO"
                 )
             }

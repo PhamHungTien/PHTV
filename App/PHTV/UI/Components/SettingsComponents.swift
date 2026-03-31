@@ -176,6 +176,7 @@ struct SettingsDivider: View {
 
 struct StatusCard: View {
     let hasAccessibilityPermission: Bool
+    let hasInputMonitoringPermission: Bool
     let isReady: Bool
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorScheme) private var colorScheme
@@ -204,12 +205,12 @@ struct StatusCard: View {
 
             Spacer()
 
-            if !hasAccessibilityPermission {
-                Button("Cấp quyền") {
-                    if let url = URL(
-                        string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
-                    ) {
-                        NSWorkspace.shared.open(url)
+            if shouldShowPermissionButton {
+                Button(permissionButtonTitle) {
+                    if !hasAccessibilityPermission {
+                        PHTVAccessibilityService.openAccessibilityPreferences()
+                    } else if !hasInputMonitoringPermission {
+                        PHTVPermissionService.openInputMonitoringPreferences()
                     }
                 }
                 .controlSize(.small)
@@ -239,31 +240,60 @@ struct StatusCard: View {
         if isReady {
             return .green
         }
-        return hasAccessibilityPermission ? .yellow : .orange
+        if !hasAccessibilityPermission || !hasInputMonitoringPermission {
+            return .orange
+        }
+        return .yellow
     }
 
     private var statusIcon: String {
         if isReady {
             return "checkmark.shield.fill"
         }
-        return hasAccessibilityPermission ? "clock.badge.exclamationmark.fill" : "exclamationmark.triangle.fill"
+        if !hasAccessibilityPermission || !hasInputMonitoringPermission {
+            return "exclamationmark.triangle.fill"
+        }
+        return "clock.badge.exclamationmark.fill"
     }
 
     private var statusTitle: String {
         if isReady {
             return "Sẵn sàng"
         }
-        return hasAccessibilityPermission ? "Đang hoàn tất khởi tạo" : "Thiếu quyền Trợ năng"
+        if !hasAccessibilityPermission {
+            return "Thiếu quyền Trợ năng"
+        }
+        if !hasInputMonitoringPermission {
+            return "Thiếu Input Monitoring"
+        }
+        return "Đang hoàn tất khởi tạo"
     }
 
     private var statusDescription: String {
         if isReady {
             return "PHTV đã sẵn sàng để gõ tiếng Việt."
         }
-        if hasAccessibilityPermission {
-            return "Quyền đã được cấp, nhưng bộ gõ chưa sẵn sàng. Nếu chưa hoạt động, hãy mở lại ứng dụng hoặc bật lại quyền."
+        if !hasAccessibilityPermission {
+            return "Cần cấp quyền Trợ năng để PHTV hoạt động ổn định."
         }
-        return "Cần cấp quyền Trợ năng để PHTV hoạt động ổn định."
+        if !hasInputMonitoringPermission {
+            return "PHTV đã có Trợ năng nhưng còn thiếu Input Monitoring để bắt phím toàn cục."
+        }
+        return "Quyền đã được cấp, nhưng bộ gõ chưa sẵn sàng. Nếu chưa hoạt động, hãy mở lại ứng dụng hoặc bật lại quyền."
+    }
+
+    private var shouldShowPermissionButton: Bool {
+        !isReady && (!hasAccessibilityPermission || !hasInputMonitoringPermission)
+    }
+
+    private var permissionButtonTitle: String {
+        if !hasAccessibilityPermission {
+            return "Cấp quyền"
+        }
+        if !hasInputMonitoringPermission {
+            return "Mở Input Monitoring"
+        }
+        return "Mở quyền"
     }
 }
 

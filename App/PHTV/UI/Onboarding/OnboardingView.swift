@@ -823,7 +823,7 @@ struct AccessibilityStepView: View {
         VStack(spacing: 20) {
             OnboardingStepHeader(
                 title: "Cấp quyền truy cập",
-                subtitle: "PHTV cần quyền Accessibility để gõ ổn định",
+                subtitle: "PHTV cần quyền Trợ năng và Input Monitoring để gõ ổn định",
                 icon: "hand.raised.fill"
             )
 
@@ -835,32 +835,7 @@ struct AccessibilityStepView: View {
                         description: "Quyền đã được cấp và bộ gõ đã sẵn sàng hoạt động.",
                         tint: .green
                     )
-                } else if appState.hasAccessibilityPermission {
-                    OnboardingStatusCard(
-                        icon: "clock.badge.exclamationmark.fill",
-                        title: "Đang hoàn tất khởi tạo",
-                        description: "Quyền đã được cấp, nhưng PHTV vẫn đang chờ khởi tạo lại bộ gõ.",
-                        tint: .yellow
-                    )
-
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Nếu chưa hoạt động")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-
-                        OnboardingNumberedRow(number: "1", text: "Chờ vài giây để macOS áp dụng quyền.")
-                        OnboardingNumberedRow(number: "2", text: "Nếu vẫn chưa gõ được, thử đóng và mở lại PHTV.")
-                        OnboardingNumberedRow(number: "3", text: "Nếu cần, tắt rồi bật lại quyền Accessibility cho PHTV.")
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        OnboardingSurface(
-                            cornerRadius: 14,
-                            fillColor: Color(nsColor: .controlBackgroundColor),
-                            strokeColor: Color.black.opacity(0.1)
-                        )
-                    )
-                } else {
+                } else if !appState.hasAccessibilityPermission {
                     OnboardingStatusCard(
                         icon: "exclamationmark.triangle.fill",
                         title: "Cần cấp quyền Accessibility",
@@ -886,14 +861,65 @@ struct AccessibilityStepView: View {
                         )
                     )
 
-                    Button("Mở Cài đặt Quyền riêng tư") {
-                        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                            NSWorkspace.shared.open(url)
-                        } else {
-                            PHTVLogger.shared.error("[Onboarding] Invalid accessibility settings URL")
-                        }
+                    Button("Mở Cài đặt Accessibility") {
+                        PHTVAccessibilityService.openAccessibilityPreferences()
                     }
                     .buttonStyle(OnboardingPrimaryButtonStyle())
+                } else if !appState.hasInputMonitoringPermission {
+                    OnboardingStatusCard(
+                        icon: "keyboard.badge.ellipsis.fill",
+                        title: "Cần cấp quyền Input Monitoring",
+                        description: "PHTV đã có Trợ năng nhưng còn thiếu quyền bắt phím toàn cục.",
+                        tint: .orange
+                    )
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Hướng dẫn nhanh")
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+
+                        OnboardingNumberedRow(number: "1", text: "Mở mục Input Monitoring trong Cài đặt Quyền riêng tư.")
+                        OnboardingNumberedRow(number: "2", text: "Bật công tắc cho PHTV để cho phép nghe phím toàn cục.")
+                        OnboardingNumberedRow(number: "3", text: "Nếu vẫn chưa gõ được, thử tắt rồi bật lại quyền này hoặc mở lại PHTV.")
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        OnboardingSurface(
+                            cornerRadius: 14,
+                            fillColor: Color(nsColor: .controlBackgroundColor),
+                            strokeColor: Color.black.opacity(0.1)
+                        )
+                    )
+
+                    Button("Mở Input Monitoring") {
+                        PHTVPermissionService.openInputMonitoringPreferences()
+                    }
+                    .buttonStyle(OnboardingPrimaryButtonStyle())
+                } else {
+                    OnboardingStatusCard(
+                        icon: "clock.badge.exclamationmark.fill",
+                        title: "Đang hoàn tất khởi tạo",
+                        description: "Các quyền đã được cấp, nhưng PHTV vẫn đang chờ khởi tạo lại bộ gõ.",
+                        tint: .yellow
+                    )
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Nếu chưa hoạt động")
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+
+                        OnboardingNumberedRow(number: "1", text: "Chờ vài giây để macOS áp dụng quyền.")
+                        OnboardingNumberedRow(number: "2", text: "Nếu vẫn chưa gõ được, thử đóng và mở lại PHTV.")
+                        OnboardingNumberedRow(number: "3", text: "Nếu cần, tắt rồi bật lại Input Monitoring hoặc Accessibility cho PHTV.")
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        OnboardingSurface(
+                            cornerRadius: 14,
+                            fillColor: Color(nsColor: .controlBackgroundColor),
+                            strokeColor: Color.black.opacity(0.1)
+                        )
+                    )
                 }
             }
             .padding(.horizontal, OnboardingStyle.contentHorizontalPadding)
@@ -907,7 +933,9 @@ struct AccessibilityStepView: View {
             appState.checkAccessibilityPermission()
             // When AX is granted, ensure AppDelegate starts the event tap
             // (handles the case where TCC notification wasn't delivered).
-            if appState.hasAccessibilityPermission && !appState.isTypingPermissionReady {
+            if appState.hasAccessibilityPermission &&
+                appState.hasInputMonitoringPermission &&
+                !appState.isTypingPermissionReady {
                 AppDelegate.current()?.checkAccessibilityAndRestart()
             }
         }

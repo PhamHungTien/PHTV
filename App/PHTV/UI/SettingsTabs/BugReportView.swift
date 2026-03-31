@@ -417,8 +417,8 @@ struct BugReportView: View {
                 } label: {
                     if isSending {
                         ProgressView()
-                            .scaleEffect(0.7)
-                            .frame(maxWidth: .infinity, minHeight: 36)
+                            .controlSize(.small)
+                            .frame(maxWidth: .infinity)
                     } else {
                         Label("Sao chép báo lỗi", systemImage: "doc.on.doc")
                             .frame(maxWidth: .infinity)
@@ -434,8 +434,8 @@ struct BugReportView: View {
                 } label: {
                     if isSending {
                         ProgressView()
-                            .scaleEffect(0.7)
-                            .frame(maxWidth: .infinity, minHeight: 36)
+                            .controlSize(.small)
+                            .frame(maxWidth: .infinity)
                     } else {
                         Label("GitHub", systemImage: "link")
                             .frame(maxWidth: .infinity)
@@ -452,8 +452,8 @@ struct BugReportView: View {
                 } label: {
                     if isSending {
                         ProgressView()
-                            .scaleEffect(0.7)
-                            .frame(maxWidth: .infinity, minHeight: 36)
+                            .controlSize(.small)
+                            .frame(maxWidth: .infinity)
                     } else {
                         Label("Gửi email", systemImage: "envelope")
                             .frame(maxWidth: .infinity)

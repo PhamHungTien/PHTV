@@ -523,7 +523,7 @@ struct ConvertToolView: View {
             } label: {
                 if isConverting {
                     ProgressView()
-                        .scaleEffect(0.7)
+                        .controlSize(.small)
                         .frame(width: 16, height: 16)
                 } else {
                     Label("Chuyển đổi", systemImage: "arrow.triangle.2.circlepath")

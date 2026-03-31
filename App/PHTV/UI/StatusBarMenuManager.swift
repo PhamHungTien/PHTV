@@ -285,10 +285,18 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
         m.addItem(.separator())
 
         if appState.isTypingPermissionReady {
-            let item = NSMenuItem(title: "Đã cấp quyền Accessibility", action: nil, keyEquivalent: "")
+            let item = NSMenuItem(title: "Đã cấp quyền nhập liệu", action: nil, keyEquivalent: "")
             item.image = sfImage("checkmark.shield")
             item.isEnabled = false
             m.addItem(item)
+        } else if appState.hasAccessibilityPermission && !appState.hasInputMonitoringPermission {
+            m.addItem(
+                actionItem(
+                    "Cần cấp quyền Input Monitoring",
+                    image: "keyboard.badge.ellipsis",
+                    sel: #selector(openInputMonitoringPrefs)
+                )
+            )
         } else if appState.hasAccessibilityPermission {
             let item = NSMenuItem(title: "Đã cấp quyền, đang khởi tạo", action: nil, keyEquivalent: "")
             item.image = sfImage("clock.badge.exclamationmark")
@@ -401,6 +409,10 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
     @objc private func openAccessibilityPrefs() {
         guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") else { return }
         NSWorkspace.shared.open(url)
+    }
+
+    @objc private func openInputMonitoringPrefs() {
+        PHTVPermissionService.openInputMonitoringPreferences()
     }
 
     @objc private func openConvertTool() {

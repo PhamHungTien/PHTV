@@ -634,7 +634,6 @@ struct SettingsButtonRow: View {
                 if isLoading {
                     ProgressView()
                         .controlSize(.small)
-                        .scaleEffect(0.8)
                         .frame(width: 24, height: 24)
                         .tint(iconColor)
                 } else {
