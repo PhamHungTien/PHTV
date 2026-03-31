@@ -13,7 +13,6 @@
 [![Swift 6.0+](https://img.shields.io/badge/Swift-6.0+-orange.svg)](https://swift.org)
 [![GitHub release](https://img.shields.io/github/v/release/PhamHungTien/PHTV)](../../releases/latest)
 [![Auto-update](https://img.shields.io/badge/Auto--update-Sparkle-green.svg)](https://sparkle-project.org/)
-[![GitHub downloads](https://img.shields.io/github/downloads/PhamHungTien/PHTV/total?label=Downloads)](../../releases)
 [![GitHub stars](https://img.shields.io/github/stars/PhamHungTien/PHTV)](../../stargazers)
 [![Sponsor](https://img.shields.io/badge/❤️_Sponsor-PHTV-ea4aaa?style=flat&logo=github-sponsors)](https://phamhungtien.com/PHTV/#donate)
 
