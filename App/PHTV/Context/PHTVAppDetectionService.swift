@@ -262,6 +262,14 @@ final class PHTVAppDetectionService: NSObject {
         "com.apple.ScreenContinuity"
     ])
 
+    private static let appListMatchingAliases: [String: String] = [
+        "com.apple.spotlight": "com.apple.spotlight",
+        "com.apple.systemuiserver": "com.apple.spotlight",
+        "com.apple.apps.launcher": "com.apple.spotlight",
+        "com.apple.launchpad": "com.apple.launchpad",
+        "com.apple.launchpad.launcher": "com.apple.launchpad"
+    ]
+
     private static let terminalKeywords: [String] = [
         "terminal",
         "xterm",
@@ -299,6 +307,23 @@ final class PHTVAppDetectionService: NSObject {
             return nil
         }
         return bundleId.lowercased()
+    }
+
+    @objc(canonicalBundleIdForAppListMatching:)
+    class func canonicalBundleIdForAppListMatching(_ bundleId: String?) -> String? {
+        guard let normalized = normalizeBundleId(bundleId) else {
+            return nil
+        }
+        return appListMatchingAliases[normalized] ?? normalized
+    }
+
+    @objc(bundleId:matchesAppListBundleId:)
+    class func bundleId(_ bundleId: String?, matchesAppListBundleId appListBundleId: String?) -> Bool {
+        guard let lhs = canonicalBundleIdForAppListMatching(bundleId),
+              let rhs = canonicalBundleIdForAppListMatching(appListBundleId) else {
+            return false
+        }
+        return lhs == rhs
     }
 
     @objc class func isBrowserApp(_ bundleId: String?) -> Bool {

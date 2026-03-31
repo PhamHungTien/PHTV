@@ -30,6 +30,7 @@ private let phtvNotificationLanguageChangedFromExcludedApp = Notification.Name("
 private let phtvNotificationTCCDatabaseChanged = Notification.Name("TCCDatabaseChanged")
 private let phtvNotificationApplicationDidBecomeActive = NSApplication.didBecomeActiveNotification
 private let phtvSpotlightInvalidationDedupMs: UInt64 = 30
+private let phtvSpotlightBundleIdentifier = "com.apple.Spotlight"
 private let phtvEmojiHotkeyWakeRefreshDelays: [TimeInterval] = [0.0, 0.3, 1.0]
 private let phtvClipboardHotkeyWakeRefreshDelays: [TimeInterval] = [0.0, 0.3, 1.0]
 
@@ -52,7 +53,8 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
     }
 
     for entry in appList {
-        if let candidate = entry["bundleIdentifier"] as? String, candidate == bundleIdentifier {
+        if let candidate = entry["bundleIdentifier"] as? String,
+           PHTVAppDetectionService.bundleId(bundleIdentifier, matchesAppListBundleId: candidate) {
             return true
         }
     }
@@ -61,18 +63,54 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
 }
 
 @MainActor extension AppDelegate {
+    private func bundleIdentifierForAppListChecks(frontmostBundleIdentifier: String) -> String {
+        guard !frontmostBundleIdentifier.isEmpty else {
+            return frontmostBundleIdentifier
+        }
+
+        _ = PHTVCacheStateService.invalidateSpotlightCache(dedupWindowMs: phtvSpotlightInvalidationDedupMs)
+        guard PHTVSpotlightDetectionService.isSpotlightActive() else {
+            return frontmostBundleIdentifier
+        }
+
+        if let focusedBundleIdentifier = PHTVCacheStateService.cachedFocusedBundleId(),
+           !focusedBundleIdentifier.isEmpty {
+            return focusedBundleIdentifier
+        }
+
+        return phtvSpotlightBundleIdentifier
+    }
+
+    private func refreshAppListContexts(forFrontmostBundleIdentifier frontmostBundleIdentifier: String,
+                                        forceExcludedRecheck: Bool = false) {
+        let effectiveBundleIdentifier = bundleIdentifierForAppListChecks(
+            frontmostBundleIdentifier: frontmostBundleIdentifier
+        )
+
+        if forceExcludedRecheck {
+            previousBundleIdentifier = nil
+        }
+
+        if effectiveBundleIdentifier != frontmostBundleIdentifier {
+            NSLog(
+                "[AppContext] Resolved effective app-list bundle '%@' from frontmost '%@'",
+                effectiveBundleIdentifier,
+                frontmostBundleIdentifier
+            )
+        }
+
+        checkExcludedApp(effectiveBundleIdentifier)
+        checkSendKeyStepByStepApp(effectiveBundleIdentifier)
+        checkUpperCaseExcludedApp(effectiveBundleIdentifier)
+    }
+
     private func applyFrontmostAppContext(_ bundleIdentifier: String) {
         PHTVAppContextService.updateFrontmostBundleCache(bundleIdentifier)
-        PHTVCacheStateService.updateSpotlightCache(false, pid: 0, bundleId: bundleIdentifier)
-        checkExcludedApp(bundleIdentifier)
+        refreshAppListContexts(forFrontmostBundleIdentifier: bundleIdentifier)
 
         if !isInExcludedApp && PHTVManager.isSmartSwitchKeyEnabled() && PHTVManager.isInited() {
             PHTVManager.notifyActiveAppChanged()
         }
-
-        _ = PHTVCacheStateService.invalidateSpotlightCache(dedupWindowMs: phtvSpotlightInvalidationDedupMs)
-        checkSendKeyStepByStepApp(bundleIdentifier)
-        checkUpperCaseExcludedApp(bundleIdentifier)
     }
 
     func syncCurrentFrontmostAppContext(reason: String, forceExcludedRecheck: Bool = false) {
@@ -118,8 +156,10 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
         _ = notification
         if let bundleIdentifier = PHTVAppContextService.currentFrontmostBundleId(),
            !bundleIdentifier.isEmpty {
-            previousBundleIdentifier = nil
-            checkExcludedApp(bundleIdentifier)
+            refreshAppListContexts(
+                forFrontmostBundleIdentifier: bundleIdentifier,
+                forceExcludedRecheck: true
+            )
         }
     }
 
@@ -127,7 +167,7 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
         _ = notification
         if let bundleIdentifier = PHTVAppContextService.currentFrontmostBundleId(),
            !bundleIdentifier.isEmpty {
-            checkSendKeyStepByStepApp(bundleIdentifier)
+            refreshAppListContexts(forFrontmostBundleIdentifier: bundleIdentifier)
         }
     }
 
@@ -135,7 +175,7 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
         _ = notification
         if let bundleIdentifier = PHTVAppContextService.currentFrontmostBundleId(),
            !bundleIdentifier.isEmpty {
-            checkUpperCaseExcludedApp(bundleIdentifier)
+            refreshAppListContexts(forFrontmostBundleIdentifier: bundleIdentifier)
         }
     }
 
