@@ -36,7 +36,12 @@ final class SparkleManager: NSObject {
     override init() {
         super.init()
         _ = updaterController
-        NSLog("[Sparkle] Initialized with SPUStandardUpdaterController + popup pinning")
+        NSLog(
+            "[Sparkle] Initialized with SPUStandardUpdaterController + popup pinning (checks=%@ downloads=%@ interval=%.0f)",
+            updater.automaticallyChecksForUpdates ? "YES" : "NO",
+            updater.automaticallyDownloadsUpdates ? "YES" : "NO",
+            updater.updateCheckInterval
+        )
     }
 
     /// Manually trigger update check (Sparkle handles all UI)
@@ -48,13 +53,17 @@ final class SparkleManager: NSObject {
     /// Background update check
     @objc func checkForUpdates() {
         NSLog("[Sparkle] Background check requested")
+        guard updater.automaticallyChecksForUpdates else {
+            NSLog("[Sparkle] Skipping background check because automatic checks are disabled")
+            return
+        }
         updater.checkForUpdatesInBackground()
     }
 
     /// Configure update check interval in seconds
     @objc func setUpdateCheckInterval(_ interval: TimeInterval) {
         NSLog("[Sparkle] Update interval set to %.0f seconds", interval)
-        UserDefaults.standard.set(interval, forKey: "SUScheduledCheckInterval")
+        updater.updateCheckInterval = interval
     }
 }
 

@@ -11,6 +11,15 @@ import AppKit
 import Foundation
 
 @objc extension AppDelegate {
+    func bootstrapSparkleUpdates() {
+        _ = SparkleManager.shared()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
+            NSLog("[Sparkle] Checking for updates (launch bootstrap)...")
+            SparkleManager.shared().checkForUpdates()
+        }
+    }
+
     func registerSparkleObservers() {
         let center = NotificationCenter.default
 

@@ -83,7 +83,9 @@ enum UserDefaultsKey {
     // MARK: - Sparkle Updates
     static let updateCheckInterval = "SUScheduledCheckInterval"
     static let sparkleBetaChannel = "SUEnableBetaChannel"
-    static let autoInstallUpdates = "vAutoInstallUpdates"
+    static let automaticUpdateChecks = "SUEnableAutomaticChecks"
+    static let autoInstallUpdates = "SUAutomaticallyUpdate"
+    static let legacyAutoInstallUpdates = "vAutoInstallUpdates"
 
     // MARK: - Debug
     static let liveDebug = "PHTV_LIVE_DEBUG"
@@ -583,10 +585,16 @@ extension UserDefaults {
         if object(forKey: UserDefaultsKey.sparkleBetaChannel) != nil {
             return true
         }
+        if object(forKey: UserDefaultsKey.legacyAutoInstallUpdates) != nil {
+            return true
+        }
+        if !bool(forKey: UserDefaultsKey.automaticUpdateChecks, default: true) {
+            return true
+        }
         return !bool(forKey: UserDefaultsKey.autoInstallUpdates, default: true)
     }
 
-    /// Always use stable update channel and auto-install updates.
+    /// Always use the stable Sparkle channel with automatic checks and installs enabled.
     @discardableResult
     func enforceStableUpdateChannel() -> Bool {
         guard requiresStableUpdateChannelEnforcement() else {
@@ -595,6 +603,12 @@ extension UserDefaults {
 
         if object(forKey: UserDefaultsKey.sparkleBetaChannel) != nil {
             removeObject(forKey: UserDefaultsKey.sparkleBetaChannel)
+        }
+        if object(forKey: UserDefaultsKey.legacyAutoInstallUpdates) != nil {
+            removeObject(forKey: UserDefaultsKey.legacyAutoInstallUpdates)
+        }
+        if !bool(forKey: UserDefaultsKey.automaticUpdateChecks, default: true) {
+            set(true, forKey: UserDefaultsKey.automaticUpdateChecks)
         }
         if !bool(forKey: UserDefaultsKey.autoInstallUpdates, default: true) {
             set(true, forKey: UserDefaultsKey.autoInstallUpdates)
@@ -654,6 +668,7 @@ final class SettingsBootstrap: NSObject {
             UserDefaultsKey.runOnStartup: Defaults.runOnStartup,
             UserDefaultsKey.runOnStartupLegacy: 0,
             UserDefaultsKey.updateCheckInterval: Defaults.updateCheckInterval,
+            UserDefaultsKey.automaticUpdateChecks: true,
             UserDefaultsKey.includeSystemInfo: Defaults.includeSystemInfo,
             UserDefaultsKey.includeLogs: Defaults.includeLogs,
             UserDefaultsKey.includeCrashLogs: Defaults.includeCrashLogs,
