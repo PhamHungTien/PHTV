@@ -159,6 +159,60 @@ struct SettingsToggleRow: View {
     }
 }
 
+// MARK: - Settings Selection Row
+
+struct SettingsSelectionRow: View {
+    let title: String
+    let subtitle: String
+    let isSelected: Bool
+    let action: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        Button(action: action) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+                    .frame(width: 18, height: 18)
+                    .padding(.top, 1)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.primary)
+
+                    Text(subtitle)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(backgroundShape)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var backgroundShape: some View {
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
+            .fill(isSelected ? Color.accentColor.opacity(colorScheme == .dark ? 0.18 : 0.10) : Color.clear)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(
+                        isSelected
+                            ? Color.accentColor.opacity(colorScheme == .dark ? 0.45 : 0.28)
+                            : Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.08),
+                        lineWidth: 1
+                    )
+            )
+    }
+}
+
 // MARK: - Settings Divider
 
 struct SettingsDivider: View {

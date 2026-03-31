@@ -207,20 +207,26 @@ final class EngineRegressionTests: XCTestCase {
         expectRestore: Bool,
         autoRestoreEnglish: Bool = true,
         autoRestoreMode: AutoRestoreEnglishMode = .englishOnly,
+        allowConsonantZFWJ: Bool? = nil,
         file: StaticString = #filePath, line: UInt = #line
     ) {
         setCustomEnglishWords(customEnglish)
         let saved = PHTVEngineRuntimeFacade.autoRestoreEnglishWord()
         let savedMode = PHTVEngineRuntimeFacade.autoRestoreEnglishWordMode()
         let savedWrongSpelling = PHTVEngineRuntimeFacade.restoreIfWrongSpelling()
+        let savedAllowConsonantZFWJ = PHTVEngineRuntimeFacade.allowConsonantZFWJ()
         PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(autoRestoreEnglish ? 1 : 0)
         PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(autoRestoreMode.rawValue))
+        if let allowConsonantZFWJ {
+            PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(allowConsonantZFWJ ? 1 : 0)
+        }
         let wrongSpellingFallback: Int32 = autoRestoreEnglish && autoRestoreMode.enablesWrongSpellingFallback ? 1 : 0
         PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(wrongSpellingFallback)
         defer {
             PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(saved)
             PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(savedMode)
             PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(savedWrongSpelling)
+            PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(savedAllowConsonantZFWJ)
         }
         engineInitialize()
         feedWord(token)
@@ -237,6 +243,7 @@ final class EngineRegressionTests: XCTestCase {
         expectRestore: Bool,
         autoRestoreEnglish: Bool = true,
         autoRestoreMode: AutoRestoreEnglishMode = .englishOnly,
+        allowConsonantZFWJ: Bool? = nil,
         breakKey: UInt16 = KEY_DOT,
         breakCaps: UInt8 = 0,
         file: StaticString = #filePath, line: UInt = #line
@@ -245,14 +252,19 @@ final class EngineRegressionTests: XCTestCase {
         let saved = PHTVEngineRuntimeFacade.autoRestoreEnglishWord()
         let savedMode = PHTVEngineRuntimeFacade.autoRestoreEnglishWordMode()
         let savedWrongSpelling = PHTVEngineRuntimeFacade.restoreIfWrongSpelling()
+        let savedAllowConsonantZFWJ = PHTVEngineRuntimeFacade.allowConsonantZFWJ()
         PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(autoRestoreEnglish ? 1 : 0)
         PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(autoRestoreMode.rawValue))
+        if let allowConsonantZFWJ {
+            PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(allowConsonantZFWJ ? 1 : 0)
+        }
         let wrongSpellingFallback: Int32 = autoRestoreEnglish && autoRestoreMode.enablesWrongSpellingFallback ? 1 : 0
         PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(wrongSpellingFallback)
         defer {
             PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(saved)
             PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(savedMode)
             PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(savedWrongSpelling)
+            PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(savedAllowConsonantZFWJ)
         }
         engineInitialize()
         feedWord(token)
@@ -268,6 +280,8 @@ final class EngineRegressionTests: XCTestCase {
         customEnglish: [String] = [],
         quickStart: Bool,
         quickEnd: Bool,
+        autoRestoreMode: AutoRestoreEnglishMode = .englishOnly,
+        allowConsonantZFWJ: Bool? = nil,
         expectedOutput: String,
         expectedBackspaceCount: Int,
         file: StaticString = #filePath, line: UInt = #line
@@ -275,13 +289,25 @@ final class EngineRegressionTests: XCTestCase {
         setCustomEnglishWords(customEnglish)
         let savedQuickStart = PHTVEngineRuntimeFacade.quickStartConsonant()
         let savedQuickEnd = PHTVEngineRuntimeFacade.quickEndConsonant()
+        let savedAutoRestoreMode = PHTVEngineRuntimeFacade.autoRestoreEnglishWordMode()
+        let savedWrongSpelling = PHTVEngineRuntimeFacade.restoreIfWrongSpelling()
+        let savedAllowConsonantZFWJ = PHTVEngineRuntimeFacade.allowConsonantZFWJ()
         defer {
             PHTVEngineRuntimeFacade.setQuickStartConsonant(savedQuickStart)
             PHTVEngineRuntimeFacade.setQuickEndConsonant(savedQuickEnd)
+            PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(savedAutoRestoreMode)
+            PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(savedWrongSpelling)
+            PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(savedAllowConsonantZFWJ)
         }
 
         PHTVEngineRuntimeFacade.setQuickStartConsonant(quickStart ? 1 : 0)
         PHTVEngineRuntimeFacade.setQuickEndConsonant(quickEnd ? 1 : 0)
+        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(autoRestoreMode.rawValue))
+        let wrongSpellingFallback: Int32 = autoRestoreMode.enablesWrongSpellingFallback ? 1 : 0
+        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(wrongSpellingFallback)
+        if let allowConsonantZFWJ {
+            PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(allowConsonantZFWJ ? 1 : 0)
+        }
 
         engineInitialize()
         feedWord(token)
@@ -302,6 +328,65 @@ final class EngineRegressionTests: XCTestCase {
             hookOutputWord(),
             expectedOutput,
             "SPACE quick-consonant mismatch for token='\(token)'",
+            file: file, line: line
+        )
+    }
+
+    private func runQuickConsonantWordBreakCase(
+        _ token: String,
+        customEnglish: [String] = [],
+        quickStart: Bool,
+        quickEnd: Bool,
+        autoRestoreMode: AutoRestoreEnglishMode = .englishOnly,
+        allowConsonantZFWJ: Bool? = nil,
+        breakKey: UInt16 = KEY_COMMA,
+        breakCaps: UInt8 = 0,
+        expectedOutput: String,
+        expectedBackspaceCount: Int,
+        file: StaticString = #filePath, line: UInt = #line
+    ) {
+        setCustomEnglishWords(customEnglish)
+        let savedQuickStart = PHTVEngineRuntimeFacade.quickStartConsonant()
+        let savedQuickEnd = PHTVEngineRuntimeFacade.quickEndConsonant()
+        let savedAutoRestoreMode = PHTVEngineRuntimeFacade.autoRestoreEnglishWordMode()
+        let savedWrongSpelling = PHTVEngineRuntimeFacade.restoreIfWrongSpelling()
+        let savedAllowConsonantZFWJ = PHTVEngineRuntimeFacade.allowConsonantZFWJ()
+        defer {
+            PHTVEngineRuntimeFacade.setQuickStartConsonant(savedQuickStart)
+            PHTVEngineRuntimeFacade.setQuickEndConsonant(savedQuickEnd)
+            PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(savedAutoRestoreMode)
+            PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(savedWrongSpelling)
+            PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(savedAllowConsonantZFWJ)
+        }
+
+        PHTVEngineRuntimeFacade.setQuickStartConsonant(quickStart ? 1 : 0)
+        PHTVEngineRuntimeFacade.setQuickEndConsonant(quickEnd ? 1 : 0)
+        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(autoRestoreMode.rawValue))
+        let wrongSpellingFallback: Int32 = autoRestoreMode.enablesWrongSpellingFallback ? 1 : 0
+        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(wrongSpellingFallback)
+        if let allowConsonantZFWJ {
+            PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(allowConsonantZFWJ ? 1 : 0)
+        }
+
+        engineInitialize()
+        feedWord(token)
+        engineHandleEvent(eventKeyboard, stateKeyDown, breakKey, breakCaps, 0)
+
+        XCTAssertTrue(
+            isRestore(engineHookCode()),
+            "Quick consonant should trigger restore flow, got code=\(engineHookCode())",
+            file: file, line: line
+        )
+        XCTAssertEqual(
+            Int(engineHookBackspaceCount()),
+            expectedBackspaceCount,
+            "Unexpected backspace count for token='\(token)' on break key=\(breakKey)",
+            file: file, line: line
+        )
+        XCTAssertEqual(
+            hookOutputWord(),
+            expectedOutput,
+            "BREAK(key=\(breakKey),caps=\(breakCaps)) quick-consonant mismatch for token='\(token)'",
             file: file, line: line
         )
     }
@@ -433,6 +518,43 @@ final class EngineRegressionTests: XCTestCase {
         )
     }
 
+    func testQuickStartConsonantWorksInNonVietnameseAutoRestoreMode() {
+        runQuickConsonantSpaceCase(
+            "fan",
+            customEnglish: ["fan"],
+            quickStart: true,
+            quickEnd: false,
+            autoRestoreMode: .nonVietnamese,
+            expectedOutput: "phan",
+            expectedBackspaceCount: 3
+        )
+    }
+
+    func testQuickStartConsonantWorksOnCommaWhenAllowConsonantZFWJIsEnabled() {
+        runQuickConsonantWordBreakCase(
+            "fan",
+            customEnglish: ["fan"],
+            quickStart: true,
+            quickEnd: false,
+            autoRestoreMode: .nonVietnamese,
+            allowConsonantZFWJ: true,
+            expectedOutput: "phan",
+            expectedBackspaceCount: 3
+        )
+    }
+
+    func testQuickEndConsonantWorksOnCommaInNonVietnameseAutoRestoreMode() {
+        runQuickConsonantWordBreakCase(
+            "nah",
+            customEnglish: ["nah"],
+            quickStart: false,
+            quickEnd: true,
+            autoRestoreMode: .nonVietnamese,
+            expectedOutput: "nh",
+            expectedBackspaceCount: 1
+        )
+    }
+
     // MARK: - Wrong-spelling fallback removed
 
     func testKosovoDoesNotRestoreOnComma() {
@@ -498,6 +620,30 @@ final class EngineRegressionTests: XCTestCase {
     func testUnknownNonEnglishWordRestoresOnlyInNonVietnameseMode() {
         runSpaceCase("qwrty", expectRestore: true, autoRestoreMode: .nonVietnamese)
         runSpaceCase("qwrty", expectRestore: false, autoRestoreMode: .englishOnly)
+    }
+
+    func testAllowConsonantPreventsEnglishRestoreForExtendedInitialOnSpace() {
+        runSpaceCase("zoom", expectRestore: false, allowConsonantZFWJ: true)
+        runSpaceCase("zoom", expectRestore: true, allowConsonantZFWJ: false)
+    }
+
+    func testAllowConsonantPreventsEnglishRestoreForExtendedInitialOnComma() {
+        runWordBreakCase("zoom", expectRestore: false,
+                         allowConsonantZFWJ: true, breakKey: KEY_COMMA)
+        runWordBreakCase("zoom", expectRestore: true,
+                         allowConsonantZFWJ: false, breakKey: KEY_COMMA)
+    }
+
+    func testAllowConsonantPreventsNonVietnameseRestoreForExtendedInitialOnSpace() {
+        runSpaceCase("zoom", expectRestore: false, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: true)
+        runSpaceCase("zoom", expectRestore: true, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: false)
+    }
+
+    func testAllowConsonantPreventsNonVietnameseRestoreForExtendedInitialOnComma() {
+        runWordBreakCase("zoom", expectRestore: false, autoRestoreMode: .nonVietnamese,
+                         allowConsonantZFWJ: true, breakKey: KEY_COMMA)
+        runWordBreakCase("zoom", expectRestore: true, autoRestoreMode: .nonVietnamese,
+                         allowConsonantZFWJ: false, breakKey: KEY_COMMA)
     }
 
     func testNonVietnameseModeKeepsVietnameseDictionaryWord() {

@@ -76,6 +76,13 @@ final class InputMethodState: ObservableObject {
         autoRestoreEnglishWord && autoRestoreEnglishWordMode.enablesWrongSpellingFallback
     }
 
+    private func persistAutoRestoreEnglishSettings() {
+        let defaults = UserDefaults.standard
+        defaults.set(autoRestoreEnglishWord, forKey: UserDefaultsKey.autoRestoreEnglishWord)
+        defaults.set(autoRestoreEnglishWordMode.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
+        defaults.set(restoreIfWrongSpellingForRuntime, forKey: UserDefaultsKey.restoreIfWrongSpelling)
+    }
+
     init() {}
 
     // MARK: - Load/Save Settings
@@ -190,9 +197,7 @@ final class InputMethodState: ObservableObject {
         defaults.set(rememberCode, forKey: UserDefaultsKey.rememberCode)
 
         // Auto restore English words
-        defaults.set(autoRestoreEnglishWord, forKey: UserDefaultsKey.autoRestoreEnglishWord)
-        defaults.set(autoRestoreEnglishWordMode.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
-        defaults.set(restoreIfWrongSpellingForRuntime, forKey: UserDefaultsKey.restoreIfWrongSpelling)
+        persistAutoRestoreEnglishSettings()
 
         // Restore to raw keys (customizable key)
         defaults.set(restoreOnEscape, forKey: UserDefaultsKey.restoreOnEscape)
@@ -254,6 +259,26 @@ final class InputMethodState: ObservableObject {
                 )
             }.store(in: &cancellables)
 
+        Publishers.Merge(
+            $autoRestoreEnglishWord
+                .dropFirst()
+                .removeDuplicates()
+                .map { _ in () },
+            $autoRestoreEnglishWordMode
+                .dropFirst()
+                .removeDuplicates()
+                .map { _ in () }
+        )
+        .sink { [weak self] _ in
+            guard let self = self, !self.isLoadingSettings else { return }
+            SettingsObserver.shared.suspendNotifications()
+            self.persistAutoRestoreEnglishSettings()
+            NotificationCenter.default.post(
+                name: NotificationName.phtvSettingsChanged,
+                object: nil
+            )
+        }.store(in: &cancellables)
+
         // Observer for other settings that need to save and notify backend
         Publishers.MergeMany([
             $checkSpelling.map { _ in () }.eraseToAnyPublisher(),
@@ -265,8 +290,6 @@ final class InputMethodState: ObservableObject {
             $quickEndConsonant.map { _ in () }.eraseToAnyPublisher(),
             $rememberCode.map { _ in () }.eraseToAnyPublisher(),
             $sendKeyStepByStep.map { _ in () }.eraseToAnyPublisher(),
-            $autoRestoreEnglishWord.map { _ in () }.eraseToAnyPublisher(),
-            $autoRestoreEnglishWordMode.map { _ in () }.eraseToAnyPublisher(),
             $restoreOnEscape.map { _ in () }.eraseToAnyPublisher(),
             $restoreKey.map { _ in () }.eraseToAnyPublisher(),
             $pauseKeyEnabled.map { _ in () }.eraseToAnyPublisher(),

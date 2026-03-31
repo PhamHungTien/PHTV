@@ -1836,6 +1836,21 @@ final class PHTVVietnameseEngine {
         return false
     }
 
+    func shouldSuppressAutoRestoreForAllowedInitialConsonant(_ englishLength: Int) -> Bool {
+        guard phtvRuntimeAllowConsonantZFWJEnabled() != 0,
+              englishLength > 1,
+              englishLength <= stateIdx else {
+            return false
+        }
+
+        switch UInt16(keyStates[0] & CHAR_MASK) {
+        case KEY_Z, KEY_F, KEY_W, KEY_J:
+            return true
+        default:
+            return false
+        }
+    }
+
     func evaluateAutoRestoreEnglishDecision() -> (restoreStateIndex: Int, canAutoRestore: Bool, shouldRestore: Bool) {
         let englishStateIndex = getEnglishLookupStateLength()
         let isPureLetter = englishStateIndex == stateIdx && hasOnlyEnglishLetterKeyStates(stateIdx)
@@ -1853,10 +1868,14 @@ final class PHTVVietnameseEngine {
         }
 
         let keySlice = Array(keyStates.prefix(englishStateIndex))
+        let shouldSuppressForAllowedInitialConsonant =
+            shouldSuppressAutoRestoreForAllowedInitialConsonant(englishStateIndex)
         let isNonVietnameseMode = autoRestoreEnglishModeValue() == Int32(AutoRestoreEnglishMode.nonVietnamese.rawValue)
         var shouldRestoreEnglish = false
 
-        if isNonVietnameseMode {
+        if shouldSuppressForAllowedInitialConsonant {
+            shouldRestoreEnglish = false
+        } else if isNonVietnameseMode {
             shouldRestoreEnglish = !hasVietnameseDictionaryMatchForAutoRestore(
                 keySlice,
                 englishLength: englishStateIndex,
@@ -1972,6 +1991,10 @@ final class PHTVVietnameseEngine {
             hCode = HookCodeState.replaceMacro.rawValue
             hBPC = hMacroKey.count
             hasHandledMacro = true
+        } else if (phtvRuntimeQuickStartConsonantEnabled() != 0 || phtvRuntimeQuickEndConsonantEnabled() != 0) &&
+                    !tempDisableKey && isMacroBreakCode(data) && checkQuickConsonant() {
+            // Quick consonant expansions take priority over auto-restore so shorthand
+            // typing is not converted back to raw English first.
         } else if phtvRuntimeAutoRestoreEnglishWordEnabled() != 0 && isAutoRestoreBreakKey {
             if isSpellCheckingEnabled() { checkSpelling(forceCheckVowel: true) }
             let decision = evaluateAutoRestoreEnglishDecision()
@@ -1991,8 +2014,6 @@ final class PHTVVietnameseEngine {
             } else if tempDisableKey && phtvRuntimeRestoreIfWrongSpellingEnabled() != 0 {
                 _ = checkRestoreIfWrongSpelling(HookCodeState.restoreAndStartNewSession.rawValue)
             }
-        } else if (phtvRuntimeQuickStartConsonantEnabled() != 0 || phtvRuntimeQuickEndConsonantEnabled() != 0) && !tempDisableKey && isMacroBreakCode(data) {
-            _ = checkQuickConsonant()
         } else if isAutoRestoreBreakKey {
             if !tempDisableKey && isSpellCheckingEnabled() { checkSpelling(forceCheckVowel: true) }
             if tempDisableKey {
@@ -2040,35 +2061,46 @@ final class PHTVVietnameseEngine {
     // MARK: - Space handler
 
     func handleSpace(state: VKeyEventState, data: UInt16) {
-        if isSpellCheckingEnabled() { checkSpelling(forceCheckVowel: true) }
-        let decision = evaluateAutoRestoreEnglishDecision()
         // EngineKeyHandleEventSpaceDecision.inc
         if phtvRuntimeUseMacroEnabled() != 0 && !hasHandledMacro &&
             (findMacro(&hMacroKey, &hMacroData) || (!hMacroRawKey.isEmpty && hMacroRawKey != hMacroKey && findMacro(&hMacroRawKey, &hMacroData))) {
             hCode = HookCodeState.replaceMacro.rawValue
             hBPC = hMacroKey.count; spaceCount += 1
-        } else if phtvRuntimeAutoRestoreEnglishWordEnabled() != 0 && idx > 0 && decision.restoreStateIndex > 1 && decision.canAutoRestore && decision.shouldRestore {
-            hCode = HookCodeState.restore.rawValue
-            hBPC = idx; hNCC = decision.restoreStateIndex; hExt = 5
-            for i in 0..<decision.restoreStateIndex {
-                typingWord[i] = keyStates[i]
-                hData[decision.restoreStateIndex - 1 - i] = keyStates[i]
-            }
-            if snapshotUpperCaseFirstChar != 0 && phtvRuntimeUpperCaseExcludedForCurrentApp() == 0 &&
-               shouldUpperCaseEnglishRestore && decision.restoreStateIndex > 0 {
-                hData[decision.restoreStateIndex - 1] |= CAPS_MASK
-            }
-            shouldUpperCaseEnglishRestore = false
-            // Save English raw key states so backspace can undo back through the word.
-            // Clear old history first (prevents mismatch when backspace restores prior words
-            // that are no longer at cursor position after the English restore).
-            typingStatesData.removeAll()
-            for i in 0..<decision.restoreStateIndex { typingStatesData.append(typingWord[i]) }
-            typingStates.removeAll()
-            typingStates.append(typingStatesData)
-            spaceCount += 1; idx = 0; stateIdx = 0
-        } else if (phtvRuntimeQuickStartConsonantEnabled() != 0 || phtvRuntimeQuickEndConsonantEnabled() != 0) && !tempDisableKey && checkQuickConsonant() {
+        } else if (phtvRuntimeQuickStartConsonantEnabled() != 0 || phtvRuntimeQuickEndConsonantEnabled() != 0) &&
+                    !tempDisableKey && checkQuickConsonant() {
             spaceCount += 1
+        } else if phtvRuntimeAutoRestoreEnglishWordEnabled() != 0 && idx > 0 {
+            if isSpellCheckingEnabled() { checkSpelling(forceCheckVowel: true) }
+            let decision = evaluateAutoRestoreEnglishDecision()
+            if decision.restoreStateIndex > 1 && decision.canAutoRestore && decision.shouldRestore {
+                hCode = HookCodeState.restore.rawValue
+                hBPC = idx; hNCC = decision.restoreStateIndex; hExt = 5
+                for i in 0..<decision.restoreStateIndex {
+                    typingWord[i] = keyStates[i]
+                    hData[decision.restoreStateIndex - 1 - i] = keyStates[i]
+                }
+                if snapshotUpperCaseFirstChar != 0 && phtvRuntimeUpperCaseExcludedForCurrentApp() == 0 &&
+                   shouldUpperCaseEnglishRestore && decision.restoreStateIndex > 0 {
+                    hData[decision.restoreStateIndex - 1] |= CAPS_MASK
+                }
+                shouldUpperCaseEnglishRestore = false
+                // Save English raw key states so backspace can undo back through the word.
+                // Clear old history first (prevents mismatch when backspace restores prior words
+                // that are no longer at cursor position after the English restore).
+                typingStatesData.removeAll()
+                for i in 0..<decision.restoreStateIndex { typingStatesData.append(typingWord[i]) }
+                typingStates.removeAll()
+                typingStates.append(typingStatesData)
+                spaceCount += 1; idx = 0; stateIdx = 0
+            } else if tempDisableKey && !hasHandledMacro {
+                if !(phtvRuntimeRestoreIfWrongSpellingEnabled() != 0 && checkRestoreIfWrongSpelling(HookCodeState.restore.rawValue)) {
+                    hCode = HookCodeState.doNothing.rawValue
+                }
+                spaceCount += 1
+            } else {
+                hCode = HookCodeState.doNothing.rawValue
+                spaceCount += 1
+            }
         } else if tempDisableKey && !hasHandledMacro {
             if !(phtvRuntimeRestoreIfWrongSpellingEnabled() != 0 && checkRestoreIfWrongSpelling(HookCodeState.restore.rawValue)) {
                 hCode = HookCodeState.doNothing.rawValue
