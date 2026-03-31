@@ -35,7 +35,7 @@ final class AutoRestoreSettingsPersistenceTests: XCTestCase {
         }
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         let defaults = UserDefaults.standard
 
         for key in keysUnderTest {
@@ -46,7 +46,11 @@ final class AutoRestoreSettingsPersistenceTests: XCTestCase {
             defaults.set(value, forKey: key)
         }
 
-        super.tearDown()
+        await MainActor.run {
+            AppState.shared.loadSettings()
+        }
+
+        try await super.tearDown()
     }
 
     func testFirstModeChangePersistsBeforeReload() async {
@@ -113,6 +117,34 @@ final class AutoRestoreSettingsPersistenceTests: XCTestCase {
         await MainActor.run {
             states.0.saveSettings()
             states.1.saveSettings()
+        }
+
+        XCTAssertTrue(defaults.bool(forKey: UserDefaultsKey.quickTelex))
+        XCTAssertEqual(defaults.double(forKey: UserDefaultsKey.menuBarIconSize), 16.0)
+        XCTAssertEqual(
+            defaults.integer(forKey: UserDefaultsKey.autoRestoreEnglishWordMode),
+            AutoRestoreEnglishMode.nonVietnamese.rawValue
+        )
+        XCTAssertTrue(defaults.bool(forKey: UserDefaultsKey.restoreIfWrongSpelling))
+    }
+
+    func testWindowCloseFlushPersistsPendingSettingsWithoutWaitingForDebounce() async {
+        let defaults = UserDefaults.standard
+        defaults.set(false, forKey: UserDefaultsKey.quickTelex)
+        defaults.set(18.0, forKey: UserDefaultsKey.menuBarIconSize)
+        defaults.set(true, forKey: UserDefaultsKey.autoRestoreEnglishWord)
+        defaults.set(AutoRestoreEnglishMode.englishOnly.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
+        defaults.set(false, forKey: UserDefaultsKey.restoreIfWrongSpelling)
+
+        await MainActor.run {
+            let appState = AppState.shared
+            appState.loadSettings()
+
+            appState.quickTelex = true
+            appState.autoRestoreEnglishWordMode = .nonVietnamese
+            appState.uiState.menuBarIconSize = 16.0
+
+            appState.flushPendingSettingsForWindowClose()
         }
 
         XCTAssertTrue(defaults.bool(forKey: UserDefaultsKey.quickTelex))

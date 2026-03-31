@@ -155,12 +155,21 @@ final class AppState: ObservableObject {
         persistAllSettings(notifyBackend: true)
     }
 
-    func flushPendingSettingsForTermination() {
-        persistAllSettings(notifyBackend: false)
+    private func synchronizePreferences(logContext: String) {
         let synchronized = CFPreferencesAppSynchronize(kCFPreferencesCurrentApplication)
         if !synchronized {
-            NSLog("[AppState] Failed to synchronize preferences during termination flush")
+            NSLog("[AppState] Failed to synchronize preferences during %@", logContext)
         }
+    }
+
+    func flushPendingSettingsForWindowClose() {
+        persistAllSettings(notifyBackend: true)
+        synchronizePreferences(logContext: "settings-window close flush")
+    }
+
+    func flushPendingSettingsForTermination() {
+        persistAllSettings(notifyBackend: false)
+        synchronizePreferences(logContext: "termination flush")
     }
 
     // MARK: - External Settings Observer

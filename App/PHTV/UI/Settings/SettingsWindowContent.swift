@@ -116,6 +116,7 @@ struct SettingsWindowContent: View {
         .onDisappear {
             pendingDockShowWorkItem?.cancel()
             pendingDockShowWorkItem = nil
+            appState.flushPendingSettingsForWindowClose()
             // Remove window observers for this lifecycle.
             removeWindowObservers()
 
@@ -210,12 +211,11 @@ struct SettingsWindowContent: View {
             object: nil,
             queue: .main
         ) { notification in
-            let windowID = (notification.object as? NSWindow).map(ObjectIdentifier.init)
+            let window = notification.object as? NSWindow
             Task { @MainActor in
-                guard let windowID,
-                      let window = NSApp.windows.first(where: { ObjectIdentifier($0) == windowID }),
-                      isSettingsWindow(window) else { return }
+                guard isSettingsWindow(window) else { return }
                 isClosingSettingsWindow = true
+                appState.flushPendingSettingsForWindowClose()
                 pendingDockShowWorkItem?.cancel()
                 pendingDockShowWorkItem = nil
                 windowLifecycleToken = UUID()

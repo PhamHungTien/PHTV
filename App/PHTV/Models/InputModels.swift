@@ -92,6 +92,15 @@ enum AutoRestoreEnglishMode: Int, CaseIterable, Identifiable, Sendable {
         }
     }
 
+    nonisolated var controlTitle: String {
+        switch self {
+        case .nonVietnamese:
+            return "Không phải tiếng Việt"
+        case .englishOnly:
+            return "Tiếng Anh"
+        }
+    }
+
     nonisolated var descriptionText: String {
         switch self {
         case .nonVietnamese:

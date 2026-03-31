@@ -146,9 +146,7 @@ struct TypingSettingsView: View {
                         if appState.autoRestoreEnglishWord {
                             SettingsDivider()
 
-                            AutoRestoreEnglishModeSection(
-                                inputMethodState: appState.inputMethodState
-                            )
+                            AutoRestoreEnglishModeSection(inputMethodState: appState.inputMethodState)
                         }
 
                         SettingsDivider()
@@ -221,16 +219,23 @@ struct AutoRestoreEnglishModeSection: View {
         let contentLeadingPadding: CGFloat = 38
 
         VStack(alignment: .leading, spacing: 10) {
-            ForEach(AutoRestoreEnglishMode.allCases) { mode in
-                SettingsSelectionRow(
-                    title: mode.displayName,
-                    subtitle: mode.descriptionText,
-                    isSelected: inputMethodState.autoRestoreEnglishWordMode == mode
-                ) {
-                    guard inputMethodState.autoRestoreEnglishWordMode != mode else { return }
-                    inputMethodState.autoRestoreEnglishWordMode = mode
+            Text("Chế độ khôi phục")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.secondary)
+
+            Picker("Chế độ khôi phục", selection: $inputMethodState.autoRestoreEnglishWordMode) {
+                ForEach(AutoRestoreEnglishMode.allCases) { mode in
+                    Text(mode.controlTitle)
+                        .tag(mode)
                 }
             }
+            .labelsHidden()
+            .pickerStyle(.segmented)
+
+            Text(inputMethodState.autoRestoreEnglishWordMode.descriptionText)
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.leading, contentLeadingPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
