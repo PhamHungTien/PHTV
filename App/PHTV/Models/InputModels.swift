@@ -74,3 +74,63 @@ enum CodeTable: String, CaseIterable, Identifiable, Sendable {
         }
     }
 }
+
+// MARK: - Auto Restore Mode
+
+enum AutoRestoreEnglishMode: Int, CaseIterable, Identifiable, Sendable {
+    case nonVietnamese = 0
+    case englishOnly = 1
+
+    nonisolated var id: Int { rawValue }
+
+    nonisolated var displayName: String {
+        switch self {
+        case .nonVietnamese:
+            return "Khôi phục nếu không phải là tiếng Việt"
+        case .englishOnly:
+            return "Khôi phục nếu là tiếng Anh"
+        }
+    }
+
+    nonisolated var descriptionText: String {
+        switch self {
+        case .nonVietnamese:
+            return "Chỉ giữ nguyên dạng gõ thô khi từ sau biến đổi không phải tiếng Việt; từ Việt có trong từ điển sẽ không bị khôi phục."
+        case .englishOnly:
+            return "Giữ nguyên hành vi hiện tại: chỉ khôi phục khi từ được nhận diện là tiếng Anh."
+        }
+    }
+
+    nonisolated var reportLabel: String {
+        switch self {
+        case .nonVietnamese:
+            return "Không phải tiếng Việt"
+        case .englishOnly:
+            return "Chỉ tiếng Anh"
+        }
+    }
+
+    nonisolated var enablesWrongSpellingFallback: Bool {
+        self == .nonVietnamese
+    }
+
+    static func from(index: Int) -> AutoRestoreEnglishMode {
+        AutoRestoreEnglishMode(rawValue: index) ?? .englishOnly
+    }
+
+    static func from(persistedValue value: Any?) -> AutoRestoreEnglishMode? {
+        if let mode = value as? AutoRestoreEnglishMode {
+            return mode
+        }
+        if let intValue = value as? Int {
+            return from(index: intValue)
+        }
+        if let numberValue = value as? NSNumber {
+            return from(index: numberValue.intValue)
+        }
+        if let stringValue = value as? String, let rawValue = Int(stringValue) {
+            return from(index: rawValue)
+        }
+        return nil
+    }
+}

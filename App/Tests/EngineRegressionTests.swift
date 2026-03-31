@@ -32,6 +32,8 @@ final class EngineRegressionTests: XCTestCase {
         // Reset runtime to known defaults for each test.
         PHTVEngineRuntimeFacade.setCurrentInputType(0)          // Telex
         PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(1)
+        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(AutoRestoreEnglishMode.englishOnly.rawValue))
+        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(0)
         PHTVEngineRuntimeFacade.setCheckSpelling(1)
         PHTVEngineRuntimeFacade.setUseModernOrthography(1)
         PHTVEngineRuntimeFacade.setQuickTelex(0)
@@ -204,12 +206,22 @@ final class EngineRegressionTests: XCTestCase {
         customEnglish: [String] = [],
         expectRestore: Bool,
         autoRestoreEnglish: Bool = true,
+        autoRestoreMode: AutoRestoreEnglishMode = .englishOnly,
         file: StaticString = #filePath, line: UInt = #line
     ) {
         setCustomEnglishWords(customEnglish)
         let saved = PHTVEngineRuntimeFacade.autoRestoreEnglishWord()
+        let savedMode = PHTVEngineRuntimeFacade.autoRestoreEnglishWordMode()
+        let savedWrongSpelling = PHTVEngineRuntimeFacade.restoreIfWrongSpelling()
         PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(autoRestoreEnglish ? 1 : 0)
-        defer { PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(saved) }
+        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(autoRestoreMode.rawValue))
+        let wrongSpellingFallback: Int32 = autoRestoreEnglish && autoRestoreMode.enablesWrongSpellingFallback ? 1 : 0
+        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(wrongSpellingFallback)
+        defer {
+            PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(saved)
+            PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(savedMode)
+            PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(savedWrongSpelling)
+        }
         engineInitialize()
         feedWord(token)
         engineHandleEvent(eventKeyboard, stateKeyDown, KEY_SPACE, 0, 0)
@@ -224,14 +236,24 @@ final class EngineRegressionTests: XCTestCase {
         customEnglish: [String] = [],
         expectRestore: Bool,
         autoRestoreEnglish: Bool = true,
+        autoRestoreMode: AutoRestoreEnglishMode = .englishOnly,
         breakKey: UInt16 = KEY_DOT,
         breakCaps: UInt8 = 0,
         file: StaticString = #filePath, line: UInt = #line
     ) {
         setCustomEnglishWords(customEnglish)
         let saved = PHTVEngineRuntimeFacade.autoRestoreEnglishWord()
+        let savedMode = PHTVEngineRuntimeFacade.autoRestoreEnglishWordMode()
+        let savedWrongSpelling = PHTVEngineRuntimeFacade.restoreIfWrongSpelling()
         PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(autoRestoreEnglish ? 1 : 0)
-        defer { PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(saved) }
+        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(autoRestoreMode.rawValue))
+        let wrongSpellingFallback: Int32 = autoRestoreEnglish && autoRestoreMode.enablesWrongSpellingFallback ? 1 : 0
+        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(wrongSpellingFallback)
+        defer {
+            PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(saved)
+            PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(savedMode)
+            PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(savedWrongSpelling)
+        }
         engineInitialize()
         feedWord(token)
         engineHandleEvent(eventKeyboard, stateKeyDown, breakKey, breakCaps, 0)
@@ -425,6 +447,14 @@ final class EngineRegressionTests: XCTestCase {
         runWordBreakCase("roothide", expectRestore: false, breakKey: KEY_COMMA)
     }
 
+    func testKosovoRestoresOnCommaInNonVietnameseMode() {
+        runWordBreakCase("koosvo", expectRestore: true, autoRestoreMode: .nonVietnamese, breakKey: KEY_COMMA)
+    }
+
+    func testRoothideRestoresOnCommaInNonVietnameseMode() {
+        runWordBreakCase("roothide", expectRestore: true, autoRestoreMode: .nonVietnamese, breakKey: KEY_COMMA)
+    }
+
     func testNoobRestoresOnSpace() {
         // "noob" in Telex produces "nôb" (oo→ô). "noob" is in the English dictionary.
         runSpaceCase("noob", expectRestore: true)
@@ -455,6 +485,23 @@ final class EngineRegressionTests: XCTestCase {
     func testGoodnotesRestoresOnComma() {
         // The same curated source should continue to work across word-break paths.
         runWordBreakCase("goodnotes", expectRestore: true, breakKey: KEY_COMMA)
+    }
+
+    func testAlnumInt1234RestoresOnSpaceInNonVietnameseMode() {
+        runSpaceCase("int1234", customEnglish: ["int"], expectRestore: true, autoRestoreMode: .nonVietnamese)
+    }
+
+    func testAlnumInt1234RestoresOnDotInNonVietnameseMode() {
+        runWordBreakCase("int1234", customEnglish: ["int"], expectRestore: true, autoRestoreMode: .nonVietnamese)
+    }
+
+    func testUnknownNonEnglishWordRestoresOnlyInNonVietnameseMode() {
+        runSpaceCase("qwrty", expectRestore: true, autoRestoreMode: .nonVietnamese)
+        runSpaceCase("qwrty", expectRestore: false, autoRestoreMode: .englishOnly)
+    }
+
+    func testNonVietnameseModeKeepsVietnameseDictionaryWord() {
+        runSpaceCase("xin", expectRestore: false, autoRestoreMode: .nonVietnamese)
     }
 
     func testHoomDoesNotRestoreOnSpace() {

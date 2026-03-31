@@ -56,6 +56,20 @@ import Foundation
         return (token &* 16_777_619) ^ hashValue
     }
 
+    @nonobjc private class func phtv_readAutoRestoreEnglishMode(defaults: UserDefaults) -> AutoRestoreEnglishMode {
+        defaults.autoRestoreEnglishMode()
+    }
+
+    @nonobjc private class func phtv_restoreIfWrongSpellingValue(
+        autoRestoreEnglishWord: Int32,
+        mode: AutoRestoreEnglishMode
+    ) -> Int32 {
+        guard autoRestoreEnglishWord != 0 else {
+            return 0
+        }
+        return mode.enablesWrongSpellingFallback ? 1 : 0
+    }
+
     private class func phtv_computeSettingsToken(defaults: UserDefaults) -> UInt {
         var token: UInt = 2_166_136_261
         let tokenKeys = [
@@ -79,6 +93,8 @@ import Foundation
             "vPauseKeyEnabled",
             "vPauseKey",
             "vAutoRestoreEnglishWord",
+            "vAutoRestoreEnglishWordMode",
+            "vRestoreIfWrongSpelling",
             "vEnableEmojiHotkey",
             "vEmojiHotkeyModifiers",
             "vEmojiHotkeyKeyCode"
@@ -318,14 +334,21 @@ import Foundation
             )
         )
 
-        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(
-            phtv_readIntWithFallback(
-                defaults: defaults,
-                key: "vAutoRestoreEnglishWord",
-                fallback: Int32(PHTVEngineRuntimeFacade.autoRestoreEnglishWord())
-            )
+        let autoRestoreEnglishWord = phtv_readIntWithFallback(
+            defaults: defaults,
+            key: UserDefaultsKey.autoRestoreEnglishWord,
+            fallback: Int32(PHTVEngineRuntimeFacade.autoRestoreEnglishWord())
         )
-        defaults.removeObject(forKey: "vRestoreIfWrongSpelling")
+        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(autoRestoreEnglishWord)
+        let autoRestoreMode = phtv_readAutoRestoreEnglishMode(defaults: defaults)
+        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(autoRestoreMode.rawValue))
+        let restoreIfWrongSpelling = phtv_restoreIfWrongSpellingValue(
+            autoRestoreEnglishWord: autoRestoreEnglishWord,
+            mode: autoRestoreMode
+        )
+        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(restoreIfWrongSpelling)
+        defaults.set(autoRestoreMode.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
+        defaults.set(Int(restoreIfWrongSpelling), forKey: UserDefaultsKey.restoreIfWrongSpelling)
         PHTVEngineRuntimeFacade.setShowIconOnDock(
             phtv_readIntWithFallback(
                 defaults: defaults,
@@ -436,6 +459,11 @@ import Foundation
 
         PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(1)
         defaults.set(1, forKey: "vAutoRestoreEnglishWord")
+        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(Defaults.autoRestoreEnglishWordMode.rawValue))
+        defaults.set(Defaults.autoRestoreEnglishWordMode.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
+        let restoreIfWrongSpelling = Defaults.restoreIfWrongSpelling ? 1 : 0
+        PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(Int32(restoreIfWrongSpelling))
+        defaults.set(restoreIfWrongSpelling, forKey: UserDefaultsKey.restoreIfWrongSpelling)
 
         PHTVEngineRuntimeFacade.setRestoreOnEscape(1)
         defaults.set(1, forKey: "vRestoreOnEscape")

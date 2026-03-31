@@ -393,7 +393,7 @@ struct SystemSettingsView: View {
             UserDefaultsKey.quickStartConsonant, UserDefaultsKey.quickEndConsonant, UserDefaultsKey.rememberCode,
 
             // Auto restore English
-            UserDefaultsKey.autoRestoreEnglishWord,
+            UserDefaultsKey.autoRestoreEnglishWord, UserDefaultsKey.autoRestoreEnglishWordMode, UserDefaultsKey.restoreIfWrongSpelling,
 
             // Restore key
             UserDefaultsKey.restoreOnEscape, UserDefaultsKey.customEscapeKey,

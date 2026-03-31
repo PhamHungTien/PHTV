@@ -35,6 +35,8 @@ enum UserDefaultsKey {
     static let quickEndConsonant = "vQuickEndConsonant"
     static let rememberCode = "vRememberCode"
     static let autoRestoreEnglishWord = "vAutoRestoreEnglishWord"
+    static let autoRestoreEnglishWordMode = "vAutoRestoreEnglishWordMode"
+    static let restoreIfWrongSpelling = "vRestoreIfWrongSpelling"
 
     // MARK: - Restore & Pause Keys
     static let restoreOnEscape = "vRestoreOnEscape"
@@ -391,6 +393,8 @@ enum Defaults {
     static let quickEndConsonant = false
     static let rememberCode = true
     static let autoRestoreEnglishWord = true
+    static let autoRestoreEnglishWordMode = AutoRestoreEnglishMode.englishOnly
+    static let restoreIfWrongSpelling = autoRestoreEnglishWordMode.enablesWrongSpellingFallback
 
     // MARK: - Restore & Pause
     static let restoreOnEscape = true
@@ -454,6 +458,26 @@ enum Defaults {
 // MARK: - UserDefaults Helpers
 
 extension UserDefaults {
+    private func decodePersistedBool(_ value: Any?) -> Bool? {
+        if let boolValue = value as? Bool {
+            return boolValue
+        }
+        if let numberValue = value as? NSNumber {
+            return numberValue.boolValue
+        }
+        if let stringValue = value as? String {
+            switch stringValue.lowercased() {
+            case "1", "true", "yes":
+                return true
+            case "0", "false", "no":
+                return false
+            default:
+                return nil
+            }
+        }
+        return nil
+    }
+
     /// Reads a value only if it was explicitly persisted (ignores register(defaults:)).
     func persistedObject(forKey key: String) -> Any? {
         guard let bundleIdentifier = Bundle.main.bundleIdentifier,
@@ -515,6 +539,29 @@ extension UserDefaults {
             return numberValue.intValue
         }
         return defaultValue
+    }
+
+    /// Reads auto-restore mode and falls back to legacy wrong-spelling behavior.
+    func autoRestoreEnglishMode() -> AutoRestoreEnglishMode {
+        if let mode = AutoRestoreEnglishMode.from(
+            persistedValue: persistedObject(forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
+        ) {
+            return mode
+        }
+
+        if let legacyRestoreIfWrongSpelling = decodePersistedBool(
+            persistedObject(forKey: UserDefaultsKey.restoreIfWrongSpelling)
+        ) {
+            return legacyRestoreIfWrongSpelling ? .nonVietnamese : .englishOnly
+        }
+
+        if let legacyRestoreIfInvalidWord = decodePersistedBool(
+            persistedObject(forKey: "RestoreIfInvalidWord")
+        ) {
+            return legacyRestoreIfInvalidWord ? .nonVietnamese : .englishOnly
+        }
+
+        return Defaults.autoRestoreEnglishWordMode
     }
 
     /// Reads a Double with explicit fallback when the key is missing.
@@ -585,6 +632,8 @@ final class SettingsBootstrap: NSObject {
             UserDefaultsKey.quickEndConsonant: Defaults.quickEndConsonant,
             UserDefaultsKey.rememberCode: Defaults.rememberCode,
             UserDefaultsKey.autoRestoreEnglishWord: Defaults.autoRestoreEnglishWord,
+            UserDefaultsKey.autoRestoreEnglishWordMode: Defaults.autoRestoreEnglishWordMode.rawValue,
+            UserDefaultsKey.restoreIfWrongSpelling: Defaults.restoreIfWrongSpelling,
             UserDefaultsKey.restoreOnEscape: Defaults.restoreOnEscape,
             UserDefaultsKey.customEscapeKey: Int(Defaults.restoreKeyCode),
             UserDefaultsKey.pauseKeyEnabled: Defaults.pauseKeyEnabled,

@@ -61,7 +61,7 @@ open /Applications/PHTV.app
 - **Gõ tắt nhanh (Quick Telex)** - cc→ch, gg→gi, kk→kh, nn→ng, qq→qu, pp→ph, tt→th
 - **Phụ âm đầu/cuối nhanh** - f→ph, j→gi, w→qu (đầu) và g→ng, h→nh, k→ch (cuối)
 - **Tự động viết hoa** - Viết hoa chữ cái đầu câu sau dấu chấm
-- **Tự động khôi phục từ tiếng Anh** - Nhận diện và khôi phục từ tiếng Anh khi gõ nhầm (VD: "tẻminal" → "terminal")
+- **Tự động khôi phục** - Hỗ trợ 2 chế độ: khôi phục nếu không phải tiếng Việt hoặc chỉ khôi phục nếu là tiếng Anh (VD: "tẻminal" → "terminal")
 - **Vietnamese consonant detection** - Logic thông minh phân biệt từ tiếng Việt có dấu và từ tiếng Anh (VD: "đi" vs "did", "fix" vs "fi")
 
 ### Macro & Text Snippets

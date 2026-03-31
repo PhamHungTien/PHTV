@@ -217,6 +217,11 @@ final class PHTVVietnameseEngine {
         }
     }
 
+    @inline(__always)
+    func autoRestoreEnglishModeValue() -> Int32 {
+        phtvRuntimeAutoRestoreEnglishWordModeValue()
+    }
+
     func detectorKeyStatesToString(_ keyStatesPtr: [UInt32], _ count: Int) -> String {
         var buf = [CChar](repeating: 0, count: count + 1)
         let written = keyStatesPtr.withUnsafeBufferPointer { ptr in
@@ -300,6 +305,24 @@ final class PHTVVietnameseEngine {
         }
         if isVietnameseFromCanonicalTelex(typingLength) {
             return true
+        }
+        return false
+    }
+
+    func checkRestoreIfWrongSpelling(_ handleCode: Int32) -> Bool {
+        for ii in 0..<idx {
+            if !isConsonant(chr(ii)) &&
+               ((typingWord[ii] & MARK_MASK) != 0 || (typingWord[ii] & TONE_MASK) != 0 || (typingWord[ii] & TONEW_MASK) != 0) {
+                hCode = handleCode
+                hBPC = idx
+                hNCC = stateIdx
+                for i in 0..<stateIdx {
+                    typingWord[i] = keyStates[i]
+                    hData[stateIdx - 1 - i] = typingWord[i]
+                }
+                idx = stateIdx
+                return true
+            }
         }
         return false
     }
@@ -1813,6 +1836,73 @@ final class PHTVVietnameseEngine {
         return false
     }
 
+    func evaluateAutoRestoreEnglishDecision() -> (restoreStateIndex: Int, canAutoRestore: Bool, shouldRestore: Bool) {
+        let englishStateIndex = getEnglishLookupStateLength()
+        let isPureLetter = englishStateIndex == stateIdx && hasOnlyEnglishLetterKeyStates(stateIdx)
+        let isWithNumSuffix = englishStateIndex > 0 && englishStateIndex < stateIdx &&
+            hasOnlyEnglishLetterKeyStates(englishStateIndex) &&
+            hasOnlyTrailingDigitKeyStates(englishStateIndex)
+        let canAutoRestore = isPureLetter || isWithNumSuffix
+        let restoreStateIndex = isWithNumSuffix ? stateIdx : englishStateIndex
+
+        guard phtvRuntimeAutoRestoreEnglishWordEnabled() != 0,
+              idx > 0,
+              englishStateIndex > 1,
+              canAutoRestore else {
+            return (restoreStateIndex, canAutoRestore, false)
+        }
+
+        let keySlice = Array(keyStates.prefix(englishStateIndex))
+        let isNonVietnameseMode = autoRestoreEnglishModeValue() == Int32(AutoRestoreEnglishMode.nonVietnamese.rawValue)
+        var shouldRestoreEnglish = false
+
+        if isNonVietnameseMode {
+            shouldRestoreEnglish = !hasVietnameseDictionaryMatchForAutoRestore(
+                keySlice,
+                englishLength: englishStateIndex,
+                typingLength: idx
+            )
+        } else {
+            let hasVietnameseDictionaryMatch = hasVietnameseDictionaryMatchForAutoRestore(
+                keySlice,
+                englishLength: englishStateIndex,
+                typingLength: idx
+            )
+            shouldRestoreEnglish = !hasVietnameseDictionaryMatch && detectorShouldRestoreEnglish(keySlice, englishStateIndex)
+            if !shouldRestoreEnglish && !hasVietnameseDictionaryMatch {
+                if detectorIsEnglishWord(keySlice, englishStateIndex) &&
+                   !detectorIsVietnameseWord(keySlice, englishStateIndex) &&
+                   !isVietnameseWordFromTypingWord(idx) {
+                    shouldRestoreEnglish = true
+                }
+            }
+            if shouldRestoreEnglish && idx == 1 {
+                if (typingWord[0] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) != 0 {
+                    shouldRestoreEnglish = false
+                }
+            }
+            if shouldRestoreEnglish && hasVietnameseDictionaryMatch {
+                shouldRestoreEnglish = false
+            }
+            if shouldRestoreEnglish {
+                var isPureEnglish = true
+                for k2 in 0..<idx where (typingWord[k2] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) != 0 {
+                    isPureEnglish = false
+                    break
+                }
+                let twSlice = Array(typingWord.prefix(idx))
+                if isPureEnglish && detectorIsEnglishWord(twSlice, idx) {
+                    shouldRestoreEnglish = false
+                }
+            }
+            if shouldRestoreEnglish && isWithNumSuffix && !hasVietnameseTransformsInTypingWord(idx) {
+                shouldRestoreEnglish = false
+            }
+        }
+
+        return (restoreStateIndex, canAutoRestore, shouldRestoreEnglish)
+    }
+
     // MARK: - English mode (EngineEnglishMode.inc)
 
     func vEnglishMode(state: VKeyEventState, data: UInt16, isCaps: Bool, otherControlKey: Bool) {
@@ -1884,62 +1974,22 @@ final class PHTVVietnameseEngine {
             hasHandledMacro = true
         } else if phtvRuntimeAutoRestoreEnglishWordEnabled() != 0 && isAutoRestoreBreakKey {
             if isSpellCheckingEnabled() { checkSpelling(forceCheckVowel: true) }
-            var shouldRestoreEnglish = false
-            let englishStateIndex = getEnglishLookupStateLength()
-            let isPureLetter = englishStateIndex == stateIdx && hasOnlyEnglishLetterKeyStates(stateIdx)
-            let isWithNumSuffix = englishStateIndex > 0 && englishStateIndex < stateIdx &&
-                hasOnlyEnglishLetterKeyStates(englishStateIndex) &&
-                hasOnlyTrailingDigitKeyStates(englishStateIndex)
-            let canAutoRestore = isPureLetter || isWithNumSuffix
-            let restoreStateIndex = isWithNumSuffix ? stateIdx : englishStateIndex
-            if englishStateIndex > 1 && canAutoRestore {
-                let keySlice = Array(keyStates.prefix(englishStateIndex))
-                let hasVietnameseDictionaryMatch = hasVietnameseDictionaryMatchForAutoRestore(
-                    keySlice,
-                    englishLength: englishStateIndex,
-                    typingLength: idx
-                )
-                shouldRestoreEnglish = !hasVietnameseDictionaryMatch && detectorShouldRestoreEnglish(keySlice, englishStateIndex)
-                if !shouldRestoreEnglish && !hasVietnameseDictionaryMatch {
-                    if detectorIsEnglishWord(keySlice, englishStateIndex) &&
-                       !detectorIsVietnameseWord(keySlice, englishStateIndex) &&
-                       !isVietnameseWordFromTypingWord(idx) {
-                        shouldRestoreEnglish = true
-                    }
-                }
-                if shouldRestoreEnglish && idx == 1 {
-                    if (typingWord[0] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) != 0 {
-                        shouldRestoreEnglish = false
-                    }
-                }
-                if shouldRestoreEnglish && hasVietnameseDictionaryMatch {
-                    shouldRestoreEnglish = false
-                }
-                if shouldRestoreEnglish {
-                    var isPureEnglish = true
-                    for k2 in 0..<idx where (typingWord[k2] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) != 0 {
-                        isPureEnglish = false; break
-                    }
-                    let twSlice = Array(typingWord.prefix(idx))
-                    if isPureEnglish && detectorIsEnglishWord(twSlice, idx) { shouldRestoreEnglish = false }
-                }
-                if shouldRestoreEnglish && isWithNumSuffix && !hasVietnameseTransformsInTypingWord(idx) {
-                    shouldRestoreEnglish = false
-                }
-            }
-            if idx > 0 && restoreStateIndex > 1 && canAutoRestore && shouldRestoreEnglish {
+            let decision = evaluateAutoRestoreEnglishDecision()
+            if idx > 0 && decision.restoreStateIndex > 1 && decision.canAutoRestore && decision.shouldRestore {
                 hCode = HookCodeState.restoreAndStartNewSession.rawValue
-                hBPC = idx; hNCC = restoreStateIndex; hExt = 5
-                for i in 0..<restoreStateIndex {
+                hBPC = idx; hNCC = decision.restoreStateIndex; hExt = 5
+                for i in 0..<decision.restoreStateIndex {
                     typingWord[i] = keyStates[i]
-                    hData[restoreStateIndex - 1 - i] = keyStates[i]
+                    hData[decision.restoreStateIndex - 1 - i] = keyStates[i]
                 }
                 if snapshotUpperCaseFirstChar != 0 && phtvRuntimeUpperCaseExcludedForCurrentApp() == 0 &&
-                   shouldUpperCaseEnglishRestore && restoreStateIndex > 0 {
-                    hData[restoreStateIndex - 1] |= CAPS_MASK
+                   shouldUpperCaseEnglishRestore && decision.restoreStateIndex > 0 {
+                    hData[decision.restoreStateIndex - 1] |= CAPS_MASK
                 }
                 shouldUpperCaseEnglishRestore = false
                 idx = 0; stateIdx = 0
+            } else if tempDisableKey && phtvRuntimeRestoreIfWrongSpellingEnabled() != 0 {
+                _ = checkRestoreIfWrongSpelling(HookCodeState.restoreAndStartNewSession.rawValue)
             }
         } else if (phtvRuntimeQuickStartConsonantEnabled() != 0 || phtvRuntimeQuickEndConsonantEnabled() != 0) && !tempDisableKey && isMacroBreakCode(data) {
             _ = checkQuickConsonant()
@@ -1991,74 +2041,38 @@ final class PHTVVietnameseEngine {
 
     func handleSpace(state: VKeyEventState, data: UInt16) {
         if isSpellCheckingEnabled() { checkSpelling(forceCheckVowel: true) }
-        var shouldRestoreEnglish = false
-        let englishStateIndex = getEnglishLookupStateLength()
-        let isPureLetter = englishStateIndex == stateIdx && hasOnlyEnglishLetterKeyStates(stateIdx)
-        let isWithNumSuffix = englishStateIndex > 0 && englishStateIndex < stateIdx &&
-            hasOnlyEnglishLetterKeyStates(englishStateIndex) &&
-            hasOnlyTrailingDigitKeyStates(englishStateIndex)
-        let canAutoRestore = isPureLetter || isWithNumSuffix
-        let restoreStateIndex = isWithNumSuffix ? stateIdx : englishStateIndex
-        if phtvRuntimeAutoRestoreEnglishWordEnabled() != 0 && idx > 0 && englishStateIndex > 1 && canAutoRestore {
-            let keySlice = Array(keyStates.prefix(englishStateIndex))
-            let hasVietnameseDictionaryMatch = hasVietnameseDictionaryMatchForAutoRestore(
-                keySlice,
-                englishLength: englishStateIndex,
-                typingLength: idx
-            )
-            shouldRestoreEnglish = !hasVietnameseDictionaryMatch && detectorShouldRestoreEnglish(keySlice, englishStateIndex)
-            if !shouldRestoreEnglish && !hasVietnameseDictionaryMatch {
-                if detectorIsEnglishWord(keySlice, englishStateIndex) &&
-                   !detectorIsVietnameseWord(keySlice, englishStateIndex) &&
-                   !isVietnameseWordFromTypingWord(idx) { shouldRestoreEnglish = true }
-            }
-            if shouldRestoreEnglish && idx == 1 {
-                if (typingWord[0] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) != 0 { shouldRestoreEnglish = false }
-            }
-            if shouldRestoreEnglish && hasVietnameseDictionaryMatch {
-                shouldRestoreEnglish = false
-            }
-            if shouldRestoreEnglish {
-                var isPureEnglish = true
-                for k2 in 0..<idx where (typingWord[k2] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) != 0 {
-                    isPureEnglish = false; break
-                }
-                let twSlice = Array(typingWord.prefix(idx))
-                if isPureEnglish && detectorIsEnglishWord(twSlice, idx) { shouldRestoreEnglish = false }
-            }
-            if shouldRestoreEnglish && isWithNumSuffix && !hasVietnameseTransformsInTypingWord(idx) {
-                shouldRestoreEnglish = false
-            }
-        }
+        let decision = evaluateAutoRestoreEnglishDecision()
         // EngineKeyHandleEventSpaceDecision.inc
         if phtvRuntimeUseMacroEnabled() != 0 && !hasHandledMacro &&
             (findMacro(&hMacroKey, &hMacroData) || (!hMacroRawKey.isEmpty && hMacroRawKey != hMacroKey && findMacro(&hMacroRawKey, &hMacroData))) {
             hCode = HookCodeState.replaceMacro.rawValue
             hBPC = hMacroKey.count; spaceCount += 1
-        } else if phtvRuntimeAutoRestoreEnglishWordEnabled() != 0 && idx > 0 && restoreStateIndex > 1 && canAutoRestore && shouldRestoreEnglish {
+        } else if phtvRuntimeAutoRestoreEnglishWordEnabled() != 0 && idx > 0 && decision.restoreStateIndex > 1 && decision.canAutoRestore && decision.shouldRestore {
             hCode = HookCodeState.restore.rawValue
-            hBPC = idx; hNCC = restoreStateIndex; hExt = 5
-            for i in 0..<restoreStateIndex {
+            hBPC = idx; hNCC = decision.restoreStateIndex; hExt = 5
+            for i in 0..<decision.restoreStateIndex {
                 typingWord[i] = keyStates[i]
-                hData[restoreStateIndex - 1 - i] = keyStates[i]
+                hData[decision.restoreStateIndex - 1 - i] = keyStates[i]
             }
             if snapshotUpperCaseFirstChar != 0 && phtvRuntimeUpperCaseExcludedForCurrentApp() == 0 &&
-               shouldUpperCaseEnglishRestore && restoreStateIndex > 0 {
-                hData[restoreStateIndex - 1] |= CAPS_MASK
+               shouldUpperCaseEnglishRestore && decision.restoreStateIndex > 0 {
+                hData[decision.restoreStateIndex - 1] |= CAPS_MASK
             }
             shouldUpperCaseEnglishRestore = false
             // Save English raw key states so backspace can undo back through the word.
             // Clear old history first (prevents mismatch when backspace restores prior words
             // that are no longer at cursor position after the English restore).
             typingStatesData.removeAll()
-            for i in 0..<restoreStateIndex { typingStatesData.append(typingWord[i]) }
+            for i in 0..<decision.restoreStateIndex { typingStatesData.append(typingWord[i]) }
             typingStates.removeAll()
             typingStates.append(typingStatesData)
             spaceCount += 1; idx = 0; stateIdx = 0
         } else if (phtvRuntimeQuickStartConsonantEnabled() != 0 || phtvRuntimeQuickEndConsonantEnabled() != 0) && !tempDisableKey && checkQuickConsonant() {
             spaceCount += 1
         } else if tempDisableKey && !hasHandledMacro {
-            hCode = HookCodeState.doNothing.rawValue
+            if !(phtvRuntimeRestoreIfWrongSpellingEnabled() != 0 && checkRestoreIfWrongSpelling(HookCodeState.restore.rawValue)) {
+                hCode = HookCodeState.doNothing.rawValue
+            }
             spaceCount += 1
         } else {
             hCode = HookCodeState.doNothing.rawValue; spaceCount += 1

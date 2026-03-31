@@ -138,10 +138,18 @@ struct TypingSettingsView: View {
                         SettingsToggleRow(
                             icon: "text.magnifyingglass",
                             iconColor: .accentColor,
-                            title: "Tự động khôi phục tiếng Anh",
-                            subtitle: "Không biến đổi từ tiếng Anh khi đang gõ tiếng Việt",
+                            title: "Tự động khôi phục",
+                            subtitle: "Không biến đổi từ không phải tiếng Việt theo chế độ bạn chọn",
                             isOn: $appState.autoRestoreEnglishWord
                         )
+
+                        if appState.autoRestoreEnglishWord {
+                            SettingsDivider()
+
+                            AutoRestoreEnglishModeSection(
+                                selectedMode: $appState.autoRestoreEnglishWordMode
+                            )
+                        }
 
                         SettingsDivider()
 
@@ -202,6 +210,38 @@ struct TypingSettingsView: View {
 }
 
 // Components moved to SettingsComponents.swift
+
+
+// MARK: - Auto Restore Section
+
+struct AutoRestoreEnglishModeSection: View {
+    @Binding var selectedMode: AutoRestoreEnglishMode
+
+    var body: some View {
+        let contentLeadingPadding: CGFloat = 38
+
+        VStack(alignment: .leading, spacing: 8) {
+            Picker("Chế độ khôi phục", selection: $selectedMode) {
+                ForEach(AutoRestoreEnglishMode.allCases) { mode in
+                    Text(mode.displayName).tag(mode)
+                }
+            }
+            .pickerStyle(.radioGroup)
+            .labelsHidden()
+            .padding(.leading, contentLeadingPadding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text(selectedMode.descriptionText)
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .padding(.leading, contentLeadingPadding)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .multilineTextAlignment(.leading)
+        .padding(.vertical, 6)
+    }
+}
 
 
 // MARK: - Upper Case Excluded Apps Section

@@ -28,8 +28,8 @@ struct SettingsItem: Identifiable {
             title: "Bảng mã", iconName: "textformat", tab: .typing,
             keywords: ["unicode", "tcvn3", "vni windows", "code table", "codepoint"]),
         SettingsItem(
-            title: "Tự động khôi phục tiếng Anh", iconName: "textformat.abc.dottedunderline", tab: .typing,
-            keywords: ["auto restore english", "tiếng anh", "english word", "terminal", "tẻminal", "khôi phục"]),
+            title: "Tự động khôi phục", iconName: "textformat.abc.dottedunderline", tab: .typing,
+            keywords: ["auto restore english", "tiếng anh", "english word", "terminal", "tẻminal", "khôi phục", "không phải tiếng việt", "chỉ tiếng anh"]),
         SettingsItem(
             title: "Kiểm tra chính tả", iconName: "textformat.abc.dottedunderline", tab: .typing,
             keywords: ["spell check", "chính tả", "kiểm tra", "đúng", "sai", "correction"]),
