@@ -161,6 +161,7 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
     func applicationWillTerminate(_ notification: Notification) {
         _ = notification
 
+        AppState.shared.flushPendingSettingsForTermination()
         cancelEventTapRecovery(reason: "applicationWillTerminate")
         stopInputSourceMonitoring()
         stopAccessibilityMonitoring()

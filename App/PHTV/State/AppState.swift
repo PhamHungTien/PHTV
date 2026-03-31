@@ -121,6 +121,29 @@ final class AppState: ObservableObject {
         appListsState.isLoadingSettings = false
     }
 
+    private func persistAllSettings(notifyBackend: Bool) {
+        SettingsObserver.shared.suspendNotifications()
+
+        let defaults = UserDefaults.standard
+        let language = isEnabled ? 1 : 0
+        defaults.set(language, forKey: UserDefaultsKey.inputMethod)
+
+        inputMethodState.saveSettings()
+        macroState.saveSettings()
+        clipboardHistoryState.saveSettings()
+        systemState.saveSettings()
+        uiState.saveSettings()
+        appListsState.saveSettings()
+
+        if notifyBackend {
+            liveLog("posting PHTVSettingsChanged")
+            NotificationCenter.default.post(
+                name: NotificationName.phtvSettingsChanged,
+                object: nil
+            )
+        }
+    }
+
     /// Bridges legacy runtime refresh requests into the SwiftUI state tree.
     func refreshFromRuntime() {
         liveLog("refreshing AppState from runtime")
@@ -129,21 +152,15 @@ final class AppState: ObservableObject {
     }
 
     func saveSettings() {
-        SettingsObserver.shared.suspendNotifications()
+        persistAllSettings(notifyBackend: true)
+    }
 
-        // Save all sub-states
-        inputMethodState.saveSettings()
-        macroState.saveSettings()
-        clipboardHistoryState.saveSettings()
-        systemState.saveSettings()
-        uiState.saveSettings()
-        appListsState.saveSettings()
-
-
-        // Notify Objective-C backend
-        liveLog("posting PHTVSettingsChanged")
-        NotificationCenter.default.post(
-            name: NotificationName.phtvSettingsChanged, object: nil)
+    func flushPendingSettingsForTermination() {
+        persistAllSettings(notifyBackend: false)
+        let synchronized = CFPreferencesAppSynchronize(kCFPreferencesCurrentApplication)
+        if !synchronized {
+            NSLog("[AppState] Failed to synchronize preferences during termination flush")
+        }
     }
 
     // MARK: - External Settings Observer
