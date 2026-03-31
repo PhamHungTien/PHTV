@@ -638,13 +638,13 @@ final class EngineRegressionTests: XCTestCase {
                          allowConsonantZFWJ: false, breakKey: KEY_COMMA)
     }
 
-    func testAllowConsonantDoesNotBlockNonVietnameseRestoreForExtendedInitialOnSpace() {
-        runSpaceCase("zoom", expectRestore: true, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: true)
+    func testNonVietnameseModeRespectsAllowedExtendedInitialOnSpace() {
+        runSpaceCase("zoom", expectRestore: false, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: true)
         runSpaceCase("zoom", expectRestore: true, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: false)
     }
 
-    func testAllowConsonantDoesNotBlockNonVietnameseRestoreForExtendedInitialOnComma() {
-        runWordBreakCase("zoom", expectRestore: true, autoRestoreMode: .nonVietnamese,
+    func testNonVietnameseModeRespectsAllowedExtendedInitialOnComma() {
+        runWordBreakCase("zoom", expectRestore: false, autoRestoreMode: .nonVietnamese,
                          allowConsonantZFWJ: true, breakKey: KEY_COMMA)
         runWordBreakCase("zoom", expectRestore: true, autoRestoreMode: .nonVietnamese,
                          allowConsonantZFWJ: false, breakKey: KEY_COMMA)
@@ -664,6 +664,14 @@ final class EngineRegressionTests: XCTestCase {
 
     func testIssue160ForRestoresOnCommaWhenAllowConsonantIsDisabledInNonVietnameseMode() {
         runWordBreakCase("for", expectRestore: true, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: false, breakKey: KEY_COMMA)
+    }
+
+    func testNonVietnameseModeKeepsAllowedFInitialOnSpace() {
+        runSpaceCase("for", expectRestore: false, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: true)
+    }
+
+    func testNonVietnameseModeKeepsAllowedFInitialOnComma() {
+        runWordBreakCase("for", expectRestore: false, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: true, breakKey: KEY_COMMA)
     }
 
     func testIssue160DetectorRecognizesForAsEnglishWord() {

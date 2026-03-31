@@ -312,6 +312,25 @@ final class PHTVVietnameseEngine {
         }
     }
 
+    func shouldRespectExtendedConsonantLayoutInNonVietnameseMode(_ keySlice: [UInt32], englishLength: Int) -> Bool {
+        guard englishLength > 0 else { return false }
+
+        let firstKey = UInt16(keySlice[0] & UInt32(CHAR_MASK))
+        let allowExtendedInitials = phtvRuntimeAllowConsonantZFWJEnabled() != 0
+        let quickStart = phtvRuntimeQuickStartConsonantEnabled() != 0
+
+        switch firstKey {
+        case KEY_Z:
+            return allowExtendedInitials
+        case KEY_F, KEY_J:
+            return allowExtendedInitials || quickStart
+        case KEY_W:
+            return allowExtendedInitials || quickStart
+        default:
+            return false
+        }
+    }
+
     func hasVietnameseDictionaryMatchForAutoRestore(_ keySlice: [UInt32], englishLength: Int, typingLength: Int) -> Bool {
         if shouldPreferEnglishForExtendedConsonantWord(keySlice, englishLength: englishLength) {
             return false
@@ -1876,11 +1895,19 @@ final class PHTVVietnameseEngine {
         var shouldRestoreEnglish = false
 
         if isNonVietnameseMode {
-            shouldRestoreEnglish = !hasVietnameseDictionaryMatchForAutoRestore(
+            let hasVietnameseDictionaryMatch = hasVietnameseDictionaryMatchForAutoRestore(
                 keySlice,
                 englishLength: englishStateIndex,
                 typingLength: idx
             )
+            shouldRestoreEnglish = !hasVietnameseDictionaryMatch
+            if shouldRestoreEnglish &&
+                shouldRespectExtendedConsonantLayoutInNonVietnameseMode(
+                    keySlice,
+                    englishLength: englishStateIndex
+                ) {
+                shouldRestoreEnglish = false
+            }
         } else {
             let hasVietnameseDictionaryMatch = hasVietnameseDictionaryMatchForAutoRestore(
                 keySlice,
