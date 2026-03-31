@@ -16,7 +16,7 @@ struct TypingSettingsView: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 20) {
+            VStack(spacing: 20) {
                 SettingsHeaderView(
                     title: "Bộ gõ tiếng Việt",
                     subtitle: "Thiết lập phương pháp gõ, chính tả và các tối ưu để gõ nhanh, đúng.",
@@ -146,7 +146,7 @@ struct TypingSettingsView: View {
                         if appState.autoRestoreEnglishWord {
                             SettingsDivider()
 
-                            AutoRestoreEnglishModeSection(inputMethodState: appState.inputMethodState)
+                            AutoRestoreEnglishModeSection()
                         }
 
                         SettingsDivider()
@@ -213,7 +213,7 @@ struct TypingSettingsView: View {
 // MARK: - Auto Restore Section
 
 struct AutoRestoreEnglishModeSection: View {
-    @ObservedObject var inputMethodState: InputMethodState
+    @EnvironmentObject private var appState: AppState
 
     var body: some View {
         let contentLeadingPadding: CGFloat = 38
@@ -223,19 +223,18 @@ struct AutoRestoreEnglishModeSection: View {
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
 
-            Picker("Chế độ khôi phục", selection: $inputMethodState.autoRestoreEnglishWordMode) {
+            VStack(spacing: 8) {
                 ForEach(AutoRestoreEnglishMode.allCases) { mode in
-                    Text(mode.controlTitle)
-                        .tag(mode)
+                    SettingsSelectionRow(
+                        title: mode.controlTitle,
+                        subtitle: mode.selectionSubtitle,
+                        isSelected: appState.autoRestoreEnglishWordMode == mode,
+                        action: {
+                            appState.autoRestoreEnglishWordMode = mode
+                        }
+                    )
                 }
             }
-            .labelsHidden()
-            .pickerStyle(.segmented)
-
-            Text(inputMethodState.autoRestoreEnglishWordMode.descriptionText)
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.leading, contentLeadingPadding)
         .frame(maxWidth: .infinity, alignment: .leading)

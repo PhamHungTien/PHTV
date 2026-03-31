@@ -46,6 +46,7 @@ final class AppState: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var notificationObservers: [NSObjectProtocol] = []
     private var isLoadingSettings = false
+    private var isObjectWillChangePropagationScheduled = false
 
     private static var liveDebugEnabled: Bool {
         let env = ProcessInfo.processInfo.environment["PHTV_LIVE_DEBUG"]
@@ -58,6 +59,16 @@ final class AppState: ObservableObject {
     private func liveLog(_ message: String) {
         guard Self.liveDebugEnabled else { return }
         NSLog("[PHTV Live] %@", message)
+    }
+
+    private func scheduleObjectWillChangePropagation() {
+        guard !isObjectWillChangePropagationScheduled else { return }
+        isObjectWillChangePropagationScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.isObjectWillChangePropagationScheduled = false
+            self.objectWillChange.send()
+        }
     }
 
     // MARK: - Initialization
@@ -345,27 +356,27 @@ final class AppState: ObservableObject {
         // Propagate sub-state changes to AppState
         // This ensures Views observing AppState are updated when a sub-state changes
         inputMethodState.objectWillChange.sink { [weak self] _ in
-            self?.objectWillChange.send()
+            self?.scheduleObjectWillChangePropagation()
         }.store(in: &cancellables)
 
         macroState.objectWillChange.sink { [weak self] _ in
-            self?.objectWillChange.send()
+            self?.scheduleObjectWillChangePropagation()
         }.store(in: &cancellables)
 
         clipboardHistoryState.objectWillChange.sink { [weak self] _ in
-            self?.objectWillChange.send()
+            self?.scheduleObjectWillChangePropagation()
         }.store(in: &cancellables)
 
         systemState.objectWillChange.sink { [weak self] _ in
-            self?.objectWillChange.send()
+            self?.scheduleObjectWillChangePropagation()
         }.store(in: &cancellables)
 
         uiState.objectWillChange.sink { [weak self] _ in
-            self?.objectWillChange.send()
+            self?.scheduleObjectWillChangePropagation()
         }.store(in: &cancellables)
 
         appListsState.objectWillChange.sink { [weak self] _ in
-            self?.objectWillChange.send()
+            self?.scheduleObjectWillChangePropagation()
         }.store(in: &cancellables)
 
         // Observer for global isEnabled (language toggle)

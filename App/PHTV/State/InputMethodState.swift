@@ -29,8 +29,18 @@ final class InputMethodState: ObservableObject {
     @Published var rememberCode: Bool = true
 
     // Auto restore English words - default: ON for new users
-    @Published var autoRestoreEnglishWord: Bool = true
-    @Published var autoRestoreEnglishWordMode: AutoRestoreEnglishMode = .englishOnly
+    @Published var autoRestoreEnglishWord: Bool = true {
+        didSet {
+            guard autoRestoreEnglishWord != oldValue else { return }
+            handleAutoRestoreEnglishSettingsDidChange()
+        }
+    }
+    @Published var autoRestoreEnglishWordMode: AutoRestoreEnglishMode = .englishOnly {
+        didSet {
+            guard autoRestoreEnglishWordMode != oldValue else { return }
+            handleAutoRestoreEnglishSettingsDidChange()
+        }
+    }
 
     // Restore to raw keys (customizable key)
     @Published var restoreOnEscape: Bool = true
@@ -81,6 +91,16 @@ final class InputMethodState: ObservableObject {
         defaults.set(autoRestoreEnglishWord, forKey: UserDefaultsKey.autoRestoreEnglishWord)
         defaults.set(autoRestoreEnglishWordMode.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
         defaults.set(restoreIfWrongSpellingForRuntime, forKey: UserDefaultsKey.restoreIfWrongSpelling)
+    }
+
+    private func handleAutoRestoreEnglishSettingsDidChange() {
+        guard !isLoadingSettings else { return }
+        SettingsObserver.shared.suspendNotifications()
+        persistAutoRestoreEnglishSettings()
+        NotificationCenter.default.post(
+            name: NotificationName.phtvSettingsChanged,
+            object: nil
+        )
     }
 
     init() {}
@@ -258,26 +278,6 @@ final class InputMethodState: ObservableObject {
                     name: NotificationName.phtvSettingsChanged, object: nil
                 )
             }.store(in: &cancellables)
-
-        Publishers.Merge(
-            $autoRestoreEnglishWord
-                .dropFirst()
-                .removeDuplicates()
-                .map { _ in () },
-            $autoRestoreEnglishWordMode
-                .dropFirst()
-                .removeDuplicates()
-                .map { _ in () }
-        )
-        .sink { [weak self] _ in
-            guard let self = self, !self.isLoadingSettings else { return }
-            SettingsObserver.shared.suspendNotifications()
-            self.persistAutoRestoreEnglishSettings()
-            NotificationCenter.default.post(
-                name: NotificationName.phtvSettingsChanged,
-                object: nil
-            )
-        }.store(in: &cancellables)
 
         // Observer for other settings that need to save and notify backend
         Publishers.MergeMany([

@@ -110,6 +110,15 @@ enum AutoRestoreEnglishMode: Int, CaseIterable, Identifiable, Sendable {
         }
     }
 
+    nonisolated var selectionSubtitle: String {
+        switch self {
+        case .nonVietnamese:
+            return "Giữ từ Việt, khôi phục từ còn lại."
+        case .englishOnly:
+            return "Chỉ khôi phục từ tiếng Anh."
+        }
+    }
+
     nonisolated var reportLabel: String {
         switch self {
         case .nonVietnamese:

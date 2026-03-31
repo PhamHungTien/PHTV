@@ -67,7 +67,6 @@ final class AutoRestoreSettingsPersistenceTests: XCTestCase {
             state.setupObservers()
 
             state.autoRestoreEnglishWordMode = .nonVietnamese
-            state.saveSettings()
 
             state.isLoadingSettings = true
             state.reloadFromDefaults()
@@ -112,7 +111,11 @@ final class AutoRestoreSettingsPersistenceTests: XCTestCase {
 
         XCTAssertFalse(defaults.bool(forKey: UserDefaultsKey.quickTelex))
         XCTAssertEqual(defaults.double(forKey: UserDefaultsKey.menuBarIconSize), 18.0)
-        XCTAssertEqual(defaults.integer(forKey: UserDefaultsKey.autoRestoreEnglishWordMode), AutoRestoreEnglishMode.englishOnly.rawValue)
+        XCTAssertEqual(
+            defaults.integer(forKey: UserDefaultsKey.autoRestoreEnglishWordMode),
+            AutoRestoreEnglishMode.nonVietnamese.rawValue
+        )
+        XCTAssertTrue(defaults.bool(forKey: UserDefaultsKey.restoreIfWrongSpelling))
 
         await MainActor.run {
             states.0.saveSettings()
