@@ -53,6 +53,7 @@ final class InputMethodState: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
     var isLoadingSettings = false
+    private var isRuntimeSettingsCommitScheduled = false
 
     private static let autoRestoreEnglishLegacyKeys: [String] = [
         "RestoreIfInvalidWord"
@@ -101,6 +102,22 @@ final class InputMethodState: ObservableObject {
             name: NotificationName.phtvSettingsChanged,
             object: nil
         )
+    }
+
+    private func scheduleRuntimeSettingsCommit() {
+        guard !isRuntimeSettingsCommitScheduled else { return }
+        isRuntimeSettingsCommitScheduled = true
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.isRuntimeSettingsCommitScheduled = false
+            guard !self.isLoadingSettings else { return }
+            self.saveSettings()
+            NotificationCenter.default.post(
+                name: NotificationName.phtvSettingsChanged,
+                object: nil
+            )
+        }
     }
 
     init() {}
@@ -280,7 +297,7 @@ final class InputMethodState: ObservableObject {
             }.store(in: &cancellables)
 
         // Observer for other settings that need to save and notify backend
-        let settingsChanges = Publishers.MergeMany([
+        Publishers.MergeMany([
             $checkSpelling.settingsChangeEvent(),
             $useModernOrthography.settingsChangeEvent(),
             $quickTelex.settingsChangeEvent(),
@@ -299,23 +316,8 @@ final class InputMethodState: ObservableObject {
         .filter { [weak self] _ in
             !(self?.isLoadingSettings ?? true)
         }
-        .share()
-
-        settingsChanges
         .sink { [weak self] _ in
-            DispatchQueue.main.async { [weak self] in
-                guard let self = self, !self.isLoadingSettings else { return }
-                self.saveSettings()
-            }
-        }.store(in: &cancellables)
-
-        settingsChanges
-        .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
-        .sink { [weak self] _ in
-            guard let self = self else { return }
-            NotificationCenter.default.post(
-                name: NotificationName.phtvSettingsChanged, object: nil
-            )
+            self?.scheduleRuntimeSettingsCommit()
         }.store(in: &cancellables)
     }
 

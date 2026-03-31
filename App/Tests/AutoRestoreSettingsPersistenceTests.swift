@@ -204,6 +204,52 @@ final class AutoRestoreSettingsPersistenceTests: XCTestCase {
         XCTAssertTrue(defaults.bool(forKey: UserDefaultsKey.allowConsonantZFWJ))
     }
 
+    func testFirstConsonantTogglePostsSettingsChangedNotification() async throws {
+        let defaults = UserDefaults.standard
+        defaults.set(false, forKey: UserDefaultsKey.allowConsonantZFWJ)
+
+        let notificationExpectation = XCTNSNotificationExpectation(
+            name: NotificationName.phtvSettingsChanged
+        )
+
+        let state = await MainActor.run { () -> InputMethodState in
+            let state = InputMethodState()
+            state.isLoadingSettings = true
+            state.loadSettings()
+            state.isLoadingSettings = false
+            state.setupObservers()
+            state.allowConsonantZFWJ = true
+            return state
+        }
+
+        _ = state
+        await fulfillment(of: [notificationExpectation], timeout: 0.3)
+        XCTAssertTrue(defaults.bool(forKey: UserDefaultsKey.allowConsonantZFWJ))
+    }
+
+    func testFirstConsonantToggleUpdatesRuntimeSettingAfterCommit() async throws {
+        let defaults = UserDefaults.standard
+        defaults.set(false, forKey: UserDefaultsKey.allowConsonantZFWJ)
+        PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(0)
+
+        let state = await MainActor.run { () -> InputMethodState in
+            let state = InputMethodState()
+            state.isLoadingSettings = true
+            state.loadSettings()
+            state.isLoadingSettings = false
+            state.setupObservers()
+            state.allowConsonantZFWJ = true
+            return state
+        }
+
+        _ = state
+        try await Task.sleep(nanoseconds: 80_000_000)
+        _ = PHTVManager.loadRuntimeSettingsFromUserDefaults()
+
+        XCTAssertEqual(PHTVEngineRuntimeFacade.allowConsonantZFWJ(), 1)
+        XCTAssertTrue(defaults.bool(forKey: UserDefaultsKey.allowConsonantZFWJ))
+    }
+
     func testMenubarIconToggleSurvivesImmediateRuntimeReload() async {
         let defaults = UserDefaults.standard
         defaults.set(false, forKey: UserDefaultsKey.useVietnameseMenubarIcon)
