@@ -622,28 +622,40 @@ final class EngineRegressionTests: XCTestCase {
         runSpaceCase("qwrty", expectRestore: false, autoRestoreMode: .englishOnly)
     }
 
-    func testAllowConsonantPreventsEnglishRestoreForExtendedInitialOnSpace() {
-        runSpaceCase("zoom", expectRestore: false, allowConsonantZFWJ: true)
+    func testAllowConsonantDoesNotBlockEnglishRestoreForExtendedInitialOnSpace() {
+        runSpaceCase("zoom", expectRestore: true, allowConsonantZFWJ: true)
         runSpaceCase("zoom", expectRestore: true, allowConsonantZFWJ: false)
     }
 
-    func testAllowConsonantPreventsEnglishRestoreForExtendedInitialOnComma() {
-        runWordBreakCase("zoom", expectRestore: false,
+    func testAllowConsonantDoesNotBlockEnglishRestoreForExtendedInitialOnComma() {
+        runWordBreakCase("zoom", expectRestore: true,
                          allowConsonantZFWJ: true, breakKey: KEY_COMMA)
         runWordBreakCase("zoom", expectRestore: true,
                          allowConsonantZFWJ: false, breakKey: KEY_COMMA)
     }
 
-    func testAllowConsonantPreventsNonVietnameseRestoreForExtendedInitialOnSpace() {
-        runSpaceCase("zoom", expectRestore: false, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: true)
+    func testAllowConsonantDoesNotBlockNonVietnameseRestoreForExtendedInitialOnSpace() {
+        runSpaceCase("zoom", expectRestore: true, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: true)
         runSpaceCase("zoom", expectRestore: true, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: false)
     }
 
-    func testAllowConsonantPreventsNonVietnameseRestoreForExtendedInitialOnComma() {
-        runWordBreakCase("zoom", expectRestore: false, autoRestoreMode: .nonVietnamese,
+    func testAllowConsonantDoesNotBlockNonVietnameseRestoreForExtendedInitialOnComma() {
+        runWordBreakCase("zoom", expectRestore: true, autoRestoreMode: .nonVietnamese,
                          allowConsonantZFWJ: true, breakKey: KEY_COMMA)
         runWordBreakCase("zoom", expectRestore: true, autoRestoreMode: .nonVietnamese,
                          allowConsonantZFWJ: false, breakKey: KEY_COMMA)
+    }
+
+    func testIssue160ForRestoresOnSpaceWhenAllowConsonantIsEnabled() {
+        runSpaceCase("for", expectRestore: true, allowConsonantZFWJ: true)
+    }
+
+    func testIssue160FastRestoresOnSpaceWhenAllowConsonantIsEnabled() {
+        runSpaceCase("fast", expectRestore: true, allowConsonantZFWJ: true)
+    }
+
+    func testIssue160FixRestoresOnCommaWhenAllowConsonantIsDisabled() {
+        runWordBreakCase("fix", expectRestore: true, allowConsonantZFWJ: false, breakKey: KEY_COMMA)
     }
 
     func testNonVietnameseModeKeepsVietnameseDictionaryWord() {

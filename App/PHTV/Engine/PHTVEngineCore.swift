@@ -1836,21 +1836,6 @@ final class PHTVVietnameseEngine {
         return false
     }
 
-    func shouldSuppressAutoRestoreForAllowedInitialConsonant(_ englishLength: Int) -> Bool {
-        guard phtvRuntimeAllowConsonantZFWJEnabled() != 0,
-              englishLength > 1,
-              englishLength <= stateIdx else {
-            return false
-        }
-
-        switch UInt16(keyStates[0] & CHAR_MASK) {
-        case KEY_Z, KEY_F, KEY_W, KEY_J:
-            return true
-        default:
-            return false
-        }
-    }
-
     func evaluateAutoRestoreEnglishDecision() -> (restoreStateIndex: Int, canAutoRestore: Bool, shouldRestore: Bool) {
         let englishStateIndex = getEnglishLookupStateLength()
         let isPureLetter = englishStateIndex == stateIdx && hasOnlyEnglishLetterKeyStates(stateIdx)
@@ -1868,14 +1853,10 @@ final class PHTVVietnameseEngine {
         }
 
         let keySlice = Array(keyStates.prefix(englishStateIndex))
-        let shouldSuppressForAllowedInitialConsonant =
-            shouldSuppressAutoRestoreForAllowedInitialConsonant(englishStateIndex)
         let isNonVietnameseMode = autoRestoreEnglishModeValue() == Int32(AutoRestoreEnglishMode.nonVietnamese.rawValue)
         var shouldRestoreEnglish = false
 
-        if shouldSuppressForAllowedInitialConsonant {
-            shouldRestoreEnglish = false
-        } else if isNonVietnameseMode {
+        if isNonVietnameseMode {
             shouldRestoreEnglish = !hasVietnameseDictionaryMatchForAutoRestore(
                 keySlice,
                 englishLength: englishStateIndex,
