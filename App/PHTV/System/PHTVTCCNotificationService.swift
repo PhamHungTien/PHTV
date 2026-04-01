@@ -17,20 +17,37 @@ final class PHTVTCCNotificationService: NSObject {
 
     private final class ObserverStateBox: @unchecked Sendable {
         private let lock = NSLock()
-        private var observers: [NSObjectProtocol] = []
+        private var tasks: [Task<Void, Never>] = []
 
-        func withLock<T>(_ body: (inout [NSObjectProtocol]) -> T) -> T {
+        func withLock<T>(_ body: (inout [Task<Void, Never>]) -> T) -> T {
             lock.lock()
             defer { lock.unlock() }
-            return body(&observers)
+            return body(&tasks)
         }
     }
 
     private static let observerState = ObserverStateBox()
 
+    private class func makeDistributedNotificationTask(name: Notification.Name) -> Task<Void, Never> {
+        let distributedCenter = DistributedNotificationCenter.default()
+
+        return Task { @MainActor in
+            for await notification in distributedCenter.notifications(named: name) {
+                guard !Task.isCancelled else { break }
+                if name.rawValue == "com.apple.accessibility.api" {
+                    NSLog("[TCC] 🔔 TCC notification received: %@", notification.name.rawValue)
+                    NSLog("[TCC] userInfo: %@", String(describing: notification.userInfo))
+                } else {
+                    NSLog("[TCC] 🔔 TCC access changed notification: %@", String(describing: notification.userInfo))
+                }
+                handleTCCNotification(notification)
+            }
+        }
+    }
+
     @objc class func startListening() {
-        let isAlreadyStarted = observerState.withLock { observers in
-            !observers.isEmpty
+        let isAlreadyStarted = observerState.withLock { tasks in
+            !tasks.isEmpty
         }
         guard !isAlreadyStarted else {
             NSLog("[TCC] Notification listener already started")
@@ -39,48 +56,29 @@ final class PHTVTCCNotificationService: NSObject {
 
         NSLog("[TCC] Starting notification listener...")
 
-        let distributedCenter = DistributedNotificationCenter.default()
-
-        let observer1 = distributedCenter.addObserver(
-            forName: Notification.Name("com.apple.accessibility.api"),
-            object: nil,
-            queue: .main
-        ) { notification in
-            NSLog("[TCC] 🔔 TCC notification received: %@", notification.name.rawValue)
-            NSLog("[TCC] userInfo: %@", String(describing: notification.userInfo))
-            handleTCCNotification(notification)
+        let taskCount = observerState.withLock { tasks -> Int in
+            tasks = [
+                makeDistributedNotificationTask(name: Notification.Name("com.apple.accessibility.api")),
+                makeDistributedNotificationTask(name: Notification.Name("com.apple.TCC.access.changed"))
+            ]
+            return tasks.count
         }
-
-        let observer2 = distributedCenter.addObserver(
-            forName: Notification.Name("com.apple.TCC.access.changed"),
-            object: nil,
-            queue: .main
-        ) { notification in
-            NSLog("[TCC] 🔔 TCC access changed notification: %@", String(describing: notification.userInfo))
-            handleTCCNotification(notification)
-        }
-
-        let observerCount = observerState.withLock { observers -> Int in
-            observers = [observer1, observer2]
-            return observers.count
-        }
-        NSLog("[TCC] Notification listener started successfully (%lu observer(s))", observerCount)
+        NSLog("[TCC] Notification listener started successfully (%lu task(s))", taskCount)
     }
 
     @objc class func stopListening() {
-        let removedObservers = observerState.withLock { observers -> [NSObjectProtocol] in
-            let removed = observers
-            observers.removeAll()
+        let removedTasks = observerState.withLock { tasks -> [Task<Void, Never>] in
+            let removed = tasks
+            tasks.removeAll()
             return removed
         }
-        guard !removedObservers.isEmpty else {
+        guard !removedTasks.isEmpty else {
             return
         }
 
         NSLog("[TCC] Stopping notification listener...")
-        let distributedCenter = DistributedNotificationCenter.default()
-        for observer in removedObservers {
-            distributedCenter.removeObserver(observer)
+        for task in removedTasks {
+            task.cancel()
         }
         NSLog("[TCC] Notification listener stopped")
     }

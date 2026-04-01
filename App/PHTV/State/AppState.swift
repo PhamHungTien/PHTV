@@ -60,7 +60,7 @@ final class AppState {
 
     // MARK: - Private State
 
-    @ObservationIgnored private var notificationObservers: [NSObjectProtocol] = []
+    @ObservationIgnored private var notificationTasks: [Task<Void, Never>] = []
     @ObservationIgnored private var externalSettingsObservationTask: Task<Void, Never>?
     @ObservationIgnored private var isLoadingSettings = false
     @ObservationIgnored private var isSubstateInvalidationScheduled = false
@@ -220,6 +220,31 @@ final class AppState {
         }
     }
 
+    private func makeNotificationTask(
+        center: NotificationCenter = .default,
+        name: Notification.Name,
+        handler: @escaping @MainActor (Notification) async -> Void
+    ) -> Task<Void, Never> {
+        Task { @MainActor in
+            for await notification in center.notifications(named: name) {
+                guard !Task.isCancelled else { break }
+                await handler(notification)
+            }
+        }
+    }
+
+    private func applyLanguageChange(from notification: Notification, playBeep: Bool) {
+        guard let language = notification.object as? NSNumber else { return }
+
+        isLoadingSettings = true
+        isEnabled = language.intValue == 1
+        isLoadingSettings = false
+
+        if playBeep && uiState.beepOnModeSwitch && uiState.beepVolume > 0.0 {
+            BeepManager.shared.play(volume: uiState.beepVolume)
+        }
+    }
+
     /// Reload only settings that may have changed externally
     private func reloadSettingsFromDefaults() {
         reloadSettingsFromDefaults(logSystemSettings: true)
@@ -269,91 +294,25 @@ final class AppState {
     private func setupNotificationObservers() {
         // Delegate notification observers to SystemState
         systemState.setupNotificationObservers()
+        notificationTasks.forEach { $0.cancel() }
 
-        // Listen for language changes from manual actions (hotkey, UI, input type change)
-        let observer1 = NotificationCenter.default.addObserver(
-            forName: NotificationName.languageChangedFromBackend,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let self = self else { return }
-            if let language = notification.object as? NSNumber {
-                Task { @MainActor in
-                    self.isLoadingSettings = true
-                    self.isEnabled = language.intValue == 1
-                    self.isLoadingSettings = false
-
-                    // Play beep for manual mode changes (if enabled)
-                    if self.uiState.beepOnModeSwitch && self.uiState.beepVolume > 0.0 {
-                        BeepManager.shared.play(volume: self.uiState.beepVolume)
-                    }
-                }
-            }
-        }
-        notificationObservers.append(observer1)
-
-        // Listen for language changes from excluded apps (no beep sound)
-        let observer2 = NotificationCenter.default.addObserver(
-            forName: NotificationName.languageChangedFromExcludedApp,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let self = self else { return }
-            if let language = notification.object as? NSNumber {
-                Task { @MainActor in
-                    self.isLoadingSettings = true
-                    self.isEnabled = language.intValue == 1
-                    self.isLoadingSettings = false
-                }
-            }
-        }
-        notificationObservers.append(observer2)
-
-        // Listen for language changes from smart switch (no beep sound)
-        let observer3 = NotificationCenter.default.addObserver(
-            forName: NotificationName.languageChangedFromSmartSwitch,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let self = self else { return }
-            if let language = notification.object as? NSNumber {
-                Task { @MainActor in
-                    self.isLoadingSettings = true
-                    self.isEnabled = language.intValue == 1
-                    self.isLoadingSettings = false
-                }
-            }
-        }
-        notificationObservers.append(observer3)
-
-        // Listen for language changes from input source switch (no beep sound)
-        let observer4 = NotificationCenter.default.addObserver(
-            forName: NotificationName.languageChangedFromObjC,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let self = self else { return }
-            if let language = notification.object as? NSNumber {
-                Task { @MainActor in
-                    self.isLoadingSettings = true
-                    self.isEnabled = language.intValue == 1
-                    self.isLoadingSettings = false
-                }
-            }
-        }
-        notificationObservers.append(observer4)
-
-        // Listen for app termination
-        let terminateObserver = NotificationCenter.default.addObserver(
-            forName: NotificationName.applicationWillTerminate,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in
+        notificationTasks = [
+            makeNotificationTask(name: NotificationName.languageChangedFromBackend) { [weak self] notification in
+                self?.applyLanguageChange(from: notification, playBeep: true)
+            },
+            makeNotificationTask(name: NotificationName.languageChangedFromExcludedApp) { [weak self] notification in
+                self?.applyLanguageChange(from: notification, playBeep: false)
+            },
+            makeNotificationTask(name: NotificationName.languageChangedFromSmartSwitch) { [weak self] notification in
+                self?.applyLanguageChange(from: notification, playBeep: false)
+            },
+            makeNotificationTask(name: NotificationName.languageChangedFromObjC) { [weak self] notification in
+                self?.applyLanguageChange(from: notification, playBeep: false)
+            },
+            makeNotificationTask(name: NotificationName.applicationWillTerminate) { [weak self] _ in
                 self?.cleanupObservers()
             }
-        }
-        notificationObservers.append(terminateObserver)
+        ]
     }
 
     /// Cleanup notification observers (call on app termination)
@@ -361,10 +320,8 @@ final class AppState {
         externalSettingsObservationTask?.cancel()
         externalSettingsObservationTask = nil
 
-        notificationObservers.forEach { observer in
-            NotificationCenter.default.removeObserver(observer)
-        }
-        notificationObservers.removeAll()
+        notificationTasks.forEach { $0.cancel() }
+        notificationTasks.removeAll()
 
         systemState.cleanupObservers()
     }

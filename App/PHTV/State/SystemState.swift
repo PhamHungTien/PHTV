@@ -139,10 +139,10 @@ final class SystemState {
     }
 
     @ObservationIgnored var onChange: (() -> Void)?
-    @ObservationIgnored private var notificationObservers: [NSObjectProtocol] = []
+    @ObservationIgnored private var notificationTasks: [Task<Void, Never>] = []
     @ObservationIgnored var isLoadingSettings = false
     @ObservationIgnored private var isUpdatingRunOnStartup = false
-    @ObservationIgnored private var loginItemActiveObserver: NSObjectProtocol?
+    @ObservationIgnored private var loginItemActiveTask: Task<Void, Never>?
     @ObservationIgnored private var systemSettingsNotificationTask: Task<Void, Never>?
 
     private func isRunOnStartupEffectivelyEnabled(_ status: SMAppService.Status) -> Bool {
@@ -160,6 +160,19 @@ final class SystemState {
     @MainActor
     private func getAppDelegate() -> AppDelegate? {
         return AppDelegate.current()
+    }
+
+    private func makeNotificationTask(
+        center: NotificationCenter = .default,
+        name: Notification.Name,
+        handler: @escaping @MainActor (Notification) async -> Void
+    ) -> Task<Void, Never> {
+        Task { @MainActor in
+            for await notification in center.notifications(named: name) {
+                guard !Task.isCancelled else { break }
+                await handler(notification)
+            }
+        }
     }
 
     init() {}
@@ -354,27 +367,21 @@ final class SystemState {
 
     /// Start lightweight login-item status refresh while Settings is visible.
     func startLoginItemStatusMonitoring() {
-        guard loginItemActiveObserver == nil else { return }
+        guard loginItemActiveTask == nil else { return }
 
-        loginItemActiveObserver = NotificationCenter.default.addObserver(
-            forName: NSApplication.didBecomeActiveNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in
-                self?.refreshRunOnStartupStatus(logContext: "didBecomeActive")
-            }
+        loginItemActiveTask = makeNotificationTask(name: NSApplication.didBecomeActiveNotification) { [weak self] _ in
+            self?.refreshRunOnStartupStatus(logContext: "didBecomeActive")
         }
 
         refreshRunOnStartupStatus(logContext: "settings-open")
-        NSLog("[LoginItem] Status refresh monitoring started (active-app observer)")
+        NSLog("[LoginItem] Status refresh monitoring started (active-app task)")
     }
 
     /// Stop login-item status refresh observer.
     func stopLoginItemStatusMonitoring() {
-        if let observer = loginItemActiveObserver {
-            NotificationCenter.default.removeObserver(observer)
-            loginItemActiveObserver = nil
+        if let task = loginItemActiveTask {
+            task.cancel()
+            loginItemActiveTask = nil
             NSLog("[LoginItem] Status refresh monitoring stopped")
         }
     }
@@ -419,32 +426,24 @@ final class SystemState {
     }
 
     func setupNotificationObservers() {
-        let observer1 = NotificationCenter.default.addObserver(
-            forName: NotificationName.accessibilityStatusChanged,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let self = self else { return }
-            if let isEnabled = notification.object as? NSNumber {
-                Task { @MainActor in
-                    self.refreshPermissionState(eventTapReady: isEnabled.boolValue)
-                }
-            }
-        }
-        notificationObservers.append(observer1)
+        notificationTasks.forEach { $0.cancel() }
 
-        // React immediately to macOS TCC accessibility changes without depending on
-        // the PHTVTCCNotificationService chain. This is the Apple-recommended approach
-        // for detecting accessibility permission grants in real time.
-        let accessibilityObserver = DistributedNotificationCenter.default().addObserver(
-            forName: Notification.Name("com.apple.accessibility.api"),
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            guard let self = self else { return }
-            Task { @MainActor in
+        notificationTasks = [
+            makeNotificationTask(name: NotificationName.accessibilityStatusChanged) { [weak self] notification in
+                guard let self,
+                      let isEnabled = notification.object as? NSNumber else { return }
+                self.refreshPermissionState(eventTapReady: isEnabled.boolValue)
+            },
+            makeNotificationTask(
+                center: DistributedNotificationCenter.default(),
+                name: Notification.Name("com.apple.accessibility.api")
+            ) { [weak self] _ in
+                guard let self else { return }
+
                 // Short settle delay: TCC database write propagates asynchronously.
-                try? await Task.sleep(nanoseconds: 200_000_000) // 200ms
+                try? await Task.sleep(for: .milliseconds(200))
+                guard !Task.isCancelled else { return }
+
                 self.refreshPermissionState()
                 let axTrusted = AXIsProcessTrusted()
                 let postEventGranted = PHTVPermissionService.hasPostEventAccess()
@@ -455,18 +454,16 @@ final class SystemState {
                     self.hasInputMonitoringPermission ? "YES" : "NO",
                     self.isTypingPermissionReady ? "YES" : "NO"
                 )
-            }
-        }
-        notificationObservers.append(accessibilityObserver)
+            },
+            makeNotificationTask(
+                center: DistributedNotificationCenter.default(),
+                name: Notification.Name("com.apple.TCC.access.changed")
+            ) { [weak self] _ in
+                guard let self else { return }
 
-        let tccObserver = DistributedNotificationCenter.default().addObserver(
-            forName: Notification.Name("com.apple.TCC.access.changed"),
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            guard let self = self else { return }
-            Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 200_000_000) // 200ms
+                try? await Task.sleep(for: .milliseconds(200))
+                guard !Task.isCancelled else { return }
+
                 self.refreshPermissionState()
                 let axTrusted = AXIsProcessTrusted()
                 let postEventGranted = PHTVPermissionService.hasPostEventAccess()
@@ -477,100 +474,58 @@ final class SystemState {
                     self.hasInputMonitoringPermission ? "YES" : "NO",
                     self.isTypingPermissionReady ? "YES" : "NO"
                 )
-            }
-        }
-        notificationObservers.append(tccObserver)
+            },
+            makeNotificationTask(name: NotificationName.checkForUpdatesResponse) { [weak self] notification in
+                guard let self,
+                      let response = notification.object as? [String: Any] else { return }
 
-        // Listen for update check responses from backend
-        let observer2 = NotificationCenter.default.addObserver(
-            forName: NotificationName.checkForUpdatesResponse,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let self = self else { return }
-            if let response = notification.object as? [String: Any] {
                 let updateAvailable = (response["updateAvailable"] as? Bool) ?? false
                 let message = response["message"] as? String ?? ""
                 let latestVersion = response["latestVersion"] as? String ?? ""
 
-                if updateAvailable && !message.isEmpty && !latestVersion.isEmpty {
-                    Task { @MainActor in
-                        self.updateAvailableMessage = message
-                        self.latestVersion = latestVersion
-                        self.showUpdateBanner = true
-                    }
-                }
-            }
-        }
-        notificationObservers.append(observer2)
+                guard updateAvailable, !message.isEmpty, !latestVersion.isEmpty else { return }
+                self.updateAvailableMessage = message
+                self.latestVersion = latestVersion
+                self.showUpdateBanner = true
+            },
+            makeNotificationTask(name: NotificationName.sparkleShowUpdateBanner) { [weak self] notification in
+                guard let self,
+                      let info = notification.object as? [String: String] else { return }
 
-        // Sparkle custom update banner
-        let observer3 = NotificationCenter.default.addObserver(
-            forName: NotificationName.sparkleShowUpdateBanner,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let self = self else { return }
-            if let info = notification.object as? [String: String] {
-                Task { @MainActor in
-                    let updateInfo = UpdateBannerInfo(
-                        version: info["version"] ?? "",
-                        releaseNotes: info["releaseNotes"] ?? "",
-                        downloadURL: info["downloadURL"] ?? ""
-                    )
-                    self.customUpdateBannerInfo = updateInfo
-                    self.showCustomUpdateBanner = true
-                    NSLog("[SystemState] Showing update banner for version %@", updateInfo.version)
-                }
-            }
-        }
-        notificationObservers.append(observer3)
+                let updateInfo = UpdateBannerInfo(
+                    version: info["version"] ?? "",
+                    releaseNotes: info["releaseNotes"] ?? "",
+                    downloadURL: info["downloadURL"] ?? ""
+                )
+                self.customUpdateBannerInfo = updateInfo
+                self.showCustomUpdateBanner = true
+                NSLog("[SystemState] Showing update banner for version %@", updateInfo.version)
+            },
+            makeNotificationTask(name: NotificationName.runOnStartupChanged) { [weak self] notification in
+                guard let self,
+                      let userInfo = notification.userInfo,
+                      let enabled = userInfo[NotificationUserInfoKey.enabled] as? Bool else { return }
 
-        // Listen for Launch at Login changes from AppDelegate
-        let observer4 = NotificationCenter.default.addObserver(
-            forName: NotificationName.runOnStartupChanged,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let self = self else { return }
-            if let userInfo = notification.userInfo,
-               let enabled = userInfo[NotificationUserInfoKey.enabled] as? Bool {
-                Task { @MainActor in
-                    self.isUpdatingRunOnStartup = true
-                    self.runOnStartup = enabled
-                    self.isUpdatingRunOnStartup = false
-                    PHTVLogger.shared.info("[SystemState] RunOnStartup synced from notification: \(enabled)")
-                }
-            }
-        }
-        notificationObservers.append(observer4)
-
-        // Listen for app termination
-        let terminateObserver = NotificationCenter.default.addObserver(
-            forName: NotificationName.applicationWillTerminate,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in
+                self.isUpdatingRunOnStartup = true
+                self.runOnStartup = enabled
+                self.isUpdatingRunOnStartup = false
+                PHTVLogger.shared.info("[SystemState] RunOnStartup synced from notification: \(enabled)")
+            },
+            makeNotificationTask(name: NotificationName.applicationWillTerminate) { [weak self] _ in
                 self?.cleanupObservers()
             }
-        }
-        notificationObservers.append(terminateObserver)
+        ]
     }
 
     func cleanupObservers() {
         systemSettingsNotificationTask?.cancel()
         systemSettingsNotificationTask = nil
 
-        notificationObservers.forEach { observer in
-            NotificationCenter.default.removeObserver(observer)
-        }
-        notificationObservers.removeAll()
+        notificationTasks.forEach { $0.cancel() }
+        notificationTasks.removeAll()
 
-        if let observer = loginItemActiveObserver {
-            NotificationCenter.default.removeObserver(observer)
-            loginItemActiveObserver = nil
-        }
+        loginItemActiveTask?.cancel()
+        loginItemActiveTask = nil
     }
 
     func resetToDefaults() {

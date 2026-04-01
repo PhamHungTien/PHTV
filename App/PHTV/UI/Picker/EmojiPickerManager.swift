@@ -18,7 +18,9 @@ class EmojiPickerManager {
     private var panel: FloatingPanel<EmojiPickerView>?
     private var previousApp: NSRunningApplication?
     private var lastShowRequestTime: CFAbsoluteTime = 0
-    private var panelResignKeyObserver: NSObjectProtocol?
+    private var panelResignKeyTask: Task<Void, Never>?
+    private var restoreFocusTask: Task<Void, Never>?
+    private var pendingPasteTask: Task<Void, Never>?
 
     private init() {}
 
@@ -70,16 +72,21 @@ class EmojiPickerManager {
 
         // Belt-and-suspenders: re-assert key status after one run-loop pass so that
         // SwiftUI's focus engine can transfer focus to the search field reliably.
-        DispatchQueue.main.async { [weak self] in
+        Task { @MainActor [weak self] in
+            await Task.yield()
             self?.panel?.makeKey()
         }
 
-        panelResignKeyObserver = NotificationCenter.default.addObserver(
-            forName: NSWindow.didResignKeyNotification,
-            object: panel,
-            queue: .main
-        ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.hide() }
+        panelResignKeyTask?.cancel()
+        panelResignKeyTask = Task { @MainActor [weak self, panel] in
+            guard let panel else { return }
+            for await _ in NotificationCenter.default.notifications(
+                named: NSWindow.didResignKeyNotification,
+                object: panel
+            ) {
+                guard !Task.isCancelled else { break }
+                self?.hide()
+            }
         }
 
         NSLog("[EmojiPicker] Panel shown")
@@ -88,20 +95,19 @@ class EmojiPickerManager {
     /// Hides the PHTV Picker and restores focus to previous app
     func hide() {
         NSLog("[PHTPPicker] Hiding PHTV Picker")
-        if let observer = panelResignKeyObserver {
-            NotificationCenter.default.removeObserver(observer)
-            panelResignKeyObserver = nil
-        }
+        panelResignKeyTask?.cancel()
+        panelResignKeyTask = nil
         panel?.close()
         panel = nil
 
         // Restore focus to the previous app with a small delay
         // to ensure panel is fully closed first
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
-            if let app = self?.previousApp {
+        restoreFocusTask?.cancel()
+        restoreFocusTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(50))
+            guard !Task.isCancelled, let app = self?.previousApp else { return }
                 NSLog("[PHTPPicker] Restoring focus to: %@", app.localizedName ?? "Unknown")
                 app.activate(options: [.activateIgnoringOtherApps])
-            }
         }
     }
 
@@ -116,7 +122,10 @@ class EmojiPickerManager {
         hide()
 
         // Small delay to allow panel to close and frontmost app to regain focus
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        pendingPasteTask?.cancel()
+        pendingPasteTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(100))
+            guard let self, !Task.isCancelled else { return }
             self.pasteEmoji(emoji)
         }
     }
