@@ -49,7 +49,9 @@ import ServiceManagement
 
             let verificationDelays: [TimeInterval] = shouldEnable ? [0.5, 1.5] : [0.5]
             for delay in verificationDelays {
-                DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(for: .seconds(delay))
+                    guard !Task.isCancelled else { return }
                     self?.refreshRunOnStartupStatus(
                         context: shouldEnable
                             ? "request-enable-verify"

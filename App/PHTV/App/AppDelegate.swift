@@ -58,8 +58,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var isUpdatingLanguage = false
     var isUpdatingInputType = false
     var isUpdatingCodeTable = false
-    var appearanceObserver: Any?
-    var inputSourceObserver: Any?
+    var appearanceObserver: Task<Void, Never>?
+    var inputSourceObserver: Task<Void, Never>?
     var savedLanguageBeforeNonLatin = 0
     var isInNonLatinInputSource = false
     var monitoringNotificationTasks: [Task<Void, Never>] = []

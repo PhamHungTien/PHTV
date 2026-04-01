@@ -38,11 +38,11 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
     func startAccessibilityMonitoring(withInterval interval: TimeInterval, resetState: Bool) {
         stopAccessibilityMonitoring()
 
-        accessibilityMonitor = Timer.scheduledTimer(timeInterval: interval,
-                                                    target: self,
-                                                    selector: #selector(checkAccessibilityStatus),
-                                                    userInfo: nil,
-                                                    repeats: true)
+        accessibilityMonitor = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.checkAccessibilityStatus()
+            }
+        }
         accessibilityMonitor?.tolerance = interval * 0.2
 
         if resetState {
@@ -69,11 +69,11 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
     func startHealthCheckMonitoring() {
         stopHealthCheckMonitoring()
 
-        healthCheckTimer = Timer.scheduledTimer(timeInterval: 10.0,
-                                                target: self,
-                                                selector: #selector(runHealthCheck),
-                                                userInfo: nil,
-                                                repeats: true)
+        healthCheckTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.runHealthCheck()
+            }
+        }
         healthCheckTimer?.tolerance = 1.0
     }
 
@@ -141,9 +141,10 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
         }
 
         if attempt < 3 {
-            // Use asyncAfter instead of usleep to avoid blocking the main thread.
-            let delayMs = Double(100 * attempt)
-            DispatchQueue.main.asyncAfter(deadline: .now() + delayMs / 1000.0) {
+            let delayMs = 100 * attempt
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(delayMs))
+                guard !Task.isCancelled else { return }
                 PHTVManager.invalidatePermissionCache()
                 self.tryInitEventTap(attempt: attempt + 1)
             }
@@ -188,7 +189,9 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
         }
 
         let bundleURL = URL(fileURLWithPath: bundlePath)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(600))
+            guard !Task.isCancelled else { return }
             let config = NSWorkspace.OpenConfiguration()
             NSWorkspace.shared.openApplication(at: bundleURL, configuration: config) { _, error in
                 if let error {
@@ -196,7 +199,7 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
                     return
                 }
                 NSLog("[Accessibility] Relaunching app to finalize permission")
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     NSApp.terminate(nil)
                 }
             }
@@ -210,21 +213,18 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
         }
         publishTypingPermissionState(eventTapReady: false)
 
-        DispatchQueue.main.async {
-            let alert = NSAlert()
-            alert.messageText = "⚠️  Quyền trợ năng đã bị tắt!"
-            alert.informativeText = "PHTV cần quyền trợ năng để hoạt động.\n\nỨng dụng sẽ tự động hoạt động lại khi bạn cấp quyền."
-            alert.alertStyle = .warning
-            alert.addButton(withTitle: "Mở cài đặt")
-            alert.addButton(withTitle: "Đóng")
+        let alert = NSAlert()
+        alert.messageText = "⚠️  Quyền trợ năng đã bị tắt!"
+        alert.informativeText = "PHTV cần quyền trợ năng để hoạt động.\n\nỨng dụng sẽ tự động hoạt động lại khi bạn cấp quyền."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Mở cài đặt")
+        alert.addButton(withTitle: "Đóng")
 
-            let response = alert.runModal()
-            if response == .alertFirstButtonReturn {
-                PHTVAccessibilityService.openAccessibilityPreferences()
-                PHTVManager.invalidatePermissionCache()
-                NSLog("[Accessibility] User opening System Settings to re-grant")
-            }
-
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            PHTVAccessibilityService.openAccessibilityPreferences()
+            PHTVManager.invalidatePermissionCache()
+            NSLog("[Accessibility] User opening System Settings to re-grant")
         }
 
         attemptAutomaticTCCRepairIfNeeded()

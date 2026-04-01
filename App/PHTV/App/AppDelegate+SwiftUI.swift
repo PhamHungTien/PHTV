@@ -68,32 +68,32 @@ extension AppDelegate {
     }
 
     @objc private func handleOpenConvertTool() {
-        DispatchQueue.main.async {
-            // Open settings window and navigate to System tab, then show convert tool
-            if let openWindow = NSApp.windows.first(where: { $0.identifier?.rawValue.hasPrefix("settings") == true }) {
-                // Set window level based on user preference
-                let alwaysOnTop = UserDefaults.standard.bool(
-                    forKey: UserDefaultsKey.settingsWindowAlwaysOnTop,
-                    default: Defaults.settingsWindowAlwaysOnTop
-                )
-                openWindow.level = alwaysOnTop ? .floating : .normal
-                
-                // FIX: Ensure robust window behavior
-                openWindow.hidesOnDeactivate = false
-                openWindow.isMovableByWindowBackground = false
-                openWindow.collectionBehavior = [.managed, .participatesInCycle, .moveToActiveSpace, .fullScreenAuxiliary]
-                
-                openWindow.makeKeyAndOrderFront(nil)
-            } else {
-                // Post notification to open settings first (will be handled by SettingsNotificationObserver)
-                NotificationCenter.default.post(name: NotificationName.showSettings, object: nil)
-            }
-            NSApp.activate(ignoringOtherApps: true)
+        // Open settings window and navigate to System tab, then show convert tool
+        if let openWindow = NSApp.windows.first(where: { $0.identifier?.rawValue.hasPrefix("settings") == true }) {
+            // Set window level based on user preference
+            let alwaysOnTop = UserDefaults.standard.bool(
+                forKey: UserDefaultsKey.settingsWindowAlwaysOnTop,
+                default: Defaults.settingsWindowAlwaysOnTop
+            )
+            openWindow.level = alwaysOnTop ? .floating : .normal
 
-            // Post notification to show convert tool sheet
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                NotificationCenter.default.post(name: NotificationName.showConvertToolSheet, object: nil)
-            }
+            // FIX: Ensure robust window behavior
+            openWindow.hidesOnDeactivate = false
+            openWindow.isMovableByWindowBackground = false
+            openWindow.collectionBehavior = [.managed, .participatesInCycle, .moveToActiveSpace, .fullScreenAuxiliary]
+
+            openWindow.makeKeyAndOrderFront(nil)
+        } else {
+            // Post notification to open settings first (will be handled by SettingsNotificationObserver)
+            NotificationCenter.default.post(name: NotificationName.showSettings, object: nil)
+        }
+        NSApp.activate(ignoringOtherApps: true)
+
+        // Post notification to show convert tool sheet
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(300))
+            guard !Task.isCancelled else { return }
+            NotificationCenter.default.post(name: NotificationName.showConvertToolSheet, object: nil)
         }
     }
 

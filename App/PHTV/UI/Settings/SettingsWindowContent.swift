@@ -11,7 +11,7 @@ import AppKit
 
 struct SettingsWindowContent: View {
     @Environment(AppState.self) private var appState
-    @State private var windowObservers: [NSObjectProtocol] = []
+    @State private var windowObserverTasks: [Task<Void, Never>] = []
     @State private var showOnboarding: Bool = false
     @State private var isClosingSettingsWindow: Bool = false
     @State private var pendingCloseTask: Task<Void, Never>?
@@ -175,93 +175,44 @@ struct SettingsWindowContent: View {
 
     /// Setup observer to ensure settings window stays visible when app loses focus
     /// This is critical for accessory mode (no dock icon) where windows can hide unexpectedly
+    @MainActor
     private func setupWindowObservers() {
         removeWindowObservers()
 
-        let center = NotificationCenter.default
-
-        // App deactivation/activation can cause accessory windows to sink or hide.
-        let resignObserver = center.addObserver(
-            forName: NSApplication.didResignActiveNotification,
-            object: nil,
-            queue: .main
-        ) { _ in
-            Task { @MainActor in
+        windowObserverTasks = [
+            // App deactivation/activation can cause accessory windows to sink or hide.
+            makeWindowObserverTask(name: NSApplication.didResignActiveNotification) { _ in
                 applySettingsWindowBehavior(forceFront: false)
-            }
-        }
-
-        let becomeObserver = center.addObserver(
-            forName: NSApplication.didBecomeActiveNotification,
-            object: nil,
-            queue: .main
-        ) { _ in
-            Task { @MainActor in
+            },
+            makeWindowObserverTask(name: NSApplication.didBecomeActiveNotification) { _ in
                 applySettingsWindowBehavior(forceFront: false)
-            }
-        }
-
-        // If settings window loses key/main while "always on top" is enabled,
-        // re-assert its level and order to prevent sinking.
-        let resignKeyObserver = center.addObserver(
-            forName: NSWindow.didResignKeyNotification,
-            object: nil,
-            queue: .main
-        ) { notification in
-            let windowID = (notification.object as? NSWindow).map(ObjectIdentifier.init)
-            Task { @MainActor in
-                guard let windowID,
-                      let window = NSApp.windows.first(where: { ObjectIdentifier($0) == windowID }),
-                      isSettingsWindow(window) else { return }
+            },
+            // If settings window loses key/main while "always on top" is enabled,
+            // re-assert its level and order to prevent sinking.
+            makeWindowObserverTask(name: NSWindow.didResignKeyNotification) { notification in
+                guard resolveSettingsWindow(from: notification) != nil else { return }
                 if appState.settingsWindowAlwaysOnTop, !isClosingSettingsWindow {
                     // Re-apply window level only. Do not force front here, otherwise
                     // clicking close can immediately reopen the settings window.
                     applySettingsWindowBehavior(forceFront: false)
                 }
-            }
-        }
-
-        let resignMainObserver = center.addObserver(
-            forName: NSWindow.didResignMainNotification,
-            object: nil,
-            queue: .main
-        ) { notification in
-            let windowID = (notification.object as? NSWindow).map(ObjectIdentifier.init)
-            Task { @MainActor in
-                guard let windowID,
-                      let window = NSApp.windows.first(where: { ObjectIdentifier($0) == windowID }),
-                      isSettingsWindow(window) else { return }
+            },
+            makeWindowObserverTask(name: NSWindow.didResignMainNotification) { notification in
+                guard resolveSettingsWindow(from: notification) != nil else { return }
                 if appState.settingsWindowAlwaysOnTop, !isClosingSettingsWindow {
                     applySettingsWindowBehavior(forceFront: false)
                 }
-            }
-        }
-
-        let willCloseObserver = center.addObserver(
-            forName: NSWindow.willCloseNotification,
-            object: nil,
-            queue: .main
-        ) { notification in
-            let window = notification.object as? NSWindow
-            Task { @MainActor in
+            },
+            makeWindowObserverTask(name: NSWindow.willCloseNotification) { notification in
+                let window = notification.object as? NSWindow
                 guard isSettingsWindow(window) else { return }
                 isClosingSettingsWindow = true
                 appState.flushPendingSettingsForWindowClose()
                 windowLifecycleToken = UUID()
                 appState.systemState.stopLoginItemStatusMonitoring()
-            }
-        }
-
-        let occlusionObserver = center.addObserver(
-            forName: NSWindow.didChangeOcclusionStateNotification,
-            object: nil,
-            queue: .main
-        ) { notification in
-            let windowID = (notification.object as? NSWindow).map(ObjectIdentifier.init)
-            Task { @MainActor in
-                guard let windowID,
-                      let window = NSApp.windows.first(where: { ObjectIdentifier($0) == windowID }),
-                      isSettingsWindow(window),
+            },
+            makeWindowObserverTask(name: NSWindow.didChangeOcclusionStateNotification) { notification in
+                guard let window = resolveSettingsWindow(from: notification),
                       !isClosingSettingsWindow,
                       appState.settingsWindowAlwaysOnTop,
                       !window.isMiniaturized else { return }
@@ -269,24 +220,35 @@ struct SettingsWindowContent: View {
                 // a focus tug-of-war with system UI and continuously invalidate layout.
                 window.level = .floating
             }
-        }
-
-        windowObservers = [
-            resignObserver,
-            becomeObserver,
-            resignKeyObserver,
-            resignMainObserver,
-            willCloseObserver,
-            occlusionObserver
         ]
     }
 
+    @MainActor
     private func removeWindowObservers() {
-        if windowObservers.isEmpty { return }
-        for observer in windowObservers {
-            NotificationCenter.default.removeObserver(observer)
+        guard !windowObserverTasks.isEmpty else { return }
+        windowObserverTasks.forEach { $0.cancel() }
+        windowObserverTasks.removeAll()
+    }
+
+    @MainActor
+    private func makeWindowObserverTask(
+        name: Notification.Name,
+        object: AnyObject? = nil,
+        handler: @escaping @MainActor (Notification) -> Void
+    ) -> Task<Void, Never> {
+        Task { @MainActor in
+            for await notification in NotificationCenter.default.notifications(named: name, object: object) {
+                guard !Task.isCancelled else { break }
+                handler(notification)
+            }
         }
-        windowObservers.removeAll()
+    }
+
+    @MainActor
+    private func resolveSettingsWindow(from notification: Notification) -> NSWindow? {
+        let windowID = (notification.object as? NSWindow).map(ObjectIdentifier.init)
+        guard let windowID else { return nil }
+        return NSApp.windows.first(where: { ObjectIdentifier($0) == windowID && isSettingsWindow($0) })
     }
 
     @MainActor

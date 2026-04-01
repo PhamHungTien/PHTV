@@ -46,6 +46,9 @@ final class ClipboardHistoryManager {
     private var lastShowRequestTime: CFAbsoluteTime = 0
     private var settingsObservationTask: Task<Void, Never>?
     private var panelResignKeyTask: Task<Void, Never>?
+    private var restoreFocusTask: Task<Void, Never>?
+    private var pendingPasteTask: Task<Void, Never>?
+    private var clearPastingTask: Task<Void, Never>?
     var isPasting = false
 
     var isVisible: Bool {
@@ -161,7 +164,8 @@ final class ClipboardHistoryManager {
         panel?.showAtMousePosition()
         panel?.makeKey()
 
-        DispatchQueue.main.async { [weak self] in
+        Task { @MainActor [weak self] in
+            await Task.yield()
             self?.panel?.makeKey()
         }
 
@@ -187,10 +191,11 @@ final class ClipboardHistoryManager {
         panel = nil
         lastShowRequestTime = 0
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
-            if let app = self?.previousApp {
-                _ = app.activate()
-            }
+        restoreFocusTask?.cancel()
+        restoreFocusTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(50))
+            guard !Task.isCancelled, let app = self?.previousApp else { return }
+            _ = app.activate()
         }
     }
 
@@ -199,7 +204,10 @@ final class ClipboardHistoryManager {
     private func handleItemSelected(_ item: ClipboardHistoryItem) {
         hide()
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+        pendingPasteTask?.cancel()
+        pendingPasteTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(100))
+            guard !Task.isCancelled else { return }
             self?.pasteItem(item)
         }
     }
@@ -239,7 +247,10 @@ final class ClipboardHistoryManager {
             cmdUp.post(tap: .cgSessionEventTap)
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+        clearPastingTask?.cancel()
+        clearPastingTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(300))
+            guard !Task.isCancelled else { return }
             self?.isPasting = false
         }
     }

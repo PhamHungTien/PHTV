@@ -71,13 +71,17 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
         loadRuntimeSettingsFromUserDefaults()
         EmojiHotkeyBridge.initializeEmojiHotkeyManager()
         for delay in [0.0, 0.25, 0.8] {
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(delay))
+                guard !Task.isCancelled else { return }
                 EmojiHotkeyBridge.refreshEmojiHotkeyRegistration()
             }
         }
         ClipboardHotkeyBridge.initializeClipboardHotkeyManager()
         for delay in [0.0, 0.25, 0.8] {
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(delay))
+                guard !Task.isCancelled else { return }
                 ClipboardHotkeyBridge.refreshClipboardHotkeyRegistration()
             }
         }
@@ -103,7 +107,8 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
             return
         }
 
-        DispatchQueue.main.async { [weak self] in
+        Task { @MainActor [weak self] in
+            await Task.yield()
             guard let self else {
                 return
             }

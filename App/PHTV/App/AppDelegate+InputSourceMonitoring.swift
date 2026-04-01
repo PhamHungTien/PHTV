@@ -31,11 +31,14 @@ private func phtvInputSourceProperty(_ inputSource: TISInputSource, _ key: CFStr
     }
 
     @objc func observeAppearanceChanges() {
-        DistributedNotificationCenter.default().addObserver(self,
-                                                            selector: #selector(handleAppearanceChanged(_:)),
-                                                            name: phtvAppearanceChangedNotification,
-                                                            object: nil)
-        appearanceObserver = NSNumber(value: 1)
+        guard appearanceObserver == nil else { return }
+
+        appearanceObserver = makeNotificationTask(
+            center: DistributedNotificationCenter.default(),
+            name: phtvAppearanceChangedNotification
+        ) { appDelegate, notification in
+            appDelegate.handleAppearanceChanged(notification)
+        }
     }
 
     @objc func handleAppearanceChanged(_ notification: Notification) {
@@ -95,11 +98,12 @@ private func phtvInputSourceProperty(_ inputSource: TISInputSource, _ key: CFStr
         if inputSourceObserver == nil {
             resetInputSourceTrackingState()
 
-            DistributedNotificationCenter.default().addObserver(self,
-                                                                selector: #selector(handleInputSourceChanged(_:)),
-                                                                name: phtvInputSourceChangedNotification,
-                                                                object: nil)
-            inputSourceObserver = NSNumber(value: 1)
+            inputSourceObserver = makeNotificationTask(
+                center: DistributedNotificationCenter.default(),
+                name: phtvInputSourceChangedNotification
+            ) { appDelegate, notification in
+                appDelegate.handleInputSourceChanged(notification)
+            }
 
             NSLog("[InputSource] Started monitoring input source changes")
         }
@@ -109,18 +113,12 @@ private func phtvInputSourceProperty(_ inputSource: TISInputSource, _ key: CFStr
 
     @objc func stopInputSourceMonitoring() {
         if let appearanceObserver {
-            _ = appearanceObserver
-            DistributedNotificationCenter.default().removeObserver(self,
-                                                                   name: phtvAppearanceChangedNotification,
-                                                                   object: nil)
+            appearanceObserver.cancel()
             self.appearanceObserver = nil
         }
 
         if let inputSourceObserver {
-            _ = inputSourceObserver
-            DistributedNotificationCenter.default().removeObserver(self,
-                                                                   name: phtvInputSourceChangedNotification,
-                                                                   object: nil)
+            inputSourceObserver.cancel()
             self.inputSourceObserver = nil
         }
 

@@ -131,7 +131,9 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
     private func refreshEmojiHotkeyRegistration(reason: String, settledRetries: Bool) {
         let delays = settledRetries ? phtvEmojiHotkeyWakeRefreshDelays : [0.0]
         for delay in delays {
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(delay))
+                guard !Task.isCancelled else { return }
                 EmojiHotkeyBridge.refreshEmojiHotkeyRegistration()
             }
         }
@@ -143,7 +145,9 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
     private func refreshClipboardHotkeyRegistration(reason: String, settledRetries: Bool) {
         let delays = settledRetries ? phtvClipboardHotkeyWakeRefreshDelays : [0.0]
         for delay in delays {
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(delay))
+                guard !Task.isCancelled else { return }
                 ClipboardHotkeyBridge.refreshClipboardHotkeyRegistration()
             }
         }
