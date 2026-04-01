@@ -959,33 +959,15 @@ extension View {
 // MARK: - Conditional Symbol Effects (macOS 14+)
 
 extension View {
-    /// Applies pulse symbol effect when available (macOS 14+)
-    @ViewBuilder
     func conditionalPulseEffect() -> some View {
-        if #available(macOS 14.0, *) {
-            self.symbolEffect(.pulse, options: .repeating)
-        } else {
-            self
-        }
+        self.symbolEffect(.pulse, options: .repeating)
     }
 
-    /// Applies pulse symbol effect with value binding when available (macOS 14+)
-    @ViewBuilder
     func conditionalPulseEffect<V: Equatable>(value: V) -> some View {
-        if #available(macOS 14.0, *) {
-            self.symbolEffect(.pulse, options: .repeating, value: value)
-        } else {
-            self
-        }
+        self.symbolEffect(.pulse, options: .repeating, value: value)
     }
 
-    /// Applies bounce symbol effect when available (macOS 14+)
-    @ViewBuilder
     func conditionalBounceEffect<V: Equatable>(value: V) -> some View {
-        if #available(macOS 14.0, *) {
-            self.symbolEffect(.bounce, value: value)
-        } else {
-            self
-        }
+        self.symbolEffect(.bounce, value: value)
     }
 }

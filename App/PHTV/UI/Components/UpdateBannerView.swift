@@ -70,16 +70,10 @@ struct UpdateBannerView: View {
                 )
                 .frame(width: 48, height: 48)
 
-            if #available(macOS 14.0, *) {
-                Image(systemName: "arrow.down.circle.fill")
-                    .font(.system(size: 24))
-                    .foregroundStyle(Color.accentColor)
-                    .symbolEffect(.bounce, value: animateIcon)
-            } else {
-                Image(systemName: "arrow.down.circle.fill")
-                    .font(.system(size: 24))
-                    .foregroundStyle(Color.accentColor)
-            }
+            Image(systemName: "arrow.down.circle.fill")
+                .font(.system(size: 24))
+                .foregroundStyle(Color.accentColor)
+                .symbolEffect(.bounce, value: animateIcon)
         }
     }
 

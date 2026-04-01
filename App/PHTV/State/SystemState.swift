@@ -79,7 +79,6 @@ final class SystemState: ObservableObject {
     private var isUpdatingRunOnStartup = false
     private var loginItemActiveObserver: NSObjectProtocol?
 
-    @available(macOS 13.0, *)
     private func isRunOnStartupEffectivelyEnabled(_ status: SMAppService.Status) -> Bool {
         switch status {
         case .enabled, .requiresApproval:
@@ -105,7 +104,7 @@ final class SystemState: ObservableObject {
         let defaults = UserDefaults.standard
 
         // Load system settings - use SMAppService status as source of truth.
-        if #available(macOS 13.0, *), shouldRefreshRunOnStartupStatus {
+        if shouldRefreshRunOnStartupStatus {
             refreshRunOnStartupStatus(
                 logContext: logRunOnStartupStatus ? "load-settings" : nil
             )
@@ -216,7 +215,6 @@ final class SystemState: ObservableObject {
 
     /// Start lightweight login-item status refresh while Settings is visible.
     func startLoginItemStatusMonitoring() {
-        guard #available(macOS 13.0, *) else { return }
         guard loginItemActiveObserver == nil else { return }
 
         loginItemActiveObserver = NotificationCenter.default.addObserver(
@@ -242,7 +240,6 @@ final class SystemState: ObservableObject {
         }
     }
 
-    @available(macOS 13.0, *)
     private func refreshRunOnStartupStatus(logContext: String?) {
         let status = SMAppService.mainApp.status
         let isEnabled = isRunOnStartupEffectivelyEnabled(status)
@@ -293,25 +290,23 @@ final class SystemState: ObservableObject {
 
             guard let appDelegate = self.getAppDelegate() else {
                 NSLog("[SystemState] ⚠️ AppDelegate unavailable, applying runOnStartup fallback path")
-                if #available(macOS 13.0, *) {
-                    do {
-                        if value {
-                            try SMAppService.mainApp.register()
-                        } else {
-                            try SMAppService.mainApp.unregister()
-                        }
-                    } catch {
-                        let nsError = error as NSError
-                        NSLog(
-                            "[SystemState] ❌ Fallback %@ failed: %@ (domain=%@ code=%ld)",
-                            value ? "register" : "unregister",
-                            nsError.localizedDescription,
-                            nsError.domain,
-                            nsError.code
-                        )
+                do {
+                    if value {
+                        try SMAppService.mainApp.register()
+                    } else {
+                        try SMAppService.mainApp.unregister()
                     }
-                    self.refreshRunOnStartupStatus(logContext: "observer-fallback")
+                } catch {
+                    let nsError = error as NSError
+                    NSLog(
+                        "[SystemState] ❌ Fallback %@ failed: %@ (domain=%@ code=%ld)",
+                        value ? "register" : "unregister",
+                        nsError.localizedDescription,
+                        nsError.domain,
+                        nsError.code
+                    )
                 }
+                self.refreshRunOnStartupStatus(logContext: "observer-fallback")
                 return
             }
 
