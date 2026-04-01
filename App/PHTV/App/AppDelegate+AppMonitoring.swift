@@ -336,81 +336,64 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
 #endif
 
         let workspaceCenter = NSWorkspace.shared.notificationCenter
-        workspaceCenter.addObserver(self,
-                                    selector: #selector(receiveWakeNote(_:)),
-                                    name: NSWorkspace.didWakeNotification,
-                                    object: nil)
-        workspaceCenter.addObserver(self,
-                                    selector: #selector(receiveSleepNote(_:)),
-                                    name: NSWorkspace.willSleepNotification,
-                                    object: nil)
-        workspaceCenter.addObserver(self,
-                                    selector: #selector(receiveActiveSpaceChanged(_:)),
-                                    name: NSWorkspace.activeSpaceDidChangeNotification,
-                                    object: nil)
-        workspaceCenter.addObserver(self,
-                                    selector: #selector(activeAppChanged(_:)),
-                                    name: NSWorkspace.didActivateApplicationNotification,
-                                    object: nil)
+        monitoringNotificationTasks.forEach { $0.cancel() }
+        monitoringNotificationTasks = [
+            makeNotificationTask(center: workspaceCenter, name: NSWorkspace.didWakeNotification) { appDelegate, notification in
+                appDelegate.receiveWakeNote(notification)
+            },
+            makeNotificationTask(center: workspaceCenter, name: NSWorkspace.willSleepNotification) { appDelegate, notification in
+                appDelegate.receiveSleepNote(notification)
+            },
+            makeNotificationTask(center: workspaceCenter, name: NSWorkspace.activeSpaceDidChangeNotification) { appDelegate, notification in
+                appDelegate.receiveActiveSpaceChanged(notification)
+            },
+            makeNotificationTask(center: workspaceCenter, name: NSWorkspace.didActivateApplicationNotification) { appDelegate, notification in
+                appDelegate.activeAppChanged(notification)
+            }
+        ]
 
         let center = NotificationCenter.default
-        center.addObserver(self,
-                           selector: #selector(onInputMethodChangedFromSwiftUI(_:)),
-                           name: phtvNotificationInputMethodChanged,
-                           object: nil)
-        center.addObserver(self,
-                           selector: #selector(onCodeTableChangedFromSwiftUI(_:)),
-                           name: phtvNotificationCodeTableChanged,
-                           object: nil)
-        center.addObserver(self,
-                           selector: #selector(handleHotkeyChanged(_:)),
-                           name: phtvNotificationHotkeyChanged,
-                           object: nil)
-        center.addObserver(self,
-                           selector: #selector(handleEmojiHotkeySettingsChanged(_:)),
-                           name: phtvNotificationEmojiHotkeySettingsChanged,
-                           object: nil)
-        center.addObserver(self,
-                           selector: #selector(handleTCCDatabaseChanged(_:)),
-                           name: phtvNotificationTCCDatabaseChanged,
-                           object: nil)
-        center.addObserver(self,
-                           selector: #selector(handleSettingsChanged(_:)),
-                           name: phtvNotificationSettingsChanged,
-                           object: nil)
-        center.addObserver(self,
-                           selector: #selector(handleMacrosUpdated(_:)),
-                           name: phtvNotificationMacrosUpdated,
-                           object: nil)
-        center.addObserver(self,
-                           selector: #selector(handleExcludedAppsChanged(_:)),
-                           name: phtvNotificationExcludedAppsChanged,
-                           object: nil)
-        center.addObserver(self,
-                           selector: #selector(handleSendKeyStepByStepAppsChanged(_:)),
-                           name: phtvNotificationSendKeyStepByStepAppsChanged,
-                           object: nil)
-        center.addObserver(self,
-                           selector: #selector(handleUpperCaseExcludedAppsChanged(_:)),
-                           name: phtvNotificationUpperCaseExcludedAppsChanged,
-                           object: nil)
-        center.addObserver(self,
-                           selector: #selector(handleApplicationDidBecomeActive(_:)),
-                           name: phtvNotificationApplicationDidBecomeActive,
-                           object: nil)
-        center.addObserver(self,
-                           selector: #selector(handleLanguageChangedFromSwiftUI(_:)),
-                           name: phtvNotificationLanguageChangedFromSwiftUI,
-                           object: nil)
-        userDefaultsObserver = center.addObserver(
-            forName: UserDefaults.didChangeNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.handleUserDefaultsDidChange(nil)
+        monitoringNotificationTasks += [
+            makeNotificationTask(center: center, name: phtvNotificationInputMethodChanged) { appDelegate, notification in
+                appDelegate.onInputMethodChangedFromSwiftUI(notification)
+            },
+            makeNotificationTask(center: center, name: phtvNotificationCodeTableChanged) { appDelegate, notification in
+                appDelegate.onCodeTableChangedFromSwiftUI(notification)
+            },
+            makeNotificationTask(center: center, name: phtvNotificationHotkeyChanged) { appDelegate, notification in
+                appDelegate.handleHotkeyChanged(notification)
+            },
+            makeNotificationTask(center: center, name: phtvNotificationEmojiHotkeySettingsChanged) { appDelegate, notification in
+                appDelegate.handleEmojiHotkeySettingsChanged(notification)
+            },
+            makeNotificationTask(center: center, name: phtvNotificationTCCDatabaseChanged) { appDelegate, notification in
+                appDelegate.handleTCCDatabaseChanged(notification)
+            },
+            makeNotificationTask(center: center, name: phtvNotificationSettingsChanged) { appDelegate, notification in
+                appDelegate.handleSettingsChanged(notification)
+            },
+            makeNotificationTask(center: center, name: phtvNotificationMacrosUpdated) { appDelegate, notification in
+                appDelegate.handleMacrosUpdated(notification)
+            },
+            makeNotificationTask(center: center, name: phtvNotificationExcludedAppsChanged) { appDelegate, notification in
+                appDelegate.handleExcludedAppsChanged(notification)
+            },
+            makeNotificationTask(center: center, name: phtvNotificationSendKeyStepByStepAppsChanged) { appDelegate, notification in
+                appDelegate.handleSendKeyStepByStepAppsChanged(notification)
+            },
+            makeNotificationTask(center: center, name: phtvNotificationUpperCaseExcludedAppsChanged) { appDelegate, notification in
+                appDelegate.handleUpperCaseExcludedAppsChanged(notification)
+            },
+            makeNotificationTask(center: center, name: phtvNotificationApplicationDidBecomeActive) { appDelegate, notification in
+                appDelegate.handleApplicationDidBecomeActive(notification)
+            },
+            makeNotificationTask(center: center, name: phtvNotificationLanguageChangedFromSwiftUI) { appDelegate, notification in
+                appDelegate.handleLanguageChangedFromSwiftUI(notification)
+            },
+            makeNotificationTask(center: center, name: UserDefaults.didChangeNotification) { appDelegate, notification in
+                appDelegate.handleUserDefaultsDidChange(notification)
             }
-        }
+        ]
 
         registerSparkleObservers()
     }

@@ -7,9 +7,11 @@
 //
 
 import SwiftUI
+import Observation
 
 struct HotkeySettingsView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) private var appState
+    private var bindable: Bindable<AppState> { Bindable(appState) }
 
     // Check if restore key conflicts with hotkey
     private var hasRestoreHotkeyConflict: Bool {
@@ -72,7 +74,7 @@ struct HotkeySettingsView: View {
                             iconColor: .accentColor,
                             title: "Hoàn tác về ký tự gốc",
                             subtitle: "Dùng phím hoàn tác để trả về ký tự trước khi biến đổi",
-                            isOn: $appState.restoreOnEscape
+                            isOn: bindable.restoreOnEscape
                         )
 
                         if appState.restoreOnEscape {
@@ -184,6 +186,6 @@ struct HotkeySettingsView: View {
 
 #Preview {
     HotkeySettingsView()
-        .environmentObject(AppState.shared)
+        .environment(AppState.shared)
         .frame(width: 500, height: 700)
 }

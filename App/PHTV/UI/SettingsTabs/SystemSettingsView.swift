@@ -9,9 +9,10 @@
 import SwiftUI
 import UniformTypeIdentifiers
 import AppKit
+import Observation
 
 struct SystemSettingsView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) private var appState
     @State private var showingResetAlert = false
     @State private var showingConvertTool = false
     @State private var showingExportSheet = false
@@ -24,6 +25,7 @@ struct SystemSettingsView: View {
     @State private var successMessage = ""
     @State private var showOnboarding = false
     @State private var exportBackup = SettingsBackup(version: "2.0", exportDate: "")
+    private var bindable: Bindable<AppState> { Bindable(appState) }
 
     private static let isoFormatter = ISO8601DateFormatter()
 
@@ -71,11 +73,11 @@ struct SystemSettingsView: View {
         .sheet(isPresented: $showingConvertTool) {
             ConvertToolView()
         }
-        .onReceive(NotificationCenter.default.publisher(for: NotificationName.showConvertToolSheet)) { _ in
-            showingConvertTool = true
+        .task {
+            await observeConvertToolNotification(named: NotificationName.showConvertToolSheet)
         }
-        .onReceive(NotificationCenter.default.publisher(for: NotificationName.openConvertToolSheet)) { _ in
-            showingConvertTool = true
+        .task {
+            await observeConvertToolNotification(named: NotificationName.openConvertToolSheet)
         }
         .alert("Khôi phục mặc định?", isPresented: $showingResetAlert) {
             Button("Hủy", role: .cancel) {}
@@ -134,7 +136,15 @@ struct SystemSettingsView: View {
             OnboardingView(onDismiss: {
                 showOnboarding = false
             })
-            .environmentObject(appState)
+            .environment(appState)
+        }
+    }
+
+    @MainActor
+    private func observeConvertToolNotification(named name: Notification.Name) async {
+        for await _ in NotificationCenter.default.notifications(named: name) {
+            guard !Task.isCancelled else { return }
+            showingConvertTool = true
         }
     }
 
@@ -150,7 +160,7 @@ struct SystemSettingsView: View {
                     iconColor: .accentColor,
                     title: "Mở cùng hệ thống",
                     subtitle: "Tự động mở PHTV khi đăng nhập macOS",
-                    isOn: $appState.runOnStartup
+                    isOn: bindable.runOnStartup
                 )
             }
         }
@@ -168,7 +178,7 @@ struct SystemSettingsView: View {
                     iconColor: .accentColor,
                     title: "Cài đặt luôn ở trên",
                     subtitle: "Giữ cửa sổ Cài đặt nằm trên các ứng dụng khác",
-                    isOn: $appState.settingsWindowAlwaysOnTop
+                    isOn: bindable.settingsWindowAlwaysOnTop
                 )
             }
         }
@@ -186,7 +196,7 @@ struct SystemSettingsView: View {
                     iconColor: .accentColor,
                     title: "Hiển thị biểu tượng chữ V",
                     subtitle: "Dùng icon chữ V khi đang ở chế độ Tiếng Việt",
-                    isOn: $appState.useVietnameseMenubarIcon
+                    isOn: bindable.useVietnameseMenubarIcon
                 )
 
                 SettingsDivider()
@@ -199,7 +209,7 @@ struct SystemSettingsView: View {
                     minValue: menuBarIconSizeBounds.lowerBound,
                     maxValue: menuBarIconSizeBounds.upperBound,
                     step: 0.1,
-                    value: $appState.menuBarIconSize,
+                    value: bindable.menuBarIconSize,
                     valueFormatter: { String(format: "%.1f px", $0) }
                 )
             }
@@ -218,7 +228,7 @@ struct SystemSettingsView: View {
                     iconColor: .accentColor,
                     title: "Hiện icon trên Dock",
                     subtitle: "Hiển thị PHTV trên Dock khi mở Cài đặt",
-                    isOn: $appState.showIconOnDock
+                    isOn: bindable.showIconOnDock
                 )
             }
         }
@@ -248,7 +258,7 @@ struct SystemSettingsView: View {
 
                     Spacer()
 
-                    Picker("", selection: $appState.updateCheckFrequency) {
+                    Picker("", selection: bindable.updateCheckFrequency) {
                         ForEach(UpdateCheckFrequency.allCases) { freq in
                             Text(freq.displayName).tag(freq)
                         }
@@ -770,6 +780,6 @@ struct SettingsBackupDocument: FileDocument {
 
 #Preview {
     SystemSettingsView()
-        .environmentObject(AppState.shared)
+        .environment(AppState.shared)
         .frame(width: 500, height: 600)
 }

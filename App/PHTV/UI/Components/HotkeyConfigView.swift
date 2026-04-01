@@ -10,12 +10,14 @@ import SwiftUI
 import Carbon
 import AudioToolbox
 import AppKit
+import Observation
 
 struct HotkeyConfigView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) private var appState
     @State private var isRecording = false
     
     private let modifierOnlyKeyCode: UInt16 = KeyCode.noKey
+    private var bindable: Bindable<AppState> { Bindable(appState) }
 
     // Check if hotkey conflicts with restore key
     private var hasRestoreHotkeyConflict: Bool {
@@ -41,11 +43,11 @@ struct HotkeyConfigView: View {
                     .foregroundStyle(.primary)
                 
                 HStack(spacing: 12) {
-                    ModifierKeyButton(symbol: "⌃", name: "Control", isOn: $appState.switchKeyControl)
-                    ModifierKeyButton(symbol: "⇧", name: "Shift", isOn: $appState.switchKeyShift)
-                    ModifierKeyButton(symbol: "⌘", name: "Command", isOn: $appState.switchKeyCommand)
-                    ModifierKeyButton(symbol: "⌥", name: "Option", isOn: $appState.switchKeyOption)
-                    ModifierKeyButton(symbol: "fn", name: "Fn", isOn: $appState.switchKeyFn)
+                    ModifierKeyButton(symbol: "⌃", name: "Control", isOn: bindable.switchKeyControl)
+                    ModifierKeyButton(symbol: "⇧", name: "Shift", isOn: bindable.switchKeyShift)
+                    ModifierKeyButton(symbol: "⌘", name: "Command", isOn: bindable.switchKeyCommand)
+                    ModifierKeyButton(symbol: "⌥", name: "Option", isOn: bindable.switchKeyOption)
+                    ModifierKeyButton(symbol: "fn", name: "Fn", isOn: bindable.switchKeyFn)
                 }
                 
                 Text("Mặc định: Ctrl + Shift (bấm rồi thả)")
@@ -220,7 +222,7 @@ struct HotkeyConfigView: View {
                     iconColor: .accentColor,
                     title: "Phát âm thanh khi chuyển chế độ",
                     subtitle: "Phát beep khi bấm phím tắt",
-                    isOn: $appState.beepOnModeSwitch
+                    isOn: bindable.beepOnModeSwitch
                 )
                 .padding(.top, 8)
 
@@ -236,7 +238,7 @@ struct HotkeyConfigView: View {
                         minValue: 0.0,
                         maxValue: 1.0,
                         step: 0.01,
-                        value: $appState.beepVolume,
+                        value: bindable.beepVolume,
                         valueFormatter: { String(format: "%.0f%%", $0 * 100) },
                         onEditingChanged: { editing in
                             // Play pop sound on slider release
@@ -584,7 +586,8 @@ fileprivate func convertToNSColor(_ color: Color) -> NSColor? {
 
 // MARK: - Pause Key Configuration View
 struct PauseKeyConfigView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) private var appState
+    private var bindable: Bindable<AppState> { Bindable(appState) }
 
     // Check if pause key conflicts with restore key
     private var hasPauseRestoreConflict: Bool {
@@ -618,7 +621,7 @@ struct PauseKeyConfigView: View {
                 iconColor: .accentColor,
                 title: "Bật tính năng tạm dừng",
                 subtitle: "Nhấn giữ phím để tạm thời chuyển sang tiếng Anh",
-                isOn: $appState.pauseKeyEnabled
+                isOn: bindable.pauseKeyEnabled
             )
 
             if appState.pauseKeyEnabled {
@@ -636,15 +639,15 @@ struct PauseKeyConfigView: View {
                             symbol: "⌃",
                             name: "Control",
                             keyCode: KeyCode.leftControl,
-                            selectedKeyCode: $appState.pauseKey,
-                            selectedKeyName: $appState.pauseKeyName
+                            selectedKeyCode: bindable.pauseKey,
+                            selectedKeyName: bindable.pauseKeyName
                         )
                         PauseKeyButton(
                             symbol: "⌥",
                             name: "Option",
                             keyCode: KeyCode.leftOption,
-                            selectedKeyCode: $appState.pauseKey,
-                            selectedKeyName: $appState.pauseKeyName
+                            selectedKeyCode: bindable.pauseKey,
+                            selectedKeyName: bindable.pauseKeyName
                         )
                     }
 
@@ -788,10 +791,11 @@ struct PauseKeyButton: View {
 
 // MARK: - Emoji Hotkey Configuration View
 struct EmojiHotkeyConfigView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) private var appState
     @State private var isRecording = false
 
     private let modifierOnlyKeyCode: UInt16 = KeyCode.noKey
+    private var bindable: Bindable<AppState> { Bindable(appState) }
 
     // Computed properties for modifier bindings
     private var emojiHotkeyControl: Binding<Bool> {
@@ -877,7 +881,7 @@ struct EmojiHotkeyConfigView: View {
                 iconColor: .accentColor,
                 title: "Bật phím tắt PHTV Picker",
                 subtitle: "Mở bảng tùy chọn Emoji, GIF, Sticker của PHTV",
-                isOn: $appState.enableEmojiHotkey
+                isOn: bindable.enableEmojiHotkey
             )
 
             if appState.enableEmojiHotkey {
@@ -1175,5 +1179,5 @@ class EmojiKeyCaptureView: NSView {
 
 #Preview {
     HotkeyConfigView()
-        .environmentObject(AppState.shared)
+        .environment(AppState.shared)
 }

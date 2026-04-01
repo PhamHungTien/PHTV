@@ -19,7 +19,7 @@ class SwiftUIWindowController: NSWindowController, NSWindowDelegate {
         unifiedTitlebar: Bool = false,
         frameAutosaveName: String? = nil
     ) {
-        var styleMask: NSWindow.StyleMask = [.titled, .closable, .miniaturizable, .resizable]
+        let styleMask: NSWindow.StyleMask = [.titled, .closable, .miniaturizable, .resizable]
 
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: size.width, height: size.height),
@@ -88,7 +88,7 @@ extension SwiftUIWindowController {
     static func settingsWindow() -> SwiftUIWindowController {
         let controller = SwiftUIWindowController(
             rootView: SettingsWindowContent()
-                .environmentObject(AppState.shared)
+                .environment(AppState.shared)
                 .frame(minWidth: 800, minHeight: 600),
             title: "Cài đặt PHTV",
             size: NSSize(width: 950, height: 680),
@@ -104,7 +104,7 @@ extension SwiftUIWindowController {
     static func aboutWindow() -> SwiftUIWindowController {
         let controller = SwiftUIWindowController(
             rootView: AboutView()
-                .environmentObject(AppState.shared),
+                .environment(AppState.shared),
             title: "Về PHTV",
             size: NSSize(width: 500, height: 600)
         )

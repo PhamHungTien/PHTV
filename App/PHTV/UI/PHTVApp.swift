@@ -12,8 +12,6 @@ import SwiftUI
 @main
 struct PHTVApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @StateObject private var appState = AppState.shared
-    @StateObject private var windowOpener = SettingsWindowOpener.shared
 
     init() {
         NSLog("PHTV-APP-INIT-START")

@@ -7,15 +7,17 @@
 //
 
 import SwiftUI
+import Observation
 
 struct AppsSettingsView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) private var appState
     @State private var showingExcludedFilePicker = false
     @State private var showingExcludedRunningApps = false
     @State private var showingExcludedBundleIdInput = false
     @State private var showingStepByStepFilePicker = false
     @State private var showingStepByStepRunningApps = false
     @State private var showingStepByStepBundleIdInput = false
+    private var bindable: Bindable<AppState> { Bindable(appState) }
 
     var body: some View {
         ScrollView {
@@ -49,7 +51,7 @@ struct AppsSettingsView: View {
                             iconColor: .accentColor,
                             title: "Tự chuyển theo ứng dụng",
                             subtitle: "Tự động chuyển Việt/Anh theo ứng dụng đang dùng",
-                            isOn: $appState.useSmartSwitchKey
+                            isOn: bindable.useSmartSwitchKey
                         )
 
                         SettingsDivider()
@@ -59,7 +61,7 @@ struct AppsSettingsView: View {
                             iconColor: .accentColor,
                             title: "Ghi nhớ bảng mã",
                             subtitle: "Lưu bảng mã riêng cho từng ứng dụng",
-                            isOn: $appState.rememberCode
+                            isOn: bindable.rememberCode
                         )
                     }
                 }
@@ -111,7 +113,7 @@ struct AppsSettingsView: View {
                         iconColor: .accentColor,
                         title: "Bật gửi theo từng phím",
                         subtitle: "Gửi từng ký tự một (chậm nhưng ổn định)",
-                        isOn: $appState.sendKeyStepByStep
+                        isOn: bindable.sendKeyStepByStep
                     )
                 }
 
@@ -164,7 +166,7 @@ struct AppsSettingsView: View {
                             iconColor: .accentColor,
                             title: "Tương thích bố cục bàn phím",
                             subtitle: "Hỗ trợ Dvorak, Colemak và các bố cục đặc biệt",
-                            isOn: $appState.performLayoutCompat
+                            isOn: bindable.performLayoutCompat
                         )
 
                         SettingsDivider()
@@ -175,7 +177,7 @@ struct AppsSettingsView: View {
                             iconColor: .accentColor,
                             title: "Bật chế độ an toàn",
                             subtitle: "Tự phục hồi khi Accessibility API gặp lỗi",
-                            isOn: $appState.safeMode
+                            isOn: bindable.safeMode
                         )
 
                             if appState.safeMode {
@@ -216,6 +218,6 @@ struct AppsSettingsView: View {
 
 #Preview {
     AppsSettingsView()
-        .environmentObject(AppState.shared)
+        .environment(AppState.shared)
         .frame(width: 500, height: 600)
 }

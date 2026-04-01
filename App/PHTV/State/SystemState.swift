@@ -6,10 +6,10 @@
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
-import SwiftUI
+import AppKit
 import ServiceManagement
-import Combine
 import ApplicationServices
+import Observation
 
 enum PHTVTypingPermissionState: Equatable {
     case ready
@@ -42,42 +42,108 @@ enum PHTVTypingPermissionState: Equatable {
 
 /// Manages system settings, permissions, and updates
 @MainActor
-final class SystemState: ObservableObject {
+@Observable
+final class SystemState {
     // System settings
-    @Published var runOnStartup: Bool = false
-    @Published var performLayoutCompat: Bool = false
-    @Published var showIconOnDock: Bool = false
-    @Published var settingsWindowAlwaysOnTop: Bool = false
-    @Published var safeMode: Bool = false
+    var runOnStartup: Bool = false {
+        didSet {
+            handleObservedChange(oldValue: oldValue, newValue: runOnStartup) {
+                self.applyRunOnStartupChange(self.runOnStartup)
+            }
+        }
+    }
+    var performLayoutCompat: Bool = false {
+        didSet { handleSystemSettingDidChange(oldValue: oldValue, newValue: performLayoutCompat) }
+    }
+    var showIconOnDock: Bool = false {
+        didSet {
+            handleObservedChange(oldValue: oldValue, newValue: showIconOnDock) {
+                SettingsObserver.shared.suspendNotifications()
+                let defaults = UserDefaults.standard
+                defaults.set(self.showIconOnDock, forKey: UserDefaultsKey.showIconOnDock)
+                NotificationCenter.default.post(
+                    name: NotificationName.phtvSettingsChanged,
+                    object: nil
+                )
+            }
+        }
+    }
+    var settingsWindowAlwaysOnTop: Bool = false {
+        didSet {
+            handleObservedChange(oldValue: oldValue, newValue: settingsWindowAlwaysOnTop) {
+                SettingsObserver.shared.suspendNotifications()
+                let defaults = UserDefaults.standard
+                defaults.set(self.settingsWindowAlwaysOnTop, forKey: UserDefaultsKey.settingsWindowAlwaysOnTop)
+            }
+        }
+    }
+    var safeMode: Bool = false {
+        didSet { handleSystemSettingDidChange(oldValue: oldValue, newValue: safeMode) }
+    }
 
     // Text Replacement Fix is always enabled (no user setting)
     var enableTextReplacementFix: Bool { return true }
 
     // Accessibility / typing readiness
-    @Published var hasAccessibilityPermission: Bool = false
-    @Published var hasInputMonitoringPermission: Bool = false
-    @Published var isTypingPermissionReady: Bool = false
+    var hasAccessibilityPermission: Bool = false {
+        didSet { notifyChangeIfNeeded(oldValue: oldValue, newValue: hasAccessibilityPermission) }
+    }
+    var hasInputMonitoringPermission: Bool = false {
+        didSet { notifyChangeIfNeeded(oldValue: oldValue, newValue: hasInputMonitoringPermission) }
+    }
+    var isTypingPermissionReady: Bool = false {
+        didSet { notifyChangeIfNeeded(oldValue: oldValue, newValue: isTypingPermissionReady) }
+    }
 
     // Update notification - shown when new version is available on startup
-    @Published var updateAvailableMessage: String = ""
-    @Published var showUpdateBanner: Bool = false
-    @Published var latestVersion: String = ""
+    var updateAvailableMessage: String = "" {
+        didSet { notifyChangeIfNeeded(oldValue: oldValue, newValue: updateAvailableMessage) }
+    }
+    var showUpdateBanner: Bool = false {
+        didSet { notifyChangeIfNeeded(oldValue: oldValue, newValue: showUpdateBanner) }
+    }
+    var latestVersion: String = "" {
+        didSet { notifyChangeIfNeeded(oldValue: oldValue, newValue: latestVersion) }
+    }
 
     // Sparkle update configuration
-    @Published var updateCheckFrequency: UpdateCheckFrequency = .daily
-    @Published var showCustomUpdateBanner: Bool = false
-    @Published var customUpdateBannerInfo: UpdateBannerInfo? = nil
+    var updateCheckFrequency: UpdateCheckFrequency = .daily {
+        didSet {
+            handleObservedChange(oldValue: oldValue, newValue: updateCheckFrequency) {
+                SettingsObserver.shared.suspendNotifications()
+                let defaults = UserDefaults.standard
+                defaults.set(self.updateCheckFrequency.rawValue, forKey: UserDefaultsKey.updateCheckInterval)
+                NotificationCenter.default.post(
+                    name: NotificationName.updateCheckFrequencyChanged,
+                    object: NSNumber(value: self.updateCheckFrequency.rawValue)
+                )
+            }
+        }
+    }
+    var showCustomUpdateBanner: Bool = false {
+        didSet { notifyChangeIfNeeded(oldValue: oldValue, newValue: showCustomUpdateBanner) }
+    }
+    var customUpdateBannerInfo: UpdateBannerInfo? = nil {
+        didSet { notifyChangeIfNeeded(oldValue: oldValue, newValue: customUpdateBannerInfo) }
+    }
 
     // Bug report settings
-    @Published var includeSystemInfo: Bool = true
-    @Published var includeLogs: Bool = false
-    @Published var includeCrashLogs: Bool = true
+    var includeSystemInfo: Bool = true {
+        didSet { handleBugReportSettingDidChange(oldValue: oldValue, newValue: includeSystemInfo) }
+    }
+    var includeLogs: Bool = false {
+        didSet { handleBugReportSettingDidChange(oldValue: oldValue, newValue: includeLogs) }
+    }
+    var includeCrashLogs: Bool = true {
+        didSet { handleBugReportSettingDidChange(oldValue: oldValue, newValue: includeCrashLogs) }
+    }
 
-    private var cancellables = Set<AnyCancellable>()
-    private var notificationObservers: [NSObjectProtocol] = []
-    var isLoadingSettings = false
-    private var isUpdatingRunOnStartup = false
-    private var loginItemActiveObserver: NSObjectProtocol?
+    @ObservationIgnored var onChange: (() -> Void)?
+    @ObservationIgnored private var notificationObservers: [NSObjectProtocol] = []
+    @ObservationIgnored var isLoadingSettings = false
+    @ObservationIgnored private var isUpdatingRunOnStartup = false
+    @ObservationIgnored private var loginItemActiveObserver: NSObjectProtocol?
+    @ObservationIgnored private var systemSettingsNotificationTask: Task<Void, Never>?
 
     private func isRunOnStartupEffectivelyEnabled(_ status: SMAppService.Status) -> Bool {
         switch status {
@@ -97,6 +163,79 @@ final class SystemState: ObservableObject {
     }
 
     init() {}
+
+    @discardableResult
+    private func notifyChangeIfNeeded<Value: Equatable>(oldValue: Value, newValue: Value) -> Bool {
+        guard newValue != oldValue else { return false }
+        onChange?()
+        return true
+    }
+
+    private func handleObservedChange<Value: Equatable>(
+        oldValue: Value,
+        newValue: Value,
+        action: (() -> Void)? = nil
+    ) {
+        guard notifyChangeIfNeeded(oldValue: oldValue, newValue: newValue) else { return }
+        guard !isLoadingSettings else { return }
+        action?()
+    }
+
+    private func handleSystemSettingDidChange<Value: Equatable>(oldValue: Value, newValue: Value) {
+        handleObservedChange(oldValue: oldValue, newValue: newValue) {
+            self.saveSettings()
+            self.scheduleSystemSettingsNotification()
+        }
+    }
+
+    private func handleBugReportSettingDidChange<Value: Equatable>(oldValue: Value, newValue: Value) {
+        handleObservedChange(oldValue: oldValue, newValue: newValue) {
+            self.saveSettings()
+        }
+    }
+
+    private func scheduleSystemSettingsNotification() {
+        systemSettingsNotificationTask?.cancel()
+        systemSettingsNotificationTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(Timing.settingsDebounce) * 1_000_000)
+            guard self != nil, !Task.isCancelled else { return }
+            NotificationCenter.default.post(name: NotificationName.phtvSettingsChanged, object: nil)
+        }
+    }
+
+    private func applyRunOnStartupChange(_ value: Bool) {
+        guard !isUpdatingRunOnStartup else {
+            NSLog("[SystemState] runOnStartup observer skipped")
+            return
+        }
+
+        NSLog("[SystemState] 🔄 runOnStartup observer triggered: value=%@", value ? "ON" : "OFF")
+
+        guard let appDelegate = getAppDelegate() else {
+            NSLog("[SystemState] ⚠️ AppDelegate unavailable, applying runOnStartup fallback path")
+            do {
+                if value {
+                    try SMAppService.mainApp.register()
+                } else {
+                    try SMAppService.mainApp.unregister()
+                }
+            } catch {
+                let nsError = error as NSError
+                NSLog(
+                    "[SystemState] ❌ Fallback %@ failed: %@ (domain=%@ code=%ld)",
+                    value ? "register" : "unregister",
+                    nsError.localizedDescription,
+                    nsError.domain,
+                    nsError.code
+                )
+            }
+            refreshRunOnStartupStatus(logContext: "observer-fallback")
+            return
+        }
+
+        NSLog("[SystemState] ✅ Calling AppDelegate.setRunOnStartup(%@)", value ? "YES" : "NO")
+        appDelegate.setRunOnStartup(value)
+    }
 
     // MARK: - Load/Save Settings
 
@@ -276,134 +415,7 @@ final class SystemState: ObservableObject {
     // MARK: - Setup Observers
 
     func setupObservers() {
-        // Observer for runOnStartup
-        $runOnStartup
-            .dropFirst()
-            .removeDuplicates()
-            .sink { [weak self] value in
-            guard let self = self, !self.isLoadingSettings, !self.isUpdatingRunOnStartup else {
-                NSLog("[SystemState] runOnStartup observer skipped")
-                return
-            }
-
-            NSLog("[SystemState] 🔄 runOnStartup observer triggered: value=%@", value ? "ON" : "OFF")
-
-            guard let appDelegate = self.getAppDelegate() else {
-                NSLog("[SystemState] ⚠️ AppDelegate unavailable, applying runOnStartup fallback path")
-                do {
-                    if value {
-                        try SMAppService.mainApp.register()
-                    } else {
-                        try SMAppService.mainApp.unregister()
-                    }
-                } catch {
-                    let nsError = error as NSError
-                    NSLog(
-                        "[SystemState] ❌ Fallback %@ failed: %@ (domain=%@ code=%ld)",
-                        value ? "register" : "unregister",
-                        nsError.localizedDescription,
-                        nsError.domain,
-                        nsError.code
-                    )
-                }
-                self.refreshRunOnStartupStatus(logContext: "observer-fallback")
-                return
-            }
-
-            NSLog("[SystemState] ✅ Calling AppDelegate.setRunOnStartup(%@)", value ? "YES" : "NO")
-            appDelegate.setRunOnStartup(value)
-        }.store(in: &cancellables)
-
-        // Observer for showIconOnDock
-        $showIconOnDock
-            .dropFirst()
-            .removeDuplicates()
-            .sink { [weak self] value in
-            guard let self = self, !self.isLoadingSettings else { return }
-            SettingsObserver.shared.suspendNotifications()
-            let defaults = UserDefaults.standard
-            defaults.set(value, forKey: UserDefaultsKey.showIconOnDock)
-            NotificationCenter.default.post(
-                name: NotificationName.phtvSettingsChanged, object: nil)
-        }.store(in: &cancellables)
-
-        // Observer for settingsWindowAlwaysOnTop
-        $settingsWindowAlwaysOnTop
-            .dropFirst()
-            .removeDuplicates()
-            .sink { [weak self] value in
-            guard let self = self, !self.isLoadingSettings else { return }
-            SettingsObserver.shared.suspendNotifications()
-            let defaults = UserDefaults.standard
-            defaults.set(value, forKey: UserDefaultsKey.settingsWindowAlwaysOnTop)
-        }.store(in: &cancellables)
-
-        // Observer for system settings
-        let systemSettingsChanges = Publishers.MergeMany([
-            $performLayoutCompat.settingsChangeEvent(),
-            $safeMode.settingsChangeEvent()
-        ])
-        .filter { [weak self] _ in
-            !(self?.isLoadingSettings ?? true)
-        }
-        .share()
-
-        systemSettingsChanges
-        .sink { [weak self] _ in
-            DispatchQueue.main.async { [weak self] in
-                guard let self = self, !self.isLoadingSettings else { return }
-                self.saveSettings()
-            }
-        }.store(in: &cancellables)
-
-        systemSettingsChanges
-        .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
-        .sink { [weak self] _ in
-            guard let self = self else { return }
-            NotificationCenter.default.post(
-                name: NotificationName.phtvSettingsChanged, object: nil)
-        }.store(in: &cancellables)
-
-        // Update frequency observer
-        $updateCheckFrequency
-            .dropFirst()
-            .removeDuplicates()
-            .sink { [weak self] frequency in
-            guard let self = self, !self.isLoadingSettings else { return }
-            SettingsObserver.shared.suspendNotifications()
-            let defaults = UserDefaults.standard
-            defaults.set(frequency.rawValue, forKey: UserDefaultsKey.updateCheckInterval)
-
-            NotificationCenter.default.post(
-                name: NotificationName.updateCheckFrequencyChanged,
-                object: NSNumber(value: frequency.rawValue)
-            )
-        }.store(in: &cancellables)
-
-        // Bug report settings observers
-        let bugReportSettingsChanges = Publishers.MergeMany([
-            $includeSystemInfo.settingsChangeEvent(),
-            $includeLogs.settingsChangeEvent(),
-            $includeCrashLogs.settingsChangeEvent()
-        ])
-        .filter { [weak self] _ in
-            !(self?.isLoadingSettings ?? true)
-        }
-        .share()
-
-        bugReportSettingsChanges
-        .sink { [weak self] _ in
-            DispatchQueue.main.async { [weak self] in
-                guard let self = self, !self.isLoadingSettings else { return }
-                self.saveSettings()
-            }
-        }.store(in: &cancellables)
-
-        bugReportSettingsChanges
-        .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
-        .sink { [weak self] _ in
-            guard let self = self else { return }
-        }.store(in: &cancellables)
+        // Observation-based state now handles side effects in property observers.
     }
 
     func setupNotificationObservers() {
@@ -547,6 +559,9 @@ final class SystemState: ObservableObject {
     }
 
     func cleanupObservers() {
+        systemSettingsNotificationTask?.cancel()
+        systemSettingsNotificationTask = nil
+
         notificationObservers.forEach { observer in
             NotificationCenter.default.removeObserver(observer)
         }

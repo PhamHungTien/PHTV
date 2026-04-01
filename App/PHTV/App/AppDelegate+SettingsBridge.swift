@@ -46,38 +46,33 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
         phtvSettingsBridgeLiveLog("setupSwiftUIBridge registering observers")
 
         let center = NotificationCenter.default
-        center.addObserver(self,
-                           selector: #selector(onShowMacroTab(_:)),
-                           name: phtvNotificationShowMacroTab,
-                           object: nil)
-        center.addObserver(self,
-                           selector: #selector(onShowAboutTab(_:)),
-                           name: phtvNotificationShowAboutTab,
-                           object: nil)
-        center.addObserver(self,
-                           selector: #selector(handleInputMethodChanged(_:)),
-                           name: phtvNotificationInputMethodChanged,
-                           object: nil)
-        center.addObserver(self,
-                           selector: #selector(handleCodeTableChanged(_:)),
-                           name: phtvNotificationCodeTableChanged,
-                           object: nil)
-        center.addObserver(self,
-                           selector: #selector(handleShowDockIconNotification(_:)),
-                           name: phtvNotificationShowDockIcon,
-                           object: nil)
-        center.addObserver(self,
-                           selector: #selector(handleCustomDictionaryUpdated(_:)),
-                           name: phtvNotificationCustomDictionaryUpdated,
-                           object: nil)
-        center.addObserver(self,
-                           selector: #selector(handleSettingsReset(_:)),
-                           name: phtvNotificationSettingsReset,
-                           object: nil)
-        center.addObserver(self,
-                           selector: #selector(handleAccessibilityRevoked),
-                           name: phtvNotificationAccessibilityPermissionLost,
-                           object: nil)
+        settingsBridgeNotificationTasks.forEach { $0.cancel() }
+        settingsBridgeNotificationTasks = [
+            makeNotificationTask(center: center, name: phtvNotificationShowMacroTab) { appDelegate, notification in
+                appDelegate.onShowMacroTab(notification)
+            },
+            makeNotificationTask(center: center, name: phtvNotificationShowAboutTab) { appDelegate, notification in
+                appDelegate.onShowAboutTab(notification)
+            },
+            makeNotificationTask(center: center, name: phtvNotificationInputMethodChanged) { appDelegate, notification in
+                appDelegate.handleInputMethodChanged(notification)
+            },
+            makeNotificationTask(center: center, name: phtvNotificationCodeTableChanged) { appDelegate, notification in
+                appDelegate.handleCodeTableChanged(notification)
+            },
+            makeNotificationTask(center: center, name: phtvNotificationShowDockIcon) { appDelegate, notification in
+                appDelegate.handleShowDockIconNotification(notification)
+            },
+            makeNotificationTask(center: center, name: phtvNotificationCustomDictionaryUpdated) { appDelegate, notification in
+                appDelegate.handleCustomDictionaryUpdated(notification)
+            },
+            makeNotificationTask(center: center, name: phtvNotificationSettingsReset) { appDelegate, notification in
+                appDelegate.handleSettingsReset(notification)
+            },
+            makeNotificationTask(center: center, name: phtvNotificationAccessibilityPermissionLost) { appDelegate, _ in
+                appDelegate.handleAccessibilityRevoked()
+            }
+        ]
     }
 
     @objc func handleHotkeyChanged(_ notification: Notification?) {

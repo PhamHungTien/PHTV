@@ -109,6 +109,7 @@ enum NotificationName {
 
     // MARK: - Settings Changes
     static let phtvSettingsChanged = NSNotification.Name("PHTVSettingsChanged")
+    static let settingsObserverDidChange = NSNotification.Name("SettingsObserverDidChange")
     static let inputMethodChanged = NSNotification.Name("InputMethodChanged")
     static let codeTableChanged = NSNotification.Name("CodeTableChanged")
     static let toggleEnabled = NSNotification.Name("ToggleEnabled")

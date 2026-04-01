@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct UpdateBannerView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) private var appState
     @State private var showReleaseNotes = false
     @State private var animateIcon = false
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -140,5 +140,5 @@ struct UpdateBannerView: View {
 
 #Preview {
     UpdateBannerView()
-        .environmentObject(AppState.shared)
+        .environment(AppState.shared)
 }

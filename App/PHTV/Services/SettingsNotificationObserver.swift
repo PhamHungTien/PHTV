@@ -12,37 +12,29 @@ import AppKit
 @MainActor
 final class SettingsNotificationObserver {
     static let shared = SettingsNotificationObserver()
-    private var observers: [Any] = []
+    private var showSettingsTask: Task<Void, Never>?
+    private var createSettingsWindowTask: Task<Void, Never>?
 
     private init() {
         setupObservers()
     }
 
     private func setupObservers() {
-        // Listen for ShowSettings notification
-        let showSettingsObserver = NotificationCenter.default.addObserver(
-            forName: NotificationName.showSettings,
-            object: nil,
-            queue: .main
-        ) { _ in
-            Task { @MainActor in
+        showSettingsTask = Task { @MainActor in
+            for await _ in NotificationCenter.default.notifications(named: NotificationName.showSettings) {
+                guard !Task.isCancelled else { break }
                 SettingsWindowHelper.openSettingsWindow()
             }
         }
-        observers.append(showSettingsObserver)
 
-        // Listen for CreateSettingsWindow notification
-        let createWindowObserver = NotificationCenter.default.addObserver(
-            forName: NotificationName.createSettingsWindow,
-            object: nil,
-            queue: .main
-        ) { _ in
-            Task { @MainActor in
+        createSettingsWindowTask = Task { @MainActor in
+            for await _ in NotificationCenter.default.notifications(named: NotificationName.createSettingsWindow) {
+                guard !Task.isCancelled else { break }
                 SettingsWindowHelper.openSettingsWindow()
             }
         }
-        observers.append(createWindowObserver)
     }
+
 }
 
 @MainActor

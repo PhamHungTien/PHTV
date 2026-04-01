@@ -60,11 +60,43 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var isUpdatingCodeTable = false
     var appearanceObserver: Any?
     var inputSourceObserver: Any?
-    var userDefaultsObserver: Any?
     var savedLanguageBeforeNonLatin = 0
     var isInNonLatinInputSource = false
+    var monitoringNotificationTasks: [Task<Void, Never>] = []
+    var settingsBridgeNotificationTasks: [Task<Void, Never>] = []
+    var legacySwiftUINotificationTasks: [Task<Void, Never>] = []
+    var sparkleNotificationTasks: [Task<Void, Never>] = []
 
     // Tracks the last-seen system text replacements token so macro list
     // can be refreshed when NSUserDictionaryReplacementItems changes.
     var lastSystemReplacementsChangeToken: Int = 0
+
+    func makeNotificationTask(
+        center: NotificationCenter = .default,
+        name: Notification.Name,
+        object: AnyObject? = nil,
+        handler: @escaping @MainActor (AppDelegate, Notification) -> Void
+    ) -> Task<Void, Never> {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            for await notification in center.notifications(named: name, object: object) {
+                guard !Task.isCancelled else { break }
+                handler(self, notification)
+            }
+        }
+    }
+
+    func cancelManagedNotificationTasks() {
+        monitoringNotificationTasks.forEach { $0.cancel() }
+        monitoringNotificationTasks.removeAll()
+
+        settingsBridgeNotificationTasks.forEach { $0.cancel() }
+        settingsBridgeNotificationTasks.removeAll()
+
+        legacySwiftUINotificationTasks.forEach { $0.cancel() }
+        legacySwiftUINotificationTasks.removeAll()
+
+        sparkleNotificationTasks.forEach { $0.cancel() }
+        sparkleNotificationTasks.removeAll()
+    }
 }

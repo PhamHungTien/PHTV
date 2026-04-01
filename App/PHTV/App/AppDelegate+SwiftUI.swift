@@ -14,48 +14,28 @@ extension AppDelegate {
     /// Legacy bridge observers kept for backward compatibility experiments.
     /// Main notification wiring lives in the shared AppDelegate notification layer.
     func setupLegacySwiftUINotificationBridge() {
-        // Subscribe to notifications from SwiftUI
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleLegacyInputMethodChanged(_:)),
-            name: NotificationName.inputMethodChanged,
-            object: nil
-        )
-
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleLegacyCodeTableChanged(_:)),
-            name: NotificationName.codeTableChanged,
-            object: nil
-        )
-        
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleToggleEnabled(_:)),
-            name: NotificationName.toggleEnabled,
-            object: nil
-        )
-        
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleShowConvertTool),
-            name: NotificationName.showConvertTool,
-            object: nil
-        )
-
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleOpenConvertTool),
-            name: NotificationName.openConvertTool,
-            object: nil
-        )
-
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleShowAbout),
-            name: NotificationName.showAbout,
-            object: nil
-        )
+        let center = NotificationCenter.default
+        legacySwiftUINotificationTasks.forEach { $0.cancel() }
+        legacySwiftUINotificationTasks = [
+            makeNotificationTask(center: center, name: NotificationName.inputMethodChanged) { appDelegate, notification in
+                appDelegate.handleLegacyInputMethodChanged(notification)
+            },
+            makeNotificationTask(center: center, name: NotificationName.codeTableChanged) { appDelegate, notification in
+                appDelegate.handleLegacyCodeTableChanged(notification)
+            },
+            makeNotificationTask(center: center, name: NotificationName.toggleEnabled) { appDelegate, notification in
+                appDelegate.handleToggleEnabled(notification)
+            },
+            makeNotificationTask(center: center, name: NotificationName.showConvertTool) { appDelegate, _ in
+                appDelegate.handleShowConvertTool()
+            },
+            makeNotificationTask(center: center, name: NotificationName.openConvertTool) { appDelegate, _ in
+                appDelegate.handleOpenConvertTool()
+            },
+            makeNotificationTask(center: center, name: NotificationName.showAbout) { appDelegate, _ in
+                appDelegate.handleShowAbout()
+            }
+        ]
     }
     
     @objc private func handleLegacyInputMethodChanged(_ notification: Notification) {

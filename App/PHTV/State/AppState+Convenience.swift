@@ -15,338 +15,338 @@ extension AppState {
     // MARK: Backward Compatibility Properties
 
     var inputMethod: InputMethod {
-        get { inputMethodState.inputMethod }
+        get { trackedSubstate(inputMethodState.inputMethod) }
         set { inputMethodState.inputMethod = newValue }
     }
 
     var codeTable: CodeTable {
-        get { inputMethodState.codeTable }
+        get { trackedSubstate(inputMethodState.codeTable) }
         set { inputMethodState.codeTable = newValue }
     }
 
     var checkSpelling: Bool {
-        get { inputMethodState.checkSpelling }
+        get { trackedSubstate(inputMethodState.checkSpelling) }
         set { inputMethodState.checkSpelling = newValue }
     }
 
     var useModernOrthography: Bool {
-        get { inputMethodState.useModernOrthography }
+        get { trackedSubstate(inputMethodState.useModernOrthography) }
         set { inputMethodState.useModernOrthography = newValue }
     }
 
     var quickTelex: Bool {
-        get { inputMethodState.quickTelex }
+        get { trackedSubstate(inputMethodState.quickTelex) }
         set { inputMethodState.quickTelex = newValue }
     }
 
     var sendKeyStepByStep: Bool {
-        get { inputMethodState.sendKeyStepByStep }
+        get { trackedSubstate(inputMethodState.sendKeyStepByStep) }
         set { inputMethodState.sendKeyStepByStep = newValue }
     }
 
     var useSmartSwitchKey: Bool {
-        get { inputMethodState.useSmartSwitchKey }
+        get { trackedSubstate(inputMethodState.useSmartSwitchKey) }
         set { inputMethodState.useSmartSwitchKey = newValue }
     }
 
     var upperCaseFirstChar: Bool {
-        get { inputMethodState.upperCaseFirstChar }
+        get { trackedSubstate(inputMethodState.upperCaseFirstChar) }
         set { inputMethodState.upperCaseFirstChar = newValue }
     }
 
     var allowConsonantZFWJ: Bool {
-        get { inputMethodState.allowConsonantZFWJ }
+        get { trackedSubstate(inputMethodState.allowConsonantZFWJ) }
         set { inputMethodState.allowConsonantZFWJ = newValue }
     }
 
     var quickStartConsonant: Bool {
-        get { inputMethodState.quickStartConsonant }
+        get { trackedSubstate(inputMethodState.quickStartConsonant) }
         set { inputMethodState.quickStartConsonant = newValue }
     }
 
     var quickEndConsonant: Bool {
-        get { inputMethodState.quickEndConsonant }
+        get { trackedSubstate(inputMethodState.quickEndConsonant) }
         set { inputMethodState.quickEndConsonant = newValue }
     }
 
     var rememberCode: Bool {
-        get { inputMethodState.rememberCode }
+        get { trackedSubstate(inputMethodState.rememberCode) }
         set { inputMethodState.rememberCode = newValue }
     }
 
     var autoRestoreEnglishWord: Bool {
-        get { inputMethodState.autoRestoreEnglishWord }
+        get { trackedSubstate(inputMethodState.autoRestoreEnglishWord) }
         set { inputMethodState.autoRestoreEnglishWord = newValue }
     }
 
     var autoRestoreEnglishWordMode: AutoRestoreEnglishMode {
-        get { inputMethodState.autoRestoreEnglishWordMode }
+        get { trackedSubstate(inputMethodState.autoRestoreEnglishWordMode) }
         set { inputMethodState.autoRestoreEnglishWordMode = newValue }
     }
 
     var restoreOnEscape: Bool {
-        get { inputMethodState.restoreOnEscape }
+        get { trackedSubstate(inputMethodState.restoreOnEscape) }
         set { inputMethodState.restoreOnEscape = newValue }
     }
 
     var restoreKey: RestoreKey {
-        get { inputMethodState.restoreKey }
+        get { trackedSubstate(inputMethodState.restoreKey) }
         set { inputMethodState.restoreKey = newValue }
     }
 
     var pauseKeyEnabled: Bool {
-        get { inputMethodState.pauseKeyEnabled }
+        get { trackedSubstate(inputMethodState.pauseKeyEnabled) }
         set { inputMethodState.pauseKeyEnabled = newValue }
     }
 
     var pauseKey: UInt16 {
-        get { inputMethodState.pauseKey }
+        get { trackedSubstate(inputMethodState.pauseKey) }
         set { inputMethodState.pauseKey = newValue }
     }
 
     var pauseKeyName: String {
-        get { inputMethodState.pauseKeyName }
+        get { trackedSubstate(inputMethodState.pauseKeyName) }
         set { inputMethodState.pauseKeyName = newValue }
     }
 
     // MARK: Macro State
 
     var useMacro: Bool {
-        get { macroState.useMacro }
+        get { trackedSubstate(macroState.useMacro) }
         set { macroState.useMacro = newValue }
     }
 
     var useMacroInEnglishMode: Bool {
-        get { macroState.useMacroInEnglishMode }
+        get { trackedSubstate(macroState.useMacroInEnglishMode) }
         set { macroState.useMacroInEnglishMode = newValue }
     }
 
     var useSystemTextReplacements: Bool {
-        get { macroState.useSystemTextReplacements }
+        get { trackedSubstate(macroState.useSystemTextReplacements) }
         set { macroState.useSystemTextReplacements = newValue }
     }
 
     var autoCapsMacro: Bool {
-        get { macroState.autoCapsMacro }
+        get { trackedSubstate(macroState.autoCapsMacro) }
         set { macroState.autoCapsMacro = newValue }
     }
 
     var macroCategories: [MacroCategory] {
-        get { macroState.macroCategories }
+        get { trackedSubstate(macroState.macroCategories) }
         set { macroState.macroCategories = newValue }
     }
 
     var enableEmojiHotkey: Bool {
-        get { macroState.enableEmojiHotkey }
+        get { trackedSubstate(macroState.enableEmojiHotkey) }
         set { macroState.enableEmojiHotkey = newValue }
     }
 
     var emojiHotkeyModifiersRaw: Int {
-        get { macroState.emojiHotkeyModifiersRaw }
+        get { trackedSubstate(macroState.emojiHotkeyModifiersRaw) }
         set { macroState.emojiHotkeyModifiersRaw = newValue }
     }
 
     var emojiHotkeyKeyCode: UInt16 {
-        get { macroState.emojiHotkeyKeyCode }
+        get { trackedSubstate(macroState.emojiHotkeyKeyCode) }
         set { macroState.emojiHotkeyKeyCode = newValue }
     }
 
     var emojiHotkeyModifiers: NSEvent.ModifierFlags {
-        get { macroState.emojiHotkeyModifiers }
+        get { trackedSubstate(macroState.emojiHotkeyModifiers) }
         set { macroState.emojiHotkeyModifiers = newValue }
     }
 
     // MARK: Clipboard History State
 
     var enableClipboardHistory: Bool {
-        get { clipboardHistoryState.enableClipboardHistory }
+        get { trackedSubstate(clipboardHistoryState.enableClipboardHistory) }
         set { clipboardHistoryState.enableClipboardHistory = newValue }
     }
 
     var clipboardHotkeyModifiersRaw: Int {
-        get { clipboardHistoryState.clipboardHotkeyModifiersRaw }
+        get { trackedSubstate(clipboardHistoryState.clipboardHotkeyModifiersRaw) }
         set { clipboardHistoryState.clipboardHotkeyModifiersRaw = newValue }
     }
 
     var clipboardHotkeyKeyCode: UInt16 {
-        get { clipboardHistoryState.clipboardHotkeyKeyCode }
+        get { trackedSubstate(clipboardHistoryState.clipboardHotkeyKeyCode) }
         set { clipboardHistoryState.clipboardHotkeyKeyCode = newValue }
     }
 
     var clipboardHotkeyModifiers: NSEvent.ModifierFlags {
-        get { clipboardHistoryState.clipboardHotkeyModifiers }
+        get { trackedSubstate(clipboardHistoryState.clipboardHotkeyModifiers) }
         set { clipboardHistoryState.clipboardHotkeyModifiers = newValue }
     }
 
     var clipboardHistoryMaxItems: Int {
-        get { clipboardHistoryState.clipboardHistoryMaxItems }
+        get { trackedSubstate(clipboardHistoryState.clipboardHistoryMaxItems) }
         set { clipboardHistoryState.clipboardHistoryMaxItems = newValue }
     }
 
     // MARK: System State
 
     var runOnStartup: Bool {
-        get { systemState.runOnStartup }
+        get { trackedSubstate(systemState.runOnStartup) }
         set { systemState.runOnStartup = newValue }
     }
 
     var performLayoutCompat: Bool {
-        get { systemState.performLayoutCompat }
+        get { trackedSubstate(systemState.performLayoutCompat) }
         set { systemState.performLayoutCompat = newValue }
     }
 
     var showIconOnDock: Bool {
-        get { systemState.showIconOnDock }
+        get { trackedSubstate(systemState.showIconOnDock) }
         set { systemState.showIconOnDock = newValue }
     }
 
     var settingsWindowAlwaysOnTop: Bool {
-        get { systemState.settingsWindowAlwaysOnTop }
+        get { trackedSubstate(systemState.settingsWindowAlwaysOnTop) }
         set { systemState.settingsWindowAlwaysOnTop = newValue }
     }
 
     var safeMode: Bool {
-        get { systemState.safeMode }
+        get { trackedSubstate(systemState.safeMode) }
         set { systemState.safeMode = newValue }
     }
 
     var enableTextReplacementFix: Bool {
-        systemState.enableTextReplacementFix
+        trackedSubstate(systemState.enableTextReplacementFix)
     }
 
     var hasAccessibilityPermission: Bool {
-        get { systemState.hasAccessibilityPermission }
+        get { trackedSubstate(systemState.hasAccessibilityPermission) }
         set { systemState.hasAccessibilityPermission = newValue }
     }
 
     var hasInputMonitoringPermission: Bool {
-        get { systemState.hasInputMonitoringPermission }
+        get { trackedSubstate(systemState.hasInputMonitoringPermission) }
         set { systemState.hasInputMonitoringPermission = newValue }
     }
 
     var isTypingPermissionReady: Bool {
-        get { systemState.isTypingPermissionReady }
+        get { trackedSubstate(systemState.isTypingPermissionReady) }
         set { systemState.isTypingPermissionReady = newValue }
     }
 
     var updateAvailableMessage: String {
-        get { systemState.updateAvailableMessage }
+        get { trackedSubstate(systemState.updateAvailableMessage) }
         set { systemState.updateAvailableMessage = newValue }
     }
 
     var showUpdateBanner: Bool {
-        get { systemState.showUpdateBanner }
+        get { trackedSubstate(systemState.showUpdateBanner) }
         set { systemState.showUpdateBanner = newValue }
     }
 
     var latestVersion: String {
-        get { systemState.latestVersion }
+        get { trackedSubstate(systemState.latestVersion) }
         set { systemState.latestVersion = newValue }
     }
 
     var updateCheckFrequency: UpdateCheckFrequency {
-        get { systemState.updateCheckFrequency }
+        get { trackedSubstate(systemState.updateCheckFrequency) }
         set { systemState.updateCheckFrequency = newValue }
     }
 
     var showCustomUpdateBanner: Bool {
-        get { systemState.showCustomUpdateBanner }
+        get { trackedSubstate(systemState.showCustomUpdateBanner) }
         set { systemState.showCustomUpdateBanner = newValue }
     }
 
     var customUpdateBannerInfo: UpdateBannerInfo? {
-        get { systemState.customUpdateBannerInfo }
+        get { trackedSubstate(systemState.customUpdateBannerInfo) }
         set { systemState.customUpdateBannerInfo = newValue }
     }
 
     // MARK: Bug Report
 
     var includeSystemInfo: Bool {
-        get { systemState.includeSystemInfo }
+        get { trackedSubstate(systemState.includeSystemInfo) }
         set { systemState.includeSystemInfo = newValue }
     }
 
     var includeLogs: Bool {
-        get { systemState.includeLogs }
+        get { trackedSubstate(systemState.includeLogs) }
         set { systemState.includeLogs = newValue }
     }
 
     var includeCrashLogs: Bool {
-        get { systemState.includeCrashLogs }
+        get { trackedSubstate(systemState.includeCrashLogs) }
         set { systemState.includeCrashLogs = newValue }
     }
 
     // MARK: UI State
 
     var switchKeyCommand: Bool {
-        get { uiState.switchKeyCommand }
+        get { trackedSubstate(uiState.switchKeyCommand) }
         set { uiState.switchKeyCommand = newValue }
     }
 
     var switchKeyOption: Bool {
-        get { uiState.switchKeyOption }
+        get { trackedSubstate(uiState.switchKeyOption) }
         set { uiState.switchKeyOption = newValue }
     }
 
     var switchKeyControl: Bool {
-        get { uiState.switchKeyControl }
+        get { trackedSubstate(uiState.switchKeyControl) }
         set { uiState.switchKeyControl = newValue }
     }
 
     var switchKeyShift: Bool {
-        get { uiState.switchKeyShift }
+        get { trackedSubstate(uiState.switchKeyShift) }
         set { uiState.switchKeyShift = newValue }
     }
 
     var switchKeyFn: Bool {
-        get { uiState.switchKeyFn }
+        get { trackedSubstate(uiState.switchKeyFn) }
         set { uiState.switchKeyFn = newValue }
     }
 
     var switchKeyCode: UInt16 {
-        get { uiState.switchKeyCode }
+        get { trackedSubstate(uiState.switchKeyCode) }
         set { uiState.switchKeyCode = newValue }
     }
 
     var switchKeyName: String {
-        get { uiState.switchKeyName }
+        get { trackedSubstate(uiState.switchKeyName) }
         set { uiState.switchKeyName = newValue }
     }
 
     var beepOnModeSwitch: Bool {
-        get { uiState.beepOnModeSwitch }
+        get { trackedSubstate(uiState.beepOnModeSwitch) }
         set { uiState.beepOnModeSwitch = newValue }
     }
 
     var beepVolume: Double {
-        get { uiState.beepVolume }
+        get { trackedSubstate(uiState.beepVolume) }
         set { uiState.beepVolume = newValue }
     }
 
     var menuBarIconSize: Double {
-        get { uiState.menuBarIconSize }
+        get { trackedSubstate(uiState.menuBarIconSize) }
         set { uiState.menuBarIconSize = newValue }
     }
 
     var useVietnameseMenubarIcon: Bool {
-        get { uiState.useVietnameseMenubarIcon }
+        get { trackedSubstate(uiState.useVietnameseMenubarIcon) }
         set { uiState.useVietnameseMenubarIcon = newValue }
     }
 
     // MARK: App Lists
 
     var excludedApps: [ExcludedApp] {
-        get { appListsState.excludedApps }
+        get { trackedSubstate(appListsState.excludedApps) }
         set { appListsState.excludedApps = newValue }
     }
 
     var sendKeyStepByStepApps: [SendKeyStepByStepApp] {
-        get { appListsState.sendKeyStepByStepApps }
+        get { trackedSubstate(appListsState.sendKeyStepByStepApps) }
         set { appListsState.sendKeyStepByStepApps = newValue }
     }
 
     var upperCaseExcludedApps: [ExcludedApp] {
-        get { appListsState.upperCaseExcludedApps }
+        get { trackedSubstate(appListsState.upperCaseExcludedApps) }
         set { appListsState.upperCaseExcludedApps = newValue }
     }
 

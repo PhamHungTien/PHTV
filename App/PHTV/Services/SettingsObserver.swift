@@ -6,34 +6,31 @@
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
-import Combine
 import Foundation
 
 /// Monitors UserDefaults changes and notifies AppState in real-time
 @MainActor
-final class SettingsObserver: NSObject, ObservableObject {
+final class SettingsObserver {
     static let shared = SettingsObserver()
 
-    @Published var settingsDidChange: Date?
-
-    private var observer: NSObjectProtocol?
+    private var observationTask: Task<Void, Never>?
     private var lastNotificationTime: Date = Date()
     private var suppressUntil: Date?
 
-    private override init() {
-        super.init()
+    private init() {
         setupObserver()
     }
 
     private func setupObserver() {
-        // Listen on the main queue so @MainActor isolation is respected
-        observer = NotificationCenter.default.addObserver(
-            forName: UserDefaults.didChangeNotification,
-            object: UserDefaults.standard,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in
-                self?.didChangeSettings()
+        observationTask?.cancel()
+        observationTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for await _ in NotificationCenter.default.notifications(
+                named: UserDefaults.didChangeNotification,
+                object: UserDefaults.standard
+            ) {
+                guard !Task.isCancelled else { break }
+                self.didChangeSettings()
             }
         }
     }
@@ -46,7 +43,10 @@ final class SettingsObserver: NSObject, ObservableObject {
         let now = Date()
         if now.timeIntervalSince(lastNotificationTime) > 0.1 {
             lastNotificationTime = now
-            settingsDidChange = now
+            NotificationCenter.default.post(
+                name: NotificationName.settingsObserverDidChange,
+                object: nil
+            )
         }
     }
 

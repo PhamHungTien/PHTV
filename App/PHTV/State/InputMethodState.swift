@@ -6,54 +6,121 @@
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
-import SwiftUI
-import Combine
+import Foundation
+import Observation
 
 /// Manages input method settings and Vietnamese typing features
 @MainActor
-final class InputMethodState: ObservableObject {
+@Observable
+final class InputMethodState {
     // Input method settings
-    @Published var inputMethod: InputMethod = .telex
-    @Published var codeTable: CodeTable = .unicode
-
-    // Features
-    @Published var checkSpelling: Bool = true
-    @Published var useModernOrthography: Bool = true
-    @Published var quickTelex: Bool = false
-    @Published var sendKeyStepByStep: Bool = false
-    @Published var useSmartSwitchKey: Bool = true
-    @Published var upperCaseFirstChar: Bool = false
-    @Published var allowConsonantZFWJ: Bool = true
-    @Published var quickStartConsonant: Bool = false
-    @Published var quickEndConsonant: Bool = false
-    @Published var rememberCode: Bool = true
-
-    // Auto restore English words - default: ON for new users
-    @Published var autoRestoreEnglishWord: Bool = true {
+    var inputMethod: InputMethod = .telex {
         didSet {
-            guard autoRestoreEnglishWord != oldValue else { return }
-            handleAutoRestoreEnglishSettingsDidChange()
+            handleObservedChange(oldValue: oldValue, newValue: inputMethod) {
+                SettingsObserver.shared.suspendNotifications()
+                let defaults = UserDefaults.standard
+                defaults.set(self.inputMethod.toIndex(), forKey: UserDefaultsKey.inputType)
+                NotificationCenter.default.post(
+                    name: NotificationName.inputMethodChanged,
+                    object: NSNumber(value: self.inputMethod.toIndex())
+                )
+            }
         }
     }
-    @Published var autoRestoreEnglishWordMode: AutoRestoreEnglishMode = .englishOnly {
+    var codeTable: CodeTable = .unicode {
         didSet {
-            guard autoRestoreEnglishWordMode != oldValue else { return }
-            handleAutoRestoreEnglishSettingsDidChange()
+            handleObservedChange(oldValue: oldValue, newValue: codeTable) {
+                SettingsObserver.shared.suspendNotifications()
+                let defaults = UserDefaults.standard
+                defaults.set(self.codeTable.toIndex(), forKey: UserDefaultsKey.codeTable)
+                NotificationCenter.default.post(
+                    name: NotificationName.codeTableChanged,
+                    object: NSNumber(value: self.codeTable.toIndex())
+                )
+            }
+        }
+    }
+
+    // Features
+    var checkSpelling: Bool = true {
+        didSet { handleRuntimeSettingDidChange(oldValue: oldValue, newValue: checkSpelling) }
+    }
+    var useModernOrthography: Bool = true {
+        didSet { handleRuntimeSettingDidChange(oldValue: oldValue, newValue: useModernOrthography) }
+    }
+    var quickTelex: Bool = false {
+        didSet { handleRuntimeSettingDidChange(oldValue: oldValue, newValue: quickTelex) }
+    }
+    var sendKeyStepByStep: Bool = false {
+        didSet { handleRuntimeSettingDidChange(oldValue: oldValue, newValue: sendKeyStepByStep) }
+    }
+    var useSmartSwitchKey: Bool = true {
+        didSet { handleRuntimeSettingDidChange(oldValue: oldValue, newValue: useSmartSwitchKey) }
+    }
+    var upperCaseFirstChar: Bool = false {
+        didSet {
+            handleObservedChange(oldValue: oldValue, newValue: upperCaseFirstChar) {
+                SettingsObserver.shared.suspendNotifications()
+                let defaults = UserDefaults.standard
+                defaults.set(self.upperCaseFirstChar, forKey: UserDefaultsKey.upperCaseFirstChar)
+                NotificationCenter.default.post(
+                    name: NotificationName.phtvSettingsChanged,
+                    object: nil
+                )
+            }
+        }
+    }
+    var allowConsonantZFWJ: Bool = true {
+        didSet { handleRuntimeSettingDidChange(oldValue: oldValue, newValue: allowConsonantZFWJ) }
+    }
+    var quickStartConsonant: Bool = false {
+        didSet { handleRuntimeSettingDidChange(oldValue: oldValue, newValue: quickStartConsonant) }
+    }
+    var quickEndConsonant: Bool = false {
+        didSet { handleRuntimeSettingDidChange(oldValue: oldValue, newValue: quickEndConsonant) }
+    }
+    var rememberCode: Bool = true {
+        didSet { handleRuntimeSettingDidChange(oldValue: oldValue, newValue: rememberCode) }
+    }
+
+    // Auto restore English words - default: ON for new users
+    var autoRestoreEnglishWord: Bool = true {
+        didSet {
+            handleObservedChange(oldValue: oldValue, newValue: autoRestoreEnglishWord) {
+                self.handleAutoRestoreEnglishSettingsDidChange()
+            }
+        }
+    }
+    var autoRestoreEnglishWordMode: AutoRestoreEnglishMode = .englishOnly {
+        didSet {
+            handleObservedChange(oldValue: oldValue, newValue: autoRestoreEnglishWordMode) {
+                self.handleAutoRestoreEnglishSettingsDidChange()
+            }
         }
     }
 
     // Restore to raw keys (customizable key)
-    @Published var restoreOnEscape: Bool = true
-    @Published var restoreKey: RestoreKey = .esc
+    var restoreOnEscape: Bool = true {
+        didSet { handleRuntimeSettingDidChange(oldValue: oldValue, newValue: restoreOnEscape) }
+    }
+    var restoreKey: RestoreKey = .esc {
+        didSet { handleRuntimeSettingDidChange(oldValue: oldValue, newValue: restoreKey) }
+    }
 
     // Pause Vietnamese input when holding a key
-    @Published var pauseKeyEnabled: Bool = false
-    @Published var pauseKey: UInt16 = Defaults.pauseKeyCode
-    @Published var pauseKeyName: String = Defaults.pauseKeyName
+    var pauseKeyEnabled: Bool = false {
+        didSet { handleRuntimeSettingDidChange(oldValue: oldValue, newValue: pauseKeyEnabled) }
+    }
+    var pauseKey: UInt16 = Defaults.pauseKeyCode {
+        didSet { handleRuntimeSettingDidChange(oldValue: oldValue, newValue: pauseKey) }
+    }
+    var pauseKeyName: String = Defaults.pauseKeyName {
+        didSet { handleRuntimeSettingDidChange(oldValue: oldValue, newValue: pauseKeyName) }
+    }
 
-    private var cancellables = Set<AnyCancellable>()
-    var isLoadingSettings = false
-    private var isRuntimeSettingsCommitScheduled = false
+    @ObservationIgnored var onChange: (() -> Void)?
+    @ObservationIgnored var isLoadingSettings = false
+    @ObservationIgnored private var runtimeSettingsCommitTask: Task<Void, Never>?
 
     private static let autoRestoreEnglishLegacyKeys: [String] = [
         "RestoreIfInvalidWord"
@@ -94,8 +161,24 @@ final class InputMethodState: ObservableObject {
         defaults.set(restoreIfWrongSpellingForRuntime, forKey: UserDefaultsKey.restoreIfWrongSpelling)
     }
 
-    private func handleAutoRestoreEnglishSettingsDidChange() {
+    private func handleObservedChange<Value: Equatable>(
+        oldValue: Value,
+        newValue: Value,
+        action: (() -> Void)? = nil
+    ) {
+        guard newValue != oldValue else { return }
+        onChange?()
         guard !isLoadingSettings else { return }
+        action?()
+    }
+
+    private func handleRuntimeSettingDidChange<Value: Equatable>(oldValue: Value, newValue: Value) {
+        handleObservedChange(oldValue: oldValue, newValue: newValue) {
+            self.scheduleRuntimeSettingsCommit()
+        }
+    }
+
+    private func handleAutoRestoreEnglishSettingsDidChange() {
         SettingsObserver.shared.suspendNotifications()
         persistAutoRestoreEnglishSettings()
         NotificationCenter.default.post(
@@ -105,13 +188,10 @@ final class InputMethodState: ObservableObject {
     }
 
     private func scheduleRuntimeSettingsCommit() {
-        guard !isRuntimeSettingsCommitScheduled else { return }
-        isRuntimeSettingsCommitScheduled = true
-
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            self.isRuntimeSettingsCommitScheduled = false
-            guard !self.isLoadingSettings else { return }
+        runtimeSettingsCommitTask?.cancel()
+        runtimeSettingsCommitTask = Task { @MainActor [weak self] in
+            await Task.yield()
+            guard let self = self, !Task.isCancelled, !self.isLoadingSettings else { return }
             self.saveSettings()
             NotificationCenter.default.post(
                 name: NotificationName.phtvSettingsChanged,
@@ -254,71 +334,7 @@ final class InputMethodState: ObservableObject {
     // MARK: - Setup Observers
 
     func setupObservers() {
-        // Observer for input method
-        $inputMethod
-            .dropFirst()
-            .removeDuplicates()
-            .sink { [weak self] newMethod in
-            guard let self = self, !self.isLoadingSettings else { return }
-            SettingsObserver.shared.suspendNotifications()
-            let defaults = UserDefaults.standard
-            defaults.set(newMethod.toIndex(), forKey: UserDefaultsKey.inputType)
-            NotificationCenter.default.post(
-                name: NotificationName.inputMethodChanged,
-                object: NSNumber(value: newMethod.toIndex()))
-        }.store(in: &cancellables)
-
-        // Observer for code table
-        $codeTable
-            .dropFirst()
-            .removeDuplicates()
-            .sink { [weak self] newTable in
-            guard let self = self, !self.isLoadingSettings else { return }
-            SettingsObserver.shared.suspendNotifications()
-            let defaults = UserDefaults.standard
-            defaults.set(newTable.toIndex(), forKey: UserDefaultsKey.codeTable)
-            NotificationCenter.default.post(
-                name: NotificationName.codeTableChanged,
-                object: NSNumber(value: newTable.toIndex()))
-        }.store(in: &cancellables)
-
-        // Uppercase first character: apply immediately (no debounce)
-        $upperCaseFirstChar
-            .dropFirst()
-            .removeDuplicates()
-            .sink { [weak self] value in
-                guard let self = self, !self.isLoadingSettings else { return }
-                SettingsObserver.shared.suspendNotifications()
-                let defaults = UserDefaults.standard
-                defaults.set(value, forKey: UserDefaultsKey.upperCaseFirstChar)
-                NotificationCenter.default.post(
-                    name: NotificationName.phtvSettingsChanged, object: nil
-                )
-            }.store(in: &cancellables)
-
-        // Observer for other settings that need to save and notify backend
-        Publishers.MergeMany([
-            $checkSpelling.settingsChangeEvent(),
-            $useModernOrthography.settingsChangeEvent(),
-            $quickTelex.settingsChangeEvent(),
-            $useSmartSwitchKey.settingsChangeEvent(),
-            $allowConsonantZFWJ.settingsChangeEvent(),
-            $quickStartConsonant.settingsChangeEvent(),
-            $quickEndConsonant.settingsChangeEvent(),
-            $rememberCode.settingsChangeEvent(),
-            $sendKeyStepByStep.settingsChangeEvent(),
-            $restoreOnEscape.settingsChangeEvent(),
-            $restoreKey.settingsChangeEvent(),
-            $pauseKeyEnabled.settingsChangeEvent(),
-            $pauseKey.settingsChangeEvent(),
-            $pauseKeyName.settingsChangeEvent()
-        ])
-        .filter { [weak self] _ in
-            !(self?.isLoadingSettings ?? true)
-        }
-        .sink { [weak self] _ in
-            self?.scheduleRuntimeSettingsCommit()
-        }.store(in: &cancellables)
+        // Observation-based state now handles side effects in property observers.
     }
 
     func resetToDefaults() {

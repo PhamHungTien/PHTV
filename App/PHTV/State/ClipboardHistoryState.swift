@@ -6,17 +6,25 @@
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
-import SwiftUI
 import AppKit
-import Combine
+import Observation
 
 /// Manages clipboard history settings
 @MainActor
-final class ClipboardHistoryState: ObservableObject {
-    @Published var enableClipboardHistory: Bool = false
-    @Published var clipboardHotkeyModifiersRaw: Int = Int(NSEvent.ModifierFlags.control.rawValue)
-    @Published var clipboardHotkeyKeyCode: UInt16 = KeyCode.vKey
-    @Published var clipboardHistoryMaxItems: Int = 30
+@Observable
+final class ClipboardHistoryState {
+    var enableClipboardHistory: Bool = false {
+        didSet { handleClipboardSettingDidChange(oldValue: oldValue, newValue: enableClipboardHistory) }
+    }
+    var clipboardHotkeyModifiersRaw: Int = Int(NSEvent.ModifierFlags.control.rawValue) {
+        didSet { handleClipboardSettingDidChange(oldValue: oldValue, newValue: clipboardHotkeyModifiersRaw) }
+    }
+    var clipboardHotkeyKeyCode: UInt16 = KeyCode.vKey {
+        didSet { handleClipboardSettingDidChange(oldValue: oldValue, newValue: clipboardHotkeyKeyCode) }
+    }
+    var clipboardHistoryMaxItems: Int = 30 {
+        didSet { handleClipboardSettingDidChange(oldValue: oldValue, newValue: clipboardHistoryMaxItems) }
+    }
 
     var clipboardHotkeyModifiers: NSEvent.ModifierFlags {
         get {
@@ -24,14 +32,41 @@ final class ClipboardHistoryState: ObservableObject {
         }
         set {
             clipboardHotkeyModifiersRaw = Int(newValue.rawValue)
+        }
+    }
+
+    @ObservationIgnored var onChange: (() -> Void)?
+    @ObservationIgnored var isLoadingSettings = false
+    @ObservationIgnored private var clipboardNotificationTask: Task<Void, Never>?
+
+    init() {}
+
+    private func handleObservedChange<Value: Equatable>(
+        oldValue: Value,
+        newValue: Value,
+        action: (() -> Void)? = nil
+    ) {
+        guard newValue != oldValue else { return }
+        onChange?()
+        guard !isLoadingSettings else { return }
+        action?()
+    }
+
+    private func scheduleClipboardHotkeyNotification() {
+        clipboardNotificationTask?.cancel()
+        clipboardNotificationTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(Timing.settingsDebounce) * 1_000_000)
+            guard self != nil, !Task.isCancelled else { return }
             NotificationCenter.default.post(name: NotificationName.clipboardHotkeySettingsChanged, object: nil)
         }
     }
 
-    private var cancellables = Set<AnyCancellable>()
-    var isLoadingSettings = false
-
-    init() {}
+    private func handleClipboardSettingDidChange<Value: Equatable>(oldValue: Value, newValue: Value) {
+        handleObservedChange(oldValue: oldValue, newValue: newValue) {
+            self.saveSettings()
+            self.scheduleClipboardHotkeyNotification()
+        }
+    }
 
     // MARK: - Load/Save Settings
 
@@ -91,31 +126,7 @@ final class ClipboardHistoryState: ObservableObject {
     // MARK: - Setup Observers
 
     func setupObservers() {
-        let clipboardChanges = Publishers.MergeMany([
-            $enableClipboardHistory.settingsChangeEvent(),
-            $clipboardHotkeyModifiersRaw.settingsChangeEvent(),
-            $clipboardHotkeyKeyCode.settingsChangeEvent(),
-            $clipboardHistoryMaxItems.settingsChangeEvent()
-        ])
-        .filter { [weak self] _ in
-            !(self?.isLoadingSettings ?? true)
-        }
-        .share()
-
-        clipboardChanges
-        .sink { [weak self] _ in
-            DispatchQueue.main.async { [weak self] in
-                guard let self = self, !self.isLoadingSettings else { return }
-                self.saveSettings()
-            }
-        }.store(in: &cancellables)
-
-        clipboardChanges
-        .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
-        .sink { [weak self] in
-            guard let self = self else { return }
-            NotificationCenter.default.post(name: NotificationName.clipboardHotkeySettingsChanged, object: nil)
-        }.store(in: &cancellables)
+        // Observation-based state now handles side effects in property observers.
     }
 
     func resetToDefaults() {

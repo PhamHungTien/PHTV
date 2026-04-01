@@ -6,6 +6,7 @@
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
+import Observation
 import SwiftUI
 
 /// Manages excluded apps and send key step by step apps
@@ -13,15 +14,31 @@ import SwiftUI
 @MainActor
 final class AppListsState {
     // Excluded apps - auto switch to English when these apps are active
-    var excludedApps: [ExcludedApp] = []
+    var excludedApps: [ExcludedApp] = [] {
+        didSet {
+            guard excludedApps != oldValue else { return }
+            onChange?()
+        }
+    }
 
     // Send key step by step apps - auto enable send key step by step when these apps are active
-    var sendKeyStepByStepApps: [SendKeyStepByStepApp] = []
+    var sendKeyStepByStepApps: [SendKeyStepByStepApp] = [] {
+        didSet {
+            guard sendKeyStepByStepApps != oldValue else { return }
+            onChange?()
+        }
+    }
 
     // Upper case excluded apps - disable uppercase first char for these apps
-    var upperCaseExcludedApps: [ExcludedApp] = []
+    var upperCaseExcludedApps: [ExcludedApp] = [] {
+        didSet {
+            guard upperCaseExcludedApps != oldValue else { return }
+            onChange?()
+        }
+    }
 
-    var isLoadingSettings = false
+    @ObservationIgnored var onChange: (() -> Void)?
+    @ObservationIgnored var isLoadingSettings = false
 
     private static var liveDebugEnabled: Bool {
         let env = ProcessInfo.processInfo.environment["PHTV_LIVE_DEBUG"]

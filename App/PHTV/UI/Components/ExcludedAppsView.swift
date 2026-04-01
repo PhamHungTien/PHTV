@@ -10,7 +10,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct ExcludedAppsView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) private var appState
     @Binding var showingFilePicker: Bool
     @Binding var showingRunningApps: Bool
     @Binding var showingBundleIdInput: Bool
@@ -513,7 +513,7 @@ struct ManualBundleIdInputView: View {
         showingRunningApps: .constant(false),
         showingBundleIdInput: .constant(false)
     )
-        .environmentObject(AppState.shared)
+        .environment(AppState.shared)
         .frame(width: 400)
         .padding()
 }

@@ -8,45 +8,63 @@
 
 import SwiftUI
 import AppKit
-import Combine
+import Observation
 import ServiceManagement
 
 /// Main application state coordinator that manages all sub-states
 @MainActor
-final class AppState: ObservableObject {
+@Observable
+final class AppState {
     static let shared = AppState()
 
     // MARK: - Sub-States (ViewModels)
 
     /// Input method and Vietnamese typing features
-    @Published var inputMethodState = InputMethodState()
+    @ObservationIgnored var inputMethodState = InputMethodState()
 
     /// Macro and emoji hotkey settings
-    @Published var macroState = MacroState()
+    @ObservationIgnored var macroState = MacroState()
 
     /// Clipboard history settings
-    @Published var clipboardHistoryState = ClipboardHistoryState()
+    @ObservationIgnored var clipboardHistoryState = ClipboardHistoryState()
 
     /// System settings, permissions, and updates
-    @Published var systemState = SystemState()
+    @ObservationIgnored var systemState = SystemState()
 
     /// UI settings, hotkeys, and display preferences
-    @Published var uiState = UIState()
+    @ObservationIgnored var uiState = UIState()
 
     /// Excluded apps and send key step by step apps
-    @Published var appListsState = AppListsState()
+    @ObservationIgnored var appListsState = AppListsState()
 
     // MARK: - Global State
 
     /// Global language toggle (Vietnamese/English)
-    @Published var isEnabled: Bool = true
+    var isEnabled: Bool = true {
+        didSet {
+            guard isEnabled != oldValue, !isLoadingSettings else { return }
+            let defaults = UserDefaults.standard
+            let language = isEnabled ? 1 : 0
+            defaults.set(language, forKey: UserDefaultsKey.inputMethod)
+
+            if uiState.beepOnModeSwitch && uiState.beepVolume > 0.0 {
+                BeepManager.shared.play(volume: uiState.beepVolume)
+            }
+
+            NotificationCenter.default.post(
+                name: NotificationName.languageChangedFromSwiftUI,
+                object: NSNumber(value: language)
+            )
+        }
+    }
 
     // MARK: - Private State
 
-    private var cancellables = Set<AnyCancellable>()
-    private var notificationObservers: [NSObjectProtocol] = []
-    private var isLoadingSettings = false
-    private var isObjectWillChangePropagationScheduled = false
+    @ObservationIgnored private var notificationObservers: [NSObjectProtocol] = []
+    @ObservationIgnored private var externalSettingsObservationTask: Task<Void, Never>?
+    @ObservationIgnored private var isLoadingSettings = false
+    @ObservationIgnored private var isSubstateInvalidationScheduled = false
+    private var substateObservationTick = 0
 
     private static var liveDebugEnabled: Bool {
         let env = ProcessInfo.processInfo.environment["PHTV_LIVE_DEBUG"]
@@ -61,13 +79,18 @@ final class AppState: ObservableObject {
         NSLog("[PHTV Live] %@", message)
     }
 
-    private func scheduleObjectWillChangePropagation() {
-        guard !isObjectWillChangePropagationScheduled else { return }
-        isObjectWillChangePropagationScheduled = true
+    func trackedSubstate<Value>(_ value: Value) -> Value {
+        _ = substateObservationTick
+        return value
+    }
+
+    private func scheduleSubstateObservationInvalidation() {
+        guard !isSubstateInvalidationScheduled else { return }
+        isSubstateInvalidationScheduled = true
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            self.isObjectWillChangePropagationScheduled = false
-            self.objectWillChange.send()
+            self.isSubstateInvalidationScheduled = false
+            self.substateObservationTick &+= 1
         }
     }
 
@@ -187,14 +210,14 @@ final class AppState: ObservableObject {
 
     /// Monitor external UserDefaults changes and reload settings in real-time
     private func setupExternalSettingsObserver() {
-        SettingsObserver.shared.$settingsDidChange
-            .compactMap { $0 }
-            .debounce(for: .seconds(Timing.externalSettingsDebounce), scheduler: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self = self else { return }
+        externalSettingsObservationTask?.cancel()
+        externalSettingsObservationTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for await _ in NotificationCenter.default.notifications(named: NotificationName.settingsObserverDidChange) {
+                guard !Task.isCancelled else { break }
                 self.reloadSettingsFromDefaults(logSystemSettings: false)
             }
-            .store(in: &cancellables)
+        }
     }
 
     /// Reload only settings that may have changed externally
@@ -335,6 +358,9 @@ final class AppState: ObservableObject {
 
     /// Cleanup notification observers (call on app termination)
     @objc func cleanupObservers() {
+        externalSettingsObservationTask?.cancel()
+        externalSettingsObservationTask = nil
+
         notificationObservers.forEach { observer in
             NotificationCenter.default.removeObserver(observer)
         }
@@ -352,49 +378,12 @@ final class AppState: ObservableObject {
         clipboardHistoryState.setupObservers()
         systemState.setupObservers()
         uiState.setupObservers()
-
-        // Propagate sub-state changes to AppState
-        // This ensures Views observing AppState are updated when a sub-state changes
-        inputMethodState.objectWillChange.sink { [weak self] _ in
-            self?.scheduleObjectWillChangePropagation()
-        }.store(in: &cancellables)
-
-        macroState.objectWillChange.sink { [weak self] _ in
-            self?.scheduleObjectWillChangePropagation()
-        }.store(in: &cancellables)
-
-        clipboardHistoryState.objectWillChange.sink { [weak self] _ in
-            self?.scheduleObjectWillChangePropagation()
-        }.store(in: &cancellables)
-
-        systemState.objectWillChange.sink { [weak self] _ in
-            self?.scheduleObjectWillChangePropagation()
-        }.store(in: &cancellables)
-
-        uiState.objectWillChange.sink { [weak self] _ in
-            self?.scheduleObjectWillChangePropagation()
-        }.store(in: &cancellables)
-
-        // Observer for global isEnabled (language toggle)
-        $isEnabled
-            .dropFirst()
-            .removeDuplicates()
-            .sink { [weak self] value in
-            guard let self = self, !self.isLoadingSettings else { return }
-            let defaults = UserDefaults.standard
-            let language = value ? 1 : 0
-            defaults.set(language, forKey: UserDefaultsKey.inputMethod)
-
-            // Play beep if enabled (volume adjusted)
-            if self.uiState.beepOnModeSwitch && self.uiState.beepVolume > 0.0 {
-                BeepManager.shared.play(volume: self.uiState.beepVolume)
-            }
-
-            // Notify backend about language change from SwiftUI
-            NotificationCenter.default.post(
-                name: NotificationName.languageChangedFromSwiftUI,
-                object: NSNumber(value: language))
-        }.store(in: &cancellables)
+        inputMethodState.onChange = { [weak self] in self?.scheduleSubstateObservationInvalidation() }
+        macroState.onChange = { [weak self] in self?.scheduleSubstateObservationInvalidation() }
+        clipboardHistoryState.onChange = { [weak self] in self?.scheduleSubstateObservationInvalidation() }
+        systemState.onChange = { [weak self] in self?.scheduleSubstateObservationInvalidation() }
+        uiState.onChange = { [weak self] in self?.scheduleSubstateObservationInvalidation() }
+        appListsState.onChange = { [weak self] in self?.scheduleSubstateObservationInvalidation() }
     }
 
     // MARK: - Reset to Defaults

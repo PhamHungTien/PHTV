@@ -15,7 +15,7 @@ import Carbon
 /// Monitors global keyboard events and triggers PHTV Picker when hotkey is pressed
 /// Supports both key+modifier combos and modifier-only mode (including Fn key)
 @MainActor
-final class EmojiHotkeyManager: ObservableObject {
+final class EmojiHotkeyManager {
 
     static let shared = EmojiHotkeyManager()
 
@@ -23,7 +23,9 @@ final class EmojiHotkeyManager: ObservableObject {
     private var localMonitor: Any?
     private var globalFlagsMonitor: Any?
     private var localFlagsMonitor: Any?
-    private var settingsObserver: NSObjectProtocol?
+    private var settingsObservationTask: Task<Void, Never>?
+    private var settingsRefreshTask: Task<Void, Never>?
+    private var initialSyncTask: Task<Void, Never>?
     private let carbonHotkeyRegistration = PHTVCarbonHotkeyRegistration(
         signature: 0x50454D4A // "PEMJ"
     ) {
@@ -47,29 +49,27 @@ final class EmojiHotkeyManager: ObservableObject {
     private static let relevantModifiers: NSEvent.ModifierFlags = [.command, .option, .control, .shift, .function]
 
     private init() {
-        // Use block-based observer with .main queue for thread safety
-        settingsObserver = NotificationCenter.default.addObserver(
-            forName: NotificationName.emojiHotkeySettingsChanged,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.handleSettingsChanged()
+        settingsObservationTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for await _ in NotificationCenter.default.notifications(named: NotificationName.emojiHotkeySettingsChanged) {
+                guard !Task.isCancelled else { break }
+                self.handleSettingsChanged()
             }
         }
 
-        // CRITICAL: Delay sync to avoid circular dependency during AppState.shared initialization
-        // Use asyncAfter with minimal delay to break the dispatch_once recursion
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            guard let self = self else { return }
+        // Delay initial sync slightly to avoid circular dependency during AppState.shared initialization.
+        initialSyncTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            guard let self, !Task.isCancelled else { return }
             self.syncFromAppState(AppState.shared)
         }
     }
 
     private func handleSettingsChanged() {
-        // Delay to avoid circular dependency if called during AppState.shared initialization
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
-            guard let self = self else { return }
+        settingsRefreshTask?.cancel()
+        settingsRefreshTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 50_000_000)
+            guard let self, !Task.isCancelled else { return }
             self.syncFromAppState(AppState.shared)
         }
     }
@@ -329,5 +329,4 @@ final class EmojiHotkeyManager: ObservableObject {
 
         return nil
     }
-
 }

@@ -8,11 +8,13 @@
 
 import SwiftUI
 import AudioToolbox
+import Observation
 
 struct TypingSettingsView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) private var appState
     @State private var showingUpperCaseFilePicker = false
     @State private var showingUpperCaseRunningApps = false
+    private var bindable: Bindable<AppState> { Bindable(appState) }
 
     var body: some View {
         ScrollView {
@@ -58,7 +60,7 @@ struct TypingSettingsView: View {
 
                             Spacer()
 
-                            Picker("", selection: $appState.inputMethod) {
+                            Picker("", selection: bindable.inputMethod) {
                                 ForEach(InputMethod.allCases) { method in
                                     Text(method.displayName).tag(method)
                                 }
@@ -77,7 +79,7 @@ struct TypingSettingsView: View {
 
                             Spacer()
 
-                            Picker("", selection: $appState.codeTable) {
+                            Picker("", selection: bindable.codeTable) {
                                 ForEach(CodeTable.allCases) { table in
                                     Text(table.displayName).tag(table)
                                 }
@@ -100,7 +102,7 @@ struct TypingSettingsView: View {
                             iconColor: .accentColor,
                             title: "Kiểm tra chính tả",
                             subtitle: "Tự động sửa lỗi khi gõ sai cấu trúc tiếng Việt",
-                            isOn: $appState.checkSpelling
+                            isOn: bindable.checkSpelling
                         )
 
                         SettingsDivider()
@@ -110,7 +112,7 @@ struct TypingSettingsView: View {
                             iconColor: .accentColor,
                             title: "Chính tả mới (oà, uý)",
                             subtitle: "Ưu tiên dấu trên chữ (oà, uý) thay vì òa, úy",
-                            isOn: $appState.useModernOrthography
+                            isOn: bindable.useModernOrthography
                         )
 
                         SettingsDivider()
@@ -120,7 +122,7 @@ struct TypingSettingsView: View {
                             iconColor: .accentColor,
                             title: "Viết hoa đầu câu",
                             subtitle: "Tự động viết hoa sau dấu kết thúc câu",
-                            isOn: $appState.upperCaseFirstChar
+                            isOn: bindable.upperCaseFirstChar
                         )
 
                         // Upper Case Excluded Apps (only show when feature is enabled)
@@ -140,7 +142,7 @@ struct TypingSettingsView: View {
                             iconColor: .accentColor,
                             title: "Tự động khôi phục",
                             subtitle: "Không biến đổi từ không phải tiếng Việt theo chế độ bạn chọn",
-                            isOn: $appState.autoRestoreEnglishWord
+                            isOn: bindable.autoRestoreEnglishWord
                         )
 
                         if appState.autoRestoreEnglishWord {
@@ -156,7 +158,7 @@ struct TypingSettingsView: View {
                             iconColor: .accentColor,
                             title: "Gõ nhanh Telex",
                             subtitle: "Tăng tốc: cc→ch, gg→gi, kk→kh, nn→ng…",
-                            isOn: $appState.quickTelex
+                            isOn: bindable.quickTelex
                         )
                     }
                 }
@@ -173,7 +175,7 @@ struct TypingSettingsView: View {
                             iconColor: .accentColor,
                             title: "Phụ âm Z, F, W, J",
                             subtitle: "Cho phép gõ các phụ âm không có trong tiếng Việt",
-                            isOn: $appState.allowConsonantZFWJ
+                            isOn: bindable.allowConsonantZFWJ
                         )
 
                         SettingsDivider()
@@ -183,7 +185,7 @@ struct TypingSettingsView: View {
                             iconColor: .accentColor,
                             title: "Phụ âm đầu nhanh",
                             subtitle: "Gõ tắt: f→ph, j→gi, w→qu…",
-                            isOn: $appState.quickStartConsonant
+                            isOn: bindable.quickStartConsonant
                         )
 
                         SettingsDivider()
@@ -193,7 +195,7 @@ struct TypingSettingsView: View {
                             iconColor: .accentColor,
                             title: "Phụ âm cuối nhanh",
                             subtitle: "Gõ tắt: g→ng, h→nh, k→ch…",
-                            isOn: $appState.quickEndConsonant
+                            isOn: bindable.quickEndConsonant
                         )
                     }
                 }
@@ -213,7 +215,7 @@ struct TypingSettingsView: View {
 // MARK: - Auto Restore Section
 
 struct AutoRestoreEnglishModeSection: View {
-    @EnvironmentObject private var appState: AppState
+    @Environment(AppState.self) private var appState
 
     var body: some View {
         let contentLeadingPadding: CGFloat = 38
@@ -247,7 +249,7 @@ struct AutoRestoreEnglishModeSection: View {
 // MARK: - Upper Case Excluded Apps Section
 
 struct UpperCaseExcludedAppsSection: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) private var appState
     @Binding var showingFilePicker: Bool
     @Binding var showingRunningApps: Bool
     @State private var showingBundleIdInput = false
@@ -672,6 +674,6 @@ private struct UpperCaseRunningAppRow: View {
 
 #Preview {
     TypingSettingsView()
-        .environmentObject(AppState.shared)
+        .environment(AppState.shared)
         .frame(width: 500, height: 800)
 }

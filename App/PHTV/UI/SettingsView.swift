@@ -10,7 +10,7 @@ import SwiftUI
 
 // MARK: - Main Settings View
 struct SettingsView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) private var appState
     @State private var selectedTab: SettingsTab = .typing
     @State private var lastTab: SettingsTab = .typing
     @State private var searchText: String = ""
@@ -40,22 +40,39 @@ struct SettingsView: View {
                 }
                 lastTab = newValue
             }
-            .onReceive(NotificationCenter.default.publisher(for: NotificationName.showAboutTab)) { _ in
-                selectedTab = .about
+            .task {
+                await observeTabSelectionNotification(named: NotificationName.showAboutTab, tab: .about)
             }
-            .onReceive(NotificationCenter.default.publisher(for: NotificationName.showMacroTab)) { _ in
-                selectedTab = .macro
+            .task {
+                await observeTabSelectionNotification(named: NotificationName.showMacroTab, tab: .macro)
             }
-            .onReceive(NotificationCenter.default.publisher(for: NotificationName.showConvertToolSheet)) { _ in
-                // Switch to System tab first, then SystemSettingsView will show the sheet
-                if selectedTab != .system {
-                    selectedTab = .system
-                    // Post notification for SystemSettingsView after it's mounted
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                        NotificationCenter.default.post(name: NotificationName.openConvertToolSheet, object: nil)
-                    }
-                }
+            .task {
+                await observeConvertToolRequests()
             }
+    }
+
+    @MainActor
+    private func observeTabSelectionNotification(named name: Notification.Name, tab: SettingsTab) async {
+        for await _ in NotificationCenter.default.notifications(named: name) {
+            guard !Task.isCancelled else { return }
+            selectedTab = tab
+        }
+    }
+
+    @MainActor
+    private func observeConvertToolRequests() async {
+        for await _ in NotificationCenter.default.notifications(named: NotificationName.showConvertToolSheet) {
+            guard !Task.isCancelled else { return }
+
+            // Switch to System tab first, then SystemSettingsView will show the sheet
+            guard selectedTab != .system else { continue }
+            selectedTab = .system
+
+            // Give SystemSettingsView a moment to mount before asking it to open the sheet.
+            try? await Task.sleep(for: .seconds(0.15))
+            guard !Task.isCancelled else { return }
+            NotificationCenter.default.post(name: NotificationName.openConvertToolSheet, object: nil)
+        }
     }
 
     private var settingsSplitView: some View {
@@ -63,7 +80,7 @@ struct SettingsView: View {
             sidebarView
         } detail: {
             detailView
-                .environmentObject(appState)
+                .environment(appState)
                 .frame(minWidth: 400, minHeight: 400)
                 .modifier(DetailViewGlassModifier())
         }
@@ -280,5 +297,5 @@ struct DetailViewGlassModifier: ViewModifier {
 
 #Preview {
     SettingsView()
-        .environmentObject(AppState.shared)
+        .environment(AppState.shared)
 }

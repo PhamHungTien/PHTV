@@ -6,31 +6,85 @@
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
-import SwiftUI
-import Combine
 import AppKit
+import Observation
 
 /// Manages UI settings, hotkeys, and display preferences
 @MainActor
-final class UIState: ObservableObject {
+@Observable
+final class UIState {
     // Hotkey settings - Default: Ctrl + Shift (modifier only mode)
     // KeyCode.noKey = no key needed, just use modifiers
-    @Published var switchKeyCommand: Bool = false
-    @Published var switchKeyOption: Bool = false
-    @Published var switchKeyControl: Bool = true
-    @Published var switchKeyShift: Bool = true
-    @Published var switchKeyFn: Bool = false
-    @Published var switchKeyCode: UInt16 = KeyCode.noKey  // KeyCode.noKey = modifier only mode
-    @Published var switchKeyName: String = KeyCode.modifierOnlyDisplayName  // Display name for the key
-    @Published var beepOnModeSwitch: Bool = false  // Play beep sound when switching mode
+    var switchKeyCommand: Bool = false {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKeyCommand) }
+    }
+    var switchKeyOption: Bool = false {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKeyOption) }
+    }
+    var switchKeyControl: Bool = true {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKeyControl) }
+    }
+    var switchKeyShift: Bool = true {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKeyShift) }
+    }
+    var switchKeyFn: Bool = false {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKeyFn) }
+    }
+    var switchKeyCode: UInt16 = KeyCode.noKey {  // KeyCode.noKey = modifier only mode
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKeyCode) }
+    }
+    var switchKeyName: String = KeyCode.modifierOnlyDisplayName {  // Display name for the key
+        didSet {
+            guard switchKeyName != oldValue else { return }
+            onChange?()
+        }
+    }
+    var beepOnModeSwitch: Bool = false {  // Play beep sound when switching mode
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: beepOnModeSwitch) }
+    }
 
     // Audio and Display settings
-    @Published var beepVolume: Double = 0.5  // Range: 0.0 to 1.0
-    @Published var menuBarIconSize: Double = 18.0
-    @Published var useVietnameseMenubarIcon: Bool = false  // Use Vietnamese menubar icon in Vietnamese mode
+    var beepVolume: Double = 0.5 {  // Range: 0.0 to 1.0
+        didSet {
+            handleObservedChange(oldValue: oldValue, newValue: beepVolume) {
+                self.scheduleBeepVolumeSave()
+            }
+        }
+    }
+    var menuBarIconSize: Double = 18.0 {
+        didSet {
+            let sanitized = sanitizeMenuBarIconSize(menuBarIconSize)
+            if sanitized != menuBarIconSize {
+                menuBarIconSize = sanitized
+                return
+            }
+            guard menuBarIconSize != oldValue else { return }
+            onChange?()
+            guard !isLoadingSettings else { return }
+            NotificationCenter.default.post(
+                name: NotificationName.menuBarIconSizeChanged,
+                object: NSNumber(value: sanitized)
+            )
+            scheduleMenuBarIconSizeSave()
+        }
+    }
+    var useVietnameseMenubarIcon: Bool = false {  // Use Vietnamese menubar icon in Vietnamese mode
+        didSet {
+            handleObservedChange(oldValue: oldValue, newValue: useVietnameseMenubarIcon) {
+                NotificationCenter.default.post(
+                    name: NotificationName.menuBarIconPreferenceChanged,
+                    object: nil
+                )
+                self.persistVietnameseMenubarIconPreference(self.useVietnameseMenubarIcon)
+            }
+        }
+    }
 
-    private var cancellables = Set<AnyCancellable>()
-    var isLoadingSettings = false
+    @ObservationIgnored var onChange: (() -> Void)?
+    @ObservationIgnored var isLoadingSettings = false
+    @ObservationIgnored private var hotkeyNotificationTask: Task<Void, Never>?
+    @ObservationIgnored private var beepVolumeSaveTask: Task<Void, Never>?
+    @ObservationIgnored private var menuBarIconSizeSaveTask: Task<Void, Never>?
 
     private static var liveDebugEnabled: Bool {
         let env = ProcessInfo.processInfo.environment["PHTV_LIVE_DEBUG"]
@@ -100,6 +154,62 @@ final class UIState: ObservableObject {
     }
 
     init() {}
+
+    private func handleObservedChange<Value: Equatable>(
+        oldValue: Value,
+        newValue: Value,
+        action: (() -> Void)? = nil
+    ) {
+        guard newValue != oldValue else { return }
+        onChange?()
+        guard !isLoadingSettings else { return }
+        action?()
+    }
+
+    private func handleHotkeySettingDidChange<Value: Equatable>(oldValue: Value, newValue: Value) {
+        handleObservedChange(oldValue: oldValue, newValue: newValue) {
+            self.persistHotkeySettings()
+            self.scheduleHotkeyChangeNotification()
+        }
+    }
+
+    private func scheduleHotkeyChangeNotification() {
+        hotkeyNotificationTask?.cancel()
+        hotkeyNotificationTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(Timing.hotkeyDebounce) * 1_000_000)
+            guard let self, !Task.isCancelled else { return }
+            let switchKeyStatus = self.encodeSwitchKeyStatus()
+            self.liveLog("posting HotkeyChanged (0x\(String(switchKeyStatus, radix: 16)))")
+            NotificationCenter.default.post(
+                name: NotificationName.hotkeyChanged,
+                object: NSNumber(value: switchKeyStatus)
+            )
+        }
+    }
+
+    private func scheduleBeepVolumeSave() {
+        beepVolumeSaveTask?.cancel()
+        beepVolumeSaveTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(Timing.audioSliderDebounce) * 1_000_000)
+            guard let self, !Task.isCancelled else { return }
+            SettingsObserver.shared.suspendNotifications()
+            let defaults = UserDefaults.standard
+            defaults.set(self.beepVolume, forKey: UserDefaultsKey.beepVolume)
+        }
+    }
+
+    private func scheduleMenuBarIconSizeSave() {
+        menuBarIconSizeSaveTask?.cancel()
+        menuBarIconSizeSaveTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(Timing.settingsDebounce) * 1_000_000)
+            guard let self, !Task.isCancelled else { return }
+            SettingsObserver.shared.suspendNotifications()
+            let defaults = UserDefaults.standard
+            let sanitized = self.sanitizeMenuBarIconSize(self.menuBarIconSize)
+            defaults.set(sanitized, forKey: UserDefaultsKey.menuBarIconSize)
+            self.liveLog("Saved menuBarIconSize: \(sanitized)")
+        }
+    }
 
     // MARK: - Load/Save Settings
 
@@ -234,116 +344,7 @@ final class UIState: ObservableObject {
     // MARK: - Setup Observers
 
     func setupObservers() {
-        // Observer for hotkey settings
-        let hotkeyChanges = Publishers.MergeMany([
-            $switchKeyCode.settingsChangeEvent(),
-            $switchKeyCommand.settingsChangeEvent(),
-            $switchKeyOption.settingsChangeEvent(),
-            $switchKeyControl.settingsChangeEvent(),
-            $switchKeyShift.settingsChangeEvent(),
-            $switchKeyFn.settingsChangeEvent(),
-            $beepOnModeSwitch.settingsChangeEvent()
-        ])
-        .filter { [weak self] _ in
-            !(self?.isLoadingSettings ?? true)
-        }
-        .share()
-
-        hotkeyChanges
-            .sink { [weak self] _ in
-                DispatchQueue.main.async { [weak self] in
-                    guard let self = self, !self.isLoadingSettings else { return }
-                    self.persistHotkeySettings()
-                }
-            }.store(in: &cancellables)
-
-        hotkeyChanges
-            .debounce(for: .milliseconds(Timing.hotkeyDebounce), scheduler: RunLoop.main)
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                let switchKeyStatus = self.encodeSwitchKeyStatus()
-                // Notify backend about hotkey change
-                self.liveLog("posting HotkeyChanged (0x\(String(switchKeyStatus, radix: 16)))")
-                NotificationCenter.default.post(
-                    name: NotificationName.hotkeyChanged, object: NSNumber(value: switchKeyStatus)
-                )
-            }.store(in: &cancellables)
-
-        // Immediate UI update for menu bar icon size
-        $menuBarIconSize
-            .dropFirst()
-            .removeDuplicates()
-            .sink { [weak self] value in
-                guard let self = self else { return }
-                let sanitized = self.sanitizeMenuBarIconSize(value)
-                if sanitized != value {
-                    self.menuBarIconSize = sanitized
-                    return
-                }
-                guard !self.isLoadingSettings else { return }
-                NotificationCenter.default.post(
-                    name: NotificationName.menuBarIconSizeChanged,
-                    object: NSNumber(value: sanitized)
-                )
-            }.store(in: &cancellables)
-
-        // Immediate UI update for Vietnamese menubar icon preference
-        $useVietnameseMenubarIcon
-            .dropFirst()
-            .removeDuplicates()
-            .sink { [weak self] _ in
-                guard let self = self, !self.isLoadingSettings else { return }
-                NotificationCenter.default.post(
-                    name: NotificationName.menuBarIconPreferenceChanged,
-                    object: nil
-                )
-            }.store(in: &cancellables)
-
-        // Debounced persistence for beep volume slider
-        $beepVolume
-            .dropFirst()
-            .filter { [weak self] _ in
-                !(self?.isLoadingSettings ?? true)
-            }
-            .debounce(for: .milliseconds(Timing.audioSliderDebounce), scheduler: RunLoop.main)
-            .sink { [weak self] value in
-                guard self != nil else { return }
-                SettingsObserver.shared.suspendNotifications()
-                let defaults = UserDefaults.standard
-                defaults.set(value, forKey: UserDefaultsKey.beepVolume)
-            }.store(in: &cancellables)
-
-        // Debounced persistence for menu bar icon size
-        $menuBarIconSize
-            .dropFirst()
-            .filter { [weak self] _ in
-                !(self?.isLoadingSettings ?? true)
-            }
-            .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
-            .sink { [weak self] value in
-                guard let self = self else { return }
-                SettingsObserver.shared.suspendNotifications()
-                let defaults = UserDefaults.standard
-                let sanitized = self.sanitizeMenuBarIconSize(value)
-                defaults.set(sanitized, forKey: UserDefaultsKey.menuBarIconSize)
-                self.liveLog("Saved menuBarIconSize: \(sanitized)")
-            }.store(in: &cancellables)
-
-        // Debounced persistence for Vietnamese menubar icon
-        let useVietnameseMenubarIconChanges = $useVietnameseMenubarIcon
-            .dropFirst()
-            .removeDuplicates()
-            .filter { [weak self] _ in
-                !(self?.isLoadingSettings ?? true)
-            }
-            .share()
-
-        useVietnameseMenubarIconChanges
-            .sink { [weak self] value in
-                guard let self = self else { return }
-                self.persistVietnameseMenubarIconPreference(value)
-            }
-            .store(in: &cancellables)
+        // Observation-based state now handles side effects in property observers.
     }
 
     func resetToDefaults() {

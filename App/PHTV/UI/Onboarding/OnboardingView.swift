@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import Observation
 
 private enum OnboardingStyle {
     static let cardCornerRadius: CGFloat = 26
@@ -18,7 +19,7 @@ private enum OnboardingStyle {
 }
 
 struct OnboardingView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) private var appState
     var onDismiss: () -> Void
     @State private var currentStep = 0
 
@@ -696,7 +697,7 @@ struct SystemSettingsStepView: View {
 }
 
 struct InputMethodStepView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) private var appState
 
     var body: some View {
         VStack(spacing: 18) {
@@ -746,7 +747,8 @@ struct InputMethodStepView: View {
 }
 
 struct BasicFeaturesStepView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) private var appState
+    private var bindable: Bindable<AppState> { Bindable(appState) }
 
     private let columns = [
         GridItem(.flexible(), spacing: 12),
@@ -767,42 +769,42 @@ struct BasicFeaturesStepView: View {
                         icon: "bolt.fill",
                         title: "Gõ tắt (Macro)",
                         description: "Tăng tốc nhập liệu với bảng gõ tắt.",
-                        isOn: $appState.useMacro
+                        isOn: bindable.useMacro
                     )
 
                     FeatureToggleRow(
                         icon: "arrow.2.squarepath",
                         title: "Chuyển chế độ thông minh",
                         description: "Tự nhớ kiểu gõ theo từng ứng dụng.",
-                        isOn: $appState.useSmartSwitchKey
+                        isOn: bindable.useSmartSwitchKey
                     )
 
                     FeatureToggleRow(
                         icon: "textformat.abc",
                         title: "Chính tả mới",
                         description: "Đặt dấu oà, uý thay vì òa, úy.",
-                        isOn: $appState.useModernOrthography
+                        isOn: bindable.useModernOrthography
                     )
 
                     FeatureToggleRow(
                         icon: "textformat.size.larger",
                         title: "Viết hoa chữ cái đầu",
                         description: "Tự viết hoa sau dấu chấm câu.",
-                        isOn: $appState.upperCaseFirstChar
+                        isOn: bindable.upperCaseFirstChar
                     )
 
                     FeatureToggleRow(
                         icon: "hare.fill",
                         title: "Gõ nhanh (Quick Telex)",
                         description: "Rút gọn tổ hợp phím khi gõ Telex.",
-                        isOn: $appState.quickTelex
+                        isOn: bindable.quickTelex
                     )
 
                     FeatureToggleRow(
                         icon: "character.bubble.fill",
                         title: "Tự động khôi phục",
                         description: "Giữ nguyên từ ngoài tiếng Việt theo chế độ đã chọn.",
-                        isOn: $appState.autoRestoreEnglishWord
+                        isOn: bindable.autoRestoreEnglishWord
                     )
                 }
                 .padding(.horizontal, OnboardingStyle.contentHorizontalPadding)
@@ -817,7 +819,7 @@ struct BasicFeaturesStepView: View {
 }
 
 struct AccessibilityStepView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) private var appState
 
     var body: some View {
         VStack(spacing: 20) {

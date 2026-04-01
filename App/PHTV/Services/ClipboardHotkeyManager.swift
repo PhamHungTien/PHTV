@@ -12,7 +12,7 @@ import Carbon
 /// Singleton manager for Clipboard History hotkey
 /// Monitors global keyboard events and triggers Clipboard History panel when hotkey is pressed
 @MainActor
-final class ClipboardHotkeyManager: ObservableObject {
+final class ClipboardHotkeyManager {
 
     static let shared = ClipboardHotkeyManager()
 
@@ -20,7 +20,9 @@ final class ClipboardHotkeyManager: ObservableObject {
     private var localMonitor: Any?
     private var globalFlagsMonitor: Any?
     private var localFlagsMonitor: Any?
-    private var settingsObserver: NSObjectProtocol?
+    private var settingsObservationTask: Task<Void, Never>?
+    private var settingsRefreshTask: Task<Void, Never>?
+    private var initialSyncTask: Task<Void, Never>?
     private let carbonHotkeyRegistration = PHTVCarbonHotkeyRegistration(
         signature: 0x50434C50 // "PCLP"
     ) {
@@ -42,25 +44,26 @@ final class ClipboardHotkeyManager: ObservableObject {
     private static let relevantModifiers: NSEvent.ModifierFlags = [.command, .option, .control, .shift, .function]
 
     private init() {
-        settingsObserver = NotificationCenter.default.addObserver(
-            forName: NotificationName.clipboardHotkeySettingsChanged,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.handleSettingsChanged()
+        settingsObservationTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for await _ in NotificationCenter.default.notifications(named: NotificationName.clipboardHotkeySettingsChanged) {
+                guard !Task.isCancelled else { break }
+                self.handleSettingsChanged()
             }
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            guard let self = self else { return }
+        initialSyncTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            guard let self, !Task.isCancelled else { return }
             self.syncFromAppState(AppState.shared)
         }
     }
 
     private func handleSettingsChanged() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
-            guard let self = self else { return }
+        settingsRefreshTask?.cancel()
+        settingsRefreshTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 50_000_000)
+            guard let self, !Task.isCancelled else { return }
             self.syncFromAppState(AppState.shared)
         }
     }

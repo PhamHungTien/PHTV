@@ -6,24 +6,48 @@
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
-import SwiftUI
 import AppKit
-import Combine
+import Observation
 
 /// Manages macro and emoji hotkey settings
 @MainActor
-final class MacroState: ObservableObject {
+@Observable
+final class MacroState {
     // Macro settings
-    @Published var useMacro: Bool = true
-    @Published var useMacroInEnglishMode: Bool = false
-    @Published var useSystemTextReplacements: Bool = false
-    @Published var autoCapsMacro: Bool = false
-    @Published var macroCategories: [MacroCategory] = []
+    var useMacro: Bool = true {
+        didSet { handleMacroSettingsDidChange(oldValue: oldValue, newValue: useMacro) }
+    }
+    var useMacroInEnglishMode: Bool = false {
+        didSet { handleMacroSettingsDidChange(oldValue: oldValue, newValue: useMacroInEnglishMode) }
+    }
+    var useSystemTextReplacements: Bool = false {
+        didSet {
+            handleObservedChange(oldValue: oldValue, newValue: useSystemTextReplacements) {
+                self.saveSettings()
+                self.scheduleSystemTextReplacementNotification()
+            }
+        }
+    }
+    var autoCapsMacro: Bool = false {
+        didSet { handleMacroSettingsDidChange(oldValue: oldValue, newValue: autoCapsMacro) }
+    }
+    var macroCategories: [MacroCategory] = [] {
+        didSet {
+            guard macroCategories != oldValue else { return }
+            onChange?()
+        }
+    }
 
     // Emoji Hotkey Settings
-    @Published var enableEmojiHotkey: Bool = true
-    @Published var emojiHotkeyModifiersRaw: Int = Int(NSEvent.ModifierFlags.command.rawValue)
-    @Published var emojiHotkeyKeyCode: UInt16 = KeyCode.eKey  // E key default
+    var enableEmojiHotkey: Bool = true {
+        didSet { handleEmojiHotkeySettingDidChange(oldValue: oldValue, newValue: enableEmojiHotkey) }
+    }
+    var emojiHotkeyModifiersRaw: Int = Int(NSEvent.ModifierFlags.command.rawValue) {
+        didSet { handleEmojiHotkeySettingDidChange(oldValue: oldValue, newValue: emojiHotkeyModifiersRaw) }
+    }
+    var emojiHotkeyKeyCode: UInt16 = KeyCode.eKey {  // E key default
+        didSet { handleEmojiHotkeySettingDidChange(oldValue: oldValue, newValue: emojiHotkeyKeyCode) }
+    }
 
     /// Computed property for emoji hotkey modifiers
     var emojiHotkeyModifiers: NSEvent.ModifierFlags {
@@ -32,15 +56,71 @@ final class MacroState: ObservableObject {
         }
         set {
             emojiHotkeyModifiersRaw = Int(newValue.rawValue)
-            // Trigger sync when modifiers change
+        }
+    }
+
+    @ObservationIgnored var onChange: (() -> Void)?
+    @ObservationIgnored var isLoadingSettings = false
+    @ObservationIgnored private var macroSettingsNotificationTask: Task<Void, Never>?
+    @ObservationIgnored private var systemTextReplacementNotificationTask: Task<Void, Never>?
+    @ObservationIgnored private var emojiHotkeyNotificationTask: Task<Void, Never>?
+
+    init() {}
+
+    private func handleObservedChange<Value: Equatable>(
+        oldValue: Value,
+        newValue: Value,
+        action: (() -> Void)? = nil
+    ) {
+        guard newValue != oldValue else { return }
+        onChange?()
+        guard !isLoadingSettings else { return }
+        action?()
+    }
+
+    private func scheduleMacroSettingsNotification() {
+        macroSettingsNotificationTask?.cancel()
+        macroSettingsNotificationTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(Timing.settingsDebounce) * 1_000_000)
+            guard self != nil, !Task.isCancelled else { return }
+            NotificationCenter.default.post(name: NotificationName.phtvSettingsChanged, object: nil)
+        }
+    }
+
+    private func scheduleSystemTextReplacementNotification() {
+        systemTextReplacementNotificationTask?.cancel()
+        systemTextReplacementNotificationTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(Timing.settingsDebounce) * 1_000_000)
+            guard self != nil, !Task.isCancelled else { return }
+            NotificationCenter.default.post(name: NotificationName.phtvSettingsChanged, object: nil)
+            NotificationCenter.default.post(name: NotificationName.macrosUpdated, object: nil)
+        }
+    }
+
+    private func scheduleEmojiHotkeyNotification() {
+        emojiHotkeyNotificationTask?.cancel()
+        emojiHotkeyNotificationTask = Task { @MainActor [weak self] in
+            guard self != nil else { return }
+            try? await Task.sleep(nanoseconds: UInt64(Timing.settingsDebounce) * 1_000_000)
+            guard self != nil, !Task.isCancelled else { return }
+            PHTVLogger.shared.debug("[MacroState] Posting EmojiHotkeySettingsChanged notification")
             NotificationCenter.default.post(name: NotificationName.emojiHotkeySettingsChanged, object: nil)
         }
     }
 
-    private var cancellables = Set<AnyCancellable>()
-    var isLoadingSettings = false
+    private func handleMacroSettingsDidChange<Value: Equatable>(oldValue: Value, newValue: Value) {
+        handleObservedChange(oldValue: oldValue, newValue: newValue) {
+            self.saveSettings()
+            self.scheduleMacroSettingsNotification()
+        }
+    }
 
-    init() {}
+    private func handleEmojiHotkeySettingDidChange<Value: Equatable>(oldValue: Value, newValue: Value) {
+        handleObservedChange(oldValue: oldValue, newValue: newValue) {
+            self.saveSettings()
+            self.scheduleEmojiHotkeyNotification()
+        }
+    }
 
     // MARK: - Load/Save Settings
 
@@ -137,87 +217,7 @@ final class MacroState: ObservableObject {
     // MARK: - Setup Observers
 
     func setupObservers() {
-        // Observer for macro settings
-        let macroSettingsChanges = Publishers.MergeMany([
-            $useMacro.settingsChangeEvent(),
-            $useMacroInEnglishMode.settingsChangeEvent(),
-            $autoCapsMacro.settingsChangeEvent()
-        ])
-        .filter { [weak self] _ in
-            !(self?.isLoadingSettings ?? true)
-        }
-        .share()
-
-        macroSettingsChanges
-        .sink { [weak self] _ in
-            DispatchQueue.main.async { [weak self] in
-                guard let self = self, !self.isLoadingSettings else { return }
-                self.saveSettings()
-            }
-        }.store(in: &cancellables)
-
-        macroSettingsChanges
-        .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
-        .sink { [weak self] _ in
-            guard let self = self else { return }
-            NotificationCenter.default.post(
-                name: NotificationName.phtvSettingsChanged, object: nil
-            )
-        }.store(in: &cancellables)
-
-        let systemTextReplacementChanges = $useSystemTextReplacements
-            .dropFirst()
-            .removeDuplicates()
-            .filter { [weak self] _ in
-                !(self?.isLoadingSettings ?? true)
-            }
-            .share()
-
-        systemTextReplacementChanges
-            .sink { [weak self] _ in
-                DispatchQueue.main.async { [weak self] in
-                    guard let self = self, !self.isLoadingSettings else { return }
-                    self.saveSettings()
-                }
-            }
-            .store(in: &cancellables)
-
-        systemTextReplacementChanges
-            .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
-            .sink { [weak self] _ in
-                guard let self = self else { return }
-                NotificationCenter.default.post(name: NotificationName.phtvSettingsChanged, object: nil)
-                NotificationCenter.default.post(name: NotificationName.macrosUpdated, object: nil)
-            }
-            .store(in: &cancellables)
-
-        // Observer for emoji hotkey settings
-        let emojiHotkeyChanges = Publishers.MergeMany([
-            $enableEmojiHotkey.settingsChangeEvent(),
-            $emojiHotkeyModifiersRaw.settingsChangeEvent(),
-            $emojiHotkeyKeyCode.settingsChangeEvent()
-        ])
-        .filter { [weak self] _ in
-            !(self?.isLoadingSettings ?? true)
-        }
-        .share()
-
-        emojiHotkeyChanges
-        .sink { [weak self] _ in
-            DispatchQueue.main.async { [weak self] in
-                guard let self = self, !self.isLoadingSettings else { return }
-                self.saveSettings()
-            }
-        }.store(in: &cancellables)
-
-        emojiHotkeyChanges
-        .debounce(for: .milliseconds(Timing.settingsDebounce), scheduler: RunLoop.main)
-        .sink { [weak self] in
-            guard let self = self else { return }
-            // Post notification to trigger sync in EmojiHotkeyManager
-            PHTVLogger.shared.debug("[MacroState] Posting EmojiHotkeySettingsChanged notification")
-            NotificationCenter.default.post(name: NotificationName.emojiHotkeySettingsChanged, object: nil)
-        }.store(in: &cancellables)
+        // Observation-based state now handles side effects in property observers.
     }
 
     func resetToDefaults() {

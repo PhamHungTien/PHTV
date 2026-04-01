@@ -11,6 +11,7 @@ import OSLog
 import Carbon
 import Darwin.Mach
 import UniformTypeIdentifiers
+import Observation
 
 // MARK: - Logger for PHTV
 private let phtvLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.phamhungtien.phtv", category: "general")
@@ -69,7 +70,8 @@ private enum BugArea: String, CaseIterable, Identifiable {
 }
 
 struct BugReportView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) private var appState
+    private var bindable: Bindable<AppState> { Bindable(appState) }
 
     @State private var bugTitle: String = ""
     @State private var bugDescription: String = ""
@@ -323,7 +325,7 @@ struct BugReportView: View {
                     iconColor: .accentColor,
                     title: "Thông tin hệ thống",
                     subtitle: "Phiên bản PHTV, macOS, chip và bàn phím",
-                    isOn: $appState.includeSystemInfo
+                    isOn: bindable.includeSystemInfo
                 )
 
                 SettingsDivider()
@@ -333,7 +335,7 @@ struct BugReportView: View {
                     iconColor: .accentColor,
                     title: "Nhật ký (tùy chọn)",
                     subtitle: appState.includeLogs ? "Đang thu thập log 60 phút gần nhất" : "Chỉ tải khi cần để tiết kiệm RAM",
-                    isOn: $appState.includeLogs
+                    isOn: bindable.includeLogs
                 )
 
                 if appState.includeLogs {
@@ -397,7 +399,7 @@ struct BugReportView: View {
                     iconColor: .accentColor,
                     title: "Crash logs gần đây",
                     subtitle: "Đính kèm các crash log PHTV trong 7 ngày",
-                    isOn: $appState.includeCrashLogs
+                    isOn: bindable.includeCrashLogs
                 )
             }
         }
@@ -1579,6 +1581,6 @@ struct BugReportView: View {
 
 #Preview {
     BugReportView()
-        .environmentObject(AppState.shared)
+        .environment(AppState.shared)
         .frame(width: 600, height: 800)
 }

@@ -14,35 +14,26 @@ import Foundation
     func bootstrapSparkleUpdates() {
         _ = SparkleManager.shared()
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(10))
             NSLog("[Sparkle] Checking for updates (launch bootstrap)...")
             SparkleManager.shared().checkForUpdates()
         }
     }
 
     func registerSparkleObservers() {
-        let center = NotificationCenter.default
-
-        center.addObserver(
-            self,
-            selector: #selector(handleSparkleManualCheck(_:)),
-            name: NotificationName.sparkleManualCheck,
-            object: nil
-        )
-
-        center.addObserver(
-            self,
-            selector: #selector(handleUpdateFrequencyChanged(_:)),
-            name: NotificationName.updateCheckFrequencyChanged,
-            object: nil
-        )
-
-        center.addObserver(
-            self,
-            selector: #selector(handleSparkleInstallUpdate(_:)),
-            name: NotificationName.sparkleInstallUpdate,
-            object: nil
-        )
+        sparkleNotificationTasks.forEach { $0.cancel() }
+        sparkleNotificationTasks = [
+            makeNotificationTask(name: NotificationName.sparkleManualCheck) { appDelegate, notification in
+                appDelegate.handleSparkleManualCheck(notification)
+            },
+            makeNotificationTask(name: NotificationName.updateCheckFrequencyChanged) { appDelegate, notification in
+                appDelegate.handleUpdateFrequencyChanged(notification)
+            },
+            makeNotificationTask(name: NotificationName.sparkleInstallUpdate) { appDelegate, notification in
+                appDelegate.handleSparkleInstallUpdate(notification)
+            }
+        ]
     }
 
     func handleSparkleManualCheck(_ notification: Notification) {

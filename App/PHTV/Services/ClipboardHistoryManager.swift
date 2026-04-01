@@ -44,8 +44,8 @@ final class ClipboardHistoryManager {
     private var panel: FloatingPanel<ClipboardHistoryView>?
     private var previousApp: NSRunningApplication?
     private var lastShowRequestTime: CFAbsoluteTime = 0
-    private var settingsObserver: NSObjectProtocol?
-    private var panelResignKeyObserver: NSObjectProtocol?
+    private var settingsObservationTask: Task<Void, Never>?
+    private var panelResignKeyTask: Task<Void, Never>?
     var isPasting = false
 
     var isVisible: Bool {
@@ -55,13 +55,11 @@ final class ClipboardHistoryManager {
     private init() {
         loadHistory()
 
-        settingsObserver = NotificationCenter.default.addObserver(
-            forName: NotificationName.clipboardHotkeySettingsChanged,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.trimItemsToConfiguredLimit()
+        settingsObservationTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for await _ in NotificationCenter.default.notifications(named: NotificationName.clipboardHotkeySettingsChanged) {
+                guard !Task.isCancelled else { break }
+                self.trimItemsToConfiguredLimit()
             }
         }
     }
@@ -167,27 +165,31 @@ final class ClipboardHistoryManager {
             self?.panel?.makeKey()
         }
 
-        panelResignKeyObserver = NotificationCenter.default.addObserver(
-            forName: NSWindow.didResignKeyNotification,
-            object: panel,
-            queue: .main
-        ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.hide() }
+        panelResignKeyTask?.cancel()
+        if let panel {
+            panelResignKeyTask = Task { @MainActor [weak self, panel] in
+                for await _ in NotificationCenter.default.notifications(
+                    named: NSWindow.didResignKeyNotification,
+                    object: panel
+                ) {
+                    guard let self, !Task.isCancelled else { break }
+                    self.hide()
+                    break
+                }
+            }
         }
     }
 
     func hide() {
-        if let observer = panelResignKeyObserver {
-            NotificationCenter.default.removeObserver(observer)
-            panelResignKeyObserver = nil
-        }
+        panelResignKeyTask?.cancel()
+        panelResignKeyTask = nil
         panel?.close()
         panel = nil
         lastShowRequestTime = 0
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
             if let app = self?.previousApp {
-                app.activate(options: [.activateIgnoringOtherApps])
+                _ = app.activate()
             }
         }
     }

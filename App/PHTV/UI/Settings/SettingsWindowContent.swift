@@ -10,11 +10,12 @@ import SwiftUI
 import AppKit
 
 struct SettingsWindowContent: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) private var appState
     @State private var windowObservers: [NSObjectProtocol] = []
     @State private var showOnboarding: Bool = false
     @State private var isClosingSettingsWindow: Bool = false
-    @State private var pendingCloseWorkItem: DispatchWorkItem?
+    @State private var pendingCloseTask: Task<Void, Never>?
+    @State private var onboardingTask: Task<Void, Never>?
     @State private var windowLifecycleToken = UUID()
     @State private var showDonatePopover = false
 
@@ -52,8 +53,10 @@ struct SettingsWindowContent: View {
         .onAppear {
             isClosingSettingsWindow = false
             windowLifecycleToken = UUID()
-            pendingCloseWorkItem?.cancel()
-            pendingCloseWorkItem = nil
+            pendingCloseTask?.cancel()
+            pendingCloseTask = nil
+            onboardingTask?.cancel()
+            onboardingTask = nil
             applySettingsWindowBehavior(forceFront: false)
 
             // Update window level based on user preference
@@ -68,19 +71,22 @@ struct SettingsWindowContent: View {
             // Check if onboarding should be shown (first launch)
             checkAndShowOnboarding()
         }
-        .onReceive(NotificationCenter.default.publisher(for: NotificationName.showOnboarding)) { _ in
-            withAnimation(.easeInOut(duration: 0.3)) {
-                showOnboarding = true
-            }
+        .task {
+            await observeShowOnboardingNotifications()
         }
         .onDisappear {
             appState.flushPendingSettingsForWindowClose()
+            onboardingTask?.cancel()
+            onboardingTask = nil
             // Remove window observers for this lifecycle.
             removeWindowObservers()
 
             // Delay close cleanup a bit to avoid transient SwiftUI disappear/reappear flapping.
             let lifecycleToken = windowLifecycleToken
-            let closeWorkItem = DispatchWorkItem { [lifecycleToken] in
+            pendingCloseTask?.cancel()
+            pendingCloseTask = Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.15))
+                guard !Task.isCancelled else { return }
                 guard lifecycleToken == windowLifecycleToken else { return }
 
                 let hasVisibleSettingsWindow = NSApp.windows.contains { window in
@@ -91,12 +97,20 @@ struct SettingsWindowContent: View {
 
                 finalizeSettingsWindowClose()
             }
-            pendingCloseWorkItem = closeWorkItem
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15, execute: closeWorkItem)
         }
         .onChange(of: appState.settingsWindowAlwaysOnTop) { _, _ in
             // Update window level when user toggles the setting
             updateSettingsWindowLevel()
+        }
+    }
+
+    @MainActor
+    private func observeShowOnboardingNotifications() async {
+        for await _ in NotificationCenter.default.notifications(named: NotificationName.showOnboarding) {
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeInOut(duration: 0.3)) {
+                showOnboarding = true
+            }
         }
     }
 
@@ -277,8 +291,10 @@ struct SettingsWindowContent: View {
 
     @MainActor
     private func finalizeSettingsWindowClose() {
-        pendingCloseWorkItem?.cancel()
-        pendingCloseWorkItem = nil
+        pendingCloseTask?.cancel()
+        pendingCloseTask = nil
+        onboardingTask?.cancel()
+        onboardingTask = nil
         windowLifecycleToken = UUID()
 
         // Restore dock icon to user preference when settings closes.
@@ -299,10 +315,8 @@ struct SettingsWindowContent: View {
             ]
         )
 
-        DispatchQueue.main.async {
-            let policy: NSApplication.ActivationPolicy = userPrefersDock ? .regular : .accessory
-            NSApp.setActivationPolicy(policy)
-        }
+        let policy: NSApplication.ActivationPolicy = userPrefersDock ? .regular : .accessory
+        NSApp.setActivationPolicy(policy)
 
         isClosingSettingsWindow = false
     }
@@ -311,8 +325,11 @@ struct SettingsWindowContent: View {
     private func checkAndShowOnboarding() {
         let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: UserDefaultsKey.onboardingCompleted)
         if !hasCompletedOnboarding {
+            onboardingTask?.cancel()
             // Small delay to ensure window is fully loaded
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            onboardingTask = Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.3))
+                guard !Task.isCancelled else { return }
                 withAnimation(.easeInOut(duration: 0.3)) {
                     showOnboarding = true
                 }

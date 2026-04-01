@@ -8,9 +8,10 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+import Observation
 
 struct MacroSettingsView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) private var appState
     @State private var macros: [MacroItem] = []
     @State private var systemReplacementCount = 0
     @State private var selectedMacro: UUID?
@@ -20,10 +21,12 @@ struct MacroSettingsView: View {
     // Animation and highlight states
     @State private var recentlyAddedId: UUID? = nil
     @State private var recentlyEditedId: UUID? = nil
+    @State private var highlightResetTask: Task<Void, Never>? = nil
     // Category states
     @State private var selectedCategoryId: UUID? = nil  // nil = show all
     @State private var showingAddCategory = false
     @State private var editingCategory: MacroCategory? = nil  // nil = not editing, set to show edit sheet
+    private var bindable: Bindable<AppState> { Bindable(appState) }
 
     private static var cachedMacrosData: Data?
     private static var cachedMacros: [MacroItem] = []
@@ -73,7 +76,7 @@ struct MacroSettingsView: View {
                             iconColor: .accentColor,
                             title: "Bật gõ tắt",
                             subtitle: appState.useMacro ? "Cho phép mở rộng từ viết tắt" : "Tắt mở rộng từ viết tắt",
-                            isOn: $appState.useMacro
+                            isOn: bindable.useMacro
                         )
 
                         SettingsDivider()
@@ -83,7 +86,7 @@ struct MacroSettingsView: View {
                             iconColor: .accentColor,
                             title: "Gõ tắt trong chế độ tiếng Anh",
                             subtitle: "Cho phép mở rộng ngay cả khi đang ở chế độ Anh",
-                            isOn: $appState.useMacroInEnglishMode
+                            isOn: bindable.useMacroInEnglishMode
                         )
                         .disabled(!appState.useMacro)
                         .opacity(appState.useMacro ? 1 : 0.5)
@@ -95,7 +98,7 @@ struct MacroSettingsView: View {
                             iconColor: .accentColor,
                             title: "Tự động viết hoa",
                             subtitle: "Viết hoa ký tự đầu của nội dung mở rộng",
-                            isOn: $appState.autoCapsMacro
+                            isOn: bindable.autoCapsMacro
                         )
                         .disabled(!appState.useMacro)
                         .opacity(appState.useMacro ? 1 : 0.5)
@@ -109,7 +112,7 @@ struct MacroSettingsView: View {
                             subtitle: appState.useSystemTextReplacements
                                 ? "Đang ghép \(systemReplacementCount) mục từ System Settings vào runtime"
                                 : "Đọc từ Keyboard > Text Replacements, không ghi đè macro riêng",
-                            isOn: $appState.useSystemTextReplacements
+                            isOn: bindable.useSystemTextReplacements
                         )
                         .disabled(!appState.useMacro)
                         .opacity(appState.useMacro ? 1 : 0.5)
@@ -317,7 +320,7 @@ struct MacroSettingsView: View {
                 categories: appState.macroCategories,
                 defaultCategoryId: selectedCategoryId
             )
-            .environmentObject(appState)
+            .environment(appState)
         }
         .sheet(item: $editingMacro) { macro in
             MacroEditorView(
@@ -328,7 +331,7 @@ struct MacroSettingsView: View {
                 editingMacro: macro,
                 categories: appState.macroCategories
             )
-            .environmentObject(appState)
+            .environment(appState)
         }
         .sheet(isPresented: $showingAddCategory) {
             MacroCategoryEditorView(
@@ -358,6 +361,8 @@ struct MacroSettingsView: View {
             refreshSystemReplacementCount()
         }
         .onDisappear {
+            highlightResetTask?.cancel()
+            highlightResetTask = nil
             macros = []
             systemReplacementCount = 0
             selectedMacro = nil
@@ -366,46 +371,63 @@ struct MacroSettingsView: View {
             editingMacro = nil
             editingCategory = nil
         }
-        .onReceive(NotificationCenter.default.publisher(for: NotificationName.macrosUpdated))
-        { notification in
-            // Note: .onReceive already runs on main thread in SwiftUI
-            PHTVLogger.shared.macro("[MacroSettings] Received MacrosUpdated notification, reloading...")
+        .task {
+            await observeMacrosUpdatedNotifications()
+        }
+    }
 
-            // Check if notification contains info about added/edited macro
-            if let userInfo = notification.userInfo,
-               let macroId = userInfo[NotificationUserInfoKey.macroId] as? UUID,
-               let action = userInfo[NotificationUserInfoKey.action] as? String {
+    @MainActor
+    private func observeMacrosUpdatedNotifications() async {
+        for await notification in NotificationCenter.default.notifications(named: NotificationName.macrosUpdated) {
+            guard !Task.isCancelled else { return }
+            handleMacrosUpdated(notification)
+        }
+    }
 
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
-                    loadMacros()
+    @MainActor
+    private func handleMacrosUpdated(_ notification: Notification) {
+        PHTVLogger.shared.macro("[MacroSettings] Received MacrosUpdated notification, reloading...")
 
-                    if action == MacroUpdateAction.added {
-                        recentlyAddedId = macroId
-                    } else if action == MacroUpdateAction.edited {
-                        recentlyEditedId = macroId
-                    }
-                }
+        // Check if notification contains info about added/edited macro
+        if let userInfo = notification.userInfo,
+           let macroId = userInfo[NotificationUserInfoKey.macroId] as? UUID,
+           let action = userInfo[NotificationUserInfoKey.action] as? String {
 
-                // Clear highlight after delay
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                    withAnimation {
-                        if recentlyAddedId == macroId {
-                            recentlyAddedId = nil
-                        }
-                        if recentlyEditedId == macroId {
-                            recentlyEditedId = nil
-                        }
-                    }
-                }
-            } else {
-                // Default animation for other updates
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    loadMacros()
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+                loadMacros()
+
+                if action == MacroUpdateAction.added {
+                    recentlyAddedId = macroId
+                } else if action == MacroUpdateAction.edited {
+                    recentlyEditedId = macroId
                 }
             }
 
-            refreshSystemReplacementCount()
+            scheduleHighlightReset(for: macroId)
+        } else {
+            // Default animation for other updates
+            withAnimation(.easeInOut(duration: 0.3)) {
+                loadMacros()
+            }
+        }
 
+        refreshSystemReplacementCount()
+    }
+
+    private func scheduleHighlightReset(for macroId: UUID) {
+        highlightResetTask?.cancel()
+        highlightResetTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
+
+            withAnimation {
+                if recentlyAddedId == macroId {
+                    recentlyAddedId = nil
+                }
+                if recentlyEditedId == macroId {
+                    recentlyEditedId = nil
+                }
+            }
         }
     }
 
@@ -912,6 +934,6 @@ struct MacroRowView: View {
 
 #Preview {
     MacroSettingsView()
-        .environmentObject(AppState.shared)
+        .environment(AppState.shared)
         .frame(width: 500, height: 800)
 }

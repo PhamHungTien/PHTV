@@ -106,6 +106,8 @@ private final class SparkleUserDriverDelegate: NSObject, SPUStandardUserDriverDe
 
     private var trackedWindows: [TrackedWindow] = []
     private var isUpdateSessionActive = false
+    private var observerTasks: [Task<Void, Never>] = []
+    private var cascadeScanTasks: [Task<Void, Never>] = []
     /// Cascade scan delays (seconds) after session begins, to catch windows that appear slightly late
     private static let scanDelays: [TimeInterval] = [0.05, 0.15, 0.35, 0.7, 1.2, 2.0, 3.5]
 
@@ -115,7 +117,8 @@ private final class SparkleUserDriverDelegate: NSObject, SPUStandardUserDriverDe
     }
 
     deinit {
-        NotificationCenter.default.removeObserver(self)
+        observerTasks.forEach { $0.cancel() }
+        cascadeScanTasks.forEach { $0.cancel() }
     }
 
     nonisolated var supportsGentleScheduledUpdateReminders: Bool {
@@ -153,31 +156,24 @@ private final class SparkleUserDriverDelegate: NSObject, SPUStandardUserDriverDe
         Task { @MainActor [weak self] in
             guard let self else { return }
             self.isUpdateSessionActive = false
+            self.cancelCascadeScans()
             self.restoreWindowLevels()
         }
     }
 
     private func registerObservers() {
-        let center = NotificationCenter.default
-
-        center.addObserver(
-            self,
-            selector: #selector(handleWindowBecameKey(_:)),
-            name: NSWindow.didBecomeMainNotification,
-            object: nil
-        )
-        center.addObserver(
-            self,
-            selector: #selector(handleWindowBecameKey(_:)),
-            name: NSWindow.didBecomeKeyNotification,
-            object: nil
-        )
-        center.addObserver(
-            self,
-            selector: #selector(handleAppDidBecomeActive(_:)),
-            name: NSApplication.didBecomeActiveNotification,
-            object: nil
-        )
+        observerTasks.forEach { $0.cancel() }
+        observerTasks = [
+            makeObserverTask(name: NSWindow.didBecomeMainNotification) { [weak self] notification in
+                self?.handleWindowBecameKey(notification)
+            },
+            makeObserverTask(name: NSWindow.didBecomeKeyNotification) { [weak self] notification in
+                self?.handleWindowBecameKey(notification)
+            },
+            makeObserverTask(name: NSApplication.didBecomeActiveNotification) { [weak self] notification in
+                self?.handleAppDidBecomeActive(notification)
+            }
+        ]
     }
 
     @objc
@@ -210,9 +206,11 @@ private final class SparkleUserDriverDelegate: NSObject, SPUStandardUserDriverDe
     /// Fires `bringUpdatePopupToFront` at each delay offset so late-appearing Sparkle
     /// windows (e.g. the "No updates available" alert) are always pinned on top.
     private func scheduleCascadeScans() {
-        for delay in Self.scanDelays {
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
-                guard let self, self.isUpdateSessionActive else { return }
+        cancelCascadeScans()
+        cascadeScanTasks = Self.scanDelays.map { delay in
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(delay))
+                guard let self, !Task.isCancelled, self.isUpdateSessionActive else { return }
                 self.bringUpdatePopupToFront()
             }
         }
@@ -241,6 +239,23 @@ private final class SparkleUserDriverDelegate: NSObject, SPUStandardUserDriverDe
             window.level = tracked.originalLevel
         }
         trackedWindows.removeAll()
+    }
+
+    private func makeObserverTask(
+        name: Notification.Name,
+        handler: @escaping @MainActor (Notification) -> Void
+    ) -> Task<Void, Never> {
+        Task { @MainActor in
+            for await notification in NotificationCenter.default.notifications(named: name) {
+                guard !Task.isCancelled else { break }
+                handler(notification)
+            }
+        }
+    }
+
+    private func cancelCascadeScans() {
+        cascadeScanTasks.forEach { $0.cancel() }
+        cascadeScanTasks.removeAll()
     }
 
     /// Detects whether a window belongs to Sparkle by checking bundle IDs and class names.

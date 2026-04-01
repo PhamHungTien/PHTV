@@ -7,12 +7,14 @@
 //
 
 import SwiftUI
+import Observation
 
 struct ClipboardHotkeyConfigView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) private var appState
     @State private var isRecording = false
 
     private let modifierOnlyKeyCode: UInt16 = KeyCode.noKey
+    private var bindable: Bindable<AppState> { Bindable(appState) }
 
     private var clipboardHotkeyControl: Binding<Bool> {
         Binding(
@@ -103,7 +105,7 @@ struct ClipboardHotkeyConfigView: View {
                 iconColor: .accentColor,
                 title: "Bật lịch sử Clipboard",
                 subtitle: "Lưu lại nội dung đã sao chép và mở nhanh bằng phím tắt",
-                isOn: $appState.enableClipboardHistory
+                isOn: bindable.enableClipboardHistory
             )
 
             if appState.enableClipboardHistory {

@@ -10,7 +10,7 @@ import SwiftUI
 
 struct MacroEditorView: View {
     @Binding var isPresented: Bool
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) private var appState
     @State private var macroName: String
     @State private var macroCode: String
     @State private var errorMessage = ""

@@ -7,9 +7,11 @@
 //
 
 import SwiftUI
+import Observation
 
 struct CompatibilitySettingsView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) private var appState
+    private var bindable: Bindable<AppState> { Bindable(appState) }
 
     var body: some View {
         ScrollView {
@@ -31,7 +33,7 @@ struct CompatibilitySettingsView: View {
                         iconColor: .accentColor,
                         title: "Tương thích bố cục bàn phím",
                         subtitle: "Hỗ trợ Dvorak, Colemak và các bố cục đặc biệt",
-                        isOn: $appState.performLayoutCompat
+                        isOn: bindable.performLayoutCompat
                     )
                 }
 
@@ -47,7 +49,7 @@ struct CompatibilitySettingsView: View {
                             iconColor: .accentColor,
                             title: "Bật chế độ an toàn",
                             subtitle: "Tự phục hồi khi Accessibility API gặp lỗi",
-                            isOn: $appState.safeMode
+                            isOn: bindable.safeMode
                         )
 
                         if appState.safeMode {
@@ -88,6 +90,6 @@ struct CompatibilitySettingsView: View {
 
 #Preview {
     CompatibilitySettingsView()
-        .environmentObject(AppState.shared)
+        .environment(AppState.shared)
         .frame(width: 500, height: 600)
 }

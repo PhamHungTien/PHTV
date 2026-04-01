@@ -11,7 +11,6 @@
 //
 
 import AppKit
-import Combine
 import SwiftUI
 
 @MainActor
@@ -19,9 +18,10 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
     static let shared = StatusBarMenuManager()
 
     private var statusItem: NSStatusItem?
-    private var cancellables = Set<AnyCancellable>()
     private let iconCache = NSCache<NSString, NSImage>()
     private var donatePopover: NSPopover?
+    private var notificationTasks: [Task<Void, Never>] = []
+    private var didSetupIconObservers = false
 
     private var appState: AppState { AppState.shared }
 
@@ -38,24 +38,32 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
         menu.delegate = self
         statusItem?.menu = menu
 
-        // Keep the icon in sync only with fields that actually affect its appearance.
-        appState.$isEnabled
-            .removeDuplicates()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.updateIcon() }
-            .store(in: &cancellables)
+        setupIconObserversIfNeeded()
+    }
 
-        appState.uiState.$useVietnameseMenubarIcon
-            .removeDuplicates()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.updateIcon() }
-            .store(in: &cancellables)
+    private func setupIconObserversIfNeeded() {
+        guard !didSetupIconObservers else { return }
+        didSetupIconObservers = true
 
-        appState.uiState.$menuBarIconSize
-            .removeDuplicates()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.updateIcon() }
-            .store(in: &cancellables)
+        let names: [NSNotification.Name] = [
+            NotificationName.languageChangedFromSwiftUI,
+            NotificationName.languageChangedFromBackend,
+            NotificationName.languageChangedFromExcludedApp,
+            NotificationName.languageChangedFromSmartSwitch,
+            NotificationName.languageChangedFromObjC,
+            NotificationName.menuBarIconPreferenceChanged,
+            NotificationName.menuBarIconSizeChanged
+        ]
+
+        notificationTasks.forEach { $0.cancel() }
+        notificationTasks = names.map { name in
+            Task { @MainActor [weak self] in
+                for await _ in NotificationCenter.default.notifications(named: name) {
+                    guard let self, !Task.isCancelled else { break }
+                    self.updateIcon()
+                }
+            }
+        }
     }
 
     // MARK: - Icon
@@ -404,11 +412,11 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
     @objc private func setEnglish() { AppState.shared.isEnabled = false }
 
     @objc private func openSettings() {
-        SettingsWindowOpener.shared.requestOpenWindow()
+        SettingsWindowOpener.requestOpenWindow()
     }
 
     @objc private func openAbout() {
-        SettingsWindowOpener.shared.requestOpenWindow()
+        SettingsWindowOpener.requestOpenWindow()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             NotificationCenter.default.post(name: NotificationName.showAboutTab, object: nil)
         }
@@ -451,7 +459,7 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
     }
 
     @objc private func openConvertTool() {
-        SettingsWindowOpener.shared.requestOpenWindow()
+        SettingsWindowOpener.requestOpenWindow()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
             NotificationCenter.default.post(name: NotificationName.showConvertToolSheet, object: nil)
         }
