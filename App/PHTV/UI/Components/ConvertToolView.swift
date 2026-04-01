@@ -58,22 +58,55 @@ enum ConvertInputMode: String, CaseIterable, Identifiable {
 }
 
 struct ConvertToolView: View {
-    private static let convertToolFromCodeKey = "convertToolFromCode"
-    private static let convertToolToCodeKey = "convertToolToCode"
-
     @Environment(\.dismiss) private var dismiss
 
-    @State private var inputMode: ConvertInputMode = .clipboard
+    @SceneStorage("ConvertToolInputMode") private var storedInputMode = ConvertInputMode.clipboard.rawValue
+    @AppStorage(UserDefaultsKey.convertToolFromCode) private var storedSourceCodeTable = Defaults.convertToolFromCode
+    @AppStorage(UserDefaultsKey.convertToolToCode) private var storedTargetCodeTable = Defaults.convertToolToCode
     @State private var inputText: String = ""
     @State private var clipboardContent: String = ""
     @State private var convertedContent: String = ""
-    @State private var sourceCodeTable: ConvertCodeTable = .tcvn3
-    @State private var targetCodeTable: ConvertCodeTable = .unicode
     @State private var isConverting = false
     @State private var showResult = false
     @State private var resultMessage = ""
     @State private var isSuccess = false
     private let presetColumns = [GridItem(.adaptive(minimum: 140), spacing: 8, alignment: .leading)]
+
+    private var inputMode: ConvertInputMode {
+        get { ConvertInputMode(rawValue: storedInputMode) ?? .clipboard }
+        nonmutating set { storedInputMode = newValue.rawValue }
+    }
+
+    private var sourceCodeTable: ConvertCodeTable {
+        get { ConvertCodeTable(rawValue: storedSourceCodeTable) ?? .tcvn3 }
+        nonmutating set { storedSourceCodeTable = newValue.rawValue }
+    }
+
+    private var targetCodeTable: ConvertCodeTable {
+        get { ConvertCodeTable(rawValue: storedTargetCodeTable) ?? .unicode }
+        nonmutating set { storedTargetCodeTable = newValue.rawValue }
+    }
+
+    private var inputModeBinding: Binding<ConvertInputMode> {
+        Binding(
+            get: { inputMode },
+            set: { inputMode = $0 }
+        )
+    }
+
+    private var sourceCodeTableBinding: Binding<ConvertCodeTable> {
+        Binding(
+            get: { sourceCodeTable },
+            set: { sourceCodeTable = $0 }
+        )
+    }
+
+    private var targetCodeTableBinding: Binding<ConvertCodeTable> {
+        Binding(
+            get: { targetCodeTable },
+            set: { targetCodeTable = $0 }
+        )
+    }
 
     // Current text to convert based on mode
     private var currentText: String {
@@ -122,7 +155,8 @@ struct ConvertToolView: View {
         }
         .settingsBackground()
         .frame(width: 560, height: 680)
-        .onAppear {
+        .task(id: inputMode) {
+            guard inputMode == .clipboard else { return }
             loadClipboardContent()
         }
     }
@@ -173,7 +207,7 @@ struct ConvertToolView: View {
     // MARK: - Input Mode Picker
 
     private var inputModePicker: some View {
-        Picker("", selection: $inputMode) {
+        Picker("", selection: inputModeBinding) {
             ForEach(ConvertInputMode.allCases) { mode in
                 switch mode {
                 case .clipboard:
@@ -185,9 +219,6 @@ struct ConvertToolView: View {
         }
         .pickerStyle(.segmented)
         .labelsHidden()
-        .onChange(of: inputMode) { _, _ in
-            loadClipboardContent()
-        }
     }
 
     // MARK: - Input Area Card
@@ -321,15 +352,15 @@ struct ConvertToolView: View {
             VStack(alignment: .leading, spacing: 16) {
                 ViewThatFits {
                     HStack(spacing: 12) {
-                        codeTablePicker(title: "Từ bảng mã", icon: "tray.and.arrow.down.fill", selection: $sourceCodeTable)
+                        codeTablePicker(title: "Từ bảng mã", icon: "tray.and.arrow.down.fill", selection: sourceCodeTableBinding)
                         swapButtonCompact
-                        codeTablePicker(title: "Sang bảng mã", icon: "tray.and.arrow.up.fill", selection: $targetCodeTable)
+                        codeTablePicker(title: "Sang bảng mã", icon: "tray.and.arrow.up.fill", selection: targetCodeTableBinding)
                     }
 
                     VStack(spacing: 12) {
-                        codeTablePicker(title: "Từ bảng mã", icon: "tray.and.arrow.down.fill", selection: $sourceCodeTable)
+                        codeTablePicker(title: "Từ bảng mã", icon: "tray.and.arrow.down.fill", selection: sourceCodeTableBinding)
                         swapButtonWide
-                        codeTablePicker(title: "Sang bảng mã", icon: "tray.and.arrow.up.fill", selection: $targetCodeTable)
+                        codeTablePicker(title: "Sang bảng mã", icon: "tray.and.arrow.up.fill", selection: targetCodeTableBinding)
                     }
                 }
 
@@ -582,17 +613,10 @@ struct ConvertToolView: View {
         }
 
         Task { @MainActor in
-            let defaults = UserDefaults.standard
-            let originalFromCode = defaults.integer(forKey: Self.convertToolFromCodeKey)
-            let originalToCode = defaults.integer(forKey: Self.convertToolToCodeKey)
-
-            defaults.set(sourceCode.rawValue, forKey: Self.convertToolFromCodeKey)
-            defaults.set(targetCode.rawValue, forKey: Self.convertToolToCodeKey)
-
-            let success = PHTVManager.quickConvert()
-
-            defaults.set(originalFromCode, forKey: Self.convertToolFromCodeKey)
-            defaults.set(originalToCode, forKey: Self.convertToolToCodeKey)
+            let success = PHTVConvertToolTextConversionService.quickConvertClipboard(
+                fromCode: Int32(sourceCode.rawValue),
+                toCode: Int32(targetCode.rawValue)
+            )
 
             let pasteboard = NSPasteboard.general
             let newContent = pasteboard.string(forType: .string) ?? ""

@@ -589,7 +589,7 @@ struct UpperCaseRunningAppsPickerView: View {
             .padding()
         }
         .frame(width: 400, height: 500)
-        .onAppear {
+        .task {
             loadRunningApps()
         }
         .onDisappear {

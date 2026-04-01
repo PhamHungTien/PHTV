@@ -60,7 +60,7 @@ struct GIFThumbnailView: View {
             onTap()
         }
         .help(gif.isAd ? "Quảng cáo - Click để xem" : "Click để tải và gửi \(contentType)")
-        .onAppear {
+        .task(id: gif.id) {
             if gif.isAd && !hasTrackedImpression {
                 klipyClient.trackImpression(for: gif)
                 hasTrackedImpression = true

@@ -928,24 +928,33 @@ struct AccessibilityStepView: View {
 
             Spacer()
         }
-        .onAppear {
-            appState.checkAccessibilityPermission()
-        }
-        .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
-            appState.checkAccessibilityPermission()
-            // When AX is granted, ensure AppDelegate starts the event tap
-            // (handles the case where TCC notification wasn't delivered).
-            if appState.hasAccessibilityPermission &&
-                appState.hasInputMonitoringPermission &&
-                !appState.isTypingPermissionReady {
-                AppDelegate.current()?.checkAccessibilityAndRestart()
+        .task {
+            refreshPermissionState()
+
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { break }
+                refreshPermissionState()
             }
+        }
+    }
+
+    private func refreshPermissionState() {
+        appState.checkAccessibilityPermission()
+
+        // When AX is granted, ensure AppDelegate starts the event tap
+        // (handles the case where TCC notification wasn't delivered).
+        if appState.hasAccessibilityPermission &&
+            appState.hasInputMonitoringPermission &&
+            !appState.isTypingPermissionReady {
+            AppDelegate.current()?.checkAccessibilityAndRestart()
         }
     }
 }
 
 struct CompletionStepView: View {
     var onFinish: () -> Void
+    @AppStorage(UserDefaultsKey.onboardingCompleted) private var hasCompletedOnboarding = false
     @State private var scale: CGFloat = 0.5
     @State private var opacity: Double = 0.0
 
@@ -964,7 +973,7 @@ struct CompletionStepView: View {
                     .scaleEffect(scale)
                     .opacity(opacity)
             }
-            .onAppear {
+            .task {
                 withAnimation(.spring(response: 0.5, dampingFraction: 0.65)) {
                     scale = 1.0
                     opacity = 1.0
@@ -985,7 +994,7 @@ struct CompletionStepView: View {
             Spacer()
 
             Button(action: {
-                UserDefaults.standard.set(true, forKey: UserDefaultsKey.onboardingCompleted)
+                hasCompletedOnboarding = true
                 onFinish()
             }) {
                 Text("Bắt đầu sử dụng")

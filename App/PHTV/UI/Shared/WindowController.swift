@@ -75,7 +75,7 @@ class SwiftUIWindowController: NSWindowController, NSWindowDelegate {
             }
             SettingsWindowHelper.releaseSettingsWindow()
             let appDelegate = AppDelegate.current()
-            let showDock = UserDefaults.standard.bool(forKey: UserDefaultsKey.showIconOnDock)
+            let showDock = AppState.shared.showIconOnDock
             appDelegate?.showIcon(showDock)
         }
     }

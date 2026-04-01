@@ -356,7 +356,7 @@ struct MacroSettingsView: View {
                 }
             )
         }
-        .onAppear {
+        .task {
             loadMacros()
             refreshSystemReplacementCount()
         }

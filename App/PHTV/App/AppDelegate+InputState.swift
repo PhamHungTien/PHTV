@@ -15,6 +15,14 @@ private let phtvInputStateDefaultsKeyInputType = "InputType"
 private let phtvInputStateDefaultsKeyCodeTable = "CodeTable"
 private let phtvInputStateNotificationLanguageChangedFromBackend = Notification.Name("LanguageChangedFromBackend")
 
+private nonisolated func phtvNotifyInputMethodChangedInBackground() async {
+    PHTVManager.notifyInputMethodChanged()
+}
+
+private nonisolated func phtvNotifyTableCodeChangedInBackground() async {
+    PHTVManager.notifyTableCodeChanged()
+}
+
 @MainActor extension AppDelegate {
     @objc func handleLanguageChangedFromSwiftUI(_ notification: Notification) {
         if isUpdatingLanguage {
@@ -55,8 +63,8 @@ private let phtvInputStateNotificationLanguageChangedFromBackend = Notification.
         fillData()
 
         if PHTVManager.isSmartSwitchKeyEnabled() {
-            Task.detached(priority: .utility) {
-                PHTVManager.notifyInputMethodChanged()
+            Task(priority: .utility) {
+                await phtvNotifyInputMethodChangedInBackground()
             }
         }
 
@@ -97,8 +105,8 @@ private let phtvInputStateNotificationLanguageChangedFromBackend = Notification.
         fillData()
 
         if PHTVManager.isSmartSwitchKeyEnabled() {
-            Task.detached(priority: .utility) {
-                PHTVManager.notifyInputMethodChanged()
+            Task(priority: .utility) {
+                await phtvNotifyInputMethodChangedInBackground()
             }
         }
 
@@ -159,8 +167,8 @@ private let phtvInputStateNotificationLanguageChangedFromBackend = Notification.
                                         object: NSNumber(value: targetLanguage))
 
         if willNotify && PHTVManager.isSmartSwitchKeyEnabled() {
-            Task.detached(priority: .utility) {
-                PHTVManager.notifyInputMethodChanged()
+            Task(priority: .utility) {
+                await phtvNotifyInputMethodChangedInBackground()
             }
         }
 
@@ -213,8 +221,8 @@ private let phtvInputStateNotificationLanguageChangedFromBackend = Notification.
                                         object: NSNumber(value: PHTVManager.currentLanguage()))
 
         if PHTVManager.isSmartSwitchKeyEnabled() {
-            Task.detached(priority: .utility) {
-                PHTVManager.notifyInputMethodChanged()
+            Task(priority: .utility) {
+                await phtvNotifyInputMethodChangedInBackground()
             }
         }
 
@@ -250,8 +258,8 @@ private let phtvInputStateNotificationLanguageChangedFromBackend = Notification.
         PHTVManager.requestNewSession()
         fillData()
 
-        Task.detached(priority: .utility) {
-            PHTVManager.notifyTableCodeChanged()
+        Task(priority: .utility) {
+            await phtvNotifyTableCodeChangedInBackground()
         }
 
         NSLog("[MenuBar] Code table changed to: %d", index)

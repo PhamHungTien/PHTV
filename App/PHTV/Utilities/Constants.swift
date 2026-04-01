@@ -64,6 +64,9 @@ enum UserDefaultsKey {
     static let showIconOnDock = "vShowIconOnDock"
     static let settingsWindowAlwaysOnTop = "vSettingsWindowAlwaysOnTop"
     static let safeMode = "SafeMode"
+    static let convertToolDontAlertWhenCompleted = "convertToolDontAlertWhenCompleted"
+    static let convertToolFromCode = "convertToolFromCode"
+    static let convertToolToCode = "convertToolToCode"
 
     // MARK: - Hotkey Settings
     static let switchKeyStatus = "SwitchKeyStatus"
@@ -423,6 +426,9 @@ enum Defaults {
     static let showIconOnDock = false
     static let settingsWindowAlwaysOnTop = false
     static let safeMode = false
+    static let convertToolDontAlertWhenCompleted = false
+    static let convertToolFromCode = CodeTable.tcvn.toIndex()
+    static let convertToolToCode = CodeTable.unicode.toIndex()
 
     // MARK: - Hotkey
     static let switchKeyControl = true
@@ -663,6 +669,9 @@ final class SettingsBootstrap: NSObject {
             UserDefaultsKey.performLayoutCompat: Defaults.performLayoutCompat,
             UserDefaultsKey.settingsWindowAlwaysOnTop: Defaults.settingsWindowAlwaysOnTop,
             UserDefaultsKey.safeMode: Defaults.safeMode,
+            UserDefaultsKey.convertToolDontAlertWhenCompleted: Defaults.convertToolDontAlertWhenCompleted,
+            UserDefaultsKey.convertToolFromCode: Defaults.convertToolFromCode,
+            UserDefaultsKey.convertToolToCode: Defaults.convertToolToCode,
             UserDefaultsKey.enableEmojiHotkey: Defaults.enableEmojiHotkey,
             UserDefaultsKey.emojiHotkeyModifiers: Int(Defaults.emojiHotkeyModifiers),
             UserDefaultsKey.emojiHotkeyKeyCode: Int(Defaults.emojiHotkeyKeyCode),

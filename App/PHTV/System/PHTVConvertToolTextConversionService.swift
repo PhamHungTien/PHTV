@@ -26,8 +26,8 @@ final class PHTVConvertToolTextConversionService: NSObject {
     private static let keyToCapsFirstLetter = "convertToolToCapsFirstLetter"
     private static let keyToCapsEachWord = "convertToolToCapsEachWord"
     private static let keyRemoveMark = "convertToolRemoveMark"
-    private static let keyFromCode = "convertToolFromCode"
-    private static let keyToCode = "convertToolToCode"
+    private static let keyFromCode = UserDefaultsKey.convertToolFromCode
+    private static let keyToCode = UserDefaultsKey.convertToolToCode
 
     private static let breakCodes: Set<UInt16> = [46, 63, 33] // . ? !
     private static let defaultCodeTable = Int32(CodeTable.unicode.toIndex())
@@ -37,6 +37,24 @@ final class PHTVConvertToolTextConversionService: NSObject {
     @objc(convertText:)
     class func convertText(_ text: String) -> String {
         convert(text)
+    }
+
+    class func quickConvertClipboard(
+        fromCode: Int32,
+        toCode: Int32,
+        defaults: UserDefaults = .standard
+    ) -> Bool {
+        let originalFromCode = defaults.integer(forKey: keyFromCode)
+        let originalToCode = defaults.integer(forKey: keyToCode)
+
+        defer {
+            defaults.set(originalFromCode, forKey: keyFromCode)
+            defaults.set(originalToCode, forKey: keyToCode)
+        }
+
+        defaults.set(Int(sanitizeCodeTable(fromCode)), forKey: keyFromCode)
+        defaults.set(Int(sanitizeCodeTable(toCode)), forKey: keyToCode)
+        return PHTVManager.quickConvert()
     }
 
     class func convert(_ text: String, defaults: UserDefaults = .standard) -> String {

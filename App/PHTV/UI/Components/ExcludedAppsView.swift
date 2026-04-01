@@ -25,12 +25,15 @@ struct ExcludedAppsView: View {
             
             // Apps List
             if appState.excludedApps.isEmpty {
-                EmptyExcludedAppsView(
+                AppSelectionEmptyStateView(
+                    iconName: "app.badge.checkmark",
+                    title: "Chưa có ứng dụng nào",
+                    subtitle: "Tự chuyển sang tiếng Anh khi dùng các ứng dụng này",
                     onPickRunningApps: { showingRunningApps = true },
                     onPickFromApplications: { showingFilePicker = true }
                 )
             } else {
-                ExcludedAppsList(apps: appState.excludedApps) { app in
+                AppSelectionList(apps: appState.excludedApps) { app in
                     appState.removeExcludedApp(app)
                 }
             }
@@ -119,20 +122,28 @@ struct ExcludedAppsView: View {
 }
 
 // MARK: - Empty State View
-private struct EmptyExcludedAppsView: View {
+struct AppSelectionEmptyStateView: View {
+    let iconName: String
+    let title: String
+    let subtitle: String
     let onPickRunningApps: () -> Void
     let onPickFromApplications: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: "app.badge.checkmark")
+            Image(systemName: iconName)
                 .font(.system(size: 24))
                 .foregroundStyle(.tertiary)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Chưa có ứng dụng nào")
+                Text(title)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.secondary)
+
+                Text(subtitle)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 HStack(spacing: 6) {
                     Button("Đang chạy") {
@@ -181,14 +192,14 @@ private struct EmptyExcludedAppsView: View {
 }
 
 // MARK: - Excluded Apps List
-private struct ExcludedAppsList: View {
-    let apps: [ExcludedApp]
-    let onRemove: (ExcludedApp) -> Void
+struct AppSelectionList<Item: AppSelectionEntry>: View {
+    let apps: [Item]
+    let onRemove: (Item) -> Void
     
     var body: some View {
         LazyVStack(spacing: 0) {
             ForEach(apps) { app in
-                ExcludedAppRow(app: app) {
+                AppSelectionRow(app: app) {
                     onRemove(app)
                 }
                 
@@ -211,16 +222,16 @@ private struct ExcludedAppsList: View {
     }
 }
 
-// MARK: - Excluded App Row
-private struct ExcludedAppRow: View {
-    let app: ExcludedApp
+// MARK: - App Row
+struct AppSelectionRow<Item: AppSelectionEntry>: View {
+    let app: Item
     let onRemove: () -> Void
     @State private var isHovered = false
     
     var body: some View {
         HStack(spacing: 12) {
             // App Icon
-            AppIconView(path: app.path)
+            AppSelectionIconView(path: app.path)
                 .frame(width: 32, height: 32)
             
             // App Info
@@ -254,32 +265,33 @@ private struct ExcludedAppRow: View {
 }
 
 // MARK: - App Icon View
-private struct AppIconView: View {
+struct AppSelectionIconView: View {
     let path: String
+    var size: CGFloat = 32
     
     var body: some View {
-        if let icon = AppIconCache.shared.icon(for: path, size: 32) {
+        if let icon = AppIconCache.shared.icon(for: path, size: size) {
             Image(nsImage: icon)
                 .resizable()
                 .scaledToFit()
         } else {
             Image(systemName: "app.fill")
-                .font(.system(size: 24))
+                .font(.system(size: size * 0.75))
                 .foregroundStyle(.secondary)
         }
     }
 }
 
 // MARK: - Running Apps Picker
-struct RunningAppsPickerView: View {
+struct AppSelectionRunningAppsPickerView<Item: AppSelectionEntry>: View {
     @Environment(\.dismiss) private var dismiss
-    let onSelect: ([ExcludedApp]) -> Void
+    let onSelect: ([Item]) -> Void
     
-    @State private var runningApps: [ExcludedApp] = []
+    @State private var runningApps: [Item] = []
     @State private var selectedApps: Set<String> = []
     @State private var searchText = ""
     
-    var filteredApps: [ExcludedApp] {
+    var filteredApps: [Item] {
         if searchText.isEmpty {
             return runningApps
         }
@@ -323,7 +335,7 @@ struct RunningAppsPickerView: View {
             ScrollView {
                 LazyVStack(spacing: 0) {
                     ForEach(filteredApps) { app in
-                        RunningAppRow(
+                        AppSelectionRunningAppRow(
                             app: app,
                             isSelected: selectedApps.contains(app.bundleIdentifier)
                         ) {
@@ -365,7 +377,7 @@ struct RunningAppsPickerView: View {
             .padding()
         }
         .frame(width: 400, height: 500)
-        .onAppear {
+        .task {
             loadRunningApps()
         }
         .onDisappear {
@@ -379,12 +391,12 @@ struct RunningAppsPickerView: View {
         let workspace = NSWorkspace.shared
         let apps = workspace.runningApplications
             .filter { $0.activationPolicy != .prohibited }
-            .compactMap { app -> ExcludedApp? in
+            .compactMap { app -> Item? in
                 guard let bundleId = app.bundleIdentifier,
                       let name = app.localizedName,
                       let url = app.bundleURL
                 else { return nil }
-                return ExcludedApp(bundleIdentifier: bundleId, name: name, path: url.path)
+                return Item(bundleIdentifier: bundleId, name: name, path: url.path)
             }
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         
@@ -394,9 +406,17 @@ struct RunningAppsPickerView: View {
     }
 }
 
+struct RunningAppsPickerView: View {
+    let onSelect: ([ExcludedApp]) -> Void
+
+    var body: some View {
+        AppSelectionRunningAppsPickerView(onSelect: onSelect)
+    }
+}
+
 // MARK: - Running App Row
-private struct RunningAppRow: View {
-    let app: ExcludedApp
+struct AppSelectionRunningAppRow<Item: AppSelectionEntry>: View {
+    let app: Item
     let isSelected: Bool
     let onToggle: () -> Void
     @State private var isHovered = false
@@ -410,7 +430,7 @@ private struct RunningAppRow: View {
                     .imageScale(.large)
                 
                 // App Icon
-                AppIconView(path: app.path)
+                AppSelectionIconView(path: app.path, size: 28)
                     .frame(width: 28, height: 28)
                 
                 // App Info

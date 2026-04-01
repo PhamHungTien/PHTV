@@ -153,41 +153,39 @@ struct GIFOnlyView: View {
             onClose?()
 
             // Small delay to allow panel to close and frontmost app to regain focus
-            Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(150))
-                guard !Task.isCancelled else { return }
-                NSLog("[GIFPicker] Pasting GIF...")
+            try? await Task.sleep(for: .milliseconds(150))
+            guard !Task.isCancelled else { return }
+            NSLog("[GIFPicker] Pasting GIF...")
 
-                let source = CGEventSource(stateID: .hidSystemState)
+            let source = CGEventSource(stateID: .hidSystemState)
 
-                // Press Command
-                if let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: true) {
-                    cmdDown.flags = .maskCommand
-                    cmdDown.post(tap: .cghidEventTap)
-                }
-
-                // Press V
-                if let vDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true) {
-                    vDown.flags = .maskCommand
-                    vDown.post(tap: .cghidEventTap)
-                }
-
-                // Release V
-                if let vUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false) {
-                    vUp.flags = .maskCommand
-                    vUp.post(tap: .cghidEventTap)
-                }
-
-                // Release Command
-                if let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: false) {
-                    cmdUp.post(tap: .cghidEventTap)
-                }
-
-                NSLog("[GIFPicker] Paste command sent")
-
-                // Clean up file after paste
-                deleteFileAfterDelay(gifURL)
+            // Press Command
+            if let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: true) {
+                cmdDown.flags = .maskCommand
+                cmdDown.post(tap: .cghidEventTap)
             }
+
+            // Press V
+            if let vDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true) {
+                vDown.flags = .maskCommand
+                vDown.post(tap: .cghidEventTap)
+            }
+
+            // Release V
+            if let vUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false) {
+                vUp.flags = .maskCommand
+                vUp.post(tap: .cghidEventTap)
+            }
+
+            // Release Command
+            if let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: false) {
+                cmdUp.post(tap: .cghidEventTap)
+            }
+
+            NSLog("[GIFPicker] Paste command sent")
+
+            // Clean up file after paste
+            deleteFileAfterDelay(gifURL)
         }
     }
 }

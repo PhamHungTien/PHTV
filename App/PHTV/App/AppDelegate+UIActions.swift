@@ -14,7 +14,6 @@ private let phtvNotificationSettingsResetComplete = Notification.Name("SettingsR
 private let phtvNotificationShowSettings = Notification.Name("ShowSettings")
 private let phtvNotificationShowMacroTab = Notification.Name("ShowMacroTab")
 private let phtvNotificationShowAboutTab = Notification.Name("ShowAboutTab")
-private let convertToolDontAlertWhenCompletedKey = "convertToolDontAlertWhenCompleted"
 
 @MainActor @objc extension AppDelegate {
     func handleSettingsReset(_ notification: Notification?) {
@@ -40,7 +39,7 @@ private let convertToolDontAlertWhenCompletedKey = "convertToolDontAlertWhenComp
     func onQuickConvert() {
         if PHTVManager.quickConvert() {
             // Legacy behavior: show success alert only when this flag is true.
-            if UserDefaults.standard.bool(forKey: convertToolDontAlertWhenCompletedKey) {
+            if UserDefaults.standard.bool(forKey: UserDefaultsKey.convertToolDontAlertWhenCompleted) {
                 PHTVManager.showMessage(nil,
                                         message: "Chuyển mã thành công!",
                                         subMsg: "Kết quả đã được lưu trong clipboard.")

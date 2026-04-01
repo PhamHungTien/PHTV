@@ -470,10 +470,12 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
     }
 
     private func quickConvert(from source: Int, to target: Int) {
-        let original = UserDefaults.standard.integer(forKey: UserDefaultsKey.codeTable)
-        UserDefaults.standard.set(source, forKey: UserDefaultsKey.codeTable)
-        if PHTVManager.quickConvert() { NSSound.beep() }
-        UserDefaults.standard.set(original, forKey: UserDefaultsKey.codeTable)
+        if PHTVConvertToolTextConversionService.quickConvertClipboard(
+            fromCode: Int32(source),
+            toCode: Int32(target)
+        ) {
+            NSSound.beep()
+        }
     }
 }
 

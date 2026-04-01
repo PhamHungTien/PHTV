@@ -369,15 +369,13 @@ struct UnifiedContentView: View {
                 onClose?()
 
                 // Small delay to allow panel to close and frontmost app to regain focus
-                Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(150))
-                    guard !Task.isCancelled else { return }
-                    NSLog("[PHTPPicker] Pasting GIF...")
-                    simulatePaste()
+                try? await Task.sleep(for: .milliseconds(150))
+                guard !Task.isCancelled else { return }
+                NSLog("[PHTPPicker] Pasting GIF...")
+                simulatePaste()
 
-                    // Clean up file after paste
-                    deleteFileAfterDelay(tempURL)
-                }
+                // Clean up file after paste
+                deleteFileAfterDelay(tempURL)
             } else {
                 NSLog("[PHTPPicker] Failed to save GIF to temp location")
             }
@@ -412,15 +410,13 @@ struct UnifiedContentView: View {
                 onClose?()
 
                 // Small delay to allow panel to close and frontmost app to regain focus
-                Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(150))
-                    guard !Task.isCancelled else { return }
-                    NSLog("[PHTPPicker] Pasting Sticker...")
-                    simulatePaste()
+                try? await Task.sleep(for: .milliseconds(150))
+                guard !Task.isCancelled else { return }
+                NSLog("[PHTPPicker] Pasting Sticker...")
+                simulatePaste()
 
-                    // Clean up file after paste
-                    deleteFileAfterDelay(tempURL)
-                }
+                // Clean up file after paste
+                deleteFileAfterDelay(tempURL)
             } else {
                 NSLog("[PHTPPicker] Failed to save Sticker to temp location")
             }

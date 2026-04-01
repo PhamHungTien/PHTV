@@ -8,6 +8,14 @@
 
 import Foundation
 
+protocol AppSelectionEntry: Identifiable, Hashable {
+    init(bundleIdentifier: String, name: String, path: String)
+    init?(from url: URL)
+    var bundleIdentifier: String { get }
+    var name: String { get }
+    var path: String { get }
+}
+
 // MARK: - Excluded App Model
 
 struct ExcludedApp: Codable, Identifiable, Hashable {
@@ -61,3 +69,6 @@ struct SendKeyStepByStepApp: Codable, Identifiable, Hashable {
         self.path = url.path
     }
 }
+
+extension ExcludedApp: AppSelectionEntry {}
+extension SendKeyStepByStepApp: AppSelectionEntry {}

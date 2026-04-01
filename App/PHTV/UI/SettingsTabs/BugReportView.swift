@@ -764,10 +764,8 @@ struct BugReportView: View {
         guard !isLoadingLogs else { return }
         isLoadingLogs = true
 
-        Task.detached(priority: .userInitiated) {
-            let logs = autoreleasepool {
-                Self.fetchLogsSync(maxEntries: 80) // Giới hạn số log
-            }
+        Task(priority: .userInitiated) {
+            let logs = await Self.fetchLogsInBackground(maxEntries: 80)
             await MainActor.run {
                 self.logBuffer = logs
                 self.isLoadingLogs = false
@@ -780,11 +778,7 @@ struct BugReportView: View {
         guard !isLoadingLogs else { return }
         isLoadingLogs = true
 
-        let logs = await Task.detached(priority: .userInitiated) {
-            autoreleasepool {
-                Self.fetchLogsSync(maxEntries: 80) // Giới hạn số log
-            }
-        }.value
+        let logs = await Self.fetchLogsInBackground(maxEntries: 80)
 
         logBuffer = logs
         isLoadingLogs = false
@@ -956,6 +950,12 @@ struct BugReportView: View {
         }
 
         return buildFormattedOutput(entries: allLogEntries, stats: stats, maxEntries: maxEntries)
+    }
+
+    nonisolated private static func fetchLogsInBackground(maxEntries: Int = 100) async -> String {
+        autoreleasepool {
+            fetchLogsSync(maxEntries: maxEntries)
+        }
     }
 
     /// Lọc bỏ các log hệ thống không liên quan đến PHTV
@@ -1263,11 +1263,7 @@ struct BugReportView: View {
         // Lấy FULL logs cho clipboard (đầy đủ nhất)
         let logs: String
         if appState.includeLogs {
-            logs = await Task.detached(priority: .utility) {
-                autoreleasepool {
-                    Self.fetchLogsSync(maxEntries: 120)
-                }
-            }.value
+            logs = await Self.fetchLogsInBackground(maxEntries: 120)
             logBuffer = logs
         } else {
             logs = ""
@@ -1288,9 +1284,7 @@ struct BugReportView: View {
         // Lấy log quan trọng
         let importantLogs: String
         if appState.includeLogs {
-            importantLogs = await Task.detached(priority: .utility) {
-                Self.fetchImportantLogsOnly()
-            }.value
+            importantLogs = await Self.fetchImportantLogsInBackground()
         } else {
             importantLogs = ""
         }
@@ -1363,6 +1357,10 @@ struct BugReportView: View {
         }
 
         return result.joined(separator: "\n")
+    }
+
+    nonisolated private static func fetchImportantLogsInBackground() async -> String {
+        fetchImportantLogsOnly()
     }
 
     /// Tạo báo lỗi ngắn gọn để gửi trực tiếp qua URL (không cần paste)
@@ -1449,11 +1447,7 @@ struct BugReportView: View {
         // Lấy FULL logs cho email (không giới hạn như GitHub)
         let fullLogs: String
         if appState.includeLogs {
-            fullLogs = await Task.detached(priority: .utility) {
-                autoreleasepool {
-                    Self.fetchLogsSync(maxEntries: 120)
-                }
-            }.value
+            fullLogs = await Self.fetchLogsInBackground(maxEntries: 120)
         } else {
             fullLogs = ""
         }
@@ -1491,11 +1485,7 @@ struct BugReportView: View {
 
         let logs: String
         if appState.includeLogs {
-            logs = await Task.detached(priority: .utility) {
-                autoreleasepool {
-                    Self.fetchLogsSync(maxEntries: 120)
-                }
-            }.value
+            logs = await Self.fetchLogsInBackground(maxEntries: 120)
         } else {
             logs = ""
         }

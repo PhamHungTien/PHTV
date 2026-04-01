@@ -11,6 +11,7 @@ import AppKit
 
 struct SettingsWindowContent: View {
     @Environment(AppState.self) private var appState
+    @AppStorage(UserDefaultsKey.onboardingCompleted) private var hasCompletedOnboarding = false
     @State private var windowObserverTasks: [Task<Void, Never>] = []
     @State private var showOnboarding: Bool = false
     @State private var isClosingSettingsWindow: Bool = false
@@ -50,7 +51,7 @@ struct SettingsWindowContent: View {
                     .zIndex(1000)
             }
         }
-        .onAppear {
+        .task {
             isClosingSettingsWindow = false
             windowLifecycleToken = UUID()
             pendingCloseTask?.cancel()
@@ -285,7 +286,6 @@ struct SettingsWindowContent: View {
 
     /// Check if onboarding should be shown (first time user)
     private func checkAndShowOnboarding() {
-        let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: UserDefaultsKey.onboardingCompleted)
         if !hasCompletedOnboarding {
             onboardingTask?.cancel()
             // Small delay to ensure window is fully loaded

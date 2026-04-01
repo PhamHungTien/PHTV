@@ -71,10 +71,7 @@ extension AppDelegate {
         // Open settings window and navigate to System tab, then show convert tool
         if let openWindow = NSApp.windows.first(where: { $0.identifier?.rawValue.hasPrefix("settings") == true }) {
             // Set window level based on user preference
-            let alwaysOnTop = UserDefaults.standard.bool(
-                forKey: UserDefaultsKey.settingsWindowAlwaysOnTop,
-                default: Defaults.settingsWindowAlwaysOnTop
-            )
+            let alwaysOnTop = AppState.shared.settingsWindowAlwaysOnTop
             openWindow.level = alwaysOnTop ? .floating : .normal
 
             // FIX: Ensure robust window behavior

@@ -13,6 +13,31 @@ import Foundation
 private let phtvDefaultsKeyShowUIOnStartup = "ShowUIOnStartup"
 private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
 
+private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Bool, error: Error?) {
+    guard PHTVManager.isTCCEntryCorrupt() else {
+        return (false, nil)
+    }
+
+    NSLog("[Accessibility] ⚠️ TCC entry missing/corrupt - attempting automatic repair")
+
+    var objcError: NSError?
+    if PHTVManager.autoFixTCCEntry(withError: &objcError) {
+        NSLog("[Accessibility] ✅ TCC auto-repair succeeded, restarting tccd...")
+        PHTVManager.restartTCCDaemon()
+        PHTVManager.invalidatePermissionCache()
+        return (true, nil)
+    }
+
+    let repairError = objcError ?? NSError(
+        domain: "PHTV.TCCRepair",
+        code: -1,
+        userInfo: [NSLocalizedDescriptionKey: "Automatic TCC repair failed"]
+    )
+    NSLog("[Accessibility] ❌ TCC auto-repair failed: %@",
+          repairError.localizedDescription)
+    return (false, repairError)
+}
+
 
 @MainActor @objc extension AppDelegate {
     @nonobjc
@@ -238,9 +263,9 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
         }
         isAttemptingTCCRepair = true
 
-        Task.detached(priority: .userInitiated) {
-            let isCorrupt = PHTVManager.isTCCEntryCorrupt()
-            if !isCorrupt {
+        Task(priority: .userInitiated) {
+            let repairResult = await phtvAttemptTCCRepairInBackground()
+            if repairResult.error == nil && !repairResult.fixed {
                 await MainActor.run {
                     if let app = AppDelegate.current() {
                         app.isAttemptingTCCRepair = false
@@ -249,34 +274,11 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
                 return
             }
 
-            NSLog("[Accessibility] ⚠️ TCC entry missing/corrupt - attempting automatic repair")
-
-            var fixed = false
-            var repairError: Error?
-            var objcError: NSError?
-            if PHTVManager.autoFixTCCEntry(withError: &objcError) {
-                fixed = true
-            } else {
-                repairError = objcError ?? NSError(
-                    domain: "PHTV.TCCRepair",
-                    code: -1,
-                    userInfo: [NSLocalizedDescriptionKey: "Automatic TCC repair failed"]
-                )
-            }
-            if fixed {
-                NSLog("[Accessibility] ✅ TCC auto-repair succeeded, restarting tccd...")
-                PHTVManager.restartTCCDaemon()
-                PHTVManager.invalidatePermissionCache()
-            } else {
-                NSLog("[Accessibility] ❌ TCC auto-repair failed: %@",
-                      repairError?.localizedDescription ?? "unknown error")
-            }
-
             await MainActor.run {
                 guard let app = AppDelegate.current() else {
                     return
                 }
-                if fixed {
+                if repairResult.fixed {
                     app.startAccessibilityMonitoring(withInterval: 0.3, resetState: true)
                 }
                 app.didAttemptTCCRepairOnce = true

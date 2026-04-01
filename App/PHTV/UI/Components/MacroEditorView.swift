@@ -214,7 +214,7 @@ struct MacroEditorView: View {
         } message: {
             Text(errorMessage)
         }
-        .onAppear {
+        .task {
             // MACRO INTELLIGENCE: Check conflicts when opening editor
             updateConflicts()
         }

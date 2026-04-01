@@ -102,6 +102,99 @@ final class KlipyAPIClient {
         cleanOldCache()
     }
 
+    private nonisolated static func cleanOldCacheInBackground() async {
+        let fileManager = FileManager.default
+        let tempDir = fileManager.temporaryDirectory
+        let phtpDir = tempDir.appendingPathComponent("PHTPMedia", isDirectory: true)
+
+        if !fileManager.fileExists(atPath: phtpDir.path) {
+            try? fileManager.createDirectory(at: phtpDir, withIntermediateDirectories: true)
+            return
+        }
+
+        let sevenDaysAgo = Date().addingTimeInterval(-7 * 24 * 60 * 60)
+
+        guard let files = try? fileManager.contentsOfDirectory(
+            at: phtpDir,
+            includingPropertiesForKeys: [.creationDateKey, .fileSizeKey],
+            options: .skipsHiddenFiles
+        ) else {
+            return
+        }
+
+        var totalSize: Int64 = 0
+        var oldFiles: [URL] = []
+
+        for fileURL in files {
+            let ext = fileURL.pathExtension.lowercased()
+            guard ext == "gif" || ext == "png" else { continue }
+
+            if let attributes = try? fileManager.attributesOfItem(atPath: fileURL.path),
+               let creationDate = attributes[.creationDate] as? Date,
+               let fileSize = attributes[.size] as? Int64 {
+
+                totalSize += fileSize
+
+                if creationDate < sevenDaysAgo {
+                    oldFiles.append(fileURL)
+                }
+            }
+        }
+
+        for fileURL in oldFiles {
+            try? fileManager.removeItem(at: fileURL)
+        }
+
+        let maxCacheSize: Int64 = 100 * 1024 * 1024
+        let targetCacheSize: Int64 = 50 * 1024 * 1024
+
+        if totalSize > maxCacheSize {
+            let sortedFiles = files
+                .filter { url in
+                    let ext = url.pathExtension.lowercased()
+                    return ext == "gif" || ext == "png"
+                }
+                .compactMap { url -> (URL, Date)? in
+                    guard let attributes = try? fileManager.attributesOfItem(atPath: url.path),
+                          let creationDate = attributes[.creationDate] as? Date else {
+                        return nil
+                    }
+                    return (url, creationDate)
+                }
+                .sorted { $0.1 < $1.1 }
+
+            var currentSize = totalSize
+            for (fileURL, _) in sortedFiles {
+                if currentSize <= targetCacheSize {
+                    break
+                }
+
+                if let attributes = try? fileManager.attributesOfItem(atPath: fileURL.path),
+                   let fileSize = attributes[.size] as? Int64 {
+                    try? fileManager.removeItem(at: fileURL)
+                    currentSize -= fileSize
+                }
+            }
+
+            PHTVLogger.shared.info("[Klipy Cache] Cleaned cache from \(totalSize / 1024 / 1024)MB to \(currentSize / 1024 / 1024)MB")
+        }
+    }
+
+    private nonisolated static func trackAdEvent(
+        url: URL,
+        successMessage: String,
+        errorPrefix: String
+    ) async {
+        do {
+            _ = try await URLSession.shared.data(from: url)
+            PHTVLogger.shared.debug(successMessage)
+        } catch is CancellationError {
+            return
+        } catch {
+            PHTVLogger.shared.warning("\(errorPrefix): \(error.localizedDescription)")
+        }
+    }
+
     func saveAPIKey(_ key: String) {
         PHTVLogger.shared.warning("[Klipy] Please hardcode your app key in PHTVApp.swift")
     }
@@ -295,89 +388,8 @@ final class KlipyAPIClient {
     /// Clean old cached GIFs/Stickers (older than 7 days or if cache exceeds 100MB)
     /// Only cleans files in the PHTPMedia directory to avoid affecting other apps
     func cleanOldCache() {
-        Task.detached(priority: .background) {
-            let fileManager = FileManager.default
-            let tempDir = fileManager.temporaryDirectory
-            let phtpDir = tempDir.appendingPathComponent("PHTPMedia", isDirectory: true)
-
-            // Create directory if it doesn't exist
-            if !fileManager.fileExists(atPath: phtpDir.path) {
-                try? fileManager.createDirectory(at: phtpDir, withIntermediateDirectories: true)
-                return // Nothing to clean yet
-            }
-
-            let sevenDaysAgo = Date().addingTimeInterval(-7 * 24 * 60 * 60)
-
-            guard let files = try? fileManager.contentsOfDirectory(
-                at: phtpDir,
-                includingPropertiesForKeys: [.creationDateKey, .fileSizeKey],
-                options: .skipsHiddenFiles
-            ) else {
-                return
-            }
-
-            var totalSize: Int64 = 0
-            var oldFiles: [URL] = []
-
-            // Collect old files and calculate total size
-            for fileURL in files {
-                // Only process GIF and PNG files (our cached media)
-                let ext = fileURL.pathExtension.lowercased()
-                guard ext == "gif" || ext == "png" else { continue }
-
-                if let attributes = try? fileManager.attributesOfItem(atPath: fileURL.path),
-                   let creationDate = attributes[.creationDate] as? Date,
-                   let fileSize = attributes[.size] as? Int64 {
-
-                    totalSize += fileSize
-
-                    // Mark files older than 7 days for deletion
-                    if creationDate < sevenDaysAgo {
-                        oldFiles.append(fileURL)
-                    }
-                }
-            }
-
-            // Delete old files
-            for fileURL in oldFiles {
-                try? fileManager.removeItem(at: fileURL)
-            }
-
-            // If total cache size > 100MB, delete oldest files until under 50MB
-            let maxCacheSize: Int64 = 100 * 1024 * 1024 // 100MB
-            let targetCacheSize: Int64 = 50 * 1024 * 1024 // 50MB
-
-            if totalSize > maxCacheSize {
-                // Sort files by creation date (oldest first)
-                let sortedFiles = files
-                    .filter { url in
-                        let ext = url.pathExtension.lowercased()
-                        return ext == "gif" || ext == "png"
-                    }
-                    .compactMap { url -> (URL, Date)? in
-                        guard let attributes = try? fileManager.attributesOfItem(atPath: url.path),
-                              let creationDate = attributes[.creationDate] as? Date else {
-                            return nil
-                        }
-                        return (url, creationDate)
-                    }
-                    .sorted { $0.1 < $1.1 }
-
-                var currentSize = totalSize
-                for (fileURL, _) in sortedFiles {
-                    if currentSize <= targetCacheSize {
-                        break
-                    }
-
-                    if let attributes = try? fileManager.attributesOfItem(atPath: fileURL.path),
-                       let fileSize = attributes[.size] as? Int64 {
-                        try? fileManager.removeItem(at: fileURL)
-                        currentSize -= fileSize
-                    }
-                }
-
-                PHTVLogger.shared.info("[Klipy Cache] Cleaned cache from \(totalSize / 1024 / 1024)MB to \(currentSize / 1024 / 1024)MB")
-            }
+        Task(priority: .background) {
+            await Self.cleanOldCacheInBackground()
         }
     }
 
@@ -391,15 +403,12 @@ final class KlipyAPIClient {
 
         PHTVLogger.shared.info("[Klipy Ads] Tracking impression for ad: \(gif.id)")
 
-        Task.detached(priority: .utility) {
-            do {
-                _ = try await URLSession.shared.data(from: url)
-                PHTVLogger.shared.debug("[Klipy Ads] Impression tracked successfully")
-            } catch is CancellationError {
-                return
-            } catch {
-                PHTVLogger.shared.warning("[Klipy Ads] Impression tracking error: \(error.localizedDescription)")
-            }
+        Task(priority: .utility) {
+            await Self.trackAdEvent(
+                url: url,
+                successMessage: "[Klipy Ads] Impression tracked successfully",
+                errorPrefix: "[Klipy Ads] Impression tracking error"
+            )
         }
     }
 
@@ -411,15 +420,12 @@ final class KlipyAPIClient {
 
         PHTVLogger.shared.info("[Klipy Ads] Tracking click for ad: \(gif.id)")
 
-        Task.detached(priority: .utility) {
-            do {
-                _ = try await URLSession.shared.data(from: url)
-                PHTVLogger.shared.debug("[Klipy Ads] Click tracked successfully")
-            } catch is CancellationError {
-                return
-            } catch {
-                PHTVLogger.shared.warning("[Klipy Ads] Click tracking error: \(error.localizedDescription)")
-            }
+        Task(priority: .utility) {
+            await Self.trackAdEvent(
+                url: url,
+                successMessage: "[Klipy Ads] Click tracked successfully",
+                errorPrefix: "[Klipy Ads] Click tracking error"
+            )
         }
     }
 
