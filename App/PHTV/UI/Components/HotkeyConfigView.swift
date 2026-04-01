@@ -538,7 +538,7 @@ struct CustomSlider: NSViewRepresentable {
     class Coordinator: NSObject {
         var parent: CustomSlider
         var previousValue: Double?
-        var debounceTask: DispatchWorkItem?
+        var debounceTask: Task<Void, Never>?
         var lastColor: NSColor?
 
         init(_ parent: CustomSlider) {
@@ -563,14 +563,13 @@ struct CustomSlider: NSViewRepresentable {
             debounceTask?.cancel()
 
             // Use delay to detect end of editing (when user releases slider)
-            let task = DispatchWorkItem { [weak self] in
-                guard let self = self else { return }
+            debounceTask = Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .milliseconds(100))
+                guard let self, !Task.isCancelled else { return }
                 // Value hasn't changed for 0.1s, editing ended
                 self.parent.onEditingChanged?(false)
                 self.previousValue = nil
             }
-            debounceTask = task
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: task)
         }
     }
 }

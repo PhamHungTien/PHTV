@@ -52,11 +52,10 @@ struct AnimatedGIFView: NSViewRepresentable {
                 return
             }
 
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 nsView.image = image
             }
         }.resume()
     }
 }
-
 

@@ -20,7 +20,7 @@ struct UnifiedContentView: View {
 
     @State private var searchText = ""
     @State private var emojiSearchResults: [EmojiItem] = []
-    @State private var searchTask: DispatchWorkItem?
+    @State private var searchTask: Task<Void, Never>?
     @FocusState private var isSearchFocused: Bool
 
     private let iconColumns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 7)
@@ -53,16 +53,17 @@ struct UnifiedContentView: View {
                             klipyClient.stickerSearchResults = []
                         } else {
                             // Debounce search - wait for user to stop typing
-                            let task = DispatchWorkItem { [self] in
+                            searchTask = Task { @MainActor [self] in
+                                try? await Task.sleep(for: .milliseconds(350))
+                                guard !Task.isCancelled else { return }
                                 performSearch(query: newValue)
                             }
-                            searchTask = task
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: task)
                         }
                     }
                 if !searchText.isEmpty {
                     Button(action: {
                         searchTask?.cancel()
+                        searchTask = nil
                         searchText = ""
                         emojiSearchResults = []
                         isSearchFocused = true
@@ -326,7 +327,9 @@ struct UnifiedContentView: View {
         .onAppear {
             // Delay is required for nonactivating panels: the panel must become key
             // before SwiftUI's @FocusState can transfer focus to the text field.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(50))
+                guard !Task.isCancelled else { return }
                 isSearchFocused = true
             }
             // Fetch content if empty
@@ -378,7 +381,7 @@ struct UnifiedContentView: View {
                 return
             }
 
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 if let tempURL = saveTempGIF(data: data, filename: gif.slug) {
                     let pasteboard = NSPasteboard.general
                     pasteboard.clearContents()
@@ -389,7 +392,9 @@ struct UnifiedContentView: View {
                     onClose?()
 
                     // Small delay to allow panel to close and frontmost app to regain focus
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(150))
+                        guard !Task.isCancelled else { return }
                         NSLog("[PHTPPicker] Pasting GIF...")
                         simulatePaste()
 
@@ -431,7 +436,7 @@ struct UnifiedContentView: View {
                 return
             }
 
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 if let tempURL = saveTempSticker(data: data, filename: sticker.slug) {
                     NSLog("[PHTPPicker] Sticker downloaded: %@", sticker.slug)
 
@@ -443,7 +448,9 @@ struct UnifiedContentView: View {
                     onClose?()
 
                     // Small delay to allow panel to close and frontmost app to regain focus
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(150))
+                        guard !Task.isCancelled else { return }
                         NSLog("[PHTPPicker] Pasting Sticker...")
                         simulatePaste()
 

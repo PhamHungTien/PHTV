@@ -16,6 +16,7 @@ struct StickerOnlyView: View {
 
     @State private var klipyClient = KlipyAPIClient.shared
     @State private var searchText = ""
+    @State private var searchTask: Task<Void, Never>?
     @FocusState private var isSearchFocused: Bool
 
     private let columns = [
@@ -41,18 +42,22 @@ struct StickerOnlyView: View {
                     .font(.system(size: 13))
                     .focused($isSearchFocused)
                     .onChange(of: searchText) { _, newValue in
+                        searchTask?.cancel()
+                        searchTask = nil
                         if newValue.isEmpty {
                             klipyClient.stickerSearchResults = []
                         } else {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                if searchText == newValue {
-                                    klipyClient.searchStickers(query: newValue)
-                                }
+                            searchTask = Task { @MainActor in
+                                try? await Task.sleep(for: .milliseconds(500))
+                                guard !Task.isCancelled else { return }
+                                klipyClient.searchStickers(query: newValue)
                             }
                         }
                     }
                 if !searchText.isEmpty {
                     Button(action: {
+                        searchTask?.cancel()
+                        searchTask = nil
                         searchText = ""
                         isSearchFocused = true
                     }) {
@@ -146,7 +151,7 @@ struct StickerOnlyView: View {
                 return
             }
 
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 NSLog("[StickerPicker] Sticker downloaded: %@", sticker.slug)
 
                 let phtpDir = getPHTPMediaDirectory()
@@ -167,7 +172,9 @@ struct StickerOnlyView: View {
                 onClose?()
 
                 // Small delay to allow panel to close and frontmost app to regain focus
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(150))
+                    guard !Task.isCancelled else { return }
                     NSLog("[StickerPicker] Pasting Sticker...")
 
                     let source = CGEventSource(stateID: .hidSystemState)
@@ -204,4 +211,3 @@ struct StickerOnlyView: View {
         }.resume()
     }
 }
-

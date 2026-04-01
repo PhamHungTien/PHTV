@@ -19,7 +19,9 @@ final class PHTVSmartSwitchPersistenceService: NSObject {
         if Thread.isMainThread {
             action()
         } else {
-            DispatchQueue.main.async(execute: action)
+            Task { @MainActor in
+                action()
+            }
         }
     }
 

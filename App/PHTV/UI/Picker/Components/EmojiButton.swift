@@ -23,7 +23,9 @@ struct EmojiButton: View {
         Button(action: {
             isPressed = true
             action()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(100))
+                guard !Task.isCancelled else { return }
                 isPressed = false
             }
         }) {
@@ -58,4 +60,3 @@ struct EmojiButton: View {
         .help(emoji.name)
     }
 }
-

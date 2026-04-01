@@ -19,7 +19,7 @@ struct EmojiCategoriesView: View {
     @State private var selectedSubCategory: Int
     @State private var searchText = ""
     @State private var searchResults: [EmojiItem] = []
-    @State private var searchTask: DispatchWorkItem?
+    @State private var searchTask: Task<Void, Never>?
     @State private var isSearchFocused = false
     @State private var keyboardFocus: EmojiPickerKeyboardFocus = .search
 
@@ -144,7 +144,9 @@ struct EmojiCategoriesView: View {
                         .padding(.vertical, 8)
                     }
                     .onAppear {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .milliseconds(100))
+                            guard !Task.isCancelled else { return }
                             scrollProxy.scrollTo(selectedSubCategory, anchor: .center)
                         }
                     }
@@ -193,7 +195,9 @@ struct EmojiCategoriesView: View {
         }
         .onAppear {
             keyboardFocus = .search
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(50))
+                guard !Task.isCancelled else { return }
                 isSearchFocused = true
             }
         }
@@ -245,11 +249,11 @@ struct EmojiCategoriesView: View {
             return
         }
 
-        let task = DispatchWorkItem {
+        searchTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(300))
+            guard !Task.isCancelled else { return }
             searchResults = database.search(query)
         }
-        searchTask = task
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: task)
     }
 
     private func moveFocusIntoEmojiGrid() -> Bool {
@@ -364,8 +368,10 @@ private struct EmojiPickerSearchField: NSViewRepresentable {
         }
 
         if isFocused {
-            DispatchQueue.main.async {
-                guard let window = nsView.window,
+            Task { @MainActor [weak nsView] in
+                await Task.yield()
+                guard let nsView,
+                      let window = nsView.window,
                       window.firstResponder !== nsView.currentEditor() else { return }
                 window.makeFirstResponder(nsView)
             }
@@ -434,7 +440,9 @@ private struct EmojiGridKeyboardHandler: NSViewRepresentable {
         nsView.onDeleteFromSearch = onDeleteFromSearch
 
         if isActive {
-            DispatchQueue.main.async {
+            Task { @MainActor [weak nsView] in
+                await Task.yield()
+                guard let nsView else { return }
                 nsView.window?.makeFirstResponder(nsView)
             }
         }

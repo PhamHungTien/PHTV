@@ -16,6 +16,7 @@ struct GIFOnlyView: View {
 
     @State private var klipyClient = KlipyAPIClient.shared
     @State private var searchText = ""
+    @State private var searchTask: Task<Void, Never>?
     @FocusState private var isSearchFocused: Bool
 
     private let columns = [
@@ -41,18 +42,22 @@ struct GIFOnlyView: View {
                     .font(.system(size: 13))
                     .focused($isSearchFocused)
                     .onChange(of: searchText) { _, newValue in
+                        searchTask?.cancel()
+                        searchTask = nil
                         if newValue.isEmpty {
                             klipyClient.searchResults = []
                         } else {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                if searchText == newValue {
-                                    klipyClient.search(query: newValue)
-                                }
+                            searchTask = Task { @MainActor in
+                                try? await Task.sleep(for: .milliseconds(500))
+                                guard !Task.isCancelled else { return }
+                                klipyClient.search(query: newValue)
                             }
                         }
                     }
                 if !searchText.isEmpty {
                     Button(action: {
+                        searchTask?.cancel()
+                        searchTask = nil
                         searchText = ""
                         isSearchFocused = true
                     }) {
@@ -146,7 +151,7 @@ struct GIFOnlyView: View {
                 return
             }
 
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 let phtpDir = getPHTPMediaDirectory()
                 let gifURL = phtpDir.appendingPathComponent("\(gif.slug).gif")
 
@@ -166,7 +171,9 @@ struct GIFOnlyView: View {
                 onClose?()
 
                 // Small delay to allow panel to close and frontmost app to regain focus
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(150))
+                    guard !Task.isCancelled else { return }
                     NSLog("[GIFPicker] Pasting GIF...")
 
                     let source = CGEventSource(stateID: .hidSystemState)
@@ -203,4 +210,3 @@ struct GIFOnlyView: View {
         }.resume()
     }
 }
-
