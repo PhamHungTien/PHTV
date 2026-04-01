@@ -225,7 +225,7 @@ import Foundation
         }
 
         if let tap, !CGEvent.tapIsEnabled(tap: tap) {
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 if !runtimeState.withLock({ $0.isInited }) {
                     return
                 }
@@ -249,7 +249,7 @@ import Foundation
 
     @objc static func ensureEventTapAlive() {
         if !runtimeState.withLock({ $0.isInited }) {
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 if !runtimeState.withLock({ $0.isInited }) {
                     _ = initEventTap()
                 }
@@ -258,7 +258,7 @@ import Foundation
         }
 
         guard let tap = runtimeState.withLock({ $0.eventTap }) else {
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 _ = initEventTap()
             }
             return
@@ -275,7 +275,7 @@ import Foundation
             if CGEvent.tapIsEnabled(tap: tap) {
                 publishTypingReadiness(true)
             } else {
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     if !runtimeState.withLock({ $0.isInited }) {
                         return
                     }

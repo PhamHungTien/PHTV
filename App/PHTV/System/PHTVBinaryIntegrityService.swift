@@ -153,7 +153,7 @@ final class PHTVBinaryIntegrityService: NSObject {
 
         defaults.set(currentHash, forKey: binaryHashDefaultsKey)
 
-        DispatchQueue.main.async {
+        Task { @MainActor in
             NotificationCenter.default.post(
                 name: binaryChangedNotification,
                 object: [
@@ -203,7 +203,7 @@ final class PHTVBinaryIntegrityService: NSObject {
                 NSLog("[BinaryIntegrity] ⚠️ This may cause Accessibility permission issues")
                 NSLog("[BinaryIntegrity] ⚠️ Recommendation: Reinstall app from original build")
 
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     NotificationCenter.default.post(
                         name: binaryModifiedWarningNotification,
                         object: archInfo
@@ -217,7 +217,7 @@ final class PHTVBinaryIntegrityService: NSObject {
         let errorOutput = (verifyResult.output ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         NSLog("[BinaryIntegrity] ❌ Code signature verification failed: %@", errorOutput)
 
-        DispatchQueue.main.async {
+        Task { @MainActor in
             NotificationCenter.default.post(
                 name: binarySignatureInvalidNotification,
                 object: errorOutput

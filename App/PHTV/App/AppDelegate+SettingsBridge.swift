@@ -252,17 +252,15 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
 #endif
 
         if changedDockVisibility {
-            DispatchQueue.main.async {
-                if self.isSettingsWindowVisible() {
-                    NSLog("[AppDelegate] Settings window open (verified), keeping dock icon visible")
-                    return
-                }
-                let showOnDock = (new["showIconOnDock"]?.intValue ?? 0) != 0
-                let policy: NSApplication.ActivationPolicy = showOnDock ? .regular : .accessory
-                NSApp.setActivationPolicy(policy)
-                if showOnDock {
-                    NSApp.activate(ignoringOtherApps: true)
-                }
+            if self.isSettingsWindowVisible() {
+                NSLog("[AppDelegate] Settings window open (verified), keeping dock icon visible")
+                return
+            }
+            let showOnDock = (new["showIconOnDock"]?.intValue ?? 0) != 0
+            let policy: NSApplication.ActivationPolicy = showOnDock ? .regular : .accessory
+            NSApp.setActivationPolicy(policy)
+            if showOnDock {
+                NSApp.activate(ignoringOtherApps: true)
             }
         }
     }

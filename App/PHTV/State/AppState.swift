@@ -87,7 +87,8 @@ final class AppState {
     private func scheduleSubstateObservationInvalidation() {
         guard !isSubstateInvalidationScheduled else { return }
         isSubstateInvalidationScheduled = true
-        DispatchQueue.main.async { [weak self] in
+        Task { @MainActor [weak self] in
+            await Task.yield()
             guard let self = self else { return }
             self.isSubstateInvalidationScheduled = false
             self.substateObservationTick &+= 1
@@ -107,7 +108,8 @@ final class AppState {
         PHTVLogger.shared.debug("AppState init complete")
 
         // Delay observer setup to avoid crashes during initialization
-        DispatchQueue.main.async { [weak self] in
+        Task { @MainActor [weak self] in
+            await Task.yield()
             guard let self = self else { return }
             self.setupObservers()
             self.setupNotificationObservers()

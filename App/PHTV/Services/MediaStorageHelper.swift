@@ -25,7 +25,9 @@ func getPHTPMediaDirectory() -> URL {
 
 /// Delete a file after a delay to ensure paste is complete
 func deleteFileAfterDelay(_ fileURL: URL, delay: TimeInterval = 5.0) {
-    DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+    Task {
+        try? await Task.sleep(for: .seconds(delay))
+        guard !Task.isCancelled else { return }
         try? FileManager.default.removeItem(at: fileURL)
         NSLog("[PHTPPicker] Cleaned up file: %@", fileURL.lastPathComponent)
     }

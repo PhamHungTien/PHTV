@@ -20,13 +20,11 @@ private let convertToolDontAlertWhenCompletedKey = "convertToolDontAlertWhenComp
     func handleSettingsReset(_ notification: Notification?) {
         _ = notification
 
-        DispatchQueue.main.async {
-            NotificationCenter.default.post(name: phtvNotificationSettingsResetComplete, object: nil)
+        NotificationCenter.default.post(name: phtvNotificationSettingsResetComplete, object: nil)
 
-            #if DEBUG
-            NSLog("[Settings Reset] Reset complete, UI will refresh")
-            #endif
-        }
+        #if DEBUG
+        NSLog("[Settings Reset] Reset complete, UI will refresh")
+        #endif
     }
 
     func onShowMacroTab(_ notification: Notification?) {

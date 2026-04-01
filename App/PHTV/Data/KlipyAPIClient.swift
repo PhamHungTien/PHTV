@@ -160,7 +160,7 @@ final class KlipyAPIClient {
             } else {
                 PHTVLogger.shared.error("\(media.logPrefix) Invalid URL")
             }
-            DispatchQueue.main.async { [weak self] in
+            Task { @MainActor [weak self] in
                 self?.isLoading = false
             }
             return
@@ -187,7 +187,7 @@ final class KlipyAPIClient {
                 case .search:
                     PHTVLogger.shared.error("\(media.logPrefix) Error searching: \(error?.localizedDescription ?? "unknown")")
                 }
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     self.isLoading = false
                 }
                 return
@@ -201,7 +201,7 @@ final class KlipyAPIClient {
                 case .search:
                     PHTVLogger.shared.info("\(media.logPrefix) Search found \(result.data.data.count) \(media.itemDisplayName)")
                 }
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     switch target {
                     case .trendingGIFs:
                         self.trendingGIFs = result.data.data
@@ -216,7 +216,7 @@ final class KlipyAPIClient {
                 }
             } catch {
                 PHTVLogger.shared.error("\(media.logPrefix) Decode error: \(error.localizedDescription)")
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     self.isLoading = false
                 }
             }
