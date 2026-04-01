@@ -130,7 +130,7 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
         PHTVManager.invalidatePermissionCache()
 
         Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 300_000_000) // 0.3s settle
+            try? await Task.sleep(for: .milliseconds(300))
             self.checkAccessibilityStatus()
         }
     }

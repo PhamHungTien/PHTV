@@ -176,7 +176,7 @@ final class UIState {
     private func scheduleHotkeyChangeNotification() {
         hotkeyNotificationTask?.cancel()
         hotkeyNotificationTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(Timing.hotkeyDebounce) * 1_000_000)
+            try? await Task.sleep(for: .milliseconds(Int64(Timing.hotkeyDebounce)))
             guard let self, !Task.isCancelled else { return }
             let switchKeyStatus = self.encodeSwitchKeyStatus()
             self.liveLog("posting HotkeyChanged (0x\(String(switchKeyStatus, radix: 16)))")
@@ -190,7 +190,7 @@ final class UIState {
     private func scheduleBeepVolumeSave() {
         beepVolumeSaveTask?.cancel()
         beepVolumeSaveTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(Timing.audioSliderDebounce) * 1_000_000)
+            try? await Task.sleep(for: .milliseconds(Int64(Timing.audioSliderDebounce)))
             guard let self, !Task.isCancelled else { return }
             SettingsObserver.shared.suspendNotifications()
             let defaults = UserDefaults.standard
@@ -201,7 +201,7 @@ final class UIState {
     private func scheduleMenuBarIconSizeSave() {
         menuBarIconSizeSaveTask?.cancel()
         menuBarIconSizeSaveTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(Timing.settingsDebounce) * 1_000_000)
+            try? await Task.sleep(for: .milliseconds(Int64(Timing.settingsDebounce)))
             guard let self, !Task.isCancelled else { return }
             SettingsObserver.shared.suspendNotifications()
             let defaults = UserDefaults.standard

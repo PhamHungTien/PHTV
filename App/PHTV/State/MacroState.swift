@@ -81,7 +81,7 @@ final class MacroState {
     private func scheduleMacroSettingsNotification() {
         macroSettingsNotificationTask?.cancel()
         macroSettingsNotificationTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(Timing.settingsDebounce) * 1_000_000)
+            try? await Task.sleep(for: .milliseconds(Int64(Timing.settingsDebounce)))
             guard self != nil, !Task.isCancelled else { return }
             NotificationCenter.default.post(name: NotificationName.phtvSettingsChanged, object: nil)
         }
@@ -90,7 +90,7 @@ final class MacroState {
     private func scheduleSystemTextReplacementNotification() {
         systemTextReplacementNotificationTask?.cancel()
         systemTextReplacementNotificationTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(Timing.settingsDebounce) * 1_000_000)
+            try? await Task.sleep(for: .milliseconds(Int64(Timing.settingsDebounce)))
             guard self != nil, !Task.isCancelled else { return }
             NotificationCenter.default.post(name: NotificationName.phtvSettingsChanged, object: nil)
             NotificationCenter.default.post(name: NotificationName.macrosUpdated, object: nil)
@@ -101,7 +101,7 @@ final class MacroState {
         emojiHotkeyNotificationTask?.cancel()
         emojiHotkeyNotificationTask = Task { @MainActor [weak self] in
             guard self != nil else { return }
-            try? await Task.sleep(nanoseconds: UInt64(Timing.settingsDebounce) * 1_000_000)
+            try? await Task.sleep(for: .milliseconds(Int64(Timing.settingsDebounce)))
             guard self != nil, !Task.isCancelled else { return }
             PHTVLogger.shared.debug("[MacroState] Posting EmojiHotkeySettingsChanged notification")
             NotificationCenter.default.post(name: NotificationName.emojiHotkeySettingsChanged, object: nil)

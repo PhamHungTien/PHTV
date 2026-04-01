@@ -93,7 +93,7 @@ final class PHTVTCCNotificationService: NSObject {
         )
 
         Task { @MainActor in
-            try? await Task.sleep(nanoseconds: UInt64(settledCheckDelay * 1_000_000_000))
+            try? await Task.sleep(for: .seconds(settledCheckDelay))
 
             // AXIsProcessTrusted() is the Apple-canonical check for accessibility permission.
             // Avoid calling canCreateEventTap() here: it may fail due to macOS propagation

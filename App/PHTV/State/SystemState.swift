@@ -210,7 +210,7 @@ final class SystemState {
     private func scheduleSystemSettingsNotification() {
         systemSettingsNotificationTask?.cancel()
         systemSettingsNotificationTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(Timing.settingsDebounce) * 1_000_000)
+            try? await Task.sleep(for: .milliseconds(Int64(Timing.settingsDebounce)))
             guard self != nil, !Task.isCancelled else { return }
             NotificationCenter.default.post(name: NotificationName.phtvSettingsChanged, object: nil)
         }

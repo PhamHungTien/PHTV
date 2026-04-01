@@ -53,7 +53,7 @@ final class ClipboardHotkeyManager {
         }
 
         initialSyncTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: 100_000_000)
+            try? await Task.sleep(for: .milliseconds(100))
             guard let self, !Task.isCancelled else { return }
             self.syncFromAppState(AppState.shared)
         }
@@ -62,7 +62,7 @@ final class ClipboardHotkeyManager {
     private func handleSettingsChanged() {
         settingsRefreshTask?.cancel()
         settingsRefreshTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: 50_000_000)
+            try? await Task.sleep(for: .milliseconds(50))
             guard let self, !Task.isCancelled else { return }
             self.syncFromAppState(AppState.shared)
         }
