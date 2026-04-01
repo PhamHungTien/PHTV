@@ -7,13 +7,13 @@
 //
 
 import AppKit
-import Combine
 
 // MARK: - Klipy GIF API
 
 /// Klipy API client for fetching GIFs - Free unlimited API
+@Observable
 @MainActor
-class KlipyAPIClient: ObservableObject {
+final class KlipyAPIClient {
     static let shared = KlipyAPIClient()
 
     private enum MediaKind {
@@ -80,12 +80,12 @@ class KlipyAPIClient: ObservableObject {
         return newId
     }()
 
-    @Published var trendingGIFs: [KlipyGIF] = []
-    @Published var searchResults: [KlipyGIF] = []
-    @Published var trendingStickers: [KlipyGIF] = []
-    @Published var stickerSearchResults: [KlipyGIF] = []
-    @Published var isLoading = false
-    @Published var needsAPIKey: Bool = false
+    var trendingGIFs: [KlipyGIF] = []
+    var searchResults: [KlipyGIF] = []
+    var trendingStickers: [KlipyGIF] = []
+    var stickerSearchResults: [KlipyGIF] = []
+    var isLoading = false
+    var needsAPIKey: Bool = false
 
     // Recent items tracking
     private let maxRecentItems = 20

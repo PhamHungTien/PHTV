@@ -35,7 +35,7 @@ struct ClipboardHistoryView: View {
     let onItemSelected: (ClipboardHistoryItem) -> Void
     let onClose: () -> Void
 
-    @ObservedObject private var manager = ClipboardHistoryManager.shared
+    private var manager = ClipboardHistoryManager.shared
     @State private var hoveredItemId: UUID?
     @State private var selectedItemId: UUID?
     @State private var searchText = ""
@@ -117,10 +117,10 @@ struct ClipboardHistoryView: View {
                 isSearchFieldFocused = true
             }
         }
-        .onChange(of: filteredItems.map(\.id)) { _ in
+        .onChange(of: filteredItems.map(\.id)) { _, _ in
             syncSelectionWithFilteredItems()
         }
-        .onChange(of: isSearchFieldFocused) { isFocused in
+        .onChange(of: isSearchFieldFocused) { _, isFocused in
             if isFocused {
                 keyboardFocus = .search
             }
@@ -255,7 +255,7 @@ struct ClipboardHistoryView: View {
                     .frame(width: 0, height: 0)
                 )
             }
-            .onChange(of: selectedItemId) { newValue in
+            .onChange(of: selectedItemId) { _, newValue in
                 guard let newValue else { return }
                 DispatchQueue.main.async {
                     withAnimation(.easeInOut(duration: 0.12)) {
@@ -293,21 +293,21 @@ struct ClipboardHistoryView: View {
 
     // MARK: - Empty State
 
+    @ViewBuilder
     private var emptyState: some View {
-        VStack(spacing: 12) {
-            Spacer()
-            Image(systemName: "doc.on.clipboard")
-                .font(.system(size: 40))
-                .foregroundStyle(.tertiary)
-            Text(searchText.isEmpty ? "Chưa có nội dung nào" : "Không tìm thấy")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.secondary)
-            Text(searchText.isEmpty ? "Nội dung bạn sao chép sẽ xuất hiện ở đây" : "Thử từ khoá khác")
-                .font(.system(size: 12))
-                .foregroundStyle(.tertiary)
-            Spacer()
+        if searchText.isEmpty {
+            ContentUnavailableView {
+                Label("Chưa có nội dung nào", systemImage: "doc.text.viewfinder")
+            } description: {
+                Text("Nội dung bạn sao chép sẽ xuất hiện ở đây")
+            }
+        } else {
+            ContentUnavailableView {
+                Label("Không tìm thấy", systemImage: "magnifyingglass")
+            } description: {
+                Text("Thử từ khoá khác")
+            }
         }
-        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Selection Logic

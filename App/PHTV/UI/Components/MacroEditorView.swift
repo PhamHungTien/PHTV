@@ -61,7 +61,7 @@ struct MacroEditorView: View {
                     TextField("Ví dụ: tvn (Việt Nam)", text: $macroName)
                         .settingsTextField()
                         .textFieldStyle(.roundedBorder)
-                        .onChange(of: macroName) { _ in
+                        .onChange(of: macroName) { _, _ in
                             updateConflicts()
                         }
                 }

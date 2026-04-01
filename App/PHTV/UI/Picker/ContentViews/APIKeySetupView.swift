@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct APIKeySetupView: View {
-    @ObservedObject var klipyClient: KlipyAPIClient
+    var klipyClient: KlipyAPIClient
 
     var body: some View {
         VStack(spacing: 16) {

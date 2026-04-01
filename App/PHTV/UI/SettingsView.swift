@@ -27,13 +27,13 @@ struct SettingsView: View {
 
     var body: some View {
         settingsSplitView
-            .onChange(of: appState.showIconOnDock) { newValue in
+            .onChange(of: appState.showIconOnDock) { _, newValue in
                 // When dock icon toggle is changed, update immediately and save
                 let appDelegate = AppDelegate.current()
                 NSLog("[SettingsView] onChange - showIconOnDock changed to %@", newValue ? "true" : "false")
                 appDelegate?.showIcon(newValue)  // This one saves to UserDefaults
             }
-            .onChange(of: selectedTab) { newValue in
+            .onChange(of: selectedTab) { _, newValue in
                 // Release cached app icons when leaving icon-heavy tabs.
                 if lastTab == .apps || lastTab == .typing {
                     AppIconCache.shared.clear()
@@ -165,11 +165,9 @@ struct SettingsView: View {
                 endPoint: .bottom
             )
 
-            if #available(macOS 12.0, *) {
-                Rectangle()
-                    .fill(.thinMaterial)
-                    .opacity(0.55)
-            }
+            Rectangle()
+                .fill(.thinMaterial)
+                .opacity(0.55)
         }
         .ignoresSafeArea()
     }

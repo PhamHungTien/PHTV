@@ -14,7 +14,7 @@ import Carbon
 struct StickerOnlyView: View {
     var onClose: (() -> Void)?
 
-    @StateObject private var klipyClient = KlipyAPIClient.shared
+    @State private var klipyClient = KlipyAPIClient.shared
     @State private var searchText = ""
     @FocusState private var isSearchFocused: Bool
 
@@ -40,7 +40,7 @@ struct StickerOnlyView: View {
                     .textFieldStyle(.plain)
                     .font(.system(size: 13))
                     .focused($isSearchFocused)
-                    .onChange(of: searchText) { newValue in
+                    .onChange(of: searchText) { _, newValue in
                         if newValue.isEmpty {
                             klipyClient.stickerSearchResults = []
                         } else {

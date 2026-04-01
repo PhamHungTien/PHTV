@@ -124,7 +124,7 @@ struct BugReportView: View {
         } message: {
             Text(savedLocation.isEmpty ? "Đã lưu báo cáo." : "Đã lưu tại: \(savedLocation)")
         }
-        .onChange(of: appState.includeLogs) { newValue in
+        .onChange(of: appState.includeLogs) { _, newValue in
             if newValue {
                 // Load log khi người dùng bật, tránh chiếm RAM nếu không cần
                 Task { await loadLogsIfNeeded() }
@@ -864,59 +864,57 @@ struct BugReportView: View {
         var stats = LogStats()
 
         // 1. Lấy log từ OSLogStore (unified logging)
-        if #available(macOS 12.0, *) {
-            do {
-                let store = try OSLogStore(scope: .currentProcessIdentifier)
-                // Lấy log trong 15 phút gần đây để giảm RAM khi mở tab
-                let position = store.position(date: Date().addingTimeInterval(-15 * 60))
-                let entries = try store.getEntries(at: position)
+        do {
+            let store = try OSLogStore(scope: .currentProcessIdentifier)
+            // Lấy log trong 15 phút gần đây để giảm RAM khi mở tab
+            let position = store.position(date: Date().addingTimeInterval(-15 * 60))
+            let entries = try store.getEntries(at: position)
 
-                var regularLogCount = 0
-                let maxRegularLogs = maxEntries
-                let maxTotalLogs = maxEntries * 2
+            var regularLogCount = 0
+            let maxRegularLogs = maxEntries
+            let maxTotalLogs = maxEntries * 2
 
-                for entry in entries {
-                    if let logEntry = entry as? OSLogEntryLog {
-                        var message = logEntry.composedMessage
-                        guard !message.isEmpty else { continue }
+            for entry in entries {
+                if let logEntry = entry as? OSLogEntryLog {
+                    var message = logEntry.composedMessage
+                    guard !message.isEmpty else { continue }
 
-                        let isErrorOrWarning = logEntry.level == .error || logEntry.level == .fault || logEntry.level == .notice
+                    let isErrorOrWarning = logEntry.level == .error || logEntry.level == .fault || logEntry.level == .notice
 
-                        // Lọc bỏ log hệ thống không liên quan
-                        if shouldFilterOut(message: message, subsystem: logEntry.subsystem, level: logEntry.level) {
-                            continue
+                    // Lọc bỏ log hệ thống không liên quan
+                    if shouldFilterOut(message: message, subsystem: logEntry.subsystem, level: logEntry.level) {
+                        continue
+                    }
+
+                    // LUÔN giữ lại tất cả errors và warnings - không bao giờ bỏ sót
+                    // Chỉ giới hạn số lượng log thường
+                    if !isErrorOrWarning {
+                        if regularLogCount >= maxRegularLogs {
+                            continue // Bỏ qua log thường nếu đã đủ, nhưng vẫn tiếp tục tìm errors/warnings
                         }
+                        regularLogCount += 1
+                    }
 
-                        // LUÔN giữ lại tất cả errors và warnings - không bao giờ bỏ sót
-                        // Chỉ giới hạn số lượng log thường
-                        if !isErrorOrWarning {
-                            if regularLogCount >= maxRegularLogs {
-                                continue // Bỏ qua log thường nếu đã đủ, nhưng vẫn tiếp tục tìm errors/warnings
-                            }
-                            regularLogCount += 1
-                        }
+                    if message.count > 400 {
+                        message = String(message.prefix(400)) + "..."
+                    }
 
-                        if message.count > 400 {
-                            message = String(message.prefix(400)) + "..."
-                        }
+                    let category = detectCategory(from: message)
+                    let logEntryItem = LogEntry(
+                        date: logEntry.date,
+                        level: logEntry.level,
+                        category: category,
+                        message: message
+                    )
+                    allLogEntries.append(logEntryItem)
 
-                        let category = detectCategory(from: message)
-                        let logEntryItem = LogEntry(
-                            date: logEntry.date,
-                            level: logEntry.level,
-                            category: category,
-                            message: message
-                        )
-                        allLogEntries.append(logEntryItem)
-
-                        if allLogEntries.count >= maxTotalLogs {
-                            break
-                        }
+                    if allLogEntries.count >= maxTotalLogs {
+                        break
                     }
                 }
-            } catch {
-                // Ignore OSLogStore errors, fallback to file logs
             }
+        } catch {
+            // Ignore OSLogStore errors, fallback to file logs
         }
 
         // 2. Lấy log từ file (nếu PHTVLogger được sử dụng)
@@ -1316,36 +1314,34 @@ struct BugReportView: View {
         var errors: [(time: String, message: String)] = []
         var warnings: [(time: String, message: String)] = []
 
-        if #available(macOS 12.0, *) {
-            do {
-                let store = try OSLogStore(scope: .currentProcessIdentifier)
-                let position = store.position(date: Date().addingTimeInterval(-30 * 60))
-                let entries = try store.getEntries(at: position)
+        do {
+            let store = try OSLogStore(scope: .currentProcessIdentifier)
+            let position = store.position(date: Date().addingTimeInterval(-30 * 60))
+            let entries = try store.getEntries(at: position)
 
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "HH:mm:ss"
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "HH:mm:ss"
 
-                let skipPatterns = ["HALC_Proxy", "IOWorkLoop", "AddInstanceForFactory", "Reporter disconnected"]
+            let skipPatterns = ["HALC_Proxy", "IOWorkLoop", "AddInstanceForFactory", "Reporter disconnected"]
 
-                for entry in entries {
-                    if let logEntry = entry as? OSLogEntryLog {
-                        let message = logEntry.composedMessage
-                        guard !message.isEmpty else { continue }
-                        if skipPatterns.contains(where: { message.contains($0) }) { continue }
+            for entry in entries {
+                if let logEntry = entry as? OSLogEntryLog {
+                    let message = logEntry.composedMessage
+                    guard !message.isEmpty else { continue }
+                    if skipPatterns.contains(where: { message.contains($0) }) { continue }
 
-                        let time = dateFormatter.string(from: logEntry.date)
-                        // Giới hạn 120 ký tự cho URL
-                        let truncatedMsg = message.count > 120 ? String(message.prefix(120)) + "..." : message
+                    let time = dateFormatter.string(from: logEntry.date)
+                    // Giới hạn 120 ký tự cho URL
+                    let truncatedMsg = message.count > 120 ? String(message.prefix(120)) + "..." : message
 
-                        if logEntry.level == .error || logEntry.level == .fault {
-                            errors.append((time, truncatedMsg))
-                        } else if logEntry.level == .notice {
-                            warnings.append((time, truncatedMsg))
-                        }
+                    if logEntry.level == .error || logEntry.level == .fault {
+                        errors.append((time, truncatedMsg))
+                    } else if logEntry.level == .notice {
+                        warnings.append((time, truncatedMsg))
                     }
                 }
-            } catch {}
-        }
+            }
+        } catch {}
 
         // Tổng tối đa 20 chỗ, ưu tiên lỗi trước
         let maxTotal = 20

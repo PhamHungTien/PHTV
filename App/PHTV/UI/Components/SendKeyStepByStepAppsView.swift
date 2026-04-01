@@ -24,10 +24,14 @@ struct SendKeyStepByStepAppsView: View {
 
             // Apps List
             if appState.sendKeyStepByStepApps.isEmpty {
-                EmptySendKeyStepByStepAppsView(
-                    onPickRunningApps: { showingRunningApps = true },
-                    onPickFromApplications: { showingFilePicker = true }
-                )
+                ContentUnavailableView {
+                    Label("Chưa có ứng dụng nào", systemImage: "keyboard.badge.ellipsis")
+                } description: {
+                    Text("Thêm ứng dụng để tự động bật gửi theo từng phím")
+                } actions: {
+                    Button("Đang chạy") { showingRunningApps = true }
+                    Button("Applications") { showingFilePicker = true }
+                }
             } else {
                 SendKeyStepByStepAppsList(apps: appState.sendKeyStepByStepApps) { app in
                     appState.removeSendKeyStepByStepApp(app)
@@ -108,68 +112,6 @@ struct SendKeyStepByStepAppsView: View {
             }
             .menuStyle(.borderlessButton)
             .fixedSize()
-        }
-    }
-}
-
-// MARK: - Empty State View
-private struct EmptySendKeyStepByStepAppsView: View {
-    let onPickRunningApps: () -> Void
-    let onPickFromApplications: () -> Void
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "keyboard.badge.ellipsis")
-                .font(.system(size: 24))
-                .foregroundStyle(.tertiary)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Chưa có ứng dụng nào")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.secondary)
-
-                HStack(spacing: 6) {
-                    Button("Đang chạy") {
-                        onPickRunningApps()
-                    }
-                    .buttonStyle(.plain)
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color.accentColor)
-
-                    Text("•")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.tertiary)
-
-                    Button("Applications") {
-                        onPickFromApplications()
-                    }
-                    .buttonStyle(.plain)
-                    .font(.system(size: 11))
-                    .foregroundStyle(Color.accentColor)
-                }
-            }
-
-            Spacer()
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background {
-            if #available(macOS 26.0, *), SettingsVisualEffects.enableMaterials {
-                PHTVRoundedRect(cornerRadius: 8)
-                    .fill(.ultraThinMaterial)
-                    .settingsGlassEffect(cornerRadius: 8)
-                    .overlay(
-                        PHTVRoundedRect(cornerRadius: 8)
-                            .stroke(Color.gray.opacity(0.15), lineWidth: 1)
-                    )
-            } else {
-                ZStack {
-                    PHTVRoundedRect(cornerRadius: 8)
-                        .fill(Color(NSColor.controlBackgroundColor))
-                    PHTVRoundedRect(cornerRadius: 8)
-                        .stroke(Color.gray.opacity(0.15), lineWidth: 1)
-                }
-            }
         }
     }
 }

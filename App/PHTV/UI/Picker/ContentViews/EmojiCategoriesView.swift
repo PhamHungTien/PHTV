@@ -183,7 +183,7 @@ struct EmojiCategoriesView: View {
                         onDeleteFromSearch: deleteBackwardFromSearch
                     )
                 )
-                .onChange(of: focusedEmojiKey) { newValue in
+                .onChange(of: focusedEmojiKey) { _, newValue in
                     guard let newValue else { return }
                     withAnimation(.easeInOut(duration: 0.15)) {
                         scrollProxy.scrollTo(newValue, anchor: .center)
@@ -197,14 +197,14 @@ struct EmojiCategoriesView: View {
                 isSearchFocused = true
             }
         }
-        .onChange(of: searchText) { newValue in
+        .onChange(of: searchText) { _, newValue in
             keyboardFocus = .search
             scheduleSearch(for: newValue)
         }
-        .onChange(of: selectedSubCategory) { newValue in
+        .onChange(of: selectedSubCategory) { _, newValue in
             UserDefaults.standard.set(newValue, forKey: EmojiCategoriesView.lastSubCategoryKey)
         }
-        .onChange(of: displayedEmojiKeys) { _ in
+        .onChange(of: displayedEmojiKeys) { _, _ in
             synchronizeGridFocusWithDisplayedEmojis()
         }
     }

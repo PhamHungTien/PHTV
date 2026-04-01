@@ -94,12 +94,8 @@ extension View {
                 .disableAutocorrection(true)
         }
         #elseif os(macOS)
-        if #available(macOS 12.0, *) {
-            self
-                .disableAutocorrection(true)
-        } else {
-            self
-        }
+        self
+            .disableAutocorrection(true)
         #else
         self
         #endif
@@ -554,15 +550,13 @@ struct SettingsViewBackground: ViewModifier {
                 endRadius: 520
             )
 
-            if #available(macOS 12.0, *) {
-                if SettingsVisualEffects.enableMaterials, !reduceTransparency {
-                    Rectangle()
-                        .fill(.ultraThinMaterial)
-                        .opacity(colorScheme == .light ? 0.6 : 0.25)
-                } else {
-                    Rectangle()
-                        .fill(Color(NSColor.controlBackgroundColor).opacity(colorScheme == .light ? 0.45 : 0.2))
-                }
+            if SettingsVisualEffects.enableMaterials, !reduceTransparency {
+                Rectangle()
+                    .fill(.ultraThinMaterial)
+                    .opacity(colorScheme == .light ? 0.6 : 0.25)
+            } else {
+                Rectangle()
+                    .fill(Color(NSColor.controlBackgroundColor).opacity(colorScheme == .light ? 0.45 : 0.2))
             }
             
             // Block drag on background
@@ -589,48 +583,23 @@ extension View {
         modifier(SettingsViewBackground())
     }
 
-    /// Conditionally applies searchable modifier (macOS 12+)
-    /// On macOS 11, search is not available - the view is returned unchanged
-    @ViewBuilder
+    /// Applies searchable modifier to the sidebar
     func conditionalSearchable(text: Binding<String>, prompt: String) -> some View {
-        if #available(macOS 12.0, *) {
-            self.searchable(text: text, placement: .sidebar, prompt: prompt)
-        } else {
-            self
-        }
+        self.searchable(text: text, placement: .sidebar, prompt: prompt)
     }
 
-    /// Compatible foregroundStyle - uses foregroundColor on macOS 11
-    @ViewBuilder
+    /// Compatible foregroundStyle
     func compatForegroundStyle<S: ShapeStyle>(_ style: S) -> some View {
-        if #available(macOS 12.0, *) {
-            self.foregroundStyle(style)
-        } else {
-            if let color = style as? Color {
-                self.foregroundColor(color)
-            } else {
-                self
-            }
-        }
+        self.foregroundStyle(style)
     }
 
     /// Compatible foregroundStyle for HierarchicalShapeStyle
-    @ViewBuilder
     func compatForegroundPrimary() -> some View {
-        if #available(macOS 12.0, *) {
-            self.foregroundStyle(.primary)
-        } else {
-            self.foregroundColor(.primary)
-        }
+        self.foregroundStyle(.primary)
     }
 
-    @ViewBuilder
     func compatForegroundSecondary() -> some View {
-        if #available(macOS 12.0, *) {
-            self.foregroundStyle(.secondary)
-        } else {
-            self.foregroundColor(.secondary)
-        }
+        self.foregroundStyle(.secondary)
     }
 
     /// Groups glass elements to align Liquid Glass rendering when available.
@@ -726,9 +695,7 @@ struct FloatingGlassCard<Content: View>: View {
         content
             .background {
                 // Simple material background - no glass effect
-                if #available(macOS 12.0, *),
-                   SettingsVisualEffects.enableMaterials,
-                   !reduceTransparency {
+                if SettingsVisualEffects.enableMaterials, !reduceTransparency {
                     PHTVRoundedRect(cornerRadius: cornerRadius)
                         .fill(.regularMaterial)
                 } else {

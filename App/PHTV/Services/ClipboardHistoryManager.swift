@@ -33,11 +33,12 @@ enum ClipboardHistoryStoragePolicy {
     }
 }
 
+@Observable
 @MainActor
-final class ClipboardHistoryManager: ObservableObject {
+final class ClipboardHistoryManager {
     static let shared = ClipboardHistoryManager()
 
-    @Published private(set) var items: [ClipboardHistoryItem] = []
+    private(set) var items: [ClipboardHistoryItem] = []
 
     private let showDebounceInterval: CFAbsoluteTime = 0.20
     private var panel: FloatingPanel<ClipboardHistoryView>?

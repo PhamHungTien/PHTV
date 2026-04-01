@@ -51,63 +51,17 @@ extension Color {
     }
 }
 
-// MARK: - Color Compatibility for macOS 11+
+// MARK: - Color Compatibility
 
 extension Color {
-    /// Create Color from NSColor (compatible with macOS 11+)
+    /// Create Color from NSColor
     static func fromNSColor(_ nsColor: NSColor) -> Color {
-        if #available(macOS 12.0, *) {
-            return Color(nsColor: nsColor)
-        } else {
-            // Fallback for macOS 11: convert via RGB
-            let rgbColor = nsColor.usingColorSpace(.sRGB) ?? nsColor
-            return Color(
-                red: Double(rgbColor.redComponent),
-                green: Double(rgbColor.greenComponent),
-                blue: Double(rgbColor.blueComponent),
-                opacity: Double(rgbColor.alphaComponent)
-            )
-        }
+        return Color(nsColor: nsColor)
     }
 
-    // Colors only available in macOS 12+ - define fallbacks
-    static var compatTeal: Color {
-        if #available(macOS 12.0, *) {
-            return .teal
-        } else {
-            return Color(red: 0.35, green: 0.68, blue: 0.68)
-        }
-    }
-
-    static var compatIndigo: Color {
-        if #available(macOS 12.0, *) {
-            return .indigo
-        } else {
-            return Color(red: 0.29, green: 0.0, blue: 0.51)
-        }
-    }
-
-    static var compatMint: Color {
-        if #available(macOS 12.0, *) {
-            return .mint
-        } else {
-            return Color(red: 0.0, green: 0.78, blue: 0.75)
-        }
-    }
-
-    static var compatCyan: Color {
-        if #available(macOS 12.0, *) {
-            return .cyan
-        } else {
-            return Color(red: 0.0, green: 0.75, blue: 0.85)
-        }
-    }
-
-    static var compatBrown: Color {
-        if #available(macOS 12.0, *) {
-            return .brown
-        } else {
-            return Color(red: 0.6, green: 0.4, blue: 0.2)
-        }
-    }
+    static var compatTeal: Color { .teal }
+    static var compatIndigo: Color { .indigo }
+    static var compatMint: Color { .mint }
+    static var compatCyan: Color { .cyan }
+    static var compatBrown: Color { .brown }
 }

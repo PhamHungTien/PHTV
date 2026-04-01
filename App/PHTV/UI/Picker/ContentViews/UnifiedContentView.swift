@@ -15,7 +15,7 @@ struct UnifiedContentView: View {
     var onEmojiSelected: (String) -> Void
     var onClose: (() -> Void)?
 
-    @StateObject private var klipyClient = KlipyAPIClient.shared
+    @State private var klipyClient = KlipyAPIClient.shared
     private let database = EmojiDatabase.shared
 
     @State private var searchText = ""
@@ -42,7 +42,7 @@ struct UnifiedContentView: View {
                     .textFieldStyle(.plain)
                     .font(.system(size: 13))
                     .focused($isSearchFocused)
-                    .onChange(of: searchText) { newValue in
+                    .onChange(of: searchText) { _, newValue in
                         // Cancel previous search task
                         searchTask?.cancel()
 

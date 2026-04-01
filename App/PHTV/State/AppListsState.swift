@@ -7,19 +7,19 @@
 //
 
 import SwiftUI
-import Combine
 
 /// Manages excluded apps and send key step by step apps
+@Observable
 @MainActor
-final class AppListsState: ObservableObject {
+final class AppListsState {
     // Excluded apps - auto switch to English when these apps are active
-    @Published var excludedApps: [ExcludedApp] = []
+    var excludedApps: [ExcludedApp] = []
 
     // Send key step by step apps - auto enable send key step by step when these apps are active
-    @Published var sendKeyStepByStepApps: [SendKeyStepByStepApp] = []
+    var sendKeyStepByStepApps: [SendKeyStepByStepApp] = []
 
     // Upper case excluded apps - disable uppercase first char for these apps
-    @Published var upperCaseExcludedApps: [ExcludedApp] = []
+    var upperCaseExcludedApps: [ExcludedApp] = []
 
     var isLoadingSettings = false
 

@@ -94,7 +94,7 @@ struct SettingsWindowContent: View {
             pendingCloseWorkItem = closeWorkItem
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15, execute: closeWorkItem)
         }
-        .onChange(of: appState.settingsWindowAlwaysOnTop) { _ in
+        .onChange(of: appState.settingsWindowAlwaysOnTop) { _, _ in
             // Update window level when user toggles the setting
             updateSettingsWindowLevel()
         }

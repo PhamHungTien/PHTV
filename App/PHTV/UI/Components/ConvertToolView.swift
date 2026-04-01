@@ -185,7 +185,7 @@ struct ConvertToolView: View {
         }
         .pickerStyle(.segmented)
         .labelsHidden()
-        .onChange(of: inputMode) { _ in
+        .onChange(of: inputMode) { _, _ in
             loadClipboardContent()
         }
     }
