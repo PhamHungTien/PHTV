@@ -375,10 +375,6 @@ final class AppState: ObservableObject {
             self?.scheduleObjectWillChangePropagation()
         }.store(in: &cancellables)
 
-        appListsState.objectWillChange.sink { [weak self] _ in
-            self?.scheduleObjectWillChangePropagation()
-        }.store(in: &cancellables)
-
         // Observer for global isEnabled (language toggle)
         $isEnabled
             .dropFirst()

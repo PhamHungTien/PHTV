@@ -35,7 +35,7 @@ struct ClipboardHistoryView: View {
     let onItemSelected: (ClipboardHistoryItem) -> Void
     let onClose: () -> Void
 
-    private var manager = ClipboardHistoryManager.shared
+    var manager = ClipboardHistoryManager.shared
     @State private var hoveredItemId: UUID?
     @State private var selectedItemId: UUID?
     @State private var searchText = ""
