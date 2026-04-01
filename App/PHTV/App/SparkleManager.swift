@@ -106,6 +106,8 @@ private final class SparkleUserDriverDelegate: NSObject, SPUStandardUserDriverDe
 
     private var trackedWindows: [TrackedWindow] = []
     private var isUpdateSessionActive = false
+    /// Cascade scan delays (seconds) after session begins, to catch windows that appear slightly late
+    private static let scanDelays: [TimeInterval] = [0.05, 0.15, 0.35, 0.7, 1.2, 2.0, 3.5]
 
     override init() {
         super.init()
@@ -137,17 +139,19 @@ private final class SparkleUserDriverDelegate: NSObject, SPUStandardUserDriverDe
         }
     }
 
+    /// Called after the alert is already on screen — scan immediately to pin it on top.
     nonisolated func standardUserDriverDidShowModalAlert() {
         Task { @MainActor [weak self] in
-            self?.beginUpdateSession()
+            guard let self else { return }
+            // Session may already be active; just promote whatever Sparkle window is now visible.
+            self.isUpdateSessionActive = true
+            self.bringUpdatePopupToFront()
         }
     }
 
     nonisolated func standardUserDriverWillFinishUpdateSession() {
         Task { @MainActor [weak self] in
-            guard let self else {
-                return
-            }
+            guard let self else { return }
             self.isUpdateSessionActive = false
             self.restoreWindowLevels()
         }
@@ -158,13 +162,13 @@ private final class SparkleUserDriverDelegate: NSObject, SPUStandardUserDriverDe
 
         center.addObserver(
             self,
-            selector: #selector(handleWindowNotification(_:)),
+            selector: #selector(handleWindowBecameKey(_:)),
             name: NSWindow.didBecomeMainNotification,
             object: nil
         )
         center.addObserver(
             self,
-            selector: #selector(handleWindowNotification(_:)),
+            selector: #selector(handleWindowBecameKey(_:)),
             name: NSWindow.didBecomeKeyNotification,
             object: nil
         )
@@ -177,38 +181,48 @@ private final class SparkleUserDriverDelegate: NSObject, SPUStandardUserDriverDe
     }
 
     @objc
-    private func handleWindowNotification(_ notification: Notification) {
-        guard isUpdateSessionActive else {
-            return
-        }
-        guard let window = notification.object as? NSWindow, isSparkleWindow(window) else {
-            return
-        }
-
+    private func handleWindowBecameKey(_ notification: Notification) {
+        guard isUpdateSessionActive,
+              let window = notification.object as? NSWindow,
+              isSparkleWindow(window) else { return }
         promoteWindow(window)
     }
 
     @objc
     private func handleAppDidBecomeActive(_ notification: Notification) {
         _ = notification
-        guard isUpdateSessionActive else {
-            return
-        }
+        guard isUpdateSessionActive else { return }
         bringUpdatePopupToFront()
     }
 
     private func beginUpdateSession() {
+        guard !isUpdateSessionActive else {
+            // Already active — just re-scan in case a new window appeared.
+            bringUpdatePopupToFront()
+            return
+        }
         isUpdateSessionActive = true
         bringUpdatePopupToFront()
+        // Schedule cascade scans so windows that appear with a delay are still promoted.
+        scheduleCascadeScans()
+    }
+
+    /// Fires `bringUpdatePopupToFront` at each delay offset so late-appearing Sparkle
+    /// windows (e.g. the "No updates available" alert) are always pinned on top.
+    private func scheduleCascadeScans() {
+        for delay in Self.scanDelays {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                guard let self, self.isUpdateSessionActive else { return }
+                self.bringUpdatePopupToFront()
+            }
+        }
     }
 
     private func bringUpdatePopupToFront() {
         NSApp.activate(ignoringOtherApps: true)
-
         for window in NSApp.windows where window.isVisible && isSparkleWindow(window) {
             promoteWindow(window)
         }
-
         trackedWindows.removeAll { $0.window == nil }
     }
 
@@ -216,38 +230,41 @@ private final class SparkleUserDriverDelegate: NSObject, SPUStandardUserDriverDe
         if !trackedWindows.contains(where: { $0.window === window }) {
             trackedWindows.append(TrackedWindow(window: window, originalLevel: window.level))
         }
-
         window.level = .floating
         window.collectionBehavior.insert(.fullScreenAuxiliary)
         window.orderFrontRegardless()
     }
 
     private func restoreWindowLevels() {
-        for trackedWindow in trackedWindows {
-            guard let window = trackedWindow.window else {
-                continue
-            }
-            window.level = trackedWindow.originalLevel
+        for tracked in trackedWindows {
+            guard let window = tracked.window else { continue }
+            window.level = tracked.originalLevel
         }
         trackedWindows.removeAll()
     }
 
+    /// Detects whether a window belongs to Sparkle by checking bundle IDs and class names.
     private func isSparkleWindow(_ window: NSWindow) -> Bool {
+        let sparkleKeywords = ["sparkle", "spu", "suupdater"]
+
+        func matchesSparkle(_ string: String) -> Bool {
+            let lower = string.lowercased()
+            return sparkleKeywords.contains(where: { lower.contains($0) })
+        }
+
         if let controller = window.windowController {
-            let controllerClass = type(of: controller)
-            let controllerBundleID = Bundle(for: controllerClass).bundleIdentifier ?? ""
-            if controllerBundleID.localizedCaseInsensitiveContains("sparkle") {
-                return true
-            }
+            let cls = type(of: controller)
+            if matchesSparkle(Bundle(for: cls).bundleIdentifier ?? "") { return true }
+            if matchesSparkle(String(describing: cls)) { return true }
         }
 
         if let delegate = window.delegate {
-            let delegateClass = type(of: delegate)
-            let delegateBundleID = Bundle(for: delegateClass).bundleIdentifier ?? ""
-            if delegateBundleID.localizedCaseInsensitiveContains("sparkle") {
-                return true
-            }
+            let cls = type(of: delegate)
+            if matchesSparkle(Bundle(for: cls).bundleIdentifier ?? "") { return true }
+            if matchesSparkle(String(describing: cls)) { return true }
         }
+
+        if matchesSparkle(String(describing: type(of: window))) { return true }
 
         return false
     }
