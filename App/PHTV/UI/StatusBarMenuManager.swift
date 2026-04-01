@@ -430,8 +430,7 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
     }
 
     @objc private func openAccessibilityPrefs() {
-        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") else { return }
-        NSWorkspace.shared.open(url)
+        PHTVAccessibilityService.openAccessibilityPreferences()
     }
 
     @objc private func openInputMonitoringPrefs() {

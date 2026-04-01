@@ -26,8 +26,7 @@ final class SettingsObserver {
         observationTask = Task { @MainActor [weak self] in
             guard let self else { return }
             for await _ in NotificationCenter.default.notifications(
-                named: UserDefaults.didChangeNotification,
-                object: UserDefaults.standard
+                named: UserDefaults.didChangeNotification
             ) {
                 guard !Task.isCancelled else { break }
                 self.didChangeSettings()

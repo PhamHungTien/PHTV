@@ -795,11 +795,7 @@ struct BugReportView: View {
 
         Task(priority: .userInitiated) {
             let logs = await Self.fetchLogsInBackground(maxEntries: 80)
-            await MainActor.run {
-                self.logBuffer = logs
-                self.isLoadingLogs = false
-                self.hasLoadedLogsOnce = true
-            }
+            applyLoadedLogs(logs)
         }
     }
 
@@ -1529,6 +1525,13 @@ struct BugReportView: View {
     @MainActor
     private func openExternalURL(_ url: URL) {
         openURL(url)
+    }
+
+    @MainActor
+    private func applyLoadedLogs(_ logs: String) {
+        logBuffer = logs
+        isLoadingLogs = false
+        hasLoadedLogsOnce = true
     }
 
     private func applyTemplateIfNeeded() {

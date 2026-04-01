@@ -106,8 +106,8 @@ class EmojiPickerManager {
         restoreFocusTask = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .milliseconds(50))
             guard !Task.isCancelled, let app = self?.previousApp else { return }
-                NSLog("[PHTPPicker] Restoring focus to: %@", app.localizedName ?? "Unknown")
-                app.activate(options: [.activateIgnoringOtherApps])
+            NSLog("[PHTPPicker] Restoring focus to: %@", app.localizedName ?? "Unknown")
+            _ = app.activate()
         }
     }
 

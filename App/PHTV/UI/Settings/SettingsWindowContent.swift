@@ -237,9 +237,16 @@ struct SettingsWindowContent: View {
         object: AnyObject? = nil,
         handler: @escaping @MainActor (Notification) -> Void
     ) -> Task<Void, Never> {
-        Task { @MainActor in
-            for await notification in NotificationCenter.default.notifications(named: name, object: object) {
+        let observedObjectID = object.map(ObjectIdentifier.init)
+        return Task { @MainActor in
+            for await notification in NotificationCenter.default.notifications(named: name) {
                 guard !Task.isCancelled else { break }
+                if let observedObjectID {
+                    guard let notificationObject = notification.object as AnyObject?,
+                          ObjectIdentifier(notificationObject) == observedObjectID else {
+                        continue
+                    }
+                }
                 handler(notification)
             }
         }

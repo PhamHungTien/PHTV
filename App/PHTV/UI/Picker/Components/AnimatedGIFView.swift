@@ -50,15 +50,18 @@ struct AnimatedGIFView: NSViewRepresentable {
                 return
             }
 
-            await MainActor.run {
-                guard !Task.isCancelled else { return }
-                nsView.image = image
-            }
+            guard !Task.isCancelled else { return }
+            Self.apply(image: image, to: nsView)
         }
     }
 
     static func dismantleNSView(_ nsView: NSImageView, coordinator: Coordinator) {
         coordinator.loadTask?.cancel()
         nsView.image = nil
+    }
+
+    @MainActor
+    private static func apply(image: NSImage, to nsView: NSImageView) {
+        nsView.image = image
     }
 }

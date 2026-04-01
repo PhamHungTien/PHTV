@@ -263,28 +263,28 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
         }
         isAttemptingTCCRepair = true
 
-        Task(priority: .userInitiated) {
+        Task(priority: .userInitiated) { [weak self] in
             let repairResult = await phtvAttemptTCCRepairInBackground()
+            guard let self else { return }
             if repairResult.error == nil && !repairResult.fixed {
-                await MainActor.run {
-                    if let app = AppDelegate.current() {
-                        app.isAttemptingTCCRepair = false
-                    }
-                }
+                self.finishPendingTCCRepairWithoutChanges()
                 return
             }
 
-            await MainActor.run {
-                guard let app = AppDelegate.current() else {
-                    return
-                }
-                if repairResult.fixed {
-                    app.startAccessibilityMonitoring(withInterval: 0.3, resetState: true)
-                }
-                app.didAttemptTCCRepairOnce = true
-                app.isAttemptingTCCRepair = false
-            }
+            self.finishTCCRepairAttempt(fixed: repairResult.fixed)
         }
+    }
+
+    private func finishPendingTCCRepairWithoutChanges() {
+        isAttemptingTCCRepair = false
+    }
+
+    private func finishTCCRepairAttempt(fixed: Bool) {
+        if fixed {
+            startAccessibilityMonitoring(withInterval: 0.3, resetState: true)
+        }
+        didAttemptTCCRepairOnce = true
+        isAttemptingTCCRepair = false
     }
 
     func checkAccessibilityAndRestart() {

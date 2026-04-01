@@ -77,10 +77,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         object: AnyObject? = nil,
         handler: @escaping @MainActor (AppDelegate, Notification) -> Void
     ) -> Task<Void, Never> {
-        Task { @MainActor [weak self] in
+        let observedObjectID = object.map(ObjectIdentifier.init)
+        return Task { @MainActor [weak self] in
             guard let self else { return }
-            for await notification in center.notifications(named: name, object: object) {
+            for await notification in center.notifications(named: name) {
                 guard !Task.isCancelled else { break }
+                if let observedObjectID {
+                    guard let notificationObject = notification.object as AnyObject?,
+                          ObjectIdentifier(notificationObject) == observedObjectID else {
+                        continue
+                    }
+                }
                 handler(self, notification)
             }
         }
