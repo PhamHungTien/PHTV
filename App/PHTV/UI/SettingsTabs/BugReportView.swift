@@ -72,6 +72,7 @@ private enum BugArea: String, CaseIterable, Identifiable {
 
 struct BugReportView: View {
     @Environment(AppState.self) private var appState
+    @Environment(\.openURL) private var openURL
     private var bindable: Bindable<AppState> { Bindable(appState) }
 
     @State private var bugTitle: String = ""
@@ -1327,7 +1328,7 @@ struct BugReportView: View {
         let urlString = "https://github.com/phamhungtien/PHTV/issues/new?title=\(title)&body=\(encodedBody)"
 
         if let url = URL(string: urlString) {
-            NSWorkspace.shared.open(url)
+            openExternalURL(url)
         }
 
         isSending = false
@@ -1500,7 +1501,7 @@ struct BugReportView: View {
         """.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
 
         if let url = URL(string: "mailto:phamhungtien.contact@gmail.com?subject=\(subject)&body=\(body)") {
-            NSWorkspace.shared.open(url)
+            openExternalURL(url)
         }
 
         isSending = false
@@ -1523,6 +1524,11 @@ struct BugReportView: View {
         showingSaveReportSheet = true
 
         isSending = false
+    }
+
+    @MainActor
+    private func openExternalURL(_ url: URL) {
+        openURL(url)
     }
 
     private func applyTemplateIfNeeded() {

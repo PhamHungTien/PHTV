@@ -11,6 +11,7 @@ import WebKit
 
 struct ReleaseNotesView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
     let info: UpdateBannerInfo
 
     init(info: UpdateBannerInfo) {
@@ -80,7 +81,7 @@ struct ReleaseNotesView: View {
 
                 Button {
                     if let url = URL(string: info.downloadURL) {
-                        NSWorkspace.shared.open(url)
+                        openURL(url)
                     }
                 } label: {
                     Label("Tải xuống", systemImage: "arrow.down.circle.fill")

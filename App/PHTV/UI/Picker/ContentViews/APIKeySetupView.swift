@@ -9,6 +9,7 @@
 import SwiftUI
 
 struct APIKeySetupView: View {
+    @Environment(\.openURL) private var openURL
     var klipyClient: KlipyAPIClient
 
     var body: some View {
@@ -50,7 +51,7 @@ struct APIKeySetupView: View {
 
                 Button("Mở Klipy Partner Portal") {
                     if let url = URL(string: "https://partner.klipy.com/api-keys") {
-                        NSWorkspace.shared.open(url)
+                        openURL(url)
                     }
                 }
                 .buttonStyle(.link)

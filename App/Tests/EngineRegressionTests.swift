@@ -626,6 +626,14 @@ final class EngineRegressionTests: XCTestCase {
         runSpaceCase("qwrty", expectRestore: false, autoRestoreMode: .englishOnly)
     }
 
+    func testNonVietnameseModeDoesNotRestoreWhenTypingWordAlreadyBecomesEnglishOnSpace() {
+        runSpaceCase("offfice", expectRestore: false, autoRestoreMode: .nonVietnamese)
+    }
+
+    func testNonVietnameseModeDoesNotRestoreWhenTypingWordAlreadyBecomesEnglishOnComma() {
+        runWordBreakCase("offfice", expectRestore: false, autoRestoreMode: .nonVietnamese, breakKey: KEY_COMMA)
+    }
+
     func testAllowConsonantDoesNotBlockEnglishRestoreForExtendedInitialOnSpace() {
         runSpaceCase("zoom", expectRestore: true, allowConsonantZFWJ: true)
         runSpaceCase("zoom", expectRestore: true, allowConsonantZFWJ: false)

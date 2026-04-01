@@ -611,6 +611,7 @@ struct WelcomeStepView: View {
 }
 
 struct SystemSettingsStepView: View {
+    @Environment(\.openURL) private var openURL
     @State private var showZoom = false
 
     var body: some View {
@@ -686,7 +687,7 @@ struct SystemSettingsStepView: View {
 
             Button("Mở Cài đặt Bàn phím") {
                 if let url = URL(string: "x-apple.systempreferences:com.apple.preference.keyboard") {
-                    NSWorkspace.shared.open(url)
+                    openURL(url)
                 }
             }
             .buttonStyle(OnboardingPrimaryButtonStyle())

@@ -1874,6 +1874,13 @@ final class PHTVVietnameseEngine {
         return false
     }
 
+    func isPureEnglishWordFromTypingWord(_ length: Int) -> Bool {
+        guard length > 0 else { return false }
+        guard !hasVietnameseTransformsInTypingWord(length) else { return false }
+        let typingSlice = Array(typingWord.prefix(length))
+        return detectorIsEnglishWord(typingSlice, length)
+    }
+
     func evaluateAutoRestoreEnglishDecision() -> (restoreStateIndex: Int, canAutoRestore: Bool, shouldRestore: Bool) {
         let englishStateIndex = getEnglishLookupStateLength()
         let isPureLetter = englishStateIndex == stateIdx && hasOnlyEnglishLetterKeyStates(stateIdx)
@@ -1908,6 +1915,9 @@ final class PHTVVietnameseEngine {
                 ) {
                 shouldRestoreEnglish = false
             }
+            if shouldRestoreEnglish && isPureEnglishWordFromTypingWord(idx) {
+                shouldRestoreEnglish = false
+            }
         } else {
             let hasVietnameseDictionaryMatch = hasVietnameseDictionaryMatchForAutoRestore(
                 keySlice,
@@ -1936,8 +1946,7 @@ final class PHTVVietnameseEngine {
                     isPureEnglish = false
                     break
                 }
-                let twSlice = Array(typingWord.prefix(idx))
-                if isPureEnglish && detectorIsEnglishWord(twSlice, idx) {
+                if isPureEnglish && isPureEnglishWordFromTypingWord(idx) {
                     shouldRestoreEnglish = false
                 }
             }
