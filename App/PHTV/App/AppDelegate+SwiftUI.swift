@@ -104,10 +104,8 @@ extension AppDelegate {
     
     // Sync state to SwiftUI
     @objc func syncStateToSwiftUI() {
-        DispatchQueue.main.async {
-            _ = AppState.shared
-            // Sync current state from Objective-C to SwiftUI
-            // This will be called when settings change in Objective-C side
-        }
+        _ = AppState.shared
+        // Sync current state from Objective-C to SwiftUI
+        // This will be called when settings change in Objective-C side
     }
 }

@@ -112,7 +112,8 @@ struct ClipboardHistoryView: View {
             clipboardBackground
         }
         .onAppear {
-            DispatchQueue.main.async {
+            Task { @MainActor in
+                await Task.yield()
                 keyboardFocus = .search
                 isSearchFieldFocused = true
             }
@@ -257,7 +258,8 @@ struct ClipboardHistoryView: View {
             }
             .onChange(of: selectedItemId) { _, newValue in
                 guard let newValue else { return }
-                DispatchQueue.main.async {
+                Task { @MainActor in
+                    await Task.yield()
                     withAnimation(.easeInOut(duration: 0.12)) {
                         scrollProxy.scrollTo(newValue, anchor: .center)
                     }
@@ -584,8 +586,10 @@ private struct ClipboardHistorySearchField: NSViewRepresentable {
         }
 
         if isFocused {
-            DispatchQueue.main.async {
-                guard let window = nsView.window,
+            Task { @MainActor [weak nsView] in
+                await Task.yield()
+                guard let nsView,
+                      let window = nsView.window,
                       window.firstResponder !== nsView.currentEditor() else { return }
                 window.makeFirstResponder(nsView)
             }
@@ -661,7 +665,9 @@ private struct ClipboardHistoryListKeyboardHandler: NSViewRepresentable {
         nsView.onInsertTextIntoSearch = onInsertTextIntoSearch
 
         if isActive {
-            DispatchQueue.main.async {
+            Task { @MainActor [weak nsView] in
+                await Task.yield()
+                guard let nsView else { return }
                 nsView.window?.makeFirstResponder(nsView)
             }
         }

@@ -345,9 +345,7 @@ struct KeyEventHandler: NSViewRepresentable {
                 isRecording = false
             }
         }
-        DispatchQueue.main.async {
-            context.coordinator.view = view
-        }
+        context.coordinator.view = view
         return view
     }
     
@@ -387,8 +385,7 @@ class KeyCaptureView: NSView {
         let keyCode = UInt16(event.keyCode)
         let keyName = getKeyName(for: keyCode)
 
-        // Call with animation on main thread
-        DispatchQueue.main.async { [weak self] in
+        Task { @MainActor [weak self] in
             self?.onKeyPress?(keyCode, keyName)
         }
     }
@@ -1129,9 +1126,7 @@ struct EmojiKeyEventHandler: NSViewRepresentable {
                 isRecording = false
             }
         }
-        DispatchQueue.main.async {
-            context.coordinator.view = view
-        }
+        context.coordinator.view = view
         return view
     }
 
@@ -1170,8 +1165,7 @@ class EmojiKeyCaptureView: NSView {
 
         let keyCode = UInt16(event.keyCode)
 
-        // Call with animation on main thread
-        DispatchQueue.main.async { [weak self] in
+        Task { @MainActor [weak self] in
             self?.onKeyPress?(keyCode)
         }
     }

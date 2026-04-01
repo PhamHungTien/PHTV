@@ -46,11 +46,11 @@ struct UpdateBannerView: View {
             }
             .transition(.move(edge: .top).combined(with: .opacity))
             .animation(.phtvMorph, value: appState.showCustomUpdateBanner)
-            .onAppear {
-                // Trigger bounce animation once on appear
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    animateIcon = true
-                }
+            .task(id: info.version) {
+                animateIcon = false
+                try? await Task.sleep(for: .milliseconds(300))
+                guard !Task.isCancelled else { return }
+                animateIcon = true
             }
             .sheet(isPresented: $showReleaseNotes) {
                 ReleaseNotesView(info: info)

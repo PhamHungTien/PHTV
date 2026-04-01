@@ -417,7 +417,9 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
 
     @objc private func openAbout() {
         SettingsWindowOpener.requestOpenWindow()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(300))
+            guard !Task.isCancelled else { return }
             NotificationCenter.default.post(name: NotificationName.showAboutTab, object: nil)
         }
     }
@@ -460,7 +462,9 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
 
     @objc private func openConvertTool() {
         SettingsWindowOpener.requestOpenWindow()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(250))
+            guard !Task.isCancelled else { return }
             NotificationCenter.default.post(name: NotificationName.showConvertToolSheet, object: nil)
         }
     }

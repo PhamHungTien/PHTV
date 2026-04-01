@@ -581,8 +581,7 @@ struct ConvertToolView: View {
             pasteboard.setString(textToConvert, forType: .string)
         }
 
-        // Execute on main queue because settings observers are @MainActor.
-        DispatchQueue.main.async {
+        Task { @MainActor in
             let defaults = UserDefaults.standard
             let originalFromCode = defaults.integer(forKey: Self.convertToolFromCodeKey)
             let originalToCode = defaults.integer(forKey: Self.convertToolToCodeKey)
