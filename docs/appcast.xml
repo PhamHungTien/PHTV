@@ -7,6 +7,15 @@
         <language>vi</language>
         <!-- Most recent version first -->
         <item>
+            <title>2.9.2</title>
+            <pubDate>Wed, 01 Apr 2026 14:54:27 +0000</pubDate>
+            <sparkle:version>259</sparkle:version>
+            <sparkle:shortVersionString>2.9.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v2.9.2/PHTV-2.9.2-arm64.dmg" length="9392598" type="application/octet-stream" sparkle:edSignature="rqkSY3w97G/R+8Fk4stDz+Aias8fh6lrxo71o3IrwRRxrmSJuPxBMh7WRmEdu8AIPhJxfCTjdueOVu/Mey4vBw=="/>
+        </item>
+        <item>
             <title>2.9.1</title>
             <pubDate>Wed, 01 Apr 2026 12:06:44 +0000</pubDate>
             <sparkle:version>258</sparkle:version>
