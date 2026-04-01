@@ -26,6 +26,11 @@ struct MacroSettingsView: View {
     @State private var selectedCategoryId: UUID? = nil  // nil = show all
     @State private var showingAddCategory = false
     @State private var editingCategory: MacroCategory? = nil  // nil = not editing, set to show edit sheet
+    @State private var showingExportSheet = false
+    @State private var showingImportSheet = false
+    @State private var exportDocument = MacroExportDocument(data: Data())
+    @State private var fileTransferErrorMessage = ""
+    @State private var showFileTransferError = false
     private var bindable: Bindable<AppState> { Bindable(appState) }
 
     private static var cachedMacrosData: Data?
@@ -314,6 +319,34 @@ struct MacroSettingsView: View {
             .padding(20)
         }
         .settingsBackground()
+        .alert("Không thể xử lý file", isPresented: $showFileTransferError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(fileTransferErrorMessage)
+        }
+        .fileExporter(
+            isPresented: $showingExportSheet,
+            document: exportDocument,
+            contentType: .json,
+            defaultFilename: "phtv-macros.json"
+        ) { result in
+            switch result {
+            case .success(let url):
+                PHTVLogger.shared.macro("[MacroSettings] Exported \(macros.count) macros to: \(url.path)")
+            case .failure(let error):
+                if (error as? CocoaError)?.code == .userCancelled {
+                    return
+                }
+                presentFileTransferError("Không thể xuất file: \(error.localizedDescription)")
+            }
+        }
+        .fileImporter(
+            isPresented: $showingImportSheet,
+            allowedContentTypes: [.json, .commaSeparatedText, .plainText],
+            allowsMultipleSelection: false
+        ) { result in
+            handleMacroImport(result)
+        }
         .sheet(isPresented: $showingAddMacro) {
             MacroEditorView(
                 isPresented: $showingAddMacro,
@@ -521,139 +554,151 @@ struct MacroSettingsView: View {
 
     private func exportMacros() {
         guard !macros.isEmpty else { return }
-
-        let panel = NSSavePanel()
-        panel.allowedContentTypes = [UTType.json]
-        panel.canCreateDirectories = true
-        panel.nameFieldStringValue = "phtv-macros.json"
-        panel.title = "Xuất danh sách gõ tắt"
-        panel.message = "Chọn vị trí lưu file gõ tắt"
-
-        if panel.runModal() == .OK, let url = panel.url {
-            do {
-                struct ExportMacro: Encodable {
-                    let shortcut: String
-                    let expansion: String
-                    let categoryId: String?
-                }
-
-                struct ExportData: Encodable {
-                    let categories: [MacroCategory]
-                    let macros: [ExportMacro]
-                }
-
-                let exportMacros = macros.map {
-                    ExportMacro(
-                        shortcut: $0.shortcut,
-                        expansion: $0.expansion,
-                        categoryId: $0.categoryId?.uuidString
-                    )
-                }
-
-                let exportData = ExportData(
-                    categories: appState.macroCategories,
-                    macros: exportMacros
-                )
-
-                let encoder = JSONEncoder()
-                encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-                let jsonData = try encoder.encode(exportData)
-
-                try jsonData.write(to: url)
-                PHTVLogger.shared.macro("[MacroSettings] Exported \(macros.count) macros to: \(url.path)")
-            } catch {
-                PHTVLogger.shared.error("[MacroSettings] Export failed: \(error.localizedDescription)")
-            }
+        do {
+            exportDocument = try makeExportDocument()
+            showingExportSheet = true
+        } catch {
+            PHTVLogger.shared.error("[MacroSettings] Export failed: \(error.localizedDescription)")
+            presentFileTransferError("Không thể tạo file xuất: \(error.localizedDescription)")
         }
     }
 
     private func importMacros() {
-        let panel = NSOpenPanel()
-        panel.allowedContentTypes = [UTType.json, UTType.commaSeparatedText, UTType.plainText]
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.title = "Chọn file gõ tắt (JSON/CSV)"
+        showingImportSheet = true
+    }
 
-        if panel.runModal() == .OK, let url = panel.url {
+    private func handleMacroImport(_ result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            guard let url = urls.first else { return }
+
+            guard url.startAccessingSecurityScopedResource() else {
+                presentFileTransferError("Không thể truy cập file đã chọn")
+                return
+            }
+            defer { url.stopAccessingSecurityScopedResource() }
+
             do {
-                let data = try Data(contentsOf: url)
-                var imported: [MacroItem] = []
-                var importedCategories: [MacroCategory] = []
-
-                if url.pathExtension.lowercased() == "json" {
-                    // Try new format first
-                    struct ImportData: Decodable {
-                        let categories: [MacroCategory]?
-                        let macros: [ImportMacro]?
-
-                        struct ImportMacro: Decodable {
-                            let shortcut: String
-                            let expansion: String
-                            let categoryId: String?
-                        }
-                    }
-
-                    if let importData = try? JSONDecoder().decode(ImportData.self, from: data),
-                       let macroList = importData.macros {
-                        // New format with categories
-                        importedCategories = importData.categories ?? []
-                        imported = macroList.map {
-                            MacroItem(
-                                shortcut: normalize($0.shortcut),
-                                expansion: normalize($0.expansion),
-                                categoryId: $0.categoryId.flatMap { UUID(uuidString: $0) }
-                            )
-                        }
-                    } else {
-                        // Old format: array of {shortcut, expansion}
-                        struct RawMacro: Decodable { let shortcut: String; let expansion: String }
-                        let raw = try JSONDecoder().decode([RawMacro].self, from: data)
-                        imported = raw.map { MacroItem(shortcut: normalize($0.shortcut), expansion: normalize($0.expansion)) }
-                    }
-                } else {
-                    // CSV/TXT: lines "shortcut,expansion"
-                    if let text = String(data: data, encoding: .utf8) {
-                        imported = text
-                            .split(whereSeparator: { $0.isNewline })
-                            .compactMap { line -> MacroItem? in
-                                let s = String(line).trimmingCharacters(in: .whitespaces)
-                                if s.isEmpty || s.hasPrefix("#") { return nil }
-                                let parts = s.split(separator: ",", maxSplits: 1).map(String.init)
-                                guard parts.count == 2 else { return nil }
-                                let shortcut = normalize(parts[0])
-                                let expansion = normalize(parts[1])
-                                guard !shortcut.isEmpty, !expansion.isEmpty else { return nil }
-                                return MacroItem(shortcut: shortcut, expansion: expansion)
-                            }
-                    }
-                }
-
-                // Merge categories
-                for cat in importedCategories {
-                    if !appState.macroCategories.contains(where: { $0.id == cat.id }) {
-                        appState.macroCategories.append(cat)
-                    }
-                }
-                appState.saveSettings()
-
-                // Merge macros
-                var map: [String: MacroItem] = [:]
-                for m in macros {
-                    let key = normalize(m.shortcut).lowercased()
-                    map[key] = m
-                }
-                for m in imported {
-                    let key = normalize(m.shortcut).lowercased()
-                    map[key] = m
-                }
-
-                macros = Array(map.values)
-                    .sorted { $0.shortcut.localizedCompare($1.shortcut) == .orderedAscending }
-                saveMacros()
+                try importMacros(from: url)
             } catch {
                 PHTVLogger.shared.error("[MacroSettings] Import failed: \(error.localizedDescription)")
+                presentFileTransferError("Không thể nhập file: \(error.localizedDescription)")
             }
+
+        case .failure(let error):
+            if (error as? CocoaError)?.code == .userCancelled {
+                return
+            }
+            presentFileTransferError("Không thể mở file: \(error.localizedDescription)")
         }
+    }
+
+    private func makeExportDocument() throws -> MacroExportDocument {
+        struct ExportMacro: Encodable {
+            let shortcut: String
+            let expansion: String
+            let categoryId: String?
+        }
+
+        struct ExportData: Encodable {
+            let categories: [MacroCategory]
+            let macros: [ExportMacro]
+        }
+
+        let exportMacros = macros.map {
+            ExportMacro(
+                shortcut: $0.shortcut,
+                expansion: $0.expansion,
+                categoryId: $0.categoryId?.uuidString
+            )
+        }
+
+        let exportData = ExportData(
+            categories: appState.macroCategories,
+            macros: exportMacros
+        )
+
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return MacroExportDocument(data: try encoder.encode(exportData))
+    }
+
+    private func importMacros(from url: URL) throws {
+        let data = try Data(contentsOf: url)
+        var imported: [MacroItem] = []
+        var importedCategories: [MacroCategory] = []
+
+        if url.pathExtension.lowercased() == "json" {
+            struct ImportData: Decodable {
+                let categories: [MacroCategory]?
+                let macros: [ImportMacro]?
+
+                struct ImportMacro: Decodable {
+                    let shortcut: String
+                    let expansion: String
+                    let categoryId: String?
+                }
+            }
+
+            if let importData = try? JSONDecoder().decode(ImportData.self, from: data),
+               let macroList = importData.macros {
+                importedCategories = importData.categories ?? []
+                imported = macroList.map {
+                    MacroItem(
+                        shortcut: normalize($0.shortcut),
+                        expansion: normalize($0.expansion),
+                        categoryId: $0.categoryId.flatMap { UUID(uuidString: $0) }
+                    )
+                }
+            } else {
+                struct RawMacro: Decodable {
+                    let shortcut: String
+                    let expansion: String
+                }
+
+                let raw = try JSONDecoder().decode([RawMacro].self, from: data)
+                imported = raw.map {
+                    MacroItem(shortcut: normalize($0.shortcut), expansion: normalize($0.expansion))
+                }
+            }
+        } else if let text = String(data: data, encoding: .utf8) {
+            imported = text
+                .split(whereSeparator: { $0.isNewline })
+                .compactMap { line -> MacroItem? in
+                    let s = String(line).trimmingCharacters(in: .whitespaces)
+                    if s.isEmpty || s.hasPrefix("#") { return nil }
+                    let parts = s.split(separator: ",", maxSplits: 1).map(String.init)
+                    guard parts.count == 2 else { return nil }
+                    let shortcut = normalize(parts[0])
+                    let expansion = normalize(parts[1])
+                    guard !shortcut.isEmpty, !expansion.isEmpty else { return nil }
+                    return MacroItem(shortcut: shortcut, expansion: expansion)
+                }
+        }
+
+        for cat in importedCategories where !appState.macroCategories.contains(where: { $0.id == cat.id }) {
+            appState.macroCategories.append(cat)
+        }
+        appState.saveSettings()
+
+        var map: [String: MacroItem] = [:]
+        for macro in macros {
+            let key = normalize(macro.shortcut).lowercased()
+            map[key] = macro
+        }
+        for macro in imported {
+            let key = normalize(macro.shortcut).lowercased()
+            map[key] = macro
+        }
+
+        macros = Array(map.values)
+            .sorted { $0.shortcut.localizedCompare($1.shortcut) == .orderedAscending }
+        saveMacros()
+    }
+
+    private func presentFileTransferError(_ message: String) {
+        fileTransferErrorMessage = message
+        showFileTransferError = true
     }
 
     private func normalize(_ s: String) -> String {
@@ -670,6 +715,24 @@ struct MacroSettingsView: View {
         } else {
             PHTVLogger.shared.error("[MacroSettings] Failed to encode macros")
         }
+    }
+}
+
+struct MacroExportDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.json] }
+
+    var data: Data
+
+    init(data: Data) {
+        self.data = data
+    }
+
+    init(configuration: ReadConfiguration) throws {
+        data = configuration.file.regularFileContents ?? Data()
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: data)
     }
 }
 

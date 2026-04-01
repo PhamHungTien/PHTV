@@ -15,6 +15,7 @@ import Observation
 
 // MARK: - Logger for PHTV
 private let phtvLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.phamhungtien.phtv", category: "general")
+private let phtvMarkdownContentType = UTType(filenameExtension: "md") ?? .plainText
 
 private enum BugSeverity: String, CaseIterable, Identifiable {
     case low = "low"
@@ -85,12 +86,16 @@ struct BugReportView: View {
     @State private var isLoadingLogs: Bool = false
     @State private var showCopiedAlert: Bool = false
     @State private var showSavedAlert: Bool = false
+    @State private var showSaveErrorAlert: Bool = false
     @State private var savedLocation: String = ""
+    @State private var saveErrorMessage: String = ""
     // Default: OFF to avoid loading heavy OSLog snapshot when chỉ xem tab
     @State private var showLogPreview: Bool = false
     @State private var isSending: Bool = false
     @State private var hasLoadedLogsOnce: Bool = false
     @State private var showOptionalDetails: Bool = false
+    @State private var showingSaveReportSheet: Bool = false
+    @State private var reportDocument = BugReportDocument(text: "")
 
     var body: some View {
         ScrollView {
@@ -125,6 +130,29 @@ struct BugReportView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(savedLocation.isEmpty ? "Đã lưu báo cáo." : "Đã lưu tại: \(savedLocation)")
+        }
+        .alert("Không thể lưu báo cáo", isPresented: $showSaveErrorAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(saveErrorMessage)
+        }
+        .fileExporter(
+            isPresented: $showingSaveReportSheet,
+            document: reportDocument,
+            contentType: phtvMarkdownContentType,
+            defaultFilename: "phtv-bug-report.md"
+        ) { result in
+            switch result {
+            case .success(let url):
+                savedLocation = url.lastPathComponent
+                showSavedAlert = true
+            case .failure(let error):
+                if (error as? CocoaError)?.code == .userCancelled {
+                    return
+                }
+                saveErrorMessage = "Không thể lưu file: \(error.localizedDescription)"
+                showSaveErrorAlert = true
+            }
         }
         .onChange(of: appState.includeLogs) { _, newValue in
             if newValue {
@@ -1491,23 +1519,8 @@ struct BugReportView: View {
         }
 
         let report = generateBugReportWithLogs(logs)
-
-        await MainActor.run {
-            let panel = NSSavePanel()
-            panel.allowedContentTypes = [.plainText]
-            panel.nameFieldStringValue = "phtv-bug-report.md"
-            panel.canCreateDirectories = true
-            if panel.runModal() == .OK, let url = panel.url {
-                do {
-                    try report.write(to: url, atomically: true, encoding: .utf8)
-                    savedLocation = url.lastPathComponent
-                    showSavedAlert = true
-                } catch {
-                    savedLocation = ""
-                    showSavedAlert = true
-                }
-            }
-        }
+        reportDocument = BugReportDocument(text: report)
+        showingSaveReportSheet = true
 
         isSending = false
     }
@@ -1566,6 +1579,25 @@ struct BugReportView: View {
         let lines = logBuffer.split(separator: "\n", omittingEmptySubsequences: false)
         let tail = lines.suffix(80)
         return tail.joined(separator: "\n")
+    }
+}
+
+struct BugReportDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [phtvMarkdownContentType] }
+
+    var text: String
+
+    init(text: String) {
+        self.text = text
+    }
+
+    init(configuration: ReadConfiguration) throws {
+        let data = configuration.file.regularFileContents ?? Data()
+        text = String(decoding: data, as: UTF8.self)
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: Data(text.utf8))
     }
 }
 
