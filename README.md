@@ -8,7 +8,7 @@
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/PhamHungTien/PHTV/release.yml?branch=main&label=Build)](../../actions/workflows/release.yml)
-[![macOS 13+](https://img.shields.io/badge/macOS-13+-blue.svg)](https://www.apple.com/macos/)
+[![macOS 14+](https://img.shields.io/badge/macOS-14+-blue.svg)](https://www.apple.com/macos/)
 [![Universal Binary](https://img.shields.io/badge/Universal-Intel%20%2B%20Apple%20Silicon-red.svg)](https://support.apple.com/en-us/HT211814)
 [![Swift 6.0+](https://img.shields.io/badge/Swift-6.0+-orange.svg)](https://swift.org)
 [![GitHub release](https://img.shields.io/github/v/release/PhamHungTien/PHTV)](../../releases/latest)
@@ -24,7 +24,7 @@
 
 ## Giới thiệu
 
-**PHTV (Precision Hybrid Typing Vietnamese)** là bộ gõ tiếng Việt **offline, nhanh, và riêng tư** cho macOS 13+. Được phát triển hoàn toàn bằng Swift/SwiftUI, mang đến trải nghiệm gõ tiếng Việt mượt mà và tích hợp sâu vào hệ thống.
+**PHTV (Precision Hybrid Typing Vietnamese)** là bộ gõ tiếng Việt **offline, nhanh, và riêng tư** cho macOS 14+. Được phát triển hoàn toàn bằng Swift/SwiftUI, mang đến trải nghiệm gõ tiếng Việt mượt mà và tích hợp sâu vào hệ thống.
 
 ✨ **Tự động cập nhật** - Nhận phiên bản mới ngay khi ra mắt với Sparkle framework. Không cần tải lại thủ công!
 
@@ -278,12 +278,12 @@ Click biểu tượng **Vi** (Việt) / **En** (Anh) trên menu bar:
 
 | Thành phần | Yêu cầu |
 | --- | --- |
-| **macOS** | 13.0+ (Ventura trở lên) |
+| **macOS** | 14.0+ (Sonoma trở lên) |
 | **Kiến trúc** | Universal Binary (Intel + Apple Silicon) |
 | **Xcode** | Phiên bản mới nhất (nếu build từ source) |
 | **Quyền** | Accessibility |
 
-> **Lưu ý**: PHTV hỗ trợ cả Intel và Apple Silicon (M1/M2/M3/M4/...). Universal Binary cho mọi Mac chạy macOS 13.0+.
+> **Lưu ý**: PHTV hỗ trợ cả Intel và Apple Silicon (M1/M2/M3/M4/...). Universal Binary cho mọi Mac chạy macOS 14.0+.
 
 ## Công nghệ
 
