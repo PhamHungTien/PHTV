@@ -141,7 +141,7 @@ final class KlipyAPIClient {
         request: RequestKind,
         limit: Int,
         target: OutputTarget
-    ) {
+    ) async {
         guard hasValidAppKey else {
             if case .search = request {
                 PHTVLogger.shared.warning("\(media.logPrefix) Please set your app key for search")
@@ -153,15 +153,15 @@ final class KlipyAPIClient {
         }
 
         isLoading = true
+        defer {
+            isLoading = false
+        }
 
         guard let url = buildURL(media: media, request: request, limit: limit) else {
             if case .search = request {
                 PHTVLogger.shared.error("\(media.logPrefix) Invalid search URL")
             } else {
                 PHTVLogger.shared.error("\(media.logPrefix) Invalid URL")
-            }
-            Task { @MainActor [weak self] in
-                self?.isLoading = false
             }
             return
         }
@@ -173,84 +173,73 @@ final class KlipyAPIClient {
             PHTVLogger.shared.info("\(media.logPrefix) Searching for: \(query)")
         }
 
-        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
-            guard let self = self else { return }
+        do {
+            let (data, response) = try await URLSession.shared.data(from: url)
 
             if let httpResponse = response as? HTTPURLResponse {
                 PHTVLogger.shared.debug("\(media.logPrefix) Response status: \(httpResponse.statusCode)")
             }
 
-            guard let data = data, error == nil else {
-                switch request {
-                case .trending:
-                    PHTVLogger.shared.error("\(media.logPrefix) Error fetching trending: \(error?.localizedDescription ?? "unknown")")
-                case .search:
-                    PHTVLogger.shared.error("\(media.logPrefix) Error searching: \(error?.localizedDescription ?? "unknown")")
-                }
-                Task { @MainActor in
-                    self.isLoading = false
-                }
-                return
+            let result = try JSONDecoder().decode(KlipyResponse.self, from: data)
+            guard !Task.isCancelled else { return }
+
+            switch request {
+            case .trending:
+                PHTVLogger.shared.info("\(media.logPrefix) Successfully decoded \(result.data.data.count) \(media.itemDisplayName)")
+            case .search:
+                PHTVLogger.shared.info("\(media.logPrefix) Search found \(result.data.data.count) \(media.itemDisplayName)")
             }
 
-            do {
-                let result = try JSONDecoder().decode(KlipyResponse.self, from: data)
-                switch request {
-                case .trending:
-                    PHTVLogger.shared.info("\(media.logPrefix) Successfully decoded \(result.data.data.count) \(media.itemDisplayName)")
-                case .search:
-                    PHTVLogger.shared.info("\(media.logPrefix) Search found \(result.data.data.count) \(media.itemDisplayName)")
-                }
-                Task { @MainActor in
-                    switch target {
-                    case .trendingGIFs:
-                        self.trendingGIFs = result.data.data
-                    case .searchResults:
-                        self.searchResults = result.data.data
-                    case .trendingStickers:
-                        self.trendingStickers = result.data.data
-                    case .stickerSearchResults:
-                        self.stickerSearchResults = result.data.data
-                    }
-                    self.isLoading = false
-                }
-            } catch {
-                PHTVLogger.shared.error("\(media.logPrefix) Decode error: \(error.localizedDescription)")
-                Task { @MainActor in
-                    self.isLoading = false
-                }
+            switch target {
+            case .trendingGIFs:
+                trendingGIFs = result.data.data
+            case .searchResults:
+                searchResults = result.data.data
+            case .trendingStickers:
+                trendingStickers = result.data.data
+            case .stickerSearchResults:
+                stickerSearchResults = result.data.data
             }
-        }.resume()
+        } catch is CancellationError {
+            PHTVLogger.shared.debug("\(media.logPrefix) Request cancelled")
+        } catch {
+            switch request {
+            case .trending:
+                PHTVLogger.shared.error("\(media.logPrefix) Error fetching trending: \(error.localizedDescription)")
+            case .search:
+                PHTVLogger.shared.error("\(media.logPrefix) Error searching: \(error.localizedDescription)")
+            }
+        }
     }
 
     /// Fetch trending GIFs
-    func fetchTrending(limit: Int = 24) {
-        performFetch(media: .gifs, request: .trending, limit: limit, target: .trendingGIFs)
+    func fetchTrending(limit: Int = 24) async {
+        await performFetch(media: .gifs, request: .trending, limit: limit, target: .trendingGIFs)
     }
 
     /// Search GIFs
-    func search(query: String, limit: Int = 24) {
+    func search(query: String, limit: Int = 24) async {
         guard !query.isEmpty else {
             searchResults = []
             return
         }
-        performFetch(media: .gifs, request: .search(query: query), limit: limit, target: .searchResults)
+        await performFetch(media: .gifs, request: .search(query: query), limit: limit, target: .searchResults)
     }
 
     // MARK: - Stickers API
 
     /// Fetch trending Stickers
-    func fetchTrendingStickers(limit: Int = 24) {
-        performFetch(media: .stickers, request: .trending, limit: limit, target: .trendingStickers)
+    func fetchTrendingStickers(limit: Int = 24) async {
+        await performFetch(media: .stickers, request: .trending, limit: limit, target: .trendingStickers)
     }
 
     /// Search Stickers
-    func searchStickers(query: String, limit: Int = 24) {
+    func searchStickers(query: String, limit: Int = 24) async {
         guard !query.isEmpty else {
             stickerSearchResults = []
             return
         }
-        performFetch(media: .stickers, request: .search(query: query), limit: limit, target: .stickerSearchResults)
+        await performFetch(media: .stickers, request: .search(query: query), limit: limit, target: .stickerSearchResults)
     }
 
     // MARK: - Recent Items Tracking
@@ -402,14 +391,16 @@ final class KlipyAPIClient {
 
         PHTVLogger.shared.info("[Klipy Ads] Tracking impression for ad: \(gif.id)")
 
-        // Fire impression tracking pixel
-        URLSession.shared.dataTask(with: url) { _, _, error in
-            if let error = error {
-                PHTVLogger.shared.warning("[Klipy Ads] Impression tracking error: \(error.localizedDescription)")
-            } else {
+        Task.detached(priority: .utility) {
+            do {
+                _ = try await URLSession.shared.data(from: url)
                 PHTVLogger.shared.debug("[Klipy Ads] Impression tracked successfully")
+            } catch is CancellationError {
+                return
+            } catch {
+                PHTVLogger.shared.warning("[Klipy Ads] Impression tracking error: \(error.localizedDescription)")
             }
-        }.resume()
+        }
     }
 
     /// Track ad click (when ad is clicked)
@@ -420,14 +411,16 @@ final class KlipyAPIClient {
 
         PHTVLogger.shared.info("[Klipy Ads] Tracking click for ad: \(gif.id)")
 
-        // Fire click tracking pixel
-        URLSession.shared.dataTask(with: url) { _, _, error in
-            if let error = error {
-                PHTVLogger.shared.warning("[Klipy Ads] Click tracking error: \(error.localizedDescription)")
-            } else {
+        Task.detached(priority: .utility) {
+            do {
+                _ = try await URLSession.shared.data(from: url)
                 PHTVLogger.shared.debug("[Klipy Ads] Click tracked successfully")
+            } catch is CancellationError {
+                return
+            } catch {
+                PHTVLogger.shared.warning("[Klipy Ads] Click tracking error: \(error.localizedDescription)")
             }
-        }.resume()
+        }
     }
 
     /// Open ad target URL in browser (optional, if user clicks ad)

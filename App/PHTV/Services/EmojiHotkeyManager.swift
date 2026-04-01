@@ -176,12 +176,8 @@ final class EmojiHotkeyManager {
         }
 
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            if Thread.isMainThread {
+            Task { @MainActor [weak self] in
                 self?.keyPressedWhileModifiersHeld = true
-            } else {
-                Task { @MainActor [weak self] in
-                    self?.keyPressedWhileModifiersHeld = true
-                }
             }
             return event
         }
@@ -198,20 +194,12 @@ final class EmojiHotkeyManager {
         }
 
         localFlagsMonitor = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
-            if Thread.isMainThread {
+            Task { @MainActor [weak self] in
                 self?.handleFlagsChanged(
                     event,
                     capturedModifiers: filteredCapturedModifiers,
                     relevantModifiers: relevantModifiers
                 )
-            } else {
-                Task { @MainActor [weak self] in
-                    self?.handleFlagsChanged(
-                        event,
-                        capturedModifiers: filteredCapturedModifiers,
-                        relevantModifiers: relevantModifiers
-                    )
-                }
             }
             return event
         }

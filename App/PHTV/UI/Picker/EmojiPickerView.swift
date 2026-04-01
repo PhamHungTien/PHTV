@@ -12,25 +12,22 @@ struct EmojiPickerView: View {
     var onEmojiSelected: (String) -> Void
     var onClose: (() -> Void)?
 
-    // Remember last selected tab using UserDefaults
-    @State private var selectedCategory: Int
+    @AppStorage(Self.lastTabKey) private var storedSelectedCategory = -2
     @Namespace private var categoryNamespace
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorScheme) private var colorScheme
 
     private static let lastTabKey = "PHTVPickerLastTab"
+    private static let validCategories: Set<Int> = [-2, -3, -4, -5]
 
     init(onEmojiSelected: @escaping (String) -> Void, onClose: (() -> Void)? = nil) {
         self.onEmojiSelected = onEmojiSelected
         self.onClose = onClose
-        // Load last selected tab, default to -2 ("Tất cả") if not set
-        let savedTab = UserDefaults.standard.integer(forKey: EmojiPickerView.lastTabKey)
-        // Validate saved tab is valid (-2, -3, -4, -5)
-        if [-2, -3, -4, -5].contains(savedTab) {
-            _selectedCategory = State(initialValue: savedTab)
-        } else {
-            _selectedCategory = State(initialValue: -2)
-        }
+    }
+
+    private var selectedCategory: Int {
+        get { Self.validCategories.contains(storedSelectedCategory) ? storedSelectedCategory : -2 }
+        nonmutating set { storedSelectedCategory = newValue }
     }
 
     var body: some View {
@@ -44,10 +41,15 @@ struct EmojiPickerView: View {
             // Category tabs with GlassEffectContainer for efficient morphing (Apple guideline)
             ScrollViewReader { scrollProxy in
                 ScrollView(.horizontal, showsIndicators: false) {
-                    categoryTabsContent(scrollProxy: scrollProxy)
+                    categoryTabsContent()
                         .padding(.horizontal, 12)
                 }
                 .padding(.bottom, 8)
+                .task(id: selectedCategory) {
+                    try? await Task.sleep(for: .milliseconds(100))
+                    guard !Task.isCancelled else { return }
+                    scrollProxy.scrollTo(selectedCategory, anchor: .center)
+                }
             }
 
             Divider()
@@ -73,10 +75,7 @@ struct EmojiPickerView: View {
             }
         }
         .frame(width: 380)
-        .onChange(of: selectedCategory) { _, newValue in
-            // Save selected tab to UserDefaults
-            UserDefaults.standard.set(newValue, forKey: EmojiPickerView.lastTabKey)
-        }
+        .environment(KlipyAPIClient.shared)
         .background {
             pickerBackground
         }
@@ -120,14 +119,14 @@ struct EmojiPickerView: View {
     // MARK: - Category Tabs with GlassEffectContainer
 
     @ViewBuilder
-    private func categoryTabsContent(scrollProxy: ScrollViewProxy) -> some View {
+    private func categoryTabsContent() -> some View {
         HStack(spacing: 6) {
-            categoryTabItems(scrollProxy: scrollProxy)
+            categoryTabItems()
         }
     }
 
     @ViewBuilder
-    private func categoryTabItems(scrollProxy: ScrollViewProxy) -> some View {
+    private func categoryTabItems() -> some View {
         // All Content tab
         CategoryTab(
             isSelected: selectedCategory == -2,
@@ -140,13 +139,6 @@ struct EmojiPickerView: View {
             }
         }
         .id(-2)
-        .onAppear {
-            // Scroll to saved/selected category when view appears
-            Task { @MainActor in
-                try? await Task.sleep(nanoseconds: 100_000_000) // 0.1s
-                scrollProxy.scrollTo(selectedCategory, anchor: .center)
-            }
-        }
 
         // Emoji tab
         CategoryTab(

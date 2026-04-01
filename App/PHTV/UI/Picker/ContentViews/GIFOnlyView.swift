@@ -14,9 +14,8 @@ import Carbon
 struct GIFOnlyView: View {
     var onClose: (() -> Void)?
 
-    @State private var klipyClient = KlipyAPIClient.shared
+    @Environment(KlipyAPIClient.self) private var klipyClient
     @State private var searchText = ""
-    @State private var searchTask: Task<Void, Never>?
     @FocusState private var isSearchFocused: Bool
 
     private let columns = [
@@ -41,23 +40,8 @@ struct GIFOnlyView: View {
                     .textFieldStyle(.plain)
                     .font(.system(size: 13))
                     .focused($isSearchFocused)
-                    .onChange(of: searchText) { _, newValue in
-                        searchTask?.cancel()
-                        searchTask = nil
-                        if newValue.isEmpty {
-                            klipyClient.searchResults = []
-                        } else {
-                            searchTask = Task { @MainActor in
-                                try? await Task.sleep(for: .milliseconds(500))
-                                guard !Task.isCancelled else { return }
-                                klipyClient.search(query: newValue)
-                            }
-                        }
-                    }
                 if !searchText.isEmpty {
                     Button(action: {
-                        searchTask?.cancel()
-                        searchTask = nil
                         searchText = ""
                         isSearchFocused = true
                     }) {
@@ -115,11 +99,21 @@ struct GIFOnlyView: View {
                 }
             }
         }
-        .onAppear {
+        .task {
             isSearchFocused = true
             if klipyClient.trendingGIFs.isEmpty {
-                klipyClient.fetchTrending()
+                await klipyClient.fetchTrending()
             }
+        }
+        .task(id: searchText) {
+            if searchText.isEmpty {
+                klipyClient.searchResults = []
+                return
+            }
+
+            try? await Task.sleep(for: .milliseconds(500))
+            guard !Task.isCancelled else { return }
+            await klipyClient.search(query: searchText)
         }
     }
 
@@ -130,83 +124,70 @@ struct GIFOnlyView: View {
             return
         }
 
-        URLSession.shared.dataTask(with: url) { data, response, error in
-            // Check for network errors
-            if let error = error {
-                NSLog("[GIFPicker] GIF download error: %@", error.localizedDescription)
+        Task { @MainActor in
+            guard let data = await downloadRemoteData(
+                from: url,
+                logPrefix: "[GIFPicker]",
+                itemDescription: "GIF",
+                identifier: gif.slug
+            ) else {
                 return
             }
 
-            // Check HTTP status code
-            if let httpResponse = response as? HTTPURLResponse {
-                guard 200...299 ~= httpResponse.statusCode else {
-                    NSLog("[GIFPicker] GIF download HTTP error: %d", httpResponse.statusCode)
-                    return
-                }
-            }
+            let phtpDir = getPHTPMediaDirectory()
+            let gifURL = phtpDir.appendingPathComponent("\(gif.slug).gif")
 
-            // Ensure we have data
-            guard let data = data else {
-                NSLog("[GIFPicker] No data received for GIF: %@", gif.slug)
+            do {
+                try data.write(to: gifURL)
+            } catch {
+                NSLog("[GIFPicker] Failed to save GIF: %@", error.localizedDescription)
                 return
             }
 
+            let pasteboard = NSPasteboard.general
+            pasteboard.clearContents()
+            pasteboard.writeObjects([gifURL as NSPasteboardWriting])
+            _ = pasteboard.setData(data, forType: .fileURL)
+
+            // Close panel first
+            onClose?()
+
+            // Small delay to allow panel to close and frontmost app to regain focus
             Task { @MainActor in
-                let phtpDir = getPHTPMediaDirectory()
-                let gifURL = phtpDir.appendingPathComponent("\(gif.slug).gif")
+                try? await Task.sleep(for: .milliseconds(150))
+                guard !Task.isCancelled else { return }
+                NSLog("[GIFPicker] Pasting GIF...")
 
-                do {
-                    try data.write(to: gifURL)
-                } catch {
-                    NSLog("[GIFPicker] Failed to save GIF: %@", error.localizedDescription)
-                    return
+                let source = CGEventSource(stateID: .hidSystemState)
+
+                // Press Command
+                if let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: true) {
+                    cmdDown.flags = .maskCommand
+                    cmdDown.post(tap: .cghidEventTap)
                 }
 
-                let pasteboard = NSPasteboard.general
-                pasteboard.clearContents()
-                pasteboard.writeObjects([gifURL as NSPasteboardWriting])
-                _ = pasteboard.setData(data, forType: .fileURL)
-
-                // Close panel first
-                onClose?()
-
-                // Small delay to allow panel to close and frontmost app to regain focus
-                Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(150))
-                    guard !Task.isCancelled else { return }
-                    NSLog("[GIFPicker] Pasting GIF...")
-
-                    let source = CGEventSource(stateID: .hidSystemState)
-
-                    // Press Command
-                    if let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: true) {
-                        cmdDown.flags = .maskCommand
-                        cmdDown.post(tap: .cghidEventTap)
-                    }
-
-                    // Press V
-                    if let vDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true) {
-                        vDown.flags = .maskCommand
-                        vDown.post(tap: .cghidEventTap)
-                    }
-
-                    // Release V
-                    if let vUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false) {
-                        vUp.flags = .maskCommand
-                        vUp.post(tap: .cghidEventTap)
-                    }
-
-                    // Release Command
-                    if let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: false) {
-                        cmdUp.post(tap: .cghidEventTap)
-                    }
-
-                    NSLog("[GIFPicker] Paste command sent")
-
-                    // Clean up file after paste
-                    deleteFileAfterDelay(gifURL)
+                // Press V
+                if let vDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true) {
+                    vDown.flags = .maskCommand
+                    vDown.post(tap: .cghidEventTap)
                 }
+
+                // Release V
+                if let vUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false) {
+                    vUp.flags = .maskCommand
+                    vUp.post(tap: .cghidEventTap)
+                }
+
+                // Release Command
+                if let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: false) {
+                    cmdUp.post(tap: .cghidEventTap)
+                }
+
+                NSLog("[GIFPicker] Paste command sent")
+
+                // Clean up file after paste
+                deleteFileAfterDelay(gifURL)
             }
-        }.resume()
+        }
     }
 }

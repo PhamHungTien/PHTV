@@ -39,12 +39,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var lastDockVisibilityRequestTime: CFAbsoluteTime = 0
     var settingsWindowOpen = false
 
-    var accessibilityMonitor: Timer?
+    var accessibilityMonitorTask: Task<Void, Never>?
     var wasAccessibilityEnabled = false
     var accessibilityStableCount: UInt = 0
     var isAttemptingTCCRepair = false
     var didAttemptTCCRepairOnce = false
-    var healthCheckTimer: Timer?
+    var healthCheckTask: Task<Void, Never>?
     var needsRelaunchAfterPermission = false
     var eventTapRecoveryToken: UInt = 0
     var lastEventTapRecoveryRequestTime: CFAbsoluteTime = 0

@@ -14,9 +14,8 @@ import Carbon
 struct StickerOnlyView: View {
     var onClose: (() -> Void)?
 
-    @State private var klipyClient = KlipyAPIClient.shared
+    @Environment(KlipyAPIClient.self) private var klipyClient
     @State private var searchText = ""
-    @State private var searchTask: Task<Void, Never>?
     @FocusState private var isSearchFocused: Bool
 
     private let columns = [
@@ -41,23 +40,8 @@ struct StickerOnlyView: View {
                     .textFieldStyle(.plain)
                     .font(.system(size: 13))
                     .focused($isSearchFocused)
-                    .onChange(of: searchText) { _, newValue in
-                        searchTask?.cancel()
-                        searchTask = nil
-                        if newValue.isEmpty {
-                            klipyClient.stickerSearchResults = []
-                        } else {
-                            searchTask = Task { @MainActor in
-                                try? await Task.sleep(for: .milliseconds(500))
-                                guard !Task.isCancelled else { return }
-                                klipyClient.searchStickers(query: newValue)
-                            }
-                        }
-                    }
                 if !searchText.isEmpty {
                     Button(action: {
-                        searchTask?.cancel()
-                        searchTask = nil
                         searchText = ""
                         isSearchFocused = true
                     }) {
@@ -115,11 +99,21 @@ struct StickerOnlyView: View {
                 }
             }
         }
-        .onAppear {
+        .task {
             isSearchFocused = true
             if klipyClient.trendingStickers.isEmpty {
-                klipyClient.fetchTrendingStickers()
+                await klipyClient.fetchTrendingStickers()
             }
+        }
+        .task(id: searchText) {
+            if searchText.isEmpty {
+                klipyClient.stickerSearchResults = []
+                return
+            }
+
+            try? await Task.sleep(for: .milliseconds(500))
+            guard !Task.isCancelled else { return }
+            await klipyClient.searchStickers(query: searchText)
         }
     }
 
@@ -130,84 +124,71 @@ struct StickerOnlyView: View {
             return
         }
 
-        URLSession.shared.dataTask(with: url) { data, response, error in
-            // Check for network errors
-            if let error = error {
-                NSLog("[StickerPicker] Sticker download error: %@", error.localizedDescription)
+        Task { @MainActor in
+            guard let data = await downloadRemoteData(
+                from: url,
+                logPrefix: "[StickerPicker]",
+                itemDescription: "Sticker",
+                identifier: sticker.slug
+            ) else {
                 return
             }
 
-            // Check HTTP status code
-            if let httpResponse = response as? HTTPURLResponse {
-                guard 200...299 ~= httpResponse.statusCode else {
-                    NSLog("[StickerPicker] Sticker download HTTP error: %d", httpResponse.statusCode)
-                    return
-                }
-            }
+            NSLog("[StickerPicker] Sticker downloaded: %@", sticker.slug)
 
-            // Ensure we have data
-            guard let data = data else {
-                NSLog("[StickerPicker] No data received for Sticker: %@", sticker.slug)
+            let phtpDir = getPHTPMediaDirectory()
+            let stickerURL = phtpDir.appendingPathComponent("\(sticker.slug).png")
+
+            do {
+                try data.write(to: stickerURL)
+            } catch {
+                NSLog("[StickerPicker] Failed to save Sticker: %@", error.localizedDescription)
                 return
             }
 
+            let pasteboard = NSPasteboard.general
+            pasteboard.clearContents()
+            pasteboard.writeObjects([stickerURL as NSPasteboardWriting])
+
+            // Close panel first
+            onClose?()
+
+            // Small delay to allow panel to close and frontmost app to regain focus
             Task { @MainActor in
-                NSLog("[StickerPicker] Sticker downloaded: %@", sticker.slug)
+                try? await Task.sleep(for: .milliseconds(150))
+                guard !Task.isCancelled else { return }
+                NSLog("[StickerPicker] Pasting Sticker...")
 
-                let phtpDir = getPHTPMediaDirectory()
-                let stickerURL = phtpDir.appendingPathComponent("\(sticker.slug).png")
+                let source = CGEventSource(stateID: .hidSystemState)
 
-                do {
-                    try data.write(to: stickerURL)
-                } catch {
-                    NSLog("[StickerPicker] Failed to save Sticker: %@", error.localizedDescription)
-                    return
+                // Press Command
+                if let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: true) {
+                    cmdDown.flags = .maskCommand
+                    cmdDown.post(tap: .cghidEventTap)
                 }
 
-                let pasteboard = NSPasteboard.general
-                pasteboard.clearContents()
-                pasteboard.writeObjects([stickerURL as NSPasteboardWriting])
-
-                // Close panel first
-                onClose?()
-
-                // Small delay to allow panel to close and frontmost app to regain focus
-                Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(150))
-                    guard !Task.isCancelled else { return }
-                    NSLog("[StickerPicker] Pasting Sticker...")
-
-                    let source = CGEventSource(stateID: .hidSystemState)
-
-                    // Press Command
-                    if let cmdDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: true) {
-                        cmdDown.flags = .maskCommand
-                        cmdDown.post(tap: .cghidEventTap)
-                    }
-
-                    // Press V
-                    if let vDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true) {
-                        vDown.flags = .maskCommand
-                        vDown.post(tap: .cghidEventTap)
-                    }
-
-                    // Release V
-                    if let vUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false) {
-                        vUp.flags = .maskCommand
-                        vUp.post(tap: .cghidEventTap)
-                    }
-
-                    // Release Command
-                    if let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: false) {
-                        cmdUp.post(tap: .cghidEventTap)
-                    }
-
-                    NSLog("[StickerPicker] Paste command sent")
-
-                    // Clean up file after paste
-                    deleteFileAfterDelay(stickerURL)
+                // Press V
+                if let vDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true) {
+                    vDown.flags = .maskCommand
+                    vDown.post(tap: .cghidEventTap)
                 }
+
+                // Release V
+                if let vUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false) {
+                    vUp.flags = .maskCommand
+                    vUp.post(tap: .cghidEventTap)
+                }
+
+                // Release Command
+                if let cmdUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(kVK_Command), keyDown: false) {
+                    cmdUp.post(tap: .cghidEventTap)
+                }
+
+                NSLog("[StickerPicker] Paste command sent")
+
+                // Clean up file after paste
+                deleteFileAfterDelay(stickerURL)
             }
-        }.resume()
+        }
     }
 }

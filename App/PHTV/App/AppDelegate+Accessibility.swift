@@ -38,12 +38,13 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
     func startAccessibilityMonitoring(withInterval interval: TimeInterval, resetState: Bool) {
         stopAccessibilityMonitoring()
 
-        accessibilityMonitor = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.checkAccessibilityStatus()
+        accessibilityMonitorTask = Task { @MainActor [weak self] in
+            while let self, !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(interval))
+                guard !Task.isCancelled else { break }
+                self.checkAccessibilityStatus()
             }
         }
-        accessibilityMonitor?.tolerance = interval * 0.2
 
         if resetState {
             wasAccessibilityEnabled = PHTVManager.canCreateEventTap()
@@ -59,8 +60,8 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
     }
 
     func stopAccessibilityMonitoring() {
-        accessibilityMonitor?.invalidate()
-        accessibilityMonitor = nil
+        accessibilityMonitorTask?.cancel()
+        accessibilityMonitorTask = nil
 #if DEBUG
         NSLog("[Accessibility] Stopped monitoring")
 #endif
@@ -69,17 +70,18 @@ private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
     func startHealthCheckMonitoring() {
         stopHealthCheckMonitoring()
 
-        healthCheckTimer = Timer.scheduledTimer(withTimeInterval: 10.0, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.runHealthCheck()
+        healthCheckTask = Task { @MainActor [weak self] in
+            while let self, !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(10))
+                guard !Task.isCancelled else { break }
+                self.runHealthCheck()
             }
         }
-        healthCheckTimer?.tolerance = 1.0
     }
 
     func stopHealthCheckMonitoring() {
-        healthCheckTimer?.invalidate()
-        healthCheckTimer = nil
+        healthCheckTask?.cancel()
+        healthCheckTask = nil
     }
 
     func runHealthCheck() {

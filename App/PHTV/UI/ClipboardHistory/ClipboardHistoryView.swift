@@ -111,12 +111,10 @@ struct ClipboardHistoryView: View {
         .background {
             clipboardBackground
         }
-        .onAppear {
-            Task { @MainActor in
-                await Task.yield()
-                keyboardFocus = .search
-                isSearchFieldFocused = true
-            }
+        .task {
+            await Task.yield()
+            keyboardFocus = .search
+            isSearchFieldFocused = true
         }
         .onChange(of: filteredItems.map(\.id)) { _, _ in
             syncSelectionWithFilteredItems()

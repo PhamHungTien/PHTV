@@ -13,6 +13,7 @@ struct GIFThumbnailView: View {
     let onTap: () -> Void
     var contentType: String = "GIF"  // "GIF" or "Sticker"
 
+    @Environment(KlipyAPIClient.self) private var klipyClient
     @State private var isHovered = false
     @State private var hasTrackedImpression = false
 
@@ -61,7 +62,7 @@ struct GIFThumbnailView: View {
         .help(gif.isAd ? "Quảng cáo - Click để xem" : "Click để tải và gửi \(contentType)")
         .onAppear {
             if gif.isAd && !hasTrackedImpression {
-                KlipyAPIClient.shared.trackImpression(for: gif)
+                klipyClient.trackImpression(for: gif)
                 hasTrackedImpression = true
             }
         }

@@ -15,13 +15,9 @@ final class PHTVSmartSwitchPersistenceService: NSObject {
     private static let keyInputMethod = "InputMethod"
     private static let keyCodeTable = "CodeTable"
 
-    private class func persistOnMain(_ action: @escaping @Sendable () -> Void) {
-        if Thread.isMainThread {
+    private class func persistOnMain(_ action: @escaping @MainActor @Sendable () -> Void) {
+        Task { @MainActor in
             action()
-        } else {
-            Task { @MainActor in
-                action()
-            }
         }
     }
 

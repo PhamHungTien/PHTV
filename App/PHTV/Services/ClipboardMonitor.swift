@@ -64,7 +64,7 @@ enum ClipboardHistoryPrivacyPolicy {
 final class ClipboardMonitor {
     static let shared = ClipboardMonitor()
 
-    private var timer: Timer?
+    private var monitoringTask: Task<Void, Never>?
     private var lastChangeCount: Int = 0
     private var isMonitoring = false
 
@@ -77,17 +77,19 @@ final class ClipboardMonitor {
         isMonitoring = true
         lastChangeCount = NSPasteboard.general.changeCount
 
-        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.checkForChanges()
+        monitoringTask = Task { @MainActor [weak self] in
+            while let self, !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(500))
+                guard !Task.isCancelled, self.isMonitoring else { break }
+                self.checkForChanges()
             }
         }
     }
 
     func stopMonitoring() {
         isMonitoring = false
-        timer?.invalidate()
-        timer = nil
+        monitoringTask?.cancel()
+        monitoringTask = nil
     }
 
     private func checkForChanges() {

@@ -15,12 +15,11 @@ struct UnifiedContentView: View {
     var onEmojiSelected: (String) -> Void
     var onClose: (() -> Void)?
 
-    @State private var klipyClient = KlipyAPIClient.shared
+    @Environment(KlipyAPIClient.self) private var klipyClient
     private let database = EmojiDatabase.shared
 
     @State private var searchText = ""
     @State private var emojiSearchResults: [EmojiItem] = []
-    @State private var searchTask: Task<Void, Never>?
     @FocusState private var isSearchFocused: Bool
 
     private let iconColumns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 7)
@@ -42,28 +41,8 @@ struct UnifiedContentView: View {
                     .textFieldStyle(.plain)
                     .font(.system(size: 13))
                     .focused($isSearchFocused)
-                    .onChange(of: searchText) { _, newValue in
-                        // Cancel previous search task
-                        searchTask?.cancel()
-
-                        if newValue.isEmpty {
-                            // Clear results immediately
-                            emojiSearchResults = []
-                            klipyClient.searchResults = []
-                            klipyClient.stickerSearchResults = []
-                        } else {
-                            // Debounce search - wait for user to stop typing
-                            searchTask = Task { @MainActor [self] in
-                                try? await Task.sleep(for: .milliseconds(350))
-                                guard !Task.isCancelled else { return }
-                                performSearch(query: newValue)
-                            }
-                        }
-                    }
                 if !searchText.isEmpty {
                     Button(action: {
-                        searchTask?.cancel()
-                        searchTask = nil
                         searchText = ""
                         emojiSearchResults = []
                         isSearchFocused = true
@@ -324,32 +303,42 @@ struct UnifiedContentView: View {
             .padding(.vertical, 12)
         }
         }
-        .onAppear {
+        .task {
             // Delay is required for nonactivating panels: the panel must become key
             // before SwiftUI's @FocusState can transfer focus to the text field.
-            Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(50))
-                guard !Task.isCancelled else { return }
-                isSearchFocused = true
-            }
+            try? await Task.sleep(for: .milliseconds(50))
+            guard !Task.isCancelled else { return }
+            isSearchFocused = true
             // Fetch content if empty
             if klipyClient.trendingGIFs.isEmpty {
-                klipyClient.fetchTrending()
+                await klipyClient.fetchTrending()
             }
             if klipyClient.trendingStickers.isEmpty {
-                klipyClient.fetchTrendingStickers()
+                await klipyClient.fetchTrendingStickers()
             }
+        }
+        .task(id: searchText) {
+            if searchText.isEmpty {
+                emojiSearchResults = []
+                klipyClient.searchResults = []
+                klipyClient.stickerSearchResults = []
+                return
+            }
+
+            try? await Task.sleep(for: .milliseconds(350))
+            guard !Task.isCancelled else { return }
+            await performSearch(query: searchText)
         }
     }
 
     // Perform search across all content types
-    private func performSearch(query: String) {
+    private func performSearch(query: String) async {
         // Search Emojis (cached to avoid repeated computation)
         emojiSearchResults = database.search(query)
         // Search GIFs
-        klipyClient.search(query: query)
+        await klipyClient.search(query: query)
         // Search Stickers
-        klipyClient.searchStickers(query: query)
+        await klipyClient.searchStickers(query: query)
     }
 
     // Helper functions to copy media
@@ -360,52 +349,39 @@ struct UnifiedContentView: View {
             return
         }
 
-        URLSession.shared.dataTask(with: url) { data, response, error in
-            // Check for network errors
-            if let error = error {
-                NSLog("[PHTPPicker] GIF download error: %@", error.localizedDescription)
+        Task { @MainActor in
+            guard let data = await downloadRemoteData(
+                from: url,
+                logPrefix: "[PHTPPicker]",
+                itemDescription: "GIF",
+                identifier: gif.slug
+            ) else {
                 return
             }
 
-            // Check HTTP status code
-            if let httpResponse = response as? HTTPURLResponse {
-                guard 200...299 ~= httpResponse.statusCode else {
-                    NSLog("[PHTPPicker] GIF download HTTP error: %d", httpResponse.statusCode)
-                    return
+            if let tempURL = saveTempGIF(data: data, filename: gif.slug) {
+                let pasteboard = NSPasteboard.general
+                pasteboard.clearContents()
+                pasteboard.writeObjects([tempURL as NSPasteboardWriting])
+                _ = pasteboard.setData(data, forType: .fileURL)
+
+                // Close panel first
+                onClose?()
+
+                // Small delay to allow panel to close and frontmost app to regain focus
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(150))
+                    guard !Task.isCancelled else { return }
+                    NSLog("[PHTPPicker] Pasting GIF...")
+                    simulatePaste()
+
+                    // Clean up file after paste
+                    deleteFileAfterDelay(tempURL)
                 }
+            } else {
+                NSLog("[PHTPPicker] Failed to save GIF to temp location")
             }
-
-            // Ensure we have data
-            guard let data = data else {
-                NSLog("[PHTPPicker] No data received for GIF: %@", gif.slug)
-                return
-            }
-
-            Task { @MainActor in
-                if let tempURL = saveTempGIF(data: data, filename: gif.slug) {
-                    let pasteboard = NSPasteboard.general
-                    pasteboard.clearContents()
-                    pasteboard.writeObjects([tempURL as NSPasteboardWriting])
-                    _ = pasteboard.setData(data, forType: .fileURL)
-
-                    // Close panel first
-                    onClose?()
-
-                    // Small delay to allow panel to close and frontmost app to regain focus
-                    Task { @MainActor in
-                        try? await Task.sleep(for: .milliseconds(150))
-                        guard !Task.isCancelled else { return }
-                        NSLog("[PHTPPicker] Pasting GIF...")
-                        simulatePaste()
-
-                        // Clean up file after paste
-                        deleteFileAfterDelay(tempURL)
-                    }
-                } else {
-                    NSLog("[PHTPPicker] Failed to save GIF to temp location")
-                }
-            }
-        }.resume()
+        }
     }
 
     private func copyStickerURL(_ sticker: KlipyGIF) {
@@ -415,53 +391,40 @@ struct UnifiedContentView: View {
             return
         }
 
-        URLSession.shared.dataTask(with: url) { data, response, error in
-            // Check for network errors
-            if let error = error {
-                NSLog("[PHTPPicker] Sticker download error: %@", error.localizedDescription)
+        Task { @MainActor in
+            guard let data = await downloadRemoteData(
+                from: url,
+                logPrefix: "[PHTPPicker]",
+                itemDescription: "Sticker",
+                identifier: sticker.slug
+            ) else {
                 return
             }
 
-            // Check HTTP status code
-            if let httpResponse = response as? HTTPURLResponse {
-                guard 200...299 ~= httpResponse.statusCode else {
-                    NSLog("[PHTPPicker] Sticker download HTTP error: %d", httpResponse.statusCode)
-                    return
+            if let tempURL = saveTempSticker(data: data, filename: sticker.slug) {
+                NSLog("[PHTPPicker] Sticker downloaded: %@", sticker.slug)
+
+                let pasteboard = NSPasteboard.general
+                pasteboard.clearContents()
+                pasteboard.writeObjects([tempURL as NSPasteboardWriting])
+
+                // Close panel first
+                onClose?()
+
+                // Small delay to allow panel to close and frontmost app to regain focus
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(150))
+                    guard !Task.isCancelled else { return }
+                    NSLog("[PHTPPicker] Pasting Sticker...")
+                    simulatePaste()
+
+                    // Clean up file after paste
+                    deleteFileAfterDelay(tempURL)
                 }
+            } else {
+                NSLog("[PHTPPicker] Failed to save Sticker to temp location")
             }
-
-            // Ensure we have data
-            guard let data = data else {
-                NSLog("[PHTPPicker] No data received for Sticker: %@", sticker.slug)
-                return
-            }
-
-            Task { @MainActor in
-                if let tempURL = saveTempSticker(data: data, filename: sticker.slug) {
-                    NSLog("[PHTPPicker] Sticker downloaded: %@", sticker.slug)
-
-                    let pasteboard = NSPasteboard.general
-                    pasteboard.clearContents()
-                    pasteboard.writeObjects([tempURL as NSPasteboardWriting])
-
-                    // Close panel first
-                    onClose?()
-
-                    // Small delay to allow panel to close and frontmost app to regain focus
-                    Task { @MainActor in
-                        try? await Task.sleep(for: .milliseconds(150))
-                        guard !Task.isCancelled else { return }
-                        NSLog("[PHTPPicker] Pasting Sticker...")
-                        simulatePaste()
-
-                        // Clean up file after paste
-                        deleteFileAfterDelay(tempURL)
-                    }
-                } else {
-                    NSLog("[PHTPPicker] Failed to save Sticker to temp location")
-                }
-            }
-        }.resume()
+        }
     }
 
     private func saveTempGIF(data: Data, filename: String) -> URL? {

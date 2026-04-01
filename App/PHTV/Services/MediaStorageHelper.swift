@@ -32,3 +32,35 @@ func deleteFileAfterDelay(_ fileURL: URL, delay: TimeInterval = 5.0) {
         NSLog("[PHTPPicker] Cleaned up file: %@", fileURL.lastPathComponent)
     }
 }
+
+/// Download remote media data using async/await with consistent logging.
+func downloadRemoteData(
+    from url: URL,
+    logPrefix: String,
+    itemDescription: String,
+    identifier: String? = nil
+) async -> Data? {
+    do {
+        let (data, response) = try await URLSession.shared.data(from: url)
+        guard !Task.isCancelled else { return nil }
+
+        if let httpResponse = response as? HTTPURLResponse,
+           !(200...299).contains(httpResponse.statusCode) {
+            NSLog("\(logPrefix) \(itemDescription) download HTTP error: \(httpResponse.statusCode)")
+            return nil
+        }
+
+        guard !data.isEmpty else {
+            let suffix = identifier.map { ": \($0)" } ?? ""
+            NSLog("\(logPrefix) No data received for \(itemDescription)\(suffix)")
+            return nil
+        }
+
+        return data
+    } catch is CancellationError {
+        return nil
+    } catch {
+        NSLog("\(logPrefix) \(itemDescription) download error: \(error.localizedDescription)")
+        return nil
+    }
+}

@@ -16,7 +16,7 @@ struct EmojiCategoriesView: View {
     var onEmojiSelected: (String) -> Void
 
     private let database = EmojiDatabase.shared
-    @State private var selectedSubCategory: Int
+    @AppStorage(Self.lastSubCategoryKey) private var storedSelectedSubCategory = 0
     @State private var searchText = ""
     @State private var searchResults: [EmojiItem] = []
     @State private var searchTask: Task<Void, Never>?
@@ -28,16 +28,9 @@ struct EmojiCategoriesView: View {
     // Key for saving last selected emoji sub-category
     private static let lastSubCategoryKey = "PHTVPickerLastEmojiSubCategory"
 
-    init(onEmojiSelected: @escaping (String) -> Void) {
-        self.onEmojiSelected = onEmojiSelected
-        // Load last selected sub-category, default to 0 if not set or invalid
-        let savedSubCategory = UserDefaults.standard.integer(forKey: EmojiCategoriesView.lastSubCategoryKey)
-        // Validate saved value is within valid range
-        if savedSubCategory >= 0 && savedSubCategory < EmojiDatabase.shared.categories.count {
-            _selectedSubCategory = State(initialValue: savedSubCategory)
-        } else {
-            _selectedSubCategory = State(initialValue: 0)
-        }
+    private var selectedSubCategory: Int {
+        get { database.categories.indices.contains(storedSelectedSubCategory) ? storedSelectedSubCategory : 0 }
+        nonmutating set { storedSelectedSubCategory = newValue }
     }
 
     // Display emojis - from search results or current category
@@ -143,12 +136,10 @@ struct EmojiCategoriesView: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                     }
-                    .onAppear {
-                        Task { @MainActor in
-                            try? await Task.sleep(for: .milliseconds(100))
-                            guard !Task.isCancelled else { return }
-                            scrollProxy.scrollTo(selectedSubCategory, anchor: .center)
-                        }
+                    .task(id: selectedSubCategory) {
+                        try? await Task.sleep(for: .milliseconds(100))
+                        guard !Task.isCancelled else { return }
+                        scrollProxy.scrollTo(selectedSubCategory, anchor: .center)
                     }
                 }
             }
@@ -193,20 +184,15 @@ struct EmojiCategoriesView: View {
                 }
             }
         }
-        .onAppear {
+        .task {
             keyboardFocus = .search
-            Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(50))
-                guard !Task.isCancelled else { return }
-                isSearchFocused = true
-            }
+            try? await Task.sleep(for: .milliseconds(50))
+            guard !Task.isCancelled else { return }
+            isSearchFocused = true
         }
         .onChange(of: searchText) { _, newValue in
             keyboardFocus = .search
             scheduleSearch(for: newValue)
-        }
-        .onChange(of: selectedSubCategory) { _, newValue in
-            UserDefaults.standard.set(newValue, forKey: EmojiCategoriesView.lastSubCategoryKey)
         }
         .onChange(of: displayedEmojiKeys) { _, _ in
             synchronizeGridFocusWithDisplayedEmojis()

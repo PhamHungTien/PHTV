@@ -15,6 +15,14 @@ import AppKit
 struct AnimatedGIFView: NSViewRepresentable {
     let url: URL?
 
+    final class Coordinator {
+        var loadTask: Task<Void, Never>?
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
     func makeNSView(context: Context) -> NSImageView {
         let imageView = NSImageView()
         imageView.imageScaling = .scaleProportionallyUpOrDown
@@ -23,27 +31,17 @@ struct AnimatedGIFView: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: NSImageView, context: Context) {
-        guard let url = url else { return }
+        context.coordinator.loadTask?.cancel()
+        nsView.image = nil
 
-        // Load GIF data asynchronously
-        URLSession.shared.dataTask(with: url) { data, response, error in
-            // Check for network errors
-            if let error = error {
-                NSLog("[AnimatedGIF] Failed to load GIF: %@", error.localizedDescription)
-                return
-            }
+        guard let url else { return }
 
-            // Check HTTP status code
-            if let httpResponse = response as? HTTPURLResponse {
-                guard 200...299 ~= httpResponse.statusCode else {
-                    NSLog("[AnimatedGIF] HTTP error loading GIF: %d", httpResponse.statusCode)
-                    return
-                }
-            }
-
-            // Ensure we have data and can create image
-            guard let data = data else {
-                NSLog("[AnimatedGIF] No data received for GIF")
+        context.coordinator.loadTask = Task {
+            guard let data = await downloadRemoteData(
+                from: url,
+                logPrefix: "[AnimatedGIF]",
+                itemDescription: "GIF"
+            ) else {
                 return
             }
 
@@ -52,10 +50,15 @@ struct AnimatedGIFView: NSViewRepresentable {
                 return
             }
 
-            Task { @MainActor in
+            await MainActor.run {
+                guard !Task.isCancelled else { return }
                 nsView.image = image
             }
-        }.resume()
+        }
+    }
+
+    static func dismantleNSView(_ nsView: NSImageView, coordinator: Coordinator) {
+        coordinator.loadTask?.cancel()
+        nsView.image = nil
     }
 }
-
