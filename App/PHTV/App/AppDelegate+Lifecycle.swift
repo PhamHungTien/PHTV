@@ -163,6 +163,8 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
         _ = notification
 
         AppState.shared.flushPendingSettingsForTermination()
+        permissionGuidancePresentationTask?.cancel()
+        permissionGuidancePresentationTask = nil
         cancelEventTapRecovery(reason: "applicationWillTerminate")
         cancelManagedNotificationTasks()
         stopInputSourceMonitoring()

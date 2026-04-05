@@ -40,6 +40,28 @@ enum PHTVTypingPermissionState: Equatable {
     }
 }
 
+enum PHTVPermissionGuidanceStep: Equatable {
+    case ready
+    case accessibility
+    case inputMonitoring
+    case waitingForEventTap
+
+    static func resolve(
+        accessibilityTrusted: Bool,
+        postEventGranted: Bool,
+        inputMonitoringGranted: Bool,
+        eventTapReady: Bool
+    ) -> Self {
+        guard accessibilityTrusted && postEventGranted else {
+            return .accessibility
+        }
+        guard inputMonitoringGranted else {
+            return .inputMonitoring
+        }
+        return eventTapReady ? .ready : .waitingForEventTap
+    }
+}
+
 /// Manages system settings, permissions, and updates
 @MainActor
 @Observable
@@ -334,13 +356,13 @@ final class SystemState {
 
     // MARK: - Accessibility
 
-    func checkAccessibilityPermission() {
-        Task { @MainActor in
-            refreshPermissionState()
-        }
+    @discardableResult
+    func checkAccessibilityPermission() -> PHTVTypingPermissionState {
+        refreshPermissionState()
     }
 
-    private func refreshPermissionState(eventTapReady: Bool? = nil) {
+    @discardableResult
+    private func refreshPermissionState(eventTapReady: Bool? = nil) -> PHTVTypingPermissionState {
         let axTrusted = AXIsProcessTrusted()
         let postEventGranted = PHTVPermissionService.hasPostEventAccess()
         let accessibilityTrusted = axTrusted && postEventGranted
@@ -361,6 +383,7 @@ final class SystemState {
         if isTypingPermissionReady != resolvedState.isTypingPermissionReady {
             isTypingPermissionReady = resolvedState.isTypingPermissionReady
         }
+        return resolvedState
     }
 
     // MARK: - Login Item Monitoring

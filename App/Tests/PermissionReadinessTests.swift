@@ -58,4 +58,37 @@ final class PermissionReadinessTests: XCTestCase {
         XCTAssertFalse(state.hasAccessibilityPermission)
         XCTAssertFalse(state.isTypingPermissionReady)
     }
+
+    func testGuidancePrefersAccessibilityWhilePostEventAccessIsStillMissing() {
+        let step = PHTVPermissionGuidanceStep.resolve(
+            accessibilityTrusted: true,
+            postEventGranted: false,
+            inputMonitoringGranted: true,
+            eventTapReady: false
+        )
+
+        XCTAssertEqual(step, .accessibility)
+    }
+
+    func testGuidanceAdvancesToInputMonitoringAfterAccessibilityIsReady() {
+        let step = PHTVPermissionGuidanceStep.resolve(
+            accessibilityTrusted: true,
+            postEventGranted: true,
+            inputMonitoringGranted: false,
+            eventTapReady: false
+        )
+
+        XCTAssertEqual(step, .inputMonitoring)
+    }
+
+    func testGuidanceFallsBackToRetryWhenPermissionsExistButTapIsNotReady() {
+        let step = PHTVPermissionGuidanceStep.resolve(
+            accessibilityTrusted: true,
+            postEventGranted: true,
+            inputMonitoringGranted: true,
+            eventTapReady: false
+        )
+
+        XCTAssertEqual(step, .waitingForEventTap)
+    }
 }

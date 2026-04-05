@@ -11,70 +11,88 @@ import AppKit
 import ApplicationServices
 import Foundation
 
-private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
-
 @MainActor @objc extension AppDelegate {
     func askPermission() {
-        let alert = NSAlert()
-        let accessibilityGranted = AXIsProcessTrusted()
-        let listenGranted = PHTVPermissionService.hasListenEventAccess()
-        let postGranted = PHTVPermissionService.hasPostEventAccess()
-        let needsAccessibilityPermission = !accessibilityGranted || !postGranted
-        let needsInputMonitoringPermission = !listenGranted
+        presentPermissionGuidanceUI()
+    }
 
-        var requiredPermissions: [String] = []
-        if needsAccessibilityPermission {
-            requiredPermissions.append("Accessibility (Trợ năng)")
-        }
-        if needsInputMonitoringPermission {
-            requiredPermissions.append("Input Monitoring (Giám sát nhập liệu)")
-        }
-        if requiredPermissions.isEmpty {
-            requiredPermissions = [
-                "Accessibility (Trợ năng)",
-                "Input Monitoring (Giám sát nhập liệu)"
-            ]
-        }
-        let permissionList = requiredPermissions.map { "- \($0)" }.joined(separator: "\n")
-
-        let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
-        let lastVersion = UserDefaults.standard.string(forKey: phtvDefaultsKeyLastRunVersion)
-
-        if let lastVersion, !lastVersion.isEmpty, lastVersion != currentVersion {
-            alert.messageText = "PHTV đã được cập nhật!"
-            alert.informativeText = "Do macOS yêu cầu bảo mật, bạn cần cấp lại quyền sau khi cập nhật lên phiên bản \(currentVersion).\n\nPHTV cần:\n\(permissionList)\n\nỨng dụng sẽ tự động khởi động lại sau khi bạn cấp quyền."
-        } else {
-            alert.messageText = "PHTV cần bạn cấp quyền để có thể hoạt động!"
-            alert.informativeText = "PHTV cần:\n\(permissionList)\n\nỨng dụng sẽ tự động khởi động lại sau khi bạn cấp quyền."
+    @nonobjc
+    func continuePermissionGuidanceIfNeeded(forceOpenSystemSettings: Bool = false) {
+        let step = currentPermissionGuidanceStep()
+        guard step != .ready else {
+            lastPresentedPermissionGuidanceStep = nil
+            return
         }
 
-        alert.addButton(withTitle: "Đóng")
-        alert.addButton(withTitle: "Mở cài đặt quyền")
+        guard forceOpenSystemSettings || step != lastPresentedPermissionGuidanceStep else {
+            return
+        }
 
-        alert.window.makeKeyAndOrderFront(nil)
-        alert.window.level = .statusBar
+        lastPresentedPermissionGuidanceStep = step
+        requestMissingPermissionPromptsIfNeeded()
 
-        let response = alert.runModal()
-        if response == .alertSecondButtonReturn {
-            if !listenGranted {
-                _ = PHTVPermissionService.requestListenEventAccess()
-            }
-            if !postGranted {
-                _ = PHTVPermissionService.requestPostEventAccess()
-            }
+        switch step {
+        case .accessibility:
+            NSLog("[PermissionFlow] Opening Accessibility guidance")
+            PHTVAccessibilityService.openAccessibilityPreferences()
+        case .inputMonitoring:
+            NSLog("[PermissionFlow] Opening Input Monitoring guidance")
+            PHTVPermissionService.openInputMonitoringPreferences()
+        case .waitingForEventTap:
+            NSLog("[PermissionFlow] Retrying event tap initialization")
+            retryTypingPermissionRecovery(reason: "permission-guidance")
+        case .ready:
+            break
+        }
+    }
 
-            if needsAccessibilityPermission {
-                PHTVAccessibilityService.openAccessibilityPreferences()
-            } else if needsInputMonitoringPermission {
-                PHTVPermissionService.openInputMonitoringPreferences()
-            }
+    @nonobjc
+    func retryTypingPermissionRecovery(reason: String = "manual-permission-retry") {
+        PHTVManager.invalidatePermissionCache()
+        publishTypingPermissionState(eventTapReady: false)
+        requestEventTapRecovery(reason: reason, force: true)
+    }
 
-            PHTVManager.invalidatePermissionCache()
-            NSLog("[Accessibility] User opening System Settings - cache invalidated")
+    @nonobjc
+    private func presentPermissionGuidanceUI() {
+        NotificationCenter.default.post(name: NotificationName.showSettings, object: nil)
 
-            UserDefaults.standard.set(currentVersion, forKey: phtvDefaultsKeyLastRunVersion)
-        } else {
-            NSApp.terminate(nil)
+        permissionGuidancePresentationTask?.cancel()
+        permissionGuidancePresentationTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(350))
+            guard let self, !Task.isCancelled else { return }
+
+            NotificationCenter.default.post(name: NotificationName.showOnboarding, object: nil)
+            self.continuePermissionGuidanceIfNeeded(forceOpenSystemSettings: true)
+        }
+    }
+
+    @nonobjc
+    private func currentPermissionGuidanceStep() -> PHTVPermissionGuidanceStep {
+        let accessibilityTrusted = AXIsProcessTrusted()
+        let postEventGranted = PHTVPermissionService.hasPostEventAccess()
+        let inputMonitoringGranted = PHTVPermissionService.hasListenEventAccess()
+        let eventTapReady = accessibilityTrusted
+            && postEventGranted
+            && inputMonitoringGranted
+            && PHTVManager.isInited()
+            && PHTVManager.isEventTapEnabled()
+
+        return PHTVPermissionGuidanceStep.resolve(
+            accessibilityTrusted: accessibilityTrusted,
+            postEventGranted: postEventGranted,
+            inputMonitoringGranted: inputMonitoringGranted,
+            eventTapReady: eventTapReady
+        )
+    }
+
+    @nonobjc
+    private func requestMissingPermissionPromptsIfNeeded() {
+        if !PHTVPermissionService.hasPostEventAccess() {
+            _ = PHTVPermissionService.requestPostEventAccess()
+        }
+        if !PHTVPermissionService.hasListenEventAccess() {
+            _ = PHTVPermissionService.requestListenEventAccess()
         }
     }
 }

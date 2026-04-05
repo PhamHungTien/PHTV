@@ -864,8 +864,10 @@ struct AccessibilityStepView: View {
                         )
                     )
 
-                    Button("Mở Cài đặt Accessibility") {
-                        PHTVAccessibilityService.openAccessibilityPreferences()
+                    Button("Mở Trợ năng") {
+                        AppDelegate.current()?.continuePermissionGuidanceIfNeeded(
+                            forceOpenSystemSettings: true
+                        )
                     }
                     .buttonStyle(OnboardingPrimaryButtonStyle())
                 } else if !appState.hasInputMonitoringPermission {
@@ -895,7 +897,9 @@ struct AccessibilityStepView: View {
                     )
 
                     Button("Mở Input Monitoring") {
-                        PHTVPermissionService.openInputMonitoringPreferences()
+                        AppDelegate.current()?.continuePermissionGuidanceIfNeeded(
+                            forceOpenSystemSettings: true
+                        )
                     }
                     .buttonStyle(OnboardingPrimaryButtonStyle())
                 } else {
@@ -910,8 +914,8 @@ struct AccessibilityStepView: View {
                         Text("Nếu chưa hoạt động")
                             .font(.system(size: 14, weight: .semibold, design: .rounded))
 
-                        OnboardingNumberedRow(number: "1", text: "Chờ vài giây để macOS áp dụng quyền.")
-                        OnboardingNumberedRow(number: "2", text: "Nếu vẫn chưa gõ được, thử đóng và mở lại PHTV.")
+                        OnboardingNumberedRow(number: "1", text: "Nhấn Thử lại ngay để PHTV tự kiểm tra và khởi tạo lại bộ gõ.")
+                        OnboardingNumberedRow(number: "2", text: "Nếu vẫn chưa gõ được, chờ vài giây để macOS áp dụng quyền rồi thử lại.")
                         OnboardingNumberedRow(number: "3", text: "Nếu cần, tắt rồi bật lại Input Monitoring hoặc Accessibility cho PHTV.")
                     }
                     .padding(16)
@@ -923,6 +927,13 @@ struct AccessibilityStepView: View {
                             strokeColor: Color.black.opacity(0.1)
                         )
                     )
+
+                    Button("Thử lại ngay") {
+                        AppDelegate.current()?.continuePermissionGuidanceIfNeeded(
+                            forceOpenSystemSettings: true
+                        )
+                    }
+                    .buttonStyle(OnboardingPrimaryButtonStyle())
                 }
             }
             .padding(.horizontal, OnboardingStyle.contentHorizontalPadding)
@@ -941,14 +952,10 @@ struct AccessibilityStepView: View {
     }
 
     private func refreshPermissionState() {
-        appState.checkAccessibilityPermission()
+        let permissionState = appState.checkAccessibilityPermission()
 
-        // When AX is granted, ensure AppDelegate starts the event tap
-        // (handles the case where TCC notification wasn't delivered).
-        if appState.hasAccessibilityPermission &&
-            appState.hasInputMonitoringPermission &&
-            !appState.isTypingPermissionReady {
-            AppDelegate.current()?.checkAccessibilityAndRestart()
+        if permissionState != .ready {
+            AppDelegate.current()?.continuePermissionGuidanceIfNeeded()
         }
     }
 }

@@ -261,11 +261,9 @@ struct StatusCard: View {
 
             if shouldShowPermissionButton {
                 Button(permissionButtonTitle) {
-                    if !hasAccessibilityPermission {
-                        PHTVAccessibilityService.openAccessibilityPreferences()
-                    } else if !hasInputMonitoringPermission {
-                        PHTVPermissionService.openInputMonitoringPreferences()
-                    }
+                    AppDelegate.current()?.continuePermissionGuidanceIfNeeded(
+                        forceOpenSystemSettings: true
+                    )
                 }
                 .controlSize(.small)
                 .buttonStyle(.borderedProminent)
@@ -333,21 +331,21 @@ struct StatusCard: View {
         if !hasInputMonitoringPermission {
             return "PHTV đã có Trợ năng nhưng còn thiếu Input Monitoring để bắt phím toàn cục."
         }
-        return "Quyền đã được cấp, nhưng bộ gõ chưa sẵn sàng. Nếu chưa hoạt động, hãy mở lại ứng dụng hoặc bật lại quyền."
+        return "Quyền đã được cấp, nhưng bộ gõ chưa sẵn sàng. Nhấn Thử lại ngay để PHTV tự khởi tạo lại."
     }
 
     private var shouldShowPermissionButton: Bool {
-        !isReady && (!hasAccessibilityPermission || !hasInputMonitoringPermission)
+        !isReady
     }
 
     private var permissionButtonTitle: String {
         if !hasAccessibilityPermission {
-            return "Cấp quyền"
+            return "Mở Trợ năng"
         }
         if !hasInputMonitoringPermission {
             return "Mở Input Monitoring"
         }
-        return "Mở quyền"
+        return "Thử lại ngay"
     }
 }
 

@@ -11,7 +11,6 @@ import AppKit
 import Foundation
 
 private let phtvDefaultsKeyShowUIOnStartup = "ShowUIOnStartup"
-private let phtvDefaultsKeyLastRunVersion = "LastRunVersion"
 
 private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Bool, error: Error?) {
     guard PHTVManager.isTCCEntryCorrupt() else {
@@ -43,6 +42,9 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
     @nonobjc
     func publishTypingPermissionState(eventTapReady: Bool? = nil) {
         let isReady = eventTapReady ?? (PHTVManager.isInited() && PHTVManager.isEventTapEnabled())
+        if isReady {
+            lastPresentedPermissionGuidanceStep = nil
+        }
         guard lastPublishedTypingPermissionReady != isReady else { return }
         lastPublishedTypingPermissionReady = isReady
         NotificationCenter.default.post(
@@ -148,9 +150,6 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
 
     func performAccessibilityGrantedRestart() {
         NSLog("[Accessibility] Permission granted - Initializing event tap...")
-
-        let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
-        UserDefaults.standard.set(currentVersion, forKey: phtvDefaultsKeyLastRunVersion)
 
         stopAccessibilityMonitoring()
         PHTVManager.invalidatePermissionCache()

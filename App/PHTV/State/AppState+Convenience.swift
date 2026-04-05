@@ -392,7 +392,8 @@ extension AppState {
         appListsState.isAppUpperCaseExcluded(bundleIdentifier: bundleIdentifier)
     }
 
-    func checkAccessibilityPermission() {
+    @discardableResult
+    func checkAccessibilityPermission() -> PHTVTypingPermissionState {
         systemState.checkAccessibilityPermission()
     }
 }
