@@ -141,7 +141,7 @@ struct TypingSettingsView: View {
                             icon: "text.magnifyingglass",
                             iconColor: .accentColor,
                             title: "Tự động khôi phục tiếng Anh",
-                            subtitle: "Chỉ khôi phục khi từ được nhận diện là tiếng Anh",
+                            subtitle: "Khôi phục từ được nhận diện là tiếng Anh (hoặc có trong từ điển)",
                             isOn: bindable.autoRestoreEnglishWord
                         )
 

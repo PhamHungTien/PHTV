@@ -559,7 +559,7 @@ private func shouldPreferEnglishForExtendedInitialWord(
     switch first {
     case DetectorKeyCode.z:
         return true
-    case DetectorKeyCode.f, DetectorKeyCode.j, DetectorKeyCode.w:
+    case DetectorKeyCode.f, DetectorKeyCode.j:
         return !quickStart
     default:
         return false

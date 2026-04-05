@@ -106,7 +106,7 @@ enum AutoRestoreEnglishMode: Int, CaseIterable, Identifiable, Sendable {
         case .nonVietnamese:
             return "Chỉ giữ nguyên dạng gõ thô khi từ sau biến đổi không phải tiếng Việt; từ Việt có trong từ điển sẽ không bị khôi phục."
         case .englishOnly:
-            return "Chỉ khôi phục khi từ được nhận diện là tiếng Anh."
+            return "Khôi phục từ được nhận diện là tiếng Anh (hoặc có trong từ điển)."
         }
     }
 
@@ -115,7 +115,7 @@ enum AutoRestoreEnglishMode: Int, CaseIterable, Identifiable, Sendable {
         case .nonVietnamese:
             return "Giữ từ Việt, khôi phục từ còn lại."
         case .englishOnly:
-            return "Chỉ khôi phục từ tiếng Anh."
+            return "Khôi phục từ tiếng Anh hoặc có trong từ điển."
         }
     }
 

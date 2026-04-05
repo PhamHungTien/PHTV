@@ -702,6 +702,7 @@ final class EngineRegressionTests: XCTestCase {
 
     func testCuratedAcronymsAndModelNamesRestoreOnWordBreaks() {
         runSpaceCase("qwen", expectRestore: true)
+        runWordBreakCase("qwen", expectRestore: true, breakKey: KEY_COMMA)
         runWordBreakCase("hcmus", expectRestore: true, breakKey: KEY_COMMA)
         runWordBreakCase("huflit", expectRestore: true, breakKey: KEY_DOT)
     }
@@ -902,6 +903,22 @@ final class EngineRegressionTests: XCTestCase {
 
     func testWafProducesMarkedUa() {
         XCTAssertEqual(renderedToken("waf"), "ừa")
+    }
+
+    func testQwenProducesTelexTransformedTypingBeforeRestore() {
+        XCTAssertEqual(renderedToken("qwen"), "qưen")
+    }
+
+    func testWuProducesUu() {
+        XCTAssertEqual(renderedToken("wu"), "ưu")
+    }
+
+    func testWuDoesNotRestoreOnSpace() {
+        runSpaceCase("wu", expectRestore: false)
+    }
+
+    func testWuDoesNotRestoreOnComma() {
+        runWordBreakCase("wu", expectRestore: false, breakKey: KEY_COMMA)
     }
 
     func testSispProducesMarkedSyllable() {

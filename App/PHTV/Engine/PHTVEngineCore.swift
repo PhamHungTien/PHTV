@@ -305,7 +305,7 @@ final class PHTVVietnameseEngine {
         switch firstKey {
         case KEY_Z:
             return true
-        case KEY_F, KEY_J, KEY_W:
+        case KEY_F, KEY_J:
             return !quickStart
         default:
             return false
@@ -338,13 +338,12 @@ final class PHTVVietnameseEngine {
         if englishLength > 0 && detectorIsVietnameseWord(keySlice, englishLength) {
             return true
         }
-        if isVietnameseWordFromTypingWord(typingLength) {
-            return true
+        // Once Telex has already transformed the typing buffer, stripping it back to raw
+        // base letters can create false Vietnamese matches like "qưen" -> "quen".
+        if hasVietnameseTransformsInTypingWord(typingLength) {
+            return isVietnameseFromCanonicalTelex(typingLength)
         }
-        if isVietnameseFromCanonicalTelex(typingLength) {
-            return true
-        }
-        return false
+        return isVietnameseWordFromTypingWord(typingLength) || isVietnameseFromCanonicalTelex(typingLength)
     }
 
     func checkRestoreIfWrongSpelling(_ handleCode: Int32) -> Bool {
