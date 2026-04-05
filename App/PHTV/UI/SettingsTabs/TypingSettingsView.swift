@@ -140,16 +140,10 @@ struct TypingSettingsView: View {
                         SettingsToggleRow(
                             icon: "text.magnifyingglass",
                             iconColor: .accentColor,
-                            title: "Tự động khôi phục",
-                            subtitle: "Không biến đổi từ không phải tiếng Việt theo chế độ bạn chọn",
+                            title: "Tự động khôi phục tiếng Anh",
+                            subtitle: "Chỉ khôi phục khi từ được nhận diện là tiếng Anh",
                             isOn: bindable.autoRestoreEnglishWord
                         )
-
-                        if appState.autoRestoreEnglishWord {
-                            SettingsDivider()
-
-                            AutoRestoreEnglishModeSection()
-                        }
 
                         SettingsDivider()
 
@@ -210,40 +204,6 @@ struct TypingSettingsView: View {
 }
 
 // Components moved to SettingsComponents.swift
-
-
-// MARK: - Auto Restore Section
-
-struct AutoRestoreEnglishModeSection: View {
-    @Environment(AppState.self) private var appState
-
-    var body: some View {
-        let contentLeadingPadding: CGFloat = 38
-
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Chế độ khôi phục")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.secondary)
-
-            VStack(spacing: 8) {
-                ForEach(AutoRestoreEnglishMode.allCases) { mode in
-                    SettingsSelectionRow(
-                        title: mode.controlTitle,
-                        subtitle: mode.selectionSubtitle,
-                        isSelected: appState.autoRestoreEnglishWordMode == mode,
-                        action: {
-                            appState.autoRestoreEnglishWordMode = mode
-                        }
-                    )
-                }
-            }
-        }
-        .padding(.leading, contentLeadingPadding)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .multilineTextAlignment(.leading)
-        .padding(.vertical, 6)
-    }
-}
 
 
 // MARK: - Upper Case Excluded Apps Section

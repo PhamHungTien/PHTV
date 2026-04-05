@@ -220,12 +220,9 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
         let m = NSMenu()
 
         sectionHeader("Khôi phục", in: m)
-        m.addItem(closureToggle("Tự động khôi phục", image: "character.bubble", on: appState.autoRestoreEnglishWord) {
+        m.addItem(closureToggle("Tự động khôi phục tiếng Anh", image: "character.bubble", on: appState.autoRestoreEnglishWord) {
             AppState.shared.autoRestoreEnglishWord.toggle()
         })
-        if appState.autoRestoreEnglishWord {
-            m.addItem(submenu("Chế độ khôi phục", image: "list.bullet.circle", build: buildAutoRestoreEnglishModeMenu))
-        }
 
         m.addItem(.separator())
 
@@ -267,16 +264,6 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
             AppState.shared.pauseKeyEnabled.toggle()
         })
 
-        return m
-    }
-
-    private func buildAutoRestoreEnglishModeMenu() -> NSMenu {
-        let m = NSMenu()
-        for mode in AutoRestoreEnglishMode.allCases {
-            m.addItem(closureRadio(mode.displayName, on: appState.autoRestoreEnglishWordMode == mode) {
-                AppState.shared.autoRestoreEnglishWordMode = mode
-            })
-        }
         return m
     }
 

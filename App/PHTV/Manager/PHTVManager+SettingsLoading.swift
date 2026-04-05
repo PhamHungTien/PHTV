@@ -64,10 +64,9 @@ import Foundation
         autoRestoreEnglishWord: Int32,
         mode: AutoRestoreEnglishMode
     ) -> Int32 {
-        guard autoRestoreEnglishWord != 0 else {
-            return 0
-        }
-        return mode.enablesWrongSpellingFallback ? 1 : 0
+        _ = autoRestoreEnglishWord
+        _ = mode
+        return 0
     }
 
     private class func phtv_computeSettingsToken(defaults: UserDefaults) -> UInt {

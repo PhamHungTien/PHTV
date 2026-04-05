@@ -29,7 +29,8 @@ import Foundation
     }
 
     @nonobjc private class func phtv_currentAutoRestoreEnglishMode(defaults: UserDefaults) -> AutoRestoreEnglishMode {
-        defaults.autoRestoreEnglishMode()
+        _ = defaults
+        return .englishOnly
     }
 
     @discardableResult
@@ -38,14 +39,16 @@ import Foundation
         mode: AutoRestoreEnglishMode,
         defaults: UserDefaults
     ) -> Int32 {
+        _ = mode
         let normalizedAutoRestore: Int32 = autoRestoreEnglishWord == 0 ? 0 : 1
-        let restoreIfWrongSpelling: Int32 = normalizedAutoRestore != 0 && mode.enablesWrongSpellingFallback ? 1 : 0
+        let normalizedMode = AutoRestoreEnglishMode.englishOnly
+        let restoreIfWrongSpelling: Int32 = 0
 
         PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(normalizedAutoRestore)
-        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(mode.rawValue))
+        PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(normalizedMode.rawValue))
         PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(restoreIfWrongSpelling)
         defaults.set(Int(normalizedAutoRestore), forKey: UserDefaultsKey.autoRestoreEnglishWord)
-        defaults.set(mode.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
+        defaults.set(normalizedMode.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
         defaults.set(Int(restoreIfWrongSpelling), forKey: UserDefaultsKey.restoreIfWrongSpelling)
         return restoreIfWrongSpelling
     }

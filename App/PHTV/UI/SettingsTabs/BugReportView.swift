@@ -691,7 +691,6 @@ struct BugReportView: View {
         output += "  - Empty char timing: ✅ Smart detection (skips '/' shortcuts)\n"
         output += "  - Step-by-step mode: \(appState.sendKeyStepByStep ? "✅ Enabled (global)" : "❌ Disabled (default)")\n"
         output += "  - Auto English restore: \(appState.autoRestoreEnglishWord ? "✅ (HID tap for restoration)" : "❌")\n"
-        output += "  - Auto restore mode: \(appState.autoRestoreEnglishWordMode.reportLabel)\n"
 
         // Current front app
         output += "- **Current App:** \(getFrontAppInfo())\n"
@@ -1228,7 +1227,6 @@ struct BugReportView: View {
             - **Safe Mode:** \(appState.safeMode ? "✅" : "❌")
             - **Send key step by step:** \(appState.sendKeyStepByStep ? "✅" : "❌")
             - **Auto restore English word:** \(appState.autoRestoreEnglishWord ? "✅" : "❌")
-            - **Auto restore mode:** \(appState.autoRestoreEnglishWordMode.reportLabel)
             - **Restore on Escape:** \(appState.restoreOnEscape ? "✅" : "❌")
             - **Pause key enabled:** \(appState.pauseKeyEnabled ? "✅" : "❌")
 

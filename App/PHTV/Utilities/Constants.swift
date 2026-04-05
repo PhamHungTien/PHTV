@@ -400,7 +400,7 @@ enum Defaults {
     static let rememberCode = true
     static let autoRestoreEnglishWord = true
     static let autoRestoreEnglishWordMode = AutoRestoreEnglishMode.englishOnly
-    static let restoreIfWrongSpelling = autoRestoreEnglishWordMode.enablesWrongSpellingFallback
+    static let restoreIfWrongSpelling = false
 
     // MARK: - Restore & Pause
     static let restoreOnEscape = true
@@ -550,27 +550,12 @@ extension UserDefaults {
         return defaultValue
     }
 
-    /// Reads auto-restore mode and falls back to legacy wrong-spelling behavior.
+    /// Auto-restore now only supports English-word restoration.
     func autoRestoreEnglishMode() -> AutoRestoreEnglishMode {
-        if let mode = AutoRestoreEnglishMode.from(
-            persistedValue: persistedObject(forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
-        ) {
-            return mode
-        }
-
-        if let legacyRestoreIfWrongSpelling = decodePersistedBool(
-            persistedObject(forKey: UserDefaultsKey.restoreIfWrongSpelling)
-        ) {
-            return legacyRestoreIfWrongSpelling ? .nonVietnamese : .englishOnly
-        }
-
-        if let legacyRestoreIfInvalidWord = decodePersistedBool(
-            persistedObject(forKey: "RestoreIfInvalidWord")
-        ) {
-            return legacyRestoreIfInvalidWord ? .nonVietnamese : .englishOnly
-        }
-
-        return Defaults.autoRestoreEnglishWordMode
+        _ = persistedObject(forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
+        _ = decodePersistedBool(persistedObject(forKey: UserDefaultsKey.restoreIfWrongSpelling))
+        _ = decodePersistedBool(persistedObject(forKey: "RestoreIfInvalidWord"))
+        return .englishOnly
     }
 
     /// Reads a Double with explicit fallback when the key is missing.

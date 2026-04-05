@@ -803,8 +803,8 @@ struct BasicFeaturesStepView: View {
 
                     FeatureToggleRow(
                         icon: "character.bubble.fill",
-                        title: "Tự động khôi phục",
-                        description: "Giữ nguyên từ ngoài tiếng Việt theo chế độ đã chọn.",
+                        title: "Tự động khôi phục tiếng Anh",
+                        description: "Khôi phục lại từ tiếng Anh bị biến đổi ngoài ý muốn.",
                         isOn: bindable.autoRestoreEnglishWord
                     )
                 }

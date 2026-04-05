@@ -146,18 +146,14 @@ final class InputMethodState {
         return nil
     }
 
-    private func decodeAutoRestoreEnglishMode(_ value: Any?) -> AutoRestoreEnglishMode? {
-        AutoRestoreEnglishMode.from(persistedValue: value)
-    }
-
     private var restoreIfWrongSpellingForRuntime: Bool {
-        autoRestoreEnglishWord && autoRestoreEnglishWordMode.enablesWrongSpellingFallback
+        false
     }
 
     private func persistAutoRestoreEnglishSettings() {
         let defaults = UserDefaults.standard
         defaults.set(autoRestoreEnglishWord, forKey: UserDefaultsKey.autoRestoreEnglishWord)
-        defaults.set(autoRestoreEnglishWordMode.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
+        defaults.set(Defaults.autoRestoreEnglishWordMode.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
         defaults.set(restoreIfWrongSpellingForRuntime, forKey: UserDefaultsKey.restoreIfWrongSpelling)
     }
 
@@ -269,13 +265,8 @@ final class InputMethodState {
             forKey: UserDefaultsKey.autoRestoreEnglishWord,
             default: Defaults.autoRestoreEnglishWord
         )
-        let hasPersistedAutoRestoreMode = decodeAutoRestoreEnglishMode(
-            defaults.persistedObject(forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
-        ) != nil
-        autoRestoreEnglishWordMode = defaults.autoRestoreEnglishMode()
-        if !hasPersistedAutoRestoreMode {
-            defaults.set(autoRestoreEnglishWordMode.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
-        }
+        autoRestoreEnglishWordMode = .englishOnly
+        defaults.set(Defaults.autoRestoreEnglishWordMode.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
         defaults.set(restoreIfWrongSpellingForRuntime, forKey: UserDefaultsKey.restoreIfWrongSpelling)
 
         // Restore to raw keys (customizable key)
