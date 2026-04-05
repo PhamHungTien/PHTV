@@ -321,30 +321,10 @@ struct SettingsWindowContent: View {
     private func applySettingsWindowBehavior(forceFront: Bool) {
         guard let window = NSApp.windows.first(where: { isSettingsWindow($0) }) else { return }
 
-        // Set window level based on user preference
-        // Use .floating for always-on-top, .normal for standard
-        window.level = appState.settingsWindowAlwaysOnTop ? .floating : .normal
-
-        // On macOS 26+, allow transparency so backgroundExtensionEffect() can
-        // render the glass material behind the toolbar.  On older versions keep
-        // the window fully opaque for a solid, consistent appearance.
-        if #available(macOS 26.0, *) {
-            window.isOpaque = false
-            window.backgroundColor = .clear
-        } else {
-            window.isOpaque = true
-            window.backgroundColor = NSColor.windowBackgroundColor
-        }
-
-        // Ensure window doesn't disappear when app loses focus
-        window.hidesOnDeactivate = false
-
-        // Keep dragging constrained to the real titlebar/toolbar area so
-        // sidebar clicks are never interpreted as window-drag gestures.
-        window.isMovableByWindowBackground = false
-
-        // Standard behavior: participate in Cycle, move to active space
-        window.collectionBehavior = [.managed, .participatesInCycle, .moveToActiveSpace, .fullScreenAuxiliary]
+        SettingsWindowHelper.applyWindowConfiguration(
+            to: window,
+            alwaysOnTop: appState.settingsWindowAlwaysOnTop
+        )
 
         guard forceFront,
               !window.isMiniaturized,

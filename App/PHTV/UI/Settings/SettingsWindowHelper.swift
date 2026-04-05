@@ -14,21 +14,13 @@ enum SettingsWindowHelper {
     private static var settingsController: SwiftUIWindowController?
 
     static func openSettingsWindow() {
-        NSApp.setActivationPolicy(.regular)
-
         // First, try to find and show existing settings window
         for window in NSApp.windows {
             let identifier = window.identifier?.rawValue ?? ""
             // SwiftUI Window scenes have identifiers like "settings-AppWindow-1"
             if identifier.hasPrefix("settings") {
-                // Set window level based on user preference
                 let alwaysOnTop = AppState.shared.settingsWindowAlwaysOnTop
-                window.level = alwaysOnTop ? .floating : .normal
-
-                // FIX: Ensure robust window behavior matching SettingsWindowContent
-                window.hidesOnDeactivate = false
-                window.isMovableByWindowBackground = false
-                window.collectionBehavior = [.managed, .participatesInCycle, .moveToActiveSpace, .fullScreenAuxiliary]
+                applyWindowConfiguration(to: window, alwaysOnTop: alwaysOnTop)
 
                 // Ensure window is not minimized
                 if window.isMiniaturized {
@@ -36,6 +28,7 @@ enum SettingsWindowHelper {
                 }
 
                 // Bring window to front after its final state is restored.
+                NSApp.setActivationPolicy(.regular)
                 window.makeKeyAndOrderFront(nil)
 
                 // Activate app
@@ -56,13 +49,24 @@ enum SettingsWindowHelper {
 
         if let window = controller.window {
             let alwaysOnTop = AppState.shared.settingsWindowAlwaysOnTop
-            window.level = alwaysOnTop ? .floating : .normal
-            window.hidesOnDeactivate = false
-            window.isMovableByWindowBackground = false
-            window.collectionBehavior = [.managed, .participatesInCycle, .moveToActiveSpace, .fullScreenAuxiliary]
+            applyWindowConfiguration(to: window, alwaysOnTop: alwaysOnTop)
         }
 
+        NSApp.setActivationPolicy(.regular)
         controller.show()
+    }
+
+    static func applyWindowConfiguration(to window: NSWindow, alwaysOnTop: Bool) {
+        window.level = alwaysOnTop ? .floating : .normal
+        window.hidesOnDeactivate = false
+        window.isMovableByWindowBackground = false
+        window.collectionBehavior = [.managed, .participatesInCycle, .moveToActiveSpace, .fullScreenAuxiliary]
+
+        // Keep the window visually stable when it opens from menu-bar mode.
+        // A transparent settings window on macOS 26 can briefly flash around
+        // the frame while the scene and activation policy are being restored.
+        window.isOpaque = true
+        window.backgroundColor = NSColor.windowBackgroundColor
     }
 
     static func releaseSettingsWindow() {
