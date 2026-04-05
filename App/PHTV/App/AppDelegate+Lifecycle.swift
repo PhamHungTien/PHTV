@@ -89,9 +89,11 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
 
         observeAppearanceChanges()
 
-        let binaryIntact = PHTVManager.checkBinaryIntegrity()
-        if !binaryIntact {
-            NSLog("⚠️⚠️⚠️ [AppDelegate] Binary integrity check FAILED - may cause permission issues")
+        Task.detached(priority: .utility) {
+            let binaryIntact = PHTVBinaryIntegrityService.checkBinaryIntegrity()
+            if !binaryIntact {
+                NSLog("⚠️⚠️⚠️ [AppDelegate] Binary integrity check FAILED - may cause permission issues")
+            }
         }
 
         PHTVManager.startTCCNotificationListener()
