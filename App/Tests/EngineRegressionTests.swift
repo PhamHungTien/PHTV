@@ -690,6 +690,22 @@ final class EngineRegressionTests: XCTestCase {
         XCTAssertEqual(isEnglish, 1)
     }
 
+    func testDetectorRecognizesCuratedAcronymsAndModelNamesAsEnglishWords() {
+        for token in ["hcmus", "huflit", "qwen", "ueh", "rmit"] {
+            let keyStates = detectorKeyStates(for: token)
+            let isEnglish = keyStates.withUnsafeBufferPointer {
+                phtvDetectorIsEnglishWordFromKeyStates($0.baseAddress, Int32($0.count))
+            }
+            XCTAssertEqual(isEnglish, 1, "Expected built-in dictionary to include \(token)")
+        }
+    }
+
+    func testCuratedAcronymsAndModelNamesRestoreOnWordBreaks() {
+        runSpaceCase("qwen", expectRestore: true)
+        runWordBreakCase("hcmus", expectRestore: true, breakKey: KEY_COMMA)
+        runWordBreakCase("huflit", expectRestore: true, breakKey: KEY_DOT)
+    }
+
     func testIssue160DetectorShouldRestoreForWhenAllowConsonantIsDisabled() {
         let savedAllowConsonantZFWJ = PHTVEngineRuntimeFacade.allowConsonantZFWJ()
         let savedQuickStart = PHTVEngineRuntimeFacade.quickStartConsonant()
