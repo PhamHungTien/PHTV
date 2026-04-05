@@ -95,8 +95,32 @@ final class ClipboardHistoryManager {
 
     // MARK: - Persistence
 
+    private static var historyFileURL: URL {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let dir = appSupport.appendingPathComponent("PHTV", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent("clipboard_history.json")
+    }
+
     private func loadHistory() {
-        guard let data = UserDefaults.standard.data(forKey: UserDefaultsKey.clipboardHistoryData) else { return }
+        // Migrate from UserDefaults if needed
+        if let legacyData = UserDefaults.standard.data(forKey: UserDefaultsKey.clipboardHistoryData) {
+            do {
+                items = try JSONDecoder().decode([ClipboardHistoryItem].self, from: legacyData)
+                trimItemsToConfiguredLimit()
+                saveHistory()
+                UserDefaults.standard.removeObject(forKey: UserDefaultsKey.clipboardHistoryData)
+                NSLog("[ClipboardHistory] Migrated history from UserDefaults to file storage")
+            } catch {
+                NSLog("[ClipboardHistory] Failed to migrate legacy history: %@", error.localizedDescription)
+                UserDefaults.standard.removeObject(forKey: UserDefaultsKey.clipboardHistoryData)
+            }
+            return
+        }
+
+        let url = Self.historyFileURL
+        guard FileManager.default.fileExists(atPath: url.path),
+              let data = try? Data(contentsOf: url) else { return }
         do {
             items = try JSONDecoder().decode([ClipboardHistoryItem].self, from: data)
             trimItemsToConfiguredLimit()
@@ -108,9 +132,9 @@ final class ClipboardHistoryManager {
     private func saveHistory() {
         do {
             let data = try JSONEncoder().encode(items)
-            UserDefaults.standard.set(data, forKey: UserDefaultsKey.clipboardHistoryData)
+            try data.write(to: Self.historyFileURL, options: .atomic)
         } catch {
-            NSLog("[ClipboardHistory] Failed to encode history: %@", error.localizedDescription)
+            NSLog("[ClipboardHistory] Failed to save history: %@", error.localizedDescription)
         }
     }
 
