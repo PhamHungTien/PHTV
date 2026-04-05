@@ -295,19 +295,27 @@ struct ClipboardHistoryView: View {
 
     @ViewBuilder
     private var emptyState: some View {
-        if searchText.isEmpty {
-            ContentUnavailableView {
-                Label("Chưa có nội dung nào", systemImage: "doc.text.viewfinder")
-            } description: {
-                Text("Nội dung bạn sao chép sẽ xuất hiện ở đây")
-            }
-        } else {
-            ContentUnavailableView {
-                Label("Không tìm thấy", systemImage: "magnifyingglass")
-            } description: {
-                Text("Thử từ khoá khác")
-            }
+        VStack(spacing: 12) {
+            Image(systemName: searchText.isEmpty ? "doc.text.viewfinder" : "magnifyingglass")
+                .font(.system(size: 38, weight: .regular))
+                .foregroundStyle(.secondary.opacity(0.45))
+
+            Text(searchText.isEmpty ? "Chưa có nội dung nào" : "Không tìm thấy")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.secondary)
+
+            Text(
+                searchText.isEmpty
+                ? "Nội dung bạn sao chép sẽ xuất hiện ở đây"
+                : "Thử từ khoá khác"
+            )
+            .font(.system(size: 13))
+            .foregroundStyle(.tertiary)
+            .multilineTextAlignment(.center)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .padding(.top, 56)
+        .padding(.horizontal, 24)
     }
 
     // MARK: - Selection Logic
