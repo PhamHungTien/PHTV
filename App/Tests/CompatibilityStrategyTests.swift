@@ -199,4 +199,39 @@ final class CompatibilityStrategyTests: XCTestCase {
         XCTAssertEqual(plan.adjustedBackspaceCount, 3)
         XCTAssertEqual(plan.sanitizedBackspaceCount, 3)
     }
+
+    func testNotionPrefersDecodedCharacterSendOverStepByStepReplay() {
+        let plan = PHTVInputStrategyService.characterSendPlan(
+            forSpotlightTarget: false,
+            cliTarget: false,
+            globalStepByStep: false,
+            appNeedsStepByStep: PHTVAppDetectionService.needsStepByStep("notion.id"),
+            appNeedsPrecomposedBatched: PHTVAppDetectionService.needsPrecomposedBatched("notion.id"),
+            keyCode: Int32(KeyCode.vKey),
+            engineCode: EngineSignalCode.willProcess,
+            restoreCode: EngineSignalCode.restore,
+            restoreAndStartNewSessionCode: EngineSignalCode.restoreAndStartNewSession,
+            enterKeyCode: Int32(KeyCode.enter),
+            returnKeyCode: Int32(KeyCode.returnKey)
+        )
+
+        XCTAssertFalse(plan.useStepByStepCharacterSend)
+        XCTAssertFalse(plan.shouldSendRestoreTriggerKey)
+        XCTAssertFalse(plan.shouldStartNewSessionAfterSend)
+    }
+
+    func testNotionMacrosPreferDecodedCharacterSendOverStepByStepReplay() {
+        let plan = PHTVInputStrategyService.macroPlan(
+            forPostToHIDTap: false,
+            appIsSpotlightLike: false,
+            browserFixEnabled: false,
+            originalBackspaceCount: 0,
+            cliTarget: false,
+            globalStepByStep: false,
+            appNeedsStepByStep: PHTVAppDetectionService.needsStepByStep("notion.id"),
+            appNeedsPrecomposedBatched: PHTVAppDetectionService.needsPrecomposedBatched("notion.id")
+        )
+
+        XCTAssertFalse(plan.useStepByStepSend)
+    }
 }

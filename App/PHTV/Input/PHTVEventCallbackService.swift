@@ -830,6 +830,7 @@ final class PHTVEventCallbackService {
                 cliTarget: PHTVEventRuntimeContextService.isCliTargetEnabled(),
                 globalStepByStep: PHTVEngineRuntimeFacade.isSendKeyStepByStepEnabled(),
                 appNeedsStepByStep: appChars.needsStepByStep,
+                appNeedsPrecomposedBatched: appChars.needsPrecomposedBatched,
                 keyCode: Int32(eventKeycode),
                 engineCode: PHTVEngineRuntimeFacade.engineDataCode(),
                 restoreCode: EngineSignalCode.restore,

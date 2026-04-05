@@ -177,7 +177,8 @@ final class PHTVCharacterOutputService: NSObject {
             originalBackspaceCount: PHTVEngineRuntimeFacade.engineDataBackspaceCount(),
             cliTarget: PHTVEventRuntimeContextService.isCliTargetEnabled(),
             globalStepByStep: PHTVEngineRuntimeFacade.isSendKeyStepByStepEnabled(),
-            appNeedsStepByStep: PHTVEventRuntimeContextService.appNeedsStepByStep())
+            appNeedsStepByStep: PHTVEventRuntimeContextService.appNeedsStepByStep(),
+            appNeedsPrecomposedBatched: PHTVEventRuntimeContextService.appNeedsPrecomposedBatched())
 
         let isSpotlightLike = macroPlan.isSpotlightLikeTarget
         let macroDataSize = Int(PHTVEngineRuntimeFacade.engineDataMacroDataSize())

@@ -255,12 +255,13 @@ final class PHTVInputStrategyService: NSObject {
         )
     }
 
-    @objc(characterSendPlanForSpotlightTarget:cliTarget:globalStepByStep:appNeedsStepByStep:keyCode:engineCode:restoreCode:restoreAndStartNewSessionCode:enterKeyCode:returnKeyCode:)
+    @objc(characterSendPlanForSpotlightTarget:cliTarget:globalStepByStep:appNeedsStepByStep:appNeedsPrecomposedBatched:keyCode:engineCode:restoreCode:restoreAndStartNewSessionCode:enterKeyCode:returnKeyCode:)
     class func characterSendPlan(
         forSpotlightTarget isSpotlightTarget: Bool,
         cliTarget isCliTarget: Bool,
         globalStepByStep globalStepByStepEnabled: Bool,
         appNeedsStepByStep appNeedsStepByStepEnabled: Bool,
+        appNeedsPrecomposedBatched appNeedsPrecomposedBatchedEnabled: Bool,
         keyCode: Int32,
         engineCode: Int32,
         restoreCode: Int32,
@@ -272,8 +273,15 @@ final class PHTVInputStrategyService: NSObject {
             engineCode == restoreAndStartNewSessionCode &&
             (keyCode == enterKeyCode || keyCode == returnKeyCode)
 
+        // Precomposed-batched editors such as Notion expect the finalized Unicode
+        // text chunk, not the raw engine key-state replay used by step-by-step
+        // compatibility mode.
+        let shouldPreferDecodedStringSend =
+            appNeedsPrecomposedBatchedEnabled && !isCliTarget
+
         let useStepByStepCharacterSend =
             !isSpotlightTarget &&
+            !shouldPreferDecodedStringSend &&
             (isCliTarget ||
              globalStepByStepEnabled ||
              appNeedsStepByStepEnabled ||
@@ -345,7 +353,7 @@ final class PHTVInputStrategyService: NSObject {
         return currentCodeTable == 3 && (spotlightActive || spotlightLikeApp)
     }
 
-    @objc(macroPlanForPostToHIDTap:appIsSpotlightLike:browserFixEnabled:originalBackspaceCount:cliTarget:globalStepByStep:appNeedsStepByStep:)
+    @objc(macroPlanForPostToHIDTap:appIsSpotlightLike:browserFixEnabled:originalBackspaceCount:cliTarget:globalStepByStep:appNeedsStepByStep:appNeedsPrecomposedBatched:)
     class func macroPlan(
         forPostToHIDTap postToHIDTap: Bool,
         appIsSpotlightLike: Bool,
@@ -353,12 +361,16 @@ final class PHTVInputStrategyService: NSObject {
         originalBackspaceCount: Int32,
         cliTarget: Bool,
         globalStepByStep: Bool,
-        appNeedsStepByStep: Bool
+        appNeedsStepByStep: Bool,
+        appNeedsPrecomposedBatched: Bool
     ) -> PHTVMacroPlanBox {
         let isSpotlightLikeTarget = postToHIDTap || appIsSpotlightLike
         let shouldApplyBrowserFix = browserFixEnabled
         let adjustedBackspaceCount = originalBackspaceCount + (shouldApplyBrowserFix ? 1 : 0)
-        let useStepByStepSend = cliTarget || globalStepByStep || appNeedsStepByStep
+        let shouldPreferDecodedStringSend = appNeedsPrecomposedBatched && !cliTarget
+        let useStepByStepSend =
+            !shouldPreferDecodedStringSend &&
+            (cliTarget || globalStepByStep || appNeedsStepByStep)
 
         return PHTVMacroPlanBox(
             isSpotlightLikeTarget: isSpotlightLikeTarget,
