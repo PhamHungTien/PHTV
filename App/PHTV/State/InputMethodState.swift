@@ -266,8 +266,16 @@ final class InputMethodState {
             default: Defaults.autoRestoreEnglishWord
         )
         autoRestoreEnglishWordMode = .englishOnly
-        defaults.set(Defaults.autoRestoreEnglishWordMode.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
-        defaults.set(restoreIfWrongSpellingForRuntime, forKey: UserDefaultsKey.restoreIfWrongSpelling)
+        
+        // Only write to defaults if values differ (avoid unnecessary I/O during frequent refreshes)
+        let storedMode = defaults.integer(forKey: UserDefaultsKey.autoRestoreEnglishWordMode, default: -1)
+        if storedMode != Defaults.autoRestoreEnglishWordMode.rawValue {
+            defaults.set(Defaults.autoRestoreEnglishWordMode.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
+        }
+        let storedWrongSpelling = defaults.integer(forKey: UserDefaultsKey.restoreIfWrongSpelling, default: -1)
+        if storedWrongSpelling != Int(restoreIfWrongSpellingForRuntime) {
+            defaults.set(restoreIfWrongSpellingForRuntime, forKey: UserDefaultsKey.restoreIfWrongSpelling)
+        }
 
         // Restore to raw keys (customizable key)
         restoreOnEscape = defaults.bool(forKey: UserDefaultsKey.restoreOnEscape, default: Defaults.restoreOnEscape)

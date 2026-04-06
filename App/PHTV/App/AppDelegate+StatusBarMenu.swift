@@ -22,12 +22,23 @@ import Foundation
     }
 
     func fillData() {
-        AppState.shared.refreshFromRuntime()
+        // Defer refreshFromRuntime to avoid blocking mode switches and other time-sensitive operations.
+        // This prevents UI freezes when user switches Vietnamese/English modes by allowing the mode switch
+        // to complete immediately while the expensive state reload happens asynchronously.
+        // Using DispatchQueue.main.async ensures the reload runs on the main thread but after current operations.
+        DispatchQueue.main.async {
+            AppState.shared.refreshFromRuntime()
+        }
     }
 
     @objc(fillDataWithAnimation:)
     func fillData(withAnimation animated: Bool) {
         _ = animated
-        AppState.shared.refreshFromRuntime()
+        // Defer refreshFromRuntime to avoid blocking mode switches and other time-sensitive operations.
+        // This prevents UI freezes when user switches Vietnamese/English modes by allowing the mode switch
+        // to complete immediately while the expensive state reload happens asynchronously.
+        DispatchQueue.main.async {
+            AppState.shared.refreshFromRuntime()
+        }
     }
 }
