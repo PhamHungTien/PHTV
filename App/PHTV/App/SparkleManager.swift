@@ -69,7 +69,7 @@ final class SparkleManager: NSObject {
 
 @MainActor
 private final class SparkleUpdaterDelegate: NSObject, SPUUpdaterDelegate {
-    func updater(_ updater: SPUUpdater, willInstallUpdate item: SUAppcastItem) {
+    nonisolated func updater(_ updater: SPUUpdater, willInstallUpdate item: SUAppcastItem) {
         _ = updater
         NSLog("[Sparkle] Will install update: %@", item.displayVersionString)
     }

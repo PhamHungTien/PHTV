@@ -273,7 +273,8 @@ final class InputMethodState {
             defaults.set(Defaults.autoRestoreEnglishWordMode.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
         }
         let storedWrongSpelling = defaults.integer(forKey: UserDefaultsKey.restoreIfWrongSpelling, default: -1)
-        if storedWrongSpelling != Int(restoreIfWrongSpellingForRuntime) {
+        let wrongSpellingFlag = restoreIfWrongSpellingForRuntime ? 1 : 0
+        if storedWrongSpelling != wrongSpellingFlag {
             defaults.set(restoreIfWrongSpellingForRuntime, forKey: UserDefaultsKey.restoreIfWrongSpelling)
         }
 
