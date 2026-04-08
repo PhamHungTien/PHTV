@@ -234,4 +234,44 @@ final class CompatibilityStrategyTests: XCTestCase {
 
         XCTAssertFalse(plan.useStepByStepSend)
     }
+
+    func testEnglishRestorePrefersDecodedCharacterSendEvenWhenStepByStepIsEnabled() {
+        let plan = PHTVInputStrategyService.characterSendPlan(
+            forSpotlightTarget: false,
+            cliTarget: false,
+            globalStepByStep: true,
+            appNeedsStepByStep: true,
+            appNeedsPrecomposedBatched: false,
+            keyCode: Int32(KeyCode.space),
+            engineCode: EngineSignalCode.restore,
+            restoreCode: EngineSignalCode.restore,
+            restoreAndStartNewSessionCode: EngineSignalCode.restoreAndStartNewSession,
+            enterKeyCode: Int32(KeyCode.enter),
+            returnKeyCode: Int32(KeyCode.returnKey)
+        )
+
+        XCTAssertFalse(plan.useStepByStepCharacterSend)
+        XCTAssertFalse(plan.shouldSendRestoreTriggerKey)
+        XCTAssertFalse(plan.shouldStartNewSessionAfterSend)
+    }
+
+    func testCliRestoreStillUsesStepByStepReplay() {
+        let plan = PHTVInputStrategyService.characterSendPlan(
+            forSpotlightTarget: false,
+            cliTarget: true,
+            globalStepByStep: true,
+            appNeedsStepByStep: true,
+            appNeedsPrecomposedBatched: false,
+            keyCode: Int32(KeyCode.space),
+            engineCode: EngineSignalCode.restore,
+            restoreCode: EngineSignalCode.restore,
+            restoreAndStartNewSessionCode: EngineSignalCode.restoreAndStartNewSession,
+            enterKeyCode: Int32(KeyCode.enter),
+            returnKeyCode: Int32(KeyCode.returnKey)
+        )
+
+        XCTAssertTrue(plan.useStepByStepCharacterSend)
+        XCTAssertTrue(plan.shouldSendRestoreTriggerKey)
+        XCTAssertFalse(plan.shouldStartNewSessionAfterSend)
+    }
 }

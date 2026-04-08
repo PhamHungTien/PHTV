@@ -279,6 +279,13 @@ final class EngineRegressionTests: XCTestCase {
             file: file, line: line)
     }
 
+    private func withInputType<T>(_ inputType: Int32, perform body: () throws -> T) rethrows -> T {
+        let savedInputType = PHTVEngineRuntimeFacade.currentInputType()
+        PHTVEngineRuntimeFacade.setCurrentInputType(inputType)
+        defer { PHTVEngineRuntimeFacade.setCurrentInputType(savedInputType) }
+        return try body()
+    }
+
     private func runQuickConsonantSpaceCase(
         _ token: String,
         customEnglish: [String] = [],
@@ -919,6 +926,18 @@ final class EngineRegressionTests: XCTestCase {
 
     func testWuDoesNotRestoreOnComma() {
         runWordBreakCase("wu", expectRestore: false, breakKey: KEY_COMMA)
+    }
+
+    func testIssue165EngineerRestoresOnSpaceInSimpleTelex1() {
+        withInputType(2) {
+            runSpaceCase("engineer", expectRestore: true)
+        }
+    }
+
+    func testIssue165EngineerRestoresOnCommaInSimpleTelex1() {
+        withInputType(2) {
+            runWordBreakCase("engineer", expectRestore: true, breakKey: KEY_COMMA)
+        }
     }
 
     func testSispProducesMarkedSyllable() {

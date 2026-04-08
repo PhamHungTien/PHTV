@@ -269,15 +269,21 @@ final class PHTVInputStrategyService: NSObject {
         enterKeyCode: Int32,
         returnKeyCode: Int32
     ) -> PHTVCharacterSendPlanBox {
+        let isRestoreSignal =
+            engineCode == restoreCode ||
+            engineCode == restoreAndStartNewSessionCode
         let isAutoEnglishWithEnter =
             engineCode == restoreAndStartNewSessionCode &&
             (keyCode == enterKeyCode || keyCode == returnKeyCode)
 
-        // Precomposed-batched editors such as Notion expect the finalized Unicode
-        // text chunk, not the raw engine key-state replay used by step-by-step
-        // compatibility mode.
+        // Restore signals already carry the finalized replacement text from the
+        // engine. Replaying raw key states step-by-step can re-trigger Telex
+        // transforms like `Engineer -> Enginẻer`, so prefer decoded Unicode
+        // sending for non-CLI targets. Editors such as Notion need the same
+        // decoded-string path for compatibility.
         let shouldPreferDecodedStringSend =
-            appNeedsPrecomposedBatchedEnabled && !isCliTarget
+            !isCliTarget &&
+            (appNeedsPrecomposedBatchedEnabled || isRestoreSignal)
 
         let useStepByStepCharacterSend =
             !isSpotlightTarget &&
