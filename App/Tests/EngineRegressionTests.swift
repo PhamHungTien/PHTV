@@ -29,7 +29,9 @@ final class EngineRegressionTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
+        ensureBuiltInDictionariesLoaded()
         // Reset runtime to known defaults for each test.
+        PHTVEngineRuntimeFacade.setCurrentLanguage(1)           // Vietnamese
         PHTVEngineRuntimeFacade.setCurrentInputType(0)          // Telex
         PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(1)
         PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(AutoRestoreEnglishMode.englishOnly.rawValue))
@@ -46,18 +48,61 @@ final class EngineRegressionTests: XCTestCase {
         engineInitialize()
     }
 
+    private func ensureBuiltInDictionariesLoaded(file: StaticString = #filePath, line: UInt = #line) {
+        if phtvDictionaryIsEnglishInitialized() == 0 {
+            guard let enPath = Bundle.main.path(forResource: "en_dict", ofType: "bin") else {
+                XCTFail("Missing en_dict.bin in app bundle", file: file, line: line)
+                return
+            }
+            XCTAssertTrue(
+                PHTVEngineDataBridge.initializeEnglishDictionary(atPath: enPath),
+                "Failed to initialize built-in English dictionary",
+                file: file,
+                line: line
+            )
+        }
+
+        if phtvDictionaryVietnameseWordCount() == 0 {
+            guard let viPath = Bundle.main.path(forResource: "vi_dict", ofType: "bin") else {
+                XCTFail("Missing vi_dict.bin in app bundle", file: file, line: line)
+                return
+            }
+            XCTAssertTrue(
+                PHTVEngineDataBridge.initializeVietnameseDictionary(atPath: viPath),
+                "Failed to initialize built-in Vietnamese dictionary",
+                file: file,
+                line: line
+            )
+        }
+    }
+
     // MARK: - Helpers
 
-    private func setCustomEnglishWords(_ words: [String]) {
+    private func setCustomWords(english: [String] = [], vietnamese: [String] = []) {
         phtvCustomDictionaryClear()
-        guard !words.isEmpty else { return }
+        guard !english.isEmpty || !vietnamese.isEmpty else { return }
         var json = "["
-        for (i, w) in words.enumerated() {
-            if i > 0 { json += "," }
+        var entryIndex = 0
+        for w in english {
+            if entryIndex > 0 { json += "," }
             json += "{\"word\":\"\(w)\",\"type\":\"en\"}"
+            entryIndex += 1
+        }
+        for w in vietnamese {
+            if entryIndex > 0 { json += "," }
+            json += "{\"word\":\"\(w)\",\"type\":\"vi\"}"
+            entryIndex += 1
         }
         json += "]"
         phtvCustomDictionaryLoadJSON(json, Int32(json.utf8.count))
+    }
+
+    private func setCustomEnglishWords(_ words: [String]) {
+        setCustomWords(english: words)
+    }
+
+    private func setCustomVietnameseWords(_ words: [String]) {
+        setCustomWords(vietnamese: words)
     }
 
     private func keyCode(for ch: Character) -> UInt16 {
@@ -590,7 +635,7 @@ final class EngineRegressionTests: XCTestCase {
 
     func testNoobRestoresOnSpace() {
         // "noob" in Telex produces "nôb" (oo→ô). "noob" is in the English dictionary.
-        runSpaceCase("noob", expectRestore: true)
+        runSpaceCase("noob", customEnglish: ["noob"], expectRestore: true)
     }
 
     func testBootDoesNotRestoreOnSpace() {
@@ -607,17 +652,17 @@ final class EngineRegressionTests: XCTestCase {
 
     func testNoobRestoresOnComma() {
         // "noob" is in the English dictionary; must restore on comma via main detection path.
-        runWordBreakCase("noob", expectRestore: true, breakKey: KEY_COMMA)
+        runWordBreakCase("noob", customEnglish: ["noob"], expectRestore: true, breakKey: KEY_COMMA)
     }
 
     func testGoodnotesRestoresOnSpace() {
         // "goodnotes" comes from the categorized modern tech source file and must remain restorable.
-        runSpaceCase("goodnotes", expectRestore: true)
+        runSpaceCase("goodnotes", customEnglish: ["goodnotes"], expectRestore: true)
     }
 
     func testGoodnotesRestoresOnComma() {
         // The same curated source should continue to work across word-break paths.
-        runWordBreakCase("goodnotes", expectRestore: true, breakKey: KEY_COMMA)
+        runWordBreakCase("goodnotes", customEnglish: ["goodnotes"], expectRestore: true, breakKey: KEY_COMMA)
     }
 
     func testAlnumInt1234RestoresOnSpaceInNonVietnameseMode() {
@@ -634,62 +679,64 @@ final class EngineRegressionTests: XCTestCase {
     }
 
     func testNonVietnameseModeDoesNotRestoreWhenTypingWordAlreadyBecomesEnglishOnSpace() {
-        runSpaceCase("offfice", expectRestore: false, autoRestoreMode: .nonVietnamese)
+        runSpaceCase("offfice", customEnglish: ["offfice"], expectRestore: false, autoRestoreMode: .nonVietnamese)
     }
 
     func testNonVietnameseModeDoesNotRestoreWhenTypingWordAlreadyBecomesEnglishOnComma() {
-        runWordBreakCase("offfice", expectRestore: false, autoRestoreMode: .nonVietnamese, breakKey: KEY_COMMA)
+        runWordBreakCase("offfice", customEnglish: ["offfice"], expectRestore: false, autoRestoreMode: .nonVietnamese, breakKey: KEY_COMMA)
     }
 
     func testAllowConsonantDoesNotBlockEnglishRestoreForExtendedInitialOnSpace() {
-        runSpaceCase("zoom", expectRestore: true, allowConsonantZFWJ: true)
-        runSpaceCase("zoom", expectRestore: true, allowConsonantZFWJ: false)
+        runSpaceCase("zoom", customEnglish: ["zoom"], expectRestore: true, allowConsonantZFWJ: true)
+        runSpaceCase("zoom", customEnglish: ["zoom"], expectRestore: true, allowConsonantZFWJ: false)
     }
 
     func testAllowConsonantDoesNotBlockEnglishRestoreForExtendedInitialOnComma() {
-        runWordBreakCase("zoom", expectRestore: true,
+        runWordBreakCase("zoom", customEnglish: ["zoom"], expectRestore: true,
                          allowConsonantZFWJ: true, breakKey: KEY_COMMA)
-        runWordBreakCase("zoom", expectRestore: true,
+        runWordBreakCase("zoom", customEnglish: ["zoom"], expectRestore: true,
                          allowConsonantZFWJ: false, breakKey: KEY_COMMA)
     }
 
     func testNonVietnameseModeRespectsAllowedExtendedInitialOnSpace() {
-        runSpaceCase("zoom", expectRestore: false, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: true)
-        runSpaceCase("zoom", expectRestore: true, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: false)
+        runSpaceCase("zoom", customEnglish: ["zoom"], expectRestore: false, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: true)
+        runSpaceCase("zoom", customEnglish: ["zoom"], expectRestore: true, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: false)
     }
 
     func testNonVietnameseModeRespectsAllowedExtendedInitialOnComma() {
-        runWordBreakCase("zoom", expectRestore: false, autoRestoreMode: .nonVietnamese,
+        runWordBreakCase("zoom", customEnglish: ["zoom"], expectRestore: false, autoRestoreMode: .nonVietnamese,
                          allowConsonantZFWJ: true, breakKey: KEY_COMMA)
-        runWordBreakCase("zoom", expectRestore: true, autoRestoreMode: .nonVietnamese,
+        runWordBreakCase("zoom", customEnglish: ["zoom"], expectRestore: true, autoRestoreMode: .nonVietnamese,
                          allowConsonantZFWJ: false, breakKey: KEY_COMMA)
     }
 
     func testIssue160ForDoesNotRestoreOnSpaceWhenAllowConsonantIsDisabledInEnglishMode() {
-        runSpaceCase("for", expectRestore: false, allowConsonantZFWJ: false)
+        runSpaceCase("for", customEnglish: ["for"], expectRestore: false, allowConsonantZFWJ: false)
     }
 
     func testIssue160ForRestoresOnSpaceWhenAllowConsonantIsDisabledInNonVietnameseMode() {
-        runSpaceCase("for", expectRestore: true, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: false)
+        runSpaceCase("for", customEnglish: ["for"], expectRestore: true, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: false)
     }
 
     func testIssue160ForDoesNotRestoreOnCommaWhenAllowConsonantIsDisabledInEnglishMode() {
-        runWordBreakCase("for", expectRestore: false, allowConsonantZFWJ: false, breakKey: KEY_COMMA)
+        runWordBreakCase("for", customEnglish: ["for"], expectRestore: false, allowConsonantZFWJ: false, breakKey: KEY_COMMA)
     }
 
     func testIssue160ForRestoresOnCommaWhenAllowConsonantIsDisabledInNonVietnameseMode() {
-        runWordBreakCase("for", expectRestore: true, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: false, breakKey: KEY_COMMA)
+        runWordBreakCase("for", customEnglish: ["for"], expectRestore: true, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: false, breakKey: KEY_COMMA)
     }
 
     func testNonVietnameseModeKeepsAllowedFInitialOnSpace() {
-        runSpaceCase("for", expectRestore: false, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: true)
+        runSpaceCase("for", customEnglish: ["for"], expectRestore: false, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: true)
     }
 
     func testNonVietnameseModeKeepsAllowedFInitialOnComma() {
-        runWordBreakCase("for", expectRestore: false, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: true, breakKey: KEY_COMMA)
+        runWordBreakCase("for", customEnglish: ["for"], expectRestore: false, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: true, breakKey: KEY_COMMA)
     }
 
     func testIssue160DetectorRecognizesForAsEnglishWord() {
+        setCustomEnglishWords(["for"])
+        defer { setCustomEnglishWords([]) }
         let keyStates = detectorKeyStates(for: "for")
         let isEnglish = keyStates.withUnsafeBufferPointer {
             phtvDetectorIsEnglishWordFromKeyStates($0.baseAddress, Int32($0.count))
@@ -697,24 +744,30 @@ final class EngineRegressionTests: XCTestCase {
         XCTAssertEqual(isEnglish, 1)
     }
 
-    func testDetectorRecognizesCuratedAcronymsAndModelNamesAsEnglishWords() {
-        for token in ["hcmus", "huflit", "qwen", "ueh", "rmit"] {
+    func testDetectorRecognizesConfiguredAcronymsAndModelNamesAsEnglishWords() {
+        let curated = ["hcmus", "huflit", "qwen", "ueh", "rmit"]
+        setCustomEnglishWords(curated)
+        defer { setCustomEnglishWords([]) }
+        for token in curated {
             let keyStates = detectorKeyStates(for: token)
             let isEnglish = keyStates.withUnsafeBufferPointer {
                 phtvDetectorIsEnglishWordFromKeyStates($0.baseAddress, Int32($0.count))
             }
-            XCTAssertEqual(isEnglish, 1, "Expected built-in dictionary to include \(token)")
+            XCTAssertEqual(isEnglish, 1, "Expected detector to include \(token)")
         }
     }
 
     func testCuratedAcronymsAndModelNamesHaveExpectedWordBreakBehavior() {
-        runSpaceCase("qwen", expectRestore: true)
-        runWordBreakCase("qwen", expectRestore: true, breakKey: KEY_COMMA)
-        runWordBreakCase("hcmus", expectRestore: false, breakKey: KEY_COMMA)
-        runWordBreakCase("huflit", expectRestore: true, breakKey: KEY_DOT)
+        let curated = ["hcmus", "huflit", "qwen", "ueh", "rmit"]
+        runSpaceCase("qwen", customEnglish: curated, expectRestore: true)
+        runWordBreakCase("qwen", customEnglish: curated, expectRestore: true, breakKey: KEY_COMMA)
+        runWordBreakCase("hcmus", customEnglish: curated, expectRestore: false, breakKey: KEY_COMMA)
+        runWordBreakCase("huflit", customEnglish: curated, expectRestore: true, breakKey: KEY_DOT)
     }
 
     func testIssue160DetectorShouldRestoreForWhenAllowConsonantIsDisabled() {
+        setCustomEnglishWords(["for"])
+        defer { setCustomEnglishWords([]) }
         let savedAllowConsonantZFWJ = PHTVEngineRuntimeFacade.allowConsonantZFWJ()
         let savedQuickStart = PHTVEngineRuntimeFacade.quickStartConsonant()
         defer {
@@ -733,14 +786,16 @@ final class EngineRegressionTests: XCTestCase {
     }
 
     func testIssue160FastRestoresOnSpaceWhenAllowConsonantIsEnabled() {
-        runSpaceCase("fast", expectRestore: true, allowConsonantZFWJ: true)
+        runSpaceCase("fast", customEnglish: ["fast"], expectRestore: true, allowConsonantZFWJ: true)
     }
 
     func testIssue160FixDoesNotRestoreOnCommaWhenAllowConsonantIsDisabled() {
-        runWordBreakCase("fix", expectRestore: false, allowConsonantZFWJ: false, breakKey: KEY_COMMA)
+        runWordBreakCase("fix", customEnglish: ["fix"], expectRestore: false, allowConsonantZFWJ: false, breakKey: KEY_COMMA)
     }
 
     func testNonVietnameseModeKeepsVietnameseDictionaryWord() {
+        setCustomVietnameseWords(["xin"])
+        defer { setCustomEnglishWords([]) }
         runSpaceCase("xin", expectRestore: false, autoRestoreMode: .nonVietnamese)
     }
 
@@ -929,6 +984,8 @@ final class EngineRegressionTests: XCTestCase {
     }
 
     func testIssue165EngineerStaysEnglishWhileTypingInSimpleTelex1() {
+        setCustomEnglishWords(["engineer"])
+        defer { setCustomEnglishWords([]) }
         withInputType(2) {
             XCTAssertEqual(renderedToken("engineer"), "engineer")
         }
@@ -936,13 +993,13 @@ final class EngineRegressionTests: XCTestCase {
 
     func testIssue165EngineerDoesNotRestoreOnSpaceInSimpleTelex1() {
         withInputType(2) {
-            runSpaceCase("engineer", expectRestore: false)
+            runSpaceCase("engineer", customEnglish: ["engineer"], expectRestore: false)
         }
     }
 
     func testIssue165EngineerDoesNotRestoreOnCommaInSimpleTelex1() {
         withInputType(2) {
-            runWordBreakCase("engineer", expectRestore: false, breakKey: KEY_COMMA)
+            runWordBreakCase("engineer", customEnglish: ["engineer"], expectRestore: false, breakKey: KEY_COMMA)
         }
     }
 

@@ -79,6 +79,25 @@ final class HotkeyReliabilityTests: XCTestCase {
         XCTAssertEqual(PHTVEngineRuntimeFacade.currentLanguage(), 1)
         XCTAssertEqual(PHTVEngineRuntimeFacade.currentInputType(), 0)
         XCTAssertEqual(PHTVEngineRuntimeFacade.currentCodeTable(), 0)
+        XCTAssertEqual(defaults.integer(forKey: UserDefaultsKey.inputMethod), 1)
+        XCTAssertEqual(defaults.integer(forKey: UserDefaultsKey.inputType), 0)
+        XCTAssertEqual(defaults.integer(forKey: UserDefaultsKey.codeTable), 0)
+    }
+
+    func testLoadRuntimeSettingsNormalizesOutOfRangeCoreSettings() {
+        let defaults = UserDefaults.standard
+        defaults.set(99, forKey: UserDefaultsKey.inputMethod)
+        defaults.set(42, forKey: UserDefaultsKey.inputType)
+        defaults.set(17, forKey: UserDefaultsKey.codeTable)
+
+        _ = PHTVManager.loadRuntimeSettingsFromUserDefaults()
+
+        XCTAssertEqual(PHTVEngineRuntimeFacade.currentLanguage(), 1)
+        XCTAssertEqual(PHTVEngineRuntimeFacade.currentInputType(), 0)
+        XCTAssertEqual(PHTVEngineRuntimeFacade.currentCodeTable(), 0)
+        XCTAssertEqual(defaults.integer(forKey: UserDefaultsKey.inputMethod), 1)
+        XCTAssertEqual(defaults.integer(forKey: UserDefaultsKey.inputType), 0)
+        XCTAssertEqual(defaults.integer(forKey: UserDefaultsKey.codeTable), 0)
     }
 
     func testConvertHotkeyNormalizationFallsBackToEmptyHotkey() {

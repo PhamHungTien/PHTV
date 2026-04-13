@@ -11,6 +11,25 @@ import AppKit
 import Foundation
 
 @objc extension PHTVManager {
+    @nonobjc private class func phtv_decodeInt32(_ value: Any?) -> Int32? {
+        switch value {
+        case let int32Value as Int32:
+            return int32Value
+        case let intValue as Int:
+            return Int32(clamping: intValue)
+        case let numberValue as NSNumber:
+            return numberValue.int32Value
+        case let stringValue as String:
+            let trimmed = stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty, let parsed = Int32(trimmed) else {
+                return nil
+            }
+            return parsed
+        default:
+            return nil
+        }
+    }
+
     private class func phtv_readIntWithFallback(
         defaults: UserDefaults,
         key: String,
@@ -22,14 +41,23 @@ import Foundation
         return Int32(defaults.integer(forKey: key))
     }
 
-    private class func phtv_readNonNegativeIntWithFallback(
+    @nonobjc private class func phtv_readNormalizedIntWithFallback(
         defaults: UserDefaults,
         key: String,
         fallback: Int32,
+        allowedRange: ClosedRange<Int32>,
         normalizedValue: Int32
-    ) -> Int32 {
-        let value = phtv_readIntWithFallback(defaults: defaults, key: key, fallback: fallback)
-        return value < 0 ? normalizedValue : value
+    ) -> (value: Int32, normalized: Bool) {
+        guard let persisted = defaults.object(forKey: key) else {
+            return (fallback, false)
+        }
+
+        guard let parsedValue = phtv_decodeInt32(persisted),
+              allowedRange.contains(parsedValue) else {
+            return (normalizedValue, true)
+        }
+
+        return (parsedValue, false)
     }
 
     @nonobjc private class func phtv_normalizeSwitchKeyStatus(
@@ -177,29 +205,45 @@ import Foundation
     class func phtv_loadRuntimeSettingsFromUserDefaults() -> UInt {
         let defaults = UserDefaults.standard
 
-        let language = phtv_readNonNegativeIntWithFallback(
+        let languageSetting = phtv_readNormalizedIntWithFallback(
             defaults: defaults,
             key: UserDefaultsKey.inputMethod,
             fallback: Int32(PHTVEngineRuntimeFacade.currentLanguage()),
+            allowedRange: 0...1,
             normalizedValue: 1
         )
+        let language = languageSetting.value
         PHTVEngineRuntimeFacade.setCurrentLanguage(language)
 
-        let inputType = phtv_readNonNegativeIntWithFallback(
+        let inputTypeSetting = phtv_readNormalizedIntWithFallback(
             defaults: defaults,
             key: UserDefaultsKey.inputType,
             fallback: Int32(PHTVEngineRuntimeFacade.currentInputType()),
+            allowedRange: 0...3,
             normalizedValue: 0
         )
+        let inputType = inputTypeSetting.value
         PHTVEngineRuntimeFacade.setCurrentInputType(inputType)
 
-        let codeTable = phtv_readNonNegativeIntWithFallback(
+        let codeTableSetting = phtv_readNormalizedIntWithFallback(
             defaults: defaults,
             key: UserDefaultsKey.codeTable,
             fallback: Int32(PHTVEngineRuntimeFacade.currentCodeTable()),
+            allowedRange: 0...4,
             normalizedValue: 0
         )
+        let codeTable = codeTableSetting.value
         PHTVEngineRuntimeFacade.setCurrentCodeTable(codeTable)
+
+        if languageSetting.normalized {
+            defaults.set(Int(language), forKey: UserDefaultsKey.inputMethod)
+        }
+        if inputTypeSetting.normalized {
+            defaults.set(Int(inputType), forKey: UserDefaultsKey.inputType)
+        }
+        if codeTableSetting.normalized {
+            defaults.set(Int(codeTable), forKey: UserDefaultsKey.codeTable)
+        }
 
         let checkSpelling = phtv_readIntWithFallback(
             defaults: defaults,
@@ -215,6 +259,15 @@ import Foundation
             codeTable,
             checkSpelling
         )
+
+        if languageSetting.normalized || inputTypeSetting.normalized || codeTableSetting.normalized {
+            NSLog(
+                "[AppDelegate] Normalized invalid core settings (language=%d inputType=%d codeTable=%d)",
+                language,
+                inputType,
+                codeTable
+            )
+        }
 
         PHTVEngineRuntimeFacade.setUseModernOrthography(
             phtv_readIntWithFallback(

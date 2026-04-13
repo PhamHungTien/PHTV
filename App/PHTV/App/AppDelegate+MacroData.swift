@@ -142,6 +142,8 @@ private func phtvMacroLiveLog(_ message: String) {
         do {
             words = try JSONSerialization.jsonObject(with: customDictData, options: [])
         } catch {
+            PHTVEngineDataBridge.clearCustomDictionary()
+            defaults.removeObject(forKey: phtvDefaultsKeyCustomDictionary)
             NSLog("[CustomDictionary] Failed to parse JSON: %@", error.localizedDescription)
             return
         }
@@ -153,6 +155,8 @@ private func phtvMacroLiveLog(_ message: String) {
                   PHTVEngineDataBridge.customEnglishWordCount(),
                   PHTVEngineDataBridge.customVietnameseWordCount())
         } catch {
+            PHTVEngineDataBridge.clearCustomDictionary()
+            defaults.removeObject(forKey: phtvDefaultsKeyCustomDictionary)
             NSLog("[CustomDictionary] Failed to serialize JSON: %@", error.localizedDescription)
         }
     }
