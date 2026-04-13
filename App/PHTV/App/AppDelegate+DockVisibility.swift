@@ -10,9 +10,9 @@
 import AppKit
 import Foundation
 
-private let phtvDefaultsKeyShowIconOnDock = "vShowIconOnDock"
-private let phtvNotificationUserInfoVisibleKey = "visible"
-private let phtvNotificationUserInfoForceFrontKey = "forceFront"
+private let phtvDefaultsKeyShowIconOnDock = UserDefaultsKey.showIconOnDock
+private let phtvNotificationUserInfoVisibleKey = NotificationUserInfoKey.visible
+private let phtvNotificationUserInfoForceFrontKey = NotificationUserInfoKey.forceFront
 private let phtvSpotlightInvalidationDedupMs: UInt64 = 30
 
 private func phtvLiveDebugEnabledSwift() -> Bool {
@@ -20,7 +20,7 @@ private func phtvLiveDebugEnabledSwift() -> Bool {
         return env != "0"
     }
 
-    if let stored = UserDefaults.standard.object(forKey: "PHTV_LIVE_DEBUG") as? NSNumber {
+    if let stored = UserDefaults.standard.object(forKey: UserDefaultsKey.liveDebug) as? NSNumber {
         return stored.intValue != 0
     }
 

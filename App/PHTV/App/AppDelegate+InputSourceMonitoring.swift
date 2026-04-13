@@ -11,8 +11,8 @@ import AppKit
 import Carbon
 import Foundation
 
-private let phtvDefaultsKeyInputMethod = "InputMethod"
-private let phtvNotificationLanguageChangedFromObjC = Notification.Name("LanguageChangedFromObjC")
+private let phtvDefaultsKeyInputMethod = UserDefaultsKey.inputMethod
+private let phtvNotificationLanguageChangedFromObjC = NotificationName.languageChangedFromObjC
 private let phtvInputSourceChangedNotification =
     Notification.Name(rawValue: kTISNotifySelectedKeyboardInputSourceChanged as String)
 private let phtvAppearanceChangedNotification = Notification.Name("AppleInterfaceThemeChangedNotification")

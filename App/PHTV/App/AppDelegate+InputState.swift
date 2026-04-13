@@ -10,10 +10,10 @@
 import AppKit
 import Foundation
 
-private let phtvInputStateDefaultsKeyInputMethod = "InputMethod"
-private let phtvInputStateDefaultsKeyInputType = "InputType"
-private let phtvInputStateDefaultsKeyCodeTable = "CodeTable"
-private let phtvInputStateNotificationLanguageChangedFromBackend = Notification.Name("LanguageChangedFromBackend")
+private let phtvInputStateDefaultsKeyInputMethod = UserDefaultsKey.inputMethod
+private let phtvInputStateDefaultsKeyInputType = UserDefaultsKey.inputType
+private let phtvInputStateDefaultsKeyCodeTable = UserDefaultsKey.codeTable
+private let phtvInputStateNotificationLanguageChangedFromBackend = NotificationName.languageChangedFromBackend
 
 private nonisolated func phtvNotifyInputMethodChangedInBackground() async {
     PHTVManager.notifyInputMethodChanged()

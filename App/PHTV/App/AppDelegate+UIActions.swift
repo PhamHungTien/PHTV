@@ -10,10 +10,10 @@
 import Foundation
 
 private let phtvDefaultsKeyNonFirstTime = "NonFirstTime"
-private let phtvNotificationSettingsResetComplete = Notification.Name("SettingsResetComplete")
-private let phtvNotificationShowSettings = Notification.Name("ShowSettings")
-private let phtvNotificationShowMacroTab = Notification.Name("ShowMacroTab")
-private let phtvNotificationShowAboutTab = Notification.Name("ShowAboutTab")
+private let phtvNotificationSettingsResetComplete = NotificationName.settingsResetComplete
+private let phtvNotificationShowSettings = NotificationName.showSettings
+private let phtvNotificationShowMacroTab = NotificationName.showMacroTab
+private let phtvNotificationShowAboutTab = NotificationName.showAboutTab
 
 @MainActor @objc extension AppDelegate {
     func handleSettingsReset(_ notification: Notification?) {

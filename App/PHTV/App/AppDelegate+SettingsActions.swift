@@ -9,7 +9,7 @@
 
 import Foundation
 
-private let phtvNotificationSettingsChanged = Notification.Name("PHTVSettingsChanged")
+private let phtvNotificationSettingsChanged = NotificationName.phtvSettingsChanged
 
 @MainActor @objc extension AppDelegate {
     func toggleSpellCheck(_ sender: Any?) {

@@ -117,7 +117,9 @@ enum NotificationName {
     static let codeTableChanged = NSNotification.Name("CodeTableChanged")
     static let toggleEnabled = NSNotification.Name("ToggleEnabled")
     static let hotkeyChanged = NSNotification.Name("HotkeyChanged")
+    static let settingsReset = NSNotification.Name("SettingsReset")
     static let settingsResetToDefaults = NSNotification.Name("SettingsResetToDefaults")
+    static let settingsResetComplete = NSNotification.Name("SettingsResetComplete")
     static let macrosUpdated = NSNotification.Name("MacrosUpdated")
     static let customDictionaryUpdated = NSNotification.Name("CustomDictionaryUpdated")
 

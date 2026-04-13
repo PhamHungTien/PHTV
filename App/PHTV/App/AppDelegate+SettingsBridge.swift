@@ -19,7 +19,8 @@ private let phtvNotificationInputMethodChanged = NotificationName.inputMethodCha
 private let phtvNotificationCodeTableChanged = NotificationName.codeTableChanged
 private let phtvNotificationShowDockIcon = NotificationName.phtvShowDockIcon
 private let phtvNotificationCustomDictionaryUpdated = NotificationName.customDictionaryUpdated
-private let phtvNotificationSettingsReset = Notification.Name("SettingsReset")
+private let phtvNotificationSettingsReset = NotificationName.settingsReset
+private let phtvNotificationSettingsResetToDefaults = NotificationName.settingsResetToDefaults
 private let phtvNotificationAccessibilityPermissionLost = Notification.Name("AccessibilityPermissionLost")
 
 @MainActor private var phtvLastUpperCaseFirstCharSetting = -1
@@ -67,6 +68,9 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
                 appDelegate.handleCustomDictionaryUpdated(notification)
             },
             makeNotificationTask(center: center, name: phtvNotificationSettingsReset) { appDelegate, notification in
+                appDelegate.handleSettingsReset(notification)
+            },
+            makeNotificationTask(center: center, name: phtvNotificationSettingsResetToDefaults) { appDelegate, notification in
                 appDelegate.handleSettingsReset(notification)
             },
             makeNotificationTask(center: center, name: phtvNotificationAccessibilityPermissionLost) { appDelegate, _ in
