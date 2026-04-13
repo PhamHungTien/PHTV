@@ -16,11 +16,13 @@ enum UserDefaultsKey {
     static let inputMethod = "InputMethod"
     static let inputType = "InputType"
     static let codeTable = "CodeTable"
+    static let freeMark = "FreeMark"
 
     // MARK: - Spelling & Features
     static let spelling = "Spelling"
     static let modernOrthography = "ModernOrthography"
     static let quickTelex = "QuickTelex"
+    static let fixRecommendBrowser = "FixRecommendBrowser"
     static let sendKeyStepByStep = "SendKeyStepByStep"
     static let useMacro = "UseMacro"
     static let useMacroInEnglishMode = "UseMacroInEnglishMode"
@@ -37,6 +39,9 @@ enum UserDefaultsKey {
     static let autoRestoreEnglishWord = "vAutoRestoreEnglishWord"
     static let autoRestoreEnglishWordMode = "vAutoRestoreEnglishWordMode"
     static let restoreIfWrongSpelling = "vRestoreIfWrongSpelling"
+    static let tempOffSpelling = "vTempOffSpelling"
+    static let otherLanguage = "vOtherLanguage"
+    static let tempOffPHTV = "vTempOffPHTV"
 
     // MARK: - Restore & Pause Keys
     static let restoreOnEscape = "vRestoreOnEscape"
@@ -65,6 +70,7 @@ enum UserDefaultsKey {
     static let settingsWindowAlwaysOnTop = "vSettingsWindowAlwaysOnTop"
     static let safeMode = "SafeMode"
     static let convertToolDontAlertWhenCompleted = "convertToolDontAlertWhenCompleted"
+    static let convertToolHotKey = "convertToolHotKey"
     static let convertToolFromCode = "convertToolFromCode"
     static let convertToolToCode = "convertToolToCode"
 
@@ -76,6 +82,7 @@ enum UserDefaultsKey {
     static let beepVolume = "vBeepVolume"
     static let menuBarIconSize = "vMenuBarIconSize"
     static let useVietnameseMenubarIcon = "vUseVietnameseMenubarIcon"
+    static let grayIcon = "GrayIcon"
 
     // MARK: - App Lists
     static let excludedApps = "ExcludedApps"

@@ -11,7 +11,7 @@ import AppKit
 import Foundation
 
 private let phtvDefaultsKeySwitchKeyStatus = UserDefaultsKey.switchKeyStatus
-private let phtvDefaultsKeyConvertToolHotKey = "convertToolHotKey"
+private let phtvDefaultsKeyConvertToolHotKey = UserDefaultsKey.convertToolHotKey
 
 private let phtvNotificationShowMacroTab = NotificationName.showMacroTab
 private let phtvNotificationShowAboutTab = NotificationName.showAboutTab

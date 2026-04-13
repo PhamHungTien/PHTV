@@ -21,12 +21,12 @@ final class PHTVCoreSettingsBootstrapService: NSObject {
         // Preserve bootstrap-only runtime fields that are intentionally not in the regular tokenized loader.
         PHTVEngineRuntimeFacade.setFreeMark(0)
         PHTVEngineRuntimeFacade.setFixRecommendBrowser(
-            Int32(defaults.integer(forKey: "FixRecommendBrowser"))
+            Int32(defaults.integer(forKey: UserDefaultsKey.fixRecommendBrowser))
         )
-        PHTVEngineRuntimeFacade.setTempOffSpelling(Int32(defaults.integer(forKey: "vTempOffSpelling")))
+        PHTVEngineRuntimeFacade.setTempOffSpelling(Int32(defaults.integer(forKey: UserDefaultsKey.tempOffSpelling)))
 
-        PHTVEngineRuntimeFacade.setOtherLanguageMode(Int32(defaults.integer(forKey: "vOtherLanguage")))
-        PHTVEngineRuntimeFacade.setTempOffEngine(Int32(defaults.integer(forKey: "vTempOffPHTV")))
+        PHTVEngineRuntimeFacade.setOtherLanguageMode(Int32(defaults.integer(forKey: UserDefaultsKey.otherLanguage)))
+        PHTVEngineRuntimeFacade.setTempOffEngine(Int32(defaults.integer(forKey: UserDefaultsKey.tempOffPHTV)))
         PHTVEngineRuntimeFacade.setSafeMode(defaults.bool(forKey: UserDefaultsKey.safeMode))
     }
 }

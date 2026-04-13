@@ -82,31 +82,31 @@ import Foundation
     private class func phtv_computeSettingsToken(defaults: UserDefaults) -> UInt {
         var token: UInt = 2_166_136_261
         let tokenKeys = [
-            "Spelling",
-            "ModernOrthography",
-            "QuickTelex",
-            "UseMacro",
-            "UseMacroInEnglishMode",
-            "vAutoCapsMacro",
-            "SendKeyStepByStep",
-            "UseSmartSwitchKey",
-            "UpperCaseFirstChar",
-            "vAllowConsonantZFWJ",
-            "vQuickStartConsonant",
-            "vQuickEndConsonant",
-            "vRememberCode",
-            "vPerformLayoutCompat",
-            "vShowIconOnDock",
-            "vRestoreOnEscape",
-            "vCustomEscapeKey",
-            "vPauseKeyEnabled",
-            "vPauseKey",
-            "vAutoRestoreEnglishWord",
-            "vAutoRestoreEnglishWordMode",
-            "vRestoreIfWrongSpelling",
-            "vEnableEmojiHotkey",
-            "vEmojiHotkeyModifiers",
-            "vEmojiHotkeyKeyCode"
+            UserDefaultsKey.spelling,
+            UserDefaultsKey.modernOrthography,
+            UserDefaultsKey.quickTelex,
+            UserDefaultsKey.useMacro,
+            UserDefaultsKey.useMacroInEnglishMode,
+            UserDefaultsKey.autoCapsMacro,
+            UserDefaultsKey.sendKeyStepByStep,
+            UserDefaultsKey.useSmartSwitchKey,
+            UserDefaultsKey.upperCaseFirstChar,
+            UserDefaultsKey.allowConsonantZFWJ,
+            UserDefaultsKey.quickStartConsonant,
+            UserDefaultsKey.quickEndConsonant,
+            UserDefaultsKey.rememberCode,
+            UserDefaultsKey.performLayoutCompat,
+            UserDefaultsKey.showIconOnDock,
+            UserDefaultsKey.restoreOnEscape,
+            UserDefaultsKey.customEscapeKey,
+            UserDefaultsKey.pauseKeyEnabled,
+            UserDefaultsKey.pauseKey,
+            UserDefaultsKey.autoRestoreEnglishWord,
+            UserDefaultsKey.autoRestoreEnglishWordMode,
+            UserDefaultsKey.restoreIfWrongSpelling,
+            UserDefaultsKey.enableEmojiHotkey,
+            UserDefaultsKey.emojiHotkeyModifiers,
+            UserDefaultsKey.emojiHotkeyKeyCode
         ]
 
         for key in tokenKeys {
@@ -138,14 +138,14 @@ import Foundation
         var shouldPersistNormalizedValues = false
 
         let enabled: Int32
-        if defaults.object(forKey: "vEnableEmojiHotkey") == nil {
+        if defaults.object(forKey: UserDefaultsKey.enableEmojiHotkey) == nil {
             enabled = defaultEnabled
             shouldPersistNormalizedValues = true
         } else {
-            enabled = defaults.bool(forKey: "vEnableEmojiHotkey") ? 1 : 0
+            enabled = defaults.bool(forKey: UserDefaultsKey.enableEmojiHotkey) ? 1 : 0
         }
 
-        let rawModifiers = Int32(defaults.integer(forKey: "vEmojiHotkeyModifiers"))
+        let rawModifiers = Int32(defaults.integer(forKey: UserDefaultsKey.emojiHotkeyModifiers))
         var modifiers = rawModifiers & modifierMask
         if modifiers == 0 {
             modifiers = defaultModifiers
@@ -154,7 +154,7 @@ import Foundation
             shouldPersistNormalizedValues = true
         }
 
-        let rawKeyCode = defaults.integer(forKey: "vEmojiHotkeyKeyCode")
+        let rawKeyCode = defaults.integer(forKey: UserDefaultsKey.emojiHotkeyKeyCode)
         let isValidKeyCode = (0...Int(KeyCode.keyMask)).contains(rawKeyCode) || rawKeyCode == Int(KeyCode.noKey)
         let keyCode: Int32
         if isValidKeyCode {
@@ -165,9 +165,9 @@ import Foundation
         }
 
         if shouldPersistNormalizedValues {
-            defaults.set(enabled != 0, forKey: "vEnableEmojiHotkey")
-            defaults.set(Int(modifiers), forKey: "vEmojiHotkeyModifiers")
-            defaults.set(Int(keyCode), forKey: "vEmojiHotkeyKeyCode")
+            defaults.set(enabled != 0, forKey: UserDefaultsKey.enableEmojiHotkey)
+            defaults.set(Int(modifiers), forKey: UserDefaultsKey.emojiHotkeyModifiers)
+            defaults.set(Int(keyCode), forKey: UserDefaultsKey.emojiHotkeyKeyCode)
         }
 
         PHTVEngineRuntimeFacade.setEmojiHotkeySettings(enabled, modifiers, keyCode)
@@ -179,7 +179,7 @@ import Foundation
 
         let language = phtv_readNonNegativeIntWithFallback(
             defaults: defaults,
-            key: "InputMethod",
+            key: UserDefaultsKey.inputMethod,
             fallback: Int32(PHTVEngineRuntimeFacade.currentLanguage()),
             normalizedValue: 1
         )
@@ -187,7 +187,7 @@ import Foundation
 
         let inputType = phtv_readNonNegativeIntWithFallback(
             defaults: defaults,
-            key: "InputType",
+            key: UserDefaultsKey.inputType,
             fallback: Int32(PHTVEngineRuntimeFacade.currentInputType()),
             normalizedValue: 0
         )
@@ -195,7 +195,7 @@ import Foundation
 
         let codeTable = phtv_readNonNegativeIntWithFallback(
             defaults: defaults,
-            key: "CodeTable",
+            key: UserDefaultsKey.codeTable,
             fallback: Int32(PHTVEngineRuntimeFacade.currentCodeTable()),
             normalizedValue: 0
         )
@@ -203,7 +203,7 @@ import Foundation
 
         let checkSpelling = phtv_readIntWithFallback(
             defaults: defaults,
-            key: "Spelling",
+            key: UserDefaultsKey.spelling,
             fallback: Int32(PHTVEngineRuntimeFacade.checkSpelling())
         )
         PHTVEngineRuntimeFacade.setCheckSpelling(checkSpelling)
@@ -219,21 +219,21 @@ import Foundation
         PHTVEngineRuntimeFacade.setUseModernOrthography(
             phtv_readIntWithFallback(
                 defaults: defaults,
-                key: "ModernOrthography",
+                key: UserDefaultsKey.modernOrthography,
                 fallback: Int32(PHTVEngineRuntimeFacade.useModernOrthography())
             )
         )
         PHTVEngineRuntimeFacade.setQuickTelex(
             phtv_readIntWithFallback(
                 defaults: defaults,
-                key: "QuickTelex",
+                key: UserDefaultsKey.quickTelex,
                 fallback: Int32(PHTVEngineRuntimeFacade.quickTelex())
             )
         )
         PHTVEngineRuntimeFacade.setFreeMark(
             phtv_readIntWithFallback(
                 defaults: defaults,
-                key: "FreeMark",
+                key: UserDefaultsKey.freeMark,
                 fallback: Int32(PHTVEngineRuntimeFacade.freeMark())
             )
         )
@@ -241,21 +241,21 @@ import Foundation
         PHTVEngineRuntimeFacade.setUseMacro(
             phtv_readIntWithFallback(
                 defaults: defaults,
-                key: "UseMacro",
+                key: UserDefaultsKey.useMacro,
                 fallback: Int32(PHTVEngineRuntimeFacade.useMacro())
             )
         )
         PHTVEngineRuntimeFacade.setUseMacroInEnglishMode(
             phtv_readIntWithFallback(
                 defaults: defaults,
-                key: "UseMacroInEnglishMode",
+                key: UserDefaultsKey.useMacroInEnglishMode,
                 fallback: Int32(PHTVEngineRuntimeFacade.useMacroInEnglishMode())
             )
         )
         PHTVEngineRuntimeFacade.setAutoCapsMacro(
             phtv_readIntWithFallback(
                 defaults: defaults,
-                key: "vAutoCapsMacro",
+                key: UserDefaultsKey.autoCapsMacro,
                 fallback: Int32(PHTVEngineRuntimeFacade.autoCapsMacro())
             )
         )
@@ -263,56 +263,56 @@ import Foundation
         PHTVEngineRuntimeFacade.setSendKeyStepByStepEnabled(
             phtv_readIntWithFallback(
                 defaults: defaults,
-                key: "SendKeyStepByStep",
+                key: UserDefaultsKey.sendKeyStepByStep,
                 fallback: PHTVEngineRuntimeFacade.isSendKeyStepByStepEnabled() ? 1 : 0
             ) != 0
         )
         PHTVEngineRuntimeFacade.setSmartSwitchKeyEnabled(
             phtv_readIntWithFallback(
                 defaults: defaults,
-                key: "UseSmartSwitchKey",
+                key: UserDefaultsKey.useSmartSwitchKey,
                 fallback: PHTVEngineRuntimeFacade.isSmartSwitchKeyEnabled() ? 1 : 0
             ) != 0
         )
         PHTVEngineRuntimeFacade.setUpperCaseFirstChar(
             phtv_readIntWithFallback(
                 defaults: defaults,
-                key: "UpperCaseFirstChar",
+                key: UserDefaultsKey.upperCaseFirstChar,
                 fallback: Int32(PHTVEngineRuntimeFacade.upperCaseFirstChar())
             )
         )
         PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(
             phtv_readIntWithFallback(
                 defaults: defaults,
-                key: "vAllowConsonantZFWJ",
+                key: UserDefaultsKey.allowConsonantZFWJ,
                 fallback: 1
             )
         )
         PHTVEngineRuntimeFacade.setQuickStartConsonant(
             phtv_readIntWithFallback(
                 defaults: defaults,
-                key: "vQuickStartConsonant",
+                key: UserDefaultsKey.quickStartConsonant,
                 fallback: Int32(PHTVEngineRuntimeFacade.quickStartConsonant())
             )
         )
         PHTVEngineRuntimeFacade.setQuickEndConsonant(
             phtv_readIntWithFallback(
                 defaults: defaults,
-                key: "vQuickEndConsonant",
+                key: UserDefaultsKey.quickEndConsonant,
                 fallback: Int32(PHTVEngineRuntimeFacade.quickEndConsonant())
             )
         )
         PHTVEngineRuntimeFacade.setRememberCode(
             phtv_readIntWithFallback(
                 defaults: defaults,
-                key: "vRememberCode",
+                key: UserDefaultsKey.rememberCode,
                 fallback: Int32(PHTVEngineRuntimeFacade.rememberCode())
             )
         )
         PHTVEngineRuntimeFacade.setPerformLayoutCompat(
             phtv_readIntWithFallback(
                 defaults: defaults,
-                key: "vPerformLayoutCompat",
+                key: UserDefaultsKey.performLayoutCompat,
                 fallback: Int32(PHTVEngineRuntimeFacade.performLayoutCompat())
             )
         )
@@ -320,28 +320,28 @@ import Foundation
         PHTVEngineRuntimeFacade.setRestoreOnEscape(
             phtv_readIntWithFallback(
                 defaults: defaults,
-                key: "vRestoreOnEscape",
+                key: UserDefaultsKey.restoreOnEscape,
                 fallback: Int32(PHTVEngineRuntimeFacade.restoreOnEscape())
             )
         )
         PHTVEngineRuntimeFacade.setCustomEscapeKey(
             phtv_readIntWithFallback(
                 defaults: defaults,
-                key: "vCustomEscapeKey",
+                key: UserDefaultsKey.customEscapeKey,
                 fallback: Int32(PHTVEngineRuntimeFacade.customEscapeKey())
             )
         )
         PHTVEngineRuntimeFacade.setPauseKeyEnabled(
             phtv_readIntWithFallback(
                 defaults: defaults,
-                key: "vPauseKeyEnabled",
+                key: UserDefaultsKey.pauseKeyEnabled,
                 fallback: Int32(PHTVEngineRuntimeFacade.pauseKeyEnabled())
             )
         )
         PHTVEngineRuntimeFacade.setPauseKey(
             phtv_readIntWithFallback(
                 defaults: defaults,
-                key: "vPauseKey",
+                key: UserDefaultsKey.pauseKey,
                 fallback: Int32(PHTVEngineRuntimeFacade.pauseKey())
             )
         )
@@ -364,15 +364,15 @@ import Foundation
         PHTVEngineRuntimeFacade.setShowIconOnDock(
             phtv_readIntWithFallback(
                 defaults: defaults,
-                key: "vShowIconOnDock",
+                key: UserDefaultsKey.showIconOnDock,
                 fallback: Int32(PHTVEngineRuntimeFacade.showIconOnDock())
             ) != 0
         )
 
         let defaultSwitchHotkey = Int32(Defaults.defaultSwitchKeyStatus)
-        let hasStoredSwitchHotkey = defaults.object(forKey: "SwitchKeyStatus") != nil
+        let hasStoredSwitchHotkey = defaults.object(forKey: UserDefaultsKey.switchKeyStatus) != nil
         let rawSwitchHotkey = hasStoredSwitchHotkey
-            ? Int32(truncatingIfNeeded: defaults.integer(forKey: "SwitchKeyStatus"))
+            ? Int32(truncatingIfNeeded: defaults.integer(forKey: UserDefaultsKey.switchKeyStatus))
             : defaultSwitchHotkey
         let normalizedSwitchHotkey = phtv_normalizeSwitchKeyStatus(
             rawSwitchHotkey,
@@ -381,7 +381,7 @@ import Foundation
         PHTVEngineRuntimeFacade.setSwitchKeyStatus(normalizedSwitchHotkey.value)
 
         if !hasStoredSwitchHotkey || normalizedSwitchHotkey.normalized {
-            defaults.set(Int(normalizedSwitchHotkey.value), forKey: "SwitchKeyStatus")
+            defaults.set(Int(normalizedSwitchHotkey.value), forKey: UserDefaultsKey.switchKeyStatus)
         }
 
         if normalizedSwitchHotkey.normalized {
@@ -406,71 +406,71 @@ import Foundation
         let defaults = UserDefaults.standard
 
         PHTVEngineRuntimeFacade.setCurrentLanguage(1)
-        defaults.set(1, forKey: "InputMethod")
+        defaults.set(1, forKey: UserDefaultsKey.inputMethod)
 
         PHTVEngineRuntimeFacade.setCurrentInputType(0)
-        defaults.set(0, forKey: "InputType")
+        defaults.set(0, forKey: UserDefaultsKey.inputType)
 
         PHTVEngineRuntimeFacade.setFreeMark(0)
-        defaults.set(0, forKey: "FreeMark")
+        defaults.set(0, forKey: UserDefaultsKey.freeMark)
 
         PHTVEngineRuntimeFacade.setCheckSpelling(1)
-        defaults.set(1, forKey: "Spelling")
+        defaults.set(1, forKey: UserDefaultsKey.spelling)
 
         PHTVEngineRuntimeFacade.setCurrentCodeTable(0)
-        defaults.set(0, forKey: "CodeTable")
+        defaults.set(0, forKey: UserDefaultsKey.codeTable)
 
         let defaultSwitchHotkey = Int32(Defaults.defaultSwitchKeyStatus)
         PHTVEngineRuntimeFacade.setSwitchKeyStatus(defaultSwitchHotkey)
-        defaults.set(Int(defaultSwitchHotkey), forKey: "SwitchKeyStatus")
+        defaults.set(Int(defaultSwitchHotkey), forKey: UserDefaultsKey.switchKeyStatus)
 
         PHTVEngineRuntimeFacade.setQuickTelex(0)
-        defaults.set(0, forKey: "QuickTelex")
+        defaults.set(0, forKey: UserDefaultsKey.quickTelex)
 
         PHTVEngineRuntimeFacade.setUseModernOrthography(1)
-        defaults.set(1, forKey: "ModernOrthography")
+        defaults.set(1, forKey: UserDefaultsKey.modernOrthography)
 
         PHTVEngineRuntimeFacade.setFixRecommendBrowser(1)
-        defaults.set(1, forKey: "FixRecommendBrowser")
+        defaults.set(1, forKey: UserDefaultsKey.fixRecommendBrowser)
 
         PHTVEngineRuntimeFacade.setUseMacro(1)
-        defaults.set(1, forKey: "UseMacro")
+        defaults.set(1, forKey: UserDefaultsKey.useMacro)
 
         PHTVEngineRuntimeFacade.setUseMacroInEnglishMode(0)
-        defaults.set(0, forKey: "UseMacroInEnglishMode")
+        defaults.set(0, forKey: UserDefaultsKey.useMacroInEnglishMode)
 
         PHTVEngineRuntimeFacade.setSendKeyStepByStepEnabled(false)
-        defaults.set(0, forKey: "SendKeyStepByStep")
+        defaults.set(0, forKey: UserDefaultsKey.sendKeyStepByStep)
 
         PHTVEngineRuntimeFacade.setSmartSwitchKeyEnabled(true)
-        defaults.set(1, forKey: "UseSmartSwitchKey")
+        defaults.set(1, forKey: UserDefaultsKey.useSmartSwitchKey)
 
         PHTVEngineRuntimeFacade.setUpperCaseFirstChar(0)
-        defaults.set(0, forKey: "UpperCaseFirstChar")
+        defaults.set(0, forKey: UserDefaultsKey.upperCaseFirstChar)
 
         PHTVEngineRuntimeFacade.setTempOffSpelling(0)
-        defaults.set(0, forKey: "vTempOffSpelling")
+        defaults.set(0, forKey: UserDefaultsKey.tempOffSpelling)
 
         PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(1)
-        defaults.set(1, forKey: "vAllowConsonantZFWJ")
+        defaults.set(1, forKey: UserDefaultsKey.allowConsonantZFWJ)
 
         PHTVEngineRuntimeFacade.setQuickStartConsonant(0)
-        defaults.set(0, forKey: "vQuickStartConsonant")
+        defaults.set(0, forKey: UserDefaultsKey.quickStartConsonant)
 
         PHTVEngineRuntimeFacade.setQuickEndConsonant(0)
-        defaults.set(0, forKey: "vQuickEndConsonant")
+        defaults.set(0, forKey: UserDefaultsKey.quickEndConsonant)
 
         PHTVEngineRuntimeFacade.setRememberCode(1)
-        defaults.set(1, forKey: "vRememberCode")
+        defaults.set(1, forKey: UserDefaultsKey.rememberCode)
 
         PHTVEngineRuntimeFacade.setOtherLanguageMode(1)
-        defaults.set(1, forKey: "vOtherLanguage")
+        defaults.set(1, forKey: UserDefaultsKey.otherLanguage)
 
         PHTVEngineRuntimeFacade.setTempOffEngine(0)
-        defaults.set(0, forKey: "vTempOffPHTV")
+        defaults.set(0, forKey: UserDefaultsKey.tempOffPHTV)
 
         PHTVEngineRuntimeFacade.setAutoRestoreEnglishWord(1)
-        defaults.set(1, forKey: "vAutoRestoreEnglishWord")
+        defaults.set(1, forKey: UserDefaultsKey.autoRestoreEnglishWord)
         PHTVEngineRuntimeFacade.setAutoRestoreEnglishWordMode(Int32(Defaults.autoRestoreEnglishWordMode.rawValue))
         defaults.set(Defaults.autoRestoreEnglishWordMode.rawValue, forKey: UserDefaultsKey.autoRestoreEnglishWordMode)
         let restoreIfWrongSpelling = Defaults.restoreIfWrongSpelling ? 1 : 0
@@ -478,32 +478,32 @@ import Foundation
         defaults.set(restoreIfWrongSpelling, forKey: UserDefaultsKey.restoreIfWrongSpelling)
 
         PHTVEngineRuntimeFacade.setRestoreOnEscape(1)
-        defaults.set(1, forKey: "vRestoreOnEscape")
+        defaults.set(1, forKey: UserDefaultsKey.restoreOnEscape)
 
         PHTVEngineRuntimeFacade.setCustomEscapeKey(0)
-        defaults.set(0, forKey: "vCustomEscapeKey")
+        defaults.set(0, forKey: UserDefaultsKey.customEscapeKey)
 
         PHTVEngineRuntimeFacade.setShowIconOnDock(false)
-        defaults.set(0, forKey: "vShowIconOnDock")
+        defaults.set(0, forKey: UserDefaultsKey.showIconOnDock)
 
         PHTVEngineRuntimeFacade.setPerformLayoutCompat(0)
-        defaults.set(0, forKey: "vPerformLayoutCompat")
+        defaults.set(0, forKey: UserDefaultsKey.performLayoutCompat)
 
-        defaults.set(1, forKey: "GrayIcon")
-        defaults.set(false, forKey: "PHTV_RunOnStartup")
-        defaults.set(0, forKey: "RunOnStartup")
-        defaults.set(1, forKey: "vSettingsWindowAlwaysOnTop")
-        defaults.set(0, forKey: "vBeepOnModeSwitch")
-        defaults.set(0.5, forKey: "vBeepVolume")
-        defaults.set(18.0, forKey: "vMenuBarIconSize")
-        defaults.set(0, forKey: "vUseVietnameseMenubarIcon")
+        defaults.set(1, forKey: UserDefaultsKey.grayIcon)
+        defaults.set(false, forKey: UserDefaultsKey.runOnStartup)
+        defaults.set(0, forKey: UserDefaultsKey.runOnStartupLegacy)
+        defaults.set(1, forKey: UserDefaultsKey.settingsWindowAlwaysOnTop)
+        defaults.set(0, forKey: UserDefaultsKey.beepOnModeSwitch)
+        defaults.set(0.5, forKey: UserDefaultsKey.beepVolume)
+        defaults.set(18.0, forKey: UserDefaultsKey.menuBarIconSize)
+        defaults.set(0, forKey: UserDefaultsKey.useVietnameseMenubarIcon)
 
-        defaults.set(86_400, forKey: "SUScheduledCheckInterval")
-        defaults.set(true, forKey: "vAutoInstallUpdates")
+        defaults.set(86_400, forKey: UserDefaultsKey.updateCheckInterval)
+        defaults.set(true, forKey: UserDefaultsKey.legacyAutoInstallUpdates)
 
-        defaults.set(true, forKey: "vIncludeSystemInfo")
-        defaults.set(false, forKey: "vIncludeLogs")
-        defaults.set(true, forKey: "vIncludeCrashLogs")
+        defaults.set(true, forKey: UserDefaultsKey.includeSystemInfo)
+        defaults.set(false, forKey: UserDefaultsKey.includeLogs)
+        defaults.set(true, forKey: UserDefaultsKey.includeCrashLogs)
 
         let defaultPauseKey = Int32(KeyCode.leftOption)
         PHTVEngineRuntimeFacade.setPauseKeyEnabled(0)
