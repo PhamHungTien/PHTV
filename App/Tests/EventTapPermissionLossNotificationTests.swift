@@ -112,20 +112,30 @@ final class EventTapPermissionLossNotificationTests: XCTestCase {
         defer { bridge.cleanup() }
         let appDelegate = bridge.delegate
         appDelegate.automaticTCCRepairAttemptCount = Int.max
+        defer {
+            phtvAccessibilityRevokedAlertRunner = phtvRunAccessibilityRevokedAlert
+            PHTVEventTapService.resetPermissionLossForTesting()
+        }
 
-        let alertPresented = expectation(description: "Revoked alert handler triggered from markPermissionLost")
+        PHTVEventTapService.resetPermissionLossForTesting()
+
         var callCount = 0
 
         phtvAccessibilityRevokedAlertRunner = {
             callCount += 1
-            alertPresented.fulfill()
             return .alertSecondButtonReturn
         }
 
         await Task.yield()
         PHTVEventTapService.markPermissionLost()
 
-        await fulfillment(of: [alertPresented], timeout: 1.0)
+        // Avoid XCTestExpectation in this callback path; callback can outlive test process restarts.
+        for _ in 0..<50 {
+            if callCount > 0 {
+                break
+            }
+            try? await Task.sleep(for: .milliseconds(20))
+        }
         XCTAssertGreaterThanOrEqual(callCount, 1)
     }
 }
