@@ -43,7 +43,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var wasAccessibilityEnabled = false
     var accessibilityStableCount: UInt = 0
     var isAttemptingTCCRepair = false
-    var didAttemptTCCRepairOnce = false
+    var automaticTCCRepairAttemptCount = 0
+    var lastAutomaticTCCRepairAttemptTime: CFAbsoluteTime = 0
     var healthCheckTask: Task<Void, Never>?
     var needsRelaunchAfterPermission = false
     var eventTapRecoveryToken: UInt = 0

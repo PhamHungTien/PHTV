@@ -11,6 +11,28 @@ import AppKit
 import Foundation
 
 private let phtvDefaultsKeyShowUIOnStartup = "ShowUIOnStartup"
+private let phtvTCCRepairMaxAttemptsPerSession = 3
+private let phtvTCCRepairRetryCooldown: CFAbsoluteTime = 60
+
+func phtvShouldScheduleAutomaticTCCRepair(
+    isAttempting: Bool,
+    attemptsInSession: Int,
+    lastAttemptTime: CFAbsoluteTime,
+    now: CFAbsoluteTime,
+    maxAttempts: Int = phtvTCCRepairMaxAttemptsPerSession,
+    cooldown: CFAbsoluteTime = phtvTCCRepairRetryCooldown
+) -> Bool {
+    if isAttempting {
+        return false
+    }
+    if attemptsInSession >= maxAttempts {
+        return false
+    }
+    if lastAttemptTime > 0, (now - lastAttemptTime) < cooldown {
+        return false
+    }
+    return true
+}
 
 private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Bool, error: Error?) {
     guard PHTVManager.isTCCEntryCorrupt() else {
@@ -184,6 +206,10 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
     }
 
     private func onEventTapInitSuccess() {
+        isAttemptingTCCRepair = false
+        automaticTCCRepairAttemptCount = 0
+        lastAutomaticTCCRepairAttemptTime = 0
+
         startAccessibilityMonitoring()
         startHealthCheckMonitoring()
         startInputSourceMonitoring()
@@ -257,10 +283,36 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
     }
 
     func attemptAutomaticTCCRepairIfNeeded() {
-        if isAttemptingTCCRepair || didAttemptTCCRepairOnce {
+        let now = CFAbsoluteTimeGetCurrent()
+        guard phtvShouldScheduleAutomaticTCCRepair(
+            isAttempting: isAttemptingTCCRepair,
+            attemptsInSession: automaticTCCRepairAttemptCount,
+            lastAttemptTime: lastAutomaticTCCRepairAttemptTime,
+            now: now
+        ) else {
+#if DEBUG
+            if automaticTCCRepairAttemptCount >= phtvTCCRepairMaxAttemptsPerSession {
+                NSLog(
+                    "[Accessibility] Skipping auto-repair: attempt limit reached (%d)",
+                    automaticTCCRepairAttemptCount
+                )
+            }
+#endif
             return
         }
+
         isAttemptingTCCRepair = true
+        automaticTCCRepairAttemptCount += 1
+        lastAutomaticTCCRepairAttemptTime = now
+        let attemptIndex = automaticTCCRepairAttemptCount
+
+#if DEBUG
+        NSLog(
+            "[Accessibility] Attempting automatic TCC repair (%d/%d)",
+            attemptIndex,
+            phtvTCCRepairMaxAttemptsPerSession
+        )
+#endif
 
         Task(priority: .userInitiated) { [weak self] in
             let repairResult = await phtvAttemptTCCRepairInBackground()
@@ -281,8 +333,9 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
     private func finishTCCRepairAttempt(fixed: Bool) {
         if fixed {
             startAccessibilityMonitoring(withInterval: 0.3, resetState: true)
+            automaticTCCRepairAttemptCount = 0
+            lastAutomaticTCCRepairAttemptTime = 0
         }
-        didAttemptTCCRepairOnce = true
         isAttemptingTCCRepair = false
     }
 
