@@ -35,9 +35,16 @@ private func phtvMacroLiveLog(_ message: String) {
         let defaults = UserDefaults.standard
         let macroListData = defaults.data(forKey: phtvDefaultsKeyMacroList)
         let userMacros = MacroStorage.load(defaults: defaults)
-        let macros = PHTVSystemTextReplacementService.runtimeMacros(
+        let rawSystemReplacements = PHTVSystemTextReplacementService.rawReplacementItems(
+            globalDefaults: defaults
+        )
+        let macros = PHTVSystemTextReplacementService.mergedRuntimeMacros(
             userMacros: userMacros,
-            defaults: defaults
+            useSystemTextReplacements: PHTVSystemTextReplacementService.isEnabled(in: defaults),
+            rawItems: rawSystemReplacements
+        )
+        lastSystemReplacementsChangeToken = PHTVSystemTextReplacementService.replacementItemsChangeToken(
+            rawItems: rawSystemReplacements
         )
 
         if macros.isEmpty {
@@ -61,6 +68,24 @@ private func phtvMacroLiveLog(_ message: String) {
         if resetSession {
             PHTVManager.requestNewSession()
         }
+    }
+
+    @objc func refreshMacrosIfSystemTextReplacementsChanged(resetSession: Bool) {
+        let defaults = UserDefaults.standard
+        let currentToken = PHTVSystemTextReplacementService.replacementItemsChangeToken(
+            globalDefaults: defaults
+        )
+        guard currentToken != lastSystemReplacementsChangeToken else {
+            return
+        }
+
+        guard PHTVSystemTextReplacementService.isEnabled(in: defaults) else {
+            lastSystemReplacementsChangeToken = currentToken
+            return
+        }
+
+        phtvMacroLiveLog("system text replacements changed, refreshing runtime macro map")
+        syncMacrosFromUserDefaults(resetSession: resetSession)
     }
 
     @objc func handleMacrosUpdated(_ notification: Notification?) {

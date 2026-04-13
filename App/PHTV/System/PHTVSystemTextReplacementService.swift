@@ -28,6 +28,16 @@ final class PHTVSystemTextReplacementService: NSObject {
         normalizedEntries(from: rawReplacementItems()).count
     }
 
+    class func replacementItemsChangeToken(
+        globalDefaults: UserDefaults = .standard
+    ) -> Int {
+        replacementItemsChangeToken(rawItems: rawReplacementItems(globalDefaults: globalDefaults))
+    }
+
+    class func replacementItemsChangeToken(rawItems: [[String: Any]]) -> Int {
+        stableEntriesToken(normalizedEntries(from: rawItems))
+    }
+
     class func runtimeMacros(
         userMacros: [MacroItem],
         defaults: UserDefaults = .standard
@@ -141,6 +151,31 @@ final class PHTVSystemTextReplacementService: NSObject {
         }
 
         return result
+    }
+
+    private class func stableEntriesToken(_ entries: [(shortcut: String, expansion: String)]) -> Int {
+        var hash: UInt64 = 1_469_598_103_934_665_603
+        let prime: UInt64 = 1_099_511_628_211
+
+        func feedByte(_ byte: UInt8) {
+            hash ^= UInt64(byte)
+            hash = hash &* prime
+        }
+
+        func feedString(_ value: String) {
+            for byte in value.utf8 {
+                feedByte(byte)
+            }
+        }
+
+        for entry in entries {
+            feedString(entry.shortcut)
+            feedByte(0)
+            feedString(entry.expansion)
+            feedByte(1)
+        }
+
+        return Int(truncatingIfNeeded: hash)
     }
 
     private class func normalizedText(_ text: String?) -> String {

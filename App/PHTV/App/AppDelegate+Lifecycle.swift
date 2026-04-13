@@ -67,6 +67,13 @@ private let phtvNotificationApplicationWillTerminate = Notification.Name("Applic
         bootstrapSparkleUpdates()
 
         loadExistingMacros()
+        for delay in [0.6, 1.8] {
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(delay))
+                guard let self, !Task.isCancelled else { return }
+                self.refreshMacrosIfSystemTextReplacementsChanged(resetSession: true)
+            }
+        }
         initEnglishWordDictionary()
         loadRuntimeSettingsFromUserDefaults()
         EmojiHotkeyBridge.initializeEmojiHotkeyManager()

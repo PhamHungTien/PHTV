@@ -416,6 +416,16 @@ final class PHTVEventCallbackService {
 
                 if PHTVRuntimeUIBridgeService.handleModifierReleaseHotkeyActionFromRuntime(Int32(releaseAction)) {
                     PHTVModifierRuntimeStateService.setHasJustUsedHotKeyValue(true)
+                    let shouldPassThroughReleaseEvent = PHTVHotkeyService.shouldPassThroughModifierReleaseEvent(
+                        forReleaseAction: Int32(releaseAction),
+                        switchHotkey: Int32(PHTVEngineRuntimeFacade.switchKeyStatus()),
+                        convertHotkey: currentConvertHotkey(),
+                        emojiEnabled: Int32(PHTVEngineRuntimeFacade.enableEmojiHotkey()),
+                        emojiHotkeyKeyCode: Int32(PHTVEngineRuntimeFacade.emojiHotkeyKeyCode())
+                    )
+                    if shouldPassThroughReleaseEvent {
+                        return Unmanaged.passRetained(event)
+                    }
                     return nil
                 }
 

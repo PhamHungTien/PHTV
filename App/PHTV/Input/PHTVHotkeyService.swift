@@ -709,6 +709,30 @@ final class PHTVHotkeyService: NSObject {
         return PHTVModifierReleaseAction.none.rawValue
     }
 
+    @objc(shouldPassThroughModifierReleaseEventForReleaseAction:switchHotkey:convertHotkey:emojiEnabled:emojiHotkeyKeyCode:)
+    class func shouldPassThroughModifierReleaseEvent(
+        forReleaseAction releaseAction: Int32,
+        switchHotkey: Int32,
+        convertHotkey: Int32,
+        emojiEnabled: Int32,
+        emojiHotkeyKeyCode: Int32
+    ) -> Bool {
+        guard let action = PHTVModifierReleaseAction(rawValue: releaseAction) else {
+            return false
+        }
+
+        switch action {
+        case .switchLanguage:
+            return isModifierOnlyHotkey(switchHotkey)
+        case .quickConvert:
+            return isModifierOnlyHotkey(convertHotkey)
+        case .emojiPicker:
+            return emojiEnabled != 0 && isEmojiModifierOnlyHotkey(forKeyCode: emojiHotkeyKeyCode)
+        case .none, .tempOffSpelling, .tempOffEngine:
+            return false
+        }
+    }
+
     // Packed release plan format:
     // - bit 0: should attempt restore-to-raw-keys
     // - bit 1: should reset restore-modifier state

@@ -202,6 +202,7 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
         refreshEmojiHotkeyRegistration(reason: "didWake", settledRetries: true)
         refreshClipboardHotkeyRegistration(reason: "didWake", settledRetries: true)
         requestEventTapRecovery(reason: "didWake", force: true)
+        refreshMacrosIfSystemTextReplacementsChanged(resetSession: true)
     }
 
     @objc func receiveSleepNote(_ note: Notification) {
@@ -217,6 +218,7 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
         refreshEmojiHotkeyRegistration(reason: "didBecomeActive", settledRetries: false)
         refreshClipboardHotkeyRegistration(reason: "didBecomeActive", settledRetries: false)
         requestEventTapRecovery(reason: "didBecomeActive")
+        refreshMacrosIfSystemTextReplacementsChanged(resetSession: true)
     }
 
     @objc func receiveActiveSpaceChanged(_ note: Notification) {

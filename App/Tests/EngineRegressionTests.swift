@@ -928,6 +928,12 @@ final class EngineRegressionTests: XCTestCase {
         runWordBreakCase("wu", expectRestore: false, breakKey: KEY_COMMA)
     }
 
+    func testIssue165EngineerStaysEnglishWhileTypingInSimpleTelex1() {
+        withInputType(2) {
+            XCTAssertEqual(renderedToken("engineer"), "engineer")
+        }
+    }
+
     func testIssue165EngineerRestoresOnSpaceInSimpleTelex1() {
         withInputType(2) {
             runSpaceCase("engineer", expectRestore: true)

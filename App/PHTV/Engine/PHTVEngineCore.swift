@@ -1957,6 +1957,24 @@ final class PHTVVietnameseEngine {
         return (restoreStateIndex, canAutoRestore, shouldRestoreEnglish)
     }
 
+    func shouldBypassSpecialKeyForEnglishWordConflict(_ data: UInt16) -> Bool {
+        guard phtvRuntimeAutoRestoreEnglishWordEnabled() != 0 else { return false }
+        guard autoRestoreEnglishModeValue() == Int32(AutoRestoreEnglishMode.englishOnly.rawValue) else {
+            return false
+        }
+        guard isMarkKey(data) else { return false }
+
+        let englishLength = getEnglishLookupStateLength()
+        guard englishLength > 2, englishLength == stateIdx else { return false }
+
+        let keySlice = Array(keyStates.prefix(englishLength))
+        guard detectorShouldRestoreEnglish(keySlice, englishLength) else { return false }
+        guard detectorIsEnglishWord(keySlice, englishLength) else { return false }
+        guard !detectorIsVietnameseWord(keySlice, englishLength) else { return false }
+
+        return true
+    }
+
     // MARK: - English mode (EngineEnglishMode.inc)
 
     func vEnglishMode(state: VKeyEventState, data: UInt16, isCaps: Bool, otherControlKey: Bool) {
@@ -2250,8 +2268,9 @@ final class PHTVVietnameseEngine {
         // Decision (EngineKeyHandleEventMainFlowDecision.inc)
         let quickTelexEnabled = phtvRuntimeQuickTelexEnabled() != 0
         let freeMarkEnabled = phtvRuntimeFreeMarkEnabled() != 0
+        let bypassSpecialForEnglishConflict = shouldBypassSpecialKeyForEnglishWordConflict(data)
 
-        if !isSpecialKey(data) || (tempDisableKey && !allowSpecialDespiteTempDisable) {
+        if bypassSpecialForEnglishConflict || !isSpecialKey(data) || (tempDisableKey && !allowSpecialDespiteTempDisable) {
             if quickTelexEnabled && isQuickTelexKey(data) {
                 handleQuickTelex(data, isCaps); return
             } else {

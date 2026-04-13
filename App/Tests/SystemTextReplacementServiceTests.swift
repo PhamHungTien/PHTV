@@ -74,6 +74,42 @@ final class SystemTextReplacementServiceTests: XCTestCase {
         XCTAssertEqual(merged[1].snippetType, .static)
     }
 
+    func testReplacementItemsChangeTokenIgnoresDisabledAndDuplicateRows() {
+        let tokenA = PHTVSystemTextReplacementService.replacementItemsChangeToken(
+            rawItems: [
+                ["on": 1, "replace": "dc", "with": "được"],
+                ["on": 0, "replace": "kk", "with": "không biết"],
+                ["on": 1, "replace": "dc", "with": "bị trùng"],
+                ["replace": "ntn", "with": "như thế nào"]
+            ]
+        )
+        let tokenB = PHTVSystemTextReplacementService.replacementItemsChangeToken(
+            rawItems: [
+                ["on": 1, "replace": "dc", "with": "được"],
+                ["on": 1, "replace": "ntn", "with": "như thế nào"]
+            ]
+        )
+
+        XCTAssertEqual(tokenA, tokenB)
+    }
+
+    func testReplacementItemsChangeTokenChangesWhenExpansionChanges() {
+        let tokenA = PHTVSystemTextReplacementService.replacementItemsChangeToken(
+            rawItems: [
+                ["on": 1, "replace": "dc", "with": "được"],
+                ["on": 1, "replace": "ntn", "with": "như thế nào"]
+            ]
+        )
+        let tokenB = PHTVSystemTextReplacementService.replacementItemsChangeToken(
+            rawItems: [
+                ["on": 1, "replace": "dc", "with": "đc"],
+                ["on": 1, "replace": "ntn", "with": "như thế nào"]
+            ]
+        )
+
+        XCTAssertNotEqual(tokenA, tokenB)
+    }
+
     func testNativeTextReplacementDeferralUsesGuiDefaultAndToolingFallback() {
         XCTAssertTrue(
             PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(

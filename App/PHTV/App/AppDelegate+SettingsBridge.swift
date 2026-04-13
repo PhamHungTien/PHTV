@@ -302,5 +302,6 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
         }
 
         handleSettingsChanged(nil)
+        refreshMacrosIfSystemTextReplacementsChanged(resetSession: true)
     }
 }
