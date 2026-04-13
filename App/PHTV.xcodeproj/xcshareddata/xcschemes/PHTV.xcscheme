@@ -59,6 +59,24 @@
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES">
+      <PreActions>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "Stop running host before tests"
+               scriptText = "#!/bin/sh&#10;# App-hosted XCTest can fail to launch if an existing app instance is running.&#10;/usr/bin/osascript -e 'tell application id &quot;com.phamhungtien.phtv&quot; to quit' >/dev/null 2>&amp;1 || true&#10;/usr/bin/pkill -f '/PHTV.app/Contents/MacOS/PHTV' >/dev/null 2>&amp;1 || true&#10;/usr/bin/pkill -f 'Sparkle.framework/.*/Autoupdate' >/dev/null 2>&amp;1 || true&#10;/usr/bin/pkill -f 'org.sparkle-project.Sparkle/Launcher/.*/Updater.app/Contents/MacOS/Updater' >/dev/null 2>&amp;1 || true">
+               <EnvironmentBuildable>
+                  <BuildableReference
+                     BuildableIdentifier = "primary"
+                     BlueprintIdentifier = "460202422F2814250040B043"
+                     BuildableName = "PHTV.app"
+                     BlueprintName = "PHTV"
+                     ReferencedContainer = "container:PHTV.xcodeproj">
+                  </BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
+      </PreActions>
       <Testables>
          <TestableReference
             skipped = "NO">
