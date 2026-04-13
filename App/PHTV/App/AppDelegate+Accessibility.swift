@@ -14,6 +14,20 @@ private let phtvDefaultsKeyShowUIOnStartup = "ShowUIOnStartup"
 private let phtvTCCRepairMaxAttemptsPerSession = 3
 private let phtvTCCRepairRetryCooldown: CFAbsoluteTime = 60
 
+@MainActor
+func phtvRunAccessibilityRevokedAlert() -> NSApplication.ModalResponse {
+    let alert = NSAlert()
+    alert.messageText = "⚠️  Quyền trợ năng đã bị tắt!"
+    alert.informativeText = "PHTV cần quyền trợ năng để hoạt động.\n\nỨng dụng sẽ tự động hoạt động lại khi bạn cấp quyền."
+    alert.alertStyle = .warning
+    alert.addButton(withTitle: "Mở cài đặt")
+    alert.addButton(withTitle: "Đóng")
+    return alert.runModal()
+}
+
+@MainActor
+var phtvAccessibilityRevokedAlertRunner: @MainActor () -> NSApplication.ModalResponse = phtvRunAccessibilityRevokedAlert
+
 func phtvShouldScheduleAutomaticTCCRepair(
     isAttempting: Bool,
     attemptsInSession: Int,
@@ -271,14 +285,7 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
         }
         publishTypingPermissionState(eventTapReady: false)
 
-        let alert = NSAlert()
-        alert.messageText = "⚠️  Quyền trợ năng đã bị tắt!"
-        alert.informativeText = "PHTV cần quyền trợ năng để hoạt động.\n\nỨng dụng sẽ tự động hoạt động lại khi bạn cấp quyền."
-        alert.alertStyle = .warning
-        alert.addButton(withTitle: "Mở cài đặt")
-        alert.addButton(withTitle: "Đóng")
-
-        let response = alert.runModal()
+        let response = phtvAccessibilityRevokedAlertRunner()
         if response == .alertFirstButtonReturn {
             PHTVAccessibilityService.openAccessibilityPreferences()
             PHTVManager.invalidatePermissionCache()
