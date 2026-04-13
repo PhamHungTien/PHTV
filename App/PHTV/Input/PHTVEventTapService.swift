@@ -40,6 +40,13 @@ import Foundation
             lastPublishedTypingReadiness = isReady
             return true
         }
+
+        func resetPermissionLossForTesting() {
+            lock.lock()
+            defer { lock.unlock() }
+            state.permissionLost = false
+            lastPublishedTypingReadiness = nil
+        }
     }
 
     private static let runtimeState = EventTapRuntimeStateBox()
@@ -67,6 +74,10 @@ import Foundation
 
     @objc static func hasPermissionLost() -> Bool {
         runtimeState.withLock { $0.permissionLost }
+    }
+
+    static func resetPermissionLossForTesting() {
+        runtimeState.resetPermissionLossForTesting()
     }
 
     @objc static func markPermissionLost() {
