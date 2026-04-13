@@ -5,24 +5,6 @@
    <BuildAction
       parallelizeBuildables = "YES"
       buildImplicitDependencies = "YES">
-      <PreActions>
-         <ExecutionAction
-            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
-            <ActionContent
-               title = "Prune stale test plug-ins"
-               scriptText = "APP_BUNDLE=&quot;${TARGET_BUILD_DIR}/${FULL_PRODUCT_NAME}&quot;&#10;if [ -d &quot;${APP_BUNDLE}/Contents/PlugIns&quot; ]; then&#10;  /bin/rm -rf &quot;${APP_BUNDLE}/Contents/PlugIns&quot;&#10;fi">
-               <EnvironmentBuildable>
-                  <BuildableReference
-                     BuildableIdentifier = "primary"
-                     BlueprintIdentifier = "460202422F2814250040B043"
-                     BuildableName = "PHTV.app"
-                     BlueprintName = "PHTV"
-                     ReferencedContainer = "container:PHTV.xcodeproj">
-                  </BuildableReference>
-               </EnvironmentBuildable>
-            </ActionContent>
-         </ExecutionAction>
-      </PreActions>
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
