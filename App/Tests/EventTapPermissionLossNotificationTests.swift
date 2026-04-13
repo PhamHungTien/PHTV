@@ -14,6 +14,18 @@ final class EventTapPermissionLossNotificationTests: XCTestCase {
         AppDelegate.current()
     }
 
+    private func makeBridgeDelegateForTest() -> (delegate: AppDelegate, cleanup: () -> Void) {
+        if let host = hostAppDelegate {
+            return (host, {})
+        }
+
+        let fallback = AppDelegate()
+        fallback.setupSwiftUIBridge()
+        return (fallback, {
+            fallback.cancelManagedNotificationTasks()
+        })
+    }
+
     override func setUp() {
         super.setUp()
         PHTVEventTapService.resetPermissionLossForTesting()
@@ -96,10 +108,9 @@ final class EventTapPermissionLossNotificationTests: XCTestCase {
     }
 
     func testMarkPermissionLostDrivesAppDelegateRevokedHandlerThroughBridge() async {
-        guard let appDelegate = hostAppDelegate else {
-            XCTFail("Expected app-hosted test delegate")
-            return
-        }
+        let bridge = makeBridgeDelegateForTest()
+        defer { bridge.cleanup() }
+        let appDelegate = bridge.delegate
         appDelegate.automaticTCCRepairAttemptCount = Int.max
 
         let alertPresented = expectation(description: "Revoked alert handler triggered from markPermissionLost")

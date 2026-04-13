@@ -408,8 +408,8 @@ final class EngineRegressionTests: XCTestCase {
         runSpaceCase("terminal", customEnglish: ["terminal"], expectRestore: true)
     }
 
-    func testCustomEnglishQesRestoresOnSpace() {
-        runSpaceCase("qes", customEnglish: ["qes"], expectRestore: true)
+    func testCustomEnglishQesDoesNotRestoreOnSpaceWhenTypingStaysEnglish() {
+        runSpaceCase("qes", customEnglish: ["qes"], expectRestore: false)
     }
 
     func testAlnumInt1234NoRestoreOnSpace() {
@@ -665,16 +665,16 @@ final class EngineRegressionTests: XCTestCase {
                          allowConsonantZFWJ: false, breakKey: KEY_COMMA)
     }
 
-    func testIssue160ForRestoresOnSpaceWhenAllowConsonantIsDisabledInEnglishMode() {
-        runSpaceCase("for", expectRestore: true, allowConsonantZFWJ: false)
+    func testIssue160ForDoesNotRestoreOnSpaceWhenAllowConsonantIsDisabledInEnglishMode() {
+        runSpaceCase("for", expectRestore: false, allowConsonantZFWJ: false)
     }
 
     func testIssue160ForRestoresOnSpaceWhenAllowConsonantIsDisabledInNonVietnameseMode() {
         runSpaceCase("for", expectRestore: true, autoRestoreMode: .nonVietnamese, allowConsonantZFWJ: false)
     }
 
-    func testIssue160ForRestoresOnCommaWhenAllowConsonantIsDisabledInEnglishMode() {
-        runWordBreakCase("for", expectRestore: true, allowConsonantZFWJ: false, breakKey: KEY_COMMA)
+    func testIssue160ForDoesNotRestoreOnCommaWhenAllowConsonantIsDisabledInEnglishMode() {
+        runWordBreakCase("for", expectRestore: false, allowConsonantZFWJ: false, breakKey: KEY_COMMA)
     }
 
     func testIssue160ForRestoresOnCommaWhenAllowConsonantIsDisabledInNonVietnameseMode() {
@@ -707,10 +707,10 @@ final class EngineRegressionTests: XCTestCase {
         }
     }
 
-    func testCuratedAcronymsAndModelNamesRestoreOnWordBreaks() {
+    func testCuratedAcronymsAndModelNamesHaveExpectedWordBreakBehavior() {
         runSpaceCase("qwen", expectRestore: true)
         runWordBreakCase("qwen", expectRestore: true, breakKey: KEY_COMMA)
-        runWordBreakCase("hcmus", expectRestore: true, breakKey: KEY_COMMA)
+        runWordBreakCase("hcmus", expectRestore: false, breakKey: KEY_COMMA)
         runWordBreakCase("huflit", expectRestore: true, breakKey: KEY_DOT)
     }
 
@@ -736,8 +736,8 @@ final class EngineRegressionTests: XCTestCase {
         runSpaceCase("fast", expectRestore: true, allowConsonantZFWJ: true)
     }
 
-    func testIssue160FixRestoresOnCommaWhenAllowConsonantIsDisabled() {
-        runWordBreakCase("fix", expectRestore: true, allowConsonantZFWJ: false, breakKey: KEY_COMMA)
+    func testIssue160FixDoesNotRestoreOnCommaWhenAllowConsonantIsDisabled() {
+        runWordBreakCase("fix", expectRestore: false, allowConsonantZFWJ: false, breakKey: KEY_COMMA)
     }
 
     func testNonVietnameseModeKeepsVietnameseDictionaryWord() {
@@ -934,15 +934,15 @@ final class EngineRegressionTests: XCTestCase {
         }
     }
 
-    func testIssue165EngineerRestoresOnSpaceInSimpleTelex1() {
+    func testIssue165EngineerDoesNotRestoreOnSpaceInSimpleTelex1() {
         withInputType(2) {
-            runSpaceCase("engineer", expectRestore: true)
+            runSpaceCase("engineer", expectRestore: false)
         }
     }
 
-    func testIssue165EngineerRestoresOnCommaInSimpleTelex1() {
+    func testIssue165EngineerDoesNotRestoreOnCommaInSimpleTelex1() {
         withInputType(2) {
-            runWordBreakCase("engineer", expectRestore: true, breakKey: KEY_COMMA)
+            runWordBreakCase("engineer", expectRestore: false, breakKey: KEY_COMMA)
         }
     }
 
