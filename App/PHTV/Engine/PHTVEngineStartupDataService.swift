@@ -14,10 +14,15 @@ final class PHTVEngineStartupDataService: NSObject {
     private static let legacyMacroDataKey = "macroData"
 
     @objc class func loadFromUserDefaults() {
-        UserDefaults.standard.removeObject(forKey: legacyMacroDataKey)
+        let defaults = UserDefaults.standard
+        defaults.removeObject(forKey: legacyMacroDataKey)
 
-        let macros = MacroStorage.load(defaults: .standard)
-        let macroData = MacroStorage.engineBinaryData(from: macros)
+        let userMacros = MacroStorage.load(defaults: defaults)
+        let macroSnapshot = PHTVSystemTextReplacementService.runtimeMacroSnapshot(
+            userMacros: userMacros,
+            defaults: defaults
+        )
+        let macroData = MacroStorage.engineBinaryData(from: macroSnapshot.macros)
         PHTVEngineDataBridge.initializeMacroMap(with: macroData)
 
         PHTVSmartSwitchRuntimeService.loadFromPersistedData()

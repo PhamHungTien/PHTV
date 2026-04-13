@@ -22,6 +22,16 @@ import Foundation
         return Int32(defaults.integer(forKey: key))
     }
 
+    private class func phtv_readNonNegativeIntWithFallback(
+        defaults: UserDefaults,
+        key: String,
+        fallback: Int32,
+        normalizedValue: Int32
+    ) -> Int32 {
+        let value = phtv_readIntWithFallback(defaults: defaults, key: key, fallback: fallback)
+        return value < 0 ? normalizedValue : value
+    }
+
     @nonobjc private class func phtv_normalizeSwitchKeyStatus(
         _ rawStatus: Int32,
         fallback: Int32
@@ -167,24 +177,27 @@ import Foundation
     class func phtv_loadRuntimeSettingsFromUserDefaults() -> UInt {
         let defaults = UserDefaults.standard
 
-        let language = phtv_readIntWithFallback(
+        let language = phtv_readNonNegativeIntWithFallback(
             defaults: defaults,
             key: "InputMethod",
-            fallback: Int32(PHTVEngineRuntimeFacade.currentLanguage())
+            fallback: Int32(PHTVEngineRuntimeFacade.currentLanguage()),
+            normalizedValue: 1
         )
         PHTVEngineRuntimeFacade.setCurrentLanguage(language)
 
-        let inputType = phtv_readIntWithFallback(
+        let inputType = phtv_readNonNegativeIntWithFallback(
             defaults: defaults,
             key: "InputType",
-            fallback: Int32(PHTVEngineRuntimeFacade.currentInputType())
+            fallback: Int32(PHTVEngineRuntimeFacade.currentInputType()),
+            normalizedValue: 0
         )
         PHTVEngineRuntimeFacade.setCurrentInputType(inputType)
 
-        let codeTable = phtv_readIntWithFallback(
+        let codeTable = phtv_readNonNegativeIntWithFallback(
             defaults: defaults,
             key: "CodeTable",
-            fallback: Int32(PHTVEngineRuntimeFacade.currentCodeTable())
+            fallback: Int32(PHTVEngineRuntimeFacade.currentCodeTable()),
+            normalizedValue: 0
         )
         PHTVEngineRuntimeFacade.setCurrentCodeTable(codeTable)
 

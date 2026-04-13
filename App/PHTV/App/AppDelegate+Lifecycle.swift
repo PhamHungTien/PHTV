@@ -15,8 +15,8 @@ private let phtvDefaultsKeyShowUIOnStartup = "ShowUIOnStartup"
 private let phtvDefaultsKeyNonFirstTime = "NonFirstTime"
 private let phtvDefaultsKeyInitialToolTipDelay = "NSInitialToolTipDelay"
 
-private let phtvNotificationShowSettings = Notification.Name("ShowSettings")
-private let phtvNotificationApplicationWillTerminate = Notification.Name("ApplicationWillTerminate")
+private let phtvNotificationShowSettings = NotificationName.showSettings
+private let phtvNotificationApplicationWillTerminate = NotificationName.applicationWillTerminate
 
 @MainActor @objc extension AppDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {

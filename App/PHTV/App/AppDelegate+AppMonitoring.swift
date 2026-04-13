@@ -10,23 +10,23 @@
 import AppKit
 import Foundation
 
-private let phtvDefaultsKeyInputMethod = "InputMethod"
-private let phtvDefaultsKeyExcludedApps = "ExcludedApps"
-private let phtvDefaultsKeySendKeyStepByStepApps = "SendKeyStepByStepApps"
-private let phtvDefaultsKeyUpperCaseExcludedApps = "UpperCaseExcludedApps"
-private let phtvDefaultsKeySendKeyStepByStep = "SendKeyStepByStep"
+private let phtvDefaultsKeyInputMethod = UserDefaultsKey.inputMethod
+private let phtvDefaultsKeyExcludedApps = UserDefaultsKey.excludedApps
+private let phtvDefaultsKeySendKeyStepByStepApps = UserDefaultsKey.sendKeyStepByStepApps
+private let phtvDefaultsKeyUpperCaseExcludedApps = UserDefaultsKey.upperCaseExcludedApps
+private let phtvDefaultsKeySendKeyStepByStep = UserDefaultsKey.sendKeyStepByStep
 
-private let phtvNotificationInputMethodChanged = Notification.Name("InputMethodChanged")
-private let phtvNotificationCodeTableChanged = Notification.Name("CodeTableChanged")
-private let phtvNotificationHotkeyChanged = Notification.Name("HotkeyChanged")
-private let phtvNotificationEmojiHotkeySettingsChanged = Notification.Name("EmojiHotkeySettingsChanged")
-private let phtvNotificationLanguageChangedFromSwiftUI = Notification.Name("LanguageChangedFromSwiftUI")
-private let phtvNotificationSettingsChanged = Notification.Name("PHTVSettingsChanged")
-private let phtvNotificationMacrosUpdated = Notification.Name("MacrosUpdated")
-private let phtvNotificationExcludedAppsChanged = Notification.Name("ExcludedAppsChanged")
-private let phtvNotificationSendKeyStepByStepAppsChanged = Notification.Name("SendKeyStepByStepAppsChanged")
-private let phtvNotificationUpperCaseExcludedAppsChanged = Notification.Name("UpperCaseExcludedAppsChanged")
-private let phtvNotificationLanguageChangedFromExcludedApp = Notification.Name("LanguageChangedFromExcludedApp")
+private let phtvNotificationInputMethodChanged = NotificationName.inputMethodChanged
+private let phtvNotificationCodeTableChanged = NotificationName.codeTableChanged
+private let phtvNotificationHotkeyChanged = NotificationName.hotkeyChanged
+private let phtvNotificationEmojiHotkeySettingsChanged = NotificationName.emojiHotkeySettingsChanged
+private let phtvNotificationLanguageChangedFromSwiftUI = NotificationName.languageChangedFromSwiftUI
+private let phtvNotificationSettingsChanged = NotificationName.phtvSettingsChanged
+private let phtvNotificationMacrosUpdated = NotificationName.macrosUpdated
+private let phtvNotificationExcludedAppsChanged = NotificationName.excludedAppsChanged
+private let phtvNotificationSendKeyStepByStepAppsChanged = NotificationName.sendKeyStepByStepAppsChanged
+private let phtvNotificationUpperCaseExcludedAppsChanged = NotificationName.upperCaseExcludedAppsChanged
+private let phtvNotificationLanguageChangedFromExcludedApp = NotificationName.languageChangedFromExcludedApp
 private let phtvNotificationTCCDatabaseChanged = Notification.Name("TCCDatabaseChanged")
 private let phtvNotificationApplicationDidBecomeActive = NSApplication.didBecomeActiveNotification
 private let phtvSpotlightInvalidationDedupMs: UInt64 = 30

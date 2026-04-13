@@ -9,15 +9,15 @@
 
 import Foundation
 
-private let phtvDefaultsKeyMacroList = "macroList"
+private let phtvDefaultsKeyMacroList = UserDefaultsKey.macroList
 private let phtvDefaultsKeyCustomDictionary = "customDictionary"
-private let phtvDefaultsKeySpelling = "Spelling"
+private let phtvDefaultsKeySpelling = UserDefaultsKey.spelling
 
 private func phtvMacroLiveDebugEnabled() -> Bool {
     if let env = ProcessInfo.processInfo.environment["PHTV_LIVE_DEBUG"], !env.isEmpty {
         return env != "0"
     }
-    if let stored = UserDefaults.standard.object(forKey: "PHTV_LIVE_DEBUG") as? NSNumber {
+    if let stored = UserDefaults.standard.object(forKey: UserDefaultsKey.liveDebug) as? NSNumber {
         return stored.intValue != 0
     }
     return false
@@ -35,17 +35,12 @@ private func phtvMacroLiveLog(_ message: String) {
         let defaults = UserDefaults.standard
         let macroListData = defaults.data(forKey: phtvDefaultsKeyMacroList)
         let userMacros = MacroStorage.load(defaults: defaults)
-        let rawSystemReplacements = PHTVSystemTextReplacementService.rawReplacementItems(
-            globalDefaults: defaults
-        )
-        let macros = PHTVSystemTextReplacementService.mergedRuntimeMacros(
+        let snapshot = PHTVSystemTextReplacementService.runtimeMacroSnapshot(
             userMacros: userMacros,
-            useSystemTextReplacements: PHTVSystemTextReplacementService.isEnabled(in: defaults),
-            rawItems: rawSystemReplacements
+            defaults: defaults
         )
-        lastSystemReplacementsChangeToken = PHTVSystemTextReplacementService.replacementItemsChangeToken(
-            rawItems: rawSystemReplacements
-        )
+        let macros = snapshot.macros
+        lastSystemReplacementsChangeToken = snapshot.systemChangeToken
 
         if macros.isEmpty {
             let emptyData = MacroStorage.engineBinaryData(from: [])

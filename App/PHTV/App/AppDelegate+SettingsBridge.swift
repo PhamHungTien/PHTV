@@ -10,15 +10,15 @@
 import AppKit
 import Foundation
 
-private let phtvDefaultsKeySwitchKeyStatus = "SwitchKeyStatus"
+private let phtvDefaultsKeySwitchKeyStatus = UserDefaultsKey.switchKeyStatus
 private let phtvDefaultsKeyConvertToolHotKey = "convertToolHotKey"
 
-private let phtvNotificationShowMacroTab = Notification.Name("ShowMacroTab")
-private let phtvNotificationShowAboutTab = Notification.Name("ShowAboutTab")
-private let phtvNotificationInputMethodChanged = Notification.Name("InputMethodChanged")
-private let phtvNotificationCodeTableChanged = Notification.Name("CodeTableChanged")
-private let phtvNotificationShowDockIcon = Notification.Name("PHTVShowDockIcon")
-private let phtvNotificationCustomDictionaryUpdated = Notification.Name("CustomDictionaryUpdated")
+private let phtvNotificationShowMacroTab = NotificationName.showMacroTab
+private let phtvNotificationShowAboutTab = NotificationName.showAboutTab
+private let phtvNotificationInputMethodChanged = NotificationName.inputMethodChanged
+private let phtvNotificationCodeTableChanged = NotificationName.codeTableChanged
+private let phtvNotificationShowDockIcon = NotificationName.phtvShowDockIcon
+private let phtvNotificationCustomDictionaryUpdated = NotificationName.customDictionaryUpdated
 private let phtvNotificationSettingsReset = Notification.Name("SettingsReset")
 private let phtvNotificationAccessibilityPermissionLost = Notification.Name("AccessibilityPermissionLost")
 
@@ -28,7 +28,7 @@ private func phtvSettingsBridgeLiveDebugEnabled() -> Bool {
     if let env = ProcessInfo.processInfo.environment["PHTV_LIVE_DEBUG"], !env.isEmpty {
         return env != "0"
     }
-    if let stored = UserDefaults.standard.object(forKey: "PHTV_LIVE_DEBUG") as? NSNumber {
+    if let stored = UserDefaults.standard.object(forKey: UserDefaultsKey.liveDebug) as? NSNumber {
         return stored.intValue != 0
     }
     return false
@@ -144,9 +144,10 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
             return
         }
 
-        let old = PHTVManager.runtimeSettingsSnapshot()
-        let settingsToken = PHTVManager.loadRuntimeSettingsFromUserDefaults()
-        let new = PHTVManager.runtimeSettingsSnapshot()
+        let reloadResult = reloadRuntimeSettingsFromUserDefaults()
+        let old = reloadResult.oldSnapshot
+        let new = reloadResult.newSnapshot
+        let settingsToken = reloadResult.token
 
         func changed(_ key: String) -> Bool {
             old[key]?.intValue != new[key]?.intValue

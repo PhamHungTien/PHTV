@@ -110,6 +110,62 @@ final class SystemTextReplacementServiceTests: XCTestCase {
         XCTAssertNotEqual(tokenA, tokenB)
     }
 
+    func testRuntimeMacroSnapshotUsesProvidedDefaultsForMergeAndToken() {
+        let suiteName = "SystemTextReplacementServiceTests.\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suiteName) else {
+            XCTFail("Failed to create isolated UserDefaults suite")
+            return
+        }
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let rawItems: [[String: Any]] = [
+            ["on": 1, "replace": "dc", "with": "được"],
+            ["on": 1, "replace": "ntn", "with": "như thế nào"]
+        ]
+        defaults.set(true, forKey: UserDefaultsKey.useSystemTextReplacements)
+        defaults.set(rawItems, forKey: "NSUserDictionaryReplacementItems")
+
+        let snapshot = PHTVSystemTextReplacementService.runtimeMacroSnapshot(
+            userMacros: [MacroItem(shortcut: "dc", expansion: "do custom")],
+            defaults: defaults
+        )
+
+        XCTAssertEqual(snapshot.macros.count, 2)
+        XCTAssertEqual(snapshot.macros[0].snippetType, .systemTextReplacement)
+        XCTAssertEqual(snapshot.macros[1].shortcut, "ntn")
+        XCTAssertEqual(
+            snapshot.systemChangeToken,
+            PHTVSystemTextReplacementService.replacementItemsChangeToken(rawItems: rawItems)
+        )
+    }
+
+    func testRuntimeMacroSnapshotKeepsTokenWhenSystemReplacementDisabled() {
+        let suiteName = "SystemTextReplacementServiceTests.\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suiteName) else {
+            XCTFail("Failed to create isolated UserDefaults suite")
+            return
+        }
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let rawItems: [[String: Any]] = [
+            ["on": 1, "replace": "dc", "with": "được"]
+        ]
+        defaults.set(false, forKey: UserDefaultsKey.useSystemTextReplacements)
+        defaults.set(rawItems, forKey: "NSUserDictionaryReplacementItems")
+
+        let snapshot = PHTVSystemTextReplacementService.runtimeMacroSnapshot(
+            userMacros: [MacroItem(shortcut: "dc", expansion: "do custom")],
+            defaults: defaults
+        )
+
+        XCTAssertEqual(snapshot.macros.count, 1)
+        XCTAssertEqual(snapshot.macros[0].snippetType, .static)
+        XCTAssertEqual(
+            snapshot.systemChangeToken,
+            PHTVSystemTextReplacementService.replacementItemsChangeToken(rawItems: rawItems)
+        )
+    }
+
     func testNativeTextReplacementDeferralUsesGuiDefaultAndToolingFallback() {
         XCTAssertTrue(
             PHTVSystemTextReplacementService.shouldDeferToNativeTextReplacement(

@@ -42,11 +42,21 @@ final class PHTVSystemTextReplacementService: NSObject {
         userMacros: [MacroItem],
         defaults: UserDefaults = .standard
     ) -> [MacroItem] {
-        mergedRuntimeMacros(
+        runtimeMacroSnapshot(userMacros: userMacros, defaults: defaults).macros
+    }
+
+    class func runtimeMacroSnapshot(
+        userMacros: [MacroItem],
+        defaults: UserDefaults = .standard
+    ) -> (macros: [MacroItem], systemChangeToken: Int) {
+        let rawItems = rawReplacementItems(globalDefaults: defaults)
+        let macros = mergedRuntimeMacros(
             userMacros: userMacros,
             useSystemTextReplacements: isEnabled(in: defaults),
-            rawItems: rawReplacementItems()
+            rawItems: rawItems
         )
+        let token = replacementItemsChangeToken(rawItems: rawItems)
+        return (macros, token)
     }
 
     class func mergedRuntimeMacros(

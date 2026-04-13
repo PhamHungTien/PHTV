@@ -12,11 +12,14 @@ import AppKit
 
 final class HotkeyReliabilityTests: XCTestCase {
     private let trackedDefaultsKeys = [
-        "SwitchKeyStatus",
+        UserDefaultsKey.switchKeyStatus,
         "convertToolHotKey",
-        "vEnableEmojiHotkey",
-        "vEmojiHotkeyModifiers",
-        "vEmojiHotkeyKeyCode"
+        UserDefaultsKey.enableEmojiHotkey,
+        UserDefaultsKey.emojiHotkeyModifiers,
+        UserDefaultsKey.emojiHotkeyKeyCode,
+        UserDefaultsKey.inputMethod,
+        UserDefaultsKey.inputType,
+        UserDefaultsKey.codeTable
     ]
 
     private var defaultsBackup: [String: Any] = [:]
@@ -57,12 +60,25 @@ final class HotkeyReliabilityTests: XCTestCase {
 
     func testLoadRuntimeSettingsNormalizesInvalidSwitchHotkey() {
         let defaults = UserDefaults.standard
-        defaults.set(Int(Int32(bitPattern: 0xFFFF_FFFF)), forKey: "SwitchKeyStatus")
+        defaults.set(Int(Int32(bitPattern: 0xFFFF_FFFF)), forKey: UserDefaultsKey.switchKeyStatus)
 
         _ = PHTVManager.loadRuntimeSettingsFromUserDefaults()
 
         XCTAssertEqual(PHTVManager.currentSwitchKeyStatus(), Int32(Defaults.defaultSwitchKeyStatus))
-        XCTAssertEqual(defaults.integer(forKey: "SwitchKeyStatus"), Defaults.defaultSwitchKeyStatus)
+        XCTAssertEqual(defaults.integer(forKey: UserDefaultsKey.switchKeyStatus), Defaults.defaultSwitchKeyStatus)
+    }
+
+    func testLoadRuntimeSettingsNormalizesNegativeCoreSettings() {
+        let defaults = UserDefaults.standard
+        defaults.set(-9, forKey: UserDefaultsKey.inputMethod)
+        defaults.set(-5, forKey: UserDefaultsKey.inputType)
+        defaults.set(-3, forKey: UserDefaultsKey.codeTable)
+
+        _ = PHTVManager.loadRuntimeSettingsFromUserDefaults()
+
+        XCTAssertEqual(PHTVEngineRuntimeFacade.currentLanguage(), 1)
+        XCTAssertEqual(PHTVEngineRuntimeFacade.currentInputType(), 0)
+        XCTAssertEqual(PHTVEngineRuntimeFacade.currentCodeTable(), 0)
     }
 
     func testConvertHotkeyNormalizationFallsBackToEmptyHotkey() {
