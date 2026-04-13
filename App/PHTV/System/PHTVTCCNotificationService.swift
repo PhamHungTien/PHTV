@@ -11,8 +11,8 @@ import Foundation
 
 @objcMembers
 final class PHTVTCCNotificationService: NSObject {
-    private static let tccDatabaseChangedNotification = Notification.Name("TCCDatabaseChanged")
-    private static let accessibilityStatusChangedNotification = Notification.Name("AccessibilityStatusChanged")
+    private static let tccDatabaseChangedNotification = NotificationName.tccDatabaseChanged
+    private static let accessibilityStatusChangedNotification = NotificationName.accessibilityStatusChanged
     private static let settledCheckDelay: TimeInterval = 0.2
 
     private final class ObserverStateBox: @unchecked Sendable {

@@ -70,9 +70,10 @@ import Foundation
     }
 
     @objc static func markPermissionLost() {
-        let tap = runtimeState.withLock { state -> CFMachPort? in
+        let (tap, shouldNotify) = runtimeState.withLock { state -> (CFMachPort?, Bool) in
+            let wasAlreadyLost = state.permissionLost
             state.permissionLost = true
-            return state.eventTap
+            return (state.eventTap, !wasAlreadyLost)
         }
 
         if let tap {
@@ -82,6 +83,9 @@ import Foundation
         }
 
         publishTypingReadiness(false)
+        if shouldNotify {
+            NotificationCenter.default.post(name: NotificationName.accessibilityPermissionLost, object: nil)
+        }
     }
 
     @objc static func isEventTapInited() -> Bool {

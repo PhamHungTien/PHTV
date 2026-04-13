@@ -21,7 +21,7 @@ private let phtvNotificationShowDockIcon = NotificationName.phtvShowDockIcon
 private let phtvNotificationCustomDictionaryUpdated = NotificationName.customDictionaryUpdated
 private let phtvNotificationSettingsReset = NotificationName.settingsReset
 private let phtvNotificationSettingsResetToDefaults = NotificationName.settingsResetToDefaults
-private let phtvNotificationAccessibilityPermissionLost = Notification.Name("AccessibilityPermissionLost")
+private let phtvNotificationAccessibilityPermissionLost = NotificationName.accessibilityPermissionLost
 
 @MainActor private var phtvLastUpperCaseFirstCharSetting = -1
 

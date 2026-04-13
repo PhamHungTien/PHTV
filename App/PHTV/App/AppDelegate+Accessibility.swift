@@ -162,7 +162,7 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
         } else if wasAccessibilityEnabled && !isEnabled {
             NSLog("[Accessibility] 🛑 CRITICAL - Permission REVOKED (test tap failed)!")
             accessibilityStableCount = 0
-            handleAccessibilityRevoked()
+            NotificationCenter.default.post(name: NotificationName.accessibilityPermissionLost, object: nil)
         } else if isEnabled {
             accessibilityStableCount += 1
         }
@@ -259,6 +259,12 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
     }
 
     func handleAccessibilityRevoked() {
+        guard !isPresentingAccessibilityRevokedAlert else {
+            return
+        }
+        isPresentingAccessibilityRevokedAlert = true
+        defer { isPresentingAccessibilityRevokedAlert = false }
+
         if PHTVManager.isInited() {
             NSLog("🛑 CRITICAL: Accessibility revoked! Stopping event tap immediately...")
             PHTVManager.stopEventTap()
