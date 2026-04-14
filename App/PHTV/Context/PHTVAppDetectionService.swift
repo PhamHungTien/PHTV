@@ -70,6 +70,7 @@ final class PHTVAppDetectionService: NSObject {
         "com.apple.Safari",
         "com.apple.SafariTechnologyPreview",
         "com.apple.Safari.WebApp.*",
+        "com.apple.mail",
         "com.google.Chrome",
         "com.brave.Browser",
         "com.microsoft.edgemac",
@@ -238,7 +239,8 @@ final class PHTVAppDetectionService: NSObject {
         "notion.id",
         "com.apple.Safari",
         "com.apple.SafariTechnologyPreview",
-        "com.apple.Safari.WebApp.*"
+        "com.apple.Safari.WebApp.*",
+        "com.apple.mail"
     ])
 
     // Outlook can rewrite the committed word on Space unless we break the editor's
