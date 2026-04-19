@@ -951,6 +951,14 @@ final class EngineRegressionTests: XCTestCase {
         XCTAssertEqual(renderedToken("uyeje"), renderedToken("uyeej"))
     }
 
+    func testRepeatedToneKeyOnInvalidMarkedWordCancelsToneInsteadOfAppendingRawKey() {
+        XCTAssertEqual(renderedToken("porr"), "por")
+    }
+
+    func testRuntimeRepeatedToneKeyOnInvalidMarkedWordCancelsToneInsteadOfAppendingRawKey() {
+        XCTAssertEqual(runtimeRenderedToken("porr"), "por")
+    }
+
     func testTheemDoesNotRestoreOnSpace() {
         runSpaceCase("theem", expectRestore: false)
     }
