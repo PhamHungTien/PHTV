@@ -1963,6 +1963,7 @@ final class PHTVVietnameseEngine {
             return false
         }
         guard isMarkKey(data) else { return false }
+        guard !hasVietnameseToneMarksInTypingWord(idx) else { return false }
 
         let englishLength = getEnglishLookupStateLength()
         guard englishLength > 2, englishLength == stateIdx else { return false }
