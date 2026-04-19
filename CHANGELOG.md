@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.6] - 2026-04-19
+
+### Fixed
+- **Lặp phím dấu Telex trên từ đã mang dấu**: Sửa lỗi khi gõ lại cùng phím dấu trên một âm tiết đã có dấu có thể chèn thêm ký tự thường thay vì gỡ hoặc đổi dấu
+  - Ví dụ: `porr` giờ trả về `por` thay vì `pỏr`
+  - Nguyên nhân: nhánh ưu tiên giữ từ tiếng Anh đã chặn phím dấu quá sớm, khiến engine không kịp xử lý thao tác toggle dấu trên từ đang mang dấu
+  - Đã bổ sung regression test cho cả render nội bộ và runtime output để tránh lỗi tái diễn
+
+### Improved
+- **Tương thích Apple Mail tốt hơn**: Thêm `com.apple.mail` vào các danh sách nhận diện ứng dụng dùng chiến lược gõ từng bước và Unicode tổ hợp
+  - Cải thiện độ ổn định khi soạn thư trong Mail, đặc biệt ở các ô nhập có hành vi chỉnh sửa giống trình duyệt hoặc web app
+
 ## [2.6.7] - 2026-03-14
 
 ### Fixed
