@@ -13,6 +13,32 @@ import Foundation
 private let phtvDefaultsKeyShowUIOnStartup = "ShowUIOnStartup"
 private let phtvTCCRepairMaxAttemptsPerSession = 3
 private let phtvTCCRepairRetryCooldown: CFAbsoluteTime = 60
+private let phtvAccessibilityGrantRelaunchDelay: TimeInterval = 0.8
+private let phtvAccessibilityGrantRelaunchArgument = "--phtv-relaunched-after-accessibility-grant"
+
+func phtvShouldRelaunchAfterAccessibilityGrant(
+    axTrusted: Bool,
+    needsRelaunchAfterPermission: Bool,
+    isEventTapInitialized: Bool,
+    isRelaunchAlreadyScheduled: Bool
+) -> Bool {
+    axTrusted
+        && needsRelaunchAfterPermission
+        && !isEventTapInitialized
+        && !isRelaunchAlreadyScheduled
+}
+
+func phtvShouldFallbackRelaunchAfterEventTapFailures(
+    accessibilityTrusted: Bool,
+    postEventGranted: Bool,
+    inputMonitoringGranted: Bool,
+    isRelaunchAlreadyScheduled: Bool
+) -> Bool {
+    accessibilityTrusted
+        && postEventGranted
+        && inputMonitoringGranted
+        && !isRelaunchAlreadyScheduled
+}
 
 @MainActor
 func phtvRunAccessibilityRevokedAlert() -> NSApplication.ModalResponse {
@@ -176,6 +202,9 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
         } else if wasAccessibilityEnabled && !isEnabled {
             NSLog("[Accessibility] 🛑 CRITICAL - Permission REVOKED (test tap failed)!")
             accessibilityStableCount = 0
+            if !AXIsProcessTrusted() {
+                needsRelaunchAfterPermission = true
+            }
             NotificationCenter.default.post(name: NotificationName.accessibilityPermissionLost, object: nil)
         } else if isEnabled {
             accessibilityStableCount += 1
@@ -185,11 +214,24 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
     }
 
     func performAccessibilityGrantedRestart() {
-        NSLog("[Accessibility] Permission granted - Initializing event tap...")
-
-        stopAccessibilityMonitoring()
+        NSLog("[Accessibility] Permission granted - preparing event tap recovery...")
         PHTVManager.invalidatePermissionCache()
 
+        if phtvShouldRelaunchAfterAccessibilityGrant(
+            axTrusted: AXIsProcessTrusted(),
+            needsRelaunchAfterPermission: needsRelaunchAfterPermission,
+            isEventTapInitialized: PHTVManager.isInited(),
+            isRelaunchAlreadyScheduled: isRelaunchingAfterPermissionGrant
+        ) {
+            NSLog("[Accessibility] Accessibility was granted after launch - relaunching app")
+            stopAccessibilityMonitoring()
+            stopHealthCheckMonitoring()
+            publishTypingPermissionState(eventTapReady: false)
+            relaunchAppAfterPermissionGrant()
+            return
+        }
+
+        stopAccessibilityMonitoring()
         tryInitEventTap(attempt: 1)
     }
 
@@ -211,10 +253,25 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
                 self.tryInitEventTap(attempt: attempt + 1)
             }
         } else {
-            // macOS requires a process restart for the new permission to take effect
-            // at the CGEvent tap level. Restart automatically instead of asking the user.
-            NSLog("[EventTap] Failed to initialize after 3 attempts - relaunching automatically")
             publishTypingPermissionState(eventTapReady: false)
+
+            let shouldRelaunch = phtvShouldFallbackRelaunchAfterEventTapFailures(
+                accessibilityTrusted: AXIsProcessTrusted(),
+                postEventGranted: PHTVPermissionService.hasPostEventAccess(),
+                inputMonitoringGranted: PHTVPermissionService.hasListenEventAccess(),
+                isRelaunchAlreadyScheduled: isRelaunchingAfterPermissionGrant
+            )
+
+            guard shouldRelaunch else {
+                NSLog("[EventTap] Failed after 3 attempts; waiting for remaining TCC grants")
+                startAccessibilityMonitoring(withInterval: currentMonitoringInterval(), resetState: true)
+                continuePermissionGuidanceIfNeeded()
+                return
+            }
+
+            // macOS may require a process restart before the new TCC state is visible
+            // to a live CGEvent tap. Restart automatically instead of asking the user.
+            NSLog("[EventTap] Failed after 3 attempts with all permissions present - relaunching automatically")
             relaunchAppAfterPermissionGrant()
         }
     }
@@ -235,36 +292,50 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
         publishTypingPermissionState(eventTapReady: true)
         syncCurrentFrontmostAppContext(reason: "accessibilityGranted", forceExcludedRecheck: true)
         setQuickConvertString()
+        needsRelaunchAfterPermission = false
+        isRelaunchingAfterPermissionGrant = false
 
         let showUI = UserDefaults.standard.integer(forKey: phtvDefaultsKeyShowUIOnStartup)
         if showUI == 1 {
             onControlPanelSelected()
         }
-
-        if needsRelaunchAfterPermission {
-            needsRelaunchAfterPermission = false
-            NSLog("[Accessibility] Initialized successfully - skipping forced relaunch")
-        }
     }
 
     func relaunchAppAfterPermissionGrant() {
-        let bundlePath = Bundle.main.bundlePath
-        if bundlePath.isEmpty {
-            NSLog("[Accessibility] Relaunch skipped: bundle path missing")
+        guard !isRelaunchingAfterPermissionGrant else {
+            NSLog("[Accessibility] Relaunch already scheduled; skipping duplicate request")
             return
         }
 
-        let bundleURL = URL(fileURLWithPath: bundlePath)
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(600))
+        let bundleURL = Bundle.main.bundleURL
+        guard bundleURL.pathExtension == "app" else {
+            NSLog("[Accessibility] Relaunch skipped: bundle URL is not an app (%@)", bundleURL.path)
+            return
+        }
+
+        isRelaunchingAfterPermissionGrant = true
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(phtvAccessibilityGrantRelaunchDelay))
             guard !Task.isCancelled else { return }
+            guard let self else { return }
+
             let config = NSWorkspace.OpenConfiguration()
+            config.activates = true
+            config.createsNewApplicationInstance = true
+            config.allowsRunningApplicationSubstitution = false
+            config.arguments = [phtvAccessibilityGrantRelaunchArgument]
+
             NSWorkspace.shared.openApplication(at: bundleURL, configuration: config) { _, error in
                 if let error {
                     NSLog("[Accessibility] Relaunch failed: %@", error.localizedDescription)
+                    Task { @MainActor in
+                        self.isRelaunchingAfterPermissionGrant = false
+                        self.tryInitEventTap(attempt: 1)
+                    }
                     return
                 }
-                NSLog("[Accessibility] Relaunching app to finalize permission")
+
+                NSLog("[Accessibility] Relaunch instance started - terminating current app")
                 Task { @MainActor in
                     NSApp.terminate(nil)
                 }
@@ -278,6 +349,10 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
         }
         isPresentingAccessibilityRevokedAlert = true
         defer { isPresentingAccessibilityRevokedAlert = false }
+
+        if !AXIsProcessTrusted() {
+            needsRelaunchAfterPermission = true
+        }
 
         if PHTVManager.isInited() {
             NSLog("🛑 CRITICAL: Accessibility revoked! Stopping event tap immediately...")

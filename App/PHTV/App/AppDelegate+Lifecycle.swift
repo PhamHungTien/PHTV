@@ -8,6 +8,7 @@
 //
 
 import AppKit
+import ApplicationServices
 import Foundation
 
 private let phtvDefaultsKeyShowIconOnDock = "vShowIconOnDock"
@@ -42,7 +43,10 @@ private let phtvNotificationApplicationWillTerminate = NotificationName.applicat
 
         let defaults = UserDefaults.standard
         let isFirstLaunch = !defaults.bool(forKey: phtvDefaultsKeyNonFirstTime)
-        needsRelaunchAfterPermission = isFirstLaunch && !PHTVManager.canCreateEventTap()
+        needsRelaunchAfterPermission = !AXIsProcessTrusted()
+        if needsRelaunchAfterPermission {
+            NSLog("[Accessibility] App launched before Accessibility trust; will relaunch after grant")
+        }
 
         // Set up NSStatusItem + NSMenu (replaces SwiftUI MenuBarExtra for proper submenu hover).
         StatusBarMenuManager.shared.setup()

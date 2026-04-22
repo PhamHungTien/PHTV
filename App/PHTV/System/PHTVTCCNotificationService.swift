@@ -110,6 +110,7 @@ final class PHTVTCCNotificationService: NSObject {
                 // Trigger initialization immediately instead of waiting for the next timer tick.
                 AppDelegate.current()?.checkAccessibilityAndRestart()
             } else {
+                AppDelegate.current()?.needsRelaunchAfterPermission = true
                 // Permission was revoked or not yet effective — notify observers to refresh.
                 NotificationCenter.default.post(
                     name: accessibilityStatusChangedNotification,

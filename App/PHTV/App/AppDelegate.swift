@@ -48,6 +48,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var lastAutomaticTCCRepairAttemptTime: CFAbsoluteTime = 0
     var healthCheckTask: Task<Void, Never>?
     var needsRelaunchAfterPermission = false
+    var isRelaunchingAfterPermissionGrant = false
     var eventTapRecoveryToken: UInt = 0
     var lastEventTapRecoveryRequestTime: CFAbsoluteTime = 0
     var lastPublishedTypingPermissionReady: Bool?
