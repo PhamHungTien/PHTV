@@ -232,16 +232,16 @@ final class EngineRegressionTests: XCTestCase {
             let code = keyCode(for: ch)
             engineHandleEvent(eventKeyboard, stateKeyDown, code, 0, 0)
 
-            let backspaceCount = min(Int(engineHookBackspaceCount()), output.count)
-            if backspaceCount > 0 {
-                output.removeLast(backspaceCount)
-            }
-
             if engineHookCode() == HookCodeState.doNothing.rawValue {
                 if let scalar = UnicodeScalar(Int(EngineMacroKeyMap.character(for: UInt32(code)))) {
                     output.unicodeScalars.append(scalar)
                 }
                 continue
+            }
+
+            let backspaceCount = min(Int(engineHookBackspaceCount()), output.count)
+            if backspaceCount > 0 {
+                output.removeLast(backspaceCount)
             }
 
             output += runtimeEmittedWord(for: code)
@@ -957,6 +957,24 @@ final class EngineRegressionTests: XCTestCase {
 
     func testRuntimeRepeatedToneKeyOnInvalidMarkedWordCancelsToneInsteadOfAppendingRawKey() {
         XCTAssertEqual(runtimeRenderedToken("porr"), "por")
+    }
+
+    func testDungAppliesAcuteToneBeforeFinalNg() {
+        XCTAssertEqual(renderedToken("ddusng"), "đúng")
+    }
+
+    func testRuntimeDungAppliesAcuteToneBeforeFinalNg() {
+        XCTAssertEqual(runtimeRenderedToken("ddusng"), "đúng")
+    }
+
+    func testDungKeepsToneWhenEnglishConflictDetectorMatchesRawPrefix() {
+        setCustomEnglishWords(["ddus"])
+        XCTAssertEqual(renderedToken("ddusng"), "đúng")
+    }
+
+    func testRuntimeDungKeepsToneWhenEnglishConflictDetectorMatchesRawPrefix() {
+        setCustomEnglishWords(["ddus"])
+        XCTAssertEqual(runtimeRenderedToken("ddusng"), "đúng")
     }
 
     func testTheemDoesNotRestoreOnSpace() {

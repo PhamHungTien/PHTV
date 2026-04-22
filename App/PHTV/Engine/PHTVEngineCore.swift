@@ -1963,7 +1963,9 @@ final class PHTVVietnameseEngine {
             return false
         }
         guard isMarkKey(data) else { return false }
-        guard !hasVietnameseToneMarksInTypingWord(idx) else { return false }
+        // Once Telex has already shaped the in-progress word (đ/ư/â or tone marks),
+        // keep mark keys in the Vietnamese flow instead of treating them as raw ASCII.
+        guard !hasVietnameseTransformsInTypingWord(idx) else { return false }
 
         let englishLength = getEnglishLookupStateLength()
         guard englishLength > 2, englishLength == stateIdx else { return false }
@@ -2257,11 +2259,15 @@ final class PHTVVietnameseEngine {
                     !spellingVowelOK &&
                     canFixVowelWithDiacriticsForMark()
                 let allowToneOnInvalidEndConsonant = !spellingOK && spellingVowelOK && hasToneWTransform
+                let allowToneOnTransformedVietnamesePrefix =
+                    hasVietnameseTransformsInTypingWord(idx) &&
+                    canFixVowelWithDiacriticsForMark()
                 let allowToneOnInvalid =
                     allowToneOnInvalidVowel ||
                     allowToneOnInvalidEndConsonant ||
                     hasToneWTransform ||
-                    allowElongatedTonePlacement
+                    allowElongatedTonePlacement ||
+                    allowToneOnTransformedVietnamesePrefix
                 if !allowToneOnInvalid { allowSpecialDespiteTempDisable = false }
             }
         }
