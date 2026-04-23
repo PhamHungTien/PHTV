@@ -7,7 +7,6 @@
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
 
-import AppKit
 import ApplicationServices
 import Foundation
 
@@ -30,22 +29,6 @@ import Foundation
     private static let maxTestTapRetries = 3
     private static let testTapRetryDelayUsec: useconds_t = 50_000
 
-    @objc static func hasListenEventAccess() -> Bool {
-        CGPreflightListenEventAccess()
-    }
-
-    @objc static func requestListenEventAccess() -> Bool {
-        CGRequestListenEventAccess()
-    }
-
-    @objc static func hasPostEventAccess() -> Bool {
-        CGPreflightPostEventAccess()
-    }
-
-    @objc static func requestPostEventAccess() -> Bool {
-        CGRequestPostEventAccess()
-    }
-
     @objc static func invalidatePermissionCache() {
         permissionState.lock.lock()
         permissionState.lastPermissionCheckTime = 0
@@ -60,18 +43,6 @@ import Foundation
     @objc static func forcePermissionCheck() -> Bool {
         invalidatePermissionCache()
         return canCreateEventTap()
-    }
-
-    @objc static func openInputMonitoringPreferences() {
-        if let url = URL(
-            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"
-        ), NSWorkspace.shared.open(url) {
-            return
-        }
-
-        if let fallbackURL = URL(string: "x-apple.systempreferences:com.apple.preference.security") {
-            _ = NSWorkspace.shared.open(fallbackURL)
-        }
     }
 
     private static func cacheMissingPermissionAndReturnFalse(_ message: String) -> Bool {
@@ -91,20 +62,6 @@ import Foundation
         let axTrusted = AXIsProcessTrusted()
         if !axTrusted {
             return cacheMissingPermissionAndReturnFalse("Accessibility (AX) is NOT granted")
-        }
-
-        let canListen = hasListenEventAccess()
-        if !canListen {
-            return cacheMissingPermissionAndReturnFalse(
-                "Input Monitoring (ListenEvent) is NOT granted"
-            )
-        }
-
-        let canPost = hasPostEventAccess()
-        if !canPost {
-            return cacheMissingPermissionAndReturnFalse(
-                "Accessibility/Event Synthesis (PostEvent) is NOT granted"
-            )
         }
 
         let now = Date().timeIntervalSince1970
@@ -152,8 +109,8 @@ import Foundation
             shouldLogSuccess = !previousHasLastOutcome || !previousOutcome
         } else {
             permissionState.permissionFailureCount += 1
-            // At this point AX, ListenEvent, and PostEvent preflights already passed.
-            // The tap failure is a macOS propagation delay, not a denial.
+            // At this point AX is trusted and the remaining failure is creating
+            // a live session tap. Treat it as a propagation/readiness delay.
             // Use a short fixed backoff so recovery happens within ~1s rather than up to 15s.
             let backoff: TimeInterval = 1.0
             permissionState.permissionBackoffUntil = now + backoff

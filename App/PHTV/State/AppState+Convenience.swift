@@ -219,11 +219,6 @@ extension AppState {
         set { systemState.hasAccessibilityPermission = newValue }
     }
 
-    var hasInputMonitoringPermission: Bool {
-        get { trackedSubstate(systemState.hasInputMonitoringPermission) }
-        set { systemState.hasInputMonitoringPermission = newValue }
-    }
-
     var isTypingPermissionReady: Bool {
         get { trackedSubstate(systemState.isTypingPermissionReady) }
         set { systemState.isTypingPermissionReady = newValue }

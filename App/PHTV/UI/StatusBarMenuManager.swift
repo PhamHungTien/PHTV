@@ -297,16 +297,8 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
             item.image = sfImage("checkmark.shield")
             item.isEnabled = false
             m.addItem(item)
-        } else if appState.hasAccessibilityPermission && !appState.hasInputMonitoringPermission {
-            m.addItem(
-                actionItem(
-                    "Cần cấp quyền Input Monitoring",
-                    image: "keyboard.badge.ellipsis",
-                    sel: #selector(openInputMonitoringPrefs)
-                )
-            )
         } else if appState.hasAccessibilityPermission {
-            let item = NSMenuItem(title: "Đã cấp quyền, đang khởi tạo", action: nil, keyEquivalent: "")
+            let item = NSMenuItem(title: "Đã cấp Trợ năng, đang khởi tạo", action: nil, keyEquivalent: "")
             item.image = sfImage("clock.badge.exclamationmark")
             item.isEnabled = false
             m.addItem(item)
@@ -418,10 +410,6 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
 
     @objc private func openAccessibilityPrefs() {
         PHTVAccessibilityService.openAccessibilityPreferences()
-    }
-
-    @objc private func openInputMonitoringPrefs() {
-        PHTVPermissionService.openInputMonitoringPreferences()
     }
 
     @objc private func openConvertTool() {

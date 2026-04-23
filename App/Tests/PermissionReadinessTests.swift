@@ -14,7 +14,6 @@ final class PermissionReadinessTests: XCTestCase {
     func testResolveReturnsReadyWhenAccessibilityAndEventTapAreAvailable() {
         let state = PHTVTypingPermissionState.resolve(
             accessibilityTrusted: true,
-            inputMonitoringGranted: true,
             eventTapReady: true
         )
 
@@ -26,7 +25,6 @@ final class PermissionReadinessTests: XCTestCase {
     func testResolveReturnsWaitingWhenAccessibilityExistsButEventTapIsNotReady() {
         let state = PHTVTypingPermissionState.resolve(
             accessibilityTrusted: true,
-            inputMonitoringGranted: true,
             eventTapReady: false
         )
 
@@ -35,22 +33,20 @@ final class PermissionReadinessTests: XCTestCase {
         XCTAssertFalse(state.isTypingPermissionReady)
     }
 
-    func testResolveReturnsInputMonitoringRequiredWhenAccessibilityExistsButListenAccessIsMissing() {
+    func testResolveReturnsAccessibilityRequiredWhenAccessibilityIsMissing() {
         let state = PHTVTypingPermissionState.resolve(
-            accessibilityTrusted: true,
-            inputMonitoringGranted: false,
+            accessibilityTrusted: false,
             eventTapReady: false
         )
 
-        XCTAssertEqual(state, .inputMonitoringRequired)
-        XCTAssertTrue(state.hasAccessibilityPermission)
+        XCTAssertEqual(state, .accessibilityRequired)
+        XCTAssertFalse(state.hasAccessibilityPermission)
         XCTAssertFalse(state.isTypingPermissionReady)
     }
 
     func testResolveRejectsImpossibleReadyStateWithoutAccessibility() {
         let state = PHTVTypingPermissionState.resolve(
             accessibilityTrusted: false,
-            inputMonitoringGranted: true,
             eventTapReady: true
         )
 
@@ -59,36 +55,30 @@ final class PermissionReadinessTests: XCTestCase {
         XCTAssertFalse(state.isTypingPermissionReady)
     }
 
-    func testGuidancePrefersAccessibilityWhilePostEventAccessIsStillMissing() {
+    func testGuidancePrefersAccessibilityWhenAccessibilityIsMissing() {
         let step = PHTVPermissionGuidanceStep.resolve(
-            accessibilityTrusted: true,
-            postEventGranted: false,
-            inputMonitoringGranted: true,
+            accessibilityTrusted: false,
             eventTapReady: false
         )
 
         XCTAssertEqual(step, .accessibility)
     }
 
-    func testGuidanceAdvancesToInputMonitoringAfterAccessibilityIsReady() {
+    func testGuidanceFallsBackToRetryWhenAccessibilityExistsButTapIsNotReady() {
         let step = PHTVPermissionGuidanceStep.resolve(
             accessibilityTrusted: true,
-            postEventGranted: true,
-            inputMonitoringGranted: false,
-            eventTapReady: false
-        )
-
-        XCTAssertEqual(step, .inputMonitoring)
-    }
-
-    func testGuidanceFallsBackToRetryWhenPermissionsExistButTapIsNotReady() {
-        let step = PHTVPermissionGuidanceStep.resolve(
-            accessibilityTrusted: true,
-            postEventGranted: true,
-            inputMonitoringGranted: true,
             eventTapReady: false
         )
 
         XCTAssertEqual(step, .waitingForEventTap)
+    }
+
+    func testGuidanceReturnsReadyWhenAccessibilityAndTapAreAvailable() {
+        let step = PHTVPermissionGuidanceStep.resolve(
+            accessibilityTrusted: true,
+            eventTapReady: true
+        )
+
+        XCTAssertEqual(step, .ready)
     }
 }

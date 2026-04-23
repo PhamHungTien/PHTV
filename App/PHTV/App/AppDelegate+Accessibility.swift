@@ -13,8 +13,8 @@ import Foundation
 private let phtvDefaultsKeyShowUIOnStartup = "ShowUIOnStartup"
 private let phtvTCCRepairMaxAttemptsPerSession = 3
 private let phtvTCCRepairRetryCooldown: CFAbsoluteTime = 60
-private let phtvAccessibilityGrantRelaunchDelay: TimeInterval = 0.8
 private let phtvAccessibilityGrantRelaunchArgument = "--phtv-relaunched-after-accessibility-grant"
+private let phtvDeferredRelaunchPollIntervalSeconds = "0.2"
 
 func phtvShouldRelaunchAfterAccessibilityGrant(
     axTrusted: Bool,
@@ -30,14 +30,45 @@ func phtvShouldRelaunchAfterAccessibilityGrant(
 
 func phtvShouldFallbackRelaunchAfterEventTapFailures(
     accessibilityTrusted: Bool,
-    postEventGranted: Bool,
-    inputMonitoringGranted: Bool,
     isRelaunchAlreadyScheduled: Bool
 ) -> Bool {
     accessibilityTrusted
-        && postEventGranted
-        && inputMonitoringGranted
         && !isRelaunchAlreadyScheduled
+}
+
+func phtvShouldPerformInProcessRecovery(
+    isRelaunchAlreadyScheduled: Bool
+) -> Bool {
+    !isRelaunchAlreadyScheduled
+}
+
+func phtvDeferredRelaunchProcessArguments(
+    parentPID: Int32,
+    bundlePath: String,
+    launchArguments: [String]
+) -> [String] {
+    let script = """
+    parent_pid="$1"
+    bundle_path="$2"
+    shift 2
+    while kill -0 "$parent_pid" 2>/dev/null; do
+        sleep \(phtvDeferredRelaunchPollIntervalSeconds)
+    done
+    sleep \(phtvDeferredRelaunchPollIntervalSeconds)
+    if [ "$#" -gt 0 ]; then
+        exec /usr/bin/open -n "$bundle_path" --args "$@"
+    else
+        exec /usr/bin/open -n "$bundle_path"
+    fi
+    """
+
+    return [
+        "-c",
+        script,
+        "sh",
+        String(parentPID),
+        bundlePath
+    ] + launchArguments
 }
 
 @MainActor
@@ -184,6 +215,18 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
         let isEnabled = PHTVManager.canCreateEventTap()
         let statusChanged = (wasAccessibilityEnabled != isEnabled)
 
+        if !phtvShouldPerformInProcessRecovery(
+            isRelaunchAlreadyScheduled: isRelaunchingAfterPermissionGrant
+        ) {
+            if statusChanged {
+                NSLog(
+                    "[Accessibility] Status changed while relaunch is pending; suppressing in-process recovery"
+                )
+            }
+            wasAccessibilityEnabled = isEnabled
+            return
+        }
+
         if statusChanged {
             NSLog("[Accessibility] Status CHANGED: was=%@, now=%@",
                   wasAccessibilityEnabled ? "YES" : "NO",
@@ -214,6 +257,13 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
     }
 
     func performAccessibilityGrantedRestart() {
+        guard phtvShouldPerformInProcessRecovery(
+            isRelaunchAlreadyScheduled: isRelaunchingAfterPermissionGrant
+        ) else {
+            NSLog("[Accessibility] Relaunch already pending; skipping duplicate recovery")
+            return
+        }
+
         NSLog("[Accessibility] Permission granted - preparing event tap recovery...")
         PHTVManager.invalidatePermissionCache()
 
@@ -257,13 +307,11 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
 
             let shouldRelaunch = phtvShouldFallbackRelaunchAfterEventTapFailures(
                 accessibilityTrusted: AXIsProcessTrusted(),
-                postEventGranted: PHTVPermissionService.hasPostEventAccess(),
-                inputMonitoringGranted: PHTVPermissionService.hasListenEventAccess(),
                 isRelaunchAlreadyScheduled: isRelaunchingAfterPermissionGrant
             )
 
             guard shouldRelaunch else {
-                NSLog("[EventTap] Failed after 3 attempts; waiting for remaining TCC grants")
+                NSLog("[EventTap] Failed after 3 attempts; waiting for Accessibility/session tap readiness")
                 startAccessibilityMonitoring(withInterval: currentMonitoringInterval(), resetState: true)
                 continuePermissionGuidanceIfNeeded()
                 return
@@ -314,32 +362,29 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
         }
 
         isRelaunchingAfterPermissionGrant = true
-        Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .seconds(phtvAccessibilityGrantRelaunchDelay))
-            guard !Task.isCancelled else { return }
-            guard let self else { return }
+        let relaunchArguments = [phtvAccessibilityGrantRelaunchArgument]
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/bin/sh")
+        task.arguments = phtvDeferredRelaunchProcessArguments(
+            parentPID: ProcessInfo.processInfo.processIdentifier,
+            bundlePath: bundleURL.path,
+            launchArguments: relaunchArguments
+        )
+        task.standardOutput = FileHandle.nullDevice
+        task.standardError = FileHandle.nullDevice
+        task.standardInput = nil
 
-            let config = NSWorkspace.OpenConfiguration()
-            config.activates = true
-            config.createsNewApplicationInstance = true
-            config.allowsRunningApplicationSubstitution = false
-            config.arguments = [phtvAccessibilityGrantRelaunchArgument]
-
-            NSWorkspace.shared.openApplication(at: bundleURL, configuration: config) { _, error in
-                if let error {
-                    NSLog("[Accessibility] Relaunch failed: %@", error.localizedDescription)
-                    Task { @MainActor in
-                        self.isRelaunchingAfterPermissionGrant = false
-                        self.tryInitEventTap(attempt: 1)
-                    }
-                    return
-                }
-
-                NSLog("[Accessibility] Relaunch instance started - terminating current app")
-                Task { @MainActor in
-                    NSApp.terminate(nil)
-                }
-            }
+        do {
+            try task.run()
+            NSLog(
+                "[Accessibility] Deferred relaunch helper started (pid=%d); terminating current app",
+                task.processIdentifier
+            )
+            NSApp.terminate(nil)
+        } catch {
+            NSLog("[Accessibility] Failed to start deferred relaunch helper: %@", error.localizedDescription)
+            isRelaunchingAfterPermissionGrant = false
+            tryInitEventTap(attempt: 1)
         }
     }
 
@@ -429,9 +474,8 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
 
     func checkAccessibilityAndRestart() {
         // AXIsProcessTrusted() is the Apple-canonical gate for accessibility permission.
-        // Do NOT gate on canCreateEventTap() here: CGPreflightPostEventAccess() may still
-        // return false due to macOS propagation delay even when AXIsProcessTrusted() is true,
-        // causing the app to silently skip initialization. If already initialized, skip.
+        // Do NOT gate on canCreateEventTap() here: the session tap may still be settling
+        // after TCC propagation even when AXIsProcessTrusted() is already true.
         guard AXIsProcessTrusted() else { return }
         guard !PHTVManager.isInited() else { return }
         PHTVManager.invalidatePermissionCache()

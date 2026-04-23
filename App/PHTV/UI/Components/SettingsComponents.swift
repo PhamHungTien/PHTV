@@ -230,7 +230,6 @@ struct SettingsDivider: View {
 
 struct StatusCard: View {
     let hasAccessibilityPermission: Bool
-    let hasInputMonitoringPermission: Bool
     let isReady: Bool
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorScheme) private var colorScheme
@@ -292,7 +291,7 @@ struct StatusCard: View {
         if isReady {
             return .green
         }
-        if !hasAccessibilityPermission || !hasInputMonitoringPermission {
+        if !hasAccessibilityPermission {
             return .orange
         }
         return .yellow
@@ -302,7 +301,7 @@ struct StatusCard: View {
         if isReady {
             return "checkmark.shield.fill"
         }
-        if !hasAccessibilityPermission || !hasInputMonitoringPermission {
+        if !hasAccessibilityPermission {
             return "exclamationmark.triangle.fill"
         }
         return "clock.badge.exclamationmark.fill"
@@ -315,9 +314,6 @@ struct StatusCard: View {
         if !hasAccessibilityPermission {
             return "Thiếu quyền Trợ năng"
         }
-        if !hasInputMonitoringPermission {
-            return "Thiếu Input Monitoring"
-        }
         return "Đang hoàn tất khởi tạo"
     }
 
@@ -326,10 +322,7 @@ struct StatusCard: View {
             return "PHTV đã sẵn sàng để gõ tiếng Việt."
         }
         if !hasAccessibilityPermission {
-            return "Cần cấp quyền Trợ năng để PHTV hoạt động ổn định."
-        }
-        if !hasInputMonitoringPermission {
-            return "PHTV đã có Trợ năng nhưng còn thiếu Input Monitoring để bắt phím toàn cục."
+            return "PHTV chỉ cần quyền Trợ năng để hoạt động ổn định."
         }
         return "Quyền đã được cấp, nhưng bộ gõ chưa sẵn sàng. Nhấn Thử lại ngay để PHTV tự khởi tạo lại."
     }
@@ -341,9 +334,6 @@ struct StatusCard: View {
     private var permissionButtonTitle: String {
         if !hasAccessibilityPermission {
             return "Mở Trợ năng"
-        }
-        if !hasInputMonitoringPermission {
-            return "Mở Input Monitoring"
         }
         return "Thử lại ngay"
     }

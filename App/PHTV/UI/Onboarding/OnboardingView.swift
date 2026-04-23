@@ -826,7 +826,7 @@ struct AccessibilityStepView: View {
         VStack(spacing: 20) {
             OnboardingStepHeader(
                 title: "Cấp quyền truy cập",
-                subtitle: "PHTV cần quyền Trợ năng và Input Monitoring để gõ ổn định",
+                subtitle: "PHTV chỉ cần quyền Trợ năng để gõ ổn định",
                 icon: "hand.raised.fill"
             )
 
@@ -852,7 +852,7 @@ struct AccessibilityStepView: View {
 
                         OnboardingNumberedRow(number: "1", text: "Nhấn nút bên dưới để mở Cài đặt Hệ thống.")
                         OnboardingNumberedRow(number: "2", text: "Trong Accessibility, bật công tắc cho PHTV.")
-                        OnboardingNumberedRow(number: "3", text: "Nếu đã bật nhưng chưa hoạt động, thử tắt rồi bật lại.")
+                        OnboardingNumberedRow(number: "3", text: "Sau khi cấp quyền, PHTV có thể tự khởi động lại để nhận quyền. Nếu chưa hoạt động, thử tắt rồi bật lại.")
                     }
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -870,43 +870,11 @@ struct AccessibilityStepView: View {
                         )
                     }
                     .buttonStyle(OnboardingPrimaryButtonStyle())
-                } else if !appState.hasInputMonitoringPermission {
-                    OnboardingStatusCard(
-                        icon: "keyboard.badge.ellipsis.fill",
-                        title: "Cần cấp quyền Input Monitoring",
-                        description: "PHTV đã có Trợ năng nhưng còn thiếu quyền bắt phím toàn cục.",
-                        tint: .orange
-                    )
-
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Hướng dẫn nhanh")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-
-                        OnboardingNumberedRow(number: "1", text: "Mở mục Input Monitoring trong Cài đặt Quyền riêng tư.")
-                        OnboardingNumberedRow(number: "2", text: "Bật công tắc cho PHTV để cho phép nghe phím toàn cục.")
-                        OnboardingNumberedRow(number: "3", text: "Nếu vẫn chưa gõ được, thử tắt rồi bật lại quyền này hoặc mở lại PHTV.")
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        OnboardingSurface(
-                            cornerRadius: 14,
-                            fillColor: Color(nsColor: .controlBackgroundColor),
-                            strokeColor: Color.black.opacity(0.1)
-                        )
-                    )
-
-                    Button("Mở Input Monitoring") {
-                        AppDelegate.current()?.continuePermissionGuidanceIfNeeded(
-                            forceOpenSystemSettings: true
-                        )
-                    }
-                    .buttonStyle(OnboardingPrimaryButtonStyle())
                 } else {
                     OnboardingStatusCard(
                         icon: "clock.badge.exclamationmark.fill",
                         title: "Đang hoàn tất khởi tạo",
-                        description: "Các quyền đã được cấp, nhưng PHTV vẫn đang chờ khởi tạo lại bộ gõ.",
+                        description: "Quyền Trợ năng đã được cấp, nhưng PHTV vẫn đang chờ khởi tạo lại bộ gõ.",
                         tint: .yellow
                     )
 
@@ -915,8 +883,8 @@ struct AccessibilityStepView: View {
                             .font(.system(size: 14, weight: .semibold, design: .rounded))
 
                         OnboardingNumberedRow(number: "1", text: "Nhấn Thử lại ngay để PHTV tự kiểm tra và khởi tạo lại bộ gõ.")
-                        OnboardingNumberedRow(number: "2", text: "Nếu vẫn chưa gõ được, chờ vài giây để macOS áp dụng quyền rồi thử lại.")
-                        OnboardingNumberedRow(number: "3", text: "Nếu cần, tắt rồi bật lại Input Monitoring hoặc Accessibility cho PHTV.")
+                        OnboardingNumberedRow(number: "2", text: "Nếu vừa cấp quyền, hãy chờ vài giây để macOS áp dụng thay đổi hoặc để PHTV tự khởi động lại.")
+                        OnboardingNumberedRow(number: "3", text: "Nếu vẫn chưa gõ được, thử tắt rồi bật lại quyền Trợ năng cho PHTV.")
                     }
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)

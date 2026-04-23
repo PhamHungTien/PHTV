@@ -29,15 +29,11 @@ import Foundation
         }
 
         lastPresentedPermissionGuidanceStep = step
-        requestMissingPermissionPromptsIfNeeded()
 
         switch step {
         case .accessibility:
             NSLog("[PermissionFlow] Opening Accessibility guidance")
             PHTVAccessibilityService.openAccessibilityPreferences()
-        case .inputMonitoring:
-            NSLog("[PermissionFlow] Opening Input Monitoring guidance")
-            PHTVPermissionService.openInputMonitoringPreferences()
         case .waitingForEventTap:
             NSLog("[PermissionFlow] Retrying event tap initialization")
             retryTypingPermissionRecovery(reason: "permission-guidance")
@@ -70,29 +66,13 @@ import Foundation
     @nonobjc
     private func currentPermissionGuidanceStep() -> PHTVPermissionGuidanceStep {
         let accessibilityTrusted = AXIsProcessTrusted()
-        let postEventGranted = PHTVPermissionService.hasPostEventAccess()
-        let inputMonitoringGranted = PHTVPermissionService.hasListenEventAccess()
         let eventTapReady = accessibilityTrusted
-            && postEventGranted
-            && inputMonitoringGranted
             && PHTVManager.isInited()
             && PHTVManager.isEventTapEnabled()
 
         return PHTVPermissionGuidanceStep.resolve(
             accessibilityTrusted: accessibilityTrusted,
-            postEventGranted: postEventGranted,
-            inputMonitoringGranted: inputMonitoringGranted,
             eventTapReady: eventTapReady
         )
-    }
-
-    @nonobjc
-    private func requestMissingPermissionPromptsIfNeeded() {
-        if !PHTVPermissionService.hasPostEventAccess() {
-            _ = PHTVPermissionService.requestPostEventAccess()
-        }
-        if !PHTVPermissionService.hasListenEventAccess() {
-            _ = PHTVPermissionService.requestListenEventAccess()
-        }
     }
 }

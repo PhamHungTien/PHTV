@@ -136,29 +136,15 @@ import Foundation
             return PHTVEventCallbackService.handle(proxy: proxy, type: type, event: event, refcon: refcon)
         }
 
-        var createdTap = CGEvent.tapCreate(
-            tap: .cghidEventTap,
+        guard let tap = CGEvent.tapCreate(
+            tap: .cgSessionEventTap,
             place: .headInsertEventTap,
             options: .defaultTap,
             eventsOfInterest: mask,
             callback: callback,
             userInfo: nil
-        )
-
-        if createdTap == nil {
-            NSLog("[EventTap] HID tap failed, falling back to session tap")
-            createdTap = CGEvent.tapCreate(
-                tap: .cgSessionEventTap,
-                place: .headInsertEventTap,
-                options: .defaultTap,
-                eventsOfInterest: mask,
-                callback: callback,
-                userInfo: nil
-            )
-        }
-
-        guard let tap = createdTap else {
-            fputs("Failed to create event tap\n", stderr)
+        ) else {
+            fputs("Failed to create session event tap\n", stderr)
             publishTypingReadiness(false)
             return false
         }

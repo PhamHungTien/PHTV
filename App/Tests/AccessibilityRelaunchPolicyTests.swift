@@ -53,12 +53,17 @@ final class AccessibilityRelaunchPolicyTests: XCTestCase {
         )
     }
 
-    func testFallbackRelaunchAfterEventTapFailuresRequiresAllPermissions() {
+    func testFallbackRelaunchAfterEventTapFailuresRequiresAccessibilityTrust() {
         XCTAssertTrue(
             phtvShouldFallbackRelaunchAfterEventTapFailures(
                 accessibilityTrusted: true,
-                postEventGranted: true,
-                inputMonitoringGranted: true,
+                isRelaunchAlreadyScheduled: false
+            )
+        )
+
+        XCTAssertFalse(
+            phtvShouldFallbackRelaunchAfterEventTapFailures(
+                accessibilityTrusted: false,
                 isRelaunchAlreadyScheduled: false
             )
         )
@@ -66,10 +71,33 @@ final class AccessibilityRelaunchPolicyTests: XCTestCase {
         XCTAssertFalse(
             phtvShouldFallbackRelaunchAfterEventTapFailures(
                 accessibilityTrusted: true,
-                postEventGranted: true,
-                inputMonitoringGranted: false,
-                isRelaunchAlreadyScheduled: false
+                isRelaunchAlreadyScheduled: true
             )
         )
+    }
+
+    func testInProcessRecoveryStopsWhenRelaunchIsAlreadyScheduled() {
+        XCTAssertTrue(
+            phtvShouldPerformInProcessRecovery(isRelaunchAlreadyScheduled: false)
+        )
+        XCTAssertFalse(
+            phtvShouldPerformInProcessRecovery(isRelaunchAlreadyScheduled: true)
+        )
+    }
+
+    func testDeferredRelaunchProcessArgumentsCarryParentPIDBundlePathAndLaunchArgs() {
+        let arguments = phtvDeferredRelaunchProcessArguments(
+            parentPID: 1234,
+            bundlePath: "/Applications/PHTV.app",
+            launchArguments: ["--phtv-relaunched-after-accessibility-grant"]
+        )
+
+        XCTAssertEqual(arguments[0], "-c")
+        XCTAssertTrue(arguments[1].contains("kill -0"))
+        XCTAssertTrue(arguments[1].contains("/usr/bin/open -n"))
+        XCTAssertEqual(arguments[2], "sh")
+        XCTAssertEqual(arguments[3], "1234")
+        XCTAssertEqual(arguments[4], "/Applications/PHTV.app")
+        XCTAssertEqual(arguments[5], "--phtv-relaunched-after-accessibility-grant")
     }
 }

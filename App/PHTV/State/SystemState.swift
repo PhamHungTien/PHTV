@@ -14,19 +14,14 @@ import Observation
 enum PHTVTypingPermissionState: Equatable {
     case ready
     case waitingForEventTap
-    case inputMonitoringRequired
     case accessibilityRequired
 
     static func resolve(
         accessibilityTrusted: Bool,
-        inputMonitoringGranted: Bool = true,
         eventTapReady: Bool
     ) -> Self {
         guard accessibilityTrusted else {
             return .accessibilityRequired
-        }
-        guard inputMonitoringGranted else {
-            return .inputMonitoringRequired
         }
         return eventTapReady ? .ready : .waitingForEventTap
     }
@@ -43,20 +38,14 @@ enum PHTVTypingPermissionState: Equatable {
 enum PHTVPermissionGuidanceStep: Equatable {
     case ready
     case accessibility
-    case inputMonitoring
     case waitingForEventTap
 
     static func resolve(
         accessibilityTrusted: Bool,
-        postEventGranted: Bool,
-        inputMonitoringGranted: Bool,
         eventTapReady: Bool
     ) -> Self {
-        guard accessibilityTrusted && postEventGranted else {
+        guard accessibilityTrusted else {
             return .accessibility
-        }
-        guard inputMonitoringGranted else {
-            return .inputMonitoring
         }
         return eventTapReady ? .ready : .waitingForEventTap
     }
@@ -109,9 +98,6 @@ final class SystemState {
     // Accessibility / typing readiness
     var hasAccessibilityPermission: Bool = false {
         didSet { notifyChangeIfNeeded(oldValue: oldValue, newValue: hasAccessibilityPermission) }
-    }
-    var hasInputMonitoringPermission: Bool = false {
-        didSet { notifyChangeIfNeeded(oldValue: oldValue, newValue: hasInputMonitoringPermission) }
     }
     var isTypingPermissionReady: Bool = false {
         didSet { notifyChangeIfNeeded(oldValue: oldValue, newValue: isTypingPermissionReady) }
@@ -363,22 +349,15 @@ final class SystemState {
 
     @discardableResult
     private func refreshPermissionState(eventTapReady: Bool? = nil) -> PHTVTypingPermissionState {
-        let axTrusted = AXIsProcessTrusted()
-        let postEventGranted = PHTVPermissionService.hasPostEventAccess()
-        let accessibilityTrusted = axTrusted && postEventGranted
-        let inputMonitoringGranted = PHTVPermissionService.hasListenEventAccess()
+        let accessibilityTrusted = AXIsProcessTrusted()
         let liveEventTapReady = accessibilityTrusted && PHTVManager.isInited() && PHTVManager.isEventTapEnabled()
         let effectiveEventTapReady = eventTapReady.map { $0 || liveEventTapReady } ?? liveEventTapReady
         let resolvedState = PHTVTypingPermissionState.resolve(
             accessibilityTrusted: accessibilityTrusted,
-            inputMonitoringGranted: inputMonitoringGranted,
             eventTapReady: effectiveEventTapReady
         )
         if hasAccessibilityPermission != resolvedState.hasAccessibilityPermission {
             hasAccessibilityPermission = resolvedState.hasAccessibilityPermission
-        }
-        if hasInputMonitoringPermission != inputMonitoringGranted {
-            hasInputMonitoringPermission = inputMonitoringGranted
         }
         if isTypingPermissionReady != resolvedState.isTypingPermissionReady {
             isTypingPermissionReady = resolvedState.isTypingPermissionReady
@@ -469,12 +448,9 @@ final class SystemState {
 
                 self.refreshPermissionState()
                 let axTrusted = AXIsProcessTrusted()
-                let postEventGranted = PHTVPermissionService.hasPostEventAccess()
                 NSLog(
-                    "[SystemState] AX TCC notification → AX=%@, PostEvent=%@, InputMonitoring=%@, eventTapReady=%@",
+                    "[SystemState] AX TCC notification → AX=%@, eventTapReady=%@",
                     axTrusted ? "YES" : "NO",
-                    postEventGranted ? "YES" : "NO",
-                    self.hasInputMonitoringPermission ? "YES" : "NO",
                     self.isTypingPermissionReady ? "YES" : "NO"
                 )
             },
@@ -489,12 +465,9 @@ final class SystemState {
 
                 self.refreshPermissionState()
                 let axTrusted = AXIsProcessTrusted()
-                let postEventGranted = PHTVPermissionService.hasPostEventAccess()
                 NSLog(
-                    "[SystemState] Generic TCC notification → AX=%@, PostEvent=%@, InputMonitoring=%@, eventTapReady=%@",
+                    "[SystemState] Generic TCC notification → AX=%@, eventTapReady=%@",
                     axTrusted ? "YES" : "NO",
-                    postEventGranted ? "YES" : "NO",
-                    self.hasInputMonitoringPermission ? "YES" : "NO",
                     self.isTypingPermissionReady ? "YES" : "NO"
                 )
             },

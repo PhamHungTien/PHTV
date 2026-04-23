@@ -40,7 +40,6 @@ struct TypingSettingsView: View {
                 if !appState.isTypingPermissionReady {
                     StatusCard(
                         hasAccessibilityPermission: appState.hasAccessibilityPermission,
-                        hasInputMonitoringPermission: appState.hasInputMonitoringPermission,
                         isReady: appState.isTypingPermissionReady
                     )
                 }
