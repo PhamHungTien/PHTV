@@ -52,6 +52,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var eventTapRecoveryToken: UInt = 0
     var lastEventTapRecoveryRequestTime: CFAbsoluteTime = 0
     var lastPublishedTypingPermissionReady: Bool?
+    var lastPublishedTypingRuntimeHealth: PHTVTypingRuntimeHealthSnapshot?
     var permissionGuidancePresentationTask: Task<Void, Never>?
     var lastPresentedPermissionGuidanceStep: PHTVPermissionGuidanceStep?
 

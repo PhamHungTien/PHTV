@@ -117,6 +117,7 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
         guard let bundleIdentifier = PHTVAppContextService.currentFrontmostBundleId(),
               !bundleIdentifier.isEmpty else {
             PHTVAppContextService.invalidateFrontmostBundleCache()
+            publishTypingPermissionState()
             return
         }
 
@@ -125,6 +126,7 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
         }
 
         applyFrontmostAppContext(bundleIdentifier)
+        publishTypingPermissionState(frontmostBundleId: bundleIdentifier)
         NSLog("[AppContext] Synced frontmost app context (%@): %@", reason, bundleIdentifier)
     }
 

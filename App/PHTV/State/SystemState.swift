@@ -16,14 +16,30 @@ enum PHTVTypingPermissionState: Equatable {
     case waitingForEventTap
     case accessibilityRequired
 
+    static func resolve(snapshot: PHTVTypingRuntimeHealthSnapshot) -> Self {
+        switch snapshot.phase {
+        case .accessibilityRequired:
+            return .accessibilityRequired
+        case .waitingForEventTap, .relaunchPending:
+            return .waitingForEventTap
+        case .ready:
+            return .ready
+        }
+    }
+
     static func resolve(
         accessibilityTrusted: Bool,
         eventTapReady: Bool
     ) -> Self {
-        guard accessibilityTrusted else {
-            return .accessibilityRequired
-        }
-        return eventTapReady ? .ready : .waitingForEventTap
+        resolve(
+            snapshot: PHTVTypingRuntimeHealthSnapshot.resolve(
+                axTrusted: accessibilityTrusted,
+                eventTapReady: eventTapReady,
+                relaunchPending: false,
+                safeModeEnabled: false,
+                activeAppProfile: .generic
+            )
+        )
     }
 
     var hasAccessibilityPermission: Bool {
@@ -40,14 +56,30 @@ enum PHTVPermissionGuidanceStep: Equatable {
     case accessibility
     case waitingForEventTap
 
+    static func resolve(snapshot: PHTVTypingRuntimeHealthSnapshot) -> Self {
+        switch snapshot.phase {
+        case .accessibilityRequired:
+            return .accessibility
+        case .waitingForEventTap, .relaunchPending:
+            return .waitingForEventTap
+        case .ready:
+            return .ready
+        }
+    }
+
     static func resolve(
         accessibilityTrusted: Bool,
         eventTapReady: Bool
     ) -> Self {
-        guard accessibilityTrusted else {
-            return .accessibility
-        }
-        return eventTapReady ? .ready : .waitingForEventTap
+        resolve(
+            snapshot: PHTVTypingRuntimeHealthSnapshot.resolve(
+                axTrusted: accessibilityTrusted,
+                eventTapReady: eventTapReady,
+                relaunchPending: false,
+                safeModeEnabled: false,
+                activeAppProfile: .generic
+            )
+        )
     }
 }
 
@@ -101,6 +133,25 @@ final class SystemState {
     }
     var isTypingPermissionReady: Bool = false {
         didSet { notifyChangeIfNeeded(oldValue: oldValue, newValue: isTypingPermissionReady) }
+    }
+    var typingRuntimeHealth = PHTVTypingRuntimeHealthSnapshot.resolve(
+        axTrusted: false,
+        eventTapReady: false,
+        relaunchPending: false,
+        safeModeEnabled: false,
+        activeAppProfile: .generic
+    ) {
+        didSet {
+            guard typingRuntimeHealth != oldValue else { return }
+            let resolvedState = typingRuntimeHealth.permissionState
+            if hasAccessibilityPermission != resolvedState.hasAccessibilityPermission {
+                hasAccessibilityPermission = resolvedState.hasAccessibilityPermission
+            }
+            if isTypingPermissionReady != resolvedState.isTypingPermissionReady {
+                isTypingPermissionReady = resolvedState.isTypingPermissionReady
+            }
+            onChange?()
+        }
     }
 
     // Update notification - shown when new version is available on startup
@@ -349,20 +400,33 @@ final class SystemState {
 
     @discardableResult
     private func refreshPermissionState(eventTapReady: Bool? = nil) -> PHTVTypingPermissionState {
+        let snapshot = makeTypingRuntimeHealthSnapshot(eventTapReady: eventTapReady)
+        if typingRuntimeHealth != snapshot {
+            typingRuntimeHealth = snapshot
+        }
+        return snapshot.permissionState
+    }
+
+    private func makeTypingRuntimeHealthSnapshot(
+        eventTapReady: Bool? = nil,
+        frontmostBundleId: String? = nil,
+        relaunchPending: Bool? = nil
+    ) -> PHTVTypingRuntimeHealthSnapshot {
         let accessibilityTrusted = AXIsProcessTrusted()
         let liveEventTapReady = accessibilityTrusted && PHTVManager.isInited() && PHTVManager.isEventTapEnabled()
         let effectiveEventTapReady = eventTapReady.map { $0 || liveEventTapReady } ?? liveEventTapReady
-        let resolvedState = PHTVTypingPermissionState.resolve(
-            accessibilityTrusted: accessibilityTrusted,
-            eventTapReady: effectiveEventTapReady
+        let activeBundleId = frontmostBundleId ?? PHTVAppContextService.currentFrontmostBundleId()
+        let profile = PHTVCompatibilityProfileResolver.resolve(forBundleId: activeBundleId)
+        let isRelaunchPending = relaunchPending ?? AppDelegate.current()?.isRelaunchingAfterPermissionGrant ?? false
+
+        return PHTVTypingRuntimeStateMachine.snapshot(
+            axTrusted: accessibilityTrusted,
+            eventTapReady: effectiveEventTapReady,
+            relaunchPending: isRelaunchPending,
+            safeModeEnabled: safeMode,
+            activeAppProfile: profile.kind,
+            activeBundleId: activeBundleId
         )
-        if hasAccessibilityPermission != resolvedState.hasAccessibilityPermission {
-            hasAccessibilityPermission = resolvedState.hasAccessibilityPermission
-        }
-        if isTypingPermissionReady != resolvedState.isTypingPermissionReady {
-            isTypingPermissionReady = resolvedState.isTypingPermissionReady
-        }
-        return resolvedState
     }
 
     // MARK: - Login Item Monitoring
@@ -431,6 +495,13 @@ final class SystemState {
         notificationTasks.forEach { $0.cancel() }
 
         notificationTasks = [
+            makeNotificationTask(name: NotificationName.typingRuntimeHealthChanged) { [weak self] notification in
+                guard let self,
+                      let snapshot = notification.object as? PHTVTypingRuntimeHealthSnapshot else { return }
+                if self.typingRuntimeHealth != snapshot {
+                    self.typingRuntimeHealth = snapshot
+                }
+            },
             makeNotificationTask(name: NotificationName.accessibilityStatusChanged) { [weak self] notification in
                 guard let self,
                       let isEnabled = notification.object as? NSNumber else { return }

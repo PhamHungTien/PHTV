@@ -46,15 +46,22 @@ import Foundation
     }
 
     private static func cacheMissingPermissionAndReturnFalse(_ message: String) -> Bool {
-        NSLog("[Permission] %@", message)
+        let now = Date().timeIntervalSince1970
+        var shouldLog = false
         permissionState.lock.lock()
+        shouldLog = !permissionState.hasLastPermissionOutcome
+            || permissionState.lastPermissionOutcome
+            || (now - permissionState.lastPermissionCheckTime) >= 5
         permissionState.lastPermissionCheckResult = false
-        permissionState.lastPermissionCheckTime = Date().timeIntervalSince1970
+        permissionState.lastPermissionCheckTime = now
         permissionState.permissionFailureCount = 0
         permissionState.permissionBackoffUntil = 0
         permissionState.lastPermissionOutcome = false
         permissionState.hasLastPermissionOutcome = true
         permissionState.lock.unlock()
+        if shouldLog {
+            NSLog("[Permission] %@", message)
+        }
         return false
     }
 

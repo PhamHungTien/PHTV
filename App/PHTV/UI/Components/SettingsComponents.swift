@@ -229,8 +229,7 @@ struct SettingsDivider: View {
 // MARK: - Status Card
 
 struct StatusCard: View {
-    let hasAccessibilityPermission: Bool
-    let isReady: Bool
+    let runtimeHealth: PHTVTypingRuntimeHealthSnapshot
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorScheme) private var colorScheme
 
@@ -288,51 +287,68 @@ struct StatusCard: View {
     }
 
     private var statusColor: Color {
-        if isReady {
+        switch runtimeHealth.phase {
+        case .ready:
             return .green
-        }
-        if !hasAccessibilityPermission {
+        case .accessibilityRequired:
             return .orange
+        case .relaunchPending:
+            return .blue
+        case .waitingForEventTap:
+            return .yellow
         }
-        return .yellow
     }
 
     private var statusIcon: String {
-        if isReady {
+        switch runtimeHealth.phase {
+        case .ready:
             return "checkmark.shield.fill"
-        }
-        if !hasAccessibilityPermission {
+        case .accessibilityRequired:
             return "exclamationmark.triangle.fill"
+        case .relaunchPending:
+            return "arrow.clockwise.circle.fill"
+        case .waitingForEventTap:
+            return "clock.badge.exclamationmark.fill"
         }
-        return "clock.badge.exclamationmark.fill"
     }
 
     private var statusTitle: String {
-        if isReady {
+        switch runtimeHealth.phase {
+        case .ready:
             return "Sẵn sàng"
-        }
-        if !hasAccessibilityPermission {
+        case .accessibilityRequired:
             return "Thiếu quyền Trợ năng"
+        case .relaunchPending:
+            return "Đang tự khởi động lại"
+        case .waitingForEventTap:
+            return "Đang hoàn tất khởi tạo"
         }
-        return "Đang hoàn tất khởi tạo"
     }
 
     private var statusDescription: String {
-        if isReady {
+        switch runtimeHealth.phase {
+        case .ready:
             return "PHTV đã sẵn sàng để gõ tiếng Việt."
-        }
-        if !hasAccessibilityPermission {
+        case .accessibilityRequired:
             return "PHTV chỉ cần quyền Trợ năng để hoạt động ổn định."
+        case .relaunchPending:
+            return "PHTV đang tự khởi động lại để nhận quyền Trợ năng và khôi phục bộ gõ."
+        case .waitingForEventTap:
+            return "Quyền đã được cấp, nhưng bộ gõ chưa sẵn sàng. Nhấn Thử lại ngay để PHTV tự khởi tạo lại."
         }
-        return "Quyền đã được cấp, nhưng bộ gõ chưa sẵn sàng. Nhấn Thử lại ngay để PHTV tự khởi tạo lại."
     }
 
     private var shouldShowPermissionButton: Bool {
-        !isReady
+        switch runtimeHealth.phase {
+        case .ready, .relaunchPending:
+            return false
+        case .accessibilityRequired, .waitingForEventTap:
+            return true
+        }
     }
 
     private var permissionButtonTitle: String {
-        if !hasAccessibilityPermission {
+        if runtimeHealth.phase == .accessibilityRequired {
             return "Mở Trợ năng"
         }
         return "Thử lại ngay"

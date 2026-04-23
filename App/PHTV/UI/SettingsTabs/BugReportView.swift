@@ -581,15 +581,14 @@ struct BugReportView: View {
     // MARK: - Runtime Info Helpers
 
     private func checkEventTapStatus() -> String {
-        let hasPermission = PHTVManager.canCreateEventTap()
-        let isInited = PHTVManager.isInited()
-        if hasPermission && isInited {
+        switch appState.typingRuntimeHealth.phase {
+        case .ready:
             return "✅ Running"
-        } else if hasPermission && !isInited {
+        case .relaunchPending:
+            return "🔄 Relaunch pending after Accessibility grant"
+        case .waitingForEventTap:
             return "⚠️ Permission OK, tap not initialized"
-        } else if appState.hasAccessibilityPermission {
-            return "⚠️ Accessibility granted, event tap unavailable"
-        } else {
+        case .accessibilityRequired:
             return "❌ No accessibility permission"
         }
     }
@@ -1214,8 +1213,12 @@ struct BugReportView: View {
             - **Show icon on Dock:** \(appState.showIconOnDock ? "✅" : "❌")
 
             ## 🔐 Quyền & Trạng thái
+            - **Runtime Session:** \(PHTVLogger.shared.currentSessionID())
+            - **Runtime Phase:** \(appState.typingRuntimeHealth.phase.rawValue)
             - **Accessibility Permission:** \(appState.hasAccessibilityPermission ? "✅ Granted" : "❌ Denied")
             - **Event Tap:** \(checkEventTapStatus())
+            - **Active App Profile:** \(appState.typingRuntimeHealth.activeAppProfile.displayName)
+            - **Active Bundle ID:** \(appState.typingRuntimeHealth.activeBundleId ?? "Unknown")
             - **Binary Architecture:** \(PHTVManager.getBinaryArchitectures())
             - **Binary Integrity:** \(PHTVManager.checkBinaryIntegrity() ? "✅ Intact" : "⚠️ Modified (CleanMyMac?)")
             - **Front App:** \(getFrontAppInfo())
@@ -1422,6 +1425,9 @@ struct BugReportView: View {
 
             report += "## 💻 Hệ thống\n"
             report += "- **PHTV:** \(version) (\(build))\n"
+            report += "- **Runtime Session:** \(PHTVLogger.shared.currentSessionID())\n"
+            report += "- **Runtime Phase:** \(appState.typingRuntimeHealth.phase.rawValue)\n"
+            report += "- **App Profile:** \(appState.typingRuntimeHealth.activeAppProfile.displayName)\n"
             report += "- **macOS:** \(macOS)\n"
             report += "- **Chip:** \(chip)\n"
             report += "- **Chế độ:** \(appState.isEnabled ? "🇻🇳 Tiếng Việt" : "🇬🇧 English")\n"

@@ -38,10 +38,7 @@ struct TypingSettingsView: View {
 
                 // Status Card (only show when permission is missing)
                 if !appState.isTypingPermissionReady {
-                    StatusCard(
-                        hasAccessibilityPermission: appState.hasAccessibilityPermission,
-                        isReady: appState.isTypingPermissionReady
-                    )
+                    StatusCard(runtimeHealth: appState.typingRuntimeHealth)
                 }
 
                 // Input Configuration

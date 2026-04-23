@@ -22,24 +22,46 @@ func phtvShouldRelaunchAfterAccessibilityGrant(
     isEventTapInitialized: Bool,
     isRelaunchAlreadyScheduled: Bool
 ) -> Bool {
-    axTrusted
-        && needsRelaunchAfterPermission
-        && !isEventTapInitialized
-        && !isRelaunchAlreadyScheduled
+    PHTVTypingRuntimeStateMachine.shouldRelaunchAfterGrant(
+        snapshot: PHTVTypingRuntimeHealthSnapshot.resolve(
+            axTrusted: axTrusted,
+            eventTapReady: false,
+            relaunchPending: isRelaunchAlreadyScheduled,
+            safeModeEnabled: false,
+            activeAppProfile: .generic
+        ),
+        needsRelaunchAfterPermission: needsRelaunchAfterPermission,
+        isEventTapInitialized: isEventTapInitialized
+    )
 }
 
 func phtvShouldFallbackRelaunchAfterEventTapFailures(
     accessibilityTrusted: Bool,
     isRelaunchAlreadyScheduled: Bool
 ) -> Bool {
-    accessibilityTrusted
-        && !isRelaunchAlreadyScheduled
+    PHTVTypingRuntimeStateMachine.shouldFallbackRelaunchAfterEventTapFailures(
+        snapshot: PHTVTypingRuntimeHealthSnapshot.resolve(
+            axTrusted: accessibilityTrusted,
+            eventTapReady: false,
+            relaunchPending: isRelaunchAlreadyScheduled,
+            safeModeEnabled: false,
+            activeAppProfile: .generic
+        )
+    )
 }
 
 func phtvShouldPerformInProcessRecovery(
     isRelaunchAlreadyScheduled: Bool
 ) -> Bool {
-    !isRelaunchAlreadyScheduled
+    PHTVTypingRuntimeStateMachine.shouldPerformInProcessRecovery(
+        snapshot: PHTVTypingRuntimeHealthSnapshot.resolve(
+            axTrusted: true,
+            eventTapReady: false,
+            relaunchPending: isRelaunchAlreadyScheduled,
+            safeModeEnabled: false,
+            activeAppProfile: .generic
+        )
+    )
 }
 
 func phtvDeferredRelaunchProcessArguments(
@@ -133,18 +155,63 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
 
 @MainActor @objc extension AppDelegate {
     @nonobjc
-    func publishTypingPermissionState(eventTapReady: Bool? = nil) {
-        let isReady = eventTapReady ?? (PHTVManager.isInited() && PHTVManager.isEventTapEnabled())
-        if isReady {
+    func currentTypingRuntimeHealthSnapshot(
+        eventTapReady: Bool? = nil,
+        frontmostBundleId: String? = nil
+    ) -> PHTVTypingRuntimeHealthSnapshot {
+        let axTrusted = AXIsProcessTrusted()
+        let liveEventTapReady = axTrusted && PHTVManager.isInited() && PHTVManager.isEventTapEnabled()
+        let effectiveEventTapReady = eventTapReady ?? liveEventTapReady
+        let activeBundleId = frontmostBundleId ?? PHTVAppContextService.currentFrontmostBundleId()
+        let profile = PHTVCompatibilityProfileResolver.resolve(forBundleId: activeBundleId)
+
+        return PHTVTypingRuntimeStateMachine.snapshot(
+            axTrusted: axTrusted,
+            eventTapReady: effectiveEventTapReady,
+            relaunchPending: isRelaunchingAfterPermissionGrant,
+            safeModeEnabled: PHTVManager.isSafeModeEnabled(),
+            activeAppProfile: profile.kind,
+            activeBundleId: activeBundleId
+        )
+    }
+
+    @nonobjc
+    func publishTypingPermissionState(eventTapReady: Bool? = nil, frontmostBundleId: String? = nil) {
+        let snapshot = currentTypingRuntimeHealthSnapshot(
+            eventTapReady: eventTapReady,
+            frontmostBundleId: frontmostBundleId
+        )
+        if snapshot.isTypingPermissionReady {
             lastPresentedPermissionGuidanceStep = nil
         }
-        guard lastPublishedTypingPermissionReady != isReady else { return }
-        lastPublishedTypingPermissionReady = isReady
+
+        if lastPublishedTypingRuntimeHealth != snapshot {
+            lastPublishedTypingRuntimeHealth = snapshot
+            NotificationCenter.default.post(
+                name: NotificationName.typingRuntimeHealthChanged,
+                object: snapshot
+            )
+            NSLog(
+                "[Accessibility] Runtime health: phase=%@ profile=%@ ax=%@ tap=%@ relaunch=%@ safeMode=%@",
+                snapshot.phase.rawValue,
+                snapshot.activeAppProfile.rawValue,
+                snapshot.axTrusted ? "YES" : "NO",
+                snapshot.eventTapReady ? "YES" : "NO",
+                snapshot.relaunchPending ? "YES" : "NO",
+                snapshot.safeModeEnabled ? "YES" : "NO"
+            )
+        }
+
+        guard lastPublishedTypingPermissionReady != snapshot.isTypingPermissionReady else { return }
+        lastPublishedTypingPermissionReady = snapshot.isTypingPermissionReady
         NotificationCenter.default.post(
             name: NotificationName.accessibilityStatusChanged,
-            object: NSNumber(value: isReady)
+            object: NSNumber(value: snapshot.isTypingPermissionReady)
         )
-        NSLog("[Accessibility] Published typing readiness: %@", isReady ? "READY" : "WAITING")
+        NSLog(
+            "[Accessibility] Published typing readiness: %@",
+            snapshot.isTypingPermissionReady ? "READY" : "WAITING"
+        )
     }
 
     func startAccessibilityMonitoring() {
@@ -362,6 +429,7 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
         }
 
         isRelaunchingAfterPermissionGrant = true
+        publishTypingPermissionState(eventTapReady: false)
         let relaunchArguments = [phtvAccessibilityGrantRelaunchArgument]
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/bin/sh")
@@ -384,6 +452,7 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
         } catch {
             NSLog("[Accessibility] Failed to start deferred relaunch helper: %@", error.localizedDescription)
             isRelaunchingAfterPermissionGrant = false
+            publishTypingPermissionState(eventTapReady: false)
             tryInitEventTap(attempt: 1)
         }
     }

@@ -18,6 +18,11 @@ import Foundation
 
     @nonobjc
     func continuePermissionGuidanceIfNeeded(forceOpenSystemSettings: Bool = false) {
+        let runtimeHealth = currentTypingRuntimeHealthSnapshot()
+        if runtimeHealth.phase == .relaunchPending {
+            return
+        }
+
         let step = currentPermissionGuidanceStep()
         guard step != .ready else {
             lastPresentedPermissionGuidanceStep = nil
@@ -65,14 +70,6 @@ import Foundation
 
     @nonobjc
     private func currentPermissionGuidanceStep() -> PHTVPermissionGuidanceStep {
-        let accessibilityTrusted = AXIsProcessTrusted()
-        let eventTapReady = accessibilityTrusted
-            && PHTVManager.isInited()
-            && PHTVManager.isEventTapEnabled()
-
-        return PHTVPermissionGuidanceStep.resolve(
-            accessibilityTrusted: accessibilityTrusted,
-            eventTapReady: eventTapReady
-        )
+        currentTypingRuntimeHealthSnapshot().guidanceStep
     }
 }

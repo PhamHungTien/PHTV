@@ -823,6 +823,8 @@ struct AccessibilityStepView: View {
     @Environment(AppState.self) private var appState
 
     var body: some View {
+        let runtimeHealth = appState.typingRuntimeHealth
+
         VStack(spacing: 20) {
             OnboardingStepHeader(
                 title: "Cấp quyền truy cập",
@@ -831,14 +833,14 @@ struct AccessibilityStepView: View {
             )
 
             VStack(spacing: 16) {
-                if appState.isTypingPermissionReady {
+                if runtimeHealth.phase == .ready {
                     OnboardingStatusCard(
                         icon: "checkmark.seal.fill",
                         title: "PHTV đã sẵn sàng",
                         description: "Quyền đã được cấp và bộ gõ đã sẵn sàng hoạt động.",
                         tint: .green
                     )
-                } else if !appState.hasAccessibilityPermission {
+                } else if runtimeHealth.phase == .accessibilityRequired {
                     OnboardingStatusCard(
                         icon: "exclamationmark.triangle.fill",
                         title: "Cần cấp quyền Accessibility",
@@ -870,6 +872,31 @@ struct AccessibilityStepView: View {
                         )
                     }
                     .buttonStyle(OnboardingPrimaryButtonStyle())
+                } else if runtimeHealth.phase == .relaunchPending {
+                    OnboardingStatusCard(
+                        icon: "arrow.clockwise.circle.fill",
+                        title: "PHTV đang tự khởi động lại",
+                        description: "macOS đã nhận quyền Trợ năng. PHTV đang chờ mở lại để bộ gõ hoạt động ổn định.",
+                        tint: .blue
+                    )
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Trong lúc chờ")
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+
+                        OnboardingNumberedRow(number: "1", text: "Giữ nguyên cửa sổ cài đặt trong vài giây để macOS hoàn tất áp dụng quyền.")
+                        OnboardingNumberedRow(number: "2", text: "PHTV sẽ tự mở lại. Nếu chưa thấy, hãy mở lại PHTV một lần.")
+                        OnboardingNumberedRow(number: "3", text: "Khi PHTV mở lại, trạng thái sẽ tự chuyển sang sẵn sàng.")
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        OnboardingSurface(
+                            cornerRadius: 14,
+                            fillColor: Color(nsColor: .controlBackgroundColor),
+                            strokeColor: Color.black.opacity(0.1)
+                        )
+                    )
                 } else {
                     OnboardingStatusCard(
                         icon: "clock.badge.exclamationmark.fill",

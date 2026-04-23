@@ -449,8 +449,8 @@ final class PHTVInputStrategyService: NSObject {
         needsPrecomposedBatched: Bool,
         browserFixEnabled: Bool
     ) -> PHTVProcessSignalPlanBox {
+        let compatibilityProfile = PHTVCompatibilityProfileResolver.resolve(forBundleId: bundleId)
         let isNotionApp = PHTVAppDetectionService.isNotionApp(bundleId)
-        let needsLegacySpaceCommitFix = PHTVAppDetectionService.needsLegacySpaceCommitFix(bundleId)
         let inputStrategy = strategy(
             forSpaceKey: keyCode == spaceKeyCode,
             slashKey: keyCode == slashKeyCode,
@@ -461,7 +461,7 @@ final class PHTVInputStrategyService: NSObject {
             needsPrecomposedBatched: needsPrecomposedBatched,
             browserFixEnabled: browserFixEnabled,
             isNotionApp: isNotionApp,
-            needsLegacySpaceCommitFix: needsLegacySpaceCommitFix
+            needsLegacySpaceCommitFix: compatibilityProfile.needsLegacySpaceCommitFix
         )
 
         return PHTVProcessSignalPlanBox(

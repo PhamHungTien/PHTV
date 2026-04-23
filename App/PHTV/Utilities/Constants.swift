@@ -144,6 +144,7 @@ enum NotificationName {
     // MARK: - System
     static let accessibilityStatusChanged = NSNotification.Name("AccessibilityStatusChanged")
     static let accessibilityPermissionLost = NSNotification.Name("AccessibilityPermissionLost")
+    static let typingRuntimeHealthChanged = NSNotification.Name("TypingRuntimeHealthChanged")
     static let tccDatabaseChanged = NSNotification.Name("TCCDatabaseChanged")
     static let runOnStartupChanged = NSNotification.Name("RunOnStartupChanged")
     static let applicationWillTerminate = NSNotification.Name("ApplicationWillTerminate")

@@ -18,6 +18,7 @@ final class PHTVLogger: Sendable {
 
     private let logger: Logger
     private let logFileURL: URL
+    private let sessionID: String
     private let maxLogFileSize: Int = 2 * 1024 * 1024  // 2MB max
     private let maxLogAge: TimeInterval = 24 * 60 * 60  // 24 giờ
     private let queue = DispatchQueue(label: "com.phamhungtien.phtv.logger", qos: .utility)
@@ -46,6 +47,7 @@ final class PHTVLogger: Sendable {
 
     private init() {
         self.logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.phamhungtien.phtv", category: "app")
+        self.sessionID = String(UUID().uuidString.prefix(8)).lowercased()
 
         // Tạo thư mục logs
         let logsDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -134,6 +136,10 @@ final class PHTVLogger: Sendable {
         }
     }
 
+    func currentSessionID() -> String {
+        sessionID
+    }
+
     // MARK: - Private Methods
 
     private enum LogLevel: String {
@@ -147,7 +153,7 @@ final class PHTVLogger: Sendable {
 
     private func log(_ message: String, level: LogLevel, file: String, function: String, line: Int) {
         let fileName = (file as NSString).lastPathComponent.replacingOccurrences(of: ".swift", with: "")
-        let formattedMessage = "[PHTV] [\(fileName)] \(message)"
+        let formattedMessage = "[PHTV] [session:\(sessionID)] [\(fileName)] \(message)"
 
         // Log to OSLog (unified logging)
         switch level {
@@ -173,7 +179,7 @@ final class PHTVLogger: Sendable {
     }
 
     private func logWithCategory(_ message: String, level: LogLevel) {
-        let formattedMessage = "[PHTV] \(message)"
+        let formattedMessage = "[PHTV] [session:\(sessionID)] \(message)"
 
         switch level {
         case .debug:

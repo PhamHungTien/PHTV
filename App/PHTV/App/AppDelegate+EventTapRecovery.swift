@@ -173,6 +173,14 @@ private func phtvEmojiHotkeyLooksValid(enabled: Int32, modifiers: Int32, keyCode
             return
         }
 
+        let runtimeHealth = currentTypingRuntimeHealthSnapshot()
+        guard PHTVTypingRuntimeStateMachine.shouldPerformInProcessRecovery(snapshot: runtimeHealth) else {
+            if attempt == 1 {
+                NSLog("[EventTap] Recovery (%@) skipped: relaunch already pending", reason)
+            }
+            return
+        }
+
         guard PHTVManager.canCreateEventTap() else {
             if attempt == totalAttempts {
                 NSLog("[EventTap] Recovery (%@) stopped: permission unavailable", reason)

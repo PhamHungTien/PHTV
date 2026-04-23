@@ -214,12 +214,13 @@ final class PHTVAppContextService: NSObject {
             return box
         }
 
+        let profile = PHTVCompatibilityProfileResolver.resolve(forBundleId: bundleId)
         let box = PHTVAppCharacteristicsBox(
-            isSpotlightLike: PHTVAppDetectionService.isSpotlightLikeApp(bundleId),
-            needsPrecomposedBatched: PHTVAppDetectionService.needsPrecomposedBatched(bundleId),
-            needsStepByStep: PHTVAppDetectionService.needsStepByStep(bundleId),
-            containsUnicodeCompound: PHTVAppDetectionService.containsUnicodeCompound(bundleId),
-            isSafari: PHTVAppDetectionService.isSafariApp(bundleId)
+            isSpotlightLike: profile.isSpotlightLike,
+            needsPrecomposedBatched: profile.needsPrecomposedBatched,
+            needsStepByStep: profile.needsStepByStep,
+            containsUnicodeCompound: profile.containsUnicodeCompound,
+            isSafari: profile.isSafari
         )
 
         PHTVCacheStateService.setAppCharacteristics(
@@ -260,22 +261,24 @@ final class PHTVAppContextService: NSObject {
         let isTerminalPanel = (!safeMode && !isTerminalApp)
             ? PHTVAccessibilityService.isTerminalPanelFocused()
             : false
-        let isCliTarget = isTerminalApp || isJetBrainsApp || isTerminalPanel
         let canContainClaudeCodeSession = isTerminalApp || isTerminalPanel
         let isClaudeCodeSession = (!safeMode && canContainClaudeCodeSession)
             ? PHTVAccessibilityService.isClaudeCodeSessionFocused()
             : false
+        let compatibilityProfile = PHTVCompatibilityProfileResolver.resolve(
+            forBundleId: effectiveBundleId,
+            spotlightActive: spotlightActive,
+            isTerminalPanel: isTerminalPanel,
+            isClaudeCodeSession: isClaudeCodeSession
+        )
+        let isCliTarget = compatibilityProfile.isCliTarget
         let cliTimingProfile: PHTVCliTimingProfileBox? = {
-            guard isCliTarget else {
+            guard let profileCode = compatibilityProfile.cliProfileCode else {
                 return nil
             }
-            let profileCode = PHTVCliProfileService.profileCode(
-                forBundleId: effectiveBundleId,
-                isClaudeCodeSession: isClaudeCodeSession
-            )
             return PHTVCliProfileService.profile(forCode: profileCode)
         }()
-        let postToHIDTap = (!isBrowser && spotlightActive) || appCharacteristics.isSpotlightLike
+        let postToHIDTap = compatibilityProfile.shouldPostToHIDTap
 
         return PHTVEventTargetContextBox(
             eventTargetBundleId: eventTargetBundleId,

@@ -292,17 +292,23 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
 
         m.addItem(.separator())
 
-        if appState.isTypingPermissionReady {
+        switch appState.typingRuntimeHealth.phase {
+        case .ready:
             let item = NSMenuItem(title: "Đã cấp quyền nhập liệu", action: nil, keyEquivalent: "")
             item.image = sfImage("checkmark.shield")
             item.isEnabled = false
             m.addItem(item)
-        } else if appState.hasAccessibilityPermission {
+        case .relaunchPending:
+            let item = NSMenuItem(title: "Đang tự khởi động lại để nhận quyền", action: nil, keyEquivalent: "")
+            item.image = sfImage("arrow.clockwise.circle")
+            item.isEnabled = false
+            m.addItem(item)
+        case .waitingForEventTap:
             let item = NSMenuItem(title: "Đã cấp Trợ năng, đang khởi tạo", action: nil, keyEquivalent: "")
             item.image = sfImage("clock.badge.exclamationmark")
             item.isEnabled = false
             m.addItem(item)
-        } else {
+        case .accessibilityRequired:
             m.addItem(actionItem("Cần cấp quyền Accessibility", image: "exclamationmark.shield", sel: #selector(openAccessibilityPrefs)))
         }
 

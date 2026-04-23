@@ -8,6 +8,11 @@
 
 import Foundation
 
+func phtvShouldElevateBinaryModificationWarning(bundlePath: String) -> Bool {
+    let standardizedPath = URL(fileURLWithPath: bundlePath).standardizedFileURL.path
+    return standardizedPath == "/Applications" || standardizedPath.hasPrefix("/Applications/")
+}
+
 @objcMembers
 final class PHTVBinaryIntegrityService: NSObject {
     private static let binaryHashDefaultsKey = "BinaryHashAtLastRun"
@@ -138,7 +143,7 @@ final class PHTVBinaryIntegrityService: NSObject {
         guard let savedHash = defaults.string(forKey: binaryHashDefaultsKey) else {
             defaults.set(currentHash, forKey: binaryHashDefaultsKey)
             let prefix = String(currentHash.prefix(16))
-            NSLog("[BinaryIntegrity] First run - saved hash: %@...", prefix)
+            PHTVLogger.shared.debug("[BinaryIntegrity] First run - saved hash: \(prefix)...")
             return false
         }
 
@@ -147,9 +152,9 @@ final class PHTVBinaryIntegrityService: NSObject {
             return false
         }
 
-        NSLog("[BinaryIntegrity] 🚨 BINARY CHANGED DETECTED!")
-        NSLog("[BinaryIntegrity] Previous: %@...", String(savedHash.prefix(16)))
-        NSLog("[BinaryIntegrity] Current:  %@...", String(currentHash.prefix(16)))
+        PHTVLogger.shared.info("[BinaryIntegrity] Binary hash changed since last run")
+        PHTVLogger.shared.debug("[BinaryIntegrity] Previous: \(String(savedHash.prefix(16)))...")
+        PHTVLogger.shared.debug("[BinaryIntegrity] Current: \(String(currentHash.prefix(16)))...")
 
         defaults.set(currentHash, forKey: binaryHashDefaultsKey)
 
@@ -179,7 +184,7 @@ final class PHTVBinaryIntegrityService: NSObject {
 
         let binaryChanged = hasBinaryChangedSinceLastRun()
         if binaryChanged {
-            NSLog("[BinaryIntegrity] ⚠️ Binary hash changed since last run")
+            PHTVLogger.shared.debug("[BinaryIntegrity] Hash difference confirmed for current launch")
         }
 
         let archInfo = getBinaryArchitectures()
@@ -199,14 +204,20 @@ final class PHTVBinaryIntegrityService: NSObject {
             NSLog("[BinaryIntegrity] ✅ Code signature is valid")
 
             if binaryChanged {
-                NSLog("[BinaryIntegrity] ⚠️ WARNING: Binary appears to have been modified")
-                NSLog("[BinaryIntegrity] ⚠️ This may cause Accessibility permission issues")
-                NSLog("[BinaryIntegrity] ⚠️ Recommendation: Reinstall app from original build")
+                if phtvShouldElevateBinaryModificationWarning(bundlePath: bundlePath) {
+                    NSLog("[BinaryIntegrity] ⚠️ WARNING: Binary appears to have been modified")
+                    NSLog("[BinaryIntegrity] ⚠️ This may cause Accessibility permission issues")
+                    NSLog("[BinaryIntegrity] ⚠️ Recommendation: Reinstall app from original build")
 
-                Task { @MainActor in
-                    NotificationCenter.default.post(
-                        name: binaryModifiedWarningNotification,
-                        object: archInfo
+                    Task { @MainActor in
+                        NotificationCenter.default.post(
+                            name: binaryModifiedWarningNotification,
+                            object: archInfo
+                        )
+                    }
+                } else {
+                    PHTVLogger.shared.info(
+                        "[BinaryIntegrity] Local binary changed since last run; signed build still valid"
                     )
                 }
             }

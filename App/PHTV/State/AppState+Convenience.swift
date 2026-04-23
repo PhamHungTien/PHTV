@@ -224,6 +224,11 @@ extension AppState {
         set { systemState.isTypingPermissionReady = newValue }
     }
 
+    var typingRuntimeHealth: PHTVTypingRuntimeHealthSnapshot {
+        get { trackedSubstate(systemState.typingRuntimeHealth) }
+        set { systemState.typingRuntimeHealth = newValue }
+    }
+
     var updateAvailableMessage: String {
         get { trackedSubstate(systemState.updateAvailableMessage) }
         set { systemState.updateAvailableMessage = newValue }

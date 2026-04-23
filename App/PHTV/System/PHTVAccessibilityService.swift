@@ -583,7 +583,8 @@ final class PHTVAccessibilityService: NSObject {
 
         var isAddressBar = true // Default to YES (Address Bar) for safety
         let bundleId = focusedAppBundleId()
-        let strictDetection = PHTVAppDetectionService.needsStrictAddressBarDetection(bundleId)
+        let strictDetection = PHTVCompatibilityProfileResolver.resolve(forBundleId: bundleId)
+            .needsStrictAddressBarDetection
 
         guard let focused = focusedElement() else {
             // AX failed: use recent cached result, otherwise safe default.
