@@ -24,6 +24,11 @@ struct PHTVApp: App {
             diskPath: nil
         )
 
+        if phtvIsRunningUnderXCTest() {
+            NSLog("PHTV-APP-INIT-XCTEST-SKIP")
+            return
+        }
+
         // CRITICAL: Initialize AppState first so all shared state is ready
         // before any notification-driven services start.
         _ = AppState.shared

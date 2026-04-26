@@ -9,9 +9,39 @@
 
 import Carbon
 import AppKit
+import Darwin
 import Foundation
 
 #if DEBUG
+func phtvRemoveUserDefaultsSuiteFilesForTesting(_ suiteName: String) {
+    let fileManager = FileManager.default
+    let preferencesDirectories = Set([
+        fileManager.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Preferences", isDirectory: true)
+            .path,
+        URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
+            .appendingPathComponent("Library/Preferences", isDirectory: true)
+            .path
+    ] + {
+        guard let passwd = getpwuid(getuid()), let homeDirectory = passwd.pointee.pw_dir else {
+            return []
+        }
+        return [
+            URL(fileURLWithPath: String(cString: homeDirectory), isDirectory: true)
+                .appendingPathComponent("Library/Preferences", isDirectory: true)
+                .path
+        ]
+    }())
+
+    for directoryPath in preferencesDirectories {
+        let preferencesDirectory = URL(fileURLWithPath: directoryPath, isDirectory: true)
+        for suffix in ["plist", "plist.lockfile"] {
+            let fileURL = preferencesDirectory.appendingPathComponent("\(suiteName).\(suffix)")
+            try? fileManager.removeItem(at: fileURL)
+        }
+    }
+}
+
 @MainActor
 enum DebugSelfTests {
     private static var didRun = false
@@ -276,6 +306,8 @@ enum DebugSelfTests {
 
     private static func clear(defaults: UserDefaults, suiteName: String) {
         defaults.removePersistentDomain(forName: suiteName)
+        defaults.synchronize()
+        phtvRemoveUserDefaultsSuiteFilesForTesting(suiteName)
     }
 
     private static func assertCondition(_ condition: @autoclosure () -> Bool, _ message: String) {

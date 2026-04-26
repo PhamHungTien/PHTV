@@ -50,5 +50,7 @@ final class SparklePreferencesEnforcementTests: XCTestCase {
 
     private func clear(defaults: UserDefaults, suiteName: String) {
         defaults.removePersistentDomain(forName: suiteName)
+        defaults.synchronize()
+        phtvRemoveUserDefaultsSuiteFilesForTesting(suiteName)
     }
 }

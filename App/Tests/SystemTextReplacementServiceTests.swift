@@ -116,7 +116,11 @@ final class SystemTextReplacementServiceTests: XCTestCase {
             XCTFail("Failed to create isolated UserDefaults suite")
             return
         }
-        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+            defaults.synchronize()
+            phtvRemoveUserDefaultsSuiteFilesForTesting(suiteName)
+        }
 
         let rawItems: [[String: Any]] = [
             ["on": 1, "replace": "dc", "with": "được"],
@@ -145,7 +149,11 @@ final class SystemTextReplacementServiceTests: XCTestCase {
             XCTFail("Failed to create isolated UserDefaults suite")
             return
         }
-        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+            defaults.synchronize()
+            phtvRemoveUserDefaultsSuiteFilesForTesting(suiteName)
+        }
 
         let rawItems: [[String: Any]] = [
             ["on": 1, "replace": "dc", "with": "được"]

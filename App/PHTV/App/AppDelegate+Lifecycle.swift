@@ -19,6 +19,14 @@ private let phtvDefaultsKeyInitialToolTipDelay = "NSInitialToolTipDelay"
 private let phtvNotificationShowSettings = NotificationName.showSettings
 private let phtvNotificationApplicationWillTerminate = NotificationName.applicationWillTerminate
 
+func phtvIsRunningUnderXCTest() -> Bool {
+    let environment = ProcessInfo.processInfo.environment
+    return environment["PHTV_RUNNING_XCTEST"] == "1"
+        || environment["XCTestConfigurationFilePath"] != nil
+        || NSClassFromString("XCTestCase") != nil
+        || NSClassFromString("XCTest.XCTestCase") != nil
+}
+
 @MainActor @objc extension AppDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         _ = notification
@@ -40,6 +48,12 @@ private let phtvNotificationApplicationWillTerminate = NotificationName.applicat
         isUpdatingCodeTable = false
 
         SettingsBootstrap.registerDefaults()
+
+        if phtvIsRunningUnderXCTest() {
+            setupSwiftUIBridge()
+            NSLog("[AppDelegate] XCTest host mode: skipping app launch side effects")
+            return
+        }
 
         let defaults = UserDefaults.standard
         let isFirstLaunch = !defaults.bool(forKey: phtvDefaultsKeyNonFirstTime)
