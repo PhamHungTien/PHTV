@@ -252,11 +252,19 @@ final class PHTVAppDetectionService: NSObject {
     // Coc Coc's Chromium UI can expose suggestion/search inputs as plain text fields.
     // Use stricter address-bar detection there to avoid applying omnibox fixes to
     // unrelated browser search/history fields.
+    //
+    // Note: Dia (`company.thebrowser.dia`) was removed from this list — its Cmd+T
+    // command bar exposes role `AXTextArea` with `AXIdentifier=commandBarTextField`
+    // outside any `AXWebArea`, with no positive keyword match in title/description.
+    // Strict mode forced the `default` branch in `addressBarClassification` to
+    // return `false`, so the SendEmptyCharacter+1 omnibox fix never ran on the
+    // first focus → first character was duplicated (e.g., `trần` → `traần`).
+    // Removing Dia here restores the standard non-strict path used by Chrome,
+    // Edge, etc. Dia does not appear to surface Coc Coc-style suggestion text
+    // fields, so this is safe.
     private static let strictAddressBarDetectionApps = BundlePatternSet([
         "com.coccoc.browser",
-        "com.coccoc.browser.app.*",
-        "company.thebrowser.dia",
-        "company.thebrowser.dia.app.*"
+        "com.coccoc.browser.app.*"
     ])
 
     private static let disableVietnameseApps = BundlePatternSet([
