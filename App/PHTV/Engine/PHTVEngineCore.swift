@@ -1873,6 +1873,60 @@ final class PHTVVietnameseEngine {
         return false
     }
 
+    func isVowelKeyCode(_ keyCode: UInt16) -> Bool {
+        switch keyCode {
+        case KEY_A, KEY_E, KEY_I, KEY_O, KEY_U, KEY_Y: return true
+        default: return false
+        }
+    }
+
+    func hasAdjacentRepeatedVowelKeyStates(_ keySlice: [UInt32], _ length: Int) -> Bool {
+        guard length >= 2 else { return false }
+        var previousKey = UInt16(keySlice[0] & UInt32(CHAR_MASK))
+        for idx2 in 1..<length {
+            let currentKey = UInt16(keySlice[idx2] & UInt32(CHAR_MASK))
+            if currentKey == previousKey && isVowelKeyCode(currentKey) {
+                return true
+            }
+            previousKey = currentKey
+        }
+        return false
+    }
+
+    func isSimpleTelexEnglishDoubleVowelWord(_ keySlice: [UInt32], _ length: Int) -> Bool {
+        guard runtimeInputTypeSnapshot == 2 || runtimeInputTypeSnapshot == 3 else { return false }
+        guard length > 2,
+              isMarkKey(UInt16(keySlice[length - 1] & UInt32(CHAR_MASK))),
+              hasAdjacentRepeatedVowelKeyStates(keySlice, length) else {
+            return false
+        }
+        return detectorIsEnglishWord(keySlice, length)
+    }
+
+    func shouldRestoreSimpleTelexEnglishDoubleVowelRawKeys() -> Bool {
+        guard phtvRuntimeAutoRestoreEnglishWordEnabled() != 0,
+              autoRestoreEnglishModeValue() == Int32(AutoRestoreEnglishMode.englishOnly.rawValue),
+              stateIdx > 2,
+              hasVietnameseTransformsInTypingWord(idx) else {
+            return false
+        }
+
+        let keySlice = Array(keyStates.prefix(stateIdx))
+        if isSimpleTelexEnglishDoubleVowelWord(keySlice, stateIdx) {
+            return true
+        }
+
+        if stateIdx > 3 {
+            let priorLength = stateIdx - 1
+            let priorSlice = Array(keyStates.prefix(priorLength))
+            if isSimpleTelexEnglishDoubleVowelWord(priorSlice, priorLength) {
+                return true
+            }
+        }
+
+        return false
+    }
+
     func isPureEnglishWordFromTypingWord(_ length: Int) -> Bool {
         guard length > 0 else { return false }
         guard !hasVietnameseTransformsInTypingWord(length) else { return false }
@@ -1971,6 +2025,17 @@ final class PHTVVietnameseEngine {
         guard englishLength > 2, englishLength == stateIdx else { return false }
 
         let keySlice = Array(keyStates.prefix(englishLength))
+        if isSimpleTelexEnglishDoubleVowelWord(keySlice, englishLength) {
+            return true
+        }
+        if englishLength > 3 {
+            let priorLength = englishLength - 1
+            let priorSlice = Array(keyStates.prefix(priorLength))
+            if isSimpleTelexEnglishDoubleVowelWord(priorSlice, priorLength) {
+                return true
+            }
+        }
+
         guard detectorShouldRestoreEnglish(keySlice, englishLength) else { return false }
         guard detectorIsEnglishWord(keySlice, englishLength) else { return false }
         guard !detectorIsVietnameseWord(keySlice, englishLength) else { return false }
@@ -2306,6 +2371,14 @@ final class PHTVVietnameseEngine {
                 // hMacroRawKey always appends the raw key — never merges like hMacroKey does —
                 // so ASCII macro shortcuts (e.g. \gets) can be matched even in Vietnamese mode.
                 hMacroRawKey.append(UInt32(data) | (isCaps ? CAPS_MASK : 0))
+            }
+        }
+
+        if shouldRestoreSimpleTelexEnglishDoubleVowelRawKeys(), restoreToRawKeys() {
+            hCode = HookCodeState.willProcess.rawValue
+            if phtvRuntimeUseMacroEnabled() != 0 {
+                hMacroKey = Array(keyStates.prefix(stateIdx))
+                hMacroRawKey = hMacroKey
             }
         }
 

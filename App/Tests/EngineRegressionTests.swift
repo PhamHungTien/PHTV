@@ -1029,6 +1029,36 @@ final class EngineRegressionTests: XCTestCase {
         }
     }
 
+    // MARK: - Issue #175: English double-vowel words must not absorb trailing tone keys in Simple Telex
+
+    func testIssue175CareerStaysEnglishWhileTypingInSimpleTelex1() {
+        withInputType(2) {
+            XCTAssertEqual(renderedToken("career"), "career")
+            XCTAssertEqual(runtimeRenderedToken("career"), "career")
+        }
+    }
+
+    func testIssue175RepeatedToneKeyAfterCareerStaysRawInSimpleTelex1() {
+        withInputType(2) {
+            XCTAssertEqual(renderedToken("careerr"), "careerr")
+            XCTAssertEqual(runtimeRenderedToken("careerr"), "careerr")
+        }
+    }
+
+    func testIssue175BeefStaysEnglishWhileTypingInSimpleTelex1() {
+        withInputType(2) {
+            XCTAssertEqual(renderedToken("beef"), "beef")
+            XCTAssertEqual(runtimeRenderedToken("beef"), "beef")
+        }
+    }
+
+    func testIssue175RepeatedToneKeyAfterBeefStaysRawInSimpleTelex1() {
+        withInputType(2) {
+            XCTAssertEqual(renderedToken("beeff"), "beeff")
+            XCTAssertEqual(runtimeRenderedToken("beeff"), "beeff")
+        }
+    }
+
     func testSispProducesMarkedSyllable() {
         XCTAssertEqual(renderedToken("sisp"), "síp")
     }
