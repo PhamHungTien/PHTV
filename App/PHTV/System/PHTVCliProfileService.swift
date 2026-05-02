@@ -37,9 +37,9 @@ final class PHTVCliProfileService: NSObject {
 
     private static let profileByCode: [Int32: TimingProfile] = [
         1: TimingProfile(backspaceDelayUs: 8_000, waitAfterBackspaceUs: 25_000, textDelayUs: 8_000, textChunkSize: 1),  // IDE
-        2: TimingProfile(backspaceDelayUs: 6_000, waitAfterBackspaceUs: 18_000, textDelayUs: 5_000, textChunkSize: 1),  // Fast terminal
-        3: TimingProfile(backspaceDelayUs: 9_000, waitAfterBackspaceUs: 27_000, textDelayUs: 7_000, textChunkSize: 1),  // Medium terminal
-        4: TimingProfile(backspaceDelayUs: 12_000, waitAfterBackspaceUs: 36_000, textDelayUs: 9_000, textChunkSize: 1), // Slow terminal
+        2: TimingProfile(backspaceDelayUs: 8_000, waitAfterBackspaceUs: 25_000, textDelayUs: 8_000, textChunkSize: 1),  // Fast terminal (unified)
+        3: TimingProfile(backspaceDelayUs: 8_000, waitAfterBackspaceUs: 25_000, textDelayUs: 8_000, textChunkSize: 1),  // Medium terminal (unified)
+        4: TimingProfile(backspaceDelayUs: 8_000, waitAfterBackspaceUs: 25_000, textDelayUs: 8_000, textChunkSize: 1), // Slow terminal (unified)
         5: TimingProfile(backspaceDelayUs: 15_000, waitAfterBackspaceUs: 48_000, textDelayUs: 12_000, textChunkSize: 1), // Claude Code session
     ]
 

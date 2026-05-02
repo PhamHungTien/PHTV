@@ -187,7 +187,8 @@ final class PHTVAppDetectionService: NSObject {
         "dev.warp.Warp-Stable",
         "co.zeit.hyper",
         "org.tabby",
-        "com.termius-dmg.mac"
+        "com.termius-dmg.mac",
+        "com.cmuxterm.app"
     ])
 
     private static let fastTerminalApps = BundlePatternSet([
@@ -204,7 +205,8 @@ final class PHTVAppDetectionService: NSObject {
         "dev.warp.Warp-Stable",
         "co.zeit.hyper",
         "org.tabby",
-        "com.termius-dmg.mac"
+        "com.termius-dmg.mac",
+        "com.cmuxterm.app"
     ])
 
     private static let slowTerminalApps = BundlePatternSet([])
