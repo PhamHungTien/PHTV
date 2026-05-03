@@ -1634,9 +1634,23 @@ final class PHTVVietnameseEngine {
         guard hasTransforms else { return false }
         hCode = HookCodeState.restore.rawValue
         hBPC = idx; hNCC = stateIdx
+        // Carry over caps from the (possibly transformed) typingWord BEFORE we
+        // overwrite typingWord with raw keyStates. Telex transforms occasionally
+        // re-emit the leading character (e.g. after tone application on the
+        // following vowel) and the original caps bit needs to survive the
+        // round-trip back to ASCII so `Fix` + Esc round-trips to `Fix` and
+        // `Career` (with the #175 hook) keeps the leading capital.
+        var capsByPosition = [Bool](repeating: false, count: stateIdx)
+        for i in 0..<min(stateIdx, idx) where (typingWord[i] & CAPS_MASK) != 0 {
+            capsByPosition[i] = true
+        }
         for i in 0..<stateIdx {
-            typingWord[i] = keyStates[i]
-            hData[stateIdx - 1 - i] = keyStates[i]
+            var rawKey = keyStates[i]
+            if capsByPosition[i] {
+                rawKey |= CAPS_MASK
+            }
+            typingWord[i] = rawKey
+            hData[stateIdx - 1 - i] = rawKey
         }
         idx = stateIdx
         return true
@@ -1925,6 +1939,174 @@ final class PHTVVietnameseEngine {
         }
 
         return false
+    }
+
+    // MARK: - Telex leading-WW escape (e.g., "wwork" → "work")
+    //
+    // In Telex, `w` is mapped to `ư`, so users frequently double the W key
+    // as the canonical Telex cancel signal when they actually want a literal
+    // English word starting with W (e.g. "Work"). The first W shapes the
+    // buffer into Vietnamese ("Ư"); the second cancels back to "W"; but
+    // every following letter still goes through Telex tone transforms, so
+    // the buffer ends up as e.g. "Wỏk" instead of "Work".
+    //
+    // This mirrors `isSimpleTelexEnglishDoubleVowelWord` (#175 — vowel pairs
+    // like "ee" in "career") but for a leading repeated CONSONANT key that
+    // doubles as a Telex tone macro. Gated by the same auto-restore-English
+    // toggle so that users who deliberately disable English restoration
+    // (typical Vietnamese-only typists) still see the literal Vi composition.
+
+    func isTelexLeadingDoubleConsonantEnglishWord(_ keySlice: [UInt32], _ length: Int) -> Bool {
+        guard runtimeInputTypeSnapshot == 0 || runtimeInputTypeSnapshot == 2 || runtimeInputTypeSnapshot == 3 else { return false }
+        guard length >= 3 else { return false }
+
+        let first = UInt16(keySlice[0] & UInt32(CHAR_MASK))
+        let second = UInt16(keySlice[1] & UInt32(CHAR_MASK))
+        guard first == second, first == KEY_W else { return false }
+
+        let dedupedSlice = Array(keySlice.dropFirst().prefix(length - 1))
+        return detectorIsEnglishWord(dedupedSlice, length - 1)
+    }
+
+    func shouldRestoreTelexLeadingDoubleConsonantRawKeys() -> Bool {
+        guard phtvRuntimeAutoRestoreEnglishWordEnabled() != 0,
+              autoRestoreEnglishModeValue() == Int32(AutoRestoreEnglishMode.englishOnly.rawValue),
+              stateIdx > 2,
+              hasVietnameseTransformsInTypingWord(idx) else {
+            return false
+        }
+
+        let keySlice = Array(keyStates.prefix(stateIdx))
+        if isTelexLeadingDoubleConsonantEnglishWord(keySlice, stateIdx) {
+            return true
+        }
+
+        if stateIdx > 3 {
+            let priorLength = stateIdx - 1
+            let priorSlice = Array(keyStates.prefix(priorLength))
+            if isTelexLeadingDoubleConsonantEnglishWord(priorSlice, priorLength) {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    // MARK: - Telex internal adjacent-duplicate escape (e.g., "carreer" → "career")
+    //
+    // Mid-word tone-marker keys inadvertently apply Vietnamese tones to the
+    // preceding vowel (`career` typed as 6 keys becomes `carể` because
+    // `r` is the hỏi marker). Users who deliberately want the English form
+    // type the offending key twice — `carreer`, `harrd`, `worrd` — relying
+    // on the Telex cancel rule to neutralise the tone, then expect the
+    // engine to recognise the de-duplicated form as English and restore.
+    //
+    // Gated by the same auto-restore-English toggle as #175 / WW so users
+    // who type Vi-only see the literal Vi composition. The leading-dup
+    // case is handled separately by `restoreToRawKeysSkippingFirstDuplicate`
+    // (single-W escape); skip position 0 here so legitimate Telex compose
+    // macros (`dd → đ`, `aa → â`, …) are never mis-restored.
+
+    func detectEnglishViaSingleAdjacentDedup(_ keySlice: [UInt32], _ length: Int) -> [UInt32]? {
+        guard length >= 4 else { return nil }
+
+        for i in 1..<(length - 1) {
+            let cur = keySlice[i] & UInt32(CHAR_MASK)
+            let next = keySlice[i + 1] & UInt32(CHAR_MASK)
+            guard cur == next else { continue }
+
+            var trial = Array(keySlice.prefix(length))
+            trial.remove(at: i)
+            if detectorIsEnglishWord(trial, length - 1) {
+                return trial
+            }
+        }
+        return nil
+    }
+
+    func shouldRestoreTelexAdjacentDedupRawKeys() -> [UInt32]? {
+        guard phtvRuntimeAutoRestoreEnglishWordEnabled() != 0,
+              autoRestoreEnglishModeValue() == Int32(AutoRestoreEnglishMode.englishOnly.rawValue),
+              runtimeInputTypeSnapshot == 0 || runtimeInputTypeSnapshot == 2 || runtimeInputTypeSnapshot == 3,
+              stateIdx >= 4,
+              hasVietnameseTransformsInTypingWord(idx) else {
+            return nil
+        }
+
+        let keySlice = Array(keyStates.prefix(stateIdx))
+        // Skip when the full sequence is already an English word: maintainer's
+        // #175 hook (or normal auto-restore on space) handles those, and
+        // de-duplicating a 4-key English word like "beef" into "bef" would
+        // be wrong.
+        guard !detectorIsEnglishWord(keySlice, stateIdx) else { return nil }
+
+        return detectEnglishViaSingleAdjacentDedup(keySlice, stateIdx)
+    }
+
+    func restoreToCustomKeySlice(_ trial: [UInt32]) -> Bool {
+        guard !trial.isEmpty && idx > 0 else { return false }
+
+        var hasTransforms = false
+        for ii in 0..<idx where (typingWord[ii] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) != 0 {
+            hasTransforms = true; break
+        }
+        guard hasTransforms else { return false }
+
+        let leadingCaps = (typingWord[0] & CAPS_MASK) != 0
+            || (keyStates[0] & CAPS_MASK) != 0
+
+        let outputCount = trial.count
+        hCode = HookCodeState.restore.rawValue
+        hBPC = idx
+        hNCC = outputCount
+
+        for i in 0..<outputCount {
+            var rawKey = trial[i]
+            if i == 0 && leadingCaps {
+                rawKey |= CAPS_MASK
+            }
+            typingWord[i] = rawKey
+            hData[outputCount - 1 - i] = rawKey
+        }
+        idx = outputCount
+        return true
+    }
+
+    func restoreToRawKeysSkippingFirstDuplicate() -> Bool {
+        guard stateIdx > 1 && idx > 0 else { return false }
+
+        let first = UInt16(keyStates[0] & UInt32(CHAR_MASK))
+        let second = UInt16(keyStates[1] & UInt32(CHAR_MASK))
+        guard first == second else { return false }
+
+        var hasTransforms = false
+        for ii in 0..<idx where (typingWord[ii] & (MARK_MASK | TONE_MASK | TONEW_MASK | STANDALONE_MASK)) != 0 {
+            hasTransforms = true; break
+        }
+        guard hasTransforms else { return false }
+
+        // Carry caps from the (possibly transformed) typingWord first char or
+        // the original keystroke so that user-supplied Shift on the leading
+        // surviving key (e.g. WW + Ar = "War") survives the de-duplicating
+        // restore.
+        let leadingCapsFromTransform = (typingWord[0] & CAPS_MASK) != 0
+            || (keyStates[0] & CAPS_MASK) != 0
+
+        let outputCount = stateIdx - 1
+        hCode = HookCodeState.restore.rawValue
+        hBPC = idx
+        hNCC = outputCount
+
+        for i in 0..<outputCount {
+            var rawKey = keyStates[i + 1]
+            if i == 0 && leadingCapsFromTransform {
+                rawKey |= CAPS_MASK
+            }
+            typingWord[i] = rawKey
+            hData[outputCount - 1 - i] = rawKey
+        }
+        idx = outputCount
+        return true
     }
 
     func isPureEnglishWordFromTypingWord(_ length: Int) -> Bool {
@@ -2379,6 +2561,24 @@ final class PHTVVietnameseEngine {
             if phtvRuntimeUseMacroEnabled() != 0 {
                 hMacroKey = Array(keyStates.prefix(stateIdx))
                 hMacroRawKey = hMacroKey
+            }
+        }
+
+        if shouldRestoreTelexLeadingDoubleConsonantRawKeys(), restoreToRawKeysSkippingFirstDuplicate() {
+            hCode = HookCodeState.willProcess.rawValue
+            if phtvRuntimeUseMacroEnabled() != 0 {
+                let dedup = Array(keyStates.dropFirst().prefix(stateIdx - 1))
+                hMacroKey = dedup
+                hMacroRawKey = dedup
+            }
+        }
+
+        if let dedupedSlice = shouldRestoreTelexAdjacentDedupRawKeys(),
+           restoreToCustomKeySlice(dedupedSlice) {
+            hCode = HookCodeState.willProcess.rawValue
+            if phtvRuntimeUseMacroEnabled() != 0 {
+                hMacroKey = dedupedSlice
+                hMacroRawKey = dedupedSlice
             }
         }
 
