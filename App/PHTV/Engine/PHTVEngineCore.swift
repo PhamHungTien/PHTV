@@ -482,12 +482,40 @@ final class PHTVVietnameseEngine {
         while tailStart > 0 && chr(tailStart - 1) == tailVowel { tailStart -= 1 }
         guard idx - tailStart >= 2, tailStart > 0 else { return false }
 
-        var hasExistingMark = false
-        for ii in 0..<idx where (typingWord[ii] & MARK_MASK) != 0 {
-            hasExistingMark = true
+        var existingTailMarkIndex = -1
+        for ii in tailStart..<idx where (typingWord[ii] & MARK_MASK) != 0 {
+            existingTailMarkIndex = ii
             break
         }
-        guard !hasExistingMark else { return false }
+
+        if existingTailMarkIndex >= 0 {
+            let isCancellingSameMark = (typingWord[existingTailMarkIndex] & markMask) != 0
+            hCode = isCancellingSameMark ? HookCodeState.restore.rawValue : HookCodeState.willProcess.rawValue
+            hExt = 0
+            hBPC = idx - tailStart
+            hNCC = hBPC
+
+            for ii in tailStart..<idx {
+                if ii == existingTailMarkIndex && !isCancellingSameMark {
+                    typingWord[ii] &= ~MARK_MASK
+                    typingWord[ii] |= markMask
+                } else {
+                    typingWord[ii] &= ~MARK_MASK
+                }
+            }
+
+            for ii in stride(from: idx - 1, through: tailStart, by: -1) {
+                hData[idx - 1 - ii] = get(typingWord[ii])
+            }
+
+            isChanged = true
+            if isCancellingSameMark { tempDisableKey = true }
+            return true
+        }
+
+        for ii in 0..<tailStart where (typingWord[ii] & MARK_MASK) != 0 {
+            return false
+        }
 
         let savedTypingWord = typingWord
         let savedIdx = idx
@@ -561,6 +589,22 @@ final class PHTVVietnameseEngine {
         let canFix = canFixVowelWithDiacriticsForMark()
         idx = savedIdx
         return canFix
+    }
+
+    func hasMarkedElongatedTrailingVowelForMark(_ data: UInt16) -> Bool {
+        guard markMask(for: data) != nil, idx >= 3 else { return false }
+
+        let tailVowel = chr(idx - 1)
+        guard !isConsonant(tailVowel) else { return false }
+
+        var tailStart = idx - 1
+        while tailStart > 0 && chr(tailStart - 1) == tailVowel { tailStart -= 1 }
+        guard idx - tailStart >= 2, tailStart > 0 else { return false }
+
+        for ii in tailStart..<idx where (typingWord[ii] & MARK_MASK) != 0 {
+            return true
+        }
+        return false
     }
 
     func insertState(_ keyCode: UInt16, _ isCaps: Bool) {
@@ -1900,7 +1944,51 @@ final class PHTVVietnameseEngine {
               hasAdjacentRepeatedVowelKeyStates(keySlice, length) else {
             return false
         }
+        if shouldPreferVietnameseForSimpleTelexDoubleVowelConflict(keySlice, length) {
+            return false
+        }
         return detectorIsEnglishWord(keySlice, length)
+    }
+
+    func repeatedVowelBeforeTrailingTone(_ keySlice: [UInt32], _ length: Int) -> UInt16? {
+        guard length >= 3,
+              isMarkKey(UInt16(keySlice[length - 1] & UInt32(CHAR_MASK))) else {
+            return nil
+        }
+        for idx2 in 1..<(length - 1) {
+            let previousKey = UInt16(keySlice[idx2 - 1] & UInt32(CHAR_MASK))
+            let currentKey = UInt16(keySlice[idx2] & UInt32(CHAR_MASK))
+            if currentKey == previousKey && isVowelKeyCode(currentKey) {
+                return currentKey
+            }
+        }
+        return nil
+    }
+
+    func hasGHEFamilyInitial(_ keySlice: [UInt32], _ length: Int) -> Bool {
+        guard length >= 4 else { return false }
+        let first = UInt16(keySlice[0] & UInt32(CHAR_MASK))
+        let second = UInt16(keySlice[1] & UInt32(CHAR_MASK))
+        if first == KEY_G && second == KEY_H { return true }
+        guard length >= 5 else { return false }
+        let third = UInt16(keySlice[2] & UInt32(CHAR_MASK))
+        return first == KEY_N && second == KEY_G && third == KEY_H
+    }
+
+    func shouldPreferVietnameseForSimpleTelexDoubleVowelConflict(_ keySlice: [UInt32], _ length: Int) -> Bool {
+        guard let repeatedVowel = repeatedVowelBeforeTrailingTone(keySlice, length) else {
+            return false
+        }
+
+        if repeatedVowel == KEY_E && hasGHEFamilyInitial(keySlice, length) {
+            return true
+        }
+
+        if repeatedVowel == KEY_A && length <= 4 {
+            return true
+        }
+
+        return false
     }
 
     func shouldRestoreSimpleTelexEnglishDoubleVowelRawKeys() -> Bool {
@@ -2327,11 +2415,13 @@ final class PHTVVietnameseEngine {
                 let allowToneOnTransformedVietnamesePrefix =
                     hasVietnameseTransformsInTypingWord(idx) &&
                     canFixVowelWithDiacriticsForMark()
+                let allowMarkedElongatedToneUpdate = hasMarkedElongatedTrailingVowelForMark(data)
                 let allowToneOnInvalid =
                     allowToneOnInvalidVowel ||
                     allowToneOnInvalidEndConsonant ||
                     hasToneWTransform ||
                     allowElongatedTonePlacement ||
+                    allowMarkedElongatedToneUpdate ||
                     allowToneOnTransformedVietnamesePrefix
                 if !allowToneOnInvalid { allowSpecialDespiteTempDisable = false }
             }

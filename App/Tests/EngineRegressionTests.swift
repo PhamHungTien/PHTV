@@ -879,6 +879,56 @@ final class EngineRegressionTests: XCTestCase {
         XCTAssertEqual(renderedToken("treen"), "trên")
     }
 
+    func testKeetsProducesKetWithCircumflexAndAcute() {
+        XCTAssertEqual(renderedToken("keets"), "kết")
+        XCTAssertEqual(runtimeRenderedToken("keets"), "kết")
+    }
+
+    func testNooisProducesNoiWithCircumflexAndAcute() {
+        XCTAssertEqual(renderedToken("noois"), "nối")
+        XCTAssertEqual(runtimeRenderedToken("noois"), "nối")
+    }
+
+    func testRepeatedToneKeyAfterTripleEFamilyCancelsToRawTail() {
+        XCTAssertEqual(renderedToken("treeerr"), "treer")
+        XCTAssertEqual(runtimeRenderedToken("treeerr"), "treer")
+    }
+
+    func testDifferentToneKeyAfterTripleEFamilyReplacesExistingTone() {
+        XCTAssertEqual(renderedToken("treeerx"), "trẽe")
+        XCTAssertEqual(runtimeRenderedToken("treeerx"), "trẽe")
+    }
+
+    func testGheesProducesGheAcrossTelexFamilies() {
+        XCTAssertEqual(renderedToken("ghees"), "ghế")
+        XCTAssertEqual(runtimeRenderedToken("ghees"), "ghế")
+
+        withInputType(2) {
+            XCTAssertEqual(renderedToken("ghees"), "ghế")
+            XCTAssertEqual(runtimeRenderedToken("ghees"), "ghế")
+        }
+
+        withInputType(3) {
+            XCTAssertEqual(renderedToken("ghees"), "ghế")
+            XCTAssertEqual(runtimeRenderedToken("ghees"), "ghế")
+        }
+    }
+
+    func testBaasmProducesBamAcrossTelexFamilies() {
+        XCTAssertEqual(renderedToken("baasm"), "bấm")
+        XCTAssertEqual(runtimeRenderedToken("baasm"), "bấm")
+
+        withInputType(2) {
+            XCTAssertEqual(renderedToken("baasm"), "bấm")
+            XCTAssertEqual(runtimeRenderedToken("baasm"), "bấm")
+        }
+
+        withInputType(3) {
+            XCTAssertEqual(renderedToken("baasm"), "bấm")
+            XCTAssertEqual(runtimeRenderedToken("baasm"), "bấm")
+        }
+    }
+
     func testTheemProducesThemWithCircumflex() {
         XCTAssertEqual(renderedToken("theem"), "thêm")
     }

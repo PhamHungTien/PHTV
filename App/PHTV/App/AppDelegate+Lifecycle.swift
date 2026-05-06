@@ -9,6 +9,7 @@
 
 import AppKit
 import ApplicationServices
+import Darwin
 import Foundation
 
 private let phtvDefaultsKeyShowIconOnDock = "vShowIconOnDock"
@@ -18,6 +19,26 @@ private let phtvDefaultsKeyInitialToolTipDelay = "NSInitialToolTipDelay"
 
 private let phtvNotificationShowSettings = NotificationName.showSettings
 private let phtvNotificationApplicationWillTerminate = NotificationName.applicationWillTerminate
+
+private func phtvProcessOwnerUID(_ pid: pid_t) -> uid_t? {
+    var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, pid]
+    var info = kinfo_proc()
+    var size = MemoryLayout<kinfo_proc>.stride
+    let result = mib.withUnsafeMutableBufferPointer { pointer in
+        sysctl(pointer.baseAddress, u_int(pointer.count), &info, &size, nil, 0)
+    }
+    guard result == 0, size >= MemoryLayout<kinfo_proc>.stride else { return nil }
+    return info.kp_eproc.e_ucred.cr_uid
+}
+
+private func phtvShouldTerminateExistingInstance(_ app: NSRunningApplication, currentBundleID: String?) -> Bool {
+    guard app.bundleIdentifier == currentBundleID,
+          app.processIdentifier != ProcessInfo.processInfo.processIdentifier else {
+        return false
+    }
+    guard let ownerUID = phtvProcessOwnerUID(app.processIdentifier) else { return false }
+    return ownerUID == getuid()
+}
 
 func phtvIsRunningUnderXCTest() -> Bool {
     let environment = ProcessInfo.processInfo.environment
@@ -72,7 +93,7 @@ func phtvIsRunningUnderXCTest() -> Bool {
         let runningApps = NSWorkspace.shared.runningApplications
         let currentBundleID = Bundle.main.bundleIdentifier
 
-        for app in runningApps where app.bundleIdentifier == currentBundleID && app.processIdentifier != ProcessInfo.processInfo.processIdentifier {
+        for app in runningApps where phtvShouldTerminateExistingInstance(app, currentBundleID: currentBundleID) {
             NSLog("Found existing instance (PID: %d), terminating it...", app.processIdentifier)
             app.terminate()
             break
