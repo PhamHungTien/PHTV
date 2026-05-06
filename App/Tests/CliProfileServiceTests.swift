@@ -7,6 +7,7 @@
 //
 
 import XCTest
+import Darwin
 @testable import PHTV
 
 final class CliProfileServiceTests: XCTestCase {
@@ -52,5 +53,19 @@ final class CliProfileServiceTests: XCTestCase {
             ),
             0
         )
+    }
+
+    func testRawCliPassThroughSchedulesSettleBlock() {
+        PHTVCliRuntimeStateService.applyProfile(PHTVCliProfileService.profile(forCode: 3))
+        PHTVCliRuntimeStateService.resetSpeedState()
+
+        let now = mach_absolute_time()
+        PHTVCliRuntimeStateService.scheduleRawKeyPassThroughBlock(nowMachTime: now)
+
+        let remainingUs = PHTVCliRuntimeStateService.remainingBlockMicroseconds(forNowMachTime: now)
+        XCTAssertGreaterThan(remainingUs, 0)
+        XCTAssertLessThanOrEqual(remainingUs, UInt64(PHTVCliProfileService.profile(forCode: 3).textDelayUs))
+
+        PHTVCliRuntimeStateService.applyProfile(nil)
     }
 }

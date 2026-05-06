@@ -929,6 +929,43 @@ final class EngineRegressionTests: XCTestCase {
         }
     }
 
+    func testShortOFamilyToneAfterShapeMatchesAcrossTelexFamilies() {
+        let cases = [
+            ("coos", "cố"),
+            ("coof", "cồ"),
+            ("coor", "cổ"),
+            ("coox", "cỗ"),
+            ("cooj", "cộ")
+        ]
+
+        for inputType in [Int32(0), Int32(2), Int32(3)] {
+            withInputType(inputType) {
+                for (input, expected) in cases {
+                    XCTAssertEqual(renderedToken(input), expected, "\(inputType):\(input)")
+                    XCTAssertEqual(runtimeRenderedToken(input), expected, "\(inputType):\(input)")
+                }
+            }
+        }
+    }
+
+    func testCommonTerminalPhraseSyllablesRenderInRuntimeOrder() {
+        let cases = [
+            ("chaof", "chào"),
+            ("muwngf", "mừng"),
+            ("cacs", "các"),
+            ("banj", "bạn"),
+            ("ddax", "đã"),
+            ("ddeens", "đến"),
+            ("vowsi", "với"),
+            ("vieetj", "việt")
+        ]
+
+        for (input, expected) in cases {
+            XCTAssertEqual(renderedToken(input), expected, input)
+            XCTAssertEqual(runtimeRenderedToken(input), expected, input)
+        }
+    }
+
     func testTheemProducesThemWithCircumflex() {
         XCTAssertEqual(renderedToken("theem"), "thêm")
     }

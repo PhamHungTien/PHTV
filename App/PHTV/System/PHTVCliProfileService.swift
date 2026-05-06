@@ -173,6 +173,7 @@ final class PHTVCliRuntimeStateService: NSObject {
         state.runtimeCliTextDelayUs = 0
         state.runtimeCliTextChunkSize = PHTVCliProfileService.nonCliTextChunkSize()
         state.runtimeCliPostSendBlockUs = UInt64(PHTVCliProfileService.minimumPostSendBlockUsValue)
+        state.runtimeCliBlockUntilMachTime = 0
     }
 
     @objc(updateSpeedFactorForNowMachTime:)
@@ -198,6 +199,7 @@ final class PHTVCliRuntimeStateService: NSObject {
         state.lock.lock()
         state.runtimeCliSpeedFactor = 1.0
         state.runtimeCliLastKeyDownMachTime = 0
+        state.runtimeCliBlockUntilMachTime = 0
         state.lock.unlock()
     }
 
@@ -266,5 +268,19 @@ final class PHTVCliRuntimeStateService: NSObject {
         let value = state.runtimeCliPostSendBlockUs
         state.lock.unlock()
         return value
+    }
+
+    @objc(scheduleRawKeyPassThroughBlockForNowMachTime:)
+    class func scheduleRawKeyPassThroughBlock(nowMachTime now: UInt64) {
+        state.lock.lock()
+        let baseDelayUs = state.runtimeCliTextDelayUs
+        let speedFactor = state.runtimeCliSpeedFactor
+        state.lock.unlock()
+
+        let settleDelayUs = PHTVTimingService.scaleDelayMicroseconds(
+            baseDelayUs,
+            factor: speedFactor
+        )
+        scheduleBlock(forMicroseconds: settleDelayUs, nowMachTime: now)
     }
 }

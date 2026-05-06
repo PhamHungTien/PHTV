@@ -144,6 +144,19 @@ final class PHTVEventCallbackService {
         return hasShift && (keyCode == KEY_9 || keyCode == KEY_0)
     }
 
+    private static func shouldStabilizeCliPassThroughKey(
+        keyCode: CGKeyCode,
+        flags: CGEventFlags
+    ) -> Bool {
+        guard !PHTVEventContextBridgeService.hasOtherControlKey(withFlags: flags.rawValue) else {
+            return false
+        }
+        guard !EngineInputClassification.isNavigationKey(keyCode) else {
+            return false
+        }
+        return EngineMacroKeyMap.character(for: UInt32(keyCode)) != 0
+    }
+
     private static func englishUppercaseSentenceTerminatorSpaceRequirement(
         keyCode: UInt16,
         hasShift: Bool
@@ -663,6 +676,12 @@ final class PHTVEventCallbackService {
                     containsUnicodeCompound: appChars.containsUnicodeCompound)
             if shouldSendExtraBackspace {
                 PHTVKeyEventSenderService.sendPhysicalBackspace()
+            }
+            if targetContext.isCliTarget &&
+                shouldStabilizeCliPassThroughKey(keyCode: eventKeycode, flags: eventFlags) {
+                PHTVCliRuntimeStateService.scheduleRawKeyPassThroughBlock(
+                    nowMachTime: mach_absolute_time()
+                )
             }
             return Unmanaged.passRetained(event)
 

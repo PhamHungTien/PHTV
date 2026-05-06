@@ -1975,6 +1975,11 @@ final class PHTVVietnameseEngine {
         return first == KEY_N && second == KEY_G && third == KEY_H
     }
 
+    func transformedTypingWordHasVietnameseCanonicalTelexMatch() -> Bool {
+        guard idx > 0, hasVietnameseTransformsInTypingWord(idx) else { return false }
+        return isVietnameseWordFromTypingWord(idx) || isVietnameseFromCanonicalTelex(idx)
+    }
+
     func shouldPreferVietnameseForSimpleTelexDoubleVowelConflict(_ keySlice: [UInt32], _ length: Int) -> Bool {
         guard let repeatedVowel = repeatedVowelBeforeTrailingTone(keySlice, length) else {
             return false
@@ -1985,6 +1990,10 @@ final class PHTVVietnameseEngine {
         }
 
         if repeatedVowel == KEY_A && length <= 4 {
+            return true
+        }
+
+        if repeatedVowel == KEY_O && transformedTypingWordHasVietnameseCanonicalTelexMatch() {
             return true
         }
 
