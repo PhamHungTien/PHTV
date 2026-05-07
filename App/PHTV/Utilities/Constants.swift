@@ -1,4 +1,4 @@
-ô chọn phương pháp gõ và bảng mã đang không đều nhau theo chiều dọc theo tôi test ở macos 26//
+//
 //  Constants.swift
 //  PHTV
 //
