@@ -47,5 +47,13 @@ struct PHTVApp: App {
                 .environment(AppState.shared)
                 .frame(minWidth: 800, minHeight: 600)
         }
+        .commands {
+            CommandGroup(replacing: .appSettings) {
+                SettingsLink {
+                    Text("Cài đặt PHTV...")
+                }
+                .keyboardShortcut(",", modifiers: .command)
+            }
+        }
     }
 }

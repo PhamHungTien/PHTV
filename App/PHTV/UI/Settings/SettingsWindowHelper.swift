@@ -12,32 +12,13 @@ import AppKit
 @MainActor
 enum SettingsWindowHelper {
     private static var settingsController: SwiftUIWindowController?
-    private static var pendingSettingsSceneOpenTask: Task<Void, Never>?
 
     static func openSettingsWindow() {
-        pendingSettingsSceneOpenTask?.cancel()
-
         if focusExistingSettingsWindow() {
             return
         }
 
         NSApp.setActivationPolicy(.regular)
-
-        if openNativeSettingsSceneIfAvailable() {
-            pendingSettingsSceneOpenTask = Task { @MainActor in
-                for _ in 0..<5 {
-                    try? await Task.sleep(for: .milliseconds(80))
-                    guard !Task.isCancelled else { return }
-                    if focusExistingSettingsWindow() {
-                        return
-                    }
-                }
-
-                openControllerBackedSettingsWindow()
-            }
-            return
-        }
-
         openControllerBackedSettingsWindow()
     }
 
@@ -66,10 +47,6 @@ enum SettingsWindowHelper {
         }
 
         return false
-    }
-
-    private static func openNativeSettingsSceneIfAvailable() -> Bool {
-        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }
 
     private static func openControllerBackedSettingsWindow() {
@@ -118,8 +95,6 @@ enum SettingsWindowHelper {
     }
 
     static func releaseSettingsWindow() {
-        pendingSettingsSceneOpenTask?.cancel()
-        pendingSettingsSceneOpenTask = nil
         settingsController = nil
     }
 }
