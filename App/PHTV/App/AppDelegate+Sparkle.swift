@@ -12,6 +12,7 @@ import Foundation
 
 @objc extension AppDelegate {
     func bootstrapSparkleUpdates() {
+        SparkleLocalization.install()
         _ = SparkleManager.shared()
 
         Task { @MainActor in

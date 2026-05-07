@@ -200,6 +200,7 @@
 				en,
 				Base,
 				"vi-VN",
+				vi,
 			);
 			mainGroup = 4602023A2F2814250040B043;
 			minimizedProjectReferenceProxies = 1;

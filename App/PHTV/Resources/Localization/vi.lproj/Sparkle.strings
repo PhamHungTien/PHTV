@@ -1,0 +1,96 @@
+/* Sparkle Vietnamese Localization for PHTV */
+
+/* Update Available */
+"A new version of %@ is available!" = "Đã có phiên bản mới của %@!";
+"A new version of %@ is ready to install!" = "Phiên bản mới của %@ đã sẵn sàng cài đặt!";
+"%@ %@ is now available—you have %@. Would you like to download it now?" = "%1$@ %2$@ đã có — bạn đang dùng %3$@. Bạn có muốn tải về ngay không?";
+"%@ %@ is now available—you have %@. This is an important update; would you like to download it now?" = "%1$@ %2$@ đã có — bạn đang dùng %3$@. Đây là bản cập nhật quan trọng; bạn có muốn tải về ngay không?";
+"%@ %@ is now available—you have %@. Would you like to learn more about this update on the web?" = "%1$@ %2$@ đã có — bạn đang dùng %3$@. Bạn có muốn tìm hiểu thêm về bản cập nhật này không?";
+
+/* Update Downloaded */
+"%1$@ %2$@ has been downloaded and is ready to use! Would you like to install it and relaunch %1$@ now?" = "%1$@ %2$@ đã được tải về và sẵn sàng sử dụng! Bạn có muốn cài đặt và khởi động lại %1$@ ngay?";
+"%1$@ %2$@ has been downloaded and is ready to use! This is an important update; would you like to install it and relaunch %1$@ now?" = "%1$@ %2$@ đã được tải về và sẵn sàng sử dụng! Đây là bản cập nhật quan trọng; bạn có muốn cài đặt và khởi động lại %1$@ ngay?";
+
+/* Up to Date */
+"You're up to date!" = "Bạn đã dùng phiên bản mới nhất!";
+"%@ %@ is currently the newest version available." = "%1$@ %2$@ hiện là phiên bản mới nhất.";
+"%1$@ %2$@ is currently the newest version available." = "%1$@ %2$@ hiện là phiên bản mới nhất.";
+"%@ %@ is currently the newest version available.\n(You are currently running version %@.)" = "%1$@ %2$@ hiện là phiên bản mới nhất.\n(Bạn đang chạy phiên bản %3$@.)";
+"%1$@ %2$@ is currently the newest version available.\n(You are currently running version\u00A0%3$@.)" = "%1$@ %2$@ hiện là phiên bản mới nhất.\n(Bạn đang chạy phiên bản\u00A0%3$@.)";
+
+/* Updated */
+"%@ is now updated!" = "%@ đã được cập nhật!";
+"%@ is now updated to version\u00A0%@!" = "%1$@ đã được cập nhật lên phiên bản\u00A0%2$@!";
+"%1$@ is now updated to version\u00A0%2$@!" = "%1$@ đã được cập nhật lên phiên bản\u00A0%2$@!";
+
+/* Buttons */
+"OK" = "Đồng ý";
+"Cancel" = "Huỷ";
+"Cancel Update" = "Huỷ cập nhật";
+"Install Update" = "Cài đặt cập nhật";
+"Install and Relaunch" = "Cài đặt và khởi động lại";
+"Install on Quit" = "Cài đặt khi thoát";
+"Don't Install" = "Không cài đặt";
+"Remind Me Later" = "Nhắc lại sau";
+"Skip This Version" = "Bỏ qua phiên bản này";
+"Learn More…" = "Tìm hiểu thêm…";
+"Don't Check" = "Không kiểm tra";
+"Check Automatically" = "Tự động kiểm tra";
+"Yes" = "Có";
+"No" = "Không";
+
+/* Status */
+"Checking for updates…" = "Đang kiểm tra cập nhật…";
+"Downloading update…" = "Đang tải cập nhật…";
+"Extracting update…" = "Đang giải nén cập nhật…";
+"Installing update…" = "Đang cài đặt cập nhật…";
+"Ready to Install" = "Sẵn sàng cài đặt";
+"An important update to %@ is ready to install" = "Một bản cập nhật quan trọng cho %@ đã sẵn sàng cài đặt";
+"Update Installed" = "Đã cài đặt cập nhật";
+"Updating %@" = "Đang cập nhật %@";
+
+/* Errors */
+"Update Error!" = "Lỗi cập nhật!";
+"Unable to Check For Updates" = "Không thể kiểm tra cập nhật";
+"An error occurred in retrieving update information. Please try again later." = "Đã xảy ra lỗi khi lấy thông tin cập nhật. Vui lòng thử lại sau.";
+"An error occurred while downloading the update. Please try again later." = "Đã xảy ra lỗi khi tải cập nhật. Vui lòng thử lại sau.";
+"An error occurred while extracting the archive. Please try again later." = "Đã xảy ra lỗi khi giải nén bản cập nhật. Vui lòng thử lại sau.";
+"An error occurred while launching the installer. Please try again later." = "Đã xảy ra lỗi khi khởi chạy trình cài đặt. Vui lòng thử lại sau.";
+"An error occurred while starting the installer. Please try again later." = "Đã xảy ra lỗi khi khởi động trình cài đặt. Vui lòng thử lại sau.";
+"An error occurred while running the updater. Please try again later." = "Đã xảy ra lỗi khi chạy trình cập nhật. Vui lòng thử lại sau.";
+"An error occurred while connecting to the installer. Please try again later." = "Đã xảy ra lỗi khi kết nối với trình cài đặt. Vui lòng thử lại sau.";
+"An error occurred while parsing the update feed." = "Đã xảy ra lỗi khi phân tích nguồn cập nhật.";
+"Failed to resume installing update." = "Không thể tiếp tục cài đặt cập nhật.";
+"The update is improperly signed and could not be validated. Please try again later or contact the app developer." = "Bản cập nhật có chữ ký không hợp lệ và không thể xác minh. Vui lòng thử lại sau hoặc liên hệ nhà phát triển.";
+"The installation failed due to not having permission to write the new update." = "Cài đặt thất bại do không có quyền ghi bản cập nhật mới.";
+"The updater failed to start. Please verify you have the latest version of %@ and contact the app developer if the issue still persists. Check the Console logs for more information." = "Trình cập nhật không thể khởi động. Vui lòng xác nhận bạn đang dùng phiên bản mới nhất của %@ và liên hệ nhà phát triển nếu lỗi vẫn xảy ra. Kiểm tra Console để biết thêm chi tiết.";
+
+/* macOS version issues */
+"Your macOS version is too new" = "Phiên bản macOS của bạn quá mới";
+"Your macOS version is too old" = "Phiên bản macOS của bạn quá cũ";
+"%1$@ %2$@ is available but your macOS version is too old to install it. At least macOS\u00A0%3$@ is required." = "%1$@ %2$@ đã có nhưng phiên bản macOS của bạn quá cũ để cài đặt. Cần ít nhất macOS\u00A0%3$@.";
+"%1$@ %2$@ is available but your macOS version is too new for this update. This update only supports up to macOS\u00A0%3$@." = "%1$@ %2$@ đã có nhưng phiên bản macOS của bạn quá mới cho bản cập nhật này. Bản cập nhật chỉ hỗ trợ đến macOS\u00A0%3$@.";
+
+/* Location issues */
+"%1$@ can't be updated because it was opened from a read-only or a temporary location." = "%1$@ không thể cập nhật vì được mở từ một vị trí chỉ đọc hoặc tạm thời.";
+"%1$@ can't be updated if it's running from the location it was downloaded to." = "%1$@ không thể cập nhật nếu đang chạy từ vị trí tải về.";
+"Use Finder to copy %1$@ to the Applications folder, relaunch it from there, and try again." = "Dùng Finder để sao chép %1$@ vào thư mục Ứng dụng, mở lại từ đó và thử lại.";
+"Quit %1$@, move it into your Applications folder, relaunch it from there and try again." = "Thoát %1$@, di chuyển vào thư mục Ứng dụng, mở lại từ đó và thử lại.";
+
+/* Permissions */
+"You may need to allow modifications from %1$@ in System Settings under Privacy & Security and App Management to install future updates." = "Bạn có thể cần cho phép sửa đổi từ %1$@ trong Cài đặt hệ thống > Quyền riêng tư & Bảo mật > Quản lý ứng dụng để cài đặt các bản cập nhật sau.";
+
+/* Auto update */
+"Should %1$@ automatically check for updates? You can always check for updates manually from the %1$@ menu." = "%1$@ có nên tự động kiểm tra cập nhật không? Bạn luôn có thể kiểm tra thủ công từ menu %1$@.";
+"Check for updates automatically?" = "Tự động kiểm tra cập nhật?";
+"Automatically download and install updates" = "Tự động tải và cài đặt cập nhật";
+"Automatically download and install updates in the future" = "Tự động tải và cài đặt cập nhật trong tương lai";
+
+/* Misc */
+"Software Update" = "Cập nhật phần mềm";
+"Version History" = "Lịch sử phiên bản";
+"% downloaded" = "% đã tải";
+"%@ of %@" = "%1$@ / %2$@";
+"%1$@ of %2$@" = "%1$@ / %2$@";
+"%@ downloaded" = "%@ đã tải";
+"Include anonymous system profile" = "Gửi kèm thông tin hệ thống ẩn danh";
