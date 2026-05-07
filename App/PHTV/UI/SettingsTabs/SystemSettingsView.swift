@@ -602,18 +602,17 @@ struct SettingsInfoRow: View {
     let iconColor: Color
     let title: String
     let value: String
-    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            // Compact icon
             Image(systemName: icon)
                 .font(.system(size: 15, weight: .medium))
+                .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(iconColor)
                 .frame(width: 24, height: 24)
 
             Text(title)
-                .font(.system(size: 13))
+                .font(.body)
                 .foregroundStyle(.primary)
 
             Spacer()
@@ -640,7 +639,6 @@ struct SettingsButtonRow: View {
     var body: some View {
         Button(action: action) {
             HStack(alignment: .center, spacing: 12) {
-                // Compact icon
                 if isLoading {
                     ProgressView()
                         .controlSize(.small)
@@ -649,17 +647,18 @@ struct SettingsButtonRow: View {
                 } else {
                     Image(systemName: icon)
                         .font(.system(size: 15, weight: .medium))
+                        .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(iconColor)
                         .frame(width: 24, height: 24)
                 }
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(title)
-                        .font(.system(size: 13))
+                        .font(.body)
                         .foregroundStyle(isDestructive ? .red : .primary)
 
                     Text(subtitle)
-                        .font(.system(size: 11))
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
@@ -694,7 +693,7 @@ struct SettingsButtonRow: View {
     private var hoverBackground: some View {
         if isHovered {
             PHTVRoundedRect(cornerRadius: 8, style: .continuous)
-                .fill(Color.primary.opacity(colorScheme == .dark ? 0.06 : 0.03))
+                .fill(Color.primary.opacity(colorScheme == .dark ? 0.05 : 0.03))
                 .padding(.horizontal, -4)
                 .padding(.vertical, -2)
         } else {

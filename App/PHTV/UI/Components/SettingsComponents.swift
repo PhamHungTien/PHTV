@@ -16,8 +16,6 @@ struct SettingsCard<Content: View, Trailing: View>: View {
     let icon: String
     let trailing: Trailing
     let content: Content
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     init(
         title: String,
@@ -34,86 +32,51 @@ struct SettingsCard<Content: View, Trailing: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Header
-            HStack(spacing: 12) {
-                // Icon with subtle background
-                ZStack {
-                    Circle()
-                        .fill(Color.accentColor.opacity(0.1))
-                        .frame(width: 28, height: 28)
-                    
-                    Image(systemName: icon)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Color.accentColor)
-                }
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .semibold))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 18, height: 18)
+                    .padding(.top, 1)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.headline)
                         .foregroundStyle(.primary)
 
                     if let subtitle {
                         Text(subtitle)
-                            .font(.system(size: 11))
+                            .font(.subheadline)
                             .foregroundStyle(.secondary)
-                            .lineLimit(1)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
 
-                Spacer()
+                Spacer(minLength: 12)
 
                 trailing
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(headerBackground)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            Divider()
-                .opacity(0.5)
-
-            // Content
             content
-                .padding(16)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(settingsGroupedBackground)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .background(cardBackground)
-        .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(borderCallback, lineWidth: 1.0)
-        )
-        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.25 : 0.12), radius: 8, x: 0, y: 4)
-        .frame(maxWidth: 700)
+        .frame(maxWidth: 720, alignment: .leading)
     }
 
-    private var borderCallback: Color {
-        if colorScheme == .dark {
-            return Color.white.opacity(0.18)
-        } else {
-            return Color.black.opacity(0.14)
-        }
-    }
-
-    @ViewBuilder
-    private var cardBackground: some View {
-        if SettingsVisualEffects.enableMaterials, !reduceTransparency {
-            // Glassy look for modern macOS
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(.ultraThinMaterial)
-        } else {
-            // Solid background fallback
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color(NSColor.controlBackgroundColor))
-        }
-    }
-
-    @ViewBuilder
-    private var headerBackground: some View {
-        if colorScheme == .dark {
-            Color.white.opacity(0.02)
-        } else {
-            Color.black.opacity(0.01)
-        }
+    private var settingsGroupedBackground: some View {
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .fill(Color(NSColor.controlBackgroundColor))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(Color(NSColor.separatorColor).opacity(0.42), lineWidth: 0.5)
+            )
     }
 }
 
@@ -127,19 +90,14 @@ struct SettingsToggleRow: View {
     @Binding var isOn: Bool
 
     var body: some View {
-        HStack(alignment: .center, spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 16))
-                .foregroundStyle(iconColor)
-                .frame(width: 24, height: 24)
-
+        HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.body)
                     .foregroundStyle(.primary)
 
                 Text(subtitle)
-                    .font(.system(size: 11))
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -152,10 +110,10 @@ struct SettingsToggleRow: View {
                 .labelsHidden()
                 .toggleStyle(.switch)
                 .controlSize(.small)
-                .tint(Color.accentColor)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 6)
+        .padding(.vertical, 8)
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -201,23 +159,13 @@ struct SettingsSelectionRow: View {
     private var backgroundShape: some View {
         RoundedRectangle(cornerRadius: 8, style: .continuous)
             .fill(isSelected ? Color.accentColor.opacity(colorScheme == .dark ? 0.18 : 0.10) : Color.clear)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(
-                        isSelected
-                            ? Color.accentColor.opacity(colorScheme == .dark ? 0.45 : 0.28)
-                            : Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.08),
-                        lineWidth: 1
-                    )
-            )
     }
 }
 
 // MARK: - Settings Divider
 
 struct SettingsDivider: View {
-    var leadingInset: CGFloat = 38 // Aligned with text start
-    @Environment(\.colorScheme) private var colorScheme
+    var leadingInset: CGFloat = 0
 
     var body: some View {
         Divider()
@@ -230,7 +178,6 @@ struct SettingsDivider: View {
 
 struct StatusCard: View {
     let runtimeHealth: PHTVTypingRuntimeHealthSnapshot
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
@@ -268,22 +215,13 @@ struct StatusCard: View {
                 .tint(.orange)
             }
         }
-        .padding(16)
-        .frame(maxWidth: 700)
-        .background {
-            if SettingsVisualEffects.enableMaterials, !reduceTransparency {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(.ultraThinMaterial)
-            } else {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color(NSColor.controlBackgroundColor))
-            }
-        }
+        .padding(14)
+        .frame(maxWidth: 720)
+        .background(Color(NSColor.controlBackgroundColor), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(statusColor.opacity(0.4), lineWidth: 1.5)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(statusColor.opacity(colorScheme == .dark ? 0.45 : 0.28), lineWidth: 1)
         )
-        .shadow(color: statusColor.opacity(colorScheme == .dark ? 0.15 : 0.08), radius: 10, x: 0, y: 4)
     }
 
     private var statusColor: Color {

@@ -282,47 +282,20 @@ extension View {
     }
 }
 
-// MARK: - Window Dragging Utilities
-
-/// A view that blocks window dragging
-struct WindowDragBlocker: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSView {
-        return BlockerView()
-    }
-    
-    func updateNSView(_ nsView: NSView, context: Context) {}
-    
-    private class BlockerView: NSView {
-        override var mouseDownCanMoveWindow: Bool { false }
-        
-        override func mouseDown(with event: NSEvent) {
-            // Consume event to prevent propagation to window background
-            // Do nothing
-        }
-        
-        // Ensure we catch mouse down even if transparency might let it through
-        override func hitTest(_ point: NSPoint) -> NSView? {
-            let view = super.hitTest(point)
-            return view == self ? self : view
-        }
-    }
-}
-
 // MARK: - Settings Header Components
 
 struct SettingsStatusPill: View {
     let text: String
     var color: Color = .accentColor
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
         Text(text)
             .font(.caption)
-            .fontWeight(.semibold)
+            .fontWeight(.medium)
             .lineLimit(1)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 3)
             .background(pillBackground)
             .overlay(pillBorder)
             .foregroundStyle(color)
@@ -331,29 +304,17 @@ struct SettingsStatusPill: View {
 
     @ViewBuilder
     private var pillBackground: some View {
-        if #available(macOS 26.0, *),
-           SettingsVisualEffects.enableMaterials,
-           !reduceTransparency {
-            Capsule()
-                .fill(.ultraThinMaterial)
-                .settingsGlassEffect(in: Capsule())
-                .overlay(
-                    Capsule()
-                        .fill(color.opacity(colorScheme == .light ? 0.12 : 0.18))
-                )
-        } else {
-            Capsule()
-                .fill(pillBaseFill)
-                .overlay(
-                    Capsule()
-                        .fill(color.opacity(colorScheme == .light ? 0.12 : 0.18))
-                )
-        }
+        Capsule()
+            .fill(pillBaseFill)
+            .overlay(
+                Capsule()
+                    .fill(color.opacity(colorScheme == .light ? 0.10 : 0.16))
+            )
     }
 
     private var pillBorder: some View {
         Capsule()
-            .stroke(color.opacity(colorScheme == .light ? 0.35 : 0.45), lineWidth: 1)
+            .stroke(color.opacity(colorScheme == .light ? 0.22 : 0.32), lineWidth: 0.5)
     }
 
     private var pillBaseFill: Color {
@@ -369,7 +330,6 @@ struct SettingsIconTile<Content: View>: View {
     var size: CGFloat = 24
     var cornerRadius: CGFloat = 6
     let content: Content
-    @Environment(\.colorScheme) private var colorScheme
 
     init(
         color: Color,
@@ -397,7 +357,6 @@ struct SettingsHeaderView<Trailing: View>: View {
     var accent: Color = .accentColor
     let trailing: Trailing
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     init(
         title: String,
@@ -414,16 +373,17 @@ struct SettingsHeaderView<Trailing: View>: View {
     }
 
     var body: some View {
-        HStack(alignment: .center, spacing: 14) {
+        HStack(alignment: .center, spacing: 12) {
             iconTile
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.title3)
+                    .fontWeight(.semibold)
                     .foregroundStyle(.primary)
 
                 Text(subtitle)
-                    .font(.system(size: 11))
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -433,59 +393,36 @@ struct SettingsHeaderView<Trailing: View>: View {
 
             trailing
         }
-        .padding(16)
-        .frame(maxWidth: 700)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
         .background(headerBackground)
-        .overlay(headerBorder)
-        .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.3 : 0.15), radius: 10, x: 0, y: 5)
-        // Add explicit drag handle to header
-        .background(WindowDragHandle())
+        .frame(maxWidth: 720, alignment: .leading)
     }
 
     private var iconTile: some View {
         ZStack {
-            PHTVRoundedRect(cornerRadius: 10)
-                .fill(Color(NSColor.controlBackgroundColor))
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(accent.opacity(colorScheme == .light ? 0.10 : 0.16))
                 .overlay(
-                    PHTVRoundedRect(cornerRadius: 10)
-                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.08), lineWidth: 0.5)
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(accent.opacity(colorScheme == .light ? 0.16 : 0.24), lineWidth: 0.5)
                 )
 
             Image(systemName: icon)
                 .font(.system(size: 20, weight: .semibold))
+                .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(accent)
         }
-        .frame(width: 42, height: 42)
+        .frame(width: 40, height: 40)
     }
 
-    @ViewBuilder
     private var headerBackground: some View {
-        ZStack {
-            if SettingsVisualEffects.enableMaterials, !reduceTransparency {
-                PHTVRoundedRect(cornerRadius: 12)
-                    .fill(.regularMaterial)
-            } else {
-                PHTVRoundedRect(cornerRadius: 12)
-                    .fill(Color(NSColor.controlBackgroundColor))
-            }
-            
-            // Modern Gradient Overlay
-            PHTVRoundedRect(cornerRadius: 12)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            accent.opacity(colorScheme == .light ? 0.15 : 0.25),
-                            accent.opacity(colorScheme == .light ? 0.02 : 0.05)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-        }
-    }
-
-    private var headerBorder: some View {
-        SettingsSurfaceBorder(cornerRadius: 12)
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .fill(Color(NSColor.controlBackgroundColor))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(Color(NSColor.separatorColor).opacity(0.42), lineWidth: 0.5)
+            )
     }
 }
 
@@ -548,54 +485,10 @@ enum SettingsVisualEffects {
 
 /// Applies consistent background for settings views
 struct SettingsViewBackground: ViewModifier {
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-
     func body(content: Content) -> some View {
         content
             .scrollContentBackground(.hidden)
-            .background(
-                backgroundLayer
-            )
-    }
-
-    @ViewBuilder
-    private var backgroundLayer: some View {
-        let base = ZStack {
-            LinearGradient(
-                colors: [
-                    Color(NSColor.windowBackgroundColor).opacity(colorScheme == .light ? 0.98 : 1.0),
-                    Color(NSColor.controlBackgroundColor).opacity(colorScheme == .light ? 0.96 : 1.0)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-
-            RadialGradient(
-                colors: [
-                    Color.accentColor.opacity(colorScheme == .light ? 0.06 : 0.12),
-                    Color.clear
-                ],
-                center: .topLeading,
-                startRadius: 20,
-                endRadius: 520
-            )
-
-            if SettingsVisualEffects.enableMaterials, !reduceTransparency {
-                Rectangle()
-                    .fill(.ultraThinMaterial)
-                    .opacity(colorScheme == .light ? 0.6 : 0.25)
-            } else {
-                Rectangle()
-                    .fill(Color(NSColor.controlBackgroundColor).opacity(colorScheme == .light ? 0.45 : 0.2))
-            }
-            
-            // Block drag on background
-            WindowDragBlocker()
-        }
-        .ignoresSafeArea()
-
-        base
+            .background(Color(NSColor.windowBackgroundColor).ignoresSafeArea())
     }
 }
 
