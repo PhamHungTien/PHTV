@@ -408,22 +408,21 @@ jobs:
           let textSize = text.size(withAttributes: titleAttributes)
           text.draw(at: NSPoint(x: (width - textSize.width) / 2, y: 310), withAttributes: titleAttributes)
 
-          let arrowColor = NSColor(calibratedRed: 0.60, green: 0.65, blue: 0.70, alpha: 0.6)
-          let arrowLine = NSBezierPath()
-          arrowLine.lineWidth = 10
-          arrowLine.lineCapStyle = .round
-          arrowLine.move(to: NSPoint(x: 250, y: 180))
-          arrowLine.line(to: NSPoint(x: 410, y: 180))
-          arrowColor.setStroke()
-          arrowLine.stroke()
-
-          let arrowHead = NSBezierPath()
-          arrowHead.move(to: NSPoint(x: 410, y: 180))
-          arrowHead.line(to: NSPoint(x: 380, y: 200))
-          arrowHead.line(to: NSPoint(x: 380, y: 160))
-          arrowHead.close()
-          arrowColor.setFill()
-          arrowHead.fill()
+          if let arrowImage = NSImage(systemSymbolName: "arrow.right", accessibilityDescription: nil) {
+              let arrowColor = NSColor(calibratedRed: 0.65, green: 0.68, blue: 0.72, alpha: 0.8)
+              let config = NSImage.SymbolConfiguration(pointSize: 70, weight: .regular)
+                  .applying(.init(hierarchicalColor: arrowColor))
+              if let configuredArrow = arrowImage.withSymbolConfiguration(config) {
+                  let arrowSize = configuredArrow.size
+                  let arrowRect = NSRect(
+                      x: 330 - arrowSize.width / 2,
+                      y: 180 - arrowSize.height / 2,
+                      width: arrowSize.width,
+                      height: arrowSize.height
+                  )
+                  configuredArrow.draw(in: arrowRect)
+              }
+          }
 
           NSGraphicsContext.restoreGraphicsState()
 

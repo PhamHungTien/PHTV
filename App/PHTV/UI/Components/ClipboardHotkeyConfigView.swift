@@ -123,7 +123,7 @@ struct ClipboardHotkeyConfigView: View {
                         ModifierKeyButton(symbol: "⇧", name: "Shift", isOn: clipboardHotkeyShift)
                         ModifierKeyButton(symbol: "⌘", name: "Command", isOn: clipboardHotkeyCommand)
                         ModifierKeyButton(symbol: "⌥", name: "Option", isOn: clipboardHotkeyOption)
-                        ModifierKeyButton(symbol: "fn", name: "Fn", isOn: clipboardHotkeyFn)
+                        ModifierKeyButton(symbol: "fn", name: "", isOn: clipboardHotkeyFn)
                     }
 
                     Text("Mặc định: ⌃V. Bấm lại phím tắt hoặc Esc để đóng.")

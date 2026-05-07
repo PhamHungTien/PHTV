@@ -895,7 +895,7 @@ struct EmojiHotkeyConfigView: View {
                         ModifierKeyButton(symbol: "⇧", name: "Shift", isOn: emojiHotkeyShift)
                         ModifierKeyButton(symbol: "⌘", name: "Command", isOn: emojiHotkeyCommand)
                         ModifierKeyButton(symbol: "⌥", name: "Option", isOn: emojiHotkeyOption)
-                        ModifierKeyButton(symbol: "fn", name: "Fn", isOn: emojiHotkeyFn)
+                        ModifierKeyButton(symbol: "fn", name: "", isOn: emojiHotkeyFn)
                     }
 
                     Text("Mặc định: ⌘E")
