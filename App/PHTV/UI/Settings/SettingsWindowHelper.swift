@@ -11,7 +11,6 @@ import AppKit
 
 @MainActor
 enum SettingsWindowHelper {
-    private static var settingsController: SwiftUIWindowController?
 
     static func openSettingsWindow() {
         if focusExistingSettingsWindow() {
@@ -19,14 +18,15 @@ enum SettingsWindowHelper {
         }
 
         NSApp.setActivationPolicy(.regular)
-        openControllerBackedSettingsWindow()
+        NSApp.activate(ignoringOtherApps: true)
+        openNativeSettingsWindow()
     }
 
     @discardableResult
     private static func focusExistingSettingsWindow() -> Bool {
         for window in NSApp.windows {
             let identifier = window.identifier?.rawValue ?? ""
-            if identifier.hasPrefix("settings") {
+            if identifier.hasPrefix("settings") || identifier == "com_apple_SwiftUI_Settings_window" {
                 let alwaysOnTop = AppState.shared.settingsWindowAlwaysOnTop
                 applyWindowConfiguration(to: window, alwaysOnTop: alwaysOnTop)
 
@@ -49,27 +49,26 @@ enum SettingsWindowHelper {
         return false
     }
 
-    private static func openControllerBackedSettingsWindow() {
-        let controller: SwiftUIWindowController
-        if let existingController = settingsController {
-            controller = existingController
+    private static func openNativeSettingsWindow() {
+        if let appMenu = NSApp.mainMenu?.items.first?.submenu {
+            for item in appMenu.items {
+                if item.keyEquivalent == "," {
+                    appMenu.performActionForItem(at: appMenu.index(of: item))
+                    return
+                }
+            }
+        }
+        
+        // Fallback
+        if #available(macOS 13.0, *) {
+            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
         } else {
-            let newController = SwiftUIWindowController.settingsWindow()
-            settingsController = newController
-            controller = newController
+            NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
         }
-
-        if let window = controller.window {
-            let alwaysOnTop = AppState.shared.settingsWindowAlwaysOnTop
-            applyWindowConfiguration(to: window, alwaysOnTop: alwaysOnTop)
-        }
-
-        NSApp.setActivationPolicy(.regular)
-        controller.show()
     }
 
     static func configureSettingsSceneWindow(_ window: NSWindow, alwaysOnTop: Bool) {
-        if window.identifier?.rawValue.hasPrefix("settings") != true {
+        if window.identifier?.rawValue.hasPrefix("settings") != true && window.identifier?.rawValue != "com_apple_SwiftUI_Settings_window" {
             window.identifier = NSUserInterfaceItemIdentifier("settings-swiftui-scene")
         }
         window.title = "Cài đặt PHTV"
@@ -98,6 +97,5 @@ enum SettingsWindowHelper {
     }
 
     static func releaseSettingsWindow() {
-        settingsController = nil
     }
 }

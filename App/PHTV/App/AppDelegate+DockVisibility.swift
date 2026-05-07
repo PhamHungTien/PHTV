@@ -42,7 +42,7 @@ private func phtvSettingsIdentifier(_ window: NSWindow) -> String? {
 @MainActor @objc extension AppDelegate {
     func currentSettingsWindow() -> NSWindow? {
         for window in NSApp.windows {
-            if let identifier = phtvSettingsIdentifier(window), identifier.hasPrefix("settings") {
+            if let identifier = phtvSettingsIdentifier(window), identifier.hasPrefix("settings") || identifier == "com_apple_SwiftUI_Settings_window" {
                 return window
             }
         }
@@ -135,7 +135,7 @@ private func phtvSettingsIdentifier(_ window: NSWindow) -> String? {
             NSApp.activate(ignoringOtherApps: true)
 
             for window in NSApp.windows {
-                if let identifier = phtvSettingsIdentifier(window), identifier.hasPrefix("settings") {
+                if let identifier = phtvSettingsIdentifier(window), identifier.hasPrefix("settings") || identifier == "com_apple_SwiftUI_Settings_window" {
                     window.makeKeyAndOrderFront(nil)
                     window.orderFrontRegardless()
                     break

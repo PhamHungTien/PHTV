@@ -314,7 +314,7 @@ struct SettingsWindowContent: View {
     @MainActor
     private func isSettingsWindow(_ window: NSWindow?) -> Bool {
         guard let identifier = window?.identifier?.rawValue else { return false }
-        return identifier.hasPrefix("settings")
+        return identifier.hasPrefix("settings") || identifier == "com_apple_SwiftUI_Settings_window"
     }
 
     @MainActor

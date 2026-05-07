@@ -49,8 +49,8 @@ struct PHTVApp: App {
         }
         .commands {
             CommandGroup(replacing: .appSettings) {
-                Button("Cài đặt PHTV...") {
-                    SettingsWindowOpener.requestOpenWindow()
+                SettingsLink {
+                    Text("Cài đặt PHTV...")
                 }
                 .keyboardShortcut(",", modifiers: .command)
             }

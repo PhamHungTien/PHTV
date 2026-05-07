@@ -69,7 +69,10 @@ extension AppDelegate {
 
     @objc private func handleOpenConvertTool() {
         // Open settings window and navigate to System tab, then show convert tool
-        if let openWindow = NSApp.windows.first(where: { $0.identifier?.rawValue.hasPrefix("settings") == true }) {
+        if let openWindow = NSApp.windows.first(where: { 
+            let id = $0.identifier?.rawValue ?? ""
+            return id.hasPrefix("settings") || id == "com_apple_SwiftUI_Settings_window"
+        }) {
             let alwaysOnTop = AppState.shared.settingsWindowAlwaysOnTop
             SettingsWindowHelper.applyWindowConfiguration(to: openWindow, alwaysOnTop: alwaysOnTop)
             NSApp.setActivationPolicy(.regular)
