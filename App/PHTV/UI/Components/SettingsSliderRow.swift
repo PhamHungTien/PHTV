@@ -30,9 +30,17 @@ struct SettingsSliderRow: View {
 
             HStack(spacing: 8) {
                 Slider(
-                    value: $value,
+                    value: Binding(
+                        get: { self.value },
+                        set: { newValue in
+                            if step > 0 {
+                                self.value = round(newValue / step) * step
+                            } else {
+                                self.value = newValue
+                            }
+                        }
+                    ),
                     in: minValue...maxValue,
-                    step: step,
                     onEditingChanged: { editing in
                         onEditingChanged?(editing)
                     }

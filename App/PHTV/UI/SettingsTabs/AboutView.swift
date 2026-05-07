@@ -9,6 +9,7 @@
 import SwiftUI
 
 struct AboutView: View {
+    @State private var showDonateQR = false
     private var versionString: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1.0"
     }
@@ -69,17 +70,14 @@ struct AboutView: View {
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
 
-                        if let donateImage = NSImage(named: "donate") {
-                            Image(nsImage: donateImage)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(maxWidth: 180)
-                                .frame(maxWidth: .infinity, alignment: .center)
-
-                            Text("Quét mã để ủng hộ")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .center)
+                        Button {
+                            showDonateQR.toggle()
+                        } label: {
+                            Label("Hiển thị QR", systemImage: "qrcode")
+                        }
+                        .adaptiveBorderedButtonStyle()
+                        .popover(isPresented: $showDonateQR, arrowEdge: .bottom) {
+                            DonateQRPopoverView()
                         }
                     }
                 }
