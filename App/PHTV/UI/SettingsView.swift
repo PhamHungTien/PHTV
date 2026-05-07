@@ -79,12 +79,16 @@ struct SettingsView: View {
         NavigationSplitView {
             sidebarView
         } detail: {
-            detailView
-                .environment(appState)
-                .frame(
-                    minWidth: SettingsLayout.detailMinWidth,
-                    minHeight: SettingsLayout.detailMinHeight
-                )
+            ZStack {
+                settingsDetailExtensionBackground
+
+                detailView
+                    .environment(appState)
+            }
+            .frame(
+                minWidth: SettingsLayout.detailMinWidth,
+                minHeight: SettingsLayout.detailMinHeight
+            )
         }
         .navigationTitle("Cài đặt PHTV")
         .conditionalSearchable(text: $searchText, prompt: "Tìm nhanh cài đặt…")
@@ -151,11 +155,14 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var detailView: some View {
-        // Lazy loading: Only create the view for selected tab
-        // This significantly reduces memory usage by not instantiating all 7 tabs at once
+        // Lazy loading: Only create the view for selected tab.
         Group {
             if selectedTab == .typing {
                 TypingSettingsView()
+            } else if selectedTab == .phtvPicker {
+                PHTVPickerSettingsView()
+            } else if selectedTab == .clipboardHistory {
+                ClipboardHistorySettingsView()
             } else if selectedTab == .hotkeys {
                 HotkeySettingsView()
             } else if selectedTab == .macro {
@@ -173,6 +180,15 @@ struct SettingsView: View {
         // Avoid forced teardown to reduce peak allocations on tab switch.
         .transaction { transaction in
             transaction.animation = nil
+        }
+    }
+
+    @ViewBuilder
+    private var settingsDetailExtensionBackground: some View {
+        if #available(macOS 26.0, *) {
+            Color(NSColor.windowBackgroundColor)
+                .backgroundExtensionEffect()
+                .ignoresSafeArea()
         }
     }
 

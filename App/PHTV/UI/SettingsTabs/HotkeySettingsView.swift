@@ -97,24 +97,6 @@ struct HotkeySettingsView: View {
                     PauseKeyConfigView()
                 }
 
-                // PHTV Picker Hotkey
-                SettingsCard(
-                    title: "PHTV Picker",
-                    subtitle: "Mở nhanh bảng emoji/sticker/GIF",
-                    icon: "smiley.fill"
-                ) {
-                    EmojiHotkeyConfigView()
-                }
-
-                // Clipboard History Hotkey
-                SettingsCard(
-                    title: "Lịch sử Clipboard",
-                    subtitle: "Mở nhanh lịch sử đã sao chép, bấm lại phím tắt để đóng",
-                    icon: "doc.on.clipboard.fill"
-                ) {
-                    ClipboardHotkeyConfigView()
-                }
-
                 Spacer(minLength: SettingsLayout.sectionSpacing)
             }
             .frame(maxWidth: .infinity)

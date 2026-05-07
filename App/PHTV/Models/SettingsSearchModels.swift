@@ -95,9 +95,22 @@ struct SettingsItem: Identifiable {
         SettingsItem(
             title: "Phím tạm dừng", iconName: "pause.circle.fill", tab: .hotkeys,
             keywords: ["pause", "tạm dừng", "giữ phím", "option", "control"]),
+        // ═══════════════════════════════════════════
+        // MARK: - PHTV Picker
+        // ═══════════════════════════════════════════
         SettingsItem(
-            title: "PHTV Picker", iconName: "smiley.fill", tab: .hotkeys,
-            keywords: ["emoji", "mặt cười", "biểu tượng cảm xúc", "phím tắt", "hotkey", "character viewer", "palette", "😀", "😊", "🎉"]),
+            title: "PHTV Picker", iconName: "smiley.fill", tab: .phtvPicker,
+            keywords: ["emoji", "mặt cười", "biểu tượng cảm xúc", "phím tắt", "hotkey", "character viewer", "palette", "gif", "sticker", "😀", "😊", "🎉"]),
+
+        // ═══════════════════════════════════════════
+        // MARK: - Clipboard History
+        // ═══════════════════════════════════════════
+        SettingsItem(
+            title: "Lịch sử Clipboard", iconName: "doc.on.clipboard.fill", tab: .clipboardHistory,
+            keywords: ["clipboard", "pasteboard", "lịch sử", "sao chép", "copy", "paste", "dán", "phím tắt", "hotkey"]),
+        SettingsItem(
+            title: "Số mục Clipboard tối đa", iconName: "list.number", tab: .clipboardHistory,
+            keywords: ["clipboard", "max items", "số mục", "lưu", "history", "100", "30"]),
 
         // ═══════════════════════════════════════════
         // MARK: - Ứng dụng (Apps)
@@ -193,6 +206,8 @@ struct SettingsItem: Identifiable {
 
 enum SettingsTab: String, CaseIterable, Identifiable {
     case typing = "Bộ gõ"
+    case phtvPicker = "PHTV Picker"
+    case clipboardHistory = "Lịch sử Clipboard"
     case hotkeys = "Phím tắt"
     case macro = "Gõ tắt"
     case apps = "Ứng dụng"
@@ -206,6 +221,8 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     nonisolated var iconName: String {
         switch self {
         case .typing: return "keyboard"
+        case .phtvPicker: return "smiley"
+        case .clipboardHistory: return "doc.on.clipboard"
         case .hotkeys: return "command"
         case .macro: return "text.badge.checkmark"
         case .apps: return "square.stack.3d.up"
@@ -229,7 +246,7 @@ enum SettingsTabSection: String, CaseIterable, Identifiable {
     nonisolated var tabs: [SettingsTab] {
         switch self {
         case .typing:
-            return [.typing, .hotkeys, .macro, .apps]
+            return [.typing, .phtvPicker, .clipboardHistory, .hotkeys, .macro, .apps]
         case .system:
             return [.system]
         case .support:
