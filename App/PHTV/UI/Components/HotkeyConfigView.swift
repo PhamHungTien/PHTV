@@ -101,33 +101,9 @@ struct HotkeyConfigView: View {
                                 .foregroundStyle(isRecording ? Color.accentColor : .primary)
                                 .lineLimit(1)
                         }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background {
-                            if #available(macOS 26.0, *), SettingsVisualEffects.enableMaterials {
-                                if isRecording {
-                                    PHTVRoundedRect(cornerRadius: 6)
-                                        .fill(Color.accentColor.opacity(0.1))
-                                        .overlay(
-                                            PHTVRoundedRect(cornerRadius: 6)
-                                                .stroke(Color.accentColor, lineWidth: 1)
-                                        )
-                                } else {
-                                    PHTVRoundedRect(cornerRadius: 6)
-                                        .fill(.ultraThinMaterial)
-                                        .settingsGlassEffect(cornerRadius: 6)
-                                }
-                            } else {
-                                PHTVRoundedRect(cornerRadius: 6)
-                                    .fill(isRecording ? .accentColor.opacity(0.1) : Color(NSColor.controlBackgroundColor))
-                                    .overlay(
-                                        PHTVRoundedRect(cornerRadius: 6)
-                                            .stroke(isRecording ? .accentColor : Color.gray.opacity(0.3), lineWidth: 1)
-                                    )
-                            }
-                        }
                     }
-                    .buttonStyle(.plain)
+                    .settingsControlButtonStyle(isProminent: isRecording)
+                    .controlSize(.small)
                     .background(KeyEventHandler(isRecording: $isRecording, appState: appState))
                 }
             }
@@ -209,7 +185,6 @@ struct ModifierKeyButton: View {
     let symbol: String
     let name: String
     @Binding var isOn: Bool
-    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         Button(action: {
@@ -226,26 +201,10 @@ struct ModifierKeyButton: View {
                         .font(.system(size: 11))
                 }
             }
-            .foregroundStyle(isOn ? .white : .primary)
             .frame(maxWidth: .infinity)
-            .frame(height: 32)
-            .background {
-                if isOn {
-                    PHTVRoundedRect(cornerRadius: 10)
-                        .fill(Color.accentColor)
-                } else {
-                    // Clearer unselected state with subtle fill and visible border
-                    PHTVRoundedRect(cornerRadius: 10)
-                        .fill(Color(NSColor.controlBackgroundColor).opacity(colorScheme == .dark ? 0.5 : 0.8))
-                        .overlay(
-                            PHTVRoundedRect(cornerRadius: 10)
-                                .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.15), lineWidth: 1)
-                        )
-                }
-            }
-            .scaleEffect(isOn ? 1.0 : 1.0)
         }
-        .buttonStyle(.plain)
+        .settingsControlButtonStyle(isProminent: isOn)
+        .controlSize(.small)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isOn)
     }
 }
@@ -589,7 +548,6 @@ struct PauseKeyButton: View {
     let keyCode: UInt16
     @Binding var selectedKeyCode: UInt16
     @Binding var selectedKeyName: String
-    @Environment(\.colorScheme) private var colorScheme
 
     private var isSelected: Bool {
         selectedKeyCode == keyCode
@@ -609,26 +567,10 @@ struct PauseKeyButton: View {
                 Text(name)
                     .font(.system(size: 11))
             }
-            .foregroundStyle(isSelected ? .white : .primary)
             .frame(maxWidth: .infinity)
-            .frame(height: 32)
-            .background {
-                if isSelected {
-                    PHTVRoundedRect(cornerRadius: 10)
-                        .fill(Color.accentColor)
-                } else {
-                    // Clearer unselected state with subtle fill and visible border
-                    PHTVRoundedRect(cornerRadius: 10)
-                        .fill(Color(NSColor.controlBackgroundColor).opacity(colorScheme == .dark ? 0.5 : 0.8))
-                        .overlay(
-                            PHTVRoundedRect(cornerRadius: 10)
-                                .stroke(Color.primary.opacity(colorScheme == .dark ? 0.2 : 0.15), lineWidth: 1)
-                        )
-                }
-            }
-            .scaleEffect(isSelected ? 1.0 : 1.0)
         }
-        .buttonStyle(.plain)
+        .settingsControlButtonStyle(isProminent: isSelected)
+        .controlSize(.small)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
     }
 }
@@ -789,33 +731,9 @@ struct EmojiHotkeyConfigView: View {
                                     .foregroundStyle(isRecording ? Color.accentColor : .primary)
                                     .lineLimit(1)
                             }
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background {
-                                if #available(macOS 26.0, *), SettingsVisualEffects.enableMaterials {
-                                    if isRecording {
-                                        PHTVRoundedRect(cornerRadius: 6)
-                                            .fill(Color.accentColor.opacity(0.1))
-                                            .overlay(
-                                                PHTVRoundedRect(cornerRadius: 6)
-                                                    .stroke(Color.accentColor, lineWidth: 1)
-                                            )
-                                    } else {
-                                        PHTVRoundedRect(cornerRadius: 6)
-                                            .fill(.ultraThinMaterial)
-                                            .settingsGlassEffect(cornerRadius: 6)
-                                    }
-                                } else {
-                                    PHTVRoundedRect(cornerRadius: 6)
-                                        .fill(isRecording ? .accentColor.opacity(0.1) : Color(NSColor.controlBackgroundColor))
-                                        .overlay(
-                                            PHTVRoundedRect(cornerRadius: 6)
-                                                .stroke(isRecording ? .accentColor : Color.gray.opacity(0.3), lineWidth: 1)
-                                        )
-                                }
-                            }
                         }
-                        .buttonStyle(.plain)
+                        .settingsControlButtonStyle(isProminent: isRecording)
+                        .controlSize(.small)
                         .background(EmojiKeyEventHandler(isRecording: $isRecording, appState: appState))
                     }
                 }

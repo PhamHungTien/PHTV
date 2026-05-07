@@ -90,7 +90,6 @@ struct SettingsView: View {
                 minHeight: SettingsLayout.detailMinHeight
             )
         }
-        .navigationTitle("Cài đặt PHTV")
         .conditionalSearchable(text: $searchText, prompt: "Tìm nhanh cài đặt…")
         .settingsSearchToolbarBehavior()
     }

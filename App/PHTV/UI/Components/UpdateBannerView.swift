@@ -60,21 +60,11 @@ struct UpdateBannerView: View {
 
     @ViewBuilder
     private var iconView: some View {
-        // Icon with white/neutral background
-        ZStack {
-            PHTVRoundedRect(cornerRadius: 12)
-                .fill(Color(NSColor.controlBackgroundColor))
-                .overlay(
-                    PHTVRoundedRect(cornerRadius: 12)
-                        .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
-                )
-                .frame(width: 48, height: 48)
-
-            Image(systemName: "arrow.down.circle.fill")
-                .font(.system(size: 24))
-                .foregroundStyle(Color.accentColor)
-                .symbolEffect(.bounce, value: animateIcon)
-        }
+        Image(systemName: "arrow.down.circle.fill")
+            .font(.system(size: 28))
+            .foregroundStyle(Color.accentColor)
+            .symbolEffect(.bounce, value: animateIcon)
+            .frame(width: 40, height: 40)
     }
 
     @ViewBuilder
@@ -94,10 +84,14 @@ struct UpdateBannerView: View {
             }
             .adaptiveProminentButtonStyle()
 
-            // Close button with glass effect
-            GlassCloseButton {
+            Button {
                 dismissBanner()
+            } label: {
+                Image(systemName: "xmark")
             }
+            .adaptiveBorderedButtonStyle()
+            .controlSize(.small)
+            .help("Đóng")
         }
     }
 
@@ -105,19 +99,10 @@ struct UpdateBannerView: View {
     private var bannerBackground: some View {
         let fallback = Color(NSColor.controlBackgroundColor).opacity(colorScheme == .light ? 0.92 : 0.6)
         if SettingsVisualEffects.enableMaterials, !reduceTransparency {
-            PHTVRoundedRect(cornerRadius: 16)
+            Rectangle()
                 .fill(.regularMaterial)
-                .overlay(
-                    PHTVRoundedRect(cornerRadius: 16)
-                        .stroke(Color.accentColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
-                )
         } else {
-            PHTVRoundedRect(cornerRadius: 16)
-                .fill(fallback)
-                .overlay(
-                    PHTVRoundedRect(cornerRadius: 16)
-                        .stroke(Color.accentColor.opacity(colorScheme == .dark ? 0.3 : 0.2), lineWidth: 1)
-                )
+            fallback
         }
     }
 

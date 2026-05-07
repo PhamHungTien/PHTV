@@ -169,33 +169,9 @@ struct ClipboardHotkeyConfigView: View {
                                     .foregroundStyle(isRecording ? Color.accentColor : .primary)
                                     .lineLimit(1)
                             }
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background {
-                                if #available(macOS 26.0, *), SettingsVisualEffects.enableMaterials {
-                                    if isRecording {
-                                        PHTVRoundedRect(cornerRadius: 6)
-                                            .fill(Color.accentColor.opacity(0.1))
-                                            .overlay(
-                                                PHTVRoundedRect(cornerRadius: 6)
-                                                    .stroke(Color.accentColor, lineWidth: 1)
-                                            )
-                                    } else {
-                                        PHTVRoundedRect(cornerRadius: 6)
-                                            .fill(.ultraThinMaterial)
-                                            .settingsGlassEffect(cornerRadius: 6)
-                                    }
-                                } else {
-                                    PHTVRoundedRect(cornerRadius: 6)
-                                        .fill(isRecording ? .accentColor.opacity(0.1) : Color(NSColor.controlBackgroundColor))
-                                        .overlay(
-                                            PHTVRoundedRect(cornerRadius: 6)
-                                                .stroke(isRecording ? .accentColor : Color.gray.opacity(0.3), lineWidth: 1)
-                                        )
-                                }
-                            }
                         }
-                        .buttonStyle(.plain)
+                        .settingsControlButtonStyle(isProminent: isRecording)
+                        .controlSize(.small)
                         .background(
                             ClipboardKeyEventHandler(isRecording: $isRecording, appState: appState)
                         )

@@ -165,17 +165,10 @@ struct ConvertToolView: View {
 
     private var headerView: some View {
         HStack(spacing: 14) {
-            ZStack {
-                PHTVRoundedRect(cornerRadius: 12)
-                    .fill(Color.accentColor.opacity(0.14))
-                    .settingsGlassEffect(cornerRadius: 12)
-                PHTVRoundedRect(cornerRadius: 12)
-                    .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
-                Image(systemName: "arrow.triangle.2.circlepath")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(Color.accentColor)
-            }
-            .frame(width: 44, height: 44)
+            Image(systemName: "arrow.triangle.2.circlepath")
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 32, height: 32)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text("Chuyển đổi bảng mã")
@@ -396,16 +389,10 @@ struct ConvertToolView: View {
             sourceCodeTable = source
             targetCodeTable = target
         }
-        .buttonStyle(.plain)
         .font(.caption.weight(.semibold))
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(
-            Capsule()
-                .fill(isSelected ? Color.accentColor : Color.accentColor.opacity(0.15))
-                .settingsGlassEffect(cornerRadius: 999)
-        )
-        .foregroundStyle(isSelected ? .white : Color.accentColor)
+        .settingsControlButtonStyle(isProminent: isSelected)
+        .controlSize(.small)
+        .tint(Color.accentColor)
     }
 
     private var swapButtonCompact: some View {
@@ -466,15 +453,7 @@ struct ConvertToolView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            PHTVRoundedRect(cornerRadius: 12)
-                .fill(Color(NSColor.controlBackgroundColor))
-                .settingsGlassEffect(cornerRadius: 12)
-        )
-        .overlay(
-            PHTVRoundedRect(cornerRadius: 12)
-                .stroke(Color.primary.opacity(0.12), lineWidth: 1)
-        )
+        .background(Color(NSColor.controlBackgroundColor))
     }
 
     // MARK: - Result Preview Card
@@ -505,9 +484,7 @@ struct ConvertToolView: View {
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background {
-                        PHTVRoundedRect(cornerRadius: 8)
-                            .fill(Color.green.opacity(0.1))
-                            .settingsGlassEffect(cornerRadius: 8)
+                        Color.green.opacity(0.1)
                     }
             } else {
                 Text(resultMessage)
@@ -516,9 +493,7 @@ struct ConvertToolView: View {
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background {
-                        PHTVRoundedRect(cornerRadius: 8)
-                            .fill(Color.red.opacity(0.1))
-                            .settingsGlassEffect(cornerRadius: 8)
+                        Color.red.opacity(0.1)
                     }
             }
         }
@@ -568,9 +543,7 @@ struct ConvertToolView: View {
     }
 
     private var inputPanelBackground: some View {
-        PHTVRoundedRect(cornerRadius: 8)
-            .fill(Color(NSColor.controlBackgroundColor))
-            .settingsGlassEffect(cornerRadius: 8)
+        Color(NSColor.controlBackgroundColor)
     }
 
     // MARK: - Actions

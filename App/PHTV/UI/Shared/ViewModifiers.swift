@@ -57,57 +57,58 @@ extension View {
         #endif
     }
 
-    // Rounded text area style for TextEditor and similar inputs
+    // Native text area fill for TextEditor and similar inputs
     func roundedTextArea() -> some View {
         self
             .padding(6)
-            .background {
-                if #available(macOS 26.0, *),
-                   SettingsVisualEffects.enableMaterials {
-                    PHTVRoundedRect(cornerRadius: 8)
-                        .fill(.ultraThinMaterial)
-                        .settingsGlassEffect(cornerRadius: 8)
-                        .overlay(
-                            PHTVRoundedRect(cornerRadius: 8)
-                                .stroke(Color.gray.opacity(0.25), lineWidth: 1)
-                        )
-                } else {
-                    PHTVRoundedRect(cornerRadius: 8)
-                        .fill(Color(NSColor.controlBackgroundColor))
-                        .overlay(
-                            PHTVRoundedRect(cornerRadius: 8)
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                        )
-                }
-            }
+            .background(Color(NSColor.textBackgroundColor))
     }
 }
 
 // MARK: - Settings Glass Effect
 
 extension View {
-    /// No-op retained for older subviews while Settings uses system-native chrome.
+    /// Uses the system's default Liquid Glass shape on macOS 26. The corner
+    /// parameter is retained for older call sites, but Settings no longer
+    /// forces custom radii for Liquid Glass.
     @ViewBuilder
     func settingsGlassEffect(cornerRadius: CGFloat) -> some View {
-        self
+        if #available(macOS 26.0, *) {
+            self.glassEffect()
+        } else {
+            self
+        }
     }
 
-    /// No-op retained for older subviews while Settings uses system-native chrome.
+    /// Uses the system's default Liquid Glass effect. Shape-specialized call
+    /// sites are intentionally normalized to the default native shape.
     @ViewBuilder
     func settingsGlassEffect<S: Shape>(in shape: S) -> some View {
-        self
+        if #available(macOS 26.0, *) {
+            self.glassEffect()
+        } else {
+            self
+        }
     }
 
-    /// No-op retained for older subviews while Settings uses system-native chrome.
+    /// Uses interactive Liquid Glass with the default system shape.
     @ViewBuilder
     func settingsInteractiveGlassEffect(cornerRadius: CGFloat) -> some View {
-        self
+        if #available(macOS 26.0, *) {
+            self.glassEffect(.regular.interactive())
+        } else {
+            self
+        }
     }
 
-    /// No-op retained for older subviews while Settings uses system-native chrome.
+    /// Uses tinted Liquid Glass with the default system shape.
     @ViewBuilder
     func settingsTintedGlassEffect(cornerRadius: CGFloat, tint: Color) -> some View {
-        self
+        if #available(macOS 26.0, *) {
+            self.glassEffect(.regular.tint(tint))
+        } else {
+            self
+        }
     }
 }
 
@@ -199,14 +200,34 @@ extension Color {
 // MARK: - Adaptive Button Styles
 
 extension View {
-    /// Uses borderedProminent button style (no glass)
+    /// Uses the native prominent button surface for the current OS.
+    @ViewBuilder
     func adaptiveProminentButtonStyle() -> some View {
-        self.buttonStyle(.borderedProminent)
+        if #available(macOS 26.0, *) {
+            self.buttonStyle(.glassProminent)
+        } else {
+            self.buttonStyle(.borderedProminent)
+        }
     }
 
-    /// Uses bordered button style (no glass)
+    /// Uses the native bordered button surface for the current OS.
+    @ViewBuilder
     func adaptiveBorderedButtonStyle() -> some View {
-        self.buttonStyle(.bordered)
+        if #available(macOS 26.0, *) {
+            self.buttonStyle(.glass)
+        } else {
+            self.buttonStyle(.bordered)
+        }
+    }
+
+    /// Applies the native Settings control button style without custom shapes.
+    @ViewBuilder
+    func settingsControlButtonStyle(isProminent: Bool = false) -> some View {
+        if isProminent {
+            adaptiveProminentButtonStyle()
+        } else {
+            adaptiveBorderedButtonStyle()
+        }
     }
 }
 
@@ -297,22 +318,35 @@ extension View {
         self.foregroundStyle(.secondary)
     }
 
-    /// No-op retained for older subviews while Settings uses system-native chrome.
     @ViewBuilder
     func settingsGlassContainer() -> some View {
-        self
+        if #available(macOS 26.0, *) {
+            GlassEffectContainer {
+                self
+            }
+        } else {
+            self
+        }
     }
 
-    /// No-op retained for older subviews while Settings uses system-native chrome.
     @ViewBuilder
     func settingsGlassContainer(spacing: CGFloat) -> some View {
-        self
+        if #available(macOS 26.0, *) {
+            GlassEffectContainer(spacing: spacing) {
+                self
+            }
+        } else {
+            self
+        }
     }
 
-    /// No-op retained for older subviews while Settings uses system-native chrome.
     @ViewBuilder
     func settingsGlassID<ID: Hashable & Sendable>(_ id: ID, in namespace: Namespace.ID) -> some View {
-        self
+        if #available(macOS 26.0, *) {
+            self.glassEffectID(id, in: namespace)
+        } else {
+            self
+        }
     }
 }
 

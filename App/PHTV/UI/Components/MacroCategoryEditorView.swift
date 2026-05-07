@@ -103,13 +103,10 @@ struct MacroCategoryEditorView: View {
                                     Image(systemName: icon)
                                         .font(.system(size: 16))
                                         .frame(width: 36, height: 36)
-                                        .background(
-                                            PHTVRoundedRect(cornerRadius: 8)
-                                                .fill(selectedIcon == icon ? (Color(hex: selectedColor) ?? .blue) : Color(NSColor.controlBackgroundColor))
-                                        )
-                                        .foregroundStyle(selectedIcon == icon ? .white : .primary)
                                 }
-                                .buttonStyle(.plain)
+                                .settingsControlButtonStyle(isProminent: selectedIcon == icon)
+                                .controlSize(.small)
+                                .tint(Color(hex: selectedColor) ?? .blue)
                             }
                         }
                     }
@@ -159,10 +156,6 @@ struct MacroCategoryEditorView: View {
                                 .font(.system(size: 16))
                                 .foregroundStyle(Color(hex: selectedColor) ?? .blue)
                                 .frame(width: 28, height: 28)
-                                .background(
-                                    PHTVRoundedRect(cornerRadius: 6)
-                                        .fill((Color(hex: selectedColor) ?? .blue).opacity(0.15))
-                                )
 
                             Text(name.isEmpty ? "Tên danh mục" : name)
                                 .foregroundStyle(name.isEmpty ? .secondary : .primary)
@@ -174,10 +167,7 @@ struct MacroCategoryEditorView: View {
                                 .font(.caption)
                         }
                         .padding(12)
-                        .background(
-                            PHTVRoundedRect(cornerRadius: 8)
-                                .fill(Color(NSColor.controlBackgroundColor))
-                        )
+                        .background(Color(NSColor.controlBackgroundColor))
                     }
 
                     if showError {
@@ -189,10 +179,6 @@ struct MacroCategoryEditorView: View {
                                 .font(.caption)
                         }
                         .padding(10)
-                        .background(
-                            PHTVRoundedRect(cornerRadius: 8)
-                                .fill(Color.red.opacity(0.1))
-                        )
                     }
                 }
                 .padding()

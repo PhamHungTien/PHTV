@@ -170,24 +170,6 @@ struct AppSelectionEmptyStateView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background {
-            if #available(macOS 26.0, *), SettingsVisualEffects.enableMaterials {
-                PHTVRoundedRect(cornerRadius: 8)
-                    .fill(.ultraThinMaterial)
-                    .settingsGlassEffect(cornerRadius: 8)
-                    .overlay(
-                        PHTVRoundedRect(cornerRadius: 8)
-                            .stroke(Color.gray.opacity(0.15), lineWidth: 1)
-                    )
-            } else {
-                ZStack {
-                    PHTVRoundedRect(cornerRadius: 8)
-                        .fill(Color(NSColor.controlBackgroundColor))
-                    PHTVRoundedRect(cornerRadius: 8)
-                        .stroke(Color.gray.opacity(0.15), lineWidth: 1)
-                }
-            }
-        }
     }
 }
 
@@ -207,16 +189,6 @@ struct AppSelectionList<Item: AppSelectionEntry>: View {
                     Divider()
                         .padding(.leading, 52)
                 }
-            }
-        }
-        .background {
-            if #available(macOS 26.0, *), SettingsVisualEffects.enableMaterials {
-                PHTVRoundedRect(cornerRadius: 10)
-                    .fill(.ultraThinMaterial)
-                    .settingsGlassEffect(cornerRadius: 10)
-            } else {
-                PHTVRoundedRect(cornerRadius: 10)
-                    .fill(Color(NSColor.controlBackgroundColor))
             }
         }
     }
@@ -324,11 +296,8 @@ struct AppSelectionRunningAppsPickerView<Item: AppSelectionEntry>: View {
                     .foregroundStyle(.secondary)
                 TextField("Tìm kiếm...", text: $searchText)
                     .settingsTextField()
-                    .textFieldStyle(.plain)
+                    .textFieldStyle(.roundedBorder)
             }
-            .padding(8)
-            .background(Color(NSColor.controlBackgroundColor))
-            .cornerRadius(8)
             .padding(.horizontal)
             
             // Apps List
@@ -499,8 +468,7 @@ struct ManualBundleIdInputView: View {
                     .font(.system(size: 11, design: .monospaced))
                     .foregroundStyle(.secondary)
                     .padding(6)
-                    .background(Color(NSColor.controlBackgroundColor))
-                    .cornerRadius(4)
+                    .textSelection(.enabled)
             }
             .padding(.horizontal)
 

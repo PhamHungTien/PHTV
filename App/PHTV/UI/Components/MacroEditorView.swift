@@ -153,15 +153,10 @@ struct MacroEditorView: View {
                                         Text("Không có")
                                             .font(.subheadline)
                                     }
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 8)
-                                    .background(
-                                        PHTVRoundedRect(cornerRadius: 8)
-                                            .fill(selectedCategoryId == nil ? Color.gray : Color(NSColor.controlBackgroundColor))
-                                    )
-                                    .foregroundStyle(selectedCategoryId == nil ? .white : .primary)
                                 }
-                                .buttonStyle(.plain)
+                                .settingsControlButtonStyle(isProminent: selectedCategoryId == nil)
+                                .controlSize(.small)
+                                .tint(.gray)
 
                                 // User categories
                                 ForEach(categories) { category in
@@ -176,15 +171,10 @@ struct MacroEditorView: View {
                                             Text(category.name)
                                                 .font(.subheadline)
                                         }
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 8)
-                                        .background(
-                                            PHTVRoundedRect(cornerRadius: 8)
-                                                .fill(selectedCategoryId == category.id ? category.swiftUIColor : Color(NSColor.controlBackgroundColor))
-                                        )
-                                        .foregroundStyle(selectedCategoryId == category.id ? .white : .primary)
                                     }
-                                    .buttonStyle(.plain)
+                                    .settingsControlButtonStyle(isProminent: selectedCategoryId == category.id)
+                                    .controlSize(.small)
+                                    .tint(category.swiftUIColor)
                                 }
                             }
                             .padding(.vertical, 4)

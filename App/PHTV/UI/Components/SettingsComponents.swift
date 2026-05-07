@@ -167,12 +167,11 @@ struct SettingsSelectionRow: View {
     let subtitle: String
     let isSelected: Bool
     let action: () -> Void
-    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         Button(action: action) {
             HStack(alignment: .top, spacing: 12) {
-                Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(isSelected ? Color.accentColor : .secondary)
                     .frame(width: 18, height: 18)
@@ -187,15 +186,10 @@ struct SettingsSelectionRow: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
-            .background(backgroundShape)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-    }
-
-    private var backgroundShape: some View {
-        RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .fill(isSelected ? Color.accentColor.opacity(colorScheme == .dark ? 0.18 : 0.10) : Color.clear)
+        .settingsControlButtonStyle(isProminent: isSelected)
+        .controlSize(.small)
     }
 }
 
@@ -239,7 +233,7 @@ struct StatusCard: View {
                         )
                     }
                     .controlSize(.small)
-                    .buttonStyle(.borderedProminent)
+                    .adaptiveProminentButtonStyle()
                     .tint(.orange)
                 }
             }
@@ -311,7 +305,6 @@ struct RestoreKeyButton: View {
     let isSelected: Bool
     let themeColor: Color
     let action: () -> Void
-    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         Button(action: action) {
@@ -328,25 +321,11 @@ struct RestoreKeyButton: View {
                         .minimumScaleFactor(0.8)
                 }
             }
-            .foregroundStyle(isSelected ? .white : .primary)
             .frame(maxWidth: .infinity)
-            .frame(height: 32)
-            .background {
-                if isSelected {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(themeColor)
-                        .shadow(color: themeColor.opacity(0.3), radius: 4, x: 0, y: 2)
-                } else {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color(NSColor.controlBackgroundColor))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .stroke(Color.primary.opacity(0.1), lineWidth: 1)
-                        )
-                }
-            }
         }
-        .buttonStyle(.plain)
+        .settingsControlButtonStyle(isProminent: isSelected)
+        .controlSize(.small)
+        .tint(themeColor)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
     }
 

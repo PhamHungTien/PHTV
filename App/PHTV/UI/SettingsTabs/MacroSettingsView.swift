@@ -259,13 +259,8 @@ struct MacroSettingsView: View {
                             Text("\(filteredMacros.count)")
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 4)
-                                .background(
-                                    Capsule()
-                                        .fill(Color.accentColor)
-                                )
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
                                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: filteredMacros.count)
                                 
                         }
@@ -738,13 +733,10 @@ struct CategoryRowView: View {
                 .font(.system(size: 14))
                 .foregroundStyle(color)
                 .frame(width: 24, height: 24)
-                .background(
-                    PHTVRoundedRect(cornerRadius: 5)
-                        .fill(color.opacity(0.15))
-                )
 
             Text(name)
                 .font(.subheadline)
+                .fontWeight(isSelected ? .semibold : .regular)
                 .foregroundStyle(.primary)
 
             Spacer()
@@ -766,17 +758,15 @@ struct CategoryRowView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: count)
+
+            if isSelected {
+                Image(systemName: "checkmark")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(color)
+            }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
-        .background(
-            PHTVRoundedRect(cornerRadius: 8)
-                .fill(isSelected ? color.opacity(0.12) : Color.clear)
-        )
-        .overlay(
-            PHTVRoundedRect(cornerRadius: 8)
-                .stroke(isSelected ? color.opacity(0.3) : Color.clear, lineWidth: 1)
-        )
         .contentShape(Rectangle())
         .onHover { hovering in
             isHovering = hovering
@@ -881,10 +871,6 @@ struct MacroRowView: View {
                 .font(.system(size: 14))
                 .foregroundStyle(rowColor)
                 .frame(width: 24, height: 24)
-                .background(
-                    PHTVRoundedRect(cornerRadius: 5)
-                        .fill(rowColor.opacity(0.15))
-                )
                 .scaleEffect(isRecentlyAdded ? 1.1 : 1.0)
                 .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isRecentlyAdded)
 
@@ -925,23 +911,17 @@ struct MacroRowView: View {
                 Text(cat.name)
                     .font(.caption2)
                     .foregroundStyle(cat.swiftUIColor)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(
-                        Capsule().fill(cat.swiftUIColor.opacity(0.12))
-                    )
+            }
+
+            if isSelected {
+                Image(systemName: "checkmark")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(rowColor)
             }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
-        .background(
-            PHTVRoundedRect(cornerRadius: 8)
-                .fill(backgroundColor)
-        )
-        .overlay(
-            PHTVRoundedRect(cornerRadius: 8)
-                .stroke(borderColor, lineWidth: borderWidth)
-        )
+        .background(backgroundColor)
         .contentShape(Rectangle())
         .onHover { hovering in
             isHovering = hovering
@@ -961,21 +941,6 @@ struct MacroRowView: View {
         }
     }
 
-    private var borderColor: Color {
-        if isRecentlyAdded {
-            return .green.opacity(0.3)
-        } else if isRecentlyEdited {
-            return .blue.opacity(0.3)
-        } else if isSelected {
-            return rowColor.opacity(0.3)
-        } else {
-            return .clear
-        }
-    }
-
-    private var borderWidth: CGFloat {
-        (isRecentlyAdded || isRecentlyEdited || isSelected) ? 1 : 0
-    }
 }
 
 #Preview {

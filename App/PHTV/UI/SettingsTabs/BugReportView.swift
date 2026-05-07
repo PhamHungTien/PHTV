@@ -173,28 +173,17 @@ struct BugReportView: View {
 
                 // Bug Title
                 TextField("Tiêu đề vấn đề (vd: Không gõ được tiếng Việt trong Safari)", text: $bugTitle)
-                    .textFieldStyle(.plain)
-                    .padding(8)
-                    .background {
-                        inputFieldBackground(cornerRadius: 8)
-                    }
+                    .textFieldStyle(.roundedBorder)
 
                 // Description
                 TextEditor(text: $bugDescription)
                     .frame(minHeight: 100)
                     .font(.body)
-                    .scrollContentBackground(.hidden)
-                    .padding(8)
-                    .background {
-                        inputFieldBackground(cornerRadius: 8)
-                    }
-                    .clipShape(PHTVRoundedRect(cornerRadius: 8))
                     .overlay(alignment: .topLeading) {
                         if bugDescription.isEmpty {
                             Text("Mô tả ngắn gọn vấn đề. Có thể kèm bước tái hiện nếu muốn…")
                                 .foregroundStyle(.tertiary)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 16)
+                                .padding(6)
                                 .allowsHitTesting(false)
                         }
                     }
@@ -243,18 +232,11 @@ struct BugReportView: View {
                         TextEditor(text: $stepsToReproduce)
                             .frame(minHeight: 80)
                             .font(.body)
-                            .scrollContentBackground(.hidden)
-                            .padding(8)
-                            .background {
-                                inputFieldBackground(cornerRadius: 8)
-                            }
-                            .clipShape(PHTVRoundedRect(cornerRadius: 8))
                             .overlay(alignment: .topLeading) {
                                 if stepsToReproduce.isEmpty {
                                     Text("1. Mở ứng dụng...\n2. Thực hiện...\n3. Lỗi xảy ra...")
                                         .foregroundStyle(.tertiary)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 16)
+                                        .padding(6)
                                         .allowsHitTesting(false)
                                 }
                             }
@@ -267,18 +249,11 @@ struct BugReportView: View {
                                 TextEditor(text: $expectedResult)
                                     .frame(minHeight: 70)
                                     .font(.body)
-                                    .scrollContentBackground(.hidden)
-                                    .padding(8)
-                                    .background {
-                                        inputFieldBackground(cornerRadius: 8)
-                                    }
-                                    .clipShape(PHTVRoundedRect(cornerRadius: 8))
                                     .overlay(alignment: .topLeading) {
                                         if expectedResult.isEmpty {
                                             Text("Ứng dụng nên…")
                                                 .foregroundStyle(.tertiary)
-                                                .padding(.horizontal, 12)
-                                                .padding(.vertical, 16)
+                                                .padding(6)
                                                 .allowsHitTesting(false)
                                         }
                                     }
@@ -291,29 +266,18 @@ struct BugReportView: View {
                                 TextEditor(text: $actualResult)
                                     .frame(minHeight: 70)
                                     .font(.body)
-                                    .scrollContentBackground(.hidden)
-                                    .padding(8)
-                                    .background {
-                                        inputFieldBackground(cornerRadius: 8)
-                                    }
-                                    .clipShape(PHTVRoundedRect(cornerRadius: 8))
                                     .overlay(alignment: .topLeading) {
                                         if actualResult.isEmpty {
                                             Text("Thực tế đang…")
                                                 .foregroundStyle(.tertiary)
-                                                .padding(.horizontal, 12)
-                                                .padding(.vertical, 16)
+                                                .padding(6)
                                                 .allowsHitTesting(false)
                                         }
                                 }
                             }
                         }
                         TextField("Email liên hệ (tuỳ chọn)", text: $contactEmail)
-                            .textFieldStyle(.plain)
-                            .padding(8)
-                            .background {
-                                inputFieldBackground(cornerRadius: 8)
-                            }
+                            .textFieldStyle(.roundedBorder)
                     }
                     .padding(.top, 4)
                 } label: {
@@ -1073,27 +1037,6 @@ struct BugReportView: View {
         contactEmail = ""
         bugSeverity = .normal
         bugArea = .typing
-    }
-
-    @ViewBuilder
-    private func inputFieldBackground(cornerRadius: CGFloat) -> some View {
-        if #available(macOS 26.0, *) {
-            PHTVRoundedRect(cornerRadius: cornerRadius)
-                .fill(Color(NSColor.textBackgroundColor).opacity(0.6))
-                .background(.regularMaterial)
-                .clipShape(PHTVRoundedRect(cornerRadius: cornerRadius))
-                .overlay(
-                    PHTVRoundedRect(cornerRadius: cornerRadius)
-                        .stroke(Color.primary.opacity(0.2), lineWidth: 1)
-                )
-        } else {
-            PHTVRoundedRect(cornerRadius: cornerRadius)
-                .fill(Color(NSColor.textBackgroundColor))
-                .overlay(
-                    PHTVRoundedRect(cornerRadius: cornerRadius)
-                        .stroke(Color.secondary.opacity(0.4), lineWidth: 1)
-                )
-        }
     }
 
     private var logPreviewText: String {

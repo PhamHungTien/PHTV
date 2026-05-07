@@ -599,8 +599,6 @@ struct SettingsButtonRow: View {
     var isDestructive: Bool = false
     var isLoading: Bool = false
     let action: () -> Void
-    @Environment(\.colorScheme) private var colorScheme
-    @State private var isHovered = false
 
     var body: some View {
         Button(action: action) {
@@ -634,30 +632,10 @@ struct SettingsButtonRow: View {
             .padding(.vertical, 5)
             .contentShape(Rectangle())
         }
-        .background(hoverBackground)
         .buttonStyle(.plain)
         .disabled(isLoading)
         .accessibilityLabel(Text(title))
         .accessibilityHint(Text(subtitle))
-        .onHover { hovering in
-            isHovered = hovering
-        }
-        .transaction { transaction in
-            transaction.animation = nil
-        }
-        .animation(nil, value: isHovered)
-    }
-
-    @ViewBuilder
-    private var hoverBackground: some View {
-        if isHovered {
-            PHTVRoundedRect(cornerRadius: 8, style: .continuous)
-                .fill(Color.primary.opacity(colorScheme == .dark ? 0.05 : 0.03))
-                .padding(.horizontal, -4)
-                .padding(.vertical, -2)
-        } else {
-            EmptyView()
-        }
     }
 }
 
