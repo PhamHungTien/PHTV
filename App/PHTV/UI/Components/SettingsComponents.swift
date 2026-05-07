@@ -18,13 +18,13 @@ enum SettingsLayout {
     static let rowControlColumnWidth: CGFloat = 168
     static let toggleControlWidth: CGFloat = 54
     static let defaultPickerWidth: CGFloat = 148
-    static let sidebarMinWidth: CGFloat = 150
-    static let sidebarIdealWidth: CGFloat = 184
-    static let sidebarMaxWidth: CGFloat = 220
-    static let detailMinWidth: CGFloat = 360
-    static let detailMinHeight: CGFloat = 360
-    static let windowMinSize = CGSize(width: 720, height: 500)
-    static let windowIdealSize = CGSize(width: 840, height: 540)
+    static let sidebarMinWidth: CGFloat = 200
+    static let sidebarIdealWidth: CGFloat = 240
+    static let sidebarMaxWidth: CGFloat = 300
+    static let detailMinWidth: CGFloat = 500
+    static let detailMinHeight: CGFloat = 500
+    static let windowMinSize = CGSize(width: 780, height: 550)
+    static let windowIdealSize = CGSize(width: 900, height: 620)
 }
 
 // MARK: - Settings Card
