@@ -18,25 +18,13 @@ struct SettingsWindowContent: View {
     @State private var pendingCloseTask: Task<Void, Never>?
     @State private var onboardingTask: Task<Void, Never>?
     @State private var windowLifecycleToken = UUID()
-    @State private var showDonatePopover = false
-
-    var body: some View {
-        configuredSettingsWindowContent
-    }
-
     @ViewBuilder
-    private var configuredSettingsWindowContent: some View {
-        if #available(macOS 26.0, *) {
+    var body: some View {
+        if #available(macOS 15.0, *) {
             settingsWindowContent
                 .toolbar(removing: .title)
-                .toolbar { settingsToolbarContent }
-        } else if #available(macOS 15.0, *) {
-            settingsWindowContent
-                .toolbar(removing: .title)
-                .toolbar { settingsToolbarContent }
         } else {
             settingsWindowContent
-                .toolbar { settingsToolbarContent }
         }
     }
 
@@ -115,34 +103,7 @@ struct SettingsWindowContent: View {
         }
     }
 
-    @ToolbarContentBuilder
-    private var settingsToolbarContent: some ToolbarContent {
-        ToolbarItemGroup(placement: .primaryAction) {
-            Button {
-                appState.settingsWindowAlwaysOnTop.toggle()
-            } label: {
-                Image(systemName: appState.settingsWindowAlwaysOnTop ? "pin.fill" : "pin")
-            }
-            .help(appState.settingsWindowAlwaysOnTop ? "Bỏ ghim cửa sổ Cài đặt" : "Ghim cửa sổ Cài đặt")
 
-            Button {
-                NotificationCenter.default.post(name: NotificationName.sparkleManualCheck, object: nil)
-            } label: {
-                Image(systemName: "arrow.clockwise")
-            }
-            .help("Kiểm tra cập nhật")
-
-            Button {
-                showDonatePopover.toggle()
-            } label: {
-                Image(systemName: "heart")
-            }
-            .popover(isPresented: $showDonatePopover, arrowEdge: .bottom) {
-                DonateQRPopoverView()
-            }
-            .help("Ủng hộ phát triển")
-        }
-    }
 
     /// Setup observer to ensure settings window stays visible when app loses focus
     /// This is critical for accessory mode (no dock icon) where windows can hide unexpectedly
