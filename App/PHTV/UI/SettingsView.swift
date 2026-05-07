@@ -82,9 +82,7 @@ struct SettingsView: View {
             detailView
                 .environment(appState)
                 .frame(minWidth: 400, minHeight: 400)
-                .modifier(DetailViewGlassModifier())
         }
-        .navigationSplitViewStyle(.balanced)
     }
 
     @ViewBuilder
@@ -193,31 +191,17 @@ struct SettingsView: View {
 // MARK: - Sidebar Row
 struct SettingsSidebarRow: View {
     let tab: SettingsTab
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
-        HStack(spacing: 10) {
-            // Icon with white/neutral background
-            ZStack {
-                PHTVRoundedRect(cornerRadius: 6)
-                    .fill(Color(NSColor.controlBackgroundColor))
-                    .overlay(
-                        PHTVRoundedRect(cornerRadius: 6)
-                            .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
-                    )
-
-                Image(systemName: tab.iconName)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Color.accentColor)
-            }
-            .frame(width: 24, height: 24)
-
+        Label {
             Text(tab.title)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.primary)
-
-            Spacer(minLength: 0)
+        } icon: {
+            Image(systemName: tab.iconName)
+                .font(.system(size: 14, weight: .medium))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(.secondary)
+                .frame(width: 18)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 2)
@@ -231,26 +215,14 @@ struct SearchResultRow: View {
     let item: SettingsItem
     let action: () -> Void
 
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 12) {
-                // Icon with white/neutral background
-                ZStack {
-                    PHTVRoundedRect(cornerRadius: 6)
-                        .fill(Color(NSColor.controlBackgroundColor))
-                        .overlay(
-                            PHTVRoundedRect(cornerRadius: 6)
-                                .stroke(Color.primary.opacity(colorScheme == .dark ? 0.15 : 0.1), lineWidth: 1)
-                        )
-
-                    Image(systemName: item.iconName)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Color.accentColor)
-                }
-                .frame(width: 28, height: 28)
+            HStack(spacing: 10) {
+                Image(systemName: item.iconName)
+                    .font(.system(size: 15, weight: .medium))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 20)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(item.title)
@@ -268,30 +240,9 @@ struct SearchResultRow: View {
                     .foregroundStyle(.tertiary)
             }
             .padding(.vertical, 6)
-            .padding(.horizontal, 8)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Detail View Glass Modifier
-
-/// Applies backgroundExtensionEffect() only to the detail view,
-/// preserving the sidebar's native appearance while extending
-/// glass effect into the toolbar area for the content pane.
-struct DetailViewGlassModifier: ViewModifier {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-
-    func body(content: Content) -> some View {
-        if #available(macOS 26.0, *),
-           SettingsVisualEffects.enableBackgroundExtensionEffect,
-           !reduceTransparency {
-            content
-                .backgroundExtensionEffect()
-        } else {
-            content
-        }
     }
 }
 

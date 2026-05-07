@@ -29,7 +29,6 @@ struct SettingsWindowContent: View {
         if #available(macOS 26.0, *) {
             settingsWindowContent
                 .toolbar(removing: .title)
-                .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
                 .toolbar { settingsToolbarContent }
         } else if #available(macOS 15.0, *) {
             settingsWindowContent

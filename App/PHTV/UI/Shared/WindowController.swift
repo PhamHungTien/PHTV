@@ -42,12 +42,9 @@ class SwiftUIWindowController: NSWindowController, NSWindowDelegate {
         }
         
         if unifiedTitlebar {
-            // Full-size content view so NavigationSplitView extends under the
-            // toolbar/titlebar — required for backgroundExtensionEffect() on macOS 26
-            // and for the modern System-Settings-style look on earlier versions.
             window.styleMask.insert(.fullSizeContentView)
-            window.titlebarAppearsTransparent = true
             window.titleVisibility = .hidden
+            window.titlebarAppearsTransparent = true
             window.isMovableByWindowBackground = false
             if #available(macOS 11.0, *) {
                 // .unified aligns toolbar items with the titlebar traffic-light area,

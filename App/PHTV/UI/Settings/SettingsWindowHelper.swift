@@ -82,15 +82,18 @@ enum SettingsWindowHelper {
         window.hidesOnDeactivate = false
         window.isMovableByWindowBackground = false
         window.collectionBehavior = [.managed, .participatesInCycle, .moveToActiveSpace, .fullScreenAuxiliary]
+        configureNativeSettingsChrome(for: window)
+        window.isOpaque = true
+        window.backgroundColor = NSColor.windowBackgroundColor
+    }
 
-        if #available(macOS 26.0, *),
-           SettingsVisualEffects.enableBackgroundExtensionEffect,
-           !NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency {
-            window.isOpaque = false
-            window.backgroundColor = .clear
-        } else {
-            window.isOpaque = true
-            window.backgroundColor = NSColor.windowBackgroundColor
+    private static func configureNativeSettingsChrome(for window: NSWindow) {
+        window.styleMask.insert(.fullSizeContentView)
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+
+        if #available(macOS 11.0, *) {
+            window.toolbarStyle = .unified
         }
     }
 
