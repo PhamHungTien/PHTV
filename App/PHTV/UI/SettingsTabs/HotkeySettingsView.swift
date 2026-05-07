@@ -67,11 +67,11 @@ struct HotkeySettingsView: View {
                                     ForEach(RestoreKey.allCases) { key in
                                         RestoreKeyButton(
                                             key: key,
-                                            isSelected: appState.restoreKey == key,
+                                            isSelected: bindable.restoreKey.wrappedValue == key,
                                             themeColor: .accentColor
                                         ) {
                                             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                                appState.restoreKey = key
+                                                bindable.restoreKey.wrappedValue = key
                                             }
                                         }
                                     }
