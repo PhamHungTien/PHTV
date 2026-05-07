@@ -1142,17 +1142,27 @@ final class EngineRegressionTests: XCTestCase {
 
     // MARK: - Simple Telex double-vowel conflicts follow Telex Vietnamese-first precedence
 
-    func testIssue175CareerStaysEnglishWhileTypingInSimpleTelex1() {
-        withInputType(2) {
-            XCTAssertEqual(renderedToken("career"), "career")
-            XCTAssertEqual(runtimeRenderedToken("career"), "career")
+    func testIssue175CareerMatchesStandardTelexAcrossSimpleTelexFamilies() {
+        let expectedRendered = withInputType(0) { renderedToken("career") }
+        let expectedRuntime = withInputType(0) { runtimeRenderedToken("career") }
+
+        for inputType in [Int32(2), Int32(3)] {
+            withInputType(inputType) {
+                XCTAssertEqual(renderedToken("career"), expectedRendered, "\(inputType):career")
+                XCTAssertEqual(runtimeRenderedToken("career"), expectedRuntime, "\(inputType):career")
+            }
         }
     }
 
-    func testIssue175RepeatedToneKeyAfterCareerStaysRawInSimpleTelex1() {
-        withInputType(2) {
-            XCTAssertEqual(renderedToken("careerr"), "careerr")
-            XCTAssertEqual(runtimeRenderedToken("careerr"), "careerr")
+    func testIssue175RepeatedToneKeyAfterCareerMatchesStandardTelexAcrossSimpleTelexFamilies() {
+        let expectedRendered = withInputType(0) { renderedToken("careerr") }
+        let expectedRuntime = withInputType(0) { runtimeRenderedToken("careerr") }
+
+        for inputType in [Int32(2), Int32(3)] {
+            withInputType(inputType) {
+                XCTAssertEqual(renderedToken("careerr"), expectedRendered, "\(inputType):careerr")
+                XCTAssertEqual(runtimeRenderedToken("careerr"), expectedRuntime, "\(inputType):careerr")
+            }
         }
     }
 

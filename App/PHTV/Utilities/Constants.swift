@@ -584,6 +584,17 @@ extension UserDefaults {
         return defaultValue
     }
 
+    private func isExplicitlyEnabled(forKey key: String) -> Bool {
+        guard let value = object(forKey: key) else { return false }
+        if let boolValue = value as? Bool {
+            return boolValue
+        }
+        if let numberValue = value as? NSNumber {
+            return numberValue.boolValue
+        }
+        return false
+    }
+
     /// Returns true when Sparkle preferences need to be normalized to the stable channel.
     func requiresStableUpdateChannelEnforcement() -> Bool {
         if object(forKey: UserDefaultsKey.sparkleBetaChannel) != nil {
@@ -592,32 +603,36 @@ extension UserDefaults {
         if object(forKey: UserDefaultsKey.legacyAutoInstallUpdates) != nil {
             return true
         }
-        if !bool(forKey: UserDefaultsKey.automaticUpdateChecks, default: true) {
+        if !isExplicitlyEnabled(forKey: UserDefaultsKey.automaticUpdateChecks) {
             return true
         }
-        return !bool(forKey: UserDefaultsKey.autoInstallUpdates, default: true)
+        return !isExplicitlyEnabled(forKey: UserDefaultsKey.autoInstallUpdates)
     }
 
     /// Always use the stable Sparkle channel with automatic checks and installs enabled.
     @discardableResult
     func enforceStableUpdateChannel() -> Bool {
-        guard requiresStableUpdateChannelEnforcement() else {
-            return false
-        }
+        var changed = requiresStableUpdateChannelEnforcement()
 
         if object(forKey: UserDefaultsKey.sparkleBetaChannel) != nil {
             removeObject(forKey: UserDefaultsKey.sparkleBetaChannel)
+            changed = true
         }
         if object(forKey: UserDefaultsKey.legacyAutoInstallUpdates) != nil {
             removeObject(forKey: UserDefaultsKey.legacyAutoInstallUpdates)
+            changed = true
         }
-        if !bool(forKey: UserDefaultsKey.automaticUpdateChecks, default: true) {
-            set(true, forKey: UserDefaultsKey.automaticUpdateChecks)
+        if !isExplicitlyEnabled(forKey: UserDefaultsKey.automaticUpdateChecks) {
+            changed = true
         }
-        if !bool(forKey: UserDefaultsKey.autoInstallUpdates, default: true) {
-            set(true, forKey: UserDefaultsKey.autoInstallUpdates)
+        set(true, forKey: UserDefaultsKey.automaticUpdateChecks)
+
+        if !isExplicitlyEnabled(forKey: UserDefaultsKey.autoInstallUpdates) {
+            changed = true
         }
-        return true
+        set(true, forKey: UserDefaultsKey.autoInstallUpdates)
+
+        return changed
     }
 }
 

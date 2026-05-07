@@ -40,6 +40,27 @@ final class SparklePreferencesEnforcementTests: XCTestCase {
         XCTAssertFalse(defaults.enforceStableUpdateChannel())
     }
 
+    func testMissingSparklePreferencesArePersistedAsEnabled() {
+        let (defaults, suiteName) = makeIsolatedDefaults()
+        defer { clear(defaults: defaults, suiteName: suiteName) }
+
+        XCTAssertNil(defaults.persistentDomain(forName: suiteName)?[UserDefaultsKey.automaticUpdateChecks])
+        XCTAssertNil(defaults.persistentDomain(forName: suiteName)?[UserDefaultsKey.autoInstallUpdates])
+
+        _ = defaults.enforceStableUpdateChannel()
+        XCTAssertTrue(defaults.bool(forKey: UserDefaultsKey.automaticUpdateChecks, default: false))
+        XCTAssertTrue(defaults.bool(forKey: UserDefaultsKey.autoInstallUpdates, default: false))
+        XCTAssertEqual(
+            (defaults.persistentDomain(forName: suiteName)?[UserDefaultsKey.automaticUpdateChecks] as? NSNumber)?.boolValue,
+            true
+        )
+        XCTAssertEqual(
+            (defaults.persistentDomain(forName: suiteName)?[UserDefaultsKey.autoInstallUpdates] as? NSNumber)?.boolValue,
+            true
+        )
+        XCTAssertFalse(defaults.requiresStableUpdateChannelEnforcement())
+    }
+
     private func makeIsolatedDefaults() -> (UserDefaults, String) {
         let suiteName = "com.phamhungtien.phtv.tests.sparkle.\(UUID().uuidString)"
         guard let defaults = UserDefaults(suiteName: suiteName) else {

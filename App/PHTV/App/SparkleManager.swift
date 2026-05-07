@@ -2,7 +2,7 @@
 //  SparkleManager.swift
 //  PHTV
 //
-//  Lightweight Sparkle wrapper using default Sparkle behavior.
+//  Lightweight Sparkle wrapper using native Sparkle behavior.
 //  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
@@ -23,21 +23,35 @@ final class SparkleManager: NSObject {
         sharedInstance
     }
 
-    private lazy var updaterController = SPUStandardUpdaterController(
-        startingUpdater: true,
-        updaterDelegate: SparkleManager.updaterDelegate,
-        userDriverDelegate: SparkleManager.userDriverDelegate
+    private lazy var userDriver = PHSilentUserDriver(
+        hostBundle: .main,
+        delegate: SparkleManager.userDriverDelegate
     )
 
     @objc private(set) lazy var updater: SPUUpdater = {
-        updaterController.updater
+        let updater = SPUUpdater(
+            hostBundle: .main,
+            applicationBundle: .main,
+            userDriver: userDriver,
+            delegate: SparkleManager.updaterDelegate
+        )
+        configureAutomaticInstallPreferences(on: updater)
+
+        do {
+            try updater.start()
+        } catch {
+            NSLog("[Sparkle] Failed to start updater: %@", error.localizedDescription)
+        }
+
+        return updater
     }()
 
     override init() {
         super.init()
-        _ = updaterController
+        UserDefaults.standard.enforceStableUpdateChannel()
+        _ = updater
         NSLog(
-            "[Sparkle] Initialized with SPUStandardUpdaterController + popup pinning (checks=%@ downloads=%@ interval=%.0f)",
+            "[Sparkle] Initialized with SPUUpdater + auto-install user driver (checks=%@ downloads=%@ interval=%.0f)",
             updater.automaticallyChecksForUpdates ? "YES" : "NO",
             updater.automaticallyDownloadsUpdates ? "YES" : "NO",
             updater.updateCheckInterval
@@ -47,12 +61,14 @@ final class SparkleManager: NSObject {
     /// Manually trigger update check (Sparkle handles all UI)
     @objc func checkForUpdatesWithFeedback() {
         NSLog("[Sparkle] Manual check requested")
+        configureAutomaticInstallPreferences(on: updater)
         updater.checkForUpdates()
     }
 
     /// Background update check
     @objc func checkForUpdates() {
         NSLog("[Sparkle] Background check requested")
+        configureAutomaticInstallPreferences(on: updater)
         guard updater.automaticallyChecksForUpdates else {
             NSLog("[Sparkle] Skipping background check because automatic checks are disabled")
             return
@@ -65,13 +81,31 @@ final class SparkleManager: NSObject {
         NSLog("[Sparkle] Update interval set to %.0f seconds", interval)
         updater.updateCheckInterval = interval
     }
+
+    private func configureAutomaticInstallPreferences(on updater: SPUUpdater) {
+        UserDefaults.standard.enforceStableUpdateChannel()
+        updater.automaticallyChecksForUpdates = true
+        updater.automaticallyDownloadsUpdates = true
+    }
 }
 
-@MainActor
 private final class SparkleUpdaterDelegate: NSObject, SPUUpdaterDelegate {
     nonisolated func updater(_ updater: SPUUpdater, willInstallUpdate item: SUAppcastItem) {
         _ = updater
         NSLog("[Sparkle] Will install update: %@", item.displayVersionString)
+    }
+
+    nonisolated func updater(_ updater: SPUUpdater,
+                             willInstallUpdateOnQuit item: SUAppcastItem,
+                             immediateInstallationBlock immediateInstallHandler: @escaping () -> Void) -> Bool {
+        _ = updater
+        guard UserDefaults.standard.bool(forKey: UserDefaultsKey.autoInstallUpdates, default: true) else {
+            return false
+        }
+
+        NSLog("[Sparkle] Auto-install update on quit requested for %@ - installing immediately", item.displayVersionString)
+        immediateInstallHandler()
+        return true
     }
 
     nonisolated func feedURLString(for updater: SPUUpdater) -> String? {
@@ -155,6 +189,7 @@ private final class SparkleUserDriverDelegate: NSObject, SPUStandardUserDriverDe
     nonisolated func standardUserDriverWillFinishUpdateSession() {
         Task { @MainActor [weak self] in
             guard let self else { return }
+            UserDefaults.standard.enforceStableUpdateChannel()
             self.isUpdateSessionActive = false
             self.cancelCascadeScans()
             self.restoreWindowLevels()
