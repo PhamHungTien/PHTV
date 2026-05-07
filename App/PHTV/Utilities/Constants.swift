@@ -1,4 +1,4 @@
-//
+ô chọn phương pháp gõ và bảng mã đang không đều nhau theo chiều dọc theo tôi test ở macos 26//
 //  Constants.swift
 //  PHTV
 //
@@ -410,7 +410,7 @@ enum Defaults {
     static let quickStartConsonant = false
     static let quickEndConsonant = false
     static let rememberCode = true
-    static let autoRestoreEnglishWord = true
+    static let autoRestoreEnglishWord = false
     static let autoRestoreEnglishWordMode = AutoRestoreEnglishMode.englishOnly
     static let restoreIfWrongSpelling = false
 

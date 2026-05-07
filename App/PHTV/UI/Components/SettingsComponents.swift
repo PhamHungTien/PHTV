@@ -108,6 +108,7 @@ struct SettingsPickerRow<SelectionValue: Hashable, PickerContent: View>: View {
             }
             .labelsHidden()
             .controlSize(.small)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .frame(width: controlWidth)
             .frame(width: SettingsLayout.rowControlColumnWidth, alignment: .trailing)
         }

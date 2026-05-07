@@ -2219,7 +2219,7 @@ final class PHTVVietnameseEngine {
         return detectorIsEnglishWord(typingSlice, length)
     }
 
-    func evaluateAutoRestoreEnglishDecision() -> (restoreStateIndex: Int, canAutoRestore: Bool, shouldRestore: Bool) {
+    func evaluateAutoRestoreEnglishDecision() -> (restoreStateIndex: Int, canAutoRestore: Bool, shouldRestore: Bool, customRestoreSlice: [UInt32]?) {
         let englishStateIndex = getEnglishLookupStateLength()
         let isPureLetter = englishStateIndex == stateIdx && hasOnlyEnglishLetterKeyStates(stateIdx)
         let isWithNumSuffix = englishStateIndex > 0 && englishStateIndex < stateIdx &&
@@ -2232,19 +2232,20 @@ final class PHTVVietnameseEngine {
               idx > 0,
               englishStateIndex > 1,
               canAutoRestore else {
-            return (restoreStateIndex, canAutoRestore, false)
+            return (restoreStateIndex, canAutoRestore, false, nil)
         }
 
         let keySlice = Array(keyStates.prefix(englishStateIndex))
         let isNonVietnameseMode = autoRestoreEnglishModeValue() == Int32(AutoRestoreEnglishMode.nonVietnamese.rawValue)
         var shouldRestoreEnglish = false
 
+        let hasVietnameseDictionaryMatch = hasVietnameseDictionaryMatchForAutoRestore(
+            keySlice,
+            englishLength: englishStateIndex,
+            typingLength: idx
+        )
+
         if isNonVietnameseMode {
-            let hasVietnameseDictionaryMatch = hasVietnameseDictionaryMatchForAutoRestore(
-                keySlice,
-                englishLength: englishStateIndex,
-                typingLength: idx
-            )
             shouldRestoreEnglish = !hasVietnameseDictionaryMatch
             if shouldRestoreEnglish &&
                 shouldRespectExtendedConsonantLayoutInNonVietnameseMode(
@@ -2257,11 +2258,6 @@ final class PHTVVietnameseEngine {
                 shouldRestoreEnglish = false
             }
         } else {
-            let hasVietnameseDictionaryMatch = hasVietnameseDictionaryMatchForAutoRestore(
-                keySlice,
-                englishLength: englishStateIndex,
-                typingLength: idx
-            )
             shouldRestoreEnglish = !hasVietnameseDictionaryMatch && detectorShouldRestoreEnglish(keySlice, englishStateIndex)
             if !shouldRestoreEnglish && !hasVietnameseDictionaryMatch {
                 if detectorIsEnglishWord(keySlice, englishStateIndex) &&
@@ -2293,7 +2289,28 @@ final class PHTVVietnameseEngine {
             }
         }
 
-        return (restoreStateIndex, canAutoRestore, shouldRestoreEnglish)
+        if shouldRestoreEnglish {
+            return (restoreStateIndex, canAutoRestore, true, nil)
+        }
+
+        // PR 177: check for custom deduped/english words only if we haven't already decided to restore,
+        // and only if the current sequence is NOT a valid Vietnamese word.
+        if !hasVietnameseDictionaryMatch && !isVietnameseWordFromTypingWord(idx) {
+            if let dedupedSlice = shouldRestoreTelexAdjacentDedupRawKeys() {
+                return (dedupedSlice.count, true, true, dedupedSlice)
+            }
+            if shouldRestoreTelexLeadingDoubleConsonantRawKeys() {
+                let leadingCaps = (typingWord[0] & CAPS_MASK) != 0 || (keyStates[0] & CAPS_MASK) != 0
+                var deduped = Array(keyStates.dropFirst().prefix(englishStateIndex - 1))
+                if leadingCaps && !deduped.isEmpty { deduped[0] |= CAPS_MASK }
+                return (deduped.count, true, true, deduped)
+            }
+            if shouldRestoreSimpleTelexEnglishDoubleVowelRawKeys() {
+                return (englishStateIndex, true, true, nil)
+            }
+        }
+
+        return (restoreStateIndex, canAutoRestore, false, nil)
     }
 
     func shouldBypassSpecialKeyForEnglishWordConflict(_ data: UInt16) -> Bool {
@@ -2408,8 +2425,9 @@ final class PHTVVietnameseEngine {
                 hCode = HookCodeState.restoreAndStartNewSession.rawValue
                 hBPC = idx; hNCC = decision.restoreStateIndex; hExt = 5
                 for i in 0..<decision.restoreStateIndex {
-                    typingWord[i] = keyStates[i]
-                    hData[decision.restoreStateIndex - 1 - i] = keyStates[i]
+                    let rawKey = decision.customRestoreSlice?[i] ?? keyStates[i]
+                    typingWord[i] = rawKey
+                    hData[decision.restoreStateIndex - 1 - i] = rawKey
                 }
                 if snapshotUpperCaseFirstChar != 0 && phtvRuntimeUpperCaseExcludedForCurrentApp() == 0 &&
                    shouldUpperCaseEnglishRestore && decision.restoreStateIndex > 0 {
@@ -2482,8 +2500,9 @@ final class PHTVVietnameseEngine {
                 hCode = HookCodeState.restore.rawValue
                 hBPC = idx; hNCC = decision.restoreStateIndex; hExt = 5
                 for i in 0..<decision.restoreStateIndex {
-                    typingWord[i] = keyStates[i]
-                    hData[decision.restoreStateIndex - 1 - i] = keyStates[i]
+                    let rawKey = decision.customRestoreSlice?[i] ?? keyStates[i]
+                    typingWord[i] = rawKey
+                    hData[decision.restoreStateIndex - 1 - i] = rawKey
                 }
                 if snapshotUpperCaseFirstChar != 0 && phtvRuntimeUpperCaseExcludedForCurrentApp() == 0 &&
                    shouldUpperCaseEnglishRestore && decision.restoreStateIndex > 0 {
@@ -2661,31 +2680,7 @@ final class PHTVVietnameseEngine {
             }
         }
 
-        if shouldRestoreSimpleTelexEnglishDoubleVowelRawKeys(), restoreToRawKeys() {
-            hCode = HookCodeState.willProcess.rawValue
-            if phtvRuntimeUseMacroEnabled() != 0 {
-                hMacroKey = Array(keyStates.prefix(stateIdx))
-                hMacroRawKey = hMacroKey
-            }
-        }
 
-        if shouldRestoreTelexLeadingDoubleConsonantRawKeys(), restoreToRawKeysSkippingFirstDuplicate() {
-            hCode = HookCodeState.willProcess.rawValue
-            if phtvRuntimeUseMacroEnabled() != 0 {
-                let dedup = Array(keyStates.dropFirst().prefix(stateIdx - 1))
-                hMacroKey = dedup
-                hMacroRawKey = dedup
-            }
-        }
-
-        if let dedupedSlice = shouldRestoreTelexAdjacentDedupRawKeys(),
-           restoreToCustomKeySlice(dedupedSlice) {
-            hCode = HookCodeState.willProcess.rawValue
-            if phtvRuntimeUseMacroEnabled() != 0 {
-                hMacroKey = dedupedSlice
-                hMacroRawKey = dedupedSlice
-            }
-        }
 
         if snapshotUpperCaseFirstChar != 0 && phtvRuntimeUpperCaseExcludedForCurrentApp() == 0 {
             if idx == 1 && upperCaseStatus == 2 && !upperCaseNeedsSpaceConfirm {
