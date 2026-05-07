@@ -47,7 +47,7 @@ struct HotkeyConfigView: View {
                     ModifierKeyButton(symbol: "⇧", name: "Shift", isOn: bindable.switchKeyShift)
                     ModifierKeyButton(symbol: "⌘", name: "Command", isOn: bindable.switchKeyCommand)
                     ModifierKeyButton(symbol: "⌥", name: "Option", isOn: bindable.switchKeyOption)
-                    ModifierKeyButton(symbol: "fn", name: "Fn", isOn: bindable.switchKeyFn)
+                    ModifierKeyButton(symbol: "fn", name: "", isOn: bindable.switchKeyFn)
                 }
                 
                 Text("Mặc định: Ctrl + Shift (bấm rồi thả)")
@@ -303,8 +303,10 @@ struct ModifierKeyButton: View {
                 Text(symbol)
                     .font(.system(size: 14, weight: .semibold))
 
-                Text(name)
-                    .font(.system(size: 11))
+                if !name.isEmpty {
+                    Text(name)
+                        .font(.system(size: 11))
+                }
             }
             .foregroundStyle(isOn ? .white : .primary)
             .frame(maxWidth: .infinity)

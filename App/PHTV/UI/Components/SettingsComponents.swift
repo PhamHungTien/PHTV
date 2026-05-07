@@ -322,10 +322,12 @@ struct RestoreKeyButton: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
 
-                Text(shortDisplayName)
-                    .font(.system(size: 11))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                if key != .esc {
+                    Text(shortDisplayName)
+                        .font(.system(size: 11))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
             }
             .foregroundStyle(isSelected ? .white : .primary)
             .frame(maxWidth: .infinity)
