@@ -418,11 +418,15 @@ struct SettingsHeaderView<Trailing: View>: View {
 
     private var headerBackground: some View {
         RoundedRectangle(cornerRadius: 10, style: .continuous)
-            .fill(Color(NSColor.controlBackgroundColor))
+            .fill(Color(NSColor.controlBackgroundColor).opacity(colorScheme == .dark ? 0.98 : 1.0))
             .overlay(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(Color(NSColor.separatorColor).opacity(0.42), lineWidth: 0.5)
+                    .stroke(headerBorderColor, lineWidth: 0.75)
             )
+    }
+
+    private var headerBorderColor: Color {
+        Color.primary.opacity(colorScheme == .dark ? 0.18 : 0.12)
     }
 }
 

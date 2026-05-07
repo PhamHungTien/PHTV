@@ -47,41 +47,25 @@ struct TypingSettingsView: View {
                     subtitle: "Chọn phương pháp gõ và bảng mã phù hợp",
                     icon: "keyboard.fill"
                 ) {
-                    VStack(spacing: 12) {
-                        // Input Method Picker - inline style
-                        HStack {
-                            Text("Phương pháp gõ")
-                                .font(.body)
-                                .foregroundStyle(.primary)
-
-                            Spacer()
-
-                            Picker("", selection: bindable.inputMethod) {
-                                ForEach(InputMethod.allCases) { method in
-                                    Text(method.displayName).tag(method)
-                                }
+                    VStack(spacing: 0) {
+                        SettingsPickerRow(
+                            title: "Phương pháp gõ",
+                            selection: bindable.inputMethod
+                        ) {
+                            ForEach(InputMethod.allCases) { method in
+                                Text(method.displayName).tag(method)
                             }
-                            .labelsHidden()
-                            .frame(width: 140)
                         }
 
-                        Divider()
+                        SettingsDivider()
 
-                        // Code Table Picker - inline style
-                        HStack {
-                            Text("Bảng mã")
-                                .font(.body)
-                                .foregroundStyle(.primary)
-
-                            Spacer()
-
-                            Picker("", selection: bindable.codeTable) {
-                                ForEach(CodeTable.allCases) { table in
-                                    Text(table.displayName).tag(table)
-                                }
+                        SettingsPickerRow(
+                            title: "Bảng mã",
+                            selection: bindable.codeTable
+                        ) {
+                            ForEach(CodeTable.allCases) { table in
+                                Text(table.displayName).tag(table)
                             }
-                            .labelsHidden()
-                            .frame(width: 140)
                         }
                     }
                 }

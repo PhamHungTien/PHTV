@@ -241,33 +241,16 @@ struct SystemSettingsView: View {
             icon: "arrow.down.circle.fill"
         ) {
             VStack(spacing: 0) {
-                HStack(alignment: .center, spacing: 12) {
-                    Image(systemName: "clock.fill")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(Color.accentColor)
-                        .frame(width: 24, height: 24)
-
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("Tần suất kiểm tra cập nhật")
-                            .font(.system(size: 13))
-
-                        Text("Tự động kiểm tra bản cập nhật mới")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
+                SettingsPickerRow(
+                    title: "Tần suất kiểm tra cập nhật",
+                    subtitle: "Tự động kiểm tra bản cập nhật mới",
+                    selection: bindable.updateCheckFrequency,
+                    controlWidth: 150
+                ) {
+                    ForEach(UpdateCheckFrequency.allCases) { freq in
+                        Text(freq.displayName).tag(freq)
                     }
-
-                    Spacer()
-
-                    Picker("", selection: bindable.updateCheckFrequency) {
-                        ForEach(UpdateCheckFrequency.allCases) { freq in
-                            Text(freq.displayName).tag(freq)
-                        }
-                    }
-                    .labelsHidden()
-                    .controlSize(.small)
-                    .frame(width: 130)
                 }
-                .padding(.vertical, 5)
 
                 SettingsDivider()
 

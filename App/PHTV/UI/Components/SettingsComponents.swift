@@ -13,9 +13,9 @@ import SwiftUI
 struct SettingsCard<Content: View, Trailing: View>: View {
     let title: String
     let subtitle: String?
-    let icon: String
     let trailing: Trailing
     let content: Content
+    @Environment(\.colorScheme) private var colorScheme
 
     init(
         title: String,
@@ -24,23 +24,16 @@ struct SettingsCard<Content: View, Trailing: View>: View {
         @ViewBuilder trailing: () -> Trailing = { EmptyView() },
         @ViewBuilder content: () -> Content
     ) {
+        _ = icon
         self.title = title
         self.subtitle = subtitle
-        self.icon = icon
         self.trailing = trailing()
         self.content = content()
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: 14, weight: .semibold))
-                    .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 18, height: 18)
-                    .padding(.top, 1)
-
+        VStack(alignment: .leading, spacing: 7) {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.headline)
@@ -72,11 +65,69 @@ struct SettingsCard<Content: View, Trailing: View>: View {
 
     private var settingsGroupedBackground: some View {
         RoundedRectangle(cornerRadius: 10, style: .continuous)
-            .fill(Color(NSColor.controlBackgroundColor))
+            .fill(Color(NSColor.controlBackgroundColor).opacity(colorScheme == .dark ? 0.98 : 1.0))
             .overlay(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(Color(NSColor.separatorColor).opacity(0.42), lineWidth: 0.5)
+                    .stroke(settingsSurfaceBorderColor, lineWidth: 0.75)
             )
+    }
+
+    private var settingsSurfaceBorderColor: Color {
+        Color.primary.opacity(colorScheme == .dark ? 0.18 : 0.12)
+    }
+}
+
+// MARK: - Settings Picker Row
+
+struct SettingsPickerRow<SelectionValue: Hashable, PickerContent: View>: View {
+    let title: String
+    let subtitle: String?
+    let controlWidth: CGFloat
+    @Binding var selection: SelectionValue
+    let pickerContent: PickerContent
+
+    init(
+        title: String,
+        subtitle: String? = nil,
+        selection: Binding<SelectionValue>,
+        controlWidth: CGFloat = 160,
+        @ViewBuilder content: () -> PickerContent
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.controlWidth = controlWidth
+        self._selection = selection
+        self.pickerContent = content()
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Spacer(minLength: 12)
+
+            Picker("", selection: $selection) {
+                pickerContent
+            }
+            .labelsHidden()
+            .controlSize(.small)
+            .frame(width: controlWidth)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 8)
     }
 }
 
