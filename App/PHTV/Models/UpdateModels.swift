@@ -28,13 +28,10 @@ enum UpdateCheckFrequency: Int, CaseIterable, Identifiable, Sendable {
     }
 
     static func from(interval: Int) -> UpdateCheckFrequency {
-        switch interval {
-        case 0: return .never
-        case 86400: return .daily
-        case 604800: return .weekly
-        case 2592000: return .monthly
-        default: return .daily
-        }
+        if interval <= 0 { return .never }
+        
+        let all = allCases.filter { $0 != .never }
+        return all.min(by: { abs($0.rawValue - interval) < abs($1.rawValue - interval) }) ?? .daily
     }
 }
 

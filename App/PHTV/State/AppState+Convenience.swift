@@ -249,6 +249,11 @@ extension AppState {
         set { systemState.updateCheckFrequency = newValue }
     }
 
+    var autoInstallUpdates: Bool {
+        get { trackedSubstate(systemState.autoInstallUpdates) }
+        set { systemState.autoInstallUpdates = newValue }
+    }
+
     var showCustomUpdateBanner: Bool {
         get { trackedSubstate(systemState.showCustomUpdateBanner) }
         set { systemState.showCustomUpdateBanner = newValue }

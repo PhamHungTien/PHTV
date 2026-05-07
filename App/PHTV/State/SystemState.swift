@@ -171,11 +171,27 @@ final class SystemState {
             handleObservedChange(oldValue: oldValue, newValue: updateCheckFrequency) {
                 SettingsObserver.shared.suspendNotifications()
                 let defaults = UserDefaults.standard
+                
+                // If frequency is "Never" (0), disable automatic checks.
+                let autoChecks = self.updateCheckFrequency != .never
+                defaults.set(autoChecks, forKey: UserDefaultsKey.automaticUpdateChecks)
                 defaults.set(self.updateCheckFrequency.rawValue, forKey: UserDefaultsKey.updateCheckInterval)
+                defaults.synchronize()
+
                 NotificationCenter.default.post(
                     name: NotificationName.updateCheckFrequencyChanged,
                     object: NSNumber(value: self.updateCheckFrequency.rawValue)
                 )
+            }
+        }
+    }
+    var autoInstallUpdates: Bool = true {
+        didSet {
+            handleObservedChange(oldValue: oldValue, newValue: autoInstallUpdates) {
+                SettingsObserver.shared.suspendNotifications()
+                let defaults = UserDefaults.standard
+                defaults.set(self.autoInstallUpdates, forKey: UserDefaultsKey.autoInstallUpdates)
+                defaults.synchronize()
             }
         }
     }
@@ -340,8 +356,9 @@ final class SystemState {
             default: Defaults.updateCheckInterval
         )
         updateCheckFrequency = UpdateCheckFrequency.from(interval: updateInterval)
+        autoInstallUpdates = defaults.bool(forKey: UserDefaultsKey.autoInstallUpdates, default: true)
 
-        // Always use stable channel and always auto-install updates.
+        // Ensure beta channel and legacy keys are cleaned up.
         if defaults.requiresStableUpdateChannelEnforcement() {
             SettingsObserver.shared.suspendNotifications()
             defaults.enforceStableUpdateChannel()
@@ -374,8 +391,12 @@ final class SystemState {
         PHTVManager.setSafeModeEnabled(safeMode)
 
         // Save Sparkle settings
+        let autoChecks = updateCheckFrequency != .never
+        defaults.set(autoChecks, forKey: UserDefaultsKey.automaticUpdateChecks)
         defaults.set(updateCheckFrequency.rawValue, forKey: UserDefaultsKey.updateCheckInterval)
+        defaults.set(autoInstallUpdates, forKey: UserDefaultsKey.autoInstallUpdates)
         defaults.enforceStableUpdateChannel()
+        defaults.synchronize()
 
         // Save bug report settings
         defaults.set(includeSystemInfo, forKey: UserDefaultsKey.includeSystemInfo)

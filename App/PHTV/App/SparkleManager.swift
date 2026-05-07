@@ -83,9 +83,19 @@ final class SparkleManager: NSObject {
     }
 
     private func configureAutomaticInstallPreferences(on updater: SPUUpdater) {
-        UserDefaults.standard.enforceStableUpdateChannel()
-        updater.automaticallyChecksForUpdates = true
-        updater.automaticallyDownloadsUpdates = true
+        let defaults = UserDefaults.standard
+        defaults.enforceStableUpdateChannel()
+        
+        let interval = defaults.integer(forKey: UserDefaultsKey.updateCheckInterval, default: Defaults.updateCheckInterval)
+        let autoChecks = interval != 0
+        let autoInstall = defaults.bool(forKey: UserDefaultsKey.autoInstallUpdates, default: true)
+        
+        updater.automaticallyChecksForUpdates = autoChecks
+        updater.automaticallyDownloadsUpdates = autoInstall
+        
+        if autoChecks {
+            updater.updateCheckInterval = TimeInterval(interval)
+        }
     }
 }
 

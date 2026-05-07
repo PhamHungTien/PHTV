@@ -237,6 +237,16 @@ struct SystemSettingsView: View {
 
                 SettingsDivider()
 
+                SettingsToggleRow(
+                    icon: "arrow.down.to.line.circle.fill",
+                    iconColor: .accentColor,
+                    title: "Tự động tải và cài đặt",
+                    subtitle: "Tự động áp dụng các bản cập nhật mới nhất",
+                    isOn: bindable.autoInstallUpdates
+                )
+
+                SettingsDivider()
+
                 SettingsButtonRow(
                     icon: "arrow.clockwise.circle.fill",
                     iconColor: .accentColor,

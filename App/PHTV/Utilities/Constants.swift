@@ -609,10 +609,10 @@ extension UserDefaults {
         return !isExplicitlyEnabled(forKey: UserDefaultsKey.autoInstallUpdates)
     }
 
-    /// Always use the stable Sparkle channel with automatic checks and installs enabled.
+    /// Always use the stable Sparkle channel. Automatic checks and installs are managed by the UI.
     @discardableResult
     func enforceStableUpdateChannel() -> Bool {
-        var changed = requiresStableUpdateChannelEnforcement()
+        var changed = false
 
         if object(forKey: UserDefaultsKey.sparkleBetaChannel) != nil {
             removeObject(forKey: UserDefaultsKey.sparkleBetaChannel)
@@ -622,15 +622,6 @@ extension UserDefaults {
             removeObject(forKey: UserDefaultsKey.legacyAutoInstallUpdates)
             changed = true
         }
-        if !isExplicitlyEnabled(forKey: UserDefaultsKey.automaticUpdateChecks) {
-            changed = true
-        }
-        set(true, forKey: UserDefaultsKey.automaticUpdateChecks)
-
-        if !isExplicitlyEnabled(forKey: UserDefaultsKey.autoInstallUpdates) {
-            changed = true
-        }
-        set(true, forKey: UserDefaultsKey.autoInstallUpdates)
 
         return changed
     }
