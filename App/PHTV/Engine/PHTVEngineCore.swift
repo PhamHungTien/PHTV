@@ -1985,6 +1985,12 @@ final class PHTVVietnameseEngine {
             return false
         }
 
+        // Match Telex precedence: a valid Vietnamese reading wins before
+        // Simple Telex restores a double-vowel sequence as dictionary English.
+        if detectorIsVietnameseWord(keySlice, length) {
+            return true
+        }
+
         if repeatedVowel == KEY_E && hasGHEFamilyInitial(keySlice, length) {
             return true
         }

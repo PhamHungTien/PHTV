@@ -880,8 +880,12 @@ final class EngineRegressionTests: XCTestCase {
     }
 
     func testKeetsProducesKetWithCircumflexAndAcute() {
-        XCTAssertEqual(renderedToken("keets"), "kết")
-        XCTAssertEqual(runtimeRenderedToken("keets"), "kết")
+        for inputType in [Int32(0), Int32(2), Int32(3)] {
+            withInputType(inputType) {
+                XCTAssertEqual(renderedToken("keets"), "kết", "\(inputType):keets")
+                XCTAssertEqual(runtimeRenderedToken("keets"), "kết", "\(inputType):keets")
+            }
+        }
     }
 
     func testNooisProducesNoiWithCircumflexAndAcute() {
@@ -936,6 +940,26 @@ final class EngineRegressionTests: XCTestCase {
             ("coor", "cổ"),
             ("coox", "cỗ"),
             ("cooj", "cộ")
+        ]
+
+        for inputType in [Int32(0), Int32(2), Int32(3)] {
+            withInputType(inputType) {
+                for (input, expected) in cases {
+                    XCTAssertEqual(renderedToken(input), expected, "\(inputType):\(input)")
+                    XCTAssertEqual(runtimeRenderedToken(input), expected, "\(inputType):\(input)")
+                }
+            }
+        }
+    }
+
+    func testShortEFamilyToneAfterShapeMatchesAcrossTelexFamilies() {
+        let cases = [
+            ("tees", "tế"),
+            ("teef", "tề"),
+            ("teer", "tể"),
+            ("teex", "tễ"),
+            ("teej", "tệ"),
+            ("keets", "kết")
         ]
 
         for inputType in [Int32(0), Int32(2), Int32(3)] {
@@ -1116,7 +1140,7 @@ final class EngineRegressionTests: XCTestCase {
         }
     }
 
-    // MARK: - Issue #175: English double-vowel words must not absorb trailing tone keys in Simple Telex
+    // MARK: - Simple Telex double-vowel conflicts follow Telex Vietnamese-first precedence
 
     func testIssue175CareerStaysEnglishWhileTypingInSimpleTelex1() {
         withInputType(2) {
@@ -1132,17 +1156,24 @@ final class EngineRegressionTests: XCTestCase {
         }
     }
 
-    func testIssue175BeefStaysEnglishWhileTypingInSimpleTelex1() {
-        withInputType(2) {
-            XCTAssertEqual(renderedToken("beef"), "beef")
-            XCTAssertEqual(runtimeRenderedToken("beef"), "beef")
+    func testIssue175BeefPrefersVietnameseAcrossTelexFamilies() {
+        for inputType in [Int32(0), Int32(2), Int32(3)] {
+            withInputType(inputType) {
+                XCTAssertEqual(renderedToken("beef"), "bề", "\(inputType):beef")
+                XCTAssertEqual(runtimeRenderedToken("beef"), "bề", "\(inputType):beef")
+            }
         }
     }
 
-    func testIssue175RepeatedToneKeyAfterBeefStaysRawInSimpleTelex1() {
-        withInputType(2) {
-            XCTAssertEqual(renderedToken("beeff"), "beeff")
-            XCTAssertEqual(runtimeRenderedToken("beeff"), "beeff")
+    func testIssue175RepeatedToneKeyAfterBeefMatchesStandardTelexAcrossTelexFamilies() {
+        let expectedRendered = withInputType(0) { renderedToken("beeff") }
+        let expectedRuntime = withInputType(0) { runtimeRenderedToken("beeff") }
+
+        for inputType in [Int32(0), Int32(2), Int32(3)] {
+            withInputType(inputType) {
+                XCTAssertEqual(renderedToken("beeff"), expectedRendered, "\(inputType):beeff")
+                XCTAssertEqual(runtimeRenderedToken("beeff"), expectedRuntime, "\(inputType):beeff")
+            }
         }
     }
 
