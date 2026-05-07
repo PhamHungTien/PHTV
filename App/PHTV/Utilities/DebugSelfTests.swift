@@ -93,7 +93,7 @@ enum DebugSelfTests {
         defaults.set(false, forKey: UserDefaultsKey.legacyAutoInstallUpdates)
         assertCondition(
             defaults.requiresStableUpdateChannelEnforcement(),
-            "Stable channel enforcement should detect unsupported Sparkle preferences"
+            "Stable channel enforcement should detect beta and legacy Sparkle preferences"
         )
         assertCondition(
             defaults.enforceStableUpdateChannel(),
@@ -104,16 +104,16 @@ enum DebugSelfTests {
             "Stable channel enforcement should clear beta flag"
         )
         assertCondition(
-            defaults.bool(forKey: UserDefaultsKey.autoInstallUpdates, default: false),
-            "Stable channel enforcement should force auto install"
-        )
-        assertCondition(
-            defaults.bool(forKey: UserDefaultsKey.automaticUpdateChecks, default: false),
-            "Stable channel enforcement should force automatic update checks"
-        )
-        assertCondition(
             defaults.object(forKey: UserDefaultsKey.legacyAutoInstallUpdates) == nil,
             "Stable channel enforcement should clear legacy auto install flag"
+        )
+        assertCondition(
+            defaults.bool(forKey: UserDefaultsKey.autoInstallUpdates, default: true) == false,
+            "Stable channel enforcement should NOT override manual auto install preference"
+        )
+        assertCondition(
+            defaults.bool(forKey: UserDefaultsKey.automaticUpdateChecks, default: true) == false,
+            "Stable channel enforcement should NOT override manual automatic update preference"
         )
         assertCondition(
             !defaults.requiresStableUpdateChannelEnforcement(),

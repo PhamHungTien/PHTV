@@ -600,13 +600,7 @@ extension UserDefaults {
         if object(forKey: UserDefaultsKey.sparkleBetaChannel) != nil {
             return true
         }
-        if object(forKey: UserDefaultsKey.legacyAutoInstallUpdates) != nil {
-            return true
-        }
-        if !isExplicitlyEnabled(forKey: UserDefaultsKey.automaticUpdateChecks) {
-            return true
-        }
-        return !isExplicitlyEnabled(forKey: UserDefaultsKey.autoInstallUpdates)
+        return object(forKey: UserDefaultsKey.legacyAutoInstallUpdates) != nil
     }
 
     /// Always use the stable Sparkle channel. Automatic checks and installs are managed by the UI.
