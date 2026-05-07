@@ -246,7 +246,7 @@ enum SettingsTabSection: String, CaseIterable, Identifiable {
     nonisolated var tabs: [SettingsTab] {
         switch self {
         case .typing:
-            return [.typing, .phtvPicker, .clipboardHistory, .hotkeys, .macro, .apps]
+            return [.typing, .hotkeys, .macro, .apps, .phtvPicker, .clipboardHistory]
         case .system:
             return [.system]
         case .support:
