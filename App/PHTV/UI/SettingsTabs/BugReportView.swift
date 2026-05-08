@@ -175,7 +175,7 @@ struct BugReportView: View {
                     minHeight: 86
                 )
 
-                HStack(spacing: 10) {
+                HStack(alignment: .top, spacing: 10) {
                     compactPicker(title: "Mức độ", selection: $bugSeverity) {
                         ForEach(BugSeverity.allCases) { severity in
                             Text("\(severity.badge) \(severity.displayName)").tag(severity)
@@ -188,8 +188,11 @@ struct BugReportView: View {
                         }
                     }
 
-                    TextField("Email liên hệ (tuỳ chọn)", text: $contactEmail)
-                        .textFieldStyle(.roundedBorder)
+                    compactTextField(
+                        title: "Email",
+                        placeholder: "Email liên hệ (tùy chọn)",
+                        text: $contactEmail
+                    )
                 }
 
                 DisclosureGroup(isExpanded: $showOptionalDetails) {
@@ -449,6 +452,18 @@ struct BugReportView: View {
             .controlSize(.small)
         }
         .frame(width: 128, alignment: .leading)
+    }
+
+    private func compactTextField(title: String, placeholder: String, text: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            compactFieldLabel(title)
+
+            TextField(placeholder, text: text)
+                .textFieldStyle(.roundedBorder)
+                .settingsTextField()
+                .controlSize(.small)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func actionLabel(_ title: String, systemImage: String) -> some View {
