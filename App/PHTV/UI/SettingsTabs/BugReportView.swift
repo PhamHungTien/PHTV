@@ -71,9 +71,6 @@ struct BugReportView: View {
 
     @State private var bugTitle: String = ""
     @State private var bugDescription: String = ""
-    @State private var stepsToReproduce: String = ""
-    @State private var expectedResult: String = ""
-    @State private var actualResult: String = ""
     @State private var contactEmail: String = ""
     @State private var bugSeverity: BugSeverity = .normal
     @State private var bugArea: BugArea = .typing
@@ -88,7 +85,6 @@ struct BugReportView: View {
     @State private var showLogPreview: Bool = false
     @State private var isSending: Bool = false
     @State private var hasLoadedLogsOnce: Bool = false
-    @State private var showOptionalDetails: Bool = false
     @State private var showingSaveReportSheet: Bool = false
     @State private var reportDocument = BugReportDocument(text: "")
 
@@ -195,45 +191,6 @@ struct BugReportView: View {
                     )
                 }
 
-                DisclosureGroup(isExpanded: $showOptionalDetails) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        compactFieldLabel("Bước tái hiện")
-                        bugTextEditor(
-                            text: $stepsToReproduce,
-                            placeholder: "1. Mở ứng dụng...\n2. Thực hiện...\n3. Lỗi xảy ra...",
-                            minHeight: 66
-                        )
-
-                        HStack(spacing: 12) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                compactFieldLabel("Mong muốn")
-                                bugTextEditor(
-                                    text: $expectedResult,
-                                    placeholder: "Ứng dụng nên...",
-                                    minHeight: 58
-                                )
-                            }
-
-                            VStack(alignment: .leading, spacing: 6) {
-                                compactFieldLabel("Thực tế")
-                                bugTextEditor(
-                                    text: $actualResult,
-                                    placeholder: "Thực tế đang...",
-                                    minHeight: 58
-                                )
-                            }
-                        }
-                    }
-                    .padding(.top, 8)
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "slider.horizontal.3")
-                            .font(.system(size: 12, weight: .semibold))
-                        Text("Chi tiết tái hiện")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
             }
         }
     }
@@ -698,15 +655,6 @@ struct BugReportView: View {
         ## 📝 Mô tả chi tiết
         \(bugDescription.isEmpty ? "(Chưa nhập)" : bugDescription)
 
-        ## ✅ Bước tái hiện
-        \(stepsToReproduce.isEmpty ? "(Chưa nhập)" : stepsToReproduce)
-
-        ## 🎯 Kết quả mong muốn
-        \(expectedResult.isEmpty ? "(Chưa nhập)" : expectedResult)
-
-        ## ❗️Kết quả thực tế
-        \(actualResult.isEmpty ? "(Chưa nhập)" : actualResult)
-
         """
 
         if appState.includeSystemInfo {
@@ -874,16 +822,6 @@ struct BugReportView: View {
         }
         report += "\n"
 
-        if !stepsToReproduce.isEmpty {
-            report += "## ✅ Bước tái hiện\n\(stepsToReproduce)\n\n"
-        }
-        if !expectedResult.isEmpty {
-            report += "## 🎯 Kết quả mong muốn\n\(expectedResult)\n\n"
-        }
-        if !actualResult.isEmpty {
-            report += "## ❗️Kết quả thực tế\n\(actualResult)\n\n"
-        }
-
         // Thông tin hệ thống (rút gọn nhưng đầy đủ)
         if appState.includeSystemInfo {
             let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
@@ -1010,23 +948,11 @@ struct BugReportView: View {
         if bugDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             bugDescription = "Mô tả ngắn gọn vấn đề và bối cảnh xảy ra."
         }
-        if stepsToReproduce.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            stepsToReproduce = "1. Mở...\n2. Thực hiện...\n3. Lỗi xuất hiện..."
-        }
-        if expectedResult.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            expectedResult = "Kết quả mong muốn là..."
-        }
-        if actualResult.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            actualResult = "Kết quả thực tế đang là..."
-        }
     }
 
     private func clearForm() {
         bugTitle = ""
         bugDescription = ""
-        stepsToReproduce = ""
-        expectedResult = ""
-        actualResult = ""
         contactEmail = ""
         bugSeverity = .normal
         bugArea = .typing
