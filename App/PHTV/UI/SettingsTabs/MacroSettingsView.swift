@@ -293,8 +293,7 @@ struct MacroSettingsView: View {
 
                 Spacer(minLength: SettingsLayout.sectionSpacing)
             }
-            .frame(maxWidth: .infinity)
-            .padding(SettingsLayout.contentPadding)
+            .settingsPageFrame()
         }
         .settingsBackground()
         .alert("Không thể xử lý file", isPresented: $showFileTransferError) {

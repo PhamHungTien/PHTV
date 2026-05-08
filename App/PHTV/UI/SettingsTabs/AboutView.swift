@@ -64,21 +64,16 @@ struct AboutView: View {
                     subtitle: "Ủng hộ để PHTV tiếp tục được cải thiện",
                     icon: "heart"
                 ) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Nếu PHTV hữu ích, bạn có thể ủng hộ để giúp phát triển thêm các tính năng mới.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        Button {
-                            showDonateQR.toggle()
-                        } label: {
-                            Label("Hiển thị QR", systemImage: "qrcode")
-                        }
-                        .adaptiveBorderedButtonStyle()
-                        .popover(isPresented: $showDonateQR, arrowEdge: .bottom) {
-                            DonateQRPopoverView()
-                        }
+                    SettingsButtonRow(
+                        icon: "qrcode",
+                        iconColor: .accentColor,
+                        title: "Hiển thị QR ủng hộ",
+                        subtitle: "Mở mã QR ủng hộ phát triển PHTV"
+                    ) {
+                        showDonateQR.toggle()
+                    }
+                    .popover(isPresented: $showDonateQR, arrowEdge: .bottom) {
+                        DonateQRPopoverView()
                     }
                 }
 
@@ -94,8 +89,10 @@ struct AboutView: View {
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
+                .frame(maxWidth: SettingsLayout.contentMaxWidth)
                 .padding(.bottom, 20)
             }
+            .settingsPageFrame()
         }
         .settingsBackground()
     }
@@ -110,6 +107,8 @@ private struct AboutInfoRow: View {
             Text(title)
                 .font(.body)
                 .foregroundStyle(.primary)
+                .lineLimit(1)
+                .layoutPriority(1)
 
             Spacer(minLength: 12)
 
@@ -118,6 +117,8 @@ private struct AboutInfoRow: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.trailing)
                 .textSelection(.enabled)
+                .lineLimit(2)
+                .frame(width: SettingsLayout.rowControlColumnWidth, alignment: .trailing)
         }
         .padding(.vertical, SettingsLayout.rowVerticalPadding)
     }

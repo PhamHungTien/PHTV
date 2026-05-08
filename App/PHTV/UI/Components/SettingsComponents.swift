@@ -28,6 +28,17 @@ enum SettingsLayout {
     static let windowIdealSize = CGSize(width: 900, height: 620)
 }
 
+// MARK: - Settings Page
+
+extension View {
+    func settingsPageFrame() -> some View {
+        self
+            .frame(maxWidth: SettingsLayout.contentMaxWidth, alignment: .top)
+            .frame(maxWidth: .infinity, alignment: .top)
+            .padding(SettingsLayout.contentPadding)
+    }
+}
+
 // MARK: - Settings Card
 
 struct SettingsCard<Content: View, Trailing: View>: View {

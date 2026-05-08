@@ -106,8 +106,7 @@ struct BugReportView: View {
 
                 Spacer(minLength: SettingsLayout.sectionSpacing)
             }
-            .frame(maxWidth: .infinity)
-            .padding(SettingsLayout.contentPadding)
+            .settingsPageFrame()
         }
         .settingsBackground()
         .alert("Đã sao chép", isPresented: $showCopiedAlert) {
@@ -162,129 +161,72 @@ struct BugReportView: View {
     // MARK: - Bug Info Section
     private var bugInfoSection: some View {
         SettingsCard(
-            title: "Thông tin sự cố",
-            subtitle: "Chỉ cần tiêu đề và mô tả",
+            title: "Sự cố",
+            subtitle: nil,
             icon: "ladybug.fill"
         ) {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Bạn chỉ cần nhập tiêu đề và mô tả. Các mục khác là tuỳ chọn.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                // Bug Title
+            VStack(alignment: .leading, spacing: 10) {
                 TextField("Tiêu đề vấn đề (vd: Không gõ được tiếng Việt trong Safari)", text: $bugTitle)
                     .textFieldStyle(.roundedBorder)
 
-                // Description
-                TextEditor(text: $bugDescription)
-                    .frame(minHeight: 100)
-                    .font(.body)
-                    .overlay(alignment: .topLeading) {
-                        if bugDescription.isEmpty {
-                            Text("Mô tả ngắn gọn vấn đề. Có thể kèm bước tái hiện nếu muốn…")
-                                .foregroundStyle(.tertiary)
-                                .padding(6)
-                                .allowsHitTesting(false)
+                bugTextEditor(
+                    text: $bugDescription,
+                    placeholder: "Mô tả ngắn gọn vấn đề, app đang gõ, từ đang gõ, và kết quả sai...",
+                    minHeight: 86
+                )
+
+                HStack(spacing: 10) {
+                    compactPicker(title: "Mức độ", selection: $bugSeverity) {
+                        ForEach(BugSeverity.allCases) { severity in
+                            Text("\(severity.badge) \(severity.displayName)").tag(severity)
                         }
                     }
+
+                    compactPicker(title: "Khu vực", selection: $bugArea) {
+                        ForEach(BugArea.allCases) { area in
+                            Text(area.displayName).tag(area)
+                        }
+                    }
+
+                    TextField("Email liên hệ (tuỳ chọn)", text: $contactEmail)
+                        .textFieldStyle(.roundedBorder)
+                }
 
                 DisclosureGroup(isExpanded: $showOptionalDetails) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Các mục dưới đây giúp chẩn đoán nhanh hơn (không bắt buộc).")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 10) {
+                        compactFieldLabel("Bước tái hiện")
+                        bugTextEditor(
+                            text: $stepsToReproduce,
+                            placeholder: "1. Mở ứng dụng...\n2. Thực hiện...\n3. Lỗi xảy ra...",
+                            minHeight: 66
+                        )
 
                         HStack(spacing: 12) {
                             VStack(alignment: .leading, spacing: 6) {
-                                Text("Mức độ")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Picker("", selection: $bugSeverity) {
-                                    ForEach(BugSeverity.allCases) { severity in
-                                        Text("\(severity.badge) \(severity.displayName)").tag(severity)
-                                    }
-                                }
-                                .labelsHidden()
-                                .pickerStyle(.menu)
-                                .glassMenuPickerStyle()
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                                compactFieldLabel("Mong muốn")
+                                bugTextEditor(
+                                    text: $expectedResult,
+                                    placeholder: "Ứng dụng nên...",
+                                    minHeight: 58
+                                )
                             }
 
                             VStack(alignment: .leading, spacing: 6) {
-                                Text("Khu vực")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Picker("", selection: $bugArea) {
-                                    ForEach(BugArea.allCases) { area in
-                                        Text(area.displayName).tag(area)
-                                    }
-                                }
-                                .labelsHidden()
-                                .pickerStyle(.menu)
-                                .glassMenuPickerStyle()
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                                compactFieldLabel("Thực tế")
+                                bugTextEditor(
+                                    text: $actualResult,
+                                    placeholder: "Thực tế đang...",
+                                    minHeight: 58
+                                )
                             }
                         }
-
-                        Text("Bước tái hiện")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        TextEditor(text: $stepsToReproduce)
-                            .frame(minHeight: 80)
-                            .font(.body)
-                            .overlay(alignment: .topLeading) {
-                                if stepsToReproduce.isEmpty {
-                                    Text("1. Mở ứng dụng...\n2. Thực hiện...\n3. Lỗi xảy ra...")
-                                        .foregroundStyle(.tertiary)
-                                        .padding(6)
-                                        .allowsHitTesting(false)
-                                }
-                            }
-
-                        HStack(spacing: 12) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Kết quả mong muốn")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                TextEditor(text: $expectedResult)
-                                    .frame(minHeight: 70)
-                                    .font(.body)
-                                    .overlay(alignment: .topLeading) {
-                                        if expectedResult.isEmpty {
-                                            Text("Ứng dụng nên…")
-                                                .foregroundStyle(.tertiary)
-                                                .padding(6)
-                                                .allowsHitTesting(false)
-                                        }
-                                    }
-                            }
-
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Kết quả thực tế")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                TextEditor(text: $actualResult)
-                                    .frame(minHeight: 70)
-                                    .font(.body)
-                                    .overlay(alignment: .topLeading) {
-                                        if actualResult.isEmpty {
-                                            Text("Thực tế đang…")
-                                                .foregroundStyle(.tertiary)
-                                                .padding(6)
-                                                .allowsHitTesting(false)
-                                        }
-                                }
-                            }
-                        }
-                        TextField("Email liên hệ (tuỳ chọn)", text: $contactEmail)
-                            .textFieldStyle(.roundedBorder)
                     }
-                    .padding(.top, 4)
+                    .padding(.top, 8)
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "slider.horizontal.3")
                             .font(.system(size: 12, weight: .semibold))
-                        Text("Thêm chi tiết (tuỳ chọn)")
+                        Text("Chi tiết tái hiện")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -296,8 +238,8 @@ struct BugReportView: View {
     // MARK: - Debug Options Section
     private var debugOptionsSection: some View {
         SettingsCard(
-            title: "Thông tin chẩn đoán",
-            subtitle: "Hệ thống và nhật ký",
+            title: "Đính kèm",
+            subtitle: nil,
             icon: "doc.text.fill"
         ) {
             VStack(spacing: 0) {
@@ -321,31 +263,34 @@ struct BugReportView: View {
 
                 if appState.includeLogs {
                     SettingsDivider()
-                    HStack(spacing: 10) {
-                        if isLoadingLogs {
-                            ProgressView()
-                                .controlSize(.small)
-                        } else {
-                            Image(systemName: hasLoadedLogsOnce ? "checkmark.circle.fill" : "arrow.down.circle.fill")
-                                .foregroundStyle(hasLoadedLogsOnce ? Color.green : Color.accentColor)
-                        }
-                        Text(hasLoadedLogsOnce ? "Đã tải log — tắt/bật để làm mới" : "Bật để tải log (tối đa 100 mục)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 6)
 
-                    HStack(spacing: 12) {
+                    HStack(spacing: 10) {
+                        Label {
+                            Text(logStatusText)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } icon: {
+                            if isLoadingLogs {
+                                ProgressView()
+                                    .controlSize(.small)
+                            } else {
+                                Image(systemName: hasLoadedLogsOnce ? "checkmark.circle.fill" : "arrow.down.circle.fill")
+                                    .foregroundStyle(hasLoadedLogsOnce ? Color.green : Color.accentColor)
+                            }
+                        }
+                        .labelStyle(.titleAndIcon)
+
+                        Spacer(minLength: 10)
+
                         Button {
                             Task { await refreshLogs() }
                         } label: {
-                            Label("Làm mới log", systemImage: "arrow.clockwise")
-                                .font(.caption.weight(.semibold))
+                            Image(systemName: "arrow.clockwise")
                         }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(Color.accentColor)
+                        .adaptiveBorderedButtonStyle()
+                        .controlSize(.small)
                         .disabled(isLoadingLogs)
+                        .help("Làm mới log")
 
                         Button {
                             withAnimation(.easeInOut(duration: 0.2)) {
@@ -355,14 +300,12 @@ struct BugReportView: View {
                                 Task { await loadLogsIfNeeded() }
                             }
                         } label: {
-                            Label(showLogPreview ? "Ẩn xem trước" : "Xem trước log", systemImage: showLogPreview ? "chevron.up" : "chevron.down")
-                                .font(.caption.weight(.semibold))
+                            Label(showLogPreview ? "Ẩn" : "Xem", systemImage: showLogPreview ? "chevron.up" : "chevron.down")
                         }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(Color.accentColor)
-
-                        Spacer()
+                        .adaptiveBorderedButtonStyle()
+                        .controlSize(.small)
                     }
+                    .padding(.vertical, SettingsLayout.rowVerticalPadding)
 
                     if showLogPreview {
                         TextEditor(text: .constant(logPreviewText))
@@ -389,102 +332,130 @@ struct BugReportView: View {
     // MARK: - Actions Section
     private var actionsSection: some View {
         SettingsCard(
-            title: "Gửi báo lỗi",
-            subtitle: "Chọn kênh gửi phù hợp",
+            title: "Gửi",
+            subtitle: nil,
             icon: "paperplane.fill"
         ) {
-            HStack(spacing: 12) {
-                // Copy to Clipboard
-                Button {
-                    Task { await copyBugReportToClipboardAsync() }
-                } label: {
-                    if isSending {
-                        ProgressView()
-                            .controlSize(.small)
-                            .frame(maxWidth: .infinity)
-                    } else {
-                        Label("Sao chép báo lỗi", systemImage: "doc.on.doc")
-                            .frame(maxWidth: .infinity)
+            VStack(spacing: 10) {
+                HStack(spacing: 10) {
+                    Button {
+                        Task { await openGitHubIssueAsync() }
+                    } label: {
+                        actionLabel("Mở GitHub", systemImage: "link")
                     }
-                }
-                .adaptiveBorderedButtonStyle()
-                .controlSize(.large)
-                .disabled(isSending)
+                    .adaptiveProminentButtonStyle()
+                    .tint(.accentColor)
+                    .disabled(isSending)
 
-                // Open GitHub Issue
-                Button {
-                    Task { await openGitHubIssueAsync() }
-                } label: {
-                    if isSending {
-                        ProgressView()
-                            .controlSize(.small)
-                            .frame(maxWidth: .infinity)
-                    } else {
-                        Label("GitHub", systemImage: "link")
-                            .frame(maxWidth: .infinity)
+                    Button {
+                        Task { await copyBugReportToClipboardAsync() }
+                    } label: {
+                        actionLabel("Sao chép", systemImage: "doc.on.doc")
                     }
-                }
-                .adaptiveProminentButtonStyle()
-                .controlSize(.large)
-                .tint(.accentColor)
-                .disabled(isSending)
+                    .adaptiveBorderedButtonStyle()
+                    .disabled(isSending)
 
-                // Send Email
-                Button {
-                    Task { await sendEmailReportAsync() }
-                } label: {
+                    Button {
+                        Task { await sendEmailReportAsync() }
+                    } label: {
+                        actionLabel("Email", systemImage: "envelope")
+                    }
+                    .adaptiveBorderedButtonStyle()
+                    .disabled(isSending)
+                }
+                .controlSize(.regular)
+
+                HStack(spacing: 10) {
                     if isSending {
                         ProgressView()
                             .controlSize(.small)
-                            .frame(maxWidth: .infinity)
-                    } else {
-                        Label("Gửi email", systemImage: "envelope")
-                            .frame(maxWidth: .infinity)
+                        Text("Đang chuẩn bị báo cáo...")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
+
+                    Spacer()
+
+                    Button {
+                        Task { await saveReportToFileAsync() }
+                    } label: {
+                        Label("Lưu", systemImage: "square.and.arrow.down")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.accentColor)
+                    .disabled(isSending)
+
+                    Button {
+                        applyTemplateIfNeeded()
+                    } label: {
+                        Label("Mẫu", systemImage: "wand.and.stars")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.accentColor)
+                    .disabled(isSending)
+
+                    Button(role: .destructive) {
+                        clearForm()
+                    } label: {
+                        Label("Xoá", systemImage: "trash")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isSending)
                 }
-                .adaptiveBorderedButtonStyle()
-                .controlSize(.large)
-                .disabled(isSending)
             }
-            .padding(.vertical, 8)
-
-            HStack(spacing: 10) {
-                Button {
-                    Task { await saveReportToFileAsync() }
-                } label: {
-                    Label("Lưu báo cáo…", systemImage: "square.and.arrow.down")
-                        .font(.caption.weight(.semibold))
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(Color.accentColor)
-                .disabled(isSending)
-
-                Button {
-                    applyTemplateIfNeeded()
-                } label: {
-                    Label("Tạo mẫu", systemImage: "wand.and.stars")
-                        .font(.caption.weight(.semibold))
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(Color.accentColor)
-                .disabled(isSending)
-
-                Spacer()
-
-                Button(role: .destructive) {
-                    clearForm()
-                } label: {
-                    Label("Xoá nội dung", systemImage: "trash")
-                        .font(.caption.weight(.semibold))
-                }
-                .buttonStyle(.plain)
-                .disabled(isSending)
-            }
-            .padding(.top, 6)
         }
     }
 
     // MARK: - Helper Views
+    private func bugTextEditor(text: Binding<String>, placeholder: String, minHeight: CGFloat) -> some View {
+        TextEditor(text: text)
+            .font(.body)
+            .frame(minHeight: minHeight)
+            .settingsTextAreaSurface()
+            .overlay(alignment: .topLeading) {
+                if text.wrappedValue.isEmpty {
+                    Text(placeholder)
+                        .foregroundStyle(.tertiary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 7)
+                        .allowsHitTesting(false)
+                }
+            }
+    }
+
+    private func compactFieldLabel(_ title: String) -> some View {
+        Text(title)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+    }
+
+    private func compactPicker<SelectionValue: Hashable, PickerContent: View>(
+        title: String,
+        selection: Binding<SelectionValue>,
+        @ViewBuilder content: () -> PickerContent
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            compactFieldLabel(title)
+
+            Picker("", selection: selection) {
+                content()
+            }
+            .labelsHidden()
+            .pickerStyle(.menu)
+            .glassMenuPickerStyle()
+            .controlSize(.small)
+        }
+        .frame(width: 128, alignment: .leading)
+    }
+
+    private func actionLabel(_ title: String, systemImage: String) -> some View {
+        Label(title, systemImage: systemImage)
+            .frame(maxWidth: .infinity)
+    }
+
     private func systemInfoRow(_ label: String, value: String) -> some View {
         HStack {
             Text(label)
@@ -494,6 +465,13 @@ struct BugReportView: View {
                 .fontWeight(.medium)
         }
         .font(.caption)
+    }
+
+    private var logStatusText: String {
+        if isLoadingLogs {
+            return "Đang tải log..."
+        }
+        return hasLoadedLogsOnce ? "Đã tải log" : "Sẵn sàng tải log"
     }
 
     // MARK: - Helper Functions
@@ -1053,4 +1031,30 @@ struct BugReportView: View {
     BugReportView()
         .environment(AppState.shared)
         .frame(width: 600, height: 800)
+}
+
+private extension View {
+    @ViewBuilder
+    func settingsTextAreaSurface() -> some View {
+        if #available(macOS 13.0, *) {
+            self
+                .scrollContentBackground(.hidden)
+                .padding(4)
+                .background {
+                    PHTVRoundedRect(cornerRadius: 8)
+                        .fill(Color(NSColor.textBackgroundColor).opacity(0.72))
+                }
+                .overlay {
+                    PHTVRoundedRect(cornerRadius: 8)
+                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                }
+        } else {
+            self
+                .padding(4)
+                .background {
+                    PHTVRoundedRect(cornerRadius: 8)
+                        .fill(Color(NSColor.textBackgroundColor))
+                }
+        }
+    }
 }

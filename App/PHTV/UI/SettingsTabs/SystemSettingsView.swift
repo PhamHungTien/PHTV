@@ -49,8 +49,7 @@ struct SystemSettingsView: View {
 
                 Spacer(minLength: SettingsLayout.sectionSpacing)
             }
-            .frame(maxWidth: .infinity)
-            .padding(SettingsLayout.contentPadding)
+            .settingsPageFrame()
         }
         .settingsBackground()
         .sheet(isPresented: $showingConvertTool) {
