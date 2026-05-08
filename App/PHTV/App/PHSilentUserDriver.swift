@@ -116,7 +116,10 @@ final class PHSilentUserDriver: SPUStandardUserDriver {
     }
 
     private var automaticInstallEnabled: Bool {
-        UserDefaults.standard.bool(forKey: UserDefaultsKey.autoInstallUpdates, default: true)
+        UserDefaults.standard.bool(
+            forKey: UserDefaultsKey.autoInstallUpdates,
+            default: Defaults.autoInstallUpdates
+        )
     }
 
     private func shouldInstallAutomatically(appcastItem: SUAppcastItem, state: SPUUserUpdateState) -> Bool {

@@ -461,8 +461,8 @@ import Foundation
         PHTVEngineRuntimeFacade.setCurrentLanguage(1)
         defaults.set(1, forKey: UserDefaultsKey.inputMethod)
 
-        PHTVEngineRuntimeFacade.setCurrentInputType(0)
-        defaults.set(0, forKey: UserDefaultsKey.inputType)
+        PHTVEngineRuntimeFacade.setCurrentInputType(Int32(Defaults.inputMethod.toIndex()))
+        defaults.set(Defaults.inputMethod.toIndex(), forKey: UserDefaultsKey.inputType)
 
         PHTVEngineRuntimeFacade.setFreeMark(0)
         defaults.set(0, forKey: UserDefaultsKey.freeMark)
@@ -470,51 +470,51 @@ import Foundation
         PHTVEngineRuntimeFacade.setCheckSpelling(Defaults.checkSpelling ? 1 : 0)
         defaults.set(Defaults.checkSpelling ? 1 : 0, forKey: UserDefaultsKey.spelling)
 
-        PHTVEngineRuntimeFacade.setCurrentCodeTable(0)
-        defaults.set(0, forKey: UserDefaultsKey.codeTable)
+        PHTVEngineRuntimeFacade.setCurrentCodeTable(Int32(Defaults.codeTable.toIndex()))
+        defaults.set(Defaults.codeTable.toIndex(), forKey: UserDefaultsKey.codeTable)
 
         let defaultSwitchHotkey = Int32(Defaults.defaultSwitchKeyStatus)
         PHTVEngineRuntimeFacade.setSwitchKeyStatus(defaultSwitchHotkey)
         defaults.set(Int(defaultSwitchHotkey), forKey: UserDefaultsKey.switchKeyStatus)
 
-        PHTVEngineRuntimeFacade.setQuickTelex(0)
-        defaults.set(0, forKey: UserDefaultsKey.quickTelex)
+        PHTVEngineRuntimeFacade.setQuickTelex(Defaults.quickTelex ? 1 : 0)
+        defaults.set(Defaults.quickTelex, forKey: UserDefaultsKey.quickTelex)
 
-        PHTVEngineRuntimeFacade.setUseModernOrthography(1)
-        defaults.set(1, forKey: UserDefaultsKey.modernOrthography)
+        PHTVEngineRuntimeFacade.setUseModernOrthography(Defaults.useModernOrthography ? 1 : 0)
+        defaults.set(Defaults.useModernOrthography, forKey: UserDefaultsKey.modernOrthography)
 
         PHTVEngineRuntimeFacade.setFixRecommendBrowser(Defaults.fixRecommendBrowser ? 1 : 0)
         defaults.set(Defaults.fixRecommendBrowser ? 1 : 0, forKey: UserDefaultsKey.fixRecommendBrowser)
 
-        PHTVEngineRuntimeFacade.setUseMacro(1)
-        defaults.set(1, forKey: UserDefaultsKey.useMacro)
+        PHTVEngineRuntimeFacade.setUseMacro(Defaults.useMacro ? 1 : 0)
+        defaults.set(Defaults.useMacro, forKey: UserDefaultsKey.useMacro)
 
-        PHTVEngineRuntimeFacade.setUseMacroInEnglishMode(0)
-        defaults.set(0, forKey: UserDefaultsKey.useMacroInEnglishMode)
+        PHTVEngineRuntimeFacade.setUseMacroInEnglishMode(Defaults.useMacroInEnglishMode ? 1 : 0)
+        defaults.set(Defaults.useMacroInEnglishMode, forKey: UserDefaultsKey.useMacroInEnglishMode)
 
-        PHTVEngineRuntimeFacade.setSendKeyStepByStepEnabled(false)
-        defaults.set(0, forKey: UserDefaultsKey.sendKeyStepByStep)
+        PHTVEngineRuntimeFacade.setSendKeyStepByStepEnabled(Defaults.sendKeyStepByStep)
+        defaults.set(Defaults.sendKeyStepByStep, forKey: UserDefaultsKey.sendKeyStepByStep)
 
-        PHTVEngineRuntimeFacade.setSmartSwitchKeyEnabled(true)
-        defaults.set(1, forKey: UserDefaultsKey.useSmartSwitchKey)
+        PHTVEngineRuntimeFacade.setSmartSwitchKeyEnabled(Defaults.useSmartSwitchKey)
+        defaults.set(Defaults.useSmartSwitchKey, forKey: UserDefaultsKey.useSmartSwitchKey)
 
-        PHTVEngineRuntimeFacade.setUpperCaseFirstChar(0)
-        defaults.set(0, forKey: UserDefaultsKey.upperCaseFirstChar)
+        PHTVEngineRuntimeFacade.setUpperCaseFirstChar(Defaults.upperCaseFirstChar ? 1 : 0)
+        defaults.set(Defaults.upperCaseFirstChar, forKey: UserDefaultsKey.upperCaseFirstChar)
 
         PHTVEngineRuntimeFacade.setTempOffSpelling(0)
         defaults.set(0, forKey: UserDefaultsKey.tempOffSpelling)
 
-        PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(1)
-        defaults.set(1, forKey: UserDefaultsKey.allowConsonantZFWJ)
+        PHTVEngineRuntimeFacade.setAllowConsonantZFWJ(Defaults.allowConsonantZFWJ ? 1 : 0)
+        defaults.set(Defaults.allowConsonantZFWJ, forKey: UserDefaultsKey.allowConsonantZFWJ)
 
-        PHTVEngineRuntimeFacade.setQuickStartConsonant(0)
-        defaults.set(0, forKey: UserDefaultsKey.quickStartConsonant)
+        PHTVEngineRuntimeFacade.setQuickStartConsonant(Defaults.quickStartConsonant ? 1 : 0)
+        defaults.set(Defaults.quickStartConsonant, forKey: UserDefaultsKey.quickStartConsonant)
 
-        PHTVEngineRuntimeFacade.setQuickEndConsonant(0)
-        defaults.set(0, forKey: UserDefaultsKey.quickEndConsonant)
+        PHTVEngineRuntimeFacade.setQuickEndConsonant(Defaults.quickEndConsonant ? 1 : 0)
+        defaults.set(Defaults.quickEndConsonant, forKey: UserDefaultsKey.quickEndConsonant)
 
-        PHTVEngineRuntimeFacade.setRememberCode(1)
-        defaults.set(1, forKey: UserDefaultsKey.rememberCode)
+        PHTVEngineRuntimeFacade.setRememberCode(Defaults.rememberCode ? 1 : 0)
+        defaults.set(Defaults.rememberCode, forKey: UserDefaultsKey.rememberCode)
 
         PHTVEngineRuntimeFacade.setOtherLanguageMode(1)
         defaults.set(1, forKey: UserDefaultsKey.otherLanguage)
@@ -531,36 +531,41 @@ import Foundation
         PHTVEngineRuntimeFacade.setRestoreIfWrongSpelling(Int32(restoreIfWrongSpelling))
         defaults.set(restoreIfWrongSpelling, forKey: UserDefaultsKey.restoreIfWrongSpelling)
 
-        PHTVEngineRuntimeFacade.setRestoreOnEscape(1)
-        defaults.set(1, forKey: UserDefaultsKey.restoreOnEscape)
+        PHTVEngineRuntimeFacade.setRestoreOnEscape(Defaults.restoreOnEscape ? 1 : 0)
+        defaults.set(Defaults.restoreOnEscape, forKey: UserDefaultsKey.restoreOnEscape)
 
-        PHTVEngineRuntimeFacade.setCustomEscapeKey(0)
-        defaults.set(0, forKey: UserDefaultsKey.customEscapeKey)
+        PHTVEngineRuntimeFacade.setCustomEscapeKey(Int32(Defaults.restoreKeyCode))
+        defaults.set(Int(Defaults.restoreKeyCode), forKey: UserDefaultsKey.customEscapeKey)
 
-        PHTVEngineRuntimeFacade.setShowIconOnDock(false)
-        defaults.set(0, forKey: UserDefaultsKey.showIconOnDock)
+        PHTVEngineRuntimeFacade.setShowIconOnDock(Defaults.showIconOnDock)
+        defaults.set(Defaults.showIconOnDock, forKey: UserDefaultsKey.showIconOnDock)
 
-        PHTVEngineRuntimeFacade.setPerformLayoutCompat(0)
-        defaults.set(0, forKey: UserDefaultsKey.performLayoutCompat)
+        PHTVEngineRuntimeFacade.setPerformLayoutCompat(Defaults.performLayoutCompat ? 1 : 0)
+        defaults.set(Defaults.performLayoutCompat, forKey: UserDefaultsKey.performLayoutCompat)
 
         defaults.set(1, forKey: UserDefaultsKey.grayIcon)
-        defaults.set(false, forKey: UserDefaultsKey.runOnStartup)
+        defaults.set(Defaults.runOnStartup, forKey: UserDefaultsKey.runOnStartup)
         defaults.set(0, forKey: UserDefaultsKey.runOnStartupLegacy)
-        defaults.set(1, forKey: UserDefaultsKey.settingsWindowAlwaysOnTop)
-        defaults.set(0, forKey: UserDefaultsKey.beepOnModeSwitch)
-        defaults.set(0.5, forKey: UserDefaultsKey.beepVolume)
-        defaults.set(18.0, forKey: UserDefaultsKey.menuBarIconSize)
-        defaults.set(0, forKey: UserDefaultsKey.useVietnameseMenubarIcon)
+        defaults.set(Defaults.settingsWindowAlwaysOnTop, forKey: UserDefaultsKey.settingsWindowAlwaysOnTop)
+        defaults.set(Defaults.beepOnModeSwitch, forKey: UserDefaultsKey.beepOnModeSwitch)
+        defaults.set(Defaults.beepVolume, forKey: UserDefaultsKey.beepVolume)
+        defaults.set(Defaults.menuBarIconSize, forKey: UserDefaultsKey.menuBarIconSize)
+        defaults.set(Defaults.useVietnameseMenubarIcon, forKey: UserDefaultsKey.useVietnameseMenubarIcon)
 
-        defaults.set(86_400, forKey: UserDefaultsKey.updateCheckInterval)
-        defaults.set(true, forKey: UserDefaultsKey.legacyAutoInstallUpdates)
+        defaults.set(Defaults.updateCheckInterval, forKey: UserDefaultsKey.updateCheckInterval)
+        defaults.set(Defaults.automaticUpdateChecks, forKey: UserDefaultsKey.automaticUpdateChecks)
+        defaults.set(Defaults.autoInstallUpdates, forKey: UserDefaultsKey.autoInstallUpdates)
+        defaults.enforceStableUpdateChannel()
 
-        defaults.set(true, forKey: UserDefaultsKey.includeSystemInfo)
-        defaults.set(false, forKey: UserDefaultsKey.includeLogs)
-        defaults.set(true, forKey: UserDefaultsKey.includeCrashLogs)
+        defaults.set(Defaults.includeSystemInfo, forKey: UserDefaultsKey.includeSystemInfo)
+        defaults.set(Defaults.includeLogs, forKey: UserDefaultsKey.includeLogs)
+        defaults.set(Defaults.includeCrashLogs, forKey: UserDefaultsKey.includeCrashLogs)
 
-        let defaultPauseKey = Int32(KeyCode.leftOption)
-        PHTVEngineRuntimeFacade.setPauseKeyEnabled(0)
+        let defaultPauseKey = Int32(Defaults.pauseKeyCode)
+        PHTVEngineRuntimeFacade.setPauseKeyEnabled(Defaults.pauseKeyEnabled ? 1 : 0)
         PHTVEngineRuntimeFacade.setPauseKey(defaultPauseKey)
+        defaults.set(Defaults.pauseKeyEnabled, forKey: UserDefaultsKey.pauseKeyEnabled)
+        defaults.set(Int(Defaults.pauseKeyCode), forKey: UserDefaultsKey.pauseKey)
+        defaults.set(Defaults.pauseKeyName, forKey: UserDefaultsKey.pauseKeyName)
     }
 }

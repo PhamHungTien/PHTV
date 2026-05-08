@@ -470,6 +470,8 @@ enum Defaults {
 
     // MARK: - Updates
     static let updateCheckInterval = 86400  // 1 day in seconds
+    static let automaticUpdateChecks = true
+    static let autoInstallUpdates = true
 
     // MARK: - Bug Report
     static let includeSystemInfo = true
@@ -670,17 +672,21 @@ final class SettingsBootstrap: NSObject {
             UserDefaultsKey.convertToolDontAlertWhenCompleted: Defaults.convertToolDontAlertWhenCompleted,
             UserDefaultsKey.convertToolFromCode: Defaults.convertToolFromCode,
             UserDefaultsKey.convertToolToCode: Defaults.convertToolToCode,
+            UserDefaultsKey.enableClipboardHistory: Defaults.enableClipboardHistory,
+            UserDefaultsKey.clipboardHotkeyModifiers: Int(Defaults.clipboardHotkeyModifiers),
+            UserDefaultsKey.clipboardHotkeyKeyCode: Int(Defaults.clipboardHotkeyKeyCode),
+            UserDefaultsKey.clipboardHistoryMaxItems: Defaults.clipboardHistoryMaxItems,
             UserDefaultsKey.enableEmojiHotkey: Defaults.enableEmojiHotkey,
             UserDefaultsKey.emojiHotkeyModifiers: Int(Defaults.emojiHotkeyModifiers),
             UserDefaultsKey.emojiHotkeyKeyCode: Int(Defaults.emojiHotkeyKeyCode),
             UserDefaultsKey.runOnStartup: Defaults.runOnStartup,
             UserDefaultsKey.runOnStartupLegacy: 0,
             UserDefaultsKey.updateCheckInterval: Defaults.updateCheckInterval,
-            UserDefaultsKey.automaticUpdateChecks: true,
+            UserDefaultsKey.automaticUpdateChecks: Defaults.automaticUpdateChecks,
             UserDefaultsKey.includeSystemInfo: Defaults.includeSystemInfo,
             UserDefaultsKey.includeLogs: Defaults.includeLogs,
             UserDefaultsKey.includeCrashLogs: Defaults.includeCrashLogs,
-            UserDefaultsKey.autoInstallUpdates: true,
+            UserDefaultsKey.autoInstallUpdates: Defaults.autoInstallUpdates,
             "FreeMark": 0,
             "FixRecommendBrowser": 1,
             "vTempOffSpelling": 0,

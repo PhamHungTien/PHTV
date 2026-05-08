@@ -88,7 +88,10 @@ final class SparkleManager: NSObject {
         
         let interval = defaults.integer(forKey: UserDefaultsKey.updateCheckInterval, default: Defaults.updateCheckInterval)
         let autoChecks = interval != 0
-        let autoInstall = defaults.bool(forKey: UserDefaultsKey.autoInstallUpdates, default: true)
+        let autoInstall = defaults.bool(
+            forKey: UserDefaultsKey.autoInstallUpdates,
+            default: Defaults.autoInstallUpdates
+        )
         
         updater.automaticallyChecksForUpdates = autoChecks
         updater.automaticallyDownloadsUpdates = autoInstall
@@ -109,7 +112,10 @@ private final class SparkleUpdaterDelegate: NSObject, SPUUpdaterDelegate {
                              willInstallUpdateOnQuit item: SUAppcastItem,
                              immediateInstallationBlock immediateInstallHandler: @escaping () -> Void) -> Bool {
         _ = updater
-        guard UserDefaults.standard.bool(forKey: UserDefaultsKey.autoInstallUpdates, default: true) else {
+        guard UserDefaults.standard.bool(
+            forKey: UserDefaultsKey.autoInstallUpdates,
+            default: Defaults.autoInstallUpdates
+        ) else {
             return false
         }
 

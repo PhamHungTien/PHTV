@@ -356,7 +356,10 @@ final class SystemState {
             default: Defaults.updateCheckInterval
         )
         updateCheckFrequency = UpdateCheckFrequency.from(interval: updateInterval)
-        autoInstallUpdates = defaults.bool(forKey: UserDefaultsKey.autoInstallUpdates, default: true)
+        autoInstallUpdates = defaults.bool(
+            forKey: UserDefaultsKey.autoInstallUpdates,
+            default: Defaults.autoInstallUpdates
+        )
 
         // Ensure beta channel and legacy keys are cleaned up.
         if defaults.requiresStableUpdateChannelEnforcement() {
@@ -628,6 +631,7 @@ final class SystemState {
 
         let checkInterval = Defaults.updateCheckInterval
         updateCheckFrequency = UpdateCheckFrequency.from(interval: checkInterval)
+        autoInstallUpdates = Defaults.autoInstallUpdates
 
         includeSystemInfo = Defaults.includeSystemInfo
         includeLogs = Defaults.includeLogs
