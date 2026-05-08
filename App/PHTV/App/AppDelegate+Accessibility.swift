@@ -108,6 +108,7 @@ func phtvRunAccessibilityRevokedAlert() -> NSApplication.ModalResponse {
 var phtvAccessibilityRevokedAlertRunner: @MainActor () -> NSApplication.ModalResponse = phtvRunAccessibilityRevokedAlert
 
 func phtvShouldScheduleAutomaticTCCRepair(
+    accessibilityTrusted: Bool = true,
     isAttempting: Bool,
     attemptsInSession: Int,
     lastAttemptTime: CFAbsoluteTime,
@@ -115,6 +116,9 @@ func phtvShouldScheduleAutomaticTCCRepair(
     maxAttempts: Int = phtvTCCRepairMaxAttemptsPerSession,
     cooldown: CFAbsoluteTime = phtvTCCRepairRetryCooldown
 ) -> Bool {
+    if !accessibilityTrusted {
+        return false
+    }
     if isAttempting {
         return false
     }
@@ -487,6 +491,7 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
     func attemptAutomaticTCCRepairIfNeeded() {
         let now = CFAbsoluteTimeGetCurrent()
         guard phtvShouldScheduleAutomaticTCCRepair(
+            accessibilityTrusted: AXIsProcessTrusted(),
             isAttempting: isAttemptingTCCRepair,
             attemptsInSession: automaticTCCRepairAttemptCount,
             lastAttemptTime: lastAutomaticTCCRepairAttemptTime,

@@ -97,16 +97,13 @@ struct MacroCategoryEditorView: View {
 
                         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 8), spacing: 8) {
                             ForEach(availableIcons, id: \.self) { icon in
-                                Button {
+                                MacroCategoryIconButton(
+                                    icon: icon,
+                                    color: Color(hex: selectedColor) ?? .accentColor,
+                                    isSelected: selectedIcon == icon
+                                ) {
                                     selectedIcon = icon
-                                } label: {
-                                    Image(systemName: icon)
-                                        .font(.system(size: 16))
-                                        .frame(width: 36, height: 36)
                                 }
-                                .settingsControlButtonStyle(isProminent: selectedIcon == icon)
-                                .controlSize(.small)
-                                .tint(Color(hex: selectedColor) ?? .blue)
                             }
                         }
                     }
@@ -245,6 +242,64 @@ struct MacroCategoryEditorView: View {
 
         onSave(category)
         dismiss()
+    }
+}
+
+private struct MacroCategoryIconButton: View {
+    let icon: String
+    let color: Color
+    let isSelected: Bool
+    let action: () -> Void
+
+    @State private var isHovering = false
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: isSelected ? .semibold : .regular))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(iconForegroundStyle)
+                .frame(width: 36, height: 36)
+                .background {
+                    buttonBackground
+                }
+                .overlay {
+                    if isSelected {
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .stroke(Color.white.opacity(0.65), lineWidth: 1)
+                    }
+                }
+                .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(icon))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .onHover { hovering in
+            isHovering = hovering
+        }
+    }
+
+    private var iconForegroundStyle: some ShapeStyle {
+        isSelected ? AnyShapeStyle(Color.white) : AnyShapeStyle(color)
+    }
+
+    @ViewBuilder
+    private var buttonBackground: some View {
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
+            .fill(backgroundFill)
+    }
+
+    private var backgroundFill: Color {
+        if isSelected {
+            return color
+        }
+
+        if isHovering {
+            return Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.08)
+        }
+
+        return Color.primary.opacity(colorScheme == .dark ? 0.06 : 0.04)
     }
 }
 

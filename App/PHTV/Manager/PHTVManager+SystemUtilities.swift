@@ -8,17 +8,36 @@
 //
 
 import AppKit
+import ApplicationServices
 import Foundation
+
+func phtvShouldTreatTCCEntryAsCorrupt(
+    accessibilityTrusted: Bool,
+    canCreateEventTap: Bool,
+    isRegisteredInTCC: Bool
+) -> Bool {
+    accessibilityTrusted && !canCreateEventTap && !isRegisteredInTCC
+}
 
 @objc extension PHTVManager {
     @objc(phtv_isTCCEntryCorrupt)
     class func phtv_isTCCEntryCorrupt() -> Bool {
-        if canCreateEventTap() {
+        let accessibilityTrusted = AXIsProcessTrusted()
+        guard accessibilityTrusted else {
+            return false
+        }
+
+        let eventTapReady = canCreateEventTap()
+        if eventTapReady {
             return false
         }
 
         let isRegistered = PHTVTCCMaintenanceService.isAppRegisteredInTCC()
-        if !isRegistered {
+        if phtvShouldTreatTCCEntryAsCorrupt(
+            accessibilityTrusted: accessibilityTrusted,
+            canCreateEventTap: eventTapReady,
+            isRegisteredInTCC: isRegistered
+        ) {
             NSLog("[TCC] ⚠️ CORRUPT ENTRY DETECTED - App not found in TCC database!")
             return true
         }

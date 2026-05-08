@@ -9,6 +9,18 @@ import XCTest
 @testable import PHTV
 
 final class AutomaticTCCRepairRetryPolicyTests: XCTestCase {
+    func testPolicyRejectsWhenAccessibilityIsNotTrusted() {
+        XCTAssertFalse(
+            phtvShouldScheduleAutomaticTCCRepair(
+                accessibilityTrusted: false,
+                isAttempting: false,
+                attemptsInSession: 0,
+                lastAttemptTime: 0,
+                now: 100
+            )
+        )
+    }
+
     func testPolicyRejectsWhileRepairIsRunning() {
         XCTAssertFalse(
             phtvShouldScheduleAutomaticTCCRepair(
@@ -66,6 +78,40 @@ final class AutomaticTCCRepairRetryPolicyTests: XCTestCase {
                 attemptsInSession: 0,
                 lastAttemptTime: 0,
                 now: 1
+            )
+        )
+    }
+
+    func testCorruptEntryRequiresTrustedAccessibilityAndMissingTCCRegistration() {
+        XCTAssertFalse(
+            phtvShouldTreatTCCEntryAsCorrupt(
+                accessibilityTrusted: false,
+                canCreateEventTap: false,
+                isRegisteredInTCC: false
+            )
+        )
+
+        XCTAssertFalse(
+            phtvShouldTreatTCCEntryAsCorrupt(
+                accessibilityTrusted: true,
+                canCreateEventTap: true,
+                isRegisteredInTCC: false
+            )
+        )
+
+        XCTAssertFalse(
+            phtvShouldTreatTCCEntryAsCorrupt(
+                accessibilityTrusted: true,
+                canCreateEventTap: false,
+                isRegisteredInTCC: true
+            )
+        )
+
+        XCTAssertTrue(
+            phtvShouldTreatTCCEntryAsCorrupt(
+                accessibilityTrusted: true,
+                canCreateEventTap: false,
+                isRegisteredInTCC: false
             )
         )
     }

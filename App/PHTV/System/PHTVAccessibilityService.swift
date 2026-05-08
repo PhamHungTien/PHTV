@@ -8,7 +8,7 @@
 
 import Foundation
 import AppKit
-import ApplicationServices
+@preconcurrency import ApplicationServices
 import Darwin
 
 @objcMembers
@@ -819,22 +819,32 @@ final class PHTVAccessibilityService: NSObject {
         return isClaudeCodeSession
     }
 
-    @objc class func openAccessibilityPreferences() {
-        let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
-        _ = AXIsProcessTrustedWithOptions(options)
+    @discardableResult
+    @objc class func requestAccessibilityPrompt() -> Bool {
+        let promptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
+        let options = [promptKey: true] as CFDictionary
+        return AXIsProcessTrustedWithOptions(options)
+    }
 
-        if let url = URL(
-            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
-        ), NSWorkspace.shared.open(url) {
-            return
+    @objc class func openAccessibilityPreferences() {
+        _ = requestAccessibilityPrompt()
+
+        let settingsURLs = [
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility",
+            "x-apple.systempreferences:com.apple.preference.security",
+            "x-apple.systempreferences:com.apple.preference.universalaccess"
+        ]
+
+        for urlString in settingsURLs {
+            guard let url = URL(string: urlString) else { continue }
+            if NSWorkspace.shared.open(url) {
+                return
+            }
         }
 
-        let script = """
-        tell application "System Preferences"
-            activate
-            set current pane to pane "com.apple.preference.universalaccess"
-        end tell
-        """
-        NSAppleScript(source: script)?.executeAndReturnError(nil)
+        let systemSettingsURL = URL(fileURLWithPath: "/System/Applications/System Settings.app")
+        if FileManager.default.fileExists(atPath: systemSettingsURL.path) {
+            NSWorkspace.shared.open(systemSettingsURL)
+        }
     }
 }
