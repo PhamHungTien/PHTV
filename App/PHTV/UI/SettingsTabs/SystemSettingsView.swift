@@ -18,6 +18,8 @@ struct SystemSettingsView: View {
     @State private var showingExportSheet = false
     @State private var showingImportSheet = false
     @State private var showingImportConfirm = false
+    @State private var showingUninstallAlert = false
+    @State private var isUninstalling = false
     @State private var importData: SettingsBackup?
     @State private var errorMessage = ""
     @State private var showError = false
@@ -68,6 +70,14 @@ struct SystemSettingsView: View {
             }
         } message: {
             Text("Tất cả cài đặt sẽ được đưa về mặc định. Hành động này không thể hoàn tác.")
+        }
+        .alert("Gỡ cài đặt PHTV?", isPresented: $showingUninstallAlert) {
+            Button("Hủy", role: .cancel) {}
+            Button("Gỡ cài đặt", role: .destructive) {
+                uninstallPHTV()
+            }
+        } message: {
+            Text("PHTV sẽ tắt, xoá ứng dụng cùng toàn bộ cài đặt, dữ liệu cục bộ, cache, log và dữ liệu tạm liên quan. Hành động này không thể hoàn tác.")
         }
         .fileExporter(
             isPresented: $showingExportSheet,
@@ -331,6 +341,20 @@ struct SystemSettingsView: View {
                         showingResetAlert = true
                     }
                 )
+
+                SettingsDivider()
+
+                SettingsButtonRow(
+                    icon: "trash.fill",
+                    iconColor: .red,
+                    title: "Gỡ cài đặt PHTV",
+                    subtitle: "Xoá ứng dụng, cài đặt, cache, log và dữ liệu cục bộ",
+                    isDestructive: true,
+                    isLoading: isUninstalling,
+                    action: {
+                        showingUninstallAlert = true
+                    }
+                )
             }
         }
     }
@@ -554,6 +578,19 @@ struct SystemSettingsView: View {
     private func resetToDefaults() {
         // Reset via AppState (single source of truth)
         appState.resetToDefaults()
+    }
+
+    private func uninstallPHTV() {
+        guard !isUninstalling else { return }
+        isUninstalling = true
+
+        do {
+            try PHTVUninstaller.scheduleCleanUninstall()
+        } catch {
+            isUninstalling = false
+            errorMessage = error.localizedDescription
+            showError = true
+        }
     }
 
     private func checkForUpdates() {
