@@ -14,10 +14,12 @@ import Foundation
 struct PHTVEnglishUppercaseState {
     var pending: Bool
     var needsSpaceConfirm: Bool
+    var ellipsisContinuation: Bool = false
 
     static let idle = PHTVEnglishUppercaseState(
         pending: false,
-        needsSpaceConfirm: false
+        needsSpaceConfirm: false,
+        ellipsisContinuation: false
     )
 }
 
@@ -73,14 +75,32 @@ final class PHTVEventCallbackService {
         let hasCapsLock = flags.contains(.maskAlphaShift)
         let hasShiftOrCaps = hasShift || hasCapsLock
 
+        if state.ellipsisContinuation {
+            if keyCode == KEY_DOT || keyCode == KEY_SPACE {
+                return (state, false)
+            }
+            return (.idle, false)
+        }
+
         if let needsSpaceConfirm = englishUppercaseSentenceTerminatorSpaceRequirement(
             keyCode: keyCode,
             hasShift: hasShift
         ) {
+            if state.pending && state.needsSpaceConfirm && keyCode == KEY_DOT && !hasShift {
+                return (
+                    PHTVEnglishUppercaseState(
+                        pending: false,
+                        needsSpaceConfirm: false,
+                        ellipsisContinuation: true
+                    ),
+                    false
+                )
+            }
             return (
                 PHTVEnglishUppercaseState(
                     pending: true,
-                    needsSpaceConfirm: needsSpaceConfirm
+                    needsSpaceConfirm: needsSpaceConfirm,
+                    ellipsisContinuation: false
                 ),
                 false
             )
@@ -95,7 +115,8 @@ final class PHTVEventCallbackService {
                 return (
                     PHTVEnglishUppercaseState(
                         pending: true,
-                        needsSpaceConfirm: false
+                        needsSpaceConfirm: false,
+                        ellipsisContinuation: false
                     ),
                     false
                 )
@@ -183,7 +204,8 @@ final class PHTVEventCallbackService {
         ) {
             return PHTVEnglishUppercaseState(
                 pending: true,
-                needsSpaceConfirm: needsSpaceConfirm
+                needsSpaceConfirm: needsSpaceConfirm,
+                ellipsisContinuation: false
             )
         }
 
@@ -191,7 +213,8 @@ final class PHTVEventCallbackService {
             || isEnglishUppercaseSkippablePunctuation(keyCode: keyCode, hasShift: hasShift) {
             return PHTVEnglishUppercaseState(
                 pending: true,
-                needsSpaceConfirm: false
+                needsSpaceConfirm: false,
+                ellipsisContinuation: false
             )
         }
         return nil

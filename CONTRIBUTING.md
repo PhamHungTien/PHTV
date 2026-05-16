@@ -120,14 +120,20 @@ PHTV/
 # Clone project
 git clone https://github.com/PhamHungTien/PHTV.git
 
+# Kiểm tra môi trường local
+scripts/dev.sh env-check
+
 # Build project (Universal Binary - Intel + Apple Silicon)
-xcodebuild -project App/PHTV.xcodeproj -scheme PHTV -destination 'platform=macOS' build
+scripts/dev.sh build
 
 # Run engine regression tests
-xcodebuild -project App/PHTV.xcodeproj -scheme PHTV -configuration Debug -destination 'platform=macOS' test -only-testing:PHEngineTests/EngineRegressionTests
+scripts/dev.sh engine-test
+
+# Run hotkey smoke tests
+scripts/dev.sh hotkey-test
 
 # Clean build
-xcodebuild -project App/PHTV.xcodeproj clean
+scripts/dev.sh clean
 ```
 
 ### Debugging

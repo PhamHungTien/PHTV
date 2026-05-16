@@ -9,6 +9,34 @@
 import Foundation
 import AppKit
 
+// MARK: - Build Info
+
+enum PHTVBuildInfo {
+    static var isDebugBuild: Bool {
+        #if DEBUG
+        true
+        #else
+        false
+        #endif
+    }
+
+    static var updatesEnabled: Bool {
+        !isDebugBuild
+    }
+
+    static var shortVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+    }
+
+    static var buildNumber: String {
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "0"
+    }
+
+    static var displayVersion: String {
+        isDebugBuild ? "\(shortVersion) Debug (\(buildNumber))" : shortVersion
+    }
+}
+
 // MARK: - UserDefaults Keys
 
 enum UserDefaultsKey {

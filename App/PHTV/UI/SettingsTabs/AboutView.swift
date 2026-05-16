@@ -11,7 +11,7 @@ import SwiftUI
 struct AboutView: View {
     @State private var showDonateQR = false
     private var versionString: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1.0"
+        PHTVBuildInfo.displayVersion
     }
 
     var body: some View {

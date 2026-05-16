@@ -124,9 +124,12 @@ HEADER_SEARCH_PATHS = $(SRCROOT)/PHTV/Engine
 # Mở project
 open App/PHTV.xcodeproj
 
+# Kiểm tra môi trường local
+scripts/dev.sh env-check
+
 # Build từ command line
-xcodebuild -project App/PHTV.xcodeproj -scheme PHTV -destination 'platform=macOS' build
+scripts/dev.sh build
 
 # Chạy regression tests
-xcodebuild -project App/PHTV.xcodeproj -scheme PHTV -configuration Debug -destination 'platform=macOS' test -only-testing:PHEngineTests/EngineRegressionTests
+scripts/dev.sh engine-test
 ```

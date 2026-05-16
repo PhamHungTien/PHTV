@@ -61,6 +61,26 @@ final class EnglishUppercaseFirstCharTests: XCTestCase {
         XCTAssertFalse(letter.state.needsSpaceConfirm)
     }
 
+    func testEllipsisSpaceLetterDoesNotForceUppercase() {
+        var state = PHTVEnglishUppercaseState.idle
+
+        state = transition(state, keyCode: KEY_DOT).state
+
+        let secondDot = transition(state, keyCode: KEY_DOT)
+        XCTAssertFalse(secondDot.forceUppercase)
+        XCTAssertFalse(secondDot.state.pending)
+        XCTAssertTrue(secondDot.state.ellipsisContinuation)
+        state = secondDot.state
+
+        state = transition(state, keyCode: KEY_DOT).state
+        state = transition(state, keyCode: KEY_SPACE).state
+
+        let letter = transition(state, keyCode: KEY_A)
+        XCTAssertFalse(letter.forceUppercase)
+        XCTAssertFalse(letter.state.pending)
+        XCTAssertFalse(letter.state.ellipsisContinuation)
+    }
+
     func testEnterThenLetterForcesUppercaseWithoutSpace() {
         var state = PHTVEnglishUppercaseState.idle
 

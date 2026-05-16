@@ -99,6 +99,7 @@ final class PHTVVietnameseEngine {
     var shouldUpperCaseEnglishRestore: Bool = false
     var upperCaseStatus: UInt8 = 0
     var upperCaseNeedsSpaceConfirm: Bool = false
+    var upperCaseEllipsisContinuation: Bool = false
     var snapshotUpperCaseFirstChar: UInt8 = 0
 
     var isCharKeyCode: Bool = false
@@ -699,6 +700,7 @@ final class PHTVVietnameseEngine {
         longWordHelper.removeAll()
         upperCaseStatus = 0
         upperCaseNeedsSpaceConfirm = false
+        upperCaseEllipsisContinuation = false
         snapshotUpperCaseFirstChar = UInt8(phtvRuntimeUpperCaseFirstCharEnabled())
     }
 
@@ -1809,6 +1811,7 @@ final class PHTVVietnameseEngine {
     func vPrimeUpperCaseFirstChar() {
         if phtvRuntimeUpperCaseFirstCharEnabled() != 0 && phtvRuntimeUpperCaseExcludedForCurrentApp() == 0 {
             upperCaseStatus = 2
+            upperCaseEllipsisContinuation = false
         }
     }
 
@@ -2455,6 +2458,10 @@ final class PHTVVietnameseEngine {
             hExt = 3
         }
 
+        let previousUpperCaseStatus = upperCaseStatus
+        let previousUpperCaseNeedsSpaceConfirm = upperCaseNeedsSpaceConfirm
+        let previousUpperCaseEllipsisContinuation = upperCaseEllipsisContinuation
+
         if hCode == HookCodeState.doNothing.rawValue {
             startNewSession(); setSpellCheckingEnabled(useSpellCheckingBefore); willTempOffEngine = false
         } else if hCode == HookCodeState.replaceMacro.rawValue || hasHandleQuickConsonant {
@@ -2471,13 +2478,25 @@ final class PHTVVietnameseEngine {
         }
 
         if snapshotUpperCaseFirstChar != 0 && phtvRuntimeUpperCaseExcludedForCurrentApp() == 0 {
-            if isSentenceTerminator(data, capsStatus) {
+            if previousUpperCaseStatus == 2 && previousUpperCaseNeedsSpaceConfirm && data == KEY_DOT && capsStatus != 1 {
+                upperCaseStatus = 0
+                upperCaseNeedsSpaceConfirm = false
+                upperCaseEllipsisContinuation = true
+            } else if previousUpperCaseEllipsisContinuation && (data == KEY_DOT || data == KEY_SPACE) {
+                // Keep suppressing auto-uppercase while the user is typing an ellipsis.
+                upperCaseEllipsisContinuation = true
+            } else if isSentenceTerminator(data, capsStatus) {
                 upperCaseStatus = 2
                 upperCaseNeedsSpaceConfirm = (data != KEY_ENTER && data != KEY_RETURN)
-            } else if upperCaseStatus > 0 && isUppercaseSkippablePunctuation(data, capsStatus) {
+                upperCaseEllipsisContinuation = false
+            } else if previousUpperCaseStatus > 0 && isUppercaseSkippablePunctuation(data, capsStatus) {
                 // Keep pending
+                upperCaseStatus = previousUpperCaseStatus
+                upperCaseNeedsSpaceConfirm = previousUpperCaseNeedsSpaceConfirm
+                upperCaseEllipsisContinuation = false
             } else {
                 upperCaseStatus = 0
+                upperCaseEllipsisContinuation = false
             }
         }
     }
@@ -2571,9 +2590,13 @@ final class PHTVVietnameseEngine {
             if phtvRuntimeUseMacroEnabled() != 0 && !hMacroKey.isEmpty { hMacroKey.removeLast(); if !hMacroRawKey.isEmpty { hMacroRawKey.removeLast() } }
             hBPC = 0; hNCC = 0; hExt = 2
             if idx == 0 {
-                let savedStatus = upperCaseStatus, savedSpaceConfirm = upperCaseNeedsSpaceConfirm
+                let savedStatus = upperCaseStatus
+                let savedSpaceConfirm = upperCaseNeedsSpaceConfirm
+                let savedEllipsisContinuation = upperCaseEllipsisContinuation
                 startNewSession()
-                upperCaseStatus = savedStatus; upperCaseNeedsSpaceConfirm = savedSpaceConfirm
+                upperCaseStatus = savedStatus
+                upperCaseNeedsSpaceConfirm = savedSpaceConfirm
+                upperCaseEllipsisContinuation = savedEllipsisContinuation
                 specialChar.removeAll(); restoreLastTypingState()
             } else {
                 checkGrammar(deltaBackSpace: 1)
@@ -2589,9 +2612,13 @@ final class PHTVVietnameseEngine {
         if spaceCount > 0 {
             hBPC = 0; hNCC = 0; hExt = 0
             let savedSpaceCount = spaceCount
-            let savedUpperCaseStatus = upperCaseStatus, savedSpaceConfirm = upperCaseNeedsSpaceConfirm
+            let savedUpperCaseStatus = upperCaseStatus
+            let savedSpaceConfirm = upperCaseNeedsSpaceConfirm
+            let savedEllipsisContinuation = upperCaseEllipsisContinuation
             startNewSession()
-            upperCaseStatus = savedUpperCaseStatus; upperCaseNeedsSpaceConfirm = savedSpaceConfirm
+            upperCaseStatus = savedUpperCaseStatus
+            upperCaseNeedsSpaceConfirm = savedSpaceConfirm
+            upperCaseEllipsisContinuation = savedEllipsisContinuation
             saveWord(UInt32(KEY_SPACE), savedSpaceCount)
         } else if !specialChar.isEmpty {
             saveSpecialChar()
@@ -2686,7 +2713,9 @@ final class PHTVVietnameseEngine {
             if idx == 1 && upperCaseStatus == 2 && !upperCaseNeedsSpaceConfirm {
                 upperCaseFirstCharacter(); shouldUpperCaseEnglishRestore = true
             }
-            upperCaseStatus = 0; upperCaseNeedsSpaceConfirm = false
+            upperCaseStatus = 0
+            upperCaseNeedsSpaceConfirm = false
+            upperCaseEllipsisContinuation = false
         }
 
         if isBracketKey(data) && (isBracketKey(UInt16(hData[0] & CHAR_MASK)) || runtimeInputTypeSnapshot == 2 || runtimeInputTypeSnapshot == 3) {

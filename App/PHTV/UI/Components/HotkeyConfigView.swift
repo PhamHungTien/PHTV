@@ -79,6 +79,7 @@ struct HotkeyConfigView: View {
                         Button(action: {
                             appState.switchKeyCode = modifierOnlyKeyCode
                             appState.switchKeyName = KeyCode.modifierOnlyDisplayName
+                            isRecording = true
                         }) {
                             Image(systemName: "xmark.circle.fill")
                                 .foregroundStyle(.secondary)
@@ -91,19 +92,9 @@ struct HotkeyConfigView: View {
                     Button(action: {
                         isRecording = true
                     }) {
-                        HStack(spacing: 6) {
-                            Image(systemName: isRecording ? "keyboard.badge.ellipsis" : "keyboard")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(isRecording ? Color.accentColor : .secondary)
-
-                            Text(keyDisplayText)
-                                .font(.system(size: 12))
-                                .foregroundStyle(isRecording ? Color.accentColor : .primary)
-                                .lineLimit(1)
-                        }
+                        SettingsShortcutRecorderLabel(text: keyDisplayText, isRecording: isRecording)
                     }
-                    .settingsControlButtonStyle(isProminent: isRecording)
-                    .controlSize(.small)
+                    .buttonStyle(SettingsShortcutRecorderButtonStyle(isRecording: isRecording))
                     .background(KeyEventHandler(isRecording: $isRecording, appState: appState))
                 }
             }
@@ -209,14 +200,72 @@ struct ModifierKeyButton: View {
     }
 }
 
+struct SettingsShortcutRecorderLabel: View {
+    let text: String
+    let isRecording: Bool
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: isRecording ? "keyboard.badge.ellipsis" : "keyboard")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(isRecording ? Color.accentColor : .secondary)
+                .frame(width: 16)
+
+            Text(text)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(isRecording ? Color.accentColor : .primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+
+            Spacer(minLength: 0)
+        }
+    }
+}
+
+struct SettingsShortcutRecorderButtonStyle: ButtonStyle {
+    let isRecording: Bool
+    @Environment(\.colorScheme) private var colorScheme
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, 10)
+            .frame(width: SettingsLayout.rowControlColumnWidth, height: 32, alignment: .leading)
+            .background {
+                PHTVRoundedRect(cornerRadius: 7)
+                    .fill(backgroundColor)
+                    .overlay {
+                        PHTVRoundedRect(cornerRadius: 7)
+                            .stroke(borderColor, lineWidth: isRecording ? 1.5 : 1)
+                    }
+            }
+            .contentShape(PHTVRoundedRect(cornerRadius: 7))
+            .opacity(configuration.isPressed ? 0.82 : 1)
+    }
+
+    private var backgroundColor: Color {
+        if isRecording {
+            return Color.accentColor.opacity(colorScheme == .dark ? 0.18 : 0.12)
+        }
+        return Color(NSColor.controlBackgroundColor)
+    }
+
+    private var borderColor: Color {
+        if isRecording {
+            return Color.accentColor.opacity(colorScheme == .dark ? 0.8 : 0.65)
+        }
+        return Color(NSColor.separatorColor).opacity(colorScheme == .dark ? 0.9 : 0.65)
+    }
+}
+
 // MARK: - Key Event Handler
 struct KeyEventHandler: NSViewRepresentable {
     @Binding var isRecording: Bool
     var appState: AppState
     
     func makeNSView(context: Context) -> NSView {
-        let view = KeyCaptureView()
-        view.onKeyPress = { keyCode, keyName in
+        let view = SettingsHotkeyCaptureView()
+        view.onKeyPress = { keyCode in
+            let keyName = SettingsHotkeyKeyNameResolver.name(for: keyCode)
             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                 appState.switchKeyCode = keyCode
                 appState.switchKeyName = keyName
@@ -228,7 +277,7 @@ struct KeyEventHandler: NSViewRepresentable {
     }
     
     func updateNSView(_ nsView: NSView, context: Context) {
-        if let keyView = nsView as? KeyCaptureView {
+        if let keyView = nsView as? SettingsHotkeyCaptureView {
             keyView.isRecording = isRecording
         }
     }
@@ -238,44 +287,18 @@ struct KeyEventHandler: NSViewRepresentable {
     }
     
     class Coordinator {
-        var view: KeyCaptureView?
+        var view: SettingsHotkeyCaptureView?
     }
 }
 
-class KeyCaptureView: NSView {
-    var onKeyPress: ((UInt16, String) -> Void)?
-    var isRecording = false {
-        didSet {
-            if isRecording {
-                window?.makeFirstResponder(self)
-            }
-        }
-    }
-
-    override var acceptsFirstResponder: Bool { true }
-
-    override func keyDown(with event: NSEvent) {
-        guard isRecording else {
-            super.keyDown(with: event)
-            return
-        }
-
-        let keyCode = UInt16(event.keyCode)
-        let keyName = getKeyName(for: keyCode)
-
-        Task { @MainActor [weak self] in
-            self?.onKeyPress?(keyCode, keyName)
-        }
-    }
-    
-    private func getKeyName(for keyCode: UInt16) -> String {
-        // First try to get the actual character from the current keyboard layout
-        // This ensures correct display on QWERTZ, AZERTY, and other layouts
-        if let layoutKeyName = getKeyNameFromLayout(for: keyCode) {
+enum SettingsHotkeyKeyNameResolver {
+    static func name(for keyCode: UInt16) -> String {
+        // First try to get the actual character from the current keyboard layout.
+        // This keeps display correct on QWERTZ, AZERTY, and other layouts.
+        if let layoutKeyName = nameFromCurrentLayout(for: keyCode) {
             return layoutKeyName
         }
 
-        // Fallback: Map common keycodes to readable names (special keys)
         switch Int(keyCode) {
         case kVK_Space: return "Space"
         case kVK_Return: return "Return"
@@ -303,14 +326,11 @@ class KeyCaptureView: NSView {
         case kVK_PageUp: return "PgUp"
         case kVK_PageDown: return "PgDn"
         case kVK_ForwardDelete: return "⌦"
-        default: return "Key \(keyCode)"
+        default: return KeyCode.name(for: keyCode)
         }
     }
 
-    /// Get the actual character produced by a keycode on the current keyboard layout
-    /// This ensures correct display for international keyboards (QWERTZ, AZERTY, etc.)
-    private func getKeyNameFromLayout(for keyCode: UInt16) -> String? {
-        // Use TIS API to get the current keyboard layout and convert keycode to character
+    private static func nameFromCurrentLayout(for keyCode: UInt16) -> String? {
         guard let inputSource = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue(),
               let layoutDataRef = TISGetInputSourceProperty(inputSource, kTISPropertyUnicodeKeyLayoutData) else {
             return nil
@@ -328,8 +348,6 @@ class KeyCaptureView: NSView {
         var deadKeyState: UInt32 = 0
         var chars = [UniChar](repeating: 0, count: 4)
         var length: Int = 0
-
-        // Convert UnsafePointer<UInt8> to UnsafePointer<UCKeyboardLayout>
         let keyboardLayout = UnsafeRawPointer(keyboardLayoutPtr).bindMemory(
             to: UCKeyboardLayout.self,
             capacity: 1
@@ -339,7 +357,7 @@ class KeyCaptureView: NSView {
             keyboardLayout,
             keyCode,
             UInt16(kUCKeyActionDown),
-            0,  // No modifiers
+            0,
             UInt32(LMGetKbdType()),
             UInt32(kUCKeyTranslateNoDeadKeysMask),
             &deadKeyState,
@@ -350,13 +368,93 @@ class KeyCaptureView: NSView {
 
         if error == noErr && length > 0 {
             let character = String(utf16CodeUnits: chars, count: length).uppercased()
-            // Filter out control characters, empty strings, and whitespace (space key should use fallback)
-            if !character.isEmpty && !character.trimmingCharacters(in: .whitespaces).isEmpty && character.unicodeScalars.first?.value ?? 0 >= 32 {
+            if !character.isEmpty,
+               !character.trimmingCharacters(in: .whitespaces).isEmpty,
+               character.unicodeScalars.first?.value ?? 0 >= 32 {
                 return character
             }
         }
 
         return nil
+    }
+}
+
+private struct SettingsHotkeyLocalEventMonitor: @unchecked Sendable {
+    let value: Any
+
+    func remove() {
+        NSEvent.removeMonitor(value)
+    }
+}
+
+final class SettingsHotkeyCaptureView: NSView {
+    var onKeyPress: ((UInt16) -> Void)?
+    private var localKeyDownMonitor: SettingsHotkeyLocalEventMonitor?
+
+    var isRecording = false {
+        didSet {
+            isRecording ? startRecording() : stopRecording()
+        }
+    }
+
+    override var acceptsFirstResponder: Bool { true }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        if isRecording {
+            focusForCapture()
+        }
+    }
+
+    deinit {
+        if let localKeyDownMonitor {
+            localKeyDownMonitor.remove()
+        }
+    }
+
+    override func keyDown(with event: NSEvent) {
+        guard isRecording else {
+            super.keyDown(with: event)
+            return
+        }
+
+        capture(event)
+    }
+
+    private func startRecording() {
+        focusForCapture()
+        guard localKeyDownMonitor == nil else { return }
+
+        guard let monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown, handler: { [weak self] event in
+            guard let self, self.isRecording else { return event }
+            self.capture(event)
+            return nil
+        }) else { return }
+        localKeyDownMonitor = SettingsHotkeyLocalEventMonitor(value: monitor)
+    }
+
+    private func stopRecording() {
+        if let localKeyDownMonitor {
+            localKeyDownMonitor.remove()
+            self.localKeyDownMonitor = nil
+        }
+    }
+
+    private func focusForCapture() {
+        window?.makeFirstResponder(self)
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.isRecording else { return }
+            self.window?.makeFirstResponder(self)
+        }
+    }
+
+    private func capture(_ event: NSEvent) {
+        guard isRecording else { return }
+        isRecording = false
+        let keyCode = UInt16(event.keyCode)
+        Task { @MainActor [weak self] in
+            self?.onKeyPress?(keyCode)
+        }
     }
 }
 
@@ -709,6 +807,7 @@ struct EmojiHotkeyConfigView: View {
                         if !isRecording && appState.emojiHotkeyKeyCode != modifierOnlyKeyCode {
                             Button(action: {
                                 appState.emojiHotkeyKeyCode = modifierOnlyKeyCode
+                                isRecording = true
                             }) {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundStyle(.secondary)
@@ -721,19 +820,9 @@ struct EmojiHotkeyConfigView: View {
                         Button(action: {
                             isRecording = true
                         }) {
-                            HStack(spacing: 6) {
-                                Image(systemName: isRecording ? "keyboard.badge.ellipsis" : "keyboard")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundStyle(isRecording ? Color.accentColor : .secondary)
-
-                                Text(keyDisplayText)
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(isRecording ? Color.accentColor : .primary)
-                                    .lineLimit(1)
-                            }
+                            SettingsShortcutRecorderLabel(text: keyDisplayText, isRecording: isRecording)
                         }
-                        .settingsControlButtonStyle(isProminent: isRecording)
-                        .controlSize(.small)
+                        .buttonStyle(SettingsShortcutRecorderButtonStyle(isRecording: isRecording))
                         .background(EmojiKeyEventHandler(isRecording: $isRecording, appState: appState))
                     }
                 }
@@ -828,7 +917,7 @@ struct EmojiKeyEventHandler: NSViewRepresentable {
     var appState: AppState
 
     func makeNSView(context: Context) -> NSView {
-        let view = EmojiKeyCaptureView()
+        let view = SettingsHotkeyCaptureView()
         view.onKeyPress = { keyCode in
             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                 appState.emojiHotkeyKeyCode = keyCode
@@ -840,7 +929,7 @@ struct EmojiKeyEventHandler: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {
-        if let keyView = nsView as? EmojiKeyCaptureView {
+        if let keyView = nsView as? SettingsHotkeyCaptureView {
             keyView.isRecording = isRecording
         }
     }
@@ -850,33 +939,7 @@ struct EmojiKeyEventHandler: NSViewRepresentable {
     }
 
     class Coordinator {
-        var view: EmojiKeyCaptureView?
-    }
-}
-
-class EmojiKeyCaptureView: NSView {
-    var onKeyPress: ((UInt16) -> Void)?
-    var isRecording = false {
-        didSet {
-            if isRecording {
-                window?.makeFirstResponder(self)
-            }
-        }
-    }
-
-    override var acceptsFirstResponder: Bool { true }
-
-    override func keyDown(with event: NSEvent) {
-        guard isRecording else {
-            super.keyDown(with: event)
-            return
-        }
-
-        let keyCode = UInt16(event.keyCode)
-
-        Task { @MainActor [weak self] in
-            self?.onKeyPress?(keyCode)
-        }
+        var view: SettingsHotkeyCaptureView?
     }
 }
 

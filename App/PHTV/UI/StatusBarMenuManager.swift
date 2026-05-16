@@ -134,7 +134,7 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
 
         menu.addItem(.separator())
 
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let version = PHTVBuildInfo.displayVersion
         menu.addItem(actionItem("Về PHTV v\(version)", image: "info.circle", sel: #selector(openAbout)))
         menu.addItem(actionItem("Kiểm tra cập nhật", image: "arrow.down.circle", sel: #selector(checkUpdates)))
 

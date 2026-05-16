@@ -131,6 +131,18 @@ final class EngineRegressionTests: XCTestCase {
         }
     }
 
+    private func feed(_ engine: PHTVVietnameseEngine, _ codes: [UInt16]) {
+        for code in codes {
+            engine.vKeyHandleEvent(
+                event: .keyboard,
+                state: .keyDown,
+                data: code,
+                capsStatus: 0,
+                otherControlKey: false
+            )
+        }
+    }
+
     private func detectorKeyStates(for token: String) -> [UInt32] {
         token.map { UInt32(keyCode(for: $0)) }
     }
@@ -329,6 +341,34 @@ final class EngineRegressionTests: XCTestCase {
         PHTVEngineRuntimeFacade.setCurrentInputType(inputType)
         defer { PHTVEngineRuntimeFacade.setCurrentInputType(savedInputType) }
         return try body()
+    }
+
+    func testUppercaseFirstCharStillAppliesAfterSingleDotAndSpace() {
+        let savedUppercase = PHTVEngineRuntimeFacade.upperCaseFirstChar()
+        PHTVEngineRuntimeFacade.setUpperCaseFirstChar(1)
+        defer { PHTVEngineRuntimeFacade.setUpperCaseFirstChar(savedUppercase) }
+
+        let engine = PHTVVietnameseEngine()
+        engine.refreshRuntimeLayoutSnapshot()
+        engine.startNewSession()
+
+        feed(engine, [KEY_A, KEY_B, KEY_C, KEY_DOT, KEY_SPACE, KEY_D])
+
+        XCTAssertEqual(renderedTypingWord(engine), "D")
+    }
+
+    func testUppercaseFirstCharDoesNotApplyAfterEllipsisAndSpace() {
+        let savedUppercase = PHTVEngineRuntimeFacade.upperCaseFirstChar()
+        PHTVEngineRuntimeFacade.setUpperCaseFirstChar(1)
+        defer { PHTVEngineRuntimeFacade.setUpperCaseFirstChar(savedUppercase) }
+
+        let engine = PHTVVietnameseEngine()
+        engine.refreshRuntimeLayoutSnapshot()
+        engine.startNewSession()
+
+        feed(engine, [KEY_A, KEY_B, KEY_C, KEY_DOT, KEY_DOT, KEY_DOT, KEY_SPACE, KEY_D])
+
+        XCTAssertEqual(renderedTypingWord(engine), "d")
     }
 
     private func runQuickConsonantSpaceCase(

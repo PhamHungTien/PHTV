@@ -147,6 +147,7 @@ struct ClipboardHotkeyConfigView: View {
                         if !isRecording && appState.clipboardHotkeyKeyCode != modifierOnlyKeyCode {
                             Button(action: {
                                 appState.clipboardHotkeyKeyCode = modifierOnlyKeyCode
+                                isRecording = true
                             }) {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundStyle(.secondary)
@@ -159,19 +160,9 @@ struct ClipboardHotkeyConfigView: View {
                         Button(action: {
                             isRecording = true
                         }) {
-                            HStack(spacing: 6) {
-                                Image(systemName: isRecording ? "keyboard.badge.ellipsis" : "keyboard")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundStyle(isRecording ? Color.accentColor : .secondary)
-
-                                Text(keyDisplayText)
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(isRecording ? Color.accentColor : .primary)
-                                    .lineLimit(1)
-                            }
+                            SettingsShortcutRecorderLabel(text: keyDisplayText, isRecording: isRecording)
                         }
-                        .settingsControlButtonStyle(isProminent: isRecording)
-                        .controlSize(.small)
+                        .buttonStyle(SettingsShortcutRecorderButtonStyle(isRecording: isRecording))
                         .background(
                             ClipboardKeyEventHandler(isRecording: $isRecording, appState: appState)
                         )
@@ -247,8 +238,8 @@ struct ClipboardKeyEventHandler: NSViewRepresentable {
     @Binding var isRecording: Bool
     let appState: AppState
 
-    func makeNSView(context: Context) -> ClipboardKeyCaptureView {
-        let view = ClipboardKeyCaptureView()
+    func makeNSView(context: Context) -> NSView {
+        let view = SettingsHotkeyCaptureView()
         view.onKeyPress = { keyCode in
             Task { @MainActor in
                 appState.clipboardHotkeyKeyCode = keyCode
@@ -258,25 +249,9 @@ struct ClipboardKeyEventHandler: NSViewRepresentable {
         return view
     }
 
-    func updateNSView(_ nsView: ClipboardKeyCaptureView, context: Context) {
-        nsView.isActive = isRecording
-        if isRecording {
-            nsView.window?.makeFirstResponder(nsView)
+    func updateNSView(_ nsView: NSView, context: Context) {
+        if let keyView = nsView as? SettingsHotkeyCaptureView {
+            keyView.isRecording = isRecording
         }
-    }
-}
-
-class ClipboardKeyCaptureView: NSView {
-    var onKeyPress: ((UInt16) -> Void)?
-    var isActive = false
-
-    override var acceptsFirstResponder: Bool { isActive }
-
-    override func keyDown(with event: NSEvent) {
-        guard isActive else {
-            super.keyDown(with: event)
-            return
-        }
-        onKeyPress?(event.keyCode)
     }
 }

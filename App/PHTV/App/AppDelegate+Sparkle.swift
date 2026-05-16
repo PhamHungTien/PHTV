@@ -12,6 +12,11 @@ import Foundation
 
 @objc extension AppDelegate {
     func bootstrapSparkleUpdates() {
+        guard PHTVBuildInfo.updatesEnabled else {
+            NSLog("[Sparkle] Disabled for Debug build")
+            return
+        }
+
         SparkleLocalization.install()
         _ = SparkleManager.shared()
 
@@ -39,11 +44,21 @@ import Foundation
 
     func handleSparkleManualCheck(_ notification: Notification) {
         _ = notification
+        guard PHTVBuildInfo.updatesEnabled else {
+            NSLog("[Sparkle] Manual check ignored for Debug build")
+            return
+        }
+
         NSLog("[Sparkle] Manual check requested from UI")
         SparkleManager.shared().checkForUpdatesWithFeedback()
     }
 
     func handleUpdateFrequencyChanged(_ notification: Notification) {
+        guard PHTVBuildInfo.updatesEnabled else {
+            NSLog("[Sparkle] Update frequency change ignored for Debug build")
+            return
+        }
+
         guard let interval = notification.object as? NSNumber else {
             return
         }
@@ -54,6 +69,11 @@ import Foundation
 
     func handleSparkleInstallUpdate(_ notification: Notification) {
         _ = notification
+        guard PHTVBuildInfo.updatesEnabled else {
+            NSLog("[Sparkle] Install update ignored for Debug build")
+            return
+        }
+
         NSLog("[Sparkle] Install update requested from custom banner")
         SparkleManager.shared().checkForUpdatesWithFeedback()
     }

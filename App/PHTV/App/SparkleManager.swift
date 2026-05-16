@@ -48,6 +48,11 @@ final class SparkleManager: NSObject {
 
     override init() {
         super.init()
+        guard PHTVBuildInfo.updatesEnabled else {
+            NSLog("[Sparkle] Manager initialized with updates disabled for Debug build")
+            return
+        }
+
         UserDefaults.standard.enforceStableUpdateChannel()
         _ = updater
         NSLog(
@@ -60,6 +65,11 @@ final class SparkleManager: NSObject {
 
     /// Manually trigger update check (Sparkle handles all UI)
     @objc func checkForUpdatesWithFeedback() {
+        guard PHTVBuildInfo.updatesEnabled else {
+            NSLog("[Sparkle] Manual check ignored because updates are disabled for Debug build")
+            return
+        }
+
         NSLog("[Sparkle] Manual check requested")
         configureAutomaticInstallPreferences(on: updater)
         updater.checkForUpdates()
@@ -67,6 +77,11 @@ final class SparkleManager: NSObject {
 
     /// Background update check
     @objc func checkForUpdates() {
+        guard PHTVBuildInfo.updatesEnabled else {
+            NSLog("[Sparkle] Background check ignored because updates are disabled for Debug build")
+            return
+        }
+
         NSLog("[Sparkle] Background check requested")
         configureAutomaticInstallPreferences(on: updater)
         guard updater.automaticallyChecksForUpdates else {
@@ -78,6 +93,11 @@ final class SparkleManager: NSObject {
 
     /// Configure update check interval in seconds
     @objc func setUpdateCheckInterval(_ interval: TimeInterval) {
+        guard PHTVBuildInfo.updatesEnabled else {
+            NSLog("[Sparkle] Update interval change ignored because updates are disabled for Debug build")
+            return
+        }
+
         NSLog("[Sparkle] Update interval set to %.0f seconds", interval)
         updater.updateCheckInterval = interval
     }
