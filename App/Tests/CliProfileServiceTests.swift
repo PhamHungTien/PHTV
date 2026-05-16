@@ -63,8 +63,22 @@ final class CliProfileServiceTests: XCTestCase {
         PHTVCliRuntimeStateService.scheduleRawKeyPassThroughBlock(nowMachTime: now)
 
         let remainingUs = PHTVCliRuntimeStateService.remainingBlockMicroseconds(forNowMachTime: now)
-        XCTAssertGreaterThanOrEqual(remainingUs, UInt64(20_000))
-        XCTAssertLessThanOrEqual(remainingUs, UInt64(21_000))
+        XCTAssertGreaterThanOrEqual(remainingUs, UInt64(42_000))
+        XCTAssertLessThanOrEqual(remainingUs, UInt64(43_000))
+
+        PHTVCliRuntimeStateService.applyProfile(nil)
+    }
+
+    func testFastRawCliPassThroughUsesProfileWaitDelay() {
+        PHTVCliRuntimeStateService.applyProfile(PHTVCliProfileService.profile(forCode: 2))
+        PHTVCliRuntimeStateService.resetSpeedState()
+
+        let now = mach_absolute_time()
+        PHTVCliRuntimeStateService.scheduleRawKeyPassThroughBlock(nowMachTime: now)
+
+        let remainingUs = PHTVCliRuntimeStateService.remainingBlockMicroseconds(forNowMachTime: now)
+        XCTAssertGreaterThanOrEqual(remainingUs, UInt64(25_000))
+        XCTAssertLessThanOrEqual(remainingUs, UInt64(26_000))
 
         PHTVCliRuntimeStateService.applyProfile(nil)
     }

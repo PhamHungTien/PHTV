@@ -274,12 +274,22 @@ final class PHTVCliRuntimeStateService: NSObject {
     class func scheduleRawKeyPassThroughBlock(nowMachTime now: UInt64) {
         state.lock.lock()
         let baseDelayUs = state.runtimeCliTextDelayUs
+        let waitAfterBackspaceUs = state.runtimeCliWaitAfterBackspaceUs
         let speedFactor = state.runtimeCliSpeedFactor
         state.lock.unlock()
 
+        let scaledTextDelayUs = PHTVTimingService.scaleDelayMicroseconds(
+            baseDelayUs,
+            factor: speedFactor
+        )
+        let scaledWaitAfterBackspaceUs = PHTVTimingService.scaleDelayMicroseconds(
+            waitAfterBackspaceUs,
+            factor: speedFactor
+        )
         let settleDelayUs = max(
             UInt64(PHTVCliProfileService.minimumPostSendBlockUsValue),
-            PHTVTimingService.scaleDelayMicroseconds(baseDelayUs, factor: speedFactor)
+            scaledWaitAfterBackspaceUs,
+            scaledTextDelayUs * 3
         )
         scheduleBlock(forMicroseconds: settleDelayUs, nowMachTime: now)
     }

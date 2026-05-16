@@ -276,14 +276,13 @@ final class PHTVInputStrategyService: NSObject {
             engineCode == restoreAndStartNewSessionCode &&
             (keyCode == enterKeyCode || keyCode == returnKeyCode)
 
-        // Restore signals already carry the finalized replacement text from the
-        // engine. Replaying raw key states step-by-step can re-trigger Telex
-        // transforms like `Engineer -> Enginẻer`, so prefer decoded Unicode
-        // sending for non-CLI targets. Editors such as Notion need the same
-        // decoded-string path for compatibility.
+        // Restore signals and CLI targets should send the finalized Unicode
+        // string. Replaying raw key states can re-trigger Telex transforms or
+        // interleave with fast terminal input.
         let shouldPreferDecodedStringSend =
-            !isCliTarget &&
-            (appNeedsPrecomposedBatchedEnabled || isRestoreSignal)
+            isCliTarget ||
+            appNeedsPrecomposedBatchedEnabled ||
+            isRestoreSignal
 
         let useStepByStepCharacterSend =
             !isSpotlightTarget &&
