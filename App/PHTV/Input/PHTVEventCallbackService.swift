@@ -169,13 +169,51 @@ final class PHTVEventCallbackService {
         keyCode: CGKeyCode,
         flags: CGEventFlags
     ) -> Bool {
-        guard !PHTVEventContextBridgeService.hasOtherControlKey(withFlags: flags.rawValue) else {
-            return false
+        PHTVInputStrategyService.shouldOwnCliPrintableKey(
+            forCliTarget: true,
+            printableKey: EngineMacroKeyMap.character(for: UInt32(keyCode)) != 0,
+            otherControlKey: PHTVEventContextBridgeService.hasOtherControlKey(withFlags: flags.rawValue),
+            navigationKey: EngineInputClassification.isNavigationKey(keyCode)
+        )
+    }
+
+    private static func cliPrintableCodeUnit(
+        from event: CGEvent,
+        keyCode: CGKeyCode,
+        flags: CGEventFlags
+    ) -> UInt16? {
+        guard shouldStabilizeCliPassThroughKey(keyCode: keyCode, flags: flags) else {
+            return nil
         }
-        guard !EngineInputClassification.isNavigationKey(keyCode) else {
-            return false
+
+        var length = 0
+        var chars = [UniChar](repeating: 0, count: 4)
+        event.keyboardGetUnicodeString(
+            maxStringLength: chars.count,
+            actualStringLength: &length,
+            unicodeString: &chars
+        )
+        if length == 1, chars[0] != 0 {
+            return chars[0]
         }
-        return EngineMacroKeyMap.character(for: UInt32(keyCode)) != 0
+
+        let hasCaps = flags.contains(.maskShift) || flags.contains(.maskAlphaShift)
+        let mapped = EngineMacroKeyMap.character(
+            for: UInt32(keyCode) | (hasCaps ? EngineBitMask.caps : 0)
+        )
+        return mapped == 0 ? nil : mapped
+    }
+
+    private static func sendCliOwnedPrintableCodeUnit(_ codeUnit: UInt16) {
+        var mutableCodeUnit = codeUnit
+        withUnsafePointer(to: &mutableCodeUnit) { ptr in
+            PHTVKeyEventSenderService.sendUnicodeStringChunked(
+                ptr,
+                len: 1,
+                chunkSize: 1,
+                interDelayUs: 0
+            )
+        }
     }
 
     private static func englishUppercaseSentenceTerminatorSpaceRequirement(
@@ -701,11 +739,14 @@ final class PHTVEventCallbackService {
             if shouldSendExtraBackspace {
                 PHTVKeyEventSenderService.sendPhysicalBackspace()
             }
-            if targetContext.isCliTarget &&
-                shouldStabilizeCliPassThroughKey(keyCode: eventKeycode, flags: eventFlags) {
-                PHTVCliRuntimeStateService.scheduleRawKeyPassThroughBlock(
-                    nowMachTime: mach_absolute_time()
-                )
+            if targetContext.isCliTarget,
+               let cliCodeUnit = cliPrintableCodeUnit(
+                from: event,
+                keyCode: eventKeycode,
+                flags: eventFlags
+               ) {
+                sendCliOwnedPrintableCodeUnit(cliCodeUnit)
+                return nil
             }
             return Unmanaged.passRetained(event)
 

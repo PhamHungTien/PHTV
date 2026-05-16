@@ -151,6 +151,19 @@ final class PHTVProcessSignalPlanBox: NSObject {
 
 @objcMembers
 final class PHTVInputStrategyService: NSObject {
+    @objc(shouldOwnCliPrintableKeyForCliTarget:printableKey:otherControlKey:navigationKey:)
+    class func shouldOwnCliPrintableKey(
+        forCliTarget isCliTarget: Bool,
+        printableKey isPrintableKey: Bool,
+        otherControlKey hasOtherControlKey: Bool,
+        navigationKey isNavigationKey: Bool
+    ) -> Bool {
+        isCliTarget &&
+            isPrintableKey &&
+            !hasOtherControlKey &&
+            !isNavigationKey
+    }
+
     private class func strategy(
         forSpaceKey isSpaceKey: Bool,
         slashKey isSlashKey: Bool,

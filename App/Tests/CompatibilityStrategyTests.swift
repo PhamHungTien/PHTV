@@ -316,4 +316,34 @@ final class CompatibilityStrategyTests: XCTestCase {
         XCTAssertFalse(plan.shouldSendRestoreTriggerKey)
         XCTAssertFalse(plan.shouldStartNewSessionAfterSend)
     }
+
+    func testCliOwnsPrintableKeysWithoutControlModifiers() {
+        XCTAssertTrue(PHTVInputStrategyService.shouldOwnCliPrintableKey(
+            forCliTarget: true,
+            printableKey: true,
+            otherControlKey: false,
+            navigationKey: false
+        ))
+    }
+
+    func testCliDoesNotOwnShortcutsOrNavigationKeys() {
+        XCTAssertFalse(PHTVInputStrategyService.shouldOwnCliPrintableKey(
+            forCliTarget: true,
+            printableKey: true,
+            otherControlKey: true,
+            navigationKey: false
+        ))
+        XCTAssertFalse(PHTVInputStrategyService.shouldOwnCliPrintableKey(
+            forCliTarget: true,
+            printableKey: true,
+            otherControlKey: false,
+            navigationKey: true
+        ))
+        XCTAssertFalse(PHTVInputStrategyService.shouldOwnCliPrintableKey(
+            forCliTarget: false,
+            printableKey: true,
+            otherControlKey: false,
+            navigationKey: false
+        ))
+    }
 }
