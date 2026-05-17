@@ -322,6 +322,10 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
             NotificationCenter.default.post(name: NotificationName.accessibilityPermissionLost, object: nil)
         } else if isEnabled {
             accessibilityStableCount += 1
+            if !PHTVManager.isInited() {
+                NSLog("[Accessibility] Tap not initialized but permission is granted - triggering recovery")
+                tryInitEventTap(attempt: 1)
+            }
         }
 
         wasAccessibilityEnabled = isEnabled
@@ -357,10 +361,19 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
     }
 
     private func tryInitEventTap(attempt: Int) {
+        if attempt == 1 {
+            guard !isInitializingEventTap else {
+                NSLog("[EventTap] Already initializing, ignoring redundant request")
+                return
+            }
+            isInitializingEventTap = true
+        }
+
         NSLog("[EventTap] Init attempt %d/3", attempt)
 
         if PHTVManager.initEventTap() {
             NSLog("[EventTap] Initialized successfully on attempt %d - App ready!", attempt)
+            isInitializingEventTap = false
             onEventTapInitSuccess()
             return
         }
@@ -374,6 +387,7 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
                 self.tryInitEventTap(attempt: attempt + 1)
             }
         } else {
+            isInitializingEventTap = false
             publishTypingPermissionState(eventTapReady: false)
 
             let shouldRelaunch = phtvShouldFallbackRelaunchAfterEventTapFailures(
