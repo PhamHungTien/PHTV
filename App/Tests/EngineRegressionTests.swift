@@ -509,6 +509,32 @@ final class EngineRegressionTests: XCTestCase {
         runSpaceCase("user", expectRestore: false, autoRestoreEnglish: false)
     }
 
+    func testAutoRestoreSkipsUnsafeStaleBufferInsteadOfDeletingPreviousWord() {
+        setCustomEnglishWords(["terminal"])
+
+        let engine = PHTVVietnameseEngine()
+        engine.refreshRuntimeLayoutSnapshot()
+        engine.startNewSession()
+        for (index, ch) in "terminal".enumerated() {
+            engine.keyStates[index] = UInt32(keyCode(for: ch))
+        }
+        engine.stateIdx = 8
+        engine.typingWord[0] = UInt32(KEY_A)
+        engine.typingWord[1] = UInt32(KEY_B)
+        engine.typingWord[2] = UInt32(KEY_C)
+        for (index, ch) in "terminal".enumerated() {
+            engine.typingWord[index + 3] = UInt32(keyCode(for: ch))
+        }
+        engine.idx = 11
+
+        engine.handleSpace(state: .keyDown, data: KEY_SPACE)
+
+        XCTAssertEqual(engine.hCode, HookCodeState.doNothing.rawValue)
+        XCTAssertEqual(engine.hBPC, 0)
+        XCTAssertEqual(engine.idx, 0)
+        XCTAssertEqual(engine.stateIdx, 0)
+    }
+
     // MARK: - Word-break (DOT) tests
 
     func testCustomEnglishTerminalRestoresOnDot() {

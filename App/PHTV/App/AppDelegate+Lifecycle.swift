@@ -164,6 +164,7 @@ func phtvIsRunningUnderXCTest() -> Bool {
             if !PHTVManager.initEventTap() {
                 self.publishTypingPermissionState(eventTapReady: false)
                 self.startAccessibilityMonitoring(withInterval: 1.0, resetState: false)
+                self.startHealthCheckMonitoring()
                 NotificationCenter.default.post(name: phtvNotificationShowSettings, object: nil)
             } else {
                 NSLog("[EventTap] Initialized successfully")

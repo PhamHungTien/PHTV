@@ -2316,6 +2316,50 @@ final class PHTVVietnameseEngine {
         return (restoreStateIndex, canAutoRestore, false, nil)
     }
 
+    func applyAutoRestoreEnglishDecision(
+        _ decision: (restoreStateIndex: Int, canAutoRestore: Bool, shouldRestore: Bool, customRestoreSlice: [UInt32]?),
+        handleCode: Int32
+    ) -> Bool {
+        guard idx > 0,
+              decision.restoreStateIndex > 1,
+              decision.canAutoRestore,
+              decision.shouldRestore else {
+            return false
+        }
+
+        let restoreCount = decision.customRestoreSlice?.count ?? decision.restoreStateIndex
+        guard restoreCount == decision.restoreStateIndex,
+              restoreCount > 1,
+              restoreCount <= ENGINE_MAX_BUFF,
+              restoreCount <= stateIdx,
+              idx <= restoreCount else {
+            NSLog(
+                "[AutoEnglish] Skipping unsafe restore: idx=%d restore=%d state=%d custom=%@",
+                idx,
+                restoreCount,
+                stateIdx,
+                decision.customRestoreSlice == nil ? "NO" : "YES"
+            )
+            return false
+        }
+
+        hCode = handleCode
+        hBPC = idx
+        hNCC = restoreCount
+        hExt = 5
+        for i in 0..<restoreCount {
+            let rawKey = decision.customRestoreSlice?[i] ?? keyStates[i]
+            typingWord[i] = rawKey
+            hData[restoreCount - 1 - i] = rawKey
+        }
+        if snapshotUpperCaseFirstChar != 0 && phtvRuntimeUpperCaseExcludedForCurrentApp() == 0 &&
+           shouldUpperCaseEnglishRestore && restoreCount > 0 {
+            hData[restoreCount - 1] |= CAPS_MASK
+        }
+        shouldUpperCaseEnglishRestore = false
+        return true
+    }
+
     func shouldBypassSpecialKeyForEnglishWordConflict(_ data: UInt16) -> Bool {
         guard phtvRuntimeAutoRestoreEnglishWordEnabled() != 0 else { return false }
         guard autoRestoreEnglishModeValue() == Int32(AutoRestoreEnglishMode.englishOnly.rawValue) else {
@@ -2424,20 +2468,13 @@ final class PHTVVietnameseEngine {
         } else if phtvRuntimeAutoRestoreEnglishWordEnabled() != 0 && isAutoRestoreBreakKey {
             if isSpellCheckingEnabled() { checkSpelling(forceCheckVowel: true) }
             let decision = evaluateAutoRestoreEnglishDecision()
-            if idx > 0 && decision.restoreStateIndex > 1 && decision.canAutoRestore && decision.shouldRestore {
-                hCode = HookCodeState.restoreAndStartNewSession.rawValue
-                hBPC = idx; hNCC = decision.restoreStateIndex; hExt = 5
-                for i in 0..<decision.restoreStateIndex {
-                    let rawKey = decision.customRestoreSlice?[i] ?? keyStates[i]
-                    typingWord[i] = rawKey
-                    hData[decision.restoreStateIndex - 1 - i] = rawKey
-                }
-                if snapshotUpperCaseFirstChar != 0 && phtvRuntimeUpperCaseExcludedForCurrentApp() == 0 &&
-                   shouldUpperCaseEnglishRestore && decision.restoreStateIndex > 0 {
-                    hData[decision.restoreStateIndex - 1] |= CAPS_MASK
-                }
-                shouldUpperCaseEnglishRestore = false
+            if applyAutoRestoreEnglishDecision(
+                decision,
+                handleCode: HookCodeState.restoreAndStartNewSession.rawValue
+            ) {
                 idx = 0; stateIdx = 0
+            } else if decision.restoreStateIndex > 1 && decision.canAutoRestore && decision.shouldRestore {
+                startNewSession()
             } else if tempDisableKey && phtvRuntimeRestoreIfWrongSpellingEnabled() != 0 {
                 _ = checkRestoreIfWrongSpelling(HookCodeState.restoreAndStartNewSession.rawValue)
             }
@@ -2515,27 +2552,22 @@ final class PHTVVietnameseEngine {
         } else if phtvRuntimeAutoRestoreEnglishWordEnabled() != 0 && idx > 0 {
             if isSpellCheckingEnabled() { checkSpelling(forceCheckVowel: true) }
             let decision = evaluateAutoRestoreEnglishDecision()
-            if decision.restoreStateIndex > 1 && decision.canAutoRestore && decision.shouldRestore {
-                hCode = HookCodeState.restore.rawValue
-                hBPC = idx; hNCC = decision.restoreStateIndex; hExt = 5
-                for i in 0..<decision.restoreStateIndex {
-                    let rawKey = decision.customRestoreSlice?[i] ?? keyStates[i]
-                    typingWord[i] = rawKey
-                    hData[decision.restoreStateIndex - 1 - i] = rawKey
-                }
-                if snapshotUpperCaseFirstChar != 0 && phtvRuntimeUpperCaseExcludedForCurrentApp() == 0 &&
-                   shouldUpperCaseEnglishRestore && decision.restoreStateIndex > 0 {
-                    hData[decision.restoreStateIndex - 1] |= CAPS_MASK
-                }
-                shouldUpperCaseEnglishRestore = false
+            if applyAutoRestoreEnglishDecision(
+                decision,
+                handleCode: HookCodeState.restore.rawValue
+            ) {
                 // Save English raw key states so backspace can undo back through the word.
                 // Clear old history first (prevents mismatch when backspace restores prior words
                 // that are no longer at cursor position after the English restore).
                 typingStatesData.removeAll()
-                for i in 0..<decision.restoreStateIndex { typingStatesData.append(typingWord[i]) }
+                for i in 0..<hNCC { typingStatesData.append(typingWord[i]) }
                 typingStates.removeAll()
                 typingStates.append(typingStatesData)
                 spaceCount += 1; idx = 0; stateIdx = 0
+            } else if decision.restoreStateIndex > 1 && decision.canAutoRestore && decision.shouldRestore {
+                startNewSession()
+                hCode = HookCodeState.doNothing.rawValue
+                spaceCount += 1
             } else if tempDisableKey && !hasHandledMacro {
                 if !(phtvRuntimeRestoreIfWrongSpellingEnabled() != 0 && checkRestoreIfWrongSpelling(HookCodeState.restore.rawValue)) {
                     hCode = HookCodeState.doNothing.rawValue

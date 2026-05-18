@@ -114,4 +114,36 @@ final class TypingRuntimeScenarioTests: XCTestCase {
             PHTVTypingRuntimeStateMachine.shouldFallbackRelaunchAfterEventTapFailures(snapshot: snapshot)
         )
     }
+
+    func testWaitingForEventTapSchedulesInProcessRecoveryWhenAccessibilityIsTrusted() {
+        let snapshot = PHTVTypingRuntimeStateMachine.snapshot(
+            axTrusted: true,
+            eventTapReady: false,
+            relaunchPending: false,
+            safeModeEnabled: false,
+            activeAppProfile: .browser
+        )
+
+        XCTAssertTrue(PHTVTypingRuntimeStateMachine.shouldScheduleEventTapRecovery(snapshot: snapshot))
+    }
+
+    func testEventTapRecoverySchedulingIsSuppressedWithoutAccessibilityOrDuringRelaunch() {
+        let missingAccessibility = PHTVTypingRuntimeStateMachine.snapshot(
+            axTrusted: false,
+            eventTapReady: false,
+            relaunchPending: false,
+            safeModeEnabled: false,
+            activeAppProfile: .generic
+        )
+        let relaunchPending = PHTVTypingRuntimeStateMachine.snapshot(
+            axTrusted: true,
+            eventTapReady: false,
+            relaunchPending: true,
+            safeModeEnabled: false,
+            activeAppProfile: .generic
+        )
+
+        XCTAssertFalse(PHTVTypingRuntimeStateMachine.shouldScheduleEventTapRecovery(snapshot: missingAccessibility))
+        XCTAssertFalse(PHTVTypingRuntimeStateMachine.shouldScheduleEventTapRecovery(snapshot: relaunchPending))
+    }
 }

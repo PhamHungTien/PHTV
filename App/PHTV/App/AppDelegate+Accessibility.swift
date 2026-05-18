@@ -185,11 +185,12 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
             eventTapReady: eventTapReady,
             frontmostBundleId: frontmostBundleId
         )
+        let runtimeHealthChanged = lastPublishedTypingRuntimeHealth != snapshot
         if snapshot.isTypingPermissionReady {
             lastPresentedPermissionGuidanceStep = nil
         }
 
-        if lastPublishedTypingRuntimeHealth != snapshot {
+        if runtimeHealthChanged {
             lastPublishedTypingRuntimeHealth = snapshot
             NotificationCenter.default.post(
                 name: NotificationName.typingRuntimeHealthChanged,
@@ -204,6 +205,11 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
                 snapshot.relaunchPending ? "YES" : "NO",
                 snapshot.safeModeEnabled ? "YES" : "NO"
             )
+        }
+
+        if runtimeHealthChanged &&
+            PHTVTypingRuntimeStateMachine.shouldScheduleEventTapRecovery(snapshot: snapshot) {
+            requestEventTapRecovery(reason: "runtimeHealthWaitingForEventTap")
         }
 
         guard lastPublishedTypingPermissionReady != snapshot.isTypingPermissionReady else { return }
@@ -277,9 +283,15 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
 
     func runHealthCheck() {
         if !PHTVManager.canCreateEventTap() {
+            publishTypingPermissionState(eventTapReady: false)
             return
         }
         PHTVManager.ensureEventTapAlive()
+        let eventTapReady = PHTVManager.isInited() && PHTVManager.isEventTapEnabled()
+        publishTypingPermissionState(eventTapReady: eventTapReady)
+        if !eventTapReady {
+            requestEventTapRecovery(reason: "healthCheckWaitingForEventTap")
+        }
     }
 
     func checkAccessibilityStatus() {
@@ -398,6 +410,7 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
             guard shouldRelaunch else {
                 NSLog("[EventTap] Failed after 3 attempts; waiting for Accessibility/session tap readiness")
                 startAccessibilityMonitoring(withInterval: currentMonitoringInterval(), resetState: true)
+                startHealthCheckMonitoring()
                 continuePermissionGuidanceIfNeeded()
                 return
             }

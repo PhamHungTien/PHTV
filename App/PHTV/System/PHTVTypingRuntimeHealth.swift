@@ -148,4 +148,10 @@ enum PHTVTypingRuntimeStateMachine {
     ) -> Bool {
         !snapshot.isRelaunchPending
     }
+
+    static func shouldScheduleEventTapRecovery(
+        snapshot: PHTVTypingRuntimeHealthSnapshot
+    ) -> Bool {
+        snapshot.axTrusted && !snapshot.eventTapReady && !snapshot.isRelaunchPending
+    }
 }
