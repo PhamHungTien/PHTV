@@ -17,8 +17,6 @@ struct PHTVVietnameseComposer {
         let characters = Array(rawText)
         var output: [Character] = []
         var activeTone: PHTVTone? = nil
-        var activeToneChar: Character? = nil
-        var activeToneIndex: Int? = nil
 
         for char in characters {
             if let tone = PHTVTelexMarker.tone(for: char) {
@@ -28,15 +26,11 @@ struct PHTVVietnameseComposer {
                 if hasVowelBefore {
                     if let current = activeTone, current == tone {
                         activeTone = nil
-                        if let skipIdx = activeToneIndex, let skipChar = activeToneChar {
-                            output.insert(skipChar, at: min(skipIdx, output.count))
+                        if tone != .clear {
+                            output.append(char)
                         }
-                        activeToneChar = nil
-                        activeToneIndex = nil
                     } else {
                         activeTone = tone
-                        activeToneChar = char
-                        activeToneIndex = output.count
                     }
                     continue
                 }
@@ -53,8 +47,6 @@ struct PHTVVietnameseComposer {
         let characters = Array(rawText)
         var output: [Character] = []
         var activeTone: PHTVTone? = nil
-        var activeToneChar: Character? = nil
-        var activeToneIndex: Int? = nil
 
         for char in characters {
             if let tone = PHTVVNIMarker.tone(for: char) {
@@ -64,15 +56,11 @@ struct PHTVVietnameseComposer {
                 if hasVowelBefore {
                     if let current = activeTone, current == tone {
                         activeTone = nil
-                        if let skipIdx = activeToneIndex, let skipChar = activeToneChar {
-                            output.insert(skipChar, at: min(skipIdx, output.count))
+                        if tone != .clear {
+                            output.append(char)
                         }
-                        activeToneChar = nil
-                        activeToneIndex = nil
                     } else {
                         activeTone = tone
-                        activeToneChar = char
-                        activeToneIndex = output.count
                     }
                     continue
                 }
