@@ -36,12 +36,12 @@ final class PHTVInputController: IMKInputController {
 
     @objc(composedString:)
     override func composedString(_ sender: Any!) -> Any! {
-        session(for: sender).composedText
+        nil
     }
 
     @objc(originalString:)
     override func originalString(_ sender: Any!) -> NSAttributedString! {
-        NSAttributedString(string: session(for: sender).rawText)
+        nil
     }
 
     @objc(candidates:)
