@@ -31,7 +31,8 @@ jobs:
     name: Build PHTV (${{ matrix.arch }})
     runs-on: macos-26
     strategy:
-      fail-fast: true
+      fail-fast: false
+      max-parallel: 1
       matrix:
         include:
           - arch: arm64
@@ -558,8 +559,9 @@ jobs:
           fi
 
           STATUS=""
-          for attempt in {1..90}; do
-            echo "🔎 Checking notarization status ($attempt/90) for $SUBMISSION_ID..."
+          MAX_ATTEMPTS=240
+          for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
+            echo "🔎 Checking notarization status ($attempt/$MAX_ATTEMPTS) for $SUBMISSION_ID..."
             if xcrun notarytool info "$SUBMISSION_ID" \
               --apple-id "$APPLE_ID" \
               --team-id "$APPLE_TEAM_ID" \
@@ -579,6 +581,10 @@ jobs:
 
           if [ "$STATUS" != "Accepted" ]; then
             echo "❌ Notarization failed with status: ${STATUS:-unknown}"
+            if [ "$STATUS" = "In Progress" ]; then
+              echo "Apple notary service did not finish within $((MAX_ATTEMPTS / 2)) minutes."
+              echo "This usually means Apple's queue is backed up. Re-run the workflow later."
+            fi
             if [ -n "$SUBMISSION_ID" ]; then
               echo "📋 Apple notary log for $SUBMISSION_ID:"
               xcrun notarytool log "$SUBMISSION_ID" \
