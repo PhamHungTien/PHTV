@@ -1,15 +1,22 @@
 import Foundation
 
-final class PHTVTelexInputEngine: PHTVInputEngine {
+final class PHTVVietnameseInputEngine: PHTVInputEngine {
     private var rawBuffer = ""
-    private let composer = PHTVTelexComposer()
+    private let composer = PHTVVietnameseComposer()
+    private let transcoder = PHTVOutputTranscoder()
+
+    private var configuration: PHTVInputMethodConfiguration {
+        PHTVInputMethodPreferences.currentConfiguration()
+    }
 
     var rawText: String {
         rawBuffer
     }
 
     var composedText: String {
-        composer.compose(rawBuffer)
+        let configuration = configuration
+        let unicodeText = composer.compose(rawBuffer, style: configuration.inputStyle)
+        return transcoder.transcode(unicodeText, to: configuration.outputEncoding)
     }
 
     var candidates: [String] {

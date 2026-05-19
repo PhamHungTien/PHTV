@@ -3,7 +3,7 @@ import Foundation
 extension String {
     var isPHTVInputComposableText: Bool {
         unicodeScalars.allSatisfy { scalar in
-            CharacterSet.letters.contains(scalar) || PHTVInputMethodCharacterSets.telexToneMarkers.contains(scalar)
+            CharacterSet.letters.contains(scalar) || PHTVInputMethodCharacterSets.inputMarkers.contains(scalar)
         }
     }
 
@@ -15,5 +15,5 @@ extension String {
 }
 
 private enum PHTVInputMethodCharacterSets {
-    static let telexToneMarkers = CharacterSet(charactersIn: "sfrxjzSFRXJZ")
+    static let inputMarkers = CharacterSet(charactersIn: "sfrxjzSFRXJZ0123456789")
 }

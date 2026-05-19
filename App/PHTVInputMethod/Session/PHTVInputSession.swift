@@ -4,7 +4,7 @@ import Foundation
 final class PHTVInputSession {
     private let engine: PHTVInputEngine
 
-    init(engine: PHTVInputEngine = PHTVTelexInputEngine()) {
+    init(engine: PHTVInputEngine = PHTVVietnameseInputEngine()) {
         self.engine = engine
     }
 
