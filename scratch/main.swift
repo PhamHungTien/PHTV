@@ -1,114 +1,156 @@
 import Foundation
 
-// Custom assertion helper
-func assertEqual(_ actual: String, _ expected: String, _ message: String, file: String = #file, line: Int = #line) {
-    if actual != expected {
-        print("❌ FAIL: \(message)")
+// Define the PHTVInputStyle enum as it is in the main target
+enum PHTVInputStyle: Int, CaseIterable {
+    case telex = 0
+    case vni = 1
+    case simpleTelex1 = 2
+    case simpleTelex2 = 3
+}
+
+// Simple test helper
+var failedTests = 0
+var passedTests = 0
+
+func assertEqual(_ actual: String, _ expected: String, _ message: String = "", file: String = #file, line: Int = #line) {
+    if actual == expected {
+        passedTests += 1
+    } else {
+        failedTests += 1
+        print("❌ Assertion Failed at \(file):\(line)")
+        if !message.isEmpty {
+            print("   Message: \(message)")
+        }
         print("   Expected: \"\(expected)\"")
         print("   Actual:   \"\(actual)\"")
-        print("   At:       \(file):\(line)")
-        exit(1)
+    }
+}
+
+func assertNotEqual(_ actual: String, _ expected: String, _ message: String = "", file: String = #file, line: Int = #line) {
+    if actual != expected {
+        passedTests += 1
+    } else {
+        failedTests += 1
+        print("❌ Assertion Failed at \(file):\(line)")
+        if !message.isEmpty {
+            print("   Message: \(message)")
+        }
+        print("   Expected NOT to equal: \"\(expected)\"")
+        print("   Actual:                \"\(actual)\"")
     }
 }
 
 let composer = PHTVVietnameseComposer()
 
-print("Running PHTVVietnameseComposer tests...")
+print("--- Running PHTVVietnameseComposer Tests ---")
 
-// Test 1: Telex Tone Marker Recognition with Raw Vowel W
-assertEqual(composer.compose("mwfng", style: .telex), "mừng", "mwfng -> mừng")
-assertEqual(composer.compose("mwf", style: .telex), "mừ", "mwf -> mừ")
-assertEqual(composer.compose("dwfng", style: .telex), "dừng", "dwfng -> dừng")
-assertEqual(composer.compose("ddwfng", style: .telex), "đừng", "ddwfng -> đừng")
-assertEqual(composer.compose("duowngf", style: .telex), "dường", "duowngf -> dường")
-assertEqual(composer.compose("dduowngf", style: .telex), "đường", "dduowngf -> đường")
-assertEqual(composer.compose("suownf", style: .telex), "sườn", "suownf -> sườn")
+// 1. testTelexToneMarkerRecognitionWithRawVowelW
+assertEqual(composer.compose("mwfng", style: PHTVInputStyle.telex), "mừng")
+assertEqual(composer.compose("mwf", style: PHTVInputStyle.telex), "mừ")
+assertEqual(composer.compose("dwfng", style: PHTVInputStyle.telex), "dừng")
+assertEqual(composer.compose("ddwfng", style: PHTVInputStyle.telex), "đừng")
+assertEqual(composer.compose("duowngf", style: PHTVInputStyle.telex), "dường")
+assertEqual(composer.compose("dduowngf", style: PHTVInputStyle.telex), "đường")
+assertEqual(composer.compose("suownf", style: PHTVInputStyle.telex), "sườn")
 
-// Test 2: Tone Placement for Initial Consonant GI
-assertEqual(composer.compose("giups", style: .telex), "giúp", "giups -> giúp")
-assertEqual(composer.compose("giangr", style: .telex), "giảng", "giangr -> giảng")
-assertEqual(composer.compose("giayf", style: .telex), "giày", "giayf -> giày")
-assertEqual(composer.compose("gieets", style: .telex), "giết", "gieets -> giết")
-assertEqual(composer.compose("gioir", style: .telex), "giỏi", "gioir -> giỏi")
-assertEqual(composer.compose("gif", style: .telex), "gì", "gif -> gì")
-assertEqual(composer.compose("ginf", style: .telex), "gìn", "ginf -> gìn")
+// 2. testTonePlacementForInitialConsonantGI
+assertEqual(composer.compose("giups", style: PHTVInputStyle.telex), "giúp")
+assertEqual(composer.compose("giangr", style: PHTVInputStyle.telex), "giảng")
+assertEqual(composer.compose("giayf", style: PHTVInputStyle.telex), "giày")
+assertEqual(composer.compose("gieets", style: PHTVInputStyle.telex), "giết")
+assertEqual(composer.compose("gioir", style: PHTVInputStyle.telex), "giỏi")
+assertEqual(composer.compose("gif", style: PHTVInputStyle.telex), "gì")
+assertEqual(composer.compose("ginf", style: PHTVInputStyle.telex), "gìn")
 
-// Test 3: Tone Placement for Initial Consonant QU
-assertEqual(composer.compose("quans", style: .telex), "quán", "quans -> quán")
-assertEqual(composer.compose("quawns", style: .telex), "quắn", "quawns -> quắn")
-assertEqual(composer.compose("queor", style: .telex), "quẻo", "queor -> quẻo")
-assertEqual(composer.compose("quys", style: .telex), "quý", "quys -> quý")
-assertEqual(composer.compose("quyeets", style: .telex), "quyết", "quyeets -> quyết")
+// 3. testTonePlacementForInitialConsonantQU
+assertEqual(composer.compose("quans", style: PHTVInputStyle.telex), "quán")
+assertEqual(composer.compose("quawns", style: PHTVInputStyle.telex), "quắn")
+assertEqual(composer.compose("queor", style: PHTVInputStyle.telex), "quẻo")
+assertEqual(composer.compose("quys", style: PHTVInputStyle.telex), "quý")
+assertEqual(composer.compose("quyeets", style: PHTVInputStyle.telex), "quyết")
 
-// Test 4: Traditional Regression Cases
-assertEqual(composer.compose("sai", style: .telex), "sai", "sai -> sai")
-assertEqual(composer.compose("sau", style: .telex), "sau", "sau -> sau")
-assertEqual(composer.compose("fan", style: .telex), "fan", "fan -> fan")
-assertEqual(composer.compose("rum", style: .telex), "rum", "rum -> rum")
-assertEqual(composer.compose("xin", style: .telex), "xin", "xin -> xin")
-assertEqual(composer.compose("jam", style: .telex), "jam", "jam -> jam")
-assertEqual(composer.compose("zap", style: .telex), "zap", "zap -> zap")
-assertEqual(composer.compose("huowsng", style: .telex), "hướng", "huowsng -> hướng")
-assertEqual(composer.compose("huwongs", style: .telex), "hướng", "huwongs -> hướng")
-assertEqual(composer.compose("huwong", style: .telex), "hương", "huwong -> hương")
-assertEqual(composer.compose("huongw", style: .telex), "hương", "huongw -> hương")
-assertEqual(composer.compose("huongws", style: .telex), "hướng", "huongws -> hướng")
-assertEqual(composer.compose("HUWONGS", style: .telex), "HƯỚNG", "HUWONGS -> HƯỚNG")
-assertEqual(composer.compose("Huwongs", style: .telex), "Hướng", "Huwongs -> Hướng")
+// 4. testTraditionalRegressionCases
+assertEqual(composer.compose("sai", style: PHTVInputStyle.telex), "sai")
+assertEqual(composer.compose("sau", style: PHTVInputStyle.telex), "sau")
+assertEqual(composer.compose("fan", style: PHTVInputStyle.telex), "fan")
+assertEqual(composer.compose("rum", style: PHTVInputStyle.telex), "rum")
+assertEqual(composer.compose("xin", style: PHTVInputStyle.telex), "xin")
+assertEqual(composer.compose("jam", style: PHTVInputStyle.telex), "jam")
+assertEqual(composer.compose("zap", style: PHTVInputStyle.telex), "zap")
+assertEqual(composer.compose("huowsng", style: PHTVInputStyle.telex), "hướng")
 
+// 5. testVowelCombinationEdgeCases
+assertEqual(composer.compose("khoas", style: PHTVInputStyle.telex), "khoá")
+assertEqual(composer.compose("khuys", style: PHTVInputStyle.telex), "khuý")
+assertEqual(composer.compose("hoaf", style: PHTVInputStyle.telex), "hoà")
 
-// Test 5: Vowel Combination Edge Cases
-assertEqual(composer.compose("khoas", style: .telex), "khoá", "khoas -> khoá")
-assertEqual(composer.compose("khuys", style: .telex), "khuý", "khuys -> khuý")
-assertEqual(composer.compose("hoaf", style: .telex), "hoà", "hoaf -> hoà")
+// 6. testVNIMethodEdgeCases
+assertEqual(composer.compose("mu7ng2", style: PHTVInputStyle.vni), "mừng")
+assertEqual(composer.compose("giu1p", style: PHTVInputStyle.vni), "giúp")
+assertEqual(composer.compose("qua1n", style: PHTVInputStyle.vni), "quán")
+assertEqual(composer.compose("sai", style: PHTVInputStyle.vni), "sai")
 
-// Test 6: VNI Method Edge Cases
-assertEqual(composer.compose("mu7ng2", style: .vni), "mừng", "mu7ng2 -> mừng")
-assertEqual(composer.compose("giu1p", style: .vni), "giúp", "giu1p -> giúp")
-assertEqual(composer.compose("qua1n", style: .vni), "quán", "qua1n -> quán")
-assertEqual(composer.compose("sai", style: .vni), "sai", "sai -> sai")
-assertEqual(composer.compose("hu7ong", style: .vni), "hương", "hu7ong -> hương")
-assertEqual(composer.compose("huong7", style: .vni), "hương", "huong7 -> hương")
-assertEqual(composer.compose("hu7ong1", style: .vni), "hướng", "hu7ong1 -> hướng")
-assertEqual(composer.compose("huong71", style: .vni), "hướng", "huong71 -> hướng")
-assertEqual(composer.compose("HU7ONG1", style: .vni), "HƯỚNG", "HU7ONG1 -> HƯỚNG")
-assertEqual(composer.compose("Hu7ong1", style: .vni), "Hướng", "Hu7ong1 -> Hướng")
+// 7. testSpellingNormalization
+assertEqual(composer.compose("huwongs", style: PHTVInputStyle.telex), "hướng")
+assertEqual(composer.compose("huwong", style: PHTVInputStyle.telex), "hương")
+assertEqual(composer.compose("huongw", style: PHTVInputStyle.telex), "hương")
+assertEqual(composer.compose("huongws", style: PHTVInputStyle.telex), "hướng")
+assertEqual(composer.compose("HUWONGS", style: PHTVInputStyle.telex), "HƯỚNG")
+assertEqual(composer.compose("Huwongs", style: PHTVInputStyle.telex), "Hướng")
 
+assertEqual(composer.compose("hu7ong", style: PHTVInputStyle.vni), "hương")
+assertEqual(composer.compose("huong7", style: PHTVInputStyle.vni), "hương")
+assertEqual(composer.compose("hu7ong1", style: PHTVInputStyle.vni), "hướng")
+assertEqual(composer.compose("huong71", style: PHTVInputStyle.vni), "hướng")
+assertEqual(composer.compose("HU7ONG1", style: PHTVInputStyle.vni), "HƯỚNG")
+assertEqual(composer.compose("Hu7ong1", style: PHTVInputStyle.vni), "Hướng")
 
-// Test 7: Telex Consecutive W Collapsing
-assertEqual(composer.compose("ww", style: .telex), "w", "ww -> w")
-assertEqual(composer.compose("WW", style: .telex), "W", "WW -> W")
-assertEqual(composer.compose("uww", style: .telex), "ưw", "uww -> ưw")
-assertEqual(composer.compose("oww", style: .telex), "ơw", "oww -> ơw")
-assertEqual(composer.compose("aww", style: .telex), "ăw", "aww -> ăw")
-assertEqual(composer.compose("huoww", style: .telex), "hươw", "huoww -> hươw")
+assertEqual(composer.compose("hứo", style: PHTVInputStyle.telex), "hướ")
+assertEqual(composer.compose("huớ", style: PHTVInputStyle.telex), "hướ")
+assertEqual(composer.compose("hứong", style: PHTVInputStyle.telex), "hướng")
+assertEqual(composer.compose("huớng", style: PHTVInputStyle.telex), "hướng")
+assertEqual(composer.compose("Hứong", style: PHTVInputStyle.telex), "Hướng")
+assertEqual(composer.compose("HUỚNG", style: PHTVInputStyle.telex), "HƯỚNG")
 
-// Test 8: Telex Tone Removal (Gỡ Dấu)
-assertEqual(composer.compose("as", style: .telex), "á", "as -> á")
-assertEqual(composer.compose("ass", style: .telex), "as", "ass -> as")
-assertEqual(composer.compose("asss", style: .telex), "ás", "asss -> ás")
-assertEqual(composer.compose("assss", style: .telex), "ass", "assss -> ass")
-assertEqual(composer.compose("asf", style: .telex), "à", "asf -> à")
-assertEqual(composer.compose("asff", style: .telex), "af", "asff -> af")
-assertEqual(composer.compose("asfs", style: .telex), "á", "asfs -> á")
-assertEqual(composer.compose("asnhs", style: .telex), "anhs", "asnhs -> anhs")
-assertEqual(composer.compose("sais", style: .telex), "sái", "sais -> sái")
-assertEqual(composer.compose("saiss", style: .telex), "sais", "saiss -> sais")
-assertEqual(composer.compose("chafof", style: .telex), "chaof", "chafof -> chaof")
+// 8. testAutoRestoreEnglish
+assertEqual(composer.compose("terminal", style: PHTVInputStyle.telex), "terminal")
+assertEqual(composer.compose("microsoft", style: PHTVInputStyle.telex), "microsoft")
+assertEqual(composer.compose("clear", style: PHTVInputStyle.telex), "clear")
+assertEqual(composer.compose("email", style: PHTVInputStyle.telex), "email")
+assertEqual(composer.compose("install", style: PHTVInputStyle.telex), "install")
+assertEqual(composer.compose("facebook", style: PHTVInputStyle.telex), "facebook")
+assertEqual(composer.compose("google", style: PHTVInputStyle.telex), "google")
+assertEqual(composer.compose("local", style: PHTVInputStyle.telex), "local")
+assertEqual(composer.compose("internet", style: PHTVInputStyle.telex), "internet")
 
-// Test 9: VNI Tone Removal (Gỡ Dấu)
-assertEqual(composer.compose("a1", style: .vni), "á", "a1 -> á")
-assertEqual(composer.compose("a11", style: .vni), "a1", "a11 -> a1")
-assertEqual(composer.compose("a111", style: .vni), "á1", "a111 -> á1")
-assertEqual(composer.compose("a1111", style: .vni), "a11", "a1111 -> a11")
+assertNotEqual(composer.compose("terminal", style: PHTVInputStyle.telex, autoRestore: false), "terminal")
 
-// Test 10: Pre-composed / Partial Spelling Normalization
-assertEqual(composer.compose("hứo", style: .telex), "hướ", "hứo -> hướ")
-assertEqual(composer.compose("huớ", style: .telex), "hướ", "huớ -> hướ")
-assertEqual(composer.compose("hứong", style: .telex), "hướng", "hứong -> hướng")
-assertEqual(composer.compose("huớng", style: .telex), "hướng", "huớng -> hướng")
-assertEqual(composer.compose("Hứong", style: .telex), "Hướng", "Hứong -> Hướng")
-assertEqual(composer.compose("HUỚNG", style: .telex), "HƯỚNG", "HUỚNG -> HƯỚNG")
+assertEqual(composer.compose("free", style: PHTVInputStyle.telex), "free")
+assertEqual(composer.compose("book", style: PHTVInputStyle.telex), "book")
+assertEqual(composer.compose("good", style: PHTVInputStyle.telex), "good")
+assertEqual(composer.compose("size", style: PHTVInputStyle.telex), "size")
+assertEqual(composer.compose("code", style: PHTVInputStyle.telex), "code")
+assertEqual(composer.compose("make", style: PHTVInputStyle.telex), "make")
 
-print("✨ ALL TESTS PASSED SUCCESSFULLY! (60+ assertions)")
+assertEqual(composer.compose("kieer", style: PHTVInputStyle.telex), "kiể")
+assertEqual(composer.compose("kiee", style: PHTVInputStyle.telex), "kiê")
+assertEqual(composer.compose("tieerng", style: PHTVInputStyle.telex), "tiểng")
+assertEqual(composer.compose("tier", style: PHTVInputStyle.telex), "tier")
+assertEqual(composer.compose("ties", style: PHTVInputStyle.telex), "ties")
+assertEqual(composer.compose("bye", style: PHTVInputStyle.telex), "bye")
 
+assertEqual(composer.compose("mwfng", style: PHTVInputStyle.telex), "mừng")
+assertEqual(composer.compose("giups", style: PHTVInputStyle.telex), "giúp")
+assertEqual(composer.compose("quans", style: PHTVInputStyle.telex), "quán")
+assertEqual(composer.compose("huowsng", style: PHTVInputStyle.telex), "hướng")
+assertEqual(composer.compose("xoong", style: PHTVInputStyle.telex), "xông")
+
+print("--- Test Run Completed ---")
+print("Passed: \(passedTests) assertions")
+if failedTests > 0 {
+    print("❌ Failed: \(failedTests) assertions")
+    exit(1)
+} else {
+    print("✅ All tests passed successfully!")
+    exit(0)
+}

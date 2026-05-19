@@ -119,27 +119,31 @@ final class PHTVInputController: IMKInputController {
         return menu
     }
 
-    @objc private func selectInputStyle(_ sender: NSMenuItem) {
+    @objc func selectInputStyle(_ sender: NSMenuItem) {
         guard let style = PHTVInputStyle(rawValue: sender.tag) else { return }
+        PHTVInputMethodDiagnostics.log("selectInputStyle called with tag \(sender.tag) -> \(style.displayName)")
         var config = PHTVInputMethodPreferences.currentConfiguration()
         config.inputStyle = style
         PHTVInputMethodPreferences.saveConfiguration(config)
     }
 
-    @objc private func selectOutputEncoding(_ sender: NSMenuItem) {
+    @objc func selectOutputEncoding(_ sender: NSMenuItem) {
         guard let encoding = PHTVOutputEncoding(rawValue: sender.tag) else { return }
+        PHTVInputMethodDiagnostics.log("selectOutputEncoding called with tag \(sender.tag) -> \(encoding.displayName)")
         var config = PHTVInputMethodPreferences.currentConfiguration()
         config.outputEncoding = encoding
         PHTVInputMethodPreferences.saveConfiguration(config)
     }
 
-    @objc private func openPreferences(_ sender: NSMenuItem) {
+    @objc func openPreferences(_ sender: NSMenuItem) {
+        PHTVInputMethodDiagnostics.log("openPreferences called")
         DispatchQueue.main.async {
             PHTVSettingsWindowController.shared.displayWindow()
         }
     }
 
-    @objc private func toggleAutoRestoreEnglish(_ sender: NSMenuItem) {
+    @objc func toggleAutoRestoreEnglish(_ sender: NSMenuItem) {
+        PHTVInputMethodDiagnostics.log("toggleAutoRestoreEnglish called")
         var config = PHTVInputMethodPreferences.currentConfiguration()
         config.autoRestoreEnglishWord.toggle()
         PHTVInputMethodPreferences.saveConfiguration(config)

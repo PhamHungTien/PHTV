@@ -474,9 +474,16 @@ struct PHTVVietnameseComposer {
             }
         }
         
-        // "ie" and "ye" as vowel runs are only valid if followed by a final consonant
+        // "ie" and "ye" as vowel runs are only valid if followed by a final consonant,
+        // EXCEPT if the vowel run contains a circumflex accent base ("ê" or "Ê") which signals Vietnamese typing intent.
         if (vowelRunBase == "ie" || vowelRunBase == "ye") && lowerFinal.isEmpty {
-            return false
+            let hasCircumflex = vowelRun.contains { char in
+                let lower = char.lowercased()
+                return "êềếểễệ".contains(lower)
+            }
+            if !hasCircumflex {
+                return false
+            }
         }
         
         return true

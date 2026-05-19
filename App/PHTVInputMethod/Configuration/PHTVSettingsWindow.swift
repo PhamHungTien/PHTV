@@ -68,73 +68,243 @@ final class PHTVSettingsWindowController: NSWindowController {
     }
 }
 
+// MARK: - Settings Layout Tokens
+enum SettingsLayout {
+    static let sectionSpacing: CGFloat = 16
+    static let cardContentHorizontalPadding: CGFloat = 12
+    static let cardContentVerticalPadding: CGFloat = 8
+    static let cardCornerRadius: CGFloat = 12
+    static let rowVerticalPadding: CGFloat = 7
+    static let rowControlColumnWidth: CGFloat = 168
+    static let toggleControlWidth: CGFloat = 54
+}
+
+// MARK: - Settings Card Component
+struct SettingsCard<Content: View>: View {
+    let title: String
+    let subtitle: String?
+    let icon: String
+    let content: Content
+
+    init(
+        title: String,
+        subtitle: String? = nil,
+        icon: String,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.icon = icon
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            cardHeader
+
+            content
+                .padding(.horizontal, SettingsLayout.cardContentHorizontalPadding)
+                .padding(.vertical, SettingsLayout.cardContentVerticalPadding)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: SettingsLayout.cardCornerRadius, style: .continuous)
+                        .fill(Color(NSColor.controlBackgroundColor).opacity(0.4))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: SettingsLayout.cardCornerRadius, style: .continuous)
+                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                )
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var cardHeader: some View {
+        HStack(alignment: .center, spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(.accentColor)
+                .frame(width: 22, height: 22)
+                .background(Color.accentColor.opacity(0.12))
+                .cornerRadius(6)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundColor(.primary)
+                
+                if let subtitle = subtitle {
+                    Text(subtitle)
+                        .font(.system(size: 10, design: .rounded))
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            Spacer(minLength: 12)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 2)
+    }
+}
+
+// MARK: - Settings Picker Row Component
+struct SettingsPickerRow<SelectionValue: Hashable, PickerContent: View>: View {
+    let title: String
+    let subtitle: String?
+    @Binding var selection: SelectionValue
+    let pickerContent: PickerContent
+
+    init(
+        title: String,
+        subtitle: String? = nil,
+        selection: Binding<SelectionValue>,
+        @ViewBuilder content: () -> PickerContent
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self._selection = selection
+        self.pickerContent = content()
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 16) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundColor(.primary)
+                
+                if let subtitle = subtitle {
+                    Text(subtitle)
+                        .font(.system(size: 10, design: .rounded))
+                        .foregroundColor(.secondary)
+                }
+            }
+            .layoutPriority(1)
+
+            Spacer(minLength: 12)
+
+            Picker("", selection: $selection) {
+                pickerContent
+            }
+            .labelsHidden()
+            .controlSize(.small)
+            .frame(width: SettingsLayout.rowControlColumnWidth, alignment: .trailing)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, SettingsLayout.rowVerticalPadding)
+    }
+}
+
+// MARK: - Settings Toggle Row Component
+struct SettingsToggleRow: View {
+    let icon: String
+    let iconColor: Color
+    let title: String
+    let subtitle: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 16) {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 13))
+                    .foregroundColor(iconColor)
+                    .frame(width: 22, height: 22)
+                    .background(iconColor.opacity(0.12))
+                    .cornerRadius(6)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundColor(.primary)
+                    
+                    Text(subtitle)
+                        .font(.system(size: 10, design: .rounded))
+                        .foregroundColor(.secondary)
+                }
+            }
+            .layoutPriority(1)
+
+            Spacer(minLength: 12)
+
+            Toggle("", isOn: $isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .fixedSize()
+                .frame(width: SettingsLayout.toggleControlWidth, alignment: .trailing)
+                .frame(width: SettingsLayout.rowControlColumnWidth, alignment: .trailing)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, SettingsLayout.rowVerticalPadding)
+    }
+}
+
+// MARK: - Settings Divider Component
+struct SettingsDivider: View {
+    var body: some View {
+        Divider()
+            .opacity(0.15)
+            .padding(.vertical, 2)
+    }
+}
+
 // MARK: - SwiftUI Settings View
 struct PHTVSettingsView: View {
-    @State private var activeTab: SettingsTab = .inputStyle
     @State private var inputStyle: PHTVInputStyle = .telex
     @State private var outputEncoding: PHTVOutputEncoding = .unicode
+    @State private var autoRestoreEnglishWord = true
     @State private var showSavedAlert = false
     
-    enum SettingsTab: String, CaseIterable {
-        case inputStyle = "Kiểu gõ"
-        case encoding = "Bảng mã"
-        
-        var icon: String {
-            switch self {
-            case .inputStyle: return "keyboard"
-            case .encoding: return "character.textbox"
+    private var inputStyleBinding: Binding<PHTVInputStyle> {
+        Binding(
+            get: { self.inputStyle },
+            set: { newValue in
+                self.inputStyle = newValue
+                self.save()
             }
-        }
+        )
+    }
+    
+    private var outputEncodingBinding: Binding<PHTVOutputEncoding> {
+        Binding(
+            get: { self.outputEncoding },
+            set: { newValue in
+                self.outputEncoding = newValue
+                self.save()
+            }
+        )
+    }
+    
+    private var autoRestoreBinding: Binding<Bool> {
+        Binding(
+            get: { self.autoRestoreEnglishWord },
+            set: { newValue in
+                self.autoRestoreEnglishWord = newValue
+                self.save()
+            }
+        )
     }
     
     var body: some View {
         VStack(spacing: 0) {
             // Premium Header acting as Custom Title Bar
-            HStack {
-                HStack(spacing: 12) {
-                    Image(nsImage: NSApp.applicationIconImage)
-                        .resizable()
-                        .frame(width: 40, height: 40)
-                        .cornerRadius(8)
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Bộ gõ PHTV")
-                            .font(.system(.headline, design: .rounded))
-                            .fontWeight(.bold)
-                            .foregroundColor(.primary)
-                        Text("Cấu hình bộ gõ độc lập")
-                            .font(.system(.caption, design: .rounded))
-                            .foregroundColor(.secondary)
-                    }
+            HStack(spacing: 12) {
+                Image(nsImage: NSApp.applicationIconImage)
+                    .resizable()
+                    .frame(width: 40, height: 40)
+                    .cornerRadius(8)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Bộ gõ PHTV")
+                        .font(.system(.headline, design: .rounded))
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
+                    Text("Cấu hình bộ gõ độc lập")
+                        .font(.system(.caption, design: .rounded))
+                        .foregroundColor(.secondary)
                 }
                 
                 Spacer()
-                
-                // Custom Modern Tab Bar
-                HStack(spacing: 4) {
-                    ForEach(SettingsTab.allCases, id: \.self) { tab in
-                        Button(action: {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                activeTab = tab
-                            }
-                        }) {
-                            HStack(spacing: 6) {
-                                Image(systemName: tab.icon)
-                                    .font(.system(size: 11, weight: .semibold))
-                                Text(tab.rawValue)
-                                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(activeTab == tab ? Color.white.opacity(0.15) : Color.clear)
-                            .cornerRadius(8)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(4)
-                .background(Color.black.opacity(0.15))
-                .cornerRadius(10)
             }
             .padding(.horizontal, 24)
             .padding(.top, 24)
@@ -145,11 +315,49 @@ struct PHTVSettingsView: View {
             
             // Preferences Content Pane
             ScrollView {
-                VStack(spacing: 20) {
-                    if activeTab == .inputStyle {
-                        inputStyleTab
-                    } else {
-                        encodingTab
+                VStack(spacing: SettingsLayout.sectionSpacing) {
+                    // Card 1: Thiết lập bộ gõ
+                    SettingsCard(
+                        title: "Thiết lập bộ gõ",
+                        subtitle: "Chọn phương pháp gõ và bảng mã phù hợp",
+                        icon: "keyboard.fill"
+                    ) {
+                        VStack(spacing: 0) {
+                            SettingsPickerRow(
+                                title: "Phương pháp gõ",
+                                selection: inputStyleBinding
+                            ) {
+                                ForEach(PHTVInputStyle.allCases, id: \.self) { style in
+                                    Text(style.displayName).tag(style)
+                                }
+                            }
+                            
+                            SettingsDivider()
+                            
+                            SettingsPickerRow(
+                                title: "Bảng mã",
+                                selection: outputEncodingBinding
+                            ) {
+                                ForEach(PHTVOutputEncoding.allCases, id: \.self) { encoding in
+                                    Text(encoding.displayName).tag(encoding)
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Card 2: Tối ưu gõ
+                    SettingsCard(
+                        title: "Tối ưu gõ",
+                        subtitle: "Tăng tốc và cải thiện trải nghiệm",
+                        icon: "wand.and.stars"
+                    ) {
+                        SettingsToggleRow(
+                            icon: "text.magnifyingglass",
+                            iconColor: .accentColor,
+                            title: "Tự động khôi phục tiếng Anh",
+                            subtitle: "Khôi phục từ được nhận diện là tiếng Anh",
+                            isOn: autoRestoreBinding
+                        )
                     }
                 }
                 .padding(24)
@@ -193,161 +401,17 @@ struct PHTVSettingsView: View {
             let config = PHTVInputMethodPreferences.currentConfiguration()
             self.inputStyle = config.inputStyle
             self.outputEncoding = config.outputEncoding
-        }
-    }
-    
-    // MARK: - Kiểu gõ Tab View
-    private var inputStyleTab: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Chọn kiểu gõ Tiếng Việt:")
-                .font(.system(size: 13, weight: .bold, design: .rounded))
-                .foregroundColor(.secondary)
-                .padding(.bottom, 2)
-            
-            ForEach(PHTVInputStyle.allCases, id: \.self) { style in
-                let isSelected = inputStyle == style
-                Button(action: {
-                    withAnimation(.spring(response: 0.25, dampingFraction: 0.75)) {
-                        inputStyle = style
-                        save()
-                    }
-                }) {
-                    HStack(spacing: 16) {
-                        // Custom Interactive Radio Icon
-                        ZStack {
-                            Circle()
-                                .stroke(isSelected ? Color.accentColor : Color.secondary.opacity(0.4), lineWidth: 2)
-                                .frame(width: 18, height: 18)
-                            if isSelected {
-                                Circle()
-                                    .fill(Color.accentColor)
-                                    .frame(width: 10, height: 10)
-                            }
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(style.displayName)
-                                .font(.system(size: 14, weight: .bold, design: .rounded))
-                                .foregroundColor(.primary)
-                            Text(styleDescription(for: style))
-                                .font(.system(size: 11, design: .rounded))
-                                .foregroundColor(.secondary)
-                                .multilineTextAlignment(.leading)
-                        }
-                        
-                        Spacer()
-                        
-                        // Tag Descriptor
-                        Text(style.displayName.uppercased())
-                            .font(.system(size: 9, weight: .bold, design: .rounded))
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(isSelected ? Color.accentColor.opacity(0.2) : Color.white.opacity(0.08))
-                            .foregroundColor(isSelected ? .accentColor : .secondary)
-                            .cornerRadius(6)
-                    }
-                    .padding(14)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(isSelected ? Color.accentColor.opacity(0.06) : Color.white.opacity(0.03))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(isSelected ? Color.accentColor.opacity(0.3) : Color.white.opacity(0.05), lineWidth: 1)
-                    )
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-    
-    // MARK: - Bảng mã Tab View
-    private var encodingTab: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Chọn bảng mã đầu ra:")
-                .font(.system(size: 13, weight: .bold, design: .rounded))
-                .foregroundColor(.secondary)
-                .padding(.bottom, 2)
-            
-            ForEach(PHTVOutputEncoding.allCases, id: \.self) { encoding in
-                let isSelected = outputEncoding == encoding
-                Button(action: {
-                    withAnimation(.spring(response: 0.25, dampingFraction: 0.75)) {
-                        outputEncoding = encoding
-                        save()
-                    }
-                }) {
-                    HStack(spacing: 16) {
-                        // Custom Interactive Radio Icon
-                        ZStack {
-                            Circle()
-                                .stroke(isSelected ? Color.accentColor : Color.secondary.opacity(0.4), lineWidth: 2)
-                                .frame(width: 18, height: 18)
-                            if isSelected {
-                                Circle()
-                                    .fill(Color.accentColor)
-                                    .frame(width: 10, height: 10)
-                            }
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(encoding.displayName)
-                                .font(.system(size: 14, weight: .bold, design: .rounded))
-                                .foregroundColor(.primary)
-                            Text(encodingDescription(for: encoding))
-                                .font(.system(size: 11, design: .rounded))
-                                .foregroundColor(.secondary)
-                        }
-                        
-                        Spacer()
-                    }
-                    .padding(14)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(isSelected ? Color.accentColor.opacity(0.06) : Color.white.opacity(0.03))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(isSelected ? Color.accentColor.opacity(0.3) : Color.white.opacity(0.05), lineWidth: 1)
-                    )
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-    
-    // MARK: - Descriptions
-    private func styleDescription(for style: PHTVInputStyle) -> String {
-        switch style {
-        case .telex:
-            return "Kiểu gõ tiếng Việt phổ biến nhất. Dùng phím chữ (s, f, r, x, j, z) để gõ dấu."
-        case .vni:
-            return "Kiểu gõ dùng phím số (1, 2, 3, 4, 5, 6, 7, 8, 9, 0) để gõ dấu."
-        case .simpleTelex1:
-            return "Telex đơn giản hóa. Phím 'w' tự động thêm dấu móc cho 'ư' và 'ơ'."
-        case .simpleTelex2:
-            return "Telex mở rộng. Tự động thêm dấu móc và linh hoạt xử lý từ."
-        }
-    }
-    
-    private func encodingDescription(for encoding: PHTVOutputEncoding) -> String {
-        switch encoding {
-        case .unicode:
-            return "Tiêu chuẩn quốc tế hiện đại. Tương thích hoàn hảo với web và hệ điều hành mới."
-        case .tcvn3:
-            return "Bảng mã TCVN3 (ABC) cũ dùng cho một số tài liệu hành chính nhà nước trước đây."
-        case .vniWindows:
-            return "Bảng mã 2-byte cũ của VNI sử dụng các phông chữ có tiền tố 'VNI-'."
-        case .unicodeComposite:
-            return "Unicode tổ hợp dùng trong một số phần mềm hoặc hệ thống cũ hơn."
-        case .cp1258:
-            return "Bảng mã trang mã địa phương tiếng Việt của Microsoft Windows."
+            self.autoRestoreEnglishWord = config.autoRestoreEnglishWord
         }
     }
     
     // MARK: - Save Settings
     private func save() {
-        let config = PHTVInputMethodConfiguration(inputStyle: inputStyle, outputEncoding: outputEncoding)
+        let config = PHTVInputMethodConfiguration(
+            inputStyle: inputStyle,
+            outputEncoding: outputEncoding,
+            autoRestoreEnglishWord: autoRestoreEnglishWord
+        )
         PHTVInputMethodPreferences.saveConfiguration(config)
         
         withAnimation(.easeInOut(duration: 0.15)) {
