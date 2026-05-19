@@ -57,15 +57,11 @@ final class PHTVInputController: IMKInputController {
         let menu = NSMenu(title: "PHTV")
         let config = PHTVInputMethodPreferences.currentConfiguration()
 
-        // Kiểu gõ section header
-        let styleHeader = NSMenuItem(title: "Kiểu gõ", action: nil, keyEquivalent: "")
-        styleHeader.isEnabled = false
-        menu.addItem(styleHeader)
-
-        // Kiểu gõ items
+        // Kiểu gõ submenu
+        let styleMenu = NSMenu(title: "Kiểu gõ")
         for style in PHTVInputStyle.allCases {
             let item = NSMenuItem(
-                title: "  " + style.displayName,
+                title: style.displayName,
                 action: #selector(selectInputStyle(_:)),
                 keyEquivalent: ""
             )
@@ -74,20 +70,17 @@ final class PHTVInputController: IMKInputController {
             if config.inputStyle == style {
                 item.state = .on
             }
-            menu.addItem(item)
+            styleMenu.addItem(item)
         }
+        let styleSubmenuItem = NSMenuItem(title: "Kiểu gõ", action: nil, keyEquivalent: "")
+        styleSubmenuItem.submenu = styleMenu
+        menu.addItem(styleSubmenuItem)
 
-        menu.addItem(NSMenuItem.separator())
-
-        // Bảng mã section header
-        let encodingHeader = NSMenuItem(title: "Bảng mã", action: nil, keyEquivalent: "")
-        encodingHeader.isEnabled = false
-        menu.addItem(encodingHeader)
-
-        // Bảng mã items
+        // Bảng mã submenu
+        let encodingMenu = NSMenu(title: "Bảng mã")
         for encoding in PHTVOutputEncoding.allCases {
             let item = NSMenuItem(
-                title: "  " + encoding.displayName,
+                title: encoding.displayName,
                 action: #selector(selectOutputEncoding(_:)),
                 keyEquivalent: ""
             )
@@ -96,10 +89,11 @@ final class PHTVInputController: IMKInputController {
             if config.outputEncoding == encoding {
                 item.state = .on
             }
-            menu.addItem(item)
+            encodingMenu.addItem(item)
         }
-
-        menu.addItem(NSMenuItem.separator())
+        let encodingSubmenuItem = NSMenuItem(title: "Bảng mã", action: nil, keyEquivalent: "")
+        encodingSubmenuItem.submenu = encodingMenu
+        menu.addItem(encodingSubmenuItem)
 
         // Tự động khôi phục tiếng Anh item
         let autoRestoreItem = NSMenuItem(
@@ -125,30 +119,58 @@ final class PHTVInputController: IMKInputController {
         return menu
     }
 
-    @objc func selectInputStyle(_ sender: NSMenuItem) {
-        guard let style = PHTVInputStyle(rawValue: sender.tag) else { return }
-        PHTVInputMethodDiagnostics.log("selectInputStyle called with tag \(sender.tag) -> \(style.displayName)")
+    @objc func selectInputStyle(_ sender: Any) {
+        let menuItem: NSMenuItem?
+        if let item = sender as? NSMenuItem {
+            menuItem = item
+        } else if let dict = sender as? [AnyHashable: Any],
+                  let item = dict[kIMKCommandMenuItemName] as? NSMenuItem {
+            menuItem = item
+        } else {
+            menuItem = nil
+        }
+
+        guard let item = menuItem,
+              let style = PHTVInputStyle(rawValue: item.tag) else {
+            PHTVInputMethodDiagnostics.log("selectInputStyle: failed to extract NSMenuItem from sender: \(sender)")
+            return
+        }
+        PHTVInputMethodDiagnostics.log("selectInputStyle called with tag \(item.tag) -> \(style.displayName)")
         var config = PHTVInputMethodPreferences.currentConfiguration()
         config.inputStyle = style
         PHTVInputMethodPreferences.saveConfiguration(config)
     }
 
-    @objc func selectOutputEncoding(_ sender: NSMenuItem) {
-        guard let encoding = PHTVOutputEncoding(rawValue: sender.tag) else { return }
-        PHTVInputMethodDiagnostics.log("selectOutputEncoding called with tag \(sender.tag) -> \(encoding.displayName)")
+    @objc func selectOutputEncoding(_ sender: Any) {
+        let menuItem: NSMenuItem?
+        if let item = sender as? NSMenuItem {
+            menuItem = item
+        } else if let dict = sender as? [AnyHashable: Any],
+                  let item = dict[kIMKCommandMenuItemName] as? NSMenuItem {
+            menuItem = item
+        } else {
+            menuItem = nil
+        }
+
+        guard let item = menuItem,
+              let encoding = PHTVOutputEncoding(rawValue: item.tag) else {
+            PHTVInputMethodDiagnostics.log("selectOutputEncoding: failed to extract NSMenuItem from sender: \(sender)")
+            return
+        }
+        PHTVInputMethodDiagnostics.log("selectOutputEncoding called with tag \(item.tag) -> \(encoding.displayName)")
         var config = PHTVInputMethodPreferences.currentConfiguration()
         config.outputEncoding = encoding
         PHTVInputMethodPreferences.saveConfiguration(config)
     }
 
-    @objc func openPreferences(_ sender: NSMenuItem) {
+    @objc func openPreferences(_ sender: Any) {
         PHTVInputMethodDiagnostics.log("openPreferences called")
         DispatchQueue.main.async {
             PHTVSettingsWindowController.shared.displayWindow()
         }
     }
 
-    @objc func toggleAutoRestoreEnglish(_ sender: NSMenuItem) {
+    @objc func toggleAutoRestoreEnglish(_ sender: Any) {
         PHTVInputMethodDiagnostics.log("toggleAutoRestoreEnglish called")
         var config = PHTVInputMethodPreferences.currentConfiguration()
         config.autoRestoreEnglishWord.toggle()
