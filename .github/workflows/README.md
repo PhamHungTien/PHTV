@@ -26,7 +26,7 @@ Workflow release hiện đã được đồng bộ theo mẫu LunarV, với cấ
 - `SPARKLE_PRIVATE_KEY`
 - `TAP_REPO_TOKEN`
 
-`CERTIFICATES_P12` phải là certificate `Developer ID Application` export dạng `.p12` rồi base64 encode. `APPLE_APP_SPECIFIC_PASSWORD` là app-specific password của Apple ID dùng để submit notarization.
+`CERTIFICATES_P12` phải là certificate `Developer ID Application` export dạng `.p12` rồi base64 encode. Không dùng certificate `Apple Development` hoặc `Mac Development` cho release public/notarized. `APPLE_APP_SPECIFIC_PASSWORD` là app-specific password của Apple ID dùng để submit notarization.
 
 ## Release Flow
 

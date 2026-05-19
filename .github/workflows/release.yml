@@ -189,18 +189,20 @@ jobs:
           security default-keychain -s "$KEYCHAIN_PATH"
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
-          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -o '"[^"]*"' | head -1 | tr -d '"')
+          echo "🔎 Available code signing identities:"
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+
+          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" \
+            | sed -n 's/.*"\(Developer ID Application:[^"]*\)".*/\1/p' \
+            | head -1)
           if [ -z "$IDENTITY" ]; then
-            echo "❌ Error: No valid signing identity found."
-            exit 1
-          fi
-          if [[ "$IDENTITY" != Developer\ ID\ Application:* ]]; then
-            echo "❌ Error: Expected a Developer ID Application certificate for notarized macOS distribution."
-            echo "Found: $IDENTITY"
+            echo "❌ Error: No Developer ID Application signing identity found."
+            echo "CERTIFICATES_P12 must be exported from a Developer ID Application certificate."
+            echo "Apple Development certificates cannot be used for notarized public macOS releases."
             exit 1
           fi
 
-          echo "🔐 Identity found: $IDENTITY"
+          echo "🔐 Developer ID identity found: $IDENTITY"
           echo "identity=$IDENTITY" >> "$GITHUB_OUTPUT"
           echo "keychain=$KEYCHAIN_PATH" >> "$GITHUB_OUTPUT"
 
