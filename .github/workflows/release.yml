@@ -96,7 +96,7 @@ jobs:
               "docs/appcast-intel.xml",
           ]
 
-          def load_text(path: str) -> str | None:
+          def load_text(path):
               specs = [f"origin/main:{path}", path]
               for spec in specs:
                   try:
