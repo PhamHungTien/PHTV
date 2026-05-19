@@ -1309,4 +1309,73 @@ final class EngineRegressionTests: XCTestCase {
         XCTAssertEqual(renderedToken("choifiii"), "chòiiii")
     }
 
+    // MARK: - Bug fix: initial consonant must not be consumed as a tone marker
+
+    func testSaiRendersAsPlainSai() {
+        // "s" is an initial consonant here, NOT a tone marker; no vowel precedes it.
+        XCTAssertEqual(renderedToken("sai"), "sai")
+        XCTAssertEqual(runtimeRenderedToken("sai"), "sai")
+    }
+
+    func testSaoRendersAsPlainSao() {
+        XCTAssertEqual(renderedToken("sao"), "sao")
+        XCTAssertEqual(runtimeRenderedToken("sao"), "sao")
+    }
+
+    func testFanRendersAsPlainFan() {
+        // "f" (grave marker) at position 0 must not be eaten as tone.
+        XCTAssertEqual(renderedToken("fan"), "fan")
+        XCTAssertEqual(runtimeRenderedToken("fan"), "fan")
+    }
+
+    func testRumRendersAsPlainRum() {
+        // "r" (hook marker) at position 0 must not be eaten as tone.
+        XCTAssertEqual(renderedToken("rum"), "rum")
+        XCTAssertEqual(runtimeRenderedToken("rum"), "rum")
+    }
+
+    func testXinRendersAsPlainXin() {
+        // "x" (tilde marker) at position 0 must not be eaten as tone.
+        XCTAssertEqual(renderedToken("xin"), "xin")
+        XCTAssertEqual(runtimeRenderedToken("xin"), "xin")
+    }
+
+    func testJamRendersAsPlainJam() {
+        // "j" (dot marker) at position 0 must not be eaten as tone.
+        XCTAssertEqual(renderedToken("jam"), "jam")
+        XCTAssertEqual(runtimeRenderedToken("jam"), "jam")
+    }
+
+    func testZapRendersAsPlainZap() {
+        // "z" (clear marker) at position 0 must not be consumed as a clear-tone command.
+        XCTAssertEqual(renderedToken("zap"), "zap")
+        XCTAssertEqual(runtimeRenderedToken("zap"), "zap")
+    }
+
+    // MARK: - Bug fix: diphthong tone placement – "ươ" cluster
+
+    func testHuowsngProducesHuong() {
+        // "huowsng" → uo+w = ươ, s = sắc; tone must land on ơ, not ư.
+        XCTAssertEqual(renderedToken("huowsng"), "hướng")
+        XCTAssertEqual(runtimeRenderedToken("huowsng"), "hướng")
+    }
+
+    func testBuowscProducesBuoc() {
+        // "buowsc" → b + uo+w(=ươ) + s(=acute) + c; tone lands on ơ → "bước".
+        XCTAssertEqual(renderedToken("buowsc"), "bước")
+        XCTAssertEqual(runtimeRenderedToken("buowsc"), "bước")
+    }
+
+    func testTuowsngProducesTuong() {
+        // "tuowsng" → tướng; tone (s) should be placed on ơ.
+        XCTAssertEqual(renderedToken("tuowsng"), "tướng")
+        XCTAssertEqual(runtimeRenderedToken("tuowsng"), "tướng")
+    }
+
+    func testMuowfngProducesMuong() {
+        // "muowfng" → mường; tone (f=grave) on ơ.
+        XCTAssertEqual(renderedToken("muowfng"), "mường")
+        XCTAssertEqual(runtimeRenderedToken("muowfng"), "mường")
+    }
+
 }

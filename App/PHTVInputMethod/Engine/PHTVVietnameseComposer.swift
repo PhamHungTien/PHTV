@@ -18,8 +18,17 @@ struct PHTVVietnameseComposer {
         var tone: PHTVTone?
 
         if let toneIndex = characters.lastIndex(where: { PHTVTelexMarker.tone(for: $0) != nil }) {
-            tone = PHTVTelexMarker.tone(for: characters[toneIndex])
-            characters.remove(at: toneIndex)
+            // Tone marker is only valid when at least one vowel precedes it in the
+            // raw sequence. Without this guard, a leading consonant that matches a
+            // tone key (e.g. the "s" in "sai") would be silently consumed, turning
+            // "sai" into "ái".
+            let hasVowelBefore = characters[0..<toneIndex].contains {
+                PHTVVietnameseToneTable.contains($0)
+            }
+            if hasVowelBefore {
+                tone = PHTVTelexMarker.tone(for: characters[toneIndex])
+                characters.remove(at: toneIndex)
+            }
         }
 
         if tone == .clear {
@@ -36,8 +45,14 @@ struct PHTVVietnameseComposer {
         var tone: PHTVTone?
 
         if let toneIndex = characters.lastIndex(where: { PHTVVNIMarker.tone(for: $0) != nil }) {
-            tone = PHTVVNIMarker.tone(for: characters[toneIndex])
-            characters.remove(at: toneIndex)
+            // Tone marker is only valid when at least one vowel precedes it.
+            let hasVowelBefore = characters[0..<toneIndex].contains {
+                PHTVVietnameseToneTable.contains($0)
+            }
+            if hasVowelBefore {
+                tone = PHTVVNIMarker.tone(for: characters[toneIndex])
+                characters.remove(at: toneIndex)
+            }
         }
 
         if tone == .clear {
@@ -180,7 +195,10 @@ struct PHTVVietnameseComposer {
         let vowelRuns = vowelRuns(in: characters)
         guard let run = vowelRuns.last else { return nil }
 
-        for index in run where PHTVVietnameseToneTable.isMarkedBase(characters[index]) {
+        // Scan right-to-left so that in diphthongs where both vowels carry a
+        // shape mark (e.g. "ươ"), the rightmost marked base wins. This gives the
+        // correct placement for "huowsng" → "hướng" (acute on ơ, not on ư).
+        for index in run.reversed() where PHTVVietnameseToneTable.isMarkedBase(characters[index]) {
             return index
         }
 
