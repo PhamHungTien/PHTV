@@ -47,6 +47,13 @@ assertEqual(composer.compose("xin", style: .telex), "xin", "xin -> xin")
 assertEqual(composer.compose("jam", style: .telex), "jam", "jam -> jam")
 assertEqual(composer.compose("zap", style: .telex), "zap", "zap -> zap")
 assertEqual(composer.compose("huowsng", style: .telex), "hướng", "huowsng -> hướng")
+assertEqual(composer.compose("huwongs", style: .telex), "hướng", "huwongs -> hướng")
+assertEqual(composer.compose("huwong", style: .telex), "hương", "huwong -> hương")
+assertEqual(composer.compose("huongw", style: .telex), "hương", "huongw -> hương")
+assertEqual(composer.compose("huongws", style: .telex), "hướng", "huongws -> hướng")
+assertEqual(composer.compose("HUWONGS", style: .telex), "HƯỚNG", "HUWONGS -> HƯỚNG")
+assertEqual(composer.compose("Huwongs", style: .telex), "Hướng", "Huwongs -> Hướng")
+
 
 // Test 5: Vowel Combination Edge Cases
 assertEqual(composer.compose("khoas", style: .telex), "khoá", "khoas -> khoá")
@@ -58,5 +65,12 @@ assertEqual(composer.compose("m7n7g2", style: .vni), "mừng", "m7n7g2 -> mừng
 assertEqual(composer.compose("giu1p", style: .vni), "giúp", "giu1p -> giúp")
 assertEqual(composer.compose("qua1n", style: .vni), "quán", "qua1n -> quán")
 assertEqual(composer.compose("sai", style: .vni), "sai", "sai -> sai")
+assertEqual(composer.compose("hu7ong", style: .vni), "hương", "hu7ong -> hương")
+assertEqual(composer.compose("huong7", style: .vni), "hương", "huong7 -> hương")
+assertEqual(composer.compose("hu7ong1", style: .vni), "hướng", "hu7ong1 -> hướng")
+assertEqual(composer.compose("huong71", style: .vni), "hướng", "huong71 -> hướng")
+assertEqual(composer.compose("HU7ONG1", style: .vni), "HƯỚNG", "HU7ONG1 -> HƯỚNG")
+assertEqual(composer.compose("Hu7ong1", style: .vni), "Hướng", "Hu7ong1 -> Hướng")
 
-print("✨ ALL TESTS PASSED SUCCESSFULLY! (30+ assertions)")
+
+print("✨ ALL TESTS PASSED SUCCESSFULLY! (40+ assertions)")

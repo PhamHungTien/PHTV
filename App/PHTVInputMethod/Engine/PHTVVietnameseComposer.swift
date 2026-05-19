@@ -38,7 +38,8 @@ struct PHTVVietnameseComposer {
             output.append(char)
         }
 
-        let base = applyTelexShapes(to: output, style: style)
+        var base = applyTelexShapes(to: output, style: style)
+        base = normalizeVowels(base)
         guard let activeTone, activeTone != .clear else { return String(base) }
         return apply(tone: activeTone, to: base)
     }
@@ -68,7 +69,8 @@ struct PHTVVietnameseComposer {
             output.append(char)
         }
 
-        let base = applyVNIShapes(to: output)
+        var base = applyVNIShapes(to: output)
+        base = normalizeVowels(base)
         guard let activeTone, activeTone != .clear else { return String(base) }
         return apply(tone: activeTone, to: base)
     }
@@ -205,6 +207,29 @@ struct PHTVVietnameseComposer {
             }
         }
         return false
+    }
+
+    private func normalizeVowels(_ characters: [Character]) -> [Character] {
+        var output = characters
+        guard output.count >= 2 else { return output }
+
+        for i in 0..<(output.count - 1) {
+            let c1 = output[i]
+            let c2 = output[i + 1]
+
+            let isU1 = c1 == "u" || c1 == "U"
+            let isUw1 = c1 == "ư" || c1 == "Ư"
+            let isO2 = c2 == "o" || c2 == "O"
+            let isOw2 = c2 == "ơ" || c2 == "Ơ"
+
+            if (isU1 && isOw2) || (isUw1 && isO2) {
+                let isUpper1 = c1.isUppercase
+                output[i] = isUpper1 ? "Ư" : "ư"
+                let isUpper2 = c2.isUppercase
+                output[i + 1] = isUpper2 ? "Ơ" : "ơ"
+            }
+        }
+        return output
     }
 
     private func apply(tone: PHTVTone, to characters: [Character]) -> String {
