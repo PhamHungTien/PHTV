@@ -95,6 +95,16 @@ final class PHTVInputController: IMKInputController {
         encodingSubmenuItem.submenu = encodingMenu
         menu.addItem(encodingSubmenuItem)
 
+        // Tự động khôi phục tiếng Anh item
+        let autoRestoreItem = NSMenuItem(
+            title: "Tự động khôi phục tiếng Anh",
+            action: #selector(toggleAutoRestoreEnglish(_:)),
+            keyEquivalent: ""
+        )
+        autoRestoreItem.target = self
+        autoRestoreItem.state = config.autoRestoreEnglishWord ? .on : .off
+        menu.addItem(autoRestoreItem)
+
         menu.addItem(NSMenuItem.separator())
 
         // Preferences button
@@ -127,5 +137,11 @@ final class PHTVInputController: IMKInputController {
         DispatchQueue.main.async {
             PHTVSettingsWindowController.shared.displayWindow()
         }
+    }
+
+    @objc private func toggleAutoRestoreEnglish(_ sender: NSMenuItem) {
+        var config = PHTVInputMethodPreferences.currentConfiguration()
+        config.autoRestoreEnglishWord.toggle()
+        PHTVInputMethodPreferences.saveConfiguration(config)
     }
 }

@@ -1,16 +1,22 @@
 import Foundation
 
 struct PHTVVietnameseComposer {
-    func compose(_ rawText: String, style: PHTVInputStyle) -> String {
+    func compose(_ rawText: String, style: PHTVInputStyle, autoRestore: Bool = true) -> String {
         guard !rawText.isEmpty else { return "" }
 
         let normalizedText = rawText.precomposedStringWithCanonicalMapping
+        let composed: String
         switch style {
         case .telex, .simpleTelex1, .simpleTelex2:
-            return composeTelex(normalizedText, style: style)
+            composed = composeTelex(normalizedText, style: style)
         case .vni:
-            return composeVNI(normalizedText)
+            composed = composeVNI(normalizedText)
         }
+
+        if autoRestore && !isVietnameseSyllablePossible(composed) {
+            return rawText
+        }
+        return composed
     }
 
     private func composeTelex(_ rawText: String, style: PHTVInputStyle) -> String {
@@ -307,6 +313,154 @@ struct PHTVVietnameseComposer {
         }
 
         return runs
+    }
+
+    private func isVietnameseSyllablePossible(_ word: String) -> Bool {
+        // Empty string is not a syllable
+        guard !word.isEmpty else { return true }
+        
+        // If the word contains non-letter characters (like digits or punctuation), it's not a standard Vietnamese syllable
+        guard word.allSatisfy({ $0.isLetter }) else { return false }
+        
+        // Find all contiguous runs of vowels
+        let vowels = Set("aàáảãạăằắẳẵặâầấẩẫậeèéẻẽẹêềếểễệiìíỉĩịoòóỏõọôồốổỗộơờớởỡợuùúủũụưừứửữựyỳýỷỹỵAÀÁẢÃẠĂẰẮẲẴẶÂẦẤẨẪẬEÈÉẺẼẸÊỀẾỂỄỆIÌÍỈĨỊOÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢUÙÚỦŨỤƯỪỨỬỮỰYỲÝỶỸỴ")
+        
+        var vowelRuns: [Range<String.Index>] = []
+        var inRun = false
+        var runStart = word.startIndex
+        
+        for index in word.indices {
+            let char = word[index]
+            let isV = vowels.contains(char)
+            if isV && !inRun {
+                runStart = index
+                inRun = true
+            } else if !isV && inRun {
+                vowelRuns.append(runStart..<index)
+                inRun = false
+            }
+        }
+        if inRun {
+            vowelRuns.append(runStart..<word.endIndex)
+        }
+        
+        // If there are no vowels, it's an in-progress consonant typing (like "str", "ngh"). We allow it.
+        if vowelRuns.isEmpty {
+            return true
+        }
+        
+        // If there is more than 1 vowel run (e.g. "terminal", "microsoft"), it is 100% English/foreign
+        if vowelRuns.count > 1 {
+            return false
+        }
+        
+        let vowelRange = vowelRuns[0]
+        let vowelRun = String(word[vowelRange])
+        let initialPart = String(word[..<vowelRange.lowerBound])
+        let finalPart = String(word[vowelRange.upperBound...])
+        
+        let lowerInitial = initialPart.lowercased()
+        let lowerFinal = finalPart.lowercased()
+        
+        // 1. Validate Initial Consonant
+        let validInitials: Set<String> = [
+            "", "b", "c", "ch", "d", "đ", "g", "gh", "gi", "h", "k", "kh",
+            "l", "m", "n", "ng", "ngh", "nh", "p", "ph", "q", "qu", "r", "s",
+            "t", "th", "tr", "v", "x"
+        ]
+        guard validInitials.contains(lowerInitial) else {
+            return false
+        }
+        
+        // 2. Validate Final Consonant
+        let validFinals: Set<String> = [
+            "", "c", "ch", "m", "n", "ng", "nh", "p", "t"
+        ]
+        guard validFinals.contains(lowerFinal) else {
+            return false
+        }
+        
+        // 3. Map Vowel Run to Base ASCII Vowel Run
+        func toBaseVowel(_ char: Character) -> Character {
+            let lower = char.lowercased()
+            switch lower {
+            case "a", "à", "á", "ả", "ã", "ạ", "ă", "ằ", "ắ", "ẳ", "ẵ", "ặ", "â", "ầ", "ấ", "ẩ", "ẫ", "ậ":
+                return "a"
+            case "e", "è", "é", "ẻ", "ẽ", "ẹ", "ê", "ề", "ế", "ể", "ễ", "ệ":
+                return "e"
+            case "i", "ì", "í", "ỉ", "ĩ", "ị":
+                return "i"
+            case "o", "ò", "ó", "ỏ", "õ", "ọ", "ô", "ồ", "ố", "ổ", "ỗ", "ộ", "ơ", "ờ", "ớ", "ở", "ỡ", "ợ":
+                return "o"
+            case "u", "ù", "ú", "ủ", "ũ", "ụ", "ư", "ừ", "ứ", "ử", "ữ", "ự":
+                return "u"
+            case "y", "ỳ", "ý", "ỷ", "ỹ", "ỵ":
+                return "y"
+            default:
+                return Character(lower)
+            }
+        }
+        
+        let vowelRunBase = String(vowelRun.map { toBaseVowel($0) })
+        
+        let validBaseVowelRuns: Set<String> = [
+            "a", "e", "i", "o", "u", "y", "ai", "ao", "au", "ay", "eo", "ia", "ie", "iu", "oa", "oe", "oi", "oo",
+            "ua", "ue", "ui", "uo", "uu", "uy", "ye", "ieu", "yeu", "oai", "oay", "oao", "oeo", "uay", "uoi", "uou",
+            "uya", "uye", "uyu"
+        ]
+        
+        guard validBaseVowelRuns.contains(vowelRunBase) else {
+            return false
+        }
+        
+        // 4. Advanced Spelling Constraints
+        
+        // "q" must be part of "qu" and followed by another vowel
+        if lowerInitial == "q" {
+            if !vowelRunBase.hasPrefix("u") {
+                return false
+            }
+        }
+        
+        // "io" is only valid if the initial is "g" (e.g. "gió", "giông")
+        if vowelRunBase == "io" && lowerInitial != "g" {
+            return false
+        }
+        
+        // "gh" and "ngh" can only precede "e", "ê", "i", "y" -> bases "e", "i", "y"
+        if lowerInitial == "gh" || lowerInitial == "ngh" {
+            guard let firstBaseVowel = vowelRunBase.first,
+                  firstBaseVowel == "e" || firstBaseVowel == "i" || firstBaseVowel == "y" else {
+                return false
+            }
+        }
+        
+        // "k" can only precede "e", "ê", "i", "y" -> bases "e", "i", "y"
+        if lowerInitial == "k" {
+            guard let firstBaseVowel = vowelRunBase.first,
+                  firstBaseVowel == "e" || firstBaseVowel == "i" || firstBaseVowel == "y" else {
+                return false
+            }
+        }
+        
+        // "c" cannot precede "e", "ê", "i", "y" -> bases "e", "i", "y"
+        if lowerInitial == "c" {
+            if let firstBaseVowel = vowelRunBase.first {
+                if firstBaseVowel == "e" || firstBaseVowel == "i" || firstBaseVowel == "y" {
+                    return false
+                }
+            }
+        }
+        
+        // "ch" and "nh" as finals can only follow "a", "e", "i"
+        if lowerFinal == "ch" || lowerFinal == "nh" {
+            guard let lastBaseVowel = vowelRunBase.last,
+                  lastBaseVowel == "a" || lastBaseVowel == "e" || lastBaseVowel == "i" || lastBaseVowel == "y" else {
+                return false
+            }
+        }
+        
+        return true
     }
 }
 

@@ -102,4 +102,35 @@ final class PHTVVietnameseComposerTests: XCTestCase {
         XCTAssertEqual(composer.compose("Hứong", style: .telex), "Hướng")
         XCTAssertEqual(composer.compose("HUỚNG", style: .telex), "HƯỚNG")
     }
+
+    func testAutoRestoreEnglish() {
+        // English words that should not be mangled
+        XCTAssertEqual(composer.compose("terminal", style: .telex), "terminal")
+        XCTAssertEqual(composer.compose("microsoft", style: .telex), "microsoft")
+        XCTAssertEqual(composer.compose("clear", style: .telex), "clear")
+        XCTAssertEqual(composer.compose("email", style: .telex), "email")
+        XCTAssertEqual(composer.compose("install", style: .telex), "install")
+        XCTAssertEqual(composer.compose("facebook", style: .telex), "facebook")
+        XCTAssertEqual(composer.compose("google", style: .telex), "google")
+        XCTAssertEqual(composer.compose("local", style: .telex), "local")
+        XCTAssertEqual(composer.compose("internet", style: .telex), "internet")
+        
+        // With autoRestore disabled
+        XCTAssertNotEqual(composer.compose("terminal", style: .telex, autoRestore: false), "terminal")
+        
+        // Single-syllable English words that are invalid in Vietnamese
+        XCTAssertEqual(composer.compose("free", style: .telex), "free")
+        XCTAssertEqual(composer.compose("book", style: .telex), "book")
+        XCTAssertEqual(composer.compose("good", style: .telex), "good")
+        XCTAssertEqual(composer.compose("size", style: .telex), "size")
+        XCTAssertEqual(composer.compose("code", style: .telex), "code")
+        XCTAssertEqual(composer.compose("make", style: .telex), "make")
+        
+        // Check that standard Vietnamese typing remains 100% unaffected
+        XCTAssertEqual(composer.compose("mwfng", style: .telex), "mừng")
+        XCTAssertEqual(composer.compose("giups", style: .telex), "giúp")
+        XCTAssertEqual(composer.compose("quans", style: .telex), "quán")
+        XCTAssertEqual(composer.compose("huowsng", style: .telex), "hướng")
+        XCTAssertEqual(composer.compose("xoong", style: .telex), "xoong")
+    }
 }

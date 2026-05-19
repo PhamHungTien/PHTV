@@ -15,7 +15,11 @@ final class PHTVVietnameseInputEngine: PHTVInputEngine {
 
     var composedText: String {
         let configuration = configuration
-        let unicodeText = composer.compose(rawBuffer, style: configuration.inputStyle)
+        let unicodeText = composer.compose(
+            rawBuffer,
+            style: configuration.inputStyle,
+            autoRestore: configuration.autoRestoreEnglishWord
+        )
         return transcoder.transcode(unicodeText, to: configuration.outputEncoding)
     }
 
