@@ -6,6 +6,16 @@ import InputMethodKit
 final class PHTVInputController: IMKInputController {
     private let sessionStore = PHTVInputSessionStore()
 
+    override init!(server: IMKServer!, delegate: Any!, client inputClient: Any!) {
+        super.init(server: server, delegate: delegate, client: inputClient)
+
+        if let client = PHTVInputClient(inputClient) {
+            PHTVInputMethodDiagnostics.log("controller initialized for \(client.bundleIdentifier)")
+        } else {
+            PHTVInputMethodDiagnostics.log("controller initialized")
+        }
+    }
+
     @objc(inputText:client:)
     override func inputText(_ string: String!, client sender: Any!) -> Bool {
         guard let client = PHTVInputClient(sender) else { return false }

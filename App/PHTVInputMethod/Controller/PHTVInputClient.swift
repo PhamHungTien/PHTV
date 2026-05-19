@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 import InputMethodKit
 
 struct PHTVInputClient {
@@ -9,15 +9,43 @@ struct PHTVInputClient {
         self.client = client
     }
 
-    func mark(_ text: String) {
+    var selectedRange: NSRange {
+        client.selectedRange()
+    }
+
+    var markedRange: NSRange {
+        client.markedRange()
+    }
+
+    var bundleIdentifier: String {
+        client.bundleIdentifier() ?? "unknown"
+    }
+
+    func mark(_ text: String, replacementRange: NSRange) {
+        let attributedText = NSAttributedString(
+            string: text,
+            attributes: [
+                .underlineStyle: NSUnderlineStyle.single.rawValue,
+                .underlineColor: NSColor.secondaryLabelColor,
+            ]
+        )
+
         client.setMarkedText(
-            text,
+            attributedText,
             selectionRange: NSRange(location: text.utf16.count, length: 0),
-            replacementRange: PHTVInputMethodConstants.notFoundRange
+            replacementRange: replacementRange
         )
     }
 
-    func commit(_ text: String) {
-        client.insertText(text, replacementRange: PHTVInputMethodConstants.notFoundRange)
+    func clearMarkedText(replacementRange: NSRange) {
+        client.setMarkedText(
+            "",
+            selectionRange: NSRange(location: 0, length: 0),
+            replacementRange: replacementRange
+        )
+    }
+
+    func commit(_ text: String, replacementRange: NSRange) {
+        client.insertText(text, replacementRange: replacementRange)
     }
 }

@@ -1,17 +1,20 @@
 import Cocoa
 import InputMethodKit
 
-final class PHTVInputMethodServer {
+final class PHTVInputMethodApplicationDelegate: NSObject, NSApplicationDelegate {
     private var server: IMKServer?
 
-    @MainActor
-    func run() {
+    func applicationDidFinishLaunching(_ notification: Notification) {
         let bundle = Bundle.main
         let bundleIdentifier = bundle.bundleIdentifier ?? PHTVInputMethodConstants.bundleIdentifierFallback
         let connectionName = bundle.object(forInfoDictionaryKey: PHTVInputMethodConstants.connectionNameInfoKey) as? String
             ?? PHTVInputMethodConstants.connectionNameFallback
 
         server = IMKServer(name: connectionName, bundleIdentifier: bundleIdentifier)
-        NSApplication.shared.run()
+        PHTVInputMethodDiagnostics.log("server started: \(bundleIdentifier) / \(connectionName)")
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        PHTVInputMethodDiagnostics.log("server stopping")
     }
 }
