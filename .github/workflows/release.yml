@@ -29,11 +29,10 @@ env:
 jobs:
   build:
     name: Build PHTV (${{ matrix.arch }})
-    runs-on: macos-26
-    timeout-minutes: 360
+    runs-on: [self-hosted, phtv-mac]
     strategy:
       fail-fast: false
-      max-parallel: 2
+      max-parallel: 1
       matrix:
         include:
           - arch: arm64
@@ -745,6 +744,16 @@ jobs:
           name: build-log-${{ matrix.arch }}
           path: App/build-${{ matrix.arch }}.log
           retention-days: 7
+
+      - name: Cleanup signing keychain
+        if: always()
+        run: |
+          set -euo pipefail
+          KEYCHAIN_PATH="${{ steps.certificate.outputs.keychain }}"
+          if [ -n "$KEYCHAIN_PATH" ] && [ -f "$KEYCHAIN_PATH" ]; then
+            security delete-keychain "$KEYCHAIN_PATH" || true
+          fi
+          rm -f "$RUNNER_TEMP/certificate.p12" "$RUNNER_TEMP/cert_base64.txt" "$RUNNER_TEMP/AppleWWDRCAG3.cer"
 
   release:
     name: Create Release

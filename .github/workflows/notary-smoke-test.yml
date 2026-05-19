@@ -16,7 +16,7 @@ env:
 jobs:
   smoke-test:
     name: Notarize minimal signed app
-    runs-on: macos-26
+    runs-on: [self-hosted, phtv-mac]
 
     steps:
       - name: Import Code Signing Certificate
@@ -187,3 +187,13 @@ jobs:
           fi
 
           echo "✅ Minimal signed app notarized successfully."
+
+      - name: Cleanup signing keychain
+        if: always()
+        run: |
+          set -euo pipefail
+          KEYCHAIN_PATH="${{ steps.certificate.outputs.keychain }}"
+          if [ -n "$KEYCHAIN_PATH" ] && [ -f "$KEYCHAIN_PATH" ]; then
+            security delete-keychain "$KEYCHAIN_PATH" || true
+          fi
+          rm -f "$RUNNER_TEMP/certificate.p12" "$RUNNER_TEMP/NotarySmoke.zip" "$RUNNER_TEMP/smoke.c"
