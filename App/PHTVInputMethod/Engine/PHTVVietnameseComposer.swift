@@ -354,7 +354,21 @@ struct PHTVVietnameseComposer {
             return false
         }
         
-        let vowelRange = vowelRuns[0]
+        var vowelRange = vowelRuns[0]
+        
+        // Handle "gi" and "qu" where the first vowel of the run is actually part of the initial consonant
+        if word.index(after: vowelRange.lowerBound) < vowelRange.upperBound {
+            let firstVowelIndex = vowelRange.lowerBound
+            let firstVowelChar = word[firstVowelIndex].lowercased()
+            if firstVowelIndex > word.startIndex {
+                let prevIndex = word.index(before: firstVowelIndex)
+                let prevChar = word[prevIndex].lowercased()
+                if (firstVowelChar == "i" && prevChar == "g") || (firstVowelChar == "u" && prevChar == "q") {
+                    vowelRange = word.index(after: firstVowelIndex)..<vowelRange.upperBound
+                }
+            }
+        }
+        
         let vowelRun = String(word[vowelRange])
         let initialPart = String(word[..<vowelRange.lowerBound])
         let finalPart = String(word[vowelRange.upperBound...])
@@ -458,6 +472,11 @@ struct PHTVVietnameseComposer {
                   lastBaseVowel == "a" || lastBaseVowel == "e" || lastBaseVowel == "i" || lastBaseVowel == "y" else {
                 return false
             }
+        }
+        
+        // "ie" and "ye" as vowel runs are only valid if followed by a final consonant
+        if (vowelRunBase == "ie" || vowelRunBase == "ye") && lowerFinal.isEmpty {
+            return false
         }
         
         return true

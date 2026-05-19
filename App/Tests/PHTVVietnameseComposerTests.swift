@@ -131,6 +131,6 @@ final class PHTVVietnameseComposerTests: XCTestCase {
         XCTAssertEqual(composer.compose("giups", style: .telex), "giúp")
         XCTAssertEqual(composer.compose("quans", style: .telex), "quán")
         XCTAssertEqual(composer.compose("huowsng", style: .telex), "hướng")
-        XCTAssertEqual(composer.compose("xoong", style: .telex), "xoong")
+        XCTAssertEqual(composer.compose("xoong", style: .telex), "xông")
     }
 }
