@@ -125,11 +125,11 @@ HEADER_SEARCH_PATHS = $(SRCROOT)/PHTV/Engine
 open App/PHTV.xcodeproj
 
 # Kiểm tra môi trường local
-scripts/dev.sh env-check
+scripts/dev.swift env-check
 
 # Build từ command line
-scripts/dev.sh build
+scripts/dev.swift build
 
 # Chạy regression tests
-scripts/dev.sh engine-test
+scripts/dev.swift engine-test
 ```

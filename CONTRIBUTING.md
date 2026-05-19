@@ -121,19 +121,19 @@ PHTV/
 git clone https://github.com/PhamHungTien/PHTV.git
 
 # Kiểm tra môi trường local
-scripts/dev.sh env-check
+scripts/dev.swift env-check
 
 # Build project (Universal Binary - Intel + Apple Silicon)
-scripts/dev.sh build
+scripts/dev.swift build
 
 # Run engine regression tests
-scripts/dev.sh engine-test
+scripts/dev.swift engine-test
 
 # Run hotkey smoke tests
-scripts/dev.sh hotkey-test
+scripts/dev.swift hotkey-test
 
 # Clean build
-scripts/dev.sh clean
+scripts/dev.swift clean
 ```
 
 ### Debugging

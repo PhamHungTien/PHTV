@@ -6,24 +6,24 @@ Release automation is fully managed by GitHub Actions in:
 
 ## Local development entrypoint
 
-Use `scripts/dev.sh` for local build/test commands. It pins command-line builds to
+Use `scripts/dev.swift` for local build/test commands. It pins command-line builds to
 `/Applications/Xcode.app/Contents/Developer` by default, so the project still builds
 when the system `xcode-select` path points at Command Line Tools.
 
 Useful commands:
-- `scripts/dev.sh env-check`
-- `scripts/dev.sh build`
-- `scripts/dev.sh test`
-- `scripts/dev.sh engine-test`
-- `scripts/dev.sh hotkey-test`
-- `scripts/dev.sh dict-check`
-- `scripts/dev.sh clean`
+- `scripts/dev.swift env-check`
+- `scripts/dev.swift build`
+- `scripts/dev.swift test`
+- `scripts/dev.swift engine-test`
+- `scripts/dev.swift hotkey-test`
+- `scripts/dev.swift dict-check`
+- `scripts/dev.swift clean`
 
 Override Xcode or DerivedData paths when needed:
 
 ```bash
-DEVELOPER_DIR=/path/to/Xcode.app/Contents/Developer scripts/dev.sh build
-DERIVED_DATA_PATH=/tmp/phtv-derived-data scripts/dev.sh test
+DEVELOPER_DIR=/path/to/Xcode.app/Contents/Developer scripts/dev.swift build
+DERIVED_DATA_PATH=/tmp/phtv-derived-data scripts/dev.swift test
 ```
 
 ## Remaining local tools
