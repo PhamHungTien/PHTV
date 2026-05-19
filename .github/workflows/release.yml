@@ -279,34 +279,41 @@ jobs:
             fi
           done < <(find "$APP_PATH" -type f -print0)
 
-          if [ "$FOUND_FAT" -eq 1 ]; then
-            echo "🔏 Re-signing app bundle after thinning..."
+          echo "🔏 Re-signing app bundle and nested code..."
 
-            sign_code() {
-              local target="$1"
-              echo "  Signing: ${target#$APP_PATH/}"
-              codesign --force --sign "${{ steps.certificate.outputs.identity }}" \
-                --options runtime \
-                --timestamp \
-                --keychain "${{ steps.certificate.outputs.keychain }}" \
-                "$target"
-            }
-
-            # Sign nested code from the inside out. Sparkle embeds XPC services,
-            # helper apps, and frameworks that can be invalidated by lipo.
-            while IFS= read -r -d '' nested; do sign_code "$nested"; done < <(find "$APP_PATH" -type d -name "*.xpc" -print0)
-            while IFS= read -r -d '' nested; do sign_code "$nested"; done < <(find "$APP_PATH" -type d -name "*.app" ! -path "$APP_PATH" -print0)
-            while IFS= read -r -d '' nested; do sign_code "$nested"; done < <(find "$APP_PATH" -type d -name "*.framework" -print0)
-            while IFS= read -r -d '' nested; do sign_code "$nested"; done < <(find "$APP_PATH" -type d -name "*.appex" -print0)
-
+          sign_code() {
+            local target="$1"
+            echo "  Signing: ${target#$APP_PATH/}"
             codesign --force --sign "${{ steps.certificate.outputs.identity }}" \
               --options runtime \
               --timestamp \
-              --entitlements PHTV/PHTV.entitlements \
               --keychain "${{ steps.certificate.outputs.keychain }}" \
-              "$APP_PATH"
-            echo "✅ Re-signed after thinning"
-          fi
+              "$target"
+          }
+
+          sign_macho_file() {
+            local target="$1"
+            if lipo -info "$target" >/dev/null 2>&1; then
+              sign_code "$target"
+            fi
+          }
+
+          # Sign nested code from the inside out. Sparkle embeds XPC services,
+          # helper apps, frameworks, and standalone executables such as
+          # Sparkle.framework/Versions/B/Autoupdate.
+          while IFS= read -r -d '' nested; do sign_code "$nested"; done < <(find "$APP_PATH" -type d -name "*.xpc" -print0)
+          while IFS= read -r -d '' nested; do sign_code "$nested"; done < <(find "$APP_PATH" -type d -name "*.app" ! -path "$APP_PATH" -print0)
+          while IFS= read -r -d '' nested; do sign_macho_file "$nested"; done < <(find "$APP_PATH/Contents/Frameworks" -type f -print0)
+          while IFS= read -r -d '' nested; do sign_code "$nested"; done < <(find "$APP_PATH" -type d -name "*.framework" -print0)
+          while IFS= read -r -d '' nested; do sign_code "$nested"; done < <(find "$APP_PATH" -type d -name "*.appex" -print0)
+
+          codesign --force --sign "${{ steps.certificate.outputs.identity }}" \
+            --options runtime \
+            --timestamp \
+            --entitlements PHTV/PHTV.entitlements \
+            --keychain "${{ steps.certificate.outputs.keychain }}" \
+            "$APP_PATH"
+          echo "✅ Re-signed app bundle and nested code"
 
           # Verify only the expected arch is present in the main executable.
           echo "📐 Verifying architectures in main binary..."
@@ -340,6 +347,11 @@ jobs:
           echo "🔍 Verifying code signature..."
           codesign -dv --verbose=2 "$APP_PATH" 2>&1
           codesign --verify --deep --strict "$APP_PATH" 2>&1
+          while IFS= read -r -d '' autoupdate; do
+            echo "🔍 Verifying Sparkle Autoupdate signature: ${autoupdate#$APP_PATH/}"
+            codesign -dv --verbose=4 "$autoupdate" 2>&1
+            codesign --verify --strict --verbose=2 "$autoupdate"
+          done < <(find "$APP_PATH" -type f -name Autoupdate -print0)
           ENTITLEMENTS_PLIST="$RUNNER_TEMP/PHTV-${{ matrix.arch }}.entitlements.plist"
           codesign -d --entitlements :- "$APP_PATH" 2>/dev/null > "$ENTITLEMENTS_PLIST"
           plutil -p "$ENTITLEMENTS_PLIST"
