@@ -568,6 +568,10 @@ jobs:
 
           STATUS=""
           MAX_ATTEMPTS=600
+          # If notarization remains "In Progress" for too long, fail early
+          # and dump notary logs for faster diagnostics during CI runs.
+          DEBUG_DUMP_AFTER_ATTEMPTS=40
+
           for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
             echo "🔎 Checking notarization status ($attempt/$MAX_ATTEMPTS) for $SUBMISSION_ID..."
             if xcrun notarytool info "$SUBMISSION_ID" \
@@ -584,6 +588,23 @@ jobs:
             else
               echo "⚠️  notarytool info failed, will retry."
             fi
+            # If we've polled DEBUG_DUMP_AFTER_ATTEMPTS times without final status,
+            # dump notary logs to the runner for troubleshooting and fail early so
+            # maintainers get faster feedback instead of waiting hours.
+            if [ "$attempt" -eq "$DEBUG_DUMP_AFTER_ATTEMPTS" ]; then
+              echo "⚠️ Notarization still 'In Progress' after $DEBUG_DUMP_AFTER_ATTEMPTS checks; dumping notary log and history for diagnostics."
+              xcrun notarytool log "$SUBMISSION_ID" \
+                --apple-id "$APPLE_ID" \
+                --team-id "$APPLE_TEAM_ID" \
+                --password "$APPLE_APP_SPECIFIC_PASSWORD" || true
+              xcrun notarytool history \
+                --apple-id "$APPLE_ID" \
+                --team-id "$APPLE_TEAM_ID" \
+                --password "$APPLE_APP_SPECIFIC_PASSWORD" || true
+              echo "Failing early to allow maintainers to inspect logs and re-run the workflow."
+              exit 1
+            fi
+
             sleep 30
           done
 
