@@ -13,10 +13,11 @@ import Foundation
 
 func phtvShouldTreatTCCEntryAsCorrupt(
     accessibilityTrusted: Bool,
+    inputMonitoringTrusted: Bool = true,
     canCreateEventTap: Bool,
     isRegisteredInTCC: Bool
 ) -> Bool {
-    accessibilityTrusted && !canCreateEventTap && !isRegisteredInTCC
+    accessibilityTrusted && inputMonitoringTrusted && !canCreateEventTap && !isRegisteredInTCC
 }
 
 @objc extension PHTVManager {
@@ -24,6 +25,9 @@ func phtvShouldTreatTCCEntryAsCorrupt(
     class func phtv_isTCCEntryCorrupt() -> Bool {
         let accessibilityTrusted = AXIsProcessTrusted()
         guard accessibilityTrusted else {
+            return false
+        }
+        guard PHTVPermissionService.hasInputMonitoringPermission() else {
             return false
         }
 

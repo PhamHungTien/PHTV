@@ -487,9 +487,11 @@ struct BugReportView: View {
         case .ready:
             return "✅ Running"
         case .relaunchPending:
-            return "🔄 Relaunch pending after Accessibility grant"
+            return "🔄 Relaunch pending after permission grant"
         case .waitingForEventTap:
             return "⚠️ Permission OK, tap not initialized"
+        case .inputMonitoringRequired:
+            return "❌ No Input Monitoring permission"
         case .accessibilityRequired:
             return "❌ No accessibility permission"
         }
@@ -690,6 +692,7 @@ struct BugReportView: View {
             - **Runtime Session:** \(PHTVLogger.shared.currentSessionID())
             - **Runtime Phase:** \(appState.typingRuntimeHealth.phase.rawValue)
             - **Accessibility Permission:** \(appState.hasAccessibilityPermission ? "✅ Granted" : "❌ Denied")
+            - **Input Monitoring Permission:** \(appState.hasInputMonitoringPermission ? "✅ Granted" : "❌ Denied")
             - **Event Tap:** \(checkEventTapStatus())
             - **Active App Profile:** \(appState.typingRuntimeHealth.activeAppProfile.displayName)
             - **Active Bundle ID:** \(appState.typingRuntimeHealth.activeBundleId ?? "Unknown")
@@ -843,6 +846,9 @@ struct BugReportView: View {
             // Thêm thông tin permission nếu không có quyền (quan trọng để debug)
             if !appState.hasAccessibilityPermission {
                 report += "- ⚠️ **Accessibility:** ❌ Denied\n"
+            }
+            if !appState.hasInputMonitoringPermission {
+                report += "- ⚠️ **Input Monitoring:** ❌ Denied\n"
             }
 
             report += "\n"

@@ -187,8 +187,8 @@ struct SettingsItem: Identifiable {
             title: "Gửi báo lỗi", iconName: "paperplane.fill", tab: .bugReport,
             keywords: ["send", "gửi", "email", "github", "issue"]),
         SettingsItem(
-            title: "Quyền Accessibility", iconName: "checkmark.shield", tab: .bugReport,
-            keywords: ["accessibility", "permission", "quyền", "trợ năng", "cấp quyền"]),
+            title: "Quyền nhập liệu", iconName: "checkmark.shield", tab: .bugReport,
+            keywords: ["accessibility", "input monitoring", "permission", "quyền", "trợ năng", "giám sát đầu vào", "cấp quyền"]),
 
         // ═══════════════════════════════════════════
         // MARK: - Thông tin (About)

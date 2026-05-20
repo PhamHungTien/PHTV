@@ -123,6 +123,12 @@ import Foundation
             _ = stopEventTap()
         }
 
+        guard PHTVPermissionService.canCreateEventTap() else {
+            NSLog("[EventTap] Required TCC permissions are not ready; skipping tap creation")
+            publishTypingReadiness(false)
+            return false
+        }
+
         runtimeState.withLock { $0.permissionLost = false }
         PHTVPermissionService.invalidatePermissionCache()
         resetTransientTapRuntimeState()

@@ -2,7 +2,7 @@
 //  PHTVPermissionService.swift
 //  PHTV
 //
-//  Centralized runtime Accessibility permission checks.
+//  Centralized runtime typing permission checks.
 //  Created by Phạm Hùng Tiến on 2026.
 //  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
 //
@@ -45,6 +45,15 @@ import Foundation
         return canCreateEventTap()
     }
 
+    @objc static func hasInputMonitoringPermission() -> Bool {
+        CGPreflightListenEventAccess()
+    }
+
+    @discardableResult
+    @objc static func requestInputMonitoringPermission() -> Bool {
+        CGRequestListenEventAccess()
+    }
+
     private static func cacheMissingPermissionAndReturnFalse(_ message: String) -> Bool {
         let now = Date().timeIntervalSince1970
         var shouldLog = false
@@ -69,6 +78,9 @@ import Foundation
         let axTrusted = AXIsProcessTrusted()
         if !axTrusted {
             return cacheMissingPermissionAndReturnFalse("Accessibility (AX) is NOT granted")
+        }
+        if !hasInputMonitoringPermission() {
+            return cacheMissingPermissionAndReturnFalse("Input Monitoring is NOT granted")
         }
 
         let now = Date().timeIntervalSince1970

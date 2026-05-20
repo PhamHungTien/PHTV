@@ -39,6 +39,9 @@ import Foundation
         case .accessibility:
             NSLog("[PermissionFlow] Opening Accessibility guidance")
             PHTVAccessibilityService.openAccessibilityPreferences()
+        case .inputMonitoring:
+            NSLog("[PermissionFlow] Opening Input Monitoring guidance")
+            PHTVAccessibilityService.openInputMonitoringPreferences()
         case .waitingForEventTap:
             NSLog("[PermissionFlow] Retrying event tap initialization")
             retryTypingPermissionRecovery(reason: "permission-guidance")

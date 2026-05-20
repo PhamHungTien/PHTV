@@ -304,10 +304,12 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
             item.isEnabled = false
             m.addItem(item)
         case .waitingForEventTap:
-            let item = NSMenuItem(title: "Đã cấp Trợ năng, đang khởi tạo", action: nil, keyEquivalent: "")
+            let item = NSMenuItem(title: "Đã cấp đủ quyền, đang khởi tạo", action: nil, keyEquivalent: "")
             item.image = sfImage("clock.badge.exclamationmark")
             item.isEnabled = false
             m.addItem(item)
+        case .inputMonitoringRequired:
+            m.addItem(actionItem("Cần cấp Giám sát đầu vào", image: "eye", sel: #selector(openAccessibilityPrefs)))
         case .accessibilityRequired:
             m.addItem(actionItem("Cần cấp quyền Accessibility", image: "exclamationmark.shield", sel: #selector(openAccessibilityPrefs)))
         }
@@ -415,7 +417,7 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
     }
 
     @objc private func openAccessibilityPrefs() {
-        PHTVAccessibilityService.openAccessibilityPreferences()
+        AppDelegate.current()?.continuePermissionGuidanceIfNeeded(forceOpenSystemSettings: true)
     }
 
     @objc private func openConvertTool() {

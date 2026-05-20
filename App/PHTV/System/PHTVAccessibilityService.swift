@@ -847,4 +847,31 @@ final class PHTVAccessibilityService: NSObject {
             NSWorkspace.shared.open(systemSettingsURL)
         }
     }
+
+    @discardableResult
+    @objc class func requestInputMonitoringPrompt() -> Bool {
+        PHTVPermissionService.requestInputMonitoringPermission()
+    }
+
+    @objc class func openInputMonitoringPreferences() {
+        _ = requestInputMonitoringPrompt()
+
+        let settingsURLs = [
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent",
+            "x-apple.systempreferences:com.apple.preference.security",
+            "x-apple.systempreferences:com.apple.preference.keyboard"
+        ]
+
+        for urlString in settingsURLs {
+            guard let url = URL(string: urlString) else { continue }
+            if NSWorkspace.shared.open(url) {
+                return
+            }
+        }
+
+        let systemSettingsURL = URL(fileURLWithPath: "/System/Applications/System Settings.app")
+        if FileManager.default.fileExists(atPath: systemSettingsURL.path) {
+            NSWorkspace.shared.open(systemSettingsURL)
+        }
+    }
 }

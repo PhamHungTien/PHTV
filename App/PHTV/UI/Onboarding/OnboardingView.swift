@@ -557,6 +557,43 @@ struct OnboardingNumberedRow: View {
     }
 }
 
+struct OnboardingPermissionStateRow: View {
+    let title: String
+    let detail: String
+    let granted: Bool
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 10) {
+            Image(systemName: granted ? "checkmark.circle.fill" : "xmark.circle.fill")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(granted ? .green : .orange)
+                .frame(width: 22, height: 22)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+
+                Text(detail)
+                    .font(.system(size: 10, design: .rounded))
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 8)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .background(
+            OnboardingSurface(
+                cornerRadius: 10,
+                fillColor: Color(nsColor: .controlBackgroundColor),
+                strokeColor: Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.08)
+            )
+        )
+    }
+}
+
 // MARK: - Steps
 
 struct WelcomeStepView: View {
@@ -825,105 +862,32 @@ struct AccessibilityStepView: View {
     var body: some View {
         let runtimeHealth = appState.typingRuntimeHealth
 
-        VStack(spacing: 20) {
+        VStack(spacing: 14) {
             OnboardingStepHeader(
-                title: "Cấp quyền truy cập",
-                subtitle: "PHTV chỉ cần quyền Trợ năng để gõ ổn định",
+                title: "Cấp quyền nhập liệu",
+                subtitle: "PHTV cần Trợ năng và Giám sát đầu vào để bắt phím ổn định",
                 icon: "hand.raised.fill"
             )
 
-            VStack(spacing: 16) {
-                if runtimeHealth.phase == .ready {
-                    OnboardingStatusCard(
-                        icon: "checkmark.seal.fill",
-                        title: "PHTV đã sẵn sàng",
-                        description: "Quyền đã được cấp và bộ gõ đã sẵn sàng hoạt động.",
-                        tint: .green
-                    )
-                } else if runtimeHealth.phase == .accessibilityRequired {
-                    OnboardingStatusCard(
-                        icon: "exclamationmark.triangle.fill",
-                        title: "Cần cấp quyền Accessibility",
-                        description: "Bật quyền để PHTV có thể nhập liệu chính xác.",
-                        tint: .orange
+            VStack(spacing: 12) {
+                HStack(spacing: 10) {
+                    OnboardingPermissionStateRow(
+                        title: "Trợ năng",
+                        detail: "Cho phép PHTV thao tác với ô nhập liệu.",
+                        granted: runtimeHealth.hasAccessibilityPermission
                     )
 
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Hướng dẫn nhanh")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-
-                        OnboardingNumberedRow(number: "1", text: "Nhấn nút bên dưới để mở Cài đặt Hệ thống.")
-                        OnboardingNumberedRow(number: "2", text: "Trong Accessibility, bật công tắc cho PHTV.")
-                        OnboardingNumberedRow(number: "3", text: "Sau khi cấp quyền, PHTV có thể tự khởi động lại để nhận quyền. Nếu chưa hoạt động, thử tắt rồi bật lại.")
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        OnboardingSurface(
-                            cornerRadius: 14,
-                            fillColor: Color(nsColor: .controlBackgroundColor),
-                            strokeColor: Color.black.opacity(0.1)
-                        )
+                    OnboardingPermissionStateRow(
+                        title: "Giám sát đầu vào",
+                        detail: "Cho phép PHTV nhận phím gõ từ macOS.",
+                        granted: runtimeHealth.hasInputMonitoringPermission
                     )
+                }
 
-                    Button("Mở Trợ năng") {
-                        AppDelegate.current()?.continuePermissionGuidanceIfNeeded(
-                            forceOpenSystemSettings: true
-                        )
-                    }
-                    .buttonStyle(OnboardingPrimaryButtonStyle())
-                } else if runtimeHealth.phase == .relaunchPending {
-                    OnboardingStatusCard(
-                        icon: "arrow.clockwise.circle.fill",
-                        title: "PHTV đang tự khởi động lại",
-                        description: "macOS đã nhận quyền Trợ năng. PHTV đang chờ mở lại để bộ gõ hoạt động ổn định.",
-                        tint: .blue
-                    )
+                permissionGuidanceContent(for: runtimeHealth)
 
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Trong lúc chờ")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-
-                        OnboardingNumberedRow(number: "1", text: "Giữ nguyên cửa sổ cài đặt trong vài giây để macOS hoàn tất áp dụng quyền.")
-                        OnboardingNumberedRow(number: "2", text: "PHTV sẽ tự mở lại. Nếu chưa thấy, hãy mở lại PHTV một lần.")
-                        OnboardingNumberedRow(number: "3", text: "Khi PHTV mở lại, trạng thái sẽ tự chuyển sang sẵn sàng.")
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        OnboardingSurface(
-                            cornerRadius: 14,
-                            fillColor: Color(nsColor: .controlBackgroundColor),
-                            strokeColor: Color.black.opacity(0.1)
-                        )
-                    )
-                } else {
-                    OnboardingStatusCard(
-                        icon: "clock.badge.exclamationmark.fill",
-                        title: "Đang hoàn tất khởi tạo",
-                        description: "Quyền Trợ năng đã được cấp, nhưng PHTV vẫn đang chờ khởi tạo lại bộ gõ.",
-                        tint: .yellow
-                    )
-
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Nếu chưa hoạt động")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-
-                        OnboardingNumberedRow(number: "1", text: "Nhấn Thử lại ngay để PHTV tự kiểm tra và khởi tạo lại bộ gõ.")
-                        OnboardingNumberedRow(number: "2", text: "Nếu vừa cấp quyền, hãy chờ vài giây để macOS áp dụng thay đổi hoặc để PHTV tự khởi động lại.")
-                        OnboardingNumberedRow(number: "3", text: "Nếu vẫn chưa gõ được, thử tắt rồi bật lại quyền Trợ năng cho PHTV.")
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        OnboardingSurface(
-                            cornerRadius: 14,
-                            fillColor: Color(nsColor: .controlBackgroundColor),
-                            strokeColor: Color.black.opacity(0.1)
-                        )
-                    )
-
-                    Button("Thử lại ngay") {
+                if let actionTitle = permissionActionTitle(for: runtimeHealth.phase) {
+                    Button(actionTitle) {
                         AppDelegate.current()?.continuePermissionGuidanceIfNeeded(
                             forceOpenSystemSettings: true
                         )
@@ -943,6 +907,102 @@ struct AccessibilityStepView: View {
                 guard !Task.isCancelled else { break }
                 refreshPermissionState()
             }
+        }
+    }
+
+    @ViewBuilder
+    private func permissionGuidanceContent(for runtimeHealth: PHTVTypingRuntimeHealthSnapshot) -> some View {
+        switch runtimeHealth.phase {
+        case .ready:
+            OnboardingStatusCard(
+                icon: "checkmark.seal.fill",
+                title: "PHTV đã sẵn sàng",
+                description: "Hai quyền đã được cấp và bộ gõ đã sẵn sàng hoạt động.",
+                tint: .green
+            )
+        case .accessibilityRequired:
+            guidancePanel(
+                title: "Cấp quyền Trợ năng",
+                rows: [
+                    "Nhấn nút bên dưới để mở Cài đặt Hệ thống.",
+                    "Trong Quyền riêng tư & Bảo mật > Trợ năng, bật PHTV.",
+                    "Khi macOS nhận quyền, PHTV sẽ tự chuyển sang bước Giám sát đầu vào."
+                ]
+            )
+        case .inputMonitoringRequired:
+            guidancePanel(
+                title: "Cấp quyền Giám sát đầu vào",
+                rows: [
+                    "Nhấn nút bên dưới để mở đúng mục Giám sát đầu vào.",
+                    "Bật PHTV trong danh sách ứng dụng được phép giám sát đầu vào.",
+                    "Nếu macOS hỏi mở lại ứng dụng, hãy cho phép. PHTV sẽ tự kiểm tra lại sau đó."
+                ]
+            )
+        case .relaunchPending:
+            OnboardingStatusCard(
+                icon: "arrow.clockwise.circle.fill",
+                title: "PHTV đang tự khởi động lại",
+                description: "macOS đã nhận quyền. PHTV đang chờ mở lại để bộ gõ hoạt động ổn định.",
+                tint: .blue
+            )
+
+            guidancePanel(
+                title: "Trong lúc chờ",
+                rows: [
+                    "Giữ nguyên cửa sổ cài đặt trong vài giây để macOS hoàn tất áp dụng quyền.",
+                    "PHTV sẽ tự mở lại. Nếu chưa thấy, hãy mở lại PHTV một lần.",
+                    "Khi PHTV mở lại, trạng thái sẽ tự chuyển sang sẵn sàng."
+                ]
+            )
+        case .waitingForEventTap:
+            OnboardingStatusCard(
+                icon: "clock.badge.exclamationmark.fill",
+                title: "Đang hoàn tất khởi tạo",
+                description: "Hai quyền đã được cấp, nhưng PHTV vẫn đang chờ khởi tạo lại bộ gõ.",
+                tint: .yellow
+            )
+
+            guidancePanel(
+                title: "Nếu chưa hoạt động",
+                rows: [
+                    "Nhấn Thử lại ngay để PHTV tự kiểm tra và khởi tạo lại bộ gõ.",
+                    "Nếu vừa cấp quyền, hãy chờ vài giây để macOS áp dụng thay đổi.",
+                    "Nếu vẫn chưa gõ được, thử tắt rồi bật lại cả hai quyền cho PHTV."
+                ]
+            )
+        }
+    }
+
+    private func guidancePanel(title: String, rows: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+
+            ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
+                OnboardingNumberedRow(number: "\(index + 1)", text: row)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            OnboardingSurface(
+                cornerRadius: 14,
+                fillColor: Color(nsColor: .controlBackgroundColor),
+                strokeColor: Color.black.opacity(0.1)
+            )
+        )
+    }
+
+    private func permissionActionTitle(for phase: PHTVTypingRuntimePhase) -> String? {
+        switch phase {
+        case .accessibilityRequired:
+            return "Mở Trợ năng"
+        case .inputMonitoringRequired:
+            return "Mở Giám sát đầu vào"
+        case .waitingForEventTap:
+            return "Thử lại ngay"
+        case .ready, .relaunchPending:
+            return nil
         }
     }
 
