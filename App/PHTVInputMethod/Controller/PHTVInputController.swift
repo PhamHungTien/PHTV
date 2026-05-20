@@ -66,6 +66,16 @@ final class PHTVInputController: IMKInputController {
         menu.addItem(summaryItem)
         menu.addItem(NSMenuItem.separator())
 
+        let upperCaseItem = NSMenuItem(
+            title: "Viết hoa đầu câu",
+            action: #selector(toggleUpperCaseFirstChar(_:)),
+            keyEquivalent: ""
+        )
+        upperCaseItem.image = NSImage(systemSymbolName: "textformat.size.larger", accessibilityDescription: nil)
+        upperCaseItem.target = self
+        upperCaseItem.state = config.upperCaseFirstChar ? .on : .off
+        menu.addItem(upperCaseItem)
+
         let autoRestoreItem = NSMenuItem(
             title: "Khôi phục từ tiếng Anh",
             action: #selector(toggleAutoRestoreEnglish(_:)),
@@ -101,6 +111,13 @@ final class PHTVInputController: IMKInputController {
         PHTVInputMethodDiagnostics.log("toggleAutoRestoreEnglish called")
         var config = PHTVInputMethodPreferences.currentConfiguration()
         config.autoRestoreEnglishWord.toggle()
+        PHTVInputMethodPreferences.saveConfiguration(config)
+    }
+
+    @objc func toggleUpperCaseFirstChar(_ sender: Any) {
+        PHTVInputMethodDiagnostics.log("toggleUpperCaseFirstChar called")
+        var config = PHTVInputMethodPreferences.currentConfiguration()
+        config.upperCaseFirstChar.toggle()
         PHTVInputMethodPreferences.saveConfiguration(config)
     }
 }

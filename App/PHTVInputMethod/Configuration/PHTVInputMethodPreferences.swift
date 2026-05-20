@@ -47,17 +47,25 @@ struct PHTVInputMethodConfiguration {
     var inputStyle: PHTVInputStyle
     var outputEncoding: PHTVOutputEncoding
     var autoRestoreEnglishWord: Bool
+    var upperCaseFirstChar: Bool
 
-    init(inputStyle: PHTVInputStyle, outputEncoding: PHTVOutputEncoding, autoRestoreEnglishWord: Bool = true) {
+    init(
+        inputStyle: PHTVInputStyle,
+        outputEncoding: PHTVOutputEncoding,
+        autoRestoreEnglishWord: Bool = true,
+        upperCaseFirstChar: Bool = false
+    ) {
         self.inputStyle = inputStyle
         self.outputEncoding = outputEncoding
         self.autoRestoreEnglishWord = autoRestoreEnglishWord
+        self.upperCaseFirstChar = upperCaseFirstChar
     }
 
     static let fallback = PHTVInputMethodConfiguration(
         inputStyle: .telex,
         outputEncoding: .unicode,
-        autoRestoreEnglishWord: true
+        autoRestoreEnglishWord: true,
+        upperCaseFirstChar: false
     )
 }
 
@@ -65,6 +73,7 @@ enum PHTVInputMethodPreferences {
     private static let inputMethodKey = "InputType"
     private static let codeTableKey = "CodeTable"
     private static let autoRestoreEnglishWordKey = "vAutoRestoreEnglishWord"
+    private static let upperCaseFirstCharKey = "UpperCaseFirstChar"
     private static let preferenceDomains = [
         "com.phamhungtien.phtv.inputmethod",
         "com.phamhungtien.phtv",
@@ -75,8 +84,9 @@ enum PHTVInputMethodPreferences {
         var inputMethodValue = UserDefaults.standard.object(forKey: inputMethodKey) as? Int
         var codeTableValue = UserDefaults.standard.object(forKey: codeTableKey) as? Int
         var autoRestoreValue = UserDefaults.standard.object(forKey: autoRestoreEnglishWordKey) as? Bool
+        var upperCaseValue = UserDefaults.standard.object(forKey: upperCaseFirstCharKey) as? Bool
 
-        for domain in preferenceDomains where inputMethodValue == nil || codeTableValue == nil || autoRestoreValue == nil {
+        for domain in preferenceDomains where inputMethodValue == nil || codeTableValue == nil || autoRestoreValue == nil || upperCaseValue == nil {
             guard let defaults = UserDefaults(suiteName: domain) else { continue }
             if inputMethodValue == nil {
                 inputMethodValue = defaults.object(forKey: inputMethodKey) as? Int
@@ -87,6 +97,9 @@ enum PHTVInputMethodPreferences {
             if autoRestoreValue == nil {
                 autoRestoreValue = defaults.object(forKey: autoRestoreEnglishWordKey) as? Bool
             }
+            if upperCaseValue == nil {
+                upperCaseValue = defaults.object(forKey: upperCaseFirstCharKey) as? Bool
+            }
         }
 
         return PHTVInputMethodConfiguration(
@@ -94,7 +107,8 @@ enum PHTVInputMethodPreferences {
                 ?? PHTVInputMethodConfiguration.fallback.inputStyle,
             outputEncoding: PHTVOutputEncoding(rawValue: codeTableValue ?? PHTVInputMethodConfiguration.fallback.outputEncoding.rawValue)
                 ?? PHTVInputMethodConfiguration.fallback.outputEncoding,
-            autoRestoreEnglishWord: autoRestoreValue ?? PHTVInputMethodConfiguration.fallback.autoRestoreEnglishWord
+            autoRestoreEnglishWord: autoRestoreValue ?? PHTVInputMethodConfiguration.fallback.autoRestoreEnglishWord,
+            upperCaseFirstChar: upperCaseValue ?? PHTVInputMethodConfiguration.fallback.upperCaseFirstChar
         )
     }
 
@@ -106,6 +120,7 @@ enum PHTVInputMethodPreferences {
             defaults.set(config.inputStyle.rawValue, forKey: "InputType")
             defaults.set(config.outputEncoding.rawValue, forKey: "CodeTable")
             defaults.set(config.autoRestoreEnglishWord, forKey: autoRestoreEnglishWordKey)
+            defaults.set(config.upperCaseFirstChar, forKey: upperCaseFirstCharKey)
             defaults.synchronize()
         }
         
@@ -113,6 +128,7 @@ enum PHTVInputMethodPreferences {
         UserDefaults.standard.set(config.inputStyle.rawValue, forKey: "InputType")
         UserDefaults.standard.set(config.outputEncoding.rawValue, forKey: "CodeTable")
         UserDefaults.standard.set(config.autoRestoreEnglishWord, forKey: autoRestoreEnglishWordKey)
+        UserDefaults.standard.set(config.upperCaseFirstChar, forKey: upperCaseFirstCharKey)
         UserDefaults.standard.synchronize()
         
         // Post notifications
@@ -127,6 +143,10 @@ enum PHTVInputMethodPreferences {
         NotificationCenter.default.post(
             name: NSNotification.Name("vAutoRestoreEnglishWordChanged"),
             object: NSNumber(value: config.autoRestoreEnglishWord)
+        )
+        NotificationCenter.default.post(
+            name: NSNotification.Name("UpperCaseFirstCharChanged"),
+            object: NSNumber(value: config.upperCaseFirstChar)
         )
         NotificationCenter.default.post(
             name: NSNotification.Name("PHTVSettingsChanged"),

@@ -25,7 +25,7 @@ final class PHTVSettingsWindowController: NSWindowController {
 
         let hostingController = NSHostingController(rootView: PHTVSettingsView())
         let window = NSWindow(contentViewController: hostingController)
-        window.setContentSize(NSSize(width: 520, height: 390))
+        window.setContentSize(NSSize(width: 520, height: 430))
         window.styleMask = [.titled, .closable, .miniaturizable]
         window.title = "Cài đặt PHTV"
         window.subtitle = "Vietnamese Input Method"
@@ -55,6 +55,7 @@ struct PHTVSettingsView: View {
     @State private var inputStyle: PHTVInputStyle = .telex
     @State private var outputEncoding: PHTVOutputEncoding = .unicode
     @State private var autoRestoreEnglishWord = true
+    @State private var upperCaseFirstChar = false
     @State private var showsSavedStatus = false
 
     private var inputStyleBinding: Binding<PHTVInputStyle> {
@@ -87,6 +88,16 @@ struct PHTVSettingsView: View {
         )
     }
 
+    private var upperCaseBinding: Binding<Bool> {
+        Binding(
+            get: { upperCaseFirstChar },
+            set: { newValue in
+                upperCaseFirstChar = newValue
+                save()
+            }
+        )
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             Form {
@@ -113,6 +124,9 @@ struct PHTVSettingsView: View {
                 }
 
                 Section {
+                    Toggle("Viết hoa đầu câu", isOn: upperCaseBinding)
+                        .help("Tự động viết hoa chữ cái đầu sau dấu kết thúc câu.")
+
                     Toggle("Khôi phục từ tiếng Anh", isOn: autoRestoreBinding)
                         .help("Khi một chuỗi giống từ tiếng Anh, PHTV tự trả về dạng không dấu.")
                 } header: {
@@ -153,7 +167,7 @@ struct PHTVSettingsView: View {
             .padding(.vertical, 14)
             .background(.bar)
         }
-        .frame(width: 520, height: 390)
+        .frame(width: 520, height: 430)
         .onAppear(perform: loadConfiguration)
     }
 
@@ -162,13 +176,15 @@ struct PHTVSettingsView: View {
         inputStyle = config.inputStyle
         outputEncoding = config.outputEncoding
         autoRestoreEnglishWord = config.autoRestoreEnglishWord
+        upperCaseFirstChar = config.upperCaseFirstChar
     }
 
     private func save() {
         let config = PHTVInputMethodConfiguration(
             inputStyle: inputStyle,
             outputEncoding: outputEncoding,
-            autoRestoreEnglishWord: autoRestoreEnglishWord
+            autoRestoreEnglishWord: autoRestoreEnglishWord,
+            upperCaseFirstChar: upperCaseFirstChar
         )
         PHTVInputMethodPreferences.saveConfiguration(config)
 

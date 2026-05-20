@@ -5,6 +5,7 @@ final class PHTVInputSession {
     private let engine: PHTVInputEngine
     private var markedTextStartLocation = NSNotFound
     private var markedTextLength = 0
+    private var autoCapitalization = PHTVInputMethodAutoCapitalizationState()
 
     init(engine: PHTVInputEngine = PHTVVietnameseInputEngine()) {
         self.engine = engine
@@ -24,17 +25,21 @@ final class PHTVInputSession {
 
     func handleText(_ text: String, client: PHTVInputClient) -> Bool {
         guard !text.isEmpty else { return false }
+        let config = PHTVInputMethodPreferences.currentConfiguration()
 
         if text.isPHTVInputCommitBoundary {
+            autoCapitalization.observeCommittedText(text, enabled: config.upperCaseFirstChar)
             return commitBoundary(text, client: client)
         }
 
         guard text.isPHTVInputComposableText else {
             commit(client: client)
+            autoCapitalization.observeCommittedText(text, enabled: config.upperCaseFirstChar)
             return false
         }
 
-        engine.insert(text)
+        let inputText = autoCapitalization.prepareComposableText(text, enabled: config.upperCaseFirstChar)
+        engine.insert(inputText)
         markComposition(client: client)
         return true
     }
@@ -47,6 +52,8 @@ final class PHTVInputSession {
             return false
         }
 
+        let config = PHTVInputMethodPreferences.currentConfiguration()
+
         switch Int(event.keyCode) {
         case PHTVInputMethodConstants.tabKeyCode:
             return commitBoundary("\t", client: client)
@@ -56,6 +63,7 @@ final class PHTVInputSession {
             return cancelComposition(client: client)
         case PHTVInputMethodConstants.returnKeyCode,
              PHTVInputMethodConstants.enterKeyCode:
+            autoCapitalization.observeCommittedText("\n", enabled: config.upperCaseFirstChar)
             return commitBoundary("\n", client: client)
         default:
             guard let text = event.characters, !text.isEmpty else {
@@ -89,6 +97,7 @@ final class PHTVInputSession {
     private func deleteBackward(client: PHTVInputClient) -> Bool {
         if client.hasSelectedText {
             engine.reset()
+            autoCapitalization.reset()
             resetMarkedTextTracking()
             return false
         }
@@ -108,6 +117,7 @@ final class PHTVInputSession {
         guard engine.isComposing else { return false }
         client.commit(engine.rawText, replacementRange: replacementRangeForCommit(client: client))
         engine.reset()
+        autoCapitalization.reset()
         resetMarkedTextTracking()
         return true
     }
@@ -154,6 +164,123 @@ final class PHTVInputSession {
     private func resetMarkedTextTracking() {
         markedTextStartLocation = NSNotFound
         markedTextLength = 0
+    }
+}
+
+private struct PHTVInputMethodAutoCapitalizationState {
+    private var pending = true
+    private var needsSpaceConfirm = false
+    private var ellipsisContinuation = false
+
+    mutating func reset() {
+        pending = true
+        needsSpaceConfirm = false
+        ellipsisContinuation = false
+    }
+
+    mutating func prepareComposableText(_ text: String, enabled: Bool) -> String {
+        guard enabled else {
+            clear()
+            return text
+        }
+
+        guard let firstCharacter = text.first else { return text }
+        defer {
+            pending = false
+            needsSpaceConfirm = false
+            ellipsisContinuation = false
+        }
+
+        guard pending, !needsSpaceConfirm, firstCharacter.isPHTVLetter else {
+            return text
+        }
+
+        return firstCharacter.uppercased() + String(text.dropFirst())
+    }
+
+    mutating func observeCommittedText(_ text: String, enabled: Bool) {
+        guard enabled else {
+            clear()
+            return
+        }
+
+        for character in text {
+            observeCommittedCharacter(character)
+        }
+    }
+
+    private mutating func observeCommittedCharacter(_ character: Character) {
+        if character.isPHTVNewline {
+            pending = true
+            needsSpaceConfirm = false
+            ellipsisContinuation = false
+            return
+        }
+
+        if character.isPHTVWhitespace {
+            if pending && needsSpaceConfirm && !ellipsisContinuation {
+                needsSpaceConfirm = false
+            } else if ellipsisContinuation {
+                clear()
+            }
+            return
+        }
+
+        if character == "." {
+            if pending && needsSpaceConfirm {
+                clear()
+                ellipsisContinuation = true
+            } else if ellipsisContinuation {
+                ellipsisContinuation = true
+            } else {
+                pending = true
+                needsSpaceConfirm = true
+                ellipsisContinuation = false
+            }
+            return
+        }
+
+        if character == "!" || character == "?" {
+            pending = true
+            needsSpaceConfirm = true
+            ellipsisContinuation = false
+            return
+        }
+
+        if pending && !needsSpaceConfirm && character.isPHTVUppercaseSkippablePunctuation {
+            return
+        }
+
+        clear()
+    }
+
+    private mutating func clear() {
+        pending = false
+        needsSpaceConfirm = false
+        ellipsisContinuation = false
+    }
+}
+
+private extension Character {
+    var isPHTVLetter: Bool {
+        unicodeScalars.allSatisfy { CharacterSet.letters.contains($0) }
+    }
+
+    var isPHTVWhitespace: Bool {
+        unicodeScalars.allSatisfy { CharacterSet.whitespaces.contains($0) }
+    }
+
+    var isPHTVNewline: Bool {
+        unicodeScalars.allSatisfy { CharacterSet.newlines.contains($0) }
+    }
+
+    var isPHTVUppercaseSkippablePunctuation: Bool {
+        switch self {
+        case "\"", "'", "”", "’", ")", "]", "}", "»":
+            return true
+        default:
+            return false
+        }
     }
 }
 
