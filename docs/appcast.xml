@@ -12,6 +12,19 @@
             <sparkle:version>282</sparkle:version>
             <sparkle:shortVersionString>3.1.5</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.1.5</h2>
+                <p>PHTV 3.1.5 là bản cập nhật quan trọng về phân phối và bảo mật. Từ phiên bản này, PHTV được build và ký bằng tài khoản Apple Developer với chứng chỉ Developer ID, giúp macOS nhận diện ứng dụng rõ ràng hơn và giảm cảnh báo khi cài đặt.</p>
+                <h3>Điểm nổi bật</h3>
+                <ul>
+                    <li><strong>Ký bằng Apple Developer</strong>: PHTV nay được ký bằng chứng chỉ Developer ID Application, giúp ứng dụng có danh tính rõ ràng hơn với macOS.</li>
+                    <li><strong>Hỗ trợ notarization cho macOS</strong>: Workflow phát hành đã sẵn sàng submit DMG lên Apple notarization và staple ticket sau khi Apple xác thực thành công.</li>
+                    <li><strong>Cải thiện quy trình release</strong>: Kiểm tra chữ ký ứng dụng, entitlements và quyền cần thiết của app trong workflow phát hành.</li>
+                </ul>
+                <h3>Lưu ý sau khi cập nhật</h3>
+                <p>Do danh tính ký số của ứng dụng thay đổi, macOS có thể yêu cầu bạn cấp lại quyền Trợ năng một lần. Nếu PHTV không gõ được ngay sau khi cập nhật, hãy mở <strong>System Settings &gt; Privacy &amp; Security &gt; Accessibility</strong>, tắt rồi bật lại quyền cho PHTV, hoặc xóa PHTV cũ và thêm lại PHTV mới. Sau đó thoát hẳn PHTV và mở lại ứng dụng.</p>
+                <p>Nếu macOS vẫn giữ cache quyền cũ, hãy khởi động lại máy sau khi cấp lại quyền.</p>
+            ]]></description>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.1.5/PHTV-3.1.5-arm64.dmg" length="9291353" type="application/octet-stream" sparkle:edSignature="h3CnpUmj0z1/gsizX4M0DBbIABIEQk/qgmqjNe8NQ6HWmTaFv9Uyj1J/4A+B0bNKRtg+duB6FsBkHQc7ld5vAQ=="/>
         </item>
         <item>

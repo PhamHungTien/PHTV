@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.5] - 2026-05-20
+
+### Tổng quan
+PHTV 3.1.5 là bản cập nhật quan trọng về phân phối và bảo mật. Từ phiên bản này, PHTV được build và ký bằng tài khoản Apple Developer với chứng chỉ Developer ID, giúp macOS nhận diện ứng dụng rõ ràng hơn và giảm cảnh báo khi cài đặt trên máy người dùng.
+
+Do ứng dụng đã được ký bằng danh tính Apple Developer mới, macOS có thể yêu cầu người dùng cấp lại quyền Trợ năng một lần sau khi cập nhật. Đây là hành vi bình thường của macOS/TCC khi danh tính ký số của ứng dụng thay đổi.
+
+### Điểm nổi bật
+- **Ký bằng Apple Developer**
+  - PHTV nay được ký bằng chứng chỉ Developer ID Application.
+  - Bản phát hành có danh tính ứng dụng rõ ràng hơn với macOS.
+  - Cải thiện độ tin cậy khi tải, cài đặt và chạy PHTV trên các phiên bản macOS mới.
+- **Hỗ trợ notarization cho macOS**
+  - Workflow phát hành đã sẵn sàng submit bản DMG lên Apple notarization.
+  - DMG được staple notarization ticket sau khi Apple xác thực thành công.
+  - Giảm khả năng macOS Gatekeeper chặn app khi người dùng mở lần đầu.
+- **Cần cấp lại quyền Trợ năng một lần**
+  - Sau khi cập nhật lên PHTV 3.1.5, nếu bộ gõ không hoạt động ngay, hãy mở `System Settings` > `Privacy & Security` > `Accessibility`.
+  - Tìm `PHTV`, tắt rồi bật lại quyền cho PHTV, hoặc xóa PHTV cũ và thêm lại PHTV mới.
+  - Thoát hẳn PHTV và mở lại ứng dụng.
+  - Người dùng chỉ cần thực hiện bước này một lần sau khi chuyển sang bản đã ký bằng Apple Developer.
+
+### Fixed and Improved
+- Cải thiện quy trình build release cho macOS.
+- Kiểm tra chữ ký ứng dụng và entitlements trong workflow phát hành.
+- Giữ đúng quyền cần thiết của PHTV khi ký lại app bundle.
+- Chuẩn bị quy trình phát hành ổn định hơn cho các bản cập nhật tiếp theo.
+
+### Ghi chú nâng cấp
+- Đây là bản nên cập nhật cho tất cả người dùng.
+- Nếu PHTV báo đã có quyền Trợ năng nhưng không gõ được, hãy cấp lại quyền Trợ năng theo hướng dẫn ở trên.
+- Nếu macOS vẫn giữ cache quyền cũ, hãy khởi động lại máy sau khi cấp lại quyền.
+
 ## [2.9.6] - 2026-04-19
 
 ### Fixed
