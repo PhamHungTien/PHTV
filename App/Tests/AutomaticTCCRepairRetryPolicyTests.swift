@@ -82,6 +82,29 @@ final class AutomaticTCCRepairRetryPolicyTests: XCTestCase {
         )
     }
 
+    func testGuidedPermissionRepairRequiresForcedOpenAndMissingTrust() {
+        XCTAssertTrue(
+            phtvShouldRepairPermissionEntryBeforeGuidance(
+                permissionTrusted: false,
+                forceOpenSystemSettings: true
+            )
+        )
+
+        XCTAssertFalse(
+            phtvShouldRepairPermissionEntryBeforeGuidance(
+                permissionTrusted: true,
+                forceOpenSystemSettings: true
+            )
+        )
+
+        XCTAssertFalse(
+            phtvShouldRepairPermissionEntryBeforeGuidance(
+                permissionTrusted: false,
+                forceOpenSystemSettings: false
+            )
+        )
+    }
+
     func testCorruptEntryRequiresTrustedAccessibilityAndMissingTCCRegistration() {
         XCTAssertFalse(
             phtvShouldTreatTCCEntryAsCorrupt(

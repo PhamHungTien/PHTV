@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.6] - 2026-05-20
+
+### Tổng quan
+PHTV 3.1.6 tập trung vào độ ổn định khi cấp quyền trên macOS và dọn lại project để chỉ giữ bộ gõ chính. Từ phiên bản này, ứng dụng nhận diện rõ cả hai quyền cần thiết để bộ gõ hoạt động ổn định: **Trợ năng** và **Giám sát đầu vào**.
+
+Trên một số máy, PHTV có thể đã được cấp Trợ năng nhưng vẫn không bắt được phím vì thiếu Giám sát đầu vào. Bản cập nhật này hướng dẫn người dùng cấp đúng cả hai quyền và tự kiểm tra lại trạng thái quyền sau khi macOS áp dụng thay đổi.
+
+Ngoài ra, nếu macOS giữ lại một mục quyền cũ/hỏng khiến PHTV vẫn báo mất Trợ năng dù người dùng đã cấp lại, PHTV sẽ làm mới riêng entry TCC của quyền đang thiếu trước khi mở System Settings để người dùng bật lại.
+
+### Điểm nổi bật
+- **Yêu cầu đủ 2 quyền nhập liệu**
+  - PHTV nay kiểm tra riêng quyền `Accessibility` và `Input Monitoring`.
+  - Onboarding hiển thị trạng thái của từng quyền để người dùng biết chính xác còn thiếu bước nào.
+  - Nút hướng dẫn sẽ mở đúng mục cần cấp tiếp theo trong System Settings.
+  - Khi người dùng cấp quyền xong, PHTV tự nhận diện lại và khởi tạo event tap tốt nhất có thể.
+- **Tự phục hồi quyền tốt hơn**
+  - Không còn retry event tap sai hướng khi máy đang thiếu Giám sát đầu vào.
+  - Khi người dùng mở lại quyền đang thiếu, PHTV reset riêng entry TCC của Trợ năng hoặc Giám sát đầu vào để tránh trạng thái quyền bị kẹt.
+  - TCC notification và polling runtime cùng cập nhật trạng thái hai quyền.
+  - Trạng thái trên Settings, menu bar và báo cáo lỗi phản ánh đúng nguyên nhân: thiếu Trợ năng, thiếu Giám sát đầu vào, đang chờ khởi tạo, hoặc đã sẵn sàng.
+- **Dọn project macOS**
+  - Xoá target thử nghiệm `PHTVInputMethod`.
+  - Xoá target test `PHTVInputMethodTests` và các source liên quan.
+  - Scheme `PHTV` chỉ còn build app chính và `PHEngineTests`.
+- **Sửa lỗi xoá văn bản đã chọn**
+  - Cải thiện xử lý phím Delete/Backspace khi đang có vùng chọn.
+  - Giảm khả năng bộ gõ can thiệp sai khi người dùng chỉ muốn xoá đoạn text đã bôi đen.
+
+### Fixed and Improved
+- Tách trạng thái runtime thành các pha riêng cho `accessibilityRequired`, `inputMonitoringRequired`, `waitingForEventTap`, `relaunchPending` và `ready`.
+- Thêm kiểm tra `CGPreflightListenEventAccess()` và prompt `CGRequestListenEventAccess()` cho quyền Giám sát đầu vào.
+- Cải thiện luồng mở System Settings cho cả Trợ năng và Giám sát đầu vào.
+- Thêm guided repair dùng `tccutil reset Accessibility` và `tccutil reset ListenEvent` cho bundle hiện tại khi người dùng chủ động mở lại quyền đang thiếu.
+- Cập nhật Onboarding, Settings status card, menu bar và bug report để hiển thị đủ thông tin quyền.
+- Bổ sung regression tests cho readiness, guidance step, relaunch policy và event tap recovery khi thiếu Input Monitoring.
+- Gỡ toàn bộ target `PHTVInputMethod`/`PHTVInputMethodTests` khỏi Xcode project.
+
+### Ghi chú nâng cấp
+- Đây là bản nên cập nhật cho tất cả người dùng, đặc biệt nếu PHTV không hoạt động dù đã cấp Trợ năng.
+- Sau khi cập nhật, nếu macOS yêu cầu quyền, hãy cấp cả:
+  - `System Settings` > `Privacy & Security` > `Accessibility` > bật PHTV.
+  - `System Settings` > `Privacy & Security` > `Input Monitoring` > bật PHTV.
+- Nếu PHTV vẫn chưa hoạt động ngay sau khi cấp quyền, hãy thoát hẳn PHTV và mở lại. Một số phiên bản macOS cần vài giây hoặc một lần mở lại ứng dụng để TCC áp dụng quyền mới.
+
 ## [3.1.5] - 2026-05-20
 
 ### Tổng quan

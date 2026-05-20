@@ -828,24 +828,15 @@ final class PHTVAccessibilityService: NSObject {
 
     @objc class func openAccessibilityPreferences() {
         _ = requestAccessibilityPrompt()
+        openSystemSettings(urlStrings: accessibilitySettingsURLs)
+    }
 
-        let settingsURLs = [
-            "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility",
-            "x-apple.systempreferences:com.apple.preference.security",
-            "x-apple.systempreferences:com.apple.preference.universalaccess"
-        ]
-
-        for urlString in settingsURLs {
-            guard let url = URL(string: urlString) else { continue }
-            if NSWorkspace.shared.open(url) {
-                return
-            }
+    @objc class func repairAndOpenAccessibilityPreferences() {
+        if PHTVTCCMaintenanceService.resetAccessibilityEntry() {
+            PHTVTCCMaintenanceService.restartTCCDaemon()
         }
-
-        let systemSettingsURL = URL(fileURLWithPath: "/System/Applications/System Settings.app")
-        if FileManager.default.fileExists(atPath: systemSettingsURL.path) {
-            NSWorkspace.shared.open(systemSettingsURL)
-        }
+        _ = requestAccessibilityPrompt()
+        openSystemSettings(urlStrings: accessibilitySettingsURLs)
     }
 
     @discardableResult
@@ -855,14 +846,31 @@ final class PHTVAccessibilityService: NSObject {
 
     @objc class func openInputMonitoringPreferences() {
         _ = requestInputMonitoringPrompt()
+        openSystemSettings(urlStrings: inputMonitoringSettingsURLs)
+    }
 
-        let settingsURLs = [
-            "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent",
-            "x-apple.systempreferences:com.apple.preference.security",
-            "x-apple.systempreferences:com.apple.preference.keyboard"
-        ]
+    @objc class func repairAndOpenInputMonitoringPreferences() {
+        if PHTVTCCMaintenanceService.resetInputMonitoringEntry() {
+            PHTVTCCMaintenanceService.restartTCCDaemon()
+        }
+        _ = requestInputMonitoringPrompt()
+        openSystemSettings(urlStrings: inputMonitoringSettingsURLs)
+    }
 
-        for urlString in settingsURLs {
+    private static let accessibilitySettingsURLs = [
+        "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility",
+        "x-apple.systempreferences:com.apple.preference.security",
+        "x-apple.systempreferences:com.apple.preference.universalaccess"
+    ]
+
+    private static let inputMonitoringSettingsURLs = [
+        "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent",
+        "x-apple.systempreferences:com.apple.preference.security",
+        "x-apple.systempreferences:com.apple.preference.keyboard"
+    ]
+
+    private class func openSystemSettings(urlStrings: [String]) {
+        for urlString in urlStrings {
             guard let url = URL(string: urlString) else { continue }
             if NSWorkspace.shared.open(url) {
                 return

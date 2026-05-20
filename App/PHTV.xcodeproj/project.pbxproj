@@ -16,7 +16,6 @@
 		460202732F2814260040B043 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 460202742F2814260040B043 /* Sparkle */; };
 		46020A082F3000000040B043 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46020A072F3000000040B043 /* XCTest.framework */; };
 		46A9C5F42F4AF9D70048BCED /* PHTV.icon in Resources */ = {isa = PBXBuildFile; fileRef = 46A9C5F32F4AF9D70048BCED /* PHTV.icon */; };
-		46B100042F5000000040B043 /* InputMethodKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 46B100032F5000000040B043 /* InputMethodKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -40,8 +39,6 @@
 		46020A012F3000000040B043 /* PHEngineTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PHEngineTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		46020A072F3000000040B043 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
 		46A9C5F32F4AF9D70048BCED /* PHTV.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = PHTV.icon; sourceTree = "<group>"; };
-		46B100012F5000000040B043 /* PHTVInputMethod.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PHTVInputMethod.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		46B100032F5000000040B043 /* InputMethodKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = InputMethodKit.framework; path = System/Library/Frameworks/InputMethodKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -51,15 +48,6 @@
 				Info.plist,
 			);
 			target = 460202422F2814250040B043 /* PHTV */;
-		};
-		46B1000C2F5000000040B043 /* Exceptions for "PHTVInputMethod" folder in "PHTVInputMethod" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-				PHTVInputMethod.entitlements,
-				PHTVInputMethodRelease.entitlements,
-			);
-			target = 46B100082F5000000040B043 /* PHTVInputMethod */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -75,14 +63,6 @@
 		46020A022F3000000040B043 /* Tests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Tests;
-			sourceTree = "<group>";
-		};
-		46B100022F5000000040B043 /* PHTVInputMethod */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				46B1000C2F5000000040B043 /* Exceptions for "PHTVInputMethod" folder in "PHTVInputMethod" target */,
-			);
-			path = PHTVInputMethod;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -110,14 +90,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		46B100052F5000000040B043 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				46B100042F5000000040B043 /* InputMethodKit.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -126,7 +98,6 @@
 			children = (
 				46A9C5F32F4AF9D70048BCED /* PHTV.icon */,
 				460202452F2814250040B043 /* PHTV */,
-				46B100022F5000000040B043 /* PHTVInputMethod */,
 				46020A022F3000000040B043 /* Tests */,
 				460202692F2814260040B043 /* Frameworks */,
 				460202442F2814250040B043 /* Products */,
@@ -137,7 +108,6 @@
 			isa = PBXGroup;
 			children = (
 				460202432F2814250040B043 /* PHTV.app */,
-				46B100012F5000000040B043 /* PHTVInputMethod.app */,
 				46020A012F3000000040B043 /* PHEngineTests.xctest */,
 			);
 			name = Products;
@@ -151,7 +121,6 @@
 				460202632F2814260040B043 /* Cocoa.framework */,
 				460202622F2814260040B043 /* CoreGraphics.framework */,
 				460202612F2814260040B043 /* Foundation.framework */,
-				46B100032F5000000040B043 /* InputMethodKit.framework */,
 				460202672F2814260040B043 /* ServiceManagement.framework */,
 				46020A072F3000000040B043 /* XCTest.framework */,
 			);
@@ -205,28 +174,6 @@
 			productReference = 46020A012F3000000040B043 /* PHEngineTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		46B100082F5000000040B043 /* PHTVInputMethod */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 46B1000B2F5000000040B043 /* Build configuration list for PBXNativeTarget "PHTVInputMethod" */;
-			buildPhases = (
-				46B100062F5000000040B043 /* Sources */,
-				46B100052F5000000040B043 /* Frameworks */,
-				46B100072F5000000040B043 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				46B100022F5000000040B043 /* PHTVInputMethod */,
-			);
-			name = PHTVInputMethod;
-			packageProductDependencies = (
-			);
-			productName = PHTVInputMethod;
-			productReference = 46B100012F5000000040B043 /* PHTVInputMethod.app */;
-			productType = "com.apple.product-type.application";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -243,9 +190,6 @@
 					46020A032F3000000040B043 = {
 						CreatedOnToolsVersion = 26.2;
 						TestTargetID = 460202422F2814250040B043;
-					};
-					46B100082F5000000040B043 = {
-						CreatedOnToolsVersion = 26.5;
 					};
 				};
 			};
@@ -269,7 +213,6 @@
 			projectRoot = "";
 			targets = (
 				460202422F2814250040B043 /* PHTV */,
-				46B100082F5000000040B043 /* PHTVInputMethod */,
 				46020A032F3000000040B043 /* PHEngineTests */,
 			);
 		};
@@ -291,13 +234,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		46B100072F5000000040B043 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -309,13 +245,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		46020A042F3000000040B043 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		46B100062F5000000040B043 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -586,7 +515,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_VERSION = 6.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PHTVInputMethod.app/Contents/MacOS/PHTVInputMethod";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PHTV.app/Contents/MacOS/PHTV";
 			};
 			name = Debug;
 		};
@@ -610,77 +539,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_VERSION = 6.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PHTVInputMethod.app/Contents/MacOS/PHTVInputMethod";
-			};
-			name = Release;
-		};
-		46B100092F5000000040B043 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = PHTV;
-				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
-				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = PHTVInputMethod/PHTVInputMethod.entitlements;
-				CODE_SIGN_IDENTITY = "-";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 95AKA2N383;
-				ENABLE_DEBUG_DYLIB = NO;
-				ENABLE_APP_SANDBOX = NO;
-				EXTRACT_APP_INTENTS_METADATA = NO;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = PHTVInputMethod/Info.plist;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Input Methods";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/../Frameworks",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.phamhungtien.inputmethod.PHTV.Debug;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = NO;
-				SWIFT_STRICT_CONCURRENCY = complete;
-				SWIFT_VERSION = 6.0;
-				WRAPPER_EXTENSION = app;
-			};
-			name = Debug;
-		};
-		46B1000A2F5000000040B043 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = PHTV;
-				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
-				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = PHTVInputMethod/PHTVInputMethodRelease.entitlements;
-				CODE_SIGN_IDENTITY = "-";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 95AKA2N383;
-				ENABLE_DEBUG_DYLIB = NO;
-				ENABLE_APP_SANDBOX = NO;
-				EXTRACT_APP_INTENTS_METADATA = NO;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = PHTVInputMethod/Info.plist;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Input Methods";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/../Frameworks",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.phamhungtien.inputmethod.PHTV;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = NO;
-				SWIFT_STRICT_CONCURRENCY = complete;
-				SWIFT_VERSION = 6.0;
-				WRAPPER_EXTENSION = app;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PHTV.app/Contents/MacOS/PHTV";
 			};
 			name = Release;
 		};
@@ -710,15 +569,6 @@
 			buildConfigurations = (
 				46020A0C2F3000000040B043 /* Debug */,
 				46020A0D2F3000000040B043 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		46B1000B2F5000000040B043 /* Build configuration list for PBXNativeTarget "PHTVInputMethod" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				46B100092F5000000040B043 /* Debug */,
-				46B1000A2F5000000040B043 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

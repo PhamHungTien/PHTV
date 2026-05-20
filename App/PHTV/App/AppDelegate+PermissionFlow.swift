@@ -11,6 +11,13 @@ import AppKit
 import ApplicationServices
 import Foundation
 
+func phtvShouldRepairPermissionEntryBeforeGuidance(
+    permissionTrusted: Bool,
+    forceOpenSystemSettings: Bool
+) -> Bool {
+    forceOpenSystemSettings && !permissionTrusted
+}
+
 @MainActor @objc extension AppDelegate {
     func askPermission() {
         presentPermissionGuidanceUI()
@@ -38,10 +45,24 @@ import Foundation
         switch step {
         case .accessibility:
             NSLog("[PermissionFlow] Opening Accessibility guidance")
-            PHTVAccessibilityService.openAccessibilityPreferences()
+            if phtvShouldRepairPermissionEntryBeforeGuidance(
+                permissionTrusted: runtimeHealth.axTrusted,
+                forceOpenSystemSettings: forceOpenSystemSettings
+            ) {
+                PHTVAccessibilityService.repairAndOpenAccessibilityPreferences()
+            } else {
+                PHTVAccessibilityService.openAccessibilityPreferences()
+            }
         case .inputMonitoring:
             NSLog("[PermissionFlow] Opening Input Monitoring guidance")
-            PHTVAccessibilityService.openInputMonitoringPreferences()
+            if phtvShouldRepairPermissionEntryBeforeGuidance(
+                permissionTrusted: runtimeHealth.inputMonitoringTrusted,
+                forceOpenSystemSettings: forceOpenSystemSettings
+            ) {
+                PHTVAccessibilityService.repairAndOpenInputMonitoringPreferences()
+            } else {
+                PHTVAccessibilityService.openInputMonitoringPreferences()
+            }
         case .waitingForEventTap:
             NSLog("[PermissionFlow] Retrying event tap initialization")
             retryTypingPermissionRecovery(reason: "permission-guidance")

@@ -55,6 +55,50 @@ final class PHTVTCCMaintenanceService: NSObject {
         path.replacingOccurrences(of: "'", with: "'\\''")
     }
 
+    @discardableResult
+    private class func resetPermissionEntry(serviceName: String, displayName: String) -> Bool {
+        guard let bundleID = Bundle.main.bundleIdentifier, !bundleID.isEmpty else {
+            NSLog("[TCC] Cannot reset %@ entry: missing bundle identifier", displayName)
+            return false
+        }
+
+        guard let result = runTask(
+            launchPath: "/usr/bin/tccutil",
+            arguments: ["reset", serviceName, bundleID],
+            captureStderr: true
+        ) else {
+            return false
+        }
+
+        PHTVManager.invalidatePermissionCache()
+
+        if result.status == 0 {
+            NSLog("[TCC] Reset %@ entry for bundleID %@", displayName, bundleID)
+            usleep(200_000)
+            return true
+        }
+
+        let detail = result.errorText.isEmpty ? result.output : result.errorText
+        NSLog(
+            "[TCC] Failed to reset %@ entry for bundleID %@ (status=%d): %@",
+            displayName,
+            bundleID,
+            result.status,
+            detail.isEmpty ? "-" : detail
+        )
+        return false
+    }
+
+    @objc(resetAccessibilityEntry)
+    class func resetAccessibilityEntry() -> Bool {
+        resetPermissionEntry(serviceName: "Accessibility", displayName: "Accessibility")
+    }
+
+    @objc(resetInputMonitoringEntry)
+    class func resetInputMonitoringEntry() -> Bool {
+        resetPermissionEntry(serviceName: "ListenEvent", displayName: "Input Monitoring")
+    }
+
     @objc(isAppRegisteredInTCC)
     class func isAppRegisteredInTCC() -> Bool {
         guard let result = runTask(

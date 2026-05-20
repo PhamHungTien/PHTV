@@ -924,8 +924,8 @@ struct AccessibilityStepView: View {
             guidancePanel(
                 title: "Cấp quyền Trợ năng",
                 rows: [
-                    "Nhấn nút bên dưới để mở Cài đặt Hệ thống.",
-                    "Trong Quyền riêng tư & Bảo mật > Trợ năng, bật PHTV.",
+                    "Nhấn nút bên dưới để PHTV làm mới mục quyền cũ rồi mở Cài đặt Hệ thống.",
+                    "Trong Quyền riêng tư & Bảo mật > Trợ năng, bật lại PHTV.",
                     "Khi macOS nhận quyền, PHTV sẽ tự chuyển sang bước Giám sát đầu vào."
                 ]
             )
@@ -933,8 +933,8 @@ struct AccessibilityStepView: View {
             guidancePanel(
                 title: "Cấp quyền Giám sát đầu vào",
                 rows: [
-                    "Nhấn nút bên dưới để mở đúng mục Giám sát đầu vào.",
-                    "Bật PHTV trong danh sách ứng dụng được phép giám sát đầu vào.",
+                    "Nhấn nút bên dưới để PHTV làm mới mục quyền cũ rồi mở Giám sát đầu vào.",
+                    "Bật lại PHTV trong danh sách ứng dụng được phép giám sát đầu vào.",
                     "Nếu macOS hỏi mở lại ứng dụng, hãy cho phép. PHTV sẽ tự kiểm tra lại sau đó."
                 ]
             )
