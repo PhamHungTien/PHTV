@@ -2741,6 +2741,24 @@ final class PHTVVietnameseEngine {
 
 
 
+        if shouldRestoreTelexLeadingDoubleConsonantRawKeys(), restoreToRawKeysSkippingFirstDuplicate() {
+            hCode = HookCodeState.willProcess.rawValue
+            if phtvRuntimeUseMacroEnabled() != 0 {
+                let dedup = Array(keyStates.dropFirst().prefix(stateIdx - 1))
+                hMacroKey = dedup
+                hMacroRawKey = dedup
+            }
+        }
+
+        if let dedupedSlice = shouldRestoreTelexAdjacentDedupRawKeys(),
+           restoreToCustomKeySlice(dedupedSlice) {
+            hCode = HookCodeState.willProcess.rawValue
+            if phtvRuntimeUseMacroEnabled() != 0 {
+                hMacroKey = dedupedSlice
+                hMacroRawKey = dedupedSlice
+            }
+        }
+
         if snapshotUpperCaseFirstChar != 0 && phtvRuntimeUpperCaseExcludedForCurrentApp() == 0 {
             if idx == 1 && upperCaseStatus == 2 && !upperCaseNeedsSpaceConfirm {
                 upperCaseFirstCharacter(); shouldUpperCaseEnglishRestore = true
