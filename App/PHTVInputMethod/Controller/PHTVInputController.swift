@@ -66,42 +66,6 @@ final class PHTVInputController: IMKInputController {
         menu.addItem(summaryItem)
         menu.addItem(NSMenuItem.separator())
 
-        let styleMenu = NSMenu(title: "Kiểu gõ")
-        for style in PHTVInputStyle.allCases {
-            let item = NSMenuItem(
-                title: style.displayName,
-                action: selector(for: style),
-                keyEquivalent: ""
-            )
-            item.target = self
-            if config.inputStyle == style {
-                item.state = .on
-            }
-            styleMenu.addItem(item)
-        }
-        let styleSubmenuItem = NSMenuItem(title: "Kiểu gõ", action: nil, keyEquivalent: "")
-        styleSubmenuItem.image = NSImage(systemSymbolName: "keyboard", accessibilityDescription: nil)
-        styleSubmenuItem.submenu = styleMenu
-        menu.addItem(styleSubmenuItem)
-
-        let encodingMenu = NSMenu(title: "Bảng mã")
-        for encoding in PHTVOutputEncoding.allCases {
-            let item = NSMenuItem(
-                title: encoding.displayName,
-                action: selector(for: encoding),
-                keyEquivalent: ""
-            )
-            item.target = self
-            if config.outputEncoding == encoding {
-                item.state = .on
-            }
-            encodingMenu.addItem(item)
-        }
-        let encodingSubmenuItem = NSMenuItem(title: "Bảng mã", action: nil, keyEquivalent: "")
-        encodingSubmenuItem.image = NSImage(systemSymbolName: "textformat", accessibilityDescription: nil)
-        encodingSubmenuItem.submenu = encodingMenu
-        menu.addItem(encodingSubmenuItem)
-
         let autoRestoreItem = NSMenuItem(
             title: "Khôi phục từ tiếng Anh",
             action: #selector(toggleAutoRestoreEnglish(_:)),
@@ -124,84 +88,6 @@ final class PHTVInputController: IMKInputController {
         menu.addItem(preferencesItem)
 
         return menu
-    }
-
-    @objc func selectTelex(_ sender: Any) {
-        selectInputStyle(.telex)
-    }
-
-    @objc func selectVNI(_ sender: Any) {
-        selectInputStyle(.vni)
-    }
-
-    @objc func selectSimpleTelex1(_ sender: Any) {
-        selectInputStyle(.simpleTelex1)
-    }
-
-    @objc func selectSimpleTelex2(_ sender: Any) {
-        selectInputStyle(.simpleTelex2)
-    }
-
-    @objc func selectUnicode(_ sender: Any) {
-        selectOutputEncoding(.unicode)
-    }
-
-    @objc func selectTCVN3(_ sender: Any) {
-        selectOutputEncoding(.tcvn3)
-    }
-
-    @objc func selectVNIWindows(_ sender: Any) {
-        selectOutputEncoding(.vniWindows)
-    }
-
-    @objc func selectUnicodeComposite(_ sender: Any) {
-        selectOutputEncoding(.unicodeComposite)
-    }
-
-    @objc func selectCP1258(_ sender: Any) {
-        selectOutputEncoding(.cp1258)
-    }
-
-    private func selector(for style: PHTVInputStyle) -> Selector {
-        switch style {
-        case .telex:
-            return #selector(selectTelex(_:))
-        case .vni:
-            return #selector(selectVNI(_:))
-        case .simpleTelex1:
-            return #selector(selectSimpleTelex1(_:))
-        case .simpleTelex2:
-            return #selector(selectSimpleTelex2(_:))
-        }
-    }
-
-    private func selector(for encoding: PHTVOutputEncoding) -> Selector {
-        switch encoding {
-        case .unicode:
-            return #selector(selectUnicode(_:))
-        case .tcvn3:
-            return #selector(selectTCVN3(_:))
-        case .vniWindows:
-            return #selector(selectVNIWindows(_:))
-        case .unicodeComposite:
-            return #selector(selectUnicodeComposite(_:))
-        case .cp1258:
-            return #selector(selectCP1258(_:))
-        }
-    }
-
-    private func selectInputStyle(_ style: PHTVInputStyle) {
-        PHTVInputMethodDiagnostics.log("selectInputStyle -> \(style.displayName)")
-        var config = PHTVInputMethodPreferences.currentConfiguration()
-        config.inputStyle = style
-        PHTVInputMethodPreferences.saveConfiguration(config)
-    }
-
-    private func selectOutputEncoding(_ encoding: PHTVOutputEncoding) {
-        PHTVInputMethodDiagnostics.log("selectOutputEncoding -> \(encoding.displayName)")
-        var config = PHTVInputMethodPreferences.currentConfiguration()
-        config.outputEncoding = encoding
-        PHTVInputMethodPreferences.saveConfiguration(config)
     }
 
     @objc func openPreferences(_ sender: Any) {
