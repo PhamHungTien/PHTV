@@ -87,6 +87,12 @@ final class PHTVInputSession {
     }
 
     private func deleteBackward(client: PHTVInputClient) -> Bool {
+        if client.hasSelectedText {
+            engine.reset()
+            resetMarkedTextTracking()
+            return false
+        }
+
         guard engine.isComposing else { return false }
         engine.deleteBackward()
         if engine.isComposing {

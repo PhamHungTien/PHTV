@@ -13,6 +13,10 @@ struct PHTVInputClient {
         client.selectedRange()
     }
 
+    var hasSelectedText: Bool {
+        selectedRange.location != NSNotFound && selectedRange.length > 0
+    }
+
     var markedRange: NSRange {
         client.markedRange()
     }
