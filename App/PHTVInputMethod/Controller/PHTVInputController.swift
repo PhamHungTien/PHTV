@@ -57,7 +57,15 @@ final class PHTVInputController: IMKInputController {
         let menu = NSMenu(title: "PHTV")
         let config = PHTVInputMethodPreferences.currentConfiguration()
 
-        // Kiểu gõ submenu
+        let summaryItem = NSMenuItem(
+            title: "\(config.inputStyle.displayName) • \(config.outputEncoding.displayName)",
+            action: nil,
+            keyEquivalent: ""
+        )
+        summaryItem.isEnabled = false
+        menu.addItem(summaryItem)
+        menu.addItem(NSMenuItem.separator())
+
         let styleMenu = NSMenu(title: "Kiểu gõ")
         for style in PHTVInputStyle.allCases {
             let item = NSMenuItem(
@@ -73,10 +81,10 @@ final class PHTVInputController: IMKInputController {
             styleMenu.addItem(item)
         }
         let styleSubmenuItem = NSMenuItem(title: "Kiểu gõ", action: nil, keyEquivalent: "")
+        styleSubmenuItem.image = NSImage(systemSymbolName: "keyboard", accessibilityDescription: nil)
         styleSubmenuItem.submenu = styleMenu
         menu.addItem(styleSubmenuItem)
 
-        // Bảng mã submenu
         let encodingMenu = NSMenu(title: "Bảng mã")
         for encoding in PHTVOutputEncoding.allCases {
             let item = NSMenuItem(
@@ -92,27 +100,28 @@ final class PHTVInputController: IMKInputController {
             encodingMenu.addItem(item)
         }
         let encodingSubmenuItem = NSMenuItem(title: "Bảng mã", action: nil, keyEquivalent: "")
+        encodingSubmenuItem.image = NSImage(systemSymbolName: "textformat", accessibilityDescription: nil)
         encodingSubmenuItem.submenu = encodingMenu
         menu.addItem(encodingSubmenuItem)
 
-        // Tự động khôi phục tiếng Anh item
         let autoRestoreItem = NSMenuItem(
-            title: "Tự động khôi phục tiếng Anh",
+            title: "Khôi phục từ tiếng Anh",
             action: #selector(toggleAutoRestoreEnglish(_:)),
             keyEquivalent: ""
         )
+        autoRestoreItem.image = NSImage(systemSymbolName: "arrow.uturn.backward.circle", accessibilityDescription: nil)
         autoRestoreItem.target = self
         autoRestoreItem.state = config.autoRestoreEnglishWord ? .on : .off
         menu.addItem(autoRestoreItem)
 
         menu.addItem(NSMenuItem.separator())
 
-        // Preferences button
         let preferencesItem = NSMenuItem(
-            title: "Cấu hình...",
+            title: "Cài đặt PHTV...",
             action: #selector(openPreferences(_:)),
             keyEquivalent: ""
         )
+        preferencesItem.image = NSImage(systemSymbolName: "gearshape", accessibilityDescription: nil)
         preferencesItem.target = self
         menu.addItem(preferencesItem)
 
