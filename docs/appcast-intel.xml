@@ -12,6 +12,20 @@
             <sparkle:version>284</sparkle:version>
             <sparkle:shortVersionString>3.1.7</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.1.7</h2>
+                <p>PHTV 3.1.7 thêm chế độ <strong>Lau bàn phím</strong>, giúp bạn tạm chặn phím bấm trong thời gian ngắn để vệ sinh bàn phím mà không cần thoát PHTV.</p>
+                <h3>Điểm nổi bật</h3>
+                <ul>
+                    <li><strong>Lau bàn phím</strong>: Mở trong Cài đặt hoặc từ menu bar <strong>Công cụ &gt; Lau bàn phím...</strong>.</li>
+                    <li><strong>Chọn thời lượng linh hoạt</strong>: 30 giây, 1 phút, 2 phút hoặc 5 phút.</li>
+                    <li><strong>Chặn phím an toàn</strong>: PHTV bỏ qua phím bấm trong lúc vệ sinh; chuột và trackpad vẫn dùng được để bấm Dừng.</li>
+                    <li><strong>Tự kết thúc</strong>: Chế độ tự tắt khi hết giờ để tránh bị kẹt.</li>
+                    <li><strong>Tài liệu rõ hơn</strong>: README, hướng dẫn cài đặt, FAQ, kiến trúc và bảo mật đã được cập nhật theo luồng quyền mới.</li>
+                </ul>
+                <h3>Lưu ý sau khi cập nhật</h3>
+                <p>Tính năng Lau bàn phím cần đủ hai quyền nhập liệu của PHTV: <strong>Accessibility</strong> và <strong>Input Monitoring</strong>. Nếu nút Bắt đầu bị khóa, hãy mở Cài đặt PHTV và cấp đủ quyền theo hướng dẫn.</p>
+            ]]></description>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.1.7/PHTV-3.1.7-intel.dmg" length="9550667" type="application/octet-stream" sparkle:edSignature="ZsMoqvwSxYx/JHw2JQJdcx011+NCyVMdl9L0uwxp8gYqVPQ9OJRCyiIq+TT/yMdqV3bFY4Ui8gjHW/F7/wJvAg=="/>
         </item>
         <item>

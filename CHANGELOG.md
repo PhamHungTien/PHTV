@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.7] - 2026-05-21
+
+### Tổng quan
+PHTV 3.1.7 bổ sung chế độ **Lau bàn phím**, giúp người dùng tạm chặn phím bấm trong một khoảng thời gian ngắn để vệ sinh bàn phím an toàn hơn mà không cần thoát ứng dụng.
+
+Bản này cũng hoàn thiện tài liệu người dùng và tài liệu kỹ thuật sau thay đổi quyền nhập liệu ở 3.1.6: PHTV nay giải thích rõ hai quyền cần thiết trên macOS là **Trợ năng** và **Giám sát đầu vào**, đồng thời mô tả cách xử lý khi quyền bị kẹt do TCC.
+
+### Điểm nổi bật
+- **Lau bàn phím**
+  - Thêm tab `Lau bàn phím` trong Cài đặt.
+  - Cho phép chọn thời lượng 30 giây, 1 phút, 2 phút hoặc 5 phút.
+  - Khi bật, PHTV tạm bỏ qua `keyDown`, `keyUp` và `flagsChanged`; chuột/trackpad vẫn hoạt động để người dùng bấm Dừng.
+  - Chế độ tự tắt khi hết thời gian để tránh người dùng bị kẹt.
+  - Có thể mở nhanh từ menu bar: `Công cụ` > `Lau bàn phím...`.
+- **Hiển thị release notes cho người dùng**
+  - Cập nhật appcast arm64 và Intel để Sparkle hiển thị ghi chú bản 3.1.7 trong cửa sổ cập nhật.
+  - Nội dung release notes tập trung vào tính năng mới, quyền cần thiết và lưu ý sau khi cập nhật.
+- **Tài liệu đầy đủ hơn**
+  - Cập nhật README, hướng dẫn cài đặt, FAQ, kiến trúc, đóng góp và bảo mật.
+  - Làm rõ app hiện dùng event tap của app chính, không còn target InputMethodKit thử nghiệm.
+  - Thêm hướng dẫn xử lý khi macOS báo thiếu quyền hoặc giữ quyền cũ.
+
+### Fixed and Improved
+- Thêm `PHTVKeyboardCleaningService` để quản lý trạng thái Lau bàn phím bằng state có khóa, tự hết hạn theo thời gian.
+- Nối chế độ Lau bàn phím vào event tap hiện có để chặn sự kiện bàn phím ở tầng runtime.
+- Thêm trạng thái, thanh tiến trình và nút Dừng trong giao diện Settings.
+- Thêm regression tests cho việc chặn phím, tự hết hạn, dừng thủ công và giới hạn thời lượng an toàn.
+- Dọn các script/artefact cũ liên quan đến `PHTVInputMethod` không còn dùng.
+
+### Ghi chú nâng cấp
+- Đây là bản nên cập nhật cho người dùng muốn vệ sinh bàn phím laptop hoặc bàn phím rời mà không vô tình nhập ký tự.
+- Tính năng Lau bàn phím cần đủ hai quyền nhập liệu của PHTV: `Accessibility` và `Input Monitoring`.
+- Nếu nút Bắt đầu bị khóa, hãy mở Cài đặt PHTV và cấp đủ quyền theo hướng dẫn trong tab Lau bàn phím hoặc Onboarding.
+
 ## [3.1.6] - 2026-05-20
 
 ### Tổng quan
@@ -648,7 +682,10 @@ Phạm Hùng Tiến
 - Macro (gõ tắt)
 - Hoàn toàn offline
 
-[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v1.6.8...HEAD
+[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v3.1.7...HEAD
+[3.1.7]: https://github.com/PhamHungTien/PHTV/compare/v3.1.6...v3.1.7
+[3.1.6]: https://github.com/PhamHungTien/PHTV/compare/v3.1.5...v3.1.6
+[3.1.5]: https://github.com/PhamHungTien/PHTV/compare/v3.1.4...v3.1.5
 [1.6.8]: https://github.com/PhamHungTien/PHTV/compare/v1.6.5...v1.6.8
 [1.6.5]: https://github.com/PhamHungTien/PHTV/compare/v1.5.9...v1.6.5
 [1.5.9]: https://github.com/PhamHungTien/PHTV/compare/v1.5.8...v1.5.9
