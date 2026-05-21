@@ -33,6 +33,34 @@ enum ClipboardHistoryStoragePolicy {
     }
 }
 
+enum ClipboardHistoryPastePayload: Equatable {
+    case image(Data)
+    case files([String])
+    case text(String)
+}
+
+enum ClipboardHistoryPastePayloadResolver {
+    static func resolve(
+        _ item: ClipboardHistoryItem,
+        fileExists: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }
+    ) -> ClipboardHistoryPastePayload? {
+        if let imageData = item.imageData {
+            return .image(imageData)
+        }
+
+        let filePaths = item.resolvedFilePastePaths(fileExists: fileExists)
+        if !filePaths.isEmpty {
+            return .files(filePaths)
+        }
+
+        if let text = item.textContent {
+            return .text(text)
+        }
+
+        return nil
+    }
+}
+
 @Observable
 @MainActor
 final class ClipboardHistoryManager {
@@ -71,25 +99,31 @@ final class ClipboardHistoryManager {
 
     func addItem(_ item: ClipboardHistoryItem) {
         // Remove duplicate if exists
-        items.removeAll { $0.isDuplicate(of: item) }
+        let duplicateItems = items.filter { $0.isDuplicate(of: item) }
+        duplicateItems.forEach { ClipboardHistoryFileCache.removeCache(for: $0) }
+        items.removeAll { duplicateItems.contains($0) }
 
         // Insert at beginning
         items.insert(item, at: 0)
-        items = ClipboardHistoryStoragePolicy.trimmed(
+        let trimmedItems = ClipboardHistoryStoragePolicy.trimmed(
             items,
             maxItems: ClipboardHistoryStoragePolicy.maxItems()
         )
+        cleanupCaches(forRemovedItemsFrom: items, keeping: trimmedItems)
+        items = trimmedItems
 
         saveHistory()
     }
 
     func removeItem(_ item: ClipboardHistoryItem) {
         items.removeAll { $0.id == item.id }
+        ClipboardHistoryFileCache.removeCache(for: item)
         saveHistory()
     }
 
     func clearAll() {
         items.removeAll()
+        ClipboardHistoryFileCache.removeAll()
         saveHistory()
     }
 
@@ -124,6 +158,7 @@ final class ClipboardHistoryManager {
         do {
             items = try JSONDecoder().decode([ClipboardHistoryItem].self, from: data)
             trimItemsToConfiguredLimit()
+            cleanupOrphanedCaches()
         } catch {
             NSLog("[ClipboardHistory] Failed to decode history: %@", error.localizedDescription)
         }
@@ -144,8 +179,20 @@ final class ClipboardHistoryManager {
             maxItems: ClipboardHistoryStoragePolicy.maxItems()
         )
         guard trimmedItems != items else { return }
+        cleanupCaches(forRemovedItemsFrom: items, keeping: trimmedItems)
         items = trimmedItems
         saveHistory()
+    }
+
+    private func cleanupCaches(forRemovedItemsFrom oldItems: [ClipboardHistoryItem], keeping newItems: [ClipboardHistoryItem]) {
+        let keptIDs = Set(newItems.map(\.id))
+        oldItems
+            .filter { !keptIDs.contains($0.id) }
+            .forEach { ClipboardHistoryFileCache.removeCache(for: $0) }
+    }
+
+    private func cleanupOrphanedCaches() {
+        ClipboardHistoryFileCache.removeCaches(excluding: Set(items.map(\.id)))
     }
 
     // MARK: - UI Show/Hide
@@ -242,14 +289,10 @@ final class ClipboardHistoryManager {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
 
-        // Set pasteboard content based on item type
-        if let filePaths = item.filePaths, !filePaths.isEmpty {
-            let urls = filePaths.compactMap { URL(fileURLWithPath: $0) as NSURL }
-            pasteboard.writeObjects(urls)
-        } else if let imageData = item.imageData, let image = NSImage(data: imageData) {
-            pasteboard.writeObjects([image])
-        } else if let text = item.textContent {
-            pasteboard.setString(text, forType: .string)
+        guard setPasteboardContents(for: item, pasteboard: pasteboard) else {
+            NSLog("[ClipboardHistory] Unable to prepare pasteboard for item %@", item.id.uuidString)
+            scheduleClearPasting()
+            return
         }
 
         // Simulate Command+V to paste
@@ -271,9 +314,37 @@ final class ClipboardHistoryManager {
             cmdUp.post(tap: .cgSessionEventTap)
         }
 
+        scheduleClearPasting()
+    }
+
+    private func setPasteboardContents(for item: ClipboardHistoryItem, pasteboard: NSPasteboard) -> Bool {
+        guard let payload = ClipboardHistoryPastePayloadResolver.resolve(item) else { return false }
+
+        switch payload {
+        case .image(let imageData):
+            var wroteContent = false
+            if let image = NSImage(data: imageData) {
+                wroteContent = pasteboard.writeObjects([image]) || wroteContent
+                if let tiffData = image.tiffRepresentation {
+                    wroteContent = pasteboard.setData(tiffData, forType: .tiff) || wroteContent
+                }
+            }
+            wroteContent = pasteboard.setData(imageData, forType: .png) || wroteContent
+            return wroteContent
+
+        case .files(let filePaths):
+            let urls = filePaths.map { URL(fileURLWithPath: $0) as NSURL }
+            return pasteboard.writeObjects(urls)
+
+        case .text(let text):
+            return pasteboard.setString(text, forType: .string)
+        }
+    }
+
+    private func scheduleClearPasting() {
         clearPastingTask?.cancel()
         clearPastingTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .milliseconds(300))
+            try? await Task.sleep(for: .milliseconds(500))
             guard !Task.isCancelled else { return }
             self?.isPasting = false
         }

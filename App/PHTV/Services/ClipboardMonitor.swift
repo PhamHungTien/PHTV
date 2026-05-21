@@ -12,6 +12,19 @@ struct ClipboardHistoryCapturePayload: Equatable {
     let textContent: String?
     let imageData: Data?
     let filePaths: [String]?
+    let fileReferences: [ClipboardHistoryFileReference]?
+
+    init(
+        textContent: String?,
+        imageData: Data?,
+        filePaths: [String]?,
+        fileReferences: [ClipboardHistoryFileReference]? = nil
+    ) {
+        self.textContent = textContent
+        self.imageData = imageData
+        self.filePaths = filePaths
+        self.fileReferences = fileReferences
+    }
 }
 
 enum ClipboardHistoryCaptureSanitizer {
@@ -20,7 +33,8 @@ enum ClipboardHistoryCaptureSanitizer {
     static func sanitizedPayload(
         textContent: String?,
         imageData: Data?,
-        filePaths: [String]?
+        filePaths: [String]?,
+        fileReferences: [ClipboardHistoryFileReference]? = nil
     ) -> ClipboardHistoryCapturePayload? {
         var sanitizedImageData = imageData
         if let data = sanitizedImageData, data.count > maxImageBytes {
@@ -29,13 +43,14 @@ enum ClipboardHistoryCaptureSanitizer {
 
         let hasText = textContent != nil
         let hasImage = sanitizedImageData != nil
-        let hasFiles = !(filePaths?.isEmpty ?? true)
+        let hasFiles = !(filePaths?.isEmpty ?? true) || !(fileReferences?.isEmpty ?? true)
         guard hasText || hasImage || hasFiles else { return nil }
 
         return ClipboardHistoryCapturePayload(
             textContent: textContent,
             imageData: sanitizedImageData,
-            filePaths: hasFiles ? filePaths : nil
+            filePaths: hasFiles ? filePaths : nil,
+            fileReferences: hasFiles ? fileReferences : nil
         )
     }
 }
@@ -112,6 +127,7 @@ final class ClipboardMonitor {
         guard ClipboardHistoryPrivacyPolicy.shouldCaptureContent(from: sourceApp) else {
             return nil
         }
+        let itemID = UUID()
 
         let textContent = pasteboard.string(forType: .string)
 
@@ -125,26 +141,31 @@ final class ClipboardMonitor {
         }
 
         var filePaths: [String]?
+        var fileReferences: [ClipboardHistoryFileReference]?
         if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: [
             .urlReadingFileURLsOnly: true
         ]) as? [URL], !urls.isEmpty {
             filePaths = urls.map { $0.path }
+            fileReferences = ClipboardHistoryFileCache.references(for: urls, itemID: itemID)
         }
 
         guard let payload = ClipboardHistoryCaptureSanitizer.sanitizedPayload(
             textContent: textContent,
             imageData: imageData,
-            filePaths: filePaths
+            filePaths: filePaths,
+            fileReferences: fileReferences
         ) else {
+            ClipboardHistoryFileCache.removeCache(for: itemID)
             return nil
         }
 
         return ClipboardHistoryItem(
-            id: UUID(),
+            id: itemID,
             timestamp: Date(),
             textContent: payload.textContent,
             imageData: payload.imageData,
             filePaths: payload.filePaths,
+            fileReferences: payload.fileReferences,
             sourceApp: sourceApp
         )
     }

@@ -78,4 +78,95 @@ final class ClipboardHistoryLogicTests: XCTestCase {
             ClipboardHistoryPrivacyPolicy.shouldCaptureContent(from: nil)
         )
     }
+
+    func testPastePayloadPrioritizesImageOverFileURL() {
+        let item = ClipboardHistoryItem(
+            id: UUID(),
+            timestamp: Date(),
+            textContent: nil,
+            imageData: Data([0x89, 0x50, 0x4E, 0x47]),
+            filePaths: ["/tmp/Screenshot 2026-05-21 at 22-02-42.png"],
+            sourceApp: nil
+        )
+
+        XCTAssertEqual(
+            ClipboardHistoryPastePayloadResolver.resolve(item, fileExists: { _ in true }),
+            .image(Data([0x89, 0x50, 0x4E, 0x47]))
+        )
+    }
+
+    func testPastePayloadUsesCachedFileBeforeOriginalPath() {
+        let item = ClipboardHistoryItem(
+            id: UUID(),
+            timestamp: Date(),
+            textContent: nil,
+            imageData: nil,
+            filePaths: ["/Users/example/Desktop/original.png"],
+            fileReferences: [
+                ClipboardHistoryFileReference(
+                    originalPath: "/Users/example/Desktop/original.png",
+                    cachedPath: "/Users/example/Library/Application Support/PHTV/ClipboardHistoryFiles/item/original.png",
+                    displayName: "original.png",
+                    sizeBytes: 12
+                )
+            ],
+            sourceApp: nil
+        )
+
+        XCTAssertEqual(
+            ClipboardHistoryPastePayloadResolver.resolve(item) { path in
+                path.contains("ClipboardHistoryFiles")
+            },
+            .files(["/Users/example/Library/Application Support/PHTV/ClipboardHistoryFiles/item/original.png"])
+        )
+    }
+
+    func testPastePayloadFallsBackToOriginalFileWhenCacheIsMissing() {
+        let item = ClipboardHistoryItem(
+            id: UUID(),
+            timestamp: Date(),
+            textContent: nil,
+            imageData: nil,
+            filePaths: ["/Users/example/Desktop/report.pdf"],
+            fileReferences: [
+                ClipboardHistoryFileReference(
+                    originalPath: "/Users/example/Desktop/report.pdf",
+                    cachedPath: "/missing/report.pdf",
+                    displayName: "report.pdf",
+                    sizeBytes: 12
+                )
+            ],
+            sourceApp: nil
+        )
+
+        XCTAssertEqual(
+            ClipboardHistoryPastePayloadResolver.resolve(item) { path in
+                path == "/Users/example/Desktop/report.pdf"
+            },
+            .files(["/Users/example/Desktop/report.pdf"])
+        )
+    }
+
+    func testLegacyClipboardHistoryJSONDecodesWithoutFileReferences() throws {
+        let id = UUID()
+        let json = """
+        [
+          {
+            "id": "\(id.uuidString)",
+            "timestamp": 0,
+            "textContent": null,
+            "imageData": null,
+            "filePaths": ["/Users/example/Desktop/old.png"],
+            "sourceApp": "com.apple.finder"
+          }
+        ]
+        """.data(using: .utf8)!
+
+        let items = try JSONDecoder().decode([ClipboardHistoryItem].self, from: json)
+
+        XCTAssertEqual(items.count, 1)
+        XCTAssertEqual(items[0].id, id)
+        XCTAssertEqual(items[0].filePaths, ["/Users/example/Desktop/old.png"])
+        XCTAssertNil(items[0].fileReferences)
+    }
 }
