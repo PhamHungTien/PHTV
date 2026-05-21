@@ -12,6 +12,20 @@
             <sparkle:version>285</sparkle:version>
             <sparkle:shortVersionString>3.1.8</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>PHTV 3.1.8</h2>
+                <p>PHTV 3.1.8 sửa lỗi <strong>Clipboard History không dán lại được ảnh hoặc file cũ</strong>. Bản này đặc biệt hữu ích nếu bạn thường mở lịch sử clipboard để tìm lại ảnh chụp màn hình, ảnh đã copy hoặc file cũ.</p>
+                <h3>Điểm nổi bật</h3>
+                <ul>
+                    <li><strong>Dán lại ảnh cũ ổn định hơn</strong>: PHTV ưu tiên dán dữ liệu ảnh đã lưu thay vì dán nhầm đường dẫn file tạm của screenshot.</li>
+                    <li><strong>Sửa lỗi screenshot không dán được</strong>: Các mục kiểu <strong>Screenshot ... .png</strong> trong lịch sử clipboard không còn chỉ hiện tên file rồi paste trống.</li>
+                    <li><strong>Dán lại file đáng tin cậy hơn</strong>: File nhỏ được cache nội bộ để giảm phụ thuộc vào quyền file-url tạm thời của pasteboard macOS.</li>
+                    <li><strong>Fallback thông minh</strong>: Khi cache không còn nhưng file gốc vẫn tồn tại, PHTV tự dùng lại đường dẫn gốc.</li>
+                    <li><strong>Dọn cache tự động</strong>: Cache file được xoá khi xoá item, xoá toàn bộ lịch sử hoặc khi lịch sử bị giới hạn theo số mục tối đa.</li>
+                </ul>
+                <h3>Lưu ý sau khi cập nhật</h3>
+                <p>Các ảnh/file mới được copy sau khi cập nhật sẽ ổn định nhất vì PHTV có thêm dữ liệu/cache mới. Một số mục file rất cũ vẫn có thể không dán lại được nếu file gốc đã bị xoá và trước đó chưa có cache nội bộ.</p>
+            ]]></description>
             <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.1.8/PHTV-3.1.8-arm64.dmg" length="9363583" type="application/octet-stream" sparkle:edSignature="yqQ9G+gb2PjLkQSR7zl4Ux/T6YP7ggWrmmKLyxSof2y+Xi75zObt2IP4/r/4dYKtz1QrTIgZWVrdPNVQWRI6Bw=="/>
         </item>
         <item>

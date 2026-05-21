@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.8] - 2026-05-21
+
+### Tổng quan
+PHTV 3.1.8 tập trung sửa lỗi **Clipboard History không dán lại được ảnh hoặc file cũ**. Trước đây, một số ảnh chụp màn hình hoặc file đã copy có thể hiển thị trong lịch sử clipboard nhưng khi chọn lại và nhấn Enter thì không dán được, đặc biệt với các mục không phải mục clipboard gần nhất.
+
+Nguyên nhân chính là clipboard của macOS có thể chứa cả dữ liệu ảnh và `file-url`. Khi lưu lịch sử, PHTV giữ được dữ liệu ảnh nhưng lúc dán lại lại ưu tiên đường dẫn file trước. Với screenshot hoặc file do app khác tạo, quyền truy cập file-url/sandbox extension có thể hết hiệu lực sau một thời gian, dẫn đến lỗi không dán được.
+
+### Điểm nổi bật
+- **Dán lại ảnh cũ ổn định hơn**
+  - Nếu một mục Clipboard History có dữ liệu ảnh, PHTV nay ưu tiên dán lại chính dữ liệu ảnh đã lưu thay vì dán đường dẫn file tạm.
+  - Sửa lỗi các mục kiểu `Screenshot ... .png` hiển thị trong lịch sử nhưng dán lại không ra nội dung.
+  - Khi chuẩn bị paste ảnh, PHTV ghi lại cả PNG/TIFF phù hợp để nhiều ứng dụng đích nhận ảnh tốt hơn.
+- **Dán lại file cũ đáng tin cậy hơn**
+  - Khi clipboard chứa file, PHTV tạo thêm bản cache nội bộ cho các file nhỏ hợp lý.
+  - Khi người dùng dán lại từ lịch sử, PHTV ưu tiên bản cache nội bộ; nếu cache không còn nhưng file gốc vẫn tồn tại thì tự fallback về đường dẫn gốc.
+  - Cách này giảm phụ thuộc vào sandbox extension tạm thời của pasteboard macOS.
+- **Dọn dữ liệu phụ tự động**
+  - Cache file của Clipboard History được xoá khi người dùng xoá item, xoá toàn bộ lịch sử hoặc khi lịch sử bị giới hạn theo số mục tối đa.
+  - Khi khởi động lại, PHTV cũng dọn các cache mồ côi không còn item tương ứng.
+- **Hiển thị log cập nhật cho người dùng**
+  - Cập nhật appcast arm64 và Intel để Sparkle hiển thị ghi chú bản 3.1.8 trong cửa sổ chuẩn bị cập nhật.
+  - Người dùng có thể đọc rõ bản này sửa gì trước khi tải/cài đặt cập nhật.
+
+### Fixed and Improved
+- Thêm `ClipboardHistoryFileReference` để lưu metadata file, đường dẫn gốc và đường dẫn cache nội bộ.
+- Thêm `ClipboardHistoryFileCache` để cache file clipboard vào Application Support của PHTV.
+- Thêm resolver riêng cho paste payload, đảm bảo thứ tự ưu tiên: ảnh đã lưu > file khả dụng/cache > văn bản.
+- Cải thiện xử lý pasteboard cho ảnh để tránh dán nhầm `public.file-url` đã hết quyền.
+- Giữ tương thích với lịch sử clipboard cũ chưa có trường `fileReferences`.
+- Bổ sung regression tests cho ảnh kèm file URL, cache file, fallback file gốc và decode lịch sử cũ.
+
+### Ghi chú nâng cấp
+- Đây là bản nên cập nhật nếu bạn dùng **Lịch sử Clipboard** để lưu ảnh chụp màn hình, ảnh copy từ app khác hoặc file trong Finder.
+- Các mục ảnh/file mới được copy sau khi cập nhật sẽ ổn định nhất vì có thêm dữ liệu/cache mới.
+- Một số mục file rất cũ vẫn có thể không dán lại được nếu file gốc đã bị xoá và trước đó chưa có cache nội bộ.
+
 ## [3.1.7] - 2026-05-21
 
 ### Tổng quan
