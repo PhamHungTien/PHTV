@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import AppKit
 
 /// Các bảng mã tiếng Việt hỗ trợ chuyển đổi
 enum ConvertCodeTable: Int, CaseIterable, Identifiable {
@@ -40,11 +41,11 @@ enum ConvertCodeTable: Int, CaseIterable, Identifiable {
 
     var description: String {
         switch self {
-        case .unicode: return "Bảng mã chuẩn quốc tế, phổ biến nhất hiện nay"
-        case .tcvn3: return "Bảng mã cũ, dùng trong các tài liệu cũ"
-        case .vniWindows: return "Bảng mã VNI, dùng trong Windows cũ"
-        case .unicodeCompound: return "Unicode dạng tổ hợp (combining marks)"
-        case .cp1258: return "Code Page 1258 của Windows"
+        case .unicode: return "Chuẩn quốc tế"
+        case .tcvn3: return "Tiêu chuẩn cũ"
+        case .vniWindows: return "Bảng mã VNI"
+        case .unicodeCompound: return "Dạng tổ hợp"
+        case .cp1258: return "Code Page 1258"
         }
     }
 }
@@ -63,6 +64,7 @@ struct ConvertToolView: View {
     @SceneStorage("ConvertToolInputMode") private var storedInputMode = ConvertInputMode.clipboard.rawValue
     @AppStorage(UserDefaultsKey.convertToolFromCode) private var storedSourceCodeTable = Defaults.convertToolFromCode
     @AppStorage(UserDefaultsKey.convertToolToCode) private var storedTargetCodeTable = Defaults.convertToolToCode
+    
     @State private var inputText: String = ""
     @State private var clipboardContent: String = ""
     @State private var convertedContent: String = ""
@@ -70,7 +72,7 @@ struct ConvertToolView: View {
     @State private var showResult = false
     @State private var resultMessage = ""
     @State private var isSuccess = false
-    private let presetColumns = [GridItem(.adaptive(minimum: 140), spacing: 8, alignment: .leading)]
+    @State private var showCopiedMessage = false
 
     private var inputMode: ConvertInputMode {
         get { ConvertInputMode(rawValue: storedInputMode) ?? .clipboard }
@@ -87,28 +89,6 @@ struct ConvertToolView: View {
         nonmutating set { storedTargetCodeTable = newValue.rawValue }
     }
 
-    private var inputModeBinding: Binding<ConvertInputMode> {
-        Binding(
-            get: { inputMode },
-            set: { inputMode = $0 }
-        )
-    }
-
-    private var sourceCodeTableBinding: Binding<ConvertCodeTable> {
-        Binding(
-            get: { sourceCodeTable },
-            set: { sourceCodeTable = $0 }
-        )
-    }
-
-    private var targetCodeTableBinding: Binding<ConvertCodeTable> {
-        Binding(
-            get: { targetCodeTable },
-            set: { targetCodeTable = $0 }
-        )
-    }
-
-    // Current text to convert based on mode
     private var currentText: String {
         inputMode == .clipboard ? clipboardContent : inputText
     }
@@ -117,10 +97,6 @@ struct ConvertToolView: View {
         !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && !isConverting
             && sourceCodeTable != targetCodeTable
-    }
-
-    private var conversionSummary: String {
-        "\(sourceCodeTable.displayName) → \(targetCodeTable.displayName)"
     }
 
     private var isClipboardEmpty: Bool {
@@ -132,51 +108,70 @@ struct ConvertToolView: View {
             // Header
             headerView
 
-            ScrollView {
-                VStack(spacing: 16) {
-                    // Input Area (Clipboard or Manual)
-                    inputAreaCard
-
-                    // Code Table Selection
-                    codeTableSelectionCard
-
-                    // Result Preview (if converted)
-                    if showResult {
-                        resultPreviewCard
-                    }
+            // Mode Selector
+            Picker("", selection: Binding(
+                get: { inputMode },
+                set: { inputMode = $0; showResult = false }
+            )) {
+                ForEach(ConvertInputMode.allCases) { mode in
+                    Text(mode.rawValue).tag(mode)
                 }
-                .padding(SettingsLayout.contentPadding)
             }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 12)
 
             Divider()
 
-            // Footer with buttons
+            // Pickers and Quick Presets Toolbar
+            toolbarView
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(Color(NSColor.windowBackgroundColor).opacity(0.4))
+
+            Divider()
+
+            // Main Content Area
+            Group {
+                switch inputMode {
+                case .clipboard:
+                    clipboardView
+                case .manual:
+                    manualInputView
+                }
+            }
+            .frame(maxHeight: .infinity)
+            .padding(20)
+
+            Divider()
+
+            // Footer
             footerView
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
         }
         .settingsBackground()
-        .frame(width: 560, height: 680)
+        .frame(width: 680, height: 520)
         .task(id: inputMode) {
             guard inputMode == .clipboard else { return }
             loadClipboardContent()
         }
     }
 
-    // MARK: - Header
-
+    // MARK: - Header View
     private var headerView: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 12) {
             Image(systemName: "arrow.triangle.2.circlepath")
-                .font(.system(size: 22, weight: .semibold))
+                .font(.title2)
                 .foregroundStyle(Color.accentColor)
-                .frame(width: 32, height: 32)
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text("Chuyển đổi bảng mã")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.headline)
                     .foregroundStyle(.primary)
 
-                Text("Chuyển văn bản giữa Unicode, TCVN3, VNI...")
-                    .font(.system(size: 12))
+                Text("Chuyển đổi nhanh văn bản giữa các bảng mã tiếng Việt")
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
@@ -186,199 +181,89 @@ struct ConvertToolView: View {
                 dismiss()
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 11, weight: .bold))
             }
-            .adaptiveBorderedButtonStyle()
-            .controlSize(.small)
-            .help("Đóng")
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .padding(4)
         }
         .padding(.horizontal, 20)
-        .padding(.top, 14)
-        .padding(.bottom, 8)
+        .padding(.top, 16)
+        .padding(.bottom, 12)
     }
 
-    // MARK: - Input Mode Picker
-
-    private var inputModePicker: some View {
-        Picker("", selection: inputModeBinding) {
-            ForEach(ConvertInputMode.allCases) { mode in
-                switch mode {
-                case .clipboard:
-                    Label("Clipboard", systemImage: "doc.on.clipboard").tag(mode)
-                case .manual:
-                    Label("Nhập tay", systemImage: "keyboard").tag(mode)
+    // MARK: - Toolbar View (Pickers & Presets)
+    private var toolbarView: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 16) {
+                // Source Picker
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Từ bảng mã")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
+                    Picker("", selection: Binding(
+                        get: { sourceCodeTable },
+                        set: { sourceCodeTable = $0; showResult = false }
+                    )) {
+                        ForEach(ConvertCodeTable.allCases) { table in
+                            Text(table.displayName).tag(table)
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                    .frame(maxWidth: .infinity)
+                }
+                
+                // Swap Button
+                Button {
+                    let temp = sourceCodeTable
+                    sourceCodeTable = targetCodeTable
+                    targetCodeTable = temp
+                    showResult = false
+                } label: {
+                    Image(systemName: "arrow.left.arrow.right")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 28, height: 28)
+                        .background(Color(NSColor.controlBackgroundColor))
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(Color(NSColor.separatorColor), lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 14)
+                
+                // Target Picker
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Sang bảng mã")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
+                    Picker("", selection: Binding(
+                        get: { targetCodeTable },
+                        set: { targetCodeTable = $0; showResult = false }
+                    )) {
+                        ForEach(ConvertCodeTable.allCases) { table in
+                            Text(table.displayName).tag(table)
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                    .frame(maxWidth: .infinity)
                 }
             }
-        }
-        .pickerStyle(.segmented)
-        .labelsHidden()
-    }
 
-    // MARK: - Input Area Card
+            // Quick Presets
+            HStack(spacing: 8) {
+                Text("Gợi ý nhanh:")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
 
-    private var inputAreaCard: some View {
-        SettingsCard(
-            title: "Bước 1 · Nguồn dữ liệu",
-            subtitle: "Chọn clipboard hoặc nhập văn bản",
-            icon: "1.circle.fill"
-        ) {
-            VStack(alignment: .leading, spacing: 12) {
-                inputModePicker
+                presetButton(from: .tcvn3, to: .unicode)
+                presetButton(from: .vniWindows, to: .unicode)
+                presetButton(from: .unicodeCompound, to: .unicode)
 
-                HStack(spacing: 10) {
-                    Label(
-                        inputMode == .clipboard ? "Nội dung Clipboard" : "Văn bản cần chuyển đổi",
-                        systemImage: inputMode == .clipboard ? "clipboard.fill" : "text.cursor"
-                    )
-                    .font(.subheadline.weight(.semibold))
-
-                    Spacer()
-
-                    if inputMode == .clipboard {
-                        Button {
-                            loadClipboardContent()
-                        } label: {
-                            Label("Làm mới", systemImage: "arrow.clockwise")
-                                .font(.caption)
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(Color.accentColor)
-
-                        Button {
-                            pasteClipboardToInput()
-                        } label: {
-                            Label("Dán vào ô nhập", systemImage: "arrow.down.doc")
-                                .font(.caption)
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(Color.accentColor)
-                        .opacity(isClipboardEmpty ? 0.5 : 1)
-                        .disabled(isClipboardEmpty)
-                    } else {
-                        Button {
-                            pasteClipboardToInput()
-                        } label: {
-                            Label("Dán", systemImage: "doc.on.clipboard")
-                                .font(.caption)
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(Color.accentColor)
-                        .opacity(isClipboardEmpty ? 0.5 : 1)
-                        .disabled(isClipboardEmpty)
-
-                        Button {
-                            inputText = ""
-                            showResult = false
-                        } label: {
-                            Label("Xóa", systemImage: "trash")
-                                .font(.caption)
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(.red)
-                        .opacity(inputText.isEmpty ? 0.5 : 1)
-                        .disabled(inputText.isEmpty)
-                    }
-                }
-
-                if inputMode == .clipboard {
-                    if isClipboardEmpty {
-                        HStack {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundStyle(.orange)
-                            Text("Clipboard trống. Hãy copy văn bản cần chuyển đổi.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(inputPanelBackground)
-                    } else {
-                        Text(clipboardContent)
-                            .font(.system(.body, design: .monospaced))
-                            .lineLimit(6)
-                            .padding()
-                            .frame(maxWidth: .infinity, minHeight: 110, alignment: .topLeading)
-                            .background(inputPanelBackground)
-                    }
-                } else {
-                    TextEditor(text: $inputText)
-                        .font(.system(.body, design: .monospaced))
-                        .frame(minHeight: 140)
-                        .roundedTextArea()
-                        .overlay {
-                            if inputText.isEmpty {
-                                Text("Nhập hoặc dán văn bản cần chuyển đổi vào đây…")
-                                    .font(.body)
-                                    .foregroundStyle(.tertiary)
-                                    .padding(12)
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                                    .allowsHitTesting(false)
-                            }
-                        }
-                }
-
-                HStack {
-                    if currentText.isEmpty {
-                        Text("Sẵn sàng chuyển đổi khi có nội dung.")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Text("\(currentText.count) ký tự")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                    }
-
-                    Spacer()
-                }
-            }
-        }
-    }
-
-    // MARK: - Code Table Selection Card
-
-    private var codeTableSelectionCard: some View {
-        SettingsCard(
-            title: "Bước 2 · Bảng mã",
-            subtitle: "Chọn nguồn và đích để chuyển đổi",
-            icon: "2.circle.fill"
-        ) {
-            VStack(alignment: .leading, spacing: 16) {
-                ViewThatFits {
-                    HStack(spacing: 12) {
-                        codeTablePicker(title: "Từ bảng mã", icon: "tray.and.arrow.down.fill", selection: sourceCodeTableBinding)
-                        swapButtonCompact
-                        codeTablePicker(title: "Sang bảng mã", icon: "tray.and.arrow.up.fill", selection: targetCodeTableBinding)
-                    }
-
-                    VStack(spacing: 12) {
-                        codeTablePicker(title: "Từ bảng mã", icon: "tray.and.arrow.down.fill", selection: sourceCodeTableBinding)
-                        swapButtonWide
-                        codeTablePicker(title: "Sang bảng mã", icon: "tray.and.arrow.up.fill", selection: targetCodeTableBinding)
-                    }
-                }
-
-                HStack(spacing: 8) {
-                    Image(systemName: "arrow.right")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(conversionSummary)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                // Quick presets
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Nhanh")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    LazyVGrid(columns: presetColumns, alignment: .leading, spacing: 8) {
-                        presetButton(from: .tcvn3, to: .unicode)
-                        presetButton(from: .vniWindows, to: .unicode)
-                        presetButton(from: .unicode, to: .tcvn3)
-                        presetButton(from: .unicodeCompound, to: .unicode)
-                    }
-                }
+                Spacer()
             }
         }
     }
@@ -388,120 +273,191 @@ struct ConvertToolView: View {
         return Button("\(source.shortName) → \(target.shortName)") {
             sourceCodeTable = source
             targetCodeTable = target
+            showResult = false
         }
-        .font(.caption.weight(.semibold))
-        .settingsControlButtonStyle(isProminent: isSelected)
-        .controlSize(.small)
-        .tint(Color.accentColor)
+        .font(.caption2.weight(.medium))
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(isSelected ? Color.accentColor.opacity(0.15) : Color.clear)
+        .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+        .cornerRadius(4)
+        .overlay(
+            RoundedRectangle(cornerRadius: 4)
+                .stroke(isSelected ? Color.accentColor.opacity(0.4) : Color(NSColor.separatorColor), lineWidth: 1)
+        )
+        .buttonStyle(.plain)
     }
 
-    private var swapButtonCompact: some View {
-        Button {
-            let temp = sourceCodeTable
-            sourceCodeTable = targetCodeTable
-            targetCodeTable = temp
-        } label: {
-            Image(systemName: "arrow.left.arrow.right")
-                .font(.subheadline.weight(.semibold))
-                .frame(width: 28, height: 28)
-        }
-        .adaptiveBorderedButtonStyle()
-        .foregroundStyle(Color.accentColor)
-        .help("Hoán đổi bảng mã")
-        .accessibilityLabel("Hoán đổi bảng mã")
-    }
-
-    private var swapButtonWide: some View {
-        Button {
-            let temp = sourceCodeTable
-            sourceCodeTable = targetCodeTable
-            targetCodeTable = temp
-        } label: {
-            Label("Hoán đổi", systemImage: "arrow.left.arrow.right")
-                .font(.subheadline.weight(.semibold))
-        }
-        .adaptiveBorderedButtonStyle()
-        .foregroundStyle(Color.accentColor)
-        .help("Hoán đổi bảng mã")
-        .frame(maxWidth: .infinity)
-    }
-
-    private func codeTablePicker(
-        title: String,
-        icon: String,
-        selection: Binding<ConvertCodeTable>
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Label(title, systemImage: icon)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            Picker("", selection: selection) {
-                ForEach(ConvertCodeTable.allCases) { table in
-                    Text(table.displayName).tag(table)
-                }
-            }
-            .labelsHidden()
-            .pickerStyle(.menu)
-            .glassMenuPickerStyle()
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            Text(selection.wrappedValue.description)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(NSColor.controlBackgroundColor))
-    }
-
-    // MARK: - Result Preview Card
-
-    private var resultPreviewCard: some View {
-        SettingsCard(
-            title: isSuccess ? "Kết quả chuyển đổi" : "Không thể chuyển đổi",
-            subtitle: isSuccess ? resultMessage : "Hãy kiểm tra lại bảng mã và nội dung",
-            icon: isSuccess ? "checkmark.seal.fill" : "exclamationmark.triangle.fill",
-            trailing: {
-                if isSuccess {
+    // MARK: - Clipboard View
+    private var clipboardView: some View {
+        VStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Label("Nội dung Clipboard hiện tại", systemImage: "doc.on.clipboard.fill")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                    
+                    Spacer()
+                    
                     Button {
-                        copyResultToClipboard()
+                        loadClipboardContent()
                     } label: {
-                        Label("Copy", systemImage: "doc.on.doc")
+                        Label("Làm mới", systemImage: "arrow.clockwise")
                             .font(.caption)
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(Color.accentColor)
                 }
-            }
-        ) {
-            if isSuccess {
-                Text(convertedContent)
-                    .font(.system(.body, design: .monospaced))
-                    .lineLimit(6)
-                    .textSelection(.enabled)
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background {
-                        Color.green.opacity(0.1)
+
+                if isClipboardEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "doc.text.magnifyingglass")
+                            .font(.system(size: 32))
+                            .foregroundStyle(.secondary)
+                        Text("Clipboard trống hoặc không chứa văn bản.\nHãy sao chép văn bản cần chuyển đổi trước.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
                     }
-            } else {
-                Text(resultMessage)
-                    .font(.caption)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+                    .cornerRadius(8)
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(NSColor.separatorColor), lineWidth: 1))
+                } else {
+                    ScrollView {
+                        Text(clipboardContent)
+                            .font(.system(.body, design: .monospaced))
+                            .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+                    .cornerRadius(8)
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(NSColor.separatorColor), lineWidth: 1))
+                }
+            }
+
+            if showResult {
+                HStack(spacing: 10) {
+                    Image(systemName: isSuccess ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                        .foregroundStyle(isSuccess ? .green : .red)
+                    Text(resultMessage)
+                        .font(.caption)
+                        .foregroundStyle(isSuccess ? .green : .red)
+                    Spacer()
+                }
+                .padding(10)
+                .background(isSuccess ? Color.green.opacity(0.1) : Color.red.opacity(0.1))
+                .cornerRadius(6)
+            }
+        }
+    }
+
+    // MARK: - Manual Input View
+    private var manualInputView: some View {
+        HStack(spacing: 16) {
+            // Left Column (Source Editor)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Văn bản gốc")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
+                    
+                    Spacer()
+                    
+                    Button(action: pasteClipboardToInput) {
+                        Image(systemName: "doc.on.clipboard")
+                            .help("Dán từ clipboard")
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.accentColor)
+                    
+                    Button(action: { inputText = ""; convertedContent = ""; showResult = false }) {
+                        Image(systemName: "trash")
+                            .help("Xóa văn bản")
+                    }
+                    .buttonStyle(.plain)
                     .foregroundStyle(.red)
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background {
-                        Color.red.opacity(0.1)
+                    .disabled(inputText.isEmpty)
+                }
+                
+                TextEditor(text: $inputText)
+                    .font(.system(.body, design: .monospaced))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(4)
+                    .background(Color(NSColor.controlBackgroundColor))
+                    .cornerRadius(6)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color(NSColor.separatorColor), lineWidth: 1)
+                    )
+                    .overlay {
+                        if inputText.isEmpty {
+                            Text("Nhập hoặc dán văn bản tại đây...")
+                                .font(.body)
+                                .foregroundStyle(.tertiary)
+                                .padding(8)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                                .allowsHitTesting(false)
+                        }
+                    }
+            }
+            
+            // Right Column (Target/Output View)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Văn bản sau chuyển")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        copyResultToClipboard()
+                        showCopiedMessage = true
+                        Task {
+                            try? await Task.sleep(for: .seconds(2))
+                            showCopiedMessage = false
+                        }
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: showCopiedMessage ? "checkmark" : "doc.on.doc")
+                            Text(showCopiedMessage ? "Đã copy" : "Sao chép")
+                                .font(.caption)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.accentColor)
+                    .disabled(convertedContent.isEmpty)
+                }
+                
+                TextEditor(text: .constant(convertedContent))
+                    .font(.system(.body, design: .monospaced))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(4)
+                    .background(Color(NSColor.controlBackgroundColor).opacity(0.8))
+                    .cornerRadius(6)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color(NSColor.separatorColor), lineWidth: 1)
+                    )
+                    .overlay {
+                        if convertedContent.isEmpty {
+                            Text("Kết quả chuyển đổi sẽ hiển thị tại đây...")
+                                .font(.body)
+                                .foregroundStyle(.tertiary)
+                                .padding(8)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                                .allowsHitTesting(false)
+                        }
                     }
             }
         }
-        .transition(.opacity.combined(with: .move(edge: .bottom)))
     }
 
-    // MARK: - Footer
-
+    // MARK: - Footer View
     private var footerView: some View {
         HStack {
             Button("Đóng") {
@@ -512,7 +468,13 @@ struct ConvertToolView: View {
 
             Spacer()
 
-            if !isConverting {
+            if showResult && inputMode == .manual {
+                Text(resultMessage)
+                    .font(.caption)
+                    .foregroundStyle(isSuccess ? Color.secondary : Color.red)
+                    .lineLimit(1)
+                    .frame(maxWidth: 320, alignment: .trailing)
+            } else if !isConverting {
                 if currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     Text("Chưa có nội dung để chuyển đổi")
                         .font(.caption)
@@ -532,22 +494,16 @@ struct ConvertToolView: View {
                         .controlSize(.small)
                         .frame(width: 16, height: 16)
                 } else {
-                    Label("Chuyển đổi", systemImage: "arrow.triangle.2.circlepath")
+                    Label(inputMode == .clipboard ? "Chuyển đổi Clipboard" : "Chuyển đổi", systemImage: "arrow.triangle.2.circlepath")
                 }
             }
             .keyboardShortcut(.return)
             .disabled(!canConvert)
             .adaptiveProminentButtonStyle()
         }
-        .padding()
-    }
-
-    private var inputPanelBackground: some View {
-        Color(NSColor.controlBackgroundColor)
     }
 
     // MARK: - Actions
-
     private func loadClipboardContent() {
         let pasteboard = NSPasteboard.general
         clipboardContent = pasteboard.string(forType: .string) ?? ""
@@ -560,10 +516,6 @@ struct ConvertToolView: View {
         clipboardContent = content
         inputText = content
         showResult = false
-
-        if inputMode == .clipboard {
-            inputMode = .manual
-        }
     }
 
     private func performConversion() {
@@ -573,7 +525,6 @@ struct ConvertToolView: View {
         isConverting = true
         showResult = false
 
-        // Capture values for the conversion flow
         let sourceCode = sourceCodeTable
         let targetCode = targetCodeTable
         let mode = inputMode
@@ -604,10 +555,10 @@ struct ConvertToolView: View {
                 NSSound.beep()
             } else if newContent == textToConvert {
                 isSuccess = false
-                resultMessage = "Văn bản không thay đổi. Có thể văn bản đã ở định dạng \(targetCode.displayName) hoặc không chứa ký tự tiếng Việt."
+                resultMessage = "Văn bản không thay đổi hoặc không chứa ký tự tiếng Việt."
             } else {
                 isSuccess = false
-                resultMessage = "Không thể chuyển đổi. Văn bản có thể không đúng định dạng \(sourceCode.displayName)."
+                resultMessage = "Không thể chuyển đổi. Định dạng không khớp."
             }
         }
     }
