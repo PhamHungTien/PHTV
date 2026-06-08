@@ -9,6 +9,10 @@
 import SwiftUI
 import AppKit
 
+#if canImport(FoundationModels)
+import FoundationModels
+#endif
+
 /// Các bảng mã tiếng Việt hỗ trợ chuyển đổi
 enum ConvertCodeTable: Int, CaseIterable, Identifiable {
     case unicode = 0
@@ -81,6 +85,10 @@ struct ConvertToolView: View {
     @State private var resultMessage = ""
     @State private var isSuccess = false
     @State private var showCopiedMessage = false
+    
+    // macOS 27 On-Device AI State
+    @State private var isAIAvailable = false
+    @State private var isDetectingAI = false
 
     private enum CaseTransformationMode: String, CaseIterable, Identifiable {
         case none = "Không đổi chữ"
@@ -153,14 +161,14 @@ struct ConvertToolView: View {
             }
             .pickerStyle(.segmented)
             .padding(.horizontal, 20)
-            .padding(.bottom, 12)
+            .padding(.bottom, 8)
 
             Divider()
 
             // Pickers and Quick Presets Toolbar
             toolbarView
                 .padding(.horizontal, 20)
-                .padding(.vertical, 12)
+                .padding(.vertical, 8)
                 .background(Color(NSColor.windowBackgroundColor).opacity(0.4))
 
             Divider()
@@ -175,17 +183,24 @@ struct ConvertToolView: View {
                 }
             }
             .frame(maxHeight: .infinity)
-            .padding(20)
+            .padding(16)
 
             Divider()
 
             // Footer
             footerView
                 .padding(.horizontal, 20)
-                .padding(.vertical, 12)
+                .padding(.vertical, 8)
         }
         .settingsBackground()
-        .frame(width: 680, height: 520)
+        .frame(width: 680, height: 470)
+        .task {
+            #if canImport(FoundationModels)
+            if #available(macOS 26.0, *) {
+                isAIAvailable = SystemLanguageModel.default.isAvailable
+            }
+            #endif
+        }
         .task(id: inputMode) {
             guard inputMode == .clipboard else { return }
             loadClipboardContent()
@@ -267,8 +282,8 @@ struct ConvertToolView: View {
             .padding(4)
         }
         .padding(.horizontal, 20)
-        .padding(.top, 16)
-        .padding(.bottom, 12)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
     }
 
     // MARK: - Toolbar View (Pickers & Presets)
@@ -277,9 +292,31 @@ struct ConvertToolView: View {
             HStack(spacing: 16) {
                 // Source Picker
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Từ bảng mã")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    HStack(spacing: 6) {
+                        Text("Từ bảng mã")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        
+                        if isAIAvailable {
+                            Button(action: detectSourceEncodingWithAI) {
+                                HStack(spacing: 3) {
+                                    if isDetectingAI {
+                                        ProgressView()
+                                            .controlSize(.small)
+                                            .scaleEffect(0.6)
+                                            .frame(width: 10, height: 10)
+                                    } else {
+                                        Image(systemName: "sparkles")
+                                    }
+                                    Text("Nhận diện (AI)")
+                                        .font(.system(size: 10, weight: .semibold))
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(Color.accentColor)
+                            .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isDetectingAI)
+                        }
+                    }
                     
                     Picker("", selection: Binding(
                         get: { sourceCodeTable },
@@ -412,7 +449,7 @@ struct ConvertToolView: View {
                     .foregroundStyle(Color.accentColor)
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, 16)
+                .padding(.top, 12)
                 
                 Divider()
                 
@@ -448,9 +485,9 @@ struct ConvertToolView: View {
                         .cornerRadius(6)
                     }
                 }
-                .frame(height: 110)
+                .frame(height: 90)
                 .padding(.horizontal, 16)
-                .padding(.bottom, 16)
+                .padding(.bottom, 12)
             }
             .background(Color(NSColor.controlBackgroundColor).opacity(0.4))
             .cornerRadius(12)
@@ -905,6 +942,76 @@ struct ConvertToolView: View {
         pasteboard.clearContents()
         pasteboard.setString(convertedContent, forType: .string)
         resultMessage = "Đã copy kết quả vào clipboard!"
+    }
+    
+    // MARK: - macOS 27 On-Device AI Detection Logic
+    private func detectSourceEncodingWithAI() {
+        let text = inputText
+        guard !text.isEmpty else { return }
+        
+        isDetectingAI = true
+        showResult = false
+        
+        Task { @MainActor in
+            #if canImport(FoundationModels)
+            if #available(macOS 26.0, *) {
+                do {
+                    let session = LanguageModelSession()
+                    let prompt = """
+                    Analyze this Vietnamese text snippet and determine its encoding format. Answer with ONLY one of these exact names: 'Unicode', 'TCVN3', 'VNI Windows', 'Unicode Compound', or 'CP 1258'. Do not include any other text, explanation, or conversational filler.
+                    
+                    Text snippet:
+                    "\(text.prefix(150))"
+                    """
+                    
+                    let response = try await session.respond(to: prompt)
+                    let responseText = response.content.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                    
+                    isDetectingAI = false
+                    
+                    if responseText.contains("tcvn3") || responseText.contains("abc") {
+                        sourceCodeTable = .tcvn3
+                        showAIDetectionSuccess(detected: .tcvn3)
+                    } else if responseText.contains("vni") {
+                        sourceCodeTable = .vniWindows
+                        showAIDetectionSuccess(detected: .vniWindows)
+                    } else if responseText.contains("compound") || responseText.contains("tổ hợp") {
+                        sourceCodeTable = .unicodeCompound
+                        showAIDetectionSuccess(detected: .unicodeCompound)
+                    } else if responseText.contains("1258") {
+                        sourceCodeTable = .cp1258
+                        showAIDetectionSuccess(detected: .cp1258)
+                    } else if responseText.contains("unicode") {
+                        sourceCodeTable = .unicode
+                        showAIDetectionSuccess(detected: .unicode)
+                    } else {
+                        isSuccess = false
+                        showResult = true
+                        resultMessage = "AI phản hồi không xác định: \(response.content)"
+                    }
+                } catch {
+                    isDetectingAI = false
+                    isSuccess = false
+                    showResult = true
+                    resultMessage = "Lỗi AI nhận diện: \(error.localizedDescription)"
+                }
+            } else {
+                isDetectingAI = false
+            }
+            #else
+            isDetectingAI = false
+            #endif
+        }
+    }
+    
+    private func showAIDetectionSuccess(detected: ConvertCodeTable) {
+        isSuccess = true
+        showResult = true
+        resultMessage = "AI nhận diện thành công bảng mã nguồn: \(detected.displayName)"
+        NSSound.beep()
+        if liveConvert {
+            performLiveConversion()
+        }
     }
 }
 

@@ -22,7 +22,13 @@ struct SettingsWindowContent: View {
 
     @ViewBuilder
     var body: some View {
-        if #available(macOS 15.0, *) {
+        if #available(macOS 26.0, *) {
+            settingsWindowContent
+                .toolbar(removing: .title)
+                .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+                .containerBackground(.thinMaterial, for: .window)
+                .toolbar { settingsToolbarContent }
+        } else if #available(macOS 15.0, *) {
             settingsWindowContent
                 .toolbar(removing: .title)
                 .toolbar { settingsToolbarContent }
