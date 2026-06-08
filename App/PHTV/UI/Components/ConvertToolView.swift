@@ -52,8 +52,8 @@ enum ConvertCodeTable: Int, CaseIterable, Identifiable {
 
 /// Chế độ nhập liệu
 enum ConvertInputMode: String, CaseIterable, Identifiable {
-    case clipboard = "Clipboard"
-    case manual = "Nhập văn bản"
+    case manual = "Chuyển văn bản"
+    case clipboard = "Chuyển Clipboard"
 
     var id: String { rawValue }
 }
@@ -61,10 +61,18 @@ enum ConvertInputMode: String, CaseIterable, Identifiable {
 struct ConvertToolView: View {
     @Environment(\.dismiss) private var dismiss
 
-    @SceneStorage("ConvertToolInputMode") private var storedInputMode = ConvertInputMode.clipboard.rawValue
+    @SceneStorage("ConvertToolInputMode") private var storedInputMode = ConvertInputMode.manual.rawValue
     @AppStorage(UserDefaultsKey.convertToolFromCode) private var storedSourceCodeTable = Defaults.convertToolFromCode
     @AppStorage(UserDefaultsKey.convertToolToCode) private var storedTargetCodeTable = Defaults.convertToolToCode
     
+    // Additional options stored in UserDefaults
+    @AppStorage("convertToolToAllCaps") private var toAllCaps = false
+    @AppStorage("convertToolToAllNonCaps") private var toAllNonCaps = false
+    @AppStorage("convertToolToCapsFirstLetter") private var toCapsFirstLetter = false
+    @AppStorage("convertToolToCapsEachWord") private var toCapsEachWord = false
+    @AppStorage("convertToolRemoveMark") private var removeMark = false
+    @AppStorage("convertToolLiveConvert") private var liveConvert = true
+
     @State private var inputText: String = ""
     @State private var clipboardContent: String = ""
     @State private var convertedContent: String = ""
@@ -74,8 +82,34 @@ struct ConvertToolView: View {
     @State private var isSuccess = false
     @State private var showCopiedMessage = false
 
+    private enum CaseTransformationMode: String, CaseIterable, Identifiable {
+        case none = "Không đổi chữ"
+        case allCaps = "CHỮ HOA"
+        case allNonCaps = "chữ thường"
+        case capsFirstLetter = "Hoa đầu câu"
+        case capsEachWord = "Hoa mỗi từ"
+
+        var id: String { rawValue }
+    }
+
+    private var caseTransformation: CaseTransformationMode {
+        get {
+            if toAllCaps { return .allCaps }
+            if toAllNonCaps { return .allNonCaps }
+            if toCapsFirstLetter { return .capsFirstLetter }
+            if toCapsEachWord { return .capsEachWord }
+            return .none
+        }
+        nonmutating set {
+            toAllCaps = newValue == .allCaps
+            toAllNonCaps = newValue == .allNonCaps
+            toCapsFirstLetter = newValue == .capsFirstLetter
+            toCapsEachWord = newValue == .capsEachWord
+        }
+    }
+
     private var inputMode: ConvertInputMode {
-        get { ConvertInputMode(rawValue: storedInputMode) ?? .clipboard }
+        get { ConvertInputMode(rawValue: storedInputMode) ?? .manual }
         nonmutating set { storedInputMode = newValue.rawValue }
     }
 
@@ -156,6 +190,51 @@ struct ConvertToolView: View {
             guard inputMode == .clipboard else { return }
             loadClipboardContent()
         }
+        .onChange(of: inputText) { _, _ in
+            if liveConvert && inputMode == .manual {
+                performLiveConversion()
+            }
+        }
+        .onChange(of: sourceCodeTable) { _, _ in
+            if liveConvert && inputMode == .manual {
+                performLiveConversion()
+            }
+        }
+        .onChange(of: targetCodeTable) { _, _ in
+            if liveConvert && inputMode == .manual {
+                performLiveConversion()
+            }
+        }
+        .onChange(of: toAllCaps) { _, _ in
+            if liveConvert && inputMode == .manual {
+                performLiveConversion()
+            }
+        }
+        .onChange(of: toAllNonCaps) { _, _ in
+            if liveConvert && inputMode == .manual {
+                performLiveConversion()
+            }
+        }
+        .onChange(of: toCapsFirstLetter) { _, _ in
+            if liveConvert && inputMode == .manual {
+                performLiveConversion()
+            }
+        }
+        .onChange(of: toCapsEachWord) { _, _ in
+            if liveConvert && inputMode == .manual {
+                performLiveConversion()
+            }
+        }
+        .onChange(of: removeMark) { _, _ in
+            if liveConvert && inputMode == .manual {
+                performLiveConversion()
+            }
+        }
+        .onChange(of: liveConvert) { _, newValue in
+            if newValue && inputMode == .manual {
+                performLiveConversion()
+            }
+        }
     }
 
     // MARK: - Header View
@@ -170,7 +249,7 @@ struct ConvertToolView: View {
                     .font(.headline)
                     .foregroundStyle(.primary)
 
-                Text("Chuyển đổi nhanh văn bản giữa các bảng mã tiếng Việt")
+                Text("Chuyển đổi văn bản giữa các bảng mã tiếng Việt")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -288,57 +367,131 @@ struct ConvertToolView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Clipboard View
+    // MARK: - Clipboard View (Dashboard Layout)
     private var clipboardView: some View {
         VStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Label("Nội dung Clipboard hiện tại", systemImage: "doc.on.clipboard.fill")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
+            // Dashboard Card
+            VStack(spacing: 16) {
+                HStack(spacing: 16) {
+                    // Clipboard Icon with background glow
+                    ZStack {
+                        Circle()
+                            .fill(Color.accentColor.opacity(0.1))
+                            .frame(width: 50, height: 50)
+                        
+                        Image(systemName: "doc.on.clipboard.fill")
+                            .font(.system(size: 20))
+                            .foregroundStyle(Color.accentColor)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Bảng tạm hệ thống")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.primary)
+                        
+                        if isClipboardEmpty {
+                            Text("Clipboard hiện tại đang trống hoặc không có chữ")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text("Chứa \(clipboardContent.count) ký tự (khoảng \(clipboardContent.split(separator: " ").count) từ)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                     
                     Spacer()
                     
-                    Button {
-                        loadClipboardContent()
-                    } label: {
+                    // Refresh Button
+                    Button(action: loadClipboardContent) {
                         Label("Làm mới", systemImage: "arrow.clockwise")
                             .font(.caption)
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(Color.accentColor)
                 }
-
-                if isClipboardEmpty {
-                    VStack(spacing: 12) {
-                        Image(systemName: "doc.text.magnifyingglass")
-                            .font(.system(size: 32))
-                            .foregroundStyle(.secondary)
-                        Text("Clipboard trống hoặc không chứa văn bản.\nHãy sao chép văn bản cần chuyển đổi trước.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+                
+                Divider()
+                
+                // Preview box
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Nội dung xem trước:")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    
+                    if isClipboardEmpty {
+                        VStack(spacing: 8) {
+                            Image(systemName: "doc.text.magnifyingglass")
+                                .font(.system(size: 24))
+                                .foregroundStyle(.tertiary)
+                            Text("Không có dữ liệu văn bản. Hãy sao chép văn bản cần chuyển mã trước.")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color(NSColor.controlBackgroundColor).opacity(0.3))
+                        .cornerRadius(6)
+                    } else {
+                        ScrollView {
+                            Text(clipboardContent)
+                                .font(.system(.caption, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                                .padding(8)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color(NSColor.controlBackgroundColor).opacity(0.3))
+                        .cornerRadius(6)
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
-                    .cornerRadius(8)
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(NSColor.separatorColor), lineWidth: 1))
-                } else {
-                    ScrollView {
-                        Text(clipboardContent)
-                            .font(.system(.body, design: .monospaced))
-                            .padding(12)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
-                    .cornerRadius(8)
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(NSColor.separatorColor), lineWidth: 1))
                 }
+                .frame(height: 110)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
             }
-
+            .background(Color(NSColor.controlBackgroundColor).opacity(0.4))
+            .cornerRadius(12)
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(NSColor.separatorColor), lineWidth: 1))
+            .settingsGlassEffect(cornerRadius: 12)
+            
+            // Clipboard Options Strip
+            HStack(spacing: 20) {
+                // Dropdown for Case transformation
+                HStack(spacing: 6) {
+                    Text("Chuyển chữ:")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
+                    Picker("", selection: Binding(
+                        get: { caseTransformation },
+                        set: { caseTransformation = $0; showResult = false }
+                    )) {
+                        ForEach(CaseTransformationMode.allCases) { mode in
+                            Text(mode.rawValue).tag(mode)
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                    .frame(width: 140)
+                }
+                
+                // Checkbox for Accents Removal
+                Toggle("Bỏ dấu", isOn: Binding(
+                    get: { removeMark },
+                    set: { removeMark = $0; showResult = false }
+                ))
+                .toggleStyle(.checkbox)
+                
+                Spacer()
+            }
+            .padding(.horizontal, 8)
+            
+            // Action Banner
             if showResult {
-                HStack(spacing: 10) {
+                HStack(spacing: 8) {
                     Image(systemName: isSuccess ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                         .foregroundStyle(isSuccess ? .green : .red)
                     Text(resultMessage)
@@ -348,112 +501,174 @@ struct ConvertToolView: View {
                 }
                 .padding(10)
                 .background(isSuccess ? Color.green.opacity(0.1) : Color.red.opacity(0.1))
-                .cornerRadius(6)
+                .cornerRadius(8)
             }
+            
+            Spacer()
         }
     }
 
     // MARK: - Manual Input View
     private var manualInputView: some View {
-        HStack(spacing: 16) {
-            // Left Column (Source Editor)
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("Văn bản gốc")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.secondary)
-                    
-                    Spacer()
-                    
-                    Button(action: pasteClipboardToInput) {
-                        Image(systemName: "doc.on.clipboard")
-                            .help("Dán từ clipboard")
+        VStack(spacing: 12) {
+            HStack(spacing: 16) {
+                // Left Column (Source Editor)
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Label("Văn bản gốc", systemImage: "doc.text")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.secondary)
+                        
+                        Spacer()
+                        
+                        Button(action: pasteClipboardToInput) {
+                            Image(systemName: "doc.on.clipboard")
+                                .help("Dán từ clipboard")
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Color.accentColor)
+                        
+                        Button(action: { inputText = ""; convertedContent = ""; showResult = false }) {
+                            Image(systemName: "trash")
+                                .help("Xóa văn bản")
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.red)
+                        .disabled(inputText.isEmpty)
                     }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(Color.accentColor)
                     
-                    Button(action: { inputText = ""; convertedContent = ""; showResult = false }) {
-                        Image(systemName: "trash")
-                            .help("Xóa văn bản")
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.red)
-                    .disabled(inputText.isEmpty)
-                }
-                
-                TextEditor(text: $inputText)
-                    .font(.system(.body, design: .monospaced))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(4)
-                    .background(Color(NSColor.controlBackgroundColor))
-                    .cornerRadius(6)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6)
-                            .stroke(Color(NSColor.separatorColor), lineWidth: 1)
-                    )
-                    .overlay {
+                    ZStack(alignment: .topLeading) {
+                        TextEditor(text: $inputText)
+                            .font(.system(.body, design: .monospaced))
+                            .roundedTextArea()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .cornerRadius(6)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(Color(NSColor.separatorColor), lineWidth: 1)
+                            )
+                        
                         if inputText.isEmpty {
                             Text("Nhập hoặc dán văn bản tại đây...")
                                 .font(.body)
                                 .foregroundStyle(.tertiary)
-                                .padding(8)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 8)
                                 .allowsHitTesting(false)
                         }
                     }
-            }
-            
-            // Right Column (Target/Output View)
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("Văn bản sau chuyển")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.secondary)
                     
-                    Spacer()
-                    
-                    Button(action: {
-                        copyResultToClipboard()
-                        showCopiedMessage = true
-                        Task {
-                            try? await Task.sleep(for: .seconds(2))
-                            showCopiedMessage = false
-                        }
-                    }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: showCopiedMessage ? "checkmark" : "doc.on.doc")
-                            Text(showCopiedMessage ? "Đã copy" : "Sao chép")
-                                .font(.caption)
-                        }
+                    HStack {
+                        Spacer()
+                        Text("\(inputText.count) ký tự")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
                     }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(Color.accentColor)
-                    .disabled(convertedContent.isEmpty)
                 }
                 
-                TextEditor(text: .constant(convertedContent))
-                    .font(.system(.body, design: .monospaced))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(4)
-                    .background(Color(NSColor.controlBackgroundColor).opacity(0.8))
-                    .cornerRadius(6)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6)
-                            .stroke(Color(NSColor.separatorColor), lineWidth: 1)
-                    )
-                    .overlay {
+                // Right Column (Target/Output View)
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Label("Văn bản sau chuyển", systemImage: "doc.plaintext")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.secondary)
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            copyResultToClipboard()
+                            showCopiedMessage = true
+                            Task {
+                                try? await Task.sleep(for: .seconds(2))
+                                showCopiedMessage = false
+                            }
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: showCopiedMessage ? "checkmark.circle.fill" : "doc.on.doc")
+                                Text(showCopiedMessage ? "Đã copy" : "Sao chép")
+                                    .font(.caption)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(showCopiedMessage ? .green : Color.accentColor)
+                        .disabled(convertedContent.isEmpty)
+                    }
+                    
+                    ZStack(alignment: .topLeading) {
+                        TextEditor(text: .constant(convertedContent))
+                            .font(.system(.body, design: .monospaced))
+                            .roundedTextArea()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .cornerRadius(6)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(Color(NSColor.separatorColor), lineWidth: 1)
+                            )
+                            .opacity(0.9)
+                        
                         if convertedContent.isEmpty {
                             Text("Kết quả chuyển đổi sẽ hiển thị tại đây...")
                                 .font(.body)
                                 .foregroundStyle(.tertiary)
-                                .padding(8)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 8)
                                 .allowsHitTesting(false)
                         }
                     }
+                    
+                    HStack {
+                        Spacer()
+                        Text("\(convertedContent.count) ký tự")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
+            
+            // Options strip
+            HStack(spacing: 20) {
+                // Dropdown for Case transformation
+                HStack(spacing: 6) {
+                    Text("Chuyển chữ:")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    
+                    Picker("", selection: Binding(
+                        get: { caseTransformation },
+                        set: { caseTransformation = $0; if liveConvert { performLiveConversion() } }
+                    )) {
+                        ForEach(CaseTransformationMode.allCases) { mode in
+                            Text(mode.rawValue).tag(mode)
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                    .frame(width: 140)
+                }
+                
+                // Checkbox for Accents Removal
+                Toggle("Bỏ dấu", isOn: Binding(
+                    get: { removeMark },
+                    set: { removeMark = $0; if liveConvert { performLiveConversion() } }
+                ))
+                .toggleStyle(.checkbox)
+                
+                Spacer()
+                
+                // Toggle for Live convert
+                Toggle(isOn: $liveConvert) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "bolt.fill")
+                            .foregroundStyle(.yellow)
+                        Text("Chuyển đổi trực tiếp")
+                    }
+                }
+                .toggleStyle(.switch)
+                .controlSize(.small)
+            }
+            .padding(.top, 4)
         }
     }
 
@@ -474,8 +689,8 @@ struct ConvertToolView: View {
                     .foregroundStyle(isSuccess ? Color.secondary : Color.red)
                     .lineLimit(1)
                     .frame(maxWidth: 320, alignment: .trailing)
-            } else if !isConverting {
-                if currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            } else if !isConverting && inputMode == .manual {
+                if inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     Text("Chưa có nội dung để chuyển đổi")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -487,7 +702,11 @@ struct ConvertToolView: View {
             }
 
             Button {
-                performConversion()
+                if inputMode == .clipboard {
+                    performClipboardConversion()
+                } else {
+                    performManualConversion()
+                }
             } label: {
                 if isConverting {
                     ProgressView()
@@ -516,49 +735,167 @@ struct ConvertToolView: View {
         clipboardContent = content
         inputText = content
         showResult = false
+        if liveConvert {
+            performLiveConversion()
+        }
     }
 
-    private func performConversion() {
-        let textToConvert = currentText
-        guard !textToConvert.isEmpty else { return }
-
-        isConverting = true
-        showResult = false
-
+    private func performLiveConversion() {
+        guard !inputText.isEmpty else {
+            convertedContent = ""
+            showResult = false
+            return
+        }
+        
         let sourceCode = sourceCodeTable
         let targetCode = targetCodeTable
-        let mode = inputMode
-
-        // If manual mode, first copy text to clipboard
-        if mode == .manual {
-            let pasteboard = NSPasteboard.general
-            pasteboard.clearContents()
-            pasteboard.setString(textToConvert, forType: .string)
+        guard sourceCode != targetCode else {
+            convertedContent = ""
+            return
         }
+        
+        let defaults = UserDefaults.standard
+        let originalFromCode = defaults.integer(forKey: UserDefaultsKey.convertToolFromCode)
+        let originalToCode = defaults.integer(forKey: UserDefaultsKey.convertToolToCode)
+        let originalAllCaps = defaults.bool(forKey: "convertToolToAllCaps")
+        let originalAllNonCaps = defaults.bool(forKey: "convertToolToAllNonCaps")
+        let originalCapsFirst = defaults.bool(forKey: "convertToolToCapsFirstLetter")
+        let originalCapsEach = defaults.bool(forKey: "convertToolToCapsEachWord")
+        let originalRemoveMark = defaults.bool(forKey: "convertToolRemoveMark")
+        
+        defaults.set(sourceCode.rawValue, forKey: UserDefaultsKey.convertToolFromCode)
+        defaults.set(targetCode.rawValue, forKey: UserDefaultsKey.convertToolToCode)
+        defaults.set(toAllCaps, forKey: "convertToolToAllCaps")
+        defaults.set(toAllNonCaps, forKey: "convertToolToAllNonCaps")
+        defaults.set(toCapsFirstLetter, forKey: "convertToolToCapsFirstLetter")
+        defaults.set(toCapsEachWord, forKey: "convertToolToCapsEachWord")
+        defaults.set(removeMark, forKey: "convertToolRemoveMark")
+        
+        let result = PHTVConvertToolTextConversionService.convertText(inputText)
+        
+        defaults.set(originalFromCode, forKey: UserDefaultsKey.convertToolFromCode)
+        defaults.set(originalToCode, forKey: UserDefaultsKey.convertToolToCode)
+        defaults.set(originalAllCaps, forKey: "convertToolToAllCaps")
+        defaults.set(originalAllNonCaps, forKey: "convertToolToAllNonCaps")
+        defaults.set(originalCapsFirst, forKey: "convertToolToCapsFirstLetter")
+        defaults.set(originalCapsEach, forKey: "convertToolToCapsEachWord")
+        defaults.set(originalRemoveMark, forKey: "convertToolRemoveMark")
+        
+        convertedContent = result
+        isSuccess = true
+        showResult = true
+        resultMessage = "Đã tự động chuyển đổi \(inputText.count) ký tự"
+    }
 
+    private func performManualConversion() {
+        guard !inputText.isEmpty else { return }
+        
+        isConverting = true
+        showResult = false
+        
+        let sourceCode = sourceCodeTable
+        let targetCode = targetCodeTable
+        
+        Task { @MainActor in
+            let defaults = UserDefaults.standard
+            let originalFromCode = defaults.integer(forKey: UserDefaultsKey.convertToolFromCode)
+            let originalToCode = defaults.integer(forKey: UserDefaultsKey.convertToolToCode)
+            let originalAllCaps = defaults.bool(forKey: "convertToolToAllCaps")
+            let originalAllNonCaps = defaults.bool(forKey: "convertToolToAllNonCaps")
+            let originalCapsFirst = defaults.bool(forKey: "convertToolToCapsFirstLetter")
+            let originalCapsEach = defaults.bool(forKey: "convertToolToCapsEachWord")
+            let originalRemoveMark = defaults.bool(forKey: "convertToolRemoveMark")
+            
+            defaults.set(sourceCode.rawValue, forKey: UserDefaultsKey.convertToolFromCode)
+            defaults.set(targetCode.rawValue, forKey: UserDefaultsKey.convertToolToCode)
+            defaults.set(toAllCaps, forKey: "convertToolToAllCaps")
+            defaults.set(toAllNonCaps, forKey: "convertToolToAllNonCaps")
+            defaults.set(toCapsFirstLetter, forKey: "convertToolToCapsFirstLetter")
+            defaults.set(toCapsEachWord, forKey: "convertToolToCapsEachWord")
+            defaults.set(removeMark, forKey: "convertToolRemoveMark")
+            
+            let result = PHTVConvertToolTextConversionService.convertText(inputText)
+            
+            defaults.set(originalFromCode, forKey: UserDefaultsKey.convertToolFromCode)
+            defaults.set(originalToCode, forKey: UserDefaultsKey.convertToolToCode)
+            defaults.set(originalAllCaps, forKey: "convertToolToAllCaps")
+            defaults.set(originalAllNonCaps, forKey: "convertToolToAllNonCaps")
+            defaults.set(originalCapsFirst, forKey: "convertToolToCapsFirstLetter")
+            defaults.set(originalCapsEach, forKey: "convertToolToCapsEachWord")
+            defaults.set(originalRemoveMark, forKey: "convertToolRemoveMark")
+            
+            isConverting = false
+            showResult = true
+            
+            if !result.isEmpty && result != inputText {
+                isSuccess = true
+                convertedContent = result
+                resultMessage = "Đã chuyển đổi \(inputText.count) ký tự từ \(sourceCode.displayName) sang \(targetCode.displayName)"
+                NSSound.beep()
+            } else if result == inputText {
+                isSuccess = false
+                resultMessage = "Văn bản không thay đổi hoặc không chứa ký tự tiếng Việt."
+            } else {
+                isSuccess = false
+                resultMessage = "Không thể chuyển đổi."
+            }
+        }
+    }
+
+    private func performClipboardConversion() {
+        let textToConvert = clipboardContent
+        guard !textToConvert.isEmpty else { return }
+        
+        isConverting = true
+        showResult = false
+        
+        let sourceCode = sourceCodeTable
+        let targetCode = targetCodeTable
+        
+        // Capture choices into defaults for the service
+        let defaults = UserDefaults.standard
+        let originalAllCaps = defaults.bool(forKey: "convertToolToAllCaps")
+        let originalAllNonCaps = defaults.bool(forKey: "convertToolToAllNonCaps")
+        let originalCapsFirst = defaults.bool(forKey: "convertToolToCapsFirstLetter")
+        let originalCapsEach = defaults.bool(forKey: "convertToolToCapsEachWord")
+        let originalRemoveMark = defaults.bool(forKey: "convertToolRemoveMark")
+        
+        defaults.set(toAllCaps, forKey: "convertToolToAllCaps")
+        defaults.set(toAllNonCaps, forKey: "convertToolToAllNonCaps")
+        defaults.set(toCapsFirstLetter, forKey: "convertToolToCapsFirstLetter")
+        defaults.set(toCapsEachWord, forKey: "convertToolToCapsEachWord")
+        defaults.set(removeMark, forKey: "convertToolRemoveMark")
+        
         Task { @MainActor in
             let success = PHTVConvertToolTextConversionService.quickConvertClipboard(
                 fromCode: Int32(sourceCode.rawValue),
                 toCode: Int32(targetCode.rawValue)
             )
-
+            
+            // Restore defaults
+            defaults.set(originalAllCaps, forKey: "convertToolToAllCaps")
+            defaults.set(originalAllNonCaps, forKey: "convertToolToAllNonCaps")
+            defaults.set(originalCapsFirst, forKey: "convertToolToCapsFirstLetter")
+            defaults.set(originalCapsEach, forKey: "convertToolToCapsEachWord")
+            defaults.set(originalRemoveMark, forKey: "convertToolRemoveMark")
+            
             let pasteboard = NSPasteboard.general
             let newContent = pasteboard.string(forType: .string) ?? ""
-
+            
             isConverting = false
             showResult = true
-
+            
             if success && !newContent.isEmpty && newContent != textToConvert {
                 isSuccess = true
-                convertedContent = newContent
-                resultMessage = "Đã chuyển đổi \(textToConvert.count) ký tự từ \(sourceCode.displayName) sang \(targetCode.displayName)"
+                clipboardContent = newContent
+                resultMessage = "Đã chuyển đổi thành công clipboard (\(newContent.count) ký tự)"
                 NSSound.beep()
             } else if newContent == textToConvert {
                 isSuccess = false
-                resultMessage = "Văn bản không thay đổi hoặc không chứa ký tự tiếng Việt."
+                resultMessage = "Không đổi hoặc không chứa ký tự tiếng Việt cần chuyển."
             } else {
                 isSuccess = false
-                resultMessage = "Không thể chuyển đổi. Định dạng không khớp."
+                resultMessage = "Lỗi khi chuyển đổi clipboard."
             }
         }
     }
