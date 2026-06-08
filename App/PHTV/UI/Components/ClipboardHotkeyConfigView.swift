@@ -16,85 +16,20 @@ struct ClipboardHotkeyConfigView: View {
     private let modifierOnlyKeyCode: UInt16 = KeyCode.noKey
     private var bindable: Bindable<AppState> { Bindable(appState) }
 
-    private var clipboardHotkeyControl: Binding<Bool> {
-        Binding(
-            get: { appState.clipboardHotkeyModifiers.contains(.control) },
-            set: { newValue in
-                var modifiers = appState.clipboardHotkeyModifiers
-                if newValue { modifiers.insert(.control) } else { modifiers.remove(.control) }
-                appState.clipboardHotkeyModifiers = modifiers
-            }
-        )
-    }
-
-    private var clipboardHotkeyShift: Binding<Bool> {
-        Binding(
-            get: { appState.clipboardHotkeyModifiers.contains(.shift) },
-            set: { newValue in
-                var modifiers = appState.clipboardHotkeyModifiers
-                if newValue { modifiers.insert(.shift) } else { modifiers.remove(.shift) }
-                appState.clipboardHotkeyModifiers = modifiers
-            }
-        )
-    }
-
-    private var clipboardHotkeyCommand: Binding<Bool> {
-        Binding(
-            get: { appState.clipboardHotkeyModifiers.contains(.command) },
-            set: { newValue in
-                var modifiers = appState.clipboardHotkeyModifiers
-                if newValue { modifiers.insert(.command) } else { modifiers.remove(.command) }
-                appState.clipboardHotkeyModifiers = modifiers
-            }
-        )
-    }
-
-    private var clipboardHotkeyOption: Binding<Bool> {
-        Binding(
-            get: { appState.clipboardHotkeyModifiers.contains(.option) },
-            set: { newValue in
-                var modifiers = appState.clipboardHotkeyModifiers
-                if newValue { modifiers.insert(.option) } else { modifiers.remove(.option) }
-                appState.clipboardHotkeyModifiers = modifiers
-            }
-        )
-    }
-
-    private var clipboardHotkeyFn: Binding<Bool> {
-        Binding(
-            get: { appState.clipboardHotkeyModifiers.contains(.function) },
-            set: { newValue in
-                var modifiers = appState.clipboardHotkeyModifiers
-                if newValue { modifiers.insert(.function) } else { modifiers.remove(.function) }
-                appState.clipboardHotkeyModifiers = modifiers
-            }
-        )
-    }
-
     private var keyDisplayText: String {
         if isRecording { return "Nhấn phím..." }
-        if appState.clipboardHotkeyKeyCode == modifierOnlyKeyCode {
-            return "Không dùng (chỉ modifier)"
+        if appState.clipboardHotkeyKeyCode == modifierOnlyKeyCode && appState.clipboardHotkeyModifiers.isEmpty {
+            return "Chưa đặt"
         }
-        return keyCodeToName(appState.clipboardHotkeyKeyCode)
-    }
-
-    private var hasValidHotkey: Bool {
-        !appState.clipboardHotkeyModifiers.isEmpty
-    }
-
-    private var currentHotkeyString: String {
-        var parts: [String] = []
-        let mods = appState.clipboardHotkeyModifiers
-        if mods.contains(.control) { parts.append("⌃") }
-        if mods.contains(.shift) { parts.append("⇧") }
-        if mods.contains(.command) { parts.append("⌘") }
-        if mods.contains(.option) { parts.append("⌥") }
-        if mods.contains(.function) { parts.append("fn") }
-        if appState.clipboardHotkeyKeyCode != modifierOnlyKeyCode {
-            parts.append(keyCodeToName(appState.clipboardHotkeyKeyCode))
-        }
-        return parts.isEmpty ? "Chưa đặt" : parts.joined(separator: " + ")
+        return HotkeyFormatter.switchHotkeyString(
+            control: appState.clipboardHotkeyModifiers.contains(.control),
+            option: appState.clipboardHotkeyModifiers.contains(.option),
+            shift: appState.clipboardHotkeyModifiers.contains(.shift),
+            command: appState.clipboardHotkeyModifiers.contains(.command),
+            fn: appState.clipboardHotkeyModifiers.contains(.function),
+            keyCode: appState.clipboardHotkeyKeyCode,
+            keyName: SettingsHotkeyKeyNameResolver.name(for: appState.clipboardHotkeyKeyCode)
+        )
     }
 
     var body: some View {
@@ -111,32 +46,12 @@ struct ClipboardHotkeyConfigView: View {
             if appState.enableClipboardHistory {
                 Divider()
 
-                // Modifier keys
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 12) {
-                        ModifierKeyButton(symbol: "⌃", name: "Control", isOn: clipboardHotkeyControl)
-                        ModifierKeyButton(symbol: "⇧", name: "Shift", isOn: clipboardHotkeyShift)
-                        ModifierKeyButton(symbol: "⌘", name: "Command", isOn: clipboardHotkeyCommand)
-                        ModifierKeyButton(symbol: "⌥", name: "Option", isOn: clipboardHotkeyOption)
-                        ModifierKeyButton(symbol: "fn", name: "", isOn: clipboardHotkeyFn)
-                    }
-
-                    Text("Mặc định: ⌃V. Bấm lại phím tắt hoặc Esc để đóng.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Divider()
-
                 // Key Selection - Compact inline row
                 HStack(alignment: .center, spacing: 16) {
                     HStack(spacing: 4) {
-                        Text("Phím chính")
+                        Text("Phím tắt")
                             .font(.body)
                             .foregroundStyle(.primary)
-                        Text("(tùy chọn)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
                     }
                     .layoutPriority(1)
 
@@ -144,10 +59,10 @@ struct ClipboardHotkeyConfigView: View {
 
                     HStack(spacing: 6) {
                         // Clear button
-                        if !isRecording && appState.clipboardHotkeyKeyCode != modifierOnlyKeyCode {
+                        if !isRecording && (appState.clipboardHotkeyKeyCode != modifierOnlyKeyCode || !appState.clipboardHotkeyModifiers.isEmpty) {
                             Button(action: {
                                 appState.clipboardHotkeyKeyCode = modifierOnlyKeyCode
-                                isRecording = true
+                                appState.clipboardHotkeyModifiers = []
                             }) {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundStyle(.secondary)
@@ -164,12 +79,29 @@ struct ClipboardHotkeyConfigView: View {
                         }
                         .buttonStyle(SettingsShortcutRecorderButtonStyle(isRecording: isRecording))
                         .background(
-                            ClipboardKeyEventHandler(isRecording: $isRecording, appState: appState)
+                            UnifiedHotkeyEventHandler(
+                                isRecording: $isRecording,
+                                onCaptured: { keyCode, modifiers in
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                        appState.clipboardHotkeyKeyCode = keyCode
+                                        appState.clipboardHotkeyModifiers = modifiers
+                                        isRecording = false
+                                    }
+                                },
+                                onCancelled: {
+                                    isRecording = false
+                                }
+                            )
                         )
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, SettingsLayout.rowVerticalPadding)
+
+                Text("Mặc định: ⌃V. Bấm lại phím tắt hoặc Esc để đóng.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, -4)
 
                 Divider()
 
@@ -215,43 +147,5 @@ struct ClipboardHotkeyConfigView: View {
             }
         }
     }
-
-    private func keyCodeToName(_ keyCode: UInt16) -> String {
-        if let name = KeyCode.keyNames[keyCode] { return name }
-        let event = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: true)
-        var length = 0
-        event?.keyboardGetUnicodeString(maxStringLength: 4, actualStringLength: &length, unicodeString: nil)
-        if length > 0 {
-            var chars: [UniChar] = Array(repeating: 0, count: length)
-            event?.keyboardGetUnicodeString(maxStringLength: 4, actualStringLength: &length, unicodeString: &chars)
-            if let scalar = UnicodeScalar(chars[0]) {
-                return String(Character(scalar)).uppercased()
-            }
-        }
-        return "Key\(keyCode)"
-    }
 }
 
-// MARK: - Key Event Handler
-
-struct ClipboardKeyEventHandler: NSViewRepresentable {
-    @Binding var isRecording: Bool
-    let appState: AppState
-
-    func makeNSView(context: Context) -> NSView {
-        let view = SettingsHotkeyCaptureView()
-        view.onKeyPress = { keyCode in
-            Task { @MainActor in
-                appState.clipboardHotkeyKeyCode = keyCode
-                isRecording = false
-            }
-        }
-        return view
-    }
-
-    func updateNSView(_ nsView: NSView, context: Context) {
-        if let keyView = nsView as? SettingsHotkeyCaptureView {
-            keyView.isRecording = isRecording
-        }
-    }
-}

@@ -15,6 +15,8 @@ import Observation
 struct HotkeyConfigView: View {
     @Environment(AppState.self) private var appState
     @State private var isRecording = false
+    @State private var isRecordingSingle = false
+    @State private var showSecondaryHotkey = false
     
     private let modifierOnlyKeyCode: UInt16 = KeyCode.noKey
     private var bindable: Bindable<AppState> { Bindable(appState) }
@@ -27,47 +29,24 @@ struct HotkeyConfigView: View {
         case .esc:
             return false // ESC never conflicts
         case .option:
-            return appState.switchKeyOption
+            return appState.switchKeyOption || appState.switchKey2Option
         case .control:
-            return appState.switchKeyControl
+            return appState.switchKeyControl || appState.switchKey2Control
         }
+    }
+
+    private var hasSecondaryHotkey: Bool {
+        appState.switchKey2KeyCode != modifierOnlyKeyCode || appState.switchKey2Control || appState.switchKey2Option || appState.switchKey2Command || appState.switchKey2Shift || appState.switchKey2Fn
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Modifier keys
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 12) {
-                    ModifierKeyButton(symbol: "⌃", name: "Control", isOn: bindable.switchKeyControl)
-                    ModifierKeyButton(symbol: "⇧", name: "Shift", isOn: bindable.switchKeyShift)
-                    ModifierKeyButton(symbol: "⌘", name: "Command", isOn: bindable.switchKeyCommand)
-                    ModifierKeyButton(symbol: "⌥", name: "Option", isOn: bindable.switchKeyOption)
-                    ModifierKeyButton(symbol: "fn", name: "", isOn: bindable.switchKeyFn)
-                }
-
-                Text("Mặc định: Ctrl + Shift (bấm rồi thả)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                // Conflict warning
-                if hasRestoreHotkeyConflict {
-                    Label("Phím bổ trợ trùng với phím khôi phục", systemImage: "exclamationmark.triangle.fill")
-                        .font(.caption)
-                        .foregroundStyle(.orange)
-                }
-            }
-
-            Divider()
-            
-            // Key Selection - Compact inline row
+            // Hotkey 1 Selection - Compact inline row
             HStack(alignment: .center, spacing: 16) {
                 HStack(spacing: 4) {
-                    Text("Phím chính")
+                    Text("Phím tắt chuyển đổi")
                         .font(.body)
                         .foregroundStyle(.primary)
-                    Text("(tùy chọn)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                 }
                 .layoutPriority(1)
 
@@ -75,11 +54,15 @@ struct HotkeyConfigView: View {
 
                 HStack(spacing: 6) {
                     // Clear button
-                    if !isRecording && appState.switchKeyCode != modifierOnlyKeyCode {
+                    if !isRecording && (appState.switchKeyCode != modifierOnlyKeyCode || appState.switchKeyControl || appState.switchKeyOption || appState.switchKeyCommand || appState.switchKeyShift || appState.switchKeyFn) {
                         Button(action: {
                             appState.switchKeyCode = modifierOnlyKeyCode
+                            appState.switchKeyControl = false
+                            appState.switchKeyOption = false
+                            appState.switchKeyCommand = false
+                            appState.switchKeyShift = false
+                            appState.switchKeyFn = false
                             appState.switchKeyName = KeyCode.modifierOnlyDisplayName
-                            isRecording = true
                         }) {
                             Image(systemName: "xmark.circle.fill")
                                 .foregroundStyle(.secondary)
@@ -95,11 +78,116 @@ struct HotkeyConfigView: View {
                         SettingsShortcutRecorderLabel(text: keyDisplayText, isRecording: isRecording)
                     }
                     .buttonStyle(SettingsShortcutRecorderButtonStyle(isRecording: isRecording))
-                    .background(KeyEventHandler(isRecording: $isRecording, appState: appState))
+                    .background(UnifiedHotkeyEventHandler(
+                        isRecording: $isRecording,
+                        onCaptured: { keyCode, modifiers in
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                appState.switchKeyCode = keyCode
+                                appState.switchKeyControl = modifiers.contains(.control)
+                                appState.switchKeyOption = modifiers.contains(.option)
+                                appState.switchKeyCommand = modifiers.contains(.command)
+                                appState.switchKeyShift = modifiers.contains(.shift)
+                                appState.switchKeyFn = modifiers.contains(.function)
+                                appState.switchKeyName = SettingsHotkeyKeyNameResolver.name(for: keyCode)
+                                isRecording = false
+                            }
+                        },
+                        onCancelled: {
+                            isRecording = false
+                        }
+                    ))
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, SettingsLayout.rowVerticalPadding)
+
+            Divider()
+
+            if hasSecondaryHotkey || showSecondaryHotkey {
+                // Hotkey 2 Selection - Compact inline row
+                HStack(alignment: .center, spacing: 16) {
+                    HStack(spacing: 4) {
+                        Text("Phím tắt chuyển đổi phụ")
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                    }
+                    .layoutPriority(1)
+
+                    Spacer(minLength: 12)
+
+                    HStack(spacing: 6) {
+                        // Clear button
+                        Button(action: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                appState.switchKey2KeyCode = modifierOnlyKeyCode
+                                appState.switchKey2Control = false
+                                appState.switchKey2Option = false
+                                appState.switchKey2Command = false
+                                appState.switchKey2Shift = false
+                                appState.switchKey2Fn = false
+                                appState.switchKey2Name = KeyCode.modifierOnlyDisplayName
+                                showSecondaryHotkey = false
+                            }
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.secondary)
+                                .imageScale(.small)
+                        }
+                        .buttonStyle(.plain)
+
+                        // Key capture button
+                        Button(action: {
+                            isRecordingSingle = true
+                        }) {
+                            SettingsShortcutRecorderLabel(text: switchKey2DisplayText, isRecording: isRecordingSingle)
+                        }
+                        .buttonStyle(SettingsShortcutRecorderButtonStyle(isRecording: isRecordingSingle))
+                        .background(UnifiedHotkeyEventHandler(
+                            isRecording: $isRecordingSingle,
+                            onCaptured: { keyCode, modifiers in
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                    appState.switchKey2KeyCode = keyCode
+                                    appState.switchKey2Control = modifiers.contains(.control)
+                                    appState.switchKey2Option = modifiers.contains(.option)
+                                    appState.switchKey2Command = modifiers.contains(.command)
+                                    appState.switchKey2Shift = modifiers.contains(.shift)
+                                    appState.switchKey2Fn = modifiers.contains(.function)
+                                    appState.switchKey2Name = SettingsHotkeyKeyNameResolver.name(for: keyCode)
+                                    isRecordingSingle = false
+                                }
+                            },
+                            onCancelled: {
+                                isRecordingSingle = false
+                            }
+                        ))
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, SettingsLayout.rowVerticalPadding)
+
+                Divider()
+            } else {
+                Button(action: {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        showSecondaryHotkey = true
+                        isRecordingSingle = true
+                    }
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "plus.circle.fill")
+                            .foregroundStyle(Color.accentColor)
+                        Text("Thêm phím tắt chuyển đổi phụ")
+                            .font(.body)
+                            .foregroundStyle(Color.accentColor)
+                        Spacer()
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.vertical, SettingsLayout.rowVerticalPadding)
+
+                Divider()
+            }
 
             
             // Beep on mode switch toggle
@@ -141,10 +229,36 @@ struct HotkeyConfigView: View {
         if isRecording {
             return "Nhấn phím..."
         }
-        if appState.switchKeyCode == modifierOnlyKeyCode {
-            return "Không dùng (chỉ modifier)"
+        if appState.switchKeyCode == modifierOnlyKeyCode && !appState.switchKeyControl && !appState.switchKeyOption && !appState.switchKeyCommand && !appState.switchKeyShift && !appState.switchKeyFn {
+            return "Chưa đặt"
         }
-        return appState.switchKeyName
+        return HotkeyFormatter.switchHotkeyString(
+            control: appState.switchKeyControl,
+            option: appState.switchKeyOption,
+            shift: appState.switchKeyShift,
+            command: appState.switchKeyCommand,
+            fn: appState.switchKeyFn,
+            keyCode: appState.switchKeyCode,
+            keyName: appState.switchKeyName
+        )
+    }
+
+    private var switchKey2DisplayText: String {
+        if isRecordingSingle {
+            return "Nhấn phím..."
+        }
+        if appState.switchKey2KeyCode == modifierOnlyKeyCode && !appState.switchKey2Control && !appState.switchKey2Option && !appState.switchKey2Command && !appState.switchKey2Shift && !appState.switchKey2Fn {
+            return "Chưa đặt"
+        }
+        return HotkeyFormatter.switchHotkeyString(
+            control: appState.switchKey2Control,
+            option: appState.switchKey2Option,
+            shift: appState.switchKey2Shift,
+            command: appState.switchKey2Command,
+            fn: appState.switchKey2Fn,
+            keyCode: appState.switchKey2KeyCode,
+            keyName: appState.switchKey2Name
+        )
     }
     
     private var hasValidHotkey: Bool {
@@ -170,6 +284,7 @@ struct HotkeyConfigView: View {
         
         return parts.isEmpty ? "Chưa đặt" : parts.joined(separator: " + ")
     }
+
 }
 
 struct ModifierKeyButton: View {
@@ -200,96 +315,8 @@ struct ModifierKeyButton: View {
     }
 }
 
-struct SettingsShortcutRecorderLabel: View {
-    let text: String
-    let isRecording: Bool
 
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: isRecording ? "keyboard.badge.ellipsis" : "keyboard")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(isRecording ? Color.accentColor : .secondary)
-                .frame(width: 16)
 
-            Text(text)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(isRecording ? Color.accentColor : .primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.85)
-
-            Spacer(minLength: 0)
-        }
-    }
-}
-
-struct SettingsShortcutRecorderButtonStyle: ButtonStyle {
-    let isRecording: Bool
-    @Environment(\.colorScheme) private var colorScheme
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .padding(.horizontal, 10)
-            .frame(width: SettingsLayout.rowControlColumnWidth, height: 32, alignment: .leading)
-            .background {
-                PHTVRoundedRect(cornerRadius: 7)
-                    .fill(backgroundColor)
-                    .overlay {
-                        PHTVRoundedRect(cornerRadius: 7)
-                            .stroke(borderColor, lineWidth: isRecording ? 1.5 : 1)
-                    }
-            }
-            .contentShape(PHTVRoundedRect(cornerRadius: 7))
-            .opacity(configuration.isPressed ? 0.82 : 1)
-    }
-
-    private var backgroundColor: Color {
-        if isRecording {
-            return Color.accentColor.opacity(colorScheme == .dark ? 0.18 : 0.12)
-        }
-        return Color(NSColor.controlBackgroundColor)
-    }
-
-    private var borderColor: Color {
-        if isRecording {
-            return Color.accentColor.opacity(colorScheme == .dark ? 0.8 : 0.65)
-        }
-        return Color(NSColor.separatorColor).opacity(colorScheme == .dark ? 0.9 : 0.65)
-    }
-}
-
-// MARK: - Key Event Handler
-struct KeyEventHandler: NSViewRepresentable {
-    @Binding var isRecording: Bool
-    var appState: AppState
-    
-    func makeNSView(context: Context) -> NSView {
-        let view = SettingsHotkeyCaptureView()
-        view.onKeyPress = { keyCode in
-            let keyName = SettingsHotkeyKeyNameResolver.name(for: keyCode)
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                appState.switchKeyCode = keyCode
-                appState.switchKeyName = keyName
-                isRecording = false
-            }
-        }
-        context.coordinator.view = view
-        return view
-    }
-    
-    func updateNSView(_ nsView: NSView, context: Context) {
-        if let keyView = nsView as? SettingsHotkeyCaptureView {
-            keyView.isRecording = isRecording
-        }
-    }
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator()
-    }
-    
-    class Coordinator {
-        var view: SettingsHotkeyCaptureView?
-    }
-}
 
 enum SettingsHotkeyKeyNameResolver {
     static func name(for keyCode: UInt16) -> String {
@@ -379,84 +406,6 @@ enum SettingsHotkeyKeyNameResolver {
     }
 }
 
-private struct SettingsHotkeyLocalEventMonitor: @unchecked Sendable {
-    let value: Any
-
-    func remove() {
-        NSEvent.removeMonitor(value)
-    }
-}
-
-final class SettingsHotkeyCaptureView: NSView {
-    var onKeyPress: ((UInt16) -> Void)?
-    private var localKeyDownMonitor: SettingsHotkeyLocalEventMonitor?
-
-    var isRecording = false {
-        didSet {
-            isRecording ? startRecording() : stopRecording()
-        }
-    }
-
-    override var acceptsFirstResponder: Bool { true }
-
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        if isRecording {
-            focusForCapture()
-        }
-    }
-
-    deinit {
-        if let localKeyDownMonitor {
-            localKeyDownMonitor.remove()
-        }
-    }
-
-    override func keyDown(with event: NSEvent) {
-        guard isRecording else {
-            super.keyDown(with: event)
-            return
-        }
-
-        capture(event)
-    }
-
-    private func startRecording() {
-        focusForCapture()
-        guard localKeyDownMonitor == nil else { return }
-
-        guard let monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown, handler: { [weak self] event in
-            guard let self, self.isRecording else { return event }
-            self.capture(event)
-            return nil
-        }) else { return }
-        localKeyDownMonitor = SettingsHotkeyLocalEventMonitor(value: monitor)
-    }
-
-    private func stopRecording() {
-        if let localKeyDownMonitor {
-            localKeyDownMonitor.remove()
-            self.localKeyDownMonitor = nil
-        }
-    }
-
-    private func focusForCapture() {
-        window?.makeFirstResponder(self)
-        DispatchQueue.main.async { [weak self] in
-            guard let self, self.isRecording else { return }
-            self.window?.makeFirstResponder(self)
-        }
-    }
-
-    private func capture(_ event: NSEvent) {
-        guard isRecording else { return }
-        isRecording = false
-        let keyCode = UInt16(event.keyCode)
-        Task { @MainActor [weak self] in
-            self?.onKeyPress?(keyCode)
-        }
-    }
-}
 
 // MARK: - Custom Slider without tick marks
 struct CustomSlider: NSViewRepresentable {
@@ -674,88 +623,13 @@ struct PauseKeyButton: View {
 }
 
 // MARK: - Emoji Hotkey Configuration View
+// MARK: - Emoji Hotkey Configuration View
 struct EmojiHotkeyConfigView: View {
     @Environment(AppState.self) private var appState
     @State private var isRecording = false
 
     private let modifierOnlyKeyCode: UInt16 = KeyCode.noKey
     private var bindable: Bindable<AppState> { Bindable(appState) }
-
-    // Computed properties for modifier bindings
-    private var emojiHotkeyControl: Binding<Bool> {
-        Binding(
-            get: { appState.emojiHotkeyModifiers.contains(.control) },
-            set: { newValue in
-                var modifiers = appState.emojiHotkeyModifiers
-                if newValue {
-                    modifiers.insert(.control)
-                } else {
-                    modifiers.remove(.control)
-                }
-                appState.emojiHotkeyModifiers = modifiers
-            }
-        )
-    }
-
-    private var emojiHotkeyShift: Binding<Bool> {
-        Binding(
-            get: { appState.emojiHotkeyModifiers.contains(.shift) },
-            set: { newValue in
-                var modifiers = appState.emojiHotkeyModifiers
-                if newValue {
-                    modifiers.insert(.shift)
-                } else {
-                    modifiers.remove(.shift)
-                }
-                appState.emojiHotkeyModifiers = modifiers
-            }
-        )
-    }
-
-    private var emojiHotkeyCommand: Binding<Bool> {
-        Binding(
-            get: { appState.emojiHotkeyModifiers.contains(.command) },
-            set: { newValue in
-                var modifiers = appState.emojiHotkeyModifiers
-                if newValue {
-                    modifiers.insert(.command)
-                } else {
-                    modifiers.remove(.command)
-                }
-                appState.emojiHotkeyModifiers = modifiers
-            }
-        )
-    }
-
-    private var emojiHotkeyOption: Binding<Bool> {
-        Binding(
-            get: { appState.emojiHotkeyModifiers.contains(.option) },
-            set: { newValue in
-                var modifiers = appState.emojiHotkeyModifiers
-                if newValue {
-                    modifiers.insert(.option)
-                } else {
-                    modifiers.remove(.option)
-                }
-                appState.emojiHotkeyModifiers = modifiers
-            }
-        )
-    }
-
-    private var emojiHotkeyFn: Binding<Bool> {
-        Binding(
-            get: { appState.emojiHotkeyModifiers.contains(.function) },
-            set: { newValue in
-                var modifiers = appState.emojiHotkeyModifiers
-                if newValue {
-                    modifiers.insert(.function)
-                } else {
-                    modifiers.remove(.function)
-                }
-                appState.emojiHotkeyModifiers = modifiers
-            }
-        )
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -771,32 +645,12 @@ struct EmojiHotkeyConfigView: View {
             if appState.enableEmojiHotkey {
                 Divider()
 
-                // Modifier keys
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 12) {
-                        ModifierKeyButton(symbol: "⌃", name: "Control", isOn: emojiHotkeyControl)
-                        ModifierKeyButton(symbol: "⇧", name: "Shift", isOn: emojiHotkeyShift)
-                        ModifierKeyButton(symbol: "⌘", name: "Command", isOn: emojiHotkeyCommand)
-                        ModifierKeyButton(symbol: "⌥", name: "Option", isOn: emojiHotkeyOption)
-                        ModifierKeyButton(symbol: "fn", name: "", isOn: emojiHotkeyFn)
-                    }
-
-                    Text("Mặc định: ⌘E")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Divider()
-
                 // Key Selection - Compact inline row
                 HStack(alignment: .center, spacing: 16) {
                     HStack(spacing: 4) {
-                        Text("Phím chính")
+                        Text("Phím tắt")
                             .font(.body)
                             .foregroundStyle(.primary)
-                        Text("(tùy chọn)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
                     }
                     .layoutPriority(1)
 
@@ -804,10 +658,10 @@ struct EmojiHotkeyConfigView: View {
 
                     HStack(spacing: 6) {
                         // Clear button
-                        if !isRecording && appState.emojiHotkeyKeyCode != modifierOnlyKeyCode {
+                        if !isRecording && (appState.emojiHotkeyKeyCode != modifierOnlyKeyCode || !appState.emojiHotkeyModifiers.isEmpty) {
                             Button(action: {
                                 appState.emojiHotkeyKeyCode = modifierOnlyKeyCode
-                                isRecording = true
+                                appState.emojiHotkeyModifiers = []
                             }) {
                                 Image(systemName: "xmark.circle.fill")
                                     .foregroundStyle(.secondary)
@@ -823,7 +677,19 @@ struct EmojiHotkeyConfigView: View {
                             SettingsShortcutRecorderLabel(text: keyDisplayText, isRecording: isRecording)
                         }
                         .buttonStyle(SettingsShortcutRecorderButtonStyle(isRecording: isRecording))
-                        .background(EmojiKeyEventHandler(isRecording: $isRecording, appState: appState))
+                        .background(UnifiedHotkeyEventHandler(
+                            isRecording: $isRecording,
+                            onCaptured: { keyCode, modifiers in
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                    appState.emojiHotkeyKeyCode = keyCode
+                                    appState.emojiHotkeyModifiers = modifiers
+                                    isRecording = false
+                                }
+                            },
+                            onCancelled: {
+                                isRecording = false
+                            }
+                        ))
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -832,114 +698,22 @@ struct EmojiHotkeyConfigView: View {
         }
     }
 
-    private var isModifierOnlyMode: Bool {
-        appState.emojiHotkeyKeyCode == modifierOnlyKeyCode
-    }
-
     private var keyDisplayText: String {
         if isRecording {
             return "Nhấn phím..."
         }
-        if isModifierOnlyMode {
-            return "Không dùng (chỉ modifier)"
+        if appState.emojiHotkeyKeyCode == modifierOnlyKeyCode && appState.emojiHotkeyModifiers.isEmpty {
+            return "Chưa đặt"
         }
-        return emojiKeyName
-    }
-
-    private var emojiKeyName: String {
-        let keyCode = appState.emojiHotkeyKeyCode
-        if keyCode == modifierOnlyKeyCode {
-            return KeyCode.modifierOnlyDisplayName
-        }
-        // Common key codes for emoji hotkeys
-        switch keyCode {
-        case 41: return ";"
-        case KeyCode.eKey: return "E"
-        case KeyCode.space: return "Space"
-        case 44: return "/"
-        case 39: return "'"
-        case 43: return ","
-        case 47: return "."
-        default:
-            // Try to get character from key code
-            if let char = keyCodeToCharacter(keyCode) {
-                return String(char).uppercased()
-            }
-            return KeyCode.name(for: keyCode)
-        }
-    }
-
-    private var hasValidHotkey: Bool {
-        // Valid if at least one modifier is selected
-        let modifiers = appState.emojiHotkeyModifiers
-        return modifiers.contains(.control) || modifiers.contains(.shift) ||
-               modifiers.contains(.command) || modifiers.contains(.option) ||
-               modifiers.contains(.function)
-    }
-
-    private var currentHotkeyDisplay: String {
-        var parts: [String] = []
-        let modifiers = appState.emojiHotkeyModifiers
-
-        if modifiers.contains(.function) { parts.append("fn") }
-        if modifiers.contains(.control) { parts.append("⌃") }
-        if modifiers.contains(.shift) { parts.append("⇧") }
-        if modifiers.contains(.command) { parts.append("⌘") }
-        if modifiers.contains(.option) { parts.append("⌥") }
-
-        // Only add key name if it's a real key (not modifier-only mode)
-        if !isModifierOnlyMode {
-            parts.append(emojiKeyName)
-        }
-
-        return parts.isEmpty ? "Chưa đặt" : parts.joined(separator: " + ")
-    }
-
-    private func keyCodeToCharacter(_ keyCode: UInt16) -> Character? {
-        let event = CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(keyCode), keyDown: true)
-        var length = 0
-        event?.keyboardGetUnicodeString(maxStringLength: 4, actualStringLength: &length, unicodeString: nil)
-
-        if length > 0 {
-            var chars: [UniChar] = Array(repeating: 0, count: length)
-            event?.keyboardGetUnicodeString(maxStringLength: 4, actualStringLength: &length, unicodeString: &chars)
-            if let scalar = UnicodeScalar(chars[0]) {
-                return Character(scalar)
-            }
-        }
-        return nil
-    }
-}
-
-// MARK: - Emoji Key Event Handler
-struct EmojiKeyEventHandler: NSViewRepresentable {
-    @Binding var isRecording: Bool
-    var appState: AppState
-
-    func makeNSView(context: Context) -> NSView {
-        let view = SettingsHotkeyCaptureView()
-        view.onKeyPress = { keyCode in
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                appState.emojiHotkeyKeyCode = keyCode
-                isRecording = false
-            }
-        }
-        context.coordinator.view = view
-        return view
-    }
-
-    func updateNSView(_ nsView: NSView, context: Context) {
-        if let keyView = nsView as? SettingsHotkeyCaptureView {
-            keyView.isRecording = isRecording
-        }
-    }
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator()
-    }
-
-    class Coordinator {
-        var view: SettingsHotkeyCaptureView?
+        return HotkeyFormatter.switchHotkeyString(
+            control: appState.emojiHotkeyModifiers.contains(.control),
+            option: appState.emojiHotkeyModifiers.contains(.option),
+            shift: appState.emojiHotkeyModifiers.contains(.shift),
+            command: appState.emojiHotkeyModifiers.contains(.command),
+            fn: appState.emojiHotkeyModifiers.contains(.function),
+            keyCode: appState.emojiHotkeyKeyCode,
+            keyName: KeyCode.name(for: appState.emojiHotkeyKeyCode)
+        )
     }
 }
 

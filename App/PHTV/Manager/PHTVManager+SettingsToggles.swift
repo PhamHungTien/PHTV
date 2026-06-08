@@ -146,7 +146,9 @@ import Foundation
             "restoreIfWrongSpelling": NSNumber(value: PHTVEngineRuntimeFacade.restoreIfWrongSpelling()),
             "enableEmojiHotkey": NSNumber(value: PHTVEngineRuntimeFacade.enableEmojiHotkey()),
             "emojiHotkeyModifiers": NSNumber(value: PHTVEngineRuntimeFacade.emojiHotkeyModifiers()),
-            "emojiHotkeyKeyCode": NSNumber(value: PHTVEngineRuntimeFacade.emojiHotkeyKeyCode())
+            "emojiHotkeyKeyCode": NSNumber(value: PHTVEngineRuntimeFacade.emojiHotkeyKeyCode()),
+            "switchKey2Status": NSNumber(value: PHTVEngineRuntimeFacade.switchKey2Status()),
+            "singleModifierSwitchKeys": NSNumber(value: 0)
         ]
     }
 }

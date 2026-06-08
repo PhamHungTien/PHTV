@@ -323,6 +323,41 @@ extension AppState {
         set { uiState.switchKeyName = newValue }
     }
 
+    var switchKey2Command: Bool {
+        get { trackedSubstate(uiState.switchKey2Command) }
+        set { uiState.switchKey2Command = newValue }
+    }
+
+    var switchKey2Option: Bool {
+        get { trackedSubstate(uiState.switchKey2Option) }
+        set { uiState.switchKey2Option = newValue }
+    }
+
+    var switchKey2Control: Bool {
+        get { trackedSubstate(uiState.switchKey2Control) }
+        set { uiState.switchKey2Control = newValue }
+    }
+
+    var switchKey2Shift: Bool {
+        get { trackedSubstate(uiState.switchKey2Shift) }
+        set { uiState.switchKey2Shift = newValue }
+    }
+
+    var switchKey2Fn: Bool {
+        get { trackedSubstate(uiState.switchKey2Fn) }
+        set { uiState.switchKey2Fn = newValue }
+    }
+
+    var switchKey2KeyCode: UInt16 {
+        get { trackedSubstate(uiState.switchKey2KeyCode) }
+        set { uiState.switchKey2KeyCode = newValue }
+    }
+
+    var switchKey2Name: String {
+        get { trackedSubstate(uiState.switchKey2Name) }
+        set { uiState.switchKey2Name = newValue }
+    }
+
     var beepOnModeSwitch: Bool {
         get { trackedSubstate(uiState.beepOnModeSwitch) }
         set { uiState.beepOnModeSwitch = newValue }

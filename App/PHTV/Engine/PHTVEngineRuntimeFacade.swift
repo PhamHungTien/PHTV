@@ -63,6 +63,8 @@ private final class RuntimeSettingsStateBox: @unchecked Sendable {
     var showIconOnDock: Int32 = 0
     var performLayoutCompat: Int32 = 0
     var safeMode: Int32 = 0
+    var singleModifierSwitchKeys: Int32 = 0
+    var switchKey2Status: Int32 = 0
 }
 
 private let macroLookupState = MacroLookupStateBox()
@@ -105,6 +107,16 @@ private var runtimeLanguage: Int32 {
 private var runtimeSwitchKeyStatus: Int32 {
     get { withRuntimeSettings { $0.switchKeyStatus } }
     set { withRuntimeSettings { $0.switchKeyStatus = newValue } }
+}
+
+private var runtimeSwitchKey2Status: Int32 {
+    get { withRuntimeSettings { $0.switchKey2Status } }
+    set { withRuntimeSettings { $0.switchKey2Status = newValue } }
+}
+
+private var runtimeSingleModifierSwitchKeys: Int32 {
+    get { withRuntimeSettings { $0.singleModifierSwitchKeys } }
+    set { withRuntimeSettings { $0.singleModifierSwitchKeys = newValue } }
 }
 
 private var runtimeFixRecommendBrowser: Int32 {
@@ -822,6 +834,14 @@ final class PHTVEngineRuntimeFacade: NSObject {
         runtimeSwitchKeyStatus = status
     }
 
+    class func switchKey2Status() -> Int32 {
+        runtimeSwitchKey2Status
+    }
+
+    class func setSwitchKey2Status(_ status: Int32) {
+        runtimeSwitchKey2Status = status
+    }
+
     class func setShowIconOnDock(_ visible: Bool) {
         runtimeShowIconOnDock = visible ? 1 : 0
     }
@@ -1072,6 +1092,14 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func engineDataMatchedMacroSnippetType() -> Int32 {
         lastMatchedMacroSnippetType()
+    }
+
+    class func singleModifierSwitchKeys() -> Int32 {
+        runtimeSingleModifierSwitchKeys
+    }
+
+    class func setSingleModifierSwitchKeys(_ value: Int32) {
+        runtimeSingleModifierSwitchKeys = value
     }
 
 }

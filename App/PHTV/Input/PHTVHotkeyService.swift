@@ -274,11 +274,11 @@ final class PHTVHotkeyService: NSObject {
     }
 
     private class func isEmptyHotkey(_ data: UInt32) -> Bool {
-        (data & ~hotkeyBeepMask) == emptyHotkey
+        data == 0 || (data & ~hotkeyBeepMask) == emptyHotkey
     }
 
     private class func hasHotkeyKey(_ data: UInt32) -> Bool {
-        (data & hotkeyKeyMask) != hotkeyNoKey
+        !isEmptyHotkey(data) && (data & hotkeyKeyMask) != hotkeyNoKey
     }
 
     private class func keyMatches(_ data: UInt32, currentKeycode: UInt16) -> Bool {
@@ -355,8 +355,19 @@ final class PHTVHotkeyService: NSObject {
     @objc(isModifierOnlyHotkey:)
     class func isModifierOnlyHotkey(_ hotKeyData: Int32) -> Bool {
         let data = UInt32(bitPattern: hotKeyData)
-        return !hasHotkeyKey(data)
+        return !hasHotkeyKey(data) && !isEmptyHotkey(data) && data != 0
     }
+
+    @objc(isSingleModifierKey:mask:)
+    class func isSingleModifierKey(keyCode: UInt16, mask: Int32) -> Bool {
+        for key in SingleModifierKey.allCases {
+            if key.keyCode == keyCode {
+                return (mask & (1 << key.rawValue)) != 0
+            }
+        }
+        return false
+    }
+
 
     private class func isOptionRestoreKey(_ customEscapeKey: Int32) -> Bool {
         Int(customEscapeKey) == kVK_Option || Int(customEscapeKey) == kVK_RightOption
@@ -495,24 +506,34 @@ final class PHTVHotkeyService: NSObject {
         return relevantHotkeyModifierFlags(flags) == expectedModifiers
     }
 
-    @objc(evaluateKeyDownHotkeyActionForKeyCode:lastFlags:currentFlags:switchHotkey:convertHotkey:emojiEnabled:emojiModifiers:emojiHotkeyKeyCode:)
+    class func isSingleModifierKeyCode(_ keyCode: UInt16) -> Bool {
+        return keyCode == 54 || keyCode == 55 || keyCode == 56 || keyCode == 58 ||
+               keyCode == 59 || keyCode == 60 || keyCode == 61 || keyCode == 62 ||
+               keyCode == 63
+    }
+
+    @objc(evaluateKeyDownHotkeyActionForKeyCode:lastFlags:currentFlags:switchHotkey:switchHotkey2:convertHotkey:emojiEnabled:emojiModifiers:emojiHotkeyKeyCode:)
     class func evaluateKeyDownHotkeyAction(
         forKeyCode keyCode: UInt16,
         lastFlags: UInt64,
         currentFlags: UInt64,
         switchHotkey: Int32,
+        switchHotkey2: Int32,
         convertHotkey: Int32,
         emojiEnabled: Int32,
         emojiModifiers: Int32,
         emojiHotkeyKeyCode: Int32
     ) -> Int32 {
         let switchData = UInt32(bitPattern: switchHotkey)
+        let switch2Data = UInt32(bitPattern: switchHotkey2)
         let convertData = UInt32(bitPattern: convertHotkey)
 
         let switchHasKey = hasHotkeyKey(switchData)
+        let switch2HasKey = hasHotkeyKey(switch2Data)
         let convertHasKey = hasHotkeyKey(convertData)
 
-        let isSwitchHotkeyKey = switchHasKey && keyMatches(switchData, currentKeycode: keyCode)
+        let isSwitchHotkeyKey = (switchHasKey && keyMatches(switchData, currentKeycode: keyCode))
+            || (switch2HasKey && keyMatches(switch2Data, currentKeycode: keyCode))
         let isConvertHotkeyKey = convertHasKey && keyMatches(convertData, currentKeycode: keyCode)
         let isEmojiHotkeyKey = emojiEnabled != 0
             && UInt16(truncatingIfNeeded: emojiHotkeyKeyCode) == keyCode
@@ -522,18 +543,28 @@ final class PHTVHotkeyService: NSObject {
         }
 
         if isSwitchHotkeyKey {
-            let matchedOnLastFlags = checkHotKey(
+            let matchedOnLastFlags = (switchHasKey && checkHotKey(
                 switchHotkey,
                 checkKeyCode: true,
                 currentKeycode: keyCode,
                 currentFlags: lastFlags
-            )
-            let matchedOnCurrentFlags = checkHotKey(
+            )) || (switch2HasKey && checkHotKey(
+                switchHotkey2,
+                checkKeyCode: true,
+                currentKeycode: keyCode,
+                currentFlags: lastFlags
+            ))
+            let matchedOnCurrentFlags = (switchHasKey && checkHotKey(
                 switchHotkey,
                 checkKeyCode: true,
                 currentKeycode: keyCode,
                 currentFlags: currentFlags
-            )
+            )) || (switch2HasKey && checkHotKey(
+                switchHotkey2,
+                checkKeyCode: true,
+                currentKeycode: keyCode,
+                currentFlags: currentFlags
+            ))
             if matchedOnLastFlags || matchedOnCurrentFlags {
                 return PHTVKeyDownHotkeyAction.switchLanguage.rawValue
             }
@@ -570,12 +601,13 @@ final class PHTVHotkeyService: NSObject {
         return PHTVKeyDownHotkeyAction.none.rawValue
     }
 
-    @objc(processKeyDownHotkeyWithKeyCode:lastFlags:currentFlags:switchHotkey:convertHotkey:emojiEnabled:emojiModifiers:emojiHotkeyKeyCode:)
+    @objc(processKeyDownHotkeyWithKeyCode:lastFlags:currentFlags:switchHotkey:switchHotkey2:convertHotkey:emojiEnabled:emojiModifiers:emojiHotkeyKeyCode:)
     class func processKeyDownHotkey(
         withKeyCode keyCode: UInt16,
         lastFlags: UInt64,
         currentFlags: UInt64,
         switchHotkey: Int32,
+        switchHotkey2: Int32,
         convertHotkey: Int32,
         emojiEnabled: Int32,
         emojiModifiers: Int32,
@@ -586,6 +618,7 @@ final class PHTVHotkeyService: NSObject {
             lastFlags: lastFlags,
             currentFlags: currentFlags,
             switchHotkey: switchHotkey,
+            switchHotkey2: switchHotkey2,
             convertHotkey: convertHotkey,
             emojiEnabled: emojiEnabled,
             emojiModifiers: emojiModifiers,
@@ -609,23 +642,27 @@ final class PHTVHotkeyService: NSObject {
         )
     }
 
-    @objc(shouldMarkSwitchModifiersHeldForFlags:switchHotkey:convertHotkey:)
+    @objc(shouldMarkSwitchModifiersHeldForFlags:switchHotkey:switchHotkey2:convertHotkey:)
     class func shouldMarkSwitchModifiersHeld(
         forFlags flags: UInt64,
         switchHotkey: Int32,
+        switchHotkey2: Int32,
         convertHotkey: Int32
     ) -> Bool {
         let switchIsModifierOnly = isModifierOnlyHotkey(switchHotkey)
+        let switch2IsModifierOnly = isModifierOnlyHotkey(switchHotkey2)
         let convertIsModifierOnly = isModifierOnlyHotkey(convertHotkey)
-        if !switchIsModifierOnly && !convertIsModifierOnly {
+        if !switchIsModifierOnly && !switch2IsModifierOnly && !convertIsModifierOnly {
             return false
         }
 
         let switchModifiersHeld = switchIsModifierOnly
             && hotkeyModifiersAreHeld(switchHotkey, currentFlags: flags)
+        let switch2ModifiersHeld = switch2IsModifierOnly
+            && hotkeyModifiersAreHeld(switchHotkey2, currentFlags: flags)
         let convertModifiersHeld = convertIsModifierOnly
             && hotkeyModifiersAreHeld(convertHotkey, currentFlags: flags)
-        return switchModifiersHeld || convertModifiersHeld
+        return switchModifiersHeld || switch2ModifiersHeld || convertModifiersHeld
     }
 
     @objc(shouldMarkEmojiModifiersHeldForFlags:emojiEnabled:emojiModifiers:emojiHotkeyKeyCode:)
@@ -644,10 +681,11 @@ final class PHTVHotkeyService: NSObject {
         return emojiHotkeyModifiersAreHeld(flags, emojiModifiers: emojiModifiers)
     }
 
-    @objc(evaluateModifierReleaseActionWithLastFlags:switchHotkey:convertHotkey:emojiEnabled:emojiModifiers:emojiKeyCode:keyPressedWhileSwitchModifiersHeld:keyPressedWhileEmojiModifiersHeld:hasJustUsedHotkey:tempOffSpellingEnabled:tempOffEngineEnabled:)
+    @objc(evaluateModifierReleaseActionWithLastFlags:switchHotkey:switchHotkey2:convertHotkey:emojiEnabled:emojiModifiers:emojiKeyCode:keyPressedWhileSwitchModifiersHeld:keyPressedWhileEmojiModifiersHeld:hasJustUsedHotkey:tempOffSpellingEnabled:tempOffEngineEnabled:)
     class func evaluateModifierReleaseAction(
         lastFlags: UInt64,
         switchHotkey: Int32,
+        switchHotkey2: Int32,
         convertHotkey: Int32,
         emojiEnabled: Int32,
         emojiModifiers: Int32,
@@ -667,7 +705,18 @@ final class PHTVHotkeyService: NSObject {
             currentKeycode: 0,
             currentFlags: lastFlags
         )
-        if canTriggerSwitch && switchMatched {
+
+        let switch2HasKey = hasHotkeyKey(UInt32(bitPattern: switchHotkey2))
+        let switch2IsModifierOnly = isModifierOnlyHotkey(switchHotkey2)
+        let canTriggerSwitch2 = !switch2IsModifierOnly || !keyPressedWhileSwitchModifiersHeld
+        let switch2Matched = checkHotKey(
+            switchHotkey2,
+            checkKeyCode: switch2HasKey,
+            currentKeycode: 0,
+            currentFlags: lastFlags
+        )
+
+        if (canTriggerSwitch && switchMatched) || (canTriggerSwitch2 && switch2Matched) {
             return PHTVModifierReleaseAction.switchLanguage.rawValue
         }
 
@@ -709,10 +758,11 @@ final class PHTVHotkeyService: NSObject {
         return PHTVModifierReleaseAction.none.rawValue
     }
 
-    @objc(shouldPassThroughModifierReleaseEventForReleaseAction:switchHotkey:convertHotkey:emojiEnabled:emojiHotkeyKeyCode:)
+    @objc(shouldPassThroughModifierReleaseEventForReleaseAction:switchHotkey:switchHotkey2:convertHotkey:emojiEnabled:emojiHotkeyKeyCode:)
     class func shouldPassThroughModifierReleaseEvent(
         forReleaseAction releaseAction: Int32,
         switchHotkey: Int32,
+        switchHotkey2: Int32,
         convertHotkey: Int32,
         emojiEnabled: Int32,
         emojiHotkeyKeyCode: Int32
@@ -723,7 +773,7 @@ final class PHTVHotkeyService: NSObject {
 
         switch action {
         case .switchLanguage:
-            return isModifierOnlyHotkey(switchHotkey)
+            return isModifierOnlyHotkey(switchHotkey) || isModifierOnlyHotkey(switchHotkey2)
         case .quickConvert:
             return isModifierOnlyHotkey(convertHotkey)
         case .emojiPicker:
@@ -737,7 +787,7 @@ final class PHTVHotkeyService: NSObject {
     // - bit 0: should attempt restore-to-raw-keys
     // - bit 1: should reset restore-modifier state
     // - bits 8...15: PHTVModifierReleaseAction value
-    @objc(evaluateFlagsReleasePlanWithRestoreOnEscape:restoreModifierPressed:keyPressedWithRestoreModifier:customEscapeKey:oldFlags:newFlags:switchHotkey:convertHotkey:emojiEnabled:emojiModifiers:emojiKeyCode:keyPressedWhileSwitchModifiersHeld:keyPressedWhileEmojiModifiersHeld:hasJustUsedHotkey:tempOffSpellingEnabled:tempOffEngineEnabled:)
+    @objc(evaluateFlagsReleasePlanWithRestoreOnEscape:restoreModifierPressed:keyPressedWithRestoreModifier:customEscapeKey:oldFlags:newFlags:switchHotkey:switchHotkey2:convertHotkey:emojiEnabled:emojiModifiers:emojiKeyCode:keyPressedWhileSwitchModifiersHeld:keyPressedWhileEmojiModifiersHeld:hasJustUsedHotkey:tempOffSpellingEnabled:tempOffEngineEnabled:)
     class func evaluateFlagsReleasePlan(
         restoreOnEscape: Int32,
         restoreModifierPressed: Bool,
@@ -746,6 +796,7 @@ final class PHTVHotkeyService: NSObject {
         oldFlags: UInt64,
         newFlags: UInt64,
         switchHotkey: Int32,
+        switchHotkey2: Int32,
         convertHotkey: Int32,
         emojiEnabled: Int32,
         emojiModifiers: Int32,
@@ -775,6 +826,7 @@ final class PHTVHotkeyService: NSObject {
         let releaseAction = evaluateModifierReleaseAction(
             lastFlags: oldFlags,
             switchHotkey: switchHotkey,
+            switchHotkey2: switchHotkey2,
             convertHotkey: convertHotkey,
             emojiEnabled: emojiEnabled,
             emojiModifiers: emojiModifiers,
@@ -943,7 +995,7 @@ final class PHTVHotkeyService: NSObject {
         )
     }
 
-    @objc(keyDownModifierTrackingForFlags:restoreOnEscape:customEscapeKey:restoreModifierPressed:keyPressedWithRestoreModifier:switchHotkey:convertHotkey:keyPressedWhileSwitchModifiersHeld:emojiEnabled:emojiModifiers:emojiHotkeyKeyCode:keyPressedWhileEmojiModifiersHeld:)
+    @objc(keyDownModifierTrackingForFlags:restoreOnEscape:customEscapeKey:restoreModifierPressed:keyPressedWithRestoreModifier:switchHotkey:switchHotkey2:convertHotkey:keyPressedWhileSwitchModifiersHeld:emojiEnabled:emojiModifiers:emojiHotkeyKeyCode:keyPressedWhileEmojiModifiersHeld:)
     class func keyDownModifierTracking(
         forFlags flags: UInt64,
         restoreOnEscape: Int32,
@@ -951,6 +1003,7 @@ final class PHTVHotkeyService: NSObject {
         restoreModifierPressed: Bool,
         keyPressedWithRestoreModifier: Bool,
         switchHotkey: Int32,
+        switchHotkey2: Int32,
         convertHotkey: Int32,
         keyPressedWhileSwitchModifiersHeld: Bool,
         emojiEnabled: Int32,
@@ -971,6 +1024,7 @@ final class PHTVHotkeyService: NSObject {
         if shouldMarkSwitchModifiersHeld(
             forFlags: flags,
             switchHotkey: switchHotkey,
+            switchHotkey2: switchHotkey2,
             convertHotkey: convertHotkey
         ) {
             nextKeyPressedWhileSwitchModifiersHeld = true
@@ -1039,7 +1093,7 @@ final class PHTVHotkeyService: NSObject {
         )
     }
 
-    @objc(modifierReleaseTransitionWithRestoreOnEscape:restoreModifierPressed:keyPressedWithRestoreModifier:customEscapeKey:oldFlags:newFlags:switchHotkey:convertHotkey:emojiEnabled:emojiModifiers:emojiKeyCode:keyPressedWhileSwitchModifiersHeld:keyPressedWhileEmojiModifiersHeld:hasJustUsedHotkey:tempOffSpellingEnabled:tempOffEngineEnabled:pauseKeyEnabled:pauseKeyCode:pausePressed:currentLanguage:savedLanguage:)
+    @objc(modifierReleaseTransitionWithRestoreOnEscape:restoreModifierPressed:keyPressedWithRestoreModifier:customEscapeKey:oldFlags:newFlags:switchHotkey:switchHotkey2:convertHotkey:emojiEnabled:emojiModifiers:emojiKeyCode:keyPressedWhileSwitchModifiersHeld:keyPressedWhileEmojiModifiersHeld:hasJustUsedHotkey:tempOffSpellingEnabled:tempOffEngineEnabled:pauseKeyEnabled:pauseKeyCode:pausePressed:currentLanguage:savedLanguage:)
     class func modifierReleaseTransition(
         restoreOnEscape: Int32,
         restoreModifierPressed: Bool,
@@ -1048,6 +1102,7 @@ final class PHTVHotkeyService: NSObject {
         oldFlags: UInt64,
         newFlags: UInt64,
         switchHotkey: Int32,
+        switchHotkey2: Int32,
         convertHotkey: Int32,
         emojiEnabled: Int32,
         emojiModifiers: Int32,
@@ -1071,6 +1126,7 @@ final class PHTVHotkeyService: NSObject {
             oldFlags: oldFlags,
             newFlags: newFlags,
             switchHotkey: switchHotkey,
+            switchHotkey2: switchHotkey2,
             convertHotkey: convertHotkey,
             emojiEnabled: emojiEnabled,
             emojiModifiers: emojiModifiers,

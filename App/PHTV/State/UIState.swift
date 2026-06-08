@@ -39,8 +39,40 @@ final class UIState {
             onChange?()
         }
     }
+    var switchKey2Command: Bool = false {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKey2Command) }
+    }
+    var switchKey2Option: Bool = false {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKey2Option) }
+    }
+    var switchKey2Control: Bool = false {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKey2Control) }
+    }
+    var switchKey2Shift: Bool = false {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKey2Shift) }
+    }
+    var switchKey2Fn: Bool = false {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKey2Fn) }
+    }
+    var switchKey2KeyCode: UInt16 = KeyCode.noKey {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKey2KeyCode) }
+    }
+    var switchKey2Name: String = KeyCode.modifierOnlyDisplayName {
+        didSet {
+            guard switchKey2Name != oldValue else { return }
+            onChange?()
+        }
+    }
     var beepOnModeSwitch: Bool = false {  // Play beep sound when switching mode
         didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: beepOnModeSwitch) }
+    }
+    var singleModifierSwitchKeys: Int = 0 {
+        didSet {
+            handleObservedChange(oldValue: oldValue, newValue: singleModifierSwitchKeys) {
+                self.persistSingleModifierSettings()
+                self.scheduleHotkeyChangeNotification()
+            }
+        }
     }
 
     // Audio and Display settings
@@ -229,9 +261,21 @@ final class UIState {
             )
         }
         decodeSwitchKeyStatus(switchKeyStatus)
+
+        // Load hotkey 2 from SwitchKey2Status
+        let storedSwitchKey2Status = defaults.integer(
+            forKey: UserDefaultsKey.switchKey2Status,
+            default: 0
+        )
+        decodeSwitchKey2Status(storedSwitchKey2Status)
+
         beepOnModeSwitch = defaults.bool(
             forKey: UserDefaultsKey.beepOnModeSwitch,
             default: Defaults.beepOnModeSwitch
+        )
+        singleModifierSwitchKeys = defaults.integer(
+            forKey: UserDefaultsKey.singleModifierSwitchKeys,
+            default: 0
         )
 
         // Load audio and display settings
@@ -264,7 +308,9 @@ final class UIState {
         // Save hotkey in backend format (SwitchKeyStatus)
         let switchKeyStatus = encodeSwitchKeyStatus()
         defaults.set(switchKeyStatus, forKey: UserDefaultsKey.switchKeyStatus)
+        defaults.set(encodeSwitchKey2Status(), forKey: UserDefaultsKey.switchKey2Status)
         defaults.set(beepOnModeSwitch, forKey: UserDefaultsKey.beepOnModeSwitch)
+        defaults.set(singleModifierSwitchKeys, forKey: UserDefaultsKey.singleModifierSwitchKeys)
 
         // Save audio and display settings
         defaults.set(beepVolume, forKey: UserDefaultsKey.beepVolume)
@@ -277,7 +323,14 @@ final class UIState {
         SettingsObserver.shared.suspendNotifications()
         let defaults = UserDefaults.standard
         defaults.set(encodeSwitchKeyStatus(), forKey: UserDefaultsKey.switchKeyStatus)
+        defaults.set(encodeSwitchKey2Status(), forKey: UserDefaultsKey.switchKey2Status)
         defaults.set(beepOnModeSwitch, forKey: UserDefaultsKey.beepOnModeSwitch)
+    }
+
+    private func persistSingleModifierSettings() {
+        SettingsObserver.shared.suspendNotifications()
+        let defaults = UserDefaults.standard
+        defaults.set(singleModifierSwitchKeys, forKey: UserDefaultsKey.singleModifierSwitchKeys)
     }
 
     private func persistVietnameseMenubarIconPreference(_ value: Bool) {
@@ -336,6 +389,39 @@ final class UIState {
         return status
     }
 
+    private func decodeSwitchKey2Status(_ status: Int) {
+        if status == 0 {
+            switchKey2KeyCode = KeyCode.noKey
+            switchKey2Control = false
+            switchKey2Option = false
+            switchKey2Command = false
+            switchKey2Shift = false
+            switchKey2Fn = false
+            switchKey2Name = KeyCode.modifierOnlyDisplayName
+            return
+        }
+        switchKey2KeyCode = UInt16(status & KeyCode.keyMask)
+        switchKey2Control = (status & KeyCode.controlMask) != 0
+        switchKey2Option = (status & KeyCode.optionMask) != 0
+        switchKey2Command = (status & KeyCode.commandMask) != 0
+        switchKey2Shift = (status & KeyCode.shiftMask) != 0
+        switchKey2Fn = (status & KeyCode.fnMask) != 0
+        switchKey2Name = keyCodeToName(switchKey2KeyCode)
+    }
+
+    func encodeSwitchKey2Status() -> Int {
+        if switchKey2KeyCode == KeyCode.noKey && !switchKey2Control && !switchKey2Option && !switchKey2Command && !switchKey2Shift && !switchKey2Fn {
+            return 0
+        }
+        var status = Int(switchKey2KeyCode)
+        if switchKey2Control { status |= KeyCode.controlMask }
+        if switchKey2Option { status |= KeyCode.optionMask }
+        if switchKey2Command { status |= KeyCode.commandMask }
+        if switchKey2Shift { status |= KeyCode.shiftMask }
+        if switchKey2Fn { status |= KeyCode.fnMask }
+        return status
+    }
+
     /// Convert key code to display name
     private func keyCodeToName(_ keyCode: UInt16) -> String {
         KeyCode.name(for: keyCode)
@@ -358,6 +444,16 @@ final class UIState {
         switchKeyFn = Defaults.switchKeyFn
         switchKeyCode = Defaults.switchKeyCode
         switchKeyName = Defaults.switchKeyName
+
+        switchKey2Command = false
+        switchKey2Option = false
+        switchKey2Control = false
+        switchKey2Shift = false
+        switchKey2Fn = false
+        switchKey2KeyCode = KeyCode.noKey
+        switchKey2Name = KeyCode.modifierOnlyDisplayName
+
+        singleModifierSwitchKeys = 0
         beepOnModeSwitch = Defaults.beepOnModeSwitch
 
         beepVolume = Defaults.beepVolume

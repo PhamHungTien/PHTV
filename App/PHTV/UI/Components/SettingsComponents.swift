@@ -396,3 +396,210 @@ struct RestoreKeyButton: View {
         }
     }
 }
+
+// MARK: - Shared Hotkey Recorder Button & Label
+
+struct SettingsShortcutRecorderLabel: View {
+    let text: String
+    let isRecording: Bool
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: isRecording ? "keyboard.badge.ellipsis" : "keyboard")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(isRecording ? Color.accentColor : .secondary)
+                .frame(width: 16)
+
+            Text(text)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(isRecording ? Color.accentColor : .primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+
+            Spacer(minLength: 0)
+        }
+    }
+}
+
+struct SettingsShortcutRecorderButtonStyle: ButtonStyle {
+    let isRecording: Bool
+    @Environment(\.colorScheme) private var colorScheme
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, 10)
+            .frame(width: SettingsLayout.rowControlColumnWidth, height: 32, alignment: .leading)
+            .background {
+                PHTVRoundedRect(cornerRadius: 7)
+                    .fill(backgroundColor)
+                    .overlay {
+                        PHTVRoundedRect(cornerRadius: 7)
+                            .stroke(borderColor, lineWidth: isRecording ? 1.5 : 1)
+                    }
+            }
+            .contentShape(PHTVRoundedRect(cornerRadius: 7))
+            .opacity(configuration.isPressed ? 0.82 : 1)
+    }
+
+    private var backgroundColor: Color {
+        if isRecording {
+            return Color.accentColor.opacity(colorScheme == .dark ? 0.18 : 0.12)
+        }
+        return Color(NSColor.controlBackgroundColor)
+    }
+
+    private var borderColor: Color {
+        if isRecording {
+            return Color.accentColor.opacity(colorScheme == .dark ? 0.8 : 0.65)
+        }
+        return Color(NSColor.separatorColor).opacity(colorScheme == .dark ? 0.9 : 0.65)
+    }
+}
+
+// MARK: - Unified Hotkey Capture Services
+
+private final class SettingsHotkeyLocalEventMonitor: @unchecked Sendable {
+    let value: Any
+
+    init(value: Any) {
+        self.value = value
+    }
+
+    deinit {
+        NSEvent.removeMonitor(value)
+    }
+}
+
+final class UnifiedHotkeyCaptureView: NSView {
+    var onKeyPress: ((UInt16, NSEvent.ModifierFlags) -> Void)?
+    var onCancel: (() -> Void)?
+    private var localMonitor: SettingsHotkeyLocalEventMonitor?
+    private var maxModifiers: NSEvent.ModifierFlags = []
+    private var keyDownHappened = false
+
+    var isRecording = false {
+        didSet {
+            isRecording ? startRecording() : stopRecording()
+        }
+    }
+
+    override var acceptsFirstResponder: Bool { true }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        if isRecording {
+            focusForCapture()
+        }
+    }
+
+    private func startRecording() {
+        focusForCapture()
+        guard localMonitor == nil else { return }
+        maxModifiers = []
+        keyDownHappened = false
+
+        guard let monitor = NSEvent.addLocalMonitorForEvents(matching: [.flagsChanged, .keyDown], handler: { [weak self] event in
+            guard let self, self.isRecording else { return event }
+
+            if event.type == .flagsChanged {
+                let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+                let keyCode = event.keyCode
+                
+                if !flags.isEmpty {
+                    self.maxModifiers = self.maxModifiers.union(flags)
+                } else if !self.maxModifiers.isEmpty && !self.keyDownHappened {
+                    if self.maxModifiersMatchKey(keyCode: keyCode, maxMods: self.maxModifiers) {
+                        self.capture(keyCode: keyCode, modifiers: [])
+                    } else {
+                        self.capture(keyCode: KeyCode.noKey, modifiers: self.maxModifiers)
+                    }
+                    return nil
+                }
+            } else if event.type == .keyDown {
+                self.keyDownHappened = true
+                let keyCode = event.keyCode
+                let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+                
+                if keyCode == KeyCode.escape && flags.isEmpty {
+                    self.cancel()
+                    return nil
+                }
+                
+                self.capture(keyCode: keyCode, modifiers: flags)
+                return nil
+            }
+
+            return event
+        }) else { return }
+        localMonitor = SettingsHotkeyLocalEventMonitor(value: monitor)
+    }
+
+    private func stopRecording() {
+        self.localMonitor = nil
+    }
+
+    private func focusForCapture() {
+        window?.makeFirstResponder(self)
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.isRecording else { return }
+            self.window?.makeFirstResponder(self)
+        }
+    }
+
+    private func capture(keyCode: UInt16, modifiers: NSEvent.ModifierFlags) {
+        isRecording = false
+        Task { @MainActor [weak self] in
+            self?.onKeyPress?(keyCode, modifiers)
+        }
+    }
+
+    private func cancel() {
+        isRecording = false
+        Task { @MainActor [weak self] in
+            self?.onCancel?()
+        }
+    }
+
+    private func maxModifiersMatchKey(keyCode: UInt16, maxMods: NSEvent.ModifierFlags) -> Bool {
+        switch keyCode {
+        case 58, 61: return maxMods == [.option]
+        case 59, 62: return maxMods == [.control]
+        case 56, 60: return maxMods == [.shift]
+        case 55, 54: return maxMods == [.command]
+        case 63: return maxMods == [.function]
+        default: return false
+        }
+    }
+}
+
+struct UnifiedHotkeyEventHandler: NSViewRepresentable {
+    @Binding var isRecording: Bool
+    var onCaptured: (UInt16, NSEvent.ModifierFlags) -> Void
+    var onCancelled: () -> Void
+
+    func makeNSView(context: Context) -> NSView {
+        let view = UnifiedHotkeyCaptureView()
+        view.onKeyPress = { keyCode, modifiers in
+            onCaptured(keyCode, modifiers)
+        }
+        view.onCancel = {
+            onCancelled()
+        }
+        context.coordinator.view = view
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        if let captureView = nsView as? UnifiedHotkeyCaptureView {
+            captureView.isRecording = isRecording
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    class Coordinator {
+        var view: UnifiedHotkeyCaptureView?
+    }
+}

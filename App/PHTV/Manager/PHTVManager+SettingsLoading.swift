@@ -134,7 +134,8 @@ import Foundation
             UserDefaultsKey.restoreIfWrongSpelling,
             UserDefaultsKey.enableEmojiHotkey,
             UserDefaultsKey.emojiHotkeyModifiers,
-            UserDefaultsKey.emojiHotkeyKeyCode
+            UserDefaultsKey.emojiHotkeyKeyCode,
+            UserDefaultsKey.switchKey2Status
         ]
 
         for key in tokenKeys {
@@ -447,6 +448,10 @@ import Foundation
             NSLog("[AppDelegate] Loaded hotkey from UserDefaults: 0x%X", normalizedSwitchHotkey.value)
         }
 
+        let rawSwitchKey2Status = Int32(truncatingIfNeeded: defaults.integer(forKey: UserDefaultsKey.switchKey2Status))
+        PHTVEngineRuntimeFacade.setSwitchKey2Status(rawSwitchKey2Status)
+        PHTVEngineRuntimeFacade.setSingleModifierSwitchKeys(0)
+
         phtv_loadEmojiHotkeySettingsFromDefaults()
 
         let settingsToken = phtv_computeSettingsToken(defaults: defaults)
@@ -567,5 +572,10 @@ import Foundation
         defaults.set(Defaults.pauseKeyEnabled, forKey: UserDefaultsKey.pauseKeyEnabled)
         defaults.set(Int(Defaults.pauseKeyCode), forKey: UserDefaultsKey.pauseKey)
         defaults.set(Defaults.pauseKeyName, forKey: UserDefaultsKey.pauseKeyName)
+
+        PHTVEngineRuntimeFacade.setSwitchKey2Status(0)
+        defaults.set(0, forKey: UserDefaultsKey.switchKey2Status)
+        PHTVEngineRuntimeFacade.setSingleModifierSwitchKeys(0)
+        defaults.set(0, forKey: UserDefaultsKey.singleModifierSwitchKeys)
     }
 }

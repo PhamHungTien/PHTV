@@ -141,13 +141,32 @@ final class PHTVEventContextBridgeService: NSObject {
         return targetContext
     }
 
-    @objc(handleModifierPressWithFlags:restoreOnEscape:customEscapeKey:pauseKeyEnabled:pauseKeyCode:currentLanguage:)
+    @objc(handleModifierPressWithFlags:keyCode:restoreOnEscape:customEscapeKey:pauseKeyEnabled:pauseKeyCode:currentLanguage:switchHotkey:switchHotkey2:)
     class func handleModifierPress(withFlags flags: UInt64,
+                                   keyCode: UInt16,
                                    restoreOnEscape: Int32,
                                    customEscapeKey: Int32,
                                    pauseKeyEnabled: Int32,
                                    pauseKeyCode: Int32,
-                                   currentLanguage: Int32) -> PHTVModifierTransitionResultBox {
+                                   currentLanguage: Int32,
+                                   switchHotkey: Int32,
+                                   switchHotkey2: Int32) -> PHTVModifierTransitionResultBox {
+        let isSwitch1Single = PHTVHotkeyService.isSingleModifierKeyCode(UInt16(switchHotkey & 0xFFFF)) && (UInt16(switchHotkey & 0xFFFF) == keyCode)
+        let isSwitch2Single = PHTVHotkeyService.isSingleModifierKeyCode(UInt16(switchHotkey2 & 0xFFFF)) && (UInt16(switchHotkey2 & 0xFFFF) == keyCode)
+        if isSwitch1Single || isSwitch2Single {
+            let pressedKey = PHTVModifierRuntimeStateService.singleModifierSwitchPressedKeyValue()
+            if pressedKey == 0 {
+                PHTVModifierRuntimeStateService.setSingleModifierSwitchPressedKeyValue(keyCode)
+                PHTVModifierRuntimeStateService.setKeyPressedWhileSingleModifierHeldValue(false)
+            } else if pressedKey != keyCode {
+                PHTVModifierRuntimeStateService.setKeyPressedWhileSingleModifierHeldValue(true)
+            }
+        } else {
+            if PHTVModifierRuntimeStateService.singleModifierSwitchPressedKeyValue() != 0 {
+                PHTVModifierRuntimeStateService.setKeyPressedWhileSingleModifierHeldValue(true)
+            }
+        }
+
         let transition = PHTVHotkeyService.modifierPressTransition(
             forFlags: flags,
             restoreOnEscape: restoreOnEscape,
@@ -177,12 +196,14 @@ final class PHTVEventContextBridgeService: NSObject {
         )
     }
 
-    @objc(handleModifierReleaseWithOldFlags:newFlags:restoreOnEscape:customEscapeKey:switchHotkey:convertHotkey:emojiEnabled:emojiModifiers:emojiKeyCode:tempOffSpellingEnabled:tempOffEngineEnabled:pauseKeyEnabled:pauseKeyCode:currentLanguage:)
+    @objc(handleModifierReleaseWithOldFlags:newFlags:keyCode:restoreOnEscape:customEscapeKey:switchHotkey:switchHotkey2:convertHotkey:emojiEnabled:emojiModifiers:emojiKeyCode:tempOffSpellingEnabled:tempOffEngineEnabled:pauseKeyEnabled:pauseKeyCode:currentLanguage:)
     class func handleModifierRelease(oldFlags: UInt64,
                                      newFlags: UInt64,
+                                     keyCode: UInt16,
                                      restoreOnEscape: Int32,
                                      customEscapeKey: Int32,
                                      switchHotkey: Int32,
+                                     switchHotkey2: Int32,
                                      convertHotkey: Int32,
                                      emojiEnabled: Int32,
                                      emojiModifiers: Int32,
@@ -200,6 +221,7 @@ final class PHTVEventContextBridgeService: NSObject {
             oldFlags: oldFlags,
             newFlags: newFlags,
             switchHotkey: switchHotkey,
+            switchHotkey2: switchHotkey2,
             convertHotkey: convertHotkey,
             emojiEnabled: emojiEnabled,
             emojiModifiers: emojiModifiers,
@@ -224,18 +246,29 @@ final class PHTVEventContextBridgeService: NSObject {
         PHTVModifierRuntimeStateService.setKeyPressedWhileSwitchModifiersHeldValue(transition.keyPressedWhileSwitchModifiersHeld)
         PHTVModifierRuntimeStateService.setKeyPressedWhileEmojiModifiersHeldValue(transition.keyPressedWhileEmojiModifiersHeld)
 
+        var releaseAction = transition.releaseAction
+        let pressedKey = PHTVModifierRuntimeStateService.singleModifierSwitchPressedKeyValue()
+        if pressedKey != 0 && keyCode == pressedKey {
+            if !PHTVModifierRuntimeStateService.keyPressedWhileSingleModifierHeldValue() {
+                releaseAction = PHTVModifierReleaseAction.switchLanguage.rawValue
+            }
+            PHTVModifierRuntimeStateService.setSingleModifierSwitchPressedKeyValue(0)
+            PHTVModifierRuntimeStateService.setKeyPressedWhileSingleModifierHeldValue(false)
+        }
+
         return PHTVModifierTransitionResultBox(
             shouldAttemptRestore: transition.shouldAttemptRestore,
-            releaseAction: transition.releaseAction,
+            releaseAction: releaseAction,
             shouldUpdateLanguage: transition.shouldUpdateLanguage,
             language: transition.language
         )
     }
 
-    @objc(processKeyDownHotkeyAndApplyStateForKeyCode:currentFlags:switchHotkey:convertHotkey:emojiEnabled:emojiModifiers:emojiHotkeyKeyCode:)
+    @objc(processKeyDownHotkeyAndApplyStateForKeyCode:currentFlags:switchHotkey:switchHotkey2:convertHotkey:emojiEnabled:emojiModifiers:emojiHotkeyKeyCode:)
     class func processKeyDownHotkeyAndApplyState(forKeyCode keyCode: UInt16,
                                                  currentFlags: UInt64,
                                                  switchHotkey: Int32,
+                                                 switchHotkey2: Int32,
                                                  convertHotkey: Int32,
                                                  emojiEnabled: Int32,
                                                  emojiModifiers: Int32,
@@ -245,6 +278,7 @@ final class PHTVEventContextBridgeService: NSObject {
             lastFlags: PHTVModifierRuntimeStateService.lastFlagsValue(),
             currentFlags: currentFlags,
             switchHotkey: switchHotkey,
+            switchHotkey2: switchHotkey2,
             convertHotkey: convertHotkey,
             emojiEnabled: emojiEnabled,
             emojiModifiers: emojiModifiers,
@@ -256,11 +290,12 @@ final class PHTVEventContextBridgeService: NSObject {
         return evaluation.action
     }
 
-    @objc(applyKeyDownModifierTrackingForFlags:restoreOnEscape:customEscapeKey:switchHotkey:convertHotkey:emojiEnabled:emojiModifiers:emojiHotkeyKeyCode:)
+    @objc(applyKeyDownModifierTrackingForFlags:restoreOnEscape:customEscapeKey:switchHotkey:switchHotkey2:convertHotkey:emojiEnabled:emojiModifiers:emojiHotkeyKeyCode:)
     class func applyKeyDownModifierTracking(forFlags flags: UInt64,
                                             restoreOnEscape: Int32,
                                             customEscapeKey: Int32,
                                             switchHotkey: Int32,
+                                            switchHotkey2: Int32,
                                             convertHotkey: Int32,
                                             emojiEnabled: Int32,
                                             emojiModifiers: Int32,
@@ -272,6 +307,7 @@ final class PHTVEventContextBridgeService: NSObject {
             restoreModifierPressed: PHTVModifierRuntimeStateService.restoreModifierPressedValue(),
             keyPressedWithRestoreModifier: PHTVModifierRuntimeStateService.keyPressedWithRestoreModifierValue(),
             switchHotkey: switchHotkey,
+            switchHotkey2: switchHotkey2,
             convertHotkey: convertHotkey,
             keyPressedWhileSwitchModifiersHeld: PHTVModifierRuntimeStateService.keyPressedWhileSwitchModifiersHeldValue(),
             emojiEnabled: emojiEnabled,
@@ -283,6 +319,10 @@ final class PHTVEventContextBridgeService: NSObject {
         PHTVModifierRuntimeStateService.setKeyPressedWithRestoreModifierValue(tracking.keyPressedWithRestoreModifier)
         PHTVModifierRuntimeStateService.setKeyPressedWhileSwitchModifiersHeldValue(tracking.keyPressedWhileSwitchModifiersHeld)
         PHTVModifierRuntimeStateService.setKeyPressedWhileEmojiModifiersHeldValue(tracking.keyPressedWhileEmojiModifiersHeld)
+
+        if PHTVModifierRuntimeStateService.singleModifierSwitchPressedKeyValue() != 0 {
+            PHTVModifierRuntimeStateService.setKeyPressedWhileSingleModifierHeldValue(true)
+        }
     }
 
     @objc(shouldPrimeUppercaseOnKeyDownWithFlags:keyCode:keyCharacter:isNavigationKey:safeMode:uppercaseEnabled:uppercaseExcluded:)
@@ -507,6 +547,8 @@ final class PHTVModifierRuntimeStateService: NSObject {
         var keyPressedWithRestoreModifier = false
         var keyPressedWhileSwitchModifiersHeld = false
         var keyPressedWhileEmojiModifiersHeld = false
+        var singleModifierSwitchPressedKey: UInt16 = 0
+        var keyPressedWhileSingleModifierHeld = false
     }
 
     private final class ModifierRuntimeStateBox: @unchecked Sendable {
@@ -534,6 +576,8 @@ final class PHTVModifierRuntimeStateService: NSObject {
             state.keyPressedWithRestoreModifier = false
             state.keyPressedWhileSwitchModifiersHeld = false
             state.keyPressedWhileEmojiModifiersHeld = false
+            state.singleModifierSwitchPressedKey = 0
+            state.keyPressedWhileSingleModifierHeld = false
         }
     }
 
@@ -660,6 +704,32 @@ final class PHTVModifierRuntimeStateService: NSObject {
     class func setKeyPressedWhileEmojiModifiersHeldValue(_ value: Bool) {
         runtimeState.withLock { state in
             state.keyPressedWhileEmojiModifiersHeld = value
+        }
+    }
+
+    @objc class func singleModifierSwitchPressedKeyValue() -> UInt16 {
+        runtimeState.withLock { state in
+            state.singleModifierSwitchPressedKey
+        }
+    }
+
+    @objc(setSingleModifierSwitchPressedKeyValue:)
+    class func setSingleModifierSwitchPressedKeyValue(_ value: UInt16) {
+        runtimeState.withLock { state in
+            state.singleModifierSwitchPressedKey = value
+        }
+    }
+
+    @objc class func keyPressedWhileSingleModifierHeldValue() -> Bool {
+        runtimeState.withLock { state in
+            state.keyPressedWhileSingleModifierHeld
+        }
+    }
+
+    @objc(setKeyPressedWhileSingleModifierHeldValue:)
+    class func setKeyPressedWhileSingleModifierHeldValue(_ value: Bool) {
+        runtimeState.withLock { state in
+            state.keyPressedWhileSingleModifierHeld = value
         }
     }
 }

@@ -105,6 +105,8 @@ enum UserDefaultsKey {
 
     // MARK: - Hotkey Settings
     static let switchKeyStatus = "SwitchKeyStatus"
+    static let switchKey2Status = "SwitchKey2Status"
+    static let singleModifierSwitchKeys = "SingleModifierSwitchKeys"
     static let beepOnModeSwitch = "vBeepOnModeSwitch"
 
     // MARK: - Audio & Display
@@ -483,6 +485,7 @@ enum Defaults {
     static let switchKeyFn = false
     static let switchKeyCode = KeyCode.noKey
     static let switchKeyName = KeyCode.modifierOnlyDisplayName
+    static let singleModifierSwitchKeys = 0
     static let beepOnModeSwitch = false
     static var defaultSwitchKeyStatus: Int {
         var status = Int(switchKeyCode)
@@ -693,6 +696,8 @@ final class SettingsBootstrap: NSObject {
             UserDefaultsKey.pauseKey: Int(Defaults.pauseKeyCode),
             UserDefaultsKey.pauseKeyName: Defaults.pauseKeyName,
             UserDefaultsKey.switchKeyStatus: Defaults.defaultSwitchKeyStatus,
+            UserDefaultsKey.switchKey2Status: 0,
+            UserDefaultsKey.singleModifierSwitchKeys: Defaults.singleModifierSwitchKeys,
             UserDefaultsKey.beepOnModeSwitch: Defaults.beepOnModeSwitch,
             UserDefaultsKey.beepVolume: Defaults.beepVolume,
             UserDefaultsKey.menuBarIconSize: Defaults.menuBarIconSize,

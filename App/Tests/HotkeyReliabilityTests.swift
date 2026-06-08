@@ -206,6 +206,7 @@ final class HotkeyReliabilityTests: XCTestCase {
             PHTVHotkeyService.shouldPassThroughModifierReleaseEvent(
                 forReleaseAction: PHTVModifierReleaseAction.switchLanguage.rawValue,
                 switchHotkey: modifierOnlySwitchHotkey,
+                switchHotkey2: emptyConvertHotkey,
                 convertHotkey: emptyConvertHotkey,
                 emojiEnabled: 0,
                 emojiHotkeyKeyCode: Int32(KeyCode.eKey)
@@ -221,6 +222,7 @@ final class HotkeyReliabilityTests: XCTestCase {
             PHTVHotkeyService.shouldPassThroughModifierReleaseEvent(
                 forReleaseAction: PHTVModifierReleaseAction.switchLanguage.rawValue,
                 switchHotkey: commandSpaceSwitchHotkey,
+                switchHotkey2: emptyConvertHotkey,
                 convertHotkey: emptyConvertHotkey,
                 emojiEnabled: 0,
                 emojiHotkeyKeyCode: Int32(KeyCode.eKey)
@@ -235,9 +237,42 @@ final class HotkeyReliabilityTests: XCTestCase {
             PHTVHotkeyService.shouldPassThroughModifierReleaseEvent(
                 forReleaseAction: PHTVModifierReleaseAction.emojiPicker.rawValue,
                 switchHotkey: Int32(bitPattern: 0x00000431),
+                switchHotkey2: emptyConvertHotkey,
                 convertHotkey: emptyConvertHotkey,
                 emojiEnabled: 1,
                 emojiHotkeyKeyCode: Int32(bitPattern: 0x000000FE)
+            )
+        )
+    }
+
+    func testModifierOnlySecondarySwitchReleasePassesThroughFlagsChangedEvent() {
+        let modifierOnlySwitchHotkey = Int32(bitPattern: 0x000009FE)
+        let emptyHotkey = Int32(bitPattern: 0xFE0000FE)
+
+        XCTAssertTrue(
+            PHTVHotkeyService.shouldPassThroughModifierReleaseEvent(
+                forReleaseAction: PHTVModifierReleaseAction.switchLanguage.rawValue,
+                switchHotkey: emptyHotkey,
+                switchHotkey2: modifierOnlySwitchHotkey,
+                convertHotkey: emptyHotkey,
+                emojiEnabled: 0,
+                emojiHotkeyKeyCode: Int32(KeyCode.eKey)
+            )
+        )
+    }
+
+    func testKeyedSecondarySwitchReleaseStillConsumesEvent() {
+        let commandSpaceSwitchHotkey = Int32(bitPattern: 0x00000431)
+        let emptyHotkey = Int32(bitPattern: 0xFE0000FE)
+
+        XCTAssertFalse(
+            PHTVHotkeyService.shouldPassThroughModifierReleaseEvent(
+                forReleaseAction: PHTVModifierReleaseAction.switchLanguage.rawValue,
+                switchHotkey: emptyHotkey,
+                switchHotkey2: commandSpaceSwitchHotkey,
+                convertHotkey: emptyHotkey,
+                emojiEnabled: 0,
+                emojiHotkeyKeyCode: Int32(KeyCode.eKey)
             )
         )
     }

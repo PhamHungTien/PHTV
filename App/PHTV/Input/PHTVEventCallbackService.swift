@@ -391,6 +391,7 @@ final class PHTVEventCallbackService {
                 forKeyCode: eventKeycode,
                 currentFlags: eventFlags.rawValue,
                 switchHotkey: Int32(PHTVEngineRuntimeFacade.switchKeyStatus()),
+                switchHotkey2: Int32(PHTVEngineRuntimeFacade.switchKey2Status()),
                 convertHotkey: quickConvertHotkey,
                 emojiEnabled: Int32(PHTVEngineRuntimeFacade.enableEmojiHotkey()),
                 emojiModifiers: Int32(PHTVEngineRuntimeFacade.emojiHotkeyModifiers()),
@@ -433,6 +434,7 @@ final class PHTVEventCallbackService {
                 restoreOnEscape: Int32(PHTVEngineRuntimeFacade.restoreOnEscape()),
                 customEscapeKey: Int32(PHTVEngineRuntimeFacade.customEscapeKey()),
                 switchHotkey: Int32(PHTVEngineRuntimeFacade.switchKeyStatus()),
+                switchHotkey2: Int32(PHTVEngineRuntimeFacade.switchKey2Status()),
                 convertHotkey: currentConvertHotkey(),
                 emojiEnabled: Int32(PHTVEngineRuntimeFacade.enableEmojiHotkey()),
                 emojiModifiers: Int32(PHTVEngineRuntimeFacade.emojiHotkeyModifiers()),
@@ -443,11 +445,14 @@ final class PHTVEventCallbackService {
             if lastFlags == 0 || lastFlags < eventFlags.rawValue {
                 let pressResult = PHTVEventContextBridgeService.handleModifierPress(
                     withFlags: eventFlags.rawValue,
+                    keyCode: eventKeycode,
                     restoreOnEscape: Int32(PHTVEngineRuntimeFacade.restoreOnEscape()),
                     customEscapeKey: Int32(PHTVEngineRuntimeFacade.customEscapeKey()),
                     pauseKeyEnabled: Int32(PHTVEngineRuntimeFacade.pauseKeyEnabled()),
                     pauseKeyCode: Int32(PHTVEngineRuntimeFacade.pauseKey()),
-                    currentLanguage: Int32(PHTVEngineRuntimeFacade.currentLanguage()))
+                    currentLanguage: Int32(PHTVEngineRuntimeFacade.currentLanguage()),
+                    switchHotkey: Int32(PHTVEngineRuntimeFacade.switchKeyStatus()),
+                    switchHotkey2: Int32(PHTVEngineRuntimeFacade.switchKey2Status()))
                 if pressResult.shouldUpdateLanguage {
                     PHTVEngineRuntimeFacade.setCurrentLanguage(pressResult.language)
                 }
@@ -455,9 +460,11 @@ final class PHTVEventCallbackService {
                 let releaseResult = PHTVEventContextBridgeService.handleModifierRelease(
                     oldFlags: lastFlags,
                     newFlags: eventFlags.rawValue,
+                    keyCode: eventKeycode,
                     restoreOnEscape: Int32(PHTVEngineRuntimeFacade.restoreOnEscape()),
                     customEscapeKey: Int32(PHTVEngineRuntimeFacade.customEscapeKey()),
                     switchHotkey: Int32(PHTVEngineRuntimeFacade.switchKeyStatus()),
+                    switchHotkey2: Int32(PHTVEngineRuntimeFacade.switchKey2Status()),
                     convertHotkey: currentConvertHotkey(),
                     emojiEnabled: Int32(PHTVEngineRuntimeFacade.enableEmojiHotkey()),
                     emojiModifiers: Int32(PHTVEngineRuntimeFacade.emojiHotkeyModifiers()),
@@ -498,6 +505,7 @@ final class PHTVEventCallbackService {
                     let shouldPassThroughReleaseEvent = PHTVHotkeyService.shouldPassThroughModifierReleaseEvent(
                         forReleaseAction: Int32(releaseAction),
                         switchHotkey: Int32(PHTVEngineRuntimeFacade.switchKeyStatus()),
+                        switchHotkey2: Int32(PHTVEngineRuntimeFacade.switchKey2Status()),
                         convertHotkey: currentConvertHotkey(),
                         emojiEnabled: Int32(PHTVEngineRuntimeFacade.enableEmojiHotkey()),
                         emojiHotkeyKeyCode: Int32(PHTVEngineRuntimeFacade.emojiHotkeyKeyCode())
@@ -615,6 +623,8 @@ final class PHTVEventCallbackService {
         // Handle mouse - reset session to avoid stale typing state
         if type == .leftMouseDown || type == .rightMouseDown {
             PHTVEngineSessionService.requestNewSessionInternal(allowUppercasePrime: true)
+            PHTVModifierRuntimeStateService.setSingleModifierSwitchPressedKeyValue(0)
+            PHTVModifierRuntimeStateService.setKeyPressedWhileSingleModifierHeldValue(false)
             return Unmanaged.passRetained(event)
         }
 
