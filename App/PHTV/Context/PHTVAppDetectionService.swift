@@ -101,7 +101,9 @@ final class PHTVAppDetectionService: NSObject {
         "company.thebrowser.dia.app.*",
         "org.chromium.Chromium.app.*",
         "com.vivaldi.Vivaldi.app.*",
-        "com.operasoftware.Opera.app.*"
+        "com.operasoftware.Opera.app.*",
+        "net.imput.helium",
+        "net.imput.helium.app.*"
     ])
 
     private static let browserApps = BundlePatternSet([
@@ -174,6 +176,8 @@ final class PHTVAppDetectionService: NSObject {
         "com.bookry.wavebox.app.*",
         "com.collovos.naver.whale.app.*",
         "ru.yandex.desktop.yandex-browser.app.*",
+        "net.imput.helium",
+        "net.imput.helium.app.*",
         "com.tinyspeck.slackmacgap",
         "com.hnc.Discord",
         "com.electron.discord",

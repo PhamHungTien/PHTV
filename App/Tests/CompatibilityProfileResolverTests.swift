@@ -85,4 +85,12 @@ final class CompatibilityProfileResolverTests: XCTestCase {
         XCTAssertEqual(profile.kind, .browser)
         XCTAssertTrue(profile.needsStrictAddressBarDetection)
     }
+
+    func testHeliumBrowserProfile() {
+        let profile = PHTVCompatibilityProfileResolver.resolve(forBundleId: "net.imput.helium")
+
+        XCTAssertEqual(profile.kind, .browser)
+        XCTAssertTrue(profile.isBrowser)
+        XCTAssertTrue(profile.containsUnicodeCompound)
+    }
 }
