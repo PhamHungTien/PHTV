@@ -358,8 +358,10 @@ final class UIState {
         let hasModifier = (filtered & modifierMask) != 0
         let key = filtered & keyMask
         let keyIsValid = key != KeyCode.keyMask
+        
+        let hasPhysicalKey = key != Int(KeyCode.noKey) && key != 0
 
-        guard hasModifier, keyIsValid else {
+        guard keyIsValid, (hasModifier || hasPhysicalKey) else {
             return Defaults.defaultSwitchKeyStatus
         }
         return filtered

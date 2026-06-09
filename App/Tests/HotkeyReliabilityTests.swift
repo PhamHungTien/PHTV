@@ -68,6 +68,17 @@ final class HotkeyReliabilityTests: XCTestCase {
         XCTAssertEqual(defaults.integer(forKey: UserDefaultsKey.switchKeyStatus), Defaults.defaultSwitchKeyStatus)
     }
 
+    func testLoadRuntimeSettingsAllowsSingleKeySwitchHotkey() {
+        let defaults = UserDefaults.standard
+        // F12 key (keycode 111) with no modifiers should be valid now
+        defaults.set(111, forKey: UserDefaultsKey.switchKeyStatus)
+
+        _ = PHTVManager.loadRuntimeSettingsFromUserDefaults()
+
+        XCTAssertEqual(PHTVManager.currentSwitchKeyStatus(), 111)
+        XCTAssertEqual(defaults.integer(forKey: UserDefaultsKey.switchKeyStatus), 111)
+    }
+
     func testLoadRuntimeSettingsNormalizesNegativeCoreSettings() {
         let defaults = UserDefaults.standard
         defaults.set(-9, forKey: UserDefaultsKey.inputMethod)

@@ -81,7 +81,9 @@ import Foundation
         let key = filtered & keyMask
         let keyIsValid = key != UInt32(KeyCode.keyMask)
 
-        guard modifiers != 0, keyIsValid else {
+        let hasModifier = modifiers != 0
+        let hasPhysicalKey = key != UInt32(KeyCode.noKey) && key != 0
+        guard keyIsValid, (hasModifier || hasPhysicalKey) else {
             return (fallback, true)
         }
 
