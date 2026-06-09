@@ -396,7 +396,36 @@ enum KeyCode {
         if isModifierOnly(keyCode) {
             return modifierOnlyDisplayName
         }
-        return keyNames[keyCode] ?? "Key \(keyCode)"
+        if let name = keyNames[keyCode] {
+            return name
+        }
+        // Fallback for special keys and modifier keys
+        switch Int(keyCode) {
+        case 49: return "Space"
+        case 36: return "Return"
+        case 48: return "Tab"
+        case 51: return "Delete"
+        case 53: return "Esc"
+        case 123: return "←"
+        case 124: return "→"
+        case 126: return "↑"
+        case 125: return "↓"
+        case 115: return "Home"
+        case 119: return "End"
+        case 116: return "PgUp"
+        case 121: return "PgDn"
+        case 117: return "⌦"
+        
+        // Modifier keys
+        case 55, 54: return "Command"
+        case 56, 60: return "Shift"
+        case 58, 61: return "Option"
+        case 59, 62: return "Control"
+        case 63: return "Fn"
+        
+        default:
+            return "Key \(keyCode)"
+        }
     }
 }
 
