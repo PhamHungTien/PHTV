@@ -193,7 +193,7 @@ struct ConvertToolView: View {
                 .padding(.vertical, 8)
         }
         .settingsBackground()
-        .frame(width: 680, height: 470)
+        .frame(width: 680, height: 480)
         .task {
             #if canImport(FoundationModels)
             if #available(macOS 26.0, *) {
@@ -406,22 +406,22 @@ struct ConvertToolView: View {
 
     // MARK: - Clipboard View (Dashboard Layout)
     private var clipboardView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             // Dashboard Card
-            VStack(spacing: 16) {
-                HStack(spacing: 16) {
+            VStack(spacing: 10) {
+                HStack(spacing: 12) {
                     // Clipboard Icon with background glow
                     ZStack {
                         Circle()
                             .fill(Color.accentColor.opacity(0.1))
-                            .frame(width: 50, height: 50)
+                            .frame(width: 36, height: 36)
                         
                         Image(systemName: "doc.on.clipboard.fill")
-                            .font(.system(size: 20))
+                            .font(.system(size: 15))
                             .foregroundStyle(Color.accentColor)
                     }
                     
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 2) {
                         Text("Bảng tạm hệ thống")
                             .font(.subheadline)
                             .fontWeight(.semibold)
@@ -429,11 +429,11 @@ struct ConvertToolView: View {
                         
                         if isClipboardEmpty {
                             Text("Clipboard hiện tại đang trống hoặc không có chữ")
-                                .font(.caption)
+                                .font(.caption2)
                                 .foregroundStyle(.secondary)
                         } else {
                             Text("Chứa \(clipboardContent.count) ký tự (khoảng \(clipboardContent.split(separator: " ").count) từ)")
-                                .font(.caption)
+                                .font(.caption2)
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -448,24 +448,24 @@ struct ConvertToolView: View {
                     .buttonStyle(.plain)
                     .foregroundStyle(Color.accentColor)
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
+                .padding(.horizontal, 12)
+                .padding(.top, 10)
                 
                 Divider()
                 
                 // Preview box
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text("Nội dung xem trước:")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                     
                     if isClipboardEmpty {
-                        VStack(spacing: 8) {
+                        VStack(spacing: 6) {
                             Image(systemName: "doc.text.magnifyingglass")
-                                .font(.system(size: 24))
+                                .font(.system(size: 20))
                                 .foregroundStyle(.tertiary)
                             Text("Không có dữ liệu văn bản. Hãy sao chép văn bản cần chuyển mã trước.")
-                                .font(.caption)
+                                .font(.caption2)
                                 .foregroundStyle(.tertiary)
                                 .multilineTextAlignment(.center)
                         }
@@ -475,9 +475,9 @@ struct ConvertToolView: View {
                     } else {
                         ScrollView {
                             Text(clipboardContent)
-                                .font(.system(.caption, design: .monospaced))
+                                .font(.system(.caption2, design: .monospaced))
                                 .foregroundStyle(.secondary)
-                                .padding(8)
+                                .padding(6)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -485,9 +485,9 @@ struct ConvertToolView: View {
                         .cornerRadius(6)
                     }
                 }
-                .frame(height: 90)
-                .padding(.horizontal, 16)
-                .padding(.bottom, 12)
+                .frame(height: 64)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 10)
             }
             .background(Color(NSColor.controlBackgroundColor).opacity(0.4))
             .cornerRadius(12)
@@ -536,7 +536,7 @@ struct ConvertToolView: View {
                         .foregroundStyle(isSuccess ? .green : .red)
                     Spacer()
                 }
-                .padding(10)
+                .padding(8)
                 .background(isSuccess ? Color.green.opacity(0.1) : Color.red.opacity(0.1))
                 .cornerRadius(8)
             }
