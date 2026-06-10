@@ -452,13 +452,14 @@ import Foundation
             NSLog("[AppDelegate] Loaded hotkey from UserDefaults: 0x%X", normalizedSwitchHotkey.value)
         }
 
+        let switchKey2Migrated = defaults.bool(forKey: UserDefaultsKey.switchKey2Migrated)
         var rawSwitchKey2Status = Int32(truncatingIfNeeded: defaults.integer(forKey: UserDefaultsKey.switchKey2Status))
-        if defaults.object(forKey: UserDefaultsKey.switchKey2Status) == nil {
-            rawSwitchKey2Status = Int32(KeyCode.noKey)
-            defaults.set(Int(KeyCode.noKey), forKey: UserDefaultsKey.switchKey2Status)
-        } else if rawSwitchKey2Status == 0 {
-            rawSwitchKey2Status = Int32(KeyCode.noKey)
-            defaults.set(Int(KeyCode.noKey), forKey: UserDefaultsKey.switchKey2Status)
+        if !switchKey2Migrated {
+            if defaults.object(forKey: UserDefaultsKey.switchKey2Status) == nil || rawSwitchKey2Status == 0 {
+                rawSwitchKey2Status = Int32(KeyCode.noKey)
+                defaults.set(Int(KeyCode.noKey), forKey: UserDefaultsKey.switchKey2Status)
+            }
+            defaults.set(true, forKey: UserDefaultsKey.switchKey2Migrated)
         }
         PHTVEngineRuntimeFacade.setSwitchKey2Status(rawSwitchKey2Status)
         PHTVEngineRuntimeFacade.setSingleModifierSwitchKeys(0)

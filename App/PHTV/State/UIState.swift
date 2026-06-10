@@ -263,15 +263,17 @@ final class UIState {
         decodeSwitchKeyStatus(switchKeyStatus)
 
         // Load hotkey 2 from SwitchKey2Status
+        let switchKey2Migrated = defaults.bool(forKey: UserDefaultsKey.switchKey2Migrated)
         var storedSwitchKey2Status = defaults.integer(
             forKey: UserDefaultsKey.switchKey2Status,
             default: Int(KeyCode.noKey)
         )
-        if defaults.object(forKey: UserDefaultsKey.switchKey2Status) == nil {
-            storedSwitchKey2Status = Int(KeyCode.noKey)
-        } else if storedSwitchKey2Status == 0 {
-            storedSwitchKey2Status = Int(KeyCode.noKey)
-            defaults.set(storedSwitchKey2Status, forKey: UserDefaultsKey.switchKey2Status)
+        if !switchKey2Migrated {
+            if defaults.object(forKey: UserDefaultsKey.switchKey2Status) == nil || storedSwitchKey2Status == 0 {
+                storedSwitchKey2Status = Int(KeyCode.noKey)
+                defaults.set(storedSwitchKey2Status, forKey: UserDefaultsKey.switchKey2Status)
+            }
+            defaults.set(true, forKey: UserDefaultsKey.switchKey2Migrated)
         }
         decodeSwitchKey2Status(storedSwitchKey2Status)
 
