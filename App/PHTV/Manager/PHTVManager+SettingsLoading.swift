@@ -82,8 +82,10 @@ import Foundation
         let keyIsValid = key != UInt32(KeyCode.keyMask)
 
         let hasModifier = modifiers != 0
-        let hasPhysicalKey = key != UInt32(KeyCode.noKey) && key != 0
-        guard keyIsValid, (hasModifier || hasPhysicalKey) else {
+        let hasPhysicalKey = key != UInt32(KeyCode.noKey)
+        let isNotSet = key == UInt32(KeyCode.noKey) && !hasModifier
+
+        guard keyIsValid, (hasModifier || hasPhysicalKey || isNotSet) else {
             return (fallback, true)
         }
 
@@ -450,7 +452,14 @@ import Foundation
             NSLog("[AppDelegate] Loaded hotkey from UserDefaults: 0x%X", normalizedSwitchHotkey.value)
         }
 
-        let rawSwitchKey2Status = Int32(truncatingIfNeeded: defaults.integer(forKey: UserDefaultsKey.switchKey2Status))
+        var rawSwitchKey2Status = Int32(truncatingIfNeeded: defaults.integer(forKey: UserDefaultsKey.switchKey2Status))
+        if defaults.object(forKey: UserDefaultsKey.switchKey2Status) == nil {
+            rawSwitchKey2Status = Int32(KeyCode.noKey)
+            defaults.set(Int(KeyCode.noKey), forKey: UserDefaultsKey.switchKey2Status)
+        } else if rawSwitchKey2Status == 0 {
+            rawSwitchKey2Status = Int32(KeyCode.noKey)
+            defaults.set(Int(KeyCode.noKey), forKey: UserDefaultsKey.switchKey2Status)
+        }
         PHTVEngineRuntimeFacade.setSwitchKey2Status(rawSwitchKey2Status)
         PHTVEngineRuntimeFacade.setSingleModifierSwitchKeys(0)
 
@@ -575,8 +584,8 @@ import Foundation
         defaults.set(Int(Defaults.pauseKeyCode), forKey: UserDefaultsKey.pauseKey)
         defaults.set(Defaults.pauseKeyName, forKey: UserDefaultsKey.pauseKeyName)
 
-        PHTVEngineRuntimeFacade.setSwitchKey2Status(0)
-        defaults.set(0, forKey: UserDefaultsKey.switchKey2Status)
+        PHTVEngineRuntimeFacade.setSwitchKey2Status(Int32(KeyCode.noKey))
+        defaults.set(Int(KeyCode.noKey), forKey: UserDefaultsKey.switchKey2Status)
         PHTVEngineRuntimeFacade.setSingleModifierSwitchKeys(0)
         defaults.set(0, forKey: UserDefaultsKey.singleModifierSwitchKeys)
     }

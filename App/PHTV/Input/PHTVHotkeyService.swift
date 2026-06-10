@@ -274,7 +274,9 @@ final class PHTVHotkeyService: NSObject {
     }
 
     private class func isEmptyHotkey(_ data: UInt32) -> Bool {
-        data == 0 || (data & ~hotkeyBeepMask) == emptyHotkey
+        let key = data & hotkeyKeyMask
+        let modifiers = data & (hotkeyControlMask | hotkeyOptionMask | hotkeyCommandMask | hotkeyShiftMask | hotkeyFnMask)
+        return data == 0 || (data & ~hotkeyBeepMask) == emptyHotkey || (key == hotkeyNoKey && modifiers == 0)
     }
 
     private class func hasHotkeyKey(_ data: UInt32) -> Bool {

@@ -79,6 +79,39 @@ final class HotkeyReliabilityTests: XCTestCase {
         XCTAssertEqual(defaults.integer(forKey: UserDefaultsKey.switchKeyStatus), 111)
     }
 
+    func testLoadRuntimeSettingsAllowsSingleKeyASwitchHotkey() {
+        let defaults = UserDefaults.standard
+        // Key A (keycode 0) with no modifiers should be valid now
+        defaults.set(0, forKey: UserDefaultsKey.switchKeyStatus)
+
+        _ = PHTVManager.loadRuntimeSettingsFromUserDefaults()
+
+        XCTAssertEqual(PHTVManager.currentSwitchKeyStatus(), 0)
+        XCTAssertEqual(defaults.integer(forKey: UserDefaultsKey.switchKeyStatus), 0)
+    }
+
+    func testLoadRuntimeSettingsAllowsNotSetSwitchHotkey() {
+        let defaults = UserDefaults.standard
+        // Not set (keycode 0xFE / 254) with no modifiers should be valid now
+        defaults.set(Int(KeyCode.noKey), forKey: UserDefaultsKey.switchKeyStatus)
+
+        _ = PHTVManager.loadRuntimeSettingsFromUserDefaults()
+
+        XCTAssertEqual(PHTVManager.currentSwitchKeyStatus(), Int32(KeyCode.noKey))
+        XCTAssertEqual(defaults.integer(forKey: UserDefaultsKey.switchKeyStatus), Int(KeyCode.noKey))
+    }
+
+    func testLoadRuntimeSettingsMigratesZeroSwitchKey2StatusToNoKey() {
+        let defaults = UserDefaults.standard
+        // Existing 0 in SwitchKey2Status represents old "not set" (disabled), should be migrated to KeyCode.noKey
+        defaults.set(0, forKey: UserDefaultsKey.switchKey2Status)
+
+        _ = PHTVManager.loadRuntimeSettingsFromUserDefaults()
+
+        XCTAssertEqual(PHTVEngineRuntimeFacade.switchKey2Status(), Int32(KeyCode.noKey))
+        XCTAssertEqual(defaults.integer(forKey: UserDefaultsKey.switchKey2Status), Int(KeyCode.noKey))
+    }
+
     func testLoadRuntimeSettingsNormalizesNegativeCoreSettings() {
         let defaults = UserDefaults.standard
         defaults.set(-9, forKey: UserDefaultsKey.inputMethod)

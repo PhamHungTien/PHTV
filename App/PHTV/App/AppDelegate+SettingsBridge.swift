@@ -100,6 +100,8 @@ private func phtvSettingsBridgeLiveLog(_ message: String) {
 
         PHTVManager.setSwitchKeyStatus(switchKeyStatus)
         UserDefaults.standard.set(Int(switchKeyStatus), forKey: phtvDefaultsKeySwitchKeyStatus)
+        let switchKey2Status = Int32(UserDefaults.standard.integer(forKey: UserDefaultsKey.switchKey2Status))
+        PHTVEngineRuntimeFacade.setSwitchKey2Status(switchKey2Status)
         fillData()
         runHotkeyHealthCheck(reason: "switch-hotkey-changed")
 

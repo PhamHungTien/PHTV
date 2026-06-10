@@ -417,10 +417,14 @@ enum KeyCode {
         case 117: return "⌦"
         
         // Modifier keys
-        case 55, 54: return "Command"
-        case 56, 60: return "Shift"
-        case 58, 61: return "Option"
-        case 59, 62: return "Control"
+        case 55: return "Left Command"
+        case 54: return "Right Command"
+        case 56: return "Left Shift"
+        case 60: return "Right Shift"
+        case 58: return "Left Option"
+        case 61: return "Right Option"
+        case 59: return "Left Control"
+        case 62: return "Right Control"
         case 63: return "Fn"
         
         default:
@@ -725,7 +729,7 @@ final class SettingsBootstrap: NSObject {
             UserDefaultsKey.pauseKey: Int(Defaults.pauseKeyCode),
             UserDefaultsKey.pauseKeyName: Defaults.pauseKeyName,
             UserDefaultsKey.switchKeyStatus: Defaults.defaultSwitchKeyStatus,
-            UserDefaultsKey.switchKey2Status: 0,
+            UserDefaultsKey.switchKey2Status: Int(KeyCode.noKey),
             UserDefaultsKey.singleModifierSwitchKeys: Defaults.singleModifierSwitchKeys,
             UserDefaultsKey.beepOnModeSwitch: Defaults.beepOnModeSwitch,
             UserDefaultsKey.beepVolume: Defaults.beepVolume,

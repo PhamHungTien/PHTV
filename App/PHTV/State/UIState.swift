@@ -263,10 +263,16 @@ final class UIState {
         decodeSwitchKeyStatus(switchKeyStatus)
 
         // Load hotkey 2 from SwitchKey2Status
-        let storedSwitchKey2Status = defaults.integer(
+        var storedSwitchKey2Status = defaults.integer(
             forKey: UserDefaultsKey.switchKey2Status,
-            default: 0
+            default: Int(KeyCode.noKey)
         )
+        if defaults.object(forKey: UserDefaultsKey.switchKey2Status) == nil {
+            storedSwitchKey2Status = Int(KeyCode.noKey)
+        } else if storedSwitchKey2Status == 0 {
+            storedSwitchKey2Status = Int(KeyCode.noKey)
+            defaults.set(storedSwitchKey2Status, forKey: UserDefaultsKey.switchKey2Status)
+        }
         decodeSwitchKey2Status(storedSwitchKey2Status)
 
         beepOnModeSwitch = defaults.bool(
@@ -359,9 +365,10 @@ final class UIState {
         let key = filtered & keyMask
         let keyIsValid = key != KeyCode.keyMask
         
-        let hasPhysicalKey = key != Int(KeyCode.noKey) && key != 0
+        let hasPhysicalKey = key != Int(KeyCode.noKey)
+        let isNotSet = key == Int(KeyCode.noKey) && !hasModifier
 
-        guard keyIsValid, (hasModifier || hasPhysicalKey) else {
+        guard keyIsValid, (hasModifier || hasPhysicalKey || isNotSet) else {
             return Defaults.defaultSwitchKeyStatus
         }
         return filtered
@@ -392,7 +399,7 @@ final class UIState {
     }
 
     private func decodeSwitchKey2Status(_ status: Int) {
-        if status == 0 {
+        if status == Int(KeyCode.noKey) {
             switchKey2KeyCode = KeyCode.noKey
             switchKey2Control = false
             switchKey2Option = false
@@ -413,7 +420,7 @@ final class UIState {
 
     func encodeSwitchKey2Status() -> Int {
         if switchKey2KeyCode == KeyCode.noKey && !switchKey2Control && !switchKey2Option && !switchKey2Command && !switchKey2Shift && !switchKey2Fn {
-            return 0
+            return Int(KeyCode.noKey)
         }
         var status = Int(switchKey2KeyCode)
         if switchKey2Control { status |= KeyCode.controlMask }
