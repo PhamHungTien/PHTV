@@ -49,6 +49,7 @@ SourcePackages/
 # Temporary
 *.tmp
 *.temp
+build.log
 
 # CMake / Native build outputs
 /build/
