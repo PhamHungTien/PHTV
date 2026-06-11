@@ -187,6 +187,9 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
 
     @objc func receiveWakeNote(_ note: Notification) {
         _ = note
+        PHTVCacheStateService.invalidatePIDCache()
+        PHTVCacheStateService.invalidateAppCharacteristicsCache()
+        PHTVAccessibilityService.invalidateContextDetectionCaches()
         _ = PHTVManager.stopEventTap()
         publishTypingPermissionState(eventTapReady: false)
 

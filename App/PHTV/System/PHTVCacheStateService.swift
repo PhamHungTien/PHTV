@@ -113,6 +113,22 @@ final class PHTVCacheStateService: NSObject {
     private static let spotlightState = SpotlightCacheStateBox()
     private static let layoutState = LayoutCacheStateBox()
 
+    class func bundleIdentifierFromAppPath(_ path: String) -> String? {
+        guard let appRange = path.range(of: ".app", options: .backwards) else {
+            return nil
+        }
+        let appBundlePath = String(path[..<appRange.upperBound])
+        if let bundle = Bundle(path: appBundlePath) {
+            return bundle.bundleIdentifier
+        }
+        let plistPath = appBundlePath + "/Contents/Info.plist"
+        if let dict = NSDictionary(contentsOfFile: plistPath),
+           let bundleId = dict["CFBundleIdentifier"] as? String {
+            return bundleId
+        }
+        return nil
+    }
+
     // MARK: - PID Cache
 
     @objc(bundleIdFromPID:safeMode:)
@@ -176,6 +192,13 @@ final class PHTVCacheStateService: NSObject {
 #if DEBUG
             NSLog("PHTV DEBUG: PID=%d path=%@", pid, path)
 #endif
+            if let resolvedBundleId = PHTVCacheStateService.bundleIdentifierFromAppPath(path) {
+                pidState.withLock { state in
+                    state.pidBundleCache[pid] = resolvedBundleId
+                }
+                return resolvedBundleId
+            }
+
             if path.contains("Spotlight") {
                 pidState.withLock { state in
                     state.pidBundleCache[pid] = "com.apple.Spotlight"

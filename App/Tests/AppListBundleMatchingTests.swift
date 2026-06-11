@@ -56,4 +56,14 @@ final class AppListBundleMatchingTests: XCTestCase {
             )
         )
     }
+
+    func testBundleIdentifierFromAppPath() {
+        let mailPath = "/System/Applications/Mail.app/Contents/MacOS/Mail"
+        if FileManager.default.fileExists(atPath: "/System/Applications/Mail.app") {
+            XCTAssertEqual(PHTVCacheStateService.bundleIdentifierFromAppPath(mailPath), "com.apple.mail")
+        }
+
+        let nonAppPath = "/usr/bin/git"
+        XCTAssertNil(PHTVCacheStateService.bundleIdentifierFromAppPath(nonAppPath))
+    }
 }
