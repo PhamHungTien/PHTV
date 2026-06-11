@@ -18,14 +18,38 @@ final class UIState {
     var switchKeyCommand: Bool = false {
         didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKeyCommand) }
     }
+    var switchKeyLeftCommand: Bool = false {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKeyLeftCommand) }
+    }
+    var switchKeyRightCommand: Bool = false {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKeyRightCommand) }
+    }
     var switchKeyOption: Bool = false {
         didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKeyOption) }
+    }
+    var switchKeyLeftOption: Bool = false {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKeyLeftOption) }
+    }
+    var switchKeyRightOption: Bool = false {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKeyRightOption) }
     }
     var switchKeyControl: Bool = true {
         didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKeyControl) }
     }
+    var switchKeyLeftControl: Bool = false {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKeyLeftControl) }
+    }
+    var switchKeyRightControl: Bool = false {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKeyRightControl) }
+    }
     var switchKeyShift: Bool = true {
         didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKeyShift) }
+    }
+    var switchKeyLeftShift: Bool = false {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKeyLeftShift) }
+    }
+    var switchKeyRightShift: Bool = false {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKeyRightShift) }
     }
     var switchKeyFn: Bool = false {
         didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKeyFn) }
@@ -42,14 +66,38 @@ final class UIState {
     var switchKey2Command: Bool = false {
         didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKey2Command) }
     }
+    var switchKey2LeftCommand: Bool = false {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKey2LeftCommand) }
+    }
+    var switchKey2RightCommand: Bool = false {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKey2RightCommand) }
+    }
     var switchKey2Option: Bool = false {
         didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKey2Option) }
+    }
+    var switchKey2LeftOption: Bool = false {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKey2LeftOption) }
+    }
+    var switchKey2RightOption: Bool = false {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKey2RightOption) }
     }
     var switchKey2Control: Bool = false {
         didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKey2Control) }
     }
+    var switchKey2LeftControl: Bool = false {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKey2LeftControl) }
+    }
+    var switchKey2RightControl: Bool = false {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKey2RightControl) }
+    }
     var switchKey2Shift: Bool = false {
         didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKey2Shift) }
+    }
+    var switchKey2LeftShift: Bool = false {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKey2LeftShift) }
+    }
+    var switchKey2RightShift: Bool = false {
+        didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKey2RightShift) }
     }
     var switchKey2Fn: Bool = false {
         didSet { handleHotkeySettingDidChange(oldValue: oldValue, newValue: switchKey2Fn) }
@@ -360,6 +408,14 @@ final class UIState {
             | KeyCode.commandMask
             | KeyCode.shiftMask
             | KeyCode.fnMask
+            | KeyCode.leftControlMask
+            | KeyCode.rightControlMask
+            | KeyCode.leftOptionMask
+            | KeyCode.rightOptionMask
+            | KeyCode.leftCommandMask
+            | KeyCode.rightCommandMask
+            | KeyCode.leftShiftMask
+            | KeyCode.rightShiftMask
         let allowedMask = keyMask | modifierMask | KeyCode.beepMask
 
         let filtered = status & allowedMask
@@ -385,6 +441,16 @@ final class UIState {
         switchKeyShift = (status & KeyCode.shiftMask) != 0
         switchKeyFn = (status & KeyCode.fnMask) != 0
         beepOnModeSwitch = (status & KeyCode.beepMask) != 0
+        
+        switchKeyLeftControl = (status & KeyCode.leftControlMask) != 0
+        switchKeyRightControl = (status & KeyCode.rightControlMask) != 0
+        switchKeyLeftOption = (status & KeyCode.leftOptionMask) != 0
+        switchKeyRightOption = (status & KeyCode.rightOptionMask) != 0
+        switchKeyLeftCommand = (status & KeyCode.leftCommandMask) != 0
+        switchKeyRightCommand = (status & KeyCode.rightCommandMask) != 0
+        switchKeyLeftShift = (status & KeyCode.leftShiftMask) != 0
+        switchKeyRightShift = (status & KeyCode.rightShiftMask) != 0
+        
         switchKeyName = keyCodeToName(switchKeyCode)
     }
 
@@ -397,6 +463,15 @@ final class UIState {
         if switchKeyShift { status |= KeyCode.shiftMask }
         if switchKeyFn { status |= KeyCode.fnMask }
         if beepOnModeSwitch { status |= KeyCode.beepMask }
+        
+        if switchKeyLeftControl { status |= KeyCode.leftControlMask }
+        if switchKeyRightControl { status |= KeyCode.rightControlMask }
+        if switchKeyLeftOption { status |= KeyCode.leftOptionMask }
+        if switchKeyRightOption { status |= KeyCode.rightOptionMask }
+        if switchKeyLeftCommand { status |= KeyCode.leftCommandMask }
+        if switchKeyRightCommand { status |= KeyCode.rightCommandMask }
+        if switchKeyLeftShift { status |= KeyCode.leftShiftMask }
+        if switchKeyRightShift { status |= KeyCode.rightShiftMask }
         return status
     }
 
@@ -404,9 +479,17 @@ final class UIState {
         if status == Int(KeyCode.noKey) {
             switchKey2KeyCode = KeyCode.noKey
             switchKey2Control = false
+            switchKey2LeftControl = false
+            switchKey2RightControl = false
             switchKey2Option = false
+            switchKey2LeftOption = false
+            switchKey2RightOption = false
             switchKey2Command = false
+            switchKey2LeftCommand = false
+            switchKey2RightCommand = false
             switchKey2Shift = false
+            switchKey2LeftShift = false
+            switchKey2RightShift = false
             switchKey2Fn = false
             switchKey2Name = KeyCode.modifierOnlyDisplayName
             return
@@ -417,6 +500,16 @@ final class UIState {
         switchKey2Command = (status & KeyCode.commandMask) != 0
         switchKey2Shift = (status & KeyCode.shiftMask) != 0
         switchKey2Fn = (status & KeyCode.fnMask) != 0
+        
+        switchKey2LeftControl = (status & KeyCode.leftControlMask) != 0
+        switchKey2RightControl = (status & KeyCode.rightControlMask) != 0
+        switchKey2LeftOption = (status & KeyCode.leftOptionMask) != 0
+        switchKey2RightOption = (status & KeyCode.rightOptionMask) != 0
+        switchKey2LeftCommand = (status & KeyCode.leftCommandMask) != 0
+        switchKey2RightCommand = (status & KeyCode.rightCommandMask) != 0
+        switchKey2LeftShift = (status & KeyCode.leftShiftMask) != 0
+        switchKey2RightShift = (status & KeyCode.rightShiftMask) != 0
+        
         switchKey2Name = keyCodeToName(switchKey2KeyCode)
     }
 
@@ -430,6 +523,15 @@ final class UIState {
         if switchKey2Command { status |= KeyCode.commandMask }
         if switchKey2Shift { status |= KeyCode.shiftMask }
         if switchKey2Fn { status |= KeyCode.fnMask }
+        
+        if switchKey2LeftControl { status |= KeyCode.leftControlMask }
+        if switchKey2RightControl { status |= KeyCode.rightControlMask }
+        if switchKey2LeftOption { status |= KeyCode.leftOptionMask }
+        if switchKey2RightOption { status |= KeyCode.rightOptionMask }
+        if switchKey2LeftCommand { status |= KeyCode.leftCommandMask }
+        if switchKey2RightCommand { status |= KeyCode.rightCommandMask }
+        if switchKey2LeftShift { status |= KeyCode.leftShiftMask }
+        if switchKey2RightShift { status |= KeyCode.rightShiftMask }
         return status
     }
 
@@ -439,7 +541,7 @@ final class UIState {
     }
 
     // MARK: - Setup Observers
-
+ 
     func setupObservers() {
         // Observation-based state now handles side effects in property observers.
     }
@@ -449,17 +551,33 @@ final class UIState {
         defer { isLoadingSettings = false }
 
         switchKeyCommand = Defaults.switchKeyCommand
+        switchKeyLeftCommand = false
+        switchKeyRightCommand = false
         switchKeyOption = Defaults.switchKeyOption
+        switchKeyLeftOption = false
+        switchKeyRightOption = false
         switchKeyControl = Defaults.switchKeyControl
+        switchKeyLeftControl = false
+        switchKeyRightControl = false
         switchKeyShift = Defaults.switchKeyShift
+        switchKeyLeftShift = false
+        switchKeyRightShift = false
         switchKeyFn = Defaults.switchKeyFn
         switchKeyCode = Defaults.switchKeyCode
         switchKeyName = Defaults.switchKeyName
 
         switchKey2Command = false
+        switchKey2LeftCommand = false
+        switchKey2RightCommand = false
         switchKey2Option = false
+        switchKey2LeftOption = false
+        switchKey2RightOption = false
         switchKey2Control = false
+        switchKey2LeftControl = false
+        switchKey2RightControl = false
         switchKey2Shift = false
+        switchKey2LeftShift = false
+        switchKey2RightShift = false
         switchKey2Fn = false
         switchKey2KeyCode = KeyCode.noKey
         switchKey2Name = KeyCode.modifierOnlyDisplayName

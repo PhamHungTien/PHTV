@@ -471,10 +471,11 @@ private final class SettingsHotkeyLocalEventMonitor: @unchecked Sendable {
 }
 
 final class UnifiedHotkeyCaptureView: NSView {
-    var onKeyPress: ((UInt16, NSEvent.ModifierFlags) -> Void)?
+    var onKeyPress: ((UInt16, NSEvent.ModifierFlags, UInt64) -> Void)?
     var onCancel: (() -> Void)?
     private var localMonitor: SettingsHotkeyLocalEventMonitor?
     private var maxModifiers: NSEvent.ModifierFlags = []
+    private var maxRawFlags: UInt64 = 0
     private var keyDownHappened = false
 
     var isRecording = false {
@@ -496,6 +497,7 @@ final class UnifiedHotkeyCaptureView: NSView {
         focusForCapture()
         guard localMonitor == nil else { return }
         maxModifiers = []
+        maxRawFlags = 0
         keyDownHappened = false
 
         guard let monitor = NSEvent.addLocalMonitorForEvents(matching: [.flagsChanged, .keyDown], handler: { [weak self] event in
@@ -503,15 +505,17 @@ final class UnifiedHotkeyCaptureView: NSView {
 
             if event.type == .flagsChanged {
                 let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+                let raw = UInt64(event.modifierFlags.rawValue)
                 let keyCode = event.keyCode
                 
                 if !flags.isEmpty {
                     self.maxModifiers = self.maxModifiers.union(flags)
+                    self.maxRawFlags |= raw
                 } else if !self.maxModifiers.isEmpty && !self.keyDownHappened {
                     if self.maxModifiersMatchKey(keyCode: keyCode, maxMods: self.maxModifiers) {
-                        self.capture(keyCode: keyCode, modifiers: [])
+                        self.capture(keyCode: keyCode, modifiers: [], rawFlags: self.maxRawFlags)
                     } else {
-                        self.capture(keyCode: KeyCode.noKey, modifiers: self.maxModifiers)
+                        self.capture(keyCode: KeyCode.noKey, modifiers: self.maxModifiers, rawFlags: self.maxRawFlags)
                     }
                     return nil
                 }
@@ -519,13 +523,14 @@ final class UnifiedHotkeyCaptureView: NSView {
                 self.keyDownHappened = true
                 let keyCode = event.keyCode
                 let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+                let raw = UInt64(event.modifierFlags.rawValue) | self.maxRawFlags
                 
                 if keyCode == KeyCode.escape && flags.isEmpty {
                     self.cancel()
                     return nil
                 }
                 
-                self.capture(keyCode: keyCode, modifiers: flags)
+                self.capture(keyCode: keyCode, modifiers: flags, rawFlags: raw)
                 return nil
             }
 
@@ -546,10 +551,10 @@ final class UnifiedHotkeyCaptureView: NSView {
         }
     }
 
-    private func capture(keyCode: UInt16, modifiers: NSEvent.ModifierFlags) {
+    private func capture(keyCode: UInt16, modifiers: NSEvent.ModifierFlags, rawFlags: UInt64) {
         isRecording = false
         Task { @MainActor [weak self] in
-            self?.onKeyPress?(keyCode, modifiers)
+            self?.onKeyPress?(keyCode, modifiers, rawFlags)
         }
     }
 
@@ -574,13 +579,13 @@ final class UnifiedHotkeyCaptureView: NSView {
 
 struct UnifiedHotkeyEventHandler: NSViewRepresentable {
     @Binding var isRecording: Bool
-    var onCaptured: (UInt16, NSEvent.ModifierFlags) -> Void
+    var onCaptured: (UInt16, NSEvent.ModifierFlags, UInt64) -> Void
     var onCancelled: () -> Void
 
     func makeNSView(context: Context) -> NSView {
         let view = UnifiedHotkeyCaptureView()
-        view.onKeyPress = { keyCode, modifiers in
-            onCaptured(keyCode, modifiers)
+        view.onKeyPress = { keyCode, modifiers, rawFlags in
+            onCaptured(keyCode, modifiers, rawFlags)
         }
         view.onCancel = {
             onCancelled()

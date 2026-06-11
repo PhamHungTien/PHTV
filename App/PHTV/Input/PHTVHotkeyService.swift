@@ -211,6 +211,24 @@ final class PHTVHotkeyService: NSObject {
     private static let hotkeyNoKey: UInt32 = 0x00FE
     private static let emptyHotkey: UInt32 = 0xFE0000FE
 
+    private static let hotkeyLeftControlMask: UInt32 = 0x0001_0000
+    private static let hotkeyRightControlMask: UInt32 = 0x0002_0000
+    private static let hotkeyLeftOptionMask: UInt32 = 0x0004_0000
+    private static let hotkeyRightOptionMask: UInt32 = 0x0008_0000
+    private static let hotkeyLeftCommandMask: UInt32 = 0x0010_0000
+    private static let hotkeyRightCommandMask: UInt32 = 0x0020_0000
+    private static let hotkeyLeftShiftMask: UInt32 = 0x0040_0000
+    private static let hotkeyRightShiftMask: UInt32 = 0x0080_0000
+
+    private static let leftControlDeviceFlag: UInt64 = 0x0001
+    private static let leftShiftDeviceFlag: UInt64 = 0x0002
+    private static let rightShiftDeviceFlag: UInt64 = 0x0004
+    private static let leftCommandDeviceFlag: UInt64 = 0x0008
+    private static let rightCommandDeviceFlag: UInt64 = 0x0010
+    private static let leftOptionDeviceFlag: UInt64 = 0x0020
+    private static let rightOptionDeviceFlag: UInt64 = 0x0040
+    private static let rightControlDeviceFlag: UInt64 = 0x2000
+
     private static let controlFlagMask = CGEventFlags.maskControl.rawValue
     private static let optionFlagMask = CGEventFlags.maskAlternate.rawValue
     private static let commandFlagMask = CGEventFlags.maskCommand.rawValue
@@ -222,6 +240,7 @@ final class PHTVHotkeyService: NSObject {
         | controlFlagMask
         | shiftFlagMask
         | fnFlagMask
+
 
     // Reverse mapping from layout character -> US keycode
     private static let layoutKeyStringToKeyCodeMap: [String: UInt16] = [
@@ -288,40 +307,140 @@ final class PHTVHotkeyService: NSObject {
     }
 
     private class func matchesFlags(_ data: UInt32, currentFlags: UInt64) -> Bool {
-        if hasMask(data, mask: hotkeyControlMask) != flagSet(currentFlags, mask: controlFlagMask) {
-            return false
+        // Control
+        let hasControl = hasMask(data, mask: hotkeyControlMask)
+        let hasLeftControl = hasMask(data, mask: hotkeyLeftControlMask)
+        let hasRightControl = hasMask(data, mask: hotkeyRightControlMask)
+        
+        let controlHeld = flagSet(currentFlags, mask: controlFlagMask)
+        let leftControlHeld = flagSet(currentFlags, mask: leftControlDeviceFlag)
+        let rightControlHeld = flagSet(currentFlags, mask: rightControlDeviceFlag)
+        
+        if hasControl {
+            if hasLeftControl && !leftControlHeld { return false }
+            if hasRightControl && !rightControlHeld { return false }
+            if !hasLeftControl && !hasRightControl && !controlHeld { return false }
+        } else {
+            if controlHeld { return false }
         }
-        if hasMask(data, mask: hotkeyOptionMask) != flagSet(currentFlags, mask: optionFlagMask) {
-            return false
+
+        // Option
+        let hasOption = hasMask(data, mask: hotkeyOptionMask)
+        let hasLeftOption = hasMask(data, mask: hotkeyLeftOptionMask)
+        let hasRightOption = hasMask(data, mask: hotkeyRightOptionMask)
+        
+        let optionHeld = flagSet(currentFlags, mask: optionFlagMask)
+        let leftOptionHeld = flagSet(currentFlags, mask: leftOptionDeviceFlag)
+        let rightOptionHeld = flagSet(currentFlags, mask: rightOptionDeviceFlag)
+        
+        if hasOption {
+            if hasLeftOption && !leftOptionHeld { return false }
+            if hasRightOption && !rightOptionHeld { return false }
+            if !hasLeftOption && !hasRightOption && !optionHeld { return false }
+        } else {
+            if optionHeld { return false }
         }
-        if hasMask(data, mask: hotkeyCommandMask) != flagSet(currentFlags, mask: commandFlagMask) {
-            return false
+
+        // Command
+        let hasCommand = hasMask(data, mask: hotkeyCommandMask)
+        let hasLeftCommand = hasMask(data, mask: hotkeyLeftCommandMask)
+        let hasRightCommand = hasMask(data, mask: hotkeyRightCommandMask)
+        
+        let commandHeld = flagSet(currentFlags, mask: commandFlagMask)
+        let leftCommandHeld = flagSet(currentFlags, mask: leftCommandDeviceFlag)
+        let rightCommandHeld = flagSet(currentFlags, mask: rightCommandDeviceFlag)
+        
+        if hasCommand {
+            if hasLeftCommand && !leftCommandHeld { return false }
+            if hasRightCommand && !rightCommandHeld { return false }
+            if !hasLeftCommand && !hasRightCommand && !commandHeld { return false }
+        } else {
+            if commandHeld { return false }
         }
-        if hasMask(data, mask: hotkeyShiftMask) != flagSet(currentFlags, mask: shiftFlagMask) {
-            return false
+
+        // Shift
+        let hasShift = hasMask(data, mask: hotkeyShiftMask)
+        let hasLeftShift = hasMask(data, mask: hotkeyLeftShiftMask)
+        let hasRightShift = hasMask(data, mask: hotkeyRightShiftMask)
+        
+        let shiftHeld = flagSet(currentFlags, mask: shiftFlagMask)
+        let leftShiftHeld = flagSet(currentFlags, mask: leftShiftDeviceFlag)
+        let rightShiftHeld = flagSet(currentFlags, mask: rightShiftDeviceFlag)
+        
+        if hasShift {
+            if hasLeftShift && !leftShiftHeld { return false }
+            if hasRightShift && !rightShiftHeld { return false }
+            if !hasLeftShift && !hasRightShift && !shiftHeld { return false }
+        } else {
+            if shiftHeld { return false }
         }
+
+        // Fn
         if hasMask(data, mask: hotkeyFnMask) != flagSet(currentFlags, mask: fnFlagMask) {
             return false
         }
+        
         return true
     }
 
     private class func modifiersHeld(_ data: UInt32, currentFlags: UInt64) -> Bool {
-        if hasMask(data, mask: hotkeyControlMask) && !flagSet(currentFlags, mask: controlFlagMask) {
-            return false
+        // Control
+        if hasMask(data, mask: hotkeyControlMask) {
+            let hasLeftControl = hasMask(data, mask: hotkeyLeftControlMask)
+            let hasRightControl = hasMask(data, mask: hotkeyRightControlMask)
+            let leftControlHeld = flagSet(currentFlags, mask: leftControlDeviceFlag)
+            let rightControlHeld = flagSet(currentFlags, mask: rightControlDeviceFlag)
+            let controlHeld = flagSet(currentFlags, mask: controlFlagMask)
+            
+            if hasLeftControl && !leftControlHeld { return false }
+            if hasRightControl && !rightControlHeld { return false }
+            if !hasLeftControl && !hasRightControl && !controlHeld { return false }
         }
-        if hasMask(data, mask: hotkeyOptionMask) && !flagSet(currentFlags, mask: optionFlagMask) {
-            return false
+        
+        // Option
+        if hasMask(data, mask: hotkeyOptionMask) {
+            let hasLeftOption = hasMask(data, mask: hotkeyLeftOptionMask)
+            let hasRightOption = hasMask(data, mask: hotkeyRightOptionMask)
+            let leftOptionHeld = flagSet(currentFlags, mask: leftOptionDeviceFlag)
+            let rightOptionHeld = flagSet(currentFlags, mask: rightOptionDeviceFlag)
+            let optionHeld = flagSet(currentFlags, mask: optionFlagMask)
+            
+            if hasLeftOption && !leftOptionHeld { return false }
+            if hasRightOption && !rightOptionHeld { return false }
+            if !hasLeftOption && !hasRightOption && !optionHeld { return false }
         }
-        if hasMask(data, mask: hotkeyCommandMask) && !flagSet(currentFlags, mask: commandFlagMask) {
-            return false
+        
+        // Command
+        if hasMask(data, mask: hotkeyCommandMask) {
+            let hasLeftCommand = hasMask(data, mask: hotkeyLeftCommandMask)
+            let hasRightCommand = hasMask(data, mask: hotkeyRightCommandMask)
+            let leftCommandHeld = flagSet(currentFlags, mask: leftCommandDeviceFlag)
+            let rightCommandHeld = flagSet(currentFlags, mask: rightCommandDeviceFlag)
+            let commandHeld = flagSet(currentFlags, mask: commandFlagMask)
+            
+            if hasLeftCommand && !leftCommandHeld { return false }
+            if hasRightCommand && !rightCommandHeld { return false }
+            if !hasLeftCommand && !hasRightCommand && !commandHeld { return false }
         }
-        if hasMask(data, mask: hotkeyShiftMask) && !flagSet(currentFlags, mask: shiftFlagMask) {
-            return false
+        
+        // Shift
+        if hasMask(data, mask: hotkeyShiftMask) {
+            let hasLeftShift = hasMask(data, mask: hotkeyLeftShiftMask)
+            let hasRightShift = hasMask(data, mask: hotkeyRightShiftMask)
+            let leftShiftHeld = flagSet(currentFlags, mask: leftShiftDeviceFlag)
+            let rightShiftHeld = flagSet(currentFlags, mask: rightShiftDeviceFlag)
+            let shiftHeld = flagSet(currentFlags, mask: shiftFlagMask)
+            
+            if hasLeftShift && !leftShiftHeld { return false }
+            if hasRightShift && !rightShiftHeld { return false }
+            if !hasLeftShift && !hasRightShift && !shiftHeld { return false }
         }
+        
+        // Fn
         if hasMask(data, mask: hotkeyFnMask) && !flagSet(currentFlags, mask: fnFlagMask) {
             return false
         }
+        
         return true
     }
 
@@ -512,6 +631,93 @@ final class PHTVHotkeyService: NSObject {
         return keyCode == 54 || keyCode == 55 || keyCode == 56 || keyCode == 58 ||
                keyCode == 59 || keyCode == 60 || keyCode == 61 || keyCode == 62 ||
                keyCode == 63
+    }
+
+    @objc(isSingleModifierHotkeyStatus:)
+    class func isSingleModifierHotkeyStatus(_ status: Int32) -> Bool {
+        let data = UInt32(bitPattern: status)
+        if isEmptyHotkey(data) {
+            return false
+        }
+        
+        let key = data & hotkeyKeyMask
+        let control = hasMask(data, mask: hotkeyControlMask)
+        let option = hasMask(data, mask: hotkeyOptionMask)
+        let command = hasMask(data, mask: hotkeyCommandMask)
+        let shift = hasMask(data, mask: hotkeyShiftMask)
+        let fn = hasMask(data, mask: hotkeyFnMask)
+        
+        var modifierCount = 0
+        if control { modifierCount += 1 }
+        if option { modifierCount += 1 }
+        if command { modifierCount += 1 }
+        if shift { modifierCount += 1 }
+        if fn { modifierCount += 1 }
+        
+        if key == hotkeyNoKey {
+            return modifierCount == 1
+        } else {
+            return isSingleModifierKeyCode(UInt16(key)) && modifierCount == 0
+        }
+    }
+
+    @objc(singleModifierHotkeyStatus:matchesKeyCode:flags:)
+    class func singleModifierHotkeyStatus(
+        _ status: Int32,
+        matchesKeyCode keyCode: UInt16,
+        flags: UInt64
+    ) -> Bool {
+        guard isSingleModifierHotkeyStatus(status) else {
+            return false
+        }
+        
+        let data = UInt32(bitPattern: status)
+        let key = data & hotkeyKeyMask
+        
+        if key == hotkeyNoKey {
+            let control = hasMask(data, mask: hotkeyControlMask)
+            let option = hasMask(data, mask: hotkeyOptionMask)
+            let command = hasMask(data, mask: hotkeyCommandMask)
+            let shift = hasMask(data, mask: hotkeyShiftMask)
+            let fn = hasMask(data, mask: hotkeyFnMask)
+            
+            let hasLeftControl = hasMask(data, mask: hotkeyLeftControlMask)
+            let hasRightControl = hasMask(data, mask: hotkeyRightControlMask)
+            let hasLeftOption = hasMask(data, mask: hotkeyLeftOptionMask)
+            let hasRightOption = hasMask(data, mask: hotkeyRightOptionMask)
+            let hasLeftCommand = hasMask(data, mask: hotkeyLeftCommandMask)
+            let hasRightCommand = hasMask(data, mask: hotkeyRightCommandMask)
+            let hasLeftShift = hasMask(data, mask: hotkeyLeftShiftMask)
+            let hasRightShift = hasMask(data, mask: hotkeyRightShiftMask)
+            
+            if control {
+                if hasLeftControl { return keyCode == 59 }
+                if hasRightControl { return keyCode == 62 }
+                return keyCode == 59 || keyCode == 62
+            }
+            if option {
+                if hasLeftOption { return keyCode == 58 }
+                if hasRightOption { return keyCode == 61 }
+                return keyCode == 58 || keyCode == 61
+            }
+            if command {
+                if hasLeftCommand { return keyCode == 55 }
+                if hasRightCommand { return keyCode == 54 }
+                return keyCode == 55 || keyCode == 54
+            }
+            if shift {
+                if hasLeftShift { return keyCode == 56 }
+                if hasRightShift { return keyCode == 60 }
+                return keyCode == 56 || keyCode == 60
+            }
+            if fn {
+                return keyCode == 63
+            }
+        } else {
+            return key == UInt32(keyCode)
+        }
+        
+        return false
     }
 
     @objc(evaluateKeyDownHotkeyActionForKeyCode:lastFlags:currentFlags:switchHotkey:switchHotkey2:convertHotkey:emojiEnabled:emojiModifiers:emojiHotkeyKeyCode:)
@@ -775,7 +981,8 @@ final class PHTVHotkeyService: NSObject {
 
         switch action {
         case .switchLanguage:
-            return isModifierOnlyHotkey(switchHotkey) || isModifierOnlyHotkey(switchHotkey2)
+            return isModifierOnlyHotkey(switchHotkey) || isModifierOnlyHotkey(switchHotkey2) ||
+                   isSingleModifierHotkeyStatus(switchHotkey) || isSingleModifierHotkeyStatus(switchHotkey2)
         case .quickConvert:
             return isModifierOnlyHotkey(convertHotkey)
         case .emojiPicker:

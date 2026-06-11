@@ -362,6 +362,15 @@ enum KeyCode {
     static let fnMask = 0x1000
     static let beepMask = 0x8000
 
+    static let leftControlMask = 0x0001_0000
+    static let rightControlMask = 0x0002_0000
+    static let leftOptionMask = 0x0004_0000
+    static let rightOptionMask = 0x0008_0000
+    static let leftCommandMask = 0x0010_0000
+    static let rightCommandMask = 0x0020_0000
+    static let leftShiftMask = 0x0040_0000
+    static let rightShiftMask = 0x0080_0000
+
     // MARK: - Key Name Mapping
     static let keyNames: [UInt16: String] = [
         // Letters
@@ -418,14 +427,14 @@ enum KeyCode {
         case 117: return "⌦"
         
         // Modifier keys
-        case 55: return "Left Command"
-        case 54: return "Right Command"
-        case 56: return "Left Shift"
-        case 60: return "Right Shift"
-        case 58: return "Left Option"
-        case 61: return "Right Option"
-        case 59: return "Left Control"
-        case 62: return "Right Control"
+        case 55: return "Command Trái"
+        case 54: return "Command Phải"
+        case 56: return "Shift Trái"
+        case 60: return "Shift Phải"
+        case 58: return "Option Trái"
+        case 61: return "Option Phải"
+        case 59: return "Control Trái"
+        case 62: return "Control Phải"
         case 63: return "Fn"
         
         default:
@@ -437,21 +446,47 @@ enum KeyCode {
 enum HotkeyFormatter {
     static func switchHotkeyString(
         control: Bool,
+        leftControl: Bool = false,
+        rightControl: Bool = false,
         option: Bool,
+        leftOption: Bool = false,
+        rightOption: Bool = false,
         shift: Bool,
+        leftShift: Bool = false,
+        rightShift: Bool = false,
         command: Bool,
+        leftCommand: Bool = false,
+        rightCommand: Bool = false,
         fn: Bool,
         keyCode: UInt16,
         keyName: String
     ) -> String {
         var parts: [String] = []
         if fn { parts.append("fn") }
-        if control { parts.append("⌃") }
-        if option { parts.append("⌥") }
-        if shift { parts.append("⇧") }
-        if command { parts.append("⌘") }
-        if !KeyCode.isModifierOnly(keyCode) { parts.append(keyName) }
-        return parts.isEmpty ? "Chưa đặt" : parts.joined()
+        if control {
+            if leftControl { parts.append("⌃ Trái") }
+            else if rightControl { parts.append("⌃ Phải") }
+            else { parts.append("⌃") }
+        }
+        if option {
+            if leftOption { parts.append("⌥ Trái") }
+            else if rightOption { parts.append("⌥ Phải") }
+            else { parts.append("⌥") }
+        }
+        if shift {
+            if leftShift { parts.append("⇧ Trái") }
+            else if rightShift { parts.append("⇧ Phải") }
+            else { parts.append("⇧") }
+        }
+        if command {
+            if leftCommand { parts.append("⌘ Trái") }
+            else if rightCommand { parts.append("⌘ Phải") }
+            else { parts.append("⌘") }
+        }
+        if !KeyCode.isModifierOnly(keyCode) {
+            parts.append(keyName)
+        }
+        return parts.isEmpty ? "Chưa đặt" : parts.joined(separator: " + ")
     }
 }
 

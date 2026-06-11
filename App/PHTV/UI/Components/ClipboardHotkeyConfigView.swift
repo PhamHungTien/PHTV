@@ -81,7 +81,7 @@ struct ClipboardHotkeyConfigView: View {
                         .background(
                             UnifiedHotkeyEventHandler(
                                 isRecording: $isRecording,
-                                onCaptured: { keyCode, modifiers in
+                                onCaptured: { keyCode, modifiers, _ in
                                     withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                         appState.clipboardHotkeyKeyCode = keyCode
                                         appState.clipboardHotkeyModifiers = modifiers

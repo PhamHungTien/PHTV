@@ -80,7 +80,7 @@ struct HotkeyConfigView: View {
                     .buttonStyle(SettingsShortcutRecorderButtonStyle(isRecording: isRecording))
                     .background(UnifiedHotkeyEventHandler(
                         isRecording: $isRecording,
-                        onCaptured: { keyCode, modifiers in
+                        onCaptured: { keyCode, modifiers, rawFlags in
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                 appState.switchKeyCode = keyCode
                                 appState.switchKeyControl = modifiers.contains(.control)
@@ -88,6 +88,17 @@ struct HotkeyConfigView: View {
                                 appState.switchKeyCommand = modifiers.contains(.command)
                                 appState.switchKeyShift = modifiers.contains(.shift)
                                 appState.switchKeyFn = modifiers.contains(.function)
+                                
+                                let raw = rawFlags
+                                appState.switchKeyLeftControl = (raw & 0x0001) != 0
+                                appState.switchKeyRightControl = (raw & 0x2000) != 0
+                                appState.switchKeyLeftShift = (raw & 0x0002) != 0
+                                appState.switchKeyRightShift = (raw & 0x0004) != 0
+                                appState.switchKeyLeftOption = (raw & 0x0020) != 0
+                                appState.switchKeyRightOption = (raw & 0x0040) != 0
+                                appState.switchKeyLeftCommand = (raw & 0x0008) != 0
+                                appState.switchKeyRightCommand = (raw & 0x0010) != 0
+                                
                                 appState.switchKeyName = SettingsHotkeyKeyNameResolver.name(for: keyCode)
                                 isRecording = false
                             }
@@ -144,7 +155,7 @@ struct HotkeyConfigView: View {
                         .buttonStyle(SettingsShortcutRecorderButtonStyle(isRecording: isRecordingSingle))
                         .background(UnifiedHotkeyEventHandler(
                             isRecording: $isRecordingSingle,
-                            onCaptured: { keyCode, modifiers in
+                            onCaptured: { keyCode, modifiers, rawFlags in
                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                     appState.switchKey2KeyCode = keyCode
                                     appState.switchKey2Control = modifiers.contains(.control)
@@ -152,6 +163,17 @@ struct HotkeyConfigView: View {
                                     appState.switchKey2Command = modifiers.contains(.command)
                                     appState.switchKey2Shift = modifiers.contains(.shift)
                                     appState.switchKey2Fn = modifiers.contains(.function)
+                                    
+                                    let raw = rawFlags
+                                    appState.switchKey2LeftControl = (raw & 0x0001) != 0
+                                    appState.switchKey2RightControl = (raw & 0x2000) != 0
+                                    appState.switchKey2LeftShift = (raw & 0x0002) != 0
+                                    appState.switchKey2RightShift = (raw & 0x0004) != 0
+                                    appState.switchKey2LeftOption = (raw & 0x0020) != 0
+                                    appState.switchKey2RightOption = (raw & 0x0040) != 0
+                                    appState.switchKey2LeftCommand = (raw & 0x0008) != 0
+                                    appState.switchKey2RightCommand = (raw & 0x0010) != 0
+                                    
                                     appState.switchKey2Name = SettingsHotkeyKeyNameResolver.name(for: keyCode)
                                     isRecordingSingle = false
                                 }
@@ -234,9 +256,17 @@ struct HotkeyConfigView: View {
         }
         return HotkeyFormatter.switchHotkeyString(
             control: appState.switchKeyControl,
+            leftControl: appState.switchKeyLeftControl,
+            rightControl: appState.switchKeyRightControl,
             option: appState.switchKeyOption,
+            leftOption: appState.switchKeyLeftOption,
+            rightOption: appState.switchKeyRightOption,
             shift: appState.switchKeyShift,
+            leftShift: appState.switchKeyLeftShift,
+            rightShift: appState.switchKeyRightShift,
             command: appState.switchKeyCommand,
+            leftCommand: appState.switchKeyLeftCommand,
+            rightCommand: appState.switchKeyRightCommand,
             fn: appState.switchKeyFn,
             keyCode: appState.switchKeyCode,
             keyName: appState.switchKeyName
@@ -252,9 +282,17 @@ struct HotkeyConfigView: View {
         }
         return HotkeyFormatter.switchHotkeyString(
             control: appState.switchKey2Control,
+            leftControl: appState.switchKey2LeftControl,
+            rightControl: appState.switchKey2RightControl,
             option: appState.switchKey2Option,
+            leftOption: appState.switchKey2LeftOption,
+            rightOption: appState.switchKey2RightOption,
             shift: appState.switchKey2Shift,
+            leftShift: appState.switchKey2LeftShift,
+            rightShift: appState.switchKey2RightShift,
             command: appState.switchKey2Command,
+            leftCommand: appState.switchKey2LeftCommand,
+            rightCommand: appState.switchKey2RightCommand,
             fn: appState.switchKey2Fn,
             keyCode: appState.switchKey2KeyCode,
             keyName: appState.switchKey2Name
@@ -679,7 +717,7 @@ struct EmojiHotkeyConfigView: View {
                         .buttonStyle(SettingsShortcutRecorderButtonStyle(isRecording: isRecording))
                         .background(UnifiedHotkeyEventHandler(
                             isRecording: $isRecording,
-                            onCaptured: { keyCode, modifiers in
+                            onCaptured: { keyCode, modifiers, _ in
                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                     appState.emojiHotkeyKeyCode = keyCode
                                     appState.emojiHotkeyModifiers = modifiers

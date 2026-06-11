@@ -293,9 +293,29 @@ extension AppState {
         set { uiState.switchKeyCommand = newValue }
     }
 
+    var switchKeyLeftCommand: Bool {
+        get { trackedSubstate(uiState.switchKeyLeftCommand) }
+        set { uiState.switchKeyLeftCommand = newValue }
+    }
+
+    var switchKeyRightCommand: Bool {
+        get { trackedSubstate(uiState.switchKeyRightCommand) }
+        set { uiState.switchKeyRightCommand = newValue }
+    }
+
     var switchKeyOption: Bool {
         get { trackedSubstate(uiState.switchKeyOption) }
         set { uiState.switchKeyOption = newValue }
+    }
+
+    var switchKeyLeftOption: Bool {
+        get { trackedSubstate(uiState.switchKeyLeftOption) }
+        set { uiState.switchKeyLeftOption = newValue }
+    }
+
+    var switchKeyRightOption: Bool {
+        get { trackedSubstate(uiState.switchKeyRightOption) }
+        set { uiState.switchKeyRightOption = newValue }
     }
 
     var switchKeyControl: Bool {
@@ -303,9 +323,29 @@ extension AppState {
         set { uiState.switchKeyControl = newValue }
     }
 
+    var switchKeyLeftControl: Bool {
+        get { trackedSubstate(uiState.switchKeyLeftControl) }
+        set { uiState.switchKeyLeftControl = newValue }
+    }
+
+    var switchKeyRightControl: Bool {
+        get { trackedSubstate(uiState.switchKeyRightControl) }
+        set { uiState.switchKeyRightControl = newValue }
+    }
+
     var switchKeyShift: Bool {
         get { trackedSubstate(uiState.switchKeyShift) }
         set { uiState.switchKeyShift = newValue }
+    }
+
+    var switchKeyLeftShift: Bool {
+        get { trackedSubstate(uiState.switchKeyLeftShift) }
+        set { uiState.switchKeyLeftShift = newValue }
+    }
+
+    var switchKeyRightShift: Bool {
+        get { trackedSubstate(uiState.switchKeyRightShift) }
+        set { uiState.switchKeyRightShift = newValue }
     }
 
     var switchKeyFn: Bool {
@@ -328,9 +368,29 @@ extension AppState {
         set { uiState.switchKey2Command = newValue }
     }
 
+    var switchKey2LeftCommand: Bool {
+        get { trackedSubstate(uiState.switchKey2LeftCommand) }
+        set { uiState.switchKey2LeftCommand = newValue }
+    }
+
+    var switchKey2RightCommand: Bool {
+        get { trackedSubstate(uiState.switchKey2RightCommand) }
+        set { uiState.switchKey2RightCommand = newValue }
+    }
+
     var switchKey2Option: Bool {
         get { trackedSubstate(uiState.switchKey2Option) }
         set { uiState.switchKey2Option = newValue }
+    }
+
+    var switchKey2LeftOption: Bool {
+        get { trackedSubstate(uiState.switchKey2LeftOption) }
+        set { uiState.switchKey2LeftOption = newValue }
+    }
+
+    var switchKey2RightOption: Bool {
+        get { trackedSubstate(uiState.switchKey2RightOption) }
+        set { uiState.switchKey2RightOption = newValue }
     }
 
     var switchKey2Control: Bool {
@@ -338,9 +398,29 @@ extension AppState {
         set { uiState.switchKey2Control = newValue }
     }
 
+    var switchKey2LeftControl: Bool {
+        get { trackedSubstate(uiState.switchKey2LeftControl) }
+        set { uiState.switchKey2LeftControl = newValue }
+    }
+
+    var switchKey2RightControl: Bool {
+        get { trackedSubstate(uiState.switchKey2RightControl) }
+        set { uiState.switchKey2RightControl = newValue }
+    }
+
     var switchKey2Shift: Bool {
         get { trackedSubstate(uiState.switchKey2Shift) }
         set { uiState.switchKey2Shift = newValue }
+    }
+
+    var switchKey2LeftShift: Bool {
+        get { trackedSubstate(uiState.switchKey2LeftShift) }
+        set { uiState.switchKey2LeftShift = newValue }
+    }
+
+    var switchKey2RightShift: Bool {
+        get { trackedSubstate(uiState.switchKey2RightShift) }
+        set { uiState.switchKey2RightShift = newValue }
     }
 
     var switchKey2Fn: Bool {

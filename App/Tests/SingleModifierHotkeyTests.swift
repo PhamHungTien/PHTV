@@ -188,4 +188,67 @@ final class SingleModifierHotkeyTests: XCTestCase {
         
         XCTAssertEqual(releaseResult.releaseAction, PHTVModifierReleaseAction.none.rawValue)
     }
+
+    func testLeftVsRightModifierHotkeyDistinction() {
+        // Encode switchHotkey as Left Option only:
+        // KeyCode.noKey (0x00FE) | KeyCode.optionMask (0x0200) | KeyCode.leftOptionMask (0x0004_0000)
+        let leftOptionHotkey = Int32(0x0004_02FE)
+        
+        // 1. Simulate Pressing Right Option (keycode: 61, flags contain rightOptionDeviceFlag: 0x0040)
+        let pressRightResult = PHTVEventContextBridgeService.handleModifierPress(
+            withFlags: UInt64(CGEventFlags.maskAlternate.rawValue | 0x0040),
+            keyCode: 61,
+            restoreOnEscape: 0,
+            customEscapeKey: 0,
+            pauseKeyEnabled: 0,
+            pauseKeyCode: 0,
+            currentLanguage: 1,
+            switchHotkey: leftOptionHotkey,
+            switchHotkey2: 0
+        )
+        
+        // Right Option should not match Left Option hotkey, so pressed key should remain 0
+        XCTAssertEqual(PHTVModifierRuntimeStateService.singleModifierSwitchPressedKeyValue(), 0)
+        XCTAssertFalse(pressRightResult.shouldUpdateLanguage)
+        
+        // 2. Simulate Pressing Left Option (keycode: 58, flags contain leftOptionDeviceFlag: 0x0020)
+        let pressLeftResult = PHTVEventContextBridgeService.handleModifierPress(
+            withFlags: UInt64(CGEventFlags.maskAlternate.rawValue | 0x0020),
+            keyCode: 58,
+            restoreOnEscape: 0,
+            customEscapeKey: 0,
+            pauseKeyEnabled: 0,
+            pauseKeyCode: 0,
+            currentLanguage: 1,
+            switchHotkey: leftOptionHotkey,
+            switchHotkey2: 0
+        )
+        
+        // Left Option should match and be recorded
+        XCTAssertEqual(PHTVModifierRuntimeStateService.singleModifierSwitchPressedKeyValue(), 58)
+        XCTAssertFalse(pressLeftResult.shouldUpdateLanguage)
+        
+        // 3. Simulate Release Left Option (keycode: 58)
+        let releaseLeftResult = PHTVEventContextBridgeService.handleModifierRelease(
+            oldFlags: UInt64(CGEventFlags.maskAlternate.rawValue | 0x0020),
+            newFlags: 0,
+            keyCode: 58,
+            restoreOnEscape: 0,
+            customEscapeKey: 0,
+            switchHotkey: leftOptionHotkey,
+            switchHotkey2: 0,
+            convertHotkey: 0,
+            emojiEnabled: 0,
+            emojiModifiers: 0,
+            emojiKeyCode: 0,
+            tempOffSpellingEnabled: 0,
+            tempOffEngineEnabled: 0,
+            pauseKeyEnabled: 0,
+            pauseKeyCode: 0,
+            currentLanguage: 1
+        )
+        
+        XCTAssertEqual(releaseLeftResult.releaseAction, PHTVModifierReleaseAction.switchLanguage.rawValue)
+        XCTAssertEqual(PHTVModifierRuntimeStateService.singleModifierSwitchPressedKeyValue(), 0)
+    }
 }

@@ -151,8 +151,8 @@ final class PHTVEventContextBridgeService: NSObject {
                                    currentLanguage: Int32,
                                    switchHotkey: Int32,
                                    switchHotkey2: Int32) -> PHTVModifierTransitionResultBox {
-        let isSwitch1Single = PHTVHotkeyService.isSingleModifierKeyCode(UInt16(switchHotkey & 0xFFFF)) && (UInt16(switchHotkey & 0xFFFF) == keyCode)
-        let isSwitch2Single = PHTVHotkeyService.isSingleModifierKeyCode(UInt16(switchHotkey2 & 0xFFFF)) && (UInt16(switchHotkey2 & 0xFFFF) == keyCode)
+        let isSwitch1Single = PHTVHotkeyService.singleModifierHotkeyStatus(switchHotkey, matchesKeyCode: keyCode, flags: flags)
+        let isSwitch2Single = PHTVHotkeyService.singleModifierHotkeyStatus(switchHotkey2, matchesKeyCode: keyCode, flags: flags)
         if isSwitch1Single || isSwitch2Single {
             let pressedKey = PHTVModifierRuntimeStateService.singleModifierSwitchPressedKeyValue()
             if pressedKey == 0 {

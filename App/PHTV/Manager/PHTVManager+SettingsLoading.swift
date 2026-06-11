@@ -73,7 +73,17 @@ import Foundation
             | KeyCode.fnMask
         )
         let beepMask = UInt32(KeyCode.beepMask)
-        let allowedMask = keyMask | modifierMask | beepMask
+        let leftRightMask = UInt32(
+            KeyCode.leftControlMask
+            | KeyCode.rightControlMask
+            | KeyCode.leftOptionMask
+            | KeyCode.rightOptionMask
+            | KeyCode.leftCommandMask
+            | KeyCode.rightCommandMask
+            | KeyCode.leftShiftMask
+            | KeyCode.rightShiftMask
+        )
+        let allowedMask = keyMask | modifierMask | leftRightMask | beepMask
 
         let raw = UInt32(bitPattern: rawStatus)
         let filtered = raw & allowedMask
