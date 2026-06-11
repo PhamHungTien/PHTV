@@ -155,17 +155,13 @@ PHTV xử lý dữ liệu gõ **offline trên máy**. Ứng dụng không gửi 
 
 <table>
 <tr>
-<td width="33%" align="center">
+<td width="50%" align="center">
 <img src="docs/images/Setting_1_bogo.jpg" alt="Settings - Bộ gõ" width="100%">
 <p><em>Bộ gõ</em></p>
 </td>
-<td width="33%" align="center">
+<td width="50%" align="center">
 <img src="docs/images/Setting_2_phimtat.jpg" alt="Settings - Phím tắt" width="100%">
 <p><em>Phím tắt</em></p>
-</td>
-<td width="33%" align="center">
-<img src="docs/images/Setting_7_thongtin.png" alt="Settings - Thông tin" width="100%">
-<p><em>Thông tin</em></p>
 </td>
 </tr>
 </table>
