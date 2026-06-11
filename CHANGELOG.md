@@ -7,7 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [3.1.8] - 2026-05-21
+## [3.2.4] - 2026-06-11
+
+### Tổng quan
+PHTV 3.2.4 mang đến hai cải tiến quan trọng về tính tương thích và hệ thống phím tắt: khắc phục triệt để lỗi xáo trộn chữ khi gõ tiếng Việt trên Safari (đặc biệt là các rich-text editor như TikTok Studio) và nâng cấp toàn diện hệ thống phím tắt chuyển đổi để phân biệt rõ ràng các phím bổ trợ bên Trái/Phải cũng như hoạt động ổn định với phím đơn lẻ.
+
+### Điểm nổi bật
+- **Khắc phục lỗi gõ tiếng Việt trong trình duyệt Safari**
+  - Tự động nhận diện ngữ cảnh nhập liệu trong Safari: Khi người dùng gõ trên thanh địa chỉ (Address Bar), PHTV giữ nguyên chiến lược gõ từng bước để tránh lỗi nhân đôi ký tự.
+  - Khi người dùng gõ trong nội dung trang web (Web Content - ví dụ như ô mô tả của TikTok Studio), PHTV tự động chuyển sang cơ chế gửi văn bản tổ hợp Unicode một lần (tương tự Chrome). Thay đổi này giúp DOM/React state của trang web không bị mất đồng bộ, giải quyết dứt điểm hiện tượng xáo trộn ký tự.
+- **Phân biệt phím sửa đổi Trái/Phải (Left/Right Modifiers)**
+  - Hệ thống phím tắt chuyển đổi ngôn ngữ hiện tại đã phân biệt chính xác các phím bổ trợ bên Trái hoặc bên Phải (ví dụ: `Option Trái + Z` sẽ không bị kích hoạt nhầm bởi `Option Phải + Z`).
+  - Tên phím tắt hiển thị trong giao diện Cài đặt trực quan bằng Tiếng Việt (ví dụ: `⌥ Trái + Z`, `⌘ Phải + Space`).
+- **Sửa lỗi phím tắt đơn lẻ ở phím tắt chính**
+  - Khắc phục lỗi phím tắt chính không hoạt động khi được gán phím bổ trợ đơn lẻ (Shift, Fn, Control, Option, Command) trong khi phím tắt phụ vẫn hoạt động bình thường.
+  - Đồng nhất và tối ưu hóa logic so khớp phím đơn lẻ cho cả phím tắt chính và phụ, đảm bảo nhận diện chính xác ở cả cấp độ KeyCode và Modifier Flags.
+
+### Fixed and Improved
+- Tích hợp kiểm tra `PHTVHotkeyService.singleModifierHotkeyStatus` vào `handleModifierPress` và `handleModifierRelease` để xử lý chính xác và ổn định các phím bổ trợ đơn lẻ.
+- Cập nhật `phtv_normalizeSwitchKeyStatus` để cho phép các cờ Trái/Phải đi qua bộ lọc khi tải cấu hình từ UserDefaults.
+- Bổ sung unit tests kiểm tra độ độc lập của phím bổ trợ Trái/Phải cho phím tắt đơn lẻ, đảm bảo tính ổn định lâu dài của hệ thống.
+
+### Ghi chú nâng cấp
+- Đây là bản cập nhật khuyến nghị cho tất cả người dùng Safari và những người dùng muốn cấu hình phím tắt chuyển đổi ngôn ngữ linh hoạt, chi tiết hơn.
+- Nếu bạn gặp bất kỳ vấn đề nào sau khi cập nhật, hãy kiểm tra lại cấu hình phím tắt trong phần Cài đặt của PHTV để đảm bảo các phím tắt được ghi nhận chính xác theo mong muốn của bạn.
 
 ### Tổng quan
 PHTV 3.1.8 tập trung sửa lỗi **Clipboard History không dán lại được ảnh hoặc file cũ**. Trước đây, một số ảnh chụp màn hình hoặc file đã copy có thể hiển thị trong lịch sử clipboard nhưng khi chọn lại và nhấn Enter thì không dán được, đặc biệt với các mục không phải mục clipboard gần nhất.
@@ -718,7 +741,9 @@ Phạm Hùng Tiến
 - Macro (gõ tắt)
 - Hoàn toàn offline
 
-[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v3.1.7...HEAD
+[Unreleased]: https://github.com/PhamHungTien/PHTV/compare/v3.2.4...HEAD
+[3.2.4]: https://github.com/PhamHungTien/PHTV/compare/v3.1.8...v3.2.4
+[3.1.8]: https://github.com/PhamHungTien/PHTV/compare/v3.1.7...v3.1.8
 [3.1.7]: https://github.com/PhamHungTien/PHTV/compare/v3.1.6...v3.1.7
 [3.1.6]: https://github.com/PhamHungTien/PHTV/compare/v3.1.5...v3.1.6
 [3.1.5]: https://github.com/PhamHungTien/PHTV/compare/v3.1.4...v3.1.5
