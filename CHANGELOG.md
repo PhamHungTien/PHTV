@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.5] - 2026-06-11
+
+### Tổng quan
+PHTV 3.2.5 đồng bộ hóa toàn diện hệ thống phím tắt của PHTV Picker (Emoji) và Lịch sử Clipboard (Clipboard History), mang lại trải nghiệm phân biệt phím bổ trợ Trái/Phải (Left/Right Modifiers) nhất quán trên toàn bộ ứng dụng.
+
+### Điểm nổi bật
+- **Phân biệt phím sửa đổi Trái/Phải cho PHTV Picker & Clipboard**
+  - Hỗ trợ ghi nhận đầy đủ cờ thiết bị của các phím bổ trợ khi người dùng gán phím tắt cho Picker và Clipboard.
+  - Hiển thị trực quan nhãn phím tắt kèm chỉ thị "Trái" / "Phải" bằng Tiếng Việt (ví dụ: `⌥ Trái + E`, `⌃ Phải + V`).
+- **Nâng cấp cơ chế so khớp phím tắt**
+  - Tối ưu hóa `EmojiHotkeyManager` và `ClipboardHotkeyManager` để so khớp chính xác phím bổ trợ bên Trái hay bên Phải đối với cả tổ hợp phím thông thường (Key Down) và chế độ phím tắt đơn lẻ (Modifier-only).
+  - Tự động tương thích ngược với các cấu hình phím tắt cũ (mặc định chấp nhận cả hai bên nếu cấu hình cũ không phân biệt Trái/Phải).
+
+### Fixed and Improved
+- Tích hợp hàm kiểm tra `matchesModifiers` linh hoạt cho cả hai trình quản lý phím tắt, giúp loại bỏ các hành vi kích hoạt nhầm phím tắt từ phím bổ trợ đối diện.
+- Sửa đổi các view cấu hình phím tắt để lưu trữ chính xác thông tin cờ thiết bị thô (`rawFlags`).
+
 ## [3.2.4] - 2026-06-11
 
 ### Tổng quan
