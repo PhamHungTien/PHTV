@@ -132,7 +132,7 @@ PHTV xử lý dữ liệu gõ **offline trên máy**. Ứng dụng không gửi 
 
 <div align="center">
 
-### Menu Bar & PHTV Picker
+### Menu Bar, PHTV Picker & Lịch sử Clipboard
 
 <table>
 <tr>
@@ -140,17 +140,13 @@ PHTV xử lý dữ liệu gõ **offline trên máy**. Ứng dụng không gửi 
 <img src="docs/images/ui/menubar_ui.png" alt="Menu Bar UI" width="200">
 <p><em>Menu Bar</em></p>
 </td>
-<td width="26%" align="center">
-<img src="docs/images/ui/PHTV_Picker_1_Emoji.png" alt="PHTV Picker - Emoji" width="280">
-<p><em>Emoji Picker</em></p>
+<td width="40%" align="center">
+<img src="docs/images/ui/PHTV_Picker.jpg" alt="PHTV Picker" width="380">
+<p><em>PHTV Picker (Emoji & GIF)</em></p>
 </td>
-<td width="26%" align="center">
-<img src="docs/images/ui/PHTV_Picker_2_GIF.png" alt="PHTV Picker - GIF" width="280">
-<p><em>GIF Picker</em></p>
-</td>
-<td width="26%" align="center">
-<img src="docs/images/ui/PHTV_Picker_3_Sticker.png" alt="PHTV Picker - Sticker" width="280">
-<p><em>Sticker Picker</em></p>
+<td width="40%" align="center">
+<img src="docs/images/ui/Setting_clipboard.jpg" alt="Lịch sử Clipboard" width="380">
+<p><em>Lịch sử Clipboard</em></p>
 </td>
 </tr>
 </table>
@@ -160,11 +156,11 @@ PHTV xử lý dữ liệu gõ **offline trên máy**. Ứng dụng không gửi 
 <table>
 <tr>
 <td width="25%" align="center">
-<img src="docs/images/Setting_1_bogo.png" alt="Settings - Bộ gõ" width="100%">
+<img src="docs/images/Setting_1_bogo.jpg" alt="Settings - Bộ gõ" width="100%">
 <p><em>Bộ gõ</em></p>
 </td>
 <td width="25%" align="center">
-<img src="docs/images/Setting_2_phimtat.png" alt="Settings - Phím tắt" width="100%">
+<img src="docs/images/Setting_2_phimtat.jpg" alt="Settings - Phím tắt" width="100%">
 <p><em>Phím tắt</em></p>
 </td>
 <td width="25%" align="center">
