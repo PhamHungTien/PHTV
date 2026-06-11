@@ -104,7 +104,9 @@ final class EmojiHotkeyManager {
     func registerHotkey(modifiers: NSEvent.ModifierFlags, keyCode: UInt16) {
         unregisterHotkey()
 
-        let filteredModifiers = modifiers.intersection(Self.relevantModifiers)
+        let deviceFlagsMask = NSEvent.ModifierFlags(rawValue: 0x0001 | 0x0002 | 0x0004 | 0x0008 | 0x0010 | 0x0020 | 0x0040 | 0x2000)
+        let allowedModifiersMask = Self.relevantModifiers.union(deviceFlagsMask)
+        let filteredModifiers = modifiers.intersection(allowedModifiersMask)
         let normalizedModifiers = filteredModifiers.isEmpty ? NSEvent.ModifierFlags.command : filteredModifiers
         let normalizedKeyCode: UInt16
         if keyCode <= KeyCode.keyMask || keyCode == KeyCode.noKey {
@@ -134,24 +136,21 @@ final class EmojiHotkeyManager {
     }
 
     private func registerKeyDownHotkey(capturedKeyCode: UInt16, capturedModifiers: NSEvent.ModifierFlags, relevantModifiers: NSEvent.ModifierFlags) {
-        let filteredCapturedModifiers = capturedModifiers.intersection(relevantModifiers)
-
         globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
             Task { @MainActor [weak self] in
                 self?.handleKeyEvent(event)
             }
         }
 
-        localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+        localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self else { return event }
             // Quick check to consume event IMMEDIATELY if it matches hotkey
             // This prevents system beep sound
             guard event.keyCode == capturedKeyCode else {
                 return event
             }
 
-            let eventModifiers = event.modifierFlags.intersection(relevantModifiers)
-
-            guard eventModifiers == filteredCapturedModifiers else {
+            guard self.matchesModifiers(expected: capturedModifiers, actual: event.modifierFlags) else {
                 return event
             }
 
@@ -206,21 +205,23 @@ final class EmojiHotkeyManager {
     }
 
     private func handleFlagsChanged(_ event: NSEvent, capturedModifiers: NSEvent.ModifierFlags, relevantModifiers: NSEvent.ModifierFlags) {
-        let currentFlags = event.modifierFlags.intersection(relevantModifiers)
+        let currentFlags = event.modifierFlags
+        let currentIndependent = currentFlags.intersection(relevantModifiers)
+        let lastIndependent = lastModifierFlags.intersection(relevantModifiers)
 
-        if currentFlags.rawValue > lastModifierFlags.rawValue {
+        if currentIndependent.rawValue > lastIndependent.rawValue {
             // Pressing more modifiers
             lastModifierFlags = currentFlags
             keyPressedWhileModifiersHeld = false
-        } else if currentFlags.rawValue < lastModifierFlags.rawValue {
+        } else if currentIndependent.rawValue < lastIndependent.rawValue {
             // Releasing modifiers - check if the combo matched
-            if !keyPressedWhileModifiersHeld && lastModifierFlags == capturedModifiers {
+            if !keyPressedWhileModifiersHeld && matchesModifiers(expected: capturedModifiers, actual: lastModifierFlags) {
                 Task { @MainActor in
                     EmojiHotkeyManager.shared.openEmojiPicker()
                 }
             }
             lastModifierFlags = currentFlags
-            if currentFlags.isEmpty {
+            if currentIndependent.isEmpty {
                 keyPressedWhileModifiersHeld = false
             }
         }
@@ -260,14 +261,70 @@ final class EmojiHotkeyManager {
             return false
         }
 
-        let eventModifiers = event.modifierFlags.intersection(Self.relevantModifiers)
-        let expectedModifiers = modifiers.intersection(Self.relevantModifiers)
-
-        guard eventModifiers == expectedModifiers else {
+        guard matchesModifiers(expected: modifiers, actual: event.modifierFlags) else {
             return false
         }
 
         openEmojiPicker()
+        return true
+    }
+
+    private func matchesModifiers(expected: NSEvent.ModifierFlags, actual: NSEvent.ModifierFlags) -> Bool {
+        let relevant = expected.intersection(Self.relevantModifiers)
+        let actualRelevant = actual.intersection(Self.relevantModifiers)
+        guard relevant == actualRelevant else { return false }
+        
+        let expectedRaw = UInt64(expected.rawValue)
+        let actualRaw = UInt64(actual.rawValue)
+        
+        // Alternate/Option
+        if expected.contains(.option) {
+            let leftExpected = (expectedRaw & 0x0020) != 0
+            let rightExpected = (expectedRaw & 0x0040) != 0
+            if leftExpected || rightExpected {
+                let leftActual = (actualRaw & 0x0020) != 0
+                let rightActual = (actualRaw & 0x0040) != 0
+                if leftExpected && !leftActual { return false }
+                if rightExpected && !rightActual { return false }
+            }
+        }
+        
+        // Command
+        if expected.contains(.command) {
+            let leftExpected = (expectedRaw & 0x0008) != 0
+            let rightExpected = (expectedRaw & 0x0010) != 0
+            if leftExpected || rightExpected {
+                let leftActual = (actualRaw & 0x0008) != 0
+                let rightActual = (actualRaw & 0x0010) != 0
+                if leftExpected && !leftActual { return false }
+                if rightExpected && !rightActual { return false }
+            }
+        }
+        
+        // Control
+        if expected.contains(.control) {
+            let leftExpected = (expectedRaw & 0x0001) != 0
+            let rightExpected = (expectedRaw & 0x2000) != 0
+            if leftExpected || rightExpected {
+                let leftActual = (actualRaw & 0x0001) != 0
+                let rightActual = (actualRaw & 0x2000) != 0
+                if leftExpected && !leftActual { return false }
+                if rightExpected && !rightActual { return false }
+            }
+        }
+        
+        // Shift
+        if expected.contains(.shift) {
+            let leftExpected = (expectedRaw & 0x0002) != 0
+            let rightExpected = (expectedRaw & 0x0004) != 0
+            if leftExpected || rightExpected {
+                let leftActual = (actualRaw & 0x0002) != 0
+                let rightActual = (actualRaw & 0x0004) != 0
+                if leftExpected && !leftActual { return false }
+                if rightExpected && !rightActual { return false }
+            }
+        }
+        
         return true
     }
 

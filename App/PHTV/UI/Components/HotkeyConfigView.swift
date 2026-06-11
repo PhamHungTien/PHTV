@@ -717,10 +717,12 @@ struct EmojiHotkeyConfigView: View {
                         .buttonStyle(SettingsShortcutRecorderButtonStyle(isRecording: isRecording))
                         .background(UnifiedHotkeyEventHandler(
                             isRecording: $isRecording,
-                            onCaptured: { keyCode, modifiers, _ in
+                            onCaptured: { keyCode, modifiers, rawFlags in
                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                     appState.emojiHotkeyKeyCode = keyCode
-                                    appState.emojiHotkeyModifiers = modifiers
+                                    let deviceFlags = rawFlags & (0x0001 | 0x2000 | 0x0002 | 0x0004 | 0x0020 | 0x0040 | 0x0008 | 0x0010)
+                                    let combinedRaw = UInt(modifiers.rawValue) | UInt(deviceFlags)
+                                    appState.emojiHotkeyModifiers = NSEvent.ModifierFlags(rawValue: combinedRaw)
                                     isRecording = false
                                 }
                             },
@@ -745,9 +747,17 @@ struct EmojiHotkeyConfigView: View {
         }
         return HotkeyFormatter.switchHotkeyString(
             control: appState.emojiHotkeyModifiers.contains(.control),
+            leftControl: (appState.emojiHotkeyModifiers.rawValue & 0x0001) != 0,
+            rightControl: (appState.emojiHotkeyModifiers.rawValue & 0x2000) != 0,
             option: appState.emojiHotkeyModifiers.contains(.option),
+            leftOption: (appState.emojiHotkeyModifiers.rawValue & 0x0020) != 0,
+            rightOption: (appState.emojiHotkeyModifiers.rawValue & 0x0040) != 0,
             shift: appState.emojiHotkeyModifiers.contains(.shift),
+            leftShift: (appState.emojiHotkeyModifiers.rawValue & 0x0002) != 0,
+            rightShift: (appState.emojiHotkeyModifiers.rawValue & 0x0004) != 0,
             command: appState.emojiHotkeyModifiers.contains(.command),
+            leftCommand: (appState.emojiHotkeyModifiers.rawValue & 0x0008) != 0,
+            rightCommand: (appState.emojiHotkeyModifiers.rawValue & 0x0010) != 0,
             fn: appState.emojiHotkeyModifiers.contains(.function),
             keyCode: appState.emojiHotkeyKeyCode,
             keyName: KeyCode.name(for: appState.emojiHotkeyKeyCode)

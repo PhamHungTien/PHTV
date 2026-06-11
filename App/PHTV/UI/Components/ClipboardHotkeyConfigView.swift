@@ -23,9 +23,17 @@ struct ClipboardHotkeyConfigView: View {
         }
         return HotkeyFormatter.switchHotkeyString(
             control: appState.clipboardHotkeyModifiers.contains(.control),
+            leftControl: (appState.clipboardHotkeyModifiers.rawValue & 0x0001) != 0,
+            rightControl: (appState.clipboardHotkeyModifiers.rawValue & 0x2000) != 0,
             option: appState.clipboardHotkeyModifiers.contains(.option),
+            leftOption: (appState.clipboardHotkeyModifiers.rawValue & 0x0020) != 0,
+            rightOption: (appState.clipboardHotkeyModifiers.rawValue & 0x0040) != 0,
             shift: appState.clipboardHotkeyModifiers.contains(.shift),
+            leftShift: (appState.clipboardHotkeyModifiers.rawValue & 0x0002) != 0,
+            rightShift: (appState.clipboardHotkeyModifiers.rawValue & 0x0004) != 0,
             command: appState.clipboardHotkeyModifiers.contains(.command),
+            leftCommand: (appState.clipboardHotkeyModifiers.rawValue & 0x0008) != 0,
+            rightCommand: (appState.clipboardHotkeyModifiers.rawValue & 0x0010) != 0,
             fn: appState.clipboardHotkeyModifiers.contains(.function),
             keyCode: appState.clipboardHotkeyKeyCode,
             keyName: SettingsHotkeyKeyNameResolver.name(for: appState.clipboardHotkeyKeyCode)
@@ -81,10 +89,12 @@ struct ClipboardHotkeyConfigView: View {
                         .background(
                             UnifiedHotkeyEventHandler(
                                 isRecording: $isRecording,
-                                onCaptured: { keyCode, modifiers, _ in
+                                onCaptured: { keyCode, modifiers, rawFlags in
                                     withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                         appState.clipboardHotkeyKeyCode = keyCode
-                                        appState.clipboardHotkeyModifiers = modifiers
+                                        let deviceFlags = rawFlags & (0x0001 | 0x2000 | 0x0002 | 0x0004 | 0x0020 | 0x0040 | 0x0008 | 0x0010)
+                                        let combinedRaw = UInt(modifiers.rawValue) | UInt(deviceFlags)
+                                        appState.clipboardHotkeyModifiers = NSEvent.ModifierFlags(rawValue: combinedRaw)
                                         isRecording = false
                                     }
                                 },
