@@ -29,6 +29,12 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
     }
 
     func setup() {
+        if statusItem != nil {
+            updateIcon()
+            setupIconObserversIfNeeded()
+            return
+        }
+
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         updateIcon()
 

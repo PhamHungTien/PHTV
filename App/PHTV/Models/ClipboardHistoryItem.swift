@@ -9,7 +9,7 @@
 import Foundation
 import AppKit
 
-struct ClipboardHistoryFileReference: Codable, Equatable {
+struct ClipboardHistoryFileReference: Codable, Equatable, Sendable {
     let originalPath: String
     let cachedPath: String?
     let displayName: String
@@ -75,7 +75,7 @@ final class ClipboardSourceAppResolver {
     }
 }
 
-struct ClipboardHistoryItem: Identifiable, Codable, Equatable {
+struct ClipboardHistoryItem: Identifiable, Codable, Equatable, Sendable {
     let id: UUID
     let timestamp: Date
     let textContent: String?
@@ -102,7 +102,7 @@ struct ClipboardHistoryItem: Identifiable, Codable, Equatable {
         self.sourceApp = sourceApp
     }
 
-    enum ContentType: String, Codable {
+    enum ContentType: String, Codable, Sendable {
         case text
         case image
         case file

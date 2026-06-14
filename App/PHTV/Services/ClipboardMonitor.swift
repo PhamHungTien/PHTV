@@ -8,7 +8,7 @@
 
 import AppKit
 
-struct ClipboardHistoryCapturePayload: Equatable {
+struct ClipboardHistoryCapturePayload: Equatable, Sendable {
     let textContent: String?
     let imageData: Data?
     let filePaths: [String]?
@@ -80,8 +80,15 @@ final class ClipboardMonitor {
     static let shared = ClipboardMonitor()
 
     private var monitoringTask: Task<Void, Never>?
+    private var captureTask: Task<Void, Never>?
+    private var captureTimeoutTask: Task<Void, Never>?
+    private var activeCaptureID: UUID?
     private var lastChangeCount: Int = 0
     private var isMonitoring = false
+    private var captureBackoffUntil: CFAbsoluteTime = 0
+
+    private let captureTimeoutSeconds: TimeInterval = 2.0
+    private let captureBackoffSeconds: TimeInterval = 5.0
 
     private init() {
         lastChangeCount = NSPasteboard.general.changeCount
@@ -105,68 +112,124 @@ final class ClipboardMonitor {
         isMonitoring = false
         monitoringTask?.cancel()
         monitoringTask = nil
+        captureTask?.cancel()
+        captureTask = nil
+        captureTimeoutTask?.cancel()
+        captureTimeoutTask = nil
+        activeCaptureID = nil
     }
 
     private func checkForChanges() {
+        let now = CFAbsoluteTimeGetCurrent()
+        guard now >= captureBackoffUntil else { return }
+
         let pasteboard = NSPasteboard.general
         let currentCount = pasteboard.changeCount
         guard currentCount != lastChangeCount else { return }
+
+        guard captureTask == nil else {
+            return
+        }
+
         lastChangeCount = currentCount
 
         // Don't capture items that we just pasted from clipboard history
         if ClipboardHistoryManager.shared.isPasting { return }
 
-        let item = captureCurrentPasteboard(pasteboard)
-        if let item = item {
+        let sourceApp = PHTVAppContextService.currentFrontmostBundleId()
+        guard ClipboardHistoryPrivacyPolicy.shouldCaptureContent(from: sourceApp) else {
+            return
+        }
+
+        startCapture(sourceApp: sourceApp)
+    }
+
+    private func startCapture(sourceApp: String?) {
+        let captureID = UUID()
+        activeCaptureID = captureID
+
+        captureTask = Task.detached(priority: .utility) { [captureID, sourceApp] in
+            let item = Self.captureCurrentPasteboard(sourceApp: sourceApp)
+            await ClipboardMonitor.shared.finishCapture(captureID: captureID, item: item)
+        }
+
+        captureTimeoutTask?.cancel()
+        captureTimeoutTask = Task { @MainActor [weak self, captureID] in
+            try? await Task.sleep(for: .seconds(self?.captureTimeoutSeconds ?? 2.0))
+            self?.handleCaptureTimeout(captureID: captureID)
+        }
+    }
+
+    private func finishCapture(captureID: UUID, item: ClipboardHistoryItem?) {
+        guard activeCaptureID == captureID else { return }
+
+        captureTask = nil
+        activeCaptureID = nil
+        captureTimeoutTask?.cancel()
+        captureTimeoutTask = nil
+
+        guard isMonitoring else { return }
+
+        if let item {
             ClipboardHistoryManager.shared.addItem(item)
         }
     }
 
-    private func captureCurrentPasteboard(_ pasteboard: NSPasteboard) -> ClipboardHistoryItem? {
-        let sourceApp = PHTVAppContextService.currentFrontmostBundleId()
-        guard ClipboardHistoryPrivacyPolicy.shouldCaptureContent(from: sourceApp) else {
-            return nil
-        }
-        let itemID = UUID()
+    private func handleCaptureTimeout(captureID: UUID) {
+        guard activeCaptureID == captureID else { return }
 
-        let textContent = pasteboard.string(forType: .string)
+        NSLog("[ClipboardHistory] Pasteboard capture timed out; keeping UI responsive and retrying later")
+        captureTask?.cancel()
+        captureTask = nil
+        activeCaptureID = nil
+        captureTimeoutTask = nil
+        captureBackoffUntil = CFAbsoluteTimeGetCurrent() + captureBackoffSeconds
+    }
 
-        var imageData: Data?
-        if let tiffData = pasteboard.data(forType: .tiff) {
-            if let bitmap = NSBitmapImageRep(data: tiffData) {
-                imageData = bitmap.representation(using: .png, properties: [:])
+    nonisolated private static func captureCurrentPasteboard(sourceApp: String?) -> ClipboardHistoryItem? {
+        autoreleasepool {
+            let pasteboard = NSPasteboard.general
+            let itemID = UUID()
+
+            let textContent = pasteboard.string(forType: .string)
+
+            var imageData: Data?
+            if let tiffData = pasteboard.data(forType: .tiff) {
+                if let bitmap = NSBitmapImageRep(data: tiffData) {
+                    imageData = bitmap.representation(using: .png, properties: [:])
+                }
+            } else if let pngData = pasteboard.data(forType: .png) {
+                imageData = pngData
             }
-        } else if let pngData = pasteboard.data(forType: .png) {
-            imageData = pngData
-        }
 
-        var filePaths: [String]?
-        var fileReferences: [ClipboardHistoryFileReference]?
-        if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: [
-            .urlReadingFileURLsOnly: true
-        ]) as? [URL], !urls.isEmpty {
-            filePaths = urls.map { $0.path }
-            fileReferences = ClipboardHistoryFileCache.references(for: urls, itemID: itemID)
-        }
+            var filePaths: [String]?
+            var fileReferences: [ClipboardHistoryFileReference]?
+            if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: [
+                .urlReadingFileURLsOnly: true
+            ]) as? [URL], !urls.isEmpty {
+                filePaths = urls.map { $0.path }
+                fileReferences = ClipboardHistoryFileCache.references(for: urls, itemID: itemID)
+            }
 
-        guard let payload = ClipboardHistoryCaptureSanitizer.sanitizedPayload(
-            textContent: textContent,
-            imageData: imageData,
-            filePaths: filePaths,
-            fileReferences: fileReferences
-        ) else {
-            ClipboardHistoryFileCache.removeCache(for: itemID)
-            return nil
-        }
+            guard let payload = ClipboardHistoryCaptureSanitizer.sanitizedPayload(
+                textContent: textContent,
+                imageData: imageData,
+                filePaths: filePaths,
+                fileReferences: fileReferences
+            ) else {
+                ClipboardHistoryFileCache.removeCache(for: itemID)
+                return nil
+            }
 
-        return ClipboardHistoryItem(
-            id: itemID,
-            timestamp: Date(),
-            textContent: payload.textContent,
-            imageData: payload.imageData,
-            filePaths: payload.filePaths,
-            fileReferences: payload.fileReferences,
-            sourceApp: sourceApp
-        )
+            return ClipboardHistoryItem(
+                id: itemID,
+                timestamp: Date(),
+                textContent: payload.textContent,
+                imageData: payload.imageData,
+                filePaths: payload.filePaths,
+                fileReferences: payload.fileReferences,
+                sourceApp: sourceApp
+            )
+        }
     }
 }
