@@ -16,10 +16,6 @@ final class PHTVRuntimeUIBridgeService: NSObject {
     private static let languageChangedNotification = Notification.Name("LanguageChangedFromBackend")
     private static let inputMethodDefaultsKey = "InputMethod"
 
-    private nonisolated class func notifyInputMethodChangedInBackground() async {
-        PHTVManager.notifyInputMethodChanged()
-    }
-
     private class func resolveAppDelegate() -> AppDelegate? {
         return AppDelegate.current()
     }
@@ -51,9 +47,9 @@ final class PHTVRuntimeUIBridgeService: NSObject {
                                         object: NSNumber(value: targetLanguage))
 
         if PHTVManager.isSmartSwitchKeyEnabled() {
-            Task(priority: .utility) {
-                await notifyInputMethodChangedInBackground()
-            }
+            // Call synchronously so the focused bundle ID is captured NOW, before
+            // any Cmd+Tab can switch the focused app and corrupt the stored state.
+            PHTVManager.notifyInputMethodChanged()
         }
 
 #if DEBUG
