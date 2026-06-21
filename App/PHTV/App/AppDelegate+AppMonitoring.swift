@@ -218,6 +218,47 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
         publishTypingPermissionState(eventTapReady: false)
     }
 
+    @objc func receiveSessionResignActive(_ note: Notification) {
+        _ = note
+        NSLog("[Session] Did resign active — suspending event tap and monitoring")
+        cancelEventTapRecovery(reason: "sessionResignActive")
+        stopHealthCheckMonitoring()
+        stopAccessibilityMonitoring()
+        _ = PHTVManager.stopEventTap()
+        publishTypingPermissionState(eventTapReady: false)
+        ClipboardMonitor.shared.stopMonitoring()
+    }
+
+    @objc func receiveSessionBecomeActive(_ note: Notification) {
+        _ = note
+        NSLog("[Session] Did become active — resuming event tap and monitoring")
+        PHTVCacheStateService.invalidatePIDCache()
+        PHTVCacheStateService.invalidateAppCharacteristicsCache()
+        PHTVAccessibilityService.invalidateContextDetectionCaches()
+        _ = PHTVManager.stopEventTap()
+        publishTypingPermissionState(eventTapReady: false)
+
+        let initSucceeded = PHTVManager.initEventTap()
+        let eventTapReady = initSucceeded && PHTVManager.isEventTapEnabled()
+        publishTypingPermissionState(eventTapReady: eventTapReady)
+        startInputSourceMonitoring()
+        startAccessibilityMonitoring()
+        if eventTapReady {
+            startHealthCheckMonitoring()
+        } else {
+            stopHealthCheckMonitoring()
+        }
+        syncCurrentFrontmostAppContext(reason: "sessionBecomeActive", forceExcludedRecheck: true)
+        refreshEmojiHotkeyRegistration(reason: "sessionBecomeActive", settledRetries: true)
+        refreshClipboardHotkeyRegistration(reason: "sessionBecomeActive", settledRetries: true)
+        requestEventTapRecovery(reason: "sessionBecomeActive", force: true)
+        refreshMacrosIfSystemTextReplacementsChanged(resetSession: true)
+
+        if AppState.shared.enableClipboardHistory {
+            ClipboardMonitor.shared.startMonitoring()
+        }
+    }
+
     @objc func handleApplicationDidBecomeActive(_ note: Notification) {
         _ = note
         refreshEmojiHotkeyRegistration(reason: "didBecomeActive", settledRetries: false)
@@ -354,6 +395,12 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
             },
             makeNotificationTask(center: workspaceCenter, name: NSWorkspace.willSleepNotification) { appDelegate, notification in
                 appDelegate.receiveSleepNote(notification)
+            },
+            makeNotificationTask(center: workspaceCenter, name: NSWorkspace.sessionDidResignActiveNotification) { appDelegate, notification in
+                appDelegate.receiveSessionResignActive(notification)
+            },
+            makeNotificationTask(center: workspaceCenter, name: NSWorkspace.sessionDidBecomeActiveNotification) { appDelegate, notification in
+                appDelegate.receiveSessionBecomeActive(notification)
             },
             makeNotificationTask(center: workspaceCenter, name: NSWorkspace.activeSpaceDidChangeNotification) { appDelegate, notification in
                 appDelegate.receiveActiveSpaceChanged(notification)
