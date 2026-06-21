@@ -15,11 +15,11 @@ import Foundation
     // Coalesces rapid-fire session resets that carry identical engine state.
     // Direct callers (event tap, input callbacks) use requestNewSessionInternal
     // and are not affected by this throttle.
-    private static var lastSessionRequestTime: CFAbsoluteTime = 0
+    private nonisolated(unsafe) static var lastSessionRequestTime: CFAbsoluteTime = 0
     private static let sessionRequestMinInterval: CFAbsoluteTime = 0.05 // 50ms
 
     #if DEBUG
-    private static var skippedSessionRequestCount: Int = 0
+    private nonisolated(unsafe) static var skippedSessionRequestCount: Int = 0
     #endif
 
     private class func smartSwitchFocusedBundleId() -> String? {

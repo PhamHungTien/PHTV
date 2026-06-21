@@ -433,6 +433,20 @@ final class PHTVVietnameseEngine {
                 return true
             }
         }
+
+        // The loop above only scans the trailing vowel run (runStart..<idx).
+        // When the initial portion of the word carries the tone mark instead —
+        // e.g. `ừa` where MARK2_MASK lives on typingWord[0] (KEY_W|TONEW_MASK)
+        // while the trailing `a` at typingWord[1] has no mark — the loop exits
+        // without triggering elongation, causing `wfa` + `aaa` to misfire as
+        // `ùaaa` (loses ư hook) instead of `ừaaa`.
+        // Fix: extend the scan to the initial portion as well.
+        if runStart > 0 && (data == KEY_A || data == KEY_E) {
+            for ii in 0..<runStart where (typingWord[ii] & MARK_MASK) != 0 {
+                return true
+            }
+        }
+
         return false
     }
 

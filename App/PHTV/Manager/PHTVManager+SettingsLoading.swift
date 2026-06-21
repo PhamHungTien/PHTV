@@ -16,8 +16,8 @@ private struct PHTVLastLoggedCoreSettings {
     var codeTable: Int32 = -1
     var checkSpelling: Int32 = -1
 }
-private var phtvLastLoggedCoreSettings = PHTVLastLoggedCoreSettings()
-private var phtvCoreSettingsLoadCount: Int = 0
+private nonisolated(unsafe) var phtvLastLoggedCoreSettings = PHTVLastLoggedCoreSettings()
+private nonisolated(unsafe) var phtvCoreSettingsLoadCount: Int = 0
 
 @objc extension PHTVManager {
     @nonobjc private class func phtv_decodeInt32(_ value: Any?) -> Int32? {
