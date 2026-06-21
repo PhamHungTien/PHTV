@@ -89,6 +89,12 @@ import ServiceManagement
         persistRunOnStartupState(enabled: enabled)
         postRunOnStartupChanged(enabled: enabled)
 
+        // Suppress repeated identical status logs; only emit when status changes.
+        guard status.rawValue != lastLoggedLoginItemStatusRawValue else {
+            return
+        }
+        lastLoggedLoginItemStatusRawValue = status.rawValue
+
         switch status {
         case .enabled:
             NSLog("[LoginItem] ✅ %@: enabled", context)

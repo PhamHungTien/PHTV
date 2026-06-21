@@ -12,6 +12,16 @@ import Foundation
 @objc extension PHTVManager {
     private static let smartSwitchSpotlightCacheDurationMs: UInt64 = 150
 
+    // Coalesces rapid-fire session resets that carry identical engine state.
+    // Direct callers (event tap, input callbacks) use requestNewSessionInternal
+    // and are not affected by this throttle.
+    private static var lastSessionRequestTime: CFAbsoluteTime = 0
+    private static let sessionRequestMinInterval: CFAbsoluteTime = 0.05 // 50ms
+
+    #if DEBUG
+    private static var skippedSessionRequestCount: Int = 0
+    #endif
+
     private class func smartSwitchFocusedBundleId() -> String? {
         PHTVAppContextService.focusedBundleId(
             forSafeMode: PHTVEngineRuntimeFacade.safeModeEnabled(),
@@ -21,6 +31,21 @@ import Foundation
 
     @objc(phtv_requestNewSession)
     class func phtv_requestNewSession() {
+        let now = CFAbsoluteTimeGetCurrent()
+        guard (now - lastSessionRequestTime) >= sessionRequestMinInterval else {
+            #if DEBUG
+            skippedSessionRequestCount += 1
+            #endif
+            return
+        }
+        #if DEBUG
+        if skippedSessionRequestCount > 0 {
+            NSLog("[RequestNewSession] Coalesced %d duplicate call(s) within %.0fms window",
+                  skippedSessionRequestCount, sessionRequestMinInterval * 1000)
+            skippedSessionRequestCount = 0
+        }
+        #endif
+        lastSessionRequestTime = now
         PHTVEngineSessionService.requestNewSession()
     }
 

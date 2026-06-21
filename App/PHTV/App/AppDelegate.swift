@@ -75,6 +75,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     var legacySwiftUINotificationTasks: [Task<Void, Never>] = []
     var sparkleNotificationTasks: [Task<Void, Never>] = []
 
+    // Tracks last logged LoginItem status to suppress repeated identical warnings.
+    var lastLoggedLoginItemStatusRawValue: Int? = nil
+
     // Tracks the last-seen system text replacements token so macro list
     // can be refreshed when NSUserDictionaryReplacementItems changes.
     var lastSystemReplacementsChangeToken: Int = 0

@@ -252,6 +252,7 @@ final class SystemState {
     @ObservationIgnored var isLoadingSettings = false
     @ObservationIgnored private var isUpdatingRunOnStartup = false
     @ObservationIgnored private var loginItemActiveTask: Task<Void, Never>?
+    @ObservationIgnored private var lastLoggedLoginItemStatusRawValue: Int? = nil
     @ObservationIgnored private var systemSettingsNotificationTask: Task<Void, Never>?
 
     private func isRunOnStartupEffectivelyEnabled(_ status: SMAppService.Status) -> Bool {
@@ -537,6 +538,12 @@ final class SystemState {
         guard let logContext else {
             return
         }
+
+        // Suppress repeated identical status logs to avoid noise in the console.
+        guard status.rawValue != lastLoggedLoginItemStatusRawValue else {
+            return
+        }
+        lastLoggedLoginItemStatusRawValue = status.rawValue
 
         switch status {
         case .enabled:

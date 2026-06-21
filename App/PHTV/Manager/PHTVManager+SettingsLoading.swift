@@ -10,6 +10,15 @@
 import AppKit
 import Foundation
 
+private struct PHTVLastLoggedCoreSettings {
+    var language: Int32 = -1
+    var inputType: Int32 = -1
+    var codeTable: Int32 = -1
+    var checkSpelling: Int32 = -1
+}
+private var phtvLastLoggedCoreSettings = PHTVLastLoggedCoreSettings()
+private var phtvCoreSettingsLoadCount: Int = 0
+
 @objc extension PHTVManager {
     @nonobjc private class func phtv_decodeInt32(_ value: Any?) -> Int32? {
         switch value {
@@ -267,13 +276,26 @@ import Foundation
         )
         PHTVEngineRuntimeFacade.setCheckSpelling(checkSpelling)
 
-        NSLog(
-            "[AppDelegate] Loaded core settings: language=%d, inputType=%d, codeTable=%d, spelling=%d",
-            language,
-            inputType,
-            codeTable,
-            checkSpelling
-        )
+        phtvCoreSettingsLoadCount += 1
+        let coreSettingsChanged = language != phtvLastLoggedCoreSettings.language
+            || inputType != phtvLastLoggedCoreSettings.inputType
+            || codeTable != phtvLastLoggedCoreSettings.codeTable
+            || checkSpelling != phtvLastLoggedCoreSettings.checkSpelling
+        if coreSettingsChanged || phtvCoreSettingsLoadCount == 1 {
+            NSLog(
+                "[AppDelegate] Loaded core settings: language=%d, inputType=%d, codeTable=%d, spelling=%d",
+                language,
+                inputType,
+                codeTable,
+                checkSpelling
+            )
+            phtvLastLoggedCoreSettings = PHTVLastLoggedCoreSettings(
+                language: language,
+                inputType: inputType,
+                codeTable: codeTable,
+                checkSpelling: checkSpelling
+            )
+        }
 
         if languageSetting.normalized || inputTypeSetting.normalized || codeTableSetting.normalized {
             NSLog(
@@ -477,7 +499,9 @@ import Foundation
         phtv_loadEmojiHotkeySettingsFromDefaults()
 
         let settingsToken = phtv_computeSettingsToken(defaults: defaults)
-        NSLog("[AppDelegate] All settings loaded from UserDefaults")
+        if coreSettingsChanged || phtvCoreSettingsLoadCount == 1 {
+            NSLog("[AppDelegate] All settings loaded from UserDefaults")
+        }
         return settingsToken
     }
 
