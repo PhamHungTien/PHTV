@@ -280,6 +280,21 @@ struct SettingsWindowContent: View {
         NSApp.setActivationPolicy(policy)
 
         isClosingSettingsWindow = false
+
+        if appState.autoRestartOnSettingsClose {
+            performAutoRestart()
+        }
+    }
+
+    @MainActor
+    private func performAutoRestart() {
+        let config = NSWorkspace.OpenConfiguration()
+        config.activates = false
+        NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: config) { _, _ in }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(400))
+            NSApp.terminate(nil)
+        }
     }
 
     /// Check if onboarding should be shown (first time user)

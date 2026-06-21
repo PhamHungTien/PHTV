@@ -221,14 +221,21 @@ final class ClipboardMonitor {
                 return nil
             }
 
+            // Save image to disk immediately so it is never held in RAM after capture
+            var imageFilePath: String?
+            if let data = payload.imageData {
+                imageFilePath = ClipboardHistoryFileCache.saveImageData(data, for: itemID)?.path
+            }
+
             return ClipboardHistoryItem(
                 id: itemID,
                 timestamp: Date(),
                 textContent: payload.textContent,
-                imageData: payload.imageData,
+                imageData: nil,
                 filePaths: payload.filePaths,
                 fileReferences: payload.fileReferences,
-                sourceApp: sourceApp
+                sourceApp: sourceApp,
+                imageFilePath: imageFilePath
             )
         }
     }

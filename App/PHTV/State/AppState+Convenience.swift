@@ -210,6 +210,11 @@ extension AppState {
         set { systemState.safeMode = newValue }
     }
 
+    var autoRestartOnSettingsClose: Bool {
+        get { trackedSubstate(systemState.autoRestartOnSettingsClose) }
+        set { systemState.autoRestartOnSettingsClose = newValue }
+    }
+
     var enableTextReplacementFix: Bool {
         trackedSubstate(systemState.enableTextReplacementFix)
     }

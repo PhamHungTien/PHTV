@@ -129,6 +129,9 @@ enum UserDefaultsKey {
     static let autoInstallUpdates = "SUAutomaticallyUpdate"
     static let legacyAutoInstallUpdates = "vAutoInstallUpdates"
 
+    // MARK: - Performance
+    static let autoRestartOnSettingsClose = "vAutoRestartOnSettingsClose"
+
     // MARK: - Debug
     static let liveDebug = "PHTV_LIVE_DEBUG"
     static let includeSystemInfo = "vIncludeSystemInfo"
@@ -541,6 +544,7 @@ enum Defaults {
     static let showIconOnDock = false
     static let settingsWindowAlwaysOnTop = false
     static let safeMode = false
+    static let autoRestartOnSettingsClose = false
     static let convertToolDontAlertWhenCompleted = false
     static let convertToolFromCode = CodeTable.tcvn.toIndex()
     static let convertToolToCode = CodeTable.unicode.toIndex()

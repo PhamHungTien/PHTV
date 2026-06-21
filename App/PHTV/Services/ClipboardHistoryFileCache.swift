@@ -33,6 +33,27 @@ enum ClipboardHistoryFileCache {
         }
     }
 
+    @discardableResult
+    static func saveImageData(_ data: Data, for itemID: UUID, fileManager: FileManager = .default) -> URL? {
+        let itemDir = rootDirectoryURL.appendingPathComponent(itemID.uuidString, isDirectory: true)
+        do {
+            try fileManager.createDirectory(at: itemDir, withIntermediateDirectories: true)
+            let imageURL = itemDir.appendingPathComponent("image.png", isDirectory: false)
+            try data.write(to: imageURL)
+            return imageURL
+        } catch {
+            NSLog("[ClipboardHistory] Failed to save image for %@: %@", itemID.uuidString, error.localizedDescription)
+            return nil
+        }
+    }
+
+    static func loadImageData(for itemID: UUID) -> Data? {
+        let imageURL = rootDirectoryURL
+            .appendingPathComponent(itemID.uuidString, isDirectory: true)
+            .appendingPathComponent("image.png", isDirectory: false)
+        return try? Data(contentsOf: imageURL)
+    }
+
     static func removeCache(for item: ClipboardHistoryItem, fileManager: FileManager = .default) {
         removeCache(for: item.id, fileManager: fileManager)
     }

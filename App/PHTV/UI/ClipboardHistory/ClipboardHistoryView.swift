@@ -462,6 +462,8 @@ private struct ClipboardItemRow: View {
     let onSelect: () -> Void
     let onDelete: () -> Void
 
+    @State private var loadedImage: NSImage?
+
     var body: some View {
         Button(action: onSelect) {
             HStack(spacing: 10) {
@@ -508,13 +510,24 @@ private struct ClipboardItemRow: View {
         }
         .buttonStyle(.plain)
         .id(item.id)
+        .task(id: item.id) {
+            guard item.hasImage, loadedImage == nil else { return }
+            if let data = item.imageData {
+                loadedImage = NSImage(data: data)
+            } else if let path = item.imageFilePath {
+                let url = URL(fileURLWithPath: path)
+                if let data = try? Data(contentsOf: url) {
+                    loadedImage = NSImage(data: data)
+                }
+            }
+        }
     }
 
     @ViewBuilder
     private var contentIcon: some View {
         switch item.contentType {
         case .image:
-            if let image = item.previewImage {
+            if let image = loadedImage {
                 Image(nsImage: image)
                     .resizable()
                     .scaledToFill()

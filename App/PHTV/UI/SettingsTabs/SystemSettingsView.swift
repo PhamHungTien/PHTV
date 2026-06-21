@@ -154,6 +154,16 @@ struct SystemSettingsView: View {
                     subtitle: "Tự động mở PHTV khi đăng nhập macOS",
                     isOn: bindable.runOnStartup
                 )
+
+                SettingsDivider()
+
+                SettingsToggleRow(
+                    icon: "arrow.clockwise",
+                    iconColor: .accentColor,
+                    title: "Tự động khởi động lại khi đóng Cài đặt",
+                    subtitle: "Giải phóng RAM bằng cách khởi động lại ứng dụng mỗi khi đóng cửa sổ Cài đặt",
+                    isOn: bindable.autoRestartOnSettingsClose
+                )
             }
         }
     }
@@ -390,7 +400,7 @@ struct SystemSettingsView: View {
 
             // System settings
             UserDefaultsKey.runOnStartup, UserDefaultsKey.performLayoutCompat, UserDefaultsKey.showIconOnDock,
-            UserDefaultsKey.settingsWindowAlwaysOnTop, UserDefaultsKey.safeMode,
+            UserDefaultsKey.settingsWindowAlwaysOnTop, UserDefaultsKey.safeMode, UserDefaultsKey.autoRestartOnSettingsClose,
 
             // Switch key (hotkey)
             UserDefaultsKey.switchKeyStatus,

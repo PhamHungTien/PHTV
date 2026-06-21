@@ -44,8 +44,14 @@ enum ClipboardHistoryPastePayloadResolver {
         _ item: ClipboardHistoryItem,
         fileExists: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }
     ) -> ClipboardHistoryPastePayload? {
-        if let imageData = item.imageData {
-            return .image(imageData)
+        // In-memory imageData is present only for items captured in the same session
+        // before they were serialized. After a restart imageFilePath is used instead.
+        if let data = item.imageData {
+            return .image(data)
+        }
+        if let path = item.imageFilePath,
+           let data = try? Data(contentsOf: URL(fileURLWithPath: path)) {
+            return .image(data)
         }
 
         let filePaths = item.resolvedFilePastePaths(fileExists: fileExists)

@@ -79,10 +79,15 @@ struct ClipboardHistoryItem: Identifiable, Codable, Equatable, Sendable {
     let id: UUID
     let timestamp: Date
     let textContent: String?
-    let imageData: Data?
+    /// Path to the image file on disk. Not kept in memory as raw bytes.
+    let imageFilePath: String?
     let filePaths: [String]?
     let fileReferences: [ClipboardHistoryFileReference]?
     let sourceApp: String?
+
+    // Non-Codable: only populated for freshly captured items before first save.
+    // After decoding from disk this is always nil; use imageFilePath instead.
+    let imageData: Data?
 
     init(
         id: UUID,
@@ -91,16 +96,64 @@ struct ClipboardHistoryItem: Identifiable, Codable, Equatable, Sendable {
         imageData: Data?,
         filePaths: [String]?,
         fileReferences: [ClipboardHistoryFileReference]? = nil,
-        sourceApp: String?
+        sourceApp: String?,
+        imageFilePath: String? = nil
     ) {
         self.id = id
         self.timestamp = timestamp
         self.textContent = textContent
         self.imageData = imageData
+        self.imageFilePath = imageFilePath
         self.filePaths = filePaths
         self.fileReferences = fileReferences
         self.sourceApp = sourceApp
     }
+
+    // MARK: - Codable
+
+    private enum CodingKeys: String, CodingKey {
+        case id, timestamp, textContent, imageFilePath, filePaths, fileReferences, sourceApp
+        // Legacy key for migration only — not written on encode
+        case legacyImageData = "imageData"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        timestamp = try c.decode(Date.self, forKey: .timestamp)
+        textContent = try c.decodeIfPresent(String.self, forKey: .textContent)
+        filePaths = try c.decodeIfPresent([String].self, forKey: .filePaths)
+        fileReferences = try c.decodeIfPresent([ClipboardHistoryFileReference].self, forKey: .fileReferences)
+        sourceApp = try c.decodeIfPresent(String.self, forKey: .sourceApp)
+
+        if let existingPath = try c.decodeIfPresent(String.self, forKey: .imageFilePath) {
+            // New format: image already on disk
+            imageFilePath = existingPath
+            imageData = nil
+        } else if let legacyData = try c.decodeIfPresent(Data.self, forKey: .legacyImageData) {
+            // Migration: old format stored imageData inline. Save to disk now.
+            let savedURL = ClipboardHistoryFileCache.saveImageData(legacyData, for: id)
+            imageFilePath = savedURL?.path
+            imageData = nil
+        } else {
+            imageFilePath = nil
+            imageData = nil
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(timestamp, forKey: .timestamp)
+        try c.encodeIfPresent(textContent, forKey: .textContent)
+        try c.encodeIfPresent(imageFilePath, forKey: .imageFilePath)
+        try c.encodeIfPresent(filePaths, forKey: .filePaths)
+        try c.encodeIfPresent(fileReferences, forKey: .fileReferences)
+        try c.encodeIfPresent(sourceApp, forKey: .sourceApp)
+        // imageData is intentionally excluded — it lives on disk only
+    }
+
+    // MARK: - Content
 
     enum ContentType: String, Codable, Sendable {
         case text
@@ -109,9 +162,10 @@ struct ClipboardHistoryItem: Identifiable, Codable, Equatable, Sendable {
         case mixed
     }
 
+    var hasImage: Bool { imageData != nil || imageFilePath != nil }
+
     var contentType: ContentType {
         let hasText = textContent != nil && !(textContent?.isEmpty ?? true)
-        let hasImage = imageData != nil
         let hasFiles = hasFileContent
 
         if hasText && (hasImage || hasFiles) { return .mixed }
@@ -128,7 +182,7 @@ struct ClipboardHistoryItem: Identifiable, Codable, Equatable, Sendable {
             }
             return trimmed
         }
-        if imageData != nil {
+        if hasImage {
             return "[Hình ảnh]"
         }
         let names = displayFileNames
@@ -139,7 +193,9 @@ struct ClipboardHistoryItem: Identifiable, Codable, Equatable, Sendable {
     }
 
     var previewImage: NSImage? {
-        guard let data = imageData else { return nil }
+        if let data = imageData { return NSImage(data: data) }
+        guard let path = imageFilePath,
+              let data = try? Data(contentsOf: URL(fileURLWithPath: path)) else { return nil }
         return NSImage(data: data)
     }
 
@@ -175,7 +231,6 @@ struct ClipboardHistoryItem: Identifiable, Codable, Equatable, Sendable {
 
     func isDuplicate(of other: ClipboardHistoryItem) -> Bool {
         if let t1 = textContent, let t2 = other.textContent, t1 == t2 { return true }
-        if let d1 = imageData, let d2 = other.imageData, d1 == d2 { return true }
         if let f1 = filePaths, let f2 = other.filePaths, f1 == f2 { return true }
         if let r1 = fileReferences, let r2 = other.fileReferences, r1.map(\.originalPath) == r2.map(\.originalPath) { return true }
         return false

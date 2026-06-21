@@ -142,6 +142,14 @@ final class SystemState {
     var safeMode: Bool = false {
         didSet { handleSystemSettingDidChange(oldValue: oldValue, newValue: safeMode) }
     }
+    var autoRestartOnSettingsClose: Bool = false {
+        didSet {
+            handleObservedChange(oldValue: oldValue, newValue: autoRestartOnSettingsClose) {
+                SettingsObserver.shared.suspendNotifications()
+                UserDefaults.standard.set(self.autoRestartOnSettingsClose, forKey: UserDefaultsKey.autoRestartOnSettingsClose)
+            }
+        }
+    }
 
     // Text Replacement Fix is always enabled (no user setting)
     var enableTextReplacementFix: Bool { return true }
@@ -375,6 +383,10 @@ final class SystemState {
             default: Defaults.settingsWindowAlwaysOnTop
         )
         safeMode = defaults.bool(forKey: UserDefaultsKey.safeMode, default: Defaults.safeMode)
+        autoRestartOnSettingsClose = defaults.bool(
+            forKey: UserDefaultsKey.autoRestartOnSettingsClose,
+            default: Defaults.autoRestartOnSettingsClose
+        )
 
         // Load Sparkle settings
         let updateInterval = defaults.integer(
