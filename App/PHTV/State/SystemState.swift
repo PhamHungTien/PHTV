@@ -142,7 +142,7 @@ final class SystemState {
     var safeMode: Bool = false {
         didSet { handleSystemSettingDidChange(oldValue: oldValue, newValue: safeMode) }
     }
-    var autoRestartOnSettingsClose: Bool = false {
+    var autoRestartOnSettingsClose: Bool = true {
         didSet {
             handleObservedChange(oldValue: oldValue, newValue: autoRestartOnSettingsClose) {
                 SettingsObserver.shared.suspendNotifications()

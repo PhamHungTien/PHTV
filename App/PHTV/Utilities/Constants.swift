@@ -544,7 +544,7 @@ enum Defaults {
     static let showIconOnDock = false
     static let settingsWindowAlwaysOnTop = false
     static let safeMode = false
-    static let autoRestartOnSettingsClose = false
+    static let autoRestartOnSettingsClose = true
     static let convertToolDontAlertWhenCompleted = false
     static let convertToolFromCode = CodeTable.tcvn.toIndex()
     static let convertToolToCode = CodeTable.unicode.toIndex()

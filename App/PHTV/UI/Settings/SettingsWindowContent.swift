@@ -288,13 +288,15 @@ struct SettingsWindowContent: View {
 
     @MainActor
     private func performAutoRestart() {
-        let config = NSWorkspace.OpenConfiguration()
-        config.activates = false
-        NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: config) { _, _ in }
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(400))
-            NSApp.terminate(nil)
-        }
+        // Spawn a detached shell that waits for this process to exit, then relaunches.
+        // NSWorkspace.openApplication while still running routes to the existing instance
+        // instead of starting a new one, so we must terminate first.
+        let appPath = Bundle.main.bundlePath
+        let task = Process()
+        task.launchPath = "/bin/sh"
+        task.arguments = ["-c", "sleep 0.5 && open -a \"\(appPath)\""]
+        try? task.run()
+        NSApp.terminate(nil)
     }
 
     /// Check if onboarding should be shown (first time user)
