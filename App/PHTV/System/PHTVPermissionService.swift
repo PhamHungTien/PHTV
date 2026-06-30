@@ -45,13 +45,10 @@ import Foundation
         return canCreateEventTap()
     }
 
+    // Retained for diagnostics only (Bug Report, TCC logging). Input Monitoring is
+    // NOT required for typing — PHTV's active session tap is gated on Accessibility.
     @objc static func hasInputMonitoringPermission() -> Bool {
         CGPreflightListenEventAccess()
-    }
-
-    @discardableResult
-    @objc static func requestInputMonitoringPermission() -> Bool {
-        CGRequestListenEventAccess()
     }
 
     private static func cacheMissingPermissionAndReturnFalse(_ message: String) -> Bool {

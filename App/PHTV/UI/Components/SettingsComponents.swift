@@ -293,8 +293,6 @@ struct StatusCard: View {
             return .green
         case .accessibilityRequired:
             return .orange
-        case .inputMonitoringRequired:
-            return .orange
         case .relaunchPending:
             return .blue
         case .waitingForEventTap:
@@ -308,8 +306,6 @@ struct StatusCard: View {
             return "checkmark.shield.fill"
         case .accessibilityRequired:
             return "exclamationmark.triangle.fill"
-        case .inputMonitoringRequired:
-            return "eye.fill"
         case .relaunchPending:
             return "arrow.clockwise.circle.fill"
         case .waitingForEventTap:
@@ -323,8 +319,6 @@ struct StatusCard: View {
             return "Sẵn sàng"
         case .accessibilityRequired:
             return "Thiếu quyền Trợ năng"
-        case .inputMonitoringRequired:
-            return "Thiếu quyền Giám sát đầu vào"
         case .relaunchPending:
             return "Đang tự khởi động lại"
         case .waitingForEventTap:
@@ -336,7 +330,7 @@ struct StatusCard: View {
         switch runtimeHealth.phase {
         case .ready, .relaunchPending:
             return false
-        case .accessibilityRequired, .inputMonitoringRequired, .waitingForEventTap:
+        case .accessibilityRequired, .waitingForEventTap:
             return true
         }
     }
@@ -344,9 +338,6 @@ struct StatusCard: View {
     private var permissionButtonTitle: String {
         if runtimeHealth.phase == .accessibilityRequired {
             return "Mở Trợ năng"
-        }
-        if runtimeHealth.phase == .inputMonitoringRequired {
-            return "Mở Giám sát đầu vào"
         }
         return "Thử lại ngay"
     }

@@ -53,16 +53,6 @@ func phtvShouldRepairPermissionEntryBeforeGuidance(
             } else {
                 PHTVAccessibilityService.openAccessibilityPreferences()
             }
-        case .inputMonitoring:
-            NSLog("[PermissionFlow] Opening Input Monitoring guidance")
-            if phtvShouldRepairPermissionEntryBeforeGuidance(
-                permissionTrusted: runtimeHealth.inputMonitoringTrusted,
-                forceOpenSystemSettings: forceOpenSystemSettings
-            ) {
-                PHTVAccessibilityService.repairAndOpenInputMonitoringPreferences()
-            } else {
-                PHTVAccessibilityService.openInputMonitoringPreferences()
-            }
         case .waitingForEventTap:
             NSLog("[PermissionFlow] Retrying event tap initialization")
             retryTypingPermissionRecovery(reason: "permission-guidance")

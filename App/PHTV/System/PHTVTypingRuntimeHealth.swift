@@ -41,7 +41,6 @@ enum PHTVActiveAppProfile: String, CaseIterable, Equatable, Sendable {
 
 enum PHTVTypingRuntimePhase: String, Equatable, Sendable {
     case accessibilityRequired
-    case inputMonitoringRequired
     case relaunchPending
     case waitingForEventTap
     case ready
@@ -65,8 +64,7 @@ struct PHTVTypingRuntimeHealthSnapshot: Equatable, Sendable {
         // (.defaultTap) session tap, which macOS gates on Accessibility alone — not
         // Input Monitoring (that gate only applies to passive .listenOnly taps).
         // `inputMonitoringTrusted` is retained purely for diagnostics and never
-        // blocks the typing phase. The .inputMonitoringRequired case is now legacy
-        // and unreachable.
+        // blocks the typing phase.
         guard axTrusted else {
             return .accessibilityRequired
         }

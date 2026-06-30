@@ -921,9 +921,6 @@ struct AccessibilityStepView: View {
                     "Khi macOS nhận quyền, PHTV sẽ tự khởi tạo bộ gõ và sẵn sàng hoạt động."
                 ]
             )
-        case .inputMonitoringRequired:
-            // Legacy/unreachable: Accessibility is the only required permission.
-            EmptyView()
         case .relaunchPending:
             OnboardingStatusCard(
                 icon: "arrow.clockwise.circle.fill",
@@ -983,8 +980,6 @@ struct AccessibilityStepView: View {
         switch phase {
         case .accessibilityRequired:
             return "Mở Trợ năng"
-        case .inputMonitoringRequired:
-            return "Mở Giám sát đầu vào"
         case .waitingForEventTap:
             return "Thử lại ngay"
         case .ready, .relaunchPending:

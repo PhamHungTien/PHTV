@@ -839,34 +839,10 @@ final class PHTVAccessibilityService: NSObject {
         openSystemSettings(urlStrings: accessibilitySettingsURLs)
     }
 
-    @discardableResult
-    @objc class func requestInputMonitoringPrompt() -> Bool {
-        PHTVPermissionService.requestInputMonitoringPermission()
-    }
-
-    @objc class func openInputMonitoringPreferences() {
-        _ = requestInputMonitoringPrompt()
-        openSystemSettings(urlStrings: inputMonitoringSettingsURLs)
-    }
-
-    @objc class func repairAndOpenInputMonitoringPreferences() {
-        if PHTVTCCMaintenanceService.resetInputMonitoringEntry() {
-            PHTVTCCMaintenanceService.restartTCCDaemon()
-        }
-        _ = requestInputMonitoringPrompt()
-        openSystemSettings(urlStrings: inputMonitoringSettingsURLs)
-    }
-
     private static let accessibilitySettingsURLs = [
         "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility",
         "x-apple.systempreferences:com.apple.preference.security",
         "x-apple.systempreferences:com.apple.preference.universalaccess"
-    ]
-
-    private static let inputMonitoringSettingsURLs = [
-        "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent",
-        "x-apple.systempreferences:com.apple.preference.security",
-        "x-apple.systempreferences:com.apple.preference.keyboard"
     ]
 
     private class func openSystemSettings(urlStrings: [String]) {
