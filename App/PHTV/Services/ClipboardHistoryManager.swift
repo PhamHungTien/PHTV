@@ -121,6 +121,29 @@ final class ClipboardHistoryManager {
         saveHistory()
     }
 
+    /// Move a just-used item to the top of the history (most-recently-used ordering)
+    /// and refresh its timestamp so the list reflects real recency. The pasteboard
+    /// monitor skips re-capturing content we paste ourselves (via `isPasting`), so the
+    /// promotion is applied explicitly here.
+    func promoteItemToTop(_ item: ClipboardHistoryItem) {
+        guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
+        guard index != 0 else { return }
+
+        let existing = items.remove(at: index)
+        let promoted = ClipboardHistoryItem(
+            id: existing.id,
+            timestamp: Date(),
+            textContent: existing.textContent,
+            imageData: existing.imageData,
+            filePaths: existing.filePaths,
+            fileReferences: existing.fileReferences,
+            sourceApp: existing.sourceApp,
+            imageFilePath: existing.imageFilePath
+        )
+        items.insert(promoted, at: 0)
+        saveHistory()
+    }
+
     func removeItem(_ item: ClipboardHistoryItem) {
         items.removeAll { $0.id == item.id }
         ClipboardHistoryFileCache.removeCache(for: item)
@@ -300,6 +323,9 @@ final class ClipboardHistoryManager {
             scheduleClearPasting()
             return
         }
+
+        // Most-recently-used ordering: bump the pasted item back to the top.
+        promoteItemToTop(item)
 
         // Simulate Command+V to paste
         let source = CGEventSource(stateID: .hidSystemState)

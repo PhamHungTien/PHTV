@@ -476,9 +476,9 @@ final class SystemState {
         relaunchPending: Bool? = nil
     ) -> PHTVTypingRuntimeHealthSnapshot {
         let accessibilityTrusted = AXIsProcessTrusted()
+        // Diagnostics only — Input Monitoring no longer gates typing readiness.
         let inputMonitoringTrusted = PHTVPermissionService.hasInputMonitoringPermission()
         let liveEventTapReady = accessibilityTrusted
-            && inputMonitoringTrusted
             && PHTVManager.isInited()
             && PHTVManager.isEventTapEnabled()
         let effectiveEventTapReady = eventTapReady.map { $0 || liveEventTapReady } ?? liveEventTapReady

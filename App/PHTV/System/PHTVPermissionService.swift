@@ -79,9 +79,11 @@ import Foundation
         if !axTrusted {
             return cacheMissingPermissionAndReturnFalse("Accessibility (AX) is NOT granted")
         }
-        if !hasInputMonitoringPermission() {
-            return cacheMissingPermissionAndReturnFalse("Input Monitoring is NOT granted")
-        }
+        // NOTE: Active taps (.defaultTap) only require Accessibility on macOS, NOT
+        // Input Monitoring (that gate is for .listenOnly passive taps). We therefore
+        // do not block on hasInputMonitoringPermission() here — the live test tap
+        // below (tryCreateTestTapWithRetries) is the single source of truth: if the
+        // active tap actually enables with Accessibility alone, typing is ready.
 
         let now = Date().timeIntervalSince1970
         var backoffUntil = 0.0
