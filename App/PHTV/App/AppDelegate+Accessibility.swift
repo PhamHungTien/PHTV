@@ -19,7 +19,6 @@ private let phtvDeferredRelaunchPollIntervalSeconds = "0.2"
 
 func phtvShouldRelaunchAfterAccessibilityGrant(
     axTrusted: Bool,
-    inputMonitoringTrusted: Bool = true,
     needsRelaunchAfterPermission: Bool,
     isEventTapInitialized: Bool,
     isRelaunchAlreadyScheduled: Bool
@@ -27,7 +26,6 @@ func phtvShouldRelaunchAfterAccessibilityGrant(
     PHTVTypingRuntimeStateMachine.shouldRelaunchAfterGrant(
         snapshot: PHTVTypingRuntimeHealthSnapshot.resolve(
             axTrusted: axTrusted,
-            inputMonitoringTrusted: inputMonitoringTrusted,
             eventTapReady: false,
             relaunchPending: isRelaunchAlreadyScheduled,
             safeModeEnabled: false,
@@ -40,14 +38,12 @@ func phtvShouldRelaunchAfterAccessibilityGrant(
 
 func phtvShouldFallbackRelaunchAfterEventTapFailures(
     accessibilityTrusted: Bool,
-    inputMonitoringTrusted: Bool = true,
     needsRelaunchAfterPermission: Bool,
     isRelaunchAlreadyScheduled: Bool
 ) -> Bool {
     PHTVTypingRuntimeStateMachine.shouldFallbackRelaunchAfterEventTapFailures(
         snapshot: PHTVTypingRuntimeHealthSnapshot.resolve(
             axTrusted: accessibilityTrusted,
-            inputMonitoringTrusted: inputMonitoringTrusted,
             eventTapReady: false,
             relaunchPending: isRelaunchAlreadyScheduled,
             safeModeEnabled: false,
@@ -259,7 +255,6 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
 
         if resetState {
             wasAccessibilityEnabled = AXIsProcessTrusted()
-            wasInputMonitoringEnabled = PHTVPermissionService.hasInputMonitoringPermission()
         }
 
         NSLog("[Accessibility] Started monitoring via TCC trust (interval: %.1fs, resetState: %@)",
@@ -431,7 +426,6 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
 
             let shouldRelaunch = phtvShouldFallbackRelaunchAfterEventTapFailures(
                 accessibilityTrusted: AXIsProcessTrusted(),
-                inputMonitoringTrusted: PHTVPermissionService.hasInputMonitoringPermission(),
                 needsRelaunchAfterPermission: needsRelaunchAfterPermission,
                 isRelaunchAlreadyScheduled: isRelaunchingAfterPermissionGrant
             )

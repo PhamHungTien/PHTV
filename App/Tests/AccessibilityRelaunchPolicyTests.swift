@@ -31,20 +31,6 @@ final class AccessibilityRelaunchPolicyTests: XCTestCase {
         )
     }
 
-    func testRelaunchAfterGrantDoesNotWaitForInputMonitoring() {
-        // Input Monitoring is not required: a missing grant must not hold back the
-        // post-Accessibility relaunch.
-        XCTAssertTrue(
-            phtvShouldRelaunchAfterAccessibilityGrant(
-                axTrusted: true,
-                inputMonitoringTrusted: false,
-                needsRelaunchAfterPermission: true,
-                isEventTapInitialized: false,
-                isRelaunchAlreadyScheduled: false
-            )
-        )
-    }
-
     func testRelaunchAfterGrantDoesNotFireWhenEventTapIsAlreadyInitialized() {
         XCTAssertFalse(
             phtvShouldRelaunchAfterAccessibilityGrant(
@@ -79,16 +65,6 @@ final class AccessibilityRelaunchPolicyTests: XCTestCase {
         XCTAssertFalse(
             phtvShouldFallbackRelaunchAfterEventTapFailures(
                 accessibilityTrusted: false,
-                needsRelaunchAfterPermission: true,
-                isRelaunchAlreadyScheduled: false
-            )
-        )
-
-        // Input Monitoring is not required: its absence must not suppress the fallback relaunch.
-        XCTAssertTrue(
-            phtvShouldFallbackRelaunchAfterEventTapFailures(
-                accessibilityTrusted: true,
-                inputMonitoringTrusted: false,
                 needsRelaunchAfterPermission: true,
                 isRelaunchAlreadyScheduled: false
             )
