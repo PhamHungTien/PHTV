@@ -158,13 +158,15 @@ struct KeyboardCleaningSettingsView: View {
         if appState.systemState.isTypingPermissionReady {
             return "Bấm Bắt đầu rồi lau bàn phím. Chế độ sẽ tự tắt khi hết thời gian."
         }
-        return "Cần quyền Trợ năng để chặn phím an toàn."
+        return "Cần đủ quyền Accessibility và Giám sát đầu vào để chặn phím an toàn."
     }
 
     private var permissionText: String {
         switch appState.systemState.typingRuntimeHealth.phase {
         case .ready:
             return "Đã sẵn sàng"
+        case .inputMonitoringRequired:
+            return "Cần cấp Giám sát đầu vào"
         case .accessibilityRequired:
             return "Cần cấp Accessibility"
         case .waitingForEventTap:

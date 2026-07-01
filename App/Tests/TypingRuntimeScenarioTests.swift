@@ -34,7 +34,7 @@ final class TypingRuntimeScenarioTests: XCTestCase {
                 expectedGuidanceStep: .accessibility
             ),
             TypingScenario(
-                name: "input-monitoring-absent-does-not-block",
+                name: "first-install-without-input-monitoring",
                 snapshot: .resolve(
                     axTrusted: true,
                     inputMonitoringTrusted: false,
@@ -43,11 +43,9 @@ final class TypingRuntimeScenarioTests: XCTestCase {
                     safeModeEnabled: false,
                     activeAppProfile: .generic
                 ),
-                // Input Monitoring is not required: with Accessibility trusted the
-                // runtime proceeds straight to waiting for the session tap.
-                expectedPhase: .waitingForEventTap,
-                expectedPermissionState: .waitingForEventTap,
-                expectedGuidanceStep: .waitingForEventTap
+                expectedPhase: .inputMonitoringRequired,
+                expectedPermissionState: .inputMonitoringRequired,
+                expectedGuidanceStep: .inputMonitoring
             ),
             TypingScenario(
                 name: "grant-accepted-and-relaunch-scheduled",
@@ -175,9 +173,7 @@ final class TypingRuntimeScenarioTests: XCTestCase {
         XCTAssertFalse(PHTVTypingRuntimeStateMachine.shouldScheduleEventTapRecovery(snapshot: relaunchPending))
     }
 
-    func testEventTapRecoverySchedulingProceedsWithoutInputMonitoring() {
-        // Input Monitoring is no longer required: with Accessibility trusted and the
-        // tap not yet ready, recovery must still be scheduled.
+    func testEventTapRecoverySchedulingIsSuppressedWithoutInputMonitoring() {
         let missingInputMonitoring = PHTVTypingRuntimeStateMachine.snapshot(
             axTrusted: true,
             inputMonitoringTrusted: false,
@@ -187,6 +183,6 @@ final class TypingRuntimeScenarioTests: XCTestCase {
             activeAppProfile: .generic
         )
 
-        XCTAssertTrue(PHTVTypingRuntimeStateMachine.shouldScheduleEventTapRecovery(snapshot: missingInputMonitoring))
+        XCTAssertFalse(PHTVTypingRuntimeStateMachine.shouldScheduleEventTapRecovery(snapshot: missingInputMonitoring))
     }
 }

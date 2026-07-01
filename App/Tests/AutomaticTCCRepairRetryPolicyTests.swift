@@ -125,6 +125,15 @@ final class AutomaticTCCRepairRetryPolicyTests: XCTestCase {
         XCTAssertFalse(
             phtvShouldTreatTCCEntryAsCorrupt(
                 accessibilityTrusted: true,
+                inputMonitoringTrusted: false,
+                canCreateEventTap: false,
+                isRegisteredInTCC: false
+            )
+        )
+
+        XCTAssertFalse(
+            phtvShouldTreatTCCEntryAsCorrupt(
+                accessibilityTrusted: true,
                 canCreateEventTap: false,
                 isRegisteredInTCC: true
             )

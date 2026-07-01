@@ -864,17 +864,25 @@ struct AccessibilityStepView: View {
 
         VStack(spacing: 14) {
             OnboardingStepHeader(
-                title: "Cấp quyền Trợ năng",
-                subtitle: "PHTV chỉ cần duy nhất quyền Trợ năng để gõ tiếng Việt ở mọi ứng dụng",
+                title: "Cấp quyền nhập liệu",
+                subtitle: "PHTV cần Trợ năng và Giám sát đầu vào để bắt phím ổn định",
                 icon: "hand.raised.fill"
             )
 
             VStack(spacing: 12) {
-                OnboardingPermissionStateRow(
-                    title: "Trợ năng",
-                    detail: "Cho phép PHTV nhận phím gõ và thao tác với ô nhập liệu.",
-                    granted: runtimeHealth.hasAccessibilityPermission
-                )
+                HStack(spacing: 10) {
+                    OnboardingPermissionStateRow(
+                        title: "Trợ năng",
+                        detail: "Cho phép PHTV thao tác với ô nhập liệu.",
+                        granted: runtimeHealth.hasAccessibilityPermission
+                    )
+
+                    OnboardingPermissionStateRow(
+                        title: "Giám sát đầu vào",
+                        detail: "Cho phép PHTV nhận phím gõ từ macOS.",
+                        granted: runtimeHealth.hasInputMonitoringPermission
+                    )
+                }
 
                 permissionGuidanceContent(for: runtimeHealth)
 
@@ -909,7 +917,7 @@ struct AccessibilityStepView: View {
             OnboardingStatusCard(
                 icon: "checkmark.seal.fill",
                 title: "PHTV đã sẵn sàng",
-                description: "Quyền Trợ năng đã được cấp và bộ gõ đã sẵn sàng hoạt động.",
+                description: "Hai quyền đã được cấp và bộ gõ đã sẵn sàng hoạt động.",
                 tint: .green
             )
         case .accessibilityRequired:
@@ -918,7 +926,16 @@ struct AccessibilityStepView: View {
                 rows: [
                     "Nhấn nút bên dưới để PHTV làm mới mục quyền cũ rồi mở Cài đặt Hệ thống.",
                     "Trong Quyền riêng tư & Bảo mật > Trợ năng, bật lại PHTV.",
-                    "Khi macOS nhận quyền, PHTV sẽ tự khởi tạo bộ gõ và sẵn sàng hoạt động."
+                    "Khi macOS nhận quyền, PHTV sẽ tự chuyển sang bước Giám sát đầu vào."
+                ]
+            )
+        case .inputMonitoringRequired:
+            guidancePanel(
+                title: "Cấp quyền Giám sát đầu vào",
+                rows: [
+                    "Nhấn nút bên dưới để PHTV làm mới mục quyền cũ rồi mở Giám sát đầu vào.",
+                    "Bật lại PHTV trong danh sách ứng dụng được phép giám sát đầu vào.",
+                    "Nếu macOS hỏi mở lại ứng dụng, hãy cho phép. PHTV sẽ tự kiểm tra lại sau đó."
                 ]
             )
         case .relaunchPending:
@@ -941,7 +958,7 @@ struct AccessibilityStepView: View {
             OnboardingStatusCard(
                 icon: "clock.badge.exclamationmark.fill",
                 title: "Đang hoàn tất khởi tạo",
-                description: "Quyền Trợ năng đã được cấp, nhưng PHTV vẫn đang chờ khởi tạo lại bộ gõ.",
+                description: "Hai quyền đã được cấp, nhưng PHTV vẫn đang chờ khởi tạo lại bộ gõ.",
                 tint: .yellow
             )
 
@@ -950,7 +967,7 @@ struct AccessibilityStepView: View {
                 rows: [
                     "Nhấn Thử lại ngay để PHTV tự kiểm tra và khởi tạo lại bộ gõ.",
                     "Nếu vừa cấp quyền, hãy chờ vài giây để macOS áp dụng thay đổi.",
-                    "Nếu vẫn chưa gõ được, thử tắt rồi bật lại quyền Trợ năng cho PHTV."
+                    "Nếu vẫn chưa gõ được, thử tắt rồi bật lại cả hai quyền cho PHTV."
                 ]
             )
         }
@@ -980,6 +997,8 @@ struct AccessibilityStepView: View {
         switch phase {
         case .accessibilityRequired:
             return "Mở Trợ năng"
+        case .inputMonitoringRequired:
+            return "Mở Giám sát đầu vào"
         case .waitingForEventTap:
             return "Thử lại ngay"
         case .ready, .relaunchPending:

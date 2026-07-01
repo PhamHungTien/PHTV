@@ -188,6 +188,13 @@ private func phtvEmojiHotkeyLooksValid(enabled: Int32, modifiers: Int32, keyCode
             }
             return
         }
+        guard PHTVPermissionService.hasInputMonitoringPermission() else {
+            if attempt == totalAttempts {
+                NSLog("[EventTap] Recovery (%@) stopped: Input Monitoring unavailable", reason)
+                continuePermissionGuidanceIfNeeded()
+            }
+            return
+        }
 
         let isInited = PHTVManager.isInited()
         let isEnabled = PHTVManager.isEventTapEnabled()

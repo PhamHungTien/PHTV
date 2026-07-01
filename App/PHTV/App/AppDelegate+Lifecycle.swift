@@ -79,11 +79,13 @@ func phtvIsRunningUnderXCTest() -> Bool {
         let defaults = UserDefaults.standard
         let isFirstLaunch = !defaults.bool(forKey: phtvDefaultsKeyNonFirstTime)
         let axTrustedAtLaunch = AXIsProcessTrusted()
-        needsRelaunchAfterPermission = !axTrustedAtLaunch
+        let inputMonitoringTrustedAtLaunch = PHTVPermissionService.hasInputMonitoringPermission()
+        needsRelaunchAfterPermission = !(axTrustedAtLaunch && inputMonitoringTrustedAtLaunch)
         if needsRelaunchAfterPermission {
             NSLog(
-                "[Accessibility] App launched before Accessibility trust; will relaunch after grant (AX=%@)",
-                axTrustedAtLaunch ? "YES" : "NO"
+                "[Accessibility] App launched before required TCC trust; will relaunch after grant (AX=%@, Input=%@)",
+                axTrustedAtLaunch ? "YES" : "NO",
+                inputMonitoringTrustedAtLaunch ? "YES" : "NO"
             )
         }
 
@@ -149,7 +151,7 @@ func phtvIsRunningUnderXCTest() -> Bool {
         PHTVManager.startTCCNotificationListener()
         NSLog("[TCC] Notification listener started at app launch")
 
-        if !axTrustedAtLaunch {
+        if !axTrustedAtLaunch || !inputMonitoringTrustedAtLaunch {
             runHotkeyHealthCheck(reason: "launch-missing-typing-permission")
             publishTypingPermissionState(eventTapReady: false)
             askPermission()

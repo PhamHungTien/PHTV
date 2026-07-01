@@ -19,6 +19,7 @@ private let phtvDeferredRelaunchPollIntervalSeconds = "0.2"
 
 func phtvShouldRelaunchAfterAccessibilityGrant(
     axTrusted: Bool,
+    inputMonitoringTrusted: Bool = true,
     needsRelaunchAfterPermission: Bool,
     isEventTapInitialized: Bool,
     isRelaunchAlreadyScheduled: Bool
@@ -26,6 +27,7 @@ func phtvShouldRelaunchAfterAccessibilityGrant(
     PHTVTypingRuntimeStateMachine.shouldRelaunchAfterGrant(
         snapshot: PHTVTypingRuntimeHealthSnapshot.resolve(
             axTrusted: axTrusted,
+            inputMonitoringTrusted: inputMonitoringTrusted,
             eventTapReady: false,
             relaunchPending: isRelaunchAlreadyScheduled,
             safeModeEnabled: false,
@@ -38,12 +40,14 @@ func phtvShouldRelaunchAfterAccessibilityGrant(
 
 func phtvShouldFallbackRelaunchAfterEventTapFailures(
     accessibilityTrusted: Bool,
+    inputMonitoringTrusted: Bool = true,
     needsRelaunchAfterPermission: Bool,
     isRelaunchAlreadyScheduled: Bool
 ) -> Bool {
     PHTVTypingRuntimeStateMachine.shouldFallbackRelaunchAfterEventTapFailures(
         snapshot: PHTVTypingRuntimeHealthSnapshot.resolve(
             axTrusted: accessibilityTrusted,
+            inputMonitoringTrusted: inputMonitoringTrusted,
             eventTapReady: false,
             relaunchPending: isRelaunchAlreadyScheduled,
             safeModeEnabled: false,
@@ -100,8 +104,8 @@ func phtvDeferredRelaunchProcessArguments(
 @MainActor
 func phtvRunAccessibilityRevokedAlert() -> NSApplication.ModalResponse {
     let alert = NSAlert()
-    alert.messageText = "⚠️  Thiếu quyền Trợ năng!"
-    alert.informativeText = "PHTV cần quyền Trợ năng để hoạt động.\n\nỨng dụng sẽ tự kiểm tra và hoạt động lại khi bạn cấp quyền."
+    alert.messageText = "⚠️  Thiếu quyền nhập liệu!"
+    alert.informativeText = "PHTV cần quyền Trợ năng và Giám sát đầu vào để hoạt động.\n\nỨng dụng sẽ tự kiểm tra và hoạt động lại khi bạn cấp đủ quyền."
     alert.alertStyle = .warning
     alert.addButton(withTitle: "Mở cài đặt")
     alert.addButton(withTitle: "Đóng")
@@ -168,9 +172,9 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
         frontmostBundleId: String? = nil
     ) -> PHTVTypingRuntimeHealthSnapshot {
         let axTrusted = AXIsProcessTrusted()
-        // Diagnostics only — Input Monitoring is no longer a required permission.
         let inputMonitoringTrusted = PHTVPermissionService.hasInputMonitoringPermission()
         let liveEventTapReady = axTrusted
+            && inputMonitoringTrusted
             && PHTVManager.isInited()
             && PHTVManager.isEventTapEnabled()
         let effectiveEventTapReady = eventTapReady ?? liveEventTapReady
@@ -255,6 +259,7 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
 
         if resetState {
             wasAccessibilityEnabled = AXIsProcessTrusted()
+            wasInputMonitoringEnabled = PHTVPermissionService.hasInputMonitoringPermission()
         }
 
         NSLog("[Accessibility] Started monitoring via TCC trust (interval: %.1fs, resetState: %@)",
@@ -263,7 +268,7 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
     }
 
     func currentMonitoringInterval() -> TimeInterval {
-        return AXIsProcessTrusted() ? 20.0 : 1.0
+        return (AXIsProcessTrusted() && PHTVPermissionService.hasInputMonitoringPermission()) ? 20.0 : 1.0
     }
 
     func stopAccessibilityMonitoring() {
@@ -292,7 +297,7 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
     }
 
     func runHealthCheck() {
-        if !AXIsProcessTrusted() {
+        if !AXIsProcessTrusted() || !PHTVPermissionService.hasInputMonitoringPermission() {
             publishTypingPermissionState(eventTapReady: false)
             continuePermissionGuidanceIfNeeded()
             return
@@ -306,11 +311,12 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
     }
 
     func checkAccessibilityStatus() {
-        // Accessibility is the only required permission; Input Monitoring no longer gates typing.
         let isAccessibilityEnabled = AXIsProcessTrusted()
-        let hasAllPermissions = isAccessibilityEnabled
-        let hadAllPermissions = wasAccessibilityEnabled
+        let isInputMonitoringEnabled = PHTVPermissionService.hasInputMonitoringPermission()
+        let hasAllPermissions = isAccessibilityEnabled && isInputMonitoringEnabled
+        let hadAllPermissions = wasAccessibilityEnabled && wasInputMonitoringEnabled
         let statusChanged = wasAccessibilityEnabled != isAccessibilityEnabled
+            || wasInputMonitoringEnabled != isInputMonitoringEnabled
 
         if !phtvShouldPerformInProcessRecovery(
             isRelaunchAlreadyScheduled: isRelaunchingAfterPermissionGrant
@@ -321,13 +327,16 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
                 )
             }
             wasAccessibilityEnabled = isAccessibilityEnabled
+            wasInputMonitoringEnabled = isInputMonitoringEnabled
             return
         }
 
         if statusChanged {
-            NSLog("[Accessibility] TCC status CHANGED: AX %@→%@",
+            NSLog("[Accessibility] TCC status CHANGED: AX %@→%@, Input %@→%@",
                   wasAccessibilityEnabled ? "YES" : "NO",
-                  isAccessibilityEnabled ? "YES" : "NO")
+                  isAccessibilityEnabled ? "YES" : "NO",
+                  wasInputMonitoringEnabled ? "YES" : "NO",
+                  isInputMonitoringEnabled ? "YES" : "NO")
 
             let newInterval: TimeInterval = hasAllPermissions ? 20.0 : 1.0
             NSLog("[Accessibility] Adjusting monitoring interval to %.1fs", newInterval)
@@ -342,9 +351,15 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
         } else if hadAllPermissions && !hasAllPermissions {
             NSLog("[Accessibility] CRITICAL - Required permission revoked!")
             accessibilityStableCount = 0
-            needsRelaunchAfterPermission = true
+            if !hasAllPermissions {
+                needsRelaunchAfterPermission = true
+            }
             publishTypingPermissionState(eventTapReady: false)
             NotificationCenter.default.post(name: NotificationName.accessibilityPermissionLost, object: nil)
+        } else if isAccessibilityEnabled && !isInputMonitoringEnabled {
+            accessibilityStableCount = 0
+            publishTypingPermissionState(eventTapReady: false)
+            continuePermissionGuidanceIfNeeded()
         } else if hasAllPermissions {
             accessibilityStableCount += 1
             if !PHTVManager.isInited() {
@@ -354,6 +369,7 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
         }
 
         wasAccessibilityEnabled = isAccessibilityEnabled
+        wasInputMonitoringEnabled = isInputMonitoringEnabled
     }
 
     func performAccessibilityGrantedRestart() {
@@ -367,9 +383,14 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
         NSLog("[Accessibility] Permission granted - preparing event tap recovery...")
         PHTVManager.invalidatePermissionCache()
         let axTrusted = AXIsProcessTrusted()
+        let inputMonitoringTrusted = PHTVPermissionService.hasInputMonitoringPermission()
 
-        guard axTrusted else {
-            NSLog("[Accessibility] Waiting for Accessibility before event tap recovery")
+        guard axTrusted && inputMonitoringTrusted else {
+            NSLog(
+                "[Accessibility] Waiting for required permissions before event tap recovery (AX=%@, Input=%@)",
+                axTrusted ? "YES" : "NO",
+                inputMonitoringTrusted ? "YES" : "NO"
+            )
             publishTypingPermissionState(eventTapReady: false)
             startAccessibilityMonitoring(withInterval: currentMonitoringInterval(), resetState: true)
             continuePermissionGuidanceIfNeeded()
@@ -378,6 +399,7 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
 
         if phtvShouldRelaunchAfterAccessibilityGrant(
             axTrusted: axTrusted,
+            inputMonitoringTrusted: inputMonitoringTrusted,
             needsRelaunchAfterPermission: needsRelaunchAfterPermission,
             isEventTapInitialized: PHTVManager.isInited(),
             isRelaunchAlreadyScheduled: isRelaunchingAfterPermissionGrant
@@ -426,6 +448,7 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
 
             let shouldRelaunch = phtvShouldFallbackRelaunchAfterEventTapFailures(
                 accessibilityTrusted: AXIsProcessTrusted(),
+                inputMonitoringTrusted: PHTVPermissionService.hasInputMonitoringPermission(),
                 needsRelaunchAfterPermission: needsRelaunchAfterPermission,
                 isRelaunchAlreadyScheduled: isRelaunchingAfterPermissionGrant
             )
@@ -519,7 +542,8 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
         defer { isPresentingAccessibilityRevokedAlert = false }
 
         let axTrusted = AXIsProcessTrusted()
-        if !axTrusted {
+        let inputMonitoringTrusted = PHTVPermissionService.hasInputMonitoringPermission()
+        if !axTrusted || !inputMonitoringTrusted {
             needsRelaunchAfterPermission = true
         }
 
@@ -598,11 +622,16 @@ private nonisolated func phtvAttemptTCCRepairInBackground() async -> (fixed: Boo
     }
 
     func checkAccessibilityAndRestart() {
-        // AXIsProcessTrusted() is the canonical gate for the single TCC permission PHTV
-        // needs before creating an active session tap. Do NOT gate on canCreateEventTap()
-        // here: the session tap may still be settling after TCC propagation even when
-        // Accessibility is already trusted.
+        // AXIsProcessTrusted() and CGPreflightListenEventAccess() are the canonical
+        // gates for the two TCC permissions PHTV needs before creating a session tap.
+        // Do NOT gate on canCreateEventTap() here: the session tap may still be settling
+        // after TCC propagation even when both permission checks are already true.
         guard AXIsProcessTrusted() else { return }
+        guard PHTVPermissionService.hasInputMonitoringPermission() else {
+            publishTypingPermissionState(eventTapReady: false)
+            continuePermissionGuidanceIfNeeded()
+            return
+        }
         guard !PHTVManager.isInited() else { return }
         PHTVManager.invalidatePermissionCache()
         performAccessibilityGrantedRestart()

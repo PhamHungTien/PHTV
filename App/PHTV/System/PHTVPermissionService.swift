@@ -45,10 +45,13 @@ import Foundation
         return canCreateEventTap()
     }
 
-    // Retained for diagnostics only (Bug Report, TCC logging). Input Monitoring is
-    // NOT required for typing — PHTV's active session tap is gated on Accessibility.
     @objc static func hasInputMonitoringPermission() -> Bool {
         CGPreflightListenEventAccess()
+    }
+
+    @discardableResult
+    @objc static func requestInputMonitoringPermission() -> Bool {
+        CGRequestListenEventAccess()
     }
 
     private static func cacheMissingPermissionAndReturnFalse(_ message: String) -> Bool {
@@ -76,11 +79,9 @@ import Foundation
         if !axTrusted {
             return cacheMissingPermissionAndReturnFalse("Accessibility (AX) is NOT granted")
         }
-        // NOTE: Active taps (.defaultTap) only require Accessibility on macOS, NOT
-        // Input Monitoring (that gate is for .listenOnly passive taps). We therefore
-        // do not block on hasInputMonitoringPermission() here — the live test tap
-        // below (tryCreateTestTapWithRetries) is the single source of truth: if the
-        // active tap actually enables with Accessibility alone, typing is ready.
+        if !hasInputMonitoringPermission() {
+            return cacheMissingPermissionAndReturnFalse("Input Monitoring is NOT granted")
+        }
 
         let now = Date().timeIntervalSince1970
         var backoffUntil = 0.0

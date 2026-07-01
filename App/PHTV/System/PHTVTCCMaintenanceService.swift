@@ -94,6 +94,11 @@ final class PHTVTCCMaintenanceService: NSObject {
         resetPermissionEntry(serviceName: "Accessibility", displayName: "Accessibility")
     }
 
+    @objc(resetInputMonitoringEntry)
+    class func resetInputMonitoringEntry() -> Bool {
+        resetPermissionEntry(serviceName: "ListenEvent", displayName: "Input Monitoring")
+    }
+
     @objc(isAppRegisteredInTCC)
     class func isAppRegisteredInTCC() -> Bool {
         guard let result = runTask(

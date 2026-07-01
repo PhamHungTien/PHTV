@@ -14,12 +14,15 @@ import Observation
 enum PHTVTypingPermissionState: Equatable {
     case ready
     case waitingForEventTap
+    case inputMonitoringRequired
     case accessibilityRequired
 
     static func resolve(snapshot: PHTVTypingRuntimeHealthSnapshot) -> Self {
         switch snapshot.phase {
         case .accessibilityRequired:
             return .accessibilityRequired
+        case .inputMonitoringRequired:
+            return .inputMonitoringRequired
         case .waitingForEventTap, .relaunchPending:
             return .waitingForEventTap
         case .ready:
@@ -48,6 +51,15 @@ enum PHTVTypingPermissionState: Equatable {
         self != .accessibilityRequired
     }
 
+    var hasInputMonitoringPermission: Bool {
+        switch self {
+        case .ready, .waitingForEventTap:
+            return true
+        case .inputMonitoringRequired, .accessibilityRequired:
+            return false
+        }
+    }
+
     var isTypingPermissionReady: Bool {
         self == .ready
     }
@@ -56,12 +68,15 @@ enum PHTVTypingPermissionState: Equatable {
 enum PHTVPermissionGuidanceStep: Equatable {
     case ready
     case accessibility
+    case inputMonitoring
     case waitingForEventTap
 
     static func resolve(snapshot: PHTVTypingRuntimeHealthSnapshot) -> Self {
         switch snapshot.phase {
         case .accessibilityRequired:
             return .accessibility
+        case .inputMonitoringRequired:
+            return .inputMonitoring
         case .waitingForEventTap, .relaunchPending:
             return .waitingForEventTap
         case .ready:
@@ -461,9 +476,9 @@ final class SystemState {
         relaunchPending: Bool? = nil
     ) -> PHTVTypingRuntimeHealthSnapshot {
         let accessibilityTrusted = AXIsProcessTrusted()
-        // Diagnostics only — Input Monitoring no longer gates typing readiness.
         let inputMonitoringTrusted = PHTVPermissionService.hasInputMonitoringPermission()
         let liveEventTapReady = accessibilityTrusted
+            && inputMonitoringTrusted
             && PHTVManager.isInited()
             && PHTVManager.isEventTapEnabled()
         let effectiveEventTapReady = eventTapReady.map { $0 || liveEventTapReady } ?? liveEventTapReady

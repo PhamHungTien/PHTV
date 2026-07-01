@@ -314,6 +314,8 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
             item.image = sfImage("clock.badge.exclamationmark")
             item.isEnabled = false
             m.addItem(item)
+        case .inputMonitoringRequired:
+            m.addItem(actionItem("Cần cấp Giám sát đầu vào", image: "eye", sel: #selector(openAccessibilityPrefs)))
         case .accessibilityRequired:
             m.addItem(actionItem("Cần cấp quyền Accessibility", image: "exclamationmark.shield", sel: #selector(openAccessibilityPrefs)))
         }

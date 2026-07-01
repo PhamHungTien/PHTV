@@ -490,6 +490,8 @@ struct BugReportView: View {
             return "🔄 Relaunch pending after permission grant"
         case .waitingForEventTap:
             return "⚠️ Permission OK, tap not initialized"
+        case .inputMonitoringRequired:
+            return "❌ No Input Monitoring permission"
         case .accessibilityRequired:
             return "❌ No accessibility permission"
         }

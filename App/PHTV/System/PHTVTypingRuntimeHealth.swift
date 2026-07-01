@@ -41,6 +41,7 @@ enum PHTVActiveAppProfile: String, CaseIterable, Equatable, Sendable {
 
 enum PHTVTypingRuntimePhase: String, Equatable, Sendable {
     case accessibilityRequired
+    case inputMonitoringRequired
     case relaunchPending
     case waitingForEventTap
     case ready
@@ -60,13 +61,11 @@ struct PHTVTypingRuntimeHealthSnapshot: Equatable, Sendable {
     let activeBundleId: String?
 
     var phase: PHTVTypingRuntimePhase {
-        // Accessibility is the ONLY required TCC permission. PHTV creates an active
-        // (.defaultTap) session tap, which macOS gates on Accessibility alone — not
-        // Input Monitoring (that gate only applies to passive .listenOnly taps).
-        // `inputMonitoringTrusted` is retained purely for diagnostics and never
-        // blocks the typing phase.
         guard axTrusted else {
             return .accessibilityRequired
+        }
+        guard inputMonitoringTrusted else {
+            return .inputMonitoringRequired
         }
         if relaunchPending && !eventTapReady {
             return .relaunchPending
@@ -110,7 +109,7 @@ struct PHTVTypingRuntimeHealthSnapshot: Equatable, Sendable {
         Self(
             axTrusted: axTrusted,
             inputMonitoringTrusted: inputMonitoringTrusted,
-            eventTapReady: axTrusted && eventTapReady,
+            eventTapReady: axTrusted && inputMonitoringTrusted && eventTapReady,
             relaunchPending: relaunchPending,
             safeModeEnabled: safeModeEnabled,
             activeAppProfile: activeAppProfile,
@@ -146,6 +145,7 @@ enum PHTVTypingRuntimeStateMachine {
         isEventTapInitialized: Bool
     ) -> Bool {
         snapshot.axTrusted
+            && snapshot.inputMonitoringTrusted
             && needsRelaunchAfterPermission
             && !isEventTapInitialized
             && !snapshot.isRelaunchPending
@@ -156,6 +156,7 @@ enum PHTVTypingRuntimeStateMachine {
         needsRelaunchAfterPermission: Bool
     ) -> Bool {
         snapshot.axTrusted
+            && snapshot.inputMonitoringTrusted
             && needsRelaunchAfterPermission
             && !snapshot.isRelaunchPending
     }
@@ -170,6 +171,7 @@ enum PHTVTypingRuntimeStateMachine {
         snapshot: PHTVTypingRuntimeHealthSnapshot
     ) -> Bool {
         snapshot.axTrusted
+            && snapshot.inputMonitoringTrusted
             && !snapshot.eventTapReady
             && !snapshot.isRelaunchPending
     }
