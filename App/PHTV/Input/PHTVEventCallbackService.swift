@@ -331,8 +331,11 @@ final class PHTVEventCallbackService {
         PHTVEventRuntimeContextService.clearCliPostFlags()
         var eventFlags = event.flags
         var eventKeycode = CGKeyCode(event.getIntegerValueField(.keyboardEventKeycode))
-        let currentLanguage = PHTVEngineRuntimeFacade.currentLanguage()
-        let safeModeEnabled = PHTVEngineRuntimeFacade.safeModeEnabled()
+        // One consistent settings view per event; avoids re-locking the
+        // runtime-settings store for every field read below.
+        let settings = PHTVEngineRuntimeFacade.eventDispatchSettingsSnapshot()
+        let currentLanguage = settings.language
+        let safeModeEnabled = settings.safeMode
         if currentLanguage != 0 {
             englishUppercaseStateBox.withLock { state in
                 state = .idle
@@ -368,7 +371,7 @@ final class PHTVEventCallbackService {
         // BUT only if no other modifiers are pressed (to preserve system shortcuts like Option+Cmd+V)
         if PHTVModifierRuntimeStateService.pausePressedValue() &&
            (type == .keyDown || type == .keyUp) {
-            let pauseKey = Int32(PHTVEngineRuntimeFacade.pauseKey())
+            let pauseKey = settings.pauseKey
             if PHTVHotkeyService.shouldStripPauseModifier(
                 withFlags: eventFlags.rawValue,
                 pauseKeyCode: pauseKey) {
@@ -379,7 +382,7 @@ final class PHTVEventCallbackService {
             }
         }
 
-        if type == .keyDown && PHTVEngineRuntimeFacade.performLayoutCompat() != 0 {
+        if type == .keyDown && settings.performLayoutCompat != 0 {
             eventKeycode = PHTVHotkeyService.convertEventToKeyboardLayoutCompatKeyCode(
                 event, fallback: eventKeycode)
         }
@@ -390,12 +393,12 @@ final class PHTVEventCallbackService {
             let hotkeyAction = PHTVEventContextBridgeService.processKeyDownHotkeyAndApplyState(
                 forKeyCode: eventKeycode,
                 currentFlags: eventFlags.rawValue,
-                switchHotkey: Int32(PHTVEngineRuntimeFacade.switchKeyStatus()),
-                switchHotkey2: Int32(PHTVEngineRuntimeFacade.switchKey2Status()),
+                switchHotkey: settings.switchKeyStatus,
+                switchHotkey2: settings.switchKey2Status,
                 convertHotkey: quickConvertHotkey,
-                emojiEnabled: Int32(PHTVEngineRuntimeFacade.enableEmojiHotkey()),
-                emojiModifiers: Int32(PHTVEngineRuntimeFacade.emojiHotkeyModifiers()),
-                emojiHotkeyKeyCode: Int32(PHTVEngineRuntimeFacade.emojiHotkeyKeyCode()))
+                emojiEnabled: settings.enableEmojiHotkey,
+                emojiModifiers: settings.emojiHotkeyModifiers,
+                emojiHotkeyKeyCode: settings.emojiHotkeyKeyCode)
             if hotkeyAction != PHTVKeyDownHotkeyAction.none.rawValue {
                 if PHTVRuntimeUIBridgeService.handleKeyDownHotkeyActionFromRuntime(Int32(hotkeyAction)) {
                     PHTVModifierRuntimeStateService.setLastFlagsValue(0)
@@ -406,8 +409,8 @@ final class PHTVEventCallbackService {
         }
 
         if type == .keyDown {
-            if PHTVEngineRuntimeFacade.upperCaseFirstChar() != 0 &&
-               PHTVEngineRuntimeFacade.upperCaseExcludedForCurrentApp() == 0 {
+            if settings.upperCaseFirstChar != 0 &&
+               settings.upperCaseExcludedForCurrentApp == 0 {
                 let keyWithCaps = UInt32(eventKeycode) |
                     ((eventFlags.contains(.maskShift) || eventFlags.contains(.maskAlphaShift))
                      ? EngineBitMask.caps : 0)
@@ -419,8 +422,8 @@ final class PHTVEventCallbackService {
                     keyCharacter: keyCharacter,
                     isNavigationKey: isNavigationKey,
                     safeMode: safeModeEnabled,
-                    uppercaseEnabled: Int32(PHTVEngineRuntimeFacade.upperCaseFirstChar()),
-                    uppercaseExcluded: Int32(PHTVEngineRuntimeFacade.upperCaseExcludedForCurrentApp()))
+                    uppercaseEnabled: settings.upperCaseFirstChar,
+                    uppercaseExcluded: settings.upperCaseExcludedForCurrentApp)
                 if shouldPrime {
                     shouldPrimeUppercaseFromAX = true
                     if currentLanguage != 0 {
@@ -431,14 +434,14 @@ final class PHTVEventCallbackService {
 
             PHTVEventContextBridgeService.applyKeyDownModifierTracking(
                 forFlags: eventFlags.rawValue,
-                restoreOnEscape: Int32(PHTVEngineRuntimeFacade.restoreOnEscape()),
-                customEscapeKey: Int32(PHTVEngineRuntimeFacade.customEscapeKey()),
-                switchHotkey: Int32(PHTVEngineRuntimeFacade.switchKeyStatus()),
-                switchHotkey2: Int32(PHTVEngineRuntimeFacade.switchKey2Status()),
+                restoreOnEscape: settings.restoreOnEscape,
+                customEscapeKey: settings.customEscapeKey,
+                switchHotkey: settings.switchKeyStatus,
+                switchHotkey2: settings.switchKey2Status,
                 convertHotkey: currentConvertHotkey(),
-                emojiEnabled: Int32(PHTVEngineRuntimeFacade.enableEmojiHotkey()),
-                emojiModifiers: Int32(PHTVEngineRuntimeFacade.emojiHotkeyModifiers()),
-                emojiHotkeyKeyCode: Int32(PHTVEngineRuntimeFacade.emojiHotkeyKeyCode()))
+                emojiEnabled: settings.enableEmojiHotkey,
+                emojiModifiers: settings.emojiHotkeyModifiers,
+                emojiHotkeyKeyCode: settings.emojiHotkeyKeyCode)
 
         } else if type == .flagsChanged {
             let lastFlags = PHTVModifierRuntimeStateService.lastFlagsValue()
@@ -446,13 +449,13 @@ final class PHTVEventCallbackService {
                 let pressResult = PHTVEventContextBridgeService.handleModifierPress(
                     withFlags: eventFlags.rawValue,
                     keyCode: eventKeycode,
-                    restoreOnEscape: Int32(PHTVEngineRuntimeFacade.restoreOnEscape()),
-                    customEscapeKey: Int32(PHTVEngineRuntimeFacade.customEscapeKey()),
-                    pauseKeyEnabled: Int32(PHTVEngineRuntimeFacade.pauseKeyEnabled()),
-                    pauseKeyCode: Int32(PHTVEngineRuntimeFacade.pauseKey()),
-                    currentLanguage: Int32(PHTVEngineRuntimeFacade.currentLanguage()),
-                    switchHotkey: Int32(PHTVEngineRuntimeFacade.switchKeyStatus()),
-                    switchHotkey2: Int32(PHTVEngineRuntimeFacade.switchKey2Status()))
+                    restoreOnEscape: settings.restoreOnEscape,
+                    customEscapeKey: settings.customEscapeKey,
+                    pauseKeyEnabled: settings.pauseKeyEnabled,
+                    pauseKeyCode: settings.pauseKey,
+                    currentLanguage: currentLanguage,
+                    switchHotkey: settings.switchKeyStatus,
+                    switchHotkey2: settings.switchKey2Status)
                 if pressResult.shouldUpdateLanguage {
                     PHTVEngineRuntimeFacade.setCurrentLanguage(pressResult.language)
                 }
@@ -461,19 +464,19 @@ final class PHTVEventCallbackService {
                     oldFlags: lastFlags,
                     newFlags: eventFlags.rawValue,
                     keyCode: eventKeycode,
-                    restoreOnEscape: Int32(PHTVEngineRuntimeFacade.restoreOnEscape()),
-                    customEscapeKey: Int32(PHTVEngineRuntimeFacade.customEscapeKey()),
-                    switchHotkey: Int32(PHTVEngineRuntimeFacade.switchKeyStatus()),
-                    switchHotkey2: Int32(PHTVEngineRuntimeFacade.switchKey2Status()),
+                    restoreOnEscape: settings.restoreOnEscape,
+                    customEscapeKey: settings.customEscapeKey,
+                    switchHotkey: settings.switchKeyStatus,
+                    switchHotkey2: settings.switchKey2Status,
                     convertHotkey: currentConvertHotkey(),
-                    emojiEnabled: Int32(PHTVEngineRuntimeFacade.enableEmojiHotkey()),
-                    emojiModifiers: Int32(PHTVEngineRuntimeFacade.emojiHotkeyModifiers()),
-                    emojiKeyCode: Int32(PHTVEngineRuntimeFacade.emojiHotkeyKeyCode()),
-                    tempOffSpellingEnabled: Int32(PHTVEngineRuntimeFacade.tempOffSpelling()),
-                    tempOffEngineEnabled: Int32(PHTVEngineRuntimeFacade.tempOffEngine()),
-                    pauseKeyEnabled: Int32(PHTVEngineRuntimeFacade.pauseKeyEnabled()),
-                    pauseKeyCode: Int32(PHTVEngineRuntimeFacade.pauseKey()),
-                    currentLanguage: Int32(PHTVEngineRuntimeFacade.currentLanguage()))
+                    emojiEnabled: settings.enableEmojiHotkey,
+                    emojiModifiers: settings.emojiHotkeyModifiers,
+                    emojiKeyCode: settings.emojiHotkeyKeyCode,
+                    tempOffSpellingEnabled: settings.tempOffSpelling,
+                    tempOffEngineEnabled: settings.tempOffEngine,
+                    pauseKeyEnabled: settings.pauseKeyEnabled,
+                    pauseKeyCode: settings.pauseKey,
+                    currentLanguage: currentLanguage)
 
                 let shouldAttemptRestore = releaseResult.shouldAttemptRestore
                 let releaseAction = Int(releaseResult.releaseAction)
@@ -504,11 +507,11 @@ final class PHTVEventCallbackService {
                     PHTVModifierRuntimeStateService.setHasJustUsedHotKeyValue(true)
                     let shouldPassThroughReleaseEvent = PHTVHotkeyService.shouldPassThroughModifierReleaseEvent(
                         forReleaseAction: Int32(releaseAction),
-                        switchHotkey: Int32(PHTVEngineRuntimeFacade.switchKeyStatus()),
-                        switchHotkey2: Int32(PHTVEngineRuntimeFacade.switchKey2Status()),
+                        switchHotkey: settings.switchKeyStatus,
+                        switchHotkey2: settings.switchKey2Status,
                         convertHotkey: currentConvertHotkey(),
-                        emojiEnabled: Int32(PHTVEngineRuntimeFacade.enableEmojiHotkey()),
-                        emojiHotkeyKeyCode: Int32(PHTVEngineRuntimeFacade.emojiHotkeyKeyCode())
+                        emojiEnabled: settings.enableEmojiHotkey,
+                        emojiHotkeyKeyCode: settings.emojiHotkeyKeyCode
                     )
                     if shouldPassThroughReleaseEvent {
                         return Unmanaged.passRetained(event)
@@ -541,8 +544,8 @@ final class PHTVEventCallbackService {
                 let keyCode = UInt16(eventKeycode)
                 let hasShift = eventFlags.contains(.maskShift)
                 let hasCapsLock = eventFlags.contains(.maskAlphaShift)
-                let uppercaseEnabled = PHTVEngineRuntimeFacade.upperCaseFirstChar() != 0
-                let uppercaseExcluded = PHTVEngineRuntimeFacade.upperCaseExcludedForCurrentApp() != 0
+                let uppercaseEnabled = settings.upperCaseFirstChar != 0
+                let uppercaseExcluded = settings.upperCaseExcludedForCurrentApp != 0
                 let currentUppercaseState = englishUppercaseStateBox.withLock { state in
                     state
                 }
@@ -595,7 +598,7 @@ final class PHTVEventCallbackService {
                 }
             }
 
-            if PHTVEngineRuntimeFacade.useMacro() != 0 && PHTVEngineRuntimeFacade.useMacroInEnglishMode() != 0 &&
+            if settings.useMacro != 0 && settings.useMacroInEnglishMode != 0 &&
                type == .keyDown {
                 phtvEngineHandleEnglishMode(
                     keyEventStateKeyDown,
@@ -629,7 +632,7 @@ final class PHTVEventCallbackService {
         }
 
         // If "turn off Vietnamese when in other language" mode on
-        if PHTVEngineRuntimeFacade.otherLanguageMode() != 0 {
+        if settings.otherLanguage != 0 {
             if !PHTVInputSourceLanguageService.shouldAllowVietnameseForOtherLanguageMode() {
                 return Unmanaged.passRetained(event)
             }
@@ -641,7 +644,7 @@ final class PHTVEventCallbackService {
                                  event: event,
                                  eventKeycode: eventKeycode,
                                  eventFlags: eventFlags,
-                                 safeModeEnabled: safeModeEnabled)
+                                 settings: settings)
         }
 
         return Unmanaged.passRetained(event)
@@ -653,7 +656,8 @@ final class PHTVEventCallbackService {
                                       event: CGEvent,
                                       eventKeycode: CGKeyCode,
                                       eventFlags: CGEventFlags,
-                                      safeModeEnabled: Bool) -> Unmanaged<CGEvent>? {
+                                      settings: PHTVEventDispatchSettings) -> Unmanaged<CGEvent>? {
+        let safeModeEnabled = settings.safeMode
         let targetContext = PHTVEventContextBridgeService.prepareTargetContextAndConfigureRuntime(
             forEvent: event,
             safeMode: safeModeEnabled,
@@ -697,6 +701,7 @@ final class PHTVEventCallbackService {
             savedCodeTable = currentCodeTable
             PHTVEngineRuntimeFacade.setCurrentCodeTable(Int32(0))
         }
+        let effectiveCodeTable = codeTableOverrideActive ? Int32(0) : currentCodeTable
 
         // Send event signal to Engine
         let capsStatus: UInt8 = eventFlags.contains(.maskShift) ? 1
@@ -708,30 +713,35 @@ final class PHTVEventCallbackService {
             capsStatus,
             PHTVEventContextBridgeService.hasOtherControlKey(withFlags: eventFlags.rawValue) ? 1 : 0)
 
+        // Capture engine output once; avoids re-locking the engine for every
+        // field read below. Backspace-count adjustments later in this function
+        // are tracked via locals alongside the engine-state mutation.
+        let hookData = PHTVEngineRuntimeFacade.engineDataResultSnapshot()
+
         #if DEBUG
         if eventKeycode == CGKeyCode(KeyCode.space) {
             NSLog("[TextReplacement] Engine result for SPACE: code=%d, extCode=%d, backspace=%d, newChar=%d",
-                  PHTVEngineRuntimeFacade.engineDataCode(), PHTVEngineRuntimeFacade.engineDataExtCode(),
-                  PHTVEngineRuntimeFacade.engineDataBackspaceCount(), PHTVEngineRuntimeFacade.engineDataNewCharCount())
+                  hookData.code, hookData.extCode,
+                  hookData.backspaceCount, hookData.newCharCount)
         }
-        if PHTVEngineRuntimeFacade.engineDataExtCode() == 5 {
-            if PHTVEngineRuntimeFacade.engineDataCode() == EngineSignalCode.restore ||
-               PHTVEngineRuntimeFacade.engineDataCode() == EngineSignalCode.restoreAndStartNewSession {
+        if hookData.extCode == 5 {
+            if hookData.code == EngineSignalCode.restore ||
+               hookData.code == EngineSignalCode.restoreAndStartNewSession {
                 NSLog("[AutoEnglish] ✓ RESTORE TRIGGERED: code=%d, backspace=%d, newChar=%d, keycode=%d (0x%X)",
-                      PHTVEngineRuntimeFacade.engineDataCode(), PHTVEngineRuntimeFacade.engineDataBackspaceCount(),
-                      PHTVEngineRuntimeFacade.engineDataNewCharCount(), eventKeycode, eventKeycode)
+                      hookData.code, hookData.backspaceCount,
+                      hookData.newCharCount, eventKeycode, eventKeycode)
             } else {
-                NSLog("[AutoEnglish] ⚠️ WARNING: extCode=5 but code=%d (not restore!)", PHTVEngineRuntimeFacade.engineDataCode())
+                NSLog("[AutoEnglish] ⚠️ WARNING: extCode=5 but code=%d (not restore!)", hookData.code)
             }
         } else if eventKeycode == CGKeyCode(KeyCode.space) &&
-                  PHTVEngineRuntimeFacade.engineDataCode() == EngineSignalCode.doNothing {
+                  hookData.code == EngineSignalCode.doNothing {
             NSLog("[AutoEnglish] ✗ NO RESTORE on SPACE: code=%d, extCode=%d",
-                  PHTVEngineRuntimeFacade.engineDataCode(), PHTVEngineRuntimeFacade.engineDataExtCode())
+                  hookData.code, hookData.extCode)
         }
         #endif
 
         let signalAction = Int(PHTVInputStrategyService.engineSignalAction(
-            forEngineCode: PHTVEngineRuntimeFacade.engineDataCode(),
+            forEngineCode: hookData.code,
             doNothingCode: EngineSignalCode.doNothing,
             willProcessCode: EngineSignalCode.willProcess,
             restoreCode: EngineSignalCode.restore,
@@ -744,11 +754,10 @@ final class PHTVEventCallbackService {
                 // TryToRestoreSessionFromAX -- commented out
             }
 
-            let currTable = PHTVEngineRuntimeFacade.currentCodeTable()
             let shouldSendExtraBackspace =
                 PHTVEventContextBridgeService.applyDoNothingSyncStateTransition(
-                    forCodeTable: currTable,
-                    extCode: PHTVEngineRuntimeFacade.engineDataExtCode(),
+                    forCodeTable: effectiveCodeTable,
+                    extCode: hookData.extCode,
                     containsUnicodeCompound: appChars.containsUnicodeCompound)
             if shouldSendExtraBackspace {
                 PHTVKeyEventSenderService.sendPhysicalBackspace()
@@ -772,13 +781,13 @@ final class PHTVEventCallbackService {
                 keyCode: Int32(eventKeycode),
                 spaceKeyCode: Int32(KeyCode.space),
                 slashKeyCode: Int32(KeyCode.slash),
-                extCode: PHTVEngineRuntimeFacade.engineDataExtCode(),
-                backspaceCount: PHTVEngineRuntimeFacade.engineDataBackspaceCount(),
-                newCharCount: PHTVEngineRuntimeFacade.engineDataNewCharCount(),
+                extCode: hookData.extCode,
+                backspaceCount: hookData.backspaceCount,
+                newCharCount: hookData.newCharCount,
                 isBrowserApp: isBrowserApp,
                 isSpotlightTarget: isSpotlightTarget,
                 needsPrecomposedBatched: appChars.needsPrecomposedBatched,
-                browserFixEnabled: PHTVEngineRuntimeFacade.fixRecommendBrowser() != 0)
+                browserFixEnabled: settings.fixRecommendBrowser != 0)
 
             // FIGMA FIX: Force pass-through for Space key to support "Hand tool" (Hold Space)
             if processSignalPlan.shouldBypassForFigma {
@@ -786,8 +795,8 @@ final class PHTVEventCallbackService {
             }
 
             #if DEBUG
-            if PHTVEngineRuntimeFacade.engineDataCode() == EngineSignalCode.restoreAndStartNewSession {
-                fputs("[AutoEnglish] vRestoreAndStartNewSession START: backspace=\(PHTVEngineRuntimeFacade.engineDataBackspaceCount()), newChar=\(PHTVEngineRuntimeFacade.engineDataNewCharCount()), keycode=\(eventKeycode)\n", stderr)
+            if hookData.code == EngineSignalCode.restoreAndStartNewSession {
+                fputs("[AutoEnglish] vRestoreAndStartNewSession START: backspace=\(hookData.backspaceCount), newChar=\(hookData.newCharCount), keycode=\(eventKeycode)\n", stderr)
             }
             #endif
 
@@ -795,16 +804,16 @@ final class PHTVEventCallbackService {
             let isSpotlightTargetDbg = processSignalPlan.isSpecialApp
             let isBrowserFix = processSignalPlan.isBrowserFix
             NSLog("[BrowserFix] Status: vFix=%d, app=%@, isBrowser=%d => isFix=%d | bs=%d, ext=%d",
-                  PHTVEngineRuntimeFacade.fixRecommendBrowser(), effectiveBundleId ?? "",
+                  settings.fixRecommendBrowser, effectiveBundleId ?? "",
                   isBrowserApp ? 1 : 0, isBrowserFix ? 1 : 0,
-                  PHTVEngineRuntimeFacade.engineDataBackspaceCount(), PHTVEngineRuntimeFacade.engineDataExtCode())
-            if isBrowserFix && PHTVEngineRuntimeFacade.engineDataBackspaceCount() > 0 {
+                  hookData.backspaceCount, hookData.extCode)
+            if isBrowserFix && hookData.backspaceCount > 0 {
                 NSLog("[BrowserFix] Checking logic: fix=%d, ext=%d, special=%d, skipSp=%d, shortcut=%d, bs=%d",
-                      isBrowserFix ? 1 : 0, PHTVEngineRuntimeFacade.engineDataExtCode(),
+                      isBrowserFix ? 1 : 0, hookData.extCode,
                       isSpotlightTargetDbg ? 1 : 0,
                       processSignalPlan.shouldSkipSpace ? 1 : 0,
                       processSignalPlan.isPotentialShortcut ? 1 : 0,
-                      PHTVEngineRuntimeFacade.engineDataBackspaceCount())
+                      hookData.backspaceCount)
             }
             #endif
 
@@ -818,8 +827,8 @@ final class PHTVEventCallbackService {
             }
 
             let shouldInspectNotionCodeBlock =
-                PHTVEngineRuntimeFacade.engineDataBackspaceCount() > 0 &&
-                PHTVEngineRuntimeFacade.engineDataExtCode() != 4 &&
+                hookData.backspaceCount > 0 &&
+                hookData.extCode != 4 &&
                 (!processSignalPlan.isSpecialApp || processSignalPlan.isNotionApp) &&
                 !processSignalPlan.isPotentialShortcut
             var isNotionCodeBlockDetected = false
@@ -842,7 +851,7 @@ final class PHTVEventCallbackService {
                 legacyNonBrowserFix: shouldApplyLegacyBackspaceFix,
                 containsUnicodeCompound: appChars.containsUnicodeCompound,
                 notionCodeBlockDetected: isNotionCodeBlockDetected,
-                backspaceCount: PHTVEngineRuntimeFacade.engineDataBackspaceCount(),
+                backspaceCount: hookData.backspaceCount,
                 maxBuffer: EngineSignalCode.maxBuffer,
                 safetyLimit: 15)
 
@@ -859,7 +868,7 @@ final class PHTVEventCallbackService {
                 PHTVKeyEventSenderService.sendEmptyCharacter()
             }
 
-            let adjustedBackspaceCount = Int(resolvedBackspacePlan.sanitizedBackspaceCount)
+            let adjustedBackspaceCount = resolvedBackspacePlan.sanitizedBackspaceCount
             PHTVEngineRuntimeFacade.setEngineDataBackspaceCount(UInt8(adjustedBackspaceCount))
 
             #if DEBUG
@@ -878,14 +887,14 @@ final class PHTVEventCallbackService {
                 PHTVTextReplacementDecisionService.shouldEvaluate(
                     forKeyCode: Int32(eventKeycode),
                     spaceKeyCode: Int32(KeyCode.space),
-                    backspaceCount: PHTVEngineRuntimeFacade.engineDataBackspaceCount(),
-                    newCharCount: PHTVEngineRuntimeFacade.engineDataNewCharCount())
+                    backspaceCount: Int32(adjustedBackspaceCount),
+                    newCharCount: hookData.newCharCount)
 
             #if DEBUG
             if shouldEvaluateTextReplacement {
                 NSLog("[PHTV TextReplacement] Key=%d: code=%d, extCode=%d, backspace=%d, newChar=%d, deleteCount=%d",
-                      eventKeycode, PHTVEngineRuntimeFacade.engineDataCode(), PHTVEngineRuntimeFacade.engineDataExtCode(),
-                      PHTVEngineRuntimeFacade.engineDataBackspaceCount(), PHTVEngineRuntimeFacade.engineDataNewCharCount(),
+                      eventKeycode, hookData.code, hookData.extCode,
+                      adjustedBackspaceCount, hookData.newCharCount,
                       externalDeleteCount)
             }
             #endif
@@ -893,10 +902,10 @@ final class PHTVEventCallbackService {
             if shouldEvaluateTextReplacement {
                 let textReplacementDecision = PHTVTextReplacementDecisionService.evaluate(
                     forSpaceKey: true,
-                    code: PHTVEngineRuntimeFacade.engineDataCode(),
-                    extCode: PHTVEngineRuntimeFacade.engineDataExtCode(),
-                    backspaceCount: PHTVEngineRuntimeFacade.engineDataBackspaceCount(),
-                    newCharCount: PHTVEngineRuntimeFacade.engineDataNewCharCount(),
+                    code: hookData.code,
+                    extCode: hookData.extCode,
+                    backspaceCount: Int32(adjustedBackspaceCount),
+                    newCharCount: hookData.newCharCount,
                     externalDeleteCount: externalDeleteCount,
                     restoreAndStartNewSessionCode: EngineSignalCode.restoreAndStartNewSession,
                     willProcessCode: EngineSignalCode.willProcess,
@@ -907,17 +916,17 @@ final class PHTVEventCallbackService {
                     #if DEBUG
                     if textReplacementDecision.isExternalDelete {
                         NSLog("[TextReplacement] Text replacement detected - passing through event (code=%d, backspace=%d, newChar=%d, deleteCount=%d, elapsedMs=%llu)",
-                              PHTVEngineRuntimeFacade.engineDataCode(), PHTVEngineRuntimeFacade.engineDataBackspaceCount(),
-                              PHTVEngineRuntimeFacade.engineDataNewCharCount(), externalDeleteCount,
+                              hookData.code, adjustedBackspaceCount,
+                              hookData.newCharCount, externalDeleteCount,
                               textReplacementDecision.matchedElapsedMs)
                     } else if textReplacementDecision.isPatternMatch {
                         NSLog("[PHTV TextReplacement] Pattern %@ matched: code=%d, backspace=%d, newChar=%d, keycode=%d",
                               textReplacementDecision.patternLabel ?? "?",
-                              PHTVEngineRuntimeFacade.engineDataCode(), PHTVEngineRuntimeFacade.engineDataBackspaceCount(),
-                              PHTVEngineRuntimeFacade.engineDataNewCharCount(), eventKeycode)
+                              hookData.code, adjustedBackspaceCount,
+                              hookData.newCharCount, eventKeycode)
                         NSLog("[PHTV TextReplacement] ✅ DETECTED - Skipping processing (code=%d, backspace=%d, newChar=%d)",
-                              PHTVEngineRuntimeFacade.engineDataCode(), PHTVEngineRuntimeFacade.engineDataBackspaceCount(),
-                              PHTVEngineRuntimeFacade.engineDataNewCharCount())
+                              hookData.code, adjustedBackspaceCount,
+                              hookData.newCharCount)
                     }
                     #endif
                     // CRITICAL: Return event to let macOS insert Space
@@ -927,8 +936,8 @@ final class PHTVEventCallbackService {
                 #if DEBUG
                 if textReplacementDecision.isFallbackNoMatch {
                     NSLog("[PHTV TextReplacement] ❌ NOT DETECTED - Will process normally (code=%d, backspace=%d, newChar=%d) - MAY CAUSE DUPLICATE!",
-                          PHTVEngineRuntimeFacade.engineDataCode(), PHTVEngineRuntimeFacade.engineDataBackspaceCount(),
-                          PHTVEngineRuntimeFacade.engineDataNewCharCount())
+                          hookData.code, adjustedBackspaceCount,
+                          hookData.newCharCount)
                 }
                 #endif
             }
@@ -936,28 +945,28 @@ final class PHTVEventCallbackService {
             let characterSendPlan = PHTVInputStrategyService.characterSendPlan(
                 forSpotlightTarget: isSpotlightTarget,
                 cliTarget: PHTVEventRuntimeContextService.isCliTargetEnabled(),
-                globalStepByStep: PHTVEngineRuntimeFacade.isSendKeyStepByStepEnabled(),
+                globalStepByStep: settings.sendKeyStepByStep,
                 appNeedsStepByStep: appChars.needsStepByStep,
                 appNeedsPrecomposedBatched: appChars.needsPrecomposedBatched,
                 keyCode: Int32(eventKeycode),
-                engineCode: PHTVEngineRuntimeFacade.engineDataCode(),
+                engineCode: hookData.code,
                 restoreCode: EngineSignalCode.restore,
                 restoreAndStartNewSessionCode: EngineSignalCode.restoreAndStartNewSession,
                 enterKeyCode: Int32(KeyCode.enter),
                 returnKeyCode: Int32(KeyCode.returnKey))
 
             // Send backspace
-            let bsCount = Int(PHTVEngineRuntimeFacade.engineDataBackspaceCount())
-            if bsCount > 0 && bsCount < Int(EngineSignalCode.maxBuffer) {
+            let bsCount = adjustedBackspaceCount
+            if bsCount > 0 && bsCount < EngineSignalCode.maxBuffer {
                 if characterSendPlan.deferBackspaceToAX {
-                    PHTVEventRuntimeContextService.setPendingBackspaceCount(Int32(bsCount))
+                    PHTVEventRuntimeContextService.setPendingBackspaceCount(bsCount)
                     #if DEBUG
                     PHTVSpotlightDetectionService.emitRuntimeDebugLog(
-                        "deferBackspace=\(bsCount) newCharCount=\(PHTVEngineRuntimeFacade.engineDataNewCharCount())",
+                        "deferBackspace=\(bsCount) newCharCount=\(hookData.newCharCount)",
                         throttleMs: kDebugLogThrottleMs)
                     #endif
                 } else {
-                    PHTVKeyEventSenderService.sendBackspaceSequenceWithDelay(Int32(bsCount))
+                    PHTVKeyEventSenderService.sendBackspaceSequenceWithDelay(bsCount)
                 }
             }
 
@@ -966,7 +975,7 @@ final class PHTVEventCallbackService {
             #if DEBUG
             if isSpotlightTarget {
                 PHTVSpotlightDetectionService.emitRuntimeDebugLog(
-                    "willSend stepByStep=\(useStepByStep ? 1 : 0) backspaceCount=\(PHTVEngineRuntimeFacade.engineDataBackspaceCount()) newCharCount=\(PHTVEngineRuntimeFacade.engineDataNewCharCount())",
+                    "willSend stepByStep=\(useStepByStep ? 1 : 0) backspaceCount=\(adjustedBackspaceCount) newCharCount=\(hookData.newCharCount)",
                     throttleMs: kDebugLogThrottleMs)
             }
             #endif
@@ -976,45 +985,17 @@ final class PHTVEventCallbackService {
                     dataFromMacro: false, offset: 0,
                     keycode: eventKeycode, flags: eventFlags.rawValue)
             } else {
-                let newCharCount = Int(PHTVEngineRuntimeFacade.engineDataNewCharCount())
+                let newCharCount = Int(hookData.newCharCount)
                 if newCharCount > 0 && newCharCount <= Int(EngineSignalCode.maxBuffer) {
-                    let cliSpeedFactor = PHTVCliRuntimeStateService.currentSpeedFactor()
-                    let isCli = PHTVEventRuntimeContextService.isCliTargetEnabled()
-                    let scaledCliTextDelayUs: UInt64 = isCli
-                        ? UInt64(PHTVTimingService.scaleDelayUseconds(
-                            PHTVTimingService.clampToUseconds(
-                                PHTVCliRuntimeStateService.cliTextDelayUs()),
-                            factor: cliSpeedFactor))
-                        : 0
-                    let scaledCliPostSendBlockUs: UInt64 = isCli
-                        ? PHTVTimingService.scaleDelayMicroseconds(
-                            PHTVCliRuntimeStateService.cliPostSendBlockUs(),
-                            factor: cliSpeedFactor)
-                        : 0
-                    let sendPlan = PHTVSendSequenceService.sequencePlan(
-                        forCliTarget: isCli,
-                        itemCount: Int32(newCharCount),
-                        scaledCliTextDelayUs: Int64(scaledCliTextDelayUs),
-                        scaledCliPostSendBlockUs: Int64(scaledCliPostSendBlockUs))
-                    let interItemDelayUs = PHTVTimingService.clampToUseconds(
-                        UInt64(max(Int64(0), sendPlan.interItemDelayUs)))
-
-                    for i in stride(from: newCharCount - 1, through: 0, by: -1) {
-                        PHTVKeyEventSenderService.sendKeyCode(PHTVEngineRuntimeFacade.engineDataCharAt(Int32(i)))
-                        if interItemDelayUs > 0 && i > 0 {
-                            usleep(interItemDelayUs)
-                        }
-                    }
-                    if sendPlan.shouldScheduleCliBlock {
-                        PHTVCliRuntimeStateService.scheduleBlock(
-                            forMicroseconds: UInt64(max(Int64(0), sendPlan.cliBlockUs)),
-                            nowMachTime: mach_absolute_time())
+                    PHTVSendSequenceService.sendItemsStepByStep(count: newCharCount) { index in
+                        PHTVKeyEventSenderService.sendKeyCode(
+                            hookData.char(at: newCharCount - 1 - index))
                     }
                 }
                 if characterSendPlan.shouldSendRestoreTriggerKey {
                     #if DEBUG
-                    if PHTVEngineRuntimeFacade.engineDataCode() == EngineSignalCode.restoreAndStartNewSession {
-                        fputs("[AutoEnglish] PROCESSING RESTORE: backspace=\(PHTVEngineRuntimeFacade.engineDataBackspaceCount()), newChar=\(PHTVEngineRuntimeFacade.engineDataNewCharCount())\n", stderr)
+                    if hookData.code == EngineSignalCode.restoreAndStartNewSession {
+                        fputs("[AutoEnglish] PROCESSING RESTORE: backspace=\(adjustedBackspaceCount), newChar=\(hookData.newCharCount)\n", stderr)
                     }
                     #endif
                     PHTVKeyEventSenderService.sendKeyCode(

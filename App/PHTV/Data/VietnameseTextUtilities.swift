@@ -10,10 +10,9 @@ import Foundation
 
 // MARK: - Vietnamese Text Utilities
 
-/// Normalize Vietnamese text by removing diacritics for flexible search
-/// Example: "cười" -> "cuoi", "yêu" -> "yeu"
-func normalizeVietnamese(_ text: String) -> String {
-    let vietnameseMap: [Character: String] = [
+/// Diacritic-stripping table shared by all normalizeVietnamese calls.
+/// Built once — rebuilding it per call is measurable on search hot paths.
+private let vietnameseMap: [Character: String] = [
         // a variants
         "à": "a", "á": "a", "ả": "a", "ã": "a", "ạ": "a",
         "ă": "a", "ằ": "a", "ắ": "a", "ẳ": "a", "ẵ": "a", "ặ": "a",
@@ -48,9 +47,13 @@ func normalizeVietnamese(_ text: String) -> String {
         "Ư": "U", "Ừ": "U", "Ứ": "U", "Ử": "U", "Ữ": "U", "Ự": "U",
         "Ỳ": "Y", "Ý": "Y", "Ỷ": "Y", "Ỹ": "Y", "Ỵ": "Y",
         "Đ": "D"
-    ]
+]
 
+/// Normalize Vietnamese text by removing diacritics for flexible search
+/// Example: "cười" -> "cuoi", "yêu" -> "yeu"
+func normalizeVietnamese(_ text: String) -> String {
     var result = ""
+    result.reserveCapacity(text.count)
     for char in text {
         if let replacement = vietnameseMap[char] {
             result += replacement

@@ -8,7 +8,6 @@
 //
 
 import CoreGraphics
-import Darwin
 import AppKit
 import Foundation
 
@@ -24,12 +23,14 @@ final class PHTVCharacterOutputService: NSObject {
                                  offset: UInt16,
                                  keycode: UInt16,
                                  flags: UInt64) {
+        // Capture engine output once; avoids re-locking the engine per character.
+        let hookData = PHTVEngineRuntimeFacade.engineDataResultSnapshot()
+        let macroData = dataFromMacro ? PHTVEngineRuntimeFacade.engineDataMacroSnapshot() : []
+
         let maxBuf = 20
         var outputIndex = 0
         var loopIndex = 0
-        var newCharSize = dataFromMacro
-            ? Int(PHTVEngineRuntimeFacade.engineDataMacroDataSize())
-            : Int(PHTVEngineRuntimeFacade.engineDataNewCharCount())
+        let sourceCharCount = dataFromMacro ? macroData.count : Int(hookData.newCharCount)
         var newCharString = [UInt16](repeating: 0, count: maxBuf)
         var willContinueSending = false
         var willSendControlKey = false
@@ -44,33 +45,29 @@ final class PHTVCharacterOutputService: NSObject {
         let pureCharMask = EngineBitMask.pureCharacter
         let charCodeMask = EngineBitMask.charCode
 
-        if newCharSize > 0 {
+        if sourceCharCount > 0 {
             if dataFromMacro {
                 loopIndex = Int(offset)
-                while loopIndex < Int(PHTVEngineRuntimeFacade.engineDataMacroDataSize()) {
+                while loopIndex < macroData.count {
                     if outputIndex >= 16 { willContinueSending = true; break }
-                    let tempChar = PHTVEngineRuntimeFacade.engineDataMacroDataAt(Int32(loopIndex))
-                    buildChar(tempChar, codeTable: codeTable,
+                    buildChar(macroData[loopIndex], codeTable: codeTable,
                               pureCharMask: pureCharMask, charCodeMask: charCodeMask,
-                              into: &newCharString,
-                              outputIndex: &outputIndex, newCharSize: &newCharSize)
+                              into: &newCharString, outputIndex: &outputIndex)
                     loopIndex += 1
                 }
             } else {
-                loopIndex = Int(PHTVEngineRuntimeFacade.engineDataNewCharCount()) - 1 - Int(offset)
+                loopIndex = Int(hookData.newCharCount) - 1 - Int(offset)
                 while loopIndex >= 0 {
                     if outputIndex >= 16 { willContinueSending = true; break }
-                    let tempChar = PHTVEngineRuntimeFacade.engineDataCharAt(Int32(loopIndex))
-                    buildChar(tempChar, codeTable: codeTable,
+                    buildChar(hookData.char(at: loopIndex), codeTable: codeTable,
                               pureCharMask: pureCharMask, charCodeMask: charCodeMask,
-                              into: &newCharString,
-                              outputIndex: &outputIndex, newCharSize: &newCharSize)
+                              into: &newCharString, outputIndex: &outputIndex)
                     loopIndex -= 1
                 }
             }
         }
 
-        let engineCode = Int(PHTVEngineRuntimeFacade.engineDataCode())
+        let engineCode = Int(hookData.code)
         let vRestoreCode = Int(EngineSignalCode.restore)
         let vRestoreNewCode = Int(EngineSignalCode.restoreAndStartNewSession)
         let capsMask = EngineBitMask.caps
@@ -82,7 +79,6 @@ final class PHTVCharacterOutputService: NSObject {
                 let withCaps = UInt32(keycode) | (hasCaps ? capsMask : 0)
                 newCharString[outputIndex] = EngineMacroKeyMap.character(for: withCaps)
                 outputIndex += 1
-                newCharSize += 1
             } else {
                 willSendControlKey = true
             }
@@ -170,33 +166,34 @@ final class PHTVCharacterOutputService: NSObject {
             return true
         }
 
+        let originalBackspaceCount = PHTVEngineRuntimeFacade.engineDataBackspaceCount()
         let macroPlan = PHTVInputStrategyService.macroPlan(
             forPostToHIDTap: PHTVEventRuntimeContextService.postToHIDTapEnabled(),
             appIsSpotlightLike: PHTVEventRuntimeContextService.appIsSpotlightLike(),
             browserFixEnabled: PHTVEngineRuntimeFacade.fixRecommendBrowser() != 0,
-            originalBackspaceCount: PHTVEngineRuntimeFacade.engineDataBackspaceCount(),
+            originalBackspaceCount: originalBackspaceCount,
             cliTarget: PHTVEventRuntimeContextService.isCliTargetEnabled(),
             globalStepByStep: PHTVEngineRuntimeFacade.isSendKeyStepByStepEnabled(),
             appNeedsStepByStep: PHTVEventRuntimeContextService.appNeedsStepByStep(),
             appNeedsPrecomposedBatched: PHTVEventRuntimeContextService.appNeedsPrecomposedBatched())
 
         let isSpotlightLike = macroPlan.isSpotlightLikeTarget
-        let macroDataSize = Int(PHTVEngineRuntimeFacade.engineDataMacroDataSize())
+        // Capture macro output once; avoids re-locking the engine per item.
+        let macroData = PHTVEngineRuntimeFacade.engineDataMacroSnapshot()
 
         #if DEBUG
         NSLog("[Macro] handleMacro: target='%@', isSpotlight=%d (postToHID=%d), backspaceCount=%d, macroSize=%d",
               effectiveTarget ?? "",
               isSpotlightLike ? 1 : 0,
               PHTVEventRuntimeContextService.postToHIDTapEnabled() ? 1 : 0,
-              Int(PHTVEngineRuntimeFacade.engineDataBackspaceCount()),
-              macroDataSize)
+              Int(originalBackspaceCount),
+              macroData.count)
         #endif
 
         if macroPlan.shouldTryAXReplacement {
-            let macroData = macroDataSnapshot(count: macroDataSize)
             let replacedByAX = PHTVEngineDataBridge.replaceSpotlightLikeMacroIfNeeded(
                 isSpotlightLike ? 1 : 0,
-                backspaceCount: PHTVEngineRuntimeFacade.engineDataBackspaceCount(),
+                backspaceCount: originalBackspaceCount,
                 macroData: macroData,
                 codeTable: Int32(PHTVEngineRuntimeFacade.currentCodeTable()),
                 safeMode: PHTVEngineRuntimeFacade.safeModeEnabled())
@@ -211,55 +208,28 @@ final class PHTVCharacterOutputService: NSObject {
             #endif
         }
 
+        var effectiveBackspaceCount = originalBackspaceCount
         if macroPlan.shouldApplyBrowserFix {
             PHTVKeyEventSenderService.sendEmptyCharacter()
             PHTVEngineRuntimeFacade.setEngineDataBackspaceCount(UInt8(macroPlan.adjustedBackspaceCount))
+            effectiveBackspaceCount = macroPlan.adjustedBackspaceCount
         }
 
-        if PHTVEngineRuntimeFacade.engineDataBackspaceCount() > 0 {
-            PHTVKeyEventSenderService.sendBackspaceSequenceWithDelay(
-                PHTVEngineRuntimeFacade.engineDataBackspaceCount())
+        if effectiveBackspaceCount > 0 {
+            PHTVKeyEventSenderService.sendBackspaceSequenceWithDelay(effectiveBackspaceCount)
         }
 
         if !macroPlan.useStepByStepSend {
             sendNewCharString(dataFromMacro: true, offset: 0, keycode: keycode, flags: flags)
         } else {
-            let macroCount = Int32(PHTVEngineRuntimeFacade.engineDataMacroDataSize())
-            let cliSpeedFactor = PHTVCliRuntimeStateService.currentSpeedFactor()
-            let isCli = PHTVEventRuntimeContextService.isCliTargetEnabled()
-            let scaledCliTextDelayUs: UInt64 = isCli
-                ? UInt64(PHTVTimingService.scaleDelayUseconds(
-                    PHTVTimingService.clampToUseconds(PHTVCliRuntimeStateService.cliTextDelayUs()),
-                    factor: cliSpeedFactor))
-                : 0
-            let scaledCliPostSendBlockUs: UInt64 = isCli
-                ? PHTVTimingService.scaleDelayMicroseconds(
-                    PHTVCliRuntimeStateService.cliPostSendBlockUs(), factor: cliSpeedFactor)
-                : 0
-            let sendPlan = PHTVSendSequenceService.sequencePlan(
-                forCliTarget: isCli,
-                itemCount: macroCount,
-                scaledCliTextDelayUs: Int64(scaledCliTextDelayUs),
-                scaledCliPostSendBlockUs: Int64(scaledCliPostSendBlockUs))
-            let interItemDelayUs = PHTVTimingService.clampToUseconds(
-                UInt64(max(Int64(0), sendPlan.interItemDelayUs)))
             let pureCharMask = EngineBitMask.pureCharacter
-            let totalMacroSize = Int(PHTVEngineRuntimeFacade.engineDataMacroDataSize())
-            for i in 0..<totalMacroSize {
-                let macroItem = PHTVEngineRuntimeFacade.engineDataMacroDataAt(Int32(i))
+            PHTVSendSequenceService.sendItemsStepByStep(count: macroData.count) { index in
+                let macroItem = macroData[index]
                 if (macroItem & pureCharMask) != 0 {
                     PHTVKeyEventSenderService.sendPureCharacter(UInt16(macroItem & 0xFFFF))
                 } else {
                     PHTVKeyEventSenderService.sendKeyCode(macroItem)
                 }
-                if interItemDelayUs > 0 && i + 1 < totalMacroSize {
-                    usleep(interItemDelayUs)
-                }
-            }
-            if sendPlan.shouldScheduleCliBlock {
-                PHTVCliRuntimeStateService.scheduleBlock(
-                    forMicroseconds: UInt64(max(Int64(0), sendPlan.cliBlockUs)),
-                    nowMachTime: mach_absolute_time())
             }
         }
 
@@ -279,8 +249,7 @@ final class PHTVCharacterOutputService: NSObject {
                                   pureCharMask: UInt32,
                                   charCodeMask: UInt32,
                                   into newCharString: inout [UInt16],
-                                  outputIndex: inout Int,
-                                  newCharSize: inout Int) {
+                                  outputIndex: inout Int) {
         if (tempChar & pureCharMask) != 0 {
             newCharString[outputIndex] = UInt16(tempChar & 0xFFFF)
             outputIndex += 1
@@ -307,7 +276,6 @@ final class PHTVCharacterOutputService: NSObject {
                     if codeTable == 2 { PHTVKeyEventSenderService.insertKeyLength(2) }
                     newCharString[outputIndex] = newCharHi
                     outputIndex += 1
-                    newCharSize += 1
                 } else {
                     if codeTable == 2 { PHTVKeyEventSenderService.insertKeyLength(1) }
                 }
@@ -319,7 +287,6 @@ final class PHTVCharacterOutputService: NSObject {
                 newCharString[outputIndex] = newChar
                 outputIndex += 1
                 if newCharHi > 0 {
-                    newCharSize += 1
                     newCharString[outputIndex] = EnginePackedData.unicodeCompoundMark(at: Int32(newCharHi) - 1)
                     outputIndex += 1
                 }
@@ -327,15 +294,5 @@ final class PHTVCharacterOutputService: NSObject {
                 break
             }
         }
-    }
-
-    private static func macroDataSnapshot(count: Int) -> [UInt32] {
-        guard count > 0 else { return [] }
-        var snapshot: [UInt32] = []
-        snapshot.reserveCapacity(count)
-        for index in 0..<count {
-            snapshot.append(PHTVEngineRuntimeFacade.engineDataMacroDataAt(Int32(index)))
-        }
-        return snapshot
     }
 }

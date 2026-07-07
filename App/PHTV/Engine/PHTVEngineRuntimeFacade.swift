@@ -756,8 +756,66 @@ func phtvRuntimeQuickEndConsonantEnabled() -> Int32 {
     runtimeQuickEndConsonant
 }
 
+/// Per-event snapshot of the runtime settings consumed while dispatching one
+/// CGEvent. Captured under a single lock acquisition so the event-tap hot
+/// path avoids re-locking for every field and sees one consistent view.
+struct PHTVEventDispatchSettings {
+    let language: Int32
+    let safeMode: Bool
+    let performLayoutCompat: Int32
+    let switchKeyStatus: Int32
+    let switchKey2Status: Int32
+    let enableEmojiHotkey: Int32
+    let emojiHotkeyModifiers: Int32
+    let emojiHotkeyKeyCode: Int32
+    let upperCaseFirstChar: Int32
+    let upperCaseExcludedForCurrentApp: Int32
+    let restoreOnEscape: Int32
+    let customEscapeKey: Int32
+    let pauseKeyEnabled: Int32
+    let pauseKey: Int32
+    let tempOffSpelling: Int32
+    let tempOffEngine: Int32
+    let useMacro: Int32
+    let useMacroInEnglishMode: Int32
+    let otherLanguage: Int32
+    let fixRecommendBrowser: Int32
+    let sendKeyStepByStep: Bool
+}
+
 @objcMembers
 final class PHTVEngineRuntimeFacade: NSObject {
+
+    /// Captures every runtime setting the event-tap dispatch path reads, in
+    /// one lock acquisition. Mid-event runtime mutations (language switches,
+    /// code-table overrides) are tracked by callers via locals.
+    @nonobjc class func eventDispatchSettingsSnapshot() -> PHTVEventDispatchSettings {
+        withRuntimeSettings { state in
+            PHTVEventDispatchSettings(
+                language: state.language,
+                safeMode: state.safeMode != 0,
+                performLayoutCompat: state.performLayoutCompat,
+                switchKeyStatus: state.switchKeyStatus,
+                switchKey2Status: state.switchKey2Status,
+                enableEmojiHotkey: state.enableEmojiHotkey,
+                emojiHotkeyModifiers: state.emojiHotkeyModifiers,
+                emojiHotkeyKeyCode: state.emojiHotkeyKeyCode,
+                upperCaseFirstChar: state.upperCaseFirstChar,
+                upperCaseExcludedForCurrentApp: state.upperCaseExcludedForCurrentApp,
+                restoreOnEscape: state.restoreOnEscape,
+                customEscapeKey: state.customEscapeKey,
+                pauseKeyEnabled: state.pauseKeyEnabled,
+                pauseKey: state.pauseKey,
+                tempOffSpelling: state.tempOffSpelling,
+                tempOffEngine: state.tempOffEngine,
+                useMacro: state.useMacro,
+                useMacroInEnglishMode: state.useMacroInEnglishMode,
+                otherLanguage: state.otherLanguage,
+                fixRecommendBrowser: state.fixRecommendBrowser,
+                sendKeyStepByStep: state.sendKeyStepByStep != 0)
+        }
+    }
+
     @objc class func initializeAndGetKeyHookState() {
         phtvEngineInitialize()
     }
@@ -1050,6 +1108,18 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func fixRecommendBrowser() -> Int32 {
         runtimeFixRecommendBrowser
+    }
+
+    /// Captures code/extCode/backspaceCount/newCharCount/chars in one lock
+    /// acquisition. Prefer this over repeated engineData* calls on the
+    /// per-keystroke hot path.
+    class func engineDataResultSnapshot() -> PHTVEngineHookSnapshot {
+        engineHookResultSnapshot()
+    }
+
+    /// Captures the full macro replacement buffer in one lock acquisition.
+    class func engineDataMacroSnapshot() -> [UInt32] {
+        engineHookMacroSnapshot()
     }
 
     class func engineDataCode() -> Int32 {

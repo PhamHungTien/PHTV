@@ -2850,6 +2850,38 @@ func engineInitialize() {
     }
 }
 
+/// Immutable copy of the engine hook output, captured under a single lock
+/// acquisition so per-keystroke consumers avoid re-locking for every field.
+struct PHTVEngineHookSnapshot {
+    let code: Int32
+    let extCode: Int32
+    let backspaceCount: Int32
+    let newCharCount: Int32
+    let chars: [UInt32]
+
+    func char(at index: Int) -> UInt32 {
+        guard index >= 0 && index < chars.count else { return 0 }
+        return chars[index]
+    }
+}
+
+func engineHookResultSnapshot() -> PHTVEngineHookSnapshot {
+    withEngineState { engine in
+        PHTVEngineHookSnapshot(
+            code: engine.hCode,
+            extCode: engine.hExt,
+            backspaceCount: Int32(engine.hBPC),
+            newCharCount: Int32(engine.hNCC),
+            chars: engine.hData)
+    }
+}
+
+func engineHookMacroSnapshot() -> [UInt32] {
+    withEngineState { engine in
+        engine.hMacroData
+    }
+}
+
 func engineHookCode() -> Int32 {
     withEngineState { engine in
         engine.hCode

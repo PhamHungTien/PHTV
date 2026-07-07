@@ -1823,6 +1823,37 @@ EmojiItem(emoji: "🏧", name: "Atm Sign", keywords: ["atm", "sign"], category: 
         ]
     }
 
+    // MARK: - Search index
+
+    /// Precomputed lowercased/diacritic-stripped strings for one emoji.
+    /// Computing these per search keystroke costs thousands of string
+    /// normalizations; the index pays that once.
+    private struct SearchEntry {
+        let item: EmojiItem
+        let nameLower: String
+        let nameNormalized: String
+        let keywordsLower: [String]
+        let keywordsNormalized: [String]
+    }
+
+    private lazy var searchIndex: [SearchEntry] = {
+        var seen = Set<String>()
+        var entries: [SearchEntry] = []
+        for (_, _, emojis) in categories {
+            for emoji in emojis where seen.insert(emoji.emoji).inserted {
+                let nameLower = emoji.name.lowercased()
+                let keywordsLower = emoji.keywords.map { $0.lowercased() }
+                entries.append(SearchEntry(
+                    item: emoji,
+                    nameLower: nameLower,
+                    nameNormalized: normalizeVietnamese(nameLower),
+                    keywordsLower: keywordsLower,
+                    keywordsNormalized: keywordsLower.map(normalizeVietnamese)))
+            }
+        }
+        return entries
+    }()
+
     /// Smart search emojis with Vietnamese support
     /// Features: diacritics removal, synonym expansion, relevance scoring
     func search(_ query: String) -> [EmojiItem] {
@@ -1839,36 +1870,21 @@ EmojiItem(emoji: "🏧", name: "Atm Sign", keywords: ["atm", "sign"], category: 
         if let synonyms = vietnameseSynonyms[normalizedQuery] {
             searchTerms.append(contentsOf: synonyms)
         }
-        // Remove duplicates
-        searchTerms = Array(Set(searchTerms))
+        // Remove duplicates, then normalize each term once per search
+        let termPairs = Set(searchTerms).map { ($0, normalizeVietnamese($0)) }
 
         // Get frequency map for boosting frequently used emojis
         let frequencyMap = getEmojiFrequency()
 
         // Score-based results: (emoji, score)
         var scoredResults: [(EmojiItem, Int)] = []
-        var addedEmojis = Set<String>() // Track added emojis to avoid duplicates
 
-        for (_, _, emojis) in categories {
-            for emoji in emojis {
-                // Skip if already added
-                guard !addedEmojis.contains(emoji.emoji) else { continue }
-
-                let score = calculateMatchScore(
-                    emoji: emoji,
-                    searchTerms: searchTerms,
-                    originalQuery: lowercaseQuery,
-                    normalizedQuery: normalizedQuery
-                )
-
-                if score > 0 {
-                    // Boost score based on usage frequency
-                    let frequencyBoost = min(frequencyMap[emoji.emoji] ?? 0, 10) * 5
-                    let finalScore = score + frequencyBoost
-
-                    scoredResults.append((emoji, finalScore))
-                    addedEmojis.insert(emoji.emoji)
-                }
+        for entry in searchIndex {
+            let score = calculateMatchScore(entry: entry, termPairs: termPairs)
+            if score > 0 {
+                // Boost score based on usage frequency
+                let frequencyBoost = min(frequencyMap[entry.item.emoji] ?? 0, 10) * 5
+                scoredResults.append((entry.item, score + frequencyBoost))
             }
         }
 
@@ -1878,36 +1894,25 @@ EmojiItem(emoji: "🏧", name: "Atm Sign", keywords: ["atm", "sign"], category: 
         return scoredResults.map { $0.0 }
     }
 
-    /// Calculate match score for an emoji against search terms
+    /// Calculate match score for an emoji against pre-normalized search terms
     /// Higher score = better match
     /// Scoring: exact match (100) > prefix match (80) > word boundary (60) > contains (40)
     private func calculateMatchScore(
-        emoji: EmojiItem,
-        searchTerms: [String],
-        originalQuery: String,
-        normalizedQuery: String
+        entry: SearchEntry,
+        termPairs: [(String, String)]
     ) -> Int {
         var maxScore = 0
 
-        // Prepare searchable text from emoji
-        let nameLower = emoji.name.lowercased()
-        let nameNormalized = normalizeVietnamese(nameLower)
-        let keywordsLower = emoji.keywords.map { $0.lowercased() }
-        let keywordsNormalized = emoji.keywords.map { normalizeVietnamese($0.lowercased()) }
-
-        for term in searchTerms {
-            let termNormalized = normalizeVietnamese(term)
-
+        for (term, termNormalized) in termPairs {
             // Check name (English)
             let nameScore = matchScore(query: term, queryNormalized: termNormalized,
-                                       target: nameLower, targetNormalized: nameNormalized)
+                                       target: entry.nameLower, targetNormalized: entry.nameNormalized)
             maxScore = max(maxScore, nameScore)
 
             // Check keywords (English + Vietnamese)
-            for (i, keyword) in keywordsLower.enumerated() {
-                let keywordNormalized = keywordsNormalized[i]
+            for (i, keyword) in entry.keywordsLower.enumerated() {
                 let keywordScore = matchScore(query: term, queryNormalized: termNormalized,
-                                             target: keyword, targetNormalized: keywordNormalized)
+                                             target: keyword, targetNormalized: entry.keywordsNormalized[i])
                 // Keywords get slightly lower priority than name
                 maxScore = max(maxScore, keywordScore > 0 ? keywordScore - 5 : 0)
             }
@@ -1995,13 +2000,19 @@ EmojiItem(emoji: "🏧", name: "Atm Sign", keywords: ["atm", "sign"], category: 
             .map { $0.key }
     }
 
-    /// Get EmojiItem for a given emoji string
-    func getEmojiItem(for emoji: String) -> EmojiItem? {
+    /// Emoji string -> item lookup, built once on first use.
+    private lazy var emojiLookup: [String: EmojiItem] = {
+        var lookup: [String: EmojiItem] = [:]
         for (_, _, emojis) in categories {
-            if let found = emojis.first(where: { $0.emoji == emoji }) {
-                return found
+            for emoji in emojis where lookup[emoji.emoji] == nil {
+                lookup[emoji.emoji] = emoji
             }
         }
-        return nil
+        return lookup
+    }()
+
+    /// Get EmojiItem for a given emoji string
+    func getEmojiItem(for emoji: String) -> EmojiItem? {
+        emojiLookup[emoji]
     }
 }
