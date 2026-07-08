@@ -111,6 +111,11 @@ func phtvIsRunningUnderXCTest() -> Bool {
         setupSwiftUIBridge()
         bootstrapSparkleUpdates()
 
+        initEnglishWordDictionary()
+        loadRuntimeSettingsFromUserDefaults()
+        // Load macros only after the runtime settings (input type, code
+        // table) are in place: the lookup map prebuild targets the active
+        // code table (issue #146 — macros were stale until a manual refresh).
         loadExistingMacros()
         for delay in [0.6, 1.8] {
             Task { @MainActor [weak self] in
@@ -119,8 +124,6 @@ func phtvIsRunningUnderXCTest() -> Bool {
                 self.refreshMacrosIfSystemTextReplacementsChanged(resetSession: true)
             }
         }
-        initEnglishWordDictionary()
-        loadRuntimeSettingsFromUserDefaults()
         EmojiHotkeyBridge.initializeEmojiHotkeyManager()
         for delay in [0.0, 0.25, 0.8] {
             Task { @MainActor in

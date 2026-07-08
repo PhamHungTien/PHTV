@@ -17,7 +17,28 @@ private struct MacroLookupEntry {
 
 private final class MacroLookupStateBox: @unchecked Sendable {
     let lock = NSLock()
-    var map: [[UInt32]: MacroLookupEntry] = [:]
+    /// Raw macro payload as loaded; kept so lookup maps can be rebuilt for
+    /// whichever code table is active (issue #146: maps baked with the
+    /// load-time table stopped matching after a code-table change).
+    var binary: [UInt8] = []
+    var mapsByCodeTable: [Int32: [[UInt32]: MacroLookupEntry]] = [:]
+
+    /// Returns the lookup map for `codeTable`, building and memoizing it from
+    /// the stored payload on first use. Callers must hold `lock`.
+    func mapLocked(forCodeTable codeTable: Int32) -> [[UInt32]: MacroLookupEntry] {
+        if let cached = mapsByCodeTable[codeTable] {
+            return cached
+        }
+        guard !binary.isEmpty else {
+            return [:]
+        }
+        let built = binary.withUnsafeBufferPointer { buffer -> [[UInt32]: MacroLookupEntry] in
+            guard let base = buffer.baseAddress else { return [:] }
+            return macroMapFromBinaryData(base, size: buffer.count, codeTable: codeTable)
+        }
+        mapsByCodeTable[codeTable] = built
+        return built
+    }
 }
 
 private final class MatchedMacroStateBox: @unchecked Sendable {
@@ -358,12 +379,15 @@ private func readUInt16LE(from data: UnsafePointer<UInt8>, cursor: inout Int, si
     return value
 }
 
-private func macroMapFromBinaryData(_ data: UnsafePointer<UInt8>, size: Int) -> [[UInt32]: MacroLookupEntry] {
+private func macroMapFromBinaryData(
+    _ data: UnsafePointer<UInt8>,
+    size: Int,
+    codeTable activeCodeTable: Int32
+) -> [[UInt32]: MacroLookupEntry] {
     guard size >= 2 else {
         return [:]
     }
 
-    let activeCodeTable = PHTVEngineRuntimeFacade.currentCodeTable()
     var result: [[UInt32]: MacroLookupEntry] = [:]
     var cursor = 0
     guard let macroCountRaw = readUInt16LE(from: data, cursor: &cursor, size: size) else {
@@ -557,7 +581,9 @@ private func findMacroContentForNormalizedKeys(
         macroLookupState.lock.unlock()
     }
 
-    if let directEntry = macroLookupState.map[keys] {
+    let map = macroLookupState.mapLocked(forCodeTable: codeTable)
+
+    if let directEntry = map[keys] {
         setLastMatchedMacroSnippetType(directEntry.snippetType)
         return macroContentCode(for: directEntry, codeTable: codeTable)
     }
@@ -586,7 +612,7 @@ private func findMacroContentForNormalizedKeys(
         }
     }
 
-    guard let entry = macroLookupState.map[candidate] else {
+    guard let entry = map[candidate] else {
         return nil
     }
     setLastMatchedMacroSnippetType(entry.snippetType)
@@ -601,15 +627,21 @@ func phtvLoadMacroMapFromBinary(
 ) {
     guard let data, size > 0 else {
         macroLookupState.lock.lock()
-        macroLookupState.map = [:]
+        macroLookupState.binary = []
+        macroLookupState.mapsByCodeTable = [:]
         macroLookupState.lock.unlock()
         setLastMatchedMacroSnippetType(EngineMacroSnippetType.staticContent)
         return
     }
 
-    let parsedMap = macroMapFromBinaryData(data, size: Int(size))
+    let binary = Array(UnsafeBufferPointer(start: data, count: Int(size)))
+    let activeCodeTable = PHTVEngineRuntimeFacade.currentCodeTable()
     macroLookupState.lock.lock()
-    macroLookupState.map = parsedMap
+    macroLookupState.binary = binary
+    macroLookupState.mapsByCodeTable = [:]
+    // Prebuild for the active table so the first keystroke pays nothing;
+    // other tables are built lazily on their first lookup.
+    _ = macroLookupState.mapLocked(forCodeTable: activeCodeTable)
     macroLookupState.lock.unlock()
     setLastMatchedMacroSnippetType(EngineMacroSnippetType.staticContent)
 }

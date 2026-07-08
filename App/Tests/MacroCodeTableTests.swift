@@ -1,0 +1,122 @@
+//
+//  MacroCodeTableTests.swift
+//  PHTV
+//
+//  Regression coverage for issue #146: macros (Gõ Tắt / macOS Text
+//  Replacements) must keep matching regardless of which code table was
+//  active when the macro map was loaded, and diacritic shortcuts must work.
+//  Created by Phạm Hùng Tiến on 2026.
+//  Copyright © 2026 Phạm Hùng Tiến. All rights reserved.
+//
+
+import XCTest
+@testable import PHTV
+
+final class MacroCodeTableTests: XCTestCase {
+
+    private let eventKeyboard: Int32 = 0
+    private let stateKeyDown: Int32 = 0
+
+    override func setUp() {
+        super.setUp()
+        PHTVEngineRuntimeFacade.setCurrentLanguage(1)   // Vietnamese
+        PHTVEngineRuntimeFacade.setCurrentInputType(0)  // Telex
+        PHTVEngineRuntimeFacade.setCurrentCodeTable(0)  // Unicode
+        PHTVEngineRuntimeFacade.setUseMacro(1)
+        PHTVEngineRuntimeFacade.setAutoCapsMacro(0)
+        PHTVEngineRuntimeFacade.setCheckSpelling(1)
+        engineInitialize()
+    }
+
+    override func tearDown() {
+        loadMacros([])
+        PHTVEngineRuntimeFacade.setUseMacro(0)
+        PHTVEngineRuntimeFacade.setCurrentCodeTable(0)
+        engineInitialize()
+        super.tearDown()
+    }
+
+    // MARK: - Helpers
+
+    private func loadMacros(_ macros: [MacroItem]) {
+        let data = MacroStorage.engineBinaryData(from: macros)
+        PHTVEngineDataBridge.initializeMacroMap(with: data)
+    }
+
+    private func keyCode(for ch: Character) -> UInt16 {
+        switch ch {
+        case "a": return KEY_A; case "b": return KEY_B; case "c": return KEY_C
+        case "d": return KEY_D; case "e": return KEY_E; case "f": return KEY_F
+        case "g": return KEY_G; case "h": return KEY_H; case "i": return KEY_I
+        case "j": return KEY_J; case "k": return KEY_K; case "l": return KEY_L
+        case "m": return KEY_M; case "n": return KEY_N; case "o": return KEY_O
+        case "p": return KEY_P; case "q": return KEY_Q; case "r": return KEY_R
+        case "s": return KEY_S; case "t": return KEY_T; case "u": return KEY_U
+        case "v": return KEY_V; case "w": return KEY_W; case "x": return KEY_X
+        case "y": return KEY_Y; case "z": return KEY_Z
+        default:  return KEY_SPACE
+        }
+    }
+
+    /// Types the token then a space; returns true when the engine signaled a
+    /// macro replacement on the space.
+    private func typedTokenTriggersMacro(_ token: String) -> Bool {
+        engineStartNewSession()
+        for ch in token {
+            engineHandleEvent(eventKeyboard, stateKeyDown, keyCode(for: ch), 0, 0)
+        }
+        engineHandleEvent(eventKeyboard, stateKeyDown, UInt16(KEY_SPACE), 0, 0)
+        return engineHookCode() == HookCodeState.replaceMacro.rawValue
+    }
+
+    // MARK: - Baseline
+
+    func testAsciiMacroTriggersOnSpace() {
+        loadMacros([MacroItem(shortcut: "btw", expansion: "by the way")])
+        XCTAssertTrue(typedTokenTriggersMacro("btw"))
+    }
+
+    func testUnrelatedTokenDoesNotTriggerMacro() {
+        loadMacros([MacroItem(shortcut: "btw", expansion: "by the way")])
+        XCTAssertFalse(typedTokenTriggersMacro("hello"))
+    }
+
+    // MARK: - Diacritic shortcuts (issue #146)
+
+    func testDiacriticShortcutMatchesComposedTyping() {
+        // Shortcut "bò" is typed in Telex as b-o-f.
+        loadMacros([MacroItem(shortcut: "bò", expansion: "bao nhiêu")])
+        XCTAssertTrue(typedTokenTriggersMacro("bof"))
+    }
+
+    func testDiacriticShortcutSurvivesCodeTableSwitch() {
+        // Map loaded while a non-Unicode table is active, then the user (or
+        // Smart Switch) changes to Unicode: lookups must still match.
+        PHTVEngineRuntimeFacade.setCurrentCodeTable(2) // VNI Windows
+        loadMacros([MacroItem(shortcut: "bò", expansion: "bao nhiêu")])
+
+        PHTVEngineRuntimeFacade.setCurrentCodeTable(0) // Unicode
+        XCTAssertTrue(typedTokenTriggersMacro("bof"))
+    }
+
+    func testAsciiShortcutSurvivesCodeTableSwitch() {
+        PHTVEngineRuntimeFacade.setCurrentCodeTable(2)
+        loadMacros([MacroItem(shortcut: "btw", expansion: "by the way")])
+
+        PHTVEngineRuntimeFacade.setCurrentCodeTable(0)
+        XCTAssertTrue(typedTokenTriggersMacro("btw"))
+    }
+
+    func testDiacriticShortcutSurvivesTemporaryUnicodeOverride() {
+        // The Spotlight path temporarily forces the Unicode table mid-event;
+        // macros loaded under another table must still match during it.
+        PHTVEngineRuntimeFacade.setCurrentCodeTable(3) // Unicode Compound
+        loadMacros([MacroItem(shortcut: "bò", expansion: "bao nhiêu")])
+
+        PHTVEngineRuntimeFacade.setCurrentCodeTable(0)
+        let matchedDuringOverride = typedTokenTriggersMacro("bof")
+        PHTVEngineRuntimeFacade.setCurrentCodeTable(3)
+
+        XCTAssertTrue(matchedDuringOverride)
+    }
+}
