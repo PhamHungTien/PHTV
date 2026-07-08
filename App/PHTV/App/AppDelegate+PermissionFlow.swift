@@ -82,13 +82,31 @@ func phtvShouldRepairPermissionEntryBeforeGuidance(
     private func presentPermissionGuidanceUI() {
         NotificationCenter.default.post(name: NotificationName.showSettings, object: nil)
 
+        let hasCompletedOnboarding = UserDefaults.standard.bool(
+            forKey: UserDefaultsKey.onboardingCompleted)
+
         permissionGuidancePresentationTask?.cancel()
         permissionGuidancePresentationTask = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .milliseconds(350))
             guard let self, !Task.isCancelled else { return }
 
-            NotificationCenter.default.post(name: NotificationName.showOnboarding, object: nil)
-            self.continuePermissionGuidanceIfNeeded(forceOpenSystemSettings: true)
+            if hasCompletedOnboarding {
+                // Returning user lost a permission: jump straight to the
+                // permission step and open the right System Settings pane.
+                NotificationCenter.default.post(
+                    name: NotificationName.showOnboarding,
+                    object: nil,
+                    userInfo: [
+                        NotificationUserInfoKey.onboardingInitialStep:
+                            OnboardingView.permissionStepIndex
+                    ])
+                self.continuePermissionGuidanceIfNeeded(forceOpenSystemSettings: true)
+            } else {
+                // First install: show the full tour without covering it with
+                // System Settings. The permission step opens the correct pane
+                // in context once the user reaches it.
+                NotificationCenter.default.post(name: NotificationName.showOnboarding, object: nil)
+            }
         }
     }
 

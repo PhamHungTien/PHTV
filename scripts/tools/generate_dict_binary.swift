@@ -12,7 +12,12 @@
 import Foundation
 import Darwin
 
-private let trieMagic = "PHT4"
+// PHT5: sparse trie nodes. Each node stores a 32-bit header (bits 0-25 =
+// child-presence bitmap, bit 26 = end-of-word) followed by one 32-bit
+// section-relative byte offset per present child, in ascending letter order.
+// Versus PHT4's fixed 79-byte nodes this shrinks the shipped dictionary ~10x.
+private let trieMagic = "PHT5"
+private let trieIsEndBit: UInt32 = 1 << 26
 private let maxEnglishWords = Int.max
 private let maxEnglishLength = 45
 private let maxTelexLength = 30
@@ -26,11 +31,6 @@ private extension Data {
         }
     }
 
-    mutating func appendLEUInt24(_ value: UInt32) {
-        append(UInt8(value & 0xFF))
-        append(UInt8((value >> 8) & 0xFF))
-        append(UInt8((value >> 16) & 0xFF))
-    }
 }
 
 private extension Character {
@@ -105,15 +105,29 @@ private final class Trie {
     }
 
     func serialize() -> Data {
-        var data = Data()
-        data.reserveCapacity(nodes.count * 79) // 26×3 + 1
-
+        // Pass 1: byte offset of every node inside the node section.
+        var offsets = [Int]()
+        offsets.reserveCapacity(nodes.count)
+        var runningOffset = 0
         for node in nodes {
-            for child in node.children {
-                let childValue = child.map { UInt32($0) } ?? 0xFFFFFF
-                data.appendLEUInt24(childValue)
+            offsets.append(runningOffset)
+            let childCount = node.children.lazy.compactMap { $0 }.count
+            runningOffset += 4 + 4 * childCount
+        }
+
+        // Pass 2: emit header word + present child offsets per node.
+        var data = Data()
+        data.reserveCapacity(runningOffset)
+        for node in nodes {
+            var header: UInt32 = node.isEnd ? trieIsEndBit : 0
+            for (letter, child) in node.children.enumerated() where child != nil {
+                header |= UInt32(1) << UInt32(letter)
             }
-            data.append(node.isEnd ? 1 : 0)
+            data.appendLEUInt32(header)
+            for child in node.children {
+                guard let child else { continue }
+                data.appendLEUInt32(UInt32(offsets[child]))
+            }
         }
 
         return data

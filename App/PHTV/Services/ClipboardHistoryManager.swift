@@ -107,7 +107,8 @@ final class ClipboardHistoryManager {
         // Remove duplicate if exists
         let duplicateItems = items.filter { $0.isDuplicate(of: item) }
         duplicateItems.forEach { ClipboardHistoryFileCache.removeCache(for: $0) }
-        items.removeAll { duplicateItems.contains($0) }
+        let duplicateIDs = Set(duplicateItems.map(\.id))
+        items.removeAll { duplicateIDs.contains($0.id) }
 
         // Insert at beginning
         items.insert(item, at: 0)
@@ -158,12 +159,12 @@ final class ClipboardHistoryManager {
 
     // MARK: - Persistence
 
-    private static var historyFileURL: URL {
+    private static let historyFileURL: URL = {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let dir = appSupport.appendingPathComponent("PHTV", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir.appendingPathComponent("clipboard_history.json")
-    }
+    }()
 
     private func loadHistory() {
         // Migrate from UserDefaults if needed

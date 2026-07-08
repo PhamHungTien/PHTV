@@ -428,7 +428,9 @@ final class StatusBarMenuManager: NSObject, NSMenuDelegate {
     }
 
     @objc private func openAccessibilityPrefs() {
-        AppDelegate.current()?.continuePermissionGuidanceIfNeeded(forceOpenSystemSettings: true)
+        // Full guided flow: settings window + onboarding at the permission
+        // step + the matching System Settings pane.
+        AppDelegate.current()?.askPermission()
     }
 
     @objc private func openConvertTool() {

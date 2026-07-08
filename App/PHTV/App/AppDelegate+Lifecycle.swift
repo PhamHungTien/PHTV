@@ -151,6 +151,9 @@ func phtvIsRunningUnderXCTest() -> Bool {
         PHTVManager.startTCCNotificationListener()
         NSLog("[TCC] Notification listener started at app launch")
 
+        // One-shot cleanup of previous-version leftovers after an update.
+        PHTVUpdateMaintenanceService.runAfterUpdateIfNeeded()
+
         if !axTrustedAtLaunch || !inputMonitoringTrustedAtLaunch {
             runHotkeyHealthCheck(reason: "launch-missing-typing-permission")
             publishTypingPermissionState(eventTapReady: false)

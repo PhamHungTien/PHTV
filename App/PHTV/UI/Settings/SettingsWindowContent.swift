@@ -14,6 +14,7 @@ struct SettingsWindowContent: View {
     @AppStorage(UserDefaultsKey.onboardingCompleted) private var hasCompletedOnboarding = false
     @State private var windowObserverTasks: [Task<Void, Never>] = []
     @State private var showOnboarding: Bool = false
+    @State private var onboardingInitialStep: Int = 0
     @State private var isClosingSettingsWindow: Bool = false
     @State private var pendingCloseTask: Task<Void, Never>?
     @State private var onboardingTask: Task<Void, Never>?
@@ -39,7 +40,7 @@ struct SettingsWindowContent: View {
     }
 
     private var settingsWindowContent: some View {
-        OnboardingContainer(showOnboarding: $showOnboarding) {
+        OnboardingContainer(showOnboarding: $showOnboarding, initialStep: onboardingInitialStep) {
             ZStack(alignment: .top) {
                 SettingsView()
 
@@ -105,8 +106,10 @@ struct SettingsWindowContent: View {
 
     @MainActor
     private func observeShowOnboardingNotifications() async {
-        for await _ in NotificationCenter.default.notifications(named: NotificationName.showOnboarding) {
+        for await notification in NotificationCenter.default.notifications(named: NotificationName.showOnboarding) {
             guard !Task.isCancelled else { return }
+            let requestedStep = notification.userInfo?[NotificationUserInfoKey.onboardingInitialStep] as? Int
+            onboardingInitialStep = requestedStep ?? 0
             withAnimation(.easeInOut(duration: 0.3)) {
                 showOnboarding = true
             }
@@ -307,6 +310,7 @@ struct SettingsWindowContent: View {
             onboardingTask = Task { @MainActor in
                 try? await Task.sleep(for: .seconds(0.3))
                 guard !Task.isCancelled else { return }
+                onboardingInitialStep = 0
                 withAnimation(.easeInOut(duration: 0.3)) {
                     showOnboarding = true
                 }

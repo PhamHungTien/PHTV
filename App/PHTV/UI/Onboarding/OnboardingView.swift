@@ -21,7 +21,17 @@ private enum OnboardingStyle {
 struct OnboardingView: View {
     @Environment(AppState.self) private var appState
     var onDismiss: () -> Void
-    @State private var currentStep = 0
+    @State private var currentStep: Int
+
+    /// Index of the "Quyền truy cập" step — permission guidance can open the
+    /// onboarding directly here so users who lost a permission don't have to
+    /// click through the whole tour again.
+    static let permissionStepIndex = 4
+
+    init(onDismiss: @escaping () -> Void, initialStep: Int = 0) {
+        self.onDismiss = onDismiss
+        self._currentStep = State(initialValue: initialStep)
+    }
 
     // Steps definition
     private let totalSteps = 6
@@ -75,8 +85,10 @@ struct OnboardingView: View {
                     BasicFeaturesStepView()
                         .transition(stepTransition)
                 case 4:
-                    AccessibilityStepView()
-                        .transition(stepTransition)
+                    AccessibilityStepView(onPermissionsReady: {
+                        advanceAfterPermissionsGranted()
+                    })
+                    .transition(stepTransition)
                 case 5:
                     CompletionStepView(onFinish: {
                         onDismiss()
@@ -176,6 +188,18 @@ struct OnboardingView: View {
         guard nextStep != currentStep else { return }
         withAnimation(.easeInOut(duration: 0.25)) {
             currentStep = nextStep
+        }
+    }
+
+    /// Both permissions just got granted while the user was on the permission
+    /// step: give them a moment to see the green confirmation, then move on.
+    private func advanceAfterPermissionsGranted() {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1.2))
+            guard currentStep == Self.permissionStepIndex else { return }
+            withAnimation(.easeInOut(duration: 0.25)) {
+                currentStep = Self.permissionStepIndex + 1
+            }
         }
     }
 }
@@ -858,6 +882,10 @@ struct BasicFeaturesStepView: View {
 
 struct AccessibilityStepView: View {
     @Environment(AppState.self) private var appState
+    /// Called once when both permissions transition from missing to granted
+    /// while this step is visible, so the onboarding can advance on its own.
+    var onPermissionsReady: (() -> Void)? = nil
+    @State private var sawMissingPermission = false
 
     var body: some View {
         let runtimeHealth = appState.typingRuntimeHealth
@@ -893,6 +921,14 @@ struct AccessibilityStepView: View {
                         )
                     }
                     .buttonStyle(OnboardingPrimaryButtonStyle())
+                }
+
+                if runtimeHealth.phase == .accessibilityRequired ||
+                   runtimeHealth.phase == .inputMonitoringRequired {
+                    Text("Bạn có thể tiếp tục và cấp quyền sau — PHTV sẽ nhắc lại khi bộ gõ cần quyền.")
+                        .font(.system(size: 11, design: .rounded))
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
                 }
             }
             .padding(.horizontal, OnboardingStyle.contentHorizontalPadding)
@@ -1010,7 +1046,13 @@ struct AccessibilityStepView: View {
         let permissionState = appState.checkAccessibilityPermission()
 
         if permissionState != .ready {
+            sawMissingPermission = true
             AppDelegate.current()?.continuePermissionGuidanceIfNeeded()
+        } else if sawMissingPermission {
+            // Just transitioned to fully granted while the user watched this
+            // step — let the onboarding advance automatically.
+            sawMissingPermission = false
+            onPermissionsReady?()
         }
     }
 }
@@ -1074,10 +1116,14 @@ struct CompletionStepView: View {
 
 struct OnboardingContainer<Content: View>: View {
     @Binding var showOnboarding: Bool
+    var initialStep: Int
     let content: Content
 
-    init(showOnboarding: Binding<Bool>, @ViewBuilder content: () -> Content) {
+    init(showOnboarding: Binding<Bool>,
+         initialStep: Int = 0,
+         @ViewBuilder content: () -> Content) {
         self._showOnboarding = showOnboarding
+        self.initialStep = initialStep
         self.content = content()
     }
 
@@ -1088,11 +1134,14 @@ struct OnboardingContainer<Content: View>: View {
                 .disabled(showOnboarding)
 
             if showOnboarding {
-                OnboardingView(onDismiss: {
-                    withAnimation {
-                        showOnboarding = false
-                    }
-                })
+                OnboardingView(
+                    onDismiss: {
+                        withAnimation {
+                            showOnboarding = false
+                        }
+                    },
+                    initialStep: initialStep
+                )
                 .transition(.scale(scale: 0.98).combined(with: .opacity))
                 .zIndex(2000)
             }

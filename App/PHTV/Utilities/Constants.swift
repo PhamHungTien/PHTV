@@ -219,6 +219,7 @@ enum NotificationUserInfoKey {
     static let enabled = "enabled"
     static let macroId = "macroId"
     static let action = "action"
+    static let onboardingInitialStep = "onboardingInitialStep"
 }
 
 enum MacroUpdateAction {
