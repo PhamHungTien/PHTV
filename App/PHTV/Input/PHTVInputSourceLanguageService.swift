@@ -18,6 +18,7 @@ final class PHTVInputSourceLanguageService: NSObject {
         let lock = NSLock()
         var cachedPrimaryLanguage: String?
         var lastLanguageCheckTime: UInt64 = 0
+        var refreshInFlight = false
     }
     private static let languageCacheState = LanguageCacheStateBox()
 
@@ -118,8 +119,43 @@ final class PHTVInputSourceLanguageService: NSObject {
             }
         }
 
-        guard let inputSource = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue() else {
+        // TIS/TSM assert the main queue on modern macOS. The event tap runs
+        // on its own thread, so off-main callers get the last cached value
+        // and a coalesced main-thread refresh is scheduled (stale-while-
+        // revalidate); only main-thread callers refresh synchronously.
+        guard Thread.isMainThread else {
+            scheduleMainThreadRefresh()
             return cached
+        }
+
+        return refreshPrimaryLanguageOnMain(now: now)
+    }
+
+    private class func scheduleMainThreadRefresh() {
+        languageCacheState.lock.lock()
+        let alreadyScheduled = languageCacheState.refreshInFlight
+        languageCacheState.refreshInFlight = true
+        languageCacheState.lock.unlock()
+        guard !alreadyScheduled else {
+            return
+        }
+
+        DispatchQueue.main.async {
+            _ = refreshPrimaryLanguageOnMain(now: mach_absolute_time())
+            languageCacheState.lock.lock()
+            languageCacheState.refreshInFlight = false
+            languageCacheState.lock.unlock()
+        }
+    }
+
+    @discardableResult
+    private class func refreshPrimaryLanguageOnMain(now: UInt64) -> String? {
+        dispatchPrecondition(condition: .onQueue(.main))
+
+        guard let inputSource = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue() else {
+            languageCacheState.lock.lock()
+            defer { languageCacheState.lock.unlock() }
+            return languageCacheState.cachedPrimaryLanguage
         }
 
         let languages = inputSourceProperty(inputSource, kTISPropertyInputSourceLanguages) as? [String]

@@ -215,6 +215,11 @@ extension AppState {
         set { systemState.autoRestartOnSettingsClose = newValue }
     }
 
+    var doubleSpacePeriodEnabled: Bool {
+        get { trackedSubstate(systemState.doubleSpacePeriodEnabled) }
+        set { systemState.doubleSpacePeriodEnabled = newValue }
+    }
+
     var enableTextReplacementFix: Bool {
         trackedSubstate(systemState.enableTextReplacementFix)
     }

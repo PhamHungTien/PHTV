@@ -150,6 +150,15 @@ final class SystemState {
             }
         }
     }
+    var doubleSpacePeriodEnabled: Bool = false {
+        didSet {
+            handleObservedChange(oldValue: oldValue, newValue: doubleSpacePeriodEnabled) {
+                SettingsObserver.shared.suspendNotifications()
+                UserDefaults.standard.set(self.doubleSpacePeriodEnabled, forKey: UserDefaultsKey.doubleSpacePeriodEnabled)
+                PHTVSystemTextPreferencesService.applyDoubleSpacePeriodEnabled(self.doubleSpacePeriodEnabled)
+            }
+        }
+    }
 
     // Text Replacement Fix is always enabled (no user setting)
     var enableTextReplacementFix: Bool { return true }
@@ -388,6 +397,13 @@ final class SystemState {
             forKey: UserDefaultsKey.autoRestartOnSettingsClose,
             default: Defaults.autoRestartOnSettingsClose
         )
+        doubleSpacePeriodEnabled = defaults.bool(
+            forKey: UserDefaultsKey.doubleSpacePeriodEnabled,
+            default: Defaults.doubleSpacePeriodEnabled
+        )
+        // Keep the system value in sync with PHTV's toggle at every launch
+        // (default OFF: double spaces stay two spaces while typing).
+        PHTVSystemTextPreferencesService.applyPersistedDoubleSpacePeriodPreference(in: defaults)
 
         // Load Sparkle settings
         let updateInterval = defaults.integer(

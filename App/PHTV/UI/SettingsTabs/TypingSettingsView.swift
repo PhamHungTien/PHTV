@@ -101,6 +101,16 @@ struct TypingSettingsView: View {
                         SettingsDivider()
 
                         SettingsToggleRow(
+                            icon: "circle.fill",
+                            iconColor: .accentColor,
+                            title: "Thêm dấu chấm khi gõ 2 lần phím cách",
+                            subtitle: "Tự thay hai phím cách bằng dấu chấm (thiết lập hệ thống macOS)",
+                            isOn: bindable.doubleSpacePeriodEnabled
+                        )
+
+                        SettingsDivider()
+
+                        SettingsToggleRow(
                             icon: "text.magnifyingglass",
                             iconColor: .accentColor,
                             title: "Tự động khôi phục tiếng Anh",

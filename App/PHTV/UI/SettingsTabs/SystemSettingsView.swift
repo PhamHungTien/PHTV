@@ -410,6 +410,7 @@ struct SystemSettingsView: View {
             UserDefaultsKey.sendKeyStepByStep, UserDefaultsKey.useMacro, UserDefaultsKey.useMacroInEnglishMode, UserDefaultsKey.autoCapsMacro,
             UserDefaultsKey.useSmartSwitchKey, UserDefaultsKey.upperCaseFirstChar, UserDefaultsKey.allowConsonantZFWJ,
             UserDefaultsKey.quickStartConsonant, UserDefaultsKey.quickEndConsonant, UserDefaultsKey.rememberCode,
+            UserDefaultsKey.doubleSpacePeriodEnabled,
 
             // Auto restore English
             UserDefaultsKey.autoRestoreEnglishWord, UserDefaultsKey.autoRestoreEnglishWordMode, UserDefaultsKey.restoreIfWrongSpelling,

@@ -20,6 +20,16 @@ final class PHTVLayoutCompatibilityService: NSObject {
             return
         }
 
+        // TIS/TSM assert the main queue on modern macOS, and this runs from
+        // session resets on the event-tap thread. The check is a one-time
+        // first-run migration, so defer it to the main thread.
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async {
+                autoEnableIfNeeded()
+            }
+            return
+        }
+
         guard let currentKeyboard = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue() else {
             return
         }

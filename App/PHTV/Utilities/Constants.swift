@@ -131,6 +131,7 @@ enum UserDefaultsKey {
 
     // MARK: - Performance
     static let autoRestartOnSettingsClose = "vAutoRestartOnSettingsClose"
+    static let doubleSpacePeriodEnabled = "PHTV_DoubleSpacePeriodEnabled"
 
     // MARK: - Debug
     static let liveDebug = "PHTV_LIVE_DEBUG"
@@ -546,6 +547,9 @@ enum Defaults {
     static let settingsWindowAlwaysOnTop = false
     static let safeMode = false
     static let autoRestartOnSettingsClose = true
+    /// macOS "add period with double-space" substitution. Off by default:
+    /// while typing Vietnamese, two spaces should stay two spaces.
+    static let doubleSpacePeriodEnabled = false
     static let convertToolDontAlertWhenCompleted = false
     static let convertToolFromCode = CodeTable.tcvn.toIndex()
     static let convertToolToCode = CodeTable.unicode.toIndex()
@@ -800,6 +804,7 @@ final class SettingsBootstrap: NSObject {
             UserDefaultsKey.includeLogs: Defaults.includeLogs,
             UserDefaultsKey.includeCrashLogs: Defaults.includeCrashLogs,
             UserDefaultsKey.autoInstallUpdates: Defaults.autoInstallUpdates,
+            UserDefaultsKey.doubleSpacePeriodEnabled: Defaults.doubleSpacePeriodEnabled,
             "FreeMark": 0,
             "FixRecommendBrowser": 1,
             "vTempOffSpelling": 0,
