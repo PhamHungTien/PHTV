@@ -254,6 +254,7 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
         refreshClipboardHotkeyRegistration(reason: "sessionBecomeActive", settledRetries: true)
         requestEventTapRecovery(reason: "sessionBecomeActive", force: true)
         refreshMacrosIfSystemTextReplacementsChanged(resetSession: true)
+        SparkleManager.shared().resumeUpdateChecksAfterSessionBecameActive()
 
         if AppState.shared.enableClipboardHistory {
             ClipboardMonitor.shared.startMonitoring()

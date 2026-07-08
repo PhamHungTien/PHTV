@@ -54,6 +54,53 @@ import Foundation
 
     private static let runtimeState = EventTapRuntimeStateBox()
 
+    // MARK: - Dedicated event-tap thread
+
+    private final class TapThreadStateBox: @unchecked Sendable {
+        let lock = NSLock()
+        var runLoop: CFRunLoop?
+    }
+
+    private static let tapThreadState = TapThreadStateBox()
+
+    /// Run loop of the dedicated event-tap thread, starting the thread on
+    /// first use. Hosting the tap off the main run loop means UI work
+    /// (settings window, Sparkle checks, pickers) can never delay keystroke
+    /// processing for the whole system (issue #205). The thread lives for
+    /// the app's lifetime; recovery cycles only attach/detach tap sources.
+    private static func tapThreadRunLoop() -> CFRunLoop {
+        tapThreadState.lock.lock()
+        if let existing = tapThreadState.runLoop {
+            tapThreadState.lock.unlock()
+            return existing
+        }
+        tapThreadState.lock.unlock()
+
+        let ready = DispatchSemaphore(value: 0)
+        let thread = Thread {
+            let runLoop = CFRunLoopGetCurrent()
+            tapThreadState.lock.lock()
+            tapThreadState.runLoop = runLoop
+            tapThreadState.lock.unlock()
+            ready.signal()
+
+            // A permanently attached port keeps the run loop alive across
+            // tap stop/start cycles when no tap source is installed.
+            RunLoop.current.add(Port(), forMode: .common)
+            while true {
+                RunLoop.current.run(mode: .default, before: .distantFuture)
+            }
+        }
+        thread.name = "com.phamhungtien.phtv.eventtap"
+        thread.qualityOfService = .userInteractive
+        thread.start()
+        ready.wait()
+
+        tapThreadState.lock.lock()
+        defer { tapThreadState.lock.unlock() }
+        return tapThreadState.runLoop!
+    }
+
     private static func publishTypingReadiness(_ isReady: Bool) {
         guard runtimeState.shouldPublishTypingReadiness(isReady) else {
             return
@@ -190,7 +237,9 @@ import Foundation
         }
 
         if let source {
-            CFRunLoopAddSource(CFRunLoopGetMain(), source, CFRunLoopMode.commonModes)
+            let tapRunLoop = tapThreadRunLoop()
+            CFRunLoopAddSource(tapRunLoop, source, CFRunLoopMode.commonModes)
+            CFRunLoopWakeUp(tapRunLoop)
         }
 
         CGEvent.tapEnable(tap: tap, enable: true)
@@ -200,7 +249,7 @@ import Foundation
             NSLog("[EventTap] ✅ Keyboard-only tap enabled — installing NSEvent mouse monitor")
             installMouseClickMonitor()
         } else {
-            NSLog("[EventTap] ✅ Full tap enabled (keyboard + mouse) on main run loop")
+            NSLog("[EventTap] ✅ Full tap enabled (keyboard + mouse) on dedicated tap thread")
         }
 
         publishTypingReadiness(isReady)
@@ -231,7 +280,9 @@ import Foundation
             }
 
             if let source {
-                CFRunLoopRemoveSource(CFRunLoopGetMain(), source, CFRunLoopMode.commonModes)
+                let tapRunLoop = tapThreadRunLoop()
+                CFRunLoopRemoveSource(tapRunLoop, source, CFRunLoopMode.commonModes)
+                CFRunLoopWakeUp(tapRunLoop)
             }
 
             if let tap, CFMachPortIsValid(tap) {

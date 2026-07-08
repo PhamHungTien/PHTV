@@ -91,6 +91,21 @@ final class SparkleManager: NSObject {
         updater.checkForUpdatesInBackground()
     }
 
+    /// Called when this login session returns to the console. Update checks
+    /// are blocked while off-console (issue #196); if a scheduled check came
+    /// due during that window, run it now instead of waiting a full interval.
+    @objc func resumeUpdateChecksAfterSessionBecameActive() {
+        guard PHTVBuildInfo.updatesEnabled else { return }
+        configureAutomaticInstallPreferences(on: updater)
+        guard updater.automaticallyChecksForUpdates else { return }
+
+        let lastCheck = updater.lastUpdateCheckDate ?? .distantPast
+        guard Date().timeIntervalSince(lastCheck) >= updater.updateCheckInterval else { return }
+
+        NSLog("[Sparkle] Session became active with an overdue check - checking in background")
+        updater.checkForUpdatesInBackground()
+    }
+
     /// Configure update check interval in seconds
     @objc func setUpdateCheckInterval(_ interval: TimeInterval) {
         guard PHTVBuildInfo.updatesEnabled else {
@@ -123,6 +138,22 @@ final class SparkleManager: NSObject {
 }
 
 private final class SparkleUpdaterDelegate: NSObject, SPUUpdaterDelegate {
+    /// With fast user switching, PHTV runs once per logged-in account. Only
+    /// the on-console instance may perform update activity: an off-console
+    /// instance replacing /Applications/PHTV.app underneath the instance the
+    /// active user is running freezes both sessions (issue #196).
+    nonisolated func updater(_ updater: SPUUpdater, mayPerform updateCheck: SPUUpdateCheck) throws {
+        _ = updater
+        guard PHTVSessionConsoleService.shouldAllowUpdateActivity() else {
+            NSLog("[Sparkle] Blocking update check: session is not on console")
+            throw NSError(
+                domain: "com.phamhungtien.phtv.sparkle",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Session is not on console; update deferred."]
+            )
+        }
+    }
+
     nonisolated func updater(_ updater: SPUUpdater, willInstallUpdate item: SUAppcastItem) {
         _ = updater
         NSLog("[Sparkle] Will install update: %@", item.displayVersionString)
@@ -136,6 +167,13 @@ private final class SparkleUpdaterDelegate: NSObject, SPUUpdaterDelegate {
             forKey: UserDefaultsKey.autoInstallUpdates,
             default: Defaults.autoInstallUpdates
         ) else {
+            return false
+        }
+
+        // Never swap the app bundle from a background session; leave the
+        // update staged so Sparkle installs it on quit/relaunch instead.
+        guard PHTVSessionConsoleService.shouldAllowUpdateActivity() else {
+            NSLog("[Sparkle] Deferring immediate install of %@: session is not on console", item.displayVersionString)
             return false
         }
 
