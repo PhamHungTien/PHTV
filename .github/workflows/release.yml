@@ -54,6 +54,24 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Select Xcode toolchain
+        run: |
+          set -euo pipefail
+          # Self-hosted runners may have xcode-select pointing at Command Line
+          # Tools; xcodebuild requires full Xcode. DEVELOPER_DIR overrides the
+          # machine default without needing sudo/xcode-select.
+          if [ -z "${DEVELOPER_DIR:-}" ] || [ ! -d "${DEVELOPER_DIR:-/nonexistent}" ]; then
+            XCODE_APP=$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -1)
+            if [ -z "$XCODE_APP" ]; then
+              echo "❌ No Xcode installation found on this runner. Install Xcode or set DEVELOPER_DIR."
+              exit 1
+            fi
+            DEVELOPER_DIR="$XCODE_APP/Contents/Developer"
+          fi
+          echo "DEVELOPER_DIR=$DEVELOPER_DIR" >> "$GITHUB_ENV"
+          echo "🧰 Using DEVELOPER_DIR=$DEVELOPER_DIR"
+          DEVELOPER_DIR="$DEVELOPER_DIR" xcodebuild -version
+
       - name: Determine version
         id: version
         run: |
