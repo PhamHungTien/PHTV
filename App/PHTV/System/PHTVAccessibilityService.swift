@@ -476,16 +476,32 @@ final class PHTVAccessibilityService: NSObject {
     @objc class func selectBackwardForTypeover(_ count: Int32) -> Bool {
         guard count > 0, let focused = focusedElement() else { return false }
 
-        var caretRef: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(
-                focused, kAXSelectedTextRangeAttribute as CFString, &caretRef) == .success,
-              let caretValue = caretRef else {
-            return false
-        }
+        // Wait for the accessibility caret to settle: when typing fast, the
+        // previous replacement text may still be committing in the renderer,
+        // and selecting against a stale caret grabs the wrong characters
+        // (dropped or duplicated letters). Two consecutive identical
+        // zero-length reads mean the pending edits have landed.
         var caret = CFRange()
-        guard AXValueGetValue(caretValue as! AXValue, .cfRange, &caret),
-              caret.length == 0,
-              caret.location >= Int(count) else {
+        var settled = false
+        var lastLocation = -1
+        for attempt in 0..<5 {
+            var caretRef: CFTypeRef?
+            guard AXUIElementCopyAttributeValue(
+                    focused, kAXSelectedTextRangeAttribute as CFString, &caretRef) == .success,
+                  let caretValue = caretRef else {
+                return false
+            }
+            guard AXValueGetValue(caretValue as! AXValue, .cfRange, &caret) else {
+                return false
+            }
+            if attempt > 0 && caret.length == 0 && caret.location == lastLocation {
+                settled = true
+                break
+            }
+            lastLocation = caret.length == 0 ? caret.location : -1
+            usleep(8000)
+        }
+        guard settled, caret.location >= Int(count) else {
             return false
         }
 
