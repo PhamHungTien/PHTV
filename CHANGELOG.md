@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-07-08
+
+### Tổng quan
+PHTV 3.3.0 là bản cập nhật lớn về hiệu năng và độ gọn nhẹ: dung lượng sau cài đặt giảm khoảng **75 MB** nhờ định dạng từ điển hoàn toàn mới, lõi xử lý phím được tinh gọn để mỗi phím gõ tốn ít tài nguyên hơn đáng kể, trải nghiệm cấp quyền được thiết kế lại thân thiện hơn, và ứng dụng nay **tự dọn dẹp tàn dư của phiên bản cũ** sau mỗi lần cập nhật.
+
+### Điểm nổi bật
+- **Nhẹ hơn ~75 MB sau cài đặt — định dạng từ điển PHT5**
+  - Từ điển tiếng Anh (phục vụ tính năng tự khôi phục từ tiếng Anh) giảm từ **81,4 MB xuống 8,2 MB**; từ điển Telex tiếng Việt giảm từ **1,85 MB xuống 0,19 MB**.
+  - Định dạng trie nén thưa (sparse) mới: mỗi nút chỉ lưu các nhánh thực sự tồn tại thay vì bảng 26 con trỏ cố định, nhưng vẫn được nạp trực tiếp bằng memory-mapping — **không tốn thêm RAM hay thời gian giải nén khi khởi động**.
+  - Đã xác minh tự động: đầy đủ 371.125 từ tra cứu chính xác, không có kết quả dương tính giả; giữ tương thích ngược với định dạng cũ.
+- **Gõ phím nhẹ và mượt hơn**
+  - Lõi xử lý sự kiện phím nay đọc toàn bộ trạng thái engine và cài đặt runtime bằng **một lần khóa duy nhất cho mỗi phím gõ** thay vì hơn 100 lần như trước, đồng thời đảm bảo mọi quyết định trong một phím gõ đều dựa trên một góc nhìn cài đặt nhất quán.
+  - Vòng gửi ký tự (kể cả gõ tắt/macro) không còn khóa engine cho từng ký tự riêng lẻ.
+  - Tìm kiếm emoji nhanh hơn rõ rệt: chỉ mục tìm kiếm được dựng sẵn một lần thay vì chuẩn hóa lại ~9.000 từ khóa cho mỗi ký tự người dùng nhập; bảng bỏ dấu tiếng Việt không còn bị khởi tạo lại ở mỗi lần gọi.
+- **Trải nghiệm cấp quyền được thiết kế lại**
+  - Khi PHTV phát hiện mất quyền (Trợ năng / Giám sát đầu vào), bảng hướng dẫn nay mở **thẳng vào bước "Quyền truy cập"** kèm đúng trang System Settings cần thiết — không phải bấm qua các bước giới thiệu như trước.
+  - Trong lần cài đặt đầu tiên, System Settings không còn bật đè lên màn hình chào mừng; cửa sổ cấp quyền chỉ mở đúng lúc người dùng tới bước hướng dẫn cấp quyền, khi đang đọc chỉ dẫn từng bước.
+  - Khi cả hai quyền được cấp đủ, onboarding hiển thị xác nhận rồi **tự động chuyển sang bước hoàn tất**; bổ sung ghi chú cho biết có thể cấp quyền sau nếu muốn.
+  - Mục cấp quyền trên menu bar nay dẫn vào luồng hướng dẫn đầy đủ với trạng thái quyền cập nhật trực tiếp.
+- **Tự dọn dẹp thông minh sau khi cập nhật**
+  - Cơ chế bảo trì mới chạy **một lần duy nhất sau mỗi lần cập nhật phiên bản**, ở mức ưu tiên thấp, không ảnh hưởng khởi động.
+  - Chỉ dọn theo danh sách cho phép tường minh trong các vị trí thuộc sở hữu của PHTV: khóa cài đặt cũ đã hoàn tất di trú (chỉ xóa khi giá trị mới đã tồn tại — không bao giờ làm mất cài đặt), và file media tạm cũ hơn 3 ngày.
+  - Nền tảng này cho phép các phiên bản tương lai bổ sung quy tắc dọn dẹp một cách an toàn, có kiểm soát.
+
+### Fixed and Improved
+- Thêm `PHTVEngineHookSnapshot` và `PHTVEventDispatchSettings`: chụp kết quả engine + cài đặt runtime trong một lần khóa cho toàn bộ đường xử lý phím.
+- Gom logic gửi ký tự từng bước có nhịp CLI (trước đây trùng lặp ở hai nơi) về `PHTVSendSequenceService.sendItemsStepByStep`; loại bỏ biến đếm không còn tác dụng trong đường gửi ký tự.
+- `EmojiDatabase`: thêm chỉ mục tìm kiếm dựng sẵn và bảng tra cứu emoji theo ký tự, giúp lưới "dùng gần đây" không phải quét toàn bộ cơ sở dữ liệu mỗi lần hiển thị.
+- Lịch sử Clipboard: loại so sánh trùng lặp toàn nội dung độ phức tạp bậc hai khi thêm mục mới; đường dẫn file lịch sử không còn tạo lại thư mục ở mỗi lần lưu.
+- Bộ sinh từ điển (`generate_dict_binary.swift`) và bộ nạp trie đồng bộ định dạng PHT5, kèm kiểm tra biên đầy đủ khi đọc dữ liệu.
+- Thêm `PHTVUpdateMaintenanceService` với phần chính sách tách thuần để kiểm thử; bổ sung 9 unit test mới (tổng cộng 316 test, tất cả đều đạt).
+
+### Ghi chú nâng cấp
+- Đây là bản cập nhật khuyến nghị cho tất cả người dùng: gõ nhẹ hơn, chiếm ít dung lượng đĩa hơn rõ rệt và quy trình cấp quyền dễ theo dõi hơn.
+- Không cần thao tác gì sau khi cập nhật: từ điển định dạng mới nằm sẵn trong ứng dụng, và lần khởi động đầu tiên sẽ tự chạy dọn dẹp tàn dư phiên bản cũ một lần ở chế độ nền.
+- Nếu trước đây bạn từng bị kẹt ở bước cấp quyền, hãy mở lại hướng dẫn từ menu bar — luồng mới sẽ đưa bạn thẳng tới đúng bước và đúng trang System Settings cần bật.
+
 ## [3.2.5] - 2026-06-11
 
 ### Tổng quan
