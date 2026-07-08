@@ -202,7 +202,11 @@ final class CompatibilityStrategyTests: XCTestCase {
         XCTAssertTrue(plan.shouldTryLegacyNonBrowserFix)
     }
 
-    func testNotionCodeBlockAlwaysUsesSelectionOverwritePlan() {
+    func testNotionCodeBlockKeepsFullBackspaceCountForTypeover() {
+        // CodeMirror code blocks drop synthetic backspaces and the old
+        // select+delete key combo raced. The plan hands the FULL count to the
+        // caller, which deletes via AX select + type-over (with paced HID
+        // backspaces as fallback), so no key-event adjustment applies here.
         let plan = PHTVInputStrategyService.resolvedBackspacePlan(
             forBrowserAddressBarFix: false,
             addressBarDetected: false,
@@ -216,10 +220,10 @@ final class CompatibilityStrategyTests: XCTestCase {
 
         XCTAssertEqual(
             plan.adjustmentAction,
-            PHTVBackspaceAdjustmentAction.sendShiftLeftThenBackspace.rawValue
+            PHTVBackspaceAdjustmentAction.none.rawValue
         )
-        XCTAssertEqual(plan.adjustedBackspaceCount, 3)
-        XCTAssertEqual(plan.sanitizedBackspaceCount, 3)
+        XCTAssertEqual(plan.adjustedBackspaceCount, 4)
+        XCTAssertEqual(plan.sanitizedBackspaceCount, 4)
     }
 
     func testNotionPrefersDecodedCharacterSendOverStepByStepReplay() {

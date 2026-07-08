@@ -496,15 +496,34 @@ final class PHTVAccessibilityService: NSObject {
             return false
         }
 
-        var verifyRef: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(
-                focused, kAXSelectedTextRangeAttribute as CFString, &verifyRef) == .success,
-              let verifyValue = verifyRef else {
-            return false
+        // Chromium applies the selection asynchronously in the renderer, with
+        // latency jitter while it is busy rendering keystrokes. Poll briefly
+        // until the selection is confirmed before letting the replacement
+        // text type over it.
+        for _ in 0..<4 {
+            usleep(12000)
+            var verifyRef: CFTypeRef?
+            guard AXUIElementCopyAttributeValue(
+                    focused, kAXSelectedTextRangeAttribute as CFString, &verifyRef) == .success,
+                  let verifyValue = verifyRef else {
+                break
+            }
+            var applied = CFRange()
+            guard AXValueGetValue(verifyValue as! AXValue, .cfRange, &applied) else { break }
+            if applied.location == selection.location && applied.length == selection.length {
+                return true
+            }
         }
-        var applied = CFRange()
-        guard AXValueGetValue(verifyValue as! AXValue, .cfRange, &applied) else { return false }
-        return applied.location == selection.location && applied.length == selection.length
+
+        // The selection could still apply late; restore the original caret so
+        // the fallback deletion path cannot double-delete on top of it.
+        var originalCaret = caret
+        if let caretValue = AXValueCreate(.cfRange, &originalCaret) {
+            AXUIElementSetAttributeValue(
+                focused, kAXSelectedTextRangeAttribute as CFString, caretValue)
+            usleep(8000)
+        }
+        return false
     }
 
     private class func focusedElement() -> AXUIElement? {

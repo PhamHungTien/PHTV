@@ -969,11 +969,22 @@ final class PHTVEventCallbackService {
                         "deferBackspace=\(bsCount) newCharCount=\(hookData.newCharCount)",
                         throttleMs: kDebugLogThrottleMs)
                     #endif
+                } else if isNotionCodeBlockDetected,
+                          PHTVAccessibilityService.selectBackwardForTypeover(bsCount) {
+                    // CodeMirror code blocks drop synthetic backspaces but do
+                    // apply AX selection changes: select the chars to delete
+                    // and let the replacement text below type over them.
+                    // Hold the next real keystroke briefly so it cannot land
+                    // between the renderer applying the selection and the
+                    // replacement text typing over it.
+                    PHTVCliRuntimeStateService.scheduleBlock(
+                        forMicroseconds: 50000, nowMachTime: mach_absolute_time())
+                    #if DEBUG
+                    NSLog("[Notion] AX select+typeover x%d", bsCount)
+                    #endif
                 } else if isNotionCodeBlockDetected {
-                    // CodeMirror code blocks ignore deletions injected at the
-                    // tap point; route this event's whole output (backspaces
-                    // and replacement text) through the HID pipeline so it
-                    // arrives like real keyboard input, in order.
+                    // Fallback when the AX selection could not be verified:
+                    // paced backspaces through the HID pipeline.
                     PHTVEventRuntimeContextService.setForceHIDPost(true)
                     #if DEBUG
                     NSLog("[Notion] HID-paced backspace x%d (%dus gap)", bsCount, kNotionCodeBlockKeyDelayUs)
