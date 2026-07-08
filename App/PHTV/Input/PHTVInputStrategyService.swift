@@ -243,9 +243,12 @@ final class PHTVInputStrategyService: NSObject {
         }
 
         if shouldTryLegacyNonBrowserFix && isNotionCodeBlockDetected {
+            // CodeMirror code blocks drop synthetic events arriving within one
+            // render frame. The caller sends the full count as paced plain
+            // backspaces instead of the select+delete combo, which raced.
             return PHTVBackspaceAdjustment(
-                action: PHTVBackspaceAdjustmentAction.sendShiftLeftThenBackspace.rawValue,
-                adjustedBackspaceCount: backspaceCount - 1
+                action: PHTVBackspaceAdjustmentAction.none.rawValue,
+                adjustedBackspaceCount: backspaceCount
             )
         }
 

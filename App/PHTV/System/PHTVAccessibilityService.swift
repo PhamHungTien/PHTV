@@ -417,6 +417,96 @@ final class PHTVAccessibilityService: NSObject {
         return unsafeDowncast(raw, to: AXUIElement.self)
     }
 
+    // MARK: - Electron accessibility bootstrap
+
+    private final class ElectronAXBootstrapStateBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var enabledPids: Set<pid_t> = []
+
+        /// Returns true when the pid was not enabled yet and the caller
+        /// should perform the enable step now.
+        func markIfNeeded(_ pid: pid_t) -> Bool {
+            lock.lock()
+            defer { lock.unlock() }
+            return enabledPids.insert(pid).inserted
+        }
+
+        func unmark(_ pid: pid_t) {
+            lock.lock()
+            defer { lock.unlock() }
+            enabledPids.remove(pid)
+        }
+    }
+
+    private static let electronAXBootstrapState = ElectronAXBootstrapStateBox()
+
+    /// Chromium/Electron apps only build their DOM accessibility tree after an
+    /// assistive client opts in via AXManualAccessibility. Without this the
+    /// focused element of apps like Notion is invisible to PHTV, so
+    /// per-context typing fixes (e.g. Notion code blocks) silently fail.
+    /// Called on every frontmost-app change; enables once per app process.
+    @objc class func ensureElectronAccessibility(forBundleId bundleId: String?) {
+        guard PHTVAppDetectionService.isNotionApp(bundleId), let bundleId else { return }
+
+        for app in NSRunningApplication.runningApplications(withBundleIdentifier: bundleId) {
+            let pid = app.processIdentifier
+            guard pid > 0, electronAXBootstrapState.markIfNeeded(pid) else { continue }
+
+            let appElement = AXUIElementCreateApplication(pid)
+            let result = AXUIElementSetAttributeValue(
+                appElement,
+                "AXManualAccessibility" as CFString,
+                kCFBooleanTrue
+            )
+            if result == .success {
+                NSLog("[Accessibility] Enabled Electron accessibility tree for %@ (pid %d)",
+                      bundleId, pid)
+            } else {
+                // The app may still be launching; retry on its next activation.
+                electronAXBootstrapState.unmark(pid)
+            }
+        }
+    }
+
+    /// Selects the `count` UTF-16 units before the caret in the focused
+    /// element so the next synthetic text event types over them. Returns true
+    /// only when the selection was applied and verified by reading it back —
+    /// CodeMirror-based editors accept AX selection changes but silently
+    /// ignore AX text writes, which is exactly the combination this enables.
+    @objc class func selectBackwardForTypeover(_ count: Int32) -> Bool {
+        guard count > 0, let focused = focusedElement() else { return false }
+
+        var caretRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(
+                focused, kAXSelectedTextRangeAttribute as CFString, &caretRef) == .success,
+              let caretValue = caretRef else {
+            return false
+        }
+        var caret = CFRange()
+        guard AXValueGetValue(caretValue as! AXValue, .cfRange, &caret),
+              caret.length == 0,
+              caret.location >= Int(count) else {
+            return false
+        }
+
+        var selection = CFRange(location: caret.location - Int(count), length: Int(count))
+        guard let selectionValue = AXValueCreate(.cfRange, &selection) else { return false }
+        guard AXUIElementSetAttributeValue(
+                focused, kAXSelectedTextRangeAttribute as CFString, selectionValue) == .success else {
+            return false
+        }
+
+        var verifyRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(
+                focused, kAXSelectedTextRangeAttribute as CFString, &verifyRef) == .success,
+              let verifyValue = verifyRef else {
+            return false
+        }
+        var applied = CFRange()
+        guard AXValueGetValue(verifyValue as! AXValue, .cfRange, &applied) else { return false }
+        return applied.location == selection.location && applied.length == selection.length
+    }
+
     private class func focusedElement() -> AXUIElement? {
         let systemWide = AXUIElementCreateSystemWide()
         return elementAttribute(systemWide, kAXFocusedUIElementAttribute)

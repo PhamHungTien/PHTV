@@ -30,6 +30,10 @@ final class PHTVEventCallbackService {
     private static let kSpotlightCacheDurationMs: UInt64 = 150
     private static let kTextReplacementDeleteWindowMs: UInt64 = 30000
     private static let kAppCharacteristicsCacheMaxAgeMs: UInt64 = 10000
+    /// Settle delay between synthetic key events inside Notion code blocks.
+    /// CodeMirror applies input per render frame (~16ms); deletions arriving
+    /// within one frame get dropped, so pace comfortably above a frame.
+    private static let kNotionCodeBlockKeyDelayUs: UInt32 = 40000
     private static let keyEventKeyboard: Int32 = Int32(PHTV_ENGINE_EVENT_KEYBOARD)
     private static let keyEventStateKeyDown: Int32 = Int32(PHTV_ENGINE_EVENT_STATE_KEY_DOWN)
     private final class EnglishUppercaseStateBox: @unchecked Sendable {
@@ -965,6 +969,17 @@ final class PHTVEventCallbackService {
                         "deferBackspace=\(bsCount) newCharCount=\(hookData.newCharCount)",
                         throttleMs: kDebugLogThrottleMs)
                     #endif
+                } else if isNotionCodeBlockDetected {
+                    // CodeMirror code blocks ignore deletions injected at the
+                    // tap point; route this event's whole output (backspaces
+                    // and replacement text) through the HID pipeline so it
+                    // arrives like real keyboard input, in order.
+                    PHTVEventRuntimeContextService.setForceHIDPost(true)
+                    #if DEBUG
+                    NSLog("[Notion] HID-paced backspace x%d (%dus gap)", bsCount, kNotionCodeBlockKeyDelayUs)
+                    #endif
+                    PHTVKeyEventSenderService.sendPacedBackspaceSequence(
+                        bsCount, interDelayUs: kNotionCodeBlockKeyDelayUs)
                 } else {
                     PHTVKeyEventSenderService.sendBackspaceSequenceWithDelay(bsCount)
                 }

@@ -106,6 +106,7 @@ private func phtvListContainsBundleIdentifier(_ appList: [[String: Any]]?, bundl
 
     private func applyFrontmostAppContext(_ bundleIdentifier: String) {
         PHTVAppContextService.updateFrontmostBundleCache(bundleIdentifier)
+        PHTVAccessibilityService.ensureElectronAccessibility(forBundleId: bundleIdentifier)
         refreshAppListContexts(forFrontmostBundleIdentifier: bundleIdentifier)
 
         if !isInExcludedApp && PHTVManager.isSmartSwitchKeyEnabled() && PHTVManager.isInited() {

@@ -45,7 +45,8 @@ class PHTVKeyEventSenderService: NSObject {
 
     @objc class func postSyntheticEvent(_ event: CGEvent) {
         event.setIntegerValueField(.eventSourceUserData, value: EventSourceMarker.phtv)
-        if PHTVEventRuntimeContextService.postToHIDTapEnabled() {
+        if PHTVEventRuntimeContextService.postToHIDTapEnabled() ||
+           PHTVEventRuntimeContextService.forceHIDPostEnabled() {
             event.post(tap: .cghidEventTap)
         } else if PHTVEventRuntimeContextService.postToSessionForCliEnabled() {
             event.post(tap: .cgSessionEventTap)
@@ -71,7 +72,8 @@ class PHTVKeyEventSenderService: NSObject {
 
     @objc class func sendPhysicalBackspace() {
         guard let source = eventSource else { return }
-        if PHTVEventRuntimeContextService.postToHIDTapEnabled() {
+        if PHTVEventRuntimeContextService.postToHIDTapEnabled() ||
+           PHTVEventRuntimeContextService.forceHIDPostEnabled() {
             guard let bsDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(KeyCode.delete), keyDown: true),
                   let bsUp   = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(KeyCode.delete), keyDown: false) else { return }
             PHTVEventContextBridgeService.configureSyntheticKeyEvents(withKeyDown: bsDown, keyUp: bsUp, eventMarker: EventSourceMarker.phtv)
@@ -331,6 +333,20 @@ class PHTVKeyEventSenderService: NSObject {
     }
 
     // MARK: - Backspace sequence
+
+    /// Paced variant for editors that drop synthetic key events arriving
+    /// back-to-back (observed in Notion code blocks / CodeMirror). Waits
+    /// before the first deletion so the editor settles after the consumed
+    /// keystroke, then paces each backspace and leaves a trailing delay so
+    /// the replacement text does not race the final deletion.
+    @objc class func sendPacedBackspaceSequence(_ count: Int32, interDelayUs: UInt32) {
+        guard count > 0 else { return }
+        if interDelayUs > 0 { usleep(interDelayUs) }
+        for _ in 0..<count {
+            sendBackspace()
+            if interDelayUs > 0 { usleep(interDelayUs) }
+        }
+    }
 
     @objc class func sendBackspaceSequenceWithDelay(_ count: Int32) {
         guard count > 0 else { return }

@@ -412,6 +412,10 @@ final class PHTVEventRuntimeContextService: NSObject {
         var postToHIDTap = false
         var postToSessionForCli = false
         var cliTarget = false
+        /// One-event override: route synthetic output through the HID tap
+        /// without switching to the Spotlight/AX send strategy. Used for
+        /// editors that ignore tap-point deletions (Notion code blocks).
+        var forceHIDPost = false
         var keyboardType: Int64 = 0
         var pendingBackspaceCount: Int32 = 0
         var eventTapProxyRaw: UInt64 = 0
@@ -440,6 +444,7 @@ final class PHTVEventRuntimeContextService: NSObject {
             state.postToHIDTap = targetContext.postToHIDTap
             state.cliTarget = targetContext.isCliTarget
             state.postToSessionForCli = state.cliTarget
+            state.forceHIDPost = false
             state.keyboardType = eventKeyboardType
             state.pendingBackspaceCount = 0
         }
@@ -449,6 +454,20 @@ final class PHTVEventRuntimeContextService: NSObject {
         runtimeState.withLock { state in
             state.postToSessionForCli = false
             state.cliTarget = false
+            state.forceHIDPost = false
+        }
+    }
+
+    @objc(setForceHIDPost:)
+    class func setForceHIDPost(_ enabled: Bool) {
+        runtimeState.withLock { state in
+            state.forceHIDPost = enabled
+        }
+    }
+
+    @objc class func forceHIDPostEnabled() -> Bool {
+        runtimeState.withLock { state in
+            state.forceHIDPost
         }
     }
 
