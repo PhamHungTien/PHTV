@@ -1516,8 +1516,65 @@ final class PHTVHotkeyService: NSObject {
         return Int32(fallback)
     }
 
+    private final class LayoutPrewarmStateBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var scheduled = false
+
+        /// Returns true when the caller owns the scheduling slot.
+        func beginScheduling() -> Bool {
+            lock.lock()
+            defer { lock.unlock() }
+            if scheduled { return false }
+            scheduled = true
+            return true
+        }
+
+        func endScheduling() {
+            lock.lock()
+            scheduled = false
+            lock.unlock()
+        }
+    }
+
+    private static let layoutPrewarmState = LayoutPrewarmStateBox()
+
     @objc class func invalidateLayoutCache() {
         PHTVCacheStateService.invalidateLayoutCache()
+        prewarmLayoutCompatCache()
+    }
+
+    /// Fills the whole keycode → US-keycode table on the main thread.
+    ///
+    /// `NSEvent.charactersIgnoringModifiers` resolves the active keyboard
+    /// layout through Carbon TSM, which hard-asserts the main dispatch queue
+    /// on recent macOS. Since PHTV processes keys on a dedicated event-tap
+    /// thread, resolving lazily there crashes on the first press of any key.
+    /// Prewarming keeps that work on the main thread so the tap thread only
+    /// ever reads the cache.
+    @objc class func prewarmLayoutCompatCache() {
+        guard Thread.isMainThread else {
+            // Coalesce: a burst of keystrokes must not enqueue one hop per key.
+            guard layoutPrewarmState.beginScheduling() else { return }
+            DispatchQueue.main.async {
+                layoutPrewarmState.endScheduling()
+                prewarmLayoutCompatCache()
+            }
+            return
+        }
+        guard let source = CGEventSource(stateID: .privateState) else { return }
+
+        for keyCode in 0..<UInt16(128) {
+            guard PHTVCacheStateService.cachedLayoutConversion(keyCode) == layoutCacheNoValue,
+                  let probe = CGEvent(
+                    keyboardEventSource: source,
+                    virtualKey: CGKeyCode(keyCode),
+                    keyDown: true
+                  ) else {
+                continue
+            }
+            probe.flags = []
+            _ = resolveLayoutCompatKeyCode(probe, fallback: keyCode)
+        }
     }
 
     @objc(convertEventToKeyboardLayoutCompatKeyCode:fallback:)
@@ -1534,7 +1591,28 @@ final class PHTVHotkeyService: NSObject {
             }
         }
 
-        guard let layoutEvent = NSEvent(cgEvent: event) else {
+        // Off the main thread (the event-tap thread) the TSM lookup below is
+        // fatal. Pass the key through untouched and rebuild the table on the
+        // main thread so the next keystroke hits the cache.
+        guard Thread.isMainThread else {
+            prewarmLayoutCompatCache()
+            return fallback
+        }
+
+        return resolveLayoutCompatKeyCode(event, fallback: fallback)
+    }
+
+    /// Main-thread only: performs the TSM-backed layout resolution and caches it.
+    private class func resolveLayoutCompatKeyCode(_ event: CGEvent, fallback: UInt16) -> UInt16 {
+        dispatchPrecondition(condition: .onQueue(.main))
+
+        let rawKeyCode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
+
+        // Modifier keycodes surface as FlagsChanged events, and asking those
+        // for their characters raises an ObjC exception. They never need
+        // layout translation anyway.
+        guard let layoutEvent = NSEvent(cgEvent: event),
+              layoutEvent.type == .keyDown || layoutEvent.type == .keyUp else {
             return fallback
         }
 

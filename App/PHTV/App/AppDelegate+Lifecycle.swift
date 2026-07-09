@@ -113,6 +113,9 @@ func phtvIsRunningUnderXCTest() -> Bool {
 
         initEnglishWordDictionary()
         loadRuntimeSettingsFromUserDefaults()
+        // Resolve the keyboard-layout mapping here, on the main thread: the
+        // event-tap thread must never touch Carbon TSM (issue #208).
+        PHTVHotkeyService.prewarmLayoutCompatCache()
         // Load macros only after the runtime settings (input type, code
         // table) are in place: the lookup map prebuild targets the active
         // code table (issue #146 — macros were stale until a manual refresh).

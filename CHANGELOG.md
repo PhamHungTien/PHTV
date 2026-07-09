@@ -7,19 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.3] - 2026-07-09
+
+### Tổng quan
+PHTV 3.3.3 là bản sửa lỗi khẩn cấp: trên macOS 27, ứng dụng thoát ngay khi gõ phím đầu tiên. Đây là bản cập nhật bắt buộc cho người dùng macOS 27, đặc biệt nếu bạn dùng bàn phím không phải bố cục US.
+
+### Điểm nổi bật
+- **Sửa lỗi thoát ứng dụng khi gõ bất kỳ phím nào trên macOS 27 (#208)**
+  - Nguyên nhân: từ 3.3.1, PHTV xử lý phím trên một luồng riêng để giao diện không làm chậm việc gõ. Nhưng bước quy đổi bố cục bàn phím (dành cho bàn phím không phải US) lại hỏi hệ thống về bố cục đang dùng ngay trên luồng đó — thao tác này bắt buộc phải chạy ở luồng chính, và macOS 27 kiểm tra nghiêm ngặt điều này nên làm ứng dụng thoát ngay ở phím đầu tiên.
+  - PHTV nay **dựng sẵn bảng quy đổi bố cục bàn phím trên luồng chính** (lúc khởi động và mỗi khi đổi nguồn nhập liệu). Luồng xử lý phím chỉ đọc bảng đã dựng sẵn nên không còn chạm vào hệ thống bố cục bàn phím — vừa hết crash, vừa bỏ được một bước tra cứu khỏi đường gõ phím.
+  - Lưu ý: tuỳ chọn tương thích bố cục bàn phím được PHTV **tự bật cho bàn phím không phải US**, nên lỗi này ảnh hưởng phần lớn người dùng bàn phím quốc tế trên macOS 27.
+- **Sửa một lỗi tiềm ẩn khác trong cùng đường xử lý**
+  - Các phím bổ trợ (Shift, Command, Option…) khi bị đem đi quy đổi bố cục có thể gây lỗi ở tầng hệ thống. PHTV nay bỏ qua chúng — các phím này vốn không cần quy đổi.
+
+### Fixed and Improved
+- Tách toàn bộ phần chạm vào Carbon TSM ra khỏi luồng bắt phím; bổ sung cơ chế dựng lại bảng quy đổi có gom nhóm (coalescing) để không dồn tác vụ khi gõ nhanh.
+- Bổ sung 3 test hồi quy khoá chặt bất biến "luồng bắt phím không bao giờ tự quy đổi bố cục", có xác minh test thất bại trên bản chưa sửa và đạt sau khi áp dụng fix.
+- Toàn bộ test suite đạt **336/336 tests**.
+
+### Ghi chú nâng cấp
+- **Người dùng macOS 27 nên cập nhật ngay.** Nếu ứng dụng đang thoát mỗi lần gõ, hãy tải bản này từ trang phát hành; bản cũ không tự cập nhật được nếu bạn không gõ được phím nào.
+- Người dùng macOS 14–26 không gặp lỗi này, nhưng vẫn nên cập nhật vì đường xử lý phím được tinh gọn thêm.
+
 ## [3.3.2] - 2026-07-09
 
-### Fixed
+### Tổng quan
+PHTV 3.3.2 sửa xung đột giữa hai tính năng gõ: khi bật **Thêm dấu chấm khi gõ 2 lần phím cách**, tính năng **Viết hoa đầu câu** ngừng hoạt động. Bản này cũng bổ sung một số tên thương hiệu vào từ điển tiếng Anh để chúng không bị Telex biến dạng khi gõ.
 
-* Sửa lỗi khi bật **Thêm dấu chấm khi gõ 2 lần phím cách** thì tính năng **Viết hoa đầu câu** không còn hoạt động đúng.
-* Khi người dùng gõ hai lần phím cách để tạo dấu chấm, PHTV giờ nhận diện đúng đó là dấu kết thúc câu và tự viết hoa ký tự đầu câu tiếp theo nếu tùy chọn **Viết hoa đầu câu** đang bật.
-* Đồng bộ lại luồng xử lý giữa dấu chấm tự động, khoảng trắng sau câu và cơ chế viết hoa đầu câu để các tính năng không còn xung đột với nhau.
+### Điểm nổi bật
+- **Hai tính năng nay hoạt động cùng nhau**
+  - Khi gõ hai lần phím cách, macOS thay chúng bằng ". " — nhưng PHTV không nhìn thấy phím chấm nào nên không biết câu đã kết thúc, dẫn tới chữ tiếp theo không được viết hoa.
+  - PHTV nay hiểu rằng phím cách thứ hai chính là dấu kết thúc câu, và tự viết hoa chữ đầu câu tiếp theo — đúng như khi bạn gõ dấu chấm rồi phím cách.
+  - Áp dụng cho cả chế độ gõ tiếng Việt và tiếng Anh. Gõ một phím cách bình thường giữa hai từ vẫn không bị viết hoa.
+- **Bổ sung tên thương hiệu vào từ điển tiếng Anh**
+  - Thêm `lapaz`, `lapazfood`, `lapazfoods`: trước đây gõ "lapazfoods" trong chế độ tiếng Việt bị Telex biến thành "lâpzfôds"; nay được nhận diện là từ tiếng Anh và giữ nguyên.
 
-### Tests
+### Fixed and Improved
+- Engine và lõi xử lý phím nhận thêm trạng thái "double-space tạo dấu chấm" để đồng bộ quyết định viết hoa đầu câu giữa hai chế độ gõ.
+- Bổ sung test hồi quy cho cả hai chế độ (tiếng Việt và tiếng Anh), và test khôi phục từ thương hiệu từ từ điển tích hợp.
+- Xác minh các test mới thất bại trên bản chưa sửa và đạt sau khi áp dụng fix; toàn bộ test suite đạt **333/333 tests**.
 
-* Bổ sung test hồi quy cho trường hợp **double-space period + auto-capitalization**.
-* Xác minh test mới thất bại trên bản chưa sửa và chạy đúng sau khi áp dụng fix.
-* Toàn bộ test suite đạt **332/332 tests**.
+### Ghi chú nâng cấp
+- Nếu bạn dùng tuỳ chọn **Thêm dấu chấm khi gõ 2 lần phím cách** (Cài đặt > Gõ tiếng Việt) cùng với **Viết hoa đầu câu**, hãy cập nhật bản này — hai tính năng nay phối hợp đúng.
 
 ## [3.3.1] - 2026-07-09
 
