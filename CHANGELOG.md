@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.2] - 2026-07-09
+
+### Fixed
+
+* Sửa lỗi khi bật **Thêm dấu chấm khi gõ 2 lần phím cách** thì tính năng **Viết hoa đầu câu** không còn hoạt động đúng.
+* Khi người dùng gõ hai lần phím cách để tạo dấu chấm, PHTV giờ nhận diện đúng đó là dấu kết thúc câu và tự viết hoa ký tự đầu câu tiếp theo nếu tùy chọn **Viết hoa đầu câu** đang bật.
+* Đồng bộ lại luồng xử lý giữa dấu chấm tự động, khoảng trắng sau câu và cơ chế viết hoa đầu câu để các tính năng không còn xung đột với nhau.
+
+### Tests
+
+* Bổ sung test hồi quy cho trường hợp **double-space period + auto-capitalization**.
+* Xác minh test mới thất bại trên bản chưa sửa và chạy đúng sau khi áp dụng fix.
+* Toàn bộ test suite đạt **332/332 tests**.
+
 ## [3.3.1] - 2026-07-09
 
 ### Tổng quan
