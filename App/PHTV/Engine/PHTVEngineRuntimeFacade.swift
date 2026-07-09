@@ -66,6 +66,7 @@ private final class RuntimeSettingsStateBox: @unchecked Sendable {
     var quickEndConsonant: Int32 = 0
     var upperCaseFirstChar: Int32 = 0
     var upperCaseExcludedForCurrentApp: Int32 = 0
+    var doubleSpacePeriod: Int32 = 0
     var rememberCode: Int32 = 1
     var otherLanguage: Int32 = 1
     var tempOffSpelling: Int32 = 0
@@ -208,6 +209,11 @@ private var runtimeUpperCaseFirstChar: Int32 {
 private var runtimeUpperCaseExcludedForCurrentApp: Int32 {
     get { withRuntimeSettings { $0.upperCaseExcludedForCurrentApp } }
     set { withRuntimeSettings { $0.upperCaseExcludedForCurrentApp = newValue } }
+}
+
+private var runtimeDoubleSpacePeriod: Int32 {
+    get { withRuntimeSettings { $0.doubleSpacePeriod } }
+    set { withRuntimeSettings { $0.doubleSpacePeriod = newValue } }
 }
 
 private var runtimeRememberCode: Int32 {
@@ -733,6 +739,14 @@ func phtvRuntimeUpperCaseExcludedForCurrentApp() -> Int32 {
     runtimeUpperCaseExcludedForCurrentApp
 }
 
+/// Whether macOS "double-space inserts a period" is active. When enabled, two
+/// consecutive spaces become ". " in the destination app, so the engine treats
+/// the second space as a sentence terminator for auto-capitalization.
+@_cdecl("phtvRuntimeDoubleSpacePeriodEnabled")
+func phtvRuntimeDoubleSpacePeriodEnabled() -> Int32 {
+    runtimeDoubleSpacePeriod
+}
+
 @_cdecl("phtvRuntimeUseMacroEnabled")
 func phtvRuntimeUseMacroEnabled() -> Int32 {
     runtimeUseMacro
@@ -802,6 +816,7 @@ struct PHTVEventDispatchSettings {
     let emojiHotkeyKeyCode: Int32
     let upperCaseFirstChar: Int32
     let upperCaseExcludedForCurrentApp: Int32
+    let doubleSpacePeriod: Int32
     let restoreOnEscape: Int32
     let customEscapeKey: Int32
     let pauseKeyEnabled: Int32
@@ -834,6 +849,7 @@ final class PHTVEngineRuntimeFacade: NSObject {
                 emojiHotkeyKeyCode: state.emojiHotkeyKeyCode,
                 upperCaseFirstChar: state.upperCaseFirstChar,
                 upperCaseExcludedForCurrentApp: state.upperCaseExcludedForCurrentApp,
+                doubleSpacePeriod: state.doubleSpacePeriod,
                 restoreOnEscape: state.restoreOnEscape,
                 customEscapeKey: state.customEscapeKey,
                 pauseKeyEnabled: state.pauseKeyEnabled,
@@ -950,6 +966,14 @@ final class PHTVEngineRuntimeFacade: NSObject {
 
     class func upperCaseExcludedForCurrentApp() -> Int32 {
         runtimeUpperCaseExcludedForCurrentApp
+    }
+
+    class func doubleSpacePeriod() -> Int32 {
+        runtimeDoubleSpacePeriod
+    }
+
+    class func setDoubleSpacePeriod(_ value: Int32) {
+        runtimeDoubleSpacePeriod = value
     }
 
     class func checkSpelling() -> Int32 {

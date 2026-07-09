@@ -15,11 +15,16 @@ struct PHTVEnglishUppercaseState {
     var pending: Bool
     var needsSpaceConfirm: Bool
     var ellipsisContinuation: Bool = false
+    /// Whether the last processed key was a space. Used to recognize the
+    /// second of two consecutive spaces, which macOS turns into ". " when
+    /// "add period with double-space" is enabled.
+    var trailingSpace: Bool = false
 
     static let idle = PHTVEnglishUppercaseState(
         pending: false,
         needsSpaceConfirm: false,
-        ellipsisContinuation: false
+        ellipsisContinuation: false,
+        trailingSpace: false
     )
 }
 
@@ -65,7 +70,8 @@ final class PHTVEventCallbackService {
         keyCode: UInt16,
         flags: CGEventFlags,
         uppercaseEnabled: Bool,
-        uppercaseExcluded: Bool
+        uppercaseExcluded: Bool,
+        doubleSpacePeriodEnabled: Bool = false
     ) -> (nextState: PHTVEnglishUppercaseState, shouldForceUppercase: Bool) {
         guard uppercaseEnabled, !uppercaseExcluded else {
             return (.idle, false)
@@ -75,6 +81,35 @@ final class PHTVEventCallbackService {
             return (state, false)
         }
 
+        // Double-space → period: the second of two consecutive spaces becomes
+        // ". " in the destination app, so arm auto-capitalization exactly as a
+        // typed "period + space" would.
+        if doubleSpacePeriodEnabled, keyCode == KEY_SPACE, state.trailingSpace {
+            return (
+                PHTVEnglishUppercaseState(
+                    pending: true,
+                    needsSpaceConfirm: false,
+                    ellipsisContinuation: false,
+                    trailingSpace: true
+                ),
+                false
+            )
+        }
+
+        var (nextState, shouldForceUppercase) = coreEnglishUppercaseTransition(
+            state: state,
+            keyCode: keyCode,
+            flags: flags
+        )
+        nextState.trailingSpace = (keyCode == KEY_SPACE)
+        return (nextState, shouldForceUppercase)
+    }
+
+    private static func coreEnglishUppercaseTransition(
+        state: PHTVEnglishUppercaseState,
+        keyCode: UInt16,
+        flags: CGEventFlags
+    ) -> (nextState: PHTVEnglishUppercaseState, shouldForceUppercase: Bool) {
         let hasShift = flags.contains(.maskShift)
         let hasCapsLock = flags.contains(.maskAlphaShift)
         let hasShiftOrCaps = hasShift || hasCapsLock
@@ -558,7 +593,8 @@ final class PHTVEventCallbackService {
                     keyCode: keyCode,
                     flags: eventFlags,
                     uppercaseEnabled: uppercaseEnabled,
-                    uppercaseExcluded: uppercaseExcluded
+                    uppercaseExcluded: uppercaseExcluded,
+                    doubleSpacePeriodEnabled: settings.doubleSpacePeriod != 0
                 )
                 englishUppercaseStateBox.withLock { state in
                     state = englishUppercaseTransitionResult.nextState

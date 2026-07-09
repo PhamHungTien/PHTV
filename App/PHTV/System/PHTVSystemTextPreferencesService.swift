@@ -24,6 +24,9 @@ final class PHTVSystemTextPreferencesService: NSObject {
 
     class func applyDoubleSpacePeriodEnabled(_ enabled: Bool) {
         setGlobalPeriodSubstitution(enabled)
+        // Mirror into the typing engine so auto-capitalization treats the
+        // macOS-inserted period (from two spaces) as a sentence terminator.
+        PHTVEngineRuntimeFacade.setDoubleSpacePeriod(enabled ? 1 : 0)
         NSLog("[SystemTextPrefs] Double-space period substitution %@", enabled ? "enabled" : "disabled")
     }
 
@@ -35,6 +38,7 @@ final class PHTVSystemTextPreferencesService: NSObject {
             default: Defaults.doubleSpacePeriodEnabled
         )
         setGlobalPeriodSubstitution(enabled)
+        PHTVEngineRuntimeFacade.setDoubleSpacePeriod(enabled ? 1 : 0)
     }
 
     private class func setGlobalPeriodSubstitution(_ enabled: Bool) {

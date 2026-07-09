@@ -2558,6 +2558,12 @@ final class PHTVVietnameseEngine {
     // MARK: - Space handler
 
     func handleSpace(state: VKeyEventState, data: UInt16) {
+        // A non-zero spaceCount on entry means the previous key was also a
+        // space with no character between them. With macOS "double-space adds
+        // a period" active, that pair becomes ". " in the destination app, so
+        // this second space acts as a completed sentence terminator.
+        let isConsecutiveSpace = spaceCount > 0
+
         // EngineKeyHandleEventSpaceDecision.inc
         if phtvRuntimeUseMacroEnabled() != 0 && !hasHandledMacro &&
             (findMacro(&hMacroKey, &hMacroData) || (!hMacroRawKey.isEmpty && hMacroRawKey != hMacroKey && findMacro(&hMacroRawKey, &hMacroData))) {
@@ -2605,8 +2611,17 @@ final class PHTVVietnameseEngine {
 
         // EngineKeyHandleEventSpaceFinalize.inc
         if phtvRuntimeUseMacroEnabled() != 0 { hMacroKey.removeAll(); hMacroRawKey.removeAll(); hasHandledMacro = false }
-        if snapshotUpperCaseFirstChar != 0 && phtvRuntimeUpperCaseExcludedForCurrentApp() == 0 && upperCaseNeedsSpaceConfirm {
-            upperCaseNeedsSpaceConfirm = false
+        if snapshotUpperCaseFirstChar != 0 && phtvRuntimeUpperCaseExcludedForCurrentApp() == 0 {
+            if isConsecutiveSpace && phtvRuntimeDoubleSpacePeriodEnabled() != 0 {
+                // macOS turned this second space into ". "; treat it as a
+                // fully confirmed sentence terminator so the next word is
+                // auto-capitalized just like typing "period + space".
+                upperCaseStatus = 2
+                upperCaseNeedsSpaceConfirm = false
+                upperCaseEllipsisContinuation = false
+            } else if upperCaseNeedsSpaceConfirm {
+                upperCaseNeedsSpaceConfirm = false
+            }
         }
         if spaceCount == 1 {
             if !specialChar.isEmpty { saveSpecialChar() } else { saveWord() }
