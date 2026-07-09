@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.1] - 2026-07-09
+
+### Tổng quan
+PHTV 3.3.1 tập trung sửa dứt điểm các lỗi được cộng đồng báo cáo: gõ tiếng Việt trong khung code của Notion, gõ tắt có dấu ngừng hoạt động sau khi cập nhật, treo máy khi dùng nhiều tài khoản macOS, và hiện tượng thi thoảng gõ ra chữ chậm. Lõi xử lý phím được chuyển sang luồng riêng ưu tiên cao — gõ phím không còn phụ thuộc vào bất kỳ tác vụ giao diện nào của ứng dụng. Bổ sung tuỳ chọn "Thêm dấu chấm khi gõ 2 lần phím cách" (mặc định tắt).
+
+### Điểm nổi bật
+- **Sửa lỗi gõ trong khung code (/code) của Notion**
+  - Nguyên nhân gốc: Notion (Electron) chỉ mở cây accessibility khi có ứng dụng yêu cầu — PHTV chưa từng yêu cầu, nên cơ chế nhận diện khung code không hoạt động, backspace tổng hợp bị editor nuốt gây ra chữ lặp kiểu "chaào mưừng".
+  - PHTV nay tự kích hoạt cây accessibility của Notion, nhận diện khung code chính xác và thay chữ bằng cơ chế **chọn vùng + gõ đè nguyên tử** — không còn phụ thuộc backspace; có cơ chế chờ ổn định con trỏ để gõ nhanh không bị lệch ký tự.
+- **Gõ tắt / Text Replacements hoạt động ổn định với mọi bảng mã (#146)**
+  - Sửa lỗi gõ tắt **có dấu** ngừng hoạt động sau khi cập nhật hoặc đổi bảng mã: bảng tra cứu gõ tắt trước đây bị "đóng khung" theo bảng mã tại thời điểm nạp; nay tự dựng lại theo đúng bảng mã đang dùng (kể cả khi Chuyển thông minh đổi bảng theo ứng dụng hoặc trong ngữ cảnh Spotlight).
+  - Không còn phải mở tab Gõ tắt "gõ vài từ" để kích lại sau khi cập nhật.
+- **Hết treo máy khi dùng nhiều tài khoản macOS (#196)**
+  - Instance PHTV ở tài khoản nền không còn kiểm tra hay tự cài bản cập nhật: chỉ phiên đang giữ màn hình mới được phép — chấm dứt kịch bản tài khoản nền thay file ứng dụng ngay dưới chân tài khoản đang dùng.
+  - Khi quay lại phiên, nếu lịch kiểm tra cập nhật đã quá hạn thì PHTV kiểm tra bù ngay.
+- **Gõ phím không còn thi thoảng bị khựng (#205, #206)**
+  - Bộ bắt phím được chuyển từ main thread sang **luồng riêng ưu tiên tương tác cao**: cửa sổ Cài đặt, kiểm tra cập nhật, picker hay bất kỳ việc giao diện nào cũng không thể làm chậm việc gõ nữa.
+  - Đồng thời sửa lỗi crash tiềm ẩn trên macOS mới khi đọc nguồn bàn phím từ luồng bắt phím (TIS yêu cầu main thread): nay dùng cache và làm mới bất đồng bộ trên main thread.
+- **Tuỳ chọn mới: "Thêm dấu chấm khi gõ 2 lần phím cách" (mặc định tắt)**
+  - Nằm trong tab Gõ tiếng Việt > Tối ưu gõ, điều khiển trực tiếp thiết lập hệ thống macOS: mặc định PHTV tắt để hai phím cách ra đúng hai dấu cách khi gõ tiếng Việt; bật lại nếu bạn muốn dùng tính năng này của macOS.
+
+### Fixed and Improved
+- Thêm `ensureElectronAccessibility` (bật cây AX của Notion khi thành ứng dụng trước) và `selectBackwardForTypeover` (chọn vùng qua AX với retry-verify, tự khôi phục con trỏ khi thất bại).
+- Bảng tra cứu gõ tắt lưu payload gốc và memoize theo từng bảng mã; nạp gõ tắt sau khi nạp cài đặt runtime lúc khởi động.
+- Sparkle nhận biết phiên console (`PHTVSessionConsoleService` + chặn trong `SPUUpdaterDelegate`); chuyển kiểm tra nguồn bàn phím sang mô hình cache stale-while-revalidate; `autoEnableIfNeeded` của layout compat tự chuyển về main thread.
+- Bổ sung 9 unit test mới (gõ tắt theo bảng mã, chính sách cập nhật theo phiên) — tổng cộng 325 test, tất cả đều đạt; kiểm chứng end-to-end tự động trên Notion và TextEdit.
+
+### Ghi chú nâng cấp
+- Bản cập nhật khuyến nghị cho tất cả người dùng, đặc biệt nếu bạn: gõ trong khung code của Notion, dùng gõ tắt có dấu, dùng nhiều tài khoản macOS trên một máy, hoặc từng thấy gõ thi thoảng bị chậm.
+- Tuỳ chọn "Thêm dấu chấm khi gõ 2 lần phím cách" mặc định tắt — nếu bạn thích tính năng này của macOS, bật lại trong Cài đặt > Gõ tiếng Việt.
+
 ## [3.3.0] - 2026-07-08
 
 ### Tổng quan
