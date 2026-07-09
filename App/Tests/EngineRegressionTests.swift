@@ -371,6 +371,67 @@ final class EngineRegressionTests: XCTestCase {
         XCTAssertEqual(renderedTypingWord(engine), "d")
     }
 
+    func testUppercaseFirstCharAppliesAfterDoubleSpaceWhenPeriodSubstitutionEnabled() {
+        // macOS turns two spaces into ". "; with the feature on, the next
+        // word must still be auto-capitalized (issue: uppercase stopped
+        // working when "add period on double-space" was enabled).
+        let savedUppercase = PHTVEngineRuntimeFacade.upperCaseFirstChar()
+        let savedDoubleSpace = PHTVEngineRuntimeFacade.doubleSpacePeriod()
+        PHTVEngineRuntimeFacade.setUpperCaseFirstChar(1)
+        PHTVEngineRuntimeFacade.setDoubleSpacePeriod(1)
+        defer {
+            PHTVEngineRuntimeFacade.setUpperCaseFirstChar(savedUppercase)
+            PHTVEngineRuntimeFacade.setDoubleSpacePeriod(savedDoubleSpace)
+        }
+
+        let engine = PHTVVietnameseEngine()
+        engine.refreshRuntimeLayoutSnapshot()
+        engine.startNewSession()
+
+        feed(engine, [KEY_A, KEY_B, KEY_C, KEY_SPACE, KEY_SPACE, KEY_D])
+
+        XCTAssertEqual(renderedTypingWord(engine), "D")
+    }
+
+    func testDoubleSpaceDoesNotCapitalizeWhenPeriodSubstitutionDisabled() {
+        let savedUppercase = PHTVEngineRuntimeFacade.upperCaseFirstChar()
+        let savedDoubleSpace = PHTVEngineRuntimeFacade.doubleSpacePeriod()
+        PHTVEngineRuntimeFacade.setUpperCaseFirstChar(1)
+        PHTVEngineRuntimeFacade.setDoubleSpacePeriod(0)
+        defer {
+            PHTVEngineRuntimeFacade.setUpperCaseFirstChar(savedUppercase)
+            PHTVEngineRuntimeFacade.setDoubleSpacePeriod(savedDoubleSpace)
+        }
+
+        let engine = PHTVVietnameseEngine()
+        engine.refreshRuntimeLayoutSnapshot()
+        engine.startNewSession()
+
+        feed(engine, [KEY_A, KEY_B, KEY_C, KEY_SPACE, KEY_SPACE, KEY_D])
+
+        XCTAssertEqual(renderedTypingWord(engine), "d")
+    }
+
+    func testSingleSpaceDoesNotCapitalizeWhenPeriodSubstitutionEnabled() {
+        let savedUppercase = PHTVEngineRuntimeFacade.upperCaseFirstChar()
+        let savedDoubleSpace = PHTVEngineRuntimeFacade.doubleSpacePeriod()
+        PHTVEngineRuntimeFacade.setUpperCaseFirstChar(1)
+        PHTVEngineRuntimeFacade.setDoubleSpacePeriod(1)
+        defer {
+            PHTVEngineRuntimeFacade.setUpperCaseFirstChar(savedUppercase)
+            PHTVEngineRuntimeFacade.setDoubleSpacePeriod(savedDoubleSpace)
+        }
+
+        let engine = PHTVVietnameseEngine()
+        engine.refreshRuntimeLayoutSnapshot()
+        engine.startNewSession()
+
+        // A single space between words must not trigger sentence capitalization.
+        feed(engine, [KEY_A, KEY_B, KEY_C, KEY_SPACE, KEY_D])
+
+        XCTAssertEqual(renderedTypingWord(engine), "d")
+    }
+
     private func runQuickConsonantSpaceCase(
         _ token: String,
         customEnglish: [String] = [],

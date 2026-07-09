@@ -16,14 +16,16 @@ final class EnglishUppercaseFirstCharTests: XCTestCase {
         keyCode: UInt16,
         flags: CGEventFlags = [],
         enabled: Bool = true,
-        excluded: Bool = false
+        excluded: Bool = false,
+        doubleSpacePeriod: Bool = false
     ) -> (state: PHTVEnglishUppercaseState, forceUppercase: Bool) {
         let result = PHTVEventCallbackService.englishUppercaseTransition(
             state: state,
             keyCode: keyCode,
             flags: flags,
             uppercaseEnabled: enabled,
-            uppercaseExcluded: excluded
+            uppercaseExcluded: excluded,
+            doubleSpacePeriodEnabled: doubleSpacePeriod
         )
         return (result.nextState, result.shouldForceUppercase)
     }
@@ -154,5 +156,59 @@ final class EnglishUppercaseFirstCharTests: XCTestCase {
         state = blocked.state
         let nextLetter = transition(state, keyCode: KEY_G)
         XCTAssertTrue(nextLetter.forceUppercase)
+    }
+
+    // MARK: - Double-space → period (issue: capitalize still works)
+
+    func testDoubleSpaceThenLetterForcesUppercaseWhenEnabled() {
+        var state = PHTVEnglishUppercaseState.idle
+
+        // A word letter first so a real sentence context exists.
+        state = transition(state, keyCode: KEY_A, doubleSpacePeriod: true).state
+
+        let space1 = transition(state, keyCode: KEY_SPACE, doubleSpacePeriod: true)
+        XCTAssertFalse(space1.forceUppercase)
+        XCTAssertTrue(space1.state.trailingSpace)
+        state = space1.state
+
+        let space2 = transition(state, keyCode: KEY_SPACE, doubleSpacePeriod: true)
+        XCTAssertTrue(space2.state.pending)
+        XCTAssertFalse(space2.state.needsSpaceConfirm)
+        XCTAssertFalse(space2.forceUppercase)
+        state = space2.state
+
+        let letter = transition(state, keyCode: KEY_B, doubleSpacePeriod: true)
+        XCTAssertTrue(letter.forceUppercase)
+        XCTAssertFalse(letter.state.pending)
+    }
+
+    func testDoubleSpaceDoesNotForceUppercaseWhenDisabled() {
+        var state = PHTVEnglishUppercaseState.idle
+        state = transition(state, keyCode: KEY_A, doubleSpacePeriod: false).state
+        state = transition(state, keyCode: KEY_SPACE, doubleSpacePeriod: false).state
+        state = transition(state, keyCode: KEY_SPACE, doubleSpacePeriod: false).state
+
+        let letter = transition(state, keyCode: KEY_B, doubleSpacePeriod: false)
+        XCTAssertFalse(letter.forceUppercase)
+    }
+
+    func testSingleSpaceDoesNotForceUppercaseWhenEnabled() {
+        var state = PHTVEnglishUppercaseState.idle
+        state = transition(state, keyCode: KEY_A, doubleSpacePeriod: true).state
+        state = transition(state, keyCode: KEY_SPACE, doubleSpacePeriod: true).state
+
+        // Only one space: this is a normal word gap, not a sentence end.
+        let letter = transition(state, keyCode: KEY_B, doubleSpacePeriod: true)
+        XCTAssertFalse(letter.forceUppercase)
+    }
+
+    func testDoubleSpacePeriodStillCapitalizesAfterManualPeriodPath() {
+        // Manual "period + space" continues to work with the feature enabled.
+        var state = PHTVEnglishUppercaseState.idle
+        state = transition(state, keyCode: KEY_DOT, doubleSpacePeriod: true).state
+        state = transition(state, keyCode: KEY_SPACE, doubleSpacePeriod: true).state
+
+        let letter = transition(state, keyCode: KEY_C, doubleSpacePeriod: true)
+        XCTAssertTrue(letter.forceUppercase)
     }
 }
