@@ -570,6 +570,15 @@ final class EngineRegressionTests: XCTestCase {
         runSpaceCase("user", expectRestore: false, autoRestoreEnglish: false)
     }
 
+    func testLapazBrandWordsRestoreFromBuiltInDictionary() {
+        // Brand names added to the built-in English dictionary must trigger
+        // auto-restore so they type as-is instead of being Telex-mangled
+        // ("lapazfoods" -> "lâpzfôds" without the dictionary entry).
+        runSpaceCase("lapaz", expectRestore: true)
+        runSpaceCase("lapazfood", expectRestore: true)
+        runSpaceCase("lapazfoods", expectRestore: true)
+    }
+
     func testAutoRestoreSkipsUnsafeStaleBufferInsteadOfDeletingPreviousWord() {
         setCustomEnglishWords(["terminal"])
 
