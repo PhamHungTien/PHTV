@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.4] - 2026-07-11
+
+### Tổng quan
+PHTV 3.3.4 sửa dứt điểm phần còn sót của lỗi gõ tắt có dấu (#146): khi bật đồng thời **Gõ Tắt** của PHTV và **Text Replacements** của macOS, các phím tắt có dấu (ví dụ `cđ`, `đc`) không được mở rộng.
+
+### Điểm nổi bật
+- **Gõ tắt có dấu hoạt động ổn định khi bật đồng thời macOS Text Replacements (#146)**
+  - Nguyên nhân: khi bật cả **Gõ Tắt** của PHTV lẫn **Text Replacements** của macOS, PHTV nhường việc thay thế cho macOS đối với các phím tắt trùng nhau. Nhưng bộ thay thế của macOS căn cứ vào ký tự người dùng gõ trực tiếp, nên không thể nhận ra phím tắt có dấu (ví dụ `cđ`, `đc`) — vốn được PHTV tạo ra bằng biến đổi Telex ("cdd" → "cđ"). Kết quả: các phím tắt có dấu không được mở rộng.
+  - PHTV nay **luôn tự xử lý mọi phím tắt có dấu** (chứa ký tự tiếng Việt), chỉ nhường cho macOS những phím tắt thuần ASCII — nơi macOS hoạt động ổn định và tránh nhân đôi.
+  - Áp dụng cho cả phím tắt do người dùng tạo trong PHTV lẫn phím tắt nhập từ macOS Text Replacements: `cđ → cũng được`, `đc → được`… nay hoạt động ổn định.
+
+### Fixed and Improved
+- `PHTVSystemTextReplacementService`: chỉ nhường phím tắt thuần ASCII cho macOS; mọi phím tắt chứa ký tự tiếng Việt đều do PHTV tự mở rộng — không còn bị "nuốt" khi hai hệ thống cùng bật.
+- Bổ sung 4 test hồi quy cho luồng nhường/xử lý phím tắt có dấu và ASCII; xác minh các test thất bại trên bản chưa sửa và đạt sau khi áp dụng fix. Toàn bộ test suite đạt **340/340 tests**.
+
+### Ghi chú nâng cấp
+- Nếu bạn dùng gõ tắt có dấu (ví dụ `cđ → cũng được`) và có bật **Text Replacements** của macOS, hãy cập nhật bản này — các phím tắt có dấu nay mở rộng đúng.
+
 ## [3.3.3] - 2026-07-09
 
 ### Tổng quan

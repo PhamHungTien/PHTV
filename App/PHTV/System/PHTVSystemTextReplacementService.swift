@@ -79,10 +79,16 @@ final class PHTVSystemTextReplacementService: NSObject {
 
         // Keep the user macro payload, but mark colliding shortcuts as
         // system replacements so GUI apps can defer to native replacement.
+        //
+        // Only ASCII shortcuts may defer: macOS's text-substitution engine
+        // keys on the literal characters typed into the field, so it cannot
+        // reliably expand a shortcut the Vietnamese engine produced through
+        // transformation (e.g. "cdd" → "cđ"). Deferring diacritic shortcuts
+        // left them unexpanded (issue #146). PHTV always handles those itself.
         var merged = userMacros.map { macro -> MacroItem in
             var runtimeMacro = macro
             let key = normalizedText(runtimeMacro.shortcut).folding(options: [.caseInsensitive], locale: .current)
-            if systemShortcutKeys.contains(key) {
+            if systemShortcutKeys.contains(key), canDeferShortcutToNative(runtimeMacro.shortcut) {
                 runtimeMacro.snippetType = .systemTextReplacement
             }
             return runtimeMacro
@@ -100,12 +106,25 @@ final class PHTVSystemTextReplacementService: NSObject {
                 MacroItem(
                     shortcut: entry.shortcut,
                     expansion: entry.expansion,
-                    snippetType: .systemTextReplacement
+                    // Diacritic macOS replacements are expanded by PHTV so they
+                    // fire reliably; ASCII ones defer to macOS as before.
+                    snippetType: canDeferShortcutToNative(entry.shortcut)
+                        ? .systemTextReplacement
+                        : .static
                 )
             )
         }
 
         return merged
+    }
+
+    /// A shortcut may be handed off to macOS's native text replacement only
+    /// when it is pure ASCII. Shortcuts containing Vietnamese/diacritic
+    /// characters must be expanded by PHTV itself.
+    static func canDeferShortcutToNative(_ shortcut: String) -> Bool {
+        let trimmed = shortcut.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        return trimmed.unicodeScalars.allSatisfy { $0.isASCII }
     }
 
     @objc(shouldDeferToNativeTextReplacementForBundleId:)

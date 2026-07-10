@@ -119,4 +119,55 @@ final class MacroCodeTableTests: XCTestCase {
 
         XCTAssertTrue(matchedDuringOverride)
     }
+
+    // MARK: - Native deferral must never swallow diacritic shortcuts (issue #146)
+
+    func testCanDeferShortcutToNativeOnlyForASCII() {
+        XCTAssertTrue(PHTVSystemTextReplacementService.canDeferShortcutToNative("btw"))
+        XCTAssertTrue(PHTVSystemTextReplacementService.canDeferShortcutToNative("cd"))
+        XCTAssertFalse(PHTVSystemTextReplacementService.canDeferShortcutToNative("cđ"))
+        XCTAssertFalse(PHTVSystemTextReplacementService.canDeferShortcutToNative("đt"))
+        XCTAssertFalse(PHTVSystemTextReplacementService.canDeferShortcutToNative("bò"))
+        XCTAssertFalse(PHTVSystemTextReplacementService.canDeferShortcutToNative(""))
+        XCTAssertFalse(PHTVSystemTextReplacementService.canDeferShortcutToNative("   "))
+    }
+
+    private func snippetType(of shortcut: String, in macros: [MacroItem]) -> SnippetType? {
+        macros.first { $0.shortcut == shortcut }?.snippetType
+    }
+
+    func testDiacriticUserMacroNeverDefersEvenWhenCollidingWithSystemEntry() {
+        // Same shortcut exists in both PHTV and macOS Text Replacements.
+        let user = [MacroItem(shortcut: "cđ", expansion: "cũng được")]
+        let systemRaw: [[String: Any]] = [["replace": "cđ", "with": "cũng được", "on": 1]]
+
+        let merged = PHTVSystemTextReplacementService.mergedRuntimeMacros(
+            userMacros: user, useSystemTextReplacements: true, rawItems: systemRaw)
+
+        // Must stay PHTV-handled so the shortcut actually expands.
+        XCTAssertEqual(snippetType(of: "cđ", in: merged), .static)
+    }
+
+    func testAsciiUserMacroStillDefersWhenCollidingWithSystemEntry() {
+        let user = [MacroItem(shortcut: "btw", expansion: "by the way")]
+        let systemRaw: [[String: Any]] = [["replace": "btw", "with": "by the way", "on": 1]]
+
+        let merged = PHTVSystemTextReplacementService.mergedRuntimeMacros(
+            userMacros: user, useSystemTextReplacements: true, rawItems: systemRaw)
+
+        XCTAssertEqual(snippetType(of: "btw", in: merged), .systemTextReplacement)
+    }
+
+    func testImportedDiacriticSystemEntryIsHandledByPHTV() {
+        let systemRaw: [[String: Any]] = [
+            ["replace": "đc", "with": "được", "on": 1],
+            ["replace": "omw", "with": "on my way", "on": 1]
+        ]
+
+        let merged = PHTVSystemTextReplacementService.mergedRuntimeMacros(
+            userMacros: [], useSystemTextReplacements: true, rawItems: systemRaw)
+
+        XCTAssertEqual(snippetType(of: "đc", in: merged), .static)
+        XCTAssertEqual(snippetType(of: "omw", in: merged), .systemTextReplacement)
+    }
 }
