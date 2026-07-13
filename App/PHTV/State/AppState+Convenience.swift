@@ -183,6 +183,11 @@ extension AppState {
         set { clipboardHistoryState.clipboardHistoryMaxItems = newValue }
     }
 
+    var clipboardHistoryRetention: ClipboardHistoryRetention {
+        get { trackedSubstate(clipboardHistoryState.clipboardHistoryRetention) }
+        set { clipboardHistoryState.clipboardHistoryRetention = newValue }
+    }
+
     // MARK: System State
 
     var runOnStartup: Bool {

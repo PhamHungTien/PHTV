@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Tự động xóa lịch sử Clipboard theo thời gian (#209)**
+  - Tuỳ chọn mới trong **Cài đặt > Lịch sử Clipboard**: tự động xóa các mục cũ hơn **3 ngày / 1 tuần / 1 tháng / 3 tháng**, hoặc **Không giới hạn**.
+  - **Mặc định là Không giới hạn** — PHTV không tự xóa lịch sử của bạn cho tới khi bạn chủ động chọn một mốc thời gian.
+  - Mục hết hạn được dọn ngay khi: mở bảng lịch sử, sao chép nội dung mới, đổi cài đặt, khởi động ứng dụng, và tự quét lại mỗi giờ (mục vẫn cũ đi kể cả khi bạn không sao chép gì thêm).
+  - Ảnh và file đính kèm của mục bị xóa cũng được dọn khỏi ổ đĩa, không để lại rác.
+  - Giới hạn theo thời gian hoạt động song song với **Số mục tối đa** đã có: mục hết hạn bị xóa trước, sau đó mới áp giới hạn số lượng.
+
 ## [3.3.4] - 2026-07-11
 
 ### Tổng quan

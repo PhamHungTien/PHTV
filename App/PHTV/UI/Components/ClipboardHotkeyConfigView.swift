@@ -16,6 +16,16 @@ struct ClipboardHotkeyConfigView: View {
     private let modifierOnlyKeyCode: UInt16 = KeyCode.noKey
     private var bindable: Bindable<AppState> { Bindable(appState) }
 
+    private var retentionFootnote: String {
+        switch appState.clipboardHistoryRetention {
+        case .forever:
+            return "Lịch sử chỉ bị giới hạn bởi số mục tối đa ở trên."
+        default:
+            let window = appState.clipboardHistoryRetention.displayName.lowercased()
+            return "Mục được sao chép quá \(window) sẽ tự động bị xóa."
+        }
+    }
+
     private var keyDisplayText: String {
         if isRecording { return "Nhấn phím..." }
         if appState.clipboardHotkeyKeyCode == modifierOnlyKeyCode && appState.clipboardHotkeyModifiers.isEmpty {
@@ -149,6 +159,39 @@ struct ClipboardHotkeyConfigView: View {
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
                     }
+                }
+
+                Divider()
+
+                // Retention window
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Tự động xóa mục cũ hơn")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.primary)
+
+                        Spacer()
+
+                        Picker(
+                            "",
+                            selection: Binding(
+                                get: { appState.clipboardHistoryRetention },
+                                set: { appState.clipboardHistoryRetention = $0 }
+                            )
+                        ) {
+                            ForEach(ClipboardHistoryRetention.allCases) { option in
+                                Text(option.displayName).tag(option)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.menu)
+                        .fixedSize()
+                    }
+
+                    Text(retentionFootnote)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
 
                     Text("Clipboard từ password manager và ứng dụng nhạy cảm sẽ không được lưu vào lịch sử.")
                         .font(.caption)

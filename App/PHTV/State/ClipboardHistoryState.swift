@@ -25,6 +25,9 @@ final class ClipboardHistoryState {
     var clipboardHistoryMaxItems: Int = 30 {
         didSet { handleClipboardSettingDidChange(oldValue: oldValue, newValue: clipboardHistoryMaxItems) }
     }
+    var clipboardHistoryRetention: ClipboardHistoryRetention = .forever {
+        didSet { handleClipboardSettingDidChange(oldValue: oldValue, newValue: clipboardHistoryRetention) }
+    }
 
     var clipboardHotkeyModifiers: NSEvent.ModifierFlags {
         get {
@@ -107,6 +110,13 @@ final class ClipboardHistoryState {
         )
         if clipboardHistoryMaxItems < 10 { clipboardHistoryMaxItems = 10 }
         if clipboardHistoryMaxItems > 100 { clipboardHistoryMaxItems = 100 }
+
+        clipboardHistoryRetention = ClipboardHistoryRetention.from(
+            rawValue: defaults.integer(
+                forKey: UserDefaultsKey.clipboardHistoryRetention,
+                default: Defaults.clipboardHistoryRetention
+            )
+        )
     }
 
     func saveSettings() {
@@ -117,6 +127,7 @@ final class ClipboardHistoryState {
         defaults.set(clipboardHotkeyModifiersRaw, forKey: UserDefaultsKey.clipboardHotkeyModifiers)
         defaults.set(Int(clipboardHotkeyKeyCode), forKey: UserDefaultsKey.clipboardHotkeyKeyCode)
         defaults.set(clipboardHistoryMaxItems, forKey: UserDefaultsKey.clipboardHistoryMaxItems)
+        defaults.set(clipboardHistoryRetention.rawValue, forKey: UserDefaultsKey.clipboardHistoryRetention)
     }
 
     func reloadFromDefaults() {
@@ -137,6 +148,7 @@ final class ClipboardHistoryState {
         clipboardHotkeyModifiersRaw = Int(Defaults.clipboardHotkeyModifiers)
         clipboardHotkeyKeyCode = Defaults.clipboardHotkeyKeyCode
         clipboardHistoryMaxItems = Defaults.clipboardHistoryMaxItems
+        clipboardHistoryRetention = ClipboardHistoryRetention.from(rawValue: Defaults.clipboardHistoryRetention)
 
         saveSettings()
     }

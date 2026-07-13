@@ -31,6 +31,37 @@ enum ClipboardHistoryStoragePolicy {
         guard items.count > limit else { return items }
         return Array(items.prefix(limit))
     }
+
+    static func retention(from defaults: UserDefaults = .standard) -> ClipboardHistoryRetention {
+        ClipboardHistoryRetention.from(
+            rawValue: defaults.integer(
+                forKey: UserDefaultsKey.clipboardHistoryRetention,
+                default: Defaults.clipboardHistoryRetention
+            )
+        )
+    }
+
+    /// Drops items older than the retention window. Items dated in the future
+    /// (clock changes, restored backups) are kept — expiry must never be
+    /// triggered by a clock going backwards.
+    static func retained(
+        _ items: [ClipboardHistoryItem],
+        retention: ClipboardHistoryRetention,
+        now: Date = Date()
+    ) -> [ClipboardHistoryItem] {
+        guard let maxAge = retention.maxAge else { return items }
+        return items.filter { now.timeIntervalSince($0.timestamp) <= maxAge }
+    }
+
+    /// Single place that applies both limits: age first, then item count.
+    static func enforced(
+        _ items: [ClipboardHistoryItem],
+        retention: ClipboardHistoryRetention,
+        maxItems: Int,
+        now: Date = Date()
+    ) -> [ClipboardHistoryItem] {
+        trimmed(retained(items, retention: retention, now: now), maxItems: maxItems)
+    }
 }
 
 enum ClipboardHistoryPastePayload: Equatable {
@@ -78,7 +109,12 @@ final class ClipboardHistoryManager {
     private var panel: FloatingPanel<ClipboardHistoryView>?
     private var previousApp: NSRunningApplication?
     private var lastShowRequestTime: CFAbsoluteTime = 0
+    /// Hourly: fine enough for the shortest window offered (3 days) while
+    /// costing one wakeup per hour.
+    private static let retentionSweepInterval: TimeInterval = 3600
+
     private var settingsObservationTask: Task<Void, Never>?
+    private var retentionSweepTask: Task<Void, Never>?
     private var panelResignKeyTask: Task<Void, Never>?
     private var restoreFocusTask: Task<Void, Never>?
     private var pendingPasteTask: Task<Void, Never>?
@@ -96,7 +132,17 @@ final class ClipboardHistoryManager {
             guard let self else { return }
             for await _ in NotificationCenter.default.notifications(named: NotificationName.clipboardHotkeySettingsChanged) {
                 guard !Task.isCancelled else { break }
-                self.trimItemsToConfiguredLimit()
+                self.enforceStoragePolicies()
+            }
+        }
+
+        // Items age even when nothing new is copied, so sweep on a timer as
+        // well; expired entries must not linger on disk until the next copy.
+        retentionSweepTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(Self.retentionSweepInterval))
+                guard let self, !Task.isCancelled else { break }
+                self.enforceStoragePolicies()
             }
         }
     }
@@ -112,12 +158,13 @@ final class ClipboardHistoryManager {
 
         // Insert at beginning
         items.insert(item, at: 0)
-        let trimmedItems = ClipboardHistoryStoragePolicy.trimmed(
+        let keptItems = ClipboardHistoryStoragePolicy.enforced(
             items,
+            retention: ClipboardHistoryStoragePolicy.retention(),
             maxItems: ClipboardHistoryStoragePolicy.maxItems()
         )
-        cleanupCaches(forRemovedItemsFrom: items, keeping: trimmedItems)
-        items = trimmedItems
+        cleanupCaches(forRemovedItemsFrom: items, keeping: keptItems)
+        items = keptItems
 
         saveHistory()
     }
@@ -171,7 +218,7 @@ final class ClipboardHistoryManager {
         if let legacyData = UserDefaults.standard.data(forKey: UserDefaultsKey.clipboardHistoryData) {
             do {
                 items = try JSONDecoder().decode([ClipboardHistoryItem].self, from: legacyData)
-                trimItemsToConfiguredLimit()
+                enforceStoragePolicies()
                 saveHistory()
                 UserDefaults.standard.removeObject(forKey: UserDefaultsKey.clipboardHistoryData)
                 NSLog("[ClipboardHistory] Migrated history from UserDefaults to file storage")
@@ -187,7 +234,7 @@ final class ClipboardHistoryManager {
               let data = try? Data(contentsOf: url) else { return }
         do {
             items = try JSONDecoder().decode([ClipboardHistoryItem].self, from: data)
-            trimItemsToConfiguredLimit()
+            enforceStoragePolicies()
             cleanupOrphanedCaches()
         } catch {
             NSLog("[ClipboardHistory] Failed to decode history: %@", error.localizedDescription)
@@ -203,14 +250,17 @@ final class ClipboardHistoryManager {
         }
     }
 
-    private func trimItemsToConfiguredLimit() {
-        let trimmedItems = ClipboardHistoryStoragePolicy.trimmed(
+    /// Applies both storage limits: the retention window (age) and the maximum
+    /// item count. Safe to call often — it only writes when something changed.
+    private func enforceStoragePolicies() {
+        let keptItems = ClipboardHistoryStoragePolicy.enforced(
             items,
+            retention: ClipboardHistoryStoragePolicy.retention(),
             maxItems: ClipboardHistoryStoragePolicy.maxItems()
         )
-        guard trimmedItems != items else { return }
-        cleanupCaches(forRemovedItemsFrom: items, keeping: trimmedItems)
-        items = trimmedItems
+        guard keptItems != items else { return }
+        cleanupCaches(forRemovedItemsFrom: items, keeping: keptItems)
+        items = keptItems
         saveHistory()
     }
 
@@ -241,6 +291,9 @@ final class ClipboardHistoryManager {
             return
         }
         lastShowRequestTime = now
+
+        // Never show an entry the retention window has already expired.
+        enforceStoragePolicies()
 
         previousApp = NSWorkspace.shared.frontmostApplication
 

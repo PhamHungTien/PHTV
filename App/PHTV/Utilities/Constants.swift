@@ -83,6 +83,7 @@ enum UserDefaultsKey {
     static let clipboardHotkeyModifiers = "vClipboardHotkeyModifiers"
     static let clipboardHotkeyKeyCode = "vClipboardHotkeyKeyCode"
     static let clipboardHistoryMaxItems = "vClipboardHistoryMaxItems"
+    static let clipboardHistoryRetention = "vClipboardHistoryRetention"
     static let clipboardHistoryData = "vClipboardHistoryData"
 
     // MARK: - Emoji Hotkey
@@ -534,6 +535,8 @@ enum Defaults {
     static let clipboardHotkeyModifiers = NSEvent.ModifierFlags.control.rawValue
     static let clipboardHotkeyKeyCode = KeyCode.vKey
     static let clipboardHistoryMaxItems = 30
+    /// Keep clipboard history forever unless the user opts into auto-delete.
+    static let clipboardHistoryRetention = ClipboardHistoryRetention.forever.rawValue
 
     // MARK: - Emoji Hotkey
     static let enableEmojiHotkey = true
@@ -793,6 +796,7 @@ final class SettingsBootstrap: NSObject {
             UserDefaultsKey.clipboardHotkeyModifiers: Int(Defaults.clipboardHotkeyModifiers),
             UserDefaultsKey.clipboardHotkeyKeyCode: Int(Defaults.clipboardHotkeyKeyCode),
             UserDefaultsKey.clipboardHistoryMaxItems: Defaults.clipboardHistoryMaxItems,
+            UserDefaultsKey.clipboardHistoryRetention: Defaults.clipboardHistoryRetention,
             UserDefaultsKey.enableEmojiHotkey: Defaults.enableEmojiHotkey,
             UserDefaultsKey.emojiHotkeyModifiers: Int(Defaults.emojiHotkeyModifiers),
             UserDefaultsKey.emojiHotkeyKeyCode: Int(Defaults.emojiHotkeyKeyCode),
