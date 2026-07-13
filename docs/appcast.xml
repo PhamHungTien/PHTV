@@ -7,6 +7,14 @@
         <language>vi</language>
         <!-- Most recent version first -->
         <item>
+            <title>3.3.5</title>
+            <pubDate>Mon, 13 Jul 2026 13:42:50 +0700</pubDate>
+            <sparkle:version>301</sparkle:version>
+            <sparkle:shortVersionString>3.3.5</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/PhamHungTien/PHTV/releases/download/v3.3.5/PHTV-3.3.5-arm64.dmg" length="8922198" type="application/octet-stream" sparkle:edSignature="Sp5liYGdkM+RQgyjpUPCbSCouW7HAQ90OXl0thknnuTdKmvss+9Dircxmnu8KaFzn01cHb/JtdZ2rl9PRplbAw=="/>
+        </item>
+        <item>
             <title>3.3.4</title>
             <pubDate>Sat, 11 Jul 2026 04:17:11 +0700</pubDate>
             <sparkle:version>300</sparkle:version>
